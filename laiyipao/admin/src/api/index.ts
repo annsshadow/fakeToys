@@ -508,6 +508,14 @@ export function deleteAnnouncement(id: number) {
   return api.del(`/admin/announcements/${id}`)
 }
 
+/**
+ * 导出公告 CSV（2026-10-31 实质优化第 38 轮）。
+ * 运营需要把公告清单带走做归档。readonly 可导出。
+ */
+export function exportAnnouncementsCsv() {
+  return api.getBlob('/admin/announcements/export')
+}
+
 export function fetchRedeemCodes(limit = 50, offset = 0) {
   return api.get<AdminRedeemCodesResp>(`/admin/redeem-codes?limit=${limit}&offset=${offset}`)
 }

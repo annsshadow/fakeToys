@@ -324,6 +324,8 @@ func (s *Server) Register(app *fiber.App) {
 	adm.Get("/orders", s.adminOrders)
 	adm.Put("/shop/:id", requireWritable(), s.adminUpdateShop)
 	adm.Get("/announcements", s.adminAnnouncements)
+	// 公告 CSV 导出（2026-10-31 实质优化第 38 轮）：读操作，readonly 可访问。
+	adm.Get("/announcements/export", s.adminExportAnnouncements)
 	adm.Post("/announcements", requireWritable(), s.adminCreateAnnouncement)
 	// 公告编辑/删除（2026-10-31 实质优化第 23 轮）：
 	// 此前只有创建/列表，发错内容无法修改、发错发布状态无法撤回。

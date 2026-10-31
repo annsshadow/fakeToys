@@ -1049,6 +1049,57 @@ func (s *Service) AdminUpdateRedeemCode(ctx context.Context, id int, reward map[
 	return v, nil
 }
 
+// AdminExportAnnouncements 导出公告列表为 CSV（2026-10-31 实质优化第 38 轮）。
+//
+// 与兑换码/用户/战报/审计导出同族：运营需要把公告清单带走做归档。
+// UTF-8 BOM，上限 100_000 行。
+func (s *Service) AdminExportAnnouncements(ctx context.Context) ([]byte, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, title, body, published, published_at, created_at
+		 FROM announcements ORDER BY id LIMIT 100000`)
+	if err != nil {
+		return nil, fmt.Errorf("export announcements: %w", err)
+	}
+	defer rows.Close()
+
+	var buf bytes.Buffer
+	buf.WriteString("\xEF\xBB\xBF")
+	w := csv.NewWriter(&buf)
+	header := []string{"id", "title", "body", "published", "published_at", "created_at"}
+	if err := w.Write(header); err != nil {
+		return nil, fmt.Errorf("write csv header: %w", err)
+	}
+
+	for rows.Next() {
+		var id int
+		var title, body string
+		var published bool
+		var publishedAt, createdAt *time.Time
+		if err := rows.Scan(&id, &title, &body, &published, &publishedAt, &createdAt); err != nil {
+			return nil, fmt.Errorf("scan announcement: %w", err)
+		}
+		rec := []string{
+			strconv.Itoa(id),
+			title,
+			body,
+			strconv.FormatBool(published),
+			formatNullableTime(publishedAt),
+			formatNullableTime(createdAt),
+		}
+		if err := w.Write(rec); err != nil {
+			return nil, fmt.Errorf("write csv row: %w", err)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	w.Flush()
+	if err := w.Error(); err != nil {
+		return nil, fmt.Errorf("flush csv: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
 // AdminListAuditLogs 返回操作审计。
 func (s *Service) AdminListAuditLogs(ctx context.Context, limit, offset int) ([]AdminAuditLogView, int64, error) {
 	if limit <= 0 || limit > 500 {

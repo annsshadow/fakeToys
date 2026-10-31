@@ -6,6 +6,7 @@ import {
   createAnnouncement,
   updateAnnouncement,
   deleteAnnouncement,
+  exportAnnouncementsCsv,
   fetchRedeemCodes,
   createRedeemCode,
   updateRedeemCode,
@@ -173,6 +174,27 @@ async function onDeleteAnn(a: AdminAnnouncementView) {
     await loadAll()
   } catch (e) {
     ElMessage.error(`删除失败：${(e as Error).message}`)
+  }
+}
+
+/**
+ * 导出公告 CSV（2026-10-31 实质优化第 38 轮）。
+ * 运营需要把公告清单带走做归档。readonly 可导出。
+ */
+async function onExportAnnouncements() {
+  try {
+    const blob = await exportAnnouncementsCsv()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `announcements_${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+    ElMessage.success(`已导出 ${announcements.value.length} 条公告（当前页）`)
+  } catch (e) {
+    ElMessage.error(`导出失败：${(e as Error).message}`)
   }
 }
 
@@ -357,6 +379,10 @@ loadAll()
           </el-col>
           <el-col :span="14" :xs="24" :sm="24" :md="14">
             <el-card shadow="never" header="已有公告">
+              <div style="display: flex; align-items: center; justify-content: flex-end; margin-bottom: 8px">
+                <span class="muted" style="margin-right: 8px">共 {{ annTotal }} 条</span>
+                <el-button size="small" @click="onExportAnnouncements">导出 CSV</el-button>
+              </div>
               <el-table :data="announcements" size="small" stripe>
                 <el-table-column prop="id" label="ID" width="55" />
                 <el-table-column prop="title" label="标题" min-width="140" />

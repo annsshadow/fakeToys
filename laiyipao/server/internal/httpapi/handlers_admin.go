@@ -778,6 +778,17 @@ func (s *Server) adminAnnouncements(c *fiber.Ctx) error {
 	return c.JSON(service.NormalizeNilSlices(service.AdminAnnouncementsResp{Items: items, Total: total}))
 }
 
+// adminExportAnnouncements 导出公告 CSV（2026-10-31 实质优化第 38 轮）。
+func (s *Server) adminExportAnnouncements(c *fiber.Ctx) error {
+	data, err := s.Svc.AdminExportAnnouncements(c.Context())
+	if err != nil {
+		return failErr(c, err)
+	}
+	c.Set("Content-Type", "text/csv; charset=utf-8")
+	c.Set("Content-Disposition", `attachment; filename="announcements.csv"`)
+	return c.Send(data)
+}
+
 func (s *Server) adminCreateAnnouncement(c *fiber.Ctx) error {
 	var body struct {
 		Title     string `json:"title"`

@@ -16,7 +16,8 @@ import (
 )
 
 func TestAdminListUsersSearchByID(t *testing.T) {
-	ts := openTestService(t)
+	// 用一次性 scratch 库：共享库的残留用户会让 total==1 断言不可靠。
+	ts := openScratchService(t)
 	ctx := context.Background()
 
 	// 两个用户：一个昵称含 "searchme"，一个不含
