@@ -12,11 +12,18 @@
       <!-- 敌人图鉴（服务端下发的权威表） -->
       <view class="card">
         <text class="card-title">敌人图鉴</text>
+        <!-- 搜索（2026-11-01 新一轮第 70 轮）：图鉴条目多，名称/类别过滤快速定位 -->
+        <input
+          v-model="keyword"
+          class="search-inp"
+          placeholder="搜索敌人名称 / 类别（如 Boss、飞行）"
+          placeholder-class="ph"
+        />
         <text class="muted" style="display: block; margin-bottom: 12rpx">
           数值直接来自服务端 /config，与游戏内实际生效的一致。
           抗性为千分比：正值减伤、负值易伤。
         </text>
-        <view v-for="en in enemies" :key="en.id" class="enemy">
+        <view v-for="en in filteredEnemies" :key="en.id" class="enemy">
           <view class="rxn-head">
             <text class="rxn-name">{{ en.name }}</text>
             <text class="dim">{{ categoryLabel(en.category) }}</text>
@@ -50,7 +57,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useGameStore } from '@/store/game'
 import { ELEMENT_NAME, type Element } from '@/game/elements'
 
@@ -65,6 +72,21 @@ const store = useGameStore()
  * 这里补上图鉴页。
  */
 const enemies = computed(() => store.config?.enemies ?? [])
+
+/** 图鉴搜索（2026-11-01 新一轮第 70 轮）：按名称/类别中文过滤。 */
+const keyword = ref('')
+
+const filteredEnemies = computed(() => {
+  const kw = keyword.value.trim().toLowerCase()
+  if (!kw) return enemies.value
+  return enemies.value.filter((en) => {
+    return (
+      en.name.toLowerCase().includes(kw) ||
+      categoryLabel(en.category).toLowerCase().includes(kw) ||
+      en.category.toLowerCase().includes(kw)
+    )
+  })
+})
 
 function categoryLabel(c: string): string {
   const map: Record<string, string> = {
@@ -92,5 +114,22 @@ function resistEntries(en: { resist?: Record<string, number> }): [string, number
 .enemy {
   border-top: 1rpx solid var(--border, #eee);
   padding: 16rpx 0;
+}
+
+/* 图鉴搜索（2026-11-01 新一轮第 70 轮） */
+.search-inp {
+  display: block;
+  height: 72rpx;
+  padding: 0 20rpx;
+  margin-bottom: 12rpx;
+  background: var(--panel-2, #f5f6f7);
+  border: 1rpx solid var(--border, #eee);
+  border-radius: 12rpx;
+  font-size: 26rpx;
+  color: var(--text, #222);
+}
+
+.ph {
+  color: var(--dim, #9aa0a6);
 }
 </style>
