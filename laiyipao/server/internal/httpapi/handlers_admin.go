@@ -282,7 +282,16 @@ func (s *Server) adminUsers(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	items, total, err := s.Svc.AdminListUsers(c.Context(), c.Query("keyword", ""), limit, offset)
+	// 注册日期范围（2026-10-31 新一轮第 15 轮）：可选。
+	dateFrom, err := queryTime(c, "date_from")
+	if err != nil {
+		return failErr(c, err)
+	}
+	dateTo, err := queryTime(c, "date_to")
+	if err != nil {
+		return failErr(c, err)
+	}
+	items, total, err := s.Svc.AdminListUsers(c.Context(), c.Query("keyword", ""), limit, offset, dateFrom, dateTo)
 	if err != nil {
 		return failErr(c, err)
 	}
@@ -292,9 +301,17 @@ func (s *Server) adminUsers(c *fiber.Ctx) error {
 // adminExportUsers 导出用户列表为 CSV（2026-10-30 实质优化第 12 轮）。
 //
 // 读操作，readonly 角色可访问（导出不改变任何数据）。
-// 过滤条件与 `GET /admin/users` 一致（keyword 模糊搜昵称）。
+// 过滤条件与 `GET /admin/users` 一致（keyword 模糊搜昵称 + 注册日期范围）。
 func (s *Server) adminExportUsers(c *fiber.Ctx) error {
-	data, err := s.Svc.AdminExportUsers(c.Context(), c.Query("keyword", ""))
+	dateFrom, err := queryTime(c, "date_from")
+	if err != nil {
+		return failErr(c, err)
+	}
+	dateTo, err := queryTime(c, "date_to")
+	if err != nil {
+		return failErr(c, err)
+	}
+	data, err := s.Svc.AdminExportUsers(c.Context(), c.Query("keyword", ""), dateFrom, dateTo)
 	if err != nil {
 		return failErr(c, err)
 	}

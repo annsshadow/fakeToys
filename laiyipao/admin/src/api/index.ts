@@ -247,23 +247,38 @@ export function fetchEquipment() {
 
 // ---------- 用户 ----------
 
-export function fetchUsers(params: { keyword?: string; limit?: number; offset?: number } = {}) {
+export function fetchUsers(params: {
+  keyword?: string
+  limit?: number
+  offset?: number
+  date_from?: string
+  date_to?: string
+} = {}) {
   const q = new URLSearchParams()
   if (params.keyword) q.set('keyword', params.keyword)
   q.set('limit', String(params.limit ?? 50))
   q.set('offset', String(params.offset ?? 0))
+  // 注册日期范围（2026-10-31 新一轮第 15 轮）：查「今天/某时间段」注册的用户
+  if (params.date_from) q.set('date_from', params.date_from)
+  if (params.date_to) q.set('date_to', params.date_to)
   return api.get<AdminUsersResp>(`/admin/users?${q}`)
 }
 
 /**
  * 导出用户列表 CSV（2026-10-30 实质优化第 12 轮）。
  *
- * 过滤条件与 `fetchUsers` 一致（keyword 模糊搜昵称）。
+ * 过滤条件与 `fetchUsers` 一致（keyword 模糊搜昵称 + 注册日期范围）。
  * 返回带 UTF-8 BOM 的 CSV Blob（Excel 中文兼容）。readonly 可导出。
  */
-export function exportUsersCsv(keyword?: string) {
+export function exportUsersCsv(params: {
+  keyword?: string
+  date_from?: string
+  date_to?: string
+} = {}) {
   const q = new URLSearchParams()
-  if (keyword) q.set('keyword', keyword)
+  if (params.keyword) q.set('keyword', params.keyword)
+  if (params.date_from) q.set('date_from', params.date_from)
+  if (params.date_to) q.set('date_to', params.date_to)
   return api.getBlob(`/admin/users/export?${q}`)
 }
 

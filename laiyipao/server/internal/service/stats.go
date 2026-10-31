@@ -336,7 +336,7 @@ type AdminUserView struct {
 }
 
 // AdminListUsers 分页查询玩家。
-func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, offset int) ([]AdminUserView, int64, error) {
+func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, offset int, dateFrom, dateTo *time.Time) ([]AdminUserView, int64, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
@@ -376,11 +376,25 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 	// ⚠️ 这**不是**一个「顺便也加上」的改法：它让一条既有功能消失，
 	// 所以必须同时说清楚「谁因此失去了什么」——见下面 `TestAdminSearchNeverMatchesGuestToken`
 	// 的断言，它守的正是「这一列不再可检索」这条新不变式。
+	// 日期范围（2026-10-31 新一轮第 15 轮）：可选，nil 不过滤。
+	// 列表查询的 $5/$6 是日期（limit/offset 占 $3/$4）；
+	// COUNT 查询没有 limit/offset，日期改占 $3/$4。
+	where := `($1 = '' OR u.nickname LIKE $2 ESCAPE '\'::char OR u.id::text = $1)`
+	countArgs := []any{kw, pattern}
+	listArgs := []any{kw, pattern, limit, offset}
+	if dateFrom != nil || dateTo != nil {
+		where += ` AND ($5::timestamptz IS NULL OR u.created_at >= $5)
+		             AND ($6::timestamptz IS NULL OR u.created_at < $6)`
+		countArgs = append(countArgs, dateFrom, dateTo)
+		listArgs = append(listArgs, dateFrom, dateTo)
+	}
+	countWhere := strings.ReplaceAll(strings.ReplaceAll(where, "$5", "$3"), "$6", "$4")
+
 	var total int64
 	if err := s.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM users
-		 WHERE $1 = '' OR nickname LIKE $2 ESCAPE '\'::char OR id::text = $1`,
-		kw, pattern).Scan(&total); err != nil {
+		`SELECT COUNT(*) FROM users u
+		 WHERE `+countWhere,
+		countArgs...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("count users: %w", err)
 	}
 
@@ -412,8 +426,8 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 			JOIN battle_records br ON br.id = rv.battle_id
 			GROUP BY br.user_id
 		) v ON v.user_id = u.id
-		WHERE $1 = '' OR u.nickname LIKE $2 ESCAPE '\'::char OR u.id::text = $1
-		ORDER BY u.id DESC LIMIT $3 OFFSET $4`, kw, pattern, limit, offset)
+		WHERE `+where+`
+		ORDER BY u.id DESC LIMIT $3 OFFSET $4`, listArgs...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list users: %w", err)
 	}
@@ -444,13 +458,23 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 //   - 列头用英文，内容用 UTF-8 原文 + BOM（Excel 打开中文不乱码）。
 //
 // 注意：guest_token 等敏感凭证**绝不导出**（理由见 AdminListUsers 的注释）。
-func (s *Service) AdminExportUsers(ctx context.Context, keyword string) ([]byte, error) {
+func (s *Service) AdminExportUsers(ctx context.Context, keyword string, dateFrom, dateTo *time.Time) ([]byte, error) {
 	kw, err := trimAdminKeyword(keyword)
 	if err != nil {
 		return nil, err
 	}
 	escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(kw)
 	pattern := "%" + escaped + "%"
+
+	// 日期范围（2026-10-31 新一轮第 15 轮）：可选，nil 不过滤。
+	// 导出查询没有 limit/offset，日期直接占 $3/$4。
+	where := `($1 = '' OR u.nickname LIKE $2 ESCAPE '\'::char OR u.id::text = $1)`
+	args := []any{kw, pattern}
+	if dateFrom != nil || dateTo != nil {
+		where += ` AND ($3::timestamptz IS NULL OR u.created_at >= $3)
+		             AND ($4::timestamptz IS NULL OR u.created_at < $4)`
+		args = append(args, dateFrom, dateTo)
+	}
 
 	rows, err := s.pool.Query(ctx, `
 		SELECT u.id, u.nickname, u.is_guest, u.status,
@@ -468,8 +492,8 @@ func (s *Service) AdminExportUsers(ctx context.Context, keyword string) ([]byte,
 			JOIN battle_records br ON br.id = rv.battle_id
 			GROUP BY br.user_id
 		) v ON v.user_id = u.id
-		WHERE $1 = '' OR u.nickname LIKE $2 ESCAPE '\'::char OR u.id::text = $1
-		ORDER BY u.id DESC LIMIT 100000`, kw, pattern)
+		WHERE `+where+`
+		ORDER BY u.id DESC LIMIT 100000`, args...)
 	if err != nil {
 		return nil, fmt.Errorf("export users: %w", err)
 	}

@@ -47,7 +47,7 @@ func TestAdminListUsersSearchByID(t *testing.T) {
 	}
 
 	// 按 id 精确搜索 → 只返回 A
-	items, total, err := ts.AdminListUsers(ctx, strconv.FormatInt(idA, 10), 10, 0)
+	items, total, err := ts.AdminListUsers(ctx, strconv.FormatInt(idA, 10), 10, 0, nil, nil)
 	if err != nil {
 		t.Fatalf("按 id 搜索失败：%v", err)
 	}
@@ -64,7 +64,7 @@ func TestAdminListUsersIDSearchNoMatch(t *testing.T) {
 	ctx := context.Background()
 
 	// 不存在的 id → 空结果
-	items, total, err := ts.AdminListUsers(ctx, "999999999", 10, 0)
+	items, total, err := ts.AdminListUsers(ctx, "999999999", 10, 0, nil, nil)
 	if err != nil {
 		t.Fatalf("按 id 搜索失败：%v", err)
 	}
@@ -83,7 +83,7 @@ func TestAdminListUsersNonNumericKeywordStillSearchesNickname(t *testing.T) {
 	}
 
 	// 非数字 keyword 不应触发 id 匹配，仍按昵称模糊搜索（昵称=用户名）
-	items, total, err := ts.AdminListUsers(ctx, "nicksearch_", 10, 0)
+	items, total, err := ts.AdminListUsers(ctx, "nicksearch_", 10, 0, nil, nil)
 	if err != nil {
 		t.Fatalf("按昵称搜索失败：%v", err)
 	}

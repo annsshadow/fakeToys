@@ -40,7 +40,7 @@ func TestAdminKeywordLengthIsCapped(t *testing.T) {
 	// 判据是「返回 ErrBadInput」而不是「返回空结果」：
 	// 静默回空集就是上面说的那种「看起来查过了」。
 	t.Run("AdminListUsers 超长 → ErrBadInput", func(t *testing.T) {
-		if _, _, err := ts.AdminListUsers(ctx, overLimit, 50, 0); !errors.Is(err, ErrBadInput) {
+		if _, _, err := ts.AdminListUsers(ctx, overLimit, 50, 0, nil, nil); !errors.Is(err, ErrBadInput) {
 			t.Errorf("超长搜索词应被 %v 拒绝，实际 %v（静默回空集 = 运营以为查无此人）", ErrBadInput, err)
 		}
 	})
@@ -50,7 +50,7 @@ func TestAdminKeywordLengthIsCapped(t *testing.T) {
 		}
 	})
 	t.Run("上限恰好不拒（边界是闭的）", func(t *testing.T) {
-		if _, _, err := ts.AdminListUsers(ctx, atLimit, 50, 0); err != nil {
+		if _, _, err := ts.AdminListUsers(ctx, atLimit, 50, 0, nil, nil); err != nil {
 			t.Errorf("恰好 %d 字符应放行，实际 %v", MaxAdminKeywordLen, err)
 		}
 		if _, _, err := ts.AdminListLevels(ctx, 0, atLimit, 0, 0); err != nil {
@@ -71,7 +71,7 @@ func TestAdminKeywordLengthIgnoresSurroundingWhitespace(t *testing.T) {
 
 	// 前后各塞 200 个空白：trim 之后是 5 个字符，必须放行。
 	padded := strings.Repeat(" ", 100) + "张小明" + strings.Repeat("\n", 100)
-	if _, _, err := ts.AdminListUsers(ctx, padded, 50, 0); err != nil {
+	if _, _, err := ts.AdminListUsers(ctx, padded, 50, 0, nil, nil); err != nil {
 		t.Errorf("前后空白不该计入长度（先 trim 再数）：%v", err)
 	}
 	if _, _, err := ts.AdminListLevels(ctx, 0, padded, 0, 0); err != nil {
@@ -92,7 +92,7 @@ func TestAdminKeywordLengthCountsRunesNotBytes(t *testing.T) {
 	if len(kw) <= MaxAdminKeywordLen {
 		t.Fatalf("前置条件：%d 个汉字应超过 %d 字节，实际 %d", MaxAdminKeywordLen, MaxAdminKeywordLen, len(kw))
 	}
-	if _, _, err := ts.AdminListUsers(ctx, kw, 50, 0); err != nil {
+	if _, _, err := ts.AdminListUsers(ctx, kw, 50, 0, nil, nil); err != nil {
 		t.Errorf("%d 个汉字（%d 字节）在字符口径下恰好达上限，应放行：%v",
 			MaxAdminKeywordLen, len(kw), err)
 	}

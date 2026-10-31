@@ -29,7 +29,7 @@ func TestAdminExportUsersCSV(t *testing.T) {
 	}
 	guestID, _ := newGuestUser(t, ts, "export")
 
-	data, err := ts.AdminExportUsers(ctx, "")
+	data, err := ts.AdminExportUsers(ctx, "", nil, nil)
 	if err != nil {
 		t.Fatalf("导出失败：%v", err)
 	}
@@ -97,7 +97,7 @@ func TestAdminExportUsersKeywordFilter(t *testing.T) {
 		t.Fatalf("引导账号 B 失败：%v", err)
 	}
 
-	data, err := ts.AdminExportUsers(ctx, "_aaa")
+	data, err := ts.AdminExportUsers(ctx, "_aaa", nil, nil)
 	if err != nil {
 		t.Fatalf("导出失败：%v", err)
 	}
@@ -119,7 +119,7 @@ func TestAdminExportUsersBrokenPool(t *testing.T) {
 	ts := openBrokenService(t)
 	ctx := context.Background()
 
-	if _, err := ts.AdminExportUsers(ctx, ""); err == nil {
+	if _, err := ts.AdminExportUsers(ctx, "", nil, nil); err == nil {
 		t.Fatal("连接池已关闭时导出必须报错，不能静默返回空 CSV")
 	}
 }

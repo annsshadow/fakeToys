@@ -67,6 +67,19 @@ const keyword = ref('')
 const limit = ref(50)
 const offset = ref(0)
 
+/**
+ * 注册日期范围（2026-10-31 新一轮第 15 轮）。
+ * `el-date-picker` value-format="YYYY-MM-DD"，v-model 是字符串数组。
+ * 服务端 `date_to` 是开区间，结束日期传**次日** 00:00 才能包含结束当天。
+ */
+const dateRange = ref<[string, string] | null>(null)
+
+function nextDay(day: string): string {
+  const d = new Date(day + 'T00:00:00Z')
+  d.setUTCDate(d.getUTCDate() + 1)
+  return d.toISOString().slice(0, 10)
+}
+
 const CURRENCY_LABEL: Record<string, string> = {
   coin: '金币',
   gem: '钻石',
@@ -124,7 +137,14 @@ function verifyTag(u: AdminUserView): { text: string; type: 'info' | 'success' |
 async function load() {
   loading.value = true
   try {
-    const res = await fetchUsers({ keyword: keyword.value || undefined, limit: limit.value, offset: offset.value })
+    const res = await fetchUsers({
+      keyword: keyword.value || undefined,
+      limit: limit.value,
+      offset: offset.value,
+      // 注册日期范围（2026-10-31 新一轮第 15 轮）
+      date_from: dateRange.value?.[0] || undefined,
+      date_to: dateRange.value ? nextDay(dateRange.value[1]) : undefined,
+    })
     users.value = res.items
     total.value = res.total
   } catch (e) {
@@ -296,7 +316,12 @@ async function onResetPassword(u: AdminUserView) {
  */
 async function onExportCsv() {
   try {
-    const blob = await exportUsersCsv(keyword.value || undefined)
+    const blob = await exportUsersCsv({
+      keyword: keyword.value || undefined,
+      // 注册日期范围（2026-10-31 新一轮第 15 轮）：与列表过滤同口径
+      date_from: dateRange.value?.[0] || undefined,
+      date_to: dateRange.value ? nextDay(dateRange.value[1]) : undefined,
+    })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -375,6 +400,16 @@ const asRow = (r: unknown) => r as AdminUserView
         />
         <el-button @click="((offset = 0), load())">查询</el-button>
         <el-button @click="onExportCsv">导出 CSV</el-button>
+        <!-- 注册日期范围（2026-10-31 新一轮第 15 轮）：查「今天/某时间段」注册的用户 -->
+        <el-date-picker
+          v-model="dateRange"
+          type="daterange"
+          range-separator="至"
+          start-placeholder="注册开始日期"
+          end-placeholder="注册结束日期"
+          value-format="YYYY-MM-DD"
+          style="width: 260px; margin-left: 12px"
+        />
         <span class="toolbar-spacer" />
         <span class="muted">共 {{ total }} 名用户 · 第 {{ page }} / {{ pageCount }} 页</span>
         <el-button size="small" :disabled="offset <= 0" @click="prevPage">上一页</el-button>
