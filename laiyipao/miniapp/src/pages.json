@@ -40,6 +40,12 @@
       }
     },
     {
+      "path": "pages/enemies/enemies",
+      "style": {
+        "navigationBarTitleText": "敌人图鉴"
+      }
+    },
+    {
       "path": "pages/shop/shop",
       "style": {
         "navigationBarTitleText": "商城"
