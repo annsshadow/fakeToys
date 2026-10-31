@@ -555,10 +555,17 @@ func (s *Service) SignInStatus(ctx context.Context, userID int64) (SignInStatus,
 
 	// 周期是否签满：下一行（claimed+1）在日历里不存在即满（与 SignIn 的
 	// 「MAX+1 查不到行 → Already」同口径，避免本地再数一个 7）。
-	var cycleLen int
-	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM sign_in_calendar`).Scan(&cycleLen); err != nil {
+	//
+	// 2026-10-31（新一轮第 5 轮）：日历行数不再单独查库 ——
+	// `SignInCalendar` 已有 TTL 缓存（seeder 静态配置），直接复用其长度，
+	// 每次 `GET /signin/status` 少一次 `COUNT(*) FROM sign_in_calendar` 往返。
+	// 缓存命中时零查库；未命中时加载整份日历（7 行）也只等于原 COUNT
+	// 一次查询的代价，不会更差。
+	days, err := s.SignInCalendar(ctx)
+	if err != nil {
 		return SignInStatus{}, fmt.Errorf("count signin calendar: %w", err)
 	}
+	cycleLen := len(days)
 	return SignInStatus{ClaimedCount: claimed, SignedToday: signedToday, CanSign: !signedToday && claimed < cycleLen}, nil
 }
 
