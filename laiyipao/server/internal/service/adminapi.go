@@ -406,12 +406,32 @@ func (s *Service) AdminEquipment(ctx context.Context) (AdminEquipmentResp, error
 }
 
 // AdminListDefenses 返回全部防线。
-func (s *Service) AdminListDefenses(ctx context.Context, limit int, offset int) ([]AdminDefenseView, int64, error) {
+//
+// keyword / ownerID 均为可选筛选（2026-10-31 新一轮第 19 轮）：
+// keyword 模糊匹配防线名或玩家昵称（`%`/`_`/`\` 转义为字面量），
+// ownerID=0 不过滤。
+func (s *Service) AdminListDefenses(ctx context.Context, limit, offset int, keyword string, ownerID int64) ([]AdminDefenseView, int64, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
+	kw, err := trimAdminKeyword(keyword)
+	if err != nil {
+		return nil, 0, err
+	}
+	escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(kw)
+	pattern := "%" + escaped + "%"
+
+	// COUNT：$1/$2 = kw/pattern，$3 = ownerID。
+	countArgs := []any{kw, pattern, ownerID}
+	listArgs := []any{limit, offset, kw, pattern, ownerID}
+	where := `($3 = '' OR d.name ILIKE $4 OR u.nickname ILIKE $4)
+	          AND ($5 = 0 OR d.owner_id = $5)`
+	countWhere := strings.NewReplacer(`$3`, `$1`, `$4`, `$2`, `$5`, `$3`).Replace(where)
+
 	var total int64
-	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM defenses`).Scan(&total); err != nil {
+	if err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM defenses d JOIN users u ON u.id = d.owner_id WHERE `+countWhere,
+		countArgs...).Scan(&total); err != nil {
 		return nil, 0, err
 	}
 	// ⚠️ 2026-10-21（二轮审计 P2-6）：补 offset ——
@@ -426,7 +446,8 @@ func (s *Service) AdminListDefenses(ctx context.Context, limit int, offset int) 
 		       d.mastery_done, d.wins, d.losses, d.shielded_until, d.updated_at,
 		       d.snapshot_hash
 		FROM defenses d JOIN users u ON u.id = d.owner_id
-		ORDER BY d.power DESC LIMIT $1 OFFSET $2`, limit, offset)
+		WHERE `+where+`
+		ORDER BY d.power DESC LIMIT $1 OFFSET $2`, listArgs...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("admin defenses: %w", err)
 	}

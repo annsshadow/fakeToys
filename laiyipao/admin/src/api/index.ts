@@ -486,8 +486,18 @@ export function fetchReactions() {
  * 此前只能看前 100 条，而 `total` 是全量 COUNT，
  * 于是「共 N 条防线」却只看得到 100 条（漏掉的还是**弱**防线，按战力倒序）。
  */
-export function fetchDefenses(limit = 50, offset = 0) {
-  return api.get<AdminDefensesResp>(`/admin/defenses?limit=${limit}&offset=${offset}`)
+export function fetchDefenses(
+  limit = 50,
+  offset = 0,
+  params: { keyword?: string; owner_id?: number } = {},
+) {
+  const q = new URLSearchParams()
+  q.set('limit', String(limit))
+  q.set('offset', String(offset))
+  // 防线名/玩家昵称搜索 + owner_id 过滤（2026-10-31 新一轮第 19 轮）
+  if (params.keyword) q.set('keyword', params.keyword)
+  if (params.owner_id) q.set('owner_id', String(params.owner_id))
+  return api.get<AdminDefensesResp>(`/admin/defenses?${q}`)
 }
 
 /**

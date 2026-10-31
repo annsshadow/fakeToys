@@ -48,10 +48,17 @@ function rateTone(r: AdminDefenseView): 'success' | 'info' | 'warning' | 'danger
 const PAGE_SIZE = 50
 const page = ref(1)
 
+// 防线名/玩家昵称搜索 + owner_id 过滤（2026-10-31 新一轮第 19 轮）。
+const keyword = ref('')
+const ownerId = ref<number | undefined>(undefined)
+
 async function load() {
   loading.value = true
   try {
-    const res = await fetchDefenses(PAGE_SIZE, (page.value - 1) * PAGE_SIZE)
+    const res = await fetchDefenses(PAGE_SIZE, (page.value - 1) * PAGE_SIZE, {
+      keyword: keyword.value || undefined,
+      owner_id: ownerId.value,
+    })
     rows.value = res.items
     total.value = res.total
   } catch (e) {
@@ -145,6 +152,22 @@ load()
 
     <el-card shadow="never">
       <div class="toolbar">
+        <!-- 防线搜索（2026-10-31 新一轮第 19 轮） -->
+        <el-input
+          v-model="keyword"
+          placeholder="按防线名 / 玩家昵称搜索"
+          clearable
+          style="width: 220px"
+          @keyup.enter="((page = 1), load())"
+          @clear="((page = 1), load())"
+        />
+        <el-input-number
+          v-model="ownerId"
+          :controls="false"
+          placeholder="属主 ID"
+          style="width: 120px"
+        />
+        <el-button @click="((page = 1), load())">查询</el-button>
         <el-pagination
           v-if="total > PAGE_SIZE"
           v-model:current-page="page"

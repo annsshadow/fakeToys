@@ -136,7 +136,8 @@ describe('DefensesView 渲染细节', () => {
     expect(fetchDefenses).toHaveBeenCalledTimes(2)
     // 2026-10-21（P2-6）：防线列表分页了 —— limit/offset 一起发。
     // 此前固定 limit=100 且**没有** offset，于是第 101 条起不可达。
-    expect(fetchDefenses).toHaveBeenLastCalledWith(50, 0)
+    // 2026-10-31（新一轮第 19 轮）：第三个参数是筛选对象（无筛选时全 undefined）。
+    expect(fetchDefenses).toHaveBeenLastCalledWith(50, 0, { keyword: undefined, owner_id: undefined })
     wrapper.unmount()
   })
 

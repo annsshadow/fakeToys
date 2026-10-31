@@ -732,7 +732,12 @@ func (s *Server) adminDefenses(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	items, total, err := s.Svc.AdminListDefenses(c.Context(), limit, offset)
+	// 防线名/玩家昵称搜索 + owner_id 过滤（2026-10-31 新一轮第 19 轮）。
+	ownerID, err := queryInt(c, "owner_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	items, total, err := s.Svc.AdminListDefenses(c.Context(), limit, offset, c.Query("keyword", ""), int64(ownerID))
 	if err != nil {
 		return failErr(c, err)
 	}

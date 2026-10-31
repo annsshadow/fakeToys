@@ -749,7 +749,7 @@ func TestStatsMidwayFailures(t *testing.T) {
 		ts := openScratchService(t)
 		// COUNT(defenses) 成功 → users 改名 → 列表 JOIN 查询失败。
 		ts.renameTable(t, "users", "users_bak")
-		_, _, err := ts.AdminListDefenses(ctx, 50, 0)
+		_, _, err := ts.AdminListDefenses(ctx, 50, 0, "", 0)
 		ts.renameTable(t, "users_bak", "users")
 		mustErr(t, err, "admin defenses")
 	})
