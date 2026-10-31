@@ -935,7 +935,13 @@ loadAll()
           </div>
           <el-table :data="redeemUsages" size="small" stripe max-height="480">
             <el-table-column prop="id" label="ID" width="60" />
-            <el-table-column prop="code" label="兑换码" min-width="150" />
+            <el-table-column label="兑换码" min-width="180">
+              <!-- 复制码（2026-11-01 新一轮第 94 轮）：核查/工单 -->
+              <template #default="{ row }">
+                <span class="mono">{{ row.code }}</span>
+                <el-button size="small" text type="primary" @click="copyRedeemCode(row.code)">复制</el-button>
+              </template>
+            </el-table-column>
             <el-table-column label="玩家" min-width="120">
               <!-- 点击跳转用户详情（2026-11-01 新一轮第 51 轮）：
                    核查补偿发放（谁用了码、是不是恶意批量）时直达玩家详情。 -->

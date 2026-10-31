@@ -720,3 +720,31 @@ describe('ContentView 公告发布/撤回快捷切换（第 84 轮）', () => {
     wrapper.unmount()
   })
 })
+
+describe('ContentView 使用记录复制码（第 94 轮）', () => {
+  it('点击使用记录行的「复制」：写入剪贴板并提示', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    const wrapper = await mountContent()
+    fetchAdminRedeemUsages.mockResolvedValue({
+      items: [
+        { id: 1, code: 'LYP-USED-001', user_id: 7, nickname: '玩家甲', reward: { coin: 100 }, created_at: '2026-01-01T00:00:00Z' },
+      ],
+      total: 1,
+    })
+    const openBtn = wrapper.findAll('button').find((b) => b.text() === '使用记录')
+    expect(openBtn, '找不到「使用记录」按钮').toBeTruthy()
+    await openBtn!.trigger('click')
+    await flushPromises()
+
+    const copyBtn = wrapper.findAll('.el-dialog button').find((b) => b.text() === '复制')
+    expect(copyBtn, '找不到使用记录复制按钮').toBeTruthy()
+    await copyBtn!.trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith('LYP-USED-001')
+    expect(document.body.textContent).toContain('已复制 LYP-USED-001')
+    wrapper.unmount()
+  })
+})
