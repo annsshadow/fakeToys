@@ -198,6 +198,19 @@ async function copyOrderNo(orderNo: string) {
 }
 
 /**
+ * 复制商城商品 ID（2026-11-01 新一轮第 97 轮）。
+ * 运营把商品 id 贴到工单/排查时无需手动选中。
+ */
+async function copyShopId(id: number) {
+  try {
+    await navigator.clipboard.writeText(String(id))
+    ElMessage.success(`已复制商品 ID ${id}`)
+  } catch {
+    ElMessage.error('复制失败，请手动选择复制')
+  }
+}
+
+/**
  * 第 113 轮：价格输入「coin:100, gem:5」→ {coin:100, gem:5}。
  * 服务端 price 列是 JSONB 的 map[string]int（玩家 Buy 按 map 读），
  * 修前发裸数字 100 → 落库成 JSON 标量 → 该商品购买链路永久 500。
@@ -497,7 +510,13 @@ loadOrders()
 
     <el-card shadow="never" header="商城商品" style="margin-top: 12px">
       <el-table :data="shop" size="small" stripe>
-        <el-table-column prop="id" label="ID" width="55" />
+        <el-table-column label="ID" width="100">
+          <!-- 复制商品 ID（2026-11-01 新一轮第 97 轮）：运营工单/排查 -->
+          <template #default="{ row }">
+            <span>{{ row.id }}</span>
+            <el-button size="small" text type="primary" @click="copyShopId(row.id)">复制</el-button>
+          </template>
+        </el-table-column>
         <el-table-column label="名称" min-width="140">
           <template #default="{ row }">{{ row.name }}</template>
         </el-table-column>

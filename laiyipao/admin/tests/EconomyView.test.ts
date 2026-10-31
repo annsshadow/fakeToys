@@ -141,17 +141,17 @@ describe('EconomyView 通胀监控', () => {
       .mockResolvedValueOnce({ value: '超级体力瓶' }) // 改名 → 字符串
     const wrapper = await mountEconomy([], [row])
     const buttons = wrapper.findAll('.el-table__row')[0].findAll('button')
-    expect(buttons.map((b) => b.text())).toEqual(['改价', '限购', '改名', '下架', '上移', '下移'])
+    expect(buttons.map((b) => b.text())).toEqual(['复制', '改价', '限购', '改名', '下架', '上移', '下移'])
 
-    await buttons[0].trigger('click')
+    await buttons.find((b) => b.text() === '改价')!.trigger('click')
     await flushPromises()
     expect(updateShopItem).toHaveBeenLastCalledWith(1, { price: { coin: 120 } })
 
-    await buttons[1].trigger('click')
+    await buttons.find((b) => b.text() === '限购')!.trigger('click')
     await flushPromises()
     expect(updateShopItem).toHaveBeenLastCalledWith(1, { limit_per_day: 3 })
 
-    await buttons[2].trigger('click')
+    await buttons.find((b) => b.text() === '改名')!.trigger('click')
     await flushPromises()
     expect(updateShopItem).toHaveBeenLastCalledWith(1, { name: '超级体力瓶' })
     wrapper.unmount()
@@ -519,6 +519,23 @@ describe('EconomyView 复制订单号（第 89 轮）', () => {
 
     expect(writeText).toHaveBeenCalledWith('NO1')
     expect(document.body.textContent).toContain('订单号已复制')
+    wrapper.unmount()
+  })
+})
+
+describe('EconomyView 复制商城商品 ID（第 97 轮）', () => {
+  it('点击商城商品行「复制」：写入剪贴板并提示', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    const wrapper = await mountEconomy([], [shopFixture({ id: 55 })])
+    const copyBtn = wrapper.findAll('.el-table__row')[0].findAll('button').find((b) => b.text() === '复制')
+    expect(copyBtn, '找不到商品 ID 复制按钮').toBeTruthy()
+    await copyBtn!.trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith('55')
+    expect(document.body.textContent).toContain('已复制商品 ID 55')
     wrapper.unmount()
   })
 })
