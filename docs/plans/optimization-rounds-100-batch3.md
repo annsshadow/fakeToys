@@ -94,6 +94,7 @@
 | 82 | 2026-11-01 | **导出单个用户钱包流水 CSV**：用户详情只展示最近 10 条流水，运营审计「这个玩家的钱从哪来/去哪了」需要全量明细 —— 此前没有导出入口 | 服务层 `AdminExportUserFlows`（全部 wallet_flows，UTF-8 BOM，上限 10 万行）；`GET /api/v1/admin/users/:id/flows/export`（readonly 可访问）；admin UsersView 详情抽屉「最近钱包流水」旁新增「导出全部流水 CSV」按钮，`exportUserFlowsCsv` API 同步；新增服务层 2 用例 + e2e 3 用例 + admin 2 用例 | 服务层（CSV 内容/BOM/表头/故障）全绿；e2e（401/readonly 200/内容含流水）全绿；admin type-check + 400 测试全绿；`go test ./...` 全绿 |
 | 83 | 2026-11-01 | **登录页显示密码切换**：测试环境口令较长且不能预填，输入时不可见容易输错 | miniapp `login.vue` 密码框旁新增「显示/隐藏」切换（`:password="!showPassword"` 控制明文）；新增守卫测试 `login_show_password_feature.test.ts` | miniapp type-check 通过、新守卫 2 用例通过、全量 1243 测试全绿 |
 | 84 | 2026-11-01 | **后台公告发布/撤回快捷按钮**：公告发布状态变更（误发/误撤回）需要进编辑表单改勾选再提交 —— 发错状态时多一步操作就多一分风险 | admin ContentView 公告行操作列新增「发布/撤回」一键切换（`updateAnnouncement` 只改 `published`，玩家端缓存由第 59 轮的写后失效立即生效）；admin 测试新增 3 用例 | admin type-check 通过；403 测试全绿（新增发布/撤回 3 用例）；无 Go 改动 |
+| 85 | 2026-11-01 | **后台战报详情复制回放哈希**：运营要把哈希贴到工单/外部重放工具时，只能手动选中一长串字符复制 | admin BattlesView 详情抽屉「回放哈希」行新增「复制」按钮（`navigator.clipboard` 写入）；admin 测试新增 1 用例 | admin type-check 通过；404 测试全绿（新增复制哈希 1 用例）；无 Go 改动 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **84 轮实质优化**，距 100 轮还差 16 轮。
+> 状态：进行中。当前累计 **85 轮实质优化**，距 100 轮还差 15 轮。

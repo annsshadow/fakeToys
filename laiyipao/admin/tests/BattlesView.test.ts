@@ -647,3 +647,26 @@ describe('BattlesView 详情抽屉点击玩家跳转用户详情（第 63 轮）
   })
 })
 
+describe('BattlesView 详情复制回放哈希（第 85 轮）', () => {
+  it('点击「复制」：写入剪贴板并提示', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    fetchBattleDetail.mockResolvedValueOnce({
+      battle: { ...detailBase, id: 1, replay_hash: 'abcd1234abcd1234abcd1234abcd1234' },
+    })
+    const wrapper = await mountBattles([battleFixture({ id: 1 })])
+    await wrapper.findAll('button').find((b) => b.text() === '详情')!.trigger('click')
+    await flushPromises()
+
+    const copyBtn = wrapper.findAll('button').find((b) => b.text() === '复制')
+    expect(copyBtn, '找不到「复制」按钮').toBeTruthy()
+    await copyBtn!.trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith('abcd1234abcd1234abcd1234abcd1234')
+    expect(document.body.textContent).toContain('回放哈希已复制')
+    wrapper.unmount()
+  })
+})
+

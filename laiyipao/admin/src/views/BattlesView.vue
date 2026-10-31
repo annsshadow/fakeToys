@@ -118,6 +118,20 @@ function openUserDetail(userId: number) {
   router.push({ path: '/users', query: { user_id: String(userId) } })
 }
 
+/**
+ * 复制回放哈希（2026-11-01 新一轮第 85 轮）。
+ * 运营把哈希贴到工单或外部重放工具时无需手选长字符串。
+ */
+async function copyReplayHash(hash: string) {
+  if (!hash) return
+  try {
+    await navigator.clipboard.writeText(hash)
+    ElMessage.success('回放哈希已复制')
+  } catch {
+    ElMessage.error('复制失败，请手动选择复制')
+  }
+}
+
 async function load() {
   loading.value = true
   try {
@@ -430,6 +444,10 @@ const asRow = (r: unknown) => r as AdminBattleView
           <el-descriptions-item label="峰值热量">{{ detail.heat_max }}</el-descriptions-item>
           <el-descriptions-item label="回放哈希" :span="2">
             <code class="hash">{{ detail.replay_hash }}</code>
+            <!-- 复制哈希（2026-11-01 新一轮第 85 轮）：贴到工单/外部重放工具 -->
+            <el-button size="small" text type="primary" style="margin-left: 8px" @click="copyReplayHash(detail.replay_hash)">
+              复制
+            </el-button>
           </el-descriptions-item>
         </el-descriptions>
 
