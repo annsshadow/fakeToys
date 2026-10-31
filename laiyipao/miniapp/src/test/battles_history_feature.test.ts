@@ -60,4 +60,13 @@ describe('我的战报历史页守卫', () => {
     expect(src).toContain('existing.has(it.id)')
     expect(src).toContain('load-more')
   })
+
+  it('支持按结果筛选（第 74 轮）：全部/胜/负过滤已加载列表', () => {
+    const src = readFileSync(BATTLES_VUE, 'utf-8')
+    expect(src).toContain('filteredItems')
+    expect(src).toContain("filter.value === 'win'")
+    expect(src).toContain("it.result === want")
+    expect(src).toContain("label: '胜利'")
+    expect(src).toContain("label: '失败'")
+  })
 })

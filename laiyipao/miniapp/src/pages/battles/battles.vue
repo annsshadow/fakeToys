@@ -2,12 +2,25 @@
   <view class="page-root">
     <view class="pad safe-bottom">
       <text class="muted" style="display: block; margin-bottom: 16rpx">
-        最近 20 场战斗的记录。点开一行可以回顾单局掉落与元素/反应/地形使用。
+        最近战斗的记录。点开一行可以回顾单局掉落与元素/反应/地形使用。
       </text>
+
+      <!-- 结果筛选（2026-11-01 新一轮第 74 轮） -->
+      <view class="filter-row">
+        <view
+          v-for="f in filters"
+          :key="f.key"
+          class="filter-chip"
+          :class="{ active: filter === f.key }"
+          @click="filter = f.key"
+        >
+          {{ f.label }}
+        </view>
+      </view>
 
       <view v-if="loading" class="card"><text class="muted">加载中…</text></view>
 
-      <view v-else-if="items.length === 0" class="card">
+      <view v-else-if="filteredItems.length === 0" class="card">
         <text class="card-title">暂无战报</text>
         <text class="muted" style="display: block; margin-top: 8rpx">
           打一局战斗后，胜负、星级、分数和击杀都会出现在这里。
@@ -16,7 +29,7 @@
 
       <view v-else class="card" style="padding: 8rpx 24rpx">
         <view
-          v-for="it in items"
+          v-for="it in filteredItems"
           :key="it.id"
           class="battle-row"
           :class="{ expanded: expandedId === it.id }"
@@ -89,6 +102,24 @@ const loadingMore = ref(false)
 /** 是否还有更早的战报（上次返回满一页 20 条即视为还有更多）。 */
 const hasMore = ref(false)
 const expandedId = ref(0)
+
+/**
+ * 结果筛选（2026-11-01 新一轮第 74 轮）：全部 / 胜 / 负。
+ * 筛选作用于已加载的列表（最近 N 局内过滤）。
+ */
+const filters = [
+  { key: 'all', label: '全部' },
+  { key: 'win', label: '胜利' },
+  { key: 'lose', label: '失败' },
+] as const
+type BattleFilter = (typeof filters)[number]['key']
+const filter = ref<BattleFilter>('all')
+
+const filteredItems = computed(() => {
+  if (filter.value === 'all') return items.value
+  const want = filter.value === 'win' ? 'win' : 'lose'
+  return items.value.filter((it) => it.result === want)
+})
 const details = ref<Record<number, BattleDetail>>({})
 const detailLoading = ref(false)
 
@@ -313,5 +344,28 @@ onMounted(async () => {
   background: var(--panel);
   border: 1rpx solid var(--border);
   border-radius: 12rpx;
+}
+
+/* 结果筛选（2026-11-01 新一轮第 74 轮） */
+.filter-row {
+  display: flex;
+  flex-direction: row;
+  gap: 12rpx;
+  margin-bottom: 16rpx;
+}
+
+.filter-chip {
+  padding: 10rpx 28rpx;
+  border-radius: 999rpx;
+  background: var(--panel);
+  border: 1rpx solid var(--border);
+  font-size: 24rpx;
+  color: var(--muted);
+}
+
+.filter-chip.active {
+  background: rgba(255, 107, 53, 0.16);
+  border-color: var(--fire);
+  color: var(--fire);
 }
 </style>
