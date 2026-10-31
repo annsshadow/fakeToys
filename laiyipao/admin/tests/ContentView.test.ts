@@ -194,7 +194,9 @@ describe('ContentView 列表渲染', () => {
     expect(text).toContain('—') // 空时间
     // 审计日志：管理员 / 操作 / 对象 三列按服务端字段渲染
     expect(text).toContain('admin')
-    expect(text).toContain('grant_currency')
+    // 第 56 轮：操作类型显示中文标签
+    expect(text).toContain('发放货币')
+    expect(text).not.toContain('grant_currency')
     // detail 是 JSON 对象，detailText 渲染成可读文本
     expect(text).toContain('coin')
     expect(text).toContain('-300')
@@ -453,6 +455,33 @@ describe('ContentView 公告玩家端预览（第 54 轮）', () => {
 
     expect(document.body.textContent).toContain('标题与正文都不能为空')
     expect(wrapper.text()).not.toContain('玩家端预览')
+    wrapper.unmount()
+  })
+})
+
+describe('ContentView 审计日志操作中文标签（第 56 轮）', () => {
+  async function mountWithLogs(logs: Row[]) {
+    const wrapper = await mountContent({ logs })
+    // 切到审计日志 tab
+    await wrapper.findAll('.el-tabs__item').find((t) => t.text() === '审计日志')!.trigger('click')
+    await flushPromises()
+    return wrapper
+  }
+
+  it('已知 action 显示中文标签', async () => {
+    const wrapper = await mountWithLogs([
+      { id: 1, username: 'admin', action: 'ban_user', target: '9', detail: { reason: '刷分' }, created_at: '2026-01-01T00:00:00Z' },
+    ])
+    expect(wrapper.text()).toContain('封禁用户')
+    expect(wrapper.text()).not.toContain('ban_user')
+    wrapper.unmount()
+  })
+
+  it('未知 action 回退原值（fail-loud：不吞掉新动作）', async () => {
+    const wrapper = await mountWithLogs([
+      { id: 2, username: 'admin', action: 'brand_new_action', target: '1', detail: null, created_at: '2026-01-01T00:00:00Z' },
+    ])
+    expect(wrapper.text()).toContain('brand_new_action')
     wrapper.unmount()
   })
 })

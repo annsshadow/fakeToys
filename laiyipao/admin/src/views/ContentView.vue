@@ -484,6 +484,55 @@ function detailText(v: unknown): string {
   }
 }
 
+/**
+ * 审计操作类型 → 中文（2026-11-01 新一轮第 56 轮）。
+ *
+ * 服务端 action 是英文机器值（ban_user / grant_currency …），
+ * 运营读审计时看到的是一串下划线英文。这里映射成中文；
+ * 未知值回退原值（fail-loud：不吞掉新动作，宁可见英文也不猜错）。
+ */
+const ACTION_LABEL: Record<string, string> = {
+  ban_user: '封禁用户',
+  unban_user: '解封用户',
+  grant_currency: '发放货币',
+  revoke_currency: '回收货币',
+  reset_password: '重置密码',
+  create_announcement: '创建公告',
+  update_announcement: '更新公告',
+  delete_announcement: '删除公告',
+  create_redeem_code: '创建兑换码',
+  update_redeem_code: '更新兑换码',
+  set_redeem_code_enabled: '启停兑换码',
+  update_level: '更新关卡',
+  update_shop: '更新商城商品',
+  set_recompute_mode: '切换重算档位',
+  delete_defense: '删除防线',
+  verify_battle: '验真战报',
+  update_loadout: '更新出战技能',
+  mastery_reset: '重置专精',
+  wash_gem: '洗练宝石',
+  upgrade_skill: '升级技能',
+  synthesize_skill: '熔炼技能',
+  allocate_mastery: '分配专精',
+  sign_in: '签到',
+  claim_task: '领取任务',
+  buy_item: '商城购买',
+  redeem_code: '兑换码使用',
+  settle_battle: '战斗结算',
+  abandon_battle: '放弃战斗',
+  challenge_defense: '挑战防线',
+  save_defense: '设置防线',
+  delete_my_defense: '删除防线',
+  claim_offline_reward: '领取离线收益',
+  change_password: '修改密码',
+  upgrade_account: '游客转正',
+  update_nickname: '修改昵称',
+}
+
+function actionLabel(action: string): string {
+  return ACTION_LABEL[action] ?? action
+}
+
 onMounted(loadAll)
 
 /**
@@ -841,7 +890,10 @@ loadAll()
           <el-table :data="logs" size="small" stripe>
             <el-table-column prop="id" label="ID" width="55" />
             <el-table-column prop="username" label="管理员" width="110" />
-            <el-table-column prop="action" label="操作" width="150" />
+            <el-table-column label="操作" width="150">
+              <!-- 中文标签（2026-11-01 新一轮第 56 轮），未知回退原值 -->
+              <template #default="{ row }">{{ actionLabel(row.action) }}</template>
+            </el-table-column>
             <!--
               第 121 轮：旧列 admin_username / target_type / target_id / reason
               在服务端响应（AdminListAuditLogs）里**都不存在**——

@@ -65,6 +65,7 @@
 | 53 | 2026-11-01 | **战斗结算后再来一局**：结算后玩家只能「返回关卡」再选一次同一关，刷关/补星时每次都要重复两步操作 | miniapp `battle.vue` 结算面板新增「再来一局」按钮，用 `uni.redirectTo` 替换当前战斗页重新进入同一关（不叠加页面栈）；新增守卫测试 `battle_retry_feature.test.ts` | miniapp type-check 通过、新守卫 2 用例通过、全量 1220 测试全绿 |
 | 54 | 2026-11-01 | **后台公告玩家端预览**：运营发布前想确认玩家看到的实际效果（标题/正文/发布时间），此前只能先发布再在玩家端看 | admin ContentView 公告表单新增「预览玩家端」按钮，用当前表单内容打开预览对话框（标题/正文/发布状态与时间，草稿标注「未发布」）；新增 2 个 admin 测试用例 | admin type-check 通过；375 测试全绿（新增公告预览 2 用例）；无 Go 改动 |
 | 55 | 2026-11-01 | **我的战报分页**：玩家战报历史只返回最近 20 条，更早的记录永远不可达 —— 老玩家想回看早期战报没有任何入口 | 服务层 `MyBattleHistory` 增加 `offset` 分页（LIMIT/OFFSET，负 offset 夹 0）；`GET /me/battles` 解析 `limit`/`offset`；miniapp `myBattleHistory(limit, offset)` 传参，battles.vue 新增「加载更多」（按 offset 追加并去重，返回满一页才显示按钮）；新增服务层分页用例 1 个 + 扩展守卫测试 | 服务层（分页/越界/负 offset）全绿；miniapp type-check 通过、全量 1221 测试全绿；`go test ./...` 全绿 |
+| 56 | 2026-11-01 | **审计日志操作类型中文标签**：服务端 action 是英文机器值（ban_user / grant_currency …），运营读审计时看到的是一串下划线英文 | admin ContentView 新增 `ACTION_LABEL` 映射（31 个常见动作 → 中文），审计日志「操作」列渲染中文标签，未知 action 回退原值（fail-loud）；新增 2 个 admin 测试用例并更新既有断言 | admin type-check 通过；377 测试全绿（新增审计中文标签 2 用例）；无 Go 改动 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **55 轮实质优化**，距 100 轮还差 45 轮。
+> 状态：进行中。当前累计 **56 轮实质优化**，距 100 轮还差 44 轮。
