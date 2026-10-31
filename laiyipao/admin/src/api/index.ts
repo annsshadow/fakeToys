@@ -28,6 +28,8 @@ import type {
   AdminBattlesResp,
   AdminDefenseView,
   AdminDefensesResp,
+  AdminDefenseChallengeView,
+  AdminDefenseChallengesResp,
   AdminEconomyFlowView,
   AdminEconomyResp,
   AdminOrderView,
@@ -82,6 +84,8 @@ export type {
   AdminBattlesResp,
   AdminDefenseView,
   AdminDefensesResp,
+  AdminDefenseChallengeView,
+  AdminDefenseChallengesResp,
   AdminEconomyFlowView,
   AdminEconomyResp,
   AdminOrderView,
@@ -498,6 +502,25 @@ export function fetchDefenses(
   if (params.keyword) q.set('keyword', params.keyword)
   if (params.owner_id) q.set('owner_id', String(params.owner_id))
   return api.get<AdminDefensesResp>(`/admin/defenses?${q}`)
+}
+
+/**
+ * 防线挑战记录（2026-10-31 新一轮第 30 轮）。
+ * 运营此前只能看到防线胜负计数，无法查看挑战明细。
+ */
+export function fetchAdminDefenseChallenges(
+  limit = 50,
+  offset = 0,
+  params: { defense_id?: number; challenger_id?: number; date_from?: string; date_to?: string } = {},
+) {
+  const q = new URLSearchParams()
+  q.set('limit', String(limit))
+  q.set('offset', String(offset))
+  if (params.defense_id) q.set('defense_id', String(params.defense_id))
+  if (params.challenger_id) q.set('challenger_id', String(params.challenger_id))
+  if (params.date_from) q.set('date_from', params.date_from)
+  if (params.date_to) q.set('date_to', params.date_to)
+  return api.get<AdminDefenseChallengesResp>(`/admin/defense-challenges?${q}`)
 }
 
 /**

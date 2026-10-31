@@ -70,6 +70,8 @@ func TestRegistryCoversEveryAdminResponse(t *testing.T) {
 		"AdminEquipmentView",
 		"AdminEquipmentResp",
 		"AdminDefenseView",
+		"AdminDefenseChallengeView",
+		"AdminDefenseChallengesResp",
 		"AdminEconomyFlowView",
 		"AdminShopItemView",
 		"AdminEconomyResp",

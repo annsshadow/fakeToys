@@ -744,6 +744,40 @@ func (s *Server) adminDefenses(c *fiber.Ctx) error {
 	return c.JSON(service.NormalizeNilSlices(service.AdminDefensesResp{Items: items, Total: total}))
 }
 
+// adminDefenseChallenges 返回防线挑战记录列表（2026-10-31 新一轮第 30 轮）。
+func (s *Server) adminDefenseChallenges(c *fiber.Ctx) error {
+	limit, err := queryInt(c, "limit", 50)
+	if err != nil {
+		return failErr(c, err)
+	}
+	offset, err := queryInt(c, "offset", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	defenseID, err := queryInt(c, "defense_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	challengerID, err := queryInt(c, "challenger_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	dateFrom, err := queryTime(c, "date_from")
+	if err != nil {
+		return failErr(c, err)
+	}
+	dateTo, err := queryTime(c, "date_to")
+	if err != nil {
+		return failErr(c, err)
+	}
+	items, total, err := s.Svc.AdminListDefenseChallenges(
+		c.Context(), limit, offset, int64(defenseID), int64(challengerID), dateFrom, dateTo)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(service.NormalizeNilSlices(service.AdminDefenseChallengesResp{Items: items, Total: total}))
+}
+
 // adminDeleteDefense 删除玩家防线（2026-10-31 实质优化第 26 轮）。
 func (s *Server) adminDeleteDefense(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)

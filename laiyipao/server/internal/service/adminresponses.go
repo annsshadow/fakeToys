@@ -92,6 +92,13 @@ type AdminDefensesResp struct {
 	Total int64              `json:"total"`
 }
 
+// AdminDefenseChallengesResp 是 `GET /admin/defense-challenges` 的响应
+// （2026-10-31 新一轮第 30 轮）。
+type AdminDefenseChallengesResp struct {
+	Items []AdminDefenseChallengeView `json:"items"`
+	Total int64                       `json:"total"`
+}
+
 // AdminOrdersResp 是 `GET /admin/orders` 的响应（2026-10-31 实质优化第 33 轮）。
 type AdminOrdersResp struct {
 	Items []AdminOrderView `json:"items"`

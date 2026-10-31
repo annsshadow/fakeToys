@@ -103,6 +103,24 @@ export interface AdminBattlesResp {
   total: number
 }
 
+export interface AdminDefenseChallengeView {
+  id: number
+  defense_id: number
+  defense_name: string
+  challenger_id: number
+  challenger_nickname: string
+  won: boolean
+  duration_ms: number
+  hp_left_pct: number
+  loot: { [key: string]: number }
+  created_at: string
+}
+
+export interface AdminDefenseChallengesResp {
+  items: AdminDefenseChallengeView[]
+  total: number
+}
+
 export interface AdminDefenseView {
   id: number
   owner_id: number

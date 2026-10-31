@@ -37,6 +37,9 @@ var AdminRegistry = tygen.Registry{
 	{Name: "AdminEquipmentResp", Go: service.AdminEquipmentResp{}},
 	// ── 防线 ──
 	{Name: "AdminDefenseView", Go: service.AdminDefenseView{}},
+	// 2026-10-31（新一轮第 30 轮）：防线挑战记录视图。
+	{Name: "AdminDefenseChallengeView", Go: service.AdminDefenseChallengeView{}},
+	{Name: "AdminDefenseChallengesResp", Go: service.AdminDefenseChallengesResp{}},
 	// ── 经济 / 商城 ──
 	{Name: "AdminEconomyFlowView", Go: service.AdminEconomyFlowView{}},
 	{Name: "AdminShopItemView", Go: service.AdminShopItemView{}},

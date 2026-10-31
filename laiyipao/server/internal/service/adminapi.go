@@ -497,6 +497,82 @@ func (s *Service) AdminDeleteDefense(ctx context.Context, defenseID int64) error
 	return nil
 }
 
+// AdminDefenseChallengeView 是防线挑战记录的一行（2026-10-31 新一轮第 30 轮）。
+type AdminDefenseChallengeView struct {
+	ID                 int64          `json:"id"`
+	DefenseID          int64          `json:"defense_id"`
+	DefenseName        string         `json:"defense_name"`
+	ChallengerID       int64          `json:"challenger_id"`
+	ChallengerNickname string         `json:"challenger_nickname"`
+	Won                bool           `json:"won"` // 挑战者是否获胜
+	DurationMs         int            `json:"duration_ms"`
+	HpLeftPct          int            `json:"hp_left_pct"`
+	Loot               map[string]int `json:"loot"`
+	CreatedAt          time.Time      `json:"created_at"`
+}
+
+// AdminListDefenseChallenges 返回防线挑战记录列表。
+//
+// 后台此前只有防线列表（含胜负计数），没有挑战**明细** —— 运营想回答
+// 「这条防线被谁挑战过 / 某个玩家挑战了哪些防线 / 某天有多少挑战」，
+// 只能直接查库。这里补上全局挑战记录视图。
+//
+// defenseID / challengerID / dateFrom / dateTo 均为可选筛选
+// （0 或 nil 表示不过滤，created_at 开区间）。
+func (s *Service) AdminListDefenseChallenges(ctx context.Context, limit, offset int, defenseID, challengerID int64, dateFrom, dateTo *time.Time) ([]AdminDefenseChallengeView, int64, error) {
+	if limit <= 0 || limit > 200 {
+		limit = 50
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	// 列表查询的 $1/$2 是 limit/offset，筛选从 $3 起；
+	// COUNT 查询没有 limit/offset，筛选映射到 $1/$2/$3/$4。
+	where := `($3 = 0 OR dc.defense_id = $3)
+	          AND ($4 = 0 OR dc.challenger_id = $4)
+	          AND ($5::timestamptz IS NULL OR dc.created_at >= $5)
+	          AND ($6::timestamptz IS NULL OR dc.created_at < $6)`
+	countArgs := []any{defenseID, challengerID, dateFrom, dateTo}
+	listArgs := []any{limit, offset, defenseID, challengerID, dateFrom, dateTo}
+	countWhere := strings.NewReplacer(`$3`, `$1`, `$4`, `$2`, `$5`, `$3`, `$6`, `$4`).Replace(where)
+
+	var total int64
+	if err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM defense_challenges dc WHERE `+countWhere,
+		countArgs...).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("admin defense challenges count: %w", err)
+	}
+	rows, err := s.pool.Query(ctx, `
+		SELECT dc.id, dc.defense_id, COALESCE(d.name, ''), dc.challenger_id,
+		       COALESCE(u.nickname, ''), dc.won, dc.duration_ms, dc.hp_left_pct,
+		       dc.loot, dc.created_at
+		FROM defense_challenges dc
+		JOIN defenses d ON d.id = dc.defense_id
+		LEFT JOIN users u ON u.id = dc.challenger_id
+		WHERE `+where+`
+		ORDER BY dc.id DESC LIMIT $1 OFFSET $2`, listArgs...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("admin defense challenges: %w", err)
+	}
+	defer rows.Close()
+
+	out := []AdminDefenseChallengeView{}
+	for rows.Next() {
+		var v AdminDefenseChallengeView
+		var lootRaw []byte
+		if err := rows.Scan(&v.ID, &v.DefenseID, &v.DefenseName, &v.ChallengerID,
+			&v.ChallengerNickname, &v.Won, &v.DurationMs, &v.HpLeftPct,
+			&lootRaw, &v.CreatedAt); err != nil {
+			return nil, 0, err
+		}
+		if err := json.Unmarshal(lootRaw, &v.Loot); err != nil {
+			return nil, 0, fmt.Errorf("unmarshal defense challenge loot: %w", err)
+		}
+		out = append(out, v)
+	}
+	return out, total, rows.Err()
+}
+
 // AdminListOrders 返回支付订单列表（2026-10-31 实质优化第 33 轮）。
 //
 // 后台此前只有 `AdminEconomy` 里的订单**计数**（paid/pending），

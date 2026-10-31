@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import {onMounted, ref, computed, onActivated} from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { fetchDefenses, deleteDefense, type AdminDefenseView } from '@/api'
+import { fetchDefenses, fetchAdminDefenseChallenges, deleteDefense, type AdminDefenseView, type AdminDefenseChallengeView } from '@/api'
 import { fmtTime } from '@/utils/format'
 
 /** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
@@ -9,6 +9,49 @@ const emptyText = '还没有人设置防线'
 const loading = ref(false)
 const rows = ref<AdminDefenseView[]>([])
 const total = ref(0)
+
+// 防线挑战记录（2026-10-31 新一轮第 30 轮）。
+const challengeVisible = ref(false)
+const challenges = ref<AdminDefenseChallengeView[]>([])
+const challengeTotal = ref(0)
+const challengePage = ref(1)
+const challengeDefenseId = ref<number | undefined>(undefined)
+const challengeChallengerId = ref<number | undefined>(undefined)
+
+async function loadChallenges() {
+  try {
+    const res = await fetchAdminDefenseChallenges(50, (challengePage.value - 1) * 50, {
+      defense_id: challengeDefenseId.value,
+      challenger_id: challengeChallengerId.value,
+    })
+    challenges.value = res.items
+    challengeTotal.value = res.total ?? res.items.length
+  } catch (e) {
+    ElMessage.error(`挑战记录加载失败：${(e as Error).message}`)
+  }
+}
+
+/** 打开挑战记录对话框并加载第一页（2026-10-31 新一轮第 30 轮）。 */
+function openChallenges() {
+  challengeVisible.value = true
+  challengePage.value = 1
+  loadChallenges()
+}
+
+/** 挑战记录筛选变化：回到第一页并重新加载。 */
+function applyChallengeFilter() {
+  challengePage.value = 1
+  loadChallenges()
+}
+
+/** 偷取奖励格式：`100 金币`、`5 钻石`，多项用逗号分隔。 */
+function rewardText(loot: Record<string, number> | undefined): string {
+  if (!loot) return ''
+  const label: Record<string, string> = { coin: '金币', gem: '钻石', energy: '体力', keys: '钥匙' }
+  return Object.entries(loot)
+    .map(([k, v]) => `${v} ${label[k] ?? k}`)
+    .join('、')
+}
 
 /**
  * 防线值守（I-5）的关键设计：
@@ -179,6 +222,7 @@ load()
           @current-change="load"
         />
         <el-button @click="load">刷新</el-button>
+        <el-button @click="openChallenges">挑战记录</el-button>
         <span class="toolbar-spacer" />
         <span class="muted">共 {{ total }} 条防线</span>
       </div>
@@ -231,6 +275,58 @@ load()
         </template>
 </el-table>
     </el-card>
+
+    <!-- 防线挑战记录（2026-10-31 新一轮第 30 轮） -->
+    <el-dialog v-model="challengeVisible" title="防线挑战记录" width="760px">
+      <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px">
+        <el-input-number
+          v-model="challengeDefenseId"
+          :controls="false"
+          placeholder="防线 ID"
+          style="width: 120px"
+        />
+        <el-input-number
+          v-model="challengeChallengerId"
+          :controls="false"
+          placeholder="挑战者 ID"
+          style="width: 130px"
+        />
+        <el-button @click="applyChallengeFilter">查询</el-button>
+      </div>
+      <el-table :data="challenges" size="small" stripe max-height="480">
+        <el-table-column prop="id" label="ID" width="60" />
+        <el-table-column prop="defense_id" label="防线 ID" width="80" />
+        <el-table-column prop="defense_name" label="防线名" min-width="100" />
+        <el-table-column prop="challenger_nickname" label="挑战者" min-width="110" />
+        <el-table-column prop="challenger_id" label="挑战者 ID" width="90" />
+        <el-table-column label="结果" width="80">
+          <template #default="{ row }">
+            <el-tag :type="row.won ? 'danger' : 'success'" size="small">
+              {{ row.won ? '挑战成功' : '防守成功' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="偷取" min-width="120">
+          <template #default="{ row }">{{ rewardText(row.loot) }}</template>
+        </el-table-column>
+        <el-table-column label="时间" width="155">
+          <template #default="{ row }">{{ fmtTime(row.created_at) }}</template>
+        </el-table-column>
+        <template #empty>
+          <el-empty description="暂无挑战记录" :image-size="60" />
+        </template>
+      </el-table>
+      <el-pagination
+        v-if="challengeTotal > 50"
+        v-model:current-page="challengePage"
+        :page-size="50"
+        :total="challengeTotal"
+        layout="prev, pager, next, total"
+        size="small"
+        background
+        @current-change="loadChallenges"
+      />
+    </el-dialog>
   </div>
 </template>
 
