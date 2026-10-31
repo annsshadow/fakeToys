@@ -143,6 +143,9 @@
       >
         查看本局战报
       </view>
+      <!-- 再来一局（2026-11-01 新一轮第 53 轮）：redirectTo 替换当前页，
+           重新进入同一关（重新扣体力/发 token），省去返回选关再点一次的路径。 -->
+      <view class="btn" style="margin-top: 20rpx" @click="retryLevel">再来一局</view>
       <view class="btn btn-primary" style="margin-top: 20rpx" @click="backToStage">返回关卡</view>
     </view>
 
@@ -594,6 +597,15 @@ function goBattleReport() {
   if (Number.isInteger(id) && id > 0) {
     uni.navigateTo({ url: `/pages/battles/battles?battle_id=${id}` })
   }
+}
+
+/**
+ * 再来一局（2026-11-01 新一轮第 53 轮）。
+ * 用 redirectTo 替换当前战斗页，重新进入同一关。
+ * 不用 navigateTo：否则每次重开都会叠加一个战斗页，页面栈无限增长。
+ */
+function retryLevel() {
+  uni.redirectTo({ url: `/pages/battle/battle?level=${levelId.value}` })
 }
 
 /**
