@@ -424,3 +424,35 @@ describe('ContentView 使用记录玩家跳转用户详情（第 51 轮）', () 
     wrapper.unmount()
   })
 })
+
+describe('ContentView 公告玩家端预览（第 54 轮）', () => {
+  it('填写标题/正文后点击预览：对话框展示标题与正文', async () => {
+    const wrapper = await mountContent()
+    const vm = wrapper.vm as unknown as { annForm: { title: string; body: string; published: boolean } }
+    vm.annForm = { title: '周末双倍', body: '所有关卡金币翻倍', published: true }
+
+    const btn = wrapper.findAll('button').find((b) => b.text() === '预览玩家端')
+    expect(btn, '找不到「预览玩家端」按钮').toBeTruthy()
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('玩家端预览')
+    expect(wrapper.text()).toContain('周末双倍')
+    expect(wrapper.text()).toContain('所有关卡金币翻倍')
+    wrapper.unmount()
+  })
+
+  it('标题或正文为空时点击预览：提示错误，不打开对话框', async () => {
+    const wrapper = await mountContent()
+    const vm = wrapper.vm as unknown as { annForm: { title: string; body: string; published: boolean } }
+    vm.annForm = { title: '', body: '只有正文', published: false }
+
+    const btn = wrapper.findAll('button').find((b) => b.text() === '预览玩家端')
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(document.body.textContent).toContain('标题与正文都不能为空')
+    expect(wrapper.text()).not.toContain('玩家端预览')
+    wrapper.unmount()
+  })
+})

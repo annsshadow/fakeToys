@@ -302,6 +302,25 @@ function cancelEditAnn() {
 }
 
 /**
+ * 公告玩家端预览（2026-11-01 新一轮第 54 轮）。
+ * 运营发布前想确认玩家看到的实际效果（标题/正文/发布时间），
+ * 此前只能先发布再在玩家端看。这里用当前表单内容打开预览对话框。
+ */
+const previewVisible = ref(false)
+
+function openPreview() {
+  if (!annForm.value.title.trim() || !annForm.value.body.trim()) {
+    ElMessage.error('标题与正文都不能为空')
+    return
+  }
+  previewVisible.value = true
+}
+
+function closePreview() {
+  previewVisible.value = false
+}
+
+/**
  * 删除公告（2026-10-31 实质优化第 23 轮）。
  * 删除不可恢复，必须二次确认；玩家端缓存最迟 30 秒后消失。
  */
@@ -520,6 +539,8 @@ loadAll()
                 <el-button type="primary" @click="submitAnnouncement">
                   {{ editingAnnId !== null ? '更新' : '创建' }}
                 </el-button>
+                <!-- 玩家端预览（2026-11-01 新一轮第 54 轮） -->
+                <el-button @click="openPreview">预览玩家端</el-button>
                 <el-button v-if="editingAnnId !== null" @click="cancelEditAnn">取消编辑</el-button>
               </el-form>
             </el-card>
@@ -602,6 +623,24 @@ loadAll()
             </el-card>
           </el-col>
         </el-row>
+
+        <!-- 公告玩家端预览（2026-11-01 新一轮第 54 轮） -->
+        <el-dialog v-model="previewVisible" title="玩家端预览" width="520px">
+          <div style="border: 1rpx solid var(--el-border-color); border-radius: 8px; padding: 16px 20px">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 16px">
+              <strong>{{ annForm.title }}</strong>
+              <span class="muted" style="font-size: 12px">
+                {{ annForm.published ? new Date().toLocaleString() : '未发布（仅草稿）' }}
+              </span>
+            </div>
+            <div style="margin-top: 10px; white-space: pre-wrap; color: var(--el-text-color-regular); line-height: 1.7">
+              {{ annForm.body }}
+            </div>
+          </div>
+          <template #footer>
+            <el-button type="primary" @click="closePreview">关闭</el-button>
+          </template>
+        </el-dialog>
       </el-tab-pane>
 
       <!-- 兑换码 -->
