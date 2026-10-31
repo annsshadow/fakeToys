@@ -46,6 +46,12 @@
       }
     },
     {
+      "path": "pages/skills/skills",
+      "style": {
+        "navigationBarTitleText": "技能图鉴"
+      }
+    },
+    {
       "path": "pages/shop/shop",
       "style": {
         "navigationBarTitleText": "商城"

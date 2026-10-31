@@ -207,6 +207,9 @@ const menus = [
   // 敌人图鉴（2026-10-31 新一轮第 24 轮）：`/config.enemies` 的属性与
   // 抗性此前零 UI 消费 —— 玩家无法在战斗前了解敌人。
   { path: '/pages/enemies/enemies', label: '敌人', icon: '👾' },
+  // 技能图鉴（2026-10-31 新一轮第 25 轮）：`/config.skills` 的伤害/热量/
+  // 解锁等级此前只对已拥有技能可见 —— 未解锁技能全靠猜。
+  { path: '/pages/skills/skills', label: '技能', icon: '⚔️' },
   { path: '/pages/signin/signin', label: '签到', icon: '📅' },
   { path: '/pages/rank/rank', label: '排行', icon: '🏆' },
   { path: '/pages/verify/verify', label: '验真', icon: '🔍' },
