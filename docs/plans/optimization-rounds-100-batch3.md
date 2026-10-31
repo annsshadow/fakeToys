@@ -36,6 +36,7 @@
 | 24 | 2026-10-31 | **「敌人图鉴」页**：`/config.enemies` 从第一天起就下发了完整敌人属性（血量/护甲/护盾/攻击/速度/五维抗性），但客户端**零 UI 消费** —— 玩家战斗前无法了解敌人特性，「这关为什么难」只能靠试错 | 新增 miniapp 页面 `pages/enemies/enemies.vue`（从 `store.config.enemies` 读取：名称/类别/描述/属性/非零抗性展示，类别中文映射，抗性千分比转百分比）；pages.json 注册路由；首页菜单新增「敌人」入口；新增源码守卫测试 `enemies_feature.test.ts` | miniapp type-check 通过、新守卫 3 用例通过、全量测试通过；`go test ./...` 全绿 |
 | 25 | 2026-10-31 | **「技能图鉴」页**：`/config.skills` 从第一天起就下发了全部技能的伤害/热量/冷却/穿透/溅射/解锁等级，但客户端只在背包展示**已拥有**的技能 —— 玩家看不到未解锁技能的成长路径 | 新增 miniapp 页面 `pages/skills/skills.vue`（从 `store.config.skills` 读取：名称/元素/主动被动/描述/伤害/热量/冷却/穿透/溅射/连锁/解锁等级，并标注已拥有）；pages.json 注册路由；首页菜单新增「技能」入口；新增源码守卫测试 `skills_feature.test.ts` | miniapp type-check 通过、新守卫 3 用例通过、全量测试通过；`go test ./...` 全绿 |
 | 26 | 2026-10-31 | **「装备图鉴」页**：`/config.equipment` 从第一天起就下发了全部 18 件装备的护甲/加成/解锁等级，但客户端只在背包展示**已拥有**的装备 —— 玩家看不到未解锁装备的成长路径 | 新增 miniapp 页面 `pages/equipment/equipment.vue`（从 `store.config.equipment` 读取：名称/槽位/阶/元素/描述/护甲/加成/解锁等级，并标注已拥有）；pages.json 注册路由；首页菜单新增「装备」入口；新增源码守卫测试 `equipment_feature.test.ts` | miniapp type-check 通过、新守卫 3 用例通过、全量测试通过；`go test ./...` 全绿 |
+| 27 | 2026-10-31 | **「宝石图鉴」页**：`/config.gems` 从第一天起就下发了 8 种宝石的属性与说明，但客户端只在背包展示**已拥有**的宝石实例 —— 玩家看不到全部宝石的成长路径 | 新增 miniapp 页面 `pages/gems/gems.vue`（从 `store.config.gems` 读取：名称/属性（中文映射）/描述，onShow 拉取 `/me/gems` 标注每种宝石的拥有数量）；pages.json 注册路由；首页菜单新增「宝石」入口；新增源码守卫测试 `gems_feature.test.ts` | miniapp type-check 通过、新守卫 3 用例通过、全量测试通过；`go test ./...` 全绿 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **26 轮实质优化**，距 100 轮还差 74 轮。
+> 状态：进行中。当前累计 **27 轮实质优化**，距 100 轮还差 73 轮。

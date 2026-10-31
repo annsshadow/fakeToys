@@ -58,6 +58,12 @@
       }
     },
     {
+      "path": "pages/gems/gems",
+      "style": {
+        "navigationBarTitleText": "宝石图鉴"
+      }
+    },
+    {
       "path": "pages/shop/shop",
       "style": {
         "navigationBarTitleText": "商城"
