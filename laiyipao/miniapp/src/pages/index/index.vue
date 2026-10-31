@@ -220,6 +220,9 @@ const menus = [
   // 定义此前零 UI 消费。
   { path: '/pages/skins/skins', label: '皮肤', icon: '🎨' },
   { path: '/pages/signin/signin', label: '签到', icon: '📅' },
+  // 我的战报（2026-11-01 新一轮第 41 轮）：`/me/battles` 端点早已存在，
+  // 客户端却没有任何战报历史入口 —— 打完就再也找不到那一局的记录。
+  { path: '/pages/battles/battles', label: '战报', icon: '📜' },
   { path: '/pages/rank/rank', label: '排行', icon: '🏆' },
   { path: '/pages/verify/verify', label: '验真', icon: '🔍' },
   { path: '/pages/me/me', label: '我的', icon: '👤' },

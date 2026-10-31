@@ -70,6 +70,12 @@
       }
     },
     {
+      "path": "pages/battles/battles",
+      "style": {
+        "navigationBarTitleText": "我的战报"
+      }
+    },
+    {
       "path": "pages/shop/shop",
       "style": {
         "navigationBarTitleText": "商城"
