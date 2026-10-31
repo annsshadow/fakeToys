@@ -893,40 +893,108 @@ type TaskView struct {
 	Done     bool           `json:"done"`
 }
 
+// taskConfig 是任务配置的**静态部分**（缓存用，不含 per-user 进度）。
+type taskConfig struct {
+	ID     int            `json:"id"`
+	Code   string         `json:"code"`
+	Name   string         `json:"name"`
+	Scope  string         `json:"scope"`
+	Target int            `json:"target"`
+	Metric string         `json:"metric"`
+	Reward map[string]int `json:"reward"`
+}
+
 // LoadTasks 返回指定周期的任务列表。
 func (s *Service) LoadTasks(ctx context.Context, userID int64, scope string) ([]TaskView, error) {
 	day := periodStart(nowFunc(), scope)
-	rows, err := s.pool.Query(ctx, `
-		SELECT t.id, t.code, t.name, t.scope, t.target, t.metric, t.reward,
-		       COALESCE(ut.progress, 0), ut.claimed_at IS NOT NULL
-		FROM tasks t
-		LEFT JOIN user_tasks ut
-		       ON ut.task_id = t.id AND ut.user_id = $1 AND ut.task_date = $2
-		WHERE t.enabled AND t.scope = $3
-		ORDER BY t.id`, userID, day, scope)
+
+	// 2026-10-31（新一轮第 8 轮）：任务配置**静态部分**走 TTL 缓存。
+	//
+	// 原查询每次把整张 `tasks` 配置表（seeder 纯静态、无后台修改入口）
+	// 与 `user_tasks` LEFT JOIN 一起查。任务页（签到/任务/兑换同页）是
+	// 每日高频打开的页面，配置部分每次重查是浪费。
+	// 拆成「缓存任务配置 + 一条按 user+day 查进度」再合并，
+	// 响应形状与排序（按 id）保持不变。
+	//
+	// ⚠️ 静态列表缓存的是 `taskConfig`（无 Progress/Claimed），
+	// per-user 进度绝不缓存。
+	configs, err := s.tasksCache.getOrLoad(time.Now(), s.Cfg().TasksCacheTTL, func() ([]taskConfig, error) {
+		rows, err := s.pool.Query(ctx, `
+			SELECT id, code, name, scope, target, metric, reward
+			FROM tasks WHERE enabled ORDER BY id`)
+		if err != nil {
+			return nil, fmt.Errorf("load tasks: %w", err)
+		}
+		defer rows.Close()
+
+		out := []taskConfig{}
+		for rows.Next() {
+			var v taskConfig
+			var rewardRaw []byte
+			if err := rows.Scan(&v.ID, &v.Code, &v.Name, &v.Scope, &v.Target, &v.Metric, &rewardRaw); err != nil {
+				return nil, err
+			}
+			// 第 148 轮：fail-loud（AGENTS #11）。reward 是发给玩家的奖励，
+			// `_ =` 会把坏 jsonb 静默吞成空奖励 —— 任务列表显示「奖励：」空白，
+			// 玩家以为没奖。改报错，让坏数据在后台/客户端可见。
+			if err := json.Unmarshal(rewardRaw, &v.Reward); err != nil {
+				return nil, fmt.Errorf("load tasks: task %d 的 reward 非法 jsonb: %w", v.ID, err)
+			}
+			out = append(out, v)
+		}
+		return out, rows.Err()
+	})
 	if err != nil {
-		return nil, fmt.Errorf("load tasks: %w", err)
+		return nil, err
+	}
+
+	// 玩家当日进度：一条查询（走 idx_user_tasks_date）。
+	type userTask struct {
+		progress int
+		claimed  bool
+	}
+	progressByTask := map[int]userTask{}
+	rows, err := s.pool.Query(ctx,
+		`SELECT task_id, progress, claimed_at IS NOT NULL
+		 FROM user_tasks WHERE user_id = $1 AND task_date = $2`,
+		userID, day)
+	if err != nil {
+		return nil, fmt.Errorf("load user tasks: %w", err)
 	}
 	defer rows.Close()
+	for rows.Next() {
+		var taskID, prog int
+		var claimed bool
+		if err := rows.Scan(&taskID, &prog, &claimed); err != nil {
+			return nil, fmt.Errorf("scan user tasks: %w", err)
+		}
+		progressByTask[taskID] = userTask{progress: prog, claimed: claimed}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("scan user tasks: %w", err)
+	}
 
 	var out []TaskView
-	for rows.Next() {
-		var v TaskView
-		var rewardRaw []byte
-		if err := rows.Scan(&v.ID, &v.Code, &v.Name, &v.Scope, &v.Target, &v.Metric,
-			&rewardRaw, &v.Progress, &v.Claimed); err != nil {
-			return nil, err
+	for _, t := range configs {
+		if t.Scope != scope {
+			continue
 		}
-		// 第 148 轮：fail-loud（AGENTS #11）。reward 是发给玩家的奖励，
-		// `_ =` 会把坏 jsonb 静默吞成空奖励 —— 任务列表显示「奖励：」空白，
-		// 玩家以为没奖。改报错，让坏数据在后台/客户端可见。
-		if err := json.Unmarshal(rewardRaw, &v.Reward); err != nil {
-			return nil, fmt.Errorf("load tasks: task %d 的 reward 非法 jsonb: %w", v.ID, err)
+		up := progressByTask[t.ID]
+		v := TaskView{
+			ID:       t.ID,
+			Code:     t.Code,
+			Name:     t.Name,
+			Scope:    t.Scope,
+			Target:   t.Target,
+			Metric:   t.Metric,
+			Reward:   t.Reward,
+			Progress: up.progress,
+			Claimed:  up.claimed,
 		}
 		v.Done = v.Progress >= v.Target
 		out = append(out, v)
 	}
-	return out, rows.Err()
+	return out, nil
 }
 
 // LevelStars 返回玩家每关的历史最好星级（结算时 GREATEST 落库，见 SettleBattle）。

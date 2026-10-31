@@ -116,6 +116,10 @@ type Service struct {
 	// 商品本身是 seeder 配置（低频运营修改），TTL 见 config.ShopCacheTTL；
 	// 玩家「今日已购次数」是 per-user 数据，不缓存。
 	shopCache ttlCache[[]shopItem]
+	// tasksCache 是任务配置**静态部分**的缓存（2026-10-31 新一轮第 8 轮）。
+	// tasks 是 seeder 纯静态配置（无后台修改入口），TTL 见 config.TasksCacheTTL；
+	// 玩家当日进度是 per-user 数据，不缓存。
+	tasksCache ttlCache[[]taskConfig]
 }
 
 // leaderboardCacheKinds 是与 `leaderboardKinds` 同步的三个榜。

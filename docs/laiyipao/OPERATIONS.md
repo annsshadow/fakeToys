@@ -147,6 +147,7 @@ cd laiyipao/admin   && pnpm install && pnpm dev          # :5175
 | `SIGNIN_CALENDAR_CACHE_TTL` | `60s` | 签到日历预览的进程内缓存有效期。`0` = 关闭（日历是 seeder 静态配置，后台无修改入口，通常不用关） |
 | `ANNOUNCEMENTS_CACHE_TTL` | `30s` | 公告列表的进程内缓存有效期。`0` = 关闭（公告是公开端点，首页首屏每次拉取；运营人工发布、变化极低频） |
 | `SHOP_CACHE_TTL` | `30s` | 商城商品列表**静态部分**的进程内缓存有效期。`0` = 关闭（商品是 seeder 配置、仅低频运营修改；玩家今日已购次数是 per-user 数据，不缓存） |
+| `TASKS_CACHE_TTL` | `60s` | 任务配置**静态部分**的进程内缓存有效期。`0` = 关闭（任务是 seeder 纯静态配置、无后台修改入口；玩家当日进度是 per-user 数据，不缓存） |
 | `METRICS_ENABLED` | `false` | 是否挂 `/metrics`（Prometheus 文本格式：TTL 缓存命中/未命中计数等）。**默认不挂**——未设口令的指标端点会泄露内部计数，确认采集端可达再开 |
 | `PPROF_ADDR` | 空 | pprof 性能剖析监听地址（如 `127.0.0.1:6060`）。**默认不启动**；仅绑回环，排障时临时开 |
 | `PLAYER_LOGIN_REQUIRED` | `false` | 玩家是否必须用账号口令登录。开启后 `/auth/guest` 一律 403，并引导一个**与超管同名同口令**的共享测试账号（测试环境用，详见 §2.4） |

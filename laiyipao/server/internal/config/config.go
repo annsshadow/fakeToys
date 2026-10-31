@@ -234,6 +234,14 @@ type Config struct {
 	// 设成 `0` 即关闭缓存（排查时与其它缓存同一条命令）。
 	ShopCacheTTL time.Duration
 
+	// TasksCacheTTL 是任务配置静态部分的进程内缓存有效期
+	// （2026-10-31 新一轮第 8 轮）。
+	//
+	// `tasks` 是 seeder 写入的**纯静态配置**（后台没有修改入口），
+	// 任务页（签到/任务/兑换同页）每日高频打开，每次重新读配置表是浪费。
+	// 60 秒 TTL 完全够；设成 `0` 即关闭缓存（排查时与其它缓存同一条命令）。
+	TasksCacheTTL time.Duration
+
 	// 默认管理员（仅在 admin_users 为空时引导创建）
 	BootstrapAdminUser string
 	BootstrapAdminPass string
@@ -388,6 +396,7 @@ func Load() Config {
 		SignInCalendarCacheTTL: envDuration("SIGNIN_CALENDAR_CACHE_TTL", 60*time.Second),
 		AnnouncementsCacheTTL:  envDuration("ANNOUNCEMENTS_CACHE_TTL", 30*time.Second),
 		ShopCacheTTL:           envDuration("SHOP_CACHE_TTL", 30*time.Second),
+		TasksCacheTTL:          envDuration("TASKS_CACHE_TTL", 60*time.Second),
 
 		BootstrapAdminUser: env("BOOTSTRAP_ADMIN_USER", "admin"),
 		BootstrapAdminPass: env("BOOTSTRAP_ADMIN_PASS", "admin12345"),
