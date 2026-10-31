@@ -12,10 +12,17 @@
       <!-- 宝石图鉴（服务端下发的权威表） -->
       <view class="card">
         <text class="card-title">宝石图鉴</text>
+        <!-- 搜索（2026-11-01 新一轮第 75 轮）：按名称/属性过滤 -->
+        <input
+          v-model="keyword"
+          class="search-inp"
+          placeholder="搜索宝石名称 / 属性"
+          placeholder-class="ph"
+        />
         <text class="muted" style="display: block; margin-bottom: 12rpx">
           数值与描述直接来自服务端 /config。共 {{ ownedCount }} 颗已拥有。
         </text>
-        <view v-for="g in gems" :key="g.id" class="gem">
+        <view v-for="g in filteredGems" :key="g.id" class="gem">
           <view class="rxn-head">
             <text class="rxn-name">{{ g.name }}</text>
             <text class="dim">{{ attrLabel(g.attr) }}</text>
@@ -54,6 +61,17 @@ interface GemDef {
  * 这里补上图鉴页，并标注每种宝石的拥有数量。
  */
 const gems = computed(() => (store.config?.gems ?? []) as unknown as GemDef[])
+
+/** 图鉴搜索（2026-11-01 新一轮第 75 轮）：名称/属性中文过滤。 */
+const keyword = ref('')
+
+const filteredGems = computed(() => {
+  const kw = keyword.value.trim().toLowerCase()
+  if (!kw) return gems.value
+  return gems.value.filter((g) => {
+    return g.name.toLowerCase().includes(kw) || attrLabel(g.attr).toLowerCase().includes(kw)
+  })
+})
 
 /** 已拥有的宝石实例列表（/me/gems）。 */
 const ownedGems = ref<OwnedGem[]>([])
@@ -94,5 +112,22 @@ onShow(() => {
 .gem {
   border-top: 1rpx solid var(--border, #eee);
   padding: 16rpx 0;
+}
+
+/* 图鉴搜索（2026-11-01 新一轮第 75 轮） */
+.search-inp {
+  display: block;
+  height: 72rpx;
+  padding: 0 20rpx;
+  margin-bottom: 12rpx;
+  background: var(--panel-2, #f5f6f7);
+  border: 1rpx solid var(--border, #eee);
+  border-radius: 12rpx;
+  font-size: 26rpx;
+  color: var(--text, #222);
+}
+
+.ph {
+  color: var(--dim, #9aa0a6);
 }
 </style>
