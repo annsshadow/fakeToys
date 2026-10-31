@@ -453,6 +453,9 @@ async function submitCode() {
  */
 const batchCount = ref(10)
 const batchLoading = ref(false)
+/** 本次批量生成的码（2026-11-01 新一轮第 72 轮）：生成后弹窗展示供复制分发。 */
+const batchGeneratedCodes = ref<AdminRedeemCodeView[]>([])
+const batchCodesVisible = ref(false)
 
 async function submitCodeBatch() {
   const reward = parseReward(codeForm.value.reward)
@@ -473,12 +476,24 @@ async function submitCodeBatch() {
       max_uses: codeForm.value.max_uses,
       expires_at: codeForm.value.expires_at || undefined,
     })
+    batchGeneratedCodes.value = res.items ?? []
+    batchCodesVisible.value = true
     ElMessage.success(`已批量生成 ${res.items.length} 个兑换码`)
     await loadAll()
   } catch (e) {
     ElMessage.error(`批量生成失败：${(e as Error).message}`)
   } finally {
     batchLoading.value = false
+  }
+}
+
+/** 复制单个码到剪贴板（2026-11-01 新一轮第 72 轮）。 */
+async function copyRedeemCode(code: string) {
+  try {
+    await navigator.clipboard.writeText(code)
+    ElMessage.success(`已复制 ${code}`)
+  } catch {
+    ElMessage.error('复制失败，请手动选择复制')
   }
 }
 
@@ -932,6 +947,20 @@ loadAll()
             @current-change="loadRedeemUsages"
           />
         </el-dialog>
+
+        <!-- 批量生成的码（2026-11-01 新一轮第 72 轮）：生成后展示并支持复制分发 -->
+        <el-dialog v-model="batchCodesVisible" title="批量生成的兑换码" width="560px">
+          <div style="margin-bottom: 8px" class="muted">共 {{ batchGeneratedCodes.length }} 个码，点击码可复制。</div>
+          <div style="max-height: 400px; overflow-y: auto">
+            <div v-for="c in batchGeneratedCodes" :key="c.id" class="batch-code-row">
+              <span class="mono">{{ c.code }}</span>
+              <el-button size="small" text type="primary" @click="copyRedeemCode(c.code)">复制</el-button>
+            </div>
+          </div>
+          <template #footer>
+            <el-button type="primary" @click="batchCodesVisible = false">关闭</el-button>
+          </template>
+        </el-dialog>
       </el-tab-pane>
 
       <!-- 审计日志 -->
@@ -1020,4 +1049,18 @@ loadAll()
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.batch-code-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8rpx 12rpx;
+  border-bottom: 1rpx solid var(--el-border-color-lighter);
+  font-size: 13px;
+}
+
+.batch-code-row .mono {
+  font-family: monospace;
+  word-break: break-all;
+}
+</style>

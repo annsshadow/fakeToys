@@ -585,3 +585,53 @@ describe('ContentView 兑换码批量生成（第 57 轮）', () => {
     wrapper.unmount()
   })
 })
+
+describe('ContentView 批量生成码展示与复制（第 72 轮）', () => {
+  it('批量生成后弹出码列表，展示每个码', async () => {
+    createRedeemCodesBatch.mockResolvedValue({
+      items: [
+        { id: 1, code: 'ABCDEFGHJKLM', reward: { coin: 100 }, max_uses: 3, expires_at: null, enabled: true },
+        { id: 2, code: 'NPQRSTUVWXYZ', reward: { coin: 100 }, max_uses: 3, expires_at: null, enabled: true },
+      ],
+    })
+    const wrapper = await mountContent()
+    const vm = wrapper.vm as unknown as { codeForm: { reward: string }; batchCount: number }
+    vm.codeForm = { code: '', reward: 'coin:100', max_uses: 3, expires_at: '' }
+    vm.batchCount = 2
+
+    await wrapper.findAll('button').find((b) => b.text() === '批量生成')!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('批量生成的兑换码')
+    expect(wrapper.text()).toContain('ABCDEFGHJKLM')
+    expect(wrapper.text()).toContain('NPQRSTUVWXYZ')
+    wrapper.unmount()
+  })
+
+  it('点击「复制」调用剪贴板写入该码', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    createRedeemCodesBatch.mockResolvedValue({
+      items: [
+        { id: 1, code: 'ABCDEFGHJKLM', reward: { coin: 100 }, max_uses: 3, expires_at: null, enabled: true },
+      ],
+    })
+    const wrapper = await mountContent()
+    const vm = wrapper.vm as unknown as { codeForm: { reward: string }; batchCount: number }
+    vm.codeForm = { code: '', reward: 'coin:100', max_uses: 3, expires_at: '' }
+    vm.batchCount = 1
+
+    await wrapper.findAll('button').find((b) => b.text() === '批量生成')!.trigger('click')
+    await flushPromises()
+
+    const copyBtn = wrapper.findAll('button').find((b) => b.text() === '复制')
+    expect(copyBtn, '找不到「复制」按钮').toBeTruthy()
+    await copyBtn!.trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith('ABCDEFGHJKLM')
+    expect(document.body.textContent).toContain('已复制 ABCDEFGHJKLM')
+    wrapper.unmount()
+  })
+})
