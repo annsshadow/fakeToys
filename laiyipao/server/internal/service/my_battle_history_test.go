@@ -38,7 +38,7 @@ func TestMyBattleHistorySucceeds(t *testing.T) {
 	winID := seedBattleFor(t, ts, id, 3, "win", 3, time.Now().Add(-1*time.Hour))
 	loseID := seedBattleFor(t, ts, id, 2, "lose", 1, time.Now().Add(-2*time.Hour))
 
-	items, err := ts.MyBattleHistory(ctx, id, 20)
+	items, err := ts.MyBattleHistory(ctx, id, 20, 0)
 	if err != nil {
 		t.Fatalf("查询战报历史失败：%v", err)
 	}
@@ -66,7 +66,7 @@ func TestMyBattleHistoryEmpty(t *testing.T) {
 	ctx := context.Background()
 
 	id, _ := newGuestUser(t, ts, "bhist_empty")
-	items, err := ts.MyBattleHistory(ctx, id, 20)
+	items, err := ts.MyBattleHistory(ctx, id, 20, 0)
 	if err != nil {
 		t.Fatalf("查询战报历史失败：%v", err)
 	}
@@ -84,7 +84,7 @@ func TestMyBattleHistoryLimitCap(t *testing.T) {
 		seedBattleFor(t, ts, id, i%100+1, "win", 3, time.Now().Add(-time.Duration(i)*time.Minute))
 	}
 
-	items, err := ts.MyBattleHistory(ctx, id, 1000)
+	items, err := ts.MyBattleHistory(ctx, id, 1000, 0)
 	if err != nil {
 		t.Fatalf("查询战报历史失败：%v", err)
 	}
@@ -97,8 +97,63 @@ func TestMyBattleHistoryBrokenPool(t *testing.T) {
 	ts := openBrokenService(t)
 	ctx := context.Background()
 
-	_, err := ts.MyBattleHistory(ctx, 1, 20)
+	_, err := ts.MyBattleHistory(ctx, 1, 20, 0)
 	if err == nil {
 		t.Fatal("连接池已关闭时查询必须报错，不能静默返回空列表")
+	}
+}
+
+// TestMyBattleHistoryPagination 守住分页（2026-11-01 新一轮第 55 轮）。
+func TestMyBattleHistoryPagination(t *testing.T) {
+	ts := openScratchService(t) // 一次性库，避免共享库数据干扰
+	ctx := context.Background()
+
+	id, _ := newGuestUser(t, ts, "bhist_page")
+	// 造 5 条战报：i=0 是 now（最新），i=4 是最旧
+	ids := make([]int64, 0, 5)
+	for i := 0; i < 5; i++ {
+		ids = append(ids, seedBattleFor(t, ts, id, i+1, "win", 3, time.Now().Add(-time.Duration(i)*time.Minute)))
+	}
+
+	// 第一页 2 条：最新的两条（i=0 / i=1）
+	page1, err := ts.MyBattleHistory(ctx, id, 2, 0)
+	if err != nil {
+		t.Fatalf("第一页查询失败：%v", err)
+	}
+	if len(page1) != 2 {
+		t.Fatalf("第一页应有 2 条，实际 %d", len(page1))
+	}
+	if page1[0].ID != ids[0] || page1[1].ID != ids[1] {
+		t.Errorf("第一页应按时间倒序取最新两条，实际 %d/%d", page1[0].ID, page1[1].ID)
+	}
+
+	// 第二页 2 条：offset=2
+	page2, err := ts.MyBattleHistory(ctx, id, 2, 2)
+	if err != nil {
+		t.Fatalf("第二页查询失败：%v", err)
+	}
+	if len(page2) != 2 {
+		t.Fatalf("第二页应有 2 条，实际 %d", len(page2))
+	}
+	if page2[0].ID != ids[2] || page2[1].ID != ids[3] {
+		t.Errorf("第二页应取第 3/4 新，实际 %d/%d", page2[0].ID, page2[1].ID)
+	}
+
+	// 第三页（offset=4）：只剩 1 条（最旧）
+	page3, err := ts.MyBattleHistory(ctx, id, 2, 4)
+	if err != nil {
+		t.Fatalf("第三页查询失败：%v", err)
+	}
+	if len(page3) != 1 || page3[0].ID != ids[4] {
+		t.Errorf("第三页应只剩最旧的 1 条，实际 %d", len(page3))
+	}
+
+	// 负 offset 夹到 0（不报错）
+	neg, err := ts.MyBattleHistory(ctx, id, 2, -1)
+	if err != nil {
+		t.Fatalf("负 offset 查询失败：%v", err)
+	}
+	if len(neg) != 2 {
+		t.Errorf("负 offset 应夹到 0 取第一页，实际 %d", len(neg))
 	}
 }

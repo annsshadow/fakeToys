@@ -23,7 +23,7 @@ const INDEX_VUE = join(__dirname, '../pages/index/index.vue')
 describe('我的战报历史页守卫', () => {
   it('battles.vue 必须拉取战报列表并展示胜负/星级/分数/击杀', () => {
     const src = readFileSync(BATTLES_VUE, 'utf-8')
-    expect(src).toContain('api.myBattleHistory()')
+    expect(src).toContain('api.myBattleHistory(20, 0)')
     expect(src).toContain('it.result === \'win\'')
     expect(src).toContain('it.kills')
     expect(src).toContain('it.score')
@@ -52,5 +52,12 @@ describe('我的战报历史页守卫', () => {
     expect(src).toContain("query?.battle_id")
     expect(src).toContain('focusBattleId.value = id')
     expect(src).toContain('items.value.find((it) => it.id === focusBattleId.value)')
+  })
+
+  it('支持分页加载更多（第 55 轮）：按 offset 追加并去重', () => {
+    const src = readFileSync(BATTLES_VUE, 'utf-8')
+    expect(src).toContain('api.myBattleHistory(20, items.value.length)')
+    expect(src).toContain('existing.has(it.id)')
+    expect(src).toContain('load-more')
   })
 })

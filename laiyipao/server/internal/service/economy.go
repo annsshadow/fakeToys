@@ -1105,16 +1105,20 @@ type MyBattleHistoryItem struct {
 //
 // 玩家打完关卡后没有任何历史战报入口（后台有 `AdminListBattles`，
 // 玩家侧只有单条验真/回放端点）。这里补上玩家视角的战绩列表。
-func (s *Service) MyBattleHistory(ctx context.Context, userID int64, limit int) ([]MyBattleHistoryItem, error) {
+func (s *Service) MyBattleHistory(ctx context.Context, userID int64, limit, offset int) ([]MyBattleHistoryItem, error) {
 	if limit <= 0 || limit > 50 {
 		limit = 20
+	}
+	// 分页（2026-11-01 新一轮第 55 轮）：负 offset 夹到 0。
+	if offset < 0 {
+		offset = 0
 	}
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, level_id, result, stars, score, kills, leaked, replay_hash, created_at
 		 FROM battle_records
 		 WHERE user_id = $1
 		 ORDER BY created_at DESC
-		 LIMIT $2`, userID, limit)
+		 LIMIT $2 OFFSET $3`, userID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("my battle history: %w", err)
 	}

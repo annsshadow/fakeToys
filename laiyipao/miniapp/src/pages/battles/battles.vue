@@ -63,6 +63,11 @@
           </view>
         </view>
       </view>
+
+      <!-- 加载更早战报（2026-11-01 新一轮第 55 轮） -->
+      <view v-if="hasMore" class="load-more" @click="loadMore">
+        {{ loadingMore ? '加载中…' : '加载更多' }}
+      </view>
     </view>
   </view>
 </template>
@@ -80,6 +85,9 @@ const store = useGameStore()
 
 const items = ref<BattleHistoryItem[]>([])
 const loading = ref(false)
+const loadingMore = ref(false)
+/** 是否还有更早的战报（上次返回满一页 20 条即视为还有更多）。 */
+const hasMore = ref(false)
 const expandedId = ref(0)
 const details = ref<Record<number, BattleDetail>>({})
 const detailLoading = ref(false)
@@ -190,12 +198,33 @@ function goVerify(battleId: number) {
   uni.navigateTo({ url: `/pages/verify/verify?battle_id=${battleId}` })
 }
 
+/**
+ * 加载更早的战报（2026-11-01 新一轮第 55 轮）。
+ * 服务端按时间倒序分页（limit=20/offset），追加到列表并去重。
+ */
+async function loadMore() {
+  if (loadingMore.value || !hasMore.value) return
+  loadingMore.value = true
+  try {
+    const res = await api.myBattleHistory(20, items.value.length)
+    const more = res.items ?? []
+    const existing = new Set(items.value.map((it) => it.id))
+    items.value = items.value.concat(more.filter((it) => !existing.has(it.id)))
+    hasMore.value = more.length >= 20
+  } catch {
+    // 加载更多失败：保留按钮可重试
+  } finally {
+    loadingMore.value = false
+  }
+}
+
 onMounted(async () => {
   if (!store.loggedIn) await store.login()
   loading.value = true
   try {
-    const res = await api.myBattleHistory()
+    const res = await api.myBattleHistory(20, 0)
     items.value = res.items ?? []
+    hasMore.value = (res.items?.length ?? 0) >= 20
     // 深链（2026-11-01 新一轮第 43 轮）：结算页跳转过来时自动展开刚打的那一局
     if (focusBattleId.value > 0) {
       const target = items.value.find((it) => it.id === focusBattleId.value)
@@ -272,5 +301,17 @@ onMounted(async () => {
 .hash {
   font-size: 20rpx;
   word-break: break-all;
+}
+
+/* 加载更多（2026-11-01 新一轮第 55 轮） */
+.load-more {
+  margin-top: 16rpx;
+  padding: 16rpx 0;
+  text-align: center;
+  font-size: 26rpx;
+  color: var(--fire);
+  background: var(--panel);
+  border: 1rpx solid var(--border);
+  border-radius: 12rpx;
 }
 </style>

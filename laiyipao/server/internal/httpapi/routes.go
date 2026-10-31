@@ -777,9 +777,18 @@ func (s *Server) myDefenseChallenges(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"items": items})
 }
 
-// myBattleHistory 返回当前玩家最近的战斗记录。
+// myBattleHistory 返回当前玩家最近的战斗记录（2026-11-01 新一轮第 55 轮：
+// 支持 limit/offset 分页，客户端「加载更多」查看更早的战报）。
 func (s *Server) myBattleHistory(c *fiber.Ctx) error {
-	items, err := s.Svc.MyBattleHistory(c.Context(), userIDFrom(c), 20)
+	limit, err := queryInt(c, "limit", 20)
+	if err != nil {
+		return failErr(c, err)
+	}
+	offset, err := queryInt(c, "offset", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	items, err := s.Svc.MyBattleHistory(c.Context(), userIDFrom(c), limit, offset)
 	if err != nil {
 		return failErr(c, err)
 	}
