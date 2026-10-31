@@ -23,6 +23,13 @@
         </view>
       </scroll-view>
 
+      <!-- 章节星级进度（2026-11-01 新一轮第 52 轮）：
+           玩家能一眼看到本章节还差多少星才全清。 -->
+      <view v-if="chapterLevels.length" class="star-progress">
+        <text class="muted">本章节星级</text>
+        <text class="mono">{{ chapterStars }} / {{ chapterTotal }}</text>
+      </view>
+
       <!-- 关卡网格 -->
       <view class="grid">
         <view
@@ -165,6 +172,16 @@ const chapterLevels = computed<LevelSummary[]>(() => {
   const all = store.config?.levels ?? []
   return all.filter((l) => l.chapter === curChapter.value)
 })
+
+/**
+ * 章节星级进度（2026-11-01 新一轮第 52 轮）。
+ * 星级以服务端 level_stars 为准（starOf 读取 stars.value），
+ * 汇总当前章节已获星星与理论上限（关卡数 × 3）。
+ */
+const chapterStars = computed(() =>
+  chapterLevels.value.reduce((sum, lv) => sum + (starOf(lv.id) ?? 0), 0),
+)
+const chapterTotal = computed(() => chapterLevels.value.length * 3)
 
 // 选关页只读元数据（章节/名称/难度/体力/星级/地形），**不需要 waves** ——
 // 所以这里用摘要类型就够，不必为此把完整关卡拉回来。
@@ -376,6 +393,25 @@ onMounted(() => {
   background: rgba(255, 107, 53, 0.16);
   border-color: var(--fire);
   color: var(--fire);
+}
+
+/* 章节星级进度（2026-11-01 新一轮第 52 轮） */
+.star-progress {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12rpx 20rpx;
+  margin-bottom: 20rpx;
+  border-radius: 12rpx;
+  background: var(--panel);
+  border: 1rpx solid var(--border);
+  font-size: 26rpx;
+}
+
+.star-progress .mono {
+  color: var(--warn);
+  font-weight: 600;
 }
 
 .grid {
