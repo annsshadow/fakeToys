@@ -69,6 +69,7 @@
 | 57 | 2026-11-01 | **后台兑换码批量生成**：运营发活动补偿通常一次需要几十个码，此前只能在前端逐个生成/复制 | 服务层 `AdminCreateRedeemCodes`（crypto/rand 生成 12 位随机码，字符集剔除 0/O/1/I，count 1..100，唯一冲突 23505 自动重试不中断批次）；`POST /api/v1/admin/redeem-codes/batch`；admin ContentView 表单新增「批量生成」数量输入 + 按钮（复用当前奖励/次数/过期时间）；新增服务层 3 用例 + e2e 4 用例 + admin 2 用例 | 服务层（批量/数量校验/故障）全绿；e2e（401/403/成功/400）全绿；admin type-check + 379 测试全绿；`go test ./...` 全绿 |
 | 58 | 2026-11-01 | **用户详情增加封禁/解封记录**：运营打开用户详情能看到「为什么被封、谁封的、什么时候解的」—— 此前封禁原因只进审计日志，详情页没有任何入口 | 服务层 `AdminUserDetailResp` 增加 `BanRecords []AdminBanRecordView`（最近 20 条 ban_user/unban_user 审计，detail 原样保留）；并发段新增第 10 段查询（与其它段并行）；apitypes + tygen 重新生成 types.gen.ts；admin UsersView 详情抽屉新增「封禁 / 解封记录」表格（动作标签/操作人/原因可读化/时间）；新增服务层 1 用例 + admin 1 用例 | 服务层（封禁记录内容/排序/detail 保留）全绿；tygen 测试全绿；admin type-check + 380 测试全绿；`go test ./...` 全绿 |
 | 59 | 2026-11-01 | **删除/更新公告后玩家端缓存立即失效**：玩家端公告有 TTL 缓存，运营撤回违规公告后玩家端最迟要等一个 TTL 才消失 —— 撤回不要求秒级生效的假设对违规内容不成立 | 服务层 `AdminCreateAnnouncement`/`AdminUpdateAnnouncement`/`AdminDeleteAnnouncement`在写库成功后调用 `announcementsCache.flush()`（ttlCache 既有失效方法），玩家端下一次拉取立即看到新内容；新增缓存失效集成测试（创建/更新/删除三路，用缓存命中计数验证重新查库） | 服务层定向测试（缓存失效/既有缓存测试）全绿；`go test ./...` 全绿；无前端改动 |
+| 60 | 2026-11-01 | **后台用户列表按「需核查」筛选**：列表里已有需核查标记（战力>5000 且最高关<=1 的刷分嫌疑），但没有筛选 —— 运营想批量处理只能翻页 | 服务层 `AdminListUsers`/`AdminExportUsers` 增加可选 `suspicious`（三态，COUNT 查询补 JOIN user_progress 使条件可求值）；handler 解析 `suspicious` 三态；admin UsersView 新增「需核查」下拉，`fetchUsers`/`exportUsersCsv` 参数同步；新增服务层 2 用例 + e2e 1 用例 + admin 2 用例 | 服务层（列表/导出三态筛选）全绿；e2e（suspicious=1/0）全绿；admin type-check + 382 测试全绿；`go test ./...` 全绿 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **59 轮实质优化**，距 100 轮还差 41 轮。
+> 状态：进行中。当前累计 **60 轮实质优化**，距 100 轮还差 40 轮。

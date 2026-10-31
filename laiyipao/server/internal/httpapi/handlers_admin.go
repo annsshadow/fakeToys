@@ -310,7 +310,18 @@ func (s *Server) adminUsers(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	items, total, err := s.Svc.AdminListUsers(c.Context(), c.Query("keyword", ""), limit, offset, dateFrom, dateTo, isGuest, lastLoginFrom, lastLoginTo)
+	// 需核查筛选（2026-11-01 新一轮第 60 轮）：三态。
+	// 判据与前端列表的 suspicious 标记一致（power>5000 且最高关<=1）。
+	var suspicious *bool
+	switch c.Query("suspicious", "") {
+	case "1", "true":
+		v := true
+		suspicious = &v
+	case "0", "false":
+		v := false
+		suspicious = &v
+	}
+	items, total, err := s.Svc.AdminListUsers(c.Context(), c.Query("keyword", ""), limit, offset, dateFrom, dateTo, isGuest, lastLoginFrom, lastLoginTo, suspicious)
 	if err != nil {
 		return failErr(c, err)
 	}
@@ -339,7 +350,17 @@ func (s *Server) adminExportUsers(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	data, err := s.Svc.AdminExportUsers(c.Context(), c.Query("keyword", ""), dateFrom, dateTo, lastLoginFrom, lastLoginTo)
+	// 需核查筛选（2026-11-01 新一轮第 60 轮）：与列表同口径。
+	var suspicious *bool
+	switch c.Query("suspicious", "") {
+	case "1", "true":
+		v := true
+		suspicious = &v
+	case "0", "false":
+		v := false
+		suspicious = &v
+	}
+	data, err := s.Svc.AdminExportUsers(c.Context(), c.Query("keyword", ""), dateFrom, dateTo, lastLoginFrom, lastLoginTo, suspicious)
 	if err != nil {
 		return failErr(c, err)
 	}

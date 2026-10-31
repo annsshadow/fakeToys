@@ -336,7 +336,7 @@ type AdminUserView struct {
 }
 
 // AdminListUsers 分页查询玩家。
-func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, offset int, dateFrom, dateTo *time.Time, isGuest *bool, lastLoginFrom, lastLoginTo *time.Time) ([]AdminUserView, int64, error) {
+func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, offset int, dateFrom, dateTo *time.Time, isGuest *bool, lastLoginFrom, lastLoginTo *time.Time, suspicious *bool) ([]AdminUserView, int64, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
@@ -392,13 +392,25 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 	          AND ($9::timestamptz IS NULL OR u.last_login_at < $9)`
 	countArgs := []any{kw, pattern, dateFrom, dateTo, isGuest, lastLoginFrom, lastLoginTo}
 	listArgs := []any{kw, pattern, limit, offset, dateFrom, dateTo, isGuest, lastLoginFrom, lastLoginTo}
-	countWhere := strings.NewReplacer(`$5`, `$3`, `$6`, `$4`, `$7`, `$5`, `$8`, `$6`, `$9`, `$7`).Replace(where)
+	// 需核查筛选（2026-11-01 新一轮第 60 轮）：仅当开启时拼入条件并引用 p。
+	// 不开启时 COUNT 保持不 JOIN user_progress（历史行为，中段失败测试依赖它）。
+	if suspicious != nil {
+		where += ` AND (COALESCE(p.level_exp, 0) > 5000 AND COALESCE(p.max_stage, 0) <= 1) = $10`
+		countArgs = append(countArgs, suspicious)
+		listArgs = append(listArgs, suspicious)
+	}
+	// 统一做 COUNT 参数编号映射（列表 $5-$10 → COUNT $3-$8）。
+	countWhere := strings.NewReplacer(`$5`, `$3`, `$6`, `$4`, `$7`, `$5`, `$8`, `$6`, `$9`, `$7`, `$10`, `$8`).Replace(where)
 
 	var total int64
-	if err := s.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM users u
-		 WHERE `+countWhere,
-		countArgs...).Scan(&total); err != nil {
+	// 需核查开启时 COUNT 也要 JOIN p（user_progress 每用户一行，不放大）。
+	countSQL := `SELECT COUNT(*) FROM users u WHERE ` + countWhere
+	if suspicious != nil {
+		countSQL = `SELECT COUNT(*) FROM users u
+		 LEFT JOIN user_progress p ON p.user_id = u.id
+		 WHERE ` + countWhere
+	}
+	if err := s.pool.QueryRow(ctx, countSQL, countArgs...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("count users: %w", err)
 	}
 
@@ -462,7 +474,7 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 //   - 列头用英文，内容用 UTF-8 原文 + BOM（Excel 打开中文不乱码）。
 //
 // 注意：guest_token 等敏感凭证**绝不导出**（理由见 AdminListUsers 的注释）。
-func (s *Service) AdminExportUsers(ctx context.Context, keyword string, dateFrom, dateTo *time.Time, lastLoginFrom, lastLoginTo *time.Time) ([]byte, error) {
+func (s *Service) AdminExportUsers(ctx context.Context, keyword string, dateFrom, dateTo *time.Time, lastLoginFrom, lastLoginTo *time.Time, suspicious *bool) ([]byte, error) {
 	kw, err := trimAdminKeyword(keyword)
 	if err != nil {
 		return nil, err
@@ -480,6 +492,12 @@ func (s *Service) AdminExportUsers(ctx context.Context, keyword string, dateFrom
 	          AND ($5::timestamptz IS NULL OR u.last_login_at >= $5)
 	          AND ($6::timestamptz IS NULL OR u.last_login_at < $6)`
 	args := []any{kw, pattern, dateFrom, dateTo, lastLoginFrom, lastLoginTo}
+	// 需核查筛选（2026-11-01 新一轮第 60 轮）：仅开启时拼入（引用 p，
+	// 导出查询始终 JOIN user_progress，无解析问题）。
+	if suspicious != nil {
+		where += ` AND (COALESCE(p.level_exp, 0) > 5000 AND COALESCE(p.max_stage, 0) <= 1) = $7`
+		args = append(args, suspicious)
+	}
 
 	rows, err := s.pool.Query(ctx, `
 		SELECT u.id, u.nickname, u.is_guest, u.status,

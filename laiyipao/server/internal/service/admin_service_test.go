@@ -428,7 +428,7 @@ func TestAdminListUsers(t *testing.T) {
 	uid := ts.newUser(t, ctx)
 	u, _ := ts.loadUser(ctx, uid)
 
-	items, total, err := ts.AdminListUsers(ctx, u.Nickname, 50, 0, nil, nil, nil, nil, nil)
+	items, total, err := ts.AdminListUsers(ctx, u.Nickname, 50, 0, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("列表失败：%v", err)
 	}
@@ -446,12 +446,12 @@ func TestAdminListUsers(t *testing.T) {
 	}
 
 	// limit/offset 夹紧：非法值不报错、不越界
-	if _, _, err := ts.AdminListUsers(ctx, "", 9999, -5, nil, nil, nil, nil, nil); err != nil {
+	if _, _, err := ts.AdminListUsers(ctx, "", 9999, -5, nil, nil, nil, nil, nil, nil); err != nil {
 		t.Errorf("非法分页参数应被夹紧而不是报错：%v", err)
 	}
 
 	broken := openBrokenService(t)
-	if _, _, err := broken.AdminListUsers(ctx, "", 50, 0, nil, nil, nil, nil, nil); err == nil {
+	if _, _, err := broken.AdminListUsers(ctx, "", 50, 0, nil, nil, nil, nil, nil, nil); err == nil {
 		t.Error("数据库故障时应报错")
 	}
 }

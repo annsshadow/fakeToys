@@ -67,6 +67,8 @@ const total = ref(0)
 const keyword = ref('')
 // 游客/账号筛选（2026-11-01 新一轮第 37 轮）。
 const isGuestFilter = ref<boolean | undefined>(undefined)
+// 需核查筛选（2026-11-01 新一轮第 60 轮）：高战力但停在第一关的刷分嫌疑。
+const suspiciousFilter = ref<boolean | undefined>(undefined)
 const limit = ref(50)
 const offset = ref(0)
 
@@ -174,6 +176,8 @@ async function load() {
       // 最后登录时间范围（2026-11-01 新一轮第 46 轮）
       last_login_from: lastLoginRange.value?.[0] || undefined,
       last_login_to: lastLoginRange.value ? nextDay(lastLoginRange.value[1]) : undefined,
+      // 需核查筛选（2026-11-01 新一轮第 60 轮）
+      suspicious: suspiciousFilter.value,
     })
     users.value = res.items
     total.value = res.total
@@ -354,6 +358,8 @@ async function onExportCsv() {
       // 最后登录时间范围（2026-11-01 新一轮第 46 轮）：与列表同口径
       last_login_from: lastLoginRange.value?.[0] || undefined,
       last_login_to: lastLoginRange.value ? nextDay(lastLoginRange.value[1]) : undefined,
+      // 需核查筛选（2026-11-01 新一轮第 60 轮）：与列表同口径
+      suspicious: suspiciousFilter.value,
     })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -445,6 +451,11 @@ const asRow = (r: unknown) => r as AdminUserView
         <el-select v-model="isGuestFilter" placeholder="账号类型" clearable style="width: 110px" @change="((offset = 0), load())">
           <el-option label="游客" :value="true" />
           <el-option label="账号" :value="false" />
+        </el-select>
+        <!-- 需核查筛选（2026-11-01 新一轮第 60 轮）：高战力但停在第一关 -->
+        <el-select v-model="suspiciousFilter" placeholder="需核查" clearable style="width: 110px" @change="((offset = 0), load())">
+          <el-option label="需核查" :value="true" />
+          <el-option label="非需核查" :value="false" />
         </el-select>
         <el-button @click="((offset = 0), load())">查询</el-button>
         <el-button @click="onExportCsv">导出 CSV</el-button>

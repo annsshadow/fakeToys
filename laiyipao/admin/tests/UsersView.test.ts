@@ -866,3 +866,24 @@ describe('UsersView 最后登录时间筛选（第 46 轮）', () => {
     wrapper.unmount()
   })
 })
+
+describe('UsersView 需核查筛选（第 60 轮）', () => {
+  it('选择「需核查」后 fetchUsers 携带 suspicious=true', async () => {
+    const wrapper = await mountUsers([userFixture()], 5)
+    const select = wrapper.findAllComponents({ name: 'ElSelect' }).find((s) => s.props('placeholder') === '需核查')
+    expect(select, '找不到需核查下拉').toBeTruthy()
+
+    await select!.vm.$emit('update:modelValue', true)
+    await select!.vm.$emit('change', true)
+    await flushPromises()
+
+    expect(fetchUsers).toHaveBeenLastCalledWith(expect.objectContaining({ suspicious: true }))
+    wrapper.unmount()
+  })
+
+  it('未设置需核查时参数为 undefined', async () => {
+    const wrapper = await mountUsers([userFixture()])
+    expect(fetchUsers).toHaveBeenLastCalledWith(expect.objectContaining({ suspicious: undefined }))
+    wrapper.unmount()
+  })
+})

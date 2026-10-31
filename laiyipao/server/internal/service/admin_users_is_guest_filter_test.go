@@ -20,7 +20,7 @@ func TestAdminListUsersIsGuestFilter(t *testing.T) {
 	}
 
 	// 只看游客 → 应包含 guestID，且账号不在其中
-	items, total, err := ts.AdminListUsers(ctx, "", 50, 0, nil, nil, boolPtr(true), nil, nil)
+	items, total, err := ts.AdminListUsers(ctx, "", 50, 0, nil, nil, boolPtr(true), nil, nil, nil)
 	if err != nil {
 		t.Fatalf("游客筛选失败：%v", err)
 	}
@@ -41,7 +41,7 @@ func TestAdminListUsersIsGuestFilter(t *testing.T) {
 	}
 
 	// 只看账号 → 应包含账号，且游客不在其中
-	items, total, err = ts.AdminListUsers(ctx, "", 50, 0, nil, nil, boolPtr(false), nil, nil)
+	items, total, err = ts.AdminListUsers(ctx, "", 50, 0, nil, nil, boolPtr(false), nil, nil, nil)
 	if err != nil {
 		t.Fatalf("账号筛选失败：%v", err)
 	}

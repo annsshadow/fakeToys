@@ -395,7 +395,7 @@ func TestAdminSearchNeverMatchesGuestToken(t *testing.T) {
 		`INSERT INTO users (guest_token, nickname, is_guest, status)
 		 VALUES ($1,$2,TRUE,1)`, gt, nick)
 
-	if _, total, err := ts.AdminListUsers(ctx, gt, 200, 0, nil, nil, nil, nil, nil); err != nil {
+	if _, total, err := ts.AdminListUsers(ctx, gt, 200, 0, nil, nil, nil, nil, nil, nil); err != nil {
 		t.Fatalf("搜索失败：%v", err)
 	} else if total != 0 {
 		t.Errorf("按 guest_token 搜到了 %d 个用户 —— 凭证又回到了检索面。\n"+
@@ -403,7 +403,7 @@ func TestAdminSearchNeverMatchesGuestToken(t *testing.T) {
 			"后台账号被盗即等于「批量导出所有玩家凭证」", total)
 	}
 	// 反向：昵称仍然可搜（别把功能删过头）
-	if _, total, err := ts.AdminListUsers(ctx, nick, 200, 0, nil, nil, nil, nil, nil); err != nil {
+	if _, total, err := ts.AdminListUsers(ctx, nick, 200, 0, nil, nil, nil, nil, nil, nil); err != nil {
 		t.Fatalf("按昵称搜索失败：%v", err)
 	} else if total != 1 {
 		t.Errorf("按昵称应仍能搜到 1 个，实际 %d —— 功能删过头了", total)

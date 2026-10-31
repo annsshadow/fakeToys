@@ -264,6 +264,7 @@ export function fetchUsers(params: {
   is_guest?: boolean
   last_login_from?: string
   last_login_to?: string
+  suspicious?: boolean
 } = {}) {
   const q = new URLSearchParams()
   if (params.keyword) q.set('keyword', params.keyword)
@@ -277,6 +278,8 @@ export function fetchUsers(params: {
   // 最后登录时间范围（2026-11-01 新一轮第 46 轮）：查「最近活跃」的用户
   if (params.last_login_from) q.set('last_login_from', params.last_login_from)
   if (params.last_login_to) q.set('last_login_to', params.last_login_to)
+  // 需核查筛选（2026-11-01 新一轮第 60 轮）
+  if (params.suspicious !== undefined) q.set('suspicious', params.suspicious ? '1' : '0')
   return api.get<AdminUsersResp>(`/admin/users?${q}`)
 }
 
@@ -292,6 +295,7 @@ export function exportUsersCsv(params: {
   date_to?: string
   last_login_from?: string
   last_login_to?: string
+  suspicious?: boolean
 } = {}) {
   const q = new URLSearchParams()
   if (params.keyword) q.set('keyword', params.keyword)
@@ -299,6 +303,7 @@ export function exportUsersCsv(params: {
   if (params.date_to) q.set('date_to', params.date_to)
   if (params.last_login_from) q.set('last_login_from', params.last_login_from)
   if (params.last_login_to) q.set('last_login_to', params.last_login_to)
+  if (params.suspicious !== undefined) q.set('suspicious', params.suspicious ? '1' : '0')
   return api.getBlob(`/admin/users/export?${q}`)
 }
 

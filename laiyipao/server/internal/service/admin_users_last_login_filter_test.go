@@ -39,7 +39,7 @@ func TestAdminListUsersLastLoginFilter(t *testing.T) {
 	to := now.Add(-90 * time.Minute)    // -1.5h
 
 	// 只传 last_login_from：包含 -2h / -1h，不含 -3h
-	list, total, err := ts.AdminListUsers(ctx, "", 50, 0, nil, nil, nil, &from, nil)
+	list, total, err := ts.AdminListUsers(ctx, "", 50, 0, nil, nil, nil, &from, nil, nil)
 	if err != nil {
 		t.Fatalf("last_login_from 过滤失败：%v", err)
 	}
@@ -53,7 +53,7 @@ func TestAdminListUsersLastLoginFilter(t *testing.T) {
 	}
 
 	// 只传 last_login_to（开区间 <）：应只含 -3h 登录的用户
-	list, total, err = ts.AdminListUsers(ctx, "", 50, 0, nil, nil, nil, nil, &from)
+	list, total, err = ts.AdminListUsers(ctx, "", 50, 0, nil, nil, nil, nil, &from, nil)
 	if err != nil {
 		t.Fatalf("last_login_to 过滤失败：%v", err)
 	}
@@ -62,7 +62,7 @@ func TestAdminListUsersLastLoginFilter(t *testing.T) {
 	}
 
 	// 双端 [from, to)：应只含 -2h 登录的用户
-	list, total, err = ts.AdminListUsers(ctx, "", 50, 0, nil, nil, nil, &from, &to)
+	list, total, err = ts.AdminListUsers(ctx, "", 50, 0, nil, nil, nil, &from, &to, nil)
 	if err != nil {
 		t.Fatalf("双端过滤失败：%v", err)
 	}
@@ -88,7 +88,7 @@ func TestAdminExportUsersLastLoginFilter(t *testing.T) {
 	_ = newUserWithLastLogin(t, ts, "ll_exp_new", now.Add(-1*time.Hour))
 
 	from := now.Add(-2 * time.Hour)
-	data, err := ts.AdminExportUsers(ctx, "", nil, nil, &from, nil)
+	data, err := ts.AdminExportUsers(ctx, "", nil, nil, &from, nil, nil)
 	if err != nil {
 		t.Fatalf("last_login_from 导出失败：%v", err)
 	}
@@ -98,7 +98,7 @@ func TestAdminExportUsersLastLoginFilter(t *testing.T) {
 	}
 
 	// 空筛选：两条都在
-	data, err = ts.AdminExportUsers(ctx, "", nil, nil, nil, nil)
+	data, err = ts.AdminExportUsers(ctx, "", nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("空筛选导出失败：%v", err)
 	}
