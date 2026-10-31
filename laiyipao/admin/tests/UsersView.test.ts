@@ -388,7 +388,7 @@ describe('UsersView 封禁 / 解封', () => {
 
     // 第 1 行（正常用户）：发资源 → 封禁
     const normalBtns = rows[0].findAll('button')
-    expect(normalBtns.map((b) => b.text())).toEqual(['详情', '发资源', '封禁'])
+    expect(normalBtns.map((b) => b.text())).toEqual(['复制 ID', '详情', '发资源', '封禁'])
     await normalBtns.find((b) => b.text() === '发资源')!.trigger('click')
     await flushPromises()
     expect(grantUser).toHaveBeenCalledWith(1, 'coin', 10000)
@@ -398,7 +398,7 @@ describe('UsersView 封禁 / 解封', () => {
 
     // 第 2 行（封禁用户）：解封
     const bannedBtns = rows[1].findAll('button')
-    expect(bannedBtns.map((b) => b.text())).toEqual(['详情', '发资源', '解封'])
+    expect(bannedBtns.map((b) => b.text())).toEqual(['复制 ID', '详情', '发资源', '解封'])
     await bannedBtns.find((b) => b.text() === '解封')!.trigger('click')
     await flushPromises()
     expect(unbanUser).toHaveBeenCalledWith(2)
@@ -965,6 +965,23 @@ describe('UsersView 导出玩家流水 CSV（第 82 轮）', () => {
     await flushPromises()
 
     expect(document.body.textContent).toContain('导出失败：流水导出服务不可用')
+    wrapper.unmount()
+  })
+})
+
+describe('UsersView 复制用户 ID（第 86 轮）', () => {
+  it('点击「复制 ID」：写入剪贴板并提示', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    const wrapper = await mountUsers([userFixture({ id: 42, nickname: '玩家甲' })])
+    const btn = wrapper.findAll('.el-table__row')[0].findAll('button').find((b) => b.text() === '复制 ID')
+    expect(btn, '找不到「复制 ID」按钮').toBeTruthy()
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith('42')
+    expect(document.body.textContent).toContain('已复制用户 ID 42')
     wrapper.unmount()
   })
 })

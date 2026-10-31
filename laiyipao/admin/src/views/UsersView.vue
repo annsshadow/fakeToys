@@ -418,6 +418,19 @@ async function onExportCsv() {
   }
 }
 
+/**
+ * 复制用户 ID（2026-11-01 新一轮第 86 轮）。
+ * 运营把 user_id 贴到工单/群聊时无需手动选中。
+ */
+async function copyUserId(userId: number) {
+  try {
+    await navigator.clipboard.writeText(String(userId))
+    ElMessage.success(`已复制用户 ID ${userId}`)
+  } catch {
+    ElMessage.error('复制失败，请手动选择复制')
+  }
+}
+
 const route = useRoute()
 
 onMounted(async () => {
@@ -561,8 +574,10 @@ const asRow = (r: unknown) => r as AdminUserView
         <el-table-column label="最后登录" width="160">
           <template #default="{ row }">{{ fmtTime(row.last_login_at) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
+            <!-- 复制 ID（2026-11-01 新一轮第 86 轮）：贴到工单/群聊 -->
+            <el-button size="small" text type="primary" @click="copyUserId(row.id)">复制 ID</el-button>
             <el-button size="small" text @click="openDetail(asRow(row))">详情</el-button>
             <el-button v-if="!isReadonly" size="small" text @click="onGrant(asRow(row))">
               发资源
