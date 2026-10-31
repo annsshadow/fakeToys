@@ -184,6 +184,20 @@ function openUserDetail(userId: number) {
 }
 
 /**
+ * 复制订单号（2026-11-01 新一轮第 89 轮）。
+ * 运营对账/客服核查时把订单号贴到工单，无需手动选中。
+ */
+async function copyOrderNo(orderNo: string) {
+  if (!orderNo) return
+  try {
+    await navigator.clipboard.writeText(orderNo)
+    ElMessage.success('订单号已复制')
+  } catch {
+    ElMessage.error('复制失败，请手动选择复制')
+  }
+}
+
+/**
  * 第 113 轮：价格输入「coin:100, gem:5」→ {coin:100, gem:5}。
  * 服务端 price 列是 JSONB 的 map[string]int（玩家 Buy 按 map 读），
  * 修前发裸数字 100 → 落库成 JSON 标量 → 该商品购买链路永久 500。
@@ -428,7 +442,13 @@ loadOrders()
       </div>
       <el-table :data="orders" size="small" stripe>
         <el-table-column prop="id" label="ID" width="55" />
-        <el-table-column prop="order_no" label="订单号" min-width="170" />
+        <el-table-column label="订单号" min-width="180">
+          <!-- 复制订单号（2026-11-01 新一轮第 89 轮）：对账贴工单 -->
+          <template #default="{ row }">
+            <span class="mono">{{ row.order_no }}</span>
+            <el-button size="small" text type="primary" @click="copyOrderNo(row.order_no)">复制</el-button>
+          </template>
+        </el-table-column>
         <el-table-column label="玩家" min-width="110">
           <!-- 点击跳转用户详情（2026-11-01 新一轮第 48 轮）：
                运营在订单里发现异常支付时，需要直达该玩家详情核查。 -->

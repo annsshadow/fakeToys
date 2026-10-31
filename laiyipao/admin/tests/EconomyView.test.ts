@@ -490,3 +490,35 @@ describe('EconomyView 订单渠道筛选（第 67 轮）', () => {
     wrapper.unmount()
   })
 })
+
+describe('EconomyView 复制订单号（第 89 轮）', () => {
+  function orderFixture(userId: number, nickname: string): Row {
+    return {
+      id: 1,
+      user_id: userId,
+      nickname,
+      order_no: 'NO1',
+      sku: 'gem_pack',
+      amount: 600,
+      status: 'paid',
+      provider: 'mock',
+      created_at: '2026-01-01T00:00:00Z',
+      delivered_at: null,
+    }
+  }
+
+  it('点击订单行「复制」：写入剪贴板并提示', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    const wrapper = await mountEconomy([], [], [orderFixture(9, '订单玩家')])
+    const copyBtn = wrapper.findAll('.el-table__row')[0].findAll('button').find((b) => b.text() === '复制')
+    expect(copyBtn, '找不到订单号复制按钮').toBeTruthy()
+    await copyBtn!.trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith('NO1')
+    expect(document.body.textContent).toContain('订单号已复制')
+    wrapper.unmount()
+  })
+})
