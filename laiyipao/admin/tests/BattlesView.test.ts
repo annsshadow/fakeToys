@@ -659,13 +659,30 @@ describe('BattlesView 详情复制回放哈希（第 85 轮）', () => {
     await wrapper.findAll('button').find((b) => b.text() === '详情')!.trigger('click')
     await flushPromises()
 
-    const copyBtn = wrapper.findAll('button').find((b) => b.text() === '复制')
+    const copyBtn = wrapper.findAll('.el-drawer button').find((b) => b.text() === '复制')
     expect(copyBtn, '找不到「复制」按钮').toBeTruthy()
     await copyBtn!.trigger('click')
     await flushPromises()
 
     expect(writeText).toHaveBeenCalledWith('abcd1234abcd1234abcd1234abcd1234')
     expect(document.body.textContent).toContain('回放哈希已复制')
+    wrapper.unmount()
+  })
+})
+
+describe('BattlesView 复制战报 ID（第 92 轮）', () => {
+  it('点击列表行「复制」：写入剪贴板并提示', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    const wrapper = await mountBattles([battleFixture({ id: 123 })])
+    const copyBtn = wrapper.findAll('.el-table__row')[0].findAll('button').find((b) => b.text() === '复制')
+    expect(copyBtn, '找不到战报 ID 复制按钮').toBeTruthy()
+    await copyBtn!.trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith('123')
+    expect(document.body.textContent).toContain('已复制战报 ID 123')
     wrapper.unmount()
   })
 })

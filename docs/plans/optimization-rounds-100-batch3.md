@@ -101,6 +101,7 @@
 | 89 | 2026-11-01 | **后台订单列表复制订单号**：运营对账/客服核查时要把订单号贴到工单，只能手动选中一长串订单号复制 | admin EconomyView 订单「订单号」列新增「复制」按钮（`navigator.clipboard` 写入）；admin 测试新增 1 用例 | admin type-check 通过；408 测试全绿（新增复制订单号 1 用例）；无 Go 改动 |
 | 90 | 2026-11-01 | **我的页面复制用户 ID**：玩家在社区/反馈中报问题时需要提供用户 ID，此前只能手动记住/截图 | miniapp `me.vue` 账号卡 ID 行新增「复制」链接（`uni.setClipboardData` 写入并 toast 提示）；新增守卫测试 `me_copy_user_id_feature.test.ts` | miniapp type-check 通过、新守卫 2 用例通过、全量 1247 测试全绿 |
 | 91 | 2026-11-01 | **商店购买二次确认**：商店购买会消耗货币，误点会直接扣款 —— 此前点击「购买」立即下单，没有防误触保护 | miniapp `shop.vue` doBuy 前先弹 `uni.showModal` 确认（写明商品名与花费），确认后才发起购买请求；`uni-mock` 补充 `showModal` 桩，既有 shop 测试适配确认流程；新增守卫测试 `shop_buy_confirm_feature.test.ts` | miniapp type-check 通过、新守卫 2 用例通过、全量 1249 测试全绿 |
+| 92 | 2026-11-01 | **后台战报列表复制战报 ID**：运营把 battle_id 贴到工单/外部重放工具时，只能手动选中一长串数字复制 | admin BattlesView 战报 ID 列新增「复制」按钮（`navigator.clipboard` 写入）；admin 测试新增 1 用例，并把第 85 轮复制哈希用例限定在抽屉内查找按钮（避免与行级按钮冲突） | admin type-check 通过；409 测试全绿（新增复制战报 ID 1 用例）；无 Go 改动 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **91 轮实质优化**，距 100 轮还差 9 轮。
+> 状态：进行中。当前累计 **92 轮实质优化**，距 100 轮还差 8 轮。

@@ -132,6 +132,19 @@ async function copyReplayHash(hash: string) {
   }
 }
 
+/**
+ * 复制战报 ID（2026-11-01 新一轮第 92 轮）。
+ * 运营把 battle_id 贴到工单/外部重放工具时无需手动选中。
+ */
+async function copyBattleId(id: number) {
+  try {
+    await navigator.clipboard.writeText(String(id))
+    ElMessage.success(`已复制战报 ID ${id}`)
+  } catch {
+    ElMessage.error('复制失败，请手动选择复制')
+  }
+}
+
 async function load() {
   loading.value = true
   try {
@@ -346,7 +359,13 @@ const asRow = (r: unknown) => r as AdminBattleView
       </div>
 
       <el-table :data="battles" size="small" stripe>
-        <el-table-column prop="id" label="ID" width="60" />
+        <el-table-column label="ID" width="100">
+          <!-- 复制战报 ID（2026-11-01 新一轮第 92 轮）：贴工单/外部重放 -->
+          <template #default="{ row }">
+            <span>{{ row.id }}</span>
+            <el-button size="small" text type="primary" @click="copyBattleId(row.id)">复制</el-button>
+          </template>
+        </el-table-column>
         <el-table-column prop="user_id" label="用户" width="110">
           <!-- 点击跳转用户详情（2026-11-01 新一轮第 38 轮） -->
           <template #default="{ row }">
