@@ -43,7 +43,9 @@
       <view v-if="announcements.length" class="card">
         <view class="card-title">
           <text>公告</text>
-          <text class="dim">共 {{ announcements.length }} 条</text>
+          <!-- 全部公告入口（2026-11-01 新一轮第 42 轮）：首页只展示最新几条，
+               历史公告在首页不可回看，这里提供公告列表页入口。 -->
+          <text class="ann-all" @click="goAnnouncements">全部 {{ announcements.length }} 条 →</text>
         </view>
         <view
           v-for="a in announcements"
@@ -304,6 +306,11 @@ const weaknesses = computed<string[]>(() => store.buildRating?.weaknesses ?? [])
 
 function go(path: string) {
   uni.navigateTo({ url: path })
+}
+
+/** 公告列表页（2026-11-01 新一轮第 42 轮）。 */
+function goAnnouncements() {
+  uni.navigateTo({ url: '/pages/announcements/announcements' })
 }
 
 function goStage() {
@@ -598,6 +605,13 @@ onShareAppMessage(() => indexShare())
   font-weight: 600;
   color: var(--text);
   flex: 1;
+}
+
+/* 全部公告入口（2026-11-01 新一轮第 42 轮） */
+.ann-all {
+  font-size: 22rpx;
+  color: var(--fire);
+  padding: 4rpx 0 4rpx 16rpx;
 }
 
 .ann-body {

@@ -10,6 +10,12 @@
       }
     },
     {
+      "path": "pages/announcements/announcements",
+      "style": {
+        "navigationBarTitleText": "公告"
+      }
+    },
+    {
       "path": "pages/stage/stage",
       "style": {
         "navigationBarTitleText": "关卡"
