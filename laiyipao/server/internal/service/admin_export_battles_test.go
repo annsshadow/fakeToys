@@ -39,7 +39,7 @@ func TestAdminExportBattlesCSV(t *testing.T) {
 	id, _ := newGuestUser(t, ts, "exportbattle")
 	battleID := seedBattleRecord(t, ts, id, 1, "win")
 
-	data, err := ts.AdminExportBattles(ctx, 0, 0, false)
+	data, err := ts.AdminExportBattles(ctx, 0, 0, false, nil, nil)
 	if err != nil {
 		t.Fatalf("导出失败：%v", err)
 	}
@@ -95,7 +95,7 @@ func TestAdminExportBattlesFilterByUser(t *testing.T) {
 	seedBattleRecord(t, ts, idA, 1, "win")
 	seedBattleRecord(t, ts, idB, 2, "lose")
 
-	data, err := ts.AdminExportBattles(ctx, idA, 0, false)
+	data, err := ts.AdminExportBattles(ctx, idA, 0, false, nil, nil)
 	if err != nil {
 		t.Fatalf("导出失败：%v", err)
 	}
@@ -116,7 +116,7 @@ func TestAdminExportBattlesBrokenPool(t *testing.T) {
 	ts := openBrokenService(t)
 	ctx := context.Background()
 
-	if _, err := ts.AdminExportBattles(ctx, 0, 0, false); err == nil {
+	if _, err := ts.AdminExportBattles(ctx, 0, 0, false, nil, nil); err == nil {
 		t.Fatal("连接池已关闭时导出必须报错，不能静默返回空 CSV")
 	}
 }
