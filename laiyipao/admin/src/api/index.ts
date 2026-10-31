@@ -539,7 +539,7 @@ export function fetchReactions() {
 export function fetchDefenses(
   limit = 50,
   offset = 0,
-  params: { keyword?: string; owner_id?: number } = {},
+  params: { keyword?: string; owner_id?: number; shielded?: boolean } = {},
 ) {
   const q = new URLSearchParams()
   q.set('limit', String(limit))
@@ -547,6 +547,8 @@ export function fetchDefenses(
   // 防线名/玩家昵称搜索 + owner_id 过滤（2026-10-31 新一轮第 19 轮）
   if (params.keyword) q.set('keyword', params.keyword)
   if (params.owner_id) q.set('owner_id', String(params.owner_id))
+  // 护盾状态筛选（2026-11-01 新一轮第 100 轮）
+  if (params.shielded !== undefined) q.set('shielded', params.shielded ? '1' : '0')
   return api.get<AdminDefensesResp>(`/admin/defenses?${q}`)
 }
 

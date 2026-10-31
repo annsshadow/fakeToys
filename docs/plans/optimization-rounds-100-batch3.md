@@ -109,6 +109,7 @@
 | 97 | 2026-11-01 | **后台商城商品列表复制 ID**：运营把商品 id 贴到工单/排查时，只能手动选中一长串数字复制 | admin EconomyView 商城商品 ID 列新增「复制」按钮（`navigator.clipboard` 写入）；admin 测试新增 1 用例，并更新既有按钮列表断言与点击方式（按文本查找） | admin type-check 通过；414 测试全绿（新增复制商品 ID 1 用例）；无 Go 改动 |
 | 98 | 2026-11-01 | **后台公告列表复制正文**：运营把公告文案贴到群/工单/其它渠道时，只能手动选中正文复制 | admin ContentView 公告行操作列新增「复制正文」按钮（`navigator.clipboard` 写入）；admin 测试新增 1 用例 | admin type-check 通过；415 测试全绿（新增复制公告正文 1 用例）；无 Go 改动 |
 | 99 | 2026-11-01 | **后台防线挑战记录复制 ID**：运营把挑战记录 id 贴到工单时，只能手动选中一长串数字复制 | admin DefensesView 挑战记录对话框 ID 列新增「复制」按钮（`navigator.clipboard` 写入）；admin 测试新增 1 用例 | admin type-check 通过；416 测试全绿（新增挑战记录复制 ID 1 用例）；无 Go 改动 |
+| 100 | 2026-11-01 | **后台防线列表按护盾状态筛选**：护盾剩余列已显示（第 81 轮），但运营要快速找出「哪些防线在护盾期/已过期」只能翻页 —— 没有筛选入口 | 服务层 `AdminListDefenses` 增加可选 `shielded`（三态：有护盾 = shielded_until 非空且未过期，COUNT 参数映射 $6→$4）；handler 解析 `shielded` 三态；admin DefensesView 新增「护盾状态」下拉，`fetchDefenses` 参数同步；新增服务层 1 用例 + e2e 1 用例 + admin 1 用例 | 服务层（三态筛选）全绿；e2e（shielded=1/0）全绿；admin type-check + 417 测试全绿；`go test ./...` 全绿 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **99 轮实质优化**，距 100 轮还差 1 轮。
+> 状态：✅ 已完成。100 轮实质优化全部完成，每轮均有测试验证并推送。

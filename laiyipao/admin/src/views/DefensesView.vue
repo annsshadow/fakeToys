@@ -171,6 +171,8 @@ const page = ref(1)
 // 防线名/玩家昵称搜索 + owner_id 过滤（2026-10-31 新一轮第 19 轮）。
 const keyword = ref('')
 const ownerId = ref<number | undefined>(undefined)
+// 护盾状态筛选（2026-11-01 新一轮第 100 轮）。
+const shieldedFilter = ref<boolean | undefined>(undefined)
 
 async function load() {
   loading.value = true
@@ -178,6 +180,7 @@ async function load() {
     const res = await fetchDefenses(PAGE_SIZE, (page.value - 1) * PAGE_SIZE, {
       keyword: keyword.value || undefined,
       owner_id: ownerId.value,
+      shielded: shieldedFilter.value,
     })
     rows.value = res.items
     total.value = res.total
@@ -287,6 +290,17 @@ load()
           placeholder="属主 ID"
           style="width: 120px"
         />
+        <!-- 护盾状态筛选（2026-11-01 新一轮第 100 轮） -->
+        <el-select
+          v-model="shieldedFilter"
+          placeholder="护盾状态"
+          clearable
+          style="width: 120px; margin-left: 8px"
+          @change="((page = 1), load())"
+        >
+          <el-option label="有护盾" :value="true" />
+          <el-option label="无护盾" :value="false" />
+        </el-select>
         <el-button @click="((page = 1), load())">查询</el-button>
         <el-pagination
           v-if="total > PAGE_SIZE"

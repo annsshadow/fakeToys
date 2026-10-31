@@ -317,3 +317,22 @@ describe('DefensesView 挑战记录复制 ID（第 99 轮）', () => {
     wrapper.unmount()
   })
 })
+
+describe('DefensesView 护盾状态筛选（第 100 轮）', () => {
+  it('选择「有护盾」后 fetchDefenses 携带 shielded=true，清空后不带', async () => {
+    const wrapper = await mountDefenses([defenseFixture()])
+    const select = wrapper.findAllComponents({ name: 'ElSelect' }).find((s) => s.props('placeholder') === '护盾状态')
+    expect(select, '找不到护盾状态下拉').toBeTruthy()
+
+    await select!.vm.$emit('update:modelValue', true)
+    await select!.vm.$emit('change', true)
+    await flushPromises()
+    expect(fetchDefenses).toHaveBeenLastCalledWith(50, 0, expect.objectContaining({ shielded: true }))
+
+    await select!.vm.$emit('update:modelValue', undefined)
+    await select!.vm.$emit('change', undefined)
+    await flushPromises()
+    expect(fetchDefenses).toHaveBeenLastCalledWith(50, 0, expect.objectContaining({ shielded: undefined }))
+    wrapper.unmount()
+  })
+})

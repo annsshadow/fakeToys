@@ -831,7 +831,17 @@ func (s *Server) adminDefenses(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	items, total, err := s.Svc.AdminListDefenses(c.Context(), limit, offset, c.Query("keyword", ""), int64(ownerID))
+	// 护盾状态筛选（2026-11-01 新一轮第 100 轮）：三态。
+	var shielded *bool
+	switch c.Query("shielded", "") {
+	case "1", "true":
+		v := true
+		shielded = &v
+	case "0", "false":
+		v := false
+		shielded = &v
+	}
+	items, total, err := s.Svc.AdminListDefenses(c.Context(), limit, offset, c.Query("keyword", ""), int64(ownerID), shielded)
 	if err != nil {
 		return failErr(c, err)
 	}

@@ -18,7 +18,7 @@ func TestAdminListDefensesKeywordFilter(t *testing.T) {
 	seedDefense(t, ts, uidB, "尖刺陷阱")
 
 	// 按防线名搜索 → 1 条
-	items, total, err := ts.AdminListDefenses(ctx, 50, 0, "铁壁", 0)
+	items, total, err := ts.AdminListDefenses(ctx, 50, 0, "铁壁", 0, nil)
 	if err != nil {
 		t.Fatalf("防线名搜索失败：%v", err)
 	}
@@ -27,7 +27,7 @@ func TestAdminListDefensesKeywordFilter(t *testing.T) {
 	}
 
 	// 按 owner_id 过滤 → 1 条（A 的防线）
-	items, total, err = ts.AdminListDefenses(ctx, 50, 0, "", uidA)
+	items, total, err = ts.AdminListDefenses(ctx, 50, 0, "", uidA, nil)
 	if err != nil {
 		t.Fatalf("owner_id 过滤失败：%v", err)
 	}
@@ -36,7 +36,7 @@ func TestAdminListDefensesKeywordFilter(t *testing.T) {
 	}
 
 	// 无筛选 → 2 条
-	items, total, err = ts.AdminListDefenses(ctx, 50, 0, "", 0)
+	items, total, err = ts.AdminListDefenses(ctx, 50, 0, "", 0, nil)
 	if err != nil {
 		t.Fatalf("无筛选失败：%v", err)
 	}
@@ -55,7 +55,7 @@ func TestAdminListDefensesKeywordEscapesWildcards(t *testing.T) {
 	seedDefense(t, ts, uidB, "普通防线")
 
 	// 搜「%」应只命中名字里带 % 的防线（通配符被转义为字面量）
-	items, total, err := ts.AdminListDefenses(ctx, 50, 0, "%", 0)
+	items, total, err := ts.AdminListDefenses(ctx, 50, 0, "%", 0, nil)
 	if err != nil {
 		t.Fatalf("通配符搜索失败：%v", err)
 	}

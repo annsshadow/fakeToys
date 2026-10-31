@@ -825,16 +825,16 @@ func TestAdminListDefenses(t *testing.T) {
 		t.Fatalf("建防线失败：%v", err)
 	}
 
-	_, total, err := ts.AdminListDefenses(ctx, 50, 0, "", 0)
+	_, total, err := ts.AdminListDefenses(ctx, 50, 0, "", 0, nil)
 	if err != nil || total < 1 {
 		t.Fatalf("防线列表应非空：%d, %v", total, err)
 	}
-	if _, _, err := ts.AdminListDefenses(ctx, 9999, 0, "", 0); err != nil {
+	if _, _, err := ts.AdminListDefenses(ctx, 9999, 0, "", 0, nil); err != nil {
 		t.Errorf("limit 夹紧不应报错：%v", err)
 	}
 
 	broken := openBrokenService(t)
-	if _, _, err := broken.AdminListDefenses(ctx, 50, 0, "", 0); err == nil {
+	if _, _, err := broken.AdminListDefenses(ctx, 50, 0, "", 0, nil); err == nil {
 		t.Error("故障态应报错")
 	}
 }
@@ -1157,7 +1157,7 @@ func TestAdminListDefensesFailsOnDBError(t *testing.T) {
 	defer db.Close()
 
 	s := New(db, cfg)
-	if _, _, err := s.AdminListDefenses(ctx, 50, 0, "", 0); err == nil {
+	if _, _, err := s.AdminListDefenses(ctx, 50, 0, "", 0, nil); err == nil {
 		t.Fatal("无 defenses 表时 AdminListDefenses 必须返回错误")
 	}
 }

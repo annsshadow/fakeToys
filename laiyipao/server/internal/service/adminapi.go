@@ -411,7 +411,7 @@ func (s *Service) AdminEquipment(ctx context.Context) (AdminEquipmentResp, error
 // keyword / ownerID 均为可选筛选（2026-10-31 新一轮第 19 轮）：
 // keyword 模糊匹配防线名或玩家昵称（`%`/`_`/`\` 转义为字面量），
 // ownerID=0 不过滤。
-func (s *Service) AdminListDefenses(ctx context.Context, limit, offset int, keyword string, ownerID int64) ([]AdminDefenseView, int64, error) {
+func (s *Service) AdminListDefenses(ctx context.Context, limit, offset int, keyword string, ownerID int64, shielded *bool) ([]AdminDefenseView, int64, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
@@ -427,7 +427,14 @@ func (s *Service) AdminListDefenses(ctx context.Context, limit, offset int, keyw
 	listArgs := []any{limit, offset, kw, pattern, ownerID}
 	where := `($3 = '' OR d.name ILIKE $4 OR u.nickname ILIKE $4)
 	          AND ($5 = 0 OR d.owner_id = $5)`
-	countWhere := strings.NewReplacer(`$3`, `$1`, `$4`, `$2`, `$5`, `$3`).Replace(where)
+	// 护盾状态筛选（2026-11-01 新一轮第 100 轮）：三态。
+	// 有护盾 = shielded_until 非空且未过期；nil 不过滤。
+	if shielded != nil {
+		where += ` AND ($6::boolean IS NULL OR (d.shielded_until IS NOT NULL AND d.shielded_until > now()) = $6)`
+		countArgs = append(countArgs, shielded)
+		listArgs = append(listArgs, shielded)
+	}
+	countWhere := strings.NewReplacer(`$3`, `$1`, `$4`, `$2`, `$5`, `$3`, `$6`, `$4`).Replace(where)
 
 	var total int64
 	if err := s.pool.QueryRow(ctx,
