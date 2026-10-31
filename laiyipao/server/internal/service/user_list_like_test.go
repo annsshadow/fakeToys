@@ -30,25 +30,25 @@ func TestAdminListUsersKeywordLikeEscaped(t *testing.T) {
 	mk("c", "L118-plainuser", "gtl118plain")
 
 	// 搜字面 "%"：只有 nick 含字面 % 的命中（guest_token 都无 %）
-	if _, total, err := ts.AdminListUsers(ctx, "%", 200, 0, nil, nil); err != nil {
+	if _, total, err := ts.AdminListUsers(ctx, "%", 200, 0, nil, nil, nil); err != nil {
 		t.Fatalf("搜百分号失败：%v", err)
 	} else if total != 1 {
 		t.Errorf("搜字面「%%」应命中 1 个（仅含字面 %% 的昵称），实际 %d（未转义时哨兵 %% 会命中全部）", total)
 	}
 	// 搜字面 "_"：只有 nick 含字面 _ 的命中
-	if _, total, err := ts.AdminListUsers(ctx, "_", 200, 0, nil, nil); err != nil {
+	if _, total, err := ts.AdminListUsers(ctx, "_", 200, 0, nil, nil, nil); err != nil {
 		t.Fatalf("搜下划线失败：%v", err)
 	} else if total != 1 {
 		t.Errorf("搜字面「_」应命中 1 个（_ 不该当「任意单字符」通配符），实际 %d", total)
 	}
 	// 正常关键词仍按子串匹配
-	if _, total, err := ts.AdminListUsers(ctx, "plainuser", 200, 0, nil, nil); err != nil {
+	if _, total, err := ts.AdminListUsers(ctx, "plainuser", 200, 0, nil, nil, nil); err != nil {
 		t.Fatalf("搜 plainuser 失败：%v", err)
 	} else if total != 1 {
 		t.Errorf("搜 plainuser 应命中 1 个，实际 %d", total)
 	}
 	// 空关键词 = 不过滤（哨兵 %%），返回全部
-	if _, total, err := ts.AdminListUsers(ctx, "", 200, 0, nil, nil); err != nil {
+	if _, total, err := ts.AdminListUsers(ctx, "", 200, 0, nil, nil, nil); err != nil {
 		t.Fatalf("空搜索失败：%v", err)
 	} else if total != 3 {
 		t.Errorf("空搜索应返回全部 3 个，实际 %d", total)

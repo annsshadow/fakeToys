@@ -46,6 +46,7 @@
 | 34 | 2026-10-31 | **后台兑换码使用记录 CSV 导出**：使用记录列表（第 23 轮）只能分页看，运营核对补偿发放（哪个码被谁用了、发了什么）需要全量快照 | 服务层 `AdminExportRedeemUsages`（与列表同口径的 code_keyword/user_id 筛选，reward 转可读文本 `coin:30000 gem:50`，UTF-8 BOM，上限 10 万行）；`GET /api/v1/admin/redeem-usages/export`（readonly 可访问）；admin ContentView 使用记录对话框增加「导出 CSV」按钮 | 服务层 3 用例（内容/BOM/表头/筛选/故障）全绿；e2e 1 用例（导出 200 + BOM + 数据行含用户 id/reward）全绿；admin type-check + 353 测试全绿；`go test ./...` 全绿 |
 | 35 | 2026-10-31 | **「皮肤图鉴」页**：`/config.skins` 从第一天起就下发了 6 款皮肤的稀有度/被动/说明，但客户端**零 UI 消费** —— 玩家不知道皮肤系统长什么样 | 新增 miniapp 页面 `pages/skins/skins.vue`（从 `store.config.skins` 读取：名称/稀有度中文映射/被动机制词条映射/描述）；pages.json 注册路由；首页菜单新增「皮肤」入口；新增源码守卫测试 `skins_feature.test.ts` | miniapp type-check 通过、新守卫 3 用例通过、全量测试通过；`go test ./...` 全绿 |
 | 36 | 2026-11-01 | **任务进度条**：任务行此前只显示 `progress / target` 文本，完成度不直观 —— 玩家看不出「还差多少到领取线」 | miniapp `signin.vue` 任务行新增进度条（`taskPercent` 计算完成度百分比，进度条宽度 = 完成度，圆角样式）；新增源码守卫测试 `signin_task_progress_feature.test.ts` | miniapp type-check 通过、新守卫 2 用例通过、全量测试通过；`go test ./...` 全绿 |
+| 37 | 2026-11-01 | **后台用户列表按游客/账号筛选**：运营查「游客占比 / 某批游客行为」只能翻页或靠看板计数，无法在列表内直接过滤 | 服务层 `AdminListUsers` 增加可选 `isGuest`（三态 `*bool`，COUNT/列表参数编号分别连续，nil 日期也恒真）；handler 解析 `is_guest` 三态；admin UsersView 增加「账号类型」下拉（游客/账号/不限），`fetchUsers` 参数同步 | 服务层新增 1 用例（游客/账号过滤）通过；e2e 新增 `TestE2EAdminUsersIsGuestFilter`（游客包含/账号不含）通过；admin type-check + 353 测试全绿；`go test ./...` 全绿 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **36 轮实质优化**，距 100 轮还差 64 轮。
+> 状态：进行中。当前累计 **37 轮实质优化**，距 100 轮还差 63 轮。

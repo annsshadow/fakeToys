@@ -336,7 +336,7 @@ type AdminUserView struct {
 }
 
 // AdminListUsers 分页查询玩家。
-func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, offset int, dateFrom, dateTo *time.Time) ([]AdminUserView, int64, error) {
+func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, offset int, dateFrom, dateTo *time.Time, isGuest *bool) ([]AdminUserView, int64, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
@@ -379,16 +379,17 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 	// 日期范围（2026-10-31 新一轮第 15 轮）：可选，nil 不过滤。
 	// 列表查询的 $5/$6 是日期（limit/offset 占 $3/$4）；
 	// COUNT 查询没有 limit/offset，日期改占 $3/$4。
-	where := `($1 = '' OR u.nickname LIKE $2 ESCAPE '\'::char OR u.id::text = $1)`
-	countArgs := []any{kw, pattern}
-	listArgs := []any{kw, pattern, limit, offset}
-	if dateFrom != nil || dateTo != nil {
-		where += ` AND ($5::timestamptz IS NULL OR u.created_at >= $5)
-		             AND ($6::timestamptz IS NULL OR u.created_at < $6)`
-		countArgs = append(countArgs, dateFrom, dateTo)
-		listArgs = append(listArgs, dateFrom, dateTo)
-	}
-	countWhere := strings.ReplaceAll(strings.ReplaceAll(where, "$5", "$3"), "$6", "$4")
+	// 日期范围（2026-10-31 新一轮第 15 轮）与游客/账号筛选
+	// （2026-11-01 新一轮第 37 轮）：均为可选，nil 不过滤（NULL 时 `IS NULL` 分支恒真）。
+	// 列表查询的 $3/$4 是 limit/offset，筛选从 $5 起；
+	// COUNT 查询没有 limit/offset，筛选映射到 $3/$4/$5。
+	where := `($1 = '' OR u.nickname LIKE $2 ESCAPE '\'::char OR u.id::text = $1)
+	          AND ($5::timestamptz IS NULL OR u.created_at >= $5)
+	          AND ($6::timestamptz IS NULL OR u.created_at < $6)
+	          AND ($7::boolean IS NULL OR u.is_guest = $7)`
+	countArgs := []any{kw, pattern, dateFrom, dateTo, isGuest}
+	listArgs := []any{kw, pattern, limit, offset, dateFrom, dateTo, isGuest}
+	countWhere := strings.NewReplacer(`$5`, `$3`, `$6`, `$4`, `$7`, `$5`).Replace(where)
 
 	var total int64
 	if err := s.pool.QueryRow(ctx,

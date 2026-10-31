@@ -291,7 +291,17 @@ func (s *Server) adminUsers(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	items, total, err := s.Svc.AdminListUsers(c.Context(), c.Query("keyword", ""), limit, offset, dateFrom, dateTo)
+	// 游客/账号筛选（2026-11-01 新一轮第 37 轮）：三态。
+	var isGuest *bool
+	switch c.Query("is_guest", "") {
+	case "1", "true":
+		v := true
+		isGuest = &v
+	case "0", "false":
+		v := false
+		isGuest = &v
+	}
+	items, total, err := s.Svc.AdminListUsers(c.Context(), c.Query("keyword", ""), limit, offset, dateFrom, dateTo, isGuest)
 	if err != nil {
 		return failErr(c, err)
 	}

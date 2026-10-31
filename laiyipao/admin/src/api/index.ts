@@ -261,6 +261,7 @@ export function fetchUsers(params: {
   offset?: number
   date_from?: string
   date_to?: string
+  is_guest?: boolean
 } = {}) {
   const q = new URLSearchParams()
   if (params.keyword) q.set('keyword', params.keyword)
@@ -269,6 +270,8 @@ export function fetchUsers(params: {
   // 注册日期范围（2026-10-31 新一轮第 15 轮）：查「今天/某时间段」注册的用户
   if (params.date_from) q.set('date_from', params.date_from)
   if (params.date_to) q.set('date_to', params.date_to)
+  // 游客/账号筛选（2026-11-01 新一轮第 37 轮）
+  if (params.is_guest !== undefined) q.set('is_guest', params.is_guest ? '1' : '0')
   return api.get<AdminUsersResp>(`/admin/users?${q}`)
 }
 

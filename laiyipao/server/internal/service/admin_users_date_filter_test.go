@@ -28,7 +28,7 @@ func TestAdminListUsersDateFilter(t *testing.T) {
 	to := now.Add(-90 * time.Minute)    // -1.5h
 
 	// 只传 date_from：包含 -2h / -1h，不含 -3h
-	list, total, err := ts.AdminListUsers(ctx, "", 50, 0, &from, nil)
+	list, total, err := ts.AdminListUsers(ctx, "", 50, 0, &from, nil, nil)
 	if err != nil {
 		t.Fatalf("date_from 过滤失败：%v", err)
 	}
@@ -42,7 +42,7 @@ func TestAdminListUsersDateFilter(t *testing.T) {
 	}
 
 	// 只传 date_to（开区间 <）：应只含 -3h 注册的用户
-	list, total, err = ts.AdminListUsers(ctx, "", 50, 0, nil, &from)
+	list, total, err = ts.AdminListUsers(ctx, "", 50, 0, nil, &from, nil)
 	if err != nil {
 		t.Fatalf("date_to 过滤失败：%v", err)
 	}
@@ -51,7 +51,7 @@ func TestAdminListUsersDateFilter(t *testing.T) {
 	}
 
 	// 双端 [from, to)：应只含 -2h 注册的用户（-1h 在开区间外）
-	list, total, err = ts.AdminListUsers(ctx, "", 50, 0, &from, &to)
+	list, total, err = ts.AdminListUsers(ctx, "", 50, 0, &from, &to, nil)
 	if err != nil {
 		t.Fatalf("双端过滤失败：%v", err)
 	}

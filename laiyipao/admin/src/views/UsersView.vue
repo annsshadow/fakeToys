@@ -64,6 +64,8 @@ async function openDetail(u: AdminUserView) {
 }
 const total = ref(0)
 const keyword = ref('')
+// 游客/账号筛选（2026-11-01 新一轮第 37 轮）。
+const isGuestFilter = ref<boolean | undefined>(undefined)
 const limit = ref(50)
 const offset = ref(0)
 
@@ -144,6 +146,8 @@ async function load() {
       // 注册日期范围（2026-10-31 新一轮第 15 轮）
       date_from: dateRange.value?.[0] || undefined,
       date_to: dateRange.value ? nextDay(dateRange.value[1]) : undefined,
+      // 游客/账号筛选（2026-11-01 新一轮第 37 轮）
+      is_guest: isGuestFilter.value,
     })
     users.value = res.items
     total.value = res.total
@@ -398,6 +402,11 @@ const asRow = (r: unknown) => r as AdminUserView
           style="width: 220px"
           @keyup.enter="((offset = 0), load())"
         />
+        <!-- 游客/账号筛选（2026-11-01 新一轮第 37 轮） -->
+        <el-select v-model="isGuestFilter" placeholder="账号类型" clearable style="width: 110px" @change="((offset = 0), load())">
+          <el-option label="游客" :value="true" />
+          <el-option label="账号" :value="false" />
+        </el-select>
         <el-button @click="((offset = 0), load())">查询</el-button>
         <el-button @click="onExportCsv">导出 CSV</el-button>
         <!-- 注册日期范围（2026-10-31 新一轮第 15 轮）：查「今天/某时间段」注册的用户 -->
