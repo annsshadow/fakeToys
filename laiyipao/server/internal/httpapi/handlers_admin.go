@@ -958,7 +958,12 @@ func (s *Server) adminRedeemUsages(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	items, total, err := s.Svc.AdminListRedeemUsages(c.Context(), limit, offset)
+	// 按码搜索 / 用户过滤（2026-10-31 新一轮第 23 轮）。
+	userID, err := queryInt(c, "user_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	items, total, err := s.Svc.AdminListRedeemUsages(c.Context(), limit, offset, c.Query("code_keyword", ""), int64(userID))
 	if err != nil {
 		return failErr(c, err)
 	}

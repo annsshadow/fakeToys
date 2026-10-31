@@ -61,6 +61,9 @@ const redeemUsages = ref<AdminRedeemUsageView[]>([])
 const redeemUsageTotal = ref(0)
 const redeemUsagePage = ref(1)
 const redeemUsageVisible = ref(false)
+// 使用记录筛选（2026-10-31 新一轮第 23 轮）：按码搜索 / 用户过滤。
+const redeemCodeKeyword = ref('')
+const redeemUserId = ref<number | undefined>(undefined)
 
 // 审计筛选（2026-10-31 新一轮第 18 轮）：操作类型 + 日期范围。
 const logAction = ref('')
@@ -95,12 +98,22 @@ function nextDay(day: string): string {
 
 async function loadRedeemUsages() {
   try {
-    const res = await fetchAdminRedeemUsages(PAGE_SIZE, (redeemUsagePage.value - 1) * PAGE_SIZE)
+    const res = await fetchAdminRedeemUsages(PAGE_SIZE, (redeemUsagePage.value - 1) * PAGE_SIZE, {
+      // 按码搜索 / 用户过滤（2026-10-31 新一轮第 23 轮）
+      code_keyword: redeemCodeKeyword.value || undefined,
+      user_id: redeemUserId.value,
+    })
     redeemUsages.value = res.items
     redeemUsageTotal.value = res.total ?? res.items.length
   } catch (e) {
     ElMessage.error(`使用记录加载失败：${(e as Error).message}`)
   }
+}
+
+/** 使用记录筛选变化：回到第一页并重新加载（2026-10-31 新一轮第 23 轮）。 */
+function applyRedeemUsageFilter() {
+  redeemUsagePage.value = 1
+  loadRedeemUsages()
 }
 
 /** 打开使用记录对话框并加载第一页（2026-10-31 新一轮第 17 轮）。 */
@@ -666,6 +679,24 @@ loadAll()
 
         <!-- 兑换码使用记录（2026-10-31 新一轮第 17 轮） -->
         <el-dialog v-model="redeemUsageVisible" title="兑换码使用记录" width="720px">
+          <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px">
+            <!-- 使用记录筛选（2026-10-31 新一轮第 23 轮） -->
+            <el-input
+              v-model="redeemCodeKeyword"
+              placeholder="按码搜索"
+              clearable
+              style="width: 180px"
+              @keyup.enter="applyRedeemUsageFilter"
+              @clear="applyRedeemUsageFilter"
+            />
+            <el-input-number
+              v-model="redeemUserId"
+              :controls="false"
+              placeholder="用户 ID"
+              style="width: 120px"
+            />
+            <el-button @click="applyRedeemUsageFilter">查询</el-button>
+          </div>
           <el-table :data="redeemUsages" size="small" stripe max-height="480">
             <el-table-column prop="id" label="ID" width="60" />
             <el-table-column prop="code" label="兑换码" min-width="150" />

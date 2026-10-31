@@ -24,7 +24,7 @@ func TestAdminListRedeemUsages(t *testing.T) {
 		t.Fatalf("插入使用记录失败：%v", err)
 	}
 
-	items, total, err := ts.AdminListRedeemUsages(ctx, 50, 0)
+	items, total, err := ts.AdminListRedeemUsages(ctx, 50, 0, "", 0)
 	if err != nil {
 		t.Fatalf("查询使用记录失败：%v", err)
 	}
@@ -53,7 +53,7 @@ func TestAdminListRedeemUsagesEmpty(t *testing.T) {
 	ts := openScratchService(t)
 	ctx := context.Background()
 
-	items, total, err := ts.AdminListRedeemUsages(ctx, 50, 0)
+	items, total, err := ts.AdminListRedeemUsages(ctx, 50, 0, "", 0)
 	if err != nil {
 		t.Fatalf("查询使用记录失败：%v", err)
 	}
@@ -89,7 +89,7 @@ func TestAdminListRedeemUsagesLimitCap(t *testing.T) {
 		}
 	}
 
-	items, total, err := ts.AdminListRedeemUsages(ctx, 1000, 0)
+	items, total, err := ts.AdminListRedeemUsages(ctx, 1000, 0, "", 0)
 	if err != nil {
 		t.Fatalf("查询使用记录失败：%v", err)
 	}
@@ -105,7 +105,7 @@ func TestAdminListRedeemUsagesBrokenPool(t *testing.T) {
 	ts := openBrokenService(t)
 	ctx := context.Background()
 
-	if _, _, err := ts.AdminListRedeemUsages(ctx, 50, 0); err == nil {
+	if _, _, err := ts.AdminListRedeemUsages(ctx, 50, 0, "", 0); err == nil {
 		t.Fatal("连接池已关闭时必须报错，不能静默返回空列表")
 	}
 }

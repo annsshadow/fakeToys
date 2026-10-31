@@ -560,15 +560,29 @@ type AdminRedeemUsageView struct {
 //
 // 运营发放兑换码后，想知道「这个码被谁用了 / 某个玩家用了哪些码」，
 // 此前没有任何后台入口（只能直接查库）。这里补上全局使用记录视图。
-func (s *Service) AdminListRedeemUsages(ctx context.Context, limit, offset int) ([]AdminRedeemUsageView, int64, error) {
+func (s *Service) AdminListRedeemUsages(ctx context.Context, limit, offset int, codeKeyword string, userID int64) ([]AdminRedeemUsageView, int64, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
 	if offset < 0 {
 		offset = 0
 	}
+	// 码模糊搜索 + 用户过滤（2026-10-31 新一轮第 23 轮）。
+	kw, err := trimAdminKeyword(codeKeyword)
+	if err != nil {
+		return nil, 0, err
+	}
+	escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(kw)
+	pattern := "%" + escaped + "%"
+	// 列表查询的 $1/$2 是 limit/offset，筛选从 $3 起；
+	// COUNT 查询没有 limit/offset，筛选映射到 $1/$2/$3。
+	where := `($3 = '' OR rc.code ILIKE $4) AND ($5 = 0 OR ru.user_id = $5)`
+	countArgs := []any{kw, pattern, userID}
+	listArgs := []any{limit, offset, kw, pattern, userID}
+	countWhere := strings.NewReplacer(`$3`, `$1`, `$4`, `$2`, `$5`, `$3`).Replace(where)
+
 	var total int64
-	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM redeem_usages`).Scan(&total); err != nil {
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM redeem_usages ru JOIN redeem_codes rc ON rc.id = ru.code_id WHERE `+countWhere, countArgs...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("admin redeem usages count: %w", err)
 	}
 	rows, err := s.pool.Query(ctx, `
@@ -576,7 +590,8 @@ func (s *Service) AdminListRedeemUsages(ctx context.Context, limit, offset int) 
 		FROM redeem_usages ru
 		JOIN redeem_codes rc ON rc.id = ru.code_id
 		LEFT JOIN users u ON u.id = ru.user_id
-		ORDER BY ru.id DESC LIMIT $1 OFFSET $2`, limit, offset)
+		WHERE `+where+`
+		ORDER BY ru.id DESC LIMIT $1 OFFSET $2`, listArgs...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("admin redeem usages: %w", err)
 	}

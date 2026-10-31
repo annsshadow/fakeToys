@@ -596,8 +596,18 @@ export function fetchRedeemCodes(
  * 兑换码使用记录（2026-10-31 新一轮第 17 轮）。
  * 运营发码后此前无法查看「谁用了 / 奖励是什么」。
  */
-export function fetchAdminRedeemUsages(limit = 50, offset = 0) {
-  return api.get<AdminRedeemUsagesResp>(`/admin/redeem-usages?limit=${limit}&offset=${offset}`)
+export function fetchAdminRedeemUsages(
+  limit = 50,
+  offset = 0,
+  params: { code_keyword?: string; user_id?: number } = {},
+) {
+  const q = new URLSearchParams()
+  q.set('limit', String(limit))
+  q.set('offset', String(offset))
+  // 按码搜索 / 用户过滤（2026-10-31 新一轮第 23 轮）
+  if (params.code_keyword) q.set('code_keyword', params.code_keyword)
+  if (params.user_id) q.set('user_id', String(params.user_id))
+  return api.get<AdminRedeemUsagesResp>(`/admin/redeem-usages?${q}`)
 }
 
 export function createRedeemCode(payload: {
