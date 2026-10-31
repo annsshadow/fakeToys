@@ -771,7 +771,17 @@ func (s *Server) adminOrders(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	items, total, err := s.Svc.AdminListOrders(c.Context(), limit, offset)
+	// 状态 + 日期范围筛选（2026-10-31 新一轮第 16 轮）。
+	status := c.Query("status", "")
+	dateFrom, err := queryTime(c, "date_from")
+	if err != nil {
+		return failErr(c, err)
+	}
+	dateTo, err := queryTime(c, "date_to")
+	if err != nil {
+		return failErr(c, err)
+	}
+	items, total, err := s.Svc.AdminListOrders(c.Context(), limit, offset, status, dateFrom, dateTo)
 	if err != nil {
 		return failErr(c, err)
 	}

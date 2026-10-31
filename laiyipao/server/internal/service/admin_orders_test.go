@@ -34,7 +34,7 @@ func TestAdminListOrdersSucceeds(t *testing.T) {
 	uid, _ := newGuestUser(t, ts, "adm_orders")
 	orderNo := seedOrderFor(t, ts, uid, "paid")
 
-	items, total, err := ts.AdminListOrders(ctx, 50, 0)
+	items, total, err := ts.AdminListOrders(ctx, 50, 0, "", nil, nil)
 	if err != nil {
 		t.Fatalf("查询订单失败：%v", err)
 	}
@@ -66,7 +66,7 @@ func TestAdminListOrdersEmpty(t *testing.T) {
 	ts := openScratchService(t)
 	ctx := context.Background()
 
-	items, total, err := ts.AdminListOrders(ctx, 50, 0)
+	items, total, err := ts.AdminListOrders(ctx, 50, 0, "", nil, nil)
 	if err != nil {
 		t.Fatalf("查询订单失败：%v", err)
 	}
@@ -87,7 +87,7 @@ func TestAdminListOrdersLimitCap(t *testing.T) {
 		seedOrderFor(t, ts, uid, "paid")
 	}
 
-	items, _, err := ts.AdminListOrders(ctx, 1000, 0)
+	items, _, err := ts.AdminListOrders(ctx, 1000, 0, "", nil, nil)
 	if err != nil {
 		t.Fatalf("查询订单失败：%v", err)
 	}
@@ -100,7 +100,7 @@ func TestAdminListOrdersBrokenPool(t *testing.T) {
 	ts := openBrokenService(t)
 	ctx := context.Background()
 
-	_, _, err := ts.AdminListOrders(ctx, 50, 0)
+	_, _, err := ts.AdminListOrders(ctx, 50, 0, "", nil, nil)
 	if err == nil {
 		t.Fatal("连接池已关闭时查询必须报错，不能静默返回空列表")
 	}

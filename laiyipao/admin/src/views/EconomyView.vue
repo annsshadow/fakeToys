@@ -25,6 +25,19 @@ const orderTotal = ref(0)
 const ORDER_PAGE_SIZE = 50
 const orderPage = ref(1)
 
+/**
+ * 订单筛选（2026-10-31 新一轮第 16 轮）：状态 + 创建日期范围。
+ * 服务端 date_to 是开区间，结束日期传**次日** 00:00 才能包含结束当天。
+ */
+const orderStatus = ref('')
+const orderDateRange = ref<[string, string] | null>(null)
+
+function nextDay(day: string): string {
+  const d = new Date(day + 'T00:00:00Z')
+  d.setUTCDate(d.getUTCDate() + 1)
+  return d.toISOString().slice(0, 10)
+}
+
 const CURRENCY_LABEL: Record<string, string> = {
   coin: '金币',
   gem: '钻石',
@@ -107,12 +120,23 @@ async function load() {
 /** 加载订单列表（2026-10-31 实质优化第 33 轮）。 */
 async function loadOrders() {
   try {
-    const res = await fetchAdminOrders(ORDER_PAGE_SIZE, (orderPage.value - 1) * ORDER_PAGE_SIZE)
+    const res = await fetchAdminOrders(ORDER_PAGE_SIZE, (orderPage.value - 1) * ORDER_PAGE_SIZE, {
+      // 状态 + 日期范围（2026-10-31 新一轮第 16 轮）
+      status: orderStatus.value || undefined,
+      date_from: orderDateRange.value?.[0] || undefined,
+      date_to: orderDateRange.value ? nextDay(orderDateRange.value[1]) : undefined,
+    })
     orders.value = res.items
     orderTotal.value = res.total ?? res.items.length
   } catch (e) {
     ElMessage.error(`订单加载失败：${(e as Error).message}`)
   }
+}
+
+/** 筛选条件变化时回到第一页并重新加载（2026-10-31 新一轮第 16 轮）。 */
+function applyOrderFilter() {
+  orderPage.value = 1
+  loadOrders()
 }
 
 /**
@@ -303,6 +327,25 @@ loadOrders()
 
     <!-- 订单明细（2026-10-31 实质优化第 33 轮） -->
     <el-card shadow="never" header="支付订单" style="margin-top: 12px">
+      <div class="toolbar" style="margin-bottom: 8px">
+        <!-- 订单筛选（2026-10-31 新一轮第 16 轮）：状态 + 日期范围 -->
+        <el-select v-model="orderStatus" placeholder="全部状态" clearable style="width: 130px" @change="applyOrderFilter">
+          <el-option label="pending" value="pending" />
+          <el-option label="paid" value="paid" />
+          <el-option label="delivered" value="delivered" />
+          <el-option label="refunded" value="refunded" />
+        </el-select>
+        <el-date-picker
+          v-model="orderDateRange"
+          type="daterange"
+          range-separator="至"
+          start-placeholder="创建开始日期"
+          end-placeholder="创建结束日期"
+          value-format="YYYY-MM-DD"
+          style="width: 260px; margin-left: 8px"
+        />
+        <el-button @click="applyOrderFilter">查询</el-button>
+      </div>
       <el-table :data="orders" size="small" stripe>
         <el-table-column prop="id" label="ID" width="55" />
         <el-table-column prop="order_no" label="订单号" min-width="170" />

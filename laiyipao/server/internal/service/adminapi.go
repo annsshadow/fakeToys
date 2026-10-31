@@ -480,15 +480,25 @@ func (s *Service) AdminDeleteDefense(ctx context.Context, defenseID int64) error
 //
 // 后台此前只有 `AdminEconomy` 里的订单**计数**（paid/pending），
 // 没有订单明细 —— 玩家反馈「扣款了没到账」时运营无从查起。
-func (s *Service) AdminListOrders(ctx context.Context, limit, offset int) ([]AdminOrderView, int64, error) {
+func (s *Service) AdminListOrders(ctx context.Context, limit, offset int, status string, dateFrom, dateTo *time.Time) ([]AdminOrderView, int64, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
 	if offset < 0 {
 		offset = 0
 	}
+	status = strings.TrimSpace(status)
+	// 状态 + 日期范围（2026-10-31 新一轮第 16 轮）：可选筛选。
+	// `$1 = ''` 是「不过滤」哨兵；`$2/$3` 是日期（nil → NULL，`IS NULL` 分支恒真）。
+	// 列表查询的 limit/offset 占 $4/$5，COUNT 查询没有它们。
+	where := `($1 = '' OR o.status = $1)
+	          AND ($2::timestamptz IS NULL OR o.created_at >= $2)
+	          AND ($3::timestamptz IS NULL OR o.created_at < $3)`
+	countArgs := []any{status, dateFrom, dateTo}
+	listArgs := []any{status, dateFrom, dateTo, limit, offset}
+
 	var total int64
-	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM orders`).Scan(&total); err != nil {
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM orders o WHERE `+where, countArgs...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("admin orders count: %w", err)
 	}
 	rows, err := s.pool.Query(ctx, `
@@ -496,7 +506,8 @@ func (s *Service) AdminListOrders(ctx context.Context, limit, offset int) ([]Adm
 		       o.amount, o.status, o.provider, o.created_at, o.delivered_at
 		FROM orders o
 		LEFT JOIN users u ON u.id = o.user_id
-		ORDER BY o.id DESC LIMIT $1 OFFSET $2`, limit, offset)
+		WHERE `+where+`
+		ORDER BY o.id DESC LIMIT $4 OFFSET $5`, listArgs...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("admin orders: %w", err)
 	}

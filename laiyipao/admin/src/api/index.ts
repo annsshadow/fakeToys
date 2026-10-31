@@ -504,8 +504,19 @@ export function fetchEconomy() {
  * 订单列表（2026-10-31 实质优化第 33 轮）。
  * 后台此前只有订单计数，没有明细可查。
  */
-export function fetchAdminOrders(limit = 50, offset = 0) {
-  return api.get<AdminOrdersResp>(`/admin/orders?limit=${limit}&offset=${offset}`)
+export function fetchAdminOrders(
+  limit = 50,
+  offset = 0,
+  params: { status?: string; date_from?: string; date_to?: string } = {},
+) {
+  const q = new URLSearchParams()
+  q.set('limit', String(limit))
+  q.set('offset', String(offset))
+  // 状态 + 日期范围（2026-10-31 新一轮第 16 轮）
+  if (params.status) q.set('status', params.status)
+  if (params.date_from) q.set('date_from', params.date_from)
+  if (params.date_to) q.set('date_to', params.date_to)
+  return api.get<AdminOrdersResp>(`/admin/orders?${q}`)
 }
 
 export function updateShopItem(id: number, patch: AdminShopPatch) {
