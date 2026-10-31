@@ -56,6 +56,9 @@
               <view v-if="reactionText" class="kv"><text class="muted">反应</text><text class="flex-1">{{ reactionText }}</text></view>
               <view v-if="terrainText" class="kv"><text class="muted">地形</text><text class="flex-1">{{ terrainText }}</text></view>
               <view class="kv"><text class="muted">回放哈希</text><text class="mono hash">{{ detail.replay_hash }}</text></view>
+              <!-- 直达验真（2026-11-01 新一轮第 47 轮）：验真页已支持 battle_id 深链，
+                   这里一键跳转，玩家无需手动复制/输入 battle_id。 -->
+              <view class="btn verify-btn" @click="goVerify(it.id)">去验真此局</view>
             </template>
           </view>
         </view>
@@ -176,6 +179,15 @@ async function loadDetail(it: BattleHistoryItem): Promise<void> {
   } finally {
     detailLoading.value = false
   }
+}
+
+/**
+ * 直达验真（2026-11-01 新一轮第 47 轮）。
+ * 验真页支持 `?battle_id=` 深链并自动拉取复现信息，
+ * 玩家从战报详情一键跳转即可验真，无需手动复制哈希。
+ */
+function goVerify(battleId: number) {
+  uni.navigateTo({ url: `/pages/verify/verify?battle_id=${battleId}` })
 }
 
 onMounted(async () => {
