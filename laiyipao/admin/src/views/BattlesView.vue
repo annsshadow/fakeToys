@@ -69,6 +69,20 @@ function verifyTag(b: AdminBattleView): { text: string; type: 'info' | 'success'
 const onlyMismatched = ref(false)
 
 /**
+ * 日期范围（2026-10-31 新一轮第 14 轮）。
+ * `el-date-picker` value-format="YYYY-MM-DD"，v-model 直接是字符串数组。
+ * 服务端 `date_to` 是开区间（`created_at < date_to`），
+ * 所以结束日期要传**次日** 00:00 才能包含结束当天。
+ */
+const dateRange = ref<[string, string] | null>(null)
+
+function nextDay(day: string): string {
+  const d = new Date(day + 'T00:00:00Z')
+  d.setUTCDate(d.getUTCDate() + 1)
+  return d.toISOString().slice(0, 10)
+}
+
+/**
  * 2026-10-21（P5-1）：分页。
  *
  * 此前战报列表**只能看前 50 条** —— 而「共 N 条」显示的其实是
@@ -84,6 +98,9 @@ const filterParams = computed(() => ({
   limit: PAGE_SIZE,
   offset: (page.value - 1) * PAGE_SIZE,
   only_mismatched: onlyMismatched.value || undefined,
+  // 日期范围（2026-10-31 新一轮第 14 轮）：date_from 当天 00:00，date_to 次日 00:00（开区间）
+  date_from: dateRange.value?.[0] || undefined,
+  date_to: dateRange.value ? nextDay(dateRange.value[1]) : undefined,
 }))
 
 async function load() {
@@ -118,6 +135,9 @@ async function onExportCsv() {
       user_id: userId.value,
       level_id: levelId.value,
       only_mismatched: onlyMismatched.value || undefined,
+      // 日期范围（2026-10-31 新一轮第 14 轮）：与列表过滤同口径
+      date_from: dateRange.value?.[0] || undefined,
+      date_to: dateRange.value ? nextDay(dateRange.value[1]) : undefined,
     })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -272,6 +292,16 @@ const asRow = (r: unknown) => r as AdminBattleView
         />
         <el-button @click="((page = 1), load())">筛选</el-button>
         <el-button @click="onExportCsv">导出 CSV</el-button>
+        <!-- 日期范围（2026-10-31 新一轮第 14 轮）：查「今天/某时间段」的战报 -->
+        <el-date-picker
+          v-model="dateRange"
+          type="daterange"
+          range-separator="至"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+          value-format="YYYY-MM-DD"
+          style="width: 260px; margin-left: 12px"
+        />
         <el-checkbox v-model="onlyMismatched" style="margin-left: 12px">
           只看验真不匹配
         </el-checkbox>

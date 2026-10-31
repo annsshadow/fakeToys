@@ -465,7 +465,16 @@ func (s *Server) adminBattles(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	items, total, err := s.Svc.AdminListBattles(c.Context(), int64(userID), levelID, limit, onlyMismatched, offset)
+	// 日期范围（2026-10-31 新一轮第 14 轮）：可选，查「今天/某时间段」。
+	dateFrom, err := queryTime(c, "date_from")
+	if err != nil {
+		return failErr(c, err)
+	}
+	dateTo, err := queryTime(c, "date_to")
+	if err != nil {
+		return failErr(c, err)
+	}
+	items, total, err := s.Svc.AdminListBattles(c.Context(), int64(userID), levelID, limit, onlyMismatched, offset, dateFrom, dateTo)
 	if err != nil {
 		return failErr(c, err)
 	}
@@ -475,7 +484,7 @@ func (s *Server) adminBattles(c *fiber.Ctx) error {
 // adminExportBattles 导出战报列表为 CSV（2026-10-30 实质优化第 13 轮）。
 //
 // 读操作，readonly 角色可访问。过滤条件与 `GET /admin/battles` 一致
-// （user_id / level_id / only_mismatched）。
+// （user_id / level_id / only_mismatched / date_from / date_to）。
 func (s *Server) adminExportBattles(c *fiber.Ctx) error {
 	userID, err := queryInt(c, "user_id", 0)
 	if err != nil {
@@ -486,7 +495,15 @@ func (s *Server) adminExportBattles(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	onlyMismatched := c.Query("only_mismatched") == "1" || c.Query("only_mismatched") == "true"
-	data, err := s.Svc.AdminExportBattles(c.Context(), int64(userID), levelID, onlyMismatched)
+	dateFrom, err := queryTime(c, "date_from")
+	if err != nil {
+		return failErr(c, err)
+	}
+	dateTo, err := queryTime(c, "date_to")
+	if err != nil {
+		return failErr(c, err)
+	}
+	data, err := s.Svc.AdminExportBattles(c.Context(), int64(userID), levelID, onlyMismatched, dateFrom, dateTo)
 	if err != nil {
 		return failErr(c, err)
 	}

@@ -777,7 +777,7 @@ type AdminBattleView struct {
 //
 // onlyMismatched 为真时**只**返回「被验真过且有不匹配记录」的战报，
 // 用来从「这个用户有 3 次不匹配」直接跳到「是哪 3 场」。
-func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID int, limit int, onlyMismatched bool, offset int) ([]AdminBattleView, int64, error) {
+func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID int, limit int, onlyMismatched bool, offset int, dateFrom, dateTo *time.Time) ([]AdminBattleView, int64, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
@@ -840,11 +840,23 @@ func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID in
 	if onlyMismatched {
 		where += ` AND COALESCE(v.mismatched, 0) > 0`
 	}
+	// 日期范围（2026-10-31 新一轮第 14 轮）：可选，nil 不过滤。
+	// 列表查询的 $5/$6 是日期（limit/offset 占 $3/$4）；
+	// COUNT 查询没有 limit/offset，日期改占 $3/$4。
+	countArgs := []any{userID, levelID}
+	listArgs := []any{userID, levelID, limit, offset}
+	if dateFrom != nil || dateTo != nil {
+		where += ` AND ($5::timestamptz IS NULL OR br.created_at >= $5)
+		             AND ($6::timestamptz IS NULL OR br.created_at < $6)`
+		countArgs = append(countArgs, dateFrom, dateTo)
+		listArgs = append(listArgs, dateFrom, dateTo)
+	}
+	countWhere := strings.ReplaceAll(strings.ReplaceAll(where, "$5", "$3"), "$6", "$4")
 
 	var total int64
 	if err := s.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM battle_records br `+vsub+` WHERE `+where,
-		userID, levelID).Scan(&total); err != nil {
+		`SELECT COUNT(*) FROM battle_records br `+vsub+` WHERE `+countWhere,
+		countArgs...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("count battles: %w", err)
 	}
 	rows, err := s.pool.Query(ctx, `
@@ -856,7 +868,7 @@ func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID in
 		LEFT JOIN users u ON u.id = br.user_id
 		`+vsub+`
 		WHERE `+where+`
-		ORDER BY br.id DESC LIMIT $3 OFFSET $4`, userID, levelID, limit, offset)
+		ORDER BY br.id DESC LIMIT $3 OFFSET $4`, listArgs...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list battles: %w", err)
 	}
@@ -898,7 +910,7 @@ func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID in
 // 过滤条件与 `AdminListBattles` 完全一致（user_id / level_id / only_mismatched），
 // 上限 100_000 行。replay_hash 是回放校验哈希（后台本来就可读），
 // 不是账号凭证，可以导出；guest_token 等敏感字段绝不进入。
-func (s *Service) AdminExportBattles(ctx context.Context, userID int64, levelID int, onlyMismatched bool) ([]byte, error) {
+func (s *Service) AdminExportBattles(ctx context.Context, userID int64, levelID int, onlyMismatched bool, dateFrom, dateTo *time.Time) ([]byte, error) {
 	// 与 AdminListBattles 相同的子查询形态（注释见那边）。
 	vsub := `LEFT JOIN (
 		SELECT battle_id,
@@ -918,8 +930,16 @@ func (s *Service) AdminExportBattles(ctx context.Context, userID int64, levelID 
 	}
 
 	where := `($1 = 0 OR br.user_id = $1) AND ($2 = 0 OR br.level_id = $2)`
+	args := []any{userID, levelID}
 	if onlyMismatched {
 		where += ` AND COALESCE(v.mismatched, 0) > 0`
+	}
+	// 日期范围（2026-10-31 新一轮第 14 轮）：可选，nil 不过滤。
+	// 导出查询没有 limit/offset，日期直接占 $3/$4。
+	if dateFrom != nil || dateTo != nil {
+		where += ` AND ($3::timestamptz IS NULL OR br.created_at >= $3)
+		             AND ($4::timestamptz IS NULL OR br.created_at < $4)`
+		args = append(args, dateFrom, dateTo)
 	}
 
 	rows, err := s.pool.Query(ctx, `
@@ -931,7 +951,7 @@ func (s *Service) AdminExportBattles(ctx context.Context, userID int64, levelID 
 		LEFT JOIN users u ON u.id = br.user_id
 		`+vsub+`
 		WHERE `+where+`
-		ORDER BY br.id DESC LIMIT 100000`, userID, levelID)
+		ORDER BY br.id DESC LIMIT 100000`, args...)
 	if err != nil {
 		return nil, fmt.Errorf("export battles: %w", err)
 	}

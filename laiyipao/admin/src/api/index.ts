@@ -308,6 +308,8 @@ export function fetchBattles(
     limit?: number
     offset?: number
     only_mismatched?: boolean
+    date_from?: string
+    date_to?: string
   } = {},
 ) {
   const q = new URLSearchParams()
@@ -319,24 +321,32 @@ export function fetchBattles(
   // 2026-10-21（P5-1）：分页。此前只能看前 50 条 ——
   // 战报表可能有上万行，而「共 N 条」显示的其实是**这次返回了几条**。
   if (params.offset) q.set('offset', String(params.offset))
+  // 日期范围（2026-10-31 新一轮第 14 轮）：查「今天/某时间段」的战报。
+  if (params.date_from) q.set('date_from', params.date_from)
+  if (params.date_to) q.set('date_to', params.date_to)
   return api.get<AdminBattlesResp>(`/admin/battles?${q}`)
 }
 
 /**
  * 导出战报列表 CSV（2026-10-30 实质优化第 13 轮）。
  *
- * 过滤条件与 `fetchBattles` 一致（user_id / level_id / only_mismatched）。
- * 返回带 UTF-8 BOM 的 CSV Blob（Excel 中文兼容）。readonly 可导出。
+ * 过滤条件与 `fetchBattles` 一致（user_id / level_id / only_mismatched
+ * / date_from / date_to）。返回带 UTF-8 BOM 的 CSV Blob（Excel 中文兼容）。
+ * readonly 可导出。
  */
 export function exportBattlesCsv(params: {
   user_id?: number
   level_id?: number
   only_mismatched?: boolean
+  date_from?: string
+  date_to?: string
 } = {}) {
   const q = new URLSearchParams()
   if (params.user_id) q.set('user_id', String(params.user_id))
   if (params.level_id) q.set('level_id', String(params.level_id))
   if (params.only_mismatched) q.set('only_mismatched', '1')
+  if (params.date_from) q.set('date_from', params.date_from)
+  if (params.date_to) q.set('date_to', params.date_to)
   return api.getBlob(`/admin/battles/export?${q}`)
 }
 

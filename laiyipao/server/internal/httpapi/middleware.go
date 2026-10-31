@@ -284,6 +284,32 @@ func queryInt(c *fiber.Ctx, name string, def int) (int, error) {
 	return v, nil
 }
 
+// queryTime 解析可选的日期/时间查询参数（2026-10-31 新一轮第 14 轮）。
+//
+// 键不在 → nil（不过滤）。值支持两种格式：
+//   - `YYYY-MM-DD`：当天 00:00:00 UTC（后台日期选择器的自然格式）；
+//   - RFC3339：精确到秒的时间点。
+//
+// 解析失败返回 ErrBadInput（与 queryInt 同一个 fail-loud 口径，
+// 运营手滑打错格式看到的是 400 而不是「静默不过滤」）。
+func queryTime(c *fiber.Ctx, name string) (*time.Time, error) {
+	if !c.Context().QueryArgs().Has(name) {
+		return nil, nil
+	}
+	raw := strings.TrimSpace(c.Query(name))
+	if raw == "" {
+		return nil, nil
+	}
+	if t, err := time.Parse("2006-01-02", raw); err == nil {
+		return &t, nil
+	}
+	if t, err := time.Parse(time.RFC3339, raw); err == nil {
+		return &t, nil
+	}
+	return nil, fmt.Errorf("%w: 查询参数 %s=%q 不是合法日期（期望 YYYY-MM-DD 或 RFC3339）",
+		service.ErrBadInput, name, raw)
+}
+
 // userIDFrom 读取中间件写入的 user_id。
 func userIDFrom(c *fiber.Ctx) int64 {
 	v, ok := c.Locals("user_id").(int64)
