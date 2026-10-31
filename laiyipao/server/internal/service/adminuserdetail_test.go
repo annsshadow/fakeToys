@@ -119,3 +119,31 @@ func TestAdminUserDetailBanRecords(t *testing.T) {
 		t.Error("封禁记录应带 detail（reason）")
 	}
 }
+
+// TestAdminUserDetailRecentFlows 守住最近钱包流水（2026-11-01 新一轮第 66 轮）。
+func TestAdminUserDetailRecentFlows(t *testing.T) {
+	ts := openScratchService(t)
+	ctx := context.Background()
+
+	uid := ts.newUser(t, ctx)
+	// grant 会写 wallet_flows（coin +1000）
+	ts.grant(t, ctx, uid, map[string]int64{"coin": 1000})
+
+	d, err := ts.AdminUserDetail(ctx, uid)
+	if err != nil {
+		t.Fatalf("读玩家详情失败：%v", err)
+	}
+	if len(d.RecentFlows) == 0 {
+		t.Fatal("发放货币后应有钱包流水")
+	}
+	// 最新在前；第一条应是 coin 的发放
+	if d.RecentFlows[0].Currency != "coin" || d.RecentFlows[0].Delta != 1000 {
+		t.Errorf("第一条流水应为 coin +1000，实际 %+v", d.RecentFlows[0])
+	}
+	if d.RecentFlows[0].Reason == "" {
+		t.Error("流水应带 reason")
+	}
+	if d.RecentFlows[0].CreatedAt.IsZero() {
+		t.Error("流水应带时间")
+	}
+}

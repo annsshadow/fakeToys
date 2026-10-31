@@ -98,6 +98,27 @@ const CURRENCY_LABEL: Record<string, string> = {
   keys: '钥匙',
 }
 
+/** 钱包流水来源 → 中文（2026-11-01 新一轮第 66 轮）。未知回退原值。 */
+const FLOW_REASON_LABEL: Record<string, string> = {
+  battle_loot: '战斗掉落',
+  signin: '签到',
+  task: '任务',
+  shop: '商城消费',
+  admin_grant: '后台发放',
+  admin_revoke: '后台回收',
+  defense_steal: '防线窃取',
+  redeem: '兑换码',
+  upgrade_skill: '升级技能',
+  synthesize_skill: '熔炼技能',
+  wash_gem: '洗练宝石',
+  buy_item: '商城购买',
+  offline_reward: '离线收益',
+}
+
+function flowReasonLabel(reason: string): string {
+  return FLOW_REASON_LABEL[reason] ?? reason
+}
+
 const page = computed(() => Math.floor(offset.value / limit.value) + 1)
 const pageCount = computed(() => Math.max(1, Math.ceil(total.value / limit.value)))
 
@@ -645,6 +666,31 @@ const asRow = (r: unknown) => r as AdminUserView
             </template>
           </el-table>
 
+          <!-- 最近钱包流水（2026-11-01 新一轮第 66 轮）：回答「钱去哪了」 -->
+          <div class="section-title">最近钱包流水</div>
+          <el-table :data="detail.recent_flows" size="small" border>
+            <el-table-column label="货币" width="80">
+              <template #default="{ row }">{{ CURRENCY_LABEL[row.currency] ?? row.currency }}</template>
+            </el-table-column>
+            <el-table-column label="变动" width="100">
+              <template #default="{ row }">
+                <span :class="row.delta >= 0 ? 'flow-pos' : 'flow-neg'">
+                  {{ row.delta >= 0 ? '+' : '' }}{{ row.delta }}
+                </span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="balance" label="余额" width="100" />
+            <el-table-column label="来源" min-width="120">
+              <template #default="{ row }">{{ flowReasonLabel(row.reason) }}</template>
+            </el-table-column>
+            <el-table-column label="时间" min-width="160">
+              <template #default="{ row }">{{ fmtTime(row.created_at) }}</template>
+            </el-table-column>
+            <template #empty>
+              <el-empty description="没有流水记录" :image-size="60" />
+            </template>
+          </el-table>
+
           <div class="section-title">账号操作</div>
           <div class="drawer-actions">
             <el-button
@@ -681,5 +727,14 @@ const asRow = (r: unknown) => r as AdminUserView
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+/* 钱包流水正负（2026-11-01 新一轮第 66 轮） */
+.flow-pos {
+  color: var(--lyp-ok, #67c23a);
+}
+
+.flow-neg {
+  color: var(--lyp-danger, #f56c6c);
 }
 </style>

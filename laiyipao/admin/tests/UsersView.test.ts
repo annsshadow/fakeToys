@@ -140,6 +140,22 @@ function detailFixture(overrides: Partial<AdminUserDetailResp> = {}): AdminUserD
       },
     ],
     flow_count: 17,
+    recent_flows: [
+      {
+        currency: 'coin',
+        delta: 1000,
+        balance: 1500,
+        reason: 'admin_grant',
+        created_at: '2026-01-02T03:04:05Z',
+      },
+      {
+        currency: 'gem',
+        delta: -50,
+        balance: 20,
+        reason: 'shop',
+        created_at: '2026-01-01T03:04:05Z',
+      },
+    ],
     ban_records: [
       {
         action: 'ban_user',
@@ -706,6 +722,27 @@ describe('UsersView 详情抽屉（P5-7）', () => {
     // 动作标签：封禁（danger）与解封（success）
     expect(text).toContain('封禁')
     expect(text).toContain('解封')
+    wrapper.unmount()
+  })
+
+  it('详情抽屉展示最近钱包流水（第 66 轮）', async () => {
+    const row = userFixture({ id: 7, nickname: '详情玩家' })
+    fetchUserDetail.mockResolvedValueOnce(detailFixture())
+    const wrapper = await mountUsers([row])
+
+    const btn = wrapper.findAll('.el-table__row')[0].findAll('button').find((b) => b.text() === '详情')!
+    await btn.trigger('click')
+    await flushPromises()
+
+    const text = wrapper.text()
+    expect(text).toContain('最近钱包流水')
+    // 货币中文 + 变动正负 + 来源中文
+    expect(text).toContain('金币')
+    expect(text).toContain('+1000')
+    expect(text).toContain('后台发放')
+    expect(text).toContain('-50')
+    expect(text).toContain('商城消费')
+    expect(text).toContain('1500') // 余额
     wrapper.unmount()
   })
 

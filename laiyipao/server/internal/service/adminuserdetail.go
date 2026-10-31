@@ -51,6 +51,18 @@ type AdminUserDetailResp struct {
 	// BanRecords 是最近 20 条封禁/解封审计（2026-11-01 新一轮第 58 轮）。
 	// 运营打开用户详情能看到「为什么被封、谁封的、什么时候解的」。
 	BanRecords []AdminBanRecordView `json:"ban_records"`
+	// RecentFlows 是最近 10 条钱包流水（2026-11-01 新一轮第 66 轮）。
+	// 回答「钱去哪了 / 钱从哪来」—— 不止有 flow_count 这个数字。
+	RecentFlows []AdminUserFlowView `json:"recent_flows"`
+}
+
+// AdminUserFlowView 是一条钱包流水（玩家详情视角）。
+type AdminUserFlowView struct {
+	Currency  string    `json:"currency"`
+	Delta     int64     `json:"delta"`
+	Balance   int64     `json:"balance"`
+	Reason    string    `json:"reason"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 // AdminBanRecordView 是一条封禁/解封审计记录。
@@ -146,7 +158,8 @@ func (s *Service) AdminUserDetail(ctx context.Context, userID int64) (AdminUserD
 		flowCount     int
 		defense       *AdminDefenseView
 		banRecords    []AdminBanRecordView
-		errs          [9]error
+		recentFlows   []AdminUserFlowView
+		errs          [10]error
 	)
 	seg := func(i int, fn func()) {
 		wg.Add(1)
@@ -311,6 +324,32 @@ func (s *Service) AdminUserDetail(ctx context.Context, userID int64) (AdminUserD
 		}
 	})
 
+	// 11) 最近钱包流水（2026-11-01 新一轮第 66 轮）。
+	// 回答「钱去哪了 / 钱从哪来」—— flow_count 只有条数，这里是明细。
+	seg(9, func() {
+		rows, err := s.pool.Query(ctx,
+			`SELECT currency, delta, balance, reason, created_at
+			 FROM wallet_flows
+			 WHERE user_id = $1
+			 ORDER BY id DESC LIMIT 10`, userID)
+		if err != nil {
+			errs[9] = fmt.Errorf("load user flows: %w", err)
+			return
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var v AdminUserFlowView
+			if err := rows.Scan(&v.Currency, &v.Delta, &v.Balance, &v.Reason, &v.CreatedAt); err != nil {
+				errs[9] = err
+				return
+			}
+			recentFlows = append(recentFlows, v)
+		}
+		if err := rows.Err(); err != nil {
+			errs[9] = fmt.Errorf("load user flows: %w", err)
+		}
+	})
+
 	wg.Wait()
 	for _, err := range errs {
 		if err != nil {
@@ -332,6 +371,7 @@ func (s *Service) AdminUserDetail(ctx context.Context, userID int64) (AdminUserD
 	out.FlowCount = flowCount
 	out.Defense = defense
 	out.BanRecords = banRecords
+	out.RecentFlows = recentFlows
 
 	return out, nil
 }

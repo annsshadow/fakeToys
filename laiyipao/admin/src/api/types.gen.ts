@@ -355,6 +355,7 @@ export interface AdminUserDetailResp {
   flow_count: number
   defense: AdminDefenseView | null
   ban_records: { action: string; username: string; reason: string; created_at: string }[]
+  recent_flows: { currency: string; delta: number; balance: number; reason: string; created_at: string }[]
 }
 
 export interface AdminUserResp {
