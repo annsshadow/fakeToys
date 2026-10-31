@@ -45,6 +45,7 @@
 | 33 | 2026-10-31 | **显示防线护盾剩余时间**：玩家开启防线 24h 护盾后不知道还剩多久 —— 只能靠「开关状态」猜，护盾悄然过期后防线被偷而没有提醒 | miniapp `me.vue` 新增 `shieldRemainText` computed（用服务端时钟基准 `estimateServerNowMs` 计算剩余时长，转「X.X 小时 / X 分钟」可读文案），护盾开关按钮下方展示；新增源码守卫测试 `me_shield_remain_feature.test.ts` | miniapp type-check 通过、新守卫 2 用例通过、全量测试通过；`go test ./...` 全绿 |
 | 34 | 2026-10-31 | **后台兑换码使用记录 CSV 导出**：使用记录列表（第 23 轮）只能分页看，运营核对补偿发放（哪个码被谁用了、发了什么）需要全量快照 | 服务层 `AdminExportRedeemUsages`（与列表同口径的 code_keyword/user_id 筛选，reward 转可读文本 `coin:30000 gem:50`，UTF-8 BOM，上限 10 万行）；`GET /api/v1/admin/redeem-usages/export`（readonly 可访问）；admin ContentView 使用记录对话框增加「导出 CSV」按钮 | 服务层 3 用例（内容/BOM/表头/筛选/故障）全绿；e2e 1 用例（导出 200 + BOM + 数据行含用户 id/reward）全绿；admin type-check + 353 测试全绿；`go test ./...` 全绿 |
 | 35 | 2026-10-31 | **「皮肤图鉴」页**：`/config.skins` 从第一天起就下发了 6 款皮肤的稀有度/被动/说明，但客户端**零 UI 消费** —— 玩家不知道皮肤系统长什么样 | 新增 miniapp 页面 `pages/skins/skins.vue`（从 `store.config.skins` 读取：名称/稀有度中文映射/被动机制词条映射/描述）；pages.json 注册路由；首页菜单新增「皮肤」入口；新增源码守卫测试 `skins_feature.test.ts` | miniapp type-check 通过、新守卫 3 用例通过、全量测试通过；`go test ./...` 全绿 |
+| 36 | 2026-11-01 | **任务进度条**：任务行此前只显示 `progress / target` 文本，完成度不直观 —— 玩家看不出「还差多少到领取线」 | miniapp `signin.vue` 任务行新增进度条（`taskPercent` 计算完成度百分比，进度条宽度 = 完成度，圆角样式）；新增源码守卫测试 `signin_task_progress_feature.test.ts` | miniapp type-check 通过、新守卫 2 用例通过、全量测试通过；`go test ./...` 全绿 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **35 轮实质优化**，距 100 轮还差 65 轮。
+> 状态：进行中。当前累计 **36 轮实质优化**，距 100 轮还差 64 轮。
