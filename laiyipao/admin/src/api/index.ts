@@ -577,6 +577,22 @@ export function fetchAdminOrders(
   return api.get<AdminOrdersResp>(`/admin/orders?${q}`)
 }
 
+/**
+ * 订单 CSV 导出（2026-11-01 新一轮第 40 轮）。
+ * 与列表同口径的状态 + 创建日期筛选，运营对账需要全量快照。
+ */
+export function exportOrdersCsv(params: {
+  status?: string
+  date_from?: string
+  date_to?: string
+} = {}) {
+  const q = new URLSearchParams()
+  if (params.status) q.set('status', params.status)
+  if (params.date_from) q.set('date_from', params.date_from)
+  if (params.date_to) q.set('date_to', params.date_to)
+  return api.getBlob(`/admin/orders/export?${q}`)
+}
+
 export function updateShopItem(id: number, patch: AdminShopPatch) {
   return api.put<AdminShopItemResp>(`/admin/shop/${id}`, patch)
 }

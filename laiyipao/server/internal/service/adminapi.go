@@ -715,6 +715,78 @@ func (s *Service) AdminListOrders(ctx context.Context, limit, offset int, status
 	return out, total, rows.Err()
 }
 
+// AdminExportOrders 返回支付订单 CSV（UTF-8 BOM，上限 10 万行）。
+//
+// 订单是玩家真金白银的支付记录，运营对账、客服核查「扣款了没到账」
+// 需要全量快照，而列表只能分页看（2026-11-01 新一轮第 40 轮）。
+// 与 AdminListOrders 同口径：状态 + 创建日期范围筛选，字段与列表行一致。
+func (s *Service) AdminExportOrders(ctx context.Context, status string, dateFrom, dateTo *time.Time) ([]byte, error) {
+	status = strings.TrimSpace(status)
+	// 与 AdminListOrders 相同的 where（导出没有 limit/offset，参数就是 $1..$3）。
+	where := `($1 = '' OR o.status = $1)
+	          AND ($2::timestamptz IS NULL OR o.created_at >= $2)
+	          AND ($3::timestamptz IS NULL OR o.created_at < $3)`
+	args := []any{status, dateFrom, dateTo}
+
+	rows, err := s.pool.Query(ctx, `
+		SELECT o.id, o.user_id, COALESCE(u.nickname, ''), o.order_no, o.sku,
+		       o.amount, o.status, o.provider, o.created_at, o.delivered_at
+		FROM orders o
+		LEFT JOIN users u ON u.id = o.user_id
+		WHERE `+where+`
+		ORDER BY o.id DESC LIMIT 100000`, args...)
+	if err != nil {
+		return nil, fmt.Errorf("export orders: %w", err)
+	}
+	defer rows.Close()
+
+	var buf bytes.Buffer
+	buf.WriteString("\xEF\xBB\xBF")
+	w := csv.NewWriter(&buf)
+	header := []string{
+		"id", "user_id", "nickname", "order_no", "sku", "amount_cents",
+		"status", "provider", "created_at", "delivered_at",
+	}
+	if err := w.Write(header); err != nil {
+		return nil, fmt.Errorf("write csv header: %w", err)
+	}
+
+	for rows.Next() {
+		var v AdminOrderView
+		if err := rows.Scan(&v.ID, &v.UserID, &v.Nickname, &v.OrderNo, &v.SKU,
+			&v.Amount, &v.Status, &v.Provider, &v.CreatedAt, &v.DeliveredAt); err != nil {
+			return nil, fmt.Errorf("scan export order: %w", err)
+		}
+		delivered := ""
+		if v.DeliveredAt != nil {
+			delivered = v.DeliveredAt.UTC().Format(time.RFC3339)
+		}
+		rec := []string{
+			strconv.FormatInt(v.ID, 10),
+			strconv.FormatInt(v.UserID, 10),
+			v.Nickname,
+			v.OrderNo,
+			v.SKU,
+			strconv.Itoa(v.Amount),
+			v.Status,
+			v.Provider,
+			v.CreatedAt.UTC().Format(time.RFC3339),
+			delivered,
+		}
+		if err := w.Write(rec); err != nil {
+			return nil, fmt.Errorf("write csv row: %w", err)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	w.Flush()
+	if err := w.Error(); err != nil {
+		return nil, fmt.Errorf("flush csv: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
 // AdminRedeemUsageView 是兑换码使用记录的一行（2026-10-31 新一轮第 17 轮）。
 type AdminRedeemUsageView struct {
 	ID        int64          `json:"id"`

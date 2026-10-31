@@ -18,10 +18,17 @@ import ElementPlus from 'element-plus'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const fetchEconomy = vi.hoisted(() => vi.fn())
+const fetchAdminOrders = vi.hoisted(() => vi.fn())
+const exportOrdersCsv = vi.hoisted(() => vi.fn())
 const updateShopItem = vi.hoisted(() => vi.fn())
 const box = vi.hoisted(() => ({ prompt: vi.fn(), confirm: vi.fn() }))
 
-vi.mock('@/api', () => ({ fetchEconomy, updateShopItem }))
+vi.mock('@/api', () => ({
+  fetchEconomy,
+  fetchAdminOrders,
+  exportOrdersCsv,
+  updateShopItem,
+}))
 vi.mock('element-plus', async (importOriginal) => {
   const mod = await importOriginal<typeof import('element-plus')>()
   return { ...mod, ElMessageBox: box }
@@ -49,6 +56,7 @@ function shopFixture(overrides: Row = {}): Row {
 
 async function mountEconomy(flows: Row[] = [], shop: Row[] = []) {
   fetchEconomy.mockResolvedValue({ flows, shop })
+  fetchAdminOrders.mockResolvedValue({ items: [], total: 0 })
   const wrapper = mount(EconomyView, { global: { plugins: [ElementPlus] } })
   await flushPromises()
   return wrapper
@@ -303,6 +311,62 @@ describe('EconomyView 商城编辑', () => {
     const wrapper = mount(EconomyView, { global: { plugins: [ElementPlus] } })
     await flushPromises()
     expect(document.body.textContent).toContain('经济数据加载失败：经济服务不可用')
+    wrapper.unmount()
+  })
+})
+
+describe('EconomyView 订单 CSV 导出（新一轮第 40 轮）', () => {
+  it('点击导出 CSV：按当前筛选参数调用接口并触发下载', async () => {
+    const wrapper = await mountEconomy()
+    exportOrdersCsv.mockResolvedValue(new Blob(['\uFEFFid\n']))
+
+    // 设置筛选条件（状态 + 日期范围），再点导出
+    const selects = wrapper.findAllComponents({ name: 'ElSelect' })
+    await selects[0].vm.$emit('update:modelValue', 'paid')
+    const pickers = wrapper.findAllComponents({ name: 'ElDatePicker' })
+    await pickers[0].vm.$emit('update:modelValue', ['2026-10-01', '2026-10-31'])
+    await flushPromises()
+
+    const btn = wrapper.findAll('button').find((b) => b.text() === '导出 CSV')
+    expect(btn, '找不到「导出 CSV」按钮').toBeTruthy()
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(exportOrdersCsv).toHaveBeenCalledWith({
+      status: 'paid',
+      date_from: '2026-10-01',
+      // 结束日期传次日（服务端 date_to 是开区间）
+      date_to: '2026-11-01',
+    })
+    expect(document.body.textContent).toContain('已导出')
+    wrapper.unmount()
+  })
+
+  it('无筛选条件时导出参数为 undefined', async () => {
+    const wrapper = await mountEconomy()
+    exportOrdersCsv.mockResolvedValue(new Blob(['\uFEFFid\n']))
+
+    const btn = wrapper.findAll('button').find((b) => b.text() === '导出 CSV')
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(exportOrdersCsv).toHaveBeenCalledWith({
+      status: undefined,
+      date_from: undefined,
+      date_to: undefined,
+    })
+    wrapper.unmount()
+  })
+
+  it('导出失败：弹出错误消息', async () => {
+    const wrapper = await mountEconomy()
+    exportOrdersCsv.mockRejectedValueOnce(new Error('导出服务不可用'))
+
+    const btn = wrapper.findAll('button').find((b) => b.text() === '导出 CSV')
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(document.body.textContent).toContain('导出失败：导出服务不可用')
     wrapper.unmount()
   })
 })

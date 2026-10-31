@@ -865,6 +865,29 @@ func (s *Server) adminOrders(c *fiber.Ctx) error {
 	return c.JSON(service.NormalizeNilSlices(service.AdminOrdersResp{Items: items, Total: total}))
 }
 
+// adminExportOrders 导出支付订单 CSV（2026-11-01 新一轮第 40 轮）。
+//
+// 与 adminOrders 同口径筛选（状态 + 创建日期范围），readonly 可访问
+// （导出是只读操作，与其它 CSV 导出一致）。
+func (s *Server) adminExportOrders(c *fiber.Ctx) error {
+	status := c.Query("status", "")
+	dateFrom, err := queryTime(c, "date_from")
+	if err != nil {
+		return failErr(c, err)
+	}
+	dateTo, err := queryTime(c, "date_to")
+	if err != nil {
+		return failErr(c, err)
+	}
+	data, err := s.Svc.AdminExportOrders(c.Context(), status, dateFrom, dateTo)
+	if err != nil {
+		return failErr(c, err)
+	}
+	c.Set("Content-Type", "text/csv; charset=utf-8")
+	c.Set("Content-Disposition", `attachment; filename="orders.csv"`)
+	return c.Send(data)
+}
+
 func (s *Server) adminUpdateShop(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {

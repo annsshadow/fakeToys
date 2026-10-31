@@ -340,6 +340,8 @@ func (s *Server) Register(app *fiber.App) {
 	// 订单明细（2026-10-31 实质优化第 33 轮）：
 	// 后台此前只有订单计数，没有明细可查。
 	adm.Get("/orders", s.adminOrders)
+	// 订单 CSV 导出（2026-11-01 新一轮第 40 轮）：读操作，readonly 可访问。
+	adm.Get("/orders/export", s.adminExportOrders)
 	adm.Put("/shop/:id", requireWritable(), s.adminUpdateShop)
 	adm.Get("/announcements", s.adminAnnouncements)
 	// 公告 CSV 导出（2026-10-31 实质优化第 38 轮）：读操作，readonly 可访问。

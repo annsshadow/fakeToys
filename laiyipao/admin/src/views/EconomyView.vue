@@ -7,6 +7,7 @@ import {
   fetchEconomy,
   fetchAdminOrders,
   updateShopItem,
+  exportOrdersCsv,
   type AdminEconomyFlowView,
   type AdminOrderView,
   type AdminShopItemView,
@@ -137,6 +138,32 @@ async function loadOrders() {
 function applyOrderFilter() {
   orderPage.value = 1
   loadOrders()
+}
+
+/**
+ * 导出订单 CSV（2026-11-01 新一轮第 40 轮）。
+ * 与列表同口径的状态 + 日期筛选；readonly 角色也可导出（读操作）。
+ * 下载文件名带日期。
+ */
+async function onExportOrdersCsv() {
+  try {
+    const blob = await exportOrdersCsv({
+      status: orderStatus.value || undefined,
+      date_from: orderDateRange.value?.[0] || undefined,
+      date_to: orderDateRange.value ? nextDay(orderDateRange.value[1]) : undefined,
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `orders_${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+    ElMessage.success(`已导出 ${orders.value.length} 条订单（当前筛选结果）`)
+  } catch (e) {
+    ElMessage.error(`导出失败：${(e as Error).message}`)
+  }
 }
 
 /**
@@ -345,6 +372,8 @@ loadOrders()
           style="width: 260px; margin-left: 8px"
         />
         <el-button @click="applyOrderFilter">查询</el-button>
+        <!-- 订单 CSV 导出（2026-11-01 新一轮第 40 轮） -->
+        <el-button @click="onExportOrdersCsv">导出 CSV</el-button>
       </div>
       <el-table :data="orders" size="small" stripe>
         <el-table-column prop="id" label="ID" width="55" />
