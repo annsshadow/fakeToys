@@ -66,6 +66,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
 import type { BattleHistoryItem, BattleDetail } from '@/api/client'
@@ -79,6 +80,14 @@ const loading = ref(false)
 const expandedId = ref(0)
 const details = ref<Record<number, BattleDetail>>({})
 const detailLoading = ref(false)
+
+/** 深链目标战报 id（2026-11-01 新一轮第 43 轮）：结算页跳转时携带。 */
+const focusBattleId = ref(0)
+
+onLoad((query) => {
+  const id = Number(query?.battle_id ?? 0)
+  if (Number.isInteger(id) && id > 0) focusBattleId.value = id
+})
 
 /** 当前展开行的详情（未拉取时为 undefined）。 */
 const detail = computed<BattleDetail | undefined>(() =>
@@ -153,6 +162,11 @@ async function toggleDetail(it: BattleHistoryItem) {
     return
   }
   expandedId.value = it.id
+  await loadDetail(it)
+}
+
+/** 拉取单局详情（已缓存则直接返回）。 */
+async function loadDetail(it: BattleHistoryItem): Promise<void> {
   if (details.value[it.id]) return
   detailLoading.value = true
   try {
@@ -170,6 +184,14 @@ onMounted(async () => {
   try {
     const res = await api.myBattleHistory()
     items.value = res.items ?? []
+    // 深链（2026-11-01 新一轮第 43 轮）：结算页跳转过来时自动展开刚打的那一局
+    if (focusBattleId.value > 0) {
+      const target = items.value.find((it) => it.id === focusBattleId.value)
+      if (target) {
+        expandedId.value = target.id
+        void loadDetail(target)
+      }
+    }
   } catch {
     // 战报加载失败：展示空态，不阻塞页面
   } finally {

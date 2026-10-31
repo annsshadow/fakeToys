@@ -133,6 +133,16 @@
         </text>
       </view>
       <text class="hash-note">回放哈希 {{ settleResult.replay_hash }}（可验真）</text>
+      <!-- 查看本局战报（2026-11-01 新一轮第 43 轮）：结算响应带 battle_id，
+           跳转战报页并自动展开这一局，玩家可以立即回顾掉落/元素/反应/地形。 -->
+      <view
+        v-if="settleResult.battle_id"
+        class="btn"
+        style="margin-top: 20rpx"
+        @click="goBattleReport"
+      >
+        查看本局战报
+      </view>
       <view class="btn btn-primary" style="margin-top: 20rpx" @click="backToStage">返回关卡</view>
     </view>
 
@@ -570,6 +580,20 @@ function skipCards() {
 
 function backToStage() {
   uni.navigateBack()
+}
+
+/**
+ * 查看本局战报（2026-11-01 新一轮第 43 轮）。
+ *
+ * 结算响应带 `battle_id`，但此前没有任何消费 —— 玩家打完只能看到
+ * 结算面板上的数字，想回顾掉落/元素/反应/地形没有入口。
+ * 这里跳转战报页并携带 battle_id，战报页会自动展开这一局。
+ */
+function goBattleReport() {
+  const id = Number(settleResult.value?.battle_id)
+  if (Number.isInteger(id) && id > 0) {
+    uni.navigateTo({ url: `/pages/battles/battles?battle_id=${id}` })
+  }
 }
 
 /**

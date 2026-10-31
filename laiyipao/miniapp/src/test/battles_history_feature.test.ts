@@ -46,4 +46,11 @@ describe('我的战报历史页守卫', () => {
     expect(index).toContain("'/pages/battles/battles'")
     expect(index).toContain("label: '战报'")
   })
+
+  it('支持 battle_id 深链：结算页跳转后自动展开对应战报（第 43 轮）', () => {
+    const src = readFileSync(BATTLES_VUE, 'utf-8')
+    expect(src).toContain("query?.battle_id")
+    expect(src).toContain('focusBattleId.value = id')
+    expect(src).toContain('items.value.find((it) => it.id === focusBattleId.value)')
+  })
 })
