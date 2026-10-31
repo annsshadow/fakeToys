@@ -79,6 +79,31 @@
         </text>
       </view>
 
+      <!-- 离线收益（2026-10-31 新一轮第 7 轮）。
+           offline_rewards 表与 OFFLINE_CAP_HOURS 配置存在已久，
+           但一直没有玩家入口 —— 这里补上「挂机收益领取」。 -->
+      <view v-if="offlineReward" class="card">
+        <text class="card-title">离线收益</text>
+        <view class="row" style="justify-content: space-between; align-items: center">
+          <view class="flex-1">
+            <view class="row" style="gap: 12rpx; align-items: baseline">
+              <text class="res-v mono">{{ offlineReward.coin }}</text>
+              <text class="res-k">金币可领</text>
+            </view>
+            <text class="dim" style="display: block">
+              已挂机 {{ fmtElapsed(offlineReward.elapsed_hours) }}（上限 {{ offlineReward.cap_hours }} 小时）
+            </text>
+          </view>
+          <view
+            class="btn btn-mini btn-primary"
+            :class="{ disabled: offlineReward.coin <= 0 || claiming }"
+            @click="claimOffline"
+          >
+            {{ claiming ? '领取中' : '领取' }}
+          </view>
+        </view>
+      </view>
+
       <view class="card">
         <text class="card-title">进度</text>
         <view class="kv"><text class="muted">最高关卡</text><text class="mono">第 {{ store.maxStage || 1 }} 关</text></view>
@@ -554,6 +579,44 @@ async function loadDefenseChallengeHistory() {
     defenseChallengeHistory.value = res.items ?? []
   } catch {
     // 被挑战历史是辅助信息，加载失败不打扰主流程
+  }
+}
+
+// 离线收益（2026-10-31 新一轮第 7 轮）。
+const offlineReward = ref<api.OfflineRewardStatus | null>(null)
+const claiming = ref(false)
+
+/** 挂机时长转可读文本。 */
+function fmtElapsed(hours: number): string {
+  if (!isFinite(hours) || hours <= 0) return '不足 1 小时'
+  if (hours < 1) return `${Math.round(hours * 60)} 分钟`
+  return `${hours.toFixed(1)} 小时`
+}
+
+async function loadOfflineReward() {
+  try {
+    offlineReward.value = await api.offlineRewardStatus()
+  } catch {
+    // 离线收益是辅助信息，加载失败不打扰主流程
+  }
+}
+
+/** 领取离线收益：成功则刷新收益状态与钱包。 */
+async function claimOffline() {
+  if (claiming.value || !offlineReward.value || offlineReward.value.coin <= 0) return
+  claiming.value = true
+  try {
+    const res = await api.claimOfflineReward()
+    if (res.coin > 0) {
+      // 领取成功：刷新收益状态 + 钱包（refreshProfile 会拉 /me 与 /wallet）
+      await Promise.all([loadOfflineReward(), store.refreshProfile()])
+    } else {
+      await loadOfflineReward()
+    }
+  } catch {
+    // 领取失败保持现状，玩家可重试
+  } finally {
+    claiming.value = false
   }
 }
 
@@ -1144,6 +1207,8 @@ onShow(async () => {
       loadChallengeHistory(),
       // 被挑战记录（2026-10-31 新一轮第 3 轮）。
       loadDefenseChallengeHistory(),
+      // 离线收益（2026-10-31 新一轮第 7 轮）。
+      loadOfflineReward(),
       loadBattleHistory(),
       loadPurchases(),
       loadRedemptions(),

@@ -180,7 +180,17 @@ type Config struct {
 	MinBattleDuration time.Duration
 
 	// 离线收益
+	// OfflineCapHours 是离线（挂机）收益的累计上限（小时）。
+	// 2026-10-31（新一轮第 7 轮）起由 OfflineReward 端点消费。
 	OfflineCapHours int
+
+	// OfflineCoinPerHour 是离线（挂机）收益的每小时金币速率
+	// （2026-10-31 新一轮第 7 轮）。
+	//
+	// 收益按「距上次领取经过的时长」结算（在线挂机也累计，领取时清零），
+	// 上限由 OfflineCapHours 约束。默认每小时 600 金币：12 小时上限
+	// 7200 金币，约等于每日任务+签到的半天产出，作为挂机收益不破坏经济。
+	OfflineCoinPerHour int
 
 	// DashboardCacheTTL / LeaderboardCacheTTL 是看板与榜单的进程内缓存有效期
 	// （2026-10-23）。
@@ -369,7 +379,8 @@ func Load() Config {
 
 		SettleRecomputeMode: env("SETTLE_RECOMPUTE_MODE", "enforce"),
 
-		OfflineCapHours: envInt("OFFLINE_CAP_HOURS", 12),
+		OfflineCapHours:    envInt("OFFLINE_CAP_HOURS", 12),
+		OfflineCoinPerHour: envInt("OFFLINE_COIN_PER_HOUR", 600),
 
 		// 30s / 15s / 60s：见字段注释里的取舍。0 = 关闭缓存。
 		DashboardCacheTTL:      envDuration("DASHBOARD_CACHE_TTL", 30*time.Second),

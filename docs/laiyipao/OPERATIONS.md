@@ -140,7 +140,8 @@ cd laiyipao/admin   && pnpm install && pnpm dev          # :5175
 | `BATTLE_TOKEN_TTL` | `30m` | 战斗凭证有效期 |
 | `MIN_BATTLE_DURATION` | `15s` | 「清完全场」的最短合理时长，短于此的**胜利**上报会被拒 |
 | `SETTLE_RECOMPUTE_MODE` | `enforce` | 服务端重算的处置档位，`off` / `shadow` / `enforce`。**不发版即可切换**，改环境变量重启生效 |
-| `OFFLINE_CAP_HOURS` | `12` | 离线收益累计上限 |
+| `OFFLINE_CAP_HOURS` | `12` | 离线收益累计上限（2026-10-31 新一轮第 7 轮起由 `GET/POST /me/offline-reward` 消费） |
+| `OFFLINE_COIN_PER_HOUR` | `600` | 离线收益每小时金币速率（2026-10-31 新一轮第 7 轮）。收益按「距上次领取的时长 × 速率」结算，领取时清零；`0` = 无收益 |
 | `DASHBOARD_CACHE_TTL` | `30s` | 运营看板的进程内缓存有效期。**设成 `0` 即关闭缓存**（每次都查库）—— 排查「数字为什么不动」时先关它，不需要发版 |
 | `LEADERBOARD_CACHE_TTL` | `15s` | 三个榜单的进程内缓存有效期。`0` = 关闭。⚠️ `/me/rank`（我的排名）**不受它影响**，永远实时 |
 | `SIGNIN_CALENDAR_CACHE_TTL` | `60s` | 签到日历预览的进程内缓存有效期。`0` = 关闭（日历是 seeder 静态配置，后台无修改入口，通常不用关） |

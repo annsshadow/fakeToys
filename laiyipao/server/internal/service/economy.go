@@ -569,6 +569,121 @@ func (s *Service) SignInStatus(ctx context.Context, userID int64) (SignInStatus,
 	return SignInStatus{ClaimedCount: claimed, SignedToday: signedToday, CanSign: !signedToday && claimed < cycleLen}, nil
 }
 
+// --- 离线（挂机）收益 ---
+
+// OfflineRewardStatus 是离线收益的查询结果（2026-10-31 新一轮第 7 轮）。
+type OfflineRewardStatus struct {
+	// Coin 是当前可领取的金币（0 = 还没攒够或刚领过）。
+	Coin int64 `json:"coin"`
+	// ElapsedHours 是距上次领取已累计的小时数（已按上限封顶）。
+	ElapsedHours float64 `json:"elapsed_hours"`
+	// CapHours 是累计上限（小时）。
+	CapHours int `json:"cap_hours"`
+	// LastClaimAt 是上次领取时间。
+	LastClaimAt time.Time `json:"last_claim_at"`
+}
+
+// offlineRewardFor 按「距上次领取的时长」结算金币，并封顶。
+//
+// 口径（2026-10-31 新一轮第 7 轮）：`offline_rewards.last_claim_at`
+// 是上次领取时刻，收益 = 经过时长 × 每小时速率，**领取时清零**。
+// 在线挂机同样累计（GAME_DESIGN 对离线收益的定位就是「挂机产出」）。
+// 上限由 `OfflineCapHours` 约束；`OfflineCapHours <= 0` 视为不封顶，
+// `OfflineCoinPerHour <= 0` 则恒为 0 收益。
+func (s *Service) offlineRewardFor(lastClaimAt time.Time, now time.Time) (coin int64, elapsed time.Duration) {
+	elapsed = now.Sub(lastClaimAt)
+	if cap := s.Cfg().OfflineCapHours; cap > 0 {
+		capDur := time.Duration(cap) * time.Hour
+		if elapsed > capDur {
+			elapsed = capDur
+		}
+	}
+	rate := s.Cfg().OfflineCoinPerHour
+	if rate <= 0 {
+		return 0, elapsed
+	}
+	coin = int64(elapsed.Seconds() * float64(rate) / float64(time.Hour/time.Second))
+	return coin, elapsed
+}
+
+// OfflineRewardStatus 返回当前玩家可领取的离线收益。
+//
+// 老用户可能没有 `offline_rewards` 行（迁移上线前注册），
+// 查询用 data-modifying CTE 幂等补行，保证首次访问不报 404。
+func (s *Service) OfflineRewardStatus(ctx context.Context, userID int64) (OfflineRewardStatus, error) {
+	var lastClaimAt time.Time
+	err := s.pool.QueryRow(ctx, `
+		WITH ensure AS (
+		  INSERT INTO offline_rewards (user_id) VALUES ($1)
+		  ON CONFLICT (user_id) DO NOTHING
+		  RETURNING last_claim_at
+		)
+		SELECT last_claim_at FROM ensure
+		UNION ALL
+		SELECT last_claim_at FROM offline_rewards WHERE user_id = $1
+		  AND NOT EXISTS (SELECT 1 FROM ensure)`, userID).Scan(&lastClaimAt)
+	if err != nil {
+		return OfflineRewardStatus{}, fmt.Errorf("load offline reward: %w", err)
+	}
+	coin, elapsed := s.offlineRewardFor(lastClaimAt, time.Now())
+	return OfflineRewardStatus{
+		Coin:         coin,
+		ElapsedHours: elapsed.Hours(),
+		CapHours:     s.Cfg().OfflineCapHours,
+		LastClaimAt:  lastClaimAt,
+	}, nil
+}
+
+// ClaimOfflineReward 领取离线收益：发金币并清零计时。
+//
+// 并发安全：事务内 `SELECT ... FOR UPDATE` 锁行 —— 两个并发领取
+// 串行化，后到者在锁释放后读到已清零的 last_claim_at，收益为 0，
+// 不会重复发奖。
+//
+// 收益为 0 时**不清零**（玩家离线不足一小时就点领取，不应把已累计的
+// 时间吞掉），返回 `{"coin": 0}`。
+func (s *Service) ClaimOfflineReward(ctx context.Context, userID int64) (map[string]int64, error) {
+	var reward map[string]int64
+	err := s.DB.Tx(ctx, func(tx pgx.Tx) error {
+		var lastClaimAt time.Time
+		err := tx.QueryRow(ctx,
+			`SELECT last_claim_at FROM offline_rewards WHERE user_id = $1 FOR UPDATE`, userID).Scan(&lastClaimAt)
+		if errors.Is(err, pgx.ErrNoRows) {
+			// 老用户首次领取：先补行，再锁。
+			if _, ierr := tx.Exec(ctx,
+				`INSERT INTO offline_rewards (user_id) VALUES ($1) ON CONFLICT (user_id) DO NOTHING`, userID); ierr != nil {
+				return fmt.Errorf("init offline reward: %w", ierr)
+			}
+			if err := tx.QueryRow(ctx,
+				`SELECT last_claim_at FROM offline_rewards WHERE user_id = $1 FOR UPDATE`, userID).Scan(&lastClaimAt); err != nil {
+				return fmt.Errorf("lock offline reward: %w", err)
+			}
+		} else if err != nil {
+			return fmt.Errorf("lock offline reward: %w", err)
+		}
+
+		coin, _ := s.offlineRewardFor(lastClaimAt, time.Now())
+		if coin <= 0 {
+			reward = map[string]int64{"coin": 0}
+			return nil
+		}
+		// 发金币（grantWallet 写 wallet_flows，reason=offline_reward）
+		if err := s.grantWallet(ctx, tx, userID, map[string]int64{"coin": coin}, "offline_reward", 0); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx,
+			`UPDATE offline_rewards SET last_claim_at = now() WHERE user_id = $1`, userID); err != nil {
+			return fmt.Errorf("update offline reward: %w", err)
+		}
+		reward = map[string]int64{"coin": coin}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return reward, nil
+}
+
 // Redeem 兑换兑换码。
 func (s *Service) Redeem(ctx context.Context, userID int64, code string) (map[string]int, error) {
 	var out map[string]int

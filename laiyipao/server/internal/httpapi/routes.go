@@ -158,6 +158,12 @@ func (s *Server) Register(app *fiber.App) {
 	// 我的支付订单（2026-10-31 实质优化第 27 轮）。
 	// orders 记录支付订单（mock provider），玩家端此前没有任何入口。
 	me.Get("/orders", s.myOrders)
+	// 离线（挂机）收益（2026-10-31 新一轮第 7 轮）。
+	// offline_rewards 表与 OFFLINE_CAP_HOURS 配置存在已久，但始终没有
+	// 玩家入口 —— 运维文档明确标注「已解析但当前无离线收益端点消费」。
+	// 查询可领金额；领取是经济写操作，走 economyWriteLimit 限流。
+	me.Get("/offline-reward", s.offlineReward)
+	me.Post("/offline-reward/claim", authRateLimit("offlinereward", economyWriteLimit), s.claimOfflineReward)
 
 	wallet := v1.Group("/wallet", requireUser(s.Svc))
 	wallet.Get("/", s.wallet)
@@ -783,6 +789,26 @@ func (s *Server) myOrders(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	return c.JSON(fiber.Map{"items": items})
+}
+
+// offlineReward 返回当前玩家可领取的离线（挂机）收益
+// （2026-10-31 新一轮第 7 轮）。
+func (s *Server) offlineReward(c *fiber.Ctx) error {
+	status, err := s.Svc.OfflineRewardStatus(c.Context(), userIDFrom(c))
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(status)
+}
+
+// claimOfflineReward 领取离线（挂机）收益
+// （2026-10-31 新一轮第 7 轮）。
+func (s *Server) claimOfflineReward(c *fiber.Ctx) error {
+	reward, err := s.Svc.ClaimOfflineReward(c.Context(), userIDFrom(c))
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(reward)
 }
 
 // washGem 消耗 1 枚洗练券，重 roll 这颗宝石的词条（品质不变）。

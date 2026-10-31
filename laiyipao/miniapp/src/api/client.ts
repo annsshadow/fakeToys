@@ -1210,6 +1210,28 @@ export function myOrders(): Promise<{ items: OrderItem[] }> {
 }
 
 /**
+ * 离线（挂机）收益（2026-10-31 新一轮第 7 轮）。
+ *
+ * 服务端 `GET /me/offline-reward` 返回可领取的挂机金币
+ * （按距上次领取的时长 × 每小时速率结算，上限 OFFLINE_CAP_HOURS 小时）；
+ * `POST /me/offline-reward/claim` 领取并清零计时。
+ */
+export interface OfflineRewardStatus {
+  coin: number
+  elapsed_hours: number
+  cap_hours: number
+  last_claim_at: string
+}
+
+export function offlineRewardStatus(): Promise<OfflineRewardStatus> {
+  return request<OfflineRewardStatus>('/me/offline-reward')
+}
+
+export function claimOfflineReward(): Promise<{ coin: number }> {
+  return request<{ coin: number }>('/me/offline-reward/claim', { method: 'POST' })
+}
+
+/**
  * 卡关诊断（L-1）。
  *
  * 2026-10-21（P2-7）：`failed_times` 此前由客户端**硬编码成 2**，

@@ -61,7 +61,8 @@ CI 的 govulncheck 闸门会直接红。升级方式只是 `go.mod` 一行 —�
 | `BATTLE_TOKEN_TTL` | `30m` | 否 | 开局凭证有效期 |
 | `MIN_BATTLE_DURATION` | `15s` | 否 | 最短可信战斗时长 |
 | `SETTLE_RECOMPUTE_MODE` | `enforce` | 否 | `off` / `shadow` / `enforce` |
-| `OFFLINE_CAP_HOURS` | `12` | 否 | ⚠️ 已解析但当前无离线收益端点消费 |
+| `OFFLINE_CAP_HOURS` | `12` | 否 | 离线收益累计上限（2026-10-31 新一轮第 7 轮起由 `GET/POST /me/offline-reward` 消费） |
+| `OFFLINE_COIN_PER_HOUR` | `600` | 否 | 离线收益每小时金币速率（2026-10-31 新一轮第 7 轮） |
 | `PLAYER_LOGIN_REQUIRED` | `false` | 否 | 开启后玩家必须用账号口令登录，`/auth/guest` 一律 403；启动时引导一个**与超管同名同口令**的共享测试账号 |
 | `BOOTSTRAP_ADMIN_USER` | `admin` | 否 | 首次引导管理员用户名 |
 | `BOOTSTRAP_ADMIN_PASS` | `admin12345` | **是** | prod 下未显式设置会 panic；长度 < 10 时拒绝创建 |
