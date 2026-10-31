@@ -79,6 +79,16 @@ func (s *Service) Login(ctx context.Context, username, password string) (TokenPa
 		return TokenPair{}, fmt.Errorf("%w: 账号已被封禁", ErrForbidden)
 	}
 
+	// 2026-10-31（新一轮第 12 轮）：账号密码登录此前**不更新**
+	// `last_login_at` —— 游客登录（GuestLogin）与微信登录（WechatLogin）
+	// 都走 `ON CONFLICT DO UPDATE SET last_login_at = now()`，唯独账号登录
+	// 只读不写，于是 `/me` 的「最近登录」对账号玩家恒等于注册时间。
+	// 先落时间戳再读用户，返回的 TokenPair.User 也带最新值。
+	if _, err := s.pool.Exec(ctx,
+		`UPDATE users SET last_login_at = now() WHERE id = $1`, id); err != nil {
+		return TokenPair{}, fmt.Errorf("touch player login: %w", err)
+	}
+
 	u, err := s.loadUser(ctx, id)
 	if err != nil {
 		return TokenPair{}, err

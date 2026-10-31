@@ -173,3 +173,44 @@ func TestEnsureBootstrapPlayerRejectsShortPassword(t *testing.T) {
 		t.Error("口令短于 10 位应被拒绝")
 	}
 }
+
+// TestPlayerLoginUpdatesLastLoginAt 账号密码登录必须刷新 last_login_at
+// （2026-10-31 新一轮第 12 轮）。
+//
+// 游客/微信登录都走 `ON CONFLICT DO UPDATE SET last_login_at = now()`，
+// 唯独账号登录此前只读不写 —— `/me` 的「最近登录」对账号玩家恒等于
+// 注册时间。修复后登录应把 last_login_at 刷新到当下。
+func TestPlayerLoginUpdatesLastLoginAt(t *testing.T) {
+	ts := openTestService(t)
+	ctx := context.Background()
+
+	username := fmt.Sprintf("login_touch_%d", time.Now().UnixNano())
+	const password = "test-password-12345"
+	if _, err := ts.EnsureBootstrapPlayer(ctx, username, password); err != nil {
+		t.Fatalf("引导玩家账号失败：%v", err)
+	}
+
+	var uid int64
+	if err := ts.db.Pool.QueryRow(ctx,
+		`SELECT id FROM users WHERE username = $1`, username).Scan(&uid); err != nil {
+		t.Fatalf("查用户失败：%v", err)
+	}
+	// 把 last_login_at 改成 1 小时前，模拟「上次登录是很久以前」
+	if _, err := ts.db.Pool.Exec(ctx,
+		`UPDATE users SET last_login_at = now() - interval '1 hour' WHERE id = $1`, uid); err != nil {
+		t.Fatalf("改 last_login_at 失败：%v", err)
+	}
+
+	if _, err := ts.Login(ctx, username, password); err != nil {
+		t.Fatalf("登录失败：%v", err)
+	}
+
+	var lastLoginAt time.Time
+	if err := ts.db.Pool.QueryRow(ctx,
+		`SELECT last_login_at FROM users WHERE id = $1`, uid).Scan(&lastLoginAt); err != nil {
+		t.Fatalf("读 last_login_at 失败：%v", err)
+	}
+	if time.Since(lastLoginAt) > time.Minute {
+		t.Errorf("登录后 last_login_at 应刷新为现在（原 1 小时前），实际 %v", lastLoginAt)
+	}
+}
