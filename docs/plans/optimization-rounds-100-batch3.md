@@ -80,6 +80,7 @@
 | 68 | 2026-11-01 | **后台审计日志用户操作对象可点击跳转**：审计日志里 ban_user / grant_currency 等操作的 target 是用户 id，运营追查时要手动复制再切页面 | admin ContentView 审计日志「对象」列：对用户相关操作（ban_user/unban_user/grant_currency/revoke_currency/reset_password）且 target 为纯数字时渲染 el-link，点击跳转 `/users?user_id=`（复用第 38 轮深链）；其他操作保持原值不可点击；admin 测试新增 2 用例 | admin type-check 通过；392 测试全绿（新增审计对象跳转 2 用例）；无 Go 改动 |
 | 69 | 2026-11-01 | **后台公告行级玩家端预览**：运营要回看某条已发布公告的玩家端效果，只能先点编辑再点预览 —— 列表里没有直达入口 | admin ContentView 公告行操作列新增「预览」按钮（回填表单并打开玩家端预览对话框）；admin 测试新增 1 用例 | admin type-check 通过；393 测试全绿（新增行级预览 1 用例）；无 Go 改动 |
 | 70 | 2026-11-01 | **敌人图鉴搜索**：敌人图鉴有几十种敌人（普通/远程/飞行/精英/Boss），没有搜索时想找一种敌人只能滚动翻找 | miniapp `enemies.vue` 顶部新增搜索框，按名称 / 类别中文 / 原始类别 key 实时过滤；新增守卫测试 `enemies_search_feature.test.ts` | miniapp type-check 通过、新守卫 2 用例通过、全量 1228 测试全绿 |
+| 71 | 2026-11-01 | **技能图鉴搜索**：技能图鉴条目多（主动/被动、多元素），没有搜索时想找一种技能只能滚动翻找 | miniapp `skills.vue` 顶部新增搜索框，按名称 / 元素中文 / 主动被动实时过滤；新增守卫测试 `skills_search_feature.test.ts` | miniapp type-check 通过、新守卫 2 用例通过、全量 1230 测试全绿 |
 | ... | | 持续至 100 轮 | | |
 
-> 状态：进行中。当前累计 **70 轮实质优化**，距 100 轮还差 30 轮。
+> 状态：进行中。当前累计 **71 轮实质优化**，距 100 轮还差 29 轮。

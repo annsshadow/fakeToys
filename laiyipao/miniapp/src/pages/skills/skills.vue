@@ -12,11 +12,18 @@
       <!-- 技能图鉴（服务端下发的权威表） -->
       <view class="card">
         <text class="card-title">技能图鉴</text>
+        <!-- 搜索（2026-11-01 新一轮第 71 轮）：按名称/元素/主动被动过滤 -->
+        <input
+          v-model="keyword"
+          class="search-inp"
+          placeholder="搜索技能名称 / 元素 / 主动被动"
+          placeholder-class="ph"
+        />
         <text class="muted" style="display: block; margin-bottom: 12rpx">
           数值直接来自服务端 /config，与游戏内实际生效的一致。
           {{ ownedCount }} / {{ skills.length }} 个已解锁（背包可查看拥有状态）。
         </text>
-        <view v-for="s in skills" :key="s.id" class="skill">
+        <view v-for="s in filteredSkills" :key="s.id" class="skill">
           <view class="rxn-head">
             <text class="rxn-name">{{ s.name }}</text>
             <text class="tag" :class="'tag-' + s.element">{{ elementName(s.element) }}</text>
@@ -43,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useGameStore } from '@/store/game'
 import { ELEMENT_NAME, type Element } from '@/game/elements'
 
@@ -58,6 +65,21 @@ const store = useGameStore()
  * 这里补上图鉴页，并标注已拥有状态。
  */
 const skills = computed(() => store.config?.skills ?? [])
+
+/** 图鉴搜索（2026-11-01 新一轮第 71 轮）：名称/元素/主动被动过滤。 */
+const keyword = ref('')
+
+const filteredSkills = computed(() => {
+  const kw = keyword.value.trim().toLowerCase()
+  if (!kw) return skills.value
+  return skills.value.filter((s) => {
+    return (
+      s.name.toLowerCase().includes(kw) ||
+      elementName(s.element).toLowerCase().includes(kw) ||
+      (s.kind === 'active' ? '主动' : '被动').includes(kw)
+    )
+  })
+})
 
 /**
  * 已拥有判据与背包一致：服务端 `build.skills` 里有没有这一行
@@ -86,5 +108,22 @@ function elementName(e: Element): string {
 .skill {
   border-top: 1rpx solid var(--border, #eee);
   padding: 16rpx 0;
+}
+
+/* 图鉴搜索（2026-11-01 新一轮第 71 轮） */
+.search-inp {
+  display: block;
+  height: 72rpx;
+  padding: 0 20rpx;
+  margin-bottom: 12rpx;
+  background: var(--panel-2, #f5f6f7);
+  border: 1rpx solid var(--border, #eee);
+  border-radius: 12rpx;
+  font-size: 26rpx;
+  color: var(--text, #222);
+}
+
+.ph {
+  color: var(--dim, #9aa0a6);
 }
 </style>
