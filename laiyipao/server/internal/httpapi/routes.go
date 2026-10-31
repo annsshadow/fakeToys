@@ -149,6 +149,9 @@ func (s *Server) Register(app *fiber.App) {
 	// 我的战报历史（2026-10-30 实质优化第 19 轮）。
 	// 玩家打完关卡后没有任何历史战报入口。
 	me.Get("/battles", s.myBattleHistory)
+	// 我的战报详情（2026-10-31 新一轮第 10 轮）。
+	// 战报列表只有摘要，单局掉落/元素/反应/地形没有查看入口。
+	me.Get("/battles/:id", s.myBattleDetail)
 	// 我的购买记录（2026-10-30 实质优化第 20 轮）。
 	// 玩家每次商城购买都落 user_purchases，但玩家端没有任何入口。
 	me.Get("/purchases", s.myPurchases)
@@ -762,6 +765,20 @@ func (s *Server) myBattleHistory(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	return c.JSON(fiber.Map{"items": items})
+}
+
+// myBattleDetail 返回当前玩家单局战报的完整详情
+// （2026-10-31 新一轮第 10 轮）。
+func (s *Server) myBattleDetail(c *fiber.Ctx) error {
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil || id < 1 {
+		return fail(c, fiber.StatusBadRequest, "bad_input", "战报 ID 非法")
+	}
+	detail, err := s.Svc.MyBattleDetail(c.Context(), userIDFrom(c), id)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(detail)
 }
 
 // myPurchases 返回当前玩家最近的商城购买记录。

@@ -1152,6 +1152,39 @@ export function myBattleHistory(): Promise<{ items: BattleHistoryItem[] }> {
 }
 
 /**
+ * 我的战报详情（2026-10-31 新一轮第 10 轮）。
+ *
+ * 服务端 `GET /me/battles/:id` 返回单局完整详情：掉落、元素/反应/地形
+ * 使用、命中、峰值热量、剩余血量等。战报列表只有摘要，详情补全回顾入口。
+ */
+export interface BattleDetail {
+  id: number
+  level_id: number
+  result: string
+  stars: number
+  score: number
+  kills: number
+  leaked: number
+  hp_left: number
+  wave_reached: number
+  duration_ms: number
+  shots: number
+  hits: number
+  reactions: number
+  heat_max: number
+  elements_used: Record<string, number>
+  reactions_used: Record<string, number>
+  terrain_used: string[]
+  loot: Record<string, number>
+  replay_hash: string
+  created_at: string
+}
+
+export function myBattleDetail(id: number): Promise<BattleDetail> {
+  return request<BattleDetail>(`/me/battles/${id}`)
+}
+
+/**
  * 我的购买记录（2026-10-30 实质优化第 20 轮）。
  *
  * 服务端 `GET /me/purchases` 返回最近 20 条商城购买记录

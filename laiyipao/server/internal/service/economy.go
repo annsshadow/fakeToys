@@ -1132,6 +1132,78 @@ func (s *Service) MyBattleHistory(ctx context.Context, userID int64, limit int) 
 	return out, rows.Err()
 }
 
+// BattleDetail 是单局战报的完整详情（2026-10-31 新一轮第 10 轮）。
+type BattleDetail struct {
+	ID            int64          `json:"id"`
+	LevelID       int            `json:"level_id"`
+	Result        string         `json:"result"`
+	Stars         int            `json:"stars"`
+	Score         int64          `json:"score"`
+	Kills         int            `json:"kills"`
+	Leaked        int            `json:"leaked"`
+	HpLeft        int            `json:"hp_left"`
+	WaveReached   int            `json:"wave_reached"`
+	DurationMs    int            `json:"duration_ms"`
+	Shots         int            `json:"shots"`
+	Hits          int            `json:"hits"`
+	Reactions     int            `json:"reactions"`
+	HeatMax       int            `json:"heat_max"`
+	ElementsUsed  map[string]int `json:"elements_used"`
+	ReactionsUsed map[string]int `json:"reactions_used"`
+	TerrainUsed   []string       `json:"terrain_used"`
+	Loot          map[string]int `json:"loot"`
+	ReplayHash    string         `json:"replay_hash"`
+	CreatedAt     time.Time      `json:"created_at"`
+}
+
+// MyBattleDetail 返回当前玩家单局战报的完整详情。
+//
+// 战报列表（`MyBattleHistory`）只有摘要（关卡/结果/星级/分数），
+// 玩家想回顾「这局拿了多少掉落、用了什么元素、触发了什么反应」
+// 没有任何入口。这里补上单局详情：掉落、元素/反应/地形使用、
+// 命中、峰值热量等全部字段。
+//
+// 归属校验与 `getReplay` 同口径：`WHERE id = $1 AND user_id = $2`，
+// 「不存在」与「不是你的」返回同一个 `ErrNotFound`（避免 id 预言机）。
+func (s *Service) MyBattleDetail(ctx context.Context, userID, battleID int64) (BattleDetail, error) {
+	var d BattleDetail
+	var elementsRaw, reactionsRaw, terrainRaw, lootRaw []byte
+	err := s.pool.QueryRow(ctx, `
+		SELECT id, level_id, result, stars, score, kills, leaked, hp_left,
+		       wave_reached, duration_ms, shots, hits, reactions, heat_max,
+		       elements_used, reactions_used, terrain_used, loot, replay_hash, created_at
+		FROM battle_records
+		WHERE id = $1 AND user_id = $2`, battleID, userID).
+		Scan(&d.ID, &d.LevelID, &d.Result, &d.Stars, &d.Score, &d.Kills, &d.Leaked, &d.HpLeft,
+			&d.WaveReached, &d.DurationMs, &d.Shots, &d.Hits, &d.Reactions, &d.HeatMax,
+			&elementsRaw, &reactionsRaw, &terrainRaw, &lootRaw, &d.ReplayHash, &d.CreatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return BattleDetail{}, fmt.Errorf("%w: battle %d", ErrNotFound, battleID)
+	}
+	if err != nil {
+		return BattleDetail{}, fmt.Errorf("load battle detail: %w", err)
+	}
+	// jsonb 解析：坏数据 fail-loud（AGENTS #11），不静默给空值。
+	if err := json.Unmarshal(elementsRaw, &d.ElementsUsed); err != nil {
+		return BattleDetail{}, fmt.Errorf("battle %d elements_used 非法 jsonb: %w", battleID, err)
+	}
+	if err := json.Unmarshal(reactionsRaw, &d.ReactionsUsed); err != nil {
+		return BattleDetail{}, fmt.Errorf("battle %d reactions_used 非法 jsonb: %w", battleID, err)
+	}
+	if err := json.Unmarshal(terrainRaw, &d.TerrainUsed); err != nil {
+		return BattleDetail{}, fmt.Errorf("battle %d terrain_used 非法 jsonb: %w", battleID, err)
+	}
+	if err := json.Unmarshal(lootRaw, &d.Loot); err != nil {
+		return BattleDetail{}, fmt.Errorf("battle %d loot 非法 jsonb: %w", battleID, err)
+	}
+	// 响应形状稳定：空值给 `{}` / `[]` 而不是 `null`。
+	d.ElementsUsed = orEmptyMap(d.ElementsUsed)
+	d.ReactionsUsed = orEmptyMap(d.ReactionsUsed)
+	d.TerrainUsed = orEmptySlice(d.TerrainUsed)
+	d.Loot = orEmptyMap(d.Loot)
+	return d, nil
+}
+
 // MyPurchaseItem 是玩家购买记录的一行（2026-10-30 实质优化第 20 轮）。
 type MyPurchaseItem struct {
 	ID           int64          `json:"id"`

@@ -297,13 +297,29 @@
       <view v-if="battleHistory.length" class="card">
         <text class="card-title">最近战报</text>
         <view v-for="b in battleHistory" :key="b.id" class="ch-row">
-          <view class="flex-1 row" style="gap: 8rpx; min-width: 0">
-            <text class="mono">第 {{ b.level_id }} 关</text>
-            <text class="dim ellipsis">
-              {{ b.result === 'win' ? '胜利' : '失败' }} · {{ b.stars }} 星 · {{ b.score }} 分
-            </text>
-            <!-- 从战报进入验真（2026-10-31 实质优化第 35 轮） -->
-            <text class="dim link" @click="goVerify(b)">验真</text>
+          <view class="flex-1" style="min-width: 0">
+            <view class="row" style="gap: 8rpx; min-width: 0">
+              <text class="mono">第 {{ b.level_id }} 关</text>
+              <text class="dim ellipsis">
+                {{ b.result === 'win' ? '胜利' : '失败' }} · {{ b.stars }} 星 · {{ b.score }} 分
+              </text>
+              <!-- 从战报进入验真（2026-10-31 实质优化第 35 轮） -->
+              <text class="dim link" @click="goVerify(b)">验真</text>
+              <!-- 战报详情（2026-10-31 新一轮第 10 轮） -->
+              <text class="dim link" @click="toggleBattleDetail(b)">详情</text>
+            </view>
+            <!-- 展开的单局完整详情 -->
+            <view v-if="battleDetail && battleDetail.id === b.id" style="margin-top: 8rpx">
+              <view class="kv"><text class="muted">掉落</text><text class="mono">{{ lootText(battleDetail.loot) || '无' }}</text></view>
+              <view class="kv"><text class="muted">元素使用</text><text class="mono">{{ mapText(battleDetail.elements_used) || '无' }}</text></view>
+              <view class="kv"><text class="muted">反应</text><text class="mono">{{ mapText(battleDetail.reactions_used) || '无' }}</text></view>
+              <view class="kv"><text class="muted">地形</text><text class="mono">{{ (battleDetail.terrain_used || []).join('、') || '无' }}</text></view>
+              <view class="kv"><text class="muted">命中</text><text class="mono">{{ battleDetail.hits }}/{{ battleDetail.shots }}</text></view>
+              <view class="kv"><text class="muted">峰值热量</text><text class="mono">{{ battleDetail.heat_max }}</text></view>
+              <view class="kv"><text class="muted">剩余血量</text><text class="mono">{{ battleDetail.hp_left }}%</text></view>
+              <view class="kv"><text class="muted">到达波次</text><text class="mono">{{ battleDetail.wave_reached }}</text></view>
+              <view class="kv"><text class="muted">时长</text><text class="mono">{{ Math.round(battleDetail.duration_ms / 1000) }}s</text></view>
+            </view>
           </view>
           <text class="dim">{{ fmtChallengeTime(b.created_at) }}</text>
         </view>
@@ -640,6 +656,30 @@ function goVerify(b: api.BattleHistoryItem) {
   uni.navigateTo({
     url: `/pages/verify/verify?battle_id=${b.id}&hash=${encodeURIComponent(b.replay_hash ?? '')}`,
   })
+}
+
+// 战报详情（2026-10-31 新一轮第 10 轮）。
+// 列表只有摘要，点「详情」展开单局的掉落/元素/反应/地形/命中。
+const battleDetail = ref<api.BattleDetail | null>(null)
+
+/** 把 `{fire:12, ice:3}` 转成 `fire 12、ice 3`。 */
+function mapText(m: Record<string, number> | undefined): string {
+  if (!m) return ''
+  return Object.entries(m)
+    .map(([k, v]) => `${k} ${v}`)
+    .join('、')
+}
+
+async function toggleBattleDetail(b: api.BattleHistoryItem) {
+  if (battleDetail.value?.id === b.id) {
+    battleDetail.value = null
+    return
+  }
+  try {
+    battleDetail.value = await api.myBattleDetail(b.id)
+  } catch {
+    battleDetail.value = null
+  }
 }
 
 // 购买记录（2026-10-30 实质优化第 20 轮）。
