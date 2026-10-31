@@ -83,6 +83,18 @@
         </text>
       </view>
 
+      <!-- 设置：战斗音效开关（2026-11-01 新一轮第 79 轮） -->
+      <view class="card">
+        <text class="card-title">设置</text>
+        <view class="row" style="justify-content: space-between; align-items: center">
+          <text>战斗音效</text>
+          <switch :checked="sfxMuted" color="#ff6b35" @change="onSfxToggle" />
+        </view>
+        <text class="muted" style="display: block; margin-top: 8rpx">
+          关闭后战斗中的射击/反应/胜利等音效将静音，偏好会保存在本机。
+        </text>
+      </view>
+
       <!-- 离线收益（2026-10-31 新一轮第 7 轮）。
            offline_rewards 表与 OFFLINE_CAP_HOURS 配置存在已久，
            但一直没有玩家入口 —— 这里补上「挂机收益领取」。 -->
@@ -509,6 +521,7 @@
 <script setup lang="ts">
 import { currencyName } from '@/utils/labels'
 import { useStatusBarPad } from '@/utils/statusBar'
+import { isMuted, setMuted } from '@/audio/sfx'
 import { ref, computed, onMounted } from 'vue'
 import {onShow, onUnload} from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
@@ -527,6 +540,18 @@ import type { Element } from '@/game/elements'
 import type { GeneratedLevel } from '@/game/types'
 
 const store = useGameStore()
+
+/**
+ * 战斗音效开关（2026-11-01 新一轮第 79 轮）。
+ * 音效系统支持静音持久化（lyp_sfx_muted），但此前没有任何 UI 入口。
+ */
+const sfxMuted = ref(isMuted())
+
+function onSfxToggle(e: { detail?: { value?: boolean } }) {
+  const next = e.detail?.value === true
+  setMuted(next)
+  sfxMuted.value = next
+}
 /**
  * 延迟回调的句柄（2026-10-21 P6-7）。
  *
