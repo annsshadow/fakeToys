@@ -216,6 +216,9 @@ const menus = [
   // 宝石图鉴（2026-10-31 新一轮第 27 轮）：`/config.gems` 的 8 种宝石
   // 此前只对已拥有实例可见。
   { path: '/pages/gems/gems', label: '宝石', icon: '💎' },
+  // 皮肤图鉴（2026-10-31 新一轮第 35 轮）：`/config.skins` 的 6 款皮肤
+  // 定义此前零 UI 消费。
+  { path: '/pages/skins/skins', label: '皮肤', icon: '🎨' },
   { path: '/pages/signin/signin', label: '签到', icon: '📅' },
   { path: '/pages/rank/rank', label: '排行', icon: '🏆' },
   { path: '/pages/verify/verify', label: '验真', icon: '🔍' },

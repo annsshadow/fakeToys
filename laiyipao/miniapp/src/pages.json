@@ -64,6 +64,12 @@
       }
     },
     {
+      "path": "pages/skins/skins",
+      "style": {
+        "navigationBarTitleText": "皮肤图鉴"
+      }
+    },
+    {
       "path": "pages/shop/shop",
       "style": {
         "navigationBarTitleText": "商城"
