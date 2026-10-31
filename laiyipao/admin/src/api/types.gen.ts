@@ -353,6 +353,7 @@ export interface AdminUserDetailResp {
   recent_battles: AdminBattleView[]
   verifications: AdminVerificationView[]
   flow_count: number
+  defense: AdminDefenseView | null
 }
 
 export interface AdminUserResp {

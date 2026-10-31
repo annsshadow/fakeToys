@@ -493,6 +493,18 @@ const asRow = (r: unknown) => r as AdminUserView
             <el-descriptions-item label="验真">{{ detail.user.verify_checked }} / 不匹配 {{ detail.user.verify_mismatched }}</el-descriptions-item>
             <el-descriptions-item label="流水条数">{{ detail.flow_count }}</el-descriptions-item>
           </el-descriptions>
+          <!-- 防线信息（2026-10-31 新一轮第 31 轮） -->
+          <el-descriptions v-if="detail.defense" :column="2" border size="small" style="margin-top: 8px">
+            <el-descriptions-item label="防线名">{{ detail.defense.name || '（未命名）' }}</el-descriptions-item>
+            <el-descriptions-item label="战力">{{ detail.defense.power }}</el-descriptions-item>
+            <el-descriptions-item label="战绩">{{ detail.defense.wins }} 胜 / {{ detail.defense.losses }} 负</el-descriptions-item>
+            <el-descriptions-item label="护盾至">
+              {{ detail.defense.shielded_until ? fmtTime(detail.defense.shielded_until) : '无' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="快照哈希" :span="2">
+              <code>{{ detail.defense.snapshot_hash ? detail.defense.snapshot_hash.slice(0, 32) + '…' : '—' }}</code>
+            </el-descriptions-item>
+          </el-descriptions>
 
           <div class="section-title">构筑</div>
           <el-descriptions :column="1" border size="small">

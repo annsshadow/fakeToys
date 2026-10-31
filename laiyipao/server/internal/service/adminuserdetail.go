@@ -44,6 +44,8 @@ type AdminUserDetailResp struct {
 	Verifications []AdminVerificationView `json:"verifications"`
 	// FlowCount 是钱包流水的条数（用于「有没有流水」这个问题的快答）。
 	FlowCount int `json:"flow_count"`
+	// Defense 是玩家的防线（未设置防线时为 null）（2026-10-31 新一轮第 31 轮）。
+	Defense *AdminDefenseView `json:"defense"`
 }
 
 // AdminVerificationView 是一条验真记录。
@@ -118,7 +120,7 @@ func (s *Service) AdminUserDetail(ctx context.Context, userID int64) (AdminUserD
 	}
 	out.User = u
 
-	// 2)~7) 并发段。段序 = 曾经的串行执行顺序；errs[i] 非 nil 即该段失败，
+// 2)~8) 并发段。段序 = 曾经的串行执行顺序；errs[i] 非 nil 即该段失败，
 	// wg.Wait() 后按序优先返回——与串行版的「第一个错误」一致。
 	var (
 		wg            sync.WaitGroup
@@ -129,7 +131,8 @@ func (s *Service) AdminUserDetail(ctx context.Context, userID int64) (AdminUserD
 		battles       []AdminBattleView
 		verifications []AdminVerificationView
 		flowCount     int
-		errs          [7]error
+		defense       *AdminDefenseView
+		errs          [8]error
 	)
 	seg := func(i int, fn func()) {
 		wg.Add(1)
@@ -241,6 +244,31 @@ func (s *Service) AdminUserDetail(ctx context.Context, userID int64) (AdminUserD
 		}
 	})
 
+	// 9) 防线（2026-10-31 新一轮第 31 轮）：未设置防线时保持 nil。
+	seg(7, func() {
+		var v AdminDefenseView
+		var shielded *time.Time
+		var updated time.Time
+		err := s.pool.QueryRow(ctx,
+			`SELECT d.id, d.owner_id, u.nickname, d.name, d.power, d.element_coverage,
+			        d.mastery_done, d.wins, d.losses, d.shielded_until, d.updated_at,
+			        d.snapshot_hash
+			 FROM defenses d JOIN users u ON u.id = d.owner_id
+			 WHERE d.owner_id = $1`, userID).
+			Scan(&v.ID, &v.OwnerID, &v.OwnerName, &v.Name, &v.Power, &v.ElementCoverage,
+				&v.MasteryDone, &v.Wins, &v.Losses, &shielded, &updated, &v.SnapshotHash)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return // 没有防线不是错误
+		}
+		if err != nil {
+			errs[7] = fmt.Errorf("load user defense: %w", err)
+			return
+		}
+		v.ShieldedUntil = shielded
+		v.UpdatedAt = updated
+		defense = &v
+	})
+
 	wg.Wait()
 	for _, err := range errs {
 		if err != nil {
@@ -260,6 +288,7 @@ func (s *Service) AdminUserDetail(ctx context.Context, userID int64) (AdminUserD
 	out.RecentBattles = battles
 	out.Verifications = verifications
 	out.FlowCount = flowCount
+	out.Defense = defense
 
 	return out, nil
 }
