@@ -62,6 +62,16 @@ const redeemUsageTotal = ref(0)
 const redeemUsagePage = ref(1)
 const redeemUsageVisible = ref(false)
 
+// 审计筛选（2026-10-31 新一轮第 18 轮）：操作类型 + 日期范围。
+const logAction = ref('')
+const logDateRange = ref<[string, string] | null>(null)
+
+function nextDay(day: string): string {
+  const d = new Date(day + 'T00:00:00Z')
+  d.setUTCDate(d.getUTCDate() + 1)
+  return d.toISOString().slice(0, 10)
+}
+
 async function loadRedeemUsages() {
   try {
     const res = await fetchAdminRedeemUsages(PAGE_SIZE, (redeemUsagePage.value - 1) * PAGE_SIZE)
@@ -85,7 +95,12 @@ async function loadAll() {
     const [a, c, l] = await Promise.all([
       fetchAnnouncements(PAGE_SIZE, (annPage.value - 1) * PAGE_SIZE),
       fetchRedeemCodes(PAGE_SIZE, (codePage.value - 1) * PAGE_SIZE),
-      fetchAuditLogs(PAGE_SIZE, (logPage.value - 1) * PAGE_SIZE),
+      fetchAuditLogs(PAGE_SIZE, (logPage.value - 1) * PAGE_SIZE, {
+        // 审计筛选（2026-10-31 新一轮第 18 轮）
+        action: logAction.value || undefined,
+        date_from: logDateRange.value?.[0] || undefined,
+        date_to: logDateRange.value ? nextDay(logDateRange.value[1]) : undefined,
+      }),
     ])
     announcements.value = a.items
     annTotal.value = a.total ?? a.items.length
@@ -100,6 +115,12 @@ async function loadAll() {
   }
 }
 
+/** 审计筛选变化：回到第一页并只重载审计（公告/兑换码不动）。 */
+function applyLogFilter() {
+  logPage.value = 1
+  loadAll()
+}
+
 /**
  * 导出审计日志 CSV（2026-10-30 实质优化第 15 轮）。
  *
@@ -108,7 +129,12 @@ async function loadAll() {
  */
 async function onExportAuditLogs() {
   try {
-    const blob = await exportAuditLogsCsv()
+    const blob = await exportAuditLogsCsv({
+      // 与列表过滤同口径（2026-10-31 新一轮第 18 轮）
+      action: logAction.value || undefined,
+      date_from: logDateRange.value?.[0] || undefined,
+      date_to: logDateRange.value ? nextDay(logDateRange.value[1]) : undefined,
+    })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -585,7 +611,27 @@ loadAll()
       <!-- 审计日志 -->
       <el-tab-pane label="审计日志" name="logs">
         <el-card shadow="never">
-          <div style="display: flex; align-items: center; justify-content: flex-end; margin-bottom: 8px">
+          <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px">
+            <!-- 审计筛选（2026-10-31 新一轮第 18 轮） -->
+            <el-input
+              v-model="logAction"
+              placeholder="操作类型（如 update_redeem）"
+              clearable
+              style="width: 200px"
+              @keyup.enter="applyLogFilter"
+              @clear="applyLogFilter"
+            />
+            <el-date-picker
+              v-model="logDateRange"
+              type="daterange"
+              range-separator="至"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+              value-format="YYYY-MM-DD"
+              style="width: 260px"
+            />
+            <el-button @click="applyLogFilter">查询</el-button>
+            <span style="flex: 1" />
             <span class="muted" style="margin-right: 8px">共 {{ logTotal }} 条</span>
             <el-button size="small" @click="onExportAuditLogs">导出 CSV</el-button>
           </div>

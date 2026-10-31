@@ -605,17 +605,40 @@ export function exportRedeemCodesCsv() {
   return api.getBlob('/admin/redeem-codes/export')
 }
 
-export function fetchAuditLogs(limit = 100, offset = 0) {
+export function fetchAuditLogs(
+  limit = 100,
+  offset = 0,
+  params: { action?: string; admin_id?: number; date_from?: string; date_to?: string } = {},
+) {
   // 2026-10-21（P5-1）：审计日志也要能翻页 —— 固定 100 条时，
   // 更早的操作**根本看不到**。
-  return api.get<AdminAuditLogsResp>(`/admin/audit-logs?limit=${limit}&offset=${offset}`)
+  const q = new URLSearchParams()
+  q.set('limit', String(limit))
+  q.set('offset', String(offset))
+  // 操作/管理员/日期筛选（2026-10-31 新一轮第 18 轮）
+  if (params.action) q.set('action', params.action)
+  if (params.admin_id) q.set('admin_id', String(params.admin_id))
+  if (params.date_from) q.set('date_from', params.date_from)
+  if (params.date_to) q.set('date_to', params.date_to)
+  return api.get<AdminAuditLogsResp>(`/admin/audit-logs?${q}`)
 }
 
 /**
  * 导出审计日志 CSV（2026-10-30 实质优化第 15 轮）。
  *
  * 合规归档需要全量快照。返回带 UTF-8 BOM 的 CSV Blob。readonly 可导出。
+ * 过滤条件与列表一致（2026-10-31 新一轮第 18 轮）。
  */
-export function exportAuditLogsCsv() {
-  return api.getBlob('/admin/audit-logs/export')
+export function exportAuditLogsCsv(params: {
+  action?: string
+  admin_id?: number
+  date_from?: string
+  date_to?: string
+} = {}) {
+  const q = new URLSearchParams()
+  if (params.action) q.set('action', params.action)
+  if (params.admin_id) q.set('admin_id', String(params.admin_id))
+  if (params.date_from) q.set('date_from', params.date_from)
+  if (params.date_to) q.set('date_to', params.date_to)
+  return api.getBlob(`/admin/audit-logs/export?${q}`)
 }

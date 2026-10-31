@@ -1165,7 +1165,10 @@ func (s *Service) AdminExportAnnouncements(ctx context.Context) ([]byte, error) 
 }
 
 // AdminListAuditLogs 返回操作审计。
-func (s *Service) AdminListAuditLogs(ctx context.Context, limit, offset int) ([]AdminAuditLogView, int64, error) {
+//
+// action / adminID / dateFrom / dateTo 均为可选筛选（2026-10-31 新一轮
+// 第 18 轮）：空 action 不过滤、adminID=0 不过滤、nil 日期不过滤。
+func (s *Service) AdminListAuditLogs(ctx context.Context, limit, offset int, action string, adminID int64, dateFrom, dateTo *time.Time) ([]AdminAuditLogView, int64, error) {
 	if limit <= 0 || limit > 500 {
 		limit = 100
 	}
@@ -1176,8 +1179,19 @@ func (s *Service) AdminListAuditLogs(ctx context.Context, limit, offset int) ([]
 	}
 	// ⚠️ 2026-10-21（二轮审计 P2-6）：`total` 必须是**全量行数**，
 	// 不是当前页的条数 —— 前端要拿它算页数。
+	action = strings.TrimSpace(action)
+	// 操作类型 / 管理员 / 日期范围筛选（2026-10-31 新一轮第 18 轮）。
+	// `$1 = ''` 与 `$2 = 0` 是「不过滤」哨兵；`$3/$4` 是日期（nil → NULL）。
+	// 列表查询的 limit/offset 占 $5/$6，COUNT 查询没有它们。
+	where := `($1 = '' OR action = $1)
+	          AND ($2 = 0 OR COALESCE(admin_id, 0) = $2)
+	          AND ($3::timestamptz IS NULL OR created_at >= $3)
+	          AND ($4::timestamptz IS NULL OR created_at < $4)`
+	countArgs := []any{action, adminID, dateFrom, dateTo}
+	listArgs := []any{action, adminID, dateFrom, dateTo, limit, offset}
+
 	var total int64
-	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM admin_audit_logs`).Scan(&total); err != nil {
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM admin_audit_logs WHERE `+where, countArgs...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("admin admin_audit_logs count: %w", err)
 	}
 	// ⚠️ fail-loud 的取舍（2026-10-21 二轮审计 P2 复核后确认是**有意设计**）：
@@ -1194,7 +1208,7 @@ func (s *Service) AdminListAuditLogs(ctx context.Context, limit, offset int) ([]
 	// 要改它 = 改一个有测试守卫的**刻意决定**，那是产品决策，不是修 bug。
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, admin_id, username, action, target, detail, created_at
-		 FROM admin_audit_logs ORDER BY id DESC LIMIT $1 OFFSET $2`, limit, offset)
+		 FROM admin_audit_logs WHERE `+where+` ORDER BY id DESC LIMIT $5 OFFSET $6`, listArgs...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -1232,10 +1246,17 @@ func (s *Service) AdminListAuditLogs(ctx context.Context, limit, offset int) ([]
 // 与列表的差异：detail 是原始 JSONB 文本**不解析**直接导出 ——
 // 列表对坏 jsonb 报 500 是 fail-loud 的有意取舍（见 AdminListAuditLogs），
 // 而导出是归档，应尽量把原始证据留下来，不能被一行坏数据中断。
-func (s *Service) AdminExportAuditLogs(ctx context.Context) ([]byte, error) {
+func (s *Service) AdminExportAuditLogs(ctx context.Context, action string, adminID int64, dateFrom, dateTo *time.Time) ([]byte, error) {
+	action = strings.TrimSpace(action)
+	// 与列表同口径的筛选（2026-10-31 新一轮第 18 轮）。
+	where := `($1 = '' OR action = $1)
+	          AND ($2 = 0 OR COALESCE(admin_id, 0) = $2)
+	          AND ($3::timestamptz IS NULL OR created_at >= $3)
+	          AND ($4::timestamptz IS NULL OR created_at < $4)`
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, admin_id, username, action, target, detail, created_at
-		 FROM admin_audit_logs ORDER BY id DESC LIMIT 100000`)
+		 FROM admin_audit_logs WHERE `+where+` ORDER BY id DESC LIMIT 100000`,
+		action, adminID, dateFrom, dateTo)
 	if err != nil {
 		return nil, fmt.Errorf("export audit logs: %w", err)
 	}

@@ -1013,7 +1013,7 @@ func TestAdminListAuditLogs(t *testing.T) {
 	adminID, username, _ := ts.newAdminFixture(t, "logs", 1)
 	ts.Audit(ctx, adminID, "svc_logs_probe", "t", "10.0.0.1", map[string]any{"a": 1})
 
-	items, _, err := ts.AdminListAuditLogs(ctx, 100, 0)
+	items, _, err := ts.AdminListAuditLogs(ctx, 100, 0, "", 0, nil, nil)
 	if err != nil {
 		t.Fatalf("审计列表失败：%v", err)
 	}
@@ -1026,12 +1026,12 @@ func TestAdminListAuditLogs(t *testing.T) {
 	if !found {
 		t.Error("探针审计行应出现在列表里")
 	}
-	if _, _, err := ts.AdminListAuditLogs(ctx, 0, 0); err != nil {
+	if _, _, err := ts.AdminListAuditLogs(ctx, 0, 0, "", 0, nil, nil); err != nil {
 		t.Errorf("limit=0 应回落默认：%v", err)
 	}
 
 	broken := openBrokenService(t)
-	if _, _, err := broken.AdminListAuditLogs(ctx, 10, 0); err == nil {
+	if _, _, err := broken.AdminListAuditLogs(ctx, 10, 0, "", 0, nil, nil); err == nil {
 		t.Error("故障态应报错")
 	}
 }
