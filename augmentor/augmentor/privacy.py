@@ -94,12 +94,13 @@ class PiiSanitizer:
         hits: List[str] = []
         result = text
         for name, pattern in self.patterns.items():
-            matches = pattern.findall(result)
-            if not matches:
-                continue
             placeholder = self.placeholders.get(name, f"[{name.upper()}]")
-            result = pattern.sub(placeholder, result)
-            hits.append(name)
+            # `subn` 一次扫描同时给出替换结果与命中数。原写法先 `findall` 判空
+            # 再 `sub`，同一段文本每个模式扫两遍（8+ 模式 × 每字段），
+            # 脱敏耗时约翻倍；而 `findall` 的唯一用途就是"有没有命中"。
+            result, count = pattern.subn(placeholder, result)
+            if count:
+                hits.append(name)
         return result, hits
 
     def sanitize_item(self, item: Dict[str, Any]) -> Tuple[Dict[str, Any], List[str]]:

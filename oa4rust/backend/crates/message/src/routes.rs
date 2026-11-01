@@ -16,7 +16,7 @@ pub fn router(pool: Pool) -> Router {
             "/api/message/consume/list/{consume}/count/{count}",
             get(consume_list),
         )
-        .route("/api/message/consume/{id}/type/{type}", get(update_single))
+        .route("/api/message/consume/{id}/type/{type}", post(update_single))
         .route("/api/message/custom/create", post(custom_create))
         .route("/api/message/mark_read/{id}", post(mark_read))
         .route("/api/message/unread/count/{consume}", get(unread_count))

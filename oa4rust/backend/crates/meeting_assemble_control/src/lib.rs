@@ -41,7 +41,7 @@ pub async fn list_meeting_controls(
 
     let rows = client
         .query(
-            "SELECT id, meeting_id, control_type, enabled, config FROM x_meeting_assemble_control WHERE meeting_id = $1 ORDER BY create_time",
+            "SELECT id, meeting_id, control_type, enabled, config FROM x_meeting_assemble_control WHERE meeting_id = $1 ORDER BY create_time LIMIT 100",
             &[&meeting_id],
         )
         .await
@@ -1735,7 +1735,7 @@ async fn meeting_list_year_year_month_month_day_day_roomId_core(
 
     let rows = client
         .query(
-            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE start_time >= $1 AND start_time <= $2 AND room_id = $3 ORDER BY start_time ASC",
+            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE start_time >= $1 AND start_time <= $2 AND room_id = $3 ORDER BY start_time ASC LIMIT 100",
             &[&start_date, &end_date, &room_id],
         )
         .await
@@ -2127,9 +2127,10 @@ async fn u2_meeting_owner_gate(
 #[allow(non_snake_case)]
 pub async fn create_meeting(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let title = payload
@@ -2149,7 +2150,7 @@ pub async fn create_meeting(
         .and_then(|v| v.as_str())
         .ok_or(AppError::BadRequest("endTime is required".to_string()))?;
     // 四轮 A3-N3：creator 不再取请求体（原可任意冒名 / 落 "system"），改以会话身份为权威
-    let creator = session.person_unique.as_str();
+    let creator = sess.person_unique.as_str();
     // roomId 落 x_meeting.room_id（前端选择会议室；buildingId 仅用于筛选会议室，可由 room 反查，不单独落库）
     let room_id = payload
         .get("roomId")
@@ -2332,14 +2333,15 @@ pub async fn meeting_id_add_invite(
 #[allow(non_snake_case)]
 pub async fn meeting_id_checkin(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(_payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     // 四轮 A3-N3：签到人不再取请求体（原可以他人身份打卡），改以会话身份为权威
-    let person = session.person_unique.as_str();
+    let person = sess.person_unique.as_str();
     let checkin_id = uuid::Uuid::new_v4().to_string();
 
     let result = client
@@ -3043,6 +3045,14 @@ async fn u2_require_admin(pool: &Pool, session: &shared::session::Session) -> Re
     }
 }
 
+/// 会话存在档门：无会话（Option<Extension<Session>> = None）→ 401。
+/// 与 other crates 的 require_session 同构，供 GET 写收口（A4 批）使用。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 /// 可选会话版 admin 门禁：无会话 401、非 admin 403。
 /// 用于挂在 o2server 对齐豁免前缀下的破坏性写 handler（前缀须保持匿名可达供
 /// 只读端点使用，写操作只能在 handler 内拦截，未认证请求拿不到会话即 401）。
@@ -3436,9 +3446,10 @@ async fn u2_attachment_update_inner(
 #[allow(non_snake_case)]
 pub async fn u2_attachment_create_from_processplatform(
     pool: Extension<Pool>,
-    Extension(session): Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let meeting_id = payload
         .get("meetingId")
         .or_else(|| payload.get("meetingId"))
@@ -3460,7 +3471,7 @@ pub async fn u2_attachment_create_from_processplatform(
         return Err(AppError::BadRequest("meeting not found".to_string()));
     }
     let id = uuid::Uuid::new_v4().to_string();
-    let person = session.person_unique.clone();
+    let person = sess.person_unique.clone();
     client
         .execute(
             "INSERT INTO x_meeting_attachment (id, meeting_id, person, file_name, extension, length, summary, content, storage_key, create_time) \
@@ -3555,16 +3566,17 @@ pub async fn u2_attachment_list_prev(
 #[allow(non_snake_case)]
 pub async fn u2_attachment_upload(
     pool: Extension<Pool>,
-    Extension(session): Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((meeting_id, summary)): axum::extract::Path<(String, String)>,
     form: axum::extract::Multipart,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let summary = matches!(summary.as_str(), "true" | "1");
     let (fname, mime, data) = u2_extract_multipart(form).await?;
     let filename = fname.unwrap_or_else(|| "upload.bin".to_string());
     u2_attachment_store_new(
         &pool,
-        &session,
+        &sess,
         &meeting_id,
         summary,
         &filename,
@@ -3577,7 +3589,7 @@ pub async fn u2_attachment_upload(
 #[allow(non_snake_case)]
 pub async fn u2_attachment_upload_callback(
     pool: Extension<Pool>,
-    Extension(session): Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((meeting_id, summary, callback)): axum::extract::Path<(
         String,
         String,
@@ -3585,13 +3597,14 @@ pub async fn u2_attachment_upload_callback(
     )>,
     form: axum::extract::Multipart,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     tracing::debug!(callback, meeting = %meeting_id, "attachment upload via callback route");
     let summary = matches!(summary.as_str(), "true" | "1");
     let (fname, mime, data) = u2_extract_multipart(form).await?;
     let filename = fname.unwrap_or_else(|| "upload.bin".to_string());
     u2_attachment_store_new(
         &pool,
-        &session,
+        &sess,
         &meeting_id,
         summary,
         &filename,
@@ -4019,14 +4032,15 @@ pub async fn u2_meeting_put_save(
 #[allow(non_snake_case)]
 pub async fn u2_meeting_checkin_get(
     pool: Extension<Pool>,
-    Extension(session): Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     if u2_meeting_creator(&client, &id).await?.is_none() {
         return Err(AppError::NotFound);
     }
-    let person = session.person_unique.clone();
+    let person = sess.person_unique.clone();
     let checkin_id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
@@ -4242,10 +4256,11 @@ pub async fn u2_room_delete(
 #[allow(non_snake_case)]
 pub async fn u2_room_set_photo(
     pool: Extension<Pool>,
-    Extension(_session): Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
     form: axum::extract::Multipart,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let (_fname, _mime, data) = u2_extract_multipart(form).await?;
     if data.is_empty() {
         return Err(AppError::BadRequest("empty photo upload".to_string()));

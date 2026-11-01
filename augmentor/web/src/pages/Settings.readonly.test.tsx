@@ -21,16 +21,17 @@ import { message } from 'antd'
 
 window.matchMedia =
   window.matchMedia ||
-  ((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  }) as unknown as MediaQueryList)
+  ((query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList)
 class RO {
   observe() {}
   unobserve() {}
@@ -108,9 +109,7 @@ describe('Settings 只读回显卡（L237 补渲染）', () => {
 
     render(<Settings />)
 
-    await waitFor(() =>
-      expect(screen.getByText('其余节的生效值（本页只读）')).toBeInTheDocument()
-    )
+    await waitFor(() => expect(screen.getByText('其余节的生效值（本页只读）')).toBeInTheDocument())
     const text = document.body.textContent ?? ''
     // 改前这 7 键在类型面上根本不存在，页面上也就无从渲染
     for (const cell of [
@@ -149,9 +148,7 @@ describe('Settings 只读回显卡（L237 补渲染）', () => {
 
     render(<Settings />)
 
-    await waitFor(() =>
-      expect(screen.getByText(/还没取到配置/)).toBeInTheDocument()
-    )
+    await waitFor(() => expect(screen.getByText(/还没取到配置/)).toBeInTheDocument())
     expect(document.body.textContent).not.toContain('undefined')
   })
 
@@ -160,9 +157,7 @@ describe('Settings 只读回显卡（L237 补渲染）', () => {
 
     render(<Settings />)
 
-    await waitFor(() =>
-      expect(screen.getByText('这些键本页只能看、不能改')).toBeInTheDocument()
-    )
+    await waitFor(() => expect(screen.getByText('这些键本页只能看、不能改')).toBeInTheDocument())
     const text = document.body.textContent ?? ''
     expect(text).toContain('在 POST /api/config 的写入清单里，但本页没给它们做输入控件')
     expect(text).toContain('versioning / visualization 两节根本不在写入清单里')
@@ -198,9 +193,7 @@ describe('Settings 保存回执卡（L237 补渲染）', () => {
     await waitFor(() => expect(screen.getByText('上次保存的回执')).toBeInTheDocument())
     await save()
 
-    await waitFor(() =>
-      expect(screen.getByText('配置已保存（2 个键被忽略）')).toBeInTheDocument()
-    )
+    await waitFor(() => expect(screen.getByText('配置已保存（2 个键被忽略）')).toBeInTheDocument())
     const text = document.body.textContent ?? ''
     expect(text).toContain('ignored_keys: 2 个')
     expect(text).toContain('web')
@@ -221,9 +214,7 @@ describe('Settings 保存回执卡（L237 补渲染）', () => {
     await waitFor(() => expect(screen.getByText('上次保存的回执')).toBeInTheDocument())
     await save()
 
-    await waitFor(() =>
-      expect(screen.getByText('ignored_keys: 0 个')).toBeInTheDocument()
-    )
+    await waitFor(() => expect(screen.getByText('ignored_keys: 0 个')).toBeInTheDocument())
   })
 
   it('后端没回 ignored_keys 这一键时也不炸（契约里它非必填）', async () => {
@@ -234,9 +225,7 @@ describe('Settings 保存回执卡（L237 补渲染）', () => {
     await waitFor(() => expect(screen.getByText('上次保存的回执')).toBeInTheDocument())
     await save()
 
-    await waitFor(() =>
-      expect(screen.getByText('ignored_keys: 0 个')).toBeInTheDocument()
-    )
+    await waitFor(() => expect(screen.getByText('ignored_keys: 0 个')).toBeInTheDocument())
   })
 
   it('卡上写明 success 恒为 true、落没落盘看 message 与 ignored_keys', async () => {
@@ -251,8 +240,8 @@ describe('Settings 保存回执卡（L237 补渲染）', () => {
 
     await waitFor(() =>
       expect(
-        screen.getByText(/success 两边都是 true（它只表示「请求被正常处理」）/)
-      ).toBeInTheDocument()
+        screen.getByText(/success 两边都是 true（它只表示「请求被正常处理」）/),
+      ).toBeInTheDocument(),
     )
   })
 })

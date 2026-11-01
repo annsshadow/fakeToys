@@ -76,7 +76,7 @@ func (s *Service) AdminLogin(ctx context.Context, username, password string) (Ad
 	}
 	if _, err := s.pool.Exec(ctx,
 		`INSERT INTO admin_tokens (admin_id, token_hash, expires_at) VALUES ($1,$2,$3)`,
-		a.ID, sessionHash, timeNow().Add(s.Cfg.AccessTTL)); err != nil {
+		a.ID, sessionHash, timeNow().Add(s.Cfg().AccessTTL)); err != nil {
 		return AdminTokenPair{}, fmt.Errorf("store admin session: %w", err)
 	}
 	if _, err := s.pool.Exec(ctx,

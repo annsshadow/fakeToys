@@ -40,6 +40,14 @@ func (s *Server) saveDefense(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"defense": view})
 }
 
+// deleteMyDefense 删除当前玩家的防线（2026-10-31 实质优化第 32 轮）。
+func (s *Server) deleteMyDefense(c *fiber.Ctx) error {
+	if err := s.Svc.DeleteMyDefense(c.Context(), userIDFrom(c)); err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"ok": true})
+}
+
 func (s *Server) challengeDefense(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {
@@ -274,11 +282,91 @@ func (s *Server) adminUsers(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	items, total, err := s.Svc.AdminListUsers(c.Context(), c.Query("keyword", ""), limit, offset)
+	// 注册日期范围（2026-10-31 新一轮第 15 轮）：可选。
+	dateFrom, err := queryTime(c, "date_from")
+	if err != nil {
+		return failErr(c, err)
+	}
+	dateTo, err := queryTime(c, "date_to")
+	if err != nil {
+		return failErr(c, err)
+	}
+	// 游客/账号筛选（2026-11-01 新一轮第 37 轮）：三态。
+	var isGuest *bool
+	switch c.Query("is_guest", "") {
+	case "1", "true":
+		v := true
+		isGuest = &v
+	case "0", "false":
+		v := false
+		isGuest = &v
+	}
+	// 最后登录时间范围（2026-11-01 新一轮第 46 轮）：可选。
+	lastLoginFrom, err := queryTime(c, "last_login_from")
+	if err != nil {
+		return failErr(c, err)
+	}
+	lastLoginTo, err := queryTime(c, "last_login_to")
+	if err != nil {
+		return failErr(c, err)
+	}
+	// 需核查筛选（2026-11-01 新一轮第 60 轮）：三态。
+	// 判据与前端列表的 suspicious 标记一致（power>5000 且最高关<=1）。
+	var suspicious *bool
+	switch c.Query("suspicious", "") {
+	case "1", "true":
+		v := true
+		suspicious = &v
+	case "0", "false":
+		v := false
+		suspicious = &v
+	}
+	items, total, err := s.Svc.AdminListUsers(c.Context(), c.Query("keyword", ""), limit, offset, dateFrom, dateTo, isGuest, lastLoginFrom, lastLoginTo, suspicious)
 	if err != nil {
 		return failErr(c, err)
 	}
 	return c.JSON(service.NormalizeNilSlices(service.AdminUsersResp{Items: items, Total: total}))
+}
+
+// adminExportUsers 导出用户列表为 CSV（2026-10-30 实质优化第 12 轮）。
+//
+// 读操作，readonly 角色可访问（导出不改变任何数据）。
+// 过滤条件与 `GET /admin/users` 一致（keyword 模糊搜昵称 + 注册日期范围）。
+func (s *Server) adminExportUsers(c *fiber.Ctx) error {
+	dateFrom, err := queryTime(c, "date_from")
+	if err != nil {
+		return failErr(c, err)
+	}
+	dateTo, err := queryTime(c, "date_to")
+	if err != nil {
+		return failErr(c, err)
+	}
+	// 最后登录时间范围（2026-11-01 新一轮第 46 轮）：与列表同口径。
+	lastLoginFrom, err := queryTime(c, "last_login_from")
+	if err != nil {
+		return failErr(c, err)
+	}
+	lastLoginTo, err := queryTime(c, "last_login_to")
+	if err != nil {
+		return failErr(c, err)
+	}
+	// 需核查筛选（2026-11-01 新一轮第 60 轮）：与列表同口径。
+	var suspicious *bool
+	switch c.Query("suspicious", "") {
+	case "1", "true":
+		v := true
+		suspicious = &v
+	case "0", "false":
+		v := false
+		suspicious = &v
+	}
+	data, err := s.Svc.AdminExportUsers(c.Context(), c.Query("keyword", ""), dateFrom, dateTo, lastLoginFrom, lastLoginTo, suspicious)
+	if err != nil {
+		return failErr(c, err)
+	}
+	c.Set("Content-Type", "text/csv; charset=utf-8")
+	c.Set("Content-Disposition", `attachment; filename="users.csv"`)
+	return c.Send(data)
 }
 
 // adminUserDetail 返回一个玩家的详情（构筑、钱包、最近战报、验真明细）。
@@ -298,6 +386,22 @@ func (s *Server) adminUserDetail(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	return c.JSON(service.NormalizeNilSlices(detail))
+}
+
+// adminExportUserFlows 导出单个用户的钱包流水 CSV（2026-11-01 新一轮第 82 轮）。
+// readonly 可访问（读操作）。
+func (s *Server) adminExportUserFlows(c *fiber.Ctx) error {
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil || id < 1 {
+		return fail(c, fiber.StatusBadRequest, "bad_input", "user id 非法")
+	}
+	data, err := s.Svc.AdminExportUserFlows(c.Context(), id)
+	if err != nil {
+		return failErr(c, err)
+	}
+	c.Set("Content-Type", "text/csv; charset=utf-8")
+	c.Set("Content-Disposition", `attachment; filename="user_flows.csv"`)
+	return c.Send(data)
 }
 
 func (s *Server) adminBanUser(c *fiber.Ctx) error {
@@ -388,6 +492,30 @@ func (s *Server) adminGrantUser(c *fiber.Ctx) error {
 	return c.JSON(service.AdminGrantResp{Wallet: wallet})
 }
 
+// adminResetPlayerPassword 后台重置玩家账号密码（2026-10-30 实质优化第 11 轮）。
+//
+// 高危写操作：会更新哈希并吊销该账号全部 refresh token（其它设备被登出），
+// 审计事件 `reset_password` 必须带上目标 id。
+func (s *Server) adminResetPlayerPassword(c *fiber.Ctx) error {
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil {
+		return fail(c, fiber.StatusBadRequest, "bad_input", "user id 非法")
+	}
+	var body struct {
+		NewPassword string `json:"new_password"`
+	}
+	if err := c.BodyParser(&body); err != nil {
+		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+	}
+	if err := s.Svc.AdminResetPlayerPassword(c.Context(), id, body.NewPassword); err != nil {
+		return failErr(c, err)
+	}
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "reset_password",
+		strconv.FormatInt(id, 10), c.IP(),
+		fiber.Map{"user_id": id})
+	return c.JSON(fiber.Map{"ok": true})
+}
+
 func (s *Server) adminBattles(c *fiber.Ctx) error {
 	limit, err := queryInt(c, "limit", 50)
 	if err != nil {
@@ -419,11 +547,53 @@ func (s *Server) adminBattles(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	items, total, err := s.Svc.AdminListBattles(c.Context(), int64(userID), levelID, limit, onlyMismatched, offset)
+	// 日期范围（2026-10-31 新一轮第 14 轮）：可选，查「今天/某时间段」。
+	dateFrom, err := queryTime(c, "date_from")
+	if err != nil {
+		return failErr(c, err)
+	}
+	dateTo, err := queryTime(c, "date_to")
+	if err != nil {
+		return failErr(c, err)
+	}
+	// 结果筛选（2026-11-01 新一轮第 44 轮）：win / lose，空串不过滤。
+	result := c.Query("result", "")
+	items, total, err := s.Svc.AdminListBattles(c.Context(), int64(userID), levelID, limit, onlyMismatched, offset, dateFrom, dateTo, result)
 	if err != nil {
 		return failErr(c, err)
 	}
 	return c.JSON(service.NormalizeNilSlices(service.AdminBattlesResp{Items: items, Total: total}))
+}
+
+// adminExportBattles 导出战报列表为 CSV（2026-10-30 实质优化第 13 轮）。
+//
+// 读操作，readonly 角色可访问。过滤条件与 `GET /admin/battles` 一致
+// （user_id / level_id / only_mismatched / date_from / date_to）。
+func (s *Server) adminExportBattles(c *fiber.Ctx) error {
+	userID, err := queryInt(c, "user_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	levelID, err := queryInt(c, "level_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	onlyMismatched := c.Query("only_mismatched") == "1" || c.Query("only_mismatched") == "true"
+	dateFrom, err := queryTime(c, "date_from")
+	if err != nil {
+		return failErr(c, err)
+	}
+	dateTo, err := queryTime(c, "date_to")
+	if err != nil {
+		return failErr(c, err)
+	}
+	data, err := s.Svc.AdminExportBattles(c.Context(), int64(userID), levelID, onlyMismatched, dateFrom, dateTo, c.Query("result", ""))
+	if err != nil {
+		return failErr(c, err)
+	}
+	c.Set("Content-Type", "text/csv; charset=utf-8")
+	c.Set("Content-Disposition", `attachment; filename="battles.csv"`)
+	return c.Send(data)
 }
 
 // adminRecomputes 结算重算审计台账（R1）。
@@ -462,6 +632,33 @@ func (s *Server) adminRecomputes(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	return c.JSON(service.NormalizeNilSlices(service.AdminRecomputesResp{Items: items, Total: total}))
+}
+
+// adminExportRecomputes 导出重算台账 CSV（2026-11-01 新一轮第 45 轮）。
+//
+// 与 adminRecomputes 同筛选（only_mismatch / level_id / user_id）；
+// readonly 可访问（读操作，与其它 CSV 导出一致）。
+func (s *Server) adminExportRecomputes(c *fiber.Ctx) error {
+	userID, err := queryInt(c, "user_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	levelID, err := queryInt(c, "level_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	onlyMismatch := c.Query("only_mismatch") == "1" || c.Query("only_mismatch") == "true"
+	data, err := s.Svc.AdminExportRecomputes(c.Context(), service.RecomputeFilter{
+		OnlyMismatch: onlyMismatch,
+		LevelID:      levelID,
+		UserID:       int64(userID),
+	})
+	if err != nil {
+		return failErr(c, err)
+	}
+	c.Set("Content-Type", "text/csv; charset=utf-8")
+	c.Set("Content-Disposition", `attachment; filename="recomputes.csv"`)
+	return c.Send(data)
 }
 
 // adminRecomputeStats 重算总账 + 按关卡分布 + **闸门当前状态**。
@@ -629,11 +826,102 @@ func (s *Server) adminDefenses(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	items, total, err := s.Svc.AdminListDefenses(c.Context(), limit, offset)
+	// 防线名/玩家昵称搜索 + owner_id 过滤（2026-10-31 新一轮第 19 轮）。
+	ownerID, err := queryInt(c, "owner_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	// 护盾状态筛选（2026-11-01 新一轮第 100 轮）：三态。
+	var shielded *bool
+	switch c.Query("shielded", "") {
+	case "1", "true":
+		v := true
+		shielded = &v
+	case "0", "false":
+		v := false
+		shielded = &v
+	}
+	items, total, err := s.Svc.AdminListDefenses(c.Context(), limit, offset, c.Query("keyword", ""), int64(ownerID), shielded)
 	if err != nil {
 		return failErr(c, err)
 	}
 	return c.JSON(service.NormalizeNilSlices(service.AdminDefensesResp{Items: items, Total: total}))
+}
+
+// adminDefenseChallenges 返回防线挑战记录列表（2026-10-31 新一轮第 30 轮）。
+func (s *Server) adminDefenseChallenges(c *fiber.Ctx) error {
+	limit, err := queryInt(c, "limit", 50)
+	if err != nil {
+		return failErr(c, err)
+	}
+	offset, err := queryInt(c, "offset", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	defenseID, err := queryInt(c, "defense_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	challengerID, err := queryInt(c, "challenger_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	dateFrom, err := queryTime(c, "date_from")
+	if err != nil {
+		return failErr(c, err)
+	}
+	dateTo, err := queryTime(c, "date_to")
+	if err != nil {
+		return failErr(c, err)
+	}
+	items, total, err := s.Svc.AdminListDefenseChallenges(
+		c.Context(), limit, offset, int64(defenseID), int64(challengerID), dateFrom, dateTo)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(service.NormalizeNilSlices(service.AdminDefenseChallengesResp{Items: items, Total: total}))
+}
+
+// adminExportDefenseChallenges 导出防线挑战记录 CSV（2026-10-31 新一轮第 32 轮）。
+func (s *Server) adminExportDefenseChallenges(c *fiber.Ctx) error {
+	defenseID, err := queryInt(c, "defense_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	challengerID, err := queryInt(c, "challenger_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	dateFrom, err := queryTime(c, "date_from")
+	if err != nil {
+		return failErr(c, err)
+	}
+	dateTo, err := queryTime(c, "date_to")
+	if err != nil {
+		return failErr(c, err)
+	}
+	data, err := s.Svc.AdminExportDefenseChallenges(
+		c.Context(), int64(defenseID), int64(challengerID), dateFrom, dateTo)
+	if err != nil {
+		return failErr(c, err)
+	}
+	c.Set("Content-Type", "text/csv; charset=utf-8")
+	c.Set("Content-Disposition", `attachment; filename="defense_challenges.csv"`)
+	return c.Send(data)
+}
+
+// adminDeleteDefense 删除玩家防线（2026-10-31 实质优化第 26 轮）。
+func (s *Server) adminDeleteDefense(c *fiber.Ctx) error {
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil || id < 1 {
+		return fail(c, fiber.StatusBadRequest, "bad_input", "防线 ID 非法")
+	}
+	if err := s.Svc.AdminDeleteDefense(c.Context(), id); err != nil {
+		return failErr(c, err)
+	}
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "delete_defense",
+		strconv.FormatInt(id, 10), c.IP(), nil)
+	return c.JSON(fiber.Map{"ok": true})
 }
 
 func (s *Server) adminEconomy(c *fiber.Ctx) error {
@@ -642,6 +930,58 @@ func (s *Server) adminEconomy(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	return c.JSON(service.NormalizeNilSlices(data))
+}
+
+// adminOrders 返回支付订单列表（2026-10-31 实质优化第 33 轮）。
+func (s *Server) adminOrders(c *fiber.Ctx) error {
+	limit, err := queryInt(c, "limit", 50)
+	if err != nil {
+		return failErr(c, err)
+	}
+	offset, err := queryInt(c, "offset", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	// 状态 + 日期范围筛选（2026-10-31 新一轮第 16 轮）。
+	status := c.Query("status", "")
+	dateFrom, err := queryTime(c, "date_from")
+	if err != nil {
+		return failErr(c, err)
+	}
+	dateTo, err := queryTime(c, "date_to")
+	if err != nil {
+		return failErr(c, err)
+	}
+	// 渠道筛选（2026-11-01 新一轮第 67 轮）。
+	provider := c.Query("provider", "")
+	items, total, err := s.Svc.AdminListOrders(c.Context(), limit, offset, status, dateFrom, dateTo, provider)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(service.NormalizeNilSlices(service.AdminOrdersResp{Items: items, Total: total}))
+}
+
+// adminExportOrders 导出支付订单 CSV（2026-11-01 新一轮第 40 轮）。
+//
+// 与 adminOrders 同口径筛选（状态 + 创建日期范围），readonly 可访问
+// （导出是只读操作，与其它 CSV 导出一致）。
+func (s *Server) adminExportOrders(c *fiber.Ctx) error {
+	status := c.Query("status", "")
+	dateFrom, err := queryTime(c, "date_from")
+	if err != nil {
+		return failErr(c, err)
+	}
+	dateTo, err := queryTime(c, "date_to")
+	if err != nil {
+		return failErr(c, err)
+	}
+	data, err := s.Svc.AdminExportOrders(c.Context(), status, dateFrom, dateTo, c.Query("provider", ""))
+	if err != nil {
+		return failErr(c, err)
+	}
+	c.Set("Content-Type", "text/csv; charset=utf-8")
+	c.Set("Content-Disposition", `attachment; filename="orders.csv"`)
+	return c.Send(data)
 }
 
 func (s *Server) adminUpdateShop(c *fiber.Ctx) error {
@@ -671,11 +1011,40 @@ func (s *Server) adminAnnouncements(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	items, total, err := s.Svc.AdminListAnnouncements(c.Context(), limit, offset)
+	// 发布状态 + 创建日期筛选（2026-10-31 新一轮第 21 轮）。
+	var published *bool
+	switch c.Query("published", "") {
+	case "1", "true":
+		v := true
+		published = &v
+	case "0", "false":
+		v := false
+		published = &v
+	}
+	dateFrom, err := queryTime(c, "date_from")
+	if err != nil {
+		return failErr(c, err)
+	}
+	dateTo, err := queryTime(c, "date_to")
+	if err != nil {
+		return failErr(c, err)
+	}
+	items, total, err := s.Svc.AdminListAnnouncements(c.Context(), limit, offset, published, dateFrom, dateTo)
 	if err != nil {
 		return failErr(c, err)
 	}
 	return c.JSON(service.NormalizeNilSlices(service.AdminAnnouncementsResp{Items: items, Total: total}))
+}
+
+// adminExportAnnouncements 导出公告 CSV（2026-10-31 实质优化第 38 轮）。
+func (s *Server) adminExportAnnouncements(c *fiber.Ctx) error {
+	data, err := s.Svc.AdminExportAnnouncements(c.Context())
+	if err != nil {
+		return failErr(c, err)
+	}
+	c.Set("Content-Type", "text/csv; charset=utf-8")
+	c.Set("Content-Disposition", `attachment; filename="announcements.csv"`)
+	return c.Send(data)
 }
 
 func (s *Server) adminCreateAnnouncement(c *fiber.Ctx) error {
@@ -698,6 +1067,43 @@ func (s *Server) adminCreateAnnouncement(c *fiber.Ctx) error {
 	return c.JSON(service.AdminAnnouncementResp{Item: item})
 }
 
+// adminUpdateAnnouncement 更新公告（2026-10-31 实质优化第 23 轮）。
+func (s *Server) adminUpdateAnnouncement(c *fiber.Ctx) error {
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil || id < 1 {
+		return fail(c, fiber.StatusBadRequest, "bad_input", "公告 ID 非法")
+	}
+	var body struct {
+		Title     string `json:"title"`
+		Body      string `json:"body"`
+		Published bool   `json:"published"`
+	}
+	if err := c.BodyParser(&body); err != nil {
+		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+	}
+	item, err := s.Svc.AdminUpdateAnnouncement(c.Context(), int(id), body.Title, body.Body, body.Published)
+	if err != nil {
+		return failErr(c, err)
+	}
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "update_announcement",
+		strconv.FormatInt(id, 10), c.IP(), body)
+	return c.JSON(service.AdminAnnouncementResp{Item: item})
+}
+
+// adminDeleteAnnouncement 删除公告（2026-10-31 实质优化第 23 轮）。
+func (s *Server) adminDeleteAnnouncement(c *fiber.Ctx) error {
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil || id < 1 {
+		return fail(c, fiber.StatusBadRequest, "bad_input", "公告 ID 非法")
+	}
+	if err := s.Svc.AdminDeleteAnnouncement(c.Context(), int(id)); err != nil {
+		return failErr(c, err)
+	}
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "delete_announcement",
+		strconv.FormatInt(id, 10), c.IP(), nil)
+	return c.JSON(fiber.Map{"ok": true})
+}
+
 func (s *Server) adminRedeemCodes(c *fiber.Ctx) error {
 	limit, err := queryInt(c, "limit", 50)
 	if err != nil {
@@ -707,11 +1113,78 @@ func (s *Server) adminRedeemCodes(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	items, total, err := s.Svc.AdminListRedeemCodes(c.Context(), limit, offset)
+	// 码搜索 + 启用状态 + 过期筛选（2026-10-31 新一轮第 20 轮）。
+	var enabled *bool
+	switch c.Query("enabled", "") {
+	case "1", "true":
+		v := true
+		enabled = &v
+	case "0", "false":
+		v := false
+		enabled = &v
+	}
+	var expired *bool
+	switch c.Query("expired", "") {
+	case "1", "true":
+		v := true
+		expired = &v
+	case "0", "false":
+		v := false
+		expired = &v
+	}
+	items, total, err := s.Svc.AdminListRedeemCodes(c.Context(), limit, offset, c.Query("keyword", ""), enabled, expired)
 	if err != nil {
 		return failErr(c, err)
 	}
 	return c.JSON(service.NormalizeNilSlices(service.AdminRedeemCodesResp{Items: items, Total: total}))
+}
+
+// adminRedeemUsages 返回兑换码使用记录列表（2026-10-31 新一轮第 17 轮）。
+func (s *Server) adminRedeemUsages(c *fiber.Ctx) error {
+	limit, err := queryInt(c, "limit", 50)
+	if err != nil {
+		return failErr(c, err)
+	}
+	offset, err := queryInt(c, "offset", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	// 按码搜索 / 用户过滤（2026-10-31 新一轮第 23 轮）。
+	userID, err := queryInt(c, "user_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	items, total, err := s.Svc.AdminListRedeemUsages(c.Context(), limit, offset, c.Query("code_keyword", ""), int64(userID))
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(service.NormalizeNilSlices(service.AdminRedeemUsagesResp{Items: items, Total: total}))
+}
+
+// adminExportRedeemUsages 导出兑换码使用记录 CSV（2026-10-31 新一轮第 34 轮）。
+func (s *Server) adminExportRedeemUsages(c *fiber.Ctx) error {
+	userID, err := queryInt(c, "user_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	data, err := s.Svc.AdminExportRedeemUsages(c.Context(), c.Query("code_keyword", ""), int64(userID))
+	if err != nil {
+		return failErr(c, err)
+	}
+	c.Set("Content-Type", "text/csv; charset=utf-8")
+	c.Set("Content-Disposition", `attachment; filename="redeem_usages.csv"`)
+	return c.Send(data)
+}
+
+// adminExportRedeemCodes 导出兑换码 CSV（2026-10-31 实质优化第 37 轮）。
+func (s *Server) adminExportRedeemCodes(c *fiber.Ctx) error {
+	data, err := s.Svc.AdminExportRedeemCodes(c.Context())
+	if err != nil {
+		return failErr(c, err)
+	}
+	c.Set("Content-Type", "text/csv; charset=utf-8")
+	c.Set("Content-Disposition", `attachment; filename="redeem_codes.csv"`)
+	return c.Send(data)
 }
 
 func (s *Server) adminCreateRedeemCode(c *fiber.Ctx) error {
@@ -753,6 +1226,99 @@ func (s *Server) adminCreateRedeemCode(c *fiber.Ctx) error {
 	return c.JSON(service.AdminRedeemCodeResp{Item: item})
 }
 
+// adminCreateRedeemCodesBatch 批量生成兑换码（2026-11-01 新一轮第 57 轮）。
+//
+// 一次生成 count 个随机码（服务端 crypto/rand 生成，避免可预测）。
+func (s *Server) adminCreateRedeemCodesBatch(c *fiber.Ctx) error {
+	var body struct {
+		Count     int            `json:"count"`
+		Reward    map[string]int `json:"reward"`
+		MaxUses   int            `json:"max_uses"`
+		ExpiresAt string         `json:"expires_at"`
+	}
+	if err := c.BodyParser(&body); err != nil {
+		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+	}
+	if body.Count <= 0 || body.Count > 100 {
+		return fail(c, fiber.StatusBadRequest, "bad_input", "count 必须在 1..100")
+	}
+	if len(body.Reward) == 0 {
+		return fail(c, fiber.StatusBadRequest, "bad_input", "奖励不能为空")
+	}
+	if body.MaxUses <= 0 {
+		body.MaxUses = 1
+	}
+	var expiresAt *time.Time
+	if s := strings.TrimSpace(body.ExpiresAt); s != "" {
+		parsed, err := time.Parse(time.RFC3339, s)
+		if err != nil {
+			return fail(c, fiber.StatusBadRequest, "bad_input",
+				"expires_at 必须是 RFC3339 格式（如 2026-12-31T23:59:59Z），不能是裸本地时间")
+		}
+		expiresAt = &parsed
+	}
+	items, err := s.Svc.AdminCreateRedeemCodes(c.Context(), body.Count, body.Reward, body.MaxUses, expiresAt)
+	if err != nil {
+		return failErr(c, err)
+	}
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "create_redeem_code", "batch", c.IP(), body)
+	return c.JSON(fiber.Map{"items": items})
+}
+
+// adminSetRedeemCodeEnabled 启用/禁用兑换码（2026-10-31 实质优化第 24 轮）。
+func (s *Server) adminSetRedeemCodeEnabled(c *fiber.Ctx) error {
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil || id < 1 {
+		return fail(c, fiber.StatusBadRequest, "bad_input", "兑换码 ID 非法")
+	}
+	var body struct {
+		Enabled bool `json:"enabled"`
+	}
+	if err := c.BodyParser(&body); err != nil {
+		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+	}
+	item, err := s.Svc.AdminSetRedeemCodeEnabled(c.Context(), int(id), body.Enabled)
+	if err != nil {
+		return failErr(c, err)
+	}
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "set_redeem_enabled",
+		strconv.FormatInt(id, 10), c.IP(), body)
+	return c.JSON(service.AdminRedeemCodeResp{Item: item})
+}
+
+// adminUpdateRedeemCode 更新兑换码（2026-10-31 实质优化第 25 轮）。
+func (s *Server) adminUpdateRedeemCode(c *fiber.Ctx) error {
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil || id < 1 {
+		return fail(c, fiber.StatusBadRequest, "bad_input", "兑换码 ID 非法")
+	}
+	var body struct {
+		Reward    map[string]int `json:"reward"`
+		MaxUses   int            `json:"max_uses"`
+		ExpiresAt string         `json:"expires_at"`
+	}
+	if err := c.BodyParser(&body); err != nil {
+		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+	}
+	var expiresAt *time.Time
+	if s := strings.TrimSpace(body.ExpiresAt); s != "" {
+		// 与创建同口径：RFC3339，不接受裸本地时间。
+		parsed, err := time.Parse(time.RFC3339, s)
+		if err != nil {
+			return fail(c, fiber.StatusBadRequest, "bad_input",
+				"expires_at 必须是 RFC3339 格式（如 2026-12-31T23:59:59Z）")
+		}
+		expiresAt = &parsed
+	}
+	item, err := s.Svc.AdminUpdateRedeemCode(c.Context(), int(id), body.Reward, body.MaxUses, expiresAt)
+	if err != nil {
+		return failErr(c, err)
+	}
+	s.Svc.Audit(c.Context(), adminIDFrom(c), "update_redeem_code",
+		strconv.FormatInt(id, 10), c.IP(), body)
+	return c.JSON(service.AdminRedeemCodeResp{Item: item})
+}
+
 func (s *Server) adminAuditLogs(c *fiber.Ctx) error {
 	limit, err := queryInt(c, "limit", 100)
 	if err != nil {
@@ -762,11 +1328,52 @@ func (s *Server) adminAuditLogs(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	items, total, err := s.Svc.AdminListAuditLogs(c.Context(), limit, offset)
+	// 操作类型 / 管理员 / 日期范围筛选（2026-10-31 新一轮第 18 轮）。
+	action := c.Query("action", "")
+	adminID, err := queryInt(c, "admin_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	dateFrom, err := queryTime(c, "date_from")
+	if err != nil {
+		return failErr(c, err)
+	}
+	dateTo, err := queryTime(c, "date_to")
+	if err != nil {
+		return failErr(c, err)
+	}
+	items, total, err := s.Svc.AdminListAuditLogs(c.Context(), limit, offset, action, int64(adminID), dateFrom, dateTo)
 	if err != nil {
 		return failErr(c, err)
 	}
 	return c.JSON(service.NormalizeNilSlices(service.AdminAuditLogsResp{Items: items, Total: total}))
+}
+
+// adminExportAuditLogs 导出审计日志为 CSV（2026-10-30 实质优化第 15 轮）。
+//
+// 读操作，readonly 角色可访问。合规归档需要全量快照。
+// 过滤条件与列表一致（action / admin_id / date_from / date_to）。
+func (s *Server) adminExportAuditLogs(c *fiber.Ctx) error {
+	action := c.Query("action", "")
+	adminID, err := queryInt(c, "admin_id", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	dateFrom, err := queryTime(c, "date_from")
+	if err != nil {
+		return failErr(c, err)
+	}
+	dateTo, err := queryTime(c, "date_to")
+	if err != nil {
+		return failErr(c, err)
+	}
+	data, err := s.Svc.AdminExportAuditLogs(c.Context(), action, int64(adminID), dateFrom, dateTo)
+	if err != nil {
+		return failErr(c, err)
+	}
+	c.Set("Content-Type", "text/csv; charset=utf-8")
+	c.Set("Content-Disposition", `attachment; filename="audit_logs.csv"`)
+	return c.Send(data)
 }
 
 // ctxUnused 保留下划线避免未使用告警（中间件已封装 Context 传递）。

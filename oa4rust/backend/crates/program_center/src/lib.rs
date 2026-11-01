@@ -22,6 +22,9 @@ mod tests_u3;
 #[cfg(test)]
 mod security_gate_tests_b67;
 
+#[cfg(test)]
+mod security_gate_tests_r6;
+
 #[derive(Debug, Deserialize)]
 pub struct CollectAddRequest {
     pub title: Option<String>,
@@ -183,7 +186,7 @@ pub async fn collect_list(
 
     let rows = client
         .query(
-            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE person_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE person_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC LIMIT 100",
             &[&session.person_unique],
         )
         .await
@@ -238,17 +241,18 @@ pub async fn collect_list(
 #[allow(non_snake_case)]
 pub async fn collect_add(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): Json<CollectAddRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let title = req.title.unwrap_or_default();
     let url = req.url.unwrap_or_default();
     // 归属以会话登录人为事实源：客户端 personId/creator 可伪造（替别人收藏/冒名归属）
-    let person_id = session.person_unique.clone();
-    let creator = session.person_unique.clone();
+    let person_id = sess.person_unique.clone();
+    let creator = sess.person_unique.clone();
 
     client
         .execute(
@@ -296,15 +300,16 @@ fn collect_update_spec() -> shared::crud::CrudSpec {
 #[allow(non_snake_case)]
 pub async fn collect_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     // 归属以会话登录人为事实源：客户端 personId 可伪造（替别人收藏/冒名归属）
     let mut payload = body.0;
     if let Some(obj) = payload.as_object_mut() {
         obj.insert(
             "personId".to_string(),
-            Value::String(session.person_unique.clone()),
+            Value::String(sess.person_unique.clone()),
         );
     }
     let id = shared::crud_create(&pool, &collect_spec(), &payload).await?;
@@ -1693,8 +1698,10 @@ pub async fn captcha_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
 #[allow(non_snake_case)]
 pub async fn captcha_v2_create_width_width_height_height(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((width, height)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     client
@@ -1842,8 +1849,10 @@ pub async fn center_version(pool: Extension<Pool>) -> Result<Json<ActionResult<V
 #[allow(non_snake_case)]
 pub async fn code_create_mobile_mobile(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(mobile): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let code = format!(
@@ -9262,9 +9271,10 @@ pub struct WarnLogCreateRequest {
 #[allow(non_snake_case)]
 pub async fn warnlog_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(req): Json<WarnLogCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -9280,7 +9290,7 @@ pub async fn warnlog_create(
         .execute(
             "INSERT INTO x_program_warn_log (id, level, tag, logger_name, message, detail, host, port, creator_person, create_time) \
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())",
-            &[&id, &level, &tag, &logger_name, &message, &detail, &host, &port, &session.person_unique],
+            &[&id, &level, &tag, &logger_name, &message, &detail, &host, &port, &sess.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -9675,6 +9685,11 @@ pub struct U2InvokeRequest {
     pub data: String,
     #[serde(rename = "executorList", default)]
     pub executor_list: Option<Vec<String>>,
+    /// B2（2026-10-30）：invoke token。只在创建/更新时消费：创建时
+    /// enable_token=true 且未带 token 则服务端生成一次并回显明文；
+    /// 更新时提供即轮换。任何响应都不回显哈希。
+    #[serde(rename = "token", default)]
+    pub token: Option<String>,
 }
 
 fn default_true_u2() -> bool {
@@ -9688,6 +9703,92 @@ fn opt_non_empty(s: &str) -> Option<String> {
     } else {
         Some(t.to_string())
     }
+}
+
+// ── B2：invoke token 哈希与校验（方案 A：HMAC-SHA256 + 每行随机盐）──────────
+// 存储格式 `v1:<salt_hex>:<hmac_hex>`：盐为 16 随机字节（作为 HMAC 密钥），
+// 校验时重算并常量时间比较。只存哈希，DB 泄露不直接泄露可用 token。
+
+/// 生成高熵 token（32 随机字节 → 64 hex）。
+fn generate_invoke_token() -> String {
+    format!(
+        "{}{}",
+        uuid::Uuid::new_v4().simple(),
+        uuid::Uuid::new_v4().simple()
+    )
+}
+
+fn hex_encode(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{b:02x}")).collect()
+}
+
+fn hex_decode(hex: &str) -> Result<Vec<u8>, ()> {
+    if hex.len() % 2 != 0 {
+        return Err(());
+    }
+    (0..hex.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).map_err(|_| ()))
+        .collect()
+}
+
+/// 计算 token 哈希。
+fn invoke_token_hash(token: &str) -> String {
+    use hmac::{Hmac, Mac};
+    use sha2::Sha256;
+
+    type HmacSha256 = Hmac<Sha256>;
+    let salt = uuid::Uuid::new_v4().as_bytes().to_vec();
+    let mut mac = HmacSha256::new_from_slice(&salt).expect("HMAC 接受任意长度密钥");
+    mac.update(token.as_bytes());
+    let digest = mac.finalize().into_bytes();
+    format!("v1:{}:{}", hex_encode(&salt), hex_encode(&digest))
+}
+
+/// 常量时间比较（长度不同直接 false，长度相同逐字节 XOR）。
+fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
+    if a.len() != b.len() {
+        return false;
+    }
+    let mut diff = 0u8;
+    for (x, y) in a.iter().zip(b.iter()) {
+        diff |= x ^ y;
+    }
+    diff == 0
+}
+
+/// 校验 token 与存储哈希是否匹配。存储格式非法一律拒绝（fail-closed）。
+fn invoke_token_verify(token: &str, stored: &str) -> bool {
+    use hmac::{Hmac, Mac};
+    use sha2::Sha256;
+
+    type HmacSha256 = Hmac<Sha256>;
+    let parts: Vec<&str> = stored.split(':').collect();
+    if parts.len() != 3 || parts[0] != "v1" {
+        return false;
+    }
+    let Ok(salt) = hex_decode(parts[1]) else {
+        return false;
+    };
+    let Ok(expected) = hex_decode(parts[2]) else {
+        return false;
+    };
+    let Ok(mut mac) = HmacSha256::new_from_slice(&salt) else {
+        return false;
+    };
+    mac.update(token.as_bytes());
+    let actual = mac.finalize().into_bytes();
+    constant_time_eq(&actual, &expected)
+}
+
+/// 根据请求计算待落库的 token_hash：请求带非空 token → 哈希；否则 None。
+/// 创建时 enable_token=true 且请求未带 token 时由调用方另行生成并回显。
+fn requested_token_hash(req: &U2InvokeRequest) -> Option<String> {
+    req.token
+        .as_deref()
+        .map(str::trim)
+        .filter(|t| !t.is_empty())
+        .map(invoke_token_hash)
 }
 
 async fn u2_invoke_find_by_flag(
@@ -9755,14 +9856,26 @@ pub async fn u2_invoke_create(
     }
 
     let id = uuid::Uuid::new_v4().to_string();
-    let executor_list = serde_json::to_string(&req.executor_list.unwrap_or_default())
+    let executor_list = serde_json::to_string(req.executor_list.as_ref().unwrap_or(&vec![]))
         .unwrap_or_else(|_| "[]".to_string());
+    // B2：token 处理——enable_token 时若请求未带 token 则生成一次并回显明文。
+    let (token_hash, generated_token) = if req.enable_token {
+        match requested_token_hash(&req) {
+            Some(h) => (Some(h), None),
+            None => {
+                let gen = generate_invoke_token();
+                (Some(invoke_token_hash(&gen)), Some(gen))
+            }
+        }
+    } else {
+        (None, None)
+    };
     client
         .execute(
             "INSERT INTO x_program_invoke \
              (id, name, alias, category, description, enable, enable_token, enable_anonymous, \
-              validated, text, remote_addr_regex, data, executor_list, creator) \
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, ($13::text)::jsonb, $14)",
+              validated, text, remote_addr_regex, data, executor_list, creator, token_hash) \
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, ($13::text)::jsonb, $14, $15)",
             &[
                 &id,
                 &name,
@@ -9778,6 +9891,7 @@ pub async fn u2_invoke_create(
                 &opt_non_empty(&req.data),
                 &executor_list,
                 &session.person_unique,
+                &token_hash,
             ],
         )
         .await
@@ -9793,9 +9907,12 @@ pub async fn u2_invoke_create(
             AppError::Internal
         })?;
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
-    ))))
+    let mut resp = serde_json::Map::from_iter([("id".to_string(), Value::String(id))]);
+    // B2：服务端生成的 token 只回显一次，落库只存哈希
+    if let Some(gen) = generated_token {
+        resp.insert("token".to_string(), Value::String(gen));
+    }
+    Ok(Json(ActionResult::success(Value::Object(resp))))
 }
 
 /// GET /api/program_center/invoke/{flag} —— 按 id/name/alias 查询
@@ -9870,11 +9987,14 @@ pub async fn u2_invoke_update(
     }
 
     let alias = opt_non_empty(&req.alias);
+    // B2：请求带非空 token → 轮换哈希（旧 token 立即失效）；不带 → 保持原哈希。
+    let token_hash = requested_token_hash(&req);
     let n = client
         .execute(
             "UPDATE x_program_invoke SET name = $1, alias = $2, category = $3, description = $4, \
              enable = $5, enable_token = $6, enable_anonymous = $7, validated = $8, text = $9, \
-             remote_addr_regex = $10, data = $11, update_time = NOW() WHERE id = $12",
+             remote_addr_regex = $10, data = $11, token_hash = COALESCE($13, token_hash), \
+             update_time = NOW() WHERE id = $12",
             &[
                 &name,
                 &alias,
@@ -9888,6 +10008,7 @@ pub async fn u2_invoke_update(
                 &opt_non_empty(&req.remote_addr_regex),
                 &opt_non_empty(&req.data),
                 &id,
+                &token_hash,
             ],
         )
         .await
@@ -10759,9 +10880,10 @@ pub async fn u3_config_dump(pool: Extension<Pool>) -> Result<Json<ActionResult<V
 #[allow(non_snake_case)]
 pub async fn u3_config_change_password_post(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let old_password = json_str(&body, "oldPassword");
     let new_password = json_str(&body, "newPassword");
     if new_password.is_empty() {
@@ -10771,7 +10893,7 @@ pub async fn u3_config_change_password_post(
     let row = client
         .query_opt(
             "SELECT password_hash FROM auth_person WHERE unique_id = $1",
-            &[&session.person_unique],
+            &[&sess.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -10801,7 +10923,7 @@ pub async fn u3_config_change_password_post(
     client
         .execute(
             "UPDATE auth_person SET password_hash = $1, updated_at = NOW() WHERE unique_id = $2",
-            &[&hash, &session.person_unique],
+            &[&hash, &sess.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -11214,7 +11336,7 @@ async fn u3_invoke_execute_inner(
     };
     let row = client
         .query_opt(
-            "SELECT enable_token, enable_anonymous FROM x_program_invoke WHERE id = $1",
+            "SELECT enable_token, enable_anonymous, token_hash FROM x_program_invoke WHERE id = $1",
             &[&id],
         )
         .await
@@ -11224,8 +11346,21 @@ async fn u3_invoke_execute_inner(
     };
     let enable_token: bool = row.get("enable_token");
     let enable_anonymous: bool = row.get("enable_anonymous");
-    if enable_token && !enable_anonymous && token.map(str::trim).unwrap_or_default().is_empty() {
-        return Ok(Json(ActionResult::error("token required")));
+    // B2：token 验签（方案 A）——只判非空改为校验存储哈希，非法一律拒绝。
+    if enable_token && !enable_anonymous {
+        let t = token.map(str::trim).unwrap_or_default();
+        if t.is_empty() {
+            return Ok(Json(ActionResult::error("token required")));
+        }
+        let stored: Option<String> = row.get("token_hash");
+        // 未配置 token_hash（老数据/未设置）→ fail-closed 的「token required」；
+        // 配置了但哈希不匹配 → 「invalid token」。
+        let Some(stored) = stored else {
+            return Ok(Json(ActionResult::error("token required")));
+        };
+        if !invoke_token_verify(t, &stored) {
+            return Ok(Json(ActionResult::error("invalid token")));
+        }
     }
     client
         .execute(
@@ -11565,8 +11700,9 @@ async fn u3_module_sync_action(
 #[allow(non_snake_case)]
 pub async fn u3_module_output_put(
     pool: Extension<Pool>,
-    _session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     u3_module_sync_action(&pool, "output").await
 }
 
@@ -11574,8 +11710,9 @@ pub async fn u3_module_output_put(
 #[allow(non_snake_case)]
 pub async fn u3_module_list_put(
     pool: Extension<Pool>,
-    _session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     u3_module_sync_action(&pool, "list_refresh").await
 }
 
@@ -11583,8 +11720,9 @@ pub async fn u3_module_list_put(
 #[allow(non_snake_case)]
 pub async fn u3_module_compare_upload_put(
     pool: Extension<Pool>,
-    _session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     u3_module_sync_action(&pool, "compare_upload").await
 }
 
@@ -11636,15 +11774,16 @@ pub async fn u3_mpweixin_check_post(
 #[allow(non_snake_case)]
 pub async fn u3_mpweixin_template_send_post(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(_body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
             "INSERT INTO x_program_message_log (id, creator_person, create_time) VALUES ($1, $2, NOW())",
-            &[&id, &session.person_unique],
+            &[&id, &sess.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -11707,9 +11846,10 @@ pub struct U3PromptErrorLogRequest {
 #[allow(non_snake_case)]
 pub async fn u3_prompterrorlog_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(req): Json<U3PromptErrorLogRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let exception_class = req
@@ -11721,7 +11861,7 @@ pub async fn u3_prompterrorlog_create(
         .execute(
             "INSERT INTO x_program_prompt_error_log (id, exception_class, logger_name, message, creator_person, create_time) \
              VALUES ($1, $2, $3, $4, $5, NOW())",
-            &[&id, &exception_class, &logger_name, &message, &session.person_unique],
+            &[&id, &exception_class, &logger_name, &message, &sess.person_unique],
         )
         .await
         .map_err(|e| {
@@ -11745,9 +11885,10 @@ pub struct U3UnexpectedErrorLogRequest {
 #[allow(non_snake_case)]
 pub async fn u3_unexpectederrorlog_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(req): Json<U3UnexpectedErrorLogRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let error_type = req
@@ -11759,7 +11900,7 @@ pub async fn u3_unexpectederrorlog_create(
         .execute(
             "INSERT INTO x_program_unexpected_error_log (id, error_type, message, stack_trace, creator_person, create_time) \
              VALUES ($1, $2, $3, $4, $5, NOW())",
-            &[&id, &error_type, &message, &stack_trace, &session.person_unique],
+            &[&id, &error_type, &message, &stack_trace, &sess.person_unique],
         )
         .await
         .map_err(|e| {
@@ -11775,14 +11916,15 @@ pub async fn u3_unexpectederrorlog_create(
 #[allow(non_snake_case)]
 pub async fn u3_qiyeweixin_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
             "INSERT INTO x_program_callback_registration (id, creator_person, create_time) VALUES ($1, $2, NOW())",
-            &[&id, &session.person_unique],
+            &[&id, &sess.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -12194,9 +12336,10 @@ pub struct DictCreateRequest {
 #[allow(non_snake_case)]
 pub async fn dict_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(req): Json<DictCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -12210,7 +12353,7 @@ pub async fn dict_create(
         .execute(
             "INSERT INTO x_program_dict (id, name, flag, app_name, key_name, app_data, creator_person, create_time) \
              VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
-            &[&id, &name, &flag, &app_name, &key_name, &app_data, &session.person_unique],
+            &[&id, &name, &flag, &app_name, &key_name, &app_data, &sess.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -12388,9 +12531,10 @@ pub struct ScriptSaveRequest {
 #[allow(non_snake_case)]
 pub async fn script_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(req): Json<ScriptCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -12403,7 +12547,7 @@ pub async fn script_create(
         .execute(
             "INSERT INTO x_program_script (id, name, flag, content, category, creator_person, create_time) \
              VALUES ($1, $2, $3, $4, $5, $6, NOW())",
-            &[&id, &name, &flag, &content, &category, &session.person_unique],
+            &[&id, &name, &flag, &content, &category, &sess.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -13041,5 +13185,185 @@ mod security_gate_tests {
             "以下 GET 面非 admin 未回 403（401 之外还出现 Internal 就是门插在读库之后）：{bad:?}"
         );
         assert_eq!(cases.len(), 17, "本批 17 把必须逐把点名，少一把即漏门");
+    }
+}
+
+// ── B2（2026-10-30）：invoke token 哈希/校验单元测试 ────────────────────────
+#[cfg(test)]
+mod invoke_token_tests {
+    use super::*;
+
+    #[test]
+    fn invoke_token_hash_roundtrip() {
+        let token = "test-token-abc123";
+        let stored = invoke_token_hash(token);
+        assert!(stored.starts_with("v1:"), "存储格式必须是 v1:salt:hmac");
+        assert!(invoke_token_verify(token, &stored), "正确 token 必须通过");
+        assert!(
+            !invoke_token_verify("wrong-token", &stored),
+            "错误 token 必须拒绝"
+        );
+        assert!(
+            !invoke_token_verify("", &stored),
+            "空 token 必须拒绝（fail-closed）"
+        );
+    }
+
+    #[test]
+    fn invoke_token_hash_is_salted_per_row() {
+        // 同一 token 两次哈希必须不同（每次随机盐），防止彩虹表/跨行碰撞。
+        let token = "same-token";
+        assert_ne!(invoke_token_hash(token), invoke_token_hash(token));
+    }
+
+    #[test]
+    fn invoke_token_verify_rejects_malformed_stored() {
+        // 存储格式非法一律拒绝，不 panic、不误放行。
+        assert!(!invoke_token_verify("token", ""));
+        assert!(!invoke_token_verify("token", "v2:abc:def"));
+        assert!(!invoke_token_verify("token", "v1:zz:def")); // 盐不是 hex
+        assert!(!invoke_token_verify("token", "v1:abcd:xyz")); // 摘要不是 hex
+        assert!(!invoke_token_verify("token", "v1:ab:cd:ef")); // 段数不对
+        assert!(!invoke_token_verify("token", "plaintext"));
+    }
+
+    #[test]
+    fn generate_invoke_token_is_high_entropy() {
+        let a = generate_invoke_token();
+        let b = generate_invoke_token();
+        assert_eq!(a.len(), 64, "32 随机字节 → 64 hex");
+        assert!(a.chars().all(|c| c.is_ascii_hexdigit()));
+        assert_ne!(a, b, "连续生成必须不同");
+    }
+
+    #[test]
+    fn requested_token_hash_behavior() {
+        // 带非空 token → Some(hash)；空白/缺失 → None（保持原哈希或触发生成）。
+        assert!(requested_token_hash(&U2InvokeRequest {
+            token: Some("secret".to_string()),
+            ..default_request()
+        })
+        .is_some());
+        assert!(requested_token_hash(&U2InvokeRequest {
+            token: Some("   ".to_string()),
+            ..default_request()
+        })
+        .is_none());
+        assert!(requested_token_hash(&U2InvokeRequest {
+            token: None,
+            ..default_request()
+        })
+        .is_none());
+    }
+
+    fn default_request() -> U2InvokeRequest {
+        U2InvokeRequest {
+            name: String::new(),
+            alias: String::new(),
+            category: String::new(),
+            description: String::new(),
+            enable: false,
+            enable_token: false,
+            enable_anonymous: true,
+            validated: false,
+            text: String::new(),
+            remote_addr_regex: String::new(),
+            data: String::new(),
+            executor_list: None,
+            token: None,
+        }
+    }
+
+    /// DB 臂：创建 enable_token 的 invoke 后，execute 正确 token 放行、错误 token 拒绝。
+    /// 需要真实 DATABASE_URL，不可用时跳过。
+    #[tokio::test]
+    async fn invoke_execute_validates_token_against_stored_hash() {
+        if !shared::testing::is_db_available().await {
+            eprintln!("skipping invoke_execute_validates_token_against_stored_hash: DATABASE_URL not reachable");
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let client = pool.get().await.unwrap();
+        let flag = format!("b2-token-{}", uuid::Uuid::new_v4());
+
+        // 幂等补列：本测试直接依赖迁移 114 的 token_hash 列，测试库可能未跑迁移。
+        client
+            .execute(
+                "ALTER TABLE x_program_invoke ADD COLUMN IF NOT EXISTS token_hash TEXT",
+                &[],
+            )
+            .await
+            .unwrap();
+
+        // 直接落一行 enable_token=true 且带 token_hash 的 invoke（绕过管理端，聚焦验签）。
+        let token = "db-arm-secret-token";
+        client
+            .execute(
+                "INSERT INTO x_program_invoke \
+                 (id, name, alias, enable, enable_token, enable_anonymous, validated, token_hash) \
+                 VALUES ($1, $2, $3, TRUE, TRUE, FALSE, TRUE, $4)",
+                &[
+                    &uuid::Uuid::new_v4().to_string(),
+                    &flag,
+                    &flag,
+                    &invoke_token_hash(token),
+                ],
+            )
+            .await
+            .unwrap();
+
+        // 错误 token → invalid token，且不更新 last_start_time（先于正确调用验证）
+        let bad = u3_invoke_execute_inner(&pool, &flag, Some("wrong-token")).await;
+        assert!(
+            matches!(&bad, Ok(Json(v)) if v.data.is_none()),
+            "错误 token 必须拒绝（error 信封 data=None）"
+        );
+        let row = client
+            .query_one(
+                "SELECT last_start_time FROM x_program_invoke WHERE name = $1",
+                &[&flag],
+            )
+            .await
+            .unwrap();
+        let last_start: Option<chrono::NaiveDateTime> = row.get(0);
+        assert!(last_start.is_none(), "错误 token 不得更新 last_start_time");
+
+        // 空 token → token required，同样不落库
+        let empty = u3_invoke_execute_inner(&pool, &flag, Some("  ")).await;
+        assert!(
+            matches!(&empty, Ok(Json(v)) if v.data.is_none()),
+            "空 token 必须拒绝（error 信封 data=None）"
+        );
+        let row = client
+            .query_one(
+                "SELECT last_start_time FROM x_program_invoke WHERE name = $1",
+                &[&flag],
+            )
+            .await
+            .unwrap();
+        let last_start: Option<chrono::NaiveDateTime> = row.get(0);
+        assert!(last_start.is_none(), "空 token 不得更新 last_start_time");
+
+        // 正确 token → 放行（executed=true）且更新 last_start_time
+        let ok = u3_invoke_execute_inner(&pool, &flag, Some(token)).await;
+        assert!(
+            matches!(&ok, Ok(Json(v)) if v.data.as_ref().and_then(|d| d.get("executed")) == Some(&Value::Bool(true))),
+            "正确 token 必须放行"
+        );
+        let row = client
+            .query_one(
+                "SELECT last_start_time FROM x_program_invoke WHERE name = $1",
+                &[&flag],
+            )
+            .await
+            .unwrap();
+        let last_start: Option<chrono::NaiveDateTime> = row.get(0);
+        assert!(last_start.is_some(), "正确 token 应更新 last_start_time");
+
+        // 清理
+        client
+            .execute("DELETE FROM x_program_invoke WHERE name = $1", &[&flag])
+            .await
+            .unwrap();
     }
 }

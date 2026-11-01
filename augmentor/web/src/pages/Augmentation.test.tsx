@@ -17,16 +17,17 @@ import { message } from 'antd'
 
 window.matchMedia =
   window.matchMedia ||
-  ((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  }) as unknown as MediaQueryList)
+  ((query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList)
 class RO {
   observe() {}
   unobserve() {}
@@ -80,7 +81,7 @@ describe('Augmentation 启动校验与负载', () => {
     expect(spies.startAugmentation).not.toHaveBeenCalled()
   })
 
-  it('选文件后 startAugmentation 收到五参数与默认输出名', async () => {
+  it('选文件后 startAugmentation 收到六参数与默认输出名（异步引擎默认关）', async () => {
     const { container } = render(<Augmentation />)
 
     await waitFor(() => expect(spies.getDataFiles).toHaveBeenCalled())
@@ -88,7 +89,7 @@ describe('Augmentation 启动校验与负载', () => {
     // 选中态回显的同名节点冲突）
     fireEvent.mouseDown(container.querySelector('.ant-select')!)
     await waitFor(() =>
-      expect(document.querySelector('.ant-select-item-option')).toBeInTheDocument()
+      expect(document.querySelector('.ant-select-item-option')).toBeInTheDocument(),
     )
     fireEvent.click(document.querySelector('.ant-select-item-option')!)
 
@@ -100,7 +101,37 @@ describe('Augmentation 启动校验与负载', () => {
       'augmented_output.json',
       true,
       true,
-      true
+      true,
+      false, // 异步引擎默认关
+    )
+  })
+
+  // AU-P1：异步引擎的开关必须真的把第六个参数送出去。
+  // 只断言「开关渲染出来了」是不够的 —— 那在参数没接线时同样成立。
+  it('打开异步引擎后第六个参数为 true', async () => {
+    const { container } = render(<Augmentation />)
+
+    await waitFor(() => expect(spies.getDataFiles).toHaveBeenCalled())
+    fireEvent.mouseDown(container.querySelector('.ant-select')!)
+    await waitFor(() =>
+      expect(document.querySelector('.ant-select-item-option')).toBeInTheDocument(),
+    )
+    fireEvent.click(document.querySelector('.ant-select-item-option')!)
+
+    const label = screen.getByText('异步引擎：')
+    const toggle = label.parentElement!.querySelector('.ant-switch')!
+    fireEvent.click(toggle)
+
+    fireEvent.click(screen.getByRole('button', { name: /开始增强/ }))
+
+    await waitFor(() => expect(spies.startAugmentation).toHaveBeenCalledTimes(1))
+    expect(spies.startAugmentation).toHaveBeenCalledWith(
+      'seed.json',
+      'augmented_output.json',
+      true,
+      true,
+      true,
+      true,
     )
   })
 })
@@ -193,7 +224,7 @@ describe('Augmentation 轮询的停表与重启（L277）', () => {
 
     fireEvent.mouseDown(container.querySelector('.ant-select')!)
     await waitFor(() =>
-      expect(document.querySelector('.ant-select-item-option')).toBeInTheDocument()
+      expect(document.querySelector('.ant-select-item-option')).toBeInTheDocument(),
     )
     fireEvent.click(document.querySelector('.ant-select-item-option')!)
 

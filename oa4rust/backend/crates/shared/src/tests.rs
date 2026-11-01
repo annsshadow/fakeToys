@@ -269,6 +269,29 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_csrf_mirror_origin_from_loopback_ip() {
+        // public_origin 配置为 127.0.0.1 时，「镜像语义」放行 localhost 源
+        //（CORS 白名单同款回环镜像，覆盖 csrf_middleware 的 127.0.0.1 分支）。
+        let mut state = security_state();
+        state.session_manager.auth_config.public_origin = "http://127.0.0.1:3000".to_string();
+        let token = make_token(&state.session_manager, "user").await;
+        let app = test_app(state);
+
+        let request = Request::builder()
+            .method(Method::POST)
+            .uri("/api/reset")
+            .header(header::COOKIE, format!("{}={}", SESSION_COOKIE_NAME, token))
+            .header(header::ORIGIN, "http://localhost:3000")
+            .body(Body::empty())
+            .unwrap();
+        assert_eq!(
+            app.oneshot(request).await.unwrap().status(),
+            StatusCode::OK,
+            "127.0.0.1 源配置必须放行 localhost 镜像源"
+        );
+    }
+
+    #[tokio::test]
     async fn test_cors_preflight_allows_write_methods() {
         let app = Router::new()
             .route("/write", post(|| async { "ok" }))
@@ -505,12 +528,13 @@ mod tests {
     // ──────────────────────────────────────────────────────────────────────────
 
     #[tokio::test]
-    #[ignore = "pre-existing: redis mock not configured"]
     async fn test_auth_path_rate_limited() {
         let app = test_app(security_state());
-        for i in 0..11 {
+        let max = crate::middleware::auth_rate_limit();
+        assert!(max > 0, "auth rate limit must be positive");
+        for i in 0..=max {
             let status = send(&app, Method::POST, "/api/authentication/login", None, None).await;
-            if i < 10 {
+            if i < max {
                 assert_eq!(status, StatusCode::OK, "第 {} 次认证请求应成功", i + 1);
             } else {
                 assert_eq!(
@@ -524,12 +548,13 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore = "pre-existing: redis mock not configured"]
     async fn test_reset_path_counted_in_auth_rate_limit() {
         let app = test_app(security_state());
-        for i in 0..11 {
+        let max = crate::middleware::auth_rate_limit();
+        assert!(max > 0, "auth rate limit must be positive");
+        for i in 0..=max {
             let status = send(&app, Method::POST, "/api/reset", None, None).await;
-            if i < 10 {
+            if i < max {
                 assert_eq!(status, StatusCode::OK, "第 {} 次重置请求应成功", i + 1);
             } else {
                 assert_eq!(
@@ -543,11 +568,12 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore = "pre-existing: redis mock not configured"]
     async fn test_rate_limit_keys_are_per_client_ip() {
         let app = test_app(security_state());
-        // IP A：9 次成功
-        for _ in 0..9 {
+        let max = crate::middleware::auth_rate_limit() as usize;
+        assert!(max > 1, "test needs at least two attempts of headroom");
+        // IP A：max-1 次成功
+        for _ in 0..(max - 1) {
             let status = send(
                 &app,
                 Method::POST,
@@ -558,8 +584,8 @@ mod tests {
             .await;
             assert_eq!(status, StatusCode::OK);
         }
-        // IP B：前 10 次成功，第 11 次 429
-        for i in 0..11 {
+        // IP B：前 max 次成功，第 max+1 次 429
+        for i in 0..=max {
             let status = send(
                 &app,
                 Method::POST,
@@ -568,13 +594,13 @@ mod tests {
                 Some("198.51.100.7"),
             )
             .await;
-            if i < 10 {
+            if i < max {
                 assert_eq!(status, StatusCode::OK);
             } else {
                 assert_eq!(status, StatusCode::TOO_MANY_REQUESTS);
             }
         }
-        // IP A 计数不受 IP B 影响：第 10 次仍成功
+        // IP A 计数不受 IP B 影响：第 max 次仍成功
         let status = send(
             &app,
             Method::POST,
@@ -584,6 +610,45 @@ mod tests {
         )
         .await;
         assert_eq!(status, StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_general_traffic_does_not_consume_auth_rate_limit() {
+        let app = test_app(security_state());
+        let auth_max = crate::middleware::auth_rate_limit() as usize;
+        assert!(auth_max > 1, "test needs at least two attempts of headroom");
+
+        // 用普通端点打满与认证预算同等数量的请求。它们会被认证中间件拒绝（401），
+        // 但必须计入普通桶；修复前它们与认证共用 `ip` 桶，登录会提前 429。
+        for i in 0..auth_max {
+            let status = send(&app, Method::GET, "/api/unit/list", None, None).await;
+            assert_ne!(
+                status,
+                StatusCode::TOO_MANY_REQUESTS,
+                "第 {} 次普通请求不应被限流",
+                i + 1
+            );
+        }
+
+        // 认证桶仍有完整预算：前 auth_max 次成功，第 auth_max+1 次才 429。
+        for i in 0..=auth_max {
+            let status = send(&app, Method::POST, "/api/authentication/login", None, None).await;
+            if i < auth_max {
+                assert_eq!(
+                    status,
+                    StatusCode::OK,
+                    "第 {} 次认证请求应成功（普通流量不得挤占认证预算）",
+                    i + 1
+                );
+            } else {
+                assert_eq!(
+                    status,
+                    StatusCode::TOO_MANY_REQUESTS,
+                    "第 {} 次认证请求应触发 429",
+                    i + 1
+                );
+            }
+        }
     }
 
     // ──────────────────────────────────────────────────────────────────────────

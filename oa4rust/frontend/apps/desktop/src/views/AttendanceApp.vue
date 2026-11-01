@@ -696,7 +696,7 @@ async function attCoreEntity(op: string) {
     } else if (op === 'recordDelete') {
       const id = prompt('要删除的记录 ID:', '') || ''
       if (!(await confirmMsg('确定删除该考勤记录？'))) return
-      await api.get(`/api/attendance/core/entity/record/${encodeURIComponent(id)}/delete`)
+      await api.post(`/api/attendance/core/entity/record/${encodeURIComponent(id)}/delete`, {})
     } else if (op === 'ruleCreate') {
       const name = prompt('规则名称:', '') || ''
       const startTime = prompt('开始时间:', '') || ''
@@ -708,7 +708,7 @@ async function attCoreEntity(op: string) {
     } else {
       const id = prompt('要删除的规则 ID:', '') || ''
       if (!(await confirmMsg('确定删除该考勤规则？'))) return
-      await api.get(`/api/attendance/core/entity/rule/${encodeURIComponent(id)}/delete`)
+      await api.post(`/api/attendance/core/entity/rule/${encodeURIComponent(id)}/delete`, {})
     }
     toast.success('考勤核心实体操作已提交')
   } catch (e: any) {

@@ -270,6 +270,16 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn db_placeholder_put_get_delete_semantics() {
+        // DbBlobStorage 是占位实现：get 必须显式失败（防止调用方误以为 blob 已落库），
+        // put/delete 是 no-op 成功（当前 blob 走 FILE_FILE.content，不经此后端）。
+        let db = DbBlobStorage;
+        db.put("k", b"v").await.unwrap();
+        assert!(db.get("k").await.is_err());
+        db.delete("k").await.unwrap();
+    }
+
+    #[tokio::test]
     async fn fs_rejects_traversal_keys() {
         let root = temp_root("traversal");
         let fs = FsBlobStorage::new(&root);
@@ -330,5 +340,104 @@ mod tests {
         assert_eq!(store.get(&key).await.unwrap(), b"xyz".to_vec());
         store.delete(&key).await.unwrap();
         assert!(store.get(&key).await.is_err());
+    }
+
+    // ── 2026-10-29 覆盖率轮：PgBlobStorage 往返与工厂分支 ──
+    #[cfg(test)]
+    mod pg_blob_tests {
+        use super::*;
+
+        async fn pool_or_skip() -> Option<deadpool_postgres::Pool> {
+            if !crate::testing::is_db_available().await {
+                eprintln!("SKIP: no database available (set DATABASE_URL)");
+                return None;
+            }
+            Some(crate::testing::test_pool())
+        }
+
+        #[tokio::test]
+        async fn pg_blob_roundtrip_put_get_delete_and_miss() {
+            let Some(pool) = pool_or_skip().await else {
+                return;
+            };
+            let storage = PgBlobStorage::new(pool);
+
+            assert!(storage.put("", b"x").await.is_err(), "空 key 必须拒绝");
+            storage.put("cov-blob", b"hello bytes").await.unwrap();
+            assert_eq!(storage.get("cov-blob").await.unwrap(), b"hello bytes");
+            // upsert：同 key 覆盖
+            storage.put("cov-blob", b"v2").await.unwrap();
+            assert_eq!(storage.get("cov-blob").await.unwrap(), b"v2");
+            storage.delete("cov-blob").await.unwrap();
+            assert!(
+                storage.get("cov-blob").await.is_err(),
+                "删除后应报 not found"
+            );
+            // 删不存在的 key 也是 Ok（幂等）
+            storage.delete("cov-blob").await.unwrap();
+        }
+
+        #[test]
+        fn storage_factory_routes_by_backend_value() {
+            // 未知值/缺省 → DB 后端；fs + 有 root → FS 后端（构造成功即可）
+            let _ = storage_from("db", None);
+            let _ = storage_from("totally-unknown", None);
+            let _ = storage_from("fs", Some("./cov-storage-root"));
+        }
+
+        #[test]
+        #[should_panic(expected = "STORAGE_BACKEND=fs requires STORAGE_ROOT")]
+        fn storage_factory_fs_without_root_panics() {
+            let _ = storage_from("fs", None);
+        }
+    }
+
+    // ── 2026-10-29 覆盖率轮第二刀：FsBlobStorage 往返 + 目录穿越防护 ──
+    #[tokio::test]
+    async fn fs_blob_roundtrip_and_delete() {
+        let root = std::env::temp_dir().join("cov-fs-blob-root");
+        let storage = FsBlobStorage::new(&root);
+        storage.put("dir/nested/a.txt", b"payload").await.unwrap();
+        assert_eq!(storage.get("dir/nested/a.txt").await.unwrap(), b"payload");
+        storage.put("dir/nested/a.txt", b"v2").await.unwrap();
+        assert_eq!(storage.get("dir/nested/a.txt").await.unwrap(), b"v2");
+        storage.delete("dir/nested/a.txt").await.unwrap();
+        assert!(storage.get("dir/nested/a.txt").await.is_err());
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[tokio::test]
+    async fn fs_blob_rejects_unsafe_keys() {
+        let storage = FsBlobStorage::new(std::env::temp_dir().join("cov-fs-blob-root2"));
+        assert!(storage.put("", b"x").await.is_err(), "空 key 拒绝");
+        assert!(
+            storage.put("/etc/passwd", b"x").await.is_err(),
+            "绝对 key 拒绝"
+        );
+        assert!(
+            storage.get("a/../../b").await.is_err(),
+            ".. 组件拒绝（目录穿越）"
+        );
+        assert!(storage.delete("C:\\evil").await.is_err(), "盘符 key 拒绝");
+    }
+
+    #[tokio::test]
+    async fn failing_pool_makes_blob_paths_report_pool_error() {
+        let storage = PgBlobStorage::new(crate::testing::failing_pool());
+        let put_err = storage.put("k", b"v").await.unwrap_err();
+        assert!(
+            put_err.starts_with("pool:"),
+            "put 的池错误必须带 pool: 前缀：{put_err}"
+        );
+        let get_err = storage.get("k").await.unwrap_err();
+        assert!(
+            get_err.starts_with("pool:"),
+            "get 的池错误必须带 pool: 前缀：{get_err}"
+        );
+        let del_err = storage.delete("k").await.unwrap_err();
+        assert!(
+            del_err.starts_with("pool:"),
+            "delete 的池错误必须带 pool: 前缀：{del_err}"
+        );
     }
 }

@@ -1367,7 +1367,7 @@ pub async fn page_list_portal_portal(
 
     let rows = client
         .query(
-            "SELECT id, name, category, creator, create_time FROM x_portal_page WHERE portal_id = $1 ORDER BY create_time DESC",
+            "SELECT id, name, category, creator, create_time FROM x_portal_page WHERE portal_id = $1 ORDER BY create_time DESC LIMIT 100",
             &[&portal],
         )
         .await
@@ -2095,7 +2095,7 @@ pub async fn script_list_portal_portal(
 
     let rows = client
         .query(
-            "SELECT id, name, flag, category, creator, create_time FROM x_portal_script WHERE portal_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            "SELECT id, name, flag, category, creator, create_time FROM x_portal_script WHERE portal_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC LIMIT 100",
             &[&portal],
         )
         .await
@@ -2312,7 +2312,7 @@ pub async fn widget_list_portal_portal(
 
     let rows = client
         .query(
-            "SELECT id, name, portal_id, category, config, creator, create_time FROM x_portal_widget WHERE portal_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            "SELECT id, name, portal_id, category, config, creator, create_time FROM x_portal_widget WHERE portal_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC LIMIT 100",
             &[&portal],
         )
         .await

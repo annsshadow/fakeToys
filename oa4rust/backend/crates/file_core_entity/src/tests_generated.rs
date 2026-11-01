@@ -11,8 +11,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_folder_list_top() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -33,8 +33,8 @@ mod tests {
     // SKIPPED: folder_list_with_folder not accessible
     #[tokio::test]
     async fn test_file_list() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -54,8 +54,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_complex_top() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -77,8 +77,8 @@ mod tests {
     // SKIPPED: folder_delete not accessible
     #[tokio::test]
     async fn test_file_create() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
