@@ -16,6 +16,7 @@
     "test:watch": "vitest",
     "test:contracts": "vitest run tests/contracts",
     "test:mobile": "pnpm --filter @oa4rust/mobile test",
+    "test:mobile:coverage": "pnpm --filter @oa4rust/mobile test:coverage",
     "test:e2e": "playwright test",
     "test:e2e:list": "playwright test --list",
     "gen-api": "tsx scripts/gen-api.ts",

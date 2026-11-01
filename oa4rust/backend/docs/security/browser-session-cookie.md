@@ -15,7 +15,7 @@ SESSION_TTL_SECONDS=7200
 
 ## Cookie 与接口契约
 
-唯一 Cookie 名称为 `oa4rust_session`。登录和刷新响应设置 host-only Cookie（不设置 `Domain`），属性为 `HttpOnly; SameSite=Lax; Path=/`；生产设置 `Secure`。同时设置 `Max-Age` 与 `Expires`，二者均与 `SESSION_TTL_SECONDS` 及服务端 Session/Redis TTL 一致。
+唯一 Cookie 名称为 `oa4rust_session`。登录和刷新响应设置 host-only Cookie（不设置 `Domain`），属性为 `HttpOnly; SameSite=Lax; Path=/`；生产设置 `Secure`。同时设置 `Max-Age` 与 `Expires`，二者均与 `SESSION_TTL_SECONDS` 及服务端 Session TTL 一致。
 
 - 登录：成功后设置新 Cookie；响应体不再回显正式 session token（token-free body），
   浏览器与 CLI 均以 Cookie 为权威会话载体。

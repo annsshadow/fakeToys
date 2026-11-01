@@ -15,11 +15,12 @@ interface AugmentFormValues {
   useQuality: boolean
   useDedup: boolean
   useCheckpoint: boolean
+  useAsync: boolean
 }
 
 const ENABLE_OPTIONS = [
   { label: '启用', value: true },
-  { label: '禁用', value: false }
+  { label: '禁用', value: false },
 ]
 
 /**
@@ -36,7 +37,7 @@ export default function AugmentForm({ onSubmitted }: AugmentFormProps) {
 
   useEffect(() => {
     getDataFiles()
-      .then(result => setFiles(result.files.map(f => f.name)))
+      .then((result) => setFiles(result.files.map((f) => f.name)))
       .catch((err) => message.error(apiErrorDetail(err, '加载数据文件列表失败')))
   }, [])
 
@@ -57,7 +58,8 @@ export default function AugmentForm({ onSubmitted }: AugmentFormProps) {
         values.outputFile,
         values.useQuality,
         values.useDedup,
-        values.useCheckpoint
+        values.useCheckpoint,
+        values.useAsync,
       )
       message.success('增强任务已提交，可在进度面板查看状态')
       onSubmitted?.()
@@ -76,7 +78,8 @@ export default function AugmentForm({ onSubmitted }: AugmentFormProps) {
         initialValues={{
           useQuality: true,
           useDedup: true,
-          useCheckpoint: true
+          useCheckpoint: true,
+          useAsync: false,
         }}
         onFinish={handleSubmit}
       >
@@ -87,7 +90,7 @@ export default function AugmentForm({ onSubmitted }: AugmentFormProps) {
         >
           <Select
             placeholder="请选择种子数据文件"
-            options={files.map(name => ({ label: name, value: name }))}
+            options={files.map((name) => ({ label: name, value: name }))}
           />
         </Form.Item>
 
@@ -107,6 +110,9 @@ export default function AugmentForm({ onSubmitted }: AugmentFormProps) {
             <Select style={{ width: 110 }} options={ENABLE_OPTIONS} />
           </Form.Item>
           <Form.Item name="useCheckpoint" label="断点续传" style={{ marginBottom: 0 }}>
+            <Select style={{ width: 110 }} options={ENABLE_OPTIONS} />
+          </Form.Item>
+          <Form.Item name="useAsync" label="异步引擎" style={{ marginBottom: 0 }}>
             <Select style={{ width: 110 }} options={ENABLE_OPTIONS} />
           </Form.Item>
         </Space>

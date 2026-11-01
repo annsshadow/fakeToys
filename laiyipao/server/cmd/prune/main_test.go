@@ -149,3 +149,30 @@ func TestRunCLIErrorGoesToStderr(t *testing.T) {
 		t.Errorf("stderr 应含「参数错误」，实际 %q", errBuf.String())
 	}
 }
+
+// TestParseOptsArchiveWalletFlows 归档开关（2026-10-30 实质优化第 10 轮）。
+//
+// 归档是 wallet_flows 唯一的压缩途径（冷表，不是删除），必须显式开启。
+// 判据：默认不归档（否则每次 prune 都会搬流水，行为与文档不符）；
+// 显式传 `--archive-wallet-flows` 才开启。
+func TestParseOptsArchiveWalletFlows(t *testing.T) {
+	o, err := parseOpts([]string{"--days=30"})
+	if err != nil {
+		t.Fatalf("解析失败：%v", err)
+	}
+	if o.ArchiveWallet {
+		t.Fatal("默认必须**不**归档 wallet_flows —— 归档是可选操作，不是默认行为")
+	}
+
+	o, err = parseOpts([]string{"--days=30", "--archive-wallet-flows"})
+	if err != nil {
+		t.Fatalf("解析失败：%v", err)
+	}
+	if !o.ArchiveWallet {
+		t.Fatal("--archive-wallet-flows 未生效")
+	}
+	// 其它字段不受影响
+	if o.Days != 30 || o.Apply {
+		t.Fatalf("其余选项被带偏：%+v", o)
+	}
+}

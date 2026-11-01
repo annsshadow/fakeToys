@@ -5,30 +5,25 @@ use base64::Engine;
 use chrono::{Duration, NaiveDateTime, Utc};
 use deadpool_postgres::Pool;
 use hmac::{Hmac, Mac};
-use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tracing::warn;
 
 use crate::config::{AuthConfig, DEFAULT_SESSION_TTL_SECONDS};
 use crate::error::AppError;
-use crate::messaging::{MessageBus, TokenThresholdEvent};
-use crate::redis::RedisPool;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // session
 //
-// 会话存储（内存 + PostgreSQL 持久化 + Redis 分布式缓存）。
-// SessionManager 由 main.rs 构造单一实例注入各 router 与认证中间件。
+// 会话存储（内存 + PostgreSQL 持久化）。单实例部署（2026-10-28 决策），
+// 无跨实例缓存/吊销通道。SessionManager 由 main.rs 构造单一实例注入各 router
+// 与认证中间件。
 // ──────────────────────────────────────────────────────────────────────────────
 
 type HmacSha256 = Hmac<Sha256>;
 
-const SESSION_KEY_PREFIX: &str = "oa4rust:session:";
-
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Session {
     pub token: String,
     pub person_unique: String,
@@ -42,8 +37,6 @@ pub struct SessionManager {
     pub pool: Option<Pool>,
     pub hmac_secret: Option<String>,
     pub auth_config: AuthConfig,
-    pub redis_pool: Arc<std::sync::Mutex<Option<RedisPool>>>,
-    pub message_bus: Option<Arc<dyn MessageBus<TokenThresholdEvent>>>,
 }
 
 impl Default for SessionManager {
@@ -67,8 +60,6 @@ impl SessionManager {
             pool: None,
             hmac_secret: std::env::var("SESSION_HMAC_SECRET").ok(),
             auth_config,
-            redis_pool: Arc::new(std::sync::Mutex::new(None)),
-            message_bus: None,
         };
         manager.start_threshold_scanner().start_session_sweeper()
     }
@@ -90,8 +81,6 @@ impl SessionManager {
             pool: Some(pool),
             hmac_secret: std::env::var("SESSION_HMAC_SECRET").ok(),
             auth_config,
-            redis_pool: Arc::new(std::sync::Mutex::new(None)),
-            message_bus: None,
         };
         manager.start_threshold_scanner().start_session_sweeper()
     }
@@ -136,84 +125,6 @@ impl SessionManager {
             }
         });
         self
-    }
-
-    pub fn init_redis(&self) -> bool {
-        let url = std::env::var("REDIS_URL")
-            .ok()
-            .filter(|s| !s.trim().is_empty())
-            .unwrap_or_else(|| "redis://127.0.0.1:6379".to_string());
-
-        // If we're already inside a tokio runtime, we cannot use block_on.
-        // In that case, we skip Redis initialization and let the caller
-        // use init_redis_async if needed.
-        if tokio::runtime::Handle::try_current().is_ok() {
-            return false;
-        }
-
-        let rt = match tokio::runtime::Runtime::new() {
-            Ok(r) => r,
-            Err(_) => return false,
-        };
-
-        let result = rt.block_on(async {
-            tokio::time::timeout(std::time::Duration::from_secs(2), RedisPool::from_url(&url)).await
-        });
-
-        match result {
-            Ok(Ok(pool)) => {
-                let mut g = self.redis_pool.lock().unwrap();
-                *g = Some(pool);
-                true
-            }
-            Ok(Err(e)) => {
-                warn!(error = %e, "failed to connect to Redis; session store falling back to in-memory");
-                false
-            }
-            Err(_) => {
-                warn!(
-                    "Redis connection timed out after 2s; session store falling back to in-memory"
-                );
-                false
-            }
-        }
-    }
-
-    pub async fn init_redis_async(&self) -> bool {
-        let url = std::env::var("REDIS_URL")
-            .ok()
-            .filter(|s| !s.trim().is_empty())
-            .unwrap_or_else(|| "redis://127.0.0.1:6379".to_string());
-
-        if self.redis_pool.lock().unwrap().is_some() {
-            return true;
-        }
-
-        let result =
-            tokio::time::timeout(std::time::Duration::from_secs(2), RedisPool::from_url(&url))
-                .await;
-
-        match result {
-            Ok(Ok(pool)) => {
-                let mut g = self.redis_pool.lock().unwrap();
-                *g = Some(pool);
-                true
-            }
-            Ok(Err(e)) => {
-                warn!(error = %e, "failed to connect to Redis; session store falling back to in-memory");
-                false
-            }
-            Err(_) => {
-                warn!(
-                    "Redis connection timed out after 2s; session store falling back to in-memory"
-                );
-                false
-            }
-        }
-    }
-
-    fn get_redis_pool(&self) -> Option<RedisPool> {
-        self.redis_pool.lock().unwrap().clone()
     }
 
     fn sign_token(&self, token: &str) -> String {
@@ -275,32 +186,6 @@ impl SessionManager {
             .await
             .insert(token.clone(), session.clone());
 
-        if let Some(ref pool) = self.get_redis_pool() {
-            let signed_token = self.sign_token(&token);
-            let key = format!("{}{}", SESSION_KEY_PREFIX, signed_token);
-            let session_json = match serde_json::to_string(&session) {
-                Ok(j) => j,
-                Err(_) => {
-                    Self::persist_to_db(
-                        &self.pool,
-                        &self.hmac_secret,
-                        &token,
-                        &session,
-                        &now,
-                        &expires_at,
-                    )
-                    .await;
-                    return Ok(session);
-                }
-            };
-            let mut conn = pool.0.manager.lock().await.as_ref().map(|m| m.clone());
-            if let Some(conn) = conn.as_mut() {
-                let _ = conn
-                    .set_ex::<_, _, ()>(key, session_json, self.auth_config.session_ttl_seconds)
-                    .await;
-            }
-        }
-
         Self::persist_to_db(
             &self.pool,
             &self.hmac_secret,
@@ -335,19 +220,15 @@ impl SessionManager {
                 } else {
                     token.to_string()
                 };
-                let created_at_str = now.format("%Y-%m-%d %H:%M:%S").to_string();
-                let expires_at_str = expires_at.format("%Y-%m-%d %H:%M:%S").to_string();
+                // 列类型是 TIMESTAMP（迁移 017/schema 实测）：必须绑 NaiveDateTime。
+                // 此前按 `%Y-%m-%d %H:%M:%S` 字符串绑定，tokio-postgres 对 timestamp
+                // 列报 WrongType，而 `let _ =` 把错误吞掉——会话从未真正写进 PG。
                 let _ = client
                     .execute(
                         "INSERT INTO auth_session (token, person_id, expires_at, created_at) \
                      VALUES ($1, $2, $3, $4) \
                      ON CONFLICT (token) DO UPDATE SET expires_at = $3",
-                        &[
-                            &signed_token,
-                            &session.person_unique,
-                            &expires_at_str,
-                            &created_at_str,
-                        ],
+                        &[&signed_token, &session.person_unique, expires_at, now],
                     )
                     .await;
                 // 顺带清理已过期会话行（每次登录一次的廉价簿记，失败仅延迟清理不破坏
@@ -375,6 +256,8 @@ impl SessionManager {
             Err(_) => return false,
         };
 
+        // threshold_time 列是 TIMESTAMP（迁移 017）：此前按 String 读，
+        // 行存在时 `Row::get` 直接 panic（安全控制反而变成 500 源）。
         let threshold: Option<NaiveDateTime> = match client
             .query_opt(
                 "SELECT threshold_time FROM auth_token_threshold WHERE person_unique = $1",
@@ -382,10 +265,7 @@ impl SessionManager {
             )
             .await
         {
-            Ok(Some(row)) => {
-                let threshold_str: String = row.get("threshold_time");
-                NaiveDateTime::parse_from_str(&threshold_str, "%Y-%m-%d %H:%M:%S").ok()
-            }
+            Ok(Some(row)) => Some(row.get("threshold_time")),
             _ => return false,
         };
 
@@ -415,45 +295,6 @@ impl SessionManager {
                 None
             }
             None => {
-                if let Some(ref pool) = self.get_redis_pool() {
-                    let signed_token = self.sign_token(token);
-                    let key = format!("{}{}", SESSION_KEY_PREFIX, signed_token);
-                    let result: Option<String> = {
-                        // 锁仅瞬时 clone（ConnectionManager 可 Clone+自动重连），命令执行不持锁
-                        let mut conn = pool.0.manager.lock().await.as_ref().map(|m| m.clone());
-                        match conn.as_mut() {
-                            Some(conn) => conn
-                                .get::<_, Option<String>>(key.clone())
-                                .await
-                                .ok()
-                                .flatten(),
-                            None => None,
-                        }
-                    };
-
-                    if let Some(session_json) = result {
-                        if let Ok(session) = serde_json::from_str::<Session>(&session_json) {
-                            if session.expires_at > Utc::now().naive_utc() {
-                                self.sessions
-                                    .write()
-                                    .await
-                                    .insert(token.to_string(), session.clone());
-                                return Some(session);
-                            } else {
-                                let _ = {
-                                    let mut conn =
-                                        pool.0.manager.lock().await.as_ref().map(|m| m.clone());
-                                    if let Some(conn) = conn.as_mut() {
-                                        conn.del::<_, ()>(key).await.ok()
-                                    } else {
-                                        None
-                                    }
-                                };
-                            }
-                        }
-                    }
-                }
-
                 if let Some(pg_pool) = &self.pool {
                     if let Ok(client) = pg_pool.get().await {
                         let signed_token = self.sign_token(token);
@@ -468,14 +309,10 @@ impl SessionManager {
                         {
                             let raw_token =
                                 self.verify_and_extract(&row.get::<_, String>("token"))?;
-                            let created_at_str: String = row.get("created_at");
-                            let expires_at_str: String = row.get("expires_at");
-                            let created_at =
-                                NaiveDateTime::parse_from_str(&created_at_str, "%Y-%m-%d %H:%M:%S")
-                                    .ok()?;
-                            let expires_at =
-                                NaiveDateTime::parse_from_str(&expires_at_str, "%Y-%m-%d %H:%M:%S")
-                                    .ok()?;
+                            // created_at/expires_at 列是 TIMESTAMP：按 NaiveDateTime 读。
+                            // 此前按 String 读会在有行时 panic（同 threshold_time 问题）。
+                            let created_at: NaiveDateTime = row.get("created_at");
+                            let expires_at: NaiveDateTime = row.get("expires_at");
                             let session = Session {
                                 token: raw_token,
                                 person_unique: row.get("person_id"),
@@ -497,15 +334,6 @@ impl SessionManager {
 
     pub async fn remove_session(&self, token: &str) {
         self.sessions.write().await.remove(token);
-
-        if let Some(ref pool) = self.get_redis_pool() {
-            let signed_token = self.sign_token(token);
-            let key = format!("{}{}", SESSION_KEY_PREFIX, signed_token);
-            let mut conn = pool.0.manager.lock().await.as_ref().map(|m| m.clone());
-            if let Some(conn) = conn.as_mut() {
-                let _ = conn.del::<_, ()>(key).await;
-            }
-        }
 
         if let Some(pg_pool) = &self.pool {
             if let Ok(client) = pg_pool.get().await {
@@ -533,49 +361,6 @@ impl SessionManager {
             self.sessions.write().await.remove(token);
         }
 
-        if let Some(ref pool) = self.get_redis_pool() {
-            let pattern = format!("{}*", SESSION_KEY_PREFIX);
-            let keys: Vec<String> = {
-                let mut guard = pool.0.manager.lock().await;
-                if let Some(conn) = guard.as_mut() {
-                    conn.keys::<_, Vec<String>>(pattern.clone())
-                        .await
-                        .ok()
-                        .unwrap_or_default()
-                } else {
-                    Vec::new()
-                }
-            };
-
-            for key in keys {
-                let result: Option<String> = {
-                    let mut guard = pool.0.manager.lock().await;
-                    if let Some(conn) = guard.as_mut() {
-                        conn.get::<_, Option<String>>(key.clone())
-                            .await
-                            .ok()
-                            .flatten()
-                    } else {
-                        None
-                    }
-                };
-                if let Some(session_json) = result {
-                    if let Ok(session) = serde_json::from_str::<Session>(&session_json) {
-                        if session.person_unique == person_unique {
-                            let _ = {
-                                let mut guard = pool.0.manager.lock().await;
-                                if let Some(conn) = guard.as_mut() {
-                                    conn.del::<_, ()>(key).await.ok()
-                                } else {
-                                    None
-                                }
-                            };
-                        }
-                    }
-                }
-            }
-        }
-
         if let Some(pg_pool) = &self.pool {
             if let Ok(client) = pg_pool.get().await {
                 if let Err(e) = client
@@ -591,6 +376,10 @@ impl SessionManager {
         }
     }
 
+    /// 按 token 阈值注销本进程内早于阈值的会话。
+    ///
+    /// 单实例部署（2026-10-28 决策）：只做本地内存清理，不再向消息总线广播。
+    /// 函数名保留是为了不改变 `auth::safe_logout` 的调用面。
     pub async fn broadcast_logout(&self, person_unique: &str) {
         let pool = match &self.pool {
             Some(p) => p,
@@ -605,6 +394,7 @@ impl SessionManager {
             Err(_) => return,
         };
 
+        // threshold_time 列是 TIMESTAMP（迁移 017）：此前按 String 读会在有行时 panic。
         let threshold: NaiveDateTime = match client
             .query_opt(
                 "SELECT threshold_time FROM auth_token_threshold WHERE person_unique = $1",
@@ -612,14 +402,7 @@ impl SessionManager {
             )
             .await
         {
-            Ok(Some(row)) => {
-                let threshold_str: String = row.get("threshold_time");
-
-                match NaiveDateTime::parse_from_str(&threshold_str, "%Y-%m-%d %H:%M:%S") {
-                    Ok(t) => t,
-                    Err(_) => return,
-                }
-            }
+            Ok(Some(row)) => row.get("threshold_time"),
             _ => return,
         };
 
@@ -635,22 +418,7 @@ impl SessionManager {
             self.sessions.write().await.remove(token);
         }
 
-        if let Some(ref bus) = self.message_bus {
-            let now_ms = std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .map(|d| d.as_millis() as u64)
-                .unwrap_or(0);
-            let event = TokenThresholdEvent {
-                person_unique: person_unique.to_string(),
-                threshold_time: threshold.format("%Y-%m-%d %H:%M:%S").to_string(),
-                expired_tokens: expired_tokens.clone(),
-                triggered_at_ms: now_ms,
-            };
-            let _ = bus.publish("token-threshold".to_string(), event).await;
-            tracing::info!(person = %person_unique, expired_count = expired_tokens.len(), "broadcast token-threshold event via message bus");
-        }
-
-        tracing::debug!(person = %person_unique, expired_count = expired_tokens.len(), "multi-instance broadcast: invalidated sessions before threshold");
+        tracing::debug!(person = %person_unique, expired_count = expired_tokens.len(), "single-instance mode: invalidated local sessions before threshold");
     }
 
     pub async fn cleanup_expired_sessions(&self) {
@@ -669,16 +437,704 @@ impl SessionManager {
         for token in &expired {
             self.sessions.write().await.remove(token);
         }
-        if let Some(ref pool) = self.get_redis_pool() {
-            let mut conn = pool.0.manager.lock().await.as_ref().map(|m| m.clone());
-            if let Some(conn) = conn.as_mut() {
-                for token in &expired {
-                    // 与 create/validate/remove 一致：Redis key 存的是签名后的 token。
-                    let key = format!("{}{}", SESSION_KEY_PREFIX, self.sign_token(token));
-                    let _: Result<(), _> = conn.del::<_, ()>(&key).await;
-                }
-            }
-        }
         tracing::info!(expired_count = expired.len(), "cleaned up expired sessions");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ──────────────────────────────────────────────────────────────────────
+    // 为什么这一组只测「无 pool（纯内存）」路径
+    //
+    // SessionManager 有两层存储：内存 HashMap → PostgreSQL。PG 分支要求真实
+    // 外部服务，单测里只能靠 mock 才有意义（而 mock 掉连接层等于不测连接层）。
+    // 剩下的**内存层**恰恰是最容易出错、也最容易漏测的部分：
+    // 过期判定、惰性清除、按人批量注销——这三条都直接决定「登出到底有没有生效」。
+    //
+    // 之前这里只有 17% 覆盖，原因不是难写，而是构造函数会 spawn 后台任务
+    // （sweeper / threshold scanner），必须在 tokio 运行时里才不 panic，
+    // 而调用方从没在测试里建过它。
+    // ──────────────────────────────────────────────────────────────────────
+
+    fn manager_with_ttl(ttl_seconds: u64) -> SessionManager {
+        SessionManager::with_config(AuthConfig {
+            public_origin: "http://localhost:3000".to_string(),
+            cookie_secure: false,
+            session_ttl_seconds: ttl_seconds,
+        })
+    }
+
+    fn session_at(
+        token: &str,
+        person: &str,
+        created: NaiveDateTime,
+        expires: NaiveDateTime,
+    ) -> Session {
+        Session {
+            token: token.to_string(),
+            person_unique: person.to_string(),
+            created_at: created,
+            expires_at: expires,
+        }
+    }
+
+    async fn count(manager: &SessionManager) -> usize {
+        manager.sessions.read().await.len()
+    }
+
+    #[tokio::test]
+    async fn new_manager_has_no_sessions_and_rejects_unknown_token() {
+        // 空管理器不能「凭 token 猜出会话」——未知 token 必须返回 None 而不是新建。
+        let manager = SessionManager::new();
+        assert_eq!(count(&manager).await, 0);
+        assert!(manager.validate_session("never-issued").await.is_none());
+        assert_eq!(
+            count(&manager).await,
+            0,
+            "拒绝未知 token 时不应写入任何条目"
+        );
+    }
+
+    #[tokio::test]
+    async fn default_matches_new() {
+        // Default 与 new 必须等价，否则 `#[derive(Default)]` 的调用方会拿到不同配置。
+        let manager = SessionManager::default();
+        assert_eq!(
+            manager.auth_config.session_ttl_seconds,
+            DEFAULT_SESSION_TTL_SECONDS
+        );
+        assert!(manager.pool.is_none());
+    }
+
+    #[tokio::test]
+    async fn create_session_applies_configured_ttl_not_hardcoded_default() {
+        // TTL 必须来自 AuthConfig。写死 7200 的症状是「改了配置但会话时长不变」，
+        // 而这在功能上完全看不出来。
+        let manager = manager_with_ttl(60);
+        let session = manager
+            .create_session("person-a".to_string(), "tok-a".to_string())
+            .await
+            .expect("no pool means no threshold rejection");
+
+        assert_eq!(session.token, "tok-a");
+        assert_eq!(session.person_unique, "person-a");
+        assert_eq!((session.expires_at - session.created_at).num_seconds(), 60);
+    }
+
+    #[tokio::test]
+    async fn create_then_validate_roundtrips_the_same_session() {
+        let manager = manager_with_ttl(600);
+        manager
+            .create_session("person-a".to_string(), "tok-a".to_string())
+            .await
+            .unwrap();
+
+        let got = manager
+            .validate_session("tok-a")
+            .await
+            .expect("valid session");
+        assert_eq!(got.person_unique, "person-a");
+        assert_eq!(got.token, "tok-a");
+    }
+
+    #[tokio::test]
+    async fn validate_evicts_expired_entry_instead_of_leaving_it() {
+        // 惰性清除：过期会话被访问时必须**顺手删掉**。
+        // 不删的话，不活跃会话会随运行时长无限累积（内存泄漏），
+        // 而症状只是「内存慢慢涨」，几乎不可能在功能测试里发现。
+        let manager = manager_with_ttl(0); // ttl=0 → expires_at == created_at → 立刻过期
+        manager
+            .create_session("person-a".to_string(), "tok-a".to_string())
+            .await
+            .unwrap();
+        assert_eq!(count(&manager).await, 1, "创建时先写入内存");
+
+        assert!(manager.validate_session("tok-a").await.is_none());
+        assert_eq!(count(&manager).await, 0, "过期会话必须被清除");
+    }
+
+    #[tokio::test]
+    async fn validate_keeps_valid_entry_cached() {
+        // 有效会话不能被误删（过度清除的表现是「随机掉登录」）。
+        let manager = manager_with_ttl(600);
+        manager
+            .create_session("person-a".to_string(), "tok-a".to_string())
+            .await
+            .unwrap();
+
+        assert!(manager.validate_session("tok-a").await.is_some());
+        assert_eq!(count(&manager).await, 1);
+    }
+
+    #[tokio::test]
+    async fn remove_session_removes_only_the_target_token() {
+        let manager = manager_with_ttl(600);
+        for (person, token) in [("p1", "t1"), ("p2", "t2")] {
+            manager
+                .create_session(person.to_string(), token.to_string())
+                .await
+                .unwrap();
+        }
+
+        manager.remove_session("t1").await;
+
+        assert!(manager.validate_session("t1").await.is_none());
+        assert!(manager.validate_session("t2").await.is_some());
+        assert_eq!(count(&manager).await, 1);
+    }
+
+    #[tokio::test]
+    async fn remove_sessions_by_person_spares_other_people() {
+        // 「删人」必须只清掉这个人的全部会话，不能牵连别人。
+        let manager = manager_with_ttl(600);
+        for (person, token) in [("alice", "a1"), ("alice", "a2"), ("bob", "b1")] {
+            manager
+                .create_session(person.to_string(), token.to_string())
+                .await
+                .unwrap();
+        }
+
+        manager.remove_sessions_by_person("alice").await;
+
+        assert!(manager.validate_session("a1").await.is_none());
+        assert!(manager.validate_session("a2").await.is_none());
+        assert!(
+            manager.validate_session("b1").await.is_some(),
+            "bob 的会话被误删"
+        );
+        assert_eq!(count(&manager).await, 1);
+    }
+
+    #[tokio::test]
+    async fn broadcast_logout_without_pool_is_a_noop() {
+        // 单实例模式下没有 threshold 表可查：必须**保持现状**而不是清空会话。
+        // 清空的话，单实例部署里每次调用都会把所有人踢下线。
+        let manager = manager_with_ttl(600);
+        manager
+            .create_session("alice".to_string(), "a1".to_string())
+            .await
+            .unwrap();
+
+        manager.broadcast_logout("alice").await;
+
+        assert_eq!(count(&manager).await, 1);
+        assert!(manager.validate_session("a1").await.is_some());
+    }
+
+    #[tokio::test]
+    async fn check_token_threshold_without_pool_never_rejects() {
+        // 无池时阈值检查返回 false（不拒绝登录）。返回 true 会让所有登录失败。
+        let manager = manager_with_ttl(600);
+        assert!(
+            !manager
+                .check_token_threshold(Utc::now().naive_utc(), "anyone")
+                .await
+        );
+    }
+
+    #[tokio::test]
+    async fn cleanup_expired_sessions_drops_only_expired_entries() {
+        let manager = manager_with_ttl(600);
+        let now = Utc::now().naive_utc();
+        {
+            let mut map = manager.sessions.write().await;
+            map.insert(
+                "stale".to_string(),
+                session_at(
+                    "stale",
+                    "p1",
+                    now - Duration::seconds(120),
+                    now - Duration::seconds(60),
+                ),
+            );
+            map.insert(
+                "live".to_string(),
+                session_at(
+                    "live",
+                    "p1",
+                    now - Duration::seconds(10),
+                    now + Duration::seconds(60),
+                ),
+            );
+        }
+
+        manager.cleanup_expired_sessions().await;
+
+        let map = manager.sessions.read().await;
+        assert!(!map.contains_key("stale"), "过期条目未被清扫");
+        assert!(map.contains_key("live"), "未过期条目被误清扫");
+    }
+
+    #[tokio::test]
+    async fn cleanup_on_empty_manager_is_harmless() {
+        // 清扫器每 300s 跑一次，空表是常态：不能因为「没有过期项」就 panic 或写日志爆炸。
+        let manager = manager_with_ttl(600);
+        manager.cleanup_expired_sessions().await;
+        assert_eq!(count(&manager).await, 0);
+    }
+
+    #[tokio::test]
+    async fn managers_do_not_share_state() {
+        // 每个实例独立持有 HashMap。共享（比如误用 static）会让并行测试互相串扰，
+        // 也会让「登出只影响自己」这个语义在单实例多租户下失效。
+        let a = manager_with_ttl(600);
+        let b = manager_with_ttl(600);
+        a.create_session("p".to_string(), "t".to_string())
+            .await
+            .unwrap();
+
+        assert_eq!(count(&a).await, 1);
+        assert_eq!(count(&b).await, 0);
+        assert!(b.validate_session("t").await.is_none());
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // PG 分支（真库）。无库时显式 skip（沿用 response.rs 的守卫惯例），
+    // 2026-10-29 覆盖率轮补测：此前 62% 的缺口几乎全在这里——持久化、
+    // 阈值拦截、库回退重建、删行、按人批量删、阈值注销，这些路径
+    // 直接决定「重启后会话还在吗 / 踢人到底踢没踢掉」。
+    // ──────────────────────────────────────────────────────────────────────
+
+    /// 固定 HMAC 秘钥的带池管理器：签名格式可预测，测试才能直查 auth_session。
+    /// 字段是 `pub`，测试内直接赋值即可（不走 env，避免测试间串扰）。
+    fn db_manager(ttl_seconds: u64, secret: Option<&str>) -> SessionManager {
+        let mut manager = SessionManager::with_pool_and_config(
+            crate::testing::test_pool(),
+            AuthConfig {
+                public_origin: "http://localhost:3000".to_string(),
+                cookie_secure: false,
+                session_ttl_seconds: ttl_seconds,
+            },
+        );
+        manager.hmac_secret = secret.map(|s| s.to_string());
+        manager
+    }
+
+    /// 手动拼装、**不 spawn 后台 sweeper/threshold scanner** 的带池管理器。
+    /// 阈值类用例必须用它：扫描器首 tick 立即执行，会在断言窗口内并发清内存，
+    /// 让「count==1」这类断言变成竞态。
+    fn pool_manager(ttl_seconds: u64, secret: Option<&str>) -> SessionManager {
+        SessionManager {
+            sessions: Arc::new(RwLock::new(std::collections::HashMap::new())),
+            pool: Some(crate::testing::test_pool()),
+            hmac_secret: secret.map(|s| s.to_string()),
+            auth_config: AuthConfig {
+                public_origin: "http://localhost:3000".to_string(),
+                cookie_secure: false,
+                session_ttl_seconds: ttl_seconds,
+            },
+        }
+    }
+
+    async fn db() -> deadpool_postgres::Object {
+        crate::testing::test_pool().get().await.unwrap()
+    }
+
+    async fn cleanup(prefix: &str) {
+        let client = db().await;
+        let _ = client
+            .execute(
+                "DELETE FROM auth_session WHERE person_id LIKE $1 || '%'",
+                &[&prefix.to_string()],
+            )
+            .await;
+        let _ = client
+            .execute(
+                "DELETE FROM auth_token_threshold WHERE person_unique LIKE $1 || '%'",
+                &[&prefix.to_string()],
+            )
+            .await;
+    }
+
+    async fn row_count(token: &str) -> i64 {
+        let client = db().await;
+        client
+            .query_one(
+                "SELECT COUNT(*) FROM auth_session WHERE token = $1",
+                &[&token.to_string()],
+            )
+            .await
+            .unwrap()
+            .get::<_, i64>(0)
+    }
+
+    #[tokio::test]
+    async fn pg_create_session_persists_signed_row() {
+        if !crate::testing::is_db_available().await {
+            eprintln!("SKIP: no database available (set DATABASE_URL)");
+            return;
+        }
+        cleanup("cov-s1").await;
+        let manager = db_manager(600, Some("cov-hmac-secret"));
+        let created = manager
+            .create_session("cov-s1".to_string(), "cov-tok-1".to_string())
+            .await
+            .unwrap();
+
+        // 签名格式：token.<base64url(hmac)>；持久化行用的是签名后的完整串
+        let signed = manager.sign_token("cov-tok-1");
+        assert_ne!(signed, "cov-tok-1", "有秘钥时持久化 token 必须带签名");
+        assert_eq!(row_count(&signed).await, 1);
+
+        let client = db().await;
+        let row = client
+            .query_one(
+                "SELECT person_id, expires_at::text, date_trunc('second', created_at)::text AS created_sec \
+                 FROM auth_session WHERE token = $1",
+                &[&signed],
+            )
+            .await
+            .unwrap();
+        assert_eq!(row.get::<_, String>("person_id"), "cov-s1");
+        // created_at 以 NaiveDateTime 绑定（微秒精度入库），按秒截断后与内存值对齐
+        assert_eq!(
+            row.get::<_, String>("created_sec"),
+            created.created_at.format("%Y-%m-%d %H:%M:%S").to_string()
+        );
+        cleanup("cov-s1").await;
+        assert_eq!(row_count(&signed).await, 0, "清理必须真的删掉行");
+    }
+
+    #[tokio::test]
+    async fn pg_persist_without_secret_writes_raw_token() {
+        if !crate::testing::is_db_available().await {
+            eprintln!("SKIP: no database available (set DATABASE_URL)");
+            return;
+        }
+        cleanup("cov-s9").await;
+        let manager = db_manager(600, None);
+        manager
+            .create_session("cov-s9".to_string(), "cov-tok-9".to_string())
+            .await
+            .unwrap();
+        // 无秘钥时持久化的就是裸 token（历史上未配 SESSION_HMAC_SECRET 的部署形态）
+        assert_eq!(row_count("cov-tok-9").await, 1);
+        cleanup("cov-s9").await;
+    }
+
+    #[tokio::test]
+    async fn pg_threshold_future_blocks_login_and_past_allows() {
+        if !crate::testing::is_db_available().await {
+            eprintln!("SKIP: no database available (set DATABASE_URL)");
+            return;
+        }
+        cleanup("cov-t1").await;
+        let manager = pool_manager(600, None);
+
+        let client = db().await;
+        let future = (Utc::now() + Duration::hours(1)).naive_utc();
+        client
+            .execute(
+                "INSERT INTO auth_token_threshold (person_unique, threshold_time) VALUES ($1, $2)",
+                &[&"cov-t1".to_string(), &future],
+            )
+            .await
+            .unwrap();
+
+        let err = manager
+            .create_session("cov-t1".to_string(), "cov-tok-t".to_string())
+            .await
+            .unwrap_err();
+        assert!(
+            err.to_string().contains("too many active sessions"),
+            "阈值在未来的登录必须被拦截，实际：{err}"
+        );
+        assert_eq!(
+            row_count("cov-tok-t").await,
+            0,
+            "被拦截的登录不得持久化会话"
+        );
+
+        // 阈值过掉之后（登出/改密场景：把阈值拨到过去），同一人重新登录必须放行
+        let past = (Utc::now() - Duration::hours(1)).naive_utc();
+        client
+            .execute(
+                "UPDATE auth_token_threshold SET threshold_time = $2 WHERE person_unique = $1",
+                &[&"cov-t1".to_string(), &past],
+            )
+            .await
+            .unwrap();
+        manager
+            .create_session("cov-t1".to_string(), "cov-tok-t2".to_string())
+            .await
+            .unwrap();
+        assert_eq!(row_count("cov-tok-t2").await, 1);
+        cleanup("cov-t1").await;
+    }
+
+    #[tokio::test]
+    async fn pg_validate_session_falls_back_to_db_and_rehydrates() {
+        if !crate::testing::is_db_available().await {
+            eprintln!("SKIP: no database available (set DATABASE_URL)");
+            return;
+        }
+        cleanup("cov-v1").await;
+        let manager_a = db_manager(600, Some("cov-hmac-secret"));
+        manager_a
+            .create_session("cov-v1".to_string(), "cov-tok-2".to_string())
+            .await
+            .unwrap();
+
+        // 新进程（内存空、同一库同一秘钥）——重启后凭 token 恢复会话
+        let manager_b = db_manager(600, Some("cov-hmac-secret"));
+        assert_eq!(count(&manager_b).await, 0);
+        let restored = manager_b.validate_session("cov-tok-2").await.unwrap();
+        assert_eq!(restored.person_unique, "cov-v1");
+        assert_eq!(restored.token, "cov-tok-2", "恢复出来的是裸 token");
+        assert_eq!(count(&manager_b).await, 1, "库回退命中后必须回填内存缓存");
+
+        // 秘钥不同 → 签名对不上 → 库里有行也查不到（跨部署秘钥轮换的安全性）
+        let manager_c = db_manager(600, Some("other-secret"));
+        assert!(manager_c.validate_session("cov-tok-2").await.is_none());
+        cleanup("cov-v1").await;
+    }
+
+    #[tokio::test]
+    async fn pg_validate_session_ignores_expired_db_row() {
+        if !crate::testing::is_db_available().await {
+            eprintln!("SKIP: no database available (set DATABASE_URL)");
+            return;
+        }
+        cleanup("cov-v2").await;
+        let manager = db_manager(600, None);
+        let signed = manager.sign_token("cov-tok-3");
+        let client = db().await;
+        let past = (Utc::now() - Duration::hours(1)).naive_utc();
+        client
+            .execute(
+                "INSERT INTO auth_session (token, person_id, expires_at, created_at) \
+                 VALUES ($1, $2, $3, $3)",
+                &[&signed, &"cov-v2".to_string(), &past],
+            )
+            .await
+            .unwrap();
+
+        // 库里有行但已过期：SELECT 的 expires_at > NOW() 过滤掉，不得恢复
+        assert!(manager.validate_session("cov-tok-3").await.is_none());
+        cleanup("cov-v2").await;
+    }
+
+    #[tokio::test]
+    async fn pg_remove_session_deletes_db_row() {
+        if !crate::testing::is_db_available().await {
+            eprintln!("SKIP: no database available (set DATABASE_URL)");
+            return;
+        }
+        cleanup("cov-r1").await;
+        let manager = db_manager(600, Some("cov-hmac-secret"));
+        manager
+            .create_session("cov-r1".to_string(), "cov-tok-4".to_string())
+            .await
+            .unwrap();
+        assert_eq!(row_count(&manager.sign_token("cov-tok-4")).await, 1);
+
+        manager.remove_session("cov-tok-4").await;
+        assert_eq!(
+            row_count(&manager.sign_token("cov-tok-4")).await,
+            0,
+            "登出必须同时删掉 PG 行，否则重启后凭旧 token 复活"
+        );
+        cleanup("cov-r1").await;
+    }
+
+    #[tokio::test]
+    async fn pg_remove_sessions_by_person_deletes_only_that_persons_rows() {
+        if !crate::testing::is_db_available().await {
+            eprintln!("SKIP: no database available (set DATABASE_URL)");
+            return;
+        }
+        cleanup("cov-m1").await;
+        cleanup("cov-m2").await;
+        let manager = db_manager(600, Some("cov-hmac-secret"));
+        manager
+            .create_session("cov-m1".to_string(), "cov-tok-5".to_string())
+            .await
+            .unwrap();
+        manager
+            .create_session("cov-m2".to_string(), "cov-tok-6".to_string())
+            .await
+            .unwrap();
+
+        manager.remove_sessions_by_person("cov-m1").await;
+        assert_eq!(row_count(&manager.sign_token("cov-tok-5")).await, 0);
+        assert_eq!(
+            row_count(&manager.sign_token("cov-tok-6")).await,
+            1,
+            "删人只删该人的会话，不得波及其它人"
+        );
+        cleanup("cov-m1").await;
+        cleanup("cov-m2").await;
+    }
+
+    #[tokio::test]
+    async fn pg_broadcast_logout_clears_memory_sessions_before_threshold() {
+        if !crate::testing::is_db_available().await {
+            eprintln!("SKIP: no database available (set DATABASE_URL)");
+            return;
+        }
+        cleanup("cov-b1").await;
+        let manager = pool_manager(600, None);
+        let client = db().await;
+        // 真实时序（safe_logout）：先有会话，登出时才写入阈值 = 登出时刻。
+        // 会话 created_at = now < threshold = now+1s → 广播后必须被清。
+        manager
+            .create_session("cov-b1".to_string(), "cov-tok-7".to_string())
+            .await
+            .unwrap();
+        assert_eq!(count(&manager).await, 1);
+
+        let threshold = (Utc::now() + Duration::seconds(1)).naive_utc();
+        client
+            .execute(
+                "INSERT INTO auth_token_threshold (person_unique, threshold_time) VALUES ($1, $2)",
+                &[&"cov-b1".to_string(), &threshold],
+            )
+            .await
+            .unwrap();
+
+        manager.broadcast_logout("cov-b1").await;
+        assert_eq!(
+            count(&manager).await,
+            0,
+            "阈值注销必须清掉本进程内早于阈值的会话"
+        );
+
+        // 无阈值行的人：直接返回，不得 panic
+        manager.broadcast_logout("cov-b1-nobody").await;
+        // 阈值行被删（query_opt 返回 None）：直接返回，不得 panic
+        client
+            .execute(
+                "DELETE FROM auth_token_threshold WHERE person_unique = $1",
+                &[&"cov-b1".to_string()],
+            )
+            .await
+            .unwrap();
+        manager.broadcast_logout("cov-b1").await;
+        cleanup("cov-b1").await;
+    }
+
+    // ── 2026-10-29 覆盖率轮第四刀：with_pool 构造器 + 扫描器首 tick ──
+    #[tokio::test]
+    async fn with_pool_uses_default_config_and_stores_pool() {
+        let manager = SessionManager::with_pool(crate::testing::test_pool());
+        assert!(manager.pool.is_some(), "with_pool 必须带上池");
+        assert_eq!(
+            manager.auth_config.session_ttl_seconds,
+            crate::config::DEFAULT_SESSION_TTL_SECONDS,
+            "with_pool 用默认 TTL（重载构造器的职责是覆盖它）"
+        );
+    }
+
+    #[tokio::test]
+    async fn threshold_scanner_picks_up_pending_rows_on_first_tick() {
+        if !crate::testing::is_db_available().await {
+            eprintln!("SKIP: no database available (set DATABASE_URL)");
+            return;
+        }
+        let pool = crate::testing::test_pool();
+        let client = pool.get().await.unwrap();
+        client
+            .execute(
+                "DELETE FROM auth_token_threshold WHERE person_unique LIKE 'cov-scan%'",
+                &[],
+            )
+            .await
+            .unwrap();
+        // 阈值行先于管理器构造：扫描器首 tick（构造后的第一个 yield 处触发）
+        // 必然查到这行并广播——覆盖「有行 → 逐个 broadcast」的循环体。
+        // 阈值拨到过去：广播不会误清之后创建的会话（created_at > threshold）。
+        let past = (chrono::Utc::now() - chrono::Duration::hours(1)).naive_utc();
+        client
+            .execute(
+                "INSERT INTO auth_token_threshold (person_unique, threshold_time) VALUES ($1, $2)",
+                &[&"cov-scan-p1".to_string(), &past],
+            )
+            .await
+            .unwrap();
+
+        let manager = SessionManager::with_pool_and_config(
+            pool,
+            AuthConfig {
+                public_origin: "http://localhost:3000".to_string(),
+                cookie_secure: false,
+                session_ttl_seconds: 600,
+            },
+        );
+        manager
+            .create_session("cov-scan-p1".to_string(), "cov-scan-tok".to_string())
+            .await
+            .unwrap();
+        assert_eq!(count(&manager).await, 1, "过去阈值不得清掉新会话");
+        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+
+        client
+            .execute(
+                "DELETE FROM auth_token_threshold WHERE person_unique LIKE 'cov-scan%'",
+                &[],
+            )
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn failing_pool_threshold_check_fails_open_and_persist_is_silent() {
+        // 失败池：check_token_threshold 的 pool.get Err 臂 → false（不拦登录）；
+        // persist_to_db 的 `if let Ok(client)` 静默跳过（best-effort 契约）——
+        // 会话仍进内存、create_session 仍 Ok：单实例降级语义的钉子。
+        let manager = SessionManager::with_pool_and_config(
+            crate::testing::failing_pool(),
+            AuthConfig {
+                public_origin: "http://localhost:3000".to_string(),
+                cookie_secure: false,
+                session_ttl_seconds: 600,
+            },
+        );
+        let created = manager
+            .create_session("cov-fp".to_string(), "cov-fp-tok".to_string())
+            .await
+            .unwrap();
+        assert_eq!(created.person_unique, "cov-fp");
+        assert!(manager.validate_session("cov-fp-tok").await.is_some());
+    }
+
+    #[tokio::test]
+    async fn failing_pool_logout_and_broadcast_degrade_gracefully() {
+        let manager = SessionManager::with_pool_and_config(
+            crate::testing::failing_pool(),
+            AuthConfig {
+                public_origin: "http://localhost:3000".to_string(),
+                cookie_secure: false,
+                session_ttl_seconds: 600,
+            },
+        );
+        manager
+            .create_session("cov-fp2".to_string(), "cov-fp2-tok".to_string())
+            .await
+            .unwrap();
+        // remove_session / remove_sessions_by_person / broadcast_logout 在池失败时
+        // 仍要完成内存侧清理（本地登出生效），只是 PG 侧静默跳过
+        manager.remove_session("cov-fp2-tok").await;
+        assert_eq!(count(&manager).await, 0, "登出的内存侧必须生效");
+        manager
+            .create_session("cov-fp3".to_string(), "cov-fp3-tok".to_string())
+            .await
+            .unwrap();
+        manager.remove_sessions_by_person("cov-fp3").await;
+        assert_eq!(count(&manager).await, 0);
+        manager
+            .create_session("cov-fp4".to_string(), "cov-fp4-tok".to_string())
+            .await
+            .unwrap();
+        // 池失败时 broadcast_logout 在 pool.get 处提前返回（不做内存清理）：
+        // 这是有意的降级链——safe_logout 先调 remove_sessions_by_person（内存侧
+        // 独立生效，上面已验证），广播只是冗余的第二道；钉住该契约防误改。
+        manager.broadcast_logout("cov-fp4").await;
+        assert_eq!(
+            count(&manager).await,
+            1,
+            "池失败时广播登出降级为 no-op，内存清理由 remove_sessions_by_person 负责"
+        );
     }
 }

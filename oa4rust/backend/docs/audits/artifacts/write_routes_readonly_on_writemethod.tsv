@@ -74,7 +74,6 @@ bbs_assemble_control	PUT	/api/bbs/assemble/control/user/setting/code	u2_setting_
 bbs_assemble_control	PUT	/api/bbs/assemble/control/user/subject/my/list/page/{page}/count/{count}	u2_my_subject_list	R6
 bbs_assemble_control	PUT	/api/bbs/assemble/control/user/subject/voterecord/list/page/{page}/count/{count}	u2_voterecord_list	R7
 bbs_assemble_control	PUT	/api/bbs/assemble/control/userinfo	u2_userinfo_filter	R7
-bbs_core_entity	POST	/api/bbs/core/entity/reply	create_reply	R7
 calendar_assemble_control	POST	/api/calendar_assemble_control/event/list/filter/sample/manager	event_list_filter_sample_manager	R6
 calendar_assemble_control	PUT	/api/calendar_assemble_control/calendar/list/filter	calendar_list_filter	R7
 calendar_assemble_control	PUT	/api/calendar_assemble_control/event/list/filter	event_list_filter	R7
@@ -183,7 +182,6 @@ meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/list/invite/
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/list/manage/{page}/{size}/{size}	meeting_list_page_size_size_manage_p3	R7
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/list/{page}/size/{size}	meeting_list_page_size_size	R7
 meeting_assemble_control	POST	/api/meeting/assemble/control/meeting/list/{page}/size/{size}/manage	meeting_list_page_size_size_manage	R7
-meeting_core_entity	POST	/api/meeting/core/entity/meeting/create	create_meeting	R6
 message_assemble_communicate	DELETE	/api/message/assemble/communicate/im/conversation/{id}/group	im_conversation_id_group	R7
 message_assemble_communicate	POST	/api/message/assemble/communicate/im/conversation/list/with/person	im_conversation_list_with_person	R7
 message_assemble_communicate	POST	/api/message/assemble/communicate/im/msg/collection/list/{page}/size/{size}	im_msg_collection_list_page_size_size	R7
@@ -194,8 +192,10 @@ mind_assemble_control	PUT	/api/mind/assemble/control/mind/filter/list/{id}/next/
 mind_assemble_control	PUT	/api/mind/assemble/control/mind/filter/recived/{id}/next/{page}	mind_filter_received	R6
 mind_assemble_control	PUT	/api/mind/assemble/control/mind/filter/recycle/{id}/next/{page}	mind_filter_recycle	R6
 mind_assemble_control	PUT	/api/mind/assemble/control/mind/filter/shared/{id}/next/{page}	mind_filter_shared	R6
+organization_assemble_authentication	DELETE	/api/organization/assemble/authentication/authentication	logout	R4
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication/bind/meta/{meta}	authentication_bind_meta_post	R7
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication/captcha	captcha_login	R7
+organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication/code	code	R4
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication/two/factory/login	two_factor_login	R7
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/dingding/info	dingding_info	R7
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/oauth/info	oauth_info_post	R7
@@ -623,8 +623,8 @@ query_assemble_surface	POST	/api/queryview/importmodel/record/{recordId}	importm
 query_assemble_surface	POST	/api/queryview/importmodel/record/{recordId}/{status}	importmodel_record_recordId_status_p2	R7
 query_assemble_surface	POST	/api/queryview/importmodel/{flag}/{flag}/{query}/{queryFlag}	importmodel_flag_flag_query_queryFlag_p4	R7
 query_assemble_surface	POST	/api/queryview/importmodel/{id}	importmodel_id	R7
-query_assemble_surface	POST	/api/queryview/morelikethis	morelikethis_post	R4
-query_assemble_surface	POST	/api/queryview/search	search_post	R4
+query_assemble_surface	POST	/api/queryview/morelikethis	morelikethis_post	R7
+query_assemble_surface	POST	/api/queryview/search	search_post	R7
 query_assemble_surface	POST	/api/queryview/stat/execute/mockputtopost/{id}	stat_execute	R7
 query_assemble_surface	POST	/api/queryview/stat/flag/{flag}/query/{queryFlag}/execute/mockputtopost	stat_execute_with_query_mock	R7
 query_assemble_surface	POST	/api/queryview/stat/{id}/execute/mockputtopost	stat_execute	R7

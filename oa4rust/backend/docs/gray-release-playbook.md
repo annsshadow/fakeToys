@@ -1,5 +1,12 @@
 # OA4Rust U9 灰度迁移 — 灰度切换 Playbook
 
+> ⛔ **本文档已归档（2026-10-29）**：oa4rust 已是**独立系统**，不再与 Java(o2server)
+> 双栈并行，也没有"灰度切流"这个阶段了。文中「影子流量比对 / mirror backend /
+> toggle_module 切回 Java / 与 Java 基线相当」等判据**全部不再适用**。
+> 保留它是为了留存当时的迁移决策与回滚设计；新部署请直接按 `README` +
+> `docs/performance-baseline.md` 的绝对指标验收，不要照本文操作。
+
+
 > **目标**：将 attendance / control / express / meeting 四个模块从 Java（o2server）逐步迁移到 Rust（oa4rust），通过模块级灰度 + 影子流量比对，确保 ≥ 2 周观察期无差异后全量切流。
 >
 > **RTO 目标**：5 分钟（从触发回滚到流量全部切回 Java 完成）

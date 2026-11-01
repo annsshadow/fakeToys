@@ -103,6 +103,24 @@ export interface AdminBattlesResp {
   total: number
 }
 
+export interface AdminDefenseChallengeView {
+  id: number
+  defense_id: number
+  defense_name: string
+  challenger_id: number
+  challenger_nickname: string
+  won: boolean
+  duration_ms: number
+  hp_left_pct: number
+  loot: { [key: string]: number }
+  created_at: string
+}
+
+export interface AdminDefenseChallengesResp {
+  items: AdminDefenseChallengeView[]
+  total: number
+}
+
 export interface AdminDefenseView {
   id: number
   owner_id: number
@@ -212,6 +230,24 @@ export interface AdminMeResp {
   admin: { id: number; username: string; role: string }
 }
 
+export interface AdminOrderView {
+  id: number
+  user_id: number
+  nickname: string
+  order_no: string
+  sku: string
+  amount: number
+  status: string
+  provider: string
+  created_at: string
+  delivered_at: string | null
+}
+
+export interface AdminOrdersResp {
+  items: AdminOrderView[]
+  total: number
+}
+
 export interface AdminReactionsResp {
   reactions: ReactionSpec[]
 }
@@ -237,6 +273,20 @@ export interface AdminRedeemCodeView {
 
 export interface AdminRedeemCodesResp {
   items: AdminRedeemCodeView[]
+  total: number
+}
+
+export interface AdminRedeemUsageView {
+  id: number
+  code: string
+  user_id: number
+  nickname: string
+  reward: { [key: string]: number }
+  created_at: string
+}
+
+export interface AdminRedeemUsagesResp {
+  items: AdminRedeemUsageView[]
   total: number
 }
 
@@ -303,6 +353,9 @@ export interface AdminUserDetailResp {
   recent_battles: AdminBattleView[]
   verifications: AdminVerificationView[]
   flow_count: number
+  defense: AdminDefenseView | null
+  ban_records: { action: string; username: string; reason: string; created_at: string }[]
+  recent_flows: { currency: string; delta: number; balance: number; reason: string; created_at: string }[]
 }
 
 export interface AdminUserResp {
@@ -356,8 +409,9 @@ export interface ChapterInfo {
 export interface Dashboard {
   users: { total: number; guests: number; wechat: number; banned: number; new_today: number }
   battles: { total: number; today: number; wins: number; avg_duration_ms: number }
+  defenses: { total: number; challenges_today: number }
   progression: { avg_max_stage: number; avg_power: number; stage_100_clears: number }
-  economy: { coin_in: number; coin_out: number; gem_in: number; gem_out: number; orders_paid: number; orders_pending: number }
+  economy: { coin_in: number; coin_out: number; gem_in: number; gem_out: number; orders_paid: number; orders_pending: number; sign_ins_today: number; redeems_today: number }
   verification: { checked: number; matched: number; mismatched: number }
   reaction_usage: ReactionCount[]
   daily_active: DauPoint[]

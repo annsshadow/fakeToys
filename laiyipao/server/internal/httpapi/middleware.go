@@ -284,6 +284,32 @@ func queryInt(c *fiber.Ctx, name string, def int) (int, error) {
 	return v, nil
 }
 
+// queryTime 解析可选的日期/时间查询参数（2026-10-31 新一轮第 14 轮）。
+//
+// 键不在 → nil（不过滤）。值支持两种格式：
+//   - `YYYY-MM-DD`：当天 00:00:00 UTC（后台日期选择器的自然格式）；
+//   - RFC3339：精确到秒的时间点。
+//
+// 解析失败返回 ErrBadInput（与 queryInt 同一个 fail-loud 口径，
+// 运营手滑打错格式看到的是 400 而不是「静默不过滤」）。
+func queryTime(c *fiber.Ctx, name string) (*time.Time, error) {
+	if !c.Context().QueryArgs().Has(name) {
+		return nil, nil
+	}
+	raw := strings.TrimSpace(c.Query(name))
+	if raw == "" {
+		return nil, nil
+	}
+	if t, err := time.Parse("2006-01-02", raw); err == nil {
+		return &t, nil
+	}
+	if t, err := time.Parse(time.RFC3339, raw); err == nil {
+		return &t, nil
+	}
+	return nil, fmt.Errorf("%w: 查询参数 %s=%q 不是合法日期（期望 YYYY-MM-DD 或 RFC3339）",
+		service.ErrBadInput, name, raw)
+}
+
 // userIDFrom 读取中间件写入的 user_id。
 func userIDFrom(c *fiber.Ctx) int64 {
 	v, ok := c.Locals("user_id").(int64)
@@ -538,6 +564,27 @@ const (
 	// 每个动作都落库，无限制时一个账号能把库写爆（自我 DoS）并拖慢全站。
 	// 60/分钟对任何真实操作都绰绰有余；NAT 安全，因为按 user_id 计。
 	economyWriteLimit = 60
+
+	// passwordChangeLimit 是改密码的每用户每分钟上限。
+	//
+	// 改密码是口令爆破面：拿到 access token 后攻击者可以对着旧密码无限试。
+	// 正常玩家一天改不了一次，10 次/分钟足够宽，同时把暴力试探压住。
+	// 按 user_id 计（authRateLimit），NAT 下多个真实玩家互不挤占。
+	passwordChangeLimit = 10
+
+	// accountUpgradeLimit 是「游客转正」的每用户每分钟上限。
+	//
+	// 转正是注册面：脚本可以批量占用户名 / 枚举「哪个用户名已被占用」。
+	// 正常玩家一生只转正一次，10 次/分钟足够宽，同时把脚本批量注册压住。
+	// 按 user_id 计（authRateLimit），NAT 下多个真实玩家互不挤占。
+	accountUpgradeLimit = 10
+
+	// nicknameChangeLimit 是改昵称的每用户每分钟上限。
+	//
+	// 昵称会进排行榜 / 战报 / 防线 / 后台列表等所有列表响应，频繁改名
+	// 可用来刷存在感或干扰后台审计。正常玩家一天改不了一次，
+	// 10 次/分钟足够宽。按 user_id 计（authRateLimit），NAT 安全。
+	nicknameChangeLimit = 10
 )
 
 // authRateLimit 返回按登录身份计数的限流中间件。

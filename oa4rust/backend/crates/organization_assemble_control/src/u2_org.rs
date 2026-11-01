@@ -257,7 +257,7 @@ pub async fn unit_list_sub_direct(
     let client = client_of(&pool).await?;
     let rows = client
         .query(
-            "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id = $1 AND deleted_at IS NULL ORDER BY sort ASC, create_time DESC",
+            "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id = $1 AND deleted_at IS NULL ORDER BY sort ASC, create_time DESC LIMIT 100",
             &[&flag],
         )
         .await
@@ -273,7 +273,7 @@ pub async fn unit_list_sub_direct_with_type(
     let client = client_of(&pool).await?;
     let rows = client
         .query(
-            "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id = $1 AND type = $2 AND deleted_at IS NULL ORDER BY sort ASC, create_time DESC",
+            "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id = $1 AND type = $2 AND deleted_at IS NULL ORDER BY sort ASC, create_time DESC LIMIT 100",
             &[&flag, &unit_type],
         )
         .await

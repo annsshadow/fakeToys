@@ -16,16 +16,17 @@ import { message } from 'antd'
 
 window.matchMedia =
   window.matchMedia ||
-  ((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  }) as unknown as MediaQueryList)
+  ((query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList)
 class RO {
   observe() {}
   unobserve() {}
@@ -63,7 +64,9 @@ vi.mock('../components/DataList', () => ({
     </button>
   ),
 }))
-vi.mock('../components/QualityChart', () => ({ default: () => <div data-testid="quality-chart" /> }))
+vi.mock('../components/QualityChart', () => ({
+  default: () => <div data-testid="quality-chart" />,
+}))
 
 import Quality from './Quality'
 
@@ -103,10 +106,10 @@ describe('Quality 质量评估', () => {
 
     await waitFor(() => expect(spies.evaluateQuality).toHaveBeenCalledWith('a.json', 0.6))
     await waitFor(() =>
-      expect(container.querySelectorAll('.ant-statistic-content-value').length).toBe(4)
+      expect(container.querySelectorAll('.ant-statistic-content-value').length).toBe(4),
     )
     const values = Array.from(container.querySelectorAll('.ant-statistic-content-value')).map(
-      (el) => el.textContent
+      (el) => el.textContent,
     )
     // 总数 100 / 通过 82 / 过滤 18 / 通过率 82.00%（后缀单独 span）
     expect(values.slice(0, 3)).toEqual(['100', '82', '18'])
@@ -155,9 +158,7 @@ describe('Quality 离群点检测', () => {
     fireEvent.click(screen.getByRole('button', { name: /离群点检测/ }))
 
     // 默认方法 zscore、默认阈值 3
-    await waitFor(() =>
-      expect(spies.detectOutliers).toHaveBeenCalledWith('a.json', 'zscore', 3)
-    )
+    await waitFor(() => expect(spies.detectOutliers).toHaveBeenCalledWith('a.json', 'zscore', 3))
   })
 })
 
@@ -183,12 +184,12 @@ describe('Quality 结构校验', () => {
   }
 
   const rowsOfIssueTable = (container: HTMLElement) => {
-    const table = Array.from(container.querySelectorAll('.ant-table')).find(t =>
-      t.querySelector('.ant-table-thead')?.textContent?.includes('级别')
+    const table = Array.from(container.querySelectorAll('.ant-table')).find((t) =>
+      t.querySelector('.ant-table-thead')?.textContent?.includes('级别'),
     )
     if (!table) throw new Error('找不到「级别」表头的 issues 表')
-    return Array.from(table.querySelectorAll('.ant-table-tbody .ant-table-row')).map(row =>
-      Array.from(row.querySelectorAll('td')).map(td => td.textContent)
+    return Array.from(table.querySelectorAll('.ant-table-tbody .ant-table-row')).map((row) =>
+      Array.from(row.querySelectorAll('td')).map((td) => td.textContent),
     )
   }
 
@@ -216,7 +217,7 @@ describe('Quality 结构校验', () => {
 
     expect(await screen.findByText('条目总数')).toBeInTheDocument()
     const stats = Array.from(container.querySelectorAll('.ant-statistic-content-value')).map(
-      el => el.textContent
+      (el) => el.textContent,
     )
     // 顺序即页面顺序：总数 / 合格 / 错误 / 警告。四个数都来自响应，没有一个是从 issues 行数算的
     expect(stats).toEqual(['200', '180', '20', '37'])
@@ -244,14 +245,14 @@ describe('Quality 结构校验', () => {
     await waitFor(() =>
       expect(container.querySelectorAll('[role=combobox]')[1]).toHaveAttribute(
         'aria-expanded',
-        'true'
-      )
+        'true',
+      ),
     )
     const dropdown = () => document.querySelectorAll('.ant-select-dropdown')
     await waitFor(() => expect(dropdown().length).toBeGreaterThanOrEqual(1))
     const option = Array.from(
-      dropdown()[dropdown().length - 1].querySelectorAll('.ant-select-item-option')
-    ).find(el => el.textContent === 'strict（加长度下限与禁用片段）')
+      dropdown()[dropdown().length - 1].querySelectorAll('.ant-select-item-option'),
+    ).find((el) => el.textContent === 'strict（加长度下限与禁用片段）')
     if (!option) throw new Error('验证预设下拉里没有 strict')
     fireEvent.click(option)
     fireEvent.click(screen.getByRole('button', { name: /结构校验/ }))

@@ -86,7 +86,9 @@ interface ParsedModel {
 function parseOwnFields(source: string, className: string): ParsedModel | null {
   const lines = source.split(/\r?\n/)
   // 两种类头都要认：pydantic 的 `class X(BaseModel):` 与 dataclass 的 `class X:`
-  const start = lines.findIndex((line) => new RegExp(`^class\\s+${className}\\s*(\\(|:)`).test(line))
+  const start = lines.findIndex((line) =>
+    new RegExp(`^class\\s+${className}\\s*(\\(|:)`).test(line),
+  )
   if (start === -1) return null
 
   const header = /^class\s+\w+\s*(?:\(([^)]*)\))?\s*:/.exec(lines[start])
@@ -247,7 +249,11 @@ const MODELS: ModelCase[] = [
   },
   { schema: dataPageResponseSchema, className: 'DataLoadResponse', file: 'api/routes/data.py' },
   { schema: uploadResponseSchema, className: 'DataUploadResponse', file: 'api/routes/data.py' },
-  { schema: analyzeResponseSchema, className: 'DatasetAnalysisResponse', file: 'api/routes/data.py' },
+  {
+    schema: analyzeResponseSchema,
+    className: 'DatasetAnalysisResponse',
+    file: 'api/routes/data.py',
+  },
   { schema: visualizeResponseSchema, className: 'VisualizeResponse', file: 'api/routes/data.py' },
   { schema: startAugmentResponseSchema, className: 'MessageResponse', file: 'api/schemas.py' },
   {
@@ -261,13 +267,21 @@ const MODELS: ModelCase[] = [
     file: 'api/routes/augment.py',
   },
   { schema: versionInfoSchema, className: 'VersionInfo', file: 'api/routes/version.py' },
-  { schema: versionListResponseSchema, className: 'VersionListResponse', file: 'api/routes/version.py' },
+  {
+    schema: versionListResponseSchema,
+    className: 'VersionListResponse',
+    file: 'api/routes/version.py',
+  },
   {
     schema: createVersionResponseSchema,
     className: 'VersionCreateResponse',
     file: 'api/routes/version.py',
   },
-  { schema: versionDataResponseSchema, className: 'VersionDataResponse', file: 'api/routes/version.py' },
+  {
+    schema: versionDataResponseSchema,
+    className: 'VersionDataResponse',
+    file: 'api/routes/version.py',
+  },
   {
     schema: qualityEvaluationResponseSchema,
     className: 'QualityEvaluateResponse',
@@ -286,7 +300,7 @@ const FULL_SCHEMA_MODULE = fullSchemas as unknown as Record<string, z.ZodType>
  */
 const FULL_MODELS: ModelCase[] = [
   ...readFileSync(resolve(AUGMENTOR_DIR, 'web/src/schemas/full-schemas.ts'), 'utf8').matchAll(
-    /\/\*\* `([^`]+):(\d+)` → (\w+) \*\/\r?\nexport const (\w+) = z\.object\(/g
+    /\/\*\* `([^`]+):(\d+)` → (\w+) \*\/\r?\nexport const (\w+) = z\.object\(/g,
   ),
 ].map((match) => {
   const [, file, line, className, schemaName] = match
@@ -432,7 +446,7 @@ describe('zod schema ↔ 后端 response_model 契约', () => {
           if (field.hasDefault) continue
           expect(
             acceptsMissing(model.schema, field.name),
-            `${model.className}.${field.name} 后端恒在，zod 却允许缺席`
+            `${model.className}.${field.name} 后端恒在，zod 却允许缺席`,
           ).toBe(false)
         }
       } else {
@@ -440,7 +454,7 @@ describe('zod schema ↔ 后端 response_model 契约', () => {
         // 都有默认值时才允许用 union 建模。当前仅 AugmentProgressResponse 走这支。
         expect(
           pythonFields!.filter((field) => !field.hasDefault).map((field) => field.name),
-          `${model.className} 有必填字段，不能用 union 建模`
+          `${model.className} 有必填字段，不能用 union 建模`,
         ).toEqual([])
       }
     })

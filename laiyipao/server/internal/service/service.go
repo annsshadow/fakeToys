@@ -49,9 +49,22 @@ var (
 
 // Service 聚合全部依赖。
 type Service struct {
-	DB   *store.DB
-	Cfg  config.Config
-	JWT  *auth.Signer
+	DB  *store.DB
+	JWT *auth.Signer
+
+	// cfg 是**配置快照**（原子指针，2026-10-29）。
+	//
+	// 此前是值字段 `Cfg config.Config`，`New` 时拷贝一份就再也不变 ——
+	// 于是 `DASHBOARD_CACHE_TTL` / `LEADERBOARD_CACHE_TTL` / 结算重算模式
+	// 这些「运维想改但不想重启」的旋钮，只能靠重启整进程生效。
+	//
+	// 改成原子指针后，`ReloadConfig` 可以整体换掉快照，而读方永远拿到一份
+	// **完整**的配置（不会读到换到一半的字段）。与 `gate` 同一个理由与形状。
+	//
+	// ⚠️ 读配置一律走 `Cfg()` 取快照后**在同一次调用内复用**：不要写
+	// `if s.Cfg().A > 0 { ... s.Cfg().A ... }` —— 两次 Load 之间可能发生重载。
+	cfg atomic.Pointer[config.Config]
+
 	pool *pgxpool.Pool
 
 	// gate 是结算重算闸门（R1）。
@@ -93,6 +106,23 @@ type Service struct {
 	// leaderboardCache 按 kind 分键。三个键在 New 里一次建好，
 	// 之后**只读这个 map**（不再增删），所以不需要外层锁。
 	leaderboardCache map[string]*ttlCache[[]LeaderboardEntry]
+	// signInCalendarCache 是签到日历预览的缓存（2026-10-30 实质优化第 17 轮）。
+	// 日历是 seeder 写入的静态配置，TTL 见 config.SignInCalendarCacheTTL。
+	signInCalendarCache ttlCache[[]SignInCalendarDay]
+	// announcementsCache 是公告列表的缓存（2026-10-31 实质优化第 22 轮）。
+	// 公告是公开端点、变化频率极低，TTL 见 config.AnnouncementsCacheTTL。
+	announcementsCache ttlCache[[]AnnouncementView]
+	// shopCache 是商城商品列表**静态部分**的缓存（2026-10-31 新一轮第 6 轮）。
+	// 商品本身是 seeder 配置（低频运营修改），TTL 见 config.ShopCacheTTL；
+	// 玩家「今日已购次数」是 per-user 数据，不缓存。
+	shopCache ttlCache[[]shopItem]
+	// tasksCache 是任务配置**静态部分**的缓存（2026-10-31 新一轮第 8 轮）。
+	// tasks 是 seeder 纯静态配置（无后台修改入口），TTL 见 config.TasksCacheTTL；
+	// 玩家当日进度是 per-user 数据，不缓存。
+	tasksCache ttlCache[[]taskConfig]
+	// economyCache 是后台经济流水页的缓存（2026-10-31 新一轮第 28 轮）。
+	// wallet_flows 是增长最快的表，TTL 见 config.EconomyCacheTTL。
+	economyCache ttlCache[AdminEconomyResp]
 }
 
 // leaderboardCacheKinds 是与 `leaderboardKinds` 同步的三个榜。
@@ -118,16 +148,63 @@ func LeaderboardCacheKinds() []string {
 func New(db *store.DB, cfg config.Config) *Service {
 	s := &Service{
 		DB:   db,
-		Cfg:  cfg,
 		JWT:  auth.NewSigner(cfg.JWTSecret, cfg.AccessTTL),
 		pool: db.Pool,
 	}
+	s.cfg.Store(&cfg)
 	s.leaderboardCache = make(map[string]*ttlCache[[]LeaderboardEntry], len(leaderboardCacheKinds))
 	for _, kind := range leaderboardCacheKinds {
 		s.leaderboardCache[kind] = &ttlCache[[]LeaderboardEntry]{}
 	}
 	s.initRecomputeGate()
 	return s
+}
+
+// Cfg 返回当前配置快照。
+//
+// 热加载会整体替换这个指针，所以调用方应**取一次、用完**：在一次判断/计算里
+// 反复 `s.Cfg().X` 会读到两个不同代际的配置。
+//
+// 返回指针（而非值拷贝）是为了让测试能就地改单个字段
+// （`ts.Cfg().SettleRecomputeMode = ...`）——这是既有测试的写法。
+func (s *Service) Cfg() *config.Config {
+	if c := s.cfg.Load(); c != nil {
+		return c
+	}
+	// 零值 `&Service{}`（测试里只调不碰库的方法，如 `LoadGameConfig`）没有快照。
+	// 这里装一份**该实例专属**的零值配置，而不是返回共享包变量：
+	//   - 返回共享变量会让某个用例的 `Cfg().X = ...` 泄漏到别的用例；
+	//   - CAS 保证并发下只装一份，且所有读方拿到同一个指针。
+	// 生产路径上 `New` 必装快照，走不到这里。
+	var zero config.Config
+	s.cfg.CompareAndSwap(nil, &zero)
+	return s.cfg.Load()
+}
+
+// ReloadConfig 原子替换配置快照（SIGHUP 热加载入口）。
+//
+// # 生效范围
+//
+// 只影响**每次请求现读**的旋钮：`DASHBOARD_CACHE_TTL`、
+// `LEADERBOARD_CACHE_TTL`、结算重算模式、微信端点/凭据等。
+//
+// # 不生效（改完仍需重启）
+//
+// 构造期固化的东西：数据库连接池大小与生命周期、`JWT` 签名器（密钥与
+// 令牌有效期）、监听地址、路由级限流桶（在 `NewRouter` 时装配）。
+// 这些若也做热加载，等于在运行中替换连接池/中间件链，收益远小于风险。
+func (s *Service) ReloadConfig(cfg config.Config) {
+	prev := s.cfg.Load()
+	s.cfg.Store(&cfg)
+	// 配置文件里**显式改了这一档**才重建 gate。
+	//
+	// 运行期切档的唯一真相是 gate（`PUT /admin/recomputes/mode` 只换 gate、
+	// 不回写文件）。若每次重载都无条件按文件重建，一次「只改了 TTL」的
+	// SIGHUP 就会把运维刚切过的档悄悄抹回去 —— 那是比不支持热加载更糟的
+	// 形状：它看起来生效了，实际是被覆盖了。
+	if prev == nil || prev.SettleRecomputeMode != cfg.SettleRecomputeMode {
+		s.initRecomputeGateWith(cfg.SettleRecomputeMode)
+	}
 }
 
 // FlushStatsCache 立刻失效看板与榜单缓存。
@@ -159,13 +236,16 @@ func (s *Service) flushLeaderboards() {
 
 // CacheStats 是进程内缓存的命中/未命中快照（getOrLoad 口径）。
 type CacheStats struct {
-	DashboardHits, DashboardMisses     int64
-	LeaderboardHits, LeaderboardMisses int64
+	DashboardHits, DashboardMisses           int64
+	LeaderboardHits, LeaderboardMisses       int64
+	SignInCalendarHits, SignInCalendarMisses int64
+	AnnouncementsHits, AnnouncementsMisses   int64
 }
 
-// CacheStats 汇总看板与三个榜单缓存的命中/未命中计数，供 /metrics 观测。
+// CacheStats 汇总看板、榜单、签到日历与公告缓存的命中/未命中计数，
+// 供 /metrics 观测。
 //
-// 为什么值得暴露：缓存命中率是这两个缓存**唯一**的健康信号 ——
+// 为什么值得暴露：缓存命中率是这些缓存**唯一**的健康信号 ——
 // 命中率骤降意味着 TTL 被设太小或击穿没被单飞兜住，而这两者都不会报错，
 // 只是变慢。没有它，线上只能看到「看板接口偶发变慢」这种说不清的现象。
 func (s *Service) CacheStats() CacheStats {
@@ -176,6 +256,8 @@ func (s *Service) CacheStats() CacheStats {
 		st.LeaderboardHits += h
 		st.LeaderboardMisses += m
 	}
+	st.SignInCalendarHits, st.SignInCalendarMisses = s.signInCalendarCache.Stats()
+	st.AnnouncementsHits, st.AnnouncementsMisses = s.announcementsCache.Stats()
 	return st
 }
 
@@ -189,6 +271,8 @@ type User struct {
 	IsGuest   bool      `json:"is_guest"`
 	Status    int       `json:"status"`
 	CreatedAt time.Time `json:"created_at"`
+	// 2026-10-31（实质优化第 34 轮）：最后登录时间，/me 展示用。
+	LastLoginAt time.Time `json:"last_login_at"`
 }
 
 // TokenPair 是一次签发结果。
@@ -275,7 +359,7 @@ func (s *Service) GuestLogin(ctx context.Context, guestToken, nickname string) (
 // AppID/Secret 未配置时返回明确错误（501），而不是静默降级成游客登录 ——
 // 静默降级会让"登录失败"变成"登录成功但数据不对应"，极难排查。
 func (s *Service) WechatLogin(ctx context.Context, code string) (TokenPair, error) {
-	if !s.Cfg.WechatEnabled() {
+	if !s.Cfg().WechatEnabled() {
 		return TokenPair{}, fmt.Errorf("%w: 微信登录未启用（缺少 WECHAT_APP_ID / WECHAT_APP_SECRET）", ErrForbidden)
 	}
 	if strings.TrimSpace(code) == "" {
@@ -347,7 +431,7 @@ func (s *Service) issueTokens(ctx context.Context, userID int64, u User) (TokenP
 	}
 	if _, err := s.pool.Exec(ctx,
 		`INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1,$2,$3)`,
-		userID, refreshHash, time.Now().Add(s.Cfg.RefreshTTL)); err != nil {
+		userID, refreshHash, time.Now().Add(s.Cfg().RefreshTTL)); err != nil {
 		return TokenPair{}, fmt.Errorf("store refresh token: %w", err)
 	}
 	return TokenPair{
@@ -523,9 +607,9 @@ func (s *Service) initNewUser(ctx context.Context, userID int64) error {
 func (s *Service) loadUser(ctx context.Context, id int64) (User, error) {
 	var u User
 	err := s.pool.QueryRow(ctx,
-		`SELECT id, nickname, avatar_url, is_guest, status, created_at
+		`SELECT id, nickname, avatar_url, is_guest, status, created_at, last_login_at
 		 FROM users WHERE id = $1`, id).
-		Scan(&u.ID, &u.Nickname, &u.AvatarURL, &u.IsGuest, &u.Status, &u.CreatedAt)
+		Scan(&u.ID, &u.Nickname, &u.AvatarURL, &u.IsGuest, &u.Status, &u.CreatedAt, &u.LastLoginAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return User{}, fmt.Errorf("%w: user %d", ErrNotFound, id)
 	}
@@ -533,6 +617,12 @@ func (s *Service) loadUser(ctx context.Context, id int64) (User, error) {
 		return User{}, fmt.Errorf("load user: %w", err)
 	}
 	return u, nil
+}
+
+// MyAccount 返回当前玩家的账号信息（2026-10-31 实质优化第 34 轮）。
+// 包装 loadUser 供 HTTP 层调用（/me 展示注册时间/最后登录）。
+func (s *Service) MyAccount(ctx context.Context, userID int64) (User, error) {
+	return s.loadUser(ctx, userID)
 }
 
 // ResolveUser 从 access token 解析用户 ID。
@@ -954,27 +1044,63 @@ func (s *Service) LoadWallet(ctx context.Context, userID int64) (Wallet, error) 
 	// 分两次往返纯属历史拆分；本函数挂在每次进页面都会拉的
 	// fetchWallet 上，省下的是最热路径的一次往返。
 	//
-	// 语义逐位保持：
-	//   - 行不存在 → UPDATE 命中 0 行 → RETURNING 无行 → ErrNoRows，
-	//     与原「Exec 成功 + SELECT ErrNoRows」落到同一个 ErrNotFound 分支；
-	//   - RETURNING 返回的是**更新后**的值（energy 与 energy_updated_at 都含
-	//     本次恢复），与原 SELECT 读到的一致。
+	// 2026-10-29：**没有恢复量时不写库**。
+	//
+	// 原写法无条件 `SET updated_at = now()`，于是即使 `n = 0`（距上次恢复
+	// 不足一格）也每次产生一个新元组 + WAL + 行锁。客户端 3~5 分钟拉一次钱包，
+	// 而恢复间隔是 6 分钟 —— 绝大多数读取都是「n = 0」，等于把最热的读端点
+	// 变成持续的写放大源（`user_wallets` 的 dead tuple 与 autovacuum 压力）。
+	//
+	// 现在用 `cur` 先算 n，只有 `n > 0` 才走 `regen` 分支写库；`n = 0` 直接
+	// 返回 `cur` 的现有值。仍是**一条语句、一次往返**，语义逐位保持：
+	//   - 行不存在 → cur 为空 → 两个分支都无行 → ErrNoRows → ErrNotFound，
+	//     与原「UPDATE 命中 0 行」落到同一个分支；
+	//   - 有恢复 → 返回 RETURNING 的**更新后**值（energy 与 energy_updated_at
+	//     都含本次恢复），与原 SELECT 读到的一致；
+	//   - `updated_at` 的语义修正为「数据真的变了」——读一次不再算一次修改。
+	//
+	// 满体力时仍然推进时间戳（`n > 0` 就写）：否则玩家消耗体力后会按
+	// 「上次满体力那一刻」起算，瞬间回满。
 	var w Wallet
+	// 2026-10-31（新一轮第 4 轮）：道具余额查询与钱包主查询**并行执行**。
+	//
+	// TokenBalance 读 `user_tokens`，主查询读/写 `user_wallets` ——
+	// 两张表、互不依赖，此前却串行：`LoadWallet` 挂在每个页面都会拉的
+	// fetchWallet 上，串行意味着每次都要白等第二次往返。
+	// 这里先发起 TokenBalance，主查询完成后再收结果；主查询失败也先
+	// `wg.Wait()` 再返回，不让 goroutine 泄漏。
+	var (
+		tokens map[string]int64
+		tokErr error
+	)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		tokens, tokErr = s.TokenBalance(ctx, userID, WalletTokenKinds)
+	}()
+
 	err := s.pool.QueryRow(ctx, `
-		WITH k AS (
-		  SELECT GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - energy_updated_at)) / $3))::int AS n
+		WITH cur AS (
+		  SELECT coin, gem, energy, keys, energy_updated_at,
+		         GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - energy_updated_at)) / $3))::int AS n
 		    FROM user_wallets WHERE user_id = $1
+		), regen AS (
+		  UPDATE user_wallets w
+		     SET energy = LEAST($2::int, w.energy + cur.n),
+		         energy_updated_at = w.energy_updated_at
+		                         + make_interval(secs => (cur.n * $3)::double precision),
+		         updated_at = now()
+		    FROM cur
+		   WHERE w.user_id = $1 AND cur.n > 0
+		  RETURNING w.coin, w.gem, w.energy, w.keys, w.energy_updated_at
 		)
-		UPDATE user_wallets w
-		   SET energy = LEAST($2::int, w.energy + k.n),
-		       energy_updated_at = w.energy_updated_at
-		                       + make_interval(secs => (k.n * $3)::double precision),
-		       updated_at = now()
-		  FROM k
-		 WHERE w.user_id = $1
-		RETURNING w.coin, w.gem, w.energy, w.keys, w.energy_updated_at`,
+		SELECT coin, gem, energy, keys, energy_updated_at FROM regen
+		UNION ALL
+		SELECT coin, gem, energy, keys, energy_updated_at FROM cur WHERE cur.n = 0`,
 		userID, energyMax, energyIntervalSecs).
 		Scan(&w.Coin, &w.Gem, &w.Energy, &w.Keys, &w.EnergyUpdatedAt)
+	wg.Wait()
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Wallet{}, fmt.Errorf("%w: wallet for user %d", ErrNotFound, userID)
 	}
@@ -982,14 +1108,14 @@ func (s *Service) LoadWallet(ctx context.Context, userID int64) (Wallet, error) 
 		// 恢复与读取已合并，故错误可能来自任一侧——消息里点明，便于排查。
 		return Wallet{}, fmt.Errorf("regen+load wallet: %w", err)
 	}
+	if tokErr != nil {
+		return Wallet{}, tokErr
+	}
 	// 道具余额：未持有过的补 0（TokenBalance 内部按传入列表补齐）。
 	//
 	// 为什么 0 也要出现：客户端要靠「键在不在」区分「0 个」与
 	// 「这个道具不存在」，而后者只可能是服务端漏了下发。
-	w.Tokens, err = s.TokenBalance(ctx, userID, WalletTokenKinds)
-	if err != nil {
-		return Wallet{}, err
-	}
+	w.Tokens = tokens
 	return w, nil
 }
 
@@ -1165,7 +1291,7 @@ func (s *Service) LoadGameConfig() GameConfig {
 	cfg.ServerTime = time.Now()
 	// ⚠️ 这一条**依赖实例**（config 里来的开关），所以不能放进 staticConfig
 	// —— 那个 OnceValue 是全局静态的，与 Service 实例无关。
-	cfg.RequireLogin = s.Cfg.PlayerLoginRequired
+	cfg.RequireLogin = s.Cfg().PlayerLoginRequired
 	return cfg
 }
 

@@ -614,7 +614,10 @@ async def list_backups_endpoint(
         from augmentor.backup import list_backups
 
         resolved = _resolve_backup_dir(backup_dir)
-        return {"backups": list_backups(str(resolved))}
+        # `list_backups` 会 `json.load(index.json)`：同步读盘放在 `async def` 里
+        # 会阻塞事件循环，备份一多整个进程的其它请求一起等。同文件其余端点
+        # 都走 run_in_thread，这里漏了一处。
+        return {"backups": await run_in_thread(list_backups, str(resolved))}
     except HTTPException:
         raise
     except Exception as e:

@@ -17,6 +17,7 @@
  * 值班的人会以为防护开着。
  */
 import {computed, onMounted, ref, onActivated} from 'vue'
+import { useRouter } from 'vue-router'
 import { useAdminRole } from '@/utils/adminRole'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -24,6 +25,7 @@ import {
   fetchRecomputeStats,
   fetchRecomputeMode,
   setRecomputeMode,
+  exportRecomputesCsv,
   type RecomputeView,
   type RecomputeLevelStat,
   type RecomputeModeState,
@@ -33,6 +35,16 @@ import { fmtTime } from '@/utils/format'
 
 /** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
 const emptyText = '没有匹配的重算记录'
+const router = useRouter()
+
+/**
+ * 打开指定玩家的用户详情（2026-11-01 新一轮第 96 轮）。
+ * 跳到用户管理页并携带 user_id，UsersView 挂载时会自动打开详情抽屉。
+ */
+function openUserDetail(userId: number) {
+  router.push({ path: '/users', query: { user_id: String(userId) } })
+}
+
 const loading = ref(false)
 // 2026-10-21（P5-6 / 二轮审计 P2-3）：readonly 账号看不到写入口。
 const { isReadonly } = useAdminRole()
@@ -231,6 +243,45 @@ async function load() {
     ElMessage.error(`重算台账加载失败：${(e as Error).message}`)
   } finally {
     loading.value = false
+  }
+}
+
+/**
+ * 导出重算台账 CSV（2026-11-01 新一轮第 45 轮）。
+ * 与列表同口径的 only_mismatch / user_id / level_id 筛选；
+ * readonly 角色也可导出（读操作）。下载文件名带日期。
+ */
+async function onExportCsv() {
+  try {
+    const blob = await exportRecomputesCsv({
+      user_id: userId.value,
+      level_id: levelId.value,
+      only_mismatch: onlyMismatch.value || undefined,
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `recomputes_${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+    ElMessage.success(`已导出 ${rows.value.length} 条重算记录（当前筛选结果）`)
+  } catch (e) {
+    ElMessage.error(`导出失败：${(e as Error).message}`)
+  }
+}
+
+/**
+ * 复制 battle_id（2026-11-01 新一轮第 88 轮）。
+ * 运营追查某场重算对应的战报时，把 battle_id 贴到工单/战报搜索。
+ */
+async function copyBattleId(battleId: number) {
+  try {
+    await navigator.clipboard.writeText(String(battleId))
+    ElMessage.success(`已复制 battle_id ${battleId}`)
+  } catch {
+    ElMessage.error('复制失败，请手动选择复制')
   }
 }
 
@@ -512,6 +563,8 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
         />
         <el-button @click="load">筛选</el-button>
         <el-checkbox v-model="onlyMismatch" style="margin-left: 12px">只看不符</el-checkbox>
+        <!-- 重算台账 CSV 导出（2026-11-01 新一轮第 45 轮） -->
+        <el-button style="margin-left: 12px" @click="onExportCsv">导出 CSV</el-button>
         <span class="toolbar-spacer" />
         <span class="muted">共 {{ total }} 条</span>
       </div>
@@ -530,7 +583,20 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
             <span v-else>{{ asRow(row).battle_id }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="user_id" label="用户" width="80" />
+        <el-table-column label="用户" width="110">
+          <!-- 点击跳转用户详情（2026-11-01 新一轮第 96 轮） -->
+          <template #default="{ row }">
+            <el-link
+              v-if="asRow(row).nickname"
+              type="primary"
+              underline="never"
+              @click="openUserDetail(asRow(row).user_id)"
+            >
+              {{ asRow(row).nickname }}
+            </el-link>
+            <span v-else>#{{ asRow(row).user_id }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="level_id" label="关卡" width="70" />
         <el-table-column label="不符字段" min-width="140">
           <template #default="{ row }">
@@ -562,6 +628,21 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
         <el-table-column prop="engine_version" label="引擎版本" width="120" />
         <el-table-column label="时间" width="155">
           <template #default="{ row }">{{ fmtTime(row.created_at) }}</template>
+        </el-table-column>
+        <!-- 复制 battle_id（2026-11-01 新一轮第 88 轮）：追查到战报/工单 -->
+        <el-table-column label="操作" width="110" fixed="right">
+          <template #default="{ row }">
+            <el-button
+              v-if="asRow(row).battle_id !== 0"
+              size="small"
+              text
+              type="primary"
+              @click="copyBattleId(asRow(row).battle_id)"
+            >
+              复制 battle_id
+            </el-button>
+            <span v-else class="muted">—</span>
+          </template>
         </el-table-column>
         <template #empty>
           <el-empty :description="emptyText" :image-size="60" />
