@@ -47,17 +47,15 @@ pub struct FileInfo {
     pub extension: String,
     pub length: i64,
 }
-
+#[derive(utoipa::ToSchema)]
 // ── Request structs ──────────────────────────────────────────────────────────
-
 #[derive(Debug, Deserialize)]
 pub struct FolderCreateRequest {
     pub name: String,
     pub person: String,
     pub superior: Option<String>,
 }
-
-#[derive(Debug, Deserialize)]
+#[derive(utoipa::ToSchema, Debug, Deserialize)]
 pub struct FileCreateRequest {
     pub name: String,
     pub person: String,

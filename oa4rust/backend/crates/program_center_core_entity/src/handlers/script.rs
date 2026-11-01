@@ -20,8 +20,7 @@ pub struct ScriptCreateRequest {
     pub name: String,
     pub alias: Option<String>,
 }
-
-#[derive(Debug, Deserialize)]
+#[derive(utoipa::ToSchema, Debug, Deserialize)]
 pub struct ScriptUpdateRequest {
     pub name: Option<String>,
     pub alias: Option<String>,

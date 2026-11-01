@@ -8044,8 +8044,7 @@ pub async fn application_list(
         0,
     )))
 }
-
-#[derive(Debug, Deserialize)]
+#[derive(utoipa::ToSchema, Debug, Deserialize)]
 pub struct AgentCreateRequest {
     pub name: Option<String>,
     pub flag: Option<String>,
@@ -12317,9 +12316,8 @@ pub async fn apppack_server_connect(
         ]),
     ))))
 }
-
+#[derive(utoipa::ToSchema)]
 // ── dict 家族写端点（o2server DictAction POST "" / PUT|POST|DELETE {dictFlag}/{path}/data / DELETE {id}）──
-
 #[derive(Debug, Deserialize)]
 pub struct DictCreateRequest {
     #[serde(rename = "dictFlag")]
@@ -12510,9 +12508,8 @@ pub async fn dict_delete_id(
         ]),
     ))))
 }
-
+#[derive(utoipa::ToSchema)]
 // ── script 家族写端点（IDOR：creator_person 取自会话，改/删前 require_owner）──
-
 #[derive(Debug, Deserialize)]
 pub struct ScriptCreateRequest {
     pub name: Option<String>,

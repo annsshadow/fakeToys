@@ -64,8 +64,7 @@ pub struct GroupUpdateRequest {
     pub parent_id: Option<String>,
     pub level: Option<i32>,
 }
-
-#[derive(Debug, Deserialize)]
+#[derive(utoipa::ToSchema, Debug, Deserialize)]
 pub struct IdentityCreateRequest {
     pub person_id: String,
     pub name: String,

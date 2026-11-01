@@ -18,5 +18,6 @@ tower = "0.5"
 
 shared = { path = "../shared" }
 
+ utoipa.workspace = true
 [lints]
 workspace = true

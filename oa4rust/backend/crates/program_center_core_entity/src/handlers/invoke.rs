@@ -17,15 +17,13 @@ use shared::{
 };
 
 use crate::{entities, MAX_NAME_LEN, MAX_TEXT_LEN};
-
-#[derive(Debug, Deserialize)]
+#[derive(utoipa::ToSchema, Debug, Deserialize)]
 pub struct InvokeCreateRequest {
     pub name: String,
     pub alias: Option<String>,
     pub category: Option<String>,
 }
-
-#[derive(Debug, Deserialize)]
+#[derive(utoipa::ToSchema, Debug, Deserialize)]
 pub struct InvokeUpdateRequest {
     pub name: Option<String>,
     pub alias: Option<String>,
