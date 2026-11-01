@@ -204,23 +204,44 @@ func (s *Service) SetEquippedEquipment(ctx context.Context, userID int64, ids []
 	}
 
 	err := s.DB.Tx(ctx, func(tx txType) error {
-		// 1) 校验拥有
+		// 1) 目录校验（纯内存，无往返）——保持旧循环的原顺序：先目录后拥有。
 		for _, id := range uniq {
-			def, ok := equipmentCatalog[id]
-			if !ok {
+			if _, ok := equipmentCatalog[id]; !ok {
 				return fmt.Errorf("%w: 装备 %d 不在目录里", ErrBadInput, id)
 			}
-			var owned bool
-			if err := tx.QueryRow(ctx,
-				`SELECT EXISTS(SELECT 1 FROM user_equipment WHERE user_id = $1 AND equipment_id = $2)`,
-				userID, id).Scan(&owned); err != nil {
+		}
+		// 2) 校验拥有 —— 一条 `= ANY` 归还缺失项（第 16 轮）。
+		// 之前逐件 `SELECT EXISTS`：18 件装备最坏 18 次往返，全在 HTTP 同步路径
+		// （validateDefenseOwnership 的同族问题，那边已 ANY 化，这里是漏网）。
+		// 报错仍按**入参顺序**取第一个缺失项，用户可见错误与旧实现一致。
+		if len(uniq) > 0 {
+			rows, err := tx.Query(ctx, `
+				SELECT equipment_id
+				  FROM user_equipment
+				 WHERE user_id = $1 AND equipment_id = ANY($2)`, userID, uniq)
+			if err != nil {
 				return fmt.Errorf("check equipment ownership: %w", err)
 			}
-			if !owned {
-				return fmt.Errorf("%w: 尚未拥有装备 %d（%s）", ErrBadInput, id, def.Name)
+			owned := map[int]bool{}
+			for rows.Next() {
+				var id int
+				if err := rows.Scan(&id); err != nil {
+					rows.Close()
+					return fmt.Errorf("scan equipment ownership: %w", err)
+				}
+				owned[id] = true
+			}
+			rows.Close()
+			if err := rows.Err(); err != nil {
+				return fmt.Errorf("iterate equipment ownership: %w", err)
+			}
+			for _, id := range uniq {
+				if !owned[id] {
+					return fmt.Errorf("%w: 尚未拥有装备 %d（%s）", ErrBadInput, id, equipmentCatalog[id].Name)
+				}
 			}
 		}
-		// 2) 校验同部位唯一
+		// 3) 校验同部位唯一
 		slotOf := map[int]string{}
 		for _, id := range uniq {
 			slotOf[id] = equipmentCatalog[id].Slot
@@ -234,16 +255,16 @@ func (s *Service) SetEquippedEquipment(ctx context.Context, userID int64, ids []
 			}
 			slotSeen[slot] = id
 		}
-		// 3) 整组替换
+		// 4) 整组替换 —— 归零一条、穿上一条 `= ANY`（第 16 轮）。
 		if _, err := tx.Exec(ctx,
 			`UPDATE user_equipment SET equipped = FALSE WHERE user_id = $1`, userID); err != nil {
 			return fmt.Errorf("unequip all: %w", err)
 		}
-		for _, id := range uniq {
+		if len(uniq) > 0 {
 			if _, err := tx.Exec(ctx,
-				`UPDATE user_equipment SET equipped = TRUE WHERE user_id = $1 AND equipment_id = $2`,
-				userID, id); err != nil {
-				return fmt.Errorf("equip %d: %w", id, err)
+				`UPDATE user_equipment SET equipped = TRUE WHERE user_id = $1 AND equipment_id = ANY($2)`,
+				userID, uniq); err != nil {
+				return fmt.Errorf("equip %v: %w", uniq, err)
 			}
 		}
 		return nil

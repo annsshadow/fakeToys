@@ -423,12 +423,12 @@ func TestProgressionMidwayFailures(t *testing.T) {
 	t.Run("LoadMastery点数查询失败", func(t *testing.T) {
 		ts := openScratchService(t)
 		uid := ts.newUser(t, ctx)
-		// user_mastery_nodes 完好（首个 Query 成功）→ user_progress 改名 →
-		// 第二个 QueryRow(mastery_points) 失败。
+		// 第 18 轮：节点与点数合并成一条查询（两个标量子查询）——
+		// user_progress 改名后该查询必然失败，fail-loud 语义不变。
 		ts.renameTable(t, "user_progress", "user_progress_bak")
 		_, _, err := ts.LoadMastery(ctx, uid)
 		ts.renameTable(t, "user_progress_bak", "user_progress")
-		mustErr(t, err, "load mastery points")
+		mustErr(t, err, "load mastery")
 	})
 
 	t.Run("AllocateMastery锁进度失败", func(t *testing.T) {

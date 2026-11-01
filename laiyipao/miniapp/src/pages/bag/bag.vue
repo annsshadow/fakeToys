@@ -206,7 +206,9 @@
         <!-- 我持有的宝石（第 150 轮）。此前这里只有一段「拿不到宝石」的说明 ——
              `user_gems` 只有服务端内部读取，玩家在界面上看不到自己有什么。 -->
         <view style="margin-top: 16rpx">
-          <text class="dim" style="display: block; margin-bottom: 8rpx">我的宝石</text>
+          <text class="dim" style="display: block; margin-bottom: 8rpx">
+            我的宝石（已佩戴 {{ equippedGemCount }}/6）
+          </text>
           <text v-if="ownedGems.length === 0" class="dim">还没有宝石，去商城买一颗。</text>
           <view
             v-for="g in ownedGems"
@@ -217,16 +219,29 @@
               <text class="skill-name">
                 {{ g.name }}
                 <text class="dim">· {{ qualityName(g.quality) }}</text>
+                <text v-if="g.equipped_slot" class="link"> · 已佩戴</text>
               </text>
               <text class="dim" style="display: block">{{ affixText(g.affixes) }}</text>
             </view>
             <view class="skill-act">
-              <text v-if="washingId === g.id" class="dim">洗练中…</text>
-              <text
-                v-else
-                class="link"
-                @click="doWash(g)"
-              >洗练</text>
+              <text v-if="gemBusyId === g.id" class="dim">处理中…</text>
+              <template v-else>
+                <text
+                  v-if="!g.equipped_slot"
+                  class="link gem-equip"
+                  @click="doEquipGem(g)"
+                >佩戴</text>
+                <text
+                  v-else
+                  class="link gem-unequip"
+                  @click="doUnequipGem(g)"
+                >卸下</text>
+                <text
+                  class="link gem-wash"
+                  style="margin-left: 16rpx"
+                  @click="doWash(g)"
+                >洗练</text>
+              </template>
             </view>
           </view>
         </view>
@@ -454,6 +469,50 @@ async function doWash(g: OwnedGem) {
     uni.showToast({ title: (e as Error).message, icon: 'none' })
   } finally {
     washingId.value = 0
+  }
+}
+
+/** 佩戴/卸下共用忙标志（同一时刻只有一颗宝石在处理）。 */
+const gemBusyId = ref(0)
+
+/** 已佩戴计数（标题里的 x/6，与服务端 EquipSlotLimit 一致）。 */
+const equippedGemCount = computed(() => ownedGems.value.filter((g) => g.equipped_slot).length)
+
+/**
+ * 佩戴一颗宝石（第 20 轮）。这是宝石词条生效的唯一开关 ——
+ * 服务端把 equipped_slot 写上之后，构筑侧立刻吃到词条。
+ */
+async function doEquipGem(g: OwnedGem) {
+  if (gemBusyId.value !== 0) return
+  gemBusyId.value = g.id
+  try {
+    const r = await api.equipGem(g.id)
+    const i = ownedGems.value.findIndex((x) => x.id === g.id)
+    if (i >= 0 && r.gem) ownedGems.value.splice(i, 1, r.gem)
+    // 佩戴改变构筑 → 刷新档案（power/rating 以服务端为准）。
+    await store.refreshProfile()
+    uni.showToast({ title: '已佩戴，词条已生效', icon: 'none' })
+  } catch (e) {
+    uni.showToast({ title: (e as Error).message, icon: 'none' })
+  } finally {
+    gemBusyId.value = 0
+  }
+}
+
+/** 卸下一颗宝石（幂等；同样刷新档案）。 */
+async function doUnequipGem(g: OwnedGem) {
+  if (gemBusyId.value !== 0) return
+  gemBusyId.value = g.id
+  try {
+    const r = await api.unequipGem(g.id)
+    const i = ownedGems.value.findIndex((x) => x.id === g.id)
+    if (i >= 0 && r.gem) ownedGems.value.splice(i, 1, r.gem)
+    await store.refreshProfile()
+    uni.showToast({ title: '已卸下', icon: 'none' })
+  } catch (e) {
+    uni.showToast({ title: (e as Error).message, icon: 'none' })
+  } finally {
+    gemBusyId.value = 0
   }
 }
 

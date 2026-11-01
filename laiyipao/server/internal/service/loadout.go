@@ -60,37 +60,74 @@ func (s *Service) SaveLoadout(ctx context.Context, userID int64, in SaveLoadoutI
 	}
 
 	err := s.DB.Tx(ctx, func(tx txType) error {
-		// 2) 技能必须已解锁且为主动技能
-		for slot, id := range in.SkillIDs {
-			if id == 0 {
-				continue
+		// 2) 技能必须已解锁且为主动技能 —— 一条 `= ANY` 取回 kind
+		// （第 17 轮）。之前逐技能 SELECT：5 个槽最坏 5 次往返。
+		// 校验顺序保持入参槽位序：先查「未解锁」，再查「被动」，
+		// 用户可见错误与旧实现一致（第一个违规的技能按槽位序报出）。
+		slotIDs := make([]int, 0, len(in.SkillIDs))
+		for _, id := range in.SkillIDs {
+			if id != 0 {
+				slotIDs = append(slotIDs, id)
 			}
-			var kind string
-			err := tx.QueryRow(ctx,
-				`SELECT s.kind FROM user_skills us
-				 JOIN skills s ON s.id = us.skill_id
-				 WHERE us.user_id = $1 AND us.skill_id = $2`, userID, id).Scan(&kind)
+		}
+		kindOf := map[int]string{}
+		if len(slotIDs) > 0 {
+			krows, err := tx.Query(ctx, `
+				SELECT us.skill_id, s.kind
+				  FROM user_skills us
+				  JOIN skills s ON s.id = us.skill_id
+				 WHERE us.user_id = $1 AND us.skill_id = ANY($2)`, userID, slotIDs)
 			if err != nil {
-				return fmt.Errorf("%w: 技能 %d 未解锁", ErrBadInput, id)
+				return fmt.Errorf("load skill kinds: %w", err)
 			}
-			if kind != "active" {
-				return fmt.Errorf("%w: 技能 %d 是被动，不占主动槽", ErrBadInput, id)
+			for krows.Next() {
+				var id int
+				var kind string
+				if err := krows.Scan(&id, &kind); err != nil {
+					krows.Close()
+					return fmt.Errorf("scan skill kinds: %w", err)
+				}
+				kindOf[id] = kind
 			}
-			_ = slot
+			krows.Close()
+			if err := krows.Err(); err != nil {
+				return fmt.Errorf("iterate skill kinds: %w", err)
+			}
+			for _, id := range in.SkillIDs {
+				if id == 0 {
+					continue
+				}
+				kind, unlocked := kindOf[id]
+				if !unlocked {
+					return fmt.Errorf("%w: 技能 %d 未解锁", ErrBadInput, id)
+				}
+				if kind != "active" {
+					return fmt.Errorf("%w: 技能 %d 是被动，不占主动槽", ErrBadInput, id)
+				}
+			}
 		}
 
-		// 3) 全量替换槽位
+		// 3) 全量替换槽位 —— multi-row INSERT（≤ MaxActiveSlots 行，第 17 轮）。
 		if _, err := tx.Exec(ctx, `DELETE FROM user_skill_slots WHERE user_id = $1`, userID); err != nil {
 			return fmt.Errorf("clear slots: %w", err)
 		}
-		for slot, id := range in.SkillIDs {
-			if id == 0 {
-				continue
+		if len(slotIDs) > 0 {
+			ins := `INSERT INTO user_skill_slots (user_id, slot, skill_id) VALUES `
+			args := make([]any, 0, len(in.SkillIDs)*3)
+			first := true
+			for slot, id := range in.SkillIDs {
+				if id == 0 {
+					continue
+				}
+				if !first {
+					ins += ","
+				}
+				first = false
+				ins += fmt.Sprintf("($%d,$%d,$%d)", len(args)+1, len(args)+2, len(args)+3)
+				args = append(args, userID, slot, id)
 			}
-			if _, err := tx.Exec(ctx,
-				`INSERT INTO user_skill_slots (user_id, slot, skill_id) VALUES ($1,$2,$3)`,
-				userID, slot, id); err != nil {
-				return fmt.Errorf("insert slot %d: %w", slot, err)
+			if _, err := tx.Exec(ctx, ins, args...); err != nil {
+				return fmt.Errorf("insert slots: %w", err)
 			}
 		}
 

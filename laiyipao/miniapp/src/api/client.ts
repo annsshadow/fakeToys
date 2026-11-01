@@ -808,6 +808,21 @@ export function washGem(gemId: number) {
   return request<{ gem: OwnedGem }>(`/me/gems/${gemId}/wash`, { method: 'POST' })
 }
 
+/**
+ * 佩戴一颗宝石（第 20 轮）。
+ *
+ * 佩戴是宝石词条**生效的唯一开关**：服务端写上 equipped_slot 之后，
+ * 构筑侧（attacker 派生属性）立刻吃到词条。上限 6 颗（服务端 EquipSlotLimit）。
+ */
+export function equipGem(gemId: number) {
+  return request<{ gem: OwnedGem }>(`/me/gems/${gemId}/equip`, { method: 'POST' })
+}
+
+/** 卸下一颗宝石（幂等：未佩戴时原样返回）。 */
+export function unequipGem(gemId: number) {
+  return request<{ gem: OwnedGem }>(`/me/gems/${gemId}/unequip`, { method: 'POST' })
+}
+
 export function fetchLevel(id: number) {
   return request<import('@/game/types').GeneratedLevel>(`/levels/${id}`)
 }

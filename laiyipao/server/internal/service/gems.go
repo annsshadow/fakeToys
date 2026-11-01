@@ -19,6 +19,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -329,4 +330,140 @@ func (s *Service) WashGem(ctx context.Context, userID, gemID int64) (*GemView, e
 		}
 	}
 	return nil, fmt.Errorf("%w: 宝石 %d 洗练后不见了", ErrNotFound, gemID)
+}
+
+// EquipSlotLimit 是佩戴上限（第 20 轮）。
+//
+// 战斗消费侧（loadGemsAffixRows → applyLoadoutContribution）把**所有**
+// 已佩戴宝石的词条求和 —— 没有上限就是「全戴」：买的每颗宝石都自动生效，
+// 「佩戴」退化成「拥有」。6 的具体数值没有公式依据，取的是「部位感」
+// 与词条多样性的折中；它是常量而不是配置，因为没有运营调它的场景。
+const EquipSlotLimit = 6
+
+// equipGemTx 是 EquipGem / UnequipGem 的事务体（归属 + 行锁共用一份）。
+// 返回锁定的这颗宝石的当前 equipped_slot。ErrNotFound = 宝石不存在或不属于该玩家。
+func equipGemTx(ctx context.Context, tx pgx.Tx, userID, gemID int64) (string, error) {
+	var equipped string
+	err := tx.QueryRow(ctx,
+		`SELECT equipped_slot FROM user_gems WHERE id = $1 AND user_id = $2 FOR UPDATE`,
+		gemID, userID).Scan(&equipped)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", fmt.Errorf("%w: 宝石 %d 不属于该玩家", ErrNotFound, gemID)
+	}
+	if err != nil {
+		return "", fmt.Errorf("lock user_gem: %w", err)
+	}
+	return equipped, nil
+}
+
+// EquipGem 佩戴一颗宝石。
+//
+// # 这是宝石系统缺失的另一半
+//
+// `user_gems.equipped_slot` 在本功能之前**全仓零写入** —— 商城卖出的
+// `gem_instance` 永远躺在背包里，`loadGemsAffixRows` 的
+// `WHERE equipped_slot <> ”` 恒空，宝石词条对**所有玩家**零生效。
+// 佩戴写入这个字段后，构筑侧（attacker 派生属性）立刻吃到词条，
+// 与洗练共用同一份消费链路，不碰引擎与 replay_hash 的口径。
+//
+// # 槽位语义与并发
+//
+//   - 槽位 1..EquipSlotLimit，佩戴时**自动取最小空槽**（玩家只关心
+//     「戴几颗」，不关心槽号；equipped_slot 的价值在唯一性约束与排查）。
+//   - 上限靠**行锁串行化**：事务先对全部已佩戴行 FOR UPDATE，
+//     并发的第 7 颗佩戴会等锁，等到时计数已含先到者 → 被拒。
+//     已佩戴行数为 0 时无行可锁，但此时不可能超限（上限 6 > 并发增量）。
+func (s *Service) EquipGem(ctx context.Context, userID, gemID int64) (*GemView, error) {
+	err := s.DB.Tx(ctx, func(tx pgx.Tx) error {
+		equipped, err := equipGemTx(ctx, tx, userID, gemID)
+		if err != nil {
+			return err
+		}
+		if equipped != "" {
+			// 幂等：已佩戴直接返回当前视图，不报错 —— 重复点击不炸。
+			return nil
+		}
+		rows, err := tx.Query(ctx,
+			`SELECT equipped_slot FROM user_gems WHERE user_id = $1 AND equipped_slot <> '' FOR UPDATE`,
+			userID)
+		if err != nil {
+			return fmt.Errorf("lock equipped gems: %w", err)
+		}
+		used := map[string]bool{}
+		for rows.Next() {
+			var slot string
+			if err := rows.Scan(&slot); err != nil {
+				rows.Close()
+				return fmt.Errorf("scan equipped slots: %w", err)
+			}
+			used[slot] = true
+		}
+		rows.Close()
+		if err := rows.Err(); err != nil {
+			return fmt.Errorf("iterate equipped slots: %w", err)
+		}
+		if len(used) >= EquipSlotLimit {
+			return fmt.Errorf("%w: 最多佩戴 %d 颗宝石", ErrBadInput, EquipSlotLimit)
+		}
+		slot := ""
+		for i := 1; i <= EquipSlotLimit; i++ {
+			candidate := fmt.Sprintf("%d", i)
+			if !used[candidate] {
+				slot = candidate
+				break
+			}
+		}
+		if slot == "" {
+			// 与上一条互斥（len(used) 已判），走到这里说明槽位计算有 bug —— fail-loud。
+			return fmt.Errorf("equip gem: 空槽计算失败（%d 颗已佩戴）", len(used))
+		}
+		if _, err := tx.Exec(ctx,
+			`UPDATE user_gems SET equipped_slot = $1 WHERE id = $2 AND user_id = $3`,
+			slot, gemID, userID); err != nil {
+			return fmt.Errorf("equip user_gem: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return s.gemViewByID(ctx, userID, gemID, "佩戴后")
+}
+
+// UnequipGem 卸下一颗宝石（幂等：未佩戴时原样返回）。
+func (s *Service) UnequipGem(ctx context.Context, userID, gemID int64) (*GemView, error) {
+	err := s.DB.Tx(ctx, func(tx pgx.Tx) error {
+		equipped, err := equipGemTx(ctx, tx, userID, gemID)
+		if err != nil {
+			return err
+		}
+		if equipped == "" {
+			return nil
+		}
+		if _, err := tx.Exec(ctx,
+			`UPDATE user_gems SET equipped_slot = '' WHERE id = $1 AND user_id = $2`,
+			gemID, userID); err != nil {
+			return fmt.Errorf("unequip user_gem: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return s.gemViewByID(ctx, userID, gemID, "卸下后")
+}
+
+// gemViewByID 从事务外重读单颗宝石的视图（与 WashGem 的收尾同款：
+// 展示字段不必进事务）。
+func (s *Service) gemViewByID(ctx context.Context, userID, gemID int64, when string) (*GemView, error) {
+	all, err := s.ListGems(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	for i := range all {
+		if all[i].ID == gemID {
+			return &all[i], nil
+		}
+	}
+	return nil, fmt.Errorf("%w: 宝石 %d %s不见了", ErrNotFound, gemID, when)
 }

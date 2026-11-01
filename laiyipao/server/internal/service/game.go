@@ -810,14 +810,12 @@ func computeRating(build map[string]any, masteryPoints int) domain.BuildRating {
 	}
 	if nodes, ok := build["mastery_nodes"].([]int); ok {
 		in.MasteryPicked = len(nodes)
+		// 第 19 轮：nodeID → family 走一次构建的映射（此前 O(picked×96) 双层循环）。
+		famOf := masteryNodeFamily()
 		fams := map[string]bool{}
 		for _, n := range nodes {
-			for _, f := range domain.AllMasteryFamilies() {
-				for _, node := range f.Nodes {
-					if node.ID == n {
-						fams[f.Family] = true
-					}
-				}
+			if fam, ok := famOf[n]; ok {
+				fams[fam] = true
 			}
 		}
 		for f := range fams {
@@ -835,12 +833,7 @@ func computeRating(build map[string]any, masteryPoints int) domain.BuildRating {
 		for _, n := range nodes {
 			selected[n] = true
 		}
-		// 全部节点从 AllMasteryFamilies() 展平（它是 8 系 × 3 层 × 4 选 2 的来源）。
-		allNodes := make([]domain.MasteryNode, 0, 96)
-		for _, f := range domain.AllMasteryFamilies() {
-			allNodes = append(allNodes, f.Nodes...)
-		}
-		if eff, err := domain.EvaluateMastery(allNodes, selected, masteryPoints); err == nil {
+		if eff, err := domain.EvaluateMastery(allMasteryNodes(), selected, masteryPoints); err == nil {
 			in.ReactionMultBonus = eff.ReactionMultBonus
 			in.CritBonus = eff.CritBonus
 			in.ElementCapBonus = eff.ElementCapBonus

@@ -43,29 +43,32 @@ func (s *Service) ComputePowerFor(build map[string]any) int64 {
 // --- 专精点（I-3） ---
 
 // LoadMastery 返回玩家专精点状态。
+// 第 18 轮：两条串行查询（节点 + 点数）合并为**一条**（两个标量子查询，
+// 一次往返）；专精页每次打开少一次 RTT，错误语义不变（fail-loud）。
 func (s *Service) LoadMastery(ctx context.Context, userID int64) (int, []int, error) {
-	rows, err := s.pool.Query(ctx,
-		`SELECT node_id FROM user_mastery_nodes WHERE user_id = $1 ORDER BY node_id`, userID)
+	rows, err := s.pool.Query(ctx, `
+		SELECT COALESCE((SELECT mastery_points FROM user_progress WHERE user_id = $1), 0),
+		       COALESCE((SELECT array_agg(node_id ORDER BY node_id)
+		                   FROM user_mastery_nodes WHERE user_id = $1), '{}')`,
+		userID)
 	if err != nil {
 		return 0, nil, fmt.Errorf("load mastery: %w", err)
 	}
 	defer rows.Close()
+	var points int
 	var ids []int
-	for rows.Next() {
-		var id int
-		if err := rows.Scan(&id); err != nil {
-			return 0, nil, err
-		}
-		ids = append(ids, id)
+	if !rows.Next() {
+		return 0, nil, rows.Err()
+	}
+	if err := rows.Scan(&points, &ids); err != nil {
+		return 0, nil, fmt.Errorf("scan mastery: %w", err)
 	}
 	if err := rows.Err(); err != nil {
 		return 0, nil, err
 	}
-
-	var points int
-	if err := s.pool.QueryRow(ctx,
-		`SELECT mastery_points FROM user_progress WHERE user_id = $1`, userID).Scan(&points); err != nil {
-		return 0, nil, fmt.Errorf("load mastery points: %w", err)
+	// 非 nil 空切片：没有已点亮节点时返回 []（JSON 形状与旧实现一致）。
+	if ids == nil {
+		ids = []int{}
 	}
 	return points, ids, nil
 }
@@ -96,11 +99,7 @@ func (s *Service) AllocateMastery(ctx context.Context, userID int64, nodeID int)
 		}
 		next[nodeID] = true
 
-		var all []domain.MasteryNode
-		for _, f := range domain.AllMasteryFamilies() {
-			all = append(all, f.Nodes...)
-		}
-		if _, err := domain.EvaluateMastery(all, next, points); err != nil {
+		if _, err := domain.EvaluateMastery(allMasteryNodes(), next, points); err != nil {
 			return fmt.Errorf("%w: %s", ErrBadInput, err.Error())
 		}
 		if _, err := tx.Exec(ctx,

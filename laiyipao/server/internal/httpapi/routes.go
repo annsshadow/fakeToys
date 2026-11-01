@@ -141,8 +141,12 @@ func (s *Server) Register(app *fiber.App) {
 
 	// 第 150 轮：宝石。第 133 轮的权益扫描要求「宝石要有装备/卸下入口」，
 	// 那条只覆盖了 equipped_slot；这里补的是**看得见**与**洗得动**。
+	// 第 20 轮：佩戴/卸下 —— equipped_slot 的第一个写入方，
+	// 商城卖出的宝石从此真正生效（loadGemsAffixRows 的 WHERE 首次非空）。
 	me.Get("/gems", s.listGems)
 	me.Post("/gems/:id/wash", s.washGem)
+	me.Post("/gems/:id/equip", s.equipGem)
+	me.Post("/gems/:id/unequip", s.unequipGem)
 	// 我的挑战记录（2026-10-30 实质优化第 18 轮）。
 	// 玩家此前只能看到最近一次挑战结果，历史记录没有入口。
 	me.Get("/challenges", s.myChallengeHistory)
@@ -859,6 +863,33 @@ func (s *Server) washGem(c *fiber.Ctx) error {
 		return fail(c, fiber.StatusBadRequest, "bad_input", "宝石 ID 非法")
 	}
 	g, err := s.Svc.WashGem(c.Context(), userIDFrom(c), id)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"gem": g})
+}
+
+// equipGem 佩戴一颗宝石（第 20 轮）：写入 equipped_slot，词条即刻进构筑。
+// 状态写路径 —— 与 loadout/防线保存同一限流组（挂载处统一配置）。
+func (s *Server) equipGem(c *fiber.Ctx) error {
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil || id < 1 {
+		return fail(c, fiber.StatusBadRequest, "bad_input", "宝石 ID 非法")
+	}
+	g, err := s.Svc.EquipGem(c.Context(), userIDFrom(c), id)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"gem": g})
+}
+
+// unequipGem 卸下一颗宝石（第 20 轮，幂等）。
+func (s *Server) unequipGem(c *fiber.Ctx) error {
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil || id < 1 {
+		return fail(c, fiber.StatusBadRequest, "bad_input", "宝石 ID 非法")
+	}
+	g, err := s.Svc.UnequipGem(c.Context(), userIDFrom(c), id)
 	if err != nil {
 		return failErr(c, err)
 	}

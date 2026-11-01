@@ -28,6 +28,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	"github.com/jackc/pgx/v5"
 
@@ -266,6 +267,29 @@ func applyLoadoutContribution(equipment []int, gemRaw [][]byte) loadoutContribut
 
 // ---- 「算」的共享件 ----
 
+// allMasteryNodes 是 8 系 × 3 层 × 4 选 2 展平后的全部节点（96 个），
+// 进程内只构建一次（第 19 轮）。此前 4 处调用点各自重新展平 ——
+// masteryEffectFrom / AllocateMastery / computeRating 每次调用都白付一遍。
+var allMasteryNodes = sync.OnceValue(func() []domain.MasteryNode {
+	all := make([]domain.MasteryNode, 0, 96)
+	for _, f := range domain.AllMasteryFamilies() {
+		all = append(all, f.Nodes...)
+	}
+	return all
+})
+
+// masteryNodeFamily 是 nodeID → 所属系的映射（与 allMasteryNodes 同源一次构建）。
+// computeRating 此前对每个已投入节点做 O(96) 的双层循环找 family。
+var masteryNodeFamily = sync.OnceValue(func() map[int]string {
+	m := make(map[int]string, 96)
+	for _, f := range domain.AllMasteryFamilies() {
+		for _, node := range f.Nodes {
+			m[node.ID] = f.Family
+		}
+	}
+	return m
+})
+
 // masteryEffectFrom 是 loadMasteryEffect 的纯计算部分：
 // 由「已点亮节点 + 剩余点数」求专精合计效果。
 // 出错时返回零值（无加成）—— 与旧 loadMasteryEffect 的静默降级一致，
@@ -278,11 +302,7 @@ func masteryEffectFrom(nodes []int, points int) domain.MasteryEffect {
 	for _, n := range nodes {
 		selected[n] = true
 	}
-	allNodes := make([]domain.MasteryNode, 0, 96)
-	for _, f := range domain.AllMasteryFamilies() {
-		allNodes = append(allNodes, f.Nodes...)
-	}
-	eff, err := domain.EvaluateMastery(allNodes, selected, points)
+	eff, err := domain.EvaluateMastery(allMasteryNodes(), selected, points)
 	if err != nil {
 		// 专精点数/前置不合法属于玩家侧状态问题，不该让整局战斗打不开。
 		return domain.MasteryEffect{}

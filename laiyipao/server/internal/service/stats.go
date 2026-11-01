@@ -817,6 +817,20 @@ func (s *Service) AdminGrantCurrency(ctx context.Context, userID int64, currency
 			map[string]int64{currency: amount}, reason, 0); err != nil {
 			return err
 		}
+		// 第 21 轮：道具（revive_token / gem_wash_token / mastery_reset）的
+		// 发放与回显。grantWallet 早就把 isWalletToken 转发到 grantToken
+		// （第 74 轮），但响应的 out 只装四货币 —— 后台发道具时**余额
+		// 不回显**，运营无法确认发放生效（只能去审计日志猜）。
+		if isWalletToken(currency) {
+			var balance int64
+			if err := tx.QueryRow(ctx,
+				`SELECT COALESCE((SELECT balance FROM user_tokens WHERE user_id = $1 AND token = $2), 0)`,
+				userID, currency).Scan(&balance); err != nil {
+				return fmt.Errorf("read token balance: %w", err)
+			}
+			out[currency] = balance
+			return nil
+		}
 		w, err := s.loadWalletTx(ctx, tx, userID)
 		if err != nil {
 			return err

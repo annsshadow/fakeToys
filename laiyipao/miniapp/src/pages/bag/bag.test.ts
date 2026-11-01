@@ -31,6 +31,8 @@ vi.mock('@/api/client', () => ({
   upgradeSkill: vi.fn(),
   fetchGems: vi.fn(),
   washGem: vi.fn(),
+  equipGem: vi.fn(),
+  unequipGem: vi.fn(),
   setTokenInternal: vi.fn(),
   // 账号登录（测试环境共用一个账号）新增的 API 面：
   //   hasUsableToken —— 本地是否已有可用令牌（有就别再建游客号）
@@ -299,7 +301,8 @@ describe('bag.vue 背包页', () => {
       await flushPromises()
       expect(wrapper.text()).toContain('暴击 +100')
 
-      await wrapper.find('.owned-gem')!.find('.link')!.trigger('click')
+      // 第 20 轮起宝石行有「佩戴/卸下/洗练」三个操作，洗练用专属类名定位。
+      await wrapper.find('.owned-gem')!.find('.gem-wash')!.trigger('click')
       await flushPromises()
       await flushPromises()
 
@@ -310,6 +313,67 @@ describe('bag.vue 背包页', () => {
       // 余额以服务端为准：扣券后必须重拉，否则下次进来还显示 1
       expect(mockApi.fetchWallet.mock.calls.length).toBeGreaterThanOrEqual(2)
       expect(um.mock.showToast).toHaveBeenCalledWith({ title: '洗练完成', icon: 'none' })
+    })
+
+    it('佩戴：写 equipped_slot 的唯一开关（第 20 轮）—— 就地更新、刷新档案、提示生效', async () => {
+      mockApi.fetchGems.mockResolvedValue({
+        gems: [
+          {
+            id: 7, gem_id: 3, code: 'gem_crit', name: '暴击石', descr: '',
+            quality: 'gold', affixes: [{ affix: 'crit', value: 100 }], equipped_slot: '',
+          },
+        ],
+      })
+      mockApi.equipGem.mockResolvedValue({
+        gem: {
+          id: 7, gem_id: 3, code: 'gem_crit', name: '暴击石', descr: '',
+          quality: 'gold', affixes: [{ affix: 'crit', value: 100 }], equipped_slot: '1',
+        },
+      })
+      const { wrapper } = mountPage(Bag)
+      await flushPromises()
+      expect(wrapper.text()).toContain('已佩戴 0/6')
+      expect(wrapper.text()).not.toContain('已佩戴 ·')
+
+      await wrapper.find('.owned-gem')!.find('.gem-equip')!.trigger('click')
+      await flushPromises()
+      await flushPromises()
+
+      expect(mockApi.equipGem).toHaveBeenCalledWith(7)
+      // 佩戴态可见（「已佩戴」标记 + 计数变化）
+      expect(wrapper.text()).toContain('已佩戴 1/6')
+      // 佩戴改变构筑 → 必须刷新档案（power/rating 以服务端为准）
+      expect(mockApi.fetchMe).toHaveBeenCalled()
+      expect(um.mock.showToast).toHaveBeenCalledWith({ title: '已佩戴，词条已生效', icon: 'none' })
+    })
+
+    it('卸下：幂等端点就地更新并刷新档案', async () => {
+      mockApi.fetchGems.mockResolvedValue({
+        gems: [
+          {
+            id: 7, gem_id: 3, code: 'gem_crit', name: '暴击石', descr: '',
+            quality: 'gold', affixes: [{ affix: 'crit', value: 100 }], equipped_slot: '1',
+          },
+        ],
+      })
+      mockApi.unequipGem.mockResolvedValue({
+        gem: {
+          id: 7, gem_id: 3, code: 'gem_crit', name: '暴击石', descr: '',
+          quality: 'gold', affixes: [{ affix: 'crit', value: 100 }], equipped_slot: '',
+        },
+      })
+      const { wrapper } = mountPage(Bag)
+      await flushPromises()
+      expect(wrapper.text()).toContain('已佩戴 1/6')
+
+      await wrapper.find('.owned-gem')!.find('.gem-unequip')!.trigger('click')
+      await flushPromises()
+      await flushPromises()
+
+      expect(mockApi.unequipGem).toHaveBeenCalledWith(7)
+      expect(wrapper.text()).toContain('已佩戴 0/6')
+      expect(mockApi.fetchMe).toHaveBeenCalled()
+      expect(um.mock.showToast).toHaveBeenCalledWith({ title: '已卸下', icon: 'none' })
     })
 
     it('洗练失败 → toast 原因，不静默（券是花钱买的）', async () => {
@@ -328,7 +392,7 @@ describe('bag.vue 背包页', () => {
 
       const { wrapper } = mountPage(Bag)
       await flushPromises()
-      await wrapper.find('.owned-gem')!.find('.link')!.trigger('click')
+      await wrapper.find('.owned-gem')!.find('.gem-wash')!.trigger('click')
       await flushPromises()
       await flushPromises()
 
@@ -349,7 +413,7 @@ describe('bag.vue 背包页', () => {
       })
       const { wrapper } = mountPage(Bag)
       await flushPromises()
-      await wrapper.find('.owned-gem')!.find('.link')!.trigger('click')
+      await wrapper.find('.owned-gem')!.find('.gem-wash')!.trigger('click')
       await flushPromises()
 
       expect(mockApi.washGem).not.toHaveBeenCalled()
