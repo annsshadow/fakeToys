@@ -147,6 +147,14 @@ func (s *Server) Register(app *fiber.App) {
 	me.Post("/gems/:id/wash", s.washGem)
 	me.Post("/gems/:id/equip", s.equipGem)
 	me.Post("/gems/:id/unequip", s.unequipGem)
+	// 第 48 轮：L-3 阵型预设。user_presets 表建表以来零代码引用 ——
+	// 玩家换构筑每次都要手动重配，多套配装无法一键切换。
+	// 服务端保存当前构筑/列表/删除/设当前；应用由客户端消费 slots
+	// 后复用既有写端点（loadout/equipment/gems）。
+	me.Get("/presets", s.listPresets)
+	me.Post("/presets", s.saveCurrentPreset)
+	me.Delete("/presets/:id", s.deletePreset)
+	me.Post("/presets/:id/current", s.setCurrentPreset)
 	// 我的挑战记录（2026-10-30 实质优化第 18 轮）。
 	// 玩家此前只能看到最近一次挑战结果，历史记录没有入口。
 	me.Get("/challenges", s.myChallengeHistory)
@@ -894,6 +902,55 @@ func (s *Server) unequipGem(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	return c.JSON(fiber.Map{"gem": g})
+}
+
+// listPresets 返回玩家全部阵型预设（第 48 轮）。
+func (s *Server) listPresets(c *fiber.Ctx) error {
+	presets, err := s.Svc.ListPresets(c.Context(), userIDFrom(c))
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"presets": presets})
+}
+
+// saveCurrentPreset 把当前构筑固化为预设（第 48 轮）。
+func (s *Server) saveCurrentPreset(c *fiber.Ctx) error {
+	var body struct {
+		Name string `json:"name"`
+	}
+	if err := c.BodyParser(&body); err != nil {
+		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+	}
+	preset, err := s.Svc.SaveCurrentPreset(c.Context(), userIDFrom(c), body.Name)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"preset": preset})
+}
+
+// deletePreset 删除一个预设（第 48 轮，归属校验）。
+func (s *Server) deletePreset(c *fiber.Ctx) error {
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil || id < 1 {
+		return fail(c, fiber.StatusBadRequest, "bad_input", "预设 ID 非法")
+	}
+	if err := s.Svc.DeletePreset(c.Context(), userIDFrom(c), id); err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"ok": true})
+}
+
+// setCurrentPreset 把某预设设为当前（第 48 轮）。
+func (s *Server) setCurrentPreset(c *fiber.Ctx) error {
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil || id < 1 {
+		return fail(c, fiber.StatusBadRequest, "bad_input", "预设 ID 非法")
+	}
+	preset, err := s.Svc.SetCurrentPreset(c.Context(), userIDFrom(c), id)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"preset": preset})
 }
 
 func (s *Server) getReplay(c *fiber.Ctx) error {
