@@ -37,7 +37,17 @@ pub struct SessionManager {
     pub pool: Option<Pool>,
     pub hmac_secret: Option<String>,
     pub auth_config: AuthConfig,
+    // 第 46 轮：无效 token 的负缓存（短 TTL + 容量上限）。
+    // 伪造/过期 token 每次重放都直查 auth_session 会打穿连接池；
+    // 负缓存让「已确认无效」的 token 在 TTL 内被快速拒绝。合法 token
+    // 命中后进内存 sessions（正结果不缓存），无安全回归。
+    negative_cache: Arc<std::sync::Mutex<std::collections::HashMap<String, std::time::Instant>>>,
 }
+
+/// 负缓存 TTL：无效 token 在 5 秒内的重放不再查库。
+const NEGATIVE_CACHE_TTL: std::time::Duration = std::time::Duration::from_secs(5);
+/// 负缓存容量上限：超限先清过期项，仍满则逐出最旧条目（简单 LRU）。
+const NEGATIVE_CACHE_MAX: usize = 1024;
 
 impl Default for SessionManager {
     fn default() -> Self {
@@ -60,6 +70,7 @@ impl SessionManager {
             pool: None,
             hmac_secret: std::env::var("SESSION_HMAC_SECRET").ok(),
             auth_config,
+            negative_cache: Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
         };
         manager.start_threshold_scanner().start_session_sweeper()
     }
@@ -81,6 +92,7 @@ impl SessionManager {
             pool: Some(pool),
             hmac_secret: std::env::var("SESSION_HMAC_SECRET").ok(),
             auth_config,
+            negative_cache: Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
         };
         manager.start_threshold_scanner().start_session_sweeper()
     }
@@ -295,10 +307,20 @@ impl SessionManager {
                 None
             }
             None => {
+                // 第 46 轮：先查负缓存（已确认无效的 token 在 TTL 内直接拒绝）。
+                let now = std::time::Instant::now();
+                {
+                    let neg = self.negative_cache.lock().unwrap();
+                    if let Some(at) = neg.get(token) {
+                        if now.duration_since(*at) < NEGATIVE_CACHE_TTL {
+                            return None;
+                        }
+                    }
+                }
                 if let Some(pg_pool) = &self.pool {
                     if let Ok(client) = pg_pool.get().await {
                         let signed_token = self.sign_token(token);
-                        if let Ok(Some(row)) = client
+                        match client
                             .query_opt(
                                 "SELECT token, person_id, created_at, expires_at \
                                  FROM auth_session \
@@ -307,29 +329,58 @@ impl SessionManager {
                             )
                             .await
                         {
-                            let raw_token =
-                                self.verify_and_extract(&row.get::<_, String>("token"))?;
-                            // created_at/expires_at 列是 TIMESTAMP：按 NaiveDateTime 读。
-                            // 此前按 String 读会在有行时 panic（同 threshold_time 问题）。
-                            let created_at: NaiveDateTime = row.get("created_at");
-                            let expires_at: NaiveDateTime = row.get("expires_at");
-                            let session = Session {
-                                token: raw_token,
-                                person_unique: row.get("person_id"),
-                                created_at,
-                                expires_at,
-                            };
-                            self.sessions
-                                .write()
-                                .await
-                                .insert(token.to_string(), session.clone());
-                            return Some(session);
+                            Ok(Some(row)) => {
+                                let raw_token =
+                                    self.verify_and_extract(&row.get::<_, String>("token"))?;
+                                // created_at/expires_at 列是 TIMESTAMP：按 NaiveDateTime 读。
+                                // 此前按 String 读会在有行时 panic（同 threshold_time 问题）。
+                                let created_at: NaiveDateTime = row.get("created_at");
+                                let expires_at: NaiveDateTime = row.get("expires_at");
+                                let session = Session {
+                                    token: raw_token,
+                                    person_unique: row.get("person_id"),
+                                    created_at,
+                                    expires_at,
+                                };
+                                self.sessions
+                                    .write()
+                                    .await
+                                    .insert(token.to_string(), session.clone());
+                                return Some(session);
+                            }
+                            Ok(None) => {
+                                // 查询成功且确认无行 → token 无效，写负缓存（第 46 轮）。
+                                self.negative_cache_put(token, now);
+                            }
+                            Err(_) => {
+                                // 连接/查询失败：fail-closed 但不写负缓存（临时故障不该
+                                // 让后续重放在 TTL 内被快速拒绝，掩盖故障恢复）。
+                            }
                         }
                     }
                 }
                 None
             }
         }
+    }
+
+    /// 第 46 轮：把确认无效的 token 写入负缓存（容量清理：先清过期，
+    /// 仍满则逐出最旧条目）。
+    fn negative_cache_put(&self, token: &str, now: std::time::Instant) {
+        let mut neg = self.negative_cache.lock().unwrap();
+        if neg.len() >= NEGATIVE_CACHE_MAX {
+            neg.retain(|_, at| now.duration_since(*at) < NEGATIVE_CACHE_TTL);
+        }
+        if neg.len() >= NEGATIVE_CACHE_MAX {
+            if let Some(oldest) = neg
+                .iter()
+                .min_by_key(|(_, at)| **at)
+                .map(|(k, _)| k.clone())
+            {
+                neg.remove(&oldest);
+            }
+        }
+        neg.insert(token.to_string(), now);
     }
 
     pub async fn remove_session(&self, token: &str) {
@@ -495,6 +546,36 @@ mod tests {
             0,
             "拒绝未知 token 时不应写入任何条目"
         );
+    }
+
+    // 第 46 轮：负缓存容量清理 —— 塞满后新条目逐出最旧，长度保持在上限内。
+    #[tokio::test]
+    async fn negative_cache_evicts_oldest_when_full() {
+        let manager = SessionManager::new();
+        let base = std::time::Instant::now();
+        for i in 0..NEGATIVE_CACHE_MAX {
+            manager.negative_cache_put(
+                &format!("tok-{:04}", i),
+                base + std::time::Duration::from_secs(i as u64),
+            );
+        }
+        assert_eq!(
+            manager.negative_cache.lock().unwrap().len(),
+            NEGATIVE_CACHE_MAX
+        );
+
+        // 再插入一条（时间最新）→ 最早插入的 tok-0000 必须被逐出。
+        manager.negative_cache_put(
+            "newest",
+            base + std::time::Duration::from_secs(NEGATIVE_CACHE_MAX as u64 + 1),
+        );
+        let neg = manager.negative_cache.lock().unwrap();
+        assert!(neg.len() <= NEGATIVE_CACHE_MAX, "负缓存长度不能超过上限");
+        assert!(
+            !neg.contains_key("tok-0000"),
+            "最旧条目应被逐出（简单 LRU）"
+        );
+        assert!(neg.contains_key("newest"), "新条目应保留");
     }
 
     #[tokio::test]
@@ -725,6 +806,7 @@ mod tests {
                 cookie_secure: false,
                 session_ttl_seconds: ttl_seconds,
             },
+            negative_cache: Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
         }
     }
 
