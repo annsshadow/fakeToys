@@ -7,6 +7,7 @@
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import ElementPlus from 'element-plus'
+import { createMemoryHistory, createRouter } from 'vue-router'
 import { defineComponent, h, KeepAlive, nextTick, ref } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AdminUserDetailResp, AdminUserView } from '@/api'
@@ -17,8 +18,16 @@ const banUser = vi.hoisted(() => vi.fn())
 const unbanUser = vi.hoisted(() => vi.fn())
 const grantUser = vi.hoisted(() => vi.fn())
 const box = vi.hoisted(() => ({ prompt: vi.fn(), confirm: vi.fn() }))
+const exportUserFlowsCsv = vi.hoisted(() => vi.fn())
 
-vi.mock('@/api', () => ({ fetchUsers, fetchUserDetail, banUser, unbanUser, grantUser }))
+vi.mock('@/api', () => ({
+  fetchUsers,
+  fetchUserDetail,
+  banUser,
+  unbanUser,
+  grantUser,
+  exportUserFlowsCsv,
+}))
 vi.mock('element-plus', async (importOriginal) => {
   const mod = await importOriginal<typeof import('element-plus')>()
   return { ...mod, ElMessageBox: box }
@@ -45,11 +54,39 @@ function userFixture(overrides: Partial<AdminUserView> = {}): AdminUserView {
   }
 }
 
-async function mountUsers(items: AdminUserView[] = [], total = items.length) {
+/**
+ * 构造真实 router（createMemoryHistory）。
+ *
+ * ⚠️ 必须提供：组件在 onMounted 里读 `route.query.user_id`（第 38 轮：
+ * 从战报页跳转过来直接打开详情抽屉）。没有 router 注入时 `useRoute()`
+ * 返回 undefined，挂载即抛 TypeError。
+ */
+async function makeRouter(query: Record<string, string> = {}) {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [{ path: '/users', name: 'users', component: { template: '<div />' } }],
+  })
+  await router.push({ path: '/users', query })
+  await router.isReady()
+  return router
+}
+
+async function mountUsers(
+  items: AdminUserView[] = [],
+  total = items.length,
+  query: Record<string, string> = {},
+) {
   fetchUsers.mockResolvedValue({ items, total })
-  const wrapper = mount(UsersView, { global: { plugins: [ElementPlus] } })
+  const router = await makeRouter(query)
+  const wrapper = mount(UsersView, { global: { plugins: [ElementPlus, router] } })
   await flushPromises()
   return wrapper
+}
+
+/** 需要自定义 fetch mock 时直接挂载（仍带真实 router）。 */
+async function mountUsersView() {
+  const router = await makeRouter()
+  return mount(UsersView, { global: { plugins: [ElementPlus, router] } })
 }
 
 function detailFixture(overrides: Partial<AdminUserDetailResp> = {}): AdminUserDetailResp {
@@ -111,6 +148,36 @@ function detailFixture(overrides: Partial<AdminUserDetailResp> = {}): AdminUserD
       },
     ],
     flow_count: 17,
+    recent_flows: [
+      {
+        currency: 'coin',
+        delta: 1000,
+        balance: 1500,
+        reason: 'admin_grant',
+        created_at: '2026-01-02T03:04:05Z',
+      },
+      {
+        currency: 'gem',
+        delta: -50,
+        balance: 20,
+        reason: 'shop',
+        created_at: '2026-01-01T03:04:05Z',
+      },
+    ],
+    ban_records: [
+      {
+        action: 'ban_user',
+        username: 'ops_alice',
+        reason: '{"reason":"恶意刷分"}',
+        created_at: '2026-01-02T03:04:05Z',
+      },
+      {
+        action: 'unban_user',
+        username: 'ops_alice',
+        reason: '{"reason":"误封，已解"}',
+        created_at: '2026-01-03T03:04:05Z',
+      },
+    ],
     ...overrides,
   }
 }
@@ -190,7 +257,7 @@ describe('UsersView 列表渲染', () => {
 
   it('加载失败：弹出错误消息', async () => {
     fetchUsers.mockRejectedValueOnce(new Error('用户库超时'))
-    const wrapper = mount(UsersView, { global: { plugins: [ElementPlus] } })
+    const wrapper = await mountUsersView()
     await flushPromises()
     expect(document.body.textContent).toContain('用户加载失败：用户库超时')
     wrapper.unmount()
@@ -315,13 +382,13 @@ describe('UsersView 封禁 / 解封', () => {
       .mockResolvedValueOnce({ value: 'coin 10000' })
       .mockResolvedValueOnce({ value: '恶意刷分' })
 
-    const wrapper = mount(UsersView, { global: { plugins: [ElementPlus] } })
+    const wrapper = await mountUsersView()
     await flushPromises()
     const rows = wrapper.findAll('.el-table__row')
 
     // 第 1 行（正常用户）：发资源 → 封禁
     const normalBtns = rows[0].findAll('button')
-    expect(normalBtns.map((b) => b.text())).toEqual(['详情', '发资源', '封禁'])
+    expect(normalBtns.map((b) => b.text())).toEqual(['复制 ID', '详情', '发资源', '封禁'])
     await normalBtns.find((b) => b.text() === '发资源')!.trigger('click')
     await flushPromises()
     expect(grantUser).toHaveBeenCalledWith(1, 'coin', 10000)
@@ -331,7 +398,7 @@ describe('UsersView 封禁 / 解封', () => {
 
     // 第 2 行（封禁用户）：解封
     const bannedBtns = rows[1].findAll('button')
-    expect(bannedBtns.map((b) => b.text())).toEqual(['详情', '发资源', '解封'])
+    expect(bannedBtns.map((b) => b.text())).toEqual(['复制 ID', '详情', '发资源', '解封'])
     await bannedBtns.find((b) => b.text() === '解封')!.trigger('click')
     await flushPromises()
     expect(unbanUser).toHaveBeenCalledWith(2)
@@ -508,7 +575,7 @@ describe('UsersView 破坏性操作需要二次确认（P5-2）', () => {
     unbanUser.mockResolvedValueOnce({ user: userFixture({ id: 1, status: 1 }) })
     box.confirm.mockRejectedValueOnce('cancel')
 
-    const wrapper = mount(UsersView, { global: { plugins: [ElementPlus] } })
+    const wrapper = await mountUsersView()
     await flushPromises()
     const rows = wrapper.findAll('.el-table__row')
     const btn = rows[0].findAll('button').find((b) => b.text() === '解封')
@@ -525,7 +592,7 @@ describe('UsersView 破坏性操作需要二次确认（P5-2）', () => {
     unbanUser.mockResolvedValueOnce({ user: userFixture({ id: 1, status: 1 }) })
     box.confirm.mockResolvedValueOnce('ok')
 
-    const wrapper = mount(UsersView, { global: { plugins: [ElementPlus] } })
+    const wrapper = await mountUsersView()
     await flushPromises()
     const rows = wrapper.findAll('.el-table__row')
     const btn = rows[0].findAll('button').find((b) => b.text() === '解封')
@@ -541,7 +608,7 @@ describe('UsersView 破坏性操作需要二次确认（P5-2）', () => {
     box.prompt.mockResolvedValueOnce({ value: 'coin -1000000' })
     box.confirm.mockRejectedValueOnce('cancel')
 
-    const wrapper = mount(UsersView, { global: { plugins: [ElementPlus] } })
+    const wrapper = await mountUsersView()
     await flushPromises()
     const rows = wrapper.findAll('.el-table__row')
     const btn = rows[0].findAll('button').find((b) => b.text() === '发资源')
@@ -562,7 +629,7 @@ describe('UsersView 破坏性操作需要二次确认（P5-2）', () => {
     box.prompt.mockResolvedValueOnce({ value: 'coin 10000' })
     box.confirm.mockResolvedValueOnce('ok')
 
-    const wrapper = mount(UsersView, { global: { plugins: [ElementPlus] } })
+    const wrapper = await mountUsersView()
     await flushPromises()
     const rows = wrapper.findAll('.el-table__row')
     const btn = rows[0].findAll('button').find((b) => b.text() === '发资源')
@@ -646,6 +713,78 @@ describe('UsersView 详情抽屉（P5-7）', () => {
     expect(vm.detailLoading).toBe(false)
     wrapper.unmount()
   })
+
+  it('详情抽屉展示封禁/解封记录与原因（第 58 轮）', async () => {
+    const row = userFixture({ id: 7, nickname: '详情玩家' })
+    fetchUserDetail.mockResolvedValueOnce(detailFixture())
+    const wrapper = await mountUsers([row])
+
+    const btn = wrapper.findAll('.el-table__row')[0].findAll('button').find((b) => b.text() === '详情')!
+    await btn.trigger('click')
+    await flushPromises()
+
+    const text = wrapper.text()
+    expect(text).toContain('封禁 / 解封记录')
+    expect(text).toContain('恶意刷分') // reasonText 从 JSONB 解析出原因
+    expect(text).toContain('ops_alice')
+    // 动作标签：封禁（danger）与解封（success）
+    expect(text).toContain('封禁')
+    expect(text).toContain('解封')
+    wrapper.unmount()
+  })
+
+  it('详情抽屉展示最近钱包流水（第 66 轮）', async () => {
+    const row = userFixture({ id: 7, nickname: '详情玩家' })
+    fetchUserDetail.mockResolvedValueOnce(detailFixture())
+    const wrapper = await mountUsers([row])
+
+    const btn = wrapper.findAll('.el-table__row')[0].findAll('button').find((b) => b.text() === '详情')!
+    await btn.trigger('click')
+    await flushPromises()
+
+    const text = wrapper.text()
+    expect(text).toContain('最近钱包流水')
+    // 货币中文 + 变动正负 + 来源中文
+    expect(text).toContain('金币')
+    expect(text).toContain('+1000')
+    expect(text).toContain('后台发放')
+    expect(text).toContain('-50')
+    expect(text).toContain('商城消费')
+    expect(text).toContain('1500') // 余额
+    wrapper.unmount()
+  })
+
+  describe('UsersView 从战报跳转深链（第 38 轮）', () => {
+    it('携带合法 user_id query：列表加载后自动打开该玩家详情抽屉', async () => {
+      fetchUserDetail.mockResolvedValueOnce(detailFixture())
+      const wrapper = await mountUsers(
+        [userFixture({ id: 7, nickname: '详情玩家' })],
+        1,
+        { user_id: '7' },
+      )
+
+      expect(fetchUserDetail).toHaveBeenCalledWith(7)
+      const text = wrapper.text()
+      expect(text).toContain('玩家详情')
+      expect(text).toContain('详情玩家')
+      wrapper.unmount()
+    })
+
+    it('user_id 非法（非正整数）：不请求详情、不弹抽屉', async () => {
+      const wrapper = await mountUsers([userFixture()], 1, { user_id: 'abc' })
+      expect(fetchUserDetail).not.toHaveBeenCalled()
+      // 抽屉未打开：详情数据保持 null（页面里的「玩家详情」是 el-drawer
+      // 常驻的 title 属性，不能拿它当判据）
+      expect((wrapper.vm as unknown as Vm).detail).toBeNull()
+      wrapper.unmount()
+    })
+
+    it('无 user_id query：行为与普通进入一致，只加载列表', async () => {
+      const wrapper = await mountUsers([userFixture()])
+      expect(fetchUserDetail).not.toHaveBeenCalled()
+      wrapper.unmount()
+    })
+  })
 })
 
 describe('UsersView 操作失败提示（P2-2）', () => {
@@ -702,7 +841,8 @@ describe('UsersView keep-alive 刷新（P5-9）', () => {
       },
     })
 
-    const wrapper = mount(Host, { global: { plugins: [ElementPlus] } })
+    const router = await makeRouter()
+    const wrapper = mount(Host, { global: { plugins: [ElementPlus, router] } })
     await flushPromises()
     expect(fetchUsers).toHaveBeenCalledTimes(1)
 
@@ -737,6 +877,111 @@ describe('UsersView 分页/搜索边界补充', () => {
     await flushPromises()
     expect(vm.offset).toBe(0)
     expect(fetchUsers).toHaveBeenLastCalledWith({ keyword: '龙', limit: 50, offset: 0 })
+    wrapper.unmount()
+  })
+})
+
+describe('UsersView 最后登录时间筛选（第 46 轮）', () => {
+  it('设置最后登录范围后 fetchUsers 携带 last_login_from/to（结束日期次日）', async () => {
+    const wrapper = await mountUsers([userFixture()], 5)
+    const vm = wrapper.vm as unknown as { lastLoginRange: [string, string] | null }
+
+    vm.lastLoginRange = ['2026-10-01', '2026-10-31']
+    await wrapper.findAll('button').find((b) => b.text() === '查询')!.trigger('click')
+    await flushPromises()
+
+    expect(fetchUsers).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        last_login_from: '2026-10-01',
+        // 服务端 date_to 是开区间：结束日期传次日才能包含 10-31 当天
+        last_login_to: '2026-11-01',
+      }),
+    )
+    wrapper.unmount()
+  })
+
+  it('未设置最后登录范围时参数为 undefined（与其他筛选互不影响）', async () => {
+    const wrapper = await mountUsers([userFixture()])
+    expect(fetchUsers).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        last_login_from: undefined,
+        last_login_to: undefined,
+      }),
+    )
+    wrapper.unmount()
+  })
+})
+
+describe('UsersView 需核查筛选（第 60 轮）', () => {
+  it('选择「需核查」后 fetchUsers 携带 suspicious=true', async () => {
+    const wrapper = await mountUsers([userFixture()], 5)
+    const select = wrapper.findAllComponents({ name: 'ElSelect' }).find((s) => s.props('placeholder') === '需核查')
+    expect(select, '找不到需核查下拉').toBeTruthy()
+
+    await select!.vm.$emit('update:modelValue', true)
+    await select!.vm.$emit('change', true)
+    await flushPromises()
+
+    expect(fetchUsers).toHaveBeenLastCalledWith(expect.objectContaining({ suspicious: true }))
+    wrapper.unmount()
+  })
+
+  it('未设置需核查时参数为 undefined', async () => {
+    const wrapper = await mountUsers([userFixture()])
+    expect(fetchUsers).toHaveBeenLastCalledWith(expect.objectContaining({ suspicious: undefined }))
+    wrapper.unmount()
+  })
+})
+
+describe('UsersView 导出玩家流水 CSV（第 82 轮）', () => {
+  it('详情抽屉点击「导出全部流水 CSV」：按当前玩家 id 调用接口并触发下载', async () => {
+    fetchUserDetail.mockResolvedValueOnce(detailFixture())
+    exportUserFlowsCsv.mockResolvedValue(new Blob(['\uFEFFid\n']))
+    const wrapper = await mountUsers([userFixture({ id: 7, nickname: '详情玩家' })])
+
+    await wrapper.findAll('.el-table__row')[0].findAll('button').find((b) => b.text() === '详情')!.trigger('click')
+    await flushPromises()
+
+    const btn = wrapper.findAll('button').find((b) => b.text().includes('导出全部流水 CSV'))
+    expect(btn, '找不到「导出全部流水 CSV」按钮').toBeTruthy()
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(exportUserFlowsCsv).toHaveBeenCalledWith(7)
+    expect(document.body.textContent).toContain('流水 CSV 已导出')
+    wrapper.unmount()
+  })
+
+  it('导出失败：弹出错误消息', async () => {
+    fetchUserDetail.mockResolvedValueOnce(detailFixture())
+    exportUserFlowsCsv.mockRejectedValueOnce(new Error('流水导出服务不可用'))
+    const wrapper = await mountUsers([userFixture({ id: 7, nickname: '详情玩家' })])
+
+    await wrapper.findAll('.el-table__row')[0].findAll('button').find((b) => b.text() === '详情')!.trigger('click')
+    await flushPromises()
+
+    const btn = wrapper.findAll('button').find((b) => b.text().includes('导出全部流水 CSV'))
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(document.body.textContent).toContain('导出失败：流水导出服务不可用')
+    wrapper.unmount()
+  })
+})
+
+describe('UsersView 复制用户 ID（第 86 轮）', () => {
+  it('点击「复制 ID」：写入剪贴板并提示', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    const wrapper = await mountUsers([userFixture({ id: 42, nickname: '玩家甲' })])
+    const btn = wrapper.findAll('.el-table__row')[0].findAll('button').find((b) => b.text() === '复制 ID')
+    expect(btn, '找不到「复制 ID」按钮').toBeTruthy()
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith('42')
+    expect(document.body.textContent).toContain('已复制用户 ID 42')
     wrapper.unmount()
   })
 })

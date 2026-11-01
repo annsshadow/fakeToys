@@ -118,7 +118,7 @@
 </template>
 
 <script setup lang="ts">
-import { onUnload } from '@dcloudio/uni-app'
+import { onLoad, onUnload } from '@dcloudio/uni-app'
 import { ref, computed, onMounted } from 'vue'
 import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
@@ -156,6 +156,20 @@ function schedulePending(fn: () => void, ms: number): void {
 }
 
 const battleId = ref('')
+
+// 2026-10-31（实质优化第 35 轮）：从「我的战报」进入时自动填充 battle_id。
+// 2026-11-01（新一轮第 47 轮）：battle_id 合法时**自动拉取复现信息** ——
+// 战报页「去验真此局」跳转过来后无需再点一次按钮。
+onLoad((query) => {
+  const bid = query?.battle_id
+  if (bid) {
+    battleId.value = String(bid)
+    const id = Number(bid)
+    if (Number.isInteger(id) && id > 0) {
+      void fetchReplay()
+    }
+  }
+})
 const replayInfo = ref<ReplayInfo | null>(null)
 const outcome = ref<ReplayOutcome | null>(null)
 const result = ref<any>(null)

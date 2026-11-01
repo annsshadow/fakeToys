@@ -10,6 +10,12 @@
       }
     },
     {
+      "path": "pages/announcements/announcements",
+      "style": {
+        "navigationBarTitleText": "公告"
+      }
+    },
+    {
       "path": "pages/stage/stage",
       "style": {
         "navigationBarTitleText": "关卡"
@@ -37,6 +43,42 @@
       "path": "pages/reactions/reactions",
       "style": {
         "navigationBarTitleText": "反应图鉴"
+      }
+    },
+    {
+      "path": "pages/enemies/enemies",
+      "style": {
+        "navigationBarTitleText": "敌人图鉴"
+      }
+    },
+    {
+      "path": "pages/skills/skills",
+      "style": {
+        "navigationBarTitleText": "技能图鉴"
+      }
+    },
+    {
+      "path": "pages/equipment/equipment",
+      "style": {
+        "navigationBarTitleText": "装备图鉴"
+      }
+    },
+    {
+      "path": "pages/gems/gems",
+      "style": {
+        "navigationBarTitleText": "宝石图鉴"
+      }
+    },
+    {
+      "path": "pages/skins/skins",
+      "style": {
+        "navigationBarTitleText": "皮肤图鉴"
+      }
+    },
+    {
+      "path": "pages/battles/battles",
+      "style": {
+        "navigationBarTitleText": "我的战报"
       }
     },
     {
