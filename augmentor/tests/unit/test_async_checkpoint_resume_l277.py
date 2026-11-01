@@ -60,13 +60,15 @@ def _install_spy(monkeypatch, calls, fail_outputs=()):
     变体把 `input` 写成「变体」——续传用例要靠这一格把「上一轮的旧产物」和
     「本轮重跑生成的新行」区分开，否则两行内容一字不差，覆盖与保留看不出差别。
     """
-    def fake_seed(self, item, use_quality_check=False, existing_generated=None):
+    # AU-P1 起 `augment_async` 的原生异步路径直接走 `_agenerate_variants`，
+    # 不再经过 `augment_seed`（同步入口的桩在异步路径上不生效），桩随之对齐。
+    async def fake_agenerate(self, item):
         calls.append(item["output"])
         if item["output"] in fail_outputs:
             raise RuntimeError("桩失败: " + item["output"])
         return [{**item, "input": "变体"}]
 
-    monkeypatch.setattr(pl.AugmentorPipeline, "augment_seed", fake_seed)
+    monkeypatch.setattr(pl.AugmentorPipeline, "_agenerate_variants", fake_agenerate)
 
 
 def _run(pipeline, src, out, **kwargs):
