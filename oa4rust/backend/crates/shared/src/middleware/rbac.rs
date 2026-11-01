@@ -682,6 +682,20 @@ mod tests {
     use super::*;
 
     #[test]
+    fn permission_registry_default_uses_defaults() {
+        // `Default` 委托 `with_defaults()`（与单例 permission_registry 同源）。
+        let d = PermissionRegistry::default();
+        assert_eq!(
+            d.get_permission("/api/authentication"),
+            Some(PermissionLevel::Public)
+        );
+        assert_eq!(
+            d.get_permission("/api/person"),
+            Some(PermissionLevel::Authenticated)
+        );
+    }
+
+    #[test]
     fn registry_matches_exact_before_prefix() {
         let mut reg = PermissionRegistry::new();
         reg.register_prefix("/api/x", PermissionLevel::Authenticated);
@@ -953,6 +967,16 @@ mod security_audit_registry_tests {
                 client.execute(sql, &[]).await.unwrap();
             }
         }
+    }
+
+    #[tokio::test]
+    async fn admin_role_group_checks_fail_closed_on_unreachable_pool() {
+        // 连接失败时必须 fail-closed（返回 false 而非 panic）：mock_pool 指向
+        // 不可达 localhost（容器内无 PG 监听本机回环），pool.get() 必 Err。
+        let pool = crate::testing::mock_pool();
+        assert!(!is_admin(&pool, "anyone").await);
+        assert!(!person_has_role(&pool, "anyone", "any-role").await);
+        assert!(!person_has_group(&pool, "anyone", "any-group").await);
     }
 
     #[tokio::test]

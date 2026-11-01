@@ -247,7 +247,6 @@ pub fn correlation_core_entity_router(db: DatabaseConnection) -> Router {
             delete(delete_by_id),
         )
         .layer(Extension(db))
-
 }
 
 #[cfg(test)]

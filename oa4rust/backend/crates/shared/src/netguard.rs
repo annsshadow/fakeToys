@@ -361,7 +361,17 @@ mod tests {
 
     #[tokio::test]
     async fn validate_target_resolves_public_hostname() {
-        // 依赖 DNS（容器/CI 均具备）：example.com 解析结果全为全局地址 → 放行
+        // 依赖公网 DNS：example.com 解析结果必须全为全局地址 → 放行。
+        // 某些受限网络（如 Docker 内建 DNS 返回 benchmark 保留段 198.18.x.x）
+        // 无法解析到公网，此时 SKIP 而不是失败（判据本身无变化）。
+        let Ok(addrs) = tokio::net::lookup_host(("example.com", 443)).await else {
+            eprintln!("SKIP: no DNS resolution available");
+            return;
+        };
+        if !addrs.into_iter().all(|a| ip_allowed_for_fetch(a.ip())) {
+            eprintln!("SKIP: DNS 解析结果不含全局地址（受限网络）");
+            return;
+        }
         let url = reqwest::Url::parse("https://example.com/").unwrap();
         assert!(validate_target(&url).await.is_ok());
     }
@@ -389,6 +399,20 @@ mod tests {
     fn filename_from_url_falls_back_to_placeholder_when_both_empty() {
         assert_eq!(
             filename_from_url("https://a.test/", "https://b.test"),
+            "remote-file"
+        );
+    }
+
+    #[test]
+    fn filename_from_url_skips_unparsable_candidate() {
+        // final_url 不是合法 URL → 跳过该候选，回退 raw。
+        assert_eq!(
+            filename_from_url("https://a.test/dir/real.tar.gz", "not a url"),
+            "real.tar.gz"
+        );
+        // 两个候选都无法解析 → 回退 remote-file。
+        assert_eq!(
+            filename_from_url("not a url", "also not a url"),
             "remote-file"
         );
     }
@@ -424,5 +448,30 @@ mod tests {
             "最终 URL 应仍在源站（无重定向）：{final_url}"
         );
         assert!(!body.is_empty(), "example.com 的响应体不应为空");
+    }
+
+    #[tokio::test]
+    async fn fetch_limited_reports_http_error_status() {
+        // example.com 对任意未知路径稳定返回 404：覆盖「非成功状态码报错」分支。
+        // 受限网络（Docker 内建 DNS 返回保留段）下无法验证该分支时 SKIP。
+        let Ok(addrs) = tokio::net::lookup_host(("example.com", 443)).await else {
+            eprintln!("SKIP: no DNS resolution available");
+            return;
+        };
+        if !addrs.into_iter().all(|a| ip_allowed_for_fetch(a.ip())) {
+            eprintln!("SKIP: DNS 解析结果不含全局地址（受限网络）");
+            return;
+        }
+        let client = fetch_client().unwrap();
+        let err = fetch_limited(
+            &client,
+            "https://example.com/definitely-not-a-real-page-oa4rust",
+        )
+        .await
+        .expect_err("404 必须报错");
+        assert!(
+            matches!(err, FetchError::Http(_)),
+            "非成功状态应映射为 Http 错误，实际: {err:?}"
+        );
     }
 }

@@ -745,7 +745,6 @@ pub fn calendar_core_entity_router(db: DatabaseConnection) -> Router {
             get(event_list_by_calendar),
         )
         .layer(Extension(db))
-
 }
 
 #[cfg(test)]

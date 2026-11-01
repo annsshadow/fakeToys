@@ -417,6 +417,7 @@ mod e2e_chain_tests {
 #[cfg(test)]
 mod mock_infra_tests {
     use super::*;
+    use crate::ControlClient;
 
     #[test]
     fn mock_pool_builds_without_connecting() {
@@ -432,5 +433,152 @@ mod mock_infra_tests {
     async fn is_db_available_returns_bool_without_panicking() {
         // 无论 DATABASE_URL 是否可达，该探测函数都必须返回 bool 而非 panic。
         let _ = is_db_available().await;
+    }
+
+    #[tokio::test]
+    async fn upsert_fixture_person_is_idempotent_and_detects_violation() {
+        // 真库臂：upsert_fixture_person 与 is_unique_violation 主要被其他 crate
+        // 使用，shared 自身从不调用 → 补幂等 + 唯一冲突检测路径。
+        if !is_db_available().await {
+            eprintln!("SKIP: no database available");
+            return;
+        }
+        let pool = test_pool();
+        let client = pool.get().await.expect("获取 client");
+        let pid = format!("fixture-{}", uuid::Uuid::new_v4());
+        let uid = format!("fixture-uid-{}", uuid::Uuid::new_v4());
+
+        // 首次插入 + 幂等重复插入（同 id 走 ON CONFLICT DO UPDATE）。
+        upsert_fixture_person(&client, &pid, &uid, "Fixture Person").await;
+        upsert_fixture_person(&client, &pid, &uid, "Fixture Person 2").await;
+
+        // 用相同 id 不同 unique_id 直接插入 → 主键冲突 23505，is_unique_violation 必须识别。
+        let conflict = client
+            .execute(
+                "INSERT INTO auth_person (id, unique_id, name, password_hash) \
+                 VALUES ($1, $2, 'other', 'x')",
+                &[&pid, &"other-uid"],
+            )
+            .await
+            .expect_err("同 id 重复插入必须主键冲突");
+        assert!(
+            is_unique_violation(&conflict),
+            "23505 应被识别为唯一冲突，实际: {:?}",
+            conflict.code()
+        );
+
+        // 清理。
+        client
+            .execute("DELETE FROM auth_person WHERE id = $1", &[&pid])
+            .await
+            .expect("清理夹具");
+    }
+
+    #[tokio::test]
+    async fn is_unique_violation_rejects_non_conflict_errors() {
+        // 反向：非唯一冲突错误（如 42P01 undefined_table）必须返回 false，
+        // 防止把「表不存在/连接失败」误判成可重试的冲突。
+        if !is_db_available().await {
+            eprintln!("SKIP: no database available");
+            return;
+        }
+        let pool = test_pool();
+        let client = pool.get().await.expect("获取 client");
+        let err = client
+            .execute("SELECT * FROM definitely_not_a_table_oa4rust", &[])
+            .await
+            .expect_err("非法 SQL 必须报错");
+        assert!(
+            !is_unique_violation(&err),
+            "非唯一冲突错误不应识别为冲突，实际 code: {:?}",
+            err.code()
+        );
+    }
+
+    #[tokio::test]
+    async fn upsert_fixture_person_cleans_same_uid_collision() {
+        // upsert_fixture_person 的「清同 unique_id 残留」分支：先插入同
+        // unique_id 不同 id 的脏行，upsert 后残留必须被删掉（否则后续
+        // 唯一索引冲突无法收敛）。
+        if !is_db_available().await {
+            eprintln!("SKIP: no database available");
+            return;
+        }
+        let pool = test_pool();
+        let client = pool.get().await.expect("获取 client");
+        let pid = format!("fixture-{}", uuid::Uuid::new_v4());
+        let uid = format!("fixture-uid-{}", uuid::Uuid::new_v4());
+        let rogue_id = format!("fixture-rogue-{}", uuid::Uuid::new_v4());
+        client
+            .execute(
+                "INSERT INTO auth_person (id, unique_id, name, password_hash) \
+                 VALUES ($1, $2, 'rogue', 'x')",
+                &[&rogue_id, &uid],
+            )
+            .await
+            .expect("插入残留行");
+        upsert_fixture_person(&client, &pid, &uid, "Fixture Person").await;
+        let rogue_exists: bool = client
+            .query_one(
+                "SELECT EXISTS(SELECT 1 FROM auth_person WHERE id = $1)",
+                &[&rogue_id],
+            )
+            .await
+            .expect("查询残留")
+            .get(0);
+        assert!(!rogue_exists, "同 unique_id 的残留行应被清理");
+        client
+            .execute("DELETE FROM auth_person WHERE id = $1", &[&pid])
+            .await
+            .expect("清理夹具");
+    }
+
+    #[tokio::test]
+    async fn control_client_object_and_rowget_real_pool_impls() {
+        // lib.rs 的 `ControlClient for deadpool_postgres::Object` 与
+        // `RowGet for tokio_postgres::Row` 是真库实现，之前只被下游 crate 的
+        // 真库测试覆盖、shared 自身从不直接调用 → 补全 8 个方法的覆盖。
+        if !is_db_available().await {
+            eprintln!("SKIP: no database available");
+            return;
+        }
+        let pool = test_pool();
+        let client = pool.get().await.expect("获取 client");
+        let arc: std::sync::Arc<dyn ControlClient> = std::sync::Arc::new(client);
+
+        let rows = arc
+            .ctrl_query(
+                "SELECT 1::int4 AS id, 'x'::text AS name, true AS flag, 1000000000::int8 AS big",
+                &[],
+            )
+            .await
+            .expect("ctrl_query");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].get_i32("id"), 1);
+        assert_eq!(rows[0].get_str("name"), "x");
+        assert!(rows[0].get_bool("flag"), "flag 列应为 true");
+        assert_eq!(rows[0].get_i64("big"), 1_000_000_000);
+
+        let one = arc
+            .ctrl_query_one("SELECT 1::int4 AS id", &[])
+            .await
+            .expect("ctrl_query_one");
+        assert_eq!(one.get_i32("id"), 1);
+
+        let opt = arc
+            .ctrl_query_opt("SELECT 1::int4 AS id", &[])
+            .await
+            .expect("ctrl_query_opt");
+        assert!(opt.is_some());
+
+        // 临时表随连接关闭自动消失；execute 对 DDL 返回 0、对 INSERT 返回行数。
+        arc.ctrl_execute("CREATE TEMP TABLE _cov_ctrl (id int)", &[])
+            .await
+            .expect("create temp");
+        let n = arc
+            .ctrl_execute("INSERT INTO _cov_ctrl VALUES (1)", &[])
+            .await
+            .expect("insert");
+        assert_eq!(n, 1);
     }
 }

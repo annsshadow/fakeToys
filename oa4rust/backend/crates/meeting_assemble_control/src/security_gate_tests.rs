@@ -498,12 +498,7 @@ mod r6_gate_tests {
         assert_eq!(cases.len(), 6, "本批 6 把写路由必须逐条点名");
         let mut leaked: Vec<String> = Vec::new();
         for (name, req) in cases {
-            let status = app
-                .clone()
-                .oneshot(req)
-                .await
-                .unwrap()
-                .status();
+            let status = app.clone().oneshot(req).await.unwrap().status();
             if status != StatusCode::UNAUTHORIZED {
                 leaked.push(format!("{name} => 期望 401，实际 {status}"));
             }

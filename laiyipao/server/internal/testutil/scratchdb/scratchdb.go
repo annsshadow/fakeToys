@@ -57,6 +57,7 @@ var Prefixes = []string{
 	"laiyipao_mig_test_",
 	"laiyipao_store_test_",
 	"laiyipao_httpapi_e2e_",
+	"laiyipao_prune_test_",
 }
 
 var seq atomic.Int64

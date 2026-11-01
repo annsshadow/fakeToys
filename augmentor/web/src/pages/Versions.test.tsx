@@ -14,16 +14,17 @@ import { message } from 'antd'
 
 window.matchMedia =
   window.matchMedia ||
-  ((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  }) as unknown as MediaQueryList)
+  ((query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList)
 class RO {
   observe() {}
   unobserve() {}
@@ -69,7 +70,12 @@ vi.mock('../services/api', async (importOriginal) => {
   })
   spies.getVersionHistory = vi.fn().mockResolvedValue({
     history: [
-      { action: 'create', version_id: 'v-1', timestamp: '2026-10-10T00:00:00', detail: { label: '首版', item_count: 12 } },
+      {
+        action: 'create',
+        version_id: 'v-1',
+        timestamp: '2026-10-10T00:00:00',
+        detail: { label: '首版', item_count: 12 },
+      },
     ],
   })
   return {
@@ -112,7 +118,7 @@ describe('Versions 创建版本', () => {
     await waitFor(() => expect(spies.getDataFiles).toHaveBeenCalled())
     fireEvent.click(screen.getByRole('button', { name: /创建版本/ }))
     // 弹窗的确定按钮
-    fireEvent.click(screen.getByRole('button', { name: "OK" }))
+    fireEvent.click(screen.getByRole('button', { name: 'OK' }))
 
     await waitFor(() => expect(document.body.textContent).toContain('请选择文件'))
     expect(spies.createVersion).not.toHaveBeenCalled()
@@ -132,10 +138,10 @@ describe('Versions 创建版本', () => {
     const descInput = document.querySelector('textarea') as HTMLTextAreaElement
     fireEvent.change(descInput, { target: { value: '初始快照' } })
 
-    fireEvent.click(screen.getByRole('button', { name: "OK" }))
+    fireEvent.click(screen.getByRole('button', { name: 'OK' }))
 
     await waitFor(() =>
-      expect(spies.createVersion).toHaveBeenCalledWith('seed.json', 'v1.0', '初始快照')
+      expect(spies.createVersion).toHaveBeenCalledWith('seed.json', 'v1.0', '初始快照'),
     )
   })
 })
@@ -159,7 +165,7 @@ describe('Versions 对比', () => {
     // 对比弹窗里两个原生 select
     fireEvent.change(selects[0], { target: { value: 'v-1' } })
     fireEvent.change(selects[1], { target: { value: 'v-2' } })
-    fireEvent.click(screen.getByRole('button', { name: "OK" }))
+    fireEvent.click(screen.getByRole('button', { name: 'OK' }))
 
     await waitFor(() => expect(spies.diffVersions).toHaveBeenCalledWith('v-1', 'v-2'))
     expect(await screen.findByText('8')).toBeInTheDocument()

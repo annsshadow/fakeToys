@@ -687,11 +687,8 @@ mod u3_tests {
         // 2026-10 安全审计：jest 清缓存降为 admin 门禁；非 admin 会话（无 DB 时
         // is_admin 查询失败 fail-closed）返回 Forbidden，不再直通写库。
         assert!(matches!(r, Err(shared::error::AppError::Forbidden)));
-        let r = u3_qiyeweixin_create(
-            Extension(pool.clone()),
-            Some(Extension(test_session())),
-        )
-        .await;
+        let r =
+            u3_qiyeweixin_create(Extension(pool.clone()), Some(Extension(test_session()))).await;
         assert!(matches!(r, Err(shared::error::AppError::Internal)));
     }
 

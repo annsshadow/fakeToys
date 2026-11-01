@@ -13,15 +13,22 @@ import {
   Table,
   Tabs,
   Tag,
-  message
+  message,
 } from 'antd'
 import DataList from '../components/DataList'
-import { apiErrorDetail, auditDataset, checkLeakage, getDataFiles, getPiiPatterns, sanitizeData } from '../services/api'
+import {
+  apiErrorDetail,
+  auditDataset,
+  checkLeakage,
+  getDataFiles,
+  getPiiPatterns,
+  sanitizeData,
+} from '../services/api'
 import type {
   AuditResponse,
   LeakageResponse,
   PiiPatternsResponse,
-  SanitizeResponse
+  SanitizeResponse,
 } from '../types/api'
 
 /**
@@ -53,7 +60,7 @@ export default function Security() {
       .catch((err) => message.error(apiErrorDetail(err, '加载 PII 模式清单失败')))
     // 泄漏检测要选两个文件，DataList 只解决「单文件 + 预览」，所以这里另拉一份文件名列表
     getDataFiles()
-      .then(result => setFiles(result.files.map(item => item.name)))
+      .then((result) => setFiles(result.files.map((item) => item.name)))
       .catch((err) => message.error(apiErrorDetail(err, '加载数据文件列表失败')))
   }, [])
 
@@ -63,11 +70,7 @@ export default function Security() {
    * 泛型让 `onDone` 与 `task` 的结果类型绑在一起，否则 `onDone` 只能是
    * `(data: any) => void`，而 `src/pages` 层禁止写 `any`。
    */
-  const run = async <T,>(
-    task: () => Promise<T>,
-    onDone: (data: T) => void,
-    failText: string
-  ) => {
+  const run = async <T,>(task: () => Promise<T>, onDone: (data: T) => void, failText: string) => {
     setLoading(true)
     try {
       onDone(await task())
@@ -78,15 +81,16 @@ export default function Security() {
     }
   }
 
-  const fileOptions = files.map(name => ({ label: name, value: name }))
+  const fileOptions = files.map((name) => ({ label: name, value: name }))
 
-  const matchRows = Object.entries(sanitized?.report.matches || {}).map(
-    ([pattern, count]) => ({ pattern, count })
-  )
+  const matchRows = Object.entries(sanitized?.report.matches || {}).map(([pattern, count]) => ({
+    pattern,
+    count,
+  }))
 
   const sanitizedPreview = (sanitized?.items || []).slice(0, 5)
 
-  const auditFindings = (audit?.findings || []).map(finding => ({ finding }))
+  const auditFindings = (audit?.findings || []).map((finding) => ({ finding }))
 
   return (
     <div>
@@ -100,11 +104,11 @@ export default function Security() {
             max={1}
             step={0.05}
             value={fuzzyThreshold}
-            onChange={value => setFuzzyThreshold(Number(value ?? 0.8))}
+            onChange={(value) => setFuzzyThreshold(Number(value ?? 0.8))}
           />
           <Checkbox
             checked={includeExtra}
-            onChange={event => setIncludeExtra(event.target.checked)}
+            onChange={(event) => setIncludeExtra(event.target.checked)}
           >
             启用增强脱敏模式（误伤率更高）
           </Checkbox>
@@ -115,11 +119,7 @@ export default function Security() {
               type="primary"
               loading={loading}
               onClick={() =>
-                run(
-                  () => sanitizeData(file, undefined, includeExtra),
-                  setSanitized,
-                  'PII 脱敏失败'
-                )
+                run(() => sanitizeData(file, undefined, includeExtra), setSanitized, 'PII 脱敏失败')
               }
             >
               隐私脱敏
@@ -127,11 +127,7 @@ export default function Security() {
             <Button
               loading={loading}
               onClick={() =>
-                run(
-                  () => auditDataset(file, referenceFile || undefined),
-                  setAudit,
-                  '就绪审计失败'
-                )
+                run(() => auditDataset(file, referenceFile || undefined), setAudit, '就绪审计失败')
               }
             >
               就绪审计
@@ -152,13 +148,13 @@ export default function Security() {
                   style={{ marginBottom: 16 }}
                   extra={
                     <Tag color="blue">
-                      默认 {patterns?.default.length ?? 0} 项 · 增强{' '}
-                      {patterns?.extra.length ?? 0} 项
+                      默认 {patterns?.default.length ?? 0} 项 · 增强 {patterns?.extra.length ?? 0}{' '}
+                      项
                     </Tag>
                   }
                 >
                   <Space wrap>
-                    {(patterns?.default || []).map(name => (
+                    {(patterns?.default || []).map((name) => (
                       <Tag key={name} color="geekblue">
                         {name}
                       </Tag>
@@ -167,7 +163,7 @@ export default function Security() {
                   <div style={{ marginTop: 12 }}>
                     <span style={{ marginRight: 8 }}>增强模式：</span>
                     <Space wrap>
-                      {(patterns?.extra || []).map(name => (
+                      {(patterns?.extra || []).map((name) => (
                         <Tag key={name} color="orange">
                           {name}
                         </Tag>
@@ -204,7 +200,7 @@ export default function Security() {
                             pagination={false}
                             columns={[
                               { title: '模式', dataIndex: 'pattern' },
-                              { title: '命中次数', dataIndex: 'count', width: 100 }
+                              { title: '命中次数', dataIndex: 'count', width: 100 },
                             ]}
                             dataSource={matchRows}
                           />
@@ -218,7 +214,7 @@ export default function Security() {
                             pagination={false}
                             columns={[
                               { title: '问题', dataIndex: 'instruction', ellipsis: true },
-                              { title: '回答', dataIndex: 'output', ellipsis: true }
+                              { title: '回答', dataIndex: 'output', ellipsis: true },
                             ]}
                             dataSource={sanitizedPreview}
                           />
@@ -230,7 +226,7 @@ export default function Security() {
                   <Card>选择数据集后点击「隐私脱敏」，查看命中明细与脱敏后的数据</Card>
                 )}
               </>
-            )
+            ),
           },
           {
             key: 'leakage',
@@ -262,7 +258,7 @@ export default function Security() {
                         run(
                           () => checkLeakage(trainFile, testFile, fuzzyThreshold),
                           setLeakage,
-                          '泄漏检测失败，请确认已选择两个数据集'
+                          '泄漏检测失败，请确认已选择两个数据集',
                         )
                       }
                     >
@@ -334,7 +330,7 @@ export default function Security() {
                   <Card>选择训练集与测试集后点击「检测泄漏」</Card>
                 )}
               </>
-            )
+            ),
           },
           {
             key: 'audit',
@@ -426,8 +422,8 @@ export default function Security() {
                   <Card>点击「就绪审计」把脱敏、重复、空字段与泄漏信号合成一个判定</Card>
                 )}
               </>
-            )
-          }
+            ),
+          },
         ]}
       />
     </div>

@@ -26107,15 +26107,7 @@ pub async fn attachment_u2b_doc_to_word_wowc(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // workOrWorkCompleted：先查 work，缺失再查 workcompleted（o2 双表语义）
     let sess = u4_require_session(session)?;
-    match doc_to_word_for_job(
-        &pool,
-        &sess.person_unique,
-        &flag,
-        "pp_c_work",
-        body.clone(),
-    )
-    .await
-    {
+    match doc_to_word_for_job(&pool, &sess.person_unique, &flag, "pp_c_work", body.clone()).await {
         Err(AppError::NotFound) => {
             doc_to_word_for_job(
                 &pool,

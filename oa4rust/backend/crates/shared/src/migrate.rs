@@ -359,5 +359,51 @@ mod tests {
             .expect("清理测试版本记录");
         }
         std::fs::remove_dir_all(&empty_dir).ok();
+
+        // ⑦ read_dir 失败分支（第十六轮补）：MIGRATIONS_DIR 指向一个**文件**而
+        // 非目录时，`std::fs::read_dir` 必须报错（"cannot read …"），不能把
+        // 文件路径当成空目录静默返回 0 条迁移——部署漏拷 migrations/ 时若
+        // 恰好有同名文件占位，静默成功会拖到启动后第一次查询才炸。
+        let file_path = std::env::temp_dir().join(format!(
+            "oa4rust_migrations_file_{}.sql",
+            std::process::id()
+        ));
+        std::fs::write(&file_path, "not a directory").expect("写临时文件");
+        let saved3 = std::env::var(MIGRATIONS_DIR_KEY).ok();
+        std::env::set_var(MIGRATIONS_DIR_KEY, file_path.to_str().expect("UTF-8 路径"));
+        let err5 = run_migrations(&pool)
+            .await
+            .expect_err("迁移目录是文件时必须报错");
+        let msg5 = format!("{err5}");
+        assert!(
+            msg5.contains("cannot read"),
+            "应点明无法读取迁移目录，实际: {msg5}"
+        );
+        match saved3 {
+            Some(v) => std::env::set_var(MIGRATIONS_DIR_KEY, v),
+            None => std::env::remove_var(MIGRATIONS_DIR_KEY),
+        }
+        std::fs::remove_file(&file_path).ok();
+
+        // ⑧ 坏迁移 SQL 必须 loud 失败（第二十轮补）：迁移文件内容非法时，
+        // 事务内执行必须报错并点名文件——不能静默跳过（否则坏迁移在部署里
+        // 被当作已应用，启动照常、首次查询才炸）。
+        let bad_dir =
+            std::env::temp_dir().join(format!("oa4rust_bad_migration_{}", std::process::id()));
+        std::fs::create_dir_all(&bad_dir).expect("创建临时迁移目录");
+        std::fs::write(bad_dir.join("001_bad.sql"), "THIS IS NOT SQL;").expect("写坏迁移");
+        let saved5 = std::env::var(MIGRATIONS_DIR_KEY).ok();
+        std::env::set_var(MIGRATIONS_DIR_KEY, bad_dir.to_str().expect("UTF-8 路径"));
+        let err7 = run_migrations(&pool).await.expect_err("坏迁移必须失败");
+        let msg7 = format!("{err7}");
+        assert!(
+            msg7.contains("001_bad.sql"),
+            "错误信息应点名坏迁移文件，实际: {msg7}"
+        );
+        match saved5 {
+            Some(v) => std::env::set_var(MIGRATIONS_DIR_KEY, v),
+            None => std::env::remove_var(MIGRATIONS_DIR_KEY),
+        }
+        std::fs::remove_dir_all(&bad_dir).ok();
     }
 }

@@ -30,16 +30,17 @@ const DUMMY_MSG = (() => {}) as unknown as ReturnType<typeof message.warning>
 
 window.matchMedia =
   window.matchMedia ||
-  ((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  }) as unknown as MediaQueryList)
+  ((query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList)
 class RO {
   observe() {}
   unobserve() {}
@@ -144,7 +145,9 @@ vi.mock('../components/DataList', () => ({
     </button>
   ),
 }))
-vi.mock('../components/QualityChart', () => ({ default: () => <div data-testid="quality-chart" /> }))
+vi.mock('../components/QualityChart', () => ({
+  default: () => <div data-testid="quality-chart" />,
+}))
 
 import Quality from './Quality'
 
@@ -160,7 +163,7 @@ afterEach(() => {
 /** 按标题取某一格 Statistic 的值（本页十几格都在渲裸数字，按文本取会撞「多个匹配」） */
 function statValue(container: HTMLElement, title: string): string {
   const box = Array.from(container.querySelectorAll('.ant-statistic')).find(
-    (node) => node.querySelector('.ant-statistic-title')?.textContent === title
+    (node) => node.querySelector('.ant-statistic-title')?.textContent === title,
   )
   expect(box, `页面上没有「${title}」这一格`).toBeTruthy()
   return box!.querySelector('.ant-statistic-content-value')!.textContent!
@@ -169,7 +172,7 @@ function statValue(container: HTMLElement, title: string): string {
 /** 「规则名单」那张卡里某一行标签后面的名字（空名单渲染成「（无）」） */
 function ruleRow(container: HTMLElement, label: string): string {
   const row = Array.from(container.querySelectorAll('.ant-list-item')).find((node) =>
-    node.textContent?.includes(label)
+    node.textContent?.includes(label),
   )
   expect(row, `名单里没有「${label}」这一行`).toBeTruthy()
   return row!.textContent!.replace(label, '')
@@ -295,13 +298,11 @@ describe('Quality 健康门禁 · 回执渲染', () => {
 
     expect(document.body.textContent).toContain('门禁判定：failed（passed = false）')
     expect(statValue(container, '健康分')).toBe('0.893')
-    expect(
-      statValue(container, '等级（≥0.7 healthy / ≥0.4 moderate / 否则 poor）')
-    ).toBe('healthy')
+    expect(statValue(container, '等级（≥0.7 healthy / ≥0.4 moderate / 否则 poor）')).toBe('healthy')
     expect(statValue(container, '样本总数')).toBe('4')
-    expect(
-      statValue(container, '生效权重（完整性 / 多样性 / 质量均衡 / 覆盖率）')
-    ).toBe('0.25 / 0.25 / 0.25 / 0.25')
+    expect(statValue(container, '生效权重（完整性 / 多样性 / 质量均衡 / 覆盖率）')).toBe(
+      '0.25 / 0.25 / 0.25 / 0.25',
+    )
     expect(ruleRow(container, '判负（error 级，阻断）')).toContain('duplicate_rate')
     expect(ruleRow(container, '没参与判决（skipped）')).toContain('pass_rate')
     expect(ruleRow(container, '算不出来（errored）')).toContain('（无）')
@@ -315,9 +316,9 @@ describe('Quality 健康门禁 · 回执渲染', () => {
     expect(document.body.textContent).toContain('门禁判定：warned（passed = true）')
     expect(document.body.textContent).toContain('带警告放行')
     expect(statValue(container, '健康分')).toBe('0.625')
-    expect(
-      statValue(container, '等级（≥0.7 healthy / ≥0.4 moderate / 否则 poor）')
-    ).toBe('moderate')
+    expect(statValue(container, '等级（≥0.7 healthy / ≥0.4 moderate / 否则 poor）')).toBe(
+      'moderate',
+    )
     expect(ruleRow(container, '警告（warning 级）')).toContain('completeness')
     expect(ruleRow(container, '判负（error 级，阻断）')).toContain('（无）')
   })
@@ -349,7 +350,7 @@ describe('Quality 健康门禁 · 回执渲染', () => {
     await runAndOpenTab(container)
 
     const rows = Array.from(
-      document.querySelectorAll('[aria-label="健康门禁回执"] .ant-table-row')
+      document.querySelectorAll('[aria-label="健康门禁回执"] .ant-table-row'),
     ).map((row) => Array.from(row.querySelectorAll('td')).map((td) => td.textContent))
     expect(rows).toHaveLength(9) // 健康分 4 项 + 门禁 5 项（多一个 duplicate_rate）
     expect(rows[0]).toEqual(['健康分', 'completeness', '1.0000'])
@@ -400,9 +401,7 @@ describe('Quality 健康门禁 · 回执渲染', () => {
 
     fireEvent.click(gateButton())
 
-    await waitFor(() =>
-      expect(err).toHaveBeenCalledWith('数据集为空，门禁无法给出有意义的判定')
-    )
+    await waitFor(() => expect(err).toHaveBeenCalledWith('数据集为空，门禁无法给出有意义的判定'))
     err.mockRestore()
   })
 })
