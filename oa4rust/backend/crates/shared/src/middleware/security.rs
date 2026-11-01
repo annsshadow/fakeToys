@@ -103,21 +103,65 @@ pub(crate) fn path_matches(path: &str, pattern: &str) -> bool {
         .all(|(p, pat)| *pat == "{param}" || pat.starts_with('{') || p == pat)
 }
 
+/// 第 50 轮：豁免/限流表的进程内索引。
+/// 此前每次请求对 300+ 条豁免路径做线性扫描（`path_matches` 还逐段比较）。
+/// 精确路径（无 `{param}`）进 HashSet 实现 O(1) 命中；只有含通配的模式
+/// 保留线性扫描（数量从 307 降到 127）；blocked 点名与限流精确表同理。
+struct AuthExemptIndex {
+    exact: std::collections::HashSet<&'static str>,
+    wildcard: Vec<&'static str>,
+    prefixes: Vec<&'static str>,
+    blocked: std::collections::HashSet<&'static str>,
+    rate_exact: std::collections::HashSet<&'static str>,
+    rate_prefixes: Vec<&'static str>,
+}
+
+static AUTH_EXEMPT_INDEX: std::sync::OnceLock<AuthExemptIndex> = std::sync::OnceLock::new();
+
+fn auth_exempt_index() -> &'static AuthExemptIndex {
+    AUTH_EXEMPT_INDEX.get_or_init(|| {
+        let mut exact = std::collections::HashSet::new();
+        let mut wildcard = Vec::new();
+        for p in AUTH_EXEMPT_PATHS.iter().copied() {
+            if p.contains('{') {
+                wildcard.push(p);
+            } else {
+                exact.insert(p);
+            }
+        }
+        AuthExemptIndex {
+            exact,
+            wildcard,
+            prefixes: AUTH_EXEMPT_PREFIXES.iter().copied().collect(),
+            blocked: AUTH_EXEMPT_BLOCKED_PATHS.iter().copied().collect(),
+            rate_exact: AUTH_RATE_LIMIT_EXACT.iter().copied().collect(),
+            rate_prefixes: AUTH_RATE_LIMIT_PREFIXES.iter().copied().collect(),
+        }
+    })
+}
+
 pub(crate) fn is_auth_exempt(path: &str) -> bool {
+    let idx = auth_exempt_index();
     // 豁免排除（A5 批）：先精确点名，命中则即使匹配下方通配豁免也不放行。
     // 防「本意给只读详情的 {param} 豁免」把写路由一并匿名放行（通配段碰撞）。
-    if AUTH_EXEMPT_BLOCKED_PATHS.contains(&path) {
+    if idx.blocked.contains(path) {
         return false;
     }
-    // 精确路径匹配（带 {param} 通配）
-    AUTH_EXEMPT_PATHS.iter().any(|pattern| path_matches(path, pattern))
+    // 精确路径 O(1) 命中；含 {param} 通配的模式保留线性扫描
+    idx.exact.contains(path)
+        || idx.wildcard.iter().any(|pattern| path_matches(path, pattern))
         // 前缀匹配（覆盖带动态路径段的子路径）
-        || AUTH_EXEMPT_PREFIXES.iter().any(|prefix| path_starts_with_segment(path, prefix))
+        || idx
+            .prefixes
+            .iter()
+            .any(|prefix| path_starts_with_segment(path, prefix))
 }
 
 pub(crate) fn is_auth_rate_limited(path: &str) -> bool {
-    AUTH_RATE_LIMIT_EXACT.contains(&path)
-        || AUTH_RATE_LIMIT_PREFIXES
+    let idx = auth_exempt_index();
+    idx.rate_exact.contains(path)
+        || idx
+            .rate_prefixes
             .iter()
             .any(|prefix| path_starts_with_segment(path, prefix))
 }
@@ -395,7 +439,32 @@ pub async fn error_handler(err: AppError, _request: Request<Body>) -> Response {
 // ──────────────────────────────────────────────────────────────────────────────
 #[cfg(test)]
 mod security_audit_tests {
-    use super::is_auth_exempt;
+    use super::*;
+
+    /// 第 50 轮：进程内索引必须覆盖豁免表的**全部**条目 ——
+    /// 精确路径进 HashSet、含 `{param}` 的模式保留线性扫描，两者并集
+    /// 与原始 `AUTH_EXEMPT_PATHS` 逐条一致（漏一条就是匿名面回归）。
+    #[test]
+    fn auth_exempt_index_covers_all_patterns() {
+        let idx = auth_exempt_index();
+        for p in AUTH_EXEMPT_PATHS.iter().copied() {
+            let covered = if p.contains('{') {
+                idx.wildcard.iter().any(|w| *w == p)
+            } else {
+                idx.exact.contains(p)
+            };
+            assert!(covered, "豁免路径 {p} 未进入索引");
+        }
+        assert_eq!(
+            idx.exact.len() + idx.wildcard.len(),
+            AUTH_EXEMPT_PATHS.len(),
+            "索引条数必须与豁免表一致（无重复/无遗漏）"
+        );
+        // blocked 点名必须全集收录（漏一条会让写路由被通配豁免放行）
+        for b in AUTH_EXEMPT_BLOCKED_PATHS.iter().copied() {
+            assert!(idx.blocked.contains(b), "blocked 路径 {b} 未进入索引");
+        }
+    }
 
     /// 这些端点会写库（DELETE/UPDATE/INSERT 全表或批处理维护），
     /// 必须要求登录会话，不得匿名可达。若任一被改回豁免即测试失败。
