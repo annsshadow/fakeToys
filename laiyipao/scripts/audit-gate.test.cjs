@@ -62,8 +62,8 @@ check("G 变体 基线里没有该项目段 -> 必须拦下而不是静默放行
 
 console.log("\n=== checkOverrides ===");
 check("H 现状 30 条齐全", gate.checkOverrides(yamlTxt, baseTxt), false);
-check("I 变体 删掉 vite 那行", gate.checkOverrides(yamlTxt.replace(/^\s*"vite": 6\.4\.4$/m, ""), baseTxt), true);
-check("J 变体 把 vite 改回 5.2.8（dcloudio 的 peer 锁）", gate.checkOverrides(yamlTxt.replace('"vite": 6.4.4', '"vite": 5.2.8'), baseTxt), true);
+check("I 变体 删掉 vite 那行", gate.checkOverrides(yamlTxt.replace(/^\s*"vite": 6\.4\.5$/m, ""), baseTxt), true);
+check("J 变体 把 vite 改回 5.2.8（dcloudio 的 peer 锁）", gate.checkOverrides(yamlTxt.replace('"vite": 6.4.5', '"vite": 5.2.8'), baseTxt), true);
 check("K 变体 删掉 ws 那行", gate.checkOverrides(yamlTxt.replace(/^\s*"ws": 8\.21\.0$/m, ""), baseTxt), true);
 check("L 变体 把 postcss 退回 8.5.6", gate.checkOverrides(yamlTxt.replace('"postcss": 8.5.28', '"postcss": 8.5.6'), baseTxt), true);
 check("M 变体 overrides 整段清空", gate.checkOverrides("", baseTxt), true);
