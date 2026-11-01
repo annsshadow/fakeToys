@@ -51,7 +51,7 @@
 # 1) 建库
 createdb laiyipao
 
-# 2) 迁移（19 个 goose 迁移，50 张业务表）
+# 2) 迁移（23 个 goose 迁移，50 张业务表）
 cd laiyipao/server
 export DATABASE_URL="postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable"
 export BOOTSTRAP_ADMIN_PASS="<至少 10 位，缺省会拒绝启动>"
@@ -140,9 +140,15 @@ cd laiyipao/admin   && pnpm install && pnpm dev          # :5175
 | `BATTLE_TOKEN_TTL` | `30m` | 战斗凭证有效期 |
 | `MIN_BATTLE_DURATION` | `15s` | 「清完全场」的最短合理时长，短于此的**胜利**上报会被拒 |
 | `SETTLE_RECOMPUTE_MODE` | `enforce` | 服务端重算的处置档位，`off` / `shadow` / `enforce`。**不发版即可切换**，改环境变量重启生效 |
-| `OFFLINE_CAP_HOURS` | `12` | 离线收益累计上限 |
+| `OFFLINE_CAP_HOURS` | `12` | 离线收益累计上限（2026-10-31 新一轮第 7 轮起由 `GET/POST /me/offline-reward` 消费） |
+| `OFFLINE_COIN_PER_HOUR` | `600` | 离线收益每小时金币速率（2026-10-31 新一轮第 7 轮）。收益按「距上次领取的时长 × 速率」结算，领取时清零；`0` = 无收益 |
 | `DASHBOARD_CACHE_TTL` | `30s` | 运营看板的进程内缓存有效期。**设成 `0` 即关闭缓存**（每次都查库）—— 排查「数字为什么不动」时先关它，不需要发版 |
 | `LEADERBOARD_CACHE_TTL` | `15s` | 三个榜单的进程内缓存有效期。`0` = 关闭。⚠️ `/me/rank`（我的排名）**不受它影响**，永远实时 |
+| `SIGNIN_CALENDAR_CACHE_TTL` | `60s` | 签到日历预览的进程内缓存有效期。`0` = 关闭（日历是 seeder 静态配置，后台无修改入口，通常不用关） |
+| `ANNOUNCEMENTS_CACHE_TTL` | `30s` | 公告列表的进程内缓存有效期。`0` = 关闭（公告是公开端点，首页首屏每次拉取；运营人工发布、变化极低频） |
+| `SHOP_CACHE_TTL` | `30s` | 商城商品列表**静态部分**的进程内缓存有效期。`0` = 关闭（商品是 seeder 配置、仅低频运营修改；玩家今日已购次数是 per-user 数据，不缓存） |
+| `TASKS_CACHE_TTL` | `60s` | 任务配置**静态部分**的进程内缓存有效期。`0` = 关闭（任务是 seeder 纯静态配置、无后台修改入口；玩家当日进度是 per-user 数据，不缓存） |
+| `ECONOMY_CACHE_TTL` | `30s` | 后台经济流水页的进程内缓存有效期。`0` = 关闭（`wallet_flows` 是增长最快的表，每次打开经济页都全表聚合；运营看经济页是低频操作） |
 | `METRICS_ENABLED` | `false` | 是否挂 `/metrics`（Prometheus 文本格式：TTL 缓存命中/未命中计数等）。**默认不挂**——未设口令的指标端点会泄露内部计数，确认采集端可达再开 |
 | `PPROF_ADDR` | 空 | pprof 性能剖析监听地址（如 `127.0.0.1:6060`）。**默认不启动**；仅绑回环，排障时临时开 |
 | `PLAYER_LOGIN_REQUIRED` | `false` | 玩家是否必须用账号口令登录。开启后 `/auth/guest` 一律 403，并引导一个**与超管同名同口令**的共享测试账号（测试环境用，详见 §2.4） |
@@ -428,17 +434,20 @@ go run ./cmd/prune --days=30 --apply
 | `admin_audit_logs` | 建议 ≥ 90 天 | 后台操作审计消失。**保留期应不短于内部合规要求**，默认 30 天对多数场景偏短 |
 | `wallet_flows` | **永不删** | 它是经济系统的原始凭证。删了之后「这个玩家的金币怎么来的」永远无法追 |
 
-`wallet_flows` 要压缩只能**归档到冷表**：
+`wallet_flows` 要压缩只能**归档到冷表**（2026-10-30 起已命令化，见
+`cmd/prune` 的 `--archive-wallet-flows`）：
 
-```sql
--- 在维护窗口执行。先把老数据搬走，再删本表对应行。
-CREATE TABLE IF NOT EXISTS wallet_flows_archive (LIKE wallet_flows INCLUDING ALL);
-WITH moved AS (
-  DELETE FROM wallet_flows WHERE created_at < now() - interval '180 days'
-  RETURNING *
-)
-INSERT INTO wallet_flows_archive SELECT * FROM moved;
+```bash
+# 先看会归档多少行（不搬任何数据）
+go run ./cmd/prune --days=180 --archive-wallet-flows
+
+# 确认后真的搬：老流水进入 wallet_flows_archive，主表对应行被删除
+go run ./cmd/prune --days=180 --archive-wallet-flows --apply
 ```
+
+冷表 `wallet_flows_archive` 由命令自动创建（`LIKE wallet_flows INCLUDING ALL`，
+不含外键）。归档与删除共用同一个 `--days` 截止时间，同样默认 dry-run、
+`--apply` 才真搬，且**永不进入 `--table` 删除白名单**。
 
 ⚠️ 归档表**不进任何查询**，所以它只解决体积，不解决「查得到」。
 需要长期可查的话，导出到对象存储而不是留在同一个库里。

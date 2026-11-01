@@ -43,7 +43,9 @@
       <view v-if="announcements.length" class="card">
         <view class="card-title">
           <text>公告</text>
-          <text class="dim">共 {{ announcements.length }} 条</text>
+          <!-- 全部公告入口（2026-11-01 新一轮第 42 轮）：首页只展示最新几条，
+               历史公告在首页不可回看，这里提供公告列表页入口。 -->
+          <text class="ann-all" @click="goAnnouncements">全部 {{ announcements.length }} 条 →</text>
         </view>
         <view
           v-for="a in announcements"
@@ -204,7 +206,25 @@ const menus = [
   // 反应图鉴（2026-10-21 P4-2/P4-3）：`/config.reactions` 与
   // `reachableReactions` 此前**零 UI 消费** —— 玩家查不到「我能打出哪些反应」。
   { path: '/pages/reactions/reactions', label: '反应', icon: '⚗️' },
+  // 敌人图鉴（2026-10-31 新一轮第 24 轮）：`/config.enemies` 的属性与
+  // 抗性此前零 UI 消费 —— 玩家无法在战斗前了解敌人。
+  { path: '/pages/enemies/enemies', label: '敌人', icon: '👾' },
+  // 技能图鉴（2026-10-31 新一轮第 25 轮）：`/config.skills` 的伤害/热量/
+  // 解锁等级此前只对已拥有技能可见 —— 未解锁技能全靠猜。
+  { path: '/pages/skills/skills', label: '技能', icon: '⚔️' },
+  // 装备图鉴（2026-10-31 新一轮第 26 轮）：`/config.equipment` 的护甲/加成/
+  // 解锁等级此前只对已拥有装备可见。
+  { path: '/pages/equipment/equipment', label: '装备', icon: '🛡️' },
+  // 宝石图鉴（2026-10-31 新一轮第 27 轮）：`/config.gems` 的 8 种宝石
+  // 此前只对已拥有实例可见。
+  { path: '/pages/gems/gems', label: '宝石', icon: '💎' },
+  // 皮肤图鉴（2026-10-31 新一轮第 35 轮）：`/config.skins` 的 6 款皮肤
+  // 定义此前零 UI 消费。
+  { path: '/pages/skins/skins', label: '皮肤', icon: '🎨' },
   { path: '/pages/signin/signin', label: '签到', icon: '📅' },
+  // 我的战报（2026-11-01 新一轮第 41 轮）：`/me/battles` 端点早已存在，
+  // 客户端却没有任何战报历史入口 —— 打完就再也找不到那一局的记录。
+  { path: '/pages/battles/battles', label: '战报', icon: '📜' },
   { path: '/pages/rank/rank', label: '排行', icon: '🏆' },
   { path: '/pages/verify/verify', label: '验真', icon: '🔍' },
   { path: '/pages/me/me', label: '我的', icon: '👤' },
@@ -286,6 +306,11 @@ const weaknesses = computed<string[]>(() => store.buildRating?.weaknesses ?? [])
 
 function go(path: string) {
   uni.navigateTo({ url: path })
+}
+
+/** 公告列表页（2026-11-01 新一轮第 42 轮）。 */
+function goAnnouncements() {
+  uni.navigateTo({ url: '/pages/announcements/announcements' })
 }
 
 function goStage() {
@@ -580,6 +605,13 @@ onShareAppMessage(() => indexShare())
   font-weight: 600;
   color: var(--text);
   flex: 1;
+}
+
+/* 全部公告入口（2026-11-01 新一轮第 42 轮） */
+.ann-all {
+  font-size: 22rpx;
+  color: var(--fire);
+  padding: 4rpx 0 4rpx 16rpx;
 }
 
 .ann-body {

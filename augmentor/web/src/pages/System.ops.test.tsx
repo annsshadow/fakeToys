@@ -30,16 +30,17 @@ const DUMMY_MSG = (() => {}) as unknown as ReturnType<typeof message.warning>
 
 window.matchMedia =
   window.matchMedia ||
-  ((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  }) as unknown as MediaQueryList)
+  ((query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList)
 class RO {
   observe() {}
   unobserve() {}
@@ -139,7 +140,7 @@ const fx = vi.hoisted(() => {
     results: SUITE_MIXED.results.map((row, index) =>
       index < 2
         ? { ...row, message: index === 0 ? '格式检查通过，共 0 条数据' : row.message }
-        : { ...row, passed: false, message: '数据为空' }
+        : { ...row, passed: false, message: '数据为空' },
     ),
   }
   const STREAM_QUALITY = { total_input: 5, total_output: 2, processed: 5 }
@@ -197,7 +198,9 @@ vi.mock('../services/api', async (importOriginal) => {
     storage_dir: '',
   })
   s.listBackups = vi.fn().mockResolvedValue({ backups: [] })
-  s.getBackupSourceCandidates = vi.fn().mockResolvedValue({ files: [{ name: 'mixed.json', path: 'mixed.json' }] })
+  s.getBackupSourceCandidates = vi
+    .fn()
+    .mockResolvedValue({ files: [{ name: 'mixed.json', path: 'mixed.json' }] })
   s.listDependencyDatasets = vi.fn().mockResolvedValue({ datasets: [] })
   s.getDependencyGraph = vi.fn().mockResolvedValue({ nodes: [], edges: [], issues: [] })
   // L236 起依赖诊断自取一面。不给回执 ⇒ 页面退回综合状态里那一份，本份用例渲染结果不变
@@ -224,7 +227,16 @@ vi.mock('../services/api', async (importOriginal) => {
 
 import System from './System'
 
-const { SNAPSHOT_MIXED, SNAPSHOT_EMPTY, SNAPSHOT_ALERT, SUITE_MIXED, SUITE_EMPTY, STREAM_QUALITY, MIGRATION, spies } = fx
+const {
+  SNAPSHOT_MIXED,
+  SNAPSHOT_EMPTY,
+  SNAPSHOT_ALERT,
+  SUITE_MIXED,
+  SUITE_EMPTY,
+  STREAM_QUALITY,
+  MIGRATION,
+  spies,
+} = fx
 
 afterEach(() => {
   cleanup()
@@ -264,11 +276,11 @@ function pickOption(container: HTMLElement, label: string, optionLabel: string) 
   expect(select, `「${label}」不是一只 Select`).toBeTruthy()
   fireEvent.mouseDown(select!)
   const dropdowns = document.querySelectorAll(
-    '.ant-select-dropdown:not(.ant-select-dropdown-hidden)'
+    '.ant-select-dropdown:not(.ant-select-dropdown-hidden)',
   )
   expect(dropdowns.length, `「${label}」的下拉没打开`).toBeGreaterThan(0)
   const option = Array.from(
-    dropdowns[dropdowns.length - 1].querySelectorAll('.ant-select-item-option')
+    dropdowns[dropdowns.length - 1].querySelectorAll('.ant-select-item-option'),
   ).find((node) => node.textContent === optionLabel)
   expect(option, `下拉里没有「${optionLabel}」这一项`).toBeTruthy()
   fireEvent.click(option!)
@@ -277,7 +289,7 @@ function pickOption(container: HTMLElement, label: string, optionLabel: string) 
 /** 按卡标题取那一张 Card：本页多张表都在渲 `.ant-table-row`，按全文取会串到别的卡上 */
 function cardOf(container: HTMLElement, title: string): HTMLElement {
   const card = Array.from(container.querySelectorAll('.ant-card')).find(
-    (node) => node.querySelector('.ant-card-head-title')?.textContent === title
+    (node) => node.querySelector('.ant-card-head-title')?.textContent === title,
   )
   expect(card, `页面上没有「${title}」这张卡`).toBeTruthy()
   return card as HTMLElement
@@ -292,7 +304,7 @@ function cardOf(container: HTMLElement, title: string): HTMLElement {
  */
 function statValue(container: HTMLElement, title: string): string {
   const box = Array.from(container.querySelectorAll('.ant-statistic')).find(
-    (node) => node.querySelector('.ant-statistic-title')?.textContent === title
+    (node) => node.querySelector('.ant-statistic-title')?.textContent === title,
   )
   expect(box, `页面上没有「${title}」这一格`).toBeTruthy()
   return box!.querySelector('.ant-statistic-content-value')!.textContent!
@@ -373,7 +385,7 @@ describe('System 质量监控快照', () => {
     fireEvent.click(screen.getByLabelText('生成质量快照'))
 
     await waitFor(() =>
-      expect(err).toHaveBeenCalledWith(expect.stringContaining('文件不存在: ghost.json'))
+      expect(err).toHaveBeenCalledWith(expect.stringContaining('文件不存在: ghost.json')),
     )
     err.mockRestore()
   })
@@ -392,7 +404,7 @@ describe('System 自动化测试', () => {
     expect(statValue(container, '通过率')).toBe('60') // pass_rate 0.6 是 0–1 的小数，页面乘 100
     expect(statValue(container, '套件')).toBe('default')
     const rows = Array.from(
-      cardOf(container, '质量监控与自测').querySelectorAll('.ant-table-tbody tr.ant-table-row')
+      cardOf(container, '质量监控与自测').querySelectorAll('.ant-table-tbody tr.ant-table-row'),
     )
     expect(rows.map((row) => row.querySelector('td')?.textContent)).toEqual([
       '格式检查',
@@ -443,16 +455,14 @@ describe('System 迁移与流式', () => {
     fireEvent.click(screen.getByText(/照\s*改/))
 
     await waitFor(() =>
-      expect(spies.migrateDataset).toHaveBeenCalledWith('mixed.json', 'mig.json', { rules: [] })
+      expect(spies.migrateDataset).toHaveBeenCalledWith('mixed.json', 'mig.json', { rules: [] }),
     )
     await waitFor(() => expect(statValue(container, '迁移 id')).toBe('fd606983'))
     expect(statValue(container, '失败条数')).toBe('0')
     expect(
-      screen.getByText(/rename_instruction \/ rename_output \/ flatten_conversations/)
+      screen.getByText(/rename_instruction \/ rename_output \/ flatten_conversations/),
     ).toBeInTheDocument()
-    expect(ok).toHaveBeenCalledWith(
-      `已迁移 5/5 条 ⇒ ${MIGRATION.target_path}`
-    )
+    expect(ok).toHaveBeenCalledWith(`已迁移 5/5 条 ⇒ ${MIGRATION.target_path}`)
     ok.mockRestore()
   })
 
@@ -490,7 +500,7 @@ describe('System 迁移与流式', () => {
         operation: '',
         chunkSize: undefined,
         outputFormat: '',
-      })
+      }),
     )
     // 「被丢掉」= 5 − 2 = 3，而回执里的 processed 是 5 ⇒ 这一格必须是页面自己算的
     await waitFor(() => expect(statValue(container, '被丢掉')).toBe('3'))
@@ -513,7 +523,7 @@ describe('System 迁移与流式', () => {
         operation: 'quality',
         chunkSize: 250,
         outputFormat: 'json',
-      })
+      }),
     )
   })
 

@@ -1,14 +1,114 @@
 <script setup lang="ts">
 import {onMounted, ref, computed, onActivated} from 'vue'
-import { ElMessage } from 'element-plus'
-import { fetchDefenses, type AdminDefenseView } from '@/api'
+import { useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { fetchDefenses, fetchAdminDefenseChallenges, exportDefenseChallengesCsv, deleteDefense, type AdminDefenseView, type AdminDefenseChallengeView } from '@/api'
 import { fmtTime } from '@/utils/format'
+
+const router = useRouter()
+
+/**
+ * 打开指定玩家的用户详情（2026-11-01 新一轮第 50 轮）。
+ * 跳到用户管理页并携带 user_id，UsersView 挂载时会自动打开详情抽屉。
+ */
+function openUserDetail(userId: number) {
+  router.push({ path: '/users', query: { user_id: String(userId) } })
+}
+
+/**
+ * 复制防线 ID（2026-11-01 新一轮第 93 轮）。
+ * 运营把 defense_id 贴到工单/追查时无需手动选中。
+ */
+async function copyDefenseId(id: number) {
+  try {
+    await navigator.clipboard.writeText(String(id))
+    ElMessage.success(`已复制防线 ID ${id}`)
+  } catch {
+    ElMessage.error('复制失败，请手动选择复制')
+  }
+}
+
+/**
+ * 复制挑战记录 ID（2026-11-01 新一轮第 99 轮）。
+ * 运营把挑战记录 id 贴到工单时无需手动选中。
+ */
+async function copyChallengeId(id: number) {
+  try {
+    await navigator.clipboard.writeText(String(id))
+    ElMessage.success(`已复制挑战记录 ID ${id}`)
+  } catch {
+    ElMessage.error('复制失败，请手动选择复制')
+  }
+}
 
 /** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
 const emptyText = '还没有人设置防线'
 const loading = ref(false)
 const rows = ref<AdminDefenseView[]>([])
 const total = ref(0)
+
+// 防线挑战记录（2026-10-31 新一轮第 30 轮）。
+const challengeVisible = ref(false)
+const challenges = ref<AdminDefenseChallengeView[]>([])
+const challengeTotal = ref(0)
+const challengePage = ref(1)
+const challengeDefenseId = ref<number | undefined>(undefined)
+const challengeChallengerId = ref<number | undefined>(undefined)
+
+async function loadChallenges() {
+  try {
+    const res = await fetchAdminDefenseChallenges(50, (challengePage.value - 1) * 50, {
+      defense_id: challengeDefenseId.value,
+      challenger_id: challengeChallengerId.value,
+    })
+    challenges.value = res.items
+    challengeTotal.value = res.total ?? res.items.length
+  } catch (e) {
+    ElMessage.error(`挑战记录加载失败：${(e as Error).message}`)
+  }
+}
+
+/** 打开挑战记录对话框并加载第一页（2026-10-31 新一轮第 30 轮）。 */
+function openChallenges() {
+  challengeVisible.value = true
+  challengePage.value = 1
+  loadChallenges()
+}
+
+/** 挑战记录筛选变化：回到第一页并重新加载。 */
+function applyChallengeFilter() {
+  challengePage.value = 1
+  loadChallenges()
+}
+
+/** 导出挑战记录 CSV（2026-10-31 新一轮第 32 轮）。 */
+async function onExportChallengesCsv() {
+  try {
+    const blob = await exportDefenseChallengesCsv({
+      defense_id: challengeDefenseId.value,
+      challenger_id: challengeChallengerId.value,
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `defense_challenges_${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    ElMessage.error(`导出失败：${(e as Error).message}`)
+  }
+}
+
+/** 偷取奖励格式：`100 金币`、`5 钻石`，多项用逗号分隔。 */
+function rewardText(loot: Record<string, number> | undefined): string {
+  if (!loot) return ''
+  const label: Record<string, string> = { coin: '金币', gem: '钻石', energy: '体力', keys: '钥匙' }
+  return Object.entries(loot)
+    .map(([k, v]) => `${v} ${label[k] ?? k}`)
+    .join('、')
+}
 
 /**
  * 防线值守（I-5）的关键设计：
@@ -45,19 +145,73 @@ function rateTone(r: AdminDefenseView): 'success' | 'info' | 'warning' | 'danger
   return 'success'
 }
 
+/**
+ * 护盾剩余时长（2026-11-01 新一轮第 81 轮）。
+ * 无护盾显示「无」；已过期显示「已过期」；否则转「X 分钟 / X.X 小时 / X.X 天」。
+ */
+function shieldRemainText(r: AdminDefenseView): string {
+  if (!r.shielded_until) return '无'
+  const remain = new Date(r.shielded_until).getTime() - Date.now()
+  if (remain <= 0) return '已过期'
+  const mins = Math.floor(remain / 60000)
+  if (mins < 60) return `${mins} 分钟`
+  const hours = remain / 3600000
+  if (hours < 24) return `${hours.toFixed(1)} 小时`
+  return `${(hours / 24).toFixed(1)} 天`
+}
+
+function shieldTagType(r: AdminDefenseView): 'success' | 'info' | 'danger' {
+  if (!r.shielded_until) return 'info'
+  return new Date(r.shielded_until).getTime() > Date.now() ? 'success' : 'danger'
+}
+
 const PAGE_SIZE = 50
 const page = ref(1)
+
+// 防线名/玩家昵称搜索 + owner_id 过滤（2026-10-31 新一轮第 19 轮）。
+const keyword = ref('')
+const ownerId = ref<number | undefined>(undefined)
+// 护盾状态筛选（2026-11-01 新一轮第 100 轮）。
+const shieldedFilter = ref<boolean | undefined>(undefined)
 
 async function load() {
   loading.value = true
   try {
-    const res = await fetchDefenses(PAGE_SIZE, (page.value - 1) * PAGE_SIZE)
+    const res = await fetchDefenses(PAGE_SIZE, (page.value - 1) * PAGE_SIZE, {
+      keyword: keyword.value || undefined,
+      owner_id: ownerId.value,
+      shielded: shieldedFilter.value,
+    })
     rows.value = res.items
     total.value = res.total
   } catch (e) {
     ElMessage.error(`防线加载失败：${(e as Error).message}`)
   } finally {
     loading.value = false
+  }
+}
+
+/**
+ * 删除玩家防线（2026-10-31 实质优化第 26 轮）。
+ * 违规防线名（侮辱/广告等）运营此前只能看到、无法处理。
+ * 删除会连带该防线的挑战记录（CASCADE），需二次确认。
+ */
+async function onDeleteDefense(r: AdminDefenseView) {
+  try {
+    await ElMessageBox.confirm(
+      `删除「${r.owner_name}」的防线「${r.name}」？该玩家将失去防线，相关挑战记录也会删除。`,
+      '删除防线',
+      { type: 'warning', confirmButtonText: '删除' },
+    )
+  } catch {
+    return // 取消
+  }
+  try {
+    await deleteDefense(r.id)
+    ElMessage.success('防线已删除')
+    await load()
+  } catch (e) {
+    ElMessage.error(`删除失败：${(e as Error).message}`)
   }
 }
 
@@ -121,6 +275,33 @@ load()
 
     <el-card shadow="never">
       <div class="toolbar">
+        <!-- 防线搜索（2026-10-31 新一轮第 19 轮） -->
+        <el-input
+          v-model="keyword"
+          placeholder="按防线名 / 玩家昵称搜索"
+          clearable
+          style="width: 220px"
+          @keyup.enter="((page = 1), load())"
+          @clear="((page = 1), load())"
+        />
+        <el-input-number
+          v-model="ownerId"
+          :controls="false"
+          placeholder="属主 ID"
+          style="width: 120px"
+        />
+        <!-- 护盾状态筛选（2026-11-01 新一轮第 100 轮） -->
+        <el-select
+          v-model="shieldedFilter"
+          placeholder="护盾状态"
+          clearable
+          style="width: 120px; margin-left: 8px"
+          @change="((page = 1), load())"
+        >
+          <el-option label="有护盾" :value="true" />
+          <el-option label="无护盾" :value="false" />
+        </el-select>
+        <el-button @click="((page = 1), load())">查询</el-button>
         <el-pagination
           v-if="total > PAGE_SIZE"
           v-model:current-page="page"
@@ -132,14 +313,35 @@ load()
           @current-change="load"
         />
         <el-button @click="load">刷新</el-button>
+        <el-button @click="openChallenges">挑战记录</el-button>
         <span class="toolbar-spacer" />
         <span class="muted">共 {{ total }} 条防线</span>
       </div>
 
       <el-table :data="rows" size="small" stripe>
-        <el-table-column prop="id" label="ID" width="60" />
+        <el-table-column label="ID" width="100">
+          <!-- 复制防线 ID（2026-11-01 新一轮第 93 轮）：贴工单/追查 -->
+          <template #default="{ row }">
+            <span>{{ row.id }}</span>
+            <el-button size="small" text type="primary" @click="copyDefenseId(row.id)">复制</el-button>
+          </template>
+        </el-table-column>
         <el-table-column prop="owner_id" label="属主 ID" width="80" />
-        <el-table-column prop="owner_name" label="属主" min-width="120" />
+        <el-table-column label="属主" min-width="120">
+          <!-- 点击跳转用户详情（2026-11-01 新一轮第 50 轮）：
+               防线违规（侮辱名/广告）需要核查玩家本体，从这里直达。 -->
+          <template #default="{ row }">
+            <el-link
+              v-if="row.owner_name"
+              type="primary"
+              underline="never"
+              @click="openUserDetail(row.owner_id)"
+            >
+              {{ row.owner_name }}
+            </el-link>
+            <span v-else class="muted">—</span>
+          </template>
+        </el-table-column>
         <el-table-column label="防线名" min-width="120">
           <template #default="{ row }">{{ row.name || '（未命名）' }}</template>
         </el-table-column>
@@ -162,8 +364,14 @@ load()
             <el-tag :type="rateTone(asRow(row))" size="small">{{ winRate(asRow(row)) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="护盾至" width="155">
-          <template #default="{ row }">{{ fmtTime(row.shielded_until) }}</template>
+        <el-table-column label="护盾剩余" width="120">
+          <!-- 2026-11-01 新一轮第 81 轮：显示剩余时长而非绝对时间，
+               运营一眼看出哪些防线在护盾期、何时失效。 -->
+          <template #default="{ row }">
+            <el-tag :type="shieldTagType(asRow(row))" size="small">
+              {{ shieldRemainText(asRow(row)) }}
+            </el-tag>
+          </template>
         </el-table-column>
         <el-table-column label="快照哈希" min-width="150">
           <template #default="{ row }">
@@ -173,11 +381,90 @@ load()
         <el-table-column label="更新时间" width="155">
           <template #default="{ row }">{{ fmtTime(row.updated_at) }}</template>
         </el-table-column>
+        <!-- 删除（2026-10-31 实质优化第 26 轮） -->
+        <el-table-column label="操作" width="70" fixed="right">
+          <template #default="{ row }">
+            <el-button size="small" text type="danger" @click="onDeleteDefense(asRow(row))">删除</el-button>
+          </template>
+        </el-table-column>
         <template #empty>
           <el-empty :description="emptyText" :image-size="60" />
         </template>
 </el-table>
     </el-card>
+
+    <!-- 防线挑战记录（2026-10-31 新一轮第 30 轮） -->
+    <el-dialog v-model="challengeVisible" title="防线挑战记录" width="760px">
+      <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px">
+        <el-input-number
+          v-model="challengeDefenseId"
+          :controls="false"
+          placeholder="防线 ID"
+          style="width: 120px"
+        />
+        <el-input-number
+          v-model="challengeChallengerId"
+          :controls="false"
+          placeholder="挑战者 ID"
+          style="width: 130px"
+        />
+        <el-button @click="applyChallengeFilter">查询</el-button>
+        <el-button @click="onExportChallengesCsv">导出 CSV</el-button>
+      </div>
+      <el-table :data="challenges" size="small" stripe max-height="480">
+        <el-table-column label="ID" width="100">
+          <!-- 复制挑战记录 ID（2026-11-01 新一轮第 99 轮）：贴工单 -->
+          <template #default="{ row }">
+            <span>{{ row.id }}</span>
+            <el-button size="small" text type="primary" @click="copyChallengeId(row.id)">复制</el-button>
+          </template>
+        </el-table-column>
+        <el-table-column prop="defense_id" label="防线 ID" width="80" />
+        <el-table-column prop="defense_name" label="防线名" min-width="100" />
+        <el-table-column label="挑战者" min-width="110">
+          <!-- 点击跳转用户详情（2026-11-01 新一轮第 65 轮）：
+               挑战者反复攻击/偷取异常时，从这里直达玩家本体。 -->
+          <template #default="{ row }">
+            <el-link
+              v-if="row.challenger_nickname"
+              type="primary"
+              underline="never"
+              @click="openUserDetail(row.challenger_id)"
+            >
+              {{ row.challenger_nickname }}
+            </el-link>
+            <span v-else class="muted">—</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="challenger_id" label="挑战者 ID" width="90" />
+        <el-table-column label="结果" width="80">
+          <template #default="{ row }">
+            <el-tag :type="row.won ? 'danger' : 'success'" size="small">
+              {{ row.won ? '挑战成功' : '防守成功' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="偷取" min-width="120">
+          <template #default="{ row }">{{ rewardText(row.loot) }}</template>
+        </el-table-column>
+        <el-table-column label="时间" width="155">
+          <template #default="{ row }">{{ fmtTime(row.created_at) }}</template>
+        </el-table-column>
+        <template #empty>
+          <el-empty description="暂无挑战记录" :image-size="60" />
+        </template>
+      </el-table>
+      <el-pagination
+        v-if="challengeTotal > 50"
+        v-model:current-page="challengePage"
+        :page-size="50"
+        :total="challengeTotal"
+        layout="prev, pager, next, total"
+        size="small"
+        background
+        @current-change="loadChallenges"
+      />
+    </el-dialog>
   </div>
 </template>
 

@@ -19,3 +19,43 @@ use axum::Router;
 pub fn router() -> Router {
     Router::new().route("/health", get(|| async { "ok" }))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::router;
+    use axum::body::{to_bytes, Body};
+    use axum::http::{Request, StatusCode};
+    use tower::ServiceExt;
+
+    #[tokio::test]
+    async fn health_route_returns_ok() {
+        let app = router();
+        let res = app
+            .oneshot(
+                Request::builder()
+                    .uri("/health")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let body = to_bytes(res.into_body(), 4096).await.unwrap();
+        assert_eq!(&body[..], b"ok");
+    }
+
+    #[tokio::test]
+    async fn unknown_route_returns_404() {
+        let app = router();
+        let res = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/nope")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::NOT_FOUND);
+    }
+}

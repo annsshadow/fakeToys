@@ -239,7 +239,7 @@ pub async fn mind_share_records(pool: Extension<Pool>, Path(id): Path<String>) -
     let rows = client
         .query(
             "SELECT id, mind_id, person, create_time::text AS create_time \
-             FROM x_mind_share WHERE mind_id = $1 ORDER BY create_time DESC",
+             FROM x_mind_share WHERE mind_id = $1 ORDER BY create_time DESC LIMIT 100",
             &[&id],
         )
         .await
@@ -360,9 +360,10 @@ pub async fn mind_restore(
 #[allow(non_snake_case)]
 pub async fn mind_save(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> ApiResult {
+    let sess = crate::require_session(session)?;
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = body
@@ -390,7 +391,7 @@ pub async fn mind_save(
         .get("parentId")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
-    let person = session.person_unique.clone();
+    let person = sess.person_unique.clone();
 
     let existing = body
         .get("id")

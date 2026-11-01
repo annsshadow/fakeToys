@@ -51,3 +51,6 @@ pub mod pagination;
 pub mod soft_delete;
 
 pub use pagination::*;
+
+#[cfg(test)]
+mod tests;

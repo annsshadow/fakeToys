@@ -32,6 +32,7 @@ function readConstList(src, name) {
 const csrc = fs.readFileSync(CONSTANTS, "utf8");
 const EXEMPT_PATHS = readConstList(csrc, "AUTH_EXEMPT_PATHS");
 const EXEMPT_PREFIXES = readConstList(csrc, "AUTH_EXEMPT_PREFIXES");
+const EXEMPT_BLOCKED = readConstList(csrc, "AUTH_EXEMPT_BLOCKED_PATHS");
 const ADMIN_WRITE_PREFIXES = readConstList(csrc, "ADMIN_WRITE_PREFIXES");
 
 // rbac.rs 注册表：`authorize_middleware` 命中 Public 会**提前 return**，
@@ -90,6 +91,8 @@ function segPrefix(path, prefix) {
   return path === prefix || path.startsWith(`${prefix}/`);
 }
 function isAuthExempt(method, p) {
+  // B6：与中间件同口径——AUTH_EXEMPT_BLOCKED_PATHS 点名的路径即使匹配通配豁免也不算豁免。
+  if (EXEMPT_BLOCKED.includes(p)) return false;
   return (
     EXEMPT_PATHS.some((pat) => pathMatches(p, pat)) ||
     EXEMPT_PREFIXES.some((pre) => segPrefix(p, pre))
@@ -387,6 +390,36 @@ function moduleAliases(crate) {
   aliasCache.set(crate, m);
   return m;
 }
+// 尺子缺陷 32（2026-10-30 修）：`use super::{ delete as empower_delete, ... }` 这类
+// **分组导入**给 handler 起别名后，路由注册写的是别名（`delete(empower_delete)`），
+// 而函数体只有原名 `delete`。`fnBody` 按字面名扫描找不到 ⇒ 两条 `/api/person/empower/{id}`
+// DELETE 被读成「体内不可解析」（R8），门禁证据取不到。补函数级别名换算：只扫
+// **路由注册文件**（含 `.route(`）里的 `use ... as ...`（单条与分组都覆盖），
+// 建 别名 → 原名 映射；`fnBody` 字面名取不到时按映射换原名再扫。
+const fnAliasCache = new Map();
+function functionAliases(crate) {
+  if (fnAliasCache.has(crate)) return fnAliasCache.get(crate);
+  const m = new Map();
+  const dir = path.join(CRATES, crate, "src");
+  if (fs.existsSync(dir))
+    for (const f of walk(dir)) {
+      const src = fs.readFileSync(f, "utf8");
+      if (!src.includes(".route(")) continue;
+      // 单条 `use a::b as c;` 与分组 `use super::{ a as c, d as e }` 都覆盖。
+      // 正则在整段 use 语句内找 `path as alias`，path 取末段作原名。
+      for (const um of src.matchAll(/\buse\s+[^;]+;/gs)) {
+        const stmt = um[0];
+        for (const am of stmt.matchAll(/\b([A-Za-z_][\w]*(?:::[A-Za-z_][\w]*)*)\s+as\s+([A-Za-z_][\w]*)\b/g)) {
+          const orig = am[1];
+          const alias = am[2];
+          if (alias === "_") continue; // `Engine as _` 匿名导入不算命名别名
+          m.set(alias, orig.split("::").pop() || orig);
+        }
+      }
+    }
+  fnAliasCache.set(crate, m);
+  return m;
+}
 // 尺子缺陷 13（本批修）：缺陷 12 承认了「宏生成的 handler 看不见体内」，但「看不见」不等于「没有」——
 // cms 的 data_path_write_handlers!（68 条）、pp 的 dict_set_*/dict_del_*、bbs 的 topic_toggle_endpoints!
 // 这三族把 body 写在 macro_rules! 模板里。现按 Rust 语义补一级解析：
@@ -556,16 +589,24 @@ function fnBody(crate, ref) {
   const parts = String(ref).split("::").filter(Boolean);
   const name = parts[parts.length - 1];
   const mods = parts.slice(0, -1).filter((p) => p !== "crate" && p !== "self");
-  const scanAll = () => {
+  const scanAll = (scanName = name) => {
     for (const file of walk(dir)) {
-      const b = sliceFn(fs.readFileSync(file, "utf8"), name);
+      const b = sliceFn(fs.readFileSync(file, "utf8"), scanName);
       if (b) return b;
     }
     return "";
   };
+  // 尺子缺陷 32：字面名可能是路由文件里的分组导入别名（`use super::{ delete as empower_delete }`），
+  // 字面扫描失败后按 别名 → 原名 映射换名再扫（只对无模块限定符与回落扫描两处生效）。
+  const scanAllWithAliasFallback = () => {
+    let b = scanAll();
+    if (b) return b;
+    const orig = functionAliases(crate).get(name);
+    return orig && orig !== name ? scanAll(orig) : "";
+  };
   if (fs.existsSync(dir)) {
     if (!mods.length) {
-      body = scanAll();
+      body = scanAllWithAliasFallback();
     } else {
       const al = moduleAliases(crate);
       const variants = [
@@ -581,7 +622,23 @@ function fnBody(crate, ref) {
         const cross = v.startsWith("@");
         const parts = (cross ? v.slice(1) : v).split("::");
         const root = cross ? path.join(CRATES, parts.shift(), "src") : dir;
-        for (const f of [path.join(root, ...parts) + ".rs", path.join(root, ...parts, "mod.rs")]) {
+        // 尺子缺陷 30（2026-10-30 修）：跨 crate 限定符 `auth::login` 的 `auth` 是
+        // crate 名、`login` 在根 `lib.rs` 里，旧逻辑只试 `crates/auth/src/login.rs`
+        // 与 `login/mod.rs`，解析不到就回落全 crate 扫描（也扫不到别的 crate）⇒
+        // org_auth 契约别名委托 auth::login 的**写面整体隐形**（被读成 A3-只读，
+        // 且不在 A1 名单）。补回退：crate 根 `lib.rs`（跨 crate 根模块/单段模块
+        // 都可能落在根文件），以及模块文件 `<mod>.rs`（`auth::u2::login` →
+        // `crates/auth/src/u2.rs`）。
+        const candidates = [
+          path.join(root, ...parts) + ".rs",
+          path.join(root, ...parts, "mod.rs"),
+          path.join(root, "lib.rs"),
+        ];
+        if (parts.length >= 1) {
+          candidates.push(path.join(root, parts[0]) + ".rs");
+          candidates.push(path.join(root, parts[0], "mod.rs"));
+        }
+        for (const f of candidates) {
           if (!fs.existsSync(f)) continue;
           tried.push(path.relative(BACKEND, f));
           const b = sliceFn(fs.readFileSync(f, "utf8"), name);
@@ -596,7 +653,7 @@ function fnBody(crate, ref) {
         unresolvedRefs.push(
           `${crate}\t${ref}\t${tried.length ? `${tried.join(" / ")} 内无该 fn` : "限定符（含别名）无对应模块文件"}`
         );
-        body = scanAll();
+        body = scanAllWithAliasFallback();
       }
     }
   }
@@ -659,8 +716,35 @@ function indexCrateFns(crate) {
 // crate/std，落盘会把未解析名单刷成噪音。已知欠账：`super::f(..)` 要有调用方文件上下文
 // 才能定位父模块，这里不猜（返回 null），宁少证不假证。
 const qualHelperCache = new Map();
-function callHelperBody(crate, qual, name) {
-  if (!qual) return indexCrateFns(crate).get(name) || null;
+// 尺子缺陷 31（2026-10-30 修）：fnBody 缺陷 30 修复后，handler 可能解析到**别的
+// crate**（如 personal 路由委托 `empower::delete`），其体内裸名调用的 helper
+// （`check_owner`）在路由所在 crate 的索引里查不到 ⇒ gateEvidence 把已加门的写面
+// 读成无门禁（K3 假阳）。给门检测加**全局函数索引**回退：跨 crate 裸名 helper
+// 在全局索引里找。只用于 gateEvidence（门检测），writeEvidence 不启用——
+// 写判据全局回退会把别的 crate 的同名 helper 误认成真落笔（假阳方向）。
+const globalFnIndexCache = new Map();
+function globalFnIndex() {
+  if (globalFnIndexCache.size) return globalFnIndexCache;
+  for (const crate of fs.readdirSync(CRATES)) {
+    const dir = path.join(CRATES, crate, "src");
+    if (!fs.existsSync(dir)) continue;
+    for (const [n, b] of indexCrateFns(crate)) {
+      if (!globalFnIndexCache.has(n)) globalFnIndexCache.set(n, []);
+      globalFnIndexCache.get(n).push([crate, b]);
+    }
+  }
+  return globalFnIndexCache;
+}
+function callHelperBody(crate, qual, name, gateFallback = false) {
+  if (!qual) {
+    const local = indexCrateFns(crate).get(name);
+    if (local || !gateFallback) return local || null;
+    const hits = globalFnIndex().get(name) || [];
+    for (const [, b] of hits) {
+      if (b) return b;
+    }
+    return null;
+  }
   const key = `${crate}|${qual}|${name}`;
   if (qualHelperCache.has(key)) return qualHelperCache.get(key);
   const segs = qual.split("::").filter(Boolean);
@@ -676,7 +760,15 @@ function callHelperBody(crate, qual, name) {
         root = path.join(CRATES, parts[0], "src");
         parts.shift();
       }
+      // 与 fnBody 缺陷 30 同口径：跨 crate 根模块（parts 为空）与单段模块
+      // 都可能落在 crate 根 lib.rs 或模块文件里。
       candidates.push(path.join(root, ...parts) + ".rs", path.join(root, ...parts, "mod.rs"));
+      if (parts.length === 0 || parts.length === 1) {
+        candidates.push(path.join(root, "lib.rs"));
+      }
+      if (parts.length >= 1) {
+        candidates.push(path.join(root, parts[0]) + ".rs", path.join(root, parts[0], "mod.rs"));
+      }
     }
   }
   let body = null;
@@ -762,7 +854,9 @@ function gateEvidence(crate, body, depth = 0) {
   // 旧正则的前视断言排除 `:`，限定路径调用点整条扫不到，本把门只作证裸名那 13 把。
   for (const m of body.matchAll(/(?<![.\w])((?:[A-Za-z_]\w*::)*)([a-z_]\w*)\s*\(/g)) {
     const n = m[2];
-    const hb = callHelperBody(crate, m[1], n);
+    // 尺子缺陷 31：fnBody 可能把 handler 解析到别的 crate，其体内的裸名 helper
+    // 在本 crate 索引查不到时回退全局索引（只用于门检测）。
+    const hb = callHelperBody(crate, m[1], n, true);
     if (!hb || hb === body) continue;
     if (!callPropagates(body, n)) continue;
     const nested = gateEvidence(crate, hb, depth + 1);
@@ -816,6 +910,69 @@ const NO_BODY_BY_BUCKET = new Map(); // bucket -> 体内取不到的条数
 // 于是连「含写 SQL」都读不到：真落笔少算 14 条、GET 无门禁面少算 10 条（方向是**漏量**）。
 // 修法：UPDATE 的表名位再允许一条 `{` 前缀（`{}` 与 `{ident}` 同形状）。
 const WRITE_SQL_RE = /\b(INSERT\s+INTO|UPDATE\s+(?:\x5C?["\x60]?[A-Za-z_]\w*|\{)|DELETE\s+FROM)/i;
+// 尺子缺陷 29（A4 批修）：WRITE_SQL_RE 不排注释，`// Update the entry ...` 这类注释
+// 里的 "Update the" 会被读成 `UPDATE` 写语句（现场：qiyeweixin_bind_callback 只写内存
+// store，却因一行 `// Update the entry with external_user_id` 注释进 GET 写清单）。
+// 写判据只扫代码不扫注释；剥离器跳过字符串/字符字面量，避免 `"https://…"` 里的 `//`
+// 被当成行注释（Rust 原始字符串的 `#` 边界不单独处理，但其内容在字符串分支内已被保护）。
+function stripRustComments(src) {
+  let out = "";
+  let i = 0;
+  const n = src.length;
+  while (i < n) {
+    const c = src[i];
+    const d = src[i + 1];
+    if (c === "/" && d === "/") {
+      while (i < n && src[i] !== "\n") i++;
+    } else if (c === "/" && d === "*") {
+      i += 2;
+      while (i < n && !(src[i] === "*" && src[i + 1] === "/")) i++;
+      i = Math.min(i + 2, n);
+    } else if (c === '"') {
+      out += c;
+      i++;
+      while (i < n) {
+        out += src[i];
+        if (src[i] === "\\") {
+          i++;
+          if (i < n) {
+            out += src[i];
+            i++;
+          }
+          continue;
+        }
+        if (src[i] === '"') {
+          i++;
+          break;
+        }
+        i++;
+      }
+    } else if (c === "'") {
+      out += c;
+      i++;
+      while (i < n) {
+        out += src[i];
+        if (src[i] === "\\") {
+          i++;
+          if (i < n) {
+            out += src[i];
+            i++;
+          }
+          continue;
+        }
+        if (src[i] === "'") {
+          i++;
+          break;
+        }
+        i++;
+      }
+    } else {
+      out += c;
+      i++;
+    }
+  }
+  return out;
+}
 // 定向自证用：只要体内出现「转义引号表名」写法，WRITE_SQL_RE 就必须判它是写语句
 const ESCAPED_TABLE_RE = /(UPDATE|DELETE\s+FROM|INSERT\s+INTO)\s+\x5C["\x60][A-Za-z_]/i;
 // 定向自证用（缺陷 22）：体内出现 `format!` 动态表名的写语句，同样必须判它是写语句
@@ -863,20 +1020,53 @@ function awaitCall(body, name) {
   }
   return false;
 }
+// 尺子缺陷 28（本批修）：`writeEvidence` 旧判据只认 SQL 字面量（`INSERT INTO` / `UPDATE` /
+// `DELETE FROM`），而 sea_orm 的落笔全在 Rust API 里，一条 SQL 字面量都不出现：
+//   A. 静态实体写 `Entity::insert/insert_many/update_many/delete_many/delete_by_id(..)`；
+//   B. 活动模型写 `let [mut] x[: …]ActiveModel = ..` 之后 `x.insert/update/delete/save(..)`。
+// 于是 ORM 型写面被读成「只读挂写」：它们既不进 GET 写名单，也在 R4/R6/R7 的
+// 「含写 SQL」拆分里被算成只读。现场校准样本：`general_core_entity` 的 12 把 CRUD
+// （dict/dict_item/file/invoice × create/update/delete）本体内既无 SQL 字面量、
+// 也无转调写 helper，修前 12/12 判成非写；同 crate 的 9 条 GET 读面
+// （list/get/download）修后必须仍判非写。
+// 两臂都不按方法名裸扫，避免把 `map.insert(..)` / `Router::delete(handler)` 一类当落笔：
+// A 臂要求 `Entity::` 限定；B 臂只认本体内声明为 ActiveModel 的那个变量。
+const ORM_ENTITY_WRITE_RE = /\bEntity::(insert|insert_many|update_many|delete_many|delete_by_id)\s*\(/;
+const ACTIVE_MODEL_DECL_RES = [
+  /let\s+(?:mut\s+)?([a-z_]\w*)\s*:\s*(?:[\w:]+::)?ActiveModel\s*=/g,
+  /let\s+(?:mut\s+)?([a-z_]\w*)\s*=\s*(?:[\w:]+::)?ActiveModel\s*\{/g,
+];
+function ormWriteEvidence(body) {
+  if (!body) return false;
+  const em = ORM_ENTITY_WRITE_RE.exec(body);
+  if (em) return `sea_orm.Entity::${em[1]}`;
+  const vars = new Set();
+  for (const re of ACTIVE_MODEL_DECL_RES) for (const m of body.matchAll(re)) vars.add(m[1]);
+  for (const v of vars) {
+    const m = new RegExp(`\\b${v}\\s*\\.\\s*(insert|update|delete|save)\\s*\\(`).exec(body);
+    if (m) return `sea_orm.ActiveModel::${m[1]}(${v})`;
+  }
+  return false;
+}
 function writeEvidence(crate, body, depth = 0) {
   if (!body) return false;
-  if (WRITE_SQL_RE.test(body)) return true;
+  // 缺陷 29：写判据只扫代码不扫注释（见 stripRustComments 上方说明）。
+  const code = stripRustComments(body);
+  if (WRITE_SQL_RE.test(code)) return true;
+  // 缺陷 28：ORM 落笔与 SQL 字面量同层——都在「本函数体」判定，递归 helper 时同样成立。
+  const orm = ormWriteEvidence(code);
+  if (orm) return orm;
   if (depth >= 3) return false;
   // 缺陷 27：跨 crate 通用落笔按具名白名单作证（callHelperBody 解析不到 crud.rs 内的函数）。
   for (const n of CROSS_CRATE_WRITE_HELPERS) {
-    if (awaitCall(body, n)) return n;
+    if (awaitCall(code, n)) return n;
   }
   // 尺子缺陷 24 同族第二处：写 SQL 的转发追踪也不能只看裸名调用点
   // （现场 `u2_render::general_file_store(..)` INSERT 进 x_general_assemble_general_file，修前隐形）。
-  for (const m of body.matchAll(/(?<![.\w])((?:[A-Za-z_]\w*::)*)([a-z_]\w*)\s*\(/g)) {
+  for (const m of code.matchAll(/(?<![.\w])((?:[A-Za-z_]\w*::)*)([a-z_]\w*)\s*\(/g)) {
     const n = m[2];
     const hb = callHelperBody(crate, m[1], n);
-    if (!hb || hb === body || !awaitCall(body, n)) continue;
+    if (!hb || hb === body || !awaitCall(code, n)) continue;
     if (writeEvidence(crate, hb, depth + 1)) return n;
   }
   return false;
@@ -1078,6 +1268,34 @@ const readOnlyLines = [];
     `写 SQL 判据自证（缺陷 22）：含 format! 动态表名写法的 ${dynamicSites} 个函数全部判为写面，0 处漏量`
   );
 }
+// 刀口自证（缺陷 28 的守卫）：用 `general_core_entity` 做正反校准样本——12 把 CRUD
+// （POST create/update/delete）必须全部判为写面，9 条 GET 读面（list/get/download）
+// 必须一条都不判写。样本条数漂移（有人加/删路由）同样喊红：校准值要先复核再改，
+// 不能靠「判据变宽了但样例恰好还过」蒙混。
+{
+  const CAL = "general_core_entity";
+  const isWriteMethod = (r) => ["POST", "PUT", "DELETE", "PATCH"].includes(r.method);
+  const calRoutes = routes.filter((r) => r.crate === CAL);
+  const calWrites = calRoutes.filter(isWriteMethod);
+  const calReads = calRoutes.filter((r) => !isWriteMethod(r));
+  const bodyOf = (r) => fnBody(CAL, r.handlerRef) || "";
+  // SQL 字面量臂在这 12 把上必须 0 命中——否则样本被 SQL 污染，
+  // 就证明不了「修的是 ORM 盲区」，得另选样本或复核。
+  const sqlOnly = calWrites.filter((r) => WRITE_SQL_RE.test(bodyOf(r))).length;
+  const missing = calWrites.filter((r) => writeEvidence(CAL, bodyOf(r)) === false);
+  const noisy = calReads.filter((r) => writeEvidence(CAL, bodyOf(r)) !== false);
+  if (calWrites.length !== 12 || calReads.length !== 9 || sqlOnly || missing.length || noisy.length)
+    throw new Error(
+      `sea_orm 写判据自证失败（缺陷 28）：样本 ${calWrites.length} 写 / ${calReads.length} 读（期望 12/9）；` +
+        `SQL 字面量臂命中 ${sqlOnly} 条（期望 0）；` +
+        `漏判 ${missing.length} 条${missing.length ? `：${missing.map((r) => r.handler).join("、")}` : ""}；` +
+        `误判 ${noisy.length} 条${noisy.length ? `：${noisy.map((r) => r.handler).join("、")}` : ""}`
+    );
+  console.log(
+    `sea_orm 写判据自证（缺陷 28）：${CAL} 的 ${calWrites.length} 把 CRUD SQL 字面量臂命中 ${sqlOnly} 条、` +
+      `ORM 判据命中 ${calWrites.length - missing.length} 条，${calReads.length} 条 GET 读面 0 条误判`
+  );
+}
 for (const name of ["R4-匿名可达+体内无门禁", "R6-已认证+读会话无门禁", "R7-已认证+体内无会话无门禁"]) {
   const total = rb.get(name) || 0;
   const lines = READ_ONLY_ON_WRITE.get(name) || [];
@@ -1142,7 +1360,12 @@ console.log("明细已写 write_routes_get_writes.tsv");
 // 整条匿名放行——本批 R4 里的 `invoice_upload`（匿名 INSERT + creator 取 body）就是这么来的。
 // 这里按同一口径复刻，只点名「豁免命中里至少有一个通配段正对着路由的字面量段」的碰撞，
 // 并按体内是否含写 SQL / 是否读会话 / 是否有门禁分三档。
+// A5 批（缺陷 30）：`AUTH_EXEMPT_BLOCKED_PATHS` 是中间件层的精确排除——被点名的路径
+// 即使匹配通配豁免也不放行。碰撞普查与中间件同口径：blocked 路径不再报碰撞。
+// 另外，本身就在 `AUTH_EXEMPT_PATHS` 显式点名（无通配）的路径也不报碰撞——
+// 它的匿名来自显式豁免，不是被 `{param}` 误吞（如 `/api/queryview/list`）。
 function exemptCollisions(p) {
+  if (EXEMPT_PATHS.includes(p)) return [];
   const a = segs(p);
   const out = [];
   for (const pat of EXEMPT_PATHS) {
@@ -1159,6 +1382,7 @@ function exemptCollisions(p) {
 const collisions = [];
 const cb = new Map();
 for (const r of routes) {
+  if (EXEMPT_BLOCKED.includes(r.path)) continue;
   const eatenBy = exemptCollisions(r.path);
   if (!eatenBy.length) continue;
   const body = fnBody(r.crate, r.handlerRef);
@@ -1240,12 +1464,28 @@ console.log("明细已写 anonymous_write_routes.tsv");
 // 第三十二批：OAuth 三方登录 4 条（oauth/login/qywx·dingding·name + oauth/bind/name）已用
 // `validate_state`（服务端 state CSRF 门）收口，尺子认门后它们离开 A1（有门、非「无门禁」），
 // 名单同步移除这 4 条（9→5）。oidc_callback 本就不在 A1（它是 K3 已认证可达）。
+// 本批复跑补登记：personal 的 3 条契约别名（`/api/organization/assemble/personal/regist`
+// 与 `.../reset`、`.../reset/password/anonymous`，见 personal/src/lib.rs:406-416）
+// 是**原样委托同一 handler** 的第二条注册路径，与已登记的三条同匿名语义；
+// 复跑实测 8 条 vs 名单 5 条当场红，故按「新增匿名落笔面必须显式点名」补入，不是放宽判据。
+// 2026-10-30 复跑补登记：`auth GET /api/qiyeweixin/update/person/detail/{code}`（企微扫码登录
+// 回调）在 B6 批补了注册表 Public 后进 A1。该端点是**设计上必须匿名**的认证前置族——
+// 一次性 code 由企微 OAuth 侧验证，回调契约本身是 GET，code 换 userid 后创建/更新人员并
+// 签发会话（A4 批已定性，见 constants.rs 该路径的豁免注释）。补入名单，不是放宽判据。
 const A1_UNCONDITIONAL_WRITE = [
   "auth\tPOST\t/api/authentication",
   "auth\tPOST\t/api/authentication/login",
+  "auth\tGET\t/api/qiyeweixin/update/person/detail/{code}",
   "personal\tPOST\t/api/person/regist",
   "personal\tPUT\t/api/reset",
   "personal\tPOST\t/api/reset/password/anonymous",
+  "personal\tPOST\t/api/organization/assemble/personal/regist",
+  "personal\tPUT\t/api/organization/assemble/personal/reset",
+  "personal\tPOST\t/api/organization/assemble/personal/reset/password/anonymous",
+  // 2026-10-30 尺子缺陷 30 修复后可见：org_auth 契约别名委托 auth::login（原样
+  // 同 handler 的第三注册路径），登录写面与契约路径 /api/authentication 等权，
+  // 补入名单（同时已在 AUTH_RATE_LIMIT_EXACT 限流）。
+  "organization_assemble_authentication\tPOST\t/api/organization/assemble/authentication/authentication",
 ];
 const a1Now = anonWrites
   .filter((l) => l.includes("\tA1-真匿名+体内写 SQL 且无门禁无会话"))
@@ -1467,12 +1707,15 @@ for (const [key, helper] of [
   if (gatedByRoute.get(key) !== helper)
     witnessGaps.push(`缺陷 25 见证缺失（门埋在第二层的链未被 ${helper} 作证）：${key.replace(/\t/g, " ")}`);
 }
-// 缺陷 25 反向见证：放宽链条不等于发门。`html/to/pdf` 与 `html/to/image` 两把**确实没有归属门**
-// （它们不读附件，`workHtml` 直接来自 body → 渲染 → `general_file_store` 落一条 GeneralFile），
-// 必须继续挂在无门禁行动面；若哪天它们被链式追踪"作证"出门来，就是恒真化被踩住的信号。
+// 缺陷 25 反向见证：放宽链条不等于发门。原钉 `html/to/pdf` 与 `html/to/image` 本批（A2 收口）
+// 真的加上了 `u4_require_session` 具名门（不是尺子误判），钉子被合法冲掉。
+// 换钉到两条**设计上必须匿名/条件匿名**的协议 GET 写：`qiyeweixin_update_person_detail`
+// （企微扫码登录回调，一次性 code 由企微侧验证，加会话门会打断登录）与 `set_cancel`
+// （首次引导 `/api/secret/set*` 族，加会话门会打断初始化）。它们长期确无门禁；
+// 若哪天被链式追踪"作证"出门来，就是恒真化被踩住的信号。
 for (const key of [
-  "processplatform_assemble_surface\tPOST\t/api/processplatform/assemble/surface/attachment/html/to/pdf\tattachment_u2b_html_to_pdf",
-  "processplatform_assemble_surface\tPOST\t/api/processplatform/assemble/surface/attachment/html/to/image\tattachment_u2b_html_to_image",
+  "auth\tGET\t/api/qiyeweixin/update/person/detail/{code}\tqiyeweixin_update_person_detail",
+  "program_init\tGET\t/api/secret/set/cancel\tset_cancel",
 ]) {
   if (gatedByRoute.has(key))
     witnessGaps.push(`缺陷 25 反向见证失效（无门路由被链式追踪误作证 ${gatedByRoute.get(key)}）：${key.replace(/\t/g, " ")}`);
@@ -1487,7 +1730,18 @@ for (const key of [
 const LITERAL_REJECT_RE = /AppError::(Forbidden|Unauthorized)/;
 for (const l of indirectGated) {
   const p = l.split("\t");
-  const hb = indexCrateFns(p[0]).get(p[4]) || "";
+  // 尺子缺陷 31：跨 crate 作证的 helper（personal 路由委托 empower::delete 的
+  // check_owner）在路由 crate 的索引里取不到，回退全局索引（与 gateEvidence 同口径）。
+  let hb = indexCrateFns(p[0]).get(p[4]) || "";
+  if (!hb) {
+    const hits = globalFnIndex().get(p[4]) || [];
+    for (const [, b] of hits) {
+      if (b) {
+        hb = b;
+        break;
+      }
+    }
+  }
   if (!hb) {
     witnessGaps.push(`缺陷 20 独立反证：作证的 helper ${p[0]}::${p[4]} 体内取不到`);
     continue;
@@ -1511,9 +1765,13 @@ for (const l of indirectGated) {
 // 冲掉；换钉到 `personal PUT /api/reset`（`reset_password`）——密码重置是**设计上匿名**的入口
 // （加会话门等于打断「忘记密码」流程，故长期确无门禁），且体内确有 `apply_reset` 转调，
 // 同样是「把 helper 转调当门禁」的强载荷。
+// 第四十二批再改钉：原第二条 `attachment_u2b_doc_to_word` 本批（A2 收口）真的加上了
+// `u4_require_session` 具名门（不是尺子误判），钉子被合法冲掉；换钉到 `reset_password_anonymous`
+// ——匿名口令重置，与 reset_password 同族（设计上匿名、无门禁），且体内确有 `apply_reset` 转调，
+// 「把 helper 转调当门禁」的载荷与原钉同强。
 const NEG_WITNESS_1920 = [
   "personal\tPUT\t/api/reset\treset_password",
-  "processplatform_assemble_surface\tPOST\t/api/processplatform/assemble/surface/attachment/doc/to/word/work/{workId}\tattachment_u2b_doc_to_word",
+  "personal\tPOST\t/api/reset/password/anonymous\treset_password_anonymous",
   "auth\tGET\t/api/authentication/oauth/login/qywx/code/{code}\toauth_login_qywx",
 ];
 for (const key of NEG_WITNESS_1920) {
@@ -1579,11 +1837,35 @@ for (const key of [
     witnessGaps.push(`缺陷 23 见证缺失（u2_gate_by_sql 定门未被认出，桶 ${bucket || "K"}）：${key.replace(/\t/g, " ")}`);
 }
 // 反向：体内确无判定入口的 GET 写档不许被认成有门（防词表扩成恒真）。
+// 第四十一批换钉：原钉 `document_id_view_count` 本批（A4 收口）真的加上了
+// `require_session` 具名门（不是尺子误判），钉子被合法冲掉；换钉到 `set_cancel`——
+// 它是**设计上匿名**的初始化引导端点（首次引导 `/api/secret/set*` 族，加会话门会打断
+// 初始化），体内确无任何门名，且它确在 GET 写无门禁档，「把无门档认成已加门」的
+// 放宽会被这条当场抓住，载荷与原钉同强。
 for (const key of [
-  "cms_assemble_control\tGET\t/api/document/{id}/view/count\tdocument_id_view_count",
+  "program_init\tGET\t/api/secret/set/cancel\tset_cancel",
 ]) {
   if (!kRoutes.has(key))
     witnessGaps.push(`缺陷 23 反向见证失效（无门档被误判成已加门）：${key.replace(/\t/g, " ")}`);
+}
+// 缺陷 32：分组导入别名（`use super::{ delete as empower_delete }`）注册的 handler 必须
+// 能解析回原名函数体。正向：empower_delete 两条 DELETE 必须拿到 check_owner 门作证——
+// 别名映射退化（换名扫描失效）时它们退回 R8「体内不可解析」，间接门禁名单当场消失。
+for (const key of [
+  "empower\tDELETE\t/api/person/empower/{id}\tempower_delete",
+  "empower\tDELETE\t/api/organization/assemble/personal/empower/{id}\tempower_delete",
+]) {
+  if (gatedByRoute.get(key) !== "check_owner")
+    witnessGaps.push(`缺陷 32 见证缺失（别名 handler 未解析出体内门禁）：${key.replace(/\t/g, " ")}`);
+}
+// 反向：别名换算不许把只读的 empower_get（`get as empower_get`，纯 SELECT + owner 门）
+// 误判成写面。换名过宽（别名映射到别的写函数）时它会进 GET 写面，当场红。
+for (const key of [
+  "empower\tGET\t/api/person/empower/{id}\tempower_get",
+  "empower\tGET\t/api/organization/assemble/personal/empower/{id}\tempower_get",
+]) {
+  if (kRoutes.has(key))
+    witnessGaps.push(`缺陷 32 反向见证失效（只读别名 handler 被误判成 GET 写面）：${key.replace(/\t/g, " ")}`);
 }
 for (const w of WRITE_HELPER_WITNESSES)
   if (!wHelpers.has(w)) witnessGaps.push(`缺陷 16 见证缺失（间接写 SQL 未见 ${w}）`);
@@ -1597,7 +1879,8 @@ console.log(
   `\n判据见证：缺陷 16 ${WRITE_HELPER_WITNESSES.length} 条 / 缺陷 17 ${GATE_HELPER_WITNESSES.length} 条 / ` +
   `缺陷 18 正向 ${DEAD_ALIAS_WITNESSES.length} 条 + 反向 ${LIVE_ALIAS_WITNESSES.length} 条 / ` +
   `缺陷 19 正向 4 条 + 缺陷 20 正向 2 条 + 反向 3 条 / 缺陷 21 反向 2 条 + 正向 1 条 / ` +
-  `缺陷 22 正向 3 条 + helper 1 条 + 反向 3 条 / 缺陷 23 正向 3 条 + 反向 1 条，` +
+  `缺陷 22 正向 3 条 + helper 1 条 + 反向 3 条 / 缺陷 23 正向 3 条 + 反向 1 条 / ` +
+  `缺陷 32 正向 2 条 + 反向 2 条，` +
   `缺口 ${witnessGaps.length} 处`
 );
 for (const g of witnessGaps) console.error(`  ${g}`);

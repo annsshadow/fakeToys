@@ -9,6 +9,18 @@ use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 
 use crate::middleware::SecurityState;
 
+/// 进程级环境变量测试的串行锁。
+///
+/// 为什么需要它：环境变量是全局状态，而 `db::dialect::dialect()` 背后的
+/// `OnceLock` 全进程只初始化一次。两者叠加的后果是「哪个测试先跑」决定全局方言 ——
+/// 实测过一次：`dialect` 的用例把 `DB_DIALECT` 设成 mysql 的瞬间，迁移运行器的
+/// 测试正好初始化方言，于是 114 条 PG 迁移被改写成 MySQL 语法执行，
+/// 报 `ERROR: syntax error at end of input`（看起来像迁移文件坏了）。
+///
+/// 约定：任何会 `set_var`/`remove_var` 的测试都先拿这把锁，
+/// 尤其是**同时**依赖 `dialect()` 的测试（迁移运行器）。
+pub static ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 /// 空连接池：用于验证路由存在性（无 DB 时返回 500）。
 pub fn mock_pool() -> Pool {
     let mgr = deadpool_postgres::Manager::new(
@@ -16,6 +28,26 @@ pub fn mock_pool() -> Pool {
         deadpool_postgres::tokio_postgres::NoTls,
     );
     Pool::builder(mgr).max_size(1).build().unwrap()
+}
+
+/// 空 Mock 数据库连接（sea_orm）：用于 *_core_entity 的 HTTP 臂测试。
+/// 无 DB 环境下 handler 的 ORM 访问会得到 `DbErr`（→ 500），而不是在连接提取期
+/// 就 500（B3 接线修复后，router 必须注入 Extension<DatabaseConnection>）。
+/// 用 `connect_lazy(true)` 构建懒连接池，且指向**不可达**的 127.0.0.1:1（IPv4：
+/// Windows 上 `localhost` 会走 ::1 导致连接超时而非立即拒绝，拖慢测试）：
+/// 无论本机是否跑着 PG（5432 可能有测试库），查询都会 connection refused →
+/// DbErr → AppError::Internal（500），测试结果与环境无关。
+pub async fn mock_db() -> sea_orm::DatabaseConnection {
+    let mut opt = sea_orm::ConnectOptions::new(
+        "postgres://o2server:password@127.0.0.1:1/oa4rust".to_string(),
+    );
+    opt.connect_lazy(true)
+        .max_connections(1)
+        .acquire_timeout(std::time::Duration::from_secs(1))
+        .sqlx_logging(false);
+    sea_orm::Database::connect(opt)
+        .await
+        .expect("mock_db: 构建懒连接池不应失败（lazy 模式不实际建连）")
 }
 
 /// 连接到 PostgreSQL 的 deadpool_postgres::Pool，用于单元测试。
@@ -119,27 +151,6 @@ pub async fn upsert_fixture_person(
 /// 判据形态与 R4 在 `personal` crate 落地的版本逐字一致（两处实现同族同理）。
 pub fn is_unique_violation(e: &deadpool_postgres::tokio_postgres::Error) -> bool {
     e.code() == Some(&deadpool_postgres::tokio_postgres::error::SqlState::UNIQUE_VIOLATION)
-}
-
-/// 尝试连接默认测试 Redis（redis://127.0.0.1:6379），超时 2s。
-///
-/// Redis 在本项目中是**可选依赖**（见 `crate::redis` 顶部注释：不可达时降级为
-/// 进程内内存实现）。CI 的 unit-tests job 只起了 postgres service，没有任何
-/// Redis 服务，因此凡是以「能连上 Redis」为前提的测试都必须在缺服务时优雅跳过，
-/// 否则会断言失败 -> panic -> `cargo test` 以 exit code 101 结束。
-///
-/// 与 `is_db_available()` 对称，供测试做运行时守卫。
-pub async fn is_redis_available() -> bool {
-    let url =
-        crate::redis::redis_url_from_env().unwrap_or_else(|| "redis://127.0.0.1:6379".to_string());
-    matches!(
-        tokio::time::timeout(
-            Duration::from_secs(2),
-            crate::redis::RedisPool::from_url(&url)
-        )
-        .await,
-        Ok(Ok(_))
-    )
 }
 
 /// 连接到 PostgreSQL 的 sea_orm::DatabaseConnection，
@@ -267,4 +278,307 @@ pub async fn send_request(
     let json: serde_json::Value =
         serde_json::from_slice(&bytes).unwrap_or(serde_json::json!({"error": "invalid json"}));
     (status, json)
+}
+
+/// 指向不可达端口的失败池（错误注入专用）：`get()` 因连接被拒**立即**返回 Err，
+/// 用于覆盖各数据访问函数的 `pool.get().await.map_err(...)` 错误臂——
+/// 健康池永远走不到那些分支，而这恰恰是「数据库连不上时调用方必须显式失败」的契约。
+pub fn failing_pool() -> Pool {
+    let mut cfg = deadpool_postgres::tokio_postgres::Config::new();
+    cfg.host("127.0.0.1")
+        .port(1)
+        .user("cov")
+        .password("cov")
+        .dbname("cov");
+    let mgr = deadpool_postgres::Manager::new(cfg, deadpool_postgres::tokio_postgres::NoTls);
+    Pool::builder(mgr).max_size(1).build().unwrap()
+}
+#[cfg(test)]
+mod e2e_chain_tests {
+    use super::*;
+    use crate::middleware::security::SecurityState;
+
+    // ── 2026-10-29 覆盖率轮：test_app_with/send 驱动真实 auth 中间件链 ──
+    // 全内存（SessionManager::new 无池、失败池仅占位）：确定性、无 DB 依赖。
+    #[tokio::test]
+    async fn test_app_drives_the_auth_chain_end_to_end() {
+        let state = SecurityState {
+            session_manager: crate::session::SessionManager::new(),
+            rate_limiter: crate::rate_limit::RateLimiter::new(),
+            pool: crate::testing::failing_pool(),
+        };
+        // 在 state 的会话管理器里建一个真实内存会话（create_session 内部走
+        // check_token_threshold/persist 的无池降级路径——一并被覆盖）
+        state
+            .session_manager
+            .create_session("cov-e2e".to_string(), "cov-e2e-tok".to_string())
+            .await
+            .unwrap();
+        let app = test_app_with(state, crate::testing::failing_pool());
+        // test_session 助手（固定 token/person）此前从未被本 crate 调用
+        let s = crate::testing::test_session("cov-e2e");
+        assert_eq!(s.token, "test-token");
+
+        // ① /health：豁免 ∧ 注册表 Public → 匿名放行
+        assert_eq!(
+            send(&app, axum::http::Method::GET, "/health", None, None).await,
+            axum::http::StatusCode::OK
+        );
+        // ② 受保护路由无凭据 → 401（auth_middleware 的 extract 失败臂）
+        assert_eq!(
+            send(&app, axum::http::Method::GET, "/api/unit/list", None, None).await,
+            axum::http::StatusCode::UNAUTHORIZED
+        );
+        // ③ 空白 Bearer → 401（空 token 臂）
+        assert_eq!(
+            send(
+                &app,
+                axum::http::Method::GET,
+                "/api/unit/list",
+                Some(""),
+                None
+            )
+            .await,
+            axum::http::StatusCode::UNAUTHORIZED
+        );
+        // ④ 伪造 token → 401（validate_session 未命中臂）
+        assert_eq!(
+            send(
+                &app,
+                axum::http::Method::GET,
+                "/api/unit/list",
+                Some("forged"),
+                None
+            )
+            .await,
+            axum::http::StatusCode::UNAUTHORIZED
+        );
+        // ⑤ 真实会话 → 认证通过、注册表 Public 放行 → 200（含 xff 头注入分支）
+        assert_eq!(
+            send(
+                &app,
+                axum::http::Method::GET,
+                "/api/unit/list",
+                Some("cov-e2e-tok"),
+                Some("203.0.113.9")
+            )
+            .await,
+            axum::http::StatusCode::OK
+        );
+        // ⑥ 登录路由：豁免 ∧ Public → 匿名 200
+        assert_eq!(
+            send(
+                &app,
+                axum::http::Method::POST,
+                "/api/authentication/login",
+                None,
+                None
+            )
+            .await,
+            axum::http::StatusCode::OK
+        );
+    }
+
+    #[tokio::test]
+    async fn login_route_is_rate_limited_per_configured_threshold() {
+        // 显式设阈值：第 4 次起必须 429（环境变量每次调用都读，测试内设置即可生效）
+        std::env::set_var("OA4RUST_AUTH_RATE_LIMIT", "3");
+        let state = SecurityState {
+            session_manager: crate::session::SessionManager::new(),
+            rate_limiter: crate::rate_limit::RateLimiter::new(),
+            pool: crate::testing::failing_pool(),
+        };
+        let app = test_app_with(state, crate::testing::failing_pool());
+        let mut saw_429 = false;
+        for _ in 0..8 {
+            let status = send(
+                &app,
+                axum::http::Method::POST,
+                "/api/authentication/login",
+                None,
+                None,
+            )
+            .await;
+            if status == axum::http::StatusCode::TOO_MANY_REQUESTS {
+                saw_429 = true;
+                break;
+            }
+        }
+        std::env::remove_var("OA4RUST_AUTH_RATE_LIMIT");
+        assert!(saw_429, "超过阈值后登录必须 429");
+        std::env::remove_var("OA4RUST_AUTH_RATE_LIMIT");
+    }
+}
+
+// ── 2026-10-30 第八轮：mock 基建自身覆盖 ────────────────────────────────
+// `mock_pool()` / `mock_db()` 主要被其他 crate 作为 dev-dependency 使用，shared
+// 自身测试从未调用，导致 testing.rs 的行覆盖率长期偏低。补最小用例：它们
+// 都是懒连接，无 DB 环境也能构建成功（首次 get/query 才尝试连接）。
+#[cfg(test)]
+mod mock_infra_tests {
+    use super::*;
+    use crate::ControlClient;
+
+    #[test]
+    fn mock_pool_builds_without_connecting() {
+        let _ = mock_pool();
+    }
+
+    #[tokio::test]
+    async fn mock_db_builds_lazy_connection_without_connecting() {
+        let _ = mock_db().await;
+    }
+
+    #[tokio::test]
+    async fn is_db_available_returns_bool_without_panicking() {
+        // 无论 DATABASE_URL 是否可达，该探测函数都必须返回 bool 而非 panic。
+        let _ = is_db_available().await;
+    }
+
+    #[tokio::test]
+    async fn upsert_fixture_person_is_idempotent_and_detects_violation() {
+        // 真库臂：upsert_fixture_person 与 is_unique_violation 主要被其他 crate
+        // 使用，shared 自身从不调用 → 补幂等 + 唯一冲突检测路径。
+        if !is_db_available().await {
+            eprintln!("SKIP: no database available");
+            return;
+        }
+        let pool = test_pool();
+        let client = pool.get().await.expect("获取 client");
+        let pid = format!("fixture-{}", uuid::Uuid::new_v4());
+        let uid = format!("fixture-uid-{}", uuid::Uuid::new_v4());
+
+        // 首次插入 + 幂等重复插入（同 id 走 ON CONFLICT DO UPDATE）。
+        upsert_fixture_person(&client, &pid, &uid, "Fixture Person").await;
+        upsert_fixture_person(&client, &pid, &uid, "Fixture Person 2").await;
+
+        // 用相同 id 不同 unique_id 直接插入 → 主键冲突 23505，is_unique_violation 必须识别。
+        let conflict = client
+            .execute(
+                "INSERT INTO auth_person (id, unique_id, name, password_hash) \
+                 VALUES ($1, $2, 'other', 'x')",
+                &[&pid, &"other-uid"],
+            )
+            .await
+            .expect_err("同 id 重复插入必须主键冲突");
+        assert!(
+            is_unique_violation(&conflict),
+            "23505 应被识别为唯一冲突，实际: {:?}",
+            conflict.code()
+        );
+
+        // 清理。
+        client
+            .execute("DELETE FROM auth_person WHERE id = $1", &[&pid])
+            .await
+            .expect("清理夹具");
+    }
+
+    #[tokio::test]
+    async fn is_unique_violation_rejects_non_conflict_errors() {
+        // 反向：非唯一冲突错误（如 42P01 undefined_table）必须返回 false，
+        // 防止把「表不存在/连接失败」误判成可重试的冲突。
+        if !is_db_available().await {
+            eprintln!("SKIP: no database available");
+            return;
+        }
+        let pool = test_pool();
+        let client = pool.get().await.expect("获取 client");
+        let err = client
+            .execute("SELECT * FROM definitely_not_a_table_oa4rust", &[])
+            .await
+            .expect_err("非法 SQL 必须报错");
+        assert!(
+            !is_unique_violation(&err),
+            "非唯一冲突错误不应识别为冲突，实际 code: {:?}",
+            err.code()
+        );
+    }
+
+    #[tokio::test]
+    async fn upsert_fixture_person_cleans_same_uid_collision() {
+        // upsert_fixture_person 的「清同 unique_id 残留」分支：先插入同
+        // unique_id 不同 id 的脏行，upsert 后残留必须被删掉（否则后续
+        // 唯一索引冲突无法收敛）。
+        if !is_db_available().await {
+            eprintln!("SKIP: no database available");
+            return;
+        }
+        let pool = test_pool();
+        let client = pool.get().await.expect("获取 client");
+        let pid = format!("fixture-{}", uuid::Uuid::new_v4());
+        let uid = format!("fixture-uid-{}", uuid::Uuid::new_v4());
+        let rogue_id = format!("fixture-rogue-{}", uuid::Uuid::new_v4());
+        client
+            .execute(
+                "INSERT INTO auth_person (id, unique_id, name, password_hash) \
+                 VALUES ($1, $2, 'rogue', 'x')",
+                &[&rogue_id, &uid],
+            )
+            .await
+            .expect("插入残留行");
+        upsert_fixture_person(&client, &pid, &uid, "Fixture Person").await;
+        let rogue_exists: bool = client
+            .query_one(
+                "SELECT EXISTS(SELECT 1 FROM auth_person WHERE id = $1)",
+                &[&rogue_id],
+            )
+            .await
+            .expect("查询残留")
+            .get(0);
+        assert!(!rogue_exists, "同 unique_id 的残留行应被清理");
+        client
+            .execute("DELETE FROM auth_person WHERE id = $1", &[&pid])
+            .await
+            .expect("清理夹具");
+    }
+
+    #[tokio::test]
+    async fn control_client_object_and_rowget_real_pool_impls() {
+        // lib.rs 的 `ControlClient for deadpool_postgres::Object` 与
+        // `RowGet for tokio_postgres::Row` 是真库实现，之前只被下游 crate 的
+        // 真库测试覆盖、shared 自身从不直接调用 → 补全 8 个方法的覆盖。
+        if !is_db_available().await {
+            eprintln!("SKIP: no database available");
+            return;
+        }
+        let pool = test_pool();
+        let client = pool.get().await.expect("获取 client");
+        let arc: std::sync::Arc<dyn ControlClient> = std::sync::Arc::new(client);
+
+        let rows = arc
+            .ctrl_query(
+                "SELECT 1::int4 AS id, 'x'::text AS name, true AS flag, 1000000000::int8 AS big",
+                &[],
+            )
+            .await
+            .expect("ctrl_query");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].get_i32("id"), 1);
+        assert_eq!(rows[0].get_str("name"), "x");
+        assert!(rows[0].get_bool("flag"), "flag 列应为 true");
+        assert_eq!(rows[0].get_i64("big"), 1_000_000_000);
+
+        let one = arc
+            .ctrl_query_one("SELECT 1::int4 AS id", &[])
+            .await
+            .expect("ctrl_query_one");
+        assert_eq!(one.get_i32("id"), 1);
+
+        let opt = arc
+            .ctrl_query_opt("SELECT 1::int4 AS id", &[])
+            .await
+            .expect("ctrl_query_opt");
+        assert!(opt.is_some());
+
+        // 临时表随连接关闭自动消失；execute 对 DDL 返回 0、对 INSERT 返回行数。
+        arc.ctrl_execute("CREATE TEMP TABLE _cov_ctrl (id int)", &[])
+            .await
+            .expect("create temp");
+        let n = arc
+            .ctrl_execute("INSERT INTO _cov_ctrl VALUES (1)", &[])
+            .await
+            .expect("insert");
+        assert_eq!(n, 1);
+    }
 }

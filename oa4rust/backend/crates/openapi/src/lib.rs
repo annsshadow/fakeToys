@@ -69914,3 +69914,6 @@ impl utoipa::Modify for SecurityAddon {
         );
     }
 }
+
+#[cfg(test)]
+mod tests;

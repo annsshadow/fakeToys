@@ -131,7 +131,12 @@ class GPT(nn.Module):
         for _ in range(max_new_tokens):
             idx_cond = idx[:, -self.cfg.block_size :]
             logits, _ = self(idx_cond)
-            logits = logits[:, -1, :] / temperature
+            # 温度下限钳制：temperature=0（贪心解码）时直接相除会得到 inf，
+            # softmax 变 NaN，torch.multinomial 抛
+            # "probability tensor contains either inf, nan or element < 0"。
+            # minigrad 轨（minigrad/sample.py::_pick_next）一直用同样的 1e-6 钳制，
+            # 这里补齐，否则两条轨的 `--temperature 0` 行为不一致。
+            logits = logits[:, -1, :] / max(temperature, 1e-6)
             if top_k is not None:
                 v, _ = torch.topk(logits, min(top_k, logits.size(-1)))
                 logits[logits < v[:, [-1]]] = -float("inf")

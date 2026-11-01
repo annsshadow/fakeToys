@@ -56,7 +56,10 @@ fn perf_baseline() {
     let pool = _ctx.pool();
 
     // 关闭限流以测量成功路径延迟（仅本测试进程生效，生产不受影响）。
-    std::env::set_var("OA4RUST_DISABLE_RATE_LIMIT", "1");
+    // 注意：不存在 `OA4RUST_DISABLE_RATE_LIMIT` 这个总开关；真正生效的是
+    // 认证/普通两个限额变量（见 shared::middleware::constants）。
+    std::env::set_var("OA4RUST_AUTH_RATE_LIMIT", "100000");
+    std::env::set_var("OA4RUST_GENERAL_RATE_LIMIT", "100000");
 
     runtime.block_on(async {
         // 2) 启动完整应用，拿到 addr / 后台句柄 / 已签发的 admin token

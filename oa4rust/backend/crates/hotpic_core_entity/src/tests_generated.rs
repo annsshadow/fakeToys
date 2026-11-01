@@ -11,8 +11,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_list() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -32,8 +32,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_list_by_app_and_info() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -54,8 +54,8 @@ mod tests {
     // SKIPPED: exists_check not accessible
     #[tokio::test]
     async fn test_create() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -75,8 +75,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_delete_by_id() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()

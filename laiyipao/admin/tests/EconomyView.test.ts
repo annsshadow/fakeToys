@@ -15,13 +15,21 @@
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import ElementPlus from 'element-plus'
+import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const fetchEconomy = vi.hoisted(() => vi.fn())
+const fetchAdminOrders = vi.hoisted(() => vi.fn())
+const exportOrdersCsv = vi.hoisted(() => vi.fn())
 const updateShopItem = vi.hoisted(() => vi.fn())
 const box = vi.hoisted(() => ({ prompt: vi.fn(), confirm: vi.fn() }))
 
-vi.mock('@/api', () => ({ fetchEconomy, updateShopItem }))
+vi.mock('@/api', () => ({
+  fetchEconomy,
+  fetchAdminOrders,
+  exportOrdersCsv,
+  updateShopItem,
+}))
 vi.mock('element-plus', async (importOriginal) => {
   const mod = await importOriginal<typeof import('element-plus')>()
   return { ...mod, ElMessageBox: box }
@@ -47,15 +55,31 @@ function shopFixture(overrides: Row = {}): Row {
   }
 }
 
-async function mountEconomy(flows: Row[] = [], shop: Row[] = []) {
+async function mountEconomy(flows: Row[] = [], shop: Row[] = [], orders: Row[] = []) {
   fetchEconomy.mockResolvedValue({ flows, shop })
-  const wrapper = mount(EconomyView, { global: { plugins: [ElementPlus] } })
+  fetchAdminOrders.mockResolvedValue({ items: orders, total: orders.length })
+  // 玩家列是 el-link（第 48 轮），点击跳转用户页 —— 必须注入真实 router
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [
+      { path: '/economy', component: { template: '<div />' } },
+      { path: '/users', component: { template: '<div />' } },
+    ],
+  })
+  await router.push('/economy')
+  await router.isReady()
+  lastRouter = router
+  const wrapper = mount(EconomyView, { global: { plugins: [ElementPlus, router] } })
   await flushPromises()
   return wrapper
 }
 
+let lastRouter: ReturnType<typeof createRouter> | null = null
+
 beforeEach(() => {
-  vi.clearAllMocks()
+  // reset 而不是 clear：clear 只清调用记录，不清 mockResolvedValueOnce 队列；
+  // 前序用例若提前断言失败，未消费的 once 会串到后续用例（实测踩过）。
+  vi.resetAllMocks()
 })
 
 describe('EconomyView 通胀监控', () => {
@@ -117,17 +141,17 @@ describe('EconomyView 通胀监控', () => {
       .mockResolvedValueOnce({ value: '超级体力瓶' }) // 改名 → 字符串
     const wrapper = await mountEconomy([], [row])
     const buttons = wrapper.findAll('.el-table__row')[0].findAll('button')
-    expect(buttons.map((b) => b.text())).toEqual(['改价', '限购', '改名', '下架'])
+    expect(buttons.map((b) => b.text())).toEqual(['复制', '改价', '限购', '改名', '下架', '上移', '下移'])
 
-    await buttons[0].trigger('click')
+    await buttons.find((b) => b.text() === '改价')!.trigger('click')
     await flushPromises()
     expect(updateShopItem).toHaveBeenLastCalledWith(1, { price: { coin: 120 } })
 
-    await buttons[1].trigger('click')
+    await buttons.find((b) => b.text() === '限购')!.trigger('click')
     await flushPromises()
     expect(updateShopItem).toHaveBeenLastCalledWith(1, { limit_per_day: 3 })
 
-    await buttons[2].trigger('click')
+    await buttons.find((b) => b.text() === '改名')!.trigger('click')
     await flushPromises()
     expect(updateShopItem).toHaveBeenLastCalledWith(1, { name: '超级体力瓶' })
     wrapper.unmount()
@@ -303,6 +327,215 @@ describe('EconomyView 商城编辑', () => {
     const wrapper = mount(EconomyView, { global: { plugins: [ElementPlus] } })
     await flushPromises()
     expect(document.body.textContent).toContain('经济数据加载失败：经济服务不可用')
+    wrapper.unmount()
+  })
+})
+
+describe('EconomyView 订单 CSV 导出（新一轮第 40 轮）', () => {
+  it('点击导出 CSV：按当前筛选参数调用接口并触发下载', async () => {
+    const wrapper = await mountEconomy()
+    exportOrdersCsv.mockResolvedValue(new Blob(['\uFEFFid\n']))
+
+    // 设置筛选条件（状态 + 日期范围），再点导出
+    const selects = wrapper.findAllComponents({ name: 'ElSelect' })
+    await selects[0].vm.$emit('update:modelValue', 'paid')
+    const pickers = wrapper.findAllComponents({ name: 'ElDatePicker' })
+    await pickers[0].vm.$emit('update:modelValue', ['2026-10-01', '2026-10-31'])
+    await flushPromises()
+
+    const btn = wrapper.findAll('button').find((b) => b.text() === '导出 CSV')
+    expect(btn, '找不到「导出 CSV」按钮').toBeTruthy()
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(exportOrdersCsv).toHaveBeenCalledWith({
+      status: 'paid',
+      date_from: '2026-10-01',
+      // 结束日期传次日（服务端 date_to 是开区间）
+      date_to: '2026-11-01',
+    })
+    expect(document.body.textContent).toContain('已导出')
+    wrapper.unmount()
+  })
+
+  it('无筛选条件时导出参数为 undefined', async () => {
+    const wrapper = await mountEconomy()
+    exportOrdersCsv.mockResolvedValue(new Blob(['\uFEFFid\n']))
+
+    const btn = wrapper.findAll('button').find((b) => b.text() === '导出 CSV')
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(exportOrdersCsv).toHaveBeenCalledWith({
+      status: undefined,
+      date_from: undefined,
+      date_to: undefined,
+    })
+    wrapper.unmount()
+  })
+
+  it('导出失败：弹出错误消息', async () => {
+    const wrapper = await mountEconomy()
+    exportOrdersCsv.mockRejectedValueOnce(new Error('导出服务不可用'))
+
+    const btn = wrapper.findAll('button').find((b) => b.text() === '导出 CSV')
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(document.body.textContent).toContain('导出失败：导出服务不可用')
+    wrapper.unmount()
+  })
+})
+
+describe('EconomyView 订单玩家跳转用户详情（第 48 轮）', () => {
+  function orderFixture(userId: number, nickname: string): Row {
+    return {
+      id: 1,
+      user_id: userId,
+      nickname,
+      order_no: 'NO1',
+      sku: 'gem_pack',
+      amount: 600,
+      status: 'paid',
+      provider: 'mock',
+      created_at: '2026-01-01T00:00:00Z',
+      delivered_at: null,
+    }
+  }
+
+  it('点击玩家昵称：跳转 /users 并携带 user_id', async () => {
+    const wrapper = await mountEconomy([], [], [orderFixture(9, '订单玩家')])
+    const link = wrapper.find('.el-table .el-link')
+    expect(link.exists(), '找不到玩家列链接').toBe(true)
+    expect(link.text()).toBe('订单玩家')
+
+    await link.trigger('click')
+    await flushPromises()
+
+    expect(lastRouter?.currentRoute.value.path).toBe('/users')
+    expect(lastRouter?.currentRoute.value.query.user_id).toBe('9')
+    wrapper.unmount()
+  })
+
+  it('无昵称的订单显示占位符「—」，不渲染可点击链接', async () => {
+    const wrapper = await mountEconomy([], [], [orderFixture(3, '')])
+    expect(wrapper.find('.el-table .el-link').exists()).toBe(false)
+    expect(wrapper.text()).toContain('—')
+    wrapper.unmount()
+  })
+})
+
+describe('EconomyView 商城商品排序（第 62 轮）', () => {
+  function shopRow(id: number, sortOrder: number): Row {
+    return shopFixture({ id, sort_order: sortOrder })
+  }
+
+  it('点击「上移」：与前一商品交换 sort_order 并重新加载', async () => {
+    const wrapper = await mountEconomy([], [
+      shopRow(1, 1),
+      shopRow(2, 2),
+      shopRow(3, 3),
+    ])
+    updateShopItem.mockResolvedValue({ id: 1, updated: ['sort_order'] })
+
+    // 第二行点「上移」
+    const rows = wrapper.findAll('.el-table__row')
+    const btns = rows[1].findAll('button')
+    await btns.find((b) => b.text() === '上移')!.trigger('click')
+    await flushPromises()
+
+    // 交换：id=2 拿 id=1 的 sort_order，id=1 拿 id=2 的
+    expect(updateShopItem).toHaveBeenCalledWith(2, { sort_order: 1 })
+    expect(updateShopItem).toHaveBeenCalledWith(1, { sort_order: 2 })
+    expect(document.body.textContent).toContain('排序已更新')
+    wrapper.unmount()
+  })
+
+  it('第一行「上移」禁用，最后一行「下移」禁用', async () => {
+    const wrapper = await mountEconomy([], [
+      shopRow(1, 1),
+      shopRow(2, 2),
+    ])
+    const rows = wrapper.findAll('.el-table__row')
+    const firstBtns = rows[0].findAll('button')
+    expect(firstBtns.find((b) => b.text() === '上移')!.attributes('disabled')).toBeDefined()
+    const lastBtns = rows[1].findAll('button')
+    expect(lastBtns.find((b) => b.text() === '下移')!.attributes('disabled')).toBeDefined()
+    wrapper.unmount()
+  })
+})
+
+describe('EconomyView 订单渠道筛选（第 67 轮）', () => {
+  it('选择渠道后 fetchAdminOrders 携带 provider，清空后不带', async () => {
+    const wrapper = await mountEconomy()
+    const vm = wrapper.vm as unknown as { orderProvider: string }
+    vm.orderProvider = 'apple'
+
+    await wrapper.findAll('button').find((b) => b.text() === '查询')!.trigger('click')
+    await flushPromises()
+    expect(fetchAdminOrders).toHaveBeenLastCalledWith(
+      50,
+      0,
+      expect.objectContaining({ provider: 'apple' }),
+    )
+
+    vm.orderProvider = ''
+    await wrapper.findAll('button').find((b) => b.text() === '查询')!.trigger('click')
+    await flushPromises()
+    expect(fetchAdminOrders).toHaveBeenLastCalledWith(
+      50,
+      0,
+      expect.objectContaining({ provider: undefined }),
+    )
+    wrapper.unmount()
+  })
+})
+
+describe('EconomyView 复制订单号（第 89 轮）', () => {
+  function orderFixture(userId: number, nickname: string): Row {
+    return {
+      id: 1,
+      user_id: userId,
+      nickname,
+      order_no: 'NO1',
+      sku: 'gem_pack',
+      amount: 600,
+      status: 'paid',
+      provider: 'mock',
+      created_at: '2026-01-01T00:00:00Z',
+      delivered_at: null,
+    }
+  }
+
+  it('点击订单行「复制」：写入剪贴板并提示', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    const wrapper = await mountEconomy([], [], [orderFixture(9, '订单玩家')])
+    const copyBtn = wrapper.findAll('.el-table__row')[0].findAll('button').find((b) => b.text() === '复制')
+    expect(copyBtn, '找不到订单号复制按钮').toBeTruthy()
+    await copyBtn!.trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith('NO1')
+    expect(document.body.textContent).toContain('订单号已复制')
+    wrapper.unmount()
+  })
+})
+
+describe('EconomyView 复制商城商品 ID（第 97 轮）', () => {
+  it('点击商城商品行「复制」：写入剪贴板并提示', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    const wrapper = await mountEconomy([], [shopFixture({ id: 55 })])
+    const copyBtn = wrapper.findAll('.el-table__row')[0].findAll('button').find((b) => b.text() === '复制')
+    expect(copyBtn, '找不到商品 ID 复制按钮').toBeTruthy()
+    await copyBtn!.trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith('55')
+    expect(document.body.textContent).toContain('已复制商品 ID 55')
     wrapper.unmount()
   })
 })

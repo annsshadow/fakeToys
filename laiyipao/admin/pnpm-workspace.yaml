@@ -6,3 +6,10 @@ allowBuilds:
   esbuild: true
 onlyBuiltDependencies:
   - esbuild
+# 依赖漏洞 override（2026-10-31）：minimatch <11.0.1 的 globparts 放大 DoS
+# （GHSA-g3hv-75wg-m249）与 glob 9.0.0~14.0.1 的 AbortSignal 取消绕过
+# （GHSA-3g3m-2fjr-6pw4），经 @vue/test-utils → js-beautify 和 vue-tsc →
+# @vue/language-core 进入 dev 链，不进构建产物。补丁线 11.0.1 / 14.0.2。
+overrides:
+  minimatch: 11.0.1
+  glob: 14.0.2

@@ -373,7 +373,7 @@ mod u2_tests {
         // 在任何 DB 访问前即 400，mock_pool 不会因触库而 panic。
         let missing_definition = form_u2_create(
             Extension(mock_pool()),
-            Extension(session(OWNER)),
+            Some(Extension(session(OWNER))),
             axum::extract::Json(json!({"appId": "app-1"})),
         )
         .await;
@@ -383,7 +383,7 @@ mod u2_tests {
 
         let malformed_definition = form_u2_create(
             Extension(mock_pool()),
-            Extension(session(OWNER)),
+            Some(Extension(session(OWNER))),
             axum::extract::Json(json!({"appId": "app-1", "definition": "{broken"})),
         )
         .await;
