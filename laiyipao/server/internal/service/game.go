@@ -5,9 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
+	"math/rand/v2"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -91,15 +95,12 @@ func (s *Service) StartBattle(ctx context.Context, userID int64, levelID int) (B
 	}
 
 	// 种子取自服务端 PRNG，客户端不得自选 —— 否则客户端可以刷出想要的随机序列
-	seed, err := s.newBattleSeed(ctx)
-	if err != nil {
-		return BattleTokenResp{}, err
-	}
+	seed := newBattleSeed()
 
 	expires := time.Now().Add(s.Cfg().BattleTokenTTL)
 	var tokenID int64
 	usedRevive := false
-	err = s.DB.Tx(ctx, func(tx pgx.Tx) error {
+	err := s.DB.Tx(ctx, func(tx pgx.Tx) error {
 		if err := tx.QueryRow(ctx,
 			`INSERT INTO battle_tokens (user_id, level_id, seed, expires_at) VALUES ($1,$2,$3,$4)
 			 RETURNING id`, userID, levelID, seed, expires).Scan(&tokenID); err != nil {
@@ -178,29 +179,20 @@ func (s *Service) StartBattle(ctx context.Context, userID int64, levelID int) (B
 	}, nil
 }
 
-// LoadMaxStage 返回玩家已通关的最高关卡（user_progress.max_stage，从未通关为 0）。
-//
-// ⚠️ 第 142 轮：此前客户端的 maxStage 只在**本会话结算后**才有值 ——
-// 老玩家重进 App 恒从 0 开始，「最高关卡 / 已解锁」全线错位。
-// 该字段进 /me 响应后，客户端每次 refreshProfile 都能恢复真实进度。
-func (s *Service) LoadMaxStage(ctx context.Context, userID int64) (int, error) {
-	var n int
-	err := s.pool.QueryRow(ctx,
-		`SELECT COALESCE(MAX(max_stage), 0) FROM user_progress WHERE user_id = $1`, userID).Scan(&n)
-	if err != nil {
-		return 0, fmt.Errorf("load max stage: %w", err)
-	}
-	return n, nil
-}
+// LoadMaxStage 已删除（第 7 轮）：唯一调用方 /me 改走 LoadMeProfile ——
+// max_stage 与构筑点数同在 loadBuildParts 的一条 user_progress 查询里，
+// 独立方法只会让 /me 多付一次相同列的往返。第 142 轮「服务端权威进度」
+// 语义由 LoadMeProfile 的 parts.maxStage 承接。
 
-func (s *Service) newBattleSeed(ctx context.Context) (int64, error) {
-	var seed int64
-	// PostgreSQL 的 random() 足够随机且不需额外依赖；写库前用取模压到正数
-	if err := s.pool.QueryRow(ctx,
-		`SELECT abs(FLOOR(random() * 9223372036854775807))::bigint`).Scan(&seed); err != nil {
-		return 0, fmt.Errorf("generate seed: %w", err)
-	}
-	return seed, nil
+// newBattleSeed 生成一局战斗的随机种子（第 8 轮起不再查库）。
+//
+// 此前每局开战都发一条 `SELECT random()` 纯往返 —— 开战是最热路径之一，
+// 这条往返什么数据都不取，纯粹是把随机数生成外包给了 PG。
+// math/rand/v2 的顶层函数由运行时随机种子（ChaCha8）驱动，不可预测性
+// 与 PG random() 相当；种子仍是服务端权威（客户端拿到的就是这一份）。
+func newBattleSeed() int64 {
+	// 压到正数域（与旧 abs(FLOOR(random() * 2^63-1)) 同一值域）
+	return rand.Int64() & math.MaxInt64
 }
 
 // SettleResp 是结算返回。
@@ -510,21 +502,37 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 		return SettleResp{}, err
 	}
 
-	w, err := s.LoadWallet(ctx, userID)
-	if err != nil {
-		return SettleResp{}, err
+	// 第 5 轮：收尾三连里 LoadWallet 与构筑快照互不依赖，**并行**执行；
+	// computeRating 依赖 build，等两者就绪后再跑（与 /me 的两阶段同款）。
+	// 错误语义保持原顺序：先钱包后构筑，任一失败 fail-loud。
+	// 第 6 轮：评分的点数从快照的 parts 带入，不再二次查 user_progress。
+	var (
+		tailWg sync.WaitGroup
+		w      Wallet
+		werr   error
+		build  map[string]any
+		parts  buildParts
+		berr   error
+	)
+	tailWg.Add(2)
+	go func() {
+		defer tailWg.Done()
+		w, werr = s.LoadWallet(ctx, userID)
+	}()
+	go func() {
+		defer tailWg.Done()
+		build, parts, berr = s.loadBuildSnapshotFull(ctx, userID)
+	}()
+	tailWg.Wait()
+	if werr != nil {
+		return SettleResp{}, werr
+	}
+	if berr != nil {
+		return SettleResp{}, berr
 	}
 	resp.Wallet = w
 
-	build, err := s.LoadBuildSnapshot(ctx, userID)
-	if err != nil {
-		return SettleResp{}, err
-	}
-	rating, err := s.computeRating(ctx, userID, build)
-	if err != nil {
-		return SettleResp{}, err
-	}
-	resp.Rating = rating
+	resp.Rating = computeRating(build, parts.masteryPoints)
 	resp.Power = computePower(build)
 
 	// 结算成功后立刻让**榜单**缓存失效（2026-10-23）。
@@ -577,6 +585,7 @@ func boolToInt(b bool) int {
 // 它只是「看起来多余」，于是更容易长期存在。
 func (s *Service) applyProgress(ctx context.Context, tx pgx.Tx, userID int64, levelID int, win bool, kills int64) (int, error) {
 	var newMax int
+	var newExp int64
 	err := tx.QueryRow(ctx, `
 		UPDATE user_progress
 		   SET max_stage = GREATEST(max_stage, CASE WHEN $2 THEN $3 ELSE max_stage END),
@@ -586,8 +595,8 @@ func (s *Service) applyProgress(ctx context.Context, tx pgx.Tx, userID int64, le
 		       mastery_points = 3 + FLOOR((level_exp + 50 + $4) / 1000)::int,
 		       updated_at = now()
 		 WHERE user_id = $1
-		 RETURNING max_stage`,
-		userID, win, levelID, kills).Scan(&newMax)
+		 RETURNING max_stage, level_exp`,
+		userID, win, levelID, kills).Scan(&newMax, &newExp)
 	if err != nil {
 		return 0, fmt.Errorf("update progress: %w", err)
 	}
@@ -603,33 +612,45 @@ func (s *Service) applyProgress(ctx context.Context, tx pgx.Tx, userID int64, le
 	//      把 18 个合成技能排除在外，它们由**熔炼**发放（`synthesis.go`），
 	//      其 unlock_level 30..62 是熔炼门槛；
 	//   2. `ON CONFLICT DO NOTHING` 幂等 —— 重复结算/重复跨级不会重复发放；
-	//   3. 老玩家无需回填脚本：任意一场结算即按当前等级补齐。
+	//   3. 老玩家无需回填脚本：任意一场**跨级**结算即按当前等级补齐。
 	//
 	// 消费侧契约不动：未解锁技能装备/升级仍一律 400（routes_e2e_test.go 既有断言）。
-	if _, err := tx.Exec(ctx, `
-		INSERT INTO user_skills (user_id, skill_id)
-		SELECT $1, s.id
-		  FROM skills s
-		 WHERE s.unlock_level <= (SELECT FLOOR(p.level_exp / $2) FROM user_progress p WHERE p.user_id = $1)
-		   AND s.id NOT IN (SELECT output_skill_id FROM skill_recipes)
-		ON CONFLICT (user_id, skill_id) DO NOTHING`,
-		userID, domain.PlayerLevelDivisor); err != nil {
-		return 0, fmt.Errorf("unlock skills by level: %w", err)
-	}
+	//
+	// # 第 10 轮：未跨级的结算跳过两条解锁语句
+	//
+	// 两条解锁 INSERT 之前**每场结算都跑**（各带一次目录表扫描），而绝大多数
+	// 结算并不跨级 —— 语句跑了却解不出任何东西。等级由 level_exp 唯一决定
+	// （exp/divisor），UPDATE RETURNING 带出新值、旧值 = 新值 −（50 + kills），
+	// 纯 Go 判断即可守卫：不跨级 0 条语句，跨级行为与之前逐位一致。
+	// 回填语义仍是「任意一场跨级结算补齐」（注释 3 从「任意一场」收紧，
+	// 与实际可观察行为一致 —— 未跨级的结算本来也解不出新东西）。
+	oldExp := newExp - (50 + kills)
+	if newExp/domain.PlayerLevelDivisor > oldExp/domain.PlayerLevelDivisor {
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO user_skills (user_id, skill_id)
+			SELECT $1, s.id
+			  FROM skills s
+			 WHERE s.unlock_level <= (SELECT FLOOR(p.level_exp / $2) FROM user_progress p WHERE p.user_id = $1)
+			   AND s.id NOT IN (SELECT output_skill_id FROM skill_recipes)
+			ON CONFLICT (user_id, skill_id) DO NOTHING`,
+			userID, domain.PlayerLevelDivisor); err != nil {
+			return 0, fmt.Errorf("unlock skills by level: %w", err)
+		}
 
-	// 装备同理按等级解锁（2026-10-21 P4-1）。
-	//
-	// 为什么必须有这一条：装备的**战斗效果**一直存在
-	// （`base_armor` / `base_bonus_pct` 会被读进攻方），
-	// 但 18 件目录里此前只有 2 件（注册时赠送）玩家拿得到，
-	// 而且**没有获取途径**。于是「装备系统」在玩法上等于不存在 ——
-	// 玩家少了一个成长维度，而界面上还摆着 18 件装备的目录。
-	//
-	// 幂等（ON CONFLICT DO NOTHING）：老玩家任意一场结算即回填。
-	// 新解锁的装备**默认不装备** —— 让玩家自己选，
-	// 否则「自动穿上」会悄悄改变他的构筑。
-	if err := grantEquipmentByLevel(ctx, tx, userID); err != nil {
-		return 0, err
+		// 装备同理按等级解锁（2026-10-21 P4-1）。
+		//
+		// 为什么必须有这一条：装备的**战斗效果**一直存在
+		// （`base_armor` / `base_bonus_pct` 会被读进攻方），
+		// 但 18 件目录里此前只有 2 件（注册时赠送）玩家拿得到，
+		// 而且**没有获取途径**。于是「装备系统」在玩法上等于不存在 ——
+		// 玩家少了一个成长维度，而界面上还摆着 18 件装备的目录。
+		//
+		// 幂等（ON CONFLICT DO NOTHING）：老玩家任意一场跨级结算即回填。
+		// 新解锁的装备**默认不装备** —— 让玩家自己选，
+		// 否则「自动穿上」会悄悄改变他的构筑。
+		if err := grantEquipmentByLevel(ctx, tx, userID); err != nil {
+			return 0, err
+		}
 	}
 	return newMax, nil
 }
@@ -650,12 +671,21 @@ type BuildSnapshot struct {
 
 // LoadBuildSnapshot 读取玩家当前构筑。
 func (s *Service) LoadBuildSnapshot(ctx context.Context, userID int64) (map[string]any, error) {
+	m, _, err := s.loadBuildSnapshotFull(ctx, userID)
+	return m, err
+}
+
+// loadBuildSnapshotFull 在构筑快照之外把 buildParts 原始件一并带回
+// （第 6 轮）：紧随其后的 computeRating 直接用 parts.masteryPoints，
+// 不再对 user_progress 单独发第二次查询。
+// settle / SaveDefense / /me 三条路径都是「快照 → 评分」紧邻调用，全部受益。
+func (s *Service) loadBuildSnapshotFull(ctx context.Context, userID int64) (map[string]any, buildParts, error) {
 	// 一趟查齐 6 张表（build_parts.go）：旧路径逐个方法自己查库，
 	// 专精节点查 3 遍、点数 2 遍、装备 2 遍，合计 12 条串行往返；
 	// 本端点挂在 /battle/token 与 /battle/settle 两条最热路径上。
 	parts, err := s.loadBuildParts(ctx, userID)
 	if err != nil {
-		return nil, err
+		return nil, parts, err
 	}
 	slots, elements := parts.skills, parts.elements
 	equip := parts.equipment
@@ -678,7 +708,7 @@ func (s *Service) LoadBuildSnapshot(ctx context.Context, userID int64) (map[stri
 	extra := extraSlotsFrom(masteryEffectFrom(masteryNodes, parts.masteryPoints))
 	// 槽位预算校验：与旧路径相同，在装配完成后做一次（超预算 → 拒绝开战）。
 	if err := slotBudgetCheck(parts.occupied, extra); err != nil {
-		return nil, err
+		return nil, parts, err
 	}
 	return map[string]any{
 		"snapshot_keys_version": 2,
@@ -689,7 +719,7 @@ func (s *Service) LoadBuildSnapshot(ctx context.Context, userID int64) (map[stri
 		"mastery_nodes":         masteryNodes,
 		"attacker":              toView(att),
 		"active_slots":          int(domain.BaseSkillSlots + extra),
-	}, nil
+	}, parts, nil
 }
 
 // buildElements 从构筑快照里取元素名集合。
@@ -762,16 +792,18 @@ func (s *Service) loadMasteryNodes(ctx context.Context, userID int64) ([]int, er
 	return s.loadMasteryNodeRows(ctx, userID)
 }
 
-// computeRating 算构筑评分。
+// computeRating 算构筑评分（第 6 轮起为**纯函数**：点数由调用方从
+// loadBuildSnapshotFull 的 buildParts.masteryPoints 带入，不再单独查库 ——
+// 每条「快照 → 评分」路径省一次 user_progress 往返）。
 //
-// ⚠️ 2026-10-21（P3-1）：它**返回 error**了 —— 此前读 `mastery_points`
-// 失败时被静默当成 0，于是「专精加成凭空消失」而接口返回 200。
-// 症状是：玩家配了专精树，评分里那部分加成不见了，而**没有任何报错**。
+// ⚠️ 2026-10-21（P3-1）的「点数查询失败必须报错」语义由加载层
+// （loadBuildParts 的合并查询）继承：吞掉会下发少了专精加成的假评分；
+// 「行不存在」= 0 点是合法事实。纯函数不再返回 error —— 它没有可失败的
+// 操作，恒 nil 的 error 返回只会误导调用方以为这里有查询可取消。
 //
-// ��别：不是「读不到点数就让整次结算失败」的取舍 ——
-// 那一行**不存在**（新号还没建进度行）是合法事实，点数就是 0；
-// 只有**查询本身失败**（库挂了/连接断了）才是错误。
-func (s *Service) computeRating(ctx context.Context, userID int64, build map[string]any) (domain.BuildRating, error) {
+// ⚠️ 仿照 computePower 第 102 轮的先例移除了 `ctx` 与 `userID` 参数 ——
+// 纯函数带 ctx 会让人以为它查库，而它其实什么都不读。
+func computeRating(build map[string]any, masteryPoints int) domain.BuildRating {
 	in := domain.RatingInput{}
 	for _, elem := range buildElements(build) {
 		in.SkillElements = append(in.SkillElements, domain.Element(elem))
@@ -797,36 +829,25 @@ func (s *Service) computeRating(ctx context.Context, userID int64, build map[str
 		// 从「只写不读」变成真正生效的关键。少了它，computeAttacker 只能
 		// 硬编码常量，玩家投入这些节点后战斗数值完全不变。
 		//
-		// EvaluateMastery 需要「全部节点定义 + 已投入的 id 集合 + 剩余点数」，
-		// 前两样可以从 build 拿到，点数需要读 user_progress。
-		// 评估失败时按"无加成"处理 —— 不能因为读不到点数就让整次结算失败。
+		// EvaluateMastery 需要「全部节点定义 + 已投入的 id 集合 + 剩余点数」。
+		// 评估失败时按"无加成"处理 —— 不能因为坏节点 id 就让整次结算失败。
 		selected := make(map[int]bool, len(nodes))
 		for _, n := range nodes {
 			selected[n] = true
 		}
-		points := 0
-		if err := s.pool.QueryRow(ctx,
-			`SELECT mastery_points FROM user_progress WHERE user_id = $1`, userID).Scan(&points); err != nil {
-			// 只有「这一行不存在」才是 0 点的合法事实；
-			// 查询本身失败必须报出去（否则评分会静默少掉专精加成）。
-			if !errors.Is(err, pgx.ErrNoRows) {
-				return domain.BuildRating{}, fmt.Errorf("load mastery points: %w", err)
-			}
-		}
-		// EvaluateMastery 需要「全部节点定义 + 已投入的 id 集合 + 剩余点数」。
 		// 全部节点从 AllMasteryFamilies() 展平（它是 8 系 × 3 层 × 4 选 2 的来源）。
 		allNodes := make([]domain.MasteryNode, 0, 96)
 		for _, f := range domain.AllMasteryFamilies() {
 			allNodes = append(allNodes, f.Nodes...)
 		}
-		if eff, err := domain.EvaluateMastery(allNodes, selected, points); err == nil {
+		if eff, err := domain.EvaluateMastery(allNodes, selected, masteryPoints); err == nil {
 			in.ReactionMultBonus = eff.ReactionMultBonus
 			in.CritBonus = eff.CritBonus
 			in.ElementCapBonus = eff.ElementCapBonus
 			in.ArmorBonus = eff.ArmorBonus
 		}
 	}
-	return domain.ComputeBuildRating(in, domain.DefaultRatingWeights()), nil
+	return domain.ComputeBuildRating(in, domain.DefaultRatingWeights())
 }
 
 // computePower 是**纯函数**：只解析 build 快照里的技能等级与专精节点数，
@@ -904,6 +925,35 @@ type taskConfig struct {
 	Reward map[string]int `json:"reward"`
 }
 
+// loadTaskConfigs 是任务静态配置的共享加载器（tasksCache 的 loader，
+// LoadTasks 与 bumpTasks 同源 —— 第 9 轮）。
+func (s *Service) loadTaskConfigs(ctx context.Context) ([]taskConfig, error) {
+	rows, err := s.pool.Query(ctx, `
+		SELECT id, code, name, scope, target, metric, reward
+		FROM tasks WHERE enabled ORDER BY id`)
+	if err != nil {
+		return nil, fmt.Errorf("load tasks: %w", err)
+	}
+	defer rows.Close()
+
+	out := []taskConfig{}
+	for rows.Next() {
+		var v taskConfig
+		var rewardRaw []byte
+		if err := rows.Scan(&v.ID, &v.Code, &v.Name, &v.Scope, &v.Target, &v.Metric, &rewardRaw); err != nil {
+			return nil, err
+		}
+		// 第 148 轮：fail-loud（AGENTS #11）。reward 是发给玩家的奖励，
+		// `_ =` 会把坏 jsonb 静默吞成空奖励 —— 任务列表显示「奖励：」空白，
+		// 玩家以为没奖。改报错，让坏数据在后台/客户端可见。
+		if err := json.Unmarshal(rewardRaw, &v.Reward); err != nil {
+			return nil, fmt.Errorf("load tasks: task %d 的 reward 非法 jsonb: %w", v.ID, err)
+		}
+		out = append(out, v)
+	}
+	return out, rows.Err()
+}
+
 // LoadTasks 返回指定周期的任务列表。
 func (s *Service) LoadTasks(ctx context.Context, userID int64, scope string) ([]TaskView, error) {
 	day := periodStart(nowFunc(), scope)
@@ -918,32 +968,7 @@ func (s *Service) LoadTasks(ctx context.Context, userID int64, scope string) ([]
 	//
 	// ⚠️ 静态列表缓存的是 `taskConfig`（无 Progress/Claimed），
 	// per-user 进度绝不缓存。
-	configs, err := s.tasksCache.getOrLoad(ctx, time.Now(), s.Cfg().TasksCacheTTL, func(ctx context.Context) ([]taskConfig, error) {
-		rows, err := s.pool.Query(ctx, `
-			SELECT id, code, name, scope, target, metric, reward
-			FROM tasks WHERE enabled ORDER BY id`)
-		if err != nil {
-			return nil, fmt.Errorf("load tasks: %w", err)
-		}
-		defer rows.Close()
-
-		out := []taskConfig{}
-		for rows.Next() {
-			var v taskConfig
-			var rewardRaw []byte
-			if err := rows.Scan(&v.ID, &v.Code, &v.Name, &v.Scope, &v.Target, &v.Metric, &rewardRaw); err != nil {
-				return nil, err
-			}
-			// 第 148 轮：fail-loud（AGENTS #11）。reward 是发给玩家的奖励，
-			// `_ =` 会把坏 jsonb 静默吞成空奖励 —— 任务列表显示「奖励：」空白，
-			// 玩家以为没奖。改报错，让坏数据在后台/客户端可见。
-			if err := json.Unmarshal(rewardRaw, &v.Reward); err != nil {
-				return nil, fmt.Errorf("load tasks: task %d 的 reward 非法 jsonb: %w", v.ID, err)
-			}
-			out = append(out, v)
-		}
-		return out, rows.Err()
-	})
+	configs, err := s.tasksCache.getOrLoad(ctx, time.Now(), s.Cfg().TasksCacheTTL, s.loadTaskConfigs)
 	if err != nil {
 		return nil, err
 	}
@@ -1021,19 +1046,25 @@ func (s *Service) LevelStars(ctx context.Context, userID int64) (map[int]int, er
 // bumpTasks 按指标累加任务进度。周期内的同一任务只保留最大值，
 // 避免反复战斗把累计型任务刷爆。
 //
-// # 一次查询取全部指标（2026-10-29）
+// # 任务配置来自缓存（第 9 轮）
 //
-// 原实现 `for metric, delta := range deltas { SELECT ... WHERE metric = $1 }`：
-// 每个指标一次往返。本函数在**结算事务内**被调用，多出来的往返不只是延迟，
-// 而是把事务与行锁的持有时间一起拉长（结算是最热的写路径）。
-// 改成一条 `metric = ANY($1)` 后在 Go 侧按 metric 分组，往返数与指标数无关。
+// tasks 是 seeder 写入的静态配置（无后台修改入口），此前**每次结算都在
+// 事务内**查一遍 `tasks` 表 —— 不只是一条往返，还把事务与行锁的持有时间
+// 一起拉长（结算是最热的写路径）。配置改走 tasksCache（与 LoadTasks 同一
+// 份 loader），结算路径的这条查询归零；TTL 内的缓存与库不一致的窗口由
+// TasksCacheTTL 界定，与任务页的口径相同。
+//
+// # upsert 按 id 升序固定锁序
+//
+// 原实现的写入顺序来自无 ORDER BY 的查询（任意顺序）。并发结算下，
+// 不同顺序的 user_tasks 行锁获取是死锁窗口 —— 按 id 升序写把它关掉。
 func (s *Service) bumpTasks(ctx context.Context, tx pgx.Tx, userID int64, deltas map[string]int64, now time.Time) error {
 	if len(deltas) == 0 {
 		return nil
 	}
-	metrics := make([]string, 0, len(deltas))
-	for metric := range deltas {
-		metrics = append(metrics, metric)
+	configs, err := s.tasksCache.getOrLoad(ctx, time.Now(), s.Cfg().TasksCacheTTL, s.loadTaskConfigs)
+	if err != nil {
+		return fmt.Errorf("query tasks: %w", err)
 	}
 
 	type taskRow struct {
@@ -1041,55 +1072,39 @@ func (s *Service) bumpTasks(ctx context.Context, tx pgx.Tx, userID int64, deltas
 		scope      string
 		metric     string
 	}
-	rows, err := tx.Query(ctx,
-		`SELECT id, target, scope, metric FROM tasks WHERE enabled AND metric = ANY($1)`, metrics)
-	if err != nil {
-		return fmt.Errorf("query tasks: %w", err)
-	}
-	byMetric := make(map[string][]taskRow, len(metrics))
-	for rows.Next() {
-		var t taskRow
-		if err := rows.Scan(&t.id, &t.target, &t.scope, &t.metric); err != nil {
-			rows.Close()
-			return err
+	// 缓存里全是 enabled 任务，按指标筛出命中的并升序排列。
+	hits := make([]taskRow, 0, len(deltas))
+	for _, c := range configs {
+		if _, ok := deltas[c.Metric]; ok {
+			hits = append(hits, taskRow{id: c.ID, target: c.Target, scope: c.Scope, metric: c.Metric})
 		}
-		byMetric[t.metric] = append(byMetric[t.metric], t)
 	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
-		return err
-	}
+	sort.Slice(hits, func(i, j int) bool { return hits[i].id < hits[j].id })
 
-	for _, metric := range metrics {
-		list := byMetric[metric]
-		if len(list) == 0 {
-			continue
-		}
+	for _, t := range hits {
 		// 累计型指标取"当前值"，单局型取"本局增量"
-		value := deltas[metric]
-		for _, t := range list {
-			day := periodStart(now, t.scope)
-			if t.scope == "achievement" {
-				// 成就类记录的是"达到过的最大值"，用 GREATEST 防止倒退
-				if _, err := tx.Exec(ctx, `
-					INSERT INTO user_tasks (user_id, task_id, task_date, progress)
-					VALUES ($1,$2,$3,$4)
-					ON CONFLICT (user_id, task_id, task_date) DO UPDATE SET
-					  progress = GREATEST(user_tasks.progress, EXCLUDED.progress)`,
-					userID, t.id, day, value); err != nil {
-					return fmt.Errorf("bump achievement %d: %w", t.id, err)
-				}
-				continue
-			}
-			// 日/周任务累加，但同一周期内不超过目标值（超出无意义）
+		value := deltas[t.metric]
+		day := periodStart(now, t.scope)
+		if t.scope == "achievement" {
+			// 成就类记录的是"达到过的最大值"，用 GREATEST 防止倒退
 			if _, err := tx.Exec(ctx, `
 				INSERT INTO user_tasks (user_id, task_id, task_date, progress)
 				VALUES ($1,$2,$3,$4)
 				ON CONFLICT (user_id, task_id, task_date) DO UPDATE SET
-				  progress = LEAST($5, GREATEST(user_tasks.progress, user_tasks.progress + $4))`,
-				userID, t.id, day, value, t.target); err != nil {
-				return fmt.Errorf("bump task %d: %w", t.id, err)
+				  progress = GREATEST(user_tasks.progress, EXCLUDED.progress)`,
+				userID, t.id, day, value); err != nil {
+				return fmt.Errorf("bump achievement %d: %w", t.id, err)
 			}
+			continue
+		}
+		// 日/周任务累加，但同一周期内不超过目标值（超出无意义）
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO user_tasks (user_id, task_id, task_date, progress)
+			VALUES ($1,$2,$3,$4)
+			ON CONFLICT (user_id, task_id, task_date) DO UPDATE SET
+			  progress = LEAST($5, GREATEST(user_tasks.progress, user_tasks.progress + $4))`,
+			userID, t.id, day, value, t.target); err != nil {
+			return fmt.Errorf("bump task %d: %w", t.id, err)
 		}
 	}
 	return nil

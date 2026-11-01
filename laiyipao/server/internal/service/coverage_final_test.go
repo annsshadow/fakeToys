@@ -69,34 +69,29 @@ func TestRedeemCodesBrokenBranches(t *testing.T) {
 	}
 }
 
-// TestComputeRatingPointsQueryFallback computeRating 读 mastery_points
-// 失败时的行为。
+// TestLoadBuildPartsProgressQueryFails user_progress 不可读时
+// 构筑快照加载必须 fail-loud。
 //
-// ⚠️ 2026-10-21（P3-1）：判据**反转**了 ——
+// ⚠️ 2026-10-21（P3-1）历史：判据曾**反转**过一次 ——
+// 此前要求「读不到点数 → 降级为 0 继续算分」，那正是缺陷本身：
+// 评分里的专精加成凭空消失，而接口返回 200、一个看起来合理的数。
 //
-// 此前这条测试要求「读不到点数 → 降级为 0 继续算分」。
-// 那正是缺陷本身：库里读不到专精点数时，评分里的专精加成**凭空消失**，
-// 而接口返回 200、一个看起来合理的数 —— 玩家看到「我的专精白点了」。
+// 第 6 轮后点数由 loadBuildParts 的**合并查询**（max_stage + mastery_points
+// 一条往返）加载，computeRating 成为纯函数不再查库 —— 本测试随之迁移：
+// 判据钉在加载层，user_progress 表不可读 → LoadBuildSnapshot 必须报错，
+// 不能给一个少了专精加成的假评分 / 假 max_stage。
 //
-// 现在：查询**失败**必须报错；只有「这一行不存在」（新号没建进度行）
-// 才是 0 点的合法事实。
-//
-// 构造：故障库 + 带 mastery_nodes 的 build（只有非空 mastery_nodes 才会查点数）。
-func TestComputeRatingPointsQueryFallback(t *testing.T) {
-	broken := openBrokenService(t)
-	// build 里放一个真实存在的专精节点 id，触发 fams 匹配与点数查询两段。
-	var nodeID int
-	for _, f := range domain.AllMasteryFamilies() {
-		if len(f.Nodes) > 0 {
-			nodeID = f.Nodes[0].ID
-			break
-		}
-	}
-	build := map[string]any{"mastery_nodes": []int{nodeID}}
-	// 故障库 → 点数查询失败 → **必须报错**，不能给一个少了专精加成的假评分。
-	if _, err := broken.ComputeRatingFor(context.Background(), 1, build); err == nil {
-		t.Error("点数查询失败时 computeRating 应报错 —— " +
-			"静默降级成 0 点会让评分少掉专精加成，却返回 200 和一个看起来合理的值")
+// 构造：scratch 库把 user_progress 改名（closed pool 会连技能查询都过不了，
+// 分不出是哪张表失败）。
+func TestLoadBuildPartsProgressQueryFails(t *testing.T) {
+	ts := openScratchService(t)
+	ctx := context.Background()
+	uid := ts.newUser(t, ctx)
+	ts.renameTable(t, "user_progress", "user_progress_gone")
+	_ = uid
+	if _, err := ts.LoadBuildSnapshot(ctx, 1); err == nil {
+		t.Error("user_progress 不可读时 LoadBuildSnapshot 应报错 —— " +
+			"静默降级成 0 点/0 关会让评分与解锁少掉事实，却返回 200")
 	}
 }
 
@@ -831,10 +826,8 @@ func TestLoadLoadoutGemAndUnknownEquipment(t *testing.T) {
 
 // TestComputeRatingWithMasteryNodes computeRating 在 build 带真实专精节点时，
 // 必须走 fams 匹配（node.ID == n）与 MasteryFamilies 收集两段。
+// （第 6 轮起 computeRating 是纯函数 —— 本测试不再需要库。）
 func TestComputeRatingWithMasteryNodes(t *testing.T) {
-	ts := openTestService(t)
-	ctx := context.Background()
-	uid := ts.newUser(t, ctx)
 	var nodeID int
 	for _, f := range domain.AllMasteryFamilies() {
 		if len(f.Nodes) > 0 {
@@ -842,15 +835,12 @@ func TestComputeRatingWithMasteryNodes(t *testing.T) {
 			break
 		}
 	}
-	// 直接喂带 mastery_nodes 的 build：触发 fams/families 两段与点数读取。
+	// 直接喂带 mastery_nodes 的 build：触发 fams/families 两段。
 	build := map[string]any{
 		"elements":      []string{"fire", "ice"},
 		"mastery_nodes": []int{nodeID},
 	}
-	r, err := ts.ComputeRatingFor(ctx, uid, build)
-	if err != nil {
-		t.Fatalf("评分失败：%v", err)
-	}
+	r := computeRating(build, 0)
 	if r.MasteryDone < 1 {
 		t.Errorf("带专精节点的评分 MasteryDone 应 ≥1，实际 %+v", r)
 	}

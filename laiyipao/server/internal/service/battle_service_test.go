@@ -164,8 +164,9 @@ func TestStartBattleErrorBranches(t *testing.T) {
 	if _, err := ts.StartBattle(ctx, uid, 1); err == nil {
 		t.Error("故障态开局应报错（读进度失败）")
 	}
-	if _, err := ts.newBattleSeed(ctx); err == nil {
-		t.Error("故障态生成种子应报错")
+	// 第 8 轮：种子不再查库（math/rand/v2 进程内生成），故障态分支不存在了。
+	if s := newBattleSeed(); s <= 0 {
+		t.Errorf("种子应落在正数域，实际 %d", s)
 	}
 	if _, err := ts.LoadBuildSnapshot(ctx, uid); err == nil {
 		t.Error("故障态读构筑应报错")
@@ -482,18 +483,15 @@ func TestComputeRatingForWrappers(t *testing.T) {
 	ts := openTestService(t)
 	ctx := context.Background()
 	uid := ts.newUser(t, ctx)
-	build, err := ts.LoadBuildSnapshot(ctx, uid)
+	// 第 6 轮：快照与原始件一次取齐，评分点数从 parts 带入（不再二次查库）。
+	build, parts, err := ts.loadBuildSnapshotFull(ctx, uid)
 	if err != nil {
 		t.Fatalf("快照失败：%v", err)
 	}
 
-	// 2026-10-21（P3-1）：ComputeRatingFor 现在接 ctx 并返回 error ——
-	// 此前它用 context.Background()（请求的 ctx 被丢掉），
-	// 且读不到专精点数时静默按 0 点算，评分少了那部分加成却照样返回。
-	r, err := ts.ComputeRatingFor(ctx, uid, build)
-	if err != nil {
-		t.Fatalf("评分失败：%v", err)
-	}
+	// 2026-10-21（P3-1）的 fail-loud 语义已上移到 loadBuildParts 的合并查询；
+	// computeRating 自第 6 轮起是纯函数（点数由调用方传入）。
+	r := computeRating(build, parts.masteryPoints)
 	if r.ElementCoverage < 0 {
 		t.Errorf("ElementCoverage 异常：%+v", r)
 	}
@@ -507,27 +505,23 @@ func TestComputeRatingFallbacks(t *testing.T) {
 	ctx := context.Background()
 	uid := ts.newUser(t, ctx)
 
-	// 带专精节点的构筑：点数查询、EvaluateMastery 全链路
+	// 带专精节点的构筑：EvaluateMastery 全链路。
+	// （第 6 轮起点数由调用方传入；「点数加载」的 fail-loud 守卫见
+	// TestLoadBuildPartsProgressQueryFails。）
 	nodes, err := ts.loadMasteryNodes(ctx, uid)
 	if err != nil {
 		t.Fatalf("读专精失败：%v", err)
 	}
 	build := map[string]any{"mastery_nodes": nodes, "elements": []string{"fire", "ice"}}
-	if _, err := ts.computeRating(ctx, uid, build); err != nil {
-		t.Fatalf("正常构筑的评分不应失败：%v", err)
-	}
+	computeRating(build, 0)
 
-	// 专精 ID 不存在 → EvaluateMastery 失败 → 按零加成处理（不得 panic / 不得报错）
+	// 专精 ID 不存在 → EvaluateMastery 失败 → 按零加成处理（不得 panic）
 	badBuild := map[string]any{"mastery_nodes": []int{99999999}}
-	if _, err := ts.computeRating(ctx, uid, badBuild); err != nil {
-		t.Fatalf("无效专精 ID 应按零加成处理而不是报错：%v", err)
-	}
+	computeRating(badBuild, 0)
 
-	// 用户无 progress 行 → 点数查询「查无此行」→ points=0 兜底（合法事实）
+	// 空节点集 → 不进专精段
 	noProg := map[string]any{"mastery_nodes": []int{}}
-	if _, err := ts.computeRating(ctx, uid, noProg); err != nil {
-		t.Fatalf("没有 progress 行应按 0 点兜底而不是报错：%v", err)
-	}
+	computeRating(noProg, 0)
 	_ = uid
 }
 

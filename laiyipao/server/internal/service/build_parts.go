@@ -75,20 +75,22 @@ func (s *Service) loadBuildParts(ctx context.Context, userID int64) (buildParts,
 	}
 	p.masteryNodes = nodes
 
-	// max_stage：COALESCE(MAX(...)) 恒有一行，查询本身失败才算错 —— 与旧
-	// computeAttacker 的「load max stage」硬失败语义一致。
+	// max_stage + 点数：同一张 user_progress 表的两列，合并成**一条**往返
+	// （第 6 轮）。此前这里两条查询，computeRating 随后还要第三次读
+	// mastery_points —— 现在点数随 parts 带给 computeRating，不再单独查。
+	//
+	// 行不存在（新号没有 user_progress 行）时聚合恒有一行 (0, 0)，
+	// 不会 ErrNoRows —— 与旧两条查询「行不存在 = 0」的语义一致。
+	//
+	// ⚠️ 点数列的查询失败语义从「静默 0」收紧为「报错」：旧路径下静默分支
+	// 只有「max_stage 成功而点数失败」这一窄窗口可达（连接中断恰落在两条
+	// 查询之间），而 computeRating 对同一列的口径是 fail-loud（吞掉点数错误
+	// 会下发少了专精加成的评分，P3-1）。合并后两列同生共死，口径统一。
 	if err := s.pool.QueryRow(ctx,
-		`SELECT COALESCE(MAX(max_stage), 0) FROM user_progress WHERE user_id = $1`,
-		userID).Scan(&p.maxStage); err != nil {
-		return p, fmt.Errorf("load max stage: %w", err)
-	}
-
-	// 点数：与旧 loadMasteryEffect 相同 —— 读不到按 0（无加点）处理。
-	// 只有查询本身失败才静默；行存在但列是 NULL 仍是 PG 扫描错误。
-	if err := s.pool.QueryRow(ctx,
-		`SELECT mastery_points FROM user_progress WHERE user_id = $1`,
-		userID).Scan(&p.masteryPoints); err != nil {
-		p.masteryPoints = 0
+		`SELECT COALESCE(MAX(max_stage), 0), COALESCE(MAX(mastery_points), 0)
+		   FROM user_progress WHERE user_id = $1`,
+		userID).Scan(&p.maxStage, &p.masteryPoints); err != nil {
+		return p, fmt.Errorf("load progress (max_stage + mastery_points): %w", err)
 	}
 
 	gemRaw, err := s.loadGemsAffixRows(ctx, userID)

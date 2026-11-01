@@ -14,19 +14,18 @@ import (
 	"github.com/laiyipao/server/internal/domain"
 )
 
-// ComputeRatingFor / ComputePowerFor 是给 HTTP 层用的导出包装。
+// LoadMeProfile 是 /me 的编排（第 7 轮）：构筑快照（含 max_stage 与
+// 评分点数，一趟 user_progress 查询）+ 纯函数评分一次取齐。
+// HTTP 层只需拿结果，不再自己编排三段查询。
 //
-// ⚠️ 2026-10-21（P3-1）：`ComputeRatingFor` 现在**接 ctx 并返回 error**。
-//
-// 此前它用 `context.Background()` —— 请求的 ctx 被丢掉了：
-//  1. 客户端断开**不能**取消这条查询（连接池被白占着）；
-//  2. 它返回的是**一个值**，没有错误通道 —— 于是读不到专精点数时
-//     只能静默按 0 点算，评分里那部分加成凭空消失，接口照样 200。
-//
-// ��别：`ctxBackground()` 现在没有调用方了 —— 一个**看起来无害**的
-// 包装函数留在那里，会让下一个人以为「用 background ctx 是可以的」。
-func (s *Service) ComputeRatingFor(ctx context.Context, userID int64, build map[string]any) (domain.BuildRating, error) {
-	return s.computeRating(ctx, userID, build)
+// 第 142 轮语义保持：max_stage 是「玩家进度」的服务端权威来源，
+// 客户端 refreshProfile 恢复真实解锁进度。
+func (s *Service) LoadMeProfile(ctx context.Context, userID int64) (map[string]any, domain.BuildRating, int, error) {
+	build, parts, err := s.loadBuildSnapshotFull(ctx, userID)
+	if err != nil {
+		return nil, domain.BuildRating{}, 0, err
+	}
+	return build, computeRating(build, parts.masteryPoints), parts.maxStage, nil
 }
 
 // ComputePowerFor 是给运营接口用的包装。
@@ -707,16 +706,14 @@ func (s *Service) SaveDefense(ctx context.Context, userID int64, in SaveDefenseI
 	if err := s.validateDefenseOwnership(ctx, userID, in); err != nil {
 		return DefenseView{}, err
 	}
-	build, err := s.LoadBuildSnapshot(ctx, userID)
+	// 第 6 轮：快照与原始件一次取齐，评分点数从 parts 带入（不再二次查库）。
+	build, parts, err := s.loadBuildSnapshotFull(ctx, userID)
 	if err != nil {
 		return DefenseView{}, err
 	}
 	elements := buildElements(build)
 	mastery, _ := build["mastery_nodes"].([]int)
-	rating, err := s.computeRating(ctx, userID, build)
-	if err != nil {
-		return DefenseView{}, err
-	}
+	rating := computeRating(build, parts.masteryPoints)
 	power := computePower(build)
 
 	snapshot := map[string]any{
