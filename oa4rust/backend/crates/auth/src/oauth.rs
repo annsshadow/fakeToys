@@ -8,10 +8,8 @@ use hmac::{Hmac, KeyInit, Mac};
 use serde::Deserialize;
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
-// sha1 0.11 的 Digest（digest 0.11）与 sha2 0.10 的 Digest（digest 0.10）
-// 是不同 trait：Sha1::digest 必须由 sha1 自己的 trait 提供。匿名导入避免
-// 与上一行的 sha2::Digest 命名冲突（2026-10-24 修构建断裂）。
-use sha1::Digest as _;
+// sha2 0.11 与 sha1 0.11 同用 digest 0.11，`Sha1::digest` 由 `sha2::Digest`
+// 这一个 trait 覆盖，不再需要匿名导入 sha1::Digest（2026-11-01 hmac/sha2 成对升级）。
 use shared::error::AppError;
 use shared::response::ActionResult;
 use shared::session::SessionManager;
