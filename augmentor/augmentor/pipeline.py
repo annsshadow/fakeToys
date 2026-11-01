@@ -553,14 +553,20 @@ class AugmentorPipeline:
         if use_parallel and len(remaining_indices) > 1 and async_ok:
             # 并发度沿用 num_threads 这个旋钮：它就是"同时发多少请求"，
             # 与线程池大小是同一语义，只是现在不再等于线程数。
+            #
+            # 第 24 轮：异步档不再乘 `available_cores * 2`。
+            # 同步线程池档乘 2 是合理的 —— 线程受 CPU 约束；而异步档的
+            # 在飞请求**不占线程、不占 CPU**，乘上核心数只会让用户配置
+            # 的 num_threads 在 2 核虚机上被静默压到 4，配置形同虚设。
+            # 并发上限只由「用户要多少」和「还剩多少条目」决定。
             available_cores = max(1, (os.cpu_count() or 1) - 1)
             concurrency = min(
                 self.config.augmentation.num_threads,
-                len(remaining_indices),
-                available_cores * 2
+                len(remaining_indices)
             )
             logger.info(
-                f"异步引擎: 并发 {concurrency}（核心: {available_cores}, 任务: {len(remaining_indices)}）"
+                f"异步引擎: 并发 {concurrency}（用户配置: {self.config.augmentation.num_threads}, "
+                f"任务: {len(remaining_indices)}；核心数不再参与封顶）"
             )
 
             outcomes = asyncio.run(self._run_batch_async(

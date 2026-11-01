@@ -131,17 +131,24 @@ async def list_data_files(all_files: bool = False):
     def scan_files():
         files = []
         seen = set()
+        roots = allowed_data_roots()
+        # 第 27 轮：`Path.resolve()` 每文件约 0.2ms（实测），100 个文件就占
+        # 扫描时间的 99%（glob 本身只要 0.25ms）。去重只在**多个根互相嵌套**
+        # 时才需要（同一文件可能被两个根的 glob 各命中一次）——单根场景
+        # 是默认部署，glob 天然无重复。所以只有多根才付 resolve 的代价。
+        multi_root = len(roots) > 1
         # 白名单里的目录可能不存在（例如 `data/` 还没建）。Python 3.13 的
         # `Path.glob` 对此返回空而不是抛错，因此无需 `is_dir()` 预检——加了
         # 反而是一条永远不会走到的分支。
-        for root in allowed_data_roots():
+        for root in roots:
             for f in sorted(root.glob("*.json")):
                 if not all_files and not f.name.startswith("train_data"):
                     continue
-                resolved = f.resolve()
-                if resolved in seen:  # 多个根目录互相嵌套时去重
-                    continue
-                seen.add(resolved)
+                if multi_root:
+                    resolved = f.resolve()
+                    if resolved in seen:  # 多个根目录互相嵌套时去重
+                        continue
+                    seen.add(resolved)
                 files.append({
                     "name": f.name,
                     "path": str(f),
@@ -170,7 +177,11 @@ async def load_data(filename: str, page: int = 1, page_size: int = 20, search: s
     """
     try:
         page = require_count("page", page, minimum=1)
-        page_size = require_count("page_size", page_size, minimum=1)
+        # 第 25 轮：page_size 加上界。`load` 对 `items[start:end]` 做切片，
+        # Python 切片对越界值不报错 —— `page_size=10**9` 会整份数据进响应体
+        # （几十 MB 的 JSON 一次序列化），一个参数就能打爆服务端内存。
+        # 1000 是分页语义的上限：超过它就是「不该用这个端点拿全量」。
+        page_size = require_count("page_size", page_size, minimum=1, maximum=1000)
     except DataValidationError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 

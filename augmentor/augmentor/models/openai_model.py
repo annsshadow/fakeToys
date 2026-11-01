@@ -108,11 +108,12 @@ class OpenAIBackend(ModelBackend):
     async def _acall_api(self, prompt: str) -> str:
         """原生异步调用（httpx.AsyncClient）。
 
-        # 为什么 httpx 是**可选**依赖
+        # httpx 依赖（第 26 轮起是 core 依赖）
 
-        `httpx` 目前只声明在 `requirements-dev.txt`（测试链用），生产环境可能
-        没有。缺它就回退到基类的线程池实现：功能不受影响，只是等待期间仍占线程。
-        这样「异步接口」不会因为一个可选依赖缺失而变成 ImportError。
+        `httpx` 声明在 `requirements-core.txt`（Docker 默认镜像也会装）——
+        `use_async=True` 的原生异步路径离不开它。防御性回退仍保留：
+        极端环境缺它时退回基类的线程池实现（功能不受影响，只是等待期间仍占线程），
+        异步接口不会因为依赖缺失而变成 ImportError。
 
         # 为什么客户端要跟着事件循环走
 

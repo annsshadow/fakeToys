@@ -258,3 +258,34 @@ def test_augment_async_entry_uses_native_async_and_matches_output(
     with open(str(tmp / "out_async_entry.json"), encoding="utf-8") as f:
         data = json.load(f)
     assert len(data) == len(ITEMS) * backend.per_seed
+
+
+def test_async_concurrency_not_capped_by_cpu_cores(monkeypatch, tmp_path):
+    """第 24 轮：异步档并发只由 num_threads 与条目数决定，不再被核心数封顶。
+
+    旧逻辑 `min(num_threads, len, (cores-1)*2)` 在 1 核虚机上把
+    num_threads=100 的配置压到 2 —— 异步请求不占线程、不占 CPU，
+    核心数封顶纯属错配（同步线程池档乘 2 合理，异步档沿用是漏网）。
+
+    判据：把 `os.cpu_count()` 钉成 1，造 10 条数据、num_threads=100，
+    断言 10 条全部并发（旧逻辑下最多 2，新逻辑必须 10）。
+    """
+    monkeypatch.setattr("os.cpu_count", lambda: 1)
+    pipe = _pipeline(monkeypatch, tmp_path)
+    pipe.config.augmentation.num_threads = 100
+
+    items = [{"instruction": f"q{i}", "input": "", "output": f"a{i}"} for i in range(10)]
+    src = tmp_path / "many.json"
+    src.write_text(json.dumps(items, ensure_ascii=False), encoding="utf-8")
+
+    backend = NativeAsyncBackend(delay=0.01)
+    pipe.model_backend = backend
+    out = str(tmp_path / "many_out.json")
+    report, _ = _run(pipe, (str(src), tmp_path), backend, use_async=True, name="many_out.json")
+
+    assert report["output_count"] == len(items) * 2, report
+    # 10 条全部并发 —— 旧逻辑在 1 核下最多 2，这条能区分「封顶被移除」。
+    assert backend.max_in_flight == 10, (
+        f"异步档并发应等于条目数（num_threads=100 无核心封顶），"
+        f"实际 max_in_flight={backend.max_in_flight}"
+    )

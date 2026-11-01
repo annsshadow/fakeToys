@@ -18,3 +18,8 @@ uvicorn>=0.54.0,<1.0.0
 # 平台代码使用 pydantic v2 的 model_dump()，必须锁 v2
 pydantic>=2.0.0,<3.0.0
 python-multipart>=0.0.32
+# 异步引擎的原生 httpx 后端（AU-P1 的运行时依赖，第 26 轮）：
+# `use_async=True` 时 5 个模型后端都走 `httpx.AsyncClient`；此前 httpx 只声明在
+# requirements-dev.txt（测试链），Docker 默认镜像（core）里缺它 → 每次异步调用
+# 回退线程池并打 warning，开异步等于白开。这里是 core 的正式依赖。
+httpx>=0.26.0,<1.0.0

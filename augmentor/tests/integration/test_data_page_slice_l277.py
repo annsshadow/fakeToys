@@ -222,7 +222,11 @@ class TestPagingParametersRefuseToSlice:
         import api.routes.data as route
 
         client, _ = api
-        monkeypatch.setattr(route, "require_count", lambda name, value, minimum=0: value)
+        # 第 25 轮：调用点多传了 maximum 关键字，注入臂要一并吞掉。
+        monkeypatch.setattr(
+            route, "require_count",
+            lambda name, value, minimum=0, maximum=None: value,
+        )
         assert client.get(LOAD, params={"page": -1, "page_size": 10}).status_code == 200
         assert client.get(LOAD, params={"page": 1, "page_size": 0}).status_code == 200
 
@@ -241,3 +245,19 @@ class TestTheClientSendsWhatItWasGiven:
         # 三处消费点：索引列、编辑、删除——少一处就是那一列还在发行号
         assert text.count("absoluteIndex(") == 3
         assert "render: (_, __, index) => (page - 1) * pageSize + index + 1" not in text
+
+
+class TestPageSizeUpperBound:
+    """第 25 轮：`page_size` 无上界时 `10**9` 会把整份数据集交出去。"""
+
+    def test_absurd_page_size_is_400(self, api):
+        client, _ = api
+        response = client.get(LOAD, params={"page_size": 999999})
+        assert response.status_code == 400, response.text
+        assert "不大于 1000" in response.text
+
+    def test_page_size_1000_is_accepted(self, api):
+        client, _ = api
+        response = client.get(LOAD, params={"page_size": 1000})
+        assert response.status_code == 200, response.text
+        assert len(response.json()["items"]) == N_ITEMS
