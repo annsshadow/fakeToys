@@ -12,6 +12,7 @@ use tokio::sync::RwLock;
 use tracing::{debug, info};
 
 use tokio_cron_scheduler::{Job, JobScheduler};
+use uuid::Uuid;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // scheduler
@@ -81,7 +82,9 @@ pub trait Scheduler: Send + Sync {
 /// 基于 tokio-cron-scheduler 的调度器实现
 pub struct TokioCronScheduler {
     scheduler: Arc<RwLock<JobScheduler>>,
-    jobs: Arc<RwLock<HashMap<JobId, bool>>>,
+    // 第 43 轮：值从 bool 改为底层 job 的 UUID —— cancel 时才能从
+    // JobScheduler 真正移除，否则被取消的任务会继续触发直到进程重启。
+    jobs: Arc<RwLock<HashMap<JobId, Uuid>>>,
 }
 
 impl TokioCronScheduler {
@@ -141,6 +144,7 @@ impl Scheduler for TokioCronScheduler {
         })
         .map_err(|e| SchedulerError::SchedulerError(e.to_string()))?;
 
+        let guid = job.guid();
         self.scheduler
             .write()
             .await
@@ -148,7 +152,7 @@ impl Scheduler for TokioCronScheduler {
             .await
             .map_err(|e| SchedulerError::SchedulerError(e.to_string()))?;
 
-        self.jobs.write().await.insert(job_id.clone(), true);
+        self.jobs.write().await.insert(job_id.clone(), guid);
         info!(job_id = %job_id, "scheduled one-shot job");
         Ok(())
     }
@@ -172,6 +176,7 @@ impl Scheduler for TokioCronScheduler {
         })
         .map_err(|e| SchedulerError::SchedulerError(e.to_string()))?;
 
+        let guid = job.guid();
         self.scheduler
             .write()
             .await
@@ -179,15 +184,24 @@ impl Scheduler for TokioCronScheduler {
             .await
             .map_err(|e| SchedulerError::SchedulerError(e.to_string()))?;
 
-        self.jobs.write().await.insert(job_id.clone(), true);
+        self.jobs.write().await.insert(job_id.clone(), guid);
         info!(job_id = %job_id, cron = %cron_expr, "scheduled cron job");
         Ok(())
     }
 
     async fn cancel(&self, job_id: &JobId) -> SchedulerResult<()> {
         let jobs = self.jobs.read().await;
-        if jobs.contains_key(job_id) {
+        if let Some(guid) = jobs.get(job_id) {
+            let guid = *guid;
             drop(jobs);
+            // 第 43 轮：先从底层调度器移除，再删自维护 map ——
+            // 顺序反了会在移除失败时把 map 条目弄丢，任务仍在跑。
+            self.scheduler
+                .write()
+                .await
+                .remove(&guid)
+                .await
+                .map_err(|e| SchedulerError::SchedulerError(e.to_string()))?;
             self.jobs.write().await.remove(job_id);
             info!(job_id = %job_id, "cancelled job");
             Ok(())
@@ -482,6 +496,43 @@ mod tokio_scheduler_tests {
             .await
             .expect_err("unknown job");
         assert!(matches!(err, SchedulerError::JobNotFound(_)));
+    }
+
+    // 第 43 轮：cancel 必须让底层 JobScheduler 里的任务真正停止触发。
+    // 修复前 cancel 只从自维护 map 删条目，cron 会继续触发直到进程重启。
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn cancel_stops_cron_job_from_firing() {
+        let scheduler = TokioCronScheduler::new().await.expect("scheduler");
+        let count = Arc::new(std::sync::atomic::AtomicU32::new(0));
+        let count_clone = count.clone();
+        scheduler
+            .schedule_cron(
+                "ticker".into(),
+                "* * * * * *", // 每秒触发一次
+                Arc::new(move || {
+                    count_clone.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                }),
+            )
+            .await
+            .expect("schedule");
+
+        scheduler.start().await.expect("start");
+        // 1.1s 内应至少触发一次（每秒 cron）。
+        tokio::time::sleep(Duration::from_millis(1100)).await;
+        assert!(
+            count.load(std::sync::atomic::Ordering::SeqCst) >= 1,
+            "cron 每秒触发一次，1.1s 后计数应 >=1"
+        );
+
+        scheduler.cancel(&"ticker".to_string()).await.expect("cancel");
+        let before = count.load(std::sync::atomic::Ordering::SeqCst);
+        tokio::time::sleep(Duration::from_millis(1100)).await;
+        assert_eq!(
+            count.load(std::sync::atomic::Ordering::SeqCst),
+            before,
+            "cancel 后任务必须停止触发（底层 job 应被移除）"
+        );
+        scheduler.shutdown().await.expect("shutdown");
     }
 
     #[tokio::test]
