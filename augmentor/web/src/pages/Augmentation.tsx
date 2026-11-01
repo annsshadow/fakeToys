@@ -5,7 +5,7 @@ import {
   apiErrorDetail,
   startAugmentation,
   getProgress,
-  getCheckpoints,
+  getCheckpoints, deleteCheckpoint,
   getDataFiles,
 } from '../services/api'
 import type { AugmentProgressDetail } from '../types/api'
@@ -44,6 +44,17 @@ export default function Augmentation() {
       setFiles(result.files.map((f) => f.name))
     } catch (err) {
       message.error(apiErrorDetail(err, '加载文件列表失败'))
+    }
+  }
+
+  // 第 56 轮：删除断点（从头重跑的前置能力）。删除后刷新列表。
+  const doDeleteCheckpoint = async (taskId: string) => {
+    try {
+      await deleteCheckpoint(taskId)
+      message.success('断点已删除')
+      await loadCheckpoints()
+    } catch (err) {
+      message.error(apiErrorDetail(err, '删除断点失败'))
     }
   }
 
@@ -229,7 +240,16 @@ export default function Augmentation() {
         {checkpoints.length > 0 ? (
           <Space wrap data-testid="checkpoint-list">
             {checkpoints.map((id) => (
-              <Tag key={id}>{id}</Tag>
+              <Tag
+                key={id}
+                closable
+                onClose={(e) => {
+                  e.preventDefault()
+                  doDeleteCheckpoint(id)
+                }}
+              >
+                {id}
+              </Tag>
             ))}
           </Space>
         ) : (

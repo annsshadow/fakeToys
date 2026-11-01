@@ -104,6 +104,28 @@ export const checkpointListResponseSchema = z.object({
   checkpoints: z.array(z.string()),
 })
 
+/** 第 56 轮：`DELETE /api/augment/checkpoints/{taskId}` → 删除结果 */
+export const deleteCheckpointSchema = z.object({
+  success: z.boolean(),
+  message: z.string().optional(),
+})
+
+/** 第 35 轮：`GET /api/augment/report/{taskId}` → 增强任务报告（含失败明细） */
+export const augmentReportResponseSchema = z.object({
+  task_id: z.string(),
+  input_file: z.string(),
+  output_file: z.string(),
+  input_count: z.number(),
+  output_count: z.number(),
+  quality_check: z.boolean(),
+  dedup: z.boolean(),
+  parallel: z.boolean(),
+  vector_index: z.unknown().optional(),
+  errors: z.array(z.record(z.string(), z.unknown())),
+  progress: z.record(z.string(), z.unknown()).optional(),
+  memory_monitor: z.record(z.string(), z.unknown()),
+})
+
 // ============ 数据分析 ============
 
 /**
@@ -149,6 +171,10 @@ export const createVersionResponseSchema = z.object({
 /** `GET /api/versions/{id}/data` → `VersionDataResponse`（`items` 元素是任意对象） */
 export const versionDataResponseSchema = z.object({
   items: z.array(z.record(z.string(), z.unknown())),
+  // 第 52 轮：分页参数后响应带 total/page/page_size（默认全量，均可选）。
+  total: z.number().optional(),
+  page: z.number().optional(),
+  page_size: z.number().optional(),
 })
 
 // ============ 质量评估 ============

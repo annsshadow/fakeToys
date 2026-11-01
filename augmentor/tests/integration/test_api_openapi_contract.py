@@ -511,6 +511,10 @@ CALLS = {
             "progress", "memory_monitor",
         ),
     ),
+    ("DELETE", "/api/augment/checkpoints/{task_id}"): _Case(
+        request=lambda c: c.delete("/api/augment/checkpoints/no-such"),
+        keys=_keys("success", "message"),
+    ),
     # ---------- dataset（数据集工具箱）----------
     ("POST", "/api/dataset/stats"): _Case(
         request=lambda c: c.post("/api/dataset/stats", json={"input_file": "data.json"}),

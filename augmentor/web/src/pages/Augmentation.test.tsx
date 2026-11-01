@@ -39,6 +39,7 @@ const spies = vi.hoisted(() => ({
   startAugmentation: null as unknown as ReturnType<typeof vi.fn>,
   getProgress: null as unknown as ReturnType<typeof vi.fn>,
   getCheckpoints: null as unknown as ReturnType<typeof vi.fn>,
+  deleteCheckpoint: null as unknown as ReturnType<typeof vi.fn>,
   getDataFiles: null as unknown as ReturnType<typeof vi.fn>,
 }))
 
@@ -47,12 +48,14 @@ vi.mock('../services/api', async (importOriginal) => {
   spies.startAugmentation = vi.fn().mockResolvedValue({ success: true, message: 'ok' })
   spies.getProgress = vi.fn().mockResolvedValue({ status: 'no_checkpoint' })
   spies.getCheckpoints = vi.fn().mockResolvedValue({ checkpoints: [] })
+  spies.deleteCheckpoint = vi.fn().mockResolvedValue({ success: true, message: 'ok' })
   spies.getDataFiles = vi.fn().mockResolvedValue({ files: [{ name: 'seed.json' }] })
   return {
     ...actual,
     startAugmentation: spies.startAugmentation,
     getProgress: spies.getProgress,
     getCheckpoints: spies.getCheckpoints,
+    deleteCheckpoint: spies.deleteCheckpoint,
     getDataFiles: spies.getDataFiles,
   }
 })
@@ -265,6 +268,23 @@ describe('Augmentation 断点列表（L211 接线）', () => {
 
     await waitFor(() => expect(spies.getCheckpoints).toHaveBeenCalled())
     expect(await screen.findByText('暂无断点')).toBeInTheDocument()
+  })
+
+  it('第 56 轮：点断点 Tag 关闭按钮 → 调删除接口并刷新列表', async () => {
+    spies.getCheckpoints.mockResolvedValue({ checkpoints: ['ck-a', 'ck-b'] })
+    spies.deleteCheckpoint.mockResolvedValue({ success: true, message: '断点已删除' })
+
+    render(<Augmentation />)
+    await waitFor(() => expect(screen.getByText('ck-a')).toBeInTheDocument())
+
+    const tags = document.querySelectorAll('.ant-tag')
+    expect(tags.length).toBe(2)
+    const closeBtn = tags[0].querySelector('.ant-tag-close-icon') as HTMLElement
+    fireEvent.click(closeBtn)
+
+    await waitFor(() => expect(spies.deleteCheckpoint).toHaveBeenCalledWith('ck-a'))
+    // 删除后刷新列表
+    await waitFor(() => expect(spies.getCheckpoints.mock.calls.length).toBeGreaterThanOrEqual(2))
   })
 })
 

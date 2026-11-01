@@ -196,3 +196,50 @@ class TestAugmentReport:
         report = client.get(f"/api/augment/report/{task_id}")
         assert report.status_code == 200, report.text
         assert report.json()["task_id"] == task_id
+
+
+class TestDeleteCheckpoint:
+    """第 56 轮：断点可删（从头重跑的前置能力）。"""
+
+    def test_delete_checkpoint_removes_it(self, augment_env):
+        client, in_name, out_name, _ = augment_env
+        # 先创建断点
+        client.post(
+            "/api/augment/start",
+            json={"input_file": in_name, "output_file": out_name, "use_checkpoint": True},
+        )
+        ck_list = client.get("/api/augment/checkpoints")
+        assert ck_list.status_code == 200
+        before = ck_list.json()["checkpoints"]
+        assert len(before) >= 1
+
+        task_id = before[0]
+        resp = client.delete(f"/api/augment/checkpoints/{task_id}")
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["success"] is True
+
+        after = client.get("/api/augment/checkpoints").json()["checkpoints"]
+        assert task_id not in after, "删除后断点列表不应再包含它"
+
+    def test_delete_checkpoint_requires_auth(self, augment_env, monkeypatch):
+        client, *_ = augment_env
+        monkeypatch.setenv("AUGMENTOR_API_KEY", "secret")
+        resp = client.delete("/api/augment/checkpoints/x")
+        assert resp.status_code == 401
+
+    def test_delete_then_restart_from_scratch(self, augment_env):
+        client, in_name, out_name, _ = augment_env
+        client.post(
+            "/api/augment/start",
+            json={"input_file": in_name, "output_file": out_name, "use_checkpoint": True},
+        )
+        task_id = client.get("/api/augment/checkpoints").json()["checkpoints"][0]
+        client.delete(f"/api/augment/checkpoints/{task_id}")
+
+        # 删除后再次启动同一输入文件 → 重新创建断点（从头重跑）。
+        client.post(
+            "/api/augment/start",
+            json={"input_file": in_name, "output_file": out_name, "use_checkpoint": True},
+        )
+        after = client.get("/api/augment/checkpoints").json()["checkpoints"]
+        assert task_id in after, "删除后重新运行应重建断点（从头重跑语义）"

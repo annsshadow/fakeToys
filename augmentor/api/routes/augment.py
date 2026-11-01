@@ -175,6 +175,25 @@ async def get_augment_report(task_id: str, _auth: None = Depends(verify_api_key)
     return report
 
 
+@router.delete(
+    "/api/augment/checkpoints/{task_id}",
+    response_model=MessageResponse,
+    summary="删除断点（从头重跑）",
+)
+async def delete_checkpoint(task_id: str, _auth: None = Depends(verify_api_key)):
+    """第 56 轮：删除一个断点。
+
+    文档承诺「如需从头重跑，先调用 delete_checkpoint」，但此前 API/UI 都
+    做不到——只能登服务器删文件。删除后同一输入文件的下一次运行从零开始。
+    """
+    try:
+        p = get_pipeline()
+        p.checkpoint_manager.delete_checkpoint(task_id)
+        return {"success": True, "message": "断点已删除"}
+    except Exception as e:
+        raise_internal_error(e)
+
+
 @router.get(
     "/api/augment/progress",
     response_model=AugmentProgressResponse,

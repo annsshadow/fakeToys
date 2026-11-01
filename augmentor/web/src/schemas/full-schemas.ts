@@ -602,7 +602,7 @@ export const vectorStatusResponseSchema = z.object({
   storage_dir: z.string(),
 })
 
-/** `api/routes/version.py:30` → VersionDetailResponse */
+/** `api/routes/version.py:31` → VersionDetailResponse */
 export const versionDetailResponseSchema = z.object({
   version_id: z.string(),
   label: z.string().nullable(),
@@ -612,7 +612,7 @@ export const versionDetailResponseSchema = z.object({
   metadata: z.record(z.string(), z.unknown()),
 })
 
-/** `api/routes/version.py:46` → VersionDiffResponse */
+/** `api/routes/version.py:47` → VersionDiffResponse */
 export const versionDiffResponseSchema = z.object({
   version1: z.string(),
   version2: z.string(),
@@ -621,7 +621,7 @@ export const versionDiffResponseSchema = z.object({
   modified_count: z.number(),
 })
 
-/** `api/routes/version.py:58` → VersionHistoryResponse */
+/** `api/routes/version.py:59` → VersionHistoryResponse */
 export const versionHistoryResponseSchema = z.object({
   history: z.array(z.record(z.string(), z.unknown())),
 })

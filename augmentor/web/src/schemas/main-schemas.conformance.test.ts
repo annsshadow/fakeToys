@@ -43,6 +43,7 @@ import * as fullSchemas from './full-schemas'
 import {
   analyzeResponseSchema,
   augmentProgressSchema,
+  augmentReportResponseSchema,
   checkpointListResponseSchema,
   createVersionResponseSchema,
   dataFileInfoSchema,
@@ -266,6 +267,11 @@ const MODELS: ModelCase[] = [
     className: 'AugmentProgressResponse',
     file: 'api/routes/augment.py',
   },
+  {
+    schema: augmentReportResponseSchema,
+    className: 'AugmentReportResponse',
+    file: 'api/routes/augment.py',
+  },
   { schema: versionInfoSchema, className: 'VersionInfo', file: 'api/routes/version.py' },
   {
     schema: versionListResponseSchema,
@@ -384,9 +390,9 @@ const ALL_MODELS = [...MODELS, ...FULL_MODELS]
 
 describe('zod schema ↔ 后端 response_model 契约', () => {
   it('覆盖面非空：85 个模型、全部字段都可解析', () => {
-    expect(MODELS).toHaveLength(15)
+    expect(MODELS).toHaveLength(16)
     expect(FULL_MODELS).toHaveLength(70)
-    expect(ALL_MODELS).toHaveLength(85)
+    expect(ALL_MODELS).toHaveLength(86)
 
     let pythonFields = 0
     for (const model of ALL_MODELS) {
@@ -395,7 +401,7 @@ describe('zod schema ↔ 后端 response_model 契约', () => {
       expect(fields!.length, `${model.className} 解析出 0 个字段`).toBeGreaterThan(0)
       pythonFields += fields!.length
     }
-    expect(pythonFields).toBe(389)
+    expect(pythonFields).toBe(404)
   })
 
   it('full-schemas 的「文件:行号」映射与类定义现量一致', () => {
