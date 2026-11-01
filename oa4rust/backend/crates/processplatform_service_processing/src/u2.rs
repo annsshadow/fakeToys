@@ -322,7 +322,7 @@ async fn dict_del(pool: &Pool, parts: &[String]) -> H {
 }
 
 macro_rules! dict_data_fns {
-    ($set:ident, $del:ident ($($p:ident : $t:ty),+)) => {
+    ($set:ident, $del:ident ($($p:ident : $t:ty),+ $(,)?)) => {
         pub async fn $set(
             pool: Extension<Pool>,
             session: Option<Extension<shared::session::Session>>,
