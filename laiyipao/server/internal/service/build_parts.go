@@ -116,13 +116,18 @@ func (s *Service) loadSkillsRows(ctx context.Context, userID int64) (map[string]
 	}
 	defer rows.Close()
 
-	skills, elements, occupied := skillsRowsToMaps(rows)
+	skills, elements, occupied, err := skillsRowsToMaps(rows)
+	if err != nil {
+		return nil, nil, nil, err
+	}
 	return skills, elements, occupied, rows.Err()
 }
 
 // skillsRowsToMaps 把技能行迭代装配成 (按 id 索引的技能表, 元素列表, 已占槽位)。
 // 纯装配 —— 等级夹紧、槽位去重、元素去重都在这里，旧方法与新路径共用。
-func skillsRowsToMaps(rows pgx.Rows) (map[string]any, []string, map[int]bool) {
+// Scan 失败必须上抛：这是 /me、/battle/token、settle 的共享路径，
+// 吞掉错误会让坏行静默变成半份构筑，回放哈希漂移把诚实玩家误判成作弊。
+func skillsRowsToMaps(rows pgx.Rows) (map[string]any, []string, map[int]bool, error) {
 	skills := map[string]any{}
 	elements := map[string]bool{}
 	occupied := map[int]bool{}
@@ -130,7 +135,7 @@ func skillsRowsToMaps(rows pgx.Rows) (map[string]any, []string, map[int]bool) {
 		var id, level, slot int
 		var name, family, element, kind string
 		if err := rows.Scan(&id, &name, &family, &element, &kind, &level, &slot); err != nil {
-			return skills, nil, nil
+			return nil, nil, nil, fmt.Errorf("scan skills row: %w", err)
 		}
 		// 等级夹紧的理由见 game.go loadSkillsAndSlots 的原注释（I-6：等级进重放哈希，
 		// 脏数据 99 级会变成 4900‰ 伤害加成而服务端攻击封顶不知道）。
@@ -148,7 +153,7 @@ func skillsRowsToMaps(rows pgx.Rows) (map[string]any, []string, map[int]bool) {
 	for e := range elements {
 		list = append(list, e)
 	}
-	return skills, list, occupied
+	return skills, list, occupied, nil
 }
 
 // loadEquipmentRows 读玩家已装备装备的 id 列表（按 slot 排序）。

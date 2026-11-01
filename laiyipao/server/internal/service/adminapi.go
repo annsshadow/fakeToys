@@ -647,6 +647,11 @@ func (s *Service) AdminExportDefenseChallenges(ctx context.Context, defenseID, c
 			return nil, fmt.Errorf("write csv row: %w", err)
 		}
 	}
+	// 迭代中途断连会让 rows.Next() 静默变 false —— 不查 rows.Err() 就会把
+	// 截断的 CSV 当成功返回（其余 8 个导出都有这道检查，唯二漏网）。
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate export defense challenges: %w", err)
+	}
 	w.Flush()
 	if err := w.Error(); err != nil {
 		return nil, fmt.Errorf("flush csv: %w", err)
@@ -936,6 +941,10 @@ func (s *Service) AdminExportRedeemUsages(ctx context.Context, codeKeyword strin
 			return nil, fmt.Errorf("write csv row: %w", err)
 		}
 	}
+	// 同上：迭代中途断连不查 rows.Err() 就是静默截断的 CSV 报成功。
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate export redeem usages: %w", err)
+	}
 	w.Flush()
 	if err := w.Error(); err != nil {
 		return nil, fmt.Errorf("flush csv: %w", err)
@@ -948,7 +957,7 @@ func (s *Service) AdminEconomy(ctx context.Context) (AdminEconomyResp, error) {
 	// 2026-10-31（新一轮第 28 轮）：wallet_flows 是全游戏增长最快的表，
 	// 每次打开经济页都做全表聚合是浪费。TTL 缓存（config.EconomyCacheTTL，
 	// 0 = 关闭），错误不缓存。
-	return s.economyCache.getOrLoad(time.Now(), s.Cfg().EconomyCacheTTL, func() (AdminEconomyResp, error) {
+	return s.economyCache.getOrLoad(ctx, time.Now(), s.Cfg().EconomyCacheTTL, func(ctx context.Context) (AdminEconomyResp, error) {
 		return s.adminEconomyUncached(ctx)
 	})
 }

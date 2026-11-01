@@ -1,10 +1,17 @@
 package service
 
 import (
+	"context"
 	"sync"
 	"sync/atomic"
 	"time"
 )
+
+// cacheLoadTimeout 是缓存 loader 的独立加载超时。它与任何请求无关：
+// loader 由首个未命中请求触发，但服务的是所有等待者，所以超时也不跟
+// 任何一个请求走。所有被缓存的都是少量行（≤ 榜单 200 行 / 看板 9 段），
+// 30s 是给极端库抖动留的余量而不是正常路径的预算。
+const cacheLoadTimeout = 30 * time.Second
 
 // ttlCache 是「单值 + 有效期」的进程内缓存。
 //
@@ -97,7 +104,18 @@ func (c *ttlCache[T]) put(v T, now time.Time) {
 //     不会把一次失败固化成 15~30 秒的假数据。
 //
 // `load` 在锁外执行，绝不会持锁跑查询。
-func (c *ttlCache[T]) getOrLoad(now time.Time, ttl time.Duration, load func() (T, error)) (T, error) {
+//
+// # 加载上下文与首个请求解耦（第 3 轮）
+//
+// `load` 收到的 ctx 不是请求的 ctx：它是 `WithoutCancel(请求ctx)` 加一份
+// **独立超时**。原因：单飞之下 loader 是"第一个未命中请求"，若直接用它的
+// 请求 ctx 查库，这个客户端断连/超时就会取消加载 —— 所有等待者一起失败、
+// 缓存也不落，一次抖动把整段 TTL 的价值清零。加载是给**所有等待者**服务的，
+// 生命周期不该绑在触发它的那一个请求上。
+//
+// 独立超时（cacheLoadTimeout）保证断连后的加载不会无限期占用 inflight；
+// 请求 ctx 的 value（如追踪元数据）经 WithoutCancel 保留。
+func (c *ttlCache[T]) getOrLoad(ctx context.Context, now time.Time, ttl time.Duration, load func(ctx context.Context) (T, error)) (T, error) {
 	// 快路径：TTL 内命中，不碰 inflight。
 	if v, ok := c.get(now, ttl); ok {
 		c.hits.Add(1)
@@ -125,7 +143,10 @@ func (c *ttlCache[T]) getOrLoad(now time.Time, ttl time.Duration, load func() (T
 	c.inflight = call
 	c.mu.Unlock()
 
-	call.val, call.err = load()
+	// loader 的 ctx 与首请求解耦：取消不传播，仅保留 value 与独立超时。
+	loadCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), cacheLoadTimeout)
+	defer cancel()
+	call.val, call.err = load(loadCtx)
 	if call.err == nil {
 		c.put(call.val, time.Now())
 	}

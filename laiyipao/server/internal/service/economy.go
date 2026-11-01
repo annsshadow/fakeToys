@@ -115,7 +115,7 @@ func (s *Service) Leaderboard(ctx context.Context, kind string, limit int) ([]Le
 // 与旧行为逐字一致。
 func (s *Service) leaderboardAll(ctx context.Context, kind string) ([]LeaderboardEntry, error) {
 	if c, ok := s.leaderboardCache[kind]; ok {
-		return c.getOrLoad(time.Now(), s.Cfg().LeaderboardCacheTTL, func() ([]LeaderboardEntry, error) {
+		return c.getOrLoad(ctx, time.Now(), s.Cfg().LeaderboardCacheTTL, func(ctx context.Context) ([]LeaderboardEntry, error) {
 			return s.leaderboardQuery(ctx, kind)
 		})
 	}
@@ -360,7 +360,7 @@ func (s *Service) SignInCalendar(ctx context.Context) ([]SignInCalendarDay, erro
 	// 2026-10-30（实质优化第 17 轮）：日历是 seeder 写入的静态配置
 	// （后台没有修改入口），每次签到页打开都查库是纯浪费。
 	// TTL 缓存 + singleflight；0 = 关闭缓存（见 config.SignInCalendarCacheTTL）。
-	return s.signInCalendarCache.getOrLoad(time.Now(), s.Cfg().SignInCalendarCacheTTL, func() ([]SignInCalendarDay, error) {
+	return s.signInCalendarCache.getOrLoad(ctx, time.Now(), s.Cfg().SignInCalendarCacheTTL, func(ctx context.Context) ([]SignInCalendarDay, error) {
 		rows, err := s.pool.Query(ctx,
 			`SELECT day_index, reward FROM sign_in_calendar ORDER BY day_index`)
 		if err != nil {
@@ -807,7 +807,7 @@ func (s *Service) LoadShop(ctx context.Context, userID int64) ([]ShopItemView, e
 	// 玩家今日已购次数改为**一条分组查询** —— 商品数越多省得越多。
 	//
 	// ⚠️ 静态列表缓存的是 `shopItem`（无 Bought），per-user 计数绝不缓存。
-	items, err := s.shopCache.getOrLoad(time.Now(), s.Cfg().ShopCacheTTL, func() ([]shopItem, error) {
+	items, err := s.shopCache.getOrLoad(ctx, time.Now(), s.Cfg().ShopCacheTTL, func(ctx context.Context) ([]shopItem, error) {
 		rows, err := s.pool.Query(ctx, `
 			SELECT id, code, name, category, price, payload, limit_per_day
 			FROM shop_items WHERE enabled ORDER BY sort_order`)

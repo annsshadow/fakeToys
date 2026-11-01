@@ -11,6 +11,7 @@ package service
 //   · `ttl<=0` 不短路 → 「关闭缓存」这个开关变成摆设
 
 import (
+	"context"
 	"errors"
 	"sync"
 	"sync/atomic"
@@ -175,7 +176,7 @@ func TestTTLCacheGetOrLoadSingleflight(t *testing.T) {
 	var c ttlCache[int]
 	var loads int32
 	release := make(chan struct{})
-	load := func() (int, error) {
+	load := func(ctx context.Context) (int, error) {
 		atomic.AddInt32(&loads, 1)
 		<-release // 阻塞，逼所有并发方pile up成等待者
 		return 7, nil
@@ -189,7 +190,7 @@ func TestTTLCacheGetOrLoadSingleflight(t *testing.T) {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
-			results[i], errs[i] = c.getOrLoad(time.Now(), time.Minute, load)
+			results[i], errs[i] = c.getOrLoad(context.Background(), time.Now(), time.Minute, load)
 		}(i)
 	}
 	// 给足时间让所有 goroutine 进入 getOrLoad（loader 阻塞中，它们必然
@@ -217,14 +218,14 @@ func TestTTLCacheGetOrLoadErrorNotCached(t *testing.T) {
 	var loads int32
 	boom := errors.New("boom")
 
-	if _, err := c.getOrLoad(time.Now(), time.Minute, func() (int, error) {
+	if _, err := c.getOrLoad(context.Background(), time.Now(), time.Minute, func(ctx context.Context) (int, error) {
 		atomic.AddInt32(&loads, 1)
 		return 0, boom
 	}); !errors.Is(err, boom) {
 		t.Fatalf("应把 loader 的错误原样返回，实际 %v", err)
 	}
 	// 失败未被缓存：第二次调用重新走 loader 并成功
-	v, err := c.getOrLoad(time.Now(), time.Minute, func() (int, error) {
+	v, err := c.getOrLoad(context.Background(), time.Now(), time.Minute, func(ctx context.Context) (int, error) {
 		atomic.AddInt32(&loads, 1)
 		return 5, nil
 	})
@@ -235,7 +236,7 @@ func TestTTLCacheGetOrLoadErrorNotCached(t *testing.T) {
 		t.Fatalf("失败不应被缓存：loader 应已被调用 2 次，实际 %d", got)
 	}
 	// 成功已被缓存：第三次调用命中，不再跑 loader
-	v, err = c.getOrLoad(time.Now(), time.Minute, func() (int, error) {
+	v, err = c.getOrLoad(context.Background(), time.Now(), time.Minute, func(ctx context.Context) (int, error) {
 		atomic.AddInt32(&loads, 1)
 		return 999, nil
 	})
@@ -255,17 +256,115 @@ func TestTTLCacheGetOrLoadErrorNotCached(t *testing.T) {
 func TestTTLCacheGetOrLoadCountsHitsMisses(t *testing.T) {
 	var c ttlCache[int]
 	// 第一次：未命中 → 走 loader
-	if _, err := c.getOrLoad(time.Now(), time.Minute, func() (int, error) { return 1, nil }); err != nil {
+	if _, err := c.getOrLoad(context.Background(), time.Now(), time.Minute, func(ctx context.Context) (int, error) { return 1, nil }); err != nil {
 		t.Fatalf("加载失败: %v", err)
 	}
 	if h, m := c.Stats(); h != 0 || m != 1 {
 		t.Fatalf("首次后应 hits=0 misses=1，实际 hits=%d misses=%d", h, m)
 	}
 	// 第二次：命中
-	if _, err := c.getOrLoad(time.Now(), time.Minute, func() (int, error) { return 2, nil }); err != nil {
+	if _, err := c.getOrLoad(context.Background(), time.Now(), time.Minute, func(ctx context.Context) (int, error) { return 2, nil }); err != nil {
 		t.Fatalf("加载失败: %v", err)
 	}
 	if h, m := c.Stats(); h != 1 || m != 1 {
 		t.Fatalf("第二次后应 hits=1 misses=1，实际 hits=%d misses=%d", h, m)
+	}
+}
+
+// TestTTLCacheLoadContextDetachedFromRequest：loader 的 ctx 不随首请求取消。
+//
+// 单飞之下 loader 由第一个未命中请求触发，但它服务的是**所有等待者**。
+// 若 loader 直接用请求 ctx 查库，触发请求断连就会取消加载 —— 等待者一起
+// 失败、缓存不落。判据取真实时序：加载**中途**首请求 cancel，loader 的
+// ctx 必须仍然存活（加载结束后再检查是不对的 —— getOrLoad 返回时会释放
+// 自己的超时句柄，事后检查必然看到 Canceled，那不是缺陷而是资源卫生），
+// 且请求 ctx 的 value（请求元数据）保留。
+func TestTTLCacheLoadContextDetachedFromRequest(t *testing.T) {
+	var c ttlCache[string]
+	type reqKey struct{}
+	outer, cancel := context.WithCancel(context.WithValue(context.Background(), reqKey{}, "trace-1"))
+	defer cancel()
+
+	started := make(chan struct{})
+	release := make(chan struct{})
+	load := func(ctx context.Context) (string, error) {
+		close(started)
+		select {
+		case <-ctx.Done(): // 旧形状下首请求取消会走到这里
+			return "", ctx.Err()
+		case <-release:
+		}
+		v, _ := ctx.Value(reqKey{}).(string)
+		return v, nil
+	}
+
+	errc := make(chan error, 1)
+	valc := make(chan string, 1)
+	go func() {
+		v, err := c.getOrLoad(outer, time.Now(), time.Minute, load)
+		errc <- err
+		valc <- v
+	}()
+	<-started
+	cancel()       // 首请求断连
+	close(release) // 放行加载
+
+	if err := <-errc; err != nil {
+		t.Fatalf("loader 不应因首请求取消而失败: %v", err)
+	}
+	if v := <-valc; v != "trace-1" {
+		t.Fatalf("WithoutCancel 应保留请求 ctx 的 value，实际 %q", v)
+	}
+	// 缓存落盘：再来一次直接命中
+	if v, err := c.getOrLoad(context.Background(), time.Now(), time.Minute, load); err != nil || v != "trace-1" {
+		t.Fatalf("加载完成后应命中缓存，实际 v=%q err=%v", v, err)
+	}
+}
+
+// TestTTLCacheWaiterSurvivesRequesterCancellation：端到端判据 ——
+// 首请求在加载中途断连，与加载并发的等待者仍拿到成功结果。
+// 模拟 pgx：loader 用传入 ctx「查库」，ctx 取消即失败。
+func TestTTLCacheWaiterSurvivesRequesterCancellation(t *testing.T) {
+	var c ttlCache[int]
+	outer, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	started := make(chan struct{})
+	release := make(chan struct{})
+	load := func(ctx context.Context) (int, error) {
+		close(started)
+		select {
+		case <-ctx.Done():
+			return 0, ctx.Err()
+		case <-release:
+			return 7, nil
+		}
+	}
+
+	errc := make(chan error, 1)
+	go func() {
+		_, err := c.getOrLoad(outer, time.Now(), time.Minute, load)
+		errc <- err
+	}()
+	<-started
+	cancel() // 首请求断连，此刻加载仍在途
+
+	// 等待者带着自己的 context 进来：要么成为等待者，要么（缓存已被
+	// 单飞占住）不可能重复加载 —— 无论如何都必须拿到成功结果。
+	werrc := make(chan error, 1)
+	go func() {
+		v, err := c.getOrLoad(context.Background(), time.Now(), time.Minute, load)
+		if err == nil && v != 7 {
+			err = errors.New("等待者应拿到 7")
+		}
+		werrc <- err
+	}()
+	time.Sleep(50 * time.Millisecond) // 与 singleflight 测试同款：给等待者进入 inflight 的时间
+	close(release)
+
+	if err := <-errc; err != nil {
+		t.Fatalf("loader 不应因首请求取消而失败: %v", err)
+	}
+	if err := <-werrc; err != nil {
+		t.Fatalf("等待者应拿到成功结果: %v", err)
 	}
 }

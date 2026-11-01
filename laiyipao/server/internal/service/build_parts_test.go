@@ -9,6 +9,10 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/laiyipao/server/internal/domain"
 )
 
@@ -140,5 +144,49 @@ func TestAttackerFromPartsDeterministic(t *testing.T) {
 	a2 := attackerFromParts(p)
 	if a1 != a2 {
 		t.Errorf("同一零件两次计算应逐位一致：%+v vs %+v", a1, a2)
+	}
+}
+
+// ---- skillsRowsToMaps 的坏行必须上抛（第 1 轮）----
+// 这是 /me、/battle/token、settle 的共享装配路径：Scan 失败若被吞掉，
+// 坏行会静默变成「半份构筑 + nil error」，回放哈希漂移把诚实玩家误判成作弊。
+// 用桩 rows 注入第二行 Scan 失败（真实表全列 NOT NULL，无法用数据触发）。
+
+type failingScanRows struct{ scanned int }
+
+func (r *failingScanRows) Close()                                       {}
+func (r *failingScanRows) Err() error                                   { return nil }
+func (r *failingScanRows) CommandTag() pgconn.CommandTag                { return pgconn.CommandTag{} }
+func (r *failingScanRows) FieldDescriptions() []pgconn.FieldDescription { return nil }
+func (r *failingScanRows) Values() ([]any, error)                       { return nil, errors.New("not used") }
+func (r *failingScanRows) RawValues() [][]byte                          { return nil }
+func (r *failingScanRows) Conn() *pgx.Conn                              { return nil }
+func (r *failingScanRows) TypeMap() *pgtype.Map                         { return nil }
+func (r *failingScanRows) Next() bool                                   { return r.scanned < 2 }
+func (r *failingScanRows) Scan(dest ...any) error {
+	r.scanned++
+	if r.scanned == 2 {
+		return errors.New("injected scan failure")
+	}
+	// dest 顺序与 loadSkillsRows 的 SELECT 列一致：id,name,family,element,kind,level,slot
+	*(dest[0].(*int)) = 1
+	*(dest[1].(*string)) = "火球"
+	*(dest[2].(*string)) = "元素"
+	*(dest[3].(*string)) = "fire"
+	*(dest[4].(*string)) = "active"
+	*(dest[5].(*int)) = 1
+	*(dest[6].(*int)) = 0
+	return nil
+}
+
+func TestSkillsRowsToMapsScanErrorPropagates(t *testing.T) {
+	rows := &failingScanRows{}
+	skills, elements, occupied, err := skillsRowsToMaps(rows)
+	if err == nil {
+		t.Fatal("Scan 失败必须上抛错误，而不是把半份构筑静默返回")
+	}
+	if skills != nil || elements != nil || occupied != nil {
+		t.Fatalf("出错时必须丢弃半成品，got skills=%d elements=%v occupied=%v",
+			len(skills), elements, occupied)
 	}
 }

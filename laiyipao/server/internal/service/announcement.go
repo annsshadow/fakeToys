@@ -60,7 +60,7 @@ func (s *Service) ListAnnouncements(ctx context.Context, limit int) ([]Announcem
 	// 每次首页拉取都查库是纯浪费。缓存**全量**（最多 20 条），
 	// 再按请求 limit 复制切片 —— 不同 limit 共享同一份缓存。
 	// TTL 见 config.AnnouncementsCacheTTL；0 = 关闭缓存。
-	all, err := s.announcementsCache.getOrLoad(time.Now(), s.Cfg().AnnouncementsCacheTTL, func() ([]AnnouncementView, error) {
+	all, err := s.announcementsCache.getOrLoad(ctx, time.Now(), s.Cfg().AnnouncementsCacheTTL, func(ctx context.Context) ([]AnnouncementView, error) {
 		rows, err := s.pool.Query(ctx, `
 			SELECT id, title, body, published_at
 			FROM announcements

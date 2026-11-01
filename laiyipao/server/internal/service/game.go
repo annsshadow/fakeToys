@@ -918,7 +918,7 @@ func (s *Service) LoadTasks(ctx context.Context, userID int64, scope string) ([]
 	//
 	// ⚠️ 静态列表缓存的是 `taskConfig`（无 Progress/Claimed），
 	// per-user 进度绝不缓存。
-	configs, err := s.tasksCache.getOrLoad(time.Now(), s.Cfg().TasksCacheTTL, func() ([]taskConfig, error) {
+	configs, err := s.tasksCache.getOrLoad(ctx, time.Now(), s.Cfg().TasksCacheTTL, func(ctx context.Context) ([]taskConfig, error) {
 		rows, err := s.pool.Query(ctx, `
 			SELECT id, code, name, scope, target, metric, reward
 			FROM tasks WHERE enabled ORDER BY id`)

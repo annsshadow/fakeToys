@@ -26,6 +26,9 @@ func (s *Server) Register(app *fiber.App) {
 	// CORS 的宽松程度取决于环境：dev 放行 `*`（前后端不同端口），
 	// prod 默认一条 CORS 头都不发（等价只允许同源）。
 	SetDevMode(s.Svc.Cfg().Env != "prod")
+	// LOG_LEVEL 的消费方在此接线（第 4 轮）：访问日志按级别过滤。
+	// 启动期固化 —— 热加载不覆盖它，与 JWT 签名器/限流桶同档。
+	SetLogLevel(s.Svc.Cfg().LogLevel)
 	app.Use(recoverPanic())
 	// ⚠️ 安全响应头必须在**任何**会写响应体的中间件之前，
 	// 否则拿不到它们的输出（与 compress 同理）。

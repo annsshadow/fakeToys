@@ -8,6 +8,7 @@ import (
 	"runtime/debug"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -63,8 +64,8 @@ func failErr(c *fiber.Ctx, err error) error {
 		return fail(c, fiber.StatusUnprocessableEntity, "settle_rejected", err.Error())
 	}
 	// 其余一律 500 + 通用文案。
-	// 真实原因必须落到服务端日志，出问题时线上才能定位。
-	log.Printf("[http] %s %s -> 500: %v", c.Method(), c.OriginalURL(), err)
+	// 真实原因必须落到服务端日志（error 级），出问题时线上才能定位。
+	logAt(logError, "[http] %s %s -> 500: %v", c.Method(), c.OriginalURL(), err)
 	return fail(c, fiber.StatusInternalServerError, "internal_error", "服务内部错误")
 }
 
@@ -118,12 +119,92 @@ func isSettleRejection(err error) bool {
 
 // --- 中间件 ---
 
-// requestLogger 记录访问日志。
+// --- 访问日志分级（LOG_LEVEL 的消费方，第 4 轮）---
+//
+// LOG_LEVEL 此前只在 config 解析、全仓零消费（死配置）。这里给它最小的
+// 分级消费：stdlib log，不引第三方日志库 —— 本服务要记的量级
+// （500 原因 + 4xx + 慢请求）用不上结构化日志的复杂度。
+//
+// 分级阶梯（默认 info）：
+//   - error：500 的真实原因（failErr）、直接写出的 5xx 响应
+//   - warn ：4xx 响应
+//   - info ：慢请求（≥ slowRequestThreshold）
+//   - debug：其余全部访问 + handler 返回错误但未写 500 的路径
+
+type logLevel int32
+
+const (
+	logDebug logLevel = iota
+	logInfo
+	logWarn
+	logError
+)
+
+// accessLevel 是当前访问日志级别。原子读：日志判定在每个请求上，
+// 不为读档引入锁。
+var accessLevel atomic.Int32
+
+// slowRequestThreshold 是「慢请求」的判定线（info 级）。测试会调小它。
+var slowRequestThreshold = time.Second
+
+// parseLogLevel 解析 LOG_LEVEL。未知值回退 info 并打警告：
+// 配置写错不该静默（运维以为记了其实没记），也不该因此打死进程。
+func parseLogLevel(s string) logLevel {
+	switch strings.ToLower(strings.TrimSpace(s)) {
+	case "debug":
+		return logDebug
+	case "info", "":
+		return logInfo
+	case "warn", "warning":
+		return logWarn
+	case "error":
+		return logError
+	default:
+		log.Printf("[http] 未知 LOG_LEVEL %q，按 info 处理（可选 debug/info/warn/error）", s)
+		return logInfo
+	}
+}
+
+// SetLogLevel 设置访问日志级别（Register 启动时从 config.LOG_LEVEL 调一次；
+// 测试直接调用）。与 SetDevMode 同款包级形状。
+func SetLogLevel(s string) { accessLevel.Store(int32(parseLogLevel(s))) }
+
+// logAt 按级别打日志，级别低于当前档的调用直接丢弃。
+func logAt(level logLevel, format string, args ...any) {
+	if int32(level) < accessLevel.Load() {
+		return
+	}
+	log.Printf(format, args...)
+}
+
+// requestLogger 记录访问日志并写 X-Request-Duration（分级见 logLevel）。
 func requestLogger() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		start := time.Now()
 		err := c.Next()
-		c.Set("X-Request-Duration", time.Since(start).String())
+		dur := time.Since(start)
+		c.Set("X-Request-Duration", dur.String())
+		status := c.Response().StatusCode()
+		switch {
+		case err != nil:
+			// handler 返回错误：最终状态码由 ErrorHandler 写出，这里还看不到。
+			// 500 的真实原因 failErr 已按 error 级落日志，不重复；
+			// 本行在 debug 级补「哪个端点、哪个错误」的上下文。
+			logAt(logDebug, "[http] %s %s -> handler error (%s): %v",
+				c.Method(), c.OriginalURL(), dur, err)
+		case status >= 500:
+			logAt(logError, "[http] %s %s -> %d (%s)",
+				c.Method(), c.OriginalURL(), status, dur)
+		case status >= 400:
+			logAt(logWarn, "[http] %s %s -> %d (%s)",
+				c.Method(), c.OriginalURL(), status, dur)
+		case dur >= slowRequestThreshold:
+			logAt(logInfo, "[http] %s %s -> %d (%s，慢请求)",
+				c.Method(), c.OriginalURL(), status, dur)
+		default:
+			logAt(logDebug, "[http] %s %s -> %d (%s)",
+				c.Method(), c.OriginalURL(), status, dur)
+		}
 		return err
 	}
 }
