@@ -46,11 +46,11 @@
   <g transform="translate(600,150)">
     <circle r="62" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="13"/>
     <circle r="62" fill="none" stroke="url(#gPy)" stroke-width="13" stroke-linecap="round"
-            stroke-dasharray="389.32 389.56" stroke-dashoffset="389.56"
+            stroke-dasharray="388.53 389.56" stroke-dashoffset="389.56"
             transform="rotate(-90)" filter="url(#soft)">
-      <animate attributeName="stroke-dashoffset" from="389.56" to="0.24" dur="1.6s" fill="freeze" calcMode="spline" keyTimes="0;1" keySplines="0.22 1 0.36 1"/>
+      <animate attributeName="stroke-dashoffset" from="389.56" to="1.03" dur="1.6s" fill="freeze" calcMode="spline" keyTimes="0;1" keySplines="0.22 1 0.36 1"/>
     </circle>
-    <text y="2" text-anchor="middle" font-family="ui-monospace,Consolas,monospace" font-size="30" font-weight="700" fill="#a78bfa">99.88%</text>
+    <text y="2" text-anchor="middle" font-family="ui-monospace,Consolas,monospace" font-size="30" font-weight="700" fill="#a78bfa">99.73%</text>
     <text y="26" text-anchor="middle" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="12" fill="#94a3b8">行覆盖</text>
     <text y="88" text-anchor="middle" font-family="ui-monospace,Consolas,monospace" font-size="13" fill="#e2e8f0">🧪 augmentor</text>
     <text y="106" text-anchor="middle" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11" fill="#64748b">Python · 核心包</text>
@@ -72,19 +72,19 @@
 
   <g font-family="ui-monospace,Consolas,monospace" font-size="12">
     <rect x="46" y="272" width="252" height="38" rx="10" fill="#ffffff" fill-opacity="0.05" stroke="#ffffff" stroke-opacity="0.10"/>
-    <text x="66" y="296" fill="#93c5fd">10174</text>
+    <text x="66" y="296" fill="#93c5fd">10196</text>
     <text x="140" y="296" fill="#94a3b8">augmentor 单测全绿</text>
 
     <rect x="316" y="272" width="252" height="38" rx="10" fill="#ffffff" fill-opacity="0.05" stroke="#ffffff" stroke-opacity="0.10"/>
-    <text x="336" y="296" fill="#5eead4">96</text>
-    <text x="376" y="296" fill="#94a3b8">crate · 651 个 .rs</text>
+    <text x="336" y="296" fill="#5eead4">97</text>
+    <text x="376" y="296" fill="#94a3b8">crate · 652 个 .rs</text>
 
     <rect x="586" y="272" width="252" height="38" rx="10" fill="#ffffff" fill-opacity="0.05" stroke="#ffffff" stroke-opacity="0.10"/>
     <text x="606" y="296" fill="#fcd34d">13/14</text>
     <text x="672" y="296" fill="#94a3b8">门禁检查项通过</text>
 
     <rect x="856" y="272" width="298" height="38" rx="10" fill="#ffffff" fill-opacity="0.05" stroke="#ffffff" stroke-opacity="0.10"/>
-    <text x="876" y="296" fill="#f9a8d4">29/100</text>
-    <text x="944" y="296" fill="#94a3b8">优化轮次 · 3404 次提交</text>
+    <text x="876" y="296" fill="#f9a8d4">3769</text>
+    <text x="944" y="296" fill="#94a3b8">全仓提交</text>
   </g>
 </svg>

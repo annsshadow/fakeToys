@@ -19,8 +19,6 @@
 &nbsp;·&nbsp;
 <a href="#gates"><kbd>🚦</kbd> 门禁</a>
 &nbsp;·&nbsp;
-<a href="#rounds"><kbd>🔁</kbd> 优化</a>
-&nbsp;·&nbsp;
 <a href="#quickstart"><kbd>🚀</kbd> 上手</a>
 
 <br/>
@@ -47,9 +45,9 @@
 
 | 子项目 | 一句话 | 技术栈 | 规模 |
 | --- | --- | --- | --- |
-| 🦀 **[oa4rust](oa4rust/)** | Rust 重写的企业 OA 系统 | Rust · Axum · Vue3 · uni-app · PostgreSQL | 96 crate · 651 `.rs` |
-| 💥 **[laiyipao](laiyipao/)** | 塔防 + 元素反应小程序游戏 | Go · Fiber · uni-app · Vue3 · PostgreSQL | 289 `.go` · 50 表 |
-| 🧪 **[augmentor](augmentor/)** | AI 训练数据增强工具 v3.0 | Python · FastAPI · React · Ant Design | 76 端点 · 10174 单测 |
+| 🦀 **[oa4rust](oa4rust/)** | Rust 重写的企业 OA 系统 | Rust · Axum · Vue3 · uni-app · PostgreSQL | 97 crate · 652 `.rs` |
+| 💥 **[laiyipao](laiyipao/)** | 塔防 + 元素反应小程序游戏 | Go · Fiber · uni-app · Vue3 · PostgreSQL | 397 `.go` · 50 表 |
+| 🧪 **[augmentor](augmentor/)** | AI 训练数据增强工具 v3.0 | Python · FastAPI · React · Ant Design | 77 端点 · 10196 单测 |
 | ✅ **[auto-checkin](auto-checkin/)** | 大模型公益站自动签到面板 | Node · Playwright · Express | 3 站点 · 9 项棘轮 |
 | 🧠 **[llm-lab](llm-lab/)** | 从零学大模型训练 | Python · NumPy · PyTorch | 11 讲义 · 95 用例 |
 | 🔐 **[cool](cool/)** | Cool College OA 免登 Token 生成 | Java · AES/MD5 | — |
@@ -68,13 +66,12 @@
 
 | 指标 | 数值 | 证据来源 |
 | :-- | :--: | :-- |
-| Rust · oa4rust 行覆盖 | **95.01%** | 100 轮优化台账 · 第 25 轮 |
-| Python · augmentor 行覆盖 | **99.88%** | `augmentor/coverage.xml` |
+| Rust · oa4rust 行覆盖 | **95.01%** | `docs/plans/2026-10-29-remaining-work-plan.md`（容器内实测） |
+| Python · augmentor 行覆盖 | **99.73%** | `augmentor/coverage.xml`（全量复跑） |
 | Go · laiyipao 语句覆盖 | **85.8%** | `docs/laiyipao/audits/coverage-2026-10-28.md` |
-| augmentor 单测 | **10174 passed / 0 failed** | 100 轮优化台账 · 第 20 轮 |
+| augmentor 单测 | **10196 passed / 0 failed** | CI 全量复跑（`ai-platform-ci.yml`） |
 | 编译告警门禁 | **13 通过 / 0 失败 / 1 跳过** | `node scripts/check-warnings.mjs` |
-| 全仓提交 | **3404** | `git rev-list --count HEAD` |
-| 优化轮次 | **100 / 100** | `docs/plans/optimization-rounds-100-batch3.md` |
+| 全仓提交 | **3769** | `git rev-list --count HEAD` |
 
 </div>
 
@@ -145,7 +142,7 @@ node scripts/check-warnings.mjs --only rust,admin
 | # | id | 检查内容 |
 |---|---|---|
 | 1 | `rust-lints` | oa4rust/backend 全部成员继承 `deny(warnings)` |
-| 2 | `rust` | oa4rust/backend（Rust，96 crates） |
+| 2 | `rust` | oa4rust/backend（Rust，97 crates） |
 | 3 | `desktop` | oa4rust desktop（Vue + Vite） |
 | 4 | `mobile` | oa4rust mobile（uni-app H5 + 微信小程序） |
 | 5 | `go` | laiyipao/server（Go） |
@@ -165,36 +162,6 @@ node scripts/check-warnings.mjs --only rust,admin
 
 ---
 
-<a id="rounds"></a>
-
-## 🔁 100 轮优化引擎
-
-这个仓库正跑着一条**有台账、可复现、不允许中途糊弄**的优化流水线。每轮 = 勘察 → 实现 → 验证 → 提交 → 推送，全程记账。
-
-**当前进度：100 / 100 轮**
-
-<details>
-<summary><b>📖 最近 10 轮台账（点击展开）</b></summary>
-
-| 轮次 | 日期 | 主题 | 验证 |
-|---|---|---|---|
-| 29 | 2026-10-30 | laiyipao admin 前端 bundle 验证（echarts 已按需、element-plus 自动导入） | 工程卫生验证 |
-| 28 | 2026-10-30 | augmentor web ECharts 按需引入（vendor 1.1MB→567KB，-49%） | 416 测试全绿；门禁 13/0/1 |
-| 27 | 2026-10-30 | 全仓 rustfmt 格式统一（41 个文件，排除不可格式化的宏文件） | 门禁 13/0/1；fmt --check 通过 |
-| 26 | 2026-10-30 | 全 workspace 测试修复夹具 E23505 竞态（改 `upsert_fixture_person`） | 该 crate 27 绿；**全 workspace 零失败**；门禁 13/0/1 |
-| 25 | 2026-10-30 | 可解析但无 host URL 的 fail-fast panic 分支 | shared 329 绿；**行覆盖突破 95%** |
-| 24 | 2026-10-30 | oa4rust 前端 bundle 验证（main 41KB，vendor 独立 chunk） | 工程卫生 |
-| 23 | 2026-10-30 | 工程卫生：augmentor 启动耗时 234ms + 全仓 TODO 扫描无遗留 | 性能/卫生验证 |
-| 22 | 2026-10-30 | C1 终值更新（94.99%）+ augmentor 测试运维要点 | 文档工程 |
-| 21 | 2026-10-30 | 计划文档引用轮次台账；augmentor web bundle 分析 | 文档工程 |
-| 20 | 2026-10-30 | augmentor 全量零失败确认（棘轮重钉） | **10174 passed / 0 failed** |
-
-</details>
-
-> 完整台账（第三批）：[`docs/plans/optimization-rounds-100-batch3.md`](docs/plans/optimization-rounds-100-batch3.md)
-
----
-
 ## 📚 各子项目速览
 
 <details>
@@ -203,7 +170,7 @@ node scripts/check-warnings.mjs --only rust,admin
 源自 O2OA 的重写，追求更强的性能、内存安全与更低的资源占用。
 
 **架构特点**
-- 后端：Axum + Tokio 异步栈，PostgreSQL 持久化，**96 个 crate** 的 Cargo workspace
+- 后端：Axum + Tokio 异步栈，PostgreSQL 持久化，**97 个 crate** 的 Cargo workspace
 - 前端：pnpm workspace 统一管理桌面端（Vue3 + Vite）和移动端（uni-app）
 - 类型驱动 SDK：统一 API 客户端服务两端，跨账号缓存隔离保护
 - 质量保障：TypeScript strict 模式、Vitest 单测、Playwright E2E、三端契约守卫
@@ -267,8 +234,8 @@ go run ./cmd/migrate && go run ./cmd/seed && go run ./cmd/api
 
 **v3.0 升级**
 - 性能：流式处理峰值 22.70MB→1.66MB、dedup 内存 9536MB→20MB
-- 健壮性：**10174 单测全绿**，核心包行覆盖 **99.88%**，错误分类、自动重试、配置写入闭环
-- API：**76 个 REST 端点**全部声明 `response_model`
+- 健壮性：**10196 单测全绿**，核心包行覆盖 **99.73%**，错误分类、自动重试、配置写入闭环
+- API：**77 个 REST 端点**全部声明 `response_model`
 - Web：React 11 个功能页 + Ant Design
 
 ```bash
@@ -324,7 +291,7 @@ npm start  # 启动定时签到 + Web 面板
 cd llm-lab
 pip install -r requirements.txt
 python -m minigrad.train  # loss ~4.1 → ~0.3
-pytest tests/ -q          # 62 passed, 10 skipped（未装 torch）
+pytest tests/ -q          # 95 passed
 ```
 
 > 详见 [llm-lab/README.md](llm-lab/README.md) · 讲义从 [`docs/llm-lab/00-学习路线.md`](docs/llm-lab/00-学习路线.md) 开始
@@ -346,13 +313,13 @@ pytest tests/ -q          # 62 passed, 10 skipped（未装 torch）
 
 ```
 fakeToys/
-├── oa4rust/          # 🦀 Rust OA 后端 + 前端双端（96 crates + Vue3 + uni-app）
+├── oa4rust/          # 🦀 Rust OA 后端 + 前端双端（97 crates + Vue3 + uni-app）
 ├── laiyipao/         # 💥 塔防元素反应游戏（Go server + uni-app + Vue admin）
 ├── augmentor/        # 🧪 AI 数据增强工具（Python + FastAPI + React）
 ├── auto-checkin/     # ✅ 自动签到面板（Node + Playwright）
 ├── llm-lab/          # 🧠 大模型训练教学（Python + NumPy/PyTorch）
 ├── cool/             # 🔐 免登 Token 生成（Java）
-├── docs/             # 📚 方案/评审/审计文档（234 篇）
+├── docs/             # 📚 方案/评审/审计文档（292 篇）
 │   └── assets/       # 🎨 README 视觉资源（自绘 SVG）
 ├── scripts/          # 🛠️ 通用脚本（check-warnings.mjs 等）
 └── .github/workflows # 🤖 9 条 CI 流水线
