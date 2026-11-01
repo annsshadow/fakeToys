@@ -3,6 +3,7 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -123,6 +124,9 @@ type Service struct {
 	// economyCache 是后台经济流水页的缓存（2026-10-31 新一轮第 28 轮）。
 	// wallet_flows 是增长最快的表，TTL 见 config.EconomyCacheTTL。
 	economyCache ttlCache[AdminEconomyResp]
+	// configJSON 是 /config 序列化字节的缓存（第 11 轮）：
+	// 在 server_time 值处切开的 prefix/suffix，见 ConfigJSON。
+	configJSON configJSONCache
 }
 
 // leaderboardCacheKinds 是与 `leaderboardKinds` 同步的三个榜。
@@ -1343,6 +1347,92 @@ var staticConfig = sync.OnceValue(func() GameConfig {
 	cfg.Version = configVersionHash(cfg)
 	return cfg
 })
+
+// ConfigVersion 返回 /config 的内容版本（304 条件请求的判定值）。
+func (s *Service) ConfigVersion() string { return staticConfig().Version }
+
+// configJSONCache 是 /config 序列化字节的缓存位（零值可用）。
+type configJSONCache struct {
+	mu           sync.Mutex
+	requireLogin bool
+	version      string
+	// prefix 以 `"server_time":"` 结尾；suffix 以值的收尾引号开头。
+	prefix, suffix []byte
+}
+
+// buildConfigJSONParts 把 /config 的序列化输出在 **server_time 的值**处切开。
+// 这是 /config 唯一每请求不同的字节区（Version/RequireLogin 由缓存键覆盖）。
+func buildConfigJSONParts(requireLogin bool) (prefix, suffix []byte, err error) {
+	cfg := staticConfig()
+	cfg.RequireLogin = requireLogin
+	// ServerTime 零值：占位内容不重要，只为让 MarshalJSON 把值区写进字节流。
+	body, err := json.Marshal(cfg)
+	if err != nil {
+		return nil, nil, fmt.Errorf("marshal game config: %w", err)
+	}
+	const marker = `"server_time":"`
+	i := bytes.Index(body, []byte(marker))
+	if i < 0 {
+		// fail-loud：GameConfig 的形状变了（字段改名/自定义 MarshalJSON），
+		// 切分点失效 —— 宁可每次全量序列化也不能下发错字节。
+		return nil, nil, fmt.Errorf("marshal game config: server_time 字段未找到")
+	}
+	valStart := i + len(marker)
+	closeIdx := bytes.IndexByte(body[valStart:], '"')
+	if closeIdx < 0 {
+		return nil, nil, fmt.Errorf("marshal game config: server_time 值未闭合")
+	}
+	return body[:valStart], body[valStart+closeIdx:], nil
+}
+
+// ConfigJSON 返回 /config 的完整 JSON 字节（第 11 轮）。
+//
+// # 为什么缓存序列化字节
+//
+// /config 的响应体实测 167KB：此前**每次请求**都 json.Marshal 一遍
+// （大量的关卡/敌人/技能数组，纯 CPU + 分配），而内容里随请求变的
+// 只有 server_time 一个字段。序列化结果在 (version, requireLogin)
+// 不变时是同一份字节 —— 在 server_time 值处把字节流切成 prefix/suffix
+// 缓存起来，每请求只需拼上当前时间戳（json.Marshal(time.Now()) 与
+// 全量序列化走同一条 time.Time MarshalJSON 路径，格式逐字节一致）。
+//
+// # 失效
+//
+//   - version 变（内容哈希，随静态内容变化）→ 重建；
+//   - requireLogin 变（配置热加载可切）→ 重建；
+//   - 进程重启 → version 全新，天然重建。
+//
+// 字节不变性由 TestConfigJSONBytesMatchesStructMarshal 钉住：缓存拼装
+// 的输出必须与 json.Marshal(LoadGameConfig()) 逐字节相同。
+func (s *Service) ConfigJSON() ([]byte, error) {
+	rl := s.Cfg().PlayerLoginRequired
+	version := staticConfig().Version
+
+	s.configJSON.mu.Lock()
+	if s.configJSON.prefix == nil || s.configJSON.requireLogin != rl || s.configJSON.version != version {
+		prefix, suffix, err := buildConfigJSONParts(rl)
+		if err != nil {
+			s.configJSON.mu.Unlock()
+			return nil, err
+		}
+		s.configJSON.requireLogin = rl
+		s.configJSON.version = version
+		s.configJSON.prefix = prefix
+		s.configJSON.suffix = suffix
+	}
+	prefix, suffix := s.configJSON.prefix, s.configJSON.suffix
+	s.configJSON.mu.Unlock()
+
+	stamp, err := json.Marshal(time.Now())
+	if err != nil {
+		return nil, fmt.Errorf("marshal server time: %w", err)
+	}
+	out := make([]byte, 0, len(prefix)+len(stamp)-2+len(suffix))
+	out = append(out, prefix...)
+	out = append(out, stamp[1:len(stamp)-1]...)
+	out = append(out, suffix...)
+	return out, nil
+}
 
 // configVersionHash 对配置内容取内容哈希。
 //

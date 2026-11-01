@@ -615,21 +615,27 @@ func (s *Service) offlineRewardFor(lastClaimAt time.Time, now time.Time) (coin i
 
 // OfflineRewardStatus 返回当前玩家可领取的离线收益。
 //
-// 老用户可能没有 `offline_rewards` 行（迁移上线前注册），
-// 查询用 data-modifying CTE 幂等补行，保证首次访问不报 404。
+// 老用户可能没有 `offline_rewards` 行（迁移上线前注册）。
+// 第 15 轮起读路径**先 SELECT，缺行才补**：此前每次 GET 都跑
+// data-modifying CTE（INSERT ON CONFLICT DO NOTHING）—— 对绝大多数
+// 请求那是纯写放大（initNewUser 已保证新号有行，缺行只存在于迁移前
+// 注册的极小集合），读路径的 WAL / 行锁 / 元组版本开销归零。
+// 补行语义保持幂等（ON CONFLICT DO NOTHING），首次访问仍不报 404。
 func (s *Service) OfflineRewardStatus(ctx context.Context, userID int64) (OfflineRewardStatus, error) {
 	var lastClaimAt time.Time
-	err := s.pool.QueryRow(ctx, `
-		WITH ensure AS (
-		  INSERT INTO offline_rewards (user_id) VALUES ($1)
-		  ON CONFLICT (user_id) DO NOTHING
-		  RETURNING last_claim_at
-		)
-		SELECT last_claim_at FROM ensure
-		UNION ALL
-		SELECT last_claim_at FROM offline_rewards WHERE user_id = $1
-		  AND NOT EXISTS (SELECT 1 FROM ensure)`, userID).Scan(&lastClaimAt)
-	if err != nil {
+	err := s.pool.QueryRow(ctx,
+		`SELECT last_claim_at FROM offline_rewards WHERE user_id = $1`, userID).Scan(&lastClaimAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		if _, ierr := s.pool.Exec(ctx,
+			`INSERT INTO offline_rewards (user_id) VALUES ($1) ON CONFLICT (user_id) DO NOTHING`,
+			userID); ierr != nil {
+			return OfflineRewardStatus{}, fmt.Errorf("load offline reward: ensure row: %w", ierr)
+		}
+		if err := s.pool.QueryRow(ctx,
+			`SELECT last_claim_at FROM offline_rewards WHERE user_id = $1`, userID).Scan(&lastClaimAt); err != nil {
+			return OfflineRewardStatus{}, fmt.Errorf("load offline reward: %w", err)
+		}
+	} else if err != nil {
 		return OfflineRewardStatus{}, fmt.Errorf("load offline reward: %w", err)
 	}
 	coin, elapsed := s.offlineRewardFor(lastClaimAt, time.Now())

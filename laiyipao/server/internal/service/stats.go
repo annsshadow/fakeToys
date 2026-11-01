@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -112,91 +113,110 @@ func (s *Service) AdminDashboard(ctx context.Context) (Dashboard, error) {
 func (s *Service) adminDashboardUncached(ctx context.Context) (Dashboard, error) {
 	var d Dashboard
 
+	// 第 14 轮：13 段查询互相独立（各写各的目标字段），从**全串行**改并行。
+	// 缓存未命中刷新的延迟从 Σ(13 段) 降为 max(单段)；连接池不足 13 时
+	// 由 pgxpool 自然排队，不改变正确性。各 goroutine 只写自己的变量，
+	// 主协程 wg.Wait() 后读；错误按**原串行段序**检查 —— 第一个失败段
+	// 先报，与串行版的 fail-loud 顺序一致。
 	scan := func(q string, dest ...any) error {
 		return s.pool.QueryRow(ctx, q).Scan(dest...)
 	}
 
-	if err := scan(`
+	var steps []func() error
+	appendStep := func(errPrefix string, fn func() error) {
+		steps = append(steps, func() error {
+			if err := fn(); err != nil {
+				return fmt.Errorf("%s: %w", errPrefix, err)
+			}
+			return nil
+		})
+	}
+
+	appendStep("dashboard users", func() error {
+		return scan(`
 		SELECT COUNT(*),
 		       COUNT(*) FILTER (WHERE is_guest),
 		       COUNT(*) FILTER (WHERE NOT is_guest),
 		       COUNT(*) FILTER (WHERE status = 2),
 		       COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE)
 		FROM users`,
-		&d.Users.Total, &d.Users.Guests, &d.Users.Wechat, &d.Users.Banned, &d.Users.NewToday); err != nil {
-		return d, fmt.Errorf("dashboard users: %w", err)
-	}
+			&d.Users.Total, &d.Users.Guests, &d.Users.Wechat, &d.Users.Banned, &d.Users.NewToday)
+	})
 
-	if err := scan(`
+	appendStep("dashboard battles", func() error {
+		return scan(`
 		SELECT COUNT(*),
 		       COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE),
 		       COUNT(*) FILTER (WHERE result = 'win'),
 		       COALESCE(AVG(duration_ms), 0)
 		FROM battle_records`,
-		&d.Battles.Total, &d.Battles.Today, &d.Battles.Wins, &d.Battles.AvgDurationMs); err != nil {
-		return d, fmt.Errorf("dashboard battles: %w", err)
-	}
+			&d.Battles.Total, &d.Battles.Today, &d.Battles.Wins, &d.Battles.AvgDurationMs)
+	})
+
 	// 2026-10-31（实质优化第 39 轮）：防线总数 / 今日挑战次数。
-	if err := scan(`
+	appendStep("dashboard challenges", func() error {
+		return scan(`
 		SELECT COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE),
 		       COUNT(*)
 		FROM defense_challenges`,
-		&d.Defenses.ChallengesToday, &d.Defenses.Total); err != nil {
-		return d, fmt.Errorf("dashboard challenges: %w", err)
-	}
-	if err := scan(`
-		SELECT COUNT(*) FROM defenses`,
-		&d.Defenses.Total); err != nil {
-		return d, fmt.Errorf("dashboard defenses: %w", err)
-	}
+			&d.Defenses.ChallengesToday, &d.Defenses.Total)
+	})
 
-	if err := scan(`
+	appendStep("dashboard defenses", func() error {
+		return scan(`
+		SELECT COUNT(*) FROM defenses`,
+			&d.Defenses.Total)
+	})
+
+	appendStep("dashboard progression", func() error {
+		return scan(`
 		SELECT COALESCE(AVG(max_stage), 0), COALESCE(AVG(level_exp), 0),
 		       (SELECT COUNT(*) FROM level_stars WHERE level_id = 100 AND clears > 0)
 		FROM user_progress`,
-		&d.Progression.AvgMaxStage, &d.Progression.AvgPower, &d.Progression.Stage100Clear); err != nil {
-		return d, fmt.Errorf("dashboard progression: %w", err)
-	}
+			&d.Progression.AvgMaxStage, &d.Progression.AvgPower, &d.Progression.Stage100Clear)
+	})
 
 	// 货币流水按符号分流入/流出
-	if err := scan(`
+	appendStep("dashboard economy", func() error {
+		return scan(`
 		SELECT
 		  COALESCE(SUM(delta) FILTER (WHERE currency='coin' AND delta > 0), 0),
 		  COALESCE(-SUM(delta) FILTER (WHERE currency='coin' AND delta < 0), 0),
 		  COALESCE(SUM(delta) FILTER (WHERE currency='gem' AND delta > 0), 0),
 		  COALESCE(-SUM(delta) FILTER (WHERE currency='gem' AND delta < 0), 0)
 		FROM wallet_flows`,
-		&d.Economy.CoinIn, &d.Economy.CoinOut, &d.Economy.GemIn, &d.Economy.GemOut); err != nil {
-		return d, fmt.Errorf("dashboard economy: %w", err)
-	}
-	if err := scan(`
+			&d.Economy.CoinIn, &d.Economy.CoinOut, &d.Economy.GemIn, &d.Economy.GemOut)
+	})
+
+	appendStep("dashboard orders", func() error {
+		return scan(`
 		SELECT COUNT(*) FILTER (WHERE status IN ('paid','delivered')),
 		       COUNT(*) FILTER (WHERE status = 'pending')
 		FROM orders`,
-		&d.Economy.OrdersPaid, &d.Economy.OrdersPending); err != nil {
-		return d, fmt.Errorf("dashboard orders: %w", err)
-	}
+			&d.Economy.OrdersPaid, &d.Economy.OrdersPending)
+	})
+
 	// 2026-10-31（实质优化第 28 轮）：今日签到 / 今日兑换 ——
 	// 运营看板此前没有这两个活跃指标。
-	if err := scan(`
+	appendStep("dashboard sign-ins", func() error {
+		return scan(`
 		SELECT COUNT(*) FROM user_sign_ins WHERE sign_date = CURRENT_DATE`,
-		&d.Economy.SignInsToday); err != nil {
-		return d, fmt.Errorf("dashboard sign-ins: %w", err)
-	}
-	if err := scan(`
-		SELECT COUNT(*) FROM redeem_usages WHERE created_at >= CURRENT_DATE`,
-		&d.Economy.RedeemsToday); err != nil {
-		return d, fmt.Errorf("dashboard redeems: %w", err)
-	}
+			&d.Economy.SignInsToday)
+	})
 
-	if err := scan(`
+	appendStep("dashboard redeems", func() error {
+		return scan(`
+		SELECT COUNT(*) FROM redeem_usages WHERE created_at >= CURRENT_DATE`,
+			&d.Economy.RedeemsToday)
+	})
+
+	appendStep("dashboard verification", func() error {
+		return scan(`
 		SELECT COUNT(*), COUNT(*) FILTER (WHERE matched), COUNT(*) FILTER (WHERE NOT matched)
 		FROM replay_verifications`,
-		&d.Verification.Checked, &d.Verification.Matched, &d.Verification.Mismatched); err != nil {
-		return d, fmt.Errorf("dashboard verification: %w", err)
-	}
+			&d.Verification.Checked, &d.Verification.Matched, &d.Verification.Mismatched)
+	})
 
-	// 反应使用分布
 	// 反应使用分布
 	//
 	// ⚠️ 两处改动，都因为「读侧不该依赖写侧」。
@@ -213,88 +233,107 @@ func (s *Service) adminDashboardUncached(ctx context.Context) (Dashboard, error)
 	//
 	//    顺带修掉一个更硬的问题：`jsonb_each_text(jsonb 'null')` 会**报错**
 	//    （「不能在非对象上调用」），所以旧写法连改个过滤条件都改不动。
-	rows, err := s.pool.Query(ctx, `
-		SELECT e.key, SUM(e.value::bigint) AS total
-		FROM battle_records b,
-		     LATERAL jsonb_each_text(b.reactions_used) AS e(key, value)
-		WHERE jsonb_typeof(b.reactions_used) = 'object'
-		GROUP BY e.key
-		ORDER BY total DESC
-		LIMIT 100`)
-	if err != nil {
-		return d, fmt.Errorf("dashboard reactions: %w", err)
-	}
-	defer rows.Close()
-	// SQL 已经按 key 聚合好了，这里直接读两列。
-	//
-	// ⚠️ 旧实现在 Go 里 `json.Unmarshal` 整个 map 再逐键累加，
-	// 而错误被 `_ =` **静默吞掉** —— 解析失败时那一行就凭空消失，
-	// 没有任何日志。一个统计数字悄悄少掉一部分，比直接报错更难发现。
-	agg := map[string]int64{}
-	for rows.Next() {
-		var key string
-		var total int64
-		if err := rows.Scan(&key, &total); err != nil {
-			return d, err
+	appendStep("dashboard reactions", func() error {
+		rows, err := s.pool.Query(ctx, `
+			SELECT e.key, SUM(e.value::bigint) AS total
+			FROM battle_records b,
+			     LATERAL jsonb_each_text(b.reactions_used) AS e(key, value)
+			WHERE jsonb_typeof(b.reactions_used) = 'object'
+			GROUP BY e.key
+			ORDER BY total DESC
+			LIMIT 100`)
+		if err != nil {
+			return err
 		}
-		agg[key] = total
-	}
-	if err := rows.Err(); err != nil {
-		return d, err
-	}
-	for _, spec := range domain.AllReactionSpecs() {
-		d.ReactionUsage = append(d.ReactionUsage, ReactionCount{
-			Reaction: string(spec.Key), Count: agg[string(spec.Key)],
-		})
-	}
+		defer rows.Close()
+		// SQL 已经按 key 聚合好了，这里直接读两列。
+		//
+		// ⚠️ 旧实现在 Go 里 `json.Unmarshal` 整个 map 再逐键累加，
+		// 而错误被 `_ =` **静默吞掉** —— 解析失败时那一行就凭空消失，
+		// 没有任何日志。一个统计数字悄悄少掉一部分，比直接报错更难发现。
+		agg := map[string]int64{}
+		for rows.Next() {
+			var key string
+			var total int64
+			if err := rows.Scan(&key, &total); err != nil {
+				return err
+			}
+			agg[key] = total
+		}
+		if err := rows.Err(); err != nil {
+			return err
+		}
+		for _, spec := range domain.AllReactionSpecs() {
+			d.ReactionUsage = append(d.ReactionUsage, ReactionCount{
+				Reaction: string(spec.Key), Count: agg[string(spec.Key)],
+			})
+		}
+		return nil
+	})
 
 	// 近 14 日 DAU
-	drows, err := s.pool.Query(ctx, `
-		SELECT d::date AS day,
-		       COUNT(DISTINCT user_id) AS dau
-		FROM generate_series(CURRENT_DATE - INTERVAL '13 days', CURRENT_DATE, '1 day') d
-		LEFT JOIN battle_records br ON br.created_at >= d AND br.created_at < d + INTERVAL '1 day'
-		GROUP BY d::date ORDER BY 1`)
-	if err != nil {
-		return d, fmt.Errorf("dashboard dau: %w", err)
-	}
-	defer drows.Close()
-	for drows.Next() {
-		var day time.Time
-		var dau int64
-		if err := drows.Scan(&day, &dau); err != nil {
-			return d, err
+	appendStep("dashboard dau", func() error {
+		drows, err := s.pool.Query(ctx, `
+			SELECT d::date AS day,
+			       COUNT(DISTINCT user_id) AS dau
+			FROM generate_series(CURRENT_DATE - INTERVAL '13 days', CURRENT_DATE, '1 day') d
+			LEFT JOIN battle_records br ON br.created_at >= d AND br.created_at < d + INTERVAL '1 day'
+			GROUP BY d::date ORDER BY 1`)
+		if err != nil {
+			return err
 		}
-		d.DailyActive = append(d.DailyActive, DauPoint{
-			Date: day.Format("2006-01-02"), DAU: dau,
-		})
-	}
-	if err := drows.Err(); err != nil {
-		return d, err
-	}
+		defer drows.Close()
+		for drows.Next() {
+			var day time.Time
+			var dau int64
+			if err := drows.Scan(&day, &dau); err != nil {
+				return err
+			}
+			d.DailyActive = append(d.DailyActive, DauPoint{
+				Date: day.Format("2006-01-02"), DAU: dau,
+			})
+		}
+		return drows.Err()
+	})
 
 	// 关卡漏斗（全部 100 关）
-	frows, err := s.pool.Query(ctx, `
-		SELECT level_id, COUNT(*), COUNT(*) FILTER (WHERE result='win')
-		FROM battle_records GROUP BY level_id ORDER BY level_id`)
-	if err != nil {
-		return d, fmt.Errorf("dashboard funnel: %w", err)
+	appendStep("dashboard funnel", func() error {
+		frows, err := s.pool.Query(ctx, `
+			SELECT level_id, COUNT(*), COUNT(*) FILTER (WHERE result='win')
+			FROM battle_records GROUP BY level_id ORDER BY level_id`)
+		if err != nil {
+			return err
+		}
+		defer frows.Close()
+		for frows.Next() {
+			var f StageFunnel
+			if err := frows.Scan(&f.LevelID, &f.Attempts, &f.Number); err != nil {
+				return err
+			}
+			d.StageFunnel = append(d.StageFunnel, f)
+		}
+		// 第 144 轮：逐个查询都要在迭代结束后查 `Err()`（fail-loud，AGENTS #11）。
+		// 修前这里 `return d, rows.Err()` —— `rows` 是上面**反应分布**那支查询的句柄，
+		// 早已迭代完且查过 Err()（恒为 nil）；漏斗 `frows` 的 `Err()` 从未被检查。
+		// 后果：漏斗查询若在迭代中途失败（连接抖断 / 死锁被杀 / 磁盘满），
+		// `d.StageFunnel` 只填了一半，函数却返回 nil 错误 —— 看板静默少了一半关卡。
+		return frows.Err()
+	})
+
+	errs := make([]error, len(steps))
+	var wg sync.WaitGroup
+	wg.Add(len(steps))
+	for i, step := range steps {
+		go func(i int, step func() error) {
+			defer wg.Done()
+			errs[i] = step()
+		}(i, step)
 	}
-	defer frows.Close()
-	for frows.Next() {
-		var f StageFunnel
-		if err := frows.Scan(&f.LevelID, &f.Attempts, &f.Number); err != nil {
+	wg.Wait()
+	for _, err := range errs {
+		if err != nil {
 			return d, err
 		}
-		d.StageFunnel = append(d.StageFunnel, f)
-	}
-	// 第 144 轮：逐个查询都要在迭代结束后查 `Err()`（fail-loud，AGENTS #11）。
-	// 修前这里 `return d, rows.Err()` —— `rows` 是上面**反应分布**那支查询的句柄，
-	// 早已迭代完且查过 Err()（恒为 nil）；漏斗 `frows` 的 `Err()` 从未被检查。
-	// 后果：漏斗查询若在迭代中途失败（连接抖断 / 死锁被杀 / 磁盘满），
-	// `d.StageFunnel` 只填了一半，函数却返回 nil 错误 —— 看板静默少了一半关卡。
-	if err := frows.Err(); err != nil {
-		return d, fmt.Errorf("dashboard funnel: %w", err)
 	}
 	return d, nil
 }
@@ -414,34 +453,22 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 		return nil, 0, fmt.Errorf("count users: %w", err)
 	}
 
-	// 验真统计走**子查询预聚合**再 LEFT JOIN，而不是直接 JOIN 明细表。
+	// 验真统计改为**两阶段**（第 12 轮）：先取页内用户，再按页内 id 聚合
+	// 验真计数。原因：原实现的子查询对 replay_verifications⋈battle_records
+	// 做**全表** GROUP BY，而 LEFT JOIN 消费它的只有本页 ≤50 个用户 ——
+	// 每次翻页都为 50 人付整张验真明细表的聚合代价（该表随运营验真持续增长）。
+	// 第二阶段聚合被 `br.user_id = ANY($1)` 限定到页内，代价与页大小成正比。
 	//
-	// 原因：一场战斗可以被验真多次（不同验真人、或同一人重验），
-	// 直接 JOIN 会让 users 一行变成 N 行 —— 而这个接口是**分页**的，
-	// 行数被放大后 `LIMIT/OFFSET` 就切在错误的粒度上（分页结果会重复/漏掉用户）。
-	//
-	// 子查询里 `GROUP BY br.user_id` 保证每个用户最多贡献一行。
-	//
-	// 关联路径是 `replay_verifications → battle_records → users`：
-	// 注意 `replay_verifications.verifier_id` 是**验真人**，
-	// 不是这场战斗的**主人**。按 verifier 统计会得到完全错误的数字
-	// （谁验得多谁就「可疑」）。
+	// 列表本身仍保留「子查询预聚合」的原始教训（一场战斗可被验真多次，
+	// 直接 JOIN 明细会放大行数破坏分页粒度）—— 两阶段不改变这一点：
+	// 聚合按 user_id 分组后每用户至多一行，回填按 id 精确匹配。
 	rows, err := s.pool.Query(ctx, `
 		SELECT u.id, u.nickname, u.is_guest, u.status,
 		       COALESCE(p.max_stage, 0), COALESCE(p.level_exp, 0),
-		       COALESCE(w.coin, 0), COALESCE(w.gem, 0), u.created_at, u.last_login_at,
-		       COALESCE(v.checked, 0), COALESCE(v.mismatched, 0)
+		       COALESCE(w.coin, 0), COALESCE(w.gem, 0), u.created_at, u.last_login_at
 		FROM users u
 		LEFT JOIN user_progress p ON p.user_id = u.id
 		LEFT JOIN user_wallets w ON w.user_id = u.id
-		LEFT JOIN (
-			SELECT br.user_id,
-			       COUNT(*) AS checked,
-			       COUNT(*) FILTER (WHERE NOT rv.matched) AS mismatched
-			FROM replay_verifications rv
-			JOIN battle_records br ON br.id = rv.battle_id
-			GROUP BY br.user_id
-		) v ON v.user_id = u.id
 		WHERE `+where+`
 		ORDER BY u.id DESC LIMIT $3 OFFSET $4`, listArgs...)
 	if err != nil {
@@ -453,13 +480,54 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 	for rows.Next() {
 		var v AdminUserView
 		if err := rows.Scan(&v.ID, &v.Nickname, &v.IsGuest, &v.Status, &v.MaxStage,
-			&v.Power, &v.Coin, &v.Gem, &v.CreatedAt, &v.LastLoginAt,
-			&v.VerifyChecked, &v.VerifyMismatched); err != nil {
+			&v.Power, &v.Coin, &v.Gem, &v.CreatedAt, &v.LastLoginAt); err != nil {
 			return nil, 0, err
 		}
 		out = append(out, v)
 	}
-	return out, total, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
+
+	// 第二阶段：页内用户的验真计数（错误 fail-loud，与原单查询同口径）。
+	// 关联路径 replay_verifications → battle_records 的 owner 才是被验人；
+	// verifier 是验真人，绝不能按它统计（原注释的教训，保持）。
+	if len(out) > 0 {
+		ids := make([]int64, len(out))
+		for i := range out {
+			ids[i] = out[i].ID
+		}
+		vrows, err := s.pool.Query(ctx, `
+			SELECT br.user_id,
+			       COUNT(*) AS checked,
+			       COUNT(*) FILTER (WHERE NOT rv.matched) AS mismatched
+			FROM replay_verifications rv
+			JOIN battle_records br ON br.id = rv.battle_id
+			WHERE br.user_id = ANY($1)
+			GROUP BY br.user_id`, ids)
+		if err != nil {
+			return nil, 0, fmt.Errorf("verify stats: %w", err)
+		}
+		defer vrows.Close()
+		type verifyStat struct{ checked, mismatched int64 }
+		stats := make(map[int64]verifyStat, len(out))
+		for vrows.Next() {
+			var id int64
+			var st verifyStat
+			if err := vrows.Scan(&id, &st.checked, &st.mismatched); err != nil {
+				return nil, 0, fmt.Errorf("scan verify stats: %w", err)
+			}
+			stats[id] = st
+		}
+		if err := vrows.Err(); err != nil {
+			return nil, 0, fmt.Errorf("iterate verify stats: %w", err)
+		}
+		for i := range out {
+			out[i].VerifyChecked = stats[out[i].ID].checked
+			out[i].VerifyMismatched = stats[out[i].ID].mismatched
+		}
+	}
+	return out, total, nil
 }
 
 // AdminExportUsers 导出用户列表为 CSV（2026-10-30 实质优化第 12 轮）。
@@ -848,6 +916,14 @@ func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID in
 	// 无法收窄，保持全表聚合，语义不变。
 	// 两种形态对**结果**完全等价：外层 WHERE 已把行限制在
 	// 该用户的战报上，收窄只是让聚合少扫数据。
+	//
+	// 第 13 轮：聚合 JOIN 只在**需要它**的查询里出现 ——
+	//   1. COUNT 仅在 onlyMismatched 时带 JOIN（WHERE 引用 v.mismatched）；
+	//      普通翻页的 COUNT 对聚合结果零消费，纯多余一整张表的聚合。
+	//   2. 列表在 onlyMismatched=false 时改**两阶段**（与 AdminListUsers
+	//      第 12 轮同款）：先取页，再按页内 battle_id = ANY 聚合回填 ——
+	//      每次翻页只为 ≤50 行付聚合代价。onlyMismatched=true 时
+	//      WHERE 依赖聚合列，保持单查询（低频运营筛选，不动）。
 	vsub := `LEFT JOIN (
 		SELECT battle_id,
 		       COUNT(*) AS checked,
@@ -863,6 +939,13 @@ func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID in
 		WHERE battle_id IN (SELECT id FROM battle_records WHERE user_id = $1)
 		GROUP BY battle_id
 	) v ON v.battle_id = br.id`
+	}
+	twoPhase := !onlyMismatched
+	countVsub := vsub
+	listVsub := vsub
+	if twoPhase {
+		countVsub = ""
+		listVsub = ""
 	}
 
 	// 过滤条件写成 `COALESCE(v.mismatched, 0) > 0` 而不是 `v.mismatched > 0`。
@@ -913,18 +996,23 @@ func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID in
 
 	var total int64
 	if err := s.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM battle_records br `+vsub+` WHERE `+countWhere,
+		`SELECT COUNT(*) FROM battle_records br `+countVsub+` WHERE `+countWhere,
 		countArgs...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("count battles: %w", err)
+	}
+	// 两阶段形态下列表不选聚合列（SELECT 里引用 v 会直接 SQL 报错）。
+	verifyCols := `,
+		       COALESCE(v.checked, 0), COALESCE(v.mismatched, 0)`
+	if twoPhase {
+		verifyCols = ""
 	}
 	rows, err := s.pool.Query(ctx, `
 		SELECT br.id, br.user_id, COALESCE(u.nickname,''), br.level_id, br.result, br.stars, br.score,
 		       br.kills, br.leaked, br.wave_reached, br.duration_ms, br.reactions, br.heat_max,
-		       br.replay_hash, br.created_at,
-		       COALESCE(v.checked, 0), COALESCE(v.mismatched, 0)
+		       br.replay_hash, br.created_at`+verifyCols+`
 		FROM battle_records br
 		LEFT JOIN users u ON u.id = br.user_id
-		`+vsub+`
+		`+listVsub+`
 		WHERE `+where+`
 		ORDER BY br.id DESC LIMIT $3 OFFSET $4`, listArgs...)
 	if err != nil {
@@ -950,16 +1038,62 @@ func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID in
 	}
 	for rows.Next() {
 		var v AdminBattleView
-		if err := rows.Scan(&v.ID, &v.UserID, &v.Nickname, &v.LevelID, &v.Result, &v.Stars,
-			&v.Score, &v.Kills, &v.Leaked, &v.WaveReached, &v.DurationMs, &v.Reactions,
-			&v.HeatMax, &v.ReplayHash, &v.CreatedAt,
-			&v.VerifyChecked, &v.VerifyMismatched); err != nil {
-			return nil, 0, err
+		if twoPhase {
+			if err := rows.Scan(&v.ID, &v.UserID, &v.Nickname, &v.LevelID, &v.Result, &v.Stars,
+				&v.Score, &v.Kills, &v.Leaked, &v.WaveReached, &v.DurationMs, &v.Reactions,
+				&v.HeatMax, &v.ReplayHash, &v.CreatedAt); err != nil {
+				return nil, 0, err
+			}
+		} else {
+			if err := rows.Scan(&v.ID, &v.UserID, &v.Nickname, &v.LevelID, &v.Result, &v.Stars,
+				&v.Score, &v.Kills, &v.Leaked, &v.WaveReached, &v.DurationMs, &v.Reactions,
+				&v.HeatMax, &v.ReplayHash, &v.CreatedAt,
+				&v.VerifyChecked, &v.VerifyMismatched); err != nil {
+				return nil, 0, err
+			}
 		}
 		v.TotalEnemies = totalEnemies(v.LevelID)
 		out = append(out, v)
 	}
-	return out, total, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
+
+	// 两阶段第二段：页内战报的验真计数（battle_id = ANY 限定，fail-loud）。
+	if twoPhase && len(out) > 0 {
+		ids := make([]int64, len(out))
+		for i := range out {
+			ids[i] = out[i].ID
+		}
+		vrows, err := s.pool.Query(ctx, `
+			SELECT battle_id,
+			       COUNT(*) AS checked,
+			       COUNT(*) FILTER (WHERE NOT matched) AS mismatched
+			FROM replay_verifications
+			WHERE battle_id = ANY($1)
+			GROUP BY battle_id`, ids)
+		if err != nil {
+			return nil, 0, fmt.Errorf("verify stats: %w", err)
+		}
+		defer vrows.Close()
+		stats := make(map[int64][2]int64, len(out))
+		for vrows.Next() {
+			var id int64
+			var st [2]int64
+			if err := vrows.Scan(&id, &st[0], &st[1]); err != nil {
+				return nil, 0, fmt.Errorf("scan verify stats: %w", err)
+			}
+			stats[id] = st
+		}
+		if err := vrows.Err(); err != nil {
+			return nil, 0, fmt.Errorf("iterate verify stats: %w", err)
+		}
+		for i := range out {
+			out[i].VerifyChecked = stats[out[i].ID][0]
+			out[i].VerifyMismatched = stats[out[i].ID][1]
+		}
+	}
+	return out, total, nil
 }
 
 // AdminExportBattles 导出战报列表为 CSV（2026-10-30 实质优化第 13 轮）。

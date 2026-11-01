@@ -684,12 +684,20 @@ func (s *Server) wallet(c *fiber.Ctx) error {
 // ⚠️ 用 304 而不是 204：304 在 HTTP 语义里就是「条件 GET 未修改」，
 // 客户端一眼能看懂，也和浏览器/中间件的既有约定相容。
 func (s *Server) getConfig(c *fiber.Ctx) error {
-	cfg := s.Svc.LoadGameConfig()
-	if v := strings.TrimSpace(c.Query("if_version")); v != "" && v == cfg.Version {
+	// 第 11 轮：167KB 的响应体改为**缓存序列化字节**（ConfigJSON 在
+	// server_time 值处切分拼接），每请求不再重编全量配置。
+	// 字节与 json.Marshal(LoadGameConfig()) 逐位一致（守卫测试钉住）。
+	if v := strings.TrimSpace(c.Query("if_version")); v != "" && v == s.Svc.ConfigVersion() {
 		// 不写响应体。fiber 的 304 会自带 Content-Length: 0。
 		return c.Status(fiber.StatusNotModified).Send(nil)
 	}
-	return c.JSON(cfg)
+	body, err := s.Svc.ConfigJSON()
+	if err != nil {
+		return failErr(c, err)
+	}
+	c.Response().SetBodyRaw(body)
+	c.Response().Header.SetContentType("application/json")
+	return nil
 }
 
 func (s *Server) getLevel(c *fiber.Ctx) error {
