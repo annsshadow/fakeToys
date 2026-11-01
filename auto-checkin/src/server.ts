@@ -98,21 +98,58 @@ export function createApp(config: AppConfig): express.Express {
   });
 
   // 每日奖励趋势（用于折线图）
+  // 第 40 轮：面板 15 秒轮询三接口，/api/trend 此前每次请求都全量重算。
+  // 记录库版本不变（无签到落库）就复用上次结果，与 /api/stats 的
+  // buildSummary 同款 getStoreVersion 判据；days 参数变了也重算。
+  let trendCache: { version: number; days: number; data: unknown } | null = null;
   app.get("/api/trend", (req, res) => {
     const days = Math.min(Math.max(Number(req.query.days) || 30, 7), 90);
+    const version = getStoreVersion();
+    if (trendCache && trendCache.version === version && trendCache.days === days) {
+      res.json(trendCache.data);
+      return;
+    }
     const siteIds = adapters.map((a) => a.id);
-    res.json({
+    const data = {
       days,
       sites: adapters.map((a) => ({ id: a.id, name: a.name })),
       points: computeTrend(siteIds, days),
-    });
+    };
+    trendCache = { version, days, data };
+    res.json(data);
   });
 
-  // 历史记录（最近 N 条）
+  // 历史记录（最近 N 条；第 42 轮起支持按站点过滤）
   app.get("/api/records", (req, res) => {
     const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 500);
+    const siteId = String(req.query.siteId || "").trim();
     const all = getAllRecords();
-    res.json(all.slice(-limit).reverse());
+    const filtered = siteId ? all.filter((r) => r.siteId === siteId) : all;
+    res.json(filtered.slice(-limit).reverse());
+  });
+
+  // 历史记录 CSV 导出（第 42 轮）：全量快照，可带 siteId 过滤。
+  // 面板轮询三接口不带 CSV；运营/排障要全量明细时用浏览器直接下载。
+  app.get("/api/records.csv", (req, res) => {
+    const siteId = String(req.query.siteId || "").trim();
+    const all = getAllRecords();
+    const filtered = siteId ? all.filter((r) => r.siteId === siteId) : all;
+    const esc = (v: unknown): string => {
+      const s = String(v ?? "");
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const header = "timestamp,site_id,site_name,status,reward,balance,currency,duration_ms,message,screenshot";
+    const rows = filtered.map((r) =>
+      [
+        r.timestamp, r.siteId, r.siteName, r.status,
+        r.reward ?? "", r.balance ?? "", r.currency ?? "", r.durationMs,
+        r.message, r.screenshot ?? "",
+      ].map(esc).join(","),
+    );
+    res.type("text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="records.csv"`);
+    // \uFEFF = UTF-8 BOM：Excel 打开中文不乱码。
+    res.send("\uFEFF" + [header, ...rows].join("\n"));
   });
 
   // 手动触发全部

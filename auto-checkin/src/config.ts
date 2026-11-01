@@ -30,6 +30,9 @@ function mergeConfig(base: AppConfig, override: Record<string, unknown>): AppCon
   const o = override as Partial<AppConfig>;
   if (o.schedule) Object.assign(out.schedule, o.schedule);
   if (o.browser) Object.assign(out.browser, o.browser);
+  // 第 39 轮：panel 段此前被整段丢弃 —— 用户 config.json 写
+  // `{"panel":{"port":9999}}` 永远不生效（仍起 8787）。
+  if (o.panel) Object.assign(out.panel, o.panel);
   if (o.sites) {
     for (const [id, cfg] of Object.entries(o.sites)) {
       out.sites[id] = { ...(out.sites[id] ?? { enabled: true }), ...cfg };
@@ -38,9 +41,9 @@ function mergeConfig(base: AppConfig, override: Record<string, unknown>): AppCon
   return out;
 }
 
-export function loadConfig(): AppConfig {
+// 第 39 轮：configPath 可注入（测试传临时目录），默认仍读仓库根目录 config.json。
+export function loadConfig(configPath: string = join(ROOT_DIR, "config.json")): AppConfig {
   let config = DEFAULT_CONFIG;
-  const configPath = join(ROOT_DIR, "config.json");
   if (existsSync(configPath)) {
     try {
       const raw = JSON.parse(readFileSync(configPath, "utf-8")) as Record<string, unknown>;
@@ -50,12 +53,11 @@ export function loadConfig(): AppConfig {
     }
   }
 
-  // 面板配置由环境变量覆盖（避免把 host/port/token 写进入库文件）
-  config.panel = {
-    host: process.env.PANEL_HOST || DEFAULT_CONFIG.panel.host,
-    port: Number(process.env.PANEL_PORT) || DEFAULT_CONFIG.panel.port,
-    token: process.env.PANEL_TOKEN || "",
-  };
+  // 面板配置由环境变量**逐项**覆盖（避免把 host/port/token 写进入库文件）；
+  // config.json 里已写的值保留，环境变量只覆盖对应单项（第 39 轮）。
+  config.panel.host = process.env.PANEL_HOST || config.panel.host;
+  config.panel.port = Number(process.env.PANEL_PORT) || config.panel.port;
+  config.panel.token = process.env.PANEL_TOKEN || config.panel.token;
   return config;
 }
 

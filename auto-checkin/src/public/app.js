@@ -70,18 +70,29 @@ function renderMetrics(data) {
     </div>`).join("");
 }
 
+// 第 38 轮：面板此前把站点/记录字段直接 innerHTML 插值 —— 其中
+// `s.lastMessage` / `r.message` 来自**远端站点响应**，站点返回
+// `<img onerror=...>` 就能在本地面板执行脚本。所有不可信字符串进 HTML
+// 前必须过 esc()（文本与双引号属性都安全）。
+function esc(v) {
+  return String(v ?? "").replace(/[&<>"']/g, (c) =>
+    c === "&" ? "&amp;" : c === "<" ? "&lt;" : c === ">" ? "&gt;" :
+    c === '"' ? "&quot;" : "&#39;"
+  );
+}
+
 // ---------------- 站点卡片 ----------------
 function renderCards(sites) {
   $("cards").innerHTML = sites.map((s, i) => {
     const status = s.checkedInToday ? (s.todayStatus || "success") : (s.todayStatus || "none");
     const badgeText = s.checkedInToday ? "✅ 今日已领" : (STATUS_TEXT[s.todayStatus] || "未签到");
     const color = colorOf(i);
-    const shot = s.lastScreenshot ? `<a class="shot-link" href="/${s.lastScreenshot}" target="_blank">查看截图</a>` : "";
+    const shot = s.lastScreenshot ? `<a class="shot-link" href="/${esc(s.lastScreenshot)}" target="_blank">查看截图</a>` : "";
     return `
     <div class="card">
       <div class="glow" style="background:${color}"></div>
       <div class="c-head">
-        <span class="c-name"><span class="c-ico" style="background:linear-gradient(135deg,${color},${colorOf(i + 1)})">${s.siteName[0]}</span>${s.siteName}</span>
+        <span class="c-name"><span class="c-ico" style="background:linear-gradient(135deg,${color},${colorOf(i + 1)})">${esc(s.siteName)[0]}</span>${esc(s.siteName)}</span>
         <span class="badge ${status}">${badgeText}</span>
       </div>
       <div class="c-grid">
@@ -97,7 +108,7 @@ function renderCards(sites) {
         </div>
       </div>
       <div class="c-foot">
-        <span class="c-msg" title="${(s.lastMessage || "").replace(/"/g, "&quot;")}">${s.lastMessage || "尚无运行记录"}${shot}</span>
+        <span class="c-msg" title="${esc(s.lastMessage)}">${s.lastMessage ? esc(s.lastMessage) : "尚无运行记录"}${shot}</span>
         <button class="c-btn" data-site="${s.siteId}">单独签到</button>
       </div>
     </div>`;
@@ -123,12 +134,12 @@ async function loadRecords() {
   body.innerHTML = records.map((r) => `
     <tr>
       <td>${fmtTime(r.timestamp)}</td>
-      <td>${r.siteName}</td>
+      <td>${esc(r.siteName)}</td>
       <td><span class="st ${r.status}">${STATUS_TEXT[r.status] || r.status}</span></td>
       <td>${fmtNum(r.reward, r.currency)}</td>
       <td>${fmtNum(r.balance, r.currency)}</td>
       <td>${fmtDur(r.durationMs)}</td>
-      <td>${r.message || ""}</td>
+      <td>${esc(r.message)}</td>
     </tr>`).join("");
 }
 
@@ -143,7 +154,7 @@ async function loadTrend() {
 
 function renderLegend(sites) {
   $("legend").innerHTML = sites.map((s, i) =>
-    `<div class="item"><span class="swatch" style="background:${colorOf(i)}"></span>${s.name}</div>`
+    `<div class="item"><span class="swatch" style="background:${colorOf(i)}"></span>${esc(s.name)}</div>`
   ).join("") + `<div class="item"><span class="swatch" style="background:#fff"></span>总额</div>`;
 }
 
@@ -222,7 +233,7 @@ function drawChart(data) {
     tip.style.left = `${x(idx)}px`;
     tip.style.top = `${y(p.total)}px`;
     tip.innerHTML = `<div class="tip-date">${p.date}</div>` +
-      data.sites.map((site, si) => `<div class="tip-row"><span class="tip-dot" style="background:${colorOf(si)}"></span>${site.name}: $${p.perSite[site.id] || 0}</div>`).join("") +
+      data.sites.map((site, si) => `<div class="tip-row"><span class="tip-dot" style="background:${colorOf(si)}"></span>${esc(site.name)}: $${p.perSite[site.id] || 0}</div>`).join("") +
       `<div class="tip-row"><span class="tip-dot" style="background:#fff"></span><b>总额: $${p.total}</b></div>`;
   };
   svg.onmouseleave = () => {

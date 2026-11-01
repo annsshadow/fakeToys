@@ -37,13 +37,16 @@ export const vyceaiAdapter: SiteAdapter = {
     const page = await ctx.browserContext.newPage();
     try {
       const logged = await ensureLogin(page, ctx);
-      if (!logged) {
+      if (!logged.ok) {
         const shot = await ctx.saveScreenshot(page, "vyceai-login-fail");
         return fail("登录失败（可能凭据错误或 PoW 未通过）", shot);
       }
 
       const reward = await getJson(page, STATUS_PATH);
-      const balance = await readBalance(page);
+      // 第 41 轮：登录态路径的 dashboard 已由 ensureLogin 拉过一次，
+      // 余额直接复用（旧实现 isLoggedIn + readBalance 各拉一次，重复往返）。
+      // 登录流程路径拿不到余额（返回 null），仍照旧再读一次。
+      const balance = logged.balance ?? (await readBalance(page));
       if (!reward) {
         return { status: "failed", reward: null, balance, currency: "$", message: "无法读取每日奖励状态", screenshot: null };
       }
@@ -113,12 +116,13 @@ export const vyceaiAdapter: SiteAdapter = {
 };
 
 /** 确保登录：先探 dashboard，未登录则打开登录页由 SPA 完成登录（含 PoW），轮询等待 */
-async function ensureLogin(page: Page, ctx: AdapterContext): Promise<boolean> {
+async function ensureLogin(page: Page, ctx: AdapterContext): Promise<{ ok: boolean; balance: number | null }> {
   await page.goto(BASE_URL, { waitUntil: "domcontentloaded" }).catch(() => {});
   await page.waitForTimeout(1500);
-  if (await isLoggedIn(page)) {
+  const initial = await loggedInState(page);
+  if (initial.ok) {
     ctx.log("已是登录态（复用会话）");
-    return true;
+    return initial;
   }
   ctx.log("打开登录页，由页面完成 CSRF+PoW 登录…");
   await page.goto(`${BASE_URL}/login`, { waitUntil: "domcontentloaded" });
@@ -136,23 +140,30 @@ async function ensureLogin(page: Page, ctx: AdapterContext): Promise<boolean> {
   // PoW 求解 + 登录需要几秒，轮询等待最多 ~30s
   for (let i = 0; i < 12; i++) {
     await page.waitForTimeout(2500);
-    if (await isLoggedIn(page)) {
+    const state = await loggedInState(page);
+    if (state.ok) {
       ctx.log("登录成功");
-      return true;
+      return state;
     }
   }
-  return false;
+  return { ok: false, balance: null };
 }
 
-async function isLoggedIn(page: Page): Promise<boolean> {
+// 第 41 轮：登录态探测与余额读取合并成一次 dashboard 请求。
+// 返回 { ok: 是否登录, balance: 已登录时的余额（未登录为 null）}。
+async function loggedInState(page: Page): Promise<{ ok: boolean; balance: number | null }> {
   const d = await getJson(page, "/user/dashboard");
-  return !!(d && d.user && d.user.id);
+  if (!d || !d.user || !d.user.id) return { ok: false, balance: null };
+  return { ok: true, balance: balanceOf(d) };
+}
+
+function balanceOf(d: any): number | null {
+  const b = d?.user?.totalBalance;
+  return typeof b === "number" ? Number(b.toFixed(4)) : null;
 }
 
 async function readBalance(page: Page): Promise<number | null> {
-  const d = await getJson(page, "/user/dashboard");
-  const b = d?.user?.totalBalance;
-  return typeof b === "number" ? Number(b.toFixed(4)) : null;
+  return balanceOf(await getJson(page, "/user/dashboard"));
 }
 
 /** 领取成功后 /user/dashboard 短时间内仍返回旧余额，轮询等待其更新（每 2s 一次，最多 ~10s） */

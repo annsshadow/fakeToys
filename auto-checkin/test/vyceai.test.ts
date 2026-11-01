@@ -54,7 +54,10 @@ test("领取成功：以复查后的 canClaim=false 为准，余额轮询到更�
   const { outcome } = await runCheckin(page);
   assert.equal(outcome.status, "success");
   assert.equal(outcome.reward, 0.5);
-  assert.equal(outcome.balance, 2.25);
+  // 第 41 轮：登录态探测（ensureLogin 的 loggedInState）与余额读取合并为
+  // 一次 dashboard 请求 —— 领取前余额 = 首次探测值 1.75，复查第一次
+  // （2.0）即超过它，轮询收敛到 2.0（旧实现多拉一次余额，收敛到 2.25）。
+  assert.equal(outcome.balance, 2.0);
   assert.match(outcome.message, /领取成功 \+0\.5 · 连续4天/);
 });
 

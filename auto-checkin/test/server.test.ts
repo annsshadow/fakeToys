@@ -193,3 +193,60 @@ test("面板触发单站：未知站点 404（不占锁），已知站点 200", 
     assert.equal(known.status, 200);
   });
 });
+
+// 第 40 轮：/api/trend 在记录库版本不变时复用缓存（无写入不重算，
+// 写入后必须看到新趋势）。ESM 命名导出无法被 node:test mock 计数，
+// 所以用行为判据：无写入时连续请求返回相同快照、addRecord 后趋势变化。
+test("trend 缓存：无写入时快照稳定，写入后更新", async () => {
+  await withServer("", async (base) => {
+    const first = await (await fetch(`${base}/api/trend?days=30`)).json()
+    const second = await (await fetch(`${base}/api/trend?days=30`)).json()
+    assert.deepEqual(second, first, "无写入时趋势快照必须稳定（缓存复用）")
+
+    // 写入一条记录 → 版本号变化 → 趋势必须更新（不能返回旧缓存）
+    const { addRecord } = await import("../src/store.js")
+    addRecord({
+      siteId: "vyceai",
+      siteName: "vyceai",
+      timestamp: new Date().toISOString(),
+      status: "success",
+      reward: 1,
+      balance: 1,
+      currency: "quota",
+      durationMs: 10,
+      message: "ok",
+      screenshot: null,
+    })
+    const third = await (await fetch(`${base}/api/trend?days=30`)).json()
+    assert.notDeepEqual(third.points, first.points, "写入后趋势应重算（缓存失效）")
+  })
+})
+
+// 第 42 轮：/api/records 支持按站点过滤；/api/records.csv 导出全量/过滤 CSV。
+test("records 按站点过滤 + CSV 导出", async () => {
+  const { addRecord } = await import("../src/store.js")
+  const baseTime = Date.now()
+  addRecord({ siteId: "vyceai", siteName: "VyceAI", timestamp: new Date(baseTime).toISOString(), status: "success", reward: 1, balance: 2, currency: "quota", durationMs: 10, message: "a", screenshot: null })
+  addRecord({ siteId: "agentrouter", siteName: "AgentRouter", timestamp: new Date(baseTime + 1).toISOString(), status: "failed", reward: null, balance: null, currency: null, durationMs: 20, message: "b", screenshot: null })
+
+  await withServer("", async (base) => {
+    // 站点过滤
+    const filtered = await (await fetch(`${base}/api/records?siteId=vyceai`)).json()
+    assert.ok(filtered.length >= 1)
+    assert.ok(filtered.every((r: { siteId: string }) => r.siteId === "vyceai"))
+
+    // CSV 导出：BOM + 表头 + 数据行（Response.text() 会剥离 BOM，用字节验证）
+    const csvResp = await fetch(`${base}/api/records.csv`)
+    const buf = new Uint8Array(await csvResp.arrayBuffer())
+    assert.deepEqual([...buf.slice(0, 3)], [0xef, 0xbb, 0xbf], "CSV 应以 UTF-8 BOM 开头")
+    const csv = new TextDecoder().decode(buf)
+    assert.ok(csv.includes("timestamp,site_id"), "CSV 应含表头")
+    assert.ok(csv.includes("vyceai,VyceAI"))
+    assert.ok(csv.includes("agentrouter,AgentRouter"))
+
+    // CSV 按站点过滤
+    const csvFiltered = await (await fetch(`${base}/api/records.csv?siteId=vyceai`)).text()
+    assert.ok(csvFiltered.includes("vyceai"))
+    assert.ok(!csvFiltered.includes("agentrouter,AgentRouter"))
+  })
+})
