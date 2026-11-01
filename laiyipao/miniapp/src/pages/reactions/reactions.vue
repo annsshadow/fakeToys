@@ -27,10 +27,17 @@
       <!-- 反应图鉴（服务端下发的权威表） -->
       <view class="card">
         <text class="card-title">反应图鉴</text>
+        <!-- 搜索（2026-11-01 新一轮第 77 轮）：按反应名过滤 -->
+        <input
+          v-model="keyword"
+          class="search-inp"
+          placeholder="搜索反应名称"
+          placeholder-class="ph"
+        />
         <text class="muted" style="display: block; margin-bottom: 12rpx">
           数值直接来自服务端 /config，与游戏内实际生效的一致。
         </text>
-        <view v-for="r in allReactions" :key="r.key" class="rxn">
+        <view v-for="r in filteredReactions" :key="r.key" class="rxn">
           <view class="rxn-head">
             <text class="rxn-name">{{ r.name }}</text>
             <text v-if="reachable.has(r.key as ReactionKey)" class="rxn-hit">可达</text>
@@ -59,7 +66,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import { reachableReactions, type ReactionKey } from '@/game/elements'
@@ -78,6 +85,15 @@ const store = useGameStore()
  * 数值在服务端、内容在服务端，唯独**解释**缺失。
  */
 const allReactions = computed(() => store.config?.reactions ?? [])
+
+/** 图鉴搜索（2026-11-01 新一轮第 77 轮）：按反应名过滤。 */
+const keyword = ref('')
+
+const filteredReactions = computed(() => {
+  const kw = keyword.value.trim().toLowerCase()
+  if (!kw) return allReactions.value
+  return allReactions.value.filter((r) => r.name.toLowerCase().includes(kw))
+})
 
 /**
  * 我的构筑可达的反应（P4-3）。
@@ -184,5 +200,22 @@ onMounted(() => {
   border-radius: 8rpx;
   background: rgba(127, 127, 127, 0.14);
   font-size: 22rpx;
+}
+
+/* 图鉴搜索（2026-11-01 新一轮第 77 轮） */
+.search-inp {
+  display: block;
+  height: 72rpx;
+  padding: 0 20rpx;
+  margin-bottom: 12rpx;
+  background: var(--panel-2, #f5f6f7);
+  border: 1rpx solid var(--border, #eee);
+  border-radius: 12rpx;
+  font-size: 26rpx;
+  color: var(--text, #222);
+}
+
+.ph {
+  color: var(--dim, #9aa0a6);
 }
 </style>

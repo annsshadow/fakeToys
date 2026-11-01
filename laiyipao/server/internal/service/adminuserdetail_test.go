@@ -1,7 +1,10 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"encoding/csv"
+	"strconv"
 	"testing"
 )
 
@@ -81,5 +84,124 @@ func TestAdminUserDetail(t *testing.T) {
 	// 5) 不存在的用户 → 报错（而不是返回零值）
 	if _, err := ts.AdminUserDetail(ctx, 999_999_999); err == nil {
 		t.Error("不存在的用户应报错，而不是返回一个空详情")
+	}
+}
+
+// TestAdminUserDetailBanRecords 守住封禁/解封记录（2026-11-01 新一轮第 58 轮）。
+func TestAdminUserDetailBanRecords(t *testing.T) {
+	ts := openScratchService(t)
+	ctx := context.Background()
+
+	uid := ts.newUser(t, ctx)
+	// 初始化钱包（详情会 LoadWalletReadOnly，无钱包会报「资源不存在」）
+	ts.grant(t, ctx, uid, map[string]int64{"coin": 1})
+	// 后台审计 target 是用户 id 字符串
+	ts.exec(t, `INSERT INTO admin_audit_logs (username, action, target, detail)
+		VALUES ('ops_alice', 'ban_user', $1, '{"reason":"恶意刷分"}'::jsonb),
+		       ('ops_alice', 'unban_user', $1, '{"reason":"误封，已解"}'::jsonb)`,
+		strconv.FormatInt(uid, 10))
+
+	d, err := ts.AdminUserDetail(ctx, uid)
+	if err != nil {
+		t.Fatalf("读玩家详情失败：%v", err)
+	}
+	if len(d.BanRecords) != 2 {
+		t.Fatalf("应有 2 条封禁/解封记录，实际 %d", len(d.BanRecords))
+	}
+	// 最新在前（unban 后插入应排第一）
+	if d.BanRecords[0].Action != "unban_user" || d.BanRecords[1].Action != "ban_user" {
+		t.Errorf("记录应按时间倒序，实际 %s / %s", d.BanRecords[0].Action, d.BanRecords[1].Action)
+	}
+	if d.BanRecords[0].Username != "ops_alice" {
+		t.Errorf("操作人应为 ops_alice，实际 %q", d.BanRecords[0].Username)
+	}
+	// detail 原样保留（reason 是 JSONB 对象）
+	reason := string(d.BanRecords[1].Reason)
+	if len(reason) == 0 {
+		t.Error("封禁记录应带 detail（reason）")
+	}
+}
+
+// TestAdminUserDetailRecentFlows 守住最近钱包流水（2026-11-01 新一轮第 66 轮）。
+func TestAdminUserDetailRecentFlows(t *testing.T) {
+	ts := openScratchService(t)
+	ctx := context.Background()
+
+	uid := ts.newUser(t, ctx)
+	// grant 会写 wallet_flows（coin +1000）
+	ts.grant(t, ctx, uid, map[string]int64{"coin": 1000})
+
+	d, err := ts.AdminUserDetail(ctx, uid)
+	if err != nil {
+		t.Fatalf("读玩家详情失败：%v", err)
+	}
+	if len(d.RecentFlows) == 0 {
+		t.Fatal("发放货币后应有钱包流水")
+	}
+	// 最新在前；第一条应是 coin 的发放
+	if d.RecentFlows[0].Currency != "coin" || d.RecentFlows[0].Delta != 1000 {
+		t.Errorf("第一条流水应为 coin +1000，实际 %+v", d.RecentFlows[0])
+	}
+	if d.RecentFlows[0].Reason == "" {
+		t.Error("流水应带 reason")
+	}
+	if d.RecentFlows[0].CreatedAt.IsZero() {
+		t.Error("流水应带时间")
+	}
+}
+
+// TestAdminExportUserFlows 守住单用户流水导出（2026-11-01 新一轮第 82 轮）。
+func TestAdminExportUserFlows(t *testing.T) {
+	ts := openScratchService(t)
+	ctx := context.Background()
+
+	uid := ts.newUser(t, ctx)
+	ts.grant(t, ctx, uid, map[string]int64{"coin": 1000, "gem": 50})
+
+	data, err := ts.AdminExportUserFlows(ctx, uid)
+	if err != nil {
+		t.Fatalf("导出失败：%v", err)
+	}
+	if !bytes.HasPrefix(data, []byte("\xEF\xBB\xBF")) {
+		t.Error("CSV 必须以 UTF-8 BOM 开头")
+	}
+	records, err := csv.NewReader(bytes.NewReader(bytes.TrimPrefix(data, []byte("\xEF\xBB\xBF")))).ReadAll()
+	if err != nil {
+		t.Fatalf("解析 CSV 失败：%v", err)
+	}
+	if len(records) < 2 {
+		t.Fatalf("应有表头 + 流水数据，实际 %d 行", len(records))
+	}
+	wantHeader := []string{"id", "currency", "delta", "balance", "reason", "ref_id", "created_at"}
+	if len(records[0]) != len(wantHeader) {
+		t.Fatalf("表头列数 = %d，期望 %d", len(records[0]), len(wantHeader))
+	}
+	for i, h := range wantHeader {
+		if records[0][i] != h {
+			t.Errorf("表头第 %d 列 = %q，期望 %q", i, records[0][i], h)
+		}
+	}
+	// 数据行：至少一条 coin 流水，delta 为正
+	foundCoin := false
+	for _, rec := range records[1:] {
+		if rec[1] == "coin" {
+			foundCoin = true
+			if rec[2] == "" || rec[4] == "" {
+				t.Errorf("流水行字段缺失：%v", rec)
+			}
+		}
+	}
+	if !foundCoin {
+		t.Error("导出应包含 coin 流水")
+	}
+}
+
+// TestAdminExportUserFlowsBrokenPool 守住导出故障路径。
+func TestAdminExportUserFlowsBrokenPool(t *testing.T) {
+	ts := openBrokenService(t)
+	ctx := context.Background()
+
+	if _, err := ts.AdminExportUserFlows(ctx, 1); err == nil {
+		t.Fatal("连接池已关闭时导出必须报错")
 	}
 }

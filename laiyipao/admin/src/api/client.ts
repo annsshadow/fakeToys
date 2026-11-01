@@ -208,4 +208,48 @@ export const api = {
     request<T>('PUT', path, body, opts),
   del: <T>(path: string, opts?: { auth?: boolean; soft?: boolean }) =>
     request<T>('DELETE', path, undefined, opts),
+  /**
+   * 下载二进制/文件响应（2026-10-30 实质优化第 12 轮：CSV 导出）。
+   *
+   * 与 `get` 的区别：不解析 JSON，返回原始 Blob。401 处理与普通请求
+   * 完全一致（令牌失效照样踢回登录页）。
+   */
+  getBlob: (path: string, opts?: { auth?: boolean }) => requestBlob(path, opts),
+}
+
+/**
+ * 请求一个文件类响应（Blob）。
+ *
+ * 后端返回 `text/csv` 等非 JSON 内容时，`request` 的 `resp.text()` +
+ * `JSON.parse` 会抛「响应不是合法 JSON」。导出走这里，保持 401 语义一致。
+ */
+async function requestBlob(path: string, opts: { auth?: boolean } = {}): Promise<Blob> {
+  const headers: Record<string, string> = { Accept: 'text/csv' }
+  if (opts.auth !== false) {
+    const token = getToken()
+    if (token) headers.Authorization = `Bearer ${token}`
+  }
+
+  let resp: Response
+  try {
+    resp = await fetch(`${API_BASE}${path}`, { method: 'GET', headers })
+  } catch (e) {
+    throw new ApiError(0, 'network_error', `无法连接后端服务：${(e as Error).message}`)
+  }
+
+  if (resp.status === 401 && opts.auth !== false && !path.endsWith('/admin/login')) {
+    handleUnauthorized()
+  }
+
+  if (!resp.ok) {
+    let message = `请求失败 HTTP ${resp.status}`
+    try {
+      const payload = await resp.json()
+      message = payload?.error?.message || message
+    } catch {
+      /* 非 JSON 错误体，用默认消息 */
+    }
+    throw new ApiError(resp.status, 'http_error', message)
+  }
+  return resp.blob()
 }

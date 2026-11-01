@@ -592,7 +592,7 @@ oa4rust 已完成 83 个 crate 的真实化和 2510 个真实 handler，但 2026
 
 ## Sources & References
 
-- **Origin document:** [docs/brainstorms/2026-08-11-oa4rust-full-gap-closure-requirements.md](docs/brainstorms/2026-08-11-oa4rust-full-gap-closure-requirements.md)
+- **Origin document:** [docs/brainstorms/2026-08-11-oa4rust-full-gap-closure-requirements.md](../brainstorms/2026-08-11-oa4rust-full-gap-closure-requirements.md)
 - **Related code:** `crates/auth/src/`, `crates/personal/src/`, `crates/express/src/`, `crates/correlation/src/`, `crates/hotpic/src/`, `crates/ldap/src/`, `crates/empower/src/`
 - **Related scripts:** `scripts/gen_inventory.py`, `scripts/extract_endpoints.py`
 - **Related solutions:** `docs/solutions/architecture-patterns/actionresult-9-field-contract.md`, `docs/solutions/security-issues/idor-vulnerability-write-handlers.md`

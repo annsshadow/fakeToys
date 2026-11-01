@@ -73,9 +73,7 @@ async fn is_attendance_admin(pool: &Pool, person_unique: &str) -> Result<bool, A
     Ok(row.is_some())
 }
 
-fn require_session(
-    session: Option<Extension<Session>>,
-) -> Result<Session, AppError> {
+fn require_session(session: Option<Extension<Session>>) -> Result<Session, AppError> {
     session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
 }
 

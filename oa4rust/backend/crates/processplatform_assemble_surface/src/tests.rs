@@ -3,17 +3,14 @@
 
 use super::*;
 use axum::body::Body;
-use axum::http::{Request, Method, StatusCode};
-use deadpool_postgres::{Manager, Pool};
+use axum::http::{Method, Request, StatusCode};
 use deadpool_postgres::tokio_postgres::{Config, NoTls};
+use deadpool_postgres::{Manager, Pool};
 use serde_json::json;
 use tower::util::ServiceExt;
 
 fn build_test_pool() -> Pool {
-    let mgr = Manager::new(
-        Config::new(),
-        NoTls,
-    );
+    let mgr = Manager::new(Config::new(), NoTls);
     Pool::builder(mgr).max_size(1).build().unwrap()
 }
 
@@ -96,7 +93,8 @@ async fn test_create_surface_route_exists() {
     let req = serde_json::to_string(&json!({
         "name": "My Surface",
         "description": "A process surface"
-    })).unwrap();
+    }))
+    .unwrap();
 
     let response = app
         .oneshot(
@@ -159,7 +157,8 @@ async fn test_save_surface_route_exists() {
 
     let req = serde_json::to_string(&json!({
         "category": "default"
-    })).unwrap();
+    }))
+    .unwrap();
 
     let response = app
         .oneshot(

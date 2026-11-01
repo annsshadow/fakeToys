@@ -269,6 +269,29 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_csrf_mirror_origin_from_loopback_ip() {
+        // public_origin 配置为 127.0.0.1 时，「镜像语义」放行 localhost 源
+        //（CORS 白名单同款回环镜像，覆盖 csrf_middleware 的 127.0.0.1 分支）。
+        let mut state = security_state();
+        state.session_manager.auth_config.public_origin = "http://127.0.0.1:3000".to_string();
+        let token = make_token(&state.session_manager, "user").await;
+        let app = test_app(state);
+
+        let request = Request::builder()
+            .method(Method::POST)
+            .uri("/api/reset")
+            .header(header::COOKIE, format!("{}={}", SESSION_COOKIE_NAME, token))
+            .header(header::ORIGIN, "http://localhost:3000")
+            .body(Body::empty())
+            .unwrap();
+        assert_eq!(
+            app.oneshot(request).await.unwrap().status(),
+            StatusCode::OK,
+            "127.0.0.1 源配置必须放行 localhost 镜像源"
+        );
+    }
+
+    #[tokio::test]
     async fn test_cors_preflight_allows_write_methods() {
         let app = Router::new()
             .route("/write", post(|| async { "ok" }))

@@ -237,7 +237,7 @@ describe('index.vue 首页', () => {
 
     expect(wrapper.text()).toContain('双倍掉落')
     expect(wrapper.text()).toContain('周末两天所有关卡金币翻倍')
-    expect(wrapper.text()).toContain('共 2 条')
+    expect(wrapper.text()).toContain('全部 2 条 →')
     // 默认折叠：正文带 clamped 类（视觉收起，内容不截断）
     const bodies = wrapper.findAll('.ann-body')
     expect(bodies.length).toBe(2)
@@ -255,7 +255,7 @@ describe('index.vue 首页', () => {
     mountPage()
     await flushPromises()
     expect(wrapper.findAll('.ann-item').length).toBe(0)
-    expect(wrapper.text()).not.toContain('共 0 条')
+    expect(wrapper.text()).not.toContain('全部 0 条')
     // 首页主体仍正常
     expect(wrapper.text()).toContain('构筑评分')
   })
@@ -318,6 +318,6 @@ describe('index.vue 首页', () => {
     expect(wrapper.findAll('.ann-item').length).toBe(0)
     expect(wrapper.text()).toContain('构筑评分')
     // 失败不能变成「0 条公告」这种看起来正常的状态
-    expect(wrapper.text()).not.toContain('共 0 条')
+    expect(wrapper.text()).not.toContain('全部 0 条')
   })
 })

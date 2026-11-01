@@ -22,7 +22,7 @@ O2OA Java 后端迁移到 Rust（oa4rust）已完成 81 个 crate 的真实化�
 
 ## Requirements
 
-> 完整需求列表（R1-R60）见 origin: [docs/brainstorms/2026-08-08-oa4rust-quality-improvement-requirements.md](docs/brainstorms/2026-08-08-oa4rust-quality-improvement-requirements.md)
+> 完整需求列表（R1-R60）见 origin: [docs/brainstorms/2026-08-08-oa4rust-quality-improvement-requirements.md](../brainstorms/2026-08-08-oa4rust-quality-improvement-requirements.md)
 
 - R1. 修复 `query_service` ON CONFLICT 部分唯一索引缺失（`crates/query_service/src/lib.rs:116`）
 - R2. 为 `chat_delete` 添加事务保护（`crates/ai/src/lib.rs:305`）—— **已修复**
@@ -467,7 +467,7 @@ fn validate_query(query: &str) -> bool {
 
 ## Sources & References
 
-- **Origin document:** [docs/brainstorms/2026-08-08-oa4rust-quality-improvement-requirements.md](docs/brainstorms/2026-08-08-oa4rust-quality-improvement-requirements.md)
-- **Code review:** [docs/brainstorms/oa4rust-code-review-2026-08-08.md](docs/brainstorms/oa4rust-code-review-2026-08-08.md)
-- **Migration status:** [docs/brainstorms/oa4rust-migration-status-2026-08-08.md](docs/brainstorms/oa4rust-migration-status-2026-08-08.md)
+- **Origin document:** [docs/brainstorms/2026-08-08-oa4rust-quality-improvement-requirements.md](../brainstorms/2026-08-08-oa4rust-quality-improvement-requirements.md)
+- **Code review:** [docs/brainstorms/oa4rust-code-review-2026-08-08.md](../brainstorms/oa4rust-code-review-2026-08-08.md)
+- **Migration status:** [docs/brainstorms/oa4rust-migration-status-2026-08-08.md](../brainstorms/oa4rust-migration-status-2026-08-08.md)
 - Related code: `oa4rust/crates/shared/src/middleware.rs`, `oa4rust/crates/ai/src/lib.rs`, `oa4rust/crates/file_assemble_control/src/lib.rs`, `oa4rust/crates/query_service/src/lib.rs`

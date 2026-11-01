@@ -3,6 +3,9 @@
 > **用途**：把散落在安全审计账本、覆盖率计划、优化台账里的剩余项收敛成一份可执行清单。
 > **口径**：每项都写「判据 / 落点 / 规模 / 验收 / 依赖」；判据以**复跑现量**为准，
 > 账本记载只作线索（§四 记了一个账本已过时的反例）。
+>
+> **轮次追踪**：100 轮优化目标的逐轮计数见 `optimization-rounds-100.md`（每轮 =
+> 勘察 → 实现 → 验证 → 提交 → 推送的完整循环）。
 
 ---
 
@@ -14,8 +17,8 @@
 | 今日推送 | 13 个提交（`325296f38 → 500259e94`） |
 | auto-checkin | 102 passed；覆盖率棘轮九档全绿 |
 | laiyipao | service / httpapi / cmd / config 真库全绿；配置热加载已落地 |
-| augmentor | 10173 passed / 4 failed（4 条为基线既红：pillow 环境性 + 3 条棘轮）；web 416 tests 全绿 |
-| oa4rust | 97 crates 编译零告警；`shared` 覆盖率 **94.12%**（容器内实测，floor 93 与 C1 94 目标均达成） |
+| augmentor | **10174 passed / 0 failed / 6 skipped（全绿，2026-10-30 棘轮重钉后首次全量零失败）**；web 416 tests 全绿 |
+| oa4rust | 97 crates 编译零告警；`shared` 覆盖率 **95.01%**（容器内实测，floor 93 与 C1 94 目标均达成） |
 | oa4rust 定位 | **独立系统**，不再与 Java 对齐（CI 的 Java 双栈对比门禁已删，换成启动冒烟） |
 
 **已关闭、不要再排期**：OA-P0-1（Java 契约奇偶，前提消失）、LY-5（配置热加载，已落地）、
@@ -172,13 +175,18 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 
 | 编号 | 项 | 现状 | 缺口性质 |
 |---|---|---|---|
-| **C1** | `shared` 覆盖率 93.28% → 94% | **✅ 已达成（2026-10-30 第八轮，容器内实测 94.12%）** | 需 ~50 行，全部依赖**进程隔离**（`security` 的 OnceLock 环境臂与 parity 测试互斥）或**公网夹具**（`netguard fetch_limited` 被自身 SSRF 守卫挡回环）。属条件项，不作为默认目标。**第六轮**：发现 `oa4rust-cov` Docker 容器是可用 Linux 覆盖率环境，跑通 `cargo llvm-cov -p shared --lib`；修复 `db/mod.rs` 测试并发污染（参数化 `create_pool_with_url` / `create_sea_orm_pool_with_url` + 纯函数 `resolve_database_url`），覆盖率 93.17%。**第七轮**：① `middleware/security.rs` 三个 OnceLock 环境臂（`TRUSTED_PROXY_IPS` / `FORCE_HTTPS` / `APP_PUBLIC_ORIGIN`）参数化（`trusted_proxy_ips_from` / `force_https_from` / `force_https_host_from` 纯函数 + `https_redirect_with` 带参入口），消除进程隔离互斥；② 清理 `response.rs` 重复旧版 `AppError` 死代码；③ 补全 8 变体映射测试。覆盖率 93.20%。**第八轮（达成）**：① `migrate.rs` 补校验和变更分支（存储 checksum 与文件不一致时更新并 skip 不重放）与空迁移分支（空 SQL 仍落版本记录）测试；② 清理 `input_validation.rs` 半成品 `StringValidator`/`Validator` 死代码（全仓零引用）；③ 补 `DynControlPool` + `Arc<dyn ControlClient>` 委托全链路测试；④ 补 `mock_pool`/`mock_db`/`is_db_available` 测试基建覆盖。容器内 shared **314 全绿**、clippy 零告警、**行覆盖率 94.12%**（>94% 目标）、函数覆盖 91.30%、分支覆盖 94.29%。 |
+| **C1** | `shared` 覆盖率 93.28% → 94% | **✅ 已达成并大幅超额（2026-10-30 实测 94.99%）** | 需 ~50 行，全部依赖**进程隔离**（`security` 的 OnceLock 环境臂与 parity 测试互斥）或**公网夹具**（`netguard fetch_limited` 被自身 SSRF 守卫挡回环）。属条件项，不作为默认目标。第六轮发现 Linux 容器可测覆盖率并修复 db 测试并发污染（93.17%）；第七轮 security 环境臂参数化 + 死代码清理（93.20%）；第八轮 migrate 分支 + 基建覆盖达成 94.12%；第九~二十轮持续补分支测试（netguard / 夹具 / security_headers / 冲突反向 / 性能基线 / trait 真库实现 / 方言 Default / CSRF 镜像 / fail-closed / 无 host panic 等），**2026-10-30 终值：行覆盖率 94.99%、函数 93.63%、分支 95.41%**（容器内 shared 328 全绿）。逐轮明细见 `optimization-rounds-100.md`。 |
 
 ### D 类 · 环境与工具
 
 | 编号 | 项 | 现状 | 处置 |
 |---|---|---|---|
 | **D1** | llm-lab pytest 门禁 SKIP | ~~本机 `C:/Python314` 有 pytest；门禁默认解释器没有~~ | **已消解（2026-10-30）**：环境更新后默认 `python` 已带 pytest 9.1.1，门禁 `llm-lab (pytest 行为面)` 真实 PASS（6.7s），不再是 SKIP。门禁脚本的 `requires` 守门会在解释器缺 pytest 时显式 SKIP 并说明，无需改代码 |
+| **D2** | cool Java 门禁 SKIP（无 JDK） | 本机无 JDK（`javac` 不在 PATH，`JAVA_HOME` 未设置）；`cool/lib/` 无 commons-codec jar。jar 可从 Maven Central 下载（本机可达），但缺 javac 无法编译 | **环境限制（2026-10-30 登记）**：门禁脚本在缺 jar 时显式 SKIP；补 jar 后若无 javac 会变 FAIL，反而破坏门禁。保持 SKIP 为正确状态。待安装 JDK 后可下载 jar（`curl -sL -o cool/lib/commons-codec-1.16.1.jar https://repo1.maven.org/maven2/commons-codec/commons-codec/1.16.1/commons-codec-1.16.1.jar`）并跑通 cool 编译。`*.jar` 已被根 .gitignore 忽略，不会入仓 |
+| **D3** | 容器内跑 integration/perf 测试需 curl + RUST_MIN_STACK | `oa4rust-cov` 容器是 Debian 精简镜像：① 无 curl → `utoipa-swagger-ui` 构建脚本下载 swagger-ui zip 失败；② 编译 `openapi`（lib.rs 约 7 万行）时 rustc 默认栈溢出（SIGSEGV） | **运维要点（2026-10-30 登记）**：容器内先 `apt-get install -y curl`；编译/测试命令带 `RUST_MIN_STACK=33554432`（rustc 官方建议值）。示例见 §五复跑命令。这两项只在容器内跑全量 integration 或 perf_baseline 时需要；`cargo llvm-cov -p shared --lib`（仅 shared）不受影响 |
+| **D4** | augmentor 全量测试期间勿做 git 操作 | `test_ledger_hash_reachability_l270` / `test_log_block_bullet_ownership_l264` 等「git 侧存活」测试依赖远端 ref 面：测试运行中提交/推送会改变 HEAD/refs，导致 3 条用例随机红（实测两次） | **运维要点（2026-10-30 登记）**：augmentor 全量 pytest（约 9-10 分钟）运行期间不要 commit/push；测试开始前先 `git push` 确保 HEAD 在远端。单独复跑 `tests/unit/test_ledger_hash_reachability_l270.py` 可确认非代码问题 |
+| **D6** | ruff 自动清理 F401 不安全 | `ruff check . --select F401 --fix` 删除 260 个「未使用导入」，导致 augmentor 全量测试 10 条失败（反射/注册等副作用导入被误删），已完全回退 | **工具教训（2026-10-30 登记）**：augmentor 未配置 ruff 基线，默认规则产生 4788 假阳性（UP/I001 风格类占大头）；即使只选 F401，自动修复也会误删有副作用导入。如需清理，必须逐条人工确认 + 全量测试验证，且不应作为自动化门禁 |
+| **D5** | 本机 gcc 已装（MinGW）/ ruff 未装 | ① 升级 libz-sys 1.1.31 后本机需 C 编译器，已安装 MinGW gcc（winget WinLibs），`CGO_ENABLED=1 go test -race` 本机可用；② `ruff` 未安装 → augmentor lint 命令本机不可用 | **环境（2026-10-30 更新）**：gcc 已装（用户 PATH），race 检测本机可跑；ruff 由 CI lint job 覆盖，本机如需跑 `pip install ruff` |
 
 ---
 
@@ -225,14 +233,17 @@ LY-7（小程序虚拟化，实测列表全部有界）、AU-P1（异步后端�
 ## 五、复跑命令
 
 ```bash
-# 全仓门禁（12 项）
+# 全仓门禁（14 项）
 node scripts/check-warnings.mjs
 
 # 写门禁尺子（会刷新 docs/audits/artifacts/*.tsv，复跑后注意是否需要提交）
 cd oa4rust/backend && node scripts/audit_write_gating.mjs
 
-# 单 crate 覆盖率
-cd oa4rust/backend && cargo llvm-cov -p shared --lib --summary-only
+# 单 crate 覆盖率（Windows GNU 工具链无 profiler_builtins，必须在 Linux 容器内跑）
+docker exec oa4rust-cov sh -c 'cd /src && DATABASE_URL="postgres://o2server:password@lyp-pg:5432/oa4rust_cov" CARGO_TARGET_DIR=/tmp/cov-target cargo llvm-cov -p shared --lib --summary-only'
+
+# 后端依赖安全审计（容器内；例外经 validate_rustsec_exceptions.py --print-args 生成 ignore）
+docker exec oa4rust-cov sh -c 'cd /src && cargo audit'
 
 # 子项目测试
 cd auto-checkin && npx tsx --test test/*.test.ts && npm run test:ratchet

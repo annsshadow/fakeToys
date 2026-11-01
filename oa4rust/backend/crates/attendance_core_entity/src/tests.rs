@@ -8,7 +8,6 @@ mod tests {
     use shared::response::ActionResult;
     use tower::ServiceExt;
 
-
     #[test]
     fn test_record_list_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
