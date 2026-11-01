@@ -11,11 +11,17 @@ import {
   Select,
   Input,
   List,
-  type TableColumnsType
+  type TableColumnsType,
 } from 'antd'
 import DataList from '../components/DataList'
 import ExportDialog from '../components/ExportDialog'
-import { apiErrorDetail, bulkErrorDetail, getExportFormats, previewExport, batchExport } from '../services/api'
+import {
+  apiErrorDetail,
+  bulkErrorDetail,
+  getExportFormats,
+  previewExport,
+  batchExport,
+} from '../services/api'
 import type { ExportPreviewResponse } from '../types/api'
 
 /** 批量导出表单的字段，与各 `Form.Item` 的 `name` 一一对应 */
@@ -39,14 +45,13 @@ export default function Export() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [batchForm] = Form.useForm()
-  const [batchResult, setBatchResult] = useState<Record<
-    string,
-    Record<string, string>
-  > | null>(null)
+  const [batchResult, setBatchResult] = useState<Record<string, Record<string, string>> | null>(
+    null,
+  )
 
   useEffect(() => {
     getExportFormats()
-      .then(result => setFormats(result.formats || []))
+      .then((result) => setFormats(result.formats || []))
       .catch((err) => message.error(apiErrorDetail(err, '加载导出格式失败')))
   }, [])
 
@@ -68,13 +73,10 @@ export default function Export() {
   const handleBatch = async (values: BatchExportFormValues) => {
     setLoading(true)
     try {
-      const datasets = values.files.reduce(
-        (acc: Record<string, string>, name: string) => {
-          acc[name.replace(/\.[^.]+$/, '')] = name
-          return acc
-        },
-        {}
-      )
+      const datasets = values.files.reduce((acc: Record<string, string>, name: string) => {
+        acc[name.replace(/\.[^.]+$/, '')] = name
+        return acc
+      }, {})
       const result = await batchExport(datasets, values.outputDir, values.formats)
       setBatchResult(result.results)
       message.success('批量导出完成')
@@ -85,15 +87,14 @@ export default function Export() {
     }
   }
 
-  const previewColumns: TableColumnsType<Record<string, unknown>> = preview?.converted_data
-    ?.length
-    ? Object.keys(preview.converted_data[0]).map(key => ({
+  const previewColumns: TableColumnsType<Record<string, unknown>> = preview?.converted_data?.length
+    ? Object.keys(preview.converted_data[0]).map((key) => ({
         title: key,
         dataIndex: key,
         key,
         ellipsis: true,
         render: (value: unknown) =>
-          typeof value === 'object' ? JSON.stringify(value) : String(value)
+          typeof value === 'object' ? JSON.stringify(value) : String(value),
       }))
     : []
 
@@ -107,7 +108,7 @@ export default function Export() {
             style={{ width: 220 }}
             value={previewFormat}
             onChange={setPreviewFormat}
-            options={formats.map(fmt => ({ label: fmt, value: fmt }))}
+            options={formats.map((fmt) => ({ label: fmt, value: fmt }))}
           />
           <Button type="primary" loading={loading} onClick={handlePreview}>
             预览转换结果
@@ -139,9 +140,7 @@ export default function Export() {
           <>
             <Space style={{ marginBottom: 8 }}>
               <Tag color="blue">共 {preview.format_info?.total_items ?? 0} 条</Tag>
-              <Tag color="green">
-                预览 {preview.format_info?.preview_items ?? 0} 条
-              </Tag>
+              <Tag color="green">预览 {preview.format_info?.preview_items ?? 0} 条</Tag>
             </Space>
             <Table
               size="small"
@@ -157,10 +156,7 @@ export default function Export() {
 
       <Card title="批量导出">
         <Form form={batchForm} layout="inline" onFinish={handleBatch}>
-          <Form.Item
-            name="files"
-            rules={[{ required: true, message: '请选择数据集' }]}
-          >
+          <Form.Item name="files" rules={[{ required: true, message: '请选择数据集' }]}>
             <Select
               mode="multiple"
               style={{ minWidth: 320 }}
@@ -173,7 +169,7 @@ export default function Export() {
               mode="multiple"
               style={{ minWidth: 260 }}
               placeholder="选择导出格式"
-              options={formats.map(fmt => ({ label: fmt, value: fmt }))}
+              options={formats.map((fmt) => ({ label: fmt, value: fmt }))}
             />
           </Form.Item>
           <Form.Item name="outputDir" rules={[{ required: true, message: '请输入输出目录' }]}>
@@ -209,11 +205,7 @@ export default function Export() {
         )}
       </Card>
 
-      <ExportDialog
-        inputFile={file}
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-      />
+      <ExportDialog inputFile={file} open={dialogOpen} onClose={() => setDialogOpen(false)} />
     </div>
   )
 }

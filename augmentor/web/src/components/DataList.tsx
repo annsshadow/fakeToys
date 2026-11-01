@@ -23,7 +23,7 @@ export default function DataList({
   value,
   onChange,
   previewSize = 5,
-  showPreview = true
+  showPreview = true,
 }: DataListProps) {
   const [files, setFiles] = useState<string[]>([])
   const [items, setItems] = useState<DataItem[]>([])
@@ -33,7 +33,7 @@ export default function DataList({
 
   useEffect(() => {
     getDataFiles()
-      .then(result => setFiles(result.files.map(f => f.name)))
+      .then((result) => setFiles(result.files.map((f) => f.name)))
       .catch((err) => message.error(apiErrorDetail(err, '加载数据文件列表失败')))
   }, [])
 
@@ -46,7 +46,7 @@ export default function DataList({
 
     setLoading(true)
     loadData(value, 1, previewSize, search)
-      .then(result => {
+      .then((result) => {
         setItems(result.items || [])
         setTotal(result.total || 0)
       })
@@ -59,29 +59,25 @@ export default function DataList({
       title: '问题',
       dataIndex: 'instruction',
       key: 'instruction',
-      ellipsis: true
+      ellipsis: true,
     },
     {
       title: '回答',
       dataIndex: 'output',
       key: 'output',
-      ellipsis: true
-    }
+      ellipsis: true,
+    },
   ]
 
   return (
-    <Card
-      title="数据集"
-      extra={<Tag color="blue">共 {total} 条</Tag>}
-      style={{ marginBottom: 16 }}
-    >
+    <Card title="数据集" extra={<Tag color="blue">共 {total} 条</Tag>} style={{ marginBottom: 16 }}>
       <Space style={{ marginBottom: 16 }} wrap>
         <Select
           style={{ width: 320 }}
           value={value || undefined}
           onChange={onChange}
           placeholder="请选择数据集"
-          options={files.map(name => ({ label: name, value: name }))}
+          options={files.map((name) => ({ label: name, value: name }))}
         />
         {showPreview && (
           <Input.Search

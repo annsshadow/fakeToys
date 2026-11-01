@@ -944,7 +944,6 @@ class AugmentorPipeline:
         if use_dedup is None:
             use_dedup = self.config.dedup.enabled
 
-        loop = asyncio.get_running_loop()
         with open(input_file, 'r', encoding='utf-8') as f:
             items = json.load(f)
         
@@ -975,31 +974,22 @@ class AugmentorPipeline:
                     logger.warning(
                         f"断点显示已处理 {skipped} 条，但输出文件不存在，仅能保留本轮结果")
         
-        # 使用线程池执行同步增强逻辑，避免阻塞事件循环
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            tasks = []
-            for idx in remaining_indices:
-                # 提交到线程池
-                future = loop.run_in_executor(
-                    executor,
-                    self.augment_seed,
-                    items[idx],
-                    use_quality_check,
-                    []
-                )
-                tasks.append(future)
-            
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-        
+        # 使用原生异步批处理：模型等待期间不占线程（AU-P1）。
+        # `_run_batch_async` 用信号量约束在飞请求数，`gather` 保序返回
+        # `(idx, ok, variants)`，与 `remaining_indices` 同序；失败记入 errors。
+        errors: List[Dict] = []
+        outcomes = await self._run_batch_async(
+            remaining_indices, items, use_quality_check, errors, max_workers
+        )
+
         # `gather` 的返回顺序与提交顺序一致 ⇒ 结果与**它自己的**下标配对，
         # 失败的那一笔记进断点而不是只留一行日志
-        for idx, result in zip(remaining_indices, results):
-            if isinstance(result, Exception):
-                logger.error(f"异步处理单条数据失败: {result}")
+        for idx, ok, variants in outcomes:
+            if not ok:
                 if use_checkpoint:
                     self.checkpoint_manager.update_progress(idx, False, checkpoint=ckpt)
                 continue
-            all_results.extend(result)
+            all_results.extend(variants)
             if use_checkpoint:
                 self.checkpoint_manager.update_progress(idx, True, checkpoint=ckpt)
         

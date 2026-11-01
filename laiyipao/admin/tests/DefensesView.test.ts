@@ -14,10 +14,16 @@
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import ElementPlus from 'element-plus'
+import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const fetchDefenses = vi.hoisted(() => vi.fn())
-vi.mock('@/api', () => ({ fetchDefenses }))
+const fetchAdminDefenseChallenges = vi.hoisted(() => vi.fn())
+
+vi.mock('@/api', () => ({
+  fetchDefenses,
+  fetchAdminDefenseChallenges,
+}))
 
 import DefensesView from '@/views/DefensesView.vue'
 
@@ -33,16 +39,34 @@ function defenseFixture(overrides: Record<string, unknown> = {}) {
     mastery_done: 6,
     wins: 50,
     losses: 50,
-    shielded_until: '2026-02-01T08:00:00Z',
+    shielded_until: '',
     snapshot_hash: 'hash0123456789abcdef',
     updated_at: '2026-01-15T12:00:00Z',
     ...overrides,
   }
 }
 
+/** 属主列是 el-link（第 50 轮），点击跳转用户页 —— 必须注入真实 router。 */
+let lastRouter: ReturnType<typeof createRouter> | null = null
+
+async function makeRouter() {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [
+      { path: '/defenses', component: { template: '<div />' } },
+      { path: '/users', component: { template: '<div />' } },
+    ],
+  })
+  await router.push('/defenses')
+  await router.isReady()
+  lastRouter = router
+  return router
+}
+
 async function mountDefenses(items: Array<Record<string, unknown>> = [], total = items.length) {
   fetchDefenses.mockResolvedValue({ items, total })
-  const wrapper = mount(DefensesView, { global: { plugins: [ElementPlus] } })
+  const router = await makeRouter()
+  const wrapper = mount(DefensesView, { global: { plugins: [ElementPlus, router] } })
   await flushPromises()
   return wrapper
 }
@@ -136,15 +160,179 @@ describe('DefensesView 渲染细节', () => {
     expect(fetchDefenses).toHaveBeenCalledTimes(2)
     // 2026-10-21（P2-6）：防线列表分页了 —— limit/offset 一起发。
     // 此前固定 limit=100 且**没有** offset，于是第 101 条起不可达。
-    expect(fetchDefenses).toHaveBeenLastCalledWith(50, 0)
+    // 2026-10-31（新一轮第 19 轮）：第三个参数是筛选对象（无筛选时全 undefined）。
+    expect(fetchDefenses).toHaveBeenLastCalledWith(50, 0, { keyword: undefined, owner_id: undefined })
     wrapper.unmount()
   })
 
   it('加载失败：弹出错误消息', async () => {
     fetchDefenses.mockRejectedValueOnce(new Error('防线服务超时'))
-    const wrapper = mount(DefensesView, { global: { plugins: [ElementPlus] } })
+    const router = await makeRouter()
+    const wrapper = mount(DefensesView, { global: { plugins: [ElementPlus, router] } })
     await flushPromises()
     expect(document.body.textContent).toContain('防线加载失败：防线服务超时')
+    wrapper.unmount()
+  })
+})
+
+describe('DefensesView 属主跳转用户详情（第 50 轮）', () => {
+  it('点击属主昵称：跳转 /users 并携带 owner_id', async () => {
+    const wrapper = await mountDefenses([defenseFixture({ owner_id: 9, owner_name: '铁壁玩家' })])
+    const link = wrapper.find('.el-table .el-link')
+    expect(link.exists(), '找不到属主列链接').toBe(true)
+    expect(link.text()).toBe('铁壁玩家')
+
+    await link.trigger('click')
+    await flushPromises()
+
+    expect(lastRouter?.currentRoute.value.path).toBe('/users')
+    expect(lastRouter?.currentRoute.value.query.user_id).toBe('9')
+    wrapper.unmount()
+  })
+
+  it('无属主昵称时显示「—」，不渲染可点击链接', async () => {
+    const wrapper = await mountDefenses([defenseFixture({ owner_name: '' })])
+    expect(wrapper.find('.el-table .el-link').exists()).toBe(false)
+    expect(wrapper.text()).toContain('—')
+    wrapper.unmount()
+  })
+})
+
+describe('DefensesView 挑战记录挑战者跳转用户详情（第 65 轮）', () => {
+  function challengeFixture(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+    return {
+      id: 1,
+      defense_id: 1,
+      defense_name: '铁壁',
+      challenger_id: 7,
+      challenger_nickname: '挑战者甲',
+      won: false,
+      duration_ms: 12000,
+      hp_left_pct: 40,
+      loot: { coin: 100 },
+      created_at: '2026-01-01T00:00:00Z',
+      ...overrides,
+    }
+  }
+
+  async function openChallenges(wrapper: Awaited<ReturnType<typeof mountDefenses>>) {
+    const vm = wrapper.vm as unknown as { openChallenges: () => void }
+    vm.openChallenges()
+    await flushPromises()
+    return wrapper
+  }
+
+  it('点击挑战者昵称：跳转 /users 并携带 challenger_id', async () => {
+    fetchAdminDefenseChallenges.mockResolvedValue({ items: [challengeFixture()], total: 1 })
+    const wrapper = await mountDefenses([defenseFixture()])
+    await openChallenges(wrapper)
+
+    const link = wrapper.find('.el-dialog .el-link')
+    expect(link.exists(), '找不到挑战者列链接').toBe(true)
+    expect(link.text()).toBe('挑战者甲')
+
+    await link.trigger('click')
+    await flushPromises()
+
+    expect(lastRouter?.currentRoute.value.path).toBe('/users')
+    expect(lastRouter?.currentRoute.value.query.user_id).toBe('7')
+    wrapper.unmount()
+  })
+
+  it('无昵称的挑战者显示「—」，不渲染可点击链接', async () => {
+    fetchAdminDefenseChallenges.mockResolvedValue({
+      items: [challengeFixture({ challenger_nickname: '' })],
+      total: 1,
+    })
+    const wrapper = await mountDefenses([defenseFixture()])
+    await openChallenges(wrapper)
+
+    expect(wrapper.find('.el-dialog .el-link').exists()).toBe(false)
+    expect(wrapper.text()).toContain('—')
+    wrapper.unmount()
+  })
+})
+
+describe('DefensesView 护盾剩余显示（第 81 轮）', () => {
+  it('有护盾显示剩余时长，无护盾显示「无」', async () => {
+    const future = new Date(Date.now() + 5 * 3600 * 1000).toISOString()
+    const wrapper = await mountDefenses([
+      defenseFixture({ id: 1, shielded_until: future }),
+      defenseFixture({ id: 2, shielded_until: '' }),
+    ])
+    const text = wrapper.text()
+    expect(text).toContain('5.0 小时')
+    expect(text).toContain('无')
+    wrapper.unmount()
+  })
+
+  it('护盾已过期显示「已过期」', async () => {
+    const past = new Date(Date.now() - 3600 * 1000).toISOString()
+    const wrapper = await mountDefenses([defenseFixture({ id: 1, shielded_until: past })])
+    expect(wrapper.text()).toContain('已过期')
+    wrapper.unmount()
+  })
+})
+
+describe('DefensesView 复制防线 ID（第 93 轮）', () => {
+  it('点击防线行「复制」：写入剪贴板并提示', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    const wrapper = await mountDefenses([defenseFixture({ id: 77 })])
+    const copyBtn = wrapper.findAll('.el-table__row')[0].findAll('button').find((b) => b.text() === '复制')
+    expect(copyBtn, '找不到防线 ID 复制按钮').toBeTruthy()
+    await copyBtn!.trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith('77')
+    expect(document.body.textContent).toContain('已复制防线 ID 77')
+    wrapper.unmount()
+  })
+})
+
+describe('DefensesView 挑战记录复制 ID（第 99 轮）', () => {
+  it('点击挑战记录行「复制」：写入剪贴板并提示', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    fetchAdminDefenseChallenges.mockResolvedValue({
+      items: [
+        { id: 66, defense_id: 1, defense_name: '铁壁', challenger_id: 7, challenger_nickname: '甲', won: false, duration_ms: 1000, hp_left_pct: 50, loot: {}, created_at: '2026-01-01T00:00:00Z' },
+      ],
+      total: 1,
+    })
+    const wrapper = await mountDefenses([defenseFixture()])
+    const vm = wrapper.vm as unknown as { openChallenges: () => void }
+    vm.openChallenges()
+    await flushPromises()
+
+    const copyBtn = wrapper.findAll('.el-dialog .el-table__row')[0].findAll('button').find((b) => b.text() === '复制')
+    expect(copyBtn, '找不到挑战记录复制按钮').toBeTruthy()
+    await copyBtn!.trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith('66')
+    expect(document.body.textContent).toContain('已复制挑战记录 ID 66')
+    wrapper.unmount()
+  })
+})
+
+describe('DefensesView 护盾状态筛选（第 100 轮）', () => {
+  it('选择「有护盾」后 fetchDefenses 携带 shielded=true，清空后不带', async () => {
+    const wrapper = await mountDefenses([defenseFixture()])
+    const select = wrapper.findAllComponents({ name: 'ElSelect' }).find((s) => s.props('placeholder') === '护盾状态')
+    expect(select, '找不到护盾状态下拉').toBeTruthy()
+
+    await select!.vm.$emit('update:modelValue', true)
+    await select!.vm.$emit('change', true)
+    await flushPromises()
+    expect(fetchDefenses).toHaveBeenLastCalledWith(50, 0, expect.objectContaining({ shielded: true }))
+
+    await select!.vm.$emit('update:modelValue', undefined)
+    await select!.vm.$emit('change', undefined)
+    await flushPromises()
+    expect(fetchDefenses).toHaveBeenLastCalledWith(50, 0, expect.objectContaining({ shielded: undefined }))
     wrapper.unmount()
   })
 })

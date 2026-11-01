@@ -17,16 +17,17 @@ import { message } from 'antd'
 
 window.matchMedia =
   window.matchMedia ||
-  ((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  }) as unknown as MediaQueryList)
+  ((query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList)
 class RO {
   observe() {}
   unobserve() {}
@@ -88,7 +89,7 @@ describe('Augmentation 启动校验与负载', () => {
     // 选中态回显的同名节点冲突）
     fireEvent.mouseDown(container.querySelector('.ant-select')!)
     await waitFor(() =>
-      expect(document.querySelector('.ant-select-item-option')).toBeInTheDocument()
+      expect(document.querySelector('.ant-select-item-option')).toBeInTheDocument(),
     )
     fireEvent.click(document.querySelector('.ant-select-item-option')!)
 
@@ -101,7 +102,7 @@ describe('Augmentation 启动校验与负载', () => {
       true,
       true,
       true,
-      false  // 异步引擎默认关
+      false, // 异步引擎默认关
     )
   })
 
@@ -113,7 +114,7 @@ describe('Augmentation 启动校验与负载', () => {
     await waitFor(() => expect(spies.getDataFiles).toHaveBeenCalled())
     fireEvent.mouseDown(container.querySelector('.ant-select')!)
     await waitFor(() =>
-      expect(document.querySelector('.ant-select-item-option')).toBeInTheDocument()
+      expect(document.querySelector('.ant-select-item-option')).toBeInTheDocument(),
     )
     fireEvent.click(document.querySelector('.ant-select-item-option')!)
 
@@ -130,7 +131,7 @@ describe('Augmentation 启动校验与负载', () => {
       true,
       true,
       true,
-      true
+      true,
     )
   })
 })
@@ -223,7 +224,7 @@ describe('Augmentation 轮询的停表与重启（L277）', () => {
 
     fireEvent.mouseDown(container.querySelector('.ant-select')!)
     await waitFor(() =>
-      expect(document.querySelector('.ant-select-item-option')).toBeInTheDocument()
+      expect(document.querySelector('.ant-select-item-option')).toBeInTheDocument(),
     )
     fireEvent.click(document.querySelector('.ant-select-item-option')!)
 
