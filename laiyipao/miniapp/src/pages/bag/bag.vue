@@ -247,6 +247,57 @@
         </view>
       </view>
 
+      <!-- 阵型预设（第 49 轮）：L-3 死表接活后的客户端入口。
+           保存当前构筑为预设（技能/装备/宝石快照），一键应用——
+           应用时依次走既有的服务端写端点（出战槽/装备整组替换/宝石先卸后戴）。 -->
+      <view class="card">
+        <text class="card-title">阵型预设</text>
+        <text class="muted" style="display: block; margin-bottom: 12rpx">
+          保存当前出战技能、装备与佩戴宝石为一套配装，之后一键切换。
+        </text>
+        <view class="preset-save-row">
+          <input
+            v-model="presetName"
+            class="preset-input"
+            placeholder="预设名（最多 20 字）"
+            maxlength="20"
+          />
+          <text class="link" @click="doSavePreset">保存当前构筑</text>
+        </view>
+        <view v-if="presets.length === 0" class="dim" style="margin-top: 8rpx">
+          还没有预设，先保存一套。
+        </view>
+        <view v-for="p in presets" :key="p.id" class="equip-row preset-item">
+          <view class="flex-1">
+            <text class="skill-name">
+              {{ p.name }}
+              <text v-if="p.is_current" class="dim"> · 当前</text>
+            </text>
+            <text class="dim" style="display: block">
+              {{ p.slots.skills.length }} 技能 / {{ p.slots.equipment.length }} 装备 /
+              {{ p.slots.gems.length }} 宝石
+            </text>
+          </view>
+          <view class="skill-act">
+            <text v-if="presetBusyId === p.id" class="dim">处理中…</text>
+            <template v-else>
+              <text class="link preset-apply" @click="doApplyPreset(p)">应用</text>
+              <text
+                v-if="!p.is_current"
+                class="link preset-current"
+                style="margin-left: 12rpx"
+                @click="doSetCurrent(p)"
+              >设为当前</text>
+              <text
+                class="link preset-delete"
+                style="margin-left: 12rpx"
+                @click="doDeletePreset(p)"
+              >删除</text>
+            </template>
+          </view>
+        </view>
+      </view>
+
       <!-- 合成配方（第 150 轮）：recipes 此前从不下发到客户端，
            玩家看到「合成技能」却完全不知道它由哪两个技能合成。
            配方是内容表的一部分，缺了它就是一个悬空的词条。 -->
@@ -812,6 +863,83 @@ async function clearSlot(idx: number) {
   selected.value = [...store.loadout]
 }
 
+// ---- 阵型预设（第 49 轮） ----
+const presets = ref<api.PresetView[]>([])
+const presetName = ref('')
+const presetBusyId = ref(0)
+
+async function loadPresets() {
+  try {
+    const r = await api.fetchPresets()
+    presets.value = r.presets ?? []
+  } catch {
+    presets.value = []
+  }
+}
+
+async function doSavePreset() {
+  const name = presetName.value.trim()
+  if (!name) {
+    uni.showToast({ title: '请输入预设名', icon: 'none' })
+    return
+  }
+  try {
+    await api.saveCurrentPreset(name)
+    presetName.value = ''
+    await loadPresets()
+    uni.showToast({ title: '预设已保存', icon: 'none' })
+  } catch (e) {
+    uni.showToast({ title: (e as Error).message, icon: 'none' })
+  }
+}
+
+async function doDeletePreset(p: api.PresetView) {
+  try {
+    await api.deletePreset(p.id)
+    await loadPresets()
+    uni.showToast({ title: '已删除', icon: 'none' })
+  } catch (e) {
+    uni.showToast({ title: (e as Error).message, icon: 'none' })
+  }
+}
+
+async function doSetCurrent(p: api.PresetView) {
+  try {
+    await api.setCurrentPreset(p.id)
+    await loadPresets()
+    uni.showToast({ title: '已设为当前', icon: 'none' })
+  } catch (e) {
+    uni.showToast({ title: (e as Error).message, icon: 'none' })
+  }
+}
+
+/** 应用预设：依次写技能槽 → 装备 → 宝石（先卸全部再按预设佩戴）。 */
+async function doApplyPreset(p: api.PresetView) {
+  if (presetBusyId.value !== 0) return
+  presetBusyId.value = p.id
+  try {
+    // 1. 出战技能（槽位参与回放哈希，必须走服务端）
+    const ok = await store.persistLoadout(p.slots.skills)
+    if (!ok) throw new Error('出战技能保存失败')
+    // 2. 装备整组替换
+    await api.saveEquippedEquipment(p.slots.equipment)
+    // 3. 宝石：先卸当前全部已佩戴，再按预设逐个佩戴（上限 6 颗由服务端判）
+    const gresp = await api.fetchGems()
+    for (const g of gresp.gems ?? []) {
+      if (g.equipped_slot) await api.unequipGem(g.id)
+    }
+    for (const id of p.slots.gems) await api.equipGem(id)
+    // 刷新全部状态
+    await Promise.all([loadPresets(), loadGems()])
+    await store.refreshProfile()
+    uni.showToast({ title: '已应用预设', icon: 'none' })
+  } catch (e) {
+    uni.showToast({ title: (e as Error).message, icon: 'none' })
+  } finally {
+    presetBusyId.value = 0
+  }
+}
+
 onMounted(async () => {
   if (!store.loggedIn) await store.login()
   // 第 145 轮：修前只 loadLoadout 不 refreshProfile —— 已登录态直接进背包时
@@ -830,10 +958,39 @@ onMounted(async () => {
   }
   selected.value = [...store.loadout]
   while (selected.value.length < 4) selected.value.push(0)
+  await loadPresets()
+
 })
 </script>
 
 <style scoped>
+.preset-save-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 8rpx;
+}
+
+.preset-input {
+  flex: 1;
+  min-width: 0;
+  border: 1rpx solid var(--border);
+  border-radius: 8rpx;
+  background: var(--panel-2);
+  color: var(--text);
+  padding: 10rpx 14rpx;
+  font-size: 24rpx;
+}
+
+.preset-item {
+  border-bottom: 1rpx solid var(--border);
+}
+
+.preset-item:last-child {
+  border-bottom: none;
+}
+
 .slots {
   display: flex;
   flex-direction: row;

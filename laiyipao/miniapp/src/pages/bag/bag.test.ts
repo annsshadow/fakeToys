@@ -33,6 +33,10 @@ vi.mock('@/api/client', () => ({
   washGem: vi.fn(),
   equipGem: vi.fn(),
   unequipGem: vi.fn(),
+  fetchPresets: vi.fn(),
+  saveCurrentPreset: vi.fn(),
+  deletePreset: vi.fn(),
+  setCurrentPreset: vi.fn(),
   setTokenInternal: vi.fn(),
   // 账号登录（测试环境共用一个账号）新增的 API 面：
   //   hasUsableToken —— 本地是否已有可用令牌（有就别再建游客号）
@@ -703,3 +707,108 @@ describe('bag.vue 背包页', () => {
   })
 
 })
+
+
+describe('bag.vue 阵型预设（第 49 轮）', () => {
+  const preset = (over: Record<string, unknown> = {}) => ({
+    id: 1,
+    name: '默认套',
+    slots: { skills: [1, 4, 7], equipment: [1], gems: [] },
+    is_current: true,
+    created_at: '2026-01-01T00:00:00Z',
+    ...over,
+  })
+
+  it('保存当前构筑为预设：输入名 → 调 API → 清空输入并刷新列表', async () => {
+    mockApi.fetchPresets.mockResolvedValue({ presets: [] })
+    mockApi.saveCurrentPreset.mockResolvedValue({ preset: preset() })
+    const { wrapper } = mountPage(Bag)
+    await flushPromises()
+
+    const input = wrapper.find('.preset-input')
+    await input.setValue('我的套')
+    await wrapper.find('.preset-save-row .link')!.trigger('click')
+    await flushPromises()
+
+    expect(mockApi.saveCurrentPreset).toHaveBeenCalledWith('我的套')
+    expect(mockApi.fetchPresets).toHaveBeenCalledTimes(2) // 挂载 + 保存后刷新
+    expect(um.mock.showToast).toHaveBeenCalledWith({ title: '预设已保存', icon: 'none' })
+  })
+
+  it('预设列表：显示名称/数量/当前标记，删除与设为当前可用', async () => {
+    mockApi.fetchPresets.mockResolvedValue({
+      presets: [
+        preset({ id: 1, name: '套A', is_current: true }),
+        preset({ id: 2, name: '套B', is_current: false, slots: { skills: [1], equipment: [], gems: [7] } }),
+      ],
+    })
+    const { wrapper } = mountPage(Bag)
+    await flushPromises()
+    const text = wrapper.text()
+    expect(text).toContain('套A')
+    expect(text).toContain('套B')
+    expect(text).toContain('当前')
+
+    // 设 B 为当前
+    mockApi.setCurrentPreset.mockResolvedValue({ preset: preset({ id: 2, is_current: true }) })
+    const rows = wrapper.findAll('.preset-item')
+    await rows[1].find('.preset-current')!.trigger('click')
+    await flushPromises()
+    expect(mockApi.setCurrentPreset).toHaveBeenCalledWith(2)
+
+    // 删除 A
+    mockApi.deletePreset.mockResolvedValue({ ok: true })
+    await rows[0].find('.preset-delete')!.trigger('click')
+    await flushPromises()
+    expect(mockApi.deletePreset).toHaveBeenCalledWith(1)
+  })
+
+  it('空预设名：本地拦截不发请求', async () => {
+    mockApi.fetchPresets.mockResolvedValue({ presets: [] })
+    const { wrapper } = mountPage(Bag)
+    await flushPromises()
+    await wrapper.find('.preset-save-row .link')!.trigger('click')
+    await flushPromises()
+    expect(mockApi.saveCurrentPreset).not.toHaveBeenCalled()
+    expect(um.mock.showToast).toHaveBeenCalledWith({ title: '请输入预设名', icon: 'none' })
+  })
+
+  it('应用预设：依次写技能槽/装备/宝石（先卸后戴）并刷新档案', async () => {
+    mockApi.fetchPresets.mockResolvedValue({
+      presets: [{
+        id: 9, name: '进攻套', is_current: true, created_at: 'x',
+        slots: { skills: [1, 4, 7], equipment: [1, 10], gems: [7, 8] },
+      }],
+    })
+    // 当前已佩戴一颗宝石（id 5）→ 应用时要先卸下。
+    mockApi.fetchGems.mockResolvedValue({
+      gems: [{ id: 5, gem_id: 1, code: 'g', name: '石', descr: '', quality: 'rare',
+        affixes: [], equipped_slot: '1' }],
+    })
+    mockApi.saveLoadout.mockResolvedValue({ skill_ids: [1, 4, 7] })
+    mockApi.saveEquippedEquipment.mockResolvedValue({ items: [] })
+    mockApi.unequipGem.mockResolvedValue({
+      gem: { id: 5, gem_id: 1, code: 'g', name: '石', descr: '', quality: 'rare', affixes: [], equipped_slot: '' },
+    })
+    mockApi.equipGem.mockResolvedValue({
+      gem: { id: 7, gem_id: 2, code: 'g2', name: '石2', descr: '', quality: 'rare', affixes: [], equipped_slot: '1' },
+    })
+
+    const { wrapper } = mountPage(Bag)
+    await flushPromises()
+    await wrapper.find('.preset-apply')!.trigger('click')
+    await flushPromises()
+    await flushPromises()
+
+    // persistLoadout 会补齐 4 槽（不足补 0）
+    expect(mockApi.saveLoadout).toHaveBeenCalledWith([1, 4, 7, 0])
+    expect(mockApi.saveEquippedEquipment).toHaveBeenCalledWith([1, 10])
+    expect(mockApi.unequipGem).toHaveBeenCalledWith(5)
+    expect(mockApi.equipGem).toHaveBeenCalledWith(7)
+    expect(mockApi.equipGem).toHaveBeenCalledWith(8)
+    // 应用后刷新档案（power/rating 以服务端为准）
+    expect(mockApi.fetchMe).toHaveBeenCalled()
+    expect(um.mock.showToast).toHaveBeenCalledWith({ title: '已应用预设', icon: 'none' })
+  })
+})
+

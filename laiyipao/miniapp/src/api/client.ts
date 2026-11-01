@@ -823,6 +823,44 @@ export function unequipGem(gemId: number) {
   return request<{ gem: OwnedGem }>(`/me/gems/${gemId}/unequip`, { method: 'POST' })
 }
 
+/** 阵型预设（第 48/49 轮）：一份可一键应用的构筑快照。 */
+export interface PresetSlots {
+  skills: number[]
+  equipment: number[]
+  gems: number[]
+}
+
+export interface PresetView {
+  id: number
+  name: string
+  slots: PresetSlots
+  is_current: boolean
+  created_at: string
+}
+
+/** 列出全部预设。 */
+export function fetchPresets() {
+  return request<{ presets: PresetView[] }>('/me/presets')
+}
+
+/** 把当前构筑固化为预设（首个预设自动设为当前）。 */
+export function saveCurrentPreset(name: string) {
+  return request<{ preset: PresetView }>('/me/presets', {
+    method: 'POST',
+    body: { name },
+  })
+}
+
+/** 删除一个预设。 */
+export function deletePreset(id: number) {
+  return request<{ ok: boolean }>(`/me/presets/${id}`, { method: 'DELETE' })
+}
+
+/** 把某预设设为当前。 */
+export function setCurrentPreset(id: number) {
+  return request<{ preset: PresetView }>(`/me/presets/${id}/current`, { method: 'POST' })
+}
+
 export function fetchLevel(id: number) {
   return request<import('@/game/types').GeneratedLevel>(`/levels/${id}`)
 }
