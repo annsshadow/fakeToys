@@ -1243,10 +1243,10 @@ func (s *Service) MyChallengeHistory(ctx context.Context, userID int64, limit in
 
 // DefenseChallengeItem 是「我的防线被挑战」历史的一行（2026-10-31 新一轮第 3 轮）。
 type DefenseChallengeItem struct {
-	ID                 int64          `json:"id"`
-	DefenseID          int64          `json:"defense_id"`
-	DefenseName        string         `json:"defense_name"`
-	ChallengerNickname string         `json:"challenger_nickname"`
+	ID                 int64  `json:"id"`
+	DefenseID          int64  `json:"defense_id"`
+	DefenseName        string `json:"defense_name"`
+	ChallengerNickname string `json:"challenger_nickname"`
 	// Won 是**挑战者**是否获胜。防守方视角：won=true 表示「我的防线被攻破」。
 	Won        bool           `json:"won"`
 	DurationMs int            `json:"duration_ms"`

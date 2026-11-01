@@ -147,7 +147,7 @@ func (s *Service) AdminUserDetail(ctx context.Context, userID int64) (AdminUserD
 	}
 	out.User = u
 
-// 2)~8) 并发段。段序 = 曾经的串行执行顺序；errs[i] 非 nil 即该段失败，
+	// 2)~8) 并发段。段序 = 曾经的串行执行顺序；errs[i] 非 nil 即该段失败，
 	// wg.Wait() 后按序优先返回——与串行版的「第一个错误」一致。
 	var (
 		wg            sync.WaitGroup

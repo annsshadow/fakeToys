@@ -778,18 +778,18 @@ func (s *Service) AdminExportRecomputes(ctx context.Context, f RecomputeFilter) 
 
 	for rows.Next() {
 		var (
-			id, battleID, userID                     int64
-			nickname                                   string
-			levelID                                    int
-			repScore, repKills, repDur                int64
-			repHash                                    string
-			recScore                                    *int64
-			recKills, recDur                            *int
-			recHash                                     *string
-			mismatched                                  []string
-			mode, engineVersion                         string
-			rejected                                    bool
-			createdAt                                   time.Time
+			id, battleID, userID       int64
+			nickname                   string
+			levelID                    int
+			repScore, repKills, repDur int64
+			repHash                    string
+			recScore                   *int64
+			recKills, recDur           *int
+			recHash                    *string
+			mismatched                 []string
+			mode, engineVersion        string
+			rejected                   bool
+			createdAt                  time.Time
 		)
 		if err := rows.Scan(&id, &battleID, &userID, &nickname, &levelID,
 			&repScore, &repKills, &repDur, &repHash,

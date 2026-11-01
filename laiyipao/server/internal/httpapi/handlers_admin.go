@@ -1231,10 +1231,10 @@ func (s *Server) adminCreateRedeemCode(c *fiber.Ctx) error {
 // 一次生成 count 个随机码（服务端 crypto/rand 生成，避免可预测）。
 func (s *Server) adminCreateRedeemCodesBatch(c *fiber.Ctx) error {
 	var body struct {
-		Count      int            `json:"count"`
-		Reward     map[string]int `json:"reward"`
-		MaxUses    int            `json:"max_uses"`
-		ExpiresAt  string         `json:"expires_at"`
+		Count     int            `json:"count"`
+		Reward    map[string]int `json:"reward"`
+		MaxUses   int            `json:"max_uses"`
+		ExpiresAt string         `json:"expires_at"`
 	}
 	if err := c.BodyParser(&body); err != nil {
 		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
