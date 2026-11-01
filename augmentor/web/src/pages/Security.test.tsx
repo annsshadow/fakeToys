@@ -14,16 +14,17 @@ import { message } from 'antd'
 
 window.matchMedia =
   window.matchMedia ||
-  ((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  }) as unknown as MediaQueryList)
+  ((query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList)
 class RO {
   observe() {}
   unobserve() {}
@@ -101,12 +102,10 @@ describe('Security 隐私脱敏', () => {
     fireEvent.click(screen.getByRole('button', { name: /隐私脱敏/ }))
 
     // 未勾选增强模式 ⇒ 第三参 false
-    await waitFor(() =>
-      expect(spies.sanitizeData).toHaveBeenCalledWith('a.json', undefined, false)
-    )
+    await waitFor(() => expect(spies.sanitizeData).toHaveBeenCalledWith('a.json', undefined, false))
     await waitFor(() => expect(screen.getByText('命中样本')).toBeInTheDocument())
     const values = Array.from(container.querySelectorAll('.ant-statistic-content-value')).map(
-      (el) => el.textContent
+      (el) => el.textContent,
     )
     expect(values).toContain('30')
     expect(values).toContain('12')
@@ -159,13 +158,13 @@ describe('Security 泄漏检测', () => {
     const selectors = document.querySelectorAll('.ant-select')
     fireEvent.mouseDown(selectors[0])
     await waitFor(() =>
-      expect(document.querySelector('.ant-select-item-option')).toBeInTheDocument()
+      expect(document.querySelector('.ant-select-item-option')).toBeInTheDocument(),
     )
     fireEvent.click(document.querySelectorAll('.ant-select-item-option')[0]) // train.json
 
     fireEvent.mouseDown(document.querySelectorAll('.ant-select')[1])
     await waitFor(() =>
-      expect(document.querySelectorAll('.ant-select-item-option').length).toBeGreaterThan(1)
+      expect(document.querySelectorAll('.ant-select-item-option').length).toBeGreaterThan(1),
     )
     // 第二个下拉的第二个选项 test.json
     const opts = document.querySelectorAll('.ant-select-item-option')

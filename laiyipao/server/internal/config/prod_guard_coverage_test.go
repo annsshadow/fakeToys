@@ -191,13 +191,24 @@ func prodGuardedVars(t *testing.T) map[string]string {
 	body := rest[:end]
 
 	guarded := map[string]string{}
-	// 形态一：os.Getenv("X") == "" → 必须显式声明
+	// 形态一：`os.Getenv("X")` / `rawEnv("X")` → 必须显式声明
+	//
+	// 2026-10-29：配置读取统一改走 `rawEnv`（环境变量 + CONFIG_FILE 覆盖层），
+	// 判据同时接受两种写法。函数名变了，但「prod 分支里必须显式检查这个键」
+	// 这条意图没变 —— 删掉检查仍然会让本测试红。
 	for _, line := range strings.Split(body, "\n") {
-		if !strings.Contains(line, "os.Getenv(") {
+		call := ""
+		for _, name := range []string{"os.Getenv(", "rawEnv("} {
+			if strings.Contains(line, name) {
+				call = name
+				break
+			}
+		}
+		if call == "" {
 			continue
 		}
-		i := strings.Index(line, "os.Getenv(")
-		rest := line[i+len("os.Getenv("):]
+		i := strings.Index(line, call)
+		rest := line[i+len(call):]
 		j := strings.Index(rest, `"`)
 		if j < 0 {
 			continue

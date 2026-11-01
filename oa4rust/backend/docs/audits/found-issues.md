@@ -73,3 +73,44 @@ b7bfca566（2026-08-27）以「avoid checksum conflict on fresh DB / 列已手�
 
 扫描脚本核心正则（WHERE/SET 列引用提取）+ information_schema 对撞可复用于后续新增 handler 的
 自检；误报来源是动态拼接 SQL 片段与 AS 别名，人工复核后剔除。
+
+## FI-003: 会话 PG 持久化与全端登出阈值链路按 String 绑 TIMESTAMP 列，端到端失效（2026-10-29）
+
+- **状态**: 已修复
+- **发现途径**: shared 覆盖率收口轮为 session.rs 的 PG 分支补测试时，测试在真库上直接暴露类型错误
+  （`WrongType { postgres: Timestamp, rust: "String" }`）——覆盖率工作第一次碰到「未覆盖路径里藏着真 bug」。
+
+### 问题
+
+`auth_session`（expires_at/created_at）与 `auth_token_threshold`（threshold_time）的列类型都是
+**TIMESTAMP**（迁移 017 与 schema 实测一致），但代码全部按字符串绑定/读取：
+
+1. `shared/src/session.rs::persist_to_db`：`INSERT INTO auth_session ...` 绑 `%Y-%m-%d %H:%M:%S`
+   字符串 → tokio-postgres 对 timestamp 列报 WrongType → `let _ =` 吞掉 → **会话从未写进 PG**，
+   重启后库回退恢复会话（validate_session 的 PG 分支）永远查不到行；
+2. `shared/src/session.rs::check_token_threshold` / `broadcast_logout`：`row.get::<_, String>("threshold_time")`
+   对 timestamp 列直接 panic——**一旦表里有阈值行，登录请求 500、阈值扫描器每 60s 崩一次**；
+   表为空时（实测两张表 0 行）才没在运行期暴露；
+3. `auth/src/safe_logout.rs`：写阈值也按字符串绑定且同样被 `let _ =` 吞掉——
+   **「全端登出使旧 token 失效」整条链路端到端失效**（写不进 → 读不到 → 阈值永不生效）。
+
+### 根因
+
+与 FI-001 同类：代码按「列是 TEXT」的假设写，与迁移 schema 脱节；且所有错误都被 `let _ =`
+静默吞掉（persist 的 best-effort 注释本意是「失败仅延迟清理」，实际把持久化全灭也吞了），
+无库单测全部 skip，运行期又因表空而不可见。
+
+### 修复
+
+- `session.rs` 四处改按 `NaiveDateTime` 绑定/读取（persist、check_token_threshold、
+  validate_session 库回退、broadcast_logout），删掉字符串 parse 分支；
+- `safe_logout.rs` 写阈值改绑 `NaiveDateTime`；
+- 新增 8 条真库测试（`session::tests::pg_*`，无库显式 skip）钉住整条链路：持久化签名行、
+  无秘钥裸 token、阈值未来拦截/过期放行、库回退重建会话、过期行拒绝、登出删行、按人批量删、
+  阈值注销内存清理。修后行覆盖 session.rs 62.01% → 见台账（shared 整体 78.79% → 84.42%）。
+
+### 教训
+
+`let _ = client.execute(...)` 的「best-effort」必须配可观测性（至少 debug 日志），否则静默失败
+会让整层功能装死；覆盖率补测（连真库跑此前 skip 的分支）是发现这类「结构性静默失效」的
+最便宜手段。

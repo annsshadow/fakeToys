@@ -308,27 +308,11 @@ mod u2_contract {
         )
         .await
         .unwrap();
-        // 幂等造数（共享测试库跨运行/并发残留）：
-        // 1) 先清掉「unique_id 相同但 id 不同」的陈旧残留（旧批 schema 可能留下）；
-        // 2) 再以 id 为主键做 upsert，把 unique_id 归一为一致，避免 pkey / unique_id
-        //    双约束在并发插入时冲突。upsert 对自身是原子的，并发测试互不碰撞。
-        c.execute(
-            "DELETE FROM auth_person WHERE unique_id = $1 AND id <> $1",
-            &[&ADMIN_PERSON.to_string()],
-        )
-        .await
-        .unwrap();
-        c.execute(
-            "INSERT INTO auth_person (id, unique_id, name, password_hash) \
-             VALUES ($1, $1, 'r418 qsp admin', 'x') \
-             ON CONFLICT (id) DO UPDATE \
-             SET unique_id = EXCLUDED.unique_id, \
-                 name = EXCLUDED.name, \
-                 password_hash = EXCLUDED.password_hash",
-            &[&ADMIN_PERSON.to_string()],
-        )
-        .await
-        .unwrap();
+        // 幂等造数（共享测试库跨运行/并发残留）：改用 shared 的
+        // upsert_fixture_person——先清「unique_id 相同但 id 不同」的残留，再以
+        // id 为主键 upsert，失败重试 3 次，消除全 workspace 并行测试的 E23505 竞态。
+        shared::testing::upsert_fixture_person(&c, ADMIN_PERSON, ADMIN_PERSON, "r418 qsp admin")
+            .await;
         c.execute(
             "INSERT INTO auth_person_role (person_id, role_id, unit_id) \
              VALUES ($1, 'r418-role-admin', 'r418-unit') ON CONFLICT DO NOTHING",

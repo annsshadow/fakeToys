@@ -6,6 +6,13 @@ use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
 use shared::{error::AppError, response::ActionResult};
 
+/// 会话存在档门：无会话（Option<Extension<Session>> = None）→ 401。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 pub mod routes;
 
 #[cfg(test)]
@@ -249,9 +256,10 @@ pub async fn calendar_get(
 #[allow(non_snake_case)]
 pub async fn calendar_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): axum::extract::Json<CreateCalendarRequest>,
 ) -> Result<Json<ActionResult<CalendarItem>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = req
@@ -265,7 +273,7 @@ pub async fn calendar_create(
     let description = req.description;
     let source = req.source;
     // 属主以会话登录人为事实源（客户端 createor 可伪造，安全审计 2026-10 二轮）。
-    let createor = session.person_unique.clone();
+    let createor = sess.person_unique.clone();
     let is_public = req.is_public.unwrap_or(false);
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -416,9 +424,10 @@ pub async fn calendar_remove(
 #[allow(non_snake_case)]
 pub async fn event_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): axum::extract::Json<CreateEventRequest>,
 ) -> Result<Json<ActionResult<CalendarEvent>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let calendar_id = req
@@ -438,7 +447,7 @@ pub async fn event_create(
     let all_day = req.all_day.unwrap_or(false);
     let visibility = req.visibility.unwrap_or_else(|| "PUBLIC".to_string());
     // 属主以会话登录人为事实源（客户端 createor 可伪造，安全审计 2026-10 二轮）。
-    let createor = session.person_unique.clone();
+    let createor = sess.person_unique.clone();
 
     let id = uuid::Uuid::new_v4().to_string();
 

@@ -1,13 +1,19 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"crypto/rand"
+	"encoding/csv"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 
 	"github.com/laiyipao/server/internal/domain"
 )
@@ -401,13 +407,40 @@ func (s *Service) AdminEquipment(ctx context.Context) (AdminEquipmentResp, error
 }
 
 // AdminListDefenses 返回全部防线。
-func (s *Service) AdminListDefenses(ctx context.Context, limit int, offset int) ([]AdminDefenseView, int64, error) {
+//
+// keyword / ownerID 均为可选筛选（2026-10-31 新一轮第 19 轮）：
+// keyword 模糊匹配防线名或玩家昵称（`%`/`_`/`\` 转义为字面量），
+// ownerID=0 不过滤。
+func (s *Service) AdminListDefenses(ctx context.Context, limit, offset int, keyword string, ownerID int64, shielded *bool) ([]AdminDefenseView, int64, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
-	var total int64
-	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM defenses`).Scan(&total); err != nil {
+	kw, err := trimAdminKeyword(keyword)
+	if err != nil {
 		return nil, 0, err
+	}
+	escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(kw)
+	pattern := "%" + escaped + "%"
+
+	// COUNT：$1/$2 = kw/pattern，$3 = ownerID。
+	countArgs := []any{kw, pattern, ownerID}
+	listArgs := []any{limit, offset, kw, pattern, ownerID}
+	where := `($3 = '' OR d.name ILIKE $4 OR u.nickname ILIKE $4)
+	          AND ($5 = 0 OR d.owner_id = $5)`
+	// 护盾状态筛选（2026-11-01 新一轮第 100 轮）：三态。
+	// 有护盾 = shielded_until 非空且未过期；nil 不过滤。
+	if shielded != nil {
+		where += ` AND ($6::boolean IS NULL OR (d.shielded_until IS NOT NULL AND d.shielded_until > now()) = $6)`
+		countArgs = append(countArgs, shielded)
+		listArgs = append(listArgs, shielded)
+	}
+	countWhere := strings.NewReplacer(`$3`, `$1`, `$4`, `$2`, `$5`, `$3`, `$6`, `$4`).Replace(where)
+
+	var total int64
+	if err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM defenses d JOIN users u ON u.id = d.owner_id WHERE `+countWhere,
+		countArgs...).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("admin defenses: %w", err)
 	}
 	// ⚠️ 2026-10-21（二轮审计 P2-6）：补 offset ——
 	// 此前只能看前 100 条，而 `total` 是全量 COUNT，于是
@@ -421,7 +454,8 @@ func (s *Service) AdminListDefenses(ctx context.Context, limit int, offset int) 
 		       d.mastery_done, d.wins, d.losses, d.shielded_until, d.updated_at,
 		       d.snapshot_hash
 		FROM defenses d JOIN users u ON u.id = d.owner_id
-		ORDER BY d.power DESC LIMIT $1 OFFSET $2`, limit, offset)
+		WHERE `+where+`
+		ORDER BY d.power DESC LIMIT $1 OFFSET $2`, listArgs...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("admin defenses: %w", err)
 	}
@@ -454,8 +488,472 @@ func (s *Service) AdminListDefenses(ctx context.Context, limit int, offset int) 
 	return out, total, rows.Err()
 }
 
+// AdminDeleteDefense 删除玩家防线（2026-10-31 实质优化第 26 轮）。
+//
+// 防线名会显示在玩家端挑战列表/排行榜上，违规内容（侮辱、广告等）
+// 运营此前只能看到、无法处理（玩家不主动改就一直挂着）。
+// 删除后 `defense_challenges` 随外键 CASCADE 消失（玩家挑战历史
+// 里对这条防线的记录也会消失 —— 可接受，见 MyChallengeHistory 注释）。
+func (s *Service) AdminDeleteDefense(ctx context.Context, defenseID int64) error {
+	ct, err := s.pool.Exec(ctx, `DELETE FROM defenses WHERE id = $1`, defenseID)
+	if err != nil {
+		return fmt.Errorf("delete defense: %w", err)
+	}
+	if ct.RowsAffected() == 0 {
+		return fmt.Errorf("%w: 防线 %d 不存在", ErrNotFound, defenseID)
+	}
+	return nil
+}
+
+// AdminDefenseChallengeView 是防线挑战记录的一行（2026-10-31 新一轮第 30 轮）。
+type AdminDefenseChallengeView struct {
+	ID                 int64          `json:"id"`
+	DefenseID          int64          `json:"defense_id"`
+	DefenseName        string         `json:"defense_name"`
+	ChallengerID       int64          `json:"challenger_id"`
+	ChallengerNickname string         `json:"challenger_nickname"`
+	Won                bool           `json:"won"` // 挑战者是否获胜
+	DurationMs         int            `json:"duration_ms"`
+	HpLeftPct          int            `json:"hp_left_pct"`
+	Loot               map[string]int `json:"loot"`
+	CreatedAt          time.Time      `json:"created_at"`
+}
+
+// AdminListDefenseChallenges 返回防线挑战记录列表。
+//
+// 后台此前只有防线列表（含胜负计数），没有挑战**明细** —— 运营想回答
+// 「这条防线被谁挑战过 / 某个玩家挑战了哪些防线 / 某天有多少挑战」，
+// 只能直接查库。这里补上全局挑战记录视图。
+//
+// defenseID / challengerID / dateFrom / dateTo 均为可选筛选
+// （0 或 nil 表示不过滤，created_at 开区间）。
+func (s *Service) AdminListDefenseChallenges(ctx context.Context, limit, offset int, defenseID, challengerID int64, dateFrom, dateTo *time.Time) ([]AdminDefenseChallengeView, int64, error) {
+	if limit <= 0 || limit > 200 {
+		limit = 50
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	// 列表查询的 $1/$2 是 limit/offset，筛选从 $3 起；
+	// COUNT 查询没有 limit/offset，筛选映射到 $1/$2/$3/$4。
+	where := `($3 = 0 OR dc.defense_id = $3)
+	          AND ($4 = 0 OR dc.challenger_id = $4)
+	          AND ($5::timestamptz IS NULL OR dc.created_at >= $5)
+	          AND ($6::timestamptz IS NULL OR dc.created_at < $6)`
+	countArgs := []any{defenseID, challengerID, dateFrom, dateTo}
+	listArgs := []any{limit, offset, defenseID, challengerID, dateFrom, dateTo}
+	countWhere := strings.NewReplacer(`$3`, `$1`, `$4`, `$2`, `$5`, `$3`, `$6`, `$4`).Replace(where)
+
+	var total int64
+	if err := s.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM defense_challenges dc WHERE `+countWhere,
+		countArgs...).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("admin defense challenges count: %w", err)
+	}
+	rows, err := s.pool.Query(ctx, `
+		SELECT dc.id, dc.defense_id, COALESCE(d.name, ''), dc.challenger_id,
+		       COALESCE(u.nickname, ''), dc.won, dc.duration_ms, dc.hp_left_pct,
+		       dc.loot, dc.created_at
+		FROM defense_challenges dc
+		JOIN defenses d ON d.id = dc.defense_id
+		LEFT JOIN users u ON u.id = dc.challenger_id
+		WHERE `+where+`
+		ORDER BY dc.id DESC LIMIT $1 OFFSET $2`, listArgs...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("admin defense challenges: %w", err)
+	}
+	defer rows.Close()
+
+	out := []AdminDefenseChallengeView{}
+	for rows.Next() {
+		var v AdminDefenseChallengeView
+		var lootRaw []byte
+		if err := rows.Scan(&v.ID, &v.DefenseID, &v.DefenseName, &v.ChallengerID,
+			&v.ChallengerNickname, &v.Won, &v.DurationMs, &v.HpLeftPct,
+			&lootRaw, &v.CreatedAt); err != nil {
+			return nil, 0, err
+		}
+		if err := json.Unmarshal(lootRaw, &v.Loot); err != nil {
+			return nil, 0, fmt.Errorf("unmarshal defense challenge loot: %w", err)
+		}
+		out = append(out, v)
+	}
+	return out, total, rows.Err()
+}
+
+// AdminExportDefenseChallenges 导出防线挑战记录为 CSV（2026-10-31 新一轮第 32 轮）。
+//
+// 与用户/战报导出同族：运营做防线生态分析需要全量快照而不是分页。
+// 过滤条件与列表一致（defense_id / challenger_id / date_from / date_to），
+// 上限 100_000 行；UTF-8 BOM（Excel 中文兼容）。loot 转可读文本
+// （`coin:100 gem:5`），与公告/兑换码导出的 reward 格式一致。
+func (s *Service) AdminExportDefenseChallenges(ctx context.Context, defenseID, challengerID int64, dateFrom, dateTo *time.Time) ([]byte, error) {
+	where := `($1 = 0 OR dc.defense_id = $1)
+	          AND ($2 = 0 OR dc.challenger_id = $2)
+	          AND ($3::timestamptz IS NULL OR dc.created_at >= $3)
+	          AND ($4::timestamptz IS NULL OR dc.created_at < $4)`
+	rows, err := s.pool.Query(ctx, `
+		SELECT dc.id, dc.defense_id, COALESCE(d.name, ''), dc.challenger_id,
+		       COALESCE(u.nickname, ''), dc.won, dc.duration_ms, dc.hp_left_pct,
+		       dc.loot, dc.created_at
+		FROM defense_challenges dc
+		JOIN defenses d ON d.id = dc.defense_id
+		LEFT JOIN users u ON u.id = dc.challenger_id
+		WHERE `+where+`
+		ORDER BY dc.id DESC LIMIT 100000`, defenseID, challengerID, dateFrom, dateTo)
+	if err != nil {
+		return nil, fmt.Errorf("export defense challenges: %w", err)
+	}
+	defer rows.Close()
+
+	var buf bytes.Buffer
+	buf.WriteString("\xEF\xBB\xBF")
+	w := csv.NewWriter(&buf)
+	header := []string{
+		"id", "defense_id", "defense_name", "challenger_id", "challenger_nickname",
+		"won", "duration_ms", "hp_left_pct", "loot", "created_at",
+	}
+	if err := w.Write(header); err != nil {
+		return nil, fmt.Errorf("write csv header: %w", err)
+	}
+
+	for rows.Next() {
+		var id, defenseID2, challengerID2, duration, hp int64
+		var defenseName, challengerNickname string
+		var won bool
+		var lootRaw []byte
+		var createdAt time.Time
+		if err := rows.Scan(&id, &defenseID2, &defenseName, &challengerID2,
+			&challengerNickname, &won, &duration, &hp, &lootRaw, &createdAt); err != nil {
+			return nil, fmt.Errorf("scan export defense challenge: %w", err)
+		}
+		loot := map[string]int{}
+		if err := json.Unmarshal(lootRaw, &loot); err != nil {
+			return nil, fmt.Errorf("unmarshal export defense challenge loot: %w", err)
+		}
+		rec := []string{
+			strconv.FormatInt(id, 10),
+			strconv.FormatInt(defenseID2, 10),
+			defenseName,
+			strconv.FormatInt(challengerID2, 10),
+			challengerNickname,
+			strconv.FormatBool(won),
+			strconv.FormatInt(duration, 10),
+			strconv.FormatInt(hp, 10),
+			formatRewardText(loot),
+			createdAt.UTC().Format(time.RFC3339),
+		}
+		if err := w.Write(rec); err != nil {
+			return nil, fmt.Errorf("write csv row: %w", err)
+		}
+	}
+	w.Flush()
+	if err := w.Error(); err != nil {
+		return nil, fmt.Errorf("flush csv: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
+// formatRewardText 把 `{coin:100, gem:5}` 转成 `coin:100 gem:5`
+// （与公告/兑换码 CSV 导出的 reward 格式一致）。
+func formatRewardText(m map[string]int) string {
+	if len(m) == 0 {
+		return ""
+	}
+	parts := make([]string, 0, len(m))
+	for _, k := range []string{"coin", "gem", "energy", "keys"} {
+		if v, ok := m[k]; ok {
+			parts = append(parts, k+":"+strconv.Itoa(v))
+		}
+	}
+	for k, v := range m {
+		if k != "coin" && k != "gem" && k != "energy" && k != "keys" {
+			parts = append(parts, k+":"+strconv.Itoa(v))
+		}
+	}
+	return strings.Join(parts, " ")
+}
+
+// AdminListOrders 返回支付订单列表（2026-10-31 实质优化第 33 轮）。
+//
+// 后台此前只有 `AdminEconomy` 里的订单**计数**（paid/pending），
+// 没有订单明细 —— 玩家反馈「扣款了没到账」时运营无从查起。
+func (s *Service) AdminListOrders(ctx context.Context, limit, offset int, status string, dateFrom, dateTo *time.Time, provider string) ([]AdminOrderView, int64, error) {
+	if limit <= 0 || limit > 200 {
+		limit = 50
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	status = strings.TrimSpace(status)
+	// 状态 + 日期范围（2026-10-31 新一轮第 16 轮）：可选筛选。
+	// `$1 = ''` 是「不过滤」哨兵；`$2/$3` 是日期（nil → NULL，`IS NULL` 分支恒真）。
+	// 列表查询的 limit/offset 占 $4/$5，COUNT 查询没有它们。
+	where := `($1 = '' OR o.status = $1)
+	          AND ($2::timestamptz IS NULL OR o.created_at >= $2)
+	          AND ($3::timestamptz IS NULL OR o.created_at < $3)`
+	countArgs := []any{status, dateFrom, dateTo}
+	listArgs := []any{status, dateFrom, dateTo, limit, offset}
+	// 渠道筛选（2026-11-01 新一轮第 67 轮）：空串不过滤。
+	// 列表占 $6；COUNT 无 limit/offset，映射到 $4。
+	provider = strings.TrimSpace(provider)
+	if provider != "" {
+		where += ` AND o.provider = $6`
+		countArgs = append(countArgs, provider)
+		listArgs = append(listArgs, provider)
+	}
+	countWhere := strings.ReplaceAll(where, "$6", "$4")
+
+	var total int64
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM orders o WHERE `+countWhere, countArgs...).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("admin orders count: %w", err)
+	}
+	rows, err := s.pool.Query(ctx, `
+		SELECT o.id, o.user_id, COALESCE(u.nickname, ''), o.order_no, o.sku,
+		       o.amount, o.status, o.provider, o.created_at, o.delivered_at
+		FROM orders o
+		LEFT JOIN users u ON u.id = o.user_id
+		WHERE `+where+`
+		ORDER BY o.id DESC LIMIT $4 OFFSET $5`, listArgs...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("admin orders: %w", err)
+	}
+	defer rows.Close()
+	// 非 nil 空切片：客户端对 null 调 .length 会抛（与项目其它列表一致）。
+	out := []AdminOrderView{}
+	for rows.Next() {
+		var v AdminOrderView
+		if err := rows.Scan(&v.ID, &v.UserID, &v.Nickname, &v.OrderNo, &v.SKU,
+			&v.Amount, &v.Status, &v.Provider, &v.CreatedAt, &v.DeliveredAt); err != nil {
+			return nil, 0, err
+		}
+		out = append(out, v)
+	}
+	return out, total, rows.Err()
+}
+
+// AdminExportOrders 返回支付订单 CSV（UTF-8 BOM，上限 10 万行）。
+//
+// 订单是玩家真金白银的支付记录，运营对账、客服核查「扣款了没到账」
+// 需要全量快照，而列表只能分页看（2026-11-01 新一轮第 40 轮）。
+// 与 AdminListOrders 同口径：状态 + 创建日期范围筛选，字段与列表行一致。
+func (s *Service) AdminExportOrders(ctx context.Context, status string, dateFrom, dateTo *time.Time, provider string) ([]byte, error) {
+	status = strings.TrimSpace(status)
+	// 与 AdminListOrders 相同的 where（导出没有 limit/offset，参数就是 $1..$3）。
+	where := `($1 = '' OR o.status = $1)
+	          AND ($2::timestamptz IS NULL OR o.created_at >= $2)
+	          AND ($3::timestamptz IS NULL OR o.created_at < $3)`
+	args := []any{status, dateFrom, dateTo}
+	// 渠道筛选（2026-11-01 新一轮第 67 轮）：与列表同口径，空串不过滤。
+	provider = strings.TrimSpace(provider)
+	if provider != "" {
+		where += ` AND o.provider = $4`
+		args = append(args, provider)
+	}
+
+	rows, err := s.pool.Query(ctx, `
+		SELECT o.id, o.user_id, COALESCE(u.nickname, ''), o.order_no, o.sku,
+		       o.amount, o.status, o.provider, o.created_at, o.delivered_at
+		FROM orders o
+		LEFT JOIN users u ON u.id = o.user_id
+		WHERE `+where+`
+		ORDER BY o.id DESC LIMIT 100000`, args...)
+	if err != nil {
+		return nil, fmt.Errorf("export orders: %w", err)
+	}
+	defer rows.Close()
+
+	var buf bytes.Buffer
+	buf.WriteString("\xEF\xBB\xBF")
+	w := csv.NewWriter(&buf)
+	header := []string{
+		"id", "user_id", "nickname", "order_no", "sku", "amount_cents",
+		"status", "provider", "created_at", "delivered_at",
+	}
+	if err := w.Write(header); err != nil {
+		return nil, fmt.Errorf("write csv header: %w", err)
+	}
+
+	for rows.Next() {
+		var v AdminOrderView
+		if err := rows.Scan(&v.ID, &v.UserID, &v.Nickname, &v.OrderNo, &v.SKU,
+			&v.Amount, &v.Status, &v.Provider, &v.CreatedAt, &v.DeliveredAt); err != nil {
+			return nil, fmt.Errorf("scan export order: %w", err)
+		}
+		delivered := ""
+		if v.DeliveredAt != nil {
+			delivered = v.DeliveredAt.UTC().Format(time.RFC3339)
+		}
+		rec := []string{
+			strconv.FormatInt(v.ID, 10),
+			strconv.FormatInt(v.UserID, 10),
+			v.Nickname,
+			v.OrderNo,
+			v.SKU,
+			strconv.Itoa(v.Amount),
+			v.Status,
+			v.Provider,
+			v.CreatedAt.UTC().Format(time.RFC3339),
+			delivered,
+		}
+		if err := w.Write(rec); err != nil {
+			return nil, fmt.Errorf("write csv row: %w", err)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	w.Flush()
+	if err := w.Error(); err != nil {
+		return nil, fmt.Errorf("flush csv: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
+// AdminRedeemUsageView 是兑换码使用记录的一行（2026-10-31 新一轮第 17 轮）。
+type AdminRedeemUsageView struct {
+	ID        int64          `json:"id"`
+	Code      string         `json:"code"`
+	UserID    int64          `json:"user_id"`
+	Nickname  string         `json:"nickname"`
+	Reward    map[string]int `json:"reward"`
+	CreatedAt time.Time      `json:"created_at"`
+}
+
+// AdminListRedeemUsages 返回兑换码使用记录列表。
+//
+// 运营发放兑换码后，想知道「这个码被谁用了 / 某个玩家用了哪些码」，
+// 此前没有任何后台入口（只能直接查库）。这里补上全局使用记录视图。
+func (s *Service) AdminListRedeemUsages(ctx context.Context, limit, offset int, codeKeyword string, userID int64) ([]AdminRedeemUsageView, int64, error) {
+	if limit <= 0 || limit > 200 {
+		limit = 50
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	// 码模糊搜索 + 用户过滤（2026-10-31 新一轮第 23 轮）。
+	kw, err := trimAdminKeyword(codeKeyword)
+	if err != nil {
+		return nil, 0, err
+	}
+	escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(kw)
+	pattern := "%" + escaped + "%"
+	// 列表查询的 $1/$2 是 limit/offset，筛选从 $3 起；
+	// COUNT 查询没有 limit/offset，筛选映射到 $1/$2/$3。
+	where := `($3 = '' OR rc.code ILIKE $4) AND ($5 = 0 OR ru.user_id = $5)`
+	countArgs := []any{kw, pattern, userID}
+	listArgs := []any{limit, offset, kw, pattern, userID}
+	countWhere := strings.NewReplacer(`$3`, `$1`, `$4`, `$2`, `$5`, `$3`).Replace(where)
+
+	var total int64
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM redeem_usages ru JOIN redeem_codes rc ON rc.id = ru.code_id WHERE `+countWhere, countArgs...).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("admin redeem usages count: %w", err)
+	}
+	rows, err := s.pool.Query(ctx, `
+		SELECT ru.id, rc.code, ru.user_id, COALESCE(u.nickname, ''), rc.reward, ru.created_at
+		FROM redeem_usages ru
+		JOIN redeem_codes rc ON rc.id = ru.code_id
+		LEFT JOIN users u ON u.id = ru.user_id
+		WHERE `+where+`
+		ORDER BY ru.id DESC LIMIT $1 OFFSET $2`, listArgs...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("admin redeem usages: %w", err)
+	}
+	defer rows.Close()
+
+	out := []AdminRedeemUsageView{}
+	for rows.Next() {
+		var v AdminRedeemUsageView
+		var rewardRaw []byte
+		if err := rows.Scan(&v.ID, &v.Code, &v.UserID, &v.Nickname, &rewardRaw, &v.CreatedAt); err != nil {
+			return nil, 0, err
+		}
+		// fail-loud（AGENTS #11）：坏 reward 静默成空 map，运营看到的
+		// 是「这个码没发东西」，会误判补偿流程。
+		if err := json.Unmarshal(rewardRaw, &v.Reward); err != nil {
+			return nil, 0, fmt.Errorf("unmarshal redeem usage reward: %w", err)
+		}
+		out = append(out, v)
+	}
+	return out, total, rows.Err()
+}
+
+// AdminExportRedeemUsages 导出兑换码使用记录为 CSV（2026-10-31 新一轮第 34 轮）。
+//
+// 运营核对补偿发放（哪个码被谁用了、发了什么）需要全量快照而不是分页。
+// 过滤条件与列表一致（code_keyword / user_id），上限 100_000 行；
+// UTF-8 BOM（Excel 中文兼容）。reward 转可读文本（`coin:100 gem:5`），
+// 与兑换码导出格式一致。
+func (s *Service) AdminExportRedeemUsages(ctx context.Context, codeKeyword string, userID int64) ([]byte, error) {
+	kw, err := trimAdminKeyword(codeKeyword)
+	if err != nil {
+		return nil, err
+	}
+	escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(kw)
+	pattern := "%" + escaped + "%"
+	where := `($1 = '' OR rc.code ILIKE $2) AND ($3 = 0 OR ru.user_id = $3)`
+	rows, err := s.pool.Query(ctx, `
+		SELECT ru.id, rc.code, ru.user_id, COALESCE(u.nickname, ''), rc.reward, ru.created_at
+		FROM redeem_usages ru
+		JOIN redeem_codes rc ON rc.id = ru.code_id
+		LEFT JOIN users u ON u.id = ru.user_id
+		WHERE `+where+`
+		ORDER BY ru.id DESC LIMIT 100000`, kw, pattern, userID)
+	if err != nil {
+		return nil, fmt.Errorf("export redeem usages: %w", err)
+	}
+	defer rows.Close()
+
+	var buf bytes.Buffer
+	buf.WriteString("\xEF\xBB\xBF")
+	w := csv.NewWriter(&buf)
+	header := []string{"id", "code", "user_id", "nickname", "reward", "created_at"}
+	if err := w.Write(header); err != nil {
+		return nil, fmt.Errorf("write csv header: %w", err)
+	}
+
+	for rows.Next() {
+		var id, userID2 int64
+		var code, nickname string
+		var rewardRaw []byte
+		var createdAt time.Time
+		if err := rows.Scan(&id, &code, &userID2, &nickname, &rewardRaw, &createdAt); err != nil {
+			return nil, fmt.Errorf("scan export redeem usage: %w", err)
+		}
+		reward := map[string]int{}
+		if err := json.Unmarshal(rewardRaw, &reward); err != nil {
+			return nil, fmt.Errorf("unmarshal export redeem usage reward: %w", err)
+		}
+		rec := []string{
+			strconv.FormatInt(id, 10),
+			code,
+			strconv.FormatInt(userID2, 10),
+			nickname,
+			formatRewardText(reward),
+			createdAt.UTC().Format(time.RFC3339),
+		}
+		if err := w.Write(rec); err != nil {
+			return nil, fmt.Errorf("write csv row: %w", err)
+		}
+	}
+	w.Flush()
+	if err := w.Error(); err != nil {
+		return nil, fmt.Errorf("flush csv: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
 // AdminEconomy 返回经济流水与商城配置。
 func (s *Service) AdminEconomy(ctx context.Context) (AdminEconomyResp, error) {
+	// 2026-10-31（新一轮第 28 轮）：wallet_flows 是全游戏增长最快的表，
+	// 每次打开经济页都做全表聚合是浪费。TTL 缓存（config.EconomyCacheTTL，
+	// 0 = 关闭），错误不缓存。
+	return s.economyCache.getOrLoad(time.Now(), s.Cfg().EconomyCacheTTL, func() (AdminEconomyResp, error) {
+		return s.adminEconomyUncached(ctx)
+	})
+}
+
+func (s *Service) adminEconomyUncached(ctx context.Context) (AdminEconomyResp, error) {
 	rows, err := s.pool.Query(ctx, `
 		SELECT reason, currency, COUNT(*), COALESCE(SUM(delta), 0)
 		FROM wallet_flows GROUP BY reason, currency ORDER BY COUNT(*) DESC LIMIT 50`)
@@ -659,7 +1157,10 @@ func validWalletCurrency(k string) bool {
 }
 
 // AdminListAnnouncements 返回公告。
-func (s *Service) AdminListAnnouncements(ctx context.Context, limit, offset int) ([]AdminAnnouncementView, int64, error) {
+//
+// published / dateFrom / dateTo 均为可选筛选（2026-10-31 新一轮第 21 轮）：
+// published 三态（nil=不限）、日期按 created_at（开区间）。
+func (s *Service) AdminListAnnouncements(ctx context.Context, limit, offset int, published *bool, dateFrom, dateTo *time.Time) ([]AdminAnnouncementView, int64, error) {
 	// ⚠️ 2026-10-21（二轮审计 P2）：负 offset 必须夹到 0 ——
 	// 否则 PostgreSQL 报 `OFFSET must not be negative` → 整页 500。
 	if offset < 0 {
@@ -667,8 +1168,18 @@ func (s *Service) AdminListAnnouncements(ctx context.Context, limit, offset int)
 	}
 	// ⚠️ 2026-10-21（二轮审计 P2-6）：`total` 必须是**全量行数**，
 	// 不是当前页的条数 —— 前端要拿它算页数。
+	// 筛选条件（2026-10-31 新一轮第 21 轮）。
+	// 列表查询的 $1/$2 是 limit/offset，筛选从 $3 起；
+	// COUNT 查询没有 limit/offset，筛选映射到 $1/$2/$3。
+	where := `($3::boolean IS NULL OR published = $3)
+	          AND ($4::timestamptz IS NULL OR created_at >= $4)
+	          AND ($5::timestamptz IS NULL OR created_at < $5)`
+	countArgs := []any{published, dateFrom, dateTo}
+	listArgs := []any{limit, offset, published, dateFrom, dateTo}
+	countWhere := strings.NewReplacer(`$3`, `$1`, `$4`, `$2`, `$5`, `$3`).Replace(where)
+
 	var total int64
-	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM announcements`).Scan(&total); err != nil {
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM announcements WHERE `+countWhere, countArgs...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("admin announcements count: %w", err)
 	}
 	// ⚠️ 2026-10-21：limit 必须夹住 ——
@@ -678,7 +1189,7 @@ func (s *Service) AdminListAnnouncements(ctx context.Context, limit, offset int)
 		limit = 50
 	}
 	rows, err := s.pool.Query(ctx,
-		`SELECT id, title, body, published, published_at, created_at FROM announcements ORDER BY id DESC LIMIT $1 OFFSET $2`, limit, offset)
+		`SELECT id, title, body, published, published_at, created_at FROM announcements WHERE `+where+` ORDER BY id DESC LIMIT $1 OFFSET $2`, listArgs...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -713,13 +1224,71 @@ func (s *Service) AdminCreateAnnouncement(ctx context.Context, title, body strin
 		title, body, published, at).Scan(&id); err != nil {
 		return AdminAnnouncementView{}, fmt.Errorf("create announcement: %w", err)
 	}
+	// 玩家端缓存立即失效（2026-11-01 新一轮第 59 轮）：
+	// 运营发布/更新/撤回公告后，玩家端不再等 TTL 才看到新内容。
+	s.announcementsCache.flush()
 	return AdminAnnouncementView{
 		ID: id, Title: title, Body: body, Published: published, PublishedAt: at,
 	}, nil
 }
 
+// AdminUpdateAnnouncement 更新公告（2026-10-31 实质优化第 23 轮）。
+//
+// 此前公告只有创建/列表，发错内容无法修改、发错发布状态无法撤回。
+// 语义：
+//   - 草稿首次发布时设置 `published_at`（若为空）；
+//   - 撤回（published true→false）**保留** `published_at` —— 重新发布时
+//     已存在的时间戳不变（发布时间是历史事实，不应被反复改写）。
+func (s *Service) AdminUpdateAnnouncement(ctx context.Context, id int, title, body string, published bool) (AdminAnnouncementView, error) {
+	if title == "" || body == "" {
+		return AdminAnnouncementView{}, fmt.Errorf("%w: 标题与正文不能为空", ErrBadInput)
+	}
+	// 首次发布：published_at 为空才补 now()；已发布的历史时间戳不动。
+	row := s.pool.QueryRow(ctx,
+		`UPDATE announcements
+		 SET title = $2, body = $3, published = $4,
+		     published_at = CASE WHEN $4 AND published_at IS NULL THEN now() ELSE published_at END
+		 WHERE id = $1
+		 RETURNING id, title, body, published, published_at, created_at`,
+		id, title, body, published)
+	var v AdminAnnouncementView
+	var publishedAt, createdAt *time.Time
+	if err := row.Scan(&v.ID, &v.Title, &v.Body, &v.Published, &publishedAt, &createdAt); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return AdminAnnouncementView{}, fmt.Errorf("%w: 公告 %d 不存在", ErrNotFound, id)
+		}
+		return AdminAnnouncementView{}, fmt.Errorf("update announcement: %w", err)
+	}
+	v.PublishedAt = publishedAt
+	v.CreatedAt = createdAt
+	// 玩家端缓存立即失效（2026-11-01 新一轮第 59 轮）。
+	s.announcementsCache.flush()
+	return v, nil
+}
+
+// AdminDeleteAnnouncement 删除公告（2026-10-31 实质优化第 23 轮）。
+//
+// 玩家端公告列表有缓存（见 announcementsCache）。删除后**立即失效**
+// 缓存（2026-11-01 新一轮第 59 轮）—— 撤回违规公告时玩家端秒级消失，
+// 不再等 TTL。
+func (s *Service) AdminDeleteAnnouncement(ctx context.Context, id int) error {
+	ct, err := s.pool.Exec(ctx, `DELETE FROM announcements WHERE id = $1`, id)
+	if err != nil {
+		return fmt.Errorf("delete announcement: %w", err)
+	}
+	if ct.RowsAffected() == 0 {
+		return fmt.Errorf("%w: 公告 %d 不存在", ErrNotFound, id)
+	}
+	s.announcementsCache.flush()
+	return nil
+}
+
 // AdminListRedeemCodes 返回兑换码。
-func (s *Service) AdminListRedeemCodes(ctx context.Context, limit, offset int) ([]AdminRedeemCodeView, int64, error) {
+//
+// keyword / enabled / expired 均为可选筛选（2026-10-31 新一轮第 20 轮）：
+// keyword 模糊匹配码（`%`/`_`/`\` 转义为字面量）、enabled 三态（nil=不限）、
+// expired=true 只看已过期（expires_at 非空且早于 now）。
+func (s *Service) AdminListRedeemCodes(ctx context.Context, limit, offset int, keyword string, enabled *bool, expired *bool) ([]AdminRedeemCodeView, int64, error) {
 	// ⚠️ 2026-10-21（二轮审计 P2）：负 offset 必须夹到 0 ——
 	// 否则 PostgreSQL 报 `OFFSET must not be negative` → 整页 500。
 	if offset < 0 {
@@ -727,8 +1296,34 @@ func (s *Service) AdminListRedeemCodes(ctx context.Context, limit, offset int) (
 	}
 	// ⚠️ 2026-10-21（二轮审计 P2-6）：`total` 必须是**全量行数**，
 	// 不是当前页的条数 —— 前端要拿它算页数。
+	// 筛选条件（2026-10-31 新一轮第 20 轮）。
+	// 列表查询的 $1/$2 是 limit/offset，筛选从 $3 起；
+	// COUNT 查询没有 limit/offset，筛选映射到 $1/$2/$3。
+	kw, err := trimAdminKeyword(keyword)
+	if err != nil {
+		return nil, 0, err
+	}
+	escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(kw)
+	pattern := "%" + escaped + "%"
+	where := `($3 = '' OR code ILIKE $4)`
+	countArgs := []any{kw, pattern}
+	listArgs := []any{limit, offset, kw, pattern}
+	if enabled != nil {
+		where += ` AND enabled = $5`
+		countArgs = append(countArgs, *enabled)
+		listArgs = append(listArgs, *enabled)
+	}
+	if expired != nil {
+		if *expired {
+			where += ` AND expires_at IS NOT NULL AND expires_at < now()`
+		} else {
+			where += ` AND (expires_at IS NULL OR expires_at >= now())`
+		}
+	}
+	countWhere := strings.NewReplacer(`$3`, `$1`, `$4`, `$2`, `$5`, `$3`).Replace(where)
+
 	var total int64
-	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM redeem_codes`).Scan(&total); err != nil {
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM redeem_codes WHERE `+countWhere, countArgs...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("admin redeem_codes count: %w", err)
 	}
 	// ⚠️ 2026-10-21：limit 必须夹住 ——
@@ -750,7 +1345,7 @@ func (s *Service) AdminListRedeemCodes(ctx context.Context, limit, offset int) (
 	// 写在这里是为了让下一次审计**不要**再把它当新问题报一遍。
 	// 要改它 = 改一个有测试守卫的**刻意决定**，那是产品决策，不是修 bug。
 	rows, err := s.pool.Query(ctx,
-		`SELECT id, code, reward, max_uses, used_count, expires_at, enabled FROM redeem_codes ORDER BY id LIMIT $1 OFFSET $2`, limit, offset)
+		`SELECT id, code, reward, max_uses, used_count, expires_at, enabled FROM redeem_codes WHERE `+where+` ORDER BY id LIMIT $1 OFFSET $2`, listArgs...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -802,11 +1397,253 @@ func (s *Service) AdminCreateRedeemCode(ctx context.Context, code string, reward
 	}
 	return AdminRedeemCodeView{
 		ID: id, Code: code, Reward: reward, MaxUses: maxUses, ExpiresAt: expiresAt,
+		// ⚠️ 2026-10-31（实质优化第 24 轮）：此前漏填 Enabled，
+		// 前端「状态」列把新码显示成「停用」（表里实际是启用）。
+		Enabled: true,
 	}, nil
 }
 
+// redeemCodeAlphabet 是批量生成的码字符集（避免易混淆字符 0/O/1/I）。
+const redeemCodeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+
+// randomRedeemCode 生成 n 位随机码（crypto/rand，不可预测）。
+func randomRedeemCode(n int) (string, error) {
+	b := make([]byte, n)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	for i := range b {
+		b[i] = redeemCodeAlphabet[int(b[i])%len(redeemCodeAlphabet)]
+	}
+	return string(b), nil
+}
+
+// AdminCreateRedeemCodes 批量生成兑换码（2026-11-01 新一轮第 57 轮）。
+//
+// 运营发活动补偿通常一次需要几十个码，此前只能在前端逐个生成/复制。
+// 这里一次生成 count 个随机码（crypto/rand，避免可预测），
+// 奖励/次数上限/过期时间与单个创建一致。count 上限 100。
+// 极低概率的码冲突（唯一约束 23505）自动重新生成，不中断批次。
+func (s *Service) AdminCreateRedeemCodes(ctx context.Context, count int, reward map[string]int, maxUses int, expiresAt *time.Time) ([]AdminRedeemCodeView, error) {
+	if count <= 0 || count > 100 {
+		return nil, fmt.Errorf("%w: count 必须在 1..100", ErrBadInput)
+	}
+	if _, err := json.Marshal(reward); err != nil {
+		return nil, err
+	}
+	out := make([]AdminRedeemCodeView, 0, count)
+	seen := map[string]bool{}
+	for len(out) < count {
+		code, err := randomRedeemCode(12)
+		if err != nil {
+			return nil, fmt.Errorf("generate redeem code: %w", err)
+		}
+		if seen[code] {
+			continue
+		}
+		v, err := s.AdminCreateRedeemCode(ctx, code, reward, maxUses, expiresAt)
+		if err != nil {
+			if isUniqueViolation(err) {
+				continue // 极小概率冲突：重新生成
+			}
+			return nil, err
+		}
+		seen[code] = true
+		out = append(out, v)
+	}
+	return out, nil
+}
+
+// AdminExportRedeemCodes 导出兑换码列表为 CSV（2026-10-31 实质优化第 37 轮）。
+//
+// 与用户/战报/审计导出同族：运营需要把已生成码的清单带走做线下核对/
+// 客服分发。UTF-8 BOM（Excel 中文兼容），上限 100_000 行。
+func (s *Service) AdminExportRedeemCodes(ctx context.Context) ([]byte, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, code, reward, max_uses, used_count, expires_at, enabled
+		 FROM redeem_codes ORDER BY id LIMIT 100000`)
+	if err != nil {
+		return nil, fmt.Errorf("export redeem codes: %w", err)
+	}
+	defer rows.Close()
+
+	var buf bytes.Buffer
+	buf.WriteString("\xEF\xBB\xBF")
+	w := csv.NewWriter(&buf)
+	header := []string{"id", "code", "reward", "max_uses", "used_count", "expires_at", "enabled"}
+	if err := w.Write(header); err != nil {
+		return nil, fmt.Errorf("write csv header: %w", err)
+	}
+
+	for rows.Next() {
+		var id, maxUses, usedCount int
+		var code string
+		var rewardRaw []byte
+		var expiresAt *time.Time
+		var enabled bool
+		if err := rows.Scan(&id, &code, &rewardRaw, &maxUses, &usedCount, &expiresAt, &enabled); err != nil {
+			return nil, fmt.Errorf("scan redeem code: %w", err)
+		}
+		var rewardText string
+		var m map[string]int
+		if err := json.Unmarshal(rewardRaw, &m); err == nil {
+			parts := make([]string, 0, len(m))
+			for k, v := range m {
+				parts = append(parts, k+":"+strconv.Itoa(v))
+			}
+			sort.Strings(parts)
+			rewardText = strings.Join(parts, " ")
+		}
+		rec := []string{
+			strconv.Itoa(id),
+			code,
+			rewardText,
+			strconv.Itoa(maxUses),
+			strconv.Itoa(usedCount),
+			formatNullableTime(expiresAt),
+			strconv.FormatBool(enabled),
+		}
+		if err := w.Write(rec); err != nil {
+			return nil, fmt.Errorf("write csv row: %w", err)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	w.Flush()
+	if err := w.Error(); err != nil {
+		return nil, fmt.Errorf("flush csv: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
+// formatNullableTime 把可空时间转成 CSV 单元格（NULL → 空串）。
+func formatNullableTime(t *time.Time) string {
+	if t == nil {
+		return ""
+	}
+	return t.Format(time.RFC3339)
+}
+
+// AdminSetRedeemCodeEnabled 启用/禁用兑换码（2026-10-31 实质优化第 24 轮）。
+//
+// 此前兑换码只有创建/列表，运营创建错误码后**无法停用**（只能等过期）。
+// 禁用后 `Redeem` 的 SQL 已带 `AND enabled`，玩家端立即无法兑换；
+// `expires_at` 保留不动 —— 重新启用后仍按原过期时间失效。
+func (s *Service) AdminSetRedeemCodeEnabled(ctx context.Context, id int, enabled bool) (AdminRedeemCodeView, error) {
+	row := s.pool.QueryRow(ctx,
+		`UPDATE redeem_codes SET enabled = $2
+		 WHERE id = $1
+		 RETURNING id, code, reward, max_uses, used_count, expires_at, enabled`,
+		id, enabled)
+	var v AdminRedeemCodeView
+	var rewardRaw []byte
+	var expiresAt *time.Time
+	if err := row.Scan(&v.ID, &v.Code, &rewardRaw, &v.MaxUses, &v.UsedCount, &expiresAt, &v.Enabled); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return AdminRedeemCodeView{}, fmt.Errorf("%w: 兑换码 %d 不存在", ErrNotFound, id)
+		}
+		return AdminRedeemCodeView{}, fmt.Errorf("set redeem code enabled: %w", err)
+	}
+	if err := json.Unmarshal(rewardRaw, &v.Reward); err != nil {
+		return AdminRedeemCodeView{}, fmt.Errorf("unmarshal redeem reward: %w", err)
+	}
+	v.ExpiresAt = expiresAt
+	return v, nil
+}
+
+// AdminUpdateRedeemCode 更新兑换码（2026-10-31 实质优化第 25 轮）。
+//
+// 第 24 轮补上了启用/禁用，但运营想改奖励/次数上限/过期时间仍只能
+// 停用后重建（码本身会变，已印刷/已分享的码全部作废）。这里补上编辑。
+func (s *Service) AdminUpdateRedeemCode(ctx context.Context, id int, reward map[string]int, maxUses int, expiresAt *time.Time) (AdminRedeemCodeView, error) {
+	if len(reward) == 0 {
+		return AdminRedeemCodeView{}, fmt.Errorf("%w: 奖励不能为空", ErrBadInput)
+	}
+	if maxUses <= 0 {
+		maxUses = 1
+	}
+	raw, err := json.Marshal(reward)
+	if err != nil {
+		return AdminRedeemCodeView{}, err
+	}
+	row := s.pool.QueryRow(ctx,
+		`UPDATE redeem_codes SET reward = $2, max_uses = $3, expires_at = $4
+		 WHERE id = $1
+		 RETURNING id, code, reward, max_uses, used_count, expires_at, enabled`,
+		id, raw, maxUses, expiresAt)
+	var v AdminRedeemCodeView
+	var rewardRaw []byte
+	var vExpiresAt *time.Time
+	if err := row.Scan(&v.ID, &v.Code, &rewardRaw, &v.MaxUses, &v.UsedCount, &vExpiresAt, &v.Enabled); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return AdminRedeemCodeView{}, fmt.Errorf("%w: 兑换码 %d 不存在", ErrNotFound, id)
+		}
+		return AdminRedeemCodeView{}, fmt.Errorf("update redeem code: %w", err)
+	}
+	if err := json.Unmarshal(rewardRaw, &v.Reward); err != nil {
+		return AdminRedeemCodeView{}, fmt.Errorf("unmarshal redeem reward: %w", err)
+	}
+	v.ExpiresAt = vExpiresAt
+	return v, nil
+}
+
+// AdminExportAnnouncements 导出公告列表为 CSV（2026-10-31 实质优化第 38 轮）。
+//
+// 与兑换码/用户/战报/审计导出同族：运营需要把公告清单带走做归档。
+// UTF-8 BOM，上限 100_000 行。
+func (s *Service) AdminExportAnnouncements(ctx context.Context) ([]byte, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, title, body, published, published_at, created_at
+		 FROM announcements ORDER BY id LIMIT 100000`)
+	if err != nil {
+		return nil, fmt.Errorf("export announcements: %w", err)
+	}
+	defer rows.Close()
+
+	var buf bytes.Buffer
+	buf.WriteString("\xEF\xBB\xBF")
+	w := csv.NewWriter(&buf)
+	header := []string{"id", "title", "body", "published", "published_at", "created_at"}
+	if err := w.Write(header); err != nil {
+		return nil, fmt.Errorf("write csv header: %w", err)
+	}
+
+	for rows.Next() {
+		var id int
+		var title, body string
+		var published bool
+		var publishedAt, createdAt *time.Time
+		if err := rows.Scan(&id, &title, &body, &published, &publishedAt, &createdAt); err != nil {
+			return nil, fmt.Errorf("scan announcement: %w", err)
+		}
+		rec := []string{
+			strconv.Itoa(id),
+			title,
+			body,
+			strconv.FormatBool(published),
+			formatNullableTime(publishedAt),
+			formatNullableTime(createdAt),
+		}
+		if err := w.Write(rec); err != nil {
+			return nil, fmt.Errorf("write csv row: %w", err)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	w.Flush()
+	if err := w.Error(); err != nil {
+		return nil, fmt.Errorf("flush csv: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
 // AdminListAuditLogs 返回操作审计。
-func (s *Service) AdminListAuditLogs(ctx context.Context, limit, offset int) ([]AdminAuditLogView, int64, error) {
+//
+// action / adminID / dateFrom / dateTo 均为可选筛选（2026-10-31 新一轮
+// 第 18 轮）：空 action 不过滤、adminID=0 不过滤、nil 日期不过滤。
+func (s *Service) AdminListAuditLogs(ctx context.Context, limit, offset int, action string, adminID int64, dateFrom, dateTo *time.Time) ([]AdminAuditLogView, int64, error) {
 	if limit <= 0 || limit > 500 {
 		limit = 100
 	}
@@ -817,8 +1654,19 @@ func (s *Service) AdminListAuditLogs(ctx context.Context, limit, offset int) ([]
 	}
 	// ⚠️ 2026-10-21（二轮审计 P2-6）：`total` 必须是**全量行数**，
 	// 不是当前页的条数 —— 前端要拿它算页数。
+	action = strings.TrimSpace(action)
+	// 操作类型 / 管理员 / 日期范围筛选（2026-10-31 新一轮第 18 轮）。
+	// `$1 = ''` 与 `$2 = 0` 是「不过滤」哨兵；`$3/$4` 是日期（nil → NULL）。
+	// 列表查询的 limit/offset 占 $5/$6，COUNT 查询没有它们。
+	where := `($1 = '' OR action = $1)
+	          AND ($2 = 0 OR COALESCE(admin_id, 0) = $2)
+	          AND ($3::timestamptz IS NULL OR created_at >= $3)
+	          AND ($4::timestamptz IS NULL OR created_at < $4)`
+	countArgs := []any{action, adminID, dateFrom, dateTo}
+	listArgs := []any{action, adminID, dateFrom, dateTo, limit, offset}
+
 	var total int64
-	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM admin_audit_logs`).Scan(&total); err != nil {
+	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM admin_audit_logs WHERE `+where, countArgs...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("admin admin_audit_logs count: %w", err)
 	}
 	// ⚠️ fail-loud 的取舍（2026-10-21 二轮审计 P2 复核后确认是**有意设计**）：
@@ -835,7 +1683,7 @@ func (s *Service) AdminListAuditLogs(ctx context.Context, limit, offset int) ([]
 	// 要改它 = 改一个有测试守卫的**刻意决定**，那是产品决策，不是修 bug。
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, admin_id, username, action, target, detail, created_at
-		 FROM admin_audit_logs ORDER BY id DESC LIMIT $1 OFFSET $2`, limit, offset)
+		 FROM admin_audit_logs WHERE `+where+` ORDER BY id DESC LIMIT $5 OFFSET $6`, listArgs...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -863,4 +1711,75 @@ func (s *Service) AdminListAuditLogs(ctx context.Context, limit, offset int) ([]
 		})
 	}
 	return out, total, rows.Err()
+}
+
+// AdminExportAuditLogs 导出审计日志为 CSV（2026-10-30 实质优化第 15 轮）。
+//
+// 与用户/战报导出同族：合规归档需要全量快照而不是分页。
+// 上限 100_000 行；UTF-8 BOM（Excel 中文兼容）。
+//
+// 与列表的差异：detail 是原始 JSONB 文本**不解析**直接导出 ——
+// 列表对坏 jsonb 报 500 是 fail-loud 的有意取舍（见 AdminListAuditLogs），
+// 而导出是归档，应尽量把原始证据留下来，不能被一行坏数据中断。
+func (s *Service) AdminExportAuditLogs(ctx context.Context, action string, adminID int64, dateFrom, dateTo *time.Time) ([]byte, error) {
+	action = strings.TrimSpace(action)
+	// 与列表同口径的筛选（2026-10-31 新一轮第 18 轮）。
+	where := `($1 = '' OR action = $1)
+	          AND ($2 = 0 OR COALESCE(admin_id, 0) = $2)
+	          AND ($3::timestamptz IS NULL OR created_at >= $3)
+	          AND ($4::timestamptz IS NULL OR created_at < $4)`
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, admin_id, username, action, target, detail, created_at
+		 FROM admin_audit_logs WHERE `+where+` ORDER BY id DESC LIMIT 100000`,
+		action, adminID, dateFrom, dateTo)
+	if err != nil {
+		return nil, fmt.Errorf("export audit logs: %w", err)
+	}
+	defer rows.Close()
+
+	var buf bytes.Buffer
+	buf.WriteString("\xEF\xBB\xBF")
+	w := csv.NewWriter(&buf)
+	header := []string{"id", "admin_id", "username", "action", "target", "detail", "created_at"}
+	if err := w.Write(header); err != nil {
+		return nil, fmt.Errorf("write csv header: %w", err)
+	}
+
+	for rows.Next() {
+		var id, adminID *int64
+		var username, action, target string
+		var detail []byte
+		var createdAt time.Time
+		if err := rows.Scan(&id, &adminID, &username, &action, &target, &detail, &createdAt); err != nil {
+			return nil, fmt.Errorf("scan export audit log: %w", err)
+		}
+		rec := []string{
+			nullableID(id),
+			nullableID(adminID),
+			username,
+			action,
+			target,
+			string(detail),
+			createdAt.Format(time.RFC3339),
+		}
+		if err := w.Write(rec); err != nil {
+			return nil, fmt.Errorf("write csv row: %w", err)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	w.Flush()
+	if err := w.Error(); err != nil {
+		return nil, fmt.Errorf("flush csv: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
+// nullableID 把可空 id 转成 CSV 单元格（NULL → 空串）。
+func nullableID(id *int64) string {
+	if id == nil {
+		return ""
+	}
+	return strconv.FormatInt(*id, 10)
 }

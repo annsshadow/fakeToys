@@ -315,7 +315,6 @@ urlencoding = "2"
   utoipa = { version = "4", features = ["axum_extras"] }
   utoipa-swagger-ui = { version = "7", features = ["axum"] }
   openapi = { path = "crates/openapi" }
-  redis = { version = "0.25", features = ["tokio-comp", "connection-manager"] }
   futures-util = "0.3"
   lopdf = "0.45.0"
   x509-parser = "0.16"

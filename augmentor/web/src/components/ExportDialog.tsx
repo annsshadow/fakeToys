@@ -10,7 +10,7 @@ import {
   Space,
   message,
   Tag,
-  type TableColumnsType
+  type TableColumnsType,
 } from 'antd'
 import { apiErrorDetail, bulkErrorDetail, previewExport, batchExport } from '../services/api'
 import type { ExportPreviewResponse } from '../types/api'
@@ -30,7 +30,7 @@ const FORMAT_OPTIONS = [
   { label: 'Alpaca', value: 'alpaca' },
   { label: 'ShareGPT', value: 'sharegpt' },
   { label: 'ChatML', value: 'chatml' },
-  { label: 'CSV', value: 'csv' }
+  { label: 'CSV', value: 'csv' },
 ]
 
 /**
@@ -80,15 +80,14 @@ export default function ExportDialog({ inputFile, open, onClose }: ExportDialogP
     }
   }
 
-  const previewColumns: TableColumnsType<Record<string, unknown>> = preview?.converted_data
-    ?.length
-    ? Object.keys(preview.converted_data[0]).map(key => ({
+  const previewColumns: TableColumnsType<Record<string, unknown>> = preview?.converted_data?.length
+    ? Object.keys(preview.converted_data[0]).map((key) => ({
         title: key,
         dataIndex: key,
         key,
         ellipsis: true,
         render: (value: unknown) =>
-          typeof value === 'object' ? JSON.stringify(value) : String(value)
+          typeof value === 'object' ? JSON.stringify(value) : String(value),
       }))
     : []
 

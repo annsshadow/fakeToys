@@ -489,7 +489,7 @@ oa4rust 已完成 83 个 crate 的真实化和 SeaORM 迁移，2458 个 handler�
 
 ## Sources & References
 
-- **Origin document:** [docs/brainstorms/2026-08-10-oa4rust-comprehensive-gap-audit-requirements.md](docs/brainstorms/2026-08-10-oa4rust-comprehensive-gap-audit-requirements.md)
+- **Origin document:** [docs/brainstorms/2026-08-10-oa4rust-comprehensive-gap-audit-requirements.md](../brainstorms/2026-08-10-oa4rust-comprehensive-gap-audit-requirements.md)
 - **Related code:** `crates/auth/src/`、`crates/personal/src/`、`crates/personal_extend/src/`、`crates/mcp_server/src/tool_bridge.rs`、`crates/openapi/src/lib.rs`
 - **Related scripts:** `scripts/gen_inventory.py`、`scripts/extract_endpoints.py`
 - **Related solutions:** `docs/solutions/security-issues/idor-vulnerability-write-handlers.md`、`docs/solutions/architecture-patterns/actionresult-9-field-contract.md`
