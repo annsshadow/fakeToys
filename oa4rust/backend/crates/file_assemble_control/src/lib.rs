@@ -2352,7 +2352,7 @@ fn pptx_to_html(bytes: &[u8]) -> Option<String> {
 
     let mut slide_names: Vec<(u32, String)> = (0..archive.len())
         .filter_map(|i| {
-            let name = archive.by_index(i).ok()?.name().to_string();
+            let name = archive.by_index(i).ok()?.name().ok()?.to_string();
             let num: u32 = name
                 .strip_prefix("ppt/slides/slide")?
                 .strip_suffix(".xml")?

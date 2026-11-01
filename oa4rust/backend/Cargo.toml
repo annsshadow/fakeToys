@@ -22,7 +22,7 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 
 utoipa = { version = "6", features = ["axum_extras"] }
-utoipa-swagger-ui = { version = "6", features = ["axum"] }
+utoipa-swagger-ui = { version = "10", features = ["axum"] }
 tower.workspace = true
 
 shared = { path = "crates/shared" }
@@ -313,7 +313,7 @@ urlencoding = "2"
  sqlparser = "0.51"
  sysinfo = "0.39"
   utoipa = { version = "6", features = ["axum_extras"] }
-  utoipa-swagger-ui = { version = "7", features = ["axum"] }
+  utoipa-swagger-ui = { version = "10", features = ["axum"] }
   openapi = { path = "crates/openapi" }
   futures-util = "0.3"
   lopdf = "0.45.0"
