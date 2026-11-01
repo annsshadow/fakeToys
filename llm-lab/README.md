@@ -20,7 +20,7 @@ cd llm-lab
 pip install -r requirements.txt      # 只需 numpy + pytest
 
 python -m minigrad.train             # 训练字符级 GPT：loss ~4.1 → ~0.3，并生成文本
-pytest tests/ -q                     # 32 passed, 1 skipped（含逐算子数值梯度校验 + KV cache 等价性）
+pytest tests/ -q                     # 62 passed, 10 skipped（未装 torch：跳过 torchgpt 用例）
 
 python -m minigrad.visualize         # 训练一个小模型并生成注意力热力图 data/attention_demo.html
 python -m experiments.scaling_law    # 尺度实验：S/M/L 三档模型的参数量 vs loss，输出 CSV
@@ -30,12 +30,12 @@ python -m experiments.scaling_law    # 尺度实验：S/M/L 三档模型的参�
 
 ```bash
 pip install -r requirements-torch.txt   # 版本按 https://pytorch.org 选
-pytest tests/ -q                         # 7 个 torchgpt 用例激活：38 passed, 0 skipped
+pytest tests/ -q                         # 装 torch 后全量 95 passed, 0 skipped
 python -m torchgpt.main train --data data/tiny_corpus.txt --steps 500
 python -m torchgpt.main sample --ckpt checkpoints/ckpt.pt --prompt "The " --tokens 200
 ```
 
-> **Python 版本**：无需降级。Python 3.14 可直接 `pip install torch`（自 torch 2.14 起提供 cp314 轮子，本仓库已在 torch 2.14.1+cpu 上实测 38/38 全绿并跑通 CLI）；老版本 Python（3.10–3.13）对应更早的 torch 也兼容（代码 AMP API 下限为 torch 2.4）。
+> **Python 版本**：无需降级。Python 3.14 可直接 `pip install torch`（自 torch 2.14 起提供 cp314 轮子）；本仓库已在 **Python 3.12.10 + torch 2.14.1+cpu** 上实测 **95/95 全绿**并跑通 CLI；老版本 Python（3.10–3.13）对应更早的 torch 也兼容（代码 AMP API 下限为 torch 2.4）。
 
 ## 目录结构
 

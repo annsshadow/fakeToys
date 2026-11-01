@@ -740,7 +740,7 @@ async function imMore(op: string) {
     } else if (op === 'consume') {
       const id = prompt('消息 ID:', '') || ''
       const t = prompt('消息类型:', 'all') || 'all'
-      await api.get(`/api/message/consume/${encodeURIComponent(id)}/type/${encodeURIComponent(t)}`)
+      await api.post(`/api/message/consume/${encodeURIComponent(id)}/type/${encodeURIComponent(t)}`, {})
     } else if (op === 'consumeType') {
       const t = prompt('消息类型:', 'all') || 'all'
       await api.put(`/api/message/assemble/communicate/consume/type/${encodeURIComponent(t)}`, {})

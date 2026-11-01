@@ -109,8 +109,10 @@ pub async fn consume_list(
 
 pub async fn update_single(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((id, r#type)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query("SELECT xid FROM x_msg_message WHERE xid = $1", &[&id])

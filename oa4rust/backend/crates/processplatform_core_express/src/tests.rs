@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests {
-    use super::*;
+    use crate::*;
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use deadpool_postgres::{Manager, Pool};
@@ -41,7 +42,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_work_retract_returns_success() {
+    async fn test_work_retract_route_reaches_db() {
         let pool = build_test_pool();
         let app = processplatform_core_express_router(pool);
 
@@ -57,11 +58,13 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::OK);
+        // 该用例用空 Config 的池（永远连不上库）跑：handler 已进到 SQL 层，
+        // 故应是 500 而不是 404；200 需要可用的真实库。
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     #[tokio::test]
-    async fn test_work_processing_returns_success() {
+    async fn test_work_processing_route_reaches_db() {
         let pool = build_test_pool();
         let app = processplatform_core_express_router(pool);
 
@@ -77,11 +80,13 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::OK);
+        // 该用例用空 Config 的池（永远连不上库）跑：handler 已进到 SQL 层，
+        // 故应是 500 而不是 404；200 需要可用的真实库。
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     #[tokio::test]
-    async fn test_task_processing_returns_success() {
+    async fn test_task_processing_route_reaches_db() {
         let pool = build_test_pool();
         let app = processplatform_core_express_router(pool);
 
@@ -97,11 +102,13 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::OK);
+        // 该用例用空 Config 的池（永远连不上库）跑：handler 已进到 SQL 层，
+        // 故应是 500 而不是 404；200 需要可用的真实库。
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     #[tokio::test]
-    async fn test_work_count_with_person_returns_success() {
+    async fn test_work_count_with_person_route_reaches_db() {
         let pool = build_test_pool();
         let app = processplatform_core_express_router(pool);
 
@@ -117,11 +124,13 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::OK);
+        // 该用例用空 Config 的池（永远连不上库）跑：handler 已进到 SQL 层，
+        // 故应是 500 而不是 404；200 需要可用的真实库。
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     #[tokio::test]
-    async fn test_task_count_with_person_returns_success() {
+    async fn test_task_count_with_person_route_reaches_db() {
         let pool = build_test_pool();
         let app = processplatform_core_express_router(pool);
 
@@ -137,7 +146,9 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::OK);
+        // 该用例用空 Config 的池（永远连不上库）跑：handler 已进到 SQL 层，
+        // 故应是 500 而不是 404；200 需要可用的真实库。
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     #[test]

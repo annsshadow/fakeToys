@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="480" viewBox="0 0 1200 480" role="img" aria-label="fakeToys architecture">
+  <defs>
+    <linearGradient id="abg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#080c1c"/>
+      <stop offset="1" stop-color="#0b1024"/>
+    </linearGradient>
+    <linearGradient id="cardRust" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f0874a"/><stop offset="1" stop-color="#e0653a"/>
+    </linearGradient>
+    <linearGradient id="cardGo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#00b8d4"/><stop offset="1" stop-color="#0e9aa8"/>
+    </linearGradient>
+    <linearGradient id="cardPy" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6d5efc"/><stop offset="1" stop-color="#4f46e5"/>
+    </linearGradient>
+    <linearGradient id="cardTs" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22c55e"/><stop offset="1" stop-color="#16a34a"/>
+    </linearGradient>
+    <linearGradient id="cardVue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#42b883"/><stop offset="1" stop-color="#35495e"/>
+    </linearGradient>
+    <linearGradient id="cardJava" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f59e0b"/><stop offset="1" stop-color="#d97706"/>
+    </linearGradient>
+    <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#5b6b9c"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="480" rx="18" fill="url(#abg)" stroke="#ffffff" stroke-opacity="0.10"/>
+
+  <text x="600" y="46" text-anchor="middle" font-family="'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif"
+        font-size="21" font-weight="700" fill="#e2e8f0">架构总览</text>
+  <text x="600" y="70" text-anchor="middle" font-family="'PingFang SC','Microsoft YaHei',sans-serif"
+        font-size="13" fill="#8b9ac4">六个子项目 · 一条统一门禁 · 零编译告警</text>
+
+  <!-- 门禁层 -->
+  <rect x="330" y="92" width="540" height="52" rx="12" fill="#1e1b4b" stroke="#818cf8" stroke-opacity="0.55"/>
+  <text x="600" y="115" text-anchor="middle" font-family="ui-monospace,Consolas,monospace" font-size="14" fill="#c7d2fe">
+    🚦 warnings-gate · node scripts/check-warnings.mjs
+  </text>
+  <text x="600" y="134" text-anchor="middle" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11" fill="#818cf8">
+    编译器输出判据 · 告警即失败 · 13 项通过 / 0 失败 / 1 跳过
+  </text>
+
+  <!-- 连线：门禁 -> 各项目 -->
+  <path d="M600 144 L600 168" stroke="#5b6b9c" stroke-width="1.6" marker-end="url(#arw)" fill="none"/>
+  <path d="M130 168 L1090 168" stroke="#5b6b9c" stroke-width="1.6" fill="none"/>
+  <path d="M130 168 L130 196" stroke="#5b6b9c" stroke-width="1.6" marker-end="url(#arw)" fill="none"/>
+  <path d="M322 168 L322 196" stroke="#5b6b9c" stroke-width="1.6" marker-end="url(#arw)" fill="none"/>
+  <path d="M514 168 L514 196" stroke="#5b6b9c" stroke-width="1.6" marker-end="url(#arw)" fill="none"/>
+  <path d="M706 168 L706 196" stroke="#5b6b9c" stroke-width="1.6" marker-end="url(#arw)" fill="none"/>
+  <path d="M898 168 L898 196" stroke="#5b6b9c" stroke-width="1.6" marker-end="url(#arw)" fill="none"/>
+  <path d="M1090 168 L1090 196" stroke="#5b6b9c" stroke-width="1.6" marker-end="url(#arw)" fill="none"/>
+
+  <!-- 卡片 1 oa4rust -->
+  <rect x="40" y="200" width="180" height="150" rx="12" fill="#12182e" stroke="url(#cardRust)" stroke-opacity="0.85" stroke-width="1.6"/>
+  <rect x="40" y="200" width="180" height="34" rx="12" fill="url(#cardRust)"/>
+  <rect x="40" y="222" width="180" height="12" fill="url(#cardRust)"/>
+  <text x="130" y="223" text-anchor="middle" font-family="ui-monospace,Consolas,monospace" font-size="13" font-weight="700" fill="#1a1005">🦀 oa4rust</text>
+  <text x="56" y="256" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" fill="#cbd5e1">Rust · Axum · Tokio</text>
+  <text x="56" y="278" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" fill="#cbd5e1">96 crate · 651 .rs</text>
+  <text x="56" y="300" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" fill="#cbd5e1">PostgreSQL 持久化</text>
+  <text x="56" y="330" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" fill="#7dd3fc">桌面 Vue3 + 移动 uni-app</text>
+  <text x="56" y="342" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="10" fill="#94a3b8">行覆盖 95.01%</text>
+
+  <!-- 卡片 2 laiyipao -->
+  <rect x="232" y="200" width="180" height="150" rx="12" fill="#12182e" stroke="url(#cardGo)" stroke-opacity="0.85" stroke-width="1.6"/>
+  <rect x="232" y="200" width="180" height="34" rx="12" fill="url(#cardGo)"/>
+  <rect x="232" y="222" width="180" height="12" fill="url(#cardGo)"/>
+  <text x="322" y="223" text-anchor="middle" font-family="ui-monospace,Consolas,monospace" font-size="13" font-weight="700" fill="#03202a">💥 laiyipao</text>
+  <text x="248" y="256" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" fill="#cbd5e1">Go · Fiber v2 · GORM</text>
+  <text x="248" y="278" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" fill="#cbd5e1">50 表 · 19 迁移</text>
+  <text x="248" y="300" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" fill="#cbd5e1">确定性战斗 · 元素反应</text>
+  <text x="248" y="330" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" fill="#7dd3fc">mini-app + Vue Admin</text>
+  <text x="248" y="342" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="10" fill="#94a3b8">语句覆盖 85.8%</text>
+
+  <!-- 卡片 3 augmentor -->
+  <rect x="424" y="200" width="180" height="150" rx="12" fill="#12182e" stroke="url(#cardPy)" stroke-opacity="0.85" stroke-width="1.6"/>
+  <rect x="424" y="200" width="180" height="34" rx="12" fill="url(#cardPy)"/>
+  <rect x="424" y="222" width="180" height="12" fill="url(#cardPy)"/>
+  <text x="514" y="223" text-anchor="middle" font-family="ui-monospace,Consolas,monospace" font-size="13" font-weight="700" fill="#f0eaff">🧪 augmentor</text>
+  <text x="440" y="256" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" fill="#cbd5e1">Python · FastAPI</text>
+  <text x="440" y="278" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" fill="#cbd5e1">76 端点 · 多模型接入</text>
+  <text x="440" y="300" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" fill="#cbd5e1">语义去重 · 隐私脱敏</text>
+  <text x="440" y="330" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" fill="#7dd3fc">React 11 页 · Ant Design</text>
+  <text x="440" y="342" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="10" fill="#94a3b8">行覆盖 99.88%</text>
+
+  <!-- 卡片 4 auto-checkin -->
+  <rect x="616" y="200" width="180" height="150" rx="12" fill="#12182e" stroke="url(#cardTs)" stroke-opacity="0.85" stroke-width="1.6"/>
+  <rect x="616" y="200" width="180" height="34" rx="12" fill="url(#cardTs)"/>
+  <rect x="616" y="222" width="180" height="12" fill="url(#cardTs)"/>
+  <text x="706" y="223" text-anchor="middle" font-family="ui-monospace,Consolas,monospace" font-size="13" font-weight="700" fill="#05240f">✅ auto-checkin</text>
+  <text x="632" y="256" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" fill="#cbd5e1">Node · Playwright</text>
+  <text x="632" y="278" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" fill="#cbd5e1">3 站点签到 · PoW</text>
+  <text x="632" y="300" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" fill="#cbd5e1">覆盖率棘轮 9 项</text>
+  <text x="632" y="330" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" fill="#7dd3fc">127.0.0.1 本地面板</text>
+  <text x="632" y="342" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="10" fill="#94a3b8">justwoker 100%</text>
+
+  <!-- 卡片 5 llm-lab -->
+  <rect x="808" y="200" width="180" height="150" rx="12" fill="#12182e" stroke="url(#cardVue)" stroke-opacity="0.85" stroke-width="1.6"/>
+  <rect x="808" y="200" width="180" height="34" rx="12" fill="url(#cardVue)"/>
+  <rect x="808" y="222" width="180" height="12" fill="url(#cardVue)"/>
+  <text x="898" y="223" text-anchor="middle" font-family="ui-monospace,Consolas,monospace" font-size="13" font-weight="700" fill="#04261a">🧠 llm-lab</text>
+  <text x="824" y="256" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" fill="#cbd5e1">NumPy 手写 autograd</text>
+  <text x="824" y="278" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" fill="#cbd5e1">PyTorch 复刻 nanoGPT</text>
+  <text x="824" y="300" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" fill="#cbd5e1">11 篇中文讲义</text>
+  <text x="824" y="330" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" fill="#7dd3fc">梯度校验 · KV cache</text>
+  <text x="824" y="342" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="10" fill="#94a3b8">95 个验证用例</text>
+
+  <!-- 卡片 6 cool -->
+  <rect x="1000" y="200" width="180" height="150" rx="12" fill="#12182e" stroke="url(#cardJava)" stroke-opacity="0.85" stroke-width="1.6"/>
+  <rect x="1000" y="200" width="180" height="34" rx="12" fill="url(#cardJava)"/>
+  <rect x="1000" y="222" width="180" height="12" fill="url(#cardJava)"/>
+  <text x="1090" y="223" text-anchor="middle" font-family="ui-monospace,Consolas,monospace" font-size="13" font-weight="700" fill="#2a1a02">🔐 cool</text>
+  <text x="1016" y="256" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" fill="#cbd5e1">Java 8</text>
+  <text x="1016" y="278" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" fill="#cbd5e1">AES-CBC</text>
+  <text x="1016" y="300" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" fill="#cbd5e1">MD5 · Base64</text>
+  <text x="1016" y="330" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" fill="#7dd3fc">免登 Token</text>
+  <text x="1016" y="342" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="10" fill="#94a3b8">-Xlint:all -Werror</text>
+
+  <!-- 底部：docs / scripts / CI -->
+  <rect x="40" y="382" width="1120" height="64" rx="12" fill="#111735" stroke="#818cf8" stroke-opacity="0.35"/>
+  <text x="70" y="410" font-family="ui-monospace,Consolas,monospace" font-size="13" fill="#a5b4fc">📚 docs/</text>
+  <text x="70" y="432" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" fill="#94a3b8">234 篇方案 / 审计 / 计划</text>
+  <text x="360" y="410" font-family="ui-monospace,Consolas,monospace" font-size="13" fill="#a5b4fc">🛠️ scripts/</text>
+  <text x="360" y="432" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" fill="#94a3b8">全仓门禁一键核验</text>
+  <text x="640" y="410" font-family="ui-monospace,Consolas,monospace" font-size="13" fill="#a5b4fc">🤖 .github/workflows</text>
+  <text x="640" y="432" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" fill="#94a3b8">9 条流水线 · 供应链审计 · 三端契约</text>
+  <text x="930" y="410" font-family="ui-monospace,Consolas,monospace" font-size="13" fill="#a5b4fc">🔁 100 轮优化</text>
+  <text x="930" y="432" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11.5" fill="#94a3b8">勘察→实现→验证→提交</text>
+</svg>

@@ -32,7 +32,7 @@ describe('合法响应生成器', () => {
     expect(responseFor('GET', '/versions/v1')).toEqual(responseFor('GET', '/versions/v2'))
     expect(() => responseFor('GET', '/versions/v1/data/extra')).toThrow()
     expect(responseFor('GET', '/data/list?all_files=true')).toEqual(
-      responseFor('GET', '/data/list')
+      responseFor('GET', '/data/list'),
     )
   })
 

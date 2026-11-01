@@ -19,6 +19,8 @@ mod security_gate_tests;
 #[cfg(test)]
 mod security_gate_tests_b64;
 #[cfg(test)]
+mod security_gate_tests_r6;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
@@ -1286,9 +1288,10 @@ pub async fn excel_result_flag(
 #[allow(non_snake_case)]
 pub async fn excel_upload(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -1303,7 +1306,7 @@ pub async fn excel_upload(
         .unwrap_or("")
         .to_string();
     // 归属以会话登录人为事实源（客户端 creator 可伪造）。
-    let creator = session.person_unique.clone();
+    let creator = sess.person_unique.clone();
     let flag = uuid::Uuid::new_v4().to_string();
 
     client
@@ -1327,9 +1330,10 @@ pub async fn excel_upload(
 #[allow(non_snake_case)]
 pub async fn excel_upload_with_url(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -1344,7 +1348,7 @@ pub async fn excel_upload_with_url(
         .unwrap_or("")
         .to_string();
     // 归属以会话登录人为事实源（客户端 creator 可伪造）。
-    let creator = session.person_unique.clone();
+    let creator = sess.person_unique.clone();
     let flag = uuid::Uuid::new_v4().to_string();
 
     client
@@ -1520,9 +1524,10 @@ pub async fn generalfile_flag_flag_binary_base64(
 #[allow(non_snake_case)]
 pub async fn invoice_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -1538,7 +1543,7 @@ pub async fn invoice_create(
         .unwrap_or("draft")
         .to_string();
     // 归属以会话登录人为事实源：客户端 creator 可伪造（冒名归属，IDOR 面）。
-    let creator = session.person_unique.clone();
+    let creator = sess.person_unique.clone();
 
     client
         .execute(
@@ -1873,9 +1878,10 @@ pub async fn invoice_update_id(
 #[allow(non_snake_case)]
 pub async fn invoice_upload(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -1888,7 +1894,7 @@ pub async fn invoice_upload(
     // 四轮 §三.7：这三把 upload 家族在 R4-2 批里补过尺子门禁但 creator 仍取请求体，
     // 而双锁修复让它们从「对所有人 401 死态」变成登录可达——冒名归属面随之打开，
     // 故与 `invoice_create` 同口径：归属以会话登录人为事实源。
-    let creator = session.person_unique.clone();
+    let creator = sess.person_unique.clone();
 
     client
         .execute(
@@ -1911,9 +1917,10 @@ pub async fn invoice_upload(
 #[allow(non_snake_case)]
 pub async fn invoice_upload_for_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -1924,7 +1931,7 @@ pub async fn invoice_upload_for_create(
         .to_string();
     let flag = uuid::Uuid::new_v4().to_string();
     // 同 `invoice_upload`：归属以会话登录人为事实源，客户端 creator 可伪造。
-    let creator = session.person_unique.clone();
+    let creator = sess.person_unique.clone();
 
     client
         .execute(
@@ -1947,9 +1954,10 @@ pub async fn invoice_upload_for_create(
 #[allow(non_snake_case)]
 pub async fn invoice_upload_with_url(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -1960,7 +1968,7 @@ pub async fn invoice_upload_with_url(
         .to_string();
     let flag = uuid::Uuid::new_v4().to_string();
     // 同 `invoice_upload`：归属以会话登录人为事实源，客户端 creator 可伪造。
-    let creator = session.person_unique.clone();
+    let creator = sess.person_unique.clone();
 
     client
         .execute(
@@ -3085,9 +3093,10 @@ pub async fn worktime_minutesofworkday(
 #[allow(non_snake_case)]
 pub async fn generalfile_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or("");
@@ -3095,7 +3104,7 @@ pub async fn generalfile_create(
     let content = req.get("content").and_then(|v| v.as_str()).unwrap_or("");
     let size = req.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
     // 归属以会话登录人为事实源（客户端 creator 可伪造）。
-    let creator = session.person_unique.clone();
+    let creator = sess.person_unique.clone();
     client
         .execute(
             "INSERT INTO x_general_assemble_general_file (id, name, flag, content, size, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
@@ -3111,9 +3120,10 @@ pub async fn generalfile_create(
 #[allow(non_snake_case)]
 pub async fn qrcode_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let width = req.get("width").and_then(|v| v.as_i64()).unwrap_or(200);
@@ -3121,7 +3131,7 @@ pub async fn qrcode_create(
     let text = req.get("text").and_then(|v| v.as_str()).unwrap_or("");
     let content = req.get("content").and_then(|v| v.as_str()).unwrap_or("");
     // 归属以会话登录人为事实源（客户端 creator 可伪造）。
-    let creator = session.person_unique.clone();
+    let creator = sess.person_unique.clone();
     client
         .execute(
             "INSERT INTO x_general_assemble_qrcode (id, width, height, text, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",

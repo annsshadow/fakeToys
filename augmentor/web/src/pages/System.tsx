@@ -1,7 +1,52 @@
 import { useEffect, useState } from 'react'
-import { Alert, AutoComplete, Button, Card, Col, Input, InputNumber, Popconfirm, Row, Select, Space, Statistic, Table, Tag, message } from 'antd'
-import { apiErrorDetail, cleanupBackups, createBackup, deleteBackup, getBackupSourceCandidates, getDependencyGraph, getServiceStatus, getVectorStatus, listBackups, listDependencyDatasets, migrateDataset, registerDependencyDataset, restoreBackup, runDatasetAutoTest, runQualityMonitor, streamProcess, systemDependencies, verifyBackups } from '../services/api'
-import type { BackupInfo, BackupVerifyEntry, DatasetRegistryEntry, DependencyDiagnostics, DependencyGraphResponse, MigrationResponse, QualitySnapshotResponse, StreamReportResponse, TestSuiteResponse } from '../types/api'
+import {
+  Alert,
+  AutoComplete,
+  Button,
+  Card,
+  Col,
+  Input,
+  InputNumber,
+  Popconfirm,
+  Row,
+  Select,
+  Space,
+  Statistic,
+  Table,
+  Tag,
+  message,
+} from 'antd'
+import {
+  apiErrorDetail,
+  cleanupBackups,
+  createBackup,
+  deleteBackup,
+  getBackupSourceCandidates,
+  getDependencyGraph,
+  getServiceStatus,
+  getVectorStatus,
+  listBackups,
+  listDependencyDatasets,
+  migrateDataset,
+  registerDependencyDataset,
+  restoreBackup,
+  runDatasetAutoTest,
+  runQualityMonitor,
+  streamProcess,
+  systemDependencies,
+  verifyBackups,
+} from '../services/api'
+import type {
+  BackupInfo,
+  BackupVerifyEntry,
+  DatasetRegistryEntry,
+  DependencyDiagnostics,
+  DependencyGraphResponse,
+  MigrationResponse,
+  QualitySnapshotResponse,
+  StreamReportResponse,
+  TestSuiteResponse,
+} from '../types/api'
 import type { StatusResponse, VectorStatusResponse } from '../types/api'
 
 /**
@@ -325,7 +370,10 @@ export default function System() {
       const info = await registerDependencyDataset(dsName, dsFile, {
         description: dsDesc,
         // 中英文逗号都当分隔符：这一格是自由输入，不是受控多选
-        tags: dsTags.split(/[,，]/).map((tag) => tag.trim()).filter(Boolean),
+        tags: dsTags
+          .split(/[,，]/)
+          .map((tag) => tag.trim())
+          .filter(Boolean),
       })
       message.success(`已登记 ${info.name}（${info.dataset_id}，${info.item_count} 条）`)
       setDsName('')
@@ -366,7 +414,7 @@ export default function System() {
       const result = await runDatasetAutoTest(qaFile)
       setSuiteResult(result)
       message.success(
-        `通过率 ${(result.pass_rate * 100).toFixed(0)}%（${result.passed_tests}/${result.total_tests}）`
+        `通过率 ${(result.pass_rate * 100).toFixed(0)}%（${result.passed_tests}/${result.total_tests}）`,
       )
     } catch (err) {
       setSuiteResult(null)
@@ -391,7 +439,7 @@ export default function System() {
       const result = await migrateDataset(wsIn, migOut, { rules: migRules })
       setMigration(result)
       message.success(
-        `已迁移 ${result.migrated_items}/${result.total_items} 条 ⇒ ${result.target_path}`
+        `已迁移 ${result.migrated_items}/${result.total_items} 条 ⇒ ${result.target_path}`,
       )
     } catch (err) {
       setMigration(null)
@@ -430,9 +478,10 @@ export default function System() {
   // 依赖诊断的两个来源：自己那条端点优先（不碰管道），首载失败时退回综合状态里那一份
   const diag = deps ?? status?.dependencies ?? null
 
-  const installedRows = Object.entries(diag?.installed || {}).map(
-    ([name, available]) => ({ name, available })
-  )
+  const installedRows = Object.entries(diag?.installed || {}).map(([name, available]) => ({
+    name,
+    available,
+  }))
 
   return (
     <div>
@@ -464,7 +513,7 @@ export default function System() {
               title="模型可用"
               value={status ? (status.model_available ? '是' : '否') : '-'}
               valueStyle={{
-                color: status?.model_available ? '#3f8600' : '#cf1322'
+                color: status?.model_available ? '#3f8600' : '#cf1322',
               }}
             />
           </Col>
@@ -516,10 +565,12 @@ export default function System() {
           </Col>
         </Row>
         <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
-          「无后端」是 <code>null</code>，不是 0：管道拉不动或没有模型后端时这几键回 <code>null</code>，
-          与「后端在、重试过 0 次」是两句话，所以这里不把 <code>null</code> 折成 0。它们只住在
-          <code>/api/status</code>——<code>/api/health</code> 刻意不含（容器探针依赖那一条，明令不加可能失败的字段）。
-          累计生成耗时只算真实 API 调用的墙上时间，不含缓存命中与退避等待。
+          「无后端」是 <code>null</code>，不是 0：管道拉不动或没有模型后端时这几键回{' '}
+          <code>null</code>， 与「后端在、重试过 0 次」是两句话，所以这里不把 <code>null</code> 折成
+          0。它们只住在
+          <code>/api/status</code>——<code>/api/health</code>{' '}
+          刻意不含（容器探针依赖那一条，明令不加可能失败的字段）。 累计生成耗时只算真实 API
+          调用的墙上时间，不含缓存命中与退避等待。
         </div>
       </Card>
 
@@ -575,8 +626,8 @@ export default function System() {
                         <Tag color={available ? 'green' : 'red'}>
                           {available ? '已安装' : '未安装'}
                         </Tag>
-                      )
-                    }
+                      ),
+                    },
                   ]}
                   dataSource={installedRows}
                 />
@@ -586,7 +637,7 @@ export default function System() {
               <Card title="降级功能">
                 {(diag.degraded_features || []).length > 0 ? (
                   <Space wrap>
-                    {diag.degraded_features.map(feature => (
+                    {diag.degraded_features.map((feature) => (
                       <Tag key={feature} color="orange">
                         {feature}
                       </Tag>
@@ -739,9 +790,7 @@ export default function System() {
                 title: '校验和（sha256）',
                 dataIndex: 'checksum',
                 width: 130,
-                render: (checksum: string) => (
-                  <span title={checksum}>{checksum.slice(0, 12)}</span>
-                )
+                render: (checksum: string) => <span title={checksum}>{checksum.slice(0, 12)}</span>,
               },
               {
                 title: '操作',
@@ -766,8 +815,8 @@ export default function System() {
                       </Button>
                     </Popconfirm>
                   </Space>
-                )
-              }
+                ),
+              },
             ]}
           />
         ) : (
@@ -796,7 +845,7 @@ export default function System() {
                 dataIndex: 'exists',
                 width: 110,
                 render: (exists: boolean) =>
-                  exists ? <Tag>在</Tag> : <Tag color="red">文件丢了</Tag>
+                  exists ? <Tag>在</Tag> : <Tag color="red">文件丢了</Tag>,
               },
               {
                 title: '校验和',
@@ -807,8 +856,8 @@ export default function System() {
                     <Tag color="green">对得上</Tag>
                   ) : (
                     <Tag color="red">{row.exists ? '对不上' : '没法比'}</Tag>
-                  )
-              }
+                  ),
+              },
             ]}
           />
         ) : null}
@@ -816,14 +865,14 @@ export default function System() {
         <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
           源文件与恢复目标都受**同一份白名单**管：白名单外的绝对路径是 403「路径超出允许的数据
           目录范围」，带 .. 的是 400「路径包含非法组件」，恢复目标为空串是 400「文件路径 不能为
-          空」（三档实测）。本页六处候选下拉共用一只 fetcher，取自 /api/data/list 的
-          all_files=true 那一档，口径与白名单同宽（A304 已于 L251 收口）；同一只端点的默认档
-          仍只列 train_data*.json，其余页面的清单没有变宽，这一格也仍是可输入下拉。
+          空」（三档实测）。本页六处候选下拉共用一只 fetcher，取自 /api/data/list 的 all_files=true
+          那一档，口径与白名单同宽（A304 已于 L251 收口）；同一只端点的默认档 仍只列
+          train_data*.json，其余页面的清单没有变宽，这一格也仍是可输入下拉。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           备份 id 就是创建时填的名称，留空才由服务端取 backup_&lt;时间戳&gt;。同一个名称创建两次
-          会**覆盖同一份文件**，索引里那一行也跟着更新成新内容（列表条数与磁盘份数一致，A298
-          已于 L250 收口）；删除按 id 过滤 ⇒ 同 id 的行——含旧索引里遗留的多行——一次全清。
+          会**覆盖同一份文件**，索引里那一行也跟着更新成新内容（列表条数与磁盘份数一致，A298 已于
+          L250 收口）；删除按 id 过滤 ⇒ 同 id 的行——含旧索引里遗留的多行——一次全清。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           checksum 是备份文件的 sha256。它现在**会拦**：恢复前对不上就回 409，且一个字节都不写
@@ -847,12 +896,12 @@ export default function System() {
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           服务端设了 AUGMENTOR_API_KEY 时，这一族的写操作会回 401「缺少或无效的
-          X-API-Key」——到「配置管理 → 写操作鉴权」存一份 key，页面就会随每个请求把它送出去
-          （A302 已收）。「清理旧备份」与「校验完整性」现已有 HTTP 入口（A300 已收）：前者是
+          X-API-Key」——到「配置管理 → 写操作鉴权」存一份 key，页面就会随每个请求把它送出去 （A302
+          已收）。「清理旧备份」与「校验完整性」现已有 HTTP 入口（A300 已收）：前者是
           写操作，跟着这一族一起挂鉴权；后者只读，不鉴权。「保留份数」下面那只数字框送的是
           **保留几条**而不是删除几条，0 与负数在服务端是 400，所以页面把下限钉在 1；这一格数的是
-          **索引里的行数**（自 L250 起这个数与磁盘份数一致）。CLI 自 L244 起也是六档
-          （补上 verify 与 cleanup，后者带 --max-backups，前者查到损坏时退出码 1；A329 已收）。
+          **索引里的行数**（自 L250 起这个数与磁盘份数一致）。CLI 自 L244 起也是六档 （补上 verify
+          与 cleanup，后者带 --max-backups，前者查到损坏时退出码 1；A329 已收）。
         </div>
       </Card>
 
@@ -921,7 +970,7 @@ export default function System() {
                 title: '描述',
                 dataIndex: 'description',
                 render: (description: string) =>
-                  description || <span style={{ opacity: 0.45 }}>（空）</span>
+                  description || <span style={{ opacity: 0.45 }}>（空）</span>,
               },
               {
                 title: '标签',
@@ -932,10 +981,10 @@ export default function System() {
                     tags.map((tag) => <Tag key={tag}>{tag}</Tag>)
                   ) : (
                     <span style={{ opacity: 0.45 }}>（无）</span>
-                  )
+                  ),
               },
               { title: '服务端路径', dataIndex: 'path', ellipsis: true },
-              { title: '更新时间', dataIndex: 'updated_at', width: 190 }
+              { title: '更新时间', dataIndex: 'updated_at', width: 190 },
             ]}
           />
         ) : (
@@ -960,7 +1009,7 @@ export default function System() {
               title="校验问题"
               value={graph ? graph.issues.length : '-'}
               valueStyle={{
-                color: graph && graph.issues.length > 0 ? '#cf1322' : undefined
+                color: graph && graph.issues.length > 0 ? '#cf1322' : undefined,
               }}
             />
           </Col>
@@ -986,19 +1035,19 @@ export default function System() {
 
         <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
           「图中边」这一格对纯前端用户**恒为 0**，不是没数据：三条端点里没有建边入口，CLI 的
-          dependency --action 也只有 register/list/graph/validate，边只能由 SDK 的
-          add_dependency 建立（A309）。同理，登记过的数据集**在产品面上删不掉**——HTTP 没有
-          注销端点，连 SDK 都没有 remove_dataset，只能手改注册表里的 datasets.json。
+          dependency --action 也只有 register/list/graph/validate，边只能由 SDK 的 add_dependency
+          建立（A309）。同理，登记过的数据集**在产品面上删不掉**——HTTP 没有 注销端点，连 SDK 都没有
+          remove_dataset，只能手改注册表里的 datasets.json。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
-          「校验问题」只报**悬空端点**（missing_source / missing_target），**不查环**：实测
-          A→B 与 B→A 成环时这一格仍是 0，所以 0 不能读成「依赖关系没问题」（A310）。
+          「校验问题」只报**悬空端点**（missing_source / missing_target），**不查环**：实测 A→B 与
+          B→A 成环时这一格仍是 0，所以 0 不能读成「依赖关系没问题」（A310）。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
-          登记 id 是 md5(名称) 的前 8 位 ⇒ **同名再登记一次是覆盖同一条**（不留重复），但
-          created_at 会被刷新成第二次的时间，且没有 409、没有任何「已存在」提示（A306）。
-          源文件受白名单管：不存在是 404「文件不存在」，白名单外是 403，带 .. 是 400，
-          顶层不是 JSON 数组是 400「数据文件的顶层必须是 JSON 数组」（四档实测）。
+          登记 id 是 md5(名称) 的前 8 位 ⇒ **同名再登记一次是覆盖同一条**（不留重复），但 created_at
+          会被刷新成第二次的时间，且没有 409、没有任何「已存在」提示（A306）。
+          源文件受白名单管：不存在是 404「文件不存在」，白名单外是 403，带 .. 是 400， 顶层不是 JSON
+          数组是 400「数据文件的顶层必须是 JSON 数组」（四档实测）。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           描述与标签这两格在 L232 之前是**回显即丢**：POST 的响应里有，随后 GET 与磁盘上都是
@@ -1006,10 +1055,10 @@ export default function System() {
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           registry_path 这一格页面不送，落点由服务端决定：白名单首个根目录下的
-          .dependency_registry（出厂 data/.dependency_registry）。CLI 的 --registry-path 默认值
-          是 .dependency_registry（**相对工作目录**），两边不是同一份，所以 CLI 登记的数据集在
-          这张卡上看不见（A308）。这两支只读端点曾经会把不存在的注册表目录建出来
-          （A307），L249 起构造不再碰磁盘，刷页面不留东西了。
+          .dependency_registry（出厂 data/.dependency_registry）。CLI 的 --registry-path 默认值 是
+          .dependency_registry（**相对工作目录**），两边不是同一份，所以 CLI 登记的数据集在
+          这张卡上看不见（A308）。这两支只读端点曾经会把不存在的注册表目录建出来 （A307），L249
+          起构造不再碰磁盘，刷页面不留东西了。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           登记这一支挂鉴权门禁（两条 GET 不挂）：服务端设了 AUGMENTOR_API_KEY 时它会回 401
@@ -1029,11 +1078,7 @@ export default function System() {
             onChange={(value) => setQaFile(value)}
             options={dataFiles.map((path) => ({ value: path }))}
           />
-          <Button
-            aria-label="生成质量快照"
-            loading={opsBusy === 'monitor'}
-            onClick={handleMonitor}
-          >
+          <Button aria-label="生成质量快照" loading={opsBusy === 'monitor'} onClick={handleMonitor}>
             质量监控快照
           </Button>
           <Button
@@ -1062,7 +1107,7 @@ export default function System() {
                   title="触发告警"
                   value={snapshot.alerts.length}
                   valueStyle={{
-                    color: snapshot.alerts.length > 0 ? '#cf1322' : undefined
+                    color: snapshot.alerts.length > 0 ? '#cf1322' : undefined,
                   }}
                 />
               </Col>
@@ -1098,7 +1143,7 @@ export default function System() {
                   precision={0}
                   suffix="%"
                   valueStyle={{
-                    color: suiteResult.failed_tests > 0 ? '#cf1322' : undefined
+                    color: suiteResult.failed_tests > 0 ? '#cf1322' : undefined,
                   }}
                 />
               </Col>
@@ -1125,15 +1170,15 @@ export default function System() {
                   dataIndex: 'passed',
                   width: 80,
                   render: (passed: boolean) =>
-                    passed ? <Tag color="green">通过</Tag> : <Tag color="red">失败</Tag>
+                    passed ? <Tag color="green">通过</Tag> : <Tag color="red">失败</Tag>,
                 },
                 { title: '说明', dataIndex: 'message' },
                 {
                   title: '耗时 ms',
                   dataIndex: 'execution_time_ms',
                   width: 100,
-                  render: (ms: number) => ms.toFixed(2)
-                }
+                  render: (ms: number) => ms.toFixed(2),
+                },
               ]}
             />
           </>
@@ -1142,24 +1187,24 @@ export default function System() {
         <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
           「触发告警」为 0 只说明这一份没触三个阈值（实测 completeness 0.7 / diversity 0.4 /
           consistency 0.7），**不是「质量合格」**：这一支只比这三个数，字段缺失、重复、长度
-          一概不查——那些要看下面「运行自动化测试」的五条。告警正文是**服务端英文原文**
-          （形如 completeness below threshold: 0.50 &lt; 0.70），没有中文那一份。
+          一概不查——那些要看下面「运行自动化测试」的五条。告警正文是**服务端英文原文** （形如
+          completeness below threshold: 0.50 &lt; 0.70），没有中文那一份。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           三个指标格不是恒在：数据集是空数组时服务端回 metrics 为**空对象**（实测），这三格
           显示「-」而不是 0——0 与「没算」是两件事，页面不把它们混成一个读数。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
-          自动化测试恒为五条（格式检查 / 字段检查 / 质量检查 / 多样性检查 / 重复检查），
-          通过率是 0–1 的小数、这里乘了 100 显示。suite 这一格页面**不送**：服务端只认
+          自动化测试恒为五条（格式检查 / 字段检查 / 质量检查 / 多样性检查 / 重复检查）， 通过率是
+          0–1 的小数、这里乘了 100 显示。suite 这一格页面**不送**：服务端只认
           default，拼错与空串都是 400「未知的测试套件」，省略才走默认，所以给一个只有一项的
-          下拉只是噪音。说明那一列的明细是服务端**截断过的**（实测最多列 5 条，形如
-          「发现 12 个缺失字段: [...]」），列出来的条数不等于总数。
+          下拉只是噪音。说明那一列的明细是服务端**截断过的**（实测最多列 5 条，形如 「发现 12
+          个缺失字段: [...]」），列出来的条数不等于总数。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           这两支都不写盘、也**不挂鉴权门禁**（第六张卡那两支挂），但都是 POST 而不是 GET——
-          这一族没有只读 GET。源文件受白名单管：不存在 404「文件不存在」、白名单外 403、
-          带 .. 是 400「路径包含非法组件」、缺必填是 FastAPI 的英文 422（四档实测）。
+          这一族没有只读 GET。源文件受白名单管：不存在 404「文件不存在」、白名单外 403、 带 .. 是
+          400「路径包含非法组件」、缺必填是 FastAPI 的英文 422（四档实测）。
         </div>
       </Card>
 
@@ -1200,7 +1245,12 @@ export default function System() {
             cancelText="取消"
             onConfirm={handleMigrate}
           >
-            <Button type="primary" danger aria-label="迁移数据集结构" loading={opsBusy === 'migrate'}>
+            <Button
+              type="primary"
+              danger
+              aria-label="迁移数据集结构"
+              loading={opsBusy === 'migrate'}
+            >
               迁移结构
             </Button>
           </Popconfirm>
@@ -1220,7 +1270,7 @@ export default function System() {
                   title="失败条数"
                   value={migration.failed_items}
                   valueStyle={{
-                    color: migration.failed_items > 0 ? '#cf1322' : undefined
+                    color: migration.failed_items > 0 ? '#cf1322' : undefined,
                   }}
                 />
               </Col>
@@ -1267,7 +1317,12 @@ export default function System() {
             value={stChunk}
             onChange={(value) => setStChunk(value)}
           />
-          <Button type="primary" aria-label="流式处理" loading={opsBusy === 'stream'} onClick={handleStream}>
+          <Button
+            type="primary"
+            aria-label="流式处理"
+            loading={opsBusy === 'stream'}
+            onClick={handleStream}
+          >
             流式处理
           </Button>
         </Space>
@@ -1288,7 +1343,7 @@ export default function System() {
                   color:
                     streamReport.total_input - streamReport.total_output > 0
                       ? '#cf1322'
-                      : undefined
+                      : undefined,
                 }}
               />
             </Col>
@@ -1302,21 +1357,23 @@ export default function System() {
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           「被丢掉」是本页自己算的（读入 − 写出）：回执里的 processed **各档实测都等于读入条数**
-          （四档全是 5），它数的是「逐条看过」而不是「改动过」⇒ 不能拿它当取舍读数。同一份
-          5 条夹具上四档的实测取舍是 none 5 / quality 2 / dedup 3 / clean 5 —— clean 那档**一条不丢，改写内容**：它只动 instruction（全角标点换半角、剥首尾空白），output 里的 HTML 标签与空白原样留着。
+          （四档全是 5），它数的是「逐条看过」而不是「改动过」⇒ 不能拿它当取舍读数。同一份 5
+          条夹具上四档的实测取舍是 none 5 / quality 2 / dedup 3 / clean 5 —— clean
+          那档**一条不丢，改写内容**：它只动 instruction（全角标点换半角、剥首尾空白），output 里的
+          HTML 标签与空白原样留着。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
-          产物格式与文件扩展名**不一致时以格式为准、扩展名不改**（实测 format=json 写进
-          .jsonl 文件名里，内容是一整个 JSON 数组）。chunk_size 最小 1：0 与 -1 都是 400
-          「chunk_size 必须是不小于 1 的整数」。这一支**不调模型**（与「数据增强」那支的区别），
+          产物格式与文件扩展名**不一致时以格式为准、扩展名不改**（实测 format=json 写进 .jsonl
+          文件名里，内容是一整个 JSON 数组）。chunk_size 最小 1：0 与 -1 都是 400 「chunk_size
+          必须是不小于 1 的整数」。这一支**不调模型**（与「数据增强」那支的区别），
           所以同步返回报告而不是丢进后台任务。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           迁移是**破坏性结构变化**：字段被改名，且规则清单**留空等于三条全用**（实测 rules 为
-          空数组与省略等价），不是「不迁移」——所以那一格没有「不迁移」这一档。
-          flatten_conversations 对没有 conversations 字段的数据**静默无操作**，回执里迁移条数
-          仍等于读入条数、errors 为空，看不出这条规则其实没干成事。回执里的源与产物路径都是
-          服务端 resolve 后的**绝对路径**。
+          空数组与省略等价），不是「不迁移」——所以那一格没有「不迁移」这一档。 flatten_conversations
+          对没有 conversations 字段的数据**静默无操作**，回执里迁移条数 仍等于读入条数、errors
+          为空，看不出这条规则其实没干成事。回执里的源与产物路径都是 服务端 resolve
+          后的**绝对路径**。
         </div>
       </Card>
     </div>

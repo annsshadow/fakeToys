@@ -12,7 +12,7 @@ import {
   ExportOutlined,
   PictureOutlined,
   LockOutlined,
-  MonitorOutlined
+  MonitorOutlined,
 } from '@ant-design/icons'
 
 const DataManagement = lazy(() => import('./pages/DataManagement'))
@@ -33,95 +33,107 @@ const menuItems = [
   {
     key: '/dashboard',
     icon: <DashboardOutlined />,
-    label: '仪表盘'
+    label: '仪表盘',
   },
   {
     key: '/',
     icon: <DatabaseOutlined />,
-    label: '数据管理'
+    label: '数据管理',
   },
   {
     key: '/augment',
     icon: <RocketOutlined />,
-    label: '数据增强'
+    label: '数据增强',
   },
   {
     key: '/quality',
     icon: <SafetyCertificateOutlined />,
-    label: '质量中心'
+    label: '质量中心',
   },
   {
     key: '/security',
     icon: <LockOutlined />,
-    label: '数据安全'
+    label: '数据安全',
   },
   {
     key: '/export',
     icon: <ExportOutlined />,
-    label: '导出中心'
+    label: '导出中心',
   },
   {
     key: '/analysis',
     icon: <LineChartOutlined />,
-    label: '数据分析'
+    label: '数据分析',
   },
   {
     key: '/multimodal',
     icon: <PictureOutlined />,
-    label: '多模态'
+    label: '多模态',
   },
   {
     key: '/versions',
     icon: <BranchesOutlined />,
-    label: '版本管理'
+    label: '版本管理',
   },
   {
     key: '/settings',
     icon: <SettingOutlined />,
-    label: '配置管理'
+    label: '配置管理',
   },
   {
     key: '/system',
     icon: <MonitorOutlined />,
-    label: '系统状态'
-  }
+    label: '系统状态',
+  },
 ]
 
 function AppLayout() {
   const [collapsed, setCollapsed] = useState(false)
   const location = useLocation()
   const {
-    token: { colorBgContainer, borderRadiusLG }
+    token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken()
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider
-        collapsible
-        collapsed={collapsed}
-        onCollapse={(value) => setCollapsed(value)}
-      >
-        <div style={{ height: 32, margin: 16, background: 'rgba(255, 255, 255, 0.2)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>
+      <Sider collapsible collapsed={collapsed} onCollapse={(value) => setCollapsed(value)}>
+        <div
+          style={{
+            height: 32,
+            margin: 16,
+            background: 'rgba(255, 255, 255, 0.2)',
+            borderRadius: 6,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white',
+            fontWeight: 'bold',
+          }}
+        >
           {collapsed ? 'AI' : 'AI 数据平台'}
         </div>
-        <Menu
-          theme="dark"
-          mode="inline"
-          selectedKeys={[location.pathname]}
-          items={menuItems}
-        />
+        <Menu theme="dark" mode="inline" selectedKeys={[location.pathname]} items={menuItems} />
       </Sider>
       <Layout>
-        <Header style={{ padding: '0 16px', background: colorBgContainer, display: 'flex', alignItems: 'center' }}>
+        <Header
+          style={{
+            padding: '0 16px',
+            background: colorBgContainer,
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
           <h2 style={{ margin: 0 }}>企业级 AI 训练数据平台</h2>
         </Header>
         <Content style={{ margin: 24 }}>
-          <div style={{
-            padding: 24,
-            minHeight: 360,
-            background: colorBgContainer,
-            borderRadius: borderRadiusLG
-          }}>
+          <div
+            style={{
+              padding: 24,
+              minHeight: 360,
+              background: colorBgContainer,
+              borderRadius: borderRadiusLG,
+            }}
+          >
             <Suspense fallback={<Spin style={{ display: 'block', margin: '40px auto' }} />}>
               <Routes>
                 <Route path="/dashboard" element={<Dashboard />} />

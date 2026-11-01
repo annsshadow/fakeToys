@@ -13,14 +13,22 @@
  * 而反复误报的告警等于没有告警。
  */
 import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+import { createMemoryHistory, createRouter } from 'vue-router'
 import { mountEl, settle, bodyText } from './helpers'
 
 const fetchRecomputes = vi.fn()
 const fetchRecomputeStats = vi.fn()
+const fetchRecomputeMode = vi.fn()
+const setRecomputeMode = vi.fn()
+const exportRecomputesCsv = vi.fn()
 
 vi.mock('@/api', () => ({
   fetchRecomputes: (...a: unknown[]) => fetchRecomputes(...a),
   fetchRecomputeStats: (...a: unknown[]) => fetchRecomputeStats(...a),
+  fetchRecomputeMode: (...a: unknown[]) => fetchRecomputeMode(...a),
+  setRecomputeMode: (...a: unknown[]) => setRecomputeMode(...a),
+  exportRecomputesCsv: (...a: unknown[]) => exportRecomputesCsv(...a),
 }))
 
 import RecomputesView from '@/views/RecomputesView.vue'
@@ -68,8 +76,20 @@ function summary(over: Record<string, unknown> = {}) {
 beforeEach(() => {
   fetchRecomputes.mockReset()
   fetchRecomputeStats.mockReset()
+  fetchRecomputeMode.mockReset()
+  setRecomputeMode.mockReset()
+  exportRecomputesCsv.mockReset()
   fetchRecomputes.mockResolvedValue({ items: [row()], total: 1 })
   fetchRecomputeStats.mockResolvedValue(summary())
+  fetchRecomputeMode.mockResolvedValue({
+    mode: 'enforce',
+    engine_mode: 'enforce',
+    skills_mode: 'enforce',
+    enforcing: true,
+    configured_mode: 'enforce',
+    demoted: false,
+    demoted_reason: '',
+  })
 })
 
 async function mountView() {
@@ -320,5 +340,96 @@ describe('筛选参数', () => {
   it('总账按所选时间窗请求（熔断看 10 分钟、漂移看 24 小时，两个尺度）', async () => {
     await mountView()
     expect(fetchRecomputeStats.mock.calls[0][0]).toBe(24)
+  })
+})
+
+describe('重算台账 CSV 导出（新一轮第 45 轮）', () => {
+  it('点击导出 CSV：按当前筛选参数调用接口并触发下载', async () => {
+    const wrapper = await mountView()
+    exportRecomputesCsv.mockResolvedValue(new Blob(['\uFEFFid\n']))
+
+    // 设置用户/关卡筛选
+    const vm = wrapper.vm as unknown as { userId: number; levelId: number }
+    vm.userId = 7
+    vm.levelId = 3
+    await wrapper.findAll('button').find((b) => b.text() === '筛选')!.trigger('click')
+    await flushPromises()
+
+    const btn = wrapper.findAll('button').find((b) => b.text() === '导出 CSV')
+    expect(btn, '找不到「导出 CSV」按钮').toBeTruthy()
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(exportRecomputesCsv).toHaveBeenCalledWith({
+      user_id: 7,
+      level_id: 3,
+      only_mismatch: true,
+    })
+    expect(bodyText()).toContain('已导出')
+    wrapper.unmount()
+  })
+
+  it('导出失败：弹出错误消息', async () => {
+    const wrapper = await mountView()
+    exportRecomputesCsv.mockRejectedValueOnce(new Error('导出服务不可用'))
+
+    const btn = wrapper.findAll('button').find((b) => b.text() === '导出 CSV')
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(bodyText()).toContain('导出失败：导出服务不可用')
+    wrapper.unmount()
+  })
+})
+
+describe('RecomputesView 复制 battle_id（第 88 轮）', () => {
+  it('点击「复制 battle_id」：写入剪贴板并提示', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    const wrapper = await mountView()
+    const btn = wrapper.findAll('button').find((b) => b.text() === '复制 battle_id')
+    expect(btn, '找不到「复制 battle_id」按钮').toBeTruthy()
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith('900')
+    expect(bodyText()).toContain('已复制 battle_id 900')
+    wrapper.unmount()
+  })
+
+  it('battle_id=0 的行不渲染复制按钮', async () => {
+    fetchRecomputes.mockResolvedValue({ items: [row({ battle_id: 0 })], total: 1 })
+    const wrapper = await mountView()
+    expect(wrapper.findAll('button').find((b) => b.text() === '复制 battle_id')).toBeUndefined()
+    wrapper.unmount()
+  })
+})
+
+describe('RecomputesView 用户跳转用户详情（第 96 轮）', () => {
+  it('点击用户昵称：跳转 /users 并携带 user_id', async () => {
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/recomputes', component: { template: '<div />' } },
+        { path: '/users', component: { template: '<div />' } },
+      ],
+    })
+    await router.push('/recomputes')
+    await router.isReady()
+
+    const wrapper = mountEl(RecomputesView, { global: { plugins: [router] } })
+    await settle(wrapper)
+    await flushPromises()
+
+    const link = wrapper.find('.el-table .el-link')
+    expect(link.exists(), '找不到重算用户链接').toBe(true)
+
+    await link.trigger('click')
+    await flushPromises()
+
+    expect(router.currentRoute.value.path).toBe('/users')
+    expect(router.currentRoute.value.query.user_id).toBe('7')
+    wrapper.unmount()
   })
 })

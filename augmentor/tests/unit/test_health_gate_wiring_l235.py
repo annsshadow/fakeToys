@@ -116,12 +116,13 @@ SPARSE_HEALTH_SCORE = 0.6250000833333056
 FIELD_DEFAULTS = {name: field.default for name, field in HealthGateRequest.model_fields.items()}
 
 STATE_RE = re.compile(
-    r"const \[(\w+), set\w+\] = useState(?:<[^>]*>)?\((.*?)\)\s*$", re.M)
+    r"const \[(\w+), set\w+\] = useState(?:<[^>]*>)?\((.*?)\)")
 
 
 def _page() -> str:
     assert QUALITY_TSX.is_file(), "前端源码不在场 ⇒ 本文件的判据全部失效"
-    return strip_comments(QUALITY_TSX.read_text(encoding="utf-8"))
+    # 规范化空白：Prettier 可能对长 JSX 文本自动折行，判据关心内容而非排版。
+    return re.sub(r"\s+", " ", strip_comments(QUALITY_TSX.read_text(encoding="utf-8")))
 
 
 def state_initial(name: str) -> str:
@@ -144,7 +145,10 @@ def weight_labels() -> list:
 
 
 def verdict_copy_keys() -> list:
-    found = re.search(r"const GATE_VERDICT_COPY[^=]*= \{(.*?)\n\}", _page(), re.S)
+    # 依赖缩进/换行提取对象顶层键：用保留原始排版的 strip_comments（不走 _page
+    # 的空白压平），否则 Prettier 折行后无法区分内外层花括号。
+    page_raw = strip_comments(QUALITY_TSX.read_text(encoding="utf-8"))
+    found = re.search(r"const GATE_VERDICT_COPY[^=]*= \{(.*?)\n\}", page_raw, re.S)
     assert found, "页面里没有 GATE_VERDICT_COPY 常量 ⇒ 判据要跟着换形状"
     return re.findall(r"^\s{2}(\w+):", found.group(1), re.M)
 
