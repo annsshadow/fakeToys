@@ -13,7 +13,7 @@ use anyhow::Context as _;
 use base64::Engine;
 use chrono::NaiveDateTime;
 use deadpool_postgres::Pool;
-use hmac::Mac;
+use hmac::{KeyInit, Mac};
 use oa4rust::create_app;
 use shared::{rate_limit::RateLimiter, session::SessionManager};
 use tokio::net::TcpListener;
