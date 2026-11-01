@@ -77,13 +77,15 @@ class TestAugmentAsync:
         src = _write_items(tmp_path, "async_in2.json", 3)
         out = str(tmp_path / "async_out2.json")
 
-        def fake_seed(self, item, use_quality_check=False, existing_generated=None):
+        # AU-P1 起 `augment_async` 的原生异步路径直接走 `_agenerate_variants`，
+        # 不再经过 `augment_seed`（同步入口的桩在异步路径上不生效）。
+        async def fake_agenerate(self, item):
             return [
                 {"instruction": item["instruction"] + "（改写）", "input": "", "output": item["output"]},
                 {"instruction": item["instruction"] + "（改写）", "input": "", "output": item["output"]},
             ]
 
-        monkeypatch.setattr(pl.AugmentorPipeline, "augment_seed", fake_seed)
+        monkeypatch.setattr(pl.AugmentorPipeline, "_agenerate_variants", fake_agenerate)
         report = asyncio.run(
             pipeline.augment_async(src, out, use_dedup=True, use_quality_check=False, use_checkpoint=False)
         )
