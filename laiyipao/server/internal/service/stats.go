@@ -423,7 +423,7 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 	// 均为可选，nil 不过滤（NULL 时 `IS NULL` 分支恒真）。
 	// 列表查询的 $3/$4 是 limit/offset，筛选从 $5 起；
 	// COUNT 查询没有 limit/offset，筛选映射到 $3..$7。
-	where := `($1 = '' OR u.nickname LIKE $2 ESCAPE '\'::char OR u.id::text = $1)
+	where := `($1 = '' OR u.nickname ILIKE $2 ESCAPE '\'::char OR u.id::text = $1)
 	          AND ($5::timestamptz IS NULL OR u.created_at >= $5)
 	          AND ($6::timestamptz IS NULL OR u.created_at < $6)
 	          AND ($7::boolean IS NULL OR u.is_guest = $7)
@@ -554,7 +554,7 @@ func (s *Service) AdminExportUsers(ctx context.Context, keyword string, dateFrom
 	// （2026-11-01 新一轮第 46 轮）：**始终**拼入（nil → NULL，
 	// `IS NULL` 分支恒真），保证导出查询参数编号稳定。
 	// 导出查询没有 limit/offset，筛选从 $3 起。
-	where := `($1 = '' OR u.nickname LIKE $2 ESCAPE '\'::char OR u.id::text = $1)
+	where := `($1 = '' OR u.nickname ILIKE $2 ESCAPE '\'::char OR u.id::text = $1)
 	          AND ($3::timestamptz IS NULL OR u.created_at >= $3)
 	          AND ($4::timestamptz IS NULL OR u.created_at < $4)
 	          AND ($5::timestamptz IS NULL OR u.last_login_at >= $5)
@@ -1487,20 +1487,24 @@ func (s *Service) AdminUpdateSkill(ctx context.Context, skillID int, patch map[s
 			}
 			set(key, v)
 		case "base_damage", "heat_cost", "cooldown_ms", "pierce", "aoe_radius",
-			"apply_stacks", "projectile_speed", "chain":
-			v, ok := toInt64(val)
-			if !ok || v < 0 {
-				reject(key, "must be a non-negative integer")
-				continue
-			}
-			set(key, v)
-		case "element", "family", "kind":
-			v, ok := val.(string)
-			if !ok || v == "" {
-				reject(key, "must be a non-empty string")
-				continue
-			}
-			set(key, v)
+			"apply_stacks", "projectile_speed", "chain", "element", "family", "kind":
+			// 第 23 轮：战斗数值/语义字段从白名单**移除**（关卡数值同款口径，
+			// 见 level_authority_test.go）。
+			//
+			// # 为什么它们不能进后台
+			//
+			// 结算的 S 段校验（replaySkillsSegment）按**库值**重算
+			// `slot:skill_id:base_damage:apply_stacks:heat_cost`，
+			// 而客户端引擎按 **/config 静态种子**（domain.SeedSkills →
+			// ScaleAllSkills）算同一段。两端各读一套的缝隙里，
+			// admin 改 base_damage = 全部带 replay_skills 的结算 422
+			// （enforce 模式默认开启）——「诚实玩家被误判」的最坏形态。
+			// element/family/kind 同理：它们经 /config 之外的路径（构筑
+			// 元素列表、装备校验）影响战斗，改库同样造成两端失配。
+			//
+			// 这不是「后台功能不全」，是**权威源只有一个**：战斗数值
+			// 只能随版本发布（domain 种子），不能被运行时改出缝。
+			reject(key, "gameplay value is version-controlled (domain seed); runtime edits break the replay-skills contract")
 		default:
 			// An unknown key must be reported: silently ignoring it is a trap,
 			// because the caller gets 200 and believes the field was tuned.

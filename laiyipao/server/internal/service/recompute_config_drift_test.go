@@ -94,12 +94,11 @@ func TestAdminSkillEditDoesNotAffectRecompute(t *testing.T) {
 
 	before := ts.computedHashFor(t, ctx, uid, 1, picks, tp)
 
-	// admin 改技能：战斗数值 + 会进快照的字段（name/element）都动
+	// admin 改技能（第 23 轮起战斗数值字段已被白名单拒绝 ——
+	// 这里只剩 name 可改；本用例的判据「DB 不进战斗路径」由
+	// 白名单本身加固，仍保留以防未来有人把 DB 接回战斗路径）
 	for _, patch := range []map[string]any{
-		{"base_damage": 999999},
-		{"heat_cost": 77},
 		{"name": "ADMIN-RENAMED-SKILL"},
-		{"element": "corrosion"},
 	} {
 		for id := 1; id <= 4; id++ {
 			if _, err := ts.AdminUpdateSkill(ctx, id, patch); err != nil {
@@ -167,8 +166,7 @@ func TestAdminSkillEditDoesNotLeakIntoConfig(t *testing.T) {
 
 	for id := 1; id <= 4; id++ {
 		if _, err := ts.AdminUpdateSkill(ctx, id, map[string]any{
-			"base_damage": 888888,
-			"name":        "CONFIG-LEAK-PROBE",
+			"name": "CONFIG-LEAK-PROBE",
 		}); err != nil {
 			t.Fatalf("admin 改技能 %d 失败：%v", id, err)
 		}

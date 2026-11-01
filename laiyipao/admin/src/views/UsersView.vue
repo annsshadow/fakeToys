@@ -97,6 +97,11 @@ const CURRENCY_LABEL: Record<string, string> = {
   gem: '钻石',
   energy: '体力',
   keys: '钥匙',
+  // 第 21 轮：道具（服务端 grantWallet 的 isWalletToken 白名单同源 ——
+  // grantToken 一直支持，界面此前却把客服挡在门外，只能让玩家自己买）。
+  revive_token: '复活币',
+  gem_wash_token: '宝石洗练券',
+  mastery_reset: '专精重铸券',
 }
 
 /** 钱包流水来源 → 中文（2026-11-01 新一轮第 66 轮）。未知回退原值。 */
@@ -291,7 +296,7 @@ async function onUnban(u: AdminUserView) {
 async function onGrant(u: AdminUserView) {
   try {
     const { value } = await ElMessageBox.prompt(
-      `给「${u.nickname}」发放资源。格式：coin 10000 / gem 500 / energy 200 / keys 5（货币名为 coin/gem/energy/keys；数量为负 = 回收）`,
+      `给「${u.nickname}」发放资源。格式：coin 10000 / gem 500 / energy 200 / keys 5 / revive_token 1（货币为四货币或三种道具 revive_token/gem_wash_token/mastery_reset；数量为负 = 回收）`,
       '发放资源',
       { inputPlaceholder: 'coin 10000' },
     )
@@ -337,6 +342,13 @@ async function onGrant(u: AdminUserView) {
     const res = await grantUser(u.id, currency, amount)
     u.coin = res.wallet.coin
     u.gem = res.wallet.gem
+    // 第 21 轮：道具发放的回显（服务端把余额装在 out[currency] 里）。
+    if (currency in (res.wallet as Record<string, number>)) {
+      const bal = (res.wallet as Record<string, number>)[currency]
+      ElMessage.info(
+        `${CURRENCY_LABEL[currency]} 当前余额：${bal}（道具余额不进四货币卡片，见用户详情钱包流水）`,
+      )
+    }
     ElMessage.success(
       amount < 0
         ? `已回收 ${CURRENCY_LABEL[currency]} ${-amount}`

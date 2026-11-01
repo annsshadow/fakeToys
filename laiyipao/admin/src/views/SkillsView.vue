@@ -75,15 +75,15 @@ async function load() {
 }
 
 /**
- * 完整的技能编辑（2026-10-21 P5-4）。
+ * 技能编辑（第 23 轮收紧）：只开放 **name / descr** 两个展示字段。
  *
- * 服务端白名单有 13 个键（name / descr / base_damage / heat_cost /
- * cooldown_ms / pierce / aoe_radius / apply_stacks / projectile_speed /
- * chain / element / family / kind），此前界面只有 **3** 个入口
- * （base_damage / heat_cost / descr）。
- *
- * 其余 10 个字段在后台**根本不存在** —— 运营想调「冷却」或「穿透」，
- * 只能去改库。一个后台不能做的事，就是**不存在的能力**。
+ * ⚠️ 此前白名单还有 11 个战斗数值/语义键（base_damage / heat_cost / … /
+ * kind），界面也提供了编辑入口 —— 那是一个会炸的入口：
+ * 结算的 S 段校验按库值重算，客户端引擎按 /config 静态种子算同一段；
+ * 在后台改 base_damage 之后，所有带 replay_skills 的真实结算都会 422
+ * （enforce 模式默认开）。战斗数值只能随版本发布（domain 种子），
+ * 运行时改库 = 两端失配，所以它们从服务端白名单移除，这里同步只留展示字段。
+ * 数值列保持只读展示（DPS 效率列照旧），「为什么改不了」写在这里。
  */
 const editOpen = ref(false)
 const editSaving = ref(false)
@@ -91,43 +91,13 @@ const editRow = ref<AdminSkillView | null>(null)
 const editForm = ref({
   name: '',
   descr: '',
-  base_damage: 0,
-  heat_cost: 0,
-  cooldown_ms: 0,
-  pierce: 0,
-  aoe_radius: 0,
-  apply_stacks: 0,
-  projectile_speed: 0,
-  chain: 0,
-  element: '',
-  family: '',
-  kind: '',
 })
-
-/** 元素下拉的选项（与服务端的 5 元素一致）。 */
-const ELEMENT_OPTIONS = ['fire', 'ice', 'lightning', 'corrosion', 'kinetic']
-/** 技能类型：active（主动）/ passive（被动）。 */
-const KIND_OPTIONS = [
-  { value: 'active', label: '主动' },
-  { value: 'passive', label: '被动' },
-]
 
 function openEdit(row: AdminSkillView) {
   editRow.value = row
   editForm.value = {
     name: row.name,
     descr: row.descr,
-    base_damage: row.base_damage,
-    heat_cost: row.heat_cost,
-    cooldown_ms: row.cooldown_ms,
-    pierce: row.pierce,
-    aoe_radius: row.aoe_radius,
-    apply_stacks: row.apply_stacks,
-    projectile_speed: row.projectile_speed,
-    chain: row.chain,
-    element: row.element,
-    family: row.family,
-    kind: row.kind,
   }
   editOpen.value = true
 }
@@ -139,21 +109,6 @@ async function submitEdit() {
     ElMessage.error('技能名不能为空')
     return
   }
-  for (const [label, v] of [
-    ['基础伤害', f.base_damage],
-    ['热量消耗', f.heat_cost],
-    ['冷却', f.cooldown_ms],
-    ['穿透', f.pierce],
-    ['溅射半径', f.aoe_radius],
-    ['层数', f.apply_stacks],
-    ['弹丸速度', f.projectile_speed],
-    ['连锁', f.chain],
-  ] as Array<[string, number]>) {
-    if (!Number.isInteger(v) || v < 0) {
-      ElMessage.error(`${label} 必须是非负整数`)
-      return
-    }
-  }
   editSaving.value = true
   try {
     const res = await updateSkill(editRow.value.id, { ...f, name: f.name.trim() })
@@ -164,25 +119,6 @@ async function submitEdit() {
     ElMessage.error((e as Error).message)
   } finally {
     editSaving.value = false
-  }
-}
-
-/** 关键：改任何一项都必须知道整体影响，因此逐字段确认而不是整行提交 */
-async function patch(row: AdminSkillView, field: keyof AdminSkillView, label: string) {
-  try {
-    const { value } = await ElMessageBox.prompt(
-      `修改「${row.name}」的${label}（当前 ${row[field]}）`,
-      '编辑技能',
-      { inputValue: String(row[field]), inputPattern: /^-?\d+$/, inputErrorMessage: '必须是整数' },
-    )
-    const res = await updateSkill(row.id, { [field]: Number(value) } as Partial<AdminSkillView>)
-    Object.assign(row, res.skill)
-    ElMessage.success('已保存')
-  } catch (e) {
-    // 「取消」与「失败」分开（2026-10-21 二轮审计 P2-2）：
-    // 否则 readonly 账号点改数值得到 403，**屏幕上什么都不显示**。
-    if (isCancel(e)) return
-    ElMessage.error(`保存失败：${(e as Error).message}`)
   }
 }
 
@@ -313,8 +249,6 @@ const asRow = (r: unknown) => r as AdminSkillView
         <el-table-column prop="unlock_level" label="解锁关" width="86" />
         <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" text @click="patch(asRow(row), 'base_damage', '基础伤害')">伤害</el-button>
-            <el-button size="small" text @click="patch(asRow(row), 'heat_cost', '热量消耗')">热量</el-button>
             <el-button v-if="!isReadonly" size="small" text @click="openEdit(asRow(row))">编辑</el-button>
             <el-button v-if="!isReadonly" size="small" text @click="onEditDescr(asRow(row))">描述</el-button>
           </template>
@@ -336,53 +270,20 @@ const asRow = (r: unknown) => r as AdminSkillView
       </p>
     </el-card>
     <!--
-      完整的技能编辑对话框（2026-10-21 P5-4）。
-      服务端白名单 13 个键，此前界面只有 3 个入口。
+      技能编辑对话框（第 23 轮收紧）：只有 name / descr 两个可写字段。
+      战斗数值随版本发布（domain 种子），运行时改库会让 S 段校验两端失配。
     -->
     <el-dialog v-model="editOpen" title="编辑技能" width="560px">
+      <p class="muted" style="margin: 0 0 12px">
+        伤害 / 热量 / 冷却等战斗数值为版本内只读：结算校验按发布配置重算，
+        在此处修改会造成客户端与服务端失配（全部结算被拒）。
+      </p>
       <el-form label-width="100px" size="small">
         <el-form-item label="名称">
           <el-input v-model="editForm.name" />
         </el-form-item>
         <el-form-item label="描述">
           <el-input v-model="editForm.descr" type="textarea" :rows="2" />
-        </el-form-item>
-        <el-form-item label="元素">
-          <el-select v-model="editForm.element" style="width: 100%">
-            <el-option v-for="e in ELEMENT_OPTIONS" :key="e" :label="e" :value="e" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="系别">
-          <el-input v-model="editForm.family" placeholder="如 flame / frost" />
-        </el-form-item>
-        <el-form-item label="类型">
-          <el-select v-model="editForm.kind" style="width: 100%">
-            <el-option v-for="k in KIND_OPTIONS" :key="k.value" :label="k.label" :value="k.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="基础伤害">
-          <el-input-number v-model="editForm.base_damage" :min="0" :max="999999" />
-        </el-form-item>
-        <el-form-item label="热量消耗">
-          <el-input-number v-model="editForm.heat_cost" :min="0" :max="999" />
-        </el-form-item>
-        <el-form-item label="冷却(ms)">
-          <el-input-number v-model="editForm.cooldown_ms" :min="0" :max="999999" />
-        </el-form-item>
-        <el-form-item label="穿透">
-          <el-input-number v-model="editForm.pierce" :min="0" :max="99" />
-        </el-form-item>
-        <el-form-item label="溅射半径">
-          <el-input-number v-model="editForm.aoe_radius" :min="0" :max="9999" />
-        </el-form-item>
-        <el-form-item label="施加层数">
-          <el-input-number v-model="editForm.apply_stacks" :min="0" :max="99" />
-        </el-form-item>
-        <el-form-item label="弹丸速度">
-          <el-input-number v-model="editForm.projectile_speed" :min="0" :max="999999" />
-        </el-form-item>
-        <el-form-item label="连锁">
-          <el-input-number v-model="editForm.chain" :min="0" :max="99" />
         </el-form-item>
       </el-form>
       <template #footer>

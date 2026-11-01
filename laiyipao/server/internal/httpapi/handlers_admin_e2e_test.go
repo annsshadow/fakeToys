@@ -225,19 +225,16 @@ func TestE2EAdminUpdateSkill(t *testing.T) {
 	if status != fiber.StatusBadRequest {
 		t.Errorf("空 patch 应 400，实际 %d", status)
 	}
-	status, _ = e.put(t, "/api/v1/admin/skills/1", tok, map[string]any{"base_damage": -5})
+	// 第 23 轮：战斗数值字段整体拒绝（400），且**什么都没写**。
+	status, _ = e.put(t, "/api/v1/admin/skills/1", tok, map[string]any{"base_damage": 42.0})
 	if status != fiber.StatusBadRequest {
-		t.Errorf("负数值被过滤后应为空 patch → 400，实际 %d", status)
+		t.Errorf("战斗数值字段应 400（白名单外），实际 %d", status)
 	}
-
 	status, body = e.put(t, "/api/v1/admin/skills/1", tok, map[string]any{
-		"name": "E2E技能", "base_damage": 42.0, "element": "fire", "kind": "active",
+		"name": "E2E技能", "descr": "e2e 描述",
 	})
 	if status != 200 {
 		t.Fatalf("合法更新应 200，实际 %d %v", status, body)
-	}
-	if got := e.scalarInt(t, `SELECT base_damage FROM skills WHERE id = 1`); got != 42 {
-		t.Errorf("base_damage 应写库为 42，实际 %d", got)
 	}
 	//
 	// ⚠️ 第 120 轮：响应必须带 `skill`（回读行），与后台契约 { skill: AdminSkill } 一致。
@@ -247,8 +244,12 @@ func TestE2EAdminUpdateSkill(t *testing.T) {
 	if !ok {
 		t.Fatalf("更新响应必须带 skill 对象（回读行），实际 %v", body)
 	}
-	if skillObj["name"] != "E2E技能" || int64(skillObj["base_damage"].(float64)) != 42 {
-		t.Errorf("回读 skill 应与写入一致：name=%v base_damage=%v", skillObj["name"], skillObj["base_damage"])
+	// base_damage 不再可写（第 23 轮）：回读行里它保持库中原值。
+	if skillObj["name"] != "E2E技能" {
+		t.Errorf("回读 skill 应与写入一致：name=%v", skillObj["name"])
+	}
+	if _, has := skillObj["base_damage"]; !has {
+		t.Error("回读行应包含 base_damage（只读展示）")
 	}
 }
 

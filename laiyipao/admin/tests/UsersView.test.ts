@@ -461,6 +461,20 @@ describe('UsersView 发放资源', () => {
     wrapper.unmount()
   })
 
+  it('第 21 轮：道具（revive_token）可发放并回显余额', async () => {
+    box.prompt.mockResolvedValueOnce({ value: 'revive_token 3' })
+    grantUser.mockResolvedValueOnce({ wallet: { coin: 2000, gem: 50, revive_token: 3 } })
+    const row = userFixture()
+    const wrapper = await mountUsers([row])
+    const vm = wrapper.vm as unknown as Vm
+    await vm.onGrant(row)
+    await flushPromises()
+
+    expect(grantUser).toHaveBeenCalledWith(1, 'revive_token', 3)
+    expect(document.body.textContent).toContain('当前余额：3')
+    wrapper.unmount()
+  })
+
   it('未知货币：提示并拒绝提交（防止给不存在币种发钱）', async () => {
     box.prompt.mockResolvedValueOnce({ value: '元宝 5' })
     const wrapper = await mountUsers([userFixture()])

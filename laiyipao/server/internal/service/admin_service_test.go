@@ -694,8 +694,7 @@ func TestAdminUpdateSkill(t *testing.T) {
 
 	// 第 120 轮：AdminUpdateSkill 回读落库行作为返回值（后台契约 {skill}）
 	row, err := ts.AdminUpdateSkill(ctx, 1, map[string]any{
-		"name": "svc技能", "descr": "d", "base_damage": float64(33),
-		"element": "fire", "family": "flame", "kind": "active", "heat_cost": float64(5),
+		"name": "svc技能", "descr": "d",
 	})
 	if err != nil {
 		t.Fatalf("更新失败：%v", err)
@@ -703,16 +702,30 @@ func TestAdminUpdateSkill(t *testing.T) {
 	if row.Name != "svc技能" {
 		t.Errorf("回读行 name 应为 svc技能，实际 %v", row.Name)
 	}
-	var dmg int64
-	if err := ts.pool.QueryRow(ctx, `SELECT base_damage FROM skills WHERE id = 1`).Scan(&dmg); err != nil || dmg != 33 {
-		t.Fatalf("base_damage 应写库 33，实际 %d（err=%v）", dmg, err)
+
+	// 第 23 轮：战斗数值/语义字段从白名单移除 —— S 段校验按库值重算、
+	// 客户端按 /config 静态种子算，admin 改库值 = 全部结算 422。
+	// 判据：**整个请求被拒、什么都没写**。
+	var dmgBefore int64
+	if err := ts.pool.QueryRow(ctx, `SELECT base_damage FROM skills WHERE id = 1`).Scan(&dmgBefore); err != nil {
+		t.Skipf("无 base_damage 列：%v", err)
 	}
-	if row.BaseDamage != int64(33) {
-		t.Errorf("回读行 base_damage 应为 33，实际 %v（写后读必须与落库一致）", row.BaseDamage)
+	_, err = ts.AdminUpdateSkill(ctx, 1, map[string]any{
+		"name": "x", "base_damage": float64(33), "heat_cost": float64(5), "kind": "passive",
+	})
+	if !errors.Is(err, ErrBadInput) {
+		t.Errorf("战斗数值字段应被整体拒绝，实际 %v", err)
+	}
+	var dmgAfter int64
+	if err := ts.pool.QueryRow(ctx, `SELECT base_damage FROM skills WHERE id = 1`).Scan(&dmgAfter); err != nil {
+		t.Fatal(err)
+	}
+	if dmgBefore != dmgAfter {
+		t.Errorf("拒绝的请求不得写入任何字段：base_damage %d → %d", dmgBefore, dmgAfter)
 	}
 
-	if _, err := ts.AdminUpdateSkill(ctx, 1, map[string]any{"name": 42, "base_damage": -1}); !errors.Is(err, ErrBadInput) {
-		t.Errorf("全非法值应 ErrBadInput，实际 %v", err)
+	if _, err := ts.AdminUpdateSkill(ctx, 1, map[string]any{"name": 42}); !errors.Is(err, ErrBadInput) {
+		t.Errorf("非法值应 ErrBadInput，实际 %v", err)
 	}
 	if _, err := ts.AdminUpdateSkill(ctx, 1, map[string]any{}); !errors.Is(err, ErrBadInput) {
 		t.Errorf("空 patch 应 ErrBadInput，实际 %v", err)

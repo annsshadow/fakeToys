@@ -99,7 +99,7 @@ func (s *Service) AdminListLevels(ctx context.Context, chapter int, keyword stri
 	if kw != "" {
 		escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(kw)
 		args = append(args, "%"+escaped+"%")
-		conds = append(conds, fmt.Sprintf("l.name LIKE $%d ESCAPE '\\'::char", len(args)))
+		conds = append(conds, fmt.Sprintf("l.name ILIKE $%d ESCAPE '\\'::char", len(args)))
 	}
 	whereClause := ""
 	if len(conds) > 0 {

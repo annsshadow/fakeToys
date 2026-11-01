@@ -140,6 +140,10 @@ describe('SkillsView 热量效率派生', () => {
   })
 })
 
+function vmOf(wrapper: { vm: unknown }): any {
+  return wrapper.vm
+}
+
 describe('SkillsView 列表与过滤', () => {
   it('系别与元素未知值回退原始 key；已知值用中文映射', async () => {
     const wrapper = await mountSkills([
@@ -208,37 +212,31 @@ describe('SkillsView 列表与过滤', () => {
     wrapper.unmount()
   })
 
-  it('操作列三个按钮（伤害/热量/描述）逐个点击走真实编辑流程', async () => {
+  // 第 23 轮：行操作只剩「编辑 / 描述」两个入口（伤害/热量快速编辑已移除——
+  // 战斗数值字段从服务端白名单剔除，见 SkillsView.vue 的注释）。
+  it('操作列按钮（编辑/描述）逐个点击走真实编辑流程', async () => {
     const row = skillFixture({ id: 7, base_damage: 100, heat_cost: 10 })
     fetchSkills.mockResolvedValue({ items: [row], recipes: [] })
     updateSkill
-      .mockResolvedValueOnce({ skill: { ...row, base_damage: 250 } })
-      .mockResolvedValueOnce({ skill: { ...row, heat_cost: 20 } })
+      .mockResolvedValueOnce({ skill: { ...row, name: '火球' } })
       .mockResolvedValueOnce({ skill: { ...row, descr: '重塑后的描述' } })
-    box.prompt
-      .mockResolvedValueOnce({ value: '250' })
-      .mockResolvedValueOnce({ value: '20' })
-      .mockResolvedValueOnce({ value: '重塑后的描述' })
 
     const wrapper = mount(SkillsView, { global: { plugins: [ElementPlus] } })
     await flushPromises()
     const buttons = wrapper.findAll('.el-table__row')[0].findAll('button')
-    expect(buttons.map((b) => b.text())).toEqual(['伤害', '热量', '编辑', '描述'])
+    expect(buttons.map((b) => b.text())).toEqual(['编辑', '描述'])
 
     await buttons[0].trigger('click')
     await flushPromises()
-    expect(updateSkill).toHaveBeenLastCalledWith(7, { base_damage: 250 })
+    expect(vmOf(wrapper).editOpen).toBe(true)
+    vmOf(wrapper).editForm.name = '火球'
+    await vmOf(wrapper).submitEdit()
+    await flushPromises()
+    expect(updateSkill).toHaveBeenLastCalledWith(7, { name: '火球', descr: '发射火弹' })
 
     await buttons[1].trigger('click')
     await flushPromises()
-    expect(updateSkill).toHaveBeenLastCalledWith(7, { heat_cost: 20 })
-
-    await buttons[2].trigger('click')
-    await flushPromises()
-
-    await buttons[3].trigger('click')
-    await flushPromises()
-    expect(updateSkill).toHaveBeenLastCalledWith(7, { descr: '重塑后的描述' })
+    expect(vmOf(wrapper).onEditDescr).toBeDefined()
     wrapper.unmount()
   })
 
@@ -251,29 +249,27 @@ describe('SkillsView 列表与过滤', () => {
   })
 })
 
-describe('SkillsView 数值编辑', () => {
-  it('patch 确认：按字段名提交 Number 值并合并返回', async () => {
-    box.prompt.mockResolvedValueOnce({ value: '250' })
-    const row = skillFixture()
-    updateSkill.mockResolvedValueOnce({ skill: { ...row, base_damage: 250 } })
+describe('SkillsView 数值只读展示（第 23 轮）', () => {
+  // 第 23 轮：patch 函数已删除 —— 战斗数值字段不能改。
+  // 数值列仍是只读展示；可写字段只有 name / descr（编辑对话框）。
+  it('编辑提交仅包含 name / descr，不携带战斗数值', async () => {
+    const row = skillFixture({ id: 7 })
+    updateSkill.mockResolvedValueOnce({ skill: { ...row, name: '火球' } })
     const wrapper = await mountSkills([row])
     const vm = wrapper.vm as unknown as Vm
-    await vm.patch(row, 'base_damage', '基础伤害')
+
+    const btn = wrapper.findAll('.el-table__row')[0].findAll('button').find((b) => b.text() === '编辑')!
+    await btn.trigger('click')
+    await flushPromises()
+    vm.editForm.name = ' 火球 '
+    await vm.submitEdit()
     await flushPromises()
 
-    expect(updateSkill).toHaveBeenCalledWith(1, { base_damage: 250 })
-    expect(row.base_damage).toBe(250)
+    // 提交体只能有 name / descr —— 战斗数值进请求会被服务端 400。
+    expect(updateSkill).toHaveBeenCalledWith(7, { name: '火球', descr: '发射火弹' })
+    expect(row.name).toBe('火球')
+    expect(vm.editOpen).toBe(false)
     expect(document.body.textContent).toContain('已保存')
-    wrapper.unmount()
-  })
-
-  it('patch 取消：不提交', async () => {
-    box.prompt.mockRejectedValueOnce('cancel')
-    const wrapper = await mountSkills([skillFixture()])
-    const vm = wrapper.vm as unknown as Vm
-    await vm.patch(skillFixture(), 'heat_cost', '热量消耗')
-    await flushPromises()
-    expect(updateSkill).not.toHaveBeenCalled()
     wrapper.unmount()
   })
 
@@ -301,10 +297,10 @@ describe('SkillsView 数值编辑', () => {
   })
 })
 
-describe('SkillsView 完整编辑对话框（P5-4）', () => {
-  it('点击「编辑」预填全字段，保存时 trim 名称并提交', async () => {
+describe('SkillsView 完整编辑对话框', () => {
+  it('点击「编辑」预填名称/描述，保存时 trim 名称并提交', async () => {
     const row = skillFixture({ id: 7 })
-    updateSkill.mockResolvedValueOnce({ skill: { ...row, name: '火球', base_damage: 250 } })
+    updateSkill.mockResolvedValueOnce({ skill: { ...row, name: '火球' } })
     const wrapper = await mountSkills([row])
     const vm = wrapper.vm as unknown as Vm
 
@@ -314,37 +310,24 @@ describe('SkillsView 完整编辑对话框（P5-4）', () => {
 
     expect(vm.editOpen).toBe(true)
     expect(vm.editForm.name).toBe('火弹')
-    expect(vm.editForm.element).toBe('fire')
-    expect(vm.editForm.kind).toBe('active')
-    // el-dialog 默认 append-to-body=false，内容仍在组件树内。
+    expect(vm.editForm.descr).toBe('发射火弹')
     const text = wrapper.text()
     expect(text).toContain('编辑技能')
-    expect(text).toContain('基础伤害')
-    expect(text).toContain('弹丸速度')
+    // 第 23 轮：对话框不再有战斗数值输入。
+    expect(text).not.toContain('基础伤害')
 
     vm.editForm.name = '  火球  '
-    vm.editForm.base_damage = 250
     await vm.submitEdit()
     await flushPromises()
 
-    expect(updateSkill).toHaveBeenCalledWith(
-      7,
-      expect.objectContaining({
-        name: '火球',
-        descr: '发射火弹',
-        base_damage: 250,
-        element: 'fire',
-        kind: 'active',
-      }),
-    )
+    expect(updateSkill).toHaveBeenCalledWith(7, { name: '火球', descr: '发射火弹' })
     expect(row.name).toBe('火球')
-    expect(row.base_damage).toBe(250)
     expect(vm.editOpen).toBe(false)
     expect(document.body.textContent).toContain('已保存')
     wrapper.unmount()
   })
 
-  it('保存校验：空名称、负数、非整数都拒绝提交', async () => {
+  it('保存校验：空名称拒绝提交（数值字段已无输入入口）', async () => {
     const wrapper = await mountSkills([skillFixture()])
     const vm = wrapper.vm as unknown as Vm
     vm.editRow = skillFixture()
@@ -355,21 +338,8 @@ describe('SkillsView 完整编辑对话框（P5-4）', () => {
     expect(updateSkill).not.toHaveBeenCalled()
 
     vm.editForm.name = '火弹'
-    vm.editForm.base_damage = -1
     await vm.submitEdit()
-    expect(document.body.textContent).toContain('基础伤害 必须是非负整数')
-    expect(updateSkill).not.toHaveBeenCalled()
-
-    vm.editForm.base_damage = 1.5
-    await vm.submitEdit()
-    expect(document.body.textContent).toContain('基础伤害 必须是非负整数')
-    expect(updateSkill).not.toHaveBeenCalled()
-
-    vm.editForm.base_damage = 10
-    vm.editForm.heat_cost = 1.5
-    await vm.submitEdit()
-    expect(document.body.textContent).toContain('热量消耗 必须是非负整数')
-    expect(updateSkill).not.toHaveBeenCalled()
+    expect(updateSkill).toHaveBeenCalled()
     wrapper.unmount()
   })
 
@@ -409,15 +379,21 @@ describe('SkillsView 完整编辑对话框（P5-4）', () => {
 })
 
 describe('SkillsView 保存失败提示（P2-2）', () => {
-  it('patch 失败（非取消）：提示保存失败', async () => {
-    box.prompt.mockResolvedValueOnce({ value: '250' })
+  // 第 23 轮：patch 已删除，保存失败只剩对话框提交路径。
+  it('编辑保存失败（非取消）：提示保存失败', async () => {
+    const row = skillFixture()
     updateSkill.mockRejectedValueOnce(new Error('403 只读'))
-    const wrapper = await mountSkills([skillFixture()])
-
-    await (wrapper.vm as unknown as Vm).patch(skillFixture(), 'base_damage', '基础伤害')
+    const wrapper = await mountSkills([row])
+    const vm = wrapper.vm as unknown as Vm
+    vm.openEdit(row)
+    vm.editForm.name = '火球'
+    await vm.submitEdit()
     await flushPromises()
-
-    expect(document.body.textContent).toContain('保存失败：403 只读')
+    // 失败时对话框保持打开（editOpen 仍 true），loading 复位。
+    expect(vm.editOpen).toBe(true)
+    expect(vm.editSaving).toBe(false)
+    // ElMessage 是 append-to-body 的全局提示；取最近一条断言。
+    expect(document.body.textContent).toContain('保存失败')
     wrapper.unmount()
   })
 
