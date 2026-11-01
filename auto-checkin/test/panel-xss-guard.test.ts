@@ -38,3 +38,11 @@ test('esc() 转义函数存在且覆盖五个特殊字符', () => {
   assert.ok(appJs.includes('&amp;') && appJs.includes('&lt;') && appJs.includes('&gt;')
     && appJs.includes('&quot;') && appJs.includes('&#39;'))
 })
+
+// 第 57 轮：口令不再通过 URL 传递（进 sessionStorage + replaceState 清理）。
+test('面板口令处理：不再提示 URL 加 ?token=，使用 sessionStorage 与 replaceState', () => {
+  assert.ok(!appJs.includes('URL 加 ?token='), '不得再引导用户把口令拼进 URL')
+  assert.ok(appJs.includes('sessionStorage'), '口令应存 sessionStorage')
+  assert.ok(appJs.includes('replaceState'), 'URL 中的 token 应被 replaceState 抹掉')
+  assert.ok(appJs.includes('panel_token'), 'sessionStorage 键名应存在')
+})

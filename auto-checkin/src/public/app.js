@@ -1,10 +1,19 @@
 // ============================================================
 // 签到中枢 前端逻辑：拉取 /api/stats、/api/trend、/api/records，
 // 渲染指标 Bento、站点卡片、记录表，并用纯 SVG 手绘奖励趋势折线图。
-// 若设了访问口令，URL 加 ?token=xxx 即可。
+// 第 57 轮：口令只从 URL 读一次——立即转入 sessionStorage 并用
+// replaceState 抹掉地址栏查询串（token 不再留在浏览器历史/代理日志里）。
+// 之后刷新/导航从 sessionStorage 取，URL 保持干净。
 // ============================================================
 
-const TOKEN = new URLSearchParams(location.search).get("token") || "";
+const _URL_TOKEN = new URLSearchParams(location.search).get("token") || "";
+let TOKEN = sessionStorage.getItem("panel_token") || _URL_TOKEN;
+if (_URL_TOKEN) {
+  sessionStorage.setItem("panel_token", _URL_TOKEN);
+  try {
+    history.replaceState(null, "", location.pathname + location.hash);
+  } catch { /* 某些内嵌环境不允许 replaceState，忽略 */ }
+}
 const SITE_COLORS = ["#6d5efc", "#22d3ee", "#34e5a5", "#f0a640", "#ff5d73"];
 const NS = "http://www.w3.org/2000/svg";
 let trendDays = 30;
@@ -259,7 +268,17 @@ function round(v) { return v >= 10 ? Math.round(v) : Number(v.toFixed(2)); }
 // ---------------- 主流程 ----------------
 async function loadStats() {
   const res = await api("/api/stats");
-  if (res.status === 401) { $("live-text").textContent = "需口令：URL 加 ?token="; return; }
+  if (res.status === 401) {
+    // 第 57 轮：不再引导用户把口令拼进 URL（会进代理日志/浏览器历史）。
+    const input = window.prompt("请输入访问口令：");
+    if (input && input.trim()) {
+      sessionStorage.setItem("panel_token", input.trim());
+      location.reload();
+    } else {
+      $("live-text").textContent = "需口令：请在弹窗中输入";
+    }
+    return;
+  }
   const data = await res.json();
   renderLive(data);
   renderMetrics(data);
