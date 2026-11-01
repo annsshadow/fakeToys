@@ -4,7 +4,7 @@
 use axum::{extract::Extension, extract::Path, extract::Query, response::Response, Json};
 use base64::Engine;
 use deadpool_postgres::Pool;
-use hmac::{Hmac, Mac};
+use hmac::{Hmac, KeyInit, Mac};
 use serde::Deserialize;
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
