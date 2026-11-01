@@ -788,7 +788,7 @@ pub async fn cms_entity_note_delete(
     ))))
 }
 
-pub fn cms_core_entity_router(pool: deadpool_postgres::Pool) -> Router {
+pub fn cms_core_entity_router(db: DatabaseConnection) -> Router {
     Router::new()
         .route("/api/cms/category/list", get(category_list))
         .route("/api/cms/category/{id}", get(category_get))
@@ -915,7 +915,7 @@ pub fn cms_core_entity_router(pool: deadpool_postgres::Pool) -> Router {
             "/api/cms/core/entity/note/delete/{id}",
             post(cms_entity_note_delete),
         )
-        .layer(Extension(pool))
+        .layer(Extension(db))
 }
 
 #[cfg(test)]
@@ -924,6 +924,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    crate::cms_core_entity_router(pool)
+pub fn router(db: DatabaseConnection) -> axum::Router {
+    crate::cms_core_entity_router(db)
 }

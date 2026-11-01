@@ -328,7 +328,7 @@ func (s *Service) Diagnose(ctx context.Context, userID int64, levelID, failedTim
 	}
 	failedTimes = realFailed
 
-	gl := domain.GenerateLevel(levelID)
+	gl := domain.CachedLevel(levelID)
 
 	// 取最近若干局该关的战报做样本
 	rows, err := s.pool.Query(ctx,
@@ -511,9 +511,17 @@ func (s *Service) ListDefenses(ctx context.Context, userID int64) (mine *Defense
 		Scan(&own.ID, &own.OwnerID, &own.OwnerName, &own.Name, &own.Power,
 			&own.ElementCoverage, &own.MasteryDone, &own.Wins, &own.Losses,
 			&own.ShieldedUntil, &own.Snapshot, &own.SnapshotHash)
-	if err == nil {
+	switch {
+	case err == nil:
 		// snapshot 落库是 jsonb，Scan 进 map 后即已解码，无需再 Unmarshal
 		mine = &own
+	case errors.Is(err, pgx.ErrNoRows):
+		// 还没保存过防线：mine 保持 nil，前端据此显示「尚未布置」。
+	default:
+		// ⚠️ 原实现是 `if err == nil { mine = &own }`——连接断、超时、权限失败		// 全都落进「没保存过防线」这一支，接口 200 + mine=null。
+		// 「你没有防线」和「查不到防线」对玩家是两件事：前者要去布置，
+		// 后者要去报障。这里必须 fail-loud。
+		return nil, nil, fmt.Errorf("load own defense: %w", err)
 	}
 	return mine, candidates, nil
 }
@@ -597,51 +605,30 @@ var validDefenseWorks = map[string]bool{
 // 让所有挑战者的模拟结果失去意义。
 //
 // 参照实现是 SaveLoadout（loadout.go），它对技能做了同样的校验。
+//
+// # 为什么是批量查询（2026-10-29）
+//
+// 原实现对每个 id 单独 `SELECT COUNT(*)`：技能 ≤12、装备 ≤18、专精节点可达
+// 96，最坏一次保存要 **126 次往返**，全部发生在 HTTP 请求的同步路径上。
+// 三类各压成一条 `= ANY($2)`，往返固定为 3 次。
+//
+// 报错**仍按入参顺序**取第一个缺失项——逐条版的用户可见错误是「第一个缺失的
+// 那个 id」，批量版若按查询返回顺序报错会让同一个请求的错误信息随 PG 计划漂移。
 func (s *Service) validateDefenseOwnership(ctx context.Context, userID int64, in SaveDefenseInput) error {
 	if len(in.Skills) > 12 {
 		return fmt.Errorf("%w: 技能数量 %d 过多", ErrBadInput, len(in.Skills))
 	}
-	for _, id := range in.Skills {
-		if id <= 0 {
-			continue
-		}
-		var n int
-		if err := s.pool.QueryRow(ctx,
-			`SELECT COUNT(*) FROM user_skills WHERE user_id = $1 AND skill_id = $2`,
-			userID, id).Scan(&n); err != nil {
-			return err
-		}
-		if n == 0 {
-			return fmt.Errorf("%w: 技能 %d 未解锁", ErrBadInput, id)
-		}
+	if err := s.requireAllOwned(ctx, userID, "user_skills", "skill_id", in.Skills,
+		"技能 %d 未解锁"); err != nil {
+		return err
 	}
-	for _, id := range in.Equipment {
-		if id <= 0 {
-			continue
-		}
-		var n int
-		if err := s.pool.QueryRow(ctx,
-			`SELECT COUNT(*) FROM user_equipment WHERE user_id = $1 AND equipment_id = $2`,
-			userID, id).Scan(&n); err != nil {
-			return err
-		}
-		if n == 0 {
-			return fmt.Errorf("%w: 装备 %d 未拥有", ErrBadInput, id)
-		}
+	if err := s.requireAllOwned(ctx, userID, "user_equipment", "equipment_id", in.Equipment,
+		"装备 %d 未拥有"); err != nil {
+		return err
 	}
-	for _, node := range in.MasteryNodes {
-		if node <= 0 {
-			continue
-		}
-		var n int
-		if err := s.pool.QueryRow(ctx,
-			`SELECT COUNT(*) FROM user_mastery_nodes WHERE user_id = $1 AND node_id = $2`,
-			userID, node).Scan(&n); err != nil {
-			return err
-		}
-		if n == 0 {
-			return fmt.Errorf("%w: 专精节点 %d 未投入", ErrBadInput, node)
-		}
+	if err := s.requireAllOwned(ctx, userID, "user_mastery_nodes", "node_id", in.MasteryNodes,
+		"专精节点 %d 未投入"); err != nil {
+		return err
 	}
 	if len(in.Works) > 3 {
 		return fmt.Errorf("%w: 工程装置最多 3 个", ErrBadInput)
@@ -655,6 +642,51 @@ func (s *Service) validateDefenseOwnership(ctx context.Context, userID int64, in
 	// 而重开护盾既无冷却也无成本 —— 等于免费获得无限免偷。
 	if in.ShieldHours < 0 || in.ShieldHours > MaxDefenseShieldHours {
 		return fmt.Errorf("%w: 护盾时长须在 0..%d 小时", ErrBadInput, MaxDefenseShieldHours)
+	}
+	return nil
+}
+
+// requireAllOwned 用一条 `= ANY($2)` 校验 ids 全部归 userID 所有。
+//
+// table / column 是本文件内的编译期常量，不来自外部输入，故直接拼进 SQL
+// （列名与表名无法参数化）；值始终走占位符。
+func (s *Service) requireAllOwned(
+	ctx context.Context, userID int64, table, column string, ids []int, missingFmt string,
+) error {
+	wanted := make([]int32, 0, len(ids))
+	for _, id := range ids {
+		if id > 0 {
+			wanted = append(wanted, int32(id))
+		}
+	}
+	if len(wanted) == 0 {
+		return nil
+	}
+	query := fmt.Sprintf(
+		`SELECT %s FROM %s WHERE user_id = $1 AND %s = ANY($2)`, column, table, column)
+	rows, err := s.pool.Query(ctx, query, userID, wanted)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	owned := make(map[int32]struct{}, len(wanted))
+	for rows.Next() {
+		var id int32
+		if err := rows.Scan(&id); err != nil {
+			return err
+		}
+		owned[id] = struct{}{}
+	}
+	// 迭代中途断连必须报错：否则「查了一半」会被当成「这些都没拥有」，
+	// 玩家看到的是「技能 7 未解锁」而不是数据库故障。
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	for _, id := range wanted {
+		if _, ok := owned[id]; !ok {
+			return fmt.Errorf("%w: "+missingFmt, ErrBadInput, id)
+		}
 	}
 	return nil
 }
@@ -755,6 +787,26 @@ func (s *Service) SaveDefense(ctx context.Context, userID int64, in SaveDefenseI
 		ElementCoverage: rating.ElementCoverage, MasteryDone: rating.MasteryDone,
 		Snapshot: snapshot, SnapshotHash: hash,
 	}, nil
+}
+
+// DeleteMyDefense 删除玩家自己的防线（2026-10-31 实质优化第 32 轮）。
+//
+// 此前玩家布置防线后只能覆盖保存，无法清空 —— 不想被挑战时
+// 没有任何办法让别人找不到自己。删除后：
+//   - 其他玩家无法再挑战该防线；
+//   - `defense_challenges` 随外键 CASCADE 删除（挑战历史里这条消失，
+//     可接受，见 MyChallengeHistory 注释）。
+//
+// 不存在防线时返回 ErrNotFound（区别于「删除成功但什么都没发生」）。
+func (s *Service) DeleteMyDefense(ctx context.Context, userID int64) error {
+	ct, err := s.pool.Exec(ctx, `DELETE FROM defenses WHERE owner_id = $1`, userID)
+	if err != nil {
+		return fmt.Errorf("delete my defense: %w", err)
+	}
+	if ct.RowsAffected() == 0 {
+		return fmt.Errorf("%w: 你还没有设置防线", ErrNotFound)
+	}
+	return nil
 }
 
 // ChallengeInput 是挑战请求。
@@ -1133,6 +1185,120 @@ func (s *Service) ChallengeDefense(ctx context.Context, userID, defenseID int64,
 	return res, err
 }
 
+// ChallengeHistoryItem 是玩家挑战历史的一行（2026-10-30 实质优化第 18 轮）。
+type ChallengeHistoryItem struct {
+	ID            int64          `json:"id"`
+	DefenseID     int64          `json:"defense_id"`
+	DefenseName   string         `json:"defense_name"`
+	OwnerNickname string         `json:"owner_nickname"`
+	OwnerPower    int64          `json:"owner_power"`
+	Won           bool           `json:"won"`
+	DurationMs    int            `json:"duration_ms"`
+	HpLeftPct     int            `json:"hp_left_pct"`
+	Loot          map[string]int `json:"loot"`
+	CreatedAt     time.Time      `json:"created_at"`
+}
+
+// MyChallengeHistory 返回当前玩家最近的防线挑战记录。
+//
+// 此前玩家只能看到**最近一次**挑战结果（客户端本地保存），
+// 历史记录完全没有入口 —— 想回顾「昨天挑战谁赢了、偷了多少」
+// 只能靠记忆。这里补上服务端权威的历史列表。
+//
+// 注意：防线被删除时挑战记录会随 `ON DELETE CASCADE` 消失，
+// 这是可接受的（对手防线已不存在，回看没有意义）。
+func (s *Service) MyChallengeHistory(ctx context.Context, userID int64, limit int) ([]ChallengeHistoryItem, error) {
+	if limit <= 0 || limit > 50 {
+		limit = 20
+	}
+	rows, err := s.pool.Query(ctx, `
+		SELECT dc.id, dc.defense_id, COALESCE(d.name, ''), COALESCE(u.nickname, ''),
+		       d.power, dc.won, dc.duration_ms, dc.hp_left_pct, dc.loot, dc.created_at
+		FROM defense_challenges dc
+		JOIN defenses d ON d.id = dc.defense_id
+		LEFT JOIN users u ON u.id = d.owner_id
+		WHERE dc.challenger_id = $1
+		ORDER BY dc.created_at DESC
+		LIMIT $2`, userID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("my challenge history: %w", err)
+	}
+	defer rows.Close()
+
+	out := []ChallengeHistoryItem{}
+	for rows.Next() {
+		var it ChallengeHistoryItem
+		var lootRaw []byte
+		if err := rows.Scan(&it.ID, &it.DefenseID, &it.DefenseName, &it.OwnerNickname,
+			&it.OwnerPower, &it.Won, &it.DurationMs, &it.HpLeftPct, &lootRaw, &it.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan challenge history: %w", err)
+		}
+		if err := json.Unmarshal(lootRaw, &it.Loot); err != nil {
+			return nil, fmt.Errorf("unmarshal challenge loot: %w", err)
+		}
+		out = append(out, it)
+	}
+	return out, rows.Err()
+}
+
+// DefenseChallengeItem 是「我的防线被挑战」历史的一行（2026-10-31 新一轮第 3 轮）。
+type DefenseChallengeItem struct {
+	ID                 int64  `json:"id"`
+	DefenseID          int64  `json:"defense_id"`
+	DefenseName        string `json:"defense_name"`
+	ChallengerNickname string `json:"challenger_nickname"`
+	// Won 是**挑战者**是否获胜。防守方视角：won=true 表示「我的防线被攻破」。
+	Won        bool           `json:"won"`
+	DurationMs int            `json:"duration_ms"`
+	HpLeftPct  int            `json:"hp_left_pct"` // 挑战者剩余防线血量百分比
+	Loot       map[string]int `json:"loot"`        // 被偷走的东西
+	CreatedAt  time.Time      `json:"created_at"`
+}
+
+// MyDefenseChallenges 返回当前玩家「我的防线被挑战」的历史记录。
+//
+// 挑战记录此前只有**挑战者**能看（`MyChallengeHistory`）：防守方布置防线后，
+// 谁挑战了我、攻没攻破、被偷了什么，玩家完全看不到 ——
+// 防线被反复偷资源却没有反馈，等于「布置防线」对玩家是单向黑盒。
+// 这里补上防守方视角：按 `defenses.owner_id` 过滤，命中
+// `idx_defense_challenges_defense`（defense_id 首列）索引。
+//
+// 与 `MyChallengeHistory` 同口径：防线被删除时记录随 `ON DELETE CASCADE`
+// 消失（防线已不存在，回看没有意义）。
+func (s *Service) MyDefenseChallenges(ctx context.Context, userID int64, limit int) ([]DefenseChallengeItem, error) {
+	if limit <= 0 || limit > 50 {
+		limit = 20
+	}
+	rows, err := s.pool.Query(ctx, `
+		SELECT dc.id, dc.defense_id, COALESCE(d.name, ''), COALESCE(u.nickname, ''),
+		       dc.won, dc.duration_ms, dc.hp_left_pct, dc.loot, dc.created_at
+		FROM defense_challenges dc
+		JOIN defenses d ON d.id = dc.defense_id
+		LEFT JOIN users u ON u.id = dc.challenger_id
+		WHERE d.owner_id = $1
+		ORDER BY dc.created_at DESC
+		LIMIT $2`, userID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("my defense challenges: %w", err)
+	}
+	defer rows.Close()
+
+	out := []DefenseChallengeItem{}
+	for rows.Next() {
+		var it DefenseChallengeItem
+		var lootRaw []byte
+		if err := rows.Scan(&it.ID, &it.DefenseID, &it.DefenseName, &it.ChallengerNickname,
+			&it.Won, &it.DurationMs, &it.HpLeftPct, &lootRaw, &it.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan defense challenges: %w", err)
+		}
+		if err := json.Unmarshal(lootRaw, &it.Loot); err != nil {
+			return nil, fmt.Errorf("unmarshal defense challenge loot: %w", err)
+		}
+		out = append(out, it)
+	}
+	return out, rows.Err()
+}
+
 func (s *Service) dailyChallengeCountersTx(ctx context.Context, tx txType, userID int64) (attempts, stolen int, err error) {
 	// ⚠️ 第 98 轮：`challenge_date` 由 **Go** 决定，与每日任务 / 签到 / 商城同一个口径。
 	// 详见 dailyChallengeCounters 上方的说明。
@@ -1155,5 +1321,5 @@ func GeneratedPowerLevel(power int64) domain.GeneratedLevel {
 	if id > domain.TotalLevels {
 		id = domain.TotalLevels
 	}
-	return domain.GenerateLevel(id)
+	return domain.CachedLevel(id)
 }

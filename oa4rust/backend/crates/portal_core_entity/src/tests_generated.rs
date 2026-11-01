@@ -11,8 +11,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_portal_list() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -32,8 +32,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_widget_list() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -53,8 +53,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_page_list() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -74,8 +74,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_page_get() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -95,8 +95,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_page_create() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -116,8 +116,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_page_update() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -137,8 +137,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_page_remove() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()
@@ -158,8 +158,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_script_list() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
         let response = app
             .oneshot(
                 Request::builder()

@@ -182,7 +182,10 @@ export const dedupResponseSchema = z.object({
  * 只保留「接口名 + 第一个出问题的字段 + issue code」，不裸抛 zod 的 `issues` 原文
  * （与后端 `to_http_error` 的收口判据同族：库内部措辞不透给页面）。
  */
-export const zodErrorMessage = (schemaName: string, issues: readonly z.core.$ZodIssue[]): string => {
+export const zodErrorMessage = (
+  schemaName: string,
+  issues: readonly z.core.$ZodIssue[],
+): string => {
   const first = issues[0]
   const loc = first?.path.join('.') || '(root)'
   const code = first?.code || 'unknown'

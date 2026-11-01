@@ -12,9 +12,26 @@ import type { AddressInfo } from "node:net";
 // 必须在导入 store/server 前设置，确保测试用临时数据目录
 const DATA_DIR = mkdtempSync(join(tmpdir(), "auto-checkin-server-"));
 process.env.AUTO_CHECKIN_DATA_DIR = DATA_DIR;
+// 锁目录与数据目录一起隔离，避免与并行测试文件抢同一把 .run.lock
+process.env.AUTO_CHECKIN_LOCK_DIR = DATA_DIR;
+
+// run 路由会触发 runAll/runSite → 浏览器启动；指向空目录让其确定性失败，
+// 测试绝不碰真实站点（必须在 server.js 加载 runner 链之前设置）
+process.env.PLAYWRIGHT_BROWSERS_PATH = "Z:" + join("nonexistent", "browsers");
 
 const { addRecord } = await import("../src/store.js");
 const { createApp } = await import("../src/server.js");
+const { isRunning } = await import("../src/runner.js");
+
+/** 等 runner 空闲：run 路由是 fire-and-forget，跨测试边界仍可能在途 */
+async function waitForIdle(timeoutMs = 5000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (!isRunning()) return;
+    await new Promise((r) => setTimeout(r, 20));
+  }
+  throw new Error("runner 5 秒内未空闲，测试卫生失败");
+}
 import type { AppConfig } from "../src/types.js";
 
 function config(token = ""): AppConfig {
@@ -131,5 +148,48 @@ test("历史记录：limit 下限夹取（负值不静默丢数据）", async ()
     assert.equal(r.length, 1, "?limit=-5 应被夹到 1，返回最近 1 条而非空集");
     const zero = await (await fetch(`${base}/api/records?limit=0`)).json();
     assert.ok(zero.length >= 1, "?limit=0 走默认 100，不应被夹成 0 条");
+  });
+});
+
+test("趋势接口：days 夹取到 [7, 90]，返回站点清单与点位", async () => {
+  await withServer("", async (base) => {
+    const r = await (await fetch(`${base}/api/trend`)).json();
+    assert.equal(r.days, 30, "缺省 30 天");
+    assert.ok(Array.isArray(r.sites) && r.sites.length >= 3, "应列出全部注册站点");
+    assert.ok("points" in r);
+
+    assert.equal((await (await fetch(`${base}/api/trend?days=5`)).json()).days, 7, "下限夹到 7");
+    assert.equal((await (await fetch(`${base}/api/trend?days=999`)).json()).days, 90, "上限夹到 90");
+    assert.equal((await (await fetch(`${base}/api/trend?days=abc`)).json()).days, 30, "非数字走默认");
+  });
+});
+
+test("面板触发全部签到：立即 200；进行中再触发 → 409（running 守卫）", async () => {
+  await withServer("", async (base) => {
+    // 两个请求**同时发出**（不先等第一个返回）：CI 上三个适配器会在数毫秒内
+    // 跳过/失败完毕，若等第一个响应再发第二个，runAll 可能已结束、409 断言
+    // 必 flaky。同时发出时第二个请求的处理必然落在第一个 runAll 的在途窗口内。
+    const pending = [
+      fetch(`${base}/api/run`, { method: "POST" }),
+      fetch(`${base}/api/run`, { method: "POST" }),
+    ];
+    const [first, second] = await Promise.all(pending);
+    assert.equal(first.status, 200);
+    assert.equal(second.status, 409, "running 守卫必须拦下并发触发");
+    await waitForIdle(); // 不把在途的 runAll 泄漏给下一个测试
+  });
+});
+
+test("面板触发单站：未知站点 404（不占锁），已知站点 200", async () => {
+  await waitForIdle(); // 防上一条用例的在途 runAll 污染 isRunning
+  await withServer("", async (base) => {
+    const unknown = await fetch(`${base}/api/run/no-such-site`, { method: "POST" });
+    assert.equal(unknown.status, 404);
+
+    // 单站的 409 守卫不在此断言：单站 runSite（浏览器启动失败）毫秒级完成，
+    // 第二个请求必然赶不上 running 窗口，严格断言是 flaky——守卫语义已由
+    // 「全部签到」路由的 409 用例覆盖（同一 isRunning 判据）。
+    const known = await fetch(`${base}/api/run/vyceai`, { method: "POST" });
+    assert.equal(known.status, 200);
   });
 });

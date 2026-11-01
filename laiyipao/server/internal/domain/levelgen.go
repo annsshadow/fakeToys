@@ -11,7 +11,10 @@ package domain
 // ⚠️ 生成必须确定性：同样的章节参数 + seed 必须产出完全相同的结果，
 // 否则关卡数据无法在客户端/服务端/后台之间保持一致。
 
-import "sort"
+import (
+	"sort"
+	"sync"
+)
 
 // Chapter 章节定义。
 type Chapter struct {
@@ -787,6 +790,27 @@ func (l *LCG) Intn(n int) int {
 //	否则暴击分布不同 → 事件流不同 → 哈希不同。
 func (l *LCG) Roll() int64 {
 	return int64(l.Intn(1000))
+}
+
+// levelCache 是进程内一次性生成的全量关卡缓存（2026-10-30 实质优化第 14 轮）。
+//
+// `GenerateLevel` 是确定性纯函数（同输入必同输出），而它被请求级路径
+// 反复调用（`GET /levels/:id` 每次请求都重新生成整关）。用 `sync.OnceValue`
+// 在首次访问时生成全部 100 关一次，之后 O(1) 读取。
+//
+// ⚠️ 返回的 `GeneratedLevel` 是值拷贝，但内部 slice 与缓存**共享底层数组**：
+// 调用方必须只读。若未来有调用方需要修改关卡数据，先深拷贝再改。
+var levelCache = sync.OnceValue(func() []GeneratedLevel {
+	return GenerateAllLevels()
+})
+
+// CachedLevel 返回第 levelID 关，进程内只生成一次。
+// 非法 id 返回零值（调用方通常已先校验边界）。
+func CachedLevel(levelID int) GeneratedLevel {
+	if levelID < 1 || levelID > TotalLevels {
+		return GeneratedLevel{}
+	}
+	return levelCache()[levelID-1]
 }
 
 // GenerateAllLevels 生成全部 100 关。

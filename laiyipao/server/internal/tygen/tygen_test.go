@@ -70,13 +70,23 @@ func TestRegistryCoversEveryAdminResponse(t *testing.T) {
 		"AdminEquipmentView",
 		"AdminEquipmentResp",
 		"AdminDefenseView",
+		"AdminDefenseChallengeView",
+		"AdminDefenseChallengesResp",
 		"AdminEconomyFlowView",
 		"AdminShopItemView",
 		"AdminEconomyResp",
 		"AdminShopUpdateResp",
+		// 2026-10-31（新一轮第 3 轮）：后台订单列表此前漏登记 ——
+		// 旧批次把类型直接写进了生成物，注册表与守卫名单都没有它，
+		// tygen 一跑就会把类型删掉。这里补上，让守卫名单与注册表对齐。
+		"AdminOrderView",
+		"AdminOrdersResp",
 		"AdminAnnouncementView",
 		"AdminRedeemCodeView",
 		"AdminAuditLogView",
+		// 2026-10-31（新一轮第 17 轮）：兑换码使用记录视图。
+		"AdminRedeemUsageView",
+		"AdminRedeemUsagesResp",
 	}
 	for _, name := range want {
 		if !registered[name] {

@@ -85,7 +85,7 @@
             </view>
             <text class="muted" style="display: block; margin-top: 6rpx">{{ s.descr }}</text>
             <text class="dim" style="display: block; margin-top: 4rpx">
-              伤害 {{ damageAt(s) }} · 热量 {{ s.heat_cost }} · 冷却 {{ s.cooldown_ms }}ms
+              伤害 {{ damageAt(s) }}<template v-if="!isMaxLevel(s.id)"> → {{ nextDamageAt(s) }}</template> · 热量 {{ s.heat_cost }} · 冷却 {{ s.cooldown_ms }}ms
               <text v-if="s.pierce"> · 穿透 {{ s.pierce }}</text>
               <text v-if="s.aoe_radius"> · 溅射 {{ s.aoe_radius }}</text>
             </text>
@@ -575,6 +575,23 @@ function damageAt(s: SkillDef): number {
       { maxLevel: r.max_level, coefPermille: r.coef_permille, baseCost: r.base_cost },
       BigInt(s.base_damage),
       levelOf(s.id),
+    ),
+  )
+}
+
+/**
+ * 升级后的伤害预览（2026-11-01 新一轮第 61 轮）。
+ * 与 damageAt 同一公式、等级 +1 —— 玩家升级前能看到收益，
+ * 「花金币值不值」不必先点了升级再看。
+ */
+function nextDamageAt(s: SkillDef): number {
+  const r = skillRules.value
+  if (!r) return s.base_damage
+  return Number(
+    skillBaseDamageAtLevel(
+      { maxLevel: r.max_level, coefPermille: r.coef_permille, baseCost: r.base_cost },
+      BigInt(s.base_damage),
+      levelOf(s.id) + 1,
     ),
   )
 }

@@ -90,6 +90,7 @@ async function mountReactions(elements: 'fire_ice' | 'fire_only' = 'fire_ice') {
     build_rating: {},
     power: 0,
     max_stage: 1,
+    account: { created_at: '2026-01-01T00:00:00Z', last_login_at: '2026-01-02T00:00:00Z', is_guest: false, nickname: '测试' },
   })
   // 出战槽位：技能 1 = fire，技能 2 = ice（见 fixtures.makeSkill）
   // ⚠️ 字段名是 `skill_ids`（服务端 /me/loadout 的契约），不是 `loadout`。

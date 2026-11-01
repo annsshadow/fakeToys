@@ -7,6 +7,7 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { ElDrawer, ElInputNumber } from 'element-plus'
 import ElementPlus from 'element-plus'
+import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AdminBattleView } from '@/api'
 import { __resetReactionLabelCache } from '@/reactions'
@@ -81,9 +82,30 @@ const detailBase = {
   created_at: '2026-01-02T03:04:05Z',
 }
 
+/**
+ * 构造真实 router：用户列是 el-link，点击后 `router.push` 到用户页。
+ * 没有 router 注入时 `useRouter()` 返回 undefined，点击即抛错。
+ */
+let lastRouter: ReturnType<typeof createRouter> | null = null
+
+async function makeRouter() {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [
+      { path: '/battles', component: { template: '<div />' } },
+      { path: '/users', component: { template: '<div />' } },
+    ],
+  })
+  await router.push('/battles')
+  await router.isReady()
+  lastRouter = router
+  return router
+}
+
 async function mountBattles(items: AdminBattleView[] = [], total = items.length) {
   fetchBattles.mockResolvedValue({ items, total })
-  const wrapper = mount(BattlesView, { global: { plugins: [ElementPlus] } })
+  const router = await makeRouter()
+  const wrapper = mount(BattlesView, { global: { plugins: [ElementPlus, router] } })
   await flushPromises()
   return wrapper
 }
@@ -210,7 +232,8 @@ describe('BattlesView 列表渲染', () => {
 
   it('加载失败：弹出错误消息', async () => {
     fetchBattles.mockRejectedValueOnce(new Error('战报库离线'))
-    const wrapper = mount(BattlesView, { global: { plugins: [ElementPlus] } })
+    const router = await makeRouter()
+    const wrapper = mount(BattlesView, { global: { plugins: [ElementPlus, router] } })
     await flushPromises()
     expect(document.body.textContent).toContain('战报加载失败：战报库离线')
     wrapper.unmount()
@@ -515,6 +538,152 @@ describe('BattlesView 运营侧验真入口', () => {
     const el = wrapper.find('input[placeholder*="重放算出的 replay_hash"]')
     expect((el.element as HTMLInputElement).value).toBe('')
     expect(wrapper.text()).not.toContain('actual-FFF')
+  })
+})
+
+describe('BattlesView 点击玩家跳转用户详情（第 38 轮）', () => {
+  it('点击用户列链接：跳转 /users 并携带 user_id', async () => {
+    const wrapper = await mountBattles([battleFixture({ id: 1, user_id: 9, nickname: '测试玩家' })])
+    const link = wrapper.find('.el-table__row .el-link')
+    expect(link.exists(), '找不到用户列链接').toBe(true)
+    expect(link.text()).toBe('测试玩家')
+
+    await link.trigger('click')
+    await flushPromises()
+
+    expect(lastRouter?.currentRoute.value.path).toBe('/users')
+    expect(lastRouter?.currentRoute.value.query.user_id).toBe('9')
+    wrapper.unmount()
+  })
+
+  it('无昵称的玩家显示 #id，点击同样携带正确 user_id', async () => {
+    const wrapper = await mountBattles([
+      battleFixture({ id: 2, user_id: 42, nickname: '' }),
+    ])
+    const link = wrapper.find('.el-table__row .el-link')
+    expect(link.text()).toBe('#42')
+
+    await link.trigger('click')
+    await flushPromises()
+
+    expect(lastRouter?.currentRoute.value.path).toBe('/users')
+    expect(lastRouter?.currentRoute.value.query.user_id).toBe('42')
+    wrapper.unmount()
+  })
+})
+
+describe('BattlesView 结果筛选（第 44 轮）', () => {
+  it('结果下拉选择胜/负：fetchBattles 携带 result，清空后不带', async () => {
+    const wrapper = await mountBattles([battleFixture()])
+    const select = wrapper.findComponent({ name: 'ElSelect' })
+    expect(select.exists(), '找不到结果下拉').toBe(true)
+
+    // 选择「胜」：v-model 更新 + change 触发重新加载
+    await select.vm.$emit('update:modelValue', 'win')
+    await select.vm.$emit('change', 'win')
+    await flushPromises()
+    expect(fetchBattles).toHaveBeenLastCalledWith(expect.objectContaining({ result: 'win' }))
+
+    // 清空（clearable）：result 回到 undefined
+    await select.vm.$emit('update:modelValue', '')
+    await select.vm.$emit('change', '')
+    await flushPromises()
+    expect(fetchBattles).toHaveBeenLastCalledWith(expect.objectContaining({ result: undefined }))
+    wrapper.unmount()
+  })
+
+  it('结果筛选与用户/关卡/日期筛选同时生效', async () => {
+    const wrapper = await mountBattles([battleFixture()])
+    const vm = wrapper.vm as unknown as {
+      userId: number | undefined
+      levelId: number | undefined
+      result: string
+    }
+    vm.userId = 7
+    vm.levelId = 3
+    vm.result = 'lose'
+    await wrapper.findAll('button').find((b) => b.text() === '筛选')!.trigger('click')
+    await flushPromises()
+
+    expect(fetchBattles).toHaveBeenLastCalledWith(
+      expect.objectContaining({ user_id: 7, level_id: 3, result: 'lose' }),
+    )
+    wrapper.unmount()
+  })
+})
+
+describe('BattlesView 详情抽屉点击玩家跳转用户详情（第 63 轮）', () => {
+  it('点击详情里的玩家昵称：跳转 /users 并携带 user_id', async () => {
+    fetchBattleDetail.mockResolvedValueOnce({
+      battle: { ...detailBase, id: 1, user_id: 9, nickname: '铁壁玩家' },
+    })
+    const wrapper = await mountBattles([battleFixture({ id: 1, user_id: 9 })])
+    await wrapper.findAll('button').find((b) => b.text() === '详情')!.trigger('click')
+    await flushPromises()
+
+    const link = wrapper.find('.el-drawer .el-descriptions .el-link')
+    expect(link.exists(), '找不到详情抽屉玩家链接').toBe(true)
+    expect(link.text()).toBe('铁壁玩家')
+
+    await link.trigger('click')
+    await flushPromises()
+
+    expect(lastRouter?.currentRoute.value.path).toBe('/users')
+    expect(lastRouter?.currentRoute.value.query.user_id).toBe('9')
+    wrapper.unmount()
+  })
+
+  it('无昵称时显示 #id（不可点击），不渲染链接', async () => {
+    fetchBattleDetail.mockResolvedValueOnce({
+      battle: { ...detailBase, id: 2, user_id: 42, nickname: '' },
+    })
+    const wrapper = await mountBattles([battleFixture({ id: 2, user_id: 42, nickname: '' })])
+    await wrapper.findAll('button').find((b) => b.text() === '详情')!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.el-drawer .el-descriptions .el-link').exists()).toBe(false)
+    expect(wrapper.text()).toContain('#42')
+    wrapper.unmount()
+  })
+})
+
+describe('BattlesView 详情复制回放哈希（第 85 轮）', () => {
+  it('点击「复制」：写入剪贴板并提示', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    fetchBattleDetail.mockResolvedValueOnce({
+      battle: { ...detailBase, id: 1, replay_hash: 'abcd1234abcd1234abcd1234abcd1234' },
+    })
+    const wrapper = await mountBattles([battleFixture({ id: 1 })])
+    await wrapper.findAll('button').find((b) => b.text() === '详情')!.trigger('click')
+    await flushPromises()
+
+    const copyBtn = wrapper.findAll('.el-drawer button').find((b) => b.text() === '复制')
+    expect(copyBtn, '找不到「复制」按钮').toBeTruthy()
+    await copyBtn!.trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith('abcd1234abcd1234abcd1234abcd1234')
+    expect(document.body.textContent).toContain('回放哈希已复制')
+    wrapper.unmount()
+  })
+})
+
+describe('BattlesView 复制战报 ID（第 92 轮）', () => {
+  it('点击列表行「复制」：写入剪贴板并提示', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    const wrapper = await mountBattles([battleFixture({ id: 123 })])
+    const copyBtn = wrapper.findAll('.el-table__row')[0].findAll('button').find((b) => b.text() === '复制')
+    expect(copyBtn, '找不到战报 ID 复制按钮').toBeTruthy()
+    await copyBtn!.trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith('123')
+    expect(document.body.textContent).toContain('已复制战报 ID 123')
+    wrapper.unmount()
   })
 })
 

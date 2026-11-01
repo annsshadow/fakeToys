@@ -15,6 +15,7 @@
     "sfx:gen": "node scripts/gen-sfx.mjs",
     "sfx:check": "node scripts/gen-sfx.mjs --check",
     "test": "vitest run --config vitest.config.ts",
+    "test:coverage": "vitest run --coverage --config vitest.config.ts",
     "test:watch": "vitest --config vitest.config.ts"
   },
   "dependencies": {
@@ -51,7 +52,7 @@
     "@vue/tsconfig": "^0.1.3",
     "jsdom": "^24.1.3",
     "typescript": "^5.9.3",
-    "vite": "6.4.4",
+    "vite": "6.4.5",
     "vitest": "^4.1.12",
     "vue-tsc": "^3.3.13"
   }

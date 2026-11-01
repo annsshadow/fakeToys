@@ -7,12 +7,11 @@ auth	POST	/api/authentication/logout	logout	R4
 auth	POST	/api/authentication/code	code	R4
 organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication	login	R4
 organization_assemble_authentication	DELETE	/api/organization/assemble/authentication/authentication	logout	R4
+organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication/code	code	R4
 personal	PUT	/api/reset	reset_password	R4
 personal	POST	/api/reset/password/anonymous	reset_password_anonymous	R4
 processplatform_assemble_surface	POST	/api/processplatform/assemble/surface/application/list/range	application_list_range	R4
 program_init	POST	/api/secret/set	set	R4
-query_assemble_surface	POST	/api/queryview/search	search_post	R4
-query_assemble_surface	POST	/api/queryview/morelikethis	morelikethis_post	R4
 ai_assemble_control	POST	/api/ai_assemble_control/file/list/paging/{page}/size/{size}	file_list_paging_page_size_size	R7
 ai_assemble_control	POST	/api/ai_assemble_control/file/list	file_list_with_ids	R7
 ai_assemble_control	POST	/api/ai_assemble_control/index/list/paging/{page}/size/{size}	index_list_paging_page_size_size	R7
@@ -82,7 +81,6 @@ bbs_assemble_control	PUT	/api/bbs/assemble/control/user/role/user/selected	u2_ro
 bbs_assemble_control	PUT	/api/bbs/assemble/control/user/setting/code	u2_setting_get_by_code	R7
 bbs_assemble_control	PUT	/api/bbs/assemble/control/user/subject/voterecord/list/page/{page}/count/{count}	u2_voterecord_list	R7
 bbs_assemble_control	PUT	/api/bbs/assemble/control/userinfo	u2_userinfo_filter	R7
-bbs_core_entity	POST	/api/bbs/core/entity/reply	create_reply	R7
 calendar_assemble_control	PUT	/api/calendar_assemble_control/calendar/list/filter	calendar_list_filter	R7
 calendar_assemble_control	PUT	/api/calendar_assemble_control/event/list/filter	event_list_filter	R7
 calendar_assemble_control	PUT	/api/calendar_assemble_control/event/list/filter/sample	event_list_filter_sample	R7
@@ -622,6 +620,8 @@ query_assemble_surface	POST	/api/queryview/statement/list/query/{queryFlag}	stat
 query_assemble_surface	PUT	/api/queryview/stat/{id}/execute	stat_execute	R7
 query_assemble_surface	POST	/api/queryview/stat/{id}/execute/mockputtopost	stat_execute	R7
 query_assemble_surface	POST	/api/queryview/stat/execute/mockputtopost/{id}	stat_execute	R7
+query_assemble_surface	POST	/api/queryview/search	search_post	R7
+query_assemble_surface	POST	/api/queryview/morelikethis	morelikethis_post	R7
 query_assemble_surface	POST	/api/queryview/bundle/v2/post/{id}	view_bundle_v2_post	R7
 query_assemble_surface	POST	/api/queryview/importmodel/list/record/item/paging/{page}/size/{size}	importmodel_list_record_item_paging_page_size_size	R7
 query_assemble_surface	POST	/api/queryview/importmodel/list/record/paging/{page}/size/{size}	importmodel_list_record_paging_page_size_size	R7

@@ -41,7 +41,6 @@ base64.workspace = true
 async-trait.workspace = true
 tower = { workspace = true, features = ["util"] }
 sea-orm = { workspace = true }
-redis.workspace = true
 tokio-cron-scheduler = "0.10"
 
 [dev-dependencies]

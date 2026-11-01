@@ -27,11 +27,10 @@ pub async fn safe_logout(
         .await
         .ok_or(AppError::Unauthorized)?;
 
-    // 写入 TokenThreshold 记录当前时间戳
-    let now = Utc::now()
-        .naive_utc()
-        .format("%Y-%m-%d %H:%M:%S")
-        .to_string();
+    // 写入 TokenThreshold 记录当前时间戳。threshold_time/created_at 列是
+    // TIMESTAMP（迁移 017）：此前按字符串绑定，tokio-postgres 报 WrongType
+    // 且 `let _ =` 把错误吞掉——「全端登出使旧 token 失效」从未真正生效。
+    let now = Utc::now().naive_utc();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let _ = client
         .execute(
