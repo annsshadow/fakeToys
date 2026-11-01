@@ -524,7 +524,10 @@ mod tokio_scheduler_tests {
             "cron 每秒触发一次，1.1s 后计数应 >=1"
         );
 
-        scheduler.cancel(&"ticker".to_string()).await.expect("cancel");
+        scheduler
+            .cancel(&"ticker".to_string())
+            .await
+            .expect("cancel");
         let before = count.load(std::sync::atomic::Ordering::SeqCst);
         tokio::time::sleep(Duration::from_millis(1100)).await;
         assert_eq!(

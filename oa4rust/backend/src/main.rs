@@ -14,17 +14,32 @@ use shared::middleware::{
     auth_middleware, authorize_middleware, rate_limit_middleware, security_headers_middleware,
     trace_middleware,
 };
+use std::sync::OnceLock;
+
 use shared::rate_limit::RateLimiter;
 use shared::session::SessionManager;
 use tracing_subscriber::EnvFilter;
 
+/// 第 44 轮：OpenAPI 文档是静态的（4733 个 path item），此前**每次请求**
+/// 都重新 `ApiDoc::openapi().to_json()` 序列化一遍（数百 KB / 数十 ms）。
+/// 启动后生成一次缓存；失败（编程错误，静态文档应恒定可生成）也缓存错误，
+/// 不会每次请求重复付生成代价。
+fn openapi_json() -> Result<&'static str, &'static str> {
+    use utoipa::OpenApi;
+    static CACHE: OnceLock<Result<String, String>> = OnceLock::new();
+    CACHE
+        .get_or_init(|| ApiDoc::openapi().to_json().map_err(|e| e.to_string()))
+        .as_ref()
+        .map(String::as_str)
+        .map_err(String::as_str)
+}
+
 /// OpenAPI JSON endpoint handler.
 async fn openapi_json_handler() -> Result<Vec<u8>, axum::response::Json<serde_json::Value>> {
-    use utoipa::OpenApi;
-    let json = ApiDoc::openapi()
-        .to_json()
-        .map_err(|e| axum::Json(serde_json::json!({"error": e.to_string()})))?;
-    Ok(json.into_bytes())
+    match openapi_json() {
+        Ok(json) => Ok(json.as_bytes().to_vec()),
+        Err(e) => Err(axum::Json(serde_json::json!({"error": e}))),
+    }
 }
 
 #[tokio::main]
@@ -275,5 +290,20 @@ fn mime_for_path(path: &std::path::Path) -> &'static str {
         "txt" => "text/plain; charset=utf-8",
         "webmanifest" => "application/manifest+json",
         _ => "application/octet-stream",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn openapi_json_is_stable_and_contains_paths() {
+        // 第 44 轮：缓存后的两次读取必须返回同一份静态文档（OnceLock）。
+        let first = openapi_json().expect("openapi json 应可生成");
+        let second = openapi_json().expect("openapi json 再次生成");
+        assert_eq!(first, second, "缓存命中必须返回同一份文档");
+        assert!(first.contains("\"paths\""), "OpenAPI 文档应包含 paths");
+        assert!(first.len() > 1000, "文档应包含全部路由（不应是空文档）");
     }
 }
