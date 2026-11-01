@@ -1465,7 +1465,10 @@ pub async fn build_core_router(pool: Pool, session_manager: SessionManager) -> R
         .merge(correlation_core_express::router(pool.clone()))
         .merge(hotpic_core_entity::router(sea_orm_pool.clone()))
         .merge(jpush_core_entity::router(sea_orm_pool.clone()))
-        .merge(meeting_core_entity::router(sea_orm_pool.clone(), pool.clone()))
+        .merge(meeting_core_entity::router(
+            sea_orm_pool.clone(),
+            pool.clone(),
+        ))
         .merge(message_core_entity::router(sea_orm_pool.clone()))
         .merge(mind_core_entity::router(sea_orm_pool.clone()))
         .merge(organization_core_express::router(pool.clone()))

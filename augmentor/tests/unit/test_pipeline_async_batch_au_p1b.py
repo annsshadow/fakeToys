@@ -227,3 +227,34 @@ def test_async_advances_checkpoint_for_every_item(monkeypatch, tmp_path, files):
     assert progress is not None
     assert progress["processed_items"] == len(ITEMS), \
         "异步档的断点推进必须与同步档一样逐条落（少推会让续传重跑已完成条目）"
+
+
+# ── augment_async 入口（2026-10-30 第二批第 6 轮）──────────────────────────
+# 该入口此前用 ThreadPoolExecutor + 同步 augment_seed（模型等待仍占线程），
+# 与 augment_dataset(use_async=True) 的原生异步路径不一致。重构为复用
+# `_run_batch_async`（信号量 + gather，等待不占线程）。
+
+def test_augment_async_entry_uses_native_async_and_matches_output(
+    monkeypatch, tmp_path, files,
+):
+    """`augment_async` 入口必须走原生异步（并发真的重叠）且产物与同步档一致。"""
+    src, tmp = files
+    backend = NativeAsyncBackend(delay=0.01)
+    pipe = _pipeline(monkeypatch, tmp_path)
+    pipe.model_backend = backend
+
+    report = asyncio.run(pipe.augment_async(
+        src, str(tmp / "out_async_entry.json"),
+        use_checkpoint=False,
+        use_quality_check=False,
+        use_dedup=False,
+        max_workers=4,
+    ))
+
+    assert report["output_count"] == len(ITEMS) * backend.per_seed
+    assert backend.calls == len(ITEMS)
+    assert backend.max_in_flight > 1, \
+        "augment_async 必须并发执行（原生异步），而不是逐条串行"
+    with open(str(tmp / "out_async_entry.json"), encoding="utf-8") as f:
+        data = json.load(f)
+    assert len(data) == len(ITEMS) * backend.per_seed

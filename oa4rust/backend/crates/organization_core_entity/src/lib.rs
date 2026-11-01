@@ -1019,7 +1019,6 @@ pub fn organization_core_entity_router(db: DatabaseConnection) -> Router {
             put(bind_update).delete(bind_delete),
         )
         .layer(Extension(db))
-
 }
 
 #[cfg(test)]

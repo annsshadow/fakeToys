@@ -3,17 +3,14 @@
 
 use super::*;
 use axum::body::Body;
-use axum::http::{Request, Method};
-use deadpool_postgres::{Manager, Pool};
+use axum::http::{Method, Request};
 use deadpool_postgres::tokio_postgres::{Config, NoTls};
+use deadpool_postgres::{Manager, Pool};
 use serde_json::json;
 use tower::util::ServiceExt;
 
 fn build_test_pool() -> Pool {
-    let mgr = Manager::new(
-        Config::new(),
-        NoTls,
-    );
+    let mgr = Manager::new(Config::new(), NoTls);
     Pool::builder(mgr).max_size(1).build().unwrap()
 }
 
@@ -94,7 +91,10 @@ async fn test_get_status_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(
+        response.status(),
+        axum::http::StatusCode::INTERNAL_SERVER_ERROR
+    );
 }
 
 #[tokio::test]
@@ -114,7 +114,10 @@ async fn test_get_logs_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(
+        response.status(),
+        axum::http::StatusCode::INTERNAL_SERVER_ERROR
+    );
 }
 
 #[tokio::test]
@@ -125,7 +128,8 @@ async fn test_send_message_route_exists() {
     let req = serde_json::to_string(&json!({
         "token": "test-token",
         "message": "Hello world"
-    })).unwrap();
+    }))
+    .unwrap();
 
     let response = app
         .clone()
@@ -140,7 +144,10 @@ async fn test_send_message_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(
+        response.status(),
+        axum::http::StatusCode::INTERNAL_SERVER_ERROR
+    );
 }
 
 #[tokio::test]
@@ -160,7 +167,10 @@ async fn test_clear_cache_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(
+        response.status(),
+        axum::http::StatusCode::INTERNAL_SERVER_ERROR
+    );
 }
 
 #[tokio::test]
@@ -180,5 +190,8 @@ async fn test_get_metric_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(
+        response.status(),
+        axum::http::StatusCode::INTERNAL_SERVER_ERROR
+    );
 }

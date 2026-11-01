@@ -13,7 +13,6 @@ mod tests {
     use std::str::FromStr;
     use tower::ServiceExt;
 
-
     #[test]
     fn test_category_list_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();

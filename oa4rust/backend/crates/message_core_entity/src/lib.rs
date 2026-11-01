@@ -134,7 +134,6 @@ pub fn message_core_entity_router(db: DatabaseConnection) -> Router {
             get(unread_count),
         )
         .layer(Extension(db))
-
 }
 
 #[cfg(test)]

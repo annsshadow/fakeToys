@@ -184,7 +184,7 @@ oa4rust 已完成 86 个 crate 的真实化和 7,600+ 条路由注册。之前�
 
 ## Sources & References
 
-- **Origin document:** [docs/brainstorms/2026-08-12-oa4rust-final-gap-closure-requirements.md](docs/brainstorms/2026-08-12-oa4rust-final-gap-closure-requirements.md)
+- **Origin document:** [docs/brainstorms/2026-08-12-oa4rust-final-gap-closure-requirements.md](../brainstorms/2026-08-12-oa4rust-final-gap-closure-requirements.md)
 - Related code: `crates/auth/src/mpweixin.rs`, `crates/personal/src/regist.rs`, `crates/cms_assemble_control/src/lib.rs`
 
 ---

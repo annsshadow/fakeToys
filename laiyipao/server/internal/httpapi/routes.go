@@ -3,6 +3,7 @@ package httpapi
 import (
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -139,6 +140,33 @@ func (s *Server) Register(app *fiber.App) {
 	// 那条只覆盖了 equipped_slot；这里补的是**看得见**与**洗得动**。
 	me.Get("/gems", s.listGems)
 	me.Post("/gems/:id/wash", s.washGem)
+	// 我的挑战记录（2026-10-30 实质优化第 18 轮）。
+	// 玩家此前只能看到最近一次挑战结果，历史记录没有入口。
+	me.Get("/challenges", s.myChallengeHistory)
+	// 我的防线被挑战记录（2026-10-31 新一轮第 3 轮）。
+	// 挑战历史只有挑战者能看，防守方不知道谁攻过自己的防线。
+	me.Get("/defense/challenges", s.myDefenseChallenges)
+	// 我的战报历史（2026-10-30 实质优化第 19 轮）。
+	// 玩家打完关卡后没有任何历史战报入口。
+	me.Get("/battles", s.myBattleHistory)
+	// 我的战报详情（2026-10-31 新一轮第 10 轮）。
+	// 战报列表只有摘要，单局掉落/元素/反应/地形没有查看入口。
+	me.Get("/battles/:id", s.myBattleDetail)
+	// 我的购买记录（2026-10-30 实质优化第 20 轮）。
+	// 玩家每次商城购买都落 user_purchases，但玩家端没有任何入口。
+	me.Get("/purchases", s.myPurchases)
+	// 我的兑换记录（2026-10-30 实质优化第 21 轮）。
+	// 玩家每次兑换都落 redeem_usages，但玩家端没有任何历史入口。
+	me.Get("/redemptions", s.myRedemptions)
+	// 我的支付订单（2026-10-31 实质优化第 27 轮）。
+	// orders 记录支付订单（mock provider），玩家端此前没有任何入口。
+	me.Get("/orders", s.myOrders)
+	// 离线（挂机）收益（2026-10-31 新一轮第 7 轮）。
+	// offline_rewards 表与 OFFLINE_CAP_HOURS 配置存在已久，但始终没有
+	// 玩家入口 —— 运维文档明确标注「已解析但当前无离线收益端点消费」。
+	// 查询可领金额；领取是经济写操作，走 economyWriteLimit 限流。
+	me.Get("/offline-reward", s.offlineReward)
+	me.Post("/offline-reward/claim", authRateLimit("offlinereward", economyWriteLimit), s.claimOfflineReward)
 
 	wallet := v1.Group("/wallet", requireUser(s.Svc))
 	wallet.Get("/", s.wallet)
@@ -198,6 +226,36 @@ func (s *Server) Register(app *fiber.App) {
 	// 在最需要它的时候被拒。
 	me.Post("/logout", s.logout)
 
+	// 玩家修改密码（2026-10-30 实质优化第 7 轮）。
+	//
+	// 此前玩家账号**只有引导创建、没有改密入口** —— 共享测试账号的口令
+	// 只能靠改环境变量重启来轮换。这个端点让玩家自己改：
+	// 验证原密码 → 更新 password_hash → 吊销全部 refresh token。
+	//
+	// 限流：改密码是口令爆破面（拿到 access token 后可以无限试旧密码），
+	// 额度与理由见 middleware.go 的 passwordChangeLimit。
+	me.Post("/password", authRateLimit("password_change", passwordChangeLimit), s.changePassword)
+
+	// 游客账号转正（2026-10-30 实质优化第 8 轮）。
+	//
+	// 游客号的全部数据只靠 localStorage 里的一枚 guest_token 保护 ——
+	// 清缓存 / 换设备就永久丢失。这个端点让游客设置「用户名 + 密码」，
+	// 之后可以在任何设备登录回同一个号。
+	//
+	// 限流：注册面防刷（防止脚本批量占用户名 / 枚举可用用户名），
+	// 额度与理由见 middleware.go 的 accountUpgradeLimit。
+	me.Post("/upgrade", authRateLimit("account_upgrade", accountUpgradeLimit), s.upgradeGuestAccount)
+
+	// 玩家修改昵称（2026-10-30 实质优化第 9 轮）。
+	//
+	// 昵称只在登录/引导时设置一次，之后**永远改不了** —— 排行榜、防线、
+	// 战报上显示的都是那个默认名（游客是「user#xxx」，账号是用户名）。
+	// 这里补上改名入口：`PUT /me/nickname`，上限 MaxNicknameLen=64。
+	//
+	// 限流：昵称会进所有列表响应且被广泛读取，频繁改名可用来刷存在感，
+	// 额度与理由见 middleware.go 的 nicknameChangeLimit。
+	me.Put("/nickname", authRateLimit("nickname_change", nicknameChangeLimit), s.updateNickname)
+
 	// 兑换码既按 IP 也按身份限：IP 额度挡单点爆破，
 	// 身份额度挡「同一个号换 IP 继续试」。
 	redeem := v1.Group("/redeem", requireUser(s.Svc))
@@ -209,6 +267,9 @@ func (s *Server) Register(app *fiber.App) {
 	defenses := v1.Group("/defenses", requireUser(s.Svc))
 	defenses.Get("/", s.listDefenses)
 	defenses.Post("/save", authRateLimit("savedefense", economyWriteLimit), s.saveDefense)
+	// 删除自己的防线（2026-10-31 实质优化第 32 轮）：
+	// 玩家不想被挑战时此前没有任何办法清空防线。
+	defenses.Delete("/", s.deleteMyDefense)
 	defenses.Post("/:id/challenge", authRateLimit("challenge", economyWriteLimit), s.challengeDefense)
 
 	// ---- 管理端 ----
@@ -237,12 +298,25 @@ func (s *Server) Register(app *fiber.App) {
 	adm.Get("/equipment", s.adminEquipment)
 	adm.Get("/reactions", s.adminReactions)
 	adm.Get("/users", s.adminUsers)
+	// ⚠️ 必须注册在 `/users/:id` **之前**：否则 `GET /users/export`
+	// 会被 `:id` 参数匹配吞掉（export 当 id 解析 → 400）。
+	// 导出是读操作，readonly 角色可访问。
+	adm.Get("/users/export", s.adminExportUsers)
 	adm.Post("/users/:id/ban", requireWritable(), s.adminBanUser)
 	// 2026-10-21（P5-7）：玩家详情（只读）。
 	adm.Get("/users/:id", s.adminUserDetail)
+	// 单用户钱包流水导出（2026-11-01 新一轮第 82 轮）：读操作，readonly 可访问。
+	adm.Get("/users/:id/flows/export", s.adminExportUserFlows)
 	adm.Post("/users/:id/unban", requireWritable(), s.adminUnbanUser)
 	adm.Post("/users/:id/grant", requireWritable(), s.adminGrantUser)
+	// 后台重置玩家密码（2026-10-30 实质优化第 11 轮）。
+	// 玩家侧已有改密/转正，但运营缺少兜底：账号遗忘 / 被盗需要强制
+	// 轮换时只能封禁或改环境变量重启。重置会吊销该账号全部会话。
+	adm.Post("/users/:id/reset-password", requireWritable(), s.adminResetPlayerPassword)
 	adm.Get("/battles", s.adminBattles)
+	// ⚠️ 必须注册在 `/battles/:id` **之前**：否则 `GET /battles/export`
+	// 会被 `:id` 参数匹配吞掉。导出是读操作，readonly 角色可访问。
+	adm.Get("/battles/export", s.adminExportBattles)
 	adm.Get("/battles/:id", s.adminBattleDetail)
 	adm.Post("/battles/:id/verify", requireWritable(), s.adminVerifyBattle)
 	// 结算重算审计（R1）。两个端点成对：列表看单条，stats 看分布与闸门状态。
@@ -250,19 +324,57 @@ func (s *Server) Register(app *fiber.App) {
 	//   后者一旦存在就会把 /stats 当成 id 匹配掉。
 	adm.Get("/recomputes", s.adminRecomputes)
 	adm.Get("/recomputes/stats", s.adminRecomputeStats)
+	// 重算台账 CSV 导出（2026-11-01 新一轮第 45 轮）：读操作，readonly 可访问。
+	adm.Get("/recomputes/export", s.adminExportRecomputes)
 	// 2026-10-21（P3-3）：档位可读可改。
 	adm.Get("/recomputes/mode", s.adminRecomputeMode)
 	// 切档是**写操作**，而且是「关掉反作弊校验」那种写 ——
 	// readonly 账号绝不能做（它会 403，而不是被静默地切成功）。
 	adm.Put("/recomputes/mode", requireWritable(), s.adminSetRecomputeMode)
 	adm.Get("/defenses", s.adminDefenses)
+	// 防线挑战记录（2026-10-31 新一轮第 30 轮）：
+	// 运营此前只能看到防线胜负计数，无法查看挑战明细。
+	adm.Get("/defense-challenges", s.adminDefenseChallenges)
+	// 防线挑战记录 CSV 导出（2026-10-31 新一轮第 32 轮）：读操作，readonly 可访问。
+	adm.Get("/defense-challenges/export", s.adminExportDefenseChallenges)
+	// 删除玩家防线（2026-10-31 实质优化第 26 轮）：
+	// 违规防线名运营此前只能看到、无法处理。
+	adm.Delete("/defenses/:id", requireWritable(), s.adminDeleteDefense)
 	adm.Get("/economy", s.adminEconomy)
+	// 订单明细（2026-10-31 实质优化第 33 轮）：
+	// 后台此前只有订单计数，没有明细可查。
+	adm.Get("/orders", s.adminOrders)
+	// 订单 CSV 导出（2026-11-01 新一轮第 40 轮）：读操作，readonly 可访问。
+	adm.Get("/orders/export", s.adminExportOrders)
 	adm.Put("/shop/:id", requireWritable(), s.adminUpdateShop)
 	adm.Get("/announcements", s.adminAnnouncements)
+	// 公告 CSV 导出（2026-10-31 实质优化第 38 轮）：读操作，readonly 可访问。
+	adm.Get("/announcements/export", s.adminExportAnnouncements)
 	adm.Post("/announcements", requireWritable(), s.adminCreateAnnouncement)
+	// 公告编辑/删除（2026-10-31 实质优化第 23 轮）：
+	// 此前只有创建/列表，发错内容无法修改、发错发布状态无法撤回。
+	adm.Put("/announcements/:id", requireWritable(), s.adminUpdateAnnouncement)
+	adm.Delete("/announcements/:id", requireWritable(), s.adminDeleteAnnouncement)
 	adm.Get("/redeem-codes", s.adminRedeemCodes)
+	// 兑换码使用记录（2026-10-31 新一轮第 17 轮）：
+	// 运营发码后此前无法查看「谁用了 / 奖励是什么」。
+	adm.Get("/redeem-usages", s.adminRedeemUsages)
+	// 兑换码使用记录 CSV 导出（2026-10-31 新一轮第 34 轮）：读操作，readonly 可访问。
+	adm.Get("/redeem-usages/export", s.adminExportRedeemUsages)
+	// 兑换码 CSV 导出（2026-10-31 实质优化第 37 轮）：读操作，readonly 可访问。
+	adm.Get("/redeem-codes/export", s.adminExportRedeemCodes)
 	adm.Post("/redeem-codes", requireWritable(), s.adminCreateRedeemCode)
+	// 兑换码批量生成（2026-11-01 新一轮第 57 轮）：一次生成多个随机码。
+	adm.Post("/redeem-codes/batch", requireWritable(), s.adminCreateRedeemCodesBatch)
+	// 兑换码启用/禁用（2026-10-31 实质优化第 24 轮）：
+	// 运营创建错误码后此前无法停用（只能等过期）。
+	adm.Put("/redeem-codes/:id/enabled", requireWritable(), s.adminSetRedeemCodeEnabled)
+	// 兑换码编辑（2026-10-31 实质优化第 25 轮）：
+	// 改奖励/次数/过期时间此前只能停用后重建（码会变，已分享的全作废）。
+	adm.Put("/redeem-codes/:id", requireWritable(), s.adminUpdateRedeemCode)
 	adm.Get("/audit-logs", s.adminAuditLogs)
+	// 审计日志导出（2026-10-30 实质优化第 15 轮）：合规归档，读操作。
+	adm.Get("/audit-logs/export", s.adminExportAuditLogs)
 }
 
 // --- 基础 ---
@@ -357,21 +469,57 @@ func (s *Server) refresh(c *fiber.Ctx) error {
 
 func (s *Server) me(c *fiber.Ctx) error {
 	userID := userIDFrom(c)
-	build, err := s.Svc.LoadBuildSnapshot(c.Context(), userID)
-	if err != nil {
-		return failErr(c, err)
+	// 2026-10-31（新一轮第 1 轮 / 第 13 轮）：`/me` 是最热端点之一（每次
+	// 冷启动必拉）。LoadBuildSnapshot 一趟查 6 张表；LoadMaxStage 与
+	// MyAccount **不依赖 build**，与 build 同步启动；ComputeRatingFor
+	// 依赖 build，等 build 到手后再执行（两阶段）。
+	// 总延迟从 `build + max(stage, rating, account)` 降到
+	// `max(build, stage, account) + rating` —— build 是最慢的查询时，
+	// stage/account 的时间不再叠加在 build 之后。
+	// 各 goroutine 只写自己的变量，主协程在 wg.Wait() 之后读取，无数据竞争。
+	ctx := c.Context()
+	var (
+		build    map[string]any
+		maxStage int
+		account  service.User
+		errBuild error
+		errStage error
+		errAcct  error
+	)
+	var wg sync.WaitGroup
+	wg.Add(3)
+	go func() {
+		defer wg.Done()
+		build, errBuild = s.Svc.LoadBuildSnapshot(ctx, userID)
+	}()
+	go func() {
+		defer wg.Done()
+		// 第 142 轮：max_stage 是「玩家进度」的服务端权威来源。客户端此前只在
+		// 本会话结算后才知道进度，老玩家重进 App 恒从 0 开始。/me 带上它，
+		// 客户端 refreshProfile 即可恢复真实解锁进度。
+		maxStage, errStage = s.Svc.LoadMaxStage(ctx, userID)
+	}()
+	go func() {
+		defer wg.Done()
+		// 2026-10-31（实质优化第 34 轮）：账号信息（注册时间/最后登录）。
+		account, errAcct = s.Svc.MyAccount(ctx, userID)
+	}()
+	wg.Wait()
+	if errBuild != nil {
+		return failErr(c, errBuild)
 	}
-	// 第 142 轮：max_stage 是「玩家进度」的服务端权威来源。客户端此前只在
-	// 本会话结算后才知道进度，老玩家重进 App 恒从 0 开始。/me 带上它，
-	// 客户端 refreshProfile 即可恢复真实解锁进度。
-	maxStage, err := s.Svc.LoadMaxStage(c.Context(), userID)
-	if err != nil {
-		return failErr(c, err)
+	if errStage != nil {
+		return failErr(c, errStage)
 	}
+	if errAcct != nil {
+		return failErr(c, errAcct)
+	}
+
+	// 第二阶段：评分依赖 build，必须等 build 就绪。
 	// 2026-10-21（P3-1）：评分**可能失败**（读不到专精点数）。
 	// 此前它把错误吞成 0 点，于是返回 200 + 一个少了专精加成的评分 ——
 	// 一个看起来合理但**错的**数字。失败就报失败。
-	rating, err := s.Svc.ComputeRatingFor(c.Context(), userID, build)
+	rating, err := s.Svc.ComputeRatingFor(ctx, userID, build)
 	if err != nil {
 		return failErr(c, err)
 	}
@@ -381,6 +529,7 @@ func (s *Server) me(c *fiber.Ctx) error {
 		"build_rating": rating,
 		"power":        s.Svc.ComputePowerFor(build),
 		"max_stage":    maxStage,
+		"account":      account,
 	})
 }
 
@@ -395,6 +544,54 @@ func (s *Server) logout(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	return c.JSON(res)
+}
+
+// changePassword 修改当前玩家的账号密码。
+//
+// 成功响应带上被吊销的 refresh token 条数（`revoked`），
+// 客户端可用它判断「是否需要主动引导重新登录」。
+func (s *Server) changePassword(c *fiber.Ctx) error {
+	var body struct {
+		OldPassword string `json:"old_password"`
+		NewPassword string `json:"new_password"`
+	}
+	if err := c.BodyParser(&body); err != nil {
+		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+	}
+	revoked, err := s.Svc.ChangePassword(c.Context(), userIDFrom(c), body.OldPassword, body.NewPassword)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"revoked": revoked})
+}
+
+// upgradeGuestAccount 把当前游客账号升级为「用户名 + 密码」账号。
+func (s *Server) upgradeGuestAccount(c *fiber.Ctx) error {
+	var body struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+	if err := c.BodyParser(&body); err != nil {
+		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+	}
+	if err := s.Svc.UpgradeGuestAccount(c.Context(), userIDFrom(c), body.Username, body.Password); err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"ok": true})
+}
+
+// updateNickname 修改当前玩家的昵称。
+func (s *Server) updateNickname(c *fiber.Ctx) error {
+	var body struct {
+		Nickname string `json:"nickname"`
+	}
+	if err := c.BodyParser(&body); err != nil {
+		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+	}
+	if err := s.Svc.UpdateNickname(c.Context(), userIDFrom(c), body.Nickname); err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"ok": true})
 }
 
 // getLoadout 返回当前出战槽位。
@@ -517,7 +714,8 @@ func (s *Server) getLevel(c *fiber.Ctx) error {
 	if err != nil || id < 1 || id > domain.TotalLevels {
 		return fail(c, fiber.StatusBadRequest, "bad_input", "关卡 ID 非法")
 	}
-	return c.JSON(domain.GenerateLevel(id))
+	// 2026-10-30（实质优化第 14 轮）：进程内缓存，不再每次请求重新生成。
+	return c.JSON(domain.CachedLevel(id))
 }
 
 func (s *Server) startBattle(c *fiber.Ctx) error {
@@ -562,6 +760,105 @@ func (s *Server) listGems(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	return c.JSON(fiber.Map{"gems": gems})
+}
+
+// myChallengeHistory 返回当前玩家最近的防线挑战记录。
+func (s *Server) myChallengeHistory(c *fiber.Ctx) error {
+	items, err := s.Svc.MyChallengeHistory(c.Context(), userIDFrom(c), 20)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"items": items})
+}
+
+// myDefenseChallenges 返回当前玩家「我的防线被挑战」的历史记录
+// （2026-10-31 新一轮第 3 轮）。
+func (s *Server) myDefenseChallenges(c *fiber.Ctx) error {
+	items, err := s.Svc.MyDefenseChallenges(c.Context(), userIDFrom(c), 20)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"items": items})
+}
+
+// myBattleHistory 返回当前玩家最近的战斗记录（2026-11-01 新一轮第 55 轮：
+// 支持 limit/offset 分页，客户端「加载更多」查看更早的战报）。
+func (s *Server) myBattleHistory(c *fiber.Ctx) error {
+	limit, err := queryInt(c, "limit", 20)
+	if err != nil {
+		return failErr(c, err)
+	}
+	offset, err := queryInt(c, "offset", 0)
+	if err != nil {
+		return failErr(c, err)
+	}
+	// 结果筛选（2026-11-01 新一轮第 80 轮）：win / lose，空串不过滤。
+	items, err := s.Svc.MyBattleHistory(c.Context(), userIDFrom(c), limit, offset, c.Query("result", ""))
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"items": items})
+}
+
+// myBattleDetail 返回当前玩家单局战报的完整详情
+// （2026-10-31 新一轮第 10 轮）。
+func (s *Server) myBattleDetail(c *fiber.Ctx) error {
+	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
+	if err != nil || id < 1 {
+		return fail(c, fiber.StatusBadRequest, "bad_input", "战报 ID 非法")
+	}
+	detail, err := s.Svc.MyBattleDetail(c.Context(), userIDFrom(c), id)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(detail)
+}
+
+// myPurchases 返回当前玩家最近的商城购买记录。
+func (s *Server) myPurchases(c *fiber.Ctx) error {
+	items, err := s.Svc.MyPurchases(c.Context(), userIDFrom(c), 20)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"items": items})
+}
+
+// myRedemptions 返回当前玩家最近的兑换码使用记录。
+func (s *Server) myRedemptions(c *fiber.Ctx) error {
+	items, err := s.Svc.MyRedemptions(c.Context(), userIDFrom(c), 20)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"items": items})
+}
+
+// myOrders 返回当前玩家最近的支付订单。
+func (s *Server) myOrders(c *fiber.Ctx) error {
+	items, err := s.Svc.MyOrders(c.Context(), userIDFrom(c), 20)
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(fiber.Map{"items": items})
+}
+
+// offlineReward 返回当前玩家可领取的离线（挂机）收益
+// （2026-10-31 新一轮第 7 轮）。
+func (s *Server) offlineReward(c *fiber.Ctx) error {
+	status, err := s.Svc.OfflineRewardStatus(c.Context(), userIDFrom(c))
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(status)
+}
+
+// claimOfflineReward 领取离线（挂机）收益
+// （2026-10-31 新一轮第 7 轮）。
+func (s *Server) claimOfflineReward(c *fiber.Ctx) error {
+	reward, err := s.Svc.ClaimOfflineReward(c.Context(), userIDFrom(c))
+	if err != nil {
+		return failErr(c, err)
+	}
+	return c.JSON(reward)
 }
 
 // washGem 消耗 1 枚洗练券，重 roll 这颗宝石的词条（品质不变）。

@@ -43,7 +43,9 @@ overrides:
   # oa4rust/mobile —— 同一套 @dcloudio uni-app 工具链，它的 package.json 就
   # 声明 vite 6.4.3 并且 H5 / mp-weixin 双构建在 CI 上长期全绿。
   # 6.4.4 是这批 advisory（GHSA-587h / 698v / 9jrq 等）的最低修复线。
-  "vite": 6.4.4
+  # 2026-10-31：6.4.4 自身又命中 server.fs.deny 绕过（GHSA-9c76-4q7x-9xwv），
+  # 升到 6.4.5（oa4rust/mobile 已用 vite@<6.4.5 -> 6.4.5 的收敛覆盖验证）。
+  "vite": 6.4.5
   # ws 有 8.18.0（2 条）和 7.5.13（jsdom 带的）两条线，都顶到 8.21.0。
   # 跨大版本，已用 vitest 全量（1045 passed）验过 jsdom 没被打坏。
   "ws": 8.21.0
@@ -52,7 +54,9 @@ overrides:
   "postcss-selector-parser": 7.1.6
   # follow-redirects 1.16.0 的数组形式 header 绕过跨源凭证剥离
   # （GHSA-q3jh-wrc6-jgq8），补丁 1.16.1 —— 与 dependabot PR #101 同一个修复。
-  "follow-redirects": 1.16.1
+  # 2026-10-31：1.16.1 又命中跨域敏感头数组丢弃（GHSA-74fj-2m2r-c4xm），
+  # 升到 1.16.2。
+  "follow-redirects": 1.16.2
 
   # ── 2026-10-22：与 oa4rust/mobile 对齐的那批 overrides ──────────────────
   # 背景：漏洞库在 10-15 之后新发布了一批 advisory，miniapp 的计数从 39 涨到
@@ -69,9 +73,13 @@ overrides:
   "adm-zip": 0.6.1
   # @intlify 三件套：9.1.9 的 handleFlatJson 原型污染（GHSA-p2ph-7g93-hw3m）。
   # 9.14.5 / 9.1.11 均在 oa4rust/mobile 上验证过。
-  "@intlify/core-base": 9.14.5
-  "@intlify/message-compiler": 9.14.5
+  # 2026-10-31：9.14.5 命中 escapeParameter XSS（GHSA-83rm-6c8r-g728 / GHSA-6gv4-p3c8-p8f6），
+  # 升到 11.4.16（oa4rust/mobile 的 @intlify/core-base@9.1.9 / @11.4.10 -> 11.4.16
+  # 收敛覆盖已验证）。message-resolver 无对应漏洞，保持 9.1.11。
+  "@intlify/core-base": 11.4.16
+  "@intlify/message-compiler": 11.4.16
   "@intlify/message-resolver": 9.1.11
+  "@intlify/shared": 11.4.16
   # @babel/core 的 sourceMappingURL 任意文件读（GHSA-4x5r-pxfx-6jf8，low）。
   "@babel/core": 7.29.6
   # express 链（vite-plugin-uni 的开发服务器，只在本地 dev 生效）：
@@ -118,3 +126,10 @@ overrides:
   "@vue/runtime-dom": 3.5.42
   "@vue/server-renderer": 3.5.42
   "@vue/shared": 3.5.42
+  # ── 2026-10-31：新一批 advisory ─────────────────────────────────────────
+  # minimatch <11.0.1 的 globparts 放大 DoS（GHSA-g3hv-75wg-m249）与
+  # glob 9.0.0~14.0.1 的 AbortSignal 取消绕过（GHSA-3g3m-2fjr-6pw4），
+  # 都挂在测试链（@dcloudio/uni-automator → jest / js-beautify）上，
+  # 不进小程序产物。补丁线 11.0.1 / 14.0.2。
+  "minimatch": 11.0.1
+  "glob": 14.0.2

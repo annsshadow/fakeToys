@@ -549,7 +549,6 @@ pub fn mind_core_entity_router(db: DatabaseConnection) -> Router {
         .route("/api/mind/core/entity/folder/{id}", delete(delete_folder))
         .route("/api/mind/core/entity/version", post(create_version))
         .layer(Extension(db))
-
 }
 
 #[cfg(test)]

@@ -1,7 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Card, Button, Space, Select, Switch, message, Progress, Tag } from 'antd'
 import { RocketOutlined, ReloadOutlined } from '@ant-design/icons'
-import { apiErrorDetail, startAugmentation, getProgress, getCheckpoints, getDataFiles } from '../services/api'
+import {
+  apiErrorDetail,
+  startAugmentation,
+  getProgress,
+  getCheckpoints,
+  getDataFiles,
+} from '../services/api'
 import type { AugmentProgressDetail } from '../types/api'
 
 export default function Augmentation() {
@@ -27,7 +33,7 @@ export default function Augmentation() {
   const loadFiles = async () => {
     try {
       const result = await getDataFiles()
-      setFiles(result.files.map(f => f.name))
+      setFiles(result.files.map((f) => f.name))
     } catch (err) {
       message.error(apiErrorDetail(err, '加载文件列表失败'))
     }
@@ -110,8 +116,10 @@ export default function Augmentation() {
               onChange={setInputFile}
               placeholder="选择输入文件"
             >
-              {files.map(file => (
-                <Select.Option key={file} value={file}>{file}</Select.Option>
+              {files.map((file) => (
+                <Select.Option key={file} value={file}>
+                  {file}
+                </Select.Option>
               ))}
             </Select>
           </div>
@@ -121,7 +129,12 @@ export default function Augmentation() {
               type="text"
               value={outputFile}
               onChange={(e) => setOutputFile(e.target.value)}
-              style={{ width: 300, padding: '4px 8px', borderRadius: 4, border: '1px solid #d9d9d9' }}
+              style={{
+                width: 300,
+                padding: '4px 8px',
+                borderRadius: 4,
+                border: '1px solid #d9d9d9',
+              }}
             />
           </div>
           <div style={{ display: 'flex', gap: 24 }}>
@@ -163,7 +176,9 @@ export default function Augmentation() {
             />
             <div style={{ marginTop: 16 }}>
               <Space direction="vertical">
-                <div>任务 ID: <Tag>{progress.task_id}</Tag></div>
+                <div>
+                  任务 ID: <Tag>{progress.task_id}</Tag>
+                </div>
                 <div>总条数: {progress.total_items}</div>
                 <div>已处理: {progress.processed_items}</div>
                 <div>失败: {progress.failed_items}</div>
@@ -176,9 +191,7 @@ export default function Augmentation() {
             </div>
           </div>
         ) : (
-          <div style={{ textAlign: 'center', color: '#999', padding: 40 }}>
-            暂无进行中的任务
-          </div>
+          <div style={{ textAlign: 'center', color: '#999', padding: 40 }}>暂无进行中的任务</div>
         )}
       </Card>
 
@@ -193,7 +206,7 @@ export default function Augmentation() {
       >
         {checkpoints.length > 0 ? (
           <Space wrap data-testid="checkpoint-list">
-            {checkpoints.map(id => (
+            {checkpoints.map((id) => (
               <Tag key={id}>{id}</Tag>
             ))}
           </Space>

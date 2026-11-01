@@ -958,7 +958,6 @@ pub fn general_core_entity_router(db: DatabaseConnection) -> Router {
         .route("/api/general/invoice/update/{id}", post(invoice_update))
         .route("/api/general/invoice/delete/{id}", post(invoice_delete))
         .layer(Extension(db))
-
 }
 
 #[cfg(test)]

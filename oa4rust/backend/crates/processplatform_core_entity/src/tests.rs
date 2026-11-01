@@ -8,7 +8,6 @@ mod tests {
     use shared::response::ActionResult;
     use tower::ServiceExt;
 
-
     #[tokio::test]
     async fn test_work_list_route_exists() {
         let db = shared::testing::mock_db().await;

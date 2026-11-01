@@ -100,10 +100,7 @@ describe('ApiClient error mapping', () => {
       const onAuthFailure = vi.fn()
       const client = new ApiClient()
       client.setAuthenticationFailureHandler(onAuthFailure)
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValueOnce(emptyResponse(401))
-        .mockResolvedValueOnce(emptyResponse(401)) // refresh 也 401
+      const fetchMock = vi.fn().mockResolvedValueOnce(emptyResponse(401)).mockResolvedValueOnce(emptyResponse(401)) // refresh 也 401
       vi.stubGlobal('fetch', fetchMock)
 
       await expect(client.uploadBytes('/api/file/upload', new Uint8Array([1]))).rejects.toBeInstanceOf(
@@ -131,14 +128,10 @@ describe('ApiClient error mapping', () => {
 
     it('maps 403 to PermissionError and other statuses to ApiError', async () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(emptyResponse(403)))
-      await expect(new ApiClient().uploadBytes('/api/x', new Uint8Array([1]))).rejects.toBeInstanceOf(
-        PermissionError,
-      )
+      await expect(new ApiClient().uploadBytes('/api/x', new Uint8Array([1]))).rejects.toBeInstanceOf(PermissionError)
 
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(emptyResponse(500)))
-      const err = await new ApiClient()
-        .uploadBytes('/api/x', new Uint8Array([1]))
-        .catch((e) => e)
+      const err = await new ApiClient().uploadBytes('/api/x', new Uint8Array([1])).catch((e) => e)
       expect(err).toBeInstanceOf(ApiError)
       expect(err.status).toBe(500)
     })
@@ -175,18 +168,14 @@ describe('ApiClient error mapping', () => {
       const fetchMock = vi.fn().mockResolvedValue(emptyResponse(403))
       vi.stubGlobal('fetch', fetchMock)
 
-      await expect(new ApiClient().stream('/api/ai/stream', {}, () => {})).rejects.toBeInstanceOf(
-        PermissionError,
-      )
+      await expect(new ApiClient().stream('/api/ai/stream', {}, () => {})).rejects.toBeInstanceOf(PermissionError)
       expect(fetchMock).toHaveBeenCalledTimes(1)
     })
 
     it('reports HTTP status and status text for other failures', async () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 502, statusText: 'Bad Gateway' })))
 
-      const err = await new ApiClient()
-        .stream('/api/ai/stream', {}, () => {})
-        .catch((e) => e)
+      const err = await new ApiClient().stream('/api/ai/stream', {}, () => {}).catch((e) => e)
 
       expect(err).toBeInstanceOf(ApiError)
       expect(err.message).toContain('502')

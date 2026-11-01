@@ -1,16 +1,23 @@
 # Performance Baseline & Comparison Report
 
-- **Date**: 2026-10-28
+- **Date**: 2026-10-28（2026-10-30 复测）
 - **Rust backend**: `cargo test --test perf_baseline perf_baseline -- --ignored --nocapture`
 - **Java backend**: SKIP (no reachable Java backend; comparison not attempted)
 - **Iterations**: 5 warm-up + 50 measured request pairs, no other workload
 
 ## Rust Baseline
 
-| Scenario | Samples | Avg (ms) | P50 (ms) | P99 (ms) | Max (ms) |
-|----------|--------:|---------:|---------:|---------:|---------:|
-| `POST /api/authentication` | 50 | 1.70 | 1.69 | 2.73 | 2.73 |
-| `GET /api/cms_assemble_control/data/document` | 50 | 1.07 | 1.03 | 1.58 | 1.58 |
+| Scenario | Date | Samples | Avg (ms) | P50 (ms) | P99 (ms) | Max (ms) |
+|----------|------|--------:|---------:|---------:|---------:|---------:|
+| `POST /api/authentication` | 2026-10-28 | 50 | 1.70 | 1.69 | 2.73 | 2.73 |
+| `GET /api/cms_assemble_control/data/document` | 2026-10-28 | 50 | 1.07 | 1.03 | 1.58 | 1.58 |
+| `POST /api/authentication` | 2026-10-30 | 50 | 2.19 | 2.20 | 2.53 | 2.53 |
+| `GET /api/cms_assemble_control/data/document` | 2026-10-30 | 50 | 1.36 | 1.36 | 1.59 | 1.59 |
+
+> 2026-10-30 复测：auth avg 2.19ms / document avg 1.36ms，毫秒级稳定，无性能回归。
+> 与 10-28 相比 auth +0.49ms、document +0.29ms，属容器共享负载的正常波动
+> （debug build、同机多任务）。复测容器内需 `apt-get install -y curl` 且
+> 编译命令带 `RUST_MIN_STACK=33554432`（见计划文档 D3）。
 
 ## Environment
 

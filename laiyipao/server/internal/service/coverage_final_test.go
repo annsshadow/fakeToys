@@ -61,7 +61,7 @@ func TestResolveAdminDBError(t *testing.T) {
 func TestRedeemCodesBrokenBranches(t *testing.T) {
 	broken := openBrokenService(t)
 	ctx := context.Background()
-	if _, _, err := broken.AdminListRedeemCodes(ctx, 50, 0); err == nil {
+	if _, _, err := broken.AdminListRedeemCodes(ctx, 50, 0, "", nil, nil); err == nil {
 		t.Error("故障态兑换码列表应报错")
 	}
 	if _, err := broken.AdminCreateRedeemCode(ctx, "X", map[string]int{"coin": 1}, 1, nil); err == nil {
@@ -705,7 +705,7 @@ func TestStatsMidwayFailures(t *testing.T) {
 		ts := openScratchService(t)
 		// COUNT(users) 成功 → user_progress 改名 → 列表 JOIN 查询失败。
 		ts.renameTable(t, "user_progress", "user_progress_bak")
-		_, _, err := ts.AdminListUsers(ctx, "", 50, 0)
+		_, _, err := ts.AdminListUsers(ctx, "", 50, 0, nil, nil, nil, nil, nil, nil)
 		ts.renameTable(t, "user_progress_bak", "user_progress")
 		mustErr(t, err, "list users")
 	})
@@ -724,7 +724,7 @@ func TestStatsMidwayFailures(t *testing.T) {
 		ts := openScratchService(t)
 		// COUNT(battle_records) 成功 → users 改名 → 列表 LEFT JOIN 查询失败。
 		ts.renameTable(t, "users", "users_bak")
-		_, _, err := ts.AdminListBattles(ctx, 0, 0, 10, false, 0)
+		_, _, err := ts.AdminListBattles(ctx, 0, 0, 10, false, 0, nil, nil, "")
 		ts.renameTable(t, "users_bak", "users")
 		mustErr(t, err, "list battles")
 	})
@@ -749,7 +749,7 @@ func TestStatsMidwayFailures(t *testing.T) {
 		ts := openScratchService(t)
 		// COUNT(defenses) 成功 → users 改名 → 列表 JOIN 查询失败。
 		ts.renameTable(t, "users", "users_bak")
-		_, _, err := ts.AdminListDefenses(ctx, 50, 0)
+		_, _, err := ts.AdminListDefenses(ctx, 50, 0, "", 0, nil)
 		ts.renameTable(t, "users_bak", "users")
 		mustErr(t, err, "admin defenses")
 	})

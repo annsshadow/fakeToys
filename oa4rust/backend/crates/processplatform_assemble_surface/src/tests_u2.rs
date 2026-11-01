@@ -744,7 +744,11 @@ mod u2b_tests {
         // 上传族写面已收会话门：无会话在 pool.get() 之前即 401（不再 500）。
         // batch/upload/manage 仍走 admin 门但 handler 在门后才触库，离线仍 500。
         for (method, path, want) in [
-            ("POST", &format!("{b}/upload/work/w-1"), StatusCode::UNAUTHORIZED),
+            (
+                "POST",
+                &format!("{b}/upload/work/w-1"),
+                StatusCode::UNAUTHORIZED,
+            ),
             (
                 "POST",
                 &format!("{b}/upload/work/w-1/callback/cb-1"),

@@ -27,9 +27,7 @@ pub mod routes;
 pub mod u2;
 
 /// 会话存在档门：无会话（Option<Extension<Session>> = None）→ 401。
-fn require_session(
-    session: Option<Extension<Session>>,
-) -> Result<Session, AppError> {
+fn require_session(session: Option<Extension<Session>>) -> Result<Session, AppError> {
     session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
 }
 
