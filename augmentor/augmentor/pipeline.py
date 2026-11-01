@@ -537,6 +537,15 @@ class AugmentorPipeline:
             if output_path.exists():
                 with open(output_path, 'r', encoding='utf-8') as f:
                     all_results = json.load(f)
+                # 第 51 轮：把上一轮产物回填进多样性参照窗。
+                # 此前 existing_generated 恒为空 —— 串行分支的
+                # augment_seed → filter_by_quality 拿不到上一轮已生成的
+                # instruction，跨运行近重复项通过质量过滤（白花模型调用
+                # 并产重复数据）。
+                existing_generated = [
+                    r.get("instruction", "")
+                    for r in all_results[-max_existing_window:]
+                ]
                 logger.info(f"载入上一轮已生成的 {len(all_results)} 条数据")
             else:
                 logger.warning(f"断点显示已处理 {skipped} 条，但输出文件不存在，仅能保留本轮结果")
