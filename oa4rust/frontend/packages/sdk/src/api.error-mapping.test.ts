@@ -100,23 +100,16 @@ describe('ApiClient error mapping', () => {
       const onAuthFailure = vi.fn()
       const client = new ApiClient()
       client.setAuthenticationFailureHandler(onAuthFailure)
-      const fetchMock = vi
-        .fn()
-        .mockResolvedValueOnce(emptyResponse(401))
-        .mockResolvedValueOnce(emptyResponse(401)) // refresh 也 401
+      const fetchMock = vi.fn().mockResolvedValueOnce(emptyResponse(401)).mockResolvedValueOnce(emptyResponse(401)) // refresh 也 401
       vi.stubGlobal('fetch', fetchMock)
 
       await expect(client.uploadBytes('/api/file/upload', new Uint8Array([1]))).rejects.toBeInstanceOf(
         AuthenticationError,
       )
-      // 认证彻底失败必须通知上层（路由跳登录页就挂在这个回调上）。
-      //
-      // 这里**故意不断言次数**：当前实现会通知两次 —— 一次来自 refreshSession
-      // 内部那个 401（request() 里的 authenticationFailed），一次来自本方法的
-      // catch。这是已知瑕疵（同一次失败重复通知，若 handler 弹 toast 会弹两条），
-      // 记在 docs/plans 的待修项里。把 2 写死会让「去重」这个修复反而弄红测试，
-      // 所以只钉住真正的契约：至少通知一次。
-      expect(onAuthFailure).toHaveBeenCalled()
+      // 认证彻底失败必须通知上层（路由跳登录页就挂在这个回调上），且**只通知一次**：
+      // refreshSession 内部那个 401 已经走过 authenticationFailed，外层 catch
+      // 必须透传同一个 AuthenticationError，而不是再通知一遍。
+      expect(onAuthFailure).toHaveBeenCalledTimes(1)
     })
 
     it('does not retry twice when the replay also returns 401', async () => {
@@ -135,14 +128,10 @@ describe('ApiClient error mapping', () => {
 
     it('maps 403 to PermissionError and other statuses to ApiError', async () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(emptyResponse(403)))
-      await expect(new ApiClient().uploadBytes('/api/x', new Uint8Array([1]))).rejects.toBeInstanceOf(
-        PermissionError,
-      )
+      await expect(new ApiClient().uploadBytes('/api/x', new Uint8Array([1]))).rejects.toBeInstanceOf(PermissionError)
 
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(emptyResponse(500)))
-      const err = await new ApiClient()
-        .uploadBytes('/api/x', new Uint8Array([1]))
-        .catch((e) => e)
+      const err = await new ApiClient().uploadBytes('/api/x', new Uint8Array([1])).catch((e) => e)
       expect(err).toBeInstanceOf(ApiError)
       expect(err.status).toBe(500)
     })
@@ -179,18 +168,14 @@ describe('ApiClient error mapping', () => {
       const fetchMock = vi.fn().mockResolvedValue(emptyResponse(403))
       vi.stubGlobal('fetch', fetchMock)
 
-      await expect(new ApiClient().stream('/api/ai/stream', {}, () => {})).rejects.toBeInstanceOf(
-        PermissionError,
-      )
+      await expect(new ApiClient().stream('/api/ai/stream', {}, () => {})).rejects.toBeInstanceOf(PermissionError)
       expect(fetchMock).toHaveBeenCalledTimes(1)
     })
 
     it('reports HTTP status and status text for other failures', async () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 502, statusText: 'Bad Gateway' })))
 
-      const err = await new ApiClient()
-        .stream('/api/ai/stream', {}, () => {})
-        .catch((e) => e)
+      const err = await new ApiClient().stream('/api/ai/stream', {}, () => {}).catch((e) => e)
 
       expect(err).toBeInstanceOf(ApiError)
       expect(err.message).toContain('502')

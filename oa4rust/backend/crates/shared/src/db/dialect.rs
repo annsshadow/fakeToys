@@ -279,6 +279,20 @@ pub fn dialect() -> &'static dyn SqlDialect {
 mod tests {
     use super::*;
 
+    #[allow(clippy::default_constructed_unit_structs)] // 目的就是覆盖 Default impl
+    #[test]
+    fn postgres_dialect_default_matches_new() {
+        let d = PostgresDialect::default();
+        assert_eq!(d.name(), PostgresDialect::new().name());
+    }
+
+    #[allow(clippy::default_constructed_unit_structs)] // 目的就是覆盖 Default impl
+    #[test]
+    fn mysql_dialect_default_matches_new() {
+        let d = MySQLDialect::default();
+        assert_eq!(d.name(), MySQLDialect::new().name());
+    }
+
     #[test]
     fn postgres_format_sql_is_identity() {
         let sql = "SELECT * FROM t WHERE id = $1 AND name = $2";
@@ -403,7 +417,11 @@ mod tests {
         );
 
         std::env::remove_var("DATABASE_DIALECT");
-        assert_eq!(dialect_name_from_env(), "postgres", "两者都缺省时回落到 postgres");
+        assert_eq!(
+            dialect_name_from_env(),
+            "postgres",
+            "两者都缺省时回落到 postgres"
+        );
 
         // 大小写不敏感（配置里写成 MySQL 不该被当成未知值）
         assert_eq!(dialect_from("MySQL").name(), "mysql");
@@ -487,5 +505,35 @@ mod tests {
             KingbaseDialect.format_sql(sql),
             "SELECT * FROM t WHERE id = ?"
         );
+    }
+
+    // ── 2026-10-29 覆盖率轮：四方言全方法过一遍（含从未被调用的默认方法）──
+    #[test]
+    fn every_dialect_answers_every_trait_method() {
+        for name in ["postgres", "mysql", "dameng", "kingbase"] {
+            let d = dialect_from(name);
+            assert_eq!(d.name(), name);
+            assert!(!d.quote_ident("col").is_empty());
+            assert!(!d.param(3).is_empty());
+            assert!(!d.now().is_empty());
+            assert!(!d.json_type().is_empty());
+            assert!(!d.cast_text("x").is_empty());
+            assert!(!d.cast_bigint("x").is_empty());
+            assert!(!d.ilike_op().is_empty());
+            assert!(!d.format_sql("SELECT 1").is_empty());
+            // 默认方法 cast_text_param / cast_bigint_param：此前没有任何路径调用过
+            assert!(d.cast_text_param(2).contains(&d.param(2)));
+            assert!(d.cast_bigint_param(2).contains(&d.param(2)));
+        }
+        // 精确值钉两代表方言，防静默漂移
+        let pg = dialect_from("postgres");
+        assert_eq!(pg.cast_text_param(2), "$2::text");
+        assert_eq!(pg.cast_bigint_param(2), "$2::bigint");
+        assert_eq!(pg.format_sql("SELECT 1"), "SELECT 1");
+        let kb = dialect_from("kingbase");
+        assert_eq!(kb.cast_text_param(2), "CAST(? AS VARCHAR)");
+        assert_eq!(kb.cast_bigint_param(2), "CAST(? AS BIGINT)");
+        let dm = dialect_from("dameng");
+        assert_eq!(dm.param(1), "$1", "dameng 兼容 PostgreSQL 协议");
     }
 }

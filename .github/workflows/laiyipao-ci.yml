@@ -105,8 +105,24 @@ jobs:
             echo "$out"
             exit 1
           fi
-      - name: Test
-        run: go test ./... -count=1 -timeout 1200s
+      - name: Test (with coverage)
+        # 覆盖率不是「顺手打印」：B1 的基线是 85.8%（2026-10-28），
+        # 门禁钉 85 留 0.8 个点给噪声。低于它说明新代码没测试或旧测试被删。
+        # DSN 显式注入，避免依赖测试里的本机缺省值：连不上时 e2e 是 Skip 而不是失败。
+        run: go test ./... -count=1 -timeout 1200s -coverprofile=coverage.out -covermode=atomic
+        env:
+          TEST_DATABASE_URL: postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable
+      - name: Coverage gate (total statements >= 85%)
+        run: |
+          set -euo pipefail
+          go tool cover -func=coverage.out | tail -1
+          total=$(go tool cover -func=coverage.out | tail -1 | awk '{print $3}' | tr -d '%')
+          awk -v total="$total" 'BEGIN {
+            if (total + 0 < 85) {
+              printf "::error::total coverage %.2f%% < 85%%\n", total
+              exit 1
+            }
+          }'
 
   # ── admin 管理端（Vue3 + Vite）：类型检查 + 单测 + 构建 ─────────────────
   admin:

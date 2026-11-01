@@ -234,7 +234,10 @@ mod token_parsing_tests {
         // 非 UTF-8 的 Cookie 头不能让提取逻辑 panic 或提前返回：
         // 跳过它，继续看下一个头。
         let mut headers = HeaderMap::new();
-        headers.append(header::COOKIE, HeaderValue::from_bytes(b"\xff\xfe").unwrap());
+        headers.append(
+            header::COOKIE,
+            HeaderValue::from_bytes(b"\xff\xfe").unwrap(),
+        );
         headers.append(
             header::COOKIE,
             HeaderValue::from_str("oa4rust_session=after-binary").unwrap(),
@@ -312,9 +315,75 @@ mod token_parsing_tests {
     #[test]
     fn extract_token_from_headers_matches_authentication() {
         let headers = cookie_headers(&["oa4rust_session=abc"]);
-        assert_eq!(extract_token_from_headers(&headers), Some("abc".to_string()));
+        assert_eq!(
+            extract_token_from_headers(&headers),
+            Some("abc".to_string())
+        );
 
         let headers = HeaderMap::new();
         assert_eq!(extract_token_from_headers(&headers), None);
+    }
+
+    // ── 2026-10-29 覆盖率轮：初始化窗口判定的真库路径 ──
+    #[cfg(test)]
+    mod system_init_tests {
+        use super::*;
+        use crate::testing::is_db_available;
+
+        #[tokio::test]
+        async fn uninitialized_window_flips_when_first_person_exists() {
+            if !is_db_available().await {
+                eprintln!("SKIP: no database available (set DATABASE_URL)");
+                return;
+            }
+            let pool = crate::testing::test_pool();
+            let client = pool.get().await.unwrap();
+            client
+                .execute("DELETE FROM auth_person WHERE id LIKE 'cov-init%'", &[])
+                .await
+                .unwrap();
+
+            let base: i64 = client
+            .query_one(
+                "SELECT COUNT(*) AS c FROM auth_person WHERE locked = false AND deleted_at IS NULL",
+                &[],
+            )
+            .await
+            .unwrap()
+            .get("c");
+            if base == 0 {
+                assert!(
+                    system_uninitialized(&pool).await,
+                    "无任何未锁定用户时系统处于未初始化窗口"
+                );
+            } else {
+                assert!(
+                    !system_uninitialized(&pool).await,
+                    "已有未锁定用户时窗口必须处于关闭态"
+                );
+            }
+            client
+            .execute(
+                "INSERT INTO auth_person (id, unique_id, name, password_hash) VALUES ('cov-init-p1', 'cov-init-p1', 'init', 'x')",
+                &[],
+            )
+            .await
+            .unwrap();
+            assert!(
+                !system_uninitialized(&pool).await,
+                "存在未锁定用户后窗口必须关闭"
+            );
+            client
+                .execute("DELETE FROM auth_person WHERE id LIKE 'cov-init%'", &[])
+                .await
+                .unwrap();
+        }
+    }
+
+    #[tokio::test]
+    async fn failing_pool_makes_uninitialized_check_fail_closed() {
+        // 初始化窗口判定在池失败时回 false（视作「已初始化」）——
+        // 拒绝在数据库不可用时打开匿名初始化窗口（fail-closed 契约）。
+        assert!(!system_uninitialized(&crate::testing::failing_pool()).await);
     }
 }

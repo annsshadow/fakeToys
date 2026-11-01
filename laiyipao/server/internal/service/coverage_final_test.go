@@ -61,7 +61,7 @@ func TestResolveAdminDBError(t *testing.T) {
 func TestRedeemCodesBrokenBranches(t *testing.T) {
 	broken := openBrokenService(t)
 	ctx := context.Background()
-	if _, _, err := broken.AdminListRedeemCodes(ctx, 50, 0); err == nil {
+	if _, _, err := broken.AdminListRedeemCodes(ctx, 50, 0, "", nil, nil); err == nil {
 		t.Error("故障态兑换码列表应报错")
 	}
 	if _, err := broken.AdminCreateRedeemCode(ctx, "X", map[string]int{"coin": 1}, 1, nil); err == nil {
@@ -105,7 +105,7 @@ func TestComputeRatingPointsQueryFallback(t *testing.T) {
 // "build wechat request" 而不是 panic。
 func TestCode2SessionRequestBuildError(t *testing.T) {
 	ts := openTestService(t)
-	ts.Cfg.WechatEndpoint = "http://\x7f-bad-host/wx" // DEL 控制字符 → URL 解析失败
+	ts.Cfg().WechatEndpoint = "http://\x7f-bad-host/wx" // DEL 控制字符 → URL 解析失败
 	if _, err := ts.code2Session(context.Background(), "code"); err == nil {
 		t.Error("非法端点应让 code2Session 构造请求失败")
 	}
@@ -127,7 +127,7 @@ func TestCode2SessionBodyReadError(t *testing.T) {
 		}
 	}))
 	defer srv.Close()
-	ts.Cfg.WechatEndpoint = srv.URL
+	ts.Cfg().WechatEndpoint = srv.URL
 	if _, err := ts.code2Session(context.Background(), "code"); err == nil {
 		t.Error("响应体读取失败应报错")
 	}
@@ -146,7 +146,7 @@ func TestWechatLoginMidwayFailures(t *testing.T) {
 
 	t.Run("upsert失败", func(t *testing.T) {
 		ts := openScratchService(t)
-		ts.Cfg.WechatAppID, ts.Cfg.WechatAppSecret, ts.Cfg.WechatEndpoint = "wx", "sec", srv.URL
+		ts.Cfg().WechatAppID, ts.Cfg().WechatAppSecret, ts.Cfg().WechatEndpoint = "wx", "sec", srv.URL
 		ts.renameTable(t, "users", "users_bak")
 		_, err := ts.WechatLogin(ctx, "good")
 		ts.renameTable(t, "users_bak", "users")
@@ -155,7 +155,7 @@ func TestWechatLoginMidwayFailures(t *testing.T) {
 
 	t.Run("initNewUser失败", func(t *testing.T) {
 		ts := openScratchService(t)
-		ts.Cfg.WechatAppID, ts.Cfg.WechatAppSecret, ts.Cfg.WechatEndpoint = "wx", "sec", srv.URL
+		ts.Cfg().WechatAppID, ts.Cfg().WechatAppSecret, ts.Cfg().WechatEndpoint = "wx", "sec", srv.URL
 		// users 完好 → upsert 成功；user_wallets 缺失 → initNewUser 第一步失败
 		ts.renameTable(t, "user_wallets", "user_wallets_bak")
 		_, err := ts.WechatLogin(ctx, "good")
@@ -705,7 +705,7 @@ func TestStatsMidwayFailures(t *testing.T) {
 		ts := openScratchService(t)
 		// COUNT(users) 成功 → user_progress 改名 → 列表 JOIN 查询失败。
 		ts.renameTable(t, "user_progress", "user_progress_bak")
-		_, _, err := ts.AdminListUsers(ctx, "", 50, 0)
+		_, _, err := ts.AdminListUsers(ctx, "", 50, 0, nil, nil, nil, nil, nil, nil)
 		ts.renameTable(t, "user_progress_bak", "user_progress")
 		mustErr(t, err, "list users")
 	})
@@ -724,7 +724,7 @@ func TestStatsMidwayFailures(t *testing.T) {
 		ts := openScratchService(t)
 		// COUNT(battle_records) 成功 → users 改名 → 列表 LEFT JOIN 查询失败。
 		ts.renameTable(t, "users", "users_bak")
-		_, _, err := ts.AdminListBattles(ctx, 0, 0, 10, false, 0)
+		_, _, err := ts.AdminListBattles(ctx, 0, 0, 10, false, 0, nil, nil, "")
 		ts.renameTable(t, "users_bak", "users")
 		mustErr(t, err, "list battles")
 	})
@@ -749,7 +749,7 @@ func TestStatsMidwayFailures(t *testing.T) {
 		ts := openScratchService(t)
 		// COUNT(defenses) 成功 → users 改名 → 列表 JOIN 查询失败。
 		ts.renameTable(t, "users", "users_bak")
-		_, _, err := ts.AdminListDefenses(ctx, 50, 0)
+		_, _, err := ts.AdminListDefenses(ctx, 50, 0, "", 0, nil)
 		ts.renameTable(t, "users_bak", "users")
 		mustErr(t, err, "admin defenses")
 	})

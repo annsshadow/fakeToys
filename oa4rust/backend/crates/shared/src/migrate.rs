@@ -223,10 +223,7 @@ mod tests {
         // 迁移只在 postgres 方言下才有意义（其它方言会把 SQL 重写掉）。
         // 环境里真的配了别的方言时直接跳过，而不是给出一个假的失败。
         if dialect().name() != "postgres" {
-            eprintln!(
-                "skip: 当前方言是 {}，PG 迁移用例不适用",
-                dialect().name()
-            );
+            eprintln!("skip: 当前方言是 {}，PG 迁移用例不适用", dialect().name());
             return;
         }
 
@@ -265,14 +262,20 @@ mod tests {
         let mut unique = versions.clone();
         unique.sort();
         unique.dedup();
-        assert_eq!(unique.len(), versions.len(), "schema_migrations 出现重复版本");
+        assert_eq!(
+            unique.len(),
+            versions.len(),
+            "schema_migrations 出现重复版本"
+        );
 
         // ④ 目录不存在时必须**报错**而不是「0 条迁移、静默成功」。
         //    静默成功的后果是：部署时漏拷 migrations/，服务照常启动，
         //    然后在第一次查询时炸在缺表上——现场完全看不出根因。
         let saved = std::env::var(MIGRATIONS_DIR_KEY).ok();
         std::env::set_var(MIGRATIONS_DIR_KEY, "definitely-not-a-real-dir-oa4rust");
-        let err = run_migrations(&pool).await.expect_err("missing dir must fail");
+        let err = run_migrations(&pool)
+            .await
+            .expect_err("missing dir must fail");
         let msg = format!("{err}");
         assert!(
             msg.contains("migrations directory not found"),
@@ -282,5 +285,125 @@ mod tests {
             Some(v) => std::env::set_var(MIGRATIONS_DIR_KEY, v),
             None => std::env::remove_var(MIGRATIONS_DIR_KEY),
         }
+
+        // ⑤ 校验和变更分支（第八轮补）：已应用且文件被改（存储 checksum 与
+        // 文件不一致）时，运行器必须更新存储的 checksum 并跳过重放——不能失败，
+        // 也不能重放（重放会重复建表/插种子，部署里表现为「重启一次坏一次」）。
+        let target = second.skipped.first().expect("第二次应全部 skip").clone();
+        let bad_checksum = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+        {
+            let c = pool.get().await.expect("获取 client");
+            c.execute(
+                &dialect()
+                    .format_sql("UPDATE schema_migrations SET checksum = $1 WHERE version = $2"),
+                &[&bad_checksum, &target],
+            )
+            .await
+            .expect("把存储 checksum 改成错误值");
+        }
+        let third = run_migrations(&pool).await.expect("third migration run");
+        assert!(
+            third.applied.iter().all(|f| f != &target),
+            "校验和变更后不应重放迁移 {target}"
+        );
+        assert!(
+            third.skipped.contains(&target),
+            "校验和变更后应记为 skipped（已应用，仅更新 checksum）"
+        );
+        {
+            let c = pool.get().await.expect("获取 client");
+            let stored: Option<String> = c
+                .query_opt(
+                    &dialect()
+                        .format_sql("SELECT checksum FROM schema_migrations WHERE version = $1"),
+                    &[&target],
+                )
+                .await
+                .expect("查询 checksum")
+                .map(|r| r.get(0));
+            assert_ne!(
+                stored.as_deref(),
+                Some(bad_checksum),
+                "checksum 应被更新回文件实际值"
+            );
+        }
+
+        // ⑥ 空迁移分支（第八轮补）：SQL 为空（如占位/注释-only 文件）时，仍必须
+        // 落版本记录并记为 applied，但不能执行任何 SQL（无建表副作用）。
+        let empty_dir =
+            std::env::temp_dir().join(format!("oa4rust_empty_migrations_{}", std::process::id()));
+        std::fs::create_dir_all(&empty_dir).expect("创建临时迁移目录");
+        std::fs::write(empty_dir.join("000_empty.sql"), "").expect("写入空迁移");
+        let saved2 = std::env::var(MIGRATIONS_DIR_KEY).ok();
+        std::env::set_var(MIGRATIONS_DIR_KEY, empty_dir.to_str().expect("UTF-8 路径"));
+        let fourth = run_migrations(&pool)
+            .await
+            .expect("empty migration must run");
+        assert_eq!(
+            fourth.applied,
+            vec!["000_empty.sql".to_string()],
+            "空迁移应记为 applied"
+        );
+        assert!(fourth.skipped.is_empty(), "首次运行无 skip");
+        match saved2 {
+            Some(v) => std::env::set_var(MIGRATIONS_DIR_KEY, v),
+            None => std::env::remove_var(MIGRATIONS_DIR_KEY),
+        }
+        {
+            let c = pool.get().await.expect("获取 client");
+            c.execute(
+                &dialect().format_sql("DELETE FROM schema_migrations WHERE version = $1"),
+                &[&"000_empty.sql"],
+            )
+            .await
+            .expect("清理测试版本记录");
+        }
+        std::fs::remove_dir_all(&empty_dir).ok();
+
+        // ⑦ read_dir 失败分支（第十六轮补）：MIGRATIONS_DIR 指向一个**文件**而
+        // 非目录时，`std::fs::read_dir` 必须报错（"cannot read …"），不能把
+        // 文件路径当成空目录静默返回 0 条迁移——部署漏拷 migrations/ 时若
+        // 恰好有同名文件占位，静默成功会拖到启动后第一次查询才炸。
+        let file_path = std::env::temp_dir().join(format!(
+            "oa4rust_migrations_file_{}.sql",
+            std::process::id()
+        ));
+        std::fs::write(&file_path, "not a directory").expect("写临时文件");
+        let saved3 = std::env::var(MIGRATIONS_DIR_KEY).ok();
+        std::env::set_var(MIGRATIONS_DIR_KEY, file_path.to_str().expect("UTF-8 路径"));
+        let err5 = run_migrations(&pool)
+            .await
+            .expect_err("迁移目录是文件时必须报错");
+        let msg5 = format!("{err5}");
+        assert!(
+            msg5.contains("cannot read"),
+            "应点明无法读取迁移目录，实际: {msg5}"
+        );
+        match saved3 {
+            Some(v) => std::env::set_var(MIGRATIONS_DIR_KEY, v),
+            None => std::env::remove_var(MIGRATIONS_DIR_KEY),
+        }
+        std::fs::remove_file(&file_path).ok();
+
+        // ⑧ 坏迁移 SQL 必须 loud 失败（第二十轮补）：迁移文件内容非法时，
+        // 事务内执行必须报错并点名文件——不能静默跳过（否则坏迁移在部署里
+        // 被当作已应用，启动照常、首次查询才炸）。
+        let bad_dir =
+            std::env::temp_dir().join(format!("oa4rust_bad_migration_{}", std::process::id()));
+        std::fs::create_dir_all(&bad_dir).expect("创建临时迁移目录");
+        std::fs::write(bad_dir.join("001_bad.sql"), "THIS IS NOT SQL;").expect("写坏迁移");
+        let saved5 = std::env::var(MIGRATIONS_DIR_KEY).ok();
+        std::env::set_var(MIGRATIONS_DIR_KEY, bad_dir.to_str().expect("UTF-8 路径"));
+        let err7 = run_migrations(&pool).await.expect_err("坏迁移必须失败");
+        let msg7 = format!("{err7}");
+        assert!(
+            msg7.contains("001_bad.sql"),
+            "错误信息应点名坏迁移文件，实际: {msg7}"
+        );
+        match saved5 {
+            Some(v) => std::env::set_var(MIGRATIONS_DIR_KEY, v),
+            None => std::env::remove_var(MIGRATIONS_DIR_KEY),
+        }
+        std::fs::remove_dir_all(&bad_dir).ok();
     }
 }

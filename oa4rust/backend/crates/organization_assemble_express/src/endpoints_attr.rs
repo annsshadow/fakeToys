@@ -228,9 +228,7 @@ pub async fn personattr_set_person_name(
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     // 写面：收有效会话门（无会话 401），防匿名属性写入；owner 从 body 取（冒名族，另记待修）。
-    let Some(Extension(_session)) = session else {
-        return Err(AppError::Unauthorized);
-    };
+    crate::require_session(session)?;
     attr_write_values(&pool, &body, "x_org_person_attribute", "person_id", false).await?;
     Ok(AxumJson(ActionResult::success(wrap_true())))
 }
@@ -243,9 +241,7 @@ pub async fn personattr_append_person_name(
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     // 写面：收有效会话门（无会话 401），防匿名属性写入；owner 从 body 取（冒名族，另记待修）。
-    let Some(Extension(_session)) = session else {
-        return Err(AppError::Unauthorized);
-    };
+    crate::require_session(session)?;
     attr_write_values(&pool, &body, "x_org_person_attribute", "person_id", true).await?;
     Ok(AxumJson(ActionResult::success(wrap_true())))
 }
@@ -390,9 +386,7 @@ pub async fn unitattr_set_unit_name(
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     // 写面：收有效会话门（无会话 401），防匿名属性写入；owner 从 body 取（冒名族，另记待修）。
-    let Some(Extension(_session)) = session else {
-        return Err(AppError::Unauthorized);
-    };
+    crate::require_session(session)?;
     attr_write_values(&pool, &body, "x_org_unit_attribute", "unit_id", false).await?;
     Ok(AxumJson(ActionResult::success(wrap_true())))
 }
@@ -404,9 +398,7 @@ pub async fn unitattr_append_unit_name(
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     // 写面：收有效会话门（无会话 401），防匿名属性写入；owner 从 body 取（冒名族，另记待修）。
-    let Some(Extension(_session)) = session else {
-        return Err(AppError::Unauthorized);
-    };
+    crate::require_session(session)?;
     attr_write_values(&pool, &body, "x_org_unit_attribute", "unit_id", true).await?;
     Ok(AxumJson(ActionResult::success(wrap_true())))
 }
@@ -466,9 +458,7 @@ pub async fn empowerlog_create(
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     // 写面：收有效会话门（无会话 401），防匿名授权日志写入；from/to identity 从 body 取（冒名族，另记待修）。
-    let Some(Extension(_session)) = session else {
-        return Err(AppError::Unauthorized);
-    };
+    crate::require_session(session)?;
     let required = [
         ("application", string_field(&body, "application")),
         ("process", string_field(&body, "process")),

@@ -19,7 +19,9 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/laiyipao/server/internal/config"
 	"github.com/laiyipao/server/internal/domain"
+	"github.com/laiyipao/server/internal/store"
 )
 
 // newAdminFixture 直接在库中插一个管理员（密码 MinCost 加速测试）。
@@ -426,7 +428,7 @@ func TestAdminListUsers(t *testing.T) {
 	uid := ts.newUser(t, ctx)
 	u, _ := ts.loadUser(ctx, uid)
 
-	items, total, err := ts.AdminListUsers(ctx, u.Nickname, 50, 0)
+	items, total, err := ts.AdminListUsers(ctx, u.Nickname, 50, 0, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("列表失败：%v", err)
 	}
@@ -444,12 +446,12 @@ func TestAdminListUsers(t *testing.T) {
 	}
 
 	// limit/offset 夹紧：非法值不报错、不越界
-	if _, _, err := ts.AdminListUsers(ctx, "", 9999, -5); err != nil {
+	if _, _, err := ts.AdminListUsers(ctx, "", 9999, -5, nil, nil, nil, nil, nil, nil); err != nil {
 		t.Errorf("非法分页参数应被夹紧而不是报错：%v", err)
 	}
 
 	broken := openBrokenService(t)
-	if _, _, err := broken.AdminListUsers(ctx, "", 50, 0); err == nil {
+	if _, _, err := broken.AdminListUsers(ctx, "", 50, 0, nil, nil, nil, nil, nil, nil); err == nil {
 		t.Error("数据库故障时应报错")
 	}
 }
@@ -546,12 +548,12 @@ func TestAdminListBattles(t *testing.T) {
 		t.Fatalf("结算失败：%v", err)
 	}
 
-	_, total, err := ts.AdminListBattles(ctx, uid, 1, 10, false, 0)
+	_, total, err := ts.AdminListBattles(ctx, uid, 1, 10, false, 0, nil, nil, "")
 	if err != nil || total < 1 {
 		t.Fatalf("按用户+关卡过滤应命中：%d, %v", total, err)
 	}
 	// 第 123 轮：total_enemies 必须填上（生成器权威值），后台「守恒」列靠它做伪造判定
-	list, _, err := ts.AdminListBattles(ctx, uid, 1, 10, false, 0)
+	list, _, err := ts.AdminListBattles(ctx, uid, 1, 10, false, 0, nil, nil, "")
 	if err != nil {
 		t.Fatalf("读战报失败：%v", err)
 	}
@@ -574,17 +576,17 @@ func TestAdminListBattles(t *testing.T) {
 		}
 	}
 	// 非匹配过滤 → 0
-	_, total, err = ts.AdminListBattles(ctx, uid, 99, 10, false, 0)
+	_, total, err = ts.AdminListBattles(ctx, uid, 99, 10, false, 0, nil, nil, "")
 	if err != nil || total != 0 {
 		t.Errorf("level_id=99 不应命中：%d, %v", total, err)
 	}
 	// limit 夹紧
-	if _, _, err := ts.AdminListBattles(ctx, 0, 0, 0, false, 0); err != nil {
+	if _, _, err := ts.AdminListBattles(ctx, 0, 0, 0, false, 0, nil, nil, ""); err != nil {
 		t.Errorf("limit=0 应回落默认：%v", err)
 	}
 
 	broken := openBrokenService(t)
-	if _, _, err := broken.AdminListBattles(ctx, 0, 0, 10, false, 0); err == nil {
+	if _, _, err := broken.AdminListBattles(ctx, 0, 0, 10, false, 0, nil, nil, ""); err == nil {
 		t.Error("数据库故障时应报错")
 	}
 }
@@ -823,16 +825,16 @@ func TestAdminListDefenses(t *testing.T) {
 		t.Fatalf("建防线失败：%v", err)
 	}
 
-	_, total, err := ts.AdminListDefenses(ctx, 50, 0)
+	_, total, err := ts.AdminListDefenses(ctx, 50, 0, "", 0, nil)
 	if err != nil || total < 1 {
 		t.Fatalf("防线列表应非空：%d, %v", total, err)
 	}
-	if _, _, err := ts.AdminListDefenses(ctx, 9999, 0); err != nil {
+	if _, _, err := ts.AdminListDefenses(ctx, 9999, 0, "", 0, nil); err != nil {
 		t.Errorf("limit 夹紧不应报错：%v", err)
 	}
 
 	broken := openBrokenService(t)
-	if _, _, err := broken.AdminListDefenses(ctx, 50, 0); err == nil {
+	if _, _, err := broken.AdminListDefenses(ctx, 50, 0, "", 0, nil); err == nil {
 		t.Error("故障态应报错")
 	}
 }
@@ -840,6 +842,11 @@ func TestAdminListDefenses(t *testing.T) {
 func TestAdminEconomy(t *testing.T) {
 	ts := openTestService(t)
 	ctx := context.Background()
+
+	// 造一笔流水，使本用例不依赖其它测试先写入 wallet_flows
+	//（否则单独运行本测试时「钱包流水不应为空」会失败）。
+	uid := ts.newUser(t, ctx)
+	ts.grant(t, ctx, uid, map[string]int64{"coin": 100})
 
 	data, err := ts.AdminEconomy(ctx)
 	if err != nil {
@@ -910,7 +917,7 @@ func TestAdminAnnouncements(t *testing.T) {
 	if !item.Published {
 		t.Error("published 应原样返回")
 	}
-	items, _, err := ts.AdminListAnnouncements(ctx, 50, 0)
+	items, _, err := ts.AdminListAnnouncements(ctx, 50, 0, nil, nil, nil)
 	if err != nil || len(items) == 0 {
 		t.Fatalf("公告列表应非空：%v", err)
 	}
@@ -919,7 +926,7 @@ func TestAdminAnnouncements(t *testing.T) {
 	if _, err := broken.AdminCreateAnnouncement(ctx, "x", "y", false); err == nil {
 		t.Error("故障态应报错")
 	}
-	if _, _, err := broken.AdminListAnnouncements(ctx, 50, 0); err == nil {
+	if _, _, err := broken.AdminListAnnouncements(ctx, 50, 0, nil, nil, nil); err == nil {
 		t.Error("故障态应报错")
 	}
 }
@@ -928,7 +935,7 @@ func TestAdminRedeemCodes(t *testing.T) {
 	ts := openTestService(t)
 	ctx := context.Background()
 
-	items, _, err := ts.AdminListRedeemCodes(ctx, 50, 0)
+	items, _, err := ts.AdminListRedeemCodes(ctx, 50, 0, "", nil, nil)
 	if err != nil {
 		t.Fatalf("兑换码列表失败：%v", err)
 	}
@@ -951,7 +958,7 @@ func TestAdminRedeemCodes(t *testing.T) {
 		t.Errorf("自动分配的 id 应为正，得 %v", created.ID)
 	}
 
-	after, _, err := ts.AdminListRedeemCodes(ctx, 50, 0)
+	after, _, err := ts.AdminListRedeemCodes(ctx, 50, 0, "", nil, nil)
 	if err != nil {
 		t.Fatalf("创建后列表失败：%v", err)
 	}
@@ -1011,7 +1018,7 @@ func TestAdminListAuditLogs(t *testing.T) {
 	adminID, username, _ := ts.newAdminFixture(t, "logs", 1)
 	ts.Audit(ctx, adminID, "svc_logs_probe", "t", "10.0.0.1", map[string]any{"a": 1})
 
-	items, _, err := ts.AdminListAuditLogs(ctx, 100, 0)
+	items, _, err := ts.AdminListAuditLogs(ctx, 100, 0, "", 0, nil, nil)
 	if err != nil {
 		t.Fatalf("审计列表失败：%v", err)
 	}
@@ -1024,12 +1031,12 @@ func TestAdminListAuditLogs(t *testing.T) {
 	if !found {
 		t.Error("探针审计行应出现在列表里")
 	}
-	if _, _, err := ts.AdminListAuditLogs(ctx, 0, 0); err != nil {
+	if _, _, err := ts.AdminListAuditLogs(ctx, 0, 0, "", 0, nil, nil); err != nil {
 		t.Errorf("limit=0 应回落默认：%v", err)
 	}
 
 	broken := openBrokenService(t)
-	if _, _, err := broken.AdminListAuditLogs(ctx, 10, 0); err == nil {
+	if _, _, err := broken.AdminListAuditLogs(ctx, 10, 0, "", 0, nil, nil); err == nil {
 		t.Error("故障态应报错")
 	}
 }
@@ -1061,5 +1068,181 @@ func TestJoinCommaAndToInt64(t *testing.T) {
 		if ok != c.ok || (ok && got != c.want) {
 			t.Errorf("toInt64(%v)（用例 %d）= %d, %t；期望 %d, %t", c.in, i, got, ok, c.want, c.ok)
 		}
+	}
+}
+
+// TestAdminLogoutFailsOnDBError 覆盖 AdminLogout 的数据库错误路径：
+// 吊销 SQL 执行失败时必须返回错误（而不是静默 0 条）。
+// 连接 postgres 系统库（可达但无 admin_tokens 表）→ UPDATE 报 42P01。
+func TestAdminLogoutFailsOnDBError(t *testing.T) {
+	cfg := config.Load()
+	cfg.DatabaseURL = "postgres://postgres@127.0.0.1:5432/postgres?sslmode=disable"
+	cfg.DBMaxConns = 2
+	cfg.DBMinConns = 0
+	ctx := context.Background()
+
+	db, err := store.Open(ctx, cfg)
+	if err != nil {
+		t.Skipf("postgres 系统库连不上，跳过：%v", err)
+	}
+	defer db.Close()
+
+	s := New(db, cfg)
+	if _, err := s.AdminLogout(ctx, 12345); err == nil {
+		t.Fatal("无 admin_tokens 表时 AdminLogout 必须返回错误")
+	}
+}
+
+// TestAdminLoginFailsOnDBError 覆盖 AdminLogin 的数据库错误路径：
+// admin_users 表不可达（postgres 系统库无业务表）时必须返回错误，
+// 不能误报「用户名或密码错误」（那会把 DB 故障伪装成认证失败）。
+func TestAdminLoginFailsOnDBError(t *testing.T) {
+	cfg := config.Load()
+	cfg.DatabaseURL = "postgres://postgres@127.0.0.1:5432/postgres?sslmode=disable"
+	cfg.DBMaxConns = 2
+	cfg.DBMinConns = 0
+	ctx := context.Background()
+
+	db, err := store.Open(ctx, cfg)
+	if err != nil {
+		t.Skipf("postgres 系统库连不上，跳过：%v", err)
+	}
+	defer db.Close()
+
+	s := New(db, cfg)
+	_, err = s.AdminLogin(ctx, "nobody", "wrong")
+	if err == nil {
+		t.Fatal("无 admin_users 表时 AdminLogin 必须返回错误")
+	}
+	if errors.Is(err, ErrUnauthorized) {
+		t.Fatalf("DB 故障不得伪装成认证失败：%v", err)
+	}
+}
+
+// TestAdminEquipmentFailsOnDBError 覆盖 AdminEquipment 的数据库错误路径：
+// equipment 表不可达时必须返回错误，不能返回半份装备列表（静默截断
+// 会让运营以为玩家装备就是这些）。
+func TestAdminEquipmentFailsOnDBError(t *testing.T) {
+	cfg := config.Load()
+	cfg.DatabaseURL = "postgres://postgres@127.0.0.1:5432/postgres?sslmode=disable"
+	cfg.DBMaxConns = 2
+	cfg.DBMinConns = 0
+	ctx := context.Background()
+
+	db, err := store.Open(ctx, cfg)
+	if err != nil {
+		t.Skipf("postgres 系统库连不上，跳过：%v", err)
+	}
+	defer db.Close()
+
+	s := New(db, cfg)
+	if _, err := s.AdminEquipment(ctx); err == nil {
+		t.Fatal("无 equipment 表时 AdminEquipment 必须返回错误")
+	}
+}
+
+// TestAdminListDefensesFailsOnDBError 覆盖 AdminListDefenses 的数据库错误路径：
+// defenses 表不可达时 count 查询必须报错，不能返回 (0, nil) 让运营以为防线为空。
+func TestAdminListDefensesFailsOnDBError(t *testing.T) {
+	cfg := config.Load()
+	cfg.DatabaseURL = "postgres://postgres@127.0.0.1:5432/postgres?sslmode=disable"
+	cfg.DBMaxConns = 2
+	cfg.DBMinConns = 0
+	ctx := context.Background()
+
+	db, err := store.Open(ctx, cfg)
+	if err != nil {
+		t.Skipf("postgres 系统库连不上，跳过：%v", err)
+	}
+	defer db.Close()
+
+	s := New(db, cfg)
+	if _, _, err := s.AdminListDefenses(ctx, 50, 0, "", 0, nil); err == nil {
+		t.Fatal("无 defenses 表时 AdminListDefenses 必须返回错误")
+	}
+}
+
+// TestAdminLevelRowFailsOnDBError 覆盖 AdminLevelRow 的数据库错误路径：
+// levels 表不可达时必须返回错误，不能回零值行让运营误以为关卡不存在/被重置。
+func TestAdminLevelRowFailsOnDBError(t *testing.T) {
+	cfg := config.Load()
+	cfg.DatabaseURL = "postgres://postgres@127.0.0.1:5432/postgres?sslmode=disable"
+	cfg.DBMaxConns = 2
+	cfg.DBMinConns = 0
+	ctx := context.Background()
+
+	db, err := store.Open(ctx, cfg)
+	if err != nil {
+		t.Skipf("postgres 系统库连不上，跳过：%v", err)
+	}
+	defer db.Close()
+
+	s := New(db, cfg)
+	if _, err := s.AdminLevelRow(ctx, 1); err == nil {
+		t.Fatal("无 levels 表时 AdminLevelRow 必须返回错误")
+	}
+}
+
+// TestAdminLevelWavesFailsOnDBError 覆盖 AdminLevelWaves 的数据库错误路径：
+// level_waves 表不可达时必须返回错误，不能返回空波次让运营以为「这关没有刷怪」。
+func TestAdminLevelWavesFailsOnDBError(t *testing.T) {
+	cfg := config.Load()
+	cfg.DatabaseURL = "postgres://postgres@127.0.0.1:5432/postgres?sslmode=disable"
+	cfg.DBMaxConns = 2
+	cfg.DBMinConns = 0
+	ctx := context.Background()
+
+	db, err := store.Open(ctx, cfg)
+	if err != nil {
+		t.Skipf("postgres 系统库连不上，跳过：%v", err)
+	}
+	defer db.Close()
+
+	s := New(db, cfg)
+	if _, err := s.AdminLevelWaves(ctx, 1); err == nil {
+		t.Fatal("无 level_waves 表时 AdminLevelWaves 必须返回错误")
+	}
+}
+
+// TestAdminGrantCurrencyFailsOnDBError 覆盖 AdminGrantCurrency 的数据库错误路径：
+// 用户存在性检查（users 表）不可达时必须返回错误，不能把 DB 故障伪装成
+// 「余额不足」或「用户不存在」。
+func TestAdminGrantCurrencyFailsOnDBError(t *testing.T) {
+	cfg := config.Load()
+	cfg.DatabaseURL = "postgres://postgres@127.0.0.1:5432/postgres?sslmode=disable"
+	cfg.DBMaxConns = 2
+	cfg.DBMinConns = 0
+	ctx := context.Background()
+
+	db, err := store.Open(ctx, cfg)
+	if err != nil {
+		t.Skipf("postgres 系统库连不上，跳过：%v", err)
+	}
+	defer db.Close()
+
+	s := New(db, cfg)
+	if _, err := s.AdminGrantCurrency(ctx, 1, "coin", 10); err == nil {
+		t.Fatal("无 users 表时 AdminGrantCurrency 必须返回错误")
+	}
+}
+
+// TestAdminDashboardFailsOnDBError 覆盖 AdminDashboard 的数据库错误路径：
+// users 表不可达时看板必须返回错误（缓存层不得把失败当空看板缓存）。
+func TestAdminDashboardFailsOnDBError(t *testing.T) {
+	cfg := config.Load()
+	cfg.DatabaseURL = "postgres://postgres@127.0.0.1:5432/postgres?sslmode=disable"
+	cfg.DBMaxConns = 2
+	cfg.DBMinConns = 0
+	ctx := context.Background()
+
+	db, err := store.Open(ctx, cfg)
+	if err != nil {
+		t.Skipf("postgres 系统库连不上，跳过：%v", err)
+	}
+	defer db.Close()
+
+	s := New(db, cfg)
+	if _, err := s.AdminDashboard(ctx); err == nil {
+		t.Fatal("无 users 表时 AdminDashboard 必须返回错误")
 	}
 }

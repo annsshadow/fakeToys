@@ -203,3 +203,66 @@ func TestEnergyRegenNoDoubleCount(t *testing.T) {
 		t.Errorf("未满一格时连读 50 次，体力从 10 变成 %d —— 重复加点了", e)
 	}
 }
+
+// TestLoadWalletDoesNotWriteWhenNoRegen 钉住「没有恢复量时不写库」。
+//
+// 客户端每次进页面都拉钱包（3~5 分钟一次），而恢复间隔是 6 分钟 ——
+// **绝大多数读取的 n = 0**。原实现无条件 `SET updated_at = now()`，
+// 于是每次纯读都产生一个新行版本：xmin 变化 + WAL + 行锁，
+// 把最热的读端点变成持续的写放大源（dead tuple 与 autovacuum 压力）。
+//
+// ⚠️ 判据用 **xmin**（行版本号），不是 `updated_at`：
+// 断言 `updated_at` 没变只能证明「我们没改那个字段」，证明不了「没有写」——
+// 而这里要的正是「没有产生新行版本」。
+func TestLoadWalletDoesNotWriteWhenNoRegen(t *testing.T) {
+	ts := openScratchService(t)
+	ctx := context.Background()
+	uid := ts.newUser(t, ctx)
+
+	walletXmin := func() string {
+		t.Helper()
+		var xmin string
+		if err := ts.pool.QueryRow(ctx,
+			`SELECT xmin::text FROM user_wallets WHERE user_id = $1`, uid).Scan(&xmin); err != nil {
+			t.Fatalf("读行版本失败：%v", err)
+		}
+		return xmin
+	}
+
+	// 起点：刚好 now()，不足一格 → n = 0。
+	if _, err := ts.pool.Exec(ctx,
+		`UPDATE user_wallets SET energy = 10, energy_updated_at = now() WHERE user_id = $1`, uid); err != nil {
+		t.Fatalf("布置起点失败：%v", err)
+	}
+	before := walletXmin()
+
+	w, err := ts.LoadWallet(ctx, uid)
+	if err != nil {
+		t.Fatalf("LoadWallet 失败：%v", err)
+	}
+	if w.Energy != 10 {
+		t.Fatalf("未满一格时体力应为 10，实得 %d", w.Energy)
+	}
+	if after := walletXmin(); after != before {
+		t.Fatalf("n = 0 的读取不应写库，但行版本从 %s 变成了 %s\n"+
+			"（原实现无条件 SET updated_at = now()，每次纯读都产生新元组）", before, after)
+	}
+
+	// 跨过一格：必须真的写，且能量 +1。
+	if _, err := ts.pool.Exec(ctx,
+		`UPDATE user_wallets
+		    SET energy_updated_at = energy_updated_at - interval '361 seconds'
+		  WHERE user_id = $1`, uid); err != nil {
+		t.Fatalf("推进时间轴失败：%v", err)
+	}
+	w, err = ts.LoadWallet(ctx, uid)
+	if err != nil {
+		t.Fatalf("LoadWallet 失败：%v", err)
+	}
+	if w.Energy != 11 {
+		t.Fatalf("跨过一格后体力应为 11，实得 %d", w.Energy)
+	}
+	if after := walletXmin(); after == before {
+		t.Fatalf("有恢复量时必须写库，但行版本仍是 %s", after)
+	}
+}

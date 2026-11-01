@@ -26,6 +26,11 @@ pub mod routes;
 /// plan002 U2 — o2server 端点全量闭合（106 条对齐）新增实现。
 pub mod u2;
 
+/// 会话存在档门：无会话（Option<Extension<Session>> = None）→ 401。
+fn require_session(session: Option<Extension<Session>>) -> Result<Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 #[cfg(test)]
 mod security_gate_tests;
 #[cfg(test)]
@@ -434,16 +439,17 @@ pub async fn get_forum(
 #[allow(non_snake_case)]
 pub async fn create_topic(
     pool: Extension<Pool>,
-    session: Extension<Session>,
+    session: Option<Extension<Session>>,
     axum::extract::Json(req): Json<CreateTopicRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let forum_id = req.forum_id.clone().unwrap_or_default();
     let title = req.title.unwrap_or_default();
     let content = req.content.unwrap_or_default();
     // creator/author 以会话登录人为事实源：客户端传值可伪造归属（冒名发帖）
-    let creator = session.person_unique.clone();
+    let creator = sess.person_unique.clone();
     // x_bbs_topic.author_id/section_id 为 NOT NULL（无默认）：author 缺省回退 creator，
     // section 缺省回退 forum_id（版块维度），杜绝 500。
     let author_id = req.author_id.clone().unwrap_or_else(|| creator.clone());
@@ -480,7 +486,7 @@ pub async fn list_topics_by_forum(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic WHERE forum_id = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
+            "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic WHERE forum_id = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT 100",
             &[&forum_id],
         )
         .await
@@ -504,9 +510,10 @@ pub async fn list_topics_by_forum(
 #[allow(non_snake_case)]
 pub async fn create_reply(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): Json<CreateReplyRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     // x_bbs_reply.subject_id/author_id 为 NOT NULL（无默认）。subjectId/topicId 同义，
@@ -521,7 +528,7 @@ pub async fn create_reply(
         .clone()
         .or_else(|| req.author_id.clone())
         .filter(|c| !c.is_empty())
-        .unwrap_or_else(|| session.person_unique.clone());
+        .unwrap_or_else(|| sess.person_unique.clone());
 
     client
         .execute(
@@ -553,7 +560,7 @@ pub async fn forum_view_all(pool: Extension<Pool>) -> Result<Json<ActionResult<V
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, name, description, sort, creator, create_time::text FROM x_bbs_forum WHERE deleted_at IS NULL ORDER BY sort ASC",
+            "SELECT id, name, description, sort, creator, create_time::text FROM x_bbs_forum WHERE deleted_at IS NULL ORDER BY sort ASC LIMIT 100",
             &[],
         )
         .await
@@ -701,7 +708,7 @@ pub async fn reply_list_sub_id(
 
     let rows = client
         .query(
-            "SELECT id, topic_id, content, creator, create_time::text FROM x_bbs_reply WHERE topic_id = $1 AND deleted_at IS NULL ORDER BY create_time ASC",
+            "SELECT id, topic_id, content, creator, create_time::text FROM x_bbs_reply WHERE topic_id = $1 AND deleted_at IS NULL ORDER BY create_time ASC LIMIT 100",
             &[&id],
         )
         .await
@@ -752,7 +759,7 @@ pub async fn subject_top_sectionId(
 
     let rows = client
         .query(
-            "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic WHERE forum_id = $1 AND is_top = true AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
+            "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic WHERE forum_id = $1 AND is_top = true AND deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT 100",
             &[&section_id],
         )
         .await
@@ -825,7 +832,7 @@ pub async fn section_viewforum_forumId(
 
     let rows = client
         .query(
-            "SELECT id, name, forum_id, sort, description FROM x_bbs_section WHERE forum_id = $1 AND deleted_at IS NULL ORDER BY sort",
+            "SELECT id, name, forum_id, sort, description FROM x_bbs_section WHERE forum_id = $1 AND deleted_at IS NULL ORDER BY sort LIMIT 100",
             &[&forum_id],
         )
         .await
@@ -1796,7 +1803,7 @@ pub async fn user_forum_list(pool: Extension<Pool>) -> Result<Json<ActionResult<
     let rows = client
         .query(
             "SELECT id, name, description, sort, creator, create_time::text FROM x_bbs_forum \
-             WHERE deleted_at IS NULL ORDER BY sort ASC",
+             WHERE deleted_at IS NULL ORDER BY sort ASC LIMIT 100",
             &[],
         )
         .await
@@ -2054,7 +2061,7 @@ pub async fn subjectattach_list(
     let rows = client
         .query(
             "SELECT id, url, description FROM x_bbs_subject_attachment \
-             WHERE subject_id = $1 ORDER BY create_time ASC",
+             WHERE subject_id = $1 ORDER BY create_time ASC LIMIT 100",
             &[&_subject_id],
         )
         .await

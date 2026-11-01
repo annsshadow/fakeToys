@@ -15,7 +15,7 @@ import {
   Tabs,
   message,
   List,
-  Tag
+  Tag,
 } from 'antd'
 import DataList from '../components/DataList'
 import QualityChart from '../components/QualityChart'
@@ -30,7 +30,7 @@ import {
   detectOutliers,
   profileDataset,
   validateDataset,
-  healthGate
+  healthGate,
 } from '../services/api'
 import type {
   AnnotateResponse,
@@ -43,21 +43,21 @@ import type {
   OutliersResponse,
   ProfilingResponse,
   QualityEvaluationResponse,
-  QualityReportResponse
+  QualityReportResponse,
 } from '../types/api'
 
 /** 离群点检测可选方法（与 `OutlierDetector` 支持的三档一致） */
 const OUTLIER_METHODS = [
   { value: 'zscore', label: 'Z-Score（双侧）' },
   { value: 'zscore_one_sided', label: 'Z-Score（仅上侧，适合过长文本）' },
-  { value: 'iqr', label: 'IQR（四分位距）' }
+  { value: 'iqr', label: 'IQR（四分位距）' },
 ]
 
 /** 验证预设三档（与 `DatasetValidator.PRESET_RULES` 的键逐项相等，副标题按该字典的实际规则写） */
 const VALIDATION_PRESET_OPTIONS = [
   { value: 'basic', label: 'basic（上限 1000 / 5000）' },
   { value: 'strict', label: 'strict（加长度下限与禁用片段）' },
-  { value: 'chat', label: 'chat（多 history 字段，上限更紧）' }
+  { value: 'chat', label: 'chat（多 history 字段，上限更紧）' },
 ]
 
 /**
@@ -82,12 +82,12 @@ const GATE_VERDICT_COPY: Record<string, { type: 'success' | 'warning' | 'error';
   passed: { type: 'success', text: '放行：参与判决的规则全部满足' },
   warned: {
     type: 'warning',
-    text: '带警告放行：只有 warning 级规则（completeness）判负，此时 gate.passed 仍然是 true'
+    text: '带警告放行：只有 warning 级规则（completeness）判负，此时 gate.passed 仍然是 true',
   },
   failed: {
     type: 'error',
-    text: '阻断：有 error 级规则判负；若开了「warning 也阻断」，warning 级判负也会走到这一档——那时 failed_rules 是空的，判负住在 warned_rules 里'
-  }
+    text: '阻断：有 error 级规则判负；若开了「warning 也阻断」，warning 级判负也会走到这一档——那时 failed_rules 是空的，判负住在 warned_rules 里',
+  },
 }
 
 /**
@@ -140,11 +140,7 @@ export default function Quality() {
    * 泛型是为了让 `onDone` 与 `task` 的结果类型绑在一起：否则 `onDone` 只能是
    * `(data: any) => void`，而 `src/pages` 层是禁止写 `any` 的。
    */
-  const run = async <T,>(
-    task: () => Promise<T>,
-    onDone: (data: T) => void,
-    failText: string
-  ) => {
+  const run = async <T,>(task: () => Promise<T>, onDone: (data: T) => void, failText: string) => {
     if (!file) {
       message.warning('请先选择数据集')
       return
@@ -169,30 +165,28 @@ export default function Quality() {
   )
 
   const intentData = Object.entries(annotation?.intent_distribution || {}).map(
-    ([intent, count]) => ({ intent, count })
+    ([intent, count]) => ({ intent, count }),
   )
 
   const sentimentData = Object.entries(annotation?.sentiment_distribution || {}).map(
-    ([sentiment, count]) => ({ sentiment, count })
+    ([sentiment, count]) => ({ sentiment, count }),
   )
 
-  const benchmarkMetrics = Object.entries(benchmark?.metrics || {}).map(
-    ([metric, value]) => ({
-      metric,
-      value: typeof value === 'number' ? value.toFixed(4) : String(value)
-    })
-  )
+  const benchmarkMetrics = Object.entries(benchmark?.metrics || {}).map(([metric, value]) => ({
+    metric,
+    value: typeof value === 'number' ? value.toFixed(4) : String(value),
+  }))
 
   // 离群点条目自带 `index`（它在数据集里的位置），可直接当行 key
   const outlierRows = (outliers?.outliers || []).map((entry: OutlierEntry) => ({
     index: entry.index,
     value: entry.value,
-    instruction: entry.item.instruction
+    instruction: entry.item.instruction,
   }))
 
   // `field_completeness` 是「字段名 → 非空率」的扁平字典，展开成两列即可
   const completenessRows = Object.entries(profiling?.field_completeness || {}).map(
-    ([field, rate]) => ({ field, rate })
+    ([field, rate]) => ({ field, rate }),
   )
 
   const keywordRows = profiling?.top_keywords || []
@@ -206,7 +200,7 @@ export default function Quality() {
     severity: issue.severity,
     field: issue.field,
     index: issue.index,
-    message: issue.message
+    message: issue.message,
   }))
 
   // `health.metrics` 是四项固定指标（完整性 / 多样性 / 质量均衡 / 覆盖率）；`gate.metrics`
@@ -219,14 +213,14 @@ export default function Quality() {
           key: `health.${metric}`,
           source: '健康分',
           metric,
-          value
+          value,
         })),
         ...Object.entries(gate.gate.metrics).map(([metric, value]) => ({
           key: `gate.${metric}`,
           source: '门禁',
           metric,
-          value
-        }))
+          value,
+        })),
       ]
     : []
 
@@ -237,17 +231,37 @@ export default function Quality() {
   // skipped = 缺指标所以没参与判决（pass_rate 没传时它住在这里，不是 failed）。
   const gateRuleRows = gate
     ? [
-        { key: 'failed', label: '判负（error 级，阻断）', names: gate.gate.failed_rules, color: 'red' },
-        { key: 'warned', label: '警告（warning 级）', names: gate.gate.warned_rules, color: 'orange' },
-        { key: 'errored', label: '算不出来（errored）', names: gate.gate.errored_rules, color: 'volcano' },
-        { key: 'skipped', label: '没参与判决（skipped）', names: gate.skipped_rules, color: 'blue' }
+        {
+          key: 'failed',
+          label: '判负（error 级，阻断）',
+          names: gate.gate.failed_rules,
+          color: 'red',
+        },
+        {
+          key: 'warned',
+          label: '警告（warning 级）',
+          names: gate.gate.warned_rules,
+          color: 'orange',
+        },
+        {
+          key: 'errored',
+          label: '算不出来（errored）',
+          names: gate.gate.errored_rules,
+          color: 'volcano',
+        },
+        {
+          key: 'skipped',
+          label: '没参与判决（skipped）',
+          names: gate.skipped_rules,
+          color: 'blue',
+        },
       ]
     : []
 
   const gateVerdictCopy = gate
     ? (GATE_VERDICT_COPY[gate.gate.verdict] ?? {
         type: 'error' as const,
-        text: `未知判定 ${gate.gate.verdict}（后端只有 passed / warned / failed 三档）`
+        text: `未知判定 ${gate.gate.verdict}（后端只有 passed / warned / failed 三档）`,
       })
     : null
 
@@ -263,12 +277,14 @@ export default function Quality() {
             max={1}
             step={0.05}
             value={threshold}
-            onChange={value => setThreshold(Number(value ?? 0.6))}
+            onChange={(value) => setThreshold(Number(value ?? 0.6))}
           />
           <Button
             type="primary"
             loading={loading}
-            onClick={() => run(() => evaluateQuality(file, threshold), setEvaluation, '质量评估失败')}
+            onClick={() =>
+              run(() => evaluateQuality(file, threshold), setEvaluation, '质量评估失败')
+            }
           >
             质量评估
           </Button>
@@ -316,7 +332,7 @@ export default function Quality() {
             min={0.1}
             step={0.5}
             value={outlierThreshold}
-            onChange={value => setOutlierThreshold(Number(value ?? 3))}
+            onChange={(value) => setOutlierThreshold(Number(value ?? 3))}
           />
           <Button
             loading={loading}
@@ -324,7 +340,7 @@ export default function Quality() {
               run(
                 () => detectOutliers(file, outlierMethod, outlierThreshold),
                 setOutliers,
-                '离群点检测失败'
+                '离群点检测失败',
               )
             }
           >
@@ -396,7 +412,7 @@ export default function Quality() {
           <Input
             aria-label="门禁文本字段"
             value={gateTextField}
-            onChange={e => setGateTextField(e.target.value)}
+            onChange={(e) => setGateTextField(e.target.value)}
             style={{ width: 160 }}
           />
           <span>通过率</span>
@@ -406,7 +422,7 @@ export default function Quality() {
             max={1}
             step={0.05}
             value={gatePassRate}
-            onChange={value => setGatePassRate(value)}
+            onChange={(value) => setGatePassRate(value)}
             placeholder="留空＝不判这一项"
             style={{ width: 180 }}
           />
@@ -433,10 +449,10 @@ export default function Quality() {
                     passRateMin: gatePassRateMin,
                     duplicateRateMax: gateDuplicateMax,
                     completenessMin: gateCompletenessMin,
-                    blockOnWarning: gateBlockOnWarning
+                    blockOnWarning: gateBlockOnWarning,
                   }),
                 setGate,
-                '健康门禁失败'
+                '健康门禁失败',
               )
             }
           >
@@ -454,21 +470,21 @@ export default function Quality() {
             aria-label="pass_rate 下限"
             step={0.05}
             value={gatePassRateMin}
-            onChange={value => setGatePassRateMin(Number(value ?? 0.6))}
+            onChange={(value) => setGatePassRateMin(Number(value ?? 0.6))}
           />
           <span>duplicate_rate ≤</span>
           <InputNumber
             aria-label="duplicate_rate 上限"
             step={0.05}
             value={gateDuplicateMax}
-            onChange={value => setGateDuplicateMax(Number(value ?? 0.3))}
+            onChange={(value) => setGateDuplicateMax(Number(value ?? 0.3))}
           />
           <span>completeness ≥</span>
           <InputNumber
             aria-label="completeness 下限"
             step={0.05}
             value={gateCompletenessMin}
-            onChange={value => setGateCompletenessMin(Number(value ?? 0.8))}
+            onChange={(value) => setGateCompletenessMin(Number(value ?? 0.8))}
           />
           <span>warning 也阻断</span>
           <Switch
@@ -484,10 +500,12 @@ export default function Quality() {
               {label}
               <InputNumber
                 aria-label={`健康分权重 ${label}`}
-                min={0} max={1} step={0.05}
+                min={0}
+                max={1}
+                step={0.05}
                 value={gateWeights[i]}
-                onChange={value =>
-                  setGateWeights(prev => prev.map((w, j) => (j === i ? value : w)))
+                onChange={(value) =>
+                  setGateWeights((prev) => prev.map((w, j) => (j === i ? value : w)))
                 }
                 placeholder="留空＝后端默认"
                 style={{ width: 140, marginLeft: 4 }}
@@ -520,7 +538,7 @@ export default function Quality() {
               </>
             ) : (
               <Card>点击「生成报告」查看评分分布与改进建议</Card>
-            )
+            ),
           },
           {
             key: 'dedup',
@@ -536,7 +554,7 @@ export default function Quality() {
               </Card>
             ) : (
               <Card>点击「智能去重」查看重复统计</Card>
-            )
+            ),
           },
           {
             key: 'clean',
@@ -551,18 +569,16 @@ export default function Quality() {
                 </Space>
                 <div style={{ marginTop: 12 }}>
                   语言分布：
-                  {Object.entries(cleaning.language_distribution || {}).map(
-                    ([lang, count]) => (
-                      <Tag key={lang} color="purple">
-                        {lang}: {String(count)}
-                      </Tag>
-                    )
-                  )}
+                  {Object.entries(cleaning.language_distribution || {}).map(([lang, count]) => (
+                    <Tag key={lang} color="purple">
+                      {lang}: {String(count)}
+                    </Tag>
+                  ))}
                 </div>
               </Card>
             ) : (
               <Card>点击「数据清洗」查看去噪与标准化结果</Card>
-            )
+            ),
           },
           {
             key: 'annotate',
@@ -577,7 +593,7 @@ export default function Quality() {
                       pagination={false}
                       columns={[
                         { title: '意图', dataIndex: 'intent' },
-                        { title: '数量', dataIndex: 'count' }
+                        { title: '数量', dataIndex: 'count' },
                       ]}
                       dataSource={intentData}
                     />
@@ -591,7 +607,7 @@ export default function Quality() {
                       pagination={false}
                       columns={[
                         { title: '情感', dataIndex: 'sentiment' },
-                        { title: '数量', dataIndex: 'count' }
+                        { title: '数量', dataIndex: 'count' },
                       ]}
                       dataSource={sentimentData}
                     />
@@ -600,7 +616,7 @@ export default function Quality() {
               </Row>
             ) : (
               <Card>点击「自动标注」查看实体、意图与情感分布</Card>
-            )
+            ),
           },
           {
             key: 'benchmark',
@@ -613,14 +629,14 @@ export default function Quality() {
                   pagination={false}
                   columns={[
                     { title: '指标', dataIndex: 'metric' },
-                    { title: '数值', dataIndex: 'value' }
+                    { title: '数值', dataIndex: 'value' },
                   ]}
                   dataSource={benchmarkMetrics}
                 />
               </Card>
             ) : (
               <Card>点击「质量基准」运行标准化评估指标</Card>
-            )
+            ),
           },
           {
             key: 'outliers',
@@ -657,7 +673,7 @@ export default function Quality() {
                     columns={[
                       { title: '序号', dataIndex: 'index', width: 80 },
                       { title: '长度', dataIndex: 'value', width: 100 },
-                      { title: '内容', dataIndex: 'instruction', ellipsis: true }
+                      { title: '内容', dataIndex: 'instruction', ellipsis: true },
                     ]}
                     dataSource={outlierRows}
                   />
@@ -665,7 +681,7 @@ export default function Quality() {
               </>
             ) : (
               <Card>点击「离群点检测」找出长度异常的样本</Card>
-            )
+            ),
           },
           {
             key: 'profiling',
@@ -709,8 +725,8 @@ export default function Quality() {
                           {
                             title: '非空率',
                             dataIndex: 'rate',
-                            render: (value: number) => `${(value * 100).toFixed(1)}%`
-                          }
+                            render: (value: number) => `${(value * 100).toFixed(1)}%`,
+                          },
                         ]}
                         dataSource={completenessRows}
                       />
@@ -731,7 +747,7 @@ export default function Quality() {
                             <Tag key={lang} color="purple">
                               {lang}: {String(count)}
                             </Tag>
-                          )
+                          ),
                         )}
                       </div>
                     </Card>
@@ -744,7 +760,7 @@ export default function Quality() {
                         pagination={{ pageSize: 8 }}
                         columns={[
                           { title: '关键词', dataIndex: 'keyword' },
-                          { title: '频次', dataIndex: 'count', width: 80 }
+                          { title: '频次', dataIndex: 'count', width: 80 },
                         ]}
                         dataSource={keywordRows}
                       />
@@ -754,7 +770,7 @@ export default function Quality() {
               </>
             ) : (
               <Card>点击「数据画像」查看字段完整度、长度分布与高频关键词</Card>
-            )
+            ),
           },
           {
             key: 'validation',
@@ -824,16 +840,16 @@ export default function Quality() {
                           width: 90,
                           render: (severity: string) => (
                             <Tag color={severity === 'error' ? 'red' : 'orange'}>{severity}</Tag>
-                          )
+                          ),
                         },
                         { title: '字段', dataIndex: 'field', width: 140 },
                         {
                           title: '条目下标',
                           dataIndex: 'index',
                           width: 90,
-                          render: (index: number | null) => (index === null ? '-' : index)
+                          render: (index: number | null) => (index === null ? '-' : index),
                         },
-                        { title: '说明', dataIndex: 'message' }
+                        { title: '说明', dataIndex: 'message' },
                       ]}
                       dataSource={validationRows}
                     />
@@ -844,140 +860,142 @@ export default function Quality() {
               </>
             ) : (
               <Card>点击「结构校验」按预设规则检查必填字段、长度上下限与禁用片段</Card>
-            )
+            ),
           },
           {
             key: 'healthgate',
             label: '健康门禁',
-            children: gate && gateVerdictCopy ? (
-              <div aria-label="健康门禁回执">
-                <Alert
-                  style={{ marginBottom: 16 }}
-                  showIcon
-                  type={gateVerdictCopy.type}
-                  message={`门禁判定：${gate.gate.verdict}（passed = ${String(gate.gate.passed)}）`}
-                  description={`${gateVerdictCopy.text}。gate.passed 与「verdict 不是 failed」同义：verdict 是 warned 时它仍然是 true，所以别把它当「干净」读。`}
-                />
-                <Row gutter={16} style={{ marginBottom: 16 }}>
-                  <Col span={6}>
-                    <Card>
-                      <Statistic title="健康分" value={gate.health.health_score.toFixed(3)} />
-                    </Card>
-                  </Col>
-                  <Col span={6}>
-                    <Card>
-                      <Statistic
-                        title="等级（≥0.7 healthy / ≥0.4 moderate / 否则 poor）"
-                        value={gate.health.level}
-                      />
-                    </Card>
-                  </Col>
-                  <Col span={6}>
-                    <Card>
-                      <Statistic title="样本总数" value={gate.health.total_samples} />
-                    </Card>
-                  </Col>
-                  <Col span={6}>
-                    <Card>
-                      <Statistic
-                        title="生效权重（完整性 / 多样性 / 质量均衡 / 覆盖率）"
-                        value={gate.health.weights.join(' / ')}
-                      />
-                    </Card>
-                  </Col>
-                </Row>
-                <Card
-                  title="指标：健康分那四项 + 门禁实际看到的那一份"
-                  style={{ marginBottom: 16 }}
-                >
-                  <Table
-                    size="small"
-                    pagination={false}
-                    rowKey="key"
-                    columns={[
-                      { title: '来源', dataIndex: 'source', width: 100 },
-                      { title: '指标', dataIndex: 'metric', width: 200 },
-                      {
-                        title: '取值',
-                        dataIndex: 'value',
-                        render: (value: number) => value.toFixed(4)
-                      }
-                    ]}
-                    dataSource={gateMetricRows}
+            children:
+              gate && gateVerdictCopy ? (
+                <div aria-label="健康门禁回执">
+                  <Alert
+                    style={{ marginBottom: 16 }}
+                    showIcon
+                    type={gateVerdictCopy.type}
+                    message={`门禁判定：${gate.gate.verdict}（passed = ${String(gate.gate.passed)}）`}
+                    description={`${gateVerdictCopy.text}。gate.passed 与「verdict 不是 failed」同义：verdict 是 warned 时它仍然是 true，所以别把它当「干净」读。`}
                   />
-                </Card>
-                <Card title="规则名单（四个名单是四种不同的坏，不合并）">
-                  <List
-                    size="small"
-                    bordered
-                    dataSource={gateRuleRows}
-                    renderItem={row => (
-                      <List.Item>
-                        <Space wrap>
-                          <Tag color={row.color}>{row.label}</Tag>
-                          {row.names.length > 0 ? (
-                            row.names.map(name => <Tag key={name}>{name}</Tag>)
-                          ) : (
-                            <span>（无）</span>
-                          )}
-                        </Space>
-                      </List.Item>
-                    )}
+                  <Row gutter={16} style={{ marginBottom: 16 }}>
+                    <Col span={6}>
+                      <Card>
+                        <Statistic title="健康分" value={gate.health.health_score.toFixed(3)} />
+                      </Card>
+                    </Col>
+                    <Col span={6}>
+                      <Card>
+                        <Statistic
+                          title="等级（≥0.7 healthy / ≥0.4 moderate / 否则 poor）"
+                          value={gate.health.level}
+                        />
+                      </Card>
+                    </Col>
+                    <Col span={6}>
+                      <Card>
+                        <Statistic title="样本总数" value={gate.health.total_samples} />
+                      </Card>
+                    </Col>
+                    <Col span={6}>
+                      <Card>
+                        <Statistic
+                          title="生效权重（完整性 / 多样性 / 质量均衡 / 覆盖率）"
+                          value={gate.health.weights.join(' / ')}
+                        />
+                      </Card>
+                    </Col>
+                  </Row>
+                  <Card
+                    title="指标：健康分那四项 + 门禁实际看到的那一份"
+                    style={{ marginBottom: 16 }}
+                  >
+                    <Table
+                      size="small"
+                      pagination={false}
+                      rowKey="key"
+                      columns={[
+                        { title: '来源', dataIndex: 'source', width: 100 },
+                        { title: '指标', dataIndex: 'metric', width: 200 },
+                        {
+                          title: '取值',
+                          dataIndex: 'value',
+                          render: (value: number) => value.toFixed(4),
+                        },
+                      ]}
+                      dataSource={gateMetricRows}
+                    />
+                  </Card>
+                  <Card title="规则名单（四个名单是四种不同的坏，不合并）">
+                    <List
+                      size="small"
+                      bordered
+                      dataSource={gateRuleRows}
+                      renderItem={(row) => (
+                        <List.Item>
+                          <Space wrap>
+                            <Tag color={row.color}>{row.label}</Tag>
+                            {row.names.length > 0 ? (
+                              row.names.map((name) => <Tag key={name}>{name}</Tag>)
+                            ) : (
+                              <span>（无）</span>
+                            )}
+                          </Space>
+                        </List.Item>
+                      )}
+                    />
+                  </Card>
+                  <Alert
+                    style={{ marginTop: 16 }}
+                    type="info"
+                    showIcon
+                    message="读这一页之前要知道的六件事"
+                    description={
+                      <ul style={{ margin: 0, paddingLeft: 18 }}>
+                        <li>
+                          「skipped_rules」里出现 pass_rate 表示这一项没参与判决（通过率留空时），
+                          不是判负。端点这么做是因为 GateRule.evaluate() 对缺失的指标键返回
+                          False——不摘掉这条规则，「没算这一项」就会被伪装成「算出来不及格」。
+                        </li>
+                        <li>
+                          文本字段填了数据集里不存在的键、空串或纯空白，后端一律 400，detail 里
+                          带着首条实际字段（L238 之前这一档**不报错**：所有条目都取到空值， 实测
+                          duplicate_rate 变成 1.0，门禁于是在 duplicate_rate 那条上判负）。 看到 dup
+                          = 1.0 仍然先怀疑字段名，只是它现在不会静默地发生了。
+                        </li>
+                        <li>
+                          权重的判据与评分器共引同一份（L238 起）：个数必须是 4、每项必须是 [0, 1]
+                          内的数值（负数与大于 1 一律 400，并点名到 weights 的下标）、 四项之和落在
+                          1.0 ± 0.01 **含端点**（0.99 / 1.005 / 1.01 都放行， 0.98 与 1.02 才拒，400
+                          的 detail 带着实测和）。health_score 的出口 钳进 [0, 1]：改前 [2.0, -0.5,
+                          -0.25, -0.25] 能顶到 1.17（超过 1）， 今天那一档是
+                          400。但门禁三条规则一条都不看权重 ⇒ 「健康分 healthy」
+                          与「门禁阻断」仍然可以同时为真，这不是矛盾，是两套判据各说各话。
+                        </li>
+                        <li>
+                          开了「warning 也阻断」之后，只有 completeness 判负的数据会回 verdict =
+                          failed / passed = false，而 failed_rules 是空的、名字住在 warned_rules
+                          里——block_on_warning 改的是 verdict 的合成，不是规则的严重级。
+                        </li>
+                        <li>
+                          三个阈值没有范围闸：负数与大于 1 的值后端都收（实测 pass_rate_min = -1.0
+                          让 pass_rate = 0 也算满足、= 5.0 让 pass_rate = 1.0 也判负、
+                          duplicate_rate_max = 99.0 直接把 verdict 变成
+                          passed），判决随阈值单调变化。 只有 pass_rate 那一格有 [0, 1] 的闸（越界是
+                          400）。
+                        </li>
+                        <li>
+                          「errored_rules」（规则压根算不出来）在这一只端点上实测恒空，列出来是为了
+                          它哪天不空时看得见——它与 failed_rules 是两种不同的坏。
+                        </li>
+                      </ul>
+                    }
                   />
+                </div>
+              ) : (
+                <Card>
+                  在上方填好文本字段、阈值与权重（通过率可留空，或点「用上面那次评估的通过率填入」），
+                  点「健康门禁」查看健康分、verdict 与四个规则名单
                 </Card>
-                <Alert
-                  style={{ marginTop: 16 }}
-                  type="info"
-                  showIcon
-                  message="读这一页之前要知道的六件事"
-                  description={
-                    <ul style={{ margin: 0, paddingLeft: 18 }}>
-                      <li>
-                        「skipped_rules」里出现 pass_rate 表示这一项没参与判决（通过率留空时），
-                        不是判负。端点这么做是因为 GateRule.evaluate() 对缺失的指标键返回
-                        False——不摘掉这条规则，「没算这一项」就会被伪装成「算出来不及格」。
-                      </li>
-                      <li>
-                        文本字段填了数据集里不存在的键、空串或纯空白，后端一律 400，detail 里
-                        带着首条实际字段（L238 之前这一档**不报错**：所有条目都取到空值，
-                        实测 duplicate_rate 变成 1.0，门禁于是在 duplicate_rate 那条上判负）。
-                        看到 dup = 1.0 仍然先怀疑字段名，只是它现在不会静默地发生了。
-                      </li>
-                      <li>
-                        权重的判据与评分器共引同一份（L238 起）：个数必须是 4、每项必须是
-                        [0, 1] 内的数值（负数与大于 1 一律 400，并点名到 weights 的下标）、
-                        四项之和落在 1.0 ± 0.01 **含端点**（0.99 / 1.005 / 1.01 都放行，
-                        0.98 与 1.02 才拒，400 的 detail 带着实测和）。health_score 的出口
-                        钳进 [0, 1]：改前 [2.0, -0.5, -0.25, -0.25] 能顶到 1.17（超过 1），
-                        今天那一档是 400。但门禁三条规则一条都不看权重 ⇒ 「健康分 healthy」
-                        与「门禁阻断」仍然可以同时为真，这不是矛盾，是两套判据各说各话。
-                      </li>
-                      <li>
-                        开了「warning 也阻断」之后，只有 completeness 判负的数据会回
-                        verdict = failed / passed = false，而 failed_rules 是空的、名字住在
-                        warned_rules 里——block_on_warning 改的是 verdict 的合成，不是规则的严重级。
-                      </li>
-                      <li>
-                        三个阈值没有范围闸：负数与大于 1 的值后端都收（实测 pass_rate_min = -1.0
-                        让 pass_rate = 0 也算满足、= 5.0 让 pass_rate = 1.0 也判负、
-                        duplicate_rate_max = 99.0 直接把 verdict 变成 passed），判决随阈值单调变化。
-                        只有 pass_rate 那一格有 [0, 1] 的闸（越界是 400）。
-                      </li>
-                      <li>
-                        「errored_rules」（规则压根算不出来）在这一只端点上实测恒空，列出来是为了
-                        它哪天不空时看得见——它与 failed_rules 是两种不同的坏。
-                      </li>
-                    </ul>
-                  }
-                />
-              </div>
-            ) : (
-              <Card>
-                在上方填好文本字段、阈值与权重（通过率可留空，或点「用上面那次评估的通过率填入」），
-                点「健康门禁」查看健康分、verdict 与四个规则名单
-              </Card>
-            )
-          }
+              ),
+          },
         ]}
       />
     </div>

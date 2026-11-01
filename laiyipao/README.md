@@ -37,7 +37,7 @@ cd laiyipao/server
 export DATABASE_URL="postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable"
 export BOOTSTRAP_ADMIN_PASS="admin12345"   # 少于 10 位会被拒绝引导
 
-go run ./cmd/migrate   # 建表（19 个 goose 迁移，50 张业务表）
+go run ./cmd/migrate   # 建表（23 个 goose 迁移，50 张业务表）
 go run ./cmd/seed      # 写入游戏内容（首次必须执行）
 go run ./cmd/api       # 监听 :8080
 ```
@@ -75,6 +75,25 @@ pwsh -NoProfile -File scripts/e2e.ps1
 > ⚠️ 脚本会**清空并重建** `laiyipao` 库。先停掉正在运行的服务端，否则 drop 会因连接占用失败。
 
 覆盖 19 个步骤（`0`~`17`，含 `10b`）：重置数据、迁移+落库、游客登录、参考种子表、关卡内容（100 关 / 敌人 / 技能 / 反应契约）、钱包初始化、构筑评分、战斗凭证、资源守恒、**重放 422**、**超量击杀 422**、谎报星级被重算、未解锁关卡 403、签到/任务/商店/兑换码、专精每层 4 选 2、排行榜/防线/诊断、后台看板、**验真接口（I-6）**、**技能升级**、未验证上报 401。
+
+### 5. 跑测试（含覆盖率）
+
+在 `laiyipao/server` 目录下执行（目录进入方式见第 1 节）：
+
+```bash
+export TEST_DATABASE_URL="postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable"
+go test ./... -timeout 1200s -coverprofile=coverage-go.out -covermode=atomic
+go tool cover -func=coverage-go.out
+```
+
+`internal/httpapi` 的 e2e 与 `internal/service`/`store` 的集成用例按
+`TEST_DATABASE_URL` → `DATABASE_URL` → 本机 `laiyipao` 库的顺序取 DSN。库必须已
+`cmd/migrate` + `cmd/seed`；连不上时 e2e 会 **Skip 而不是失败**——报表只会显示
+「几秒跑完、覆盖率很低」，看起来像测试写得浅，实际是一条都没跑。所以 CI 必须显式提供
+可用的 DSN；Skip 数要在 `-v` 日志里人工复核（当前基线 2 条，均带显式理由）。
+`internal/service` 全套实测 3–15 分钟（机器与并发差异大，
+2026-10-28 单跑 179s，2026-10-27 夜跑 849s），默认 600s 在慢机上会假性超时，固定加
+`-timeout 1200s`。
 
 > 部署与值班请看 **[`docs/laiyipao/OPERATIONS.md`](../docs/laiyipao/OPERATIONS.md)** ——
 > 环境变量全表、迁移回滚、备份恢复、故障处置，
@@ -175,6 +194,34 @@ miniapp/src/
 |---|---|---|
 | `ADDR` | `:8080` | 监听地址 |
 | `DATABASE_URL` | — | PG 连接串 |
+| `TEST_DATABASE_URL` | — | 测试专用 DSN；优先于 `DATABASE_URL`，需指向已 migrate+seed 的 `laiyipao` 库 |
 | `BOOTSTRAP_ADMIN_PASS` | `admin12345` | 首次引导的管理员密码，**<10 位会 panic 拒绝**；**`APP_ENV=prod` 时必须显式设置**，否则 panic（默认值是公开的，第 67 轮） |
 | `WECHAT_ENABLED` | `false` | 是否启用微信登录 |
 | `ACCESS_TTL` / `REFRESH_TTL` | `2h` / `720h` | 令牌有效期 |
+| `DASHBOARD_CACHE_TTL` / `LEADERBOARD_CACHE_TTL` | `30s` / `15s` | 看板与榜单的进程内缓存有效期；**支持热加载**（见下） |
+| `CONFIG_FILE` | — | 扁平 JSON 配置文件（键名与上表同名）。出现即覆盖同名环境变量；**`SIGHUP` 会重读它** |
+
+### 配置热加载（2026-10-29）
+
+进程改不了自己的环境变量，所以「重读配置」必须有一个**能重读的文件**来源 ——
+只重读环境变量会得到与启动时逐字节相同的结果，热加载就成了表演。
+
+```json
+// /etc/laiyipao/config.json
+{ "DASHBOARD_CACHE_TTL": "60s", "LEADERBOARD_CACHE_TTL": "30s", "SETTLE_RECOMPUTE_MODE": "shadow" }
+```
+
+```bash
+CONFIG_FILE=/etc/laiyipao/config.json ./api          # 启动时读一次
+kill -HUP $(pgrep -f '/api$')                        # 改完文件后重载
+```
+
+- 文件里的空字符串视为「未设置」，回退到环境变量。
+- 覆盖层只接受标量；嵌套对象/数组会**启动失败**（猜一个序列化形式会让
+  `CORS_ALLOW_ORIGINS` 静默变成「一个元素」）。
+- 重载失败（文件不存在 / JSON 坏 / prod 校验不过）**保留原配置**并在 stderr 报错，
+  不会打死正在服务的进程。
+- **生效范围**：看板/榜单 TTL、结算重算模式、微信端点与凭据。
+  **仍需重启**：数据库连接池、JWT 签名器、监听地址、路由级限流桶（构造期固化）。
+- 结算重算模式只有在**文件里显式改了这一项**时才重建闸门；只改 TTL 的重载
+  不会覆盖运维用 `PUT /admin/recomputes/mode` 切过的档。

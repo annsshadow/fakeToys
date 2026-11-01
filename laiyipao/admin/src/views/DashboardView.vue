@@ -267,6 +267,9 @@ load()
             <div class="kpi-label">订单</div>
             <div class="kpi-value">{{ data.economy.orders_paid }}</div>
             <div class="kpi-sub">待支付 {{ data.economy.orders_pending }}</div>
+            <div class="kpi-sub">
+              今日签到 {{ data.economy.sign_ins_today }} · 今日兑换 {{ data.economy.redeems_today }}
+            </div>
           </el-card>
         </el-col>
         <el-col :span="6" :xs="24" :sm="12" :md="6">
@@ -274,6 +277,9 @@ load()
             <div class="kpi-label">封禁用户</div>
             <div class="kpi-value">{{ data.users.banned }}</div>
             <div class="kpi-sub">100 关通关人次 {{ data.progression.stage_100_clears }}</div>
+            <div class="kpi-sub">
+              防线 {{ data.defenses.total }} · 今日挑战 {{ data.defenses.challenges_today }}
+            </div>
           </el-card>
         </el-col>
       </el-row>

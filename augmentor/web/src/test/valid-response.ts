@@ -169,7 +169,7 @@ export function responseFor(method: string, url: string): unknown {
   }
   throw new Error(
     `valid-response: ${method} ${path} 没有登记合法响应。` +
-      '新增端点后请在 ROUTES 里补一行（schema 从 full-schemas / main-schemas 取）。'
+      '新增端点后请在 ROUTES 里补一行（schema 从 full-schemas / main-schemas 取）。',
   )
 }
 
@@ -180,11 +180,14 @@ export function responseFor(method: string, url: string): unknown {
  * 这个只保证**形状合法**，测试要断言返回值时仍应用 `respondWith`。
  */
 export function respondWithOk(instance: VerbMocks): void {
-  const answer = (method: string) => (url: string) => Promise.resolve({ data: responseFor(method, url) })
+  const answer = (method: string) => (url: string) =>
+    Promise.resolve({ data: responseFor(method, url) })
   ;(instance.get as { mockImplementation: (fn: unknown) => void }).mockImplementation(answer('GET'))
-  ;(instance.post as { mockImplementation: (fn: unknown) => void }).mockImplementation(answer('POST'))
+  ;(instance.post as { mockImplementation: (fn: unknown) => void }).mockImplementation(
+    answer('POST'),
+  )
   ;(instance.put as { mockImplementation: (fn: unknown) => void }).mockImplementation(answer('PUT'))
   ;(instance.delete as { mockImplementation: (fn: unknown) => void }).mockImplementation(
-    answer('DELETE')
+    answer('DELETE'),
   )
 }
