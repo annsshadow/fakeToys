@@ -493,7 +493,7 @@ class TestRulerSeesTheRealSurface:
         assert not outside, f"这些文件绕过服务层直接拼路径：{outside}"
 
     def test_corpus_excludes_test_files(self):
-        """语料口径本身：23 只产品文件在场（含 `api.ts`），26 只测试替身被排除在外
+        """语料口径本身：24 只产品文件在场（含 `api.ts`），26 只测试替身被排除在外
 
         旧写法里的第二支 `assert not any(p == API_TS for p in tests)` 是构造式恒真 ——
         `tests` 是按 `.test.` 筛出来的，而 `API_TS` 叫 `api.ts`，两条名单永不相交。
@@ -503,10 +503,11 @@ class TestRulerSeesTheRealSurface:
         `web/src/schemas/main-schemas.ts`。Z-FULL 又添了 `schemas/full-schemas.ts`
         （产品）与 `test/valid-response.ts` + `test/valid-response.test.ts`（测试替身）。
         产品数仍是 **23**：`test/` 目录下的共享夹具不是产品文件，不能拿来抬 ratchet。
+        23 → **24**：`web/src/lib/echarts.ts`（ECharts 按需引入，2026-10-30 优化）。
         测试替身 23 → **26** = 24 只 `*.test.*` + `test/setup.ts` + `test/valid-response.ts`。
         """
-        assert len(front_source_files()) == 23, \
-            f"前端产品语料现量 23 只，实得 {len(front_source_files())} 只 ⇒ 口径变了"
+        assert len(front_source_files()) == 24, \
+            f"前端产品语料现量 24 只，实得 {len(front_source_files())} 只 ⇒ 口径变了"
         assert API_TS in front_source_files(), "服务层那一份必须在这把尺子的语料里"
         excluded = [p for p in FRONT_SRC.rglob("*")
                     if p.is_file() and p.suffix in {".ts", ".tsx", ".vue", ".js"}

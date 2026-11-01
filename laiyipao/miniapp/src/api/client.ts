@@ -540,6 +540,46 @@ export function login(username: string, password: string): Promise<TokenPair> {
   })
 }
 
+/**
+ * 修改当前账号口令（`POST /me/password`）。
+ *
+ * 服务端会先验证原口令，再更新哈希，并在**同一事务**里吊销该账号
+ * 全部 refresh token —— 改密成功后，其它设备上的旧会话将无法续期，
+ * 需要重新登录。返回的 `revoked` 就是被吊销的会话数。
+ */
+export function changePassword(oldPassword: string, newPassword: string): Promise<{ revoked: number }> {
+  return request<{ revoked: number }>('/me/password', {
+    method: 'POST',
+    body: { old_password: oldPassword, new_password: newPassword },
+  })
+}
+
+/**
+ * 游客账号转正（`POST /me/upgrade`）。
+ *
+ * 游客号的数据只靠本地 localStorage 里的 guest_token 保护 —— 清缓存 /
+ * 换设备就永久丢失。设置用户名 + 密码后，可以在任何设备登录回同一个号。
+ * 服务端会保留 guest_token（老客户端冷启动仍能找回同一账号）。
+ */
+export function upgradeAccount(username: string, password: string): Promise<{ ok: boolean }> {
+  return request<{ ok: boolean }>('/me/upgrade', {
+    method: 'POST',
+    body: { username, password },
+  })
+}
+
+/**
+ * 修改玩家昵称（`PUT /me/nickname`）。
+ *
+ * 昵称会显示在排行榜、战报与防线列表里。上限 64 个字符。
+ */
+export function updateNickname(nickname: string): Promise<{ ok: boolean }> {
+  return request<{ ok: boolean }>('/me/nickname', {
+    method: 'PUT',
+    body: { nickname },
+  })
+}
+
 /** 本地是否有一枚「看起来还能用」的 access token。 */
 export function hasUsableToken(): boolean {
   const t = get(TOKEN_KEY)
@@ -783,6 +823,13 @@ export function fetchMe() {
     power: number
     /** 已通关最高关卡（第 142 轮：服务端权威进度，客户端刷新档案时恢复解锁态） */
     max_stage: number
+    /** 账号信息（2026-10-31 实质优化第 34 轮）：注册时间/最后登录 */
+    account: {
+      created_at: string
+      last_login_at: string
+      is_guest: boolean
+      nickname: string
+    }
   }>('/me')
 }
 
@@ -1024,8 +1071,198 @@ export function saveDefense(payload: any) {
   return request<any>('/defenses/save', { method: 'POST', body: payload })
 }
 
+/**
+ * 删除自己的防线（2026-10-31 实质优化第 32 轮）。
+ * 玩家不想被挑战时，此前没有任何办法清空防线。
+ */
+export function deleteMyDefense() {
+  return request<{ ok: boolean }>('/defenses', { method: 'DELETE' })
+}
+
 export function challengeDefense(id: number, payload: any) {
   return request<any>(`/defenses/${id}/challenge`, { method: 'POST', body: payload })
+}
+
+/**
+ * 我的挑战历史（2026-10-30 实质优化第 18 轮）。
+ *
+ * 服务端 `GET /me/challenges` 返回最近 20 条防线挑战记录
+ * （对手昵称/防线名/胜负/偷取/时间）。此前玩家只能看到最近一次结果。
+ */
+export interface ChallengeHistoryItem {
+  id: number
+  defense_id: number
+  defense_name: string
+  owner_nickname: string
+  owner_power: number
+  won: boolean
+  duration_ms: number
+  hp_left_pct: number
+  loot: Record<string, number>
+  created_at: string
+}
+
+export function myChallengeHistory(): Promise<{ items: ChallengeHistoryItem[] }> {
+  return request<{ items: ChallengeHistoryItem[] }>('/me/challenges')
+}
+
+/**
+ * 我的防线被挑战记录（2026-10-31 新一轮第 3 轮）。
+ *
+ * 服务端 `GET /me/defense/challenges` 返回最近 20 条「我的防线被挑战」记录
+ * （挑战者昵称/防线名/胜负/偷取/时间）。此前只有挑战者能看历史，
+ * 防守方不知道谁攻过自己的防线。
+ */
+export interface DefenseChallengeItem {
+  id: number
+  defense_id: number
+  defense_name: string
+  challenger_nickname: string
+  won: boolean
+  duration_ms: number
+  hp_left_pct: number
+  loot: Record<string, number>
+  created_at: string
+}
+
+export function myDefenseChallenges(): Promise<{ items: DefenseChallengeItem[] }> {
+  return request<{ items: DefenseChallengeItem[] }>('/me/defense/challenges')
+}
+
+/**
+ * 我的战报历史（2026-10-30 实质优化第 19 轮）。
+ *
+ * 服务端 `GET /me/battles` 返回最近 20 条战斗记录
+ * （关卡/结果/星级/分数/击杀/漏怪/时间）。
+ */
+export interface BattleHistoryItem {
+  id: number
+  level_id: number
+  result: string
+  stars: number
+  score: number
+  kills: number
+  leaked: number
+  replay_hash: string
+  created_at: string
+}
+
+export function myBattleHistory(limit = 20, offset = 0, result = ''): Promise<{ items: BattleHistoryItem[] }> {
+  const q = `limit=${limit}&offset=${offset}${result ? `&result=${result}` : ''}`
+  return request<{ items: BattleHistoryItem[] }>(`/me/battles?${q}`)
+}
+
+/**
+ * 我的战报详情（2026-10-31 新一轮第 10 轮）。
+ *
+ * 服务端 `GET /me/battles/:id` 返回单局完整详情：掉落、元素/反应/地形
+ * 使用、命中、峰值热量、剩余血量等。战报列表只有摘要，详情补全回顾入口。
+ */
+export interface BattleDetail {
+  id: number
+  level_id: number
+  result: string
+  stars: number
+  score: number
+  kills: number
+  leaked: number
+  hp_left: number
+  wave_reached: number
+  duration_ms: number
+  shots: number
+  hits: number
+  reactions: number
+  heat_max: number
+  elements_used: Record<string, number>
+  reactions_used: Record<string, number>
+  terrain_used: string[]
+  loot: Record<string, number>
+  replay_hash: string
+  created_at: string
+}
+
+export function myBattleDetail(id: number): Promise<BattleDetail> {
+  return request<BattleDetail>(`/me/battles/${id}`)
+}
+
+/**
+ * 我的购买记录（2026-10-30 实质优化第 20 轮）。
+ *
+ * 服务端 `GET /me/purchases` 返回最近 20 条商城购买记录
+ * （道具名/品类/价格快照/购买日期）。
+ */
+export interface PurchaseItem {
+  id: number
+  item_id: number
+  item_name: string
+  category: string
+  price: Record<string, number>
+  purchase_date: string
+  created_at: string
+}
+
+export function myPurchases(): Promise<{ items: PurchaseItem[] }> {
+  return request<{ items: PurchaseItem[] }>('/me/purchases')
+}
+
+/**
+ * 我的兑换记录（2026-10-30 实质优化第 21 轮）。
+ *
+ * 服务端 `GET /me/redemptions` 返回最近 20 条兑换码使用记录
+ * （兑换码/奖励快照/时间）。
+ */
+export interface RedemptionItem {
+  id: number
+  code: string
+  reward: Record<string, number>
+  created_at: string
+}
+
+export function myRedemptions(): Promise<{ items: RedemptionItem[] }> {
+  return request<{ items: RedemptionItem[] }>('/me/redemptions')
+}
+
+/**
+ * 我的支付订单（2026-10-31 实质优化第 27 轮）。
+ *
+ * 服务端 `GET /me/orders` 返回最近 20 条支付订单
+ * （订单号/SKU/金额（分）/状态/时间）。
+ */
+export interface OrderItem {
+  id: number
+  order_no: string
+  sku: string
+  amount: number
+  status: string
+  provider: string
+  created_at: string
+  delivered_at: string | null
+}
+
+export function myOrders(): Promise<{ items: OrderItem[] }> {
+  return request<{ items: OrderItem[] }>('/me/orders')
+}
+
+/**
+ * 离线（挂机）收益（2026-10-31 新一轮第 7 轮）。
+ *
+ * 服务端 `GET /me/offline-reward` 返回可领取的挂机金币
+ * （按距上次领取的时长 × 每小时速率结算，上限 OFFLINE_CAP_HOURS 小时）；
+ * `POST /me/offline-reward/claim` 领取并清零计时。
+ */
+export interface OfflineRewardStatus {
+  coin: number
+  elapsed_hours: number
+  cap_hours: number
+  last_claim_at: string
+}
+
+export function offlineRewardStatus(): Promise<OfflineRewardStatus> {
+  return request<OfflineRewardStatus>('/me/offline-reward')
+}
+
+export function claimOfflineReward(): Promise<{ coin: number }> {
+  return request<{ coin: number }>('/me/offline-reward/claim', { method: 'POST' })
 }
 
 /**

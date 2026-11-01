@@ -8,31 +8,57 @@
  */
 import { flushPromises, mount } from '@vue/test-utils'
 import ElementPlus from 'element-plus'
+import { createMemoryHistory, createRouter } from 'vue-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const fetchAnnouncements = vi.hoisted(() => vi.fn())
 const createAnnouncement = vi.hoisted(() => vi.fn())
+const updateAnnouncement = vi.hoisted(() => vi.fn())
 const fetchRedeemCodes = vi.hoisted(() => vi.fn())
 const createRedeemCode = vi.hoisted(() => vi.fn())
+const createRedeemCodesBatch = vi.hoisted(() => vi.fn())
 const fetchAuditLogs = vi.hoisted(() => vi.fn())
+const fetchAdminRedeemUsages = vi.hoisted(() => vi.fn())
 
 vi.mock('@/api', () => ({
   fetchAnnouncements,
   createAnnouncement,
+  updateAnnouncement,
   fetchRedeemCodes,
   createRedeemCode,
+  createRedeemCodesBatch,
   fetchAuditLogs,
+  fetchAdminRedeemUsages,
 }))
 
 import ContentView from '@/views/ContentView.vue'
 
 type Row = Record<string, unknown>
 
+/** 使用记录玩家列是 el-link（第 51 轮），点击跳转用户页 —— 必须注入真实 router。 */
+let lastRouter: ReturnType<typeof createRouter> | null = null
+
+async function makeRouter() {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [
+      { path: '/content', component: { template: '<div />' } },
+      { path: '/users', component: { template: '<div />' } },
+    ],
+  })
+  await router.push('/content')
+  await router.isReady()
+  lastRouter = router
+  return router
+}
+
 async function mountContent(data: { announcements?: Row[]; codes?: Row[]; logs?: Row[] } = {}) {
   fetchAnnouncements.mockResolvedValue({ items: data.announcements ?? [] })
   fetchRedeemCodes.mockResolvedValue({ items: data.codes ?? [] })
   fetchAuditLogs.mockResolvedValue({ items: data.logs ?? [] })
-  const wrapper = mount(ContentView, { global: { plugins: [ElementPlus] } })
+  fetchAdminRedeemUsages.mockResolvedValue({ items: [], total: 0 })
+  const router = await makeRouter()
+  const wrapper = mount(ContentView, { global: { plugins: [ElementPlus, router] } })
   await flushPromises()
   return wrapper
 }
@@ -89,7 +115,8 @@ describe('ContentView 列表渲染', () => {
     const { ElInputNumber } = await import('element-plus')
     const wrapper = await mountContent()
     const nums = wrapper.findAllComponents(ElInputNumber)
-    expect(nums).toHaveLength(1)
+    // 第 57 轮起有两个：次数上限 + 批量生成数量（第一个仍是次数上限）
+    expect(nums.length).toBeGreaterThanOrEqual(1)
     await nums[0].vm.$emit('update:modelValue', 7)
     await flushPromises()
     const vm = wrapper.vm as unknown as Vm
@@ -172,7 +199,9 @@ describe('ContentView 列表渲染', () => {
     expect(text).toContain('—') // 空时间
     // 审计日志：管理员 / 操作 / 对象 三列按服务端字段渲染
     expect(text).toContain('admin')
-    expect(text).toContain('grant_currency')
+    // 第 56 轮：操作类型显示中文标签
+    expect(text).toContain('发放货币')
+    expect(text).not.toContain('grant_currency')
     // detail 是 JSON 对象，detailText 渲染成可读文本
     expect(text).toContain('coin')
     expect(text).toContain('-300')
@@ -225,11 +254,11 @@ describe('ContentView 列表渲染', () => {
     wrapper.unmount()
   })
 
-  it('加载失败（Promise.all 任一失败）：弹出统一错误消息', async () => {
+  it('加载失败：按 tab 独立弹出错误消息（2026-10-31 新一轮第 22 轮）', async () => {
     fetchAnnouncements.mockRejectedValueOnce(new Error('公告服务挂了'))
     const wrapper = mount(ContentView, { global: { plugins: [ElementPlus] } })
     await flushPromises()
-    expect(document.body.textContent).toContain('运营数据加载失败：公告服务挂了')
+    expect(document.body.textContent).toContain('公告加载失败：公告服务挂了')
     wrapper.unmount()
   })
 })
@@ -350,6 +379,417 @@ describe('ContentView 兑换码表单', () => {
     await vm.submitCode()
     await flushPromises()
     expect(document.body.textContent).toContain('兑换码已存在')
+    wrapper.unmount()
+  })
+})
+
+describe('ContentView 使用记录玩家跳转用户详情（第 51 轮）', () => {
+  function usageFixture(overrides: Row = {}): Row {
+    return {
+      id: 1,
+      code: 'LYP-A',
+      user_id: 7,
+      nickname: '兑换玩家',
+      reward: { coin: 100 },
+      created_at: '2026-01-01T00:00:00Z',
+      ...overrides,
+    }
+  }
+
+  it('点击使用记录玩家昵称：跳转 /users 并携带 user_id', async () => {
+    const wrapper = await mountContent()
+    // ⚠️ mountContent 内部会重置 mock，必须先挂载再设置使用记录数据
+    fetchAdminRedeemUsages.mockResolvedValue({ items: [usageFixture()], total: 1 })
+    // 通过「使用记录」按钮打开对话框（会触发 loadRedeemUsages）
+    const openBtn = wrapper.findAll('button').find((b) => b.text() === '使用记录')
+    expect(openBtn, '找不到「使用记录」按钮').toBeTruthy()
+    await openBtn!.trigger('click')
+    await flushPromises()
+
+    const link = wrapper.find('.el-dialog .el-link')
+    expect(link.exists(), '找不到使用记录玩家列链接').toBe(true)
+    expect(link.text()).toBe('兑换玩家')
+
+    await link.trigger('click')
+    await flushPromises()
+
+    expect(lastRouter?.currentRoute.value.path).toBe('/users')
+    expect(lastRouter?.currentRoute.value.query.user_id).toBe('7')
+    wrapper.unmount()
+  })
+
+  it('无昵称的使用记录显示「—」，不渲染可点击链接', async () => {
+    const wrapper = await mountContent()
+    fetchAdminRedeemUsages.mockResolvedValue({ items: [usageFixture({ nickname: '' })], total: 1 })
+    const openBtn = wrapper.findAll('button').find((b) => b.text() === '使用记录')
+    expect(openBtn, '找不到「使用记录」按钮').toBeTruthy()
+    await openBtn!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.el-dialog .el-link').exists()).toBe(false)
+    expect(wrapper.text()).toContain('—')
+    wrapper.unmount()
+  })
+})
+
+describe('ContentView 公告玩家端预览（第 54 轮）', () => {
+  it('填写标题/正文后点击预览：对话框展示标题与正文', async () => {
+    const wrapper = await mountContent()
+    const vm = wrapper.vm as unknown as { annForm: { title: string; body: string; published: boolean } }
+    vm.annForm = { title: '周末双倍', body: '所有关卡金币翻倍', published: true }
+
+    const btn = wrapper.findAll('button').find((b) => b.text() === '预览玩家端')
+    expect(btn, '找不到「预览玩家端」按钮').toBeTruthy()
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('玩家端预览')
+    expect(wrapper.text()).toContain('周末双倍')
+    expect(wrapper.text()).toContain('所有关卡金币翻倍')
+    wrapper.unmount()
+  })
+
+  it('标题或正文为空时点击预览：提示错误，不打开对话框', async () => {
+    const wrapper = await mountContent()
+    const vm = wrapper.vm as unknown as { annForm: { title: string; body: string; published: boolean } }
+    vm.annForm = { title: '', body: '只有正文', published: false }
+
+    const btn = wrapper.findAll('button').find((b) => b.text() === '预览玩家端')
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(document.body.textContent).toContain('标题与正文都不能为空')
+    expect(wrapper.text()).not.toContain('玩家端预览')
+    wrapper.unmount()
+  })
+
+  it('行级预览（第 69 轮）：点击公告行的「预览」直接打开玩家端预览', async () => {
+    const wrapper = await mountContent({
+      announcements: [
+        { id: 1, title: '版本更新', body: '修复若干问题', published: true, published_at: '2026-01-01T00:00:00Z', created_at: '2026-01-01T00:00:00Z' },
+      ],
+    })
+    const btn = wrapper.findAll('button').find((b) => b.text() === '预览')
+    expect(btn, '找不到公告行「预览」按钮').toBeTruthy()
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('玩家端预览')
+    expect(wrapper.text()).toContain('版本更新')
+    expect(wrapper.text()).toContain('修复若干问题')
+    wrapper.unmount()
+  })
+})
+
+describe('ContentView 审计日志操作中文标签（第 56 轮）', () => {
+  async function mountWithLogs(logs: Row[]) {
+    const wrapper = await mountContent({ logs })
+    // 切到审计日志 tab
+    await wrapper.findAll('.el-tabs__item').find((t) => t.text() === '审计日志')!.trigger('click')
+    await flushPromises()
+    return wrapper
+  }
+
+  it('已知 action 显示中文标签', async () => {
+    const wrapper = await mountWithLogs([
+      { id: 1, username: 'admin', action: 'ban_user', target: '9', detail: { reason: '刷分' }, created_at: '2026-01-01T00:00:00Z' },
+    ])
+    expect(wrapper.text()).toContain('封禁用户')
+    expect(wrapper.text()).not.toContain('ban_user')
+    wrapper.unmount()
+  })
+
+  it('未知 action 回退原值（fail-loud：不吞掉新动作）', async () => {
+    const wrapper = await mountWithLogs([
+      { id: 2, username: 'admin', action: 'brand_new_action', target: '1', detail: null, created_at: '2026-01-01T00:00:00Z' },
+    ])
+    expect(wrapper.text()).toContain('brand_new_action')
+    wrapper.unmount()
+  })
+})
+
+describe('ContentView 审计对象点击跳转用户详情（第 68 轮）', () => {
+  async function mountWithLogs(logs: Row[]) {
+    const wrapper = await mountContent({ logs })
+    await wrapper.findAll('.el-tabs__item').find((t) => t.text() === '审计日志')!.trigger('click')
+    await flushPromises()
+    return wrapper
+  }
+
+  it('用户操作（ban_user）的 target 可点击：跳转 /users 并携带 user_id', async () => {
+    const wrapper = await mountWithLogs([
+      { id: 1, username: 'admin', action: 'ban_user', target: '9', detail: { reason: '刷分' }, created_at: '2026-01-01T00:00:00Z' },
+    ])
+    const link = wrapper.find('.el-table .el-link')
+    expect(link.exists(), '找不到审计对象链接').toBe(true)
+    expect(link.text()).toBe('9')
+
+    await link.trigger('click')
+    await flushPromises()
+
+    expect(lastRouter?.currentRoute.value.path).toBe('/users')
+    expect(lastRouter?.currentRoute.value.query.user_id).toBe('9')
+    wrapper.unmount()
+  })
+
+  it('非用户操作（update_announcement）的 target 不可点击', async () => {
+    const wrapper = await mountWithLogs([
+      { id: 2, username: 'admin', action: 'update_announcement', target: '5', detail: null, created_at: '2026-01-01T00:00:00Z' },
+    ])
+    expect(wrapper.find('.el-table .el-link').exists()).toBe(false)
+    expect(wrapper.text()).toContain('5')
+    wrapper.unmount()
+  })
+})
+
+describe('ContentView 兑换码批量生成（第 57 轮）', () => {
+  it('点击批量生成：按当前奖励/次数调用接口并刷新列表', async () => {
+    createRedeemCodesBatch.mockResolvedValue({
+      items: [
+        { id: 1, code: 'ABCDEFGHJKLM', reward: { coin: 100 }, max_uses: 3, expires_at: null, enabled: true },
+        { id: 2, code: 'NPQRSTUVWXYZ', reward: { coin: 100 }, max_uses: 3, expires_at: null, enabled: true },
+      ],
+    })
+    const wrapper = await mountContent()
+    const vm = wrapper.vm as unknown as {
+      codeForm: { code: string; reward: string; max_uses: number; expires_at: string }
+      batchCount: number
+    }
+    vm.codeForm = { code: '', reward: 'coin:100', max_uses: 3, expires_at: '' }
+    vm.batchCount = 2
+
+    const btn = wrapper.findAll('button').find((b) => b.text() === '批量生成')
+    expect(btn, '找不到「批量生成」按钮').toBeTruthy()
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(createRedeemCodesBatch).toHaveBeenCalledWith({
+      count: 2,
+      reward: { coin: 100 },
+      max_uses: 3,
+      expires_at: undefined,
+    })
+    expect(document.body.textContent).toContain('已批量生成 2 个兑换码')
+    wrapper.unmount()
+  })
+
+  it('奖励格式错误时批量生成不调用接口', async () => {
+    const wrapper = await mountContent()
+    const vm = wrapper.vm as unknown as { codeForm: { reward: string } }
+    vm.codeForm.reward = '金币 100'
+
+    const btn = wrapper.findAll('button').find((b) => b.text() === '批量生成')
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(createRedeemCodesBatch).not.toHaveBeenCalled()
+    expect(document.body.textContent).toContain('奖励格式错误')
+    wrapper.unmount()
+  })
+})
+
+describe('ContentView 批量生成码展示与复制（第 72 轮）', () => {
+  it('批量生成后弹出码列表，展示每个码', async () => {
+    createRedeemCodesBatch.mockResolvedValue({
+      items: [
+        { id: 1, code: 'ABCDEFGHJKLM', reward: { coin: 100 }, max_uses: 3, expires_at: null, enabled: true },
+        { id: 2, code: 'NPQRSTUVWXYZ', reward: { coin: 100 }, max_uses: 3, expires_at: null, enabled: true },
+      ],
+    })
+    const wrapper = await mountContent()
+    const vm = wrapper.vm as unknown as { codeForm: { reward: string }; batchCount: number }
+    vm.codeForm = { code: '', reward: 'coin:100', max_uses: 3, expires_at: '' }
+    vm.batchCount = 2
+
+    await wrapper.findAll('button').find((b) => b.text() === '批量生成')!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('批量生成的兑换码')
+    expect(wrapper.text()).toContain('ABCDEFGHJKLM')
+    expect(wrapper.text()).toContain('NPQRSTUVWXYZ')
+    wrapper.unmount()
+  })
+
+  it('点击「复制」调用剪贴板写入该码', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    createRedeemCodesBatch.mockResolvedValue({
+      items: [
+        { id: 1, code: 'ABCDEFGHJKLM', reward: { coin: 100 }, max_uses: 3, expires_at: null, enabled: true },
+      ],
+    })
+    const wrapper = await mountContent()
+    const vm = wrapper.vm as unknown as { codeForm: { reward: string }; batchCount: number }
+    vm.codeForm = { code: '', reward: 'coin:100', max_uses: 3, expires_at: '' }
+    vm.batchCount = 1
+
+    await wrapper.findAll('button').find((b) => b.text() === '批量生成')!.trigger('click')
+    await flushPromises()
+
+    const copyBtn = wrapper.findAll('button').find((b) => b.text() === '复制')
+    expect(copyBtn, '找不到「复制」按钮').toBeTruthy()
+    await copyBtn!.trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith('ABCDEFGHJKLM')
+    expect(document.body.textContent).toContain('已复制 ABCDEFGHJKLM')
+    wrapper.unmount()
+  })
+})
+
+describe('ContentView 兑换码行级复制（第 76 轮）', () => {
+  it('点击列表行的「复制」：写入剪贴板并提示', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    const wrapper = await mountContent({
+      codes: [
+        { id: 1, code: 'LYP-ROW-001', reward: { coin: 100 }, max_uses: 3, used_count: 0, expires_at: null, enabled: true },
+      ],
+    })
+    const copyBtn = wrapper.findAll('button').find((b) => b.text() === '复制')
+    expect(copyBtn, '找不到行级「复制」按钮').toBeTruthy()
+    await copyBtn!.trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith('LYP-ROW-001')
+    expect(document.body.textContent).toContain('已复制 LYP-ROW-001')
+    wrapper.unmount()
+  })
+})
+
+describe('ContentView 公告发布/撤回快捷切换（第 84 轮）', () => {
+  function annRow(over: Row = {}): Row {
+    return {
+      id: 1,
+      title: '版本更新',
+      body: '修复若干问题',
+      published: true,
+      published_at: '2026-01-01T00:00:00Z',
+      created_at: '2026-01-01T00:00:00Z',
+      ...over,
+    }
+  }
+
+  it('已发布公告点「撤回」：updateAnnouncement(published=false) 并提示', async () => {
+    updateAnnouncement.mockResolvedValue({ id: 1, updated: ['published'] })
+    const wrapper = await mountContent({ announcements: [annRow()] })
+
+    const btn = wrapper.findAll('button').find((b) => b.text() === '撤回')
+    expect(btn, '找不到「撤回」按钮').toBeTruthy()
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(updateAnnouncement).toHaveBeenCalledWith(1, {
+      title: '版本更新',
+      body: '修复若干问题',
+      published: false,
+    })
+    expect(document.body.textContent).toContain('公告已撤回')
+    wrapper.unmount()
+  })
+
+  it('草稿点「发布」：updateAnnouncement(published=true) 并提示', async () => {
+    updateAnnouncement.mockResolvedValue({ id: 2, updated: ['published'] })
+    const wrapper = await mountContent({ announcements: [annRow({ id: 2, published: false })] })
+
+    const btn = wrapper.findAll('button').find((b) => b.text() === '发布')
+    expect(btn, '找不到「发布」按钮').toBeTruthy()
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(updateAnnouncement).toHaveBeenCalledWith(2, {
+      title: '版本更新',
+      body: '修复若干问题',
+      published: true,
+    })
+    expect(document.body.textContent).toContain('公告已发布')
+    wrapper.unmount()
+  })
+
+  it('切换失败：提示错误', async () => {
+    updateAnnouncement.mockRejectedValueOnce(new Error('公告不存在'))
+    const wrapper = await mountContent({ announcements: [annRow()] })
+
+    const btn = wrapper.findAll('button').find((b) => b.text() === '撤回')
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(document.body.textContent).toContain('发布状态切换失败：公告不存在')
+    wrapper.unmount()
+  })
+})
+
+describe('ContentView 使用记录复制码（第 94 轮）', () => {
+  it('点击使用记录行的「复制」：写入剪贴板并提示', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    const wrapper = await mountContent()
+    fetchAdminRedeemUsages.mockResolvedValue({
+      items: [
+        { id: 1, code: 'LYP-USED-001', user_id: 7, nickname: '玩家甲', reward: { coin: 100 }, created_at: '2026-01-01T00:00:00Z' },
+      ],
+      total: 1,
+    })
+    const openBtn = wrapper.findAll('button').find((b) => b.text() === '使用记录')
+    expect(openBtn, '找不到「使用记录」按钮').toBeTruthy()
+    await openBtn!.trigger('click')
+    await flushPromises()
+
+    const copyBtn = wrapper.findAll('.el-dialog button').find((b) => b.text() === '复制')
+    expect(copyBtn, '找不到使用记录复制按钮').toBeTruthy()
+    await copyBtn!.trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith('LYP-USED-001')
+    expect(document.body.textContent).toContain('已复制 LYP-USED-001')
+    wrapper.unmount()
+  })
+})
+
+describe('ContentView 审计日志复制对象（第 95 轮）', () => {
+  it('点击审计行「复制」：写入剪贴板并提示', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    const wrapper = await mountContent({
+      logs: [
+        { id: 1, username: 'admin', action: 'update_announcement', target: '5', detail: null, created_at: '2026-01-01T00:00:00Z' },
+      ],
+    })
+    await wrapper.findAll('.el-tabs__item').find((t) => t.text() === '审计日志')!.trigger('click')
+    await flushPromises()
+
+    const copyBtn = wrapper.findAll('.el-table button').find((b) => b.text() === '复制')
+    expect(copyBtn, '找不到审计对象复制按钮').toBeTruthy()
+    await copyBtn!.trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith('5')
+    expect(document.body.textContent).toContain('已复制 5')
+    wrapper.unmount()
+  })
+})
+
+describe('ContentView 公告复制正文（第 98 轮）', () => {
+  it('点击公告行「复制正文」：写入剪贴板并提示', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    const wrapper = await mountContent({
+      announcements: [
+        { id: 1, title: '版本更新', body: '修复若干问题，周末双倍掉落。', published: true, published_at: '2026-01-01T00:00:00Z', created_at: '2026-01-01T00:00:00Z' },
+      ],
+    })
+    const btn = wrapper.findAll('button').find((b) => b.text() === '复制正文')
+    expect(btn, '找不到「复制正文」按钮').toBeTruthy()
+    await btn!.trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith('修复若干问题，周末双倍掉落。')
+    expect(document.body.textContent).toContain('公告正文已复制')
     wrapper.unmount()
   })
 })

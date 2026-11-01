@@ -1,12 +1,18 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"encoding/csv"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 
 	"github.com/laiyipao/server/internal/domain"
 )
@@ -28,6 +34,11 @@ type Dashboard struct {
 		Wins          int64   `json:"wins"`
 		AvgDurationMs float64 `json:"avg_duration_ms"`
 	} `json:"battles"`
+	// 2026-10-31（实质优化第 39 轮）：防线总数 / 今日挑战次数。
+	Defenses struct {
+		Total           int64 `json:"total"`
+		ChallengesToday int64 `json:"challenges_today"`
+	} `json:"defenses"`
 	Progression struct {
 		AvgMaxStage   float64 `json:"avg_max_stage"`
 		AvgPower      float64 `json:"avg_power"`
@@ -40,6 +51,9 @@ type Dashboard struct {
 		GemOut        int64 `json:"gem_out"`
 		OrdersPaid    int64 `json:"orders_paid"`
 		OrdersPending int64 `json:"orders_pending"`
+		// 2026-10-31（实质优化第 28 轮）：今日签到数 / 今日兑换次数。
+		SignInsToday int64 `json:"sign_ins_today"`
+		RedeemsToday int64 `json:"redeems_today"`
 	} `json:"economy"`
 	// I-6：验真健康度
 	Verification struct {
@@ -122,6 +136,19 @@ func (s *Service) adminDashboardUncached(ctx context.Context) (Dashboard, error)
 		&d.Battles.Total, &d.Battles.Today, &d.Battles.Wins, &d.Battles.AvgDurationMs); err != nil {
 		return d, fmt.Errorf("dashboard battles: %w", err)
 	}
+	// 2026-10-31（实质优化第 39 轮）：防线总数 / 今日挑战次数。
+	if err := scan(`
+		SELECT COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE),
+		       COUNT(*)
+		FROM defense_challenges`,
+		&d.Defenses.ChallengesToday, &d.Defenses.Total); err != nil {
+		return d, fmt.Errorf("dashboard challenges: %w", err)
+	}
+	if err := scan(`
+		SELECT COUNT(*) FROM defenses`,
+		&d.Defenses.Total); err != nil {
+		return d, fmt.Errorf("dashboard defenses: %w", err)
+	}
 
 	if err := scan(`
 		SELECT COALESCE(AVG(max_stage), 0), COALESCE(AVG(level_exp), 0),
@@ -148,6 +175,18 @@ func (s *Service) adminDashboardUncached(ctx context.Context) (Dashboard, error)
 		FROM orders`,
 		&d.Economy.OrdersPaid, &d.Economy.OrdersPending); err != nil {
 		return d, fmt.Errorf("dashboard orders: %w", err)
+	}
+	// 2026-10-31（实质优化第 28 轮）：今日签到 / 今日兑换 ——
+	// 运营看板此前没有这两个活跃指标。
+	if err := scan(`
+		SELECT COUNT(*) FROM user_sign_ins WHERE sign_date = CURRENT_DATE`,
+		&d.Economy.SignInsToday); err != nil {
+		return d, fmt.Errorf("dashboard sign-ins: %w", err)
+	}
+	if err := scan(`
+		SELECT COUNT(*) FROM redeem_usages WHERE created_at >= CURRENT_DATE`,
+		&d.Economy.RedeemsToday); err != nil {
+		return d, fmt.Errorf("dashboard redeems: %w", err)
 	}
 
 	if err := scan(`
@@ -297,7 +336,7 @@ type AdminUserView struct {
 }
 
 // AdminListUsers 分页查询玩家。
-func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, offset int) ([]AdminUserView, int64, error) {
+func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, offset int, dateFrom, dateTo *time.Time, isGuest *bool, lastLoginFrom, lastLoginTo *time.Time, suspicious *bool) ([]AdminUserView, int64, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
@@ -337,10 +376,41 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 	// ⚠️ 这**不是**一个「顺便也加上」的改法：它让一条既有功能消失，
 	// 所以必须同时说清楚「谁因此失去了什么」——见下面 `TestAdminSearchNeverMatchesGuestToken`
 	// 的断言，它守的正是「这一列不再可检索」这条新不变式。
+	// 日期范围（2026-10-31 新一轮第 15 轮）：可选，nil 不过滤。
+	// 列表查询的 $5/$6 是日期（limit/offset 占 $3/$4）；
+	// COUNT 查询没有 limit/offset，日期改占 $3/$4。
+	// 日期范围（2026-10-31 新一轮第 15 轮）与游客/账号筛选
+	// （2026-11-01 新一轮第 37 轮）、最后登录时间（2026-11-01 新一轮第 46 轮）：
+	// 均为可选，nil 不过滤（NULL 时 `IS NULL` 分支恒真）。
+	// 列表查询的 $3/$4 是 limit/offset，筛选从 $5 起；
+	// COUNT 查询没有 limit/offset，筛选映射到 $3..$7。
+	where := `($1 = '' OR u.nickname LIKE $2 ESCAPE '\'::char OR u.id::text = $1)
+	          AND ($5::timestamptz IS NULL OR u.created_at >= $5)
+	          AND ($6::timestamptz IS NULL OR u.created_at < $6)
+	          AND ($7::boolean IS NULL OR u.is_guest = $7)
+	          AND ($8::timestamptz IS NULL OR u.last_login_at >= $8)
+	          AND ($9::timestamptz IS NULL OR u.last_login_at < $9)`
+	countArgs := []any{kw, pattern, dateFrom, dateTo, isGuest, lastLoginFrom, lastLoginTo}
+	listArgs := []any{kw, pattern, limit, offset, dateFrom, dateTo, isGuest, lastLoginFrom, lastLoginTo}
+	// 需核查筛选（2026-11-01 新一轮第 60 轮）：仅当开启时拼入条件并引用 p。
+	// 不开启时 COUNT 保持不 JOIN user_progress（历史行为，中段失败测试依赖它）。
+	if suspicious != nil {
+		where += ` AND (COALESCE(p.level_exp, 0) > 5000 AND COALESCE(p.max_stage, 0) <= 1) = $10`
+		countArgs = append(countArgs, suspicious)
+		listArgs = append(listArgs, suspicious)
+	}
+	// 统一做 COUNT 参数编号映射（列表 $5-$10 → COUNT $3-$8）。
+	countWhere := strings.NewReplacer(`$5`, `$3`, `$6`, `$4`, `$7`, `$5`, `$8`, `$6`, `$9`, `$7`, `$10`, `$8`).Replace(where)
+
 	var total int64
-	if err := s.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM users WHERE $1 = '%%' OR nickname LIKE $2 ESCAPE '\'::char`,
-		pattern, pattern).Scan(&total); err != nil {
+	// 需核查开启时 COUNT 也要 JOIN p（user_progress 每用户一行，不放大）。
+	countSQL := `SELECT COUNT(*) FROM users u WHERE ` + countWhere
+	if suspicious != nil {
+		countSQL = `SELECT COUNT(*) FROM users u
+		 LEFT JOIN user_progress p ON p.user_id = u.id
+		 WHERE ` + countWhere
+	}
+	if err := s.pool.QueryRow(ctx, countSQL, countArgs...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("count users: %w", err)
 	}
 
@@ -372,8 +442,8 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 			JOIN battle_records br ON br.id = rv.battle_id
 			GROUP BY br.user_id
 		) v ON v.user_id = u.id
-		WHERE $1 = '%%' OR u.nickname LIKE $1 ESCAPE '\'::char
-		ORDER BY u.id DESC LIMIT $2 OFFSET $3`, pattern, limit, offset)
+		WHERE `+where+`
+		ORDER BY u.id DESC LIMIT $3 OFFSET $4`, listArgs...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list users: %w", err)
 	}
@@ -390,6 +460,112 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 		out = append(out, v)
 	}
 	return out, total, rows.Err()
+}
+
+// AdminExportUsers 导出用户列表为 CSV（2026-10-30 实质优化第 12 轮）。
+//
+// 后台列表（用户 / 战报 / 流水）此前**没有任何导出入口** —— 运营做
+// 数据分析只能手动翻页或直接查库。这里补上用户列表导出：
+//
+//   - 过滤条件与 `AdminListUsers` 完全一致（keyword 走同一转义与口径），
+//     只是不带 LIMIT/OFFSET —— 导出是「全量快照」，不是分页。
+//   - 上限 100_000 行：CSV 全量在运营常规使用里远用不到，这个上限
+//     只是防止一次导出把 API 进程内存打爆。
+//   - 列头用英文，内容用 UTF-8 原文 + BOM（Excel 打开中文不乱码）。
+//
+// 注意：guest_token 等敏感凭证**绝不导出**（理由见 AdminListUsers 的注释）。
+func (s *Service) AdminExportUsers(ctx context.Context, keyword string, dateFrom, dateTo *time.Time, lastLoginFrom, lastLoginTo *time.Time, suspicious *bool) ([]byte, error) {
+	kw, err := trimAdminKeyword(keyword)
+	if err != nil {
+		return nil, err
+	}
+	escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(kw)
+	pattern := "%" + escaped + "%"
+
+	// 日期范围（2026-10-31 新一轮第 15 轮）与最后登录时间
+	// （2026-11-01 新一轮第 46 轮）：**始终**拼入（nil → NULL，
+	// `IS NULL` 分支恒真），保证导出查询参数编号稳定。
+	// 导出查询没有 limit/offset，筛选从 $3 起。
+	where := `($1 = '' OR u.nickname LIKE $2 ESCAPE '\'::char OR u.id::text = $1)
+	          AND ($3::timestamptz IS NULL OR u.created_at >= $3)
+	          AND ($4::timestamptz IS NULL OR u.created_at < $4)
+	          AND ($5::timestamptz IS NULL OR u.last_login_at >= $5)
+	          AND ($6::timestamptz IS NULL OR u.last_login_at < $6)`
+	args := []any{kw, pattern, dateFrom, dateTo, lastLoginFrom, lastLoginTo}
+	// 需核查筛选（2026-11-01 新一轮第 60 轮）：仅开启时拼入（引用 p，
+	// 导出查询始终 JOIN user_progress，无解析问题）。
+	if suspicious != nil {
+		where += ` AND (COALESCE(p.level_exp, 0) > 5000 AND COALESCE(p.max_stage, 0) <= 1) = $7`
+		args = append(args, suspicious)
+	}
+
+	rows, err := s.pool.Query(ctx, `
+		SELECT u.id, u.nickname, u.is_guest, u.status,
+		       COALESCE(p.max_stage, 0), COALESCE(p.level_exp, 0),
+		       COALESCE(w.coin, 0), COALESCE(w.gem, 0), u.created_at, u.last_login_at,
+		       COALESCE(v.checked, 0), COALESCE(v.mismatched, 0)
+		FROM users u
+		LEFT JOIN user_progress p ON p.user_id = u.id
+		LEFT JOIN user_wallets w ON w.user_id = u.id
+		LEFT JOIN (
+			SELECT br.user_id,
+			       COUNT(*) AS checked,
+			       COUNT(*) FILTER (WHERE NOT rv.matched) AS mismatched
+			FROM replay_verifications rv
+			JOIN battle_records br ON br.id = rv.battle_id
+			GROUP BY br.user_id
+		) v ON v.user_id = u.id
+		WHERE `+where+`
+		ORDER BY u.id DESC LIMIT 100000`, args...)
+	if err != nil {
+		return nil, fmt.Errorf("export users: %w", err)
+	}
+	defer rows.Close()
+
+	var buf bytes.Buffer
+	// UTF-8 BOM：Excel 打开含中文的 CSV 时按 UTF-8 解码，否则乱码。
+	buf.WriteString("\xEF\xBB\xBF")
+	w := csv.NewWriter(&buf)
+	header := []string{
+		"id", "nickname", "is_guest", "status", "max_stage", "power",
+		"coin", "gem", "created_at", "last_login_at", "verify_checked", "verify_mismatched",
+	}
+	if err := w.Write(header); err != nil {
+		return nil, fmt.Errorf("write csv header: %w", err)
+	}
+	for rows.Next() {
+		var v AdminUserView
+		if err := rows.Scan(&v.ID, &v.Nickname, &v.IsGuest, &v.Status, &v.MaxStage,
+			&v.Power, &v.Coin, &v.Gem, &v.CreatedAt, &v.LastLoginAt,
+			&v.VerifyChecked, &v.VerifyMismatched); err != nil {
+			return nil, fmt.Errorf("scan export user: %w", err)
+		}
+		rec := []string{
+			strconv.FormatInt(v.ID, 10),
+			v.Nickname,
+			strconv.FormatBool(v.IsGuest),
+			strconv.Itoa(v.Status),
+			strconv.Itoa(v.MaxStage),
+			strconv.FormatInt(v.Power, 10),
+			strconv.FormatInt(v.Coin, 10),
+			strconv.FormatInt(v.Gem, 10),
+			v.CreatedAt.Format(time.RFC3339),
+			v.LastLoginAt.Format(time.RFC3339),
+			strconv.FormatInt(v.VerifyChecked, 10),
+			strconv.FormatInt(v.VerifyMismatched, 10),
+		}
+		if err := w.Write(rec); err != nil {
+			return nil, fmt.Errorf("write csv row: %w", err)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	w.Flush()
+	if err := w.Error(); err != nil {
+		return nil, fmt.Errorf("flush csv: %w", err)
+	}
+	return buf.Bytes(), nil
 }
 
 // AdminSetUserStatus 封禁 / 解封玩家。
@@ -481,6 +657,65 @@ func (s *Service) AdminSetUserStatus(ctx context.Context, userID int64, banned b
 // 取 1e12：比任何真实的运营发放大 6 个数量级（百万级的活动奖励），
 // 又离 int64 溢出（9.2e18）足够远 —— 连续累加到 9.2e15 次才会碰到边界。
 var MaxAdminGrantAmount = int64(1_000_000_000_000)
+
+// AdminResetPlayerPassword 后台重置玩家账号密码（2026-10-30 实质优化第 11 轮）。
+//
+// 玩家侧已有修改密码（`ChangePassword`）与游客转正（`UpgradeGuestAccount`），
+// 但运营缺少兜底：账号密码遗忘 / 账号被盗需要强制轮换时，只能封禁或
+// 改环境变量重启引导 —— 前者过重，后者只对共享测试账号有效。
+//
+// 语义要点：
+//
+//   - 只对已有用户名密码的账号开放（`password_hash` 非 NULL）。
+//     游客号没有用户名，重置密码后也无法登录，直接拒绝。
+//   - 新密码门槛与其他账号一致（至少 10 位）。
+//   - 更新哈希与吊销全部 refresh token 在**同一事务**里：
+//     中途失败不能出现「密码已改但旧会话仍有效」的中间态。
+//
+// 注意与共享测试账号的交互：`EnsureBootstrapPlayer` 只在**服务启动**时
+// 同步密码，运行中后台重置不会立即被配置覆盖；下次重启后该账号会
+// 恢复为环境变量里的口令 —— 这是「测试账号口令与超管一致」的运维
+// 约定本身要求的，文档见 player_account.go 的 EnsureBootstrapPlayer。
+func (s *Service) AdminResetPlayerPassword(ctx context.Context, userID int64, newPassword string) error {
+	newPassword = strings.TrimSpace(newPassword)
+	if len(newPassword) < 10 {
+		return fmt.Errorf("%w: 新密码至少 10 位（当前 %d 位）", ErrBadInput, len(newPassword))
+	}
+
+	var hash *string
+	err := s.pool.QueryRow(ctx,
+		`SELECT password_hash FROM users WHERE id = $1`, userID).Scan(&hash)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return fmt.Errorf("%w: 用户 %d 不存在", ErrNotFound, userID)
+		}
+		return fmt.Errorf("load player account: %w", err)
+	}
+	if hash == nil || *hash == "" {
+		return fmt.Errorf("%w: 该账号没有用户名密码，无法重置（游客号请先引导转正）", ErrBadInput)
+	}
+
+	newHash, err := HashPassword(newPassword)
+	if err != nil {
+		return err
+	}
+	err = s.DB.Tx(ctx, func(tx txType) error {
+		if _, err := tx.Exec(ctx,
+			`UPDATE users SET password_hash = $2 WHERE id = $1`, userID, newHash); err != nil {
+			return fmt.Errorf("update password hash: %w", err)
+		}
+		if _, err := tx.Exec(ctx,
+			`UPDATE refresh_tokens SET revoked_at = now()
+			  WHERE user_id = $1 AND revoked_at IS NULL`, userID); err != nil {
+			return fmt.Errorf("revoke refresh tokens: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 func (s *Service) AdminGrantCurrency(ctx context.Context, userID int64, currency string, amount int64) (map[string]int64, error) {
 	if amount == 0 {
@@ -589,7 +824,7 @@ type AdminBattleView struct {
 //
 // onlyMismatched 为真时**只**返回「被验真过且有不匹配记录」的战报，
 // 用来从「这个用户有 3 次不匹配」直接跳到「是哪 3 场」。
-func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID int, limit int, onlyMismatched bool, offset int) ([]AdminBattleView, int64, error) {
+func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID int, limit int, onlyMismatched bool, offset int, dateFrom, dateTo *time.Time, result string) ([]AdminBattleView, int64, error) {
 	if limit <= 0 || limit > 200 {
 		limit = 50
 	}
@@ -652,11 +887,34 @@ func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID in
 	if onlyMismatched {
 		where += ` AND COALESCE(v.mismatched, 0) > 0`
 	}
+	// 日期范围（2026-10-31 新一轮第 14 轮）：可选，nil 不过滤。
+	// 列表查询的 $5/$6 是日期（limit/offset 占 $3/$4）；
+	// COUNT 查询没有 limit/offset，日期改占 $3/$4。
+	countArgs := []any{userID, levelID}
+	listArgs := []any{userID, levelID, limit, offset}
+	// 日期范围：**始终**拼入（nil → NULL，`IS NULL` 分支恒真），
+	// 保证 COUNT 与列表的参数编号稳定（列表 $5/$6、COUNT $3/$4）。
+	// 若只在非 nil 时拼入，result 筛选（占 $7/$5）会悬空，
+	// PostgreSQL 报 `could not determine data type of parameter`。
+	where += ` AND ($5::timestamptz IS NULL OR br.created_at >= $5)
+	             AND ($6::timestamptz IS NULL OR br.created_at < $6)`
+	countArgs = append(countArgs, dateFrom, dateTo)
+	listArgs = append(listArgs, dateFrom, dateTo)
+	// 结果筛选（2026-11-01 新一轮第 44 轮）：win / lose，空串不过滤。
+	// 列表占 $7（COUNT 经下方映射到 $5）；COUNT 与列表参数顺序一致：
+	// 日期在前、result 在后。
+	result = strings.TrimSpace(result)
+	if result != "" {
+		where += ` AND br.result = $7`
+		countArgs = append(countArgs, result)
+		listArgs = append(listArgs, result)
+	}
+	countWhere := strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(where, "$5", "$3"), "$6", "$4"), "$7", "$5")
 
 	var total int64
 	if err := s.pool.QueryRow(ctx,
-		`SELECT COUNT(*) FROM battle_records br `+vsub+` WHERE `+where,
-		userID, levelID).Scan(&total); err != nil {
+		`SELECT COUNT(*) FROM battle_records br `+vsub+` WHERE `+countWhere,
+		countArgs...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("count battles: %w", err)
 	}
 	rows, err := s.pool.Query(ctx, `
@@ -668,7 +926,7 @@ func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID in
 		LEFT JOIN users u ON u.id = br.user_id
 		`+vsub+`
 		WHERE `+where+`
-		ORDER BY br.id DESC LIMIT $3 OFFSET $4`, userID, levelID, limit, offset)
+		ORDER BY br.id DESC LIMIT $3 OFFSET $4`, listArgs...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list battles: %w", err)
 	}
@@ -682,7 +940,7 @@ func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID in
 			return n
 		}
 		n := 0
-		for _, w := range domain.GenerateLevel(levelID).Waves {
+		for _, w := range domain.CachedLevel(levelID).Waves {
 			for _, sp := range w.Spawns {
 				n += sp.Count
 			}
@@ -702,6 +960,135 @@ func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID in
 		out = append(out, v)
 	}
 	return out, total, rows.Err()
+}
+
+// AdminExportBattles 导出战报列表为 CSV（2026-10-30 实质优化第 13 轮）。
+//
+// 与 `AdminExportUsers` 同族：运营做数据分析需要全量快照而不是分页。
+// 过滤条件与 `AdminListBattles` 完全一致（user_id / level_id / only_mismatched），
+// 上限 100_000 行。replay_hash 是回放校验哈希（后台本来就可读），
+// 不是账号凭证，可以导出；guest_token 等敏感字段绝不进入。
+func (s *Service) AdminExportBattles(ctx context.Context, userID int64, levelID int, onlyMismatched bool, dateFrom, dateTo *time.Time, result string) ([]byte, error) {
+	// 与 AdminListBattles 相同的子查询形态（注释见那边）。
+	vsub := `LEFT JOIN (
+		SELECT battle_id,
+		       COUNT(*) AS checked,
+		       COUNT(*) FILTER (WHERE NOT matched) AS mismatched
+		FROM replay_verifications GROUP BY battle_id
+	) v ON v.battle_id = br.id`
+	if userID != 0 {
+		vsub = `LEFT JOIN (
+		SELECT battle_id,
+		       COUNT(*) AS checked,
+		       COUNT(*) FILTER (WHERE NOT matched) AS mismatched
+		FROM replay_verifications
+		WHERE battle_id IN (SELECT id FROM battle_records WHERE user_id = $1)
+		GROUP BY battle_id
+	) v ON v.battle_id = br.id`
+	}
+
+	where := `($1 = 0 OR br.user_id = $1) AND ($2 = 0 OR br.level_id = $2)`
+	args := []any{userID, levelID}
+	if onlyMismatched {
+		where += ` AND COALESCE(v.mismatched, 0) > 0`
+	}
+	// 日期范围（2026-10-31 新一轮第 14 轮）：**始终**拼入（nil → NULL，
+	// `IS NULL` 分支恒真），保证 result 筛选的 $5 稳定存在。
+	// 导出查询没有 limit/offset，日期直接占 $3/$4。
+	where += ` AND ($3::timestamptz IS NULL OR br.created_at >= $3)
+	             AND ($4::timestamptz IS NULL OR br.created_at < $4)`
+	args = append(args, dateFrom, dateTo)
+	// 结果筛选（2026-11-01 新一轮第 44 轮）：与列表同口径。
+	result = strings.TrimSpace(result)
+	if result != "" {
+		where += ` AND br.result = $5`
+		args = append(args, result)
+	}
+
+	rows, err := s.pool.Query(ctx, `
+		SELECT br.id, br.user_id, COALESCE(u.nickname,''), br.level_id, br.result, br.stars, br.score,
+		       br.kills, br.leaked, br.wave_reached, br.duration_ms, br.reactions, br.heat_max,
+		       br.replay_hash, br.created_at,
+		       COALESCE(v.checked, 0), COALESCE(v.mismatched, 0)
+		FROM battle_records br
+		LEFT JOIN users u ON u.id = br.user_id
+		`+vsub+`
+		WHERE `+where+`
+		ORDER BY br.id DESC LIMIT 100000`, args...)
+	if err != nil {
+		return nil, fmt.Errorf("export battles: %w", err)
+	}
+	defer rows.Close()
+
+	var buf bytes.Buffer
+	buf.WriteString("\xEF\xBB\xBF")
+	w := csv.NewWriter(&buf)
+	header := []string{
+		"id", "user_id", "nickname", "level_id", "result", "stars", "score",
+		"kills", "leaked", "wave_reached", "duration_ms", "reactions", "heat_max",
+		"replay_hash", "created_at", "verify_checked", "verify_mismatched", "total_enemies",
+	}
+	if err := w.Write(header); err != nil {
+		return nil, fmt.Errorf("write csv header: %w", err)
+	}
+
+	// 与列表同源：本关总怪数取自生成器（确定性），按 level_id 缓存。
+	totalCache := map[int]int{}
+	totalEnemies := func(levelID int) int {
+		if n, ok := totalCache[levelID]; ok {
+			return n
+		}
+		n := 0
+		for _, wave := range domain.CachedLevel(levelID).Waves {
+			for _, sp := range wave.Spawns {
+				n += sp.Count
+			}
+		}
+		totalCache[levelID] = n
+		return n
+	}
+
+	for rows.Next() {
+		var v AdminBattleView
+		if err := rows.Scan(&v.ID, &v.UserID, &v.Nickname, &v.LevelID, &v.Result, &v.Stars,
+			&v.Score, &v.Kills, &v.Leaked, &v.WaveReached, &v.DurationMs, &v.Reactions,
+			&v.HeatMax, &v.ReplayHash, &v.CreatedAt,
+			&v.VerifyChecked, &v.VerifyMismatched); err != nil {
+			return nil, fmt.Errorf("scan export battle: %w", err)
+		}
+		v.TotalEnemies = totalEnemies(v.LevelID)
+		rec := []string{
+			strconv.FormatInt(v.ID, 10),
+			strconv.FormatInt(v.UserID, 10),
+			v.Nickname,
+			strconv.Itoa(v.LevelID),
+			v.Result,
+			strconv.Itoa(v.Stars),
+			strconv.FormatInt(v.Score, 10),
+			strconv.Itoa(v.Kills),
+			strconv.Itoa(v.Leaked),
+			strconv.Itoa(v.WaveReached),
+			strconv.Itoa(v.DurationMs),
+			strconv.Itoa(v.Reactions),
+			strconv.Itoa(v.HeatMax),
+			v.ReplayHash,
+			v.CreatedAt.Format(time.RFC3339),
+			strconv.FormatInt(v.VerifyChecked, 10),
+			strconv.FormatInt(v.VerifyMismatched, 10),
+			strconv.Itoa(v.TotalEnemies),
+		}
+		if err := w.Write(rec); err != nil {
+			return nil, fmt.Errorf("write csv row: %w", err)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	w.Flush()
+	if err := w.Error(); err != nil {
+		return nil, fmt.Errorf("flush csv: %w", err)
+	}
+	return buf.Bytes(), nil
 }
 
 // --- 内容配置 ---

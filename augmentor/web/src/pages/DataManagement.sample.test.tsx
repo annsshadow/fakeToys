@@ -18,16 +18,17 @@ import { message } from 'antd'
 
 window.matchMedia =
   window.matchMedia ||
-  ((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  }) as unknown as MediaQueryList)
+  ((query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList)
 class RO {
   observe() {}
   unobserve() {}
@@ -56,9 +57,7 @@ const fx = vi.hoisted(() => {
     aggregated_count: 0,
     source_counts: { 甲: 2, 乙: 2 },
     removed_duplicates: 0,
-    conflicts: [
-      { key: '同一个问题', values: ['答案甲', '答案乙'], sources: ['甲', '乙'] },
-    ],
+    conflicts: [{ key: '同一个问题', values: ['答案甲', '答案乙'], sources: ['甲', '乙'] }],
   }
   const AGG_OK = {
     output_file: 'D:\\data\\agg.json',
@@ -127,8 +126,7 @@ beforeEach(() => {
 /** 等文件列表落地再点按钮（`selectedFile` 是异步设成 `files[0]` 的，理由见转换那份用例） */
 async function waitFiles(container: HTMLElement) {
   await waitFor(
-    () =>
-      expect((container.querySelector('select') as HTMLSelectElement)?.value).toBe('a.json'),
+    () => expect((container.querySelector('select') as HTMLSelectElement)?.value).toBe('a.json'),
     { timeout: 10000 },
   )
 }
@@ -155,8 +153,11 @@ describe('采样卡的渲染面', () => {
     render(<DataManagement />)
 
     const method = screen.getByLabelText('采样方法')
-    expect(Array.from(method.querySelectorAll('option')).map((o) => o.value))
-      .toEqual(['random', 'systematic', 'stratified'])
+    expect(Array.from(method.querySelectorAll('option')).map((o) => o.value)).toEqual([
+      'random',
+      'systematic',
+      'stratified',
+    ])
     expect(method).toHaveProperty('value', 'random')
     expect(screen.getByLabelText('采样分层字段名')).toHaveProperty('value', 'instruction')
     // 数值格留空 = 那一格不发（契约默认是 None），页面上不许自带一套数字默认
@@ -181,7 +182,7 @@ describe('采样卡的渲染面', () => {
         ratio: undefined,
         seed: undefined,
         stratifyKey: 'instruction',
-      })
+      }),
     )
     await waitFor(() => expect(labeled('采样回执')?.textContent).toContain('20 条进'))
     expect(labeled('采样回执')?.textContent).toContain('8 条出')
@@ -216,8 +217,10 @@ describe('采样卡的渲染面', () => {
     click('采样选中的文件')
 
     await waitFor(
-      () => expect(document.body.textContent)
-        .toContain('ratio 必须是 0.0 到 1.0 之间的比例，当前是 2.0'),
+      () =>
+        expect(document.body.textContent).toContain(
+          'ratio 必须是 0.0 到 1.0 之间的比例，当前是 2.0',
+        ),
       { timeout: 10000 },
     )
     expect(labeled('采样回执')).toBeNull()
@@ -242,8 +245,12 @@ describe('聚合卡的渲染面', () => {
     await waitFiles(container)
 
     const strategy = screen.getByLabelText('聚合策略')
-    expect(Array.from(strategy.querySelectorAll('option')).map((o) => o.value))
-      .toEqual(['union', 'intersection', 'weighted', 'consistent'])
+    expect(Array.from(strategy.querySelectorAll('option')).map((o) => o.value)).toEqual([
+      'union',
+      'intersection',
+      'weighted',
+      'consistent',
+    ])
     expect(strategy).toHaveProperty('value', 'union')
 
     aggCheck('a.json')
@@ -272,7 +279,7 @@ describe('聚合卡的渲染面', () => {
         { a: 'a.json', b: 'b.jsonl' },
         'agg.json',
         { strategy: 'union', targetSize: undefined },
-      )
+      ),
     )
     await waitFor(() => expect(labeled('聚合回执')?.textContent).toContain('20 条'))
     expect(labeled('聚合回执')?.textContent).toContain('删掉 6 条')
@@ -364,7 +371,7 @@ describe('RAG 卡的渲染面', () => {
     click('转成 RAG 格式')
 
     await waitFor(() =>
-      expect(spies.convertToRag).toHaveBeenCalledWith('a.json', 'rag.json', { format: '' })
+      expect(spies.convertToRag).toHaveBeenCalledWith('a.json', 'rag.json', { format: '' }),
     )
     await waitFor(() => expect(labeled('RAG 回执')).not.toBeNull())
     const receipt = labeled('RAG 回执')?.textContent || ''
@@ -385,7 +392,7 @@ describe('RAG 卡的渲染面', () => {
     await waitFor(() =>
       expect(spies.convertToRag).toHaveBeenCalledWith('a.json', 'rag.json', {
         format: 'langchain',
-      })
+      }),
     )
     // 夹具回的是 llamaindex（服务端说哪档就是哪档）：页面不许拿自己的选择盖掉回执
     await waitFor(() => expect(labeled('RAG 回执')?.textContent).toContain('llamaindex'))

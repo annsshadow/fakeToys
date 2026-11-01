@@ -13,7 +13,7 @@ import {
   Statistic,
   Switch,
   Tag,
-  message
+  message,
 } from 'antd'
 import { SaveOutlined } from '@ant-design/icons'
 import {
@@ -25,9 +25,14 @@ import {
   getModels,
   setApiKey,
   updateConfig,
-  validateConfigFile
+  validateConfigFile,
 } from '../services/api'
-import type { AppConfig, AutoConfigResponse, ConfigValidationResponse, UpdateConfigResponse } from '../types/api'
+import type {
+  AppConfig,
+  AutoConfigResponse,
+  ConfigValidationResponse,
+  UpdateConfigResponse,
+} from '../types/api'
 
 /**
  * 本页**做了输入控件**的三节
@@ -85,7 +90,7 @@ export default function Settings() {
    *   `config` 为 null 时会在用户第一次交互时抛 `Cannot read properties of null`。
    */
   const patch = (fn: (prev: AppConfig) => AppConfig) =>
-    setConfig(prev => (prev ? fn(prev) : prev))
+    setConfig((prev) => (prev ? fn(prev) : prev))
 
   useEffect(() => {
     loadConfig()
@@ -115,7 +120,7 @@ export default function Settings() {
   const loadFiles = async () => {
     try {
       const result = await getDataFiles()
-      setFiles(result.files.map(f => f.name))
+      setFiles(result.files.map((f) => f.name))
     } catch {
       // 只影响「按数据推荐配置」这一张卡：配置表单本身走的是 loadConfig，不受牵连
       console.error('加载文件列表失败')
@@ -156,7 +161,7 @@ export default function Settings() {
       } else {
         message.warning(
           `这份配置不合法：${result.summary.errors ?? result.errors.length} 个错误、` +
-            `${result.summary.warnings ?? result.warnings.length} 个警告`
+            `${result.summary.warnings ?? result.warnings.length} 个警告`,
         )
       }
     } catch (err) {
@@ -177,10 +182,10 @@ export default function Settings() {
    */
   const applyRecommendation = () => {
     if (!recommendation) return
-    patch(c => ({
+    patch((c) => ({
       ...c,
       quality: { ...c.quality, threshold: recommendation.quality_threshold },
-      dedup: { ...c.dedup, threshold: recommendation.dedup_threshold }
+      dedup: { ...c.dedup, threshold: recommendation.dedup_threshold },
     }))
     message.success('两个阈值已填进表单，确认无误后再点「保存配置」')
   }
@@ -196,7 +201,7 @@ export default function Settings() {
         export: config?.export,
         vector: config?.vector,
         rag: config?.rag,
-        multimodal: config?.multimodal
+        multimodal: config?.multimodal,
       })
       setSaveResult(result)
       message.success('配置已保存到 config.yaml，部分配置需要重启服务生效')
@@ -224,7 +229,7 @@ export default function Settings() {
     message.success(
       trimmed
         ? '已存进这台浏览器（localStorage 明文），后续每个请求都会带上它'
-        : '输入是空的：等于清除，后续请求不再送鉴权头'
+        : '输入是空的：等于清除，后续请求不再送鉴权头',
     )
   }
 
@@ -237,8 +242,8 @@ export default function Settings() {
 
   const readonlySections = config
     ? (Object.keys(config) as (keyof AppConfig)[])
-        .filter(k => k !== 'default_model' && !FORM_SECTIONS.includes(k))
-        .map(k => [k, config[k] as Record<string, unknown>] as const)
+        .filter((k) => k !== 'default_model' && !FORM_SECTIONS.includes(k))
+        .map((k) => [k, config[k] as Record<string, unknown>] as const)
     : []
 
   return (
@@ -246,13 +251,11 @@ export default function Settings() {
       <Card title="模型配置" style={{ marginBottom: 16 }}>
         <Form layout="vertical">
           <Form.Item label="默认模型">
-            <Select
-              value={defaultModel}
-              onChange={setDefaultModel}
-              style={{ width: 300 }}
-            >
-              {models.map(model => (
-                <Select.Option key={model} value={model}>{model}</Select.Option>
+            <Select value={defaultModel} onChange={setDefaultModel} style={{ width: 300 }}>
+              {models.map((model) => (
+                <Select.Option key={model} value={model}>
+                  {model}
+                </Select.Option>
               ))}
             </Select>
           </Form.Item>
@@ -268,12 +271,12 @@ export default function Settings() {
                 min={1}
                 max={20}
                 onChange={(value) =>
-                  patch(c => ({
+                  patch((c) => ({
                     ...c,
                     augmentation: {
                       ...c.augmentation,
-                      variants_per_seed: value ?? c.augmentation.variants_per_seed
-                    }
+                      variants_per_seed: value ?? c.augmentation.variants_per_seed,
+                    },
                   }))
                 }
               />
@@ -284,12 +287,12 @@ export default function Settings() {
                 min={1}
                 max={100}
                 onChange={(value) =>
-                  patch(c => ({
+                  patch((c) => ({
                     ...c,
                     augmentation: {
                       ...c.augmentation,
-                      num_threads: value ?? c.augmentation.num_threads
-                    }
+                      num_threads: value ?? c.augmentation.num_threads,
+                    },
                   }))
                 }
               />
@@ -305,7 +308,7 @@ export default function Settings() {
               <Switch
                 checked={config?.quality?.enabled}
                 onChange={(checked) =>
-                  patch(c => ({ ...c, quality: { ...c.quality, enabled: checked } }))
+                  patch((c) => ({ ...c, quality: { ...c.quality, enabled: checked } }))
                 }
               />
             </Form.Item>
@@ -316,9 +319,9 @@ export default function Settings() {
                 max={1}
                 step={0.1}
                 onChange={(value) =>
-                  patch(c => ({
+                  patch((c) => ({
                     ...c,
-                    quality: { ...c.quality, threshold: value ?? c.quality.threshold }
+                    quality: { ...c.quality, threshold: value ?? c.quality.threshold },
                   }))
                 }
               />
@@ -334,7 +337,7 @@ export default function Settings() {
               <Switch
                 checked={config?.dedup?.enabled}
                 onChange={(checked) =>
-                  patch(c => ({ ...c, dedup: { ...c.dedup, enabled: checked } }))
+                  patch((c) => ({ ...c, dedup: { ...c.dedup, enabled: checked } }))
                 }
               />
             </Form.Item>
@@ -345,9 +348,9 @@ export default function Settings() {
                 max={1}
                 step={0.1}
                 onChange={(value) =>
-                  patch(c => ({
+                  patch((c) => ({
                     ...c,
-                    dedup: { ...c.dedup, threshold: value ?? c.dedup.threshold }
+                    dedup: { ...c.dedup, threshold: value ?? c.dedup.threshold },
                   }))
                 }
               />
@@ -391,7 +394,7 @@ export default function Settings() {
             value={recommendFile}
             onChange={setRecommendFile}
             placeholder="选择用来观测的数据集"
-            options={files.map(f => ({ value: f, label: f }))}
+            options={files.map((f) => ({ value: f, label: f }))}
           />
           <Button loading={recommending} onClick={handleRecommend}>
             取推荐值
@@ -412,10 +415,7 @@ export default function Settings() {
               </Col>
               <Col span={8}>
                 <Card>
-                  <Statistic
-                    title="建议抽样条数"
-                    value={recommendation.recommended_sample_size}
-                  />
+                  <Statistic title="建议抽样条数" value={recommendation.recommended_sample_size} />
                 </Card>
               </Col>
             </Row>
@@ -508,7 +508,7 @@ export default function Settings() {
                       </Tag>
                       <code>{issue.path}</code>：{issue.message}
                     </li>
-                  )
+                  ),
                 )}
               </ul>
             )}
@@ -525,12 +525,13 @@ export default function Settings() {
           路径留空时校验的是**服务自己**正在用的那份（AUGMENTOR_CONFIG_PATH，缺省 config.yaml）；
           那份不存在时同样回 200，判决是「不合法」加一句「文件不存在: …」，不是 404。
           显式填路径时走数据白名单：白名单外 403、不存在 404、空串 400「文件路径 不能为空」
-          （三档实测）——所以本层把空串丢成「不送这一格」，走服务自己那份。判决通道与本页其余动作不同：校验不通过也回 200，红绿只看 body 里的 is_valid。
+          （三档实测）——所以本层把空串丢成「不送这一格」，走服务自己那份。判决通道与本页其余动作不同：校验不通过也回
+          200，红绿只看 body 里的 is_valid。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           每条问题带一个行号格，但实测**恒为空**（合法、非法、YAML 解析错三档都是 null），
-          所以这里不按行号排序、也不提供「跳到出错行」。YAML 本身解析不了时，那一格的路径
-          显示为 yaml。
+          所以这里不按行号排序、也不提供「跳到出错行」。YAML 本身解析不了时，那一格的路径 显示为
+          yaml。
         </div>
       </Card>
 
@@ -541,10 +542,12 @@ export default function Settings() {
               <Input.Password
                 aria-label="写操作鉴权 API Key"
                 value={apiKeyInput}
-                onChange={e => setApiKeyInput(e.target.value)}
+                onChange={(e) => setApiKeyInput(e.target.value)}
                 placeholder="服务端设了 AUGMENTOR_API_KEY 时才需要填"
               />
-              <Button type="primary" onClick={saveApiKey}>存进这台浏览器</Button>
+              <Button type="primary" onClick={saveApiKey}>
+                存进这台浏览器
+              </Button>
               <Button onClick={clearApiKey}>清除</Button>
             </Space.Compact>
           </Form.Item>
@@ -557,10 +560,11 @@ export default function Settings() {
           留空即可，填了也不会被拒——服务端那一格看见环境变量为空就直接放过。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
-          影响面（L233 实测、L236 / L243 复核）：契约面 77 条操作里有 25 条挂着这道门禁，其中 25 条是页面上已
+          影响面（L233 实测、L236 / L243 复核）：契约面 77 条操作里有 25 条挂着这道门禁，其中 25
+          条是页面上已
           接线的动作——保存配置、上传、导出与批量导出、启动增强、版本创建与回滚、改删单条、
-          六只数据集变换、备份那四只（创建、恢复、删除、清理）、数据集登记、质量画像、迁移与流式、批量翻译。key 不对或没填，它们
-          一律回 401，错误提示会指回这张卡。
+          六只数据集变换、备份那四只（创建、恢复、删除、清理）、数据集登记、质量画像、迁移与流式、批量翻译。key
+          不对或没填，它们 一律回 401，错误提示会指回这张卡。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           存哪儿：这台浏览器的 localStorage，<strong>明文</strong>。换浏览器、换机器、清站点数据
@@ -570,13 +574,21 @@ export default function Settings() {
       </Card>
 
       <Card title="配置说明">
-        <p>配置文件位于: <code>config.yaml</code></p>
+        <p>
+          配置文件位于: <code>config.yaml</code>
+        </p>
         <p>修改配置后需要重启服务才能生效。</p>
         <p>环境变量配置：</p>
         <ul>
-          <li><code>BAIDU_API_KEY</code> - 百度 API Key</li>
-          <li><code>BAIDU_SECRET_KEY</code> - 百度 Secret Key</li>
-          <li><code>OPENAI_API_KEY</code> - OpenAI API Key</li>
+          <li>
+            <code>BAIDU_API_KEY</code> - 百度 API Key
+          </li>
+          <li>
+            <code>BAIDU_SECRET_KEY</code> - 百度 Secret Key
+          </li>
+          <li>
+            <code>OPENAI_API_KEY</code> - OpenAI API Key
+          </li>
           <li>
             <code>AUGMENTOR_API_KEY</code> - 写操作鉴权（服务端那一半；填进上面那张卡才生效）
           </li>
@@ -598,14 +610,15 @@ export default function Settings() {
               <Tag color={(saveResult.ignored_keys ?? []).length === 0 ? 'green' : 'orange'}>
                 ignored_keys: {(saveResult.ignored_keys ?? []).length} 个
               </Tag>
-              {(saveResult.ignored_keys ?? []).map(key => (
+              {(saveResult.ignored_keys ?? []).map((key) => (
                 <Tag key={key} color="orange">
                   <code>{key}</code>
                 </Tag>
               ))}
             </div>
             <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
-              形状两种：<code>section.key</code> 是节内未知子键（被 <code>hasattr</code> 丢回去的那些），
+              形状两种：<code>section.key</code> 是节内未知子键（被 <code>hasattr</code>{' '}
+              丢回去的那些），
               <code>section</code> 是整节不在写入清单里或节名拼错——按有没有那个点就能分开看。
             </div>
           </>

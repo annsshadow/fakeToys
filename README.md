@@ -74,7 +74,7 @@
 | augmentor 单测 | **10174 passed / 0 failed** | 100 轮优化台账 · 第 20 轮 |
 | 编译告警门禁 | **13 通过 / 0 失败 / 1 跳过** | `node scripts/check-warnings.mjs` |
 | 全仓提交 | **3404** | `git rev-list --count HEAD` |
-| 优化轮次 | **29 / 100** | `docs/plans/optimization-rounds-100.md` |
+| 优化轮次 | **100 / 100** | `docs/plans/optimization-rounds-100-batch3.md` |
 
 </div>
 
@@ -171,7 +171,7 @@ node scripts/check-warnings.mjs --only rust,admin
 
 这个仓库正跑着一条**有台账、可复现、不允许中途糊弄**的优化流水线。每轮 = 勘察 → 实现 → 验证 → 提交 → 推送，全程记账。
 
-**当前进度：29 / 100 轮**
+**当前进度：100 / 100 轮**
 
 <details>
 <summary><b>📖 最近 10 轮台账（点击展开）</b></summary>
@@ -191,7 +191,7 @@ node scripts/check-warnings.mjs --only rust,admin
 
 </details>
 
-> 完整台账：[`docs/plans/optimization-rounds-100.md`](docs/plans/optimization-rounds-100.md)
+> 完整台账（第三批）：[`docs/plans/optimization-rounds-100-batch3.md`](docs/plans/optimization-rounds-100-batch3.md)
 
 ---
 
@@ -241,7 +241,7 @@ pnpm install && pnpm dev
 
 **工程完善**
 - CI 全面进仓：Go server / Vue admin / uni-app miniapp 三端自动化测试
-- 50 张业务表 + 19 个 goose 迁移、端到端验收脚本
+- 50 张业务表 + 23 个 goose 迁移、端到端验收脚本
 - 双端契约守卫、公式一致性测试、100 关零死锁验证
 
 ```bash

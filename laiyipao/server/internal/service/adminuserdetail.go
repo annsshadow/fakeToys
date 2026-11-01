@@ -1,9 +1,13 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"encoding/csv"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -44,6 +48,31 @@ type AdminUserDetailResp struct {
 	Verifications []AdminVerificationView `json:"verifications"`
 	// FlowCount 是钱包流水的条数（用于「有没有流水」这个问题的快答）。
 	FlowCount int `json:"flow_count"`
+	// Defense 是玩家的防线（未设置防线时为 null）（2026-10-31 新一轮第 31 轮）。
+	Defense *AdminDefenseView `json:"defense"`
+	// BanRecords 是最近 20 条封禁/解封审计（2026-11-01 新一轮第 58 轮）。
+	// 运营打开用户详情能看到「为什么被封、谁封的、什么时候解的」。
+	BanRecords []AdminBanRecordView `json:"ban_records"`
+	// RecentFlows 是最近 10 条钱包流水（2026-11-01 新一轮第 66 轮）。
+	// 回答「钱去哪了 / 钱从哪来」—— 不止有 flow_count 这个数字。
+	RecentFlows []AdminUserFlowView `json:"recent_flows"`
+}
+
+// AdminUserFlowView 是一条钱包流水（玩家详情视角）。
+type AdminUserFlowView struct {
+	Currency  string    `json:"currency"`
+	Delta     int64     `json:"delta"`
+	Balance   int64     `json:"balance"`
+	Reason    string    `json:"reason"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// AdminBanRecordView 是一条封禁/解封审计记录。
+type AdminBanRecordView struct {
+	Action    string          `json:"action"` // ban_user / unban_user
+	Username  string          `json:"username"`
+	Reason    json.RawMessage `json:"reason"` // detail 原样（{reason: "..."}）
+	CreatedAt time.Time       `json:"created_at"`
 }
 
 // AdminVerificationView 是一条验真记录。
@@ -118,7 +147,7 @@ func (s *Service) AdminUserDetail(ctx context.Context, userID int64) (AdminUserD
 	}
 	out.User = u
 
-	// 2)~7) 并发段。段序 = 曾经的串行执行顺序；errs[i] 非 nil 即该段失败，
+	// 2)~8) 并发段。段序 = 曾经的串行执行顺序；errs[i] 非 nil 即该段失败，
 	// wg.Wait() 后按序优先返回——与串行版的「第一个错误」一致。
 	var (
 		wg            sync.WaitGroup
@@ -129,7 +158,10 @@ func (s *Service) AdminUserDetail(ctx context.Context, userID int64) (AdminUserD
 		battles       []AdminBattleView
 		verifications []AdminVerificationView
 		flowCount     int
-		errs          [7]error
+		defense       *AdminDefenseView
+		banRecords    []AdminBanRecordView
+		recentFlows   []AdminUserFlowView
+		errs          [10]error
 	)
 	seg := func(i int, fn func()) {
 		wg.Add(1)
@@ -198,7 +230,7 @@ func (s *Service) AdminUserDetail(ctx context.Context, userID int64) (AdminUserD
 	// 6) 最近战报
 	seg(4, func() {
 		var err error
-		battles, _, err = s.AdminListBattles(ctx, userID, 0, 10, false, 0)
+		battles, _, err = s.AdminListBattles(ctx, userID, 0, 10, false, 0, nil, nil, "")
 		if err != nil {
 			errs[4] = fmt.Errorf("load user battles: %w", err)
 		}
@@ -241,6 +273,85 @@ func (s *Service) AdminUserDetail(ctx context.Context, userID int64) (AdminUserD
 		}
 	})
 
+	// 9) 防线（2026-10-31 新一轮第 31 轮）：未设置防线时保持 nil。
+	seg(7, func() {
+		var v AdminDefenseView
+		var shielded *time.Time
+		var updated time.Time
+		err := s.pool.QueryRow(ctx,
+			`SELECT d.id, d.owner_id, u.nickname, d.name, d.power, d.element_coverage,
+			        d.mastery_done, d.wins, d.losses, d.shielded_until, d.updated_at,
+			        d.snapshot_hash
+			 FROM defenses d JOIN users u ON u.id = d.owner_id
+			 WHERE d.owner_id = $1`, userID).
+			Scan(&v.ID, &v.OwnerID, &v.OwnerName, &v.Name, &v.Power, &v.ElementCoverage,
+				&v.MasteryDone, &v.Wins, &v.Losses, &shielded, &updated, &v.SnapshotHash)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return // 没有防线不是错误
+		}
+		if err != nil {
+			errs[7] = fmt.Errorf("load user defense: %w", err)
+			return
+		}
+		v.ShieldedUntil = shielded
+		v.UpdatedAt = updated
+		defense = &v
+	})
+
+	// 10) 封禁/解封记录（2026-11-01 新一轮第 58 轮）。
+	// 后台审计的 target 是用户 id 字符串（ban_user/unban_user）。
+	seg(8, func() {
+		rows, err := s.pool.Query(ctx,
+			`SELECT action, username, detail, created_at
+			 FROM admin_audit_logs
+			 WHERE action IN ('ban_user','unban_user') AND target = $1
+			 ORDER BY id DESC LIMIT 20`, strconv.FormatInt(userID, 10))
+		if err != nil {
+			errs[8] = fmt.Errorf("load user ban records: %w", err)
+			return
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var v AdminBanRecordView
+			var detail []byte
+			if err := rows.Scan(&v.Action, &v.Username, &detail, &v.CreatedAt); err != nil {
+				errs[8] = err
+				return
+			}
+			v.Reason = json.RawMessage(detail)
+			banRecords = append(banRecords, v)
+		}
+		if err := rows.Err(); err != nil {
+			errs[8] = fmt.Errorf("load user ban records: %w", err)
+		}
+	})
+
+	// 11) 最近钱包流水（2026-11-01 新一轮第 66 轮）。
+	// 回答「钱去哪了 / 钱从哪来」—— flow_count 只有条数，这里是明细。
+	seg(9, func() {
+		rows, err := s.pool.Query(ctx,
+			`SELECT currency, delta, balance, reason, created_at
+			 FROM wallet_flows
+			 WHERE user_id = $1
+			 ORDER BY id DESC LIMIT 10`, userID)
+		if err != nil {
+			errs[9] = fmt.Errorf("load user flows: %w", err)
+			return
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var v AdminUserFlowView
+			if err := rows.Scan(&v.Currency, &v.Delta, &v.Balance, &v.Reason, &v.CreatedAt); err != nil {
+				errs[9] = err
+				return
+			}
+			recentFlows = append(recentFlows, v)
+		}
+		if err := rows.Err(); err != nil {
+			errs[9] = fmt.Errorf("load user flows: %w", err)
+		}
+	})
+
 	wg.Wait()
 	for _, err := range errs {
 		if err != nil {
@@ -260,6 +371,69 @@ func (s *Service) AdminUserDetail(ctx context.Context, userID int64) (AdminUserD
 	out.RecentBattles = battles
 	out.Verifications = verifications
 	out.FlowCount = flowCount
+	out.Defense = defense
+	out.BanRecords = banRecords
+	out.RecentFlows = recentFlows
 
 	return out, nil
+}
+
+// AdminExportUserFlows 导出单个用户的全部钱包流水 CSV（UTF-8 BOM）。
+//
+// 详情抽屉只展示最近 10 条流水，运营审计「这个玩家的钱从哪来/去哪了」
+// 需要全量明细（2026-11-01 新一轮第 82 轮）。
+func (s *Service) AdminExportUserFlows(ctx context.Context, userID int64) ([]byte, error) {
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, currency, delta, balance, reason, ref_id, created_at
+		 FROM wallet_flows
+		 WHERE user_id = $1
+		 ORDER BY id DESC LIMIT 100000`, userID)
+	if err != nil {
+		return nil, fmt.Errorf("export user flows: %w", err)
+	}
+	defer rows.Close()
+
+	var buf bytes.Buffer
+	buf.WriteString("\xEF\xBB\xBF")
+	w := csv.NewWriter(&buf)
+	header := []string{"id", "currency", "delta", "balance", "reason", "ref_id", "created_at"}
+	if err := w.Write(header); err != nil {
+		return nil, fmt.Errorf("write csv header: %w", err)
+	}
+
+	for rows.Next() {
+		var (
+			id, delta, balance int64
+			currency, reason   string
+			refID              *int64
+			createdAt          time.Time
+		)
+		if err := rows.Scan(&id, &currency, &delta, &balance, &reason, &refID, &createdAt); err != nil {
+			return nil, fmt.Errorf("scan export user flow: %w", err)
+		}
+		ref := ""
+		if refID != nil {
+			ref = strconv.FormatInt(*refID, 10)
+		}
+		rec := []string{
+			strconv.FormatInt(id, 10),
+			currency,
+			strconv.FormatInt(delta, 10),
+			strconv.FormatInt(balance, 10),
+			reason,
+			ref,
+			createdAt.UTC().Format(time.RFC3339),
+		}
+		if err := w.Write(rec); err != nil {
+			return nil, fmt.Errorf("write csv row: %w", err)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	w.Flush()
+	if err := w.Error(); err != nil {
+		return nil, fmt.Errorf("flush csv: %w", err)
+	}
+	return buf.Bytes(), nil
 }
