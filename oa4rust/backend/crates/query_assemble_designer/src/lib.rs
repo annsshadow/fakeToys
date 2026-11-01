@@ -186,7 +186,7 @@ pub fn add_column_ddl(
     let table_name = physical_table_name(table_flag)?;
     validate_identifier(&column.name)?;
     Ok(format!(
-        "ALTER TABLE \"{}\" ADD COLUMN \"{}\" {}{}",
+        "ALTER TABLE \"{}\" ADD COLUMN \"{}\" {}{};",
         table_name,
         column.name,
         postgres_column_type(&column.data_type)?,
@@ -363,15 +363,26 @@ pub async fn execute_table_definition(
             .into_iter()
             .map(|row| row.get::<_, String>("column_name"))
             .collect::<std::collections::HashSet<_>>();
-        for column in &columns {
-            if !existing_names.contains(&column.name) {
-                let ddl = add_column_ddl(&flag, column)?;
-                client
-                    .batch_execute(&ddl)
-                    .await
-                    .map_err(|_| AppError::Internal)?;
-                applied.push(column.name.clone());
+        // 第 54 轮：缺的列一次拼成多语句 DDL 批量执行。
+        // 此前每个新列一条 `batch_execute`（N 列 N 次往返）；表定义大时
+        // 建表 handler 的延迟被 N 个 RTT 线性放大。
+        let missing: Vec<&TableColumnDefinition> = columns
+            .iter()
+            .filter(|c| !existing_names.contains(&c.name))
+            .collect();
+        if !missing.is_empty() {
+            let mut ddl = Vec::with_capacity(missing.len());
+            for column in &missing {
+                ddl.push(add_column_ddl(&flag, column)?);
             }
+            client
+                .batch_execute(&ddl.join(
+                    "
+",
+                ))
+                .await
+                .map_err(|_| AppError::Internal)?;
+            applied.extend(missing.iter().map(|c| c.name.clone()));
         }
     } else {
         let ddl = create_table_ddl(&flag, &columns)?;

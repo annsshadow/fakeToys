@@ -3,6 +3,45 @@
 
 use super::*;
 use axum::body::Body;
+
+/// 第 54 轮：缺列合并成一条多语句 DDL —— 每条 `add_column_ddl` 必须分号结尾，
+/// 拼接后是 N 条独立 ALTER TABLE，可由 `batch_execute` 一次执行。
+#[test]
+fn add_column_ddl_produces_batchable_multi_statement() {
+    let cols = [
+        TableColumnDefinition {
+            name: "col_a".into(),
+            data_type: "text".into(),
+            nullable: true,
+        },
+        TableColumnDefinition {
+            name: "col_b".into(),
+            data_type: "integer".into(),
+            nullable: false,
+        },
+    ];
+    let mut stmts = Vec::new();
+    for c in &cols {
+        stmts.push(add_column_ddl("x_query_design", c).expect("合法列名应生成 DDL"));
+    }
+    for s in &stmts {
+        assert!(
+            s.trim_end().ends_with(';'),
+            "每条 ALTER 必须分号结尾才能拼多语句: {s}"
+        );
+    }
+    let batch = stmts.join(
+        "
+",
+    );
+    assert!(batch.contains("ADD COLUMN \"col_a\""));
+    assert!(batch.contains("ADD COLUMN \"col_b\""));
+    assert_eq!(
+        batch.matches("ALTER TABLE").count(),
+        2,
+        "两条独立 ALTER 才能一次 batch_execute"
+    );
+}
 use axum::http::{Method, Request, StatusCode};
 use deadpool_postgres::tokio_postgres::{Config, NoTls};
 use deadpool_postgres::{Manager, Pool};
