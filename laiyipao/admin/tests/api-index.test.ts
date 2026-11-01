@@ -42,6 +42,15 @@ import {
   updateShopItem,
   updateSkill,
   fetchAuditLogs,
+  adminLogout,
+  fetchDashboardSoft,
+  fetchUserDetail,
+  verifyBattle,
+  fetchRecomputes,
+  fetchRecomputeStats,
+  fetchRecomputeMode,
+  setRecomputeMode,
+  fetchReactions,
 } from '@/api'
 
 /** 让 mock 返回「收到的参数」本身：一条断言同时验证参数组装与返回值透传 */
@@ -259,5 +268,101 @@ describe('api/index 经济与运营内容', () => {
     await expect(fetchAuditLogs(7, 14)).resolves.toEqual({
       __args: ['/admin/audit-logs?limit=7&offset=14'],
     })
+  })
+})
+
+/**
+ * 补测：此前 `api/index.ts` 有 9 个导出函数没有任何用例（覆盖率 66%），
+ * 恰好是「破坏性操作」与「带默认值的分页参数」两类 —— 也正是路径拼错、
+ * 默认值写反后最不容易被发现的地方。
+ */
+describe('api/index 会话与看板（补测）', () => {
+  it('adminLogout：POST /admin/logout（服务端吊销全部会话，不只是清本地）', async () => {
+    echoArgs()
+    await expect(adminLogout()).resolves.toEqual({ __args: ['/admin/logout'] })
+    expect(apiMock.post).toHaveBeenCalledWith('/admin/logout')
+    expect(apiMock.get).not.toHaveBeenCalled()
+  })
+
+  it('fetchDashboardSoft：GET /admin/dashboard 但带 soft 标记（401 不跳登录）', async () => {
+    echoArgs()
+    await expect(fetchDashboardSoft()).resolves.toEqual({
+      __args: ['/admin/dashboard', { soft: true }],
+    })
+  })
+})
+
+describe('api/index 用户与战斗（补测）', () => {
+  it('fetchUserDetail：GET /admin/users/{id}', async () => {
+    echoArgs()
+    await expect(fetchUserDetail(42)).resolves.toEqual({ __args: ['/admin/users/42'] })
+  })
+
+  it('verifyBattle：POST /admin/battles/{id}/verify，body 是 snake_case 的 replay_hash', async () => {
+    // 字段名写错（replayHash）服务端会当成缺参 → 校验恒失败，但前端不会报错
+    echoArgs()
+    await expect(verifyBattle(9, 'abc123')).resolves.toEqual({
+      __args: ['/admin/battles/9/verify', { replay_hash: 'abc123' }],
+    })
+  })
+})
+
+describe('api/index 结算重算（补测）', () => {
+  it('fetchRecomputes：无条件时只带默认 limit=50', async () => {
+    echoArgs()
+    await expect(fetchRecomputes()).resolves.toEqual({
+      __args: ['/admin/recomputes?limit=50'],
+    })
+  })
+
+  it('fetchRecomputes：全条件拼接，only_mismatch 用 1/不出现表达', async () => {
+    echoArgs()
+    await expect(
+      fetchRecomputes({ user_id: 7, level_id: 3, limit: 10, offset: 20, only_mismatch: true }),
+    ).resolves.toEqual({
+      __args: ['/admin/recomputes?user_id=7&level_id=3&only_mismatch=1&limit=10&offset=20'],
+    })
+  })
+
+  it('fetchRecomputes：only_mismatch=false 不得出现在 query 里', async () => {
+    // 传 false 却拼出 only_mismatch=0 会让「只看不符」的语义反转
+    echoArgs()
+    await fetchRecomputes({ only_mismatch: false })
+    expect(apiMock.get).toHaveBeenCalledWith('/admin/recomputes?limit=50')
+  })
+
+  it('fetchRecomputeStats：hours 缺省 24，可覆盖', async () => {
+    echoArgs()
+    await expect(fetchRecomputeStats()).resolves.toEqual({
+      __args: ['/admin/recomputes/stats?hours=24'],
+    })
+    await expect(fetchRecomputeStats(72)).resolves.toEqual({
+      __args: ['/admin/recomputes/stats?hours=72'],
+    })
+  })
+
+  it('fetchRecomputeMode：GET /admin/recomputes/mode', async () => {
+    echoArgs()
+    await expect(fetchRecomputeMode()).resolves.toEqual({
+      __args: ['/admin/recomputes/mode'],
+    })
+  })
+
+  it('setRecomputeMode：PUT 且必须带 confirm=confirm（防手滑关掉反作弊）', async () => {
+    echoArgs()
+    await expect(setRecomputeMode('enforce')).resolves.toEqual({
+      __args: ['/admin/recomputes/mode', { mode: 'enforce', confirm: 'confirm' }],
+    })
+    expect(apiMock.put).toHaveBeenCalled()
+  })
+})
+
+describe('api/index 反应表（补测）', () => {
+  it('fetchReactions：GET /admin/reactions 并解包出 reactions 字段', async () => {
+    // 与其它函数不同，这里做了 .then 解包：返回的是数组而不是信封，
+    // 视图直接 v-for 它 —— 解包写错会让整张图空白。
+    apiMock.get.mockResolvedValue({ reactions: [{ key: 'fire', name: '火' }] } as never)
+    await expect(fetchReactions()).resolves.toEqual([{ key: 'fire', name: '火' }])
+    expect(apiMock.get).toHaveBeenCalledWith('/admin/reactions')
   })
 })

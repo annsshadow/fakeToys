@@ -18,6 +18,13 @@ use sqlparser::ast::Statement;
 use sqlparser::dialect::PostgreSqlDialect;
 use sqlparser::parser::Parser;
 
+/// 会话存在档门：无会话（Option<Extension<Session>> = None）→ 401。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 /// sqlparser 安全约束：仅允许单条 SELECT 语句，拒绝 DML/DDL/多语句。
 pub fn validate_single_select(sql: &str) -> Result<(), String> {
     let trimmed = sql.trim();
@@ -1786,9 +1793,10 @@ pub async fn output_select_put(
 #[allow(non_snake_case)]
 pub async fn query_create_v2(
     pool: Extension<Pool>,
-    session: Extension<Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = body_str(&body, &["name"]).unwrap_or_default();
@@ -1818,7 +1826,7 @@ pub async fn query_create_v2(
         .execute(
             "INSERT INTO x_query_design (id, flag, name, category, query_definition, creator, create_time, update_time) \
              VALUES ($1, $2, $3, $4, $5, $6, to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'), NOW())",
-            &[&id, &flag, &name, &category, &query_definition, &session.person_unique],
+            &[&id, &flag, &name, &category, &query_definition, &sess.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;

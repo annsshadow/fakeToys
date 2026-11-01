@@ -3,8 +3,10 @@
 
 """Anthropic Claude 模型后端"""
 
+import asyncio
 import logging
-from typing import Optional
+from typing import Any, Optional
+
 from .base import ModelBackend, extract_json_array
 from ..config import ModelConfig
 from ..exceptions import ModelGenerateError, ModelNotConfiguredError
@@ -57,6 +59,35 @@ class ClaudeBackend(ModelBackend):
 
         base_url = (config.base_url or self.DEFAULT_BASE_URL).rstrip('/')
         self.api_url = f"{base_url}/v1/messages"
+        # 异步客户端与它所属的事件循环（同 OpenAIBackend / OllamaBackend）。
+        self._async_client: Optional[Any] = None
+        self._async_loop: Optional[Any] = None
+
+    def _build_request(self, prompt: str) -> tuple:
+        """构造 (headers, payload)。同步与异步两条路径用同一份请求体，
+        避免「切到异步后模型行为变了」只能靠肉眼比对两段代码。"""
+        headers = {
+            "x-api-key": self.config.api_key,
+            "anthropic-version": self.API_VERSION,
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": self.config.model,
+            "max_tokens": self.config.max_output_tokens,
+            "temperature": self.config.temperature,
+            "top_p": self.config.top_p,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+        return headers, payload
+
+    @staticmethod
+    def _parse_response(data: Any) -> str:
+        """从响应体取全部 text 块拼接。同步/异步共用，避免两处各判一次空。"""
+        content = data.get("content")
+        if not content:
+            raise ModelGenerateError(f"API 响应异常: {data}")
+        texts = [block.get("text", "") for block in content if block.get("type") == "text"]
+        return "".join(texts)
 
     def _call_api(self, prompt: str) -> str:
         """调用 Claude Messages API（使用连接池）
@@ -67,36 +98,55 @@ class ClaudeBackend(ModelBackend):
         Returns:
             模型生成的文本
         """
-        headers = {
-            "x-api-key": self.config.api_key,
-            "anthropic-version": self.API_VERSION,
-            "Content-Type": "application/json"
-        }
-
-        payload = {
-            "model": self.config.model,
-            "max_tokens": self.config.max_output_tokens,
-            "temperature": self.config.temperature,
-            "top_p": self.config.top_p,
-            "messages": [
-                {"role": "user", "content": prompt}
-            ]
-        }
-
+        headers, payload = self._build_request(prompt)
         session = self._get_session()
         response = session.post(self.api_url, json=payload, headers=headers,
                                 timeout=self._request_timeout)
         response.raise_for_status()
 
-        data = response.json()
+        return self._parse_response(response.json())
 
-        content = data.get("content")
-        if not content:
-            raise ModelGenerateError(f"API 响应异常: {data}")
+    async def _acall_api(self, prompt: str) -> str:
+        """原生异步调用 Claude API（httpx.AsyncClient）。
 
-        # content 为块列表，拼接所有 text 块
-        texts = [block.get("text", "") for block in content if block.get("type") == "text"]
-        return "".join(texts)
+        同 OpenAIBackend / OllamaBackend：httpx 可选，缺它回退基类线程池实现；
+        AsyncClient 跟随事件循环，换循环则关闭重建。
+        """
+        try:
+            import httpx
+        except ImportError:
+            logger.warning(
+                "httpx 不可用，异步调用回退为线程池（功能不受影响，但不省线程）"
+            )
+            return await super()._acall_api(prompt)
+
+        headers, payload = self._build_request(prompt)
+        client = await self._async_client_for(httpx)
+        response = await client.post(self.api_url, json=payload, headers=headers)
+        response.raise_for_status()
+        return self._parse_response(response.json())
+
+    async def _async_client_for(self, httpx_module: Any) -> Any:
+        """取当前事件循环可用的 AsyncClient（换循环则重建）。"""
+        loop = asyncio.get_running_loop()
+        if self._async_client is not None and self._async_loop is loop:
+            return self._async_client
+        if self._async_client is not None:
+            old, self._async_client = self._async_client, None
+            try:
+                await old.aclose()
+            except Exception:
+                logger.debug("关闭上一个异步客户端失败（循环可能已关闭）", exc_info=True)
+        self._async_client = httpx_module.AsyncClient(timeout=self._request_timeout)
+        self._async_loop = loop
+        return self._async_client
+
+    async def aclose(self) -> None:
+        """关闭异步客户端（与基类 close() 同族，只是必须 await）。"""
+        client, self._async_client = self._async_client, None
+        self._async_loop = None
+        if client is not None:
+            await client.aclose()
 
     def extract_json_from_response(self, response: str) -> list:
         """从响应中提取 JSON 数组

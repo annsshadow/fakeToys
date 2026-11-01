@@ -23,6 +23,13 @@
         </view>
       </scroll-view>
 
+      <!-- 章节星级进度（2026-11-01 新一轮第 52 轮）：
+           玩家能一眼看到本章节还差多少星才全清。 -->
+      <view v-if="chapterLevels.length" class="star-progress">
+        <text class="muted">本章节星级</text>
+        <text class="mono">{{ chapterStars }} / {{ chapterTotal }}</text>
+      </view>
+
       <!-- 关卡网格 -->
       <view class="grid">
         <view
@@ -73,6 +80,33 @@
           <text class="terrain-note-name">{{ terrainName(t.kind) }}</text>
           <text class="terrain-note-descr">{{ terrainDescr(t.kind) }}</text>
         </view>
+        <!-- 敌人组成预览（2026-10-31 新一轮第 29 轮） -->
+        <view v-if="detailWaves.length" class="wave-list">
+          <text class="muted" style="display: block; margin-bottom: 4rpx">敌人组成</text>
+          <view v-for="(w, wi) in detailWaves" :key="wi" class="wave-row">
+            <text class="muted">第 {{ wi + 1 }} 波</text>
+            <text v-for="(sp, si) in w.spawns" :key="si" class="wave-spawn">
+              {{ enemyName(sp.enemy_id) }} ×{{ sp.count }}
+            </text>
+          </view>
+        </view>
+        <!-- 通关掉落预览（2026-11-01 新一轮第 39 轮） -->
+        <view v-if="dropPreview" class="drop-preview">
+          <text class="muted" style="display: block; margin-bottom: 4rpx">通关掉落</text>
+          <view class="info-row"><text class="muted">基础金币</text><text class="mono">{{ dropPreview.base }}</text></view>
+          <view class="info-row"><text class="muted">三星金币</text><text class="mono">+{{ dropPreview.starCoin }}</text></view>
+          <view v-if="dropPreview.totalEnemies > 0" class="info-row">
+            <text class="muted">击杀金币（约 {{ dropPreview.totalEnemies }} 只）</text>
+            <text class="mono">+{{ dropPreview.killCoin }}</text>
+          </view>
+          <view class="info-row"><text class="muted">反应加成（每 10 次反应）</text><text class="mono">+{{ dropPreview.reactionBonus }}</text></view>
+          <view v-if="dropPreview.keys > 0" class="info-row">
+            <text class="muted">三星钥匙</text><text class="mono">×{{ dropPreview.keys }}</text>
+          </view>
+          <view v-if="dropPreview.energy > 0" class="info-row">
+            <text class="muted">通关返还体力</text><text class="mono">+{{ dropPreview.energy }}</text>
+          </view>
+        </view>
         <view class="star-targets">
           <text class="muted">星级门槛</text>
           <text v-for="(s, i) in selected.star_targets" :key="i" class="target">
@@ -104,13 +138,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import {onLoad, onShow} from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import { unlockSfx } from '@/audio/sfx'
 import * as api from '@/api/client'
 import { TERRAIN_NAME, TERRAIN_DESCR } from '@/game/terrain'
-import type { LevelSummary, TerrainKind } from '@/game/types'
+import type { LevelSummary, TerrainKind, Wave } from '@/game/types'
 
 const store = useGameStore()
 
@@ -139,6 +173,16 @@ const chapterLevels = computed<LevelSummary[]>(() => {
   return all.filter((l) => l.chapter === curChapter.value)
 })
 
+/**
+ * 章节星级进度（2026-11-01 新一轮第 52 轮）。
+ * 星级以服务端 level_stars 为准（starOf 读取 stars.value），
+ * 汇总当前章节已获星星与理论上限（关卡数 × 3）。
+ */
+const chapterStars = computed(() =>
+  chapterLevels.value.reduce((sum, lv) => sum + (starOf(lv.id) ?? 0), 0),
+)
+const chapterTotal = computed(() => chapterLevels.value.length * 3)
+
 // 选关页只读元数据（章节/名称/难度/体力/星级/地形），**不需要 waves** ——
 // 所以这里用摘要类型就够，不必为此把完整关卡拉回来。
 const selected = computed<LevelSummary | null>(() => {
@@ -147,6 +191,39 @@ const selected = computed<LevelSummary | null>(() => {
 })
 
 const canEnter = computed(() => !!selected.value && selected.value.id <= store.unlockedLevel)
+
+/**
+ * 敌人组成预览（2026-10-31 新一轮第 29 轮）。
+ *
+ * 选关页此前只显示血量/波次/难度/地形/星级门槛 —— 玩家不知道这关
+ * 会遇到什么敌人（飞行/精英/Boss 等），「这关为什么难」只能进战斗
+ * 试错。`/levels/:id` 本就返回完整波次，这里按需拉取并展示每波敌人。
+ */
+const detailWaves = ref<Wave[]>([])
+
+const enemyNameMap = computed(() => {
+  const m = new Map<number, string>()
+  for (const e of store.config?.enemies ?? []) m.set(e.id, e.name)
+  return m
+})
+
+function enemyName(id: number): string {
+  return enemyNameMap.value.get(id) ?? `#${id}`
+}
+
+watch(selected, async (lv) => {
+  if (!lv) {
+    detailWaves.value = []
+    return
+  }
+  try {
+    const detail = await api.fetchLevel(lv.id)
+    detailWaves.value = detail.waves ?? []
+  } catch {
+    // 敌人预览是辅助信息，拉取失败不阻塞选关
+    detailWaves.value = []
+  }
+}, { immediate: true })
 
 /**
  * 体力消耗文案（2026-10-21 P4-6）。
@@ -163,6 +240,36 @@ const energyCostText = computed(() => {
   if (back <= 0) return String(cost)
   const net = cost - back
   return net > 0 ? `${cost}（通关净消耗 ${net}）` : `${cost}（通关不扣体力）`
+})
+
+/**
+ * 通关掉落预览（2026-11-01 新一轮第 39 轮）。
+ *
+ * `/config` 的 `drop_rates` 从第一天就下发，但只有 `energy_on_win`
+ * 被体力消耗文案消费 —— 玩家进关前看不到这关能拿多少金币/钥匙，
+ * 「打这关值不值」只能打完看结算。
+ *
+ * 这里汇总成收益预览：基础金币 + 三星金币（3 颗星）+ 击杀金币预估
+ * （按敌人组成求和，实际以战斗表现为准，所以标「约」）+ 反应加成
+ * （每 10 次反应）+ 三星钥匙 + 通关返还体力。
+ * `detailWaves` 拉取失败时击杀预估自动隐藏，其余规则照常展示。
+ */
+const dropPreview = computed(() => {
+  const d = store.config?.drop_rates
+  if (!d) return null
+  const totalEnemies = detailWaves.value.reduce(
+    (sum, w) => sum + w.spawns.reduce((s, sp) => s + sp.count, 0),
+    0,
+  )
+  return {
+    base: d.coin_base,
+    starCoin: d.coin_per_star * 3,
+    killCoin: d.coin_per_kill * totalEnemies,
+    totalEnemies,
+    reactionBonus: d.reaction_bonus,
+    keys: d.keys_on_three_star,
+    energy: d.energy_on_win,
+  }
 })
 
 const startLabel = computed(() => {
@@ -288,6 +395,25 @@ onMounted(() => {
   color: var(--fire);
 }
 
+/* 章节星级进度（2026-11-01 新一轮第 52 轮） */
+.star-progress {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12rpx 20rpx;
+  margin-bottom: 20rpx;
+  border-radius: 12rpx;
+  background: var(--panel);
+  border: 1rpx solid var(--border);
+  font-size: 26rpx;
+}
+
+.star-progress .mono {
+  color: var(--warn);
+  font-weight: 600;
+}
+
 .grid {
   display: flex;
   flex-direction: row;
@@ -384,6 +510,29 @@ onMounted(() => {
   font-size: 24rpx;
   color: var(--muted, #9aa0a6);
   line-height: 1.5;
+}
+
+/* 敌人组成预览（2026-10-31 新一轮第 29 轮） */
+.wave-list {
+  margin-top: 8rpx;
+}
+.wave-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8rpx 16rpx;
+  padding: 4rpx 0;
+  font-size: 24rpx;
+}
+.wave-spawn {
+  color: var(--muted, #9aa0a6);
+}
+
+/* 通关掉落预览（2026-11-01 新一轮第 39 轮） */
+.drop-preview {
+  margin-top: 8rpx;
+  padding-top: 8rpx;
+  border-top: 1rpx dashed var(--border);
 }
 
 .star-targets {

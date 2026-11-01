@@ -56,26 +56,44 @@ func (s *Service) ListAnnouncements(ctx context.Context, limit int) ([]Announcem
 		// 超出上限 → **夹到上限**，不是退回缺省
 		limit = maxAnnouncementLimit
 	}
-	rows, err := s.pool.Query(ctx, `
-		SELECT id, title, body, published_at
-		FROM announcements
-		WHERE published
-		ORDER BY published_at DESC NULLS LAST, id DESC
-		LIMIT $1`, limit)
-	if err != nil {
-		return nil, fmt.Errorf("list announcements: %w", err)
-	}
-	defer rows.Close()
-
-	// 非 nil 空切片：`[]` 而不是 `null`。
-	// 客户端对 `null` 调 `.length` 会抛，而「没有公告」是完全正常的状态。
-	out := make([]AnnouncementView, 0, limit)
-	for rows.Next() {
-		var a AnnouncementView
-		if err := rows.Scan(&a.ID, &a.Title, &a.Body, &a.PublishedAt); err != nil {
-			return nil, fmt.Errorf("scan announcement: %w", err)
+	// 2026-10-31（实质优化第 22 轮）：公告是公开端点、变化频率极低，
+	// 每次首页拉取都查库是纯浪费。缓存**全量**（最多 20 条），
+	// 再按请求 limit 复制切片 —— 不同 limit 共享同一份缓存。
+	// TTL 见 config.AnnouncementsCacheTTL；0 = 关闭缓存。
+	all, err := s.announcementsCache.getOrLoad(time.Now(), s.Cfg().AnnouncementsCacheTTL, func() ([]AnnouncementView, error) {
+		rows, err := s.pool.Query(ctx, `
+			SELECT id, title, body, published_at
+			FROM announcements
+			WHERE published
+			ORDER BY published_at DESC NULLS LAST, id DESC
+			LIMIT $1`, maxAnnouncementLimit)
+		if err != nil {
+			return nil, fmt.Errorf("list announcements: %w", err)
 		}
-		out = append(out, a)
+		defer rows.Close()
+
+		// 非 nil 空切片：`[]` 而不是 `null`。
+		// 客户端对 `null` 调 `.length` 会抛，而「没有公告」是完全正常的状态。
+		out := make([]AnnouncementView, 0, maxAnnouncementLimit)
+		for rows.Next() {
+			var a AnnouncementView
+			if err := rows.Scan(&a.ID, &a.Title, &a.Body, &a.PublishedAt); err != nil {
+				return nil, fmt.Errorf("scan announcement: %w", err)
+			}
+			out = append(out, a)
+		}
+		return out, rows.Err()
+	})
+	if err != nil {
+		return nil, err
 	}
-	return out, rows.Err()
+	// ⚠️ 复制切片再返回：`all[:limit]` 的 cap 指向缓存底层数组，
+	// 调用方一旦 append 就会覆盖缓存里的下一条。公告数据量小，复制成本可忽略。
+	n := limit
+	if len(all) < n {
+		n = len(all)
+	}
+	out := make([]AnnouncementView, n)
+	copy(out, all[:n])
+	return out, nil
 }

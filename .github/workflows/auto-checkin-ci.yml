@@ -51,3 +51,11 @@ jobs:
       - name: Test
         working-directory: auto-checkin
         run: npm test
+
+      # 覆盖率棘轮：核心文件（5 个站点适配器与 runner）行覆盖不得低于
+      # coverage-baseline.json 的地板；高于地板时提示抬地板（修复要留守卫）。
+      # 2026-10-29 B7 收口轮落地，本机实测读数见
+      # docs/plans/2026-10-27-comprehensive-test-coverage.md 的 B7 行。
+      - name: Coverage ratchet
+        working-directory: auto-checkin
+        run: npm run test:ratchet

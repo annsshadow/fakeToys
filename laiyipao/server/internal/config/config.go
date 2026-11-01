@@ -2,13 +2,115 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"os"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 )
+
+// overlay 是**配置文件覆盖层**（nil = 只读环境变量）。
+//
+// # 为什么需要它
+//
+// 本服务的配置全部来自环境变量，而运行中的进程**改不了自己的环境**
+// —— 于是「SIGHUP 重读配置」在纯环境变量模型下是空操作，热加载会变成
+// 一场表演（运维以为生效了，其实什么都没变）。要让热加载真的成立，
+// 必须有一个进程能重新读的**文件**来源。
+//
+// 用法：`CONFIG_FILE` 指向一个扁平 JSON（键名与环境变量同名），
+// 启动时读一次，SIGHUP 时重读。文件里出现的键**覆盖**同名环境变量；
+// 没出现的键仍走环境变量。
+//
+// 空字符串按「未设置」处理（与 env* 辅助函数既有的 `TrimSpace != ""` 口径
+// 一致），所以把某个键写成 "" 等于回退到环境变量。
+var overlay atomic.Pointer[map[string]string]
+
+// rawEnv 读一个配置键：覆盖层优先，其次环境变量。
+//
+// 覆盖层里的**空值视为未设置**（与 env* 辅助函数既有的 `TrimSpace != ""`
+// 口径一致）：否则把某个键写成 "" 会得到「配置为空」而不是「回退」，
+// 而后者才是运维改配置时想要的语义。
+func rawEnv(key string) string {
+	if m := overlay.Load(); m != nil {
+		if v, ok := (*m)[key]; ok && strings.TrimSpace(v) != "" {
+			return v
+		}
+	}
+	return os.Getenv(key)
+}
+
+// ApplyOverlay 安装配置文件覆盖层。传 nil 或空 map 即清除。
+//
+// 并发安全：整体替换指针，读方永远看到一份完整覆盖层。
+func ApplyOverlay(m map[string]string) {
+	if len(m) == 0 {
+		overlay.Store(nil)
+		return
+	}
+	cp := make(map[string]string, len(m))
+	for k, v := range m {
+		cp[k] = v
+	}
+	overlay.Store(&cp)
+}
+
+// OverlaySnapshot 返回当前覆盖层的副本（nil = 没有覆盖）。
+//
+// 用途只有一个：重载失败时把覆盖层回滚到上一次成功的那一份 ——
+// 否则「读到了坏文件」会留下一个半生效的覆盖层，比直接失败更难看懂。
+func OverlaySnapshot() map[string]string {
+	m := overlay.Load()
+	if m == nil {
+		return nil
+	}
+	cp := make(map[string]string, len(*m))
+	for k, v := range *m {
+		cp[k] = v
+	}
+	return cp
+}
+
+// LoadFile 读取扁平 JSON 配置文件（键名与环境变量同名）。
+//
+// 只接受**标量值**：嵌套对象/数组一律报错而不是猜一个序列化形式 ——
+// 猜错的形状会在某个 envList 上静默变成「一个元素」，而配置错误本该
+// 在启动时就吵起来（AGENTS #11 fail loud）。
+func LoadFile(path string) (map[string]string, error) {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("读配置文件 %s: %w", path, err)
+	}
+	var parsed map[string]any
+	if err := json.Unmarshal(raw, &parsed); err != nil {
+		return nil, fmt.Errorf("解析配置文件 %s（需要扁平 JSON 对象）: %w", path, err)
+	}
+	out := make(map[string]string, len(parsed))
+	for k, v := range parsed {
+		switch val := v.(type) {
+		case string:
+			out[k] = val
+		case bool:
+			out[k] = strconv.FormatBool(val)
+		case float64:
+			// JSON 只有一种数字：整数值不带小数点，避免 "1.000000" 这种
+			// 进 Atoi 失败后静默回退默认值。
+			if val == math.Trunc(val) && math.Abs(val) < 1e15 {
+				out[k] = strconv.FormatInt(int64(val), 10)
+			} else {
+				out[k] = strconv.FormatFloat(val, 'f', -1, 64)
+			}
+		case nil:
+			out[k] = ""
+		default:
+			return nil, fmt.Errorf("配置文件 %s 的键 %q 不是标量（%T）：配置只支持扁平键值", path, k, v)
+		}
+	}
+	return out, nil
+}
 
 // Config 是后端全部运行时配置。所有敏感项（数据库口令、JWT 密钥、微信 AppSecret）
 // 只从环境变量读取，仓库内不保存任何真实值。
@@ -78,7 +180,17 @@ type Config struct {
 	MinBattleDuration time.Duration
 
 	// 离线收益
+	// OfflineCapHours 是离线（挂机）收益的累计上限（小时）。
+	// 2026-10-31（新一轮第 7 轮）起由 OfflineReward 端点消费。
 	OfflineCapHours int
+
+	// OfflineCoinPerHour 是离线（挂机）收益的每小时金币速率
+	// （2026-10-31 新一轮第 7 轮）。
+	//
+	// 收益按「距上次领取经过的时长」结算（在线挂机也累计，领取时清零），
+	// 上限由 OfflineCapHours 约束。默认每小时 600 金币：12 小时上限
+	// 7200 金币，约等于每日任务+签到的半天产出，作为挂机收益不破坏经济。
+	OfflineCoinPerHour int
 
 	// DashboardCacheTTL / LeaderboardCacheTTL 是看板与榜单的进程内缓存有效期
 	// （2026-10-23）。
@@ -97,6 +209,46 @@ type Config struct {
 	// 且不需要发版的动作。
 	DashboardCacheTTL   time.Duration
 	LeaderboardCacheTTL time.Duration
+
+	// SignInCalendarCacheTTL 是签到日历预览的进程内缓存有效期
+	// （2026-10-30 实质优化第 17 轮）。
+	//
+	// `sign_in_calendar` 是 seeder 写入的**静态配置**（后台没有修改入口），
+	// 每次签到页打开都查一次库是纯浪费。60 秒 TTL 完全够；
+	// 设成 `0` 即关闭缓存（排查时与其它缓存同一条命令）。
+	SignInCalendarCacheTTL time.Duration
+
+	// AnnouncementsCacheTTL 是公告列表的进程内缓存有效期
+	// （2026-10-31 实质优化第 22 轮）。
+	//
+	// 公告是**公开端点**（无鉴权），每次首页首屏都会拉取；
+	// 而公告由运营人工发布，变化频率极低。30 秒 TTL 完全够，
+	// 设成 `0` 即关闭缓存（排查时与其它缓存同一条命令）。
+	AnnouncementsCacheTTL time.Duration
+
+	// ShopCacheTTL 是商城商品列表静态部分的进程内缓存有效期
+	// （2026-10-31 新一轮第 6 轮）。
+	//
+	// `shop_items` 是 seeder 写入的配置表（后台仅有低频的运营修改入口），
+	// 每次打开商店页都重新查一遍是纯浪费。30 秒 TTL 完全够；
+	// 设成 `0` 即关闭缓存（排查时与其它缓存同一条命令）。
+	ShopCacheTTL time.Duration
+
+	// TasksCacheTTL 是任务配置静态部分的进程内缓存有效期
+	// （2026-10-31 新一轮第 8 轮）。
+	//
+	// `tasks` 是 seeder 写入的**纯静态配置**（后台没有修改入口），
+	// 任务页（签到/任务/兑换同页）每日高频打开，每次重新读配置表是浪费。
+	// 60 秒 TTL 完全够；设成 `0` 即关闭缓存（排查时与其它缓存同一条命令）。
+	TasksCacheTTL time.Duration
+
+	// EconomyCacheTTL 是后台经济流水页的进程内缓存有效期
+	// （2026-10-31 新一轮第 28 轮）。
+	//
+	// `AdminEconomy` 每次打开都要对 `wallet_flows`（全游戏增长最快的表）
+	// 做一次全表聚合（GROUP BY reason/currency）。运营看经济页是低频操作，
+	// 30 秒 TTL 完全够；设成 `0` 即关闭缓存（排查时与其它缓存同一条命令）。
+	EconomyCacheTTL time.Duration
 
 	// 默认管理员（仅在 admin_users 为空时引导创建）
 	BootstrapAdminUser string
@@ -144,14 +296,14 @@ type Config struct {
 }
 
 func env(key, def string) string {
-	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
+	if v := strings.TrimSpace(rawEnv(key)); v != "" {
 		return v
 	}
 	return def
 }
 
 func envInt(key string, def int) int {
-	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
+	if v := strings.TrimSpace(rawEnv(key)); v != "" {
 		if n, err := strconv.Atoi(v); err == nil {
 			return n
 		}
@@ -182,7 +334,7 @@ func envInt32(key string, def int32) int32 {
 // 否则中间件里 `allowSet[""] = true` 会让「无 Origin 头」的请求
 // 命中白名单分支。
 func envList(key string) []string {
-	raw := strings.TrimSpace(os.Getenv(key))
+	raw := strings.TrimSpace(rawEnv(key))
 	if raw == "" {
 		return nil
 	}
@@ -196,7 +348,7 @@ func envList(key string) []string {
 }
 
 func envBool(key string, def bool) bool {
-	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
+	if v := strings.TrimSpace(rawEnv(key)); v != "" {
 		if b, err := strconv.ParseBool(v); err == nil {
 			return b
 		}
@@ -205,7 +357,7 @@ func envBool(key string, def bool) bool {
 }
 
 func envDuration(key string, def time.Duration) time.Duration {
-	if v := strings.TrimSpace(os.Getenv(key)); v != "" {
+	if v := strings.TrimSpace(rawEnv(key)); v != "" {
 		if d, err := time.ParseDuration(v); err == nil {
 			return d
 		}
@@ -243,11 +395,17 @@ func Load() Config {
 
 		SettleRecomputeMode: env("SETTLE_RECOMPUTE_MODE", "enforce"),
 
-		OfflineCapHours: envInt("OFFLINE_CAP_HOURS", 12),
+		OfflineCapHours:    envInt("OFFLINE_CAP_HOURS", 12),
+		OfflineCoinPerHour: envInt("OFFLINE_COIN_PER_HOUR", 600),
 
-		// 30s / 15s：见字段注释里的取舍。0 = 关闭缓存。
-		DashboardCacheTTL:   envDuration("DASHBOARD_CACHE_TTL", 30*time.Second),
-		LeaderboardCacheTTL: envDuration("LEADERBOARD_CACHE_TTL", 15*time.Second),
+		// 30s / 15s / 60s：见字段注释里的取舍。0 = 关闭缓存。
+		DashboardCacheTTL:      envDuration("DASHBOARD_CACHE_TTL", 30*time.Second),
+		LeaderboardCacheTTL:    envDuration("LEADERBOARD_CACHE_TTL", 15*time.Second),
+		SignInCalendarCacheTTL: envDuration("SIGNIN_CALENDAR_CACHE_TTL", 60*time.Second),
+		AnnouncementsCacheTTL:  envDuration("ANNOUNCEMENTS_CACHE_TTL", 30*time.Second),
+		ShopCacheTTL:           envDuration("SHOP_CACHE_TTL", 30*time.Second),
+		TasksCacheTTL:          envDuration("TASKS_CACHE_TTL", 60*time.Second),
+		EconomyCacheTTL:        envDuration("ECONOMY_CACHE_TTL", 30*time.Second),
 
 		BootstrapAdminUser: env("BOOTSTRAP_ADMIN_USER", "admin"),
 		BootstrapAdminPass: env("BOOTSTRAP_ADMIN_PASS", "admin12345"),
@@ -285,7 +443,7 @@ func Load() Config {
 		// 为什么用「显式声明」而不是「够长就行」：
 		// 长不等于安全，而默认值本身就是公开的（在 README 与本文件里），
 		// 任何人都能查到。用环境变量是否被设置来判定，语义明确且无法误解。
-		if os.Getenv("BOOTSTRAP_ADMIN_PASS") == "" {
+		if rawEnv("BOOTSTRAP_ADMIN_PASS") == "" {
 			panic("config: APP_ENV=prod 时必须显式设置 BOOTSTRAP_ADMIN_PASS（默认值 admin12345 是公开的，不能用于生产）")
 		}
 	}
@@ -317,7 +475,7 @@ func Load() Config {
 // # 判据与 prod 守卫**同源**
 //
 // 刻意复用 prod 分支完全相同的两个判断（`HasPrefix(JWTSecret,"dev-only")`
-// 与 `os.Getenv("BOOTSTRAP_ADMIN_PASS") == ""`），而不是另写一套
+// 与 `rawEnv("BOOTSTRAP_ADMIN_PASS") == ""`），而不是另写一套
 // 「值是否等于默认字面量」。两套判据迟早会分叉，而分叉之后一定是
 // 「prod 会 panic，但这里不告警」那种最坏的组合。
 //
@@ -331,7 +489,7 @@ func (c Config) DevDefaultWarnings() []string {
 		out = append(out, "JWT_SECRET 未显式声明，正在使用本仓库源码里公开的默认密钥 —— "+
 			"任何读到它的人都能伪造任意账号（含管理员）的访问令牌")
 	}
-	if os.Getenv("BOOTSTRAP_ADMIN_PASS") == "" {
+	if rawEnv("BOOTSTRAP_ADMIN_PASS") == "" {
 		out = append(out, "BOOTSTRAP_ADMIN_PASS 未显式声明，正在使用公开默认口令 admin12345 —— "+
 			"首次启动会创建 admin/admin12345")
 	}

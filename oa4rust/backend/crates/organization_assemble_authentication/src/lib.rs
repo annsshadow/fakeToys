@@ -1204,8 +1204,10 @@ async fn oauth_code_store(
 #[allow(non_snake_case)]
 pub async fn oauth_auth(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_session(session)?;
     let client = q.get("client_id").cloned().unwrap_or_default();
     let _ = oauth_code_store(&pool, &client, "auth-challenge", None, "auth")
         .await

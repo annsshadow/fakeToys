@@ -11,10 +11,12 @@
     "run-site": "tsx src/index.ts --site",
     "login": "tsx src/login.ts",
     "test": "tsx --test test/*.test.ts",
+    "test:coverage": "node --import tsx --test --experimental-test-coverage test/*.test.ts",
     "typecheck": "tsc --noEmit",
     "setup:browser": "playwright install chromium",
     "repair:browser": "playwright install --force chromium",
-    "verify:browser": "tsx src/verify-browser.ts"
+    "verify:browser": "tsx src/verify-browser.ts",
+    "test:ratchet": "node scripts/coverage-ratchet.mjs"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
@@ -32,6 +34,7 @@
     "typescript": "^5.7.3"
   },
   "overrides": {
+    "qs": "6.16.1",
     "uuid": "11.1.1"
   }
 }

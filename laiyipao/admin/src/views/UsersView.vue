@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {onMounted, ref, computed, onActivated} from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   fetchUsers,
@@ -7,6 +8,9 @@ import {
   banUser,
   unbanUser,
   grantUser,
+  resetPlayerPassword,
+  exportUsersCsv,
+  exportUserFlowsCsv,
   type AdminUserDetailResp,
   type AdminUserView,
 } from '@/api'
@@ -62,14 +66,58 @@ async function openDetail(u: AdminUserView) {
 }
 const total = ref(0)
 const keyword = ref('')
+// 游客/账号筛选（2026-11-01 新一轮第 37 轮）。
+const isGuestFilter = ref<boolean | undefined>(undefined)
+// 需核查筛选（2026-11-01 新一轮第 60 轮）：高战力但停在第一关的刷分嫌疑。
+const suspiciousFilter = ref<boolean | undefined>(undefined)
 const limit = ref(50)
 const offset = ref(0)
+
+/**
+ * 注册日期范围（2026-10-31 新一轮第 15 轮）。
+ * `el-date-picker` value-format="YYYY-MM-DD"，v-model 是字符串数组。
+ * 服务端 `date_to` 是开区间，结束日期传**次日** 00:00 才能包含结束当天。
+ */
+const dateRange = ref<[string, string] | null>(null)
+
+/**
+ * 最后登录时间范围（2026-11-01 新一轮第 46 轮）。
+ * 与注册日期同样的开区间语义：结束日期传**次日** 00:00。
+ */
+const lastLoginRange = ref<[string, string] | null>(null)
+
+function nextDay(day: string): string {
+  const d = new Date(day + 'T00:00:00Z')
+  d.setUTCDate(d.getUTCDate() + 1)
+  return d.toISOString().slice(0, 10)
+}
 
 const CURRENCY_LABEL: Record<string, string> = {
   coin: '金币',
   gem: '钻石',
   energy: '体力',
   keys: '钥匙',
+}
+
+/** 钱包流水来源 → 中文（2026-11-01 新一轮第 66 轮）。未知回退原值。 */
+const FLOW_REASON_LABEL: Record<string, string> = {
+  battle_loot: '战斗掉落',
+  signin: '签到',
+  task: '任务',
+  shop: '商城消费',
+  admin_grant: '后台发放',
+  admin_revoke: '后台回收',
+  defense_steal: '防线窃取',
+  redeem: '兑换码',
+  upgrade_skill: '升级技能',
+  synthesize_skill: '熔炼技能',
+  wash_gem: '洗练宝石',
+  buy_item: '商城购买',
+  offline_reward: '离线收益',
+}
+
+function flowReasonLabel(reason: string): string {
+  return FLOW_REASON_LABEL[reason] ?? reason
 }
 
 const page = computed(() => Math.floor(offset.value / limit.value) + 1)
@@ -119,10 +167,61 @@ function verifyTag(u: AdminUserView): { text: string; type: 'info' | 'success' |
   return { text: '未验真', type: 'info' }
 }
 
+/**
+ * 封禁原因可读化（2026-11-01 新一轮第 58 轮）。
+ * 审计 detail 是 JSONB（如 `{"reason":"恶意刷分"}` 或 null）。
+ * 解析失败回退原始文本（fail-loud）。
+ */
+function reasonText(reason: string): string {
+  if (!reason) return '—'
+  try {
+    const obj = JSON.parse(reason)
+    if (obj && typeof obj.reason === 'string' && obj.reason) return obj.reason
+  } catch {
+    // 非 JSON：原样展示
+  }
+  return reason
+}
+
+/**
+ * 导出该玩家全部钱包流水（2026-11-01 新一轮第 82 轮）。
+ * 详情抽屉只展示最近 10 条，审计资金需要全量明细。
+ */
+async function onExportUserFlows(userId: number) {
+  try {
+    const blob = await exportUserFlowsCsv(userId)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `user_${userId}_flows_${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+    ElMessage.success('流水 CSV 已导出')
+  } catch (e) {
+    ElMessage.error(`导出失败：${(e as Error).message}`)
+  }
+}
+
 async function load() {
   loading.value = true
   try {
-    const res = await fetchUsers({ keyword: keyword.value || undefined, limit: limit.value, offset: offset.value })
+    const res = await fetchUsers({
+      keyword: keyword.value || undefined,
+      limit: limit.value,
+      offset: offset.value,
+      // 注册日期范围（2026-10-31 新一轮第 15 轮）
+      date_from: dateRange.value?.[0] || undefined,
+      date_to: dateRange.value ? nextDay(dateRange.value[1]) : undefined,
+      // 游客/账号筛选（2026-11-01 新一轮第 37 轮）
+      is_guest: isGuestFilter.value,
+      // 最后登录时间范围（2026-11-01 新一轮第 46 轮）
+      last_login_from: lastLoginRange.value?.[0] || undefined,
+      last_login_to: lastLoginRange.value ? nextDay(lastLoginRange.value[1]) : undefined,
+      // 需核查筛选（2026-11-01 新一轮第 60 轮）
+      suspicious: suspiciousFilter.value,
+    })
     users.value = res.items
     total.value = res.total
   } catch (e) {
@@ -250,7 +349,99 @@ async function onGrant(u: AdminUserView) {
   }
 }
 
-onMounted(load)
+/**
+ * 重置玩家密码（2026-10-30 实质优化第 11 轮）。
+ *
+ * 玩家侧已有改密/转正，但运营缺少兜底：账号遗忘 / 被盗需要强制轮换时
+ * 只能封禁或改环境变量重启。重置会更新哈希并吊销该账号全部会话
+ * （其它设备立即被登出），提示里必须说清这一点。
+ */
+async function onResetPassword(u: AdminUserView) {
+  let newPassword = ''
+  try {
+    const { value } = await ElMessageBox.prompt(
+      `为「${u.nickname}」设置新密码（至少 10 位）？该玩家所有设备将被登出，并会写入审计日志。`,
+      '重置密码',
+      {
+        inputType: 'password',
+        inputPlaceholder: '新密码（至少 10 位）',
+        confirmButtonText: '重置',
+        cancelButtonText: '取消',
+        inputValidator: (v: string) =>
+          (v && v.trim().length >= 10) || '密码至少 10 位',
+      },
+    )
+    newPassword = (value ?? '').trim()
+  } catch (e) {
+    if (isCancel(e)) return
+    ElMessage.error(`重置失败：${(e as Error).message}`)
+    return
+  }
+  try {
+    await resetPlayerPassword(u.id, newPassword)
+    ElMessage.success('已重置，该玩家所有会话已吊销')
+  } catch (e) {
+    ElMessage.error(`重置失败：${(e as Error).message}`)
+  }
+}
+
+/**
+ * 导出用户列表 CSV（2026-10-30 实质优化第 12 轮）。
+ *
+ * 过滤条件与列表一致（keyword 模糊搜昵称）。readonly 角色也可导出
+ * （读操作）。下载文件名带日期。
+ */
+async function onExportCsv() {
+  try {
+    const blob = await exportUsersCsv({
+      keyword: keyword.value || undefined,
+      // 注册日期范围（2026-10-31 新一轮第 15 轮）：与列表过滤同口径
+      date_from: dateRange.value?.[0] || undefined,
+      date_to: dateRange.value ? nextDay(dateRange.value[1]) : undefined,
+      // 最后登录时间范围（2026-11-01 新一轮第 46 轮）：与列表同口径
+      last_login_from: lastLoginRange.value?.[0] || undefined,
+      last_login_to: lastLoginRange.value ? nextDay(lastLoginRange.value[1]) : undefined,
+      // 需核查筛选（2026-11-01 新一轮第 60 轮）：与列表同口径
+      suspicious: suspiciousFilter.value,
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `users_${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+    ElMessage.success(`已导出 ${users.value.length} 名用户（当前筛选结果）`)
+  } catch (e) {
+    ElMessage.error(`导出失败：${(e as Error).message}`)
+  }
+}
+
+/**
+ * 复制用户 ID（2026-11-01 新一轮第 86 轮）。
+ * 运营把 user_id 贴到工单/群聊时无需手动选中。
+ */
+async function copyUserId(userId: number) {
+  try {
+    await navigator.clipboard.writeText(String(userId))
+    ElMessage.success(`已复制用户 ID ${userId}`)
+  } catch {
+    ElMessage.error('复制失败，请手动选择复制')
+  }
+}
+
+const route = useRoute()
+
+onMounted(async () => {
+  await load()
+  // 从战报等页面跳转过来时携带 user_id（2026-11-01 新一轮第 38 轮）：
+  // 直接打开该玩家的详情抽屉。
+  const userId = Number(route.query.user_id)
+  if (Number.isInteger(userId) && userId > 0) {
+    openDetail({ id: userId } as AdminUserView)
+  }
+})
 
 /**
  * 2026-10-21（P5-9）：缓存视图重新可见时刷新数据。
@@ -312,7 +503,38 @@ const asRow = (r: unknown) => r as AdminUserView
           style="width: 220px"
           @keyup.enter="((offset = 0), load())"
         />
+        <!-- 游客/账号筛选（2026-11-01 新一轮第 37 轮） -->
+        <el-select v-model="isGuestFilter" placeholder="账号类型" clearable style="width: 110px" @change="((offset = 0), load())">
+          <el-option label="游客" :value="true" />
+          <el-option label="账号" :value="false" />
+        </el-select>
+        <!-- 需核查筛选（2026-11-01 新一轮第 60 轮）：高战力但停在第一关 -->
+        <el-select v-model="suspiciousFilter" placeholder="需核查" clearable style="width: 110px" @change="((offset = 0), load())">
+          <el-option label="需核查" :value="true" />
+          <el-option label="非需核查" :value="false" />
+        </el-select>
         <el-button @click="((offset = 0), load())">查询</el-button>
+        <el-button @click="onExportCsv">导出 CSV</el-button>
+        <!-- 注册日期范围（2026-10-31 新一轮第 15 轮）：查「今天/某时间段」注册的用户 -->
+        <el-date-picker
+          v-model="dateRange"
+          type="daterange"
+          range-separator="至"
+          start-placeholder="注册开始日期"
+          end-placeholder="注册结束日期"
+          value-format="YYYY-MM-DD"
+          style="width: 260px; margin-left: 12px"
+        />
+        <!-- 最后登录时间范围（2026-11-01 新一轮第 46 轮）：查「最近活跃」的用户 -->
+        <el-date-picker
+          v-model="lastLoginRange"
+          type="daterange"
+          range-separator="至"
+          start-placeholder="最后登录开始"
+          end-placeholder="最后登录结束"
+          value-format="YYYY-MM-DD"
+          style="width: 240px; margin-left: 8px"
+        />
         <span class="toolbar-spacer" />
         <span class="muted">共 {{ total }} 名用户 · 第 {{ page }} / {{ pageCount }} 页</span>
         <el-button size="small" :disabled="offset <= 0" @click="prevPage">上一页</el-button>
@@ -352,8 +574,10 @@ const asRow = (r: unknown) => r as AdminUserView
         <el-table-column label="最后登录" width="160">
           <template #default="{ row }">{{ fmtTime(row.last_login_at) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
+            <!-- 复制 ID（2026-11-01 新一轮第 86 轮）：贴到工单/群聊 -->
+            <el-button size="small" text type="primary" @click="copyUserId(row.id)">复制 ID</el-button>
             <el-button size="small" text @click="openDetail(asRow(row))">详情</el-button>
             <el-button v-if="!isReadonly" size="small" text @click="onGrant(asRow(row))">
               发资源
@@ -395,6 +619,18 @@ const asRow = (r: unknown) => r as AdminUserView
             <el-descriptions-item label="钥匙">{{ detail.wallet.keys ?? 0 }}</el-descriptions-item>
             <el-descriptions-item label="验真">{{ detail.user.verify_checked }} / 不匹配 {{ detail.user.verify_mismatched }}</el-descriptions-item>
             <el-descriptions-item label="流水条数">{{ detail.flow_count }}</el-descriptions-item>
+          </el-descriptions>
+          <!-- 防线信息（2026-10-31 新一轮第 31 轮） -->
+          <el-descriptions v-if="detail.defense" :column="2" border size="small" style="margin-top: 8px">
+            <el-descriptions-item label="防线名">{{ detail.defense.name || '（未命名）' }}</el-descriptions-item>
+            <el-descriptions-item label="战力">{{ detail.defense.power }}</el-descriptions-item>
+            <el-descriptions-item label="战绩">{{ detail.defense.wins }} 胜 / {{ detail.defense.losses }} 负</el-descriptions-item>
+            <el-descriptions-item label="护盾至">
+              {{ detail.defense.shielded_until ? fmtTime(detail.defense.shielded_until) : '无' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="快照哈希" :span="2">
+              <code>{{ detail.defense.snapshot_hash ? detail.defense.snapshot_hash.slice(0, 32) + '…' : '—' }}</code>
+            </el-descriptions-item>
           </el-descriptions>
 
           <div class="section-title">构筑</div>
@@ -444,6 +680,72 @@ const asRow = (r: unknown) => r as AdminUserView
               <el-empty description="没有验真记录" :image-size="60" />
             </template>
           </el-table>
+
+          <!-- 封禁/解封记录（2026-11-01 新一轮第 58 轮） -->
+          <div class="section-title">封禁 / 解封记录</div>
+          <el-table :data="detail.ban_records" size="small" border>
+            <el-table-column label="动作" width="80">
+              <template #default="{ row }">
+                <el-tag :type="row.action === 'ban_user' ? 'danger' : 'success'" size="small">
+                  {{ row.action === 'ban_user' ? '封禁' : '解封' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="username" label="操作人" width="110" />
+            <el-table-column label="原因" min-width="160">
+              <template #default="{ row }">{{ reasonText(row.reason) }}</template>
+            </el-table-column>
+            <el-table-column label="时间" min-width="160">
+              <template #default="{ row }">{{ fmtTime(row.created_at) }}</template>
+            </el-table-column>
+            <template #empty>
+              <el-empty description="没有封禁记录" :image-size="60" />
+            </template>
+          </el-table>
+
+          <!-- 最近钱包流水（2026-11-01 新一轮第 66 轮）：回答「钱去哪了」 -->
+          <div class="section-title">
+            <span>最近钱包流水</span>
+            <!-- 全量导出（2026-11-01 新一轮第 82 轮）：审计资金需要全量明细 -->
+            <el-button size="small" text type="primary" @click="onExportUserFlows(detail.user.id)">
+              导出全部流水 CSV
+            </el-button>
+          </div>
+          <el-table :data="detail.recent_flows" size="small" border>
+            <el-table-column label="货币" width="80">
+              <template #default="{ row }">{{ CURRENCY_LABEL[row.currency] ?? row.currency }}</template>
+            </el-table-column>
+            <el-table-column label="变动" width="100">
+              <template #default="{ row }">
+                <span :class="row.delta >= 0 ? 'flow-pos' : 'flow-neg'">
+                  {{ row.delta >= 0 ? '+' : '' }}{{ row.delta }}
+                </span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="balance" label="余额" width="100" />
+            <el-table-column label="来源" min-width="120">
+              <template #default="{ row }">{{ flowReasonLabel(row.reason) }}</template>
+            </el-table-column>
+            <el-table-column label="时间" min-width="160">
+              <template #default="{ row }">{{ fmtTime(row.created_at) }}</template>
+            </el-table-column>
+            <template #empty>
+              <el-empty description="没有流水记录" :image-size="60" />
+            </template>
+          </el-table>
+
+          <div class="section-title">账号操作</div>
+          <div class="drawer-actions">
+            <el-button
+              type="danger"
+              plain
+              :disabled="isReadonly"
+              @click="onResetPassword(detail.user)"
+            >
+              重置密码
+            </el-button>
+            <span v-if="isReadonly" class="dim">只读账号不可操作</span>
+          </div>
         </template>
       </div>
     </el-drawer>
@@ -462,5 +764,20 @@ const asRow = (r: unknown) => r as AdminUserView
 .muted {
   color: var(--lyp-muted);
   font-size: 12px;
+}
+
+.drawer-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 钱包流水正负（2026-11-01 新一轮第 66 轮） */
+.flow-pos {
+  color: var(--lyp-ok, #67c23a);
+}
+
+.flow-neg {
+  color: var(--lyp-danger, #f56c6c);
 }
 </style>

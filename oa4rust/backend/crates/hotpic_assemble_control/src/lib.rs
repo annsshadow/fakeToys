@@ -13,6 +13,13 @@ use shared::{error::AppError, response::ActionResult};
 pub const API_BASE: &str = "/api/hotpic_assemble_control";
 pub mod routes;
 
+/// 写面会话存在档：无会话先 401，在任何 `pool.get()` 之前（离线可证）。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 #[cfg(test)]
 mod security_gate_tests;
 #[cfg(test)]
@@ -820,9 +827,7 @@ pub async fn user_hotpic_delete_by_ids(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 安全审计 round4-b72：会话存在档（沿用本 crate user_hotpic_changeTitle 惯例），
     // 门置于 pool.get() 之前，杜绝匿名软删 x_hotpic。
-    let Some(Extension(_sess)) = session else {
-        return Err(AppError::Unauthorized);
-    };
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let ids = vec![id.clone(), id2.clone()];
     let n = client

@@ -226,7 +226,7 @@ augmentor/
 
 - [x] 页面级组件测试 → **已完成（L104–L113，A206）**：11 页各一份组件测试
 - [x] 5 个历史遗留的未接线服务函数：`getCheckpoints`、`visualizeData`、`getVersion`、`getVersionData`、`getVersionHistory` → **已收口（L211）**：全部接进对应页面（断点列表 / 图表文件 / 版本详情 / 版本数据 / 操作历史），`api.wiring.test.ts` 的 `KNOWN_UNWIRED` 白名单清空；同轮抓出并修掉守门自身盲区（页面 `*.test.tsx` 的替身表曾被计入「已接线」语料面）
-- [ ] 运行时 schema 校验（如 zod），把「编译期声明」升级为「前后端契约有机器保证」
+- [x] 运行时 schema 校验（如 zod），把「编译期声明」升级为「前后端契约有机器保证」 → **已完成（Z-FULL，2026-10-28，commit `1e4ba2280`）**：主链路 14 + 全量 70 共 85 个模型 / 78 个函数全部接入 zod 运行时校验；conformance 测试以 pydantic `response_model` 为 ground truth 钉 389 字段
 - [x] 前端 bundle 拆分：`antd-vendor` 与 `echarts-vendor` → **已完成（L128，A207）**：路由懒加载 + 三 vendor 拆分 + `check-dist.mjs` 产物体检
 
 ### 3.2 后端
@@ -246,8 +246,8 @@ augmentor/
 
 ### 3.3 文档
 
-- [ ] 为 `dataset` / `system` 两组的 25 个端点补人读字段说明（目前只给端点总览，字段以 `/openapi.json` 为准）
-- [ ] FAQ
+- [x] 为 `dataset` / `system` 两组的 25 个端点补人读字段说明 → **已完成（L210，2026-10-24）**：勾选框此前漏回填，见 §四 P3 小结
+- [x] FAQ → **已完成（2026-10-26 D-1，commit `5169ea920`）**：`docs/augmentor/FAQ.md`；10-27/28 轮又补部署索引（BOM-FAQ，`499da9a8e`）与 A184 文档引用普查接入（`499da9a8e`）
 
 ---
 
@@ -265,10 +265,10 @@ augmentor/
 
 68 个端点全量响应契约、`dataset` / `system` 能力补齐、前端数据安全页与系统状态页、接线守门
 
-### P3 — 待完成
+### P3 — 已完成 ✅（2026-10-28 回填）
 
-前端：运行时 schema 校验（zod）
-文档：FAQ
+前端：运行时 schema 校验（zod）→ Z-FULL（`1e4ba2280`，78/78 函数、85 模型）
+文档：FAQ → `5169ea920`（问答正文）+ `499da9a8e`（部署索引与引用普查）
 
 （已完成并移出清单：页面级组件测试（L104–L113、L211 补 7 例）、5 个未接线服务函数（L211）、
 bundle 拆分（L128）、25 个端点的人读字段说明（L210））

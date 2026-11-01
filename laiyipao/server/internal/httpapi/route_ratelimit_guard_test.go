@@ -18,6 +18,15 @@ import (
 // → 无界写）+ 五条无界状态写（loadout/equip/defenses save/challenge）。资源消耗
 // 类端点（buy/claim/signin/...）花的是有限持有物、经济上自限，刻意不限 —— 见
 // middleware.go 的 economyWriteLimit 注释。
+//
+// 2026-10-30（实质优化第 7 轮）新增 `/me/password`：改密码是口令爆破面（拿到
+// access token 后可以无限试旧密码），限流不可删 —— 见 passwordChangeLimit。
+//
+// 2026-10-30（实质优化第 8 轮）新增 `/me/upgrade`：游客转正是注册面（批量
+// 占用户名 / 枚举用户名），限流不可删 —— 见 accountUpgradeLimit。
+//
+// 2026-10-30（实质优化第 9 轮）新增 `/me/nickname`：昵称进所有列表响应，
+// 频繁改名可刷存在感，限流不可删 —— 见 nicknameChangeLimit。
 func TestEconomyWriteRoutesAreRateLimited(t *testing.T) {
 	required := []string{
 		`battle.Post("/token", authRateLimit(`,
@@ -26,6 +35,9 @@ func TestEconomyWriteRoutesAreRateLimited(t *testing.T) {
 		`me.Put("/equipment", authRateLimit(`,
 		`defenses.Post("/save", authRateLimit(`,
 		`defenses.Post("/:id/challenge", authRateLimit(`,
+		`me.Post("/password", authRateLimit(`,
+		`me.Post("/upgrade", authRateLimit(`,
+		`me.Put("/nickname", authRateLimit(`,
 	}
 	src := stripHTTPComments(readHTTPFile(t, "routes.go"))
 	for _, want := range required {

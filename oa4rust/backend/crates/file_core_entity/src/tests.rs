@@ -8,18 +8,9 @@ mod tests {
     use crate::FolderInfo;
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
-    use deadpool_postgres::{Manager, Pool};
 
     use shared::response::ActionResult;
     use tower::ServiceExt;
-
-    fn build_test_pool() -> Pool {
-        let mgr = Manager::new(
-            deadpool_postgres::tokio_postgres::Config::new(),
-            deadpool_postgres::tokio_postgres::NoTls,
-        );
-        Pool::builder(mgr).build().unwrap()
-    }
 
     // ── Route existence tests ────────────────────────────────────────────────
 
@@ -30,8 +21,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_folder_list_top_returns_error_without_db() {
-        let pool = build_test_pool();
-        let app = crate::file_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::file_core_entity_router(db);
 
         let response = app
             .clone()
@@ -50,8 +41,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_folder_list_with_folder_returns_error_without_db() {
-        let pool = build_test_pool();
-        let app = crate::file_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::file_core_entity_router(db);
 
         let response = app
             .clone()
@@ -73,8 +64,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_file_list_returns_error_without_db() {
-        let pool = build_test_pool();
-        let app = crate::file_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::file_core_entity_router(db);
 
         let response = app
             .clone()
@@ -93,8 +84,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_complex_top_returns_error_without_db() {
-        let pool = build_test_pool();
-        let app = crate::file_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::file_core_entity_router(db);
 
         let response = app
             .clone()
@@ -113,8 +104,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_unknown_route_returns_404() {
-        let pool = build_test_pool();
-        let app = crate::file_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::file_core_entity_router(db);
 
         let response = app
             .clone()
@@ -133,8 +124,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_folder_create_returns_error_without_db() {
-        let pool = build_test_pool();
-        let app = crate::file_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::file_core_entity_router(db);
 
         let response = app
             .clone()
@@ -155,13 +146,14 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        // folder_create 有会话门：无会话在 DB 访问前 401（B3 接线后）。
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
     #[tokio::test]
     async fn test_folder_create_missing_fields_returns_200_with_error_body() {
-        let pool = build_test_pool();
-        let app = crate::file_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::file_core_entity_router(db);
 
         let response = app
             .clone()
@@ -182,13 +174,14 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        // folder_create 有会话门：无会话在 DB 访问前 401（B3 接线后）。
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
     #[tokio::test]
     async fn test_folder_delete_returns_error_without_db() {
-        let pool = build_test_pool();
-        let app = crate::file_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::file_core_entity_router(db);
 
         let response = app
             .clone()
@@ -202,13 +195,14 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        // folder_delete 有会话门：无会话在 DB 访问前 401（B3 接线后）。
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
     #[tokio::test]
     async fn test_file_create_returns_error_without_db() {
-        let pool = build_test_pool();
-        let app = crate::file_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::file_core_entity_router(db);
 
         let response = app
             .clone()
@@ -230,13 +224,14 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        // file_create 有会话门：无会话在 DB 访问前 401（B3 接线后）。
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
     #[tokio::test]
     async fn test_file_create_missing_fields_returns_200_with_error_body() {
-        let pool = build_test_pool();
-        let app = crate::file_core_entity_router(pool);
+        let db = shared::testing::mock_db().await;
+        let app = crate::file_core_entity_router(db);
 
         let response = app
             .clone()
@@ -258,15 +253,16 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        // file_create 有会话门：无会话在 DB 访问前 401（B3 接线后）。
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
     #[test]
     fn test_file_core_entity_router_builds() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let _app = crate::file_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let _app = crate::file_core_entity_router(db);
         });
     }
 

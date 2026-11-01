@@ -66,6 +66,12 @@ class AugmentRequest(BaseModel):
     use_quality: Optional[bool] = None
     use_dedup: Optional[bool] = None
     use_checkpoint: bool = True
+    # 并行档是否走异步引擎（AU-P1）。默认 False = 原线程池路径。
+    #
+    # 这里**不**做"后端有没有原生异步"的判断：那是 pipeline 的职责，它在
+    # 后端不支持时自动回退并打 warning。端点若在这里先判一遍，就成了第二份
+    # 权威，两边一旦不一致就是"接口说开了异步、实际走线程池"。
+    use_async: bool = False
 
 
 @router.post(
@@ -97,7 +103,8 @@ async def start_augmentation(
                 str(output_path),
                 use_checkpoint=request.use_checkpoint,
                 use_quality_check=request.use_quality,
-                use_dedup=request.use_dedup
+                use_dedup=request.use_dedup,
+                use_async=request.use_async
             )
 
         background_tasks.add_task(run_augment)

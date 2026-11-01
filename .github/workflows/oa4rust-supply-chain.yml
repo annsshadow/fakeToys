@@ -86,6 +86,12 @@ jobs:
           git -C "$DB" fsck --strict
           git -C "$DB" log -1 --format='RustSec DB: %H %cI'
           sha256sum Cargo.lock
+      # cargo-audit --deny yanked 的 yanked 标志来自本地 crates.io 索引缓存；
+      # runner 无缓存（本 workflow 也不配 cache），不预热则每个 crate 都报
+      # 「No such crate in crates.io index」并整体退出 1（2026-10-28 实测，
+      # 该 job 历史上从未绿过）。cargo fetch 按锁文件把索引条目拉进缓存。
+      - name: Warm cargo registry index for the yanked check
+        run: cargo +1.88.0 fetch --locked
       - name: Audit current advisories and yanked crates
         run: |
           set -euo pipefail

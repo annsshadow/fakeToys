@@ -96,7 +96,10 @@ const RUST_CRATE_COUNT =
 
 /** 某 Python 模块在当前 `python` 下是否可导入（用于 requires 守门，同 java 项范式）。 */
 function hasPythonModule(module) {
-  const run = spawnSync('python', ['-c', `import ${module}`], { env, shell: true, encoding: 'utf8' })
+  // 不能加 `shell: true`：Node 会把 args 直接空格拼接，`python -c import pytest`
+  // 丢掉引号后 Python 只收到 `import`（SyntaxError），探针永远返回 false，
+  // 于是 llm-lab-tests 在 CI 里一直静默 SKIP（2026-10-28 实测）。
+  const run = spawnSync('python', ['-c', `import ${module}`], { env, encoding: 'utf8' })
   return run.status === 0
 }
 
@@ -212,6 +215,17 @@ const CHECKS = [
       const jar = findCommonsCodec()
       return jar ? { jar } : 'commons-codec jar 未找到（放 cool/lib/ 或设 COMMONS_CODEC_JAR）'
     },
+    timeout: 2 * 60 * 1000,
+  },
+  {
+    id: 'r7-readonly-cross-check',
+    label: 'oa4rust R7 只读挂写交叉验证（0 疑似含写）',
+    cwd: 'oa4rust/backend',
+    cmd: 'python scripts/cross_check_r7_readonly.py',
+    // 周期回归检查（2026-10-30）：对尺子判为「R7 只读挂写方法」的全部路由用独立
+    // 判据（注释剥离 + 写 SQL 关键字 + ORM 写扫描）复核，出现疑似含写候选即失败。
+    // 与 audit_write_gating.mjs 的 writeEvidence 是不同实现，互为印证。
+    pattern: /疑似含写候选/,
     timeout: 2 * 60 * 1000,
   },
 ]

@@ -28,15 +28,18 @@ auth	GET	/api/authentication/oauth/login/qywx/code/{code}	oauth_login_qywx	A2-�
 auth	GET	/api/authentication/oauth/login/dingding/code/{code}	oauth_login_dingding	A2-真匿名+体内写 SQL 但读会话或有门禁
 auth	GET	/api/authentication/oauth/login/name/{name}/code/{code}/redirecturi/{redirectUri}	oauth_login_name	A2-真匿名+体内写 SQL 但读会话或有门禁
 auth	GET	/api/authentication/oauth/bind/name/{name}/code/{code}/redirecturi/{redirectUri}	oauth_bind_name	A2-真匿名+体内写 SQL 但读会话或有门禁
+auth	GET	/api/qiyeweixin/update/person/detail/{code}	qiyeweixin_update_person_detail	A1-真匿名+体内写 SQL 且无门禁无会话
 meeting_assemble_control	GET	/api/meeting/assemble/control/config/system/config	config_system_config	A3-真匿名+只读
 meeting_assemble_control	POST	/api/meeting/assemble/control/config/system/config/manage	config_system_config_manage	A2-真匿名+体内写 SQL 但读会话或有门禁
 meeting_assemble_control	GET	/api/meeting/assemble/control/config/system/config/manage	u2_config_manage_get	A3-真匿名+只读
 organization_assemble_authentication	GET	/api/organization/assemble/authentication/authentication/mode	mode	A3-真匿名+只读
 organization_assemble_authentication	GET	/api/organization/assemble/authentication/authentication/mockdeletetoget	logout_get	A3-真匿名+只读
-organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication	login	A3-真匿名+只读
+organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication	login	A1-真匿名+体内写 SQL 且无门禁无会话
 organization_assemble_authentication	DELETE	/api/organization/assemble/authentication/authentication	logout	A3-真匿名+只读
 organization_assemble_authentication	GET	/api/organization/assemble/authentication/authentication	whoami	A3-真匿名+只读
 organization_assemble_authentication	GET	/api/organization/assemble/authentication/authentication/captchaRSAPublicKey	captcha_rsa_public_key	A3-真匿名+只读
+organization_assemble_authentication	POST	/api/organization/assemble/authentication/authentication/code	code	A3-真匿名+只读
+organization_assemble_authentication	GET	/api/organization/assemble/authentication/authentication/code/credential/{credential}	code_send	A3-真匿名+只读
 organization_assemble_authentication	GET	/api/organization/assemble/authentication/authentication/safe/logout	safe_logout_get	A3-真匿名+只读
 organization_assemble_express	GET	/api/person/nick/name/{flag}	person_nick_name_flag	A3-真匿名+只读
 organization_assemble_express	POST	/api/person/list	person_list	A3-真匿名+只读
@@ -138,8 +141,28 @@ personal	PUT	/api/person/definition/{name}	definition_edit	A2-真匿名+体内�
 personal	POST	/api/person/definition/{name}	definition_edit	A2-真匿名+体内写 SQL 但读会话或有门禁
 personal	DELETE	/api/person/definition/{name}	definition_delete	A2-真匿名+体内写 SQL 但读会话或有门禁
 personal	POST	/api/person/definition/{name}/mockputtopost	definition_edit	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	GET	/api/organization/assemble/personal/custom/manager/person/{person}/name/{name}	custom_manager_get	A3-真匿名+只读
+personal	PUT	/api/organization/assemble/personal/custom/manager/person/{person}/name/{name}	custom_manager_edit	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	POST	/api/organization/assemble/personal/custom/manager/person/{person}/name/{name}/mockputtopost	custom_manager_edit	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	DELETE	/api/organization/assemble/personal/custom/{name}	custom_delete	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	GET	/api/organization/assemble/personal/custom/{name}	custom_get	A3-真匿名+只读
+personal	PUT	/api/organization/assemble/personal/custom/{name}	custom_edit	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	DELETE	/api/organization/assemble/personal/definition/{name}	definition_delete	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	GET	/api/organization/assemble/personal/definition/{name}	definition_get	A3-真匿名+只读
+personal	PUT	/api/organization/assemble/personal/definition/{name}	definition_edit	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	POST	/api/organization/assemble/personal/definition/{name}/mockputtopost	definition_edit	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	GET	/api/organization/assemble/personal/icon/{person}	get	A3-真匿名+只读
+personal	POST	/api/organization/assemble/personal/person/icon	set_icon_octet_stream	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	POST	/api/organization/assemble/personal/person/icon/mockputtopost	upload_multipart_alias	A2-真匿名+体内写 SQL 但读会话或有门禁
+personal	POST	/api/organization/assemble/personal/regist	register	A1-真匿名+体内写 SQL 且无门禁无会话
+personal	PUT	/api/organization/assemble/personal/reset	reset_password	A1-真匿名+体内写 SQL 且无门禁无会话
+personal	GET	/api/organization/assemble/personal/reset/check/credential/{credential}	check_credential	A3-真匿名+只读
+personal	GET	/api/organization/assemble/personal/reset/code/credential/{credential}	send_code	A3-真匿名+只读
+personal	POST	/api/organization/assemble/personal/reset/password/anonymous	reset_password_anonymous	A1-真匿名+体内写 SQL 且无门禁无会话
 personal_extend	PUT	/api/person/icon	upload	A2-真匿名+体内写 SQL 但读会话或有门禁
 personal_extend	GET	/api/person/icon	get_current_icon	A3-真匿名+只读
+personal_extend	GET	/api/organization/assemble/personal/person/icon	get_current_icon	A3-真匿名+只读
+personal_extend	PUT	/api/organization/assemble/personal/person/icon	upload	A2-真匿名+体内写 SQL 但读会话或有门禁
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/control/workorworkcompleted/{workOrWorkCompleted}	control_workorworkcompleted_workOrWorkCompleted	A3-真匿名+只读
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/readrecord/list/workorworkcompleted/{workOrWorkCompleted}	readrecord_list_workorworkcompleted_workOrWorkCompleted	A3-真匿名+只读
 processplatform_assemble_surface	GET	/api/processplatform/assemble/surface/record/list/job/job/paging/{page}/{size}/{size}	record_list_job_job_paging_page_size_size	A3-真匿名+只读
@@ -169,5 +192,3 @@ program_center	GET	/api/program_center/authentication	authentication_who	A3-真�
 program_init	GET	/api/secret/check	check	A3-条件匿名（仅未初始化窗口）+只读
 program_init	POST	/api/secret/set	set	A1-条件匿名（仅未初始化窗口）+体内写 SQL 且无门禁无会话
 program_init	GET	/api/secret/set/cancel	set_cancel	A1-条件匿名（仅未初始化窗口）+体内写 SQL 且无门禁无会话
-query_assemble_surface	POST	/api/queryview/search	search_post	A3-真匿名+只读
-query_assemble_surface	POST	/api/queryview/morelikethis	morelikethis_post	A3-真匿名+只读

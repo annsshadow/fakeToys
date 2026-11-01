@@ -1,6 +1,8 @@
 // Copyright (C) 2026 annsshadow
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    crate::hotpic_core_entity_router(pool)
+use sea_orm::DatabaseConnection;
+
+pub fn router(db: DatabaseConnection) -> axum::Router {
+    crate::hotpic_core_entity_router(db)
 }
