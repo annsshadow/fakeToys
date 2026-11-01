@@ -292,9 +292,10 @@ pub async fn setting_ismanager(
 #[allow(non_snake_case)]
 pub async fn calendar_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> ApiResult {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = body
@@ -323,7 +324,7 @@ pub async fn calendar_create(
         .get("isPublic")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
-    let person = session.person_unique.clone();
+    let person = sess.person_unique.clone();
 
     client
         .execute(
@@ -472,10 +473,11 @@ pub async fn calendar_manager_list_with_person(
 #[allow(non_snake_case)]
 pub async fn calendar_delete(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> ApiResult {
-    if !person_can_manage_calendar(&pool, &session.person_unique, &id).await? {
+    let sess = require_session(session)?;
+    if !person_can_manage_calendar(&pool, &sess.person_unique, &id).await? {
         return Ok(Json(ActionResult::error(
             "forbidden: not calendar owner or admin",
         )));
@@ -495,9 +497,10 @@ pub async fn calendar_delete(
 #[allow(non_snake_case)]
 pub async fn event_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> ApiResult {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let calendar_id = body
@@ -537,7 +540,7 @@ pub async fn event_create(
         .get("masterId")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
-    let person = session.person_unique.clone();
+    let person = sess.person_unique.clone();
 
     client
         .execute(
@@ -573,10 +576,11 @@ pub async fn event_create(
 #[allow(non_snake_case)]
 pub async fn event_delete_after(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> ApiResult {
-    if !person_can_manage_event(&pool, &session.person_unique, &id).await? {
+    let sess = require_session(session)?;
+    if !person_can_manage_event(&pool, &sess.person_unique, &id).await? {
         return Ok(Json(ActionResult::error(
             "forbidden: not event owner or admin",
         )));
@@ -610,10 +614,11 @@ pub async fn event_delete_after(
 #[allow(non_snake_case)]
 pub async fn event_delete_all(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> ApiResult {
-    if !person_can_manage_event(&pool, &session.person_unique, &id).await? {
+    let sess = require_session(session)?;
+    if !person_can_manage_event(&pool, &sess.person_unique, &id).await? {
         return Ok(Json(ActionResult::error(
             "forbidden: not event owner or admin",
         )));
@@ -755,9 +760,10 @@ pub async fn event_list_filter_sample_manager(
 #[allow(non_snake_case)]
 pub async fn event_manage(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> ApiResult {
+    let sess = require_session(session)?;
     let id = body
         .get("id")
         .and_then(|v| v.as_str())
@@ -766,7 +772,7 @@ pub async fn event_manage(
     if id.is_empty() {
         return Ok(Json(ActionResult::error("id is required")));
     }
-    if !person_can_manage_event(&pool, &session.person_unique, &id).await? {
+    if !person_can_manage_event(&pool, &sess.person_unique, &id).await? {
         return Ok(Json(ActionResult::error(
             "forbidden: not event owner or admin",
         )));
@@ -832,10 +838,11 @@ pub async fn event_rfc(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResu
 #[allow(non_snake_case)]
 pub async fn event_delete_single(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> ApiResult {
-    if !person_can_manage_event(&pool, &session.person_unique, &id).await? {
+    let sess = require_session(session)?;
+    if !person_can_manage_event(&pool, &sess.person_unique, &id).await? {
         return Ok(Json(ActionResult::error(
             "forbidden: not event owner or admin",
         )));
@@ -858,11 +865,12 @@ pub async fn event_delete_single(
 #[allow(non_snake_case)]
 pub async fn event_update_after(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> ApiResult {
-    if !person_can_manage_event(&pool, &session.person_unique, &id).await? {
+    let sess = require_session(session)?;
+    if !person_can_manage_event(&pool, &sess.person_unique, &id).await? {
         return Ok(Json(ActionResult::error(
             "forbidden: not event owner or admin",
         )));
@@ -904,11 +912,12 @@ pub async fn event_update_after(
 #[allow(non_snake_case)]
 pub async fn event_update_all(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> ApiResult {
-    if !person_can_manage_event(&pool, &session.person_unique, &id).await? {
+    let sess = require_session(session)?;
+    if !person_can_manage_event(&pool, &sess.person_unique, &id).await? {
         return Ok(Json(ActionResult::error(
             "forbidden: not event owner or admin",
         )));
@@ -942,11 +951,12 @@ pub async fn event_update_all(
 #[allow(non_snake_case)]
 pub async fn event_update_single(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> ApiResult {
-    if !person_can_manage_event(&pool, &session.person_unique, &id).await? {
+    let sess = require_session(session)?;
+    if !person_can_manage_event(&pool, &sess.person_unique, &id).await? {
         return Ok(Json(ActionResult::error(
             "forbidden: not event owner or admin",
         )));
@@ -991,9 +1001,10 @@ pub async fn event_update_single(
 #[allow(non_snake_case)]
 pub async fn message_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> ApiResult {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let calendar_id = body
@@ -1009,7 +1020,7 @@ pub async fn message_create(
         .get("body")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
-    let person = session.person_unique.clone();
+    let person = sess.person_unique.clone();
     client
         .execute(
             "INSERT INTO cal_message (id, calendar_id, title, body, person, create_time) \

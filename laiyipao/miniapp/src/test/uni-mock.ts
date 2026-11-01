@@ -40,6 +40,8 @@ export function createUniMock() {
       storage.delete(key)
     }),
     showToast: vi.fn(),
+    // 确认弹窗（2026-11-01 新一轮第 91 轮）：商店购买二次确认等场景。
+    showModal: vi.fn(),
     navigateTo: vi.fn(),
     navigateBack: vi.fn(),
     switchTab: vi.fn(),

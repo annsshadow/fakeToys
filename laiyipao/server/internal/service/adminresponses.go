@@ -92,6 +92,19 @@ type AdminDefensesResp struct {
 	Total int64              `json:"total"`
 }
 
+// AdminDefenseChallengesResp 是 `GET /admin/defense-challenges` 的响应
+// （2026-10-31 新一轮第 30 轮）。
+type AdminDefenseChallengesResp struct {
+	Items []AdminDefenseChallengeView `json:"items"`
+	Total int64                       `json:"total"`
+}
+
+// AdminOrdersResp 是 `GET /admin/orders` 的响应（2026-10-31 实质优化第 33 轮）。
+type AdminOrdersResp struct {
+	Items []AdminOrderView `json:"items"`
+	Total int64            `json:"total"`
+}
+
 // AdminShopItemResp 是 `PUT /admin/shop/:id` 的响应。
 type AdminShopItemResp struct {
 	Item AdminShopUpdateResp `json:"item"`
@@ -114,6 +127,13 @@ type AdminRedeemCodesResp struct {
 	Items []AdminRedeemCodeView `json:"items"`
 	// Total 是**全量行数**（不是当前页条数）—— 前端拿它算页数。
 	Total int64 `json:"total"`
+}
+
+// AdminRedeemUsagesResp 是 `GET /admin/redeem-usages` 的响应
+// （2026-10-31 新一轮第 17 轮）。
+type AdminRedeemUsagesResp struct {
+	Items []AdminRedeemUsageView `json:"items"`
+	Total int64                  `json:"total"`
 }
 
 // AdminRedeemCodeResp 是 `POST /admin/redeem-codes` 的响应。

@@ -4,22 +4,13 @@
 use super::*;
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
-use deadpool_postgres::{Manager, Pool};
 use shared::response::ActionResult;
 use tower::ServiceExt;
 
-fn build_test_pool() -> Pool {
-    let mgr = Manager::new(
-        deadpool_postgres::tokio_postgres::Config::new(),
-        deadpool_postgres::tokio_postgres::NoTls,
-    );
-    Pool::builder(mgr).build().unwrap()
-}
-
 #[tokio::test]
 async fn test_portal_list_returns_success() {
-    let pool = build_test_pool();
-    let app = portal_core_entity_router(pool);
+    let db = shared::testing::mock_db().await;
+    let app = portal_core_entity_router(db);
 
     let response = app
         .clone()
@@ -38,8 +29,8 @@ async fn test_portal_list_returns_success() {
 
 #[tokio::test]
 async fn test_widget_list_returns_success() {
-    let pool = build_test_pool();
-    let app = portal_core_entity_router(pool);
+    let db = shared::testing::mock_db().await;
+    let app = portal_core_entity_router(db);
 
     let response = app
         .clone()
@@ -58,8 +49,8 @@ async fn test_widget_list_returns_success() {
 
 #[tokio::test]
 async fn test_page_list_returns_error_without_db() {
-    let pool = build_test_pool();
-    let app = portal_core_entity_router(pool);
+    let db = shared::testing::mock_db().await;
+    let app = portal_core_entity_router(db);
 
     let response = app
         .clone()
@@ -78,8 +69,8 @@ async fn test_page_list_returns_error_without_db() {
 
 #[tokio::test]
 async fn test_page_get_returns_error_without_db() {
-    let pool = build_test_pool();
-    let app = portal_core_entity_router(pool);
+    let db = shared::testing::mock_db().await;
+    let app = portal_core_entity_router(db);
 
     let response = app
         .clone()
@@ -98,8 +89,8 @@ async fn test_page_get_returns_error_without_db() {
 
 #[tokio::test]
 async fn test_page_create_returns_error_without_db() {
-    let pool = build_test_pool();
-    let app = portal_core_entity_router(pool);
+    let db = shared::testing::mock_db().await;
+    let app = portal_core_entity_router(db);
 
     let req = serde_json::to_string(&serde_json::json!({
         "portalId": "portal-1",
@@ -127,8 +118,8 @@ async fn test_page_create_returns_error_without_db() {
 
 #[tokio::test]
 async fn test_page_update_returns_error_without_db() {
-    let pool = build_test_pool();
-    let app = portal_core_entity_router(pool);
+    let db = shared::testing::mock_db().await;
+    let app = portal_core_entity_router(db);
 
     let req = serde_json::to_string(&serde_json::json!({
         "id": "page-1",
@@ -156,8 +147,8 @@ async fn test_page_update_returns_error_without_db() {
 
 #[tokio::test]
 async fn test_page_remove_returns_error_without_db() {
-    let pool = build_test_pool();
-    let app = portal_core_entity_router(pool);
+    let db = shared::testing::mock_db().await;
+    let app = portal_core_entity_router(db);
 
     let req = serde_json::to_string(&serde_json::json!({
         "id": "page-1"
@@ -182,8 +173,8 @@ async fn test_page_remove_returns_error_without_db() {
 
 #[tokio::test]
 async fn test_script_list_returns_success() {
-    let pool = build_test_pool();
-    let app = portal_core_entity_router(pool);
+    let db = shared::testing::mock_db().await;
+    let app = portal_core_entity_router(db);
 
     let response = app
         .clone()

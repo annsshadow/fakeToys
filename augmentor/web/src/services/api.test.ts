@@ -43,8 +43,7 @@ const createArgs = mocks.create.mock.calls[0]
 // 那一刻取的、照常对得上），所以「注册过几次」这一格也只能在模块作用域取下来。
 type Interceptor = (config: { headers: { set: (name: string, value: string) => void } }) => unknown
 const interceptorRegistrations = mocks.instance.interceptors.request.use.mock.calls.length
-const requestInterceptor = mocks.instance.interceptors.request.use.mock
-  .calls[0][0] as Interceptor
+const requestInterceptor = mocks.instance.interceptors.request.use.mock.calls[0][0] as Interceptor
 
 /** 让下一次请求返回给定的 data */
 function respondWith(data: unknown) {
@@ -144,19 +143,17 @@ describe('写操作鉴权（L233）', () => {
 
     expect(api.apiErrorDetail(err, '删除失败')).toBe(
       '缺少或无效的 X-API-Key——这台浏览器还没有存 key：' +
-        '到「配置管理 → 写操作鉴权」填服务端 AUGMENTOR_API_KEY 的那一份'
+        '到「配置管理 → 写操作鉴权」填服务端 AUGMENTOR_API_KEY 的那一份',
     )
 
     api.setApiKey('wrong-one')
-    expect(api.apiErrorDetail(err, '删除失败')).toContain(
-      '浏览器里存着的那一份与服务端不一致'
-    )
+    expect(api.apiErrorDetail(err, '删除失败')).toContain('浏览器里存着的那一份与服务端不一致')
   })
 
   it('401 但后端没给 detail 时，那句指路仍然在（fallback 打头）', () => {
     expect(api.apiErrorDetail({ response: { status: 401, data: {} } }, '删除失败')).toBe(
       '删除失败——这台浏览器还没有存 key：' +
-        '到「配置管理 → 写操作鉴权」填服务端 AUGMENTOR_API_KEY 的那一份'
+        '到「配置管理 → 写操作鉴权」填服务端 AUGMENTOR_API_KEY 的那一份',
     )
   })
 
@@ -258,7 +255,7 @@ describe('数据管理', () => {
         output_dir: 'out',
         formats: ['jsonl', 'csv'],
       },
-      { timeout: api.BULK_REQUEST_TIMEOUT_MS }
+      { timeout: api.BULK_REQUEST_TIMEOUT_MS },
     )
   })
 })
@@ -293,10 +290,7 @@ describe('数据增强', () => {
 describe('数据分析', () => {
   it('analyzeData / visualizeData 把文件名拼进路径', async () => {
     // 后端三个分析字段都是 Dict[str, Any]，内层不做严格断言
-    respondWithSequence(
-      { coverage_analysis: {}, statistics: {}, dedup_report: {} },
-      { charts: {} }
-    )
+    respondWithSequence({ coverage_analysis: {}, statistics: {}, dedup_report: {} }, { charts: {} })
 
     await api.analyzeData('a.json')
     await api.visualizeData('b.json')
@@ -483,7 +477,7 @@ describe('导出', () => {
         output_dir: 'out',
         formats: ['jsonl'],
       },
-      { timeout: api.BULK_REQUEST_TIMEOUT_MS }
+      { timeout: api.BULK_REQUEST_TIMEOUT_MS },
     )
   })
 })
@@ -691,8 +685,7 @@ describe('apiErrorDetail', () => {
   const httpError = (data: unknown) => ({ response: { data } })
 
   it('4xx 的字符串 detail 原样返回，一个字都不改', () => {
-    const detail =
-      '上传内容整份是一份合法 JSON，但按 csv 解析：名字或 input_format 与内容不符'
+    const detail = '上传内容整份是一份合法 JSON，但按 csv 解析：名字或 input_format 与内容不符'
 
     expect(api.apiErrorDetail(httpError({ detail }), '上传失败')).toBe(detail)
   })
@@ -709,21 +702,17 @@ describe('apiErrorDetail', () => {
   })
 
   it('空字符串 detail 走 fallback（后端回 400 但没文案时不说出空气泡）', () => {
-    expect(api.apiErrorDetail(httpError({ detail: '' }), '加载数据失败')).toBe(
-      '加载数据失败'
-    )
+    expect(api.apiErrorDetail(httpError({ detail: '' }), '加载数据失败')).toBe('加载数据失败')
   })
 
   it('detail 是非字符串非数组（对象、数字）时走 fallback', () => {
-    expect(api.apiErrorDetail(httpError({ detail: { code: 7 } }), '保存失败')).toBe(
-      '保存失败'
-    )
+    expect(api.apiErrorDetail(httpError({ detail: { code: 7 } }), '保存失败')).toBe('保存失败')
     expect(api.apiErrorDetail(httpError({ detail: 42 }), '删除失败')).toBe('删除失败')
   })
 
   it('数组里混着没有 msg 的条目：只取字符串 msg，全都没有就 fallback', () => {
     expect(
-      api.apiErrorDetail(httpError({ detail: [{ loc: ['body'] }, { msg: '坏字段' }] }), '失败')
+      api.apiErrorDetail(httpError({ detail: [{ loc: ['body'] }, { msg: '坏字段' }] }), '失败'),
     ).toBe('坏字段')
     expect(api.apiErrorDetail(httpError({ detail: [{ loc: ['body'] }] }), '失败')).toBe('失败')
     expect(api.apiErrorDetail(httpError({ detail: [] }), '失败')).toBe('失败')
@@ -731,16 +720,16 @@ describe('apiErrorDetail', () => {
 
   it('没有 response 的错误（网络断开、超时、原生 Error）走 fallback', () => {
     expect(api.apiErrorDetail(new Error('timeout of 30000ms exceeded'), '上传失败')).toBe(
-      '上传失败'
+      '上传失败',
     )
     expect(api.apiErrorDetail(undefined, '上传失败')).toBe('上传失败')
     expect(api.apiErrorDetail('字符串也能接住', '上传失败')).toBe('上传失败')
   })
 
   it('响应体是字符串（代理返回的 HTML/纯文本）不会崩', () => {
-    expect(
-      api.apiErrorDetail(httpError('<html>502 Bad Gateway</html>'), '导出失败')
-    ).toBe('导出失败')
+    expect(api.apiErrorDetail(httpError('<html>502 Bad Gateway</html>'), '导出失败')).toBe(
+      '导出失败',
+    )
   })
 })
 
@@ -847,7 +836,7 @@ describe('isTimeoutError', () => {
 
   it('带 response 的 4xx/5xx 不是超时；没有 code 的原生 Error、null、字符串也不是', () => {
     expect(
-      api.isTimeoutError({ response: { status: 504, data: {} }, code: 'ERR_BAD_RESPONSE' })
+      api.isTimeoutError({ response: { status: 504, data: {} }, code: 'ERR_BAD_RESPONSE' }),
     ).toBe(false)
     expect(api.isTimeoutError(new Error('timeout of 30000ms exceeded'))).toBe(false)
     expect(api.isTimeoutError(null)).toBe(false)
@@ -994,7 +983,7 @@ describe('运行时契约校验（Z 批次）', () => {
     respondWith({ files: [{ name: 'a.json' }] })
 
     await expect(api.getDataFiles()).rejects.toThrow(
-      '接口 getDataFiles 的响应不符合契约：字段「files.0.path」（invalid_type）'
+      '接口 getDataFiles 的响应不符合契约：字段「files.0.path」（invalid_type）',
     )
   })
 
@@ -1037,7 +1026,7 @@ describe('运行时契约校验（Z 批次）', () => {
         remaining_time: '0:00:06',
         start_time: '2026-10-26T10:00:00',
         last_update: '2026-10-26T10:00:04',
-      }
+      },
     )
 
     await expect(api.getProgress()).resolves.toEqual({ status: 'no_checkpoint' })
@@ -1050,4 +1039,3 @@ describe('运行时契约校验（Z 批次）', () => {
     await expect(api.getProgress()).rejects.toThrow('接口 getProgress 的响应不符合契约')
   })
 })
-

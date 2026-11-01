@@ -20,16 +20,17 @@ import { message } from 'antd'
 
 window.matchMedia =
   window.matchMedia ||
-  ((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  }) as unknown as MediaQueryList)
+  ((query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList)
 class RO {
   observe() {}
   unobserve() {}
@@ -113,12 +114,10 @@ describe('Settings 读配置与渲染', () => {
 
     const { container } = render(<Settings />)
 
-    await waitFor(() =>
-      expect(container.querySelector('input[value="3"]')).toBeInTheDocument()
-    )
+    await waitFor(() => expect(container.querySelector('input[value="3"]')).toBeInTheDocument())
     // 四个 InputNumber 的值分别是 variants=3 / threads=4 / quality.threshold=0.7 / dedup.threshold=0.85
     const values = Array.from(container.querySelectorAll('.ant-input-number-input')).map(
-      (el) => (el as HTMLInputElement).value
+      (el) => (el as HTMLInputElement).value,
     )
     expect(values).toEqual(['3', '4', '0.7', '0.85'])
   })
@@ -135,7 +134,7 @@ describe('Settings 保存时递给服务层的负载', () => {
     // 等下拉真的把 default 显示出来，才证明 defaultModel 状态已就绪（否则保存拿到空串）
     // antd 6 起单选的选中值就渲染在 `.ant-select-content` 里（v5 的 `.ant-select-selection-item` 已移除）
     await waitFor(() =>
-      expect(container.querySelector('.ant-select-content')?.textContent).toBe('ernie')
+      expect(container.querySelector('.ant-select-content')?.textContent).toBe('ernie'),
     )
     fireEvent.click(screen.getByRole('button', { name: /保存配置/ }))
     const payload = spies.updateConfig.mock.calls[0][0]
@@ -158,10 +157,9 @@ describe('Settings 保存时递给服务层的负载', () => {
     await waitFor(() => expect(spies.getModels).toHaveBeenCalled())
     fireEvent.click(screen.getByRole('button', { name: /保存配置/ }))
 
-    await waitFor(
-      () => expect(document.body.textContent).toContain('配置已保存到 config.yaml'),
-      { timeout: 10000 }
-    )
+    await waitFor(() => expect(document.body.textContent).toContain('配置已保存到 config.yaml'), {
+      timeout: 10000,
+    })
   })
 })
 
@@ -189,10 +187,9 @@ describe('Settings 失败路径的可见性', () => {
     await waitFor(() => expect(spies.getModels).toHaveBeenCalled())
     fireEvent.click(screen.getByRole('button', { name: /保存配置/ }))
 
-    await waitFor(
-      () => expect(document.body.textContent).toContain('quality.threshold 越界'),
-      { timeout: 10000 }
-    )
+    await waitFor(() => expect(document.body.textContent).toContain('quality.threshold 越界'), {
+      timeout: 10000,
+    })
   })
 })
 
@@ -218,14 +215,14 @@ describe('Settings 按数据推荐配置', () => {
     await waitFor(() =>
       expect(container.querySelectorAll('[role=combobox]')[1]).toHaveAttribute(
         'aria-expanded',
-        'true'
-      )
+        'true',
+      ),
     )
     const dropdown = () => document.querySelectorAll('.ant-select-dropdown')
     await waitFor(() => expect(dropdown().length).toBeGreaterThanOrEqual(1))
     const option = Array.from(
-      dropdown()[dropdown().length - 1].querySelectorAll('.ant-select-item-option')
-    ).find(el => el.textContent === 'seed.json')
+      dropdown()[dropdown().length - 1].querySelectorAll('.ant-select-item-option'),
+    ).find((el) => el.textContent === 'seed.json')
     if (!option) throw new Error('数据集下拉里没有 seed.json')
     fireEvent.click(option)
   }
@@ -242,7 +239,7 @@ describe('Settings 按数据推荐配置', () => {
 
     await waitFor(() => expect(spies.autoConfigRecommend).toHaveBeenCalledWith('seed.json'))
     const stats = Array.from(container.querySelectorAll('.ant-statistic-content-value')).map(
-      el => el.textContent
+      (el) => el.textContent,
     )
     // 250 是整数、无千分位；0.62 / 0.91 原样显示，不四舍五入成 0.6 / 0.9
     expect(stats).toEqual(['0.62', '0.91', '250'])
@@ -253,7 +250,7 @@ describe('Settings 按数据推荐配置', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /填进上面的表单/ }))
     const values = Array.from(container.querySelectorAll('.ant-input-number-input')).map(
-      el => (el as HTMLInputElement).value
+      (el) => (el as HTMLInputElement).value,
     )
     // 前两个是增强配置（3 / 4），后两个被推荐值覆盖：0.7→0.62、0.85→0.91
     expect(values).toEqual(['3', '4', '0.62', '0.91'])
@@ -333,10 +330,9 @@ describe('Settings 写操作鉴权（L233）', () => {
     // trim 后才落盘：存进去的必须是能直接与环境变量比对的那一份
     expect(localStorage.getItem(API_KEY_STORAGE_KEY)).toBe('s3cret')
     expect(screen.getByText('这台浏览器已存了一份')).toBeInTheDocument()
-    await waitFor(
-      () => expect(document.body.textContent).toContain('已存进这台浏览器'),
-      { timeout: 10000 }
-    )
+    await waitFor(() => expect(document.body.textContent).toContain('已存进这台浏览器'), {
+      timeout: 10000,
+    })
   })
 
   it('重开页面时输入框反映已经存下的那份（不是空串）', async () => {
@@ -372,10 +368,7 @@ describe('Settings 写操作鉴权（L233）', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /存进这台浏览器/ }))
 
-    await waitFor(
-      () => expect(document.body.textContent).toContain('等于清除'),
-      { timeout: 10000 }
-    )
+    await waitFor(() => expect(document.body.textContent).toContain('等于清除'), { timeout: 10000 })
     expect(localStorage.getItem(API_KEY_STORAGE_KEY)).toBeNull()
   })
 
@@ -454,7 +447,7 @@ describe('Settings 配置文件校验（L234）', () => {
     Array.from(container.querySelectorAll('.ant-statistic')).map(
       (box) =>
         `${box.querySelector('.ant-statistic-title')?.textContent}=` +
-        `${box.querySelector('.ant-statistic-content-value')?.textContent}`
+        `${box.querySelector('.ant-statistic-content-value')?.textContent}`,
     )
 
   beforeEach(() => {
@@ -478,7 +471,7 @@ describe('Settings 配置文件校验（L234）', () => {
     expect(screen.getByText('error')).toBeInTheDocument()
     await waitFor(
       () => expect(document.body.textContent).toContain('这份配置不合法：1 个错误、0 个警告'),
-      { timeout: 10000 }
+      { timeout: 10000 },
     )
   })
 
@@ -513,10 +506,9 @@ describe('Settings 配置文件校验（L234）', () => {
     fireEvent.change(pathInput(), { target: { value: '../../etc/passwd' } })
     fireEvent.click(screen.getByRole('button', { name: /校验配置/ }))
 
-    await waitFor(
-      () => expect(document.body.textContent).toContain('路径超出允许的数据目录范围'),
-      { timeout: 10000 }
-    )
+    await waitFor(() => expect(document.body.textContent).toContain('路径超出允许的数据目录范围'), {
+      timeout: 10000,
+    })
     expect(screen.getByText('还没有校验结果')).toBeInTheDocument()
     expect(container.querySelector('.ant-statistic')).toBeNull()
   })

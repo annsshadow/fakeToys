@@ -7,14 +7,17 @@ import (
 	"fmt"
 	"sync"
 	"testing"
+
+	"github.com/laiyipao/server/internal/config"
 )
 
 // TestSetRecomputeModeConcurrentWithStateReads 钉住「运行期切档 × 状态读」并发无竞争。
 //
 // # 背景（2026-10-24 修数据竞争）
 //
-// `SetRecomputeMode` 曾经直接写 `s.Cfg.SettleRecomputeMode`——而 `Cfg` 是
-// `New` 时的**值拷贝**；`RecomputeModeState`（GET /admin/recomputes/mode）
+// `SetRecomputeMode` 曾经直接写 `s.Cfg().SettleRecomputeMode`——而 `Cfg` 当时是
+// `New` 时的**值拷贝**（2026-10-29 起是原子指针，但「改结构体字段」仍非原子）；
+// `RecomputeModeState`（GET /admin/recomputes/mode）
 // 并发读同一个字段。运营在后台页面切档（PUT）的同时另一人刷新状态（GET），
 // 即构成数据竞争。`go test -race` 能抓，但此前没有用例覆盖这条路径。
 //
@@ -28,7 +31,12 @@ import (
 //  4. 运行期切档**不写 Cfg**（竞争的根源已消除）。
 func TestSetRecomputeModeConcurrentWithStateReads(t *testing.T) {
 	s := &Service{}
-	s.Cfg.SettleRecomputeMode = RecomputeOff
+	// 2026-10-29：Cfg 由值字段改为原子指针（支持 SIGHUP 热加载），
+	// 空 Service 字面量不再自带一份配置 —— 必须先装一份快照再建 gate。
+	// 用 `cfg.Store` 而不是 `Cfg().X = ...`：后者是「改结构体字段」，
+	// 正是本用例要钉住的那种非原子写法。
+	base := config.Config{SettleRecomputeMode: RecomputeOff}
+	s.cfg.Store(&base)
 	s.initRecomputeGate() // 与 New 同路径：按 Cfg 建初始 gate
 
 	modes := []string{RecomputeOff, RecomputeShadow, RecomputeEnforce}
@@ -91,8 +99,8 @@ func TestSetRecomputeModeConcurrentWithStateReads(t *testing.T) {
 		t.Errorf("终态应为 enforce 全家桶，实际 %+v", st)
 	}
 	// 运行期切档不得写 Cfg——那是数据竞争的根源。
-	if s.Cfg.SettleRecomputeMode != RecomputeOff {
+	if s.Cfg().SettleRecomputeMode != RecomputeOff {
 		t.Errorf("运行期切档不应写 Cfg（应保持启动配置 %q），实际 %q",
-			RecomputeOff, s.Cfg.SettleRecomputeMode)
+			RecomputeOff, s.Cfg().SettleRecomputeMode)
 	}
 }

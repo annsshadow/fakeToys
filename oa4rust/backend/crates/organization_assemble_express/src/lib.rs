@@ -17,6 +17,13 @@ pub mod endpoints_unit2;
 pub const API_BASE: &str = "/api/organization_assemble_express";
 pub mod routes;
 
+/// 写面会话存在档：无会话先 401，在任何 `pool.get()` 之前（离线可证）。
+pub(crate) fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;

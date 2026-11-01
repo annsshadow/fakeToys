@@ -4,6 +4,7 @@
 import { readFileSync, writeFileSync, renameSync, mkdirSync, existsSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { ROOT_DIR } from "./config.js";
+import { createLogger } from "./logger.js";
 import type { CheckinResult } from "./types.js";
 
 // 数据目录默认在项目内；测试等场景可用 AUTO_CHECKIN_DATA_DIR 指到别处
@@ -34,7 +35,26 @@ function readFromDisk(): Db {
     if (!Array.isArray(db.records)) return { records: [] };
     return db;
   } catch {
+    // 文件损坏（半截 JSON / 非 UTF-8 / 被别的东西覆盖）时**先隔离再当空账**。
+    //
+    // 原来这里直接返回空账：下一次 `addRecord` 会以「空账 + 1 条」整份重写，
+    // 把损坏文件里本可人工抢救的历史记录永久覆盖掉 —— 一次坏 JSON 等于
+    // 全部签到历史归零，而且没有任何信号。改名成 `records.corrupt-<时间戳>.json`
+    // 后，「抢救」与「继续跑」两件事互不冲突。
+    quarantineCorruptFile();
     return { records: [] };
+  }
+}
+
+function quarantineCorruptFile(): void {
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const dest = join(DATA_DIR, `records.corrupt-${stamp}.json`);
+  try {
+    renameSync(DB_PATH, dest);
+    createLogger("store").warn(`记录文件损坏，已隔离到 ${dest}，本次按空记录继续`);
+  } catch (err) {
+    // 隔离失败也不能让读取路径抛：调用方（面板统计）应拿到空账而不是 500。
+    createLogger("store").error(`记录文件损坏且隔离失败：${(err as Error).message}`);
   }
 }
 

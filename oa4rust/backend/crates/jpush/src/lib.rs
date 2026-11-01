@@ -8,6 +8,13 @@ use shared::{error::AppError, response::ActionResult};
 
 pub mod routes;
 
+/// 写面会话存在档：无会话先 401，在任何 `pool.get()` 之前（离线可证）。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 pub fn jpush_router(pool: Pool) -> Router {
     routes::jpush_router(pool)
 }
@@ -83,14 +90,15 @@ pub async fn device_get(
 #[allow(non_snake_case)]
 pub async fn device_create(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     // 推送设备归属以会话登录人为事实源：客户端 userId 可伪造，替他人注册推送设备
     // 即推送劫持面（安全审计 2026-10 二轮）。
-    let user_id = session.person_unique.clone();
+    let user_id = sess.person_unique.clone();
     let platform = req
         .get("platform")
         .and_then(|v| v.as_str())

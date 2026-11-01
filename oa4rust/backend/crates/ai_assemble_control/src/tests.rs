@@ -123,7 +123,8 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        // A2 收口后：无会话在 DB 访问前被 require_session 拦为 401。
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
     #[test]

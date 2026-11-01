@@ -9,7 +9,6 @@
 | Rust 工具链 | **1.85+**（`[workspace.package] rust-version = "1.85"`） | CI 供应链扫描固定用 Rust 1.88.0（与应用最低版本是两个独立约束） |
 | PostgreSQL | **14+**（docker-compose 用 postgres:14） | 主库；生产另有 PostgreSQL 17 实测记录（待确认：仓库文档中未找到该实测记录） |
 | MySQL 8（可选） | 8.x | 多数据库兼容验证用（`SqlDialect` + rewriter） |
-| Redis（可选但推荐） | 7.x（redis:7-alpine） | 会话存储与分布式限流的**默认后端**；不可达自动降级内存+DB |
 
 ### 前端 / 移动端
 
@@ -31,7 +30,6 @@
 | --- | --- | --- | --- |
 | `DATABASE_URL` | ✅ | `postgres://o2server:password@localhost:5432/oa4rust` | PostgreSQL 连接串 |
 | `DB_DIALECT` | 否 | `postgres` | SQL 方言选择：`postgres`（默认）/ `mysql`（经 `SqlDialect` + PG→MySQL rewriter 兼容，见 `shared/src/db/dialect.rs`） |
-| `REDIS_URL` | 推荐 | `redis://127.0.0.1:6379` | 会话/限流/PubSub；不可达自动降级 |
 | `RUST_ENV` | ✅（生产） | `development` | `production` 时强制校验认证配置 |
 | `APP_PUBLIC_ORIGIN` | ✅ | `http://localhost:3000` | **必须等于浏览器请求 API 的 origin**；不一致 → CSRF 403。Vite 代理开发时为 `http://localhost:5173` |
 | `AUTH_COOKIE_SECURE` | 生产 ✅ | `false`（开发） | 生产 HTTPS 必须 `true` |
@@ -48,7 +46,6 @@
 | --- | --- | --- | --- |
 | postgres | postgres:14 | 5432 | 主库（o2server/password，库 oa4rust，带健康检查） |
 | mysql | mysql:8 | 3306 | 多数据库兼容测试 |
-| redis | redis:7-alpine | 6379 | 会话/限流 |
 | o2server | o2oa/o2server:latest | 18080→80 | O2OA v9 行为对齐基准容器（开发期 parity 测试可选依赖；启动期最长 300s） |
 
 ```bash

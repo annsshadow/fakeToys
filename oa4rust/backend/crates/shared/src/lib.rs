@@ -19,13 +19,11 @@ pub mod crud;
 pub mod db;
 pub mod error;
 pub mod input_validation;
-pub mod messaging;
 pub mod middleware;
 pub mod migrate;
 pub mod mock_client;
 pub mod netguard;
 pub mod rate_limit;
-pub mod redis;
 pub mod response;
 pub mod router;
 pub mod scheduler;
@@ -39,10 +37,6 @@ pub use deadpool_postgres::Pool;
 pub use rate_limit::RateLimiter;
 pub use session::SessionManager;
 
-pub use messaging::{
-    Envelope, InMemoryBus, MessageBus, MessagingError, MessagingResult, RedisPubSubBus,
-    TokenThresholdEvent,
-};
 use std::ops::Deref;
 
 #[cfg(test)]
@@ -232,5 +226,48 @@ impl ControlPool for DynControlPool {
         >,
     > {
         self.0.acquire()
+    }
+}
+
+#[cfg(test)]
+mod dyn_control_pool_tests {
+    use super::*;
+    use crate::mock_client::{mock_control_pool, MockQueryResult};
+    use std::sync::Arc;
+
+    /// DynControlPool 是给下游 crate 测试注入 mock 池的包装器；本测试在 shared
+    /// 自身走一遍 acquire → Arc<dyn ControlClient> 委托 → 查询的完整链路，
+    /// 覆盖 `ControlPool for DynControlPool` 与 `ControlClient for Arc<...>` 的
+    /// 委托方法（这些行只被下游测试触发，若本仓库无人用会悄悄退化）。
+    #[tokio::test]
+    async fn dyn_control_pool_acquire_and_delegate_full_chain() {
+        // mock 是 LIFO 弹栈（pop 从末尾取）：队列按调用顺序**逆序**排列。
+        let results = Arc::new(tokio::sync::Mutex::new(vec![
+            MockQueryResult::Row(vec![("count", serde_json::json!(1))]),
+            MockQueryResult::Row(vec![("id", serde_json::json!(7))]),
+            MockQueryResult::Row(vec![("id", serde_json::json!(7))]),
+            MockQueryResult::Rows(vec![vec![("id", serde_json::json!(7))]]),
+        ]));
+        let pool = mock_control_pool(results);
+        let client = pool.acquire().await.expect("acquire 应成功");
+
+        let rows = client.ctrl_query("SELECT 1", &[]).await.expect("query");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].get_i32("id"), 7);
+
+        let one = client
+            .ctrl_query_one("SELECT 1", &[])
+            .await
+            .expect("query_one");
+        assert_eq!(one.get_i32("id"), 7);
+
+        let opt = client
+            .ctrl_query_opt("SELECT 1", &[])
+            .await
+            .expect("query_opt");
+        assert!(opt.is_some());
+
+        let n = client.ctrl_execute("UPDATE t", &[]).await.expect("execute");
+        assert_eq!(n, 1);
     }
 }
