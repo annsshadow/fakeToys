@@ -9734,7 +9734,7 @@ fn hex_decode(hex: &str) -> Result<Vec<u8>, ()> {
 
 /// 计算 token 哈希。
 fn invoke_token_hash(token: &str) -> String {
-    use hmac::{Hmac, Mac};
+    use hmac::{Hmac, KeyInit, Mac};
     use sha2::Sha256;
 
     type HmacSha256 = Hmac<Sha256>;
@@ -9759,7 +9759,7 @@ fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
 
 /// 校验 token 与存储哈希是否匹配。存储格式非法一律拒绝（fail-closed）。
 fn invoke_token_verify(token: &str, stored: &str) -> bool {
-    use hmac::{Hmac, Mac};
+    use hmac::{Hmac, KeyInit, Mac};
     use sha2::Sha256;
 
     type HmacSha256 = Hmac<Sha256>;
