@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Card, Button, Space, Select, Switch, message, Progress, Tag } from 'antd'
 import { RocketOutlined, ReloadOutlined } from '@ant-design/icons'
 import {
@@ -14,6 +14,10 @@ export default function Augmentation() {
   const [files, setFiles] = useState<string[]>([])
   const [inputFile, setInputFile] = useState('')
   const [outputFile, setOutputFile] = useState('augmented_output.json')
+  // 第 34 轮：终态 toast 要带上输出文件名，而 checkProgress 是空依赖的稳定回调 ——
+  // 用 ref 同步最新值（与 runningRef 同款）。
+  const outputFileRef = useRef(outputFile)
+  outputFileRef.current = outputFile
   const [useQuality, setUseQuality] = useState(true)
   const [useDedup, setUseDedup] = useState(true)
   const [useCheckpoint, setUseCheckpoint] = useState(true)
@@ -21,6 +25,10 @@ export default function Augmentation() {
   // 其余后端会由服务端自动回退线程池并打 warning。
   const [useAsync, setUseAsync] = useState(false)
   const [running, setRunning] = useState(false)
+  // 第 33 轮：checkProgress 是空依赖的稳定回调（见下），它读 `running`
+  // 会拿到闭包里的陈旧值 —— 用 ref 同步最新值，回调身份保持稳定。
+  const runningRef = useRef(running)
+  runningRef.current = running
   const [progress, setProgress] = useState<AugmentProgressDetail | null>(null)
   const [checkpoints, setCheckpoints] = useState<string[]>([])
   // L277：轮询开关是一个**状态**，定时器由 effect 拥有——终态（`progress >= 1`）把开关关掉，
@@ -61,11 +69,25 @@ export default function Augmentation() {
         setProgress(result)
         if (result.progress >= 1) {
           setRunning(false)
-          message.success('增强任务完成！')
+          message.success(`增强任务完成！输出文件：${outputFileRef.current}`)
           // L277：到终态就收表。改前这一句之后定时器照跑，于是「增强任务完成！」
           // 每 2 秒重发一次、并且永远在打 `GET /api/augment/progress`。
           setPolling(false)
+          // 第 34 轮：产物已落盘，立刻刷新文件列表 —— 改前左侧输入选择器
+          // 看不到新文件，用户要手动刷新页面才能加载增强结果。
+          try {
+            const fr = await getDataFiles()
+            setFiles(fr.files.map((f) => f.name))
+          } catch {
+            // 文件列表刷新失败不影响进度展示；下次手动刷新仍可恢复。
+          }
         }
+      } else if (!runningRef.current) {
+        // 第 33 轮：没有任务时也收表。改前挂载即开表，`no_checkpoint` 响应
+        // 什么都不做 —— 页面挂着就每 2 秒白打一次进度接口，永不停。
+        // 任务启动（handleStart）会重新 setPolling(true)，且那时
+        // runningRef.current 为 true（任务可能还没创建断点），不会被误关。
+        setPolling(false)
       }
     } catch {
       // 忽略错误

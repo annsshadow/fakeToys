@@ -65,15 +65,17 @@ class RateLimiter:
             for key, _ in oldest:
                 del self._hits[key]
 
-    def allow(self, key: str, now: float = None) -> bool:
-        """判断某键当前是否放行
+    def check(self, key: str, now: float = None) -> tuple:
+        """一次持锁完成限流判定（第 32 轮）。
 
-        Args:
-            key: 客户端标识（连接对端地址）
-            now: 当前时间戳（可注入）
+        中间件此前每请求抢**三次**锁：`allow` 判定、`retry_after` 算等待秒数、
+        再读一次窗口算 `X-RateLimit-Remaining`。被限流的请求（恶意/超限客户端）
+        尤其密集，锁争抢在高并发下被放大。这里一次持锁算完三样：
 
         Returns:
-            是否放行
+            (是否放行, 建议等待秒数, 窗口内命中数)
+            - 放行时 retry_after=0，used 含本次命中；
+            - 拒绝时 used 不变（本次未计数）。
         """
         now = now if now is not None else time.time()
         with self._lock:
@@ -91,9 +93,24 @@ class RateLimiter:
             while window and now - window[0] > self.window_seconds:
                 window.popleft()
             if len(window) >= self.max_requests:
-                return False
+                oldest = window[0]
+                retry = max(1, int(self.window_seconds - (now - oldest)) + 1)
+                return False, retry, len(window)
             window.append(now)
-            return True
+            return True, 0, len(window)
+
+    def allow(self, key: str, now: float = None) -> bool:
+        """判断某键当前是否放行
+
+        Args:
+            key: 客户端标识（连接对端地址）
+            now: 当前时间戳（可注入）
+
+        Returns:
+            是否放行
+        """
+        allowed, _, _ = self.check(key, now)
+        return allowed
 
     def retry_after(self, key: str, now: float = None) -> int:
         """计算建议的 Retry-After 秒数（窗口内最早命中过期时间）
@@ -175,8 +192,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         key = self._client_key(request)
         now = time.time()
-        if not self.limiter.allow(key, now):
-            retry_after = self.limiter.retry_after(key, now)
+        # 第 32 轮：一次持锁拿全 放行/等待秒数/窗口命中数，三把锁合成一把。
+        allowed, retry_after, used = self.limiter.check(key, now)
+        if not allowed:
             response = JSONResponse(
                 status_code=429,
                 content={"detail": "请求过于频繁，请稍后再试"},
@@ -186,9 +204,6 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         response = await call_next(request)
         response.headers[self.HEADER_LIMIT] = str(self.limiter.max_requests)
-        with self.limiter._lock:
-            window = self.limiter._hits.get(key)
-            used = len(window) if window else 0
         remaining = max(0, self.limiter.max_requests - used)
         response.headers[self.HEADER_REMAINING] = str(remaining)
         return response

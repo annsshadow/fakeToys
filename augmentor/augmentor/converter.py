@@ -996,13 +996,17 @@ class DatasetConverter:
                 if data:
                     writer = csv.DictWriter(f, fieldnames=csv_fieldnames(data))
                     writer.writeheader()
-                    writer.writerows([sheet_text_row(row) for row in data])
+                    # 第 29 轮：生成器逐行转换，不再物化第二份全量列表 ——
+                    # 10 万行导出的瞬时内存减半（DictWriter 支持迭代器）。
+                    writer.writerows(sheet_text_row(row) for row in data)
             elif format == "tsv":
                 if data:
                     writer = csv.DictWriter(f, fieldnames=csv_fieldnames(data),
                                             delimiter="\t")
                     writer.writeheader()
-                    writer.writerows([sheet_text_row(row) for row in data])
+                    # 第 29 轮：生成器逐行转换，不再物化第二份全量列表 ——
+                    # 10 万行导出的瞬时内存减半（DictWriter 支持迭代器）。
+                    writer.writerows(sheet_text_row(row) for row in data)
             else:
                 json.dump(data, f, ensure_ascii=False, indent=2)
 
@@ -1038,6 +1042,19 @@ class DatasetConverter:
         excel_write.export_table_to_excel(data, path, columns=csv_fieldnames(data))
 
 
+# 第 37 轮：DatasetConverter 构造只构建一张无状态分发表（17 个绑定方法），
+# 每个请求/每次转换都重建是纯浪费 —— 模块级单例复用同一张表。
+# 类本身没有可变实例状态，单例并发安全（只读 _converters）。
+_CONVERTER_SINGLETON = None
+
+
+def _get_converter() -> "DatasetConverter":
+    global _CONVERTER_SINGLETON
+    if _CONVERTER_SINGLETON is None:
+        _CONVERTER_SINGLETON = DatasetConverter()
+    return _CONVERTER_SINGLETON
+
+
 def convert_dataset(data: List[Dict], 
                    target_format: str,
                    **kwargs) -> Any:
@@ -1050,7 +1067,7 @@ def convert_dataset(data: List[Dict],
     Returns:
         转换后的数据
     """
-    converter = DatasetConverter()
+    converter = _get_converter()
     return converter.convert(data, "json", target_format, **kwargs)
 
 
@@ -1077,7 +1094,7 @@ def convert_file(input_path: str,
     Returns:
         转换结果
     """
-    converter = DatasetConverter()
+    converter = _get_converter()
     return converter.convert_file(input_path, output_path,
                                   source_format=source_format,
                                   target_format=target_format, **kwargs)
@@ -1115,7 +1132,7 @@ def read_records(content: bytes, source_format: str,
         DataFormatError: 解析失败，或 Excel 文件损坏 / 缺 xlrd
         DataLoadError: 要读 Excel 但环境里没有 pandas
     """
-    converter = DatasetConverter()
+    converter = _get_converter()
     declared = source_format.lower()
     if declared in EXCEL_SOURCE_NAMES:
         declared = EXCEL_FORMAT
@@ -1144,6 +1161,6 @@ def get_supported_formats() -> List[str]:
     `tsv` 曾经是这种虚报——枚举有成员、`_infer_format` 认扩展名，但图里缺
     `json -> tsv` 这条边；补上边之后它才真的进这份清单。
     """
-    converters = DatasetConverter()._converters
+    converters = _get_converter()._converters
     supported = {"json"} | {target for source, target in converters if source == "json"}
     return [fmt.value for fmt in DataFormat if fmt.value in supported]

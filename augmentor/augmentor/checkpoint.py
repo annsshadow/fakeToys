@@ -488,7 +488,17 @@ class CheckpointManager:
                 checkpoint.completed_indices.append(index)
                 state.pending_completed.add(index)
                 if quality_score is not None:
+                    old_score = checkpoint.quality_scores.get(index)
                     checkpoint.quality_scores[index] = quality_score
+                    # 第 31 轮：增量维护均值缓存（挂在对象上，序列化面不受影响）。
+                    # 轮询端点每 2 秒读一次均值，10 万条任务时全量 sum 是 O(n) 重复劳动。
+                    agg = getattr(checkpoint, "_score_agg", None)
+                    if agg is not None:
+                        s, c = agg
+                        if old_score is not None:
+                            s -= old_score
+                            c -= 1
+                        checkpoint._score_agg = (s + quality_score, c + 1)
             else:
                 checkpoint.failed_items += 1
                 checkpoint.failed_indices.append(index)
@@ -588,9 +598,17 @@ class CheckpointManager:
         ck = checkpoint if checkpoint is not None else self._current_checkpoint
         if ck is None:
             return 0.0
-        
-        scores = list(ck.quality_scores.values())
-        return sum(scores) / len(scores) if scores else 0.0
+
+        # 第 31 轮：优先读增量缓存（O(1)）。缓存不存在时（加载的旧断点、
+        # 外部直接构造的 CheckpointData）惰性重建一次，之后由
+        # update_progress 增量维护。
+        agg = getattr(ck, "_score_agg", None)
+        if agg is None:
+            scores = list(ck.quality_scores.values())
+            agg = (sum(scores), len(scores))
+            ck._score_agg = agg
+        total, count = agg
+        return total / count if count else 0.0
     
     def get_remaining_indices(self,
                              checkpoint: Optional[CheckpointData] = None) -> List[int]:

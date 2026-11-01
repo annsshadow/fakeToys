@@ -25,12 +25,13 @@ pydantic>=2.0.0,<3.0.0
 python-multipart>=0.0.32
 
 # ============ 旧版脚本 enhanceTXT.py 专用 ============
-nlpaug>=1.1.0
-nlpcda>=2.5.8
+# nlpaug / nlpcda 只被 archive/enhanceTXT.py（旧版脚本，不在包内）引用 ——
+# 已移至 requirements-legacy.txt（第 36 轮），主安装面不再背它们。
 
 # ============ 多模型后端 (可选) ============
+# 注意：gemini 后端走 httpx REST（augmentor/models/gemini.py），不 import
+# google-generativeai —— 该依赖已从清单移除（零消费，第 36 轮）。
 anthropic>=1.15.0
-google-generativeai>=0.8.6
 
 # ============ 向量数据库 (可选) ============
 faiss-cpu>=1.7.4

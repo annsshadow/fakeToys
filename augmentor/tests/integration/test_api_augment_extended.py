@@ -133,3 +133,66 @@ class TestErrorPaths:
 
         client = TestClient(app)
         assert client.get("/api/augment/checkpoints").status_code == 500
+
+
+class TestAugmentReport:
+    """第 35 轮：后台任务的报告（含 errors 失败明细）不再被丢弃。"""
+
+    def _task_id(self, in_name: str, tmp_path):
+        import hashlib
+        resolved = str(Path(tmp_path, in_name).resolve())
+        return f"augment_{hashlib.md5(resolved.encode('utf-8')).hexdigest()[:12]}"
+
+    def test_report_available_after_completion(self, augment_env):
+        client, in_name, out_name, tmp_path = augment_env
+        resp = client.post(
+            "/api/augment/start",
+            json={
+                "input_file": in_name,
+                "output_file": out_name,
+                "use_quality": False,
+                "use_dedup": False,
+                "use_checkpoint": False,
+            },
+        )
+        assert resp.status_code == 200
+
+        task_id = self._task_id(in_name, tmp_path)
+        report = client.get(f"/api/augment/report/{task_id}")
+        assert report.status_code == 200, report.text
+        body = report.json()
+        assert body["task_id"] == task_id
+        assert "output_count" in body
+        assert "errors" in body  # 失败明细从此可读
+        assert "input_file" in body
+
+    def test_report_unknown_task_404(self, augment_env):
+        client, *_ = augment_env
+        resp = client.get("/api/augment/report/no_such_task")
+        assert resp.status_code == 404
+
+    def test_report_requires_auth(self, augment_env, monkeypatch):
+        client, *_ = augment_env
+        monkeypatch.setenv("AUGMENTOR_API_KEY", "secret")
+        resp = client.get("/api/augment/report/t")
+        assert resp.status_code == 401
+
+    def test_async_task_id_matches_checkpoint_id(self, augment_env):
+        """第 35 轮：异步入口的返回 task_id 与断点一致（报告才能对上 progress）"""
+        client, in_name, out_name, tmp_path = augment_env
+        resp = client.post(
+            "/api/augment/start",
+            json={
+                "input_file": in_name,
+                "output_file": out_name,
+                "use_quality": False,
+                "use_dedup": False,
+                "use_checkpoint": False,
+                "use_async": True,
+            },
+        )
+        assert resp.status_code == 200
+        task_id = self._task_id(in_name, tmp_path)
+        report = client.get(f"/api/augment/report/{task_id}")
+        assert report.status_code == 200, report.text
+        assert report.json()["task_id"] == task_id

@@ -368,6 +368,12 @@ class ConfigValidator:
     # 这个钱一次进程只该付一遍，而不是每次 `validate_config` 付一遍。
     _CONSUMED_SECTIONS: Optional[Dict[str, Set[str]]] = None
 
+    # 回放基线的默认底（第 30 轮）。`_validate_replay_sections` 需要
+    # AppConfig 的字段类型做「类型层先短路」、并用 `dataclasses.replace(默认底, …)`
+    # 做单键探针 —— 默认底本身从不被修改（replace 返回新对象），
+    # 每次调用都重新构造 20 节是纯浪费。与 `_CONSUMED_SECTIONS` 同款类级缓存。
+    _BASE_PROBE: Optional["AppConfig"] = None
+
     # `rag` 两键的缺省档（L82 / A118）：静态面的跨键判据需要它，因为「只写
     # `chunk_overlap`、`chunk_size` 走默认」也是一份合法配置，而那条界要看两侧。
     # 值从 `RAGConfig` 的字段拿而不是抄数字 —— A123 之后 dataclass 就是默认值的唯一
@@ -794,7 +800,9 @@ class ConfigValidator:
         # 非法」的档位按默认底判成违规（L82 的整批语义归专项回放负责）。
         cross_key_owned = {"rag": {"chunk_size", "chunk_overlap"},
                           "quality": {"weights"}}
-        base_probe = AppConfig()
+        if self._BASE_PROBE is None:
+            self._BASE_PROBE = AppConfig()
+        base_probe = self._BASE_PROBE
         model_entry_names = set(MODEL_ENTRY_KEYS)
         for f in fields(base_probe):
             cls = type(getattr(base_probe, f.name))

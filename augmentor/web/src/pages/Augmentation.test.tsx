@@ -209,6 +209,8 @@ describe('Augmentation 轮询的停表与重启（L277）', () => {
     // 终态 toast 由 React 调度器在假定时器下渲染不出（实测 DOM 里没有「增强任务完成！」），
     // 所以这里判的是可控的那半：进度卡片停在终态、并且端点不再被戳。
     expect(document.body.textContent).toContain('增强进度100%')
+    // 第 34 轮：终态必须刷新文件列表（挂载一次 + 终态一次）。
+    expect(spies.getDataFiles).toHaveBeenCalledTimes(2)
 
     // 停表判据：再多跑 10 拍，一次都不许多打。改前 `checkProgress` 够不着定时器句柄，
     // 这十拍会原样变成十次请求，并且「增强任务完成！」每拍重发一次。
@@ -263,5 +265,69 @@ describe('Augmentation 断点列表（L211 接线）', () => {
 
     await waitFor(() => expect(spies.getCheckpoints).toHaveBeenCalled())
     expect(await screen.findByText('暂无断点')).toBeInTheDocument()
+  })
+})
+
+describe('Augmentation 轮询收敛（第 33 轮）', () => {
+  beforeEach(() => {
+    spies.getDataFiles.mockResolvedValue({ files: [{ name: 'seed.json' }] })
+    spies.startAugmentation.mockResolvedValue({ success: true, message: 'ok' })
+  })
+
+  it('没有任务时只打一次进度端点就停表（改前每 2 秒永远白打）', async () => {
+    vi.useFakeTimers()
+    spies.getProgress.mockResolvedValue({ status: 'no_checkpoint' })
+
+    render(<Augmentation />)
+    // 挂载拍（文件/断点）+ 第一拍进度（2s）
+    await vi.advanceTimersByTimeAsync(2100)
+    expect(spies.getProgress).toHaveBeenCalledTimes(1)
+
+    // 再多跑 10 拍：表已关，一次都不许多打。
+    await vi.advanceTimersByTimeAsync(2100 * 10)
+    expect(spies.getProgress).toHaveBeenCalledTimes(1)
+    vi.useRealTimers()
+  })
+
+  it('任务刚启动、断点还没建时不会被误关表（running 为真）', async () => {
+    // 只 fake 轮询定时器：下拉/启动流程里的 waitFor 依赖真实 setTimeout，
+    // 全 fake 会让它卡死（超时）。
+    vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] })
+    // 前两拍：后台任务尚未创建断点（no_checkpoint）；之后出现 task_id。
+    const sequence = [
+      { status: 'no_checkpoint' },
+      { status: 'no_checkpoint' },
+      {
+        task_id: 't-r',
+        total_items: 10,
+        processed_items: 1,
+        failed_items: 0,
+        progress: 0.1,
+        progress_percent: '10%',
+        elapsed_time: '0:00:01',
+        remaining_time: '0:00:02',
+        start_time: 's',
+        last_update: 'u',
+        avg_quality_score: 0.7,
+      },
+    ]
+    spies.getProgress.mockImplementation(async () => sequence.shift() ?? { status: 'no_checkpoint' })
+
+    const { container } = render(<Augmentation />)
+    // 选文件并点「开始增强」
+    fireEvent.mouseDown(container.querySelector('.ant-select')!)
+    await waitFor(() =>
+      expect(document.querySelector('.ant-select-item-option')).toBeInTheDocument(),
+    )
+    fireEvent.click(document.querySelector('.ant-select-item-option')!)
+    fireEvent.click(screen.getByRole('button', { name: /开始增强/ }))
+    await waitFor(() => expect(spies.startAugmentation).toHaveBeenCalledTimes(1))
+
+    spies.getProgress.mockClear()
+    // 任务已启动（running=true）：即使前两拍还是 no_checkpoint，轮询也必须继续。
+    await vi.advanceTimersByTimeAsync(2100 * 3)
+    expect(spies.getProgress.mock.calls.length).toBeGreaterThanOrEqual(2)
+    expect(document.body.textContent).toContain('增强进度10%')
+    vi.useRealTimers()
   })
 })

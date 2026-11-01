@@ -1405,3 +1405,42 @@ class TestUnreadKeyWarnings:
         """豁免清单是显式的两个名字，多一项就等于承认又一处「配了不生效」"""
         assert ConfigValidator.META_TOP_SECTIONS == {"app", "models"}
 
+
+
+def test_validate_config_baseline_constructed_once(monkeypatch):
+    """第 30 轮：`AppConfig()` 基线只构造一次，而不是每次 validate 重建。
+
+    `_validate_replay_sections` 用 AppConfig 的字段类型做类型短路、用
+    `dataclasses.replace(默认底, …)` 做单键探针 —— 默认底从不被修改，
+    每次调用重新构造 20 节是纯浪费。判据：monkeypatch 计数，连续两次
+    `validate_config` 后总构造次数不再增长（第二次走缓存）。
+    """
+    import augmentor.config_validator as cv
+
+    original = cv.AppConfig
+    calls = {"n": 0}
+
+    class _CountingAppConfig(original):
+        def __new__(cls, *args, **kwargs):
+            calls["n"] += 1
+            return super().__new__(cls)
+
+    monkeypatch.setattr(cv, "AppConfig", _CountingAppConfig)
+
+    validator = cv.ConfigValidator()
+    cfg = {
+        "app": {"name": "t", "version": "1"},
+        "models": {"default": "ernie"},
+        "augmentation": {"variants_per_seed": 5, "num_threads": 10},
+        "quality": {"enabled": True, "threshold": 0.7},
+    }
+    validator.validate_config(cfg)
+    after_first = calls["n"]
+    # 第一次调用允许少量构造（_CONSUMED_SECTIONS 推导 + 回放基线各一次）。
+    assert after_first >= 1
+
+    validator.validate_config(cfg)
+    assert calls["n"] == after_first, (
+        f"第二次 validate_config 不应再构造 AppConfig 基线："
+        f"构造次数 {after_first} → {calls['n']}"
+    )

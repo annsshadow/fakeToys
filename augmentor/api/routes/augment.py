@@ -3,7 +3,9 @@
 
 """数据增强 API 路由"""
 
-from typing import List, Optional
+import logging
+import threading
+from typing import Dict, List, Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
@@ -11,7 +13,17 @@ from pydantic import BaseModel
 from ..deps import raise_internal_error, get_pipeline, resolve_data_path, verify_api_key
 from ..schemas import MessageResponse
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(tags=["augment"])
+
+# 增强报告缓存（第 35 轮）：后台任务的返回值此前被整体丢弃 ——
+# errors 失败明细（条目下标/异常类型/预览）只存在于被丢弃的字典里，
+# UI 只能看到 failed_items 计数。这里按 task_id 存进程内报告，
+# `GET /api/augment/report/{task_id}` 可取。单进程部署适用；
+# 多 worker 部署需要落盘，见端点 docstring 的边界说明。
+_REPORTS: Dict[str, Dict] = {}
+_REPORTS_LOCK = threading.Lock()
 
 
 class CheckpointListResponse(BaseModel):
@@ -98,7 +110,7 @@ async def start_augmentation(
             # 由 `augment_dataset` 那一层的权威序（调用参数 > 配置 > 内置默认）解析。
             # 端点若在这里补成 True，配置臂就永远拿不到控制权——那正是要避免的
             # 「键写在请求模型里、读者却只有代码默认值」的幽灵面。
-            p.augment_dataset(
+            report = p.augment_dataset(
                 str(input_path),
                 str(output_path),
                 use_checkpoint=request.use_checkpoint,
@@ -106,6 +118,14 @@ async def start_augmentation(
                 use_dedup=request.use_dedup,
                 use_async=request.use_async
             )
+            # 第 35 轮：报告（含 errors 失败明细）按 task_id 存下，
+            # 前端轮询到终态后能拉取「哪条失败、为什么」。
+            try:
+                with _REPORTS_LOCK:
+                    _REPORTS[report["task_id"]] = report
+            except Exception:
+                # 报告存储失败不应影响任务本身已完成的输出。
+                logger.exception("保存增强报告失败")
 
         background_tasks.add_task(run_augment)
 
@@ -114,6 +134,25 @@ async def start_augmentation(
         raise
     except Exception as e:
         raise_internal_error(e)
+
+
+@router.get(
+    "/api/augment/report/{task_id}",
+    response_model=Dict,
+    summary="获取增强任务报告（含失败明细）",
+)
+async def get_augment_report(task_id: str, _auth: None = Depends(verify_api_key)):
+    """第 35 轮：读取一次增强任务的报告。
+
+    报告含 `errors` 失败明细（条目下标/异常类型/预览），后台任务完成时
+    按 task_id 缓存。边界：单进程部署适用 —— 多 worker 时报告落在
+    处理该任务的 worker 内存里，其它 worker 读不到（后续可改落盘）。
+    """
+    with _REPORTS_LOCK:
+        report = _REPORTS.get(task_id)
+    if report is None:
+        raise HTTPException(status_code=404, detail="报告不存在（任务未完成或由其它 worker 处理）")
+    return report
 
 
 @router.get(

@@ -1020,7 +1020,9 @@ class AugmentorPipeline:
             vector_index = self.build_vector_index(all_results)
 
         return {
-            "task_id": f"async_{hashlib.md5(str(input_file).encode()).hexdigest()[:8]}",
+            # 第 35 轮：与断点 task_id 统一（build_task_id）—— 报告按同一个
+            # id 存取，前端轮询到终态后能用 progress 的 task_id 拉报告。
+            "task_id": task_id,
             "input_file": input_file,
             "output_file": output_file,
             "input_count": len(items),

@@ -1685,3 +1685,13 @@ class TestAllEmptyQaRejected:
 
         DatasetConverter()._reject_all_empty_qa(
             ScanPastFirst([{"instruction": "q"}]), "alpaca")
+
+
+def test_converter_singleton_reused():
+    """第 37 轮：DatasetConverter 分发表进程内只建一次。
+
+    转换器只持有无状态分发表，每个请求重建是纯浪费。
+    `_get_converter()` 必须返回同一实例。
+    """
+    from augmentor.converter import _get_converter
+    assert _get_converter() is _get_converter()

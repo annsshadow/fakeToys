@@ -10,7 +10,7 @@ import logging
 import threading
 import time
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Tuple
 from ..config import (DEFAULT_REQUEST_TIMEOUT, REQUEST_TIMEOUT_RANGE, ModelConfig)
 from ..cache import MemoryCache, DiskCache
 from ..exceptions import ModelGenerateError, ModelResponseError
@@ -340,9 +340,11 @@ class ModelBackend(ABC):
             self._generation_cache = cache
         cache.set(key, value)
 
-    def _cache_lookup(self, prompt: str) -> Optional[str]:
-        """内存 → 磁盘两级缓存查询。
+    def _cache_lookup(self, prompt: str) -> Tuple[str, Optional[str]]:
+        """内存 → 磁盘两级缓存查询，同时把缓存键带回（第 28 轮）。
 
+        返回 `(cache_key, cached)`：未命中时调用方把同一个 key 传给
+        `_cache_store`，长 prompt 不再为同一份输入做两次 sha256。
         命中时**仍然计一次 request**（既有语义，别改）：统计口径问的是
         「有多少次生成请求被回答」，不是「有多少次真的打了网络」。
 
@@ -355,7 +357,7 @@ class ModelBackend(ABC):
             logger.debug("内存缓存命中，直接返回结果")
             with self._lock:
                 self._request_count += 1
-            return cached
+            return cache_key, cached
 
         disk_cached = (
             self._response_cache.get(cache_key) if self._response_cache is not None else None
@@ -365,12 +367,17 @@ class ModelBackend(ABC):
             self._cache_put(cache_key, disk_cached)
             with self._lock:
                 self._request_count += 1
-            return disk_cached
-        return None
+            return cache_key, disk_cached
+        return cache_key, None
 
-    def _cache_store(self, prompt: str, result: str) -> None:
-        """写回两级缓存。磁盘写失败**不得**让已经成功的生成变成失败。"""
-        cache_key = self._cache_key(prompt)
+    def _cache_store(self, prompt: str, result: str, cache_key: Optional[str] = None) -> None:
+        """写回两级缓存。磁盘写失败**不得**让已经成功的生成变成失败。
+
+        第 28 轮：`cache_key` 由 `_cache_lookup` 带回时直接复用，避免对
+        同一份 prompt 重复做 sha256（长 prompt 每请求两次数 KB 哈希）。
+        """
+        if cache_key is None:
+            cache_key = self._cache_key(prompt)
         self._cache_put(cache_key, result)
         if self._response_cache is not None:
             try:
@@ -404,7 +411,7 @@ class ModelBackend(ABC):
         delay = retry_delay if retry_delay is not None else self._default_retry_delay
 
         # 缓存复用优化：内存缓存 → 磁盘缓存 → 真正调用
-        cached = self._cache_lookup(prompt)
+        cache_key, cached = self._cache_lookup(prompt)
         if cached is not None:
             return cached
 
@@ -455,7 +462,7 @@ class ModelBackend(ABC):
                 f"API 调用失败，共尝试 {attempts} 次: {e}"
             ) from e
 
-        self._cache_store(prompt, result)
+        self._cache_store(prompt, result, cache_key)
         return result
     
     async def _acall_api(self, prompt: str) -> str:
@@ -507,7 +514,7 @@ class ModelBackend(ABC):
         attempts = max(1, max_retries if max_retries is not None else self._default_attempts)
         delay = retry_delay if retry_delay is not None else self._default_retry_delay
 
-        cached = self._cache_lookup(prompt)
+        cache_key, cached = self._cache_lookup(prompt)
         if cached is not None:
             return cached
 
@@ -549,7 +556,7 @@ class ModelBackend(ABC):
                 f"API 调用失败，共尝试 {attempts} 次: {e}"
             ) from e
 
-        self._cache_store(prompt, result)
+        self._cache_store(prompt, result, cache_key)
         return result
 
     @property
