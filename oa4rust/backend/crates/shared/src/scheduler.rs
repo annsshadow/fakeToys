@@ -131,10 +131,16 @@ impl Scheduler for TokioCronScheduler {
         handler: Arc<dyn Fn() + Send + Sync + 'static>,
     ) -> SchedulerResult<()> {
         let job_id_arc = Arc::new(job_id.clone());
-        let cron_expr = systemtime_to_cron(at);
         let h = handler.clone();
 
-        let job = Job::new_async_tz(cron_expr.as_str(), chrono::Utc, move |_uuid, _lock| {
+        // 第 47 轮：改用真正的 one-shot job（触发后调度器自动移除）。
+        // 旧实现把一次性任务写成「年字段钉死的一次性 cron」：触发后 job
+        // 仍留在调度器里（next_tick 指向明年），长期运行进程的任务句柄
+        // 随一次性任务数量无界增长。
+        let instant = std::time::Instant::now()
+            + at.duration_since(SystemTime::now())
+                .unwrap_or(std::time::Duration::ZERO);
+        let job = Job::new_one_shot_at_instant_async(instant, move |_uuid, _lock| {
             let h = h.clone();
             let id = job_id_arc.clone();
             Box::pin(async move {
@@ -223,6 +229,11 @@ impl Scheduler for TokioCronScheduler {
 /// 旧实现用 `*/N` 近似：`now + 30s` 会变成每 30 秒重复执行，`≥1h` 或过去
 /// 时间则退化成「每天 0 点」。这里直接钉死目标时刻；已经过去的时刻钳到
 /// `now + 1s`，避免任务因为调度开销而永远不触发。
+///
+/// 第 47 轮起 `schedule_once` 改用 one-shot job，本函数暂无生产调用方；
+/// 它仍被一组测试钉住（7 字段映射/过去时刻钳制/真实调度器接受度），
+/// 作为「SystemTime ↔ cron」的通用工具保留。
+#[cfg_attr(not(test), allow(dead_code))]
 fn systemtime_to_cron(at: SystemTime) -> String {
     let now = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
