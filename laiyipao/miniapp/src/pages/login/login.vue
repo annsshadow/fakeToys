@@ -26,16 +26,22 @@
           placeholder-class="ph"
           :disabled="submitting"
         />
-        <input
-          v-model="password"
-          class="inp"
-          type="text"
-          password
-          placeholder="口令"
-          placeholder-class="ph"
-          :disabled="submitting"
-          @confirm="submit"
-        />
+        <view class="row" style="align-items: center; gap: 12rpx">
+          <input
+            v-model="password"
+            class="inp flex-1"
+            type="text"
+            :password="!showPassword"
+            placeholder="口令"
+            placeholder-class="ph"
+            :disabled="submitting"
+            @confirm="submit"
+          />
+          <!-- 显示密码切换（2026-11-01 新一轮第 83 轮） -->
+          <text class="link" style="flex-shrink: 0" @click="showPassword = !showPassword">
+            {{ showPassword ? '隐藏' : '显示' }}
+          </text>
+        </view>
         <view
           class="btn btn-primary"
           :class="{ 'btn-disabled': submitting || !username || !password }"
@@ -91,6 +97,8 @@ const username = ref('')
 const password = ref('')
 const errMsg = ref('')
 const submitting = ref(false)
+/** 显示密码（2026-11-01 新一轮第 83 轮）：避免长口令输错。 */
+const showPassword = ref(false)
 
 onLoad(() => {
   // 只回填用户名：口令不存、也不预填（见上方注释）。

@@ -73,6 +73,10 @@
             <text class="dim" style="display: block; margin-top: 4rpx">
               {{ t.progress }} / {{ t.target }}
             </text>
+            <!-- 任务进度条（2026-11-01 新一轮第 36 轮） -->
+            <view class="task-progress">
+              <view class="task-progress-fill" :style="{ width: taskPercent(t) + '%' }" />
+            </view>
             <text class="dim" style="display: block">
               奖励：{{ rewardText(t.reward) }}
             </text>
@@ -169,6 +173,12 @@ function rewardText(reward: Record<string, number>): string {
   return Object.entries(reward ?? {})
     .map(([k, v]) => `${currencyName(k)} ${v}`)
     .join(' · ')
+}
+
+/** 任务完成度百分比（2026-11-01 新一轮第 36 轮）。 */
+function taskPercent(t: { progress: number; target: number }): number {
+  if (!t.target || t.target <= 0) return 0
+  return Math.min(100, Math.round((t.progress / t.target) * 100))
 }
 
 
@@ -333,6 +343,21 @@ onMounted(async () => {
 
 .task-name {
   font-size: 26rpx;
+}
+
+/* 任务进度条（2026-11-01 新一轮第 36 轮） */
+.task-progress {
+  height: 12rpx;
+  background: rgba(127, 127, 127, 0.2);
+  border-radius: 6rpx;
+  overflow: hidden;
+  margin-top: 8rpx;
+}
+.task-progress-fill {
+  height: 100%;
+  background: var(--ok, #3fb950);
+  border-radius: 6rpx;
+  transition: width 0.3s ease;
 }
 
 .code-input {

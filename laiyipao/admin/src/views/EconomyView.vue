@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import {onMounted, ref, computed, onActivated} from 'vue'
+import { useRouter } from 'vue-router'
 import { useAdminRole } from '@/utils/adminRole'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { isCancel } from '@/utils/format'
+import { isCancel, fmtTime } from '@/utils/format'
 import {
   fetchEconomy,
+  fetchAdminOrders,
   updateShopItem,
+  exportOrdersCsv,
   type AdminEconomyFlowView,
+  type AdminOrderView,
   type AdminShopItemView,
 } from '@/api'
 
@@ -17,6 +21,26 @@ const loading = ref(false)
 const { isReadonly } = useAdminRole()
 const flows = ref<AdminEconomyFlowView[]>([])
 const shop = ref<AdminShopItemView[]>([])
+// 订单列表（2026-10-31 实质优化第 33 轮）。
+const orders = ref<AdminOrderView[]>([])
+const orderTotal = ref(0)
+const ORDER_PAGE_SIZE = 50
+const orderPage = ref(1)
+
+/**
+ * 订单筛选（2026-10-31 新一轮第 16 轮）：状态 + 创建日期范围。
+ * 服务端 date_to 是开区间，结束日期传**次日** 00:00 才能包含结束当天。
+ */
+const orderStatus = ref('')
+const orderDateRange = ref<[string, string] | null>(null)
+// 渠道筛选（2026-11-01 新一轮第 67 轮）。
+const orderProvider = ref('')
+
+function nextDay(day: string): string {
+  const d = new Date(day + 'T00:00:00Z')
+  d.setUTCDate(d.getUTCDate() + 1)
+  return d.toISOString().slice(0, 10)
+}
 
 const CURRENCY_LABEL: Record<string, string> = {
   coin: '金币',
@@ -97,6 +121,95 @@ async function load() {
   }
 }
 
+/** 加载订单列表（2026-10-31 实质优化第 33 轮）。 */
+async function loadOrders() {
+  try {
+    const res = await fetchAdminOrders(ORDER_PAGE_SIZE, (orderPage.value - 1) * ORDER_PAGE_SIZE, {
+      // 状态 + 日期范围（2026-10-31 新一轮第 16 轮）
+      status: orderStatus.value || undefined,
+      date_from: orderDateRange.value?.[0] || undefined,
+      date_to: orderDateRange.value ? nextDay(orderDateRange.value[1]) : undefined,
+      // 渠道筛选（2026-11-01 新一轮第 67 轮）
+      provider: orderProvider.value || undefined,
+    })
+    orders.value = res.items
+    orderTotal.value = res.total ?? res.items.length
+  } catch (e) {
+    ElMessage.error(`订单加载失败：${(e as Error).message}`)
+  }
+}
+
+/** 筛选条件变化时回到第一页并重新加载（2026-10-31 新一轮第 16 轮）。 */
+function applyOrderFilter() {
+  orderPage.value = 1
+  loadOrders()
+}
+
+/**
+ * 导出订单 CSV（2026-11-01 新一轮第 40 轮）。
+ * 与列表同口径的状态 + 日期筛选；readonly 角色也可导出（读操作）。
+ * 下载文件名带日期。
+ */
+async function onExportOrdersCsv() {
+  try {
+    const blob = await exportOrdersCsv({
+      status: orderStatus.value || undefined,
+      date_from: orderDateRange.value?.[0] || undefined,
+      date_to: orderDateRange.value ? nextDay(orderDateRange.value[1]) : undefined,
+      // 渠道筛选（2026-11-01 新一轮第 67 轮）：与列表同口径
+      provider: orderProvider.value || undefined,
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `orders_${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+    ElMessage.success(`已导出 ${orders.value.length} 条订单（当前筛选结果）`)
+  } catch (e) {
+    ElMessage.error(`导出失败：${(e as Error).message}`)
+  }
+}
+
+const router = useRouter()
+
+/**
+ * 打开指定玩家的用户详情（2026-11-01 新一轮第 48 轮）。
+ * 跳到用户管理页并携带 user_id，UsersView 挂载时会自动打开详情抽屉。
+ */
+function openUserDetail(userId: number) {
+  router.push({ path: '/users', query: { user_id: String(userId) } })
+}
+
+/**
+ * 复制订单号（2026-11-01 新一轮第 89 轮）。
+ * 运营对账/客服核查时把订单号贴到工单，无需手动选中。
+ */
+async function copyOrderNo(orderNo: string) {
+  if (!orderNo) return
+  try {
+    await navigator.clipboard.writeText(orderNo)
+    ElMessage.success('订单号已复制')
+  } catch {
+    ElMessage.error('复制失败，请手动选择复制')
+  }
+}
+
+/**
+ * 复制商城商品 ID（2026-11-01 新一轮第 97 轮）。
+ * 运营把商品 id 贴到工单/排查时无需手动选中。
+ */
+async function copyShopId(id: number) {
+  try {
+    await navigator.clipboard.writeText(String(id))
+    ElMessage.success(`已复制商品 ID ${id}`)
+  } catch {
+    ElMessage.error('复制失败，请手动选择复制')
+  }
+}
+
 /**
  * 第 113 轮：价格输入「coin:100, gem:5」→ {coin:100, gem:5}。
  * 服务端 price 列是 JSONB 的 map[string]int（玩家 Buy 按 map 读），
@@ -161,6 +274,33 @@ async function patchShop(row: AdminShopItemView, field: string, label: string) {
 }
 
 /**
+ * 商城商品上下移排序（2026-11-01 新一轮第 62 轮）。
+ * 列表按服务端 sort_order 升序；与相邻商品交换 sort_order（各更新一次），
+ * 然后整页重拉对齐真库。
+ */
+function isFirstShopItem(row: AdminShopItemView): boolean {
+  return shop.value.length === 0 || shop.value[0].id === row.id
+}
+
+function isLastShopItem(row: AdminShopItemView): boolean {
+  return shop.value.length === 0 || shop.value[shop.value.length - 1].id === row.id
+}
+
+async function moveShopItem(row: AdminShopItemView, dir: -1 | 1): Promise<void> {
+  const idx = shop.value.findIndex((s) => s.id === row.id)
+  const target = shop.value[idx + dir]
+  if (!target) return
+  try {
+    await updateShopItem(row.id, { sort_order: target.sort_order })
+    await updateShopItem(target.id, { sort_order: row.sort_order })
+    ElMessage.success('排序已更新')
+    await load()
+  } catch (e) {
+    ElMessage.error(`排序失败：${(e as Error).message}`)
+  }
+}
+
+/**
  * P5-5：上架 / 下架。
  *
  * 服务端 `PUT /admin/shop/:id` 早就支持 `enabled`，但后台**没有入口** ——
@@ -197,7 +337,10 @@ async function toggleOnSale(row: AdminShopItemView) {
  */
 const asRow = (r: unknown) => r as AdminShopItemView
 
-onMounted(load)
+onMounted(() => {
+  load()
+  loadOrders()
+})
 
 /**
  * 2026-10-21（P5-9）：缓存视图重新可见时刷新数据。
@@ -223,6 +366,7 @@ onActivated(() => {
     return
   }
 load()
+loadOrders()
 })
 </script>
 
@@ -279,9 +423,100 @@ load()
 </el-table>
     </el-card>
 
+    <!-- 订单明细（2026-10-31 实质优化第 33 轮） -->
+    <el-card shadow="never" header="支付订单" style="margin-top: 12px">
+      <div class="toolbar" style="margin-bottom: 8px">
+        <!-- 订单筛选（2026-10-31 新一轮第 16 轮）：状态 + 日期范围 -->
+        <el-select v-model="orderStatus" placeholder="全部状态" clearable style="width: 130px" @change="applyOrderFilter">
+          <el-option label="pending" value="pending" />
+          <el-option label="paid" value="paid" />
+          <el-option label="delivered" value="delivered" />
+          <el-option label="refunded" value="refunded" />
+        </el-select>
+        <!-- 渠道筛选（2026-11-01 新一轮第 67 轮） -->
+        <el-select v-model="orderProvider" placeholder="全部渠道" clearable style="width: 130px; margin-left: 8px" @change="applyOrderFilter">
+          <el-option label="mock" value="mock" />
+          <el-option label="apple" value="apple" />
+          <el-option label="wechat" value="wechat" />
+          <el-option label="alipay" value="alipay" />
+        </el-select>
+        <el-date-picker
+          v-model="orderDateRange"
+          type="daterange"
+          range-separator="至"
+          start-placeholder="创建开始日期"
+          end-placeholder="创建结束日期"
+          value-format="YYYY-MM-DD"
+          style="width: 260px; margin-left: 8px"
+        />
+        <el-button @click="applyOrderFilter">查询</el-button>
+        <!-- 订单 CSV 导出（2026-11-01 新一轮第 40 轮） -->
+        <el-button @click="onExportOrdersCsv">导出 CSV</el-button>
+      </div>
+      <el-table :data="orders" size="small" stripe>
+        <el-table-column prop="id" label="ID" width="55" />
+        <el-table-column label="订单号" min-width="180">
+          <!-- 复制订单号（2026-11-01 新一轮第 89 轮）：对账贴工单 -->
+          <template #default="{ row }">
+            <span class="mono">{{ row.order_no }}</span>
+            <el-button size="small" text type="primary" @click="copyOrderNo(row.order_no)">复制</el-button>
+          </template>
+        </el-table-column>
+        <el-table-column label="玩家" min-width="110">
+          <!-- 点击跳转用户详情（2026-11-01 新一轮第 48 轮）：
+               运营在订单里发现异常支付时，需要直达该玩家详情核查。 -->
+          <template #default="{ row }">
+            <el-link
+              v-if="row.nickname"
+              type="primary"
+              underline="never"
+              @click="openUserDetail(row.user_id)"
+            >
+              {{ row.nickname }}
+            </el-link>
+            <span v-else class="muted">—</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="sku" label="SKU" min-width="100" />
+        <el-table-column label="金额" width="90">
+          <template #default="{ row }">{{ (row.amount / 100).toFixed(2) }} 元</template>
+        </el-table-column>
+        <el-table-column label="状态" width="90">
+          <template #default="{ row }">
+            <el-tag :type="row.status === 'paid' || row.status === 'delivered' ? 'success' : 'info'" size="small">
+              {{ row.status }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="provider" label="渠道" width="80" />
+        <el-table-column label="创建时间" width="160">
+          <template #default="{ row }">{{ fmtTime(row.created_at) }}</template>
+        </el-table-column>
+        <template #empty>
+          <el-empty description="暂无订单" :image-size="60" />
+        </template>
+      </el-table>
+      <el-pagination
+        v-if="orderTotal > ORDER_PAGE_SIZE"
+        v-model:current-page="orderPage"
+        :page-size="ORDER_PAGE_SIZE"
+        :total="orderTotal"
+        layout="prev, pager, next, total"
+        size="small"
+        background
+        @current-change="loadOrders"
+      />
+    </el-card>
+
     <el-card shadow="never" header="商城商品" style="margin-top: 12px">
       <el-table :data="shop" size="small" stripe>
-        <el-table-column prop="id" label="ID" width="55" />
+        <el-table-column label="ID" width="100">
+          <!-- 复制商品 ID（2026-11-01 新一轮第 97 轮）：运营工单/排查 -->
+          <template #default="{ row }">
+            <span>{{ row.id }}</span>
+            <el-button size="small" text type="primary" @click="copyShopId(row.id)">复制</el-button>
+          </template>
+        </el-table-column>
         <el-table-column label="名称" min-width="140">
           <template #default="{ row }">{{ row.name }}</template>
         </el-table-column>
@@ -319,6 +554,25 @@ load()
               @click="toggleOnSale(asRow(row))"
             >
               {{ isOnSale(asRow(row)) ? '下架' : '上架' }}
+            </el-button>
+            <!-- 排序（2026-11-01 新一轮第 62 轮）：与相邻商品交换 sort_order -->
+            <el-button
+              v-if="!isReadonly"
+              size="small"
+              text
+              :disabled="isFirstShopItem(asRow(row))"
+              @click="moveShopItem(asRow(row), -1)"
+            >
+              上移
+            </el-button>
+            <el-button
+              v-if="!isReadonly"
+              size="small"
+              text
+              :disabled="isLastShopItem(asRow(row))"
+              @click="moveShopItem(asRow(row), 1)"
+            >
+              下移
             </el-button>
           </template>
         </el-table-column>

@@ -43,23 +43,23 @@ export default function QualityChart({ report }: QualityChartProps) {
       {
         type: 'bar',
         data: histogramValues,
-        itemStyle: { color: '#1677ff' }
-      }
-    ]
+        itemStyle: { color: '#1677ff' },
+      },
+    ],
   }
 
   const radarOption = {
     title: { text: '指标均值', left: 'center' },
     tooltip: {},
     radar: {
-      indicator: radar.labels.map(label => ({ name: label, max: 1 }))
+      indicator: radar.labels.map((label) => ({ name: label, max: 1 })),
     },
     series: [
       {
         type: 'radar',
-        data: [{ value: radar.values, name: '均值' }]
-      }
-    ]
+        data: [{ value: radar.values, name: '均值' }],
+      },
+    ],
   }
 
   return (

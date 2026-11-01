@@ -20,7 +20,7 @@ interface AugmentFormValues {
 
 const ENABLE_OPTIONS = [
   { label: '启用', value: true },
-  { label: '禁用', value: false }
+  { label: '禁用', value: false },
 ]
 
 /**
@@ -37,7 +37,7 @@ export default function AugmentForm({ onSubmitted }: AugmentFormProps) {
 
   useEffect(() => {
     getDataFiles()
-      .then(result => setFiles(result.files.map(f => f.name)))
+      .then((result) => setFiles(result.files.map((f) => f.name)))
       .catch((err) => message.error(apiErrorDetail(err, '加载数据文件列表失败')))
   }, [])
 
@@ -59,7 +59,7 @@ export default function AugmentForm({ onSubmitted }: AugmentFormProps) {
         values.useQuality,
         values.useDedup,
         values.useCheckpoint,
-        values.useAsync
+        values.useAsync,
       )
       message.success('增强任务已提交，可在进度面板查看状态')
       onSubmitted?.()
@@ -79,7 +79,7 @@ export default function AugmentForm({ onSubmitted }: AugmentFormProps) {
           useQuality: true,
           useDedup: true,
           useCheckpoint: true,
-          useAsync: false
+          useAsync: false,
         }}
         onFinish={handleSubmit}
       >
@@ -90,7 +90,7 @@ export default function AugmentForm({ onSubmitted }: AugmentFormProps) {
         >
           <Select
             placeholder="请选择种子数据文件"
-            options={files.map(name => ({ label: name, value: name }))}
+            options={files.map((name) => ({ label: name, value: name }))}
           />
         </Form.Item>
 

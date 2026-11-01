@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import {onMounted, ref, computed, onActivated} from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
   fetchBattles,
   fetchBattleDetail,
   verifyBattle,
+  exportBattlesCsv,
   type AdminBattleDetailView,
   type AdminBattleView,
   type VerifyResult,
@@ -19,6 +21,8 @@ const battles = ref<AdminBattleView[]>([])
 const total = ref(0)
 const userId = ref<number | undefined>(undefined)
 const levelId = ref<number | undefined>(undefined)
+// 结果筛选（2026-11-01 新一轮第 44 轮）：win / lose，空 = 不限。
+const result = ref('')
 
 /** 反应 key → 中文名。取自服务端（见 `@/reactions`）。 */
 const reactionLabel = ref<ReactionLabels>({})
@@ -68,6 +72,20 @@ function verifyTag(b: AdminBattleView): { text: string; type: 'info' | 'success'
 const onlyMismatched = ref(false)
 
 /**
+ * 日期范围（2026-10-31 新一轮第 14 轮）。
+ * `el-date-picker` value-format="YYYY-MM-DD"，v-model 直接是字符串数组。
+ * 服务端 `date_to` 是开区间（`created_at < date_to`），
+ * 所以结束日期要传**次日** 00:00 才能包含结束当天。
+ */
+const dateRange = ref<[string, string] | null>(null)
+
+function nextDay(day: string): string {
+  const d = new Date(day + 'T00:00:00Z')
+  d.setUTCDate(d.getUTCDate() + 1)
+  return d.toISOString().slice(0, 10)
+}
+
+/**
  * 2026-10-21（P5-1）：分页。
  *
  * 此前战报列表**只能看前 50 条** —— 而「共 N 条」显示的其实是
@@ -83,7 +101,49 @@ const filterParams = computed(() => ({
   limit: PAGE_SIZE,
   offset: (page.value - 1) * PAGE_SIZE,
   only_mismatched: onlyMismatched.value || undefined,
+  // 日期范围（2026-10-31 新一轮第 14 轮）：date_from 当天 00:00，date_to 次日 00:00（开区间）
+  date_from: dateRange.value?.[0] || undefined,
+  date_to: dateRange.value ? nextDay(dateRange.value[1]) : undefined,
+  // 结果筛选（2026-11-01 新一轮第 44 轮）
+  result: result.value || undefined,
 }))
+
+const router = useRouter()
+
+/**
+ * 打开指定玩家的用户详情（2026-11-01 新一轮第 38 轮）。
+ * 跳到用户管理页并携带 user_id，UsersView 挂载时会自动打开详情抽屉。
+ */
+function openUserDetail(userId: number) {
+  router.push({ path: '/users', query: { user_id: String(userId) } })
+}
+
+/**
+ * 复制回放哈希（2026-11-01 新一轮第 85 轮）。
+ * 运营把哈希贴到工单或外部重放工具时无需手选长字符串。
+ */
+async function copyReplayHash(hash: string) {
+  if (!hash) return
+  try {
+    await navigator.clipboard.writeText(hash)
+    ElMessage.success('回放哈希已复制')
+  } catch {
+    ElMessage.error('复制失败，请手动选择复制')
+  }
+}
+
+/**
+ * 复制战报 ID（2026-11-01 新一轮第 92 轮）。
+ * 运营把 battle_id 贴到工单/外部重放工具时无需手动选中。
+ */
+async function copyBattleId(id: number) {
+  try {
+    await navigator.clipboard.writeText(String(id))
+    ElMessage.success(`已复制战报 ID ${id}`)
+  } catch {
+    ElMessage.error('复制失败，请手动选择复制')
+  }
+}
 
 async function load() {
   loading.value = true
@@ -102,6 +162,38 @@ async function load() {
     ElMessage.error(`战报加载失败：${(e as Error).message}`)
   } finally {
     loading.value = false
+  }
+}
+
+/**
+ * 导出战报列表 CSV（2026-10-30 实质优化第 13 轮）。
+ *
+ * 过滤条件与列表一致（user_id / level_id / only_mismatched）。
+ * readonly 角色也可导出（读操作）。下载文件名带日期。
+ */
+async function onExportCsv() {
+  try {
+    const blob = await exportBattlesCsv({
+      user_id: userId.value,
+      level_id: levelId.value,
+      only_mismatched: onlyMismatched.value || undefined,
+      // 日期范围（2026-10-31 新一轮第 14 轮）：与列表过滤同口径
+      date_from: dateRange.value?.[0] || undefined,
+      date_to: dateRange.value ? nextDay(dateRange.value[1]) : undefined,
+      // 结果筛选（2026-11-01 新一轮第 44 轮）：与列表同口径
+      result: result.value || undefined,
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `battles_${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+    ElMessage.success(`已导出 ${battles.value.length} 条战报（当前筛选结果）`)
+  } catch (e) {
+    ElMessage.error(`导出失败：${(e as Error).message}`)
   }
 }
 
@@ -242,7 +334,23 @@ const asRow = (r: unknown) => r as AdminBattleView
           placeholder="关卡 ID"
           style="width: 120px"
         />
+        <!-- 结果筛选（2026-11-01 新一轮第 44 轮）：只看胜/负 -->
+        <el-select v-model="result" placeholder="全部结果" clearable style="width: 110px; margin-left: 8px" @change="((page = 1), load())">
+          <el-option label="胜" value="win" />
+          <el-option label="负" value="lose" />
+        </el-select>
         <el-button @click="((page = 1), load())">筛选</el-button>
+        <el-button @click="onExportCsv">导出 CSV</el-button>
+        <!-- 日期范围（2026-10-31 新一轮第 14 轮）：查「今天/某时间段」的战报 -->
+        <el-date-picker
+          v-model="dateRange"
+          type="daterange"
+          range-separator="至"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+          value-format="YYYY-MM-DD"
+          style="width: 260px; margin-left: 12px"
+        />
         <el-checkbox v-model="onlyMismatched" style="margin-left: 12px">
           只看验真不匹配
         </el-checkbox>
@@ -251,8 +359,21 @@ const asRow = (r: unknown) => r as AdminBattleView
       </div>
 
       <el-table :data="battles" size="small" stripe>
-        <el-table-column prop="id" label="ID" width="60" />
-        <el-table-column prop="user_id" label="用户" width="70" />
+        <el-table-column label="ID" width="100">
+          <!-- 复制战报 ID（2026-11-01 新一轮第 92 轮）：贴工单/外部重放 -->
+          <template #default="{ row }">
+            <span>{{ row.id }}</span>
+            <el-button size="small" text type="primary" @click="copyBattleId(row.id)">复制</el-button>
+          </template>
+        </el-table-column>
+        <el-table-column prop="user_id" label="用户" width="110">
+          <!-- 点击跳转用户详情（2026-11-01 新一轮第 38 轮） -->
+          <template #default="{ row }">
+            <el-link type="primary" underline="never" @click="openUserDetail(row.user_id)">
+              {{ row.nickname || ('#' + row.user_id) }}
+            </el-link>
+          </template>
+        </el-table-column>
         <el-table-column prop="level_id" label="关卡" width="70" />
         <el-table-column label="结果" width="70">
           <template #default="{ row }">
@@ -320,7 +441,20 @@ const asRow = (r: unknown) => r as AdminBattleView
           </el-descriptions-item>
           <el-descriptions-item label="剩余防线血量">{{ detail.hp_left }}</el-descriptions-item>
           <el-descriptions-item label="结算后战力">{{ detail.power_after }}</el-descriptions-item>
-          <el-descriptions-item label="玩家">{{ detail.nickname }}（#{{ detail.user_id }}）</el-descriptions-item>
+          <el-descriptions-item label="玩家">
+            <!-- 点击跳转用户详情（2026-11-01 新一轮第 63 轮）：
+                 在详情里发现异常分数/反应滥用时直达玩家本体。 -->
+            <el-link
+              v-if="detail.nickname"
+              type="primary"
+              underline="never"
+              @click="openUserDetail(detail.user_id)"
+            >
+              {{ detail.nickname }}
+            </el-link>
+            <span v-else>#{{ detail.user_id }}</span>
+            <span class="muted">（#{{ detail.user_id }}）</span>
+          </el-descriptions-item>
           <el-descriptions-item label="结果">
             <el-tag :type="detail.result === 'win' ? 'success' : 'danger'" size="small">
               {{ detail.result === 'win' ? '通关' : '失败' }} · {{ detail.stars }} 星
@@ -329,6 +463,10 @@ const asRow = (r: unknown) => r as AdminBattleView
           <el-descriptions-item label="峰值热量">{{ detail.heat_max }}</el-descriptions-item>
           <el-descriptions-item label="回放哈希" :span="2">
             <code class="hash">{{ detail.replay_hash }}</code>
+            <!-- 复制哈希（2026-11-01 新一轮第 85 轮）：贴到工单/外部重放工具 -->
+            <el-button size="small" text type="primary" style="margin-left: 8px" @click="copyReplayHash(detail.replay_hash)">
+              复制
+            </el-button>
           </el-descriptions-item>
         </el-descriptions>
 

@@ -180,7 +180,17 @@ type Config struct {
 	MinBattleDuration time.Duration
 
 	// 离线收益
+	// OfflineCapHours 是离线（挂机）收益的累计上限（小时）。
+	// 2026-10-31（新一轮第 7 轮）起由 OfflineReward 端点消费。
 	OfflineCapHours int
+
+	// OfflineCoinPerHour 是离线（挂机）收益的每小时金币速率
+	// （2026-10-31 新一轮第 7 轮）。
+	//
+	// 收益按「距上次领取经过的时长」结算（在线挂机也累计，领取时清零），
+	// 上限由 OfflineCapHours 约束。默认每小时 600 金币：12 小时上限
+	// 7200 金币，约等于每日任务+签到的半天产出，作为挂机收益不破坏经济。
+	OfflineCoinPerHour int
 
 	// DashboardCacheTTL / LeaderboardCacheTTL 是看板与榜单的进程内缓存有效期
 	// （2026-10-23）。
@@ -199,6 +209,46 @@ type Config struct {
 	// 且不需要发版的动作。
 	DashboardCacheTTL   time.Duration
 	LeaderboardCacheTTL time.Duration
+
+	// SignInCalendarCacheTTL 是签到日历预览的进程内缓存有效期
+	// （2026-10-30 实质优化第 17 轮）。
+	//
+	// `sign_in_calendar` 是 seeder 写入的**静态配置**（后台没有修改入口），
+	// 每次签到页打开都查一次库是纯浪费。60 秒 TTL 完全够；
+	// 设成 `0` 即关闭缓存（排查时与其它缓存同一条命令）。
+	SignInCalendarCacheTTL time.Duration
+
+	// AnnouncementsCacheTTL 是公告列表的进程内缓存有效期
+	// （2026-10-31 实质优化第 22 轮）。
+	//
+	// 公告是**公开端点**（无鉴权），每次首页首屏都会拉取；
+	// 而公告由运营人工发布，变化频率极低。30 秒 TTL 完全够，
+	// 设成 `0` 即关闭缓存（排查时与其它缓存同一条命令）。
+	AnnouncementsCacheTTL time.Duration
+
+	// ShopCacheTTL 是商城商品列表静态部分的进程内缓存有效期
+	// （2026-10-31 新一轮第 6 轮）。
+	//
+	// `shop_items` 是 seeder 写入的配置表（后台仅有低频的运营修改入口），
+	// 每次打开商店页都重新查一遍是纯浪费。30 秒 TTL 完全够；
+	// 设成 `0` 即关闭缓存（排查时与其它缓存同一条命令）。
+	ShopCacheTTL time.Duration
+
+	// TasksCacheTTL 是任务配置静态部分的进程内缓存有效期
+	// （2026-10-31 新一轮第 8 轮）。
+	//
+	// `tasks` 是 seeder 写入的**纯静态配置**（后台没有修改入口），
+	// 任务页（签到/任务/兑换同页）每日高频打开，每次重新读配置表是浪费。
+	// 60 秒 TTL 完全够；设成 `0` 即关闭缓存（排查时与其它缓存同一条命令）。
+	TasksCacheTTL time.Duration
+
+	// EconomyCacheTTL 是后台经济流水页的进程内缓存有效期
+	// （2026-10-31 新一轮第 28 轮）。
+	//
+	// `AdminEconomy` 每次打开都要对 `wallet_flows`（全游戏增长最快的表）
+	// 做一次全表聚合（GROUP BY reason/currency）。运营看经济页是低频操作，
+	// 30 秒 TTL 完全够；设成 `0` 即关闭缓存（排查时与其它缓存同一条命令）。
+	EconomyCacheTTL time.Duration
 
 	// 默认管理员（仅在 admin_users 为空时引导创建）
 	BootstrapAdminUser string
@@ -345,11 +395,17 @@ func Load() Config {
 
 		SettleRecomputeMode: env("SETTLE_RECOMPUTE_MODE", "enforce"),
 
-		OfflineCapHours: envInt("OFFLINE_CAP_HOURS", 12),
+		OfflineCapHours:    envInt("OFFLINE_CAP_HOURS", 12),
+		OfflineCoinPerHour: envInt("OFFLINE_COIN_PER_HOUR", 600),
 
-		// 30s / 15s：见字段注释里的取舍。0 = 关闭缓存。
-		DashboardCacheTTL:   envDuration("DASHBOARD_CACHE_TTL", 30*time.Second),
-		LeaderboardCacheTTL: envDuration("LEADERBOARD_CACHE_TTL", 15*time.Second),
+		// 30s / 15s / 60s：见字段注释里的取舍。0 = 关闭缓存。
+		DashboardCacheTTL:      envDuration("DASHBOARD_CACHE_TTL", 30*time.Second),
+		LeaderboardCacheTTL:    envDuration("LEADERBOARD_CACHE_TTL", 15*time.Second),
+		SignInCalendarCacheTTL: envDuration("SIGNIN_CALENDAR_CACHE_TTL", 60*time.Second),
+		AnnouncementsCacheTTL:  envDuration("ANNOUNCEMENTS_CACHE_TTL", 30*time.Second),
+		ShopCacheTTL:           envDuration("SHOP_CACHE_TTL", 30*time.Second),
+		TasksCacheTTL:          envDuration("TASKS_CACHE_TTL", 60*time.Second),
+		EconomyCacheTTL:        envDuration("ECONOMY_CACHE_TTL", 30*time.Second),
 
 		BootstrapAdminUser: env("BOOTSTRAP_ADMIN_USER", "admin"),
 		BootstrapAdminPass: env("BOOTSTRAP_ADMIN_PASS", "admin12345"),

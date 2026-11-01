@@ -12,18 +12,18 @@ import {
   Col,
   Statistic,
   message,
-  type TableColumnsType
+  type TableColumnsType,
 } from 'antd'
 import {
   apiErrorDetail,
   getMultimodalFormats,
   processMultimodal,
-  scanMultimodal
+  scanMultimodal,
 } from '../services/api'
 import type {
   MultimodalFormatsResponse,
   MultimodalRecord,
-  MultimodalScanResponse
+  MultimodalScanResponse,
 } from '../types/api'
 
 /** 单条处理表单的字段 */
@@ -59,9 +59,7 @@ export default function Multimodal() {
   const handleProcess = async (values: ProcessFormValues) => {
     setLoading(true)
     try {
-      setSingleResult(
-        await processMultimodal(values.text, values.image, values.audio)
-      )
+      setSingleResult(await processMultimodal(values.text, values.image, values.audio))
     } catch (err) {
       message.error(apiErrorDetail(err, '多模态处理失败'))
     } finally {
@@ -88,13 +86,13 @@ export default function Multimodal() {
       key: 'modalities',
       render: (modalities: string[]) => (
         <>
-          {(modalities || []).map(item => (
+          {(modalities || []).map((item) => (
             <Tag key={item} color="blue">
               {item}
             </Tag>
           ))}
         </>
-      )
+      ),
     },
     {
       title: '状态',
@@ -102,14 +100,14 @@ export default function Multimodal() {
       key: 'valid',
       render: (valid: boolean) => (
         <Tag color={valid ? 'green' : 'red'}>{valid ? '有效' : '无效'}</Tag>
-      )
+      ),
     },
     {
       title: '错误',
       dataIndex: 'errors',
       key: 'errors',
-      render: (errors: string[]) => (errors || []).join('; ')
-    }
+      render: (errors: string[]) => (errors || []).join('; '),
+    },
   ]
 
   return (
@@ -147,7 +145,7 @@ export default function Multimodal() {
             {singleResult && (
               <div style={{ marginTop: 16 }}>
                 <Space wrap>
-                  {(singleResult.modalities || []).map(item => (
+                  {(singleResult.modalities || []).map((item) => (
                     <Tag key={item} color="blue">
                       {item}
                     </Tag>
@@ -175,7 +173,8 @@ export default function Multimodal() {
                       suffix="秒"
                     />
                     <div style={{ color: '#888', fontSize: 12 }}>
-                      采样率 {singleResult.audio.sample_rate} Hz · {singleResult.audio.channels} 声道
+                      采样率 {singleResult.audio.sample_rate} Hz · {singleResult.audio.channels}{' '}
+                      声道
                     </div>
                   </Card>
                 )}

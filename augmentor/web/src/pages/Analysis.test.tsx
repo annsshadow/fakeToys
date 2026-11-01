@@ -28,16 +28,17 @@ import { message } from 'antd'
 
 window.matchMedia =
   window.matchMedia ||
-  ((query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: () => {},
-    removeListener: () => {},
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => false,
-  }) as unknown as MediaQueryList)
+  ((query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList)
 class RO {
   observe() {}
   unobserve() {}
@@ -130,9 +131,7 @@ async function selectFileAndWait() {
   const { container } = render(<Analysis />)
   await waitFor(() => expect(spies.getDataFiles).toHaveBeenCalled())
   fireEvent.mouseDown(container.querySelector('.ant-select')!)
-  await waitFor(() =>
-    expect(document.querySelector('.ant-select-item-option')).toBeInTheDocument()
-  )
+  await waitFor(() => expect(document.querySelector('.ant-select-item-option')).toBeInTheDocument())
   fireEvent.click(document.querySelector('.ant-select-item-option')!)
   await waitFor(() => expect(spies.analyzeData).toHaveBeenCalledWith('seed.json'))
   return container
@@ -153,14 +152,14 @@ async function pickInNthSelect(container: HTMLElement, index: number, label: str
   await waitFor(() =>
     expect(container.querySelectorAll('[role=combobox]')[index]).toHaveAttribute(
       'aria-expanded',
-      'true'
-    )
+      'true',
+    ),
   )
   const dropdown = () => document.querySelectorAll('.ant-select-dropdown')
   await waitFor(() => expect(dropdown().length).toBeGreaterThanOrEqual(1))
-  const option = Array.from(dropdown()[dropdown().length - 1].querySelectorAll('.ant-select-item-option')).find(
-    el => el.textContent === label
-  )
+  const option = Array.from(
+    dropdown()[dropdown().length - 1].querySelectorAll('.ant-select-item-option'),
+  ).find((el) => el.textContent === label)
   if (!option) throw new Error(`第 ${index} 个下拉里没有 ${label}`)
   fireEvent.click(option)
 }
@@ -172,12 +171,14 @@ async function pickInNthSelect(container: HTMLElement, index: number, label: str
  * 语义命中 / 增益 / 基线侧快照 / 增强后侧快照 多张表），所以按表头文本定位。
  */
 const tablesByHeader = (container: HTMLElement, header: string) => {
-  const tables = Array.from(container.querySelectorAll('.ant-table')).filter(t =>
-    t.querySelector('.ant-table-thead')?.textContent?.includes(header)
+  const tables = Array.from(container.querySelectorAll('.ant-table')).filter((t) =>
+    t.querySelector('.ant-table-thead')?.textContent?.includes(header),
   )
   if (tables.length === 0) throw new Error(`找不到表头含 ${header} 的表格`)
-  return tables.map(table =>
-    dataRowsOf(table).map(row => Array.from(row.querySelectorAll('td')).map(td => td.textContent))
+  return tables.map((table) =>
+    dataRowsOf(table).map((row) =>
+      Array.from(row.querySelectorAll('td')).map((td) => td.textContent),
+    ),
   )
 }
 
@@ -189,7 +190,7 @@ const tablesByHeader = (container: HTMLElement, header: string) => {
  */
 const dataRowsOf = (table: Element) =>
   Array.from(table.querySelectorAll('.ant-table-tbody .ant-table-row')).filter(
-    row => !row.closest('.ant-table-expanded-row')
+    (row) => !row.closest('.ant-table-expanded-row'),
   )
 
 const rowsOfTable = (container: HTMLElement, header: string) => tablesByHeader(container, header)[0]
@@ -201,12 +202,12 @@ const rowsOfTable = (container: HTMLElement, header: string) => tablesByHeader(c
  * 按表头定位会三张混成一张；它们的区分量在标题上，所以按标题定位。
  */
 const rowsOfTitledTable = (container: HTMLElement, fragment: string) => {
-  const table = Array.from(container.querySelectorAll('.ant-table')).find(t =>
-    t.querySelector('.ant-table-title')?.textContent?.includes(fragment)
+  const table = Array.from(container.querySelectorAll('.ant-table')).find((t) =>
+    t.querySelector('.ant-table-title')?.textContent?.includes(fragment),
   )
   if (!table) throw new Error(`找不到标题含 ${fragment} 的表格`)
-  return dataRowsOf(table).map(row =>
-    Array.from(row.querySelectorAll('td')).map(td => td.textContent)
+  return dataRowsOf(table).map((row) =>
+    Array.from(row.querySelectorAll('td')).map((td) => td.textContent),
   )
 }
 
@@ -229,10 +230,10 @@ describe('Analysis 选文件触发分析', () => {
     expect(await screen.findByText('总数据量')).toBeInTheDocument()
     // antd Statistic 会把数值拆进整数/小数多个 span，故按统计值节点整体读文本
     await waitFor(() =>
-      expect(container.querySelectorAll('.ant-statistic-content-value').length).toBe(4)
+      expect(container.querySelectorAll('.ant-statistic-content-value').length).toBe(4),
     )
     const values = Array.from(container.querySelectorAll('.ant-statistic-content-value')).map(
-      (el) => el.textContent
+      (el) => el.textContent,
     )
     // 总量 100 / 平均长度 18.3 / 唯一词 512 / 去重移除 7
     expect(values).toEqual(['100', '18.3', '512', '7'])
@@ -284,7 +285,10 @@ describe('Analysis 可视化图表文件（L211 接线）', () => {
   it('点生成图表文件：visualizeData 收到所选文件，落盘路径渲成表格', async () => {
     spies.analyzeData.mockResolvedValue(ANALYSIS)
     spies.visualizeData.mockResolvedValue({
-      charts: { length_distribution: 'visualizations/length.png', topics: 'visualizations/topics.png' },
+      charts: {
+        length_distribution: 'visualizations/length.png',
+        topics: 'visualizations/topics.png',
+      },
     })
 
     await selectFileAndWait()
@@ -349,7 +353,7 @@ describe('Analysis 生成集对比评估（L225 接线）', () => {
     fireEvent.click(screen.getByRole('button', { name: /运行批量评估/ }))
 
     await waitFor(() =>
-      expect(document.body.textContent).toContain('评估需要同时选中生成集与参照集')
+      expect(document.body.textContent).toContain('评估需要同时选中生成集与参照集'),
     )
     expect(spies.evaluateDataset).not.toHaveBeenCalled()
   })
@@ -368,7 +372,7 @@ describe('Analysis 生成集对比评估（L225 接线）', () => {
 
     // 契约允许两侧同文件（同一份数据的两个字段做对照），故这里两次都是 seed.json
     await waitFor(() =>
-      expect(spies.evaluateDataset).toHaveBeenCalledWith('seed.json', 'seed.json')
+      expect(spies.evaluateDataset).toHaveBeenCalledWith('seed.json', 'seed.json'),
     )
     expect(await screen.findByText('对齐样本数 42')).toBeInTheDocument()
     expect(screen.getByText('0.7321')).toBeInTheDocument()
@@ -434,7 +438,7 @@ describe('Analysis 内容检索', () => {
     fireEvent.click(screen.getByRole('button', { name: /运行检索/ }))
 
     await waitFor(() =>
-      expect(spies.searchDataset).toHaveBeenCalledWith('seed.json', '向量', { method: 'contains' })
+      expect(spies.searchDataset).toHaveBeenCalledWith('seed.json', '向量', { method: 'contains' }),
     )
     // 12 命中 vs 本次返回 1 条：两个数都必须在场
     expect(await screen.findByText('命中 12 条')).toBeInTheDocument()
@@ -463,7 +467,7 @@ describe('Analysis 内容检索', () => {
     await waitFor(() =>
       expect(spies.searchDataset).toHaveBeenCalledWith('seed.json', '请.*数据库', {
         method: 'regex',
-      })
+      }),
     )
   })
 
@@ -549,7 +553,12 @@ describe('Analysis 语义相似检索', () => {
     collection: 'default',
     results: [
       // 一条长小数（验 toFixed(4) 的截断），一条整 1（验它渲染成 1.0000 而不是「1」或「100%」）
-      { index: 3, score: 0.8123456, text: '租房合同要写明押金。', item: { instruction: '押金怎么退' } },
+      {
+        index: 3,
+        score: 0.8123456,
+        text: '租房合同要写明押金。',
+        item: { instruction: '押金怎么退' },
+      },
       { index: 0, score: 1, text: '合同里的押金条款', item: { instruction: '租房合同' } },
     ],
   }
@@ -568,7 +577,7 @@ describe('Analysis 语义相似检索', () => {
       expect(spies.semanticSearch).toHaveBeenCalledWith('seed.json', '租房押金', {
         topK: 5,
         textKey: 'instruction',
-      })
+      }),
     )
     expect(await screen.findByText('命中 2 条')).toBeInTheDocument()
     expect(screen.getByText('后端 faiss')).toBeInTheDocument()
@@ -583,7 +592,11 @@ describe('Analysis 语义相似检索', () => {
 
   it('改前 K 条与编码字段：递出去的是改后的那两个值', async () => {
     spies.analyzeData.mockResolvedValue(ANALYSIS)
-    spies.semanticSearch.mockResolvedValue({ ...SEMANTIC, total: 1, results: [SEMANTIC.results[0]] })
+    spies.semanticSearch.mockResolvedValue({
+      ...SEMANTIC,
+      total: 1,
+      results: [SEMANTIC.results[0]],
+    })
 
     const container = await selectFileAndWait()
     fireEvent.change(container.querySelector('input[placeholder="查询文本"]')!, {
@@ -598,7 +611,7 @@ describe('Analysis 语义相似检索', () => {
       expect(spies.semanticSearch).toHaveBeenCalledWith('seed.json', '押金', {
         topK: 2,
         textKey: 'output',
-      })
+      }),
     )
   })
 
@@ -617,7 +630,7 @@ describe('Analysis 语义相似检索', () => {
       expect(spies.semanticSearch).toHaveBeenCalledWith('seed.json', '租房押金', {
         topK: 0,
         textKey: 'instruction',
-      })
+      }),
     )
     expect(await screen.findByText(/没有命中/)).toBeInTheDocument()
     expect(screen.getByText('后端 faiss')).toBeInTheDocument()
@@ -700,7 +713,7 @@ describe('Analysis 增强前后影响', () => {
     fireEvent.click(screen.getByRole('button', { name: /运行影响评估/ }))
 
     await waitFor(() =>
-      expect(document.body.textContent).toContain('影响评估需要同时选中基线集与增强后数据集')
+      expect(document.body.textContent).toContain('影响评估需要同时选中基线集与增强后数据集'),
     )
     expect(spies.assessImpact).not.toHaveBeenCalled()
   })
@@ -717,7 +730,7 @@ describe('Analysis 增强前后影响', () => {
       expect(spies.assessImpact).toHaveBeenCalledWith('seed.json', 'seed.json', {
         textField: 'instruction',
         minScaleGain: 0,
-      })
+      }),
     )
     expect(await screen.findByText('判为有增益')).toBeInTheDocument()
     expect(rowsOfTable(container, '增益项')).toEqual([
@@ -764,7 +777,7 @@ describe('Analysis 增强前后影响', () => {
       expect(spies.assessImpact).toHaveBeenCalledWith('seed.json', 'seed.json', {
         textField: 'output',
         minScaleGain: 0.5,
-      })
+      }),
     )
     expect(await screen.findByText('判为无增益')).toBeInTheDocument()
     // 门槛现在是可调的，所以口径文案必须跟着报本次值而不是出厂默认
@@ -861,7 +874,7 @@ describe('Analysis 字段级统计（L228 接线）', () => {
     // 一个都没勾 ⇒ `fields` 这一档以 undefined 递出去（服务层再把它从 JSON 里丢掉），
     // 页面不替端点写第二套默认字段清单。
     await waitFor(() =>
-      expect(spies.datasetStats).toHaveBeenCalledWith('seed.json', { fields: undefined })
+      expect(spies.datasetStats).toHaveBeenCalledWith('seed.json', { fields: undefined }),
     )
     expect(await screen.findByText(/数据集 'p' 共 4 条数据/)).toBeInTheDocument()
     // 可展开的表在第一列前面多一个空的展开图标格，行首那个 '' 就是它
@@ -916,7 +929,7 @@ describe('Analysis 字段级统计（L228 接线）', () => {
     await waitFor(() =>
       expect(spies.datasetStats).toHaveBeenLastCalledWith('seed.json', {
         fields: ['instruction'],
-      })
+      }),
     )
   })
 
@@ -963,11 +976,35 @@ describe('Analysis 特征普查（L228 接线）', () => {
     total_items: 4,
     // 故意让插入序与覆盖率序相反：这样「按覆盖率升序」这条断言才有牙齿
     field_features: [
-      { name: 'instruction', feature_type: 'text', coverage: 1.0, unique_ratio: 1.0, description: '常规特征' },
-      { name: 'output', feature_type: 'numeric', coverage: 0.75, unique_ratio: 0.5, description: '常规特征' },
-      { name: 'input', feature_type: 'unknown', coverage: 0.0, unique_ratio: 0.0, description: '稀疏特征' },
+      {
+        name: 'instruction',
+        feature_type: 'text',
+        coverage: 1.0,
+        unique_ratio: 1.0,
+        description: '常规特征',
+      },
+      {
+        name: 'output',
+        feature_type: 'numeric',
+        coverage: 0.75,
+        unique_ratio: 0.5,
+        description: '常规特征',
+      },
+      {
+        name: 'input',
+        feature_type: 'unknown',
+        coverage: 0.0,
+        unique_ratio: 0.0,
+        description: '稀疏特征',
+      },
       // 清单外的类型值：页面必须原样报而不编一个中文名
-      { name: 'novel', feature_type: 'quantum', coverage: 0.5, unique_ratio: 1.0, description: '常规特征' },
+      {
+        name: 'novel',
+        feature_type: 'quantum',
+        coverage: 0.5,
+        unique_ratio: 1.0,
+        description: '常规特征',
+      },
     ],
     sparse_fields: ['input'],
     intent_distribution: { what: 2, how: 1 },
@@ -1000,7 +1037,13 @@ describe('Analysis 特征普查（L228 接线）', () => {
     spies.detectFeatures.mockResolvedValue({
       total_items: 2,
       field_features: [
-        { name: 'instruction', feature_type: 'text', coverage: 1.0, unique_ratio: 0.5, description: '常规特征' },
+        {
+          name: 'instruction',
+          feature_type: 'text',
+          coverage: 1.0,
+          unique_ratio: 0.5,
+          description: '常规特征',
+        },
       ],
       sparse_fields: [],
       intent_distribution: {},
@@ -1112,7 +1155,7 @@ describe('Analysis 双集对比（L228 接线）', () => {
     fireEvent.click(screen.getByRole('button', { name: /运行双集对比/ }))
 
     await waitFor(() =>
-      expect(document.body.textContent).toContain('双集对比需要同时选中 A 侧与 B 侧')
+      expect(document.body.textContent).toContain('双集对比需要同时选中 A 侧与 B 侧'),
     )
     expect(spies.compareDatasets).not.toHaveBeenCalled()
   })
@@ -1128,20 +1171,22 @@ describe('Analysis 双集对比（L228 接线）', () => {
     await waitFor(() =>
       expect(spies.compareDatasets).toHaveBeenCalledWith('seed.json', 'seed.json', {
         keyFields: undefined,
-      })
+      }),
     )
     expect(await screen.findByText('A 侧平均质量分占优')).toBeInTheDocument()
-    expect(screen.getByText('本次匹配键：instruction（请求未发 key_fields，取 SDK 默认）')).toBeInTheDocument()
+    expect(
+      screen.getByText('本次匹配键：instruction（请求未发 key_fields，取 SDK 默认）'),
+    ).toBeInTheDocument()
     expect(rowsOfTable(container, '质量面指标')).toEqual([
+      ['平均质量分', 'avg_score', '单条 total_score 的均值', '0.6450', '0.5760', '-0.0690'],
       [
-        '平均质量分',
-        'avg_score',
-        '单条 total_score 的均值',
-        '0.6450',
-        '0.5760',
-        '-0.0690',
+        '通过率',
+        'pass_rate',
+        '达阈值（SDK 固定 0.6）条数 ÷ 条目数',
+        '100.00%',
+        '80.00%',
+        '-20.00%',
       ],
-      ['通过率', 'pass_rate', '达阈值（SDK 固定 0.6）条数 ÷ 条目数', '100.00%', '80.00%', '-20.00%'],
       ['最低分', 'min_score', '单条最低', '0.6195', '0.3000', '-0.3195'],
       ['最高分', 'max_score', '单条最高', '0.6800', '0.6800', '0'],
     ])
@@ -1211,7 +1256,9 @@ describe('Analysis 双集对比（L228 接线）', () => {
     await pickInNthSelect(container, 7, 'seed.json')
     fireEvent.click(screen.getByRole('button', { name: /运行双集对比/ }))
 
-    expect(await screen.findByText(/—（B 侧 0 条：SDK 存 inf，JSON 面为 null）/)).toBeInTheDocument()
+    expect(
+      await screen.findByText(/—（B 侧 0 条：SDK 存 inf，JSON 面为 null）/),
+    ).toBeInTheDocument()
     expect(container.textContent).not.toContain('NaN')
     expect(container.textContent).not.toContain('Infinity')
   })
@@ -1231,22 +1278,22 @@ describe('Analysis 双集对比（L228 接线）', () => {
     await waitFor(() =>
       expect(spies.compareDatasets).toHaveBeenLastCalledWith('seed.json', 'seed.json', {
         keyFields: ['output'],
-      })
+      }),
     )
     expect(screen.getByText('本次匹配键：output')).toBeInTheDocument()
 
     // 展开有值差异的那一行：明细列头来自条目键而不是写死的字段名
-    const fieldTable = Array.from(container.querySelectorAll('.ant-table')).find(t =>
-      t.querySelector('.ant-table-title')?.textContent?.includes('字段对照')
+    const fieldTable = Array.from(container.querySelectorAll('.ant-table')).find((t) =>
+      t.querySelector('.ant-table-title')?.textContent?.includes('字段对照'),
     )!
     const expandableRows = Array.from(fieldTable.querySelectorAll('.ant-table-row'))
     fireEvent.click(expandableRows[1].querySelector('.ant-table-row-expand-icon')!)
     await waitFor(() =>
-      expect(fieldTable.querySelectorAll('.ant-table-expanded-row').length).toBe(1)
+      expect(fieldTable.querySelectorAll('.ant-table-expanded-row').length).toBe(1),
     )
     const detailHeader = Array.from(
-      fieldTable.querySelectorAll('.ant-table-expanded-row .ant-table-thead th')
-    ).map(th => th.textContent)
+      fieldTable.querySelectorAll('.ant-table-expanded-row .ant-table-thead th'),
+    ).map((th) => th.textContent)
     expect(detailHeader).toEqual(['instruction', 'value_a', 'value_b'])
     expect(rowsOfTitledTable(container, '字段对照')).toEqual([
       ['', 'instruction', '0', '0', '4', '0', '0'],
