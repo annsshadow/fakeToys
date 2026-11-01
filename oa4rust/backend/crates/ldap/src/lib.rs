@@ -151,4 +151,6 @@ pub fn authenticator_from_env() -> Option<LdapAuthenticator> {
 pub mod sync;
 
 #[cfg(test)]
+mod tests;
+#[cfg(test)]
 mod tests_generated;

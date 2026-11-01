@@ -103,7 +103,7 @@ mod security_gate_tests {
         // create 属主来源 = 会话登录人
         let res = calendar_create(
             Extension(pool.clone()),
-            Extension(build_session("u-owner")),
+            Some(Extension(build_session("u-owner"))),
             axum::Json(CreateCalendarRequest {
                 name: Some("c".to_string()),
                 calendar_type: Some("PERSON".to_string()),

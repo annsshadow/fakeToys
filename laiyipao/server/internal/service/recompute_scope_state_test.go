@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"github.com/laiyipao/server/internal/config"
 	"testing"
 	"time"
 )
@@ -39,7 +40,9 @@ func TestModeStateSeparatesEngineAndSkillsScopes(t *testing.T) {
 	g, _ := newGateFor(RecomputeEnforce, 1000, 1000) // 100% 不符 → 熔断
 
 	s := &Service{}
-	s.Cfg.SettleRecomputeMode = RecomputeEnforce
+	// 2026-10-29：Cfg 是原子指针，空 Service 字面量不自带快照。
+	// 用 Store 装一份，而不是改结构体字段（那是非原子写法）。
+	s.cfg.Store(&config.Config{SettleRecomputeMode: RecomputeEnforce})
 	s.gate.Store(g)
 
 	// 先让**引擎侧**熔断
@@ -83,7 +86,9 @@ func TestModeStateReadsDoNotTripTheBreaker(t *testing.T) {
 	g, calls := newGateFor(RecomputeEnforce, 1000, 1000)
 
 	s := &Service{}
-	s.Cfg.SettleRecomputeMode = RecomputeEnforce
+	// 2026-10-29：Cfg 是原子指针，空 Service 字面量不自带快照。
+	// 用 Store 装一份，而不是改结构体字段（那是非原子写法）。
+	s.cfg.Store(&config.Config{SettleRecomputeMode: RecomputeEnforce})
 	s.gate.Store(g)
 
 	before := *calls

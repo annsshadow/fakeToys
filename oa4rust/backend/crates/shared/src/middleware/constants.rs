@@ -22,6 +22,10 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
     "/api/organization/assemble/authentication/authentication/captchaRSAPublicKey",
     "/api/organization/assemble/authentication/authentication/mockdeletetoget",
     "/api/organization/assemble/authentication/authentication/safe/logout",
+    // 认证别名验证码（R8 不可解析族复核，2026-10-30）：委托 auth::code / auth::code_send，
+    // 与 /api/authentication/code 同属认证前置，必须匿名可达（发送验证码）。
+    "/api/organization/assemble/authentication/authentication/code",
+    "/api/organization/assemble/authentication/authentication/code/credential/{credential}",
     // program_center 认证别名
     "/api/program_center/authentication",
     // 验证码
@@ -32,6 +36,9 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
     // 绑定 / 扫码登录
     "/api/authentication/bind",
     "/api/authentication/bind/meta/{meta}",
+    // 企微扫码登录回调：code 换 userid 后创建/更新人员并签发会话（A4 批定性为
+    // 认证前置族，必须匿名可达；一次性 code 由企微 OAuth 侧验证，等价外部门）。
+    "/api/qiyeweixin/update/person/detail/{code}",
     // OAuth 授权与回调
     "/api/authentication/oauth",
     "/api/authentication/oauth/list",
@@ -194,9 +201,7 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
     "/api/bbs/assemble/control/bbstopic/list",
     "/api/bbs/assemble/control/bbstopic/{id}",
     // meeting 只读查询（会议列表、详情）
-    "/api/meeting/assemble/control/meeting",
     "/api/meeting/assemble/control/meeting/list",
-    "/api/meeting/assemble/control/meeting/{id}",
     "/api/meeting/assemble/control/meeting/coming",
     "/api/meeting/assemble/control/meeting/coming/list",
     "/api/meeting/assemble/control/meeting/calendar",
@@ -214,13 +219,8 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
     "/api/file/assemble/control/fileinfo/{id}",
     // query 只读查询（查询设计、视图）
     "/api/queryview",
-    "/api/queryview/list",
     "/api/queryview/{id}",
-    "/api/queryview/view/{id}",
-    "/api/queryview/table/{flag}",
     "/api/queryview/table/list/{id}",
-    "/api/queryview/statement/{id}",
-    "/api/queryview/stat/{id}",
     "/api/queryview/stat/list",
     // cms 只读查询（内容管理）
     "/api/cms/assemble/control/cmsdocument",
@@ -238,7 +238,6 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
     "/api/neural/{id}",
     // ── plan006 U5 扩展：R401J200 豁免追加 ──
     // processplatform 扩展：附件/文件/可用流程/可用身份/字典
-    "/api/processplatform/assemble/surface/attachment/list/work/{workId}",
     "/api/processplatform/assemble/surface/attachment/list/task/{taskId}",
     "/api/processplatform/assemble/surface/work/list/application/{applicationFlag}/process/{processFlag}",
     "/api/processplatform/assemble/surface/work/list/process/{processFlag}/person/{person}",
@@ -249,10 +248,8 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
     "/api/processplatform/assemble/surface/available/work/process/{processFlag}",
     "/api/processplatform/assemble/surface/work/list/activity/{activityId}",
     "/api/processplatform/assemble/surface/application/list",
-    "/api/processplatform/assemble/surface/process/list/application/{applicationFlag}",
     "/api/processplatform/assemble/surface/process/list/person/{person}",
     "/api/processplatform/assemble/surface/process/list/unit/{unit}",
-    "/api/processplatform/assemble/surface/task/list/work/{workId}",
     "/api/processplatform/assemble/surface/task/list/identity/{identity}",
     "/api/processplatform/assemble/surface/task/list/person/{person}",
     "/api/processplatform/assemble/surface/task/list/unit/{unit}",
@@ -293,7 +290,6 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
     "/api/queryview/list/application/{applicationFlag}",
     "/api/queryview/view/list",
     "/api/queryview/view/list/application/{applicationFlag}",
-    "/api/queryview/table/list/{id}/next/{count}",
     "/api/queryview/table/list/{id}/list/{listId}/prev/{count}",
     "/api/queryview/table/list/{id}/list/{listId}/next/{count}",
     "/api/queryview/search/list/{viewFlag}/query/{queryFlag}",
@@ -381,6 +377,10 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
 // 认证类端点（计入 10 次/分钟/IP 的认证限流）。
 // 精确限流仅限"明文凭证尝试"：登录契约路径（POST /api/authentication）
 // 与其自造别名（/api/authentication/login）；以及密码重置与初始化端点（前缀）。
+// 2026-10-30：org_auth 契约别名 `/api/organization/assemble/authentication/
+// authentication` 原样委托 auth::login（post(auth::login)），此前不在本名单，
+// rate_limit_middleware 对「豁免且未列限流」直接跳过 ⇒ 该别名成为无上限的登录
+// 暴力破解入口。补入精确名单，与契约路径 POST /api/authentication 等权。
 pub const AUTH_RATE_LIMIT_EXACT: &[&str] = &[
     "/api/authentication",
     "/api/authentication/login",
@@ -389,6 +389,8 @@ pub const AUTH_RATE_LIMIT_EXACT: &[&str] = &[
     "/api/person/regist",
     // 契约别名同限流（2026-10-24 R1）：匿名面等权，防批量建号/验证码枚举
     "/api/organization/assemble/personal/regist",
+    // org_auth 登录契约别名同限流（2026-10-30）：委托 auth::login，防绕行
+    "/api/organization/assemble/authentication/authentication",
     "/api/secret/captcha/verify",
 ];
 pub const AUTH_RATE_LIMIT_PREFIXES: &[&str] = &[
@@ -397,6 +399,8 @@ pub const AUTH_RATE_LIMIT_PREFIXES: &[&str] = &[
     "/api/authentication/safe",       // 安全注销
     "/api/authentication/switchuser", // 用户切换
     "/api/person/regist/code",        // 注册验证码发送
+    // 认证别名验证码同限流（2026-10-30）：委托 auth::code，匿名可达必须防枚举
+    "/api/organization/assemble/authentication/authentication/code",
     // 契约别名同限流（2026-10-24 R1）
     "/api/organization/assemble/personal/regist/code",
     "/api/organization/assemble/personal/reset",
@@ -497,4 +501,25 @@ pub const AUTH_EXEMPT_PREFIXES: &[&str] = &[
     "/api/attendance/assemble/control/qywxstatistic",
     "/api/meeting/assemble/control/config/system",
     "/api/person/icon",
+];
+
+// ── 豁免排除列表（A5 批，2026-10-29）─────────────────────────────────────────
+// 通配段碰撞：下面这些路径会被上方含 `{param}` 的豁免条目「本意给只读详情的
+// {id}」错误地匿名放行（如 `/api/general/.../invoice/{id}` 把 `/invoice/create`
+// 的 create 当成 id 段）。它们要么是写路由（体内已有门，但中间件层应先拦住），
+// 要么是应该走注册表 Public 判定而非通配豁免的只读端点。逐条精确点名排除，
+// 不让通配豁免成为第二条匿名入口。
+pub const AUTH_EXEMPT_BLOCKED_PATHS: &[&str] = &[
+    // general invoice：写路由，豁免只应覆盖 invoice/{id} 详情读
+    "/api/general/assemble/control/invoice/create",
+    "/api/general/assemble/control/invoice/upload",
+    // meeting：写路由，豁免只应覆盖 meeting/{id} 详情读
+    "/api/meeting/assemble/control/meeting/create",
+    // queryview：写方法但只读的查询端点，匿名可达只应来自 rbac Public 注册，
+    // 不应靠 `/api/queryview/{id}` 的通配碰撞
+    "/api/queryview/search",
+    "/api/queryview/morelikethis",
+    // queryview/list：B6 惰性豁免条目——注册表 Authenticated 要求登录，
+    // 删除显式豁免后仍被 `{id}` 通配覆盖，精确阻断使「豁免失效」与注册表一致。
+    "/api/queryview/list",
 ];

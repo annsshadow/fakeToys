@@ -6,24 +6,15 @@ mod tests {
     use crate::entities::{mind_folder::Model as MindFolder, mind_version::Model as MindVersion};
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
-    use deadpool_postgres::{Manager, Pool};
     use shared::response::ActionResult;
     use tower::ServiceExt;
-
-    fn build_test_pool() -> Pool {
-        let mgr = Manager::new(
-            deadpool_postgres::tokio_postgres::Config::new(),
-            deadpool_postgres::tokio_postgres::NoTls,
-        );
-        Pool::builder(mgr).build().unwrap()
-    }
 
     #[test]
     fn test_list_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::mind_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::mind_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -45,8 +36,8 @@ mod tests {
     fn test_folder_list_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::mind_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::mind_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -68,8 +59,8 @@ mod tests {
     fn test_version_list_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::mind_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::mind_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -83,7 +74,7 @@ mod tests {
                 .await
                 .unwrap();
 
-            // 由于没有数据库，会返回 INTERNAL_SERVER_ERROR (500) 或 NOT_FOUND (404)
+            // 只读 GET，无会话门；无 DB 时返回 500（或路由未注册 404）。
             assert!(
                 response.status() == StatusCode::INTERNAL_SERVER_ERROR
                     || response.status() == StatusCode::NOT_FOUND
@@ -95,8 +86,8 @@ mod tests {
     fn test_mind_create_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::mind_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::mind_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -111,10 +102,7 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(
-                response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                    || response.status() == StatusCode::NOT_FOUND
-            );
+            assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
         });
     }
 
@@ -122,8 +110,8 @@ mod tests {
     fn test_mind_update_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::mind_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::mind_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -138,10 +126,7 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(
-                response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                    || response.status() == StatusCode::NOT_FOUND
-            );
+            assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
         });
     }
 
@@ -149,8 +134,8 @@ mod tests {
     fn test_mind_delete_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::mind_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::mind_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -164,10 +149,7 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(
-                response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                    || response.status() == StatusCode::NOT_FOUND
-            );
+            assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
         });
     }
 
@@ -175,8 +157,8 @@ mod tests {
     fn test_folder_create_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::mind_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::mind_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -191,10 +173,7 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(
-                response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                    || response.status() == StatusCode::NOT_FOUND
-            );
+            assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
         });
     }
 
@@ -202,8 +181,8 @@ mod tests {
     fn test_folder_update_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::mind_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::mind_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -218,10 +197,7 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(
-                response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                    || response.status() == StatusCode::NOT_FOUND
-            );
+            assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
         });
     }
 
@@ -229,8 +205,8 @@ mod tests {
     fn test_folder_delete_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::mind_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::mind_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -244,10 +220,7 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(
-                response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                    || response.status() == StatusCode::NOT_FOUND
-            );
+            assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
         });
     }
 
@@ -256,8 +229,8 @@ mod tests {
         // Without DB, list returns 500; with DB would include created data.
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let pool = build_test_pool();
-            let app = crate::mind_core_entity_router(pool);
+            let db = shared::testing::mock_db().await;
+            let app = crate::mind_core_entity_router(db);
 
             let response = app
                 .clone()
@@ -271,10 +244,8 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert!(
-                response.status() == StatusCode::INTERNAL_SERVER_ERROR
-                    || response.status() == StatusCode::NOT_FOUND
-            );
+            // 只读 GET，无会话门；无 DB 时返回 500。
+            assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
         });
     }
 

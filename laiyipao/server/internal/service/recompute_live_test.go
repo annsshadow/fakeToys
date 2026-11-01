@@ -69,7 +69,7 @@ func countRecomputeRows(t *testing.T, ts *testService, uid int64) int {
 //	不是取消拒发。若 enforce 下不再拒发，R1 就失去了全部意义。
 func TestReplaySkillsMismatchIsRejectedUnderEnforce(t *testing.T) {
 	ts := openTestService(t)
-	ts.Service.Cfg.SettleRecomputeMode = RecomputeEnforce
+	ts.Service.Cfg().SettleRecomputeMode = RecomputeEnforce
 	ts.Service.initRecomputeGate()
 
 	uid := recomputeProbeUser(t, ts, "enf")
@@ -85,7 +85,7 @@ func TestReplaySkillsMismatchIsRejectedUnderEnforce(t *testing.T) {
 // 在这一档上可以放心跑，观察台账，确认重算准不准，再切 enforce。
 func TestReplaySkillsMismatchIsNotRejectedUnderShadow(t *testing.T) {
 	ts := openTestService(t)
-	ts.Service.Cfg.SettleRecomputeMode = RecomputeShadow
+	ts.Service.Cfg().SettleRecomputeMode = RecomputeShadow
 	ts.Service.initRecomputeGate()
 
 	uid := recomputeProbeUser(t, ts, "shd")
@@ -100,7 +100,7 @@ func TestReplaySkillsMismatchIsNotRejectedUnderShadow(t *testing.T) {
 // 校验仍然在跑，仍然写台账，只是不再据此拒发。
 func TestReplaySkillsMismatchIsNotRejectedUnderOff(t *testing.T) {
 	ts := openTestService(t)
-	ts.Service.Cfg.SettleRecomputeMode = RecomputeOff
+	ts.Service.Cfg().SettleRecomputeMode = RecomputeOff
 	ts.Service.initRecomputeGate()
 
 	uid := recomputeProbeUser(t, ts, "off")
@@ -122,7 +122,7 @@ func TestReplaySkillsMismatchAlwaysLeavesEvidence(t *testing.T) {
 	for _, mode := range []string{RecomputeOff, RecomputeShadow, RecomputeEnforce} {
 		t.Run(mode, func(t *testing.T) {
 			ts := openTestService(t)
-			ts.Service.Cfg.SettleRecomputeMode = mode
+			ts.Service.Cfg().SettleRecomputeMode = mode
 			ts.Service.initRecomputeGate()
 
 			uid := recomputeProbeUser(t, ts, "ev_"+mode)
@@ -170,7 +170,7 @@ func TestReplaySkillsMismatchAlwaysLeavesEvidence(t *testing.T) {
 //	所以「相符不写」是熔断能工作的**前提**，不是省事。
 func TestReplaySkillsMatchLeavesNoLedgerRow(t *testing.T) {
 	ts := openTestService(t)
-	ts.Service.Cfg.SettleRecomputeMode = RecomputeEnforce
+	ts.Service.Cfg().SettleRecomputeMode = RecomputeEnforce
 	ts.Service.initRecomputeGate()
 
 	uid := recomputeProbeUser(t, ts, "ok")
@@ -192,7 +192,7 @@ func TestEmptyReplaySkillsStillPasses(t *testing.T) {
 	for _, mode := range []string{RecomputeOff, RecomputeShadow, RecomputeEnforce} {
 		t.Run(mode, func(t *testing.T) {
 			ts := openTestService(t)
-			ts.Service.Cfg.SettleRecomputeMode = mode
+			ts.Service.Cfg().SettleRecomputeMode = mode
 			ts.Service.initRecomputeGate()
 
 			uid := recomputeProbeUser(t, ts, "empty_"+mode)

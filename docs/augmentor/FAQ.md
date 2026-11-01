@@ -21,15 +21,15 @@
 - **选型只有两条路**：改配置里的 `models.default`，或调用方显式传 `model_type`。
   工厂是一张「类型 → 类」的表（`augmentor/models/factory.py:21`），查不到就抛
   `ConfigError`（`augmentor/models/factory.py:110`）——**不会静默回落到某一家**。
-- **重试不是降级**：默认最多尝试 3 次（`augmentor/models/base.py:75`），
+- **重试不是降级**：默认最多尝试 3 次（`augmentor/models/base.py:76`），
   配置项是 `augmentation.max_retries`（默认 3，`augmentor/config.py:254`）。
   它重试的是同一个后端；`Retry-After` 只控制等多久，不换目标。
 - **换模型不会命中旧缓存**：缓存键覆盖 provider / model / 采样参数 / prompt
-  （`augmentor/models/base.py:278`），不是「只拿 prompt 当键」。
+  （`augmentor/models/base.py:279`），不是「只拿 prompt 当键」。
 - **响应缓存默认是关的**：`response_cache_dir=None` 即不启用，因为把 prompt 与响应
   写盘属于需要显式选择的行为（`augmentor/models/base.py:97`）。开启后是磁盘
   `DiskCache`（`augmentor/cache.py:212`），容量上限 256 MB
-  （`augmentor/models/base.py:93`）—— 没有上限的磁盘缓存只是把内存泄漏换成磁盘泄漏。
+  （`augmentor/models/base.py:94`）—— 没有上限的磁盘缓存只是把内存泄漏换成磁盘泄漏。
 
 > 计划文档里曾把这条写成「多模型降级顺序」，是勘察前的措辞；按实现订正为
 > 「单后端 + 同后端内重试」，订正记录见 docs/plans 下 2026-10-26-r4 计划的 §8。

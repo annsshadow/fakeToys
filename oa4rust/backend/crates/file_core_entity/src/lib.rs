@@ -6,7 +6,6 @@ use axum::{
     routing::{delete, get, post},
     Json, Router,
 };
-use deadpool_postgres::Pool;
 use sea_orm::{
     ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder,
     QuerySelect, Set,
@@ -427,7 +426,7 @@ pub async fn file_create(
 
 // ── Router ───────────────────────────────────────────────────────────────────
 
-pub fn file_core_entity_router(_pool: Pool) -> Router {
+pub fn file_core_entity_router(db: DatabaseConnection) -> Router {
     Router::new()
         // folder
         .route(
@@ -445,6 +444,9 @@ pub fn file_core_entity_router(_pool: Pool) -> Router {
         .route("/api/file/core/entity/file", post(file_create))
         // complex
         .route("/api/file/core/entity/complex/top", get(complex_top))
+        // B3：handler 需要 Extension<DatabaseConnection>，此前 router 忽略 pool 参数
+        // 且不挂该 extension，任何请求都在提取期 500（门禁永远执行不到）。
+        .layer(Extension(db))
 }
 
 #[cfg(test)]
@@ -455,6 +457,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    crate::file_core_entity_router(pool)
+pub fn router(db: DatabaseConnection) -> axum::Router {
+    crate::file_core_entity_router(db)
 }

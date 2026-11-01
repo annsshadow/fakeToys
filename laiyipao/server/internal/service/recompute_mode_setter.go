@@ -27,9 +27,10 @@ import (
 // 调用方有机会处理。
 //
 // 并发安全：档位的运行期唯一真相是 gate（`atomic.Pointer` 整体替换），
-// 本函数只换 gate、**不写 `s.Cfg`** —— Cfg 是 New 时的值拷贝，
-// 运行期写它会与 `RecomputeModeState` 等读侧构成数据竞争
-// （2026-10-24 修；曾经的写法是 `s.Cfg.SettleRecomputeMode = mode`）。
+// 本函数只换 gate、**不回写 `s.Cfg()`** —— 配置快照自 2026-10-29 起是
+// 原子指针（支持 SIGHUP 热加载），但原子的是「换指针」不是「改结构体字段」：
+// 就地改它指向的结构仍会与 `RecomputeModeState` 等读侧构成数据竞争。
+// （2026-10-24 修过一次同形问题；当时的写法是 `s.Cfg().SettleRecomputeMode = mode`。）
 func (s *Service) SetRecomputeMode(mode string) error {
 	if !ValidRecomputeMode(mode) {
 		return fmt.Errorf("非法的重算档位 %q（合法值：%s）",
@@ -90,7 +91,8 @@ type RecomputeModeState struct {
 // RecomputeModeState 读当前闸门状态。
 //
 // ConfiguredMode 读 **gate**（atomic.Pointer 整体替换后的 mode），
-// 不读 `s.Cfg` —— 后者是 New 时的值拷贝，运行期切档不再写它
+// 不读 `s.Cfg()` —— 后者是**配置文件快照**，而运行期切档只换 gate、
+// 不回写配置文件，两者在「API 切过档」时必然不一致
 // （2026-10-24 修数据竞争；曾经 PUT /admin/recomputes/mode 与
 // GET 同端点并发即 race）。它与 AdminRecomputeSummary.ConfiguredMode
 // 同源（都来自 g.Mode()），口径统一。

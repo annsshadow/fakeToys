@@ -57,6 +57,17 @@ class ModelManager:
                 logger.warning("sentence-transformers 未安装")
                 self._sentence_model = "fallback"
                 return self._sentence_model
+            except Exception as exc:
+                # 加载失败不落哨兵会**每次调用都重试一次**：离线部署、模型缓存
+                # 损坏、HuggingFace 拉取超时都会抛 OSError/HTTPError，异常直接
+                # 逃逸到路由层变成 500，而 `_sentence_model` 仍是 None ——
+                # 于是下一个请求（quality/dedup）再走一遍秒级的加载尝试。
+                # 这里与 ImportError 同口径回退，并把原因留在日志里；
+                # 进程内只付一次代价，调用方拿到的是"没有语义模型"的既有降级路径。
+                logger.warning("sentence-transformers 模型加载失败，本次进程内回退：%s", exc,
+                               exc_info=True)
+                self._sentence_model = "fallback"
+                return self._sentence_model
     
     def clear(self):
         """清空模型缓存"""

@@ -24,13 +24,13 @@ import (
 // 所以这里只在配置完整时才会被调用。
 func (s *Service) code2Session(ctx context.Context, code string) (string, error) {
 	q := url.Values{}
-	q.Set("appid", s.Cfg.WechatAppID)
-	q.Set("secret", s.Cfg.WechatAppSecret)
+	q.Set("appid", s.Cfg().WechatAppID)
+	q.Set("secret", s.Cfg().WechatAppSecret)
 	q.Set("js_code", code)
 	q.Set("grant_type", "authorization_code")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
-		s.Cfg.WechatEndpoint+"?"+q.Encode(), nil)
+		s.Cfg().WechatEndpoint+"?"+q.Encode(), nil)
 	if err != nil {
 		return "", fmt.Errorf("build wechat request: %w", err)
 	}
@@ -115,7 +115,7 @@ func (s *Service) Leaderboard(ctx context.Context, kind string, limit int) ([]Le
 // 与旧行为逐字一致。
 func (s *Service) leaderboardAll(ctx context.Context, kind string) ([]LeaderboardEntry, error) {
 	if c, ok := s.leaderboardCache[kind]; ok {
-		return c.getOrLoad(time.Now(), s.Cfg.LeaderboardCacheTTL, func() ([]LeaderboardEntry, error) {
+		return c.getOrLoad(time.Now(), s.Cfg().LeaderboardCacheTTL, func() ([]LeaderboardEntry, error) {
 			return s.leaderboardQuery(ctx, kind)
 		})
 	}
@@ -263,14 +263,21 @@ func (s *Service) MyRank(ctx context.Context, userID int64, kind string) (MyRank
 		// 效率榜「分数越低越好」，所以优于我 = 比我小
 		cmp = "<"
 	}
+	// 2026-10-31（新一轮第 9 轮）：scores 从 CTE 改为**内联子查询**。
+	//
+	// 原实现把 `scores` 写成 CTE —— PostgreSQL 会把它**物化**成临时表，
+	// 于是 `COUNT(*)` 与名次比较永远在物化结果上全表扫描，
+	// `user_progress (level_exp, user_id)` 索引（迁移 00022）根本用不上。
+	// 改成 FROM 子查询后，planner 会把无聚合的 power 子查询**拉平**成
+	// 直接对表的引用，`level_exp` 上的索引随即可用。
+	// 分数定义仍来自 `leaderboardScoresSQL`，没有另写一份。
 	q := `
-		WITH scores AS (` + scores + `),
-		     me AS (SELECT score FROM scores WHERE user_id = $1)
 		SELECT
-		    COALESCE((SELECT score FROM me), 0)::bigint,
-		    (SELECT COUNT(*) FROM scores),
-		    CASE WHEN NOT EXISTS (SELECT 1 FROM me) THEN 0
-		         ELSE (SELECT COUNT(*) FROM scores s, me
+		    COALESCE((SELECT score FROM (` + scores + `) scores WHERE user_id = $1), 0)::bigint,
+		    (SELECT COUNT(*) FROM (` + scores + `) scores),
+		    CASE WHEN NOT EXISTS (SELECT 1 FROM (` + scores + `) scores WHERE user_id = $1) THEN 0
+		         ELSE (SELECT COUNT(*) FROM (` + scores + `) s,
+		               (SELECT score FROM (` + scores + `) scores WHERE user_id = $1) me
 		                WHERE s.score ` + cmp + ` me.score
 		                   OR (s.score = me.score AND s.user_id < $1)) + 1
 		    END`
@@ -280,6 +287,49 @@ func (s *Service) MyRank(ctx context.Context, userID int64, kind string) (MyRank
 		return MyRank{}, fmt.Errorf("my rank %s: %w", kind, err)
 	}
 	return out, nil
+}
+
+// MyRedemptionItem 是玩家兑换记录的一行（2026-10-30 实质优化第 21 轮）。
+type MyRedemptionItem struct {
+	ID        int64          `json:"id"`
+	Code      string         `json:"code"`
+	Reward    map[string]int `json:"reward"`
+	CreatedAt time.Time      `json:"created_at"`
+}
+
+// MyRedemptions 返回当前玩家最近的兑换码使用记录。
+//
+// `redeem_usages` 记录了玩家每次兑换（哪个码、拿到什么、何时），
+// 但玩家端只有输入框、没有任何历史入口。这里补上玩家视角的兑换记录。
+func (s *Service) MyRedemptions(ctx context.Context, userID int64, limit int) ([]MyRedemptionItem, error) {
+	if limit <= 0 || limit > 50 {
+		limit = 20
+	}
+	rows, err := s.pool.Query(ctx,
+		`SELECT ru.id, rc.code, rc.reward, ru.created_at
+		 FROM redeem_usages ru
+		 JOIN redeem_codes rc ON rc.id = ru.code_id
+		 WHERE ru.user_id = $1
+		 ORDER BY ru.created_at DESC
+		 LIMIT $2`, userID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("my redemptions: %w", err)
+	}
+	defer rows.Close()
+
+	out := []MyRedemptionItem{}
+	for rows.Next() {
+		var it MyRedemptionItem
+		var rewardRaw []byte
+		if err := rows.Scan(&it.ID, &it.Code, &rewardRaw, &it.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan redemption: %w", err)
+		}
+		if err := json.Unmarshal(rewardRaw, &it.Reward); err != nil {
+			return nil, fmt.Errorf("unmarshal redemption reward: %w", err)
+		}
+		out = append(out, it)
+	}
+	return out, rows.Err()
 }
 
 // --- 签到 / 离线 / 兑换 / 商店 ---
@@ -307,25 +357,30 @@ type SignInCalendarDay struct {
 // 与玩家实际拿到的 `SignInResult.Reward` 对不上。
 // 故把日历作为权威来源下发，客户端预览改读它。
 func (s *Service) SignInCalendar(ctx context.Context) ([]SignInCalendarDay, error) {
-	rows, err := s.pool.Query(ctx,
-		`SELECT day_index, reward FROM sign_in_calendar ORDER BY day_index`)
-	if err != nil {
-		return nil, fmt.Errorf("load sign-in calendar: %w", err)
-	}
-	defer rows.Close()
-	out := []SignInCalendarDay{}
-	for rows.Next() {
-		var d SignInCalendarDay
-		var rewardRaw []byte
-		if err := rows.Scan(&d.Day, &rewardRaw); err != nil {
-			return nil, err
+	// 2026-10-30（实质优化第 17 轮）：日历是 seeder 写入的静态配置
+	// （后台没有修改入口），每次签到页打开都查库是纯浪费。
+	// TTL 缓存 + singleflight；0 = 关闭缓存（见 config.SignInCalendarCacheTTL）。
+	return s.signInCalendarCache.getOrLoad(time.Now(), s.Cfg().SignInCalendarCacheTTL, func() ([]SignInCalendarDay, error) {
+		rows, err := s.pool.Query(ctx,
+			`SELECT day_index, reward FROM sign_in_calendar ORDER BY day_index`)
+		if err != nil {
+			return nil, fmt.Errorf("load sign-in calendar: %w", err)
 		}
-		if err := json.Unmarshal(rewardRaw, &d.Reward); err != nil {
-			return nil, fmt.Errorf("unmarshal sign-in reward day %d: %w", d.Day, err)
+		defer rows.Close()
+		out := []SignInCalendarDay{}
+		for rows.Next() {
+			var d SignInCalendarDay
+			var rewardRaw []byte
+			if err := rows.Scan(&d.Day, &rewardRaw); err != nil {
+				return nil, err
+			}
+			if err := json.Unmarshal(rewardRaw, &d.Reward); err != nil {
+				return nil, fmt.Errorf("unmarshal sign-in reward day %d: %w", d.Day, err)
+			}
+			out = append(out, d)
 		}
-		out = append(out, d)
-	}
-	return out, rows.Err()
+		return out, rows.Err()
+	})
 }
 
 // SignIn 执行每日签到。
@@ -507,11 +562,133 @@ func (s *Service) SignInStatus(ctx context.Context, userID int64) (SignInStatus,
 
 	// 周期是否签满：下一行（claimed+1）在日历里不存在即满（与 SignIn 的
 	// 「MAX+1 查不到行 → Already」同口径，避免本地再数一个 7）。
-	var cycleLen int
-	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM sign_in_calendar`).Scan(&cycleLen); err != nil {
+	//
+	// 2026-10-31（新一轮第 5 轮）：日历行数不再单独查库 ——
+	// `SignInCalendar` 已有 TTL 缓存（seeder 静态配置），直接复用其长度，
+	// 每次 `GET /signin/status` 少一次 `COUNT(*) FROM sign_in_calendar` 往返。
+	// 缓存命中时零查库；未命中时加载整份日历（7 行）也只等于原 COUNT
+	// 一次查询的代价，不会更差。
+	days, err := s.SignInCalendar(ctx)
+	if err != nil {
 		return SignInStatus{}, fmt.Errorf("count signin calendar: %w", err)
 	}
+	cycleLen := len(days)
 	return SignInStatus{ClaimedCount: claimed, SignedToday: signedToday, CanSign: !signedToday && claimed < cycleLen}, nil
+}
+
+// --- 离线（挂机）收益 ---
+
+// OfflineRewardStatus 是离线收益的查询结果（2026-10-31 新一轮第 7 轮）。
+type OfflineRewardStatus struct {
+	// Coin 是当前可领取的金币（0 = 还没攒够或刚领过）。
+	Coin int64 `json:"coin"`
+	// ElapsedHours 是距上次领取已累计的小时数（已按上限封顶）。
+	ElapsedHours float64 `json:"elapsed_hours"`
+	// CapHours 是累计上限（小时）。
+	CapHours int `json:"cap_hours"`
+	// LastClaimAt 是上次领取时间。
+	LastClaimAt time.Time `json:"last_claim_at"`
+}
+
+// offlineRewardFor 按「距上次领取的时长」结算金币，并封顶。
+//
+// 口径（2026-10-31 新一轮第 7 轮）：`offline_rewards.last_claim_at`
+// 是上次领取时刻，收益 = 经过时长 × 每小时速率，**领取时清零**。
+// 在线挂机同样累计（GAME_DESIGN 对离线收益的定位就是「挂机产出」）。
+// 上限由 `OfflineCapHours` 约束；`OfflineCapHours <= 0` 视为不封顶，
+// `OfflineCoinPerHour <= 0` 则恒为 0 收益。
+func (s *Service) offlineRewardFor(lastClaimAt time.Time, now time.Time) (coin int64, elapsed time.Duration) {
+	elapsed = now.Sub(lastClaimAt)
+	if cap := s.Cfg().OfflineCapHours; cap > 0 {
+		capDur := time.Duration(cap) * time.Hour
+		if elapsed > capDur {
+			elapsed = capDur
+		}
+	}
+	rate := s.Cfg().OfflineCoinPerHour
+	if rate <= 0 {
+		return 0, elapsed
+	}
+	coin = int64(elapsed.Seconds() * float64(rate) / float64(time.Hour/time.Second))
+	return coin, elapsed
+}
+
+// OfflineRewardStatus 返回当前玩家可领取的离线收益。
+//
+// 老用户可能没有 `offline_rewards` 行（迁移上线前注册），
+// 查询用 data-modifying CTE 幂等补行，保证首次访问不报 404。
+func (s *Service) OfflineRewardStatus(ctx context.Context, userID int64) (OfflineRewardStatus, error) {
+	var lastClaimAt time.Time
+	err := s.pool.QueryRow(ctx, `
+		WITH ensure AS (
+		  INSERT INTO offline_rewards (user_id) VALUES ($1)
+		  ON CONFLICT (user_id) DO NOTHING
+		  RETURNING last_claim_at
+		)
+		SELECT last_claim_at FROM ensure
+		UNION ALL
+		SELECT last_claim_at FROM offline_rewards WHERE user_id = $1
+		  AND NOT EXISTS (SELECT 1 FROM ensure)`, userID).Scan(&lastClaimAt)
+	if err != nil {
+		return OfflineRewardStatus{}, fmt.Errorf("load offline reward: %w", err)
+	}
+	coin, elapsed := s.offlineRewardFor(lastClaimAt, time.Now())
+	return OfflineRewardStatus{
+		Coin:         coin,
+		ElapsedHours: elapsed.Hours(),
+		CapHours:     s.Cfg().OfflineCapHours,
+		LastClaimAt:  lastClaimAt,
+	}, nil
+}
+
+// ClaimOfflineReward 领取离线收益：发金币并清零计时。
+//
+// 并发安全：事务内 `SELECT ... FOR UPDATE` 锁行 —— 两个并发领取
+// 串行化，后到者在锁释放后读到已清零的 last_claim_at，收益为 0，
+// 不会重复发奖。
+//
+// 收益为 0 时**不清零**（玩家离线不足一小时就点领取，不应把已累计的
+// 时间吞掉），返回 `{"coin": 0}`。
+func (s *Service) ClaimOfflineReward(ctx context.Context, userID int64) (map[string]int64, error) {
+	var reward map[string]int64
+	err := s.DB.Tx(ctx, func(tx pgx.Tx) error {
+		var lastClaimAt time.Time
+		err := tx.QueryRow(ctx,
+			`SELECT last_claim_at FROM offline_rewards WHERE user_id = $1 FOR UPDATE`, userID).Scan(&lastClaimAt)
+		if errors.Is(err, pgx.ErrNoRows) {
+			// 老用户首次领取：先补行，再锁。
+			if _, ierr := tx.Exec(ctx,
+				`INSERT INTO offline_rewards (user_id) VALUES ($1) ON CONFLICT (user_id) DO NOTHING`, userID); ierr != nil {
+				return fmt.Errorf("init offline reward: %w", ierr)
+			}
+			if err := tx.QueryRow(ctx,
+				`SELECT last_claim_at FROM offline_rewards WHERE user_id = $1 FOR UPDATE`, userID).Scan(&lastClaimAt); err != nil {
+				return fmt.Errorf("lock offline reward: %w", err)
+			}
+		} else if err != nil {
+			return fmt.Errorf("lock offline reward: %w", err)
+		}
+
+		coin, _ := s.offlineRewardFor(lastClaimAt, time.Now())
+		if coin <= 0 {
+			reward = map[string]int64{"coin": 0}
+			return nil
+		}
+		// 发金币（grantWallet 写 wallet_flows，reason=offline_reward）
+		if err := s.grantWallet(ctx, tx, userID, map[string]int64{"coin": coin}, "offline_reward", 0); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx,
+			`UPDATE offline_rewards SET last_claim_at = now() WHERE user_id = $1`, userID); err != nil {
+			return fmt.Errorf("update offline reward: %w", err)
+		}
+		reward = map[string]int64{"coin": coin}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return reward, nil
 }
 
 // Redeem 兑换兑换码。
@@ -592,6 +769,17 @@ type ShopItemView struct {
 	Bought   int            `json:"bought_today"`
 }
 
+// shopItem 是商城条目的**静态部分**（缓存用，不含 per-user 购买数）。
+type shopItem struct {
+	ID       int            `json:"id"`
+	Code     string         `json:"code"`
+	Name     string         `json:"name"`
+	Category string         `json:"category"`
+	Price    map[string]int `json:"price"`
+	Payload  map[string]int `json:"payload"`
+	Limit    int            `json:"limit_per_day"`
+}
+
 // LoadShop 返回商城，附带玩家今日已购次数。
 func (s *Service) LoadShop(ctx context.Context, userID int64) ([]ShopItemView, error) {
 	// ⚠️ 第 97 轮：`purchase_date` 改由 **Go** 决定，与任务/签到同一个口径。
@@ -609,37 +797,80 @@ func (s *Service) LoadShop(ctx context.Context, userID int64) ([]ShopItemView, e
 	//
 	// 传**日期字面量**（与第 89 轮签到同一手法）让日界只由一处决定。
 	today := periodStart(time.Now(), "daily").Format("2006-01-02")
-	rows, err := s.pool.Query(ctx, `
-		SELECT si.id, si.code, si.name, si.category, si.price, si.payload, si.limit_per_day,
-		       (SELECT COUNT(*) FROM user_purchases up
-		         WHERE up.user_id = $1 AND up.item_id = si.id
-		           AND up.purchase_date = $2)
-		FROM shop_items si WHERE si.enabled ORDER BY si.sort_order`, userID, today)
+
+	// 2026-10-31（新一轮第 6 轮）：商品静态部分走 TTL 缓存。
+	//
+	// 原查询对每个商品各做一次关联子查询（`user_purchases` 按
+	// user+item+today 计数），还要每次重新读整张 `shop_items` 配置表。
+	// `shop_items` 是 seeder 写入的配置（后台仅有低频运营修改），
+	// 商品列表拆进缓存（TTL 见 config.ShopCacheTTL，0 = 关闭），
+	// 玩家今日已购次数改为**一条分组查询** —— 商品数越多省得越多。
+	//
+	// ⚠️ 静态列表缓存的是 `shopItem`（无 Bought），per-user 计数绝不缓存。
+	items, err := s.shopCache.getOrLoad(time.Now(), s.Cfg().ShopCacheTTL, func() ([]shopItem, error) {
+		rows, err := s.pool.Query(ctx, `
+			SELECT id, code, name, category, price, payload, limit_per_day
+			FROM shop_items WHERE enabled ORDER BY sort_order`)
+		if err != nil {
+			return nil, fmt.Errorf("load shop: %w", err)
+		}
+		defer rows.Close()
+
+		out := []shopItem{}
+		for rows.Next() {
+			var v shopItem
+			var priceRaw, payloadRaw []byte
+			if err := rows.Scan(&v.ID, &v.Code, &v.Name, &v.Category, &priceRaw, &payloadRaw, &v.Limit); err != nil {
+				return nil, err
+			}
+			// 第 148 轮：fail-loud（AGENTS #11）。price/payload 是 jsonb 经济字段，
+			// `_ =` 会把坏数据静默吞成空 map —— 商品显示成「0 金 / 无内容」。
+			// 购买路径（Buy）本就 fail-loud，这里列表读侧也应同口径报错，
+			// 让坏商品在后台/客户端可见，而不是无声显示成「免费/空包」。
+			if err := json.Unmarshal(priceRaw, &v.Price); err != nil {
+				return nil, fmt.Errorf("load shop: 商品 %d 的 price 非法 jsonb: %w", v.ID, err)
+			}
+			if err := json.Unmarshal(payloadRaw, &v.Payload); err != nil {
+				return nil, fmt.Errorf("load shop: 商品 %d 的 payload 非法 jsonb: %w", v.ID, err)
+			}
+			out = append(out, v)
+		}
+		return out, rows.Err()
+	})
 	if err != nil {
-		return nil, fmt.Errorf("load shop: %w", err)
+		return nil, err
+	}
+
+	// 玩家今日已购次数：一条分组查询替代原来每个商品的关联子查询。
+	bought := map[int]int{}
+	rows, err := s.pool.Query(ctx, `
+		SELECT item_id, COUNT(*) FROM user_purchases
+		WHERE user_id = $1 AND purchase_date = $2
+		GROUP BY item_id`, userID, today)
+	if err != nil {
+		return nil, fmt.Errorf("load shop bought: %w", err)
 	}
 	defer rows.Close()
-
-	var out []ShopItemView
 	for rows.Next() {
-		var v ShopItemView
-		var priceRaw, payloadRaw []byte
-		if err := rows.Scan(&v.ID, &v.Code, &v.Name, &v.Category, &priceRaw, &payloadRaw, &v.Limit, &v.Bought); err != nil {
-			return nil, err
+		var itemID, n int
+		if err := rows.Scan(&itemID, &n); err != nil {
+			return nil, fmt.Errorf("scan shop bought: %w", err)
 		}
-		// 第 148 轮：fail-loud（AGENTS #11）。price/payload 是 jsonb 经济字段，
-		// `_ =` 会把坏数据静默吞成空 map —— 商品显示成「0 金 / 无内容」。
-		// 购买路径（Buy）本就 fail-loud，这里列表读侧也应同口径报错，
-		// 让坏商品在后台/客户端可见，而不是无声显示成「免费/空包」。
-		if err := json.Unmarshal(priceRaw, &v.Price); err != nil {
-			return nil, fmt.Errorf("load shop: 商品 %d 的 price 非法 jsonb: %w", v.ID, err)
-		}
-		if err := json.Unmarshal(payloadRaw, &v.Payload); err != nil {
-			return nil, fmt.Errorf("load shop: 商品 %d 的 payload 非法 jsonb: %w", v.ID, err)
-		}
-		out = append(out, v)
+		bought[itemID] = n
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("scan shop bought: %w", err)
+	}
+
+	out := make([]ShopItemView, 0, len(items))
+	for _, it := range items {
+		out = append(out, ShopItemView{
+			ID: it.ID, Code: it.Code, Name: it.Name, Category: it.Category,
+			Price: it.Price, Payload: it.Payload, Limit: it.Limit,
+			Bought: bought[it.ID],
+		})
+	}
+	return out, nil
 }
 
 // Buy 购买商城商品。
@@ -856,6 +1087,228 @@ func parseCardPicks(raw string) []int {
 // 下一行的注释说「这些数据公开是设计使然（否则无人能验真）」——
 // 那句话说的是**数据内容**公开，不是**谁的**战报公开。
 // 你验证自己的对局本来就不需要读别人的。
+// MyBattleHistoryItem 是玩家战报历史的一行（2026-10-30 实质优化第 19 轮）。
+type MyBattleHistoryItem struct {
+	ID        int64     `json:"id"`
+	LevelID   int       `json:"level_id"`
+	Result    string    `json:"result"`
+	Stars     int       `json:"stars"`
+	Score     int64     `json:"score"`
+	Kills     int       `json:"kills"`
+	Leaked    int       `json:"leaked"`
+	CreatedAt time.Time `json:"created_at"`
+	// 2026-10-31（实质优化第 35 轮）：回放哈希，供「从战报进入验真」。
+	ReplayHash string `json:"replay_hash"`
+}
+
+// MyBattleHistory 返回当前玩家最近的战斗记录。
+//
+// 玩家打完关卡后没有任何历史战报入口（后台有 `AdminListBattles`，
+// 玩家侧只有单条验真/回放端点）。这里补上玩家视角的战绩列表。
+func (s *Service) MyBattleHistory(ctx context.Context, userID int64, limit, offset int, result string) ([]MyBattleHistoryItem, error) {
+	if limit <= 0 || limit > 50 {
+		limit = 20
+	}
+	// 分页（2026-11-01 新一轮第 55 轮）：负 offset 夹到 0。
+	if offset < 0 {
+		offset = 0
+	}
+	// 结果筛选（2026-11-01 新一轮第 80 轮）：win / lose，空串不过滤。
+	result = strings.TrimSpace(result)
+	args := []any{userID, limit, offset}
+	where := `user_id = $1`
+	if result != "" {
+		where += ` AND result = $4`
+		args = append(args, result)
+	}
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, level_id, result, stars, score, kills, leaked, replay_hash, created_at
+		 FROM battle_records
+		 WHERE `+where+`
+		 ORDER BY created_at DESC
+		 LIMIT $2 OFFSET $3`, args...)
+	if err != nil {
+		return nil, fmt.Errorf("my battle history: %w", err)
+	}
+	defer rows.Close()
+
+	out := []MyBattleHistoryItem{}
+	for rows.Next() {
+		var it MyBattleHistoryItem
+		if err := rows.Scan(&it.ID, &it.LevelID, &it.Result, &it.Stars,
+			&it.Score, &it.Kills, &it.Leaked, &it.ReplayHash, &it.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan battle history: %w", err)
+		}
+		out = append(out, it)
+	}
+	return out, rows.Err()
+}
+
+// BattleDetail 是单局战报的完整详情（2026-10-31 新一轮第 10 轮）。
+type BattleDetail struct {
+	ID            int64          `json:"id"`
+	LevelID       int            `json:"level_id"`
+	Result        string         `json:"result"`
+	Stars         int            `json:"stars"`
+	Score         int64          `json:"score"`
+	Kills         int            `json:"kills"`
+	Leaked        int            `json:"leaked"`
+	HpLeft        int            `json:"hp_left"`
+	WaveReached   int            `json:"wave_reached"`
+	DurationMs    int            `json:"duration_ms"`
+	Shots         int            `json:"shots"`
+	Hits          int            `json:"hits"`
+	Reactions     int            `json:"reactions"`
+	HeatMax       int            `json:"heat_max"`
+	ElementsUsed  map[string]int `json:"elements_used"`
+	ReactionsUsed map[string]int `json:"reactions_used"`
+	TerrainUsed   []string       `json:"terrain_used"`
+	Loot          map[string]int `json:"loot"`
+	ReplayHash    string         `json:"replay_hash"`
+	CreatedAt     time.Time      `json:"created_at"`
+}
+
+// MyBattleDetail 返回当前玩家单局战报的完整详情。
+//
+// 战报列表（`MyBattleHistory`）只有摘要（关卡/结果/星级/分数），
+// 玩家想回顾「这局拿了多少掉落、用了什么元素、触发了什么反应」
+// 没有任何入口。这里补上单局详情：掉落、元素/反应/地形使用、
+// 命中、峰值热量等全部字段。
+//
+// 归属校验与 `getReplay` 同口径：`WHERE id = $1 AND user_id = $2`，
+// 「不存在」与「不是你的」返回同一个 `ErrNotFound`（避免 id 预言机）。
+func (s *Service) MyBattleDetail(ctx context.Context, userID, battleID int64) (BattleDetail, error) {
+	var d BattleDetail
+	var elementsRaw, reactionsRaw, terrainRaw, lootRaw []byte
+	err := s.pool.QueryRow(ctx, `
+		SELECT id, level_id, result, stars, score, kills, leaked, hp_left,
+		       wave_reached, duration_ms, shots, hits, reactions, heat_max,
+		       elements_used, reactions_used, terrain_used, loot, replay_hash, created_at
+		FROM battle_records
+		WHERE id = $1 AND user_id = $2`, battleID, userID).
+		Scan(&d.ID, &d.LevelID, &d.Result, &d.Stars, &d.Score, &d.Kills, &d.Leaked, &d.HpLeft,
+			&d.WaveReached, &d.DurationMs, &d.Shots, &d.Hits, &d.Reactions, &d.HeatMax,
+			&elementsRaw, &reactionsRaw, &terrainRaw, &lootRaw, &d.ReplayHash, &d.CreatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return BattleDetail{}, fmt.Errorf("%w: battle %d", ErrNotFound, battleID)
+	}
+	if err != nil {
+		return BattleDetail{}, fmt.Errorf("load battle detail: %w", err)
+	}
+	// jsonb 解析：坏数据 fail-loud（AGENTS #11），不静默给空值。
+	if err := json.Unmarshal(elementsRaw, &d.ElementsUsed); err != nil {
+		return BattleDetail{}, fmt.Errorf("battle %d elements_used 非法 jsonb: %w", battleID, err)
+	}
+	if err := json.Unmarshal(reactionsRaw, &d.ReactionsUsed); err != nil {
+		return BattleDetail{}, fmt.Errorf("battle %d reactions_used 非法 jsonb: %w", battleID, err)
+	}
+	if err := json.Unmarshal(terrainRaw, &d.TerrainUsed); err != nil {
+		return BattleDetail{}, fmt.Errorf("battle %d terrain_used 非法 jsonb: %w", battleID, err)
+	}
+	if err := json.Unmarshal(lootRaw, &d.Loot); err != nil {
+		return BattleDetail{}, fmt.Errorf("battle %d loot 非法 jsonb: %w", battleID, err)
+	}
+	// 响应形状稳定：空值给 `{}` / `[]` 而不是 `null`。
+	d.ElementsUsed = orEmptyMap(d.ElementsUsed)
+	d.ReactionsUsed = orEmptyMap(d.ReactionsUsed)
+	d.TerrainUsed = orEmptySlice(d.TerrainUsed)
+	d.Loot = orEmptyMap(d.Loot)
+	return d, nil
+}
+
+// MyPurchaseItem 是玩家购买记录的一行（2026-10-30 实质优化第 20 轮）。
+type MyPurchaseItem struct {
+	ID           int64          `json:"id"`
+	ItemID       int            `json:"item_id"`
+	ItemName     string         `json:"item_name"`
+	Category     string         `json:"category"`
+	Price        map[string]int `json:"price"`
+	PurchaseDate string         `json:"purchase_date"`
+	CreatedAt    time.Time      `json:"created_at"`
+}
+
+// MyPurchases 返回当前玩家最近的商城购买记录。
+//
+// `user_purchases` 记录了玩家每次商城购买（道具、价格快照、日期），
+// 但玩家端没有任何入口 —— 买了什么、花了多少只能靠记忆。
+// 这里补上玩家视角的购买历史。
+func (s *Service) MyPurchases(ctx context.Context, userID int64, limit int) ([]MyPurchaseItem, error) {
+	if limit <= 0 || limit > 50 {
+		limit = 20
+	}
+	rows, err := s.pool.Query(ctx,
+		`SELECT p.id, p.item_id, COALESCE(s.name, ''), COALESCE(s.category, ''),
+		        p.price, p.purchase_date::text, p.created_at
+		 FROM user_purchases p
+		 LEFT JOIN shop_items s ON s.id = p.item_id
+		 WHERE p.user_id = $1
+		 ORDER BY p.created_at DESC
+		 LIMIT $2`, userID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("my purchases: %w", err)
+	}
+	defer rows.Close()
+
+	out := []MyPurchaseItem{}
+	for rows.Next() {
+		var it MyPurchaseItem
+		var priceRaw []byte
+		if err := rows.Scan(&it.ID, &it.ItemID, &it.ItemName, &it.Category,
+			&priceRaw, &it.PurchaseDate, &it.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan purchase: %w", err)
+		}
+		if err := json.Unmarshal(priceRaw, &it.Price); err != nil {
+			return nil, fmt.Errorf("unmarshal purchase price: %w", err)
+		}
+		out = append(out, it)
+	}
+	return out, rows.Err()
+}
+
+// MyOrderItem 是玩家支付订单的一行（2026-10-31 实质优化第 27 轮）。
+type MyOrderItem struct {
+	ID          int64      `json:"id"`
+	OrderNo     string     `json:"order_no"`
+	SKU         string     `json:"sku"`
+	Amount      int        `json:"amount"` // 分
+	Status      string     `json:"status"`
+	Provider    string     `json:"provider"`
+	CreatedAt   time.Time  `json:"created_at"`
+	DeliveredAt *time.Time `json:"delivered_at"`
+}
+
+// MyOrders 返回当前玩家最近的支付订单。
+//
+// `orders` 记录的是支付订单（当前 mock provider，协议与状态机与真实
+// 支付一致）。玩家端此前没有任何入口 —— 订单状态（pending/paid/
+// delivered/refunded）玩家完全不可见。
+func (s *Service) MyOrders(ctx context.Context, userID int64, limit int) ([]MyOrderItem, error) {
+	if limit <= 0 || limit > 50 {
+		limit = 20
+	}
+	rows, err := s.pool.Query(ctx,
+		`SELECT id, order_no, sku, amount, status, provider, created_at, delivered_at
+		 FROM orders
+		 WHERE user_id = $1
+		 ORDER BY created_at DESC
+		 LIMIT $2`, userID, limit)
+	if err != nil {
+		return nil, fmt.Errorf("my orders: %w", err)
+	}
+	defer rows.Close()
+
+	out := []MyOrderItem{}
+	for rows.Next() {
+		var it MyOrderItem
+		if err := rows.Scan(&it.ID, &it.OrderNo, &it.SKU, &it.Amount, &it.Status,
+			&it.Provider, &it.CreatedAt, &it.DeliveredAt); err != nil {
+			return nil, fmt.Errorf("scan order: %w", err)
+		}
+		out = append(out, it)
+	}
+	return out, rows.Err()
+}
+
 func (s *Service) GetReplay(ctx context.Context, userID, battleID int64) (ReplayInfo, error) {
 	return s.getReplay(ctx, userID, battleID, true)
 }
@@ -907,7 +1360,7 @@ func (s *Service) getReplay(ctx context.Context, userID, battleID int64, enforce
 	r.Seed = strconv.FormatInt(seed, 10)
 	r.CardPicks = parseCardPicks(cardPicks)
 	r.CreatedAt = createdAt.UTC().Format(timeFormat)
-	r.Level = NewLevelResp(domain.GenerateLevel(r.LevelID))
+	r.Level = NewLevelResp(domain.CachedLevel(r.LevelID))
 
 	// ⚠️ 从玩家侧响应里剥离 settle_input。
 	//

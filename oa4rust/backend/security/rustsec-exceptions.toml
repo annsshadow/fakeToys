@@ -27,6 +27,12 @@ reason = "genpdf 0.2.0 has no release with a patched lopdf (crates.io max is sti
 compensating_control = "Untrusted-PDF parsing is confined to crates/signature on lopdf >= 0.42 (patched); the genpdf chain never invokes lopdf load paths. Exception expires after 30 days to force re-triage (replace genpdf or drop the export feature)."
 approved_by = "project-owner"
 
+# ── zip「Zip Cloaking」解析差分（GHSA-m665-v7pm-7grj / CVE-2026-115905，2026-10-29 登记）──
+# Dependabot 报 Critical（≤9.0.4 受影响，OSV 查询 fixed=None——连 9.1.3 都未修）。
+# 暂不需 exceptions 条目：RustSec DB 尚未收录该 GHSA（无 RUSTSEC 别名），cargo-audit
+# 现阶段不会命中；本仓用法（docx 归档的 ZipArchive::by_name 内存读 + ZipWriter 写，
+# 从不 extract() 落盘）不触达「解压覆盖任意文件」的攻击面。RustSec 收录后需按
+# 下方 zip 家族格式补 exception 条目（30 天重 triage）。
 # ── zip 提取类漏洞（RUSTSEC-2026-0367/0368/0369）──────────────────────────
 # 三公告只在 extract() 把条目落盘时触发。全工作区运行时无 zip extract() 调用
 # （grep crates/*/src 仅命中 query_assemble_surface 的 field.extract，与 zip 无关）。

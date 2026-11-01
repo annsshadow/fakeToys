@@ -92,13 +92,6 @@ const AUTH_FIELDS = [
  * 一个说不出具体理由的条目等于把缺口永久合法化。
  */
 const KNOWN_UNCONSUMED: Record<string, string> = {
-  equipment:
-    '装备目录：2026-10-21（P4-1）起，小程序端从 `/me/equipment` 读装备 —— ' +
-    '那个端点一次返回「目录 + 拥有状态 + 装配状态」，而 /config.equipment ' +
-    '只有目录。从 /config 再读一遍同一份目录是重复传输。' +
-    '该字段的真实消费方是**后台的玩家文档站**（admin 的 WikiView「装备图鉴」页），' +
-    '它在另一个包里 —— 本守卫的扫描范围只覆盖 miniapp/src，' +
-    '所以这里是「有消费方、但不在本扫描范围内」，不是「没人要」。',
   avatar_url:
     '头像字段：users.avatar_url 只有 DEFAULT（空串，migrations/00001_core.sql:12），' +
     '全仓库没有 UPDATE、没有 INSERT，也没有默认值覆盖 —— 所以它永远是空串。' +

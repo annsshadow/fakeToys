@@ -20,6 +20,13 @@ use uuid::Uuid;
 pub const API_BASE: &str = "/api/jpush_assemble_control";
 pub mod routes;
 
+/// 写面会话存在档：无会话先 401，在任何 `pool.get()` 之前（离线可证）。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 #[cfg(test)]
 mod security_gate_tests;
 #[cfg(test)]
@@ -467,9 +474,7 @@ pub async fn device_bind(
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 第五十四批：绑定设备要求有效会话（无会话 401）；creator 仍取 body.personId（冒名残留记 §五）。
-    if session.is_none() {
-        return Err(AppError::Unauthorized);
-    }
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let device_name = req
         .get("deviceName")
@@ -670,9 +675,7 @@ pub async fn device_unbind_deviceName_deviceType(
     Path((device_name, device_type)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 第五十四批：解绑设备要求有效会话（无会话 401）。
-    if session.is_none() {
-        return Err(AppError::Unauthorized);
-    }
+    require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(

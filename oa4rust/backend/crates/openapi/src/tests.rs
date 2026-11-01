@@ -6,6 +6,7 @@
 //! 验证 OpenAPI 文档生成与安全方案注入正确性。
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests {
     use crate::{ApiDoc, SecurityAddon};
     use utoipa::Modify;

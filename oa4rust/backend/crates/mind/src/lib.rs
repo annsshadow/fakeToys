@@ -11,6 +11,13 @@ use shared::{error::AppError, response::ActionResult};
 
 pub mod routes;
 
+/// 写面会话存在档：无会话先 401，在任何 `pool.get()` 之前（离线可证）。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 #[cfg(test)]
 mod security_gate_tests;
 #[cfg(test)]
@@ -280,9 +287,10 @@ pub async fn list_versions_with_mind_id(
 #[allow(non_snake_case)]
 pub async fn create_mind(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload
@@ -304,7 +312,7 @@ pub async fn create_mind(
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
     // 属主以会话登录人为事实源（客户端 creator 可伪造，安全审计 2026-10 二轮）。
-    let creator = session.person_unique.clone();
+    let creator = sess.person_unique.clone();
     let creator_unit = payload
         .get("creatorUnit")
         .and_then(|v| v.as_str())
@@ -445,9 +453,10 @@ pub async fn delete_mind(
 #[allow(non_snake_case)]
 pub async fn create_folder(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload
@@ -468,7 +477,7 @@ pub async fn create_folder(
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
     // 属主以会话登录人为事实源（客户端 creator 可伪造，安全审计 2026-10 二轮）。
-    let creator = session.person_unique.clone();
+    let creator = sess.person_unique.clone();
     let creator_unit = payload
         .get("creatorUnit")
         .and_then(|v| v.as_str())
