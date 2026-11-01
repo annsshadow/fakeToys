@@ -18,6 +18,8 @@ allow = [
     "CC0-1.0",
     "OpenSSL",
     "CDLA-Permissive-2.0",
+    # zip 9 的纯 Rust bzip2 实现（bzip2 v0.6.1）使用该许可证。
+    "bzip2-1.0.6",
 ]
 
 [licenses.private]
