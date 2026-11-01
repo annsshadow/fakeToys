@@ -126,8 +126,12 @@ async fn main() -> anyhow::Result<()> {
     let web_dist =
         env::var("OA4RUST_WEB_DIST").unwrap_or_else(|_| "../../../frontend/dist/web".to_string());
     let web_dist_root = std::path::PathBuf::from(&web_dist);
+    // 第 45 轮：index.html 内存缓存（SPA 深链每次请求都可能回读它）。
+    // 用 mtime 判失效：构建产物被替换后下一次请求自动重读。
+    let index_cache = Arc::new(SpaIndexCache::new(web_dist_root.join("index.html")));
     let spa = tower::service_fn(move |req: axum::http::Request<axum::body::Body>| {
         let web_dist_root = web_dist_root.clone();
+        let index_cache = index_cache.clone();
         async move {
             let path = req.uri().path();
             if path.starts_with("/api/") || path.starts_with("/ws/") {
@@ -148,12 +152,23 @@ async fn main() -> anyhow::Result<()> {
             // 命中静态文件则原样返回；未命中回 index.html（SPA 深链）
             if let Ok(bytes) = tokio::fs::read(&candidate).await {
                 let mime = mime_for_path(&candidate);
-                return Ok(axum::http::Response::builder()
+                let mut resp = axum::http::Response::builder()
                     .header(axum::http::header::CONTENT_TYPE, mime)
                     .body(axum::body::Body::from(bytes))
-                    .unwrap());
+                    .unwrap();
+                // 第 45 轮：Vite 构建产物 `/assets/*` 带内容哈希，不可变。
+                // 加 immutable 长缓存后浏览器不再回源验证；其余文件（index.html
+                // 本身、public 下的无哈希资源）由 SPA 深链路径处理，不加缓存。
+                if path.starts_with("/assets/") {
+                    resp.headers_mut().insert(
+                        axum::http::header::CACHE_CONTROL,
+                        axum::http::HeaderValue::from_static("public, max-age=31536000, immutable"),
+                    );
+                }
+                return Ok(resp);
             }
-            match tokio::fs::read(web_dist_root.join("index.html")).await {
+            // 第 45 轮：index.html 走内存缓存（mtime 失效），不再每次磁盘读。
+            match index_cache.read().await {
                 Ok(bytes) => Ok(axum::http::Response::builder()
                     .header(axum::http::header::CONTENT_TYPE, "text/html; charset=utf-8")
                     .body(axum::body::Body::from(bytes))
@@ -293,6 +308,35 @@ fn mime_for_path(path: &std::path::Path) -> &'static str {
     }
 }
 
+/// 第 45 轮：SPA 入口页的内存缓存。`read()` 返回缓存字节，
+/// 文件的 mtime 变化（构建产物被替换）时自动重读。
+struct SpaIndexCache {
+    path: std::path::PathBuf,
+    state: Arc<tokio::sync::Mutex<Option<(std::time::SystemTime, Vec<u8>)>>>,
+}
+
+impl SpaIndexCache {
+    fn new(path: std::path::PathBuf) -> Self {
+        Self {
+            path,
+            state: Arc::new(tokio::sync::Mutex::new(None)),
+        }
+    }
+
+    async fn read(&self) -> std::io::Result<Vec<u8>> {
+        let mut guard = self.state.lock().await;
+        let mtime = tokio::fs::metadata(&self.path).await?.modified()?;
+        if let Some((cached_mtime, bytes)) = guard.as_ref() {
+            if *cached_mtime == mtime {
+                return Ok(bytes.clone());
+            }
+        }
+        let bytes = tokio::fs::read(&self.path).await?;
+        *guard = Some((mtime, bytes.clone()));
+        Ok(bytes)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -305,5 +349,31 @@ mod tests {
         assert_eq!(first, second, "缓存命中必须返回同一份文档");
         assert!(first.contains("\"paths\""), "OpenAPI 文档应包含 paths");
         assert!(first.len() > 1000, "文档应包含全部路由（不应是空文档）");
+    }
+}
+
+#[cfg(test)]
+mod spa_cache_tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn index_cache_serves_cached_bytes_until_mtime_changes() {
+        let dir = std::env::temp_dir().join(format!("oa4rust-spa-test-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("index.html");
+        std::fs::write(&path, "<html>v1</html>").unwrap();
+
+        let cache = SpaIndexCache::new(path.clone());
+        let first = cache.read().await.unwrap();
+        let second = cache.read().await.unwrap();
+        assert_eq!(first, b"<html>v1</html>");
+        assert_eq!(second, b"<html>v1</html>", "mtime 不变应命中缓存");
+
+        // 改文件内容（mtime 变化）→ 下次读取必须拿到新内容。
+        std::fs::write(&path, "<html>v2</html>").unwrap();
+        let third = cache.read().await.unwrap();
+        assert_eq!(third, b"<html>v2</html>", "mtime 变化后必须重读磁盘");
+
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }
