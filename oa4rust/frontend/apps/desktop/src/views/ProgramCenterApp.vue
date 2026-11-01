@@ -1659,9 +1659,9 @@ async function pcU6Read() {
     const rs = await Promise.all([
       s(api.get('/api/program_center/agent/flag/file')),
       s(api.get('/api/program_center/authentication')),
-      s(api.get(`/api/program_center/captcha/v2/create/width/${w}/height/${h}`)),
+      s(api.post(`/api/program_center/captcha/v2/create/width/${w}/height/${h}`, {})),
       s(api.get(`/api/program_center/captcha/${cid}/validate/answer/${ans}`)),
-      s(api.get(`/api/program_center/code/create/mobile/${mob}`)),
+      s(api.post(`/api/program_center/code/create/mobile/${mob}`, {})),
       s(api.get(`/api/program_center/code/validate/mobile/${mob}/answer/${ans}`)),
       s(api.get(`/api/program_center/code/validate/mobile/${mob}/answer/${ans}/cascade`)),
       s(api.get('/api/program_center/config/collect')),

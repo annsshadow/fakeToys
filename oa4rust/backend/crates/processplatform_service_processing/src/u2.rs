@@ -346,14 +346,51 @@ macro_rules! dict_data_fns {
     };
 }
 
-dict_data_fns!(dict_set_1, dict_del_1 (id: String, p0: String));
-dict_data_fns!(dict_set_2, dict_del_2 (id: String, p0: String, p1: String));
-dict_data_fns!(dict_set_3, dict_del_3 (id: String, p0: String, p1: String, p2: String));
-dict_data_fns!(dict_set_4, dict_del_4 (id: String, p0: String, p1: String, p2: String, p3: String));
-dict_data_fns!(dict_set_5, dict_del_5 (id: String, p0: String, p1: String, p2: String, p3: String, p4: String));
-dict_data_fns!(dict_set_6, dict_del_6 (id: String, p0: String, p1: String, p2: String, p3: String, p4: String, p5: String));
-dict_data_fns!(dict_set_7, dict_del_7 (id: String, p0: String, p1: String, p2: String, p3: String, p4: String, p5: String, p6: String));
-dict_data_fns!(dict_set_8, dict_del_8 (id: String, p0: String, p1: String, p2: String, p3: String, p4: String, p5: String, p6: String, p7: String));
+dict_data_fns!(dict_set_1, dict_del_1(id: String, p0: String));
+dict_data_fns!(dict_set_2, dict_del_2(id: String, p0: String, p1: String));
+dict_data_fns!(
+    dict_set_3,
+    dict_del_3(id: String, p0: String, p1: String, p2: String)
+);
+dict_data_fns!(
+    dict_set_4,
+    dict_del_4(id: String, p0: String, p1: String, p2: String, p3: String)
+);
+dict_data_fns!(
+    dict_set_5,
+    dict_del_5(id: String, p0: String, p1: String, p2: String, p3: String, p4: String)
+);
+dict_data_fns!(
+    dict_set_6,
+    dict_del_6(id: String, p0: String, p1: String, p2: String, p3: String, p4: String, p5: String)
+);
+dict_data_fns!(
+    dict_set_7,
+    dict_del_7(
+        id: String,
+        p0: String,
+        p1: String,
+        p2: String,
+        p3: String,
+        p4: String,
+        p5: String,
+        p6: String,
+    )
+);
+dict_data_fns!(
+    dict_set_8,
+    dict_del_8(
+        id: String,
+        p0: String,
+        p1: String,
+        p2: String,
+        p3: String,
+        p4: String,
+        p5: String,
+        p6: String,
+        p7: String,
+    )
+);
 
 // ── data（DataAction：job/work/workcompleted 业务数据，migration 079 x_data）──
 
