@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
+from augmentor.validation import require_count
 from ..deps import raise_boundary_error, get_pipeline, read_json_file, require_file, run_in_thread, verify_api_key
 from ..schemas import SuccessResponse
 
@@ -61,8 +62,15 @@ class VersionHistoryResponse(BaseModel):
 
 
 class VersionDataResponse(BaseModel):
-    """某个版本的数据快照"""
+    """某个版本的数据快照。
+
+    第 52 轮：支持分页。不带 page_size（默认 0）时返回全量（向后兼容
+    旧客户端）；带 page_size>0 时返回该页切片。total 恒为全量条数。
+    """
     items: List[Dict[str, Any]]
+    total: int = 0
+    page: int = 1
+    page_size: int = 0
 
 
 class VersionCreateRequest(BaseModel):
@@ -194,12 +202,23 @@ async def get_version(version_id: str):
     response_model=VersionDataResponse,
     summary="获取版本数据",
 )
-async def get_version_data(version_id: str):
-    """获取版本数据"""
+async def get_version_data(version_id: str, page: int = 1, page_size: int = 0):
+    """获取版本数据（第 52 轮起支持分页）。
+
+    `page_size` 默认 0 = 返回全量（兼容旧客户端）；>0 时返回该页切片。
+    `page_size` 上限 1000：与 /api/data/load 同口径，防止一次序列化整份
+    超大版本快照打爆服务端内存。
+    """
     try:
+        page = require_count("page", page, minimum=1)
+        page_size = require_count("page_size", page_size, minimum=0, maximum=1000)
         p = get_pipeline()
         items = await run_in_thread(p.version_manager.load_version, version_id)
-        return {"items": items}
+        total = len(items)
+        if page_size > 0:
+            start = (page - 1) * page_size
+            items = items[start : start + page_size]
+        return {"items": items, "total": total, "page": page, "page_size": page_size}
     except Exception as e:
         raise_boundary_error(e)
 

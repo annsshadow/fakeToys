@@ -106,6 +106,37 @@ def _fresh_version(client, filename: str = "data.json") -> str:
     return _create_version(client, filename)
 
 
+def _fresh_augment_report(client):
+    """造一份「已完成」的增强报告并返回其端点响应。
+
+    契约测试需要真实响应：直接从路由模块的报告缓存注入一份（第 35/52 轮），
+    避免依赖真实模型调用与后台任务时序。
+    """
+    from api.routes.augment import _REPORTS, _REPORTS_LOCK
+
+    with _REPORTS_LOCK:
+        _REPORTS["contract-report"] = {
+            "task_id": "contract-report",
+            "input_file": "data.json",
+            "output_file": "augmented.json",
+            "input_count": 2,
+            "output_count": 4,
+            "quality_check": False,
+            "dedup": False,
+            "parallel": True,
+            "vector_index": None,
+            "errors": [],
+            "progress": None,
+            "memory_monitor": {
+                "peak_usage_mb": 10,
+                "trend": [],
+                "final_usage_mb": 5.0,
+                "monitor_available": True,
+            },
+        }
+    return client.get("/api/augment/report/contract-report")
+
+
 def _stale_version(client) -> str:
     """建两个版本，返回那个**已不是当前版本**的 ID
 
@@ -442,7 +473,8 @@ CALLS = {
     ),
     ("GET", "/api/versions/{version_id}/data"): _Case(
         request=lambda c: c.get(f"/api/versions/{_fresh_version(c)}/data"),
-        keys=_keys("items"),
+        # 第 52 轮：分页参数后响应带 total/page/page_size（默认全量）。
+        keys=_keys("items", "total", "page", "page_size"),
     ),
     ("POST", "/api/versions/{version_id}/rollback"): _Case(
         request=lambda c: c.post(f"/api/versions/{_fresh_version(c)}/rollback"),
@@ -470,6 +502,14 @@ CALLS = {
     ("GET", "/api/augment/checkpoints"): _Case(
         request=lambda c: c.get("/api/augment/checkpoints"),
         keys=_keys("checkpoints"),
+    ),
+    ("GET", "/api/augment/report/{task_id}"): _Case(
+        request=_fresh_augment_report,
+        keys=_keys(
+            "task_id", "input_file", "output_file", "input_count", "output_count",
+            "quality_check", "dedup", "parallel", "vector_index", "errors",
+            "progress", "memory_monitor",
+        ),
     ),
     # ---------- dataset（数据集工具箱）----------
     ("POST", "/api/dataset/stats"): _Case(

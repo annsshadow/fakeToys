@@ -211,3 +211,45 @@ class TestSlowRequestMiddleware:
         client = TestClient(app)
         response = client.get("/t")
         assert "X-Process-Time" in response.headers
+
+
+class TestVersionDataPagination:
+    """第 52 轮：`GET /api/versions/{id}/data` 支持分页。
+
+    默认（page_size=0）返回全量（向后兼容）；带 page_size 时返回该页切片
+    与 total；page_size 超过上限（1000）拒绝。
+    """
+
+    def test_default_returns_all_items(self, version_env):
+        client, a, _, _ = version_env
+        vid = _create(client, a)
+        resp = client.get(f"/api/versions/{vid}/data")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["items"] == SAMPLE
+        assert body["total"] == len(SAMPLE)
+        assert body["page_size"] == 0  # 0 = 全量（兼容旧客户端）
+
+    def test_paginated_slices(self, version_env):
+        client, a, _, _ = version_env
+        vid = _create(client, a)
+        resp = client.get(f"/api/versions/{vid}/data", params={"page": 1, "page_size": 2})
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["items"] == SAMPLE[:2]
+        assert body["total"] == len(SAMPLE)
+        assert body["page"] == 1
+        assert body["page_size"] == 2
+
+        resp2 = client.get(f"/api/versions/{vid}/data", params={"page": 2, "page_size": 2})
+        assert resp2.status_code == 200
+        body2 = resp2.json()
+        assert body2["items"] == SAMPLE[2:4]
+        assert body2["total"] == len(SAMPLE)
+
+    def test_absurd_page_size_rejected(self, version_env):
+        client, a, _, _ = version_env
+        vid = _create(client, a)
+        resp = client.get(f"/api/versions/{vid}/data", params={"page_size": 999999})
+        assert resp.status_code == 400, resp.text
+        assert "不大于 1000" in resp.text

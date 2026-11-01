@@ -1325,6 +1325,7 @@ class TestWriteRouteAuthCoverage:
         ("DELETE", "/api/system/backups/{backup_id}"),
         ("DELETE", "/api/versions/{version_id}"),
         ("POST", "/api/augment/start"),
+        ("GET", "/api/augment/report/{task_id}"),  # 第 35 轮新增，报告含失败明细
         ("POST", "/api/config"),
         ("POST", "/api/data/export"),
         ("POST", "/api/data/upload"),

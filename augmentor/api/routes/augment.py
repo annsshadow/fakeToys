@@ -5,7 +5,7 @@
 
 import logging
 import threading
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
@@ -29,6 +29,26 @@ _REPORTS_LOCK = threading.Lock()
 class CheckpointListResponse(BaseModel):
     """断点任务 ID 列表"""
     checkpoints: List[str]
+
+
+class AugmentReportResponse(BaseModel):
+    """增强任务报告（第 35 轮端点的完整响应契约）。
+
+    键与 `augment_dataset` 返回的报告一致：失败明细在 `errors`，
+    `progress` / `memory_monitor` 是运行期诊断。
+    """
+    task_id: str
+    input_file: str
+    output_file: str
+    input_count: int
+    output_count: int
+    quality_check: bool
+    dedup: bool
+    parallel: bool
+    vector_index: Optional[Any] = None
+    errors: List[Dict]
+    progress: Optional[Dict[str, Any]] = None
+    memory_monitor: Dict[str, Any]
 
 
 class AugmentProgressResponse(BaseModel):
@@ -138,7 +158,7 @@ async def start_augmentation(
 
 @router.get(
     "/api/augment/report/{task_id}",
-    response_model=Dict,
+    response_model=AugmentReportResponse,
     summary="获取增强任务报告（含失败明细）",
 )
 async def get_augment_report(task_id: str, _auth: None = Depends(verify_api_key)):
