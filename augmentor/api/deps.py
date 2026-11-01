@@ -6,6 +6,8 @@
 集中管理管道单例、文件读写、路径校验与异步执行辅助。
 """
 
+from collections import OrderedDict
+
 import asyncio
 import errno
 import json
@@ -678,8 +680,35 @@ def read_items(file_path: Path) -> list:
     return assert_dataset_shape(data)
 
 
+# 第 53 轮：数据集读取的有界 LRU 缓存。
+# `/api/data/load` 每次翻页/搜索都整份重读重解析（3.6MB/6902 条实测 ~15ms），
+# 而文件在写操作之间不变。缓存键含 mtime_ns + size：写路径（mutate/write）
+# 会让 stat 变化 → 旧键自动失效，**无需显式失效**。失败不缓存（下次重试）。
+_DATA_READ_CACHE: "OrderedDict[tuple, list]" = OrderedDict()
+_DATA_READ_CACHE_MAX = 2
+_DATA_READ_CACHE_LOCK = threading.Lock()
+
+
+def _read_items_cached(file_path: Path) -> list:
+    """`read_items` 的带缓存版本（键 = path + mtime_ns + size）。"""
+    st = file_path.stat()
+    key = (str(file_path), st.st_mtime_ns, st.st_size)
+    with _DATA_READ_CACHE_LOCK:
+        cached = _DATA_READ_CACHE.get(key)
+        if cached is not None:
+            _DATA_READ_CACHE.move_to_end(key)
+            return cached
+    data = read_items(file_path)
+    with _DATA_READ_CACHE_LOCK:
+        _DATA_READ_CACHE[key] = data
+        _DATA_READ_CACHE.move_to_end(key)
+        while len(_DATA_READ_CACHE) > _DATA_READ_CACHE_MAX:
+            _DATA_READ_CACHE.popitem(last=False)
+    return data
+
+
 async def read_json_file(file_path: Path) -> list:
-    """异步读取 JSON 文件
+    """异步读取 JSON 文件（第 53 轮起走有界 LRU 缓存）
 
     Args:
         file_path: 文件路径
@@ -690,8 +719,7 @@ async def read_json_file(file_path: Path) -> list:
     Raises:
         HTTPException: 400 文件不是合法 JSON
     """
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, read_items, file_path)
+    return await asyncio.to_thread(_read_items_cached, file_path)
 
 
 def _sync_write_json(file_path: Path, data: list):
@@ -721,8 +749,7 @@ async def write_json_file(file_path: Path, data: list):
         file_path: 文件路径
         data: 数据列表
     """
-    loop = asyncio.get_event_loop()
-    await loop.run_in_executor(None, _sync_write_json, file_path, data)
+    await asyncio.to_thread(_sync_write_json, file_path, data)
 
 
 async def run_in_thread(func: Callable[..., Any], *args, **kwargs) -> Any:
@@ -736,8 +763,7 @@ async def run_in_thread(func: Callable[..., Any], *args, **kwargs) -> Any:
     Returns:
         函数返回值
     """
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, lambda: func(*args, **kwargs))
+    return await asyncio.to_thread(func, *args, **kwargs)
 
 
 def require_file(filename: str) -> Path:
@@ -827,5 +853,4 @@ async def mutate_json_file(file_path: Path, transform: Callable[[List], None]) -
             transform(items)
             atomic_write_json(file_path, items)
 
-    loop = asyncio.get_event_loop()
-    await loop.run_in_executor(None, _read_modify_write)
+    await asyncio.to_thread(_read_modify_write)

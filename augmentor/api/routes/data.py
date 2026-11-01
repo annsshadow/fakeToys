@@ -126,8 +126,6 @@ async def list_data_files(all_files: bool = False):
     只匹配单个路径段，所以它可加载的前提是 `resolve_within_roots` 会在白名单根目录内
     查找相对路径（见 `deps` 的说明）。
     """
-    loop = asyncio.get_event_loop()
-
     def scan_files():
         files = []
         seen = set()
@@ -156,7 +154,7 @@ async def list_data_files(all_files: bool = False):
                 })
         return files
 
-    files = await loop.run_in_executor(None, scan_files)
+    files = await asyncio.to_thread(scan_files)
     return {"files": files}
 
 
