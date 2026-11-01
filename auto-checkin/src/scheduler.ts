@@ -19,19 +19,49 @@ const log = createLogger("scheduler");
  *
  * 注：注释里不出现 cron 星斜杠字面量——块注释会被它提前终结。
  */
+/** 某字段是否匹配给定值：`*` 恒真，纯数字按相等；步进/列表/区间返回 null（无法判断）。 */
+function fieldMatch(field: string, value: number, allow7As0 = false): boolean | null {
+  if (field === "*") return true;
+  const n = Number(field);
+  if (Number.isNaN(n)) return null;
+  if (allow7As0 && n === 7 && value === 0) return true;
+  return n === value;
+}
+
 export function estimateNext(expr: string): { at: string | null; note: string | null } {
-  // node-cron 不直接暴露下次时间，这里给个近似：找未来 24h 内首个匹配的整分钟
+  // 第 58 轮：完整 5 字段匹配（分 时 日 月 周），扫描范围扩到未来 366 天。
+  // 旧实现只匹配分/时——`0 9 1 * *`（每月 1 号 9 点）被估成明天 9 点，
+  // 且只扫未来 24h，月/年任务永远「不能估算」。
+  // 日与周是 OR 语义（cron 规定两者都非 * 时任一命中即可）。
   const parts = expr.trim().split(/\s+/);
   if (parts.length < 5) return { at: null, note: null };
-  const [min, hour] = parts;
+  const [min, hour, dom, month, dow] = parts;
   const now = new Date();
-  for (let i = 1; i <= 60 * 24; i++) {
+  for (let i = 1; i <= 366 * 24 * 60; i++) {
     const t = new Date(now.getTime() + i * 60000);
-    const mOk = min === "*" || Number(min) === t.getMinutes();
-    const hOk = hour === "*" || Number(hour) === t.getHours();
-    if (mOk && hOk) return { at: t.toISOString(), note: null };
+    const mOk = fieldMatch(min, t.getMinutes());
+    const hOk = fieldMatch(hour, t.getHours());
+    const dowOk = fieldMatch(dow, t.getDay(), true);
+    let dayOk: boolean | null;
+    if (dom === "*" && dow === "*") {
+      dayOk = true;
+    } else if (dom !== "*" && dow === "*") {
+      dayOk = fieldMatch(dom, t.getDate());
+    } else if (dom === "*" && dow !== "*") {
+      dayOk = dowOk;
+    } else {
+      // 两者都非 *：cron 语义是 OR
+      const dOk = fieldMatch(dom, t.getDate());
+      dayOk = (dOk === true || dowOk === true);
+    }
+    const monOk = fieldMatch(month, t.getMonth() + 1);
+    // 任一字段是步进/列表/区间（null）→ 无法用数字匹配，回退说明
+    if (mOk === null || hOk === null || dayOk === null || monOk === null || dowOk === null) {
+      return { at: null, note: `cron "${expr}"（步进/列表/区间表达式暂不能估算具体时刻，任务已排定）` };
+    }
+    if (mOk && hOk && dayOk && monOk) return { at: t.toISOString(), note: null };
   }
-  return { at: null, note: `cron "${expr}"（步进/列表/区间表达式暂不能估算具体时刻，任务已排定）` };
+  return { at: null, note: `cron "${expr}"（未来一年内没有匹配时刻，任务已排定）` };
 }
 
 export function startScheduler(config: AppConfig): void {

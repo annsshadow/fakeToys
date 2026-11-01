@@ -82,3 +82,39 @@ test("cleanup：停掉本文件注册的全部定时任务，不让 node-cron �
   cron.getTasks().clear();
   assert.equal(cron.getTasks().size, 0);
 });
+
+// 第 58 轮：完整 5 字段匹配。
+test("每月 1 号 9 点：估算到**下月** 1 号而不是明天（旧实现只匹配分/时）", () => {
+  const { at, note } = estimateNext("0 9 1 * *");
+  assert.ok(at, "月任务应能估算出具体时刻");
+  assert.equal(note, null);
+  const d = new Date(at!);
+  // 必须落在某月 1 号 09:00，且晚于今天（未来）。
+  assert.equal(d.getDate(), 1);
+  assert.equal(d.getHours(), 9);
+  assert.equal(d.getMinutes(), 0);
+  assert.ok(d.getTime() > Date.now() - 60_000, "估算应在未来");
+  // 不可能是「明天」：下月 1 号距离今天至少 1 天以上（除非今天恰是月末）
+  const days = (d.getTime() - Date.now()) / 86400000;
+  assert.ok(days >= 1, "每月任务不应被估成明天（除非今天就是月末）");
+});
+
+test("每周一 9 点：估算到下一个周一 09:00", () => {
+  const { at, note } = estimateNext("0 9 * * 1");
+  assert.ok(at, "周任务应能估算");
+  assert.equal(note, null);
+  const d = new Date(at!);
+  assert.equal(d.getDay(), 1, "应落在周一");
+  assert.equal(d.getHours(), 9);
+  assert.ok(d.getTime() > Date.now() - 60_000);
+});
+
+test("cron 的日/周 OR 语义：日字段非 * 而周为 * 时按日匹配", () => {
+  // 今天是几号不确定，但 `0 9 15 * *` 的日=15 应命中 15 号（可能在下月）。
+  const { at, note } = estimateNext("0 9 15 * *");
+  assert.ok(at, "15 号任务应能估算");
+  assert.equal(note, null);
+  const d = new Date(at!);
+  assert.equal(d.getDate(), 15);
+  assert.equal(d.getHours(), 9);
+});
