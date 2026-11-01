@@ -19,6 +19,7 @@ chrono.workspace = true
 shared = { path = "../shared" }
 auth = { path = "../auth" }
 
+ utoipa.workspace = true
 [dev-dependencies]
 tower = "0.5"
 

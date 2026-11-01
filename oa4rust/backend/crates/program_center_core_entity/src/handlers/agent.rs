@@ -23,8 +23,7 @@ pub struct AgentCreateRequest {
     pub description: Option<String>,
     pub cron: Option<String>,
 }
-
-#[derive(Debug, Deserialize)]
+#[derive(utoipa::ToSchema, Debug, Deserialize)]
 pub struct AgentUpdateRequest {
     pub name: Option<String>,
     pub alias: Option<String>,

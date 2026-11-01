@@ -14,9 +14,8 @@ use shared::response::ActionResult;
 use auth::SessionManager;
 
 pub mod router;
-
+#[derive(utoipa::ToSchema)]
 // --- 数据模型 ---
-
 #[derive(Debug, Deserialize)]
 pub struct EmpowerCreateRequest {
     pub to_person: String,

@@ -21,6 +21,7 @@ shared = { path = "../shared" }
 orm = { path = "../orm" }
 chrono.workspace = true
 
+ utoipa.workspace = true
 [dev-dependencies]
 tower.workspace = true
 

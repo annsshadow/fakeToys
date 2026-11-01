@@ -21,6 +21,7 @@ chrono.workspace = true
 shared = { path = "../shared" }
 file_assemble_control = { path = "../file_assemble_control" }
 
+ utoipa.workspace = true
 [dev-dependencies]
 tower.workspace = true
 async-trait.workspace = true

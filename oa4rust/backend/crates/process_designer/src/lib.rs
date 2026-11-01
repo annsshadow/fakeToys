@@ -29,16 +29,14 @@ async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Resul
         Err(AppError::Forbidden)
     }
 }
-
-#[derive(Debug, Deserialize)]
+#[derive(utoipa::ToSchema, Debug, Deserialize)]
 pub struct ApplicationCreateRequest {
     pub name: String,
     pub description: Option<String>,
     pub form_definition: Option<String>,
     pub status: Option<String>,
 }
-
-#[derive(Debug, Deserialize)]
+#[derive(utoipa::ToSchema, Debug, Deserialize)]
 pub struct ApplicationUpdateRequest {
     pub id: String,
     pub name: Option<String>,
