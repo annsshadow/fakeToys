@@ -26,6 +26,8 @@ mod tests_generated;
 mod tests_u2;
 #[cfg(test)]
 mod tests_u3;
+#[cfg(test)]
+mod tests_view_count;
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
@@ -7855,28 +7857,133 @@ pub async fn document_id_view_count(
     require_session(session)?;
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let row = client
+    // 第 66 轮：热行「每请求一次同步 UPDATE」改为「内存聚合 + 定期 flush」。
+    // 请求路径只剩两条轻量 SELECT（存在性校验 + 计数表读基准值），
+    // 写压力从「每次浏览 1 条 UPDATE」降到「每分钟 1 条批量 upsert」。
+    let exists = client
+        .query_opt("SELECT 1 FROM x_cms_document WHERE id = $1", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if exists.is_none() {
+        return Err(AppError::NotFound);
+    }
+    // 基准值 = 计数表已落库的量（行不存在按 0）。
+    let base: i64 = client
         .query_opt(
-            "UPDATE x_cms_document SET view_count = view_count + 1 WHERE id = $1 RETURNING view_count AS new_count",
+            "SELECT COALESCE(view_count, 0) FROM x_cms_document_view_count WHERE doc_id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .map(|r| r.get::<_, i32>(0) as i64)
+        .unwrap_or(0);
 
-    match row {
-        Some(r) => {
-            let new_count: i64 = r.get("new_count");
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(id)),
-                    (
-                        "viewCount".to_string(),
-                        Value::Number(serde_json::Number::from(new_count)),
-                    ),
-                ]),
-            ))))
+    // 内存 +1（含本次），后台 flush 批量落到 024 迁移预留的计数表。
+    let pending = view_count_buffer(pool.0.clone()).record(&id) as i64;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            (
+                "viewCount".to_string(),
+                Value::Number(serde_json::Number::from(base + pending)),
+            ),
+        ]),
+    ))))
+}
+
+// ─── 浏览量缓冲（第 66 轮）──────────────────────────────────────────────
+//
+// `x_cms_document_view_count` 计数表由 024 迁移创建但一直零消费——它本就是
+// 为「浏览量异步化」预留的 sink。这里把 `document_id_view_count` 的
+// 每请求热行 UPDATE 换成：handler 内存 +1、后台任务 60s 批量 upsert。
+
+use std::sync::Mutex as StdMutex;
+use std::sync::OnceLock;
+
+pub struct ViewCountBuffer {
+    pool: Pool,
+    pending: StdMutex<HashMap<String, u64>>,
+}
+
+impl ViewCountBuffer {
+    pub fn new(pool: Pool) -> Self {
+        Self {
+            pool,
+            pending: StdMutex::new(HashMap::new()),
         }
-        None => Err(AppError::NotFound),
+    }
+}
+
+static VIEW_COUNT_BUFFER: OnceLock<ViewCountBuffer> = OnceLock::new();
+static VIEW_FLUSHER_STARTED: OnceLock<()> = OnceLock::new();
+
+/// 取（首调时创建）全局缓冲，并确保后台 flush 任务只 spawn 一次。
+/// 调用方须处于 tokio 运行时上下文（handler / router 构造都满足）。
+pub fn view_count_buffer(pool: Pool) -> &'static ViewCountBuffer {
+    let buf = VIEW_COUNT_BUFFER.get_or_init(|| ViewCountBuffer {
+        pool,
+        pending: StdMutex::new(HashMap::new()),
+    });
+    VIEW_FLUSHER_STARTED.get_or_init(|| {
+        if let Ok(handle) = tokio::runtime::Handle::try_current() {
+            handle.spawn(async move {
+                let mut tick = tokio::time::interval(std::time::Duration::from_secs(60));
+                loop {
+                    tick.tick().await;
+                    buf.flush().await;
+                }
+            });
+        }
+    });
+    buf
+}
+
+impl ViewCountBuffer {
+    /// 某文档内存 +1；返回该文档目前**未 flush** 的累计浏览量（含本次）。
+    pub fn record(&self, doc_id: &str) -> u64 {
+        let mut p = self.pending.lock().unwrap_or_else(|e| e.into_inner());
+        *p.entry(doc_id.to_string()).or_insert(0) += 1;
+        p[doc_id]
+    }
+
+    /// 把待落库的增量批量 upsert 进计数表。连接池不可用或单条失败时
+    /// 把对应量放回 pending（下一轮重试，浏览量不丢）。
+    pub async fn flush(&self) {
+        let batch: Vec<(String, u64)> = {
+            let mut p = self.pending.lock().unwrap_or_else(|e| e.into_inner());
+            p.drain().collect()
+        };
+        if batch.is_empty() {
+            return;
+        }
+        let client = match self.pool.get().await {
+            Ok(c) => c,
+            Err(_) => {
+                let mut p = self.pending.lock().unwrap_or_else(|e| e.into_inner());
+                for (id, n) in batch {
+                    *p.entry(id).or_insert(0) += n;
+                }
+                return;
+            }
+        };
+        for (id, n) in &batch {
+            let n_sql: i32 = (*n).try_into().unwrap_or(i32::MAX);
+            let ok = client
+                .execute(
+                    "INSERT INTO x_cms_document_view_count (id, doc_id, view_count, update_time)
+                     VALUES ($1, $1, $2, CURRENT_TIMESTAMP)
+                     ON CONFLICT (doc_id) DO UPDATE
+                     SET view_count = x_cms_document_view_count.view_count + EXCLUDED.view_count,
+                         update_time = CURRENT_TIMESTAMP",
+                    &[id, &n_sql],
+                )
+                .await
+                .is_ok();
+            if !ok {
+                let mut p = self.pending.lock().unwrap_or_else(|e| e.into_inner());
+                *p.entry(id.clone()).or_insert(0) += n;
+            }
+        }
     }
 }
 
