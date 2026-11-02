@@ -122,6 +122,59 @@ func TestGuestLoginNicknameIsBounded(t *testing.T) {
 	}
 }
 
+// TestGuestLoginTokenIsBounded 游客凭证长度上界（R56）。
+//
+// # 缺陷（探针实测）
+//
+// 修前同一个入口对 10,000 字符的 guest_token 返回 200 并**原样落库**；
+// 2MB 的凭证则在 users 的唯一索引上撞 `SQLSTATE 54000`
+// （`index row requires 24024 bytes, maximum size is 8191`），被兜底成 500。
+//
+// # 判据
+//
+//   - 恰好 MaxGuestTokenLen → 成功，且库里读回来的就是那串（不能静默截断）；
+//   - 上限 + 1 → ErrBadInput，且**没有落库**（拒绝发生在写之前）；
+//   - 10KB → ErrBadInput（修前是 200；这是最直接的回归锚点）。
+func TestGuestLoginTokenIsBounded(t *testing.T) {
+	ts := openTestService(t)
+	ctx := context.Background()
+
+	atLimit := strings.Repeat("t", MaxGuestTokenLen)
+	tp, err := ts.GuestLogin(ctx, atLimit, "边界凭证")
+	if err != nil {
+		t.Fatalf("恰好 %d 字符应放行：%v", MaxGuestTokenLen, err)
+	}
+	var stored string
+	if err := ts.pool.QueryRow(ctx,
+		`SELECT guest_token FROM users WHERE id = $1`, tp.User.ID).Scan(&stored); err != nil {
+		t.Fatalf("读回凭证失败：%v", err)
+	}
+	if stored != atLimit {
+		t.Errorf("恰好在边界上的凭证必须原样落库，库里 %d 字符，期望 %d",
+			len(stored), MaxGuestTokenLen)
+	}
+
+	for _, tc := range []struct {
+		name  string
+		token string
+	}{
+		{"上限 + 1", strings.Repeat("t", MaxGuestTokenLen+1)},
+		{"10KB（修前会被写入）", strings.Repeat("x", 10000)},
+	} {
+		if _, err := ts.GuestLogin(ctx, tc.token, "过界"); !errors.Is(err, ErrBadInput) {
+			t.Errorf("%s 应被 ErrBadInput 拒绝，实际 %v", tc.name, err)
+		}
+		var rows int
+		if err := ts.pool.QueryRow(ctx,
+			`SELECT COUNT(*) FROM users WHERE guest_token = $1`, tc.token).Scan(&rows); err != nil {
+			t.Fatalf("查被拒用户失败：%v", err)
+		}
+		if rows != 0 {
+			t.Errorf("%s 被拒后不得留下行，实际 %d 行", tc.name, rows)
+		}
+	}
+}
+
 func TestGuestLoginBanned(t *testing.T) {
 	ts := openTestService(t)
 	ctx := context.Background()

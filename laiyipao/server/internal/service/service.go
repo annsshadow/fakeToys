@@ -354,6 +354,25 @@ type TokenPair struct {
 // 只拒绝「传一段文章」，不拒绝任何真实昵称。
 const MaxNicknameLen = 64
 
+// MaxGuestTokenLen 游客凭证长度上限（R56）。
+//
+// # 为什么必须有一条上界
+//
+// `users.guest_token` / `guest_token_aliases.token` 都是 **TEXT 且带唯一索引**，
+// 而请求体上限是 1MB。探针实测（R56）：
+//   - 10,000 字符的 guest_token → **200，原样落库**；
+//   - 2MB 的 guest_token → Postgres `SQLSTATE 54000`
+//     （`index row requires 24024 bytes, maximum size is 8191`）→ 500。
+//
+// 也就是说，客户端只要把 JSON 里的一枚字符串改长，就能：
+//  1. 往两处唯一索引里塞超长键值（页分裂/索引膨胀，且永久留存）；
+//  2. 超过 btree 行宽阈值后稳定拿到 500（不是 400），客户端不知道是自己传错了。
+//
+// 服务端自己签发的凭证是 `g_` + 24 字节随机数的 hex = 50 字符
+// （见 `auth.NewGuestToken`），128 已是 2.5 倍余量，足以容纳客户端历史凭证，
+// 同时远低于索引行宽阈值。
+const MaxGuestTokenLen = 128
+
 // guestTokenAliasGrace 是「登出轮换后的旧游客凭证仍能找回原账号」的宽限期
 // （R38 / B2）。
 //
@@ -373,6 +392,13 @@ func (s *Service) GuestLogin(ctx context.Context, guestToken, nickname string) (
 		if err != nil {
 			return TokenPair{}, err
 		}
+	}
+	// 校验必须发生在**任何查询/写入之前**：超长凭证一旦进到
+	// `guest_token_aliases.token` 的等值查询或 users 的 upsert，
+	// 就会以 SQLSTATE 54000 的形式冒成 500（见 MaxGuestTokenLen 的探针记录）。
+	if len(guestToken) > MaxGuestTokenLen {
+		return TokenPair{}, fmt.Errorf("%w: 游客凭证超过 %d 字符（收到 %d 字符）",
+			ErrBadInput, MaxGuestTokenLen, len(guestToken))
 	}
 	if nickname == "" {
 		nickname = "玩家" + fmt.Sprintf("%04d", time.Now().UnixNano()%10000)
