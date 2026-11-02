@@ -271,6 +271,34 @@ func (s *Service) CacheStats() CacheStats {
 	return st
 }
 
+// PoolStats 是数据库连接池的瞬时快照，供 /metrics 观测（R50）。
+//
+// # 为什么值得暴露
+//
+// 连接池耗尽不会报错：调用方只是**排队变慢**，最终撞上 `DB_STATEMENT_TIMEOUT`
+// 或请求超时。线上表现是「偶发 500 / 全部接口变慢」，而根因（池被几个
+// 大导出或慢查询占满）在日志里看不出来。`acquired / max` 是最直接的信号：
+// 接近 1 就说明请求已经在等连接，不是数据库慢。
+type PoolStats struct {
+	TotalConns        int32
+	IdleConns         int32
+	AcquiredConns     int32
+	ConstructingConns int32
+	MaxConns          int32
+}
+
+// PoolStats 返回连接池快照。
+func (s *Service) PoolStats() PoolStats {
+	st := s.pool.Stat()
+	return PoolStats{
+		TotalConns:        st.TotalConns(),
+		IdleConns:         st.IdleConns(),
+		AcquiredConns:     st.AcquiredConns(),
+		ConstructingConns: st.ConstructingConns(),
+		MaxConns:          st.MaxConns(),
+	}
+}
+
 // --- 账号 ---
 
 // User 是玩家公开信息。

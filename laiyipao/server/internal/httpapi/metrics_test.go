@@ -9,24 +9,34 @@ import (
 	"github.com/laiyipao/server/internal/service"
 )
 
-// TestRenderCacheMetrics：/metrics 输出形状与数值。
+// TestRenderMetrics：/metrics 输出形状与数值。
 //
-// 判据：Prometheus 文本格式要求每个指标都有 `# HELP` 与 `# TYPE ... counter`
-// 两行元数据，且样本行是 `name value`。缺元数据的输出多数抓取端会拒收
-// 或告警 —— 那是指标「看起来有、实际抓不到」的静默失效，与本仓库反复
-// 要消灭的形态同源。纯函数、无 DB，是本机真正能跑的指标判据。
-func TestRenderCacheMetrics(t *testing.T) {
+// 判据：Prometheus 文本格式要求每个指标都有 `# HELP` 与 `# TYPE` 两行元数据，
+// 且样本行是 `name value`。缺元数据的输出多数抓取端会拒收或告警 —— 那是指标
+// 「看起来有、实际抓不到」的静默失效。纯函数、无 DB，是本机真正能跑的判据。
+//
+// R50：新增 5 个连接池 gauge（池耗尽不会报错，只会让所有接口变慢）。
+func TestRenderMetrics(t *testing.T) {
 	st := service.CacheStats{
 		DashboardHits: 3, DashboardMisses: 1,
 		LeaderboardHits: 10, LeaderboardMisses: 2,
 	}
-	out := renderCacheMetrics(st)
+	ps := service.PoolStats{
+		TotalConns: 6, IdleConns: 4, AcquiredConns: 2,
+		ConstructingConns: 0, MaxConns: 10,
+	}
+	out := renderMetrics(st, ps)
 
 	samples := map[string]bool{
 		"laiyipao_dashboard_cache_hits_total 3":     false,
 		"laiyipao_dashboard_cache_misses_total 1":   false,
 		"laiyipao_leaderboard_cache_hits_total 10":  false,
 		"laiyipao_leaderboard_cache_misses_total 2": false,
+		"laiyipao_db_pool_total_conns 6":            false,
+		"laiyipao_db_pool_idle_conns 4":             false,
+		"laiyipao_db_pool_acquired_conns 2":         false,
+		"laiyipao_db_pool_constructing_conns 0":     false,
+		"laiyipao_db_pool_max_conns 10":             false,
 	}
 	for line := range strings.SplitSeq(out, "\n") {
 		if _, ok := samples[line]; ok {
@@ -39,16 +49,44 @@ func TestRenderCacheMetrics(t *testing.T) {
 		}
 	}
 
-	// 每个指标都要有 HELP 与 TYPE 两行元数据
-	for _, name := range []string{
-		"laiyipao_dashboard_cache_hits_total",
-		"laiyipao_leaderboard_cache_misses_total",
+	// counter 与 gauge 的元数据各查两个代表，避免只验一半。
+	for name, typ := range map[string]string{
+		"laiyipao_dashboard_cache_hits_total":     "counter",
+		"laiyipao_leaderboard_cache_misses_total": "counter",
+		"laiyipao_db_pool_acquired_conns":         "gauge",
+		"laiyipao_db_pool_max_conns":              "gauge",
 	} {
 		if !strings.Contains(out, "# HELP "+name+" ") {
 			t.Errorf("缺少 %s 的 HELP 行:\n%s", name, out)
 		}
-		if !strings.Contains(out, "# TYPE "+name+" counter") {
-			t.Errorf("缺少 %s 的 TYPE 行:\n%s", name, out)
+		if !strings.Contains(out, "# TYPE "+name+" "+typ) {
+			t.Errorf("缺少 %s 的 TYPE %s 行:\n%s", name, typ, out)
 		}
+	}
+}
+
+// TestPoolStatsAreConsistent 用真实 scratch 池校验 PoolStats 的口径：
+// 占用 + 空闲不应超过总数，总数不应超过上限，上限必须等于启动配置。
+//
+// 这守的是「指标名字和实际值对不上」的一类错误（例如把 Idle 映射成
+// Acquired），那种错看数值永远「像是对的」。
+func TestPoolStatsAreConsistent(t *testing.T) {
+	e2eScratchDB(t)
+	e := newE2E(t)
+
+	ps := e.svc.PoolStats()
+	if ps.MaxConns <= 0 {
+		t.Fatalf("MaxConns 应为正数，实际 %d", ps.MaxConns)
+	}
+	if ps.TotalConns < 0 || ps.AcquiredConns < 0 || ps.IdleConns < 0 {
+		t.Fatalf("连接数不应为负：%+v", ps)
+	}
+	if ps.AcquiredConns+ps.IdleConns > ps.TotalConns {
+		t.Errorf("占用(%d)+空闲(%d) 不应超过总数(%d)",
+			ps.AcquiredConns, ps.IdleConns, ps.TotalConns)
+	}
+	if ps.TotalConns+ps.ConstructingConns > ps.MaxConns {
+		t.Errorf("总数(%d)+在建(%d) 不应超过上限(%d)",
+			ps.TotalConns, ps.ConstructingConns, ps.MaxConns)
 	}
 }
