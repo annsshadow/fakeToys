@@ -96,7 +96,7 @@ func TestAdminExportAnnouncementsBoundary(t *testing.T) {
 	ts.exec(t, `INSERT INTO announcements (title, body)
 	            SELECT 't' || g, 'b' FROM generate_series(1, $1) g`, adminExportMaxRows)
 
-	data, err := ts.AdminExportAnnouncements(ctx)
+	data, err := ts.AdminExportAnnouncements(ctx, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("恰好 %d 行应当导出成功，实际报错：%v", adminExportMaxRows, err)
 	}
@@ -108,7 +108,7 @@ func TestAdminExportAnnouncementsBoundary(t *testing.T) {
 
 	// 多一行就超过上限：必须报 ErrExportTooLarge，而不是返回 10 万行的 CSV。
 	ts.exec(t, `INSERT INTO announcements (title, body) VALUES ('overflow', 'b')`)
-	if _, err := ts.AdminExportAnnouncements(ctx); !errors.Is(err, ErrExportTooLarge) {
+	if _, err := ts.AdminExportAnnouncements(ctx, nil, nil, nil); !errors.Is(err, ErrExportTooLarge) {
 		t.Fatalf("超出上限应返回 ErrExportTooLarge，实际：%v", err)
 	}
 }
@@ -152,7 +152,7 @@ func TestAdminExportAnnouncementsByteBudget(t *testing.T) {
 	ts.exec(t, `INSERT INTO announcements (title, body)
 	            SELECT 'wide-' || g, repeat('x', 400) FROM generate_series(1, 20) g`)
 
-	_, err := ts.AdminExportAnnouncements(ctx)
+	_, err := ts.AdminExportAnnouncements(ctx, nil, nil, nil)
 	if !errors.Is(err, ErrExportTooLarge) {
 		t.Fatalf("字节超预算应返回 ErrExportTooLarge，实际：%v", err)
 	}
@@ -163,7 +163,7 @@ func TestAdminExportAnnouncementsByteBudget(t *testing.T) {
 	// 放开预算后同一批数据必须成功 —— 证明拦截来自预算，而不是数据本身有问题。
 	cfg.ExportMaxBytes = 64 << 20
 	ts.ReloadConfig(cfg)
-	if _, err := ts.AdminExportAnnouncements(ctx); err != nil {
+	if _, err := ts.AdminExportAnnouncements(ctx, nil, nil, nil); err != nil {
 		t.Fatalf("预算放开后应导出成功，实际：%v", err)
 	}
 }

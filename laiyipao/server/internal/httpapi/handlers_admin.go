@@ -1006,9 +1006,23 @@ func (s *Server) adminAnnouncements(c *fiber.Ctx) error {
 	return c.JSON(service.NormalizeNilSlices(service.AdminAnnouncementsResp{Items: items, Total: total}))
 }
 
-// adminExportAnnouncements 导出公告 CSV（2026-10-31 实质优化第 38 轮）。
+// adminExportAnnouncements 导出公告 CSV（2026-10-31 实质优化第 38 轮；
+// 2026-11-03 R30 起与列表同口径：published + 创建日期）。
 func (s *Server) adminExportAnnouncements(c *fiber.Ctx) error {
-	data, err := s.Svc.AdminExportAnnouncements(c.Context())
+	var published *bool
+	switch c.Query("published", "") {
+	case "1", "true":
+		v := true
+		published = &v
+	case "0", "false":
+		v := false
+		published = &v
+	}
+	dateFrom, dateTo, err := queryTimeRange(c, "date_from", "date_to")
+	if err != nil {
+		return failErr(c, err)
+	}
+	data, err := s.Svc.AdminExportAnnouncements(c.Context(), published, dateFrom, dateTo)
 	if err != nil {
 		return failErr(c, err)
 	}
@@ -1146,9 +1160,28 @@ func (s *Server) adminExportRedeemUsages(c *fiber.Ctx) error {
 	return c.Send(data)
 }
 
-// adminExportRedeemCodes 导出兑换码 CSV（2026-10-31 实质优化第 37 轮）。
+// adminExportRedeemCodes 导出兑换码 CSV（2026-10-31 实质优化第 37 轮；
+// 2026-11-03 R30 起与列表同口径：keyword / enabled / expired）。
 func (s *Server) adminExportRedeemCodes(c *fiber.Ctx) error {
-	data, err := s.Svc.AdminExportRedeemCodes(c.Context())
+	var enabled *bool
+	switch c.Query("enabled", "") {
+	case "1", "true":
+		v := true
+		enabled = &v
+	case "0", "false":
+		v := false
+		enabled = &v
+	}
+	var expired *bool
+	switch c.Query("expired", "") {
+	case "1", "true":
+		v := true
+		expired = &v
+	case "0", "false":
+		v := false
+		expired = &v
+	}
+	data, err := s.Svc.AdminExportRedeemCodes(c.Context(), c.Query("keyword", ""), enabled, expired)
 	if err != nil {
 		return failErr(c, err)
 	}

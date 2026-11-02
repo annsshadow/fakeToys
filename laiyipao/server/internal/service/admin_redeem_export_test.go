@@ -28,7 +28,7 @@ func TestAdminExportRedeemCodesCSV(t *testing.T) {
 		t.Fatalf("创建兑换码失败：%v", err)
 	}
 
-	data, err := ts.AdminExportRedeemCodes(ctx)
+	data, err := ts.AdminExportRedeemCodes(ctx, "", nil, nil)
 	if err != nil {
 		t.Fatalf("导出失败：%v", err)
 	}
@@ -78,7 +78,40 @@ func TestAdminExportRedeemCodesBrokenPool(t *testing.T) {
 	ts := openBrokenService(t)
 	ctx := context.Background()
 
-	if _, err := ts.AdminExportRedeemCodes(ctx); err == nil {
+	if _, err := ts.AdminExportRedeemCodes(ctx, "", nil, nil); err == nil {
 		t.Fatal("连接池已关闭时导出必须报错，不能静默返回空 CSV")
+	}
+}
+
+// R30：导出必须尊重列表的 keyword / expired 筛选。
+func TestAdminExportRedeemCodesFilters(t *testing.T) {
+	ts := openTestService(t)
+	ctx := context.Background()
+
+	tag := fmt.Sprintf("R30_%d", time.Now().UnixNano())
+	past := time.Now().Add(-time.Hour)
+	if _, err := ts.AdminCreateRedeemCode(ctx, tag+"_live", map[string]int{"coin": 1}, 1, nil); err != nil {
+		t.Fatalf("创建未过期码失败：%v", err)
+	}
+	if _, err := ts.AdminCreateRedeemCode(ctx, tag+"_dead", map[string]int{"coin": 1}, 1, &past); err != nil {
+		t.Fatalf("创建已过期码失败：%v", err)
+	}
+
+	for _, expired := range []*bool{nil, boolPtr(true), boolPtr(false)} {
+		_, total, err := ts.AdminListRedeemCodes(ctx, 50, 0, tag, nil, expired)
+		if err != nil {
+			t.Fatalf("列表 expired=%v 失败：%v", expired, err)
+		}
+		data, err := ts.AdminExportRedeemCodes(ctx, tag, nil, expired)
+		if err != nil {
+			t.Fatalf("导出 expired=%v 失败：%v", expired, err)
+		}
+		records, err := csv.NewReader(bytes.NewReader(bytes.TrimPrefix(data, []byte("\xEF\xBB\xBF")))).ReadAll()
+		if err != nil {
+			t.Fatalf("解析 CSV 失败：%v", err)
+		}
+		if got := int64(len(records) - 1); got != total {
+			t.Fatalf("expired=%v 导出 %d 行，列表 total=%d（口径不一致）", expired, got, total)
+		}
 	}
 }

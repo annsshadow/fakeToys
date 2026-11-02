@@ -103,3 +103,43 @@ func TestE2EAdminExportRedeemCodesContent(t *testing.T) {
 		t.Errorf("CSV 应包含测试兑换码 %q", code)
 	}
 }
+
+// R30：导出必须与列表同口径（keyword / expired），否则运营筛完再导出拿到的是全量。
+func TestE2EAdminExportRedeemCodesFilters(t *testing.T) {
+	e2eScratchDB(t)
+	e := newE2E(t)
+	_, adminTok := e.newAdmin(t, "redeemexpf")
+
+	tag := fmt.Sprintf("E2E_FILTER_%d", time.Now().UnixNano())
+	past := time.Now().Add(-time.Hour)
+	if _, err := e.pool.Exec(context.Background(),
+		`INSERT INTO redeem_codes (code, reward, max_uses) VALUES ($1, '{"coin":1}'::jsonb, 5)`,
+		tag+"_live"); err != nil {
+		t.Fatalf("插入未过期码失败：%v", err)
+	}
+	if _, err := e.pool.Exec(context.Background(),
+		`INSERT INTO redeem_codes (code, reward, max_uses, expires_at)
+		 VALUES ($1, '{"coin":1}'::jsonb, 5, $2)`, tag+"_dead", past); err != nil {
+		t.Fatalf("插入已过期码失败：%v", err)
+	}
+
+	for _, q := range []string{"keyword=" + tag, "expired=1", "expired=0"} {
+		listURL := "/api/v1/admin/redeem-codes?limit=50&" + q
+		status, body := e.get(t, listURL, adminTok)
+		if status != 200 {
+			t.Fatalf("%s 应 200，实际 %d", listURL, status)
+		}
+		total, _ := body["total"].(float64)
+		status, raw := e.getRaw(t, "/api/v1/admin/redeem-codes/export?"+q, adminTok)
+		if status != 200 {
+			t.Fatalf("导出 %s 应 200，实际 %d", q, status)
+		}
+		records, err := csv.NewReader(bytes.NewReader(bytes.TrimPrefix(raw, []byte("\xEF\xBB\xBF")))).ReadAll()
+		if err != nil {
+			t.Fatalf("解析 CSV 失败：%v", err)
+		}
+		if got := float64(len(records) - 1); got != total {
+			t.Fatalf("%s 导出 %.0f 行，列表 total=%.0f（口径不一致）", q, got, total)
+		}
+	}
+}

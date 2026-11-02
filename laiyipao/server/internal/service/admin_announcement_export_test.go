@@ -13,6 +13,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/csv"
+	"strconv"
 	"testing"
 )
 
@@ -24,7 +25,7 @@ func TestAdminExportAnnouncementsCSV(t *testing.T) {
 		t.Fatalf("创建公告失败：%v", err)
 	}
 
-	data, err := ts.AdminExportAnnouncements(ctx)
+	data, err := ts.AdminExportAnnouncements(ctx, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("导出失败：%v", err)
 	}
@@ -73,7 +74,43 @@ func TestAdminExportAnnouncementsBrokenPool(t *testing.T) {
 	ts := openBrokenService(t)
 	ctx := context.Background()
 
-	if _, err := ts.AdminExportAnnouncements(ctx); err == nil {
+	if _, err := ts.AdminExportAnnouncements(ctx, nil, nil, nil); err == nil {
 		t.Fatal("连接池已关闭时导出必须报错，不能静默返回空 CSV")
+	}
+}
+
+// R30：导出必须尊重列表的 published 筛选，否则运营筛完草稿/已发布导出会拿到全部。
+func TestAdminExportAnnouncementsFilters(t *testing.T) {
+	ts := openTestService(t)
+	ctx := context.Background()
+
+	if _, err := ts.AdminCreateAnnouncement(ctx, "R30 已发布", "正文", true); err != nil {
+		t.Fatalf("创建已发布公告失败：%v", err)
+	}
+	if _, err := ts.AdminCreateAnnouncement(ctx, "R30 草稿", "正文", false); err != nil {
+		t.Fatalf("创建草稿公告失败：%v", err)
+	}
+
+	for _, want := range []bool{true, false} {
+		_, total, err := ts.AdminListAnnouncements(ctx, 50, 0, boolPtr(want), nil, nil)
+		if err != nil {
+			t.Fatalf("列表 published=%v 失败：%v", want, err)
+		}
+		data, err := ts.AdminExportAnnouncements(ctx, boolPtr(want), nil, nil)
+		if err != nil {
+			t.Fatalf("导出 published=%v 失败：%v", want, err)
+		}
+		records, err := csv.NewReader(bytes.NewReader(bytes.TrimPrefix(data, []byte("\xEF\xBB\xBF")))).ReadAll()
+		if err != nil {
+			t.Fatalf("解析 CSV 失败：%v", err)
+		}
+		if got := int64(len(records) - 1); got != total {
+			t.Fatalf("published=%v 导出 %d 行，列表 total=%d（口径不一致）", want, got, total)
+		}
+		for _, rec := range records[1:] {
+			if rec[3] != strconv.FormatBool(want) {
+				t.Errorf("published=%v 导出了 published=%s 的行：%v", want, rec[3], rec)
+			}
+		}
 	}
 }

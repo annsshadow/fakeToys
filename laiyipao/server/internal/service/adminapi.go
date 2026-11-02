@@ -1507,14 +1507,30 @@ func (s *Service) AdminCreateRedeemCodes(ctx context.Context, count int, reward 
 	return out, nil
 }
 
-// AdminExportRedeemCodes 导出兑换码列表为 CSV（2026-10-31 实质优化第 37 轮）。
+// AdminExportRedeemCodes 导出兑换码列表为 CSV（2026-10-31 实质优化第 37 轮；
+// 2026-11-03 R30 起支持与列表同口径的 keyword / enabled / expired 筛选）。
 //
 // 与用户/战报/审计导出同族：运营需要把已生成码的清单带走做线下核对/
 // 客服分发。UTF-8 BOM（Excel 中文兼容），上限 100_000 行。
-func (s *Service) AdminExportRedeemCodes(ctx context.Context) ([]byte, error) {
+func (s *Service) AdminExportRedeemCodes(ctx context.Context, keyword string, enabled, expired *bool) ([]byte, error) {
+	kw, err := trimAdminKeyword(keyword)
+	if err != nil {
+		return nil, err
+	}
+	escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(kw)
+	pattern := "%" + escaped + "%"
+	where := `($1 = '' OR code ILIKE $2) AND ($3::boolean IS NULL OR enabled = $3)`
+	if expired != nil {
+		if *expired {
+			where += ` AND expires_at IS NOT NULL AND expires_at < now()`
+		} else {
+			where += ` AND (expires_at IS NULL OR expires_at >= now())`
+		}
+	}
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, code, reward, max_uses, used_count, expires_at, enabled
-		 FROM redeem_codes ORDER BY id LIMIT 100001`)
+		 FROM redeem_codes WHERE `+where+` ORDER BY id LIMIT 100001`,
+		kw, pattern, enabled)
 	if err != nil {
 		return nil, fmt.Errorf("export redeem codes: %w", err)
 	}
@@ -1663,14 +1679,19 @@ func (s *Service) AdminUpdateRedeemCode(ctx context.Context, id int, reward map[
 	return v, nil
 }
 
-// AdminExportAnnouncements 导出公告列表为 CSV（2026-10-31 实质优化第 38 轮）。
+// AdminExportAnnouncements 导出公告列表为 CSV（2026-10-31 实质优化第 38 轮；
+// 2026-11-03 R30 起支持与列表同口径的 published / 创建日期筛选）。
 //
 // 与兑换码/用户/战报/审计导出同族：运营需要把公告清单带走做归档。
 // UTF-8 BOM，上限 100_000 行。
-func (s *Service) AdminExportAnnouncements(ctx context.Context) ([]byte, error) {
+func (s *Service) AdminExportAnnouncements(ctx context.Context, published *bool, dateFrom, dateTo *time.Time) ([]byte, error) {
+	where := `($1::boolean IS NULL OR published = $1)
+	          AND ($2::timestamptz IS NULL OR created_at >= $2)
+	          AND ($3::timestamptz IS NULL OR created_at < $3)`
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, title, body, published, published_at, created_at
-		 FROM announcements ORDER BY id LIMIT 100001`)
+		 FROM announcements WHERE `+where+` ORDER BY id LIMIT 100001`,
+		published, dateFrom, dateTo)
 	if err != nil {
 		return nil, fmt.Errorf("export announcements: %w", err)
 	}
