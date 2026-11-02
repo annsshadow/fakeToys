@@ -341,16 +341,22 @@ func (s *Service) GuestLogin(ctx context.Context, guestToken, nickname string) (
 	}
 
 	var userID int64
-	err := s.pool.QueryRow(ctx,
-		`INSERT INTO users (guest_token, nickname, is_guest, last_login_at)
-		 VALUES ($1, $2, TRUE, now())
-		 ON CONFLICT (guest_token) DO UPDATE SET last_login_at = now()
-		 RETURNING id`, guestToken, nickname).Scan(&userID)
+	// 建号与新手包（钱包/进度/装备/技能/槽位）必须在**同一事务**里：
+	// 拆成两条独立写入时，initNewUser 中途失败会留下一个 users 行已提交、
+	// 但钱包/技能槽为空的账号。那不是「下次重试会补上」的小问题 ——
+	// 后台用户列表会立刻看到这个号，运营给它发币/封禁时命中「无钱包行」，
+	// 而玩家在补上之前进游戏就是「什么都点不了」的死局。
+	err := s.DB.Tx(ctx, func(tx txType) error {
+		if err := tx.QueryRow(ctx,
+			`INSERT INTO users (guest_token, nickname, is_guest, last_login_at)
+			 VALUES ($1, $2, TRUE, now())
+			 ON CONFLICT (guest_token) DO UPDATE SET last_login_at = now()
+			 RETURNING id`, guestToken, nickname).Scan(&userID); err != nil {
+			return fmt.Errorf("upsert user: %w", err)
+		}
+		return initNewUserTx(ctx, tx, userID)
+	})
 	if err != nil {
-		return TokenPair{}, fmt.Errorf("upsert user: %w", err)
-	}
-
-	if err := s.initNewUser(ctx, userID); err != nil {
 		return TokenPair{}, err
 	}
 
@@ -381,16 +387,19 @@ func (s *Service) WechatLogin(ctx context.Context, code string) (TokenPair, erro
 	}
 
 	var userID int64
-	err = s.pool.QueryRow(ctx,
-		`INSERT INTO users (guest_token, openid, nickname, is_guest, last_login_at)
-		 VALUES ($1, $2, '', FALSE, now())
-		 ON CONFLICT (openid) DO UPDATE SET last_login_at = now()
-		 RETURNING id`,
-		"wx_"+openID, openID).Scan(&userID)
+	// 与 GuestLogin 同一口径：建号 + 新手包同一事务，见那里的注释。
+	err = s.DB.Tx(ctx, func(tx txType) error {
+		if err := tx.QueryRow(ctx,
+			`INSERT INTO users (guest_token, openid, nickname, is_guest, last_login_at)
+			 VALUES ($1, $2, '', FALSE, now())
+			 ON CONFLICT (openid) DO UPDATE SET last_login_at = now()
+			 RETURNING id`,
+			"wx_"+openID, openID).Scan(&userID); err != nil {
+			return fmt.Errorf("upsert wechat user: %w", err)
+		}
+		return initNewUserTx(ctx, tx, userID)
+	})
 	if err != nil {
-		return TokenPair{}, fmt.Errorf("upsert wechat user: %w", err)
-	}
-	if err := s.initNewUser(ctx, userID); err != nil {
 		return TokenPair{}, err
 	}
 	u, err := s.loadUser(ctx, userID)
@@ -560,25 +569,43 @@ func isUniqueViolation(err error) bool {
 
 // initNewUser 为新账号铺设初始数据（钱包、进度、签到记录、离线记录）。
 // 用 ON CONFLICT DO NOTHING 保证幂等 —— 重复调用不会重置玩家进度。
+//
+// 自带事务（`s.DB.Tx`）：这是给「账号已存在、只想补齐初始数据」的调用方
+// （测试与一次性修复）用的入口。建号链路（GuestLogin / WechatLogin /
+// EnsureBootstrapPlayer）不走它 —— 它们要的是「建号与初始化同一事务」，
+// 见 initNewUserTx。
 func (s *Service) initNewUser(ctx context.Context, userID int64) error {
-	_, err := s.pool.Exec(ctx, `
+	return s.DB.Tx(ctx, func(tx txType) error { return initNewUserTx(ctx, tx, userID) })
+}
+
+// initNewUserTx 在调用方事务里铺设初始数据。
+//
+// ⚠️ 必须与「创建 users 行」同一个事务（1000 轮计划 R15）：
+// 六条写入中任一条失败（表结构变更、磁盘满、触发器拒绝……）时，
+// 建号本身也要回滚 —— 否则库里会留下一个没有钱包/没有技能槽的账号，
+// 后台可见、玩家登录后无技能可用。
+//
+// 每条仍然 ON CONFLICT DO NOTHING：同一次登录里 upsert 可能命中已存在用户
+// （游客凭证复用），此时只需补齐缺失的初始行，**绝不能**重置已有进度。
+func initNewUserTx(ctx context.Context, tx txType, userID int64) error {
+	_, err := tx.Exec(ctx, `
 		INSERT INTO user_wallets (user_id, coin, gem, energy, keys) VALUES ($1, 2000, 50, 30, 1)
 		ON CONFLICT (user_id) DO NOTHING`, userID)
 	if err != nil {
 		return fmt.Errorf("init wallet: %w", err)
 	}
-	if _, err := s.pool.Exec(ctx,
+	if _, err := tx.Exec(ctx,
 		`INSERT INTO user_progress (user_id) VALUES ($1) ON CONFLICT (user_id) DO NOTHING`,
 		userID); err != nil {
 		return fmt.Errorf("init progress: %w", err)
 	}
-	if _, err := s.pool.Exec(ctx,
+	if _, err := tx.Exec(ctx,
 		`INSERT INTO offline_rewards (user_id) VALUES ($1) ON CONFLICT (user_id) DO NOTHING`,
 		userID); err != nil {
 		return fmt.Errorf("init offline: %w", err)
 	}
 	// 新号赠送第一件装备，避免背包空白
-	if _, err := s.pool.Exec(ctx,
+	if _, err := tx.Exec(ctx,
 		`INSERT INTO user_equipment (user_id, equipment_id, slot, equipped)
 		 VALUES ($1, 1, 'weapon', TRUE), ($1, 10, 'gloves', TRUE)
 		 ON CONFLICT (user_id, equipment_id) DO NOTHING`, userID); err != nil {
@@ -592,7 +619,7 @@ func (s *Service) initNewUser(ctx context.Context, userID int64) error {
 	//
 	// 赠送超出新号等级（0 级）是礼包语义；第 4 个技能不再白送 ——
 	// Lv2 解锁 slug（重炮弹，物理系）成为玩家第一次"升级解锁新技能"的体验。
-	if _, err := s.pool.Exec(ctx,
+	if _, err := tx.Exec(ctx,
 		`INSERT INTO user_skills (user_id, skill_id) VALUES ($1,1),($1,4),($1,7)
 		 ON CONFLICT (user_id, skill_id) DO NOTHING`, userID); err != nil {
 		return fmt.Errorf("init skills: %w", err)
@@ -606,7 +633,7 @@ func (s *Service) initNewUser(ctx context.Context, userID int64) error {
 	// 保证新号一进关就能触发反应链（I-1 的核心体验不能被"新号不会玩"埋掉）。
 	// 装备校验（loadout.go「技能未拥有」）与 build 组装都以 user_skills 为准，
 	// 所以槽位上的三个技能必须都在上面的赠送列表里 —— 缺一个就是幽灵槽位。
-	if _, err := s.pool.Exec(ctx,
+	if _, err := tx.Exec(ctx,
 		`INSERT INTO user_skill_slots (user_id, slot, skill_id) VALUES ($1,0,1),($1,1,4),($1,2,7)
 		 ON CONFLICT (user_id, slot) DO NOTHING`, userID); err != nil {
 		return fmt.Errorf("init skill slots: %w", err)

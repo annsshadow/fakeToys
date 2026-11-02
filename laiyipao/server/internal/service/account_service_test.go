@@ -322,6 +322,86 @@ func TestInitNewUserErrorBranches(t *testing.T) {
 	_ = tp
 }
 
+// TestGuestLoginRollsBackHalfProvisionedAccount 是 R15 的核心守卫：
+// 新手包第六条（技能槽）失败时，**整个建号事务必须回滚** ——
+// 库里不能留下一个 users 行已提交、但钱包/装备/技能/槽位全空的账号。
+//
+// 为什么这算实质能力而不是「更整洁」：半初始化账号对后台和玩家都可见 ——
+// 运营在用户列表里看到它并尝试发币（无钱包行）、玩家重试前它一直存在。
+// 改前六条 INSERT 是六次 autocommit，前五条已落库；改后同一事务。
+func TestGuestLoginRollsBackHalfProvisionedAccount(t *testing.T) {
+	ts := openScratchService(t)
+	ctx := context.Background()
+	guest := "rollback_guest_" + fmt.Sprint(time.Now().UnixNano())
+
+	ts.renameTable(t, "user_skill_slots", "user_skill_slots_bak")
+	_, err := ts.GuestLogin(ctx, guest, "回滚")
+	ts.renameTable(t, "user_skill_slots_bak", "user_skill_slots")
+	mustErr(t, err, "init skill slots")
+
+	// 建号本身必须一起回滚：不是「账号在、数据缺」，而是「账号不在」。
+	var users, wallets int
+	if qerr := ts.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM users WHERE guest_token = $1`, guest).Scan(&users); qerr != nil {
+		t.Fatalf("查用户失败：%v", qerr)
+	}
+	if users != 0 {
+		t.Fatalf("初始化失败后仍留下 %d 个半初始化账号（guest_token=%s）", users, guest)
+	}
+	if qerr := ts.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM user_wallets WHERE user_id IN
+		   (SELECT id FROM users WHERE guest_token = $1)`, guest).Scan(&wallets); qerr != nil {
+		t.Fatalf("查钱包失败：%v", qerr)
+	}
+	if wallets != 0 {
+		t.Fatalf("初始化失败后仍留下 %d 个钱包行", wallets)
+	}
+
+	// 表恢复后同一凭证重试必须完整建号（失败不遗留脏状态，重试即恢复）。
+	if _, err := ts.GuestLogin(ctx, guest, "回滚"); err != nil {
+		t.Fatalf("恢复后重试应成功：%v", err)
+	}
+	if err := ts.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM user_skill_slots s JOIN users u ON u.id = s.user_id
+		  WHERE u.guest_token = $1`, guest).Scan(&wallets); err != nil {
+		t.Fatalf("查槽位失败：%v", err)
+	}
+	if wallets != 3 {
+		t.Fatalf("重试后应铺满 3 个初始槽位，实际 %d", wallets)
+	}
+}
+
+// TestEnsureBootstrapPlayerRollsBackHalfCreatedAccount 同上，覆盖启动期
+// 向导账号路径：失败时 users 行也不得残留，否则每次启动都会遇到
+// 「账号已存在但没初始化」的分支，且永远补不上（该路径只在新建时初始化）。
+func TestEnsureBootstrapPlayerRollsBackHalfCreatedAccount(t *testing.T) {
+	ts := openScratchService(t)
+	ctx := context.Background()
+	username := "rollback_bootstrap_" + fmt.Sprint(time.Now().UnixNano())
+
+	ts.renameTable(t, "user_skill_slots", "user_skill_slots_bak")
+	_, err := ts.EnsureBootstrapPlayer(ctx, username, "test-password-12345")
+	ts.renameTable(t, "user_skill_slots_bak", "user_skill_slots")
+	mustErr(t, err, "init skill slots")
+
+	var users int
+	if qerr := ts.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM users WHERE username = $1`, username).Scan(&users); qerr != nil {
+		t.Fatalf("查用户失败：%v", qerr)
+	}
+	if users != 0 {
+		t.Fatalf("初始化失败后仍留下 %d 个半初始化向导账号（username=%s）", users, username)
+	}
+
+	created, err := ts.EnsureBootstrapPlayer(ctx, username, "test-password-12345")
+	if err != nil {
+		t.Fatalf("恢复后重建应成功：%v", err)
+	}
+	if !created {
+		t.Fatal("恢复后应新建账号（created=true）")
+	}
+}
+
 // TestIssueTokensStoreError 覆盖 issueTokens 落库 refresh token 失败的分支。
 // 该分支在「loadUser 成功之后」—— 只能靠 scratch 库把 refresh_tokens 拿走。
 func TestIssueTokensStoreError(t *testing.T) {

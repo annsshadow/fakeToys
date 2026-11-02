@@ -332,14 +332,20 @@ func (s *Service) EnsureBootstrapPlayer(ctx context.Context, username, password 
 	if err != nil {
 		return false, err
 	}
-	// ⚠️ 必须用 QueryRow + RETURNING 拿 id：`initNewUser` 要用它发新手包。
-	if err := s.pool.QueryRow(ctx,
-		`INSERT INTO users (guest_token, username, password_hash, nickname, is_guest, last_login_at)
-		 VALUES ($1, $2, $3, $4, FALSE, now())
-		 RETURNING id`, guestToken, username, hash, username).Scan(&id); err != nil {
-		return false, fmt.Errorf("create test account: %w", err)
-	}
-	if err := s.initNewUser(ctx, id); err != nil {
+	// ⚠️ 必须用 QueryRow + RETURNING 拿 id：`initNewUserTx` 要用它发新手包。
+	//
+	// 建号与新账号初始化同一事务（1000 轮计划 R15）：向导账号若只建成
+	// users 行而没铺完钱包/技能，超管第一次登进来就是「无技能可用」，
+	// 且需要重启才能补 —— 启动期一次性写入要么全成、要么全不成。
+	if err := s.DB.Tx(ctx, func(tx txType) error {
+		if err := tx.QueryRow(ctx,
+			`INSERT INTO users (guest_token, username, password_hash, nickname, is_guest, last_login_at)
+			 VALUES ($1, $2, $3, $4, FALSE, now())
+			 RETURNING id`, guestToken, username, hash, username).Scan(&id); err != nil {
+			return fmt.Errorf("create test account: %w", err)
+		}
+		return initNewUserTx(ctx, tx, id)
+	}); err != nil {
 		return false, err
 	}
 	return true, nil
