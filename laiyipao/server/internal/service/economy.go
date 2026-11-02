@@ -735,13 +735,36 @@ func (s *Service) Redeem(ctx context.Context, userID int64, code string) (map[st
 		//
 		// 与 Buy 的 FOR UPDATE、ClaimTask 的 claimed_at IS NULL 是同一个模式：
 		// 让数据库的条件写充当互斥量，用 RowsAffected 判断是否真的抢到。
+		// R23：条件里必须**重判** enabled/expires_at。上面的 SELECT 只是前置
+		// 预检；READ COMMITTED 下，运营在两条语句之间停用/让码到期，旧谓词
+		// （只有 used_count < max_uses）仍会放行 → 停用后仍被兑走一次。
+		// 把启用状态与过期时间放进同一个条件写，让「停用」对在途兑换也生效。
 		tag, err = tx.Exec(ctx,
 			`UPDATE redeem_codes SET used_count = used_count + 1
-			 WHERE id = $1 AND used_count < max_uses`, codeID)
+			 WHERE id = $1 AND used_count < max_uses AND enabled
+			   AND (expires_at IS NULL OR expires_at > now())`, codeID)
 		if err != nil {
 			return err
 		}
 		if tag.RowsAffected() == 0 {
+			// 零行有三种原因（抢完 / 停用 / 期间到期）。再读一次当前状态给出
+			// 可操作的原因，而不是笼统一句「已被抢完」。
+			var enabledNow, expired bool
+			var used, maxUses int
+			if qerr := tx.QueryRow(ctx,
+				`SELECT enabled, (expires_at IS NOT NULL AND expires_at <= now()),
+				        used_count, max_uses
+				   FROM redeem_codes WHERE id = $1`, codeID).
+				Scan(&enabledNow, &expired, &used, &maxUses); qerr == nil {
+				switch {
+				case !enabledNow:
+					return fmt.Errorf("%w: 兑换码已停用", ErrBadInput)
+				case expired:
+					return fmt.Errorf("%w: 兑换码已过期", ErrBadInput)
+				case used >= maxUses:
+					return fmt.Errorf("%w: 兑换码已被抢完", ErrBadInput)
+				}
+			}
 			return fmt.Errorf("%w: 兑换码已被抢完", ErrBadInput)
 		}
 		var reward map[string]int
