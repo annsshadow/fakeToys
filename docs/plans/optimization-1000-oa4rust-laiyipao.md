@@ -191,11 +191,11 @@ Wechat 8s 超时 + 1MB 响应上限、Fiber 读写超时与 body limit、laiyipa
 | 路径 / 指标 | 改前 | 改后 | 日期 | commit |
 | --- | --- | --- | --- | --- |
 | `/admin/users` 总数（cache off @1M users） | p95 136ms、p99 146ms、193 QPS | p95 9.1ms、p99 10.6ms、2,622 QPS | 2026-11-02 | `b7b9563bc`（R61） |
-| `/admin/dashboard` 刷新（cache off @1M） | p95 247.9ms、p99 250.4ms、97 QPS | p95 168.1ms、p99 175.1ms、140 QPS | 2026-11-03 | R62 |
-| `/admin/dashboard` 命中（cache 30s） | p95 3.28ms、8,499 QPS | p95 3.34ms、8,330 QPS | 2026-11-03 | R62 |
-| `/config` | p95 2.43ms、16,151 QPS | 未变（R60 基线） | 2026-11-01 | R60 |
-| `/leaderboard`（cache on） | p95 1.73ms、25,003 QPS | 未变（R60 基线） | 2026-11-01 | R60 |
-| `/leaderboard`（cache off） | 10,713 QPS（`idx_user_progress_power` 生效） | 未变（R60 基线） | 2026-11-01 | R60 |
-| `/me/battles` | p95 5.32ms、4,680 QPS | 未变（R60 基线） | 2026-11-01 | R60 |
+| `/admin/dashboard` 刷新（cache off @1M） | p95 247.9ms、p99 250.4ms、97 QPS | p95 168.1ms、p99 175.1ms、140 QPS | 2026-11-03 | `20b550a7f`（R62） |
+| `/admin/dashboard` 命中（cache 30s） | p95 3.28ms、8,499 QPS | p95 3.34ms、8,330 QPS | 2026-11-03 | `20b550a7f`（R62） |
+| `/config` | p95 2.43ms、16,151 QPS | 未变（R60 基线） | 2026-11-01 | `ec3d43d0c`（R60） |
+| `/leaderboard`（cache on） | p95 1.73ms、25,003 QPS | 未变（R60 基线） | 2026-11-01 | `ec3d43d0c`（R60） |
+| `/leaderboard`（cache off） | 10,713 QPS（`idx_user_progress_power` 生效） | 未变（R60 基线） | 2026-11-01 | `ec3d43d0c`（R60） |
+| `/me/battles` | p95 5.32ms、4,680 QPS | 未变（R60 基线） | 2026-11-01 | `ec3d43d0c`（R60） |
 
-> 新增性能路径时在此登记一行；改前/改后都要是**同环境实测**，不能拿历史数字与另一台机器比。R62 的 commit 为台账同一提交（`git log --grep R62`）。
+> 新增性能路径时在此登记一行；改前/改后都要是**同环境实测**，不能拿历史数字与另一台机器比。
