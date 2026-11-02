@@ -133,6 +133,7 @@ def scan_request_structs():
                 text = rs_file.read_text(encoding="utf-8")
             except Exception:
                 continue
+            text = strip_test_modules(text)
             for match in re.finditer(r'pub\s+struct\s+(\w+(?:Create|Update)Request)', text):
                 if rs_file.name == "lib.rs":
                     mod_path = ""
@@ -160,12 +161,46 @@ def infer_request_body(path: str, method: str) -> str:
     return ""
 
 
+def strip_test_modules(text: str) -> str:
+    """移除内联 `#[cfg(test)] mod tests { ... }` 块。
+
+    生成器此前只按**文件路径**排除测试（`tests/`、`*test*.rs`），而
+    `body_limit.rs` 这类把测试模块写在业务文件末尾的写法会漏网：
+    `#[cfg(test)] mod tests` 里的 `.route("__test_upload", ...)` 被当成
+    真实路由写进 OpenAPI（R24 踩过一次）。测试模块不进库目标，扫描前先剥掉。
+    按花括号配平删除，处理嵌套大括号。
+    """
+    out = []
+    pos = 0
+    pattern = re.compile(r'#\[cfg\(test\)\]\s*(?:pub\s+)?mod\s+\w+\s*\{')
+    while True:
+        m = pattern.search(text, pos)
+        if not m:
+            out.append(text[pos:])
+            break
+        out.append(text[pos:m.start()])
+        i = m.end() - 1  # 指向模块的 `{`
+        depth = 0
+        while i < len(text):
+            ch = text[i]
+            if ch == '{':
+                depth += 1
+            elif ch == '}':
+                depth -= 1
+                if depth == 0:
+                    break
+            i += 1
+        pos = i + 1
+    return ''.join(out)
+
+
 def parse_routes_from_file(filepath: Path) -> list:
     try:
         text = filepath.read_text(encoding="utf-8")
     except Exception:
         return []
 
+    text = strip_test_modules(text)
     text_flat = re.sub(r'\s+', ' ', text)
     routes = []
     seen_keys = set()
