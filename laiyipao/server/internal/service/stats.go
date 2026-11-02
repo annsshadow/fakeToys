@@ -541,7 +541,7 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 //   - 列头用英文，内容用 UTF-8 原文 + BOM（Excel 打开中文不乱码）。
 //
 // 注意：guest_token 等敏感凭证**绝不导出**（理由见 AdminListUsers 的注释）。
-func (s *Service) AdminExportUsers(ctx context.Context, keyword string, dateFrom, dateTo *time.Time, lastLoginFrom, lastLoginTo *time.Time, suspicious *bool) ([]byte, error) {
+func (s *Service) AdminExportUsers(ctx context.Context, keyword string, dateFrom, dateTo *time.Time, isGuest *bool, lastLoginFrom, lastLoginTo *time.Time, suspicious *bool) ([]byte, error) {
 	kw, err := trimAdminKeyword(keyword)
 	if err != nil {
 		return nil, err
@@ -549,20 +549,21 @@ func (s *Service) AdminExportUsers(ctx context.Context, keyword string, dateFrom
 	escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(kw)
 	pattern := "%" + escaped + "%"
 
-	// 日期范围（2026-10-31 新一轮第 15 轮）与最后登录时间
-	// （2026-11-01 新一轮第 46 轮）：**始终**拼入（nil → NULL，
+	// 日期范围（2026-10-31 新一轮第 15 轮）、游客/账号筛选（2026-11-03 R29）
+	// 与最后登录时间（2026-11-01 新一轮第 46 轮）：**始终**拼入（nil → NULL，
 	// `IS NULL` 分支恒真），保证导出查询参数编号稳定。
 	// 导出查询没有 limit/offset，筛选从 $3 起。
 	where := `($1 = '' OR u.nickname ILIKE $2 ESCAPE '\'::char OR u.id::text = $1)
 	          AND ($3::timestamptz IS NULL OR u.created_at >= $3)
 	          AND ($4::timestamptz IS NULL OR u.created_at < $4)
+	          AND ($7::boolean IS NULL OR u.is_guest = $7)
 	          AND ($5::timestamptz IS NULL OR u.last_login_at >= $5)
 	          AND ($6::timestamptz IS NULL OR u.last_login_at < $6)`
-	args := []any{kw, pattern, dateFrom, dateTo, lastLoginFrom, lastLoginTo}
+	args := []any{kw, pattern, dateFrom, dateTo, lastLoginFrom, lastLoginTo, isGuest}
 	// 需核查筛选（2026-11-01 新一轮第 60 轮）：仅开启时拼入（引用 p，
 	// 导出查询始终 JOIN user_progress，无解析问题）。
 	if suspicious != nil {
-		where += ` AND (COALESCE(p.level_exp, 0) > 5000 AND COALESCE(p.max_stage, 0) <= 1) = $7`
+		where += ` AND (COALESCE(p.level_exp, 0) > 5000 AND COALESCE(p.max_stage, 0) <= 1) = $8`
 		args = append(args, suspicious)
 	}
 

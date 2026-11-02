@@ -81,7 +81,7 @@ func TestAdminExportUsersSuspiciousFilter(t *testing.T) {
 	_ = newUserWithProgress(t, ts, "exp_norm", 100, 10)
 
 	// 导出 suspicious=true：只含需核查用户（1 表头 + 1 数据）
-	data, err := ts.AdminExportUsers(ctx, "", nil, nil, nil, nil, boolPtr(true))
+	data, err := ts.AdminExportUsers(ctx, "", nil, nil, nil, nil, nil, boolPtr(true))
 	if err != nil {
 		t.Fatalf("suspicious=true 导出失败：%v", err)
 	}
@@ -91,7 +91,7 @@ func TestAdminExportUsersSuspiciousFilter(t *testing.T) {
 	}
 
 	// 导出 suspicious=nil：全部（1 表头 + 2 数据）
-	data, err = ts.AdminExportUsers(ctx, "", nil, nil, nil, nil, nil)
+	data, err = ts.AdminExportUsers(ctx, "", nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("suspicious=nil 导出失败：%v", err)
 	}

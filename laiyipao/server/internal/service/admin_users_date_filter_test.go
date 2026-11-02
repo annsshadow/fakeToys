@@ -72,7 +72,7 @@ func TestAdminExportUsersDateFilter(t *testing.T) {
 	newUserWithCreatedAt(t, ts, "udate_exp_new", now.Add(-1*time.Hour))
 
 	from := now.Add(-150 * time.Minute)
-	data, err := ts.AdminExportUsers(ctx, "", &from, nil, nil, nil, nil)
+	data, err := ts.AdminExportUsers(ctx, "", &from, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("date_from 导出失败：%v", err)
 	}

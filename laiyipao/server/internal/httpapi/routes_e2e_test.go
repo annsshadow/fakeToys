@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -149,6 +150,25 @@ func (e *e2e) do(t *testing.T, method, url, token string, body any) (int, map[st
 
 func (e *e2e) get(t *testing.T, url, token string) (int, map[string]any) {
 	return e.do(t, http.MethodGet, url, token, nil)
+}
+
+// getRaw 用于断言非 JSON 响应（如 CSV 导出）的原始字节与行数。
+func (e *e2e) getRaw(t *testing.T, url, token string) (int, []byte) {
+	t.Helper()
+	req := httptest.NewRequest(http.MethodGet, url, bytes.NewReader(nil))
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	resp, err := e.app.Test(req, 10000)
+	if err != nil {
+		t.Fatalf("GET %s 执行失败：%v", url, err)
+	}
+	defer resp.Body.Close()
+	raw, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("读取 %s 响应失败：%v", url, err)
+	}
+	return resp.StatusCode, raw
 }
 
 func (e *e2e) post(t *testing.T, url, token string, body any) (int, map[string]any) {

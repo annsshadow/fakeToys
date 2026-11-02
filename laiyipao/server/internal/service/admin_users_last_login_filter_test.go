@@ -90,7 +90,7 @@ func TestAdminExportUsersLastLoginFilter(t *testing.T) {
 	_ = newUserWithLastLogin(t, ts, "ll_exp_new", now.Add(-1*time.Hour))
 
 	from := now.Add(-2 * time.Hour)
-	data, err := ts.AdminExportUsers(ctx, "", nil, nil, &from, nil, nil)
+	data, err := ts.AdminExportUsers(ctx, "", nil, nil, nil, &from, nil, nil)
 	if err != nil {
 		t.Fatalf("last_login_from 导出失败：%v", err)
 	}
@@ -100,7 +100,7 @@ func TestAdminExportUsersLastLoginFilter(t *testing.T) {
 	}
 
 	// 空筛选：两条都在
-	data, err = ts.AdminExportUsers(ctx, "", nil, nil, nil, nil, nil)
+	data, err = ts.AdminExportUsers(ctx, "", nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("空筛选导出失败：%v", err)
 	}

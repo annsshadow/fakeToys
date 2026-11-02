@@ -337,6 +337,17 @@ func (s *Server) adminExportUsers(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
+	// 游客/账号筛选（2026-11-03 R29）：此前列表有、导出漏，运营筛完游客
+	// 再导出会拿到全部账号（口径不一致）。
+	var isGuest *bool
+	switch c.Query("is_guest", "") {
+	case "1", "true":
+		v := true
+		isGuest = &v
+	case "0", "false":
+		v := false
+		isGuest = &v
+	}
 	// 需核查筛选（2026-11-01 新一轮第 60 轮）：与列表同口径。
 	var suspicious *bool
 	switch c.Query("suspicious", "") {
@@ -347,7 +358,7 @@ func (s *Server) adminExportUsers(c *fiber.Ctx) error {
 		v := false
 		suspicious = &v
 	}
-	data, err := s.Svc.AdminExportUsers(c.Context(), c.Query("keyword", ""), dateFrom, dateTo, lastLoginFrom, lastLoginTo, suspicious)
+	data, err := s.Svc.AdminExportUsers(c.Context(), c.Query("keyword", ""), dateFrom, dateTo, isGuest, lastLoginFrom, lastLoginTo, suspicious)
 	if err != nil {
 		return failErr(c, err)
 	}
