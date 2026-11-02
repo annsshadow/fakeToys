@@ -154,18 +154,28 @@ func (s *Service) adminDashboardUncached(ctx context.Context) (Dashboard, error)
 			&d.Users.Total, &d.Users.Guests, &d.Users.Wechat, &d.Users.Banned, &d.Users.NewToday)
 	})
 
-	// 2026-11-03（第 62 轮）：battles 四指标与关卡漏斗合成 1 次扫描。
+	// 第 62 轮：battles 四指标与关卡漏斗合成 1 次扫描（两段原本各扫一遍
+	// battle_records，1M 行实测 ~78ms / ~72ms，每遍读 ~160MB 堆页）。
+	// 当时拒绝过 `GROUPING SETS ((level_id), ())`：实测 281ms —— 它退化成
+	// MixedAggregate、不并行，单进程扫完 1M 行，比分别跑两段还慢。
 	//
-	// 两段原本各扫一遍 battle_records（1M 行实测 ~78ms / ~72ms，每遍读
-	// ~160MB 堆页）。合并成一条按 level_id 分组的聚合并行扫描后，全局
-	// 指标再由这 100 行聚合结果求和得出；实测单条 92ms，省掉一次全表扫描。
+	// 第 63 轮：这条扫描本身成了最后一项全表扫描 —— 并发刷新时实测
+	// 131–147ms，是 p95 的天花板（跳过 reactions 段后 p95 仍 126ms）。
+	// 战报总量/胜场/时长/漏斗都是**纯增量**口径，改为读
+	// `dashboard_battle_stats`（写入时由触发器累加，迁移 00025），
+	// 读侧只剩对 100 行的聚合，实测 ~1ms。
 	//
-	// 为什么不用 `GROUPING SETS ((level_id), ())`：实测 281ms —— 它退化成
-	// MixedAggregate，不并行，单进程扫完 1M 行；比分别跑两段（并行）还慢。
-	// 这里内层 `GROUP BY level_id` 仍可并行，外层只聚合 100 行。
+	// 为什么不给增量表加「日」维度：只有 `Battles.Today` 需要今天，
+	// 而今天那一小段走现有的 `idx_battle_records_created` 就是 index-only
+	// scan（实测 30 万行 15ms；1M 铺 90 天时约 1.1 万行 → 数毫秒）。
+	// 加日维度要处理跨日滚动与旧日行清理，只为省这条几毫秒的索引扫描。
 	//
-	// `AVG(duration_ms)` 口径逐位不变：PG 的 AVG 就是 SUM/COUNT 的 numeric
-	// 结果，这里同样用 numeric 除法，扫描时再转 float64。
+	// `AVG(duration_ms)` 口径逐位不变：老实现是 SUM/COUNT 的 numeric 除法，
+	// 这里同样是 numeric 除法（`SUM(duration_sum)/NULLIF(SUM(attempts),0)`）。
+	//
+	// 漏斗只列「有战报」的关卡：战报被删光后增量表会留下 attempts=0 的行，
+	// 所以读侧统一 `WHERE attempts > 0`，与旧 `GROUP BY battle_records`
+	// 的语义一致（逐行比对在 TestDashboardMergedMatchesLegacy）。
 	appendStep("dashboard battles+funnel", func() error {
 		var (
 			levels   []int32
@@ -174,22 +184,14 @@ func (s *Service) adminDashboardUncached(ctx context.Context) (Dashboard, error)
 		)
 		if err := scan(`
 		SELECT COALESCE(SUM(attempts), 0),
-		       COALESCE(SUM(today), 0),
 		       COALESCE(SUM(wins), 0),
-		       COALESCE(SUM(dur_sum)::numeric / NULLIF(SUM(n), 0), 0),
+		       COALESCE(SUM(duration_sum)::numeric / NULLIF(SUM(attempts), 0), 0),
 		       COALESCE(array_agg(level_id ORDER BY level_id), '{}'::int[]),
 		       COALESCE(array_agg(attempts ORDER BY level_id), '{}'::bigint[]),
 		       COALESCE(array_agg(wins ORDER BY level_id), '{}'::bigint[])
-		FROM (
-		  SELECT level_id,
-		         COUNT(*) AS attempts,
-		         COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE) AS today,
-		         COUNT(*) FILTER (WHERE result = 'win') AS wins,
-		         SUM(duration_ms) AS dur_sum,
-		         COUNT(*) AS n
-		    FROM battle_records GROUP BY level_id
-		) f`,
-			&d.Battles.Total, &d.Battles.Today, &d.Battles.Wins, &d.Battles.AvgDurationMs,
+		FROM dashboard_battle_stats
+		WHERE attempts > 0`,
+			&d.Battles.Total, &d.Battles.Wins, &d.Battles.AvgDurationMs,
 			&levels, &attempts, &wins); err != nil {
 			return err
 		}
@@ -198,7 +200,9 @@ func (s *Service) adminDashboardUncached(ctx context.Context) (Dashboard, error)
 				LevelID: int(levels[i]), Attempts: attempts[i], Number: wins[i],
 			})
 		}
-		return nil
+		// 今日战报：只扫「今天」这一段，走 created_at 索引，与增量表无关。
+		return scan(`SELECT COUNT(*) FROM battle_records WHERE created_at >= CURRENT_DATE`,
+			&d.Battles.Today)
 	})
 
 	// 2026-11-03（第 62 轮）：7 段毫秒级小表统计合并成 1 条语句。
@@ -263,29 +267,24 @@ func (s *Service) adminDashboardUncached(ctx context.Context) (Dashboard, error)
 
 	// 反应使用分布
 	//
-	// ⚠️ 两处改动，都因为「读侧不该依赖写侧」。
+	// 第 63 轮：本段从「每次刷新扫一遍 battle_records 拆 jsonb 求和」
+	// 改为读 `dashboard_reaction_counts` 小表（写入时由触发器累加，
+	// 见迁移 00025）。原因：`reactions_used` 是 jsonb，没有索引可用 ——
+	// 1M 战报下单条 SQL 实测 110ms（并行顺序扫描 100+MB 堆页），
+	// 对整次刷新 p95 的边际贡献 ≈46ms（跳过该段实测 173.6 → 126.0ms）。
+	// 「按 key 求和」是纯增量口径，写在事务内累加比读路径反复全表扫描便宜得多。
 	//
-	// 1) 过滤条件用 `jsonb_typeof(...) = 'object'`，不用 `<> '{}'`。
-	//    `<> '{}'` 对 jsonb `null` 求值为 **NULL 而不是 true**，
-	//    于是那些行被**静默排除**。实测 58 行里有 8 行（13.8%）带 jsonb null。
-	//
-	// 2) 改成在 SQL 里按 key 聚合，不用 `GROUP BY reactions_used`。
-	//    原来的写法按**整个 map** 分组再在 Go 里逐键累加，
-	//    代价是：对 JSONB 列做哈希分组（无索引可用）+ 最多 500 组被截断。
-	//    实测当前只有 2 种组合所以看不出问题，但组合数会随战报量爆炸 ——
-	//    6 种反应各 0~5 次就是 6^6 种组合，`LIMIT 500` 会开始丢数据。
-	//
-	//    顺带修掉一个更硬的问题：`jsonb_each_text(jsonb 'null')` 会**报错**
-	//    （「不能在非对象上调用」），所以旧写法连改个过滤条件都改不动。
+	// 口径与旧写法逐项一致：只统计 jsonb object 的键、逐键求和；
+	// `jsonb null` 由触发器跳过（对 null 调 `jsonb_each_text` 会报错，
+	// 这也是第 10 轮迁移把历史 null 归一化的原因之一）。
+	// 一致性与删除回退由 `TestDashboardReactionCountsMatchAggregate` 钉死。
 	appendStep("dashboard reactions", func() error {
 		rows, err := s.pool.Query(ctx, `
-			SELECT e.key, SUM(e.value::bigint) AS total
-			FROM battle_records b,
-			     LATERAL jsonb_each_text(b.reactions_used) AS e(key, value)
-			WHERE jsonb_typeof(b.reactions_used) = 'object'
-			GROUP BY e.key
-			ORDER BY total DESC
-			LIMIT 100`)
+			SELECT reaction, SUM(count) AS total
+			  FROM dashboard_reaction_counts
+			 GROUP BY reaction
+			 ORDER BY total DESC
+			 LIMIT 100`)
 		if err != nil {
 			return err
 		}
@@ -322,8 +321,25 @@ func (s *Service) adminDashboardUncached(ctx context.Context) (Dashboard, error)
 	// 14 个日桶上做 `COUNT(DISTINCT user_id)` 的去重聚合。
 	// 改成「每天一个走 created_at 索引的标量子查询」后实测 73ms，
 	// 输出形状（恒 14 行、含零活跃日）与语义完全不变。
+	//
+	// 第 63 轮：这条语句显式关掉 JIT。14 个标量子查询让优化器的估算代价
+	// 达到 ~54 万（`generate_series` 被估成 1000 行 × 14 个子计划），
+	// 超过 `jit_above_cost`（默认 10 万），于是每次刷新都先编译一遍
+	// 14 个函数的 JIT 代码 —— 实测 1M 战报下 JIT 自身 92.6ms，
+	// 占该段 137.9ms 的 2/3（关掉后 33.9ms，且每次调用的
+	// 分析/优化/发射开销约 90ms 一次，单次执行的读路径摊不薄）。
+	// 只对这一条语句 `SET LOCAL`，不影响连接池里其它查询的 JIT 决策。
 	appendStep("dashboard dau", func() error {
-		drows, err := s.pool.Query(ctx, `
+		tx, err := s.pool.Begin(ctx)
+		if err != nil {
+			return err
+		}
+		// 只读事务，回滚即释放；错误忽略是刻意的（提交与否都不改变结果）。
+		defer func() { _ = tx.Rollback(ctx) }()
+		if _, err := tx.Exec(ctx, "SET LOCAL jit = off"); err != nil {
+			return err
+		}
+		drows, err := tx.Query(ctx, `
 			SELECT d::date AS day,
 			       (SELECT COUNT(DISTINCT br.user_id)
 			          FROM battle_records br

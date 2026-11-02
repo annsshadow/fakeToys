@@ -30,6 +30,9 @@ package service
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -94,41 +97,61 @@ func TestOrEmptyPreservesNonNil(t *testing.T) {
 	}
 }
 
-// TestDashboardReactionQueryIsNullSafe 确认看板查询不再依赖「写侧一定产出 {}」。
+// TestDashboardReactionNullSafetyLivesInTrigger 确认 jsonb null 的防线还在，
+// 只是从「读侧查询」挪到了「写入侧触发器」。
 //
-// 为什么读侧也要改：
+// 第 63 轮把反应分布从「每次刷新扫全表拆 jsonb」改成
+// 「战报写入时由触发器累加」（迁移 00025）。于是判据也换了地方：
 //
-// 写侧归一化只保证**今后**的写入是 `{}`。
-// 存量数据、第三方直连、手工修数据都可能再带 `null` 进来，
-// 而查询若写成 `WHERE col <> '{}'`，就会再次静默漏数据。
+//	读路径：不得再直接解析 battle_records 的 jsonb（那是 R63 之前、
+//	        每次刷新扫 100+MB 的写法），只允许读计数器表；
+//	触发器：必须 `jsonb_typeof(...) = 'object'` 判类型后才
+//	        `jsonb_each_text` —— 否则存量 jsonb `null` 会让插入直接报错
+//	        （jsonb_each_text 对非对象是硬错误）。
 //
-// 这里的判据是**查询文本本身** —— 因为它守的是
-// 「查询不能依赖写侧」这条设计约束，
-// 而不是「当前数据里没有 null」（那是数据状态，会变）。
-func TestDashboardReactionQueryIsNullSafe(t *testing.T) {
+// 为什么这仍然是「不能依赖写侧产出 {}」：触发器是 DB 层，
+// 第三方直连、手工修数据、迁移回填都走它；而读侧只剩计数器表，
+// 不再有第二个解析 jsonb 的地方。
+func TestDashboardReactionNullSafetyLivesInTrigger(t *testing.T) {
 	src, err := readServiceSource("stats.go")
 	if err != nil {
 		t.Skipf("读不到 stats.go：%v（这条守卫未执行，不是「通过了」）", err)
 	}
 
-	// 1) 不得再用 `<> '{}'` 过滤 —— 它对 null 求值为 NULL
+	// 1) 读路径不得直接解析 jsonb。
+	if contains(src, "jsonb_each_text") {
+		t.Error("stats.go 仍在读路径里解析 battle_records 的 jsonb —— " +
+			"这正是第 63 轮消掉的全表扫描；应读 dashboard_reaction_counts")
+	}
+	if !contains(src, "dashboard_reaction_counts") {
+		t.Error("stats.go 的反应分布没有读 dashboard_reaction_counts —— " +
+			"计数器表是迁移 00025 建立的唯一数据源")
+	}
+
+	// 2) 不得再用 `<> '{}'` 过滤 —— 它对 jsonb null 求值为 NULL。
 	if contains(src, "<> '{}'") {
 		t.Error("stats.go 仍用 `WHERE col <> '{}'` 过滤 jsonb 列 —— " +
-			"它对 jsonb `null` 求值为 NULL 而不是 true，会静默漏掉那些行。" +
-			"应改用 `jsonb_typeof(col) = 'object'`")
+			"它对 jsonb `null` 求值为 NULL 而不是 true，会静默漏掉那些行")
 	}
 
-	// 2) 必须显式判类型
-	if !contains(src, "jsonb_typeof") {
-		t.Error("stats.go 的反应分布查询没有 `jsonb_typeof` 判类型 —— " +
-			"存量 jsonb null 会让 `jsonb_each_text` 直接报错")
+	// 3) 触发器函数必须保留 null 防线。
+	raw, err := os.ReadFile(filepath.Join("..", "..", "migrations",
+		"00025_dashboard_incremental_aggregates.sql"))
+	if err != nil {
+		t.Skipf("读不到迁移 00025：%v（这条守卫未执行，不是「通过了」）", err)
 	}
-
-	// 3) 不得再有「按整个 map 分组 + LIMIT 截断」的写法。
-	//    组合数随战报量爆炸（6 种反应各 0~5 次 = 6^6 种），
-	//    `GROUP BY reactions_used LIMIT 500` 会开始丢数据。
-	if contains(src, "GROUP BY reactions_used") {
-		t.Error("stats.go 仍按整个 `reactions_used` map 分组并 LIMIT 截断 —— " +
-			"组合数会随战报量爆炸，截断会静默丢数据。应在 SQL 里按 key 聚合")
+	var code []string
+	for _, l := range strings.Split(string(raw), "\n") {
+		if !strings.HasPrefix(strings.TrimSpace(l), "--") {
+			code = append(code, l)
+		}
+	}
+	sql := strings.Join(code, "\n")
+	if !contains(sql, "jsonb_typeof") || !contains(sql, "jsonb_each_text") {
+		t.Error("迁移 00025 的触发器函数缺少 `jsonb_typeof` + `jsonb_each_text` —— " +
+			"存量 jsonb null 会让战报插入直接报错")
+	}
+	if contains(sql, "<> '{}'") {
+		t.Error("迁移 00025 仍用 `<> '{}'` 过滤 —— 对 jsonb null 求值为 NULL，会静默漏行")
 	}
 }
