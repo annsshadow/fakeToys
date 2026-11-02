@@ -12,9 +12,42 @@ package service
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 )
+
+// R27：单个创建撞唯一约束（23505）必须归类为输入错误（400），
+// 而不是 HTTP 层统一映射的 500「服务内部错误」。
+func TestAdminCreateRedeemCodeDuplicateIsBadInput(t *testing.T) {
+	ts := openScratchService(t)
+	ctx := context.Background()
+
+	code := fmt.Sprintf("DUP_%d", time.Now().UnixNano())
+	if _, err := ts.AdminCreateRedeemCode(ctx, code, map[string]int{"coin": 100}, 1, nil); err != nil {
+		t.Fatalf("首次创建应成功：%v", err)
+	}
+
+	_, err := ts.AdminCreateRedeemCode(ctx, code, map[string]int{"coin": 100}, 1, nil)
+	if !errors.Is(err, ErrBadInput) {
+		t.Fatalf("重复码应返回 ErrBadInput（HTTP 400），实际 %v", err)
+	}
+	if !strings.Contains(err.Error(), "已存在") {
+		t.Errorf("错误信息应说明已存在，实际 %q", err.Error())
+	}
+
+	// 失败的 INSERT 不应留下第二行。
+	var n int
+	if err := ts.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM redeem_codes WHERE code = $1`, code).Scan(&n); err != nil {
+		t.Fatalf("统计失败：%v", err)
+	}
+	if n != 1 {
+		t.Fatalf("重复创建后应仍为 1 行，实际 %d", n)
+	}
+}
 
 func TestAdminCreateRedeemCodesBatch(t *testing.T) {
 	ts := openScratchService(t) // 一次性库，避免共享库数据干扰

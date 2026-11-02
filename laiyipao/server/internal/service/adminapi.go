@@ -1414,6 +1414,12 @@ func (s *Service) AdminCreateRedeemCode(ctx context.Context, code string, reward
 		`INSERT INTO redeem_codes (code, reward, max_uses, expires_at)
 		 VALUES ($1,$2,$3,$4) RETURNING id`,
 		code, raw, maxUses, expiresAt).Scan(&id); err != nil {
+		// R27：撞 `redeem_codes_code_key` 唯一约束（23505）是运营输入问题，
+		// 不是服务故障。改前这里被包成普通 error，HTTP 层统一 500
+		// 「服务内部错误」，运营看到的是"系统坏了"而不是"这个码已存在"。
+		if isUniqueViolation(err) {
+			return AdminRedeemCodeView{}, fmt.Errorf("%w: 兑换码 %q 已存在", ErrBadInput, code)
+		}
 		return AdminRedeemCodeView{}, fmt.Errorf("create redeem code: %w", err)
 	}
 	return AdminRedeemCodeView{
