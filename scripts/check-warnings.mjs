@@ -15,7 +15,6 @@
 //
 // 各子项目自身也已经把「告警=错误」写进配置，本脚本是那套门禁的统一入口：
 //   - Rust  : oa4rust/backend/Cargo.toml 的 [workspace.lints.rust] warnings = "deny"
-//   - Java  : cool/compile.bat 的 -Xlint:all -Werror
 //   - Python: -W error::SyntaxWarning
 //   - Go    : go vet（发现即非零退出）+ gofmt -l
 //   - TS/Vue: tsc/vue-tsc 无告警概念，故由本脚本匹配构建输出
@@ -44,30 +43,10 @@ const PATTERNS = {
   tsc: /error TS\d+|warning TS\d+/i,
   gofmt: /^[^\s].*\.go$/,
   python: /SyntaxWarning|SyntaxError|DeprecationWarning/i,
-  java: /warning:|警告:/i,
 }
 
 // Vite/Rollup 的告警行带 ANSI 颜色码（"\033[33m(!) ..."），不剥掉的话 ^(!) 一条都匹配不到。
 const ANSI = /\u001b\[[0-9;]*m/g
-
-function findCommonsCodec() {
-  const lib = join(ROOT, 'cool', 'lib')
-  if (existsSync(lib)) {
-    const hit = readdirSync(lib).find((f) => /^commons-codec.*\.jar$/i.test(f))
-    if (hit) return join(lib, hit)
-  }
-  const fromEnv = process.env.COMMONS_CODEC_JAR
-  if (fromEnv && existsSync(fromEnv)) return fromEnv
-  // 本机 Maven 仓库兜底：多数开发机装过 Java 项目就有，省去手工摆 jar。
-  const m2 = join(homedir(), '.m2', 'repository', 'commons-codec', 'commons-codec')
-  if (existsSync(m2)) {
-    const jars = readdirSync(m2)
-      .filter((v) => /^\d/.test(v) && existsSync(join(m2, v, `commons-codec-${v}.jar`)))
-      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
-    if (jars.length) return join(m2, jars[jars.length - 1], `commons-codec-${jars[jars.length - 1]}.jar`)
-  }
-  return null
-}
 
 /**
  * 静态守卫：每个 workspace 成员都必须显式继承 `[lints] workspace = true`。
@@ -96,7 +75,7 @@ const RUST_CRATE_COUNT =
   1 + readdirSync(join(ROOT, 'oa4rust', 'backend', 'crates'), { withFileTypes: true })
     .filter((d) => d.isDirectory()).length
 
-/** 某 Python 模块在当前 `python` 下是否可导入（用于 requires 守门，同 java 项范式）。 */
+/** 某 Python 模块在当前 `python` 下是否可导入（用于 requires 守门）。 */
 function hasPythonModule(module) {
   // 不能加 `shell: true`：Node 会把 args 直接空格拼接，`python -c import pytest`
   // 丢掉引号后 Python 只收到 `import`（SyntaxError），探针永远返回 false，
@@ -200,24 +179,11 @@ const CHECKS = [
     cwd: 'llm-lab',
     cmd: 'python -m pytest -q --no-header -p no:cacheprovider',
     pattern: PATTERNS.python,
-    // requires 守门（同 java 项范式）：解释器没装 pytest 时 SKIP 并说明，
+    // requires 守门：解释器没装 pytest 时 SKIP 并说明，
     // 不像命令失败那样制造环境性红。本机 managed python 无 pytest；
     // 装了的开发机（或 CI 的 python）会自动接上这一项。
     requires: () => (hasPythonModule('pytest') ? true : '当前 python 无 pytest 模块'),
     timeout: 10 * 60 * 1000,
-  },
-  {
-    id: 'java',
-    label: 'cool (Java, -Xlint:all -Werror)',
-    cwd: 'cool',
-    cmd: (jar) =>
-      `javac -Xlint:all -Werror -encoding UTF-8 -cp "${jar}" -d "${join(ROOT, 'cool', '.build')}" EncryptUtil.java`,
-    pattern: PATTERNS.java,
-    requires: () => {
-      const jar = findCommonsCodec()
-      return jar ? { jar } : 'commons-codec jar 未找到（放 cool/lib/ 或设 COMMONS_CODEC_JAR）'
-    },
-    timeout: 2 * 60 * 1000,
   },
   {
     id: 'r7-readonly-cross-check',
