@@ -1404,23 +1404,37 @@ func (s *Service) AdminListRedeemCodes(ctx context.Context, limit, offset int, k
 // 运营设的过期时间静默丢失，兑换码永久有效（可被无限期转卖滥用）。
 // 兑换路径本就认 `expires_at`（economy.go 的 Redeem SQL：
 // `expires_at IS NULL OR expires_at > now()`），只差创建端不写库。
-func (s *Service) AdminCreateRedeemCode(ctx context.Context, code string, reward map[string]int, maxUses int, expiresAt *time.Time) (AdminRedeemCodeView, error) {
+func (s *Service) AdminCreateRedeemCode(ctx context.Context, code string, reward map[string]int, maxUses int, expiresAt *time.Time, audit ...AdminAuditCtx) (AdminRedeemCodeView, error) {
 	raw, err := json.Marshal(reward)
 	if err != nil {
 		return AdminRedeemCodeView{}, err
 	}
 	var id int
-	if err := s.pool.QueryRow(ctx,
-		`INSERT INTO redeem_codes (code, reward, max_uses, expires_at)
-		 VALUES ($1,$2,$3,$4) RETURNING id`,
-		code, raw, maxUses, expiresAt).Scan(&id); err != nil {
-		// R27：撞 `redeem_codes_code_key` 唯一约束（23505）是运营输入问题，
-		// 不是服务故障。改前这里被包成普通 error，HTTP 层统一 500
-		// 「服务内部错误」，运营看到的是"系统坏了"而不是"这个码已存在"。
-		if isUniqueViolation(err) {
-			return AdminRedeemCodeView{}, fmt.Errorf("%w: 兑换码 %q 已存在", ErrBadInput, code)
+	// R34：码与「生成了这个码」的审计必须同生同死。改前业务 INSERT 先
+	// autocommit，handler 再补审计（失败只打日志）——审计缺了也没人知道。
+	// 传入 audit 时（HTTP 路径）同事务；测试/内部调用不传时行为不变。
+	err = s.DB.Tx(ctx, func(tx txType) error {
+		if err := tx.QueryRow(ctx,
+			`INSERT INTO redeem_codes (code, reward, max_uses, expires_at)
+			 VALUES ($1,$2,$3,$4) RETURNING id`,
+			code, raw, maxUses, expiresAt).Scan(&id); err != nil {
+			// R27：撞 `redeem_codes_code_key` 唯一约束（23505）是运营输入问题，
+			// 不是服务故障。改前这里被包成普通 error，HTTP 层统一 500
+			// 「服务内部错误」，运营看到的是"系统坏了"而不是"这个码已存在"。
+			if isUniqueViolation(err) {
+				return fmt.Errorf("%w: 兑换码 %q 已存在", ErrBadInput, code)
+			}
+			return fmt.Errorf("create redeem code: %w", err)
 		}
-		return AdminRedeemCodeView{}, fmt.Errorf("create redeem code: %w", err)
+		if len(audit) > 0 {
+			return s.AuditTx(ctx, tx, audit[0], "create_redeem_code", code, map[string]any{
+				"count": 1, "reward": reward, "max_uses": maxUses, "expires_at": expiresAt,
+			})
+		}
+		return nil
+	})
+	if err != nil {
+		return AdminRedeemCodeView{}, err
 	}
 	return AdminRedeemCodeView{
 		ID: id, Code: code, Reward: reward, MaxUses: maxUses, ExpiresAt: expiresAt,
@@ -1451,7 +1465,7 @@ func randomRedeemCode(n int) (string, error) {
 // 这里一次生成 count 个随机码（crypto/rand，避免可预测），
 // 奖励/次数上限/过期时间与单个创建一致。count 上限 100。
 // 极低概率的码冲突（唯一约束 23505）自动重新生成，不中断批次。
-func (s *Service) AdminCreateRedeemCodes(ctx context.Context, count int, reward map[string]int, maxUses int, expiresAt *time.Time) ([]AdminRedeemCodeView, error) {
+func (s *Service) AdminCreateRedeemCodes(ctx context.Context, count int, reward map[string]int, maxUses int, expiresAt *time.Time, audit ...AdminAuditCtx) ([]AdminRedeemCodeView, error) {
 	if count <= 0 || count > 100 {
 		return nil, fmt.Errorf("%w: count 必须在 1..100", ErrBadInput)
 	}
@@ -1498,6 +1512,18 @@ func (s *Service) AdminCreateRedeemCodes(ctx context.Context, count int, reward 
 				ID: id, Code: code, Reward: reward, MaxUses: maxUses,
 				ExpiresAt: expiresAt, Enabled: true,
 			})
+		}
+		// R34：整批码与「谁生成了这一批」的审计在同一事务里提交。
+		// 审计写不进去就一个码都不留 —— 宁可让运营重试，也不留一批
+		// 没有任何来源证据的可兑换码（尤其本接口一次最多 100 个）。
+		if len(audit) > 0 {
+			// 只为审计记数量；逐个码不写进 detail（100 个码会让审计行膨胀，
+			// 清单本来就在 redeem_codes 里，可以按生成时间反查）。
+			if err := s.AuditTx(ctx, tx, audit[0], "create_redeem_code", "batch", map[string]any{
+				"count": count, "reward": reward, "max_uses": maxUses, "expires_at": expiresAt,
+			}); err != nil {
+				return err
+			}
 		}
 		return nil
 	})

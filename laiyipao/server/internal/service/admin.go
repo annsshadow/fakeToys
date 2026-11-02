@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/laiyipao/server/internal/auth"
 	"github.com/laiyipao/server/internal/domain"
@@ -269,6 +270,33 @@ func (s *Service) EnsureContentSeeded(ctx context.Context) (string, error) {
 //	这一点如实标注：生产部署**必须**配好反代的透传头，
 //	否则记下来的是反代地址 —— 那比空串好一点（能看出有集中来源），但不精确。
 func (s *Service) Audit(ctx context.Context, adminID int64, action, target, ip string, detail any) {
+	// 审计写失败不能影响主流程，但必须留下痕迹到服务端日志
+	if err := s.writeAudit(ctx, s.pool, AdminAuditCtx{AdminID: adminID, IP: ip}, action, target, detail); err != nil {
+		fmt.Printf("[audit-failed] admin=%d action=%s target=%s err=%v\n", adminID, action, target, err)
+	}
+}
+
+// AdminAuditCtx 是「谁、从哪个地址」发起了这次后台操作。
+//
+// R34：值钱/有破坏性的后台动作需要把自己的审计行写进**业务事务**里，
+// 由服务层携带这个上下文，而不是 handler 在业务提交后再补一条 autocommit。
+type AdminAuditCtx struct {
+	AdminID int64
+	IP      string
+}
+
+// auditExecer 是「能执行一条 INSERT」的最小接口，池（*pgxpool.Pool）
+// 与事务（pgx.Tx）都满足 —— 审计的写入位置由调用方决定。
+type auditExecer interface {
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+}
+
+// writeAudit 写一行审计，返回错误（与 `Audit` 的「吞掉并打日志」相对）。
+//
+// 用户名用子查询在**同一语句**里取：旧实现先 QueryRow 取用户名再 INSERT，
+// 读失败被 `_ =` 吞掉，于是会静默写空用户名；子查询让「用户名缺失」
+// 与「审计行」在同一语句里原子完成。
+func (s *Service) writeAudit(ctx context.Context, q auditExecer, a AdminAuditCtx, action, target string, detail any) error {
 	raw, err := marshalJSON(detail)
 	if err != nil {
 		// 兜底字面量保证 detail 恒为合法 JSONB
@@ -280,17 +308,32 @@ func (s *Service) Audit(ctx context.Context, adminID int64, action, target, ip s
 		}
 		// 服务端日志留痕（与全库 stdout 日志惯例一致）
 		fmt.Printf("[audit-failed] admin=%d action=%s target=%s detail 丢失：%v\n",
-			adminID, action, target, err)
+			a.AdminID, action, target, err)
 	}
-	var username string
-	_ = s.pool.QueryRow(ctx, `SELECT username FROM admin_users WHERE id = $1`, adminID).Scan(&username)
+	ip := a.IP
 	if len(ip) > 64 { // ip 列是 VARCHAR(64)，超长会让整行插入失败
 		ip = ip[:64]
 	}
-	// 审计写失败不能影响主流程，但必须留下痕迹到服务端日志
-	if _, err := s.pool.Exec(ctx,
+	if _, err := q.Exec(ctx,
 		`INSERT INTO admin_audit_logs (admin_id, username, action, target, detail, ip)
-		 VALUES ($1,$2,$3,$4,$5,$6)`, adminID, username, action, target, raw, ip); err != nil {
-		fmt.Printf("[audit-failed] admin=%d action=%s target=%s err=%v\n", adminID, action, target, err)
+		 VALUES ($1, COALESCE((SELECT username FROM admin_users WHERE id = $1), ''), $2,$3,$4,$5)`,
+		a.AdminID, action, target, raw, ip); err != nil {
+		return fmt.Errorf("insert admin audit log: %w", err)
 	}
+	return nil
+}
+
+// AuditTx 在调用方事务内写审计，并把失败作为错误返回 —— 由调用方决定回滚。
+//
+// # 为什么不是所有审计都这样（与 `Audit` 的取舍）
+//
+// `Audit` 的「失败不影响主流程」是对的：读类/校验类动作（查看、重放校验）
+// 的价值不依赖一行审计，审计写失败不该把它们一起打挂。
+//
+// 但**改动持久业务状态且与钱/权限相关**的动作相反：无审计即无操作。
+// 兑换码生成、发币、封禁、改密这类动作如果业务提交了、审计缺了，
+// 事后追责时「谁在什么时候生成了这 100 个可兑换的码」就没有任何证据，
+// 而这个缺口本身不会被任何人发现。所以它们必须和审计同一事务。
+func (s *Service) AuditTx(ctx context.Context, tx txType, a AdminAuditCtx, action, target string, detail any) error {
+	return s.writeAudit(ctx, tx, a, action, target, detail)
 }

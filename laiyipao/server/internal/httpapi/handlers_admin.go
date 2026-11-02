@@ -1221,11 +1221,12 @@ func (s *Server) adminCreateRedeemCode(c *fiber.Ctx) error {
 		}
 		expiresAt = &parsed
 	}
-	item, err := s.Svc.AdminCreateRedeemCode(c.Context(), body.Code, body.Reward, body.MaxUses, expiresAt)
+	// R34：审计随业务事务提交（不再在提交后补一条 autocommit）。
+	item, err := s.Svc.AdminCreateRedeemCode(c.Context(), body.Code, body.Reward, body.MaxUses, expiresAt,
+		service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()})
 	if err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "create_redeem_code", body.Code, c.IP(), body)
 	return c.JSON(service.AdminRedeemCodeResp{Item: item})
 }
 
@@ -1260,11 +1261,12 @@ func (s *Server) adminCreateRedeemCodesBatch(c *fiber.Ctx) error {
 		}
 		expiresAt = &parsed
 	}
-	items, err := s.Svc.AdminCreateRedeemCodes(c.Context(), body.Count, body.Reward, body.MaxUses, expiresAt)
+	// R34：整批码与审计同一事务 —— 审计失败则一个码都不落库。
+	items, err := s.Svc.AdminCreateRedeemCodes(c.Context(), body.Count, body.Reward, body.MaxUses, expiresAt,
+		service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()})
 	if err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "create_redeem_code", "batch", c.IP(), body)
 	return c.JSON(fiber.Map{"items": items})
 }
 
