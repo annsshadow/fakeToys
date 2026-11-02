@@ -28,6 +28,14 @@ export interface AppConfig {
     port: number;
     token: string;
   };
+  /** 第 60 轮：签到失败后的自动重试策略（不配置 = 不重试，旧行为不变） */
+  retry?: {
+    enabled: boolean;
+    /** 失败后最多重试次数（不含首次运行） */
+    attempts: number;
+    /** 相邻两次尝试的间隔毫秒 */
+    intervalMs: number;
+  };
 }
 
 /** 单次签到的结果 */

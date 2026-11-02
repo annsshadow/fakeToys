@@ -64,3 +64,41 @@ test("oauth 站点浏览器启动失败 → 收敛为 failed 并落库", async (
   assert.match(result?.message ?? "", /运行异常/);
   assert.equal(isRunning(), false);
 });
+
+// 第 60 轮：失败自动重试策略（默认关闭，旧行为不变）。
+test("retry: 失败站点按策略重试，每轮重试都落库", async () => {
+  const { getAllRecords } = await import("../src/store.js");
+  const before = getAllRecords().filter((r) => r.siteId === "justwoker").length;
+
+  const c = cfg({ justwoker: { enabled: true } });
+  c.retry = { enabled: true, attempts: 2, intervalMs: 20 };
+  const result = await runSite("justwoker", c);
+  assert.equal(result?.status, "failed", "浏览器不可用场景重试后仍应 failed");
+
+  const after = getAllRecords().filter((r) => r.siteId === "justwoker").length;
+  assert.equal(after - before, 3, "首次 + 2 次重试 = 3 条落库记录");
+});
+
+test("retry: 未配置 retry 段时行为不变（只跑一次，落一条）", async () => {
+  const { getAllRecords } = await import("../src/store.js");
+  const before = getAllRecords().filter((r) => r.siteId === "justwoker").length;
+
+  const result = await runSite("justwoker", cfg({ justwoker: { enabled: true } }));
+  assert.equal(result?.status, "failed");
+
+  const after = getAllRecords().filter((r) => r.siteId === "justwoker").length;
+  assert.equal(after - before, 1, "默认不重试，只落一条失败记录");
+});
+
+test("retry: 非 failed 结果（skipped）不触发重试", async () => {
+  const { getAllRecords } = await import("../src/store.js");
+  const before = getAllRecords().filter((r) => r.siteId === "vyceai").length;
+
+  const c = cfg({ vyceai: { enabled: true }, justwoker: { enabled: false } });
+  c.retry = { enabled: true, attempts: 3, intervalMs: 10 };
+  const result = await runSite("vyceai", c);
+  assert.equal(result?.status, "skipped", "凭据未配置应 skipped");
+
+  const after = getAllRecords().filter((r) => r.siteId === "vyceai").length;
+  assert.equal(after - before, 1, "skipped 是确定态，不应触发重试");
+});

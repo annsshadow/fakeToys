@@ -63,13 +63,38 @@ function failedResult(adapter: SiteAdapter, message: string): CheckinResult {
 
 /** 运行单个适配器，落库并返回结果。任何异常都收敛为 failed 结果，绝不让单站拖垮整体。 */
 async function runOneSafe(adapter: SiteAdapter, config: AppConfig): Promise<CheckinResult> {
+  let result: CheckinResult;
   try {
-    return await runOne(adapter, config);
+    result = await runOne(adapter, config);
   } catch (err) {
-    const result = failedResult(adapter, `运行异常：${(err as Error).message}`);
+    result = failedResult(adapter, `运行异常：${(err as Error).message}`);
     addRecord(result);
-    return result;
   }
+
+  // 第 60 轮：失败后自动重试。只有「运行异常」类的 failed 才有重试价值
+  // （skipped/already 是确定态，重试无意义）；默认关闭（retry.enabled 缺省 false）。
+  const { enabled, attempts, intervalMs } = config.retry ?? { enabled: false, attempts: 0, intervalMs: 0 };
+  const siteLog = createLogger(adapter.id);
+  if (!enabled || attempts <= 0 || result.status !== "failed") return result;
+
+  for (let i = 1; i <= attempts; i++) {
+    siteLog.warn(`第 ${i}/${attempts} 次重试前等待 ${intervalMs}ms`);
+    await new Promise((r) => setTimeout(r, intervalMs));
+    try {
+      result = await runOne(adapter, config);
+      // runOne 的所有结果路径（含失败）都自行落库——这里不再 addRecord，
+      // 否则每轮重试会重复落一条。
+    } catch (err) {
+      result = failedResult(adapter, `运行异常：${(err as Error).message}`);
+      addRecord(result);
+    }
+    if (result.status !== "failed") {
+      siteLog.info(`第 ${i} 次重试成功（${result.message}）`);
+      return result;
+    }
+  }
+  siteLog.warn(`重试 ${attempts} 次后仍失败，保留最后一条结果`);
+  return result;
 }
 
 /**
@@ -199,7 +224,9 @@ export async function runSite(siteId: string, config: AppConfig): Promise<Checki
 
   running = true;
   try {
-    return await runOne(adapter, config);
+    // 第 60 轮：与 runAll 同一出口（runOneSafe = runOne + 失败自动重试），
+    // 否则「手动/单站模式」拿不到重试策略。
+    return await runOneSafe(adapter, config);
   } finally {
     running = false;
     releaseRunLock();
