@@ -9,10 +9,11 @@ pub mod dialect;
 pub mod rewriter;
 
 use deadpool_postgres::tokio_postgres::{Config, NoTls};
-use deadpool_postgres::{Manager, Pool};
+use deadpool_postgres::{Manager, Pool, Runtime, Timeouts};
 use dotenvy::dotenv;
 use sea_orm::{ConnectOptions, Database, DatabaseConnection};
 use std::env;
+use std::time::Duration;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -45,7 +46,17 @@ pub struct DbPoolConfig {
     pub max_size: usize,
     pub min_idle: usize,
     pub tls: bool,
+    /// 池满时等待连接的上界（`None` = 无限等待，不推荐）。
+    pub wait_timeout: Option<Duration>,
+    /// 新建连接（TCP + 认证）的上界（`None` = 无限等待）。
+    pub create_timeout: Option<Duration>,
 }
+
+/// 池满等待默认 10s：小于全局请求超时（30s），保证排队失败先于请求超时暴露，
+/// 客户端拿到的是「池忙」而不是一个笼统的 408。
+const DEFAULT_WAIT_TIMEOUT: Duration = Duration::from_secs(10);
+/// 新建连接默认 10s：覆盖跨机房握手，又能让「网络黑洞」在下一次请求前失败。
+const DEFAULT_CREATE_TIMEOUT: Duration = Duration::from_secs(10);
 
 impl Default for DbPoolConfig {
     fn default() -> Self {
@@ -53,13 +64,34 @@ impl Default for DbPoolConfig {
             max_size: 20,
             min_idle: 0,
             tls: false,
+            wait_timeout: Some(DEFAULT_WAIT_TIMEOUT),
+            create_timeout: Some(DEFAULT_CREATE_TIMEOUT),
         }
+    }
+}
+
+/// 解析「秒数」配置：未设置取默认，`0` 显式关闭，非法值回退默认
+/// （与既有 `DB_POOL_MAX_SIZE` 口径一致）。
+fn resolve_seconds(raw: Option<&str>, default: Option<Duration>) -> Option<Duration> {
+    match raw {
+        None => default,
+        Some(v) => match v.trim().parse::<u64>() {
+            Ok(0) => None,
+            Ok(n) => Some(Duration::from_secs(n)),
+            Err(_) => default,
+        },
     }
 }
 
 impl DbPoolConfig {
     /// 纯解析逻辑（与 env 读取分离，便于无副作用单测）。
-    fn resolve(max_size: Option<&str>, min_idle: Option<&str>, tls: Option<&str>) -> Self {
+    fn resolve(
+        max_size: Option<&str>,
+        min_idle: Option<&str>,
+        tls: Option<&str>,
+        wait_timeout: Option<&str>,
+        create_timeout: Option<&str>,
+    ) -> Self {
         let mut cfg = Self::default();
         if let Some(v) = max_size {
             if let Ok(n) = v.trim().parse::<usize>() {
@@ -74,6 +106,8 @@ impl DbPoolConfig {
         if let Some(v) = tls {
             cfg.tls = is_truthy(v);
         }
+        cfg.wait_timeout = resolve_seconds(wait_timeout, cfg.wait_timeout);
+        cfg.create_timeout = resolve_seconds(create_timeout, cfg.create_timeout);
         cfg
     }
 
@@ -83,6 +117,8 @@ impl DbPoolConfig {
             env::var("DB_POOL_MAX_SIZE").ok().as_deref(),
             env::var("DB_POOL_MIN_IDLE").ok().as_deref(),
             env::var("DB_TLS").ok().as_deref(),
+            env::var("DB_POOL_WAIT_TIMEOUT_SECONDS").ok().as_deref(),
+            env::var("DB_POOL_CREATE_TIMEOUT_SECONDS").ok().as_deref(),
         )
     }
 }
@@ -171,6 +207,16 @@ pub async fn create_pool_with_url(database_url: String) -> Result<Pool, DbError>
     };
     let pool = Pool::builder(mgr)
         .max_size(pool_cfg.max_size)
+        // deadpool 配了 timeouts 就必须显式指定 runtime（否则 build 报
+        // "Timeouts require a runtime"）；本服务只跑 Tokio。
+        .runtime(Runtime::Tokio1)
+        // R6：池满等待与建连都有上界。修前 `get()` 在池满时无限排队、
+        // 建连遇到网络黑洞会一直挂到 TCP 自身超时（可能数分钟）。
+        .timeouts(Timeouts {
+            wait: pool_cfg.wait_timeout,
+            create: pool_cfg.create_timeout,
+            recycle: None,
+        })
         .build()
         .map_err(|e| DbError::PoolError(e.to_string()))?;
 
@@ -264,30 +310,55 @@ mod pool_config_tests {
 
     #[test]
     fn defaults_are_20_max_zero_idle_no_tls() {
-        // 默认口径：本地开发 NoTls、不预热连接（无库环境启动不报错）。
+        // 默认口径：本地开发 NoTls、不预热连接（无库环境启动不报错）；
+        // 池满等待与建连默认各有 10s 上界。
         assert_eq!(
-            DbPoolConfig::resolve(None, None, None),
+            DbPoolConfig::resolve(None, None, None, None, None),
             DbPoolConfig {
                 max_size: 20,
                 min_idle: 0,
-                tls: false
+                tls: false,
+                wait_timeout: Some(Duration::from_secs(10)),
+                create_timeout: Some(Duration::from_secs(10)),
             }
         );
     }
 
     #[test]
     fn env_overrides_parse_clamp_and_fallback() {
-        let c = DbPoolConfig::resolve(Some(" 50 "), Some("4"), Some("1"));
+        let c = DbPoolConfig::resolve(
+            Some(" 50 "),
+            Some("4"),
+            Some("1"),
+            Some("3"),
+            Some("7"),
+        );
         assert_eq!(c.max_size, 50);
         assert_eq!(c.min_idle, 4);
         assert!(c.tls);
+        assert_eq!(c.wait_timeout, Some(Duration::from_secs(3)));
+        assert_eq!(c.create_timeout, Some(Duration::from_secs(7)));
         // 非法 / 空值一律回退默认，不 panic
         assert_eq!(
-            DbPoolConfig::resolve(Some("abc"), Some(""), Some("maybe")),
+            DbPoolConfig::resolve(Some("abc"), Some(""), Some("maybe"), Some("x"), Some("")),
             DbPoolConfig::default()
         );
         // max_size 至少为 1（0 会让 deadpool 永远拿不到连接）
-        assert_eq!(DbPoolConfig::resolve(Some("0"), None, None).max_size, 1);
+        assert_eq!(
+            DbPoolConfig::resolve(Some("0"), None, None, None, None).max_size,
+            1
+        );
+    }
+
+    #[test]
+    fn zero_disables_pool_timeouts() {
+        // 0 = 显式关闭：排查长事务时允许无限等待，但必须是**有人做的决定**。
+        let c = DbPoolConfig::resolve(None, None, None, Some("0"), Some("0"));
+        assert_eq!(c.wait_timeout, None);
+        assert_eq!(c.create_timeout, None);
+        // 空白值按未设置处理 → 取默认，而不是关掉。
+        let blank = DbPoolConfig::resolve(None, None, None, Some("  "), Some("  "));
+        assert_eq!(blank.wait_timeout, DbPoolConfig::default().wait_timeout);
     }
 
     #[test]
@@ -408,6 +479,8 @@ mod pool_construction_tests {
             ("DB_POOL_MAX_SIZE", Some("7")),
             ("DB_POOL_MIN_IDLE", Some("2")),
             ("DB_TLS", Some("yes")),
+            ("DB_POOL_WAIT_TIMEOUT_SECONDS", Some("4")),
+            ("DB_POOL_CREATE_TIMEOUT_SECONDS", Some("6")),
         ]);
 
         assert_eq!(
@@ -416,7 +489,94 @@ mod pool_construction_tests {
                 max_size: 7,
                 min_idle: 2,
                 tls: true,
+                wait_timeout: Some(Duration::from_secs(4)),
+                create_timeout: Some(Duration::from_secs(6)),
             }
+        );
+    }
+
+    /// R6：池满等待必须有上界——修前 `get()` 会一直排队，
+    /// 客户端表现是请求永久挂起。
+    ///
+    /// 需真库（`TEST_DATABASE_URL` 或 `DATABASE_URL`）；无库时显式 skip。
+    #[tokio::test]
+    #[allow(clippy::await_holding_lock)]
+    async fn saturated_pool_waits_only_until_wait_timeout() {
+        let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let Ok(url) = env::var("TEST_DATABASE_URL").or_else(|_| env::var("DATABASE_URL")) else {
+            eprintln!("skip: 无 TEST_DATABASE_URL / DATABASE_URL，池满等待需真库");
+            return;
+        };
+        let _env = EnvRestore::apply(&[
+            ("DB_POOL_MAX_SIZE", Some("1")),
+            ("DB_POOL_WAIT_TIMEOUT_SECONDS", Some("1")),
+            ("DB_POOL_CREATE_TIMEOUT_SECONDS", Some("5")),
+            ("DB_TLS", None),
+        ]);
+
+        let pool = create_pool_with_url(url).await.expect("pool construction");
+        let held = pool.get().await.expect("第一条连接应立刻拿到");
+
+        let started = std::time::Instant::now();
+        let second = pool.get().await;
+        let elapsed = started.elapsed();
+
+        match second {
+            Err(deadpool_postgres::PoolError::Timeout(_)) => {}
+            Ok(_) => panic!("max_size=1 且连接已被占用，不应再拿到连接"),
+            Err(e) => panic!("期望池满等待超时，实际 {e:?}"),
+        }
+        assert!(
+            elapsed >= Duration::from_millis(900),
+            "等待时间短于 wait_timeout（可能没生效）：{elapsed:?}"
+        );
+        assert!(
+            elapsed < Duration::from_secs(5),
+            "等待未被 wait_timeout 截断：{elapsed:?}"
+        );
+        drop(held);
+    }
+
+    /// R6：建连遇到「只接受 TCP 但永不回应握手」的服务端时，
+    /// 必须在 create_timeout 内失败，而不是挂到 TCP 自身超时。
+    #[tokio::test]
+    #[allow(clippy::await_holding_lock)]
+    async fn create_timeout_bounds_hung_handshake() {
+        let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let _env = EnvRestore::apply(&[
+            ("DB_POOL_MAX_SIZE", Some("1")),
+            ("DB_POOL_WAIT_TIMEOUT_SECONDS", Some("5")),
+            ("DB_POOL_CREATE_TIMEOUT_SECONDS", Some("1")),
+            ("DB_TLS", None),
+        ]);
+
+        // 本地起一个「黑洞」监听：接受连接后什么都不做，PG 客户端会卡在
+        // 等待 StartupMessage 的响应上——这正是 create_timeout 要兜住的场景。
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let port = listener.local_addr().unwrap().port();
+        tokio::spawn(async move {
+            let mut held = Vec::new();
+            while let Ok((stream, _)) = listener.accept().await {
+                held.push(stream); // 保持连接打开但永不回应
+            }
+        });
+
+        let pool = create_pool_with_url(format!(
+            "postgres://user:pass@127.0.0.1:{port}/db"
+        ))
+        .await
+        .expect("pool construction");
+
+        let started = std::time::Instant::now();
+        let got = pool.get().await;
+        let elapsed = started.elapsed();
+        assert!(
+            matches!(got, Err(deadpool_postgres::PoolError::Timeout(_))),
+            "期望建连超时，实际 {got:?}"
+        );
+        assert!(
+            elapsed < Duration::from_secs(4),
+            "建连未被 create_timeout 截断：{elapsed:?}"
         );
     }
 

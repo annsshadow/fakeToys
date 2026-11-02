@@ -45,6 +45,10 @@ pub enum AppError {
     /// 请求的功能尚未实现
     #[error("not implemented")]
     NotImplemented,
+
+    /// 服务暂时不可用（如连接池排队超时）——可重试，语义区别于 500。
+    #[error("service unavailable: {0}")]
+    Unavailable(String),
 }
 
 // 将 AppError 转换为 HTTP 响应：
@@ -83,6 +87,10 @@ impl IntoResponse for AppError {
                 axum::http::StatusCode::NOT_IMPLEMENTED,
                 "ExceptionNotImplemented",
             ),
+            AppError::Unavailable(_) => (
+                axum::http::StatusCode::SERVICE_UNAVAILABLE,
+                "ExceptionInternal",
+            ),
         };
 
         // 恒填 prompt：O2OA ResponseFactory 多数 war 的错误路径填充异常类名
@@ -99,5 +107,23 @@ impl IntoResponse for AppError {
         }));
 
         (status, body).into_response()
+    }
+}
+
+#[cfg(test)]
+mod unavailable_tests {
+    use super::AppError;
+    use axum::response::IntoResponse;
+
+    /// R6：池满/建连超时映射 503 而不是 500——客户端可据此重试，
+    /// 监控也能把「容量不足」与「代码缺陷」分开。
+    #[test]
+    fn unavailable_maps_to_503() {
+        let resp = AppError::Unavailable("database pool timeout (Wait)".into()).into_response();
+        assert_eq!(
+            resp.status(),
+            axum::http::StatusCode::SERVICE_UNAVAILABLE,
+            "池超时必须映射 503"
+        );
     }
 }

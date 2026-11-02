@@ -200,7 +200,14 @@ impl ControlPool for Pool {
         >,
     > {
         Box::pin(async move {
-            let object = self.get().await.map_err(|_| AppError::Internal)?;
+            let object = self.get().await.map_err(|e| match e {
+                // R6：池满/建连超时是「暂时不可用」，映射 503 让客户端可重试；
+                // 其他池错误仍按内部错误处理。
+                deadpool_postgres::PoolError::Timeout(kind) => {
+                    AppError::Unavailable(format!("database pool timeout ({kind:?})"))
+                }
+                _ => AppError::Internal,
+            })?;
             Ok(std::sync::Arc::new(object) as std::sync::Arc<dyn ControlClient>)
         })
     }
