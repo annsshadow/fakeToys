@@ -137,13 +137,21 @@ func run() error {
 		startPprof(cfg.PprofAddr)
 	}
 
-	// 优雅退出：收到 SIGINT/SIGTERM 后给在途请求 10 秒收尾
+	// 优雅退出：收到 SIGINT/SIGTERM 后等待在途请求收尾。
+	//
+	// R53：宽限不能拍一个固定的 10s —— 它必须覆盖「一条仍被数据库层
+	// 允许的写请求」的最长耗时（DB_STATEMENT_TIMEOUT，默认 30s）。
+	// 修前硬编码 10s：实测一个 12s 的写请求在停机时先被强制断连，
+	// 紧接着 main 的 defer db.Close() 让它的提交直接失败
+	// （handler 拿到 `closed pool`，玩家看到 500）—— 也就是停机窗口
+	// 内正在结算的请求会被腰斩。见 shutdownGrace 的说明。
+	grace := shutdownGrace(cfg.DBStatementTimeout)
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-stop
-		fmt.Println("\n[来一炮 server] 收到退出信号，开始优雅关闭...")
-		if err := app.ShutdownWithTimeout(10 * time.Second); err != nil {
+		fmt.Printf("\n[来一炮 server] 收到退出信号，开始优雅关闭（最多等待 %s）...\n", grace)
+		if err := app.ShutdownWithTimeout(grace); err != nil {
 			fmt.Fprintln(os.Stderr, "关闭超时:", err)
 		}
 	}()
@@ -177,6 +185,35 @@ func run() error {
 		return fmt.Errorf("监听 %s: %w", cfg.Addr, err)
 	}
 	return nil
+}
+
+// shutdownGrace 给出「收到退出信号后等待在途请求收尾」的上限。
+//
+// # 为什么必须是 DB_STATEMENT_TIMEOUT + 余量，而不是一个固定值
+//
+// 停机时 main 的顺序是：`ShutdownWithTimeout(grace)` 返回 → `run` 返回 →
+// `defer db.Close()` 关闭连接池。宽限一旦短于一条请求的真实耗时，这条请求
+// 就会在**连接池被关掉之后**才去提交事务，直接拿到 `closed pool`。
+//
+// 而「真实耗时」的上限由数据库层自己定义：`statement_timeout`
+// （`DB_STATEMENT_TIMEOUT`，默认 30s）允许单条 SQL 排队等锁这么久。
+// 修前宽限硬编码 10s，于是 10–30s 之间、仍完全合法的写请求会在停机时
+// 被腰斩 —— 实测 12s 的 handler 得到 `closed pool` 并以 500 返回。
+//
+// statementTimeout <= 0 表示 PG 侧不限：这时给一个有界默认值，
+// 停机不能无限等待（有界是给运维的承诺，不是给单个请求的）。
+func shutdownGrace(statementTimeout time.Duration) time.Duration {
+	const (
+		margin   = 5 * time.Second
+		minGrace = 10 * time.Second
+	)
+	if statementTimeout <= 0 {
+		return 30 * time.Second
+	}
+	if g := statementTimeout + margin; g > minGrace {
+		return g
+	}
+	return minGrace
 }
 
 // buildApp 组装 fiber 实例并挂载全部路由。

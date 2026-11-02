@@ -42,6 +42,36 @@ func testService(t *testing.T) *service.Service {
 	return service.New(db, cfg)
 }
 
+// TestShutdownGraceCoversStatementTimeout 守住 R53 的不变量：
+// 停机宽限必须**大于**单条 SQL 的服务端上限，否则仍被数据库层允许的
+// 写请求会在停机时被腰斩（连接池先于 handler 关闭 → closed pool）。
+//
+// statement_timeout=0 表示 PG 侧不限，此时宽限取一个有界默认值：
+// 停机不能无限等待。
+func TestShutdownGraceCoversStatementTimeout(t *testing.T) {
+	cases := []struct {
+		name string
+		stmt time.Duration
+		want time.Duration
+	}{
+		{"默认 30s + 余量", 30 * time.Second, 35 * time.Second},
+		{"10s + 余量", 10 * time.Second, 15 * time.Second},
+		{"极短上限走下限", 1 * time.Second, 10 * time.Second},
+		{"PG 侧不限（0）", 0, 30 * time.Second},
+		{"PG 侧不限（负）", -time.Second, 30 * time.Second},
+	}
+	for _, c := range cases {
+		got := shutdownGrace(c.stmt)
+		if got != c.want {
+			t.Errorf("%s：shutdownGrace(%s) = %s，期望 %s", c.name, c.stmt, got, c.want)
+		}
+		// 核心不变量：有上限时，宽限必须严格大于它。
+		if c.stmt > 0 && got <= c.stmt {
+			t.Errorf("%s：宽限 %s 未严格大于 statement_timeout %s —— 仍可能截断合法请求", c.name, got, c.stmt)
+		}
+	}
+}
+
 // TestBuildAppRoutesAreUp 完整路由必须挂上（健康检查可达、
 // 鉴权端点对无凭证请求返回 401 而不是 404 —— 404 说明路由没注册）。
 func TestBuildAppRoutesAreUp(t *testing.T) {
