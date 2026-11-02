@@ -113,8 +113,15 @@ pub async fn receive_list(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
+    // 第 65 轮：收件箱未读列表加固定上限（同「会话成员列表 LIMIT 100」的
+    // 固定上限风格）。此前无 LIMIT —— 接收方消息堆积时一次把全部未读
+    // 序列化回客户端，查询与响应都随堆积无界增长。客户端消费/标记已读
+    // 之后下一轮拉取自然推进；200 条足够覆盖「追历史」场景。
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consume = $1 AND consumed = false ORDER BY create_time ASC", &[&consume])
+        .query(
+            "SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consume = $1 AND consumed = false ORDER BY create_time ASC LIMIT 200",
+            &[&consume],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 

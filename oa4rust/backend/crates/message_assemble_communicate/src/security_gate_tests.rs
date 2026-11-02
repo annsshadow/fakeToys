@@ -603,4 +603,67 @@ mod security_gate_tests {
             "以下 R7 写面无会话未回 401（出现 Internal 就是门插在读库之后）：{leaked:?}"
         );
     }
+
+    // 第 65 轮：收件箱未读列表有固定上限（LIMIT 200）——
+    // 接收方消息堆积时不能一次把全部未读查询并序列化回客户端。
+    #[tokio::test]
+    async fn receive_list_caps_unread_at_200() {
+        let pool = shared::testing::test_pool();
+        let consume = "r65-receive";
+        {
+            let c = pool.get().await.unwrap();
+            c.execute(
+                "DELETE FROM x_message_consume WHERE consume = $1",
+                &[&consume.to_string()],
+            )
+            .await
+            .unwrap();
+            for i in 0..250 {
+                let id = format!("r65-m{i}");
+                let content = format!("msg-{i}");
+                c.execute(
+                    "INSERT INTO x_message_consume
+                     (id, consume, content, sender, consumed, create_time)
+                     VALUES ($1, $2, $3, $4, 'false',
+                             to_char(NOW() + make_interval(secs => $5),
+                                     'YYYY-MM-DD HH24:MI:SS.MS'))",
+                    &[
+                        &id,
+                        &consume.to_string(),
+                        &content,
+                        &consume.to_string(),
+                        &(i as f64),
+                    ],
+                )
+                .await
+                .unwrap();
+            }
+        }
+
+        let out = crate::receive_list(Extension(pool.clone()), p(consume))
+            .await
+            .unwrap();
+        let data = out.0.data.expect("成功信封必有 data");
+        let arr = data.as_array().expect("data 应为数组");
+        assert_eq!(arr.len(), 200, "未读 250 条时列表必须截断到 200（LIMIT）");
+        assert_eq!(
+            out.0.count,
+            Some(200),
+            "count 应回显实际返回条数，不是全部未读"
+        );
+        // ORDER BY create_time ASC：截断后第一条必须是最早插入的
+        assert_eq!(
+            arr[0].get("content").and_then(|v| v.as_str()),
+            Some("msg-0"),
+            "上限截断必须保留最旧的 200 条（ASC 序）"
+        );
+
+        let c = pool.get().await.unwrap();
+        c.execute(
+            "DELETE FROM x_message_consume WHERE consume = $1",
+            &[&consume.to_string()],
+        )
+        .await
+        .unwrap();
+    }
 }
