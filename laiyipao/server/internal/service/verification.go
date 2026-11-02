@@ -58,7 +58,10 @@ func userVerifier(id int64) verifier  { return verifier{userID: id} }
 func adminVerifier(id int64) verifier { return verifier{adminID: id, isAdmin: true} }
 
 // recordVerification 把一条验真结果写进 replay_verifications。
-func (s *Service) recordVerification(ctx context.Context, v verifier, battleID int64, expected, actual string, matched bool) error {
+//
+// R48：写入位置由调用方决定（池或事务）。运营验真时它与审计同一事务，
+// 所以这里收一个最小 execer 而不是固定用 s.pool。
+func (s *Service) recordVerification(ctx context.Context, q auditExecer, v verifier, battleID int64, expected, actual string, matched bool) error {
 	//
 	// 2026-10-21（P3-5）：**幂等**。
 	//
@@ -92,7 +95,7 @@ func (s *Service) recordVerification(ctx context.Context, v verifier, battleID i
 	//
 	// 00018 拆成两个部分索引，各自只覆盖自己那类验真者；
 	// 这里对应地分成两条 INSERT。
-	tag, err := s.pool.Exec(ctx, insertVerificationSQL(v), insertVerificationArgs(v, battleID, expected, actual, matched)...)
+	tag, err := q.Exec(ctx, insertVerificationSQL(v), insertVerificationArgs(v, battleID, expected, actual, matched)...)
 	if err != nil {
 		return fmt.Errorf("record verification: %w", err)
 	}
@@ -160,7 +163,8 @@ func insertVerificationArgs(v verifier, battleID int64, expected, actual string,
 // `GetReplay` 的注释说「这些都是服务端权威数据，公开是设计使然
 // （否则无人能验真）」—— 那句话说的是**数据内容**，
 // 不是**谁的**。你验证自己的对局本来就不需要读别人的。
-func (s *Service) compareAndRecord(ctx context.Context, v verifier, battleID int64, actualHash string) (VerifyResult, error) {
+func (s *Service) compareAndRecord(ctx context.Context, v verifier, battleID int64, actualHash string,
+	audit ...AdminAuditCtx) (VerifyResult, error) {
 	// actual_hash 的长度上界（第 75 轮）。
 	//
 	// 结算面早就有这道校验（`maxReplayHashLen = 64`，
@@ -220,7 +224,24 @@ func (s *Service) compareAndRecord(ctx context.Context, v verifier, battleID int
 	r.Actual = actualHash
 	r.Matched = r.Expected == actualHash
 
-	if err := s.recordVerification(ctx, v, battleID, r.Expected, r.Actual, r.Matched); err != nil {
+	// R48：运营验真是一次**管理动作** —— `replay_verifications` 里那一行
+	// 可能成为「这局对不上」的指控证据。审计此前在 handler 提交后补写、
+	// 失败只打日志，于是可以出现「结论已入库、但没人知道是谁在何时判的」。
+	// 有审计上下文时，验真记录与审计同一事务；玩家侧（无 audit）保持
+	// 原来的单条写入语义，不给玩家验真增加额外失败面。
+	if len(audit) > 0 {
+		if err := s.DB.Tx(ctx, func(tx txType) error {
+			if err := s.recordVerification(ctx, tx, v, battleID, r.Expected, r.Actual, r.Matched); err != nil {
+				return err
+			}
+			return s.AuditTx(ctx, tx, audit[0], "verify_replay",
+				strconv.FormatInt(battleID, 10), AuditVerificationDetail(r))
+		}); err != nil {
+			return VerifyResult{}, err
+		}
+		return r, nil
+	}
+	if err := s.recordVerification(ctx, s.pool, v, battleID, r.Expected, r.Actual, r.Matched); err != nil {
 		return VerifyResult{}, err
 	}
 	return r, nil
@@ -238,8 +259,16 @@ func (s *Service) VerifyReplay(ctx context.Context, userID, battleID int64, actu
 //
 // 补上的是「能采取行动的人，唯一能主动发起验真」这一段。
 // 参数与返回值与玩家侧**完全一致**，因为它们做的是同一件事。
-func (s *Service) AdminVerifyReplay(ctx context.Context, adminID, battleID int64, actualHash string) (VerifyResult, error) {
-	return s.compareAndRecord(ctx, adminVerifier(adminID), battleID, actualHash)
+//
+// R48：审计（谁、何时、对哪场、结论）与验真记录同一事务；
+// handler 通过 audit 传入带 IP 的上下文。
+func (s *Service) AdminVerifyReplay(ctx context.Context, adminID, battleID int64, actualHash string,
+	audit ...AdminAuditCtx) (VerifyResult, error) {
+	ctxs := audit
+	if len(ctxs) == 0 {
+		ctxs = []AdminAuditCtx{{AdminID: adminID}}
+	}
+	return s.compareAndRecord(ctx, adminVerifier(adminID), battleID, actualHash, ctxs...)
 }
 
 // auditVerificationDetail 供审计日志用的明细。

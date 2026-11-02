@@ -789,13 +789,11 @@ func (s *Server) adminVerifyBattle(c *fiber.Ctx) error {
 	if adminID == 0 {
 		return fail(c, fiber.StatusUnauthorized, "unauthorized", "缺少管理员身份")
 	}
-	res, err := s.Svc.AdminVerifyReplay(c.Context(), adminID, id, body.ReplayHash)
+	res, err := s.Svc.AdminVerifyReplay(c.Context(), adminID, id, body.ReplayHash,
+		service.AdminAuditCtx{AdminID: adminID, IP: c.IP()})
 	if err != nil {
 		return failErr(c, err)
 	}
-	// 验真是一次**管理动作**，审计轨迹要独立于统计表存在。
-	s.Svc.Audit(c.Context(), adminID, "battle_verify", strconv.FormatInt(id, 10), c.IP(),
-		service.AuditVerificationDetail(res))
 	return c.JSON(res)
 }
 
