@@ -55,6 +55,12 @@ pub struct DbPoolConfig {
     pub wait_timeout: Option<Duration>,
     /// 新建连接（TCP + 认证）的上界（`None` = 无限等待）。
     pub create_timeout: Option<Duration>,
+    /// 单条 SQL 在服务端执行的上界（`None` = 不限制）。
+    ///
+    /// 与 `laiyipao` 的 `statement_timeout` 同义：请求超时层只能让**客户端**
+    /// 不再等待，PG 仍会在后端把慢查询跑完并占着连接。statement_timeout
+    /// 让服务端自己取消，连接立刻回到池里。
+    pub statement_timeout: Option<Duration>,
 }
 
 /// 池满等待默认 10s：小于全局请求超时（30s），保证排队失败先于请求超时暴露，
@@ -62,6 +68,9 @@ pub struct DbPoolConfig {
 const DEFAULT_WAIT_TIMEOUT: Duration = Duration::from_secs(10);
 /// 新建连接默认 10s：覆盖跨机房握手，又能让「网络黑洞」在下一次请求前失败。
 const DEFAULT_CREATE_TIMEOUT: Duration = Duration::from_secs(10);
+/// 单条 SQL 默认 30s：与全局请求超时同一量级，但由 PG 侧执行，
+/// 保证请求超时后连接不会继续被慢查询占住。
+const DEFAULT_STATEMENT_TIMEOUT: Duration = Duration::from_secs(30);
 
 impl Default for DbPoolConfig {
     fn default() -> Self {
@@ -71,6 +80,7 @@ impl Default for DbPoolConfig {
             tls: false,
             wait_timeout: Some(DEFAULT_WAIT_TIMEOUT),
             create_timeout: Some(DEFAULT_CREATE_TIMEOUT),
+            statement_timeout: Some(DEFAULT_STATEMENT_TIMEOUT),
         }
     }
 }
@@ -96,6 +106,7 @@ impl DbPoolConfig {
         tls: Option<&str>,
         wait_timeout: Option<&str>,
         create_timeout: Option<&str>,
+        statement_timeout: Option<&str>,
     ) -> Self {
         let mut cfg = Self::default();
         if let Some(v) = max_size {
@@ -113,6 +124,7 @@ impl DbPoolConfig {
         }
         cfg.wait_timeout = resolve_seconds(wait_timeout, cfg.wait_timeout);
         cfg.create_timeout = resolve_seconds(create_timeout, cfg.create_timeout);
+        cfg.statement_timeout = resolve_seconds(statement_timeout, cfg.statement_timeout);
         cfg
     }
 
@@ -124,6 +136,7 @@ impl DbPoolConfig {
             env::var("DB_TLS").ok().as_deref(),
             env::var("DB_POOL_WAIT_TIMEOUT_SECONDS").ok().as_deref(),
             env::var("DB_POOL_CREATE_TIMEOUT_SECONDS").ok().as_deref(),
+            env::var("DB_STATEMENT_TIMEOUT_SECONDS").ok().as_deref(),
         )
     }
 }
@@ -159,6 +172,19 @@ fn database_url() -> String {
 fn with_sslmode(url: &str, mode: &str) -> String {
     let sep = if url.contains('?') { '&' } else { '?' };
     format!("{url}{sep}sslmode={mode}")
+}
+
+/// 给连接 URL 追加 sqlx 的 `options[statement_timeout]=<ms>`；
+/// sqlx 会把它翻译成 PG 启动参数 `-c statement_timeout=<ms>`。
+/// URL 解析失败时原样返回，由后续连接流程统一报错。
+fn with_statement_timeout(url: &str, ms: u128) -> String {
+    let Ok(mut parsed) = url::Url::parse(url) else {
+        return url.to_string();
+    };
+    parsed
+        .query_pairs_mut()
+        .append_pair("options[statement_timeout]", &ms.to_string());
+    parsed.to_string()
 }
 
 /// rustls TLS connector（webpki 系统根证书集合）。仅 `DB_TLS` 开启时构造。
@@ -240,6 +266,12 @@ pub async fn create_pool_with_url(database_url: String) -> Result<Pool, DbError>
         .password(password)
         .dbname(dbname);
 
+    // R26：单条 SQL 的服务端上界。走 startup options（libpq 同义），
+    // 每个新建连接都会带上；`0` 表示不限制（与 resolve_seconds 口径一致）。
+    if let Some(timeout) = pool_cfg.statement_timeout {
+        cfg.options(format!("-c statement_timeout={}", timeout.as_millis()));
+    }
+
     let mgr = if pool_cfg.tls {
         Manager::new(cfg, rustls_connector())
     } else {
@@ -278,11 +310,15 @@ pub async fn create_sea_orm_pool_with_url(
     database_url: String,
 ) -> Result<DatabaseConnection, DbError> {
     let pool_cfg = pool_config();
-    let database_url = if pool_cfg.tls {
+    let mut database_url = if pool_cfg.tls {
         with_sslmode(&database_url, "require")
     } else {
         database_url
     };
+    // R26：SeaORM 连接同样带服务端 statement_timeout（与 deadpool 池同源）。
+    if let Some(timeout) = pool_cfg.statement_timeout {
+        database_url = with_statement_timeout(&database_url, timeout.as_millis());
+    }
 
     let mut options = ConnectOptions::new(database_url);
     options
@@ -353,13 +389,14 @@ mod pool_config_tests {
         // 默认口径：本地开发 NoTls、不预热连接（无库环境启动不报错）；
         // 池满等待与建连默认各有 10s 上界。
         assert_eq!(
-            DbPoolConfig::resolve(None, None, None, None, None),
+            DbPoolConfig::resolve(None, None, None, None, None, None),
             DbPoolConfig {
                 max_size: 20,
                 min_idle: 0,
                 tls: false,
                 wait_timeout: Some(Duration::from_secs(10)),
                 create_timeout: Some(Duration::from_secs(10)),
+                statement_timeout: Some(Duration::from_secs(30)),
             }
         );
     }
@@ -372,20 +409,29 @@ mod pool_config_tests {
             Some("1"),
             Some("3"),
             Some("7"),
+            Some("5"),
         );
         assert_eq!(c.max_size, 50);
         assert_eq!(c.min_idle, 4);
         assert!(c.tls);
         assert_eq!(c.wait_timeout, Some(Duration::from_secs(3)));
         assert_eq!(c.create_timeout, Some(Duration::from_secs(7)));
+        assert_eq!(c.statement_timeout, Some(Duration::from_secs(5)));
         // 非法 / 空值一律回退默认，不 panic
         assert_eq!(
-            DbPoolConfig::resolve(Some("abc"), Some(""), Some("maybe"), Some("x"), Some("")),
+            DbPoolConfig::resolve(
+                Some("abc"),
+                Some(""),
+                Some("maybe"),
+                Some("x"),
+                Some(""),
+                Some("y")
+            ),
             DbPoolConfig::default()
         );
         // max_size 至少为 1（0 会让 deadpool 永远拿不到连接）
         assert_eq!(
-            DbPoolConfig::resolve(Some("0"), None, None, None, None).max_size,
+            DbPoolConfig::resolve(Some("0"), None, None, None, None, None).max_size,
             1
         );
     }
@@ -393,12 +439,17 @@ mod pool_config_tests {
     #[test]
     fn zero_disables_pool_timeouts() {
         // 0 = 显式关闭：排查长事务时允许无限等待，但必须是**有人做的决定**。
-        let c = DbPoolConfig::resolve(None, None, None, Some("0"), Some("0"));
+        let c = DbPoolConfig::resolve(None, None, None, Some("0"), Some("0"), Some("0"));
         assert_eq!(c.wait_timeout, None);
         assert_eq!(c.create_timeout, None);
+        assert_eq!(c.statement_timeout, None);
         // 空白值按未设置处理 → 取默认，而不是关掉。
-        let blank = DbPoolConfig::resolve(None, None, None, Some("  "), Some("  "));
+        let blank = DbPoolConfig::resolve(None, None, None, Some("  "), Some("  "), Some("  "));
         assert_eq!(blank.wait_timeout, DbPoolConfig::default().wait_timeout);
+        assert_eq!(
+            blank.statement_timeout,
+            DbPoolConfig::default().statement_timeout
+        );
     }
 
     #[test]
@@ -421,6 +472,24 @@ mod pool_config_tests {
             with_sslmode("postgres://h:5432/db?application_name=x", "require"),
             "postgres://h:5432/db?application_name=x&sslmode=require"
         );
+    }
+
+    #[test]
+    fn statement_timeout_appended_to_url() {
+        // sqlx 从 `options[statement_timeout]=<ms>` 生成启动参数
+        // `-c statement_timeout=<ms>`；已有 query 时必须追加而不是覆盖。
+        let url = with_statement_timeout("postgres://h:5432/db", 30_000);
+        assert_eq!(
+            url,
+            "postgres://h:5432/db?options%5Bstatement_timeout%5D=30000"
+        );
+        let url = with_statement_timeout("postgres://h:5432/db?sslmode=require", 2_500);
+        assert_eq!(
+            url,
+            "postgres://h:5432/db?sslmode=require&options%5Bstatement_timeout%5D=2500"
+        );
+        // 解析不了的 URL 原样返回（后续连接阶段统一报错）。
+        assert_eq!(with_statement_timeout("not a url", 100), "not a url");
     }
 }
 
@@ -521,6 +590,7 @@ mod pool_construction_tests {
             ("DB_TLS", Some("yes")),
             ("DB_POOL_WAIT_TIMEOUT_SECONDS", Some("4")),
             ("DB_POOL_CREATE_TIMEOUT_SECONDS", Some("6")),
+            ("DB_STATEMENT_TIMEOUT_SECONDS", Some("5")),
         ]);
 
         assert_eq!(
@@ -531,6 +601,7 @@ mod pool_construction_tests {
                 tls: true,
                 wait_timeout: Some(Duration::from_secs(4)),
                 create_timeout: Some(Duration::from_secs(6)),
+                statement_timeout: Some(Duration::from_secs(5)),
             }
         );
     }
@@ -575,6 +646,71 @@ mod pool_construction_tests {
             "等待未被 wait_timeout 截断：{elapsed:?}"
         );
         drop(held);
+    }
+
+    /// R26：statement_timeout 由服务端执行取消慢查询，连接随后仍可用。
+    ///
+    /// 修前只有客户端请求超时：客户端不再等待，但 PG 后端仍把 pg_sleep(3)
+    /// 跑完并占着那条连接，池容量在这种「慢查询风暴」里会被吃光。
+    ///
+    /// 需真库（`TEST_DATABASE_URL` 或 `DATABASE_URL`）；无库时显式 skip。
+    #[tokio::test]
+    #[allow(clippy::await_holding_lock)]
+    async fn statement_timeout_cancels_slow_query_and_keeps_connection() {
+        let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let Ok(url) = env::var("TEST_DATABASE_URL").or_else(|_| env::var("DATABASE_URL")) else {
+            eprintln!("skip: 无 TEST_DATABASE_URL / DATABASE_URL，statement_timeout 需真库");
+            return;
+        };
+        let kill = |v: Option<&str>| EnvRestore::apply(&[("DB_TLS", None), ("DB_STATEMENT_TIMEOUT_SECONDS", v)]);
+
+        // 默认：未配置时为 30s（connection startup options 生效）。
+        {
+            let _env = kill(None);
+            let pool = create_pool_with_url(url.clone()).await.expect("pool construction");
+            let client = pool.get().await.expect("get");
+            let shown: String = client
+                .query_one("SHOW statement_timeout", &[])
+                .await
+                .expect("SHOW")
+                .get(0);
+            assert_eq!(shown, "30s", "默认 statement_timeout 应为 30s");
+        }
+
+        // 配置 2s：pg_sleep(3) 必须在 2s 附近被 PG 取消（57014），
+        // 且同一条连接随后仍能执行 SELECT 1（取消的是语句，不是连接）。
+        let _env = kill(Some("2"));
+        let pool = create_pool_with_url(url).await.expect("pool construction");
+        let client = pool.get().await.expect("get");
+        let shown: String = client
+            .query_one("SHOW statement_timeout", &[])
+            .await
+            .expect("SHOW")
+            .get(0);
+        assert_eq!(shown, "2s");
+
+        let started = std::time::Instant::now();
+        let err = client
+            .query("SELECT pg_sleep(3)", &[])
+            .await
+            .expect_err("超过 statement_timeout 的查询必须被取消");
+        assert_eq!(
+            err.code().map(|c| c.code()),
+            Some("57014"),
+            "期望 query_canceled，实际 {err}"
+        );
+        assert!(
+            started.elapsed() < Duration::from_millis(2500),
+            "取消发生得太晚（statement_timeout 可能没生效）：{:?}",
+            started.elapsed()
+        );
+
+        let one: i32 = client
+            .query_one("SELECT 1", &[])
+            .await
+            .expect("取消语句后连接仍应可用")
+            .get(0);
+        assert_eq!(one, 1);
     }
 
     /// R6：建连遇到「只接受 TCP 但永不回应握手」的服务端时，
