@@ -499,12 +499,10 @@ func (s *Server) adminResetPlayerPassword(c *fiber.Ctx) error {
 	if err := c.BodyParser(&body); err != nil {
 		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
 	}
-	if err := s.Svc.AdminResetPlayerPassword(c.Context(), id, body.NewPassword); err != nil {
+	if err := s.Svc.AdminResetPlayerPassword(c.Context(), id, body.NewPassword,
+		service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()}); err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "reset_password",
-		strconv.FormatInt(id, 10), c.IP(),
-		fiber.Map{"user_id": id})
 	return c.JSON(fiber.Map{"ok": true})
 }
 

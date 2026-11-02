@@ -762,7 +762,7 @@ var MaxAdminGrantAmount = int64(1_000_000_000_000)
 // 同步密码，运行中后台重置不会立即被配置覆盖；下次重启后该账号会
 // 恢复为环境变量里的口令 —— 这是「测试账号口令与超管一致」的运维
 // 约定本身要求的，文档见 player_account.go 的 EnsureBootstrapPlayer。
-func (s *Service) AdminResetPlayerPassword(ctx context.Context, userID int64, newPassword string) error {
+func (s *Service) AdminResetPlayerPassword(ctx context.Context, userID int64, newPassword string, audit ...AdminAuditCtx) error {
 	newPassword = strings.TrimSpace(newPassword)
 	if len(newPassword) < 10 {
 		return fmt.Errorf("%w: 新密码至少 10 位（当前 %d 位）", ErrBadInput, len(newPassword))
@@ -794,6 +794,15 @@ func (s *Service) AdminResetPlayerPassword(ctx context.Context, userID int64, ne
 			`UPDATE refresh_tokens SET revoked_at = now()
 			  WHERE user_id = $1 AND revoked_at IS NULL`, userID); err != nil {
 			return fmt.Errorf("revoke refresh tokens: %w", err)
+		}
+		// R41：改密 + 吊销 + 审计同事务。这是能把玩家从所有设备踢下线的
+		// 高危动作；审计写不进去时若照常生效，运营侧看到的是
+		// 「所有人都被登出了，但没有任何操作记录」。
+		if len(audit) > 0 {
+			if err := s.AuditTx(ctx, tx, audit[0], "reset_password",
+				strconv.FormatInt(userID, 10), map[string]any{"user_id": userID}); err != nil {
+				return err
+			}
 		}
 		return nil
 	})
