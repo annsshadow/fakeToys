@@ -602,7 +602,7 @@ func (s *Service) AdminExportDefenseChallenges(ctx context.Context, defenseID, c
 		JOIN defenses d ON d.id = dc.defense_id
 		LEFT JOIN users u ON u.id = dc.challenger_id
 		WHERE `+where+`
-		ORDER BY dc.id DESC LIMIT 100000`, defenseID, challengerID, dateFrom, dateTo)
+		ORDER BY dc.id DESC LIMIT 100001`, defenseID, challengerID, dateFrom, dateTo)
 	if err != nil {
 		return nil, fmt.Errorf("export defense challenges: %w", err)
 	}
@@ -619,7 +619,9 @@ func (s *Service) AdminExportDefenseChallenges(ctx context.Context, defenseID, c
 		return nil, fmt.Errorf("write csv header: %w", err)
 	}
 
+	n := 0
 	for rows.Next() {
+		n++
 		var id, defenseID2, challengerID2, duration, hp int64
 		var defenseName, challengerNickname string
 		var won bool
@@ -653,6 +655,9 @@ func (s *Service) AdminExportDefenseChallenges(ctx context.Context, defenseID, c
 	// 截断的 CSV 当成功返回（其余 8 个导出都有这道检查，唯二漏网）。
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("iterate export defense challenges: %w", err)
+	}
+	if n > adminExportMaxRows {
+		return nil, exportTooLarge(n)
 	}
 	w.Flush()
 	if err := w.Error(); err != nil {
@@ -764,7 +769,7 @@ func (s *Service) AdminExportOrders(ctx context.Context, status string, dateFrom
 		FROM orders o
 		LEFT JOIN users u ON u.id = o.user_id
 		WHERE `+where+`
-		ORDER BY o.id DESC LIMIT 100000`, args...)
+		ORDER BY o.id DESC LIMIT 100001`, args...)
 	if err != nil {
 		return nil, fmt.Errorf("export orders: %w", err)
 	}
@@ -781,7 +786,9 @@ func (s *Service) AdminExportOrders(ctx context.Context, status string, dateFrom
 		return nil, fmt.Errorf("write csv header: %w", err)
 	}
 
+	n := 0
 	for rows.Next() {
+		n++
 		var v AdminOrderView
 		if err := rows.Scan(&v.ID, &v.UserID, &v.Nickname, &v.OrderNo, &v.SKU,
 			&v.Amount, &v.Status, &v.Provider, &v.CreatedAt, &v.DeliveredAt); err != nil {
@@ -809,6 +816,9 @@ func (s *Service) AdminExportOrders(ctx context.Context, status string, dateFrom
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
+	}
+	if n > adminExportMaxRows {
+		return nil, exportTooLarge(n)
 	}
 	w.Flush()
 	if err := w.Error(); err != nil {
@@ -905,7 +915,7 @@ func (s *Service) AdminExportRedeemUsages(ctx context.Context, codeKeyword strin
 		JOIN redeem_codes rc ON rc.id = ru.code_id
 		LEFT JOIN users u ON u.id = ru.user_id
 		WHERE `+where+`
-		ORDER BY ru.id DESC LIMIT 100000`, kw, pattern, userID)
+		ORDER BY ru.id DESC LIMIT 100001`, kw, pattern, userID)
 	if err != nil {
 		return nil, fmt.Errorf("export redeem usages: %w", err)
 	}
@@ -919,7 +929,9 @@ func (s *Service) AdminExportRedeemUsages(ctx context.Context, codeKeyword strin
 		return nil, fmt.Errorf("write csv header: %w", err)
 	}
 
+	n := 0
 	for rows.Next() {
+		n++
 		var id, userID2 int64
 		var code, nickname string
 		var rewardRaw []byte
@@ -946,6 +958,9 @@ func (s *Service) AdminExportRedeemUsages(ctx context.Context, codeKeyword strin
 	// 同上：迭代中途断连不查 rows.Err() 就是静默截断的 CSV 报成功。
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("iterate export redeem usages: %w", err)
+	}
+	if n > adminExportMaxRows {
+		return nil, exportTooLarge(n)
 	}
 	w.Flush()
 	if err := w.Error(); err != nil {
@@ -1472,7 +1487,7 @@ func (s *Service) AdminCreateRedeemCodes(ctx context.Context, count int, reward 
 func (s *Service) AdminExportRedeemCodes(ctx context.Context) ([]byte, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, code, reward, max_uses, used_count, expires_at, enabled
-		 FROM redeem_codes ORDER BY id LIMIT 100000`)
+		 FROM redeem_codes ORDER BY id LIMIT 100001`)
 	if err != nil {
 		return nil, fmt.Errorf("export redeem codes: %w", err)
 	}
@@ -1486,7 +1501,9 @@ func (s *Service) AdminExportRedeemCodes(ctx context.Context) ([]byte, error) {
 		return nil, fmt.Errorf("write csv header: %w", err)
 	}
 
+	n := 0
 	for rows.Next() {
+		n++
 		var id, maxUses, usedCount int
 		var code string
 		var rewardRaw []byte
@@ -1520,6 +1537,9 @@ func (s *Service) AdminExportRedeemCodes(ctx context.Context) ([]byte, error) {
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
+	}
+	if n > adminExportMaxRows {
+		return nil, exportTooLarge(n)
 	}
 	w.Flush()
 	if err := w.Error(); err != nil {
@@ -1606,7 +1626,7 @@ func (s *Service) AdminUpdateRedeemCode(ctx context.Context, id int, reward map[
 func (s *Service) AdminExportAnnouncements(ctx context.Context) ([]byte, error) {
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, title, body, published, published_at, created_at
-		 FROM announcements ORDER BY id LIMIT 100000`)
+		 FROM announcements ORDER BY id LIMIT 100001`)
 	if err != nil {
 		return nil, fmt.Errorf("export announcements: %w", err)
 	}
@@ -1620,7 +1640,9 @@ func (s *Service) AdminExportAnnouncements(ctx context.Context) ([]byte, error) 
 		return nil, fmt.Errorf("write csv header: %w", err)
 	}
 
+	n := 0
 	for rows.Next() {
+		n++
 		var id int
 		var title, body string
 		var published bool
@@ -1642,6 +1664,9 @@ func (s *Service) AdminExportAnnouncements(ctx context.Context) ([]byte, error) 
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
+	}
+	if n > adminExportMaxRows {
+		return nil, exportTooLarge(n)
 	}
 	w.Flush()
 	if err := w.Error(); err != nil {
@@ -1741,7 +1766,7 @@ func (s *Service) AdminExportAuditLogs(ctx context.Context, action string, admin
 	          AND ($4::timestamptz IS NULL OR created_at < $4)`
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, admin_id, username, action, target, detail, created_at
-		 FROM admin_audit_logs WHERE `+where+` ORDER BY id DESC LIMIT 100000`,
+		 FROM admin_audit_logs WHERE `+where+` ORDER BY id DESC LIMIT 100001`,
 		action, adminID, dateFrom, dateTo)
 	if err != nil {
 		return nil, fmt.Errorf("export audit logs: %w", err)
@@ -1756,7 +1781,9 @@ func (s *Service) AdminExportAuditLogs(ctx context.Context, action string, admin
 		return nil, fmt.Errorf("write csv header: %w", err)
 	}
 
+	n := 0
 	for rows.Next() {
+		n++
 		var id, adminID *int64
 		var username, action, target string
 		var detail []byte
@@ -1779,6 +1806,9 @@ func (s *Service) AdminExportAuditLogs(ctx context.Context, action string, admin
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
+	}
+	if n > adminExportMaxRows {
+		return nil, exportTooLarge(n)
 	}
 	w.Flush()
 	if err := w.Error(); err != nil {

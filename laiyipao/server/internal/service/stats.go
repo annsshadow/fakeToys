@@ -586,7 +586,7 @@ func (s *Service) AdminExportUsers(ctx context.Context, keyword string, dateFrom
 			GROUP BY br.user_id
 		) v ON v.user_id = u.id
 		WHERE `+where+`
-		ORDER BY u.id DESC LIMIT 100000`, args...)
+		ORDER BY u.id DESC LIMIT 100001`, args...)
 	if err != nil {
 		return nil, fmt.Errorf("export users: %w", err)
 	}
@@ -603,7 +603,9 @@ func (s *Service) AdminExportUsers(ctx context.Context, keyword string, dateFrom
 	if err := w.Write(header); err != nil {
 		return nil, fmt.Errorf("write csv header: %w", err)
 	}
+	n := 0
 	for rows.Next() {
+		n++
 		var v AdminUserView
 		if err := rows.Scan(&v.ID, &v.Nickname, &v.IsGuest, &v.Status, &v.MaxStage,
 			&v.Power, &v.Coin, &v.Gem, &v.CreatedAt, &v.LastLoginAt,
@@ -630,6 +632,9 @@ func (s *Service) AdminExportUsers(ctx context.Context, keyword string, dateFrom
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
+	}
+	if n > adminExportMaxRows {
+		return nil, exportTooLarge(n)
 	}
 	w.Flush()
 	if err := w.Error(); err != nil {
@@ -1164,7 +1169,7 @@ func (s *Service) AdminExportBattles(ctx context.Context, userID int64, levelID 
 		LEFT JOIN users u ON u.id = br.user_id
 		`+vsub+`
 		WHERE `+where+`
-		ORDER BY br.id DESC LIMIT 100000`, args...)
+		ORDER BY br.id DESC LIMIT 100001`, args...)
 	if err != nil {
 		return nil, fmt.Errorf("export battles: %w", err)
 	}
@@ -1198,7 +1203,9 @@ func (s *Service) AdminExportBattles(ctx context.Context, userID int64, levelID 
 		return n
 	}
 
+	n := 0
 	for rows.Next() {
+		n++
 		var v AdminBattleView
 		if err := rows.Scan(&v.ID, &v.UserID, &v.Nickname, &v.LevelID, &v.Result, &v.Stars,
 			&v.Score, &v.Kills, &v.Leaked, &v.WaveReached, &v.DurationMs, &v.Reactions,
@@ -1233,6 +1240,9 @@ func (s *Service) AdminExportBattles(ctx context.Context, userID int64, levelID 
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
+	}
+	if n > adminExportMaxRows {
+		return nil, exportTooLarge(n)
 	}
 	w.Flush()
 	if err := w.Error(); err != nil {

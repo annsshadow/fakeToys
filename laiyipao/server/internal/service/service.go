@@ -48,6 +48,10 @@ var (
 	ErrUnauthorized = errors.New("未认证或令牌已失效")
 	ErrForbidden    = errors.New("无权访问")
 	ErrBadInput     = errors.New("输入非法")
+	// ErrExportTooLarge 表示导出结果超过单次上限。
+	// 与 ErrBadInput 分开：这是「筛选范围太宽」而不是「参数写错」，
+	// 客户端要提示运营缩小范围，HTTP 语义也不同（413 vs 400）。
+	ErrExportTooLarge = errors.New("导出结果超过上限")
 )
 
 // Service 聚合全部依赖。

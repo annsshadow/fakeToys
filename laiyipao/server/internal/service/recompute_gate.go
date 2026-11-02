@@ -759,7 +759,7 @@ func (s *Service) AdminExportRecomputes(ctx context.Context, f RecomputeFilter) 
 		FROM settle_recomputes r
 		LEFT JOIN users u ON u.id = r.user_id
 		WHERE `+where+`
-		ORDER BY r.id DESC LIMIT 100000`, args...)
+		ORDER BY r.id DESC LIMIT 100001`, args...)
 	if err != nil {
 		return nil, fmt.Errorf("export recomputes: %w", err)
 	}
@@ -778,7 +778,9 @@ func (s *Service) AdminExportRecomputes(ctx context.Context, f RecomputeFilter) 
 		return nil, fmt.Errorf("write csv header: %w", err)
 	}
 
+	n := 0
 	for rows.Next() {
+		n++
 		var (
 			id, battleID, userID       int64
 			nickname                   string
@@ -838,6 +840,9 @@ func (s *Service) AdminExportRecomputes(ctx context.Context, f RecomputeFilter) 
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
+	}
+	if n > adminExportMaxRows {
+		return nil, exportTooLarge(n)
 	}
 	w.Flush()
 	if err := w.Error(); err != nil {

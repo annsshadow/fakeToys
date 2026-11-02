@@ -60,6 +60,10 @@ func failErr(c *fiber.Ctx, err error) error {
 		return fail(c, fiber.StatusNotFound, "not_found", err.Error())
 	case errors.Is(err, service.ErrBadInput):
 		return fail(c, fiber.StatusBadRequest, "bad_input", err.Error())
+	case errors.Is(err, service.ErrExportTooLarge):
+		// 413 而不是 400：参数没写错，是筛选范围太宽导致结果超上限。
+		// 文案带上了实际行数与上限，运营能据此缩小范围。
+		return fail(c, fiber.StatusRequestEntityTooLarge, "export_too_large", err.Error())
 	}
 	// 结算拒绝类错误统一 422：请求格式对，但内容不可信
 	if isSettleRejection(err) {

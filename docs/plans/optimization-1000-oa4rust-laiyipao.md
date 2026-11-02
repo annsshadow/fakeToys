@@ -114,13 +114,13 @@ Wechat 8s 超时 + 1MB 响应上限、Fiber 读写超时与 body limit、laiyipa
 
 | 轮号 | 标题 | 状态 | 证据摘要 |
 | --- | --- | --- | --- |
-| R1 | laiyipao 管理导出超限 fail-loud（10 处） | pending | — |
-| R2 | laiyipao 导出边界（恰好 10 万行仍成功） | pending | — |
+| R1 | laiyipao 管理导出超限 fail-loud（10 处）+ 413 映射 + 边界用例 | done | 10 处 `LIMIT 100000`→`100001` 探测；超过上限返回 `ErrExportTooLarge`（可 `errors.Is`）；真库：恰好 10 万行成功且 CSV 行数=100001（表头+数据），100001 行被拒；单用户流水导出同样被拒；HTTP 映射 413 `export_too_large` |
+| R2 | （并入 R1：边界用例即 R1 的验收证据） | done | — |
 | R3 | laiyipao `store.Open` statement_timeout / idle / health | pending | — |
 | R4 | oa4rust axum 优雅停机 | pending | — |
 | R5 | oa4rust 全局请求超时层 | pending | — |
 | R6 | oa4rust deadpool acquire/wait 超时可配置 | pending | — |
 | R7 | oa4rust 结构化访问日志（耗时/请求 ID） | pending | — |
-| R8 | laiyipao 导出错误映射（413 + 可读文案） | pending | — |
+| R8 | （并入 R1：413 映射与文案是同一次改动） | done | — |
 | R9–R50 | 见 §3 B1 槽位 | pending | — |
 | R51–R1000 | 见 §3 各批槽位 | pending | — |

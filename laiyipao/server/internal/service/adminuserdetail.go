@@ -389,7 +389,7 @@ func (s *Service) AdminExportUserFlows(ctx context.Context, userID int64) ([]byt
 		`SELECT id, currency, delta, balance, reason, ref_id, created_at
 		 FROM wallet_flows
 		 WHERE user_id = $1
-		 ORDER BY id DESC LIMIT 100000`, userID)
+		 ORDER BY id DESC LIMIT 100001`, userID)
 	if err != nil {
 		return nil, fmt.Errorf("export user flows: %w", err)
 	}
@@ -403,7 +403,9 @@ func (s *Service) AdminExportUserFlows(ctx context.Context, userID int64) ([]byt
 		return nil, fmt.Errorf("write csv header: %w", err)
 	}
 
+	n := 0
 	for rows.Next() {
+		n++
 		var (
 			id, delta, balance int64
 			currency, reason   string
@@ -432,6 +434,9 @@ func (s *Service) AdminExportUserFlows(ctx context.Context, userID int64) ([]byt
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
+	}
+	if n > adminExportMaxRows {
+		return nil, exportTooLarge(n)
 	}
 	w.Flush()
 	if err := w.Error(); err != nil {
