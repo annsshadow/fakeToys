@@ -74,10 +74,13 @@ func TestEverySentinelErrorIsClassified(t *testing.T) {
 		service.ErrForbidden,
 		service.ErrNotFound,
 		service.ErrBadInput,
+		// R14 新增：超限导出 → 413，failErr 有专门分支（不在前四条的
+		// errors.Is 链里，但同属「有明确 HTTP 语义、绝不落 500」）。
+		service.ErrExportTooLarge,
 	}
 
 	// 具名豁免。理由为空也会红 —— 那等于没表态。
-	// 目前为空：扫到的 20 个哨兵都能归类，不需要的豁免就不写。
+	// 目前为空：扫到的哨兵都能归类，不需要的豁免就不写。
 	exempt := map[string]string{}
 
 	declared := scanSentinelErrors(t)
@@ -105,8 +108,9 @@ func TestEverySentinelErrorIsClassified(t *testing.T) {
 					name+"（在结算名单里，但 isSettleRejection 不认 -> 会返回 500）")
 			}
 		case inList(err, general):
-			// 通用类无需额外断言：failErr 的前四条分支用的是 errors.Is，
-			// 只要在列表里就必然命中（列表就是那四个值本身）。
+			// 通用类无需额外断言：failErr 对这些值都有 `errors.Is` 分支，
+			// 只要在列表里就必然命中（列表就是那些值本身，另有 413 的
+			// ErrExportTooLarge）。
 		default:
 			missing = append(missing, name)
 		}
@@ -182,6 +186,7 @@ var sentinelNames = map[error]string{
 	service.ErrForbidden:            "service.ErrForbidden",
 	service.ErrNotFound:             "service.ErrNotFound",
 	service.ErrBadInput:             "service.ErrBadInput",
+	service.ErrExportTooLarge:       "service.ErrExportTooLarge",
 }
 
 // scanSentinelErrors 扫出 domain 与 service 包里所有哨兵错误的 `包名.变量名`。
