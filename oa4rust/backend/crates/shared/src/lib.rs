@@ -201,16 +201,37 @@ impl ControlPool for Pool {
         >,
     > {
         Box::pin(async move {
-            let object = self.get().await.map_err(|e| match e {
-                // R6：池满/建连超时是「暂时不可用」，映射 503 让客户端可重试；
-                // 其他池错误仍按内部错误处理。
-                deadpool_postgres::PoolError::Timeout(kind) => {
-                    AppError::Unavailable(format!("database pool timeout ({kind:?})"))
-                }
-                _ => AppError::Internal,
-            })?;
+            let object = self.get().await.map_err(classify_acquire_error)?;
             Ok(std::sync::Arc::new(object) as std::sync::Arc<dyn ControlClient>)
         })
+    }
+}
+
+/// 把 `Pool::get()` 的失败分类成**可重试**与**不可重试**两类。
+///
+/// `get()` 阶段失败全部发生在「拿到可用连接之前」：排队超时、建连失败、
+/// 池已关闭。这类失败与 SQL 执行错误（在 `query` 阶段才出现）不同——它们
+/// 不说明服务端有缺陷，只说明数据库此刻不可用，客户端/网关应重试或降级。
+///
+/// 修前只有 `Timeout` 被映射 503，`Backend`（连接被拒、握手失败、连接被
+/// 回收时发现断开）与 `Closed`（池已关闭，典型为重启/迁移窗口）一律落到
+/// 500：调用方看到 500 会当成「服务端 bug」，既不敢重试也触发错误率告警。
+/// 配置类错误（未指定 runtime、post-create hook 失败）仍保持 500，因为
+/// 重试不会自愈。
+fn classify_acquire_error(e: deadpool_postgres::PoolError) -> AppError {
+    use deadpool_postgres::PoolError;
+    match e {
+        PoolError::Timeout(kind) => {
+            AppError::Unavailable(format!("database pool timeout ({kind:?})"))
+        }
+        PoolError::Backend(err) => {
+            AppError::Unavailable(format!("database connection failed: {err}"))
+        }
+        PoolError::Closed => AppError::Unavailable("database pool closed".to_string()),
+        other => {
+            tracing::error!(error = %other, "pool acquire failed with non-transient error");
+            AppError::Internal
+        }
     }
 }
 
@@ -278,5 +299,60 @@ mod dyn_control_pool_tests {
 
         let n = client.ctrl_execute("UPDATE t", &[]).await.expect("execute");
         assert_eq!(n, 1);
+    }
+}
+
+#[cfg(test)]
+mod pool_acquire_error_tests {
+    use super::*;
+    use axum::response::IntoResponse;
+
+    /// 池已关闭（重启/迁移窗口）时，客户端必须拿到可重试的 503 而不是 500。
+    #[tokio::test]
+    async fn closed_pool_acquire_maps_to_503() {
+        let pool = crate::testing::test_pool();
+        pool.close();
+        let err = match pool.acquire().await {
+            Ok(_) => panic!("关闭后的池不应再发出连接"),
+            Err(e) => e,
+        };
+        assert!(
+            matches!(err, AppError::Unavailable(_)),
+            "Closed 必须归类为暂时不可用，实际: {err:?}"
+        );
+        assert_eq!(
+            err.into_response().status(),
+            axum::http::StatusCode::SERVICE_UNAVAILABLE
+        );
+    }
+
+    /// 数据库连不上（连接被拒）时同理：这是「库挂了」，不是「服务端有 bug」。
+    /// 用指向 127.0.0.1:1 的失败池（连接被拒即时返回，不依赖网络环境）。
+    #[tokio::test]
+    async fn unreachable_backend_acquire_maps_to_503() {
+        let pool = crate::testing::failing_pool();
+        let err = match pool.acquire().await {
+            Ok(_) => panic!("不可达后端必须报错"),
+            Err(e) => e,
+        };
+        assert!(
+            matches!(err, AppError::Unavailable(_)),
+            "Backend 必须归类为暂时不可用，实际: {err:?}"
+        );
+        assert_eq!(
+            err.into_response().status(),
+            axum::http::StatusCode::SERVICE_UNAVAILABLE
+        );
+    }
+
+    /// 回归：健康池必须继续正常发出连接（分类改动不能把成功路径弄坏）。
+    #[tokio::test]
+    async fn healthy_pool_acquire_still_succeeds() {
+        if !crate::testing::is_db_available().await {
+            eprintln!("SKIP: no database available");
+            return;
+        }
+        let pool = crate::testing::test_pool();
+        pool.acquire().await.expect("健康池应能拿到连接");
     }
 }
