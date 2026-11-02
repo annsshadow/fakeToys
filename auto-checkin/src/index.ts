@@ -8,6 +8,7 @@ import { runAll, runSite } from "./runner.js";
 import { shouldFailRun } from "./run-status.js";
 import { createLogger } from "./logger.js";
 import { acquireDaemonLock, wasInterrupted } from "./lock.js";
+import { cleanupOldFiles } from "./cleanup.js";
 
 const log = createLogger("main");
 
@@ -47,6 +48,8 @@ async function main(): Promise<void> {
   }
 
   log.info("常驻模式启动");
+  // 第 59 轮：启动时清理保留窗口外的旧日志与超量截图（长期运行不无限增长）。
+  cleanupOldFiles();
   startServer(config);
   startScheduler(config);
 }
