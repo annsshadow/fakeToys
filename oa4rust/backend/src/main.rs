@@ -113,10 +113,11 @@ async fn main() -> anyhow::Result<()> {
     };
     let app = if http_flag {
         let bridge = Arc::new(ToolBridge::new(pool, session_manager).await);
-        // /mcp 在 create_app 之后挂载，不继承那里的层；这里单独套同一个上限，
-        // 保证可选端点与主路由口径一致。
+        // /mcp 在 create_app 之后挂载，不继承那里的层；这里单独套同一组请求防护，
+        // 保证可选端点与主路由口径一致（R24 body limit + R31 超时/panic）。
         let body_limit = shared::middleware::request_body_limit_from_env()?;
-        app.merge(mcp_app(bridge, security_state, body_limit))
+        let timeout = shared::middleware::request_timeout_from_env()?;
+        app.merge(mcp_app(bridge, security_state, body_limit, timeout))
     } else {
         app
     };
@@ -198,6 +199,22 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
+/// 请求层防护：与 `create_app` 同口径的超时 + panic 收敛 + body 上限。
+///
+/// `/mcp` 是在 `create_app` 之后 merge 的独立子应用，主路由的层不会包住它；
+/// 修前只有 body limit 与鉴权/限流/日志，漏了 R5 超时与 R11 panic 收敛 ——
+/// 工具调用卡在慢库/池等待时会无限挂，panic 会直接断连。
+fn apply_mcp_request_guards(
+    router: Router,
+    timeout: Option<std::time::Duration>,
+    body_limit: usize,
+) -> Router {
+    // 与 create_app 相同顺序：panic 在内层（先收敛），超时在外一层，body 上限在最外。
+    let router = shared::panic_guard::apply_panic_guard(router);
+    let router = shared::middleware::apply_request_timeout(router, timeout);
+    shared::middleware::apply_body_limit(router, body_limit)
+}
+
 /// Build the MCP HTTP sub-application mounted at /mcp.
 /// Forwards the caller's Authorization header to the internal ToolBridge so
 /// existing session-based auth is reused without duplicating business logic.
@@ -205,6 +222,7 @@ fn mcp_app(
     bridge: Arc<ToolBridge>,
     security_state: shared::middleware::SecurityState,
     body_limit: usize,
+    timeout: Option<std::time::Duration>,
 ) -> Router {
     use axum::middleware;
     use axum::routing::post;
@@ -267,7 +285,7 @@ fn mcp_app(
         }
     }
 
-    shared::middleware::apply_body_limit(
+    apply_mcp_request_guards(
         Router::new()
             .route("/mcp", post(mcp_handler).with_state(Arc::clone(&bridge)))
             .layer(middleware::from_fn_with_state(
@@ -288,6 +306,7 @@ fn mcp_app(
             ))
             .layer(middleware::from_fn(security_headers_middleware))
             .layer(middleware::from_fn(trace_middleware)),
+        timeout,
         body_limit,
     )
 }
@@ -393,5 +412,109 @@ mod spa_cache_tests {
         assert_eq!(third, b"<html>v2</html>", "mtime 变化后必须重读磁盘");
 
         let _ = std::fs::remove_dir_all(&dir);
+    }
+}
+
+/// R31：/mcp 子应用必须和主路由一样有超时 / panic 收敛 / body 上限。
+/// 这里用与 `mcp_app` 相同的 `apply_mcp_request_guards` 组装一组测试路由，
+/// 直接验证这三层真的生效。
+#[cfg(test)]
+mod mcp_guard_tests {
+    use super::apply_mcp_request_guards;
+    use axum::body::Body;
+    use axum::http::{Request, StatusCode};
+    use axum::routing::{get, post};
+    use axum::Router;
+    use std::time::{Duration, Instant};
+    use tower::ServiceExt;
+
+    async fn mcp_boom() -> &'static str {
+        panic!("mcp panic")
+    }
+
+    fn guarded_router(timeout: Option<Duration>, body_limit: usize) -> Router {
+        apply_mcp_request_guards(
+            Router::new()
+                .route(
+                    "/mcp/slow",
+                    get(|| async {
+                        tokio::time::sleep(Duration::from_millis(500)).await;
+                        "slow"
+                    }),
+                )
+                .route("/mcp/boom", get(mcp_boom))
+                .route("/mcp/ok", get(|| async { "ok" }))
+                .route("/mcp/echo", post(|body: String| async move { body })),
+            timeout,
+            body_limit,
+        )
+    }
+
+    #[tokio::test]
+    async fn mcp_slow_handler_is_cut_off_with_408() {
+        let app = guarded_router(Some(Duration::from_millis(50)), 2048);
+        let started = Instant::now();
+        let resp = app
+            .oneshot(
+                Request::builder()
+                    .uri("/mcp/slow")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::REQUEST_TIMEOUT);
+        assert!(
+            started.elapsed() < Duration::from_millis(300),
+            "超时应在上界附近返回，实际 {:?}",
+            started.elapsed()
+        );
+    }
+
+    #[tokio::test]
+    async fn mcp_panic_is_500_envelope_and_service_survives() {
+        let app = guarded_router(None, 2048);
+        let resp = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/mcp/boom")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        let raw = axum::body::to_bytes(resp.into_body(), 4096).await.unwrap();
+        let body: serde_json::Value = serde_json::from_slice(&raw).unwrap();
+        assert_eq!(body["type"], "error");
+        assert_eq!(body["message"], "internal server error");
+
+        // panic 之后服务仍然可用（不是断连/带崩进程）。
+        let resp = app
+            .oneshot(
+                Request::builder()
+                    .uri("/mcp/ok")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn mcp_oversized_body_is_413() {
+        let app = guarded_router(None, 16);
+        let resp = app
+            .oneshot(
+                Request::post("/mcp/echo")
+                    .header("content-length", "1024")
+                    .body(Body::from("x".repeat(1024)))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::PAYLOAD_TOO_LARGE);
     }
 }
