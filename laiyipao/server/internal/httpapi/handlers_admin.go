@@ -285,11 +285,8 @@ func (s *Server) adminUsers(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	// 注册日期范围（2026-10-31 新一轮第 15 轮）：可选。
-	dateFrom, err := queryTime(c, "date_from")
-	if err != nil {
-		return failErr(c, err)
-	}
-	dateTo, err := queryTime(c, "date_to")
+	// 2026-11-02 第 10 轮：成对解析并拒绝反转；date_to 日期格式含当天整天。
+	dateFrom, dateTo, err := queryTimeRange(c, "date_from", "date_to")
 	if err != nil {
 		return failErr(c, err)
 	}
@@ -304,11 +301,7 @@ func (s *Server) adminUsers(c *fiber.Ctx) error {
 		isGuest = &v
 	}
 	// 最后登录时间范围（2026-11-01 新一轮第 46 轮）：可选。
-	lastLoginFrom, err := queryTime(c, "last_login_from")
-	if err != nil {
-		return failErr(c, err)
-	}
-	lastLoginTo, err := queryTime(c, "last_login_to")
+	lastLoginFrom, lastLoginTo, err := queryTimeRange(c, "last_login_from", "last_login_to")
 	if err != nil {
 		return failErr(c, err)
 	}
@@ -335,20 +328,12 @@ func (s *Server) adminUsers(c *fiber.Ctx) error {
 // 读操作，readonly 角色可访问（导出不改变任何数据）。
 // 过滤条件与 `GET /admin/users` 一致（keyword 模糊搜昵称 + 注册日期范围）。
 func (s *Server) adminExportUsers(c *fiber.Ctx) error {
-	dateFrom, err := queryTime(c, "date_from")
-	if err != nil {
-		return failErr(c, err)
-	}
-	dateTo, err := queryTime(c, "date_to")
+	dateFrom, dateTo, err := queryTimeRange(c, "date_from", "date_to")
 	if err != nil {
 		return failErr(c, err)
 	}
 	// 最后登录时间范围（2026-11-01 新一轮第 46 轮）：与列表同口径。
-	lastLoginFrom, err := queryTime(c, "last_login_from")
-	if err != nil {
-		return failErr(c, err)
-	}
-	lastLoginTo, err := queryTime(c, "last_login_to")
+	lastLoginFrom, lastLoginTo, err := queryTimeRange(c, "last_login_from", "last_login_to")
 	if err != nil {
 		return failErr(c, err)
 	}
@@ -550,11 +535,7 @@ func (s *Server) adminBattles(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	// 日期范围（2026-10-31 新一轮第 14 轮）：可选，查「今天/某时间段」。
-	dateFrom, err := queryTime(c, "date_from")
-	if err != nil {
-		return failErr(c, err)
-	}
-	dateTo, err := queryTime(c, "date_to")
+	dateFrom, dateTo, err := queryTimeRange(c, "date_from", "date_to")
 	if err != nil {
 		return failErr(c, err)
 	}
@@ -581,11 +562,7 @@ func (s *Server) adminExportBattles(c *fiber.Ctx) error {
 		return failErr(c, err)
 	}
 	onlyMismatched := c.Query("only_mismatched") == "1" || c.Query("only_mismatched") == "true"
-	dateFrom, err := queryTime(c, "date_from")
-	if err != nil {
-		return failErr(c, err)
-	}
-	dateTo, err := queryTime(c, "date_to")
+	dateFrom, dateTo, err := queryTimeRange(c, "date_from", "date_to")
 	if err != nil {
 		return failErr(c, err)
 	}
@@ -868,11 +845,7 @@ func (s *Server) adminDefenseChallenges(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	dateFrom, err := queryTime(c, "date_from")
-	if err != nil {
-		return failErr(c, err)
-	}
-	dateTo, err := queryTime(c, "date_to")
+	dateFrom, dateTo, err := queryTimeRange(c, "date_from", "date_to")
 	if err != nil {
 		return failErr(c, err)
 	}
@@ -894,11 +867,7 @@ func (s *Server) adminExportDefenseChallenges(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	dateFrom, err := queryTime(c, "date_from")
-	if err != nil {
-		return failErr(c, err)
-	}
-	dateTo, err := queryTime(c, "date_to")
+	dateFrom, dateTo, err := queryTimeRange(c, "date_from", "date_to")
 	if err != nil {
 		return failErr(c, err)
 	}
@@ -946,11 +915,7 @@ func (s *Server) adminOrders(c *fiber.Ctx) error {
 	}
 	// 状态 + 日期范围筛选（2026-10-31 新一轮第 16 轮）。
 	status := c.Query("status", "")
-	dateFrom, err := queryTime(c, "date_from")
-	if err != nil {
-		return failErr(c, err)
-	}
-	dateTo, err := queryTime(c, "date_to")
+	dateFrom, dateTo, err := queryTimeRange(c, "date_from", "date_to")
 	if err != nil {
 		return failErr(c, err)
 	}
@@ -969,11 +934,7 @@ func (s *Server) adminOrders(c *fiber.Ctx) error {
 // （导出是只读操作，与其它 CSV 导出一致）。
 func (s *Server) adminExportOrders(c *fiber.Ctx) error {
 	status := c.Query("status", "")
-	dateFrom, err := queryTime(c, "date_from")
-	if err != nil {
-		return failErr(c, err)
-	}
-	dateTo, err := queryTime(c, "date_to")
+	dateFrom, dateTo, err := queryTimeRange(c, "date_from", "date_to")
 	if err != nil {
 		return failErr(c, err)
 	}
@@ -1023,11 +984,7 @@ func (s *Server) adminAnnouncements(c *fiber.Ctx) error {
 		v := false
 		published = &v
 	}
-	dateFrom, err := queryTime(c, "date_from")
-	if err != nil {
-		return failErr(c, err)
-	}
-	dateTo, err := queryTime(c, "date_to")
+	dateFrom, dateTo, err := queryTimeRange(c, "date_from", "date_to")
 	if err != nil {
 		return failErr(c, err)
 	}
@@ -1336,11 +1293,7 @@ func (s *Server) adminAuditLogs(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	dateFrom, err := queryTime(c, "date_from")
-	if err != nil {
-		return failErr(c, err)
-	}
-	dateTo, err := queryTime(c, "date_to")
+	dateFrom, dateTo, err := queryTimeRange(c, "date_from", "date_to")
 	if err != nil {
 		return failErr(c, err)
 	}
@@ -1361,11 +1314,7 @@ func (s *Server) adminExportAuditLogs(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	dateFrom, err := queryTime(c, "date_from")
-	if err != nil {
-		return failErr(c, err)
-	}
-	dateTo, err := queryTime(c, "date_to")
+	dateFrom, dateTo, err := queryTimeRange(c, "date_from", "date_to")
 	if err != nil {
 		return failErr(c, err)
 	}

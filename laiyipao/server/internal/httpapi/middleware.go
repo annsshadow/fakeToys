@@ -387,14 +387,80 @@ func queryTime(c *fiber.Ctx, name string) (*time.Time, error) {
 	if raw == "" {
 		return nil, nil
 	}
+	t, _, err := parseQueryTime(name, raw)
+	if err != nil {
+		return nil, err
+	}
+	return &t, nil
+}
+
+// parseQueryTime 解析单个时间值。dateOnly 表示输入形如 `YYYY-MM-DD`
+// （此时 t 是当天 00:00 UTC），调用方据此决定左端/右端的语义。
+func parseQueryTime(name, raw string) (t time.Time, dateOnly bool, err error) {
 	if t, err := time.Parse("2006-01-02", raw); err == nil {
-		return &t, nil
+		return t, true, nil
 	}
 	if t, err := time.Parse(time.RFC3339, raw); err == nil {
-		return &t, nil
+		return t, false, nil
 	}
-	return nil, fmt.Errorf("%w: 查询参数 %s=%q 不是合法日期（期望 YYYY-MM-DD 或 RFC3339）",
+	return time.Time{}, false, fmt.Errorf("%w: 查询参数 %s=%q 不是合法日期（期望 YYYY-MM-DD 或 RFC3339）",
 		service.ErrBadInput, name, raw)
+}
+
+// queryTimeEnd 解析范围右端。与 queryTime 的唯一区别：
+// `YYYY-MM-DD` 解释为**次日 00:00（不含）**。
+//
+// # 为什么右端必须 +1 天
+//
+// 服务层的日期条件一律是半开区间 `created_at < $to`（见 adminapi.go /
+// stats.go 的各条 SQL）。若 `date_to=2026-11-02` 按当天 00:00 传入，
+// 11-02 全天的数据都会被 `< 00:00` 排除 —— 运营在 UI 上明明选了
+// 「到 11-02」，看到的是「11-02 没数据」。这不是少一两条，是**整天缺失**，
+// 而且状态码是 200、响应形状完全正常，没有人会去查。
+func queryTimeEnd(c *fiber.Ctx, name string) (*time.Time, error) {
+	if !c.Context().QueryArgs().Has(name) {
+		return nil, nil
+	}
+	raw := strings.TrimSpace(c.Query(name))
+	if raw == "" {
+		return nil, nil
+	}
+	t, dateOnly, err := parseQueryTime(name, raw)
+	if err != nil {
+		return nil, err
+	}
+	if dateOnly {
+		t = t.Add(24 * time.Hour)
+	}
+	return &t, nil
+}
+
+// queryTimeRange 成对解析时间范围（左闭右开），并拒绝反转/空范围。
+//
+// # 为什么反转要报错而不是返回空集
+//
+// `date_from=2026-11-05&date_to=2026-11-01` 在 SQL 里是
+// `>= 11-05 AND < 11-01`，必然为空，且状态码 200。
+// 运营看到「无数据」会得出「这段时间没有异常/没有订单」的结论，
+// 而真实情况是两端选反了。与 keyword 拼错、user_id 打错同族：
+// **输入无效却得到合法的空结果** 是本项目最反复修的一类缺陷。
+//
+// 右端用 queryTimeEnd：日期格式的 `date_to` 包含当天整天。
+func queryTimeRange(c *fiber.Ctx, fromName, toName string) (from, to *time.Time, err error) {
+	from, err = queryTime(c, fromName)
+	if err != nil {
+		return nil, nil, err
+	}
+	to, err = queryTimeEnd(c, toName)
+	if err != nil {
+		return nil, nil, err
+	}
+	if from != nil && to != nil && !from.Before(*to) {
+		return nil, nil, fmt.Errorf("%w: 时间范围为空：%s=%q 不早于 %s=%q 的右端（结果必然为空）",
+			service.ErrBadInput, fromName, strings.TrimSpace(c.Query(fromName)),
+			toName, strings.TrimSpace(c.Query(toName)))
+	}
+	return from, to, nil
 }
 
 // userIDFrom 读取中间件写入的 user_id。
