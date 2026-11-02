@@ -42,11 +42,21 @@ function nextDay(day: string): string {
   return d.toISOString().slice(0, 10)
 }
 
+/**
+ * 服务端可作价全集 = `walletColumns`（coin/gem/energy/keys）+ `walletTokens`
+ * （道具币）。第 55 轮前只抄了前 4 个，`parsePriceMap` 因此把
+ * `{"mastery_reset":5}` 这类服务端合法定价判成非法格式 —— 运营无法配置，
+ * 而服务端 Buy 链路本身是支持的。守卫：`scripts/check-warnings.mjs` 的
+ * `admin-config-drift` 会和服务端集合双向比对。
+ */
 const CURRENCY_LABEL: Record<string, string> = {
   coin: '金币',
   gem: '钻石',
   energy: '体力',
   keys: '钥匙',
+  revive_token: '复活币',
+  mastery_reset: '专精重置',
+  gem_wash_token: '宝石洗练',
 }
 const REASON_LABEL: Record<string, string> = {
   battle_loot: '战斗掉落',

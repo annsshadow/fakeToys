@@ -69,6 +69,73 @@ function checkLintsCoverage() {
   return { ok: missing.length === 0, hits: missing.map((m) => `${m.slice(ROOT.length + 1)} 缺少 [lints] workspace = true`) }
 }
 
+/**
+ * 静态守卫：admin 前端里的「服务端枚举副本」不能与服务端各自漂移。
+ *
+ * 已发生的两处分叉（第 55 轮）：
+ *  - 商城价格币种：服务端可作价集合 = `walletColumns` + `walletTokens`（7 个），
+ *    而 `EconomyView.vue` 的 `CURRENCY_LABEL` 只抄了货币列那 4 个；
+ *    `parsePriceMap` 因此拒绝 `{"mastery_reset":5}` 这类服务端合法定价。
+ *  - 审计动作中文标签：服务端新增 action（update_shop_item / verify_replay …）
+ *    后 admin 的 `ACTION_LABEL` 没跟上，审计页只能显示英文机器值。
+ *
+ * 判据：货币集合**双向**相等（多一个少一个都失败）；审计 action 只要求
+ * 「服务端出现的每个 action 都有标签」——标签侧保留历史别名是允许的，
+ * 而漏掉新 action 正是要防的那类静默缺口。
+ */
+function checkAdminConfigDrift() {
+  const hits = []
+  const read = (rel) => readFileSync(join(ROOT, rel), 'utf8')
+
+  const serviceGo = read('laiyipao/server/internal/service/service.go')
+  const mapKeys = (src, re) => {
+    const m = src.match(re)
+    return m ? [...m[1].matchAll(/"([a-z_]+)"\s*:/g)].map((x) => x[1]) : []
+  }
+  const serverCurrencies = new Set([
+    ...mapKeys(serviceGo, /var walletColumns = map\[string\]string\{([\s\S]*?)\}/),
+    ...mapKeys(serviceGo, /var walletTokens = map\[string\]bool\{([\s\S]*?)\}/),
+  ])
+
+  const economyVue = read('laiyipao/admin/src/views/EconomyView.vue')
+  const cm = economyVue.match(/const CURRENCY_LABEL: Record<string, string> = \{([\s\S]*?)\n\}/)
+  const adminCurrencies = new Set(cm ? [...cm[1].matchAll(/^\s*([a-z_]+):/gm)].map((x) => x[1]) : [])
+
+  for (const k of serverCurrencies) if (!adminCurrencies.has(k)) hits.push(`CURRENCY_LABEL 缺服务端可作价币种 ${k}`)
+  for (const k of adminCurrencies) if (!serverCurrencies.has(k)) hits.push(`CURRENCY_LABEL 多了服务端不认的币种 ${k}`)
+
+  // 审计 action 字面量散在三种写法里：后台事务内 AuditTx、handler 里的 Svc.Audit、
+  // 玩家侧裸 INSERT，以及 stats.go 按分支赋值的 action 变量。
+  const serverActions = new Set()
+  const serviceDir = join(ROOT, 'laiyipao/server/internal/service')
+  for (const f of readdirSync(serviceDir)) {
+    if (!f.endsWith('.go') || f.endsWith('_test.go')) continue
+    const src = readFileSync(join(serviceDir, f), 'utf8')
+    for (const re of [
+      /AuditTx\(\s*ctx,\s*tx,\s*audit\[0\],\s*"([a-z_]+)"/g,
+      /action\s*(?::=|=)\s*"([a-z_]+)"/g,
+      /"user#%d",\s*"([a-z_]+)"/g,
+    ]) {
+      for (const x of src.matchAll(re)) serverActions.add(x[1])
+    }
+  }
+  const handlersAdmin = read('laiyipao/server/internal/httpapi/handlers_admin.go')
+  for (const x of handlersAdmin.matchAll(/\.Audit\(\s*(?:ctx|c\.Context\(\)),\s*adminIDFrom\(c\),\s*"([a-z_]+)"/g)) serverActions.add(x[1])
+
+  const contentVue = read('laiyipao/admin/src/views/ContentView.vue')
+  const am = contentVue.match(/const ACTION_LABEL: Record<string, string> = \{([\s\S]*?)\n\}/)
+  const adminActions = new Set(am ? [...am[1].matchAll(/^\s*([a-z_]+):/gm)].map((x) => x[1]) : [])
+  for (const a of [...serverActions].sort()) {
+    if (!adminActions.has(a)) hits.push(`ACTION_LABEL 缺服务端审计 action ${a}`)
+  }
+
+  // 解析失效（源文件结构变了）不能被当成「两边都空 = 一致」放行。
+  if (serverCurrencies.size === 0 || adminCurrencies.size === 0 || serverActions.size === 0 || adminActions.size === 0) {
+    hits.push('守卫自身没解析到集合（模式匹配已失效），先修守卫再放行')
+  }
+  return { ok: hits.length === 0, hits }
+}
+
 // crate 数量动态数：曾经 label 里硬编码「97 crates」，crate 增删后静默漂移
 // （实测 96 个目录 + 根包）。label 只该描述现状，不该是一个要人维护的常数。
 const RUST_CRATE_COUNT =
@@ -89,6 +156,11 @@ const CHECKS = [
     id: 'rust-lints',
     label: 'oa4rust/backend 全部成员继承 deny(warnings)',
     custom: checkLintsCoverage,
+  },
+  {
+    id: 'admin-config-drift',
+    label: 'laiyipao admin 枚举映射与服务端白名单一致',
+    custom: checkAdminConfigDrift,
   },
   {
     id: 'rust',

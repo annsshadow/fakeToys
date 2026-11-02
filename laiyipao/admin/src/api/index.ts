@@ -146,25 +146,16 @@ export type AdminLevelPatch = Partial<
   >
 >
 
-/** 后台可写字段白名单（服务端 `PUT /admin/skills/:id` 的 11 个键）。 */
-export type AdminSkillPatch = Partial<
-  Pick<
-    import('./types.gen').AdminSkillView,
-    | 'name'
-    | 'descr'
-    | 'base_damage'
-    | 'heat_cost'
-    | 'cooldown_ms'
-    | 'pierce'
-    | 'aoe_radius'
-    | 'apply_stacks'
-    | 'projectile_speed'
-    | 'chain'
-    | 'element'
-    | 'family'
-    | 'kind'
-  >
->
+/**
+ * 后台可写字段白名单（服务端 `PUT /admin/skills/:id` 只接受 `name` / `descr`）。
+ *
+ * 战斗数值/语义字段（base_damage / heat_cost / … / kind）已从服务端白名单
+ * 移除：结算按库值重算技能段，而客户端按 /config 静态种子算同一段，
+ * 运行时改库会让所有带 replay_skills 的结算 422。服务端收到这些键会整单
+ * 400（不是静默丢弃），所以类型侧也不该继续放行——否则编译期放过一个
+ * 必定失败的请求。
+ */
+export type AdminSkillPatch = Partial<Pick<import('./types.gen').AdminSkillView, 'name' | 'descr'>>
 
 /** 后台可写字段白名单（服务端 `PUT /admin/shop/:id` 的 6 个键）。 */
 export type AdminShopPatch = Partial<
