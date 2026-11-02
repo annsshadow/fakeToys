@@ -1234,17 +1234,32 @@ func (s *Service) AdminListAnnouncements(ctx context.Context, limit, offset int,
 }
 
 // AdminCreateAnnouncement 创建公告。
-func (s *Service) AdminCreateAnnouncement(ctx context.Context, title, body string, published bool) (AdminAnnouncementView, error) {
+func (s *Service) AdminCreateAnnouncement(ctx context.Context, title, body string, published bool, audit ...AdminAuditCtx) (AdminAnnouncementView, error) {
+	if title == "" || body == "" {
+		return AdminAnnouncementView{}, fmt.Errorf("%w: 标题与正文不能为空", ErrBadInput)
+	}
 	var id int
 	var at *time.Time
 	if published {
 		now := time.Now()
 		at = &now
 	}
-	if err := s.pool.QueryRow(ctx,
-		`INSERT INTO announcements (title, body, published, published_at) VALUES ($1,$2,$3,$4) RETURNING id`,
-		title, body, published, at).Scan(&id); err != nil {
-		return AdminAnnouncementView{}, fmt.Errorf("create announcement: %w", err)
+	// R39：公告发布与「谁发布的」审计同一事务；审计写不进去就不发布。
+	err := s.DB.Tx(ctx, func(tx txType) error {
+		if err := tx.QueryRow(ctx,
+			`INSERT INTO announcements (title, body, published, published_at) VALUES ($1,$2,$3,$4) RETURNING id`,
+			title, body, published, at).Scan(&id); err != nil {
+			return fmt.Errorf("create announcement: %w", err)
+		}
+		if len(audit) > 0 {
+			if err := s.AuditTx(ctx, tx, audit[0], "create_announcement", title, nil); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return AdminAnnouncementView{}, err
 	}
 	// 玩家端缓存立即失效（2026-11-01 新一轮第 59 轮）：
 	// 运营发布/更新/撤回公告后，玩家端不再等 TTL 才看到新内容。
@@ -1261,25 +1276,39 @@ func (s *Service) AdminCreateAnnouncement(ctx context.Context, title, body strin
 //   - 草稿首次发布时设置 `published_at`（若为空）；
 //   - 撤回（published true→false）**保留** `published_at` —— 重新发布时
 //     已存在的时间戳不变（发布时间是历史事实，不应被反复改写）。
-func (s *Service) AdminUpdateAnnouncement(ctx context.Context, id int, title, body string, published bool) (AdminAnnouncementView, error) {
+func (s *Service) AdminUpdateAnnouncement(ctx context.Context, id int, title, body string, published bool, audit ...AdminAuditCtx) (AdminAnnouncementView, error) {
 	if title == "" || body == "" {
 		return AdminAnnouncementView{}, fmt.Errorf("%w: 标题与正文不能为空", ErrBadInput)
 	}
-	// 首次发布：published_at 为空才补 now()；已发布的历史时间戳不动。
-	row := s.pool.QueryRow(ctx,
-		`UPDATE announcements
-		 SET title = $2, body = $3, published = $4,
-		     published_at = CASE WHEN $4 AND published_at IS NULL THEN now() ELSE published_at END
-		 WHERE id = $1
-		 RETURNING id, title, body, published, published_at, created_at`,
-		id, title, body, published)
 	var v AdminAnnouncementView
 	var publishedAt, createdAt *time.Time
-	if err := row.Scan(&v.ID, &v.Title, &v.Body, &v.Published, &publishedAt, &createdAt); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return AdminAnnouncementView{}, fmt.Errorf("%w: 公告 %d 不存在", ErrNotFound, id)
+	// R39：更新与审计同一事务。改错内容/撤回是运营高频动作，
+	// 「内容变了但没人知道是谁改的」同样是无法追溯的事故。
+	err := s.DB.Tx(ctx, func(tx txType) error {
+		// 首次发布：published_at 为空才补 now()；已发布的历史时间戳不动。
+		row := tx.QueryRow(ctx,
+			`UPDATE announcements
+			 SET title = $2, body = $3, published = $4,
+			     published_at = CASE WHEN $4 AND published_at IS NULL THEN now() ELSE published_at END
+			 WHERE id = $1
+			 RETURNING id, title, body, published, published_at, created_at`,
+			id, title, body, published)
+		if err := row.Scan(&v.ID, &v.Title, &v.Body, &v.Published, &publishedAt, &createdAt); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return fmt.Errorf("%w: 公告 %d 不存在", ErrNotFound, id)
+			}
+			return fmt.Errorf("update announcement: %w", err)
 		}
-		return AdminAnnouncementView{}, fmt.Errorf("update announcement: %w", err)
+		if len(audit) > 0 {
+			if err := s.AuditTx(ctx, tx, audit[0], "update_announcement", strconv.Itoa(id),
+				map[string]any{"title": title, "body": body, "published": published}); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return AdminAnnouncementView{}, err
 	}
 	v.PublishedAt = publishedAt
 	v.CreatedAt = createdAt
@@ -1293,13 +1322,26 @@ func (s *Service) AdminUpdateAnnouncement(ctx context.Context, id int, title, bo
 // 玩家端公告列表有缓存（见 announcementsCache）。删除后**立即失效**
 // 缓存（2026-11-01 新一轮第 59 轮）—— 撤回违规公告时玩家端秒级消失，
 // 不再等 TTL。
-func (s *Service) AdminDeleteAnnouncement(ctx context.Context, id int) error {
-	ct, err := s.pool.Exec(ctx, `DELETE FROM announcements WHERE id = $1`, id)
+func (s *Service) AdminDeleteAnnouncement(ctx context.Context, id int, audit ...AdminAuditCtx) error {
+	// R39：删除与审计同一事务。撤回违规公告是止损动作，
+	// 但「谁删的、删了哪一条」不能因为没有审计而消失。
+	err := s.DB.Tx(ctx, func(tx txType) error {
+		ct, err := tx.Exec(ctx, `DELETE FROM announcements WHERE id = $1`, id)
+		if err != nil {
+			return fmt.Errorf("delete announcement: %w", err)
+		}
+		if ct.RowsAffected() == 0 {
+			return fmt.Errorf("%w: 公告 %d 不存在", ErrNotFound, id)
+		}
+		if len(audit) > 0 {
+			if err := s.AuditTx(ctx, tx, audit[0], "delete_announcement", strconv.Itoa(id), nil); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 	if err != nil {
-		return fmt.Errorf("delete announcement: %w", err)
-	}
-	if ct.RowsAffected() == 0 {
-		return fmt.Errorf("%w: 公告 %d 不存在", ErrNotFound, id)
+		return err
 	}
 	s.announcementsCache.flush()
 	return nil

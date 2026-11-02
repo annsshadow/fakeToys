@@ -1037,11 +1037,11 @@ func (s *Server) adminCreateAnnouncement(c *fiber.Ctx) error {
 	if body.Title == "" || body.Body == "" {
 		return fail(c, fiber.StatusBadRequest, "bad_input", "标题与正文不能为空")
 	}
-	item, err := s.Svc.AdminCreateAnnouncement(c.Context(), body.Title, body.Body, body.Published)
+	item, err := s.Svc.AdminCreateAnnouncement(c.Context(), body.Title, body.Body, body.Published,
+		service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()})
 	if err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "create_announcement", body.Title, c.IP(), nil)
 	return c.JSON(service.AdminAnnouncementResp{Item: item})
 }
 
@@ -1059,12 +1059,11 @@ func (s *Server) adminUpdateAnnouncement(c *fiber.Ctx) error {
 	if err := c.BodyParser(&body); err != nil {
 		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
 	}
-	item, err := s.Svc.AdminUpdateAnnouncement(c.Context(), int(id), body.Title, body.Body, body.Published)
+	item, err := s.Svc.AdminUpdateAnnouncement(c.Context(), int(id), body.Title, body.Body, body.Published,
+		service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()})
 	if err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "update_announcement",
-		strconv.FormatInt(id, 10), c.IP(), body)
 	return c.JSON(service.AdminAnnouncementResp{Item: item})
 }
 
@@ -1074,11 +1073,10 @@ func (s *Server) adminDeleteAnnouncement(c *fiber.Ctx) error {
 	if err != nil || id < 1 {
 		return fail(c, fiber.StatusBadRequest, "bad_input", "公告 ID 非法")
 	}
-	if err := s.Svc.AdminDeleteAnnouncement(c.Context(), int(id)); err != nil {
+	if err := s.Svc.AdminDeleteAnnouncement(c.Context(), int(id),
+		service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()}); err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "delete_announcement",
-		strconv.FormatInt(id, 10), c.IP(), nil)
 	return c.JSON(fiber.Map{"ok": true})
 }
 
