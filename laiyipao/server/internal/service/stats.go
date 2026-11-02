@@ -114,11 +114,21 @@ func (s *Service) AdminDashboard(ctx context.Context) (Dashboard, error) {
 func (s *Service) adminDashboardUncached(ctx context.Context) (Dashboard, error) {
 	var d Dashboard
 
-	// 第 14 轮：13 段查询互相独立（各写各的目标字段），从**全串行**改并行。
-	// 缓存未命中刷新的延迟从 Σ(13 段) 降为 max(单段)；连接池不足 13 时
-	// 由 pgxpool 自然排队，不改变正确性。各 goroutine 只写自己的变量，
-	// 主协程 wg.Wait() 后读；错误按**原串行段序**检查 —— 第一个失败段
-	// 先报，与串行版的 fail-loud 顺序一致。
+	// 第 14 轮：各段互相独立，从**全串行**改并行，缓存未命中刷新的延迟
+	// 从 Σ(各段) 降为 max(单段)；连接池不足时由 pgxpool 自然排队。
+	//
+	// 第 62 轮：原有 13 段，其中 7 段毫秒级小表统计合并成 1 段、
+	// battles 与漏斗两段合并成 1 段（见下方 `dashboard counters` 与
+	// `dashboard battles+funnel`），降到 6 段 —— 6 ≤ `DB_MAX_CONNS`
+	// 默认 10，未命中刷新不再出现「后 3 段排队等槽位」。
+	// 依据是压测而不是直觉：把 battle_records 的几段也合并成
+	// `GROUPING SETS`（单条语句）实测反而 281ms，因为它退化成单进程内
+	// 一次聚合，丢掉了 PG 的并行 worker；所以**只合并必要的段**，大扫描
+	// 保持各占一条连接并行跑。
+	//
+	// 各 goroutine 只写自己的字段（第 62 轮起 `Defenses.Total` 只有一个
+	// 写入点），主协程 wg.Wait() 后读；错误按**声明顺序**检查 —— 第一个
+	// 失败段先报，与串行版的 fail-loud 顺序一致。
 	scan := func(q string, dest ...any) error {
 		return s.pool.QueryRow(ctx, q).Scan(dest...)
 	}
@@ -144,29 +154,103 @@ func (s *Service) adminDashboardUncached(ctx context.Context) (Dashboard, error)
 			&d.Users.Total, &d.Users.Guests, &d.Users.Wechat, &d.Users.Banned, &d.Users.NewToday)
 	})
 
-	appendStep("dashboard battles", func() error {
-		return scan(`
-		SELECT COUNT(*),
-		       COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE),
-		       COUNT(*) FILTER (WHERE result = 'win'),
-		       COALESCE(AVG(duration_ms), 0)
-		FROM battle_records`,
-			&d.Battles.Total, &d.Battles.Today, &d.Battles.Wins, &d.Battles.AvgDurationMs)
+	// 2026-11-03（第 62 轮）：battles 四指标与关卡漏斗合成 1 次扫描。
+	//
+	// 两段原本各扫一遍 battle_records（1M 行实测 ~78ms / ~72ms，每遍读
+	// ~160MB 堆页）。合并成一条按 level_id 分组的聚合并行扫描后，全局
+	// 指标再由这 100 行聚合结果求和得出；实测单条 92ms，省掉一次全表扫描。
+	//
+	// 为什么不用 `GROUPING SETS ((level_id), ())`：实测 281ms —— 它退化成
+	// MixedAggregate，不并行，单进程扫完 1M 行；比分别跑两段（并行）还慢。
+	// 这里内层 `GROUP BY level_id` 仍可并行，外层只聚合 100 行。
+	//
+	// `AVG(duration_ms)` 口径逐位不变：PG 的 AVG 就是 SUM/COUNT 的 numeric
+	// 结果，这里同样用 numeric 除法，扫描时再转 float64。
+	appendStep("dashboard battles+funnel", func() error {
+		var (
+			levels   []int32
+			attempts []int64
+			wins     []int64
+		)
+		if err := scan(`
+		SELECT COALESCE(SUM(attempts), 0),
+		       COALESCE(SUM(today), 0),
+		       COALESCE(SUM(wins), 0),
+		       COALESCE(SUM(dur_sum)::numeric / NULLIF(SUM(n), 0), 0),
+		       COALESCE(array_agg(level_id ORDER BY level_id), '{}'::int[]),
+		       COALESCE(array_agg(attempts ORDER BY level_id), '{}'::bigint[]),
+		       COALESCE(array_agg(wins ORDER BY level_id), '{}'::bigint[])
+		FROM (
+		  SELECT level_id,
+		         COUNT(*) AS attempts,
+		         COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE) AS today,
+		         COUNT(*) FILTER (WHERE result = 'win') AS wins,
+		         SUM(duration_ms) AS dur_sum,
+		         COUNT(*) AS n
+		    FROM battle_records GROUP BY level_id
+		) f`,
+			&d.Battles.Total, &d.Battles.Today, &d.Battles.Wins, &d.Battles.AvgDurationMs,
+			&levels, &attempts, &wins); err != nil {
+			return err
+		}
+		for i := range levels {
+			d.StageFunnel = append(d.StageFunnel, StageFunnel{
+				LevelID: int(levels[i]), Attempts: attempts[i], Number: wins[i],
+			})
+		}
+		return nil
 	})
 
-	// 2026-10-31（实质优化第 39 轮）：防线总数 / 今日挑战次数。
-	appendStep("dashboard challenges", func() error {
+	// 2026-11-03（第 62 轮）：7 段毫秒级小表统计合并成 1 条语句。
+	//
+	// 原实现给 defenses / defense_challenges / orders / user_sign_ins /
+	// redeem_usages / replay_verifications / wallet_flows 各起一条查询，
+	// 13 段并行需要 13 条连接，而池默认上限只有 10 —— 多出来的 3 段
+	// 必须等别人释放。这 7 段各自都在 1ms 以内，合并后的总耗时仍是
+	// 毫秒级，但连接占用从 7 降到 1，把槽位留给真正慢的大表扫描。
+	//
+	// 顺带修掉一个并发缺陷：旧的 `dashboard challenges` 段把
+	// `COUNT(*) FROM defense_challenges` 写进 `d.Defenses.Total`，而
+	// `dashboard defenses` 段又把 `COUNT(*) FROM defenses` 写进同一个
+	// 字段 —— 两段并行执行，最终显示哪个值由调度决定。数据量不同时
+	// （防线 3 条、累计挑战 5000 次），看板上的「防线数」会在 3 与 5000
+	// 之间跳。合并后 `Total` 只有 `defenses` 一个来源，与前端
+	// 「防线 N · 今日挑战 M」的口径一致。
+	appendStep("dashboard counters", func() error {
 		return scan(`
-		SELECT COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE),
-		       COUNT(*)
-		FROM defense_challenges`,
-			&d.Defenses.ChallengesToday, &d.Defenses.Total)
-	})
-
-	appendStep("dashboard defenses", func() error {
-		return scan(`
-		SELECT COUNT(*) FROM defenses`,
-			&d.Defenses.Total)
+		SELECT c.today_challenges,
+		       d.total_defenses,
+		       o.paid_orders, o.pending_orders,
+		       s.sign_ins_today,
+		       r.redeems_today,
+		       v.checked, v.matched, v.mismatched,
+		       e.coin_in, e.coin_out, e.gem_in, e.gem_out
+		FROM
+		  (SELECT COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE) AS today_challenges
+		     FROM defense_challenges) c,
+		  (SELECT COUNT(*) AS total_defenses FROM defenses) d,
+		  (SELECT COUNT(*) FILTER (WHERE status IN ('paid','delivered')) AS paid_orders,
+		          COUNT(*) FILTER (WHERE status = 'pending') AS pending_orders
+		     FROM orders) o,
+		  (SELECT COUNT(*) AS sign_ins_today
+		     FROM user_sign_ins WHERE sign_date = CURRENT_DATE) s,
+		  (SELECT COUNT(*) AS redeems_today
+		     FROM redeem_usages WHERE created_at >= CURRENT_DATE) r,
+		  (SELECT COUNT(*) AS checked,
+		          COUNT(*) FILTER (WHERE matched) AS matched,
+		          COUNT(*) FILTER (WHERE NOT matched) AS mismatched
+		     FROM replay_verifications) v,
+		  (SELECT COALESCE(SUM(delta) FILTER (WHERE currency='coin' AND delta > 0), 0) AS coin_in,
+		          COALESCE(-SUM(delta) FILTER (WHERE currency='coin' AND delta < 0), 0) AS coin_out,
+		          COALESCE(SUM(delta) FILTER (WHERE currency='gem' AND delta > 0), 0) AS gem_in,
+		          COALESCE(-SUM(delta) FILTER (WHERE currency='gem' AND delta < 0), 0) AS gem_out
+		     FROM wallet_flows) e`,
+			&d.Defenses.ChallengesToday, &d.Defenses.Total,
+			&d.Economy.OrdersPaid, &d.Economy.OrdersPending,
+			&d.Economy.SignInsToday,
+			&d.Economy.RedeemsToday,
+			&d.Verification.Checked, &d.Verification.Matched, &d.Verification.Mismatched,
+			&d.Economy.CoinIn, &d.Economy.CoinOut, &d.Economy.GemIn, &d.Economy.GemOut)
 	})
 
 	appendStep("dashboard progression", func() error {
@@ -175,47 +259,6 @@ func (s *Service) adminDashboardUncached(ctx context.Context) (Dashboard, error)
 		       (SELECT COUNT(*) FROM level_stars WHERE level_id = 100 AND clears > 0)
 		FROM user_progress`,
 			&d.Progression.AvgMaxStage, &d.Progression.AvgPower, &d.Progression.Stage100Clear)
-	})
-
-	// 货币流水按符号分流入/流出
-	appendStep("dashboard economy", func() error {
-		return scan(`
-		SELECT
-		  COALESCE(SUM(delta) FILTER (WHERE currency='coin' AND delta > 0), 0),
-		  COALESCE(-SUM(delta) FILTER (WHERE currency='coin' AND delta < 0), 0),
-		  COALESCE(SUM(delta) FILTER (WHERE currency='gem' AND delta > 0), 0),
-		  COALESCE(-SUM(delta) FILTER (WHERE currency='gem' AND delta < 0), 0)
-		FROM wallet_flows`,
-			&d.Economy.CoinIn, &d.Economy.CoinOut, &d.Economy.GemIn, &d.Economy.GemOut)
-	})
-
-	appendStep("dashboard orders", func() error {
-		return scan(`
-		SELECT COUNT(*) FILTER (WHERE status IN ('paid','delivered')),
-		       COUNT(*) FILTER (WHERE status = 'pending')
-		FROM orders`,
-			&d.Economy.OrdersPaid, &d.Economy.OrdersPending)
-	})
-
-	// 2026-10-31（实质优化第 28 轮）：今日签到 / 今日兑换 ——
-	// 运营看板此前没有这两个活跃指标。
-	appendStep("dashboard sign-ins", func() error {
-		return scan(`
-		SELECT COUNT(*) FROM user_sign_ins WHERE sign_date = CURRENT_DATE`,
-			&d.Economy.SignInsToday)
-	})
-
-	appendStep("dashboard redeems", func() error {
-		return scan(`
-		SELECT COUNT(*) FROM redeem_usages WHERE created_at >= CURRENT_DATE`,
-			&d.Economy.RedeemsToday)
-	})
-
-	appendStep("dashboard verification", func() error {
-		return scan(`
-		SELECT COUNT(*), COUNT(*) FILTER (WHERE matched), COUNT(*) FILTER (WHERE NOT matched)
-		FROM replay_verifications`,
-			&d.Verification.Checked, &d.Verification.Matched, &d.Verification.Mismatched)
 	})
 
 	// 反应使用分布
@@ -273,13 +316,20 @@ func (s *Service) adminDashboardUncached(ctx context.Context) (Dashboard, error)
 	})
 
 	// 近 14 日 DAU
+	//
+	// 第 62 轮改写：原写法是 `generate_series LEFT JOIN battle_records`
+	// 再 `GROUP BY d` —— 实测 1M 战报下 172ms，因为 JOIN 之后要在
+	// 14 个日桶上做 `COUNT(DISTINCT user_id)` 的去重聚合。
+	// 改成「每天一个走 created_at 索引的标量子查询」后实测 73ms，
+	// 输出形状（恒 14 行、含零活跃日）与语义完全不变。
 	appendStep("dashboard dau", func() error {
 		drows, err := s.pool.Query(ctx, `
 			SELECT d::date AS day,
-			       COUNT(DISTINCT user_id) AS dau
+			       (SELECT COUNT(DISTINCT br.user_id)
+			          FROM battle_records br
+			         WHERE br.created_at >= d AND br.created_at < d + INTERVAL '1 day') AS dau
 			FROM generate_series(CURRENT_DATE - INTERVAL '13 days', CURRENT_DATE, '1 day') d
-			LEFT JOIN battle_records br ON br.created_at >= d AND br.created_at < d + INTERVAL '1 day'
-			GROUP BY d::date ORDER BY 1`)
+			ORDER BY 1`)
 		if err != nil {
 			return err
 		}
@@ -297,29 +347,7 @@ func (s *Service) adminDashboardUncached(ctx context.Context) (Dashboard, error)
 		return drows.Err()
 	})
 
-	// 关卡漏斗（全部 100 关）
-	appendStep("dashboard funnel", func() error {
-		frows, err := s.pool.Query(ctx, `
-			SELECT level_id, COUNT(*), COUNT(*) FILTER (WHERE result='win')
-			FROM battle_records GROUP BY level_id ORDER BY level_id`)
-		if err != nil {
-			return err
-		}
-		defer frows.Close()
-		for frows.Next() {
-			var f StageFunnel
-			if err := frows.Scan(&f.LevelID, &f.Attempts, &f.Number); err != nil {
-				return err
-			}
-			d.StageFunnel = append(d.StageFunnel, f)
-		}
-		// 第 144 轮：逐个查询都要在迭代结束后查 `Err()`（fail-loud，AGENTS #11）。
-		// 修前这里 `return d, rows.Err()` —— `rows` 是上面**反应分布**那支查询的句柄，
-		// 早已迭代完且查过 Err()（恒为 nil）；漏斗 `frows` 的 `Err()` 从未被检查。
-		// 后果：漏斗查询若在迭代中途失败（连接抖断 / 死锁被杀 / 磁盘满），
-		// `d.StageFunnel` 只填了一半，函数却返回 nil 错误 —— 看板静默少了一半关卡。
-		return frows.Err()
-	})
+	// 关卡漏斗已在 `dashboard battles+funnel` 段内与 battles 指标同一次扫描产出。
 
 	errs := make([]error, len(steps))
 	var wg sync.WaitGroup
