@@ -53,6 +53,32 @@ impl MigrationReport {
     }
 }
 
+/// 把 `tokio_postgres` 的错误展开成可定位的文本。
+///
+/// ⚠️ 直接 `{}` 打印 `tokio_postgres::Error` 只会得到 **"db error"** ——
+/// 真正的原因（SQLSTATE、服务端 message、DETAIL/HINT）在 `as_db_error()` 里。
+/// 迁移运行器是启动路径上唯一会改库结构的组件，它失败时运维最需要的就是
+/// 「哪条 SQLSTATE、哪个列/表」；只剩 "db error" 的话，排查只能靠人肉把
+/// 迁移文件逐条贴进 psql 复现（实测踩过：019 因为库结构漂移缺列而失败，
+/// 日志里只有 "db error"，看不出是 `column "person_unique" does not exist`）。
+fn describe_pg_error(e: &deadpool_postgres::tokio_postgres::Error) -> String {
+    if let Some(db) = e.as_db_error() {
+        let mut s = format!("{} (SQLSTATE {})", db.message(), db.code().code());
+        if let Some(detail) = db.detail() {
+            s.push_str(&format!("; detail: {detail}"));
+        }
+        if let Some(hint) = db.hint() {
+            s.push_str(&format!("; hint: {hint}"));
+        }
+        return s;
+    }
+    // 非服务端错误（IO 断开、协议错误）没有 SQLSTATE，退到 source 链。
+    if let Some(src) = std::error::Error::source(e) {
+        return format!("{src}");
+    }
+    e.to_string()
+}
+
 /// 应用全部未执行的迁移。幂等、可重复调用。
 ///
 /// 返回 [`MigrationReport`]，便于启动日志与测试断言。
@@ -163,7 +189,7 @@ pub async fn run_migrations(pool: &Pool) -> anyhow::Result<MigrationReport> {
 
         tx.batch_execute(&rewritten_sql)
             .await
-            .map_err(|e| anyhow::anyhow!("migration {} failed: {}", name, e))?;
+            .map_err(|e| anyhow::anyhow!("migration {} failed: {}", name, describe_pg_error(&e)))?;
         let ms = start.elapsed().as_millis() as i32;
         tx.execute(
             &d.format_sql("INSERT INTO schema_migrations (version, checksum, execution_ms) VALUES ($1, $2, $3)"),
@@ -388,6 +414,11 @@ mod tests {
         // ⑧ 坏迁移 SQL 必须 loud 失败（第二十轮补）：迁移文件内容非法时，
         // 事务内执行必须报错并点名文件——不能静默跳过（否则坏迁移在部署里
         // 被当作已应用，启动照常、首次查询才炸）。
+        //
+        // ⚠️ R17：错误里必须带**真实的库错误**（SQLSTATE + message），
+        // 不能只是 `tokio_postgres::Error` 的 Display 输出 "db error" ——
+        // 后者让运维无法判断是语法错、缺列还是权限问题（实测库结构漂移时
+        // 019 只报 "db error"，得手工把 SQL 贴进 psql 才看出缺 `person_unique`）。
         let bad_dir =
             std::env::temp_dir().join(format!("oa4rust_bad_migration_{}", std::process::id()));
         std::fs::create_dir_all(&bad_dir).expect("创建临时迁移目录");
@@ -399,6 +430,18 @@ mod tests {
         assert!(
             msg7.contains("001_bad.sql"),
             "错误信息应点名坏迁移文件，实际: {msg7}"
+        );
+        assert!(
+            msg7.contains("42601"),
+            "错误信息应带 SQLSTATE（语法错 42601），实际: {msg7}"
+        );
+        assert!(
+            msg7.contains("syntax error"),
+            "错误信息应带服务端 message，实际: {msg7}"
+        );
+        assert!(
+            !msg7.contains("failed: db error"),
+            "不得退化成不透明的 \"db error\"，实际: {msg7}"
         );
         match saved5 {
             Some(v) => std::env::set_var(MIGRATIONS_DIR_KEY, v),
