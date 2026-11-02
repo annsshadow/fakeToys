@@ -26,9 +26,9 @@ package domain
 
 import (
 	"errors"
+	"hash/fnv"
 	"sort"
 	"strconv"
-	"strings"
 )
 
 // MaxTicksPerReplay 单局推进上限，防止异常关卡把进程卡死。
@@ -212,6 +212,35 @@ func orDefault(v, def int64) int64 {
 	return v
 }
 
+// hashReplayEvents 把前缀与事件流按 `;` 连接后算 FNV-1a 64。
+//
+// 第 95 轮：旧实现先把每条事件的 `String()` 收进 `[]string`、`strings.Join`
+// 拼出一整串、再 `[]byte` 拷一遍送进哈希——一次结算在事件流上额外分配两份
+// O(事件数) 的临时对象。这里改为边遍历边写哈希：字节序列与 `Join` 逐字节一致
+// （前缀 + 每条事件前一个 `;`），结果不变。
+//
+// 每 4 KiB 攒一批再 `Write`：`hash.Hash.Write` 每次调用都有固定开销，
+// 逐条写会把省下的分配又赔进调用开销里（实测反而更慢）；攒批后
+// 调用次数从 O(事件数) 降到 O(事件数/批大小)，字节序列不受影响。
+func hashReplayEvents(prefix string, events []ReplayEvent) uint64 {
+	const flushAt = 4 << 10
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(prefix))
+	buf := make([]byte, 0, 256)
+	for _, r := range events {
+		buf = append(buf, ';')
+		buf = append(buf, r.String()...)
+		if len(buf) >= flushAt {
+			_, _ = h.Write(buf)
+			buf = buf[:0]
+		}
+	}
+	if len(buf) > 0 {
+		_, _ = h.Write(buf)
+	}
+	return h.Sum64()
+}
+
 // ReplayHash 算本局的结算重放哈希。
 //
 //	hex16(fnv1a64("L{id}|A{7 项攻方系数}|S{槽位技能段}|X{额外血量};事件流"))
@@ -246,12 +275,7 @@ func (e *BattleEngine) ReplayHash() string {
 	//	省略会与「前缀里忘了写这段」不可区分，
 	//	而漏掉整段只会让 hash 不同，不会产生「看起来对但结果错」的情况。
 	//	前缀里多出锚点分隔符的鲁棒性 > 前缀更短。
-	parts := make([]string, 0, len(e.replay)+1)
-	parts = append(parts, prefix)
-	for _, r := range e.replay {
-		parts = append(parts, r.String())
-	}
-	return hex16(fnv1a64(strings.Join(parts, ";")))
+	return hex16(hashReplayEvents(prefix, e.replay))
 }
 
 // ReplaySkillsSegment 拼当前槽位技能段（S 段）。
