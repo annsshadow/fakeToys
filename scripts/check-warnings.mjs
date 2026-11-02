@@ -237,9 +237,28 @@ if (args.includes('--list')) {
   process.exit(0)
 }
 const onlyArg = args.find((a) => a.startsWith('--only'))
-const only = onlyArg
-  ? (onlyArg.includes('=') ? onlyArg.split('=')[1] : args[args.indexOf(onlyArg) + 1]).split(',').map((s) => s.trim())
-  : null
+let only = null
+if (onlyArg) {
+  // 第 62 轮：`--only x` 缺下一参数（`--only` 落在末尾）时，
+  // 之前 `args[idx+1]` 为 undefined 直接 `.split` 崩——给出人话报错。
+  const raw = onlyArg.includes('=')
+    ? onlyArg.split('=').slice(1).join('=')
+    : args[args.indexOf(onlyArg) + 1]
+  if (raw === undefined || raw === '') {
+    console.error(`--only 缺少检查项（用法：--only id 或 --only=id,other）`)
+    process.exit(2)
+  }
+  only = raw.split(',').map((s) => s.trim()).filter((s) => s.length > 0)
+}
+
+// 第 62 轮：`--only` 传入未知检查项（手误 typo）时，之前只落到
+// 「没有匹配的检查项」——用户分不清是打错了还是空列表。这里把未知值点出来。
+const validIds = new Set(CHECKS.map((c) => c.id))
+const unknown = only ? only.filter((s) => !validIds.has(s)) : []
+if (unknown.length > 0) {
+  console.error(`未知检查项：${unknown.join(', ')}\n可用：${[...validIds].join(', ')}（或 --list 查看全部）`)
+  process.exit(2)
+}
 
 const selected = only ? CHECKS.filter((c) => only.includes(c.id)) : CHECKS
 if (selected.length === 0) {
