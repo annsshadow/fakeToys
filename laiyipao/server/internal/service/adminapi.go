@@ -498,6 +498,8 @@ func (s *Service) AdminListDefenses(ctx context.Context, limit, offset int, keyw
 // 运营此前只能看到、无法处理（玩家不主动改就一直挂着）。
 // 删除后 `defense_challenges` 随外键 CASCADE 消失（玩家挑战历史
 // 里对这条防线的记录也会消失 —— 可接受，见 MyChallengeHistory 注释）。
+//
+// R47：删除与审计同一事务（见下轮补丁，本提交先保持原样）。
 func (s *Service) AdminDeleteDefense(ctx context.Context, defenseID int64) error {
 	ct, err := s.pool.Exec(ctx, `DELETE FROM defenses WHERE id = $1`, defenseID)
 	if err != nil {
@@ -1049,7 +1051,12 @@ func (s *Service) adminEconomyUncached(ctx context.Context) (AdminEconomyResp, e
 //
 // 所以判据必须落在**形状**上（和「能不能序列化」无关）：
 // price/payload 必须是「已知货币 → 非负整数」的对象。
-func (s *Service) AdminUpdateShopItem(ctx context.Context, id int64, patch map[string]any) (AdminShopUpdateResp, error) {
+//
+// R46：商城配置与审计同一事务。价格/每日限购/上下架直接决定玩家花多少、
+// 能买几次；审计此前在 handler 提交后补写、失败只打日志 —— 一次调价可以
+// 生效而没有任何操作记录。
+func (s *Service) AdminUpdateShopItem(ctx context.Context, id int64, patch map[string]any,
+	audit ...AdminAuditCtx) (AdminShopUpdateResp, error) {
 	fields := []string{}
 	args := []any{id}
 	set := func(col string, v any) {
@@ -1127,8 +1134,17 @@ func (s *Service) AdminUpdateShopItem(ctx context.Context, id int64, patch map[s
 		return AdminShopUpdateResp{}, fmt.Errorf("%w: no updatable fields", ErrBadInput)
 	}
 	sql := fmt.Sprintf(`UPDATE shop_items SET %s, updated_at = now() WHERE id = $1`, joinComma(fields))
-	if _, err := s.pool.Exec(ctx, sql, args...); err != nil {
-		return AdminShopUpdateResp{}, fmt.Errorf("update shop item: %w", err)
+	if err := s.DB.Tx(ctx, func(tx txType) error {
+		if _, err := tx.Exec(ctx, sql, args...); err != nil {
+			return fmt.Errorf("update shop item: %w", err)
+		}
+		if len(audit) > 0 {
+			return s.AuditTx(ctx, tx, audit[0], "update_shop_item",
+				strconv.FormatInt(id, 10), patch)
+		}
+		return nil
+	}); err != nil {
+		return AdminShopUpdateResp{}, err
 	}
 	return AdminShopUpdateResp{ID: id, Updated: fields}, nil
 }
