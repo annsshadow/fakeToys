@@ -803,7 +803,7 @@ func (s *Service) AdminResetPlayerPassword(ctx context.Context, userID int64, ne
 	return nil
 }
 
-func (s *Service) AdminGrantCurrency(ctx context.Context, userID int64, currency string, amount int64) (map[string]int64, error) {
+func (s *Service) AdminGrantCurrency(ctx context.Context, userID int64, currency string, amount int64, audit ...AdminAuditCtx) (map[string]int64, error) {
 	if amount == 0 {
 		return nil, fmt.Errorf("%w: 数量为 0 的发放没有意义", ErrBadInput)
 	}
@@ -834,6 +834,20 @@ func (s *Service) AdminGrantCurrency(ctx context.Context, userID int64, currency
 		if err := s.grantWallet(ctx, tx, userID,
 			map[string]int64{currency: amount}, reason, 0); err != nil {
 			return err
+		}
+		// R37：钱包变动与审计同一事务。发币/回收是价值转移，
+		// 「余额变了但审计没写」等于一笔没有来源的资产流动；
+		// 符号仍按 R109 的口径落进事件名，负数不是「发放」。
+		if len(audit) > 0 {
+			action := "grant_currency"
+			if amount < 0 {
+				action = "revoke_currency"
+			}
+			if err := s.AuditTx(ctx, tx, audit[0], action,
+				strconv.FormatInt(userID, 10),
+				map[string]any{"currency": currency, "amount": amount}); err != nil {
+				return err
+			}
 		}
 		// 第 21 轮：道具（revive_token / gem_wash_token / mastery_reset）的
 		// 发放与回显。grantWallet 早就把 isWalletToken 转发到 grantToken

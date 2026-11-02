@@ -475,19 +475,12 @@ func (s *Server) adminGrantUser(c *fiber.Ctx) error {
 	if err := c.BodyParser(&body); err != nil {
 		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
 	}
-	wallet, err := s.Svc.AdminGrantCurrency(c.Context(), id, body.Currency, body.Amount)
+	// R37：钱包变动与审计同一事务（符号仍由服务层按 R109 口径落进事件名）。
+	wallet, err := s.Svc.AdminGrantCurrency(c.Context(), id, body.Currency, body.Amount,
+		service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()})
 	if err != nil {
 		return failErr(c, err)
 	}
-	// 第 109 轮：符号进审计 —— 负数是回收，事件名必须与正数发放可区分，
-	// 否则审计里「发放」和「回收」长得一模一样。
-	evt := "grant_currency"
-	if body.Amount < 0 {
-		evt = "revoke_currency"
-	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), evt,
-		strconv.FormatInt(id, 10), c.IP(),
-		fiber.Map{"currency": body.Currency, "amount": body.Amount})
 	return c.JSON(service.AdminGrantResp{Wallet: wallet})
 }
 
