@@ -423,6 +423,14 @@ func (s *Service) AdminListDefenses(ctx context.Context, limit, offset int, keyw
 	escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(kw)
 	pattern := "%" + escaped + "%"
 
+	// ⚠️ R19：夹取必须发生在 **listArgs 构建之前**。
+	// 改前是先把 offset 塞进 listArgs、夹取放在 COUNT 之后 —— 夹的是局部
+	// 变量，SQL 参数里仍是 -1，PostgreSQL 报 `OFFSET must not be negative`
+	// → 整页 500（同包其它列表函数早已夹取，唯独这里顺序错）。
+	if offset < 0 {
+		offset = 0
+	}
+
 	// COUNT：$1/$2 = kw/pattern，$3 = ownerID。
 	countArgs := []any{kw, pattern, ownerID}
 	listArgs := []any{limit, offset, kw, pattern, ownerID}
@@ -446,10 +454,7 @@ func (s *Service) AdminListDefenses(ctx context.Context, limit, offset int, keyw
 	// ⚠️ 2026-10-21（二轮审计 P2-6）：补 offset ——
 	// 此前只能看前 100 条，而 `total` 是全量 COUNT，于是
 	// 「共 N 条防线」却只看得到 100 条（而且漏掉的是**弱**防线，
-	// 因为按战力倒序）。
-	if offset < 0 {
-		offset = 0
-	}
+	// 因为按战力倒序）。负 offset 的夹取已上移到 listArgs 构建之前（R19）。
 	rows, err := s.pool.Query(ctx, `
 		SELECT d.id, d.owner_id, u.nickname, d.name, d.power, d.element_coverage,
 		       d.mastery_done, d.wins, d.losses, d.shielded_until, d.updated_at,

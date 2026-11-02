@@ -11,6 +11,7 @@ package httpapi
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
@@ -84,6 +85,40 @@ func TestE2EAdminLoginAndGuard(t *testing.T) {
 	}
 	if got := body["admin"].(map[string]any)["id"].(float64); int64(got) != adminID {
 		t.Errorf("admin id = %v，期望 %d", got, adminID)
+	}
+}
+
+// TestE2EListNegativeOffsetIsClamped 负 offset 一律夹到 0，绝不再是 500。
+//
+// PostgreSQL 对 `OFFSET -1` 直接报 `OFFSET must not be negative`（实测），
+// 而 `queryInt` 只校验「是不是整数」（`Atoi("-1")` 成功）。服务层多数函数
+// 已把负数夹到 0，但 `AdminListDefenses` 把 offset **先**塞进 SQL 参数、
+// **后**才夹取 —— 夹取对已构建的 `listArgs` 无效，负值照旧进 SQL → 整页 500。
+// 运营手滑一个减号就能把列表页打成 Internal，且日志只说 SQL 错误。
+//
+// 这里同时守两层：所有后台列表端点不得 500；defenses 的负 offset 必须与
+// offset=0 返回同一页（证明夹取真的生效，而不是碰巧空结果）。
+func TestE2EListNegativeOffsetIsClamped(t *testing.T) {
+	e := newE2E(t)
+	_, tok := e.newAdmin(t, "offset")
+
+	for _, path := range []string{
+		"/api/v1/admin/users?limit=3&offset=-1",
+		"/api/v1/admin/battles?limit=3&offset=-1",
+		"/api/v1/admin/defenses?limit=3&offset=-1",
+		"/api/v1/admin/orders?limit=3&offset=-1",
+		"/api/v1/admin/audit-logs?limit=3&offset=-1",
+	} {
+		status, body := e.get(t, path, tok)
+		if status != fiber.StatusOK {
+			t.Errorf("%s：负 offset 应夹到 0 并正常分页，实际 %d %v", path, status, body)
+		}
+	}
+
+	_, page0 := e.get(t, "/api/v1/admin/defenses?limit=3&offset=0", tok)
+	_, pageNeg := e.get(t, "/api/v1/admin/defenses?limit=3&offset=-1", tok)
+	if !reflect.DeepEqual(page0["items"], pageNeg["items"]) {
+		t.Errorf("defenses offset=-1 应等价于 offset=0，实际 %v vs %v", pageNeg["items"], page0["items"])
 	}
 }
 
