@@ -91,6 +91,46 @@ func TestAdminLogin(t *testing.T) {
 	}
 }
 
+// TestAdminLoginIsAtomic 登录的两个副作用（会话行 / last_login_at）
+// 必须同生共死。
+//
+// 改前是两条独立 autocommit：UPDATE 失败时登录返回错误，但 admin_tokens
+// 已经提交 —— 库里多出一行「登录失败却已建立」的会话摘要，签不出可用
+// JWT，只能等过期后回收。用 BEFORE UPDATE 触发器注入失败，断言事务回滚。
+func TestAdminLoginIsAtomic(t *testing.T) {
+	ctx := context.Background()
+	ts := openScratchService(t)
+	adminID, username, password := ts.newAdminFixture(t, "atomic", 1)
+
+	ts.exec(t, `CREATE OR REPLACE FUNCTION svc_fail_admin_login_update() RETURNS trigger
+		LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'injected last_login_at failure'; END $$`)
+	ts.exec(t, `CREATE TRIGGER svc_fail_admin_login_update BEFORE UPDATE ON admin_users
+		FOR EACH ROW EXECUTE FUNCTION svc_fail_admin_login_update()`)
+
+	_, err := ts.AdminLogin(ctx, username, password)
+	mustErr(t, err, "update admin last login")
+
+	var tokens int
+	if err := ts.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM admin_tokens WHERE admin_id = $1`, adminID).Scan(&tokens); err != nil {
+		t.Fatalf("查会话行失败：%v", err)
+	}
+	if tokens != 0 {
+		t.Fatalf("UPDATE 失败后必须整笔回滚，实际残留 %d 行 admin_tokens（改前会留 1 行）", tokens)
+	}
+
+	ts.exec(t, `DROP TRIGGER svc_fail_admin_login_update ON admin_users`)
+	ts.exec(t, `DROP FUNCTION svc_fail_admin_login_update()`)
+
+	if _, err := ts.AdminLogin(ctx, username, password); err != nil {
+		t.Fatalf("触发器移除后应能登录：%v", err)
+	}
+	if err := ts.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM admin_tokens WHERE admin_id = $1`, adminID).Scan(&tokens); err != nil || tokens != 1 {
+		t.Errorf("成功登录应落一行会话，实际 %d（err=%v）", tokens, err)
+	}
+}
+
 // TestAdminLogoutRevokesAllSessions 登出必须真切断：
 // 该管理员的全部会话被吊销后，**签名仍然合法**的 access token 立刻不可用
 // （「服务端登出」与「只清客户端 localStorage」的区别就在这一条上）。

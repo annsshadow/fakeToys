@@ -76,13 +76,23 @@ func (s *Service) AdminLogin(ctx context.Context, username, password string) (Ad
 	if err != nil {
 		return AdminTokenPair{}, err
 	}
-	if _, err := s.pool.Exec(ctx,
-		`INSERT INTO admin_tokens (admin_id, token_hash, expires_at) VALUES ($1,$2,$3)`,
-		a.ID, sessionHash, timeNow().Add(s.Cfg().AccessTTL)); err != nil {
-		return AdminTokenPair{}, fmt.Errorf("store admin session: %w", err)
-	}
-	if _, err := s.pool.Exec(ctx,
-		`UPDATE admin_users SET last_login_at = now() WHERE id = $1`, a.ID); err != nil {
+	// 会话行与 last_login_at 必须在**同一事务**里落库。改前是两条独立
+	// autocommit：第二条 UPDATE 失败时登录返回错误，库里却已经留下一行
+	// admin_tokens —— 一个「登录失败但会话已建立」的半成品（那枚会话摘要
+	// 永远签不出可用的 JWT，只能等过期后由清理回收）。与玩家侧建号
+	// （R15）同一口径：一次登录的副作用要么全成，要么全无。
+	if err := s.DB.Tx(ctx, func(tx txType) error {
+		if _, err := tx.Exec(ctx,
+			`INSERT INTO admin_tokens (admin_id, token_hash, expires_at) VALUES ($1,$2,$3)`,
+			a.ID, sessionHash, timeNow().Add(s.Cfg().AccessTTL)); err != nil {
+			return fmt.Errorf("store admin session: %w", err)
+		}
+		if _, err := tx.Exec(ctx,
+			`UPDATE admin_users SET last_login_at = now() WHERE id = $1`, a.ID); err != nil {
+			return fmt.Errorf("update admin last login: %w", err)
+		}
+		return nil
+	}); err != nil {
 		return AdminTokenPair{}, err
 	}
 	return AdminTokenPair{
