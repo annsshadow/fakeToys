@@ -15,6 +15,7 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 )
@@ -80,6 +81,37 @@ func TestAdminExportRedeemCodesBrokenPool(t *testing.T) {
 
 	if _, err := ts.AdminExportRedeemCodes(ctx, "", nil, nil); err == nil {
 		t.Fatal("连接池已关闭时导出必须报错，不能静默返回空 CSV")
+	}
+}
+
+// R32：导出侧必须是 fail-loud —— 坏 reward jsonb 不能渲染成空列。
+//
+// 列表 `AdminListRedeemCodes` 早在第 146 轮就改成报错
+// （"code %s has invalid reward jsonb"），但导出这一支仍用
+// `if err := json.Unmarshal(...); err == nil { ... }` 把解析失败吞掉，
+// 于是同一个坏码在列表里看得见、在 CSV 里变成「这个码什么都不给」。
+// 导出恰是运营拿来线下核对/客服分发的产物，静默空列会被当成事实。
+func TestAdminExportRedeemCodesBrokenRewardIsLoud(t *testing.T) {
+	ts := openScratchService(t)
+	ctx := context.Background()
+
+	const id = 990001
+	code := fmt.Sprintf("BROKEN_REWARD_%d", time.Now().UnixNano())
+	// 合法 jsonb，但不是对象：能存进 NOT NULL 的 reward 列，
+	// 却无法反序列化成 map[string]int。
+	if _, err := ts.pool.Exec(ctx,
+		`INSERT INTO redeem_codes (id, code, reward, max_uses, used_count, enabled)
+		 VALUES ($1, $2, '"oops"'::jsonb, 1, 0, true)`, id, code); err != nil {
+		t.Fatalf("插入坏 reward 兑换码失败：%v", err)
+	}
+
+	data, err := ts.AdminExportRedeemCodes(ctx, code, nil, nil)
+	if err == nil {
+		t.Fatalf("reward 非法 jsonb 时导出必须报错；实际成功导出 %d 字节，"+
+			"坏行会被渲染成空的 reward 列", len(data))
+	}
+	if err.Error() == "" || !strings.Contains(err.Error(), "reward") || !strings.Contains(err.Error(), code) {
+		t.Fatalf("错误必须指出 reward 与具体兑换码，实际：%v", err)
 	}
 }
 

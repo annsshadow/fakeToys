@@ -1555,16 +1555,20 @@ func (s *Service) AdminExportRedeemCodes(ctx context.Context, keyword string, en
 		if err := rows.Scan(&id, &code, &rewardRaw, &maxUses, &usedCount, &expiresAt, &enabled); err != nil {
 			return nil, fmt.Errorf("scan redeem code: %w", err)
 		}
-		var rewardText string
 		var m map[string]int
-		if err := json.Unmarshal(rewardRaw, &m); err == nil {
-			parts := make([]string, 0, len(m))
-			for k, v := range m {
-				parts = append(parts, k+":"+strconv.Itoa(v))
-			}
-			sort.Strings(parts)
-			rewardText = strings.Join(parts, " ")
+		// R32：与列表 `AdminListRedeemCodes` 对齐的 fail-loud。
+		// 此前这里是 `if err := json.Unmarshal(...); err == nil { ... }`：
+		// 坏 reward 被静默渲染成空列，导出看起来像「这个码什么都不给」。
+		// 导出是运营线下核对/客服分发的依据，静默空列会被当成事实。
+		if err := json.Unmarshal(rewardRaw, &m); err != nil {
+			return nil, fmt.Errorf("export redeem codes: code %s has invalid reward jsonb: %w", code, err)
 		}
+		parts := make([]string, 0, len(m))
+		for k, v := range m {
+			parts = append(parts, k+":"+strconv.Itoa(v))
+		}
+		sort.Strings(parts)
+		rewardText := strings.Join(parts, " ")
 		rec := []string{
 			strconv.Itoa(id),
 			code,
