@@ -44,7 +44,7 @@
 | P1-1 | `store.Open` 未设 `statement_timeout` / `MaxConnIdleTime` / `HealthCheckPeriod` | `laiyipao/server/internal/store/store.go` |
 | P1-2 | deadpool 未显式 acquire/wait timeout，池耗尽时请求可能长时间挂起 | `oa4rust/backend/crates/shared/src/db/mod.rs` |
 | P1-3 | 访问日志只有 5xx 的 warn，无耗时、请求 ID、结构化字段 | `oa4rust/backend/crates/shared/src/middleware/security.rs`（`trace_middleware`） |
-| P1-4 | 导出全量 `bytes.Buffer` 物化，10 万行内存峰值高 | laiyipao 10 个导出函数 |
+| P1-4 | 导出全量 `bytes.Buffer` 物化，10 万行内存峰值高 | laiyipao 10 个导出函数（R1 补行数上限、R14 补字节预算） |
 | P1-5 | `ControlPool::acquire` 把池错误统一映射为 `Internal`，丢失可分类性 | `oa4rust/backend/crates/shared/src/lib.rs` |
 
 ### P2（可维护性，可作轮次前置）
@@ -132,5 +132,6 @@ Wechat 8s 超时 + 1MB 响应上限、Fiber 读写超时与 body limit、laiyipa
 | R11 | oa4rust handler panic 收敛为 500 信封（不再断连） | done | 新增 `shared::panic_guard`：`CatchPanicLayer::custom` 把 panic 转成与 `AppError::Internal` 完全一致的 500 信封，并在 `create_app` 超时层**内层**接入。用例 3 条：panic 路由返回 500 且 `type=error` / `message="internal server error"` / `prompt=...ExceptionInternal`；panic 之后 `/ok` 仍 200 且 body=`ok`（服务不被带崩）；正常请求响应原样透传。`cargo check --bin oa4rust` 通过、`cargo clippy -p shared --tests -D warnings` 零告警、`shared` 全量 350 用例连续 3 次全绿（含把 `trace_middleware` 日志用例改成进程级 subscriber，消除并行偶发空日志） |
 | R12 | oa4rust 池取连失败分类补全：`Backend`/`Closed` 由 500 改为可重试 503 | done | `classify_acquire_error`（`shared/src/lib.rs`）：`Timeout`/`Backend`（连接被拒、握手失败、回收发现断开）/`Closed`（池关闭，重启或迁移窗口）统一映射 `AppError::Unavailable`（503）；只有配置类错误（无 runtime、post-create hook）保留 500。用例 3 条：关闭池后 acquire → `Unavailable` 且响应 503；指向 `127.0.0.1:1` 的失败池 → `Unavailable` 且 503；健康池 acquire 仍成功（回归）。`shared` 全量 353 用例通过、`cargo clippy -p shared --tests -D warnings` 零告警 |
 | R13 | laiyipao 导出并发闸门：上限 + 有界排队 + 503 `export_busy` | done | 新增 `httpapi/export_gate.go`：`EXPORT_MAX_CONCURRENCY`（默认 2）、`EXPORT_WAIT`（默认 3s）；在 `routes.go` 路由层统一包住全部 10 个 CSV 导出端点（单点收口，新增导出漏加会在路由清单直接可见）。满槽位时排队至多 `EXPORT_WAIT`（并受请求 ctx deadline 约束），排不上立即 503 `export_busy`（`failErr` 新分支），不再无限期挂住或吃满池连接。用例 4 条：满+超时→busy 且耗时 <500ms；wait 窗口内释放→排队者拿到槽位；ctx deadline 优先退出；E2E `TestE2EExportBusyReturns503`——占满槽位后 `GET /admin/orders/export` 503、释放后 200。既有导出 e2e（`-run Export`，30s）全绿、readonly 守卫 4 条通过、`go vet ./internal/httpapi ./internal/config` 干净 |
-| R14–R50 | 见 §3 B1 槽位 | pending | — |
+| R14 | laiyipao 导出字节预算：单次输出上限（默认 64 MiB）+ 超限 413，补上「行数上限挡不住行太宽」的盲区 | done | `EXPORT_MAX_BYTES`（默认 64 MiB，0=不限）；新增 `exportBuffer`（`io.Writer`，写入**前**比预算，超限返回可分类 `ErrExportTooLarge`）；10 处导出全部从 `bytes.Buffer` 换成 `s.newExportBuffer()`，共用既有 `Flush()/Error()` 出口 → `failErr` 413 `export_too_large`。峰值内存 = 上限 + 至多一个 csv 内部 bufio 刷新块（4 KiB），被拒块不落缓冲。证据：单元 2 条（超限块整块丢弃且缓冲长度不变、超限后继续写仍失败；`limit=0` 不限）；真库 1 条（scratch 库 20 行 × 400B 正文、预算 4 KiB → `errors.Is(ErrExportTooLarge)` 且文案含「字节」，预算放开后同批数据导出成功）；HTTP e2e 1 条（公告正文 4096 字符、预算 1 KiB → 413 且 body 含 `export_too_large` 与「字节」）。`go vet ./internal/config ./internal/service ./internal/httpapi` 干净 |
+| R15–R50 | 见 §3 B1 槽位 | pending | — |
 | R51–R1000 | 见 §3 各批槽位 | pending | — |

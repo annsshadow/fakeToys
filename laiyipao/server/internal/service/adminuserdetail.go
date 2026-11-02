@@ -3,7 +3,6 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"encoding/csv"
 	"encoding/json"
@@ -395,9 +394,9 @@ func (s *Service) AdminExportUserFlows(ctx context.Context, userID int64) ([]byt
 	}
 	defer rows.Close()
 
-	var buf bytes.Buffer
+	buf := s.newExportBuffer()
 	buf.WriteString("\xEF\xBB\xBF")
-	w := csv.NewWriter(&buf)
+	w := csv.NewWriter(buf)
 	header := []string{"id", "currency", "delta", "balance", "reason", "ref_id", "created_at"}
 	if err := w.Write(header); err != nil {
 		return nil, fmt.Errorf("write csv header: %w", err)

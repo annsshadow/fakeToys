@@ -137,6 +137,15 @@ type Config struct {
 	// ExportWait 是导出排队等槽位的上限（默认 3s）。
 	// 排不上返回 503 export_busy（可重试），而不是无限期挂住请求。
 	ExportWait time.Duration
+	// ExportMaxBytes 是单次 CSV 导出允许物化的**字节**上限（默认 64 MiB，
+	// 0 = 不限）。
+	//
+	// 行数上限（10 万行）挡不住单行很大或行宽不均的表：100k 行 × 每行 1KB
+	// 就是 100MB，而导出是全量物化进内存后再写响应，进程会被几次并发导出
+	// 直接打爆。字面上「没超过行数上限」而实际已经 OOM，是行数上限覆盖不到
+	// 的盲区；超过字节预算时返回 413 export_too_large（可分类），而不是
+	// 静默截断或等 OOM。
+	ExportMaxBytes int
 	// DBTimeZone 是连接会话时区（第 90 轮新增）。
 	// 详见 Config.DBTimeZone 的注释。
 	DBTimeZone       string
@@ -398,8 +407,11 @@ func Load() Config {
 		// 导出并发默认 2：给 10 条池连接里的普通请求留足余量。
 		ExportMaxConcurrency: envInt("EXPORT_MAX_CONCURRENCY", 2),
 		ExportWait:           envDuration("EXPORT_WAIT", 3*time.Second),
-		DBTimeZone:           env("DB_TIMEZONE", "Asia/Shanghai"),
-		MigrationsOnBoot:     envBool("MIGRATIONS_ON_BOOT", true),
+		// 64 MiB：10 万行 × 约 600 字节的常见宽度仍在上限内；
+		// 超过说明筛选范围过宽或行内容异常，直接 413 比 OOM 好。
+		ExportMaxBytes:   envInt("EXPORT_MAX_BYTES", 64<<20),
+		DBTimeZone:       env("DB_TIMEZONE", "Asia/Shanghai"),
+		MigrationsOnBoot: envBool("MIGRATIONS_ON_BOOT", true),
 
 		JWTSecret:  env("JWT_SECRET", "dev-only-insecure-secret-change-me"),
 		AccessTTL:  envDuration("ACCESS_TTL", 2*time.Hour),

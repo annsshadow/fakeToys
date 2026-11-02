@@ -4,10 +4,68 @@ package service
 
 import (
 	"context"
+	"encoding/csv"
 	"errors"
 	"strings"
 	"testing"
 )
+
+// exportBuffer 必须在写入**前**拒绝超预算的块：事后检查等于内存已经分配。
+//
+// csv.Writer 内部是 bufio.Writer（4 KiB），所以小记录会先攒着 —— 错误在
+// Flush 时暴露，这也是各导出末尾必须 `Flush()` + `Error()` 的原因。
+func TestExportBufferRejectsOverBudget(t *testing.T) {
+	buf := newExportBuffer(12)
+	buf.WriteString("\xEF\xBB\xBF") // BOM 占 3 字节，必须计入预算
+	w := csv.NewWriter(buf)
+
+	if err := writeCSVRow(w, []string{"ok"}); err != nil {
+		t.Fatalf("预算内的行不应失败：%v", err)
+	}
+	w.Flush()
+	if err := w.Error(); err != nil {
+		t.Fatalf("预算内的行不应失败：%v", err)
+	}
+	before := buf.Len()
+
+	if err := writeCSVRow(w, []string{"0123456789abcdef"}); err != nil {
+		t.Fatalf("bufio 尚未刷新，写入阶段不该报错：%v", err)
+	}
+	w.Flush()
+	err := w.Error()
+	if !errors.Is(err, ErrExportTooLarge) {
+		t.Fatalf("超预算应返回 ErrExportTooLarge，实际：%v", err)
+	}
+	if !strings.Contains(err.Error(), "字节") {
+		t.Fatalf("文案应说明是字节预算：%v", err)
+	}
+	// 被拒的块不得写进缓冲 —— 这是「写入前拦」与「事后检查」的区别。
+	if buf.Len() != before {
+		t.Fatalf("超预算的记录写入了缓冲：%d → %d 字节", before, buf.Len())
+	}
+	// 一旦超预算，后续写入继续失败，不会悄悄恢复增长。
+	if err := writeCSVRow(w, []string{"x"}); !errors.Is(err, ErrExportTooLarge) {
+		t.Fatalf("超预算后写入仍应失败，实际：%v", err)
+	}
+}
+
+// 0 = 不限（与其它配置的 0 语义一致）：排查时可关掉预算。
+func TestExportBufferZeroLimitIsUnlimited(t *testing.T) {
+	buf := newExportBuffer(0)
+	w := csv.NewWriter(buf)
+	for i := 0; i < 100; i++ {
+		if err := writeCSVRow(w, []string{strings.Repeat("y", 100)}); err != nil {
+			t.Fatalf("limit=0 不应报错：%v", err)
+		}
+	}
+	w.Flush()
+	if err := w.Error(); err != nil {
+		t.Fatalf("limit=0 不应报错：%v", err)
+	}
+	if buf.Len() < 10*1000 {
+		t.Fatalf("缓冲长度异常：%d", buf.Len())
+	}
+}
 
 // exportTooLarge 必须可被 errors.Is 归类，且文案要给出「至少多少行 / 上限多少」
 // —— 运营据此才知道该把筛选缩到多小。
@@ -74,5 +132,38 @@ func TestAdminExportUserFlowsOverLimit(t *testing.T) {
 
 	if _, err := ts.AdminExportUserFlows(ctx, uid); !errors.Is(err, ErrExportTooLarge) {
 		t.Fatalf("超出上限应返回 ErrExportTooLarge，实际：%v", err)
+	}
+}
+
+// 字节预算必须**独立于行数上限**生效：20 行远没到 10 万行，但行宽大，
+// 总量超过 4 KiB 就必须 413，而不是把 8 KB 物化进内存后照样返回。
+//
+// 这条用例的意义是：只测 helper 时，「导出函数用了 budget buffer」
+// 这件事没有被验证 —— 漏接一个导出仍是 OOM 面。
+func TestAdminExportAnnouncementsByteBudget(t *testing.T) {
+	ts := openScratchService(t)
+	ctx := context.Background()
+
+	cfg := *ts.Cfg()
+	cfg.ExportMaxBytes = 4 << 10
+	ts.ReloadConfig(cfg)
+
+	ts.exec(t, `DELETE FROM announcements`)
+	ts.exec(t, `INSERT INTO announcements (title, body)
+	            SELECT 'wide-' || g, repeat('x', 400) FROM generate_series(1, 20) g`)
+
+	_, err := ts.AdminExportAnnouncements(ctx)
+	if !errors.Is(err, ErrExportTooLarge) {
+		t.Fatalf("字节超预算应返回 ErrExportTooLarge，实际：%v", err)
+	}
+	if !strings.Contains(err.Error(), "字节") {
+		t.Fatalf("文案应指出字节预算而不是行数：%v", err)
+	}
+
+	// 放开预算后同一批数据必须成功 —— 证明拦截来自预算，而不是数据本身有问题。
+	cfg.ExportMaxBytes = 64 << 20
+	ts.ReloadConfig(cfg)
+	if _, err := ts.AdminExportAnnouncements(ctx); err != nil {
+		t.Fatalf("预算放开后应导出成功，实际：%v", err)
 	}
 }

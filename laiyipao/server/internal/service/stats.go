@@ -3,7 +3,6 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"encoding/csv"
 	"encoding/json"
@@ -592,10 +591,10 @@ func (s *Service) AdminExportUsers(ctx context.Context, keyword string, dateFrom
 	}
 	defer rows.Close()
 
-	var buf bytes.Buffer
+	buf := s.newExportBuffer()
 	// UTF-8 BOM：Excel 打开含中文的 CSV 时按 UTF-8 解码，否则乱码。
 	buf.WriteString("\xEF\xBB\xBF")
-	w := csv.NewWriter(&buf)
+	w := csv.NewWriter(buf)
 	header := []string{
 		"id", "nickname", "is_guest", "status", "max_stage", "power",
 		"coin", "gem", "created_at", "last_login_at", "verify_checked", "verify_mismatched",
@@ -1175,9 +1174,9 @@ func (s *Service) AdminExportBattles(ctx context.Context, userID int64, levelID 
 	}
 	defer rows.Close()
 
-	var buf bytes.Buffer
+	buf := s.newExportBuffer()
 	buf.WriteString("\xEF\xBB\xBF")
-	w := csv.NewWriter(&buf)
+	w := csv.NewWriter(buf)
 	header := []string{
 		"id", "user_id", "nickname", "level_id", "result", "stars", "score",
 		"kills", "leaked", "wave_reached", "duration_ms", "reactions", "heat_max",

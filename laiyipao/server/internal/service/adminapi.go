@@ -3,7 +3,6 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/csv"
@@ -608,9 +607,9 @@ func (s *Service) AdminExportDefenseChallenges(ctx context.Context, defenseID, c
 	}
 	defer rows.Close()
 
-	var buf bytes.Buffer
+	buf := s.newExportBuffer()
 	buf.WriteString("\xEF\xBB\xBF")
-	w := csv.NewWriter(&buf)
+	w := csv.NewWriter(buf)
 	header := []string{
 		"id", "defense_id", "defense_name", "challenger_id", "challenger_nickname",
 		"won", "duration_ms", "hp_left_pct", "loot", "created_at",
@@ -775,9 +774,9 @@ func (s *Service) AdminExportOrders(ctx context.Context, status string, dateFrom
 	}
 	defer rows.Close()
 
-	var buf bytes.Buffer
+	buf := s.newExportBuffer()
 	buf.WriteString("\xEF\xBB\xBF")
-	w := csv.NewWriter(&buf)
+	w := csv.NewWriter(buf)
 	header := []string{
 		"id", "user_id", "nickname", "order_no", "sku", "amount_cents",
 		"status", "provider", "created_at", "delivered_at",
@@ -921,9 +920,9 @@ func (s *Service) AdminExportRedeemUsages(ctx context.Context, codeKeyword strin
 	}
 	defer rows.Close()
 
-	var buf bytes.Buffer
+	buf := s.newExportBuffer()
 	buf.WriteString("\xEF\xBB\xBF")
-	w := csv.NewWriter(&buf)
+	w := csv.NewWriter(buf)
 	header := []string{"id", "code", "user_id", "nickname", "reward", "created_at"}
 	if err := w.Write(header); err != nil {
 		return nil, fmt.Errorf("write csv header: %w", err)
@@ -1493,9 +1492,9 @@ func (s *Service) AdminExportRedeemCodes(ctx context.Context) ([]byte, error) {
 	}
 	defer rows.Close()
 
-	var buf bytes.Buffer
+	buf := s.newExportBuffer()
 	buf.WriteString("\xEF\xBB\xBF")
-	w := csv.NewWriter(&buf)
+	w := csv.NewWriter(buf)
 	header := []string{"id", "code", "reward", "max_uses", "used_count", "expires_at", "enabled"}
 	if err := w.Write(header); err != nil {
 		return nil, fmt.Errorf("write csv header: %w", err)
@@ -1632,9 +1631,9 @@ func (s *Service) AdminExportAnnouncements(ctx context.Context) ([]byte, error) 
 	}
 	defer rows.Close()
 
-	var buf bytes.Buffer
+	buf := s.newExportBuffer()
 	buf.WriteString("\xEF\xBB\xBF")
-	w := csv.NewWriter(&buf)
+	w := csv.NewWriter(buf)
 	header := []string{"id", "title", "body", "published", "published_at", "created_at"}
 	if err := w.Write(header); err != nil {
 		return nil, fmt.Errorf("write csv header: %w", err)
@@ -1773,9 +1772,9 @@ func (s *Service) AdminExportAuditLogs(ctx context.Context, action string, admin
 	}
 	defer rows.Close()
 
-	var buf bytes.Buffer
+	buf := s.newExportBuffer()
 	buf.WriteString("\xEF\xBB\xBF")
-	w := csv.NewWriter(&buf)
+	w := csv.NewWriter(buf)
 	header := []string{"id", "admin_id", "username", "action", "target", "detail", "created_at"}
 	if err := w.Write(header); err != nil {
 		return nil, fmt.Errorf("write csv header: %w", err)

@@ -67,7 +67,6 @@ package service
 // 所以升回只允许人工：配置改回来 + 重启。这是刻意的。
 
 import (
-	"bytes"
 	"context"
 	"encoding/csv"
 	"fmt"
@@ -765,9 +764,9 @@ func (s *Service) AdminExportRecomputes(ctx context.Context, f RecomputeFilter) 
 	}
 	defer rows.Close()
 
-	var buf bytes.Buffer
+	buf := s.newExportBuffer()
 	buf.WriteString("\xEF\xBB\xBF")
-	w := csv.NewWriter(&buf)
+	w := csv.NewWriter(buf)
 	header := []string{
 		"id", "battle_id", "user_id", "nickname", "level_id",
 		"reported_score", "reported_kills", "reported_duration_ms", "reported_hash",
