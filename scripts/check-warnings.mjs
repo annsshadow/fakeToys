@@ -241,6 +241,17 @@ const CHECKS = [
     pattern: /缺 header：/,
     timeout: 2 * 60 * 1000,
   },
+  {
+    id: 'openapi-paths',
+    label: 'oa4rust OpenAPI 生成物与路由源码不脱节（regen diff 为空）',
+    cwd: 'oa4rust/backend',
+    cmd: 'python scripts/check_openapi_up_to_date.py',
+    // 第 68 轮：跑 gen_openapi_paths.py 后与已提交产物逐字比对（行尾无关）。
+    // 脚本总是恢复原产物内容（检查本身不改仓库）；非零退出即 FAIL。
+    // pattern 只匹配失败时的「落后于路由源码」行。
+    pattern: /落后于路由源码|gen_openapi_paths\.py 执行失败/,
+    timeout: 2 * 60 * 1000,
+  },
 ]
 
 const args = process.argv.slice(2)
