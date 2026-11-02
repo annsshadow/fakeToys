@@ -8,7 +8,7 @@ import { runAll, runSite } from "./runner.js";
 import { shouldFailRun } from "./run-status.js";
 import { createLogger } from "./logger.js";
 import { acquireDaemonLock, wasInterrupted } from "./lock.js";
-import { cleanupOldFiles } from "./cleanup.js";
+import { startCleanupLoop } from "./cleanup.js";
 
 const log = createLogger("main");
 
@@ -49,7 +49,8 @@ async function main(): Promise<void> {
 
   log.info("常驻模式启动");
   // 第 59 轮：启动时清理保留窗口外的旧日志与超量截图（长期运行不无限增长）。
-  cleanupOldFiles();
+  // 第 89 轮：改为周期清理——只在启动清一次对连续运行数周的进程等于没清。
+  startCleanupLoop({ onError: (err) => log.warn(`日志/截图清理失败：${err.message}`) });
   startServer(config);
   startScheduler(config);
 }

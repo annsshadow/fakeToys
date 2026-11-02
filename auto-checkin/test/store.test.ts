@@ -12,7 +12,7 @@ import { join } from "node:path";
 const DATA_DIR = mkdtempSync(join(tmpdir(), "auto-checkin-store-"));
 process.env.AUTO_CHECKIN_DATA_DIR = DATA_DIR;
 
-const { addRecord, getAllRecords, computeSiteStats, getStoreVersion } = await import("../src/store.js");
+const { addRecord, getAllRecords, computeSiteStats, computeSiteStatsBatch, getStoreVersion, computeTrend } = await import("../src/store.js");
 import type { CheckinResult } from "../src/types.js";
 
 function result(overrides: Partial<CheckinResult> = {}): CheckinResult {
@@ -95,4 +95,43 @@ test("写入确实经过临时文件再 rename（占用临时路径时写入必�
   } finally {
     rmSync(tmpPath, { recursive: true, force: true });
   }
+});
+
+// 第 91 轮：趋势跳过窗口外记录，窗口首日（含）必须计入。
+function localIsoDaysAgo(daysAgo: number): string {
+  const d = new Date();
+  d.setHours(12, 0, 0, 0); // 正午避开跨时区/夏令时边界
+  d.setDate(d.getDate() - daysAgo);
+  return d.toISOString();
+}
+
+test("趋势窗口边界：首日记录计入，更早的历史被跳过", () => {
+  addRecord(result({ siteId: "site-c", timestamp: localIsoDaysAgo(6), reward: 7 }));
+  addRecord(result({ siteId: "site-c", timestamp: localIsoDaysAgo(7), reward: 99 }));
+
+  const trend = computeTrend(["site-c"], 7);
+  assert.equal(trend.length, 7);
+  const total = trend.reduce((s, p) => s + p.perSite["site-c"], 0);
+  assert.equal(total, 7, "7 天窗口只应统计首日那条；第 8 天前的 99 必须被跳过");
+  assert.equal(trend[0].perSite["site-c"], 7, "窗口首日（6 天前）的记录应计入");
+});
+
+// 第 78 轮：批量统计必须与逐站统计逐字段一致（含无记录站点）。
+test("批量统计与逐站统计逐字段一致，无记录站点返回零值", () => {
+  const sites = [
+    { siteId: "site-a", siteName: "Site A" },
+    { siteId: "site-b", siteName: "Site B" },
+    { siteId: "site-empty", siteName: "Site Empty" },
+  ];
+  const batch = computeSiteStatsBatch(sites);
+  assert.equal(batch.length, sites.length);
+  for (const [i, s] of sites.entries()) {
+    assert.deepEqual(batch[i], computeSiteStats(s.siteId, s.siteName), `${s.siteId} 批量结果应等于逐站结果`);
+  }
+  const empty = batch[2];
+  assert.equal(empty.siteId, "site-empty");
+  assert.equal(empty.totalRuns, 0);
+  assert.equal(empty.totalReward, 0);
+  assert.equal(empty.checkedInToday, false);
+  assert.equal(empty.todayStatus, null);
 });

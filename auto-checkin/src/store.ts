@@ -88,9 +88,11 @@ export function getAllRecords(): CheckinResult[] {
   return read().records;
 }
 
-function localDay(iso: string): string {
+// 第 78 轮：Date 只解析一次。旧实现对同一条记录分别用
+// `localDay(iso)`、`weekStart(new Date(iso))`、`monthKey(iso)` 各解析一次，
+// 统计每条记录要新建 3 个 Date、3 个日期串；改为拿到 Date 后在各处复用。
+function localDayOf(d: Date): string {
   // 用本地时区判断"今天"
-  const d = new Date(iso);
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
@@ -98,20 +100,20 @@ function localDay(iso: string): string {
 }
 
 function todayStr(): string {
-  return localDay(new Date().toISOString());
+  return localDayOf(new Date());
 }
 
-/** ISO 时间戳所在周的周一（本地时区），返回 YYYY-MM-DD */
-function weekStart(d: Date): string {
+/** 给定日期所在周的周一（本地时区），返回 YYYY-MM-DD */
+function weekStartOf(d: Date): string {
   const t = new Date(d);
   const day = (t.getDay() + 6) % 7; // 周一=0
   t.setDate(t.getDate() - day);
-  return localDay(t.toISOString());
+  return localDayOf(t);
 }
 
-/** ISO 时间戳所在月，返回 YYYY-MM */
-function monthKey(iso: string): string {
-  return localDay(iso).slice(0, 7);
+/** 给定日期所在月，返回 YYYY-MM */
+function monthKeyOf(d: Date): string {
+  return localDayOf(d).slice(0, 7);
 }
 
 export interface SiteStats {
@@ -143,10 +145,16 @@ export interface SiteStats {
   totalRuns: number;
   /** 失败次数 */
   failedRuns: number;
+  /** 跳过次数（未配置凭据/已禁用等原因，不参与成功率分母） */
+  skippedRuns: number;
   /** 成功率（success+already / 有效运行，0~100） */
   successRate: number;
   /** 平均耗时（毫秒） */
   avgDurationMs: number;
+  /** 有效耗时样本总和（供总量加权平均用，面板不展示） */
+  durationMsSum: number;
+  /** 有效耗时样本数（durationMs > 0 的记录数） */
+  durationMsCount: number;
   /** 最近一次耗时（毫秒） */
   lastDurationMs: number | null;
   /** 最近一次失败截图相对路径 */
@@ -183,20 +191,25 @@ export interface TrendPoint {
  */
 export function computeTrend(siteIds: string[], days = 30): TrendPoint[] {
   const records = read().records;
+  // 第 91 轮：趋势只覆盖最近 days 天，窗口外的历史记录不必解析日期、不必建桶。
+  // 记录库最多 2000 条，但面板每 15 秒轮询一次，省下的仍是逐条 Date + 字符串分配。
+  const cursor = new Date();
+  cursor.setDate(cursor.getDate() - (days - 1));
+  const cutoffDay = localDayOf(cursor);
   const byDay = new Map<string, Record<string, number>>();
   for (const r of records) {
     if (typeof r.reward !== "number" || r.reward === 0) continue;
-    const day = localDay(r.timestamp);
+    const day = localDayOf(new Date(r.timestamp));
+    // 本地日期是 YYYY-MM-DD 定长格式，字符串比较即日期先后
+    if (day < cutoffDay) continue;
     if (!byDay.has(day)) byDay.set(day, {});
     const bucket = byDay.get(day)!;
     bucket[r.siteId] = (bucket[r.siteId] ?? 0) + r.reward;
   }
 
   const points: TrendPoint[] = [];
-  const cursor = new Date();
-  cursor.setDate(cursor.getDate() - (days - 1));
   for (let i = 0; i < days; i++) {
-    const day = localDay(cursor.toISOString());
+    const day = localDayOf(cursor);
     const bucket = byDay.get(day) ?? {};
     const perSite: Record<string, number> = {};
     let total = 0;
@@ -217,10 +230,10 @@ function computeStreak(days: Set<string>): number {
   let streak = 0;
   const cursor = new Date();
   // 若今天还没签，从昨天开始算也不断
-  if (!days.has(localDay(cursor.toISOString()))) {
+  if (!days.has(localDayOf(cursor))) {
     cursor.setDate(cursor.getDate() - 1);
   }
-  while (days.has(localDay(cursor.toISOString()))) {
+  while (days.has(localDayOf(cursor))) {
     streak++;
     cursor.setDate(cursor.getDate() - 1);
   }
@@ -236,7 +249,7 @@ function computeBestStreak(days: Set<string>): number {
   for (let i = 1; i < sorted.length; i++) {
     const prev = new Date(sorted[i - 1]);
     prev.setDate(prev.getDate() + 1);
-    if (localDay(prev.toISOString()) === sorted[i]) {
+    if (localDayOf(prev) === sorted[i]) {
       cur++;
       best = Math.max(best, cur);
     } else {
@@ -246,12 +259,13 @@ function computeBestStreak(days: Set<string>): number {
   return best;
 }
 
-export function computeSiteStats(siteId: string, siteName: string): SiteStats {
-  const records = read().records.filter((r) => r.siteId === siteId);
+/** 单站统计的纯计算部分：records 已按站点过滤 */
+function summarizeSite(siteId: string, siteName: string, records: CheckinResult[]): SiteStats {
   const today = todayStr();
-  const thisWeek = weekStart(new Date());
-  const thisMonth = monthKey(new Date().toISOString());
+  const thisWeek = weekStartOf(new Date());
+  const thisMonth = monthKeyOf(new Date());
   const successDays = new Set<string>();
+  const todayRecords: CheckinResult[] = [];
 
   let totalCheckins = 0;
   let totalReward = 0;
@@ -261,17 +275,22 @@ export function computeSiteStats(siteId: string, siteName: string): SiteStats {
   let currency: string | null = null;
   let totalRuns = 0;
   let failedRuns = 0;
+  let skippedRuns = 0;
   let effectiveRuns = 0; // 非跳过的运行
   let successRuns = 0;
   let durationSum = 0;
   let durationCount = 0;
 
   for (const r of records) {
+    const when = new Date(r.timestamp);
+    const day = localDayOf(when);
     totalRuns++;
     if (r.status !== "skipped") {
       effectiveRuns++;
       if (r.status === "success" || r.status === "already") successRuns++;
       if (r.status === "failed") failedRuns++;
+    } else {
+      skippedRuns++;
     }
     if (typeof r.durationMs === "number" && r.durationMs > 0) {
       durationSum += r.durationMs;
@@ -279,24 +298,39 @@ export function computeSiteStats(siteId: string, siteName: string): SiteStats {
     }
     const isSuccess = r.status === "success" || r.status === "already";
     if (isSuccess) {
-      successDays.add(localDay(r.timestamp));
+      successDays.add(day);
       if (r.status === "success") totalCheckins++;
     }
     if (typeof r.reward === "number") {
       totalReward += r.reward;
-      if (weekStart(new Date(r.timestamp)) === thisWeek) weekReward += r.reward;
-      if (monthKey(r.timestamp) === thisMonth) monthReward += r.reward;
+      if (weekStartOf(when) === thisWeek) weekReward += r.reward;
+      if (monthKeyOf(when) === thisMonth) monthReward += r.reward;
     }
     if (typeof r.balance === "number") latestBalance = r.balance;
     if (r.currency) currency = r.currency;
+    if (day === today) todayRecords.push(r);
   }
 
-  const todayRecords = records.filter((r) => localDay(r.timestamp) === today);
   const lastToday = todayRecords[todayRecords.length - 1] ?? null;
   // 今日奖励取当天最后一条"有奖励值"的记录，避免被之后的跳过/失败记录覆盖成 —
-  const todayRewardRec = [...todayRecords].reverse().find((r) => typeof r.reward === "number") ?? null;
+  //
+  // 第 98 轮：旧写法 `[...todayRecords].reverse()` / `[...records].reverse()` 各复制
+  // 一份全量数组再反向遍历；这里直接从尾部找，找到即停，零额外分配。
+  let todayRewardRec: CheckinResult | null = null;
+  for (let i = todayRecords.length - 1; i >= 0; i--) {
+    if (typeof todayRecords[i].reward === "number") {
+      todayRewardRec = todayRecords[i];
+      break;
+    }
+  }
   const last = records[records.length - 1] ?? null;
-  const lastFailed = [...records].reverse().find((r) => r.screenshot) ?? null;
+  let lastFailed: CheckinResult | null = null;
+  for (let i = records.length - 1; i >= 0; i--) {
+    if (records[i].screenshot) {
+      lastFailed = records[i];
+      break;
+    }
+  }
   const checkedInToday = todayRecords.some(
     (r) => r.status === "success" || r.status === "already",
   );
@@ -319,9 +353,38 @@ export function computeSiteStats(siteId: string, siteName: string): SiteStats {
     monthReward: Number(monthReward.toFixed(4)),
     totalRuns,
     failedRuns,
+    skippedRuns,
     successRate: effectiveRuns > 0 ? Math.round((successRuns / effectiveRuns) * 100) : 0,
     avgDurationMs: durationCount > 0 ? Math.round(durationSum / durationCount) : 0,
+    durationMsSum: durationSum,
+    durationMsCount: durationCount,
     lastDurationMs: last?.durationMs ?? null,
     lastScreenshot: lastFailed?.screenshot ?? null,
   };
+}
+
+export function computeSiteStats(siteId: string, siteName: string): SiteStats {
+  const records = read().records.filter((r) => r.siteId === siteId);
+  return summarizeSite(siteId, siteName, records);
+}
+
+/**
+ * 第 78 轮：一次遍历把记录分到各站，避免「每站都全量扫一遍」。
+ *
+ * 旧实现里 `/api/stats` 对 3 个站点各调一次 `computeSiteStats`，每站都
+ * `records.filter(...size)` 全量过滤一遍（3×N 次比较），再各自遍历统计。
+ * 现在按站点分桶一次扫完，单条记录只在本站桶里被统计一次。
+ */
+export function computeSiteStatsBatch(
+  sites: Array<{ siteId: string; siteName: string }>,
+): SiteStats[] {
+  const grouped = new Map<string, CheckinResult[]>();
+  for (const s of sites) grouped.set(s.siteId, []);
+  for (const r of read().records) {
+    const bucket = grouped.get(r.siteId);
+    if (bucket) bucket.push(r);
+  }
+  return sites.map((s) =>
+    summarizeSite(s.siteId, s.siteName, grouped.get(s.siteId) ?? []),
+  );
 }

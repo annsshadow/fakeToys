@@ -16,6 +16,7 @@ import { dirname, join } from 'node:path'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const appJs = readFileSync(join(here, '..', 'src', 'public', 'app.js'), 'utf-8')
+const indexHtml = readFileSync(join(here, '..', 'src', 'public', 'index.html'), 'utf-8')
 
 const BANNED_PATTERNS: Array<[string, RegExp]> = [
   // 只拦「直接输出」的裸插值：`${s.lastMessage ? esc(...) : ...}` 里的
@@ -47,4 +48,22 @@ test('面板口令处理：不再提示 URL 加 ?token=，使用 sessionStorage 
   assert.ok(appJs.includes('sessionStorage'), '口令应存 sessionStorage')
   assert.ok(appJs.includes('replaceState'), 'URL 中的 token 应被 replaceState 抹掉')
   assert.ok(appJs.includes('panel_token'), 'sessionStorage 键名应存在')
+})
+
+// 第 71 轮：记录状态筛选片（服务端 ?status= 过滤，不是前端对最近 80 条再截）。
+test('记录状态筛选：五个筛选片齐全且请求带 status 参数', () => {
+  assert.ok(indexHtml.includes('data-status=""'), '缺少「全部」筛选片')
+  for (const s of ['success', 'already', 'failed', 'skipped']) {
+    assert.ok(indexHtml.includes(`data-status="${s}"`), `缺少 ${s} 筛选片`)
+  }
+  assert.match(appJs, /qs\.set\("status"/, '记录请求必须按状态传 status 参数')
+  assert.ok(appJs.includes('rec-filters'), '筛选片事件必须挂在 #rec-filters 上')
+})
+
+// 第 72 轮：fmtNum 也曾裸插值（currency 与数值都来自远端站点响应）。
+test('fmtNum 对 currency 与数值都转义', () => {
+  const fn = appJs.match(/function fmtNum\([\s\S]*?\n\}/)
+  assert.ok(fn, 'fmtNum 应存在')
+  assert.ok(fn[0].includes('esc(currency)'), 'currency 必须转义')
+  assert.ok(fn[0].includes('esc(n)'), '数值同样必须转义')
 })

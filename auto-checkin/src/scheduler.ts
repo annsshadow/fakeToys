@@ -11,56 +11,97 @@ import { setNextRunAt } from "./server.js";
 
 const log = createLogger("scheduler");
 
-/** 粗略估算下一次 cron 触发时间（仅用于面板展示）
+/** 把 cron 的一个字段编译成谓词：命中返回 true，表达式非法返回 null。
  *
- * 返回 `{ at, note }`：能估算时 at 是 ISO 时间；不能估算时（步进、列表、
- * 区间、名称——`Number()` 全是 NaN）at 为 null、note 是回退说明。曾经的实现
- * 直接返回 null，面板于是显示「空闲待命」——对一条**已排定**的 cron 来说
- * 那是假话（2026-10-24 修）。
+ * 第 77 轮：旧实现只认 `*` 与单个数字，步进（星斜杠 + 数字）、列表
+ * （`1,15`）、区间（`9-18`）一律回退成「暂不能估算具体时刻」——而这些正是
+ * 面板上最常见的写法。现在按 cron 语义解析：列表逐项、区间取闭区间、
+ * 步进从区间下界（`*` 时取该字段最小合法值，如日字段的 1）起步长 n。
  *
- * 注：注释里不出现 cron 星斜杠字面量——块注释会被它提前终结。
+ * 周字段允许 7 代表周日（本机 `getDay()` 是 0），由调用方额外测 `+7`。
  */
-/** 某字段是否匹配给定值：`*` 恒真，纯数字按相等；步进/列表/区间返回 null（无法判断）。 */
-function fieldMatch(field: string, value: number, allow7As0 = false): boolean | null {
-  if (field === "*") return true;
-  const n = Number(field);
-  if (Number.isNaN(n)) return null;
-  if (allow7As0 && n === 7 && value === 0) return true;
-  return n === value;
+function compileField(
+  field: string,
+  min: number,
+  max: number,
+): ((value: number) => boolean) | null {
+  if (field === "*") return () => true;
+
+  const predicates: Array<(value: number) => boolean> = [];
+  for (const chunk of field.split(",")) {
+    const slash = chunk.split("/");
+    if (slash.length > 2) return null;
+    const [range, stepRaw] = slash;
+    let step = 1;
+    if (stepRaw !== undefined) {
+      step = Number(stepRaw);
+      if (!Number.isInteger(step) || step <= 0) return null;
+    }
+
+    let lo: number;
+    let hi: number;
+    if (range === "*") {
+      lo = min;
+      hi = max;
+    } else if (range.includes("-")) {
+      const [a, b] = range.split("-");
+      lo = Number(a);
+      hi = Number(b);
+      if (!Number.isInteger(lo) || !Number.isInteger(hi)) return null;
+      if (lo < min || hi > max || lo > hi) return null;
+    } else {
+      lo = Number(range);
+      hi = lo;
+      if (!Number.isInteger(lo) || lo < min || lo > max) return null;
+    }
+
+    predicates.push(
+      (value) => value >= lo && value <= hi && (value - lo) % step === 0,
+    );
+  }
+  return (value) => predicates.some((p) => p(value));
 }
 
+/** 粗略估算下一次 cron 触发时间（仅用于面板展示）
+ *
+ * 返回 `{ at, note }`：能估算时 at 是 ISO 时间；表达式无法解析或一年内无
+ * 匹配时刻时 at 为 null、note 是回退说明。曾经的实现直接返回 null，面板
+ * 于是显示「空闲待命」——对一条**已排定**的 cron 来说那是假话（2026-10-24 修）。
+ */
 export function estimateNext(expr: string): { at: string | null; note: string | null } {
   // 第 58 轮：完整 5 字段匹配（分 时 日 月 周），扫描范围扩到未来 366 天。
-  // 旧实现只匹配分/时——`0 9 1 * *`（每月 1 号 9 点）被估成明天 9 点，
-  // 且只扫未来 24h，月/年任务永远「不能估算」。
+  // 第 77 轮：字段解析支持步进/列表/区间（见 compileField）。
   // 日与周是 OR 语义（cron 规定两者都非 * 时任一命中即可）。
   const parts = expr.trim().split(/\s+/);
   if (parts.length < 5) return { at: null, note: null };
   const [min, hour, dom, month, dow] = parts;
+  const mPred = compileField(min, 0, 59);
+  const hPred = compileField(hour, 0, 23);
+  const domPred = compileField(dom, 1, 31);
+  const monthPred = compileField(month, 1, 12);
+  const dowPred = compileField(dow, 0, 7);
+  if (!mPred || !hPred || !domPred || !monthPred || !dowPred) {
+    return { at: null, note: `cron "${expr}"（表达式无法解析，任务已排定）` };
+  }
   const now = new Date();
   for (let i = 1; i <= 366 * 24 * 60; i++) {
     const t = new Date(now.getTime() + i * 60000);
-    const mOk = fieldMatch(min, t.getMinutes());
-    const hOk = fieldMatch(hour, t.getHours());
-    const dowOk = fieldMatch(dow, t.getDay(), true);
-    let dayOk: boolean | null;
+    const dowIndex = t.getDay();
+    const dowOk = dowPred(dowIndex) || dowPred(dowIndex + 7);
+    let dayOk: boolean;
     if (dom === "*" && dow === "*") {
       dayOk = true;
     } else if (dom !== "*" && dow === "*") {
-      dayOk = fieldMatch(dom, t.getDate());
+      dayOk = domPred(t.getDate());
     } else if (dom === "*" && dow !== "*") {
       dayOk = dowOk;
     } else {
       // 两者都非 *：cron 语义是 OR
-      const dOk = fieldMatch(dom, t.getDate());
-      dayOk = (dOk === true || dowOk === true);
+      dayOk = domPred(t.getDate()) || dowOk;
     }
-    const monOk = fieldMatch(month, t.getMonth() + 1);
-    // 任一字段是步进/列表/区间（null）→ 无法用数字匹配，回退说明
-    if (mOk === null || hOk === null || dayOk === null || monOk === null || dowOk === null) {
-      return { at: null, note: `cron "${expr}"（步进/列表/区间表达式暂不能估算具体时刻，任务已排定）` };
+    if (mPred(t.getMinutes()) && hPred(t.getHours()) && dayOk && monthPred(t.getMonth() + 1)) {
+      return { at: t.toISOString(), note: null };
     }
-    if (mOk && hOk && dayOk && monOk) return { at: t.toISOString(), note: null };
   }
   return { at: null, note: `cron "${expr}"（未来一年内没有匹配时刻，任务已排定）` };
 }

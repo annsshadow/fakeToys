@@ -18,10 +18,42 @@ test("字面量 cron 能估算出未来 24h 内的 ISO 时间", () => {
   assert.ok(Date.parse(at!) > Date.now() - 60_000, "估算的下次时间应在未来");
 });
 
-test("步进/列表表达式不能估算时给回退说明，而不是假装空闲", () => {
-  // 曾经的实现对 `*/30` 返回 null，面板显示「空闲待命」——对已排定的
-  // cron 是假话（2026-10-24 修：改为返回人话说明）。
-  for (const expr of ["*/30 * * * *", "0 */2 * * *", "1,15 * * * *", "0 9-18 * * *"]) {
+// 第 77 轮：步进/列表/区间不再回退说明，按 cron 语义算出具体时刻。
+test("步进表达式（星斜杠 n）能估算出落在步长上的时刻", () => {
+  for (const [expr, modulo] of [["*/30 * * * *", 30], ["0 */2 * * *", 2]] as const) {
+    const { at, note } = estimateNext(expr);
+    assert.ok(at, `${expr} 应能估算`);
+    assert.equal(note, null);
+    const d = new Date(at!);
+    assert.ok(d.getTime() > Date.now() - 60_000, "估算应在未来");
+    if (modulo === 30) assert.equal(d.getMinutes() % 30, 0);
+    else assert.equal(d.getHours() % 2, 0);
+  }
+});
+
+test("列表与区间表达式能估算出对应字段上的时刻", () => {
+  const list = estimateNext("1,15 * * * *");
+  assert.ok(list.at, "列表表达式应能估算");
+  assert.equal(list.note, null);
+  assert.ok([1, 15].includes(new Date(list.at!).getMinutes()));
+
+  const range = estimateNext("0 9-18 * * *");
+  assert.ok(range.at, "区间表达式应能估算");
+  assert.equal(range.note, null);
+  const d = new Date(range.at!);
+  assert.ok(d.getHours() >= 9 && d.getHours() <= 18);
+  assert.equal(d.getMinutes(), 0);
+});
+
+test("周字段 7 与 0 同义（都指周日）", () => {
+  const { at, note } = estimateNext("0 9 * * 7");
+  assert.ok(at);
+  assert.equal(note, null);
+  assert.equal(new Date(at!).getDay(), 0, "7 应映射到周日");
+});
+
+test("非法或越界字段给回退说明，而不是假装空闲", () => {
+  for (const expr of ["*/0 * * * *", "60 * * * *", "0 9 * * 9"]) {
     const { at, note } = estimateNext(expr);
     assert.equal(at, null, `${expr} 不应估算出时间`);
     assert.ok(note && note.includes(expr), `${expr} 应带原始表达式回退说明，实际 ${note}`);

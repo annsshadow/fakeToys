@@ -52,3 +52,46 @@ export function cleanupOldFiles(
     /* screenshots 目录不存在，无需清理 */
   }
 }
+
+/** 周期清理的默认间隔：6 小时（常驻进程里磁盘增长按天计，无需更频繁） */
+export const CLEANUP_INTERVAL_MS = 6 * 60 * 60 * 1000;
+
+export interface CleanupLoopOptions {
+  logDir?: string;
+  shotDir?: string;
+  intervalMs?: number;
+  onError?: (err: Error) => void;
+}
+
+/**
+ * 第 89 轮：周期清理。第 59 轮只在**启动时**清一次——常驻进程连续运行数周后，
+ * `logs/` 与 `screenshots/` 又会越过保留窗口（失败截图尤其），等于清理只对
+ * 「当天重启过的部署」有效。
+ *
+ * 启动即跑一次（保留旧行为），之后按 `intervalMs` 重复；返回停止函数，便于测试
+ * 与嵌入式场景显式收尾。定时器 `unref()`，不单独阻止进程退出。
+ */
+export function startCleanupLoop(opts: CleanupLoopOptions = {}): () => void {
+  const { logDir, shotDir, intervalMs = CLEANUP_INTERVAL_MS, onError } = opts;
+  let timer: ReturnType<typeof setInterval> | null = null;
+  let stopped = false;
+
+  const run = (): void => {
+    if (stopped) return;
+    try {
+      cleanupOldFiles(logDir, shotDir);
+    } catch (err) {
+      // 清理是后台维护动作，失败只上报，绝不能让常驻进程崩掉。
+      onError?.(err as Error);
+    }
+  };
+
+  run();
+  timer = setInterval(run, intervalMs);
+  timer.unref?.();
+  return () => {
+    stopped = true;
+    if (timer) clearInterval(timer);
+    timer = null;
+  };
+}

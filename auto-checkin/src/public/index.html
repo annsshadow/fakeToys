@@ -62,7 +62,20 @@
 
     <!-- 记录 -->
     <section class="panel glass">
-      <div class="panel-head"><h2>运行记录</h2><span class="panel-sub" id="rec-count"></span></div>
+      <div class="panel-head">
+        <div>
+          <h2>运行记录</h2>
+          <div class="panel-sub" id="rec-count"></div>
+        </div>
+        <!-- 第 71 轮：记录按状态筛选（服务端 ?status= 过滤，非前端截断） -->
+        <div class="range" id="rec-filters">
+          <button data-status="" class="active">全部</button>
+          <button data-status="success">成功</button>
+          <button data-status="already">已领</button>
+          <button data-status="failed">失败</button>
+          <button data-status="skipped">跳过</button>
+        </div>
+      </div>
       <div class="table-scroll">
         <table class="records">
           <thead>

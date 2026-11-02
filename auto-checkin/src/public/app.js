@@ -36,8 +36,10 @@ function fmtTime(iso, short = false) {
 }
 function fmtNum(n, currency) {
   if (n === null || n === undefined) return "—";
-  const c = currency && currency !== "quota" ? currency : "";
-  return `${c}${n}`;
+  // 第 72 轮：currency 与数值同样来自远端站点响应（部分适配器从页面文本读余额），
+  // 第 38 轮的 esc() 加固漏了这里——`${c}${n}` 是裸插值，站点可控值能进 innerHTML。
+  const c = currency && currency !== "quota" ? esc(currency) : "";
+  return `${c}${esc(n)}`;
 }
 function fmtDur(ms) {
   if (ms === null || ms === undefined || ms === 0) return "—";
@@ -114,7 +116,7 @@ function renderCards(sites) {
         <div class="cell"><div class="k">连续签到</div><div class="v">${s.streak}<small> 天 · 最长 ${s.bestStreak}</small></div></div>
         <div class="cell"><div class="k">最近耗时</div><div class="v">${fmtDur(s.lastDurationMs)}<small> · 均 ${fmtDur(s.avgDurationMs)}</small></div></div>
         <div class="cell" style="grid-column:span 2">
-          <div class="k">成功率 · ${s.successRate}%（${s.totalRuns - s.failedRuns}/${s.totalRuns} 次）</div>
+          <div class="k">成功率 · ${s.successRate}%（${s.totalRuns - s.skippedRuns - s.failedRuns}/${s.totalRuns - s.skippedRuns} 次）</div>
           <div class="rate-bar"><i style="width:${s.successRate}%"></i></div>
         </div>
       </div>
@@ -135,11 +137,18 @@ function renderCards(sites) {
 }
 
 // ---------------- 记录表 ----------------
+// 第 71 轮：状态筛选走服务端 ?status=（面板只展示筛选后的结果，
+// 不是在前端对最近 80 条再截一刀——失败记录可能被成功流水挤出窗口）。
+let recordStatus = "";
+
 async function loadRecords() {
-  const res = await api("/api/records?limit=80");
+  const qs = new URLSearchParams({ limit: "80" });
+  if (recordStatus) qs.set("status", recordStatus);
+  const res = await api(`/api/records?${qs}`);
   if (!res.ok) return;
   const records = await res.json();
-  $("rec-count").textContent = `最近 ${records.length} 条`;
+  const suffix = recordStatus ? ` · ${STATUS_TEXT[recordStatus] || recordStatus}` : "";
+  $("rec-count").textContent = `最近 ${records.length} 条${suffix}`;
   const body = $("records-body");
   if (!records.length) { body.innerHTML = `<tr><td colspan="7" class="empty">暂无记录，点「全部签到」开始</td></tr>`; return; }
   body.innerHTML = records.map((r) => `
@@ -294,6 +303,15 @@ $("run-all").addEventListener("click", async (e) => {
   const b = e.currentTarget; b.disabled = true; b.innerHTML = "<span>⏳</span> 运行中…";
   await api("/api/run", { method: "POST" });
   setTimeout(() => { b.disabled = false; b.innerHTML = "<span>⚡</span> 全部签到"; refresh(); }, 2000);
+});
+// 第 71 轮：记录状态筛选片（服务端过滤，切换后立即重载记录表）
+$("rec-filters").querySelectorAll("[data-status]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    recordStatus = btn.dataset.status || "";
+    $("rec-filters").querySelectorAll("button").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    loadRecords();
+  });
 });
 $("range").querySelectorAll("[data-days]").forEach((btn) => {
   btn.addEventListener("click", () => {
