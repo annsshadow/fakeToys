@@ -1622,7 +1622,7 @@ func (s *Service) skillRow(ctx context.Context, skillID int) (AdminSkillView, er
 //  3. **同步 `level_waves`**：旧实现只改 levels 行，从不碰波次表。
 //     生成器升级后点「重新生成」，后台波次抽屉与 levels.wave_count
 //     仍停在旧版本。现在同一事务里整体替换每关的 level_waves。
-func (s *Service) AdminRegenerateLevels(ctx context.Context) (int, error) {
+func (s *Service) AdminRegenerateLevels(ctx context.Context, audit ...AdminAuditCtx) (int, error) {
 	levels := domain.GenerateAllLevels()
 	err := s.DB.Tx(ctx, func(tx txType) error {
 		for _, gl := range levels {
@@ -1666,6 +1666,15 @@ func (s *Service) AdminRegenerateLevels(ctx context.Context) (int, error) {
 					gl.ID, w.Index, spawns); err != nil {
 					return fmt.Errorf("regenerate level %d: insert wave %d: %w", gl.ID, w.Index, err)
 				}
+			}
+		}
+		// R42：重建全部 100 关与审计同一事务。这是全库**最重**的写操作 ——
+		// 覆盖运营手工调过的所有关卡内容且不可回滚。审计写不进去时若照常生效，
+		// 事后只能看到「关卡全变了」，没有任何「谁在什么时候按了重建」的记录。
+		if len(audit) > 0 {
+			if err := s.AuditTx(ctx, tx, audit[0], "regenerate_levels", "",
+				map[string]any{"count": len(levels)}); err != nil {
+				return err
 			}
 		}
 		return nil

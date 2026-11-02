@@ -202,11 +202,11 @@ func (s *Server) adminRegenerateLevels(c *fiber.Ctx) error {
 		return fail(c, fiber.StatusBadRequest, "bad_input",
 			"重建全部 100 关需要显式确认：请求体里带 confirm: \"regenerate\"")
 	}
-	n, err := s.Svc.AdminRegenerateLevels(c.Context())
+	n, err := s.Svc.AdminRegenerateLevels(c.Context(),
+		service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()})
 	if err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "regenerate_levels", "", c.IP(), fiber.Map{"count": n})
 	return c.JSON(service.AdminRegenerateResp{Generated: n})
 }
 
