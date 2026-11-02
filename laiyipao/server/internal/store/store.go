@@ -13,6 +13,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
+	"github.com/pressly/goose/v3/lock"
 
 	"github.com/laiyipao/server/internal/config"
 	"github.com/laiyipao/server/migrations"
@@ -130,33 +131,71 @@ func (d *DB) Close() {
 
 // Migrate 执行 migrations 包内嵌的 goose 迁移。
 //
-// 两点说明：
+// 三点说明：
 //  1. goose 的 Provider API 只接受 *sql.DB，因此用 pgx 官方的 stdlib 适配层
 //     把连接池包一层；连接池本身不受影响，stdlib 复用同一批底层连接。
 //  2. migrations.FS 用 //go:embed *.sql 嵌入，文件位于 FS 根目录，
 //     因此 goose 的目录参数是 "." 而不是 "migrations"。
+//  3. **必须使用会话级 advisory lock**（R54）。
+//
+// # 为什么并发迁移必须上锁
+//
+// 工业部署里多个实例会同时启动，而 `cmd/api` 的启动序就包含 `db.Migrate`。
+// 没有锁时每个实例都会读到同一个「当前版本」，然后各自跑同一批迁移。
+// 实测 8 个实例对同一个空库同时迁移：**1 个成功、7 个失败**，错误为
+// `relation "goose_db_version" does not exist`（42P01）与
+// `duplicate key ... pg_typename_nsp_index`（23505）—— 失败实例在 main
+// 里直接 FATAL 退出，滚动发布时表现为「只有一个副本能起来」。
+//
+// goose 的 `WithSessionLocker` 用 `pg_try_advisory_lock` 串行化整个迁移过程：
+// 抢到锁的实例迁移，其余实例在锁上等待，拿到锁后读到已是最新版本、直接空转。
+//
+// ⚠️ 会话锁会**独占一个连接**直到迁移结束，所以迁移至少需要 2 个连接
+// （锁 1 个 + goose 查询 1 个）。`DB_MAX_CONNS=1` 会在这里报错而不是
+// 卡到 context 超时 —— 后者看起来只是「迁移很慢」，很难排查。
 func (d *DB) Migrate(ctx context.Context) error {
-	goose.SetBaseFS(migrations.FS)
-	if err := goose.SetDialect("postgres"); err != nil {
-		return fmt.Errorf("goose dialect: %w", err)
+	if max := d.Pool.Config().MaxConns; max < 2 {
+		return fmt.Errorf("goose: 迁移需要至少 2 个连接（会话锁独占 1 个），当前 DB_MAX_CONNS=%d", max)
+	}
+	locker, err := lock.NewPostgresSessionLocker()
+	if err != nil {
+		return fmt.Errorf("goose session locker: %w", err)
 	}
 	sqlDB := stdlib.OpenDBFromPool(d.Pool)
 	defer sqlDB.Close()
-	if err := goose.UpContext(ctx, sqlDB, "."); err != nil {
+	provider, err := goose.NewProvider(goose.DialectPostgres, sqlDB, migrations.FS,
+		goose.WithSessionLocker(locker))
+	if err != nil {
+		return fmt.Errorf("goose provider: %w", err)
+	}
+	if _, err := provider.Up(ctx); err != nil {
 		return fmt.Errorf("goose up: %w", err)
 	}
 	return nil
 }
 
 // MigrateDown 回滚一步，仅供本地调试使用。
+//
+// 同样上会话锁：本地/CI 偶尔会并行跑通道，没有锁时回滚与升级可能交错。
 func (d *DB) MigrateDown(ctx context.Context) error {
-	goose.SetBaseFS(migrations.FS)
-	if err := goose.SetDialect("postgres"); err != nil {
-		return err
+	if max := d.Pool.Config().MaxConns; max < 2 {
+		return fmt.Errorf("goose: 迁移需要至少 2 个连接（会话锁独占 1 个），当前 DB_MAX_CONNS=%d", max)
+	}
+	locker, err := lock.NewPostgresSessionLocker()
+	if err != nil {
+		return fmt.Errorf("goose session locker: %w", err)
 	}
 	sqlDB := stdlib.OpenDBFromPool(d.Pool)
 	defer sqlDB.Close()
-	return goose.DownContext(ctx, sqlDB, ".")
+	provider, err := goose.NewProvider(goose.DialectPostgres, sqlDB, migrations.FS,
+		goose.WithSessionLocker(locker))
+	if err != nil {
+		return fmt.Errorf("goose provider: %w", err)
+	}
+	if _, err := provider.Down(ctx); err != nil {
+		return fmt.Errorf("goose down: %w", err)
+	}
+	return nil
 }
 
 // Tx 在事务中执行 fn，出错自动回滚。
