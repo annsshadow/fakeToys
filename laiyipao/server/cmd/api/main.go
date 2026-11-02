@@ -49,6 +49,12 @@ func run() error {
 		fmt.Printf("[来一炮 server] 已加载配置文件 %s（%d 个键覆盖环境变量）\n", path, len(m))
 	}
 	cfg := config.Load()
+	// R49：配置语义校验在**连库之前**跑完。修前这些值会被静默接受
+	// （ACCESS_TTL=0s 让令牌一签发就过期、DB_MAX_CONNS=0 到第一个请求
+	// 才报错、非法重算档位静默关掉反作弊），服务能起来但行为已经错了。
+	if err := cfg.Validate(); err != nil {
+		return fmt.Errorf("配置校验失败: %w", err)
+	}
 	fmt.Println("[来一炮 server] 启动配置:", cfg.Redacted())
 
 	// 第 154 轮：默认值本身是公开的（写在源码与 README 里），
