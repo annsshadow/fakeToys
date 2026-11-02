@@ -20,6 +20,11 @@ use thiserror::Error;
 pub enum DbError {
     #[error("connection pool error: {0}")]
     PoolError(String),
+    /// DATABASE_URL 形状不合法（scheme / host / user / dbname）。
+    /// 启动期 fail-loud：修前这里 panic，配置错时只有一条 backtrace，
+    /// 运维看不出是哪个字段错了。
+    #[error("invalid database configuration: {0}")]
+    Config(String),
 }
 
 impl From<deadpool_postgres::PoolError> for DbError {
@@ -173,6 +178,44 @@ fn rustls_connector() -> tokio_postgres_rustls::MakeRustlsConnect {
     tokio_postgres_rustls::MakeRustlsConnect::new(config)
 }
 
+/// 解析 DATABASE_URL 的各个字段。纯函数：非法配置在这里变成可读的
+/// [`DbError::Config`]，调用方（启动入口）以 `?` 上抛，不再 panic。
+///
+/// 校验项与 tokio-postgres 的实际要求对齐：
+///   - scheme 只接受 `postgres` / `postgresql`；
+///   - host、user、数据库名都必填（缺任何一个，连接阶段都会给出难以定位的错误）。
+fn parse_pool_url(database_url: &str) -> Result<(String, u16, String, String, String), DbError> {
+    let url = url::Url::parse(database_url)
+        .map_err(|e| DbError::Config(format!("DATABASE_URL 不是合法 URL: {e}")))?;
+    if url.scheme() != "postgres" && url.scheme() != "postgresql" {
+        return Err(DbError::Config(format!(
+            "DATABASE_URL 的 scheme 必须是 postgres 或 postgresql，实际 {:?}",
+            url.scheme()
+        )));
+    }
+    let host = url
+        .host_str()
+        .filter(|h| !h.is_empty())
+        .ok_or_else(|| DbError::Config("DATABASE_URL 缺少 host".to_string()))?;
+    let user = url.username();
+    if user.is_empty() {
+        return Err(DbError::Config("DATABASE_URL 缺少用户".to_string()));
+    }
+    let dbname = url.path().trim_start_matches('/');
+    if dbname.is_empty() {
+        return Err(DbError::Config(
+            "DATABASE_URL 缺少数据库名（路径部分）".to_string(),
+        ));
+    }
+    Ok((
+        host.to_string(),
+        url.port().unwrap_or(5432),
+        user.to_string(),
+        url.password().unwrap_or("").to_string(),
+        dbname.to_string(),
+    ))
+}
+
 /// 用显式 URL 构建 deadpool 池（TLS/sizing 仍从 `pool_config()` 读环境变量）。
 ///
 /// 独立成带参版本的原因：测试要验证「非法 URL / 指定 URL」路径时**不修改进程级
@@ -186,12 +229,9 @@ pub async fn create_pool_with_url(database_url: String) -> Result<Pool, DbError>
         .or_else(|_| env::var("DATABASE_DIALECT"))
         .unwrap_or_else(|_| "postgres".to_string());
 
-    let url = url::Url::parse(&database_url).expect("invalid DATABASE_URL");
-    let host = url.host_str().expect("no host in DATABASE_URL");
-    let port = url.port().unwrap_or(5432);
-    let user = url.username();
-    let password = url.password().unwrap_or("");
-    let dbname = url.path().trim_start_matches('/');
+    // R25：非法 DATABASE_URL 由 panic 改为结构化错误（启动入口以 anyhow
+    // 上下文包裹后直接退出，错误信息能定位到具体字段）。
+    let (host, port, user, password, dbname) = parse_pool_url(&database_url)?;
 
     let mut cfg = Config::new();
     cfg.host(host)
@@ -616,35 +656,44 @@ mod pool_construction_tests {
         assert!(matches!(err, DbError::PoolError(_)), "got {err:?}");
     }
 
+    /// R25：DATABASE_URL 的每一类形状错误都必须给出可定位的 `DbError::Config`，
+    /// 而不是 panic（修前两条 `expect` 会把启动失败变成 backtrace）。
     #[test]
-    #[should_panic(expected = "invalid DATABASE_URL")]
-    fn create_pool_with_url_without_host_panics() {
-        // URL 缺少 host（`@` 后直接 `/db`）时必须在构建阶段 panic（fail-fast），
-        // 而不是带一个空 host 的配置进入运行期（连接行为不可预期）。
-        let rt = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .expect("build rt");
-        rt.block_on(async {
-            let _ = create_pool_with_url("postgres://user:pass@/db".to_string())
-                .await
-                .expect("must panic");
-        });
+    fn parse_pool_url_rejects_malformed_with_config_error() {
+        let cases = [
+            // `postgres://user:pass@/db` 在 url 解析阶段就报 empty host。
+            ("postgres://user:pass@/db", "不是合法 URL"),
+            ("file:///path", "scheme"),
+            ("not-a-postgres-url", "不是合法 URL"),
+            ("postgres://user:pass@localhost:5432", "数据库名"),
+            ("postgres://localhost:5432/db", "缺少用户"),
+        ];
+        for (raw, needle) in cases {
+            let err = parse_pool_url(raw).expect_err(raw);
+            assert!(matches!(err, DbError::Config(_)), "raw={raw} err={err:?}");
+            assert!(
+                err.to_string().contains(needle),
+                "raw={raw} 错误信息应包含 {needle:?}，实际 {err}"
+            );
+        }
+
+        // postgresql:// 与 postgres:// 等价；标准 URL 解析结果逐字段正确。
+        let parsed = parse_pool_url("postgresql://user:pass@localhost:5432/db").unwrap();
+        assert_eq!(parsed.0, "localhost");
+        assert_eq!(parsed.1, 5432);
+        assert_eq!(parsed.2, "user");
+        assert_eq!(parsed.3, "pass");
+        assert_eq!(parsed.4, "db");
     }
 
-    #[test]
-    #[should_panic(expected = "no host in DATABASE_URL")]
-    fn create_pool_with_url_scheme_without_host_panics() {
-        // 可解析但 host 为 None 的 URL（如 file:///path）：必须在构建阶段
-        // panic（no host in DATABASE_URL），不能带空 host 配置进入运行期。
-        let rt = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .expect("build rt");
-        rt.block_on(async {
-            let _ = create_pool_with_url("file:///path".to_string())
-                .await
-                .expect("must panic");
-        });
+    /// 真实入口（`create_pool_with_url`）遇到非法 URL 必须返回 Err，
+    /// 不能再 panic —— 这条钉住「启动失败可读」的行为。
+    #[tokio::test]
+    async fn create_pool_with_url_invalid_returns_error_without_panic() {
+        let err = create_pool_with_url("postgres://user:pass@/db".to_string())
+            .await
+            .expect_err("缺 host 的 URL 必须失败");
+        assert!(matches!(err, DbError::Config(_)), "got {err:?}");
+        assert!(err.to_string().contains("不是合法 URL"), "实际 {err}");
     }
 }
