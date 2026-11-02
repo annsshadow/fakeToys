@@ -1619,9 +1619,13 @@ func (s *Service) AdminUpdateRedeemCode(ctx context.Context, id int, reward map[
 	if err != nil {
 		return AdminRedeemCodeView{}, err
 	}
+	// `used_count <= $3` 是**行为级**护栏：把上限调到已使用次数以下会撞
+	// `chk_redeem_uses`（23514）—— 那是 CHECK 约束的内部细节，经 %w 冒到
+	// HTTP 层只会变成 500「update redeem code: ERROR: new row violates ...」。
+	// 放在 UPDATE 谓词里还能防并发：同时有玩家在兑换时，谓词会重判 used_count。
 	row := s.pool.QueryRow(ctx,
 		`UPDATE redeem_codes SET reward = $2, max_uses = $3, expires_at = $4
-		 WHERE id = $1
+		 WHERE id = $1 AND used_count <= $3
 		 RETURNING id, code, reward, max_uses, used_count, expires_at, enabled`,
 		id, raw, maxUses, expiresAt)
 	var v AdminRedeemCodeView
@@ -1629,7 +1633,20 @@ func (s *Service) AdminUpdateRedeemCode(ctx context.Context, id int, reward map[
 	var vExpiresAt *time.Time
 	if err := row.Scan(&v.ID, &v.Code, &rewardRaw, &v.MaxUses, &v.UsedCount, &vExpiresAt, &v.Enabled); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return AdminRedeemCodeView{}, fmt.Errorf("%w: 兑换码 %d 不存在", ErrNotFound, id)
+			// 零行有两种原因：码不存在，或新上限小于已用次数。先查存在性
+			// 再给可操作的原因，而不是把 CHECK 约束名丢给调用方。
+			var used int
+			qerr := s.pool.QueryRow(ctx,
+				`SELECT used_count FROM redeem_codes WHERE id = $1`, id).Scan(&used)
+			if errors.Is(qerr, pgx.ErrNoRows) {
+				return AdminRedeemCodeView{}, fmt.Errorf("%w: 兑换码 %d 不存在", ErrNotFound, id)
+			}
+			if qerr != nil {
+				return AdminRedeemCodeView{}, fmt.Errorf("check redeem code usage: %w", qerr)
+			}
+			return AdminRedeemCodeView{}, fmt.Errorf(
+				"%w: 新上限 %d 小于已使用次数 %d（已发出的兑换记录无法收回）",
+				ErrBadInput, maxUses, used)
 		}
 		return AdminRedeemCodeView{}, fmt.Errorf("update redeem code: %w", err)
 	}
