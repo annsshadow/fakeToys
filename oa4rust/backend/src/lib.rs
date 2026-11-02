@@ -83,7 +83,7 @@ pub async fn create_app(
     let sea_orm_pool = shared::db::create_sea_orm_pool().await?;
 
     let app = Router::new()
-        .merge(shared::router::router())
+        .merge(shared::router::router(pool.clone()))
         .merge(auth::router(
             pool.clone(),
             rate_limiter.clone(),

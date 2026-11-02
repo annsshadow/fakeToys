@@ -1385,7 +1385,7 @@ pub async fn build_core_router(pool: Pool, session_manager: SessionManager) -> R
         .await
         .expect("B3: 创建 sea_orm 连接池失败（*_core_entity 接线必需）");
     Router::new()
-        .merge(shared::router::router())
+        .merge(shared::router::router(pool.clone()))
         .merge(auth::router(
             pool.clone(),
             shared::rate_limit::RateLimiter::new(),
