@@ -601,7 +601,7 @@ func (s *Server) getLoadout(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"skill_ids": ids})
+	return c.JSON(service.NormalizeNilSlices(fiber.Map{"skill_ids": ids}))
 }
 
 // saveLoadout 保存出战技能配置。
@@ -614,7 +614,7 @@ func (s *Server) saveLoadout(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"skill_ids": ids})
+	return c.JSON(service.NormalizeNilSlices(fiber.Map{"skill_ids": ids}))
 }
 
 // myStars 返回玩家各关历史最好星级，形状 { "stars": { "<关卡ID>": 星数 } }。
@@ -624,7 +624,7 @@ func (s *Server) myStars(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"stars": stars})
+	return c.JSON(service.NormalizeNilSlices(fiber.Map{"stars": stars}))
 }
 
 // 失败一律走 `failErr`，由它把 service 的哨兵错误翻成合适的 HTTP 码
@@ -644,7 +644,7 @@ func (s *Server) upgradeSkill(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"skill_id": id, "level": level, "wallet": w})
+	return c.JSON(service.NormalizeNilSlices(fiber.Map{"skill_id": id, "level": level, "wallet": w}))
 }
 
 // synthesizeSkill 把两个已拥有的材料技能熔炼成高阶技能（发放 18 个合成技能）。
@@ -670,7 +670,7 @@ func (s *Server) synthesizeSkill(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"output": output, "build": build})
+	return c.JSON(service.NormalizeNilSlices(fiber.Map{"output": output, "build": build}))
 }
 
 func (s *Server) wallet(c *fiber.Ctx) error {
@@ -678,7 +678,7 @@ func (s *Server) wallet(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(w)
+	return c.JSON(service.NormalizeNilSlices(w))
 }
 
 // getConfig 下发全量配置，支持按 version 做条件请求。
@@ -768,7 +768,7 @@ func (s *Server) listGems(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"gems": gems})
+	return c.JSON(service.NormalizeNilSlices(fiber.Map{"gems": gems}))
 }
 
 // myChallengeHistory 返回当前玩家最近的防线挑战记录。
@@ -777,7 +777,7 @@ func (s *Server) myChallengeHistory(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"items": items})
+	return c.JSON(service.NormalizeNilSlices(fiber.Map{"items": items}))
 }
 
 // myDefenseChallenges 返回当前玩家「我的防线被挑战」的历史记录
@@ -787,7 +787,7 @@ func (s *Server) myDefenseChallenges(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"items": items})
+	return c.JSON(service.NormalizeNilSlices(fiber.Map{"items": items}))
 }
 
 // myBattleHistory 返回当前玩家最近的战斗记录（2026-11-01 新一轮第 55 轮：
@@ -806,7 +806,7 @@ func (s *Server) myBattleHistory(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"items": items})
+	return c.JSON(service.NormalizeNilSlices(fiber.Map{"items": items}))
 }
 
 // myBattleDetail 返回当前玩家单局战报的完整详情
@@ -829,7 +829,7 @@ func (s *Server) myPurchases(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"items": items})
+	return c.JSON(service.NormalizeNilSlices(fiber.Map{"items": items}))
 }
 
 // myRedemptions 返回当前玩家最近的兑换码使用记录。
@@ -838,7 +838,7 @@ func (s *Server) myRedemptions(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"items": items})
+	return c.JSON(service.NormalizeNilSlices(fiber.Map{"items": items}))
 }
 
 // myOrders 返回当前玩家最近的支付订单。
@@ -847,7 +847,7 @@ func (s *Server) myOrders(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"items": items})
+	return c.JSON(service.NormalizeNilSlices(fiber.Map{"items": items}))
 }
 
 // offlineReward 返回当前玩家可领取的离线（挂机）收益
@@ -1084,7 +1084,7 @@ func (s *Server) announcements(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"items": items})
+	return c.JSON(service.NormalizeNilSlices(fiber.Map{"items": items}))
 }
 
 // myRank 返回「我在榜上的位置」。
@@ -1193,7 +1193,7 @@ func (s *Server) getEquipment(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"items": items})
+	return c.JSON(service.NormalizeNilSlices(fiber.Map{"items": items}))
 }
 
 // saveEquipment 整组替换玩家的装配集合。
@@ -1209,7 +1209,7 @@ func (s *Server) saveEquipment(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"items": items})
+	return c.JSON(service.NormalizeNilSlices(fiber.Map{"items": items}))
 }
 
 func (s *Server) tasks(c *fiber.Ctx) error {
@@ -1240,7 +1240,7 @@ func (s *Server) tasks(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"scope": scope, "items": items})
+	return c.JSON(service.NormalizeNilSlices(fiber.Map{"scope": scope, "items": items}))
 }
 
 func (s *Server) claimTask(c *fiber.Ctx) error {
@@ -1252,7 +1252,7 @@ func (s *Server) claimTask(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"reward": reward})
+	return c.JSON(service.NormalizeNilSlices(fiber.Map{"reward": reward}))
 }
 
 func (s *Server) signIn(c *fiber.Ctx) error {
@@ -1286,7 +1286,7 @@ func (s *Server) shop(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"items": items})
+	return c.JSON(service.NormalizeNilSlices(fiber.Map{"items": items}))
 }
 
 func (s *Server) buy(c *fiber.Ctx) error {
@@ -1312,7 +1312,7 @@ func (s *Server) redeem(c *fiber.Ctx) error {
 	if err != nil {
 		return failErr(c, err)
 	}
-	return c.JSON(fiber.Map{"reward": reward})
+	return c.JSON(service.NormalizeNilSlices(fiber.Map{"reward": reward}))
 }
 
 func (s *Server) diagnose(c *fiber.Ctx) error {

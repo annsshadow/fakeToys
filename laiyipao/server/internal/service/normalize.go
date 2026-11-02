@@ -34,14 +34,24 @@ import "reflect"
 // 「没有数据」和「数据是空的」在业务上是一回事，在 wire 上必须是同一回事。
 func NormalizeNilSlices(v any) any {
 	rv := reflect.ValueOf(v)
+	if !rv.IsValid() {
+		return v
+	}
 	if rv.Kind() == reflect.Pointer {
 		if rv.IsNil() {
 			return v
 		}
-		rv = rv.Elem()
+		normalizeReflect(rv.Elem())
+		return v
 	}
-	normalizeReflect(rv)
-	return v
+	// ⚠️ 调用方全是**传值**（`c.JSON(NormalizeNilSlices(Resp{...}))`）。
+	// 从 interface 取出的值不可寻址，字段 `CanSet()` 恒为 false ——
+	// 直接 `normalizeReflect(rv)` 会让整个归一器空转，wire 仍是 `null`。
+	// 复制成可写副本，归一后由返回值交还给调用方。
+	c := reflect.New(rv.Type()).Elem()
+	c.Set(rv)
+	normalizeReflect(c)
+	return c.Interface()
 }
 
 func normalizeReflect(v reflect.Value) {
@@ -62,11 +72,35 @@ func normalizeReflect(v reflect.Value) {
 		for i := 0; i < v.Len(); i++ {
 			normalizeReflect(v.Index(i))
 		}
+	case reflect.Map:
+		// 玩家端响应的顶层形状是 `fiber.Map{"items": items}`。
+		// 值不可寻址，必须复制成可写副本再回填。
+		if v.IsNil() {
+			return
+		}
+		iter := v.MapRange()
+		for iter.Next() {
+			val := iter.Value()
+			cp := reflect.New(val.Type()).Elem()
+			cp.Set(val)
+			normalizeField(cp)
+			v.SetMapIndex(iter.Key(), cp)
+		}
 	}
 }
 
 func normalizeField(f reflect.Value) {
 	switch f.Kind() {
+	case reflect.Interface:
+		// `map[string]any` / `any` 字段里实际装的是具体类型；拆包后归一再装回。
+		if f.IsNil() {
+			return
+		}
+		inner := f.Elem()
+		cp := reflect.New(inner.Type()).Elem()
+		cp.Set(inner)
+		normalizeField(cp)
+		f.Set(cp)
 	case reflect.Slice:
 		if f.IsNil() {
 			f.Set(reflect.MakeSlice(f.Type(), 0, 0))
@@ -75,7 +109,9 @@ func normalizeField(f reflect.Value) {
 	case reflect.Map:
 		if f.IsNil() {
 			f.Set(reflect.MakeMap(f.Type()))
+			return
 		}
+		normalizeReflect(f)
 	case reflect.Struct:
 		normalizeReflect(f)
 	case reflect.Pointer:
