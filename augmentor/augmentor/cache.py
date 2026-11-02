@@ -312,8 +312,11 @@ class DiskCache:
         """
         cache_path = self._get_cache_path(key)
         
+        # 第 81 轮：缓存值按紧凑 JSON 落盘。这里的读者只有 `get()`（`json.load`
+        # 对缩进无感），而值是模型响应这类大块文本——旧实现 `indent=2` 把每个
+        # 换行/字段都补上两格缩进，文件体积与写入 I/O 白白放大（中文响应更明显）。
         with open(cache_path, 'w', encoding='utf-8') as f:
-            json.dump(value, f, ensure_ascii=False, indent=2)
+            json.dump(value, f, ensure_ascii=False, separators=(",", ":"))
         
         # 更新元数据
         self._metadata[key] = {
@@ -441,6 +444,34 @@ class DiskCache:
         }
 
 
+def _stable_value(value: Any) -> Any:
+    """把参数整理成「同值必同形」的 JSON 结构（第 88 轮）。
+
+    旧实现直接 `str(args)` / `str(sorted(kwargs.items()))` 做键。`str` 不是结构化
+    序列化：嵌套 dict 换序、set 迭代顺序、默认 `repr` 带内存地址的对象，都会让
+    「逻辑上同一次请求」算出不同键 → 缓存必 miss；同一对象跨进程/跨实例也不稳定。
+    递归归一：dict 按稳定键序展开、list/tuple/set 带类型标记、其余标量原样、
+    未知对象退回 `repr`（与旧实现同口径，不承诺跨实例稳定）。类型标记保证
+    `1` 与 `"1"`、`(1, 2)` 与 `[1, 2]` 不混同。
+    """
+    if isinstance(value, dict):
+        items = sorted(value.items(), key=lambda kv: (type(kv[0]).__name__, repr(kv[0])))
+        return {"type": "dict", "items": [[_stable_value(k), _stable_value(v)] for k, v in items]}
+    if isinstance(value, (list, tuple)):
+        return {
+            "type": "list" if isinstance(value, list) else "tuple",
+            "items": [_stable_value(v) for v in value],
+        }
+    if isinstance(value, (set, frozenset)):
+        return {
+            "type": "set",
+            "items": sorted((_stable_value(v) for v in value), key=repr),
+        }
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    return {"type": type(value).__name__, "repr": repr(value)}
+
+
 class CachedProcessor:
     """带缓存的处理器
     
@@ -466,12 +497,14 @@ class CachedProcessor:
         self._cache_ttl = cache_ttl
     
     def _make_key(self, *args, **kwargs) -> str:
-        """生成缓存键"""
+        """生成缓存键（第 88 轮：结构化归一，见 ``_stable_value``）"""
         key_data = {
-            "args": str(args),
-            "kwargs": str(sorted(kwargs.items()))
+            "args": _stable_value(args),
+            "kwargs": _stable_value(kwargs),
         }
-        return hashlib.md5(json.dumps(key_data, default=str).encode()).hexdigest()
+        return hashlib.md5(
+            json.dumps(key_data, sort_keys=True, default=str).encode()
+        ).hexdigest()
     
     def process(self, *args, use_cache: bool = True, **kwargs) -> Any:
         """处理数据

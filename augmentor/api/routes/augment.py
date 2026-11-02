@@ -5,6 +5,7 @@
 
 import logging
 import threading
+from collections import OrderedDict
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
@@ -22,8 +23,43 @@ router = APIRouter(tags=["augment"])
 # UI 只能看到 failed_items 计数。这里按 task_id 存进程内报告，
 # `GET /api/augment/report/{task_id}` 可取。单进程部署适用；
 # 多 worker 部署需要落盘，见端点 docstring 的边界说明。
-_REPORTS: Dict[str, Dict] = {}
+#
+# 第 73 轮：缓存加容量上限（LRU 逐出最旧）。报告含逐条错误明细，长期运行的
+# 服务每跑一个任务就多占一份，此前**无上限**——任务数就是内存增长量。
+_MAX_REPORTS = 200
+_REPORTS: "OrderedDict[str, Dict]" = OrderedDict()
 _REPORTS_LOCK = threading.Lock()
+
+
+def _remember_report(report: Dict) -> None:
+    """保存一份任务报告；超出上限时逐出最久未访问的（LRU）
+
+    Args:
+        report: 含 `task_id` 的增强报告
+    """
+    task_id = report["task_id"]
+    with _REPORTS_LOCK:
+        _REPORTS[task_id] = report
+        _REPORTS.move_to_end(task_id)
+        while len(_REPORTS) > _MAX_REPORTS:
+            _REPORTS.popitem(last=False)
+
+
+def _get_report(task_id: str) -> Optional[Dict]:
+    """取一份报告并把该条移到 LRU 队尾（读也算一次访问）
+
+    Args:
+        task_id: 任务 ID
+
+    Returns:
+        报告字典；不存在时 None
+    """
+    with _REPORTS_LOCK:
+        report = _REPORTS.get(task_id)
+        if report is not None:
+            _REPORTS.move_to_end(task_id)
+        return report
+
 
 
 class CheckpointListResponse(BaseModel):
@@ -141,8 +177,7 @@ async def start_augmentation(
             # 第 35 轮：报告（含 errors 失败明细）按 task_id 存下，
             # 前端轮询到终态后能拉取「哪条失败、为什么」。
             try:
-                with _REPORTS_LOCK:
-                    _REPORTS[report["task_id"]] = report
+                _remember_report(report)
             except Exception:
                 # 报告存储失败不应影响任务本身已完成的输出。
                 logger.exception("保存增强报告失败")
@@ -168,8 +203,7 @@ async def get_augment_report(task_id: str, _auth: None = Depends(verify_api_key)
     按 task_id 缓存。边界：单进程部署适用 —— 多 worker 时报告落在
     处理该任务的 worker 内存里，其它 worker 读不到（后续可改落盘）。
     """
-    with _REPORTS_LOCK:
-        report = _REPORTS.get(task_id)
+    report = _get_report(task_id)
     if report is None:
         raise HTTPException(status_code=404, detail="报告不存在（任务未完成或由其它 worker 处理）")
     return report

@@ -634,15 +634,31 @@ class CheckpointManager:
 
     def delete_checkpoint(self, task_id: str):
         """删除断点
-        
+
+        第 70 轮：删除时必须同时清掉内存里的那一份。此前只 unlink 盘上文件，
+        而 `GET /api/augment/progress` 读的是 `_current_checkpoint` —— 删完
+        断点列表是空的、进度卡却还显示同一个任务；若该任务仍在跑，
+        `update_progress` 还会把已删的断点按批写回盘上（删除形同虚设）。
+
+        与 `update_progress` 共用 `self._lock`：正在写入的那一批先落完，再删；
+        之后 `_current_checkpoint` 为 None，后续进度更新直接 return。
+
         Args:
             task_id: 任务 ID
         """
-        checkpoint_path = self._get_checkpoint_path(task_id)
-        
-        checkpoint_path.unlink(missing_ok=True)
-        self._remove_delta(task_id)
-        
+        with self._lock:
+            checkpoint_path = self._get_checkpoint_path(task_id)
+
+            checkpoint_path.unlink(missing_ok=True)
+            self._remove_delta(task_id)
+
+            current = self._current_checkpoint
+            if current is not None and current.task_id == task_id:
+                self._current_checkpoint = None
+                # 环境态代理（`_pending_completed` 等）落到新的孤儿态，
+                # 不把已删任务未落盘的待保存集合留给下一个任务。
+                self._orphan_state = _RunState()
+
         logger.info(f"删除断点: {task_id}")
     
     def list_checkpoints(self) -> List[str]:
