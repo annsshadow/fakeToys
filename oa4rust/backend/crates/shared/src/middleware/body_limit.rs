@@ -78,6 +78,13 @@ mod tests {
     use std::sync::Arc;
     use tower::ServiceExt;
 
+    // ⚠️ 路径放在常量里，别写成 `.route("/upload", …)`。
+    // `oa4rust/backend/scripts/gen_openapi_paths.py` 按 `.route("字面量", …)`
+    // 扫描真实路由，且只按**文件路径**排除测试目录；本模块的测试是内联的
+    // `#[cfg(test)]`，会被当成生产路由写进 OpenAPI 契约（R24 首次踩到）。
+    // 用常量传路径后生成器不再误采，测试语义不变。
+    const TEST_UPLOAD_ROUTE: &str = "/upload";
+
     #[test]
     fn parse_covers_default_valid_and_invalid() {
         assert_eq!(
@@ -93,7 +100,7 @@ mod tests {
 
     fn upload_router(hits: Arc<AtomicUsize>) -> axum::Router {
         axum::Router::new().route(
-            "/upload",
+            TEST_UPLOAD_ROUTE,
             post(move |body: Bytes| {
                 let hits = hits.clone();
                 async move {
