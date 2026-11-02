@@ -24,6 +24,7 @@ pub mod middleware;
 pub mod migrate;
 pub mod mock_client;
 pub mod netguard;
+pub mod panic_guard;
 pub mod rate_limit;
 pub mod response;
 pub mod router;
