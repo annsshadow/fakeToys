@@ -3,7 +3,7 @@
 
 use axum::body::Body;
 use axum::extract::ConnectInfo;
-use axum::http::{header, HeaderValue, Request, StatusCode};
+use axum::http::{header, HeaderName, HeaderValue, Request, StatusCode};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 use deadpool_postgres::Pool;
@@ -11,7 +11,7 @@ use std::env;
 use std::net::SocketAddr;
 use std::sync::OnceLock;
 use tower_http::cors::CorsLayer;
-use tracing::warn;
+use tracing::{info, warn};
 
 use super::constants::*;
 use crate::config::AuthConfig;
@@ -254,23 +254,69 @@ pub(crate) fn client_ip(request: &Request<Body>) -> String {
 // ──────────────────────────────────────────────────────────────────────────────
 // trace_middleware
 //
-// 请求追踪中间件，记录每个请求的 HTTP 方法和 URI，
-// 并在服务端返回 5xx 错误时额外输出 warning 级别日志，便于生产环境排查。
+// 请求追踪 + 访问日志中间件。修前只记录「方法 + URI」，且只在 5xx 时打一行：
+//   - 没有耗时，慢请求与正常请求在日志里长得一样；
+//   - 没有请求 ID，一条用户投诉无法与日志/上游网关对账；
+//   - 2xx/4xx 完全静默，无法回答「这次部署后错误率变化」。
+//
+// 现在的行为：
+//   1. 每个请求都有一条结构化日志：method / uri / status / latency_ms / request_id；
+//   2. request_id 优先取上游 `x-request-id`（经字符白名单与长度校验，
+//      防日志注入与超长头），否则生成 UUID v4；
+//   3. 响应回写 `x-request-id`，客户端报障时可直接给出该值。
 // ──────────────────────────────────────────────────────────────────────────────
+
+/// 请求 ID 头（上游与响应共用）。
+pub const REQUEST_ID_HEADER: &str = "x-request-id";
+
+/// 请求 ID 长度上限：足够容纳 UUID/常见 trace id，又不给日志留下放大空间。
+const MAX_REQUEST_ID_LEN: usize = 64;
+
+/// 只接受 `[A-Za-z0-9._-]`：拒绝换行/引号/空格，避免日志伪造与头注入。
+fn sanitize_request_id(raw: &str) -> Option<String> {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() || trimmed.len() > MAX_REQUEST_ID_LEN {
+        return None;
+    }
+    if trimmed
+        .bytes()
+        .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.'))
+    {
+        Some(trimmed.to_string())
+    } else {
+        None
+    }
+}
+
+fn request_id_header() -> HeaderName {
+    HeaderName::from_static(REQUEST_ID_HEADER)
+}
+
 pub async fn trace_middleware(request: Request<Body>, next: Next) -> Response {
     let method = request.method().clone();
     let uri = request.uri().clone();
+    let request_id = request
+        .headers()
+        .get(request_id_header())
+        .and_then(|v| v.to_str().ok())
+        .and_then(sanitize_request_id)
+        .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
 
-    let response = next.run(request).await;
+    let started = std::time::Instant::now();
+    let mut response = next.run(request).await;
+    let latency_ms = started.elapsed().as_millis() as u64;
+    let status = response.status().as_u16();
 
-    // 仅对服务端错误（5xx）打 warning 日志，避免正常请求污染日志
+    if let Ok(value) = HeaderValue::from_str(&request_id) {
+        response
+            .headers_mut()
+            .insert(request_id_header(), value);
+    }
+
     if response.status().is_server_error() {
-        warn!(
-            ?method,
-            ?uri,
-            status = response.status().as_u16(),
-            "server error"
-        );
+        warn!(?method, ?uri, status, latency_ms, request_id = %request_id, "server error");
+    } else {
+        info!(?method, ?uri, status, latency_ms, request_id = %request_id, "request completed");
     }
 
     response
@@ -681,6 +727,140 @@ mod cov_middleware_tests {
         let request = Request::builder().uri("/x").body(Body::empty()).unwrap();
         let resp = error_handler(AppError::NotFound, request).await;
         assert_eq!(resp.status(), axum::http::StatusCode::NOT_FOUND);
+    }
+
+    // ── R7：请求 ID 与结构化访问日志 ────────────────────────────────
+
+    fn traced_router() -> Router {
+        Router::new()
+            .route("/ok", get(|| async { "fine" }))
+            .layer(axum::middleware::from_fn(trace_middleware))
+    }
+
+    /// 上游没给 id 时必须生成 UUID 并回写，客户端报障可直接引用。
+    #[tokio::test]
+    async fn trace_middleware_generates_request_id_when_absent() {
+        let resp = traced_router()
+            .oneshot(Request::builder().uri("/ok").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        let rid = resp
+            .headers()
+            .get(REQUEST_ID_HEADER)
+            .expect("响应必须带 x-request-id")
+            .to_str()
+            .unwrap()
+            .to_string();
+        assert!(
+            uuid::Uuid::parse_str(&rid).is_ok(),
+            "生成的请求 ID 不是 UUID：{rid}"
+        );
+    }
+
+    /// 合法的上游 id 原样透传，便于与网关/前端链路对账。
+    #[tokio::test]
+    async fn trace_middleware_echoes_valid_upstream_id() {
+        let resp = traced_router()
+            .oneshot(
+                Request::builder()
+                    .uri("/ok")
+                    .header(REQUEST_ID_HEADER, "trace-abc.123_XY")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            resp.headers().get(REQUEST_ID_HEADER).unwrap(),
+            "trace-abc.123_XY"
+        );
+    }
+
+    /// 带空格/引号/换行或超长的上游 id 一律丢弃并重新生成：
+    /// 换行会伪造日志行，超长会放大日志体积。
+    #[tokio::test]
+    async fn trace_middleware_rejects_malicious_upstream_id() {
+        let bad = "abc\" def";
+        let resp = traced_router()
+            .oneshot(
+                Request::builder()
+                    .uri("/ok")
+                    .header(REQUEST_ID_HEADER, bad)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        let rid = resp
+            .headers()
+            .get(REQUEST_ID_HEADER)
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+        assert_ne!(rid, bad, "非法上游 id 不得回显");
+        assert!(uuid::Uuid::parse_str(&rid).is_ok());
+
+        assert!(sanitize_request_id("").is_none());
+        assert!(sanitize_request_id("abc\" def").is_none());
+        assert!(sanitize_request_id(&"a".repeat(65)).is_none(), "超长必须拒绝");
+        assert_eq!(
+            sanitize_request_id(" ok-id_1.2 "),
+            Some("ok-id_1.2".to_string()),
+            "合法字符与首尾空白应被归一"
+        );
+    }
+
+    /// 捕获日志输出的内存 writer。
+    #[derive(Clone, Default)]
+    struct Capture(std::sync::Arc<std::sync::Mutex<Vec<u8>>>);
+
+    impl std::io::Write for Capture {
+        fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+            self.0.lock().unwrap().extend_from_slice(buf);
+            Ok(buf.len())
+        }
+        fn flush(&mut self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
+
+    /// 2xx 也要有结构化访问日志：status / latency_ms / request_id 必须齐全，
+    /// 否则「慢请求定位」与「错误率统计」都无从做起。
+    #[tokio::test(flavor = "current_thread")]
+    async fn trace_middleware_logs_structured_access_line() {
+        let capture = Capture::default();
+        let writer = {
+            let capture = capture.clone();
+            move || capture.clone()
+        };
+        let subscriber = tracing_subscriber::fmt()
+            .with_writer(writer)
+            .with_ansi(false)
+            .with_max_level(tracing::Level::INFO)
+            .finish();
+        let _guard = tracing::subscriber::set_default(subscriber);
+
+        let resp = traced_router()
+            .oneshot(Request::builder().uri("/ok").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        let rid = resp
+            .headers()
+            .get(REQUEST_ID_HEADER)
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+
+        let out = String::from_utf8(capture.0.lock().unwrap().clone()).unwrap();
+        assert!(out.contains("request completed"), "缺少访问日志：{out}");
+        assert!(out.contains("status=200"), "日志缺 status：{out}");
+        assert!(out.contains("latency_ms="), "日志缺耗时：{out}");
+        assert!(
+            out.contains(&rid),
+            "日志中的 request_id 与响应头不一致：{out}"
+        );
     }
 
     #[test]
