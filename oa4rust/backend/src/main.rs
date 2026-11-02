@@ -113,7 +113,10 @@ async fn main() -> anyhow::Result<()> {
     };
     let app = if http_flag {
         let bridge = Arc::new(ToolBridge::new(pool, session_manager).await);
-        app.merge(mcp_app(bridge, security_state))
+        // /mcp 在 create_app 之后挂载，不继承那里的层；这里单独套同一个上限，
+        // 保证可选端点与主路由口径一致。
+        let body_limit = shared::middleware::request_body_limit_from_env()?;
+        app.merge(mcp_app(bridge, security_state, body_limit))
     } else {
         app
     };
@@ -198,7 +201,11 @@ async fn main() -> anyhow::Result<()> {
 /// Build the MCP HTTP sub-application mounted at /mcp.
 /// Forwards the caller's Authorization header to the internal ToolBridge so
 /// existing session-based auth is reused without duplicating business logic.
-fn mcp_app(bridge: Arc<ToolBridge>, security_state: shared::middleware::SecurityState) -> Router {
+fn mcp_app(
+    bridge: Arc<ToolBridge>,
+    security_state: shared::middleware::SecurityState,
+    body_limit: usize,
+) -> Router {
     use axum::middleware;
     use axum::routing::post;
 
@@ -260,26 +267,29 @@ fn mcp_app(bridge: Arc<ToolBridge>, security_state: shared::middleware::Security
         }
     }
 
-    Router::new()
-        .route("/mcp", post(mcp_handler).with_state(Arc::clone(&bridge)))
-        .layer(middleware::from_fn_with_state(
-            security_state.clone(),
-            authorize_middleware,
-        ))
-        .layer(middleware::from_fn_with_state(
-            security_state.clone(),
-            auth_middleware,
-        ))
-        .layer(middleware::from_fn_with_state(
-            security_state.clone(),
-            shared::middleware::csrf_middleware,
-        ))
-        .layer(middleware::from_fn_with_state(
-            security_state.clone(),
-            rate_limit_middleware,
-        ))
-        .layer(middleware::from_fn(security_headers_middleware))
-        .layer(middleware::from_fn(trace_middleware))
+    shared::middleware::apply_body_limit(
+        Router::new()
+            .route("/mcp", post(mcp_handler).with_state(Arc::clone(&bridge)))
+            .layer(middleware::from_fn_with_state(
+                security_state.clone(),
+                authorize_middleware,
+            ))
+            .layer(middleware::from_fn_with_state(
+                security_state.clone(),
+                auth_middleware,
+            ))
+            .layer(middleware::from_fn_with_state(
+                security_state.clone(),
+                shared::middleware::csrf_middleware,
+            ))
+            .layer(middleware::from_fn_with_state(
+                security_state.clone(),
+                rate_limit_middleware,
+            ))
+            .layer(middleware::from_fn(security_headers_middleware))
+            .layer(middleware::from_fn(trace_middleware)),
+        body_limit,
+    )
 }
 
 /// SPA 静态服务的最小 mime 映射（按扩展名）

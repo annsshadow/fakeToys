@@ -34,7 +34,7 @@ uuid.workspace = true
 dotenvy.workspace = true
 chrono.workspace = true
 url = "2"
-tower-http = { workspace = true, features = ["cors", "trace", "timeout", "catch-panic"] }
+tower-http = { workspace = true, features = ["cors", "trace", "timeout", "catch-panic", "limit"] }
 hmac.workspace = true
 sha2.workspace = true
 base64.workspace = true

@@ -9,6 +9,7 @@
 //   token.rs     — Token 提取与认证中间件
 //   rbac.rs      — RBAC 模型（PermissionLevel, PermissionRegistry）、授权中间件
 
+pub mod body_limit;
 pub mod constants;
 pub mod contract_alias;
 pub mod rbac;
@@ -17,6 +18,7 @@ pub mod timeout;
 pub mod token;
 
 // Re-export public API for backward compatibility
+pub use body_limit::*;
 pub use constants::*;
 pub use rbac::*;
 pub use security::*;

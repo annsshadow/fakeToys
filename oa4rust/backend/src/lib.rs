@@ -231,6 +231,11 @@ pub async fn create_app(
             shared::middleware::trace_middleware,
         ));
 
+    // R24：全局请求体上限。放在最外层：已知 Content-Length 超限时在任何
+    // handler / 中间件之前直接 413，chunked 也在流层面截断。提取器口径
+    // 同步到同一个上限（默认 2 MiB，与 axum 隐式默认一致）。
+    let app = shared::middleware::apply_body_limit_from_env(app)?;
+
     Ok(app)
 }
 
