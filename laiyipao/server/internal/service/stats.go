@@ -448,8 +448,20 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 		 LEFT JOIN user_progress p ON p.user_id = u.id
 		 WHERE ` + countWhere
 	}
-	if err := s.pool.QueryRow(ctx, countSQL, countArgs...).Scan(&total); err != nil {
-		return nil, 0, fmt.Errorf("count users: %w", err)
+	// R61：total 是纯重复计算（翻页不改变总数），按完整筛选条件缓存。
+	// 懒加载值见 config.AdminUsersCountCacheTTL 的说明：最多旧 5 秒，
+	// 到期必然重算，不会长期漂移。
+	key := adminUsersCountKey(kw, dateFrom, dateTo, isGuest, lastLoginFrom, lastLoginTo, suspicious)
+	total, err = s.adminUsersCountCache.getOrLoad(ctx, time.Now(), s.Cfg().AdminUsersCountCacheTTL, key,
+		func(ctx context.Context) (int64, error) {
+			var n int64
+			if err := s.pool.QueryRow(ctx, countSQL, countArgs...).Scan(&n); err != nil {
+				return 0, fmt.Errorf("count users: %w", err)
+			}
+			return n, nil
+		})
+	if err != nil {
+		return nil, 0, err
 	}
 
 	// 验真统计改为**两阶段**（第 12 轮）：先取页内用户，再按页内 id 聚合

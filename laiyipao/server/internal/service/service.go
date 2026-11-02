@@ -130,6 +130,9 @@ type Service struct {
 	// economyCache 是后台经济流水页的缓存（2026-10-31 新一轮第 28 轮）。
 	// wallet_flows 是增长最快的表，TTL 见 config.EconomyCacheTTL。
 	economyCache ttlCache[AdminEconomyResp]
+	// adminUsersCountCache 是后台玩家列表 total 的按键缓存（R61）。
+	// 只缓存计数、不缓存列表：列表本身 0.14ms，缓存它反而引入分页一致性问题。
+	adminUsersCountCache adminUsersCountCache
 	// configJSON 是 /config 序列化字节的缓存（第 11 轮）：
 	// 在 server_time 值处切开的 prefix/suffix，见 ConfigJSON。
 	configJSON configJSONCache
@@ -196,7 +199,8 @@ func (s *Service) Cfg() *config.Config {
 // # 生效范围
 //
 // 只影响**每次请求现读**的旋钮：`DASHBOARD_CACHE_TTL`、
-// `LEADERBOARD_CACHE_TTL`、结算重算模式、微信端点/凭据等。
+// `LEADERBOARD_CACHE_TTL`、`ADMIN_USERS_COUNT_CACHE_TTL`、结算重算模式、
+// 微信端点/凭据等。
 //
 // # 不生效（改完仍需重启）
 //

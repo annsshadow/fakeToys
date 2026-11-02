@@ -273,6 +273,27 @@ type Config struct {
 	// 30 秒 TTL 完全够；设成 `0` 即关闭缓存（排查时与其它缓存同一条命令）。
 	EconomyCacheTTL time.Duration
 
+	// AdminUsersCountCacheTTL 是后台玩家列表 total 的进程内缓存有效期
+	// （2026-11-03 第 61 轮）。
+	//
+	// # 为什么单独缓存这个 total
+	//
+	// `/admin/users` 的列表 SQL 实测只要 0.14ms，而 `COUNT(*)` 在 100 万
+	// users 上要 32ms（并行 index-only 扫描）—— 20 并发下 p95 136ms，
+	// 延迟几乎全部来自这个计数。它每次翻页都重算一次，且翻页本身不会
+	// 改变总数，属于纯重复计算。
+	//
+	// # 为什么允许旧 5 秒
+	//
+	// total 是分页基准，不是账务数字：5 秒前少算/多算一个新注册用户，
+	// 运营的翻页与筛选判断不受影响。**它不会长期漂移**：每个缓存项都有
+	// 硬 TTL，到期必然重新 COUNT(*)；`0` 关闭缓存后每次都是真值。
+	// 这与「永久漂移的计数器」是两回事，后者才是假数。
+	//
+	// 缓存按**完整筛选条件**分键（关键词/日期/游客/最后登录/需核查），
+	// 键数量上限 64，超限整表清空（只造成一次未命中，不会返回错值）。
+	AdminUsersCountCacheTTL time.Duration
+
 	// 默认管理员（仅在 admin_users 为空时引导创建）
 	BootstrapAdminUser string
 	BootstrapAdminPass string
@@ -432,13 +453,14 @@ func Load() Config {
 		OfflineCoinPerHour: envInt("OFFLINE_COIN_PER_HOUR", 600),
 
 		// 30s / 15s / 60s：见字段注释里的取舍。0 = 关闭缓存。
-		DashboardCacheTTL:      envDuration("DASHBOARD_CACHE_TTL", 30*time.Second),
-		LeaderboardCacheTTL:    envDuration("LEADERBOARD_CACHE_TTL", 15*time.Second),
-		SignInCalendarCacheTTL: envDuration("SIGNIN_CALENDAR_CACHE_TTL", 60*time.Second),
-		AnnouncementsCacheTTL:  envDuration("ANNOUNCEMENTS_CACHE_TTL", 30*time.Second),
-		ShopCacheTTL:           envDuration("SHOP_CACHE_TTL", 30*time.Second),
-		TasksCacheTTL:          envDuration("TASKS_CACHE_TTL", 60*time.Second),
-		EconomyCacheTTL:        envDuration("ECONOMY_CACHE_TTL", 30*time.Second),
+		DashboardCacheTTL:       envDuration("DASHBOARD_CACHE_TTL", 30*time.Second),
+		LeaderboardCacheTTL:     envDuration("LEADERBOARD_CACHE_TTL", 15*time.Second),
+		SignInCalendarCacheTTL:  envDuration("SIGNIN_CALENDAR_CACHE_TTL", 60*time.Second),
+		AnnouncementsCacheTTL:   envDuration("ANNOUNCEMENTS_CACHE_TTL", 30*time.Second),
+		ShopCacheTTL:            envDuration("SHOP_CACHE_TTL", 30*time.Second),
+		TasksCacheTTL:           envDuration("TASKS_CACHE_TTL", 60*time.Second),
+		EconomyCacheTTL:         envDuration("ECONOMY_CACHE_TTL", 30*time.Second),
+		AdminUsersCountCacheTTL: envDuration("ADMIN_USERS_COUNT_CACHE_TTL", 5*time.Second),
 
 		BootstrapAdminUser: env("BOOTSTRAP_ADMIN_USER", "admin"),
 		BootstrapAdminPass: env("BOOTSTRAP_ADMIN_PASS", "admin12345"),
