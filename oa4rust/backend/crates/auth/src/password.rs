@@ -17,8 +17,41 @@ use sha2::Digest;
 /// bcrypt 哈希存储前缀，用于区分 MD5/DES 旧格式
 pub const BCRYPT_PREFIX: &str = "{bcrypt}";
 
-/// bcrypt 工作因子（cost），10 在安全性与性能间取得平衡
+/// bcrypt 工作因子（cost）默认值：10 在安全性与性能间取得平衡
 pub const BCRYPT_COST: u32 = 10;
+
+/// 第 67 轮：生效的 bcrypt 工作因子。
+///
+/// 支持环境变量 `OA4RUST_BCRYPT_COST` 覆盖（范围 4..=31，越界/非法回落默认
+/// 并 warn）：高负载站点可调低登录哈希 CPU 成本，敏感部署可调高（如 12）。
+/// 只影响**新写入**的哈希（`hash_password`/`rehash_password`）；校验路径
+/// （`bcrypt::verify`）从哈希串自带的 cost 读，存量哈希不受影响。
+/// 解析 env 值 → 生效 cost（纯函数，便于测试）：合法 4..=31 用配置值，
+/// 越界/非法返回默认并在调用侧 warn。
+pub fn resolve_bcrypt_cost(env: Option<&str>) -> u32 {
+    match env.and_then(|v| v.trim().parse::<u32>().ok()) {
+        Some(n) if (4..=31).contains(&n) => n,
+        Some(_) => BCRYPT_COST,
+        None => BCRYPT_COST,
+    }
+}
+
+fn bcrypt_cost() -> u32 {
+    static COST: std::sync::OnceLock<u32> = std::sync::OnceLock::new();
+    *COST.get_or_init(|| {
+        let raw = std::env::var("OA4RUST_BCRYPT_COST").ok();
+        let cost = resolve_bcrypt_cost(raw.as_deref());
+        if cost != BCRYPT_COST {
+            tracing::warn!(cost, "OA4RUST_BCRYPT_COST 覆盖默认工作因子");
+        } else if raw.is_some() {
+            tracing::warn!(
+                value = %raw.as_deref().unwrap_or(""),
+                "OA4RUST_BCRYPT_COST 非法或越界，回落默认 {BCRYPT_COST}"
+            );
+        }
+        cost
+    })
+}
 
 /// AES-GCM-256 SSO 密钥标识前缀，用于从 DB 查表选择密钥。
 /// o2server 3DES-ECB 仅作历史解密兼容，新加密一律走 AES-GCM。
@@ -67,10 +100,10 @@ fn set_cached(bcrypt_hash: &str, plain: &str, result: bool) {
 
 /// 按双算法兼容方案生成密码哈希（新写入统一 bcrypt，兼容既有 MD5/DES 校验）
 pub fn hash_password(plain: &str) -> String {
-    // bcrypt::hash 仅在 cost 越界时失败；BCRYPT_COST 为常量 10 恒合法，此路实为不可达。
+    // bcrypt::hash 仅在 cost 越界时失败；bcrypt_cost() 保证 4..=31 恒合法，此路实为不可达。
     // 失败时 fail-closed panic，杜绝静默降级到可彩虹表破解的无盐 MD5（旧实现的安全隐患）。
-    let hash = bcrypt::hash(plain, BCRYPT_COST)
-        .expect("bcrypt hashing failed with a constant valid cost; refusing to downgrade to MD5");
+    let hash = bcrypt::hash(plain, bcrypt_cost())
+        .expect("bcrypt hashing failed with a clamped valid cost; refusing to downgrade to MD5");
     format!("{BCRYPT_PREFIX}{hash}")
 }
 
@@ -510,5 +543,31 @@ mod tests {
         );
         c.clear(); // 清理，避免污染同模块其它用例
         drop(c);
+    }
+
+    // 第 67 轮：env 覆盖的工作因子解析（合法/越界/非法/缺省四档）。
+    #[test]
+    fn resolve_bcrypt_cost_clamps_to_valid_range() {
+        assert_eq!(resolve_bcrypt_cost(None), BCRYPT_COST, "缺省回落默认");
+        assert_eq!(resolve_bcrypt_cost(Some("14")), 14, "合法值直接生效");
+        assert_eq!(resolve_bcrypt_cost(Some(" 12 ")), 12, "首尾空白容忍");
+        assert_eq!(resolve_bcrypt_cost(Some("4")), 4, "bcrypt 允许的下限");
+        assert_eq!(resolve_bcrypt_cost(Some("31")), 31, "bcrypt 允许的上限");
+        assert_eq!(
+            resolve_bcrypt_cost(Some("3")),
+            BCRYPT_COST,
+            "越下界回落默认"
+        );
+        assert_eq!(
+            resolve_bcrypt_cost(Some("32")),
+            BCRYPT_COST,
+            "越上界回落默认"
+        );
+        assert_eq!(
+            resolve_bcrypt_cost(Some("abc")),
+            BCRYPT_COST,
+            "非法回落默认"
+        );
+        assert_eq!(resolve_bcrypt_cost(Some("")), BCRYPT_COST, "空串回落默认");
     }
 }
