@@ -650,7 +650,7 @@ func (s *Service) AdminExportUsers(ctx context.Context, keyword string, dateFrom
 // 被禁账号在 RefreshTTL 内仍可换访问令牌「续命」，
 // 运营止损动作实际没止住。下面的注释「封禁即吊销」
 // 与旧实现（两条可分别失败）自相矛盾，这正是缺陷能活下来的原因。
-func (s *Service) AdminSetUserStatus(ctx context.Context, userID int64, banned bool, reason string) (AdminUserView, error) {
+func (s *Service) AdminSetUserStatus(ctx context.Context, userID int64, banned bool, reason string, audit ...AdminAuditCtx) (AdminUserView, error) {
 	status := 1
 	if banned {
 		status = 2
@@ -667,6 +667,19 @@ func (s *Service) AdminSetUserStatus(ctx context.Context, userID int64, banned b
 				`UPDATE refresh_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL`,
 				userID); err != nil {
 				return fmt.Errorf("revoke tokens: %w", err)
+			}
+		}
+		// R36：封禁/解封与审计同一事务。封禁是止损动作，事后必须能回答
+		// 「谁在什么时候以什么理由封了谁」；审计缺行等于这次止损没有证据。
+		if len(audit) > 0 {
+			action, detail := "unban_user", any(nil)
+			if banned {
+				action = "ban_user"
+				detail = map[string]any{"reason": reason}
+			}
+			if err := s.AuditTx(ctx, tx, audit[0], action,
+				strconv.FormatInt(userID, 10), detail); err != nil {
+				return err
 			}
 		}
 		return nil

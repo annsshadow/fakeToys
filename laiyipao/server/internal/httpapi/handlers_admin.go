@@ -441,11 +441,12 @@ func (s *Server) adminBanUser(c *fiber.Ctx) error {
 	if body.Reason == "" {
 		body.Reason = "违反用户协议"
 	}
-	u, err := s.Svc.AdminSetUserStatus(c.Context(), id, true, body.Reason)
+	// R36：审计随封禁事务提交 —— 无审计即不封禁。
+	u, err := s.Svc.AdminSetUserStatus(c.Context(), id, true, body.Reason,
+		service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()})
 	if err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "ban_user", strconv.FormatInt(id, 10), c.IP(), body)
 	return c.JSON(service.AdminUserResp{User: u})
 }
 
@@ -454,11 +455,11 @@ func (s *Server) adminUnbanUser(c *fiber.Ctx) error {
 	if err != nil {
 		return fail(c, fiber.StatusBadRequest, "bad_input", "user id 非法")
 	}
-	u, err := s.Svc.AdminSetUserStatus(c.Context(), id, false, "")
+	u, err := s.Svc.AdminSetUserStatus(c.Context(), id, false, "",
+		service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()})
 	if err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "unban_user", strconv.FormatInt(id, 10), c.IP(), nil)
 	return c.JSON(service.AdminUserResp{User: u})
 }
 
