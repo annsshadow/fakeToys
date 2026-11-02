@@ -136,21 +136,21 @@ func (s *Server) Register(app *fiber.App) {
 	// ⚠️ 挂在 /me 组下（带 requireUser），因为它要花**玩家自己的**钱。
 	// 若挂在 v1 根下，任何人都能替别人花钱/给别人升级 ——
 	// 鉴权不是这个端点的细节，是它的全部意义。
-	me.Post("/skills/:id/upgrade", s.upgradeSkill)
+	me.Post("/skills/:id/upgrade", authRateLimit("skillupgrade", economyWriteLimit), s.upgradeSkill)
 	// 技能熔炼：把两个已拥有的材料技能熔炼成高阶技能（发放 18 个合成技能）。
 	//
 	// ⚠️ 与上面的 `/skills/:id/upgrade` 不冲突：那段是 3 段路径且固定带
 	// `/upgrade` 后缀，这段是 2 段 —— 纤维按段数匹配，不会被 `:id` 吃掉。
 	//
 	// 挂在 /me 组下（带 requireUser）：熔炼消耗的是**玩家自己的**材料。
-	me.Post("/skills/synthesize", s.synthesizeSkill)
+	me.Post("/skills/synthesize", authRateLimit("skillmerge", economyWriteLimit), s.synthesizeSkill)
 
 	// 第 150 轮：宝石。第 133 轮的权益扫描要求「宝石要有装备/卸下入口」，
 	// 那条只覆盖了 equipped_slot；这里补的是**看得见**与**洗得动**。
 	// 第 20 轮：佩戴/卸下 —— equipped_slot 的第一个写入方，
 	// 商城卖出的宝石从此真正生效（loadGemsAffixRows 的 WHERE 首次非空）。
 	me.Get("/gems", s.listGems)
-	me.Post("/gems/:id/wash", s.washGem)
+	me.Post("/gems/:id/wash", authRateLimit("gemwash", economyWriteLimit), s.washGem)
 	me.Post("/gems/:id/equip", s.equipGem)
 	me.Post("/gems/:id/unequip", s.unequipGem)
 	// 第 48 轮：L-3 阵型预设。user_presets 表建表以来零代码引用 ——
@@ -208,21 +208,21 @@ func (s *Server) Register(app *fiber.App) {
 
 	mastery := v1.Group("/mastery", requireUser(s.Svc))
 	mastery.Get("/", s.getMastery)
-	mastery.Post("/allocate", s.allocateMastery)
+	mastery.Post("/allocate", authRateLimit("masteryalloc", economyWriteLimit), s.allocateMastery)
 	// 重铸专精：消耗 1 件 mastery_reset 道具，清空已点亮节点。
 	// 挂在 /mastery 组（带 requireUser），因为要消耗**玩家自己的**道具。
-	mastery.Post("/reset", s.resetMastery)
+	mastery.Post("/reset", authRateLimit("masteryreset", economyWriteLimit), s.resetMastery)
 
 	tasks := v1.Group("/tasks", requireUser(s.Svc))
 	tasks.Get("/", s.tasks)
-	tasks.Post("/:id/claim", s.claimTask)
+	tasks.Post("/:id/claim", authRateLimit("taskclaim", economyWriteLimit), s.claimTask)
 
 	shop := v1.Group("/shop", requireUser(s.Svc))
 	shop.Get("/", s.shop)
-	shop.Post("/:id/buy", s.buy)
+	shop.Post("/:id/buy", authRateLimit("shopbuy", economyWriteLimit), s.buy)
 
 	signin := v1.Group("/signin", requireUser(s.Svc))
-	signin.Post("/", s.signIn)
+	signin.Post("/", authRateLimit("signin", economyWriteLimit), s.signIn)
 	// 第 135 轮：七日签到奖励表的权威来源。客户端预览改读它，不再本地硬编码。
 	signin.Get("/calendar", s.signinCalendar)
 	// 第 141 轮：玩家签到状态（已签天数 / 今日可否签）——签到页初始展示。

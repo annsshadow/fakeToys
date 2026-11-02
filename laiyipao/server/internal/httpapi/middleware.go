@@ -691,8 +691,9 @@ func perIPLimiter(name string, limitPerMinute int) fiber.Handler {
 // 它挂在 `requireUser` **之后**，所以 `c.Locals("user_id")` 已经有值；
 // 限流键用 `user_id` 而不是 token —— 否则换发新令牌即可重置计数。
 //
-// 为什么只覆盖这三条：它们是**写放大**路径（每次调用都落库一行，
-// 且没有任何幂等键挡住重复）。查询类端点不放大存储，不在此列。
+// 判据是**写放大**：每次调用都落库、且没有幂等键挡住重复的端点才限流。
+// 查询类端点不放大存储，不在此列。最初只覆盖下面三条，后续按同一判据
+// 扩到其它写端点（R52 补齐 `economyWriteLimit` 注释里列出、但实现漏掉的经济写路由）。
 //
 //   - `/battle/verify`：实测同一场战报重复 200 次就写 200 行
 //     （`replay_verifications` 上既无唯一约束也无去重）。
