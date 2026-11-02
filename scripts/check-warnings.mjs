@@ -19,7 +19,7 @@
 //   - Go    : go vet（发现即非零退出）+ gofmt -l
 //   - TS/Vue: tsc/vue-tsc 无告警概念，故由本脚本匹配构建输出
 
-import { spawnSync } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
@@ -256,49 +256,117 @@ if (selected.length === 0) {
   process.exit(2)
 }
 
-const results = []
-for (const check of selected) {
-  // 不跑命令的静态检查（例如「成员是否都继承了 workspace lints」）
+// 第 97 轮：检查项彼此独立（不同子项目 / 不同目录），旧实现串行 `spawnSync`
+// 让整条门禁的耗时等于各项之和（clippy / 两个前端构建 / pytest 加起来占绝大部分）。
+// 改为异步 `spawn` + 固定并发（默认 4，可用 CHECK_CONCURRENCY 调小，例如
+// 低配机器 / 需要串行基线时设 1）：墙钟时间约等于最慢一项，而不是全部相加。
+// 结果按下标回填，输出顺序与汇总口径不变。
+const CONCURRENCY = Math.max(1, Number(process.env.CHECK_CONCURRENCY) || 4)
+const MAX_OUTPUT = 64 * 1024 * 1024
+
+/** 跑一个命令型检查，返回与串行版本同形状的结果对象。 */
+function runCommandCheck(check) {
+  return new Promise((resolveCheck) => {
+    const skipped = check.requires ? check.requires() : null
+    if (typeof skipped === 'string') {
+      console.log(`- ${check.label} … SKIP (${skipped})`)
+      resolveCheck({ ...check, status: 'SKIP', detail: skipped })
+      return
+    }
+
+    // 旧写法 `check.cmd(skipped.jar)` 在无 `requires` 的检查上是 `null.jar`，
+    // 一旦再出现函数型 cmd 就会 TypeError；`skipped` 此处可能是 null/true。
+    const cmd = typeof check.cmd === 'function' ? check.cmd(skipped?.jar) : check.cmd
+    const started = Date.now()
+    let output = ''
+    let truncated = false
+    let settled = false
+    let timer = null
+
+    const child = spawn(cmd, {
+      cwd: join(ROOT, check.cwd),
+      env,
+      shell: true,
+    })
+
+    const collect = (chunk) => {
+      if (output.length >= MAX_OUTPUT) {
+        truncated = true
+        return
+      }
+      output += chunk
+      if (output.length > MAX_OUTPUT) {
+        output = output.slice(0, MAX_OUTPUT)
+        truncated = true
+      }
+    }
+    child.stdout?.setEncoding('utf8')
+    child.stderr?.setEncoding('utf8')
+    child.stdout?.on('data', collect)
+    child.stderr?.on('data', collect)
+
+    const finish = (status, extra = {}) => {
+      if (settled) return
+      settled = true
+      if (timer) clearTimeout(timer)
+      const clean = output.replace(ANSI, '')
+      const hits = clean.split(/\r?\n/).filter((line) => check.pattern.test(line))
+      const seconds = ((Date.now() - started) / 1000).toFixed(1)
+      const failed = status !== 0 || hits.length > 0
+      const entry = { ...check, status: failed ? 'FAIL' : 'PASS', hits, exit: status, seconds, ...extra }
+      console.log(
+        failed
+          ? `- ${check.label} … FAIL (exit=${status}, 告警 ${hits.length} 条, ${seconds}s)`
+          : `- ${check.label} … PASS (${seconds}s)`,
+      )
+      if (verbose || failed) {
+        for (const line of hits.slice(0, 40)) console.log(`    ${line.trim()}`)
+        if (hits.length > 40) console.log(`    … 另有 ${hits.length - 40} 条`)
+        if (failed && hits.length === 0) console.log(clean.split(/\r?\n/).slice(-25).join('\n'))
+      }
+      if (truncated) console.log(`    （输出超过 ${MAX_OUTPUT} 字节，已截断）`)
+      resolveCheck(entry)
+    }
+
+    child.on('error', (err) => finish(-1, { spawnError: err.message }))
+    child.on('close', (code, signal) => finish(code ?? (signal ? -1 : 0), signal ? { signal } : {}))
+    if (check.timeout) {
+      timer = setTimeout(() => {
+        truncated = true
+        child.kill()
+      }, check.timeout)
+    }
+  })
+}
+
+const results = new Array(selected.length)
+const jobs = []
+selected.forEach((check, index) => {
+  // 不跑命令的静态检查（例如「成员是否都继承了 workspace lints」）先同步跑完。
   if (check.custom) {
     process.stdout.write(`- ${check.label} … `)
     const outcome = check.custom()
-    results.push({ ...check, status: outcome.ok ? 'PASS' : 'FAIL', hits: outcome.hits })
+    results[index] = { ...check, status: outcome.ok ? 'PASS' : 'FAIL', hits: outcome.hits }
     console.log(outcome.ok ? 'PASS' : `FAIL (${outcome.hits.length} 处)`)
     if (!outcome.ok) for (const line of outcome.hits) console.log(`    ${line}`)
-    continue
+    return
   }
-
-  const skipped = check.requires ? check.requires() : null
-  if (typeof skipped === 'string') {
-    results.push({ ...check, status: 'SKIP', detail: skipped })
-    console.log(`- ${check.label} … SKIP (${skipped})`)
-    continue
-  }
-
-  const cmd = typeof check.cmd === 'function' ? check.cmd(skipped.jar) : check.cmd
-  process.stdout.write(`- ${check.label} … `)
-  const started = Date.now()
-  const run = spawnSync(cmd, {
-    cwd: join(ROOT, check.cwd),
-    env,
-    shell: true,
-    encoding: 'utf8',
-    maxBuffer: 64 * 1024 * 1024,
-    timeout: check.timeout,
+  // 注意这里只登记「怎么跑」，不调用 —— `runCommandCheck` 一被调用就会 spawn，
+  // 提前调用等于无视并发上限、把全部检查一次性拉起来。
+  jobs.push(async () => {
+    const entry = await runCommandCheck(check)
+    results[index] = entry
   })
-  const output = `${run.stdout ?? ''}${run.stderr ?? ''}`.replace(ANSI, '')
-  const hits = output.split(/\r?\n/).filter((line) => check.pattern.test(line))
-  const seconds = ((Date.now() - started) / 1000).toFixed(1)
-  const failed = run.status !== 0 || hits.length > 0
-  results.push({ ...check, status: failed ? 'FAIL' : 'PASS', hits, exit: run.status, seconds })
+})
 
-  console.log(failed ? `FAIL (exit=${run.status}, 告警 ${hits.length} 条, ${seconds}s)` : `PASS (${seconds}s)`)
-  if (verbose || failed) {
-    for (const line of hits.slice(0, 40)) console.log(`    ${line.trim()}`)
-    if (hits.length > 40) console.log(`    … 另有 ${hits.length - 40} 条`)
-    if (failed && hits.length === 0) console.log(output.split(/\r?\n/).slice(-25).join('\n'))
+// 固定并发池：任一 worker 空闲就领下一项，最多 CONCURRENCY 个同时在跑。
+let nextJob = 0
+const workers = Array.from({ length: Math.min(CONCURRENCY, jobs.length) }, async () => {
+  while (nextJob < jobs.length) {
+    await jobs[nextJob++]()
   }
-}
+})
+await Promise.all(workers)
 
 const failedCount = results.filter((r) => r.status === 'FAIL').length
 const skippedCount = results.filter((r) => r.status === 'SKIP').length
