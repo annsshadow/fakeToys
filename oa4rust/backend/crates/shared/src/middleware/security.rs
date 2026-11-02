@@ -812,7 +812,6 @@ mod cov_middleware_tests {
     }
 
     /// 捕获日志输出的内存 writer。
-    #[derive(Clone, Default)]
     struct Capture(std::sync::Arc<std::sync::Mutex<Vec<u8>>>);
 
     impl std::io::Write for Capture {
@@ -825,21 +824,43 @@ mod cov_middleware_tests {
         }
     }
 
+    impl Clone for Capture {
+        fn clone(&self) -> Self {
+            Capture(self.0.clone())
+        }
+    }
+
+    /// 进程级日志缓冲 + **全局** subscriber。
+    ///
+    /// ⚠️ 必须是全局而不是 `set_default`（线程局部）：tracing 的 callsite
+    /// 兴趣（never/sometimes）是**进程级缓存**，并行跑测时其它用例在同一
+    /// `info!` callsite 上没有 subscriber，会把兴趣写回 never，于是本用例
+    /// 偶发拿到空日志（实测：全量并行约 1/3 失败、单线程必过）。
+    /// 2026-11-02 已用 `set_default` + `rebuild_interest_cache` 试过，仍会复发：
+    /// 竞态发生在 rebuild 之后。唯一稳定的做法是让所有线程都看得到 subscriber。
+    fn trace_capture() -> &'static std::sync::Arc<std::sync::Mutex<Vec<u8>>> {
+        static CAPTURE: std::sync::OnceLock<std::sync::Arc<std::sync::Mutex<Vec<u8>>>> =
+            std::sync::OnceLock::new();
+        CAPTURE.get_or_init(|| {
+            let buf = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+            let writer = buf.clone();
+            let subscriber = tracing_subscriber::fmt()
+                .with_writer(move || Capture(writer.clone()))
+                .with_ansi(false)
+                .with_max_level(tracing::Level::INFO)
+                .finish();
+            tracing::subscriber::set_global_default(subscriber)
+                .expect("测试进程内不应已有其它全局 subscriber");
+            buf
+        })
+    }
+
     /// 2xx 也要有结构化访问日志：status / latency_ms / request_id 必须齐全，
     /// 否则「慢请求定位」与「错误率统计」都无从做起。
     #[tokio::test(flavor = "current_thread")]
     async fn trace_middleware_logs_structured_access_line() {
-        let capture = Capture::default();
-        let writer = {
-            let capture = capture.clone();
-            move || capture.clone()
-        };
-        let subscriber = tracing_subscriber::fmt()
-            .with_writer(writer)
-            .with_ansi(false)
-            .with_max_level(tracing::Level::INFO)
-            .finish();
-        let _guard = tracing::subscriber::set_default(subscriber);
+        let capture = trace_capture();
+        capture.lock().unwrap().clear();
 
         let resp = traced_router()
             .oneshot(Request::builder().uri("/ok").body(Body::empty()).unwrap())
@@ -853,7 +874,7 @@ mod cov_middleware_tests {
             .unwrap()
             .to_string();
 
-        let out = String::from_utf8(capture.0.lock().unwrap().clone()).unwrap();
+        let out = String::from_utf8(capture.lock().unwrap().clone()).unwrap();
         assert!(out.contains("request completed"), "缺少访问日志：{out}");
         assert!(out.contains("status=200"), "日志缺 status：{out}");
         assert!(out.contains("latency_ms="), "日志缺耗时：{out}");
