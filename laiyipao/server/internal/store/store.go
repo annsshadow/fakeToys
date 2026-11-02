@@ -6,6 +6,7 @@ package store
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -41,6 +42,11 @@ func Open(ctx context.Context, cfg config.Config) (*DB, error) {
 	poolCfg.MaxConns = cfg.DBMaxConns
 	poolCfg.MinConns = cfg.DBMinConns
 	poolCfg.MaxConnLifetime = cfg.DBConnLifetime
+	// 空闲连接回收：pgx 默认 30m，显式接配置是为了让「托管 PG 主动断开
+	// 空闲连接」的环境能把回收时间调到断连阈值以内，避免反复用坏连接。
+	if cfg.DBConnIdleTime > 0 {
+		poolCfg.MaxConnIdleTime = cfg.DBConnIdleTime
+	}
 
 	// ⚠️ 第 90 轮：把会话时区**钉死**在连接上。
 	//
@@ -78,6 +84,28 @@ func Open(ctx context.Context, cfg config.Config) (*DB, error) {
 		tz = defaultDBTimeZone
 	}
 	poolCfg.ConnConfig.RuntimeParams["TimeZone"] = tz
+
+	// ⚠️ 单条 SQL 的服务端执行上限（第 R3 轮）。
+	//
+	// 没有它时，一条写坏的查询（漏了 WHERE、笛卡尔积、锁等待）会
+	// **无限期**占着一条连接：池只有 MaxConns 条，几条这样的查询就能把
+	// API 拖到全员超时 —— 而且从应用侧看起来只是「变慢」，没有报错。
+	// 设上界后，超时由 PG 主动取消（57014），连接立刻归还，
+	// 错误也能进日志、被 fail-loud 上抛。
+	//
+	// ⚠️ 它同样作用于启动时的迁移（迁移复用同一个池）：大回填迁移如果
+	// 可能超过上限，应在那次启动显式设 DB_STATEMENT_TIMEOUT=0。
+	// 用 RuntimeParams 的理由与 TimeZone 相同：随握手一次性下发，
+	// 不存在「某条连接漏设」的可能，也不多一次往返。
+	if cfg.DBStatementTimeout > 0 {
+		ms := cfg.DBStatementTimeout.Milliseconds()
+		if ms < 1 {
+			// sub-ms 的配置若原样下发会变成 0，而 0 在 PG 里表示**关闭** ——
+			// 「设了很短的超时」反而变成「完全不超时」。
+			ms = 1
+		}
+		poolCfg.ConnConfig.RuntimeParams["statement_timeout"] = strconv.FormatInt(ms, 10)
+	}
 
 	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
 	if err != nil {

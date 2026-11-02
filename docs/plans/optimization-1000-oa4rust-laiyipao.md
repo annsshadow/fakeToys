@@ -116,7 +116,7 @@ Wechat 8s 超时 + 1MB 响应上限、Fiber 读写超时与 body limit、laiyipa
 | --- | --- | --- | --- |
 | R1 | laiyipao 管理导出超限 fail-loud（10 处）+ 413 映射 + 边界用例 | done | 10 处 `LIMIT 100000`→`100001` 探测；超过上限返回 `ErrExportTooLarge`（可 `errors.Is`）；真库：恰好 10 万行成功且 CSV 行数=100001（表头+数据），100001 行被拒；单用户流水导出同样被拒；HTTP 映射 413 `export_too_large` |
 | R2 | （并入 R1：边界用例即 R1 的验收证据） | done | — |
-| R3 | laiyipao `store.Open` statement_timeout / idle / health | pending | — |
+| R3 | laiyipao 连接池：statement_timeout 上界 + 空闲回收可配置 | done | 默认 30s `statement_timeout` 随握手下发（RuntimeParams）；`DB_CONN_IDLE_TIME` 接 `MaxConnIdleTime`。真库证据：`SHOW statement_timeout` = 2s；`pg_sleep(3)` 在 2.08s 被取消（57014，耗时 <2.5s）；设为 0 时会话为 `0`（无限制） |
 | R4 | oa4rust axum 优雅停机 | pending | — |
 | R5 | oa4rust 全局请求超时层 | pending | — |
 | R6 | oa4rust deadpool acquire/wait 超时可配置 | pending | — |
