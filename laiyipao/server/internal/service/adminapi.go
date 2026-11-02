@@ -499,16 +499,25 @@ func (s *Service) AdminListDefenses(ctx context.Context, limit, offset int, keyw
 // 删除后 `defense_challenges` 随外键 CASCADE 消失（玩家挑战历史
 // 里对这条防线的记录也会消失 —— 可接受，见 MyChallengeHistory 注释）。
 //
-// R47：删除与审计同一事务（见下轮补丁，本提交先保持原样）。
-func (s *Service) AdminDeleteDefense(ctx context.Context, defenseID int64) error {
-	ct, err := s.pool.Exec(ctx, `DELETE FROM defenses WHERE id = $1`, defenseID)
-	if err != nil {
-		return fmt.Errorf("delete defense: %w", err)
-	}
-	if ct.RowsAffected() == 0 {
-		return fmt.Errorf("%w: 防线 %d 不存在", ErrNotFound, defenseID)
-	}
-	return nil
+// R47：删除与审计同一事务。这是**不可逆**操作（防线本体与挑战历史一起
+// 被 CASCADE 删掉，没有回收站）；审计此前在 handler 提交后补写、失败只
+// 打日志，删掉一条违规防线后可以没有任何操作记录。
+func (s *Service) AdminDeleteDefense(ctx context.Context, defenseID int64,
+	audit ...AdminAuditCtx) error {
+	return s.DB.Tx(ctx, func(tx txType) error {
+		ct, err := tx.Exec(ctx, `DELETE FROM defenses WHERE id = $1`, defenseID)
+		if err != nil {
+			return fmt.Errorf("delete defense: %w", err)
+		}
+		if ct.RowsAffected() == 0 {
+			return fmt.Errorf("%w: 防线 %d 不存在", ErrNotFound, defenseID)
+		}
+		if len(audit) > 0 {
+			return s.AuditTx(ctx, tx, audit[0], "delete_defense",
+				strconv.FormatInt(defenseID, 10), nil)
+		}
+		return nil
+	})
 }
 
 // AdminDefenseChallengeView 是防线挑战记录的一行（2026-10-31 新一轮第 30 轮）。

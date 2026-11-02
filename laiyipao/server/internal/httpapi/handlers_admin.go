@@ -890,11 +890,10 @@ func (s *Server) adminDeleteDefense(c *fiber.Ctx) error {
 	if err != nil || id < 1 {
 		return fail(c, fiber.StatusBadRequest, "bad_input", "防线 ID 非法")
 	}
-	if err := s.Svc.AdminDeleteDefense(c.Context(), id); err != nil {
+	if err := s.Svc.AdminDeleteDefense(c.Context(), id,
+		service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()}); err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "delete_defense",
-		strconv.FormatInt(id, 10), c.IP(), nil)
 	return c.JSON(fiber.Map{"ok": true})
 }
 
