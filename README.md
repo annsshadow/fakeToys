@@ -6,7 +6,7 @@
 
 ### 一个装着若干「不那么玩具」的玩具箱
 
-**从 Rust 重写的企业级 OA 后端，到塔防元素反应小程序游戏、AI 训练数据增强工具、自动签到面板、免登 Token 生成器——**
+**从 Rust 重写的企业级 OA 后端，到塔防元素反应小程序游戏、AI 训练数据增强工具、自动签到面板——**
 **几个互相独立、各自能跑的实验性项目，共处一个 monorepo。**
 
 <br/>
@@ -29,7 +29,6 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://python.org/)
 [![Node](https://img.shields.io/badge/Node-20%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
-[![Java](https://img.shields.io/badge/Java-8%2B-ED8B00?logo=openjdk&logoColor=white)](https://openjdk.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![License](https://img.shields.io/badge/License-AGPL--3.0-blue?logo=gnu&logoColor=white)](LICENSE)
 
@@ -50,7 +49,6 @@
 | 🧪 **[augmentor](augmentor/)** | AI 训练数据增强工具 v3.0 | Python · FastAPI · React · Ant Design | 77 端点 · 10196 单测 |
 | ✅ **[auto-checkin](auto-checkin/)** | 大模型公益站自动签到面板 | Node · Playwright · Express | 3 站点 · 9 项棘轮 |
 | 🧠 **[llm-lab](llm-lab/)** | 从零学大模型训练 | Python · NumPy · PyTorch | 11 讲义 · 95 用例 |
-| 🔐 **[cool](cool/)** | Cool College OA 免登 Token 生成 | Java · AES/MD5 | — |
 
 ---
 
@@ -70,7 +68,7 @@
 | Python · augmentor 行覆盖 | **99.73%** | `augmentor/coverage.xml`（全量复跑） |
 | Go · laiyipao 语句覆盖 | **85.8%** | `docs/laiyipao/audits/coverage-2026-10-28.md` |
 | augmentor 单测 | **10196 passed / 0 failed** | CI 全量复跑（`ai-platform-ci.yml`） |
-| 编译告警门禁 | **13 通过 / 0 失败 / 1 跳过** | `node scripts/check-warnings.mjs` |
+| 编译告警门禁 | **13 通过 / 0 失败 / 0 跳过** | `node scripts/check-warnings.mjs` |
 | 全仓提交 | **3769** | `git rev-list --count HEAD` |
 
 </div>
@@ -90,7 +88,6 @@ graph LR
     Gate --> Py["🧪 augmentor<br/>Python · FastAPI"]
     Gate --> Ts["✅ auto-checkin<br/>Node · Playwright"]
     Gate --> Lab["🧠 llm-lab<br/>Python · NumPy"]
-    Gate --> Java["🔐 cool<br/>Java 8"]
 
     Rust --> DB1[("PostgreSQL")]
     Go --> DB2[("PostgreSQL")]
@@ -104,7 +101,6 @@ graph LR
     style Py fill:#171442,stroke:#6d5efc,color:#a78bfa
     style Ts fill:#08240f,stroke:#22c55e,color:#86efac
     style Lab fill:#062a1e,stroke:#42b883,color:#6ee7b7
-    style Java fill:#2a1a02,stroke:#f59e0b,color:#fcd34d
 ```
 
 ---
@@ -134,10 +130,9 @@ node scripts/check-warnings.mjs --only rust,admin
 | augmentor / llm-lab（Python） | `python -W error::SyntaxWarning -m compileall` |
 | augmentor/web | `eslint --max-warnings 0` + 构建日志断言 |
 | auto-checkin（TS） | `tsc --noEmit` |
-| cool（Java） | `javac -Xlint:all -Werror` |
 
 <details>
-<summary><b>🔍 14 项检查清单（点击展开）</b></summary>
+<summary><b>🔍 13 项检查清单（点击展开）</b></summary>
 
 | # | id | 检查内容 |
 |---|---|---|
@@ -153,8 +148,7 @@ node scripts/check-warnings.mjs --only rust,admin
 | 10 | `augmentor` | augmentor（Python 字节码编译） |
 | 11 | `llm-lab` | llm-lab（Python 字节码编译） |
 | 12 | `llm-lab-tests` | llm-lab（pytest 行为面） |
-| 13 | `java` | cool（Java，`-Xlint:all -Werror`） |
-| 14 | `r7-readonly-cross-check` | oa4rust R7 只读挂写交叉验证（0 疑似含写） |
+| 13 | `r7-readonly-cross-check` | oa4rust R7 只读挂写交叉验证（0 疑似含写） |
 
 </details>
 
@@ -298,15 +292,6 @@ pytest tests/ -q          # 95 passed
 
 </details>
 
-<details>
-<summary><b>🔐 cool — Cool College OA 免登 Token 生成工具</b></summary>
-
-支持 AES 加密/解密、MD5、Base64，兼容 .NET 的 AES-CBC 算法。编译门禁 `javac -Xlint:all -Werror`。
-
-> 详见 [cool/README.md](cool/README.md)
-
-</details>
-
 ---
 
 ## 🗂️ 仓库结构
@@ -318,7 +303,6 @@ fakeToys/
 ├── augmentor/        # 🧪 AI 数据增强工具（Python + FastAPI + React）
 ├── auto-checkin/     # ✅ 自动签到面板（Node + Playwright）
 ├── llm-lab/          # 🧠 大模型训练教学（Python + NumPy/PyTorch）
-├── cool/             # 🔐 免登 Token 生成（Java）
 ├── docs/             # 📚 方案/评审/审计文档（292 篇）
 │   └── assets/       # 🎨 README 视觉资源（自绘 SVG）
 ├── scripts/          # 🛠️ 通用脚本（check-warnings.mjs 等）
@@ -338,7 +322,6 @@ fakeToys/
 | **augmentor** | Python 3.10+ |
 | **auto-checkin** | Node 20+ + Playwright |
 | **llm-lab** | Python 3.10+（torch 可选） |
-| **cool** | JDK 8+ |
 
 ## 📄 开源协议
 
