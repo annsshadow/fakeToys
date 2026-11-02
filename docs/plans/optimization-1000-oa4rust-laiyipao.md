@@ -85,9 +85,14 @@ Wechat 8s 超时 + 1MB 响应上限、Fiber 读写超时与 body limit、laiyipa
 
 ### 每批轮次槽位（执行时按此细化，不改变编号）
 
-- **B1**：R1 导出截断 fail-loud；R2 导出精确边界；R3 分页参数夹取；R4 列表 total 口径；
-  R5 后台关键词长度上限；R6 导出 CSV 注入防护；R7 空结果切片归一；R8 时间范围反转校验；
-  R9 导出内存上限；R10 导出取消传播；R11–R50 同上主题其他查询（逐条落到文件:行）。
+> 编号以 §4 台账为准：实际执行时按「先闭环可验证项」调整顺序，下列槽位是候选池，
+> 具体轮号由台账在开轮时认领。R3 已用于 statement_timeout、R4 用于优雅停机（原属 B4/B6），
+> 因此 B1 的剩余候选（分页夹取、total 口径、关键词上限、CSV 注入、空切片、时间范围反转、
+> 导出内存上限、取消传播）从 R5 起继续认领。
+
+- **B1**：导出截断 fail-loud（R1 done）；候选池：分页参数夹取、列表 total 口径、
+  后台关键词长度上限、导出 CSV 注入防护、空结果切片归一、时间范围反转校验、
+  导出内存上限、导出取消传播；及同主题其他查询（逐条落到文件:行）。
 - **B2**：结算、领奖、钱包、道具、订单、兑换、公告发布的事务边界与回滚证据（R51–R100）。
 - **B3**：token 抢占、领取并发、限流并发、缓存回填并发、管理端并发写（R101–R150）。
 - **B4**：PG statement_timeout、池空闲/健康检查、body 上限、导出上限、重试预算（R151–R200）。
@@ -117,7 +122,7 @@ Wechat 8s 超时 + 1MB 响应上限、Fiber 读写超时与 body limit、laiyipa
 | R1 | laiyipao 管理导出超限 fail-loud（10 处）+ 413 映射 + 边界用例 | done | 10 处 `LIMIT 100000`→`100001` 探测；超过上限返回 `ErrExportTooLarge`（可 `errors.Is`）；真库：恰好 10 万行成功且 CSV 行数=100001（表头+数据），100001 行被拒；单用户流水导出同样被拒；HTTP 映射 413 `export_too_large` |
 | R2 | （并入 R1：边界用例即 R1 的验收证据） | done | — |
 | R3 | laiyipao 连接池：statement_timeout 上界 + 空闲回收可配置 | done | 默认 30s `statement_timeout` 随握手下发（RuntimeParams）；`DB_CONN_IDLE_TIME` 接 `MaxConnIdleTime`。真库证据：`SHOW statement_timeout` = 2s；`pg_sleep(3)` 在 2.08s 被取消（57014，耗时 <2.5s）；设为 0 时会话为 `0`（无限制） |
-| R4 | oa4rust axum 优雅停机 | pending | — |
+| R4 | oa4rust axum 优雅停机（SIGINT/SIGTERM → 停止接新连接、排队在途、宽限期强制退出） | done | 新增 `shared::graceful`：`serve_router_with_shutdown(listener, app, grace, signal)` 组合 `axum::serve(...).with_graceful_shutdown()` 与 `tokio::time::timeout`；`main.rs` 改用该入口，宽限 10s。用例：`drains_in_flight_request`——handler 进入后触发 shutdown，200ms 在途请求仍返回 `200 OK` 且 body=`done`；`forced_exit_after_grace_period`——5s 卡死请求在 100ms 宽限期后返回（实测 ≥90ms 且 <1s），证明不会无限挂住重启。`cargo clippy -p shared --tests -D warnings` 与 `cargo check --bin oa4rust` 通过 |
 | R5 | oa4rust 全局请求超时层 | pending | — |
 | R6 | oa4rust deadpool acquire/wait 超时可配置 | pending | — |
 | R7 | oa4rust 结构化访问日志（耗时/请求 ID） | pending | — |

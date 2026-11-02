@@ -182,9 +182,13 @@ async fn main() -> anyhow::Result<()> {
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
     tracing::info!("listening on {}", listener.local_addr()?);
-    axum::serve(
+    // 优雅停机：SIGINT/SIGTERM 后停止接新连接，等在途请求跑完（最多 10s）。
+    // 修前直接 `axum::serve(...).await`，部署重启会打断在途事务。
+    shared::graceful::serve_router_with_shutdown(
         listener,
-        app.into_make_service_with_connect_info::<std::net::SocketAddr>(),
+        app,
+        shared::graceful::DEFAULT_GRACE_PERIOD,
+        shared::graceful::shutdown_signal(),
     )
     .await?;
 

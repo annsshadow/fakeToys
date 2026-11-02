@@ -18,6 +18,7 @@ pub mod config;
 pub mod crud;
 pub mod db;
 pub mod error;
+pub mod graceful;
 pub mod input_validation;
 pub mod middleware;
 pub mod migrate;
