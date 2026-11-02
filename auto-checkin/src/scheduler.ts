@@ -4,6 +4,7 @@
 import cron from "node-cron";
 import type { AppConfig } from "./types.js";
 import { runAll } from "./runner.js";
+import { notifyResults } from "./notify.js";
 import { createLogger } from "./logger.js";
 import { shouldFailRun } from "./run-status.js";
 import { setNextRunAt } from "./server.js";
@@ -81,6 +82,8 @@ export function startScheduler(config: AppConfig): void {
           if (shouldFailRun(results)) log.error("定时触发未完成或存在失败站点");
           const { at, note } = estimateNext(expr);
           setNextRunAt(at, note);
+          // 第 61 轮：跑完一轮把结果推给 webhook（best-effort，失败不影响主流程）。
+          void notifyResults(config, results);
         })
         .catch((e) => log.error(String(e)));
     },
@@ -96,6 +99,7 @@ export function startScheduler(config: AppConfig): void {
     runAll(config)
       .then((results) => {
         if (shouldFailRun(results)) log.error("启动即运行未完成或存在失败站点");
+        void notifyResults(config, results);
       })
       .catch((e) => log.error(String(e)));
   }

@@ -28,6 +28,11 @@ export interface AppConfig {
     port: number;
     token: string;
   };
+  /** 第 61 轮：签到结果 webhook 通知（webhookUrl 可为空 = 不通知；URL 可含 secret，
+   *  走 config.json（不入库）或环境变量 AUTO_CHECKIN_WEBHOOK_URL） */
+  notify?: {
+    webhookUrl: string;
+  };
   /** 第 60 轮：签到失败后的自动重试策略（不配置 = 不重试，旧行为不变） */
   retry?: {
     enabled: boolean;

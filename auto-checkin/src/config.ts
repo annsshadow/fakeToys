@@ -25,6 +25,8 @@ const DEFAULT_CONFIG: AppConfig = {
   // 第 60 轮：默认关闭重试 —— 网络/站点故障立即落一条 failed 记录并留痕，
   // 需要「失败自动再试」的部署在 config.json 里打开 retry。
   retry: { enabled: false, attempts: 1, intervalMs: 30000 },
+  // 第 61 轮：默认空 webhook（不通知）。URL 常含 secret，一律走 config.json / env，不入仓库。
+  notify: { webhookUrl: "" },
 };
 
 /** 深合并：用户 config.json 覆盖默认值 */
@@ -38,6 +40,8 @@ function mergeConfig(base: AppConfig, override: Record<string, unknown>): AppCon
   if (o.panel) Object.assign(out.panel, o.panel);
   // 第 60 轮：retry 段（缺省关闭）。
   if (o.retry) Object.assign(out.retry ?? {}, o.retry);
+  // 第 61 轮：notify 段（缺省空 = 不通知）。
+  if (o.notify) Object.assign(out.notify ?? {}, o.notify);
   if (o.sites) {
     for (const [id, cfg] of Object.entries(o.sites)) {
       out.sites[id] = { ...(out.sites[id] ?? { enabled: true }), ...cfg };
