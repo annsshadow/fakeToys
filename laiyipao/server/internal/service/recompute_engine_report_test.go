@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 引擎侧读数的可观测性（2026-10-15）。

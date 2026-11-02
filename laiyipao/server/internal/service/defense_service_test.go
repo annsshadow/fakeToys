@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 防线（I-5）、专精（I-3）、诊断（L-1）与攻方属性的服务层测试。

@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 第 12 轮：AdminListUsers 验真计数改为两阶段（先页内用户，再按页内 id 聚合）。

@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 伤害结算 —— 与 server/internal/domain/damage.go 逐行等价。
  *

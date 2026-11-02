@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Package migrate 提供一个独立的一次性迁移命令，便于本地与 CI 单独执行。
 // 用法：go run ./cmd/migrate [-down]
 package main

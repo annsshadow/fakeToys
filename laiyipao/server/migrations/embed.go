@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Package migrations 把 SQL 迁移文件嵌入二进制，使服务端无需依赖外部文件即可自举数据库。
 package migrations
 

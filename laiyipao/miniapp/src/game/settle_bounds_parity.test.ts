@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 服务端新加的集合类边界**必须接受真实引擎产出的上报**。
  *

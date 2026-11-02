@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 //! 安全审计回归（round4 第七十批·calendar_assemble_control）：setting_create 真写收会话门。
 //!
 //! `setting_create`（POST `/api/calendar_assemble_control/setting`，INSERT

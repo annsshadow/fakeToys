@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package domain
 
 // 复活币契约守卫：Go 与 miniapp 的 `LeakDamageDivisor` 必须一致。

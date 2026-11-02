@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package domain
 
 // 守卫：`user_skills.level` 当前**不参与任何计算**，且这是**已知状态**。

@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 //! 安全审计回归（round4 第六十九批）：query_core_entity 视图创建真写收会话门。
 //!
 //! `view_create`（INSERT INTO QUERY_VIEW）此前无会话门禁：任何匿名调用方

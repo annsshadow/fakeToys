@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 管理员端 API 路径与类型（与 server/internal/httpapi/routes.go 一一对应）。
  *

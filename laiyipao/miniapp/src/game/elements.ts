@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 元素与反应链（I-1 的数据定义）。
  *

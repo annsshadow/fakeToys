@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 第 126 轮：ChallengeDefense 的 `user_daily_challenges` 行锁必须

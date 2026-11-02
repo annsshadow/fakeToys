@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // LoadShop 静态商品列表缓存的集成判据（2026-10-31 新一轮第 6 轮）。

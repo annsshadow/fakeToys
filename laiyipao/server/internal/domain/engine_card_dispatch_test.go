@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package domain
 
 // 针对「技能卡是哑弹」这个 bug 的守卫。

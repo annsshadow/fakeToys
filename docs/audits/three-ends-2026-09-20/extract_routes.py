@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """提取 oa4rust 后端 axum 路由 (method, path)，排除 #[cfg(test)] 块。"""
 import json
 import os

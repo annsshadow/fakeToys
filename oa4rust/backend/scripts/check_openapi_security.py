@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 check_openapi_security.py — OpenAPI 安全方案守卫（plan002 U9 / R8）。
 

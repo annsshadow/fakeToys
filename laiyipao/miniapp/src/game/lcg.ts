@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 确定性伪随机数发生器（I-6 的根基）。
  *

@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Extract all axum route registrations from the oa4rust workspace.
 
 Walks crates/ (*.rs, excluding target), finds `.route("...", get/post/...)` and

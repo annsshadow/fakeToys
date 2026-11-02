@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 技能等级**必须真的改变战斗结果** —— 行为级判据，不是字段反射。
  *

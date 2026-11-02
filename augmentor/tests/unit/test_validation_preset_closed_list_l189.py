@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # -*- coding: utf-8 -*-
 """L189 / B259：验证预设封闭清单下沉 SDK 直构面 + `rules` 的 falsy 假零。
 

@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package httpapi
 
 // 后台单用户钱包流水导出的端到端测试（2026-11-01 新一轮第 82 轮）。

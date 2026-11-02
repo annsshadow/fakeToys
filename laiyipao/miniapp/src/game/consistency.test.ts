@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 双端公式一致性检查 —— 读 server/testdata/formula_vectors.json，断言与 Go 侧相同的数字。
  *

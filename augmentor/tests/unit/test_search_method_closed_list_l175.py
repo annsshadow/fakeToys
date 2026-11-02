@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # -*- coding: utf-8 -*-
 """L175 / B245：搜索方法封闭清单下沉 SDK 层（未知 method 不再静默回落 contains）。
 

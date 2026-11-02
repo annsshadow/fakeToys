@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 第 148 轮：商城与任务列表的 jsonb 经济字段读侧必须 fail-loud。

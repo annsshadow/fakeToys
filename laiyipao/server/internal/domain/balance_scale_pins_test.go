@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package domain
 
 // 第 122 轮：把平衡缩放常量的「值」钉死。

@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 统一 API 客户端。
  * 约定：后端错误统一为 { error: { code, message } }，非 2xx 一律抛 ApiError。

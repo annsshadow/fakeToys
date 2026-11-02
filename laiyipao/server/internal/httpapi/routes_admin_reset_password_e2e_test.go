@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package httpapi
 
 // 后台重置玩家密码端点的端到端测试。

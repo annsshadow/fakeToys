@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 覆盖率收尾第二批：LoadGameConfig（纯内存组装）与若干可构造的错误分支。

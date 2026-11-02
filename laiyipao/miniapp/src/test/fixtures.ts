@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 共享测试夹具：页面与 store 测试共用的 GameConfig / 实体数据。
  * 只提供「满足类型 + 覆盖消费分支」的最小数据，字段语义见各类型注释。

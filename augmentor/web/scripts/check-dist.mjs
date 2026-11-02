@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // 构建产物体检（A207）：对 dist/ 做一组不变量断言，红了就是构建产物劣化
 //
 // 用法：`npm run build:check`（先构建再体检）。全部判据只降不升——

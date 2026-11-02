@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 第 21 轮：后台发放道具（revive_token / gem_wash_token / mastery_reset）。

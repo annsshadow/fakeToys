@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 const fs = require('fs');
 const libContent = fs.readFileSync('crates/processplatform_service_processing/src/lib.rs', 'utf8');
 const stubs = `

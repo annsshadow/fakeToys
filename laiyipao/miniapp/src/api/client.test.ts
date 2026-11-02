@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 ﻿/**
  * API 客户端单元测试（node 环境，mock 全局 uni）。
  *

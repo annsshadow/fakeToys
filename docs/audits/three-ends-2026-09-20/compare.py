@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """三端 API 对账：前端调用 vs 后端路由。
 
 分类：

@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package httpapi
 
 // 后台用户列表按注册日期范围过滤的端到端测试（2026-10-31 新一轮第 15 轮）。

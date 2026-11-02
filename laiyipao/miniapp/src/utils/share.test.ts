@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 分享文案纯函数（utils/share.ts）的判据（2026-10-23）。
  *

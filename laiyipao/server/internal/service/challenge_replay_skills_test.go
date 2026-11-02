@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 防线挑战的构筑 S 段校验（D4，2026-10-20，DECISIONS D4）。

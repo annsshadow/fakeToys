@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package domain
 
 // `LevelSummary`（列表形状）与 `GeneratedLevel`（完整形状）的**字段对拍**。

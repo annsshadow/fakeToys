@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package httpapi
 
 // 第 139 轮：GET /me/stars 把玩家各关历史最好星级下发给客户端。

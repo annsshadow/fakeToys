@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 extract_endpoints.py — 从 oa4rust crates 扫描所有路由定义，生成行为对比测试端点清单。
 

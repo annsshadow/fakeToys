@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # -*- coding: utf-8 -*-
 """L169 / B239：实验记录与趋势历史两写边收原子写（A182 逐面收路线第十一面）。
 

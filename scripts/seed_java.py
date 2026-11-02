@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Seed the o2server reference container per seed_fixtures_java.http.md.
 
 Non-idempotent creations: HTTP 500 (duplicate) = "already seeded", ignore.

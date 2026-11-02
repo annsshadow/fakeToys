@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Package seeder 把 domain 层的游戏内容与生成的 100 关写入数据库。
 //
 // 幂等：可重复执行。配置类数据（敌人/技能/装备/宝石/皮肤/专精树/关卡）

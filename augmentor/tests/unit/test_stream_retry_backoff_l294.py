@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """L294 守卫：`streaming` 的增量解析在「单个元素跨多块」时不得平方级重扫。
 
 **为什么立案**：`_iter_json_array_items` 与 `_is_single_json_value` 的重试循环原本是「读满一块

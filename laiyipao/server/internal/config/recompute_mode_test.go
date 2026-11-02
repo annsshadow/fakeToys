@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package config
 
 // `SETTLE_RECOMPUTE_MODE` 默认值的守卫。

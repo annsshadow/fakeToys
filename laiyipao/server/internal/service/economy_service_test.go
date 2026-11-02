@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 经济域（economy.go）的服务层测试：榜单、商店、兑换、验真。

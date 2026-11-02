@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // ============================================================
 // 签到中枢 前端逻辑：拉取 /api/stats、/api/trend、/api/records，
 // 渲染指标 Bento、站点卡片、记录表，并用纯 SVG 手绘奖励趋势折线图。

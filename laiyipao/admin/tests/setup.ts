@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 测试环境全局垫片。
  * jsdom 没有 ResizeObserver，Element Plus 的表格/抽屉等组件会用到它。

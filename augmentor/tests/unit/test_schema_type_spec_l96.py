@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # -*- coding: utf-8 -*-
 """L96 守卫（A173 关闭）：schema 规格的 `type` 必须归一，归一不了在**构造期**出声
 

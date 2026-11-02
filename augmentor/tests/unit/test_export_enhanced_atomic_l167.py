@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # -*- coding: utf-8 -*-
 """L167 / B237：增强导出的九格式共用落盘口收原子写（A182 逐面收路线第九面）。
 

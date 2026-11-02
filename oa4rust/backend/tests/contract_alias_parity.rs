@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // o2server 契约路径别名 ↔ 旧路径 的全栈 parity 实测（2026-10-24 R1）
 //
 // 别名路由把 /api/organization/assemble/personal/* 原样委托旧路径

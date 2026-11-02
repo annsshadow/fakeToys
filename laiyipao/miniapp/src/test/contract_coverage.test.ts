@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // @vitest-environment node
 /**
  * 跨端「消费面」守卫：服务端下发的每个字段都必须有真实消费方。

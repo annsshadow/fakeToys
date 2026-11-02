@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 //! 安全审计回归（round4 第七十二批·hotpic_assemble_control）：
 //! user_hotpic_delete_by_ids 真写收会话门。
 //!

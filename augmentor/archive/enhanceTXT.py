@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 import os
 import nlpaug.augmenter.char as nac
 import nlpaug.augmenter.word as naw

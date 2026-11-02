@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 页面测试共享辅助：创建独立 Pinia 并挂载页面组件。
  * 页面 setup 里 useGameStore() 会命中同一个 active pinia，

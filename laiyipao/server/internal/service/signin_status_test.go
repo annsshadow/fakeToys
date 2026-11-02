@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 第 141 轮：签到页的初始态（已签天数 / 今日可否签）必须由服务端回读（SignInStatus）。

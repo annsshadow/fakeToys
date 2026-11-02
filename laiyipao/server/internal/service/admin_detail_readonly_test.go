@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // 后台玩家详情是**读**端点，不得触发体力 regen 的写（LY-GAP-2 回归钉）。
 //
 // 2026-10-25（R3）前的形态：AdminUserDetail 走 LoadWallet，而 LoadWallet 会

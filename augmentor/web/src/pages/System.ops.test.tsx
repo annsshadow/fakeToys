@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * `System` 的质量监控 / 自测 / 迁移 / 流式四面（L234：A279 第九批接线）
  *

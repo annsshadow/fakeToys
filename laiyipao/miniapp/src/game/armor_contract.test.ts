@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, it, expect } from 'vitest'
 import vectors from '@vectors/formula_vectors.json'
 import { applyArmor } from './fixed'

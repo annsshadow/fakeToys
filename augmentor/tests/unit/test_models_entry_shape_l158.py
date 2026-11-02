@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # -*- coding: utf-8 -*-
 """L158 / B228：`models.<名字>` 条目写成标量 / 列表 / 数时，校验面不再静默。
 

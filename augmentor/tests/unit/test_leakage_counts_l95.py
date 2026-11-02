@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # -*- coding: utf-8 -*-
 """L95 守卫：泄漏检测的「按计数算 Jaccard」重写必须与旧的按集合算等价，且热路径零集合运算
 

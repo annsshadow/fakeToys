@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // build_parts.go 的「算」部分是纯函数 —— 这是本轮 LoadBuildSnapshot

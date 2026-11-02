@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 引擎性能的**回归绊线**（不是「打印数字的测试」）。
  *

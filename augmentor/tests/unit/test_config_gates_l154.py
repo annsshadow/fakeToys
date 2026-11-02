@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """A140 余 11 节 29 键的四面判据（L154 / B224）
 
 改前现量（A140 行的现量房 Temp/l82q/ungated_census.json，meta.timestamp 2026-09-26）：

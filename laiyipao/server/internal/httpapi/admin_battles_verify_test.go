@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package httpapi
 
 // `GET /admin/battles` 的验真字段与 `only_mismatched` 过滤。

@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 技能等级解锁（README 已知边界第 29 条发放侧）的行为锚点。

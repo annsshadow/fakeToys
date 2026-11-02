@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * `DataManagement` 的写盘变换面（L229：convert / merge / split 接线）
  *

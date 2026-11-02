@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // LoadTasks 静态任务配置缓存的集成判据（2026-10-31 新一轮第 8 轮）。

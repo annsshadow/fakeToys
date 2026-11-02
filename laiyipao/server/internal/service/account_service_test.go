@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 账号域（service.go）的服务层测试：登录链路、令牌刷新、钱包。

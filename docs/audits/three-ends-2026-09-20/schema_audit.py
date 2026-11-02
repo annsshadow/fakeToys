@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """请求体 / 响应体深度 schema 校验。
 
 思路（端点到端点，而非全仓并集）：

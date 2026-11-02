@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # -*- coding: utf-8 -*-
 """L160 / B230：DiskCache 元数据写边收原子写（A182 逐面收路线第二面）。
 

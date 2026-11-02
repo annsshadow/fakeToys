@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 引擎冒烟测试 —— 用**真实内容表**跑第 1 关。
  *

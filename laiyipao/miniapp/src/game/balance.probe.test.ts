@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 平衡基准测量 —— 跑真实关卡，输出可比较的指标。
  *

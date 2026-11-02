@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package seeder
 
 // 第 128 轮：种子库必须落**投放用的缩放值**。

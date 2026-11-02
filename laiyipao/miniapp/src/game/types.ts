@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 战斗实体与配置类型。
  * 与服务端 domain 的 JSON 结构对应（后端经 /api/v1/config 下发）。

@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // @vitest-environment node
 /**
  * 「背包技能升级收益预览」功能守卫（2026-11-01 新一轮第 61 轮）。

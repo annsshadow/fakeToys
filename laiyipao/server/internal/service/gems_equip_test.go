@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 第 20 轮：宝石佩戴。`user_gems.equipped_slot` 在此之前全仓零写入 ——

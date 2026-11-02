@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # -*- coding: utf-8 -*-
 """L166 / B236：数据集工具路由的落盘口收原子写（A182 逐面收路线第八面）。
 

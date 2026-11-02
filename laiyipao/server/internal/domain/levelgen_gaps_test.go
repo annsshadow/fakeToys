@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package domain
 
 // 关卡生成器（levelgen.go）与元素表（elements.go）的边界补漏。

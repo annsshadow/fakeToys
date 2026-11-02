@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // @vitest-environment node
 /**
  * me 页 onShow 并行加载守卫（2026-10-31 实质优化第 29 轮）。

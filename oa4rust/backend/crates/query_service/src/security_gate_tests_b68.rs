@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 //! 安全审计回归（round4 第六十八批）：query_service 两把真写收会话门。
 //!
 //! `neural_generate_model`（UPDATE x_query_neural_model status='generating'）与

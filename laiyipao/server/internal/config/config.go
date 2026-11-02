@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Package config 从环境变量读取运行时配置，提供开发环境默认值。
 package config
 

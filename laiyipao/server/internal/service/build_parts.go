@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // 构筑读路径的「一次取齐」折叠（性能：LoadBuildSnapshot 12 条往返 → 6 条）。
 //
 // # 背景：同一件事查两遍

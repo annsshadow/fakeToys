@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package httpapi
 
 // 玩家战报历史端点的端到端测试（2026-10-30 实质优化第 19 轮）。

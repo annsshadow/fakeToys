@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // ECharts 按需引入：只注册本项目用到的图表与组件，显著减小 vendor chunk。
 // 用法：`import ReactEChartsCore from 'echarts-for-react/lib/core'` +
 // `import echarts from '../lib/echarts'`，然后 `<ReactEChartsCore echarts={echarts} ... />`。

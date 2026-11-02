@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Package httpapi 提供 Fiber 路由、中间件与处理器。
 package httpapi
 

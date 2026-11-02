@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { useEffect, useState } from 'react'
 import { Row, Col, Card, Statistic, Tag, Space, message } from 'antd'
 import AugmentForm from '../components/AugmentForm'

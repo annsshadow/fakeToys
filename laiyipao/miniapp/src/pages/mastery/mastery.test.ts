@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 ﻿// @vitest-environment jsdom
 /**
  * 专精页（mastery.vue）组件测试。

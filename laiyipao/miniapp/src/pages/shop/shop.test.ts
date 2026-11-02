@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 ﻿// @vitest-environment jsdom
 /**
  * 商城页（shop.vue）的行为测试。

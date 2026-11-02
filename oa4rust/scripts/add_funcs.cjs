@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 const fs = require('node:fs')
 const path = require('node:path')
 // 从脚本自身位置推导目标文件：不在仓库里硬编码任何人的本机绝对路径。

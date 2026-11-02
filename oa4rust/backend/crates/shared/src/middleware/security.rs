@@ -449,7 +449,7 @@ mod security_audit_tests {
         let idx = auth_exempt_index();
         for p in AUTH_EXEMPT_PATHS.iter().copied() {
             let covered = if p.contains('{') {
-                idx.wildcard.iter().any(|w| *w == p)
+                idx.wildcard.contains(p)
             } else {
                 idx.exact.contains(p)
             };

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """R7 只读挂写方法交叉验证：对 write_routes_readonly_on_writemethod.tsv 中
 R7 桶的全部 handler 提取函数体，剥离注释/字符串后检查写 SQL 关键字
 （INSERT/UPDATE/DELETE + sea_orm ORM 写）。输出疑似含写但被尺子判只读的候选，

@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 漏怪伤害的**量级实测** —— 解释「为什么整个防御属性层买不到东西」。
  *

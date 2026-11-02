@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Package apitypes is the registry of API response types that are mirrored
 // into TypeScript.
 //

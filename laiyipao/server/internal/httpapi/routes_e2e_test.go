@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package httpapi
 
 // HTTP 层端到端测试：真实 Service + 真实 PostgreSQL + Fiber app.Test。

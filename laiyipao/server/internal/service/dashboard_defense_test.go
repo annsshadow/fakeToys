@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 看板「防线总数/今日挑战」指标的集成测试（2026-10-31 实质优化第 39 轮）。

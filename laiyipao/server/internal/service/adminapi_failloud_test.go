@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 第 146 轮：后台关卡列表/详情的 jsonb 列必须 fail-loud。

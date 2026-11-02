@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * `valid-response.ts` 的自证（防生成器静默退化成空转）
  *

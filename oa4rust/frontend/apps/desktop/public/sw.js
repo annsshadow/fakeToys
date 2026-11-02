@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 const CACHE_NAME = 'oa4rust-v1'
 const ASSETS = ['/', '/index.html', '/favicon.svg', '/manifest.json']
 

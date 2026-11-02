@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 第 143 轮：level_stars.min_power_clear 是效率榜（L-2）的唯一数据源。

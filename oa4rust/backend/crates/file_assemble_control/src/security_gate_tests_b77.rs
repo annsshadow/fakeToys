@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 //! 安全审计回归（round4 第七十七批）：file_assemble_control 控制配置写收 admin 门
 //! + ControlPool 扩展接线修复。
 //!

@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // o2server 契约路径别名登记表（2026-10-24 R1，OA-P0-1 收口）
 //
 // `/api/organization/assemble/personal/*` 是 Java 契约

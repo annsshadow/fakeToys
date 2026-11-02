@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # -*- coding: utf-8 -*-
 """L168 / B238：管线交付口与迁移落盘收原子写（A182 逐面收路线第十面）。
 

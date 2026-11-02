@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """L79 / A127 守卫：两份活文档里的「定位引用」必须真的指得到东西
 
 **为什么立这一条**：本仓的架构文档与循环账本大量用反引号引用（`` `path/file.py:123` ``）给

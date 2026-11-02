@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // 守卫的守卫：验证 audit-gate.cjs 该绿绿、该红红。
 //
 // 为什么要有这个：本仓已经吃过一次「安静地不检查」的亏——

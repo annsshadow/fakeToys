@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 战斗引擎 —— 固定 60Hz 步进 + 确定性 + 事件队列。
  *

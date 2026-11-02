@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 玩家列表端点 / 排名索引的存在性守卫（2026-10-31 新一轮第 2 / 9 / 11 轮）。

@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // 装配（loadout）→ 攻方属性。
 //
 // ⚠️ 这个文件存在的理由是一笔**本轮才发现的欠账**：

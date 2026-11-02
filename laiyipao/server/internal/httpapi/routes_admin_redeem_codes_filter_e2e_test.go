@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package httpapi
 
 // 后台兑换码列表按码搜索 / 启用状态 / 过期筛选的端到端测试

@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Package scratchdb 统一管理测试用的「一次性库」。
 //
 // # 它解决的是三个真实故障（第 150 轮）

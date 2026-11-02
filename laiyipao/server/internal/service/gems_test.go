@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 宝石闭环的行为测试：商城买到 → 看得到 → 洗练扣券。

@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 第 124 轮：共享 fmtTime 的行为守卫。
  * 服务端时间戳是 UTC（pgx 解码 + RFC3339 下发），

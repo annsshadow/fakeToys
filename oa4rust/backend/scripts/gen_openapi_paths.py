@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # -*- coding: utf-8 -*-
 """
 gen_openapi_paths.py — 从 oa4rust crates 源码扫描路由，生成完整的 OpenAPI lib.rs。

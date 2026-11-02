@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 //! 安全审计回归（round4 第七十三批）：message 已读标记真写收会话门。
 //!
 //! `mark_read`（POST `/api/message/mark_read/{id}`，`UPDATE x_msg_message SET

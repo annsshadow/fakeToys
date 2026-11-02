@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 第 13 轮：AdminListBattles 普通翻页改两阶段聚合（先页、后按页内 battle_id

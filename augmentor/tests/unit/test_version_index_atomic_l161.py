@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # -*- coding: utf-8 -*-
 """L161 / B231：VersionControl 索引写边收原子写（A182 逐面收路线第三面）。
 

@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // 全仓「编译告警零容忍」一键核验。
 //
 // 用法：
@@ -226,6 +228,17 @@ const CHECKS = [
     // 判据（注释剥离 + 写 SQL 关键字 + ORM 写扫描）复核，出现疑似含写候选即失败。
     // 与 audit_write_gating.mjs 的 writeEvidence 是不同实现，互为印证。
     pattern: /疑似含写候选/,
+    timeout: 2 * 60 * 1000,
+  },
+  {
+    id: 'license',
+    label: 'license header（全仓源码 SPDX 标识符）',
+    cwd: '.',
+    cmd: 'node scripts/check-license-headers.mjs',
+    // 第 63 轮：git 跟踪的 ts/tsx/js/mjs/cjs/go/rs/py 源码缺 SPDX 标识符即失败。
+    // 脚本非零退出即 FAIL；pattern 只匹配失败时的「缺 header：xxx」详情行
+    // （成功时输出的是「缺失 0」，不能被 pattern 命中误判 FAIL）。
+    pattern: /缺 header：/,
     timeout: 2 * 60 * 1000,
   },
 ]

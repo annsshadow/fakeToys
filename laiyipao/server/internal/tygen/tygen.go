@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Package tygen generates TypeScript interfaces from Go response types.
 //
 // # 为什么要有它

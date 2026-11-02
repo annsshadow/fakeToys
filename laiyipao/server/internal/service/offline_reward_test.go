@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 离线（挂机）收益的服务层测试（2026-10-31 新一轮第 7 轮）。

@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // @vitest-environment jsdom
 /**
  * pages/reactions/reactions.vue 测试（P4-2 / P4-3）。

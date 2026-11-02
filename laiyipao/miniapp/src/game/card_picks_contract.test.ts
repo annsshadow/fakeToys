@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { describe, it, expect } from 'vitest'
 import vectors from '@vectors/formula_vectors.json'
 import { PICK_CODE_BASE, PICK_CODE_MAX, PICK_MIN, encodeDiscardCode } from './engine'

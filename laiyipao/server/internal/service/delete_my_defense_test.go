@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 玩家删除自己防线的服务层测试（2026-10-31 实质优化第 32 轮）。

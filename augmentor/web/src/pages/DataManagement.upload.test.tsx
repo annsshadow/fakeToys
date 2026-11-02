@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * `DataManagement` 的上传面：渲染出来的下拉框与失败提示
  *

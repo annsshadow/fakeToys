@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 养成预算的守卫：**给装备加缩放之前，先看还有没有预算。**

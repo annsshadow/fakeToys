@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 ﻿// @vitest-environment jsdom
 /**
  * 战斗页（battle.vue）组件测试 —— 只测页面自身逻辑。

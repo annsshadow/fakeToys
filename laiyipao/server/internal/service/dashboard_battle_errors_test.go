@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 覆盖率收尾第三批：看板分区错误与战斗链路的剩余中段失败。

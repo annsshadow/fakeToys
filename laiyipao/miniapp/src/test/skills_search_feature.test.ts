@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // @vitest-environment node
 /**
  * 「技能图鉴搜索」功能守卫（2026-11-01 新一轮第 71 轮）。

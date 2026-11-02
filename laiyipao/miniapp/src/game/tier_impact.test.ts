@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 ﻿/**
  * 攻方加成（装备/宝石/专精）对**关卡可完成性**的影响。
  *

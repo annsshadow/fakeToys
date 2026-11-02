@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 //! 安全审计回归（round4 第七十一批）：express 快递订阅真写收会话门。
 //!
 //! `subscribe_express`（POST `/api/express/subscribe`，INSERT INTO

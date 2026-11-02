@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 主链路接口的 zod 运行时 schema（Z 批次，10-26-r4 计划 §5）
  *

@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 覆盖率收尾（第二轮）：把上一轮记为豁免、但其实**能在真库上构造**的

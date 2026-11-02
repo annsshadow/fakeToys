@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 第 135 轮：签到日历作为**权威来源**下发给客户端（服务端 SignInCalendar）。

@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 第 149 轮：fail-loud 清扫 —— 剩余 `_ = json.Unmarshal` 读侧改报错。

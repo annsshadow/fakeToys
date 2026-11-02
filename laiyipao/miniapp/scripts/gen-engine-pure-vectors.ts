@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 生成「引擎纯函数」的跨端契约向量（R1 第一批移植）。
  *

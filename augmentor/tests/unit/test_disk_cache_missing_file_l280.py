@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """L280：`DiskCache` 的「判过存在再动手」那一族，与单条超上限时的自逐出。
 
 三面，逐面点名：

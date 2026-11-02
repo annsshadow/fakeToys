@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 护甲属性的**形状实测** —— 装备等级/星级缩放曲线的依据。
  *

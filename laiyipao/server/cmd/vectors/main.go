@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Command vectors 从 Go 侧真相源导出跨端契约文件与测试夹具。
 //
 // 为什么需要生成器：

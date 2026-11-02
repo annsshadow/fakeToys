@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 专精「额外插槽」——最后一批曾被接线的惰性节点。
  *

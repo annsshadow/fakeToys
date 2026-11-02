@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 覆盖率最后一批：computeAttacker 的装配/封顶分支与 Buy 的中段失败。

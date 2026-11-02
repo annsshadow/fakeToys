@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # -*- coding: utf-8 -*-
 """
 gen_mcp_tools.py — 从 oa4rust crates 源码扫描路由定义，生成 MCP 工具注册代码。

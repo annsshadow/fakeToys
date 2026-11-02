@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { Card, Row, Col, Empty } from 'antd'
 import ReactEChartsCore from 'echarts-for-react/lib/core'
 import echarts from '../lib/echarts'

@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 元素系数的**真实形状** —— 一条被误诊了 20 轮的曲线。
  *

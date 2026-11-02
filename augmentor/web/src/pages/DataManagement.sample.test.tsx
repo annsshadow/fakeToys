@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * `DataManagement` 的采样 / 聚合 / RAG 面（L230：A279 第六批接线）
  *

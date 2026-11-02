@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # -*- coding: utf-8 -*-
 """L170 / B240：备份快照与恢复输出两边收原子写（A182 逐面收的待裁档裁定）。
 

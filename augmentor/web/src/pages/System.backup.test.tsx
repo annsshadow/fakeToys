@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * `System` 的数据备份面（L231：A279 第七批接线；L243：A299 校验和闸 + A300 两员入口）
  *

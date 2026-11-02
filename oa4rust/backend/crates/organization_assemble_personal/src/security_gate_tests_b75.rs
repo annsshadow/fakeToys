@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 //! 安全审计回归（round4 第七十五批）：org_personal 自定义字段更新真写收会话门。
 //!
 //! `custom_mockputtopost`（POST `/api/organization/assemble/personal/custom/{id}/mockputtopost`，

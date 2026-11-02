@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """L286 格二：委托导出面的「空数据集静默零写入 + 照样回成功」——原生 CSV 那一格的孪生
 
 `Exporter.export` 对没有原生实现的格式委托给 `EnhancedExporter`（`export.py` 里那条委托边）。

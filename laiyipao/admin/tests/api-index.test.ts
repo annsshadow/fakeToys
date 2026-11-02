@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * api/index.ts 测试：验证每个封装函数的「路径 + 参数 + 请求方法 + 透传」契约。
  *

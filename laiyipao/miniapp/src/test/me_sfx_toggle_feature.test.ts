@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // @vitest-environment node
 /**
  * 「我的页面战斗音效开关」功能守卫（2026-11-01 新一轮第 79 轮）。

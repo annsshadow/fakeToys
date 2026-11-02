@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 const fs=require('fs');
 const jt=JSON.parse(fs.readFileSync('DW/WORKSPACE/fakeToys/oa4rust/scripts/all_java_handlers.json','utf8'));
 function norm(p){while(p.includes('//'))p=p.replace('//','/');return p.replace(/\/$/,'');}

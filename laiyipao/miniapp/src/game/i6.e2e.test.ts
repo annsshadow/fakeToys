@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * I-6 验真闭环的端到端验证（**需要运行中的服务端**）。
  *

@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /// <reference types="vite/client" />
 
 // 引入 Vite 的客户端类型（`import.meta.glob` / `import.meta.env` / 静态资源模块声明）。

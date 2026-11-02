@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """L206 守卫 v5（最终版）：跑串行支路做行为断言，并行支路用源码级判据。
 
 为什么不跑并行：并行支路的 `_process_single_item` 既要干活又要往 `result_queue`

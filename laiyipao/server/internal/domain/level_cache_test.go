@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package domain
 
 // 关卡缓存测试与基准（2026-10-30 实质优化第 14 轮）。

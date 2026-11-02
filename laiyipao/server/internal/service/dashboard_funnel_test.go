@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 第 144 轮：AdminDashboard 的关卡漏斗（stage_funnel）fail-loud。

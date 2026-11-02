@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * `Quality` 的健康门禁一面（L235：A279 第十批接线）
  *

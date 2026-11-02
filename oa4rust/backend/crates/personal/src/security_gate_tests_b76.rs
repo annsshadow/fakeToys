@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 //! 安全审计回归（round4 第七十六批）：personal 密码重置 mock 别名收会话门。
 //!
 //! `POST /api/reset/mockputtopost` 是 PUT `/api/reset`（自服务密码重置流程，

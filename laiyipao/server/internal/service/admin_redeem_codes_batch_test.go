@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 后台兑换码批量生成的服务层测试（2026-11-01 新一轮第 57 轮）。

@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 给「只断言请求形状」的用例造一份**合法**响应（Z-FULL 收尾）
  *

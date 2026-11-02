@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Card, Button, Space, Select, Switch, message, Progress, Tag } from 'antd'
 import { RocketOutlined, ReloadOutlined } from '@ant-design/icons'

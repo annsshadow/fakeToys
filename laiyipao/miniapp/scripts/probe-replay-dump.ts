@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /** 一次性探针：复现 replay_vectors.json 的某个用例，导出完整 replay 事件流 + 渲染事件。 */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'

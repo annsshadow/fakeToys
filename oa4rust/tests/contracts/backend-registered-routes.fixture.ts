@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Auto-generated fixture: routes the oa4rust backend registers (axum .route literals).
 // Source: crates/*/src/{routes,u2_router,lib}.rs .route("/api/..."). Committed so the
 // desktop/mobile endpoint guards can verify frontend calls hit real backend routes.

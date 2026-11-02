@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package domain
 
 // 结算补漏（第二轮）：computeLoot 的负数输入、诊断的兜底分支、

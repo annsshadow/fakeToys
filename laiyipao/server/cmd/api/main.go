@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // cmd/api 是「来一炮」后端服务入口。
 //
 // 启动顺序：读配置 → 连库（失败即退出）→ 迁移 → 引导管理员 → 挂路由 → 监听。

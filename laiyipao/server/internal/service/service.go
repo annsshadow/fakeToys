@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Package service 承载业务编排：事务边界、跨表一致性、权限校验。
 // 纯计算规则一律下沉到 domain，这里只处理 IO 与编排。
 package service

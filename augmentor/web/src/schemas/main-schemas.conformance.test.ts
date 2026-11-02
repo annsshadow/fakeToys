@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * zod schema ↔ 后端 pydantic `response_model` 的跨语言契约守卫
  *

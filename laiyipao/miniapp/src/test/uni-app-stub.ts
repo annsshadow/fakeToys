@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * @dcloudio/uni-app 的测试替身（通过 vitest.config.ts 的 resolve.alias 挂载）。
  *

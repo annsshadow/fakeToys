@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package domain
 
 // 守卫：专精树的**每一种 kind 都必须被 EvaluateMastery 处理**。

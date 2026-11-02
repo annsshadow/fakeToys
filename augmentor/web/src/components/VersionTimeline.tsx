@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { Card, Timeline, Tag, Empty, Button, message } from 'antd'
 import { apiErrorDetail, rollbackVersion } from '../services/api'
 import type { VersionInfo } from '../types/api'

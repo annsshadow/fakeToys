@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # -*- coding: utf-8 -*-
 """L291：`merge_files` 的 `truncated_by_max_items` 只许记「真截过」的条数（A400 ①）。
 

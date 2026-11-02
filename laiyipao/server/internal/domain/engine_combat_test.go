@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package domain
 
 // Block D 的**针对性**守卫：专打跨端对齐抓不到的分支。

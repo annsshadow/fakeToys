@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // @vitest-environment jsdom
 /**
  * 音效模块（audio/sfx.ts）的行为断言（2026-10-23）。

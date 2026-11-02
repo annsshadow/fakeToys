@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // 本文件是**生成物**，请勿手工编辑。
 //
 // 来源：laiyipao/server/internal/service/adminviews.go 与 internal/domain 的响应类型，

@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Package auth 负责令牌签发与校验：access token（短期 JWT）+ refresh token（长期、落库可吊销）。
 //
 // 设计取舍：不用单一长期 token，是因为休闲游戏客户端常被逆向；

@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """L275 守卫：并发增强在共享单例上的「运行身份」归属。
 
 缺陷形（不是慢，是**写错对象**）：`api/deps._pipeline` 是进程级单例，

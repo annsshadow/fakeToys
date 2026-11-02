@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # -*- coding: utf-8 -*-
 """L172 / B242：全仓 10 条未覆盖语句收尾（配置面死码清除后余下的真缺口）。
 

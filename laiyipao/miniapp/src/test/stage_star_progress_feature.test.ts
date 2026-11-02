@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // @vitest-environment node
 /**
  * 「选关页章节星级进度」功能守卫（2026-11-01 新一轮第 52 轮）。

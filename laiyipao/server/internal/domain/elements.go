@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Package domain 存放纯业务规则：不触碰数据库、不依赖 Fiber，可直接单元测试。
 //
 // ⚠️ 双端公式一致性契约

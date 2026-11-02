@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { useEffect, useState } from 'react'
 import { Card, Select, Table, Input, Space, Tag, message } from 'antd'
 import { apiErrorDetail, getDataFiles, loadData } from '../services/api'

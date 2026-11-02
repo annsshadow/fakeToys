@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 //! Parity regression integration runner (Phase 4 / U4.1, U8 upgrade).
 //!
 //! This integration test target compiles against the full oa4rust crate

@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // 依赖漏洞闸门。CI 的 dependency-audit job 与本文件的测试
 // （audit-gate.test.cjs）共用这一份实现——逻辑只有一处，
 // 不会出现「改了闸门、测试还在验旧逻辑」的情况。

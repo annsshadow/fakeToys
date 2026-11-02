@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # -*- coding: utf-8 -*-
 """L177 / B247：SDK 导出面死符号哨兵（`__all__` 逐条必须可核到消费方）。
 

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """
 cluster_behavior_diffs.py — 行为对比报告 FAIL 差异聚类工具（U1 / R9 / R-infrastructure）
 

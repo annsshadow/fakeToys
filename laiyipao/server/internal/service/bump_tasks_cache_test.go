@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 第 9 轮：bumpTasks 的任务配置改走 tasksCache（与 LoadTasks 同一 loader）。

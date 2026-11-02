@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Package prune 按保留期清理历史数据（2026-10-23）。
 //
 // # 为什么需要它

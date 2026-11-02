@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 后台战报列表/导出按结果（胜/负）过滤的测试（2026-11-01 新一轮第 44 轮）。

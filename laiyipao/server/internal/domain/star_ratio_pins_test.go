@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package domain
 
 // 第 130 轮：钉住星级/速率锚点常量 StarTargetRatio 与 ScoreFullAtSec。

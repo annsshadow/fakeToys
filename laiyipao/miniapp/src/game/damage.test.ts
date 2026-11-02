@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 伤害结算的 TS 侧测试 —— 与 server/internal/domain/damage_test.go 断言同一批性质。
  *

@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Package main 写入全部游戏内容到数据库。
 // 用法：go run ./cmd/seed
 package main

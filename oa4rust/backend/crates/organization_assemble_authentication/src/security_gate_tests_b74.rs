@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 //! 安全审计回归（round4 第七十四批）：OAuth 授权码签发真写收会话门。
 //!
 //! `oauth_generate_code`（POST `/api/organization/assemble/authentication/oauth/generate/code`，

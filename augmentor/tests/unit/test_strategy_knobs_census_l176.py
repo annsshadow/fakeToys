@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 # -*- coding: utf-8 -*-
 """L176 / B246：策略旋钮「封闭清单拒」普查棘轮 + 质量报告 format 下沉判据。
 

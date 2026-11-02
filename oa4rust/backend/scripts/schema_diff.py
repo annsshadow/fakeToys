@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """schema_diff.py — fresh vs live 形状分叉检测（live DB 对账脚本）
 
 ## 用途

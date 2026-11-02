@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 签到日历缓存的集成判据（2026-10-30 实质优化第 17 轮）。

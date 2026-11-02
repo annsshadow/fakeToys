@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package main
 
 // vectors 生成器的可测部分：三个 JSON 夹具的构造函数。

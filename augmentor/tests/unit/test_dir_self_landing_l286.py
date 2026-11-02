@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """L286 格一：`require_within_dir` 缺「落点就是基座目录本身」那一档
 
 改前的实测形状（探针在仓外 Temp 抓的读数，基座取 `<tmp>/versions`）：

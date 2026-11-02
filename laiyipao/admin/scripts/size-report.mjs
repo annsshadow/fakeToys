@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 首屏体积报告 —— 用「用户真正等多少」代替「dist 一共多少」。
  *

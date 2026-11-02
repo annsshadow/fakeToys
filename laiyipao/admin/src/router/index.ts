@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { createRouter, createWebHashHistory, type RouteRecordRaw } from 'vue-router'
 
 import { confirmTokenValid, getToken, setToken } from '@/api/client'

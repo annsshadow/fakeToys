@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """比例 → 条数的配额分配：一处算清「余数归谁」
 
 `int(total * 比例)` 逐份下取整会同时犯两种错：份数少交（4 组等权要 7 条 → 每组 1 条

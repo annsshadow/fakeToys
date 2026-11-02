@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 渲染性能的回归绊线（单位：每帧 draw call / 每帧渐变对象数）。
  *

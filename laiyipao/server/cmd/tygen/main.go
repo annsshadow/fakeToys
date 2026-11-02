@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // Command tygen generates the admin client's TypeScript API types from the
 // Go response types.
 //

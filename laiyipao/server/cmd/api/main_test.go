@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package main
 
 // api 入口的可测部分：buildApp 组装的路由与统一错误处理。

@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 后台战报 CSV 导出的服务层测试（2026-10-30 实质优化第 13 轮）。

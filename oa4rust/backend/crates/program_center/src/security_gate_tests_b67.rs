@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 //! 安全审计回归（round4 第六十七批）：program_center invoke 执行真写收会话门。
 //!
 //! `u3_invoke_execute` / `u3_invoke_execute_with_token` 均会写

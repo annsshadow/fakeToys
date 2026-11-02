@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * 生成跨端「整局重放」契约向量（R1，服务端结算重算的基础设施）。
  *

@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // @vitest-environment node
 /**
  * 「登录页显示密码切换」功能守卫（2026-11-01 新一轮第 83 轮）。

@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package service
 
 // 后台防线列表按防线名/玩家昵称搜索 + owner_id 过滤的测试

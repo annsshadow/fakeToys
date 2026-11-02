@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """Regenerate endpoints.rs from all crate route registrations.
 
 Scans every `crates/*/src/**/*.rs` (not just routes.rs/lib.rs), so routes

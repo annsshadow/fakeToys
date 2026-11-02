@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """提取 oa4rust-web 桌面端 / 移动端对后端的 API 调用路径。
 
 增强点：

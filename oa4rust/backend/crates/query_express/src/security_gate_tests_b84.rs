@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 //! 安全审计回归（round4 第八十四批 · ORM 盲区系统复查 · query_express）：
 //! 1 把 sea_orm 真写收会话门。
 //!

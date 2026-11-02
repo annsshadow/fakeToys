@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * `DataManagement` 的批量翻译面（L236：A279 最后一员 + A283① 落盘口）
  *

@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 package httpapi
 
 // 管理端端到端测试。与玩家端同一夹具（见 routes_e2e_test.go）。

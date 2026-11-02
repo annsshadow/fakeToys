@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """L281：「判过存在再动手」那一族在 `atomic_write / backup / checkpoint / data.audio / data.image` 的十格。
 
 L280 在 `augmentor/cache.py` 里收了这一族的第一批，并把口径立成三面（AST 名册 + 确定性消失

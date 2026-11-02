@@ -1,3 +1,5 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * `services/api.ts` 的**省略分支**契约：调用方不传可选 `opts` 时，请求体/
  * query 里那些可选键必须「不传即不写」——而不是本层自己补一套默认值。

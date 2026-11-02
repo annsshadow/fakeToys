@@ -1,3 +1,5 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 r"""L81 守卫：热路径不得再有「字面量模式的 `re.<fn>`」调用，且常量化必须逐字同串。
 
 **为什么立这一条**：`re.sub(r'\s+', ...)` 看着无害，实际每次调用都要走一遍
