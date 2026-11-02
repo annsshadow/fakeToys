@@ -43,6 +43,9 @@ type e2e struct {
 	app  *fiber.App
 	svc  *service.Service
 	pool *pgxpool.Pool
+	// srv 保留 Server 实例：导出并发闸门等进程内状态从测试侧可见，
+	// 才能构造「槽位已占满」这类真实并发场景（见 export_gate_test.go）。
+	srv *Server
 }
 
 // newE2E 起一个完整 app（真中间件 + 真路由 + 真 Service）。
@@ -111,8 +114,9 @@ func newE2EWith(t *testing.T, mutate func(*config.Config)) *e2e {
 
 	svc := service.New(db, cfg)
 	app := fiber.New(fiber.Config{DisableStartupMessage: true})
-	New(svc).Register(app)
-	return &e2e{app: app, svc: svc, pool: db.Pool}
+	srv := New(svc)
+	srv.Register(app)
+	return &e2e{app: app, svc: svc, pool: db.Pool, srv: srv}
 }
 
 // 返回状态码与响应体；响应体不是 JSON 时（fiber 默认 404 文本）body 为 nil。

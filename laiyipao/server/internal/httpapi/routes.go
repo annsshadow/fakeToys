@@ -18,6 +18,10 @@ import (
 // Server 持有路由所需的依赖。
 type Server struct {
 	Svc *service.Service
+
+	// 导出并发闸门：首次使用时按配置构造（见 export_gate.go）。
+	exportsOnce sync.Once
+	exports     *exportGate
 }
 
 // New 构造 Server。
@@ -318,12 +322,12 @@ func (s *Server) Register(app *fiber.App) {
 	// ⚠️ 必须注册在 `/users/:id` **之前**：否则 `GET /users/export`
 	// 会被 `:id` 参数匹配吞掉（export 当 id 解析 → 400）。
 	// 导出是读操作，readonly 角色可访问。
-	adm.Get("/users/export", s.adminExportUsers)
+	adm.Get("/users/export", s.withExportSlot(s.adminExportUsers))
 	adm.Post("/users/:id/ban", requireWritable(), s.adminBanUser)
 	// 2026-10-21（P5-7）：玩家详情（只读）。
 	adm.Get("/users/:id", s.adminUserDetail)
 	// 单用户钱包流水导出（2026-11-01 新一轮第 82 轮）：读操作，readonly 可访问。
-	adm.Get("/users/:id/flows/export", s.adminExportUserFlows)
+	adm.Get("/users/:id/flows/export", s.withExportSlot(s.adminExportUserFlows))
 	adm.Post("/users/:id/unban", requireWritable(), s.adminUnbanUser)
 	adm.Post("/users/:id/grant", requireWritable(), s.adminGrantUser)
 	// 后台重置玩家密码（2026-10-30 实质优化第 11 轮）。
@@ -333,7 +337,7 @@ func (s *Server) Register(app *fiber.App) {
 	adm.Get("/battles", s.adminBattles)
 	// ⚠️ 必须注册在 `/battles/:id` **之前**：否则 `GET /battles/export`
 	// 会被 `:id` 参数匹配吞掉。导出是读操作，readonly 角色可访问。
-	adm.Get("/battles/export", s.adminExportBattles)
+	adm.Get("/battles/export", s.withExportSlot(s.adminExportBattles))
 	adm.Get("/battles/:id", s.adminBattleDetail)
 	adm.Post("/battles/:id/verify", requireWritable(), s.adminVerifyBattle)
 	// 结算重算审计（R1）。两个端点成对：列表看单条，stats 看分布与闸门状态。
@@ -342,7 +346,7 @@ func (s *Server) Register(app *fiber.App) {
 	adm.Get("/recomputes", s.adminRecomputes)
 	adm.Get("/recomputes/stats", s.adminRecomputeStats)
 	// 重算台账 CSV 导出（2026-11-01 新一轮第 45 轮）：读操作，readonly 可访问。
-	adm.Get("/recomputes/export", s.adminExportRecomputes)
+	adm.Get("/recomputes/export", s.withExportSlot(s.adminExportRecomputes))
 	// 2026-10-21（P3-3）：档位可读可改。
 	adm.Get("/recomputes/mode", s.adminRecomputeMode)
 	// 切档是**写操作**，而且是「关掉反作弊校验」那种写 ——
@@ -353,7 +357,7 @@ func (s *Server) Register(app *fiber.App) {
 	// 运营此前只能看到防线胜负计数，无法查看挑战明细。
 	adm.Get("/defense-challenges", s.adminDefenseChallenges)
 	// 防线挑战记录 CSV 导出（2026-10-31 新一轮第 32 轮）：读操作，readonly 可访问。
-	adm.Get("/defense-challenges/export", s.adminExportDefenseChallenges)
+	adm.Get("/defense-challenges/export", s.withExportSlot(s.adminExportDefenseChallenges))
 	// 删除玩家防线（2026-10-31 实质优化第 26 轮）：
 	// 违规防线名运营此前只能看到、无法处理。
 	adm.Delete("/defenses/:id", requireWritable(), s.adminDeleteDefense)
@@ -362,11 +366,11 @@ func (s *Server) Register(app *fiber.App) {
 	// 后台此前只有订单计数，没有明细可查。
 	adm.Get("/orders", s.adminOrders)
 	// 订单 CSV 导出（2026-11-01 新一轮第 40 轮）：读操作，readonly 可访问。
-	adm.Get("/orders/export", s.adminExportOrders)
+	adm.Get("/orders/export", s.withExportSlot(s.adminExportOrders))
 	adm.Put("/shop/:id", requireWritable(), s.adminUpdateShop)
 	adm.Get("/announcements", s.adminAnnouncements)
 	// 公告 CSV 导出（2026-10-31 实质优化第 38 轮）：读操作，readonly 可访问。
-	adm.Get("/announcements/export", s.adminExportAnnouncements)
+	adm.Get("/announcements/export", s.withExportSlot(s.adminExportAnnouncements))
 	adm.Post("/announcements", requireWritable(), s.adminCreateAnnouncement)
 	// 公告编辑/删除（2026-10-31 实质优化第 23 轮）：
 	// 此前只有创建/列表，发错内容无法修改、发错发布状态无法撤回。
@@ -377,9 +381,9 @@ func (s *Server) Register(app *fiber.App) {
 	// 运营发码后此前无法查看「谁用了 / 奖励是什么」。
 	adm.Get("/redeem-usages", s.adminRedeemUsages)
 	// 兑换码使用记录 CSV 导出（2026-10-31 新一轮第 34 轮）：读操作，readonly 可访问。
-	adm.Get("/redeem-usages/export", s.adminExportRedeemUsages)
+	adm.Get("/redeem-usages/export", s.withExportSlot(s.adminExportRedeemUsages))
 	// 兑换码 CSV 导出（2026-10-31 实质优化第 37 轮）：读操作，readonly 可访问。
-	adm.Get("/redeem-codes/export", s.adminExportRedeemCodes)
+	adm.Get("/redeem-codes/export", s.withExportSlot(s.adminExportRedeemCodes))
 	adm.Post("/redeem-codes", requireWritable(), s.adminCreateRedeemCode)
 	// 兑换码批量生成（2026-11-01 新一轮第 57 轮）：一次生成多个随机码。
 	adm.Post("/redeem-codes/batch", requireWritable(), s.adminCreateRedeemCodesBatch)
@@ -391,7 +395,7 @@ func (s *Server) Register(app *fiber.App) {
 	adm.Put("/redeem-codes/:id", requireWritable(), s.adminUpdateRedeemCode)
 	adm.Get("/audit-logs", s.adminAuditLogs)
 	// 审计日志导出（2026-10-30 实质优化第 15 轮）：合规归档，读操作。
-	adm.Get("/audit-logs/export", s.adminExportAuditLogs)
+	adm.Get("/audit-logs/export", s.withExportSlot(s.adminExportAuditLogs))
 }
 
 // --- 基础 ---

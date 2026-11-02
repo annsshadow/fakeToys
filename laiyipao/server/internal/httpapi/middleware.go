@@ -64,6 +64,10 @@ func failErr(c *fiber.Ctx, err error) error {
 		// 413 而不是 400：参数没写错，是筛选范围太宽导致结果超上限。
 		// 文案带上了实际行数与上限，运营能据此缩小范围。
 		return fail(c, fiber.StatusRequestEntityTooLarge, "export_too_large", err.Error())
+	case errors.Is(err, errExportBusy):
+		// 503 而不是 429/500：这是「资源暂时被占用」，可重试，且与限流
+		// （按 IP/分钟）区分开 —— 运营排队 3 秒后重试即可成功。
+		return fail(c, fiber.StatusServiceUnavailable, "export_busy", "导出任务繁忙，请稍后重试")
 	}
 	// 结算拒绝类错误统一 422：请求格式对，但内容不可信
 	if isSettleRejection(err) {

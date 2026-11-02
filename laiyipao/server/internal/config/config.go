@@ -130,6 +130,13 @@ type Config struct {
 	// DBStatementTimeout 是单条 SQL 的服务端执行上限（0 = 不限）。
 	// 详见 store.Open 的注释。
 	DBStatementTimeout time.Duration
+	// ExportMaxConcurrency 是同一时刻允许执行的 CSV 导出数量（默认 2）。
+	// 单次导出最多物化 10 万行、独占一条池连接最长 DBStatementTimeout，
+	// 不限并发时几个大导出就能吃满连接池与内存，把普通玩家请求拖垮。
+	ExportMaxConcurrency int
+	// ExportWait 是导出排队等槽位的上限（默认 3s）。
+	// 排不上返回 503 export_busy（可重试），而不是无限期挂住请求。
+	ExportWait time.Duration
 	// DBTimeZone 是连接会话时区（第 90 轮新增）。
 	// 详见 Config.DBTimeZone 的注释。
 	DBTimeZone       string
@@ -380,16 +387,19 @@ func Load() Config {
 		Env:      env("APP_ENV", "dev"),
 		LogLevel: env("LOG_LEVEL", "info"),
 
-		DatabaseURL:      env("DATABASE_URL", "postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable"),
-		DBMaxConns:       envInt32("DB_MAX_CONNS", 10),
-		DBMinConns:       envInt32("DB_MIN_CONNS", 2),
-		DBConnLifetime:   envDuration("DB_CONN_LIFETIME", time.Hour),
-		DBConnIdleTime:   envDuration("DB_CONN_IDLE_TIME", 30*time.Minute),
+		DatabaseURL:    env("DATABASE_URL", "postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable"),
+		DBMaxConns:     envInt32("DB_MAX_CONNS", 10),
+		DBMinConns:     envInt32("DB_MIN_CONNS", 2),
+		DBConnLifetime: envDuration("DB_CONN_LIFETIME", time.Hour),
+		DBConnIdleTime: envDuration("DB_CONN_IDLE_TIME", 30*time.Minute),
 		// 默认 30s：足够覆盖现有导出（10 万行）与看板聚合，又能在
 		// 「某条查询写坏了」时把连接释放出来，而不是拖垮整池。
 		DBStatementTimeout: envDuration("DB_STATEMENT_TIMEOUT", 30*time.Second),
-		DBTimeZone:         env("DB_TIMEZONE", "Asia/Shanghai"),
-		MigrationsOnBoot: envBool("MIGRATIONS_ON_BOOT", true),
+		// 导出并发默认 2：给 10 条池连接里的普通请求留足余量。
+		ExportMaxConcurrency: envInt("EXPORT_MAX_CONCURRENCY", 2),
+		ExportWait:           envDuration("EXPORT_WAIT", 3*time.Second),
+		DBTimeZone:           env("DB_TIMEZONE", "Asia/Shanghai"),
+		MigrationsOnBoot:     envBool("MIGRATIONS_ON_BOOT", true),
 
 		JWTSecret:  env("JWT_SECRET", "dev-only-insecure-secret-change-me"),
 		AccessTTL:  envDuration("ACCESS_TTL", 2*time.Hour),
