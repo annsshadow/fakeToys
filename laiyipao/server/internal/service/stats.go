@@ -1288,7 +1288,12 @@ func (s *Service) AdminExportBattles(ctx context.Context, userID int64, levelID 
 // AdminUpdateLevel 更新关卡配置。
 //
 // 只有白名单字段可写 —— 客户端上报的任意字段绝不能直接进库。
-func (s *Service) AdminUpdateLevel(ctx context.Context, levelID int, patch map[string]any) (AdminLevelView, error) {
+//
+// R43：关卡参数与审计同一事务。改一关的血量/波次/星级门槛是运营日常动作，
+// 而审计此前由 handler 提交后补写、失败只打日志 —— 一旦审计写不进去，
+// 玩家遇到的难度变化没有任何「谁在什么时候调过」的记录，排查时只能靠猜。
+func (s *Service) AdminUpdateLevel(ctx context.Context, levelID int, patch map[string]any,
+	audit ...AdminAuditCtx) (AdminLevelView, error) {
 	fields := []string{}
 	args := []any{levelID}
 	set := func(col string, v any) {
@@ -1467,8 +1472,18 @@ func (s *Service) AdminUpdateLevel(ctx context.Context, levelID int, patch map[s
 	}
 	sql := fmt.Sprintf(`UPDATE levels SET %s, updated_at = now() WHERE id = $1`,
 		joinComma(fields))
-	if _, err := s.pool.Exec(ctx, sql, args...); err != nil {
-		return AdminLevelView{}, fmt.Errorf("update level: %w", err)
+	err := s.DB.Tx(ctx, func(tx txType) error {
+		if _, err := tx.Exec(ctx, sql, args...); err != nil {
+			return fmt.Errorf("update level: %w", err)
+		}
+		if len(audit) > 0 {
+			return s.AuditTx(ctx, tx, audit[0], "update_level",
+				strconv.Itoa(levelID), patch)
+		}
+		return nil
+	})
+	if err != nil {
+		return AdminLevelView{}, err
 	}
 	//
 	// ⚠️ 第 107 轮：这里原来返回 `domain.GenerateLevel(levelID)`。

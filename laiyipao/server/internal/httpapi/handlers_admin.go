@@ -165,11 +165,11 @@ func (s *Server) adminUpdateLevel(c *fiber.Ctx) error {
 	if err := c.BodyParser(&patch); err != nil {
 		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
 	}
-	lvl, err := s.Svc.AdminUpdateLevel(c.Context(), id, patch)
+	lvl, err := s.Svc.AdminUpdateLevel(c.Context(), id, patch,
+		service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()})
 	if err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "update_level", strconv.Itoa(id), c.IP(), patch)
 	return c.JSON(service.AdminLevelResp{Level: lvl})
 }
 
