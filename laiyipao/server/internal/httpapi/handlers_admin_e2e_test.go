@@ -122,6 +122,40 @@ func TestE2EListNegativeOffsetIsClamped(t *testing.T) {
 	}
 }
 
+// TestE2EAdminRedeemCodesLimitZeroFallsBack 兑换码列表的 limit 夹取必须在
+// listArgs 构建之前。
+//
+// 改前夹取写在 COUNT 之后，`limit=0` 原样进了 SQL —— LIMIT 0 是「返回
+// 零行」而不是「不限」，于是 total>0 却拿到空页；`limit=999999` 则原样
+// 进 SQL 做全表扫描。夹取是死代码，注释里写的保护一条也没生效。
+func TestE2EAdminRedeemCodesLimitZeroFallsBack(t *testing.T) {
+	e := newE2E(t)
+	_, tok := e.newAdmin(t, "limit")
+
+	status, body := e.get(t, "/api/v1/admin/redeem-codes?limit=0", tok)
+	if status != fiber.StatusOK {
+		t.Fatalf("limit=0 不应报错，实际 %d %v", status, body)
+	}
+	total, _ := body["total"].(float64)
+	if total == 0 {
+		t.Skip("库里没有兑换码，无法区分「夹到缺省」与「LIMIT 0」")
+	}
+	items, _ := body["items"].([]any)
+	if len(items) == 0 {
+		t.Errorf("limit=0 应回落缺省 50，实际 0 行（total=%.0f）—— 夹取发生在 listArgs 构建之后", total)
+	}
+
+	// 超上限：999999 必须夹到 200，而不是静默回落到缺省 50。
+	_, capped := e.get(t, "/api/v1/admin/users?limit=999999", tok)
+	_, maxed := e.get(t, "/api/v1/admin/users?limit=200", tok)
+	cappedItems, _ := capped["items"].([]any)
+	maxedItems, _ := maxed["items"].([]any)
+	if len(cappedItems) != len(maxedItems) {
+		t.Errorf("users limit=999999 应夹到 200（与 limit=200 同页），实际 %d vs %d",
+			len(cappedItems), len(maxedItems))
+	}
+}
+
 func TestE2EAdminReadEndpoints(t *testing.T) {
 	e := newE2E(t)
 	_, tok := e.newAdmin(t, "read")

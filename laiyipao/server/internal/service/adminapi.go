@@ -413,9 +413,7 @@ func (s *Service) AdminEquipment(ctx context.Context) (AdminEquipmentResp, error
 // keyword 模糊匹配防线名或玩家昵称（`%`/`_`/`\` 转义为字面量），
 // ownerID=0 不过滤。
 func (s *Service) AdminListDefenses(ctx context.Context, limit, offset int, keyword string, ownerID int64, shielded *bool) ([]AdminDefenseView, int64, error) {
-	if limit <= 0 || limit > 200 {
-		limit = 50
-	}
+	limit = clampLimit(limit, 50, 200)
 	kw, err := trimAdminKeyword(keyword)
 	if err != nil {
 		return nil, 0, err
@@ -534,9 +532,7 @@ type AdminDefenseChallengeView struct {
 // defenseID / challengerID / dateFrom / dateTo 均为可选筛选
 // （0 或 nil 表示不过滤，created_at 开区间）。
 func (s *Service) AdminListDefenseChallenges(ctx context.Context, limit, offset int, defenseID, challengerID int64, dateFrom, dateTo *time.Time) ([]AdminDefenseChallengeView, int64, error) {
-	if limit <= 0 || limit > 200 {
-		limit = 50
-	}
+	limit = clampLimit(limit, 50, 200)
 	if offset < 0 {
 		offset = 0
 	}
@@ -695,9 +691,7 @@ func formatRewardText(m map[string]int) string {
 // 后台此前只有 `AdminEconomy` 里的订单**计数**（paid/pending），
 // 没有订单明细 —— 玩家反馈「扣款了没到账」时运营无从查起。
 func (s *Service) AdminListOrders(ctx context.Context, limit, offset int, status string, dateFrom, dateTo *time.Time, provider string) ([]AdminOrderView, int64, error) {
-	if limit <= 0 || limit > 200 {
-		limit = 50
-	}
+	limit = clampLimit(limit, 50, 200)
 	if offset < 0 {
 		offset = 0
 	}
@@ -846,9 +840,7 @@ type AdminRedeemUsageView struct {
 // 运营发放兑换码后，想知道「这个码被谁用了 / 某个玩家用了哪些码」，
 // 此前没有任何后台入口（只能直接查库）。这里补上全局使用记录视图。
 func (s *Service) AdminListRedeemUsages(ctx context.Context, limit, offset int, codeKeyword string, userID int64) ([]AdminRedeemUsageView, int64, error) {
-	if limit <= 0 || limit > 200 {
-		limit = 50
-	}
+	limit = clampLimit(limit, 50, 200)
 	if offset < 0 {
 		offset = 0
 	}
@@ -1191,6 +1183,10 @@ func validWalletCurrency(k string) bool {
 // published / dateFrom / dateTo 均为可选筛选（2026-10-31 新一轮第 21 轮）：
 // published 三态（nil=不限）、日期按 created_at（开区间）。
 func (s *Service) AdminListAnnouncements(ctx context.Context, limit, offset int, published *bool, dateFrom, dateTo *time.Time) ([]AdminAnnouncementView, int64, error) {
+	// ⚠️ R20：limit 夹取必须发生在 **listArgs 构建之前**。
+	// 改前夹取在 COUNT 之后，listArgs 里仍是原始值：`limit=0` 原样进 SQL
+	// 变成「返回零行」，`limit=999999` 原样进 SQL 变成全表扫描 —— 夹取是死代码。
+	limit = clampLimit(limit, 50, 500)
 	// ⚠️ 2026-10-21（二轮审计 P2）：负 offset 必须夹到 0 ——
 	// 否则 PostgreSQL 报 `OFFSET must not be negative` → 整页 500。
 	if offset < 0 {
@@ -1212,12 +1208,8 @@ func (s *Service) AdminListAnnouncements(ctx context.Context, limit, offset int,
 	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM announcements WHERE `+countWhere, countArgs...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("admin announcements count: %w", err)
 	}
-	// ⚠️ 2026-10-21：limit 必须夹住 ——
-	// `limit=0` 在 SQL 里是「**返回零行**」（不是「不限」），
-	// `limit=999999` 则是全表扫描。
-	if limit <= 0 || limit > 500 {
-		limit = 50
-	}
+	// ⚠️ 2026-10-21：`limit=0` 在 SQL 里是「**返回零行**」（不是「不限」），
+	// `limit=999999` 则是全表扫描 —— 夹取已在函数入口完成（R20）。
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, title, body, published, published_at, created_at FROM announcements WHERE `+where+` ORDER BY id DESC LIMIT $1 OFFSET $2`, listArgs...)
 	if err != nil {
@@ -1319,6 +1311,9 @@ func (s *Service) AdminDeleteAnnouncement(ctx context.Context, id int) error {
 // keyword 模糊匹配码（`%`/`_`/`\` 转义为字面量）、enabled 三态（nil=不限）、
 // expired=true 只看已过期（expires_at 非空且早于 now）。
 func (s *Service) AdminListRedeemCodes(ctx context.Context, limit, offset int, keyword string, enabled *bool, expired *bool) ([]AdminRedeemCodeView, int64, error) {
+	// ⚠️ R20：limit 夹取必须在 listArgs 构建之前（同 AdminListAnnouncements：
+	// 夹在 COUNT 之后对已构建的参数无效，`limit=0` → 零行、`limit=999999` → 全表）。
+	limit = clampLimit(limit, 50, 500)
 	// ⚠️ 2026-10-21（二轮审计 P2）：负 offset 必须夹到 0 ——
 	// 否则 PostgreSQL 报 `OFFSET must not be negative` → 整页 500。
 	if offset < 0 {
@@ -1356,12 +1351,8 @@ func (s *Service) AdminListRedeemCodes(ctx context.Context, limit, offset int, k
 	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM redeem_codes WHERE `+countWhere, countArgs...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("admin redeem_codes count: %w", err)
 	}
-	// ⚠️ 2026-10-21：limit 必须夹住 ——
-	// `limit=0` 在 SQL 里是「**返回零行**」（不是「不限」），
-	// `limit=999999` 则是全表扫描。
-	if limit <= 0 || limit > 500 {
-		limit = 50
-	}
+	// ⚠️ 2026-10-21：`limit=0` 在 SQL 里是「**返回零行**」（不是「不限」），
+	// `limit=999999` 则是全表扫描 —— 夹取已在函数入口完成（R20）。
 	// ⚠️ fail-loud 的取舍（2026-10-21 二轮审计 P2 复核后确认是**有意设计**）：
 	// 坏 jsonb 会让**整页** 500 —— 一行坏数据挡住了另外 49 行好数据。
 	//
@@ -1684,9 +1675,7 @@ func (s *Service) AdminExportAnnouncements(ctx context.Context) ([]byte, error) 
 // action / adminID / dateFrom / dateTo 均为可选筛选（2026-10-31 新一轮
 // 第 18 轮）：空 action 不过滤、adminID=0 不过滤、nil 日期不过滤。
 func (s *Service) AdminListAuditLogs(ctx context.Context, limit, offset int, action string, adminID int64, dateFrom, dateTo *time.Time) ([]AdminAuditLogView, int64, error) {
-	if limit <= 0 || limit > 500 {
-		limit = 100
-	}
+	limit = clampLimit(limit, 100, 500)
 	// ⚠️ 2026-10-21（二轮审计 P2）：负 offset / 负 limit 必须夹住 ——
 	// 否则 PostgreSQL 直接报 `OFFSET must not be negative` → 整页 500。
 	if offset < 0 {

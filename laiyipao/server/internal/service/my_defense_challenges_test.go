@@ -8,7 +8,7 @@ package service
 //   - 返回按时间倒序的被挑战记录，含挑战者昵称/防线名/胜负/偷取明细；
 //   - 无防线或无可挑战记录返回空列表（不是 nil）；
 //   - 只能看到**自己防线**的挑战（按 defenses.owner_id 过滤）；
-//   - limit 有上界（>50 夹到 20）；
+//   - limit 有上界（>50 夹到 50，不是回落到缺省 20）；
 //   - 库故障必须报错而不是静默返回空列表。
 
 import (
@@ -127,8 +127,8 @@ func TestMyDefenseChallengesLimitCap(t *testing.T) {
 	if err != nil {
 		t.Fatalf("查询被挑战历史失败：%v", err)
 	}
-	if len(items) != 20 {
-		t.Errorf("limit 超上限应夹到 20 条，实际 %d", len(items))
+	if len(items) != 25 {
+		t.Errorf("limit=1000 应夹到上限 50（数据 25 条全返回），实际 %d", len(items))
 	}
 }
 

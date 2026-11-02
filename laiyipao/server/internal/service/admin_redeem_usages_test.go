@@ -99,7 +99,7 @@ func TestAdminListRedeemUsagesLimitCap(t *testing.T) {
 		t.Errorf("total 应为 25，实际 %d", total)
 	}
 	if len(items) != 25 {
-		t.Errorf("limit=1000 应夹到 50（数据 25 条全返回），实际 %d", len(items))
+		t.Errorf("limit=1000 应夹到上限 200（数据 25 条全返回），实际 %d", len(items))
 	}
 }
 

@@ -7,7 +7,7 @@ package service
 // 关键行为锚点：
 //   - 返回按 id 倒序的订单，含玩家昵称/订单号/SKU/金额/状态/时间；
 //   - 空列表非 nil；
-//   - limit 有上界（>200 夹到 50）；
+//   - limit 有上界（>200 夹到 200，不是回落到缺省 50）；
 //   - 库故障必须报错而不是静默返回空列表。
 
 import (
@@ -81,11 +81,12 @@ func TestAdminListOrdersEmpty(t *testing.T) {
 }
 
 func TestAdminListOrdersLimitCap(t *testing.T) {
-	ts := openTestService(t)
+	// 用一次性 scratch 库：共享库会被其它用例的订单污染，算不清「夹到多少」。
+	ts := openScratchService(t)
 	ctx := context.Background()
 
 	uid, _ := newGuestUser(t, ts, "adm_orders_cap")
-	for i := 0; i < 25; i++ {
+	for i := 0; i < 60; i++ {
 		seedOrderFor(t, ts, uid, "paid")
 	}
 
@@ -93,8 +94,8 @@ func TestAdminListOrdersLimitCap(t *testing.T) {
 	if err != nil {
 		t.Fatalf("查询订单失败：%v", err)
 	}
-	if len(items) > 50 {
-		t.Errorf("limit 超上限应夹到 50 条，实际 %d", len(items))
+	if len(items) != 60 {
+		t.Errorf("limit=1000 应夹到上限 200（数据 60 条全返回），实际 %d；旧口径会回落到缺省 50", len(items))
 	}
 }
 

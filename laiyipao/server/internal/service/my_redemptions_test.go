@@ -7,7 +7,7 @@ package service
 // 关键行为锚点：
 //   - 返回按时间倒序的兑换记录，含兑换码与奖励快照；
 //   - 无记录返回空列表（不是 nil）；
-//   - limit 有上界（>50 夹到 20）；
+//   - limit 有上界（>50 夹到 50，不是回落到缺省 20）；
 //   - 库故障必须报错而不是静默返回空列表。
 
 import (
@@ -104,8 +104,8 @@ func TestMyRedemptionsLimitCap(t *testing.T) {
 	if err != nil {
 		t.Fatalf("查询兑换记录失败：%v", err)
 	}
-	if len(items) != 20 {
-		t.Errorf("limit 超上限应夹到 20 条，实际 %d", len(items))
+	if len(items) != 25 {
+		t.Errorf("limit=1000 应夹到上限 50（数据 25 条全返回），实际 %d", len(items))
 	}
 }
 

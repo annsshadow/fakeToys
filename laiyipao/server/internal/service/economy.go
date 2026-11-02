@@ -100,9 +100,7 @@ const leaderboardCacheRows = 200
 // 玩家每进一次排行页就算一次，而 15 秒的陈旧没人察觉。
 // 取舍与关闭方式见 `config.LeaderboardCacheTTL`。
 func (s *Service) Leaderboard(ctx context.Context, kind string, limit int) ([]LeaderboardEntry, error) {
-	if limit <= 0 || limit > 200 {
-		limit = 50
-	}
+	limit = clampLimit(limit, 50, 200)
 	all, err := s.leaderboardAll(ctx, kind)
 	if err != nil {
 		return nil, err
@@ -304,9 +302,7 @@ type MyRedemptionItem struct {
 // `redeem_usages` 记录了玩家每次兑换（哪个码、拿到什么、何时），
 // 但玩家端只有输入框、没有任何历史入口。这里补上玩家视角的兑换记录。
 func (s *Service) MyRedemptions(ctx context.Context, userID int64, limit int) ([]MyRedemptionItem, error) {
-	if limit <= 0 || limit > 50 {
-		limit = 20
-	}
+	limit = clampLimit(limit, 20, 50)
 	rows, err := s.pool.Query(ctx,
 		`SELECT ru.id, rc.code, rc.reward, ru.created_at
 		 FROM redeem_usages ru
@@ -1114,9 +1110,7 @@ type MyBattleHistoryItem struct {
 // 玩家打完关卡后没有任何历史战报入口（后台有 `AdminListBattles`，
 // 玩家侧只有单条验真/回放端点）。这里补上玩家视角的战绩列表。
 func (s *Service) MyBattleHistory(ctx context.Context, userID int64, limit, offset int, result string) ([]MyBattleHistoryItem, error) {
-	if limit <= 0 || limit > 50 {
-		limit = 20
-	}
+	limit = clampLimit(limit, 20, 50)
 	// 分页（2026-11-01 新一轮第 55 轮）：负 offset 夹到 0。
 	if offset < 0 {
 		offset = 0
@@ -1241,9 +1235,7 @@ type MyPurchaseItem struct {
 // 但玩家端没有任何入口 —— 买了什么、花了多少只能靠记忆。
 // 这里补上玩家视角的购买历史。
 func (s *Service) MyPurchases(ctx context.Context, userID int64, limit int) ([]MyPurchaseItem, error) {
-	if limit <= 0 || limit > 50 {
-		limit = 20
-	}
+	limit = clampLimit(limit, 20, 50)
 	rows, err := s.pool.Query(ctx,
 		`SELECT p.id, p.item_id, COALESCE(s.name, ''), COALESCE(s.category, ''),
 		        p.price, p.purchase_date::text, p.created_at
@@ -1291,9 +1283,7 @@ type MyOrderItem struct {
 // 支付一致）。玩家端此前没有任何入口 —— 订单状态（pending/paid/
 // delivered/refunded）玩家完全不可见。
 func (s *Service) MyOrders(ctx context.Context, userID int64, limit int) ([]MyOrderItem, error) {
-	if limit <= 0 || limit > 50 {
-		limit = 20
-	}
+	limit = clampLimit(limit, 20, 50)
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, order_no, sku, amount, status, provider, created_at, delivered_at
 		 FROM orders

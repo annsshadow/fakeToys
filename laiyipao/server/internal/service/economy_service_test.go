@@ -90,7 +90,7 @@ func TestLeaderboardKinds(t *testing.T) {
 		t.Errorf("limit=0 应回落 50：%v", err)
 	}
 	if _, err := ts.Leaderboard(ctx, "power", 9999); err != nil {
-		t.Errorf("limit=9999 应回落 50：%v", err)
+		t.Errorf("limit=9999 应夹到上限 200：%v", err)
 	}
 
 	broken := openBrokenService(t)

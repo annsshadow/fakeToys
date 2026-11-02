@@ -377,9 +377,7 @@ type AdminUserView struct {
 
 // AdminListUsers 分页查询玩家。
 func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, offset int, dateFrom, dateTo *time.Time, isGuest *bool, lastLoginFrom, lastLoginTo *time.Time, suspicious *bool) ([]AdminUserView, int64, error) {
-	if limit <= 0 || limit > 200 {
-		limit = 50
-	}
+	limit = clampLimit(limit, 50, 200)
 	if offset < 0 {
 		offset = 0
 	}
@@ -913,9 +911,7 @@ type AdminBattleView struct {
 // onlyMismatched 为真时**只**返回「被验真过且有不匹配记录」的战报，
 // 用来从「这个用户有 3 次不匹配」直接跳到「是哪 3 场」。
 func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID int, limit int, onlyMismatched bool, offset int, dateFrom, dateTo *time.Time, result string) ([]AdminBattleView, int64, error) {
-	if limit <= 0 || limit > 200 {
-		limit = 50
-	}
+	limit = clampLimit(limit, 50, 200)
 	// ⚠️ 2026-10-21（二轮审计 P2）：负 offset 必须夹到 0。
 	//
 	// `queryInt` **不**拒绝负数（`Atoi("-1")` 成功）→ 负 offset 原样进 SQL

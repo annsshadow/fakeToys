@@ -882,9 +882,7 @@ type RecomputeLevelStat struct {
 // 正确形状：先按 (level, user) 归并，在同一个组内同时数出
 // 总行数与不符行数，外层再对关卡求和 / 取最大。
 func (s *Service) AdminRecomputeStatsByLevel(ctx context.Context, since time.Time, limit int) ([]RecomputeLevelStat, error) {
-	if limit <= 0 || limit > 200 {
-		limit = 20
-	}
+	limit = clampLimit(limit, 20, 200)
 	rows, err := s.pool.Query(ctx, `
 		SELECT level_id,
 		       SUM(per_user_total)::bigint AS total,

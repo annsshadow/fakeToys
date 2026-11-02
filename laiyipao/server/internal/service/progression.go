@@ -1206,9 +1206,7 @@ type ChallengeHistoryItem struct {
 // 注意：防线被删除时挑战记录会随 `ON DELETE CASCADE` 消失，
 // 这是可接受的（对手防线已不存在，回看没有意义）。
 func (s *Service) MyChallengeHistory(ctx context.Context, userID int64, limit int) ([]ChallengeHistoryItem, error) {
-	if limit <= 0 || limit > 50 {
-		limit = 20
-	}
+	limit = clampLimit(limit, 20, 50)
 	rows, err := s.pool.Query(ctx, `
 		SELECT dc.id, dc.defense_id, COALESCE(d.name, ''), COALESCE(u.nickname, ''),
 		       d.power, dc.won, dc.duration_ms, dc.hp_left_pct, dc.loot, dc.created_at
@@ -1264,9 +1262,7 @@ type DefenseChallengeItem struct {
 // 与 `MyChallengeHistory` 同口径：防线被删除时记录随 `ON DELETE CASCADE`
 // 消失（防线已不存在，回看没有意义）。
 func (s *Service) MyDefenseChallenges(ctx context.Context, userID int64, limit int) ([]DefenseChallengeItem, error) {
-	if limit <= 0 || limit > 50 {
-		limit = 20
-	}
+	limit = clampLimit(limit, 20, 50)
 	rows, err := s.pool.Query(ctx, `
 		SELECT dc.id, dc.defense_id, COALESCE(d.name, ''), COALESCE(u.nickname, ''),
 		       dc.won, dc.duration_ms, dc.hp_left_pct, dc.loot, dc.created_at
