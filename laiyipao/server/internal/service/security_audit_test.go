@@ -314,16 +314,36 @@ func TestLogoutRotatesGuestToken(t *testing.T) {
 	//     - 「必须报错」→ 描述的是一个**不存在**的行为
 	//     - 「必须不回到受害者账号」→ 描述的是**安全后果**
 	//
-	//   而这个形态本身值得写进文档：**凭证轮换之后，
-	//   拿旧凭证来的人不会看到任何异常，只会得到一个空号。**
-	//   这正是客户端必须在登出后**立刻存下新凭证**的原因 ——
-	//   否则受害者自己也走这条路，进度凭空消失且毫无报错。
+	// ⚠️ R38 起这个时间点后移了：轮换结果只能通过响应体下发，响应丢失时
+	//   客户端只剩旧凭证；若旧凭证立刻作废，玩家会被永久锁在原账号之外。
+	//   所以登出时同一事务把旧凭证写入 `guest_token_aliases`，
+	//   在 `guestTokenAliasGrace`（15 分钟）内仍可**找回同一账号**。
+	//   这是「账号可恢复性」对「登出即时切断」的有意让步，窗口有界。
+	//
+	//   因此本用例守住的是两条边界，而不是「立刻失效」：
+	//     1. 宽限期内：旧凭证 → 同一账号，且回传当前（轮换后）凭证；
+	//     2. 宽限期外：旧凭证 → 空号（未知凭证语义），绝不再回到受害者账号。
+	recovered, err := ts.Service.GuestLogin(ctx, guest, "rotate")
+	if err != nil {
+		t.Fatalf("宽限期内旧凭证应能找回账号：%v", err)
+	}
+	if recovered.User.ID != tp.User.ID {
+		t.Errorf("宽限期内旧凭证应找回账号 %d，实际 %d", tp.User.ID, recovered.User.ID)
+	}
+	if recovered.GuestToken != res.GuestToken {
+		t.Errorf("找回时应回传当前 guest_token %q，实际 %q",
+			res.GuestToken, recovered.GuestToken)
+	}
+
+	// 宽限期外：必须退回「未知凭证 → 建空号」，否则轮换形同虚设。
+	ts.exec(t, `UPDATE guest_token_aliases SET expires_at = now() - interval '1 second'
+		WHERE token = $1`, guest)
 	stolen, err := ts.Service.GuestLogin(ctx, guest, "attacker")
 	if err != nil {
 		t.Fatalf("用未知凭证登录应建新号而非报错，实际 = %v", err)
 	}
 	if stolen.User.ID == tp.User.ID {
-		t.Fatal("旧 guest_token 仍回到了受害者账号 —— 轮换没生效")
+		t.Fatal("宽限期过后旧 guest_token 仍回到了受害者账号 —— 轮换没生效")
 	}
 
 	// 更强的一条：那个新号必须是**空的**。

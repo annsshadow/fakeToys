@@ -513,14 +513,32 @@ export interface TokenPair {
   refresh_token: string
   expires_at: string
   user: { id: number; nickname: string; avatar_url: string; is_guest: boolean; status: number }
+  /**
+   * 游客登录会带回当前生效的游客凭证（R38）。
+   *
+   * 服务端在登出时轮换这枚凭证，而轮换结果只能通过响应下发；
+   * 首次登录时它也由服务端生成。客户端**每次都保存**，
+   * 否则「登出响应丢失 / 首次登录后清缓存」都会让下一次冷启动
+   * 带着已作废或不存在的凭证建出一个空号（进度凭空消失）。
+   */
+  guest_token?: string
 }
 
-/** 游客登录。首次进入时自动建立账号。 */
+/**
+ * 游客登录。首次进入时自动建立账号。
+ *
+ * R38：响应里的 `guest_token` 必须落盘 —— 它是服务端的当前真值，
+ * 覆盖本地可能已失效的旧凭证。判空是安全的一侧：服务端没回时
+ * 保留本地那份（退回「这次没更新」），而不是写空串把凭证清掉。
+ */
 export function guestLogin(nickname = ''): Promise<TokenPair> {
   return request<TokenPair>('/auth/guest', {
     method: 'POST',
     auth: false,
     body: { guest_token: getGuestToken(), nickname },
+  }).then((tp) => {
+    if (tp?.guest_token) setGuestToken(tp.guest_token)
+    return tp
   })
 }
 

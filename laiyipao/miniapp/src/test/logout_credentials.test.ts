@@ -26,7 +26,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { logout } from '@/api/client'
+import { logout, guestLogin } from '@/api/client'
 import { installUniMock, type UniMock } from './uni-mock'
 
 const TOKEN_KEY = 'lyp_token'
@@ -126,5 +126,34 @@ describe('logout 的凭证处理', () => {
     expect(res.serverNotified).toBe(false)
     expect(um.storage.get(GUEST_KEY)).toBe('guest-old')
     expect(um.storage.has(TOKEN_KEY)).toBe(false)
+  })
+})
+
+describe('游客登录的凭证保存（R38）', () => {
+  // 服务端在登出时轮换 guest_token，且首次登录的凭证也由服务端生成。
+  // 客户端只有「每次游客登录都存响应里的那一枚」才能拿到当前真值；
+  // 不存的话，宽限期一过仍会带着旧凭证建号，等于把 R38 的找回能力废掉。
+  const okBody = {
+    access_token: 'acc',
+    refresh_token: 'ref',
+    expires_at: '2099-01-01T00:00:00Z',
+    user: { id: 1, nickname: 'n', avatar_url: '', is_guest: true, status: 1 },
+  }
+
+  it('响应带回 guest_token 时落盘（覆盖本地旧值）', async () => {
+    um.storage.set(GUEST_KEY, 'guest-stale')
+    respond(200, { ...okBody, guest_token: 'guest-current' })
+
+    await guestLogin()
+
+    expect(um.storage.get(GUEST_KEY)).toBe('guest-current')
+  })
+
+  it('响应没带 guest_token 时保留本地那份，绝不写空串', async () => {
+    respond(200, okBody)
+
+    await guestLogin()
+
+    expect(um.storage.get(GUEST_KEY)).toBe('guest-old')
   })
 })

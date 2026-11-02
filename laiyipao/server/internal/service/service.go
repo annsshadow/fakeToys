@@ -291,6 +291,15 @@ type TokenPair struct {
 	RefreshToken string    `json:"refresh_token"`
 	ExpiresAt    time.Time `json:"expires_at"`
 	User         User      `json:"user"`
+	// GuestToken 只在游客登录路径带回当前有效的游客凭证（R38）。
+	//
+	// 为什么必须回：登出会把 `users.guest_token` 轮换成新串，而新串只能
+	// 通过响应交给客户端。响应丢失时客户端手里只剩旧的、服务端已作废的
+	// 那一枚；冷启动再用它登录会被当成「未知凭证」造出一个新号。
+	// 客户端在**每次**游客登录时保存这一枚，才能在宽限期内把账号找回来。
+	//
+	// `omitempty`：账号口令与微信登录不涉及游客凭证，响应形状保持不变。
+	GuestToken string `json:"guest_token,omitempty"`
 }
 
 // GuestLogin 以设备凭证建立/恢复游客账号。
@@ -317,6 +326,18 @@ type TokenPair struct {
 // 只拒绝「传一段文章」，不拒绝任何真实昵称。
 const MaxNicknameLen = 64
 
+// guestTokenAliasGrace 是「登出轮换后的旧游客凭证仍能找回原账号」的宽限期
+// （R38 / B2）。
+//
+// 登出会把 guest_token 轮换成新串，而新串只能通过响应交给客户端。
+// 响应丢失（请求已提交、网络断开）时客户端只剩已作废的旧串，
+// 冷启动会被当成未知凭证、造出一个空号 —— 玩家眼里就是进度全丢。
+//
+// 15 分钟覆盖「重试 / 关闭后立刻重开」的正常恢复路径；更长的窗口会让
+// 被盗凭证在玩家登出后仍可用，与「登出立刻切断长期凭证」的意图相冲突。
+// 表结构与取舍见 migrations/00024_guest_token_alias.sql。
+const guestTokenAliasGrace = 15 * time.Minute
+
 func (s *Service) GuestLogin(ctx context.Context, guestToken, nickname string) (TokenPair, error) {
 	if strings.TrimSpace(guestToken) == "" {
 		var err error
@@ -340,13 +361,43 @@ func (s *Service) GuestLogin(ctx context.Context, guestToken, nickname string) (
 			ErrBadInput, MaxNicknameLen, n)
 	}
 
+	// R38：先查「登出后响应丢失」留下的旧凭证别名（见 guestTokenAliasGrace）。
+	//
+	// 命中说明这枚凭证是玩家登出前持有的、服务端已经轮换掉的那一枚。
+	// 这里必须找回**同一个** user_id，而不是按「未知凭证 → 建新号」
+	// 造出一个空账号；并把轮换后的当前凭证一并返回，
+	// 让客户端把本地那枚失效的旧凭证换掉。
 	var userID int64
+	err := s.pool.QueryRow(ctx,
+		`SELECT user_id FROM guest_token_aliases
+		  WHERE token = $1 AND expires_at > now()`, guestToken).Scan(&userID)
+	if err == nil {
+		var currentToken string
+		if err := s.pool.QueryRow(ctx,
+			`UPDATE users SET last_login_at = now() WHERE id = $1
+			 RETURNING guest_token`, userID).Scan(&currentToken); err != nil {
+			return TokenPair{}, fmt.Errorf("touch guest alias login: %w", err)
+		}
+		u, err := s.loadUser(ctx, userID)
+		if err != nil {
+			return TokenPair{}, err
+		}
+		tp, err := s.issueTokens(ctx, userID, u)
+		if err != nil {
+			return TokenPair{}, err
+		}
+		tp.GuestToken = currentToken
+		return tp, nil
+	} else if !errors.Is(err, pgx.ErrNoRows) {
+		return TokenPair{}, fmt.Errorf("lookup guest alias: %w", err)
+	}
+
 	// 建号与新手包（钱包/进度/装备/技能/槽位）必须在**同一事务**里：
 	// 拆成两条独立写入时，initNewUser 中途失败会留下一个 users 行已提交、
 	// 但钱包/技能槽为空的账号。那不是「下次重试会补上」的小问题 ——
 	// 后台用户列表会立刻看到这个号，运营给它发币/封禁时命中「无钱包行」，
 	// 而玩家在补上之前进游戏就是「什么都点不了」的死局。
-	err := s.DB.Tx(ctx, func(tx txType) error {
+	err = s.DB.Tx(ctx, func(tx txType) error {
 		if err := tx.QueryRow(ctx,
 			`INSERT INTO users (guest_token, nickname, is_guest, last_login_at)
 			 VALUES ($1, $2, TRUE, now())
@@ -367,7 +418,14 @@ func (s *Service) GuestLogin(ctx context.Context, guestToken, nickname string) (
 	if u.Status != 1 {
 		return TokenPair{}, fmt.Errorf("%w: 账号已被封禁", ErrForbidden)
 	}
-	return s.issueTokens(ctx, userID, u)
+	tp, err := s.issueTokens(ctx, userID, u)
+	if err != nil {
+		return TokenPair{}, err
+	}
+	// R38：把当前生效的游客凭证交回客户端。首次登录时它就是服务端
+	// 刚刚生成的那一枚 —— 客户端此前没有地方能拿到它。
+	tp.GuestToken = guestToken
+	return tp, nil
 }
 
 // WechatLogin 微信 code 登录。
@@ -440,7 +498,7 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (TokenPair, 
 		return TokenPair{}, err
 	}
 	// 令牌在事务外生成：crypto/rand 或签名失败时不应该先把事务开起来。
-	tp, newHash, err := s.newTokenPair(ctx, userID, u)
+	tp, newHash, err := s.newTokenPair(userID, u)
 	if err != nil {
 		return TokenPair{}, err
 	}
@@ -476,7 +534,7 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (TokenPair, 
 // 于是"封禁一个微信用户 → 他重新登录拿新令牌"即可绕过封禁。
 // 把检查下沉到唯一的签发出口，所有路径（游客/微信/刷新）自动覆盖。
 func (s *Service) issueTokens(ctx context.Context, userID int64, u User) (TokenPair, error) {
-	tp, refreshHash, err := s.newTokenPair(ctx, userID, u)
+	tp, refreshHash, err := s.newTokenPair(userID, u)
 	if err != nil {
 		return TokenPair{}, err
 	}
@@ -494,7 +552,7 @@ func (s *Service) issueTokens(ctx context.Context, userID int64, u User) (TokenP
 // R33 抽出：轮换路径需要在「吊销旧 token」与「写新 token」之间共享同一个
 // 事务，而登录路径没有这个约束。生成与落库分开后，两条路径都不必各写一份
 // 签发/封禁检查逻辑。
-func (s *Service) newTokenPair(ctx context.Context, userID int64, u User) (TokenPair, string, error) {
+func (s *Service) newTokenPair(userID int64, u User) (TokenPair, string, error) {
 	if u.Status != 1 {
 		return TokenPair{}, "", fmt.Errorf("%w: 账号已被封禁", ErrForbidden)
 	}
@@ -562,6 +620,18 @@ type LogoutResult struct {
 // 只做了前者的话，旧凭证仍能换出新会话，这次登出等于没做；
 // 只做了后者的话，被盗的 refresh token 还活着。
 // 两者同生共死才是「登出」这个语义。
+//
+// # R38：为什么还要给**旧**凭证留一条宽限期别名
+//
+// 轮换后的新凭证只能通过响应体交给客户端。响应丢失（请求已提交、
+// 网络断开）时，客户端按约定保留旧凭证并清掉本地令牌 ——
+// 于是下一次冷启动带着**已作废**的旧凭证登录，服务端按
+// 「未知凭证 → 建新号」造出一个空账号，玩家的进度全部找不回来。
+// 用玩家视角就是「既不能用新（没收到）也不能用旧（已失效）」。
+//
+// 所以同一事务里把旧凭证写入 `guest_token_aliases`（15 分钟宽限），
+// `GuestLogin` 命中别名时找回**同一个**账号。写入失败则整单回滚 ——
+// 不允许「凭证已换但旧凭证无从找回」的半成品登出。
 func (s *Service) Logout(ctx context.Context, userID int64) (LogoutResult, error) {
 	// 先备好新凭证：它在事务内才写，但在事务外生成 ——
 	// crypto/rand 失败的话不应该先把事务开起来。
@@ -580,6 +650,15 @@ func (s *Service) Logout(ctx context.Context, userID int64) (LogoutResult, error
 		}
 		out.RevokedTokens = tag.RowsAffected()
 
+		// R38：别名必须记**轮换前**的那一枚。先锁行读出旧凭证，
+		// 再轮换 —— 顺序反过来的话客户端手里那枚已失效的凭证就永远找不回。
+		var oldToken string
+		if err := tx.QueryRow(ctx,
+			`SELECT guest_token FROM users WHERE id = $1 FOR UPDATE`, userID).
+			Scan(&oldToken); err != nil {
+			return fmt.Errorf("logout load guest token: %w", err)
+		}
+
 		// ⚠️ UNIQUE(guest_token) 可能撞车：极低概率（24 字节随机），
 		//   但撞上了就是 500。撞了就重试，而不是把罕见错误当不可能。
 		//   上限 5 次足以把概率压到可以忽略；仍失败则如实报错。
@@ -587,6 +666,23 @@ func (s *Service) Logout(ctx context.Context, userID int64) (LogoutResult, error
 			_, err := tx.Exec(ctx,
 				`UPDATE users SET guest_token = $2 WHERE id = $1`, userID, fresh)
 			if err == nil {
+				// R38：旧凭证进宽限期别名表。命中时 GuestLogin 找回同一账号，
+				// 而不是给它建新号。ON CONFLICT：同一玩家反复登出时，
+				// 旧凭证可能已经是一条历史别名，刷新它的归属与到期时间。
+				if _, aerr := tx.Exec(ctx, `
+					INSERT INTO guest_token_aliases (token, user_id, expires_at)
+					VALUES ($1, $2, $3)
+					ON CONFLICT (token) DO UPDATE
+					   SET user_id = EXCLUDED.user_id,
+					       expires_at = EXCLUDED.expires_at`,
+					oldToken, userID, time.Now().Add(guestTokenAliasGrace)); aerr != nil {
+					return fmt.Errorf("logout record guest token alias: %w", aerr)
+				}
+				// 顺手清理过期别名：这张表只服务短期找回，不该无限增长。
+				if _, cerr := tx.Exec(ctx,
+					`DELETE FROM guest_token_aliases WHERE expires_at <= now()`); cerr != nil {
+					return fmt.Errorf("logout prune guest token aliases: %w", cerr)
+				}
 				out.GuestToken = fresh
 				return nil
 			}
