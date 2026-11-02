@@ -38,7 +38,24 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = $PSScriptRoot
-$targetDir   = Join-Path $projectRoot 'target'
+
+# target 目录可能被 .cargo/config.toml 的 [build] target-dir 改到别处，
+# 因此优先用 cargo metadata 解析真实路径，取不到再回退到默认位置。
+$targetDir = $null
+try {
+    Push-Location $projectRoot
+    $meta = & cargo metadata --no-deps --format-version 1 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        $targetDir = (($meta -join '') | ConvertFrom-Json).target_directory
+    }
+} catch {
+} finally {
+    Pop-Location
+}
+if ([string]::IsNullOrWhiteSpace($targetDir)) {
+    $targetDir = Join-Path $projectRoot 'target'
+}
+
 $logFile     = Join-Path $targetDir '.clean-target.log'
 
 function Get-DirSizeGB {
@@ -113,7 +130,12 @@ Write-Log ("清理后 target 体积：{0} GB" -f $afterGB)
 if ($afterGB -gt $HardLimitGB) {
     Write-Log "仍超过硬阈值 $HardLimitGB GB，执行 cargo clean ..."
     try {
-        & cargo clean --manifest-path (Join-Path $projectRoot 'Cargo.toml') 2>&1 | ForEach-Object { Write-Log $_ }
+        Push-Location $projectRoot
+        try {
+            & cargo clean 2>&1 | ForEach-Object { Write-Log $_ }
+        } finally {
+            Pop-Location
+        }
         Write-Log ("cargo clean 完成，target 体积：{0} GB" -f (Get-DirSizeGB $targetDir))
     } catch {
         Write-Log ("cargo clean 失败：{0}" -f $_.Exception.Message)
