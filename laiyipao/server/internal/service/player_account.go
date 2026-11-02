@@ -192,10 +192,24 @@ func (s *Service) UpgradeGuestAccount(ctx context.Context, userID int64, usernam
 	}
 
 	// 保持 guest_token 不变（见函数头注释）。
-	if _, err := s.pool.Exec(ctx,
+	ct, err := s.pool.Exec(ctx,
 		`UPDATE users SET username = $2, password_hash = $3, is_guest = FALSE
-		 WHERE id = $1`, userID, username, newHash); err != nil {
+		 WHERE id = $1`, userID, username, newHash)
+	if err != nil {
+		// R35：上面的「先查后写」挡不住并发 —— 两个游客同时把同一个
+		// 用户名转正时，两次 SELECT 都会看到「没人占用」，随后由
+		// `idx_users_username` 唯一索引决定胜负。输掉的那次此前被包成
+		// 普通 error，HTTP 层统一 500「服务内部错误」：玩家看到的是
+		// 「系统坏了」，而不是「这个用户名已经被别人用了」。
+		// 唯一约束是这条规则的**真正来源**，错误映射必须挂在它上面，
+		// 预查只负责给出更快的友好提示。
+		if isUniqueViolation(err) {
+			return fmt.Errorf("%w: 用户名已被使用", ErrBadInput)
+		}
 		return fmt.Errorf("upgrade guest account: %w", err)
+	}
+	if ct.RowsAffected() == 0 {
+		return fmt.Errorf("%w: 用户不存在", ErrNotFound)
 	}
 	return nil
 }
