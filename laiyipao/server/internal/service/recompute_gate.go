@@ -834,7 +834,7 @@ func (s *Service) AdminExportRecomputes(ctx context.Context, f RecomputeFilter) 
 			engineVersion,
 			createdAt.UTC().Format(time.RFC3339),
 		}
-		if err := w.Write(rec); err != nil {
+		if err := writeCSVRow(w, rec); err != nil {
 			return nil, fmt.Errorf("write csv row: %w", err)
 		}
 	}

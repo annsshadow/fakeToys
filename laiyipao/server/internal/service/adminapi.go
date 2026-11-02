@@ -647,7 +647,7 @@ func (s *Service) AdminExportDefenseChallenges(ctx context.Context, defenseID, c
 			formatRewardText(loot),
 			createdAt.UTC().Format(time.RFC3339),
 		}
-		if err := w.Write(rec); err != nil {
+		if err := writeCSVRow(w, rec); err != nil {
 			return nil, fmt.Errorf("write csv row: %w", err)
 		}
 	}
@@ -810,7 +810,7 @@ func (s *Service) AdminExportOrders(ctx context.Context, status string, dateFrom
 			v.CreatedAt.UTC().Format(time.RFC3339),
 			delivered,
 		}
-		if err := w.Write(rec); err != nil {
+		if err := writeCSVRow(w, rec); err != nil {
 			return nil, fmt.Errorf("write csv row: %w", err)
 		}
 	}
@@ -951,7 +951,7 @@ func (s *Service) AdminExportRedeemUsages(ctx context.Context, codeKeyword strin
 			formatRewardText(reward),
 			createdAt.UTC().Format(time.RFC3339),
 		}
-		if err := w.Write(rec); err != nil {
+		if err := writeCSVRow(w, rec); err != nil {
 			return nil, fmt.Errorf("write csv row: %w", err)
 		}
 	}
@@ -1531,7 +1531,7 @@ func (s *Service) AdminExportRedeemCodes(ctx context.Context) ([]byte, error) {
 			formatNullableTime(expiresAt),
 			strconv.FormatBool(enabled),
 		}
-		if err := w.Write(rec); err != nil {
+		if err := writeCSVRow(w, rec); err != nil {
 			return nil, fmt.Errorf("write csv row: %w", err)
 		}
 	}
@@ -1658,7 +1658,7 @@ func (s *Service) AdminExportAnnouncements(ctx context.Context) ([]byte, error) 
 			formatNullableTime(publishedAt),
 			formatNullableTime(createdAt),
 		}
-		if err := w.Write(rec); err != nil {
+		if err := writeCSVRow(w, rec); err != nil {
 			return nil, fmt.Errorf("write csv row: %w", err)
 		}
 	}
@@ -1800,7 +1800,7 @@ func (s *Service) AdminExportAuditLogs(ctx context.Context, action string, admin
 			string(detail),
 			createdAt.Format(time.RFC3339),
 		}
-		if err := w.Write(rec); err != nil {
+		if err := writeCSVRow(w, rec); err != nil {
 			return nil, fmt.Errorf("write csv row: %w", err)
 		}
 	}

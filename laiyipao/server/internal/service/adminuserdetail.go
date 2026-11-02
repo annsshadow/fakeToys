@@ -428,7 +428,7 @@ func (s *Service) AdminExportUserFlows(ctx context.Context, userID int64) ([]byt
 			ref,
 			createdAt.UTC().Format(time.RFC3339),
 		}
-		if err := w.Write(rec); err != nil {
+		if err := writeCSVRow(w, rec); err != nil {
 			return nil, fmt.Errorf("write csv row: %w", err)
 		}
 	}

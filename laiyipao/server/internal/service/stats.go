@@ -626,7 +626,7 @@ func (s *Service) AdminExportUsers(ctx context.Context, keyword string, dateFrom
 			strconv.FormatInt(v.VerifyChecked, 10),
 			strconv.FormatInt(v.VerifyMismatched, 10),
 		}
-		if err := w.Write(rec); err != nil {
+		if err := writeCSVRow(w, rec); err != nil {
 			return nil, fmt.Errorf("write csv row: %w", err)
 		}
 	}
@@ -1234,7 +1234,7 @@ func (s *Service) AdminExportBattles(ctx context.Context, userID int64, levelID 
 			strconv.FormatInt(v.VerifyMismatched, 10),
 			strconv.Itoa(v.TotalEnemies),
 		}
-		if err := w.Write(rec); err != nil {
+		if err := writeCSVRow(w, rec); err != nil {
 			return nil, fmt.Errorf("write csv row: %w", err)
 		}
 	}
