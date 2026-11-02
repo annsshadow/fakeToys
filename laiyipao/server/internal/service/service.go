@@ -410,24 +410,63 @@ func (s *Service) WechatLogin(ctx context.Context, code string) (TokenPair, erro
 }
 
 // Refresh 刷新访问令牌。
+//
+// ⚠️ R33：吊销旧 token 与写入新 token 必须在**同一事务**里。
+//
+// 修前是两条独立 autocommit：先 `UPDATE … revoked_at=now()` 消费旧 token，
+// 再在新会话里 `INSERT` 新 token。第二步失败（瞬时连接故障、约束冲突）时，
+// 旧 token 已经作废、新 token 也没发出去 —— 客户端只剩一枚已失效的
+// refresh token，用户被一次服务端瞬时错误强制重新登录，而库里看到的是
+// 「一次合法的轮换」。
+//
+// 现在拆成「先读拿 user_id（只为封禁检查与生成令牌）」+「一个事务做
+// 条件吊销 + 插新」。一次性语义仍由事务内的条件 UPDATE 保证：
+// 并发第二次刷新命中 0 行即 401，且不会插入新 token。
 func (s *Service) Refresh(ctx context.Context, refreshToken string) (TokenPair, error) {
 	if refreshToken == "" {
 		return TokenPair{}, fmt.Errorf("%w: refresh_token 不能为空", ErrBadInput)
 	}
 	hash := auth.HashRefreshToken(refreshToken)
 	var userID int64
-	err := s.pool.QueryRow(ctx,
-		`UPDATE refresh_tokens SET revoked_at = now()
-		 WHERE token_hash = $1 AND revoked_at IS NULL AND expires_at > now()
-		 RETURNING user_id`, hash).Scan(&userID)
-	if err != nil {
+	// 只读预查：真正的一次性消费在下面的事务里完成。
+	if err := s.pool.QueryRow(ctx,
+		`SELECT user_id FROM refresh_tokens
+		  WHERE token_hash = $1 AND revoked_at IS NULL AND expires_at > now()`,
+		hash).Scan(&userID); err != nil {
 		return TokenPair{}, fmt.Errorf("%w: refresh_token 无效或已过期", ErrUnauthorized)
 	}
 	u, err := s.loadUser(ctx, userID)
 	if err != nil {
 		return TokenPair{}, err
 	}
-	return s.issueTokens(ctx, userID, u)
+	// 令牌在事务外生成：crypto/rand 或签名失败时不应该先把事务开起来。
+	tp, newHash, err := s.newTokenPair(ctx, userID, u)
+	if err != nil {
+		return TokenPair{}, err
+	}
+	err = s.DB.Tx(ctx, func(tx txType) error {
+		tag, err := tx.Exec(ctx,
+			`UPDATE refresh_tokens SET revoked_at = now()
+			  WHERE token_hash = $1 AND revoked_at IS NULL AND expires_at > now()`,
+			hash)
+		if err != nil {
+			return fmt.Errorf("revoke refresh token: %w", err)
+		}
+		if tag.RowsAffected() == 0 {
+			// 并发第二次刷新：对方已经消费了这枚旧 token。
+			return fmt.Errorf("%w: refresh_token 无效或已过期", ErrUnauthorized)
+		}
+		if _, err := tx.Exec(ctx,
+			`INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1,$2,$3)`,
+			userID, newHash, time.Now().Add(s.Cfg().RefreshTTL)); err != nil {
+			return fmt.Errorf("store refresh token: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return TokenPair{}, err
+	}
+	return tp, nil
 }
 
 // issueTokens 签发玩家令牌对。
@@ -437,14 +476,7 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (TokenPair, 
 // 于是"封禁一个微信用户 → 他重新登录拿新令牌"即可绕过封禁。
 // 把检查下沉到唯一的签发出口，所有路径（游客/微信/刷新）自动覆盖。
 func (s *Service) issueTokens(ctx context.Context, userID int64, u User) (TokenPair, error) {
-	if u.Status != 1 {
-		return TokenPair{}, fmt.Errorf("%w: 账号已被封禁", ErrForbidden)
-	}
-	access, exp, err := s.JWT.Issue(userID, "user", "")
-	if err != nil {
-		return TokenPair{}, err
-	}
-	refreshPlain, refreshHash, err := auth.NewRefreshToken()
+	tp, refreshHash, err := s.newTokenPair(ctx, userID, u)
 	if err != nil {
 		return TokenPair{}, err
 	}
@@ -453,10 +485,31 @@ func (s *Service) issueTokens(ctx context.Context, userID int64, u User) (TokenP
 		userID, refreshHash, time.Now().Add(s.Cfg().RefreshTTL)); err != nil {
 		return TokenPair{}, fmt.Errorf("store refresh token: %w", err)
 	}
+	return tp, nil
+}
+
+// newTokenPair 生成一对令牌但**不落库**，返回 refresh token 的哈希供调用方
+// 决定写到哪个连接（`issueTokens` 用池，`Refresh` 用事务）。
+//
+// R33 抽出：轮换路径需要在「吊销旧 token」与「写新 token」之间共享同一个
+// 事务，而登录路径没有这个约束。生成与落库分开后，两条路径都不必各写一份
+// 签发/封禁检查逻辑。
+func (s *Service) newTokenPair(ctx context.Context, userID int64, u User) (TokenPair, string, error) {
+	if u.Status != 1 {
+		return TokenPair{}, "", fmt.Errorf("%w: 账号已被封禁", ErrForbidden)
+	}
+	access, exp, err := s.JWT.Issue(userID, "user", "")
+	if err != nil {
+		return TokenPair{}, "", err
+	}
+	refreshPlain, refreshHash, err := auth.NewRefreshToken()
+	if err != nil {
+		return TokenPair{}, "", err
+	}
 	return TokenPair{
 		AccessToken: access, RefreshToken: refreshPlain,
 		ExpiresAt: exp, User: u,
-	}, nil
+	}, refreshHash, nil
 }
 
 // LogoutResult 是登出的结果。
