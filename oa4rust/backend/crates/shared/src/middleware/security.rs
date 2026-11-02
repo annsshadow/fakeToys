@@ -132,10 +132,10 @@ fn auth_exempt_index() -> &'static AuthExemptIndex {
         AuthExemptIndex {
             exact,
             wildcard,
-            prefixes: AUTH_EXEMPT_PREFIXES.iter().copied().collect(),
+            prefixes: AUTH_EXEMPT_PREFIXES.to_vec(),
             blocked: AUTH_EXEMPT_BLOCKED_PATHS.iter().copied().collect(),
             rate_exact: AUTH_RATE_LIMIT_EXACT.iter().copied().collect(),
-            rate_prefixes: AUTH_RATE_LIMIT_PREFIXES.iter().copied().collect(),
+            rate_prefixes: AUTH_RATE_LIMIT_PREFIXES.to_vec(),
         }
     })
 }
@@ -449,7 +449,7 @@ mod security_audit_tests {
         let idx = auth_exempt_index();
         for p in AUTH_EXEMPT_PATHS.iter().copied() {
             let covered = if p.contains('{') {
-                idx.wildcard.contains(p)
+                idx.wildcard.contains(&p)
             } else {
                 idx.exact.contains(p)
             };

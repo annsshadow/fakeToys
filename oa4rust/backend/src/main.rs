@@ -310,9 +310,13 @@ fn mime_for_path(path: &std::path::Path) -> &'static str {
 
 /// 第 45 轮：SPA 入口页的内存缓存。`read()` 返回缓存字节，
 /// 文件的 mtime 变化（构建产物被替换）时自动重读。
+/// `state` 用类型别名收敛（clippy type_complexity）：
+/// `(mtime, 缓存字节)` 的锁保护可选项，包装在 Arc 里供闭包共享。
+type SpaIndexCacheState = Arc<tokio::sync::Mutex<Option<(std::time::SystemTime, Vec<u8>)>>>;
+
 struct SpaIndexCache {
     path: std::path::PathBuf,
-    state: Arc<tokio::sync::Mutex<Option<(std::time::SystemTime, Vec<u8>)>>>,
+    state: SpaIndexCacheState,
 }
 
 impl SpaIndexCache {
