@@ -1,2 +1,0 @@
-pub mod file_portal;
-integration_tests::scenarios::file_portal::file_portal_flow();

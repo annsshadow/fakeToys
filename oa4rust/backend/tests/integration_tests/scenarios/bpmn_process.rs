@@ -30,7 +30,7 @@ use crate::integration_tests::db::{TestPool, TEST_DB};
 #[ignore = "requires a running database server"]
 pub async fn bpmn_process_flow() {
     let pool = TEST_DB
-        .as_pg().unwrap().get()
+        .get()
         .expect("test database not initialized; call init_test_database() first")
         .clone();
 
@@ -186,7 +186,7 @@ pub async fn bpmn_process_flow() {
 #[ignore = "requires a running database server"]
 pub async fn bpmn_task_actions_flow() {
     let pool = TEST_DB
-        .as_pg().unwrap().get()
+        .get()
         .expect("test database not initialized; call init_test_database() first")
         .clone();
 
@@ -380,7 +380,7 @@ pub async fn bpmn_task_actions_flow() {
 #[ignore = "requires a running database server"]
 pub async fn bpmn_countersign_flow() {
     let pool = TEST_DB
-        .as_pg().unwrap().get()
+        .get()
         .expect("test database not initialized; call init_test_database() first")
         .clone();
 

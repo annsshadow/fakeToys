@@ -2,6 +2,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 pub mod bbs_correlation;
+pub mod bpmn_process;
+pub mod cms_document;
+pub mod cms_extended;
+pub mod file_portal;
+pub mod ldap_fallback;
+pub mod new_real_endpoints;
+pub mod program_center;
+pub mod query_assemble;
+
 pub mod core_crud_lifecycle;
 pub mod data_integrity;
 pub mod file_upload;

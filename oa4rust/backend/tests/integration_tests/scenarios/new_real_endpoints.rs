@@ -9,7 +9,6 @@ use serde_json::Value;
 use tracing::info;
 
 use crate::integration_tests::db::TEST_DB;
-use deadpool_postgres::Pool;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Real-PostgreSQL integration verification for newly-realized DB-touching endpoints.
@@ -71,7 +70,7 @@ async fn post_ok(base: &str, client: &Client, auth: &str, path: &str, body: Valu
 #[tokio::test]
 #[ignore = "requires a running database server"]
 pub async fn ai_endpoints_flow() {
-    let pool = (**TEST_DB.get().expect("db not initialized")).clone();
+    let pool = TEST_DB.get().expect("db not initialized").clone();
     let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
         .await
         .expect("start server");
@@ -103,7 +102,7 @@ pub async fn ai_endpoints_flow() {
     // DELETE then verify the row is gone (side effect).
     let del = get_ok(&base, &client, &auth, &format!("/api/ai/file/delete/{}", file_id)).await;
     assert_eq!(del["data"]["id"].as_str(), Some(file_id.as_str()));
-    let c = pool.get().await.expect("pool");
+    let c = pool.as_pg().unwrap().get().await.expect("pool");
     let remaining = c
         .query_opt("SELECT 1 FROM x_ai_file WHERE xid = $1", &[&file_id])
         .await
@@ -158,7 +157,7 @@ pub async fn ai_endpoints_flow() {
     }
     let del_idx = get_ok(&base, &client, &auth, &format!("/api/ai/index/delete/{}", idx_id)).await;
     assert_eq!(del_idx["data"]["id"].as_str(), Some(idx_id.as_str()));
-    let c = pool.get().await.expect("pool");
+    let c = pool.as_pg().unwrap().get().await.expect("pool");
     let idx_remaining = c
         .query_opt("SELECT 1 FROM x_ai_index WHERE id = $1", &[&idx_id])
         .await
@@ -174,7 +173,7 @@ pub async fn ai_endpoints_flow() {
 #[tokio::test]
 #[ignore = "requires a running database server"]
 pub async fn query_endpoints_flow() {
-    let pool = (**TEST_DB.get().expect("db not initialized")).clone();
+    let pool = TEST_DB.get().expect("db not initialized").clone();
     let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
         .await
         .expect("start server");
@@ -221,7 +220,7 @@ pub async fn query_endpoints_flow() {
 #[tokio::test]
 #[ignore = "requires a running database server"]
 pub async fn bbs_endpoints_flow() {
-    let pool = (**TEST_DB.get().expect("db not initialized")).clone();
+    let pool = TEST_DB.get().expect("db not initialized").clone();
     let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
         .await
         .expect("start server");
@@ -240,7 +239,7 @@ pub async fn bbs_endpoints_flow() {
     let reply_id = resp["data"]["id"].as_str().expect("reply id missing").to_string();
     assert!(!reply_id.is_empty());
 
-    let c = pool.get().await.expect("pool");
+    let c = pool.as_pg().unwrap().get().await.expect("pool");
     let row = c
         .query_opt(
             "SELECT id, topic_id, content FROM x_bbs_reply WHERE id = $1",
@@ -259,7 +258,7 @@ pub async fn bbs_endpoints_flow() {
 #[tokio::test]
 #[ignore = "requires a running database server"]
 pub async fn portal_endpoints_flow() {
-    let pool = (**TEST_DB.get().expect("db not initialized")).clone();
+    let pool = TEST_DB.get().expect("db not initialized").clone();
     let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
         .await
         .expect("start server");
@@ -294,7 +293,7 @@ pub async fn portal_endpoints_flow() {
 #[tokio::test]
 #[ignore = "requires a running database server"]
 pub async fn component_assemble_control_flow() {
-    let pool = (**TEST_DB.get().expect("db not initialized")).clone();
+    let pool = TEST_DB.get().expect("db not initialized").clone();
     let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
         .await
         .expect("start server");
@@ -320,7 +319,7 @@ pub async fn component_assemble_control_flow() {
     assert_eq!(upd_body["data"]["updated"].as_bool(), Some(true));
 
     // Side effect: config row 'default' exists with enabled=true.
-    let c = pool.get().await.expect("pool");
+    let c = pool.as_pg().unwrap().get().await.expect("pool");
     let cfg = c
         .query_opt(
             "SELECT enabled FROM x_component_assemble_control_config WHERE id = 'default'",
@@ -345,7 +344,7 @@ pub async fn component_assemble_control_flow() {
 #[tokio::test]
 #[ignore = "requires a running database server"]
 pub async fn correlation_endpoints_flow() {
-    let pool = (**TEST_DB.get().expect("db not initialized")).clone();
+    let pool = TEST_DB.get().expect("db not initialized").clone();
     let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
         .await
         .expect("start server");
@@ -380,7 +379,7 @@ pub async fn correlation_endpoints_flow() {
     ).await;
     assert_eq!(unlink["data"]["unlinked"].as_bool(), Some(true));
 
-    let c = pool.get().await.expect("pool");
+    let c = pool.as_pg().unwrap().get().await.expect("pool");
     let remaining = c
         .query_opt("SELECT 1 FROM x_correlation WHERE id = $1", &[&corr_id])
         .await
@@ -396,7 +395,7 @@ pub async fn correlation_endpoints_flow() {
 #[tokio::test]
 #[ignore = "requires a running database server"]
 pub async fn org_assemble_control_flow() {
-    let pool = (**TEST_DB.get().expect("db not initialized")).clone();
+    let pool = TEST_DB.get().expect("db not initialized").clone();
     let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
         .await
         .expect("start server");
@@ -494,7 +493,7 @@ pub async fn org_assemble_control_flow() {
 #[tokio::test]
 #[ignore = "requires a running database server"]
 pub async fn console_jpush_express_flow() {
-    let pool = (**TEST_DB.get().expect("db not initialized")).clone();
+    let pool = TEST_DB.get().expect("db not initialized").clone();
     let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
         .await
         .expect("start server");
@@ -539,3 +538,4 @@ pub async fn console_jpush_express_flow() {
     server_handle.abort();
     let _ = server_handle.await;
 }
+
