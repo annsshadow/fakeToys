@@ -85,10 +85,19 @@ func (s *Service) Login(ctx context.Context, username, password string) (TokenPa
 	// `last_login_at` —— 游客登录（GuestLogin）与微信登录（WechatLogin）
 	// 都走 `ON CONFLICT DO UPDATE SET last_login_at = now()`，唯独账号登录
 	// 只读不写，于是 `/me` 的「最近登录」对账号玩家恒等于注册时间。
-	// 先落时间戳再读用户，返回的 TokenPair.User 也带最新值。
+	//
+	// R44：这是**统计字段**，与令牌签发**有意不放在同一事务**，且**不允许
+	// 阻断登录**。修前这里失败直接返回错误 —— 一个只影响后台「最近登录」
+	// 展示的写入，却能让玩家完全登不进来（这正是 B2 要消灭的「既不能用
+	// 新也不能用旧」的锁死：密码对、账号在，却拿不到任何令牌）。
+	// 改为 best-effort：失败只打日志，登录继续。真正的数据库故障会在
+	// 紧随其后的 `loadUser` / `issueTokens` 上暴露，不会被吞掉；
+	// 时间戳陈旧只影响统计，不影响鉴权与账号状态。
+	// 证据：R44 用例用触发器让 `last_login_at` 更新必失败 —— 修前 Login
+	// 报 `touch player login` 错误，修后登录成功、令牌照发、时间戳保持原值。
 	if _, err := s.pool.Exec(ctx,
 		`UPDATE users SET last_login_at = now() WHERE id = $1`, id); err != nil {
-		return TokenPair{}, fmt.Errorf("touch player login: %w", err)
+		fmt.Printf("[login] user=%d 更新 last_login_at 失败（统计字段，不阻断登录）：%v\n", id, err)
 	}
 
 	u, err := s.loadUser(ctx, id)
