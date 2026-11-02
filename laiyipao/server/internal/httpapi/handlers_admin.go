@@ -1274,12 +1274,11 @@ func (s *Server) adminSetRedeemCodeEnabled(c *fiber.Ctx) error {
 	if err := c.BodyParser(&body); err != nil {
 		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
 	}
-	item, err := s.Svc.AdminSetRedeemCodeEnabled(c.Context(), int(id), body.Enabled)
+	item, err := s.Svc.AdminSetRedeemCodeEnabled(c.Context(), int(id), body.Enabled,
+		service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()})
 	if err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "set_redeem_enabled",
-		strconv.FormatInt(id, 10), c.IP(), body)
 	return c.JSON(service.AdminRedeemCodeResp{Item: item})
 }
 
@@ -1307,12 +1306,11 @@ func (s *Server) adminUpdateRedeemCode(c *fiber.Ctx) error {
 		}
 		expiresAt = &parsed
 	}
-	item, err := s.Svc.AdminUpdateRedeemCode(c.Context(), int(id), body.Reward, body.MaxUses, expiresAt)
+	item, err := s.Svc.AdminUpdateRedeemCode(c.Context(), int(id), body.Reward, body.MaxUses, expiresAt,
+		service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()})
 	if err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "update_redeem_code",
-		strconv.FormatInt(id, 10), c.IP(), body)
 	return c.JSON(service.AdminRedeemCodeResp{Item: item})
 }
 

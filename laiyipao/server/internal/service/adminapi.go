@@ -1676,20 +1676,34 @@ func formatNullableTime(t *time.Time) string {
 // 此前兑换码只有创建/列表，运营创建错误码后**无法停用**（只能等过期）。
 // 禁用后 `Redeem` 的 SQL 已带 `AND enabled`，玩家端立即无法兑换；
 // `expires_at` 保留不动 —— 重新启用后仍按原过期时间失效。
-func (s *Service) AdminSetRedeemCodeEnabled(ctx context.Context, id int, enabled bool) (AdminRedeemCodeView, error) {
-	row := s.pool.QueryRow(ctx,
-		`UPDATE redeem_codes SET enabled = $2
-		 WHERE id = $1
-		 RETURNING id, code, reward, max_uses, used_count, expires_at, enabled`,
-		id, enabled)
+func (s *Service) AdminSetRedeemCodeEnabled(ctx context.Context, id int, enabled bool, audit ...AdminAuditCtx) (AdminRedeemCodeView, error) {
 	var v AdminRedeemCodeView
 	var rewardRaw []byte
 	var expiresAt *time.Time
-	if err := row.Scan(&v.ID, &v.Code, &rewardRaw, &v.MaxUses, &v.UsedCount, &expiresAt, &v.Enabled); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return AdminRedeemCodeView{}, fmt.Errorf("%w: 兑换码 %d 不存在", ErrNotFound, id)
+	// R40：启停与审计同一事务。停用是止损动作（码泄露/发错奖励），
+	// 「停了但没人知道谁停的」同样是无法追溯的事故。
+	err := s.DB.Tx(ctx, func(tx txType) error {
+		row := tx.QueryRow(ctx,
+			`UPDATE redeem_codes SET enabled = $2
+			 WHERE id = $1
+			 RETURNING id, code, reward, max_uses, used_count, expires_at, enabled`,
+			id, enabled)
+		if err := row.Scan(&v.ID, &v.Code, &rewardRaw, &v.MaxUses, &v.UsedCount, &expiresAt, &v.Enabled); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return fmt.Errorf("%w: 兑换码 %d 不存在", ErrNotFound, id)
+			}
+			return fmt.Errorf("set redeem code enabled: %w", err)
 		}
-		return AdminRedeemCodeView{}, fmt.Errorf("set redeem code enabled: %w", err)
+		if len(audit) > 0 {
+			if err := s.AuditTx(ctx, tx, audit[0], "set_redeem_enabled", strconv.Itoa(id),
+				map[string]any{"enabled": enabled}); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return AdminRedeemCodeView{}, err
 	}
 	if err := json.Unmarshal(rewardRaw, &v.Reward); err != nil {
 		return AdminRedeemCodeView{}, fmt.Errorf("unmarshal redeem reward: %w", err)
@@ -1702,7 +1716,7 @@ func (s *Service) AdminSetRedeemCodeEnabled(ctx context.Context, id int, enabled
 //
 // 第 24 轮补上了启用/禁用，但运营想改奖励/次数上限/过期时间仍只能
 // 停用后重建（码本身会变，已印刷/已分享的码全部作废）。这里补上编辑。
-func (s *Service) AdminUpdateRedeemCode(ctx context.Context, id int, reward map[string]int, maxUses int, expiresAt *time.Time) (AdminRedeemCodeView, error) {
+func (s *Service) AdminUpdateRedeemCode(ctx context.Context, id int, reward map[string]int, maxUses int, expiresAt *time.Time, audit ...AdminAuditCtx) (AdminRedeemCodeView, error) {
 	if len(reward) == 0 {
 		return AdminRedeemCodeView{}, fmt.Errorf("%w: 奖励不能为空", ErrBadInput)
 	}
@@ -1713,36 +1727,55 @@ func (s *Service) AdminUpdateRedeemCode(ctx context.Context, id int, reward map[
 	if err != nil {
 		return AdminRedeemCodeView{}, err
 	}
+	var v AdminRedeemCodeView
+	var rewardRaw []byte
+	var vExpiresAt *time.Time
+	// R40：编辑与审计同一事务。改奖励/次数上限会直接改变已发码的价值，
+	// 「内容改了但没有操作记录」是比「没改」更糟的状态。
+	//
 	// `used_count <= $3` 是**行为级**护栏：把上限调到已使用次数以下会撞
 	// `chk_redeem_uses`（23514）—— 那是 CHECK 约束的内部细节，经 %w 冒到
 	// HTTP 层只会变成 500「update redeem code: ERROR: new row violates ...」。
 	// 放在 UPDATE 谓词里还能防并发：同时有玩家在兑换时，谓词会重判 used_count。
-	row := s.pool.QueryRow(ctx,
-		`UPDATE redeem_codes SET reward = $2, max_uses = $3, expires_at = $4
-		 WHERE id = $1 AND used_count <= $3
-		 RETURNING id, code, reward, max_uses, used_count, expires_at, enabled`,
-		id, raw, maxUses, expiresAt)
-	var v AdminRedeemCodeView
-	var rewardRaw []byte
-	var vExpiresAt *time.Time
-	if err := row.Scan(&v.ID, &v.Code, &rewardRaw, &v.MaxUses, &v.UsedCount, &vExpiresAt, &v.Enabled); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			// 零行有两种原因：码不存在，或新上限小于已用次数。先查存在性
-			// 再给可操作的原因，而不是把 CHECK 约束名丢给调用方。
-			var used int
-			qerr := s.pool.QueryRow(ctx,
-				`SELECT used_count FROM redeem_codes WHERE id = $1`, id).Scan(&used)
-			if errors.Is(qerr, pgx.ErrNoRows) {
-				return AdminRedeemCodeView{}, fmt.Errorf("%w: 兑换码 %d 不存在", ErrNotFound, id)
+	err = s.DB.Tx(ctx, func(tx txType) error {
+		row := tx.QueryRow(ctx,
+			`UPDATE redeem_codes SET reward = $2, max_uses = $3, expires_at = $4
+			 WHERE id = $1 AND used_count <= $3
+			 RETURNING id, code, reward, max_uses, used_count, expires_at, enabled`,
+			id, raw, maxUses, expiresAt)
+		if err := row.Scan(&v.ID, &v.Code, &rewardRaw, &v.MaxUses, &v.UsedCount, &vExpiresAt, &v.Enabled); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				// 零行有两种原因：码不存在，或新上限小于已用次数。先查存在性
+				// 再给可操作的原因，而不是把 CHECK 约束名丢给调用方。
+				var used int
+				qerr := tx.QueryRow(ctx,
+					`SELECT used_count FROM redeem_codes WHERE id = $1`, id).Scan(&used)
+				if errors.Is(qerr, pgx.ErrNoRows) {
+					return fmt.Errorf("%w: 兑换码 %d 不存在", ErrNotFound, id)
+				}
+				if qerr != nil {
+					return fmt.Errorf("check redeem code usage: %w", qerr)
+				}
+				return fmt.Errorf(
+					"%w: 新上限 %d 小于已使用次数 %d（已发出的兑换记录无法收回）",
+					ErrBadInput, maxUses, used)
 			}
-			if qerr != nil {
-				return AdminRedeemCodeView{}, fmt.Errorf("check redeem code usage: %w", qerr)
-			}
-			return AdminRedeemCodeView{}, fmt.Errorf(
-				"%w: 新上限 %d 小于已使用次数 %d（已发出的兑换记录无法收回）",
-				ErrBadInput, maxUses, used)
+			return fmt.Errorf("update redeem code: %w", err)
 		}
-		return AdminRedeemCodeView{}, fmt.Errorf("update redeem code: %w", err)
+		if len(audit) > 0 {
+			if err := s.AuditTx(ctx, tx, audit[0], "update_redeem_code", strconv.Itoa(id),
+				map[string]any{
+					"reward":     reward,
+					"max_uses":   maxUses,
+					"expires_at": expiresAt,
+				}); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return AdminRedeemCodeView{}, err
 	}
 	if err := json.Unmarshal(rewardRaw, &v.Reward); err != nil {
 		return AdminRedeemCodeView{}, fmt.Errorf("unmarshal redeem reward: %w", err)
