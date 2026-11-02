@@ -1512,7 +1512,12 @@ func (s *Service) AdminUpdateLevel(ctx context.Context, levelID int, patch map[s
 // `res.skill` 恒为 undefined —— 改完技能表行**停在上次刷新的旧值**
 // 却弹「已保存」（写后读与写入矛盾，第 107/108 轮同族）。
 // 现在返回读回的行，响应即「后台刷新列表会看到的那一行」。
-func (s *Service) AdminUpdateSkill(ctx context.Context, skillID int, patch map[string]any) (AdminSkillView, error) {
+//
+// R45：技能展示文案（name/descr）的修改与审计同一事务。改名字看着轻，
+// 但它直接是玩家在技能面板看到的文案；审计此前在 handler 提交后补写、
+// 失败只打日志，运营改错一次没有「谁改的、改成什么」可查。
+func (s *Service) AdminUpdateSkill(ctx context.Context, skillID int, patch map[string]any,
+	audit ...AdminAuditCtx) (AdminSkillView, error) {
 	fields := []string{}
 	args := []any{skillID}
 	set := func(col string, v any) {
@@ -1579,8 +1584,17 @@ func (s *Service) AdminUpdateSkill(ctx context.Context, skillID int, patch map[s
 		return AdminSkillView{}, fmt.Errorf("%w: no updatable fields", ErrBadInput)
 	}
 	sql := fmt.Sprintf(`UPDATE skills SET %s WHERE id = $1`, joinComma(fields))
-	if _, err := s.pool.Exec(ctx, sql, args...); err != nil {
-		return AdminSkillView{}, fmt.Errorf("update skill: %w", err)
+	if err := s.DB.Tx(ctx, func(tx txType) error {
+		if _, err := tx.Exec(ctx, sql, args...); err != nil {
+			return fmt.Errorf("update skill: %w", err)
+		}
+		if len(audit) > 0 {
+			return s.AuditTx(ctx, tx, audit[0], "update_skill",
+				strconv.Itoa(skillID), patch)
+		}
+		return nil
+	}); err != nil {
+		return AdminSkillView{}, err
 	}
 	// Read the row back (round 120: the response IS the row the admin table
 	// would show after a refresh).

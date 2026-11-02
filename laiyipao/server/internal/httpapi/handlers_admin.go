@@ -227,11 +227,11 @@ func (s *Server) adminUpdateSkill(c *fiber.Ctx) error {
 	if err := c.BodyParser(&patch); err != nil {
 		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
 	}
-	skill, err := s.Svc.AdminUpdateSkill(c.Context(), id, patch)
+	skill, err := s.Svc.AdminUpdateSkill(c.Context(), id, patch,
+		service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()})
 	if err != nil {
 		return failErr(c, err)
 	}
-	s.Svc.Audit(c.Context(), adminIDFrom(c), "update_skill", strconv.Itoa(id), c.IP(), patch)
 	// 第 120 轮：回读行作为响应（后台契约 { skill: AdminSkill }），
 	// 不再整个重列 adminSkills（那样 res.skill 恒 undefined，
 	// 后台改完技能表行停旧值却弹「已保存」）。
