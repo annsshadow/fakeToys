@@ -13,10 +13,12 @@ pub mod constants;
 pub mod contract_alias;
 pub mod rbac;
 pub mod security;
+pub mod timeout;
 pub mod token;
 
 // Re-export public API for backward compatibility
 pub use constants::*;
 pub use rbac::*;
 pub use security::*;
+pub use timeout::*;
 pub use token::*;

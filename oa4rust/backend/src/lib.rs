@@ -191,6 +191,15 @@ pub async fn create_app(
         // P5：IM 实时协议 WebSocket（realtime crate，自带 RealtimeManager state）
         .merge(realtime::ws_route());
 
+    // R5：全局请求超时。放在路由层内层（后续安全/审计层继续包在外面），
+    // 保证卡住的 handler 与拿不到连接的时刻都有上界；SSE 只受响应头时限约束，
+    // 流式 body 不会被截断（见 shared::middleware::timeout 的用例）。
+    // 默认 30s，REQUEST_TIMEOUT_SECONDS=0 关闭。
+    let app = shared::middleware::apply_request_timeout(
+        app,
+        shared::middleware::request_timeout_from_env()?,
+    );
+
     let app = app
         .layer(axum::middleware::from_fn_with_state(
             security_state.clone(),

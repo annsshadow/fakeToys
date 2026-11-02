@@ -123,7 +123,7 @@ Wechat 8s 超时 + 1MB 响应上限、Fiber 读写超时与 body limit、laiyipa
 | R2 | （并入 R1：边界用例即 R1 的验收证据） | done | — |
 | R3 | laiyipao 连接池：statement_timeout 上界 + 空闲回收可配置 | done | 默认 30s `statement_timeout` 随握手下发（RuntimeParams）；`DB_CONN_IDLE_TIME` 接 `MaxConnIdleTime`。真库证据：`SHOW statement_timeout` = 2s；`pg_sleep(3)` 在 2.08s 被取消（57014，耗时 <2.5s）；设为 0 时会话为 `0`（无限制） |
 | R4 | oa4rust axum 优雅停机（SIGINT/SIGTERM → 停止接新连接、排队在途、宽限期强制退出） | done | 新增 `shared::graceful`：`serve_router_with_shutdown(listener, app, grace, signal)` 组合 `axum::serve(...).with_graceful_shutdown()` 与 `tokio::time::timeout`；`main.rs` 改用该入口，宽限 10s。用例：`drains_in_flight_request`——handler 进入后触发 shutdown，200ms 在途请求仍返回 `200 OK` 且 body=`done`；`forced_exit_after_grace_period`——5s 卡死请求在 100ms 宽限期后返回（实测 ≥90ms 且 <1s），证明不会无限挂住重启。`cargo clippy -p shared --tests -D warnings` 与 `cargo check --bin oa4rust` 通过 |
-| R5 | oa4rust 全局请求超时层 | pending | — |
+| R5 | oa4rust 全局请求超时层（默认 30s，超时 408） | done | 新增 `shared::middleware::timeout`：`REQUEST_TIMEOUT_SECONDS`（未设=30s，`0`=关闭，非法=启动报错），在 `create_app` 路由层内层套 `TimeoutLayer::with_status_code(408)`。用例：500ms handler + 50ms 上界 → 实测 <300ms 返回 408；10ms handler 正常 200；**流式 body 不被截断**（响应头 50ms 内返回、body 200ms 后才吐完仍完整）；`None` 关闭后慢 handler 跑完；`parse_request_timeout` 覆盖默认/`0`/`" 5 "`/`"5s"`/`-1`。`cargo clippy -p shared --tests -D warnings`、`cargo check --bin oa4rust` 通过 |
 | R6 | oa4rust deadpool acquire/wait 超时可配置 | pending | — |
 | R7 | oa4rust 结构化访问日志（耗时/请求 ID） | pending | — |
 | R8 | （并入 R1：413 映射与文案是同一次改动） | done | — |
