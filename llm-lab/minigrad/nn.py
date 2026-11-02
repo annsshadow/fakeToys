@@ -10,12 +10,36 @@
 
 from __future__ import annotations
 
+from collections import OrderedDict
 from dataclasses import dataclass
 
 import numpy as np
 
 from . import engine
 from .engine import Tensor
+
+# 第 84 轮：因果 mask 缓存。mask 只取决于 (T, T_total) 两个形状参数，
+# 旧实现每层、每次前向都重新 `np.ones((T,T_total))` + `np.triu` + 乘法，
+# 训练里同一形状会重复上千次。缓存只存**只读 ndarray**，每次前向仍新建
+# `Tensor` 包装（`.grad` 按调用隔离，不会跨步累加）。
+_MASK_CACHE: "OrderedDict[tuple[int, int], np.ndarray]" = OrderedDict()
+_MASK_CACHE_MAX = 32
+
+
+def _causal_mask(T: int, T_total: int) -> np.ndarray:
+    """返回 (T, T_total) 的上三角 -1e9 mask（同形状复用同一只只读数组）。"""
+    key = (T, T_total)
+    cached = _MASK_CACHE.get(key)
+    if cached is not None:
+        _MASK_CACHE.move_to_end(key)
+        return cached
+    mask = np.triu(np.ones((T, T_total), dtype=np.float64),
+                   k=T_total - T + 1) * -1e9
+    mask.flags.writeable = False
+    _MASK_CACHE[key] = mask
+    if len(_MASK_CACHE) > _MASK_CACHE_MAX:
+        _MASK_CACHE.popitem(last=False)
+    return mask
 
 
 class Module:
@@ -107,16 +131,31 @@ class CausalSelfAttention(Module):
         q, k, v = split_heads(self.q(x)), split_heads(self.k(x)), split_heads(self.v(x))
 
         if cache is not None:
-            if cache.get("k") is not None:
-                k = Tensor(np.concatenate([cache["k"], k.data], axis=2))
-                v = Tensor(np.concatenate([cache["v"], v.data], axis=2))
-            cache["k"], cache["v"] = k.data, v.data
+            # 第 99 轮：旧实现每步 `np.concatenate([cache, new], axis=2)` ——
+            # 生成长度 T 时第 t 步要复制 t×d 个元素，整个解码在 KV 上做 O(T²) 拷贝。
+            # 改为按需翻倍的预分配缓冲：`k_buf`/`v_buf` 存容量，`k`/`v` 仍是对
+            # 「已用长度」的视图（外部可见形状不变），每步只写入新 token 的 K/V。
+            past = 0 if cache.get("k") is None else cache["k"].shape[2]
+            need = past + T
+            for name, new in (("k", k), ("v", v)):
+                buf = cache.get(name + "_buf")
+                if buf is None or buf.shape[2] < need:
+                    cap = max(need, 2 * past)
+                    grown = np.empty((B, H, cap, d), dtype=new.data.dtype)
+                    if past:
+                        grown[:, :, :past] = cache[name]
+                    cache[name + "_buf"] = grown
+                    buf = grown
+                buf[:, :, past:need] = new.data
+                cache[name] = buf[:, :, :need]
+            k = Tensor(cache["k"])
+            v = Tensor(cache["v"])
 
         T_total = k.shape[2]
         # 查询 i（绝对位置 T_past+i）允许看到键 j <= T_past+i。统一写成
         # 上三角 mask：禁掉 j - i >= T_total - T + 1 的位置；无 cache 时
         # T_total == T，恰好退化为普通的 k=1 因果 mask。
-        mask = np.triu(np.ones((T, T_total), dtype=np.float64), k=T_total - T + 1) * -1e9
+        mask = _causal_mask(T, T_total)
         att = engine.softmax((q @ k.transpose((0, 1, 3, 2))) * (1.0 / np.sqrt(d)) + Tensor(mask), axis=-1)
         self.last_att = att.data  # (B, H, T, T_total)，可视化用
         y = att @ v  # (B,H,T,d)

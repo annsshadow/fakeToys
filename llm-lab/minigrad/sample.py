@@ -36,10 +36,18 @@ def _pick_next(last_logits, temperature, top_k, rng):
 
 
 def generate(model, idx, max_new_tokens, temperature=1.0, top_k=None, rng=None):
-    """朴素生成：每步重算整段上下文。idx: 起始 token 列表/数组 (T,)。"""
+    """生成入口：窗口内自动走 KV cache，超出窗口才回退朴素滑窗。
+
+    idx: 起始 token 列表/数组 (T,)。第 90 轮：只要 ``len(idx)+max_new_tokens``
+    不超过 ``block_size``，就直接委托 ``generate_cached`` —— 两者对同一随机源
+    逐 token 等价，但朴素版每步 O(T) 前向，缓存版每步只喂 1 个 token。
+    一旦需要滑窗（前缀会被截断、位置编码随窗口重排），缓存不可复用，保留原实现。
+    """
     rng = rng or np.random
     block_size = model.cfg.block_size
     ids = list(np.asarray(idx).reshape(-1))
+    if len(ids) + max_new_tokens <= block_size:
+        return generate_cached(model, ids, max_new_tokens, temperature, top_k, rng)
     for _ in range(max_new_tokens):
         context = ids[-block_size:]
         logits = model.forward(np.array([context]))  # (1, T, V)

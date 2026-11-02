@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import math
 import os
+import tempfile
 
 import numpy as np
 import torch
@@ -31,10 +32,49 @@ from .model import GPT
 
 
 def get_batch(data, batch_size, block_size, device):
-    ix = torch.randint(len(data) - block_size - 1, (batch_size,))
-    x = torch.stack([torch.from_numpy(data[i : i + block_size].astype(np.int64)) for i in ix])
-    y = torch.stack([torch.from_numpy(data[i + 1 : i + 1 + block_size].astype(np.int64)) for i in ix])
-    return x.to(device), y.to(device)
+    """从 token 流随机取一个 (x, y) 批次，y 是 x 右移一位。
+
+    第 76 轮：旧实现每个样本切两次窗、每窗再 ``astype(np.int64)``（默认
+    ``copy=True``）后 ``torch.stack``——一次 batch 最多 3 份 bs×blk 的整块拷贝，
+    且每样本一次 Python 级 stack，训练循环每步都调用。改为 numpy 一次取
+    bs×(blk+1) 宽窗、必要时只转换一次类型，再 ``from_numpy`` 切出错开一位的
+    两块并 ``contiguous()``：拷贝保持 2×bs×blk（下游 ``view`` 依赖连续性，
+    旧实现返回的也是连续张量），但整批只在 C 层做两次连续化，不再逐样本 stack。
+    """
+    n = len(data) - block_size - 1
+    ix = torch.randint(n, (batch_size,)).numpy()
+    # 第 100 轮：`np.stack([data[i : i + block_size + 1] for i in ix])` 仍是
+    # 逐样本 Python 切片 —— sliding_window_view 一次建出零拷贝的窗口视图，
+    # 再用 `[ix]` 在 C 层取整批（一次连续拷贝），与旧实现逐元素一致。
+    windows = np.lib.stride_tricks.sliding_window_view(
+        np.asarray(data), block_size + 1
+    )[ix]
+    windows = windows.astype(np.int64, copy=False)
+    batch = torch.from_numpy(windows)
+    return batch[:, :-1].contiguous().to(device), batch[:, 1:].contiguous().to(device)
+
+
+def _save_checkpoint(payload, target):
+    """原子写 checkpoint：同目录临时文件 + ``os.replace``。
+
+    第 94 轮：旧实现 ``torch.save`` 直接写 ``ckpt.pt``，训练途中崩溃 / Ctrl+C / 磁盘
+    写满会留下半份文件，断点续训加载到坏 checkpoint。改为先写目标同目录的临时文件，
+    完整落盘后才原子替换；失败时删掉半成品并保留旧 checkpoint。
+    """
+    parent = os.path.dirname(os.path.abspath(target)) or "."
+    fd, tmp = tempfile.mkstemp(
+        prefix=os.path.basename(target) + ".", suffix=".tmp", dir=parent
+    )
+    os.close(fd)
+    try:
+        torch.save(payload, tmp)
+        os.replace(tmp, target)
+    except BaseException:
+        try:
+            os.remove(tmp)
+        except OSError:
+            pass
+        raise
 
 
 def cosine_lr(step, tc: TrainConfig):
@@ -100,7 +140,7 @@ def train(train_data, val_data, cfg: GPTConfig, tc: TrainConfig, device="cpu", m
             val = estimate_loss(model, val_data, tc, cfg.block_size, device)
             print(f"step {step:5d} | val loss {val:.4f}")
             os.makedirs(tc.out_dir, exist_ok=True)
-            torch.save(
+            _save_checkpoint(
                 {"model": model.state_dict(), "cfg": cfg, "step": step, "meta": meta},
                 os.path.join(tc.out_dir, "ckpt.pt"),
             )

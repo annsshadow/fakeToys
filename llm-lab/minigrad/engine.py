@@ -207,16 +207,29 @@ class Tensor:
 
 
 def _topo(root):
+    """迭代式后序 DFS（第 83 轮）。
+
+    旧实现是递归的 `build(v)`：计算图深度超过 Python 递归上限（默认 1000）时
+    `backward()` 在拓扑排序阶段就 `RecursionError`——而训练循环里逐步累积的
+    长链（如逐 token 拼接/残差）很容易越过这条线。改成显式栈 + 「已展开」标记，
+    保持后序语义：操作数总在依赖它的节点之前，`backward()` 反向遍历即可。
+    """
     topo, visited = [], set()
-
-    def build(v):
-        if v not in visited:
-            visited.add(v)
-            for child in v._prev:
-                build(child)
-            topo.append(v)
-
-    build(root)
+    stack = [(root, False)]
+    while stack:
+        node, expanded = stack.pop()
+        if expanded:
+            topo.append(node)
+            continue
+        if node in visited:
+            continue
+        visited.add(node)
+        # 先压「已展开」标记，再把孩子压在上层：孩子的整棵子树处理完，
+        # 才会轮到这个标记，从而得到「孩子先于父节点」的后序。
+        stack.append((node, True))
+        for child in node._prev:
+            if child not in visited:
+                stack.append((child, False))
     return topo
 
 
