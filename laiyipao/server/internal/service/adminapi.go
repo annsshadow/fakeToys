@@ -1449,28 +1449,54 @@ func (s *Service) AdminCreateRedeemCodes(ctx context.Context, count int, reward 
 	if count <= 0 || count > 100 {
 		return nil, fmt.Errorf("%w: count 必须在 1..100", ErrBadInput)
 	}
-	if _, err := json.Marshal(reward); err != nil {
+	raw, err := json.Marshal(reward)
+	if err != nil {
 		return nil, err
 	}
 	out := make([]AdminRedeemCodeView, 0, count)
 	seen := map[string]bool{}
-	for len(out) < count {
-		code, err := randomRedeemCode(12)
-		if err != nil {
-			return nil, fmt.Errorf("generate redeem code: %w", err)
-		}
-		if seen[code] {
-			continue
-		}
-		v, err := s.AdminCreateRedeemCode(ctx, code, reward, maxUses, expiresAt)
-		if err != nil {
-			if isUniqueViolation(err) {
-				continue // 极小概率冲突：重新生成
+	// 整批必须**同一事务**落库。改前是逐条 autocommit：第 N 条失败时
+	// 接口返回错误，库里却已留下前 N-1 个码 —— 运营拿不到清单，既不知道
+	// 哪些码生效，重试又会生成一批新码（旧码仍可兑，奖励重复发放）。
+	err = s.DB.Tx(ctx, func(tx txType) error {
+		for len(out) < count {
+			code, err := randomRedeemCode(12)
+			if err != nil {
+				return fmt.Errorf("generate redeem code: %w", err)
 			}
-			return nil, err
+			if seen[code] {
+				continue
+			}
+			// 唯一冲突用 savepoint 隔离：PG 里一条语句失败会把整个事务判为
+			// aborted，不隔离的话后续 INSERT 全部报 25P02，没法「换码重试」。
+			sp, err := tx.Begin(ctx)
+			if err != nil {
+				return err
+			}
+			var id int
+			if err := sp.QueryRow(ctx,
+				`INSERT INTO redeem_codes (code, reward, max_uses, expires_at)
+				 VALUES ($1,$2,$3,$4) RETURNING id`,
+				code, raw, maxUses, expiresAt).Scan(&id); err != nil {
+				_ = sp.Rollback(ctx)
+				if isUniqueViolation(err) {
+					continue // 极小概率冲突：换码重试
+				}
+				return fmt.Errorf("create redeem code: %w", err)
+			}
+			if err := sp.Commit(ctx); err != nil {
+				return err
+			}
+			seen[code] = true
+			out = append(out, AdminRedeemCodeView{
+				ID: id, Code: code, Reward: reward, MaxUses: maxUses,
+				ExpiresAt: expiresAt, Enabled: true,
+			})
 		}
-		seen[code] = true
-		out = append(out, v)
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 	return out, nil
 }
