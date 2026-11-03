@@ -99,7 +99,13 @@ mod tests {
     async fn request(addr: SocketAddr, path: &str) -> String {
         let mut stream = tokio::net::TcpStream::connect(addr).await.unwrap();
         stream
-            .write_all(format!("GET {} HTTP/1.1\r\nHost: test\r\nConnection: close\r\n\r\n", path).as_bytes())
+            .write_all(
+                format!(
+                    "GET {} HTTP/1.1\r\nHost: test\r\nConnection: close\r\n\r\n",
+                    path
+                )
+                .as_bytes(),
+            )
             .await
             .unwrap();
         let mut buf = Vec::new();

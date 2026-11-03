@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """O10 族①静态扫描：sea-orm 实体字段类型 vs migration 列类型。
 
 解析 crates/*/src/entities/*.rs 的 DeriveEntityModel（table_name + 字段类型），

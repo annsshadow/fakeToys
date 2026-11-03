@@ -136,7 +136,11 @@ async fn person_can_manage_event(
 /// 任何登录用户可读他人私密日程（IDOR 矩阵 canary 实证）。
 /// 返回 Ok(false) 兼含「事件不存在」——handler 统一以 403 回应，
 /// 不区分「不存在」与「无权」，不暴露存在性。
-async fn person_can_read_event(pool: &Pool, person: &str, event_id: &str) -> Result<bool, AppError> {
+async fn person_can_read_event(
+    pool: &Pool,
+    person: &str,
+    event_id: &str,
+) -> Result<bool, AppError> {
     if require_person_is_manager(pool, person).await? {
         return Ok(true);
     }
@@ -175,7 +179,6 @@ async fn person_can_read_calendar(
     }
     person_can_manage_calendar(pool, person, calendar_id).await
 }
-
 
 // ═══════════════════════════ 第 1 批（既有 7 条）═════════════════════════
 
@@ -804,7 +807,9 @@ pub async fn event_list_filter_sample(
     let rows = if is_manager {
         client.query(&sql, &[&calendar_id]).await
     } else {
-        client.query(&sql, &[&calendar_id, &session.person_unique]).await
+        client
+            .query(&sql, &[&calendar_id, &session.person_unique])
+            .await
     }
     .map_err(|_| AppError::Internal)?;
     let items: Vec<Value> = rows

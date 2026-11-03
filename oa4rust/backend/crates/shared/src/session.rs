@@ -45,7 +45,8 @@ pub struct SessionManager {
     // O9：人员禁用状态缓存（TTL 30s）。改前 locked 只在登录时检查：
     // 禁用用户的在途会话一直有效到自然过期（O9 IDOR 矩阵实测：禁用身份
     // 在全部受保护路由上照常 200）。
-    person_status_cache: Arc<tokio::sync::RwLock<std::collections::HashMap<String, (bool, std::time::Instant)>>>,
+    person_status_cache:
+        Arc<tokio::sync::RwLock<std::collections::HashMap<String, (bool, std::time::Instant)>>>,
 }
 
 /// 负缓存 TTL：无效 token 在 5 秒内的重放不再查库。
@@ -56,8 +57,7 @@ const NEGATIVE_CACHE_MAX: usize = 1024;
 /// O9：禁用状态缓存 TTL（有意取舍 = 30s，测试 `person_status_cache_ttl_is_pinned` 钉住）。
 /// 调大 = 禁用后最坏生效延迟变大（安全回退），调小 = 每请求查库频次变高（性能）。
 /// 变更必须同步改测试断言并在台账写明理由。
-pub(crate) const PERSON_STATUS_CACHE_TTL: std::time::Duration =
-    std::time::Duration::from_secs(30);
+pub(crate) const PERSON_STATUS_CACHE_TTL: std::time::Duration = std::time::Duration::from_secs(30);
 
 /// 缓存项是否新鲜（未过 TTL）。抽成纯函数以便边界测试不真等 30s。
 fn person_status_entry_fresh(at: std::time::Instant) -> bool {
@@ -86,7 +86,9 @@ impl SessionManager {
             hmac_secret: std::env::var("SESSION_HMAC_SECRET").ok(),
             auth_config,
             negative_cache: Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
-            person_status_cache: Arc::new(tokio::sync::RwLock::new(std::collections::HashMap::new())),
+            person_status_cache: Arc::new(tokio::sync::RwLock::new(
+                std::collections::HashMap::new(),
+            )),
         };
         manager.start_threshold_scanner().start_session_sweeper()
     }
@@ -108,7 +110,9 @@ impl SessionManager {
             pool: Some(pool),
             hmac_secret: std::env::var("SESSION_HMAC_SECRET").ok(),
             auth_config,
-            person_status_cache: Arc::new(tokio::sync::RwLock::new(std::collections::HashMap::new())),
+            person_status_cache: Arc::new(tokio::sync::RwLock::new(
+                std::collections::HashMap::new(),
+            )),
             negative_cache: Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
         };
         manager.start_threshold_scanner().start_session_sweeper()
@@ -337,17 +341,18 @@ impl SessionManager {
                 .await
                 .map(|row| {
                     row.map(|r| {
-                        r.get::<_, bool>("locked") || r.get::<_, Option<NaiveDateTime>>("deleted_at").is_some()
+                        r.get::<_, bool>("locked")
+                            || r.get::<_, Option<NaiveDateTime>>("deleted_at").is_some()
                     })
                     .unwrap_or(false)
                 })
                 .unwrap_or(false),
             Err(_) => false,
         };
-        self.person_status_cache
-            .write()
-            .await
-            .insert(person_unique.to_string(), (disabled, std::time::Instant::now()));
+        self.person_status_cache.write().await.insert(
+            person_unique.to_string(),
+            (disabled, std::time::Instant::now()),
+        );
         disabled
     }
 
@@ -644,7 +649,9 @@ mod tests {
                 session_ttl_seconds: 7200,
             },
             negative_cache: Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
-            person_status_cache: Arc::new(tokio::sync::RwLock::new(std::collections::HashMap::new())),
+            person_status_cache: Arc::new(tokio::sync::RwLock::new(
+                std::collections::HashMap::new(),
+            )),
         };
 
         let locked_sess = manager
@@ -990,7 +997,9 @@ mod tests {
                 session_ttl_seconds: ttl_seconds,
             },
             negative_cache: Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
-            person_status_cache: Arc::new(tokio::sync::RwLock::new(std::collections::HashMap::new())),
+            person_status_cache: Arc::new(tokio::sync::RwLock::new(
+                std::collections::HashMap::new(),
+            )),
         }
     }
 

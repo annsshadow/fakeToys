@@ -33,7 +33,11 @@ fn month_range(
     year: i32,
     month: i32,
 ) -> Result<(chrono::NaiveDateTime, chrono::NaiveDateTime), AppError> {
-    let (ny, nm) = if month == 12 { (year + 1, 1) } else { (year, month + 1) };
+    let (ny, nm) = if month == 12 {
+        (year + 1, 1)
+    } else {
+        (year, month + 1)
+    };
     let start = chrono::NaiveDate::from_ymd_opt(year, month as u32, 1);
     let end = chrono::NaiveDate::from_ymd_opt(ny, nm as u32, 1);
     match (start, end) {

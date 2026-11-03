@@ -468,13 +468,21 @@ async fn card_page(
     // O10 实证：非 withgroup 分支 cond 不含 $2（group_type），多绑会触发
     // tokio 客户端 Parameters(2,1) / PG 42P18（$2 类型无法推断）→ 500。按分支绑参。
     let total_params: &[&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)] =
-        if with_group { &[&key, &group_type] } else { &[&key] };
+        if with_group {
+            &[&key, &group_type]
+        } else {
+            &[&key]
+        };
     let total: i64 = client
         .query_one(&total_sql, total_params)
         .await
         .map_err(|_| AppError::Internal)?
         .get("cnt");
-    let (limit_ph, offset_ph) = if with_group { ("$3", "$4") } else { ("$2", "$3") };
+    let (limit_ph, offset_ph) = if with_group {
+        ("$3", "$4")
+    } else {
+        ("$2", "$3")
+    };
     let data_sql = format!(
         "SELECT id, name, group_type, distinguished_name, mobile, office_phone, address, description, creator, create_time::text
            FROM x_org_personcard WHERE {cond} ORDER BY create_time DESC LIMIT {limit_ph} OFFSET {offset_ph}"

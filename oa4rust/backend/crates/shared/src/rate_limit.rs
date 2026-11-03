@@ -65,7 +65,7 @@ fn enforce_key_cap(table: &mut std::collections::HashMap<String, Vec<Instant>>) 
         .iter()
         .map(|(k, v)| (v.last().copied(), k.clone()))
         .collect();
-    entries.sort_unstable_by(|a, b| a.0.cmp(&b.0));
+    entries.sort_unstable_by_key(|a| a.0);
 
     let n = entries.len() - EVICT_TARGET;
     let evicted = n;
@@ -369,7 +369,13 @@ mod tests {
             matches!(err, AppError::BadRequest(_)),
             "新 key 超限仍须 429，实际 {err:?}"
         );
-        let counted = limiter.attempts.read().await.get(fresh).cloned().unwrap_or_default();
+        let counted = limiter
+            .attempts
+            .read()
+            .await
+            .get(fresh)
+            .cloned()
+            .unwrap_or_default();
         assert_eq!(counted.len(), 2, "计数必须准确（被拒的第 3 次不入表）");
     }
 

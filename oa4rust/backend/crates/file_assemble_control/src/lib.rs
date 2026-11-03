@@ -1246,51 +1246,51 @@ pub async fn attachment_id(
         Some(row) => {
             require_file_read_owner(&pool, &session, &row).await?;
             Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                (
-                    "name".to_string(),
-                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
-                ),
-                (
-                    "person".to_string(),
-                    Value::String(row.get::<_, Option<String>>("person").unwrap_or_default()),
-                ),
-                (
-                    "referenceType".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("reference_type")
-                            .unwrap_or_default(),
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    (
+                        "name".to_string(),
+                        Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
                     ),
-                ),
-                (
-                    "extension".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("extension")
-                            .unwrap_or_default(),
+                    (
+                        "person".to_string(),
+                        Value::String(row.get::<_, Option<String>>("person").unwrap_or_default()),
                     ),
-                ),
-                (
-                    "length".to_string(),
-                    Value::Number(serde_json::Number::from(
-                        row.get::<_, Option<i64>>("length").unwrap_or(0),
-                    )),
-                ),
-                (
-                    "mimeType".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("mime_type")
-                            .unwrap_or_default(),
+                    (
+                        "referenceType".to_string(),
+                        Value::String(
+                            row.get::<_, Option<String>>("reference_type")
+                                .unwrap_or_default(),
+                        ),
                     ),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("create_time")
-                            .unwrap_or_default(),
+                    (
+                        "extension".to_string(),
+                        Value::String(
+                            row.get::<_, Option<String>>("extension")
+                                .unwrap_or_default(),
+                        ),
                     ),
-                ),
-            ]),
+                    (
+                        "length".to_string(),
+                        Value::Number(serde_json::Number::from(
+                            row.get::<_, Option<i64>>("length").unwrap_or(0),
+                        )),
+                    ),
+                    (
+                        "mimeType".to_string(),
+                        Value::String(
+                            row.get::<_, Option<String>>("mime_type")
+                                .unwrap_or_default(),
+                        ),
+                    ),
+                    (
+                        "createTime".to_string(),
+                        Value::String(
+                            row.get::<_, Option<String>>("create_time")
+                                .unwrap_or_default(),
+                        ),
+                    ),
+                ]),
             ))))
         }
         None => Ok(Json(ActionResult::error("attachment not found"))),
@@ -1458,7 +1458,13 @@ pub async fn attachment_id_update_callback_callback(
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    attachment_id_update(pool, Extension(session), axum::extract::Path(id), axum::extract::Json(body)).await
+    attachment_id_update(
+        pool,
+        Extension(session),
+        axum::extract::Path(id),
+        axum::extract::Json(body),
+    )
+    .await
 }
 
 #[axum::debug_handler]
@@ -2054,51 +2060,51 @@ pub async fn attachment2_id(
         Some(row) => {
             require_file_read_owner(&pool, &session, &row).await?;
             Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                (
-                    "name".to_string(),
-                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
-                ),
-                (
-                    "person".to_string(),
-                    Value::String(row.get::<_, Option<String>>("person").unwrap_or_default()),
-                ),
-                (
-                    "referenceType".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("reference_type")
-                            .unwrap_or_default(),
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    (
+                        "name".to_string(),
+                        Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
                     ),
-                ),
-                (
-                    "extension".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("extension")
-                            .unwrap_or_default(),
+                    (
+                        "person".to_string(),
+                        Value::String(row.get::<_, Option<String>>("person").unwrap_or_default()),
                     ),
-                ),
-                (
-                    "length".to_string(),
-                    Value::Number(serde_json::Number::from(
-                        row.get::<_, Option<i64>>("length").unwrap_or(0),
-                    )),
-                ),
-                (
-                    "mimeType".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("mime_type")
-                            .unwrap_or_default(),
+                    (
+                        "referenceType".to_string(),
+                        Value::String(
+                            row.get::<_, Option<String>>("reference_type")
+                                .unwrap_or_default(),
+                        ),
                     ),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("create_time")
-                            .unwrap_or_default(),
+                    (
+                        "extension".to_string(),
+                        Value::String(
+                            row.get::<_, Option<String>>("extension")
+                                .unwrap_or_default(),
+                        ),
                     ),
-                ),
-            ]),
+                    (
+                        "length".to_string(),
+                        Value::Number(serde_json::Number::from(
+                            row.get::<_, Option<i64>>("length").unwrap_or(0),
+                        )),
+                    ),
+                    (
+                        "mimeType".to_string(),
+                        Value::String(
+                            row.get::<_, Option<String>>("mime_type")
+                                .unwrap_or_default(),
+                        ),
+                    ),
+                    (
+                        "createTime".to_string(),
+                        Value::String(
+                            row.get::<_, Option<String>>("create_time")
+                                .unwrap_or_default(),
+                        ),
+                    ),
+                ]),
             ))))
         }
         None => Ok(Json(ActionResult::error("attachment not found"))),

@@ -12,11 +12,13 @@
 
 import time
 
-import torch
-import torch.nn.functional as F
+import pytest
 
-from torchgpt.config import GPTConfig
-from torchgpt.model import GPT
+torch = pytest.importorskip("torch")  # 没装 torch 就跳过本文件全部用例
+import torch.nn.functional as F  # noqa: E402
+
+from torchgpt.config import GPTConfig  # noqa: E402
+from torchgpt.model import GPT  # noqa: E402
 
 
 def _tiny(block_size=16, n_layer=2, n_head=2, n_embd=32, vocab=13):

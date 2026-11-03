@@ -53,10 +53,7 @@ pub fn router(pool: Pool) -> Router {
 /// 那是把内部拓扑与配置细节暴露在公开端点上。原因只进服务端日志。
 async fn ready(State(pool): State<Pool>) -> (StatusCode, &'static str) {
     let check = async {
-        let client = pool
-            .get()
-            .await
-            .map_err(|e| format!("acquire: {e}"))?;
+        let client = pool.get().await.map_err(|e| format!("acquire: {e}"))?;
         client
             .query_one("SELECT 1", &[])
             .await

@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // multi-instance-check.mjs — R87 多副本部署就绪性矩阵（可复跑）。
 //
 // # 干什么

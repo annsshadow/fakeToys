@@ -146,7 +146,9 @@ mod idor_matrix {
         let crates = root.join("crates");
         let mut stack = vec![crates];
         while let Some(dir) = stack.pop() {
-            let Ok(entries) = std::fs::read_dir(&dir) else { continue };
+            let Ok(entries) = std::fs::read_dir(&dir) else {
+                continue;
+            };
             for e in entries.flatten() {
                 let p = e.path();
                 if p.is_dir() {
@@ -159,7 +161,9 @@ mod idor_matrix {
                     if name.contains("test") {
                         continue;
                     }
-                    let Ok(text) = std::fs::read_to_string(&p) else { continue };
+                    let Ok(text) = std::fs::read_to_string(&p) else {
+                        continue;
+                    };
                     let prod = strip_test_modules(&text);
                     collect_routes(&prod, &mut out);
                 }
@@ -243,7 +247,9 @@ mod idor_matrix {
                 continue;
             }
             let start = q + 1;
-            let Some(endq) = text[start..].find('"') else { break };
+            let Some(endq) = text[start..].find('"') else {
+                break;
+            };
             let path = &text[start..start + endq];
             // 找到配对右括号前的区段，抽其中的方法调用
             let mut j = start + endq + 1;
@@ -528,7 +534,9 @@ mod idor_matrix {
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
     async fn idor_exhaustive_matrix() {
-        let Some((app, pool)) = setup().await else { return };
+        let Some((app, pool)) = setup().await else {
+            return;
+        };
 
         let root = Path::new(env!("CARGO_MANIFEST_DIR"));
         let all = scan_routes(root);
@@ -540,7 +548,11 @@ mod idor_matrix {
             "候选路由数 {} 低于下限 800（注册表扫描异常？）",
             candidates.len()
         );
-        eprintln!("IDOR 矩阵候选路由: {}（全量注册 {}）", candidates.len(), all.len());
+        eprintln!(
+            "IDOR 矩阵候选路由: {}（全量注册 {}）",
+            candidates.len(),
+            all.len()
+        );
 
         let mut defects: Vec<String> = Vec::new();
         // handler500：key=「METHOD 路径」，value=body 摘录——按路由去重
@@ -563,10 +575,7 @@ mod idor_matrix {
             let url = fill_params(&r.path);
             // 豁免/公共读面按「填充后的具体 URL」判定——与运行时中间件看到的口径一致
             let exempt = is_auth_exempt(&url);
-            let public = matches!(
-                registry.get_permission(&url),
-                Some(PermissionLevel::Public)
-            );
+            let public = matches!(registry.get_permission(&url), Some(PermissionLevel::Public));
             if exempt {
                 exempt_anon += 1;
             }
@@ -668,7 +677,10 @@ mod idor_matrix {
             defects.push(format!("cal_event 夹具被改动: {evt_title}"));
         }
         let file_exists: bool = client
-            .query_one("SELECT EXISTS(SELECT 1 FROM file_file WHERE id = $1)", &[&FILE_ID])
+            .query_one(
+                "SELECT EXISTS(SELECT 1 FROM file_file WHERE id = $1)",
+                &[&FILE_ID],
+            )
             .await
             .unwrap()
             .get(0);
@@ -697,21 +709,22 @@ mod idor_matrix {
         // 基线 = 2026-11-03 run15 实测 161 条（全部 owner 同 500，无越权掩盖）。
         // O10 收官：161 条全修，基线收缩为空集（零容忍：任何新增 handler 级 500 即红）。
         // 解析口径：跳过空行与 `#` 注释行。
-        let baseline_path = Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("tests/idor_handler500_baseline.txt");
-        let baseline: std::collections::BTreeSet<String> =
-            std::fs::read_to_string(&baseline_path)
-                .expect("handler500 基线文件必须存在（删文件=废棘轮）")
-                .lines()
-                .map(|l| l.trim().to_string())
-                .filter(|l| !l.is_empty() && !l.starts_with('#'))
-                .collect();
-        let current: std::collections::BTreeSet<String> =
-            handler500.keys().cloned().collect();
+        let baseline_path =
+            Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/idor_handler500_baseline.txt");
+        let baseline: std::collections::BTreeSet<String> = std::fs::read_to_string(&baseline_path)
+            .expect("handler500 基线文件必须存在（删文件=废棘轮）")
+            .lines()
+            .map(|l| l.trim().to_string())
+            .filter(|l| !l.is_empty() && !l.starts_with('#'))
+            .collect();
+        let current: std::collections::BTreeSet<String> = handler500.keys().cloned().collect();
         let new_entries: Vec<&String> = current.difference(&baseline).collect();
         let fixed: Vec<&String> = baseline.difference(&current).collect();
         if !fixed.is_empty() {
-            eprintln!("== handler500 基线可收缩 {} 条（已修复，请从基线文件删除）==", fixed.len());
+            eprintln!(
+                "== handler500 基线可收缩 {} 条（已修复，请从基线文件删除）==",
+                fixed.len()
+            );
             for f in &fixed {
                 eprintln!("  [已修复] {f}");
             }
@@ -722,7 +735,10 @@ mod idor_matrix {
             new_entries.len(),
             new_entries
                 .iter()
-                .map(|k| format!("{k} {}", handler500.get(*k).map(|v| v.as_str()).unwrap_or("")))
+                .map(|k| format!(
+                    "{k} {}",
+                    handler500.get(*k).map(|v| v.as_str()).unwrap_or("")
+                ))
                 .collect::<Vec<_>>()
                 .join("\n")
         );

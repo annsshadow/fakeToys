@@ -351,9 +351,15 @@ fn parse_created_name_survives_multibyte_and_still_parses() {
         Some("PP_Y_TABLE".to_string())
     );
     // 非表/视图（索引/序列）不认
-    assert_eq!(parse_created_name(r#"CREATE INDEX "idx_x" ON t (c)"#, 6), None);
+    assert_eq!(
+        parse_created_name(r#"CREATE INDEX "idx_x" ON t (c)"#, 6),
+        None
+    );
     // 全小写引号关系不在本守卫管辖（大小写折叠后与小写表同名）
-    assert_eq!(parse_created_name(r#"CREATE TABLE "lower_t" (id int)"#, 6), None);
+    assert_eq!(
+        parse_created_name(r#"CREATE TABLE "lower_t" (id int)"#, 6),
+        None
+    );
 
     // 全链路：迁移文件里中文注释 + 真实建表混排，created_relations 不崩且收齐
     let dir = std::env::temp_dir().join(format!("o4_guard_{}", std::process::id()));
@@ -364,7 +370,10 @@ fn parse_created_name_survives_multibyte_and_still_parses() {
     )
     .unwrap();
     let created = created_relations(&dir);
-    assert!(created.contains("PP_REAL_T"), "真实建表必须收齐: {created:?}");
+    assert!(
+        created.contains("PP_REAL_T"),
+        "真实建表必须收齐: {created:?}"
+    );
     std::fs::remove_dir_all(&dir).ok();
 }
 

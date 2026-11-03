@@ -23,7 +23,8 @@ async fn app() -> Router {
 
 #[tokio::test]
 async fn test_uuid_random_returns_uuid() {
-    let response = app().await
+    let response = app()
+        .await
         .oneshot(
             Request::builder()
                 .uri("/api/cms/uuid/random")
@@ -50,7 +51,8 @@ async fn test_uuid_random_returns_uuid() {
 
 #[tokio::test]
 async fn test_template_form_list_returns_data() {
-    let response = app().await
+    let response = app()
+        .await
         .oneshot(
             Request::builder()
                 .uri("/api/cms/templateform/list")
@@ -65,7 +67,8 @@ async fn test_template_form_list_returns_data() {
 
 #[tokio::test]
 async fn test_view_publish_route_exists() {
-    let response = app().await
+    let response = app()
+        .await
         .oneshot(
             Request::builder()
                 .uri("/api/cms/view/publish/view-001")
@@ -85,7 +88,8 @@ async fn test_view_publish_route_exists() {
 
 #[tokio::test]
 async fn test_view_unpublish_route_exists() {
-    let response = app().await
+    let response = app()
+        .await
         .oneshot(
             Request::builder()
                 .uri("/api/cms/view/unpublish/view-001")

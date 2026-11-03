@@ -34,9 +34,10 @@ pub async fn bpmn_process_flow() {
         .expect("test database not initialized; call init_test_database() first")
         .clone();
 
-    let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
-        .await
-        .expect("failed to start test server");
+    let (_addr, server_handle, token) =
+        crate::integration_tests::helpers::setup_test_server(pool.clone())
+            .await
+            .expect("failed to start test server");
 
     let client = Client::builder()
         .timeout(Duration::from_secs(10))
@@ -52,7 +53,10 @@ pub async fn bpmn_process_flow() {
 
     // Step 1: Start a process (work/create). Inserts x_work (status=running).
     let create_resp = client
-        .post(format!("{}/api/processplatform/service/processing/work/create", base))
+        .post(format!(
+            "{}/api/processplatform/service/processing/work/create",
+            base
+        ))
         .header("Authorization", &auth_header)
         .json(&json!({
             "processId": process_id,
@@ -69,7 +73,10 @@ pub async fn bpmn_process_flow() {
         "work/create failed: {}",
         create_resp.text().await.unwrap_or_default()
     );
-    let create_body: serde_json::Value = create_resp.json().await.expect("invalid work/create response");
+    let create_body: serde_json::Value = create_resp
+        .json()
+        .await
+        .expect("invalid work/create response");
     let work_id = create_body["data"]["id"]
         .as_str()
         .expect("work/create did not return a work id")
@@ -152,12 +159,15 @@ pub async fn bpmn_process_flow() {
         .await
         .expect("process complex request failed");
     assert_eq!(complex_resp.status(), reqwest::StatusCode::OK);
-    let complex_body: serde_json::Value = complex_resp.json().await.expect("invalid complex response");
+    let complex_body: serde_json::Value =
+        complex_resp.json().await.expect("invalid complex response");
     let tasks = complex_body["data"]["tasks"]
         .as_array()
         .expect("process complex missing tasks array");
     assert!(
-        tasks.iter().any(|t| t["id"].as_str() == Some(task_id.as_str())),
+        tasks
+            .iter()
+            .any(|t| t["id"].as_str() == Some(task_id.as_str())),
         "completed task not present in process complex view"
     );
     info!(task_count = %tasks.len(), "process complex reloaded with task");
@@ -190,9 +200,10 @@ pub async fn bpmn_task_actions_flow() {
         .expect("test database not initialized; call init_test_database() first")
         .clone();
 
-    let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
-        .await
-        .expect("failed to start test server");
+    let (_addr, server_handle, token) =
+        crate::integration_tests::helpers::setup_test_server(pool.clone())
+            .await
+            .expect("failed to start test server");
 
     let client = Client::builder()
         .timeout(Duration::from_secs(10))
@@ -202,7 +213,12 @@ pub async fn bpmn_task_actions_flow() {
     let base = format!("http://{}", _addr);
     let auth_header = format!("Bearer {}", token);
 
-    async fn start_work(client: &Client, base: &str, auth_header: &str, suffix: &str) -> (String, String) {
+    async fn start_work(
+        client: &Client,
+        base: &str,
+        auth_header: &str,
+        suffix: &str,
+    ) -> (String, String) {
         let pid = format!("bpmn-it-{}-{}", suffix, std::process::id());
         let aid = format!("bpmn-it-{}-app-{}", suffix, std::process::id());
         let create = client
@@ -297,7 +313,9 @@ pub async fn bpmn_task_actions_flow() {
     assert_eq!(ret_body["data"]["taskStatus"].as_str(), Some("pending"));
     // genuine DB writes: x_record(type='return') must exist
     let rec = pool
-        .as_pg().unwrap().get()
+        .as_pg()
+        .unwrap()
+        .get()
         .await
         .expect("pg client")
         .query_opt(
@@ -309,7 +327,9 @@ pub async fn bpmn_task_actions_flow() {
     assert!(rec.is_some(), "x_record of type 'return' was not written");
     // reactivated task is pending in DB
     let tk = pool
-        .as_pg().unwrap().get()
+        .as_pg()
+        .unwrap()
+        .get()
         .await
         .expect("pg client")
         .query_one("SELECT task_status FROM x_task WHERE id = $1", &[&task_a])
@@ -345,7 +365,9 @@ pub async fn bpmn_task_actions_flow() {
     assert_eq!(dis_body["data"]["workStatus"].as_str(), Some("rejected"));
     // genuine DB write: x_record(type='disagree') must exist
     let rec_b = pool
-        .as_pg().unwrap().get()
+        .as_pg()
+        .unwrap()
+        .get()
         .await
         .expect("pg client")
         .query_opt(
@@ -354,7 +376,10 @@ pub async fn bpmn_task_actions_flow() {
         )
         .await
         .expect("record B query failed");
-    assert!(rec_b.is_some(), "x_record of type 'disagree' was not written");
+    assert!(
+        rec_b.is_some(),
+        "x_record of type 'disagree' was not written"
+    );
     info!(task_b = %task_b, "task disagreed and work rejected");
 
     server_handle.abort();
@@ -384,9 +409,10 @@ pub async fn bpmn_countersign_flow() {
         .expect("test database not initialized; call init_test_database() first")
         .clone();
 
-    let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
-        .await
-        .expect("failed to start test server");
+    let (_addr, server_handle, token) =
+        crate::integration_tests::helpers::setup_test_server(pool.clone())
+            .await
+            .expect("failed to start test server");
 
     let client = Client::builder()
         .timeout(Duration::from_secs(10))
@@ -396,7 +422,12 @@ pub async fn bpmn_countersign_flow() {
     let base = format!("http://{}", _addr);
     let auth_header = format!("Bearer {}", token);
 
-    async fn start_work(client: &Client, base: &str, auth_header: &str, suffix: &str) -> (String, String) {
+    async fn start_work(
+        client: &Client,
+        base: &str,
+        auth_header: &str,
+        suffix: &str,
+    ) -> (String, String) {
         let pid = format!("bpmn-cs-{}-{}", suffix, std::process::id());
         let aid = format!("bpmn-cs-{}-app-{}", suffix, std::process::id());
         let create = client
@@ -492,7 +523,9 @@ pub async fn bpmn_countersign_flow() {
     assert_eq!(a1_body["data"]["workStatus"].as_str(), Some("processing"));
     // genuine DB: task is processing, exactly one agree record so far
     let tk_a = pool
-        .as_pg().unwrap().get()
+        .as_pg()
+        .unwrap()
+        .get()
         .await
         .expect("pg client")
         .query_one("SELECT task_status FROM x_task WHERE id = $1", &[&task_a])
@@ -500,7 +533,9 @@ pub async fn bpmn_countersign_flow() {
         .expect("task query failed");
     assert_eq!(tk_a.get::<_, &str>("task_status"), "processing");
     let agreed_n: i64 = pool
-        .as_pg().unwrap().get()
+        .as_pg()
+        .unwrap()
+        .get()
         .await
         .expect("pg client")
         .query_one(
@@ -536,7 +571,9 @@ pub async fn bpmn_countersign_flow() {
     assert_eq!(a2_body["data"]["taskStatus"].as_str(), Some("completed"));
     assert_eq!(a2_body["data"]["workStatus"].as_str(), Some("completed"));
     let agreed_n2: i64 = pool
-        .as_pg().unwrap().get()
+        .as_pg()
+        .unwrap()
+        .get()
         .await
         .expect("pg client")
         .query_one(
@@ -592,7 +629,9 @@ pub async fn bpmn_countersign_flow() {
     assert_eq!(b2_body["data"]["taskStatus"].as_str(), Some("rejected"));
     assert_eq!(b2_body["data"]["workStatus"].as_str(), Some("rejected"));
     let rec_b: Option<String> = pool
-        .as_pg().unwrap().get()
+        .as_pg()
+        .unwrap()
+        .get()
         .await
         .expect("pg client")
         .query_opt(
@@ -602,7 +641,10 @@ pub async fn bpmn_countersign_flow() {
         .await
         .expect("record B query failed")
         .map(|r| r.get("record_type"));
-    assert!(rec_b.is_some(), "x_record of type 'disagree' was not written");
+    assert!(
+        rec_b.is_some(),
+        "x_record of type 'disagree' was not written"
+    );
     info!(task_b = %task_b, "dave disagreed, countersign aborted");
 
     server_handle.abort();

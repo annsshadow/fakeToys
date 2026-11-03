@@ -308,9 +308,7 @@ pub async fn trace_middleware(request: Request<Body>, next: Next) -> Response {
     let status = response.status().as_u16();
 
     if let Ok(value) = HeaderValue::from_str(&request_id) {
-        response
-            .headers_mut()
-            .insert(request_id_header(), value);
+        response.headers_mut().insert(request_id_header(), value);
     }
 
     if response.status().is_server_error() {
@@ -803,7 +801,10 @@ mod cov_middleware_tests {
 
         assert!(sanitize_request_id("").is_none());
         assert!(sanitize_request_id("abc\" def").is_none());
-        assert!(sanitize_request_id(&"a".repeat(65)).is_none(), "超长必须拒绝");
+        assert!(
+            sanitize_request_id(&"a".repeat(65)).is_none(),
+            "超长必须拒绝"
+        );
         assert_eq!(
             sanitize_request_id(" ok-id_1.2 "),
             Some("ok-id_1.2".to_string()),

@@ -40,9 +40,7 @@ fn parse_request_timeout(raw: Option<&str>) -> anyhow::Result<Option<Duration>> 
         Some(raw) => {
             let trimmed = raw.trim();
             let secs: u64 = trimmed.parse().map_err(|_| {
-                anyhow::anyhow!(
-                    "{REQUEST_TIMEOUT_ENV}={raw:?} 不是合法秒数（整数，0 表示关闭）"
-                )
+                anyhow::anyhow!("{REQUEST_TIMEOUT_ENV}={raw:?} 不是合法秒数（整数，0 表示关闭）")
             })?;
             Ok(if secs == 0 {
                 None
@@ -54,10 +52,7 @@ fn parse_request_timeout(raw: Option<&str>) -> anyhow::Result<Option<Duration>> 
 }
 
 /// 便于调用点统一写法：有值就套层，`None` 原样返回。
-pub fn apply_request_timeout(
-    router: axum::Router,
-    timeout: Option<Duration>,
-) -> axum::Router {
+pub fn apply_request_timeout(router: axum::Router, timeout: Option<Duration>) -> axum::Router {
     match timeout {
         // 408 而不是 500：语义是「服务端等不了」，客户端可以安全重试。
         Some(d) => router.layer(TimeoutLayer::with_status_code(

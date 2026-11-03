@@ -25,9 +25,10 @@ pub async fn cms_document_crud_flow() {
         .expect("test database not initialized; call init_test_database() first")
         .clone();
 
-    let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
-        .await
-        .expect("failed to start test server");
+    let (_addr, server_handle, token) =
+        crate::integration_tests::helpers::setup_test_server(pool.clone())
+            .await
+            .expect("failed to start test server");
 
     let client = Client::builder()
         .timeout(Duration::from_secs(10))
@@ -41,7 +42,10 @@ pub async fn cms_document_crud_flow() {
 
     // Step 1: Create (publish) a document
     let create_resp = client
-        .post(format!("{}/api/cms_assemble_control/data/document/create", base))
+        .post(format!(
+            "{}/api/cms_assemble_control/data/document/create",
+            base
+        ))
         .header("Authorization", &auth_header)
         .json(&json!({
             "id": doc_id,
@@ -76,7 +80,9 @@ pub async fn cms_document_crud_flow() {
         .expect("list document request failed");
     assert_eq!(list_resp.status(), reqwest::StatusCode::OK);
     let list_body: serde_json::Value = list_resp.json().await.expect("invalid list response");
-    let docs = list_body["data"]["data"].as_array().expect("data array missing");
+    let docs = list_body["data"]["data"]
+        .as_array()
+        .expect("data array missing");
     assert!(
         docs.iter().any(|d| d["id"].as_str() == Some(doc_id)),
         "created document not present in list"
@@ -85,7 +91,10 @@ pub async fn cms_document_crud_flow() {
 
     // Step 3: Get by id — must return real content
     let get_resp = client
-        .get(format!("{}/api/cms_assemble_control/data/document/{}", base, doc_id))
+        .get(format!(
+            "{}/api/cms_assemble_control/data/document/{}",
+            base, doc_id
+        ))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -93,13 +102,22 @@ pub async fn cms_document_crud_flow() {
     assert_eq!(get_resp.status(), reqwest::StatusCode::OK);
     let get_body: serde_json::Value = get_resp.json().await.expect("invalid get response");
     assert_eq!(get_body["data"]["id"].as_str(), Some(doc_id));
-    assert_eq!(get_body["data"]["title"].as_str(), Some("Integration Test Document"));
-    assert_eq!(get_body["data"]["content"].as_str(), Some("Body of the integration test document."));
+    assert_eq!(
+        get_body["data"]["title"].as_str(),
+        Some("Integration Test Document")
+    );
+    assert_eq!(
+        get_body["data"]["content"].as_str(),
+        Some("Body of the integration test document.")
+    );
     info!(doc_id = %doc_id, "document fetched by id");
 
     // Step 4: Update title/status
     let update_resp = client
-        .post(format!("{}/api/cms_assemble_control/data/document/{}/update", base, doc_id))
+        .post(format!(
+            "{}/api/cms_assemble_control/data/document/{}/update",
+            base, doc_id
+        ))
         .header("Authorization", &auth_header)
         .json(&json!({
             "title": "Integration Test Document (Updated)",
@@ -113,19 +131,28 @@ pub async fn cms_document_crud_flow() {
     assert_eq!(update_body["data"]["updated"].as_bool(), Some(true));
 
     let get2_resp = client
-        .get(format!("{}/api/cms_assemble_control/data/document/{}", base, doc_id))
+        .get(format!(
+            "{}/api/cms_assemble_control/data/document/{}",
+            base, doc_id
+        ))
         .header("Authorization", &auth_header)
         .send()
         .await
         .expect("get after update failed");
     let get2_body: serde_json::Value = get2_resp.json().await.expect("invalid get2 response");
-    assert_eq!(get2_body["data"]["title"].as_str(), Some("Integration Test Document (Updated)"));
+    assert_eq!(
+        get2_body["data"]["title"].as_str(),
+        Some("Integration Test Document (Updated)")
+    );
     assert_eq!(get2_body["data"]["status"].as_str(), Some("archived"));
     info!(doc_id = %doc_id, "document updated");
 
     // Step 5: Soft-delete — must disappear from list and 404 on get
     let del_resp = client
-        .post(format!("{}/api/cms_assemble_control/data/document/{}/delete", base, doc_id))
+        .post(format!(
+            "{}/api/cms_assemble_control/data/document/{}/delete",
+            base, doc_id
+        ))
         .header("Authorization", &auth_header)
         .send()
         .await
@@ -141,14 +168,19 @@ pub async fn cms_document_crud_flow() {
         .await
         .expect("list after delete failed");
     let list2_body: serde_json::Value = list2_resp.json().await.expect("invalid list2 response");
-    let docs2 = list2_body["data"]["data"].as_array().expect("data array missing");
+    let docs2 = list2_body["data"]["data"]
+        .as_array()
+        .expect("data array missing");
     assert!(
         !docs2.iter().any(|d| d["id"].as_str() == Some(doc_id)),
         "soft-deleted document still present in list"
     );
 
     let get3_resp = client
-        .get(format!("{}/api/cms_assemble_control/data/document/{}", base, doc_id))
+        .get(format!(
+            "{}/api/cms_assemble_control/data/document/{}",
+            base, doc_id
+        ))
         .header("Authorization", &auth_header)
         .send()
         .await

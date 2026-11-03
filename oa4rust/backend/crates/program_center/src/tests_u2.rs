@@ -136,8 +136,10 @@ mod u2_tests {
         ] {
             // O2：死池下 503 与 500（缺会话扩展）均证明路由可达
             assert!(
-                matches!(status_of("GET", uri).await,
-                    StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE),
+                matches!(
+                    status_of("GET", uri).await,
+                    StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE
+                ),
                 "GET {uri}"
             );
         }

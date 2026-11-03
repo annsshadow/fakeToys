@@ -127,11 +127,7 @@ mod tests {
         let resp = app.oneshot(req).await.unwrap();
 
         assert_eq!(resp.status(), StatusCode::PAYLOAD_TOO_LARGE);
-        assert_eq!(
-            hits.load(Ordering::SeqCst),
-            0,
-            "超限请求不应进入 handler"
-        );
+        assert_eq!(hits.load(Ordering::SeqCst), 0, "超限请求不应进入 handler");
     }
 
     /// 无 Content-Length（chunked）时只能在读的过程中截断：

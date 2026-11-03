@@ -598,10 +598,12 @@ pub async fn zhengwudingding_bind_callback(
     // 政务钉钉配置缺失属「依赖未配置」（503），非内部错误（O10：曾 map 成 500）。
     let api_base = std::env::var("ZWDINGDING_API_BASE")
         .map_err(|_| AppError::Unavailable("政务钉钉未配置（ZWDINGDING_API_BASE 缺失）".into()))?;
-    let corp_token = std::env::var("ZWDINGDING_CORP_ACCESS_TOKEN")
-        .map_err(|_| AppError::Unavailable("政务钉钉未配置（ZWDINGDING_CORP_ACCESS_TOKEN 缺失）".into()))?;
-    let app_token = std::env::var("ZWDINGDING_APP_ACCESS_TOKEN")
-        .map_err(|_| AppError::Unavailable("政务钉钉未配置（ZWDINGDING_APP_ACCESS_TOKEN 缺失）".into()))?;
+    let corp_token = std::env::var("ZWDINGDING_CORP_ACCESS_TOKEN").map_err(|_| {
+        AppError::Unavailable("政务钉钉未配置（ZWDINGDING_CORP_ACCESS_TOKEN 缺失）".into())
+    })?;
+    let app_token = std::env::var("ZWDINGDING_APP_ACCESS_TOKEN").map_err(|_| {
+        AppError::Unavailable("政务钉钉未配置（ZWDINGDING_APP_ACCESS_TOKEN 缺失）".into())
+    })?;
 
     let client = reqwest::Client::new();
 
@@ -722,10 +724,12 @@ pub async fn zhengwudingding_login(
     // 政务钉钉配置缺失属「依赖未配置」（503），非内部错误（O10：曾 map 成 500）。
     let api_base = std::env::var("ZWDINGDING_API_BASE")
         .map_err(|_| AppError::Unavailable("政务钉钉未配置（ZWDINGDING_API_BASE 缺失）".into()))?;
-    let corp_token = std::env::var("ZWDINGDING_CORP_ACCESS_TOKEN")
-        .map_err(|_| AppError::Unavailable("政务钉钉未配置（ZWDINGDING_CORP_ACCESS_TOKEN 缺失）".into()))?;
-    let app_token = std::env::var("ZWDINGDING_APP_ACCESS_TOKEN")
-        .map_err(|_| AppError::Unavailable("政务钉钉未配置（ZWDINGDING_APP_ACCESS_TOKEN 缺失）".into()))?;
+    let corp_token = std::env::var("ZWDINGDING_CORP_ACCESS_TOKEN").map_err(|_| {
+        AppError::Unavailable("政务钉钉未配置（ZWDINGDING_CORP_ACCESS_TOKEN 缺失）".into())
+    })?;
+    let app_token = std::env::var("ZWDINGDING_APP_ACCESS_TOKEN").map_err(|_| {
+        AppError::Unavailable("政务钉钉未配置（ZWDINGDING_APP_ACCESS_TOKEN 缺失）".into())
+    })?;
 
     let client = reqwest::Client::new();
 

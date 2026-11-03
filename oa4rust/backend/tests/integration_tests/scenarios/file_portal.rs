@@ -28,9 +28,10 @@ pub async fn file_portal_flow() {
         .expect("test database not initialized; call init_test_database() first")
         .clone();
 
-    let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
-        .await
-        .expect("failed to start test server");
+    let (_addr, server_handle, token) =
+        crate::integration_tests::helpers::setup_test_server(pool.clone())
+            .await
+            .expect("failed to start test server");
 
     let client = Client::builder()
         .timeout(Duration::from_secs(10))
@@ -63,8 +64,10 @@ pub async fn file_portal_flow() {
         "create file entity failed: {}",
         create_file_resp.text().await.unwrap_or_default()
     );
-    let create_file_body: serde_json::Value =
-        create_file_resp.json().await.expect("invalid create file response");
+    let create_file_body: serde_json::Value = create_file_resp
+        .json()
+        .await
+        .expect("invalid create file response");
     let file_id = create_file_body["data"]["id"]
         .as_str()
         .expect("file id missing")
@@ -83,8 +86,10 @@ pub async fn file_portal_flow() {
         .await
         .expect("list files request failed");
     assert_eq!(list_file_resp.status(), reqwest::StatusCode::OK);
-    let list_file_body: serde_json::Value =
-        list_file_resp.json().await.expect("invalid list files response");
+    let list_file_body: serde_json::Value = list_file_resp
+        .json()
+        .await
+        .expect("invalid list files response");
     let files = list_file_body["data"]["data"]
         .as_array()
         .expect("data array missing");
@@ -128,8 +133,10 @@ pub async fn file_portal_flow() {
         "create design failed: {}",
         create_design_resp.text().await.unwrap_or_default()
     );
-    let create_design_body: serde_json::Value =
-        create_design_resp.json().await.expect("invalid create design response");
+    let create_design_body: serde_json::Value = create_design_resp
+        .json()
+        .await
+        .expect("invalid create design response");
     let design_id = create_design_body["data"]["id"]
         .as_str()
         .expect("design id missing")
@@ -145,8 +152,10 @@ pub async fn file_portal_flow() {
         .await
         .expect("list designs request failed");
     assert_eq!(list_design_resp.status(), reqwest::StatusCode::OK);
-    let list_design_body: serde_json::Value =
-        list_design_resp.json().await.expect("invalid list designs response");
+    let list_design_body: serde_json::Value = list_design_resp
+        .json()
+        .await
+        .expect("invalid list designs response");
     let designs = list_design_body["data"]["data"]
         .as_array()
         .expect("data array missing");
