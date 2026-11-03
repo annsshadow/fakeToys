@@ -83,8 +83,16 @@ func TestR86IdempotencyProbe(t *testing.T) {
 		Scan(&taskID, &target); err != nil {
 		t.Fatalf("取任务失败：%v", err)
 	}
-	ts.exec(t, `INSERT INTO user_tasks (user_id, task_id, task_date, progress) VALUES ($1,$2,CURRENT_DATE,$3)`,
-		uid6, taskID, target)
+	// ⚠️ 日期不能用 CURRENT_DATE：它按 **PG 会话时区**取日界，
+	// 而 ClaimTask 用 Go 侧的 `periodStart(nowFunc(), "daily")`（Go 进程时区）。
+	// 两者一旦不一致（本环境实测 PG=Asia/Shanghai、Go=UTC），
+	// 在 16:00–24:00 UTC（北京时间次日 00:00–08:00）会差一天 ——
+	// 夹具写下的行服务端读不到，症状是「任务未完成（0/30）」。
+	// 看上去像业务缺陷，实际是夹具口径与业务日界不一致。
+	// 必须用与业务同一个函数算日期，让「当期」的定义只有一处。
+	day := periodStart(nowFunc(), "daily")
+	ts.exec(t, `INSERT INTO user_tasks (user_id, task_id, task_date, progress) VALUES ($1,$2,$3,$4)`,
+		uid6, taskID, day, target)
 	if _, err := ts.ClaimTask(ctx, uid6, taskID); err != nil {
 		t.Fatalf("领奖 1 失败：%v", err)
 	}

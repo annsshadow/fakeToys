@@ -126,7 +126,12 @@ var AdminRegistry = tygen.Registry{
 }
 
 // Header 是生成物顶部的说明。
-const Header = `// 本文件是**生成物**，请勿手工编辑。
+//
+// ⚠️ 版权头必须由生成器自己输出（R91）：生成物是入库的源码，
+// 手工补头会在下一次 `go run ./cmd/tygen` 时被覆盖掉。
+const Header = `// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// 本文件是**生成物**，请勿手工编辑。
 //
 // 来源：laiyipao/server/internal/service/adminviews.go 与 internal/domain 的响应类型，
 // 由 laiyipao/server/cmd/tygen 生成。

@@ -98,10 +98,10 @@ func main() {
 	databaseURL := strings.TrimSpace(os.Getenv("DATABASE_URL"))
 	base := strings.TrimRight(strings.TrimSpace(os.Getenv("BASE_URL")), "/")
 	if databaseURL == "" || base == "" {
-		fail("preflight", errors.New("DATABASE_URL 与 BASE_URL 都必须设置"))
+		exitf("preflight", errors.New("DATABASE_URL 与 BASE_URL 都必须设置"))
 	}
 	if !isDrillDatabase(databaseURL) && os.Getenv("ALLOW_NON_DRILL") != "1" {
-		fail("preflight", fmt.Errorf("拒绝在非演练库上跑写操作：%s（库名需含 drill/smoke；确需覆盖请设 ALLOW_NON_DRILL=1）", databaseName(databaseURL)))
+		exitf("preflight", fmt.Errorf("拒绝在非演练库上跑写操作：%s（库名需含 drill/smoke；确需覆盖请设 ALLOW_NON_DRILL=1）", databaseName(databaseURL)))
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
@@ -109,10 +109,10 @@ func main() {
 
 	pool, err := pgxpool.New(ctx, databaseURL)
 	if err != nil {
-		fail("db.connect", fmt.Errorf("建立连接池：%w", err))
+		exitf("db.connect", fmt.Errorf("建立连接池：%w", err))
 	}
 	if err := pool.Ping(ctx); err != nil {
-		fail("db.connect", fmt.Errorf("ping：%w", err))
+		exitf("db.connect", fmt.Errorf("ping：%w", err))
 	}
 	defer pool.Close()
 
@@ -176,7 +176,7 @@ func main() {
 	for _, st := range steps {
 		if err := st.run(s); err != nil {
 			s.cleanup()
-			fail(st.name, err)
+			exitf(st.name, err)
 		}
 		fmt.Printf("[ OK ] %s\n", st.name)
 	}
@@ -184,7 +184,14 @@ func main() {
 	fmt.Printf("[PASS] 恢复库全路径通过（%d 步）\n", len(steps))
 }
 
-func fail(step string, err error) {
+// exitf 打印失败步骤并退出（CLI 的失败出口，不是 HTTP 响应出口）。
+//
+// ⚠️ 刻意不叫 `fail`：`TestErrorEntryIsSingle` 按**函数名**（`fail`/`failErr`）
+// 判定「入口包外是否有人自己写错误响应」。本命令是离线 CLI，写的是
+// stderr + exit(1)，与 HTTP 响应无关；同名会让那道守卫把 CLI 误报成
+// 绕过单一出口。改这里而不是放宽守卫 —— 守卫按名字匹配，放宽它等于
+// 给真正的旁路开口子。
+func exitf(step string, err error) {
 	fmt.Fprintf(os.Stderr, "[FAIL] %s: %v\n", step, err)
 	os.Exit(1)
 }
@@ -1091,6 +1098,14 @@ func (s *smoke) adminAudit() error {
 }
 
 // adminReconcile 收尾对账（R79）：把 R78 的九项不变量在恢复库上核一遍。
+//
+// ⚠️ R91 复核：本步骤必须走**真实 HTTP 端点**（s.call → GET /api/v1/admin/reconcile），
+// 不能直接调 svc.AdminReconcile。直接调函数只能证明「对账函数本身算得对」，
+// 证明不了恢复库上的路由、鉴权、JSON 序列化链路可用 —— 那正是恢复演练
+// 要验的东西。若改成直调，演练会退化成「测试自己的实现」。
+//
+// 本文件唯一的直连 service 调用是 replayHash 里的 LoadBuildSnapshot（只读，
+// 用来构造合法的结算 payload），不在被测响应路径上。
 //
 // 它能抓到 R58 行数比对永远看不到的漂移：比如触发器虽然存在但计数表是
 // 旧快照、或恢复丢了一部分 wallet_flows —— 那些场景下行数完全一致、
