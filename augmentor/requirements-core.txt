@@ -11,7 +11,7 @@ pyyaml>=6.0.3,<7.0.0
 # 出厂 config.yaml 的注释里住的是判据本身；缺它时 save_config 降级为整份
 # safe_dump 并记 warning（见 augmentor/config.py 的 _dump_roundtrip_document）。
 ruamel.yaml>=0.17.0,<1.0.0
-numpy>=1.21.0,<3.0.0
+numpy>=2.5.4,<3.0.0
 
 fastapi>=0.162.0,<1.0.0
 uvicorn>=0.54.0,<1.0.0
