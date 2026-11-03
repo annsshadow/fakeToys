@@ -1175,6 +1175,11 @@ pub async fn setting_create(
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
+    // 请求校验（O10）：code 有唯一约束 uq_cal_setting_code——空串首插成功、再插 23505 → 500；
+    // 空 code 属请求缺陷，400 指认字段。
+    if code.is_empty() {
+        return Err(AppError::BadRequest("code 必填".into()));
+    }
     let name = body
         .get("name")
         .and_then(|v| v.as_str())
