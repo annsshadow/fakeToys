@@ -62,6 +62,14 @@ const reconcileSampleLimit = 50
 // 全量模式当前实测（1M users + 1M battle_records + 1M wallet_flows）耗时
 // 为秒级（见台账 R78）；若未来涨到分钟级，先按用户/时间窗加 scope 参数，
 // 不要在调用方轮询硬扛。
+//
+// # 巡检节奏（R79 的裁定）
+//
+// 适合每天跑一次（外部 cron/巡检脚本 GET 本端点，`ok=false` 即告警）。
+// 它必须保持**只读**：结果只进调用方日志/告警通道，**不写审计、
+// 不落快照表**——对账若变成写库动作，它自己就成了「同一份事实写两遍」
+// 的第十个机制，也要被对账，套娃没有底。恢复演练里它已由
+// `smoke_after_restore` 的第 25 步（admin.reconcile）自动执行。
 func (s *Service) AdminReconcile(ctx context.Context) (ReconcileReport, error) {
 	start := time.Now()
 	rep := ReconcileReport{
