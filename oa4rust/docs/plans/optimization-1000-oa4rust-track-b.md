@@ -23,6 +23,7 @@
 | 轮次 | 主题 | 状态 | 缺口/改法/证据摘要 | commit |
 |------|------|------|--------------------|--------|
 | O1 | 迁移并发安全：pg advisory lock 串行化多实例迁移 | done | 缺口：多实例并发启动跑迁移无串行化；改前探针实测两个运行者并发跑同一空库，`CREATE TABLE IF NOT EXISTS schema_migrations` 撞 `pg_type_typname_nsp_index`（SQLSTATE 23505），后到实例启动失败。改法：`run_migrations` 前取会话级 advisory lock（固定 key），逐版本重查自然跳过，成功/失败路径都显式 unlock（防连接回池残留锁），断连由 PG 自动释放。证据：改前探针 runner A Err(23505)/B Ok；改后双方 Ok、3 条迁移恰好应用一次、种子恰好一行；回归 shared 363/363（`oa4rust_test` 库）。scratch `oa_par_mig_o1` 已 DROP | 068371db6 |
+| O2 | 取连失败语义统一：`shared::db::acquire` 全仓收口（R12 分类覆盖全部请求路径） | done | 缺口：R12 的池取连失败 503 分类只挂在 `ControlPool` trait 上，全仓约 2930 处 handler 仍手写 `pool.get().await.map_err(|_| AppError::Internal)` —— DB 停机/池满/重启窗口一律 500，客户端不敢重试、监控误报代码缺陷（改前证据：ai_assemble_control 等 crate 死池测试断言 500，实测连接被拒返回 `internal server error`）。改法：`shared::db::acquire(&Pool)` 公开入口复用 `classify_acquire_error`（Timeout/Backend/Closed→503，配置类→500），全仓机械替换 2930 处 + 116 文件。证据：死池请求由 500 → 503（`service unavailable: ...`）；`Extension<Session>` 缺失的 500 语义不变。测试同步：~250 处死池断言由 500 翻 503；混合路由循环（同表内既有必需会话扩展的 500 又有池失败的 503）改为「500|503 均证明路由可达」家族断言（保持≠404 的可达性语义）；`crates/shared/crud.rs` fail-loud 契约改锚 Unavailable。验证：全 workspace `cargo test --no-fail-fast` 除 4 个 main 上既有红守卫（quoted_key_guard/quoted_relation_guard/test_module_registration_guard/arity_probe，已在 origin/main 原态复现确认与本改动无关）外全绿；`cargo clippy --workspace --all-targets --keep-going` 零告警 | 待提交 |
 
 ## 不开轮记录（探针全绿 / 无真实后果）
 
