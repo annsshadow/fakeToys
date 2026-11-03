@@ -626,6 +626,48 @@ mod tests {
 
     #[tokio::test]
     #[allow(clippy::await_holding_lock)] // 阈值来自进程级 env，整个用例期间必须独占
+    async fn twenty_concurrent_requests_keep_exact_counts() {
+        // O11 正常流量等价性：20 并发打同一 IP 的认证端点，阈值 10。
+        // 限流器是写锁串行的，因此结果必须是「恰好 10 次通过 + 恰好 10 次 429」——
+        // 不能因为加了 key 上界与逐出逻辑而多放或少放。
+        let _env_guard = crate::testing::ENV_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        std::env::set_var("OA4RUST_AUTH_RATE_LIMIT", "10");
+        let app = test_app(security_state());
+
+        let mut handles = Vec::new();
+        for _ in 0..20 {
+            let app = app.clone();
+            handles.push(tokio::spawn(async move {
+                send(
+                    &app,
+                    Method::POST,
+                    "/api/authentication/login",
+                    None,
+                    Some("198.51.100.20"),
+                )
+                .await
+            }));
+        }
+
+        let mut passed = 0usize;
+        let mut limited = 0usize;
+        for h in handles {
+            match h.await.expect("并发请求任务不得 panic") {
+                StatusCode::OK => passed += 1,
+                StatusCode::TOO_MANY_REQUESTS => limited += 1,
+                other => panic!("意外状态码 {other}"),
+            }
+        }
+        std::env::remove_var("OA4RUST_AUTH_RATE_LIMIT");
+
+        assert_eq!(passed, 10, "阈值 10 必须恰好放行 10 次");
+        assert_eq!(limited, 10, "其余 10 次必须全部 429");
+    }
+
+    #[tokio::test]
+    #[allow(clippy::await_holding_lock)] // 阈值来自进程级 env，整个用例期间必须独占
     async fn test_general_traffic_does_not_consume_auth_rate_limit() {
         let _env_guard = crate::testing::ENV_LOCK
             .lock()
