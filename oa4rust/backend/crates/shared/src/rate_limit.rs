@@ -403,6 +403,54 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn flood_keeps_limiting_normal_players_afterwards() {
+        // O11 攻击场景验收：10 万唯一 key 洪泛之后，正常玩家的新请求仍须被正确计数
+        // 与限流（不能「表一满就把所有人放过去」），且洪泛后进表的计数保持准确。
+        // 改前探针：表 100_000 条；改后探针：表 49_995 条——两侧计数结果都是 10/10。
+        // 注意：洪泛**之前**就已经静默的旧 key 会被当成 LRU 最旧者逐出、计数归零，
+        // 这是已写入设计注释的取舍（代价：该 key 最多提前解禁一个窗口）。
+        let limiter = RateLimiter::new();
+
+        let mut handles = Vec::new();
+        for i in 0..100_000usize {
+            let limiter = limiter.clone();
+            handles.push(tokio::spawn(async move {
+                let key = format!("general:10.{}.{}.{}", i / 65_536, (i / 256) % 256, i % 256);
+                let _ = limiter.check_rate_limit(&key, 300, 1).await;
+            }));
+        }
+        for h in handles {
+            h.await.expect("洪泛任务不得 panic");
+        }
+        assert!(limiter.attempts.read().await.len() <= MAX_KEYS);
+
+        let player = "general:198.51.100.7";
+        for _ in 0..5 {
+            limiter.check_rate_limit(player, 10, 1).await.unwrap();
+        }
+        let counted = limiter.attempts.read().await.get(player).map(|v| v.len());
+        assert_eq!(counted, Some(5), "洪泛后正常玩家的请求必须被准确计数");
+
+        let mut handles = Vec::new();
+        for _ in 0..20 {
+            let limiter = limiter.clone();
+            handles.push(tokio::spawn(async move {
+                limiter
+                    .check_rate_limit("general:198.51.100.8", 10, 1)
+                    .await
+                    .is_ok()
+            }));
+        }
+        let mut passed = 0usize;
+        for h in handles {
+            if h.await.expect("并发任务不得 panic") {
+                passed += 1;
+            }
+        }
+        assert_eq!(passed, 10, "洪泛之后新玩家仍须恰好放行 10 次（不得全放行）");
+    }
+
+    #[tokio::test]
     async fn check_prunes_attempts_outside_the_requested_window() {
         // 否则「1 分钟内 3 次」的限制在 3 次之后仍然生效，用户要等一小时才能重试。
         let limiter = RateLimiter::new();
