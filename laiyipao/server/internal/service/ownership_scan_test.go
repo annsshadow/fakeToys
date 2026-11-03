@@ -224,6 +224,12 @@ var ownershipExemptions = map[string]string{
 		"是跨用户聚合而非单行读取；端点挂在 admin 路由组（requireAdmin 之后）。",
 	"recompute_gate.go.recomputeMismatchRate:settle_recomputes": "重算不一致率是**全服健康指标**（按时间窗统计 COUNT），" +
 		"不读取任何单行明细；由管理端重算入口/巡检调用，不属于玩家面。",
+	// ---- R91：对账扫描跨用户钱包（R78 的机制，此前漏了具名豁免）----
+	"reconcile.go.reconcileWalletCurrency:user_wallets": "对账的核心动作就是**逐用户核对** balance == 初始值 + Σdelta：" +
+		"差异查询按 user_id 分组做全表扫描，返回的是 `user#id / 期望 / 实际` 三元组，" +
+		"不返回任何一行的私有明细（余额、流水都由调用方另行授权查询）；" +
+		"端点 `/api/v1/admin/reconcile` 挂在 admin 路由组（requireAdmin 之后），" +
+		"只读、不写业务表。按调用方 user_id 过滤会让对账退化成「只核自己」，失去意义。",
 }
 
 // scanUnscopedQueries 扫出「按用户分区但没有 user_id 过滤」的查询。

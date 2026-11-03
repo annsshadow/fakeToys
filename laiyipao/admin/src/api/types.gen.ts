@@ -103,6 +103,7 @@ export interface AdminBattleView {
 export interface AdminBattlesResp {
   items: AdminBattleView[]
   total: number
+  next_cursor?: number
 }
 
 export interface AdminDefenseChallengeView {
@@ -382,6 +383,7 @@ export interface AdminUserView {
 export interface AdminUsersResp {
   items: AdminUserView[]
   total: number
+  next_cursor?: number
 }
 
 export interface AdminVerificationView {

@@ -14,6 +14,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/gofiber/fiber/v2"
+
 	"github.com/laiyipao/server/internal/domain"
 	"github.com/laiyipao/server/internal/httpapi/httperr"
 	"github.com/laiyipao/server/internal/service"
@@ -78,6 +80,10 @@ func TestEverySentinelErrorIsClassified(t *testing.T) {
 		// R14 新增：超限导出 → 413，failErr 有专门分支（不在前四条的
 		// errors.Is 链里，但同属「有明确 HTTP 语义、绝不落 500」）。
 		service.ErrExportTooLarge,
+		// R91 补登记：同 key 换请求体 → 409 idempotency_conflict。
+		// 它在 idempotency.go 声明已久，却漏进了 sentinelNames ——
+		// 于是分类守卫一直红着（22 个声明 vs 21 个登记）。
+		service.ErrIdemConflict,
 	}
 
 	// 具名豁免。理由为空也会红 —— 那等于没表态。
@@ -109,9 +115,13 @@ func TestEverySentinelErrorIsClassified(t *testing.T) {
 					name+"（在结算名单里，但 isSettleRejection 不认 -> 会返回 500）")
 			}
 		case inList(err, general):
-			// 通用类无需额外断言：failErr 对这些值都有 `errors.Is` 分支，
-			// 只要在列表里就必然命中（列表就是那些值本身，另有 413 的
-			// ErrExportTooLarge）。
+			// R91：通用类也要验证「映射真的生效」。
+			// 只比名单的话，名单写了而 httperr.classify 漏了，
+			// 这道守卫会绿而实际仍然返回 500 —— 与 settle 类同型的伪装。
+			if st := httperr.StatusOf(err); st == fiber.StatusInternalServerError {
+				notRecognized = append(notRecognized,
+					name+"（在通用名单里，但 httperr.classify 不认 -> 会返回 500）")
+			}
 		default:
 			missing = append(missing, name)
 		}
@@ -139,6 +149,13 @@ func TestEverySentinelErrorIsClassified(t *testing.T) {
 			strings.Join(missing, "\n  "))
 	}
 	t.Logf("扫到 %d 个哨兵错误，全部已归类且映射生效", len(declared))
+
+	// R91：把 ErrIdemConflict 的对外语义钉死。
+	// 登记只保证「被扫到」，这条保证「映射到 409 且不会退化成 500」——
+	// 它是 R86 幂等键的冲突口径，客户端要靠 409 区分「重放成功」与「键被撞」。
+	if st := httperr.StatusOf(service.ErrIdemConflict); st != fiber.StatusConflict {
+		t.Errorf("service.ErrIdemConflict 应映射 409 idempotency_conflict，实际 %d", st)
+	}
 }
 
 // inList 判断 err 是否在 errs 里。哨兵是包级变量，按值比即可 ——
@@ -188,6 +205,7 @@ var sentinelNames = map[error]string{
 	service.ErrNotFound:             "service.ErrNotFound",
 	service.ErrBadInput:             "service.ErrBadInput",
 	service.ErrExportTooLarge:       "service.ErrExportTooLarge",
+	service.ErrIdemConflict:         "service.ErrIdemConflict",
 }
 
 // scanSentinelErrors 扫出 domain 与 service 包里所有哨兵错误的 `包名.变量名`。
