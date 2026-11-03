@@ -317,11 +317,21 @@ func (s *Server) adminUsers(c *fiber.Ctx) error {
 		v := false
 		suspicious = &v
 	}
-	items, total, err := s.Svc.AdminListUsers(c.Context(), c.Query("keyword", ""), limit, offset, dateFrom, dateTo, isGuest, lastLoginFrom, lastLoginTo, suspicious)
+	// R77：keyset 游标（上一页末行 id）。cursor>0 时忽略 offset；
+	// 深页从数百 ms 的磁盘排序降到 ~1ms 索引范围扫描（见 service 注释）。
+	cursor, err := queryInt(c, "cursor", 0)
 	if err != nil {
 		return err
 	}
-	return c.JSON(service.NormalizeNilSlices(service.AdminUsersResp{Items: items, Total: total}))
+	items, total, err := s.Svc.AdminListUsers(c.Context(), c.Query("keyword", ""), limit, offset, dateFrom, dateTo, isGuest, lastLoginFrom, lastLoginTo, suspicious, int64(cursor))
+	if err != nil {
+		return err
+	}
+	var next int64
+	if len(items) == limit && len(items) > 0 {
+		next = items[len(items)-1].ID
+	}
+	return c.JSON(service.NormalizeNilSlices(service.AdminUsersResp{Items: items, Total: total, NextCursor: next}))
 }
 
 // adminExportUsers 导出用户列表为 CSV（2026-10-30 实质优化第 12 轮）。
@@ -545,11 +555,20 @@ func (s *Server) adminBattles(c *fiber.Ctx) error {
 	}
 	// 结果筛选（2026-11-01 新一轮第 44 轮）：win / lose，空串不过滤。
 	result := c.Query("result", "")
-	items, total, err := s.Svc.AdminListBattles(c.Context(), int64(userID), levelID, limit, onlyMismatched, offset, dateFrom, dateTo, result)
+	// R77：keyset 游标（与 /admin/users 同口径）。
+	cursor, err := queryInt(c, "cursor", 0)
 	if err != nil {
 		return err
 	}
-	return c.JSON(service.NormalizeNilSlices(service.AdminBattlesResp{Items: items, Total: total}))
+	items, total, err := s.Svc.AdminListBattles(c.Context(), int64(userID), levelID, limit, onlyMismatched, offset, dateFrom, dateTo, result, int64(cursor))
+	if err != nil {
+		return err
+	}
+	var next int64
+	if len(items) == limit && len(items) > 0 {
+		next = items[len(items)-1].ID
+	}
+	return c.JSON(service.NormalizeNilSlices(service.AdminBattlesResp{Items: items, Total: total, NextCursor: next}))
 }
 
 // adminExportBattles 导出战报列表为 CSV（2026-10-30 实质优化第 13 轮）。

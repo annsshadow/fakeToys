@@ -424,10 +424,25 @@ type AdminUserView struct {
 }
 
 // AdminListUsers 分页查询玩家。
-func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, offset int, dateFrom, dateTo *time.Time, isGuest *bool, lastLoginFrom, lastLoginTo *time.Time, suspicious *bool) ([]AdminUserView, int64, error) {
+// cursor（R77）：keyset 分页游标 = 上一页最后一行的 id（列表按 id DESC，
+// BIGSERIAL 单调递增，与 created_at 同序，单字段即严格游标，无需双字段）。
+// cursor > 0 时生效并忽略 offset：深页从「排 50 万行再丢」变成索引范围扫描，
+// 实测 offset=500k 的 525ms → cursor 模式 ~1ms（见台账 R76/R77 与 §4.1）。
+// 兼容策略：offset 参数保留，老前端/老调用继续可用（浅页快、深页慢，
+// 慢是 OFFSET 的固有成本，不是 bug）；导出/脚本类消费方应改用 cursor。
+// ⚠️ cursor 用 variadic（与 `audit ...AdminAuditCtx` 同模式）：老调用点
+// 不传即是 0（不走 keyset），44 处既有测试/调用零改动。
+func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, offset int, dateFrom, dateTo *time.Time, isGuest *bool, lastLoginFrom, lastLoginTo *time.Time, suspicious *bool, cursorArg ...int64) ([]AdminUserView, int64, error) {
 	limit = clampLimit(limit, 50, 200)
 	if offset < 0 {
 		offset = 0
+	}
+	var cursor int64
+	if len(cursorArg) > 0 {
+		cursor = cursorArg[0]
+	}
+	if cursor > 0 {
+		offset = 0 // keyset 模式下 offset 无意义（游标已是位置）
 	}
 	// 第 118 轮：keyword 里的 `%`/`_`/`\` 必须转义成**字面量**。
 	// 旧实现直接拼 `%<kw>%`，搜 "100%" 会退化成 `%100%%`（% 当通配符），
@@ -487,6 +502,11 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 	}
 	// 统一做 COUNT 参数编号映射（列表 $5-$10 → COUNT $3-$8）。
 	countWhere := strings.NewReplacer(`$5`, `$3`, `$6`, `$4`, `$7`, `$5`, `$8`, `$6`, `$9`, `$7`, `$10`, `$8`).Replace(where)
+	// R77：cursor 只进列表 WHERE（不进 COUNT —— 游标是位置不是筛选，
+	// total 语义不变），占位符取当前参数表的下一位。
+	cursorPH := fmt.Sprintf("$%d", len(listArgs)+1)
+	listWhere := where + fmt.Sprintf(` AND (%s = 0 OR u.id < %s)`, cursorPH, cursorPH)
+	listArgs = append(listArgs, cursor)
 
 	var total int64
 	// 需核查开启时 COUNT 也要 JOIN p（user_progress 每用户一行，不放大）。
@@ -528,7 +548,7 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 		FROM users u
 		LEFT JOIN user_progress p ON p.user_id = u.id
 		LEFT JOIN user_wallets w ON w.user_id = u.id
-		WHERE `+where+`
+		WHERE `+listWhere+`
 		ORDER BY u.id DESC LIMIT $3 OFFSET $4`, listArgs...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list users: %w", err)
@@ -1007,7 +1027,10 @@ type AdminBattleView struct {
 //
 // onlyMismatched 为真时**只**返回「被验真过且有不匹配记录」的战报，
 // 用来从「这个用户有 3 次不匹配」直接跳到「是哪 3 场」。
-func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID int, limit int, onlyMismatched bool, offset int, dateFrom, dateTo *time.Time, result string) ([]AdminBattleView, int64, error) {
+// cursor（R77）：与 AdminListUsers 同一 keyset 机制（id DESC，游标=上一页
+// 末行 id）。深页实测 offset=500k 的 556ms → cursor ~1ms。offset 保留兼容。
+// ⚠️ cursor 用 variadic（与 `audit ...AdminAuditCtx` 同模式）：不传即 0。
+func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID int, limit int, onlyMismatched bool, offset int, dateFrom, dateTo *time.Time, result string, cursorArg ...int64) ([]AdminBattleView, int64, error) {
 	limit = clampLimit(limit, 50, 200)
 	// ⚠️ 2026-10-21（二轮审计 P2）：负 offset 必须夹到 0。
 	//
@@ -1017,6 +1040,13 @@ func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID in
 	// 一个运营手滑打出来的负号，不该让整页报错。
 	if offset < 0 {
 		offset = 0
+	}
+	var cursor int64
+	if len(cursorArg) > 0 {
+		cursor = cursorArg[0]
+	}
+	if cursor > 0 {
+		offset = 0 // keyset 模式下游标即位置（R77）
 	}
 
 	// 验真统计走**子查询预聚合**：一场战斗可以被验真多次，
@@ -1106,6 +1136,10 @@ func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID in
 		listArgs = append(listArgs, result)
 	}
 	countWhere := strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(where, "$5", "$3"), "$6", "$4"), "$7", "$5")
+	// R77：cursor 只进列表 WHERE（不进 COUNT），占位符取参数表下一位。
+	cursorPH := fmt.Sprintf("$%d", len(listArgs)+1)
+	listWhere := where + fmt.Sprintf(` AND (%s = 0 OR br.id < %s)`, cursorPH, cursorPH)
+	listArgs = append(listArgs, cursor)
 
 	var total int64
 	if err := s.pool.QueryRow(ctx,
@@ -1126,7 +1160,7 @@ func (s *Service) AdminListBattles(ctx context.Context, userID int64, levelID in
 		FROM battle_records br
 		LEFT JOIN users u ON u.id = br.user_id
 		`+listVsub+`
-		WHERE `+where+`
+		WHERE `+listWhere+`
 		ORDER BY br.id DESC LIMIT $3 OFFSET $4`, listArgs...)
 	if err != nil {
 		return nil, 0, fmt.Errorf("list battles: %w", err)
