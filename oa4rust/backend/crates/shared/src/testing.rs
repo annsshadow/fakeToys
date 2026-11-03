@@ -380,8 +380,12 @@ mod e2e_chain_tests {
     }
 
     #[tokio::test]
+    #[allow(clippy::await_holding_lock)] // 改的就是进程级 env，整个用例期间必须独占
     async fn login_route_is_rate_limited_per_configured_threshold() {
         // 显式设阈值：第 4 次起必须 429（环境变量每次调用都读，测试内设置即可生效）
+        let _env_guard = crate::testing::ENV_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         std::env::set_var("OA4RUST_AUTH_RATE_LIMIT", "3");
         let state = SecurityState {
             session_manager: crate::session::SessionManager::new(),
