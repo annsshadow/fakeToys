@@ -39,12 +39,13 @@ pub async fn user_setting(
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT mobile, email, icon, theme, lang FROM auth_person WHERE id = $1 LIMIT 1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
 
     let mut map = serde_json::Map::new();
     if let Some(v) = row.get::<_, Option<String>>("mobile") {

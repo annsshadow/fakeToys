@@ -23,11 +23,13 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "get_process route should be registered"
-        );
+        // O10：handler 对不存在 id 正确返回 404（RowNotFound→NotFound）后，「≠404」口径
+        // 会把「可达+业务 404」误判为不可达。与生成器模板/arity_probe 同口径：仅 axum
+        // 兜底 404（空体）判不可达；handler 的 404 带 JSON 错误体 = 可达+业务正常。
+        if response.status() == StatusCode::NOT_FOUND {
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(), "get_process route should be registered (兜底空体 404)");
+        }
     }
 
     #[tokio::test]
@@ -44,11 +46,13 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "create_process route should be registered"
-        );
+        // O10：handler 对不存在 id 正确返回 404（RowNotFound→NotFound）后，「≠404」口径
+        // 会把「可达+业务 404」误判为不可达。与生成器模板/arity_probe 同口径：仅 axum
+        // 兜底 404（空体）判不可达；handler 的 404 带 JSON 错误体 = 可达+业务正常。
+        if response.status() == StatusCode::NOT_FOUND {
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(), "create_process route should be registered (兜底空体 404)");
+        }
     }
 
     #[tokio::test]
@@ -65,11 +69,13 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "list_processes route should be registered"
-        );
+        // O10：handler 对不存在 id 正确返回 404（RowNotFound→NotFound）后，「≠404」口径
+        // 会把「可达+业务 404」误判为不可达。与生成器模板/arity_probe 同口径：仅 axum
+        // 兜底 404（空体）判不可达；handler 的 404 带 JSON 错误体 = 可达+业务正常。
+        if response.status() == StatusCode::NOT_FOUND {
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(), "list_processes route should be registered (兜底空体 404)");
+        }
     }
 
     #[tokio::test]
@@ -86,11 +92,13 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "execute_process route should be registered"
-        );
+        // O10：handler 对不存在 id 正确返回 404（RowNotFound→NotFound）后，「≠404」口径
+        // 会把「可达+业务 404」误判为不可达。与生成器模板/arity_probe 同口径：仅 axum
+        // 兜底 404（空体）判不可达；handler 的 404 带 JSON 错误体 = 可达+业务正常。
+        if response.status() == StatusCode::NOT_FOUND {
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(), "execute_process route should be registered (兜底空体 404)");
+        }
     }
 
     #[tokio::test]
@@ -107,11 +115,13 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "get_process_instance route should be registered"
-        );
+        // O10：handler 对不存在 id 正确返回 404（RowNotFound→NotFound）后，「≠404」口径
+        // 会把「可达+业务 404」误判为不可达。与生成器模板/arity_probe 同口径：仅 axum
+        // 兜底 404（空体）判不可达；handler 的 404 带 JSON 错误体 = 可达+业务正常。
+        if response.status() == StatusCode::NOT_FOUND {
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(), "get_process_instance route should be registered (兜底空体 404)");
+        }
     }
 
     #[tokio::test]
@@ -128,11 +138,13 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "cancel_process_instance route should be registered"
-        );
+        // O10：handler 对不存在 id 正确返回 404（RowNotFound→NotFound）后，「≠404」口径
+        // 会把「可达+业务 404」误判为不可达。与生成器模板/arity_probe 同口径：仅 axum
+        // 兜底 404（空体）判不可达；handler 的 404 带 JSON 错误体 = 可达+业务正常。
+        if response.status() == StatusCode::NOT_FOUND {
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(), "cancel_process_instance route should be registered (兜底空体 404)");
+        }
     }
 
     #[tokio::test]
@@ -149,11 +161,13 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "work_id_processing route should be registered"
-        );
+        // O10：handler 对不存在 id 正确返回 404（RowNotFound→NotFound）后，「≠404」口径
+        // 会把「可达+业务 404」误判为不可达。与生成器模板/arity_probe 同口径：仅 axum
+        // 兜底 404（空体）判不可达；handler 的 404 带 JSON 错误体 = 可达+业务正常。
+        if response.status() == StatusCode::NOT_FOUND {
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(), "work_id_processing route should be registered (兜底空体 404)");
+        }
     }
 
     #[tokio::test]
@@ -170,11 +184,13 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "work_v2_id_terminate route should be registered"
-        );
+        // O10：handler 对不存在 id 正确返回 404（RowNotFound→NotFound）后，「≠404」口径
+        // 会把「可达+业务 404」误判为不可达。与生成器模板/arity_probe 同口径：仅 axum
+        // 兜底 404（空体）判不可达；handler 的 404 带 JSON 错误体 = 可达+业务正常。
+        if response.status() == StatusCode::NOT_FOUND {
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(), "work_v2_id_terminate route should be registered (兜底空体 404)");
+        }
     }
 
     #[tokio::test]
@@ -191,11 +207,13 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "work_v2_id_retract route should be registered"
-        );
+        // O10：handler 对不存在 id 正确返回 404（RowNotFound→NotFound）后，「≠404」口径
+        // 会把「可达+业务 404」误判为不可达。与生成器模板/arity_probe 同口径：仅 axum
+        // 兜底 404（空体）判不可达；handler 的 404 带 JSON 错误体 = 可达+业务正常。
+        if response.status() == StatusCode::NOT_FOUND {
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(), "work_v2_id_retract route should be registered (兜底空体 404)");
+        }
     }
 
     // SKIPPED: work_v2_id_goback not accessible
@@ -264,11 +282,13 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "work_list route should be registered"
-        );
+        // O10：handler 对不存在 id 正确返回 404（RowNotFound→NotFound）后，「≠404」口径
+        // 会把「可达+业务 404」误判为不可达。与生成器模板/arity_probe 同口径：仅 axum
+        // 兜底 404（空体）判不可达；handler 的 404 带 JSON 错误体 = 可达+业务正常。
+        if response.status() == StatusCode::NOT_FOUND {
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(), "work_list route should be registered (兜底空体 404)");
+        }
     }
 
     #[tokio::test]
@@ -285,11 +305,13 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "process_id_complex route should be registered"
-        );
+        // O10：handler 对不存在 id 正确返回 404（RowNotFound→NotFound）后，「≠404」口径
+        // 会把「可达+业务 404」误判为不可达。与生成器模板/arity_probe 同口径：仅 axum
+        // 兜底 404（空体）判不可达；handler 的 404 带 JSON 错误体 = 可达+业务正常。
+        if response.status() == StatusCode::NOT_FOUND {
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(), "process_id_complex route should be registered (兜底空体 404)");
+        }
     }
 
     // SKIPPED: data_work_id_path_delete not accessible
@@ -342,11 +364,13 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "work_start route should be registered"
-        );
+        // O10：handler 对不存在 id 正确返回 404（RowNotFound→NotFound）后，「≠404」口径
+        // 会把「可达+业务 404」误判为不可达。与生成器模板/arity_probe 同口径：仅 axum
+        // 兜底 404（空体）判不可达；handler 的 404 带 JSON 错误体 = 可达+业务正常。
+        if response.status() == StatusCode::NOT_FOUND {
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(), "work_start route should be registered (兜底空体 404)");
+        }
     }
 
     #[tokio::test]
@@ -363,11 +387,13 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "work_complete route should be registered"
-        );
+        // O10：handler 对不存在 id 正确返回 404（RowNotFound→NotFound）后，「≠404」口径
+        // 会把「可达+业务 404」误判为不可达。与生成器模板/arity_probe 同口径：仅 axum
+        // 兜底 404（空体）判不可达；handler 的 404 带 JSON 错误体 = 可达+业务正常。
+        if response.status() == StatusCode::NOT_FOUND {
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(), "work_complete route should be registered (兜底空体 404)");
+        }
     }
 
     #[tokio::test]
@@ -384,11 +410,13 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "task_claim route should be registered"
-        );
+        // O10：handler 对不存在 id 正确返回 404（RowNotFound→NotFound）后，「≠404」口径
+        // 会把「可达+业务 404」误判为不可达。与生成器模板/arity_probe 同口径：仅 axum
+        // 兜底 404（空体）判不可达；handler 的 404 带 JSON 错误体 = 可达+业务正常。
+        if response.status() == StatusCode::NOT_FOUND {
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(), "task_claim route should be registered (兜底空体 404)");
+        }
     }
 
     #[tokio::test]
@@ -405,11 +433,13 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "task_complete route should be registered"
-        );
+        // O10：handler 对不存在 id 正确返回 404（RowNotFound→NotFound）后，「≠404」口径
+        // 会把「可达+业务 404」误判为不可达。与生成器模板/arity_probe 同口径：仅 axum
+        // 兜底 404（空体）判不可达；handler 的 404 带 JSON 错误体 = 可达+业务正常。
+        if response.status() == StatusCode::NOT_FOUND {
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(), "task_complete route should be registered (兜底空体 404)");
+        }
     }
 
     #[tokio::test]
@@ -426,11 +456,13 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "task_reject route should be registered"
-        );
+        // O10：handler 对不存在 id 正确返回 404（RowNotFound→NotFound）后，「≠404」口径
+        // 会把「可达+业务 404」误判为不可达。与生成器模板/arity_probe 同口径：仅 axum
+        // 兜底 404（空体）判不可达；handler 的 404 带 JSON 错误体 = 可达+业务正常。
+        if response.status() == StatusCode::NOT_FOUND {
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(), "task_reject route should be registered (兜底空体 404)");
+        }
     }
 
     #[tokio::test]
@@ -447,11 +479,13 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "task_transfer route should be registered"
-        );
+        // O10：handler 对不存在 id 正确返回 404（RowNotFound→NotFound）后，「≠404」口径
+        // 会把「可达+业务 404」误判为不可达。与生成器模板/arity_probe 同口径：仅 axum
+        // 兜底 404（空体）判不可达；handler 的 404 带 JSON 错误体 = 可达+业务正常。
+        if response.status() == StatusCode::NOT_FOUND {
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(), "task_transfer route should be registered (兜底空体 404)");
+        }
     }
 
     #[tokio::test]
@@ -469,11 +503,13 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "gateway_join route should be registered"
-        );
+        // O10：handler 对不存在 id 正确返回 404（RowNotFound→NotFound）后，「≠404」口径
+        // 会把「可达+业务 404」误判为不可达。与生成器模板/arity_probe 同口径：仅 axum
+        // 兜底 404（空体）判不可达；handler 的 404 带 JSON 错误体 = 可达+业务正常。
+        if response.status() == StatusCode::NOT_FOUND {
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(), "gateway_join route should be registered (兜底空体 404)");
+        }
     }
 
     #[tokio::test]
@@ -490,11 +526,13 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "gateway_fork route should be registered"
-        );
+        // O10：handler 对不存在 id 正确返回 404（RowNotFound→NotFound）后，「≠404」口径
+        // 会把「可达+业务 404」误判为不可达。与生成器模板/arity_probe 同口径：仅 axum
+        // 兜底 404（空体）判不可达；handler 的 404 带 JSON 错误体 = 可达+业务正常。
+        if response.status() == StatusCode::NOT_FOUND {
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(), "gateway_fork route should be registered (兜底空体 404)");
+        }
     }
 
     // SKIPPED: start not accessible
@@ -515,11 +553,13 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "start_timer route should be registered"
-        );
+        // O10：handler 对不存在 id 正确返回 404（RowNotFound→NotFound）后，「≠404」口径
+        // 会把「可达+业务 404」误判为不可达。与生成器模板/arity_probe 同口径：仅 axum
+        // 兜底 404（空体）判不可达；handler 的 404 带 JSON 错误体 = 可达+业务正常。
+        if response.status() == StatusCode::NOT_FOUND {
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(), "start_timer route should be registered (兜底空体 404)");
+        }
     }
 
     #[tokio::test]
@@ -536,10 +576,12 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "cancel_timer route should be registered"
-        );
+        // O10：handler 对不存在 id 正确返回 404（RowNotFound→NotFound）后，「≠404」口径
+        // 会把「可达+业务 404」误判为不可达。与生成器模板/arity_probe 同口径：仅 axum
+        // 兜底 404（空体）判不可达；handler 的 404 带 JSON 错误体 = 可达+业务正常。
+        if response.status() == StatusCode::NOT_FOUND {
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap_or_default();
+            assert!(!bytes.is_empty(), "cancel_timer route should be registered (兜底空体 404)");
+        }
     }
 }

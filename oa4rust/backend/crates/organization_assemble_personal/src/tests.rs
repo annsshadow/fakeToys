@@ -30,7 +30,14 @@ mod tests {
             .await
             .unwrap();
 
-        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+        // O10：handler 对不存在 id 正确返回 404（RowNotFound→NotFound）后，「≠404」口径
+        // 会把「可达+业务 404」误判为不可达。仅 axum 兜底 404（空体）判不可达。
+        if response.status() == StatusCode::NOT_FOUND {
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(!bytes.is_empty(), "user_setting 兜底空体 404 = 路由不可达");
+        }
     }
 
     #[tokio::test]

@@ -94,12 +94,13 @@ pub async fn work_processing(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, title, work_status, activity FROM x_work WHERE id = $1",
             &[&work_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -127,12 +128,13 @@ pub async fn task_processing(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, title, person, activity FROM x_task WHERE id = $1",
             &[&task_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
