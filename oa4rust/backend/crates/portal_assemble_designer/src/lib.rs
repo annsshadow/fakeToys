@@ -46,7 +46,7 @@ pub async fn create_design(
     axum::extract::Json(req): Json<CreatePortalRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     crate::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_default();
     let description = req.description.unwrap_or_default();
@@ -73,7 +73,7 @@ pub async fn get_design(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, description, content FROM x_portal_design WHERE id = $1 AND deleted_at IS NULL",
@@ -115,7 +115,7 @@ pub async fn get_design(
 
 #[allow(non_snake_case)]
 pub async fn list_designs(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, description, create_time, update_time FROM x_portal_design WHERE deleted_at IS NULL ORDER BY update_time DESC",
@@ -180,7 +180,7 @@ pub async fn save_design(
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     crate::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let content = body
         .get("content")
         .and_then(|v| v.as_str())
@@ -213,7 +213,7 @@ pub async fn list_pages_by_category(
     pool: Extension<Pool>,
     axum::extract::Path(category): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -271,7 +271,7 @@ pub async fn get_page(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -322,7 +322,7 @@ pub async fn create_page(
     axum::extract::Json(req): Json<CreatePageRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     crate::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_default();
@@ -359,7 +359,7 @@ pub async fn save_page(
     axum::extract::Json(req): Json<SavePageRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     crate::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let content = req
         .content
@@ -394,7 +394,7 @@ pub async fn delete_page(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     crate::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute("DELETE FROM x_portal_page WHERE id = $1", &[&id])
@@ -444,7 +444,7 @@ pub async fn design_save(
         .and_then(|v| v.as_str())
         .unwrap_or("null");
     let content_str = content.to_string();
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let result = client
         .execute(
             "UPDATE x_portal_design SET content = $1, update_time = NOW() WHERE id = $2 AND deleted_at IS NULL",
@@ -821,7 +821,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 
 #[allow(non_snake_case)]
 pub async fn designer_search(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -881,7 +881,7 @@ pub async fn dict_list_paging_page_size_size(
     pool: Extension<Pool>,
     Path((_page, _size, _s2)): Path<(i64, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -934,7 +934,7 @@ pub async fn dict_list_portal_portalId(
     pool: Extension<Pool>,
     Path(portal_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -987,7 +987,7 @@ pub async fn dict_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1039,7 +1039,7 @@ pub async fn file_list_application_applicationFlag(
     pool: Extension<Pool>,
     Path(application_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1103,7 +1103,7 @@ pub async fn file_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, _s1, count)): Path<(String, String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1167,7 +1167,7 @@ pub async fn file_list_id_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1231,7 +1231,7 @@ pub async fn file_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1286,7 +1286,7 @@ pub async fn file_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1341,7 +1341,7 @@ pub async fn file_id_download(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1392,7 +1392,7 @@ pub async fn file_id_upload(
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     crate::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let content = body
         .get("content")
@@ -1425,7 +1425,7 @@ pub async fn id_count(
     pool: Extension<Pool>,
     Path((_s0, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_one("SELECT COUNT(*) as cnt FROM x_portal", &[])
@@ -1453,7 +1453,7 @@ pub async fn input_compare(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let input_id = body.get("id").and_then(|v| v.as_str()).unwrap_or_default();
     let content_str = body
@@ -1499,7 +1499,7 @@ pub async fn input_cover(
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     crate::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let input_id = body.get("id").and_then(|v| v.as_str()).unwrap_or_default();
     let content_str = body
@@ -1535,7 +1535,7 @@ pub async fn input_create(
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     crate::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let content = body
@@ -1565,7 +1565,7 @@ pub async fn input_prepare_cover(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let input_id = body.get("id").and_then(|v| v.as_str()).unwrap_or_default();
     let row = client
@@ -1604,7 +1604,7 @@ pub async fn input_prepare_create(
         .unwrap_or_default();
     let creator = "system";
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -1624,7 +1624,7 @@ pub async fn input_prepare_create(
 
 #[allow(non_snake_case)]
 pub async fn output_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1685,7 +1685,7 @@ pub async fn output_flag_select_file(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1729,7 +1729,7 @@ pub async fn output_portalFlag_select(
     pool: Extension<Pool>,
     Path(portal_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1790,7 +1790,7 @@ pub async fn page_list_portal_portalId(
     pool: Extension<Pool>,
     Path(portal_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1842,7 +1842,7 @@ pub async fn page_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1891,7 +1891,7 @@ pub async fn pageversion_list_page_pageId(
     pool: Extension<Pool>,
     Path(page_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1966,7 +1966,7 @@ pub async fn pageversion_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2012,7 +2012,7 @@ pub async fn pageversion_id(
 
 #[allow(non_snake_case)]
 pub async fn portal_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2067,7 +2067,7 @@ pub async fn portal_list_portalcategory_portalCategory(
     pool: Extension<Pool>,
     Path(portal_category): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2121,7 +2121,7 @@ pub async fn portal_list_portalcategory_portalCategory(
 pub async fn portal_list_summary(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2165,7 +2165,7 @@ pub async fn portal_list_summary_portalcategory_portalCategory(
     pool: Extension<Pool>,
     Path(portal_category): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2208,7 +2208,7 @@ pub async fn portal_list_summary_portalcategory_portalCategory(
 pub async fn portal_list_summary_v2(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2267,7 +2267,7 @@ pub async fn portal_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2321,7 +2321,7 @@ pub async fn portal_id_icon(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2351,7 +2351,7 @@ pub async fn portal_id_permission(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2383,7 +2383,7 @@ pub async fn portal_id_permission(
 pub async fn portalcategory_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2418,7 +2418,7 @@ pub async fn portalcategory_list(
 pub async fn script_list_manager(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2479,7 +2479,7 @@ pub async fn script_list_paging_page_size_size(
     pool: Extension<Pool>,
     Path((page, size, _s2)): Path<(i64, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2540,7 +2540,7 @@ pub async fn script_list_portal_portalId(
     pool: Extension<Pool>,
     Path(portal_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2601,7 +2601,7 @@ pub async fn script_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2657,7 +2657,7 @@ pub async fn scriptversion_list_script_scriptId(
     pool: Extension<Pool>,
     Path(script_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2721,7 +2721,7 @@ pub async fn scriptversion_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2775,7 +2775,7 @@ pub async fn scriptversion_id(
 pub async fn templatepage_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2835,7 +2835,7 @@ pub async fn templatepage_list(
 pub async fn templatepage_list_category(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2871,7 +2871,7 @@ pub async fn templatepage_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2925,7 +2925,7 @@ pub async fn widget_list_portal_portalId(
     pool: Extension<Pool>,
     Path(portal_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2993,7 +2993,7 @@ pub async fn widget_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -3066,7 +3066,7 @@ pub async fn create_portal(
     axum::extract::Json(req): Json<CreatePortalRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     crate::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let name = req.name.clone().unwrap_or_default();
     let description = req.description.clone().unwrap_or_default();
     let alias = name.clone();
@@ -3111,7 +3111,7 @@ pub async fn delete_portal(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     crate::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let result = client
         .execute(
             "UPDATE x_portal SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -3138,7 +3138,7 @@ pub async fn update_portal(
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     crate::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let name = body
         .get("name")
         .and_then(|v| v.as_str())
@@ -3185,7 +3185,7 @@ pub async fn update_portal_icon(
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     crate::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let logo = body
         .get("logo")
         .and_then(|v| v.as_str())
@@ -3217,7 +3217,7 @@ pub async fn portal_id_permission_post(
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     crate::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let permission = serde_json::to_string(&body).map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -3244,7 +3244,7 @@ pub async fn create_templatepage(
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     crate::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let name = body
         .get("name")
         .and_then(|v| v.as_str())
@@ -3294,7 +3294,7 @@ pub async fn update_templatepage_category(
     pool: Extension<Pool>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let category = body
         .get("category")
         .and_then(|v| v.as_str())
@@ -3345,7 +3345,7 @@ pub async fn delete_templatepage(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     crate::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let result = client
         .execute(
             "UPDATE x_portal_template_page SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -3371,7 +3371,7 @@ pub async fn create_widget(
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     crate::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let name = body
         .get("name")
         .and_then(|v| v.as_str())
@@ -3429,7 +3429,7 @@ pub async fn delete_widget(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     crate::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let result = client
         .execute(
             "UPDATE x_portal_widget SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -3456,7 +3456,7 @@ pub async fn update_widget(
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     crate::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let name = body
         .get("name")
         .and_then(|v| v.as_str())
@@ -3497,7 +3497,7 @@ pub async fn update_widget(
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn dict_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, app_name, create_time FROM x_portal_dict WHERE deleted_at IS NULL ORDER BY create_time DESC",
@@ -3630,7 +3630,7 @@ pub async fn dict_delete(
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn page_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, category, content, creator, create_time, update_time \
@@ -3687,7 +3687,7 @@ pub async fn page_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn widget_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, portal_id, category, config, creator, create_time \

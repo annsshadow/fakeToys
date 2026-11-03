@@ -45,8 +45,8 @@ async fn b70_writes_accept_valid_session_past_gate() {
     // 有效会话过门后直落死池 pool.get() 必败 → Internal（证明门在库前、只挡匿名）。
     let res = setting_create(Extension(pool), session, Json(serde_json::json!({}))).await;
     assert!(
-        matches!(res, Err(AppError::Internal)),
-        "有效会话应过门、之后才落库（死池 → Internal），证门在库前"
+        matches!(res, Err(AppError::Unavailable(_))),
+        "有效会话应过门、之后才落库（死池 → Unavailable(503)），证门在库前"
     );
 }
 

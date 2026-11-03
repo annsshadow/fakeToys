@@ -134,7 +134,7 @@ pub async fn captcha_login(
         _ => return Ok(Json(ActionResult::error("invalid captcha"))),
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, unique_id, name, mobile, email, icon, password_hash, locked \
@@ -267,7 +267,7 @@ pub async fn sso_encrypt_get(
 /// GET bind/list —— 扫码绑定记录列表（x_org_bind_record，按创建时间升序）
 #[allow(non_snake_case)]
 pub async fn bind_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, COALESCE(message,'') AS message, create_time \

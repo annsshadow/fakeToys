@@ -171,7 +171,7 @@ async fn test_get_designer_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 }
 
 #[tokio::test]
@@ -190,7 +190,7 @@ async fn test_list_designers_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 }
 
 #[tokio::test]
@@ -259,7 +259,7 @@ async fn test_u2_designer_search_route_exists() {
         )
         .await
         .unwrap();
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 }
 
 #[tokio::test]
@@ -277,7 +277,7 @@ async fn test_u2_input_compare_route_exists() {
         )
         .await
         .unwrap();
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 }
 
 #[tokio::test]
@@ -313,7 +313,7 @@ async fn test_u2_output_list_route_exists() {
         )
         .await
         .unwrap();
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 }
 
 #[tokio::test]
@@ -330,7 +330,7 @@ async fn test_u2_query_list_all_route_exists() {
         )
         .await
         .unwrap();
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 }
 
 #[tokio::test]
@@ -347,7 +347,7 @@ async fn test_u2_table_list_manage_route_exists() {
         )
         .await
         .unwrap();
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 }
 
 #[tokio::test]
@@ -364,7 +364,7 @@ async fn test_u2_view_get_by_id_route_exists() {
         )
         .await
         .unwrap();
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 }
 
 #[tokio::test]
@@ -381,7 +381,7 @@ async fn test_u2_statement_get_flag_route_exists() {
         )
         .await
         .unwrap();
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 }
 
 #[tokio::test]
@@ -399,7 +399,7 @@ async fn test_u2_statement_execute_v2_route_exists() {
         )
         .await
         .unwrap();
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 }
 
 #[tokio::test]
@@ -419,7 +419,7 @@ async fn test_u2_statement_execute_mode_v2_route_exists() {
         )
         .await
         .unwrap();
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 }
 
 // ── sqlparser 安全约束（无 DB 依赖的纯单测）──
@@ -550,7 +550,7 @@ async fn test_v9_designer_search_legacy_path_route_exists() {
         )
         .await
         .unwrap();
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 }
 
 #[tokio::test]
@@ -569,7 +569,7 @@ async fn test_v9_importmodel_flag_crud_routes_exist() {
         .unwrap();
     assert_eq!(
         get.status(),
-        StatusCode::INTERNAL_SERVER_ERROR,
+        StatusCode::SERVICE_UNAVAILABLE,
         "GET /importmodel/{{flag}}"
     );
 
@@ -694,7 +694,7 @@ async fn test_v9_query_list_all_legacy_path_route_exists() {
         )
         .await
         .unwrap();
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 }
 
 #[tokio::test]
@@ -730,7 +730,7 @@ async fn test_v9_statement_execute_legacy_path_route_exists() {
         )
         .await
         .unwrap();
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 
     let mode_response = crate::router(build_test_pool())
         .oneshot(
@@ -745,7 +745,7 @@ async fn test_v9_statement_execute_legacy_path_route_exists() {
         )
         .await
         .unwrap();
-    assert_eq!(mode_response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(mode_response.status(), StatusCode::SERVICE_UNAVAILABLE);
 }
 
 #[tokio::test]
@@ -762,7 +762,7 @@ async fn test_v9_table_row_legacy_paths_route_exists() {
         )
         .await
         .unwrap();
-    assert_eq!(get_row.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(get_row.status(), StatusCode::SERVICE_UNAVAILABLE);
 
     let insert = crate::router(pool.clone())
         .oneshot(
@@ -788,7 +788,7 @@ async fn test_v9_table_row_legacy_paths_route_exists() {
         )
         .await
         .unwrap();
-    assert_eq!(count_where.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(count_where.status(), StatusCode::SERVICE_UNAVAILABLE);
 }
 
 #[tokio::test]

@@ -46,7 +46,7 @@ pub async fn get_surface(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -105,7 +105,7 @@ pub async fn create_surface(
     axum::extract::Json(req): Json<CreateSurfaceRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool.0, session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_default();
@@ -137,7 +137,7 @@ pub async fn list_surfaces(
     pool: Extension<Pool>,
     axum::extract::Path(category): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -198,7 +198,7 @@ pub async fn list_surfaces(
 // ── surface/explorer/list（桌面 QueryExplorerApp 配置串引用，查 x_query_view 保存的查询）──
 #[allow(non_snake_case)]
 pub async fn explorer_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, query_type, create_time::text AS create_time FROM x_query_view ORDER BY x_query_view.create_time DESC",
@@ -244,7 +244,7 @@ pub async fn save_surface(
     axum::extract::Json(req): Json<CreateSurfaceRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool.0, session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let name = req.name.unwrap_or_default();
     let category = req.category.unwrap_or_default();
@@ -284,7 +284,7 @@ pub async fn delete_surface(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool.0, session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute("DELETE FROM x_query_surface WHERE id = $1", &[&id])
@@ -821,7 +821,7 @@ pub async fn importmodel_execute_record_recordId(
     pool: Extension<Pool>,
     Path(record_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -861,7 +861,7 @@ async fn importmodel_flag_flag_query_queryFlag_core(
     flag: String,
     query_flag: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -929,7 +929,7 @@ async fn importmodel_list_query_queryFlag_core(
     pool: Extension<Pool>,
     query_flag: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1010,7 +1010,7 @@ async fn importmodel_list_record_item_paging_page_size_size_core(
     page: i64,
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1084,7 +1084,7 @@ async fn importmodel_list_record_paging_page_size_size_core(
     page: i64,
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1157,7 +1157,7 @@ pub async fn importmodel_record_recordId(
     pool: Extension<Pool>,
     Path(record_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1208,7 +1208,7 @@ pub async fn importmodel_record_recordId_mockdeletetoget(
     pool: Extension<Pool>,
     Path(record_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1247,7 +1247,7 @@ async fn importmodel_record_recordId_status_core(
     pool: Extension<Pool>,
     record_id: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1304,7 +1304,7 @@ pub async fn importmodel_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1368,7 +1368,7 @@ pub async fn importmodel_id_execute(
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool.0, session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1413,7 +1413,7 @@ async fn neural_list_calculate_model_modelFlag_work_workId_core(
     model_flag: String,
     work_id: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1487,7 +1487,7 @@ pub async fn neural_list_calculate_model_modelFlag_work_workId_p3(
 
 #[allow(non_snake_case)]
 pub async fn query_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1541,7 +1541,7 @@ async fn query_list_key_key_core(
     pool: Extension<Pool>,
     key: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1611,7 +1611,7 @@ async fn query_flag_core(
     pool: Extension<Pool>,
     flag: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1683,7 +1683,7 @@ async fn table_list_paging_page_size_size_core(
     page: i64,
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1758,7 +1758,7 @@ async fn table_list_table_tableFlag_row_paging_page_size_size_core(
     page: i64,
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1826,7 +1826,7 @@ async fn table_list_id_next_count_core(
     id: String,
     count: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1888,7 +1888,7 @@ pub async fn table_list_id_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1934,7 +1934,7 @@ pub async fn table_list_tableFlag_row_select(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1980,7 +1980,7 @@ pub async fn table_list_tableFlag_row_select_where_where(
     pool: Extension<Pool>,
     Path((table_flag, _where)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2028,7 +2028,7 @@ async fn table_list_tableFlag_row_id_next_count_core(
     id: String,
     count: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2095,7 +2095,7 @@ pub async fn table_list_tableFlag_row_id_prev_count(
     pool: Extension<Pool>,
     Path((table_flag, id, count)): Path<(String, String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2149,7 +2149,7 @@ pub async fn table_reload_dynamic(
         }
         Some(_) => {}
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let _ = client
         .execute(
@@ -2171,7 +2171,7 @@ pub async fn table_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2222,7 +2222,7 @@ pub async fn table_tableFlag_row(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2268,7 +2268,7 @@ pub async fn table_tableFlag_row_count_where_where(
     pool: Extension<Pool>,
     Path((table_flag, _where)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_one(
@@ -2298,7 +2298,7 @@ pub async fn table_tableFlag_row_delete_all(
     Path(table_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool.0, session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -2328,7 +2328,7 @@ pub async fn table_tableFlag_row_delete_all_mockdeletetoget(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2374,7 +2374,7 @@ pub async fn table_tableFlag_row_one(
     pool: Extension<Pool>,
     Path(table_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2413,7 +2413,7 @@ pub async fn table_tableFlag_row_id(
     pool: Extension<Pool>,
     Path((table_flag, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2452,7 +2452,7 @@ pub async fn table_tableFlag_row_id_mockdeletetoget(
     pool: Extension<Pool>,
     Path((table_flag, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2495,7 +2495,7 @@ pub async fn table_tableFlag_row_id_mockputtopost(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 第五十九批：动态表行写收 admin 档（与 importmodel_record_delete 同口径）。
     require_admin_opt(&pool.0, session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let data_str = serde_json::to_string(&body).map_err(|_| AppError::Internal)?;
 
@@ -2532,7 +2532,7 @@ pub async fn table_tableFlag_row_id_part_update(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 第五十九批：动态表行局部写收 admin 档。
     require_admin_opt(&pool.0, session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let data_str = serde_json::to_string(&body).map_err(|_| AppError::Internal)?;
 
@@ -2568,7 +2568,7 @@ async fn view_excel_result_flag_core(
     pool: Extension<Pool>,
     flag: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2645,7 +2645,7 @@ async fn view_flag_flag_query_queryFlag_core(
     flag: String,
     query_flag: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2720,7 +2720,7 @@ pub async fn view_flag_flag_query_queryFlag_bundle(
     pool: Extension<Pool>,
     Path((_s0, flag, _s2, _s3, query_flag)): Path<(String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2763,7 +2763,7 @@ pub async fn view_flag_flag_query_queryFlag_bundle_mockputtopost(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 第五十九批：视图 bundle 写收 admin 档。
     require_admin_opt(&pool.0, session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let bundle_str = serde_json::to_string(&body).map_err(|_| AppError::Internal)?;
 
@@ -2796,7 +2796,7 @@ pub async fn view_flag_flag_query_queryFlag_excel(
     pool: Extension<Pool>,
     Path((_s0, flag, _s2, _s3, query_flag)): Path<(String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2839,7 +2839,7 @@ pub async fn view_flag_flag_query_queryFlag_excel_mockputtopost(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 第五十九批：视图 excel 写收 admin 档。
     require_admin_opt(&pool.0, session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let excel_str = body
         .get("excelData")
@@ -2875,7 +2875,7 @@ pub async fn view_flag_flag_query_queryFlag_execute(
     pool: Extension<Pool>,
     Path((view, app)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2935,7 +2935,7 @@ pub async fn view_flag_flag_query_queryFlag_execute_mockputtopost(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 第五十九批：视图 execute 写收 admin 档。
     require_admin_opt(&pool.0, session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let data_str = serde_json::to_string(&body).map_err(|_| AppError::Internal)?;
 
@@ -2968,7 +2968,7 @@ pub async fn view_flag_flag_query_queryFlag_execute_v2_page_page_size_size(
     pool: Extension<Pool>,
     Path((view, app, page, size)): Path<(String, String, i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -3026,7 +3026,7 @@ pub async fn view_list_query_queryFlag(
     pool: Extension<Pool>,
     Path(query_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -3081,7 +3081,7 @@ pub async fn view_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -3134,7 +3134,7 @@ pub async fn view_id_bundle(
     pool: Extension<Pool>,
     Path((_s0, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -3177,7 +3177,7 @@ pub async fn view_id_bundle_mockputtopost(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 第五十九批：视图 bundle 写收 admin 档。
     require_admin_opt(&pool.0, session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let bundle_str = serde_json::to_string(&body).map_err(|_| AppError::Internal)?;
 
@@ -3209,7 +3209,7 @@ pub async fn view_id_bundle_v2(
     pool: Extension<Pool>,
     Path((_s0, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -3248,7 +3248,7 @@ pub async fn view_id_excel(
     pool: Extension<Pool>,
     Path((_s0, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -3291,7 +3291,7 @@ pub async fn view_id_excel_mockputtopost(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 第五十九批：视图 excel 写收 admin 档。
     require_admin_opt(&pool.0, session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let excel_str = body
         .get("excelData")
@@ -3326,7 +3326,7 @@ pub async fn view_id_execute(
     pool: Extension<Pool>,
     Path((_s0, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -3398,7 +3398,7 @@ pub async fn view_id_execute_mockputtopost(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 第五十九批：视图 execute 写收 admin 档。
     require_admin_opt(&pool.0, session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let data_str = serde_json::to_string(&body).map_err(|_| AppError::Internal)?;
 
@@ -3430,7 +3430,7 @@ pub async fn view_id_execute_v2_page_page_size_size(
     pool: Extension<Pool>,
     Path((_s0, id, page, size)): Path<(String, String, i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(

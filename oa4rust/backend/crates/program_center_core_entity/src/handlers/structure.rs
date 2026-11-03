@@ -112,7 +112,7 @@ pub async fn structure_create(
         description: Set(req.description.unwrap_or_default()),
         deleted_at: Set(None),
     };
-    let model = active.insert(&db.0).await.map_err(|_| AppError::Internal)?;
+    let model = active.insert(&db.0).await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -189,7 +189,7 @@ pub async fn structure_update(
         active.description = Set(description);
     }
 
-    let updated = active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+    let updated = active.update(&db.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(updated.id.clone())),
@@ -233,7 +233,7 @@ pub async fn structure_delete(
     let id = model.id.clone();
     let mut active: entities::cte_structure::ActiveModel = model.into();
     active.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));
-    active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+    active.update(&db.0).await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),

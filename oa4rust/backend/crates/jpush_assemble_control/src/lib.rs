@@ -40,7 +40,7 @@ mod tests_generated;
 pub async fn get_control_config(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT COUNT(*) as cnt FROM x_jpush WHERE deleted_at IS NULL",
@@ -72,7 +72,7 @@ pub async fn get_control_config(
 pub async fn list_control_apps(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT target as id, COUNT(*) as cnt FROM x_jpush WHERE deleted_at IS NULL GROUP BY target ORDER BY target ASC",
@@ -125,7 +125,7 @@ pub async fn update_control_config(
         }
         Some(_) => {}
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let config = body.0;
     tracing::info!("Updating jpush assemble control config: {:?}", config);
 
@@ -170,7 +170,7 @@ pub struct JpushRequest {
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn list_jpushs(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, title, content, target, creator, create_time FROM x_jpush WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 100",
@@ -228,7 +228,7 @@ pub async fn get_jpush(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, title, content, target, creator, create_time FROM x_jpush WHERE id = $1 AND deleted_at IS NULL",
@@ -289,7 +289,7 @@ pub async fn create_jpush(
         }
         Some(_) => {}
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let title = req.title.unwrap_or_default();
     let content = req.content.unwrap_or_default();
@@ -324,7 +324,7 @@ async fn jpush_owner_gate(
     let Some(Extension(sess)) = session else {
         return Err(AppError::Unauthorized);
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let row = client
         .query_opt(
             "SELECT creator FROM x_jpush WHERE id = $1 AND deleted_at IS NULL LIMIT 1",
@@ -358,7 +358,7 @@ pub async fn save_jpush(
     if !jpush_owner_gate(&pool.0, session, &id).await? {
         return Ok(Json(ActionResult::error("jpush not found")));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let title = req.title.unwrap_or_default();
     let content = req.content.unwrap_or_default();
     let target = req.target.unwrap_or_default();
@@ -399,7 +399,7 @@ pub async fn delete_jpush(
             "jpush not found or already deleted",
         )));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let result = client
         .execute(
             "UPDATE x_jpush SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -436,7 +436,7 @@ pub async fn device_admin_unbind_all_person(
         }
         Some(_) => {}
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let person_id = req
         .get("personId")
         .and_then(|v| v.as_str())
@@ -475,7 +475,7 @@ pub async fn device_bind(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 第五十四批：绑定设备要求有效会话（无会话 401）；creator 仍取 body.personId（冒名残留记 §五）。
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let device_name = req
         .get("deviceName")
         .and_then(|v| v.as_str())
@@ -517,7 +517,7 @@ pub async fn device_check_deviceName_deviceType_pushType(
     pool: Extension<Pool>,
     Path((device_name, device_type, push_type)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, title, content, target, creator, create_time FROM x_jpush WHERE title = $1 AND content = $2 AND target = $3 AND deleted_at IS NULL LIMIT 1",
@@ -536,7 +536,7 @@ pub async fn device_check_deviceName_deviceType_pushType(
 pub async fn device_config_push_type(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(
             "SELECT COUNT(*) as cnt, MAX(target) as target FROM x_jpush WHERE deleted_at IS NULL",
@@ -563,7 +563,7 @@ pub async fn device_list_pushType(
     pool: Extension<Pool>,
     Path(push_type): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, title, content, target, creator, create_time FROM x_jpush WHERE target = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
@@ -626,7 +626,7 @@ pub async fn device_unbind_new_deviceName_deviceType_pushType(
     let Some(Extension(sess)) = session else {
         return Err(AppError::Unauthorized);
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let owner: Option<String> = client
         .query_opt(
             "SELECT creator FROM x_jpush WHERE title = $1 AND content = $2 AND target = $3 AND deleted_at IS NULL",
@@ -676,7 +676,7 @@ pub async fn device_unbind_deviceName_deviceType(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 第五十四批：解绑设备要求有效会话（无会话 401）。
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let result = client
         .execute(
             "UPDATE x_jpush SET deleted_at = NOW() WHERE title = $1 AND content = $2 AND deleted_at IS NULL",
@@ -704,7 +704,7 @@ pub async fn device_unbind_deviceName_deviceType(
 pub async fn message_test_send(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, title, content, target, creator FROM x_jpush WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 10",
@@ -979,7 +979,7 @@ pub async fn message_send(
         }
         Some(_) => {}
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let title = req
         .get("title")

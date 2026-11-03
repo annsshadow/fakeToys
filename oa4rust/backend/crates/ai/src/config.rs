@@ -12,7 +12,7 @@ use shared::{error::AppError, response::ActionResult};
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn config_get(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xname, xtype, xmodel, xenable FROM x_ai_model WHERE xenable = true ORDER BY xname LIMIT 1",
@@ -112,7 +112,7 @@ pub async fn config_get(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
 pub async fn config_base_config(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xname, xtype, xmodel, xenable FROM x_ai_model WHERE xenable = true ORDER BY xname LIMIT 1",
@@ -152,7 +152,7 @@ pub async fn config_list_model_paging(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i32, i32)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let size = size.clamp(1, 200) as i64;
     let page = page.max(1) as i64;
@@ -230,7 +230,7 @@ pub async fn config_get_model(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -322,7 +322,7 @@ pub async fn config_get_mcp(
 pub async fn list_enable_model(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xname, name, xtype, xmodel, xenable FROM x_ai_model WHERE xenable = true ORDER BY xname LIMIT 20",

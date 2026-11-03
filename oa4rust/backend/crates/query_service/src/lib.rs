@@ -29,7 +29,7 @@ pub async fn neural_generate_model(
     Path(model_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -54,7 +54,7 @@ pub async fn neural_generate_model(
 pub async fn neural_list_model(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -138,7 +138,7 @@ pub async fn processing_execute(
     Json(req): Json<ProcessingExecuteRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let query = req.query.unwrap_or_default();
     let model_flag = req.model_flag.unwrap_or_default();

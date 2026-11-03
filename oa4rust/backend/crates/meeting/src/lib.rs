@@ -89,7 +89,7 @@ pub struct Participant {
 )]
 #[allow(non_snake_case)]
 pub async fn room_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, building_id, floor, capacity, equipment::text AS equipment, description, photo, order_number FROM x_meeting_room ORDER BY name LIMIT 50",
@@ -153,7 +153,7 @@ pub async fn room_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
 )]
 #[allow(non_snake_case)]
 pub async fn building_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, address, description, order_number, create_time::text FROM x_meeting_building ORDER BY name LIMIT 50",
@@ -208,7 +208,7 @@ pub async fn building_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
 pub async fn openmeeting_list_room(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, url FROM x_meeting_room WHERE open_meeting = true ORDER BY name LIMIT 50",
@@ -257,7 +257,7 @@ pub async fn create_meeting(
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let title = payload
         .get("title")
         .and_then(|v| v.as_str())
@@ -328,7 +328,7 @@ pub async fn get_meeting(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, title, content, room_id, start_time, end_time, creator, create_time FROM x_meeting WHERE id = $1",
@@ -383,7 +383,7 @@ pub async fn get_meeting(
 )]
 #[allow(non_snake_case)]
 pub async fn list_meetings(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, title, content, room_id, start_time::text, end_time::text, creator, create_time::text FROM x_meeting ORDER BY start_time DESC LIMIT 50",
@@ -458,7 +458,7 @@ pub async fn add_participant(
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let invitee = payload
         .get("invitee")
         .and_then(|v| v.as_str())
@@ -502,7 +502,7 @@ pub async fn list_participants(
     pool: Extension<Pool>,
     axum::extract::Path(meeting_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, meeting_id, invitee, status, create_time FROM x_meeting_invite WHERE meeting_id = $1 ORDER BY create_time",
@@ -560,7 +560,7 @@ pub async fn list_schedule(
     pool: Extension<Pool>,
     axum::extract::Path(days): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, title, content, room_id, start_time, end_time, creator, create_time FROM x_meeting WHERE start_time >= NOW() AND start_time <= NOW() + INTERVAL '1 day' * $1 ORDER BY start_time ASC LIMIT 100",

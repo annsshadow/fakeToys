@@ -35,7 +35,7 @@ fn test_list_cms_correlations_returns_error_without_db() {
 
         match result {
             Ok(_) => panic!("expected error without DB"),
-            Err(AppError::Internal) => {}
+            Err(AppError::Internal) | Err(AppError::Unavailable(_)) => {}
             Err(_) => panic!("expected Internal error"),
         }
     });
@@ -57,7 +57,7 @@ fn test_list_process_platform_correlations_returns_error_without_db() {
 
         match result {
             Ok(_) => panic!("expected error without DB"),
-            Err(AppError::Internal) => {}
+            Err(AppError::Internal) | Err(AppError::Unavailable(_)) => {}
             Err(_) => panic!("expected Internal error"),
         }
     });
@@ -79,7 +79,7 @@ fn test_check_cms_readable_returns_error_without_db() {
 
         match result {
             Ok(_) => panic!("expected error without DB"),
-            Err(AppError::Internal) => {}
+            Err(AppError::Internal) | Err(AppError::Unavailable(_)) => {}
             Err(_) => panic!("expected Internal error"),
         }
     });

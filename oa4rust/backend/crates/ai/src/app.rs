@@ -10,7 +10,7 @@ use shared::{error::AppError, response::ActionResult};
 pub async fn sync_to_knowledge(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query("SELECT COUNT(*) as cnt FROM x_ai_completion", &[])
         .await
@@ -35,7 +35,7 @@ pub async fn sync_to_knowledge(
 
 #[axum::debug_handler]
 pub async fn app_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, description, status FROM x_ai_app ORDER BY create_time DESC LIMIT 20",
@@ -76,7 +76,7 @@ pub async fn app_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>
 
 #[axum::debug_handler]
 pub async fn model_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, provider, enabled FROM x_ai_model ORDER BY name LIMIT 20",
@@ -109,7 +109,7 @@ pub async fn model_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
 pub async fn conversation_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, title, user_id, create_time FROM x_ai_conversation ORDER BY create_time DESC LIMIT 20",

@@ -36,7 +36,7 @@ mod u2_tests {
     async fn u2_snap_get_reachable() {
         assert_eq!(
             status_of("GET", "/api/processplatform/assemble/surface/snap/snap-1").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
     }
 
@@ -69,11 +69,11 @@ mod u2_tests {
         let base = "/api/processplatform/assemble/surface/snap/list";
         assert_eq!(
             status_of("GET", &format!("{}/snap-1/next/20", base)).await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", &format!("{}/snap-1/prev/20", base)).await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", &format!("{}/snap-1/next/20/manage", base)).await,
@@ -86,7 +86,7 @@ mod u2_tests {
         let base = "/api/processplatform/assemble/surface/snap";
         assert_eq!(
             status_of("GET", &format!("{}/work/work-1/type/snap", base)).await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of(
@@ -94,7 +94,7 @@ mod u2_tests {
                 &format!("{}/workcompleted/wc-1/type/snapworkcompleted", base)
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
     }
 
@@ -110,7 +110,7 @@ mod u2_tests {
         ] {
             assert_eq!(
                 status_of("GET", &format!("{}{}", base, suffix)).await,
-                StatusCode::INTERNAL_SERVER_ERROR,
+                StatusCode::SERVICE_UNAVAILABLE,
                 "route not reachable: {}{}",
                 base,
                 suffix
@@ -123,7 +123,7 @@ mod u2_tests {
         let uri = "/api/processplatform/assemble/surface/attachment/att-1/work/work-1";
         assert_eq!(
             status_of("GET", uri).await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("DELETE", uri).await,
@@ -139,7 +139,7 @@ mod u2_tests {
                 "/api/processplatform/assemble/surface/attachment/att-1/work/work-1/text"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of(
@@ -147,7 +147,7 @@ mod u2_tests {
                 "/api/processplatform/assemble/surface/attachment/att-1/available"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
     }
 
@@ -176,7 +176,7 @@ mod u2_tests {
         ] {
             assert_eq!(
                 status_of(method, &format!("{}{}", base, path)).await,
-                StatusCode::INTERNAL_SERVER_ERROR,
+                StatusCode::SERVICE_UNAVAILABLE,
                 "route not reachable: {} {}",
                 method,
                 path
@@ -291,15 +291,15 @@ mod u2_tests {
         let base = "/api/processplatform/assemble/surface/snap";
         assert_eq!(
             status_of("GET", &format!("{}/snap-1/mockdeletetoget", base)).await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", &format!("{}/list/my/paging/0/size/20", base)).await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("POST", &format!("{}/list/my/filter/0/size/20", base)).await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of(
@@ -307,7 +307,7 @@ mod u2_tests {
                 &format!("{}/list/snap-1/next/20/application/app-1", base)
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of(
@@ -315,15 +315,15 @@ mod u2_tests {
                 &format!("{}/list/snap-1/prev/20/application/app-1", base)
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", &format!("{}/list/snap-1/next/20/process/pr-1", base)).await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", &format!("{}/list/snap-1/prev/20/process/pr-1", base)).await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
     }
 
@@ -336,7 +336,7 @@ mod u2_tests {
         );
         assert_eq!(
             status_of("GET", &format!("{}/att-1/mockdeletetoget", base)).await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of(
@@ -344,7 +344,7 @@ mod u2_tests {
                 &format!("{}/att-1/workorworkcompleted/either-1", base)
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of(
@@ -352,7 +352,7 @@ mod u2_tests {
                 &format!("{}/list/workorworkcompleted/either-1", base)
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
     }
 
@@ -373,7 +373,7 @@ mod u2_tests {
         ] {
             assert_eq!(
                 status_of(method, &format!("{}{}", base, path)).await,
-                StatusCode::INTERNAL_SERVER_ERROR,
+                StatusCode::SERVICE_UNAVAILABLE,
                 "tuple route extraction failed: {} {}",
                 method,
                 path
@@ -392,7 +392,7 @@ mod u2_tests {
         ] {
             assert_eq!(
                 status_of("GET", &format!("{}{}", base, path)).await,
-                StatusCode::INTERNAL_SERVER_ERROR,
+                StatusCode::SERVICE_UNAVAILABLE,
                 "cursor tuple route failed: {}",
                 path
             );
@@ -433,7 +433,7 @@ mod u2_tests {
         for method in ["GET", "PUT", "POST"] {
             assert_eq!(
                 status_of(method, uri).await,
-                StatusCode::INTERNAL_SERVER_ERROR,
+                StatusCode::SERVICE_UNAVAILABLE,
                 "method router merge broken: {}",
                 method
             );
@@ -478,7 +478,7 @@ mod u2_tests {
         ] {
             assert_eq!(
                 status_of("GET", &format!("{}{}", base, path)).await,
-                StatusCode::INTERNAL_SERVER_ERROR,
+                StatusCode::SERVICE_UNAVAILABLE,
                 "snap filtered cursor prev/next route failed: {}",
                 path
             );
@@ -497,7 +497,7 @@ mod u2_tests {
         ] {
             assert_eq!(
                 status_of(method, &format!("{}{}", base, path)).await,
-                StatusCode::INTERNAL_SERVER_ERROR,
+                StatusCode::SERVICE_UNAVAILABLE,
                 "data job pathN route failed: {} {}",
                 method,
                 path
@@ -542,7 +542,7 @@ mod u2_tests {
         ] {
             assert_eq!(
                 status_of(method, &format!("{}{}", base, path)).await,
-                StatusCode::INTERNAL_SERVER_ERROR,
+                StatusCode::SERVICE_UNAVAILABLE,
                 "v2 tuple route failed: {} {}",
                 method,
                 path
@@ -822,9 +822,12 @@ mod u2b_tests {
             format!("{b}/download/work/w-1/att/att-1"),
             format!("{b}/download/transfer/flag/either-1"),
         ] {
-            assert_eq!(
-                status_of("GET", &path).await,
-                StatusCode::INTERNAL_SERVER_ERROR,
+            // O2：死池下 503（取连失败）与 500（缺会话扩展）均证明路由可达
+            assert!(
+                matches!(
+                    status_of("GET", &path).await,
+                    StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE
+                ),
                 "download route failed: {path}"
             );
         }
@@ -958,17 +961,17 @@ mod u2b_tests {
             (
                 "GET",
                 &format!("{base}/w-1/p0"),
-                StatusCode::INTERNAL_SERVER_ERROR,
+                StatusCode::SERVICE_UNAVAILABLE,
             ),
             (
                 "GET",
                 &format!("{base}/w-1/p0/p1/p2/p3"),
-                StatusCode::INTERNAL_SERVER_ERROR,
+                StatusCode::SERVICE_UNAVAILABLE,
             ),
             (
                 "GET",
                 &format!("{base}/w-1/p0/p1/p2/p3/p4/p5/p6/p7"),
-                StatusCode::INTERNAL_SERVER_ERROR,
+                StatusCode::SERVICE_UNAVAILABLE,
             ),
             (
                 "GET",
@@ -1009,7 +1012,7 @@ mod u2b_tests {
         ] {
             assert_eq!(
                 status_of(method, path).await,
-                StatusCode::INTERNAL_SERVER_ERROR,
+                StatusCode::SERVICE_UNAVAILABLE,
                 "workcompleted pathN tuple extraction failed: {path}"
             );
         }

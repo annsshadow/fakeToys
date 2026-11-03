@@ -45,7 +45,7 @@ pub struct ConfigSaveRequest {
 
 #[allow(non_snake_case)]
 pub async fn applications(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, app_id, disable FROM x_applications ORDER BY name",
@@ -88,7 +88,7 @@ pub async fn applications(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
 
 #[allow(non_snake_case)]
 pub async fn current_style(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, app_id, disable FROM x_applications ORDER BY name",
@@ -126,7 +126,7 @@ pub async fn current_style(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
 
 #[allow(non_snake_case)]
 pub async fn modules_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -182,7 +182,7 @@ pub async fn collect_list(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -245,7 +245,7 @@ pub async fn collect_add(
     axum::extract::Json(req): Json<CollectAddRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let title = req.title.unwrap_or_default();
@@ -331,7 +331,7 @@ pub async fn collect_save(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 属主门禁（此前任何登录人可改任意收藏）；归属不可经 save 改写：
     // save 走不含 person_id 的窄 spec（客户端传 personId 会被忽略，见 collect_update_spec）
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let owned = client
         .query_opt(
             "SELECT 1 FROM x_program_collect WHERE id = $1 AND person_id = $2 AND deleted_at IS NULL",
@@ -366,7 +366,7 @@ pub async fn collect_delete(
     // 属主门禁 + 软删幂等：持他人收藏 id 删除=横向越权（修复前 crud_delete
     // 无属主校验，任何登录人可删任意收藏）；deleted=false 不区分
     // 「不存在/非本人/已删」，不泄漏行存在性
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let deleted = client
         .execute(
             "UPDATE x_program_collect SET deleted_at = NOW() WHERE id = $1 AND person_id = $2 AND deleted_at IS NULL",
@@ -388,7 +388,7 @@ pub async fn config_get(
     pool: Extension<Pool>,
     Path(key): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -446,7 +446,7 @@ pub async fn agent_flag(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, flag, creator, create_time FROM x_program_agent WHERE id = $1 AND deleted_at IS NULL",
@@ -488,7 +488,7 @@ pub async fn agent_flag_disable(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, flag, creator, create_time FROM x_program_agent WHERE id = $1 AND deleted_at IS NULL",
@@ -530,7 +530,7 @@ pub async fn agent_flag_enable(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, flag, creator, create_time FROM x_program_agent WHERE id = $1 AND deleted_at IS NULL",
@@ -572,7 +572,7 @@ pub async fn agent_flag_execute(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, flag, creator, create_time FROM x_program_agent WHERE id = $1 AND deleted_at IS NULL",
@@ -611,7 +611,7 @@ pub async fn agent_flag_execute(
 
 #[allow(non_snake_case)]
 pub async fn agent_flag_file(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, flag, creator, create_time FROM x_program_agent WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -654,7 +654,7 @@ pub async fn andfx_pull_sync(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     client
@@ -678,7 +678,7 @@ pub async fn andfx_pull_sync(
 pub async fn appstyle_current_style(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -724,7 +724,7 @@ pub async fn appstyle_current_style(
 pub async fn appstyle_current_update(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -770,7 +770,7 @@ pub async fn appstyle_current_update(
 pub async fn appstyle_image_application_top(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -828,7 +828,7 @@ pub async fn appstyle_image_application_top_erase(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -851,7 +851,7 @@ pub async fn appstyle_image_application_top_erase(
 pub async fn appstyle_image_launch_logo(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -909,7 +909,7 @@ pub async fn appstyle_image_launch_logo_erase(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -932,7 +932,7 @@ pub async fn appstyle_image_launch_logo_erase(
 pub async fn appstyle_image_login_avatar(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -990,7 +990,7 @@ pub async fn appstyle_image_login_avatar_erase(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -1013,7 +1013,7 @@ pub async fn appstyle_image_login_avatar_erase(
 pub async fn appstyle_image_menu_logo_blur(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1071,7 +1071,7 @@ pub async fn appstyle_image_menu_logo_blur_erase(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -1094,7 +1094,7 @@ pub async fn appstyle_image_menu_logo_blur_erase(
 pub async fn appstyle_image_menu_logo_focus(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1152,7 +1152,7 @@ pub async fn appstyle_image_menu_logo_focus_erase(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -1175,7 +1175,7 @@ pub async fn appstyle_image_menu_logo_focus_erase(
 pub async fn appstyle_image_process_default(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1233,7 +1233,7 @@ pub async fn appstyle_image_process_default_erase(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -1256,7 +1256,7 @@ pub async fn appstyle_image_process_default_erase(
 pub async fn appstyle_image_setup_about_logo(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1314,7 +1314,7 @@ pub async fn appstyle_image_setup_about_logo_erase(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -1337,7 +1337,7 @@ pub async fn appstyle_image_setup_about_logo_erase(
 pub async fn appstyle_index_portal(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1383,7 +1383,7 @@ pub async fn appstyle_index_portal(
 pub async fn bar_create_mass_from_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1436,7 +1436,7 @@ pub async fn bar_create_mass_from_count(
 pub async fn bar_select1_field_field_value_value_count_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1489,7 +1489,7 @@ pub async fn bar_select1_field_field_value_value_count_count(
 pub async fn bar_select2_count_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1542,7 +1542,7 @@ pub async fn bar_select2_count_count(
 pub async fn bar_select3_field_field_value_value_count_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1595,7 +1595,7 @@ pub async fn bar_select3_field_field_value_value_count_count(
 pub async fn bar_select4_field_field_value_value_count_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1646,7 +1646,7 @@ pub async fn bar_select4_field_field_value_value_count_count(
 
 #[allow(non_snake_case)]
 pub async fn captcha_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1702,7 +1702,7 @@ pub async fn captcha_v2_create_width_width_height_height(
     Path((width, height)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
@@ -1721,7 +1721,7 @@ pub async fn captcha_id_validate_answer_answer(
     pool: Extension<Pool>,
     Path((id, answer)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, flag, content FROM x_program_script WHERE id = $1 AND category = 'captcha' AND deleted_at IS NULL",
@@ -1750,7 +1750,7 @@ pub async fn captcha_id_validate_answer_answer(
 pub async fn center_applications(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1796,7 +1796,7 @@ pub async fn center_applications(
 pub async fn center_regist_applications(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1840,7 +1840,7 @@ pub async fn center_regist_applications(
 
 #[allow(non_snake_case)]
 pub async fn center_version(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let _client = shared::db::acquire(&pool).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("version".to_string(), Value::String("1.0.0".to_string()))]),
     ))))
@@ -1853,7 +1853,7 @@ pub async fn code_create_mobile_mobile(
     Path(mobile): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let code = format!(
         "{:06}",
@@ -1873,7 +1873,7 @@ pub async fn code_create_mobile_mobile(
 
 #[allow(non_snake_case)]
 pub async fn code_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1930,7 +1930,7 @@ pub async fn code_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
 pub async fn code_list_paging_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1988,7 +1988,7 @@ pub async fn code_validate_mobile_mobile_answer_answer(
     pool: Extension<Pool>,
     Path((mobile, answer)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, flag FROM x_program_script WHERE category = 'code' AND flag = $1 AND deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -2010,7 +2010,7 @@ pub async fn code_validate_mobile_mobile_answer_answer_cascade(
     pool: Extension<Pool>,
     Path((mobile, answer)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, flag FROM x_program_script WHERE category = 'code' AND flag = $1 AND deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -2032,7 +2032,7 @@ pub async fn collect_code_mobile_mobile(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
@@ -2081,7 +2081,7 @@ pub async fn collect_code_mobile_mobile(
 
 #[allow(non_snake_case)]
 pub async fn collect_connect(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -2132,7 +2132,7 @@ pub async fn collect_connect(pool: Extension<Pool>) -> Result<Json<ActionResult<
 pub async fn collect_controllebbs(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -2184,7 +2184,7 @@ pub async fn collect_controllermobile_name_name_mobile_mobile(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
@@ -2235,7 +2235,7 @@ pub async fn collect_controllermobile_name_name_mobile_mobile(
 pub async fn collect_disconnect(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -2284,7 +2284,7 @@ pub async fn collect_disconnect(
 
 #[allow(non_snake_case)]
 pub async fn collect_login(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -2335,7 +2335,7 @@ pub async fn collect_login(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
 pub async fn collect_mobile_check_connect(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -2387,7 +2387,7 @@ pub async fn collect_name_name_exist(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
@@ -2439,7 +2439,7 @@ pub async fn collect_name_name_mobile_mobile_code_code(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
@@ -2488,7 +2488,7 @@ pub async fn collect_name_name_mobile_mobile_code_code(
 
 #[allow(non_snake_case)]
 pub async fn collect_person(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -2539,7 +2539,7 @@ pub async fn collect_person(pool: Extension<Pool>) -> Result<Json<ActionResult<V
 pub async fn collect_resetpassword(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -2590,7 +2590,7 @@ pub async fn collect_resetpassword(
 pub async fn collect_sync_area(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -2641,7 +2641,7 @@ pub async fn collect_sync_area(
 pub async fn collect_updateUnit(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -2692,7 +2692,7 @@ pub async fn collect_updateUnit(
 pub async fn collect_urlMapping(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -2743,7 +2743,7 @@ pub async fn collect_urlMapping(
 pub async fn collect_validate(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -2794,7 +2794,7 @@ pub async fn collect_validate(
 pub async fn collect_validate_codeanswer(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -2845,7 +2845,7 @@ pub async fn collect_validate_codeanswer(
 pub async fn collect_validate_direct(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -2896,7 +2896,7 @@ pub async fn collect_validate_direct(
 pub async fn collect_validate_password(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -2945,7 +2945,7 @@ pub async fn collect_validate_password(
 
 #[allow(non_snake_case)]
 pub async fn command_execute(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let _client = shared::db::acquire(&pool).await?;
     Ok(Json(ActionResult::legacy_success(
         Value::Array(Vec::new()),
         0,
@@ -2957,7 +2957,7 @@ pub async fn command_execute(pool: Extension<Pool>) -> Result<Json<ActionResult<
 pub async fn command_list_node(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let _client = shared::db::acquire(&pool).await?;
     Ok(Json(ActionResult::legacy_success(
         Value::Array(Vec::new()),
         0,
@@ -2969,7 +2969,7 @@ pub async fn command_list_node(
 pub async fn config_open_get_disable_export_enable(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, key, value, category, creator, create_time FROM x_program_config \
@@ -3018,7 +3018,7 @@ pub async fn config_open_get_disable_export_enable(
 pub async fn config_centerserver(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE category = $1 AND deleted_at IS NULL",
@@ -3066,7 +3066,7 @@ pub async fn config_centerserver(
 pub async fn config_change_password(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -3112,7 +3112,7 @@ pub async fn config_change_password(
 
 #[allow(non_snake_case)]
 pub async fn config_collect(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE category = $1 AND deleted_at IS NULL",
@@ -3158,7 +3158,7 @@ pub async fn config_collect(pool: Extension<Pool>) -> Result<Json<ActionResult<V
 
 #[allow(non_snake_case)]
 pub async fn config_license(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE category = $1 AND deleted_at IS NULL",
@@ -3204,7 +3204,7 @@ pub async fn config_license(pool: Extension<Pool>) -> Result<Json<ActionResult<V
 
 #[allow(non_snake_case)]
 pub async fn config_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, key, value, category, creator, create_time FROM x_program_config ORDER BY create_time DESC LIMIT 100",
@@ -3258,7 +3258,7 @@ pub async fn config_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 pub async fn config_list_application(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, key, value, category, creator, create_time FROM x_program_config ORDER BY create_time DESC LIMIT 100",
@@ -3312,7 +3312,7 @@ pub async fn config_list_application(
 pub async fn config_list_dump_data(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, key, value, category, creator, create_time FROM x_program_config ORDER BY create_time DESC LIMIT 100",
@@ -3366,7 +3366,7 @@ pub async fn config_list_dump_data(
 pub async fn config_list_dump_data_current_node(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, key, value, category, creator, create_time FROM x_program_config ORDER BY create_time DESC LIMIT 100",
@@ -3420,7 +3420,7 @@ pub async fn config_list_dump_data_current_node(
 pub async fn config_list_entity(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, key, value, category, creator, create_time FROM x_program_config ORDER BY create_time DESC LIMIT 100",
@@ -3472,7 +3472,7 @@ pub async fn config_list_entity(
 
 #[allow(non_snake_case)]
 pub async fn config_open(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE category = $1 AND deleted_at IS NULL",
@@ -3520,7 +3520,7 @@ pub async fn config_open(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 pub async fn config_open_run_time_config(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -3566,7 +3566,7 @@ pub async fn config_open_run_time_config(
 
 #[allow(non_snake_case)]
 pub async fn config_person(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE category = $1 AND deleted_at IS NULL",
@@ -3612,7 +3612,7 @@ pub async fn config_person(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
 
 #[allow(non_snake_case)]
 pub async fn config_portal(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE category = $1 AND deleted_at IS NULL",
@@ -3658,7 +3658,7 @@ pub async fn config_portal(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
 
 #[allow(non_snake_case)]
 pub async fn config_proxy(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE category = $1 AND deleted_at IS NULL",
@@ -3709,7 +3709,7 @@ pub async fn config_save(
     axum::extract::Json(req): Json<ConfigSaveRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let key = req.key;
@@ -3739,7 +3739,7 @@ pub async fn config_save(
 pub async fn config_ternary_management(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -3794,7 +3794,7 @@ pub async fn config_ternary_management(
 
 #[allow(non_snake_case)]
 pub async fn config_token(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -3840,7 +3840,7 @@ pub async fn config_token(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
 pub async fn datastructure_fileds_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -3906,7 +3906,7 @@ pub async fn datastructure_fileds_all(
 pub async fn datastructure_modules_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -3959,7 +3959,7 @@ pub async fn datastructure_modules_all(
 pub async fn datastructure_tables_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -4016,7 +4016,7 @@ pub async fn deploy_list_paging_page_size_size(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -4069,7 +4069,7 @@ pub async fn deploy_list_paging_page_size_size(
 pub async fn deploy_server_o2(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -4115,7 +4115,7 @@ pub async fn deploy_server_o2(
 pub async fn deploy_server_resource(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -4179,7 +4179,7 @@ pub async fn deploy_web_resource_as_new_asNew(
     Path(as_new): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let creator = "system";
@@ -4205,7 +4205,7 @@ pub async fn deploy_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -4251,7 +4251,7 @@ pub async fn deploy_id(
 
 #[allow(non_snake_case)]
 pub async fn designer_search(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -4302,7 +4302,7 @@ pub async fn designer_search(pool: Extension<Pool>) -> Result<Json<ActionResult<
 
 #[allow(non_snake_case)]
 pub async fn dict_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -4372,7 +4372,7 @@ pub async fn dict_list_paging_page_size_size(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -4430,7 +4430,7 @@ pub async fn dict_dictFlag_data(
     pool: Extension<Pool>,
     Path(dict_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -4462,7 +4462,7 @@ pub async fn dict_dictFlag_path_data(
     pool: Extension<Pool>,
     Path((dict_flag, _path)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -4495,7 +4495,7 @@ pub async fn dict_dictFlag_path_data_mockdeletetoget(
     pool: Extension<Pool>,
     Path((dict_flag, _path)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -4558,7 +4558,7 @@ pub async fn dict_dictFlag_path_data_mockputtopost(
     Path((dict_flag, _path)): Path<(String, String)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // IDOR 门禁：命中行存在时按 creator_person 校验属主/管理员（与 dict_delete_id 一致）；
     // 不存在则放行，UPDATE 命中 0 行后统一回 "dict not found"，不改既有语义。
@@ -4606,7 +4606,7 @@ pub async fn dict_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -4661,7 +4661,7 @@ pub async fn dict_id(
 pub async fn dingding_get_callback_aes(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -4696,7 +4696,7 @@ pub async fn dingding_pull_sync(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -4720,7 +4720,7 @@ pub async fn dingding_request_pull_sync(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     client
@@ -4747,7 +4747,7 @@ pub async fn dingding_sync_organization_callback(
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let event_type = body
         .get("eventType")
@@ -4788,7 +4788,7 @@ pub async fn dingding_sync_organization_register_callback_enable(
     Path(enable): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
@@ -4806,7 +4806,7 @@ pub async fn dingding_sync_organization_register_callback_enable(
 pub async fn distribute_assemble_source_source(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -4859,7 +4859,7 @@ pub async fn distribute_assemble_source_source(
 pub async fn distribute_webserver_assemble_source_source(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -4912,7 +4912,7 @@ pub async fn distribute_webserver_assemble_source_source(
 pub async fn foo_create_mass_from_count(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -4970,7 +4970,7 @@ pub async fn foo_create_mass_from_count(
 
 #[allow(non_snake_case)]
 pub async fn input_compare(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -5021,7 +5021,7 @@ pub async fn input_compare(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
 
 #[allow(non_snake_case)]
 pub async fn input_cover(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -5072,7 +5072,7 @@ pub async fn input_cover(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 
 #[allow(non_snake_case)]
 pub async fn input_create(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -5125,7 +5125,7 @@ pub async fn input_create(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
 pub async fn input_prepare_cover(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -5178,7 +5178,7 @@ pub async fn input_prepare_cover(
 pub async fn input_prepare_create(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -5231,7 +5231,7 @@ pub async fn input_prepare_create(
 pub async fn invoke_list_category(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -5284,7 +5284,7 @@ pub async fn invoke_list_category(
 pub async fn invoke_list_with_category_category(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -5335,7 +5335,7 @@ pub async fn invoke_list_with_category_category(
 
 #[allow(non_snake_case)]
 pub async fn invoke_token(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -5379,7 +5379,7 @@ pub async fn invoke_token(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
 
 #[allow(non_snake_case)]
 pub async fn invoke_flag(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -5430,7 +5430,7 @@ pub async fn invoke_flag_client_client_token_token_execute(
     pool: Extension<Pool>,
     Path((client, token)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let db_client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let db_client = shared::db::acquire(&pool).await?;
     let row = db_client
         .query_opt(
             "SELECT id, name, flag FROM x_program_agent WHERE name = $1 AND flag = $2 AND deleted_at IS NULL",
@@ -5464,7 +5464,7 @@ pub async fn invoke_flag_execute(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, flag FROM x_program_agent WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -5499,7 +5499,7 @@ pub async fn invoke_flag_execute_get(
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, flag FROM x_program_agent WHERE id = $1 AND deleted_at IS NULL",
@@ -5531,7 +5531,7 @@ pub async fn invoke_flag_execute_get(
 pub async fn invoke_flag_file(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -5588,7 +5588,7 @@ pub async fn jest_clear_cache_source(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     client
@@ -5613,7 +5613,7 @@ pub async fn jest_clear_cache_source(
 
 #[allow(non_snake_case)]
 pub async fn jest_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -5668,7 +5668,7 @@ pub async fn jest_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
 
 #[allow(non_snake_case)]
 pub async fn jest_version(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let _client = shared::db::acquire(&pool).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("version".to_string(), Value::String("1.0.0".to_string()))]),
     ))))
@@ -5678,7 +5678,7 @@ pub async fn jest_version(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
 pub async fn market_cloud_unit_is_vip(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -5727,7 +5727,7 @@ pub async fn market_install_offline(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
@@ -5745,7 +5745,7 @@ pub async fn market_install_offline(
 pub async fn market_list_category(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -5798,7 +5798,7 @@ pub async fn market_list_category(
 pub async fn market_list_install_log_paging_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -5861,7 +5861,7 @@ pub async fn market_list_install_log_paging_page_size_size(
 pub async fn market_list_paging_page_size_size(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -5914,7 +5914,7 @@ pub async fn market_list_paging_page_size_size(
 pub async fn market_list_paging_page_size_size_category_category(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -5967,7 +5967,7 @@ pub async fn market_list_paging_page_size_size_category_category(
 pub async fn market_list_top_three(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -6018,7 +6018,7 @@ pub async fn market_list_top_three(
 
 #[allow(non_snake_case)]
 pub async fn market_flag(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -6064,7 +6064,7 @@ pub async fn market_flag(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 pub async fn market_flag_cover_pic(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -6120,7 +6120,7 @@ pub async fn market_flag_cover_pic(
 pub async fn market_flag_install_log(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -6185,7 +6185,7 @@ pub async fn market_flag_install_or_update(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
@@ -6210,7 +6210,7 @@ pub async fn market_flag_install_or_update(
 pub async fn market_flag_installed_version(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -6259,7 +6259,7 @@ pub async fn market_flag_uninstall(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
@@ -6282,7 +6282,7 @@ pub async fn market_id_download(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, entity FROM x_program_module WHERE id = $1 AND deleted_at IS NULL",
@@ -6311,7 +6311,7 @@ pub async fn market_id_download(
 pub async fn module_compare_upload(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -6353,7 +6353,7 @@ pub async fn module_compare_upload(
 
 #[allow(non_snake_case)]
 pub async fn module_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, entity, creator, create_time FROM x_program_module ORDER BY create_time DESC",
@@ -6403,7 +6403,7 @@ pub async fn module_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 pub async fn module_list_category(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, entity, creator, create_time FROM x_program_module ORDER BY create_time DESC",
@@ -6451,7 +6451,7 @@ pub async fn module_list_category(
 
 #[allow(non_snake_case)]
 pub async fn module_output(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -6504,7 +6504,7 @@ pub async fn module_output_list_structure() -> Result<Json<ActionResult<Value>>,
 pub async fn module_output_structure(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -6549,7 +6549,7 @@ pub async fn module_output_flag_file(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE id = $1 AND deleted_at IS NULL",
@@ -6594,7 +6594,7 @@ pub async fn module_remove_structure_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE id = $1 AND deleted_at IS NULL",
@@ -6639,7 +6639,7 @@ pub async fn module_write_flag(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE id = $1 AND deleted_at IS NULL",
@@ -6684,7 +6684,7 @@ pub async fn module_id_compare(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE id = $1 AND deleted_at IS NULL",
@@ -6726,7 +6726,7 @@ pub async fn module_id_compare(
 
 #[allow(non_snake_case)]
 pub async fn mpweixin_check(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, create_time FROM x_program_mpweixin_menu WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -6755,7 +6755,7 @@ pub async fn mpweixin_check(pool: Extension<Pool>) -> Result<Json<ActionResult<V
 pub async fn mpweixin_media_add_forever(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, create_time FROM x_program_mpweixin_menu WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -6784,7 +6784,7 @@ pub async fn mpweixin_media_add_forever(
 pub async fn mpweixin_menu_add(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, create_time FROM x_program_mpweixin_menu WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -6813,7 +6813,7 @@ pub async fn mpweixin_menu_add(
 pub async fn mpweixin_menu_create_to_weixin(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, create_time FROM x_program_mpweixin_menu WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -6845,7 +6845,7 @@ pub async fn mpweixin_menu_delete_id(
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let result = client
         .execute("DELETE FROM x_program_mpweixin_menu WHERE id = $1", &[&id])
         .await
@@ -6871,7 +6871,7 @@ pub async fn mpweixin_menu_list_weixin() -> Result<Json<ActionResult<Value>>, Ap
 pub async fn mpweixin_menu_subscribe(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, create_time FROM x_program_mpweixin_menu WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -6903,7 +6903,7 @@ pub async fn mpweixin_menu_update_id(
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -6926,7 +6926,7 @@ pub async fn mpweixin_menu_update_id(
 pub async fn mpweixin_message_template_send(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, create_time FROM x_program_mpweixin_menu WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -6953,7 +6953,7 @@ pub async fn mpweixin_message_template_send(
 
 #[allow(non_snake_case)]
 pub async fn output_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -7011,7 +7011,7 @@ pub async fn output_appInfoFlag_select(
     pool: Extension<Pool>,
     Path(app_info_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -7069,7 +7069,7 @@ pub async fn output_flag_select_file(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -7108,7 +7108,7 @@ pub async fn output_flag_select_file(
 pub async fn prompterrorlog_count_exceptionclass(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -7149,7 +7149,7 @@ pub async fn prompterrorlog_count_exceptionclass(
 pub async fn prompterrorlog_count_loggername(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -7191,7 +7191,7 @@ pub async fn prompterrorlog_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -7251,7 +7251,7 @@ pub async fn prompterrorlog_list_id_next_count_date_date(
     pool: Extension<Pool>,
     Path((id, count, date)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -7311,7 +7311,7 @@ pub async fn prompterrorlog_list_id_next_count_exceptionclass_exceptionClass(
     pool: Extension<Pool>,
     Path((id, count, exception_class)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -7371,7 +7371,7 @@ pub async fn prompterrorlog_list_id_next_count_loggername_loggerName(
     pool: Extension<Pool>,
     Path((id, count, logger_name)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -7431,7 +7431,7 @@ pub async fn prompterrorlog_list_id_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -7491,7 +7491,7 @@ pub async fn prompterrorlog_list_id_prev_count_date_date(
     pool: Extension<Pool>,
     Path((id, count, date)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -7551,7 +7551,7 @@ pub async fn prompterrorlog_list_id_prev_count_exceptionclass_exceptionClass(
     pool: Extension<Pool>,
     Path((id, count, exception_class)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -7611,7 +7611,7 @@ pub async fn prompterrorlog_list_id_prev_count_loggername_loggerName(
     pool: Extension<Pool>,
     Path((id, count, logger_name)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -7671,7 +7671,7 @@ pub async fn prompterrorlog_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -7724,7 +7724,7 @@ pub async fn prompterrorlog_id(
 pub async fn qiyeweixin_get_callback_aes(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, source, action, create_time FROM x_program_sync_log WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -7757,7 +7757,7 @@ pub async fn qiyeweixin_pull_sync(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     client
@@ -7785,7 +7785,7 @@ pub async fn qiyeweixin_request_pull_sync(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, source, action, create_time FROM x_program_sync_log WHERE id = $1 AND deleted_at IS NULL",
@@ -7819,7 +7819,7 @@ pub async fn qiyeweixin_send_getprivateinfo_message(
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let user_id = body
         .get("userId")
@@ -7855,7 +7855,7 @@ pub async fn application_create(
     Json(req): Json<ApplicationCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_default();
@@ -7892,7 +7892,7 @@ pub async fn application_get_by_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, app_id, description FROM x_applications WHERE id = $1",
@@ -7930,7 +7930,7 @@ pub async fn application_delete(
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let result = client
         .execute("DELETE FROM x_applications WHERE id = $1", &[&id])
         .await
@@ -7960,7 +7960,7 @@ pub async fn application_save(
     Json(req): Json<ApplicationSaveRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -7985,7 +7985,7 @@ pub async fn application_save(
 pub async fn application_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, app_id, description, disable, creator, create_time \
@@ -8060,7 +8060,7 @@ pub async fn agent_create(
     Json(req): Json<AgentCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_default();
@@ -8107,7 +8107,7 @@ pub async fn agent_save(
     Json(req): Json<AgentSaveRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -8130,7 +8130,7 @@ pub async fn agent_save(
 pub async fn schedule_list_schedule(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -8190,7 +8190,7 @@ pub async fn schedule_list_schedule(
 pub async fn schedule_list_schedulelocal(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -8258,7 +8258,7 @@ pub async fn schedule_list_schedulelog_application_application(
     pool: Extension<Pool>,
     Path(application): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -8319,7 +8319,7 @@ pub async fn schedule_list_schedulelog_application_application(
 
 #[allow(non_snake_case)]
 pub async fn schedule_report(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -8385,7 +8385,7 @@ pub async fn schedule_schedule_fire(
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     client
         .execute(
@@ -8402,7 +8402,7 @@ pub async fn schedule_schedule_fire(
 
 #[allow(non_snake_case)]
 pub async fn script_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -8460,7 +8460,7 @@ pub async fn script_list_paging_page_size_size(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -8518,7 +8518,7 @@ pub async fn script_name_name(
     pool: Extension<Pool>,
     Path(name): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -8570,7 +8570,7 @@ pub async fn script_name_name_imported(
     pool: Extension<Pool>,
     Path(name): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -8622,7 +8622,7 @@ pub async fn script_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -8674,7 +8674,7 @@ pub async fn script_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -8728,7 +8728,7 @@ pub async fn tokenthreshold_update(
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let threshold = body
         .get("threshold")
@@ -8767,7 +8767,7 @@ pub async fn unexpectederrorlog_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -8827,7 +8827,7 @@ pub async fn unexpectederrorlog_list_id_next_count_date_date(
     pool: Extension<Pool>,
     Path((id, count, date)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -8887,7 +8887,7 @@ pub async fn unexpectederrorlog_list_id_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -8947,7 +8947,7 @@ pub async fn unexpectederrorlog_list_id_prev_count_date_date(
     pool: Extension<Pool>,
     Path((id, count, date)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -9007,7 +9007,7 @@ pub async fn unexpectederrorlog_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -9058,7 +9058,7 @@ pub async fn unexpectederrorlog_id(
 
 #[allow(non_snake_case)]
 pub async fn validation_meta(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let _client = shared::db::acquire(&pool).await?;
     Ok(Json(ActionResult::legacy_success(
         Value::Array(Vec::new()),
         0,
@@ -9070,7 +9070,7 @@ pub async fn validation_meta(pool: Extension<Pool>) -> Result<Json<ActionResult<
 pub async fn validation_scripting_benchmark(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let _client = shared::db::acquire(&pool).await?;
     Ok(Json(ActionResult::legacy_success(
         Value::Array(Vec::new()),
         0,
@@ -9085,7 +9085,7 @@ pub async fn validation_timeout_timeout(
     Path(timeout): Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     client
         .execute(
             "INSERT INTO x_program_sync_log (id, source, action, create_time) VALUES ($1, 'validation', 'timeout', NOW())",
@@ -9107,7 +9107,7 @@ pub async fn zhengwudingding_pull_sync(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     client
@@ -9136,7 +9136,7 @@ pub async fn zhengwudingding_regist_callback(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     client
@@ -9165,7 +9165,7 @@ pub async fn zhengwudingding_sync_organization_callback(
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let event_type = body
         .get("eventType")
@@ -9274,7 +9274,7 @@ pub async fn warnlog_create(
     Json(req): Json<WarnLogCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let level = req.level.unwrap_or_else(|| "WARN".to_string());
@@ -9319,7 +9319,7 @@ pub async fn warnlog_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -9346,7 +9346,7 @@ async fn warnlog_list(
         "SELECT id, level, tag, logger_name, message, detail, host, port, create_time FROM x_program_warn_log {} ORDER BY id DESC LIMIT 100",
         where_clause,
     );
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let rows = client
         .query(&sql, params)
         .await
@@ -9417,7 +9417,7 @@ pub async fn warnlog_view_system_log_tag_tag(
 pub async fn storagemappings_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -9458,7 +9458,7 @@ pub async fn adminlogin_logout(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
             "DELETE FROM auth_session WHERE person_id = $1",
@@ -9519,7 +9519,7 @@ pub async fn cachedispatch_dispatch(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
@@ -9545,7 +9545,7 @@ pub async fn center_regist_applications_update(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
@@ -9591,7 +9591,7 @@ async fn u2_config_domain_put(
             "request body must be a JSON object",
         )));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let value = body.to_string();
     let n = client
         .execute(
@@ -9822,7 +9822,7 @@ pub async fn u2_invoke_create(
         return Ok(Json(ActionResult::error("name cannot be empty")));
     }
     let alias = opt_non_empty(&req.alias);
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 归一化查重：name 与 alias 都不允许与现有记录的 name/alias 冲突
     let dup_name = client
@@ -9920,7 +9920,7 @@ pub async fn u2_invoke_get(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let Some(id) = u2_invoke_find_by_flag(&client, flag.trim()).await? else {
         return Ok(Json(ActionResult::error("invoke not found")));
     };
@@ -9964,7 +9964,7 @@ pub async fn u2_invoke_update(
     if name.is_empty() {
         return Ok(Json(ActionResult::error("name cannot be empty")));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let Some(id) = u2_invoke_find_by_flag(&client, flag.trim()).await? else {
         return Ok(Json(ActionResult::error("invoke not found")));
     };
@@ -10031,7 +10031,7 @@ pub async fn u2_invoke_delete(
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let Some(id) = u2_invoke_find_by_flag(&client, flag.trim()).await? else {
         return Ok(Json(ActionResult::error("invoke not found")));
     };
@@ -10053,7 +10053,7 @@ async fn u2_appstyle_erase_current(
     resource_type: &str,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(pool, session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let n = client
         .execute(
             "DELETE FROM x_program_deploy_resource \
@@ -10097,7 +10097,7 @@ pub async fn u2_appstyle_launch_logo_erase_get(
 
 #[allow(non_snake_case)]
 pub async fn agent_list_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -10141,7 +10141,7 @@ pub async fn agent_delete_flag(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
             "UPDATE x_program_agent SET deleted_at = NOW() WHERE (flag = $1 OR id = $1) AND deleted_at IS NULL",
@@ -10179,7 +10179,7 @@ pub async fn u3_agent_get_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, flag, description, enable, creator_person, create_time \
@@ -10213,7 +10213,7 @@ pub async fn u3_agent_update_flag(
     Json(req): Json<AgentSaveRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let name: Option<String> = req.name;
     let description: Option<String> = req.description;
     let n = client
@@ -10239,7 +10239,7 @@ async fn u3_agent_set_enable(
     enable: bool,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(pool, session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let n = client
         .execute(
             "UPDATE x_program_agent SET enable = $2, update_time = NOW() WHERE (id = $1 OR flag = $1) AND deleted_at IS NULL",
@@ -10283,7 +10283,7 @@ pub async fn u3_agent_flag_execute(
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
             "UPDATE x_program_agent SET update_time = NOW() WHERE (id = $1 OR flag = $1) AND deleted_at IS NULL",
@@ -10324,7 +10324,7 @@ pub async fn u3_agent_file_flag(
     }
     let file_name = json_str(&body, "fileName");
     let file_path = json_str(&body, "filePath");
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
@@ -10355,7 +10355,7 @@ fn appstyle_resource_type_of(path: &'static str) -> &'static str {
 pub async fn u3_appstyle_current_update_get(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT value FROM x_program_config WHERE key = 'appstyle' AND deleted_at IS NULL",
@@ -10400,7 +10400,7 @@ async fn u3_appstyle_image_put(
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
@@ -10574,7 +10574,7 @@ async fn u3_bar_mass_page(
     count: i64,
     label: &str,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let rows = client
         .query(
             "SELECT id, name, status, creator, create_time FROM x_program_schedule \
@@ -10627,7 +10627,7 @@ async fn u3_bar_select_grouped(
     count: i64,
     label: &str,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let rows = client
         .query(
             "SELECT COALESCE(status, '-') AS label, COUNT(*) AS cnt FROM x_program_schedule \
@@ -10694,7 +10694,7 @@ pub async fn u3_collect_update(
     session: Extension<shared::session::Session>,
     Json(req): Json<CollectAddRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let Some(id) = req.person_id.clone() else {
         return Ok(Json(ActionResult::error("personId is required")));
     };
@@ -10739,7 +10739,7 @@ pub async fn u3_collect_delete_name_mobile_code(
     Path((name, mobile, code)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     // 对齐 o2server emc.flag 语义：三元组任一命中即视为匹配记录
     let n = client
         .execute(
@@ -10762,7 +10762,7 @@ pub async fn u3_collect_controllermobile_get(
     pool: Extension<Pool>,
     Path((name, mobile)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect \
@@ -10814,7 +10814,7 @@ pub async fn u3_collect_resetpassword_put(
         .await
         .map_err(|_| AppError::Internal)?
         .map_err(|_| AppError::Internal)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
             "UPDATE auth_person SET password_hash = $2, failed_attempts = 0, locked = FALSE, updated_at = NOW() \
@@ -10846,7 +10846,7 @@ pub async fn u3_collect_urlmapping_put(
 /// GET /config —— 全量配置导出
 #[allow(non_snake_case)]
 pub async fn u3_config_dump(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT key, value, category, creator, create_time FROM x_program_config WHERE deleted_at IS NULL ORDER BY key",
@@ -10888,7 +10888,7 @@ pub async fn u3_config_change_password_post(
     if new_password.is_empty() {
         return Ok(Json(ActionResult::error("newPassword is required")));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT password_hash FROM auth_person WHERE unique_id = $1",
@@ -11009,7 +11009,7 @@ pub async fn u3_deploy_server_resource_post(
         }
     };
     let path = json_str(&body, "path");
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
@@ -11032,7 +11032,7 @@ pub async fn u3_deploy_web_resource_as_new_post(
     Path(as_new): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let n = client
         .execute(
@@ -11061,7 +11061,7 @@ pub async fn u3_dict_update_id(
     Path(id): Path<String>,
     Json(req): Json<DictCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT creator_person FROM x_program_dict WHERE id = $1 AND deleted_at IS NULL",
@@ -11103,7 +11103,7 @@ async fn u3_distribute_source(
     source: &str,
     webserver: bool,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let rows = client
         .query(
             "SELECT id, name, entity, creator, create_time FROM x_program_module \
@@ -11156,7 +11156,7 @@ pub async fn u3_distribute_webserver_source_get(
 pub async fn u3_invoke_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, alias, category, enable, enable_anonymous, validated, create_time FROM x_program_invoke ORDER BY create_time DESC",
@@ -11194,7 +11194,7 @@ pub async fn u3_invoke_list_by_category(
     pool: Extension<Pool>,
     Path(category): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, alias, category, enable FROM x_program_invoke WHERE category = $1 ORDER BY name",
@@ -11227,7 +11227,7 @@ pub async fn u3_invoke_list_by_category(
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn invoke_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, alias, category, enable, enable_anonymous, validated, create_time FROM x_program_invoke ORDER BY create_time DESC",
@@ -11329,7 +11329,7 @@ async fn u3_invoke_execute_inner(
     flag: &str,
     token: Option<&str>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let Some(id) = u2_invoke_find_by_flag(&client, flag.trim()).await? else {
         return Ok(Json(ActionResult::error("invoke not found")));
     };
@@ -11410,7 +11410,7 @@ pub async fn u3_invoke_file_put(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
     let text = json_str(&body, "text");
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let Some(id) = u2_invoke_find_by_flag(&client, flag.trim()).await? else {
         return Ok(Json(ActionResult::error("invoke not found")));
     };
@@ -11439,7 +11439,7 @@ pub async fn u3_jest_clear_cache_source(
     Path(source): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
@@ -11459,7 +11459,7 @@ pub async fn u3_market_get_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, entity, creator, create_time FROM x_program_module \
@@ -11489,7 +11489,7 @@ pub async fn u3_market_cover_pic_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, resource_name, resource_type, path FROM x_program_deploy_resource \
@@ -11517,7 +11517,7 @@ pub async fn u3_market_install_log_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, schedule_id, application, status, message, create_time FROM x_program_schedule_log \
@@ -11553,7 +11553,7 @@ async fn u3_market_list_paged(
     size: i64,
     category: Option<&str>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let offset = if page > 0 {
         (page - 1).saturating_mul(size)
     } else {
@@ -11627,7 +11627,7 @@ pub async fn u3_market_install_log_paging_post(
     Path((page, size)): Path<(i64, i64)>,
     Json(_body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let offset = if page > 0 {
         (page - 1).saturating_mul(size)
     } else {
@@ -11655,7 +11655,7 @@ pub async fn u3_market_install_log_paging_post(
 pub async fn u3_module_output_structure_latest(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -11681,7 +11681,7 @@ async fn u3_module_sync_action(
     pool: &Pool,
     action: &str,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
@@ -11730,7 +11730,7 @@ pub async fn u3_module_compare_upload_put(
 pub async fn u3_mpweixin_menu_latest(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, create_time FROM x_program_mpweixin_menu WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
@@ -11755,7 +11755,7 @@ pub async fn u3_mpweixin_menu_latest(
 pub async fn u3_mpweixin_check_post(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(
             "SELECT COUNT(*) AS menus FROM x_program_mpweixin_menu WHERE deleted_at IS NULL",
@@ -11777,7 +11777,7 @@ pub async fn u3_mpweixin_template_send_post(
     Json(_body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
@@ -11798,7 +11798,7 @@ pub async fn u3_output_select_put(
     session: Extension<shared::session::Session>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT creator_person FROM x_program_output WHERE (flag = $1 OR id = $1) AND deleted_at IS NULL",
@@ -11849,7 +11849,7 @@ pub async fn u3_prompterrorlog_create(
     Json(req): Json<U3PromptErrorLogRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let exception_class = req
         .exception_class
@@ -11888,7 +11888,7 @@ pub async fn u3_unexpectederrorlog_create(
     Json(req): Json<U3UnexpectedErrorLogRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let error_type = req
         .error_type
@@ -11918,7 +11918,7 @@ pub async fn u3_qiyeweixin_create(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
@@ -11939,7 +11939,7 @@ pub async fn u3_qiyeweixin_request_pull_sync_post(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
@@ -11961,7 +11961,7 @@ pub async fn u3_schedule_fire_post(
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let target: Option<String> = match body.get("id").and_then(|v| v.as_str()) {
         Some(id) => {
             client
@@ -12015,7 +12015,7 @@ pub async fn u3_script_name_imported(
     pool: Extension<Pool>,
     Path(name): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, flag, content FROM x_program_script WHERE name = $1 AND deleted_at IS NULL",
@@ -12046,7 +12046,7 @@ pub async fn u3_welink_pull_sync(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
@@ -12067,7 +12067,7 @@ pub async fn u3_welink_request_pull_sync_post(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
@@ -12114,7 +12114,7 @@ fn apppack_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
 pub async fn apppack_info_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, version, status, file_name, file_path, description, create_time, update_time FROM x_program_app_pack ORDER BY create_time DESC",
@@ -12139,7 +12139,7 @@ const APPPACK_FILE_COLUMNS: &str =
 pub async fn apppack_file_last(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             &format!(
@@ -12162,7 +12162,7 @@ pub async fn apppack_file_download(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(&format!("{} WHERE id = $1", APPPACK_FILE_COLUMNS), &[&id])
         .await
@@ -12178,7 +12178,7 @@ pub async fn apppack_file_download(
 pub async fn apppack_logo_get(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT config_json FROM x_program_app_pack ORDER BY create_time DESC LIMIT 1",
@@ -12214,7 +12214,7 @@ pub async fn apppack_android_repack(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
             "UPDATE x_program_app_pack SET status = 'repacking', update_time = NOW() WHERE id = (SELECT id FROM x_program_app_pack ORDER BY create_time DESC LIMIT 1)",
@@ -12243,7 +12243,7 @@ pub async fn apppack_android_start(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_else(|| "android-pack".to_string());
     let version = req.version.unwrap_or_else(|| "1.0.0".to_string());
@@ -12274,7 +12274,7 @@ pub async fn apppack_publish(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
             "UPDATE x_program_app_pack SET status = 'published', update_time = NOW() WHERE id = $1",
@@ -12299,7 +12299,7 @@ pub async fn apppack_publish(
 pub async fn apppack_server_connect(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one("SELECT COUNT(*) AS packs FROM x_program_app_pack", &[])
         .await
@@ -12338,7 +12338,7 @@ pub async fn dict_create(
     Json(req): Json<DictCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_else(|| "dict".to_string());
@@ -12371,7 +12371,7 @@ async fn dict_data_write(
     path: String,
     body: Value,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // IDOR 门禁：命中行存在时按 creator_person 校验属主/管理员（与 dict_delete_id 一致）。
     if let Some(row) = client
@@ -12429,7 +12429,7 @@ pub async fn dict_data_delete_path(
     session: Extension<shared::session::Session>,
     Path((dict_flag, path)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     // IDOR 门禁：命中行存在时按 creator_person 校验属主/管理员（与 dict_delete_id 一致）。
     if let Some(row) = client
         .query_opt(
@@ -12471,7 +12471,7 @@ pub async fn dict_delete_id(
     session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -12532,7 +12532,7 @@ pub async fn script_create(
     Json(req): Json<ScriptCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_else(|| "script".to_string());
@@ -12565,7 +12565,7 @@ async fn script_save(
     key: String,
     req: ScriptSaveRequest,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let select_sql = format!(
         "SELECT creator_person FROM x_program_script WHERE {} = $1 AND deleted_at IS NULL",
@@ -12633,7 +12633,7 @@ pub async fn script_delete_id(
     session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(

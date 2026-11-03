@@ -329,7 +329,7 @@ pub async fn folder_create(
         update_time: Set(None),
         deleted_at: Set(None),
     };
-    let model = active.insert(&db).await.map_err(|_| AppError::Internal)?;
+    let model = active.insert(&db).await?;
 
     let mut entries = vec![
         ("id".to_string(), Value::String(model.id.clone())),
@@ -361,7 +361,7 @@ pub async fn folder_delete(
 
     let mut active: file_folder::ActiveModel = model.into();
     active.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));
-    active.update(&db).await.map_err(|_| AppError::Internal)?;
+    active.update(&db).await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
@@ -399,7 +399,7 @@ pub async fn file_create(
         update_time: Set(None),
         deleted_at: Set(None),
     };
-    let model = active.insert(&db).await.map_err(|_| AppError::Internal)?;
+    let model = active.insert(&db).await?;
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(model.id.clone())),

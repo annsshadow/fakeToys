@@ -44,7 +44,7 @@ pub async fn get_my_icon(
     headers: HeaderMap,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let person_unique = resolve_current_person_unique(&session_manager, &headers).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT icon FROM auth_person \
@@ -104,7 +104,7 @@ async fn write_icon(
     person_unique: &str,
     encoded: &str,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     client
         .execute(
             "UPDATE auth_person SET icon = $1, updated_at = NOW() \
@@ -226,7 +226,7 @@ pub async fn custom_get(
         return Ok(Json(ActionResult::error("name is required")));
     };
     let person = resolve_current_person_unique(&session_manager, &headers).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     match custom_find(&client, &person, &name).await? {
         Some((_, value)) => Ok(Json(ActionResult::success(value))),
         None => Ok(Json(ActionResult::success(String::new()))),
@@ -246,7 +246,7 @@ pub async fn custom_edit(
         return Ok(Json(ActionResult::error("name is required")));
     };
     let person = resolve_current_person_unique(&session_manager, &headers).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 归一化查重：同 (person,name) 仅保留一行（upsert）
     match custom_find(&client, &person, &name).await? {
@@ -287,7 +287,7 @@ pub async fn custom_delete(
         return Ok(Json(ActionResult::error("name is required")));
     };
     let person = resolve_current_person_unique(&session_manager, &headers).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     // W12 收敛：对齐 o2server CustomAction#delete——Wo extends WoId，命中回 {id}，
     // 未命中回空 data {}（WoId.id 为 null 时跳过序列化）。
     let found = client
@@ -353,7 +353,7 @@ pub async fn custom_manager_get(
     let Some(name) = normalize_name(&name) else {
         return Ok(Json(ActionResult::error("name is required")));
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let Some(person_unique) = resolve_person_flag(&client, &person).await? else {
         return Ok(Json(ActionResult::error("person not found")));
     };
@@ -376,7 +376,7 @@ pub async fn custom_manager_edit(
     let Some(name) = normalize_name(&name) else {
         return Ok(Json(ActionResult::error("name is required")));
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let Some(person_unique) = resolve_person_flag(&client, &person).await? else {
         return Ok(Json(ActionResult::error("person not found")));
     };
@@ -423,7 +423,7 @@ pub async fn definition_get(
     let Some(name) = normalize_name(&name) else {
         return Ok(Json(ActionResult::error("name is required")));
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT COALESCE(data, '') FROM x_org_definition WHERE name = $1",
@@ -449,7 +449,7 @@ pub async fn definition_edit(
     let Some(name) = normalize_name(&name) else {
         return Ok(Json(ActionResult::error("name is required")));
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // schema 漂移兼容：旧表可能存在本实现未覆盖的 NOT NULL 无默认值列；
     // 动态探测后以空串补位，保证 upsert 在新旧两种表形态下均可落库
@@ -515,7 +515,7 @@ pub async fn definition_delete(
     let Some(name) = normalize_name(&name) else {
         return Ok(Json(ActionResult::error("name is required")));
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     // W12 收敛：对齐 o2server DefinitionAction#delete——Wo extends WoId，命中回 {id}，
     // 未命中回空 data {}。
     let found = client
@@ -639,7 +639,7 @@ pub async fn empower_list_next(
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session_manager, &headers).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let anchor = match id.as_str() {
         "(0)" => None,
         _ if empower_anchor_exists(&client, &id).await? => Some(id.clone()),
@@ -667,7 +667,7 @@ pub async fn empower_list_prev(
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session_manager, &headers).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let anchor = match id.as_str() {
         "(0)" => None,
         _ if empower_anchor_exists(&client, &id).await? => Some(id.clone()),
@@ -697,7 +697,7 @@ pub async fn empower_list_with_person(
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let current = resolve_current_person_unique(&session_manager, &headers).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let Some(person_unique) = resolve_person_flag(&client, &flag).await? else {
         return Ok(Json(ActionResult::error("person not found")));
     };
@@ -764,7 +764,7 @@ pub async fn log_list_next(
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session_manager, &headers).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let limit = count.clamp(1, 500);
     let rows = if id == "(0)" || id.trim().is_empty() {
         client
@@ -806,7 +806,7 @@ pub async fn log_list_prev(
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session_manager, &headers).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let limit = count.clamp(1, 500);
     let rows = if id == "(0)" || id.trim().is_empty() {
         client
@@ -863,7 +863,7 @@ async fn log_paging(
     size: i64,
     to_scope: bool,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let limit = size.clamp(1, 200);
     let offset = (page - 1).clamp(0, i64::MAX) * limit;
 
@@ -1007,7 +1007,7 @@ pub async fn log_delete(
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session_manager, &headers).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute("DELETE FROM x_org_empower_log WHERE id = $1", &[&id])
         .await
@@ -1089,7 +1089,7 @@ pub async fn exmail_new_count_passive(
 
     let mut count = 0i64;
     if let Some(person) = person_opt {
-        let client = pool.get().await.map_err(|_| AppError::Internal)?;
+        let client = shared::db::acquire(&pool).await?;
         if let Some(ext) = read_exmail_extend(&client, &person).await? {
             count = ext.get("unreadCount").and_then(|v| v.as_i64()).unwrap_or(0);
         }
@@ -1115,7 +1115,7 @@ pub async fn exmail_list_title_passive(
 
     let mut titles: Vec<Value> = Vec::new();
     if let Some(person) = person_opt {
-        let client = pool.get().await.map_err(|_| AppError::Internal)?;
+        let client = shared::db::acquire(&pool).await?;
         if let Some(ext) = read_exmail_extend(&client, &person).await? {
             if let Some(list) = ext.get("titleList").and_then(|v| v.as_array()) {
                 titles = list
@@ -1306,7 +1306,7 @@ pub async fn signature_list_person(
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session_manager, &headers).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let Some(person_unique) = resolve_person_flag(&client, &flag).await? else {
         return Ok(Json(ActionResult::error("person not found")));
     };

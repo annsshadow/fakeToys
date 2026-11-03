@@ -76,7 +76,7 @@ pub async fn upload(
     let name = format!("SIGNATURE_{signature_id}");
     let encoded = base64::engine::general_purpose::STANDARD.encode(&data);
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     client
         .execute(
             "INSERT INTO x_custom (id, name, person, value, created_at) \
@@ -107,7 +107,7 @@ pub async fn list(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let person_unique = resolve_current_person_unique(&session_manager, &headers).await?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, person, value, created_at \
@@ -153,7 +153,7 @@ pub async fn delete(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let person_unique = resolve_current_person_unique(&session_manager, &headers).await?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows_affected = client
         .execute(
             "UPDATE x_custom SET deleted_at = NOW() \
@@ -184,7 +184,7 @@ pub async fn manager_list(
         return Err(AppError::Forbidden);
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, person, value, created_at \

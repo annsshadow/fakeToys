@@ -49,7 +49,7 @@ pub async fn portal_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, description, status, config, pages, create_time FROM x_portal WHERE id = $1 AND deleted_at IS NULL",
@@ -109,7 +109,7 @@ pub async fn portal_id(
 )]
 #[allow(non_snake_case)]
 pub async fn portal_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, description, status, create_time FROM x_portal WHERE deleted_at IS NULL ORDER BY create_time DESC",
@@ -169,7 +169,7 @@ pub async fn portal_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 pub async fn list_portal_category(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -216,7 +216,7 @@ pub async fn list_portal_category(
 )]
 #[allow(non_snake_case)]
 pub async fn page_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, category, content, creator, create_time, update_time FROM x_portal_page ORDER BY update_time DESC LIMIT 50",
@@ -282,7 +282,7 @@ pub async fn get_page(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, category, content, creator, create_time, update_time FROM x_portal_page WHERE id = $1",
@@ -340,7 +340,7 @@ pub async fn create_page(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let name = payload
         .get("name")
         .and_then(|v| v.as_str())
@@ -399,7 +399,7 @@ pub async fn save_page(
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let content = payload
         .get("content")
         .and_then(|v| v.as_str())
@@ -446,7 +446,7 @@ pub async fn delete_page(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let result = client
         .execute("DELETE FROM x_portal_page WHERE id = $1", &[&id])
         .await
@@ -479,7 +479,7 @@ pub async fn delete_page(
 )]
 #[allow(non_snake_case)]
 pub async fn widget_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, alias, category, portal FROM x_widget ORDER BY name",
@@ -522,7 +522,7 @@ pub async fn widget_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 )]
 #[allow(non_snake_case)]
 pub async fn script_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, alias, validated FROM x_script ORDER BY name",
@@ -564,7 +564,7 @@ pub async fn script_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 )]
 #[allow(non_snake_case)]
 pub async fn dict_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, app_name, app_data, creator, create_time FROM x_portal_dict WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 100",

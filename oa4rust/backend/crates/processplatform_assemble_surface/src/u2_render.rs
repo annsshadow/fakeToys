@@ -35,7 +35,7 @@ pub async fn general_file_store(
     name: &str,
     bytes: &[u8],
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let content_b64 = base64::engine::general_purpose::STANDARD.encode(bytes);
     let size = bytes.len() as i64;

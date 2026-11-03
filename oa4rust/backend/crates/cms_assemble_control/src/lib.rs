@@ -35,7 +35,7 @@ pub async fn application_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, alias, app_type, icon, enabled, manager FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL",
@@ -77,7 +77,7 @@ pub async fn application_id(
 pub async fn get_control_config(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -126,7 +126,7 @@ pub async fn get_control_config(
 pub async fn list_control_sections(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -172,7 +172,7 @@ pub async fn update_control_config(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let enabled = body
         .get("enabled")
@@ -299,7 +299,7 @@ async fn list_from_table_inner(
     where_clause: &str,
     params: &[(&(dyn ToSql + Sync), &str)],
 ) -> Result<(i64, Vec<Value>), AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
 
     let count_sql = format!(
         "SELECT COUNT(*) FROM {}{}",
@@ -381,7 +381,7 @@ async fn list_from_table_filtered_inner(
     where_clause: &str,
     params: &[&(dyn ToSql + Sync)],
 ) -> Result<(i64, Vec<Value>), AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
 
     let count_sql = format!(
         "SELECT COUNT(*) FROM {}{}",
@@ -451,7 +451,7 @@ async fn list_from_table_filtered_legacy(
 
 #[allow(dead_code)]
 async fn delete_by_id(pool: &Pool, table: &str, id: &str) -> Result<Value, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     client
         .execute(&format!("DELETE FROM {} WHERE id = $1", table), &[&id])
         .await
@@ -463,7 +463,7 @@ async fn delete_by_id(pool: &Pool, table: &str, id: &str) -> Result<Value, AppEr
 }
 
 async fn get_by_id(pool: &Pool, table: &str, id: &str) -> Result<Option<Value>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let row = client
         .query_opt(
             &format!(
@@ -481,7 +481,7 @@ async fn get_by_id(pool: &Pool, table: &str, id: &str) -> Result<Option<Value>, 
 }
 
 async fn soft_delete_by_id(pool: &Pool, table: &str, id: &str) -> Result<Value, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let affected = client
         .execute(
             // 幂等软删：已删行不再刷新 deleted_at（保住真实删除时刻，重删返回 0 行）。
@@ -525,7 +525,7 @@ async fn soft_delete_after_gate(
 
 #[allow(dead_code)]
 async fn upsert_by_id(pool: &Pool, table: &str, body: &Value) -> Result<Value, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let id = body.get("id").and_then(|v| v.as_str()).unwrap_or("");
     if id.is_empty() {
         return Ok(Value::Object(serde_json::Map::from_iter([(
@@ -636,7 +636,7 @@ pub async fn anonymous_document_id_view(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, title, content, author_id, status, publish_time::text, creator, create_time::text FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL",
@@ -694,7 +694,7 @@ pub async fn appinfo_alias_alias(
     pool: Extension<Pool>,
     axum::extract::Path(alias): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, alias, app_type, icon, enabled, manager FROM x_cms_appinfo WHERE alias = $1 AND deleted_at IS NULL",
@@ -805,7 +805,7 @@ pub async fn appinfo_get_user_publish_appId(
     pool: Extension<Pool>,
     axum::extract::Path(app_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, alias, app_type, icon, enabled, manager FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL",
@@ -1339,7 +1339,7 @@ pub async fn appinfo_appId_icon_size_size(
     pool: Extension<Pool>,
     axum::extract::Path((app_id, _icon_size)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, alias, app_type, icon, enabled, manager FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL",
@@ -1387,7 +1387,7 @@ pub async fn appinfo_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, alias, app_type, icon, enabled, manager FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL",
@@ -1429,7 +1429,7 @@ pub async fn appinfo_id_control(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, alias, app_type, icon, enabled, manager FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL",
@@ -1485,7 +1485,7 @@ pub async fn appinfo_id_permission(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, app_id, category_id, person_id, role_type, permission_level FROM x_cms_permission WHERE app_id = $1 AND deleted_at IS NULL",
@@ -1549,7 +1549,7 @@ pub async fn categoryinfo_alias_alias(
     pool: Extension<Pool>,
     axum::extract::Path(alias): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, parent_id, app_id, sort_order, status, ext_content, creator, create_time::text FROM x_cms_categoryinfo WHERE alias = $1 AND deleted_at IS NULL",
@@ -1603,7 +1603,7 @@ pub async fn categoryinfo_bind_categoryId_view(
     pool: Extension<Pool>,
     axum::extract::Path(category_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, parent_id, app_id, sort_order, status, ext_content, creator, create_time::text FROM x_cms_categoryinfo WHERE id = $1 AND deleted_at IS NULL",
@@ -1647,7 +1647,7 @@ pub async fn categoryinfo_bind_categoryId_view_mockputtopost(
         return Err(AppError::Unauthorized);
     };
     u2_require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
     let parent_id = body.get("parentId").and_then(|v| v.as_str()).unwrap_or("");
     let app_id = body.get("appId").and_then(|v| v.as_str()).unwrap_or("");
@@ -1737,7 +1737,7 @@ pub async fn categoryinfo_extContent(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, ext_content FROM x_cms_categoryinfo WHERE id = $1 AND deleted_at IS NULL",
@@ -1881,7 +1881,7 @@ pub async fn categoryinfo_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, parent_id, app_id, sort_order, status, ext_content, creator, create_time::text FROM x_cms_categoryinfo WHERE id = $1 AND deleted_at IS NULL",
@@ -1935,7 +1935,7 @@ pub async fn categoryinfo_id_control(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, parent_id, app_id, sort_order, status, ext_content, creator, create_time::text FROM x_cms_categoryinfo WHERE id = $1 AND deleted_at IS NULL",
@@ -1982,7 +1982,7 @@ pub async fn categoryinfo_id_execute_projection(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, parent_id, app_id, sort_order, status, ext_content, creator, create_time::text FROM x_cms_categoryinfo WHERE id = $1 AND deleted_at IS NULL",
@@ -2030,7 +2030,7 @@ pub async fn categoryinfo_id_permission(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, app_id, category_id, person_id, role_type, permission_level FROM x_cms_permission WHERE category_id = $1 AND deleted_at IS NULL",
@@ -2102,7 +2102,7 @@ pub async fn commend_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, doc_id, person_id, create_time::text FROM x_cms_commend WHERE id = $1 AND deleted_at IS NULL",
@@ -2190,7 +2190,7 @@ pub async fn comment_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, doc_id, person_id, content, parent_id, create_time::text FROM x_cms_comment WHERE id = $1 AND deleted_at IS NULL",
@@ -2241,7 +2241,7 @@ pub async fn comment_id_commend(
     pool: Extension<Pool>,
     axum::extract::Path((comment_id, person_id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row_id = client
         .query_one(
             "INSERT INTO x_cms_commend (id, doc_id, person_id) VALUES (gen_random_uuid()::text, (SELECT doc_id FROM x_cms_comment WHERE id = $1), $2) RETURNING id",
@@ -2308,7 +2308,7 @@ pub async fn comment_id_uncommend(
     pool: Extension<Pool>,
     axum::extract::Path((comment_id, person_id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let affected = client
         .execute(
             "DELETE FROM x_cms_commend WHERE doc_id = (SELECT doc_id FROM x_cms_comment WHERE id = $1) AND person_id = $2",
@@ -2340,7 +2340,7 @@ pub async fn correlation_doc_docId_delete(
     pool: Extension<Pool>,
     axum::extract::Path((doc_id, related_doc_id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     client
         .execute(
             "UPDATE x_cms_correlation SET deleted_at = NOW() WHERE doc_id = $1 AND related_doc_id = $2",
@@ -2408,7 +2408,7 @@ pub async fn correlation_update_doc_docId(
     axum::extract::Path((doc_id, related_doc_id)): axum::extract::Path<(String, String)>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let correlation_type = body
         .get("correlationType")
         .and_then(|v| v.as_str())
@@ -2507,7 +2507,7 @@ async fn query_doc_fields_by_name(
     doc_id: &str,
     field_name: &str,
 ) -> Result<Vec<Value>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let rows = client
         .query(
             "SELECT id, doc_id, field_name, field_value, create_time::text \
@@ -2528,7 +2528,7 @@ async fn upsert_doc_field(
     field_name: &str,
     field_value: &str,
 ) -> Result<(), AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let updated = client
         .execute(
             "UPDATE x_cms_data_document_field SET field_value = $3, deleted_at = NULL \
@@ -2594,7 +2594,7 @@ async fn write_doc_fields_base(
             ))
         }
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let mut affected: i64 = 0;
     for (key, value) in obj {
         let value_str = match value.as_str() {
@@ -2646,7 +2646,7 @@ async fn delete_doc_fields_base(
         U2Gate::Forbidden => return Err(AppError::Forbidden),
         U2Gate::Allowed => {}
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let deleted = client
         .execute(
             "UPDATE x_cms_data_document_field SET deleted_at = NOW() \
@@ -2706,7 +2706,7 @@ async fn write_doc_field_path(
         PathWriteMode::InsertIfAbsent => {
             let value = body.expect("create requires body");
             let value_str = serde_json::to_string(value).unwrap_or_default();
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let client = shared::db::acquire(pool).await?;
             // $1/$2 在选择列与子查询中双重出现：显式 ::varchar 防止 PG 推断出
             // "text vs character varying" 不一致类型（E42P08）
             let inserted = client
@@ -2732,7 +2732,7 @@ async fn write_doc_field_path(
             ))))
         }
         PathWriteMode::Remove => {
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let client = shared::db::acquire(pool).await?;
             let deleted = client
                 .execute(
                     "UPDATE x_cms_data_document_field SET deleted_at = NOW() \
@@ -3019,7 +3019,7 @@ pub async fn data_document_id_array_data(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, title, content, author_id, status, publish_time::text, creator, create_time::text FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL",
@@ -3116,7 +3116,7 @@ pub async fn data_document_id_path0(
     pool: Extension<Pool>,
     axum::extract::Path((doc_id, path0)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, doc_id, field_name, field_value, create_time::text FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2 AND deleted_at IS NULL",
@@ -3183,7 +3183,7 @@ pub async fn design_appdict_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE id = $1 AND deleted_at IS NULL",
@@ -3270,7 +3270,7 @@ pub async fn design_appdict_id_mockputtopost(
         return Err(AppError::Unauthorized);
     };
     u2_require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let data_value = body.get("dataValue").and_then(|v| v.as_str()).unwrap_or("");
     client
         .execute(
@@ -3343,7 +3343,7 @@ pub async fn designer_search(
     axum::extract::Query(params): axum::extract::Query<HashMap<String, String>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let keyword = params.get("keyword").cloned().unwrap_or_default();
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_info_flag ILIKE $1 AND deleted_at IS NULL",
@@ -3429,7 +3429,7 @@ pub async fn document_cipher_publish_content(
     axum::extract::Path(id): axum::extract::Path<String>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let cipher_text = body
         .get("cipherText")
         .and_then(|v| v.as_str())
@@ -3489,7 +3489,7 @@ pub async fn document_cipher_publish_content_mockputtopost(
     axum::extract::Path(id): axum::extract::Path<String>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let cipher_text = body
         .get("cipherText")
         .and_then(|v| v.as_str())
@@ -3548,7 +3548,7 @@ pub async fn document_cipher_id_permission_read_person_person(
     pool: Extension<Pool>,
     axum::extract::Path((doc_id, person_id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, doc_id, cipher_text, person_id, create_time::text FROM x_cms_document_cipher WHERE doc_id = $1 AND person_id = $2 AND deleted_at IS NULL",
@@ -3603,7 +3603,7 @@ pub async fn document_cipher_id_persist_view_record(
         return Err(AppError::Unauthorized);
     };
     u2_require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let person_id = body.get("personId").and_then(|v| v.as_str()).unwrap_or("");
     client
         .execute(
@@ -3694,7 +3694,7 @@ pub async fn file_flag_appInfo_appInfoFlag_content(
     pool: Extension<Pool>,
     axum::extract::Path((app_info_flag, _app_info_flag2)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, app_id, name, size, content_type, content_base64, creator, create_time::text FROM x_cms_file WHERE app_id = $1 AND deleted_at IS NULL LIMIT 1",
@@ -3758,7 +3758,7 @@ pub async fn file_flag_appInfo_appInfoFlag_download(
     pool: Extension<Pool>,
     axum::extract::Path(app_info_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, app_id, name, size, content_type, creator, create_time::text FROM x_cms_file WHERE app_id = $1 AND deleted_at IS NULL LIMIT 1",
@@ -3829,7 +3829,7 @@ pub async fn file_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, app_id, name, size, content_type, creator, create_time::text FROM x_cms_file WHERE id = $1 AND deleted_at IS NULL",
@@ -3886,7 +3886,7 @@ pub async fn file_id_content(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, content_base64, content_type FROM x_cms_file WHERE id = $1 AND deleted_at IS NULL",
@@ -3925,7 +3925,7 @@ pub async fn file_id_download(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, size, content_type, content_base64 FROM x_cms_file WHERE id = $1 AND deleted_at IS NULL",
@@ -3975,7 +3975,7 @@ pub async fn file_id_mockputtopost(
     axum::extract::Path(id): axum::extract::Path<String>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
     let content_base64 = body
         .get("contentBase64")
@@ -4007,7 +4007,7 @@ pub async fn file_id_upload(
     // 写面：收有效会话门（无会话 401）。
     // x_cms_file 的 creator 列本 upsert 不写，行属主不可判，暂按仅会话存在档收口。
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
     let content_base64 = body
         .get("contentBase64")
@@ -4034,7 +4034,7 @@ pub async fn anonymous_fileinfo_download_document_id(
     pool: Extension<Pool>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time::text FROM x_cms_fileinfo WHERE doc_id = $1 AND deleted_at IS NULL LIMIT 100",
@@ -4106,7 +4106,7 @@ pub async fn anonymous_fileinfo_download_document_id_stream(
     pool: Extension<Pool>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time::text FROM x_cms_fileinfo WHERE doc_id = $1 AND deleted_at IS NULL LIMIT 100",
@@ -4178,7 +4178,7 @@ pub async fn fileinfo_batch_download_doc_docId_site_site(
     pool: Extension<Pool>,
     axum::extract::Path((doc_id, _site)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time::text FROM x_cms_fileinfo WHERE doc_id = $1 AND deleted_at IS NULL",
@@ -4237,7 +4237,7 @@ pub async fn fileinfo_copy_to_doc_docId(
     axum::extract::Path((file_id, doc_id)): axum::extract::Path<(String, String)>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let original_name = body
         .get("originalName")
         .and_then(|v| v.as_str())
@@ -4263,7 +4263,7 @@ pub async fn fileinfo_download_document_id(
     pool: Extension<Pool>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time::text FROM x_cms_fileinfo WHERE doc_id = $1 AND deleted_at IS NULL LIMIT 100",
@@ -4335,7 +4335,7 @@ pub async fn fileinfo_download_document_id_stream(
     pool: Extension<Pool>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time::text FROM x_cms_fileinfo WHERE doc_id = $1 AND deleted_at IS NULL LIMIT 100",
@@ -4393,7 +4393,7 @@ pub async fn fileinfo_download_transfer_flag_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time::text FROM x_cms_fileinfo WHERE id = $1 AND deleted_at IS NULL",
@@ -4462,7 +4462,7 @@ pub async fn fileinfo_edit_id_doc_docId(
         U2Gate::Forbidden => return Err(AppError::Forbidden),
         U2Gate::Allowed => {}
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let original_name = body
         .get("originalName")
         .and_then(|v| v.as_str())
@@ -4502,7 +4502,7 @@ pub async fn fileinfo_edit_id_doc_docId_mockputtopost(
         U2Gate::Forbidden => return Err(AppError::Forbidden),
         U2Gate::Allowed => {}
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let original_name = body
         .get("originalName")
         .and_then(|v| v.as_str())
@@ -4556,7 +4556,7 @@ pub async fn fileinfo_replace_to_doc_docId(
     axum::extract::Path((file_id, doc_id)): axum::extract::Path<(String, String)>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let original_name = body
         .get("originalName")
         .and_then(|v| v.as_str())
@@ -4596,7 +4596,7 @@ pub async fn fileinfo_update_document_docId_attachment_id(
         U2Gate::Forbidden => return Err(AppError::Forbidden),
         U2Gate::Allowed => {}
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let original_name = body
         .get("originalName")
         .and_then(|v| v.as_str())
@@ -4640,7 +4640,7 @@ pub async fn fileinfo_update_document_docId_attachment_id_callback_callback(
         U2Gate::Forbidden => return Err(AppError::Forbidden),
         U2Gate::Allowed => {}
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let original_name = body
         .get("originalName")
         .and_then(|v| v.as_str())
@@ -4674,7 +4674,7 @@ pub async fn fileinfo_update_id_content(
     // 写面：收有效会话门（无会话 401）。
     // x_cms_fileinfo 的 upload_person 列各插入路径均不写，行属主不可判，暂按仅会话存在档收口。
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let original_name = body
         .get("originalName")
         .and_then(|v| v.as_str())
@@ -4714,7 +4714,7 @@ pub async fn fileinfo_upload_doc_docId_save_as_flag(
         U2Gate::Forbidden => return Err(AppError::Forbidden),
         U2Gate::Allowed => {}
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let original_name = body
         .get("originalName")
         .and_then(|v| v.as_str())
@@ -4751,7 +4751,7 @@ pub async fn fileinfo_upload_document_docId(
         U2Gate::Forbidden => return Err(AppError::Forbidden),
         U2Gate::Allowed => {}
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let original_name = body
         .get("originalName")
         .and_then(|v| v.as_str())
@@ -4788,7 +4788,7 @@ pub async fn fileinfo_upload_document_docId_callback_callback(
         U2Gate::Forbidden => return Err(AppError::Forbidden),
         U2Gate::Allowed => {}
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let original_name = body
         .get("originalName")
         .and_then(|v| v.as_str())
@@ -4815,7 +4815,7 @@ pub async fn fileinfo_upload_with_url(
     axum::extract::Path(doc_id): axum::extract::Path<String>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let original_name = body
         .get("originalName")
         .and_then(|v| v.as_str())
@@ -4841,7 +4841,7 @@ pub async fn fileinfo_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time::text FROM x_cms_fileinfo WHERE id = $1 AND deleted_at IS NULL",
@@ -4908,7 +4908,7 @@ pub async fn fileinfo_id_binary_base64_size(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, doc_id, original_name, size, content_type FROM x_cms_fileinfo WHERE id = $1 AND deleted_at IS NULL",
@@ -4968,7 +4968,7 @@ pub async fn fileinfo_id_doc_docId_change_seqnumber_seqNumber(
         U2Gate::Forbidden => return Err(AppError::Forbidden),
         U2Gate::Allowed => {}
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "UPDATE x_cms_fileinfo SET create_time = NOW() WHERE file_id = $1 AND doc_id = $2 RETURNING *",
@@ -4988,7 +4988,7 @@ pub async fn fileinfo_id_document_documentId(
     pool: Extension<Pool>,
     axum::extract::Path((file_id, doc_id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, doc_id, file_id, original_name, size, content_type FROM x_cms_fileinfo WHERE file_id = $1 AND doc_id = $2 AND deleted_at IS NULL",
@@ -5060,7 +5060,7 @@ pub async fn fileinfo_id_online_info(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time::text FROM x_cms_fileinfo WHERE id = $1 AND deleted_at IS NULL",
@@ -5127,7 +5127,7 @@ pub async fn fileinfo_id_preview_pdf(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, doc_id, file_id, original_name, size, content_type FROM x_cms_fileinfo WHERE id = $1 AND deleted_at IS NULL",
@@ -5265,7 +5265,7 @@ async fn form_runtime_by_id(
     id: &str,
     mobile: bool,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let row = client
         .query_opt(
             "SELECT id, app_id, name, definition FROM x_cms_form \
@@ -5287,7 +5287,7 @@ async fn form_runtime_by_document(
     doc_id: &str,
     mobile: bool,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let row = client
         .query_opt(
             "SELECT id, app_id, name, definition FROM x_cms_form \
@@ -5313,7 +5313,7 @@ async fn form_filter_list(
     count: &str,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let limit = count.parse::<i64>().unwrap_or(20).clamp(1, 1000);
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let rows = client
         .query(
             "SELECT id, app_id, name, definition, status, creator, create_time::text \
@@ -5374,7 +5374,7 @@ pub async fn form_filter_list_id_prev_count_app_appId_mockputtopost(
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn form_list_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, app_id, name, definition, status, creator, create_time::text \
@@ -5401,7 +5401,7 @@ pub async fn form_list_app_appId(
     pool: Extension<Pool>,
     axum::extract::Path(app_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, app_id, name, definition, status, creator, create_time::text \
@@ -5480,7 +5480,7 @@ pub async fn anonymous_form_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, app_id, name, definition, status FROM x_cms_form WHERE id = $1 AND deleted_at IS NULL",
@@ -5500,7 +5500,7 @@ pub async fn form_formFlag_appinfo_appFlag(
     pool: Extension<Pool>,
     axum::extract::Path(app_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, app_id, name, definition, status, creator, create_time::text FROM x_cms_form WHERE app_id = $1 AND deleted_at IS NULL",
@@ -5526,7 +5526,7 @@ pub async fn form_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, app_id, name, definition, status, creator, create_time::text FROM x_cms_form WHERE id = $1 AND deleted_at IS NULL",
@@ -5566,7 +5566,7 @@ pub async fn form_id_mockputtopost(
         return Err(AppError::Unauthorized);
     };
     u2_require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let app_id = u2_body_str(&body, "appId")
         .filter(|app_id| !app_id.trim().is_empty())
         .ok_or_else(|| AppError::BadRequest("appId required".to_string()))?;
@@ -5644,7 +5644,7 @@ pub async fn formversion_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, app_id, name, definition, status, creator, create_time::text FROM x_cms_form_v2 WHERE id = $1 AND deleted_at IS NULL",
@@ -5765,7 +5765,7 @@ pub async fn output_appInfoFlag_select(
     pool: Extension<Pool>,
     axum::extract::Path(app_info_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, app_id, name, config, creator, create_time::text FROM x_cms_output WHERE app_id = $1 AND deleted_at IS NULL LIMIT 100",
@@ -5825,7 +5825,7 @@ pub async fn output_appInfoFlag_select_mockputtopost(
         return Err(AppError::Unauthorized);
     };
     u2_require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
     let config = body.get("config").and_then(|v| v.as_str()).unwrap_or("");
     let row = client
@@ -5959,7 +5959,7 @@ pub async fn permission_management_refresh_all(
     session: Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let affected = client
         .execute(
             "UPDATE x_cms_permission SET deleted_at = NOW() WHERE deleted_at IS NULL",
@@ -5985,7 +5985,7 @@ pub async fn permission_management_refresh_category_categoryId(
     // 这条 GET 是把该分类下**全部权限行**软删（重刷），与 permission_management_refresh_all
     // 同一档：无属主的系统级数据，admin 门。
     u2_require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let affected = client
         .execute("UPDATE x_cms_permission SET deleted_at = NOW() WHERE category_id = $1 AND deleted_at IS NULL", &[&category_id])
         .await
@@ -6091,7 +6091,7 @@ pub async fn review_v2_search(
     axum::extract::Query(params): axum::extract::Query<HashMap<String, String>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let keyword = params.get("keyword").cloned().unwrap_or_default();
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, doc_id, person_id, create_time::text FROM x_cms_comment WHERE content ILIKE $1 AND deleted_at IS NULL",
@@ -6193,7 +6193,7 @@ pub async fn script_id(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // W7：按 id 返回单个脚本（原实现忽略 id 返回全表，设计器无法加载单脚本）
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, app_id, name, unique_name, script_content, creator, create_time::text \
@@ -6263,7 +6263,7 @@ pub async fn script_id_mockputtopost(
         return Err(AppError::Unauthorized);
     };
     u2_require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
     let script_content = body
         .get("scriptContent")
@@ -6319,7 +6319,7 @@ pub async fn script_uniqueName_app_flag(
     pool: Extension<Pool>,
     axum::extract::Path((app_flag, unique_name)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, app_id, name, unique_name, script_content, imported, creator, create_time::text FROM x_cms_script WHERE app_id = $1 AND unique_name = $2 AND deleted_at IS NULL",
@@ -6378,7 +6378,7 @@ pub async fn script_uniqueName_app_flag_imported(
     pool: Extension<Pool>,
     axum::extract::Path((app_flag, unique_name)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, app_id, name, unique_name, script_content, imported, creator, create_time::text FROM x_cms_script WHERE app_id = $1 AND unique_name = $2 AND imported = true AND deleted_at IS NULL",
@@ -6441,7 +6441,7 @@ pub async fn scriptversion_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, app_id, name, definition, status, creator, create_time::text FROM x_cms_form_v2 WHERE id = $1 AND deleted_at IS NULL",
@@ -6563,7 +6563,7 @@ async fn appdict_data_get(
     app_info_flag: &str,
     paths: &[String],
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     // $1 dict、$2 app、$3 深度下界、$4.. 各级路径（位置前缀匹配）
     let mut where_clause =
         String::from("WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at IS NULL");
@@ -6612,7 +6612,7 @@ async fn gate_appdict_writer(
     app_dict_flag: &str,
     app_info_flag: &str,
 ) -> Result<U2Gate, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let row = client
         .query_opt(
             "SELECT creator FROM x_cms_surface_appdict \
@@ -6660,7 +6660,7 @@ async fn appdict_data_write(
         U2Gate::Forbidden => return Err(AppError::Forbidden),
         U2Gate::NotFound | U2Gate::Allowed => {}
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     // cardinality() 返回 int4：必须绑 i32（i64 会触发 WrongType）
     let depth = paths.len() as i32;
 
@@ -6866,7 +6866,7 @@ pub async fn anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag(
     pool: Extension<Pool>,
     axum::extract::Path((app_dict_flag, app_info_flag)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text              FROM x_cms_surface_appdict              WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at IS NULL",
@@ -6949,7 +6949,7 @@ pub async fn anonymous_surface_appdict_list_appInfo_appInfoFlag(
     pool: Extension<Pool>,
     axum::extract::Path(app_info_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text              FROM x_cms_surface_appdict WHERE app_info_flag = $1 AND deleted_at IS NULL",
@@ -7068,7 +7068,7 @@ pub async fn templateform_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, app_id, name, definition, status, creator, create_time::text FROM x_cms_form_v2 WHERE id = $1 AND deleted_at IS NULL",
@@ -7203,7 +7203,7 @@ pub async fn view_id_mockputtopost(
         return Err(AppError::Unauthorized);
     };
     u2_require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
     let view_config = body
         .get("viewConfig")
@@ -7366,7 +7366,7 @@ pub async fn viewfieldconfig_id_mockputtopost(
         return Err(AppError::Unauthorized);
     };
     u2_require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let field_name = body.get("fieldName").and_then(|v| v.as_str()).unwrap_or("");
     let field_config = body
         .get("fieldConfig")
@@ -7433,7 +7433,7 @@ pub async fn viewrecord_document_docId_has_view(
     pool: Extension<Pool>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT COUNT(*)::bigint AS cnt FROM x_cms_viewrecord WHERE doc_id = $1 AND deleted_at IS NULL",
@@ -7637,7 +7637,7 @@ async fn input_compare_impl(
     pool: &Pool,
     body: &Value,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let existing = input_resolve_appinfo(&client, body).await?;
 
     // o2server WrapCms 继承 JpaObject：id 缺省时自动生成唯一 token 并回显
@@ -7668,7 +7668,7 @@ async fn input_create_impl(
     pool: &Pool,
     body: &Value,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let id = input_app_id(body)
         .map(str::to_string)
         .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
@@ -7706,7 +7706,7 @@ async fn input_cover_impl(
     pool: &Pool,
     body: &Value,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let id = input_app_id(body)
         .map(str::to_string)
         .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
@@ -7855,7 +7855,7 @@ pub async fn document_id_view_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 浏览量自增属写面：收有效会话门（无会话 401），防匿名刷量。
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 第 66 轮：热行「每请求一次同步 UPDATE」改为「内存聚合 + 定期 flush」。
     // 请求路径只剩两条轻量 SELECT（存在性校验 + 计数表读基准值），
@@ -8006,7 +8006,7 @@ pub async fn commend_list_paging(
         .and_then(|v| v.parse().ok())
         .unwrap_or(20);
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let count_row = client
         .query_one(
@@ -8109,7 +8109,7 @@ pub async fn queryview_flag_definition(
     pool: Extension<Pool>,
     axum::extract::Path((view_flag, query_flag)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -8175,7 +8175,7 @@ async fn u2_gate_by_sql(
     id: &str,
     person_unique: &str,
 ) -> Result<U2Gate, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let row = client
         .query_opt(sql, &[&id])
         .await
@@ -8293,7 +8293,7 @@ pub async fn document_u2_create(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let title = u2_body_str(&body, "title").unwrap_or_default();
     let content = u2_body_str(&body, "content").unwrap_or_default();
@@ -8337,7 +8337,7 @@ pub async fn document_u2_update(
         U2Gate::NotFound => Ok(Json(ActionResult::error("document not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let client = shared::db::acquire(&pool).await?;
             let title = u2_body_str(&body, "title");
             let content = u2_body_str(&body, "content");
             let category_id = u2_body_str(&body, "categoryId");
@@ -8366,7 +8366,7 @@ pub async fn document_u2_update(
 }
 
 async fn document_u2_set_status(pool: &Pool, id: &str, status: &str) -> Result<bool, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let sql: &str = if status == "published" {
         "UPDATE x_cms_data_document SET status = 'published', publish_time = NOW() \
          WHERE id = $1 AND deleted_at IS NULL"
@@ -8454,7 +8454,7 @@ pub async fn document_u2_commend(
     session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let doc = client
         .query_opt(
             "SELECT 1 FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL",
@@ -8490,7 +8490,7 @@ pub async fn document_u2_uncommend(
     session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let removed = client
         .execute(
             "DELETE FROM x_cms_commend WHERE doc_id = $1 AND person_id = $2",
@@ -8527,7 +8527,7 @@ async fn document_u2_set_top(
         U2Gate::NotFound => Ok(Json(ActionResult::error("document not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let client = shared::db::acquire(pool).await?;
             let affected = client
                 .execute(
                     "UPDATE x_cms_data_document SET is_top = $2 WHERE id = $1 AND deleted_at IS NULL",
@@ -8584,7 +8584,7 @@ pub async fn document_u2_category_change(
     if doc_ids.is_empty() {
         return Err(AppError::BadRequest("docIds required".to_string()));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let updated = client
         .execute(
             "UPDATE x_cms_data_document SET category_id = $1 \
@@ -8610,7 +8610,7 @@ pub async fn document_u2_document_data(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT field_name, field_value FROM x_cms_data_document_field \
@@ -8653,7 +8653,7 @@ pub async fn document_u2_list_document(
 pub async fn document_u2_fields(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT DISTINCT field_name AS name FROM x_cms_data_document_field \
@@ -8686,7 +8686,7 @@ pub async fn document_u2_filter_count(
     let app_id = u2_body_str(&body, "appId").unwrap_or_default();
     let category_id = u2_body_str(&body, "categoryId").unwrap_or_default();
     let status = u2_body_str(&body, "status").unwrap_or_default();
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(
             "SELECT COUNT(*) AS total FROM x_cms_data_document \
@@ -8721,7 +8721,7 @@ pub async fn comment_u2_create(
         Some(d) if !d.is_empty() => d,
         _ => return Err(AppError::BadRequest("docId required".to_string())),
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let doc = client
         .query_opt(
             "SELECT 1 FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL",
@@ -8787,7 +8787,7 @@ pub async fn comment_u2_list_page_size_size(
     let page = page.max(1);
     let size = size.clamp(1, 200);
     let offset = (page - 1).saturating_mul(size);
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let count_row = client
         .query_one(
             "SELECT COUNT(*) AS total FROM x_cms_comment WHERE deleted_at IS NULL",
@@ -8839,7 +8839,7 @@ pub async fn correlation_u2_doc_delete(
         U2Gate::NotFound => Ok(Json(ActionResult::error("document not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let client = shared::db::acquire(&pool).await?;
             let removed = client
                 .execute(
                     "UPDATE x_cms_correlation SET deleted_at = NOW() WHERE doc_id = $1",
@@ -8870,7 +8870,7 @@ pub async fn file_u2_create(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = u2_body_str(&body, "name").unwrap_or_default();
     let app_id = u2_body_str(&body, "appId").unwrap_or_default();
@@ -8907,7 +8907,7 @@ pub async fn file_u2_update(
         U2Gate::NotFound => Ok(Json(ActionResult::error("file not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let client = shared::db::acquire(&pool).await?;
             let name = u2_body_str(&body, "name");
             let content_type = u2_body_str(&body, "contentType");
             let content_base64 = u2_body_str(&body, "contentBase64");
@@ -8970,7 +8970,7 @@ pub async fn fileinfo_u2_filter(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let doc_id = u2_body_str(&body, "docId").unwrap_or_default();
     let original_name = u2_body_str(&body, "originalName").unwrap_or_default();
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let count_row = client
         .query_one(
             "SELECT COUNT(*) AS total FROM x_cms_fileinfo \
@@ -9027,7 +9027,7 @@ pub async fn fileinfo_u2_copy_to_doc(
             if attachment_ids.is_empty() {
                 return Err(AppError::BadRequest("attachmentIds required".to_string()));
             }
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let client = shared::db::acquire(&pool).await?;
             let copied = client
                 .execute(
                     "INSERT INTO x_cms_fileinfo (id, doc_id, file_id, original_name, size, content_type, upload_person) \
@@ -9066,7 +9066,7 @@ pub async fn fileinfo_u2_replace_to_doc(
             if attachment_ids.is_empty() {
                 return Err(AppError::BadRequest("attachmentIds required".to_string()));
             }
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let client = shared::db::acquire(&pool).await?;
             let moved = client
                 .execute(
                     "UPDATE x_cms_fileinfo SET doc_id = $1 \
@@ -9106,7 +9106,7 @@ pub async fn form_u2_create(
     let definition = form_definition_from_body(&body)?
         .ok_or_else(|| AppError::BadRequest("definition required".to_string()))?
         .to_db()?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     // default 桶跳过应用存在性校验（全局设计器场景）
     if app_id != "default" {
         let app = client
@@ -9170,7 +9170,7 @@ pub async fn form_submit(
         }
     };
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT definition FROM x_cms_form WHERE id = $1 AND deleted_at IS NULL",
@@ -9239,7 +9239,7 @@ pub async fn form_u2_update(
         U2Gate::NotFound => Ok(Json(ActionResult::error("form not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let client = shared::db::acquire(&pool).await?;
             let name = u2_body_str(&body, "name");
             let status = u2_body_str(&body, "status");
             let row = client
@@ -9294,7 +9294,7 @@ pub async fn script_u2_create(
         Some(a) if !a.is_empty() => a.to_string(),
         _ => "default".to_string(),
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     if app_id != "default" {
         let app = client
             .query_opt(
@@ -9347,7 +9347,7 @@ pub async fn script_u2_update(
         U2Gate::NotFound => Ok(Json(ActionResult::error("script not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let client = shared::db::acquire(&pool).await?;
             let name = u2_body_str(&body, "name");
             let unique_name = u2_body_str(&body, "uniqueName");
             let content = u2_body_str(&body, "scriptContent");
@@ -9424,7 +9424,7 @@ pub async fn templateform_u2_create(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = u2_body_str(&body, "name").unwrap_or_default();
     let category = u2_body_str(&body, "category").unwrap_or_default();
@@ -9480,7 +9480,7 @@ pub async fn view_u2_create(
         Some(n) if !n.is_empty() => n,
         _ => return Err(AppError::BadRequest("name required".to_string())),
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let app_id = u2_body_str(&body, "appId").unwrap_or_default();
     let category_id = u2_body_str(&body, "categoryId").unwrap_or_default();
@@ -9517,7 +9517,7 @@ pub async fn view_u2_update(
         U2Gate::NotFound => Ok(Json(ActionResult::error("view not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let client = shared::db::acquire(&pool).await?;
             let name = u2_body_str(&body, "name");
             let view_config = u2_body_str(&body, "viewConfig");
             let affected = client
@@ -9574,7 +9574,7 @@ pub async fn viewcategory_u2_create(
         Some(n) if !n.is_empty() => n,
         _ => return Err(AppError::BadRequest("name required".to_string())),
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let parent_id = u2_body_str(&body, "parentCategoryId").unwrap_or_default();
     client
@@ -9636,7 +9636,7 @@ pub async fn viewfieldconfig_u2_create(
         U2Gate::NotFound => Ok(Json(ActionResult::error("view not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let client = shared::db::acquire(&pool).await?;
             let id = uuid::Uuid::new_v4().to_string();
             let field_name = match u2_body_str(&body, "fieldName") {
                 Some(f) if !f.is_empty() => f,
@@ -9674,7 +9674,7 @@ pub async fn viewfieldconfig_u2_update(
         U2Gate::NotFound => Ok(Json(ActionResult::error("viewfieldconfig not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let client = shared::db::acquire(&pool).await?;
             let field_config = u2_body_str(&body, "fieldConfig");
             let sort_order = u2_body_i64(&body, "sortOrder").map(|v| v as i32);
             let affected = client
@@ -9729,7 +9729,7 @@ pub async fn appinfo_u2_create(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = match u2_body_str(&body, "id") {
         Some(i) if !i.is_empty() => i,
         _ => uuid::Uuid::new_v4().to_string(),
@@ -9805,7 +9805,7 @@ pub async fn categoryinfo_u2_create(
         U2Gate::NotFound => Ok(Json(ActionResult::error("application not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let client = shared::db::acquire(&pool).await?;
             let id = uuid::Uuid::new_v4().to_string();
             let name = u2_body_str(&body, "name").unwrap_or_default();
             let parent_id = u2_body_str(&body, "parentCategoryId").unwrap_or_default();
@@ -9856,9 +9856,9 @@ async fn u2_write_permissions(
     if person_ids.is_empty() {
         return Err(AppError::BadRequest("personIds required".to_string()));
     }
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(pool).await?;
     // 「删旧权限 + 逐人重授」是集合替换语义，必须原子：中途失败不得留下半删半授状态。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     tx.execute(
         &format!(
             "DELETE FROM x_cms_permission WHERE {} = $1 AND role_type = $2",
@@ -9879,7 +9879,7 @@ async fn u2_write_permissions(
             .await
             .map_err(|_| AppError::Internal)?;
     }
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     let _ = pool;
     let _ = scope_col;
     Ok(Json(ActionResult::success(Value::Object(
@@ -9903,7 +9903,7 @@ pub async fn permission_u2_app_info(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let app = client
         .query_opt(
             "SELECT 1 FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL",
@@ -9926,7 +9926,7 @@ pub async fn permission_u2_category_info(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let cat = client
         .query_opt(
             "SELECT 1 FROM x_cms_categoryinfo WHERE id = $1 AND deleted_at IS NULL",
@@ -9961,7 +9961,7 @@ pub async fn appconfig_u2_update(
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
             let config_text = serde_json::to_string(&body.0).unwrap_or_else(|_| "{}".to_string());
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let client = shared::db::acquire(&pool).await?;
             let affected = client
                 .execute(
                     "UPDATE x_cms_appinfo SET config = $1 WHERE id = $2 AND deleted_at IS NULL",
@@ -9988,7 +9988,7 @@ pub async fn appconfig_u2_get(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT config FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL",
@@ -10020,7 +10020,7 @@ pub async fn designer_u2_search(
         return Err(AppError::BadRequest("keyword required".to_string()));
     }
     let pattern = format!("%{}%", shared::db::escape_like(&keyword));
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT kind, id, label FROM (\
@@ -10117,7 +10117,7 @@ async fn u3_bulk_publish_status(
     if ids.is_empty() {
         return Err(AppError::BadRequest("docIds required".to_string()));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let affected = if status == "published" {
         client
             .execute(
@@ -10149,9 +10149,9 @@ async fn u3_cipher_upsert(
     if doc_ids.is_empty() {
         return Err(AppError::BadRequest("docIds required".to_string()));
     }
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(pool).await?;
     // 批量文档加密须整体原子：中途失败不得留下部分文档已加密、其余明文的半加密集合。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let mut written = 0u64;
     for doc_id in doc_ids {
         written += tx
@@ -10164,7 +10164,7 @@ async fn u3_cipher_upsert(
             .await
             .map_err(|_| AppError::Internal)?;
     }
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(written)
 }
 
@@ -10207,10 +10207,10 @@ async fn u3_save_scope_permissions(
             } else {
                 "category_id"
             };
-            let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let mut client = shared::db::acquire(pool).await?;
             // 「删旧权限 + 逐人重授」是集合替换语义，必须原子：中途失败不得留下
             // 半删半授的越权/漏权状态（与 ai/portal/process designer 既有事务惯例一致）。
-            let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+            let tx = client.transaction().await?;
             tx
                 .execute(
                     &format!(
@@ -10235,7 +10235,7 @@ async fn u3_save_scope_permissions(
                     .await
                     .map_err(|_| AppError::Internal)?;
             }
-            tx.commit().await.map_err(|_| AppError::Internal)?;
+            tx.commit().await?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("scope".to_string(), Value::String(scope.to_string())),
@@ -10269,7 +10269,7 @@ pub async fn categoryinfo_ext_content_save_u3(
         U2Gate::NotFound => Ok(Json(ActionResult::error("category not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let client = shared::db::acquire(&pool).await?;
             let affected = client
                 .execute(
                     "UPDATE x_cms_categoryinfo SET ext_content = $2 WHERE id = $1 AND deleted_at IS NULL",
@@ -10317,7 +10317,7 @@ pub async fn comment_commend_u3(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let exists = client
         .query_opt(
             "SELECT doc_id FROM x_cms_comment WHERE id = $1 AND deleted_at IS NULL",
@@ -10348,7 +10348,7 @@ pub async fn comment_uncommend_u3(
     session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let doc_id = client
         .query_opt(
             "SELECT doc_id FROM x_cms_comment WHERE id = $1 AND deleted_at IS NULL",
@@ -10417,8 +10417,8 @@ pub async fn correlation_create_u3(
     let mut seen = std::collections::HashSet::new();
     related.retain(|t| seen.insert(t.clone()));
 
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
+    let tx = client.transaction().await?;
     tx.execute(
         "DELETE FROM x_cms_correlation WHERE doc_id = $1 AND related_doc_id = ANY($2)",
         &[&doc_id, &related],
@@ -10451,7 +10451,7 @@ pub async fn correlation_create_u3(
         .execute(&sql, &refs)
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("docId".to_string(), Value::String(doc_id)),
@@ -10500,8 +10500,8 @@ pub async fn correlation_update_u3(
     let mut seen = std::collections::HashSet::new();
     related.retain(|t| seen.insert(t.clone()));
 
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
+    let tx = client.transaction().await?;
     tx.execute(
         "DELETE FROM x_cms_correlation WHERE doc_id = $1 AND related_doc_id = ANY($2)",
         &[&doc_id, &related],
@@ -10534,7 +10534,7 @@ pub async fn correlation_update_u3(
         .execute(&sql, &refs)
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("docId".to_string(), Value::String(doc_id)),
@@ -10583,7 +10583,7 @@ pub async fn design_appdict_create_u3(
         None => "{}".to_string(),
     };
     // 归一化查重：同一 (app, dict, 归一化 pathLevels) 仅允许一行活动数据。
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let dup = client
         .query_opt(
             "SELECT id FROM x_cms_surface_appdict \
@@ -10623,7 +10623,7 @@ pub async fn design_appdict_update_u3(
         None => "{}".to_string(),
     };
     let path_levels = u2_body_strs(&body, "pathLevels");
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let affected = if path_levels.is_empty() {
         client
             .execute(
@@ -10678,7 +10678,7 @@ pub async fn review_v2_search_u3(
     let keyword = u2_body_str(&body, "keyword").unwrap_or_default();
     let size = u2_body_i64(&body, "size").unwrap_or(20).clamp(1, 100);
     let pattern = format!("%{}%", shared::db::escape_like(&keyword));
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, title, app_id, category_id, creator, publish_time::text \
@@ -10712,7 +10712,7 @@ pub async fn document_achive_u3(
         U2Gate::NotFound => Ok(Json(ActionResult::error("document not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let client = shared::db::acquire(&pool).await?;
             let affected = client
                 .execute(
                     "UPDATE x_cms_data_document SET status = 'archived' WHERE id = $1 AND deleted_at IS NULL",
@@ -10748,7 +10748,7 @@ async fn u3_batch_modify_impl(
     if doc_ids.is_empty() {
         return Err(AppError::BadRequest("docIds required".to_string()));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let mut written = 0u64;
     for doc_id in &doc_ids {
         for (name, value) in &fields {
@@ -10792,7 +10792,7 @@ pub async fn document_batch_modify_mock_u3(
 pub async fn document_batch_status_u3(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT batch_name, COUNT(*)::bigint AS cnt FROM x_cms_data_document \
@@ -10828,7 +10828,7 @@ pub async fn document_batch_name_status_u3(
     pool: Extension<Pool>,
     axum::extract::Path(batch_name): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(
             "SELECT COUNT(*)::bigint AS cnt FROM x_cms_data_document \
@@ -10856,7 +10856,7 @@ pub async fn document_batch_delete_u3(
     axum::extract::Path(batch_name): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let affected = client
         .execute(
             "UPDATE x_cms_data_document SET deleted_at = NOW() \
@@ -10882,7 +10882,7 @@ pub async fn document_batch_delete_mock_u3(
     pool: Extension<Pool>,
     axum::extract::Path(batch_name): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(
             "SELECT COUNT(*)::bigint AS cnt FROM x_cms_data_document \
@@ -10999,7 +10999,7 @@ pub async fn document_cipher_permission_read_u3(
     session: Extension<shared::session::Session>,
     axum::extract::Path((id, person)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let doc = client
         .query_opt(
             "SELECT creator, author_id, status FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL",
@@ -11109,7 +11109,7 @@ pub async fn document_control_u3(
     session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT creator, status FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL",
@@ -11149,7 +11149,7 @@ pub async fn document_notify_u3(
         U2Gate::NotFound => Ok(Json(ActionResult::error("document not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let client = shared::db::acquire(&pool).await?;
             client
                 .execute(
                     "INSERT INTO x_cms_log (id, doc_id, person_id, operation_level, operation_type, operation_detail) \
@@ -11175,7 +11175,7 @@ pub async fn document_permission_read_u3(
     session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT creator, author_id, status FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL",
@@ -11209,7 +11209,7 @@ pub async fn document_persons_u3(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let doc = client
         .query_opt(
             "SELECT app_id, category_id, creator FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL",
@@ -11264,7 +11264,7 @@ pub async fn document_publish_html_u3(
         U2Gate::NotFound => Ok(Json(ActionResult::error("document not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let client = shared::db::acquire(&pool).await?;
             let row = client
                 .query_opt(
                     "SELECT title, content FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL",
@@ -11298,7 +11298,7 @@ pub async fn document_list_document_data_u3(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let ids = u2_body_strs(&body, "docIds");
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let docs = if ids.is_empty() {
         client
             .query(
@@ -11374,7 +11374,7 @@ pub async fn file_update_u3(
         U2Gate::NotFound => Ok(Json(ActionResult::error("file not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let client = shared::db::acquire(&pool).await?;
             let name = u2_body_str(&body, "name");
             let content_type = u2_body_str(&body, "contentType");
             let affected = client
@@ -11432,7 +11432,7 @@ pub async fn file_copy_u3(
         U2Gate::Forbidden => return Err(AppError::Forbidden),
         U2Gate::Allowed => {}
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let source = client
         .query_opt(
             "SELECT name, size, content_type, content_base64, creator FROM x_cms_file \
@@ -11476,7 +11476,7 @@ pub async fn file_download_with_app_u3(
     pool: Extension<Pool>,
     axum::extract::Path((flag, app_info_flag)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, app_id, name, size, content_type, creator, create_time::text FROM x_cms_file \
@@ -11499,7 +11499,7 @@ pub async fn fileinfo_binary_base64_u3(
     pool: Extension<Pool>,
     axum::extract::Path((id, size)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT f.original_name, fl.content_base64 FROM x_cms_fileinfo f \
@@ -11561,7 +11561,7 @@ pub async fn fileinfo_upload_with_url_u3(
         U2Gate::Forbidden => return Err(AppError::Forbidden),
         U2Gate::Allowed => {}
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(
             "INSERT INTO x_cms_fileinfo (id, doc_id, original_name, size, content_type) \
@@ -11581,7 +11581,7 @@ pub async fn form_get_with_appinfo_u3(
     pool: Extension<Pool>,
     axum::extract::Path((form_flag, app_flag)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT * FROM x_cms_form WHERE id = $1 AND app_id = $2 AND deleted_at IS NULL",
@@ -11655,10 +11655,10 @@ pub async fn script_post_nested_u3(
             if scripts.is_empty() {
                 return Err(AppError::BadRequest("importedScripts required".to_string()));
             }
-            let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let mut client = shared::db::acquire(&pool).await?;
             let mut imported = 0u64;
             // 脚本导入原子化：INSERT 无去重，裸循环中途失败后重试会产生重复脚本。
-            let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+            let tx = client.transaction().await?;
             for script in &scripts {
                 let name = script.get("name").and_then(|v| v.as_str()).unwrap_or("");
                 let content = script
@@ -11674,7 +11674,7 @@ pub async fn script_post_nested_u3(
                     .await
                     .map_err(|_| AppError::Internal)?;
             }
-            tx.commit().await.map_err(|_| AppError::Internal)?;
+            tx.commit().await?;
             let _ = unique_name;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
@@ -11705,7 +11705,7 @@ pub async fn script_load_u3(
     } else {
         "app_id = $2 AND deleted_at IS NULL AND (name = $1 OR id = $1)"
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             &format!(
@@ -11751,7 +11751,7 @@ pub async fn viewrecord_unread_u3(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id FROM x_cms_data_document \

@@ -9,7 +9,7 @@ use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
 pub async fn area_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, level, parent_id FROM district WHERE level = $1 ORDER BY name",
@@ -53,7 +53,7 @@ pub async fn area_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
 pub async fn security_clearance_enable(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(
             "SELECT COUNT(*) as cnt FROM GEN_DICT WHERE deleted_at IS NULL",
@@ -75,7 +75,7 @@ pub async fn is_workday(
     if date.is_empty() {
         return Ok(Json(ActionResult::error("date is required")));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id FROM x_gen_ara_district WHERE deleted_at IS NULL AND id = $1 LIMIT 1",

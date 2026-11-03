@@ -56,7 +56,7 @@ pub struct QueryImport {
 }
 
 pub async fn view_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, description, query_sql, creator_id, status, create_time FROM QUERY_VIEW WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 20",
@@ -119,7 +119,7 @@ pub async fn view_get(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -189,7 +189,7 @@ pub async fn view_create(
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload
         .get("name")
@@ -233,7 +233,7 @@ pub async fn view_create(
 }
 
 pub async fn item_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, view_id, name, field_name, data_type, create_time FROM QUERY_ITEM WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 20",
@@ -292,7 +292,7 @@ pub async fn item_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
 }
 
 pub async fn import_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, view_id, file_name, status, import_time, create_time FROM QUERY_IMPORT WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 20",

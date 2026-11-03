@@ -435,7 +435,7 @@ async fn login_or_create_user(
     session_manager: &SessionManager,
     unique_id: String,
 ) -> Result<Response, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
 
     let row = client
         .query_opt(

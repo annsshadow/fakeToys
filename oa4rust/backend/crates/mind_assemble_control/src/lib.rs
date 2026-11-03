@@ -46,7 +46,7 @@ async fn require_admin(
 pub async fn get_control_config(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_one(
@@ -99,7 +99,7 @@ pub async fn update_control_config(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 第五十九批：全局思维导图配置写收 admin 档。
     require_admin(&pool.0, session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let config_id = payload.get("id").and_then(|v| v.as_str()).unwrap_or("");
     let config_data = payload
@@ -149,7 +149,7 @@ pub struct MindFolderRequest {
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn list_folders(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -204,7 +204,7 @@ pub async fn get_folder(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -256,7 +256,7 @@ pub async fn save_folder(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 第五十九批：新建思维导图文件夹收会话存在档（无会话 401）。
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_default();
@@ -290,7 +290,7 @@ pub async fn update_folder(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 第五十九批：改思维导图文件夹收会话存在档（无会话 401）。
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -345,7 +345,7 @@ pub async fn folder_move_folderId(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 第五十九批：移动思维导图文件夹收会话存在档（无会话 401）。
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let parent_id = req
         .get("parentId")
@@ -400,7 +400,7 @@ pub async fn folder_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -451,7 +451,7 @@ pub async fn folder_id_force(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 第五十九批：强制删除思维导图文件夹收会话存在档（无会话 401）。
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(

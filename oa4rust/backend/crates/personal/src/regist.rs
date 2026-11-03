@@ -64,7 +64,7 @@ pub async fn register(
         return Ok(Json(ActionResult::error(e.to_string())));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 应用层预检查：用户名唯一性
     let name_exists = client
@@ -148,7 +148,7 @@ pub async fn check_name(
     pool: Extension<Pool>,
     Path(name): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let exists = client
         .query_opt(
             "SELECT id FROM auth_person WHERE unique_id = $1 AND deleted_at IS NULL",
@@ -166,7 +166,7 @@ pub async fn check_mobile(
     pool: Extension<Pool>,
     Path(mobile): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let exists = client
         .query_opt(
             "SELECT id FROM auth_person WHERE mobile = $1 AND deleted_at IS NULL",
@@ -184,7 +184,7 @@ pub async fn check_email(
     pool: Extension<Pool>,
     Path(email): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let exists = client
         .query_opt(
             "SELECT id FROM auth_person WHERE email = $1 AND deleted_at IS NULL",

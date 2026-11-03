@@ -38,7 +38,7 @@ pub async fn crud_create(
     spec: &CrudSpec,
     payload: &Value,
 ) -> Result<String, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = crate::db::acquire(pool).await?;
     use deadpool_postgres::tokio_postgres::types::ToSql;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -86,7 +86,7 @@ pub async fn crud_save(
     id: &str,
     payload: &Value,
 ) -> Result<bool, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = crate::db::acquire(pool).await?;
     use deadpool_postgres::tokio_postgres::types::ToSql;
 
     let mut set_parts: Vec<String> = Vec::new();
@@ -139,7 +139,7 @@ pub async fn crud_save(
 
 /// 软删（有 deleted_at 列）或硬删。返回是否命中。
 pub async fn crud_delete(pool: &Pool, spec: &CrudSpec, id: &str) -> Result<bool, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = crate::db::acquire(pool).await?;
     use deadpool_postgres::tokio_postgres::types::ToSql;
 
     let owned = id.to_string();
@@ -174,7 +174,7 @@ async fn crud_owner_ok(
     owner_column: &str,
     session: &crate::session::Session,
 ) -> Result<bool, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = crate::db::acquire(pool).await?;
     let deleted = if spec.soft_delete {
         " AND deleted_at IS NULL"
     } else {
@@ -299,11 +299,11 @@ pub async fn crud_create_many(
         .map(|_| uuid::Uuid::new_v4().to_string())
         .collect();
 
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = crate::db::acquire(pool).await?;
     use deadpool_postgres::tokio_postgres::types::ToSql;
 
     let max_rows = max_rows_per_statement(spec);
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     for (chunk_payloads, chunk_ids) in payloads.chunks(max_rows).zip(ids.chunks(max_rows)) {
         let sql = build_batch_insert_sql(spec, chunk_payloads.len());
         let params = batch_params(spec, chunk_payloads, chunk_ids);
@@ -313,7 +313,7 @@ pub async fn crud_create_many(
             .await
             .map_err(|_| AppError::Internal)?;
     }
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
 
     Ok(ids)
 }
@@ -645,9 +645,9 @@ mod batch_insert_tests {
         assert!(
             matches!(
                 crud_delete(&pool, &COV_SPEC_SOFT, "x").await,
-                Err(AppError::Internal)
+                Err(AppError::Unavailable(_))
             ),
-            "delete 的 pool.get 错误必须映射 Internal"
+            "delete 的 pool.get 错误必须映射 Unavailable(503)"
         );
         assert!(
             matches!(
@@ -658,16 +658,16 @@ mod batch_insert_tests {
                     &serde_json::json!({"name": "n"})
                 )
                 .await,
-                Err(AppError::Internal)
+                Err(AppError::Unavailable(_))
             ),
-            "save 的 pool.get 错误必须映射 Internal"
+            "save 的 pool.get 错误必须映射 Unavailable(503)"
         );
         assert!(
             matches!(
                 crud_create_many(&pool, &COV_SPEC_SOFT, &[serde_json::json!({"name": "n"})]).await,
-                Err(AppError::Internal)
+                Err(AppError::Unavailable(_))
             ),
-            "create_many 的 pool.get 错误必须映射 Internal"
+            "create_many 的 pool.get 错误必须映射 Unavailable(503)"
         );
         let session = cov_session("cov-err");
         assert!(
@@ -681,9 +681,9 @@ mod batch_insert_tests {
                     &session
                 )
                 .await,
-                Err(AppError::Internal)
+                Err(AppError::Unavailable(_))
             ),
-            "归属校验的 pool.get 错误必须映射 Internal（fail-loud 而非放行）"
+            "归属校验的 pool.get 错误必须映射 Unavailable(503)（fail-loud 而非放行）"
         );
     }
 }

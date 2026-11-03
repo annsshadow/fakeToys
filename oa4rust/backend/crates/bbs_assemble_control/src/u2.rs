@@ -73,7 +73,7 @@ async fn u2_gate_by_sql(
     id: &str,
     person_unique: &str,
 ) -> Result<U2Gate, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let row = client
         .query_opt(sql, &[&id])
         .await
@@ -257,7 +257,7 @@ pub async fn u2_attachment_download_stream(
 }
 
 async fn attachment_download_base64(pool: &Pool, id: &str) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let row = client
         .query_opt(
             "SELECT name, extension, content FROM x_bbs_attachment \
@@ -352,7 +352,7 @@ async fn attachment_upload_store(
         .map(|(_, e)| e.to_string())
         .unwrap_or_default();
     let length = bytes.len() as i64;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     client
         .execute(
             "INSERT INTO x_bbs_attachment \
@@ -438,7 +438,7 @@ pub async fn picture_section_icon(
     icon_png
         .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
         .map_err(|_| AppError::Internal)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let exists: bool = client
         .query_one(
             "SELECT EXISTS(SELECT 1 FROM bbs_section_info WHERE id = $1)",
@@ -472,7 +472,7 @@ pub async fn picture_section_icon(
 // 落地为**差异报告**（市场应用 ↔ 板块 名称差集，只读）——不做自动建板块
 // （o2 的创建规则未在契约文档中定义，编造规则即造假）。
 pub async fn section_syn(pool: Extension<Pool>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let apps: Vec<String> = client
         .query(
             "SELECT name FROM x_program_module WHERE deleted_at IS NULL AND name IS NOT NULL ORDER BY name",
@@ -558,7 +558,7 @@ async fn set_topic_flag(
                 "UPDATE x_bbs_topic SET {} = $1 WHERE id = $2 AND deleted_at IS NULL",
                 column
             );
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let client = shared::db::acquire(&pool).await?;
             let affected = client
                 .execute(sql.as_str(), &[&value, &id])
                 .await
@@ -612,7 +612,7 @@ topic_toggle_endpoints! {
 /// GET user/subject/{id} — 单条主题详情。
 #[allow(non_snake_case)]
 pub async fn u2_subject_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, title, content, creator, author_id, forum_id, section_id, \
@@ -712,7 +712,7 @@ pub async fn u2_subject_save(
     let subject_type = body_str(&body, &["subjectType"]).unwrap_or_default();
     let id = Uuid::new_v4().to_string();
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     client
         .execute(
             "INSERT INTO x_bbs_topic (id, title, content, author_id, creator, forum_id, \
@@ -756,8 +756,8 @@ pub async fn u2_subject_accept_reply(
         U2Gate::Allowed => {
             // 采纳 = topic.accept_reply_id 与 reply.accepted 的跨表不变量对，必须原子；
             // 此前第二写 `let _ =` 吞错且两写非事务，回帖标记失败会留主题悬空指向。
-            let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
-            let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+            let mut client = shared::db::acquire(&pool).await?;
+            let tx = client.transaction().await?;
             let affected = tx
                 .execute(
                     "UPDATE x_bbs_topic SET accept_reply_id = $1 WHERE id = $2 AND deleted_at IS NULL",
@@ -771,7 +771,7 @@ pub async fn u2_subject_accept_reply(
             )
             .await
             .map_err(|_| AppError::Internal)?;
-            tx.commit().await.map_err(|_| AppError::Internal)?;
+            tx.commit().await?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
@@ -797,8 +797,8 @@ pub async fn u2_subject_unaccept_reply(
         U2Gate::Allowed => {
             // 取消采纳须同步清回帖侧 accepted 标记：此前只清主题指针，
             // 旧回帖残留 accepted=true，会与后续新采纳并存造成双采纳。
-            let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
-            let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+            let mut client = shared::db::acquire(&pool).await?;
+            let tx = client.transaction().await?;
             let prev: Option<String> = tx
                 .query_opt(
                     "SELECT accept_reply_id FROM x_bbs_topic WHERE id = $1 AND deleted_at IS NULL",
@@ -808,7 +808,7 @@ pub async fn u2_subject_unaccept_reply(
                 .map_err(|_| AppError::Internal)?
                 .and_then(|r| r.get::<_, Option<String>>("accept_reply_id"));
             if prev.is_none() {
-                tx.commit().await.map_err(|_| AppError::Internal)?;
+                tx.commit().await?;
                 return Ok(Json(ActionResult::success(Value::Object(
                     serde_json::Map::from_iter([
                         ("id".to_string(), Value::String(id)),
@@ -830,7 +830,7 @@ pub async fn u2_subject_unaccept_reply(
                 .await
                 .map_err(|_| AppError::Internal)?;
             }
-            tx.commit().await.map_err(|_| AppError::Internal)?;
+            tx.commit().await?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
@@ -853,7 +853,7 @@ pub async fn u2_subject_soft_delete(
         U2Gate::NotFound => Ok(Json(ActionResult::error("subject not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let client = shared::db::acquire(&pool).await?;
             let affected = client
                 .execute(
                     "UPDATE x_bbs_topic SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -885,7 +885,7 @@ pub async fn u2_subject_change_section(
         U2Gate::NotFound => Ok(Json(ActionResult::error("subject not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let client = shared::db::acquire(&pool).await?;
             let affected = client
                 .execute(
                     "UPDATE x_bbs_topic SET section_id = $1, section_name = $2 WHERE id = $3 AND deleted_at IS NULL",
@@ -921,10 +921,10 @@ pub async fn u2_vote_submit(
     let person = sess.person_unique.clone();
     let record_id = Uuid::new_v4().to_string();
 
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
     // 投票=原子地「写投票记录」+「topic 票数 +1」，二写须同事务：否则 INSERT 成功而
     // UPDATE 失败会留下有记录却未计数的态（计数与记录数永久不一致）。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     tx.execute(
         "INSERT INTO x_bbs_vote_record (id, topic_id, person, option_id, option_name) \
              VALUES ($1, $2, $3, $4, $5)",
@@ -938,7 +938,7 @@ pub async fn u2_vote_submit(
     )
     .await
     .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -961,7 +961,7 @@ pub async fn u2_voterecord_list(
         None => return Err(AppError::BadRequest("subjectId is required".to_string())),
     };
     let offset = page.saturating_sub(1).saturating_mul(count);
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, person, option_id, option_name FROM x_bbs_vote_record \
@@ -1026,7 +1026,7 @@ pub async fn u2_my_subject_list(
     let person =
         body_str(&body, &["creator", "person"]).unwrap_or_else(|| session.person_unique.clone());
     let offset = page.saturating_sub(1).saturating_mul(count);
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, title, content, creator, forum_id, create_time::text AS create_time \
@@ -1096,7 +1096,7 @@ pub async fn u2_my_reply_list(
     let person =
         body_str(&body, &["creator", "person"]).unwrap_or_else(|| session.person_unique.clone());
     let offset = page.saturating_sub(1).saturating_mul(count);
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, topic_id, content, creator, create_time::text AS create_time \
@@ -1156,7 +1156,7 @@ pub async fn u2_my_reply_list(
 /// GET reply/{id} — 单条回复。
 #[allow(non_snake_case)]
 pub async fn u2_reply_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, topic_id, content, creator, accepted FROM x_bbs_reply \
@@ -1200,7 +1200,7 @@ pub async fn u2_reply_filter_list(
     body: axum::extract::Json<Value>,
 ) -> ApiResult {
     let offset = page.saturating_sub(1).saturating_mul(count);
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let (rows, total) = match body_str(&body, &["topicId", "subjectId"]) {
         Some(topic_id) => {
             let rows = client
@@ -1289,7 +1289,7 @@ pub async fn u2_user_reply_save(
     let creator = sess.person_unique.clone();
     let id = Uuid::new_v4().to_string();
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     client
         .execute(
             "INSERT INTO x_bbs_reply (id, topic_id, content, creator, create_time) \
@@ -1327,8 +1327,8 @@ pub async fn u2_user_reply_accept(
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
             // 同 u2_subject_accept_reply：跨表不变量对原子化。
-            let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
-            let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+            let mut client = shared::db::acquire(&pool).await?;
+            let tx = client.transaction().await?;
             tx.execute(
                 "UPDATE x_bbs_reply SET accepted = true WHERE id = $1 AND deleted_at IS NULL",
                 &[&reply_id],
@@ -1341,7 +1341,7 @@ pub async fn u2_user_reply_accept(
             )
             .await
             .map_err(|_| AppError::Internal)?;
-            tx.commit().await.map_err(|_| AppError::Internal)?;
+            tx.commit().await?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("subjectId".to_string(), Value::String(subject_id)),
@@ -1364,7 +1364,7 @@ pub async fn u2_user_reply_delete(
         U2Gate::NotFound => Ok(Json(ActionResult::error("reply not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let client = shared::db::acquire(&pool).await?;
             let affected = client
                 .execute(
                     "UPDATE x_bbs_reply SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -1400,7 +1400,7 @@ pub async fn u2_user_forum_save(
     let creator = session.person_unique.clone();
     let id = Uuid::new_v4().to_string();
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     client
         .execute(
             "INSERT INTO x_bbs_forum (id, name, description, creator, create_time) \
@@ -1427,7 +1427,7 @@ pub async fn u2_user_forum_delete(
 ) -> ApiResult {
     let pool = pool.0;
     u2_require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let affected = client
         .execute(
             "UPDATE x_bbs_forum SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -1489,7 +1489,7 @@ async fn query_sections(
 /// GET section/{id} — 版块详情。
 #[allow(non_snake_case)]
 pub async fn u2_section_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let data = query_sections(&client, "id = $1", &id).await?;
     match data.into_iter().next() {
         Some(v) => Ok(Json(ActionResult::success(v))),
@@ -1500,7 +1500,7 @@ pub async fn u2_section_get(pool: Extension<Pool>, Path(id): Path<String>) -> Ap
 /// GET section/viewsub/{sectionId} — 主版块的子版块。
 #[allow(non_snake_case)]
 pub async fn u2_section_viewsub(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let data = query_sections(&client, "parent_id = $1", &id).await?;
     let count = data.len() as i64;
     Ok(Json(ActionResult::legacy_success(
@@ -1516,7 +1516,7 @@ pub async fn u2_user_section_forum(
     pool: Extension<Pool>,
     Path(forum_id): Path<String>,
 ) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let data = query_sections(&client, "forum_id = $1", &forum_id).await?;
     let total_data = data.len();
     Ok(Json(ActionResult::legacy_success(
@@ -1554,7 +1554,7 @@ pub async fn u2_user_section_save(
     let creator = session.person_unique.clone();
     let id = Uuid::new_v4().to_string();
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     client
         .execute(
             "INSERT INTO x_bbs_section (id, forum_id, name, parent_id, description, creator, create_time) \
@@ -1582,7 +1582,7 @@ pub async fn u2_user_section_delete(
 ) -> ApiResult {
     let pool = pool.0;
     u2_require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let affected = client
         .execute(
             "UPDATE x_bbs_section SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -1604,7 +1604,7 @@ pub async fn u2_user_section_delete_force(
 ) -> ApiResult {
     let pool = pool.0;
     u2_require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let affected = client
         .execute("DELETE FROM x_bbs_section WHERE id = $1", &[&id])
         .await
@@ -1647,7 +1647,7 @@ fn role_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
 /// GET user/role/{id} — BBS 角色详情。
 #[allow(non_snake_case)]
 pub async fn u2_role_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, code, description, forum_id, section_id FROM x_bbs_role \
@@ -1665,7 +1665,7 @@ pub async fn u2_role_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiRe
 /// GET user/role/all — BBS 角色全量（对齐 o2server RoleInfoAction.listAll，读 x_bbs_role）。
 #[allow(non_snake_case)]
 pub async fn u2_role_all(pool: Extension<Pool>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, code, description, forum_id, section_id FROM x_bbs_role \
@@ -1703,7 +1703,7 @@ pub async fn u2_role_save(
     let creator = session.person_unique.clone();
     let id = Uuid::new_v4().to_string();
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     client
         .execute(
             "INSERT INTO x_bbs_role (id, name, code, description, forum_id, section_id, creator) \
@@ -1739,7 +1739,7 @@ pub async fn u2_role_delete(
 ) -> ApiResult {
     let pool = pool.0;
     u2_require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let affected = client
         .execute(
             "UPDATE x_bbs_role SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -1759,7 +1759,7 @@ async fn list_roles_by_column(pool: Extension<Pool>, column: &str, value: &str) 
          WHERE deleted_at IS NULL AND {} = $1 ORDER BY create_time",
         column
     );
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(sql.as_str(), &[&value])
         .await
@@ -1858,7 +1858,7 @@ pub async fn u2_role_bind_object(
     let pool = pool.0;
     u2_require_admin(&pool, &session).await?;
     let role_id = {
-        let client = pool.get().await.map_err(|_| AppError::Internal)?;
+        let client = shared::db::acquire(&pool).await?;
         resolve_role_id(
             &client,
             body_str(&body, &["roleId"]),
@@ -1878,9 +1878,9 @@ pub async fn u2_role_bind_object(
         .cloned()
         .unwrap_or_default();
     let mut bound = 0usize;
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
     // N 次绑定插入事务化：中途失败整体回滚，不留半绑定中间态。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     for obj in objects {
         let object_type = obj
             .get("type")
@@ -1911,7 +1911,7 @@ pub async fn u2_role_bind_object(
         .await?;
         bound += 1;
     }
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("roleId".to_string(), Value::String(role_id)),
@@ -1942,9 +1942,9 @@ pub async fn u2_role_bind_user(
         .cloned()
         .unwrap_or_default();
     let mut bound = 0usize;
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
     // N 次绑定插入事务化：中途失败整体回滚，不留半绑定中间态。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     for rid in role_ids {
         let Some(rid) = rid.as_str().map(String::from) else {
             continue;
@@ -1960,7 +1960,7 @@ pub async fn u2_role_bind_user(
         .await?;
         bound += 1;
     }
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("personCode".to_string(), Value::String(person)),
@@ -1993,7 +1993,7 @@ pub async fn u2_role_selected_by_code(
         Some(v) => v,
         None => return Err(AppError::BadRequest("roleCode is required".to_string())),
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let role_id = resolve_role_id(&client, None, Some(code)).await?;
     let Some(role_id) = role_id else {
         return Ok(Json(ActionResult::error("role not found")));
@@ -2033,7 +2033,7 @@ pub async fn u2_role_by_unit(pool: Extension<Pool>, body: axum::extract::Json<Va
         Some(v) => v,
         None => return Err(AppError::BadRequest("unitCode is required".to_string())),
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let data = roles_bound_to(&client, "unit", &unit).await?;
     let total_data = data.len();
     Ok(Json(ActionResult::legacy_success(
@@ -2050,7 +2050,7 @@ pub async fn u2_role_by_user(pool: Extension<Pool>, body: axum::extract::Json<Va
         Some(v) => v,
         None => return Err(AppError::BadRequest("personCode is required".to_string())),
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let data = roles_bound_to(&client, "person", &person).await?;
     let total_data = data.len();
     Ok(Json(ActionResult::legacy_success(
@@ -2100,7 +2100,7 @@ fn permission_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Valu
 /// GET permission — 全局权限概要（x_bbs_permission 聚合）。
 #[allow(non_snake_case)]
 pub async fn u2_permission_root(pool: Extension<Pool>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let total_row = client
         .query_one(
             "SELECT COUNT(*) FROM x_bbs_permission WHERE deleted_at IS NULL",
@@ -2128,7 +2128,7 @@ async fn permissions_by_column(pool: Extension<Pool>, column: &str, value: &str)
          FROM x_bbs_permission WHERE deleted_at IS NULL AND {} = $1",
         column
     );
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(sql.as_str(), &[&value])
         .await
@@ -2216,7 +2216,7 @@ async fn query_settings(
 /// GET setting/bbsName — 论坛名称（BBS_NAME 配置，缺省 O2社区）。
 #[allow(non_snake_case)]
 pub async fn u2_setting_bbs_name(pool: Extension<Pool>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let data = query_settings(&client, Some(("code", "BBS_NAME"))).await?;
     let name = data
         .first()
@@ -2232,7 +2232,7 @@ pub async fn u2_setting_bbs_name(pool: Extension<Pool>) -> ApiResult {
 /// GET user/setting/{id} — 单条配置。
 #[allow(non_snake_case)]
 pub async fn u2_setting_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let data = query_settings(&client, Some(("id", &id))).await?;
     match data.into_iter().next() {
         Some(v) => Ok(Json(ActionResult::success(v))),
@@ -2243,7 +2243,7 @@ pub async fn u2_setting_get(pool: Extension<Pool>, Path(id): Path<String>) -> Ap
 /// GET user/setting/all — 全量配置。
 #[allow(non_snake_case)]
 pub async fn u2_setting_all(pool: Extension<Pool>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let data = query_settings(&client, None).await?;
     let total_data = data.len();
     Ok(Json(ActionResult::legacy_success(
@@ -2271,7 +2271,7 @@ pub async fn u2_setting_update(
     let creator = session.person_unique.clone();
     let id = body_str(&body, &["id"]).unwrap_or_else(|| Uuid::new_v4().to_string());
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let affected = client
         .execute(
             "UPDATE x_bbs_config_setting SET value = $1, name = $2, update_time = NOW() \
@@ -2309,7 +2309,7 @@ pub async fn u2_setting_get_by_code(
         Some(v) => v,
         None => return Err(AppError::BadRequest("code is required".to_string())),
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let data = query_settings(&client, Some(("code", &code))).await?;
     let total_data = data.len();
     Ok(Json(ActionResult::legacy_success(
@@ -2345,7 +2345,7 @@ pub async fn u2_userinfo_update_nick(
             "nickname query param is required".to_string(),
         ));
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let existing = client
         .query_opt(
@@ -2398,7 +2398,7 @@ pub async fn u2_userinfo_filter(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = match body_str(&body, &["name", "nickName", "key"]) {
         Some(key) => {
             let pattern = format!("%{}%", like_escape(&key));
@@ -2504,7 +2504,7 @@ fn attachment_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Valu
 /// GET attachment/{id} — 附件元数据。
 #[allow(non_snake_case)]
 pub async fn u2_attachment_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, subject_id, name, extension, url, description, length FROM x_bbs_attachment \
@@ -2525,7 +2525,7 @@ pub async fn u2_attachment_list_by_subject(
     pool: Extension<Pool>,
     Path(subject_id): Path<String>,
 ) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, subject_id, name, extension, url, description, length FROM x_bbs_attachment \
@@ -2555,7 +2555,7 @@ pub async fn u2_attachment_delete(
         U2Gate::NotFound => Ok(Json(ActionResult::error("attachment not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let client = shared::db::acquire(&pool).await?;
             let affected = client
                 .execute(
                     "UPDATE x_bbs_attachment SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -2573,7 +2573,7 @@ pub async fn u2_attachment_delete(
 /// GET subjectattach/{id} — 主题附件元数据。
 #[allow(non_snake_case)]
 pub async fn u2_subjectattach_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, subject_id, name, extension, url, description, length FROM x_bbs_subject_attachment \
@@ -2594,7 +2594,7 @@ pub async fn u2_subjectattach_list(
     pool: Extension<Pool>,
     Path(subject_id): Path<String>,
 ) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, subject_id, name, extension, url, description, length FROM x_bbs_subject_attachment \
@@ -2624,7 +2624,7 @@ pub async fn u2_subjectattach_base64(
             "size must be within (0, 4096]".to_string(),
         ));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT content FROM x_bbs_subject_attachment WHERE id = $1 AND deleted_at IS NULL",
@@ -2669,7 +2669,7 @@ pub async fn u2_subjectattach_delete(
         U2Gate::NotFound => Ok(Json(ActionResult::error("attachment not found"))),
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
-            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let client = shared::db::acquire(&pool).await?;
             let affected = client
                 .execute(
                     "UPDATE x_bbs_subject_attachment SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -2695,7 +2695,7 @@ pub async fn u2_shutup_get_mine(
     session: Extension<shared::session::Session>,
 ) -> ApiResult {
     let person = session.person_unique.clone();
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, person, reason, create_time FROM x_bbs_shutup \
@@ -2749,7 +2749,7 @@ pub async fn u2_shutup_delete_admin(
 ) -> ApiResult {
     let pool = pool.0;
     u2_require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let affected = client
         .execute("DELETE FROM x_bbs_shutup WHERE id = $1", &[&id])
         .await
@@ -2765,7 +2765,7 @@ pub async fn u2_statgrade(
     pool: Extension<Pool>,
     Path((section_name, subject_type)): Path<(String, String)>,
 ) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT subject_grade, COUNT(*) AS total FROM x_bbs_topic \
@@ -2801,7 +2801,7 @@ pub async fn u2_subject_search_page(
 ) -> ApiResult {
     let keyword = body_str(&body, &["keyword", "key", "title", "search"]).unwrap_or_default();
     let offset = page.saturating_sub(1).saturating_mul(count);
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     if keyword.is_empty() {
         let rows = client
@@ -2927,7 +2927,7 @@ pub async fn u2_subject_listsubjectinfo_page(
         .map(|s| s as &(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync))
         .collect();
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let total_row = client
         .query_one(count_sql.as_str(), &filter_params[..])
         .await

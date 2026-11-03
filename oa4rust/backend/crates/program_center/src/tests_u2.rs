@@ -53,11 +53,11 @@ mod u2_tests {
     async fn u2_applications_and_storagemappings_reachable() {
         assert_eq!(
             status_of("GET", "/api/program_center/applications").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", "/api/program_center/storagemappings").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
     }
 
@@ -76,11 +76,11 @@ mod u2_tests {
         );
         assert_eq!(
             status_of("GET", "/api/program_center/warnlog/w-1").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", "/api/program_center/warnlog/list/w-1/next/10").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of(
@@ -88,11 +88,11 @@ mod u2_tests {
                 "/api/program_center/warnlog/list/w-1/next/10/date/2026-08-22"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", "/api/program_center/warnlog/list/w-1/prev/5").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of(
@@ -100,7 +100,7 @@ mod u2_tests {
                 "/api/program_center/warnlog/list/w-1/prev/5/date/2026-08-22"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of(
@@ -108,7 +108,7 @@ mod u2_tests {
                 "/api/program_center/warnlog/view/system/log/tag/sync"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
     }
 
@@ -116,7 +116,7 @@ mod u2_tests {
     async fn u2_agent_root_list_and_flag_delete_reachable() {
         assert_eq!(
             status_of("GET", "/api/program_center/agent").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("DELETE", "/api/program_center/agent/a-flag").await,
@@ -134,9 +134,10 @@ mod u2_tests {
             "/api/program_center/apppack/pack/info/android/repack",
             "/api/program_center/apppack/server/connect",
         ] {
-            assert_eq!(
-                status_of("GET", uri).await,
-                StatusCode::INTERNAL_SERVER_ERROR,
+            // O2：死池下 503 与 500（缺会话扩展）均证明路由可达
+            assert!(
+                matches!(status_of("GET", uri).await,
+                    StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE),
                 "GET {uri}"
             );
         }
@@ -157,7 +158,7 @@ mod u2_tests {
                 "/api/program_center/apppackanony/pack/info/file/last"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of(
@@ -165,7 +166,7 @@ mod u2_tests {
                 "/api/program_center/apppackanony/pack/info/file/download/pk-1"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
     }
 
@@ -329,7 +330,7 @@ mod u2_tests {
     async fn u2_apppack_file_last_hits_db_and_fails_internal_without_db() {
         let pool = mock_pool();
         let r = apppack_file_last(Extension(pool)).await;
-        assert!(matches!(r, Err(shared::error::AppError::Internal)));
+        assert!(matches!(r, Err(shared::error::AppError::Unavailable(_))));
     }
 
     // ── 轮96：collect 族真库往返（固化轮77 personId camelCase alias + 轮90 列表软删过滤）──

@@ -39,7 +39,7 @@ async fn unit_batch(
     if flags.is_empty() {
         return ok_legacy_list(0, vec![]);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             &format!(
@@ -59,7 +59,7 @@ async fn unit_batch(
 pub async fn unit_list_all(
     pool: Extension<Pool>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id FROM x_org_unit WHERE deleted_at IS NULL ORDER BY level, id LIMIT 100",
@@ -78,7 +78,7 @@ pub async fn unit_list_all(
 pub async fn unit_list_all_object(
     pool: Extension<Pool>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, parent_id, level FROM x_org_unit WHERE deleted_at IS NULL ORDER BY level, id",
@@ -155,7 +155,7 @@ async fn unit_tree_scope(
         ("sup", true, false) => SUP_NESTED_SQL,
         (_, _, _) => SUP_NESTED_OBJ_SQL,
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(sql, &[&flags])
         .await
@@ -264,7 +264,7 @@ pub async fn unit_check_unit_has_person(
 
     let mut value = false;
     if !person.is_empty() && !unit.is_empty() {
-        let client = pool.get().await.map_err(|_| AppError::Internal)?;
+        let client = shared::db::acquire(&pool).await?;
         let person_row = client
             .query_opt(
                 "SELECT id FROM x_org_person WHERE deleted_at IS NULL AND (id = $1 OR name = $1)",
@@ -347,7 +347,7 @@ pub async fn group_list(
     if flags.is_empty() {
         return ok_legacy_list(0, vec![]);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             &format!(
@@ -430,7 +430,7 @@ pub async fn group_list_object(
     if flags.is_empty() {
         return ok_legacy_list(0, vec![]);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT g.id, g.name, g.\"type\", g.unit_id, m.person_id \
@@ -462,7 +462,7 @@ pub async fn group_list_person(
     if flags.is_empty() {
         return ok_legacy_list(0, vec![]);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT DISTINCT p.id, p.name, p.unit_id FROM x_org_person p \
@@ -489,7 +489,7 @@ pub async fn role_list(
     if flags.is_empty() {
         return ok_legacy_list(0, vec![]);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             &format!(
@@ -514,7 +514,7 @@ pub async fn role_list_person(
     if flags.is_empty() {
         return ok_legacy_list(0, vec![]);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT DISTINCT p.id, p.name, p.unit_id FROM x_org_person p \
@@ -542,7 +542,7 @@ pub async fn unitduty_list_name(
     if flags.is_empty() {
         return ok_legacy_list(0, vec![]);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             &format!(

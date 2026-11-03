@@ -9,6 +9,8 @@
 use utoipa::OpenApi;
 mod request_types;
 use crate::request_types::*;
+#[cfg(test)]
+mod tests;
 
 #[utoipa::path(get, path = "/health", tag = "base",
     responses(

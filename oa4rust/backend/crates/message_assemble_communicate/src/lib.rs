@@ -23,7 +23,7 @@ fn require_session(
 // 未读 = x_message_consume 中 read_status 非 'read' 的待消费条目。
 #[allow(non_snake_case)]
 pub async fn unread_count(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(
             "SELECT COUNT(*)::int AS c FROM x_message_consume WHERE (read_status IS NULL OR read_status = '' OR read_status <> 'read')",
@@ -55,7 +55,7 @@ pub async fn send_message(
     let Some(sess) = session.as_deref() else {
         return Err(AppError::Unauthorized);
     };
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
 
     let conversation_id = req
         .get("conversationId")
@@ -77,7 +77,7 @@ pub async fn send_message(
 
     // 发消息=原子地「写消息行」+「会话 last_message_time 刷新」，二写须同事务：否则
     // INSERT 成功而 UPDATE 失败会留下消息已入库但会话时间戳未刷新态（会话列表排序失真）。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let result = tx
         .execute("INSERT INTO x_message (id, conversation_id, content, sender, type, create_time) VALUES ($1, $2, $3, $4, $5, NOW())", &[&id, &conversation_id, &content, &sender, &msg_type])
         .await
@@ -89,7 +89,7 @@ pub async fn send_message(
     )
     .await
     .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -111,7 +111,7 @@ pub async fn receive_list(
     pool: Extension<Pool>,
     axum::extract::Path(consume): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 第 65 轮：收件箱未读列表加固定上限（同「会话成员列表 LIMIT 100」的
     // 固定上限风格）。此前无 LIMIT —— 接收方消息堆积时一次把全部未读
@@ -173,7 +173,7 @@ pub async fn mark_read(
     let Some(sess) = session.as_deref() else {
         return Err(AppError::Unauthorized);
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let owner = client
         .query_opt(
@@ -219,7 +219,7 @@ pub async fn consume_list_consume_count_count(
     pool: Extension<Pool>,
     axum::extract::Path((consume, count)): axum::extract::Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let limit = count.max(1);
     let rows = client
@@ -271,7 +271,7 @@ pub async fn consume_list_consume_currentperson_count_count(
     pool: Extension<Pool>,
     axum::extract::Path((consume, count)): axum::extract::Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let limit = count.max(1);
     let rows = client
@@ -330,7 +330,7 @@ pub async fn consume_list_consume_person_person_count_count(
     pool: Extension<Pool>,
     axum::extract::Path((consume, person, count)): axum::extract::Path<(String, String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let limit = count.max(1);
     let rows = client
@@ -382,7 +382,7 @@ pub async fn consume_type_type(
     pool: Extension<Pool>,
     axum::extract::Path(msg_type): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, consume, content, type, sender, create_time FROM x_message_consume WHERE type = $1 ORDER BY create_time DESC", &[&msg_type])
@@ -440,7 +440,7 @@ pub async fn consume_type_type_mockputtopost(
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     // W12 收敛：对齐 o2server ActionUpdate（consume/type/{type}）——按 Wi.idList 定位
     // x_message、标记 consumed=true，WrapNumber 返回命中条数；空 body → 0。
     let id_list: Vec<String> = body
@@ -488,7 +488,7 @@ pub async fn consume_id_type_type(
     let Some(sess) = session.as_deref() else {
         return Err(AppError::Unauthorized);
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let owner = client
         .query_opt(
@@ -528,7 +528,7 @@ pub async fn im_conversation(
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default();
     let conversation_type = req.get("type").and_then(|v| v.as_str()).unwrap_or("single");
@@ -557,7 +557,7 @@ pub async fn im_conversation_business_businessId(
     pool: Extension<Pool>,
     axum::extract::Path(business_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt("SELECT id, name, type, business_id, create_time FROM x_message_conversation WHERE business_id = $1 LIMIT 1", &[&business_id])
@@ -601,7 +601,7 @@ pub async fn im_conversation_business_businessId(
 pub async fn im_conversation_list_my(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, type, last_message, create_time FROM x_message_conversation ORDER BY update_time DESC", &[])
@@ -654,7 +654,7 @@ pub async fn im_conversation_list_my(
 pub async fn im_conversation_list_with_person(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, type, create_time FROM x_message_conversation WHERE type = 'single' ORDER BY create_time DESC", &[])
@@ -705,7 +705,7 @@ pub async fn im_conversation_mockputtopost(
     let Some(sess) = session.as_deref() else {
         return Err(AppError::Unauthorized);
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = req.get("id").and_then(|v| v.as_str()).unwrap_or_default();
     if !is_conversation_member(&client, id, &sess.person_unique).await? {
@@ -732,7 +732,7 @@ pub async fn im_conversation_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt("SELECT id, name, type, last_message, create_time FROM x_message_conversation WHERE id = $1", &[&id])
@@ -780,7 +780,7 @@ pub async fn im_conversation_id_group(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, conversation_id, person_id, role, join_time FROM x_message_conversation_member WHERE conversation_id = $1 ORDER BY join_time LIMIT 100", &[&id])
@@ -842,7 +842,7 @@ pub async fn im_manager_config_post(
         return Err(AppError::Unauthorized);
     };
     require_admin(&pool, sess).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let config_key = req
         .get("configKey")
@@ -910,7 +910,7 @@ pub async fn im_conversation_update(
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // IDOR 门禁：仅会话成员可改会话信息（对齐 delete_virtual 口径；
     // 此前任何登录人可改任意会话名/类型）
@@ -981,7 +981,7 @@ pub async fn im_conversation_id_group_mockdeletetoget(
         return Err(AppError::Unauthorized);
     };
     require_admin(&pool, sess).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -1002,7 +1002,7 @@ pub async fn im_conversation_id_group_quit_self(
     session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // o2server 仅允许群聊退出；IDOR：person 取自会话，只能退自己所在的群
     let conv_type = conversation_type(&client, &id).await?;
@@ -1030,7 +1030,7 @@ pub async fn im_conversation_id_icon(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt("SELECT icon_url, icon_name, create_time FROM x_message_conversation_icon WHERE conversation_id = $1 ORDER BY create_time DESC LIMIT 1", &[&id])
@@ -1072,7 +1072,7 @@ pub async fn im_conversation_id_read(
     session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // o2server ActionConversationRead 校验会话成员；IDOR：仅成员可标记已读
     if !is_conversation_member(&client, &id, &session.person_unique).await? {
@@ -1098,7 +1098,7 @@ pub async fn im_conversation_id_read_mockputtopost(
     let Some(sess) = session.as_deref() else {
         return Err(AppError::Unauthorized);
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     if !is_conversation_member(&client, &id, &sess.person_unique).await? {
         return Ok(Json(ActionResult::error("not a conversation member")));
     }
@@ -1118,7 +1118,7 @@ pub async fn im_conversation_id_single(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt("SELECT id, name, type, create_time FROM x_message_conversation WHERE id = $1 AND type = 'single'", &[&id])
@@ -1160,7 +1160,7 @@ pub async fn im_conversation_id_single_mockdeletetoget(
     session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // IDOR：仅会话成员可删除该单聊
     if !is_conversation_member(&client, &id, &session.person_unique).await? {
@@ -1189,7 +1189,7 @@ pub async fn im_conversation_id_top_cancel(
     let Some(sess) = session.as_deref() else {
         return Err(AppError::Unauthorized);
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     if !is_conversation_member(&client, &id, &sess.person_unique).await? {
         return Ok(Json(ActionResult::error("not a conversation member")));
     }
@@ -1216,7 +1216,7 @@ pub async fn im_conversation_id_top_cancel_mockputtopost(
     let Some(sess) = session.as_deref() else {
         return Err(AppError::Unauthorized);
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     if !is_conversation_member(&client, &id, &sess.person_unique).await? {
         return Ok(Json(ActionResult::error("not a conversation member")));
     }
@@ -1243,7 +1243,7 @@ pub async fn im_conversation_id_top_set(
     let Some(sess) = session.as_deref() else {
         return Err(AppError::Unauthorized);
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     if !is_conversation_member(&client, &id, &sess.person_unique).await? {
         return Ok(Json(ActionResult::error("not a conversation member")));
     }
@@ -1270,7 +1270,7 @@ pub async fn im_conversation_id_top_set_mockputtopost(
     let Some(sess) = session.as_deref() else {
         return Err(AppError::Unauthorized);
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     if !is_conversation_member(&client, &id, &sess.person_unique).await? {
         return Ok(Json(ActionResult::error("not a conversation member")));
     }
@@ -1292,7 +1292,7 @@ pub async fn im_conversation_id_top_set_mockputtopost(
 pub async fn im_manager_config(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt("SELECT id, config_key, config_value, create_time FROM x_message_config ORDER BY create_time DESC LIMIT 1", &[])
@@ -1340,7 +1340,7 @@ pub async fn im_msg(
     let Some(sess) = session.as_deref() else {
         return Err(AppError::Unauthorized);
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let conversation_id = req
         .get("conversationId")
@@ -1389,7 +1389,7 @@ pub async fn im_msg_clear(
     let Some(sess) = session.as_deref() else {
         return Err(AppError::Unauthorized);
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let conversation_id = req
         .get("conversationId")
@@ -1424,7 +1424,7 @@ pub async fn im_msg_collection(
         return Err(AppError::Unauthorized);
     };
     require_admin(&pool, sess).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let message_id = req
         .get("messageId")
@@ -1448,7 +1448,7 @@ pub async fn im_msg_collection_list_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
@@ -1501,7 +1501,7 @@ pub async fn im_msg_collection_remove(
         return Err(AppError::Unauthorized);
     };
     require_admin(&pool, sess).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let message_id = req
         .get("messageId")
@@ -1591,7 +1591,7 @@ pub async fn im_msg_download_id(
     use axum::http::{header, StatusCode};
     use axum::response::IntoResponse;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt("SELECT file_name, type, mime, content FROM x_message_file WHERE message_id = $1 LIMIT 1", &[&id])
@@ -1655,7 +1655,7 @@ pub async fn im_msg_download_id_image_width_width_height_height(
     pool: Extension<Pool>,
     axum::extract::Path((id, width, height)): axum::extract::Path<(String, i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt("SELECT id, file_url, file_name, create_time FROM x_message_file WHERE message_id = $1 LIMIT 1", &[&id])
@@ -1702,7 +1702,7 @@ pub async fn im_msg_download_id_image_width_width_height_height(
 pub async fn im_msg_list_object(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, conversation_id, content, sender, type, create_time FROM x_message WHERE type != 'text' ORDER BY create_time DESC LIMIT 50", &[])
@@ -1761,7 +1761,7 @@ pub async fn im_msg_list_page_size_size(
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
     body: Option<Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
@@ -1844,7 +1844,7 @@ pub async fn im_msg_revoke_id(
     let Some(sess) = session.as_deref() else {
         return Err(AppError::Unauthorized);
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let owner = client
         .query_opt(
@@ -1922,7 +1922,7 @@ pub async fn im_msg_upload_conversationId_type_type(
             .unwrap_or("file"),
     );
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     if !is_conversation_member(&client, &conversation_id, &sess.person_unique).await? {
         return Ok(Json(ActionResult::error("not a conversation member")));
     }
@@ -1953,7 +1953,7 @@ pub async fn im_msg_upload_conversationId_type_type(
 pub async fn instant_currentperson_consumed(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, consume, content, sender, consume_time FROM x_message_consume WHERE consumed = true ORDER BY consume_time DESC LIMIT 50", &[])
@@ -2003,7 +2003,7 @@ pub async fn instant_currentperson_consumed(
 pub async fn instant_currentperson_consumed_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, consume, content, sender, consume_time FROM x_message_consume WHERE consumed = true ORDER BY consume_time DESC", &[])
@@ -2056,7 +2056,7 @@ pub async fn instant_currentperson_consumed_mockputtopost(
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id_list = req
         .get("idList")
@@ -2095,7 +2095,7 @@ pub async fn instant_list_currentperson_consumed_count_count_asc(
     pool: Extension<Pool>,
     axum::extract::Path(count): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, consume, content, sender, consume_time FROM x_message_consume WHERE consumed = true ORDER BY consume_time ASC LIMIT $1", &[&count])
@@ -2146,7 +2146,7 @@ pub async fn instant_list_currentperson_consumed_count_count_desc(
     pool: Extension<Pool>,
     axum::extract::Path(count): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, consume, content, sender, consume_time FROM x_message_consume WHERE consumed = true ORDER BY consume_time DESC LIMIT $1", &[&count])
@@ -2197,7 +2197,7 @@ pub async fn instant_list_currentperson_count_count_asc(
     pool: Extension<Pool>,
     axum::extract::Path(count): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, consume, content, sender, create_time FROM x_message_consume ORDER BY create_time ASC LIMIT $1", &[&count])
@@ -2248,7 +2248,7 @@ pub async fn instant_list_currentperson_count_count_desc(
     pool: Extension<Pool>,
     axum::extract::Path(count): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, consume, content, sender, create_time FROM x_message_consume ORDER BY create_time DESC LIMIT $1", &[&count])
@@ -2299,7 +2299,7 @@ pub async fn instant_list_currentperson_noim_count_count_desc(
     pool: Extension<Pool>,
     axum::extract::Path(count): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE type != 'im' ORDER BY create_time DESC LIMIT $1", &[&count])
@@ -2350,7 +2350,7 @@ pub async fn instant_list_currentperson_not_consumed_count_count_asc(
     pool: Extension<Pool>,
     axum::extract::Path(count): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consumed = false ORDER BY create_time ASC LIMIT $1", &[&count])
@@ -2401,7 +2401,7 @@ pub async fn instant_list_currentperson_not_consumed_count_count_desc(
     pool: Extension<Pool>,
     axum::extract::Path(count): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consumed = false ORDER BY create_time DESC LIMIT $1", &[&count])
@@ -2452,7 +2452,7 @@ pub async fn instant_list_id_next_count(
     pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE id > $1 ORDER BY create_time ASC LIMIT $2", &[&id, &count])
@@ -2503,7 +2503,7 @@ pub async fn instant_list_id_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE id < $1 ORDER BY create_time DESC LIMIT $2", &[&id, &count])
@@ -2559,7 +2559,7 @@ pub async fn mass_enable_type(
         return Err(AppError::Unauthorized);
     };
     require_admin(&pool, sess).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let msg_type = req.get("type").and_then(|v| v.as_str()).unwrap_or_default();
     let enabled = req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
@@ -2585,7 +2585,7 @@ pub async fn mass_list_id_next_count(
     pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE id > $1 ORDER BY create_time ASC LIMIT $2", &[&id, &count])
@@ -2636,7 +2636,7 @@ pub async fn mass_list_id_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE id < $1 ORDER BY create_time DESC LIMIT $2", &[&id, &count])
@@ -2687,7 +2687,7 @@ pub async fn mass_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2736,7 +2736,7 @@ pub async fn message_custom_create(
     let Some(sess) = session.as_deref() else {
         return Err(AppError::Unauthorized);
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let conversation_id = req
         .get("conversationId")
@@ -2779,7 +2779,7 @@ pub async fn message_list_paging_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
@@ -2891,7 +2891,7 @@ pub async fn connector_create(
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let msg_type = req
         .get("type")
@@ -2968,7 +2968,7 @@ pub async fn ws_create(
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let person = req
         .get("person")
@@ -3014,7 +3014,7 @@ pub async fn ws_create(
 /// GET /ws/count/person — 当前在线（未断开）ws 连接的去重人数。
 #[allow(non_snake_case)]
 pub async fn ws_count_person(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let count: i64 = client
         .query_one(
@@ -3038,7 +3038,7 @@ pub async fn ws_count_person(pool: Extension<Pool>) -> Result<Json<ActionResult<
 pub async fn ws_list_person_current_node(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -3069,7 +3069,7 @@ pub async fn ws_list_person_current_node(
 /// GET /ws/list/person — 按节点分组的在线人员列表。
 #[allow(non_snake_case)]
 pub async fn ws_list_person(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -3135,7 +3135,7 @@ pub async fn mass_create(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // IDOR：权限门禁先于任何资源获取/写操作，fail-closed
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let targets = mass_target_list(&req);
     if targets.is_empty() {
@@ -3189,7 +3189,7 @@ pub async fn mass_create(
 pub async fn mass_enable_type_get(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -3222,7 +3222,7 @@ pub async fn mass_id_mockdeletetoget(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // IDOR：权限门禁先于任何资源获取/删除操作，fail-closed
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let exists = client
         .query_opt("SELECT id FROM x_message_mass WHERE id = $1", &[&id])
@@ -3253,7 +3253,7 @@ pub async fn im_conversation_id_single_delete_virtual(
     session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let conv_type = conversation_type(&client, &id).await?;
     match conv_type.as_deref() {
@@ -3314,7 +3314,7 @@ pub async fn instant_currentperson_consumed_put(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let marked = client
         .execute(

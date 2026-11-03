@@ -231,7 +231,7 @@ pub async fn delete_by_id(
                 create_time: Set(m.create_time),
                 deleted_at: Set(Some(chrono::Utc::now().naive_utc())),
             };
-            active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+            active.update(&db.0).await?;
             Ok(Json(ActionResult::success(
                 serde_json::json!({"success": true}),
             )))

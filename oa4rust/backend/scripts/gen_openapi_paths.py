@@ -370,6 +370,10 @@ def main():
     lines.append("use utoipa::OpenApi;")
     lines.append("mod request_types;")
     lines.append("use crate::request_types::*;")
+    # O5：手工维护的测试模块（tests.rs）必须挂进模块树——否则文件在≠测试在跑
+    # （test_module_registration_guard 正是查这个）。
+    lines.append("#[cfg(test)]")
+    lines.append("mod tests;")
     lines.append("")
 
     # Health check

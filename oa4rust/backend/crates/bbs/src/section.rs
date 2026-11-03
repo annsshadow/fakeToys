@@ -25,7 +25,7 @@ pub async fn view_forum(
     pool: Extension<Pool>,
     Path(forum_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -84,7 +84,7 @@ pub async fn view_forum(
     tag = "bbs"
 )]
 pub async fn view_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(

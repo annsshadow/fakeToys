@@ -34,7 +34,7 @@ async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Resul
 pub async fn get_control_config(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_one(
@@ -97,7 +97,7 @@ pub(crate) fn fold_control_categories(
 pub async fn list_control_categories(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     // Single GROUP BY instead of DISTINCT type + per-type COUNT (textbook N+1).
     let rows = client
         .query(
@@ -131,7 +131,7 @@ pub async fn update_control_config(
     // 组件控制配置写仅 admin（安全审计 2026-10 二轮）。
     require_admin(&pool, &session).await?;
     let config = body.0;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let enabled = config
         .get("enabled")
@@ -195,7 +195,7 @@ pub struct ComponentRequest {
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn list_components(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -247,7 +247,7 @@ pub async fn get_component(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -296,7 +296,7 @@ pub async fn create_component(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 组件创建仅 admin（安全审计 2026-10 二轮）。
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_default();
@@ -331,7 +331,7 @@ pub async fn save_component(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 组件写仅 admin（安全审计 2026-10 二轮）。
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let name = req.name.unwrap_or_default();
     let component_type = req.component_type.unwrap_or_default();
@@ -367,7 +367,7 @@ pub async fn delete_component(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 组件删除仅 admin（安全审计 2026-10 二轮）。
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -398,7 +398,7 @@ pub async fn component_delete_all(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 组件全表软删仅 admin（安全审计 2026-10 二轮）。
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -421,7 +421,7 @@ pub async fn component_delete_all(
 
 #[allow(non_snake_case)]
 pub async fn status_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_one(

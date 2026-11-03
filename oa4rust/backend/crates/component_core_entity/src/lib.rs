@@ -23,7 +23,7 @@ pub struct ComponentInfo {
 pub async fn component_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, title, type, visible, order_number, path, icon_path FROM CPT_COMPONENT WHERE deleted_at IS NULL ORDER BY order_number ASC",
@@ -93,7 +93,7 @@ pub async fn component_get(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, title, type, visible, order_number, path, icon_path FROM CPT_COMPONENT WHERE (id = $1 OR name = $1) AND deleted_at IS NULL",
@@ -157,7 +157,7 @@ pub async fn component_get(
 }
 
 pub async fn component_count(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(
             "SELECT COUNT(*) as cnt FROM CPT_COMPONENT WHERE deleted_at IS NULL",

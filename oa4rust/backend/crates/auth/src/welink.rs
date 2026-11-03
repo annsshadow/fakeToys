@@ -102,7 +102,7 @@ async fn welink_user_id(config: &WelinkConfig, code: &str) -> Result<String, App
 
 /// 查询用户角色列表
 async fn fetch_role_list(pool: &Pool, person_id: &str) -> Result<Vec<String>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let rows = client
         .query(
             "SELECT r.name FROM auth_role r \
@@ -128,7 +128,7 @@ pub async fn welink_login(
     let user_id = welink_user_id(&config, &code).await?;
     let unique_id = format!("{WELINK_UNIQUE_PREFIX}{user_id}");
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, unique_id, name, mobile, email, icon FROM auth_person \

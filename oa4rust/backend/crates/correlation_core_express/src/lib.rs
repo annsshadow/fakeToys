@@ -11,7 +11,7 @@ pub mod routes;
 /// 获取关联服务状态
 /// 检查关联服务是否正常运行
 pub async fn get_status(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let count: i64 = client
         .query_one("SELECT COUNT(*) FROM x_correlation", &[])
         .await
@@ -35,7 +35,7 @@ pub async fn get_status(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
 pub async fn sync_correlation(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let synced: i64 = client
         .query_one("SELECT COUNT(*) FROM x_correlation", &[])
         .await

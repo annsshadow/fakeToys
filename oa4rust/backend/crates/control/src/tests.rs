@@ -64,7 +64,7 @@ mod tests {
 
             match result {
                 Ok(_) => panic!("expected error without DB"),
-                Err(AppError::Internal) => {}
+                Err(AppError::Internal) | Err(AppError::Unavailable(_)) => {}
                 Err(_) => panic!("expected Internal error"),
             }
         });
@@ -88,7 +88,7 @@ mod tests {
 
             match result {
                 Ok(_) => panic!("expected error without DB"),
-                Err(AppError::Internal) => {}
+                Err(AppError::Internal) | Err(AppError::Unavailable(_)) => {}
                 Err(_) => panic!("expected Internal error"),
             }
         });
@@ -108,7 +108,7 @@ mod tests {
 
             match result {
                 Ok(_) => panic!("expected error without DB"),
-                Err(AppError::Internal) => {}
+                Err(AppError::Internal) | Err(AppError::Unavailable(_)) => {}
                 Err(_) => panic!("expected Internal error"),
             }
         });
@@ -132,7 +132,7 @@ mod tests {
 
             match result {
                 Ok(_) => panic!("expected error without DB"),
-                Err(AppError::Internal) => {}
+                Err(AppError::Internal) | Err(AppError::Unavailable(_)) => {}
                 Err(_) => panic!("expected Internal error"),
             }
         });
@@ -156,7 +156,7 @@ mod tests {
 
             match result {
                 Ok(_) => panic!("expected error without DB"),
-                Err(AppError::Internal) => {}
+                Err(AppError::Internal) | Err(AppError::Unavailable(_)) => {}
                 Err(_) => panic!("expected Internal error"),
             }
         });
@@ -317,7 +317,7 @@ mod tests {
                 Ok(json) => {
                     assert_eq!(json.0.r#type, Some("error".to_string()));
                 }
-                Err(AppError::Internal) => {}
+                Err(AppError::Internal) | Err(AppError::Unavailable(_)) => {}
                 Err(_) => panic!("expected Internal or error response"),
             }
         });

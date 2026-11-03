@@ -58,7 +58,7 @@ pub fn ai_assemble_control_router(pool: Pool) -> axum::Router {
 pub async fn get_ai_control_config(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, default_model, temperature, max_tokens, enabled, creator FROM x_ai_mcp_config WHERE is_base = true LIMIT 1",
@@ -188,7 +188,7 @@ pub async fn get_ai_control_config(
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn list_ai_models(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, url, enabled, creator, create_time, update_time FROM x_ai_model_config WHERE enabled = true ORDER BY create_time DESC",
@@ -233,7 +233,7 @@ pub async fn list_ai_models(pool: Extension<Pool>) -> Result<Json<ActionResult<V
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn ann_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, title, content, category, status, creator, create_time::text AS create_time \
@@ -377,7 +377,7 @@ pub async fn update_ai_control_config(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let config = body.0;
 
     let name = config
@@ -441,7 +441,7 @@ pub async fn update_ai_control_config(
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn get_usage_stats(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let file_count: i64 = client
         .query_one("SELECT COUNT(*) as cnt FROM x_ai_file", &[])
@@ -514,7 +514,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 pub async fn config_base_config(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, default_model, temperature, max_tokens, enabled, creator FROM x_ai_mcp_config WHERE is_base = true LIMIT 1",
@@ -588,7 +588,7 @@ pub async fn config_create_mcp(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
     let req = req.map(|r| r.0).unwrap_or_default();
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = req
         .get("name")
@@ -641,7 +641,7 @@ pub async fn config_create_model(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
     let req = req.map(|r| r.0).unwrap_or_default();
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = req
         .get("name")
@@ -693,7 +693,7 @@ pub async fn config_delete_mcp_flag(
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let result = client
         .execute("DELETE FROM x_ai_mcp_config WHERE id = $1", &[&id])
         .await
@@ -719,7 +719,7 @@ pub async fn config_delete_model_flag(
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let result = client
         .execute("DELETE FROM x_ai_model_config WHERE id = $1", &[&id])
         .await
@@ -742,7 +742,7 @@ pub async fn config_delete_model_flag(
 pub async fn config_get_mcp_ext_flag(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, url, enabled, creator, create_time, update_time FROM x_ai_mcp_config WHERE is_extended = true LIMIT 1",
@@ -795,7 +795,7 @@ pub async fn config_get_mcp_flag(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, url, enabled, creator, create_time, update_time \
@@ -849,7 +849,7 @@ pub async fn config_get_model_flag(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, url, enabled, creator, create_time, update_time FROM x_ai_model_config WHERE id = $1",
@@ -907,7 +907,7 @@ pub async fn config_get_model_flag(
 pub async fn config_list_enable_model(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, url, enabled, creator, create_time, update_time FROM x_ai_model_config WHERE enabled = true ORDER BY create_time DESC",
@@ -972,7 +972,7 @@ pub async fn config_list_mcp_paging_page_size_size(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let (size, offset) = shared::response::page_window(page, size);
     let d = dialect();
     let sql = format!(
@@ -1038,7 +1038,7 @@ pub async fn config_list_model_paging_page_size_size(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let (size, offset) = shared::response::page_window(page, size);
     let d = dialect();
     let sql = format!(
@@ -1110,7 +1110,7 @@ pub async fn config_save(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
     let req = req.map(|r| r.0).unwrap_or_default();
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = req
         .get("id")
         .and_then(|v| v.as_str())
@@ -1209,7 +1209,7 @@ pub async fn config_update_mcp_flag(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
     let req = req.map(|r| r.0).unwrap_or_default();
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let name = req
         .get("name")
         .and_then(|v| v.as_str())
@@ -1256,7 +1256,7 @@ pub async fn config_update_model_flag(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
     let req = req.map(|r| r.0).unwrap_or_default();
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let name = req
         .get("name")
         .and_then(|v| v.as_str())
@@ -1301,7 +1301,7 @@ pub async fn file_copy_file(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_session(session)?;
     let req = req.map(|r| r.0).unwrap_or_default();
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let source_id = req
         .get("sourceId")
         .and_then(|v| v.as_str())
@@ -1342,7 +1342,7 @@ pub async fn file_delete_flag(
     let Some(Extension(sess)) = session else {
         return Err(AppError::Unauthorized);
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     // 归属门：先取文件属主再判（admin 放行 / 本人放行，归一化比较），否则任意登录用户可删他人文件。
     let owner: Option<String> = client
         .query_opt("SELECT creator FROM x_ai_file WHERE id = $1", &[&id])
@@ -1380,7 +1380,7 @@ pub async fn file_list_with_ids(
     req: Option<axum::extract::Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let req = req.map(|r| r.0).unwrap_or_default();
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let raw_ids: Vec<String> = req
         .get("ids")
         .and_then(|v| v.as_array())
@@ -1474,7 +1474,7 @@ pub async fn file_list_paging_page_size_size(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let (size, offset) = shared::response::page_window(page, size);
     let rows = client
         .query(
@@ -1541,7 +1541,7 @@ pub async fn file_upload(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_session(session)?;
     let req = req.map(|r| r.0).unwrap_or_default();
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = req
         .get("name")
@@ -1612,7 +1612,7 @@ pub async fn file_flag(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, file_name, file_size, file_type, enabled, creator, create_time FROM x_ai_file WHERE id = $1",
@@ -1673,7 +1673,7 @@ pub async fn file_id_download(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, file_name, file_size, file_type FROM x_ai_file WHERE id = $1",
@@ -1719,7 +1719,7 @@ pub async fn file_id_download_scale(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, file_name FROM x_ai_file WHERE id = $1",
@@ -1753,7 +1753,7 @@ pub async fn index_cms_doc_with_app_appId(
     pool: Extension<Pool>,
     Path(app_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, doc_id, app_id, title, enabled, creator FROM x_ai_index WHERE app_id = $1 ORDER BY create_time DESC",
@@ -1796,7 +1796,7 @@ pub async fn index_cms_doc_docId(
     pool: Extension<Pool>,
     Path(doc_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, doc_id, title, content, app_id, creator FROM x_ai_index WHERE doc_id = $1",
@@ -1841,7 +1841,7 @@ pub async fn index_delete_flag(
     let Some(Extension(sess)) = session else {
         return Err(AppError::Unauthorized);
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     // 归属门：先取索引属主再判（admin 放行 / 本人放行，归一化比较），否则任意登录用户可删他人索引。
     let owner: Option<String> = client
         .query_opt("SELECT creator FROM x_ai_index WHERE id = $1", &[&id])
@@ -1876,7 +1876,7 @@ pub async fn index_list_paging_page_size_size(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let (size, offset) = shared::response::page_window(page, size);
     let rows = client
         .query(
@@ -1935,7 +1935,7 @@ pub async fn index_sync_to_knowledge(
         None => return Err(AppError::Unauthorized),
         Some(Extension(s)) => require_admin(&pool, &s).await?,
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let synced_count = client
         .execute(
@@ -2015,7 +2015,7 @@ pub async fn chat_completion(
 
     let context_window = req.context_window.unwrap_or(20).clamp(1, 100);
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 校验 conversation 所有权：仅允许读取 own conversations 或 shared conversations
     let owner_rows = client
@@ -2153,7 +2153,7 @@ async fn process_chat_request(
 
     let context_window = req.context_window.unwrap_or(20).clamp(1, 100);
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
 
     let owner_rows = client
         .query(
@@ -2404,7 +2404,7 @@ pub async fn chat_list_paging_page_size_size(
             "page and size must be >= 1".to_string(),
         ));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let (size, offset) = shared::response::page_window(page, size);
     let d = dialect();
     let sql = format!(
@@ -2460,7 +2460,7 @@ pub async fn chat_list_completion_clue_id_paging_page_size_size(
             "page and size must be >= 1".to_string(),
         ));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let (size, offset) = shared::response::page_window(page, size);
     let d = dialect();
     let sql = format!(
@@ -2520,7 +2520,7 @@ pub async fn chat_delete_clue_id(
     let Some(Extension(session)) = session else {
         return Err(AppError::Unauthorized);
     };
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
 
     let owner: Option<String> = client
         .query_opt(
@@ -2547,7 +2547,7 @@ pub async fn chat_delete_clue_id(
     }
 
     // 级联软删：会话与其全部对话记录必须原子，中途失败留「会话在而记录已删」。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let completions = tx
         .execute(
             "UPDATE x_ai_chat SET deleted_at = NOW() WHERE conversation_id = $1 AND deleted_at IS NULL",
@@ -2563,7 +2563,7 @@ pub async fn chat_delete_clue_id(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2603,7 +2603,7 @@ pub async fn chat_write_completion_extra(
     let extra = req.get("extra").cloned().unwrap_or(Value::Null);
     let extra_text = extra.to_string();
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let updated = client
         .execute(
             "UPDATE x_ai_chat SET extra = $2::text::jsonb WHERE id = $1 AND deleted_at IS NULL",

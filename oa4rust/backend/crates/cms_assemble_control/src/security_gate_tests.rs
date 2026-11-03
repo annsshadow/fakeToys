@@ -209,7 +209,7 @@ mod security_gate_tests {
 
         let allowed = call(crate::U2Gate::Allowed).await;
         assert!(
-            matches!(allowed, Err(AppError::Internal)),
+            matches!(allowed, Err(AppError::Unavailable(_))),
             "Allowed 格必须走到落笔（无库 → Internal），不得伪装成 403：{allowed:?}"
         );
     }

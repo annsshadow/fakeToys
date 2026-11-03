@@ -60,7 +60,7 @@ async fn meeting_require_owner(
     session: &shared::session::Session,
     id: &str,
 ) -> Result<(), AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let row = client
         .query_opt("SELECT creator FROM x_meeting WHERE id = $1", &[&id])
         .await
@@ -307,7 +307,7 @@ pub async fn update_room(
         .and_then(|v| v.as_i64())
         .map(|v| v as i32);
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows_affected = client
         .execute(
             "UPDATE x_meeting_room SET name = $1, building_id = $2, floor = $3, capacity = $4, equipment = $5, description = $6, photo = $7, order_number = $8 WHERE id = $9",
@@ -341,7 +341,7 @@ pub async fn delete_room(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 会议室删除 = 系统资源写：仅 admin（安全审计 2026-10 二轮）。
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows_affected = client
         .execute("DELETE FROM x_meeting_room WHERE id = $1", &[&id])
         .await
@@ -611,7 +611,7 @@ pub async fn update_meeting(
         .parse()
         .map_err(|_| AppError::BadRequest("invalid \"endTime\"".to_string()))?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows_affected = client
         .execute(
             "UPDATE x_meeting SET title = $1, content = $2, start_time = $3, end_time = $4 WHERE id = $5",
@@ -643,7 +643,7 @@ pub async fn delete_meeting(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 会议删除 = 属主资源写：仅属主/admin（安全审计 2026-10 二轮）。
     meeting_require_owner(&pool, &session, &id).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows_affected = client
         .execute("DELETE FROM x_meeting WHERE id = $1", &[&id])
         .await

@@ -33,7 +33,7 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
     }
 
     #[tokio::test]
@@ -55,7 +55,7 @@ mod tests {
 
         assert!(matches!(
             response.status(),
-            StatusCode::OK | StatusCode::INTERNAL_SERVER_ERROR | StatusCode::NOT_FOUND
+            StatusCode::OK | StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE | StatusCode::NOT_FOUND
         ));
     }
 
@@ -78,7 +78,7 @@ mod tests {
 
         assert!(matches!(
             response.status(),
-            StatusCode::OK | StatusCode::INTERNAL_SERVER_ERROR | StatusCode::NOT_FOUND
+            StatusCode::OK | StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE | StatusCode::NOT_FOUND
         ));
     }
 

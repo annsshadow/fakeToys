@@ -74,7 +74,7 @@ pub async fn require_admin_opt(
 
 #[allow(non_snake_case)]
 pub async fn client_of(pool: &Pool) -> Result<Client, AppError> {
-    pool.get().await.map_err(|_| AppError::Internal)
+    shared::db::acquire(pool).await
 }
 
 pub fn opt<'a>(body: &'a Value, keys: &[&str]) -> Option<&'a str> {

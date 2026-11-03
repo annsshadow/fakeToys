@@ -58,13 +58,15 @@ mod u2_legacy_tests {
                 StatusCode::INTERNAL_SERVER_ERROR,
             ),
         ] {
-            assert_eq!(
-                status_of(method, &format!("{}{}", BASE, uri)).await,
-                expect,
-                "{} {} not routed",
-                method,
-                uri
-            );
+            let got = status_of(method, &format!("{}{}", BASE, uri)).await;
+                assert!(
+                    got == expect
+                        || (matches!(expect, StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE)
+                            && matches!(got, StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE)),
+                    "{} {} not routed: got {got}",
+                    method,
+                    uri
+                );
         }
     }
 
@@ -95,9 +97,10 @@ mod u2_legacy_tests {
             "/dingdingstatistic/person/unit/u1/2026/08",
             "/dingdingstatistic/unit/u1/2026/08",
         ] {
-            assert_eq!(
-                status_of("GET", &format!("{}{}", BASE, uri)).await,
-                StatusCode::INTERNAL_SERVER_ERROR,
+            // O2：死池下 503（取连失败）与 500（缺会话扩展）均证明路由可达
+            assert!(
+                matches!(status_of("GET", &format!("{}{}", BASE, uri)).await,
+                    StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE),
                 "{} not routed",
                 uri
             );
@@ -146,13 +149,15 @@ mod u2_legacy_tests {
                 StatusCode::INTERNAL_SERVER_ERROR,
             ),
         ] {
-            assert_eq!(
-                status_of(method, &format!("{}{}", BASE, uri)).await,
-                expect,
-                "{} {} not routed",
-                method,
-                uri
-            );
+            let got = status_of(method, &format!("{}{}", BASE, uri)).await;
+                assert!(
+                    got == expect
+                        || (matches!(expect, StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE)
+                            && matches!(got, StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE)),
+                    "{} {} not routed: got {got}",
+                    method,
+                    uri
+                );
         }
     }
 
@@ -168,13 +173,16 @@ mod u2_legacy_tests {
             ("GET", "/v2/appeal/ap-1/start/check"),
             ("GET", "/v2/appeal/ap-1/reset/status"),
         ] {
-            assert_eq!(
-                status_of(method, &format!("{}{}", BASE, uri)).await,
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "{} {} not routed",
-                method,
-                uri
-            );
+            // O2：死池下 503（取连失败）与 500（缺会话扩展）均证明路由可达
+                assert!(
+                    matches!(
+                        status_of(method, &format!("{}{}", BASE, uri)).await,
+                        StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE
+                    ),
+                    "{} {} not routed",
+                    method,
+                    uri
+                );
         }
     }
 
@@ -187,13 +195,16 @@ mod u2_legacy_tests {
             ("POST", "/v2/detail/statistic/export/filter"),
             ("GET", "/v2/group/rebuild/detail/group/g-1/date/2026-08-22"),
         ] {
-            assert_eq!(
-                status_of(method, &format!("{}{}", BASE, uri)).await,
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "{} {} not routed",
-                method,
-                uri
-            );
+            // O2：死池下 503（取连失败）与 500（缺会话扩展）均证明路由可达
+                assert!(
+                    matches!(
+                        status_of(method, &format!("{}{}", BASE, uri)).await,
+                        StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE
+                    ),
+                    "{} {} not routed",
+                    method,
+                    uri
+                );
         }
     }
 
@@ -206,13 +217,16 @@ mod u2_legacy_tests {
             ("GET", "/v2/groupschedule/config/group/g-1"),
             ("GET", "/v2/groupschedule/list/group/g-1/month/2026-08"),
         ] {
-            assert_eq!(
-                status_of(method, &format!("{}{}", BASE, uri)).await,
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "{} {} not routed",
-                method,
-                uri
-            );
+            // O2：死池下 503（取连失败）与 500（缺会话扩展）均证明路由可达
+                assert!(
+                    matches!(
+                        status_of(method, &format!("{}{}", BASE, uri)).await,
+                        StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE
+                    ),
+                    "{} {} not routed",
+                    method,
+                    uri
+                );
         }
     }
 
@@ -250,13 +264,16 @@ mod u2_legacy_tests {
             StatusCode::OK
         );
         for (method, uri) in [("GET", "/v2/my/controls"), ("POST", "/v2/my/detail/list")] {
-            assert_eq!(
-                status_of(method, &format!("{}{}", BASE, uri)).await,
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "{} {} not routed",
-                method,
-                uri
-            );
+            // O2：死池下 503（取连失败）与 500（缺会话扩展）均证明路由可达
+                assert!(
+                    matches!(
+                        status_of(method, &format!("{}{}", BASE, uri)).await,
+                        StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE
+                    ),
+                    "{} {} not routed",
+                    method,
+                    uri
+                );
         }
         // rest/date/check 缺 body 时 handler 校验日期返回 400（≠404 证明路由命中）
         assert_eq!(
@@ -272,13 +289,16 @@ mod u2_legacy_tests {
             ("POST", "/v2/record/import"),
             ("POST", "/v2/record/import/daily"),
         ] {
-            assert_eq!(
-                status_of(method, &format!("{}{}", BASE, uri)).await,
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "{} {} not routed",
-                method,
-                uri
-            );
+            // O2：死池下 503（取连失败）与 500（缺会话扩展）均证明路由可达
+                assert!(
+                    matches!(
+                        status_of(method, &format!("{}{}", BASE, uri)).await,
+                        StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE
+                    ),
+                    "{} {} not routed",
+                    method,
+                    uri
+                );
         }
         // template 端点为纯静态契约（无提取器）：200 即证明已路由
         assert_eq!(
@@ -298,13 +318,16 @@ mod u2_legacy_tests {
             ("DELETE", "/v2/workplace/w-1"),
             ("GET", "/v2/workplace/list/all"),
         ] {
-            assert_eq!(
-                status_of(method, &format!("{}{}", BASE, uri)).await,
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "{} {} not routed",
-                method,
-                uri
-            );
+            // O2：死池下 503（取连失败）与 500（缺会话扩展）均证明路由可达
+                assert!(
+                    matches!(
+                        status_of(method, &format!("{}{}", BASE, uri)).await,
+                        StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE
+                    ),
+                    "{} {} not routed",
+                    method,
+                    uri
+                );
         }
         // list/ids 要求 JSON body：无 content-type 时提取器拒绝 415（≠404 证明路由命中）
         assert_eq!(
@@ -340,7 +363,7 @@ mod u2_legacy_tests {
                 )
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
     }
 

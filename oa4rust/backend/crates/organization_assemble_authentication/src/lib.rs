@@ -293,7 +293,7 @@ pub async fn qiyeweixin_bind_confirm(
     }
 
     let unique_id = entry.external_user_id;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // Check if person with this unique_id exists
     let existing = client
@@ -341,7 +341,7 @@ pub async fn qiyeweixin_login(
     let userid = qywx_exchange_code(&config, &code).await?;
     let unique_id = format!("{}{}", QYWX_UNIQUE_PREFIX, userid);
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, unique_id, name, mobile, email, icon FROM auth_person \
@@ -491,7 +491,7 @@ pub async fn dingding_bind_confirm(
     }
 
     let unique_id = entry.external_user_id;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let existing = client
         .query_opt(
@@ -532,7 +532,7 @@ pub async fn dingding_login(
     let userid = dingding_exchange_code(&config, &code).await?;
     let unique_id = format!("{}{}", DINGDING_UNIQUE_PREFIX, userid);
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, unique_id, name, mobile, email, icon FROM auth_person \
@@ -671,7 +671,7 @@ pub async fn zhengwudingding_bind_confirm(
     }
 
     let unique_id = entry.external_user_id;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let existing = client
         .query_opt(
@@ -751,7 +751,7 @@ pub async fn zhengwudingding_login(
 
     let unique_id = format!("{}{}", ZWDINGDING_UNIQUE_PREFIX, user_id);
 
-    let db = pool.get().await.map_err(|_| AppError::Internal)?;
+    let db = shared::db::acquire(&pool).await?;
     let row = db
         .query_opt(
             "SELECT id, unique_id, name, mobile, email, icon FROM auth_person \
@@ -1143,7 +1143,7 @@ pub async fn person_id_icon(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one("SELECT icon_url FROM auth_person WHERE id = $1", &[&id])
         .await
@@ -1162,7 +1162,7 @@ pub async fn identity_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(
             "SELECT id, name, unit_id FROM x_org_identity WHERE id = $1",
@@ -1189,7 +1189,7 @@ async fn oauth_code_store(
     person_id: Option<&str>,
     scope: &str,
 ) -> Result<String, AppError> {
-    let rt = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rt = shared::db::acquire(pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     rt.execute(
         "INSERT INTO x_org_oauth_code (id, code, client, person_id, scope, expire_time, created_at) \
@@ -1301,11 +1301,11 @@ pub async fn oauth_token_get(
     axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let code = q.get("code").cloned().unwrap_or_default();
-    let rt = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rt = shared::db::acquire(&pool).await?;
     let row = rt.query_opt(
         "SELECT id, client, person_id, scope FROM x_org_oauth_code WHERE code = $1 AND expire_time > NOW()",
         &[&code],
-    ).await.map_err(|_| AppError::Internal)?;
+    ).await?;
     let result = match row {
         Some(r) => {
             let data = serde_json::json!({
@@ -1358,7 +1358,7 @@ pub async fn qiyeweixin_info_sign(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = pool.get().await.map_err(|_| AppError::Internal)?;
+    let _ = shared::db::acquire(&pool).await?;
     let nonce = req
         .get("nonce")
         .and_then(|v| v.as_str())

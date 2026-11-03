@@ -139,7 +139,7 @@ pub async fn qiyeweixin_login(
     let userid = exchange_code_for_userid(&config, &code).await?;
     let unique_id = format!("{}{}", QYWXPOS_UNIQUE_PREFIX, userid);
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, unique_id, name, mobile, email, icon FROM auth_person \
@@ -210,7 +210,7 @@ pub async fn qiyeweixin_update_person_detail(
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, unique_id, name, mobile, email, icon FROM auth_person \

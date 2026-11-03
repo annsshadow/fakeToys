@@ -143,7 +143,7 @@ pub async fn record_create(
         create_time: sea_orm::ActiveValue::Set(None),
     };
 
-    active.insert(&db.0).await.map_err(|_| AppError::Internal)?;
+    active.insert(&db.0).await?;
 
     let created = attendance_record::Entity::find_by_id(new_id.clone())
         .one(&db.0)
@@ -187,7 +187,7 @@ pub async fn record_update(
     let status_val = status.clone().unwrap_or(model.status.clone());
     active.status = sea_orm::ActiveValue::Set(status_val);
 
-    active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+    active.update(&db.0).await?;
 
     let updated = attendance_record::Entity::find_by_id(id.clone())
         .one(&db.0)
@@ -265,7 +265,7 @@ pub async fn rule_create(
         update_time: sea_orm::ActiveValue::Set(None),
     };
 
-    active.insert(&db.0).await.map_err(|_| AppError::Internal)?;
+    active.insert(&db.0).await?;
 
     let created = attendance_rule::Entity::find_by_id(new_id.clone())
         .one(&db.0)
@@ -325,7 +325,7 @@ pub async fn rule_update(
             .unwrap_or_default(),
     );
 
-    active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+    active.update(&db.0).await?;
 
     let updated = attendance_rule::Entity::find_by_id(id.clone())
         .one(&db.0)

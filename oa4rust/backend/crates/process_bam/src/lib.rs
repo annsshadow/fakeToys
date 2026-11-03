@@ -10,7 +10,7 @@ mod routes;
 
 #[axum::debug_handler]
 pub async fn state_summary(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_one(
@@ -56,7 +56,7 @@ pub async fn state_summary(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
 
 #[axum::debug_handler]
 pub async fn state_running(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -115,7 +115,7 @@ pub async fn state_running(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
 pub async fn state_organization(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(

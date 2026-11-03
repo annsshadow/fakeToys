@@ -51,7 +51,7 @@ pub async fn consume_list(
     pool: Extension<Pool>,
     axum::extract::Path((consume, count)): axum::extract::Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xtitle, xbody, xtype, xconsumer, xperson, \"xcreateTime\" FROM x_msg_message WHERE xconsumer = $1 AND xconsumed = false ORDER BY \"xcreateTime\" ASC LIMIT $2",
@@ -113,7 +113,7 @@ pub async fn update_single(
     axum::extract::Path((id, r#type)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query("SELECT xid FROM x_msg_message WHERE xid = $1", &[&id])
         .await
@@ -154,7 +154,7 @@ pub async fn custom_create(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 系统消息发布仅 admin（安全审计 2026-10 二轮）。
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = Uuid::new_v4().to_string();
     let title = req.title.unwrap_or_default();
     let body = req.body.unwrap_or_default();
@@ -183,7 +183,7 @@ pub async fn mark_read(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query("SELECT xid FROM x_msg_message WHERE xid = $1", &[&id])
         .await
@@ -214,7 +214,7 @@ pub async fn unread_count(
     pool: Extension<Pool>,
     axum::extract::Path(consume): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT COUNT(*) as cnt FROM x_msg_message WHERE xconsumer = $1 AND xconsumed = false",

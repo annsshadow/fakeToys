@@ -60,7 +60,7 @@ pub async fn group_has_role(
          JOIN x_org_group g ON g.id = gr.group_id AND g.deleted_at IS NULL \
          JOIN x_org_role r ON r.id = gr.role_id AND r.deleted_at IS NULL \
          WHERE (g.id = $1 OR g.name = $1) AND (r.id = ANY($2) OR r.name = ANY($2)))";
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(SQL, &[&group, &roles])
         .await
@@ -121,7 +121,7 @@ async fn group_tree_scope(
         if objects { GROUP_COLS } else { "g.id" },
         scope_sql
     );
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(&sql, &[&flags])
         .await
@@ -171,7 +171,7 @@ pub async fn group_list_person_object(
          JOIN x_org_group_member m ON m.person_id = p.id \
          JOIN x_org_group g ON g.id = m.group_id AND g.deleted_at IS NULL \
          WHERE p.deleted_at IS NULL AND (g.id = ANY($1) OR g.name = ANY($1)) ORDER BY p.id";
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(SQL, &[&flags])
         .await
@@ -210,7 +210,7 @@ pub async fn group_list_identity_object(
     if flags.is_empty() {
         return ok_legacy_list(0, vec![]);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(SQL, &[&flags])
         .await
@@ -235,7 +235,7 @@ async fn named_list_response_group(
             0,
         )));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(sql, &[&flags])
         .await
@@ -280,7 +280,7 @@ pub async fn group_list_group_tree(
     if flags.is_empty() {
         return ok_legacy_list(0, vec![]);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(SQL, &[&flags])
         .await

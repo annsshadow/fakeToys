@@ -61,7 +61,7 @@ pub async fn get_mind_with_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_one(
@@ -127,7 +127,7 @@ pub async fn get_mind_with_id(
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn list_my_folders(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, parent_id, order_number, description, creator, creator_unit FROM mind_folder_info ORDER BY order_number",
@@ -197,7 +197,7 @@ pub async fn list_versions_with_mind_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, mind_id, name, folder_id, description, creator, creator_unit, file_version, shared, create_time, update_time FROM mind_version_info WHERE mind_id = $1 ORDER BY create_time DESC",
@@ -291,7 +291,7 @@ pub async fn create_mind(
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload
         .get("name")
@@ -357,7 +357,7 @@ pub async fn update_mind(
     Path(id): Path<String>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     // 属主门禁：仅属主/admin 可改他人思维导图（安全审计 2026-10 二轮）。
     mind_owner_gate(&pool, &client, &session, "mind_base_info", &id).await?;
     let row = client
@@ -426,7 +426,7 @@ pub async fn delete_mind(
     session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     // 属主门禁：仅属主/admin 可删他人思维导图（安全审计 2026-10 二轮）。
     mind_owner_gate(&pool, &client, &session, "mind_base_info", &id).await?;
     let count = client
@@ -457,7 +457,7 @@ pub async fn create_folder(
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload
         .get("name")
@@ -512,7 +512,7 @@ pub async fn update_folder(
     Path(id): Path<String>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     // 属主门禁：仅属主/admin 可改他人文件夹（安全审计 2026-10 二轮）。
     mind_owner_gate(&pool, &client, &session, "mind_folder_info", &id).await?;
     let row = client
@@ -572,7 +572,7 @@ pub async fn delete_folder(
     session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     // 属主门禁：仅属主/admin 可删他人文件夹（安全审计 2026-10 二轮）。
     mind_owner_gate(&pool, &client, &session, "mind_folder_info", &id).await?;
     let count = client
@@ -602,7 +602,7 @@ pub async fn create_version(
     session: Extension<shared::session::Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let mind_id = payload
         .get("mindId")

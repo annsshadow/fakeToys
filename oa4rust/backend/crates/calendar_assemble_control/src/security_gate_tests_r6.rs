@@ -251,13 +251,12 @@ async fn r6_routes_reject_anonymous_writes() {
         ),
     ];
     // 注：清单行 11 的 `PUT /api/calendar_assemble_control/event → event_update_all`
-    // 是**死注册**——路由无 `{id}` 路径参数，而 event_update_all 签名要求
-    // `Path<String>`，提取器在 handler 之前拒绝（500），门无法在路由层体现。
-    // handler 本身已加 require_session 门（直调臂 401），路由注册按规则不动。
+    // 曾是死注册（路由无 {id}，Path<String> 提取器恒定 500）；O6 已删除该 PUT 臂，
+    // 更新入口统一为 /event/update/all/{id}。
     assert_eq!(
         cases.len(),
         11,
-        "本批 11 条可达写路由必须逐条点名（死路由 PUT /event 除外）"
+        "本批 11 条可达写路由必须逐条点名"
     );
     let mut leaked: Vec<String> = Vec::new();
     for (name, req) in cases {

@@ -52,7 +52,7 @@ pub async fn get(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = match client
         .query_one(
@@ -88,7 +88,7 @@ pub async fn get(
 /// 获取单位列表（树形结构）：GET /api/unit/list
 #[allow(non_snake_case)]
 pub async fn list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -144,7 +144,7 @@ async fn query_page(
     count: i64,
     is_next: bool,
 ) -> Result<(i64, Vec<Value>), AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
 
     let count = count.clamp(1, 100);
 
@@ -255,7 +255,7 @@ pub async fn create(
         return Ok(Json(ActionResult::error("level must be between 0 and 99")));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let parent_id = req.parent_id.clone().unwrap_or_default();
@@ -289,7 +289,7 @@ pub async fn update(
     Path(flag): Path<String>,
     Json(req): Json<UnitUpdateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -343,7 +343,7 @@ pub async fn delete(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(

@@ -23,7 +23,7 @@ pub async fn exists_check(
     pool: Extension<Pool>,
     Path((application, info_id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let count: i64 = client
         .query_one(
             "SELECT COUNT(*) FROM x_hotpic WHERE application = $1 AND info_id = $2 AND deleted_at IS NULL",
@@ -53,7 +53,7 @@ pub async fn get_by_id(
         return Err(AppError::BadRequest("id cannot be empty".to_string()));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
@@ -99,7 +99,7 @@ pub async fn list_by_application_and_info_id(
     pool: Extension<Pool>,
     Path((application, info_id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE application = $1 AND info_id = $2 AND deleted_at IS NULL ORDER BY create_time DESC",

@@ -279,7 +279,7 @@ pub async fn list_files(
     pool: Extension<Pool>,
     axum::extract::Path(folder_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -345,7 +345,7 @@ pub async fn get_file(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -407,7 +407,7 @@ pub async fn upload_file(
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let name = body
         .get("name")
@@ -461,7 +461,7 @@ pub async fn create_file(
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let name = body
         .get("name")
@@ -508,7 +508,7 @@ pub async fn delete_file(
     let Some(Extension(sess)) = session else {
         return Err(AppError::Unauthorized);
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT creator FROM x_file WHERE id = $1 AND deleted_at IS NULL",
@@ -551,7 +551,7 @@ pub async fn create_file_entity(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 第五十六批：新建文件实体要求有效会话（无会话 401）；creator 仍硬写 "system"（残留记 §五）。
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let name = body
         .get("name")
@@ -601,7 +601,7 @@ pub async fn update_file_entity(
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -731,7 +731,7 @@ pub async fn delete_file_entity(
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -775,7 +775,7 @@ pub async fn anonymous_file_id_download(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<axum::response::Response, AppError> {
-    let client = pool.0.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool.0).await?;
     let row = client
         .query_opt(
             "SELECT name, mime_type, content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
@@ -825,7 +825,7 @@ pub async fn attachment_list_editor_owner(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text
@@ -898,7 +898,7 @@ pub async fn attachment_list_folder_folderId(
     pool: Extension<Pool>,
     axum::extract::Path(folder_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text
@@ -971,7 +971,7 @@ pub async fn attachment_list_share_owner(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text
@@ -1043,7 +1043,7 @@ pub async fn attachment_list_share_owner(
 pub async fn attachment_list_top(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text
@@ -1153,7 +1153,7 @@ pub async fn attachment_upload_folder_folderId(
         Some(d) => d,
         None => return Ok(Json(ActionResult::error("no file provided"))),
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = name.unwrap_or_else(|| filename.clone().unwrap_or_else(|| format!("file-{}", id)));
     let mime = mime_type.as_deref().unwrap_or("");
@@ -1177,7 +1177,7 @@ pub async fn attachment_upload_folder_folderId(
         "INSERT INTO FILE_FILE (id, name, person, reference_id, reference_type, extension, length, mime_type, content, create_time, update_time) \
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())",
         &[&id, &name, &sess.person_unique, &folder_id, &ref_type, &ext, &(data.len() as i64), &mime, &content_b64],
-    ).await.map_err(|_| AppError::Internal)?;
+    ).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -1200,16 +1200,33 @@ pub async fn attachment_upload_folder_folderId_callback_callback(
     attachment_upload_folder_folderId(pool, session, axum::extract::Path(folder_id), form).await
 }
 
+/// O6：legacy 路径 `/upload/folder/callback/callback/{folderId}` 只有 1 个路径参数，
+/// 双参版 handler（Path<(String, String)>）在该注册下恒定 500（Wrong number of
+/// path arguments，arity 探针实测）。薄包装：单参提取后委托同一实现
+/// （callback 参数在实现里本就未被使用）。
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn attachment_upload_folder_callback_callback_legacy(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    axum::extract::Path(folder_id): axum::extract::Path<String>,
+    form: axum::extract::Multipart,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 透传臂也收会话门：与双参版同一判定口径。
+    require_session(session.clone())?;
+    attachment_upload_folder_folderId(pool, session, axum::extract::Path(folder_id), form).await
+}
+
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn attachment_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt("SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
@@ -1268,7 +1285,7 @@ pub async fn attachment_id_binary_base64(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
@@ -1299,7 +1316,7 @@ pub async fn attachment_id_download(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<axum::response::Response, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT name, mime_type, content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
@@ -1369,7 +1386,7 @@ pub async fn attachment_id_update(
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT person FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
@@ -1395,7 +1412,7 @@ pub async fn attachment_id_update(
     client.execute(
         "UPDATE FILE_FILE SET name = $1, mime_type = $2, update_time = NOW() WHERE id = $3 AND deleted_at IS NULL",
         &[&name, &mime_type, &id],
-    ).await.map_err(|_| AppError::Internal)?;
+    ).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -1409,16 +1426,14 @@ pub async fn attachment_id_update(
 pub async fn attachment_id_update_callback_callback(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
-    axum::extract::Path((id, _callback)): axum::extract::Path<(String, String)>,
+    // O6：本 handler 只注册在单参路径 /update/callback/callback/{id} 上，
+    // 原 Path<(String, String)> 双元组与该模式恒定不匹配（提取器 500，
+    // 且因必需会话扩展在前失败而对 arity 探针隐形）。callback 参数从未被
+    // 委托实现使用，按注册模式收成单参。
+    axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    attachment_id_update(
-        pool,
-        Extension(session),
-        axum::extract::Path(id),
-        axum::extract::Json(body),
-    )
-    .await
+    attachment_id_update(pool, Extension(session), axum::extract::Path(id), axum::extract::Json(body)).await
 }
 
 #[axum::debug_handler]
@@ -1427,7 +1442,7 @@ pub async fn attachment2_exist_file_fileMd5(
     pool: Extension<Pool>,
     axum::extract::Path(md5): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let count: i64 = client
         .query_one(
             "SELECT COUNT(*) FROM FILE_FILE WHERE md5 = $1 AND deleted_at IS NULL",
@@ -1453,14 +1468,14 @@ pub async fn attachment2_list_editor_owner(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text
              FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&session.person_unique],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -1525,14 +1540,14 @@ pub async fn attachment2_list_filter_name(
     pool: Extension<Pool>,
     axum::extract::Path(name): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text
              FROM FILE_FILE WHERE name ILIKE $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&format!("%{}%", shared::db::escape_like(&name))],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -1597,14 +1612,14 @@ pub async fn attachment2_list_folder_folderId(
     pool: Extension<Pool>,
     axum::extract::Path(folder_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text
              FROM FILE_FILE WHERE superior = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&folder_id],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -1669,14 +1684,14 @@ pub async fn attachment2_list_share_owner(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text
              FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&session.person_unique],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -1740,14 +1755,14 @@ pub async fn attachment2_list_share_owner(
 pub async fn attachment2_list_top(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text
              FROM FILE_FILE WHERE deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT 20",
             &[],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -1822,7 +1837,7 @@ pub async fn attachment2_list_type_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path((_type, page, size)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let (page_size, offset) = attachment2_limit_offset(&page, &size);
     let rows = client
         .query(
@@ -1830,7 +1845,7 @@ pub async fn attachment2_list_type_page_size_size(
              FROM FILE_FILE WHERE deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT $1 OFFSET $2",
             &[&page_size, &offset],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -1932,7 +1947,7 @@ pub async fn attachment2_upload_folder_folderId(
         Some(d) => d,
         None => return Ok(Json(ActionResult::error("no file provided"))),
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = name.unwrap_or_else(|| filename.clone().unwrap_or_else(|| format!("file-{}", id)));
     let mime = mime_type.as_deref().unwrap_or("");
@@ -1956,7 +1971,7 @@ pub async fn attachment2_upload_folder_folderId(
         "INSERT INTO FILE_FILE (id, name, person, reference_id, reference_type, extension, length, mime_type, content, create_time, update_time) \
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())",
         &[&id, &name, &sess.person_unique, &folder_id, &ref_type, &ext, &(data.len() as i64), &mime, &content_b64],
-    ).await.map_err(|_| AppError::Internal)?;
+    ).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -1972,10 +1987,10 @@ pub async fn attachment2_user_capacity(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt("SELECT COALESCE(SUM(length), 0) AS total FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL", &[&session.person_unique])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let total: i64 = row.map(|r| r.get("total")).unwrap_or(0);
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1998,10 +2013,10 @@ pub async fn attachment2_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt("SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
@@ -2060,7 +2075,7 @@ pub async fn attachment2_id_binary_base64(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
@@ -2091,7 +2106,7 @@ pub async fn attachment2_id_download(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<axum::response::Response, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT name, mime_type, content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
@@ -2430,7 +2445,7 @@ pub async fn attachment2_id_office_preview_type_type(
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Path((id, _type)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, person, extension, mime_type, content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
@@ -2534,10 +2549,10 @@ pub async fn complex_folder_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt("SELECT id, name, person, superior FROM FILE_FOLDER WHERE id = $1 AND deleted_at IS NULL", &[&id])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object({
             let mut map = serde_json::Map::from_iter([
@@ -2563,10 +2578,10 @@ pub async fn complex_folder_id(
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn complex_top(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let folder_rows = client
         .query("SELECT id, name, person, superior FROM FILE_FOLDER WHERE (superior IS NULL OR superior = '') AND deleted_at IS NULL ORDER BY name LIMIT 10", &[])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let folder_list: Vec<Value> = folder_rows
         .iter()
         .map(|row| {
@@ -2591,7 +2606,7 @@ pub async fn complex_top(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .collect();
     let attachment_rows = client
         .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE deleted_at IS NULL ORDER BY name LIMIT 10", &[])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let attachment_list: Vec<Value> = attachment_rows
         .iter()
         .map(|row| {
@@ -2662,7 +2677,7 @@ pub async fn config_system_config(
     // 系统参数读：x_system_config（094 迁移建表）全量未删行。此前为 fail-loud 501 契约，
     // 桌面 Settings 页与 configApi.systemConfig(/api/config/system) 均指向本能力，实装为真实读；
     // /api/config/system/config（旧注册形状）与 /api/config/system（前端契约形状）双路由同 handler。
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT name, value, category, description, update_time::text FROM x_system_config WHERE deleted_at IS NULL ORDER BY category, name",
@@ -2714,10 +2729,10 @@ pub async fn config_system_config(
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn editor_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query("SELECT DISTINCT person FROM FILE_FILE WHERE deleted_at IS NULL AND person != '' ORDER BY person", &[])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -2749,7 +2764,7 @@ pub async fn file_clean_unused_referencetype_cmsdocument_manage(
         }
         Some(_) => {}
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let result = client
         .execute(
             "DELETE FROM FILE_FILE WHERE reference_type = $1 AND deleted_at IS NULL",
@@ -2784,10 +2799,10 @@ pub async fn file_copy_attachment_attachmentId_referencetype_referenceType_refer
     let Some(Extension(sess)) = session else {
         return Err(AppError::Unauthorized);
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt("SELECT name, person, extension, length, mime_type, content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&attachment_id])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("attachment not found")));
     };
@@ -2807,7 +2822,7 @@ pub async fn file_copy_attachment_attachmentId_referencetype_referenceType_refer
         "INSERT INTO FILE_FILE (id, name, person, reference_id, reference_type, extension, length, mime_type, content, create_time, update_time) \
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())",
         &[&new_id, &name, &person, &reference, &reference_type, &ext, &length, &mime, &content],
-    ).await.map_err(|_| AppError::Internal)?;
+    ).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(new_id)),
@@ -2822,14 +2837,14 @@ pub async fn file_list_referencetype(
     pool: Extension<Pool>,
     axum::extract::Path(reference_type): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text
              FROM FILE_FILE WHERE reference_type = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&reference_type],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -2894,14 +2909,14 @@ pub async fn file_list_referencetype_referenceType_reference_reference(
     pool: Extension<Pool>,
     axum::extract::Path((reference_type, reference)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text
              FROM FILE_FILE WHERE reference_type = $1 AND reference_id = $2 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT 100",
             &[&reference_type, &reference],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -2965,10 +2980,10 @@ pub async fn file_list_referencetype_referenceType_reference_reference(
 pub async fn file_list_unused_referencetype_cmsdocument_manage(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE reference_type = 'cmsdocument_manage' AND deleted_at IS NULL ORDER BY create_time::timestamp DESC", &[])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -3019,10 +3034,10 @@ pub async fn file_list_id_next_count(
     pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE id > $1 AND deleted_at IS NULL ORDER BY id LIMIT 20", &[&id])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -3086,10 +3101,10 @@ pub async fn file_list_id_next_count_referencetype_referenceType(
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE id > $1 AND reference_type = $2 AND deleted_at IS NULL ORDER BY id LIMIT 20", &[&id, &reference_type])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -3140,10 +3155,10 @@ pub async fn file_list_id_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE id < $1 AND deleted_at IS NULL ORDER BY id DESC LIMIT 20", &[&id])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -3207,10 +3222,10 @@ pub async fn file_list_id_prev_count_referencetype_referenceType(
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE id < $1 AND reference_type = $2 AND deleted_at IS NULL ORDER BY id DESC LIMIT 20", &[&id, &reference_type])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -3301,7 +3316,7 @@ pub async fn file_upload_referencetype_referenceType_reference_reference_scale_s
         Some(d) => d,
         None => return Ok(Json(ActionResult::error("no file provided"))),
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = name.unwrap_or_else(|| filename.clone().unwrap_or_else(|| format!("file-{}", id)));
     let mime = mime_type.as_deref().unwrap_or("");
@@ -3324,7 +3339,7 @@ pub async fn file_upload_referencetype_referenceType_reference_reference_scale_s
         "INSERT INTO FILE_FILE (id, name, person, reference_id, reference_type, extension, length, mime_type, content, create_time, update_time) \
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())",
         &[&id, &name, &session.person_unique, &reference, &reference_type, &ext, &(data.len() as i64), &mime, &content_b64],
-    ).await.map_err(|_| AppError::Internal)?;
+    ).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -3409,7 +3424,7 @@ pub async fn file_upload_with_url(
     } else {
         name
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let creator = sess.person_unique.clone();
@@ -3452,10 +3467,10 @@ pub async fn file_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt("SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
@@ -3514,7 +3529,7 @@ pub async fn file_id_binary_base64(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
@@ -3545,7 +3560,7 @@ pub async fn file_id_download(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<axum::response::Response, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT name, mime_type, content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
@@ -3592,10 +3607,10 @@ pub async fn file_id_download_stream(
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn folder_list_top(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query("SELECT id, name, person, superior FROM FILE_FOLDER WHERE superior IS NULL OR superior = '' ORDER BY name", &[])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -3632,7 +3647,7 @@ pub async fn folder_list_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, person, superior FROM FILE_FOLDER WHERE superior = $1 ORDER BY name",
@@ -3676,10 +3691,10 @@ pub async fn folder_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt("SELECT id, name, person, superior FROM FILE_FOLDER WHERE id = $1 AND deleted_at IS NULL", &[&id])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object({
             let mut map = serde_json::Map::from_iter([
@@ -3712,7 +3727,7 @@ pub async fn folder2_batch_download(
     let Some(Extension(session)) = session else {
         return Err(AppError::Unauthorized);
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT name, content FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY name",
@@ -3738,10 +3753,10 @@ pub async fn folder2_batch_download(
 pub async fn folder2_list_top(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query("SELECT id, name, person, superior FROM FILE_FOLDER WHERE superior IS NULL OR superior = '' ORDER BY name LIMIT 20", &[])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -3797,7 +3812,7 @@ pub async fn folder2_id_download(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<axum::response::Response, AppError> {
     // o2server 语义：文件夹打包下载 —— 把该文件夹内全部文件打包为 zip。
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let folder = client
         .query_opt(
             "SELECT name FROM FILE_FOLDER WHERE id = $1 AND deleted_at IS NULL",
@@ -3835,7 +3850,7 @@ pub async fn recycle_empty(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let result = client
         .execute(
             "DELETE FROM FILE_FILE WHERE deleted_at IS NOT NULL AND person = $1",
@@ -3857,7 +3872,7 @@ pub async fn recycle_list(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, deleted_at \
@@ -3927,10 +3942,10 @@ pub async fn recycle_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt("SELECT id, name, person, deleted_at FROM FILE_FILE WHERE id = $1 AND deleted_at IS NOT NULL", &[&id])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
@@ -3960,7 +3975,7 @@ pub async fn recycle_id_delete(
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT person FROM FILE_FILE WHERE id = $1 AND deleted_at IS NOT NULL",
@@ -3998,7 +4013,7 @@ pub async fn recycle_id_resume(
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT person FROM FILE_FILE WHERE id = $1 AND deleted_at IS NOT NULL",
@@ -4033,7 +4048,7 @@ pub async fn share_download_share_shareId_file_fileId(
     axum::extract::Path((share_id, file_id)): axum::extract::Path<(String, String)>,
 ) -> Result<axum::response::Response, AppError> {
     let _ = share_id;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT name, mime_type, content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
@@ -4074,14 +4089,14 @@ pub async fn share_list(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, create_time::text
              FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&session.person_unique],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -4140,13 +4155,13 @@ pub async fn share_list_att_share_shareId_folder_folderId(
     axum::extract::Path((share_id, folder_id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = share_id;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE superior = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&folder_id],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -4207,14 +4222,14 @@ pub async fn share_list_my(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, create_time::text
              FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&session.person_unique],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -4273,13 +4288,13 @@ pub async fn share_list_my2_shareType_fileType(
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Path((_share_type, file_type)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE person = $1 AND reference_type = $2 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&session.person_unique, &file_type],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -4573,7 +4588,7 @@ async fn u2_store_new(
     let storage = shared::storage::storage_with_pool(pool.clone());
     u2_persist_verified(storage.as_ref(), &key, &bytes).await?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let ext = u2_ext_of(filename);
     let length = bytes.len() as i64;
     let mime_owned = mime.unwrap_or("").to_string();
@@ -4705,7 +4720,7 @@ pub async fn u2_attachment_update_content(
     axum::extract::Path(id): axum::extract::Path<String>,
     multipart: axum::extract::Multipart,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT person FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
@@ -4732,7 +4747,7 @@ pub async fn u2_attachment_update_content(
             "UPDATE FILE_FILE SET storage_key = $1, length = $2, extension = $3, content = $4, update_time = NOW() WHERE id = $5",
             &[&key, &length, &ext, &content_b64, &id],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -4767,7 +4782,7 @@ pub async fn u2_attachment_delete(
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT person FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
@@ -4782,7 +4797,7 @@ pub async fn u2_attachment_delete(
     shared::middleware::require_owner(&pool, &session, &owner).await?;
     client
         .execute("UPDATE FILE_FILE SET deleted_at = NOW(), update_time = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&id])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -4799,7 +4814,7 @@ pub async fn u2_attachment2_update(
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT person FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
@@ -4828,7 +4843,7 @@ pub async fn u2_attachment2_update(
             "UPDATE FILE_FILE SET name = $1, mime_type = $2, update_time = NOW() WHERE id = $3 AND deleted_at IS NULL",
             &[&name, &mime_type, &id],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -4844,7 +4859,7 @@ pub async fn u2_attachment2_delete(
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT person FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
@@ -4859,7 +4874,7 @@ pub async fn u2_attachment2_delete(
     shared::middleware::require_owner(&pool, &session, &owner).await?;
     client
         .execute("UPDATE FILE_FILE SET deleted_at = NOW(), update_time = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&id])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -4875,7 +4890,7 @@ pub async fn u2_file_delete_by_id(
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT person FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
@@ -4890,7 +4905,7 @@ pub async fn u2_file_delete_by_id(
     shared::middleware::require_owner(&pool, &session, &owner).await?;
     client
         .execute("UPDATE FILE_FILE SET deleted_at = NOW(), update_time = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&id])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -4908,7 +4923,7 @@ pub async fn u2_file_delete_by_reference(
     axum::extract::Path((reference_type, reference)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let result = client
         .execute(
             "DELETE FROM FILE_FILE WHERE reference_id = $1 AND reference_type = $2",
@@ -4934,14 +4949,14 @@ pub async fn u2_file_list_reference_types(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT reference_type AS rtype, COUNT(*) AS cnt FROM FILE_FILE \
              WHERE person = $1 AND deleted_at IS NULL GROUP BY reference_type ORDER BY reference_type",
             &[&session.person_unique],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -4994,7 +5009,7 @@ pub async fn u2_folder_create(
         .filter(|s| !s.is_empty())
         .map(|s| s.to_string());
     let id = uuid::Uuid::new_v4().to_string();
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     client
         .execute(
             "INSERT INTO FILE_FOLDER (id, name, person, superior) VALUES ($1, $2, $3, $4)",
@@ -5033,7 +5048,7 @@ pub async fn u2_folder_rename(
     if name.is_empty() {
         return Err(AppError::BadRequest("folder name is empty".to_string()));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT person FROM FILE_FOLDER WHERE id = $1 AND deleted_at IS NULL",
@@ -5051,7 +5066,7 @@ pub async fn u2_folder_rename(
             "UPDATE FILE_FOLDER SET name = $1, update_time = NOW() WHERE id = $2 AND deleted_at IS NULL",
             &[&name, &id],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -5068,7 +5083,7 @@ pub async fn u2_folder_delete(
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT person FROM FILE_FOLDER WHERE id = $1 AND deleted_at IS NULL",
@@ -5086,7 +5101,7 @@ pub async fn u2_folder_delete(
             "UPDATE FILE_FOLDER SET deleted_at = NOW(), update_time = NOW() WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -5186,7 +5201,7 @@ pub async fn u2_share_create(
         ));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     // 与 o2server 一致的 upsert：同人同文件已有分享则更新，否则新建。
     let existing = client
         .query_opt(
@@ -5218,7 +5233,7 @@ pub async fn u2_share_create(
                     "UPDATE FILE_SHARE SET share_type = $1, password = $2, name = $3, extension = $4, length = $5, update_time = NOW() WHERE id = $6",
                     &[&share_type, &password, &name, &extension, &length, &id],
                 )
-                .await.map_err(|_| AppError::Internal)?;
+                .await?;
             id
         }
         None => {
@@ -5229,7 +5244,7 @@ pub async fn u2_share_create(
                      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
                     &[&id, &session.person_unique, &name, &file_id, &share_type, &extension, &length, &share_type, &password],
                 )
-                .await.map_err(|_| AppError::Internal)?;
+                .await?;
             id
         }
     };
@@ -5249,7 +5264,7 @@ pub async fn u2_share_get(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(&format!("{U2_SHARE_SELECT} WHERE id = $1"), &[&id])
         .await
@@ -5267,7 +5282,7 @@ pub async fn u2_share_delete(
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt("SELECT person FROM FILE_SHARE WHERE id = $1", &[&id])
         .await
@@ -5297,7 +5312,7 @@ pub async fn u2_share_shield(
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt("SELECT person FROM FILE_SHARE WHERE id = $1", &[&id])
         .await
@@ -5312,7 +5327,7 @@ pub async fn u2_share_shield(
             "UPDATE FILE_SHARE SET valid_time = '1970-01-01 00:00:00'::TIMESTAMP, update_time = NOW() WHERE id = $1",
             &[&id],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -5342,7 +5357,7 @@ pub async fn u2_share_password_verify(
     if id.is_empty() {
         return Ok(Json(ActionResult::error("id is required")));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             &format!(
@@ -5374,7 +5389,7 @@ pub async fn u2_share_save_to_folder(
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let share_valid = client
         .query_opt(
             "SELECT id FROM FILE_SHARE WHERE id = $1 AND file_id = $2 \
@@ -5394,7 +5409,7 @@ pub async fn u2_share_save_to_folder(
              FROM FILE_FILE WHERE id = $4 AND deleted_at IS NULL",
             &[&new_id, &sess.person_unique, &folder_id, &file_id],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     if result == 0 {
         return Ok(Json(ActionResult::error("file not found")));
     }
@@ -5439,7 +5454,7 @@ pub async fn u2_config_save_system_config(
     u2_require_admin(&pool, &sess).await?;
     // 系统参数写：body {"configs":[{name,value,category?}]}，按 name UPSERT（未删行内更新，
     // 否则新插入）；value 接受字符串/数字/布尔，统一落 TEXT。行间独立提交，配置行无事务耦合。
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let items = body
         .get("configs")
         .and_then(Value::as_array)

@@ -242,7 +242,7 @@ pub(crate) fn extract_rsa_components(
 }
 
 pub(crate) async fn get_or_create_person(pool: &Pool, sub: &str) -> Result<Value, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let unique_id = format!("oidc_{}", sub);
 
     let row = client

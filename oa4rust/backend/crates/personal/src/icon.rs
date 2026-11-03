@@ -26,7 +26,7 @@ pub async fn get(
     pool: Extension<Pool>,
     Path(person): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT icon FROM auth_person \
@@ -94,7 +94,7 @@ pub async fn upload(
 
     let encoded = base64::engine::general_purpose::STANDARD.encode(&data);
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     client
         .execute(
             "UPDATE auth_person SET icon = $1, updated_at = NOW() \

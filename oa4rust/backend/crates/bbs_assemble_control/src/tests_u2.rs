@@ -558,14 +558,21 @@ async fn test_shutup_list_db_failure_returns_internal_error_without_panicking() 
         )
         .await
         .expect("数据库不可达时请求 future 也必须正常完成");
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 
     let bytes = axum::body::to_bytes(response.into_body(), 4096)
         .await
         .unwrap();
     let body: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
     assert_eq!(body["type"], "error");
-    assert_eq!(body["message"], "internal server error");
+    // O2：死池取连失败由 500 改为 503（可重试语义）
+    assert!(
+        body["message"]
+            .as_str()
+            .unwrap()
+            .starts_with("service unavailable"),
+        "死池应给出 service unavailable，实际 {body}"
+    );
 }
 
 #[tokio::test]

@@ -11,7 +11,7 @@ pub mod routes;
 /// 获取组织服务状态
 /// 检查组织服务是否正常运行
 pub async fn get_status(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let person_count: i64 = client
         .query_one(
             "SELECT COUNT(*) FROM x_org_person WHERE deleted_at IS NULL",
@@ -55,7 +55,7 @@ pub async fn get_status(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
 pub async fn sync_organization(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let synced: i64 = client
         .query_one(
             "SELECT COUNT(*) FROM x_org_person WHERE deleted_at IS NULL",
@@ -81,7 +81,7 @@ pub async fn sync_organization(
 /// 获取组织服务配置
 /// 返回组织服务的配置信息
 pub async fn get_config(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let enabled: bool = client
         .query_one(
             "SELECT config_value FROM x_org_config WHERE config_key = 'sync_enabled'",

@@ -49,7 +49,7 @@ pub fn hotpic_assemble_control_router(pool: Pool) -> axum::Router {
 pub async fn get_control_config(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT COUNT(*) as cnt FROM x_hotpic WHERE deleted_at IS NULL",
@@ -78,7 +78,7 @@ pub async fn get_control_config(
 pub async fn list_control_panels(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT DISTINCT creator FROM x_hotpic WHERE deleted_at IS NULL ORDER BY creator ASC LIMIT 10",
@@ -118,7 +118,7 @@ pub async fn update_control_config(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 轮播控制配置写：仅 admin（安全审计 2026-10 二轮）。
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let config = body.0;
     tracing::info!("Updating hotpic assemble control config: {:?}", config);
 
@@ -154,7 +154,7 @@ pub async fn update_control_config(
 pub async fn list_control_applications(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT DISTINCT creator as application FROM x_hotpic WHERE deleted_at IS NULL ORDER BY creator ASC",
@@ -200,7 +200,7 @@ pub struct HotpicRequest {
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn list_hotpics(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 100",
@@ -248,7 +248,7 @@ pub async fn get_hotpic(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
@@ -293,7 +293,7 @@ pub async fn create_hotpic(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 轮播图 = 管理台内容，仅 admin 可建（安全审计 2026-10 二轮）。
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let title = req.title.unwrap_or_default();
     let image_url = req.imageUrl.unwrap_or_default();
@@ -327,7 +327,7 @@ pub async fn save_hotpic(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 轮播图改 = 管理台内容写：仅 admin（安全审计 2026-10 二轮）。
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let title = req.title.unwrap_or_default();
     let image_url = req.imageUrl.unwrap_or_default();
 
@@ -362,7 +362,7 @@ pub async fn delete_hotpic(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 轮播图删 = 管理台内容写：仅 admin（安全审计 2026-10 二轮）。
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let result = client
         .execute(
             "UPDATE x_hotpic SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -390,7 +390,7 @@ pub async fn cipher_hotpic_bbs_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
@@ -431,7 +431,7 @@ pub async fn cipher_hotpic_cms_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
@@ -472,7 +472,7 @@ pub async fn cipher_hotpic_filter_list_page_page_count_count(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let (count, offset) = shared::response::page_window(page, count);
     let rows = client
         .query(
@@ -520,7 +520,7 @@ pub async fn cipher_hotpic_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
@@ -565,7 +565,7 @@ pub async fn user_hotpic_changeTitle(
     let Some(Extension(sess)) = session else {
         return Err(AppError::Unauthorized);
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = req
         .get("id")
         .and_then(|v| v.as_str())
@@ -622,7 +622,7 @@ pub async fn user_hotpic_exists_check(
     pool: Extension<Pool>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let person_id = req.get("personId").and_then(|v| v.as_str()).unwrap_or("");
     let _application = req
         .get("application")
@@ -650,7 +650,7 @@ pub async fn user_hotpic_filter_list_page_page_count_count(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let (count, offset) = shared::response::page_window(page, count);
     let rows = client
         .query(
@@ -698,7 +698,7 @@ pub async fn user_hotpic_application_infoId(
     pool: Extension<Pool>,
     Path((application, info_id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
@@ -747,7 +747,7 @@ pub async fn user_hotpic_id(
         let Some(Extension(sess)) = session else {
             return Err(AppError::Unauthorized);
         };
-        let client = pool.get().await.map_err(|_| AppError::Internal)?;
+        let client = shared::db::acquire(&pool).await?;
         let owner: Option<String> = client
             .query_opt(
                 "SELECT creator FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
@@ -783,7 +783,7 @@ pub async fn user_hotpic_id(
         ))));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
@@ -828,7 +828,7 @@ pub async fn user_hotpic_delete_by_ids(
     // 安全审计 round4-b72：会话存在档（沿用本 crate user_hotpic_changeTitle 惯例），
     // 门置于 pool.get() 之前，杜绝匿名软删 x_hotpic。
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let ids = vec![id.clone(), id2.clone()];
     let n = client
         .execute(

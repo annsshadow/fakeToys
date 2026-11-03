@@ -123,7 +123,7 @@ pub async fn upload(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows_affected = client
         .execute(
             "UPDATE auth_person SET icon = $1, updated_at = NOW() \
@@ -180,7 +180,7 @@ pub async fn get_icon(
         .await
         .ok_or(AppError::Unauthorized)?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT icon, unique_id FROM auth_person \
@@ -204,7 +204,7 @@ async fn load_icon_for_unique(
     pool: &Pool,
     person_unique: &str,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let row = client
         .query_opt(
             "SELECT icon FROM auth_person WHERE unique_id = $1 AND locked = false AND deleted_at IS NULL",

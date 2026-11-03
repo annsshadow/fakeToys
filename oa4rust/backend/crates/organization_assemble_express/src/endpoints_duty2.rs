@@ -30,7 +30,7 @@ pub async fn role_list_object(
     }
     const SQL: &str = "SELECT id, name, description FROM x_org_role \
          WHERE deleted_at IS NULL AND (id = ANY($1) OR name = ANY($1)) ORDER BY id";
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(SQL, &[&flags])
         .await
@@ -54,7 +54,7 @@ pub async fn role_list_person_object(
          JOIN x_org_group_role gr ON gr.group_id = m.group_id \
          JOIN x_org_role r ON r.id = gr.role_id AND r.deleted_at IS NULL \
          WHERE p.deleted_at IS NULL AND (p.id = ANY($1) OR p.name = ANY($1)) ORDER BY p.id";
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(SQL, &[&flags])
         .await
@@ -133,7 +133,7 @@ async fn duty_identities_by_unit_name(
             1,
         )
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(&final_sql, &[&units, &names])
         .await
@@ -185,7 +185,7 @@ async fn named_list_duty(
             0,
         )));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(sql, &[&flags])
         .await
@@ -212,7 +212,7 @@ pub async fn unitduty_list_unit_object(
     const SQL: &str = "SELECT d.id, d.name, d.unit_id, d.identity_id FROM x_org_duty d \
          JOIN x_org_unit u ON u.id = d.unit_id AND u.deleted_at IS NULL \
          WHERE d.deleted_at IS NULL AND (u.id = ANY($1) OR u.name = ANY($1)) ORDER BY d.id";
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(SQL, &[&flags])
         .await
@@ -237,7 +237,7 @@ pub async fn unitduty_find_by_unit_name(
          WHERE d.deleted_at IS NULL AND d.name = $1 AND d.unit_id IN (\
              SELECT id FROM x_org_unit WHERE deleted_at IS NULL \
              AND (id = $2 OR name = $2) ORDER BY id LIMIT 1) ORDER BY d.id LIMIT 1";
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(SQL, &[&name, &unit])
         .await

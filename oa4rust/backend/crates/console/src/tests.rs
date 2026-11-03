@@ -93,7 +93,7 @@ async fn test_get_status_route_exists() {
 
     assert_eq!(
         response.status(),
-        axum::http::StatusCode::INTERNAL_SERVER_ERROR
+        axum::http::StatusCode::SERVICE_UNAVAILABLE
     );
 }
 
@@ -116,7 +116,7 @@ async fn test_get_logs_route_exists() {
 
     assert_eq!(
         response.status(),
-        axum::http::StatusCode::INTERNAL_SERVER_ERROR
+        axum::http::StatusCode::SERVICE_UNAVAILABLE
     );
 }
 
@@ -192,6 +192,6 @@ async fn test_get_metric_route_exists() {
 
     assert_eq!(
         response.status(),
-        axum::http::StatusCode::INTERNAL_SERVER_ERROR
+        axum::http::StatusCode::SERVICE_UNAVAILABLE
     );
 }

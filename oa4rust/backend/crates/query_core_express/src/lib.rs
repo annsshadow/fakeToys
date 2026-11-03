@@ -68,7 +68,7 @@ pub async fn execute_query(
     }
 
     // 权限过滤：从 session 获取 person/identityList/unitList，注入 WHERE 条件
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 查询用户角色、身份、组织单元以注入权限过滤
     let person_id: String = session.person_unique.clone();
@@ -201,7 +201,7 @@ pub async fn get_query_history(
     pool: Extension<Pool>,
     axum::extract::Path(limit): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, create_time FROM x_query_import_record ORDER BY create_time DESC LIMIT $1",
@@ -256,7 +256,7 @@ pub async fn cache_query_result(
     axum::extract::Path(query_id): axum::extract::Path<String>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 与 execute_query 同一张写面：往查询记录表插行原本无 session、creator 硬写 "system"
     if !shared::middleware::is_admin(&pool.0, &session.person_unique).await {
@@ -303,7 +303,7 @@ pub async fn get_cache_status(
     pool: Extension<Pool>,
     axum::extract::Path(query_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let query_row = client
         .query_opt("SELECT name FROM x_query WHERE id = $1", &[&query_id])

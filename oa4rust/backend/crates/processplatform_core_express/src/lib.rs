@@ -23,7 +23,7 @@ pub async fn work_terminate(
     let Some(Extension(session)) = session else {
         return Err(AppError::Unauthorized);
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let creator: Option<String> = client
         .query_opt("SELECT creator FROM x_work WHERE id = $1", &[&work_id])
         .await
@@ -59,7 +59,7 @@ pub async fn work_retract(
     pool: Extension<Pool>,
     Path(work_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, work_status, activity FROM x_work WHERE id = $1",
@@ -92,7 +92,7 @@ pub async fn work_processing(
     pool: Extension<Pool>,
     Path(work_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(
             "SELECT id, title, work_status, activity FROM x_work WHERE id = $1",
@@ -125,7 +125,7 @@ pub async fn task_processing(
     pool: Extension<Pool>,
     Path(task_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(
             "SELECT id, title, person, activity FROM x_task WHERE id = $1",
@@ -158,7 +158,7 @@ pub async fn work_count_with_person(
     pool: Extension<Pool>,
     Path(person_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(
             "SELECT COUNT(*) as count FROM x_task WHERE person = $1 AND work IS NOT NULL",
@@ -185,7 +185,7 @@ pub async fn task_count_with_person(
     pool: Extension<Pool>,
     Path(person_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(
             "SELECT COUNT(*) as count FROM x_task WHERE person = $1",

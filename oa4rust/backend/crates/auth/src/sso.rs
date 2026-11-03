@@ -122,7 +122,7 @@ pub async fn sso_encrypt(
 
 /// 从 sso_client 表查找 client_name 对应的密钥（格式无关：AES-GCM 派生或 3DES 均用同列）。
 async fn lookup_sso_key(pool: &Pool, client: &str) -> Result<String, AppError> {
-    let client_row = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client_row = shared::db::acquire(pool).await?;
     let row = client_row
         .query_opt(
             "SELECT key FROM sso_client WHERE client_name = $1 AND deleted_at IS NULL",
@@ -170,7 +170,7 @@ async fn create_sso_session(
     session_manager: &SessionManager,
     credential: &str,
 ) -> Result<Response, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let row = client
         .query_one(
             "SELECT unique_id, name FROM auth_person \

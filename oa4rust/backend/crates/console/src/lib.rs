@@ -77,7 +77,7 @@ pub fn validate_command_and_args(
 
 #[allow(non_snake_case)]
 pub async fn get_status(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xstatus, xversion, xuptime FROM x_console_status WHERE xid = 'system' LIMIT 1",
@@ -123,7 +123,7 @@ pub async fn get_logs(
     pool: Extension<Pool>,
     axum::extract::Path(log_type): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xlevel, xmessage, xtimestamp FROM x_console_log WHERE xtype = $1 ORDER BY xtimestamp DESC LIMIT 100",
@@ -177,7 +177,7 @@ pub async fn send_message(
     let token = req.token.unwrap_or_default();
     let message = req.message.unwrap_or_default();
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
 
     let result = client
@@ -207,7 +207,7 @@ pub async fn clear_cache(
     if !is_admin(pool.deref(), &session.person_unique).await {
         return Err(AppError::Forbidden);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let result = client
         .execute(
             "DELETE FROM x_console_cache WHERE xtype = $1",
@@ -231,7 +231,7 @@ pub async fn get_metric(
     pool: Extension<Pool>,
     axum::extract::Path(metric_name): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xvalue, xunit FROM x_console_metric WHERE xname = $1 LIMIT 1",
@@ -353,7 +353,7 @@ pub async fn config_create(
     if !is_admin(pool.deref(), &session.person_unique).await {
         return Err(AppError::Forbidden);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload
         .get("name")
@@ -406,7 +406,7 @@ pub async fn config_update(
     if !is_admin(pool.deref(), &session.person_unique).await {
         return Err(AppError::Forbidden);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let name = payload
         .get("name")
         .and_then(|v| v.as_str())
@@ -456,7 +456,7 @@ pub async fn config_delete(
     if !is_admin(pool.deref(), &session.person_unique).await {
         return Err(AppError::Forbidden);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let result = client
         .execute("DELETE FROM x_system_config WHERE id = $1", &[&id])
         .await
@@ -471,7 +471,7 @@ pub async fn config_delete(
 pub async fn server_deploy_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, app_id, app_name, application, category, disable, create_time::text AS create_time \

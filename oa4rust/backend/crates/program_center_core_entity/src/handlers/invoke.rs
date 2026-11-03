@@ -92,7 +92,7 @@ pub async fn invoke_create(
         creator_person: Set(session.person_unique),
         deleted_at: Set(None),
     };
-    let model = active.insert(&db.0).await.map_err(|_| AppError::Internal)?;
+    let model = active.insert(&db.0).await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -156,7 +156,7 @@ pub async fn invoke_update(
         active.category = Set(category);
     }
 
-    let updated = active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+    let updated = active.update(&db.0).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(updated.id.clone())),
@@ -192,7 +192,7 @@ pub async fn invoke_delete(
     let id = model.id.clone();
     let mut active: entities::cte_invoke::ActiveModel = model.into();
     active.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));
-    active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+    active.update(&db.0).await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),

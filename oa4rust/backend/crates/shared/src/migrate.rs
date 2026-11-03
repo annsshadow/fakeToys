@@ -79,21 +79,68 @@ fn describe_pg_error(e: &deadpool_postgres::tokio_postgres::Error) -> String {
     e.to_string()
 }
 
+/// O1：多实例并发启动时的迁移串行化锁（PG 会话级 advisory lock 的 key）。
+///
+/// 改前真实后果（O1 探针实测，两个运行者并发跑同一空库）：
+/// `CREATE TABLE IF NOT EXISTS schema_migrations` 并发执行撞 pg_type 唯一索引
+/// （后到者 SQLSTATE 23505，`pg_type_typname_nsp_index` 冲突），该实例
+/// `run_migrations` 返回 Err → 启动失败。滚动重启/多副本部署必踩。
+///
+/// 取值为 i64 常量（"oa_migra" 的 ASCII），advisory lock 作用域是单库，
+/// 与业务侧其它 advisory lock 撞 key 的概率可忽略。
+const MIGRATION_ADVISORY_LOCK_KEY: i64 = 0x6F61_5F6D_6967_7261;
+
 /// 应用全部未执行的迁移。幂等、可重复调用。
 ///
 /// 返回 [`MigrationReport`]，便于启动日志与测试断言。
 ///
 /// 当 `DATABASE_DIALECT=mysql`（或 `DB_DIALECT=mysql`）时，
 /// 自动将 PostgreSQL 语法的迁移 SQL 重写为 MySQL 兼容语法。
+///
+/// 并发语义：进入迁移前先取会话级 advisory lock（O1），后到实例阻塞等待
+/// 持锁实例跑完全部迁移；拿到锁后逐版本重查 `schema_migrations`，已应用的
+/// 自然跳过。锁在函数返回前显式释放（成功/失败路径都释放），防止归还连接
+/// 到池后残留会话锁毒害后续使用者；若连接中断，PG 会在断连时自动释放。
+/// 锁获取语句不经方言重写：驱动恒为 tokio-postgres，与 DB_DIALECT 无关。
 pub async fn run_migrations(pool: &Pool) -> anyhow::Result<MigrationReport> {
+    let mut client = pool.get().await?;
+
+    client
+        .query_one("SELECT pg_advisory_lock($1)", &[&MIGRATION_ADVISORY_LOCK_KEY])
+        .await
+        .map_err(|e| {
+            anyhow::anyhow!(
+                "acquiring migration advisory lock failed: {}",
+                describe_pg_error(&e)
+            )
+        })?;
+
+    let result = run_migrations_inner(&mut client).await;
+
+    // 无论成败都显式释放锁；释放失败只在迁移本身成功时才上抛
+    // （迁移已失败时保留根因，不用锁释放错误覆盖它）。
+    let unlock = client
+        .query_one("SELECT pg_advisory_unlock($1)", &[&MIGRATION_ADVISORY_LOCK_KEY])
+        .await;
+    match (result, unlock) {
+        (Ok(report), Ok(_)) => Ok(report),
+        (Err(e), _) => Err(e),
+        (Ok(_), Err(e)) => Err(anyhow::anyhow!(
+            "releasing migration advisory lock failed: {}",
+            describe_pg_error(&e)
+        )),
+    }
+}
+
+async fn run_migrations_inner(
+    client: &mut deadpool_postgres::Object,
+) -> anyhow::Result<MigrationReport> {
     let dir = migrations_dir();
     anyhow::ensure!(
         dir.exists(),
         "migrations directory not found at {} (override with MIGRATIONS_DIR)",
         dir.display()
     );
-
-    let mut client = pool.get().await?;
     let d = dialect();
 
     // 1) 确保迁移追踪表存在（按方言重写列类型）
@@ -448,5 +495,130 @@ mod tests {
             None => std::env::remove_var(MIGRATIONS_DIR_KEY),
         }
         std::fs::remove_dir_all(&bad_dir).ok();
+    }
+
+    // ──────────────────────────────────────────────────────────────────────
+    // O1 探针/回归：多实例并发迁移必须串行。
+    //
+    // 场景：滚动重启/多副本部署时两个实例同时启动，都会执行 run_migrations。
+    // DDL 与种子都写成幂等（IF NOT EXISTS / ON CONFLICT DO NOTHING），但每条
+    // 迁移收尾的 `INSERT INTO schema_migrations` 不幂等：两个运行者看到同一条
+    // 版本未应用，先后 INSERT 同一 version → 后到者主键冲突（SQLSTATE 23505），
+    // 整个迁移事务回滚，该实例启动失败。
+    // ──────────────────────────────────────────────────────────────────────
+
+    /// 用 DATABASE_URL 的凭据连到指定库名（scratch 库专用）。
+    fn pool_to_db(dbname: &str) -> Pool {
+        let raw = std::env::var("DATABASE_URL")
+            .unwrap_or_else(|_| "postgres://o2server:password@localhost:5432/oa4rust".to_string());
+        let url = url::Url::parse(&raw).expect("invalid DATABASE_URL");
+        let mut cfg = deadpool_postgres::tokio_postgres::Config::new();
+        cfg.host(url.host_str().unwrap_or("localhost"))
+            .port(url.port().unwrap_or(5432))
+            .user(url.username())
+            .password(url.password().unwrap_or(""))
+            .dbname(dbname);
+        let mgr = deadpool_postgres::Manager::new(cfg, deadpool_postgres::tokio_postgres::NoTls);
+        Pool::builder(mgr).max_size(2).build().unwrap()
+    }
+
+    /// 重建 scratch 库（存在则强删重建），返回库名。
+    async fn fresh_scratch_db(dbname: &str) -> String {
+        let admin = pool_to_db("postgres");
+        let client = admin.get().await.expect("admin 连接");
+        client
+            .execute(
+                &format!("DROP DATABASE IF EXISTS {dbname} WITH (FORCE)"),
+                &[],
+            )
+            .await
+            .expect("drop scratch db");
+        client
+            .execute(&format!("CREATE DATABASE {dbname}"), &[])
+            .await
+            .expect("create scratch db");
+        dbname.to_string()
+    }
+
+    async fn drop_scratch_db(dbname: &str) {
+        let admin = pool_to_db("postgres");
+        if let Ok(client) = admin.get().await {
+            client
+                .execute(
+                    &format!("DROP DATABASE IF EXISTS {dbname} WITH (FORCE)"),
+                    &[],
+                )
+                .await
+                .ok();
+        }
+    }
+
+    #[tokio::test]
+    #[allow(clippy::await_holding_lock)] // MIGRATIONS_DIR 是进程级变量，须串行化
+    async fn concurrent_migration_runs_are_serialized() {
+        if !crate::testing::is_db_available().await {
+            eprintln!("SKIP: no database available");
+            return;
+        }
+        let _env_guard = crate::testing::ENV_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        if dialect().name() != "postgres" {
+            eprintln!("skip: 当前方言非 postgres");
+            return;
+        }
+
+        let dbname = fresh_scratch_db("oa_par_mig_o1").await;
+
+        // 临时迁移目录：pg_sleep 拉宽竞态窗口，保证两个运行者必然重叠。
+        let dir = std::env::temp_dir().join(format!("oa_par_mig_o1_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("创建临时迁移目录");
+        std::fs::write(dir.join("001_sleep.sql"), "SELECT pg_sleep(0.5);").unwrap();
+        std::fs::write(
+            dir.join("002_table.sql"),
+            "CREATE TABLE o1_probe_t (id int);",
+        )
+        .unwrap();
+        std::fs::write(dir.join("003_seed.sql"), "INSERT INTO o1_probe_t VALUES (1);").unwrap();
+
+        let saved = std::env::var(MIGRATIONS_DIR_KEY).ok();
+        std::env::set_var(MIGRATIONS_DIR_KEY, dir.to_str().expect("UTF-8 路径"));
+
+        let pool_a = pool_to_db(&dbname);
+        let pool_b = pool_to_db(&dbname);
+        let (ra, rb) = tokio::join!(run_migrations(&pool_a), run_migrations(&pool_b));
+
+        match saved {
+            Some(v) => std::env::set_var(MIGRATIONS_DIR_KEY, v),
+            None => std::env::remove_var(MIGRATIONS_DIR_KEY),
+        }
+
+        let ok_a = ra.as_ref().map(|r| r.applied.len()).map_err(|e| e.to_string());
+        let ok_b = rb.as_ref().map(|r| r.applied.len()).map_err(|e| e.to_string());
+        eprintln!("runner A: {ok_a:?}; runner B: {ok_b:?}");
+
+        // 两个实例都必须启动成功；全部迁移恰好被应用一次。
+        assert!(ra.is_ok(), "实例 A 迁移失败: {:?}", ra.err());
+        assert!(rb.is_ok(), "实例 B 迁移失败: {:?}", rb.err());
+        let total_applied = ra.unwrap().applied.len() + rb.unwrap().applied.len();
+        assert_eq!(total_applied, 3, "3 条迁移必须恰好被应用一次（两实例合计）");
+
+        // 库内状态自证：3 条版本记录、表存在且只有 1 行种子。
+        let client = pool_a.get().await.unwrap();
+        let versions: i64 = client
+            .query_one("SELECT count(*) FROM schema_migrations", &[])
+            .await
+            .unwrap()
+            .get(0);
+        assert_eq!(versions, 3);
+        let rows: i64 = client
+            .query_one("SELECT count(*) FROM o1_probe_t", &[])
+            .await
+            .unwrap()
+            .get(0);
+        assert_eq!(rows, 1, "种子迁移必须恰好执行一次");
+
+        std::fs::remove_dir_all(&dir).ok();
+        drop_scratch_db(&dbname).await;
     }
 }

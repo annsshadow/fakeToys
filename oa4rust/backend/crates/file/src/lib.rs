@@ -72,7 +72,7 @@ struct ComplexTopResponse {
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn folder_list_top(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -137,7 +137,7 @@ pub async fn folder_list_with_folder(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -196,7 +196,7 @@ pub async fn folder_list_with_folder(
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn complex_top(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let folder_rows = client
         .query(
@@ -379,7 +379,7 @@ pub async fn file_upload(
     let reference_id = reference_id.unwrap_or_default();
     let reference_type = reference_type.unwrap_or_else(|| "file".to_string());
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     client
         .execute(
             "INSERT INTO FILE_FILE (id, name, person, reference_id, reference_type, extension, length, mime_type, create_time, update_time) \
@@ -454,7 +454,7 @@ pub(crate) async fn upload_file_record(
     let reference_id = reference_id.unwrap_or_default();
     let reference_type = reference_type.unwrap_or_else(|| "file".to_string());
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     client
         .execute(
             "INSERT INTO FILE_FILE (id, name, person, reference_id, reference_type, extension, length, mime_type, create_time, update_time) \
@@ -509,7 +509,7 @@ pub async fn file_download(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -599,7 +599,7 @@ pub async fn folder_create(
     validate_required("name", &name).map_err(|e| e.to_app_error())?;
     validate_length("name", &name, 1, 255).map_err(|e| e.to_app_error())?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
 
@@ -660,7 +660,7 @@ pub async fn folder_update(
     validate_required("name", &name).map_err(|e| e.to_app_error())?;
     validate_length("name", &name, 1, 255).map_err(|e| e.to_app_error())?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -707,7 +707,7 @@ pub async fn folder_remove(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 第六十一批：软删文件夹收会话存在档（无会话 401）。
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = body
         .get("id")
@@ -759,7 +759,7 @@ pub async fn permission_set(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 第六十一批：权限配置写收 admin 档（无会话 401 / 非 admin 403）。
     require_admin(&pool.0, session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let target_type = body
         .get("targetType")

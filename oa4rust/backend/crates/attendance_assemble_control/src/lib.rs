@@ -48,7 +48,7 @@ fn require_session(
 pub async fn list_control_rules(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -113,7 +113,7 @@ pub async fn create_control_rule(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 考勤控制规则管理，表无归属列（ownerless）⇒ 管理员档。
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let rule_name = payload
         .get("ruleName")
@@ -164,7 +164,7 @@ pub async fn create_control_rule(
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn list_statistics(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT date, COUNT(*)::int AS records, MAX(status) AS status \
@@ -212,7 +212,7 @@ pub async fn delete_control_rule(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 考勤控制规则管理，表无归属列（ownerless）⇒ 管理员档。
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -235,7 +235,7 @@ pub async fn toggle_control_rule(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 考勤控制规则管理，表无归属列（ownerless）⇒ 管理员档。
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let enabled: bool = payload
         .get("enabled")
@@ -280,7 +280,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 pub async fn attendanceadmin_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -337,7 +337,7 @@ pub async fn attendanceadmin_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -394,7 +394,7 @@ pub async fn attendanceappealInfo_appeal_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 申诉处理，person 从 body 取（冒名族，另记待修）⇒ 会话存在档。
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let status = payload
         .get("status")
@@ -429,7 +429,7 @@ pub async fn attendanceappealInfo_appeal_id(
 pub async fn attendanceconfig_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -487,7 +487,7 @@ pub async fn attendanceconfig_save(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = payload
         .get("id")
@@ -560,7 +560,7 @@ pub async fn attendanceappealInfo_archive_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 归档会把申诉移出待审批队列，与同表 audit / check / workflow_sync 同属管理员动作 ⇒ admin 档。
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -592,7 +592,7 @@ pub async fn attendanceappealInfo_audit(
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = payload
         .get("id")
@@ -634,7 +634,7 @@ pub async fn attendanceappealInfo_check(
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = payload
         .get("id")
@@ -671,7 +671,7 @@ pub async fn attendanceappealInfo_filter_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let d = dialect();
     let sql = format!(
@@ -722,7 +722,7 @@ pub async fn attendanceappealInfo_filter_list_id_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let d = dialect();
     let sql = format!(
@@ -773,7 +773,7 @@ pub async fn attendanceappealInfo_manager_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -826,7 +826,7 @@ pub async fn attendanceappealInfo_workflow_appeal_id(
     // 申述工作流推进：同族 workflow_sync 已是 admin 档；本把整行改 workflow_status，
     // 属管理动作，admin 档（无会话 401 / 非 admin 403），门插在 pool.get() 前。
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -858,7 +858,7 @@ pub async fn attendanceappealInfo_workflow_sync(
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let appeal_id = payload
         .get("appealId")
@@ -891,7 +891,7 @@ pub async fn attendanceappealInfo_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -942,7 +942,7 @@ pub async fn attendancedetail_analyse(
     // 明细核算：同族 analyse/id/{id}（require_admin_opt）、analyse/redo（require_admin）均 admin 档；
     // 按 person_id 区间批量置 analysed，本人跳过重算属越权，admin 档，门插在 pool.get() 前。
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let person_id = payload
         .get("personId")
@@ -985,7 +985,7 @@ pub async fn attendancedetail_analyse_id_id(
     // analyse 族是核算动作：同族 analyse/redo（按 person_id 批量置回）与 analyse/{start}/{end}
     // 都按管理员口径出，本人把自己的明细标成「已核算」等于跳过重算 ⇒ admin 档。
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -1013,7 +1013,7 @@ pub async fn attendancedetail_analyse_redo(
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let person_id = payload
         .get("personId")
@@ -1045,7 +1045,7 @@ pub async fn attendancedetail_analyse_startDate_endDate(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 无归属维度的批量核算：一条 SQL 覆盖日期区间内**所有人**的明细，归属档量不出来 ⇒ admin 档。
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -1072,7 +1072,7 @@ pub async fn attendancedetail_archive_id(
     // 明细是同步/核算生成的行，封存属核算管线的管理动作 ⇒ admin 档。
     // 注意同张表的 `attendancedetail_delete` 走归属档（creator_person），一表两档并存待 o2 权威核。
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -1110,7 +1110,7 @@ pub async fn attendancedetail_checkDetailWithPersonByCycle_cycleYear_cycleMonth(
     // 名字里的 WithPerson 在 SQL 里并不存在：整段只按 cycle_year / cycle_month 过滤，
     // 一把覆盖该周期内**所有人**的明细 ⇒ 无归属维度可量，admin 档（语义待拍见账本）。
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 兼容旧 schema：若 checked/update_time 列不存在则跳过 UPDATE
     let updated = client
@@ -1148,7 +1148,7 @@ pub async fn attendancedetail_checkDetailWithPersonByCycle_cycleYear_cycleMonth(
 pub async fn attendancedetail_filter_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1197,7 +1197,7 @@ pub async fn attendancedetail_filter_list(
 pub async fn attendancedetail_filter_list_topUnit(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1246,7 +1246,7 @@ pub async fn attendancedetail_filter_list_topUnit(
 pub async fn attendancedetail_filter_list_unit(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1299,7 +1299,7 @@ pub async fn attendancedetail_filter_list_unit(
 pub async fn attendancedetail_filter_list_user(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1349,7 +1349,7 @@ pub async fn attendancedetail_filter_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1399,7 +1399,7 @@ pub async fn attendancedetail_filter_list_id_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1448,7 +1448,7 @@ pub async fn attendancedetail_filter_list_id_prev_count(
 pub async fn attendancedetail_list_persons_nonesign(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1498,7 +1498,7 @@ pub async fn attendancedetail_list_file_id(
     pool: Extension<Pool>,
     Path(file_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1548,7 +1548,7 @@ pub async fn attendancedetail_mobile_filter_list_page_page_count_count(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let (count, offset) = shared::response::page_window(page, count);
     let rows = client
@@ -1599,7 +1599,7 @@ pub async fn attendancedetail_mobile_mobilepreview(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let person_id = payload
         .get("personId")
@@ -1654,7 +1654,7 @@ pub async fn attendancedetail_mobile_my(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let person_id = payload
         .get("personId")
@@ -1713,7 +1713,7 @@ pub async fn attendancedetail_mobile_recive(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 考勤明细接收，person 从 body 取（冒名族，另记待修）⇒ 会话存在档。
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let person_id = payload
         .get("personId")
@@ -1747,7 +1747,7 @@ pub async fn attendancedetail_mobile_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1794,7 +1794,7 @@ pub async fn attendancedetail_recive(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 考勤明细接收，person 从 body 取（冒名族，另记待修）⇒ 会话存在档。
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = payload
         .get("id")
@@ -1826,7 +1826,7 @@ pub async fn attendancedetail_reciveSingle(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 考勤明细接收，person 从 body 取（冒名族，另记待修）⇒ 会话存在档。
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = payload
         .get("id")
@@ -1855,7 +1855,7 @@ pub async fn attendancedetail_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1898,7 +1898,7 @@ pub async fn attendancedetail_id(
 pub async fn attendanceemployeeconfig_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1947,7 +1947,7 @@ pub async fn attendanceemployeeconfig_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1989,7 +1989,7 @@ pub async fn attendanceemployeeconfig_id(
 pub async fn attendanceimportfileinfo_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2037,7 +2037,7 @@ pub async fn attendanceimportfileinfo_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2078,7 +2078,7 @@ pub async fn attendanceimportfileinfo_id(
 pub async fn attendanceschedulesetting_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2124,7 +2124,7 @@ pub async fn attendanceschedulesetting_list_topUnit_name(
     pool: Extension<Pool>,
     Path(_name): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2170,7 +2170,7 @@ pub async fn attendanceschedulesetting_list_unit_name(
     pool: Extension<Pool>,
     Path(name): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2220,7 +2220,7 @@ pub async fn attendanceschedulesetting_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2260,7 +2260,7 @@ pub async fn attendanceselfholiday_filter_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2309,7 +2309,7 @@ pub async fn attendanceselfholiday_filter_list_id_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2357,7 +2357,7 @@ pub async fn attendanceselfholiday_filter_list_id_prev_count(
 pub async fn attendanceselfholiday_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2410,7 +2410,7 @@ pub async fn attendanceselfholiday_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2457,7 +2457,7 @@ pub async fn attendancesetting_code_code(
     pool: Extension<Pool>,
     Path(code): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2501,7 +2501,7 @@ pub async fn attendancesetting_enable_type(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 开关的是**全局考勤类型**（x_attendance_setting.enabled），一人一改就影响全员 ⇒ admin 档。
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     // o2server 端该端点为 GET 无 body；字段均可选
     let payload = body.map(|Json(v)| v).unwrap_or(Value::Null);
 
@@ -2543,7 +2543,7 @@ pub async fn attendancesetting_enable_type(
 pub async fn attendancesetting_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2590,7 +2590,7 @@ pub async fn attendancesetting_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2631,7 +2631,7 @@ pub async fn attendancestatisticalcycle_cycleDetail_year_month(
     pool: Extension<Pool>,
     Path((year, month)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2674,7 +2674,7 @@ pub async fn attendancestatisticalcycle_cycleDetail_year_month(
 pub async fn attendancestatisticalcycle_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2724,7 +2724,7 @@ pub async fn attendancestatisticalcycle_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2767,7 +2767,7 @@ pub async fn attendancestatisticalcycle_id(
 pub async fn attendancestatisticrequirelog_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2813,7 +2813,7 @@ pub async fn attendancestatisticrequirelog_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2853,7 +2853,7 @@ pub async fn attendanceworkdayconfig_filter(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let start_date = payload
         .get("startDate")
@@ -2909,7 +2909,7 @@ pub async fn attendanceworkdayconfig_filter(
 pub async fn attendanceworkdayconfig_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2955,7 +2955,7 @@ pub async fn attendanceworkdayconfig_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2995,7 +2995,7 @@ pub async fn selfholidaysimple_docId_docId(
     pool: Extension<Pool>,
     Path(doc_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -3044,7 +3044,7 @@ pub async fn statistic_do(
     body: Option<Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     // o2server 端该端点为 GET 无 body；字段均可选，缺省空串
     let payload = body.map(|Json(v)| v).unwrap_or(Value::Null);
 
@@ -3085,7 +3085,7 @@ pub async fn statisticshow_filter_personMonth_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -3135,7 +3135,7 @@ pub async fn statisticshow_filter_personMonth_list_id_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -3185,7 +3185,7 @@ pub async fn statisticshow_filter_topUnitDay_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -3231,7 +3231,7 @@ pub async fn statisticshow_filter_topUnitDay_list_id_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -3277,7 +3277,7 @@ pub async fn statisticshow_filter_topUnitMonth_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -3324,7 +3324,7 @@ pub async fn statisticshow_filter_topUnitMonth_list_id_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -3371,7 +3371,7 @@ pub async fn statisticshow_filter_unitDay_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -3421,7 +3421,7 @@ pub async fn statisticshow_filter_unitDay_list_id_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -3471,7 +3471,7 @@ pub async fn statisticshow_filter_unitMonth_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -3522,7 +3522,7 @@ pub async fn statisticshow_filter_unitMonth_list_id_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -3573,7 +3573,7 @@ pub async fn statisticshow_person_name_year_month(
     pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -3621,7 +3621,7 @@ pub async fn statisticshow_persons_unit_subnested_name_year_month(
     pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -3667,7 +3667,7 @@ pub async fn statisticshow_persons_unit_name_year_month(
     pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -3713,7 +3713,7 @@ pub async fn statisticshow_topUnit_day_name_year_month(
     pool: Extension<Pool>,
     Path((_name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -3759,7 +3759,7 @@ pub async fn statisticshow_topUnit_name_year_month(
     pool: Extension<Pool>,
     Path((_name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -3806,7 +3806,7 @@ pub async fn statisticshow_unit_day_topUnit_name_date(
     pool: Extension<Pool>,
     Path((name, date)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -3852,7 +3852,7 @@ pub async fn statisticshow_unit_day_name_date(
     pool: Extension<Pool>,
     Path((name, date)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -3902,7 +3902,7 @@ pub async fn statisticshow_unit_day_name_year_month(
     pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -3948,7 +3948,7 @@ pub async fn statisticshow_unit_subnested_name_year_month(
     pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -3994,7 +3994,7 @@ pub async fn statisticshow_unit_sum_name_year_month(
     pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -4046,7 +4046,7 @@ pub async fn statisticshow_unit_topUnit_name_year_month(
     pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -4097,7 +4097,7 @@ pub async fn statisticshow_unit_name_year_month(
     pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -4154,7 +4154,7 @@ pub async fn uuid_random() -> Result<Json<ActionResult<Value>>, AppError> {
 pub async fn workplace_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -4197,7 +4197,7 @@ pub async fn workplace_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -4309,7 +4309,7 @@ async fn delete_admin_record(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(pool, session).await?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let n = client
         .execute(&format!("DELETE FROM {} WHERE id = $1", table), &[&id])
         .await
@@ -4334,7 +4334,7 @@ async fn delete_owned_record(
     id: &str,
     session: &shared::session::Session,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let row = client
         .query_opt(
             &format!("SELECT creator_person FROM {} WHERE id = $1", table),
@@ -4377,7 +4377,7 @@ pub async fn attendanceadmin_create(
     session: Extension<shared::session::Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     require_admin(&pool, &session).await?;
 
     let admin_name = json_str(&payload, "adminName");
@@ -4422,7 +4422,7 @@ pub async fn attendanceemployeeconfig_create(
     session: Extension<shared::session::Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     require_admin(&pool, &session).await?;
 
     let top_unit_name = json_opt_str(&payload, "topUnitName");
@@ -4461,7 +4461,7 @@ pub async fn attendanceschedulesetting_create(
     session: Extension<shared::session::Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     require_admin(&pool, &session).await?;
 
     let name = json_str(&payload, "name");
@@ -4500,7 +4500,7 @@ pub async fn attendanceselfholiday_create(
     session: Extension<shared::session::Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let mut person_id = json_str(&payload, "personId");
     if person_id.is_empty() {
@@ -4544,7 +4544,7 @@ pub async fn attendancedetail_create(
     session: Extension<shared::session::Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let mut person_id = json_str(&payload, "personId");
     if person_id.is_empty() {
@@ -4592,7 +4592,7 @@ pub async fn selfholidaysimple_create(
     session: Extension<shared::session::Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let mut person_id = json_str(&payload, "personId");
     if person_id.is_empty() {
@@ -4636,7 +4636,7 @@ pub async fn attendancesetting_create(
     session: Extension<shared::session::Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     require_admin(&pool, &session).await?;
 
     let code = json_str(&payload, "code");
@@ -4672,7 +4672,7 @@ pub async fn attendancestatisticalcycle_create(
     session: Extension<shared::session::Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     require_admin(&pool, &session).await?;
 
     let top_unit_name = json_opt_str(&payload, "topUnitName");
@@ -4711,7 +4711,7 @@ pub async fn attendancestatisticrequirelog_create(
     session: Extension<shared::session::Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     require_admin(&pool, &session).await?;
 
     let require_type = json_str(&payload, "requireType");
@@ -4750,7 +4750,7 @@ pub async fn attendanceworkdayconfig_create(
     session: Extension<shared::session::Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     require_admin(&pool, &session).await?;
 
     let work_date = json_str(&payload, "workDate");
@@ -4789,7 +4789,7 @@ pub async fn workplace_create(
     session: Extension<shared::session::Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     require_admin(&pool, &session).await?;
 
     let name = json_str(&payload, "name");
@@ -5009,7 +5009,7 @@ pub async fn v2_group_get(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -5100,7 +5100,7 @@ pub async fn v2_group_refresh_participate(
     };
     // 考勤组是配置人自己的行（同组 delete 走 creator_person 归属档），刷新成员名单按归属收；
     // 下面调的归属基座内含管理员放行支路，所以管理员仍能刷他人的组。
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT creator_person FROM x_attendance_v2_group WHERE id = $1",
@@ -5142,7 +5142,7 @@ pub async fn v2_group_person_date(
     session: Extension<shared::session::Session>,
     Path((_person, date)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 考勤组成员名单属隐私：以会话登录人为属主事实源，忽略路径 {person}。原先无
     // 会话、直接按路径 {person} 过滤 participate_list，前端 AttendanceApp.vue 把
@@ -5210,7 +5210,7 @@ pub async fn v2_group_create(
     session: Extension<shared::session::Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     require_admin(&pool, &session).await?;
 
     let group_name = json_str(&payload, "groupName");
@@ -5256,7 +5256,7 @@ pub async fn v2_group_list_page_size(
     body: Option<Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let (limit, offset) = json_page(page, size)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let filter_name = body
         .as_ref()
@@ -5351,7 +5351,7 @@ pub async fn v2_shift_get(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -5421,7 +5421,7 @@ pub async fn v2_shift_create(
     session: Extension<shared::session::Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     require_admin(&pool, &session).await?;
 
     let shift_name = json_str(&payload, "shiftName");
@@ -5478,7 +5478,7 @@ pub async fn v2_shift_list_page_size(
     body: Option<Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let (limit, offset) = json_page(page, size)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 与 v2_group_list 同款可选 name 过滤（班次名称模糊检索）。此前缺位：
     // 前端传 {name} 被静默忽略，班次检索永不生效。
@@ -5568,7 +5568,7 @@ pub async fn v2_shift_update(
     session: Extension<shared::session::Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = json_str(&payload, "id");
     if id.is_empty() {
@@ -5655,7 +5655,7 @@ pub async fn v2_leave_import_result_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let total: i64 = client
         .query_one(
@@ -5683,7 +5683,7 @@ pub async fn v2_leave_create(
     session: Extension<shared::session::Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let mut person = json_str(&payload, "person");
     if person.is_empty() {
@@ -5732,7 +5732,7 @@ pub async fn v2_leave_list_page_size(
     body: Option<Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let (limit, offset) = json_page(page, size)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 非 admin 只能查看本人请假记录（IDOR 读过滤）
     let admin = shared::middleware::is_admin(&pool, &session.person_unique).await;
@@ -5829,7 +5829,7 @@ pub async fn v2_leave_import(
     session: Extension<shared::session::Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let flag = payload
         .get("flag")
@@ -5914,7 +5914,7 @@ pub async fn v2_leave_import(
 
 /// GET /api/attendance/assemble/control/v2/config
 pub async fn v2_config_get(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -5940,7 +5940,7 @@ pub async fn v2_config_post(
     session: Extension<shared::session::Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     require_admin(&pool, &session).await?;
 
     let name = json_str(&payload, "name");
@@ -5998,7 +5998,7 @@ pub async fn v2_config_person_get(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -6025,7 +6025,7 @@ pub async fn v2_config_person_post(
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let name = json_str(&payload, "name");
     let value = json_opt_str(&payload, "value");
@@ -6084,7 +6084,7 @@ pub async fn v2_record_get(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -6132,7 +6132,7 @@ pub async fn v2_record_list_page_size(
     body: Option<Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let (limit, offset) = json_page(page, size)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let filter_user = body
         .as_ref()
@@ -6209,7 +6209,7 @@ pub async fn v2_detail_list_page_size(
     body: Option<Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let (limit, offset) = json_page(page, size)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let empty = String::new();
     let filter_person = body
@@ -6304,7 +6304,7 @@ pub async fn v2_my_statistic(
     session: Extension<shared::session::Session>,
     body: Option<Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 统计月份：body 可传 year/month，缺省取当前月
     let now = std::time::SystemTime::now()
@@ -6433,7 +6433,7 @@ async fn ddqy_delete_all(
     session: &shared::session::Session,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(pool, session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
 
     let n_detail = client
         .execute(&format!("DELETE FROM {} WHERE 1 = 1", detail_table), &[])
@@ -6472,7 +6472,7 @@ async fn ddqy_sync_start(
             "dateFrom/dateTo is required".to_string(),
         ));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let status = "成功";
@@ -6497,7 +6497,7 @@ async fn ddqy_sync_list(
     pool: &Pool,
     sync_type: &str,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
 
     let rows = client
         .query(
@@ -6568,7 +6568,7 @@ async fn ddqy_attendance_list_next(
     if !(1..=500).contains(&count) {
         return Err(AppError::BadRequest("count must be in 1..=500".to_string()));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
 
     let filter_user = body
         .as_ref()
@@ -6654,7 +6654,7 @@ async fn ddqy_statistic_person_trigger(
             "year must be yyyy and month must be MM".to_string(),
         ));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
 
     let delete_sql = format!(
         "DELETE FROM {st} WHERE statistic_year = $1 AND statistic_month = $2",
@@ -6714,7 +6714,7 @@ async fn ddqy_statistic_unit_day_trigger(
             "year/month/day must be yyyy/MM/dd".to_string(),
         ));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let date = format!("{}-{}-{}", year, month, day);
 
     let delete_sql = format!(
@@ -6767,7 +6767,7 @@ async fn stat_person_month_query(
     month: &str,
     unit_filter: Option<&str>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
 
     let sql = format!(
         "SELECT id, o2_user, o2_unit, statistic_year, statistic_month, work_day_count, on_duty_times, off_duty_times, \
@@ -6799,7 +6799,7 @@ async fn stat_unit_month_query(
     year: &str,
     month: &str,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
 
     let sql = format!(
         "SELECT id, o2_user, o2_unit, statistic_year, statistic_month, work_day_count, on_duty_times, off_duty_times, \
@@ -6986,7 +6986,7 @@ pub async fn dingdingstatistic_unit(
     pool: Extension<Pool>,
     Path((unit, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 优先月度统计表；无月度行时回退日粒度聚合行（同表族真实数据）
     let sql = "SELECT id, o2_user, o2_unit, statistic_year, statistic_month, work_day_count, on_duty_times, off_duty_times, \
@@ -7147,7 +7147,7 @@ pub async fn v2_appeal_list_page_size(
     body: Option<Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let (limit, offset) = json_page(page, size)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 非 admin 只能查看本人申诉记录（IDOR 读过滤）
     let admin = shared::middleware::is_admin(&pool, &session.person_unique).await;
@@ -7263,7 +7263,7 @@ pub async fn v2_appeal_manager_list_page_size(
     require_admin(&pool, &session).await?;
 
     let (limit, offset) = json_page(page, size)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let filter_status = body
         .as_ref()
@@ -7316,7 +7316,7 @@ pub async fn v2_appeal_get(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -7338,7 +7338,7 @@ async fn appeal_owner_gate(
     session: &shared::session::Session,
     id: &str,
 ) -> Result<Option<deadpool_postgres::tokio_postgres::Row>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let row = client
         .query_opt(
             "SELECT id, record_id, user_id, record_date_string, start_time, end_time, reason, status, job_id, creator_person \
@@ -7364,7 +7364,7 @@ pub async fn v2_appeal_manager_status(
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 管理员处理异常数据为正常：status=4(END_BY_ADMIN)，记录操作人
     let n = client
@@ -7396,7 +7396,7 @@ pub async fn v2_appeal_start_check(
     session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -7443,7 +7443,7 @@ pub async fn v2_appeal_start_process(
     if appeal_owner_gate(&pool, &session, &id).await?.is_none() {
         return Ok(Json(ActionResult::error("appeal not found")));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let job_id = json_str(&payload, "jobId");
     if job_id.is_empty() {
@@ -7484,7 +7484,7 @@ pub async fn v2_appeal_reset_status(
     if appeal_owner_gate(&pool, &session, &id).await?.is_none() {
         return Ok(Json(ActionResult::error("appeal not found")));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 还原数据状态，清除流程关联
     let n = client
@@ -7520,7 +7520,7 @@ pub async fn v2_appeal_end_process(
     if appeal_owner_gate(&pool, &session, &id).await?.is_none() {
         return Ok(Json(ActionResult::error("appeal not found")));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 流程结束后回填：审批结果只允许 2(通过)/3(不通过)
     let end_status = payload.get("status").and_then(|v| v.as_i64()).unwrap_or(-1) as i32;
@@ -7576,7 +7576,7 @@ pub async fn v2_detail_rebuild_person_date(
         ));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     client
         .execute(
             "DELETE FROM x_attendance_detail WHERE person_id = $1 AND date = $2",
@@ -7608,7 +7608,7 @@ pub async fn v2_detail_statistic_record_list(
     pool: Extension<Pool>,
     Path(detail_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 先定位 detail（人 + 日期），再查该人当日打卡记录
     let detail = client
@@ -7683,7 +7683,7 @@ async fn detail_statistic_aggregate(
     filter_start: &str,
     filter_end: &str,
 ) -> Result<Vec<Value>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
 
     let rows = client
         .query(
@@ -7786,7 +7786,7 @@ pub async fn v2_group_rebuild_detail_group_date(
         ));
     }
 
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
 
     let group = client
         .query_opt(
@@ -7831,7 +7831,7 @@ pub async fn v2_group_rebuild_detail_group_date(
     let mut seen = std::collections::HashSet::new();
     participate.retain(|p| seen.insert(p.clone()));
 
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     tx.execute(
         "DELETE FROM x_attendance_detail WHERE date = $1 AND person_id = ANY($2)",
         &[&date, &participate],
@@ -7876,7 +7876,7 @@ pub async fn v2_group_rebuild_detail_group_date(
             .await
             .map_err(|_| AppError::Internal)?;
     }
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -7909,7 +7909,7 @@ pub async fn v2_groupschedule_post(
         ));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 归一化查重：同组同人同日已有排班 → 更新班次而非插入重复行；
     // 班次相同则幂等返回 duplicated=true
@@ -7973,7 +7973,7 @@ pub async fn v2_groupschedule_config_get(
     pool: Extension<Pool>,
     Path(group_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -8017,7 +8017,7 @@ pub async fn v2_groupschedule_list_group_month(
     pool: Extension<Pool>,
     Path((group_id, month)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -8071,7 +8071,7 @@ pub async fn v2_groupschedule_list_filter(
     pool: Extension<Pool>,
     body: Option<Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let get = |key: &str| -> String {
         body.as_ref()
@@ -8178,7 +8178,7 @@ pub async fn v2_mobile_pre_check(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 当前用户命中的考勤组（复用 v2_group_person_date 的参与匹配语义）
     let today = date_string_from_unix(now_unix_secs());
@@ -8362,7 +8362,7 @@ pub async fn v2_mobile_check(
     session: Extension<shared::session::Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let (id, duplicated) = mobile_check_impl(&client, &pool, &session, &payload, "移动端").await?;
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -8379,7 +8379,7 @@ pub async fn v2_mobile_check_from_out(
     session: Extension<shared::session::Session>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     // 外部系统调用（门禁等）：允许代他人打卡，但需 admin
     let session_uid = normalize_key(&session.person_unique);
     let target = normalize_key(json_str(&payload, "userId").as_str());
@@ -8415,7 +8415,7 @@ pub async fn v2_my_controls(
     let admin = shared::middleware::is_admin(&pool, &session.person_unique).await;
 
     // 是否考勤组协助管理员：assist_admin_list 含本人
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let assist_rows = client
         .query(
             "SELECT 1 FROM x_attendance_v2_group \
@@ -8443,7 +8443,7 @@ pub async fn v2_my_detail_list(
     session: Extension<shared::session::Session>,
     body: Option<Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let date = body
         .as_ref()
@@ -8539,7 +8539,7 @@ pub async fn v2_my_rest_date_check(
         ));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // workday 配置表：命中记录按 is_workday 判定；未配置默认视为工作日
     let row = client
@@ -8582,11 +8582,11 @@ pub async fn v2_record_delete_people_date(
     // 仅本人或管理员可删除打卡记录（IDOR）
     shared::middleware::require_owner(&pool, &session, &people).await?;
 
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
     let pattern = format!("{}%", date);
 
     // 同一人同一天的两表打卡记录逻辑上是同一实体，双删必须原子防半删态。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let n_record = tx
         .execute(
             "DELETE FROM x_attendance_record WHERE user_id = $1 AND check_in_time LIKE $2",
@@ -8601,7 +8601,7 @@ pub async fn v2_record_delete_people_date(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -8646,9 +8646,9 @@ async fn import_checkin_rows(
     default_source: &str,
 ) -> Result<(i64, Vec<String>), AppError> {
     let admin = shared::middleware::is_admin(pool, &session.person_unique).await;
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(pool).await?;
     // 整批导入包同一事务：中途失败不得留下部分行已导入的半导入态。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let mut inserted: i64 = 0;
     let mut ids: Vec<String> = Vec::with_capacity(rows.len());
 
@@ -8790,7 +8790,7 @@ async fn import_checkin_rows(
         inserted = ins_id.len() as i64;
     }
 
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok((inserted, ids))
 }
 
@@ -8901,7 +8901,7 @@ pub async fn v2_workplace_post(
     let address = json_opt_str(&payload, "address");
     let req_id = json_opt_str(&payload, "id");
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 归一化查重：同名（trim+lower）地点只保留一行；带 id 则按 id 更新
     let target_id: Option<String> = match req_id {
@@ -8976,7 +8976,7 @@ pub async fn v2_workplace_delete(
 pub async fn v2_workplace_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -9049,7 +9049,7 @@ pub async fn v2_workplace_list_ids(
         return Err(AppError::BadRequest("ids array is required".to_string()));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(

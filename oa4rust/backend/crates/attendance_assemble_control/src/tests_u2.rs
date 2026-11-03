@@ -38,7 +38,7 @@ mod u2_tests {
     async fn u2_v2_config_get_reachable() {
         assert_eq!(
             status_of("GET", "/api/attendance/assemble/control/v2/config").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
     }
 
@@ -87,7 +87,7 @@ mod u2_tests {
                 "/api/attendance/assemble/control/v2/group/list/1/size/20"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
     }
 
@@ -126,7 +126,7 @@ mod u2_tests {
     async fn u2_v2_group_get_by_id_reachable() {
         assert_eq!(
             status_of("GET", "/api/attendance/assemble/control/v2/group/some-id").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
     }
 
@@ -139,9 +139,13 @@ mod u2_tests {
             "/api/attendance/assemble/control/v2/shift/update",
             "/api/attendance/assemble/control/v2/shift/list/1/size/20",
         ] {
-            assert_eq!(
-                status_of("POST", uri).await,
-                StatusCode::INTERNAL_SERVER_ERROR
+            // O2：死池下 503（取连失败）与 500（缺会话扩展）均证明路由可达
+            assert!(
+                matches!(
+                    status_of("POST", uri).await,
+                    StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE
+                ),
+                "POST {uri} not routed"
             );
         }
     }
@@ -150,7 +154,7 @@ mod u2_tests {
     async fn u2_v2_shift_read_and_delete_reachable() {
         assert_eq!(
             status_of("GET", "/api/attendance/assemble/control/v2/shift/abc").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         // 静态段 delete 优先于 {id} 参数段
         assert_eq!(
@@ -201,7 +205,7 @@ mod u2_tests {
                 "/api/attendance/assemble/control/v2/leave/import/result/flag/flag-x"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
     }
 
@@ -211,7 +215,7 @@ mod u2_tests {
     async fn u2_v2_record_routes_reachable() {
         assert_eq!(
             status_of("GET", "/api/attendance/assemble/control/v2/record/r-1").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of(
@@ -219,7 +223,7 @@ mod u2_tests {
                 "/api/attendance/assemble/control/v2/record/list/1/size/20"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
     }
 
@@ -231,7 +235,7 @@ mod u2_tests {
                 "/api/attendance/assemble/control/v2/detail/list/1/size/50"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("POST", "/api/attendance/assemble/control/v2/my/statistic").await,
@@ -290,7 +294,7 @@ mod u2_tests {
     async fn u2_router_sanity_known_legacy_route_still_works() {
         assert_eq!(
             status_of("GET", "/api/attendance/assemble/control/workplace/list/all").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
     }
 
@@ -301,12 +305,12 @@ mod u2_tests {
             (
                 "PUT",
                 "/api/attendance/assemble/control/attendancedetail/filter/list",
-                StatusCode::INTERNAL_SERVER_ERROR,
+                StatusCode::SERVICE_UNAVAILABLE,
             ),
             (
                 "PUT",
                 "/api/attendance/assemble/control/statisticshow/filter/unitDay/list/x/next/5",
-                StatusCode::INTERNAL_SERVER_ERROR,
+                StatusCode::SERVICE_UNAVAILABLE,
             ),
             (
                 "GET",
@@ -322,13 +326,15 @@ mod u2_tests {
             (
                 "DELETE",
                 "/api/attendance/assemble/control/attendancedetail/mobile/m-1",
-                StatusCode::INTERNAL_SERVER_ERROR,
+                StatusCode::SERVICE_UNAVAILABLE,
             ),
         ] {
-            assert_eq!(
-                status_of(method, uri).await,
-                expect,
-                "{method} {uri} not routed"
+            let got = status_of(method, uri).await;
+            assert!(
+                got == expect
+                    || (matches!(expect, StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE)
+                        && matches!(got, StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE)),
+                "{method} {uri} not routed: got {got}"
             );
         }
     }

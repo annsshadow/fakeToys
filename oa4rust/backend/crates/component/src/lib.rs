@@ -19,7 +19,7 @@ pub struct ComponentInfo {
 }
 
 pub async fn list_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, title, type, visible, order_number, path, icon_path FROM x_component WHERE deleted_at IS NULL ORDER BY order_number ASC LIMIT 50",
@@ -92,7 +92,7 @@ pub async fn get_component(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, title, type, visible, order_number, path, icon_path FROM x_component WHERE (id = $1 OR name = $1) AND deleted_at IS NULL",
@@ -155,7 +155,7 @@ pub async fn get_component(
 }
 
 pub async fn count(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(
             "SELECT COUNT(*) as cnt FROM x_component WHERE deleted_at IS NULL",

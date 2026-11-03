@@ -58,7 +58,7 @@ async fn identities_of_persons_full(
          JOIN x_org_person p ON p.id = i.person_id AND p.deleted_at IS NULL \
          WHERE i.deleted_at IS NULL AND (p.id = ANY($1) OR p.name = ANY($1)) ORDER BY i.id"
         .to_string();
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let sql_final = if objects {
         sql
     } else {
@@ -116,7 +116,7 @@ async fn unit_person_identities(
          WHERE i.deleted_at IS NULL AND (p.id = ANY($1) OR p.name = ANY($1)) \
          AND (u.id = ANY($2) OR u.name = ANY($2)) ORDER BY i.id"
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let rows = client
         .query(sql, &[&persons, &units])
         .await
@@ -152,7 +152,7 @@ async fn identities_in_groups(
         return ok_legacy_list(0, vec![]);
     }
     let sql = if objects { SQL_OBJ } else { SQL_IDS };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let rows = client
         .query(sql, &[&flags])
         .await
@@ -195,7 +195,7 @@ async fn major_identities_of_persons(
              JOIN x_org_person p ON p.id = i.person_id AND p.deleted_at IS NULL \
              WHERE i.deleted_at IS NULL AND i.major AND (p.id = ANY($1) OR p.name = ANY($1)) ORDER BY i.id".to_string()
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let rows = client
         .query(&sql, &[&flags])
         .await
@@ -241,7 +241,7 @@ pub async fn identity_list_unit_sub_direct_object(
     if flags.is_empty() {
         return ok_legacy_list(0, vec![]);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(OBJ_SQL, &[&flags])
         .await
@@ -265,7 +265,7 @@ pub async fn identity_list_unit_sub_nested_object(
     if flags.is_empty() {
         return ok_legacy_list(0, vec![]);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(OBJ_SQL, &[&flags])
         .await

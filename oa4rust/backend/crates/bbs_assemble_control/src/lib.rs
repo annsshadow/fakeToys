@@ -171,7 +171,7 @@ fn now_iso() -> String {
 pub async fn get_control_config(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_one(
@@ -209,7 +209,7 @@ pub async fn get_control_config(
 pub async fn list_control_sections(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -355,7 +355,7 @@ pub async fn update_control_config(
     if !is_admin(&pool, &sess.person_unique).await {
         return Err(AppError::Forbidden);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let enabled = body
         .get("enabled")
@@ -389,7 +389,7 @@ pub async fn update_control_config(
 /// GET /api/bbs/assemble/control/forum/list
 #[allow(non_snake_case)]
 pub async fn list_forums(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, description, sort, creator, create_time::text FROM x_bbs_forum WHERE deleted_at IS NULL ORDER BY sort ASC LIMIT 100",
@@ -418,7 +418,7 @@ pub async fn get_forum(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, description, sort, creator, create_time::text FROM x_bbs_forum WHERE id = $1 AND deleted_at IS NULL",
@@ -443,7 +443,7 @@ pub async fn create_topic(
     axum::extract::Json(req): Json<CreateTopicRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let forum_id = req.forum_id.clone().unwrap_or_default();
     let title = req.title.unwrap_or_default();
@@ -483,7 +483,7 @@ pub async fn list_topics_by_forum(
     pool: Extension<Pool>,
     axum::extract::Path(forum_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic WHERE forum_id = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT 100",
@@ -514,7 +514,7 @@ pub async fn create_reply(
     axum::extract::Json(req): Json<CreateReplyRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     // x_bbs_reply.subject_id/author_id 为 NOT NULL（无默认）。subjectId/topicId 同义，
     // 归一到 subject 并双写 topic_id（回复列表按 topic_id 过滤）；作者缺省取登录人。
@@ -557,7 +557,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 
 #[allow(non_snake_case)]
 pub async fn forum_view_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, description, sort, creator, create_time::text FROM x_bbs_forum WHERE deleted_at IS NULL ORDER BY sort ASC LIMIT 100",
@@ -585,7 +585,7 @@ pub async fn forum_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, description, sort, creator, create_time::text FROM x_bbs_forum WHERE id = $1 AND deleted_at IS NULL",
@@ -604,7 +604,7 @@ pub async fn forum_id(
 
 #[allow(non_snake_case)]
 pub async fn mobile_view_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic WHERE deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT 20",
@@ -632,7 +632,7 @@ pub async fn permission_replyPublishable_subjectId(
     pool: Extension<Pool>,
     Path(subject_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id FROM x_bbs_topic WHERE id = $1 AND deleted_at IS NULL",
@@ -652,7 +652,7 @@ pub async fn permission_subjectPublishable_sectionId(
     pool: Extension<Pool>,
     Path(section_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let section_exists = client
         .query_opt(
             "SELECT 1 FROM x_bbs_section WHERE id = $1 AND deleted_at IS NULL",
@@ -674,7 +674,7 @@ pub async fn reply_filter_list_page_page_count_count(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let offset = (page.saturating_sub(1)) * count;
 
     let rows = client
@@ -704,7 +704,7 @@ pub async fn reply_list_sub_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -733,7 +733,7 @@ pub async fn subject_view_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic WHERE id = $1 AND deleted_at IS NULL",
@@ -755,7 +755,7 @@ pub async fn subject_top_sectionId(
     pool: Extension<Pool>,
     Path(section_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -784,7 +784,7 @@ pub async fn permission_section_sectionId(
     pool: Extension<Pool>,
     Path(section_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let section_exists = client
         .query_opt(
             "SELECT 1 FROM x_bbs_section WHERE id = $1 AND deleted_at IS NULL",
@@ -806,7 +806,7 @@ pub async fn permission_subject_subjectId(
     pool: Extension<Pool>,
     Path(subject_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let topic_exists = client
         .query_opt(
             "SELECT 1 FROM x_bbs_topic WHERE id = $1 AND deleted_at IS NULL",
@@ -828,7 +828,7 @@ pub async fn section_viewforum_forumId(
     pool: Extension<Pool>,
     Path(forum_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -877,7 +877,7 @@ pub async fn delete_forum(
     if !is_admin(&pool, &session.person_unique).await {
         return Err(AppError::Forbidden);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows_affected = client
         .execute(
             "UPDATE x_bbs_forum SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -899,7 +899,7 @@ pub async fn delete_reply(
     if !is_admin(&pool, &session.person_unique).await {
         return Err(AppError::Forbidden);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows_affected = client
         .execute(
             "UPDATE x_bbs_reply SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -921,7 +921,7 @@ pub async fn delete_subject(
     if !is_admin(&pool, &session.person_unique).await {
         return Err(AppError::Forbidden);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows_affected = client
         .execute(
             "UPDATE x_bbs_topic SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -954,7 +954,7 @@ pub async fn delete_forum_body(
         return Err(AppError::Forbidden);
     }
     let id = body_id(&body);
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows_affected = client
         .execute(
             "UPDATE x_bbs_forum SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -977,7 +977,7 @@ pub async fn delete_reply_body(
         return Err(AppError::Forbidden);
     }
     let id = body_id(&body);
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows_affected = client
         .execute(
             "UPDATE x_bbs_reply SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -1000,7 +1000,7 @@ pub async fn delete_subject_body(
         return Err(AppError::Forbidden);
     }
     let id = body_id(&body);
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows_affected = client
         .execute(
             "UPDATE x_bbs_topic SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -1020,7 +1020,7 @@ pub async fn list_reply_filter(
     // 导致每次调用都在提取阶段失败（路由形同虚设）。改为可选 query 参数。
     axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let page: i64 = q.get("page").and_then(|v| v.parse().ok()).unwrap_or(1);
     let count: i64 = q.get("count").and_then(|v| v.parse().ok()).unwrap_or(200);
     let subject_id = q.get("subjectId").map(|s| s.as_str()).unwrap_or("");
@@ -1074,7 +1074,7 @@ pub async fn list_topics_creamed(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let offset = (page.saturating_sub(1)).saturating_mul(count);
     let rows = client
         .query(
@@ -1114,7 +1114,7 @@ pub async fn list_topics_recommended(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let offset = (page.saturating_sub(1)).saturating_mul(count);
     let rows = client
         .query(
@@ -1154,7 +1154,7 @@ pub async fn list_subjects_filtered(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let offset = (page.saturating_sub(1)).saturating_mul(count);
     let rows = client
         .query(
@@ -1193,7 +1193,7 @@ pub async fn list_subjects_index(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let offset = (page.saturating_sub(1)).saturating_mul(count);
     let rows = client
         .query(
@@ -1233,7 +1233,7 @@ pub async fn list_subjects_recommended_index(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let offset = (page.saturating_sub(1)).saturating_mul(count);
     let rows = client
         .query(
@@ -1278,7 +1278,7 @@ pub async fn login(
     if credential.is_empty() || password.is_empty() {
         return Ok(Json(ActionResult::error("invalid credentials")));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, unique_id, name, password_hash, locked FROM auth_person \
@@ -1359,7 +1359,7 @@ pub async fn picture_list(
     pool: Extension<Pool>,
     Path(subject_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT content FROM x_bbs_topic WHERE id = $1 AND deleted_at IS NULL",
@@ -1409,7 +1409,7 @@ pub async fn shutup_create(
     let reason = body.get("reason").and_then(|v| v.as_str()).unwrap_or("");
     let id = Uuid::new_v4().to_string();
     let ct = now_iso();
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let _ = client
         .execute(
             "INSERT INTO x_bbs_shutup (id, person, reason, create_time) VALUES ($1, $2, $3, $4)",
@@ -1442,7 +1442,7 @@ pub async fn shutup_delete(
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows_affected = client
         .execute("DELETE FROM x_bbs_shutup WHERE person = $1", &[&person])
         .await
@@ -1457,7 +1457,7 @@ pub async fn shutup_list(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let offset = (page.saturating_sub(1)).saturating_mul(count);
     let rows = client
         .query(
@@ -1529,7 +1529,7 @@ pub async fn subject_filter_listsubjectinfo(
     pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let forum_id = body.get("forumId").and_then(|v| v.as_str()).unwrap_or("");
     let offset_val = body.get("page").and_then(|v| v.as_i64()).unwrap_or(1);
     let limit_val = body.get("count").and_then(|v| v.as_i64()).unwrap_or(20);
@@ -1597,7 +1597,7 @@ pub async fn subject_search(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let offset = (page.saturating_sub(1)).saturating_mul(count);
     let rows = client
         .query(
@@ -1636,7 +1636,7 @@ pub async fn subject_search(
 pub async fn subject_statgrade(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let total_row = client
         .query_one(
             "SELECT COUNT(*) FROM x_bbs_topic WHERE deleted_at IS NULL",
@@ -1727,7 +1727,7 @@ pub async fn topic_recommended_index(
     pool: Extension<Pool>,
     Path(count): Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic \
@@ -1762,7 +1762,7 @@ pub async fn topic_search(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let offset = (page.saturating_sub(1)).saturating_mul(count);
     let rows = client
         .query(
@@ -1799,7 +1799,7 @@ pub async fn topic_search(
 
 #[allow(non_snake_case)]
 pub async fn user_forum_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, description, sort, creator, create_time::text FROM x_bbs_forum \
@@ -1854,7 +1854,7 @@ pub async fn user_info(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, unique_id, name, mobile, email, icon, job, department, unit, position \
@@ -1906,7 +1906,7 @@ pub async fn user_info(
 
 #[allow(non_snake_case)]
 pub async fn user_reply_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, topic_id, content, creator, create_time::text FROM x_bbs_reply \
@@ -1930,7 +1930,7 @@ pub async fn user_reply_list(pool: Extension<Pool>) -> Result<Json<ActionResult<
 
 #[allow(non_snake_case)]
 pub async fn user_role_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, description FROM auth_role WHERE deleted_at IS NULL ORDER BY name",
@@ -1962,7 +1962,7 @@ pub async fn user_role_list(pool: Extension<Pool>) -> Result<Json<ActionResult<V
 pub async fn user_section_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, forum_id, sort, description FROM x_bbs_section \
@@ -2000,7 +2000,7 @@ pub async fn user_section_list(
 
 #[allow(non_snake_case)]
 pub async fn user_setting(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT settings FROM auth_person WHERE settings IS NOT NULL LIMIT 1",
@@ -2022,7 +2022,7 @@ pub async fn user_setting(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
 pub async fn user_subject_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic \
@@ -2057,7 +2057,7 @@ pub async fn subjectattach_list(
     pool: Extension<Pool>,
     Path(_subject_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, url, description FROM x_bbs_subject_attachment \
