@@ -919,47 +919,90 @@ func (s *Service) AdminGrantCurrency(ctx context.Context, userID int64, currency
 		return nil, err
 	}
 	out := map[string]int64{}
+	var auditCtx *AdminAuditCtx
+	if len(audit) > 0 {
+		auditCtx = &audit[0]
+	}
 	err := s.DB.Tx(ctx, func(tx txType) error {
-		if err := s.grantWallet(ctx, tx, userID,
-			map[string]int64{currency: amount}, reason, 0); err != nil {
-			return err
-		}
-		// R37：钱包变动与审计同一事务。发币/回收是价值转移，
-		// 「余额变了但审计没写」等于一笔没有来源的资产流动；
-		// 符号仍按 R109 的口径落进事件名，负数不是「发放」。
-		if len(audit) > 0 {
-			action := "grant_currency"
-			if amount < 0 {
-				action = "revoke_currency"
-			}
-			if err := s.AuditTx(ctx, tx, audit[0], action,
-				strconv.FormatInt(userID, 10),
-				map[string]any{"currency": currency, "amount": amount}); err != nil {
-				return err
-			}
-		}
-		// 第 21 轮：道具（revive_token / gem_wash_token / mastery_reset）的
-		// 发放与回显。grantWallet 早就把 isWalletToken 转发到 grantToken
-		// （第 74 轮），但响应的 out 只装四货币 —— 后台发道具时**余额
-		// 不回显**，运营无法确认发放生效（只能去审计日志猜）。
-		if isWalletToken(currency) {
-			var balance int64
-			if err := tx.QueryRow(ctx,
-				`SELECT COALESCE((SELECT balance FROM user_tokens WHERE user_id = $1 AND token = $2), 0)`,
-				userID, currency).Scan(&balance); err != nil {
-				return fmt.Errorf("read token balance: %w", err)
-			}
-			out[currency] = balance
-			return nil
-		}
-		w, err := s.loadWalletTx(ctx, tx, userID)
-		if err != nil {
-			return err
-		}
-		out["coin"], out["gem"], out["energy"], out["keys"] = w.Coin, w.Gem, w.Energy, w.Keys
-		return nil
+		var txErr error
+		out, txErr = s.grantCurrencyTx(ctx, tx, userID, currency, amount, reason, auditCtx)
+		return txErr
 	})
 	return out, err
+}
+
+// grantCurrencyTx 是 AdminGrantCurrency 的事务内部分（R86 抽出：
+// 幂等键版本要在「查重 → 业务 → 记录」的**同一个事务**里复用它）。
+func (s *Service) grantCurrencyTx(ctx context.Context, tx pgx.Tx, userID int64,
+	currency string, amount int64, reason string, auditCtx *AdminAuditCtx) (map[string]int64, error) {
+	out := map[string]int64{}
+	if err := s.grantWallet(ctx, tx, userID,
+		map[string]int64{currency: amount}, reason, 0); err != nil {
+		return nil, err
+	}
+	// R37：钱包变动与审计同一事务。发币/回收是价值转移，
+	// 「余额变了但审计没写」等于一笔没有来源的资产流动；
+	// 符号仍按 R109 的口径落进事件名，负数不是「发放」。
+	if auditCtx != nil {
+		action := "grant_currency"
+		if amount < 0 {
+			action = "revoke_currency"
+		}
+		if err := s.AuditTx(ctx, tx, *auditCtx, action,
+			strconv.FormatInt(userID, 10),
+			map[string]any{"currency": currency, "amount": amount}); err != nil {
+			return nil, err
+		}
+	}
+	// 第 21 轮：道具（revive_token / gem_wash_token / mastery_reset）的
+	// 发放与回显。grantWallet 早就把 isWalletToken 转发到 grantToken
+	// （第 74 轮），但响应的 out 只装四货币 —— 后台发道具时**余额
+	// 不回显**，运营无法确认发放生效（只能去审计日志猜）。
+	if isWalletToken(currency) {
+		var balance int64
+		if err := tx.QueryRow(ctx,
+			`SELECT COALESCE((SELECT balance FROM user_tokens WHERE user_id = $1 AND token = $2), 0)`,
+			userID, currency).Scan(&balance); err != nil {
+			return nil, fmt.Errorf("read token balance: %w", err)
+		}
+		out[currency] = balance
+		return out, nil
+	}
+	w, err := s.loadWalletTx(ctx, tx, userID)
+	if err != nil {
+		return nil, err
+	}
+	out["coin"], out["gem"], out["energy"], out["keys"] = w.Coin, w.Gem, w.Energy, w.Keys
+	return out, nil
+}
+
+// AdminGrantCurrencyIdem 是发币/回收的幂等键版本（R86）。
+// 同 key+同请求体重放返回第一次的响应，余额只动一次；语义契约见 idempotency.go。
+func (s *Service) AdminGrantCurrencyIdem(ctx context.Context, userID int64,
+	currency string, amount int64, key, reqHash string, audit AdminAuditCtx) (body []byte, replayed bool, err error) {
+	// 校验与原方法同一顺序：参数 → 存在性 → 幂等事务。
+	if amount == 0 {
+		return nil, false, fmt.Errorf("%w: 数量为 0 的发放没有意义", ErrBadInput)
+	}
+	if amount > MaxAdminGrantAmount || amount < -MaxAdminGrantAmount {
+		return nil, false, fmt.Errorf("%w: 数量 %d 超出单次发放上限 %d（多半是手滑）",
+			ErrBadInput, amount, MaxAdminGrantAmount)
+	}
+	if err := s.assertUserExists(ctx, userID); err != nil {
+		return nil, false, err
+	}
+	reason := "admin_grant"
+	if amount < 0 {
+		reason = "admin_revoke"
+	}
+	return s.RunIdempotent(ctx, "admin.users.grant", key, reqHash,
+		func(tx pgx.Tx) (any, error) {
+			wallet, err := s.grantCurrencyTx(ctx, tx, userID, currency, amount, reason, &audit)
+			if err != nil {
+				return nil, err
+			}
+			return AdminGrantResp{Wallet: wallet}, nil
+		})
 }
 
 // assertUserExists 确认用户存在，不存在则 ErrNotFound。

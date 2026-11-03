@@ -90,6 +90,13 @@ func run() error {
 	}
 
 	svc := service.New(db, cfg)
+	// R82：限流阈值缩放（默认 1.0；压测/活动期由 RATE_LIMIT_SCALE 显式放宽，
+	// 启动日志留痕 —— 限流被放宽这件事必须一眼能看到）。
+	httpapi.SetRateLimitScale(cfg.RateLimitScale)
+	if cfg.RateLimitScale != 1.0 {
+		fmt.Printf("[来一炮 server] ⚠️ 限流阈值缩放 ×%.2f（RATE_LIMIT_SCALE；生产应为 1.0）\n",
+			cfg.RateLimitScale)
+	}
 	bootCtx, bootCancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer bootCancel()
 	created, err := svc.EnsureBootstrapAdmin(bootCtx, cfg.BootstrapAdminUser, cfg.BootstrapAdminPass)

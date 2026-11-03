@@ -64,6 +64,8 @@ func (s *Server) Register(app *fiber.App) {
 	// 而且「压缩后」指的是压缩前就已存在的 JSON 体积，不是 gzip 之后。
 	// 已按实测数字改写。
 	app.Use(compress.New())
+	// R84：trace id 必须在 requestLogger 之前（访问日志要带 req=）。
+	app.Use(traceMiddleware())
 	app.Use(requestLogger())
 	app.Use(cors(s.Svc.Cfg().CORSAllowOrigins))
 

@@ -4,11 +4,15 @@
 package httpapi
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"log"
+	"regexp"
 	"runtime/debug"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -38,6 +42,188 @@ type APIError = httperr.APIError
 type ErrorBody = httperr.ErrorBody
 
 // --- 中间件 ---
+
+// --- 请求级追踪标识（R84）---
+//
+// # 解决什么
+//
+// 一次请求此前分散在三处日志里且零关联：访问日志（requestLogger）、
+// 5xx 错误详情（httperr.Render）、慢结算日志（service.recordSettleTiming）。
+// 出问题时没法把「这个玩家的这次 503」和「那条 30s 超时的 SQL」串起来
+// （R82 死锁现场：错误行与访问行是两行无关联字段的日志）。
+//
+// # 形状
+//
+// 每个请求一个 trace id：客户端/上游带 `X-Request-Id` 且**过白名单**则继承，
+// 否则服务端重新生成（16 字节 crypto/rand 的 hex，32 字符）。
+// 出现在：① 访问日志 ② 错误详情日志 ③ 慢结算日志 ④ 响应头 X-Request-Id
+// （客户端报障时提供，服务端按它反查全部日志行）。
+//
+// ⚠️ **为什么不能把客户端值原样回显进日志**：`X-Request-Id` 是任意的
+// 客户端输入，原样写日志 = 日志注入面（`\r\n` 伪造日志行、超长串爆磁盘、
+// 塞进敏感词绕过禁词检查）。白名单只放 `A-Za-z0-9_-`（8~64 字符）；
+// 不合法就**重新生成**而不是拒绝请求 —— 这个头是便利设施不是契约，
+// 为一个坏头 400 会误伤正常代理。
+//
+// service 层经 `ctx.Value("trace_id")` 读取（fiber 的 Locals 落在
+// fasthttp userValues 上，`*fasthttp.RequestCtx` 作为 context.Context
+// 时按 string key 原样返回 —— 这条链路由 trace_middleware_test 钉住）。
+const traceIDLocalsKey = "trace_id"
+
+// traceIDPattern 是继承值的格式白名单（含服务端生成值的形状）。
+var traceIDPattern = regexp.MustCompile(`^[A-Za-z0-9_-]{8,64}$`)
+
+// newTraceID 生成服务端 trace id（32 个 hex 字符，落在白名单内）。
+func newTraceID() string {
+	var b [16]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		// crypto/rand 失败时不降级成可预测 id —— 它是关联标识不是安全凭证，
+		// 但「可预测」会让攻击者往别人报障的 id 上伪造日志行。直接抬错。
+		panic(fmt.Sprintf("crypto/rand 不可用: %v", err))
+	}
+	return hex.EncodeToString(b[:])
+}
+
+// traceMiddleware 生成或继承 trace id，写 Locals + 响应头。
+// 必须挂在 requestLogger **之前**（访问日志要带上它）。
+func traceMiddleware() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		id := c.Get("X-Request-Id")
+		if !traceIDPattern.MatchString(id) {
+			id = newTraceID()
+		}
+		c.Locals(traceIDLocalsKey, id)
+		c.Set("X-Request-Id", id)
+		return c.Next()
+	}
+}
+
+// traceIDOf 从 fiber 上下文取 id（中间件之后必有；防御性兜底 "-"，
+// 保证日志格式字段齐整）。
+func traceIDOf(c *fiber.Ctx) string {
+	if v, ok := c.Locals(traceIDLocalsKey).(string); ok && v != "" {
+		return v
+	}
+	return "-"
+}
+
+// --- 访问日志身份标识（R85）---
+//
+// # 脱敏边界（测试钉住，别破）
+//
+// 访问日志只允许出现四种身份形态：
+//   - `user#N`：内部数字 user id（认证成功，Locals 已有 —— **零新增查询**，
+//     身份来自 requireUser 的认证结果）；
+//   - `admin#N`：内部数字 admin id（requireAdmin 的认证结果。
+//     R86 实抓：没有它时管理端请求全部误标 bad_token，
+//     运营会以为后台正在被爆破）；
+//   - `bad_token`：带了 Authorization 头但没认证上（无效/过期/伪造 ——
+//     这本身就是「有人在拿坏令牌探路」的运营信号；令牌内容绝不写出）；
+//   - `anon`：没带凭证的公开请求。
+//
+// 绝不出现：昵称、openid、guest_token、JWT 串、手机号、admin 用户名。
+// 昵称恰好是数字时也不会混进 user# 字段（值只来自 Locals 的 int64）。
+func accessIdentity(c *fiber.Ctx) string {
+	if uid, ok := c.Locals("user_id").(int64); ok && uid > 0 {
+		return "user#" + strconv.FormatInt(uid, 10)
+	}
+	if aid, ok := c.Locals("admin_id").(int64); ok && aid > 0 {
+		return "admin#" + strconv.FormatInt(aid, 10)
+	}
+	if c.Get("Authorization") != "" {
+		return "bad_token"
+	}
+	return "anon"
+}
+
+// accessAgg 是访问日志的进程内聚合（R85 要求 2：运营信号）。
+//
+// 聚合两个口径：
+//  1. 身份类 × 状态段计数（anon/bad_token/user × 2xx/4xx/5xx，低基数），
+//     「认证失败率」「匿名流量占比」直接可算；
+//  2. 错误 top-N（user#N → 4xx+5xx 计数）：「谁在被打/谁在刷」。
+//
+// ⚠️ **进程内计数，多实例下不是全局口径**：N 个副本各记一份，
+// 全局值 = 各副本之和（Prometheus sum() 聚合即可）；top-N 全局语义
+// 同理需跨实例合并，单实例部署下本表即全局。
+type accessAgg struct {
+	mu       sync.Mutex
+	counts   map[string]map[string]int64 // identity → statusClass → n
+	errByUID map[int64]int64             // user#N → 4xx+5xx 次数
+}
+
+func newAccessAgg() *accessAgg {
+	return &accessAgg{counts: map[string]map[string]int64{}, errByUID: map[int64]int64{}}
+}
+
+// accessErrTopCap 是 errByUID 的键数上限：超出即整表清空重来
+// （与 AdminUsersCountCacheTTL 的键数上限同一哲学：宁可一次全丢，
+// 不留无界增长；丢的代价是 top-N 重新积累一个窗口）。
+const accessErrTopCap = 256
+
+// recordAccess 每个请求一条：身份类计数 + 错误用户的 top-N 计数。
+func (a *accessAgg) recordAccess(identity string, status int, uid int64) {
+	class := "2xx"
+	switch {
+	case status >= 500:
+		class = "5xx"
+	case status >= 400:
+		class = "4xx"
+	}
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	m := a.counts[identity]
+	if m == nil {
+		m = map[string]int64{}
+		a.counts[identity] = m
+	}
+	m[class]++
+	if uid > 0 && status >= 400 {
+		if len(a.errByUID) >= accessErrTopCap {
+			a.errByUID = map[int64]int64{}
+		}
+		a.errByUID[uid]++
+	}
+}
+
+// accessAggSnapshot 是 /metrics 渲染用的只读快照。
+type accessAggSnapshot struct {
+	Counts map[string]map[string]int64
+	TopErr []accessErrEntry
+}
+
+type accessErrEntry struct {
+	UserID int64
+	Errors int64
+}
+
+func (a *accessAgg) snapshot() accessAggSnapshot {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	out := accessAggSnapshot{Counts: map[string]map[string]int64{}}
+	for id, m := range a.counts {
+		cp := map[string]int64{}
+		for k, v := range m {
+			cp[k] = v
+		}
+		out.Counts[id] = cp
+	}
+	for uid, n := range a.errByUID {
+		out.TopErr = append(out.TopErr, accessErrEntry{UserID: uid, Errors: n})
+	}
+	// 只留前 10（metrics 标签基数纪律）。
+	for i := 0; i < len(out.TopErr); i++ {
+		for j := i + 1; j < len(out.TopErr); j++ {
+			if out.TopErr[j].Errors > out.TopErr[i].Errors {
+				out.TopErr[i], out.TopErr[j] = out.TopErr[j], out.TopErr[i]
+			}
+		}
+	}
+	if len(out.TopErr) > 10 {
+		out.TopErr = out.TopErr[:10]
+	}
+	return out
+}
 
 // --- 访问日志分级（LOG_LEVEL 的消费方，第 4 轮）---
 //
@@ -97,7 +283,16 @@ func logAt(level logLevel, format string, args ...any) {
 	log.Printf(format, args...)
 }
 
+// accessMetrics 是访问日志聚合的进程内实例（R85）。
+//
+// 包级与 R72 的 var 阈值同一模式：生产只写（requestLogger 每请求一条），
+// /metrics 渲染读快照；测试整体替换实例即可隔离，不必重启进程。
+var accessMetrics = newAccessAgg()
+
 // requestLogger 记录访问日志并写 X-Request-Duration（分级见 logLevel）。
+//
+// 字段结构固定（R85，便于采集）：`req=<trace> id=<identity> <方法> <路径> -> <状态> (<耗时>)`
+// —— 键值对前缀固定，采集端按空格切分即可，不要往中间插自由文本。
 func requestLogger() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		start := time.Now()
@@ -112,21 +307,28 @@ func requestLogger() fiber.Handler {
 		if err != nil {
 			status = httperr.StatusOf(err)
 		}
+		// R85：身份脱敏（user#N / bad_token / anon，零新增查询）+ 运营聚合。
+		identity := accessIdentity(c)
+		var uid int64
+		if v, ok := c.Locals("user_id").(int64); ok {
+			uid = v
+		}
+		accessMetrics.recordAccess(identity, status, uid)
 		switch {
 		case status >= 500:
 			// 5xx 的真实原因由 httperr.Render 按 error/warn 级落日志，不重复；
 			// 这里只补一行「哪个端点、耗时多少」的访问记录。
-			logAt(logError, "[http] %s %s -> %d (%s)",
-				c.Method(), c.OriginalURL(), status, dur)
+			logAt(logError, "[http] req=%s id=%s %s %s -> %d (%s)",
+				traceIDOf(c), identity, c.Method(), c.OriginalURL(), status, dur)
 		case status >= 400:
-			logAt(logWarn, "[http] %s %s -> %d (%s)",
-				c.Method(), c.OriginalURL(), status, dur)
+			logAt(logWarn, "[http] req=%s id=%s %s %s -> %d (%s)",
+				traceIDOf(c), identity, c.Method(), c.OriginalURL(), status, dur)
 		case dur >= slowRequestThreshold:
-			logAt(logInfo, "[http] %s %s -> %d (%s，慢请求)",
-				c.Method(), c.OriginalURL(), status, dur)
+			logAt(logInfo, "[http] req=%s id=%s %s %s -> %d (%s，慢请求)",
+				traceIDOf(c), identity, c.Method(), c.OriginalURL(), status, dur)
 		default:
-			logAt(logDebug, "[http] %s %s -> %d (%s)",
-				c.Method(), c.OriginalURL(), status, dur)
+			logAt(logDebug, "[http] req=%s id=%s %s %s -> %d (%s)",
+				traceIDOf(c), identity, c.Method(), c.OriginalURL(), status, dur)
 		}
 		return err
 	}
@@ -584,7 +786,7 @@ const (
 // 否则限流形同虚设。这一点写在这里而不是等出事时再想起来。
 func perIPLimiter(name string, limitPerMinute int) fiber.Handler {
 	return limiter.New(limiter.Config{
-		Max:        limitPerMinute,
+		Max:        scaleLimit(limitPerMinute),
 		Expiration: time.Minute,
 		KeyGenerator: func(c *fiber.Ctx) string {
 			return name + ":" + c.IP()
@@ -701,6 +903,32 @@ var (
 	globalSettleLimit    = 1200
 )
 
+// rateLimitScale 按 RATE_LIMIT_SCALE 缩放全部限流阈值（R82）。
+//
+// 默认 1.0；由 `cmd/api` 启动时 `SetRateLimitScale(cfg.RateLimitScale)`
+// 写入一次，之后只读（与 R72 的 var 阈值「生产代码只读不写」同一约定；
+// 路由装配发生在启动期，limiter 构造时取值即可，无需原子类型）。
+var rateLimitScale = 1.0
+
+// SetRateLimitScale 设置限流阈值缩放系数；合法范围 [0.01, 100000]，
+// 越界/非正回退 1.0 —— 这个 env 不是「关闭限流」的后门（config 注释同理；
+// 上限取大的理由见 config.RateLimitScale：压测单 IP 闭环 QPS 可达数千）。
+func SetRateLimitScale(f float64) {
+	if f < 0.01 || f > 100000 {
+		f = 1.0
+	}
+	rateLimitScale = f
+}
+
+// scaleLimit 应用缩放；下限 1（缩放不能把端点封死成 0 次）。
+func scaleLimit(limitPerMinute int) int {
+	n := int(float64(limitPerMinute) * rateLimitScale)
+	if n < 1 {
+		return 1
+	}
+	return n
+}
+
 // globalLimiter 返回「全端点每分钟 N 次」的限流中间件（所有 IP、所有账号
 // 共享一个桶）。
 //
@@ -709,7 +937,7 @@ var (
 // 会把全站共享预算吃完，把单点故障变成全站故障。
 func globalLimiter(name string, limitPerMinute int) fiber.Handler {
 	return limiter.New(limiter.Config{
-		Max:        limitPerMinute,
+		Max:        scaleLimit(limitPerMinute),
 		Expiration: time.Minute,
 		KeyGenerator: func(c *fiber.Ctx) string {
 			return name
@@ -724,7 +952,7 @@ func globalLimiter(name string, limitPerMinute int) fiber.Handler {
 // authRateLimit 返回按登录身份计数的限流中间件。
 func authRateLimit(name string, limitPerMinute int) fiber.Handler {
 	return limiter.New(limiter.Config{
-		Max:        limitPerMinute,
+		Max:        scaleLimit(limitPerMinute),
 		Expiration: time.Minute,
 		KeyGenerator: func(c *fiber.Ctx) string {
 			return fmt.Sprintf("%s:user%d", name, userIDFrom(c))

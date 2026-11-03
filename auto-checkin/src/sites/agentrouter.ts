@@ -31,7 +31,12 @@ export const agentrouterAdapter: SiteAdapter = {
         const shot = await ctx.saveScreenshot(page, "agentrouter-login-fail");
         return fail("登录失败", shot);
       }
-      const beforeQuota = first.user.quota ?? await readKnownQuota(page, ctx.log);
+      let beforeQuota = first.user.quota ?? await readKnownQuota(page, ctx.log);
+      if (beforeQuota === null) {
+        // 领取前余额被 WAF 拦：有头模式等用户拖完滑块再读，而不是直接跳过。
+        const waited = await waitForQuotaAfterWaf(page, ctx);
+        if (waited !== null) beforeQuota = waited;
+      }
       if (beforeQuota === null) {
         // 领取前余额都读不到，后面算不出差值，注定无法判定结果。
         // 此时退出重登只会再打一轮 OAuth，对被风控的站点是雪上加霜，直接失败。
@@ -62,7 +67,14 @@ export const agentrouterAdapter: SiteAdapter = {
 
       // 4. 算差值；无法确认前后余额时必须失败，不能把未知状态伪装成 already。
       const fresh = await fetchSelf(page, BASE_URL, ctx.log);
-      const afterQuota = fresh?.quota ?? second.user?.quota ?? await readKnownQuota(page, ctx.log);
+      let afterQuota = fresh?.quota ?? second.user?.quota;
+      if (afterQuota == null) {
+        // fresh.quota 可能是 null（WAF 拦截但 localStorage 有用户对象），
+        // second.user 可能是 undefined（重登未确认）——两种都要等 WAF 放行。
+        // 用 == null 而非 === null，否则 undefined 漏判、滑块等待不触发。
+        afterQuota = await waitForQuotaAfterWaf(page, ctx);
+      }
+      afterQuota ??= await readKnownQuota(page, ctx.log);
       if (beforeQuota === null || afterQuota === null) {
         const shot = await ctx.saveScreenshot(page, "agentrouter-balance-unknown");
         return fail(
@@ -99,6 +111,42 @@ async function readKnownQuota(
     const user = await fetchSelf(page, BASE_URL, log);
     if (user?.quota !== null && user?.quota !== undefined) return user.quota;
     await page.waitForTimeout(1000);
+  }
+  return null;
+}
+
+/**
+ * 重登后余额被阿里云 WAF 拦：有头模式下浏览器窗口还开着，等用户手动拖完滑块。
+ * 无头模式（计划任务）没有窗口，等也白等——直接返回 null 让上层走失败分支。
+ * 返回读到的 quota，超时返回 null。
+ *
+ * 关键：WAF 挑战页（滑动验证）必须作为**文档渲染**（page.goto）滑块才可见可拖；
+ * fetch() 拿到的挑战页 HTML 永远不渲染，滑块不可见，用户无从拖动。
+ */
+async function waitForQuotaAfterWaf(
+  page: import("playwright").Page,
+  ctx: AdapterContext,
+): Promise<number | null> {
+  if (ctx.config.browser.headless) return null;
+  // 先把挑战页渲染成文档（滑块才可见）
+  ctx.log("检测到阿里云 WAF 人机验证（滑块），正在打开验证页…");
+  await page.goto(`${BASE_URL}/api/user/self`, { waitUntil: "domcontentloaded", timeout: 30000 }).catch(() => {});
+  await page.waitForTimeout(2000);
+  ctx.log("👉 请在浏览器窗口里按住滑块，拖动到最右侧（放行后自动继续签到）");
+
+  const deadline = Date.now() + 4 * 60 * 1000;
+  let tries = 0;
+  while (Date.now() < deadline) {
+    await page.waitForTimeout(3000);
+    tries++;
+    const user = await fetchSelf(page, BASE_URL, ctx.log);
+    if (user?.quota != null && user?.quota != undefined) {
+      ctx.log(`✅ WAF 已放行（quota=${user.quota}），继续签到`);
+      return user.quota;
+    }
+    if (tries % 8 === 0) {
+      ctx.log(`…余额接口仍被 WAF 拦截（已等 ${Math.round((tries * 3) / 60)} 分钟），请继续拖动滑块`);
+    }
   }
   return null;
 }

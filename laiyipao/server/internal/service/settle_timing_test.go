@@ -184,7 +184,8 @@ func TestSettleSlowLogContentDiscipline(t *testing.T) {
 	if !strings.Contains(logged, "[settle-slow]") {
 		t.Fatalf("阈值 1ms 下没有打慢日志")
 	}
-	for _, want := range []string{"battle=", "user=", "total=", "insert=", "recompute=", "tail=", "tasks="} {
+	// R84：慢日志必须带 req=（无 HTTP 上下文时为 "-"，字段必须存在）。
+	for _, want := range []string{"req=", "battle=", "user=", "total=", "insert=", "recompute=", "tail=", "tasks="} {
 		if !strings.Contains(logged, want) {
 			t.Errorf("慢日志缺 %q：%q", want, logged)
 		}

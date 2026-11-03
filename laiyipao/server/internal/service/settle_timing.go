@@ -25,10 +25,25 @@ package service
 // c=32 +0.58ms/行），不在这里假装能拆。
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"time"
 )
+
+// TraceIDFrom 从请求上下文取 R84 的 trace id（没有时返回 "-"）。
+//
+// 链路：httpapi.traceMiddleware 把 id 写进 fiber Locals（fasthttp
+// userValues）→ handler 调 service 时传的 `c.Context()`
+// （*fasthttp.RequestCtx 作为 context.Context）按同一 string key 返回。
+// 服务内方法约定：要打「属于某次请求」的日志时用它取 id，
+// 不要自己发明第二套关联字段。
+func TraceIDFrom(ctx context.Context) string {
+	if v, ok := ctx.Value("trace_id").(string); ok && v != "" {
+		return v
+	}
+	return "-"
+}
 
 // SettleTimings 是一次结算的分段耗时。
 type SettleTimings struct {
@@ -131,17 +146,21 @@ func (s *Service) SettleStats() SettleStats {
 }
 
 // recordSettleTiming 每次结算末尾调用：聚合 + 超预算打可定位慢日志。
-func (s *Service) recordSettleTiming(t SettleTimings, battleID, userID int64) {
+//
+// R84：慢日志带 req=<trace id>（与访问日志/错误详情同一标识）——
+// 慢结算不再是一座孤岛，能拼回它所属的那次 HTTP 请求。
+// id 来自中间件的白名单值或服务端生成值，本身即合法日志内容（无注入面）。
+func (s *Service) recordSettleTiming(ctx context.Context, t SettleTimings, battleID, userID int64) {
 	threshold := s.Cfg().SettleSlowMs
 	slow := threshold > 0 && t.Total.Milliseconds() >= int64(threshold)
 	s.settleAgg.record(t, slow)
 	if slow {
 		// ⚠️ 内容纪律（R80 要求 3）：只允许 id 与毫秒数。
 		// 加字段前先想「它会不会是凭证/昵称/IP」——是就别放。
-		fmt.Printf("[settle-slow] battle=%d user=%d total=%dms "+
+		fmt.Printf("[settle-slow] req=%s battle=%d user=%d total=%dms "+
 			"token_load=%d skills=%d build_pre=%d recompute=%d "+
 			"claim=%d prefetch=%d wallet=%d progress=%d stars=%d tasks=%d insert=%d tail=%d\n",
-			battleID, userID, t.Total.Milliseconds(),
+			TraceIDFrom(ctx), battleID, userID, t.Total.Milliseconds(),
 			t.TokenLoad.Milliseconds(), t.SkillsCheck.Milliseconds(),
 			t.BuildLoadPre.Milliseconds(), t.Recompute.Milliseconds(),
 			t.TxClaim.Milliseconds(), t.TxPrefetch.Milliseconds(), t.TxWallet.Milliseconds(),

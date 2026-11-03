@@ -113,6 +113,45 @@ func TestGlobalLimiterMechanism(t *testing.T) {
 	}
 }
 
+// TestRateLimitScaleApplies：R82 的 RATE_LIMIT_SCALE 真的作用于限流构造。
+//
+// 这守的是「缩放开关接线断了」的一类错误：env 读了、config 有了、
+// 但 limiter 构造时没用 —— 压测与活动放宽就会静默失效，
+// 而故障形态是「以为放宽了其实在限流」，比没有开关更难查。
+func TestRateLimitScaleApplies(t *testing.T) {
+	SetRateLimitScale(3)
+	t.Cleanup(func() { SetRateLimitScale(1) })
+
+	app := fiber.New(fiber.Config{ErrorHandler: httperr.Render, DisableStartupMessage: true})
+	app.Get("/x", globalLimiter("probe_scale", 3), func(c *fiber.Ctx) error { return c.SendString("ok") })
+
+	// 3 × scale(3) = 9 次放行，第 10 次 429。
+	for i := 1; i <= 10; i++ {
+		st, _, _ := hitRaw(t, app, http.MethodGet, "/x", "", nil)
+		if i <= 9 && st != fiber.StatusOK {
+			t.Fatalf("第 %d 次应放行（3 阈值 ×3 缩放），实际 %d", i, st)
+		}
+		if i == 10 && st != fiber.StatusTooManyRequests {
+			t.Fatalf("第 10 次应 429，实际 %d", st)
+		}
+	}
+}
+
+// TestSetRateLimitScaleClamps：缩放系数的钳位与下限。
+func TestSetRateLimitScaleClamps(t *testing.T) {
+	defer SetRateLimitScale(1)
+	for _, bad := range []float64{0, -1, 0.001, 100001} {
+		SetRateLimitScale(bad)
+		if rateLimitScale != 1.0 {
+			t.Errorf("SetRateLimitScale(%v) 应回退 1.0，实际 %v", bad, rateLimitScale)
+		}
+	}
+	SetRateLimitScale(0.5)
+	if got := scaleLimit(1); got != 1 {
+		t.Errorf("scaleLimit(1)×0.5 应有下限 1，实际 %d（端点不能被缩放封死成 0 次）", got)
+	}
+}
+
 // TestGlobalSettleLimitSpansAccounts：全局结算桶跨账号共享。
 //
 // 改前同样的打法（3 账号 × 40）拿到 120×200 / 0×429；改后把全局阈值

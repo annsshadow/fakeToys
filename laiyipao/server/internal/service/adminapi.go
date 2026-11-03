@@ -1298,18 +1298,14 @@ func (s *Service) AdminCreateAnnouncement(ctx context.Context, title, body strin
 		at = &now
 	}
 	// R39：公告发布与「谁发布的」审计同一事务；审计写不进去就不发布。
+	var auditCtx *AdminAuditCtx
+	if len(audit) > 0 {
+		auditCtx = &audit[0]
+	}
 	err := s.DB.Tx(ctx, func(tx txType) error {
-		if err := tx.QueryRow(ctx,
-			`INSERT INTO announcements (title, body, published, published_at) VALUES ($1,$2,$3,$4) RETURNING id`,
-			title, body, published, at).Scan(&id); err != nil {
-			return fmt.Errorf("create announcement: %w", err)
-		}
-		if len(audit) > 0 {
-			if err := s.AuditTx(ctx, tx, audit[0], "create_announcement", title, nil); err != nil {
-				return err
-			}
-		}
-		return nil
+		var txErr error
+		id, txErr = s.createAnnouncementTx(ctx, tx, title, body, published, at, auditCtx)
+		return txErr
 	})
 	if err != nil {
 		return AdminAnnouncementView{}, err
@@ -1320,6 +1316,55 @@ func (s *Service) AdminCreateAnnouncement(ctx context.Context, title, body strin
 	return AdminAnnouncementView{
 		ID: id, Title: title, Body: body, Published: published, PublishedAt: at,
 	}, nil
+}
+
+// createAnnouncementTx 是 AdminCreateAnnouncement 的事务内部分（R86 抽出，
+// 幂等键版本在同一事务里复用）。
+func (s *Service) createAnnouncementTx(ctx context.Context, tx pgx.Tx,
+	title, body string, published bool, at *time.Time, auditCtx *AdminAuditCtx) (int, error) {
+	var id int
+	if err := tx.QueryRow(ctx,
+		`INSERT INTO announcements (title, body, published, published_at) VALUES ($1,$2,$3,$4) RETURNING id`,
+		title, body, published, at).Scan(&id); err != nil {
+		return 0, fmt.Errorf("create announcement: %w", err)
+	}
+	if auditCtx != nil {
+		if err := s.AuditTx(ctx, tx, *auditCtx, "create_announcement", title, nil); err != nil {
+			return 0, err
+		}
+	}
+	return id, nil
+}
+
+// AdminCreateAnnouncementIdem 是公告创建的幂等键版本（R86）。
+func (s *Service) AdminCreateAnnouncementIdem(ctx context.Context,
+	title, body string, published bool, key, reqHash string, audit AdminAuditCtx) (bodyBytes []byte, replayed bool, err error) {
+	if title == "" || body == "" {
+		return nil, false, fmt.Errorf("%w: 标题与正文不能为空", ErrBadInput)
+	}
+	var at *time.Time
+	if published {
+		now := time.Now()
+		at = &now
+	}
+	out, replayed, err := s.RunIdempotent(ctx, "admin.announcements.create", key, reqHash,
+		func(tx pgx.Tx) (any, error) {
+			id, err := s.createAnnouncementTx(ctx, tx, title, body, published, at, &audit)
+			if err != nil {
+				return nil, err
+			}
+			return AdminAnnouncementResp{Item: AdminAnnouncementView{
+				ID: id, Title: title, Body: body, Published: published, PublishedAt: at,
+			}}, nil
+		})
+	if err != nil {
+		return nil, false, err
+	}
+	if !replayed {
+		// 只有真的创建了才需要让玩家端立刻可见；重放没有新公告。
+		s.announcementsCache.flush()
+	}
+	return out, replayed, nil
 }
 
 // AdminUpdateAnnouncement 更新公告（2026-10-31 实质优化第 23 轮）。
@@ -1590,63 +1635,100 @@ func (s *Service) AdminCreateRedeemCodes(ctx context.Context, count int, reward 
 		return nil, err
 	}
 	out := make([]AdminRedeemCodeView, 0, count)
-	seen := map[string]bool{}
+	var auditCtx *AdminAuditCtx
+	if len(audit) > 0 {
+		auditCtx = &audit[0]
+	}
 	// 整批必须**同一事务**落库。改前是逐条 autocommit：第 N 条失败时
 	// 接口返回错误，库里却已留下前 N-1 个码 —— 运营拿不到清单，既不知道
 	// 哪些码生效，重试又会生成一批新码（旧码仍可兑，奖励重复发放）。
 	err = s.DB.Tx(ctx, func(tx txType) error {
-		for len(out) < count {
-			code, err := randomRedeemCode(12)
-			if err != nil {
-				return fmt.Errorf("generate redeem code: %w", err)
-			}
-			if seen[code] {
-				continue
-			}
-			// 唯一冲突用 savepoint 隔离：PG 里一条语句失败会把整个事务判为
-			// aborted，不隔离的话后续 INSERT 全部报 25P02，没法「换码重试」。
-			sp, err := tx.Begin(ctx)
-			if err != nil {
-				return err
-			}
-			var id int
-			if err := sp.QueryRow(ctx,
-				`INSERT INTO redeem_codes (code, reward, max_uses, expires_at)
-				 VALUES ($1,$2,$3,$4) RETURNING id`,
-				code, raw, maxUses, expiresAt).Scan(&id); err != nil {
-				_ = sp.Rollback(ctx)
-				if isUniqueViolation(err) {
-					continue // 极小概率冲突：换码重试
-				}
-				return fmt.Errorf("create redeem code: %w", err)
-			}
-			if err := sp.Commit(ctx); err != nil {
-				return err
-			}
-			seen[code] = true
-			out = append(out, AdminRedeemCodeView{
-				ID: id, Code: code, Reward: reward, MaxUses: maxUses,
-				ExpiresAt: expiresAt, Enabled: true,
-			})
-		}
-		// R34：整批码与「谁生成了这一批」的审计在同一事务里提交。
-		// 审计写不进去就一个码都不留 —— 宁可让运营重试，也不留一批
-		// 没有任何来源证据的可兑换码（尤其本接口一次最多 100 个）。
-		if len(audit) > 0 {
-			// 只为审计记数量；逐个码不写进 detail（100 个码会让审计行膨胀，
-			// 清单本来就在 redeem_codes 里，可以按生成时间反查）。
-			if err := s.AuditTx(ctx, tx, audit[0], "create_redeem_code", "batch", map[string]any{
-				"count": count, "reward": reward, "max_uses": maxUses, "expires_at": expiresAt,
-			}); err != nil {
-				return err
-			}
-		}
-		return nil
+		var txErr error
+		out, txErr = s.createRedeemCodesTx(ctx, tx, count, raw, reward, maxUses, expiresAt, auditCtx)
+		return txErr
 	})
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
+}
+
+// createRedeemCodesTx 是 AdminCreateRedeemCodes 的事务内部分（R86 抽出，
+// 幂等键版本在同一事务里复用）。seen 去重与 savepoint 隔离冲突原样保留。
+func (s *Service) createRedeemCodesTx(ctx context.Context, tx pgx.Tx,
+	count int, raw []byte, reward map[string]int, maxUses int, expiresAt *time.Time,
+	auditCtx *AdminAuditCtx) ([]AdminRedeemCodeView, error) {
+	out := make([]AdminRedeemCodeView, 0, count)
+	seen := map[string]bool{}
+	for len(out) < count {
+		code, err := randomRedeemCode(12)
+		if err != nil {
+			return nil, fmt.Errorf("generate redeem code: %w", err)
+		}
+		if seen[code] {
+			continue
+		}
+		// 唯一冲突用 savepoint 隔离：PG 里一条语句失败会把整个事务判为
+		// aborted，不隔离的话后续 INSERT 全部报 25P02，没法「换码重试」。
+		sp, err := tx.Begin(ctx)
+		if err != nil {
+			return nil, err
+		}
+		var id int
+		if err := sp.QueryRow(ctx,
+			`INSERT INTO redeem_codes (code, reward, max_uses, expires_at)
+			 VALUES ($1,$2,$3,$4) RETURNING id`,
+			code, raw, maxUses, expiresAt).Scan(&id); err != nil {
+			_ = sp.Rollback(ctx)
+			if isUniqueViolation(err) {
+				continue // 极小概率冲突：换码重试
+			}
+			return nil, fmt.Errorf("create redeem code: %w", err)
+		}
+		if err := sp.Commit(ctx); err != nil {
+			return nil, err
+		}
+		seen[code] = true
+		out = append(out, AdminRedeemCodeView{
+			ID: id, Code: code, Reward: reward, MaxUses: maxUses,
+			ExpiresAt: expiresAt, Enabled: true,
+		})
+	}
+	// R34：整批码与「谁生成了这一批」的审计在同一事务里提交。
+	// 审计写不进去就一个码都不留 —— 宁可让运营重试，也不留一批
+	// 没有任何来源证据的可兑换码（尤其本接口一次最多 100 个）。
+	if auditCtx != nil {
+		// 只为审计记数量；逐个码不写进 detail（100 个码会让审计行膨胀，
+		// 清单本来就在 redeem_codes 里，可以按生成时间反查）。
+		if err := s.AuditTx(ctx, tx, *auditCtx, "create_redeem_code", "batch", map[string]any{
+			"count": count, "reward": reward, "max_uses": maxUses, "expires_at": expiresAt,
+		}); err != nil {
+			return nil, err
+		}
+	}
+	return out, nil
+}
+
+// AdminCreateRedeemCodesIdem 是批量生成兑换码的幂等键版本（R86）。
+// 响应形状与 handler 现状一致：{"items": [...]}。
+func (s *Service) AdminCreateRedeemCodesIdem(ctx context.Context,
+	count int, reward map[string]int, maxUses int, expiresAt *time.Time,
+	key, reqHash string, audit AdminAuditCtx) (body []byte, replayed bool, err error) {
+	if count <= 0 || count > 100 {
+		return nil, false, fmt.Errorf("%w: count 必须在 1..100", ErrBadInput)
+	}
+	raw, err := json.Marshal(reward)
+	if err != nil {
+		return nil, false, err
+	}
+	return s.RunIdempotent(ctx, "admin.redeem-codes.batch", key, reqHash,
+		func(tx pgx.Tx) (any, error) {
+			items, err := s.createRedeemCodesTx(ctx, tx, count, raw, reward, maxUses, expiresAt, &audit)
+			if err != nil {
+				return nil, err
+			}
+			return map[string]any{"items": items}, nil
+		})
 }
 
 // AdminExportRedeemCodes 导出兑换码列表为 CSV（2026-10-31 实质优化第 37 轮；

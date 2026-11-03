@@ -98,11 +98,17 @@ func Render(c *fiber.Ctx, err error) error {
 		return nil
 	}
 	status, code, message, logAs := classify(err)
+	// R84：错误详情行带 trace id（与 httpapi 中间件的 Locals key 一致；
+	// e2e 断言「错误日志含响应头同款 id」钉住这条链，两处不会悄悄分叉）。
+	reqID, _ := c.Locals("trace_id").(string)
+	if reqID == "" {
+		reqID = "-"
+	}
 	switch logAs {
 	case logWarnLevel:
-		logWarn("[http] %s %s -> %d: %v", c.Method(), c.OriginalURL(), status, err)
+		logWarn("[http] req=%s %s %s -> %d: %v", reqID, c.Method(), c.OriginalURL(), status, err)
 	case logErrorLevel:
-		logError("[http] %s %s -> %d: %v", c.Method(), c.OriginalURL(), status, err)
+		logError("[http] req=%s %s %s -> %d: %v", reqID, c.Method(), c.OriginalURL(), status, err)
 	}
 	return write(c, status, code, message)
 }
@@ -149,6 +155,10 @@ func classify(err error) (status int, code, message string, logAs int) {
 		return fiber.StatusNotFound, CodeNotFound, err.Error(), logNone
 	case errors.Is(err, service.ErrBadInput):
 		return fiber.StatusBadRequest, CodeBadInput, err.Error(), logNone
+	case errors.Is(err, service.ErrIdemConflict):
+		// 409 而不是 400：key 与请求体各自合法，只是「同键换了体」，
+		// 客户端必须能区分「重放成功」与「键被撞」。
+		return fiber.StatusConflict, CodeIdempotencyConflict, err.Error(), logNone
 	case errors.Is(err, service.ErrExportTooLarge):
 		// 413 而不是 400：参数没写错，是筛选范围太宽导致结果超上限。
 		return fiber.StatusRequestEntityTooLarge, CodeExportTooLarge, err.Error(), logNone

@@ -117,6 +117,16 @@ func (c *ttlCache[T]) put(v T, now time.Time) {
 //
 // `load` 在锁外执行，绝不会持锁跑查询。
 //
+// ⚠️ **禁止在事务作用域内调用**（DB.Tx 闭包及其下游函数）。
+//
+// 未命中时 loader 会从连接池**再取一条**连接执行查询；而事务调用方
+// 手里已经占着一条。并发 ≥ 池上限且缓存冷时：N 个事务占满池互等
+// loader、loader 等池连接 —— PG 侧完全不可见，表现为 503 刷屏
+// 30~60s（R82 的 tasksCache 死锁，pool_deadlock_r82_test 守）。
+// 事务内需要缓存数据时，用「命中走内存、未命中用事务自己的连接加载」
+// 的形状（见 taskConfigsForTx），或把 getOrLoad 挪到事务开始之前。
+// 静态守卫：tx_pool_guard_test.go（事务作用域内出现本调用即红）。
+//
 // # 加载上下文与首个请求解耦（第 3 轮）
 //
 // `load` 收到的 ctx 不是请求的 ctx：它是 `WithoutCancel(请求ctx)` 加一份

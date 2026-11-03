@@ -311,8 +311,8 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 			// 必须同时留一行服务端日志 —— 否则「台账里有不符但结算成功」
 			// 这件事只有主动查台账的人看得见。
 			fmt.Fprintf(os.Stderr,
-				"[recompute] replay_skills 不符但未拒发（mode=%s, user=%d, level=%d）\n",
-				mode, userID, tok.LevelID)
+				"[recompute] req=%s replay_skills 不符但未拒发（mode=%s, user=%d, level=%d）\n",
+				TraceIDFrom(ctx), mode, userID, tok.LevelID)
 		}
 	}
 	tm.SkillsCheck = time.Since(segStart)
@@ -628,7 +628,7 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 
 	// R80：成功结算入账分段耗时（聚合 + 超阈值慢日志 + 探针采样钩子）。
 	tm.Total = time.Since(tmStart)
-	s.recordSettleTiming(tm, resp.BattleID, userID)
+	s.recordSettleTiming(ctx, tm, resp.BattleID, userID)
 	if settleTimingProbe != nil {
 		settleTimingProbe(tm)
 	}
@@ -1001,17 +1001,10 @@ type taskConfig struct {
 	Reward map[string]int `json:"reward"`
 }
 
-// loadTaskConfigs 是任务静态配置的共享加载器（tasksCache 的 loader，
-// LoadTasks 与 bumpTasks 同源 —— 第 9 轮）。
-func (s *Service) loadTaskConfigs(ctx context.Context) ([]taskConfig, error) {
-	rows, err := s.pool.Query(ctx, `
-		SELECT id, code, name, scope, target, metric, reward
-		FROM tasks WHERE enabled ORDER BY id`)
-	if err != nil {
-		return nil, fmt.Errorf("load tasks: %w", err)
-	}
+// scanTaskConfigs 是任务配置行扫描的共用段（loadTaskConfigs 与
+// taskConfigsForTx 两条取数路径同一份解析，避免两处各写一份漂移）。
+func scanTaskConfigs(rows pgx.Rows) ([]taskConfig, error) {
 	defer rows.Close()
-
 	out := []taskConfig{}
 	for rows.Next() {
 		var v taskConfig
@@ -1030,7 +1023,63 @@ func (s *Service) loadTaskConfigs(ctx context.Context) ([]taskConfig, error) {
 	return out, rows.Err()
 }
 
+// loadTaskConfigs 是任务静态配置的共享加载器（tasksCache 的 loader，
+// LoadTasks 与 bumpTasks 同源 —— 第 9 轮）。
+func (s *Service) loadTaskConfigs(ctx context.Context) ([]taskConfig, error) {
+	rows, err := s.pool.Query(ctx, `
+		SELECT id, code, name, scope, target, metric, reward
+		FROM tasks WHERE enabled ORDER BY id`)
+	if err != nil {
+		return nil, fmt.Errorf("load tasks: %w", err)
+	}
+	return scanTaskConfigs(rows)
+}
+
+// taskConfigsForTx 给**事务内**的 bumpTasks 提供任务配置：
+// 命中走内存；未命中用**事务自己的连接**加载并回填缓存。
+//
+// # 为什么不走 getOrLoad（R82 压测照出来的死锁，pool_deadlock_r82_test 守）
+//
+// getOrLoad 未命中时由 singleflight loader 从**池**再拿一条连接执行
+// loadTaskConfigs；而 bumpTasks 一定在事务内被调用（SignIn/SettleBattle），
+// 调用方手里已经占着一条池连接。并发 ≥ 池上限且缓存冷时：
+// N 个事务各占一条连接（池空）→ 全部阻塞等 loader → loader 等池连接 →
+// 互等。PG 侧完全看不到（等池发生在 Go 侧），表现为「库一切正常，
+// 服务 503 刷屏 30~60s（cacheLoadTimeout 才解锁）」。
+//
+// 用事务自己的连接加载后：命中零连接、未命中零**新增**连接，
+// 这条路径在结构上不可能再互等。
+//
+// # 代价（如实记录）
+//
+// 放弃 singleflight 的「惊群压一次」：TTL 边界上多个事务会各查一次
+// tasks 表（12 行静态表、亚毫秒）——第 9 轮引入缓存前本来就是这个成本，
+// 每分钟最多一次，可忽略。回填是幂等覆盖写（同一份静态配置）。
+// LoadTasks（读路径，无事务）仍走 getOrLoad，不受影响。
+func (s *Service) taskConfigsForTx(ctx context.Context, tx pgx.Tx, now time.Time) ([]taskConfig, error) {
+	if v, ok := s.tasksCache.get(now, s.Cfg().TasksCacheTTL); ok {
+		return v, nil
+	}
+	rows, err := tx.Query(ctx, `
+		SELECT id, code, name, scope, target, metric, reward
+		FROM tasks WHERE enabled ORDER BY id`)
+	if err != nil {
+		return nil, fmt.Errorf("load tasks: %w", err)
+	}
+	out, err := scanTaskConfigs(rows)
+	if err != nil {
+		return nil, err
+	}
+	s.tasksCache.put(out, now)
+	return out, nil
+}
+
 // LoadTasks 返回指定周期的任务列表。
+//
+// ⚠️ **禁止在事务作用域内调用**（DB.Tx 闭包及其下游）：本方法经
+// tasksCache.getOrLoad 取配置，未命中时 loader 要从池再取一条连接，
+// 与事务持有的连接互等死锁（R82/R83；静态守卫 tx_pool_guard_test 会拦）。
+// 事务内要读任务配置走 taskConfigsForTx（命中走内存、未命中用 tx 加载）。
 func (s *Service) LoadTasks(ctx context.Context, userID int64, scope string) ([]TaskView, error) {
 	day := periodStart(nowFunc(), scope)
 
@@ -1126,13 +1175,18 @@ func (s *Service) LevelStars(ctx context.Context, userID int64) (map[int]int, er
 // bumpTasks 按指标累加任务进度。周期内的同一任务只保留最大值，
 // 避免反复战斗把累计型任务刷爆。
 //
-// # 任务配置来自缓存（第 9 轮）
+// # 任务配置来自缓存（第 9 轮）；R82 起改走 taskConfigsForTx
 //
 // tasks 是 seeder 写入的静态配置（无后台修改入口），此前**每次结算都在
 // 事务内**查一遍 `tasks` 表 —— 不只是一条往返，还把事务与行锁的持有时间
 // 一起拉长（结算是最热的写路径）。配置改走 tasksCache（与 LoadTasks 同一
 // 份 loader），结算路径的这条查询归零；TTL 内的缓存与库不一致的窗口由
 // TasksCacheTTL 界定，与任务页的口径相同。
+//
+// ⚠️ R82：本函数**不**用 getOrLoad（singleflight loader 要从池再拿一条
+// 连接，而调用方手里已经占着一条 —— 并发 ≥ 池上限且缓存冷时互等死锁，
+// 见 taskConfigsForTx 的注释与 pool_deadlock_r82_test）。命中走内存、
+// 未命中用事务自己的连接加载，结构上不可能再互等。
 //
 // # upsert 按 id 升序固定锁序
 //
@@ -1142,7 +1196,7 @@ func (s *Service) bumpTasks(ctx context.Context, tx pgx.Tx, userID int64, deltas
 	if len(deltas) == 0 {
 		return nil
 	}
-	configs, err := s.tasksCache.getOrLoad(ctx, time.Now(), s.Cfg().TasksCacheTTL, s.loadTaskConfigs)
+	configs, err := s.taskConfigsForTx(ctx, tx, time.Now())
 	if err != nil {
 		return fmt.Errorf("query tasks: %w", err)
 	}
