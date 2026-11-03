@@ -39,7 +39,7 @@ func TestAdminExportAuditLogsCSV(t *testing.T) {
 		}
 	}
 
-	data, err := ts.AdminExportAuditLogs(ctx, "", 0, nil, nil)
+	data, err := ts.AdminExportAuditLogs(ctx, "", 0, nil, nil, "")
 	if err != nil {
 		t.Fatalf("导出失败：%v", err)
 	}
@@ -88,7 +88,7 @@ func TestAdminExportAuditLogsBrokenPool(t *testing.T) {
 	ts := openBrokenService(t)
 	ctx := context.Background()
 
-	if _, err := ts.AdminExportAuditLogs(ctx, "", 0, nil, nil); err == nil {
+	if _, err := ts.AdminExportAuditLogs(ctx, "", 0, nil, nil, ""); err == nil {
 		t.Fatal("连接池已关闭时导出必须报错，不能静默返回空 CSV")
 	}
 }

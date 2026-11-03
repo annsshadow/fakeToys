@@ -69,7 +69,9 @@ const redeemCodeKeyword = ref('')
 const redeemUserId = ref<number | undefined>(undefined)
 
 // 审计筛选（2026-10-31 新一轮第 18 轮）：操作类型 + 日期范围。
+// R74：补「对象」过滤 —— 「这个兑换码/玩家被谁动过」必须能直接查。
 const logAction = ref('')
+const logTarget = ref('')
 const logDateRange = ref<[string, string] | null>(null)
 
 // 公告筛选（2026-10-31 新一轮第 21 轮）：发布状态 + 创建日期范围。
@@ -191,6 +193,7 @@ async function loadLogs() {
   try {
     const l = await fetchAuditLogs(PAGE_SIZE, (logPage.value - 1) * PAGE_SIZE, {
       action: logAction.value || undefined,
+      target: logTarget.value || undefined,
       date_from: logDateRange.value?.[0] || undefined,
       date_to: logDateRange.value ? nextDay(logDateRange.value[1]) : undefined,
     })
@@ -227,8 +230,9 @@ function applyLogFilter() {
 async function onExportAuditLogs() {
   try {
     const blob = await exportAuditLogsCsv({
-      // 与列表过滤同口径（2026-10-31 新一轮第 18 轮）
+      // 与列表过滤同口径（2026-10-31 新一轮第 18 轮；R74 补 target）
       action: logAction.value || undefined,
+      target: logTarget.value || undefined,
       date_from: logDateRange.value?.[0] || undefined,
       date_to: logDateRange.value ? nextDay(logDateRange.value[1]) : undefined,
     })
@@ -1042,6 +1046,15 @@ loadAll()
               placeholder="操作类型（如 update_redeem）"
               clearable
               style="width: 200px"
+              @keyup.enter="applyLogFilter"
+              @clear="applyLogFilter"
+            />
+            <!-- R74：对象过滤（兑换码 id / user#id 等 target 精确匹配） -->
+            <el-input
+              v-model="logTarget"
+              placeholder="对象（如兑换码 id / user#12）"
+              clearable
+              style="width: 190px"
               @keyup.enter="applyLogFilter"
               @clear="applyLogFilter"
             />

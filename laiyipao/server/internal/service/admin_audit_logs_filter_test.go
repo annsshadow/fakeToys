@@ -26,7 +26,7 @@ func TestAdminListAuditLogsFilter(t *testing.T) {
 	seedAuditLog(t, ts, adminB, "update_redeem", now.Add(-1*time.Hour))
 
 	// 按 action 过滤
-	items, total, err := ts.AdminListAuditLogs(ctx, 50, 0, "update_redeem", 0, nil, nil)
+	items, total, err := ts.AdminListAuditLogs(ctx, 50, 0, "update_redeem", 0, nil, nil, "")
 	if err != nil {
 		t.Fatalf("action 过滤失败：%v", err)
 	}
@@ -40,7 +40,7 @@ func TestAdminListAuditLogsFilter(t *testing.T) {
 	}
 
 	// 按管理员过滤
-	items, total, err = ts.AdminListAuditLogs(ctx, 50, 0, "", adminB, nil, nil)
+	items, total, err = ts.AdminListAuditLogs(ctx, 50, 0, "", adminB, nil, nil, "")
 	if err != nil {
 		t.Fatalf("管理员过滤失败：%v", err)
 	}
@@ -51,7 +51,7 @@ func TestAdminListAuditLogsFilter(t *testing.T) {
 	// 按日期范围 [now-2.5h, now-1.5h) → 只含 ban_user（-2h）
 	from := now.Add(-150 * time.Minute)
 	to := now.Add(-90 * time.Minute)
-	items, total, err = ts.AdminListAuditLogs(ctx, 50, 0, "", 0, &from, &to)
+	items, total, err = ts.AdminListAuditLogs(ctx, 50, 0, "", 0, &from, &to, "")
 	if err != nil {
 		t.Fatalf("日期过滤失败：%v", err)
 	}
@@ -60,7 +60,7 @@ func TestAdminListAuditLogsFilter(t *testing.T) {
 	}
 
 	// 组合：action + 管理员
-	items, total, err = ts.AdminListAuditLogs(ctx, 50, 0, "update_redeem", adminA, nil, nil)
+	items, total, err = ts.AdminListAuditLogs(ctx, 50, 0, "update_redeem", adminA, nil, nil, "")
 	if err != nil {
 		t.Fatalf("组合过滤失败：%v", err)
 	}

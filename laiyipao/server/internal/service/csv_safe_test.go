@@ -46,7 +46,7 @@ func TestAdminExportAuditLogsNeutralizesFormulaCell(t *testing.T) {
 	            VALUES ('op', 'probe_csv_injection', $1, '{}')`,
 		`=HYPERLINK("http://example.invalid","click")`)
 
-	data, err := ts.AdminExportAuditLogs(ctx, "", 0, nil, nil)
+	data, err := ts.AdminExportAuditLogs(ctx, "", 0, nil, nil, "")
 	if err != nil {
 		t.Fatalf("导出失败：%v", err)
 	}

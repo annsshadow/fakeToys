@@ -1319,6 +1319,7 @@ func (s *Server) adminAuditLogs(c *fiber.Ctx) error {
 		return err
 	}
 	// 操作类型 / 管理员 / 日期范围筛选（2026-10-31 新一轮第 18 轮）。
+	// R74：新增 target 对象过滤（「这个兑换码被谁动过」）。
 	action := c.Query("action", "")
 	adminID, err := queryInt(c, "admin_id", 0)
 	if err != nil {
@@ -1328,7 +1329,7 @@ func (s *Server) adminAuditLogs(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	items, total, err := s.Svc.AdminListAuditLogs(c.Context(), limit, offset, action, int64(adminID), dateFrom, dateTo)
+	items, total, err := s.Svc.AdminListAuditLogs(c.Context(), limit, offset, action, int64(adminID), dateFrom, dateTo, c.Query("target", ""))
 	if err != nil {
 		return err
 	}
@@ -1338,7 +1339,7 @@ func (s *Server) adminAuditLogs(c *fiber.Ctx) error {
 // adminExportAuditLogs 导出审计日志为 CSV（2026-10-30 实质优化第 15 轮）。
 //
 // 读操作，readonly 角色可访问。合规归档需要全量快照。
-// 过滤条件与列表一致（action / admin_id / date_from / date_to）。
+// 过滤条件与列表一致（action / admin_id / date_from / date_to；R74 补 target）。
 func (s *Server) adminExportAuditLogs(c *fiber.Ctx) error {
 	action := c.Query("action", "")
 	adminID, err := queryInt(c, "admin_id", 0)
@@ -1349,7 +1350,7 @@ func (s *Server) adminExportAuditLogs(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	data, err := s.Svc.AdminExportAuditLogs(c.Context(), action, int64(adminID), dateFrom, dateTo)
+	data, err := s.Svc.AdminExportAuditLogs(c.Context(), action, int64(adminID), dateFrom, dateTo, c.Query("target", ""))
 	if err != nil {
 		return err
 	}
