@@ -12,6 +12,7 @@ import (
 	"runtime/debug"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -106,6 +107,118 @@ func traceIDOf(c *fiber.Ctx) string {
 	return "-"
 }
 
+// --- 访问日志身份标识（R85）---
+//
+// # 脱敏边界（测试钉住，别破）
+//
+// 访问日志只允许出现三种身份形态：
+//   - `user#N`：内部数字 user id（认证成功，Locals 已有 —— **零新增查询**，
+//     身份来自 requireUser 的认证结果）；
+//   - `bad_token`：带了 Authorization 头但没认证上（无效/过期/伪造 ——
+//     这本身就是「有人在拿坏令牌探路」的运营信号；令牌内容绝不写出）；
+//   - `anon`：没带凭证的公开请求。
+//
+// 绝不出现：昵称、openid、guest_token、JWT 串、手机号。
+// 昵称恰好是数字时也不会混进 user# 字段（值只来自 Locals 的 int64）。
+func accessIdentity(c *fiber.Ctx) string {
+	if uid, ok := c.Locals("user_id").(int64); ok && uid > 0 {
+		return "user#" + strconv.FormatInt(uid, 10)
+	}
+	if c.Get("Authorization") != "" {
+		return "bad_token"
+	}
+	return "anon"
+}
+
+// accessAgg 是访问日志的进程内聚合（R85 要求 2：运营信号）。
+//
+// 聚合两个口径：
+//  1. 身份类 × 状态段计数（anon/bad_token/user × 2xx/4xx/5xx，低基数），
+//     「认证失败率」「匿名流量占比」直接可算；
+//  2. 错误 top-N（user#N → 4xx+5xx 计数）：「谁在被打/谁在刷」。
+//
+// ⚠️ **进程内计数，多实例下不是全局口径**：N 个副本各记一份，
+// 全局值 = 各副本之和（Prometheus sum() 聚合即可）；top-N 全局语义
+// 同理需跨实例合并，单实例部署下本表即全局。
+type accessAgg struct {
+	mu       sync.Mutex
+	counts   map[string]map[string]int64 // identity → statusClass → n
+	errByUID map[int64]int64             // user#N → 4xx+5xx 次数
+}
+
+func newAccessAgg() *accessAgg {
+	return &accessAgg{counts: map[string]map[string]int64{}, errByUID: map[int64]int64{}}
+}
+
+// accessErrTopCap 是 errByUID 的键数上限：超出即整表清空重来
+// （与 AdminUsersCountCacheTTL 的键数上限同一哲学：宁可一次全丢，
+// 不留无界增长；丢的代价是 top-N 重新积累一个窗口）。
+const accessErrTopCap = 256
+
+// recordAccess 每个请求一条：身份类计数 + 错误用户的 top-N 计数。
+func (a *accessAgg) recordAccess(identity string, status int, uid int64) {
+	class := "2xx"
+	switch {
+	case status >= 500:
+		class = "5xx"
+	case status >= 400:
+		class = "4xx"
+	}
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	m := a.counts[identity]
+	if m == nil {
+		m = map[string]int64{}
+		a.counts[identity] = m
+	}
+	m[class]++
+	if uid > 0 && status >= 400 {
+		if len(a.errByUID) >= accessErrTopCap {
+			a.errByUID = map[int64]int64{}
+		}
+		a.errByUID[uid]++
+	}
+}
+
+// accessAggSnapshot 是 /metrics 渲染用的只读快照。
+type accessAggSnapshot struct {
+	Counts map[string]map[string]int64
+	TopErr []accessErrEntry
+}
+
+type accessErrEntry struct {
+	UserID int64
+	Errors int64
+}
+
+func (a *accessAgg) snapshot() accessAggSnapshot {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	out := accessAggSnapshot{Counts: map[string]map[string]int64{}}
+	for id, m := range a.counts {
+		cp := map[string]int64{}
+		for k, v := range m {
+			cp[k] = v
+		}
+		out.Counts[id] = cp
+	}
+	for uid, n := range a.errByUID {
+		out.TopErr = append(out.TopErr, accessErrEntry{UserID: uid, Errors: n})
+	}
+	// 只留前 10（metrics 标签基数纪律）。
+	for i := 0; i < len(out.TopErr); i++ {
+		for j := i + 1; j < len(out.TopErr); j++ {
+			if out.TopErr[j].Errors > out.TopErr[i].Errors {
+				out.TopErr[i], out.TopErr[j] = out.TopErr[j], out.TopErr[i]
+			}
+		}
+	}
+	if len(out.TopErr) > 10 {
+		out.TopErr = out.TopErr[:10]
+	}
+	return out
+}
+
 // --- 访问日志分级（LOG_LEVEL 的消费方，第 4 轮）---
 //
 // LOG_LEVEL 此前只在 config 解析、全仓零消费（死配置）。这里给它最小的
@@ -164,7 +277,16 @@ func logAt(level logLevel, format string, args ...any) {
 	log.Printf(format, args...)
 }
 
+// accessMetrics 是访问日志聚合的进程内实例（R85）。
+//
+// 包级与 R72 的 var 阈值同一模式：生产只写（requestLogger 每请求一条），
+// /metrics 渲染读快照；测试整体替换实例即可隔离，不必重启进程。
+var accessMetrics = newAccessAgg()
+
 // requestLogger 记录访问日志并写 X-Request-Duration（分级见 logLevel）。
+//
+// 字段结构固定（R85，便于采集）：`req=<trace> id=<identity> <方法> <路径> -> <状态> (<耗时>)`
+// —— 键值对前缀固定，采集端按空格切分即可，不要往中间插自由文本。
 func requestLogger() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		start := time.Now()
@@ -179,21 +301,28 @@ func requestLogger() fiber.Handler {
 		if err != nil {
 			status = httperr.StatusOf(err)
 		}
+		// R85：身份脱敏（user#N / bad_token / anon，零新增查询）+ 运营聚合。
+		identity := accessIdentity(c)
+		var uid int64
+		if v, ok := c.Locals("user_id").(int64); ok {
+			uid = v
+		}
+		accessMetrics.recordAccess(identity, status, uid)
 		switch {
 		case status >= 500:
 			// 5xx 的真实原因由 httperr.Render 按 error/warn 级落日志，不重复；
 			// 这里只补一行「哪个端点、耗时多少」的访问记录。
-			logAt(logError, "[http] req=%s %s %s -> %d (%s)",
-				traceIDOf(c), c.Method(), c.OriginalURL(), status, dur)
+			logAt(logError, "[http] req=%s id=%s %s %s -> %d (%s)",
+				traceIDOf(c), identity, c.Method(), c.OriginalURL(), status, dur)
 		case status >= 400:
-			logAt(logWarn, "[http] req=%s %s %s -> %d (%s)",
-				traceIDOf(c), c.Method(), c.OriginalURL(), status, dur)
+			logAt(logWarn, "[http] req=%s id=%s %s %s -> %d (%s)",
+				traceIDOf(c), identity, c.Method(), c.OriginalURL(), status, dur)
 		case dur >= slowRequestThreshold:
-			logAt(logInfo, "[http] req=%s %s %s -> %d (%s，慢请求)",
-				traceIDOf(c), c.Method(), c.OriginalURL(), status, dur)
+			logAt(logInfo, "[http] req=%s id=%s %s %s -> %d (%s，慢请求)",
+				traceIDOf(c), identity, c.Method(), c.OriginalURL(), status, dur)
 		default:
-			logAt(logDebug, "[http] req=%s %s %s -> %d (%s)",
-				traceIDOf(c), c.Method(), c.OriginalURL(), status, dur)
+			logAt(logDebug, "[http] req=%s id=%s %s %s -> %d (%s)",
+				traceIDOf(c), identity, c.Method(), c.OriginalURL(), status, dur)
 		}
 		return err
 	}

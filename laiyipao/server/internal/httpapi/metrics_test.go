@@ -30,6 +30,13 @@ func TestRenderMetrics(t *testing.T) {
 		Segments: map[string]service.SettleSegmentStat{
 			"tx_insert": {Count: 7, SumMs: 56, MaxMs: 21},
 		},
+	}, accessAggSnapshot{
+		Counts: map[string]map[string]int64{
+			"anon":      {"2xx": 10, "4xx": 1},
+			"bad_token": {"4xx": 3},
+			"user":      {"2xx": 100, "5xx": 2},
+		},
+		TopErr: []accessErrEntry{{UserID: 42, Errors: 2}},
 	})
 
 	samples := map[string]bool{
@@ -48,6 +55,11 @@ func TestRenderMetrics(t *testing.T) {
 		"laiyipao_settle_total_ms_sum 1234":       false,
 		"laiyipao_settle_seg_tx_insert_ms_sum 56": false,
 		"laiyipao_settle_seg_tx_insert_ms_max 21": false,
+		// R85：访问身份计数与错误 top-N。
+		`laiyipao_access_requests_total{identity="anon",status="2xx"} 10`:      false,
+		`laiyipao_access_requests_total{identity="bad_token",status="4xx"} 3`:  false,
+		`laiyipao_access_requests_total{identity="user",status="5xx"} 2`:       false,
+		`laiyipao_access_user_errors{user="user#42"} 2`:                        false,
 	}
 	for line := range strings.SplitSeq(out, "\n") {
 		if _, ok := samples[line]; ok {

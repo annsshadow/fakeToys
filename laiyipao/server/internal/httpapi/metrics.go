@@ -22,7 +22,7 @@ import (
 //
 // R50 增加连接池 gauge：池耗尽不会报错，只会让所有接口变慢，
 // `acquired / max` 是唯一能提前看出来的信号。
-func renderMetrics(st service.CacheStats, ps service.PoolStats, ss service.SettleStats) string {
+func renderMetrics(st service.CacheStats, ps service.PoolStats, ss service.SettleStats, ac accessAggSnapshot) string {
 	var b strings.Builder
 	emit := func(name, help string, v int64) {
 		fmt.Fprintf(&b, "# HELP %s %s\n# TYPE %s counter\n%s %d\n", name, help, name, name, v)
@@ -42,6 +42,25 @@ func renderMetrics(st service.CacheStats, ps service.PoolStats, ss service.Settl
 		emit("laiyipao_settle_seg_"+seg+"_ms_max", "结算分段单次最慢毫秒", s.MaxMs)
 	}
 
+	// R85：访问身份 × 状态段计数（认证失败率=bad_token 4xx / 请求总数）；
+	// 错误 top-N（谁在被打/谁在刷）。进程内口径，多实例用 sum() 聚合。
+	for _, identity := range []string{"anon", "bad_token", "user"} {
+		for _, class := range []string{"2xx", "4xx", "5xx"} {
+			fmt.Fprintf(&b,
+				"# HELP laiyipao_access_requests_total 访问请求计数（身份类 × 状态段）\n"+
+					"# TYPE laiyipao_access_requests_total counter\n"+
+					"laiyipao_access_requests_total{identity=%q,status=%q} %d\n",
+				identity, class, ac.Counts[identity][class])
+		}
+	}
+	for _, e := range ac.TopErr {
+		fmt.Fprintf(&b,
+			"# HELP laiyipao_access_user_errors 单用户 4xx+5xx 计数 top10\n"+
+				"# TYPE laiyipao_access_user_errors gauge\n"+
+				"laiyipao_access_user_errors{user=\"user#%d\"} %d\n",
+			e.UserID, e.Errors)
+	}
+
 	gauge := func(name, help string, v int32) {
 		fmt.Fprintf(&b, "# HELP %s %s\n# TYPE %s gauge\n%s %d\n", name, help, name, name, v)
 	}
@@ -59,5 +78,5 @@ func renderMetrics(st service.CacheStats, ps service.PoolStats, ss service.Settl
 // 计数与池容量，但默认不公开，见 config.MetricsEnabled 的理由。
 func (s *Server) metrics(c *fiber.Ctx) error {
 	c.Set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
-	return c.SendString(renderMetrics(s.Svc.CacheStats(), s.Svc.PoolStats(), s.Svc.SettleStats()))
+	return c.SendString(renderMetrics(s.Svc.CacheStats(), s.Svc.PoolStats(), s.Svc.SettleStats(), accessMetrics.snapshot()))
 }
