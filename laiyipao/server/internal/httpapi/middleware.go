@@ -4,8 +4,11 @@
 package httpapi
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"log"
+	"regexp"
 	"runtime/debug"
 	"strconv"
 	"strings"
@@ -38,6 +41,70 @@ type APIError = httperr.APIError
 type ErrorBody = httperr.ErrorBody
 
 // --- 中间件 ---
+
+// --- 请求级追踪标识（R84）---
+//
+// # 解决什么
+//
+// 一次请求此前分散在三处日志里且零关联：访问日志（requestLogger）、
+// 5xx 错误详情（httperr.Render）、慢结算日志（service.recordSettleTiming）。
+// 出问题时没法把「这个玩家的这次 503」和「那条 30s 超时的 SQL」串起来
+// （R82 死锁现场：错误行与访问行是两行无关联字段的日志）。
+//
+// # 形状
+//
+// 每个请求一个 trace id：客户端/上游带 `X-Request-Id` 且**过白名单**则继承，
+// 否则服务端重新生成（16 字节 crypto/rand 的 hex，32 字符）。
+// 出现在：① 访问日志 ② 错误详情日志 ③ 慢结算日志 ④ 响应头 X-Request-Id
+// （客户端报障时提供，服务端按它反查全部日志行）。
+//
+// ⚠️ **为什么不能把客户端值原样回显进日志**：`X-Request-Id` 是任意的
+// 客户端输入，原样写日志 = 日志注入面（`\r\n` 伪造日志行、超长串爆磁盘、
+// 塞进敏感词绕过禁词检查）。白名单只放 `A-Za-z0-9_-`（8~64 字符）；
+// 不合法就**重新生成**而不是拒绝请求 —— 这个头是便利设施不是契约，
+// 为一个坏头 400 会误伤正常代理。
+//
+// service 层经 `ctx.Value("trace_id")` 读取（fiber 的 Locals 落在
+// fasthttp userValues 上，`*fasthttp.RequestCtx` 作为 context.Context
+// 时按 string key 原样返回 —— 这条链路由 trace_middleware_test 钉住）。
+const traceIDLocalsKey = "trace_id"
+
+// traceIDPattern 是继承值的格式白名单（含服务端生成值的形状）。
+var traceIDPattern = regexp.MustCompile(`^[A-Za-z0-9_-]{8,64}$`)
+
+// newTraceID 生成服务端 trace id（32 个 hex 字符，落在白名单内）。
+func newTraceID() string {
+	var b [16]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		// crypto/rand 失败时不降级成可预测 id —— 它是关联标识不是安全凭证，
+		// 但「可预测」会让攻击者往别人报障的 id 上伪造日志行。直接抬错。
+		panic(fmt.Sprintf("crypto/rand 不可用: %v", err))
+	}
+	return hex.EncodeToString(b[:])
+}
+
+// traceMiddleware 生成或继承 trace id，写 Locals + 响应头。
+// 必须挂在 requestLogger **之前**（访问日志要带上它）。
+func traceMiddleware() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		id := c.Get("X-Request-Id")
+		if !traceIDPattern.MatchString(id) {
+			id = newTraceID()
+		}
+		c.Locals(traceIDLocalsKey, id)
+		c.Set("X-Request-Id", id)
+		return c.Next()
+	}
+}
+
+// traceIDOf 从 fiber 上下文取 id（中间件之后必有；防御性兜底 "-"，
+// 保证日志格式字段齐整）。
+func traceIDOf(c *fiber.Ctx) string {
+	if v, ok := c.Locals(traceIDLocalsKey).(string); ok && v != "" {
+		return v
+	}
+	return "-"
+}
 
 // --- 访问日志分级（LOG_LEVEL 的消费方，第 4 轮）---
 //
@@ -116,17 +183,17 @@ func requestLogger() fiber.Handler {
 		case status >= 500:
 			// 5xx 的真实原因由 httperr.Render 按 error/warn 级落日志，不重复；
 			// 这里只补一行「哪个端点、耗时多少」的访问记录。
-			logAt(logError, "[http] %s %s -> %d (%s)",
-				c.Method(), c.OriginalURL(), status, dur)
+			logAt(logError, "[http] req=%s %s %s -> %d (%s)",
+				traceIDOf(c), c.Method(), c.OriginalURL(), status, dur)
 		case status >= 400:
-			logAt(logWarn, "[http] %s %s -> %d (%s)",
-				c.Method(), c.OriginalURL(), status, dur)
+			logAt(logWarn, "[http] req=%s %s %s -> %d (%s)",
+				traceIDOf(c), c.Method(), c.OriginalURL(), status, dur)
 		case dur >= slowRequestThreshold:
-			logAt(logInfo, "[http] %s %s -> %d (%s，慢请求)",
-				c.Method(), c.OriginalURL(), status, dur)
+			logAt(logInfo, "[http] req=%s %s %s -> %d (%s，慢请求)",
+				traceIDOf(c), c.Method(), c.OriginalURL(), status, dur)
 		default:
-			logAt(logDebug, "[http] %s %s -> %d (%s)",
-				c.Method(), c.OriginalURL(), status, dur)
+			logAt(logDebug, "[http] req=%s %s %s -> %d (%s)",
+				traceIDOf(c), c.Method(), c.OriginalURL(), status, dur)
 		}
 		return err
 	}

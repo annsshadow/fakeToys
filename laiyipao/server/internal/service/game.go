@@ -311,8 +311,8 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 			// 必须同时留一行服务端日志 —— 否则「台账里有不符但结算成功」
 			// 这件事只有主动查台账的人看得见。
 			fmt.Fprintf(os.Stderr,
-				"[recompute] replay_skills 不符但未拒发（mode=%s, user=%d, level=%d）\n",
-				mode, userID, tok.LevelID)
+				"[recompute] req=%s replay_skills 不符但未拒发（mode=%s, user=%d, level=%d）\n",
+				TraceIDFrom(ctx), mode, userID, tok.LevelID)
 		}
 	}
 	tm.SkillsCheck = time.Since(segStart)
@@ -628,7 +628,7 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 
 	// R80：成功结算入账分段耗时（聚合 + 超阈值慢日志 + 探针采样钩子）。
 	tm.Total = time.Since(tmStart)
-	s.recordSettleTiming(tm, resp.BattleID, userID)
+	s.recordSettleTiming(ctx, tm, resp.BattleID, userID)
 	if settleTimingProbe != nil {
 		settleTimingProbe(tm)
 	}

@@ -98,11 +98,17 @@ func Render(c *fiber.Ctx, err error) error {
 		return nil
 	}
 	status, code, message, logAs := classify(err)
+	// R84：错误详情行带 trace id（与 httpapi 中间件的 Locals key 一致；
+	// e2e 断言「错误日志含响应头同款 id」钉住这条链，两处不会悄悄分叉）。
+	reqID, _ := c.Locals("trace_id").(string)
+	if reqID == "" {
+		reqID = "-"
+	}
 	switch logAs {
 	case logWarnLevel:
-		logWarn("[http] %s %s -> %d: %v", c.Method(), c.OriginalURL(), status, err)
+		logWarn("[http] req=%s %s %s -> %d: %v", reqID, c.Method(), c.OriginalURL(), status, err)
 	case logErrorLevel:
-		logError("[http] %s %s -> %d: %v", c.Method(), c.OriginalURL(), status, err)
+		logError("[http] req=%s %s %s -> %d: %v", reqID, c.Method(), c.OriginalURL(), status, err)
 	}
 	return write(c, status, code, message)
 }
