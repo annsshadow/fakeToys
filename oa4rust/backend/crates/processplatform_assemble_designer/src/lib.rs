@@ -3515,7 +3515,7 @@ pub async fn workcompleted_application_applicationFlag_merge_data(
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
-            "SELECT xid, \"xworkId\", \"xcompletedTime\", xcreator, \"xcreateTime\" FROM PP_E_WORKCOMPLETED wc JOIN PP_E_PROCESS p ON wc.xworkid = p.xid WHERE p.xapplication = $1 ORDER BY wc.\"xcompletedTime\" DESC",
+            "SELECT wc.xid, wc.\"xworkId\", wc.\"xcompletedTime\", wc.xcreator, wc.\"xcreateTime\" FROM PP_E_WORKCOMPLETED wc JOIN PP_E_PROCESS p ON wc.\"xworkId\" = p.xid WHERE p.xapplication = $1 ORDER BY wc.\"xcompletedTime\" DESC",
             &[&applicationFlag],
         )
         .await
@@ -3565,7 +3565,7 @@ pub async fn workcompleted_process_processFlag_merge_data(
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
-            "SELECT xid, \"xworkId\", \"xcompletedTime\", xcreator, \"xcreateTime\" FROM PP_E_WORKCOMPLETED wc JOIN PP_E_PROCESS p ON wc.xworkid = p.xid WHERE p.xid = $1 ORDER BY wc.\"xcompletedTime\" DESC",
+            "SELECT wc.xid, wc.\"xworkId\", wc.\"xcompletedTime\", wc.xcreator, wc.\"xcreateTime\" FROM PP_E_WORKCOMPLETED wc JOIN PP_E_PROCESS p ON wc.\"xworkId\" = p.xid WHERE p.xid = $1 ORDER BY wc.\"xcompletedTime\" DESC",
             &[&processFlag],
         )
         .await
@@ -3655,9 +3655,16 @@ async fn guard_write(
     table: &str,
     id: &str,
 ) -> Result<bool, AppError> {
+    // 归属列按表对齐真实 schema（O10 PG 日志实证 42703 → 500）：
+    // pp_e_process/application/applicationdict 有驼峰 "xcreatorPerson"（优先）+ 小写 creator_person；
+    // pp_e_mapping/mergeitemplan 只有小写 creator_person（迁移 032 定义），引用驼峰列必炸。
+    let owner_expr = match table {
+        "pp_e_mapping" | "pp_e_mergeitemplan" => "COALESCE(creator_person, '')",
+        _ => "COALESCE(\"xcreatorPerson\", creator_person, '')",
+    };
     let sql = format!(
-        "SELECT COALESCE(\"xcreatorPerson\", creator_person, '') AS owner FROM {} WHERE xid = $1",
-        table
+        "SELECT {} AS owner FROM {} WHERE xid = $1",
+        owner_expr, table
     );
     match client
         .query_opt(sql.as_str(), &[&id])

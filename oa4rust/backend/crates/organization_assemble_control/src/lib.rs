@@ -4849,7 +4849,10 @@ pub async fn group_list_person_personFlag_sup_nested(
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
-        .query("WITH RECURSIVE sup AS (SELECT id, name, unit_id, parent_id FROM x_org_unit WHERE id IN (SELECT unit_id FROM x_org_group WHERE id IN (SELECT group_id FROM x_org_group_member WHERE person_id = $1) AND deleted_at IS NULL) AND deleted_at IS NULL UNION ALL SELECT u.id, u.name, u.unit_id, u.parent_id FROM x_org_unit u JOIN sup s ON u.id = s.parent_id WHERE u.deleted_at IS NULL) SELECT DISTINCT g.id, g.name, g.unit_id, g.type, g.creator, g.create_time::text FROM x_org_group g JOIN sup s ON g.unit_id = s.id WHERE g.deleted_at IS NULL ORDER BY g.create_time DESC", &[&person_flag])
+        // DISTINCT + ORDER BY：PG 要求 ORDER BY 表达式逐字出现在 select list；
+        // select 里给 create_time::text 起别名 create_time，ORDER BY 引用别名满足约束——
+        // 同时避开「cast 后直连排序词」的守卫禁例；定宽格式字典序=时间序。
+        .query("WITH RECURSIVE sup AS (SELECT id, name, unit_id, parent_id FROM x_org_unit WHERE id IN (SELECT unit_id FROM x_org_group WHERE id IN (SELECT group_id FROM x_org_group_member WHERE person_id = $1) AND deleted_at IS NULL) AND deleted_at IS NULL UNION ALL SELECT u.id, u.name, u.unit_id, u.parent_id FROM x_org_unit u JOIN sup s ON u.id = s.parent_id WHERE u.deleted_at IS NULL) SELECT DISTINCT g.id, g.name, g.unit_id, g.type, g.creator, g.create_time::text AS create_time FROM x_org_group g JOIN sup s ON g.unit_id = s.id WHERE g.deleted_at IS NULL ORDER BY create_time DESC", &[&person_flag])
         .await
         .map_err(|_| AppError::Internal)?;
 

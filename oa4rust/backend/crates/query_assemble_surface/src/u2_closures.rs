@@ -1101,7 +1101,9 @@ async fn view_update_field_by_flag_query(
     // 归属校验：先按 (view_flag, query_flag) 定位行再走 owner 门禁。
     let owner_row = client
         .query_opt(
-            "SELECT id, COALESCE(creator_person, creator, '') AS owner FROM x_query_view \
+            // x_query_view 只有 creator 列（迁移 029+033 口径，无 creator_person；
+            // O10 PG 日志实证 42703 → 500）
+            "SELECT id, COALESCE(creator, '') AS owner FROM x_query_view \
              WHERE view_flag = $1 AND query_flag = $2 LIMIT 1",
             &[&flag, &query_flag],
         )
@@ -1317,7 +1319,7 @@ async fn view_update_field_by_id(
         pool,
         session,
         &client,
-        "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_view WHERE id = $1",
+        "SELECT COALESCE(creator, '') AS owner FROM x_query_view WHERE id = $1",
         id,
     )
     .await?;

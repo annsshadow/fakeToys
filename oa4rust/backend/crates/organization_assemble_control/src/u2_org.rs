@@ -228,7 +228,8 @@ pub async fn unit_list_prev(
     Path((flag, count)): Path<(String, i64)>,
 ) -> HandlerResult {
     let client = client_of(&pool).await?;
-    let limit = count.clamp(1, MAX_BATCH_IDS as i64).to_string();
+    // LIMIT 参数 PG 定 int8：String 绑定 WrongType 客户端 500（O10 实证）——保留 i64。
+    let limit = count.clamp(1, MAX_BATCH_IDS as i64);
     let rows = if flag == "0" || flag == "(0)" {
         client
             .query(

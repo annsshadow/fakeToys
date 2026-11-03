@@ -383,13 +383,24 @@ async fn list_from_table_filtered_inner(
 ) -> Result<(i64, Vec<Value>), AppError> {
     let client = shared::db::acquire(pool).await?;
 
+    // where_clause 实参历史上允许携带 ORDER BY/LIMIT tail（document_filter 三处）；
+    // COUNT 聚合带 ORDER BY 裸列在 PG 直接 42P10 → 500（O10 PG 日志实证）。
+    // count 语义=过滤后的总条数（legacy 分页字段），ORDER BY/LIMIT 仅作用于数据查询。
+    let upper = where_clause.to_ascii_uppercase();
+    let cut = [" ORDER BY ", " LIMIT "]
+        .iter()
+        .filter_map(|kw| upper.find(kw))
+        .min()
+        .unwrap_or(where_clause.len());
+    let filter_only = &where_clause[..cut];
+
     let count_sql = format!(
         "SELECT COUNT(*) FROM {}{}",
         table,
-        if where_clause.is_empty() {
+        if filter_only.is_empty() {
             String::new()
         } else {
-            format!(" WHERE {}", where_clause)
+            format!(" WHERE {}", filter_only)
         }
     );
     let count_row = client
@@ -6568,11 +6579,10 @@ async fn appdict_data_get(
     let mut where_clause =
         String::from("WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at IS NULL");
     if !paths.is_empty() {
-        // 占位符序：$1 dict、$2 app、$3 depth、$4.. 各级路径段
-        where_clause.push_str(&format!(
-            " AND cardinality(path_levels) >= ${}",
-            paths.len() + 2
-        ));
+        // 占位符序：$1 dict、$2 app、$3 depth、$4.. 各级路径段。
+        // depth 恒为 $3（off-by-N 曾写成 ${paths.len()+2}，把 depth 指到路径段参数上，
+        // cardinality(int4) >= text 触发 42883 → 500，2026-11-03 O10 PG 日志实证）。
+        where_clause.push_str(" AND cardinality(path_levels) >= $3");
         for i in 0..paths.len() {
             where_clause.push_str(&format!(" AND path_levels[{}] = ${}", i + 1, i + 4));
         }

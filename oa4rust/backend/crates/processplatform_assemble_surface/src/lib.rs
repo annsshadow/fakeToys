@@ -9844,7 +9844,11 @@ async fn read_list_filter_page_size_size_manage_core(
     let row = client
         .query_opt(
             "SELECT xid, xjob, xwork, \"xworkCompleted\", xread, xtitle, xapplication, \"xapplicationName\", \"xapplicationAlias\", xprocess, \"xprocessName\", xserial, xperson, xidentity, xunit, \"xcreateTime\", \"xupdateTime\" FROM PP_C_READ WHERE xid = $1",
-            &[&page],
+            // xid 是 TEXT 列：i64 绑 TEXT 在 tokio_postgres 客户端侧即序列化失败
+            // （PG 无日志，500 由 map_err 产生，O10 实证）；按列类型对齐绑定。
+            // FIXME(O10 遗留)：这些 manage list 端点的实现是占位错乱（list 路由按 xid
+            // 查单行），正确语义=o2 manage filter 翻页 DSL，属契约对齐工程，见台账。
+            &[&page.to_string()],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -11935,7 +11939,11 @@ async fn readcompleted_list_filter_page_size_size_manage_core(
     let row = client
         .query_opt(
             "SELECT xid, xjob, xwork, \"xworkCompleted\", xcompleted, xtitle, \"xstartTime\", \"xviewTime\", xapplication, \"xapplicationName\", \"xapplicationAlias\", xprocess, \"xprocessName\", xserial, xperson, xidentity, xunit, xopinion, \"xopinionLob\", \"xcreateTime\", \"xupdateTime\" FROM PP_C_READCOMPLETED WHERE xid = $1",
-            &[&page],
+            // xid 是 TEXT 列：i64 绑 TEXT 在 tokio_postgres 客户端侧即序列化失败
+            // （PG 无日志，500 由 map_err 产生，O10 实证）；按列类型对齐绑定。
+            // FIXME(O10 遗留)：这些 manage list 端点的实现是占位错乱（list 路由按 xid
+            // 查单行），正确语义=o2 manage filter 翻页 DSL，属契约对齐工程，见台账。
+            &[&page.to_string()],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -14429,7 +14437,11 @@ async fn review_v2_list_paging_page_size_size_manage_core(
     let row = client
         .query_opt(
             "SELECT xid, xjob, xwork, \"xworkCompleted\", xcompleted, xtitle, xserial, \"xstartTime\", \"xcompletedTime\", xapplication, \"xapplicationName\", \"xapplicationAlias\", xprocess, \"xprocessName\", xperson, \"xactivityUnique\", \"xcreatorPerson\", \"xcreatorIdentity\", \"xcreatorUnit\", xopinion, \"xopinionLob\", \"xcreateTime\", \"xupdateTime\" FROM PP_C_REVIEW WHERE xid = $1",
-            &[&page],
+            // xid 是 TEXT 列：i64 绑 TEXT 在 tokio_postgres 客户端侧即序列化失败
+            // （PG 无日志，500 由 map_err 产生，O10 实证）；按列类型对齐绑定。
+            // FIXME(O10 遗留)：这些 manage list 端点的实现是占位错乱（list 路由按 xid
+            // 查单行），正确语义=o2 manage filter 翻页 DSL，属契约对齐工程，见台账。
+            &[&page.to_string()],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -16145,7 +16157,11 @@ async fn task_list_filter_page_size_size_manage_core(
     let row = client
         .query_opt(
             "SELECT xid, xjob, xtitle, \"xstartTime\", xwork, xapplication, \"xapplicationName\", \"xapplicationAlias\", xprocess, \"xprocessName\", xactivity, \"xactivityName\", \"xactivityType\", \"xactivityToken\", xperson, xidentity, xunit, \"xcreatorPerson\", \"xcreatorIdentity\", \"xcreatorUnit\", \"xexpireTime\", \"xcreateTime\", \"xupdateTime\" FROM PP_C_TASK WHERE xid = $1",
-            &[&page],
+            // xid 是 TEXT 列：i64 绑 TEXT 在 tokio_postgres 客户端侧即序列化失败
+            // （PG 无日志，500 由 map_err 产生，O10 实证）；按列类型对齐绑定。
+            // FIXME(O10 遗留)：这些 manage list 端点的实现是占位错乱（list 路由按 xid
+            // 查单行），正确语义=o2 manage filter 翻页 DSL，属契约对齐工程，见台账。
+            &[&page.to_string()],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -18746,7 +18762,11 @@ async fn taskcompleted_list_filter_page_size_size_manage_core(
     let row = client
         .query_opt(
             "SELECT xid, xjob, xtitle, \"xstartTime\", \"xcompletedTime\", \"xcreatorPerson\", \"xcreatorIdentity\", \"xcreatorUnit\", xapplication, \"xapplicationName\", \"xapplicationAlias\", xprocess, \"xprocessName\", xserial, xperson, \"xactivityUnique\", \"xcreateTime\", \"xupdateTime\" FROM PP_C_TASKCOMPLETED WHERE xid = $1",
-            &[&page],
+            // xid 是 TEXT 列：i64 绑 TEXT 在 tokio_postgres 客户端侧即序列化失败
+            // （PG 无日志，500 由 map_err 产生，O10 实证）；按列类型对齐绑定。
+            // FIXME(O10 遗留)：这些 manage list 端点的实现是占位错乱（list 路由按 xid
+            // 查单行），正确语义=o2 manage filter 翻页 DSL，属契约对齐工程，见台账。
+            &[&page.to_string()],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -20731,7 +20751,11 @@ async fn work_list_filter_page_size_size_manage_core(
     let row = client
         .query_opt(
             "SELECT xid, xjob, xtitle, \"xstartTime\", \"xcreatorPerson\", \"xcreatorIdentity\", \"xcreatorUnit\", xapplication, \"xapplicationName\", \"xapplicationAlias\", xprocess, \"xprocessName\", xactivity, \"xactivityType\", \"xactivityName\", \"xactivityAlias\", \"xactivityDescription\", \"xactivityToken\", \"xactivityUnique\", \"xactivityArrivedTime\", xserial, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
-            &[&page],
+            // xid 是 TEXT 列：i64 绑 TEXT 在 tokio_postgres 客户端侧即序列化失败
+            // （PG 无日志，500 由 map_err 产生，O10 实证）；按列类型对齐绑定。
+            // FIXME(O10 遗留)：这些 manage list 端点的实现是占位错乱（list 路由按 xid
+            // 查单行），正确语义=o2 manage filter 翻页 DSL，属契约对齐工程，见台账。
+            &[&page.to_string()],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -20869,7 +20893,11 @@ async fn work_list_paging_page_size_size_application_applicationFlag_filter_mana
     let row = client
         .query_opt(
             "SELECT xid, xjob, xtitle, \"xstartTime\", \"xcreatorPerson\", \"xcreatorIdentity\", \"xcreatorUnit\", xapplication, \"xapplicationName\", \"xapplicationAlias\", xprocess, \"xprocessName\", xactivity, \"xactivityType\", \"xactivityName\", \"xactivityAlias\", \"xactivityDescription\", \"xactivityToken\", \"xactivityUnique\", \"xactivityArrivedTime\", xserial, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
-            &[&page],
+            // xid 是 TEXT 列：i64 绑 TEXT 在 tokio_postgres 客户端侧即序列化失败
+            // （PG 无日志，500 由 map_err 产生，O10 实证）；按列类型对齐绑定。
+            // FIXME(O10 遗留)：这些 manage list 端点的实现是占位错乱（list 路由按 xid
+            // 查单行），正确语义=o2 manage filter 翻页 DSL，属契约对齐工程，见台账。
+            &[&page.to_string()],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -23595,7 +23623,11 @@ async fn workcompleted_list_filter_page_size_size_manage_core(
     let row = client
         .query_opt(
             "SELECT xid, xjob, xtitle, \"xstartTime\", \"xcompletedTime\", \"xcreatorPerson\", \"xcreatorIdentity\", \"xcreatorUnit\", xapplication, \"xapplicationName\", \"xapplicationAlias\", xprocess, \"xprocessName\", xactivity, \"xactivityType\", \"xactivityName\", \"xactivityAlias\", \"xactivityDescription\", \"xactivityToken\", xserial, xform, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORKCOMPLETED WHERE xid = $1",
-            &[&page],
+            // xid 是 TEXT 列：i64 绑 TEXT 在 tokio_postgres 客户端侧即序列化失败
+            // （PG 无日志，500 由 map_err 产生，O10 实证）；按列类型对齐绑定。
+            // FIXME(O10 遗留)：这些 manage list 端点的实现是占位错乱（list 路由按 xid
+            // 查单行），正确语义=o2 manage filter 翻页 DSL，属契约对齐工程，见台账。
+            &[&page.to_string()],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -23655,7 +23687,11 @@ async fn workcompleted_list_paging_page_size_size_application_applicationFlag_fi
     let row = client
         .query_opt(
             "SELECT xid, xjob, xtitle, \"xstartTime\", \"xcompletedTime\", \"xcreatorPerson\", \"xcreatorIdentity\", \"xcreatorUnit\", xapplication, \"xapplicationName\", \"xapplicationAlias\", xprocess, \"xprocessName\", xactivity, \"xactivityType\", \"xactivityName\", \"xactivityAlias\", \"xactivityDescription\", \"xactivityToken\", xserial, xform, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORKCOMPLETED WHERE xid = $1",
-            &[&page],
+            // xid 是 TEXT 列：i64 绑 TEXT 在 tokio_postgres 客户端侧即序列化失败
+            // （PG 无日志，500 由 map_err 产生，O10 实证）；按列类型对齐绑定。
+            // FIXME(O10 遗留)：这些 manage list 端点的实现是占位错乱（list 路由按 xid
+            // 查单行），正确语义=o2 manage filter 翻页 DSL，属契约对齐工程，见台账。
+            &[&page.to_string()],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -27612,9 +27648,13 @@ async fn u2_attr_group_counts(
     } else {
         "WHERE 1=1"
     };
+    // 表名不得加双引号：PG 折叠规则下 `"PP_C_TASK"` 是大小写敏感的另一个标识符，
+    // 真实表为小写 pp_c_task（O10 PG 日志实证 42P01 → 500）。
+    // 反之列名是 camelCase 真实列（xapplicationName 等），必须加引号，否则折叠成小写
+    // 找不到列（42703 → 500，同为 O10 实证）。
     let sql = format!(
-        "SELECT {name_col} AS name, {value_col} AS value, COUNT(*)::bigint AS cnt \
-         FROM \"{table}\" {scope_clause} GROUP BY 1, 2 ORDER BY 1 NULLS LAST"
+        "SELECT \"{name_col}\" AS name, \"{value_col}\" AS value, COUNT(*)::bigint AS cnt \
+         FROM {table} {scope_clause} GROUP BY 1, 2 ORDER BY 1 NULLS LAST"
     );
     let client = shared::db::acquire(pool).await?;
     let rows = if let Some(p) = person_scope {
@@ -27648,7 +27688,7 @@ async fn u2_attr_month_counts(
     };
     let sql = format!(
         "SELECT SUBSTRING(\"{col}\" FROM 1 FOR 7) AS name, SUBSTRING(\"{col}\" FROM 1 FOR 7) AS value, \
-         COUNT(*)::bigint AS cnt FROM \"{table}\" {scope_clause} GROUP BY 1 ORDER BY 1"
+         COUNT(*)::bigint AS cnt FROM {table} {scope_clause} GROUP BY 1 ORDER BY 1"
     );
     let client = shared::db::acquire(pool).await?;
     let rows = if let Some(p) = person_scope {

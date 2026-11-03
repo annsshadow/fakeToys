@@ -359,7 +359,8 @@ pub async fn statement_delete(
         &pool,
         &session,
         &client,
-        "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_statement \
+        // x_query_statement 只有 creator 列（迁移 071 口径，无 creator_person）
+        "SELECT COALESCE(creator, '') AS owner FROM x_query_statement \
          WHERE id = $1 LIMIT 1",
         &flag,
     )
@@ -2005,8 +2006,9 @@ async fn set_permission_generic(
     let client = shared::db::acquire(pool).await?;
 
     let sql = format!(
-        "SELECT COALESCE(creator_person, creator, '') AS owner FROM {} WHERE {} LIMIT 1",
-        resource.table, resource.predicate
+        // owner_expr 按表真实列给（O10 实证 x_query_view 无 creator_person，42703 → 500）
+        "SELECT {} AS owner FROM {} WHERE {} LIMIT 1",
+        resource.owner_expr, resource.table, resource.predicate
     );
     let found = guard_write(pool, session, &client, &sql, flag).await?;
     if !found {
@@ -2053,6 +2055,9 @@ struct PermissionResource {
     predicate: &'static str,
     label: &'static str,
     time_expr: &'static str,
+    /// 归属列表达式：多数表有 creator_person（优先）+ creator 兜底；
+    /// x_query_view 只有 creator（迁移 029+033 口径）。
+    owner_expr: &'static str,
 }
 
 const TS_TEXT: &str = "to_char(NOW(),'YYYY-MM-DD HH24:MI:SS')";
@@ -2063,24 +2068,28 @@ const PERM_QUERY: PermissionResource = PermissionResource {
     predicate: "(flag = $1 OR id = $1)",
     label: "query",
     time_expr: TS_TIMESTAMP,
+    owner_expr: "COALESCE(creator_person, creator, '')",
 };
 const PERM_STAT: PermissionResource = PermissionResource {
     table: "x_query_stat",
     predicate: "id = $1",
     label: "stat",
     time_expr: TS_TEXT,
+    owner_expr: "COALESCE(creator_person, creator, '')",
 };
 const PERM_TABLE: PermissionResource = PermissionResource {
     table: "x_query_table",
     predicate: "(table_flag = $1 OR id = $1)",
     label: "table",
     time_expr: TS_TEXT,
+    owner_expr: "COALESCE(creator_person, creator, '')",
 };
 const PERM_VIEW: PermissionResource = PermissionResource {
     table: "x_query_view",
     predicate: "(id = $1 OR view_flag = $1)",
     label: "view",
     time_expr: TS_TIMESTAMP,
+    owner_expr: "COALESCE(creator, '')",
 };
 
 /// POST /query/{flag}/permission
@@ -2267,7 +2276,7 @@ pub async fn view_bundle_put(
         &pool,
         &session,
         &client,
-        "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_view WHERE id = $1",
+        "SELECT COALESCE(creator, '') AS owner FROM x_query_view WHERE id = $1",
         &id,
     )
     .await?;
@@ -2310,7 +2319,7 @@ pub async fn view_simulate_put(
         &pool,
         &session,
         &client,
-        "SELECT COALESCE(creator_person, creator, '') AS owner FROM x_query_view WHERE id = $1",
+        "SELECT COALESCE(creator, '') AS owner FROM x_query_view WHERE id = $1",
         &id,
     )
     .await?;
