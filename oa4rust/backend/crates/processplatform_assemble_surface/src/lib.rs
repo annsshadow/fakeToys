@@ -24834,7 +24834,7 @@ pub async fn snap_u2_restore(
         U2Gate::Forbidden => Err(AppError::Forbidden),
         U2Gate::Allowed => {
             let mut client = shared::db::acquire(&pool).await?;
-            let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+            let tx = client.transaction().await?;
             let row = tx
                 .query_opt(
                     &format!(
@@ -24884,7 +24884,7 @@ pub async fn snap_u2_restore(
             tx.execute("DELETE FROM \"pp_c_snap\" WHERE id = $1", &[&id])
                 .await
                 .map_err(|_| AppError::Internal)?;
-            tx.commit().await.map_err(|_| AppError::Internal)?;
+            tx.commit().await?;
 
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
@@ -28086,7 +28086,7 @@ pub async fn serialnumber_u2_generate(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_require_admin(&pool, &session).await?;
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     // 行级锁内自增，保证并发取号不重号（o2server 委托 processing service 的原子语义等价实现）
     let row = tx
         .query_opt(
@@ -28100,7 +28100,7 @@ pub async fn serialnumber_u2_generate(
         None => Err(AppError::NotFound),
         Some(row) => {
             let next: i32 = row.get("xserial");
-            tx.commit().await.map_err(|_| AppError::Internal)?;
+            tx.commit().await?;
             Ok(Json(ActionResult::success(Value::Number(next.into()))))
         }
     }
@@ -28310,7 +28310,7 @@ pub async fn work_u2_v3_retract(
     )
     .await
     .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     drop(client);
     Ok(Json(ActionResult::success(serde_json::json!({
         "retracted": deleted as i64, "job": job,

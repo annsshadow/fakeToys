@@ -9858,7 +9858,7 @@ async fn u2_write_permissions(
     }
     let mut client = shared::db::acquire(pool).await?;
     // 「删旧权限 + 逐人重授」是集合替换语义，必须原子：中途失败不得留下半删半授状态。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     tx.execute(
         &format!(
             "DELETE FROM x_cms_permission WHERE {} = $1 AND role_type = $2",
@@ -9879,7 +9879,7 @@ async fn u2_write_permissions(
             .await
             .map_err(|_| AppError::Internal)?;
     }
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     let _ = pool;
     let _ = scope_col;
     Ok(Json(ActionResult::success(Value::Object(
@@ -10151,7 +10151,7 @@ async fn u3_cipher_upsert(
     }
     let mut client = shared::db::acquire(pool).await?;
     // 批量文档加密须整体原子：中途失败不得留下部分文档已加密、其余明文的半加密集合。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let mut written = 0u64;
     for doc_id in doc_ids {
         written += tx
@@ -10164,7 +10164,7 @@ async fn u3_cipher_upsert(
             .await
             .map_err(|_| AppError::Internal)?;
     }
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(written)
 }
 
@@ -10210,7 +10210,7 @@ async fn u3_save_scope_permissions(
             let mut client = shared::db::acquire(pool).await?;
             // 「删旧权限 + 逐人重授」是集合替换语义，必须原子：中途失败不得留下
             // 半删半授的越权/漏权状态（与 ai/portal/process designer 既有事务惯例一致）。
-            let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+            let tx = client.transaction().await?;
             tx
                 .execute(
                     &format!(
@@ -10235,7 +10235,7 @@ async fn u3_save_scope_permissions(
                     .await
                     .map_err(|_| AppError::Internal)?;
             }
-            tx.commit().await.map_err(|_| AppError::Internal)?;
+            tx.commit().await?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("scope".to_string(), Value::String(scope.to_string())),
@@ -10418,7 +10418,7 @@ pub async fn correlation_create_u3(
     related.retain(|t| seen.insert(t.clone()));
 
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     tx.execute(
         "DELETE FROM x_cms_correlation WHERE doc_id = $1 AND related_doc_id = ANY($2)",
         &[&doc_id, &related],
@@ -10451,7 +10451,7 @@ pub async fn correlation_create_u3(
         .execute(&sql, &refs)
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("docId".to_string(), Value::String(doc_id)),
@@ -10501,7 +10501,7 @@ pub async fn correlation_update_u3(
     related.retain(|t| seen.insert(t.clone()));
 
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     tx.execute(
         "DELETE FROM x_cms_correlation WHERE doc_id = $1 AND related_doc_id = ANY($2)",
         &[&doc_id, &related],
@@ -10534,7 +10534,7 @@ pub async fn correlation_update_u3(
         .execute(&sql, &refs)
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("docId".to_string(), Value::String(doc_id)),
@@ -11658,7 +11658,7 @@ pub async fn script_post_nested_u3(
             let mut client = shared::db::acquire(&pool).await?;
             let mut imported = 0u64;
             // 脚本导入原子化：INSERT 无去重，裸循环中途失败后重试会产生重复脚本。
-            let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+            let tx = client.transaction().await?;
             for script in &scripts {
                 let name = script.get("name").and_then(|v| v.as_str()).unwrap_or("");
                 let content = script
@@ -11674,7 +11674,7 @@ pub async fn script_post_nested_u3(
                     .await
                     .map_err(|_| AppError::Internal)?;
             }
-            tx.commit().await.map_err(|_| AppError::Internal)?;
+            tx.commit().await?;
             let _ = unique_name;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([

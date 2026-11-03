@@ -219,7 +219,7 @@ pub async fn person_reserve_delete(
     };
     // 级联删除（身份/组成员/属性 3 表 + 软删人员）必须原子：中途失败不得留下
     // 人员仍"存在"却已丢失全部身份/成员/属性的孤儿损坏态。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     for sql in [
         "DELETE FROM x_org_identity WHERE person_id = $1",
         "DELETE FROM x_org_group_member WHERE person_id = $1",
@@ -235,7 +235,7 @@ pub async fn person_reserve_delete(
     )
     .await
     .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     ok(Value::Object(
         vec![("id".to_string(), Value::String(pid))]
             .into_iter()

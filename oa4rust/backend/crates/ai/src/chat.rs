@@ -149,7 +149,7 @@ pub async fn chat_delete(
     let clue_person: String = row.get::<_, Option<String>>("person").unwrap_or_default();
     shared::middleware::require_owner(&pool, &session, &clue_person).await?;
 
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
 
     tx.execute(
         "DELETE FROM x_ai_completion WHERE \"clueId\" = $1",
@@ -163,7 +163,7 @@ pub async fn chat_delete(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(result > 0))]),

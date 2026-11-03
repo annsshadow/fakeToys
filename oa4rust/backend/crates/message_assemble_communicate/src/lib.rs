@@ -77,7 +77,7 @@ pub async fn send_message(
 
     // 发消息=原子地「写消息行」+「会话 last_message_time 刷新」，二写须同事务：否则
     // INSERT 成功而 UPDATE 失败会留下消息已入库但会话时间戳未刷新态（会话列表排序失真）。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let result = tx
         .execute("INSERT INTO x_message (id, conversation_id, content, sender, type, create_time) VALUES ($1, $2, $3, $4, $5, NOW())", &[&id, &conversation_id, &content, &sender, &msg_type])
         .await
@@ -89,7 +89,7 @@ pub async fn send_message(
     )
     .await
     .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([

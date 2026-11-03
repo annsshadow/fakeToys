@@ -3924,14 +3924,14 @@ pub async fn u2_meeting_delete_owned(
     shared::middleware::require_owner(&pool.0, &session, &creator).await?;
 
     // 级联删除：邀请与会议两写必须原子，中途失败留「会议在而邀请全失」的幽灵会议。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     tx.execute("DELETE FROM x_meeting_invite WHERE meeting_id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
     tx.execute("DELETE FROM x_meeting WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),

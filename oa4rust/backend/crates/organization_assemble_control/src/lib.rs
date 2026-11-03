@@ -2968,12 +2968,12 @@ pub async fn unitduty_list_flag_prev_count(
         client.query(
             "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty ORDER BY create_time DESC LIMIT $1",
             &[&count],
-        ).await.map_err(|_| AppError::Internal)?
+        ).await?
     } else {
         client.query(
             "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE id < $1 ORDER BY create_time DESC LIMIT $2",
             &[&flag, &count],
-        ).await.map_err(|_| AppError::Internal)?
+        ).await?
     };
 
     let data: Vec<Value> = rows
@@ -3025,12 +3025,12 @@ pub async fn unitduty_list_flag_next_count(
         client.query(
             "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty ORDER BY create_time DESC LIMIT $1",
             &[&count],
-        ).await.map_err(|_| AppError::Internal)?
+        ).await?
     } else {
         client.query(
             "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE id > $1 ORDER BY create_time DESC LIMIT $2",
             &[&flag, &count],
-        ).await.map_err(|_| AppError::Internal)?
+        ).await?
     };
 
     let data: Vec<Value> = rows
@@ -3315,12 +3315,12 @@ pub async fn unitattribute_list_flag_prev_count(
         client.query(
             "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute ORDER BY create_time DESC LIMIT $1",
             &[&count],
-        ).await.map_err(|_| AppError::Internal)?
+        ).await?
     } else {
         client.query(
             "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute WHERE id < $1 ORDER BY create_time DESC LIMIT $2",
             &[&flag, &count],
-        ).await.map_err(|_| AppError::Internal)?
+        ).await?
     };
 
     let data: Vec<Value> = rows
@@ -3372,12 +3372,12 @@ pub async fn unitattribute_list_flag_next_count(
         client.query(
             "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute ORDER BY create_time DESC LIMIT $1",
             &[&count],
-        ).await.map_err(|_| AppError::Internal)?
+        ).await?
     } else {
         client.query(
             "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute WHERE id > $1 ORDER BY create_time DESC LIMIT $2",
             &[&flag, &count],
-        ).await.map_err(|_| AppError::Internal)?
+        ).await?
     };
 
     let data: Vec<Value> = rows
@@ -3478,12 +3478,12 @@ pub async fn role_list_flag_prev_count(
         client.query(
             "SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time DESC LIMIT $1",
             &[&count],
-        ).await.map_err(|_| AppError::Internal)?
+        ).await?
     } else {
         client.query(
             "SELECT id, name, description, creator, create_time::text FROM x_org_role WHERE id < $1 ORDER BY create_time DESC LIMIT $2",
             &[&flag, &count],
-        ).await.map_err(|_| AppError::Internal)?
+        ).await?
     };
 
     let data: Vec<Value> = rows
@@ -3986,12 +3986,12 @@ pub async fn personattribute_list_flag_prev_count(
         client.query(
             "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute ORDER BY create_time DESC LIMIT $1",
             &[&count],
-        ).await.map_err(|_| AppError::Internal)?
+        ).await?
     } else {
         client.query(
             "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute WHERE id < $1 ORDER BY create_time DESC LIMIT $2",
             &[&flag, &count],
-        ).await.map_err(|_| AppError::Internal)?
+        ).await?
     };
 
     let data: Vec<Value> = rows
@@ -4043,12 +4043,12 @@ pub async fn personattribute_list_flag_next_count(
         client.query(
             "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute ORDER BY create_time DESC LIMIT $1",
             &[&count],
-        ).await.map_err(|_| AppError::Internal)?
+        ).await?
     } else {
         client.query(
             "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute WHERE id > $1 ORDER BY create_time DESC LIMIT $2",
             &[&flag, &count],
-        ).await.map_err(|_| AppError::Internal)?
+        ).await?
     };
 
     let data: Vec<Value> = rows
@@ -4302,7 +4302,7 @@ pub async fn identity_flag_order_before_followFlag(
     let mut order_result: u64 = 0;
     // 整表重排 order_number 须原子：中途失败留下半排序（部分行新序号、部分旧序号）
     // 的错乱/重号身份顺序。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     for (index, id) in ids.iter().enumerate() {
         let order_num = (index + 1) as i32;
         order_result += tx
@@ -4313,7 +4313,7 @@ pub async fn identity_flag_order_before_followFlag(
             .await
             .map_err(|_| AppError::Internal)?;
     }
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("success".to_string(), Value::Bool(order_result > 0))]),
@@ -4381,12 +4381,12 @@ pub async fn identity_list_flag_prev_count(
         client.query(
             "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time DESC LIMIT $1",
             &[&count],
-        ).await.map_err(|_| AppError::Internal)?
+        ).await?
     } else {
         client.query(
             "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE id < $1 ORDER BY create_time DESC LIMIT $2",
             &[&flag, &count],
-        ).await.map_err(|_| AppError::Internal)?
+        ).await?
     };
 
     let data: Vec<Value> = rows
@@ -4438,12 +4438,12 @@ pub async fn identity_list_flag_next_count(
         client.query(
             "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time DESC LIMIT $1",
             &[&count],
-        ).await.map_err(|_| AppError::Internal)?
+        ).await?
     } else {
         client.query(
             "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE id > $1 ORDER BY create_time DESC LIMIT $2",
             &[&flag, &count],
-        ).await.map_err(|_| AppError::Internal)?
+        ).await?
     };
 
     let data: Vec<Value> = rows
@@ -4693,12 +4693,12 @@ pub async fn group_list_flag_prev_count(
         client.query(
             "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time DESC LIMIT $1",
             &[&count],
-        ).await.map_err(|_| AppError::Internal)?
+        ).await?
     } else {
         client.query(
             "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE id < $1 ORDER BY create_time DESC LIMIT $2",
             &[&flag, &count],
-        ).await.map_err(|_| AppError::Internal)?
+        ).await?
     };
 
     let data: Vec<Value> = rows
@@ -4747,12 +4747,12 @@ pub async fn group_list_flag_next_count(
         client.query(
             "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time DESC LIMIT $1",
             &[&count],
-        ).await.map_err(|_| AppError::Internal)?
+        ).await?
     } else {
         client.query(
             "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE id > $1 ORDER BY create_time DESC LIMIT $2",
             &[&flag, &count],
-        ).await.map_err(|_| AppError::Internal)?
+        ).await?
     };
 
     let data: Vec<Value> = rows

@@ -757,7 +757,7 @@ pub async fn u2_subject_accept_reply(
             // 采纳 = topic.accept_reply_id 与 reply.accepted 的跨表不变量对，必须原子；
             // 此前第二写 `let _ =` 吞错且两写非事务，回帖标记失败会留主题悬空指向。
             let mut client = shared::db::acquire(&pool).await?;
-            let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+            let tx = client.transaction().await?;
             let affected = tx
                 .execute(
                     "UPDATE x_bbs_topic SET accept_reply_id = $1 WHERE id = $2 AND deleted_at IS NULL",
@@ -771,7 +771,7 @@ pub async fn u2_subject_accept_reply(
             )
             .await
             .map_err(|_| AppError::Internal)?;
-            tx.commit().await.map_err(|_| AppError::Internal)?;
+            tx.commit().await?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
@@ -798,7 +798,7 @@ pub async fn u2_subject_unaccept_reply(
             // 取消采纳须同步清回帖侧 accepted 标记：此前只清主题指针，
             // 旧回帖残留 accepted=true，会与后续新采纳并存造成双采纳。
             let mut client = shared::db::acquire(&pool).await?;
-            let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+            let tx = client.transaction().await?;
             let prev: Option<String> = tx
                 .query_opt(
                     "SELECT accept_reply_id FROM x_bbs_topic WHERE id = $1 AND deleted_at IS NULL",
@@ -808,7 +808,7 @@ pub async fn u2_subject_unaccept_reply(
                 .map_err(|_| AppError::Internal)?
                 .and_then(|r| r.get::<_, Option<String>>("accept_reply_id"));
             if prev.is_none() {
-                tx.commit().await.map_err(|_| AppError::Internal)?;
+                tx.commit().await?;
                 return Ok(Json(ActionResult::success(Value::Object(
                     serde_json::Map::from_iter([
                         ("id".to_string(), Value::String(id)),
@@ -830,7 +830,7 @@ pub async fn u2_subject_unaccept_reply(
                 .await
                 .map_err(|_| AppError::Internal)?;
             }
-            tx.commit().await.map_err(|_| AppError::Internal)?;
+            tx.commit().await?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
@@ -924,7 +924,7 @@ pub async fn u2_vote_submit(
     let mut client = shared::db::acquire(&pool).await?;
     // 投票=原子地「写投票记录」+「topic 票数 +1」，二写须同事务：否则 INSERT 成功而
     // UPDATE 失败会留下有记录却未计数的态（计数与记录数永久不一致）。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     tx.execute(
         "INSERT INTO x_bbs_vote_record (id, topic_id, person, option_id, option_name) \
              VALUES ($1, $2, $3, $4, $5)",
@@ -938,7 +938,7 @@ pub async fn u2_vote_submit(
     )
     .await
     .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1328,7 +1328,7 @@ pub async fn u2_user_reply_accept(
         U2Gate::Allowed => {
             // 同 u2_subject_accept_reply：跨表不变量对原子化。
             let mut client = shared::db::acquire(&pool).await?;
-            let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+            let tx = client.transaction().await?;
             tx.execute(
                 "UPDATE x_bbs_reply SET accepted = true WHERE id = $1 AND deleted_at IS NULL",
                 &[&reply_id],
@@ -1341,7 +1341,7 @@ pub async fn u2_user_reply_accept(
             )
             .await
             .map_err(|_| AppError::Internal)?;
-            tx.commit().await.map_err(|_| AppError::Internal)?;
+            tx.commit().await?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("subjectId".to_string(), Value::String(subject_id)),
@@ -1880,7 +1880,7 @@ pub async fn u2_role_bind_object(
     let mut bound = 0usize;
     let mut client = shared::db::acquire(&pool).await?;
     // N 次绑定插入事务化：中途失败整体回滚，不留半绑定中间态。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     for obj in objects {
         let object_type = obj
             .get("type")
@@ -1911,7 +1911,7 @@ pub async fn u2_role_bind_object(
         .await?;
         bound += 1;
     }
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("roleId".to_string(), Value::String(role_id)),
@@ -1944,7 +1944,7 @@ pub async fn u2_role_bind_user(
     let mut bound = 0usize;
     let mut client = shared::db::acquire(&pool).await?;
     // N 次绑定插入事务化：中途失败整体回滚，不留半绑定中间态。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     for rid in role_ids {
         let Some(rid) = rid.as_str().map(String::from) else {
             continue;
@@ -1960,7 +1960,7 @@ pub async fn u2_role_bind_user(
         .await?;
         bound += 1;
     }
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("personCode".to_string(), Value::String(person)),

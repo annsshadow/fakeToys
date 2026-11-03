@@ -1177,7 +1177,7 @@ pub async fn attachment_upload_folder_folderId(
         "INSERT INTO FILE_FILE (id, name, person, reference_id, reference_type, extension, length, mime_type, content, create_time, update_time) \
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())",
         &[&id, &name, &sess.person_unique, &folder_id, &ref_type, &ext, &(data.len() as i64), &mime, &content_b64],
-    ).await.map_err(|_| AppError::Internal)?;
+    ).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -1226,7 +1226,7 @@ pub async fn attachment_id(
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt("SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
@@ -1412,7 +1412,7 @@ pub async fn attachment_id_update(
     client.execute(
         "UPDATE FILE_FILE SET name = $1, mime_type = $2, update_time = NOW() WHERE id = $3 AND deleted_at IS NULL",
         &[&name, &mime_type, &id],
-    ).await.map_err(|_| AppError::Internal)?;
+    ).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -1475,7 +1475,7 @@ pub async fn attachment2_list_editor_owner(
              FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&session.person_unique],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -1547,7 +1547,7 @@ pub async fn attachment2_list_filter_name(
              FROM FILE_FILE WHERE name ILIKE $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&format!("%{}%", shared::db::escape_like(&name))],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -1619,7 +1619,7 @@ pub async fn attachment2_list_folder_folderId(
              FROM FILE_FILE WHERE superior = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&folder_id],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -1691,7 +1691,7 @@ pub async fn attachment2_list_share_owner(
              FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&session.person_unique],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -1762,7 +1762,7 @@ pub async fn attachment2_list_top(
              FROM FILE_FILE WHERE deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT 20",
             &[],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -1845,7 +1845,7 @@ pub async fn attachment2_list_type_page_size_size(
              FROM FILE_FILE WHERE deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT $1 OFFSET $2",
             &[&page_size, &offset],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -1971,7 +1971,7 @@ pub async fn attachment2_upload_folder_folderId(
         "INSERT INTO FILE_FILE (id, name, person, reference_id, reference_type, extension, length, mime_type, content, create_time, update_time) \
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())",
         &[&id, &name, &sess.person_unique, &folder_id, &ref_type, &ext, &(data.len() as i64), &mime, &content_b64],
-    ).await.map_err(|_| AppError::Internal)?;
+    ).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -1990,7 +1990,7 @@ pub async fn attachment2_user_capacity(
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt("SELECT COALESCE(SUM(length), 0) AS total FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL", &[&session.person_unique])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let total: i64 = row.map(|r| r.get("total")).unwrap_or(0);
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2016,7 +2016,7 @@ pub async fn attachment2_id(
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt("SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
@@ -2552,7 +2552,7 @@ pub async fn complex_folder_id(
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt("SELECT id, name, person, superior FROM FILE_FOLDER WHERE id = $1 AND deleted_at IS NULL", &[&id])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object({
             let mut map = serde_json::Map::from_iter([
@@ -2581,7 +2581,7 @@ pub async fn complex_top(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
     let client = shared::db::acquire(&pool).await?;
     let folder_rows = client
         .query("SELECT id, name, person, superior FROM FILE_FOLDER WHERE (superior IS NULL OR superior = '') AND deleted_at IS NULL ORDER BY name LIMIT 10", &[])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let folder_list: Vec<Value> = folder_rows
         .iter()
         .map(|row| {
@@ -2606,7 +2606,7 @@ pub async fn complex_top(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
         .collect();
     let attachment_rows = client
         .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE deleted_at IS NULL ORDER BY name LIMIT 10", &[])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let attachment_list: Vec<Value> = attachment_rows
         .iter()
         .map(|row| {
@@ -2732,7 +2732,7 @@ pub async fn editor_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query("SELECT DISTINCT person FROM FILE_FILE WHERE deleted_at IS NULL AND person != '' ORDER BY person", &[])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -2802,7 +2802,7 @@ pub async fn file_copy_attachment_attachmentId_referencetype_referenceType_refer
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt("SELECT name, person, extension, length, mime_type, content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&attachment_id])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("attachment not found")));
     };
@@ -2822,7 +2822,7 @@ pub async fn file_copy_attachment_attachmentId_referencetype_referenceType_refer
         "INSERT INTO FILE_FILE (id, name, person, reference_id, reference_type, extension, length, mime_type, content, create_time, update_time) \
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())",
         &[&new_id, &name, &person, &reference, &reference_type, &ext, &length, &mime, &content],
-    ).await.map_err(|_| AppError::Internal)?;
+    ).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(new_id)),
@@ -2844,7 +2844,7 @@ pub async fn file_list_referencetype(
              FROM FILE_FILE WHERE reference_type = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&reference_type],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -2916,7 +2916,7 @@ pub async fn file_list_referencetype_referenceType_reference_reference(
              FROM FILE_FILE WHERE reference_type = $1 AND reference_id = $2 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT 100",
             &[&reference_type, &reference],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -2983,7 +2983,7 @@ pub async fn file_list_unused_referencetype_cmsdocument_manage(
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE reference_type = 'cmsdocument_manage' AND deleted_at IS NULL ORDER BY create_time::timestamp DESC", &[])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -3037,7 +3037,7 @@ pub async fn file_list_id_next_count(
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE id > $1 AND deleted_at IS NULL ORDER BY id LIMIT 20", &[&id])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -3104,7 +3104,7 @@ pub async fn file_list_id_next_count_referencetype_referenceType(
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE id > $1 AND reference_type = $2 AND deleted_at IS NULL ORDER BY id LIMIT 20", &[&id, &reference_type])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -3158,7 +3158,7 @@ pub async fn file_list_id_prev_count(
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE id < $1 AND deleted_at IS NULL ORDER BY id DESC LIMIT 20", &[&id])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -3225,7 +3225,7 @@ pub async fn file_list_id_prev_count_referencetype_referenceType(
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE id < $1 AND reference_type = $2 AND deleted_at IS NULL ORDER BY id DESC LIMIT 20", &[&id, &reference_type])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -3339,7 +3339,7 @@ pub async fn file_upload_referencetype_referenceType_reference_reference_scale_s
         "INSERT INTO FILE_FILE (id, name, person, reference_id, reference_type, extension, length, mime_type, content, create_time, update_time) \
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())",
         &[&id, &name, &session.person_unique, &reference, &reference_type, &ext, &(data.len() as i64), &mime, &content_b64],
-    ).await.map_err(|_| AppError::Internal)?;
+    ).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -3470,7 +3470,7 @@ pub async fn file_id(
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt("SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
@@ -3610,7 +3610,7 @@ pub async fn folder_list_top(pool: Extension<Pool>) -> Result<Json<ActionResult<
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query("SELECT id, name, person, superior FROM FILE_FOLDER WHERE superior IS NULL OR superior = '' ORDER BY name", &[])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -3694,7 +3694,7 @@ pub async fn folder_id(
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt("SELECT id, name, person, superior FROM FILE_FOLDER WHERE id = $1 AND deleted_at IS NULL", &[&id])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object({
             let mut map = serde_json::Map::from_iter([
@@ -3756,7 +3756,7 @@ pub async fn folder2_list_top(
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query("SELECT id, name, person, superior FROM FILE_FOLDER WHERE superior IS NULL OR superior = '' ORDER BY name LIMIT 20", &[])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -3945,7 +3945,7 @@ pub async fn recycle_id(
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt("SELECT id, name, person, deleted_at FROM FILE_FILE WHERE id = $1 AND deleted_at IS NOT NULL", &[&id])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
@@ -4096,7 +4096,7 @@ pub async fn share_list(
              FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&session.person_unique],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -4161,7 +4161,7 @@ pub async fn share_list_att_share_shareId_folder_folderId(
             "SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE superior = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&folder_id],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -4229,7 +4229,7 @@ pub async fn share_list_my(
              FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&session.person_unique],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -4294,7 +4294,7 @@ pub async fn share_list_my2_shareType_fileType(
             "SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE person = $1 AND reference_type = $2 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
             &[&session.person_unique, &file_type],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -4747,7 +4747,7 @@ pub async fn u2_attachment_update_content(
             "UPDATE FILE_FILE SET storage_key = $1, length = $2, extension = $3, content = $4, update_time = NOW() WHERE id = $5",
             &[&key, &length, &ext, &content_b64, &id],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -4797,7 +4797,7 @@ pub async fn u2_attachment_delete(
     shared::middleware::require_owner(&pool, &session, &owner).await?;
     client
         .execute("UPDATE FILE_FILE SET deleted_at = NOW(), update_time = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&id])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -4843,7 +4843,7 @@ pub async fn u2_attachment2_update(
             "UPDATE FILE_FILE SET name = $1, mime_type = $2, update_time = NOW() WHERE id = $3 AND deleted_at IS NULL",
             &[&name, &mime_type, &id],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -4874,7 +4874,7 @@ pub async fn u2_attachment2_delete(
     shared::middleware::require_owner(&pool, &session, &owner).await?;
     client
         .execute("UPDATE FILE_FILE SET deleted_at = NOW(), update_time = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&id])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -4905,7 +4905,7 @@ pub async fn u2_file_delete_by_id(
     shared::middleware::require_owner(&pool, &session, &owner).await?;
     client
         .execute("UPDATE FILE_FILE SET deleted_at = NOW(), update_time = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&id])
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -4956,7 +4956,7 @@ pub async fn u2_file_list_reference_types(
              WHERE person = $1 AND deleted_at IS NULL GROUP BY reference_type ORDER BY reference_type",
             &[&session.person_unique],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -5066,7 +5066,7 @@ pub async fn u2_folder_rename(
             "UPDATE FILE_FOLDER SET name = $1, update_time = NOW() WHERE id = $2 AND deleted_at IS NULL",
             &[&name, &id],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -5101,7 +5101,7 @@ pub async fn u2_folder_delete(
             "UPDATE FILE_FOLDER SET deleted_at = NOW(), update_time = NOW() WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -5233,7 +5233,7 @@ pub async fn u2_share_create(
                     "UPDATE FILE_SHARE SET share_type = $1, password = $2, name = $3, extension = $4, length = $5, update_time = NOW() WHERE id = $6",
                     &[&share_type, &password, &name, &extension, &length, &id],
                 )
-                .await.map_err(|_| AppError::Internal)?;
+                .await?;
             id
         }
         None => {
@@ -5244,7 +5244,7 @@ pub async fn u2_share_create(
                      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
                     &[&id, &session.person_unique, &name, &file_id, &share_type, &extension, &length, &share_type, &password],
                 )
-                .await.map_err(|_| AppError::Internal)?;
+                .await?;
             id
         }
     };
@@ -5327,7 +5327,7 @@ pub async fn u2_share_shield(
             "UPDATE FILE_SHARE SET valid_time = '1970-01-01 00:00:00'::TIMESTAMP, update_time = NOW() WHERE id = $1",
             &[&id],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -5409,7 +5409,7 @@ pub async fn u2_share_save_to_folder(
              FROM FILE_FILE WHERE id = $4 AND deleted_at IS NULL",
             &[&new_id, &sess.person_unique, &folder_id, &file_id],
         )
-        .await.map_err(|_| AppError::Internal)?;
+        .await?;
     if result == 0 {
         return Ok(Json(ActionResult::error("file not found")));
     }

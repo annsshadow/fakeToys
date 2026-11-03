@@ -310,6 +310,43 @@ pub async fn acquire(pool: &Pool) -> Result<deadpool_postgres::Object, crate::Ap
     pool.get().await.map_err(crate::classify_acquire_error)
 }
 
+/// O7：查询执行期错误分类（配合 `From<tokio_postgres::Error> for AppError`，
+/// 让 `.await?` 天然带上分类）。
+///
+/// 可重试（503 `Unavailable`）：
+///   - SQLSTATE 08xxx（连接异常类：断连、对端崩溃）；
+///   - 57014 query_canceled——本服务里即 R26 的 statement_timeout 服务端取消；
+///   - 53300 连接数耗尽 / 53200 OOM / 57P01-03 停机窗口；
+///   - 无 SQLSTATE 的连接级失败（`is_closed()` 或 source 链上是 io::Error，
+///     如被 pg_terminate_backend 杀掉的连接）。
+///
+/// 不可重试（500 `Internal`）：23505 唯一冲突、42P01 未定义表、42601 语法错等
+/// 代码/数据缺陷；以及 ToSql/FromSql 这类客户端侧参数/类型错误（非 db、非 IO、
+/// 连接未断——重试不会自愈）。
+pub fn classify_query_error(e: deadpool_postgres::tokio_postgres::Error) -> crate::AppError {
+    use crate::AppError;
+    if let Some(db) = e.as_db_error() {
+        let code = db.code().code();
+        if code.starts_with("08")
+            || matches!(code, "57014" | "53300" | "53200" | "57P01" | "57P02" | "57P03")
+        {
+            return AppError::Unavailable(format!("database error {code}: {}", db.message()));
+        }
+        return AppError::Internal;
+    }
+    if e.is_closed() {
+        return AppError::Unavailable("database connection closed".to_string());
+    }
+    let mut src = std::error::Error::source(&e);
+    while let Some(s) = src {
+        if s.is::<std::io::Error>() {
+            return AppError::Unavailable(format!("database io error: {s}"));
+        }
+        src = s.source();
+    }
+    AppError::Internal
+}
+
 /// 用显式 URL 创建 SeaORM DatabaseConnection（sizing/TLS 与 deadpool 池同源，
 /// 见 `DbPoolConfig`）。懒连接（connect_lazy）：与 deadpool 池一致，构建时不实际
 /// 建连——无库环境（如 arity 探针、core_entity 的 HTTP 臂测试）也能构建成功，
@@ -842,5 +879,157 @@ mod pool_construction_tests {
             .expect_err("缺 host 的 URL 必须失败");
         assert!(matches!(err, DbError::Config(_)), "got {err:?}");
         assert!(err.to_string().contains("不是合法 URL"), "实际 {err}");
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// O7：查询执行期错误分类的真触发验证。
+//
+// 探针要求（用户口径）：57014 用真 statement_timeout 触发、断连用真
+// pg_terminate_backend 触发，不得用构造的错误值；23505/42P01 作负锚点保持 500。
+// 每组都给「改前（map_err 吞成 Internal → 500）vs 改后（classify → 503）」对照。
+// ──────────────────────────────────────────────────────────────────────────────
+#[cfg(test)]
+mod o7_query_error_tests {
+    use crate::error::AppError;
+    use crate::testing::{is_db_available, test_pool};
+    use axum::response::IntoResponse;
+
+    /// 改前形态：各 handler 手写的吞错闭包。
+    fn legacy_map(_e: deadpool_postgres::tokio_postgres::Error) -> AppError {
+        AppError::Internal
+    }
+
+    fn status_of(e: AppError) -> axum::http::StatusCode {
+        e.into_response().status()
+    }
+
+    #[tokio::test]
+    async fn statement_timeout_57014_becomes_retryable_503() {
+        if !is_db_available().await {
+            eprintln!("SKIP: no database available");
+            return;
+        }
+        // 独立池，避免 statement_timeout 污染共享测试池
+        let pool = test_pool();
+        let client = pool.get().await.expect("get client");
+        client
+            .execute("SET statement_timeout = 1000", &[])
+            .await
+            .expect("set timeout");
+
+        let err = client
+            .query("SELECT pg_sleep(3)", &[])
+            .await
+            .expect_err("pg_sleep(3) 必须被 1s 语句超时取消");
+        assert_eq!(
+            err.code().map(|c| c.code()),
+            Some("57014"),
+            "真触发 SQLSTATE 57014，实际 {err}"
+        );
+
+        // 改前 → 500；改后 → 503 可重试
+        assert_eq!(
+            status_of(legacy_map(err)),
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR
+        );
+        let err2 = client
+            .query("SELECT pg_sleep(3)", &[])
+            .await
+            .expect_err("第二次同样被取消");
+        assert_eq!(
+            status_of(super::classify_query_error(err2)),
+            axum::http::StatusCode::SERVICE_UNAVAILABLE
+        );
+    }
+
+    #[tokio::test]
+    async fn terminated_connection_becomes_retryable_503() {
+        if !is_db_available().await {
+            eprintln!("SKIP: no database available");
+            return;
+        }
+        let pool = test_pool();
+        let victim = pool.get().await.expect("victim");
+        let pid: i32 = victim
+            .query_one("SELECT pg_backend_pid()", &[])
+            .await
+            .expect("pid")
+            .get(0);
+
+        // 从另一个连接杀掉 victim 的 PG 后端
+        let killer = pool.get().await.expect("killer");
+        killer
+            .query_one("SELECT pg_terminate_backend($1)", &[&pid])
+            .await
+            .expect("terminate");
+
+        // victim 上的下一次查询必然失败（57P01 或连接关闭）
+        let err = loop {
+            match victim.query_one("SELECT 1", &[]).await {
+                Err(e) => break e,
+                Ok(_) => tokio::time::sleep(std::time::Duration::from_millis(20)).await,
+            }
+        };
+        eprintln!("terminated error: code={:?} closed={} {err}", err.code().map(|c| c.code()), err.is_closed());
+
+        assert_eq!(
+            status_of(super::classify_query_error(err)),
+            axum::http::StatusCode::SERVICE_UNAVAILABLE
+        );
+    }
+
+    #[tokio::test]
+    async fn constraint_and_undefined_table_stay_500() {
+        if !is_db_available().await {
+            eprintln!("SKIP: no database available");
+            return;
+        }
+        let pool = test_pool();
+        let client = pool.get().await.expect("client");
+
+        // 23505 唯一冲突：代码/数据缺陷，重试不会自愈 → 保持 500
+        client
+            .execute("CREATE TEMP TABLE o7_dup (id int PRIMARY KEY)", &[])
+            .await
+            .unwrap();
+        client.execute("INSERT INTO o7_dup VALUES (1)", &[]).await.unwrap();
+        let dup = client
+            .execute("INSERT INTO o7_dup VALUES (1)", &[])
+            .await
+            .expect_err("必须唯一冲突");
+        assert_eq!(dup.code().map(|c| c.code()), Some("23505"));
+        assert_eq!(
+            status_of(super::classify_query_error(dup)),
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            "23505 不得映射为可重试"
+        );
+
+        // 42P01 未定义表：代码缺陷 → 保持 500
+        let undef = client
+            .query("SELECT 1 FROM o7_no_such_table", &[])
+            .await
+            .expect_err("必须未定义表");
+        assert_eq!(undef.code().map(|c| c.code()), Some("42P01"));
+        assert_eq!(
+            status_of(super::classify_query_error(undef)),
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR
+        );
+    }
+
+    #[tokio::test]
+    async fn from_impl_matches_classifier() {
+        // `?` 自动转换（From<tokio_postgres::Error>）必须与显式分类同口径。
+        if !is_db_available().await {
+            eprintln!("SKIP: no database available");
+            return;
+        }
+        async fn fallible(pool: &deadpool_postgres::Pool) -> Result<i64, AppError> {
+            let client = pool.get().await.unwrap();
+            let row = client.query_one("SELECT 1 FROM o7_no_such_table_either", &[]).await?;
+            Ok(row.get(0))
+        }
+        let err = fallible(&test_pool()).await.expect_err("42P01 必须失败");
+        assert!(matches!(err, AppError::Internal), "42P01 经 ? 必须 500，实际 {err:?}");
     }
 }

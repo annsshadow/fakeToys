@@ -261,7 +261,7 @@ pub async fn reset_service(
     let mut client = shared::db::acquire(&pool).await?;
     // reset=原子地「清近 1h 处理缓存」+「x_query 计数归 1」，二写须同事务：否则中途
     // 失败会留下缓存已清但计数未重置（或反之）的半重置态。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let row = tx
         .query_one("SELECT COUNT(*) as count FROM x_query", &[])
         .await
@@ -280,7 +280,7 @@ pub async fn reset_service(
         .execute("UPDATE x_query SET count = '1', update_time = NOW()", &[])
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
 
     let now = chrono::Utc::now()
         .naive_utc()

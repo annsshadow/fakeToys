@@ -39,7 +39,7 @@ pub async fn create(
     let creator = sess.person_unique.clone();
 
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     tx.execute(
         "INSERT INTO PP_E_SCRIPT (xid, xname, xapplication, xcode, \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\", id, creator) \
          VALUES ($1, $2, NULLIF($3, ''), $4, $5, to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'), to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'), $1, $5)",
@@ -54,7 +54,7 @@ pub async fn create(
     )
     .await
     .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -77,7 +77,7 @@ pub async fn update(
     let creator = sess.person_unique.clone();
 
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let n = tx
         .execute(
             "UPDATE PP_E_SCRIPT SET xname = COALESCE($2, xname), xcode = COALESCE($3, xcode), \
@@ -107,7 +107,7 @@ pub async fn update(
     )
     .await
     .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([

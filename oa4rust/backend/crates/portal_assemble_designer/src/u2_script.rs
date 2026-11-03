@@ -67,7 +67,7 @@ pub async fn create(
     let creator = session.person_unique.clone();
 
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     tx.execute(
         "INSERT INTO x_portal_script (id, name, flag, category, content, portal_id, creator, creator_person, create_time, update_time) \
          VALUES ($1, $2, $2, $3, $4, NULLIF($5, ''), $6, $6, to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'), to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'))",
@@ -83,7 +83,7 @@ pub async fn create(
     )
     .await
     .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -108,7 +108,7 @@ pub async fn update(
     let creator = session.person_unique.clone();
 
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let n = tx
         .execute(
             "UPDATE x_portal_script SET \
@@ -133,7 +133,7 @@ pub async fn update(
     )
     .await
     .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([

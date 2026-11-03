@@ -382,7 +382,7 @@ pub async fn external_datasources_set(
     // 而入口刚校验过「已配置则拒绝」，重试即坏（正确性）。多行 VALUES
     // 再把 N 次往返压成 1 次（性能）。仍按 PostgreSQL 65535 参数上限
     // 分片——管理面一次性写入现实到不了上限，但边界要防。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     use deadpool_postgres::tokio_postgres::types::ToSql;
     for chunk in req.external_data_sources.chunks(DATASOURCE_MAX_ROWS) {
         let mut values_sql = Vec::with_capacity(chunk.len());
@@ -441,7 +441,7 @@ pub async fn external_datasources_set(
             .await
             .map_err(|_| AppError::Internal)?;
     }
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(json!({ "value": true }))))
 }
 

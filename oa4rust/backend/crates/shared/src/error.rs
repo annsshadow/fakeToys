@@ -51,6 +51,15 @@ pub enum AppError {
     Unavailable(String),
 }
 
+/// O7：tokio-postgres 查询/事务错误经 `?` 自动带上 O7 分类
+/// （08xxx/57014/53300/53200/57P0x/断连 → 503 可重试；23505/42P01/语法错/
+/// ToSql/FromSql 等代码缺陷 → 500）。
+impl From<deadpool_postgres::tokio_postgres::Error> for AppError {
+    fn from(e: deadpool_postgres::tokio_postgres::Error) -> Self {
+        crate::db::classify_query_error(e)
+    }
+}
+
 // 将 AppError 转换为 HTTP 响应：
 //   - Database / Internal / InternalAnyhow        → 500 Internal Server Error
 //   - BadRequest           → 400 Bad Request

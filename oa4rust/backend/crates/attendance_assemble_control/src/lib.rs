@@ -7831,7 +7831,7 @@ pub async fn v2_group_rebuild_detail_group_date(
     let mut seen = std::collections::HashSet::new();
     participate.retain(|p| seen.insert(p.clone()));
 
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     tx.execute(
         "DELETE FROM x_attendance_detail WHERE date = $1 AND person_id = ANY($2)",
         &[&date, &participate],
@@ -7876,7 +7876,7 @@ pub async fn v2_group_rebuild_detail_group_date(
             .await
             .map_err(|_| AppError::Internal)?;
     }
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -8586,7 +8586,7 @@ pub async fn v2_record_delete_people_date(
     let pattern = format!("{}%", date);
 
     // 同一人同一天的两表打卡记录逻辑上是同一实体，双删必须原子防半删态。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let n_record = tx
         .execute(
             "DELETE FROM x_attendance_record WHERE user_id = $1 AND check_in_time LIKE $2",
@@ -8601,7 +8601,7 @@ pub async fn v2_record_delete_people_date(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -8648,7 +8648,7 @@ async fn import_checkin_rows(
     let admin = shared::middleware::is_admin(pool, &session.person_unique).await;
     let mut client = shared::db::acquire(pool).await?;
     // 整批导入包同一事务：中途失败不得留下部分行已导入的半导入态。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let mut inserted: i64 = 0;
     let mut ids: Vec<String> = Vec::with_capacity(rows.len());
 
@@ -8790,7 +8790,7 @@ async fn import_checkin_rows(
         inserted = ins_id.len() as i64;
     }
 
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok((inserted, ids))
 }
 

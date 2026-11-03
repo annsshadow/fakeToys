@@ -1305,7 +1305,7 @@ pub async fn oauth_token_get(
     let row = rt.query_opt(
         "SELECT id, client, person_id, scope FROM x_org_oauth_code WHERE code = $1 AND expire_time > NOW()",
         &[&code],
-    ).await.map_err(|_| AppError::Internal)?;
+    ).await?;
     let result = match row {
         Some(r) => {
             let data = serde_json::json!({

@@ -898,7 +898,7 @@ pub async fn att_copy_to_work(
     u4_require_actor_of(&pool.0, &session, creator.as_deref()).await?;
     // 批量化：源件一次 ANY 查回、目标已有重名一次查回（原逐条 SELECT+COUNT 为 3N+1）；
     // 写入包同一事务。同请求内重复 id/同名经 map/set 回填保持原逐条判重语义。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let sources: std::collections::HashMap<String, deadpool_postgres::tokio_postgres::Row> = tx
         .query(
             "SELECT id, name, content, creator FROM x_attachment \
@@ -947,7 +947,7 @@ pub async fn att_copy_to_work(
         existing_names.insert(name.clone());
         success.push(json!({ "id": new_id, "name": name, "copied": true }));
     }
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     ok(json!({ "successList": success }))
 }
 
@@ -962,7 +962,7 @@ pub async fn job_delete(
 ) -> H {
     require_admin_opt(&pool.0, session.as_deref()).await?;
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let n = tx
         .execute(
             "UPDATE x_job SET job_status = 'cancelled', end_time = NOW() \
@@ -978,7 +978,7 @@ pub async fn job_delete(
     )
     .await
     .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     if n == 0 {
         return biz_err("job already completed or not found");
     }
@@ -1117,7 +1117,7 @@ pub async fn read_processing(
 ) -> H {
     let session = crate::u4_session(session)?;
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let row = tx
         .query_opt(
             "SELECT id, work_id, person, scope FROM x_read \
@@ -1148,7 +1148,7 @@ pub async fn read_processing(
     )
     .await
     .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     ok(json!({ "id": id, "readCompletedId": rc_id, "value": true }))
 }
 
@@ -1579,7 +1579,7 @@ async fn snap_take_for_work(
     next_status: Option<&str>,
 ) -> H {
     let mut client = shared::db::acquire(pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let row = tx
         .query_opt(
             "SELECT id, title, process, application, work_status, creator \
@@ -1616,7 +1616,7 @@ async fn snap_take_for_work(
         .await
         .map_err(|_| AppError::Internal)?;
     }
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     ok(json!({ "id": snap_id, "type": snap_type }))
 }
 
@@ -2046,7 +2046,7 @@ pub async fn documentversion_create(
 ) -> H {
     let session = crate::u4_session(session)?;
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     // 行锁父 work：MAX+1 是读-改-写序号分配，无锁时两并发创建对同一 work 读到
     // 相同 MAX 而插入重复版本号；锁父行串行化后后者的 MAX 读到前者已提交的行。
     // 锁同时兼作存在性检查（不存在则无行可锁）。
@@ -2080,7 +2080,7 @@ pub async fn documentversion_create(
     )
     .await
     .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     ok(json!({ "id": id, "work": work, "version": next }))
 }
 
@@ -2153,7 +2153,7 @@ async fn work_start_impl(
         return biz_err("processId is required");
     }
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let exists = tx
         .query_one(
             "SELECT COUNT(*) AS c FROM x_process_definition WHERE id = $1 OR name = $1",
@@ -2191,7 +2191,7 @@ async fn work_start_impl(
     )
     .await
     .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     ok(json!({ "id": id, "taskId": task_id }))
 }
 
@@ -2271,7 +2271,7 @@ pub async fn work_delete(
 ) -> H {
     let session = crate::u4_session(session)?;
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     // 级联物理删 x_work / x_task / x_draft 之前先锁行取发起人，
     // 非发起人 / 非 admin 退回时事务不进入任何 DELETE
     let row = tx
@@ -2298,7 +2298,7 @@ pub async fn work_delete(
     tx.execute("DELETE FROM x_draft WHERE work_id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     ok(json!({ "id": id, "value": true }))
 }
 
@@ -2375,7 +2375,7 @@ pub async fn work_v3_retract_body(
         return biz_err("work is required");
     }
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let row = tx
         .query_opt(
             "SELECT creator FROM x_work WHERE id = $1 FOR UPDATE",
@@ -2405,7 +2405,7 @@ pub async fn work_v3_retract_body(
     .await
     .map_err(|_| AppError::Internal)?;
     record_insert_tx(&tx, &work, "retract", "v3 retract", &session.person_unique).await?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     ok(json!({ "id": work, "value": true }))
 }
 
@@ -2444,7 +2444,7 @@ pub async fn work_processing_signal(
     let _ = series;
     let session = crate::u4_session(session)?;
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let row = tx
         .query_opt(
             "SELECT id, person FROM x_task \
@@ -2473,7 +2473,7 @@ pub async fn work_processing_signal(
         &session.person_unique,
     )
     .await?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     ok(json!({ "id": id, "taskId": task_id, "signaled": true }))
 }
 
@@ -2491,7 +2491,7 @@ pub async fn work_add_identity_matrix(
         return biz_err("identityList is required");
     }
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let row = tx
         .query_opt(
             "SELECT id, title, creator FROM x_work WHERE id = $1 FOR UPDATE",
@@ -2518,7 +2518,7 @@ pub async fn work_add_identity_matrix(
         .map_err(|_| AppError::Internal)?;
         created.push(json!({ "taskId": task_id, "identity": identity }));
     }
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     ok(json!({ "id": id, "taskList": created }))
 }
 
@@ -2534,7 +2534,7 @@ pub async fn wc_merge_flag(
     let session = crate::u4_session(session)?;
     crate::u4_require_actors(&pool.0, &session, crate::U4ActorKey::WorkCompleted, &flag).await?;
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let row = tx
         .query_opt(
             "SELECT work_id FROM x_workcompleted WHERE id = $1 FOR UPDATE",
@@ -2553,7 +2553,7 @@ pub async fn wc_merge_flag(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     ok(json!({ "id": flag, "merged": n as i64 }))
 }
 
@@ -2640,7 +2640,7 @@ pub async fn wc_rollback_flag(
     let session = crate::u4_session(session)?;
     crate::u4_require_actors(&pool.0, &session, crate::U4ActorKey::WorkCompleted, &flag).await?;
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let row = tx
         .query_opt(
             "SELECT work_id FROM x_workcompleted WHERE id = $1 FOR UPDATE",
@@ -2672,7 +2672,7 @@ pub async fn wc_rollback_flag(
         "system",
     )
     .await?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     ok(json!({ "id": flag, "work": work_id, "rolledBack": true }))
 }
 

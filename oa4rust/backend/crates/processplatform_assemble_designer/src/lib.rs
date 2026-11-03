@@ -4097,7 +4097,7 @@ pub async fn item_access_bach_save(
     let creator = sess.person_unique.clone();
     // 整批保存包同一事务，且 UPDATE 失败必须传播（此前 `unwrap_or(0)` 吞错：
     // 更新失败被静默当 0 行计入，响应仍报成功，且批次中途失败留半保存态）。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let mut saved = 0i64;
     for item in &items {
         let name = item.get("name").and_then(|v| v.as_str()).unwrap_or("");
@@ -4126,7 +4126,7 @@ pub async fn item_access_bach_save(
             }
         }
     }
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("saved".to_string(), Value::Bool(saved > 0)),

@@ -303,7 +303,7 @@ pub async fn crud_create_many(
     use deadpool_postgres::tokio_postgres::types::ToSql;
 
     let max_rows = max_rows_per_statement(spec);
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     for (chunk_payloads, chunk_ids) in payloads.chunks(max_rows).zip(ids.chunks(max_rows)) {
         let sql = build_batch_insert_sql(spec, chunk_payloads.len());
         let params = batch_params(spec, chunk_payloads, chunk_ids);
@@ -313,7 +313,7 @@ pub async fn crud_create_many(
             .await
             .map_err(|_| AppError::Internal)?;
     }
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
 
     Ok(ids)
 }

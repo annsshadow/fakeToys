@@ -143,7 +143,7 @@ async fn attr_write_values(
     };
     let values = normalize_flags(string_list(body, "attributeList"));
     let mut client = shared::db::acquire(pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
 
     // 归一化查重：append 仅补缺失值；set 全量替换
     let existing: Vec<String> = if append {
@@ -209,7 +209,7 @@ async fn attr_write_values(
             .await
             .map_err(|_| AppError::Internal)?;
     }
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(())
 }
 

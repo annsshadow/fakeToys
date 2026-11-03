@@ -2547,7 +2547,7 @@ pub async fn chat_delete_clue_id(
     }
 
     // 级联软删：会话与其全部对话记录必须原子，中途失败留「会话在而记录已删」。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let completions = tx
         .execute(
             "UPDATE x_ai_chat SET deleted_at = NOW() WHERE conversation_id = $1 AND deleted_at IS NULL",
@@ -2563,7 +2563,7 @@ pub async fn chat_delete_clue_id(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([

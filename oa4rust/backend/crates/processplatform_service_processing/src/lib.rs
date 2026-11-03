@@ -227,7 +227,7 @@ pub async fn execute_process(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let session = u4_session(session)?;
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let creator: Option<String> = tx
         .query_opt(
             "SELECT creator FROM x_work WHERE id = $1 FOR UPDATE",
@@ -252,7 +252,7 @@ pub async fn execute_process(
     )
     .await
     .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -565,7 +565,7 @@ pub async fn work_v2_id_terminate(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let session = u4_session(session)?;
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     // 归属门先于状态写：终止是「发起人终止自己的单据」，原实现按 ID 可终止任意 work。
     let creator: Option<String> = tx
         .query_opt(
@@ -596,7 +596,7 @@ pub async fn work_v2_id_terminate(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -610,7 +610,7 @@ pub async fn work_v2_id_retract(
     // 撤销 = work 置 retracted + 该 work 全部 task 置 cancelled，两写必须原子：
     // 中途失败会留「流程已撤销但任务仍 active 可继续审批」的矛盾态。
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let creator: Option<String> = tx
         .query_opt(
             "SELECT creator FROM x_work WHERE id = $1 FOR UPDATE",
@@ -632,7 +632,7 @@ pub async fn work_v2_id_retract(
     )
     .await
     .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     let row = client
         .query_one(
             "SELECT id, title, process, application, work_status, creator, create_time, start_time, end_time FROM x_work WHERE id = $1",
@@ -648,7 +648,7 @@ async fn work_v2_id_goback_core(
     id: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     tx.execute(
         "UPDATE x_work SET work_status = $1 WHERE id = $2",
         &[&"pending", &id],
@@ -675,7 +675,7 @@ async fn work_v2_id_goback_core(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -714,7 +714,7 @@ async fn work_v2_id_rollback_core(
         .await
         .map_err(|_| AppError::Internal)?;
     if let Some(snap) = snap_row {
-        let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+        let tx = client.transaction().await?;
         let snap_data_raw: String = snap.get("snap_data");
         let snap_data: Value =
             serde_json::from_str(&snap_data_raw).unwrap_or(serde_json::json!({}));
@@ -725,7 +725,7 @@ async fn work_v2_id_rollback_core(
             )
             .await
             .map_err(|_| AppError::Internal)?;
-        tx.commit().await.map_err(|_| AppError::Internal)?;
+        tx.commit().await?;
         return Ok(Json(ActionResult::success(snap_data)));
     }
     Ok(Json(ActionResult::success(Value::Object(
@@ -762,7 +762,7 @@ async fn work_v2_id_add_split_core(
     id: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let row = tx
         .query_one(
             "SELECT id, title, process, application, work_status, creator FROM x_work WHERE id = $1 FOR UPDATE",
@@ -784,7 +784,7 @@ async fn work_v2_id_add_split_core(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -820,7 +820,7 @@ async fn work_v2_id_reroute_core(
     id: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     tx.execute(
         "UPDATE x_work SET work_status = $1 WHERE id = $2",
         &[&"rerouted", &id],
@@ -840,7 +840,7 @@ async fn work_v2_id_reroute_core(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -1032,7 +1032,7 @@ pub async fn work_manual_after_processing(
     // 第五十三批：人工流转后置落 x_record，按 work 发起人校归属。
     u4_require_work_owner(&pool.0, session, &id).await?;
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let row = tx
         .query_one(
             "SELECT id, title, process, application, work_status, creator FROM x_work WHERE id = $1",
@@ -1046,7 +1046,7 @@ pub async fn work_manual_after_processing(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -1152,7 +1152,7 @@ pub async fn task_id_urge(
     let session = u4_session(session)?;
     u4_require_actors(&pool.0, &session, U4ActorKey::Task, &id).await?;
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     tx.execute(
         "UPDATE x_task SET task_status = $1 WHERE id = $2",
         &[&"urged", &id],
@@ -1173,7 +1173,7 @@ pub async fn task_id_urge(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -1186,7 +1186,7 @@ pub async fn task_id_replace(
     let session = u4_session(session)?;
     u4_require_actors(&pool.0, &session, U4ActorKey::Task, &id).await?;
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let row = tx
         .query_one(
             "SELECT id, work, activity, activity_token, person, task_status FROM x_task WHERE id = $1",
@@ -1209,7 +1209,7 @@ pub async fn task_id_replace(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -1416,7 +1416,7 @@ pub async fn task_v3_id_add(
     // 第五十三批：给 work 追加任务，按 work 发起人校归属。
     u4_require_work_owner(&pool.0, session, &id).await?;
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let row = tx
         .query_one(
             "SELECT id, title, process, application, work_status FROM x_work WHERE id = $1",
@@ -1431,7 +1431,7 @@ pub async fn task_v3_id_add(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("workId".to_string(), Value::String(id)),
@@ -1516,7 +1516,7 @@ pub async fn taskcompleted_id_press_work_work(
     let session = u4_session(session)?;
     u4_require_actors(&pool.0, &session, U4ActorKey::WorkCompleted, &completed_id).await?;
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     tx.execute(
         "UPDATE x_workcompleted SET work_id = $1 WHERE id = $2",
         &[&work_id, &completed_id],
@@ -1530,7 +1530,7 @@ pub async fn taskcompleted_id_press_work_work(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -1647,7 +1647,7 @@ pub async fn snap_workcompleted_workCompletedId_type_abandonedworkcompleted(
     )
     .await?;
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let id = Uuid::new_v4().to_string();
     let work_id_row = tx
         .query_one(
@@ -1663,7 +1663,7 @@ pub async fn snap_workcompleted_workCompletedId_type_abandonedworkcompleted(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
     ))))
@@ -1724,7 +1724,7 @@ pub async fn snap_id_restore(
     let session = u4_session(session)?;
     u4_require_actors(&pool.0, &session, U4ActorKey::Snap, &id).await?;
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let snap_row = tx
         .query_one(
             "SELECT id, work_id, snap_type, snap_data::text AS snap_data FROM x_snap WHERE id = $1",
@@ -1748,7 +1748,7 @@ pub async fn snap_id_restore(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(snap_data)))
 }
 
@@ -1842,7 +1842,7 @@ pub async fn touch_merge(
     axum::extract::Path((id1, id2)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let row1 = tx
         .query_one(
             "SELECT id, title, process, application, work_status FROM x_work WHERE id = $1",
@@ -1870,7 +1870,7 @@ pub async fn touch_merge(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("mergedFrom".to_string(), Value::String(id2)),
@@ -1908,7 +1908,7 @@ pub async fn touch_touchdelay(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let row = tx
         .query_one(
             "SELECT id, title, work, activity, activity_token, person, task_status FROM x_task WHERE id = $1",
@@ -1924,7 +1924,7 @@ pub async fn touch_touchdelay(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -1934,7 +1934,7 @@ pub async fn touch_urge(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     tx.execute(
         "UPDATE x_task SET task_status = $1 WHERE id = $2",
         &[&"urged", &id],
@@ -1955,7 +1955,7 @@ pub async fn touch_urge(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -2042,7 +2042,7 @@ pub async fn review_init_review(
     // 无会话 401；reviewer 非空时须本人或 admin，空的历史行保留仅会话语义。
     let session = u4_session(session)?;
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let row = tx
         .query_one(
             "SELECT id, work_id, reviewer, comment, status, create_time FROM x_review WHERE id = $1",
@@ -2058,7 +2058,7 @@ pub async fn review_init_review(
     )
     .await
     .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -3309,7 +3309,7 @@ pub async fn workcompleted_flag_rollback(
     let mut client = shared::db::acquire(&pool).await?;
     // 回滚=原子地「x_work 恢复 pending」+「删除完成记录」，二写须同事务：否则中途失败
     // 会留下 work 既 pending 又仍存在完成记录的自相矛盾态（孪生 wc_rollback_flag 已事务化）。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let row = tx
         .query_one(
             "SELECT id, work_id, completed_time, creator FROM x_workcompleted WHERE id = $1 FOR UPDATE",
@@ -3327,7 +3327,7 @@ pub async fn workcompleted_flag_rollback(
     tx.execute("DELETE FROM x_workcompleted WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
 
     // 回滚提交后再读快照（复用同一 client，无需再取连接）。
     let snap_row = client
@@ -3371,7 +3371,7 @@ pub async fn work_v3_retract(
     )
     .await?;
     // 同 work_v2_id_retract：状态对写原子化，防「已撤销但任务仍 active」。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     tx.execute(
         "UPDATE x_work SET work_status = $1 WHERE id = $2",
         &[&"retracted", &id],
@@ -3384,7 +3384,7 @@ pub async fn work_v3_retract(
     )
     .await
     .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -3400,7 +3400,7 @@ pub async fn work_start(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let session = u4_session(session)?;
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let row = tx
         .query_one(
             "SELECT id, title, process, application, work_status, creator FROM x_work WHERE id = $1 FOR UPDATE",
@@ -3418,7 +3418,7 @@ pub async fn work_start(
         .get::<_, Option<String>>("work_status")
         .unwrap_or_default();
     if status != "pending" {
-        tx.commit().await.map_err(|_| AppError::Internal)?;
+        tx.commit().await?;
         return Err(AppError::BadRequest(format!(
             "work status is {}，无法启动",
             status
@@ -3437,7 +3437,7 @@ pub async fn work_start(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -3458,7 +3458,7 @@ pub async fn work_complete(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let session = u4_session(session)?;
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let row = tx
         .query_one(
             "SELECT id, title, process, application, work_status, creator FROM x_work WHERE id = $1 FOR UPDATE",
@@ -3476,7 +3476,7 @@ pub async fn work_complete(
         .get::<_, Option<String>>("work_status")
         .unwrap_or_default();
     if status != "processing" {
-        tx.commit().await.map_err(|_| AppError::Internal)?;
+        tx.commit().await?;
         return Err(AppError::BadRequest(format!(
             "work status is {}，无法完成归档",
             status
@@ -3501,7 +3501,7 @@ pub async fn work_complete(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -3519,7 +3519,7 @@ pub async fn task_claim(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let session = u4_session(session)?;
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let row = tx
         .query_one(
             "SELECT id, title, work, activity, activity_token, person, task_status FROM x_task WHERE id = $1 FOR UPDATE",
@@ -3537,7 +3537,7 @@ pub async fn task_claim(
         .get::<_, Option<String>>("task_status")
         .unwrap_or_default();
     if task_status != "pending" {
-        tx.commit().await.map_err(|_| AppError::Internal)?;
+        tx.commit().await?;
         return Err(AppError::BadRequest(format!(
             "task status is {}，无法认领",
             task_status
@@ -3557,7 +3557,7 @@ pub async fn task_claim(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     let row = client
         .query_one(
             "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
@@ -3605,7 +3605,7 @@ pub async fn task_complete(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let session = u4_session(session)?;
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let row = tx
         .query_one(
             "SELECT id, title, work, activity, activity_token, person, task_status FROM x_task WHERE id = $1 FOR UPDATE",
@@ -3623,7 +3623,7 @@ pub async fn task_complete(
         .get::<_, Option<String>>("task_status")
         .unwrap_or_default();
     if task_status != "active" && task_status != "processing" {
-        tx.commit().await.map_err(|_| AppError::Internal)?;
+        tx.commit().await?;
         return Err(AppError::BadRequest(format!(
             "task status is {}，无法完成",
             task_status
@@ -3691,7 +3691,7 @@ pub async fn task_complete(
             .await
             .map_err(|_| AppError::Internal)?;
     }
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     let row = client
         .query_one(
             "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
@@ -3711,7 +3711,7 @@ pub async fn task_reject(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let session = u4_session(session)?;
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let row = tx
         .query_one(
             "SELECT id, title, work, activity, activity_token, person, task_status FROM x_task WHERE id = $1 FOR UPDATE",
@@ -3729,7 +3729,7 @@ pub async fn task_reject(
         .get::<_, Option<String>>("task_status")
         .unwrap_or_default();
     if task_status != "active" && task_status != "processing" {
-        tx.commit().await.map_err(|_| AppError::Internal)?;
+        tx.commit().await?;
         return Err(AppError::BadRequest(format!(
             "task status is {}，无法退回",
             task_status
@@ -3772,7 +3772,7 @@ pub async fn task_reject(
         .await
         .map_err(|_| AppError::Internal)?;
     }
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     let row = client
         .query_one(
             "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
@@ -3791,7 +3791,7 @@ pub async fn task_transfer(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let session = u4_session(session)?;
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let row = tx
         .query_one(
             "SELECT id, title, work, activity, activity_token, person, task_status FROM x_task WHERE id = $1 FOR UPDATE",
@@ -3809,7 +3809,7 @@ pub async fn task_transfer(
         .get::<_, Option<String>>("task_status")
         .unwrap_or_default();
     if task_status != "active" && task_status != "pending" && task_status != "processing" {
-        tx.commit().await.map_err(|_| AppError::Internal)?;
+        tx.commit().await?;
         return Err(AppError::BadRequest(format!(
             "task status is {}，无法转办",
             task_status
@@ -3831,7 +3831,7 @@ pub async fn task_transfer(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -3848,7 +3848,7 @@ pub async fn gateway_join(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let session = u4_session(session)?;
     let mut client = shared::db::acquire(&pool).await?;
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let creator: Option<String> = tx
         .query_opt(
             "SELECT creator FROM x_work WHERE id = $1 FOR UPDATE",
@@ -3866,7 +3866,7 @@ pub async fn gateway_join(
         .await
         .map_err(|_| AppError::Internal)?;
     if rows.is_empty() {
-        tx.commit().await.map_err(|_| AppError::Internal)?;
+        tx.commit().await?;
         return Err(AppError::NotFound);
     }
     let all_completed = rows.iter().all(|r| {
@@ -3876,7 +3876,7 @@ pub async fn gateway_join(
         status == "completed"
     });
     if !all_completed {
-        tx.commit().await.map_err(|_| AppError::Internal)?;
+        tx.commit().await?;
         return Err(AppError::BadRequest(
             "not all tasks completed for this gateway".to_string(),
         ));
@@ -3888,7 +3888,7 @@ pub async fn gateway_join(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("workId".to_string(), Value::String(work_id)),

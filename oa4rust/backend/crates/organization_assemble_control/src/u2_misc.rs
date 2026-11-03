@@ -565,7 +565,7 @@ pub async fn input_person_import(
 
     // 已存在姓名一次查回（避免逐条 SELECT 的 N+1 往返）；整批导入与批次记录
     // 包同一事务——中途失败不得留下「部分人已导入 + 无批次记录」的半导入态。
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let normalized_names: Vec<String> = person_list
         .iter()
         .filter_map(|item| item.get("name").and_then(|v| v.as_str()))
@@ -628,7 +628,7 @@ pub async fn input_person_import(
     )
     .await
     .map_err(|_| AppError::Internal)?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     ok(Value::Object(
         vec![
             ("id".to_string(), Value::String(batch_id)),

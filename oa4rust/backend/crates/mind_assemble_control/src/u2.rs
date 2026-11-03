@@ -402,7 +402,7 @@ pub async fn mind_save(
             // 更新与版本记录同事务且版本 INSERT 失败必须传播（此前 `let _ =` 吞错：
             // 版本落库失败被静默丢弃，响应仍报 fileVersion=N）。n=0（脑图不存在/已删）
             // 时事务无写提交后落入下方新建分支，保持原语义。
-            let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+            let tx = client.transaction().await?;
             let n = tx
                 .execute(
                     "UPDATE x_mind SET name = $2, content = COALESCE($3, content), \
@@ -439,12 +439,12 @@ pub async fn mind_save(
                 )
                 .await
                 .map_err(|_| AppError::Internal)?;
-                tx.commit().await.map_err(|_| AppError::Internal)?;
+                tx.commit().await?;
                 return Ok(Json(ActionResult::success(
                     json!({ "id": eid, "updated": n, "fileVersion": ver }),
                 )));
             }
-            tx.commit().await.map_err(|_| AppError::Internal)?;
+            tx.commit().await?;
         }
     }
 

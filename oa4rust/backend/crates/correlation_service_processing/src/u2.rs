@@ -221,10 +221,10 @@ async fn create_impl(
     }
     let mut client = shared::db::acquire(pool).await?;
     let person = wi.person.unwrap_or_default();
-    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await?;
     let (success, failure) =
         upsert_targets(&tx, from_type, from_bundle, &person, &wi.target_list).await?;
-    tx.commit().await.map_err(|_| AppError::Internal)?;
+    tx.commit().await?;
     Ok(Json(ActionResult::success(json!({
         "successList": success,
         "failureList": failure,
@@ -285,7 +285,7 @@ async fn update_impl(
 
         // 先删除该 site 下全部旧关联，再插入新集合（o2server ActionUpdate* 语义）；
         // 删+插同事务：若 DELETE 已独立提交而 upsert 失败，该 site 旧关联将整体丢失。
-        let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+        let tx = client.transaction().await?;
         tx.execute(
             "DELETE FROM x_correlation \
              WHERE from_type = $1 AND from_bundle = $2 AND COALESCE(site, '') = $3",
@@ -305,7 +305,7 @@ async fn update_impl(
 
         let (success, failure) =
             upsert_targets(&tx, from_type, from_bundle, &person, &owned).await?;
-        tx.commit().await.map_err(|_| AppError::Internal)?;
+        tx.commit().await?;
         success_all.extend(success);
         failure_all.extend(failure);
     }
