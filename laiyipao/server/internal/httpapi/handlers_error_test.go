@@ -73,10 +73,11 @@ func TestHandlerErrorBranchesOnBrokenPool(t *testing.T) {
 
 	// 每条 = 一个 handler。请求形状合法（参数解析通过），
 	// service 调用必然失败 → 断言期望状态码。
-	// 默认 500；个别 service 把任意错误包装成哨兵错误（failErr 据此映射）：
-	//   refresh / adminMe → ErrUnauthorized → 401
-	//   getReplay / adminBattleDetail → ErrNotFound → 404
-	// want=0 表示取默认 500。
+	// 默认 503：数据库/连接故障属于**瞬时依赖故障**，
+	// failErr 据此回 503 + Retry-After（R67），客户端才知道「重试有意义」。
+	// 例外：getReplay 为防预言机把任何错误都报成 ErrNotFound → 404；
+	// refresh / adminMe 只把「真的没有这一行」当 401，查库失败走 503。
+	// want=0 表示取默认 503。
 	// hasID 为 true 的 handler 读 c.Params("id")，路由须注册 ":id" 参数。
 	// getConfig 不在清单里：LoadGameConfig 已改为无 error 返回值
 	// （纯内存构造恒不失败），handler 里没有可触发的失败分支。
@@ -90,7 +91,7 @@ func TestHandlerErrorBranchesOnBrokenPool(t *testing.T) {
 		run    func(c *fiber.Ctx) error
 	}{
 		{"guestLogin", "POST", "/x", `{"guest_token":"g","nickname":"n"}`, false, 0, s.guestLogin},
-		{"refresh", "POST", "/x", `{"refresh_token":"r"}`, false, fiber.StatusUnauthorized, s.refresh},
+		{"refresh", "POST", "/x", `{"refresh_token":"r"}`, false, 0, s.refresh},
 		{"me", "GET", "/x", "", false, 0, s.me},
 		{"getLoadout", "GET", "/x", "", false, 0, s.getLoadout},
 		{"saveLoadout", "PUT", "/x", `{"skill_ids":[1,2]}`, false, 0, s.saveLoadout},
@@ -124,7 +125,7 @@ func TestHandlerErrorBranchesOnBrokenPool(t *testing.T) {
 		{"challengeDefense", "POST", "/x/1", `{"seed":"1","won":true,"duration_ms":60000,"hp_left_pct":100,"replay_hash":"0000000000000000"}`, true, 0, s.challengeDefense},
 		// 管理端
 		{"adminLogin", "POST", "/x", `{"username":"a","password":"b"}`, false, 0, s.adminLogin},
-		{"adminMe", "GET", "/x", "", false, fiber.StatusUnauthorized, s.adminMe},
+		{"adminMe", "GET", "/x", "", false, 0, s.adminMe},
 		{"adminDashboard", "GET", "/x", "", false, 0, s.adminDashboard},
 		{"adminLevels", "GET", "/x", "", false, 0, s.adminLevels},
 		{"adminLevelWaves", "GET", "/x/1", "", true, 0, s.adminLevelWaves},
@@ -183,7 +184,7 @@ func TestHandlerErrorBranchesOnBrokenPool(t *testing.T) {
 			}
 			want := tc.want
 			if want == 0 {
-				want = fiber.StatusInternalServerError
+				want = fiber.StatusServiceUnavailable
 			}
 			status := callAs(t, sub, tc.method, tc.path, tc.body)
 			if status != want {

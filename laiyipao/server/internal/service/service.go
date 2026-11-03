@@ -549,7 +549,13 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (TokenPair, 
 		`SELECT user_id FROM refresh_tokens
 		  WHERE token_hash = $1 AND revoked_at IS NULL AND expires_at > now()`,
 		hash).Scan(&userID); err != nil {
-		return TokenPair{}, fmt.Errorf("%w: refresh_token 无效或已过期", ErrUnauthorized)
+		// R67：只有「真的没有这一行」才是令牌无效；查库失败（断连/超时）
+		// 必须原样上抛。原来一律映射成 ErrUnauthorized，数据库抖一下
+		// 客户端就会认为登录过期并丢弃可用会话，重新走游客登录还可能丢号。
+		if errors.Is(err, pgx.ErrNoRows) {
+			return TokenPair{}, fmt.Errorf("%w: refresh_token 无效或已过期", ErrUnauthorized)
+		}
+		return TokenPair{}, fmt.Errorf("查 refresh token: %w", err)
 	}
 	u, err := s.loadUser(ctx, userID)
 	if err != nil {

@@ -4,17 +4,23 @@
 package httpapi
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log"
+	"net"
 	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/puddle/v2"
 
 	"github.com/laiyipao/server/internal/domain"
 	"github.com/laiyipao/server/internal/service"
@@ -73,10 +79,68 @@ func failErr(c *fiber.Ctx, err error) error {
 	if isSettleRejection(err) {
 		return fail(c, fiber.StatusUnprocessableEntity, "settle_rejected", err.Error())
 	}
+	// 数据库/上游依赖的**瞬时**故障 → 503 + Retry-After。
+	//
+	// 与 500 的区别是给客户端的语义：503 表示「现在不行，稍后重试可能成功」，
+	// 客户端/网关可以按 Retry-After 退避重试；500 表示「请求本身有问题或
+	// 服务有 bug」，重试只会放大故障。此前断连/超时全部落到 500，
+	// 客户端既不能退避也不能区分，只能把「数据库抖一下」显示成「服务坏了」。
+	if transientDependencyError(err) {
+		// 5 秒：大于一次 pgx 连接重建/语句重试的成本，又短于用户耐心。
+		c.Set(fiber.HeaderRetryAfter, "5")
+		logAt(logWarn, "[http] %s %s -> 503: %v", c.Method(), c.OriginalURL(), err)
+		return fail(c, fiber.StatusServiceUnavailable, "service_unavailable", "依赖服务暂时不可用，请稍后重试")
+	}
 	// 其余一律 500 + 通用文案。
 	// 真实原因必须落到服务端日志（error 级），出问题时线上才能定位。
 	logAt(logError, "[http] %s %s -> 500: %v", c.Method(), c.OriginalURL(), err)
 	return fail(c, fiber.StatusInternalServerError, "internal_error", "服务内部错误")
+}
+
+// transientDependencyError 判断错误是否属于「稍后重试可能成功」的依赖故障。
+//
+// 只收**已知的瞬时类别**，不做「所有非 nil 错误都当 503」的兜底：
+// 后者会把 SQL 语法错误、约束冲突、扫描类型不符这些真 bug 伪装成
+// 「服务暂时不可用」，客户端会无限重试，排障也会被误导。
+//
+// 分类依据：
+//   - 连接池已关闭（优雅停机/重建）→ puddle.ErrClosedPool；
+//   - 连接级故障 → PostgreSQL class 08（connection exception）、
+//     57P01/57P02/57P03（后台终止/崩溃/暂不可连）、53300（连接数满）、
+//     53200（内存不足）；
+//   - 语句被取消 → 57014（statement_timeout / 主动 cancel），
+//     这也是本仓库 `DB_STATEMENT_TIMEOUT` 超时的实际错误码；
+//   - 网络层 → *net.OpError、ECONNREFUSED/ECONNRESET/EPIPE、EOF
+//     （数据库断连与微信等上游不可达都会落到这里）；
+//   - 请求/加载超时 → context.DeadlineExceeded。
+//
+// 故意**不**包含 context.Canceled：那是客户端主动断开，响应已经无人接收，
+// 归为 503 只会制造一条误导性的告警。
+func transientDependencyError(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, puddle.ErrClosedPool) ||
+		errors.Is(err, context.DeadlineExceeded) ||
+		errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) ||
+		errors.Is(err, syscall.ECONNREFUSED) ||
+		errors.Is(err, syscall.ECONNRESET) ||
+		errors.Is(err, syscall.EPIPE) {
+		return true
+	}
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		switch {
+		case strings.HasPrefix(pgErr.Code, "08"):
+			return true
+		case pgErr.Code == "57014", pgErr.Code == "57P01", pgErr.Code == "57P02",
+			pgErr.Code == "57P03", pgErr.Code == "53300", pgErr.Code == "53200":
+			return true
+		}
+		return false
+	}
+	var netErr *net.OpError
+	return errors.As(err, &netErr)
 }
 
 // isSettleRejection 判断错误是否属于「结算被拒」类。

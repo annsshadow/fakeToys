@@ -199,7 +199,13 @@ func (s *Service) AdminMe(ctx context.Context, adminID int64) (AdminUser, error)
 		`SELECT id, username, role FROM admin_users WHERE id = $1 AND status = 1`, adminID).
 		Scan(&a.ID, &a.Username, &a.Role)
 	if err != nil {
-		return AdminUser{}, fmt.Errorf("%w: admin", ErrUnauthorized)
+		// R67：与 Refresh 同样的口径——只有真的没有这一行才是「会话无效」，
+		// 查库失败（断连/超时）原样上抛，由 HTTP 层映射成 503 + Retry-After。
+		// 否则数据库抖动会让管理员看到「已退出登录」并重复登录。
+		if errors.Is(err, pgx.ErrNoRows) {
+			return AdminUser{}, fmt.Errorf("%w: admin", ErrUnauthorized)
+		}
+		return AdminUser{}, fmt.Errorf("查管理员: %w", err)
 	}
 	return a, nil
 }
