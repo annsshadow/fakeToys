@@ -102,6 +102,9 @@ type Service struct {
 	recomputeCannotRun int64
 	recomputeSkipped   int64
 
+	// settleAgg 是结算分段耗时的进程内聚合（R80，见 settle_timing.go）。
+	settleAgg *settleAgg
+
 	// 进程内缓存（2026-10-23）。语义与取舍见 `ttlcache.go` 与 config 的同名字段。
 	//
 	// ⚠️ 它们**按 Service 实例隔离**：每个 `New` 出来的服务各自一份。
@@ -160,9 +163,10 @@ func LeaderboardCacheKinds() []string {
 // New 构造服务。
 func New(db *store.DB, cfg config.Config) *Service {
 	s := &Service{
-		DB:   db,
-		JWT:  auth.NewSigner(cfg.JWTSecret, cfg.AccessTTL),
-		pool: db.Pool,
+		DB:        db,
+		JWT:       auth.NewSigner(cfg.JWTSecret, cfg.AccessTTL),
+		pool:      db.Pool,
+		settleAgg: newSettleAgg(),
 	}
 	s.cfg.Store(&cfg)
 	s.leaderboardCache = make(map[string]*ttlCache[[]LeaderboardEntry], len(leaderboardCacheKinds))
