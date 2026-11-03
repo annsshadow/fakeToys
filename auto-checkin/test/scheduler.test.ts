@@ -78,7 +78,9 @@ import { join } from "node:path";
 
 process.env.AUTO_CHECKIN_DATA_DIR = mkdtempSync(join(tmpdir(), "auto-checkin-sched-"));
 process.env.AUTO_CHECKIN_LOCK_DIR = mkdtempSync(join(tmpdir(), "auto-checkin-sched-lock-"));
-process.env.PLAYWRIGHT_BROWSERS_PATH = "Z:" + join("nonexistent", "browsers");
+// 指向一个存在但为空的目录：browser.ts 的无效路径回退（sanitizeBrowserEnv）
+// 只清理不存在路径，空目录会让 playwright 启动确定性失败，测试绝不碰真实站点。
+process.env.PLAYWRIGHT_BROWSERS_PATH = mkdtempSync(join(tmpdir(), "auto-checkin-empty-browsers-"));
 
 const cron = (await import("node-cron")).default;
 const { startScheduler } = await import("../src/scheduler.js");

@@ -198,6 +198,9 @@ type Config struct {
 	// 切档**不需要发版**：改环境变量重启即可。
 	SettleRecomputeMode string
 
+	// SettleSlowMs 是慢结算日志阈值（毫秒，R80；0=关闭日志，聚合仍记）。
+	SettleSlowMs int
+
 	// 战斗结算上限校验
 	BattleTokenTTL    time.Duration
 	MinBattleDuration time.Duration
@@ -448,6 +451,11 @@ func Load() Config {
 		MinBattleDuration: envDuration("MIN_BATTLE_DURATION", 15*time.Second),
 
 		SettleRecomputeMode: env("SETTLE_RECOMPUTE_MODE", "enforce"),
+
+		// R80：结算慢日志阈值（毫秒）。500ms 约等于「玩家开始感知卡顿」的一半，
+		// 低于它不打日志（噪声），达到它说明某分段已经值得归因。
+		// 0 = 关闭慢结算日志（聚合统计不受影响）。
+		SettleSlowMs: envInt("SETTLE_SLOW_MS", 500),
 
 		OfflineCapHours:    envInt("OFFLINE_CAP_HOURS", 12),
 		OfflineCoinPerHour: envInt("OFFLINE_COIN_PER_HOUR", 600),

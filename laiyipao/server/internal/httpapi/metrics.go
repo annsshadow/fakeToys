@@ -22,7 +22,7 @@ import (
 //
 // R50 增加连接池 gauge：池耗尽不会报错，只会让所有接口变慢，
 // `acquired / max` 是唯一能提前看出来的信号。
-func renderMetrics(st service.CacheStats, ps service.PoolStats) string {
+func renderMetrics(st service.CacheStats, ps service.PoolStats, ss service.SettleStats) string {
 	var b strings.Builder
 	emit := func(name, help string, v int64) {
 		fmt.Fprintf(&b, "# HELP %s %s\n# TYPE %s counter\n%s %d\n", name, help, name, name, v)
@@ -31,6 +31,16 @@ func renderMetrics(st service.CacheStats, ps service.PoolStats) string {
 	emit("laiyipao_dashboard_cache_misses_total", "看板缓存未命中总数", st.DashboardMisses)
 	emit("laiyipao_leaderboard_cache_hits_total", "榜单缓存命中总数", st.LeaderboardHits)
 	emit("laiyipao_leaderboard_cache_misses_total", "榜单缓存未命中总数", st.LeaderboardMisses)
+
+	// R80：结算分段聚合（累计毫秒与该段最慢一次），慢结算总数单独成列。
+	emit("laiyipao_settle_total", "成功结算总次数", ss.Total)
+	emit("laiyipao_settle_slow_total", "超 SETTLE_SLOW_MS 的结算次数", ss.Slow)
+	emit("laiyipao_settle_total_ms_sum", "结算端到端累计毫秒", ss.TotalMs)
+	for _, seg := range service.SettleSegmentNames {
+		s := ss.Segments[seg]
+		emit("laiyipao_settle_seg_"+seg+"_ms_sum", "结算分段累计毫秒", s.SumMs)
+		emit("laiyipao_settle_seg_"+seg+"_ms_max", "结算分段单次最慢毫秒", s.MaxMs)
+	}
 
 	gauge := func(name, help string, v int32) {
 		fmt.Fprintf(&b, "# HELP %s %s\n# TYPE %s gauge\n%s %d\n", name, help, name, name, v)
@@ -49,5 +59,5 @@ func renderMetrics(st service.CacheStats, ps service.PoolStats) string {
 // 计数与池容量，但默认不公开，见 config.MetricsEnabled 的理由。
 func (s *Server) metrics(c *fiber.Ctx) error {
 	c.Set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
-	return c.SendString(renderMetrics(s.Svc.CacheStats(), s.Svc.PoolStats()))
+	return c.SendString(renderMetrics(s.Svc.CacheStats(), s.Svc.PoolStats(), s.Svc.SettleStats()))
 }

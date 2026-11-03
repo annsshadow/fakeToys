@@ -25,7 +25,12 @@ func TestRenderMetrics(t *testing.T) {
 		TotalConns: 6, IdleConns: 4, AcquiredConns: 2,
 		ConstructingConns: 0, MaxConns: 10,
 	}
-	out := renderMetrics(st, ps)
+	out := renderMetrics(st, ps, service.SettleStats{
+		Total: 7, Slow: 1, TotalMs: 1234,
+		Segments: map[string]service.SettleSegmentStat{
+			"tx_insert": {Count: 7, SumMs: 56, MaxMs: 21},
+		},
+	})
 
 	samples := map[string]bool{
 		"laiyipao_dashboard_cache_hits_total 3":     false,
@@ -37,6 +42,12 @@ func TestRenderMetrics(t *testing.T) {
 		"laiyipao_db_pool_acquired_conns 2":         false,
 		"laiyipao_db_pool_constructing_conns 0":     false,
 		"laiyipao_db_pool_max_conns 10":             false,
+		// R80：结算聚合指标的形状（sum/max/total/slow）。
+		"laiyipao_settle_total 7":                 false,
+		"laiyipao_settle_slow_total 1":            false,
+		"laiyipao_settle_total_ms_sum 1234":       false,
+		"laiyipao_settle_seg_tx_insert_ms_sum 56": false,
+		"laiyipao_settle_seg_tx_insert_ms_max 21": false,
 	}
 	for line := range strings.SplitSeq(out, "\n") {
 		if _, ok := samples[line]; ok {

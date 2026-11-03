@@ -167,6 +167,10 @@ func main() {
 		{"admin.users", (*smoke).adminUsers},
 		{"admin.announcement_visible", (*smoke).announcementVisible},
 		{"admin.audit", (*smoke).adminAudit},
+
+		// R79：对账收尾——「能玩」升级为「能玩且数据自洽」。
+		// 必须放在全部写入步骤之后，覆盖 smoke 自己产生的战报/流水/公告。
+		{"admin.reconcile", (*smoke).adminReconcile},
 	}
 
 	for _, st := range steps {
@@ -1084,6 +1088,56 @@ func (s *smoke) adminAudit() error {
 		return fmt.Errorf("临时管理员 %d 没有 create_announcement 审计记录", s.adminID)
 	}
 	return nil
+}
+
+// adminReconcile 收尾对账（R79）：把 R78 的九项不变量在恢复库上核一遍。
+//
+// 它能抓到 R58 行数比对永远看不到的漂移：比如触发器虽然存在但计数表是
+// 旧快照、或恢复丢了一部分 wallet_flows —— 那些场景下行数完全一致、
+// 服务完全正常，只有「明细与计数对不上」会暴露。
+//
+// 失败文案刻意区分两类故障：玩法步骤失败报步骤名；对账漂移报
+// 「对账发现漂移：check/key/期望/实际」，一眼可辨。
+func (s *smoke) adminReconcile() error {
+	var rep struct {
+		OK     bool `json:"ok"`
+		Checks int  `json:"checks"`
+		Diffs  []struct {
+			Check    string `json:"check"`
+			Key      string `json:"key"`
+			Expected string `json:"expected"`
+			Actual   string `json:"actual"`
+		} `json:"diffs"`
+		ViolationCounts map[string]int64 `json:"violation_counts"`
+	}
+	if err := s.call(http.MethodGet, "/api/v1/admin/reconcile", s.adminToken, nil, &rep); err != nil {
+		return fmt.Errorf("调 /admin/reconcile：%w", err)
+	}
+	if rep.Checks != 9 {
+		return fmt.Errorf("对账只跑了 %d 项（期望 9）—— 服务版本过旧或对账被裁减", rep.Checks)
+	}
+	if rep.OK {
+		fmt.Printf("       对账 %d 项全绿\n", rep.Checks)
+		return nil
+	}
+	var b strings.Builder
+	kinds := 0
+	for _, n := range rep.ViolationCounts {
+		if n > 0 {
+			kinds++
+		}
+	}
+	fmt.Fprintf(&b, "对账发现漂移（%d 类）：", kinds)
+	shown := 0
+	for _, d := range rep.Diffs {
+		if shown >= 5 {
+			b.WriteString(" …")
+			break
+		}
+		fmt.Fprintf(&b, " [%s %s 期望=%s 实际=%s]", d.Check, d.Key, d.Expected, d.Actual)
+		shown++
+	}
+	return errors.New(b.String())
 }
 
 // --- 小工具 ---

@@ -22,7 +22,13 @@ const STATUS_PATH = "/user/daily-reward";
  * ⚠️ 2026-09-23：领取端点从 POST /user/daily-reward 迁移到 POST /user/daily-reward/claim。
  * 旧路径不会 404，而是被 SPA 路由兜底成 index.html 以 HTTP 200 返回，导致"看起来成功但没落账"。
  * 改路径前请先核对前端 bundle 里的字面量（GET 状态端点路径未变）。
- * 鉴权只需 session cookie（credentials: include）；前端另有 Bearer 头但服务端并不强制。
+ *
+ * ⚠️ 2026-11-03：服务端开始对 /user/* 请求校验 Authorization: Bearer <vyce_session>。
+ * 仅带 session cookie 的裸 fetch 会返回 success，但领取状态在数秒后回滚（实际未落账）。
+ * 必须在请求头带上 localStorage.vyce_session 里的会话 token（前端请求即如此）。
+ *
+ * ⚠️ 2026-11-03：服务端领取后状态更新有 ~3-30s 延迟抖动（canClaim 先 true 后 false，
+ * 期间余额先 +10 再回滚再落账）。复查不能只查一次，需轮询等待 canClaim 变 false 才算成功。
  *
  * 因 PoW 无法用裸接口复现，必须用真实浏览器让页面 SPA 自己完成登录（含 PoW），
  * 登录后再调 /user/* 端点。余额直接是美元，不做 quota 换算。
@@ -51,7 +57,6 @@ export const vyceaiAdapter: SiteAdapter = {
         return { status: "failed", reward: null, balance, currency: "$", message: "无法读取每日奖励状态", screenshot: null };
       }
       ctx.log(`daily-reward: canClaim=${reward.canClaim} streak=${reward.streak} lastClaim=${reward.lastClaim}`);
-
       if (reward.canClaim === false) {
         return { status: "already", reward: 0, balance, currency: "$", message: `今日已领 · 连续${reward.streak ?? "?"}天`, screenshot: null };
       }
@@ -74,8 +79,18 @@ export const vyceaiAdapter: SiteAdapter = {
       }
 
       // HTTP 200 不代表落账：曾出现连续多天 200 但 canClaim/streak/lastClaim 纹丝不动（实际未领取，还导致断签）。
-      // 必须复查 daily-reward 状态，canClaim 变 false 才算真成功。
-      const after = await getJson(page, STATUS_PATH);
+      // 2026-11-03 起服务端落账有 ~3-30s 延迟抖动：领取后 canClaim 可能先保持 true，
+      // 余额先 +10 再回滚，最终才稳定为 canClaim=false。必须轮询等待 canClaim 变 false 才算真成功。
+      // 轮询上限 30s（每 2s 一次），超过仍未落账则按失败处理并留痕。
+      let after = null;
+      let ineffectiveAt: string | null = null;
+      for (let i = 0; i < 15; i++) {
+        await page.waitForTimeout(2000);
+        after = await getJson(page, STATUS_PATH);
+        if (after?.canClaim === false) break;
+        ineffectiveAt = after ? `${after.streak ?? "?"}天/${after.lastClaim ?? "?"}` : "无响应";
+        ctx.log(`领取后第 ${i + 1} 次复查：canClaim 仍为 true（streak=${after?.streak} lastClaim=${after?.lastClaim}）`);
+      }
       if (after && after.canClaim === false) {
         const got =
           typeof claim?.amount === "number"
@@ -94,15 +109,17 @@ export const vyceaiAdapter: SiteAdapter = {
         };
       }
       const shot = await ctx.saveScreenshot(page, "vyceai-claim-ineffective");
-      // 接口若返回了业务错误（如 {"error":{"message":...}}），一并带出，便于直接定位
-      const apiErr = claim?.error?.message;
+      // 接口若返回了业务错误（如 {"error":{"message":...}}），一并带出，便于直接定位。
+      // postJson 的网络异常是字符串形式（{ error: "TypeError: ..." }），两种都要透传。
+      const rawErr = claim?.error;
+      const apiErr = typeof rawErr === "string" ? rawErr : rawErr?.message;
       return {
         status: "failed",
         reward: null,
         balance,
         currency: "$",
         message:
-          `领取未生效（返回 200 但 canClaim 仍为 true，streak=${after?.streak ?? "?"} lastClaim=${after?.lastClaim ?? "?"}` +
+          `领取未生效（返回 200 但 canClaim 在 30s 内未变 false，最后状态 ${ineffectiveAt ?? "未知"}` +
           `${apiErr ? `；接口报错：${apiErr}` : ""}）`,
         screenshot: shot,
       };
@@ -178,37 +195,44 @@ async function readBalanceAfterClaim(page: Page, before: number | null): Promise
   return last;
 }
 
+/**
+ * 在页面上下文中发起带会话 token 的请求。
+ * 2026-11-03：服务端校验 Authorization: Bearer <vyce_session>，仅 cookie 会导致领取被回滚。
+ * token 从 localStorage.vyce_session 读取，与前端请求一致。
+ * nonJsonAsNull=true 时非 JSON 响应返回 null（读状态用，保持"读不到状态"可被上层识别）；
+ * false 时返回 {status, body} 便于排查"返回 200 但未落账"。
+ */
+async function authedFetch(page: Page, path: string, init?: RequestInit, nonJsonAsNull = true): Promise<any> {
+  return page.evaluate(
+    async ({ p, options, asNull, timeoutMs }) => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const token = localStorage.getItem("vyce_session") || "";
+        const headers: Record<string, string> = {
+          ...((options?.headers as Record<string, string>) ?? {}),
+        };
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        const r = await fetch(p, { ...options, headers, credentials: "include", signal: controller.signal });
+        const t = await r.text();
+        if (!t.trim().startsWith("{")) return asNull ? null : { status: r.status, body: t.slice(0, 120) };
+        return JSON.parse(t);
+      } catch (e) {
+        return asNull ? null : { error: String(e) };
+      } finally {
+        clearTimeout(timer);
+      }
+    },
+    { p: path, options: init ?? {}, asNull: nonJsonAsNull, timeoutMs: 15000 },
+  );
+}
+
 async function getJson(page: Page, path: string): Promise<any> {
-  return page.evaluate(async ({ p, timeoutMs }) => {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-      const r = await fetch(p, { credentials: "include", signal: controller.signal });
-      const t = await r.text();
-      return t.trim().startsWith("{") ? JSON.parse(t) : null;
-    } catch {
-      return null;
-    } finally {
-      clearTimeout(timer);
-    }
-  }, { p: path, timeoutMs: 15000 });
+  return authedFetch(page, path);
 }
 
 async function postJson(page: Page, path: string): Promise<any> {
-  return page.evaluate(async ({ p, timeoutMs }) => {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-      const r = await fetch(p, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, signal: controller.signal });
-      const t = await r.text();
-      // 非 JSON 响应体也保留前 120 字符，便于排查"返回 200 但未落账"类问题
-      return t.trim().startsWith("{") ? JSON.parse(t) : { status: r.status, body: t.slice(0, 120) };
-    } catch (e) {
-      return { error: String(e) };
-    } finally {
-      clearTimeout(timer);
-    }
-  }, { p: path, timeoutMs: 15000 });
+  return authedFetch(page, path, { method: "POST", headers: { "Content-Type": "application/json" } }, false);
 }
 
 function fail(message: string, screenshot: string | null): AdapterOutcome {

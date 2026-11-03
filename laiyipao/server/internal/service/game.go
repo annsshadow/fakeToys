@@ -218,6 +218,12 @@ type SettleResp struct {
 // 幂等性由 battle_token.used_at 保证：token 校验失败即拒绝，
 // 同一个 token 无法结算两次。事务内同时写战报、盖 token、发掉落、推进进度。
 func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in domain.SettleInput) (SettleResp, error) {
+	// R80：分段计时。只在**成功**结算的末尾聚合/判定慢日志 —
+	// 被拒的结算不走钱的路，混进聚合会把「正常写路径的预算」弄脏。
+	tmStart := time.Now()
+	var tm SettleTimings
+
+	segStart := time.Now()
 	var tok domain.BattleToken
 	err := s.pool.QueryRow(ctx,
 		`SELECT id, user_id, level_id, seed, issued_at, expires_at, used_at
@@ -229,6 +235,7 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 	if err != nil {
 		return SettleResp{}, fmt.Errorf("load battle token: %w", err)
 	}
+	tm.TokenLoad = time.Since(segStart)
 
 	gl := domain.CachedLevel(tok.LevelID)
 	limits := domain.SettleLimits{
@@ -263,6 +270,7 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 	// 代价要说清楚：**off 档下这条校验不再拒绝任何人**。
 	// 那是刻意的（关掉即恢复旧行为），但必须可发现 ——
 	// 所以模式会进启动日志。
+	segStart = time.Now()
 	if in.ReplaySkills != "" {
 		expect, err := s.replaySkillsSegment(ctx, userID)
 		if err != nil {
@@ -307,6 +315,7 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 				mode, userID, tok.LevelID)
 		}
 	}
+	tm.SkillsCheck = time.Since(segStart)
 
 	// ⚠️ 三个上报集合**必须归一化 nil**，否则会写成 JSON `null`。
 	//
@@ -364,6 +373,7 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 	}
 	cardPicks := strings.Join(picks, ",")
 
+	segStart = time.Now()
 	// ⚠️ build_snapshot 存的是**当时的玩家构筑**，不是 settle 上报原文。
 	// 回放哈希由「关卡 + 种子 + 构筑」三者共同决定（见 I-6），
 	// 若这里只存上报数据，客户端重放时拿不到技能与养成属性，
@@ -372,6 +382,7 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 	if err != nil {
 		return SettleResp{}, fmt.Errorf("load build snapshot: %w", err)
 	}
+	tm.BuildLoadPre = time.Since(segStart)
 	// 上报原文另存一档，供审计与纠纷追溯
 	buildSnapshot["settle_input"] = in
 	//
@@ -399,9 +410,11 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 	// 传 buildRaw（JSON 原文）而不是 buildSnapshot（map）——
 	// 那条路径保证了两端的字段名/类型/缺省值逐字一致，
 	// 而 map → struct 的手工转换会在每个字段上多一个出错点。
+	segStart = time.Now()
 	if err := s.recomputeEngine(ctx, userID, tok, gl, buildRaw, in); err != nil {
 		return SettleResp{}, err
 	}
+	tm.Recompute = time.Since(segStart)
 
 	// 第 143 轮：本局通关时的战力，写进 level_stars.min_power_clear（效率榜 L-2）。
 	// 修前 upsert 恒写 0 且 ON CONFLICT 不更新 → 效率榜 `WHERE min_power_clear > 0`
@@ -413,6 +426,8 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 	}
 
 	resp := SettleResp{}
+	var newMax, newMasteryPoints int
+	var leveledUp bool
 	err = s.DB.Tx(ctx, func(tx pgx.Tx) error {
 		// 1) 抢占 token：条件更新保证并发下只有一个请求能成功
 		//
@@ -422,6 +437,7 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 		// 写成只有 `id` 的形式则是「调用点保证、语句不保证」—— 与本轮
 		// 修的 gems.go / defenses 三处同型。归属守卫（
 		// ownership_scan_test.go）覆盖 UPDATE 之后会盯着这里。
+		txSeg := time.Now()
 		tag, err := tx.Exec(ctx,
 			`UPDATE battle_tokens SET used_at = now() WHERE id = $1 AND user_id = $2 AND used_at IS NULL`,
 			tokenID, userID)
@@ -431,37 +447,52 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 		if tag.RowsAffected() == 0 {
 			return fmt.Errorf("%w: 该战斗凭证已被结算", ErrForbidden)
 		}
+		tm.TxClaim = time.Since(txSeg)
 
-		// 2) 写战报
+		// 2) R81：预取战报 id，把 INSERT 挪到事务**最后**。
+		//
+		// 实测动机（R81 探针，1M 库 8 并发）：
+		// R63/R64 触发器在 INSERT 时 UPDATE dashboard_* 计数热点行，
+		// 行锁从 INSERT 守到 COMMIT —— 实测守锁 P50≈16ms（wallet/progress/
+		// stars/tasks 四段），热点行串行容量 ≈60/s，8 并发下 85% 的活跃
+		// 采样在等这把锁（wait_event=transactionid），tx_insert P95 277ms
+		// 里 99% 是排队。把 INSERT 挪到紧邻 COMMIT 的位置后，
+		// 守锁时间 = 触发器执行 + COMMIT ≈ 1ms 量级。
+		//
+		// nextval 只推进序列、不写任何表，本身不拿热点行锁。
+		// 事务回滚会留 id 空洞 —— 序列本就不保证无空洞
+		// （任何回滚的 INSERT 同样留洞），无连续性依赖。
+		//
+		// wallet_flows.ref_id 是无 FK 的逻辑引用（00006），
+		// 流水先于战报写入在事务内不可见，原子性不变。
+		txSeg = time.Now()
 		var battleID int64
-		if err := tx.QueryRow(ctx, `
-			INSERT INTO battle_records (user_id, level_id, battle_token_id, result, stars, score,
-				kills, leaked, hp_left, wave_reached, duration_ms, shots, hits, reactions, heat_max,
-				elements_used, reactions_used, terrain_used, build_snapshot, replay_hash, loot, card_picks)
-			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
-			RETURNING id`,
-			userID, gl.ID, tokenID, resultStr(res.Win), res.Stars, res.Score,
-			in.Kills, in.Leaked, in.HPLeft, in.WaveReached, in.DurationMs,
-			in.Shots, in.Hits, in.Reactions, in.HeatMax,
-			elementsRaw, reactionsRaw, terrainRaw, buildRaw, in.ReplayHash, lootRaw, cardPicks,
-		).Scan(&battleID); err != nil {
-			return fmt.Errorf("insert battle record: %w", err)
+		if err := tx.QueryRow(ctx,
+			`SELECT nextval('battle_records_id_seq')`).Scan(&battleID); err != nil {
+			return fmt.Errorf("prefetch battle id: %w", err)
 		}
+		tm.TxPrefetch = time.Since(txSeg)
 
 		// 3) 发掉落
+		txSeg = time.Now()
 		if err := s.grantWallet(ctx, tx, userID, res.Loot, "battle_reward", battleID); err != nil {
 			return err
 		}
+		tm.TxWallet = time.Since(txSeg)
 
-		// 4) 推进进度与统计
-		newMax, err := s.applyProgress(ctx, tx, userID, gl.ID, res.Win, int64(in.Kills))
-		if err != nil {
-			return err
+		// 4) 推进进度与统计（带回新专精点数与是否跨级，供事务后复用 —— R81）
+		txSeg = time.Now()
+		var perr error
+		newMax, newMasteryPoints, leveledUp, perr = s.applyProgress(ctx, tx, userID, gl.ID, res.Win, int64(in.Kills))
+		if perr != nil {
+			return perr
 		}
+		tm.TxProgress = time.Since(txSeg)
 
 		// 5) 更新关卡星级（取历史最好）
 		// min_power_clear：第 143 轮起真的写值了 —— 效率榜（L-2）靠它排名。
 		// EXCLUDED=0（失败局）时保持旧值；两侧 >0 取更小（「通关时用的最低战力」）。
+		txSeg = time.Now()
 		if _, err := tx.Exec(ctx, `
 			INSERT INTO level_stars (user_id, level_id, stars, best_score, clears, min_power_clear)
 			VALUES ($1,$2,$3,$4,$5,$6)
@@ -478,8 +509,10 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 			userID, gl.ID, res.Stars, res.Score, boolToInt(res.Win), minPower); err != nil {
 			return fmt.Errorf("upsert level stars: %w", err)
 		}
+		tm.TxStars = time.Since(txSeg)
 
 		// 6) 任务进度
+		txSeg = time.Now()
 		if err := s.bumpTasks(ctx, tx, userID, map[string]int64{
 			"kills":     int64(in.Kills),
 			"clears":    int64(boolToInt(res.Win)),
@@ -488,6 +521,27 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 		}, nowFunc()); err != nil {
 			return err
 		}
+		tm.TxTasks = time.Since(txSeg)
+
+		// 7) 写战报 —— 事务**最后**一步（见上方 R81 注释）。
+		//
+		// 触发器（R63/R64 增量累加）内联在这条 INSERT 里，拆不出去 ——
+		// 本段 = 插入 + 触发器；触发器份额见 settle_timing.go 文件头。
+		// 显式 id（第 2 步预取）让本段可以挪到 COMMIT 紧邻处。
+		txSeg = time.Now()
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO battle_records (id, user_id, level_id, battle_token_id, result, stars, score,
+				kills, leaked, hp_left, wave_reached, duration_ms, shots, hits, reactions, heat_max,
+				elements_used, reactions_used, terrain_used, build_snapshot, replay_hash, loot, card_picks)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)`,
+			battleID, userID, gl.ID, tokenID, resultStr(res.Win), res.Stars, res.Score,
+			in.Kills, in.Leaked, in.HPLeft, in.WaveReached, in.DurationMs,
+			in.Shots, in.Hits, in.Reactions, in.HeatMax,
+			elementsRaw, reactionsRaw, terrainRaw, buildRaw, in.ReplayHash, lootRaw, cardPicks,
+		); err != nil {
+			return fmt.Errorf("insert battle record: %w", err)
+		}
+		tm.TxInsert = time.Since(txSeg)
 
 		resp.BattleID = battleID
 		resp.Result = resultStr(res.Win)
@@ -508,6 +562,17 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 	// computeRating 依赖 build，等两者就绪后再跑（与 /me 的两阶段同款）。
 	// 错误语义保持原顺序：先钱包后构筑，任一失败 fail-loud。
 	// 第 6 轮：评分的点数从快照的 parts 带入，不再二次查 user_progress。
+	//
+	// R81：构筑**不再重读第二遍** —— 复用事务前的 buildSnapshot。
+	//
+	// 一致性论证：结算事务内会改构筑相关数据的只有 applyProgress：
+	//   - mastery_points 每次重算 → 新值由 RETURNING 带回，直接喂 computeRating；
+	//   - 技能/装备/专精节点的**既有行**不动；唯一变化是跨级时**新增**
+	//     解锁行（user_skills / 装备）。因此：
+	//       非跨级：构筑快照逐位等于事务后重读的结果，直接复用；
+	//       跨级：   skills/equipment 集合变了，走老路径重读（罕见，一局一次）。
+	// 钱包必须重读（余额在事务里变了），保留 goroutine。
+	txSeg := time.Now()
 	var (
 		tailWg sync.WaitGroup
 		w      Wallet
@@ -516,16 +581,23 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 		parts  buildParts
 		berr   error
 	)
-	tailWg.Add(2)
+	tailWg.Add(1)
 	go func() {
 		defer tailWg.Done()
 		w, werr = s.LoadWallet(ctx, userID)
 	}()
-	go func() {
-		defer tailWg.Done()
-		build, parts, berr = s.loadBuildSnapshotFull(ctx, userID)
-	}()
+	if leveledUp {
+		tailWg.Add(1)
+		go func() {
+			defer tailWg.Done()
+			build, parts, berr = s.loadBuildSnapshotFull(ctx, userID)
+		}()
+	} else {
+		build = buildSnapshot
+		parts = buildParts{masteryPoints: newMasteryPoints}
+	}
 	tailWg.Wait()
+	tm.TailLoad = time.Since(txSeg)
 	if werr != nil {
 		return SettleResp{}, werr
 	}
@@ -553,6 +625,13 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 	// ⚠️ 只 flush 榜单，**不 flush 看板**：看板 30 秒的缓存正是它存在的理由，
 	// 而结算在活跃期几秒一次，flush 它等于把缓存取消掉。
 	s.flushLeaderboards()
+
+	// R80：成功结算入账分段耗时（聚合 + 超阈值慢日志 + 探针采样钩子）。
+	tm.Total = time.Since(tmStart)
+	s.recordSettleTiming(tm, resp.BattleID, userID)
+	if settleTimingProbe != nil {
+		settleTimingProbe(tm)
+	}
 
 	return resp, nil
 }
@@ -585,9 +664,10 @@ func boolToInt(b bool) int {
 // 由 `TestNoFunctionIgnoresAParameter` 抓到 —— 那种守卫只盯 `ctx`
 // 会漏掉它：`reactions` 没有 ctx 那样显眼的副作用，
 // 它只是「看起来多余」，于是更容易长期存在。
-func (s *Service) applyProgress(ctx context.Context, tx pgx.Tx, userID int64, levelID int, win bool, kills int64) (int, error) {
+func (s *Service) applyProgress(ctx context.Context, tx pgx.Tx, userID int64, levelID int, win bool, kills int64) (int, int, bool, error) {
 	var newMax int
 	var newExp int64
+	var newMasteryPoints int
 	err := tx.QueryRow(ctx, `
 		UPDATE user_progress
 		   SET max_stage = GREATEST(max_stage, CASE WHEN $2 THEN $3 ELSE max_stage END),
@@ -597,10 +677,10 @@ func (s *Service) applyProgress(ctx context.Context, tx pgx.Tx, userID int64, le
 		       mastery_points = 3 + FLOOR((level_exp + 50 + $4) / 1000)::int,
 		       updated_at = now()
 		 WHERE user_id = $1
-		 RETURNING max_stage, level_exp`,
-		userID, win, levelID, kills).Scan(&newMax, &newExp)
+		 RETURNING max_stage, level_exp, mastery_points`,
+		userID, win, levelID, kills).Scan(&newMax, &newExp, &newMasteryPoints)
 	if err != nil {
-		return 0, fmt.Errorf("update progress: %w", err)
+		return 0, 0, false, fmt.Errorf("update progress: %w", err)
 	}
 
 	// 等级解锁（已知边界第 29 条的发放侧）：结算事务内按**更新后的**
@@ -636,7 +716,7 @@ func (s *Service) applyProgress(ctx context.Context, tx pgx.Tx, userID int64, le
 			   AND s.id NOT IN (SELECT output_skill_id FROM skill_recipes)
 			ON CONFLICT (user_id, skill_id) DO NOTHING`,
 			userID, domain.PlayerLevelDivisor); err != nil {
-			return 0, fmt.Errorf("unlock skills by level: %w", err)
+			return 0, 0, false, fmt.Errorf("unlock skills by level: %w", err)
 		}
 
 		// 装备同理按等级解锁（2026-10-21 P4-1）。
@@ -651,10 +731,11 @@ func (s *Service) applyProgress(ctx context.Context, tx pgx.Tx, userID int64, le
 		// 新解锁的装备**默认不装备** —— 让玩家自己选，
 		// 否则「自动穿上」会悄悄改变他的构筑。
 		if err := grantEquipmentByLevel(ctx, tx, userID); err != nil {
-			return 0, err
+			return 0, 0, false, err
 		}
+		return newMax, newMasteryPoints, true, nil
 	}
-	return newMax, nil
+	return newMax, newMasteryPoints, false, nil
 }
 
 // --- 构筑 ---

@@ -31,7 +31,7 @@ func TestApplyProgressSkipsUnlockWhenLevelUnchanged(t *testing.T) {
 
 	scratch.renameTable(t, "skill_recipes", "skill_recipes_gone_guard")
 	err := scratch.DB.Tx(ctx, func(tx pgx.Tx) error {
-		_, err := scratch.applyProgress(ctx, tx, uid, 1, true, 0)
+		_, _, _, err := scratch.applyProgress(ctx, tx, uid, 1, true, 0)
 		return err
 	})
 	if err != nil {
@@ -50,7 +50,7 @@ func TestApplyProgressRunsUnlockWhenLevelCrossed(t *testing.T) {
 
 	scratch.renameTable(t, "skill_recipes", "skill_recipes_gone_cross")
 	err := scratch.DB.Tx(ctx, func(tx pgx.Tx) error {
-		_, err := scratch.applyProgress(ctx, tx, uid, 1, true, 0)
+		_, _, _, err := scratch.applyProgress(ctx, tx, uid, 1, true, 0)
 		return err
 	})
 	mustErr(t, err, "unlock skills by level")

@@ -77,8 +77,10 @@ func TestMasteryPointsArriveOnTheCrossingBattle(t *testing.T) {
 	_ = readPoints()
 
 	// 打一局：跨过 1000
+	var gotPoints int
 	if err := ts.DB.Tx(ctx, func(tx pgxTx) error {
-		_, err := ts.applyProgress(ctx, tx, uid, 1, true, kills)
+		_, pts, _, err := ts.applyProgress(ctx, tx, uid, 1, true, kills)
+		gotPoints = pts
 		return err
 	}); err != nil {
 		t.Fatalf("applyProgress 失败：%v", err)
@@ -99,5 +101,9 @@ func TestMasteryPointsArriveOnTheCrossingBattle(t *testing.T) {
 			"PostgreSQL 里一条 UPDATE 的所有 SET 表达式都读**同一份旧行**。\n"+
 			"修法：把 exp 的增量先算进一个 CTE / 子查询，让两者基于同一份新值。",
 			afterExp, wantPoints, after)
+	}
+	// R81：返回值必须与落库值一致（settle 事务后用它复用快照算评分，不再重读）。
+	if gotPoints != wantPoints {
+		t.Errorf("applyProgress 返回的 mastery_points=%d，应为 %d（与落库一致）", gotPoints, wantPoints)
 	}
 }

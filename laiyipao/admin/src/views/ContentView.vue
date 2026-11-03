@@ -18,6 +18,7 @@ import {
   exportRedeemCodesCsv,
   fetchAuditLogs,
   exportAuditLogsCsv,
+  fetchReconcile,
   type AdminAnnouncementView,
   type AdminAuditLogView,
   type AdminRedeemCodeView,
@@ -73,6 +74,34 @@ const redeemUserId = ref<number | undefined>(undefined)
 const logAction = ref('')
 const logTarget = ref('')
 const logDateRange = ref<[string, string] | null>(null)
+
+// R78：一致性对账（只读）。
+const reconcileBusy = ref(false)
+
+/** 跑一次一致性对账并弹结果。全绿报成功；有差异逐条列出（check/key/期望/实际）。 */
+async function onReconcile() {
+  reconcileBusy.value = true
+  try {
+    const rep = await fetchReconcile()
+    if (rep.ok) {
+      ElMessage.success(`对账通过：${rep.checks} 项不变量全部一致（耗时 ${rep.duration_ms}ms）`)
+      return
+    }
+    const lines = rep.diffs.map((d) => `${d.check}｜${d.key}｜期望 ${d.expected}｜实际 ${d.actual}`)
+    ElMessageBox.alert(
+      `发现不一致（${rep.truncated ? '样本已截断，' : ''}按类计数见下）：\n` +
+        lines.join('\n') +
+        `\n\n各类违规数：${JSON.stringify(rep.violation_counts)}\n` +
+        `说明：${rep.notes.join('；')}`,
+      `对账发现 ${rep.diffs.length} 处不一致`,
+      { confirmButtonText: '知道了', type: 'error' },
+    )
+  } catch (e) {
+    ElMessage.error(`对账失败：${(e as Error).message}`)
+  } finally {
+    reconcileBusy.value = false
+  }
+}
 
 // 公告筛选（2026-10-31 新一轮第 21 轮）：发布状态 + 创建日期范围。
 const annPublished = ref<boolean | undefined>(undefined)
@@ -1070,6 +1099,8 @@ loadAll()
             <el-button @click="applyLogFilter">查询</el-button>
             <span style="flex: 1" />
             <span class="muted" style="margin-right: 8px">共 {{ logTotal }} 条</span>
+            <!-- R78：一致性对账（只读）。把增量表/流水/兑换计数与直接聚合对在一起 -->
+            <el-button size="small" :loading="reconcileBusy" @click="onReconcile">一致性对账</el-button>
             <el-button size="small" @click="onExportAuditLogs">导出 CSV</el-button>
           </div>
           <el-table :data="logs" size="small" stripe>

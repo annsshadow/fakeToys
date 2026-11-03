@@ -59,9 +59,13 @@ type AdminSkillResp struct {
 }
 
 // AdminUsersResp 是 `GET /admin/users` 的响应。
+//
+// NextCursor（R77）：本页满员时给下一页的 keyset 游标（末行 id），
+// 客户端带 `?cursor=<值>` 继续翻；0/缺省 = 没有下一页或没用游标模式。
 type AdminUsersResp struct {
-	Items []AdminUserView `json:"items"`
-	Total int64           `json:"total"`
+	Items      []AdminUserView `json:"items"`
+	Total      int64           `json:"total"`
+	NextCursor int64           `json:"next_cursor,omitempty"`
 }
 
 // AdminUserResp 是 `POST /admin/users/:id/ban|unban` 的响应。
@@ -76,10 +80,11 @@ type AdminGrantResp struct {
 	Wallet map[string]int64 `json:"wallet"`
 }
 
-// AdminBattlesResp 是 `GET /admin/battles` 的响应。
+// AdminBattlesResp 是 `GET /admin/battles` 的响应（NextCursor 同 R77 口径）。
 type AdminBattlesResp struct {
-	Items []AdminBattleView `json:"items"`
-	Total int64             `json:"total"`
+	Items      []AdminBattleView `json:"items"`
+	Total      int64             `json:"total"`
+	NextCursor int64             `json:"next_cursor,omitempty"`
 }
 
 // AdminRecomputesResp 是 `GET /admin/recomputes` 的响应。
