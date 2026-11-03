@@ -88,7 +88,7 @@ async fn person_can_manage_calendar(
     if require_person_is_manager(pool, person).await? {
         return Ok(true);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let row = client
         .query_opt(
             "SELECT createor FROM cal_calendar WHERE id = $1",
@@ -114,7 +114,7 @@ async fn person_can_manage_event(
     if require_person_is_manager(pool, person).await? {
         return Ok(true);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let row = client
         .query_opt(
             "SELECT createor FROM cal_event WHERE id = $1",
@@ -139,7 +139,7 @@ pub async fn calendar_list_my(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
 ) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, type, target, color, description, createor, is_public, status \
@@ -175,7 +175,7 @@ pub async fn calendar_list_my(
 /// GET /api/calendar_assemble_control/calendar/list/public —— 所有公开日历
 #[allow(non_snake_case)]
 pub async fn calendar_list_public(pool: Extension<Pool>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, type, target, color, description, createor, is_public, status \
@@ -197,7 +197,7 @@ pub async fn calendar_list_public(pool: Extension<Pool>) -> ApiResult {
 /// GET /api/calendar_assemble_control/calendar/{id} —— 按 ID 获取日历信息
 #[allow(non_snake_case)]
 pub async fn calendar_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, type, target, color, description, createor, is_public, status \
@@ -225,7 +225,7 @@ pub async fn calendar_ismanager(
 /// GET /api/calendar_assemble_control/event/{id} —— 按 ID 获取日程事件
 #[allow(non_snake_case)]
 pub async fn event_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, calendar_id, title, content, location, start_time, end_time, \
@@ -244,7 +244,7 @@ pub async fn event_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResu
 /// GET /api/calendar_assemble_control/setting/list/all —— 日历设置列表
 #[allow(non_snake_case)]
 pub async fn setting_list_all(pool: Extension<Pool>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, code, name, description, value, order_no, person \
@@ -296,7 +296,7 @@ pub async fn calendar_create(
     Json(body): Json<Value>,
 ) -> ApiResult {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = body
         .get("name")
@@ -361,7 +361,7 @@ pub async fn calendar_follow_get(
     session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let count: i64 = client
         .query_one(
             "SELECT COUNT(*) AS c FROM cal_calendar_follow WHERE calendar_id = $1 AND person = $2",
@@ -381,7 +381,7 @@ pub async fn calendar_follow_cancel(
     session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
             "DELETE FROM cal_calendar_follow WHERE calendar_id = $1 AND person = $2",
@@ -407,7 +407,7 @@ pub async fn calendar_ismanager_calendar(
 /// PUT /api/calendar_assemble_control/calendar/list/filter —— 按条件过滤日历
 #[allow(non_snake_case)]
 pub async fn calendar_list_filter(pool: Extension<Pool>, Json(body): Json<Value>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     // LIKE 模式绑定值转义，防 % _ 通配注入
     let name: Option<String> = body
         .get("name")
@@ -444,7 +444,7 @@ pub async fn calendar_manager_list_with_person(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, createor, creator_person FROM cal_calendar WHERE id = $1",
@@ -482,7 +482,7 @@ pub async fn calendar_delete(
             "forbidden: not calendar owner or admin",
         )));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute("DELETE FROM cal_calendar WHERE id = $1", &[&id])
         .await
@@ -501,7 +501,7 @@ pub async fn event_create(
     Json(body): Json<Value>,
 ) -> ApiResult {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let calendar_id = body
         .get("calendarId")
@@ -585,7 +585,7 @@ pub async fn event_delete_after(
             "forbidden: not event owner or admin",
         )));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let anchor = client
         .query_opt(
             "SELECT master_id, start_time FROM cal_event WHERE id = $1",
@@ -623,7 +623,7 @@ pub async fn event_delete_all(
             "forbidden: not event owner or admin",
         )));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let master_id: Option<String> = client
         .query_opt("SELECT master_id FROM cal_event WHERE id = $1", &[&id])
         .await
@@ -642,7 +642,7 @@ pub async fn event_delete_all(
 /// PUT /api/calendar_assemble_control/event/list/filter —— 事件过滤列表
 #[allow(non_snake_case)]
 pub async fn event_list_filter(pool: Extension<Pool>, Json(body): Json<Value>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let calendar_id: Option<String> = body
         .get("calendarId")
         .and_then(|v| v.as_str())
@@ -677,7 +677,7 @@ pub async fn event_list_filter(pool: Extension<Pool>, Json(body): Json<Value>) -
 /// PUT /api/calendar_assemble_control/event/list/filter/sample —— 事件过滤样例（限量）
 #[allow(non_snake_case)]
 pub async fn event_list_filter_sample(pool: Extension<Pool>, Json(body): Json<Value>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let calendar_id: Option<String> = body
         .get("calendarId")
         .and_then(|v| v.as_str())
@@ -722,7 +722,7 @@ pub async fn event_list_filter_sample_manager(
     if !is_manager {
         return Ok(Json(ActionResult::error("forbidden: manager only")));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let calendar_id: Option<String> = body
         .get("calendarId")
         .and_then(|v| v.as_str())
@@ -777,7 +777,7 @@ pub async fn event_manage(
             "forbidden: not event owner or admin",
         )));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let status = body
         .get("status")
         .and_then(|v| v.as_str())
@@ -803,7 +803,7 @@ pub async fn event_manage(
 /// GET /api/calendar_assemble_control/event/rfc/{id} —— 返回事件 RFC2445(iCal) 文本
 #[allow(non_snake_case)]
 pub async fn event_rfc(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, title, start_time, end_time, location, rfc_text \
@@ -847,7 +847,7 @@ pub async fn event_delete_single(
             "forbidden: not event owner or admin",
         )));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
             "DELETE FROM cal_event WHERE id = $1 AND status = 'OPEN'",
@@ -875,7 +875,7 @@ pub async fn event_update_after(
             "forbidden: not event owner or admin",
         )));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let anchor = client
         .query_opt(
             "SELECT master_id, start_time FROM cal_event WHERE id = $1",
@@ -922,7 +922,7 @@ pub async fn event_update_all(
             "forbidden: not event owner or admin",
         )));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let master_id: Option<String> = client
         .query_opt("SELECT master_id FROM cal_event WHERE id = $1", &[&id])
         .await
@@ -961,7 +961,7 @@ pub async fn event_update_single(
             "forbidden: not event owner or admin",
         )));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let title = body
         .get("title")
         .and_then(|v| v.as_str())
@@ -1005,7 +1005,7 @@ pub async fn message_create(
     Json(body): Json<Value>,
 ) -> ApiResult {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let calendar_id = body
         .get("calendarId")
@@ -1045,7 +1045,7 @@ pub async fn setting_create(
     Json(body): Json<Value>,
 ) -> ApiResult {
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let code = body
         .get("code")
@@ -1087,7 +1087,7 @@ pub async fn setting_create(
 /// GET /api/calendar_assemble_control/setting/code/{code} —— 按 code 查询设置
 #[allow(non_snake_case)]
 pub async fn setting_get_by_code(pool: Extension<Pool>, Path(code): Path<String>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, code, name, description, value, order_no, person \
@@ -1112,7 +1112,7 @@ pub async fn setting_get_by_code(pool: Extension<Pool>, Path(code): Path<String>
 /// GET /api/calendar_assemble_control/setting/{id} —— 按 id 查询设置
 #[allow(non_snake_case)]
 pub async fn setting_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, code, name, description, value, order_no, person \
@@ -1137,7 +1137,7 @@ pub async fn setting_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiRe
 /// GET /api/calendar_assemble_control/test/1 —— 连通性自检
 #[allow(non_snake_case)]
 pub async fn test_1(pool: Extension<Pool>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let ok: bool = client
         .query_one("SELECT 1 AS v", &[])
         .await

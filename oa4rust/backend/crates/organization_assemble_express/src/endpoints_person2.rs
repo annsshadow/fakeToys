@@ -49,7 +49,7 @@ async fn login_after(
             0,
         )));
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let sql = if objects {
         LOGIN_AFTER_OBJ_SQL
     } else {
@@ -116,7 +116,7 @@ async fn login_recent(
     } else {
         None
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let base = if objects {
         LOGIN_RECENT_OBJ_SQL
     } else {
@@ -187,7 +187,7 @@ pub async fn person_list_pair_identity(
             0,
         )));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             &format!(
@@ -245,7 +245,7 @@ pub async fn person_detail_flag(
     let f_attr = fetch("fetchPersonAttribute");
     let f_id = fetch("fetchIdentity");
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     // 原先 resolve_person_ids(flag) 取 id + 末尾再按 id SELECT 一次 x_org_person =
     // 对同一张表两查。合并为单条按 (id OR name) 命中取整行，pid 取自该行；"首个匹配"
     // 语义保留（加 ORDER BY id 使其确定）。身份/职务/群组/角色链有真实数据依赖
@@ -480,7 +480,7 @@ async fn person_flag_objects(
     if flags.is_empty() {
         return ok_legacy_list(0, vec![]);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(sql, &[&flags])
         .await
@@ -533,7 +533,7 @@ async fn attr_persons(
         "SELECT DISTINCT p.id"
     };
     let sql = format!("{select} {ATTR_PERSON_BASE} ORDER BY p.id");
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(&sql, &[&name, &attribute])
         .await
@@ -618,7 +618,7 @@ async fn person_tree_scope(
             1,
         )
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(&select_sql, &[&flags])
         .await
@@ -726,7 +726,7 @@ async fn person_of_units(
             1,
         )
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = if like {
         client
             .query(&final_sql, &[&flags, &key])

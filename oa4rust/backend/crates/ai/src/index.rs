@@ -14,7 +14,7 @@ pub async fn index_cms_doc(
     pool: Extension<Pool>,
     Path(doc_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt("SELECT xid FROM x_cms_document WHERE xid = $1", &[&doc_id])
@@ -35,7 +35,7 @@ pub async fn index_cms_doc_with_app(
     pool: Extension<Pool>,
     Path(app_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -77,7 +77,7 @@ pub async fn index_delete(
     if !shared::middleware::is_admin(&pool, &session.person_unique).await {
         return Err(AppError::Forbidden);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let result = client
         .execute("DELETE FROM x_ai_index WHERE id = $1", &[&flag])
         .await

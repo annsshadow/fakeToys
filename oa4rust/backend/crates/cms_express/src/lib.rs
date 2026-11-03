@@ -36,7 +36,7 @@ pub async fn uuid_random() -> Result<Json<ActionResult<Value>>, AppError> {
 pub async fn template_form_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid::text AS xid, xname::text AS xname, xcategory::text AS xcategory FROM x_cms_templateform ORDER BY xname LIMIT 50",

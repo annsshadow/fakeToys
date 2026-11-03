@@ -36,7 +36,7 @@ pub async fn process_query(
     pool: Extension<Pool>,
     axum::extract::Json(req): Json<QueryRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let query_type = req.query_type.unwrap_or_default();
 
     if query_type.is_empty() {
@@ -96,7 +96,7 @@ pub async fn batch_process(
     pool: Extension<Pool>,
     axum::extract::Json(req): Json<BatchQueryRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let queries = req.queries.unwrap_or_default();
 
     if queries.is_empty() {
@@ -203,7 +203,7 @@ pub async fn batch_process(
 pub async fn get_service_status(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one("SELECT COUNT(*) as count FROM x_query", &[])
         .await
@@ -258,7 +258,7 @@ pub async fn reset_service(
     // R7 收口（第五十二批）：查询服务重置是全局运维写（清缓存 + x_query 计数归 1，事务二写），
     // 收管理员档（无会话 401 / 非管理员 403，查管理员角色对不可用库 fail-closed）。门在取连接之前，离线即证。
     u2::require_admin(&pool, session.as_deref()).await?;
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
     // reset=原子地「清近 1h 处理缓存」+「x_query 计数归 1」，二写须同事务：否则中途
     // 失败会留下缓存已清但计数未重置（或反之）的半重置态。
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;

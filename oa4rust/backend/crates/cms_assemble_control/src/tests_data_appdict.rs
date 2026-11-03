@@ -125,7 +125,7 @@ mod data_appdict_tests {
                 None
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of(
@@ -134,7 +134,7 @@ mod data_appdict_tests {
                 None
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         for depth_uri in [
             format!("/api/surface/appdict/{DICT}/appInfo/{APP}/p0/data"),
@@ -143,7 +143,7 @@ mod data_appdict_tests {
         ] {
             assert_eq!(
                 status_of("GET", &depth_uri, None).await,
-                StatusCode::INTERNAL_SERVER_ERROR,
+                StatusCode::SERVICE_UNAVAILABLE,
                 "{depth_uri}"
             );
         }
@@ -155,7 +155,7 @@ mod data_appdict_tests {
                 None
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert!(reachable(
             status_of(
@@ -227,7 +227,7 @@ mod data_appdict_tests {
         )
         .await;
         match r {
-            Err(AppError::Internal) => {}
+            Err(AppError::Internal) | Err(AppError::Unavailable(_)) => {}
             other => panic!(
                 "expected Internal(fail closed), got {:?}",
                 other.map(|_| "ok")
@@ -245,7 +245,7 @@ mod data_appdict_tests {
         )
         .await;
         match r {
-            Err(AppError::Internal) => {}
+            Err(AppError::Internal) | Err(AppError::Unavailable(_)) => {}
             other => panic!(
                 "expected Internal(fail closed), got {:?}",
                 other.map(|_| "ok")

@@ -140,7 +140,7 @@ pub async fn express_person_list(
         ))));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let mut persons: HashMap<String, Value> = HashMap::new();
 
@@ -230,7 +230,7 @@ pub async fn express_unit_list(
     let ids = payload.ids.unwrap_or_default();
     validate_id_list(&ids)?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let sql = "SELECT id, name, parent_id, level FROM auth_unit WHERE deleted_at IS NULL AND id = ANY($1)";
     let rows = client
         .query(sql, &[&ids])
@@ -277,7 +277,7 @@ pub async fn express_identity_list(
     let ids = payload.ids.unwrap_or_default();
     validate_id_list(&ids)?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let sql = "SELECT id, name FROM auth_identity WHERE deleted_at IS NULL AND id = ANY($1)";
     let rows = client
         .query(sql, &[&ids])
@@ -318,7 +318,7 @@ pub async fn express_group_list(
     let ids = payload.ids.unwrap_or_default();
     validate_id_list(&ids)?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let sql = "SELECT id, name FROM auth_group WHERE deleted_at IS NULL AND id = ANY($1)";
     let rows = client
         .query(sql, &[&ids])
@@ -359,7 +359,7 @@ pub async fn express_role_list(
     let ids = payload.ids.unwrap_or_default();
     validate_id_list(&ids)?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let sql =
         "SELECT id, name, description FROM auth_role WHERE deleted_at IS NULL AND id = ANY($1)";
     let rows = client
@@ -403,7 +403,7 @@ pub async fn express_person_with_unit(
     let ids = payload.ids.unwrap_or_default();
     validate_id_list(&ids)?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let sql = "SELECT p.id, p.unique_id, p.name, p.job, p.department, p.position, p.unit AS unit_id, u.name AS unit_name FROM auth_person p LEFT JOIN auth_unit u ON p.unit = u.id WHERE p.deleted_at IS NULL AND p.id = ANY($1)";
     let rows = client
         .query(sql, &[&ids])
@@ -461,7 +461,7 @@ pub async fn express_person_with_identity(
     let ids = payload.ids.unwrap_or_default();
     validate_id_list(&ids)?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let sql = "SELECT p.id, p.unique_id, p.name, pi.identity_id, i.name AS identity_name FROM auth_person p JOIN auth_person_identity pi ON pi.person_id = p.id JOIN auth_identity i ON i.id = pi.identity_id WHERE p.deleted_at IS NULL AND p.id = ANY($1) AND i.deleted_at IS NULL";
     let rows = client
         .query(sql, &[&ids])

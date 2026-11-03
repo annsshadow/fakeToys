@@ -50,7 +50,7 @@ pub async fn create_flow(
         return Ok(Json(ActionResult::error("name is required")));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let category = req.category.unwrap_or_default();
     let description = req.description.unwrap_or_default();
@@ -81,7 +81,7 @@ pub async fn get_flow(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(
             "SELECT id, name, category, process_definition, version, creator, \
@@ -143,7 +143,7 @@ pub async fn list_flows(
     axum::extract::Path(category): axum::extract::Path<String>,
     Query(params): Query<ListQuery>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let page = params.page.unwrap_or(1).max(1);
     let size = params.size.unwrap_or(20).clamp(1, 100);
     let offset = (page - 1).saturating_mul(size);
@@ -244,7 +244,7 @@ pub async fn list_flows(
 pub async fn designer_bare_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, category, version::text AS version, creator, create_time::text AS create_time \
@@ -303,7 +303,7 @@ pub async fn save_flow(
         return Err(AppError::Unauthorized);
     };
     require_admin_gate(&pool, &sess).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let process_definition: Option<Value> = body
         .get("processDefinition")
         .or_else(|| body.get("process_definition"))
@@ -351,7 +351,7 @@ pub async fn delete_flow(
         return Err(AppError::Unauthorized);
     };
     require_admin_gate(&pool, &sess).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let result = client
         .execute("DELETE FROM x_process_definition WHERE id = $1", &[&id])
         .await
@@ -376,7 +376,7 @@ pub async fn preview_flow(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -526,7 +526,7 @@ fn row_to_process_data(row: &Row) -> Value {
 pub async fn application_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xname, xalias, xdescription, \"xapplicationCategory\", xicon, \"xiconHue\", \"xcreatorPerson\", \"xlastUpdateTime\", \"xlastUpdatePerson\", xproperties, \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATION WHERE 1=1 ORDER BY \"xcreateTime\" DESC",
@@ -553,7 +553,7 @@ pub async fn application_list_applicationcategory_applicationCategory(
     pool: Extension<Pool>,
     axum::extract::Path(applicationCategory): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xname, xalias, xdescription, \"xapplicationCategory\", xicon, \"xiconHue\", \"xcreatorPerson\", \"xlastUpdateTime\", \"xlastUpdatePerson\", xproperties, \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATION WHERE \"xapplicationCategory\" = $1 ORDER BY \"xcreateTime\" DESC",
@@ -605,7 +605,7 @@ pub async fn application_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xname, xalias, xdescription, \"xapplicationCategory\", xicon, \"xiconHue\", \"xcreatorPerson\", \"xlastUpdateTime\", \"xlastUpdatePerson\", xproperties, \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATION WHERE xid = $1",
@@ -625,7 +625,7 @@ pub async fn application_id_icon(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xicon FROM PP_E_APPLICATION WHERE xid = $1",
@@ -656,7 +656,7 @@ pub async fn application_id_permission(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xproperties FROM PP_E_APPLICATION WHERE xid = $1",
@@ -691,7 +691,7 @@ pub async fn application_id_onlyRemoveNotCompleted(
     pool: Extension<Pool>,
     axum::extract::Path((id, _)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xname, xalias, xdescription, \"xapplicationCategory\", xicon, \"xiconHue\", \"xcreatorPerson\", \"xlastUpdateTime\", \"xlastUpdatePerson\", xproperties, \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATION WHERE xid = $1",
@@ -714,7 +714,7 @@ pub async fn application_id_onlyRemoveNotCompleted(
 pub async fn applicationcategory_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xname, xdescription, \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATIONCATEGORY WHERE 1=1 ORDER BY \"xcreateTime\" DESC",
@@ -745,7 +745,7 @@ pub async fn applicationdict_list_application_applicationId(
     pool: Extension<Pool>,
     axum::extract::Path(applicationId): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATIONDICT WHERE xapplication = $1 ORDER BY \"xcreateTime\" DESC",
@@ -772,7 +772,7 @@ pub async fn applicationdict_list_paging_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let size = size.clamp(1, 100);
     let offset = (page - 1).max(0) * size;
     let rows = client
@@ -809,7 +809,7 @@ pub async fn applicationdict_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATIONDICT WHERE xid = $1",
@@ -832,7 +832,7 @@ pub async fn applicationdict_id(
 pub async fn elementtool_applicationdict_orphan(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT d.xid, d.xname, d.xapplication, d.\"xapplicationName\", d.\"xcreatorPerson\", d.\"xcreateTime\", d.\"xupdateTime\" FROM PP_E_APPLICATIONDICT d LEFT JOIN PP_E_APPLICATION a ON d.xapplication = a.xid WHERE a.xid IS NULL ORDER BY d.\"xcreateTime\" DESC",
@@ -858,7 +858,7 @@ pub async fn elementtool_applicationdict_orphan(
 pub async fn elementtool_form_orphan(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT f.xid, f.xname, f.xapplication, f.\"xapplicationName\", f.\"xcreatorPerson\", f.\"xcreateTime\", f.\"xupdateTime\" FROM PP_E_FORM f LEFT JOIN PP_E_APPLICATION a ON f.xapplication = a.xid WHERE a.xid IS NULL ORDER BY f.\"xcreateTime\" DESC",
@@ -884,7 +884,7 @@ pub async fn elementtool_form_orphan(
 pub async fn elementtool_process_orphan(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT p.xid, p.xname, p.xapplication, p.\"xapplicationName\", p.\"xcreatorPerson\", p.\"xcreateTime\", p.\"xupdateTime\" FROM PP_E_PROCESS p LEFT JOIN PP_E_APPLICATION a ON p.xapplication = a.xid WHERE a.xid IS NULL ORDER BY p.\"xcreateTime\" DESC",
@@ -910,7 +910,7 @@ pub async fn elementtool_process_orphan(
 pub async fn elementtool_script_orphan(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT s.xid, s.xname, s.xapplication, s.\"xapplicationName\", s.\"xcreatorPerson\", s.\"xcreateTime\", s.\"xupdateTime\" FROM PP_E_SCRIPT s LEFT JOIN PP_E_APPLICATION a ON s.xapplication = a.xid WHERE a.xid IS NULL ORDER BY s.\"xcreateTime\" DESC",
@@ -941,7 +941,7 @@ pub async fn file_list_application_applicationFlag(
     pool: Extension<Pool>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_FILE WHERE xapplication = $1 ORDER BY \"xcreateTime\" DESC",
@@ -986,7 +986,7 @@ pub async fn file_list_id_next_count(
     pool: Extension<Pool>,
     axum::extract::Path((id, _, _)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let count: i64 = client
         .query_one("SELECT COUNT(*) FROM PP_E_FILE WHERE xid > $1", &[&id])
         .await
@@ -1006,7 +1006,7 @@ pub async fn file_list_id_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let count: i64 = client
         .query_one("SELECT COUNT(*) FROM PP_E_FILE WHERE xid < $1", &[&id])
         .await
@@ -1026,7 +1026,7 @@ pub async fn file_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_FILE WHERE xid = $1",
@@ -1061,7 +1061,7 @@ pub async fn file_flag_application_applicationFlag(
     pool: Extension<Pool>,
     axum::extract::Path((flag, _)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_FILE WHERE xid = $1",
@@ -1096,7 +1096,7 @@ pub async fn file_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_FILE WHERE xid = $1",
@@ -1131,7 +1131,7 @@ pub async fn file_id_content(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xname, xapplication, \"xapplicationName\", xcontent, \"xcreateTime\", \"xupdateTime\" FROM PP_E_FILE WHERE xid = $1",
@@ -1165,7 +1165,7 @@ pub async fn file_id_download(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xname, xapplication, \"xapplicationName\", xcontent, \"xcreateTime\", \"xupdateTime\" FROM PP_E_FILE WHERE xid = $1",
@@ -1210,7 +1210,7 @@ pub async fn file_id_upload(
         return Err(AppError::Unauthorized);
     };
     require_admin_gate(&pool, &sess).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let content = body
         .get("content")
         .and_then(|v| v.as_str())
@@ -1246,7 +1246,7 @@ pub async fn form_list_application_applicationId(
     pool: Extension<Pool>,
     axum::extract::Path(applicationId): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_FORM WHERE xapplication = $1 ORDER BY \"xcreateTime\" DESC",
@@ -1273,7 +1273,7 @@ pub async fn form_list_formfield_application_applicationId(
     pool: Extension<Pool>,
     axum::extract::Path(applicationId): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_FORM WHERE xapplication = $1 ORDER BY \"xcreateTime\" DESC",
@@ -1300,7 +1300,7 @@ pub async fn form_list_id_formfield(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_FORM WHERE xid = $1",
@@ -1320,7 +1320,7 @@ pub async fn form_list_id_next_count(
     pool: Extension<Pool>,
     axum::extract::Path((id, _, _)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let count: i64 = client
         .query_one("SELECT COUNT(*) FROM PP_E_FORM WHERE xid > $1", &[&id])
         .await
@@ -1340,7 +1340,7 @@ pub async fn form_list_id_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let count: i64 = client
         .query_one("SELECT COUNT(*) FROM PP_E_FORM WHERE xid < $1", &[&id])
         .await
@@ -1360,7 +1360,7 @@ pub async fn form_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_FORM WHERE xid = $1",
@@ -1380,7 +1380,7 @@ pub async fn formversion_list_form_formId(
     pool: Extension<Pool>,
     axum::extract::Path(formId): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xform, xname, xcontent, xversion, \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_FORMVERSION WHERE xform = $1 ORDER BY xversion DESC",
@@ -1439,7 +1439,7 @@ pub async fn formversion_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xform, xname, xcontent, xversion, \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_FORMVERSION WHERE xid = $1",
@@ -1497,7 +1497,7 @@ pub async fn id_count(
     pool: Extension<Pool>,
     axum::extract::Path((entity, _s1)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let table = match entity.as_str() {
         "application" => "PP_E_APPLICATION",
         "form" => "PP_E_FORM",
@@ -1535,7 +1535,7 @@ pub async fn input_compare(_pool: Extension<Pool>) -> Result<Json<ActionResult<V
 
 #[allow(non_snake_case)]
 pub async fn input_cover(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let _client = shared::db::acquire(&pool).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(0.into())),
@@ -1546,7 +1546,7 @@ pub async fn input_cover(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 
 #[allow(non_snake_case)]
 pub async fn input_create(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let _client = shared::db::acquire(&pool).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(0.into())),
@@ -1559,7 +1559,7 @@ pub async fn input_create(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
 pub async fn input_prepare_cover(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let _client = shared::db::acquire(&pool).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(0.into())),
@@ -1572,7 +1572,7 @@ pub async fn input_prepare_cover(
 pub async fn input_prepare_create(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let _client = shared::db::acquire(&pool).await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(0.into())),
@@ -1597,7 +1597,7 @@ pub async fn item_access_delete_process_processId_path_path(
         return Err(AppError::Unauthorized);
     };
     require_admin_gate(&pool, &sess).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let result = client
         .execute(
             "DELETE FROM PP_E_ITEM_ACCESS WHERE xprocess = $1 AND xpath = $2",
@@ -1621,7 +1621,7 @@ pub async fn item_access_path_path(
     pool: Extension<Pool>,
     axum::extract::Path(path): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xname, xprocess, xpath, \"xcreateTime\", \"xupdateTime\" FROM PP_E_ITEM_ACCESS WHERE xpath = $1 ORDER BY \"xcreateTime\" DESC",
@@ -1678,7 +1678,7 @@ pub async fn item_access_process_processId(
     pool: Extension<Pool>,
     axum::extract::Path(processId): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xname, xprocess, xpath, \"xcreateTime\", \"xupdateTime\" FROM PP_E_ITEM_ACCESS WHERE xprocess = $1 ORDER BY \"xcreateTime\" DESC",
@@ -1736,7 +1736,7 @@ pub async fn item_access_process_processId_path_path(
     axum::extract::Path(processId): axum::extract::Path<String>,
     axum::extract::Path(path): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xname, xprocess, xpath, \"xcreateTime\", \"xupdateTime\" FROM PP_E_ITEM_ACCESS WHERE xprocess = $1 AND xpath = $2 ORDER BY \"xcreateTime\" DESC",
@@ -1793,7 +1793,7 @@ pub async fn item_access_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xname, xprocess, xpath, \"xcreateTime\", \"xupdateTime\" FROM PP_E_ITEM_ACCESS WHERE xid = $1",
@@ -1844,7 +1844,7 @@ pub async fn mapping_list_application_applicationFlag(
     pool: Extension<Pool>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xname, xapplication, \"xapplicationName\", xsource, xtarget, \"xcreateTime\", \"xupdateTime\" FROM PP_E_MAPPING WHERE xapplication = $1 ORDER BY \"xcreateTime\" DESC",
@@ -1900,7 +1900,7 @@ pub async fn mapping_list_id_next_count(
     pool: Extension<Pool>,
     axum::extract::Path((id, _, _)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let count: i64 = client
         .query_one("SELECT COUNT(*) FROM PP_E_MAPPING WHERE xid > $1", &[&id])
         .await
@@ -1920,7 +1920,7 @@ pub async fn mapping_list_id_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let count: i64 = client
         .query_one("SELECT COUNT(*) FROM PP_E_MAPPING WHERE xid < $1", &[&id])
         .await
@@ -1940,7 +1940,7 @@ pub async fn mapping_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xname, xapplication, \"xapplicationName\", xsource, xtarget, \"xcreateTime\", \"xupdateTime\" FROM PP_E_MAPPING WHERE xid = $1",
@@ -1994,7 +1994,7 @@ pub async fn mapping_flag_execute(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xname, xapplication, \"xapplicationName\", xsource, xtarget, \"xcreateTime\", \"xupdateTime\" FROM PP_E_MAPPING WHERE xid = $1",
@@ -2032,7 +2032,7 @@ pub async fn mapping_flag_execute(
 pub async fn mergeitemplan_estimate(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let count: i64 = client
         .query_one("SELECT COUNT(*) FROM PP_E_MERGEITEMPLAN", &[])
         .await
@@ -2059,7 +2059,7 @@ pub async fn mergeitemplan_list_application_applicationId_paging_page_size_size(
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let size = size.clamp(1, 100);
     let offset = (page - 1).max(0) * size;
     let rows = client
@@ -2096,7 +2096,7 @@ pub async fn mergeitemplan_list_paging_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let size = size.clamp(1, 100);
     let offset = (page - 1).max(0) * size;
     let rows = client
@@ -2133,7 +2133,7 @@ pub async fn mergeitemplan_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_MERGEITEMPLAN WHERE xid = $1",
@@ -2154,7 +2154,7 @@ pub async fn mergeitemplan_id(
 
 #[allow(non_snake_case)]
 pub async fn output_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xname, xprocess, xoutput, \"xcreateTime\", \"xupdateTime\" FROM PP_E_OUTPUT WHERE 1=1 ORDER BY \"xcreateTime\" DESC",
@@ -2211,7 +2211,7 @@ pub async fn output_applicationFlag_select(
     pool: Extension<Pool>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xname, xprocess, xoutput, \"xcreateTime\", \"xupdateTime\" FROM PP_E_OUTPUT WHERE xapplication = $1 ORDER BY \"xcreateTime\" DESC",
@@ -2264,7 +2264,7 @@ pub async fn process_activity_flag_activityType_activityType(
     pool: Extension<Pool>,
     axum::extract::Path((_, activityType, _)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xname, \"xactivityType\", xdescription, \"xcreateTime\", \"xupdateTime\" FROM PP_E_PROCESS_ACTIVITY WHERE xactivitytype = $1 ORDER BY \"xcreateTime\" DESC",
@@ -2321,7 +2321,7 @@ pub async fn process_application_applicationId(
     pool: Extension<Pool>,
     axum::extract::Path(applicationId): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xname, xalias, xdescription, xapplication, xicon, \"xafterBeginScript\", \"xafterEndScript\", \"xserialTexture\", \"xserialActivity\", \"xserialPhase\", \"xexpireType\", \"xexpireDay\", \"xexpireHour\", \"xexpireWorkTime\", \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_PROCESS WHERE xapplication = $1 ORDER BY \"xcreateTime\" DESC",
@@ -2348,7 +2348,7 @@ pub async fn process_application_applicationId_disable_edition(
     pool: Extension<Pool>,
     axum::extract::Path(applicationId): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xname, xalias, xdescription, xapplication, xicon, \"xcreateTime\", \"xupdateTime\" FROM PP_E_PROCESS WHERE xapplication = $1 AND xstatus = 'disabled' ORDER BY \"xcreateTime\" DESC",
@@ -2399,7 +2399,7 @@ pub async fn process_application_applicationId_edition_edition(
     axum::extract::Path(applicationId): axum::extract::Path<String>,
     axum::extract::Path(edition): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xname, xalias, xdescription, xapplication, xicon, \"xcreateTime\", \"xupdateTime\" FROM PP_E_PROCESS WHERE xapplication = $1 AND xedition = $2 ORDER BY \"xcreateTime\" DESC",
@@ -2449,7 +2449,7 @@ pub async fn process_form_formId(
     pool: Extension<Pool>,
     axum::extract::Path(formId): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xname, xapplication, \"xapplicationName\", xformId, \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_PROCESS WHERE xformid = $1",
@@ -2474,7 +2474,7 @@ pub async fn process_upgrade_all(
     // 非管理员跳过升级回 false。比对恒以 testadmin（管理员）发起 → value:true。
     let is_manager = shared::middleware::is_admin(&pool, &session.person_unique).await;
     if is_manager {
-        let client = pool.get().await.map_err(|_| AppError::Internal)?;
+        let client = shared::db::acquire(&pool).await?;
         client
             .execute(
                 "UPDATE PP_E_PROCESS SET \"xupdateTime\" = NOW(), xversion = xversion + 1 WHERE 1=1",
@@ -2494,7 +2494,7 @@ pub async fn process_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xname, xalias, xdescription, xapplication, xicon, \"xafterBeginScript\", \"xafterEndScript\", \"xserialTexture\", \"xserialActivity\", \"xserialPhase\", \"xexpireType\", \"xexpireDay\", \"xexpireHour\", \"xexpireWorkTime\", \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_PROCESS WHERE xid = $1",
@@ -2515,7 +2515,7 @@ pub async fn process_id_disable(
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     // 归属门：进程属主或 admin 可禁用（对齐本 crate guard_write 口径）。
     if !guard_write(&pool, &session, &client, "pp_e_process", &id).await? {
         return Ok(Json(ActionResult::error("process not found")));
@@ -2545,7 +2545,7 @@ pub async fn process_id_enable(
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     // 归属门：进程属主或 admin 可启用（对齐本 crate guard_write 口径）。
     if !guard_write(&pool, &session, &client, "pp_e_process", &id).await? {
         return Ok(Json(ActionResult::error("process not found")));
@@ -2574,7 +2574,7 @@ pub async fn process_id_enabled(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xname, xapplication, xstatus FROM PP_E_PROCESS WHERE xid = $1 AND xstatus = 'enabled'",
@@ -2618,7 +2618,7 @@ pub async fn process_id_execute_projection(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xname, \"xserialTexture\", \"xserialActivity\", \"xserialPhase\" FROM PP_E_PROCESS WHERE xid = $1",
@@ -2667,7 +2667,7 @@ pub async fn process_id_lead_out(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xname, xalias, xdescription, xapplication, xicon, \"xafterBeginScript\", \"xafterEndScript\", \"xserialTexture\", \"xserialActivity\", \"xserialPhase\", \"xexpireType\", \"xexpireDay\", \"xexpireHour\", \"xexpireWorkTime\", \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_PROCESS WHERE xid = $1",
@@ -2705,7 +2705,7 @@ pub async fn process_id_list_element(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xname, \"xprocessId\", \"xelementType\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_PROCESS_ELEMENT WHERE xprocessid = $1 ORDER BY \"xcreateTime\" DESC",
@@ -2765,7 +2765,7 @@ pub async fn process_id_permission(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xproperties FROM PP_E_PROCESS WHERE xid = $1",
@@ -2800,7 +2800,7 @@ pub async fn process_id_process(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xname, xalias, xdescription, xapplication, xicon, \"xafterBeginScript\", \"xafterEndScript\", \"xserialTexture\", \"xserialActivity\", \"xserialPhase\", \"xexpireType\", \"xexpireDay\", \"xexpireHour\", \"xexpireWorkTime\", \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_PROCESS WHERE xid = $1",
@@ -2821,7 +2821,7 @@ pub async fn process_id_upgrade(
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     // 归属门：进程属主或 admin 可升级版本（对齐本 crate guard_write 口径）。
     if !guard_write(&pool, &session, &client, "pp_e_process", &id).await? {
         return Ok(Json(ActionResult::error("process not found")));
@@ -2850,7 +2850,7 @@ pub async fn process_id_onlyRemoveNotCompleted(
     pool: Extension<Pool>,
     axum::extract::Path((id, _)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xname, xalias, xdescription, xapplication, xicon, \"xcreateTime\", \"xupdateTime\" FROM PP_E_PROCESS WHERE xid = $1",
@@ -2870,7 +2870,7 @@ pub async fn process_id_onlyRemoveNotCompleted_edition(
     pool: Extension<Pool>,
     axum::extract::Path((id, _)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xname, xalias, xdescription, xapplication, xicon, xedition, \"xcreateTime\", \"xupdateTime\" FROM PP_E_PROCESS WHERE xid = $1",
@@ -2912,7 +2912,7 @@ pub async fn processversion_list_process_processId(
     pool: Extension<Pool>,
     axum::extract::Path(processId): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xprocess, xname, xcontent, xversion, \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_PROCESSVERSION WHERE xprocess = $1 ORDER BY xversion DESC",
@@ -2971,7 +2971,7 @@ pub async fn processversion_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xprocess, xname, xcontent, xversion, \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_PROCESSVERSION WHERE xid = $1",
@@ -3029,7 +3029,7 @@ pub async fn script_application_applicationId(
     pool: Extension<Pool>,
     axum::extract::Path(applicationId): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_SCRIPT WHERE xapplication = $1 ORDER BY \"xcreateTime\" DESC",
@@ -3056,7 +3056,7 @@ pub async fn script_application_applicationId_name_name(
     pool: Extension<Pool>,
     axum::extract::Path((applicationId, name, _s2)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_SCRIPT WHERE xapplication = $1 AND xname = $2 ORDER BY \"xcreateTime\" DESC",
@@ -3082,7 +3082,7 @@ pub async fn script_application_applicationId_name_name(
 pub async fn script_list_manager(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_SCRIPT WHERE 1=1 ORDER BY \"xcreateTime\" DESC",
@@ -3109,7 +3109,7 @@ pub async fn script_list_paging_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let size = size.clamp(1, 100);
     let offset = (page - 1).max(0) * size;
     let rows = client
@@ -3146,7 +3146,7 @@ pub async fn script_list_id_next_count(
     pool: Extension<Pool>,
     axum::extract::Path((id, _, _)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let count: i64 = client
         .query_one("SELECT COUNT(*) FROM PP_E_SCRIPT WHERE xid > $1", &[&id])
         .await
@@ -3166,7 +3166,7 @@ pub async fn script_list_id_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let count: i64 = client
         .query_one("SELECT COUNT(*) FROM PP_E_SCRIPT WHERE xid < $1", &[&id])
         .await
@@ -3186,7 +3186,7 @@ pub async fn script_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xname, xapplication, \"xapplicationName\", xcode, \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_SCRIPT WHERE xid = $1",
@@ -3225,7 +3225,7 @@ pub async fn scriptversion_list_script_scriptId(
     pool: Extension<Pool>,
     axum::extract::Path(scriptId): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xscript, xname, xcode, xversion, \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_SCRIPTVERSION WHERE xscript = $1 ORDER BY xversion DESC",
@@ -3289,7 +3289,7 @@ pub async fn scriptversion_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xscript, xname, xcode, xversion, \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_SCRIPTVERSION WHERE xid = $1",
@@ -3345,7 +3345,7 @@ pub async fn scriptversion_id(
 pub async fn templateform_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xname, xcategory, xcontent, \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_TEMPLATEFORM WHERE 1=1 ORDER BY xname",
@@ -3401,7 +3401,7 @@ pub async fn templateform_list_category(
     pool: Extension<Pool>,
     axum::extract::Path(category): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xname, xcategory, xcontent, \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_TEMPLATEFORM WHERE xcategory = $1 ORDER BY xname",
@@ -3457,7 +3457,7 @@ pub async fn templateform_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, xname, xcategory, xcontent, \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_TEMPLATEFORM WHERE xid = $1",
@@ -3512,7 +3512,7 @@ pub async fn workcompleted_application_applicationFlag_merge_data(
     pool: Extension<Pool>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, \"xworkId\", \"xcompletedTime\", xcreator, \"xcreateTime\" FROM PP_E_WORKCOMPLETED wc JOIN PP_E_PROCESS p ON wc.xworkid = p.xid WHERE p.xapplication = $1 ORDER BY wc.\"xcompletedTime\" DESC",
@@ -3562,7 +3562,7 @@ pub async fn workcompleted_process_processFlag_merge_data(
     pool: Extension<Pool>,
     axum::extract::Path(processFlag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, \"xworkId\", \"xcompletedTime\", xcreator, \"xcreateTime\" FROM PP_E_WORKCOMPLETED wc JOIN PP_E_PROCESS p ON wc.xworkid = p.xid WHERE p.xid = $1 ORDER BY wc.\"xcompletedTime\" DESC",
@@ -3723,7 +3723,7 @@ pub async fn application_id_update(
     if name.trim().is_empty() {
         return Ok(Json(ActionResult::error("name is required")));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     if !guard_write(&pool, &session, &client, "pp_e_application", &id).await? {
         return Ok(Json(ActionResult::error("application not found")));
     }
@@ -3770,7 +3770,7 @@ pub async fn application_id_icon_update(
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     if !guard_write(&pool, &session, &client, "pp_e_application", &id).await? {
         return Ok(Json(ActionResult::error("application not found")));
     }
@@ -3804,7 +3804,7 @@ pub async fn application_id_permission_save(
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     if !guard_write(&pool, &session, &client, "pp_e_application", &id).await? {
         return Ok(Json(ActionResult::error("application not found")));
     }
@@ -3847,7 +3847,7 @@ pub async fn applicationdict_create(
     if application.trim().is_empty() {
         return Ok(Json(ActionResult::error("applicationId is required")));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let dup = normalized_dup_count(
         &client,
         "SELECT COUNT(*)::bigint FROM pp_e_applicationdict WHERE \"xname\" IS NOT NULL AND LOWER(TRIM(\"xname\")) = $1 AND xapplication = $2 AND deleted_at IS NULL",
@@ -3888,7 +3888,7 @@ pub async fn applicationdict_paging_post(
     if page < 1 || size < 1 {
         return Ok(Json(ActionResult::error("page and size must be >= 1")));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let offset = (page - 1).saturating_mul(size);
     let total: i64 = client
         .query_one(
@@ -3933,7 +3933,7 @@ pub async fn applicationdict_id_delete(
     session: Extension<Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     if !guard_write(&pool, &session, &client, "pp_e_applicationdict", &id).await? {
         return Ok(Json(ActionResult::error("applicationdict not found")));
     }
@@ -3960,7 +3960,7 @@ pub async fn file_flag_in_application(
     pool: Extension<Pool>,
     axum::extract::Path((flag, application_flag)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT xid, \"xname\", xapplication, \"xcreateTime\", \"xupdateTime\" FROM pp_e_file WHERE xid = $1 AND xapplication = $2",
@@ -3980,7 +3980,7 @@ pub async fn form_list_next_exact(
     pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, \"xname\", xapplication, \"xcreateTime\", \"xupdateTime\" FROM pp_e_form \
@@ -4007,7 +4007,7 @@ pub async fn form_list_prev_exact(
     pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, \"xname\", xapplication, \"xcreateTime\", \"xupdateTime\" FROM pp_e_form \
@@ -4043,7 +4043,7 @@ pub async fn item_access_create(
     if process.trim().is_empty() || path.trim().is_empty() {
         return Ok(Json(ActionResult::error("process and path are required")));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let dup = normalized_dup_count(
         &client,
         "SELECT COUNT(*)::bigint FROM pp_e_item_access WHERE xpath IS NOT NULL AND LOWER(TRIM(xpath)) = $1 AND xprocess = $2",
@@ -4092,7 +4092,7 @@ pub async fn item_access_bach_save(
     if body.get("items").is_none() {
         return Ok(Json(ActionResult::error("items is required")));
     }
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
     let ts = now_text();
     let creator = sess.person_unique.clone();
     // 整批保存包同一事务，且 UPDATE 失败必须传播（此前 `unwrap_or(0)` 吞错：
@@ -4150,7 +4150,7 @@ pub async fn item_access_delete_exact(
         return Err(AppError::Unauthorized);
     };
     require_admin_gate(&pool, &sess).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let result = client
         .execute(
             "DELETE FROM pp_e_item_access WHERE xprocess = $1 AND xpath = $2",
@@ -4175,7 +4175,7 @@ pub async fn item_access_path_list(
     pool: Extension<Pool>,
     axum::extract::Path(path): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, \"xname\", xprocess, xpath, \"xcreateTime\", \"xupdateTime\" FROM pp_e_item_access \
@@ -4202,7 +4202,7 @@ pub async fn item_access_process_path_list(
     pool: Extension<Pool>,
     axum::extract::Path((process_id, path)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, \"xname\", xprocess, xpath, \"xcreateTime\", \"xupdateTime\" FROM pp_e_item_access \
@@ -4274,7 +4274,7 @@ pub async fn mapping_create(
     }
     let application =
         body_str(&body, &["applicationId", "application", "xapplication"]).unwrap_or_default();
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let dup = normalized_dup_count(
         &client,
         "SELECT COUNT(*)::bigint FROM pp_e_mapping WHERE \"xname\" IS NOT NULL AND LOWER(TRIM(\"xname\")) = $1 AND xapplication IS NOT DISTINCT FROM $2",
@@ -4312,7 +4312,7 @@ pub async fn mapping_list_next_exact(
     pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, \"xname\", xapplication, \"xcreateTime\", \"xupdateTime\" FROM pp_e_mapping WHERE xid > $1 ORDER BY xid LIMIT $2",
@@ -4338,7 +4338,7 @@ pub async fn mapping_list_prev_exact(
     pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, \"xname\", xapplication, \"xcreateTime\", \"xupdateTime\" FROM pp_e_mapping WHERE xid < $1 ORDER BY xid DESC LIMIT $2",
@@ -4366,7 +4366,7 @@ pub async fn mapping_id_update(
     axum::extract::Path(flag): axum::extract::Path<String>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     if !guard_write(&pool, &session, &client, "pp_e_mapping", &flag).await? {
         return Ok(Json(ActionResult::error("mapping not found")));
     }
@@ -4416,7 +4416,7 @@ pub async fn mapping_id_delete(
     session: Extension<Session>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     if !guard_write(&pool, &session, &client, "pp_e_mapping", &flag).await? {
         return Ok(Json(ActionResult::error("mapping not found")));
     }
@@ -4451,7 +4451,7 @@ pub async fn mergeitemplan_create(
     }
     let application =
         body_str(&body, &["applicationId", "application", "xapplication"]).unwrap_or_default();
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let dup = normalized_dup_count(
         &client,
         "SELECT COUNT(*)::bigint FROM pp_e_mergeitemplan WHERE \"xname\" IS NOT NULL AND LOWER(TRIM(\"xname\")) = $1 AND xapplication IS NOT DISTINCT FROM $2",
@@ -4490,7 +4490,7 @@ pub async fn mergeitemplan_paging_by_application(
     if page < 1 || size < 1 {
         return Ok(Json(ActionResult::error("page and size must be >= 1")));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let offset = (page - 1).saturating_mul(size);
     let total: i64 = client
         .query_one(
@@ -4537,7 +4537,7 @@ pub async fn mergeitemplan_paging_exact(
     if page < 1 || size < 1 {
         return Ok(Json(ActionResult::error("page and size must be >= 1")));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let offset = (page - 1).saturating_mul(size);
     let total: i64 = client
         .query_one("SELECT COUNT(*)::bigint FROM pp_e_mergeitemplan", &[])
@@ -4584,7 +4584,7 @@ pub async fn mergeitemplan_id_update(
     if name.trim().is_empty() {
         return Ok(Json(ActionResult::error("name is required")));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     if !guard_write(&pool, &session, &client, "pp_e_mergeitemplan", &id).await? {
         return Ok(Json(ActionResult::error("mergeitemplan not found")));
     }
@@ -4620,7 +4620,7 @@ pub async fn mergeitemplan_id_delete(
     session: Extension<Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     if !guard_write(&pool, &session, &client, "pp_e_mergeitemplan", &id).await? {
         return Ok(Json(ActionResult::error("mergeitemplan not found")));
     }
@@ -4647,7 +4647,7 @@ pub async fn process_disable_edition_list(
     pool: Extension<Pool>,
     axum::extract::Path(application_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT p.xid, p.\"xname\", COALESCE(p.xedition, '') AS edition, \
@@ -4696,7 +4696,7 @@ pub async fn process_edition_list(
     pool: Extension<Pool>,
     axum::extract::Path((application_id, edition)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, \"xname\", xalias, xdescription, xapplication, \"xcreateTime\", \"xupdateTime\" \
@@ -4727,7 +4727,7 @@ pub async fn process_id_update(
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     if !guard_write(&pool, &session, &client, "pp_e_process", &id).await? {
         return Ok(Json(ActionResult::error("process not found")));
     }
@@ -4775,7 +4775,7 @@ pub async fn process_id_permission_save(
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     if !guard_write(&pool, &session, &client, "pp_e_process", &id).await? {
         return Ok(Json(ActionResult::error("process not found")));
     }
@@ -4805,7 +4805,7 @@ pub async fn process_edition_delete(
     session: Extension<Session>,
     axum::extract::Path((id, flag)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     if !guard_write(&pool, &session, &client, "pp_e_process", &id).await? {
         return Ok(Json(ActionResult::error("process not found")));
     }
@@ -4836,7 +4836,7 @@ pub async fn script_by_name_exact(
     pool: Extension<Pool>,
     axum::extract::Path((application_id, name)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
         "SELECT xid, \"xname\", xapplication, \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM pp_e_script \
@@ -4866,7 +4866,7 @@ pub async fn script_by_name_exact(
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn dict_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xname, xapplication, \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATIONDICT WHERE deleted_at IS NULL ORDER BY \"xcreateTime\" DESC",
@@ -5000,7 +5000,7 @@ pub async fn dict_delete(
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn form_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xname, xapplication, \"xcreateTime\", \"xupdateTime\" FROM PP_E_FORM WHERE deleted_at IS NULL ORDER BY \"xcreateTime\" DESC",
@@ -5134,7 +5134,7 @@ pub async fn form_delete(
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn xform_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, definition, status, creator, create_time::text AS create_time, update_time::text AS update_time \

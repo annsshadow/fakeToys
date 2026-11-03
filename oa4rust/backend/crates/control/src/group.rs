@@ -50,7 +50,7 @@ pub async fn get(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = match client
         .query_one(
@@ -90,7 +90,7 @@ async fn query_page(
     count: i64,
     is_next: bool,
 ) -> Result<(i64, Vec<Value>), AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
 
     let count = count.clamp(1, 100);
 
@@ -222,7 +222,7 @@ pub async fn create(
         return Ok(Json(ActionResult::error("name is required")));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let existing = client
         .query_one(
@@ -278,7 +278,7 @@ pub async fn update(
     Path(flag): Path<String>,
     Json(req): Json<GroupUpdateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -345,7 +345,7 @@ pub async fn delete(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(

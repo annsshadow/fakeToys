@@ -327,7 +327,7 @@ async fn list_cms_entity_table(
     pool: &deadpool_postgres::Pool,
     table: &str,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let sql = match table {
         "x_cms_column" => {
             "SELECT id, name, parent_id AS parentId, sort_order AS sortOrder, \
@@ -415,7 +415,7 @@ async fn cms_entity_soft_delete(
     id: &str,
 ) -> Result<bool, AppError> {
     use deadpool_postgres::tokio_postgres::types::ToSql;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let owned = id.to_string();
     let refs: Vec<&(dyn ToSql + Sync)> = vec![&owned as &(dyn ToSql + Sync)];
     let n = client
@@ -434,7 +434,7 @@ async fn cms_entity_create(
     table: &str,
     payload: &Value,
 ) -> Result<String, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     use deadpool_postgres::tokio_postgres::types::ToSql;
     let id = uuid::Uuid::new_v4().to_string();
     let s = |k: &str| {
@@ -487,7 +487,7 @@ async fn cms_entity_save(
     id: &str,
     payload: &Value,
 ) -> Result<bool, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     use deadpool_postgres::tokio_postgres::types::ToSql;
     let s = |k: &str| {
         payload

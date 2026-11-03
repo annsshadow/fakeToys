@@ -137,7 +137,7 @@ pub(crate) async fn named_list_response(
     sql: &str,
     flags: &[String],
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let rows = client
         .query(sql, &[&flags])
         .await
@@ -222,7 +222,7 @@ pub async fn person_auth_info_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let persons = resolve_person_ids(&client, std::slice::from_ref(&flag)).await?;
     let Some(pid) = persons.first() else {
         return ok_json(Value::Object(serde_json::Map::new()));
@@ -291,7 +291,7 @@ pub async fn person_nick_name_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name FROM x_org_person WHERE deleted_at IS NULL AND (id = $1 OR name = $1)",
@@ -322,7 +322,7 @@ pub async fn person_mobile_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, mobile FROM x_org_person WHERE deleted_at IS NULL AND (id = $1 OR name = $1)",
@@ -346,7 +346,7 @@ async fn person_batch(
         return ok_legacy_list(0, vec![]);
     }
     let pii = include_pii(&body);
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             &format!(
@@ -383,7 +383,7 @@ pub async fn person_list_object(
 pub async fn person_list_all(
     pool: Extension<Pool>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id FROM x_org_person WHERE deleted_at IS NULL ORDER BY id",
@@ -402,7 +402,7 @@ pub async fn person_list_all(
 pub async fn person_list_all_object(
     pool: Extension<Pool>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, unit_id FROM x_org_person WHERE deleted_at IS NULL ORDER BY id",
@@ -427,7 +427,7 @@ pub async fn person_has_role(
     if persons.is_empty() || roles.is_empty() {
         return ok_legacy_list(0, vec![]);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT DISTINCT p.id FROM x_org_person p \
@@ -451,7 +451,7 @@ async fn identities_of_persons(pool: &Pool, flags: &[String]) -> Result<Vec<Stri
     if flags.is_empty() {
         return Ok(vec![]);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let rows = client
         .query(
             "SELECT DISTINCT i.id FROM x_org_identity i \
@@ -527,7 +527,7 @@ pub async fn person_list_filter_page_size(
         .filter(|s| !s.is_empty())
         .map(str::to_string);
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let where_clause =
         "WHERE deleted_at IS NULL AND ($1::text IS NULL OR name ILIKE '%' || $1 || '%') \
          AND ($2::text IS NULL OR unit_id = $2)";
@@ -577,7 +577,7 @@ async fn identity_batch(
     if flags.is_empty() {
         return ok_legacy_list(0, vec![]);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             &format!(

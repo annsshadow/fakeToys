@@ -50,7 +50,7 @@ pub async fn personattr_list_attribute_person_name(
          JOIN x_org_person p ON p.id = a.person_id AND p.deleted_at IS NULL \
          WHERE a.deleted_at IS NULL AND (p.id = $1 OR p.name = $1) \
          AND a.attribute_key = $2 ORDER BY a.id";
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(SQL, &[&person, &name])
         .await
@@ -86,7 +86,7 @@ pub async fn personattr_list_person_object(
          WHERE a.deleted_at IS NULL AND (a.person_id = ANY($1) OR a.person_id IN (\
              SELECT id FROM x_org_person WHERE deleted_at IS NULL AND name = ANY($1))) \
          ORDER BY a.person_id, a.attribute_key, a.id";
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(SQL, &[&flags])
         .await
@@ -142,7 +142,7 @@ async fn attr_write_values(
         return Err(AppError::BadRequest("name is required".into()));
     };
     let values = normalize_flags(string_list(body, "attributeList"));
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(pool).await?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
 
     // 归一化查重：append 仅补缺失值；set 全量替换
@@ -265,7 +265,7 @@ async fn named_keys(
             0,
         )));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(sql, &[&flags])
         .await
@@ -316,7 +316,7 @@ pub async fn unitattr_list_attribute_unit_name(
          JOIN x_org_unit u ON u.id = a.unit_id AND u.deleted_at IS NULL \
          WHERE a.deleted_at IS NULL AND (u.id = $1 OR u.name = $1) \
          AND a.attribute_key = $2 ORDER BY a.id";
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(SQL, &[&unit, &name])
         .await
@@ -351,7 +351,7 @@ pub async fn unitattr_list_unit_object(
          WHERE a.deleted_at IS NULL AND (a.unit_id = ANY($1) OR a.unit_id IN (\
              SELECT id FROM x_org_unit WHERE deleted_at IS NULL AND name = ANY($1))) \
          ORDER BY a.unit_id, a.attribute_key, a.id";
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(SQL, &[&flags])
         .await
@@ -422,7 +422,7 @@ pub async fn empower_list_identity_object(
         "SELECT id, from_person, to_person, from_identity, to_identity, role_id, enabled \
          FROM x_empower WHERE deleted_at IS NULL \
          AND (from_identity = ANY($1) OR to_identity = ANY($1)) ORDER BY id";
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(SQL, &[&flags])
         .await
@@ -474,7 +474,7 @@ pub async fn empowerlog_create(
     const SQL: &str = "INSERT INTO x_org_empower_log \
          (id, application, process, work, from_identity, to_identity) \
          VALUES ($1, $2, $3, $4, $5, $6)";
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     client
         .execute(
             SQL,
@@ -520,7 +520,7 @@ pub async fn distinguishedname_list(
          UNION SELECT id FROM x_org_role WHERE deleted_at IS NULL AND {pick} \
          UNION SELECT id FROM x_org_duty WHERE deleted_at IS NULL AND {pick}"
     );
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(&sql, &[&flags])
         .await

@@ -92,7 +92,7 @@ pub async fn create(
         return Ok(Json(ActionResult::error("to_person is required")));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let to_exists = client
         .query_opt(
@@ -137,7 +137,7 @@ pub async fn get(
     headers: HeaderMap,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<EmpowerInfo>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -178,7 +178,7 @@ pub async fn update(
     Path(id): Path<String>,
     Json(req): Json<EmpowerUpdateRequest>,
 ) -> Result<Json<ActionResult<EmpowerInfo>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -224,7 +224,7 @@ pub async fn delete(
     headers: HeaderMap,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<serde_json::Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -259,7 +259,7 @@ pub async fn enable(
     headers: HeaderMap,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<EmpowerInfo>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -302,7 +302,7 @@ pub async fn disable(
     headers: HeaderMap,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<EmpowerInfo>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -355,7 +355,7 @@ pub async fn manager_create(
         return Ok(Json(ActionResult::error("to_person is required")));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let to_exists = client
         .query_opt(
@@ -407,7 +407,7 @@ pub async fn manager_update(
         return Ok(Json(ActionResult::error("forbidden: admin required")));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -457,7 +457,7 @@ pub async fn manager_delete(
         return Ok(Json(ActionResult::error("forbidden: admin required")));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let deleted = client
         .execute(
@@ -490,7 +490,7 @@ pub async fn manager_list_paging(
         return Ok(Json(ActionResult::error("forbidden: admin required")));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let offset = (page - 1).max(0) * size;
 
     let total_row = client
@@ -537,7 +537,7 @@ pub async fn list_current_person(
     headers: HeaderMap,
 ) -> Result<Json<ActionResult<Vec<EmpowerInfo>>>, AppError> {
     let current_person = resolve_current_person_unique(&session_manager, &headers).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let total_row = client
         .query_opt(
@@ -583,7 +583,7 @@ pub async fn list_current_person_enable(
     headers: HeaderMap,
 ) -> Result<Json<ActionResult<Vec<EmpowerInfo>>>, AppError> {
     let current_person = resolve_current_person_unique(&session_manager, &headers).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let total_row = client
         .query_opt(
@@ -629,7 +629,7 @@ pub async fn list_to(
     headers: HeaderMap,
 ) -> Result<Json<ActionResult<Vec<EmpowerInfo>>>, AppError> {
     let current_person = resolve_current_person_unique(&session_manager, &headers).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let total_row = client
         .query_opt(
@@ -675,7 +675,7 @@ pub async fn list_to_enable(
     headers: HeaderMap,
 ) -> Result<Json<ActionResult<Vec<EmpowerInfo>>>, AppError> {
     let current_person = resolve_current_person_unique(&session_manager, &headers).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let total_row = client
         .query_opt(

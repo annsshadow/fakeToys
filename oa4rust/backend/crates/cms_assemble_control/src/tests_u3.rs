@@ -338,7 +338,7 @@ mod u3_tests {
         )
         .await;
         match r {
-            Err(AppError::Forbidden) | Err(AppError::Internal) => {}
+            Err(AppError::Forbidden) | Err(AppError::Internal) | Err(AppError::Unavailable(_)) => {}
             other => panic!("expected gate denial, got {:?}", other.map(|_| "ok")),
         }
     }
@@ -352,7 +352,7 @@ mod u3_tests {
         )
         .await;
         match r {
-            Err(AppError::Internal) => {}
+            Err(AppError::Internal) | Err(AppError::Unavailable(_)) => {}
             other => panic!(
                 "expected Internal(fail closed), got {:?}",
                 other.map(|_| "ok")
@@ -364,7 +364,8 @@ mod u3_tests {
             axum::extract::Path("c-1".to_string()),
         )
         .await;
-        assert!(matches!(r, Err(AppError::Internal)));
+        // O2：死池取连失败 → Unavailable(503)
+        assert!(matches!(r, Err(AppError::Unavailable(_))));
     }
 
     #[tokio::test]
@@ -387,10 +388,11 @@ mod u3_tests {
             axum::extract::Json(json!({"keyword": ""})),
         )
         .await;
-        // 空 keyword 合法（全量搜索），DB 不可用 → Internal
-        assert!(matches!(r, Err(AppError::Internal)));
+        // 空 keyword 合法（全量搜索），DB 不可用 → Unavailable(503)
+        assert!(matches!(r, Err(AppError::Unavailable(_))));
         let r = viewrecord_unread_u3(Extension(mock_pool()), Extension(session(OWNER))).await;
-        assert!(matches!(r, Err(AppError::Internal)));
+        // O2：死池取连失败 → Unavailable(503)
+        assert!(matches!(r, Err(AppError::Unavailable(_))));
         let r = categoryinfo_ext_content_save_u3(
             Extension(mock_pool()),
             Extension(session(STRANGER)),
@@ -412,9 +414,11 @@ mod u3_tests {
             axum::extract::Json(json!({"importedScripts": [{"name": "n"}]})),
         )
         .await;
-        // DB 不可用：owner 查询失败 → Internal fail-closed
+        // DB 不可用：owner 查询失败 → Unavailable(503) fail-closed（O2 起池取连失败 500→503）
         match r {
-            Err(AppError::Internal) | Err(AppError::Forbidden) => {}
+            Err(AppError::Internal)
+            | Err(AppError::Forbidden)
+            | Err(AppError::Unavailable(_)) => {}
             other => panic!("expected gate denial, got {:?}", other.map(|_| "ok")),
         }
     }

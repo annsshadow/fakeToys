@@ -62,7 +62,7 @@ pub struct StatisticalCycleInfo {
 
 /// 考勤管理员判定：x_attendance_admin 登记的 admin（与全局 admin 二选一即过）。
 async fn is_attendance_admin(pool: &Pool, person_unique: &str) -> Result<bool, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let row = client
         .query_opt(
             "SELECT 1 FROM x_attendance_admin WHERE admin = $1 LIMIT 1",
@@ -79,7 +79,7 @@ fn require_session(session: Option<Extension<Session>>) -> Result<Session, AppEr
 
 #[allow(non_snake_case)]
 pub async fn list_admins(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -142,7 +142,7 @@ pub async fn list_admins(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 pub async fn list_employee_configs(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -229,7 +229,7 @@ pub async fn list_employee_configs(
 pub async fn list_statistical_cycles(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -323,7 +323,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 pub async fn list_check_in_records(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -366,7 +366,7 @@ pub async fn list_check_in_records(
 pub async fn list_schedule_rules(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -403,7 +403,7 @@ pub async fn list_schedule_rules(
 pub async fn list_appeal_records(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 全量倾倒加护栏：与同族 list_check_in_records/list_schedule_rules 的 LIMIT 20 对齐，
     // 申诉量大时应走分页版 v2/appeal/list/{page}/size/{size}。
@@ -467,7 +467,7 @@ pub async fn submit_appeal(
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 申诉人/创建者以会话登录人为事实源：客户端 personId 可伪造（替别人提申诉）
     let person_id = sess.person_unique.clone();
@@ -519,7 +519,7 @@ pub async fn audit_appeal(
     {
         return Err(AppError::Forbidden);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = payload
         .get("id")
@@ -566,7 +566,7 @@ pub async fn archive_appeal(
     {
         return Err(AppError::Forbidden);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(

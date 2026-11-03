@@ -150,7 +150,7 @@ pub async fn design_search(
         return Ok(Json(ActionResult::error("keyword is required")));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let pattern = like_pattern(&keyword);
 
     // 未指定模块时等价于全模块（o2server 对无权限模块会过滤；此处模块集合由请求方给定）
@@ -207,7 +207,7 @@ pub async fn index_directory_document_count(
         None => (String::new(), String::new()),
     };
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let count: i64 = if category.is_empty() && key.is_empty() {
         client
             .query_one("SELECT COUNT(*) AS c FROM x_cms_document", &[])
@@ -271,7 +271,7 @@ pub async fn index_update_extra_document(
         return Ok(Json(ActionResult::error("updateTime is required")));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let data = serde_json::to_string(&Value::Object(wi.extra.clone())).unwrap_or_default();
     client
         .execute(
@@ -325,7 +325,7 @@ async fn touch_impl(
     let state_id = format!("{}:{}:{}", entity_type, freq.unwrap_or("-"), node);
     let freq_val = freq.unwrap_or("-").to_string();
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     match action {
         TouchAction::Touch => {
             client
@@ -458,7 +458,7 @@ pub async fn table_insert(
     let row_id = uuid::Uuid::new_v4().to_string();
     let bundle = uuid::Uuid::new_v4().to_string();
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     client
         .execute(
             "INSERT INTO x_query_table_data (id, table_flag, data, bundle, create_time, update_time) \
@@ -489,7 +489,7 @@ pub async fn table_update_with_bundle(
         )));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let existing = client
         .query_opt(
             "SELECT id FROM x_query_table_data WHERE table_flag = $1 AND bundle = $2 LIMIT 1",
@@ -554,7 +554,7 @@ async fn neural_start(
     if model_flag.trim().is_empty() {
         return Ok(Json(ActionResult::error("modelFlag is required")));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     // 同模型同动作存在进行中任务时不重复启动
     let running = client
         .query_opt(
@@ -595,7 +595,7 @@ async fn neural_stop(
     model_flag: &str,
     action: &str,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let n = client
         .execute(
             "UPDATE x_query_neural_job SET status = 'stopped', update_time = NOW() \
@@ -672,7 +672,7 @@ pub async fn neural_list_calculate_with_work(
     pool: Extension<Pool>,
     Path((model_flag, work_id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let learned = client
         .query_opt(
             "SELECT 1 AS ok FROM x_query_neural_job \

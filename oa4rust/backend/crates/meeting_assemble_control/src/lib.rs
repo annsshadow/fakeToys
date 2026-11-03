@@ -37,7 +37,7 @@ pub async fn list_meeting_controls(
     pool: Extension<Pool>,
     axum::extract::Path(meeting_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -102,7 +102,7 @@ pub async fn create_meeting_control(
     if !shared::middleware::is_admin(&pool.0, &sess.person_unique).await {
         return Err(AppError::Forbidden);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let meeting_id = payload
         .get("meetingId")
@@ -157,7 +157,7 @@ pub async fn delete_meeting_control(
     if !shared::middleware::is_admin(&pool.0, &session.person_unique).await {
         return Err(AppError::Forbidden);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let count = client
         .execute(
@@ -185,7 +185,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 
 #[allow(non_snake_case)]
 pub async fn building_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -244,7 +244,7 @@ pub async fn building_list_like_pinyin_key(
     pool: Extension<Pool>,
     axum::extract::Path(key): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let pattern = format!("%{}%", shared::db::escape_like(&key));
     let rows = client
@@ -304,7 +304,7 @@ pub async fn building_list_like_key(
     pool: Extension<Pool>,
     axum::extract::Path(key): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let pattern = format!("%{}%", shared::db::escape_like(&key));
     let rows = client
@@ -364,7 +364,7 @@ pub async fn building_list_pinyininitial_key(
     pool: Extension<Pool>,
     axum::extract::Path(key): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -425,7 +425,7 @@ pub async fn building_list_start_start_completed_completed(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // o2server 语义：按 [start, completed] 时段列会议（codegen 把 Action 前缀
     // 误写为 building，但 building 表无时段列——数据源是 x_meeting）。
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -450,7 +450,7 @@ pub async fn building_list_start_start_completed_completed_allmeeting(
     pool: Extension<Pool>,
     axum::extract::Path((start, completed)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -480,7 +480,7 @@ pub async fn building_list_start_start_completed_completed_room_room_meeting_mee
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -542,7 +542,7 @@ pub async fn building_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -594,7 +594,7 @@ pub async fn building_id(
 pub async fn config_system_config(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -672,7 +672,7 @@ pub async fn config_system_config_manage(
     // 路由前缀 /config/system 须保持匿名可达（o2server 对齐的未登录读），故在
     // handler 内拦截：未认证 401、非 admin 403，杜绝匿名篡改会议模块全局配置。
     u2_require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let config_key = payload
         .get("configKey")
@@ -718,7 +718,7 @@ pub async fn config_system_config_manage(
 pub async fn meeting_list_applied_completed(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -767,7 +767,7 @@ pub async fn meeting_list_applied_completed(
 pub async fn meeting_list_applied_processing(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -816,7 +816,7 @@ pub async fn meeting_list_applied_processing(
 pub async fn meeting_list_applied_wait(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -866,7 +866,7 @@ pub async fn meeting_list_apply_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
@@ -919,7 +919,7 @@ pub async fn meeting_list_coming_day_count(
     pool: Extension<Pool>,
     axum::extract::Path(count): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = match client
         .query(
@@ -975,7 +975,7 @@ async fn meeting_list_coming_month_count_core(
     pool: Extension<Pool>,
     count: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1041,7 +1041,7 @@ pub async fn meeting_list_forward_monthcount_monthCount(
     pool: Extension<Pool>,
     axum::extract::Path(month_count): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1091,7 +1091,7 @@ pub async fn meeting_list_forward_monthcount_monthCount_all(
     pool: Extension<Pool>,
     axum::extract::Path(month_count): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1142,7 +1142,7 @@ async fn meeting_list_invite_page_size_size_core(
     page: i64,
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
@@ -1210,7 +1210,7 @@ pub async fn meeting_list_invite_page_size_size_p3(
 pub async fn meeting_list_invited_completed(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1259,7 +1259,7 @@ pub async fn meeting_list_invited_completed(
 pub async fn meeting_list_invited_processing(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1308,7 +1308,7 @@ pub async fn meeting_list_invited_processing(
 pub async fn meeting_list_invited_rejected(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1357,7 +1357,7 @@ pub async fn meeting_list_invited_rejected(
 pub async fn meeting_list_invited_wait(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1406,7 +1406,7 @@ pub async fn meeting_list_invited_wait(
 pub async fn meeting_list_wait_accept(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1455,7 +1455,7 @@ pub async fn meeting_list_wait_accept(
 pub async fn meeting_list_wait_confirm(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1505,7 +1505,7 @@ pub async fn meeting_list_year_year_month_month(
     pool: Extension<Pool>,
     axum::extract::Path((year, month)): axum::extract::Path<(i32, i32)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let start_date = format!("{}-{:02}-01", year, month);
     let end_date = if month == 12 {
@@ -1562,7 +1562,7 @@ pub async fn meeting_list_year_year_month_month_all(
     pool: Extension<Pool>,
     axum::extract::Path((year, month)): axum::extract::Path<(i32, i32)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let start_date = format!("{}-{:02}-01", year, month);
     let end_date = if month == 12 {
@@ -1619,7 +1619,7 @@ pub async fn meeting_list_year_year_month_month_day_day(
     pool: Extension<Pool>,
     axum::extract::Path((year, month, day)): axum::extract::Path<(i32, i32, i32)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let start_date = format!("{}-{:02}-{:02} 00:00:00", year, month, day);
     let end_date = format!("{}-{:02}-{:02} 23:59:59", year, month, day);
@@ -1672,7 +1672,7 @@ pub async fn meeting_list_year_year_month_month_day_day_all(
     pool: Extension<Pool>,
     axum::extract::Path((year, month, day)): axum::extract::Path<(i32, i32, i32)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let start_date = format!("{}-{:02}-{:02} 00:00:00", year, month, day);
     let end_date = format!("{}-{:02}-{:02} 23:59:59", year, month, day);
@@ -1728,7 +1728,7 @@ async fn meeting_list_year_year_month_month_day_day_roomId_core(
     day: i32,
     room_id: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let start_date = format!("{}-{:02}-{:02} 00:00:00", year, month, day);
     let end_date = format!("{}-{:02}-{:02} 23:59:59", year, month, day);
@@ -1806,7 +1806,7 @@ async fn meeting_list_id_next_count_core(
     flag: String,
     count: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let count = count.max(1);
 
@@ -1884,7 +1884,7 @@ pub async fn meeting_list_id_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let count = count.max(1);
 
@@ -1936,7 +1936,7 @@ pub async fn meeting_list_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
@@ -1990,7 +1990,7 @@ async fn meeting_list_page_size_size_manage_core(
     page: i64,
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
@@ -2059,7 +2059,7 @@ pub async fn meeting_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2106,7 +2106,7 @@ async fn u2_meeting_owner_gate(
     session: &shared::session::Session,
     meeting_id: &str,
 ) -> Result<(), AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let row = client
         .query_opt(
             "SELECT creator FROM x_meeting WHERE id = $1",
@@ -2131,7 +2131,7 @@ pub async fn create_meeting(
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let title = payload
         .get("title")
@@ -2189,7 +2189,7 @@ pub async fn save_meeting(
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_meeting_owner_gate(&pool.0, &session, &id).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let title = payload
         .get("title")
@@ -2237,7 +2237,7 @@ pub async fn delete_meeting(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 属主/管理员门禁 + 软删幂等（对齐 u2_meeting_delete_owned 口径；
     // 原 无守卫物理删=任何登录人可删任意会议）
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let creator = u2_meeting_creator(&client, &id).await?;
     let Some(creator) = creator else {
         return Ok(Json(ActionResult::success(Value::Object(
@@ -2278,7 +2278,7 @@ pub async fn meeting_id_accept(
     // 会议级状态翻转（accept）收会议属主或 admin 门（u2_meeting_owner_gate）——
     // 拍板「accept/reject/complete 属会议级、归属主/admin」（账本 §三.33 收口待拍）。
     u2_meeting_owner_gate(&pool.0, &session, &id).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -2304,7 +2304,7 @@ pub async fn meeting_id_add_invite(
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_meeting_owner_gate(&pool.0, &session, &id).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let invitee = payload
         .get("invitee")
@@ -2338,7 +2338,7 @@ pub async fn meeting_id_checkin(
     axum::extract::Json(_payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 四轮 A3-N3：签到人不再取请求体（原可以他人身份打卡），改以会话身份为权威
     let person = sess.person_unique.as_str();
@@ -2367,7 +2367,7 @@ pub async fn meeting_id_checkin_code(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2406,7 +2406,7 @@ pub async fn meeting_id_confirm_allow(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_meeting_owner_gate(&pool.0, &session, &id).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -2431,7 +2431,7 @@ pub async fn meeting_id_confirm_deny(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     u2_meeting_owner_gate(&pool.0, &session, &id).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -2461,7 +2461,7 @@ pub async fn meeting_id_delete_invite(
         return Err(AppError::Unauthorized);
     };
     u2_meeting_owner_gate(&pool.0, &sess, &id).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let invitee = payload
         .get("invitee")
@@ -2496,7 +2496,7 @@ pub async fn meeting_id_manual_completed(
         return Err(AppError::Unauthorized);
     };
     u2_meeting_owner_gate(&pool.0, &sess, &id).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -2526,7 +2526,7 @@ pub async fn meeting_id_modify_completedtime(
         return Err(AppError::Unauthorized);
     };
     u2_meeting_owner_gate(&pool.0, &sess, &id).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let completed_time = payload
         .get("completedTime")
@@ -2567,7 +2567,7 @@ pub async fn meeting_id_modify_starttime(
         return Err(AppError::Unauthorized);
     };
     u2_meeting_owner_gate(&pool.0, &sess, &id).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let start_time = payload
         .get("startTime")
@@ -2616,7 +2616,7 @@ pub async fn meeting_id_reject(
         return Err(AppError::Unauthorized);
     };
     u2_meeting_owner_gate(&pool.0, &sess, &id).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -2638,7 +2638,7 @@ pub async fn meeting_id_reject(
 pub async fn openmeeting_list_room(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2694,7 +2694,7 @@ pub async fn openmeeting_list_room(
 
 #[allow(non_snake_case)]
 pub async fn room_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2753,7 +2753,7 @@ pub async fn room_list_like_pinyin_key(
     pool: Extension<Pool>,
     axum::extract::Path(key): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let pattern = format!("%{}%", shared::db::escape_like(&key));
     let rows = client
@@ -2813,7 +2813,7 @@ pub async fn room_list_like_key(
     pool: Extension<Pool>,
     axum::extract::Path(key): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let pattern = format!("%{}%", shared::db::escape_like(&key));
     let rows = client
@@ -2873,7 +2873,7 @@ pub async fn room_list_pinyininitial_key(
     pool: Extension<Pool>,
     axum::extract::Path(key): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2932,7 +2932,7 @@ pub async fn room_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2985,7 +2985,7 @@ pub async fn room_id_photo(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -3203,7 +3203,7 @@ async fn u2_attachment_store_new(
     mime: Option<&str>,
     bytes: Vec<u8>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     if u2_meeting_creator(&client, meeting_id).await?.is_none() {
         return Err(AppError::BadRequest("meeting not found".to_string()));
     }
@@ -3280,7 +3280,7 @@ pub async fn u2_attachment_list_with_meeting(
     pool: Extension<Pool>,
     axum::extract::Path(meeting_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             &format!("SELECT {U2_ATTACHMENT_COLS} FROM x_meeting_attachment WHERE meeting_id = $1 ORDER BY create_time"),
@@ -3302,7 +3302,7 @@ pub async fn u2_attachment_get(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             &format!("SELECT {U2_ATTACHMENT_COLS} FROM x_meeting_attachment WHERE id = $1"),
@@ -3322,7 +3322,7 @@ pub async fn u2_attachment_download(
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Path((id, _stream)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     u2_attachment_guard(&client, &pool, &session, &id).await?;
     let row = client
         .query_opt(
@@ -3391,7 +3391,7 @@ async fn u2_attachment_update_inner(
     id: String,
     body: Option<axum::extract::Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     u2_attachment_guard(&client, &pool, &session, &id).await?;
 
     let payload = body.map(|Json(v)| v).unwrap_or(Value::Null);
@@ -3466,7 +3466,7 @@ pub async fn u2_attachment_create_from_processplatform(
         .and_then(|v| v.as_str())
         .unwrap_or("processplatform attachment");
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     if u2_meeting_creator(&client, meeting_id).await?.is_none() {
         return Err(AppError::BadRequest("meeting not found".to_string()));
     }
@@ -3508,7 +3508,7 @@ async fn u2_attachment_paged(
             "count must be within 1..=200".to_string(),
         ));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let exists = client
         .query_opt("SELECT id FROM x_meeting_attachment WHERE id = $1", &[&id])
         .await
@@ -3620,7 +3620,7 @@ pub async fn u2_attachment_delete(
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     u2_attachment_guard(&client, &pool, &session, &id).await?;
     let key_row = client
         .query_opt(
@@ -3683,7 +3683,7 @@ pub async fn u2_building_create(
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     u2_require_admin(&pool.0, &session).await?;
 
     let name = payload
@@ -3726,7 +3726,7 @@ pub async fn u2_building_edit(
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     u2_require_admin(&pool.0, &session).await?;
 
     let exists = client
@@ -3777,7 +3777,7 @@ pub async fn u2_building_delete(
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     u2_require_admin(&pool.0, &session).await?;
 
     let in_use: i64 = client
@@ -3816,7 +3816,7 @@ pub async fn u2_config_save(
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     u2_require_admin(&pool.0, &session).await?;
 
     let config_key = payload
@@ -3867,7 +3867,7 @@ pub async fn u2_config_save(
 pub async fn u2_config_manage_get(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT config_key, config_value, to_char(update_time, 'YYYY-MM-DD HH24:MI:SS') AS update_time FROM x_meeting_config ORDER BY config_key",
@@ -3916,7 +3916,7 @@ pub async fn u2_meeting_delete_owned(
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
     let creator = u2_meeting_creator(&client, &id).await?;
     let Some(creator) = creator else {
         return Err(AppError::NotFound);
@@ -3947,7 +3947,7 @@ pub async fn u2_meeting_modify(
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let creator = u2_meeting_creator(&client, &id).await?;
     let Some(creator) = creator else {
         return Err(AppError::NotFound);
@@ -3989,7 +3989,7 @@ pub async fn u2_meeting_put_save(
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let creator = u2_meeting_creator(&client, &id).await?;
     let Some(creator) = creator else {
         return Err(AppError::NotFound);
@@ -4036,7 +4036,7 @@ pub async fn u2_meeting_checkin_get(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     if u2_meeting_creator(&client, &id).await?.is_none() {
         return Err(AppError::NotFound);
     }
@@ -4065,7 +4065,7 @@ pub async fn u2_meeting_checkin_get(
 pub async fn u2_openmeeting_get(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT config_key, config_value FROM x_meeting_config WHERE config_key LIKE 'openmeeting%' ORDER BY config_key",
@@ -4122,7 +4122,7 @@ pub async fn u2_room_create(
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     u2_require_admin(&pool.0, &session).await?;
 
     let name = payload
@@ -4179,7 +4179,7 @@ pub async fn u2_room_edit(
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     u2_require_admin(&pool.0, &session).await?;
 
     let exists = client
@@ -4233,7 +4233,7 @@ pub async fn u2_room_delete(
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     u2_require_admin(&pool.0, &session).await?;
 
     let count = client
@@ -4265,7 +4265,7 @@ pub async fn u2_room_set_photo(
     if data.is_empty() {
         return Err(AppError::BadRequest("empty photo upload".to_string()));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let exists = client
         .query_opt("SELECT id FROM x_meeting_room WHERE id = $1", &[&id])
         .await

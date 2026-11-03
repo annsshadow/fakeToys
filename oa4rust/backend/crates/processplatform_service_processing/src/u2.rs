@@ -215,7 +215,7 @@ pub async fn dict_edit(
     if id.is_empty() {
         return biz_err("id is required");
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     client
         .execute(
             "INSERT INTO x_application_dict (id, data) VALUES ($1, '{}'::jsonb) \
@@ -267,7 +267,7 @@ async fn dict_set(pool: &Pool, parts: &[String], body: Value) -> H {
     if id.is_empty() || parts.len() < 2 {
         return biz_err("id and path are required");
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     client
         .execute(
             "INSERT INTO x_application_dict (id, data) VALUES ($1, '{}'::jsonb) \
@@ -304,7 +304,7 @@ async fn dict_del(pool: &Pool, parts: &[String]) -> H {
     if id.is_empty() || parts.len() < 2 {
         return biz_err("id and path are required");
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let segments: Vec<String> = parts[1..].to_vec();
     let n = client
         .execute(
@@ -426,7 +426,7 @@ async fn data_put_whole(pool: &Pool, scope: &str, bundle: &str, body: Value) -> 
         return biz_err("bundle is required");
     }
     let data = if body.is_null() { json!({}) } else { body };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     client
         .execute(
             "INSERT INTO x_data (scope, bundle, data) VALUES ($1, $2, ($3::text)::jsonb) \
@@ -449,7 +449,7 @@ async fn data_create_whole(
     if bundle.trim().is_empty() {
         return biz_err("bundle is required");
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     if let Some(table) = gate_table {
         if !entity_exists(&client, table, bundle).await? {
             return biz_err(format!("{table} not found: {bundle}"));
@@ -473,7 +473,7 @@ async fn data_update_whole(pool: &Pool, scope: &str, bundle: &str, body: Value) 
     if bundle.trim().is_empty() {
         return biz_err("bundle is required");
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     if !data_row_exists(&client, scope, bundle).await? {
         return biz_err("data not exist");
     }
@@ -501,7 +501,7 @@ async fn data_set_key(
     if bundle.trim().is_empty() || key.trim().is_empty() {
         return biz_err("bundle and path are required");
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     if !data_row_exists(&client, scope, bundle).await? {
         return biz_err("data not exist");
     }
@@ -543,7 +543,7 @@ async fn data_set_key(
 }
 
 async fn data_delete_whole(pool: &Pool, scope: &str, bundle: &str) -> H {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let n = client
         .execute(
             "DELETE FROM x_data WHERE scope = $1 AND bundle = $2",
@@ -558,7 +558,7 @@ async fn data_delete_whole(pool: &Pool, scope: &str, bundle: &str) -> H {
 }
 
 async fn data_delete_key(pool: &Pool, scope: &str, bundle: &str, key: &str) -> H {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     if !data_row_exists(&client, scope, bundle).await? {
         return biz_err("data not exist");
     }
@@ -677,7 +677,7 @@ pub async fn data_wc_update(
 ) -> H {
     // 第五十三批：写完成记录的数据 bundle，按完成记录发起人 / work 发起人校归属。
     let session = crate::u4_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     if !entity_exists(&client, "x_workcompleted", &id).await? {
         return biz_err("workcompleted not found");
     }
@@ -695,7 +695,7 @@ pub async fn data_wc_update_path(
 ) -> H {
     // 第五十三批：写完成记录的数据键，按完成记录发起人 / work 发起人校归属。
     let session = crate::u4_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     if !entity_exists(&client, "x_workcompleted", &id).await? {
         return biz_err("workcompleted not found");
     }
@@ -714,7 +714,7 @@ pub async fn att_delete_id(
     Path(id): Path<String>,
 ) -> H {
     let session = crate::u4_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let Some(actor) = u4_actor_of(&client, U4Res::Attachment, &id).await? else {
         return biz_err("attachment not found");
     };
@@ -741,7 +741,7 @@ pub async fn att_delete_with_work(
     Path((id, work_id)): Path<(String, String)>,
 ) -> H {
     let session = crate::u4_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT work_id, creator FROM x_attachment WHERE id = $1 AND deleted_at IS NULL",
@@ -777,7 +777,7 @@ pub async fn att_delete_with_workcompleted(
     Path((id, wc_id)): Path<(String, String)>,
 ) -> H {
     let session = crate::u4_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT workcompleted_id, creator FROM x_attachment WHERE id = $1 AND deleted_at IS NULL",
@@ -817,7 +817,7 @@ pub async fn att_edit_id(
     if name.is_empty() {
         return biz_err("name is required");
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let Some(actor) = u4_actor_of(&client, U4Res::Attachment, &id).await? else {
         return biz_err("attachment not found");
     };
@@ -855,7 +855,7 @@ pub async fn att_edit_text(
     if text.is_empty() {
         return biz_err("text is required");
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let Some(actor) = u4_actor_of(&client, U4Res::Attachment, &id).await? else {
         return biz_err("attachment not found");
     };
@@ -890,7 +890,7 @@ pub async fn att_copy_to_work(
     if list.is_empty() {
         return biz_err("attachmentList is required");
     }
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
     let creator = u4_actor_of(&client, U4Res::Work, &work_id).await?;
     if creator.is_none() {
         return biz_err("work not found");
@@ -961,7 +961,7 @@ pub async fn job_delete(
     Path(job): Path<String>,
 ) -> H {
     require_admin_opt(&pool.0, session.as_deref()).await?;
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let n = tx
         .execute(
@@ -988,7 +988,7 @@ pub async fn job_delete(
 /// GET job/v2/{job}/person/{person}/view：该人员视角下的 job 任务视图
 #[allow(non_snake_case)]
 pub async fn job_v2_view(pool: Extension<Pool>, Path((job, person)): Path<(String, String)>) -> H {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, title, activity, activity_token, person, task_status \
@@ -1031,7 +1031,7 @@ async fn read_create(pool: &Pool, bundle: &str, body: Value, scope: &str, gate_t
         }
         persons.push(single);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     if !entity_exists(&client, gate_table, bundle).await? {
         return biz_err(format!("{gate_table} not found"));
     }
@@ -1090,7 +1090,7 @@ pub async fn read_delete(
     Path(id): Path<String>,
 ) -> H {
     let session = crate::u4_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let Some(actor) = u4_actor_of(&client, U4Res::Read, &id).await? else {
         return biz_err("read not found");
     };
@@ -1116,7 +1116,7 @@ pub async fn read_processing(
     Path(id): Path<String>,
 ) -> H {
     let session = crate::u4_session(session)?;
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx
         .query_opt(
@@ -1165,7 +1165,7 @@ pub async fn read_replace(
     if person.is_empty() {
         return biz_err("person is required");
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let Some(actor) = u4_actor_of(&client, U4Res::Read, &id).await? else {
         return biz_err("read not found");
     };
@@ -1193,7 +1193,7 @@ pub async fn read_reset(
 ) -> H {
     let session = crate::u4_session(session)?;
     let person = body_str(&body, &["person"]);
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let Some(actor) = u4_actor_of(&client, U4Res::Read, &id).await? else {
         return biz_err("read not found");
     };
@@ -1228,7 +1228,7 @@ pub async fn readcompleted_delete(
     Path(id): Path<String>,
 ) -> H {
     let session = crate::u4_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let Some(actor) = u4_actor_of(&client, U4Res::ReadCompleted, &id).await? else {
         return biz_err("readcompleted not found");
     };
@@ -1267,7 +1267,7 @@ async fn record_create_dedup(pool: &Pool, work_id: &str, body: Value) -> H {
     if work_id.trim().is_empty() {
         return biz_err("work/job is required");
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     if record_exists(&client, work_id, &r#type, &content).await? {
         return ok(json!({ "value": true, "duplicated": true }));
     }
@@ -1317,7 +1317,7 @@ pub async fn record_work_terminate(
     }
     // 第五十三批：先无会话即拒（401 先于任何读库），再保留 not-found 语义，最后按 work 发起人校归属。
     let session = crate::u4_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     if !entity_exists(&client, "x_work", &work).await? {
         return biz_err("work not found");
     }
@@ -1335,7 +1335,7 @@ pub async fn record_edit(
     Json(body): Json<Value>,
 ) -> H {
     let session = crate::u4_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let Some(actor) = u4_actor_of(&client, U4Res::Record, &id).await? else {
         return biz_err("record not found");
     };
@@ -1380,7 +1380,7 @@ pub async fn record_delete(
     Path(id): Path<String>,
 ) -> H {
     let session = crate::u4_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let Some(actor) = u4_actor_of(&client, U4Res::Record, &id).await? else {
         return biz_err("record not found");
     };
@@ -1428,7 +1428,7 @@ async fn review_create_batch(pool: &Pool, work_id: &str, body: Value, gate_table
     if persons.is_empty() {
         return biz_err("personList is required");
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     if !entity_exists(&client, gate_table, work_id).await? {
         return biz_err(format!("{gate_table} not found: {work_id}"));
     }
@@ -1492,7 +1492,7 @@ pub async fn review_init_for_view(
     session: Option<Extension<shared::session::Session>>,
 ) -> H {
     require_admin_opt(&pool.0, session.as_ref().map(|e| &e.0)).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT DISTINCT t.work, t.person FROM x_task t \
@@ -1531,7 +1531,7 @@ pub async fn review_delete(
     Path(id): Path<String>,
 ) -> H {
     let session = crate::u4_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let Some(actor) = u4_actor_of(&client, U4Res::Review, &id).await? else {
         return biz_err("review not found");
     };
@@ -1559,7 +1559,7 @@ pub async fn snap_delete(
     Path(id): Path<String>,
 ) -> H {
     require_admin_opt(&pool.0, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute("DELETE FROM x_snap WHERE id = $1", &[&id])
         .await
@@ -1578,7 +1578,7 @@ async fn snap_take_for_work(
     cancel_tasks: bool,
     next_status: Option<&str>,
 ) -> H {
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(pool).await?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx
         .query_opt(
@@ -1621,7 +1621,7 @@ async fn snap_take_for_work(
 }
 
 async fn snap_take_for_wc(pool: &Pool, wc_id: &str, snap_type: &str) -> H {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let row = client
         .query_opt(
             "SELECT id, work_id, completed_time, creator FROM x_workcompleted WHERE id = $1",
@@ -1715,7 +1715,7 @@ pub async fn task_delete(
     Path(id): Path<String>,
 ) -> H {
     let session = crate::u4_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let Some(actor) = u4_actor_of(&client, U4Res::Task, &id).await? else {
         return biz_err("task not found");
     };
@@ -1743,7 +1743,7 @@ pub async fn taskcompleted_delete(
     Path(id): Path<String>,
 ) -> H {
     let session = crate::u4_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let Some(actor) = u4_actor_of(&client, U4Res::ReadCompleted, &id).await? else {
         return biz_err("taskcompleted not found");
     };
@@ -1766,7 +1766,7 @@ pub async fn taskcompleted_press(
     Path((id, work)): Path<(String, String)>,
 ) -> H {
     crate::u4_require_work_owner(&pool.0, session, &work).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt("SELECT work_id FROM x_readcompleted WHERE id = $1", &[&id])
         .await
@@ -1807,7 +1807,7 @@ pub async fn taskcompleted_update_next_identity(
     // 第五十三批：改任务下一处理身份，按 task 负责人 / work 发起人两列 OR 校归属。
     let session = crate::u4_session(session)?;
     crate::u4_require_actors(&pool.0, &session, crate::U4ActorKey::Task, &id).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
             "UPDATE x_task SET next_task_identity = $2 WHERE id = $1 AND deleted_at IS NULL",
@@ -1830,7 +1830,7 @@ pub async fn touch_clean_event(
     session: Option<Extension<shared::session::Session>>,
 ) -> H {
     require_session_opt(session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
             "DELETE FROM x_record \
@@ -1849,7 +1849,7 @@ pub async fn touch_delete_draft(
     session: Option<Extension<shared::session::Session>>,
 ) -> H {
     require_session_opt(session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
             "UPDATE x_draft SET deleted_at = NOW() \
@@ -1869,7 +1869,7 @@ pub async fn touch_handover_job(
     session: Option<Extension<shared::session::Session>>,
 ) -> H {
     require_session_opt(session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
             "UPDATE x_job j SET person = w.creator \
@@ -1894,7 +1894,7 @@ pub async fn touch_log_long_detained(
     session: Option<Extension<shared::session::Session>>,
 ) -> H {
     require_session_opt(session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) \
@@ -1930,7 +1930,7 @@ pub async fn touch_delay(
     session: Option<Extension<shared::session::Session>>,
 ) -> H {
     require_session_opt(session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) \
@@ -1964,7 +1964,7 @@ pub async fn touch_urge(
     session: Option<Extension<shared::session::Session>>,
 ) -> H {
     require_session_opt(session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) \
@@ -1996,7 +1996,7 @@ pub async fn touch_merge(
     session: Option<Extension<shared::session::Session>>,
 ) -> H {
     require_session_opt(session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
             "DELETE FROM x_workcompleted a \
@@ -2017,7 +2017,7 @@ pub async fn touch_merge_item(
     session: Option<Extension<shared::session::Session>>,
 ) -> H {
     require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
             "DELETE FROM x_attachment a \
@@ -2045,7 +2045,7 @@ pub async fn documentversion_create(
     Json(body): Json<Value>,
 ) -> H {
     let session = crate::u4_session(session)?;
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     // 行锁父 work：MAX+1 是读-改-写序号分配，无锁时两并发创建对同一 work 读到
     // 相同 MAX 而插入重复版本号；锁父行串行化后后者的 MAX 读到前者已提交的行。
@@ -2119,7 +2119,7 @@ pub async fn work_create_with_serial(
     Json(body): Json<Value>,
 ) -> H {
     let session = crate::u4_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let n: i64 = client
         .query_one(
             "SELECT COUNT(*) AS c FROM x_work WHERE process = $1",
@@ -2152,7 +2152,7 @@ async fn work_start_impl(
     if process_id.is_empty() {
         return biz_err("processId is required");
     }
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let exists = tx
         .query_one(
@@ -2198,7 +2198,7 @@ async fn work_start_impl(
 /// GET work/{id}
 #[allow(non_snake_case)]
 pub async fn work_get(pool: Extension<Pool>, Path(id): Path<String>) -> H {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, title, process, application, work_status, creator, \
@@ -2240,7 +2240,7 @@ pub async fn work_edit(
     if title.is_empty() {
         return biz_err("title is required");
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let Some(actor) = u4_actor_of(&client, U4Res::Work, &id).await? else {
         return biz_err("work not found");
     };
@@ -2270,7 +2270,7 @@ pub async fn work_delete(
     Path(id): Path<String>,
 ) -> H {
     let session = crate::u4_session(session)?;
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     // 级联物理删 x_work / x_task / x_draft 之前先锁行取发起人，
     // 非发起人 / 非 admin 退回时事务不进入任何 DELETE
@@ -2310,7 +2310,7 @@ pub async fn work_draft_delete(
     Path(work): Path<String>,
 ) -> H {
     let session = crate::u4_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let creator = u4_actor_of(&client, U4Res::Work, &work).await?;
     u4_require_actor_of(&pool.0, &session, creator.as_deref()).await?;
     let n = client
@@ -2336,7 +2336,7 @@ pub async fn work_manual_after(
     }
     // 第五十三批：先无会话即拒（401 先于任何读库），再保留 not-found 语义，最后按 work 发起人校归属。
     let session = crate::u4_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     if !entity_exists(&client, "x_work", &work).await? {
         return biz_err("work not found");
     }
@@ -2374,7 +2374,7 @@ pub async fn work_v3_retract_body(
     if work.is_empty() {
         return biz_err("work is required");
     }
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx
         .query_opt(
@@ -2443,7 +2443,7 @@ pub async fn work_processing_signal(
 ) -> H {
     let _ = series;
     let session = crate::u4_session(session)?;
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx
         .query_opt(
@@ -2490,7 +2490,7 @@ pub async fn work_add_identity_matrix(
     if identities.is_empty() {
         return biz_err("identityList is required");
     }
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx
         .query_opt(
@@ -2533,7 +2533,7 @@ pub async fn wc_merge_flag(
 ) -> H {
     let session = crate::u4_session(session)?;
     crate::u4_require_actors(&pool.0, &session, crate::U4ActorKey::WorkCompleted, &flag).await?;
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx
         .query_opt(
@@ -2566,7 +2566,7 @@ pub async fn wc_process_flag(
 ) -> H {
     // 第五十三批：按流程批量补完成记录（跨多 work 的运维作业），收 admin 档。
     require_admin_opt(&pool.0, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT w.id, w.creator FROM x_work w \
@@ -2607,7 +2607,7 @@ pub async fn wc_shift_time(
         return biz_err("minutes must be non-zero within ±10 years");
     }
     let ids = body_str_list(&body, &["ids", "idList"]);
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let n = if ids.is_empty() {
         client
             .execute(
@@ -2639,7 +2639,7 @@ pub async fn wc_rollback_flag(
     // 第五十三批：回滚完成态（恢复 work + 删完成记录 + 补记 rollback），按完成记录发起人 / work 发起人校归属。
     let session = crate::u4_session(session)?;
     crate::u4_require_actors(&pool.0, &session, crate::U4ActorKey::WorkCompleted, &flag).await?;
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let row = tx
         .query_opt(

@@ -20,7 +20,7 @@ pub struct CmsContent {
 /// 获取 CMS 内容列表
 /// 从数据库查询 x_cms_content 表
 pub async fn content_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, title, category_id, status FROM x_cms_content ORDER BY create_time DESC LIMIT 20",
@@ -70,7 +70,7 @@ pub async fn content_detail(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(
             "SELECT id, title, category_id, status, content FROM x_cms_content WHERE id = $1",

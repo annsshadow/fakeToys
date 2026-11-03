@@ -212,7 +212,7 @@ async fn mpweixin_login_or_create(
     session_manager: &SessionManager,
     openid: &str,
 ) -> Result<(Value, Option<String>), AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
 
     let unique_id = format!("{MPWEXIN_UNIQUE_PREFIX}{openid}");
 
@@ -294,7 +294,7 @@ pub async fn mpweixin_bind_code(
 
     let openid = mpweixin_openid(&code).await?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     client
         .execute(
             "UPDATE auth_person SET mpwxopenId = $1 WHERE unique_id = $2 AND deleted_at IS NULL",
@@ -325,7 +325,7 @@ pub async fn mpweixin_bind_openid(
         return Ok(Json(ActionResult::error("openid is required")));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let affected = client
         .execute(
             "UPDATE auth_person SET mpwxopenId = $1 WHERE unique_id = $2 AND deleted_at IS NULL",

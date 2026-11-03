@@ -88,7 +88,7 @@ async fn test_get_bam_config_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 }
 
 #[tokio::test]
@@ -133,7 +133,7 @@ async fn test_list_bams_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 }
 
 #[tokio::test]
@@ -171,7 +171,7 @@ async fn test_get_bam_status_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

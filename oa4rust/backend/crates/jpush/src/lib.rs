@@ -29,7 +29,7 @@ pub async fn hello() -> Result<Json<ActionResult<Value>>, AppError> {
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn device_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, user_id, platform, token FROM x_jpush_device ORDER BY create_time DESC LIMIT 20",
@@ -64,7 +64,7 @@ pub async fn device_get(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, user_id, platform, token FROM x_jpush_device WHERE id = $1",
@@ -94,7 +94,7 @@ pub async fn device_create(
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 推送设备归属以会话登录人为事实源：客户端 userId 可伪造，替他人注册推送设备
     // 即推送劫持面（安全审计 2026-10 二轮）。
@@ -133,7 +133,7 @@ pub async fn device_create(
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn template_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, title, content FROM x_jpush_template ORDER BY name LIMIT 20",
@@ -168,7 +168,7 @@ pub async fn template_get(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, title, content FROM x_jpush_template WHERE id = $1",

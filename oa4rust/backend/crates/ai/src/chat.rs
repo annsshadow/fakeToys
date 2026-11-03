@@ -14,7 +14,7 @@ pub async fn chat_list_paging(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i32, i32)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let size = size.clamp(1, 200) as i64;
     let page = page.max(1) as i64;
@@ -67,7 +67,7 @@ pub async fn chat_list_completion_paging(
     pool: Extension<Pool>,
     Path((clue_id, page, size)): Path<(String, i32, i32)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let size = size.clamp(1, 200) as i64;
     let page = page.max(1) as i64;
@@ -133,7 +133,7 @@ pub async fn chat_delete(
     Extension(session): Extension<shared::session::Session>,
     Path(clue_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt("SELECT person FROM x_ai_clue WHERE id = $1", &[&clue_id])

@@ -39,7 +39,7 @@ async fn test_get_control_config_route() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 }
 
 #[tokio::test]
@@ -58,7 +58,7 @@ async fn test_list_control_sections_route() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 }
 
 #[tokio::test]
@@ -77,7 +77,7 @@ async fn test_list_forums_route() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 }
 
 #[tokio::test]
@@ -96,7 +96,7 @@ async fn test_forum_view_all_route() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 }
 
 #[tokio::test]
@@ -139,7 +139,7 @@ async fn test_subject_view_id_route() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 }
 
 #[tokio::test]
@@ -158,7 +158,7 @@ async fn test_permission_section_section_id_route() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 }
 
 #[tokio::test]

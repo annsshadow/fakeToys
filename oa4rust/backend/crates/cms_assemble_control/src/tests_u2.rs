@@ -66,15 +66,15 @@ mod u2_tests {
     async fn u2_document_read_routes_reachable() {
         assert_eq!(
             status_of("GET", "/api/document/d-1").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", "/api/document/d-1/document/data").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", "/api/document/document/fields").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", "/api/document/d-1/top").await,
@@ -156,7 +156,7 @@ mod u2_tests {
         );
         assert_eq!(
             status_of("PUT", "/api/comment/list/1/size/10").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_ne!(
             status_of("POST", "/api/comment/list/1/size/10/mockputtopost").await,
@@ -264,7 +264,7 @@ mod u2_tests {
         );
         assert_eq!(
             status_of("GET", "/api/appconfig/a-1").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
     }
 
@@ -279,7 +279,7 @@ mod u2_tests {
         )
         .await;
         match r {
-            Err(AppError::Internal) => {}
+            Err(AppError::Internal) | Err(AppError::Unavailable(_)) => {}
             other => panic!(
                 "expected Internal(fail closed), got {:?}",
                 other.map(|_| "ok")

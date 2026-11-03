@@ -80,7 +80,7 @@ async fn owner_gate(
 pub async fn get_general_control_status(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_one(
@@ -138,7 +138,7 @@ pub async fn get_general_control_status(
 pub async fn general_control_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, system_name, maintenance_mode, allow_registration, version, \
@@ -275,7 +275,7 @@ pub async fn update_general_control_status(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 全局维护模式/注册开关：任一登录用户可写 = 全员系统可用性面（安全审计 2026-10 二轮）。
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let maintenance_mode: bool = payload
         .get("maintenanceMode")
@@ -311,7 +311,7 @@ pub async fn get_module_permissions(
     pool: Extension<Pool>,
     axum::extract::Path(module): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -384,7 +384,7 @@ pub struct AttendScopeCreateRequest {
 pub async fn attendscope_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -438,7 +438,7 @@ pub async fn attendscope_get(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -488,7 +488,7 @@ pub async fn attendscope_create(
     axum::extract::Json(req): Json<AttendScopeCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_default();
@@ -521,7 +521,7 @@ pub async fn attendscope_save(
     axum::extract::Json(req): Json<AttendScopeCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let name = req.name.unwrap_or_default();
     let unit_id = req.unit_id.unwrap_or_default();
@@ -555,7 +555,7 @@ pub async fn attendscope_delete(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute("DELETE FROM x_general_attend_scope WHERE id = $1", &[&id])
@@ -576,7 +576,7 @@ pub async fn attendscope_delete(
 
 #[allow(non_snake_case)]
 pub async fn area_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -649,7 +649,7 @@ pub async fn area_list_province_province(
     pool: Extension<Pool>,
     axum::extract::Path(province): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -722,7 +722,7 @@ pub async fn area_list_province_province_city_city(
     pool: Extension<Pool>,
     axum::extract::Path((province, city)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -795,7 +795,7 @@ pub async fn area_list_province_province_city_city_district_district(
     pool: Extension<Pool>,
     axum::extract::Path((province, city, district)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -872,7 +872,7 @@ pub async fn area_create(
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload
@@ -937,7 +937,7 @@ pub async fn area_get(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1007,7 +1007,7 @@ pub async fn area_update(
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let name = payload
         .get("name")
@@ -1068,7 +1068,7 @@ pub async fn area_delete(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute("DELETE FROM x_general_assemble_area WHERE id = $1", &[&id])
@@ -1089,7 +1089,7 @@ pub async fn area_delete(
 
 #[allow(non_snake_case)]
 pub async fn ecnet_check(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1143,7 +1143,7 @@ pub async fn excel_excelName_excelName(
     pool: Extension<Pool>,
     axum::extract::Path(excel_name): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1188,7 +1188,7 @@ pub async fn excel_excelName_excelName_sheetList(
     pool: Extension<Pool>,
     axum::extract::Path(excel_name): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1245,7 +1245,7 @@ pub async fn excel_result_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1292,7 +1292,7 @@ pub async fn excel_upload(
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload
@@ -1334,7 +1334,7 @@ pub async fn excel_upload_with_url(
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload
@@ -1374,7 +1374,7 @@ pub async fn generalfile_download_flag_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1423,7 +1423,7 @@ pub async fn generalfile_flag_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1472,7 +1472,7 @@ pub async fn generalfile_flag_flag_binary_base64(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1528,7 +1528,7 @@ pub async fn invoice_create(
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload
@@ -1570,7 +1570,7 @@ pub async fn invoice_delete_id(
     session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // IDOR 门禁：属主列 creator（admin 旁路）；行不存在则后续 DELETE 命中 0 行。
     owner_gate(
@@ -1608,7 +1608,7 @@ pub async fn invoice_download_flag_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1660,7 +1660,7 @@ pub async fn invoice_get_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1712,7 +1712,7 @@ pub async fn invoice_list_paging_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i32, i32)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let offset = ((page.max(1) - 1) * size) as i64;
 
@@ -1782,7 +1782,7 @@ pub async fn invoice_update_apply_status_id(
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // IDOR 门禁：审批状态变更仅限属主/admin（安全审计 2026-10 二轮）。
     owner_gate(
@@ -1829,7 +1829,7 @@ pub async fn invoice_update_id(
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // IDOR 门禁：属主列 creator（admin 旁路）；行不存在则后续 UPDATE 命中 0 行。
     owner_gate(
@@ -1882,7 +1882,7 @@ pub async fn invoice_upload(
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload
@@ -1921,7 +1921,7 @@ pub async fn invoice_upload_for_create(
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload
@@ -1958,7 +1958,7 @@ pub async fn invoice_upload_with_url(
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload
@@ -1995,7 +1995,7 @@ pub async fn office_html_to_word(
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let html_content = payload
@@ -2031,7 +2031,7 @@ pub async fn office_html_to_word_result_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2075,7 +2075,7 @@ pub async fn qrcode_width_width_height_height_text_text(
     axum::extract::Path((width, height, text)): axum::extract::Path<(u32, u32, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let content = text.clone();
@@ -2109,7 +2109,7 @@ pub async fn qrcode_width_width_height_height_text_text(
 
 #[allow(non_snake_case)]
 pub async fn qrcode_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2171,7 +2171,7 @@ pub async fn qrcode_get(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2232,7 +2232,7 @@ pub async fn qrcode_delete(
     session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // IDOR 门禁：属主列 creator（admin 旁路）。
     owner_gate(
@@ -2273,7 +2273,7 @@ pub async fn securityclearance_enable(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 安全等级体系开关：影响全局鉴权行为，仅 admin（安全审计 2026-10 二轮）。
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let enabled = payload
         .get("enabled")
@@ -2335,7 +2335,7 @@ pub async fn securityclearance_enable(
 pub async fn securityclearance_object(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2359,7 +2359,7 @@ pub async fn securityclearance_object(
 pub async fn securityclearance_subject(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2405,7 +2405,7 @@ pub async fn securityclearance_create(
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload
@@ -2461,7 +2461,7 @@ pub async fn securityclearance_get(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2524,7 +2524,7 @@ pub async fn securityclearance_update(
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let name = payload
         .get("name")
@@ -2579,7 +2579,7 @@ pub async fn securityclearance_delete(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -2605,7 +2605,7 @@ pub async fn securityclearance_delete(
 pub async fn upgrade_2021090901(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2625,7 +2625,7 @@ pub async fn upgrade_2021090901(
 pub async fn upgrade_2021090902(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2646,7 +2646,7 @@ pub async fn worktime_betweenholidaycount_start_startDate_end_endDate(
     pool: Extension<Pool>,
     axum::extract::Path((start_date, end_date)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_one(
@@ -2674,7 +2674,7 @@ pub async fn worktime_betweenminutes_start_start_end_end(
     pool: Extension<Pool>,
     axum::extract::Path((start, end)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_one(
@@ -2705,7 +2705,7 @@ pub async fn worktime_forwarddays_start_start_days_days(
     pool: Extension<Pool>,
     axum::extract::Path((start, days)): axum::extract::Path<(String, u32)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let end_date = format!("{} + {} days", start, days);
 
@@ -2773,7 +2773,7 @@ pub async fn worktime_forwardminutes_start_start_minutes_minutes(
     pool: Extension<Pool>,
     axum::extract::Path((start, minutes)): axum::extract::Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2833,7 +2833,7 @@ pub async fn worktime_indefinedholiday_date(
     pool: Extension<Pool>,
     axum::extract::Path(date): axum::extract::Path<String>,
 ) -> Result<Json<Value>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2885,7 +2885,7 @@ pub async fn worktime_indefinedworkday_date(
     pool: Extension<Pool>,
     axum::extract::Path(date): axum::extract::Path<String>,
 ) -> Result<Json<Value>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2937,7 +2937,7 @@ pub async fn worktime_isholiday_date(
     pool: Extension<Pool>,
     axum::extract::Path(date): axum::extract::Path<String>,
 ) -> Result<Json<Value>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2988,7 +2988,7 @@ pub async fn worktime_isworkday_date(
     pool: Extension<Pool>,
     axum::extract::Path(date): axum::extract::Path<String>,
 ) -> Result<Json<Value>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -3039,7 +3039,7 @@ pub async fn worktime_isworktime_date(
     pool: Extension<Pool>,
     axum::extract::Path(date): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -3097,7 +3097,7 @@ pub async fn generalfile_create(
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or("");
     let flag = req.get("flag").and_then(|v| v.as_str()).unwrap_or("");
@@ -3124,7 +3124,7 @@ pub async fn qrcode_create(
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let width = req.get("width").and_then(|v| v.as_i64()).unwrap_or(200);
     let height = req.get("height").and_then(|v| v.as_i64()).unwrap_or(200);

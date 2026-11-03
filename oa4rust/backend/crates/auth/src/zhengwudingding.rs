@@ -82,7 +82,7 @@ pub async fn zwdingding_login(
     let unique_id = format!("zwding_{user_id}");
 
     // Step 3: 查询本地用户
-    let db = pool.get().await.map_err(|_| AppError::Internal)?;
+    let db = shared::db::acquire(&pool).await?;
     let row = db
         .query_opt(
             "SELECT unique_id, name, mobile, email, icon FROM auth_person \

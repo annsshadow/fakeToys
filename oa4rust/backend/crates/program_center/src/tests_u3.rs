@@ -53,7 +53,7 @@ mod u3_tests {
     async fn u3_agent_param_family_reachable() {
         assert_eq!(
             status_of("GET", "/api/program_center/agent/a-1").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", "/api/program_center/agent/a-1/disable").await,
@@ -122,11 +122,11 @@ mod u3_tests {
     async fn u3_bar_foo_param_routes_reachable() {
         assert_eq!(
             status_of("GET", "/api/program_center/bar/create/mass/0/10").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", "/api/program_center/foo/create/mass/5/20").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of(
@@ -134,11 +134,11 @@ mod u3_tests {
                 "/api/program_center/bar/select1/field/status/value/open/count/10"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", "/api/program_center/bar/select2/count/10").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of(
@@ -146,7 +146,7 @@ mod u3_tests {
                 "/api/program_center/bar/select3/field/name/value/x/count/5"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of(
@@ -154,7 +154,7 @@ mod u3_tests {
                 "/api/program_center/bar/select4/field/entity/value/y/count/5"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
     }
 
@@ -176,7 +176,7 @@ mod u3_tests {
                 "/api/program_center/captcha/c-1/validate/answer/1234"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("POST", "/api/program_center/code/create/mobile/13800000000").await,
@@ -188,7 +188,7 @@ mod u3_tests {
                 "/api/program_center/code/validate/mobile/13800000000/answer/123456"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of(
@@ -196,7 +196,7 @@ mod u3_tests {
                 "/api/program_center/code/validate/mobile/13800000000/answer/123456/cascade"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_ne!(
             status_of("POST", "/api/program_center/code/list/paging/1/size/20").await,
@@ -230,11 +230,11 @@ mod u3_tests {
                 "/api/program_center/collect/controllermobile/name/n/mobile/m"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", "/api/program_center/collect/name/n/exist").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         for uri in [
             "/api/program_center/collect/resetpassword",
@@ -252,7 +252,7 @@ mod u3_tests {
     async fn u3_config_family_reachable() {
         assert_eq!(
             status_of("GET", "/api/program_center/config").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of(
@@ -260,7 +260,7 @@ mod u3_tests {
                 "/api/program_center/config-open/get/disable/export/enable"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         for uri in [
             "/api/program_center/config/change/password",
@@ -307,7 +307,7 @@ mod u3_tests {
         // 参数化字典路由：段值避开静态 dictFlag/list 以命中参数节点
         assert_eq!(
             status_of("GET", "/api/program_center/dict/d-id").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         let put_status = status_of("PUT", "/api/program_center/dict/d-id").await;
         assert_ne!(put_status, StatusCode::NOT_FOUND);
@@ -318,7 +318,7 @@ mod u3_tests {
                 "/api/program_center/dict/my-flag/my-path/data/mockdeletetoget"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         let post_status = status_of(
             "POST",
@@ -344,23 +344,23 @@ mod u3_tests {
         );
         assert_eq!(
             status_of("GET", "/api/program_center/deploy/d-1").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", "/api/program_center/dict/my-flag/data").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", "/api/program_center/dict/my-flag/my-path/data").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", "/api/program_center/module/m-1/compare").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", "/api/program_center/distribute/assemble/source/o2").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of(
@@ -368,7 +368,7 @@ mod u3_tests {
                 "/api/program_center/distribute/webserver/assemble/source/o2"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
     }
 
@@ -378,11 +378,11 @@ mod u3_tests {
     async fn u3_invoke_extras_reachable() {
         assert_eq!(
             status_of("GET", "/api/program_center/invoke").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", "/api/program_center/invoke/list/with/category/cms").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         // 第十七批安全审计：invoke 执行（GET 面）收 admin 档，无会话先 401。
         assert_eq!(
@@ -414,19 +414,19 @@ mod u3_tests {
         );
         assert_eq!(
             status_of("GET", "/api/program_center/market/m-1").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", "/api/program_center/market/m-1/cover/pic").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", "/api/program_center/market/m-1/download").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", "/api/program_center/market/m-1/install/log").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_ne!(
             status_of("GET", "/api/program_center/market/m-1/install/or/update").await,
@@ -438,7 +438,7 @@ mod u3_tests {
         );
         assert_eq!(
             status_of("GET", "/api/program_center/market/m-1/installed/version").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         // 第十七批安全审计：market 卸载（GET /market/{flag}/uninstall）收 admin 档，
         // 无会话先 401。同一 handler 的 install/or/update（上方两条 assert_ne）同样被门拦住。
@@ -464,16 +464,16 @@ mod u3_tests {
                 "/api/program_center/market/list/paging/1/size/20/category/cms"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
 
         assert_eq!(
             status_of("GET", "/api/program_center/module/output/m-1/file").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("DELETE", "/api/program_center/module/remove/structure/m-1").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         let write_put = status_of("PUT", "/api/program_center/module/write/m-1").await;
         assert_ne!(write_put, StatusCode::NOT_FOUND);
@@ -481,7 +481,7 @@ mod u3_tests {
 
         assert_eq!(
             status_of("POST", "/api/program_center/mpweixin/check").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_ne!(
             status_of("POST", "/api/program_center/mpweixin/menu/update/wm-1").await,
@@ -493,12 +493,12 @@ mod u3_tests {
         );
         assert_eq!(
             status_of("GET", "/api/program_center/mpweixin/menu/create/to/weixin").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
 
         assert_eq!(
             status_of("GET", "/api/program_center/output/f-1/select/file").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("PUT", "/api/program_center/output/f-1/select").await,
@@ -516,11 +516,11 @@ mod u3_tests {
         );
         assert_eq!(
             status_of("GET", "/api/program_center/prompterrorlog/p-1").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", "/api/program_center/prompterrorlog/list/p-1/next/10").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of(
@@ -528,7 +528,7 @@ mod u3_tests {
                 "/api/program_center/prompterrorlog/list/p-1/next/10/date/2026-08-24"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_ne!(
             status_of("POST", "/api/program_center/unexpectederrorlog").await,
@@ -536,7 +536,7 @@ mod u3_tests {
         );
         assert_eq!(
             status_of("GET", "/api/program_center/unexpectederrorlog/u-1").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of(
@@ -544,12 +544,12 @@ mod u3_tests {
                 "/api/program_center/unexpectederrorlog/list/u-1/prev/5"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
 
         assert_eq!(
             status_of("GET", "/api/program_center/qiyeweixin").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("POST", "/api/program_center/qiyeweixin").await,
@@ -570,7 +570,7 @@ mod u3_tests {
                 "/api/program_center/schedule/list/schedulelog/application/app-1"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
 
         let script_name_post = status_of("POST", "/api/program_center/script/name/demo").await;
@@ -578,11 +578,11 @@ mod u3_tests {
         assert_ne!(script_name_post, StatusCode::METHOD_NOT_ALLOWED);
         assert_eq!(
             status_of("GET", "/api/program_center/script/sc-flag").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", "/api/program_center/script/name/demo/imported").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_ne!(
             status_of("POST", "/api/program_center/script/list/paging/1/size/20").await,
@@ -689,7 +689,7 @@ mod u3_tests {
         assert!(matches!(r, Err(shared::error::AppError::Forbidden)));
         let r =
             u3_qiyeweixin_create(Extension(pool.clone()), Some(Extension(test_session()))).await;
-        assert!(matches!(r, Err(shared::error::AppError::Internal)));
+        assert!(matches!(r, Err(shared::error::AppError::Unavailable(_))));
     }
 
     #[tokio::test]
@@ -700,7 +700,7 @@ mod u3_tests {
             axum::extract::Path((1i64, 20i64, "cms".to_string())),
         )
         .await;
-        assert!(matches!(r, Err(shared::error::AppError::Internal)));
+        assert!(matches!(r, Err(shared::error::AppError::Unavailable(_))));
     }
 
     #[tokio::test]
@@ -717,7 +717,7 @@ mod u3_tests {
             axum::Json(req),
         )
         .await;
-        assert!(matches!(r, Err(shared::error::AppError::Internal)));
+        assert!(matches!(r, Err(shared::error::AppError::Unavailable(_))));
     }
 
     #[tokio::test]
@@ -730,7 +730,7 @@ mod u3_tests {
             axum::Json(serde_json::json!({ "oldPassword": "old", "newPassword": "new" })),
         )
         .await;
-        assert!(matches!(r, Err(shared::error::AppError::Internal)));
+        assert!(matches!(r, Err(shared::error::AppError::Unavailable(_))));
     }
 
     #[tokio::test]
@@ -749,7 +749,7 @@ mod u3_tests {
         )
         .await;
         // 无 DB 时查询脚本所有者失败 → Internal（require_owner 前置查询）
-        assert!(matches!(r, Err(shared::error::AppError::Internal)));
+        assert!(matches!(r, Err(shared::error::AppError::Unavailable(_))));
     }
 
     // 第六轮 R7 写面收口离线臂：4 把含写 handler 无会话全 401（门在 pool.get() 之前）。

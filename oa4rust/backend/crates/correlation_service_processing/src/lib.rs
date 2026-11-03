@@ -43,7 +43,7 @@ pub async fn link_service(
     pool: Extension<Pool>,
     axum::extract::Json(req): Json<LinkRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let source_type = req.source_type.unwrap_or_default();
     let source_id = req.source_id.unwrap_or_default();
@@ -76,7 +76,7 @@ pub async fn get_link(
     pool: Extension<Pool>,
     axum::extract::Path((source_type, source_id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -113,7 +113,7 @@ pub async fn list_correlations(
     pool: Extension<Pool>,
     axum::extract::Path(person_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             r#"SELECT id, person_id, target_id, "type", creator, create_time FROM x_correlation
@@ -174,7 +174,7 @@ pub async fn get_correlation(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             r#"SELECT id, person_id, target_id, "type", creator, create_time FROM x_correlation
@@ -231,7 +231,7 @@ pub async fn create_correlation(
     axum::extract::Json(req): Json<CorrelationRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     crate::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let person_id = req.person_id.unwrap_or_default();
     let target_id = req.target_id.unwrap_or_default();
@@ -265,7 +265,7 @@ pub async fn save_correlation(
     axum::extract::Json(req): Json<CorrelationUpdateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     crate::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let target_id = req.target_id.unwrap_or_default();
     let r#type = req.r#type.unwrap_or_default();
 
@@ -298,7 +298,7 @@ pub async fn delete_correlation(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     crate::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let result = client
         .execute("DELETE FROM x_correlation WHERE id = $1", &[&id])
         .await
@@ -330,7 +330,7 @@ pub async fn unlink_service(
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     crate::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let result = client
         .execute(
             r#"DELETE FROM x_correlation WHERE "type" = $1 AND person_id = $2 AND target_id = $3"#,
@@ -451,7 +451,7 @@ pub async fn correlation_type_cms_document_document(
     pool: Extension<Pool>,
     Path(document): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             r#"SELECT id FROM x_correlation WHERE "type" = 'cms/document' AND target_id = $1 LIMIT 1"#,
@@ -479,7 +479,7 @@ pub async fn correlation_type_processplatform_job_job(
     pool: Extension<Pool>,
     Path(job): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             r#"SELECT id FROM x_correlation WHERE "type" = 'processplatform/job' AND target_id = $1 LIMIT 1"#,

@@ -40,7 +40,7 @@ pub async fn search_documents(
     query: &str,
     limit: i32,
 ) -> Result<Vec<Document>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
 
     let rows = client
         .query(
@@ -79,7 +79,7 @@ pub async fn search_subjects(
     query: &str,
     limit: i32,
 ) -> Result<Vec<Subject>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
 
     let rows = client
         .query(
@@ -118,7 +118,7 @@ pub async fn search_messages(
     query: &str,
     limit: i32,
 ) -> Result<Vec<Message>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
 
     let rows = client
         .query(
@@ -288,7 +288,7 @@ pub async fn search_documents_smart(pool: &Pool, query: &str, limit: i32) -> Vec
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn ftsearch_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, title, source, score::text AS score, creator, create_time::text AS create_time \

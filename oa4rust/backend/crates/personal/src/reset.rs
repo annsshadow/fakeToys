@@ -166,7 +166,7 @@ pub async fn check_credential(
     pool: Extension<Pool>,
     Path(credential): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(
             "SELECT EXISTS(SELECT 1 FROM auth_person \
@@ -220,7 +220,7 @@ pub async fn send_code(
     store: Extension<ResetCodeStore>,
     Path(credential): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let exists = client
         .query_opt(
             "SELECT 1 FROM auth_person WHERE unique_id = $1 AND locked = false AND deleted_at IS NULL",
@@ -293,7 +293,7 @@ async fn apply_reset(
         return Ok(Json(ActionResult::error(e.to_string())));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id FROM auth_person WHERE unique_id = $1 AND locked = false AND deleted_at IS NULL",

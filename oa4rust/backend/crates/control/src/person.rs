@@ -95,7 +95,7 @@ pub async fn get(
         return Ok(Json(ActionResult::legacy_success(data, 0, -1)));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let where_clause = format!(
         "SELECT id, unique_id, name, mobile, email, locked FROM auth_person WHERE {} AND deleted_at IS NULL",
@@ -138,7 +138,7 @@ async fn query_page(
     count: i64,
     is_next: bool,
 ) -> Result<(i64, Vec<Value>), AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
 
     let count = count.clamp(1, 100);
 
@@ -284,7 +284,7 @@ pub async fn create(
         )));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let existing = client
         .query_one(
@@ -345,7 +345,7 @@ pub async fn update(
     Path(flag): Path<String>,
     Json(req): Json<PersonUpdateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let where_clause = format!(
         "UPDATE auth_person SET name = COALESCE($1, name), mobile = COALESCE($2, mobile), \
@@ -417,7 +417,7 @@ pub async fn delete(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let where_clause = format!(
         "UPDATE auth_person SET deleted_at = NOW() WHERE {} AND deleted_at IS NULL RETURNING id, unique_id, name, mobile, email, locked",

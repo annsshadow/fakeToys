@@ -228,7 +228,7 @@ pub async fn statement_create(
         return Err(AppError::Unauthorized);
     };
     require_admin_gate(&pool, &sess).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let name = body
         .get("name")
@@ -301,7 +301,7 @@ pub async fn statement_edit(
         return Err(AppError::Unauthorized);
     };
     require_admin_gate(&pool, &sess).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let alias = body.get("alias").and_then(|v| v.as_str()).unwrap_or("");
     let data = body.get("data").and_then(|v| v.as_str()).unwrap_or("");
@@ -352,7 +352,7 @@ pub async fn statement_delete(
     session: Extension<Session>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 属主/管理员门禁（对齐同族 guard_write 口径；表无 deleted_at 列，维持物理删）
     let found = guard_write(
@@ -387,7 +387,7 @@ pub async fn statement_get_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -407,7 +407,7 @@ pub async fn statement_get_flag(
 pub async fn statement_manage_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -432,7 +432,7 @@ pub async fn statement_list_with_query(
     pool: Extension<Pool>,
     Path(query_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -464,7 +464,7 @@ pub async fn statement_permission(
         return Err(AppError::Unauthorized);
     };
     require_admin_gate(&pool, &sess).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let permission = serde_json::to_string(
         body.get("permissionList")
@@ -588,7 +588,7 @@ pub async fn statement_execute_v2(
     Path((flag, page, size)): Path<(String, i64, i64)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let parameters = body.get("parameter").cloned().unwrap_or(Value::Null);
     let result = execute_statement_by_flag(&client, &flag, "", page, size, &parameters).await?;
     Ok(Json(ActionResult::success(result)))
@@ -600,7 +600,7 @@ pub async fn statement_execute_mode_v2(
     Path((flag, mode, page, size)): Path<(String, String, i64, i64)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let parameters = body.get("parameter").cloned().unwrap_or(Value::Null);
     let result = execute_statement_by_flag(&client, &flag, &mode, page, size, &parameters).await?;
     Ok(Json(ActionResult::success(result)))
@@ -619,7 +619,7 @@ pub async fn importmodel_create(
         return Err(AppError::Unauthorized);
     };
     require_admin_gate(&pool, &sess).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let name = body
         .get("name")
@@ -679,7 +679,7 @@ pub async fn importmodel_edit(
         return Err(AppError::Unauthorized);
     };
     require_admin_gate(&pool, &sess).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
     let content = body.get("data").and_then(|v| v.as_str()).unwrap_or("");
@@ -713,7 +713,7 @@ pub async fn importmodel_delete(
     session: Extension<Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 属主/管理员门禁 + 软删幂等（对齐 importmodel_delete_by_flag 口径；
     // 原 物理 DELETE 与 crud spec soft_delete 分裂，行无法恢复）
@@ -755,7 +755,7 @@ pub async fn neural_delete_model_modelFlag(
     session: Extension<Session>,
     Path(model_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 属主/管理员门禁 + 软删幂等（对齐同族口径；原物理删与 spec soft_delete 分裂）
     let found = guard_write(
@@ -800,7 +800,7 @@ pub async fn neural_update_model_modelFlag(
         return Err(AppError::Unauthorized);
     };
     require_admin_gate(&pool, &sess).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
 
@@ -837,7 +837,7 @@ pub async fn stat_create(
         return Err(AppError::Unauthorized);
     };
     require_admin_gate(&pool, &sess).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let name = body
         .get("name")
@@ -898,7 +898,7 @@ pub async fn stat_edit(
         return Err(AppError::Unauthorized);
     };
     require_admin_gate(&pool, &sess).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
     let config = match body.get("config") {
@@ -935,7 +935,7 @@ pub async fn stat_delete(
     session: Extension<Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 属主/管理员门禁 + 软删幂等（对齐同族 importmodel_delete_by_flag 口径）
     let found = guard_write(
@@ -975,7 +975,7 @@ pub async fn table_create(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let name = body
         .get("name")
@@ -1026,7 +1026,7 @@ pub async fn table_edit(
     Path(flag): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
 
@@ -1059,7 +1059,7 @@ pub async fn table_delete(
     session: Extension<Session>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 属主/管理员门禁 + 软删幂等（对齐同族口径）
     let found = guard_write(
@@ -1107,7 +1107,7 @@ pub async fn table_tableFlag_row_insert(
         return Err(AppError::Unauthorized);
     };
     require_admin_gate(&pool, &sess).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let data_str = serde_json::to_string(&body).map_err(|_| AppError::Internal)?;
@@ -1143,7 +1143,7 @@ pub async fn table_tableFlag_row_update(
         return Err(AppError::Unauthorized);
     };
     require_admin_gate(&pool, &sess).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let data_str = serde_json::to_string(&body).map_err(|_| AppError::Internal)?;
 
@@ -1176,7 +1176,7 @@ pub async fn table_tableFlag_row_delete(
     session: Extension<Session>,
     Path((table_flag, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 表级属主/管理员门禁（guard_write 单键限制，行删除由表属主判定）+ 行软删
     let found = guard_write(
@@ -1225,7 +1225,7 @@ pub async fn view_create(
         return Err(AppError::Unauthorized);
     };
     require_admin_gate(&pool, &sess).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let name = body
         .get("name")
@@ -1286,7 +1286,7 @@ pub async fn view_edit(
         return Err(AppError::Unauthorized);
     };
     require_admin_gate(&pool, &sess).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
     let content = match body.get("data") {
@@ -1323,7 +1323,7 @@ pub async fn view_delete(
     session: Extension<Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 属主/管理员门禁 + 软删幂等（对齐同族口径；表无 creator_person，owner 取 creator）
     let found = guard_write(
@@ -1368,7 +1368,7 @@ pub async fn query_set_icon(
         return Err(AppError::Unauthorized);
     };
     require_admin_gate(&pool, &sess).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let icon = body.get("icon").and_then(|v| v.as_str()).unwrap_or("");
 
@@ -1452,7 +1452,7 @@ pub async fn designer_search_v2(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let key = body
         .get("key")
@@ -1523,7 +1523,7 @@ pub async fn importmodel_get_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1588,7 +1588,7 @@ pub async fn importmodel_edit_flag(
     Path(flag): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let found = guard_write(
         &pool,
@@ -1655,7 +1655,7 @@ pub async fn importmodel_delete_flag(
     session: Extension<Session>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // OR 优先级修正：原式 id=$1 OR (model_flag=$1 AND deleted_at IS NULL)——
     // 已删行按 id 仍可通过守卫；括号化后「未删即可见」
@@ -1697,7 +1697,7 @@ pub async fn importmodel_permission_set(
     Path(flag): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let found = guard_write(
         &pool,
@@ -1747,7 +1747,7 @@ pub async fn output_select_put(
     Path(flag): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let found = guard_write(
         &pool,
@@ -1797,7 +1797,7 @@ pub async fn query_create_v2(
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let name = body_str(&body, &["name"]).unwrap_or_default();
     if name.trim().is_empty() {
@@ -1846,7 +1846,7 @@ pub async fn query_delete_flag(
     session: Extension<Session>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let found = guard_write(
         &pool,
@@ -1888,7 +1888,7 @@ pub async fn query_edit_flag(
     Path(flag): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let found = guard_write(
         &pool,
@@ -1957,7 +1957,7 @@ pub async fn query_icon_set(
     Path(flag): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let found = guard_write(
         &pool,
@@ -2002,7 +2002,7 @@ async fn set_permission_generic(
     flag: &str,
     body: &Value,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
 
     let sql = format!(
         "SELECT COALESCE(creator_person, creator, '') AS owner FROM {} WHERE {} LIMIT 1",
@@ -2135,7 +2135,7 @@ pub async fn table_build_dispatch_flag(
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     crate::require_row_owner(&pool.0, session, "x_query_table", "table_flag", &flag).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -2208,7 +2208,7 @@ pub async fn stat_simulate_put(
     Path(id): Path<String>,
     Json(_body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let found = guard_write(
         &pool,
@@ -2261,7 +2261,7 @@ pub async fn view_bundle_put(
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let found = guard_write(
         &pool,
@@ -2304,7 +2304,7 @@ pub async fn view_simulate_put(
     Path(id): Path<String>,
     Json(_body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let found = guard_write(
         &pool,
@@ -2358,7 +2358,7 @@ pub async fn designer_execute(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     // 契约（阶段 F / H-4）：显式 sql 优先；否则按已保存查询 id 取回 data 列作为 SQL，
     // 对齐前端「执行已保存查询」语义（QueryManager 传 {id[,filter]}）。
     let explicit = body
@@ -2423,7 +2423,7 @@ pub async fn stat_do(
         return Ok(Json(ActionResult::error("dimension is required")));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let stat = client
         .query_opt(
             "SELECT query_flag FROM x_query_stat WHERE id = $1 AND deleted_at IS NULL",

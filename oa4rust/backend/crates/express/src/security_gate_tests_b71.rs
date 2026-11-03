@@ -60,8 +60,8 @@ async fn b71_writes_accept_valid_session_past_gate() {
     )
     .await;
     assert!(
-        matches!(res, Err(AppError::Internal)),
-        "有效会话应过门、之后才落库（死池 → Internal），证门在库前"
+        matches!(res, Err(AppError::Unavailable(_))),
+        "有效会话应过门、之后才落库（死池 → Unavailable(503)），证门在库前"
     );
 }
 

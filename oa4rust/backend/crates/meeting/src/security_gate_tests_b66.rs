@@ -66,7 +66,7 @@ mod tests {
         // 有效会话过门后抵达 pool.get()，dead pool 取连接失败 → Internal（证门在库访问前）
         let r = create_meeting(Extension(dead_pool()), valid_session(), empty_json()).await;
         assert!(
-            matches!(r, Err(AppError::Internal)),
+            matches!(r, Err(AppError::Unavailable(_))),
             "create_meeting 有效会话应过门并落到 DB 失败"
         );
         let r = add_participant(
@@ -77,7 +77,7 @@ mod tests {
         )
         .await;
         assert!(
-            matches!(r, Err(AppError::Internal)),
+            matches!(r, Err(AppError::Unavailable(_))),
             "add_participant 有效会话应过门并落到 DB 失败"
         );
     }

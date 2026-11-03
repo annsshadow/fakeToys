@@ -32,7 +32,7 @@ fn test_portal_get_returns_error_without_db() {
             portal_id(Extension(pool), Path("test-id".to_string())).await;
         match result {
             Ok(_) => panic!("expected error without DB"),
-            Err(AppError::Internal) => {}
+            Err(AppError::Internal) | Err(AppError::Unavailable(_)) => {}
             Err(_) => panic!("expected Internal error"),
         }
     });
@@ -47,7 +47,7 @@ fn test_portal_list_returns_error_without_db() {
             portal_list(Extension(pool)).await;
         match result {
             Ok(_) => panic!("expected error without DB"),
-            Err(AppError::Internal) => {}
+            Err(AppError::Internal) | Err(AppError::Unavailable(_)) => {}
             Err(_) => panic!("expected Internal error"),
         }
     });
@@ -69,7 +69,7 @@ async fn test_portal_get_returns_internal_error() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 }
 
 #[tokio::test]
@@ -88,5 +88,5 @@ async fn test_portal_list_returns_internal_error() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 }

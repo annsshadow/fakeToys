@@ -43,7 +43,7 @@ pub async fn switch_user(
     }
 
     // 查找目标用户
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(
             "SELECT id, unique_id, name, mobile, email, icon, job, department, unit, position, \

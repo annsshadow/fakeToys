@@ -46,7 +46,7 @@ pub async fn get_express_info(
     let code = params.code.unwrap_or_default();
     let company = params.company.unwrap_or_default();
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT \"xtrackingNumber\", xstatus, xcompany FROM x_express_info WHERE \"xtrackingNumber\" = $1 AND xcompany = $2",
@@ -81,7 +81,7 @@ pub async fn get_express_info(
 pub async fn list_express_companies(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xcode, xname FROM x_express_company ORDER BY xname LIMIT 50",
@@ -127,7 +127,7 @@ pub async fn subscribe_express(
     let company = payload.company.unwrap_or_default();
     let callback = payload.callback.unwrap_or_default();
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
 
     client

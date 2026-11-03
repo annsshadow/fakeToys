@@ -24,7 +24,7 @@ mod tests_generated;
 pub async fn get_control_config(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_one(
@@ -64,7 +64,7 @@ pub async fn get_control_config(
 pub async fn list_control_calendars(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -115,7 +115,7 @@ pub async fn update_control_config(
         Some(_) => {}
     }
     let config = body.0;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let enabled = config
         .get("enabled")
@@ -164,7 +164,7 @@ pub async fn get_calendar_detail(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let calendar_row = client
         .query_one(

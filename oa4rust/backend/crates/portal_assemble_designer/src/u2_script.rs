@@ -66,7 +66,7 @@ pub async fn create(
     let id = Uuid::new_v4().to_string();
     let creator = session.person_unique.clone();
 
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     tx.execute(
         "INSERT INTO x_portal_script (id, name, flag, category, content, portal_id, creator, creator_person, create_time, update_time) \
@@ -107,7 +107,7 @@ pub async fn update(
     let category = body_str(&body, "category").map(str::to_string);
     let creator = session.person_unique.clone();
 
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let n = tx
         .execute(
@@ -151,7 +151,7 @@ pub async fn delete(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
             "UPDATE x_portal_script SET deleted_at = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') \

@@ -67,7 +67,7 @@ pub async fn echo_get() -> Result<Json<ActionResult<Value>>, AppError> {
 )]
 #[allow(non_snake_case)]
 pub async fn cache_detail(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_one(

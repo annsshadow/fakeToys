@@ -218,7 +218,7 @@ impl ControlPool for Pool {
 /// 500：调用方看到 500 会当成「服务端 bug」，既不敢重试也触发错误率告警。
 /// 配置类错误（未指定 runtime、post-create hook 失败）仍保持 500，因为
 /// 重试不会自愈。
-fn classify_acquire_error(e: deadpool_postgres::PoolError) -> AppError {
+pub(crate) fn classify_acquire_error(e: deadpool_postgres::PoolError) -> AppError {
     use deadpool_postgres::PoolError;
     match e {
         PoolError::Timeout(kind) => {

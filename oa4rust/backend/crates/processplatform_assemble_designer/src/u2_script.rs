@@ -38,7 +38,7 @@ pub async fn create(
     let id = Uuid::new_v4().to_string();
     let creator = sess.person_unique.clone();
 
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     tx.execute(
         "INSERT INTO PP_E_SCRIPT (xid, xname, xapplication, xcode, \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\", id, creator) \
@@ -76,7 +76,7 @@ pub async fn update(
     let code = body_str(&body, "code").map(str::to_string);
     let creator = sess.person_unique.clone();
 
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let n = tx
         .execute(
@@ -128,7 +128,7 @@ pub async fn delete(
         return Err(AppError::Unauthorized);
     };
     crate::require_admin_gate(&pool, &sess).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
             "UPDATE PP_E_SCRIPT SET deleted_at = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') \

@@ -64,7 +64,7 @@ pub async fn andfx_moa_sso(
     let (credential, timestamp_str) = parse_andfx_payload(&decrypted)?;
     validate_andfx_timestamp(&timestamp_str)?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let unique_id = format!("andfx_{credential}");
 
     let row = client

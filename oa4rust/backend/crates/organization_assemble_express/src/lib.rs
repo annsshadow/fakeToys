@@ -42,7 +42,7 @@ pub fn organization_assemble_express_router(pool: Pool) -> axum::Router {
 pub async fn get_express_config(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(
             "SELECT COUNT(*) as cnt FROM ORG_UNIT WHERE deleted_at IS NULL",
@@ -71,7 +71,7 @@ pub async fn get_express_config(
 pub async fn list_organization_units(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, superior, level FROM ORG_UNIT WHERE deleted_at IS NULL ORDER BY level, name",
@@ -119,7 +119,7 @@ pub async fn list_organization_units(
 pub async fn sync_organization_data(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(
             "SELECT COUNT(*) as cnt FROM ORG_UNIT WHERE deleted_at IS NULL",

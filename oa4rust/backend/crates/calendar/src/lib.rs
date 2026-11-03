@@ -142,7 +142,7 @@ pub struct ListEventsRequest {
 pub async fn calendar_list_public(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Vec<CalendarItem>>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -176,7 +176,7 @@ pub async fn calendar_list_public(
 pub async fn calendar_list_my(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<MyCalendarResponse>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -226,7 +226,7 @@ pub async fn calendar_get(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<CalendarItem>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_one(
@@ -260,7 +260,7 @@ pub async fn calendar_create(
     axum::extract::Json(req): axum::extract::Json<CreateCalendarRequest>,
 ) -> Result<Json<ActionResult<CalendarItem>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let name = req
         .name
@@ -309,7 +309,7 @@ pub async fn calendar_update(
     session: Extension<shared::session::Session>,
     axum::extract::Json(req): axum::extract::Json<UpdateCalendarRequest>,
 ) -> Result<Json<ActionResult<CalendarItem>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = req
         .id
@@ -374,7 +374,7 @@ pub async fn calendar_remove(
     session: Extension<shared::session::Session>,
     axum::extract::Json(req): axum::extract::Json<DeleteCalendarRequest>,
 ) -> Result<Json<ActionResult<CalendarItem>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = req
         .id
@@ -428,7 +428,7 @@ pub async fn event_create(
     axum::extract::Json(req): axum::extract::Json<CreateEventRequest>,
 ) -> Result<Json<ActionResult<CalendarEvent>>, AppError> {
     let sess = require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let calendar_id = req
         .calendar_id
@@ -483,7 +483,7 @@ pub async fn event_update(
     session: Extension<shared::session::Session>,
     axum::extract::Json(req): axum::extract::Json<UpdateEventRequest>,
 ) -> Result<Json<ActionResult<CalendarEvent>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = req
         .id
@@ -554,7 +554,7 @@ pub async fn event_remove(
     session: Extension<shared::session::Session>,
     axum::extract::Json(req): axum::extract::Json<DeleteEventRequest>,
 ) -> Result<Json<ActionResult<CalendarEvent>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = req
         .id
@@ -607,7 +607,7 @@ pub async fn event_list(
     pool: Extension<Pool>,
     axum::extract::Path(calendar_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Vec<CalendarEvent>>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(

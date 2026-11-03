@@ -217,7 +217,7 @@ pub async fn login(
         }
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 与本仓库既有惯例一致（见 attendance_assemble_control / file_assemble_control）：
     // 直接传入 PG 风格 SQL，由 format_sql 整串重写为当前方言。
@@ -481,7 +481,7 @@ pub async fn whoami(
         None => return Err(AppError::Unauthorized),
     };
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             &dialect().format_sql(
@@ -721,7 +721,7 @@ pub async fn code_send(
         ));
     }
     // 检查凭证是否存在（防止对任意凭据发送验证码）
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let exists = client
         .query_opt(
             "SELECT 1 FROM auth_person WHERE unique_id = $1 AND deleted_at IS NULL",
@@ -805,7 +805,7 @@ pub async fn code(
         .into_response());
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(
             "SELECT id, unique_id, name, mobile, email, icon, job, department, unit, position \
@@ -856,7 +856,7 @@ pub async fn code(
 /// 获取组织架构树（部门/单位列表）
 #[allow(non_snake_case)]
 pub async fn unit_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, parent_id, level FROM auth_unit \
@@ -894,7 +894,7 @@ pub async fn unit_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
 /// 获取角色列表
 #[allow(non_snake_case)]
 pub async fn role_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, description FROM auth_role WHERE deleted_at IS NULL LIMIT 50",
@@ -927,7 +927,7 @@ pub async fn role_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
 /// 获取用户组列表
 #[allow(non_snake_case)]
 pub async fn group_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name FROM auth_group WHERE disable = false AND deleted_at IS NULL",

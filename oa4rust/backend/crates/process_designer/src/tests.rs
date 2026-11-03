@@ -212,7 +212,7 @@ mod tests {
 
         assert_eq!(
             response.status(),
-            axum::http::StatusCode::INTERNAL_SERVER_ERROR
+            axum::http::StatusCode::SERVICE_UNAVAILABLE
         );
     }
 

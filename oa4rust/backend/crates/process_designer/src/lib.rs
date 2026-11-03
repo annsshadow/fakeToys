@@ -103,7 +103,7 @@ pub async fn application_list_summary(pool: Extension<Pool>) -> Json<ActionResul
 pub async fn application_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, description, form_definition, status, create_time FROM PROCESS_APPLICATION WHERE deleted_at IS NULL ORDER BY create_time DESC",
@@ -161,7 +161,7 @@ pub async fn application_get(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(
             "SELECT id, name, description, form_definition, status, create_time FROM PROCESS_APPLICATION WHERE id = $1 AND deleted_at IS NULL",
@@ -216,7 +216,7 @@ pub async fn application_create(
         return Ok(Json(ActionResult::error("name is required")));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let description = req.description.unwrap_or_default();
     let form_definition = req.form_definition.unwrap_or_default();
@@ -249,7 +249,7 @@ pub async fn application_update(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 流程应用更新仅 admin（无属主列系统数据，安全审计 2026-10 二轮）。
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -313,7 +313,7 @@ pub async fn application_remove(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 流程应用软删仅 admin（无属主列系统数据，安全审计 2026-10 二轮）。
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let result = client
         .execute(
             "UPDATE PROCESS_APPLICATION SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",

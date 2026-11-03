@@ -213,7 +213,7 @@ pub async fn statement_get_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -234,7 +234,7 @@ pub async fn statement_get_format(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -271,7 +271,7 @@ pub async fn statement_list_with_query(
     pool: Extension<Pool>,
     Path(query_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -387,7 +387,7 @@ pub async fn statement_execute(
     Path((flag, page, size)): Path<(String, i64, i64)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let parameters = body.get("parameter").cloned().unwrap_or(Value::Null);
     let result = execute_statement_by_flag(&client, &flag, "", page, size, &parameters).await?;
     Ok(Json(ActionResult::success(result)))
@@ -399,7 +399,7 @@ pub async fn statement_execute_mode_v2(
     Path((flag, mode, page, size)): Path<(String, String, i64, i64)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let parameters = body.get("parameter").cloned().unwrap_or(Value::Null);
     let result = execute_statement_by_flag(&client, &flag, &mode, page, size, &parameters).await?;
     Ok(Json(ActionResult::success(result)))
@@ -512,7 +512,7 @@ pub async fn stat_get_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -533,7 +533,7 @@ pub async fn stat_get_with_query(
     pool: Extension<Pool>,
     Path((flag, query_flag)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -554,7 +554,7 @@ pub async fn stat_list_with_query(
     pool: Extension<Pool>,
     Path(query_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -579,7 +579,7 @@ pub async fn stat_execute(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let result = execute_stat_by_id(&client, &id).await?;
     Ok(Json(ActionResult::success(result)))
 }
@@ -592,7 +592,7 @@ pub async fn search_post(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let key = body
         .get("key")
@@ -672,7 +672,7 @@ pub async fn morelikethis_post(
     pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let key = body
         .get("key")
@@ -728,7 +728,7 @@ pub async fn table_row_delete(
     Path((table_flag, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool.0, session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -759,7 +759,7 @@ pub async fn table_row_insert(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 第五十九批：动态表行插入收 admin 档。
     crate::require_admin_opt(&pool.0, session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let data_str = serde_json::to_string(&body).map_err(|_| AppError::Internal)?;
@@ -792,7 +792,7 @@ pub async fn table_row_insert_one(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 第五十九批：动态表行单条插入收 admin 档。
     crate::require_admin_opt(&pool.0, session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let data_str = serde_json::to_string(&body).map_err(|_| AppError::Internal)?;
@@ -823,7 +823,7 @@ pub async fn importmodel_record_delete(
     Path(record_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin_opt(&pool.0, session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -857,7 +857,7 @@ pub async fn importmodel_reexecute_record(
         None => return Err(AppError::Unauthorized),
         Some(s) => require_admin_gate(&pool, s).await?,
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -913,7 +913,7 @@ pub async fn view_bundle_v2_post(
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1049,7 +1049,7 @@ async fn stat_execute_scoped(
     pool: Extension<Pool>,
     Path((flag, query_flag)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1096,7 +1096,7 @@ async fn view_update_field_by_flag_query(
     query_flag: &str,
     body: &Value,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
 
     // 归属校验：先按 (view_flag, query_flag) 定位行再走 owner 门禁。
     let owner_row = client
@@ -1261,7 +1261,7 @@ pub async fn view_execute_v2_flag_query(
     pool: Extension<Pool>,
     Path((flag, query_flag, page, size)): Path<(String, String, i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let offset = if page > 0 {
         (page - 1).saturating_mul(size)
     } else {
@@ -1285,7 +1285,7 @@ pub async fn view_execute_v2_id(
     pool: Extension<Pool>,
     Path((id, page, size)): Path<(String, i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let offset = if page > 0 {
         (page - 1).saturating_mul(size)
     } else {
@@ -1311,7 +1311,7 @@ async fn view_update_field_by_id(
     id: &str,
     body: &Value,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
 
     let found = guard_write(
         pool,
@@ -1420,7 +1420,7 @@ pub async fn table_row_select_post(
     Path(table_flag): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let key = body_str(&body, &["where", "key", "filter"]).unwrap_or_default();
     let pattern = format!("%{}%", shared::db::escape_like(key));

@@ -219,7 +219,7 @@ async fn create_impl(
     if from_bundle.trim().is_empty() {
         return Ok(Json(ActionResult::error("bundle is required")));
     }
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(pool).await?;
     let person = wi.person.unwrap_or_default();
     let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let (success, failure) =
@@ -266,7 +266,7 @@ async fn update_impl(
     if from_bundle.trim().is_empty() {
         return Ok(Json(ActionResult::error("bundle is required")));
     }
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(pool).await?;
     let person = wi.person.unwrap_or_default();
     let mut success_all = Vec::new();
     let mut failure_all = Vec::new();
@@ -351,7 +351,7 @@ async fn delete_impl(
     if wi.id_list.is_empty() {
         return Ok(Json(ActionResult::success(json!({ "value": true }))));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
 
     let rows = client
         .query(
@@ -433,7 +433,7 @@ async fn readable_impl(
     target_type: &str,
     target_bundle: &str,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
 
     let rows = client
         .query(
@@ -563,7 +563,7 @@ async fn list_impl(
     from_bundle: &str,
     site: Option<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let rows = match site.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
         Some(s) => {
             client

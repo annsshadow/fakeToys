@@ -50,7 +50,7 @@ async fn person_can_manage_mind(
     if require_person_is_manager(pool, person).await? {
         return Ok(true);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let row = client
         .query_opt(
             "SELECT creator FROM x_mind WHERE id = $1",
@@ -82,7 +82,7 @@ pub async fn folder_delete(
             "forbidden: not mind owner or admin",
         )));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
             "UPDATE x_mind SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -109,7 +109,7 @@ pub async fn mind_filter_list(
     pool: Extension<Pool>,
     Path((id, page)): Path<(String, String)>,
 ) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let page_no: i64 = page.parse().unwrap_or(1).max(1);
     let offset = (page_no - 1) * 20;
     let rows = client
@@ -139,7 +139,7 @@ pub async fn mind_filter_received(
     session: Extension<shared::session::Session>,
     Path((_id, page)): Path<(String, String)>,
 ) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let page_no: i64 = page.parse().unwrap_or(1).max(1);
     let offset = (page_no - 1) * 20;
     // 属主事实源=会话登录人；忽略客户端路径 {id} 防 IDOR（原先信任 {id} 可传他人
@@ -173,7 +173,7 @@ pub async fn mind_filter_recycle(
     session: Extension<shared::session::Session>,
     Path((_id, page)): Path<(String, String)>,
 ) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let page_no: i64 = page.parse().unwrap_or(1).max(1);
     let offset = (page_no - 1) * 20;
     // 属主事实源=会话登录人；忽略客户端路径 {id} 防 IDOR（原先 $1='' 分支直接返回
@@ -206,7 +206,7 @@ pub async fn mind_filter_shared(
     session: Extension<shared::session::Session>,
     Path((_id, page)): Path<(String, String)>,
 ) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let page_no: i64 = page.parse().unwrap_or(1).max(1);
     let offset = (page_no - 1) * 20;
     // 属主事实源=会话登录人；忽略客户端路径 {id} 防 IDOR（原先 $1='' 分支返回全体
@@ -235,7 +235,7 @@ pub async fn mind_filter_shared(
 /// GET /api/mind/assemble/control/mind/list/{id}/shareRecords —— 共享记录
 #[allow(non_snake_case)]
 pub async fn mind_share_records(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, mind_id, person, create_time::text AS create_time \
@@ -266,7 +266,7 @@ pub async fn mind_share_records(pool: Extension<Pool>, Path(id): Path<String>) -
 /// GET /api/mind/assemble/control/mind/list/{id}/version —— 版本列表
 #[allow(non_snake_case)]
 pub async fn mind_version_list(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, mind_id, name, file_version, creator, creator_unit, description, create_time \
@@ -308,7 +308,7 @@ pub async fn mind_recycle(
             "forbidden: not mind owner or admin",
         )));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
             "UPDATE x_mind SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -338,7 +338,7 @@ pub async fn mind_restore(
             "forbidden: not mind owner or admin",
         )));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
             "UPDATE x_mind SET deleted_at = NULL WHERE id = $1 AND deleted_at IS NOT NULL",
@@ -364,7 +364,7 @@ pub async fn mind_save(
     Json(body): Json<Value>,
 ) -> ApiResult {
     let sess = crate::require_session(session)?;
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = body
         .get("name")
@@ -499,7 +499,7 @@ pub async fn mind_share(
     if person.is_empty() {
         return Ok(Json(ActionResult::error("person is required")));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let sid = uuid::Uuid::new_v4().to_string();
     client
         .execute(
@@ -536,7 +536,7 @@ pub async fn mind_share_cancel(
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
             "DELETE FROM x_mind_share WHERE mind_id = $1 AND ($2 = '' OR person = $2)",
@@ -550,7 +550,7 @@ pub async fn mind_share_cancel(
 /// GET /api/mind/assemble/control/mind/version/{id} —— 最新版本
 #[allow(non_snake_case)]
 pub async fn mind_version_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, mind_id, name, file_version, creator, creator_unit, description, create_time \
@@ -574,7 +574,7 @@ pub async fn mind_version_get(pool: Extension<Pool>, Path(id): Path<String>) -> 
 /// GET /api/mind/assemble/control/mind/view/{id} —— 查看脑图（返回详情）
 #[allow(non_snake_case)]
 pub async fn mind_view(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, content, parent_id, folder_id, icon, description, shared, \
@@ -593,7 +593,7 @@ pub async fn mind_view(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResu
 /// GET /api/mind/assemble/control/mind/{id} —— 获取脑图
 #[allow(non_snake_case)]
 pub async fn mind_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, content, parent_id, folder_id, icon, description, shared, \
@@ -621,7 +621,7 @@ pub async fn mind_destroy(
             "forbidden: not mind owner or admin",
         )));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute("DELETE FROM x_mind WHERE id = $1", &[&id])
         .await
@@ -646,7 +646,7 @@ pub async fn mind_destroy_recycle(
             "forbidden: not mind owner or admin",
         )));
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
             "DELETE FROM x_mind WHERE id = $1 AND deleted_at IS NOT NULL",
@@ -665,7 +665,7 @@ pub async fn mind_destroy_recycle(
 /// GET /api/mind/assemble/control/mind/{id}/icon —— 获取图标
 #[allow(non_snake_case)]
 pub async fn mind_icon_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, icon FROM x_mind WHERE id = $1 AND deleted_at IS NULL",
@@ -703,7 +703,7 @@ pub async fn mind_icon_set(
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
             "UPDATE x_mind SET icon = $2 WHERE id = $1 AND deleted_at IS NULL",

@@ -31,7 +31,7 @@ pub async fn top(
     pool: Extension<Pool>,
     Path(section_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -105,7 +105,7 @@ pub async fn list(
     pool: Extension<Pool>,
     Path(section_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -187,7 +187,7 @@ pub async fn view(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, title, author_id, section_id, content, reply_count, view_count, is_top, create_time \
@@ -265,7 +265,7 @@ pub async fn create(
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let sess = crate::require_session(session)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let title = payload
         .get("title")
@@ -321,7 +321,7 @@ pub async fn search(
     pool: Extension<Pool>,
     Query(params): Query<SubjectSearchQuery>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let keyword = params.keyword.unwrap_or_default();
 
     let pattern = format!("%{}%", shared::db::escape_like(&keyword));

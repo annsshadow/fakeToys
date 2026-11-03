@@ -84,8 +84,8 @@ mod security_gate_tests_b76 {
         )
         .await;
         assert!(
-            matches!(res, Err(AppError::Internal)),
-            "有效会话应过门、之后才落库（死池 → Internal），证门在库前"
+            matches!(res, Err(AppError::Unavailable(_))),
+            "有效会话应过门、之后才落库（死池 → Unavailable(503)），证门在库前"
         );
     }
 
@@ -104,7 +104,7 @@ mod security_gate_tests_b76 {
     }
 
     /// PUT /api/reset（匿名流）不经过 wrapper：仍然无会话可用（回归护栏）——
-    /// 死池 + 无会话 + 已签发验证码 → 过密码与验证码后落死池 → Internal（而非 401）。
+    /// 死池 + 无会话 + 已签发验证码 → 过密码与验证码后落死池 → Unavailable(503)（而非 401）。
     #[tokio::test]
     async fn b76_put_canonical_route_stays_anonymous_capable() {
         let pool = dead_pool();
@@ -113,8 +113,8 @@ mod security_gate_tests_b76 {
 
         let res = reset::reset_password(Extension(pool), store, reset_req("b76-put", &code)).await;
         assert!(
-            matches!(res, Err(AppError::Internal)),
-            "PUT /api/reset 规范路径必须保持匿名可用（死池 → Internal，而非 401）"
+            matches!(res, Err(AppError::Unavailable(_))),
+            "PUT /api/reset 规范路径必须保持匿名可用（死池 → Unavailable(503)，而非 401）"
         );
     }
 }

@@ -51,7 +51,7 @@ pub async fn get_surface(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -118,7 +118,7 @@ pub async fn create_surface(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 门户内容创建仅 admin（安全审计 2026-10 二轮）。
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_default();
@@ -152,7 +152,7 @@ pub async fn list_surfaces(
     pool: Extension<Pool>,
     axum::extract::Path(category): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -222,7 +222,7 @@ pub async fn preview_surface(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -261,7 +261,7 @@ pub async fn publish_surface(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 门户发布开关仅 admin（安全审计 2026-10 二轮）。
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -309,7 +309,7 @@ pub async fn publish_surface(
 
 #[allow(non_snake_case)]
 pub async fn surface_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, portal_id, name, preview_url, published, create_time FROM x_portal_surface WHERE deleted_at IS NULL ORDER BY create_time DESC",
@@ -372,7 +372,7 @@ pub async fn surface_preview(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, html FROM x_portal_surface WHERE id = $1 AND deleted_at IS NULL",
@@ -414,7 +414,7 @@ pub async fn surface_publish(
         .get("id")
         .and_then(|v| v.as_str())
         .ok_or(AppError::BadRequest("id is required".to_string()))?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let result = client
         .execute(
             "UPDATE x_portal_surface SET published = true, published_at = NOW(), update_time = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -465,7 +465,7 @@ pub async fn page_id_delete(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 门户页面物理删除仅 admin（安全审计 2026-10 二轮）。
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let result = client
         .execute("DELETE FROM x_portal_page WHERE id = $1", &[&id])
         .await
@@ -565,7 +565,7 @@ pub async fn get_layout(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -613,7 +613,7 @@ pub async fn list_layouts(
     pool: Extension<Pool>,
     axum::extract::Path(category): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -670,7 +670,7 @@ pub async fn create_layout(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 门户布局创建仅 admin（安全审计 2026-10 二轮）。
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_default();
@@ -706,7 +706,7 @@ pub async fn save_layout(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 门户布局写仅 admin（安全审计 2026-10 二轮）。
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let name = req.name.unwrap_or_default();
     let category = req.category.unwrap_or_default();
@@ -769,7 +769,7 @@ pub async fn delete_layout(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 门户布局物理删除仅 admin（安全审计 2026-10 二轮）。
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let id = req
         .get("id")
@@ -806,7 +806,7 @@ pub async fn dict_list_portal_portalFlag(
     pool: Extension<Pool>,
     Path(portal_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -864,7 +864,7 @@ pub async fn dict_dictFlag_portal_portalFlag(
     pool: Extension<Pool>,
     Path((dict_flag, portal_flag)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -920,7 +920,7 @@ pub async fn dict_dictFlag_portal_portalFlag_data(
     pool: Extension<Pool>,
     Path((dict_flag, portal_flag)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -953,7 +953,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data(
     pool: Extension<Pool>,
     Path((dict_flag, portal_flag, _path)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1000,7 +1000,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_mockdeletetoget(
     pool: Extension<Pool>,
     Path((dict_flag, portal_flag, _path)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1046,7 +1046,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_mockputtopost(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 门户字典写仅 admin（安全审计 2026-10 二轮）。
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let data_str = match body {
         Value::String(s) => s,
@@ -1115,7 +1115,7 @@ pub async fn file_list_portal_portalFlag(
     pool: Extension<Pool>,
     Path(portal_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1176,7 +1176,7 @@ pub async fn file_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1231,7 +1231,7 @@ pub async fn file_flag_download(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1279,7 +1279,7 @@ pub async fn file_flag_portal_portalFlag_content(
     pool: Extension<Pool>,
     Path((flag, portal_flag)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1315,7 +1315,7 @@ pub async fn file_flag_portal_portalFlag_download(
     pool: Extension<Pool>,
     Path((flag, portal_flag)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1363,7 +1363,7 @@ pub async fn page_list_portal_portal(
     pool: Extension<Pool>,
     Path(portal): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1409,7 +1409,7 @@ async fn page_v2_flag_portal_portalFlag_core(
     flag: String,
     portal_flag: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1465,7 +1465,7 @@ async fn page_v2_flag_portal_portalFlag_mobile_core(
     flag: String,
     portal_flag: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1523,7 +1523,7 @@ async fn page_v2_id_core(
     pool: Extension<Pool>,
     id: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1578,7 +1578,7 @@ async fn page_v2_id_mobile_core(
     pool: Extension<Pool>,
     id: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1637,7 +1637,7 @@ async fn page_flag_portal_portalFlag_core(
     flag: String,
     portal_flag: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1693,7 +1693,7 @@ async fn page_flag_portal_portalFlag_mobile_core(
     flag: String,
     portal_flag: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1751,7 +1751,7 @@ pub async fn page_id(
     pool: Extension<Pool>,
     Path((_s0, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1790,7 +1790,7 @@ async fn page_id_mobile_core(
     pool: Extension<Pool>,
     id: String,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1845,7 +1845,7 @@ pub async fn page_id_mobile_p2(
 
 #[allow(non_snake_case)]
 pub async fn portal_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1896,7 +1896,7 @@ pub async fn portal_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 pub async fn portal_list_mobile(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1948,7 +1948,7 @@ pub async fn portal_flag(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1998,7 +1998,7 @@ pub async fn portal_flag_corner_mark(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2030,7 +2030,7 @@ pub async fn portal_id_icon(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2059,7 +2059,7 @@ pub async fn portal_id_icon_base64(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2091,7 +2091,7 @@ pub async fn script_list_portal_portal(
     pool: Extension<Pool>,
     Path(portal): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2149,7 +2149,7 @@ pub async fn script_portal_portal_name_name(
     pool: Extension<Pool>,
     Path((portal, name)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2201,7 +2201,7 @@ pub async fn script_portal_portal_name_name_imported(
     pool: Extension<Pool>,
     Path((portal, name)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2256,7 +2256,7 @@ pub async fn script_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2308,7 +2308,7 @@ pub async fn widget_list_portal_portal(
     pool: Extension<Pool>,
     Path(portal): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2373,7 +2373,7 @@ pub async fn widget_flag_portal_portalFlag(
     pool: Extension<Pool>,
     Path((flag, portal_flag)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2432,7 +2432,7 @@ pub async fn widget_flag_portal_portalFlag_mobile(
     pool: Extension<Pool>,
     Path((flag, portal_flag)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2490,7 +2490,7 @@ pub async fn widget_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2556,7 +2556,7 @@ pub async fn widget_id_mobile(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2628,7 +2628,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_delete(
     Path((dict_flag, portal_flag, _path)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -2654,7 +2654,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_post(
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let data_str = match body {
         Value::String(s) => s,
@@ -2726,7 +2726,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_put(
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let data_str = match body {
         Value::String(s) => s,
@@ -2818,7 +2818,7 @@ pub async fn script_portal_portal_name_post(
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 归一化查重：同 portal 下同名 script 视为重复
     let existing = client

@@ -50,7 +50,7 @@ mod tests {
             let result = modules_all(axum::extract::Extension(pool)).await;
             match result {
                 Ok(_) => panic!("expected error without DB"),
-                Err(AppError::Internal) => {}
+                Err(AppError::Internal) | Err(AppError::Unavailable(_)) => {}
                 Err(_) => panic!("expected Internal error"),
             }
         });

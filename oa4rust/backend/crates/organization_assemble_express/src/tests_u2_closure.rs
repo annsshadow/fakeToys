@@ -194,7 +194,7 @@ mod closure_tests {
         // 唯一新增 GET 端点：命中路由后因无法建连返回 500（非 404）
         assert_eq!(
             status_of("GET", "/api/unit/list/type/dept/object").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
     }
 

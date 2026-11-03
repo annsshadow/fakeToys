@@ -29,7 +29,7 @@ pub async fn organization_assemble_control_role_list_flag_next_count(
     pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
@@ -88,7 +88,7 @@ pub async fn organization_assemble_control_role_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -130,7 +130,7 @@ pub async fn organization_assemble_control_unit_list_flag_next_count(
     pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
@@ -195,7 +195,7 @@ pub async fn organization_assemble_control_unit_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -243,7 +243,7 @@ pub async fn organization_assemble_control_unit_list_flag_sub_nested(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -315,7 +315,7 @@ pub async fn organization_assemble_control_unit_list_flag_sup_nested(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -396,7 +396,7 @@ pub async fn organization_assemble_control_person_list_like(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<PersonLikeRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let name_pattern = req.name.unwrap_or_default();
     let like_pattern = format!("%{}%", shared::db::escape_like(&name_pattern));
@@ -454,7 +454,7 @@ pub async fn export_export_all(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 全量组织数据导出属高危写面：任意登录用户可触发整库导出 ⇒ 收 admin 门。
     crate::u2_helpers::require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let export_id = uuid::Uuid::new_v4().to_string();
     client
@@ -500,7 +500,7 @@ pub async fn export_result_flag_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -544,7 +544,7 @@ pub async fn export_zhengwudingding_person(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 政务钉钉人员导出属高危写面：任意登录用户可触发人员数据导出 ⇒ 收 admin 门。
     crate::u2_helpers::require_admin_opt(&pool, session.as_deref()).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let export_id = uuid::Uuid::new_v4().to_string();
     client
@@ -589,7 +589,7 @@ pub async fn export_zhengwudingding_person(
 pub async fn group_list_like_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time DESC", &[])
@@ -633,7 +633,7 @@ pub async fn group_list_like_mockputtopost(
 pub async fn group_list_like_pinyin(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time DESC", &[])
@@ -677,7 +677,7 @@ pub async fn group_list_like_pinyin(
 pub async fn group_list_like_pinyin_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time DESC", &[])
@@ -722,7 +722,7 @@ pub async fn group_list_like_pinyin_mockputtopost(
 pub async fn group_list_pinyininitial(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time DESC", &[])
@@ -766,7 +766,7 @@ pub async fn group_list_pinyininitial(
 pub async fn group_list_pinyininitial_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time DESC", &[])
@@ -812,7 +812,7 @@ pub async fn group_list_flag_sub_direct(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -861,7 +861,7 @@ pub async fn group_list_flag_sub_nested(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -919,7 +919,7 @@ pub async fn group_list_flag_sup_direct(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -974,7 +974,7 @@ pub async fn group_list_flag_sup_nested(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -1040,7 +1040,7 @@ pub async fn group_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1087,7 +1087,7 @@ pub async fn group_flag_add_member(
     // 安全审计（2026-10 二轮）：组成员变更 = 组织结构写，仅 admin（原任一登录用户
     // 可把任何人加进任意组，借群组-角色体系提权）。
     crate::u2_helpers::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let person_id = flag.clone();
     let result = client
@@ -1111,7 +1111,7 @@ pub async fn group_flag_add_member_mockputtopost(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 同 group_flag_add_member：组织结构写仅 admin（安全审计 2026-10 二轮）。
     crate::u2_helpers::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let person_id = flag.clone();
     let result = client
@@ -1135,7 +1135,7 @@ pub async fn group_flag_delete_member(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 同 group_flag_add_member：组织结构写仅 admin（安全审计 2026-10 二轮）。
     crate::u2_helpers::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let person_id = flag.clone();
     let result = client
@@ -1159,7 +1159,7 @@ pub async fn group_flag_delete_member_mockputtopost(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 同 group_flag_add_member：组织结构写仅 admin（安全审计 2026-10 二轮）。
     crate::u2_helpers::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let person_id = flag.clone();
     let result = client
@@ -1183,7 +1183,7 @@ pub async fn group_flag_mockdeletetoget(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 群组软删 = 组织结构写仅 admin（安全审计 2026-10 二轮）。
     crate::u2_helpers::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1224,7 +1224,7 @@ pub async fn group_flag_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1267,7 +1267,7 @@ pub async fn identity_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name, unit_id FROM x_org_identity WHERE id = $1",
@@ -1296,7 +1296,7 @@ pub async fn identity_id(
 pub async fn identity_list_like_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time DESC", &[])
@@ -1343,7 +1343,7 @@ pub async fn identity_list_like_mockputtopost(
 pub async fn identity_list_like_pinyin(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time DESC", &[])
@@ -1390,7 +1390,7 @@ pub async fn identity_list_like_pinyin(
 pub async fn identity_list_like_pinyin_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time DESC", &[])
@@ -1438,7 +1438,7 @@ pub async fn identity_list_like_pinyin_mockputtopost(
 pub async fn identity_list_pinyininitial(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time DESC", &[])
@@ -1485,7 +1485,7 @@ pub async fn identity_list_pinyininitial(
 pub async fn identity_list_pinyininitial_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time DESC", &[])
@@ -1534,7 +1534,7 @@ pub async fn identity_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1583,7 +1583,7 @@ pub async fn identity_flag_mockdeletetoget(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 身份软删 = 组织结构写仅 admin（安全审计 2026-10 二轮）。
     crate::u2_helpers::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1630,7 +1630,7 @@ pub async fn identity_flag_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1675,7 +1675,7 @@ pub async fn identity_flag_mockputtopost(
 pub async fn inputperson_template(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, person_id, status, message, create_time::text FROM x_org_import_result ORDER BY create_time DESC", &[])
@@ -1721,7 +1721,7 @@ pub async fn inputperson_template(
 pub async fn inputperson_wipe(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, person_id, status, message, create_time::text FROM x_org_import_result ORDER BY create_time DESC", &[])
@@ -1768,7 +1768,7 @@ pub async fn inputperson_wipe(
 pub async fn permissionsetting_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, creator, create_time::text FROM x_org_permission_setting ORDER BY create_time DESC", &[])
@@ -1808,7 +1808,7 @@ pub async fn permissionsetting_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1853,7 +1853,7 @@ pub async fn permissionsetting_flag_mockdeletetoget(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 权限配置软删 = 组织结构写仅 admin（安全审计 2026-10 二轮）。
     crate::u2_helpers::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1890,7 +1890,7 @@ pub async fn permissionsetting_flag_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1932,7 +1932,7 @@ pub async fn personattribute_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -1981,7 +1981,7 @@ pub async fn personattribute_flag_mockdeletetoget(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 人员属性软删 = 组织结构写仅 admin（安全审计 2026-10 二轮）。
     crate::u2_helpers::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2025,7 +2025,7 @@ pub async fn personattribute_flag_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2070,7 +2070,7 @@ pub async fn personattribute_flag_mockputtopost(
 pub async fn personcard_listgrouptypes(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time DESC", &[])
@@ -2112,7 +2112,7 @@ pub async fn personcard_listpaging_page_page_size_size_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
@@ -2165,7 +2165,7 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
@@ -2217,7 +2217,7 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size_mockputtopost(
 pub async fn personcard_mylist(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time DESC", &[])
@@ -2259,7 +2259,7 @@ pub async fn personcard_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2309,7 +2309,7 @@ pub async fn personcard_flag_mockdeletetoget(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 人员记录软删 = 组织结构写仅 admin（安全审计 2026-10 二轮）。
     crate::u2_helpers::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2350,7 +2350,7 @@ pub async fn personcard_flag_mockdeletetoget(
 pub async fn role_list_like_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time DESC", &[])
@@ -2393,7 +2393,7 @@ pub async fn role_list_like_mockputtopost(
 pub async fn role_list_like_pinyin(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time DESC", &[])
@@ -2436,7 +2436,7 @@ pub async fn role_list_like_pinyin(
 pub async fn role_list_like_pinyin_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time DESC", &[])
@@ -2480,7 +2480,7 @@ pub async fn role_list_like_pinyin_mockputtopost(
 pub async fn role_list_pinyininitial(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time DESC", &[])
@@ -2523,7 +2523,7 @@ pub async fn role_list_pinyininitial(
 pub async fn role_list_pinyininitial_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time DESC", &[])
@@ -2571,7 +2571,7 @@ pub async fn role_flag_mockdeletetoget(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 角色软删 = 组织结构写仅 admin（安全审计 2026-10 二轮）。
     crate::u2_helpers::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2614,7 +2614,7 @@ pub async fn role_flag_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2656,7 +2656,7 @@ pub async fn unitattribute_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2705,7 +2705,7 @@ pub async fn unitattribute_flag_mockdeletetoget(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 单位属性软删 = 组织结构写仅 admin（安全审计 2026-10 二轮）。
     crate::u2_helpers::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2749,7 +2749,7 @@ pub async fn unitattribute_flag_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2794,7 +2794,7 @@ pub async fn unitattribute_flag_mockputtopost(
 pub async fn unitduty_distinct_name(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT DISTINCT name FROM x_org_duty ORDER BY name", &[])
@@ -2827,7 +2827,7 @@ pub async fn unitduty_flag_mockputtopost(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 职务排序写 = 组织结构写仅 admin（安全审计 2026-10 二轮）。
     crate::u2_helpers::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute(
@@ -2850,7 +2850,7 @@ pub async fn unitduty_flag_mockdeletetoget(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 职务删除 = 组织结构写仅 admin（安全审计 2026-10 二轮）。
     crate::u2_helpers::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let result = client
         .execute("DELETE FROM x_org_duty WHERE id = $1", &[&flag])
@@ -2867,7 +2867,7 @@ pub async fn unitduty_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
@@ -2912,7 +2912,7 @@ pub async fn unitduty_flag(
 pub async fn unitduty_update_member(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty ORDER BY create_time DESC", &[])
@@ -2961,7 +2961,7 @@ pub async fn unitduty_list_flag_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
@@ -3018,7 +3018,7 @@ pub async fn unitduty_list_flag_next_count(
     pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
@@ -3075,7 +3075,7 @@ pub async fn unitduty_list_unit_unitFlag(
     pool: Extension<Pool>,
     axum::extract::Path(unit_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE unit_id = $1 ORDER BY create_time DESC LIMIT 100", &[&unit_flag])
@@ -3124,7 +3124,7 @@ pub async fn unitduty_list_name_name(
     pool: Extension<Pool>,
     axum::extract::Path(name): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let pattern = format!("%{}%", shared::db::escape_like(&name));
     let rows = client
@@ -3174,7 +3174,7 @@ pub async fn unitduty_list_like(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default();
     let pattern = format!("%{}%", shared::db::escape_like(name));
@@ -3225,7 +3225,7 @@ pub async fn unitduty_list_identity_identityFlag(
     pool: Extension<Pool>,
     axum::extract::Path(identity_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE identity_id = $1 ORDER BY create_time DESC LIMIT 100", &[&identity_flag])
@@ -3274,7 +3274,7 @@ pub async fn unitduty_distinct_name_like_key(
     pool: Extension<Pool>,
     axum::extract::Path(key): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let pattern = format!("%{}%", shared::db::escape_like(&key));
     let rows = client
@@ -3308,7 +3308,7 @@ pub async fn unitattribute_list_flag_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
@@ -3365,7 +3365,7 @@ pub async fn unitattribute_list_flag_next_count(
     pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
@@ -3422,7 +3422,7 @@ pub async fn unitattribute_list_unit_flag(
     pool: Extension<Pool>,
     axum::extract::Path(unit_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute WHERE unit_id = $1 ORDER BY create_time DESC LIMIT 100", &[&unit_flag])
@@ -3471,7 +3471,7 @@ pub async fn role_list_flag_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
@@ -3524,7 +3524,7 @@ pub async fn role_list_person_personFlag(
     pool: Extension<Pool>,
     axum::extract::Path(person_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, description, creator, create_time::text FROM x_org_role WHERE creator = $1 ORDER BY create_time DESC", &[&person_flag])
@@ -3569,7 +3569,7 @@ pub async fn role_list_like(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default();
     let pattern = format!("%{}%", shared::db::escape_like(name));
@@ -3616,7 +3616,7 @@ pub async fn role_list_group_groupFlag(
     pool: Extension<Pool>,
     axum::extract::Path(group_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT r.id, r.name, r.description, r.creator, r.create_time::text FROM x_org_role r JOIN x_org_group_role gr ON gr.role_id = r.id WHERE gr.group_id = $1 AND r.deleted_at IS NULL ORDER BY r.create_time DESC", &[&group_flag])
@@ -3667,7 +3667,7 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
@@ -3720,7 +3720,7 @@ pub async fn personcard_listpaging_page_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
@@ -3773,7 +3773,7 @@ pub async fn personcard_listVCf_idList(
     pool: Extension<Pool>,
     axum::extract::Path(id_list): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let ids: Vec<&str> = id_list.split(',').collect();
     let rows = client
@@ -3816,7 +3816,7 @@ pub async fn personcard_listPersonalVCf_idList(
     pool: Extension<Pool>,
     axum::extract::Path(id_list): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let ids: Vec<&str> = id_list.split(',').collect();
     let rows = client
@@ -3862,7 +3862,7 @@ pub async fn personcard_createQR_cardId(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 对任意人员记录写 qr_code = 越权 IDOR 面，仅 admin（安全审计 2026-10 二轮）。
     crate::u2_helpers::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // QR 图像渲染未实现：落自描述校验 payload（此前误写 api.example.com 占位
     // 假域名——外部不可解析的 URL 会被当真实数据消费）。
@@ -3923,7 +3923,7 @@ pub async fn personcard_createCode_cardId(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 对任意人员记录写 card_code = 越权 IDOR 面，仅 admin（安全审计 2026-10 二轮）。
     crate::u2_helpers::require_admin(&pool, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let code = uuid::Uuid::new_v4().to_string();
     client
@@ -3979,7 +3979,7 @@ pub async fn personattribute_list_flag_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
@@ -4036,7 +4036,7 @@ pub async fn personattribute_list_flag_next_count(
     pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
@@ -4093,7 +4093,7 @@ pub async fn personattribute_list_person_personFlag(
     pool: Extension<Pool>,
     axum::extract::Path(person_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute WHERE person_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC LIMIT 100", &[&person_flag])
@@ -4142,7 +4142,7 @@ pub async fn loginrecord_stream(
     pool: Extension<Pool>,
     axum::extract::Path(stream): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, person_id, login_time, ip, device FROM x_org_login_record WHERE stream = $1 ORDER BY login_time DESC LIMIT 100", &[&stream])
@@ -4190,7 +4190,7 @@ pub async fn inputperson_result_flag_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, person_id, status, message, create_time::text FROM x_org_import_result WHERE import_id = $1 ORDER BY create_time DESC", &[&flag])
@@ -4241,7 +4241,7 @@ pub async fn identity_flag_order_before_followFlag(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 身份排序写 = 组织结构写仅 admin（安全审计 2026-10 二轮）。
     crate::u2_helpers::require_admin(&pool, &session).await?;
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
 
     let identity_row = client
         .query_opt(
@@ -4325,7 +4325,7 @@ pub async fn identity_list_flag_unitduty_name_unitDutyName(
     pool: Extension<Pool>,
     axum::extract::Path((flag, unit_duty_name)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE id > $1 AND unit_id IN (SELECT id FROM x_org_duty WHERE name = $2) ORDER BY create_time DESC LIMIT 10", &[&flag, &unit_duty_name])
@@ -4374,7 +4374,7 @@ pub async fn identity_list_flag_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
@@ -4431,7 +4431,7 @@ pub async fn identity_list_flag_next_count(
     pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
@@ -4488,7 +4488,7 @@ pub async fn identity_list_unitduty_name_unitDutyName(
     pool: Extension<Pool>,
     axum::extract::Path(unit_duty_name): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE unit_id IN (SELECT id FROM x_org_duty WHERE name = $1) ORDER BY create_time DESC", &[&unit_duty_name])
@@ -4537,7 +4537,7 @@ pub async fn identity_list_unit_unitFlag(
     pool: Extension<Pool>,
     axum::extract::Path(unit_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE unit_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC", &[&unit_flag])
@@ -4586,7 +4586,7 @@ pub async fn identity_list_person_personFlag(
     pool: Extension<Pool>,
     axum::extract::Path(person_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE person_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC", &[&person_flag])
@@ -4635,7 +4635,7 @@ pub async fn identity_list_like(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default();
     let pattern = format!("%{}%", shared::db::escape_like(name));
@@ -4686,7 +4686,7 @@ pub async fn group_list_flag_prev_count(
     pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
@@ -4740,7 +4740,7 @@ pub async fn group_list_flag_next_count(
     pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
@@ -4794,7 +4794,7 @@ pub async fn group_list_role_roleFlag(
     pool: Extension<Pool>,
     axum::extract::Path(role_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE id IN (SELECT group_id FROM x_org_group_role WHERE role_id = $1) AND deleted_at IS NULL ORDER BY create_time DESC", &[&role_flag])
@@ -4846,7 +4846,7 @@ pub async fn group_list_person_personFlag_sup_nested(
     pool: Extension<Pool>,
     axum::extract::Path(person_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("WITH RECURSIVE sup AS (SELECT id, name, unit_id, parent_id FROM x_org_unit WHERE id IN (SELECT unit_id FROM x_org_group WHERE id IN (SELECT group_id FROM x_org_group_member WHERE person_id = $1) AND deleted_at IS NULL) AND deleted_at IS NULL UNION ALL SELECT u.id, u.name, u.unit_id, u.parent_id FROM x_org_unit u JOIN sup s ON u.id = s.parent_id WHERE u.deleted_at IS NULL) SELECT DISTINCT g.id, g.name, g.unit_id, g.type, g.creator, g.create_time::text FROM x_org_group g JOIN sup s ON g.unit_id = s.id WHERE g.deleted_at IS NULL ORDER BY g.create_time DESC", &[&person_flag])
@@ -4901,7 +4901,7 @@ pub async fn group_list_person_personFlag_sup_direct(
     pool: Extension<Pool>,
     axum::extract::Path(person_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE unit_id IN (SELECT unit_id FROM x_org_group WHERE id IN (SELECT group_id FROM x_org_group_member WHERE person_id = $1) AND deleted_at IS NULL) AND deleted_at IS NULL ORDER BY create_time DESC", &[&person_flag])
@@ -4953,7 +4953,7 @@ pub async fn group_list_like(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default();
     let pattern = format!("%{}%", shared::db::escape_like(name));

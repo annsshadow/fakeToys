@@ -51,7 +51,7 @@ pub async fn change(
 
     let person_unique = resolve_current_person_unique(&session_manager, &headers).await?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_one(

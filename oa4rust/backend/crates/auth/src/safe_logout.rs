@@ -31,7 +31,7 @@ pub async fn safe_logout(
     // TIMESTAMP（迁移 017）：此前按字符串绑定，tokio-postgres 报 WrongType
     // 且 `let _ =` 把错误吞掉——「全端登出使旧 token 失效」从未真正生效。
     let now = Utc::now().naive_utc();
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let _ = client
         .execute(
             "INSERT INTO auth_token_threshold (person_unique, threshold_time, created_at) \

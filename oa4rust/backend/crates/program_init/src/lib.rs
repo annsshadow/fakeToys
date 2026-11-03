@@ -120,7 +120,7 @@ pub struct SetSecretRequest {
 /// GET /api/secret/check —— 返回系统初始化状态（从数据库读取）
 #[allow(non_snake_case)]
 pub async fn check(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let person_row = client
         .query_one(
@@ -160,7 +160,7 @@ pub async fn set(
         )));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let has_person: bool = client
         .query_one(
             "SELECT EXISTS(SELECT 1 FROM auth_person WHERE locked = false AND deleted_at IS NULL)",
@@ -194,7 +194,7 @@ pub async fn set(
 /// 清除已设置的初始化密钥（secret_config 记录删除）
 #[allow(non_snake_case)]
 pub async fn set_cancel(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let has_person: bool = client
         .query_one(
@@ -296,7 +296,7 @@ pub fn parse_jdbc_host_port(url: &str) -> Option<(String, i32)> {
 pub async fn external_datasources_check(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let count: i64 = client
         .query_one("SELECT count(*) AS n FROM init_external_datasource", &[])
         .await
@@ -313,7 +313,7 @@ pub async fn external_datasources_check(
 pub async fn external_datasources_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT id, name, unique_name, enable, host, port, database_name, user_name, url, applied \
@@ -364,7 +364,7 @@ pub async fn external_datasources_set(
         }
     }
 
-    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let mut client = shared::db::acquire(&pool).await?;
     let configured: i64 = client
         .query_one("SELECT count(*) AS n FROM init_external_datasource", &[])
         .await
@@ -474,7 +474,7 @@ pub async fn external_datasources_set_cancel(
     session: Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool.0, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let affected = client
         .execute(
             "DELETE FROM init_external_datasource WHERE applied = false",
@@ -543,7 +543,7 @@ pub async fn external_datasources_validate(
 /// GET /api/h2/check —— Rust 侧等价语义：核心表就绪性 + 数据库版本
 #[allow(non_snake_case)]
 pub async fn h2_check(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let version: String = client
         .query_one("SELECT version() AS v", &[])
         .await
@@ -595,7 +595,7 @@ pub async fn restore_upload(
     let id = uuid::Uuid::new_v4().to_string();
     let path_str = path.to_string_lossy().to_string();
     let size = body.len() as i64;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     client
         .execute(
             "INSERT INTO init_restore_upload (id, stamp, file_path, size_bytes, status) \
@@ -617,7 +617,7 @@ pub async fn restore_upload_cancel(
     session: Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool.0, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let affected = client
         .execute(
             "UPDATE init_restore_upload SET status = 'cancelled' \
@@ -641,7 +641,7 @@ pub async fn server_execute(
     session: Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool.0, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let ds_applied = client
         .execute(
@@ -689,7 +689,7 @@ pub async fn server_execute(
 pub async fn server_execute_status(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT status, messages::text AS messages, failure_message FROM init_server_command \
@@ -719,7 +719,7 @@ pub async fn server_execute_status(
 /// GET /api/server/license —— 从 x_program_config(key='license') 读取授权信息
 #[allow(non_snake_case)]
 pub async fn server_license(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT value FROM x_program_config WHERE key = 'license' AND deleted_at IS NULL \
@@ -750,7 +750,7 @@ pub async fn server_stop(
     session: Extension<shared::session::Session>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool.0, &session).await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     client
         .execute(
             "INSERT INTO init_server_command (id, command, status, messages) \

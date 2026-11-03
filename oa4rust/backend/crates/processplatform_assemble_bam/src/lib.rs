@@ -30,7 +30,7 @@ pub async fn get_bam_config(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xname, xdefinition, xenabled FROM x_bam_config WHERE xid = $1 LIMIT 1",
@@ -76,7 +76,7 @@ pub async fn create_bam(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // x_bam_config has no owner/creator; managed as system config: only admin can write
     require_owner(&pool, &session, "").await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let id = Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_default();
     let definition = req.definition.unwrap_or_default();
@@ -106,7 +106,7 @@ pub async fn list_bams(
     pool: Extension<Pool>,
     axum::extract::Path(category): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xname, xcategory FROM x_bam_config WHERE xcategory = $1 ORDER BY \"xcreateTime\" DESC LIMIT 100",
@@ -170,7 +170,7 @@ pub async fn get_bam_status(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let task_count_rows = client
         .query(
@@ -320,7 +320,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 pub async fn period_list_completed_task_application(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT t.id, t.title, t.person, t.task_status, t.start_time, t.end_time, w.application
@@ -378,7 +378,7 @@ pub async fn period_list_completed_task_unit(
     pool: Extension<Pool>,
     axum::extract::Path(unit_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT t.id, t.title, t.person, t.task_status, t.start_time, t.end_time
@@ -435,7 +435,7 @@ pub async fn period_list_completed_work_application(
     pool: Extension<Pool>,
     axum::extract::Path(application_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT w.id, w.title, w.work_status, w.start_time, w.end_time
@@ -478,7 +478,7 @@ pub async fn period_list_completed_work_unit(
     pool: Extension<Pool>,
     axum::extract::Path((_, unit_id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT w.id, w.title, w.work_status, w.start_time, w.end_time
@@ -541,7 +541,7 @@ pub async fn period_list_count_completed_task_application_applicationId_process_
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT COUNT(*) as cnt FROM x_task t JOIN x_work w ON t.work = w.id
@@ -575,7 +575,7 @@ pub async fn period_list_count_completed_task_application_applicationId_process_
     pool: Extension<Pool>,
     axum::extract::Path((_, application_id, process_id, activity_id, _, _, person_id, _)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT COUNT(*) as cnt FROM x_task t JOIN x_work w ON t.work = w.id
@@ -605,7 +605,7 @@ pub async fn period_list_count_completed_task_application_applicationId_process_
         (String, String, String, String, String, String, String),
     >,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT t.activity, COUNT(*) as cnt FROM x_task t JOIN x_work w ON t.work = w.id
@@ -652,7 +652,7 @@ pub async fn period_list_count_completed_task_application_applicationId_unit_uni
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT w.process, COUNT(*) as cnt FROM x_task t JOIN x_work w ON t.work = w.id
@@ -698,7 +698,7 @@ pub async fn period_list_count_completed_task_unit_unit_person_person_by_applica
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT w.application, COUNT(*) as cnt FROM x_task t JOIN x_work w ON t.work = w.id
@@ -751,7 +751,7 @@ pub async fn period_list_count_completed_work_application_applicationId_process_
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT COUNT(*) as cnt FROM x_work WHERE work_status = 'completed' AND application = $1 AND process = $2",
@@ -778,7 +778,7 @@ pub async fn period_list_count_completed_work_application_applicationId_process_
     pool: Extension<Pool>,
     axum::extract::Path((_, _, application_id, process_id, _, _, person_id, _)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT COUNT(*) as cnt FROM x_work WHERE work_status = 'completed' AND application = $1 AND process = $2 AND creator = $3",
@@ -813,7 +813,7 @@ pub async fn period_list_count_completed_work_application_applicationId_unit_uni
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT process, COUNT(*) as cnt FROM x_work WHERE work_status = 'completed' AND application = $1 AND creator = $2 GROUP BY process",
@@ -855,7 +855,7 @@ pub async fn period_list_count_completed_work_unit_unit_person_person_by_applica
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT application, COUNT(*) as cnt FROM x_work WHERE work_status = 'completed' AND creator = $1 GROUP BY application",
@@ -906,7 +906,7 @@ pub async fn period_list_count_expired_task_application_applicationId_process_pr
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT t.person, COUNT(*) as cnt FROM x_task t JOIN x_work w ON t.work = w.id
@@ -946,7 +946,7 @@ pub async fn period_list_count_expired_task_application_applicationId_process_pr
     pool: Extension<Pool>,
     axum::extract::Path((_, application_id, process_id, activity_id, _, _, person_id, _)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT COUNT(*) as cnt FROM x_task t JOIN x_work w ON t.work = w.id
@@ -976,7 +976,7 @@ pub async fn period_list_count_expired_task_application_applicationId_process_pr
         (String, String, String, String, String, String, String),
     >,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT t.activity, COUNT(*) as cnt FROM x_task t JOIN x_work w ON t.work = w.id
@@ -1023,7 +1023,7 @@ pub async fn period_list_count_expired_task_application_applicationId_unit_unit_
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT w.process, COUNT(*) as cnt FROM x_task t JOIN x_work w ON t.work = w.id
@@ -1069,7 +1069,7 @@ pub async fn period_list_count_expired_task_unit_unit_person_person_by_applicati
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT w.application, COUNT(*) as cnt FROM x_task t JOIN x_work w ON t.work = w.id
@@ -1122,7 +1122,7 @@ pub async fn period_list_count_expired_work_application_applicationId_process_pr
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT COUNT(*) as cnt FROM x_work WHERE work_status = 'expired' AND application = $1 AND process = $2",
@@ -1149,7 +1149,7 @@ pub async fn period_list_count_expired_work_application_applicationId_process_pr
     pool: Extension<Pool>,
     axum::extract::Path((_, _, application_id, process_id, _, _, person_id, _)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT COUNT(*) as cnt FROM x_work WHERE work_status = 'expired' AND application = $1 AND process = $2 AND creator = $3",
@@ -1184,7 +1184,7 @@ pub async fn period_list_count_expired_work_application_applicationId_unit_unit_
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT process, COUNT(*) as cnt FROM x_work WHERE work_status = 'expired' AND application = $1 AND creator = $2 GROUP BY process",
@@ -1226,7 +1226,7 @@ pub async fn period_list_count_expired_work_unit_unit_person_person_by_applicati
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT application, COUNT(*) as cnt FROM x_work WHERE work_status = 'expired' AND creator = $1 GROUP BY application",
@@ -1278,7 +1278,7 @@ pub async fn period_list_count_start_task_application_applicationId_process_proc
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT t.person, COUNT(*) as cnt FROM x_task t JOIN x_work w ON t.work = w.id
@@ -1318,7 +1318,7 @@ pub async fn period_list_count_start_task_application_applicationId_process_proc
     pool: Extension<Pool>,
     axum::extract::Path((_, _, application_id, process_id, activity_id, _, _, person_id, _)): axum::extract::Path<(String, String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT COUNT(*) as cnt FROM x_task t JOIN x_work w ON t.work = w.id
@@ -1346,7 +1346,7 @@ pub async fn period_list_count_start_task_application_applicationId_process_proc
     pool: Extension<Pool>,
     axum::extract::Path((_, _, application_id, process_id, _, _, person_id, _)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT t.activity, COUNT(*) as cnt FROM x_task t JOIN x_work w ON t.work = w.id
@@ -1394,7 +1394,7 @@ pub async fn period_list_count_start_task_application_applicationId_unit_unit_pe
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT w.process, COUNT(*) as cnt FROM x_task t JOIN x_work w ON t.work = w.id
@@ -1441,7 +1441,7 @@ pub async fn period_list_count_start_task_unit_unit_person_person_by_application
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT w.application, COUNT(*) as cnt FROM x_task t JOIN x_work w ON t.work = w.id
@@ -1495,7 +1495,7 @@ pub async fn period_list_count_start_work_application_applicationId_process_proc
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT COUNT(*) as cnt FROM x_work WHERE work_status = 'started' AND application = $1 AND process = $2",
@@ -1522,7 +1522,7 @@ pub async fn period_list_count_start_work_application_applicationId_process_proc
     pool: Extension<Pool>,
     axum::extract::Path((_, _, _, application_id, process_id, _, _, person_id, _)): axum::extract::Path<(String, String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT COUNT(*) as cnt FROM x_work WHERE work_status = 'started' AND application = $1 AND process = $2 AND creator = $3",
@@ -1558,7 +1558,7 @@ pub async fn period_list_count_start_work_application_applicationId_unit_unit_pe
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT process, COUNT(*) as cnt FROM x_work WHERE work_status = 'started' AND application = $1 AND creator = $2 GROUP BY process",
@@ -1601,7 +1601,7 @@ pub async fn period_list_count_start_work_unit_unit_person_person_by_application
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT application, COUNT(*) as cnt FROM x_work WHERE work_status = 'started' AND creator = $1 GROUP BY application",
@@ -1645,7 +1645,7 @@ pub async fn period_list_count_start_work_unit_unit_person_person_by_application
 pub async fn period_list_expired_task_application(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT t.id, t.title, t.person, t.task_status, t.start_time, t.end_time
@@ -1696,7 +1696,7 @@ pub async fn period_list_expired_task_unit(
     pool: Extension<Pool>,
     axum::extract::Path(unit_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT t.id, t.title, t.person, t.task_status, t.start_time, t.end_time
@@ -1753,7 +1753,7 @@ pub async fn period_list_expired_work_application(
     pool: Extension<Pool>,
     axum::extract::Path(application_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT w.id, w.title, w.work_status, w.start_time, w.end_time
@@ -1796,7 +1796,7 @@ pub async fn period_list_expired_work_unit(
     pool: Extension<Pool>,
     axum::extract::Path((_, unit_id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT w.id, w.title, w.work_status, w.start_time, w.end_time
@@ -1853,7 +1853,7 @@ pub async fn period_list_start_task_application(
     pool: Extension<Pool>,
     axum::extract::Path(application_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT t.id, t.title, t.person, t.task_status, t.start_time, t.end_time
@@ -1904,7 +1904,7 @@ pub async fn period_list_start_task_unit(
     pool: Extension<Pool>,
     axum::extract::Path((_, unit_id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT t.id, t.title, t.person, t.task_status, t.start_time, t.end_time
@@ -1962,7 +1962,7 @@ pub async fn period_list_start_work_application(
     // 路由为 .../application/{start}/{work}：末段承载 application 维度取值（沿用 legacy 命名）
     axum::extract::Path((_start, application_id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT w.id, w.title, w.work_status, w.start_time, w.end_time
@@ -2005,7 +2005,7 @@ pub async fn period_list_start_work_unit(
     pool: Extension<Pool>,
     axum::extract::Path((_, _, unit_id)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT w.id, w.title, w.work_status, w.start_time, w.end_time
@@ -2061,7 +2061,7 @@ pub async fn period_list_start_work_unit(
 pub async fn state_applicationtstubs_trigger(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let total_works = client
         .query(
@@ -2124,7 +2124,7 @@ pub async fn state_applicationtstubs_trigger(
 
 #[allow(non_snake_case)]
 pub async fn state_category(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2196,7 +2196,7 @@ pub async fn state_category_trigger(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 瑙﹀彂缁熻涓虹郴缁熺骇鎿嶄綔锛屾寜 ownerless 璧勬簮澶勭悊锛氫粎 admin 鍙啓
     require_owner(&pool, &session, "").await?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
@@ -2271,7 +2271,7 @@ pub async fn state_category_trigger(
 pub async fn state_organization(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 3 条跨表独立 COUNT(*)（x_org_person/unit/group）合并为单条标量子查询：3 次
     // 往返 → 1 次往返（三表各扫一次不变）。各表不同，无法用 FILTER 单表聚合，故用
@@ -2309,7 +2309,7 @@ pub async fn state_organization(
 
 #[allow(non_snake_case)]
 pub async fn state_running(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 5 独立 COUNT(*)（x_work 2 / x_task 3）折叠为每表一条 FILTER 条件聚合：
     // 5 次串行往返 + 5 次全表扫描 → 2 次往返 + 2 次扫描，结果等价。
@@ -2367,7 +2367,7 @@ pub async fn state_running(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
 
 #[allow(non_snake_case)]
 pub async fn state_summary(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 9 独立 COUNT(*)（x_work 5 条 / x_task 4 条）折叠为每表一条 FILTER 条件聚合：
     // 串行 9 次往返 + 9 次全表扫描 → 2 次往返 + 2 次扫描，结果等价。（未进一步用
@@ -2509,7 +2509,7 @@ async fn period_count_query_shaped(
     group: Option<&str>,
     legacy_shape: bool,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(pool).await?;
     let pred = period_predicate(kind, period);
     let (from, act_col, per_col) = if kind == "task" {
         (
@@ -3310,7 +3310,7 @@ pub async fn bam_count_start_work_by_application(
 pub async fn state_category_trigger_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT COALESCE(a.\"xapplicationCategory\", '') AS category,

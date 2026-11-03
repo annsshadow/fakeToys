@@ -93,7 +93,7 @@ mod u2_tests {
         );
         assert_eq!(
             status_of("GET", "/api/message/assemble/communicate/ws/count/person").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of(
@@ -101,11 +101,11 @@ mod u2_tests {
                 "/api/message/assemble/communicate/ws/list/person/current/node"
             )
             .await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", "/api/message/assemble/communicate/ws/list/person").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
     }
 
@@ -285,7 +285,7 @@ mod u2_tests {
             )
             .await
             .unwrap();
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
     }
 
     #[test]
@@ -330,7 +330,7 @@ mod u2_tests {
             )
             .await
             .unwrap();
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
         let _ = to_bytes(response.into_body(), usize::MAX).await.unwrap();
     }
 
@@ -374,13 +374,13 @@ mod u2_tests {
             axum::extract::Extension(test_session()),
         )
         .await;
-        assert!(matches!(r, Err(AppError::Internal)));
+        assert!(matches!(r, Err(AppError::Unavailable(_))));
     }
 
     #[tokio::test]
     async fn u2_ws_count_person_fails_internal_without_db() {
         let r = ws_count_person(axum::extract::Extension(mock_pool())).await;
-        assert!(matches!(r, Err(AppError::Internal)));
+        assert!(matches!(r, Err(AppError::Unavailable(_))));
     }
 
     // ── 业务规则纯单元测试：群发目标人群 ───────────────────────
@@ -423,6 +423,6 @@ mod u2_tests {
             Json(json!({"person": "u1", "body": "hi"})),
         )
         .await;
-        assert!(matches!(client_err, Err(AppError::Internal)));
+        assert!(matches!(client_err, Err(AppError::Unavailable(_))));
     }
 }

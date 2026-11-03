@@ -39,7 +39,7 @@ pub async fn get_info(
         .await
         .ok_or(AppError::Unauthorized)?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(
             "SELECT id, unique_id, name, mobile, email, icon FROM auth_person \
@@ -84,7 +84,7 @@ pub async fn update_info(
         .await
         .ok_or(AppError::Unauthorized)?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 先查询当前用户信息，用于保留未更新的字段
     let row = client
@@ -150,7 +150,7 @@ pub async fn get_detail(
         .await
         .ok_or(AppError::Unauthorized)?;
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(
             "SELECT id, unique_id, name, mobile, email, icon FROM auth_person \
@@ -186,7 +186,7 @@ pub async fn save_signature(
         .validate_session(&token)
         .await
         .ok_or(AppError::Unauthorized)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let signature = payload
         .get("signature")
@@ -253,7 +253,7 @@ pub async fn face_list(
         .validate_session(&token)
         .await
         .ok_or(AppError::Unauthorized)?;
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(

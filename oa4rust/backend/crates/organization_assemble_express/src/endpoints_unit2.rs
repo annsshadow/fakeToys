@@ -84,7 +84,7 @@ async fn unit_pick_on_identity_chain(
          AND id IN (SELECT id FROM sup) ORDER BY id LIMIT 1",
         cols = if objects { UNIT_COLS_TYPE } else { "id" },
     );
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = if is_text {
         client
             .query(&sql, &[&identity, &second])
@@ -171,7 +171,7 @@ async fn units_of_identities(
          WHERE u.deleted_at IS NULL AND (i.id = ANY($1) OR i.name = ANY($1)) ORDER BY u.level, u.id"
             .to_string()
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(&sql, &[&flags])
         .await
@@ -221,7 +221,7 @@ async fn sup_nested_of_units(
         seeds = seeds_sql,
         cols = if objects { UNIT_COLS } else { "id" }
     );
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(&sql, &[&flags])
         .await
@@ -264,7 +264,7 @@ async fn level_query(
         "SELECT {} FROM x_org_unit WHERE deleted_at IS NULL AND level = ANY($1) ORDER BY level, id",
         if objects { UNIT_COLS } else { "id" }
     );
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(&sql, &[&levels])
         .await
@@ -314,7 +314,7 @@ pub async fn unit_list_level_name_object(
     if flags.is_empty() {
         return ok_legacy_list(0, vec![]);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(SQL, &[&flags])
         .await
@@ -373,7 +373,7 @@ async fn units_of_persons(
          WHERE u.deleted_at IS NULL AND (p.id = ANY($1) OR p.name = ANY($1)) ORDER BY u.level, u.id"
             .to_string()
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(&sql, &[&flags])
         .await
@@ -441,7 +441,7 @@ async fn attr_units(
            AND ($2::text IS NULL OR a.attribute_value = $2) ORDER BY u.id",
         if objects { UNIT_COLS } else { "id" }
     );
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(&sql, &[&name, &attribute])
         .await
@@ -485,7 +485,7 @@ async fn duty_units(
            AND ($2::text IS NULL OR d.identity_id = $2) ORDER BY u.id",
         if objects { UNIT_COLS } else { "id" }
     );
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(&sql, &[&name, &identity])
         .await
@@ -536,7 +536,7 @@ pub async fn unit_check_unit_has_identity(
          WHERE i.deleted_at IS NULL AND (i.id = $2 OR i.name = $2) \
          AND (u.id = $1 OR u.name = $1))"
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(sql, &[&unit, &identity])
         .await
@@ -555,7 +555,7 @@ pub async fn unit_check_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
             "SELECT id, name FROM x_org_unit WHERE deleted_at IS NULL AND (id = $1 OR name = $1) LIMIT 1",
@@ -603,7 +603,7 @@ pub async fn unit_check_unit_has_unit(
          WHERE s2.deleted_at IS NULL AND (s2.id = $2 OR s2.name = $2) \
          AND (p.id = $1 OR p.name = $1))"
     };
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(sql, &[&unit, &sub_unit])
         .await
@@ -626,7 +626,7 @@ async fn types_query(
         "SELECT {} FROM x_org_unit WHERE deleted_at IS NULL AND \"type\" = ANY($1) ORDER BY level, id",
         if objects { UNIT_COLS_TYPE } else { "id" }
     );
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(&sql, &[&types])
         .await
@@ -679,7 +679,7 @@ pub async fn unit_list_unit_tree(
     if flags.is_empty() {
         return ok_legacy_list(0, vec![]);
     }
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(SQL, &[&flags])
         .await

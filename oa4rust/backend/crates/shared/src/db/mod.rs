@@ -299,6 +299,17 @@ pub async fn create_pool() -> Result<Pool, DbError> {
     create_pool_with_url(database_url()).await
 }
 
+/// O2：全仓统一的取连入口，附带 R12 的失败分类。
+///
+/// 修前各 handler 普遍手写 `crate::db::acquire(&pool).await?`
+/// （全仓约 1800 处）：池满排队超时、建连失败（DB 停机/网络断）、池已关闭
+/// 这些「数据库此刻不可用」全部坍缩成 500——客户端不敢重试、监控把它算作
+/// 代码缺陷。统一走这里后，Timeout/Backend/Closed 映射为可重试 503
+/// （`AppError::Unavailable`），非瞬时的配置类错误仍 500。
+pub async fn acquire(pool: &Pool) -> Result<deadpool_postgres::Object, crate::AppError> {
+    pool.get().await.map_err(crate::classify_acquire_error)
+}
+
 /// 用显式 URL 创建 SeaORM DatabaseConnection（sizing/TLS 与 deadpool 池同源，
 /// 见 `DbPoolConfig`）。懒连接（connect_lazy）：与 deadpool 池一致，构建时不实际
 /// 建连——无库环境（如 arity 探针、core_entity 的 HTTP 臂测试）也能构建成功，

@@ -47,7 +47,7 @@ pub async fn two_factor_login(
         return Ok(Json(ActionResult::error("invalid credentials")));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = shared::db::acquire(&pool).await?;
 
     // 同 login：传入 PG 风格 SQL 交由 format_sql 整串重写，
     // 不可手工拼接 d.param(n)（会生成绕过重写的 MySQL `?` 占位符）。

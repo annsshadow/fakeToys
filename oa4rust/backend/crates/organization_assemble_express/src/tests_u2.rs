@@ -38,23 +38,23 @@ mod u2_tests {
     async fn u2_person_get_endpoints_reachable() {
         assert_eq!(
             status_of("GET", "/api/person/auth/info/p1").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", "/api/person/nick/name/p1").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", "/api/person/mobile/p1").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", "/api/person/list/all").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", "/api/person/list/all/object").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
     }
 
@@ -98,11 +98,11 @@ mod u2_tests {
     async fn u2_unit_get_and_post_endpoints_registered() {
         assert_eq!(
             status_of("GET", "/api/unit/list/all").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         assert_eq!(
             status_of("GET", "/api/unit/list/all/object").await,
-            StatusCode::INTERNAL_SERVER_ERROR
+            StatusCode::SERVICE_UNAVAILABLE
         );
         for uri in [
             "/api/unit/list",
