@@ -136,6 +136,42 @@ function checkAdminConfigDrift() {
   return { ok: hits.length === 0, hits }
 }
 
+/**
+ * 静态守卫：每一项命令里引用的本地脚本，必须**存在且被 git 跟踪**。
+ *
+ * O13 的空转根因：`oa4rust/backend/scripts/check_openapi_up_to_date.py` 从未入库
+ * （整个 scripts 目录被 .gitignore 忽略），本地写好了能跑，任何干净克隆 / CI
+ * 上都只有 exit=2。这条守卫把同类问题变成一句可读的 FAIL，而不是等某个
+ * 检查项跑到一半报「找不到文件」。
+ */
+function checkScriptPaths() {
+  const hits = []
+  const seen = new Set()
+  for (const c of CHECKS) {
+    if (typeof c.cmd !== 'string') continue
+    const base = join(ROOT, c.cwd)
+    for (const m of c.cmd.matchAll(/(?:^|[\s;&|])(scripts\/[^\s;&|"']+)/g)) {
+      const rel = m[1]
+      const key = `${c.cwd}\u0000${rel}`
+      if (seen.has(key)) continue
+      seen.add(key)
+      if (!existsSync(join(base, rel))) {
+        hits.push(`${c.id}: 引用的脚本不存在 ${c.cwd}/${rel}`)
+        continue
+      }
+      const tracked = spawnSync('git', ['ls-files', '--error-unmatch', join(c.cwd, rel)], {
+        cwd: ROOT,
+        env,
+        encoding: 'utf8',
+      })
+      if (tracked.status !== 0) {
+        hits.push(`${c.id}: 引用的脚本未被 git 跟踪 ${c.cwd}/${rel}（干净克隆 / CI 上必然空转）`)
+      }
+    }
+  }
+  return { ok: hits.length === 0, hits }
+}
+
 // crate 数量动态数：曾经 label 里硬编码「97 crates」，crate 增删后静默漂移
 // （实测 96 个目录 + 根包）。label 只该描述现状，不该是一个要人维护的常数。
 const RUST_CRATE_COUNT =
@@ -161,6 +197,11 @@ const CHECKS = [
     id: 'admin-config-drift',
     label: 'laiyipao admin 枚举映射与服务端白名单一致',
     custom: checkAdminConfigDrift,
+  },
+  {
+    id: 'script-paths',
+    label: '各项引用的本地脚本存在且已入库（防空转）',
+    custom: checkScriptPaths,
   },
   {
     id: 'rust',
@@ -417,7 +458,14 @@ selected.forEach((check, index) => {
   // 不跑命令的静态检查（例如「成员是否都继承了 workspace lints」）先同步跑完。
   if (check.custom) {
     process.stdout.write(`- ${check.label} … `)
-    const outcome = check.custom()
+    let outcome
+    try {
+      outcome = check.custom()
+    } catch (err) {
+      // 守卫自身解析失败（源文件改名 / 结构变化）不能被当成异常吞掉，
+      // 也不能让整个门禁崩在栈里：按项 FAIL，并说明原因。
+      outcome = { ok: false, hits: [`守卫自身执行异常：${err.message}`] }
+    }
     results[index] = { ...check, status: outcome.ok ? 'PASS' : 'FAIL', hits: outcome.hits }
     console.log(outcome.ok ? 'PASS' : `FAIL (${outcome.hits.length} 处)`)
     if (!outcome.ok) for (const line of outcome.hits) console.log(`    ${line}`)
