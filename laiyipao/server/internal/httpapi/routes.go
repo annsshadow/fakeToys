@@ -406,7 +406,7 @@ func (s *Server) healthz(c *fiber.Ctx) error {
 
 func (s *Server) readyz(c *fiber.Ctx) error {
 	if err := s.Svc.DB.Ping(c.Context()); err != nil {
-		return fail(c, fiber.StatusServiceUnavailable, "db_unavailable", "数据库不可用")
+		return fail(c, fiber.StatusServiceUnavailable, CodeDBUnavailable, "数据库不可用")
 	}
 	return c.JSON(fiber.Map{"ok": true, "db": "up"})
 }
@@ -423,7 +423,7 @@ func (s *Server) guestLogin(c *fiber.Ctx) error {
 	// 403 + 明确的 code=login_required：客户端据此跳登录页，
 	// 而不是把「登录失败」显示成一句看不懂的报错。
 	if s.Svc.Cfg().PlayerLoginRequired {
-		return fail(c, fiber.StatusForbidden, "login_required",
+		return fail(c, fiber.StatusForbidden, CodeLoginRequired,
 			"本环境要求账号登录，请使用账号密码登录")
 	}
 	var body struct {
@@ -431,7 +431,7 @@ func (s *Server) guestLogin(c *fiber.Ctx) error {
 		Nickname   string `json:"nickname"`
 	}
 	if err := c.BodyParser(&body); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	tp, err := s.Svc.GuestLogin(c.Context(), body.GuestToken, body.Nickname)
 	if err != nil {
@@ -451,7 +451,7 @@ func (s *Server) playerLogin(c *fiber.Ctx) error {
 		Password string `json:"password"`
 	}
 	if err := c.BodyParser(&body); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	tp, err := s.Svc.Login(c.Context(), body.Username, body.Password)
 	if err != nil {
@@ -465,7 +465,7 @@ func (s *Server) wechatLogin(c *fiber.Ctx) error {
 		Code string `json:"code"`
 	}
 	if err := c.BodyParser(&body); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	tp, err := s.Svc.WechatLogin(c.Context(), body.Code)
 	if err != nil {
@@ -479,7 +479,7 @@ func (s *Server) refresh(c *fiber.Ctx) error {
 		RefreshToken string `json:"refresh_token"`
 	}
 	if err := c.BodyParser(&body); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	tp, err := s.Svc.Refresh(c.Context(), body.RefreshToken)
 	if err != nil {
@@ -557,7 +557,7 @@ func (s *Server) changePassword(c *fiber.Ctx) error {
 		NewPassword string `json:"new_password"`
 	}
 	if err := c.BodyParser(&body); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	revoked, err := s.Svc.ChangePassword(c.Context(), userIDFrom(c), body.OldPassword, body.NewPassword)
 	if err != nil {
@@ -573,7 +573,7 @@ func (s *Server) upgradeGuestAccount(c *fiber.Ctx) error {
 		Password string `json:"password"`
 	}
 	if err := c.BodyParser(&body); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	if err := s.Svc.UpgradeGuestAccount(c.Context(), userIDFrom(c), body.Username, body.Password); err != nil {
 		return failErr(c, err)
@@ -587,7 +587,7 @@ func (s *Server) updateNickname(c *fiber.Ctx) error {
 		Nickname string `json:"nickname"`
 	}
 	if err := c.BodyParser(&body); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	if err := s.Svc.UpdateNickname(c.Context(), userIDFrom(c), body.Nickname); err != nil {
 		return failErr(c, err)
@@ -608,7 +608,7 @@ func (s *Server) getLoadout(c *fiber.Ctx) error {
 func (s *Server) saveLoadout(c *fiber.Ctx) error {
 	var in service.SaveLoadoutInput
 	if err := c.BodyParser(&in); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	ids, err := s.Svc.SaveLoadout(c.Context(), userIDFrom(c), in)
 	if err != nil {
@@ -632,7 +632,7 @@ func (s *Server) myStars(c *fiber.Ctx) error {
 func (s *Server) upgradeSkill(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil || id <= 0 {
-		return fail(c, fiber.StatusBadRequest, "bad_id", "技能 id 必须是正整数")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "技能 id 必须是正整数")
 	}
 	level, err := s.Svc.UpgradeSkill(c.Context(), userIDFrom(c), int64(id))
 	if err != nil {
@@ -658,7 +658,7 @@ func (s *Server) synthesizeSkill(c *fiber.Ctx) error {
 		B int64 `json:"b"`
 	}
 	if err := c.BodyParser(&in); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_body", "熔炼请求体需为 {\"a\":int,\"b\":int}")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "熔炼请求体需为 {\"a\":int,\"b\":int}")
 	}
 	output, err := s.Svc.SynthesizeSkills(c.Context(), userIDFrom(c), in.A, in.B)
 	if err != nil {
@@ -721,7 +721,7 @@ func (s *Server) getConfig(c *fiber.Ctx) error {
 func (s *Server) getLevel(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil || id < 1 || id > domain.TotalLevels {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "关卡 ID 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "关卡 ID 非法")
 	}
 	// 2026-10-30（实质优化第 14 轮）：进程内缓存，不再每次请求重新生成。
 	return c.JSON(domain.CachedLevel(id))
@@ -732,7 +732,7 @@ func (s *Server) startBattle(c *fiber.Ctx) error {
 		LevelID int `json:"level_id"`
 	}
 	if err := c.BodyParser(&body); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	resp, err := s.Svc.StartBattle(c.Context(), userIDFrom(c), body.LevelID)
 	if err != nil {
@@ -747,10 +747,10 @@ func (s *Server) settleBattle(c *fiber.Ctx) error {
 		domain.SettleInput
 	}
 	if err := c.BodyParser(&body); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	if body.TokenID == 0 {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "缺少 token_id")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "缺少 token_id")
 	}
 	resp, err := s.Svc.SettleBattle(c.Context(), userIDFrom(c), body.TokenID, body.SettleInput)
 	if err != nil {
@@ -814,7 +814,7 @@ func (s *Server) myBattleHistory(c *fiber.Ctx) error {
 func (s *Server) myBattleDetail(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil || id < 1 {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "战报 ID 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "战报 ID 非法")
 	}
 	detail, err := s.Svc.MyBattleDetail(c.Context(), userIDFrom(c), id)
 	if err != nil {
@@ -874,7 +874,7 @@ func (s *Server) claimOfflineReward(c *fiber.Ctx) error {
 func (s *Server) washGem(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil || id < 1 {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "宝石 ID 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "宝石 ID 非法")
 	}
 	g, err := s.Svc.WashGem(c.Context(), userIDFrom(c), id)
 	if err != nil {
@@ -888,7 +888,7 @@ func (s *Server) washGem(c *fiber.Ctx) error {
 func (s *Server) equipGem(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil || id < 1 {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "宝石 ID 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "宝石 ID 非法")
 	}
 	g, err := s.Svc.EquipGem(c.Context(), userIDFrom(c), id)
 	if err != nil {
@@ -901,7 +901,7 @@ func (s *Server) equipGem(c *fiber.Ctx) error {
 func (s *Server) unequipGem(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil || id < 1 {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "宝石 ID 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "宝石 ID 非法")
 	}
 	g, err := s.Svc.UnequipGem(c.Context(), userIDFrom(c), id)
 	if err != nil {
@@ -925,7 +925,7 @@ func (s *Server) saveCurrentPreset(c *fiber.Ctx) error {
 		Name string `json:"name"`
 	}
 	if err := c.BodyParser(&body); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	preset, err := s.Svc.SaveCurrentPreset(c.Context(), userIDFrom(c), body.Name)
 	if err != nil {
@@ -938,7 +938,7 @@ func (s *Server) saveCurrentPreset(c *fiber.Ctx) error {
 func (s *Server) deletePreset(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil || id < 1 {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "预设 ID 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "预设 ID 非法")
 	}
 	if err := s.Svc.DeletePreset(c.Context(), userIDFrom(c), id); err != nil {
 		return failErr(c, err)
@@ -950,7 +950,7 @@ func (s *Server) deletePreset(c *fiber.Ctx) error {
 func (s *Server) setCurrentPreset(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil || id < 1 {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "预设 ID 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "预设 ID 非法")
 	}
 	preset, err := s.Svc.SetCurrentPreset(c.Context(), userIDFrom(c), id)
 	if err != nil {
@@ -962,7 +962,7 @@ func (s *Server) setCurrentPreset(c *fiber.Ctx) error {
 func (s *Server) getReplay(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "battle id 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "battle id 非法")
 	}
 	// ⚠️ 第 75 轮：把 caller 传进去做归属校验。
 	//
@@ -984,10 +984,10 @@ func (s *Server) abandonBattle(c *fiber.Ctx) error {
 		TokenID int64 `json:"token_id"`
 	}
 	if err := c.BodyParser(&body); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	if body.TokenID <= 0 {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "token_id 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "token_id 非法")
 	}
 	refunded, err := s.Svc.AbandonBattle(c.Context(), userIDFrom(c), body.TokenID)
 	if err != nil {
@@ -1002,7 +1002,7 @@ func (s *Server) verifyReplay(c *fiber.Ctx) error {
 		ReplayHash string `json:"replay_hash"`
 	}
 	if err := c.BodyParser(&body); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	res, err := s.Svc.VerifyReplay(c.Context(), userIDFrom(c), body.BattleID, body.ReplayHash)
 	if err != nil {
@@ -1053,7 +1053,7 @@ func (s *Server) leaderboard(c *fiber.Ctx) error {
 		kind = c.Query("type") // 显式传了 —— 哪怕是空串，也要走下面的校验
 	}
 	if !leaderboardKinds[kind] {
-		return fail(c, fiber.StatusBadRequest, "bad_input",
+		return fail(c, fiber.StatusBadRequest, CodeBadInput,
 			"type 只能是 power / stage / efficiency")
 	}
 	limit, err := queryInt(c, "limit", 50)
@@ -1098,7 +1098,7 @@ func (s *Server) myRank(c *fiber.Ctx) error {
 		kind = c.Query("type")
 	}
 	if !leaderboardKinds[kind] {
-		return fail(c, fiber.StatusBadRequest, "bad_input",
+		return fail(c, fiber.StatusBadRequest, CodeBadInput,
 			"type 只能是 power / stage / efficiency")
 	}
 	out, err := s.Svc.MyRank(c.Context(), userIDFrom(c), kind)
@@ -1155,7 +1155,7 @@ func (s *Server) allocateMastery(c *fiber.Ctx) error {
 		NodeID int `json:"node_id"`
 	}
 	if err := c.BodyParser(&body); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	if err := s.Svc.AllocateMastery(c.Context(), userIDFrom(c), body.NodeID); err != nil {
 		return failErr(c, err)
@@ -1203,7 +1203,7 @@ func (s *Server) saveEquipment(c *fiber.Ctx) error {
 		EquipmentIDs []int `json:"equipment_ids"`
 	}
 	if err := c.BodyParser(&body); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	items, err := s.Svc.SetEquippedEquipment(c.Context(), userIDFrom(c), body.EquipmentIDs)
 	if err != nil {
@@ -1233,7 +1233,7 @@ func (s *Server) tasks(c *fiber.Ctx) error {
 		scope = c.Query("scope")
 	}
 	if !service.ValidTaskScope(scope) {
-		return fail(c, fiber.StatusBadRequest, "bad_input",
+		return fail(c, fiber.StatusBadRequest, CodeBadInput,
 			"scope 只能是 daily / weekly / achievement")
 	}
 	items, err := s.Svc.LoadTasks(c.Context(), userIDFrom(c), scope)
@@ -1246,7 +1246,7 @@ func (s *Server) tasks(c *fiber.Ctx) error {
 func (s *Server) claimTask(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "task id 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "task id 非法")
 	}
 	reward, err := s.Svc.ClaimTask(c.Context(), userIDFrom(c), id)
 	if err != nil {
@@ -1292,7 +1292,7 @@ func (s *Server) shop(c *fiber.Ctx) error {
 func (s *Server) buy(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "item id 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "item id 非法")
 	}
 	granted, err := s.Svc.Buy(c.Context(), userIDFrom(c), id)
 	if err != nil {
@@ -1306,7 +1306,7 @@ func (s *Server) redeem(c *fiber.Ctx) error {
 		Code string `json:"code"`
 	}
 	if err := c.BodyParser(&body); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	reward, err := s.Svc.Redeem(c.Context(), userIDFrom(c), body.Code)
 	if err != nil {

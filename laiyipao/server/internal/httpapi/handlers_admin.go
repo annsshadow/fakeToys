@@ -33,7 +33,7 @@ func (s *Server) listDefenses(c *fiber.Ctx) error {
 func (s *Server) saveDefense(c *fiber.Ctx) error {
 	var in service.SaveDefenseInput
 	if err := c.BodyParser(&in); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	view, err := s.Svc.SaveDefense(c.Context(), userIDFrom(c), in)
 	if err != nil {
@@ -53,11 +53,11 @@ func (s *Server) deleteMyDefense(c *fiber.Ctx) error {
 func (s *Server) challengeDefense(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "defense id 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "defense id 非法")
 	}
 	var in service.ChallengeInput
 	if err := c.BodyParser(&in); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	res, err := s.Svc.ChallengeDefense(c.Context(), userIDFrom(c), id, in)
 	if err != nil {
@@ -74,7 +74,7 @@ func (s *Server) adminLogin(c *fiber.Ctx) error {
 		Password string `json:"password"`
 	}
 	if err := c.BodyParser(&body); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	tp, err := s.Svc.AdminLogin(c.Context(), body.Username, body.Password)
 	if err != nil {
@@ -147,7 +147,7 @@ func (s *Server) adminLevels(c *fiber.Ctx) error {
 func (s *Server) adminLevelWaves(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "level id 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "level id 非法")
 	}
 	waves, err := s.Svc.AdminLevelWaves(c.Context(), id)
 	if err != nil {
@@ -159,11 +159,11 @@ func (s *Server) adminLevelWaves(c *fiber.Ctx) error {
 func (s *Server) adminUpdateLevel(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil || id < 1 || id > 100 {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "level id 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "level id 非法")
 	}
 	var patch map[string]any
 	if err := c.BodyParser(&patch); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	lvl, err := s.Svc.AdminUpdateLevel(c.Context(), id, patch,
 		service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()})
@@ -195,11 +195,11 @@ func (s *Server) adminRegenerateLevels(c *fiber.Ctx) error {
 	// 这里刻意**要求**带：破坏性操作的确认口令不该有「兼容旧客户端」的例外。
 	if len(bytes.TrimSpace(c.Body())) > 0 {
 		if err := c.BodyParser(&body); err != nil {
-			return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+			return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 		}
 	}
 	if body.Confirm != "regenerate" {
-		return fail(c, fiber.StatusBadRequest, "bad_input",
+		return fail(c, fiber.StatusBadRequest, CodeBadInput,
 			"重建全部 100 关需要显式确认：请求体里带 confirm: \"regenerate\"")
 	}
 	n, err := s.Svc.AdminRegenerateLevels(c.Context(),
@@ -221,11 +221,11 @@ func (s *Server) adminSkills(c *fiber.Ctx) error {
 func (s *Server) adminUpdateSkill(c *fiber.Ctx) error {
 	id, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "skill id 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "skill id 非法")
 	}
 	var patch map[string]any
 	if err := c.BodyParser(&patch); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	skill, err := s.Svc.AdminUpdateSkill(c.Context(), id, patch,
 		service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()})
@@ -377,7 +377,7 @@ func (s *Server) adminExportUsers(c *fiber.Ctx) error {
 func (s *Server) adminUserDetail(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil || id < 1 {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "user id 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "user id 非法")
 	}
 	detail, err := s.Svc.AdminUserDetail(c.Context(), id)
 	if err != nil {
@@ -391,7 +391,7 @@ func (s *Server) adminUserDetail(c *fiber.Ctx) error {
 func (s *Server) adminExportUserFlows(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil || id < 1 {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "user id 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "user id 非法")
 	}
 	data, err := s.Svc.AdminExportUserFlows(c.Context(), id)
 	if err != nil {
@@ -405,7 +405,7 @@ func (s *Server) adminExportUserFlows(c *fiber.Ctx) error {
 func (s *Server) adminBanUser(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "user id 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "user id 非法")
 	}
 	var body struct {
 		Reason string `json:"reason"`
@@ -435,7 +435,7 @@ func (s *Server) adminBanUser(c *fiber.Ctx) error {
 	// 这与第 104 轮 `queryInt` 的「键不存在」vs「值为空」同源。
 	if len(bytes.TrimSpace(c.Body())) > 0 {
 		if err := c.BodyParser(&body); err != nil {
-			return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+			return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 		}
 	}
 	if body.Reason == "" {
@@ -453,7 +453,7 @@ func (s *Server) adminBanUser(c *fiber.Ctx) error {
 func (s *Server) adminUnbanUser(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "user id 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "user id 非法")
 	}
 	u, err := s.Svc.AdminSetUserStatus(c.Context(), id, false, "",
 		service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()})
@@ -466,14 +466,14 @@ func (s *Server) adminUnbanUser(c *fiber.Ctx) error {
 func (s *Server) adminGrantUser(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "user id 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "user id 非法")
 	}
 	var body struct {
 		Currency string `json:"currency"`
 		Amount   int64  `json:"amount"`
 	}
 	if err := c.BodyParser(&body); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	// R37：钱包变动与审计同一事务（符号仍由服务层按 R109 口径落进事件名）。
 	wallet, err := s.Svc.AdminGrantCurrency(c.Context(), id, body.Currency, body.Amount,
@@ -491,13 +491,13 @@ func (s *Server) adminGrantUser(c *fiber.Ctx) error {
 func (s *Server) adminResetPlayerPassword(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "user id 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "user id 非法")
 	}
 	var body struct {
 		NewPassword string `json:"new_password"`
 	}
 	if err := c.BodyParser(&body); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	if err := s.Svc.AdminResetPlayerPassword(c.Context(), id, body.NewPassword,
 		service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()}); err != nil {
@@ -691,15 +691,15 @@ func (s *Server) adminSetRecomputeMode(c *fiber.Ctx) error {
 		Confirm string `json:"confirm"`
 	}
 	if err := c.BodyParser(&body); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	if body.Confirm != "confirm" {
-		return fail(c, fiber.StatusBadRequest, "bad_input",
+		return fail(c, fiber.StatusBadRequest, CodeBadInput,
 			"切档需要显式确认：请求体里带 confirm: \"confirm\"")
 	}
 	prev := s.Svc.RecomputeMode()
 	if err := s.Svc.SetRecomputeMode(body.Mode); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_input", err.Error())
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, err.Error())
 	}
 	s.Svc.Audit(c.Context(), adminIDFrom(c), "set_recompute_mode", body.Mode, c.IP(),
 		fiber.Map{"from": prev, "to": body.Mode})
@@ -724,7 +724,7 @@ func (s *Server) adminSetRecomputeMode(c *fiber.Ctx) error {
 func (s *Server) adminBattleDetail(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "battle id 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "battle id 非法")
 	}
 	// 运营侧**不加**归属过滤 —— 查任意玩家的战报本来就是它的职责
 	// （见 service.AdminGetReplay 的注释）。
@@ -753,7 +753,7 @@ func (s *Server) adminBattleDetail(c *fiber.Ctx) error {
 func (s *Server) adminVerifyBattle(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil || id < 1 {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "battle id 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "battle id 非法")
 	}
 	var body struct {
 		ReplayHash string `json:"replay_hash"`
@@ -773,21 +773,21 @@ func (s *Server) adminVerifyBattle(c *fiber.Ctx) error {
 	// 现在两处都检查，理由写在各自注释里。
 	if len(bytes.TrimSpace(c.Body())) > 0 {
 		if err := c.BodyParser(&body); err != nil {
-			return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+			return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 		}
 	}
 	// 空的 actual hash 会被判成「不匹配」，把一条**没验过**的记录
 	// 写成「验过且不符」—— 那是凭空制造一条指控。
 	// 所以这里直接拒掉，与空白的处理方式保持一致。
 	if body.ReplayHash == "" {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "缺少 replay_hash")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "缺少 replay_hash")
 	}
 	// adminIDFrom 在取不到时返回 0，而 0 不是合法的 admin_users.id
 	// （`admin_verifier_id` 是外键）—— 插进去会撞 CHECK 或外键约束。
 	// 与其让那条约束报错（500，信息还很难读），不如明确拒绝。
 	adminID := adminIDFrom(c)
 	if adminID == 0 {
-		return fail(c, fiber.StatusUnauthorized, "unauthorized", "缺少管理员身份")
+		return fail(c, fiber.StatusUnauthorized, CodeUnauthorized, "缺少管理员身份")
 	}
 	res, err := s.Svc.AdminVerifyReplay(c.Context(), adminID, id, body.ReplayHash,
 		service.AdminAuditCtx{AdminID: adminID, IP: c.IP()})
@@ -886,7 +886,7 @@ func (s *Server) adminExportDefenseChallenges(c *fiber.Ctx) error {
 func (s *Server) adminDeleteDefense(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil || id < 1 {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "防线 ID 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "防线 ID 非法")
 	}
 	if err := s.Svc.AdminDeleteDefense(c.Context(), id,
 		service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()}); err != nil {
@@ -950,11 +950,11 @@ func (s *Server) adminExportOrders(c *fiber.Ctx) error {
 func (s *Server) adminUpdateShop(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "item id 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "item id 非法")
 	}
 	var patch map[string]any
 	if err := c.BodyParser(&patch); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	item, err := s.Svc.AdminUpdateShopItem(c.Context(), id, patch,
 		service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()})
@@ -1026,10 +1026,10 @@ func (s *Server) adminCreateAnnouncement(c *fiber.Ctx) error {
 		Published bool   `json:"published"`
 	}
 	if err := c.BodyParser(&body); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	if body.Title == "" || body.Body == "" {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "标题与正文不能为空")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "标题与正文不能为空")
 	}
 	item, err := s.Svc.AdminCreateAnnouncement(c.Context(), body.Title, body.Body, body.Published,
 		service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()})
@@ -1043,7 +1043,7 @@ func (s *Server) adminCreateAnnouncement(c *fiber.Ctx) error {
 func (s *Server) adminUpdateAnnouncement(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil || id < 1 {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "公告 ID 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "公告 ID 非法")
 	}
 	var body struct {
 		Title     string `json:"title"`
@@ -1051,7 +1051,7 @@ func (s *Server) adminUpdateAnnouncement(c *fiber.Ctx) error {
 		Published bool   `json:"published"`
 	}
 	if err := c.BodyParser(&body); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	item, err := s.Svc.AdminUpdateAnnouncement(c.Context(), int(id), body.Title, body.Body, body.Published,
 		service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()})
@@ -1065,7 +1065,7 @@ func (s *Server) adminUpdateAnnouncement(c *fiber.Ctx) error {
 func (s *Server) adminDeleteAnnouncement(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil || id < 1 {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "公告 ID 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "公告 ID 非法")
 	}
 	if err := s.Svc.AdminDeleteAnnouncement(c.Context(), int(id),
 		service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()}); err != nil {
@@ -1184,10 +1184,10 @@ func (s *Server) adminCreateRedeemCode(c *fiber.Ctx) error {
 		ExpiresAt string         `json:"expires_at"`
 	}
 	if err := c.BodyParser(&body); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	if body.Code == "" || len(body.Reward) == 0 {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "兑换码与奖励不能为空")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "兑换码与奖励不能为空")
 	}
 	if body.MaxUses <= 0 {
 		body.MaxUses = 1
@@ -1202,7 +1202,7 @@ func (s *Server) adminCreateRedeemCode(c *fiber.Ctx) error {
 		// 「过期」在部署机时区漂移 8 小时。
 		parsed, err := time.Parse(time.RFC3339, s)
 		if err != nil {
-			return fail(c, fiber.StatusBadRequest, "bad_input",
+			return fail(c, fiber.StatusBadRequest, CodeBadInput,
 				"expires_at 必须是 RFC3339 格式（如 2026-12-31T23:59:59Z），不能是裸本地时间")
 		}
 		expiresAt = &parsed
@@ -1227,13 +1227,13 @@ func (s *Server) adminCreateRedeemCodesBatch(c *fiber.Ctx) error {
 		ExpiresAt string         `json:"expires_at"`
 	}
 	if err := c.BodyParser(&body); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	if body.Count <= 0 || body.Count > 100 {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "count 必须在 1..100")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "count 必须在 1..100")
 	}
 	if len(body.Reward) == 0 {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "奖励不能为空")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "奖励不能为空")
 	}
 	if body.MaxUses <= 0 {
 		body.MaxUses = 1
@@ -1242,7 +1242,7 @@ func (s *Server) adminCreateRedeemCodesBatch(c *fiber.Ctx) error {
 	if s := strings.TrimSpace(body.ExpiresAt); s != "" {
 		parsed, err := time.Parse(time.RFC3339, s)
 		if err != nil {
-			return fail(c, fiber.StatusBadRequest, "bad_input",
+			return fail(c, fiber.StatusBadRequest, CodeBadInput,
 				"expires_at 必须是 RFC3339 格式（如 2026-12-31T23:59:59Z），不能是裸本地时间")
 		}
 		expiresAt = &parsed
@@ -1260,13 +1260,13 @@ func (s *Server) adminCreateRedeemCodesBatch(c *fiber.Ctx) error {
 func (s *Server) adminSetRedeemCodeEnabled(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil || id < 1 {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "兑换码 ID 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "兑换码 ID 非法")
 	}
 	var body struct {
 		Enabled bool `json:"enabled"`
 	}
 	if err := c.BodyParser(&body); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	item, err := s.Svc.AdminSetRedeemCodeEnabled(c.Context(), int(id), body.Enabled,
 		service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()})
@@ -1280,7 +1280,7 @@ func (s *Server) adminSetRedeemCodeEnabled(c *fiber.Ctx) error {
 func (s *Server) adminUpdateRedeemCode(c *fiber.Ctx) error {
 	id, err := strconv.ParseInt(c.Params("id"), 10, 64)
 	if err != nil || id < 1 {
-		return fail(c, fiber.StatusBadRequest, "bad_input", "兑换码 ID 非法")
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, "兑换码 ID 非法")
 	}
 	var body struct {
 		Reward    map[string]int `json:"reward"`
@@ -1288,14 +1288,14 @@ func (s *Server) adminUpdateRedeemCode(c *fiber.Ctx) error {
 		ExpiresAt string         `json:"expires_at"`
 	}
 	if err := c.BodyParser(&body); err != nil {
-		return fail(c, fiber.StatusBadRequest, "bad_json", "请求体不是合法 JSON")
+		return fail(c, fiber.StatusBadRequest, CodeBadJSON, "请求体不是合法 JSON")
 	}
 	var expiresAt *time.Time
 	if s := strings.TrimSpace(body.ExpiresAt); s != "" {
 		// 与创建同口径：RFC3339，不接受裸本地时间。
 		parsed, err := time.Parse(time.RFC3339, s)
 		if err != nil {
-			return fail(c, fiber.StatusBadRequest, "bad_input",
+			return fail(c, fiber.StatusBadRequest, CodeBadInput,
 				"expires_at 必须是 RFC3339 格式（如 2026-12-31T23:59:59Z）")
 		}
 		expiresAt = &parsed

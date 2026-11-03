@@ -49,6 +49,14 @@ type ErrorBody struct {
 
 // fail 写出错误响应。
 func fail(c *fiber.Ctx, status int, code, message string) error {
+	// R68：Retry-After 由 errorcodes.go 的契约表**统一**写入。
+	//
+	// 此前它只在 failErr 的 503 分支里手动写了一次，于是同类的
+	// 503（export_busy / db_unavailable）与 429（rate_limited）
+	// 都不带这个头 —— 客户端只能猜等多久，或者干脆不重试。
+	if contract, ok := contractOf(code); ok && contract.RetryAfter != "" {
+		c.Set(fiber.HeaderRetryAfter, contract.RetryAfter)
+	}
 	return c.Status(status).JSON(APIError{Error: ErrorBody{Code: code, Message: message}})
 }
 
@@ -59,25 +67,25 @@ func fail(c *fiber.Ctx, status int, code, message string) error {
 func failErr(c *fiber.Ctx, err error) error {
 	switch {
 	case errors.Is(err, service.ErrUnauthorized):
-		return fail(c, fiber.StatusUnauthorized, "unauthorized", err.Error())
+		return fail(c, fiber.StatusUnauthorized, CodeUnauthorized, err.Error())
 	case errors.Is(err, service.ErrForbidden):
-		return fail(c, fiber.StatusForbidden, "forbidden", err.Error())
+		return fail(c, fiber.StatusForbidden, CodeForbidden, err.Error())
 	case errors.Is(err, service.ErrNotFound):
-		return fail(c, fiber.StatusNotFound, "not_found", err.Error())
+		return fail(c, fiber.StatusNotFound, CodeNotFound, err.Error())
 	case errors.Is(err, service.ErrBadInput):
-		return fail(c, fiber.StatusBadRequest, "bad_input", err.Error())
+		return fail(c, fiber.StatusBadRequest, CodeBadInput, err.Error())
 	case errors.Is(err, service.ErrExportTooLarge):
 		// 413 而不是 400：参数没写错，是筛选范围太宽导致结果超上限。
 		// 文案带上了实际行数与上限，运营能据此缩小范围。
-		return fail(c, fiber.StatusRequestEntityTooLarge, "export_too_large", err.Error())
+		return fail(c, fiber.StatusRequestEntityTooLarge, CodeExportTooLarge, err.Error())
 	case errors.Is(err, errExportBusy):
 		// 503 而不是 429/500：这是「资源暂时被占用」，可重试，且与限流
 		// （按 IP/分钟）区分开 —— 运营排队 3 秒后重试即可成功。
-		return fail(c, fiber.StatusServiceUnavailable, "export_busy", "导出任务繁忙，请稍后重试")
+		return fail(c, fiber.StatusServiceUnavailable, CodeExportBusy, "导出任务繁忙，请稍后重试")
 	}
 	// 结算拒绝类错误统一 422：请求格式对，但内容不可信
 	if isSettleRejection(err) {
-		return fail(c, fiber.StatusUnprocessableEntity, "settle_rejected", err.Error())
+		return fail(c, fiber.StatusUnprocessableEntity, CodeSettleRejected, err.Error())
 	}
 	// 数据库/上游依赖的**瞬时**故障 → 503 + Retry-After。
 	//
@@ -86,15 +94,14 @@ func failErr(c *fiber.Ctx, err error) error {
 	// 服务有 bug」，重试只会放大故障。此前断连/超时全部落到 500，
 	// 客户端既不能退避也不能区分，只能把「数据库抖一下」显示成「服务坏了」。
 	if transientDependencyError(err) {
-		// 5 秒：大于一次 pgx 连接重建/语句重试的成本，又短于用户耐心。
-		c.Set(fiber.HeaderRetryAfter, "5")
+		// Retry-After 由 fail() 按 CodeServiceUnavailable 的契约写入（5 秒）。
 		logAt(logWarn, "[http] %s %s -> 503: %v", c.Method(), c.OriginalURL(), err)
-		return fail(c, fiber.StatusServiceUnavailable, "service_unavailable", "依赖服务暂时不可用，请稍后重试")
+		return fail(c, fiber.StatusServiceUnavailable, CodeServiceUnavailable, "依赖服务暂时不可用，请稍后重试")
 	}
 	// 其余一律 500 + 通用文案。
 	// 真实原因必须落到服务端日志（error 级），出问题时线上才能定位。
 	logAt(logError, "[http] %s %s -> 500: %v", c.Method(), c.OriginalURL(), err)
-	return fail(c, fiber.StatusInternalServerError, "internal_error", "服务内部错误")
+	return fail(c, fiber.StatusInternalServerError, CodeInternalError, "服务内部错误")
 }
 
 // transientDependencyError 判断错误是否属于「稍后重试可能成功」的依赖故障。
@@ -288,7 +295,7 @@ func requireAdmin(s *service.Service) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		token := bearerToken(c)
 		if token == "" {
-			return fail(c, fiber.StatusUnauthorized, "unauthorized", "缺少 Authorization 头")
+			return fail(c, fiber.StatusUnauthorized, CodeUnauthorized, "缺少 Authorization 头")
 		}
 		adminID, role, err := s.ResolveAdminSession(c.Context(), token)
 		if err != nil {
@@ -319,7 +326,7 @@ func requireWritable() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		role, _ := c.Locals("admin_role").(string)
 		if role != "admin" && role != "ops" {
-			return fail(c, fiber.StatusForbidden, "role_not_writable",
+			return fail(c, fiber.StatusForbidden, CodeRoleNotWritable,
 				fmt.Sprintf("当前角色 %q 不可执行写操作（仅 admin/ops）", role))
 		}
 		return c.Next()
@@ -346,7 +353,7 @@ func recoverPanic() fiber.Handler {
 		defer func() {
 			if r := recover(); r != nil {
 				log.Printf("[panic] %s %s: %v\n%s", c.Method(), c.OriginalURL(), r, debug.Stack())
-				err = fail(c, fiber.StatusInternalServerError, "internal_error", "服务内部错误")
+				err = fail(c, fiber.StatusInternalServerError, CodeInternalError, "服务内部错误")
 			}
 		}()
 		return c.Next()
@@ -358,7 +365,7 @@ func requireUser(s *service.Service) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		token := bearerToken(c)
 		if token == "" {
-			return fail(c, fiber.StatusUnauthorized, "unauthorized", "缺少 Authorization 头")
+			return fail(c, fiber.StatusUnauthorized, CodeUnauthorized, "缺少 Authorization 头")
 		}
 		userID, err := s.ResolveUser(c.Context(), token)
 		if err != nil {
@@ -741,7 +748,7 @@ func perIPLimiter(name string, limitPerMinute int) fiber.Handler {
 			return name + ":" + c.IP()
 		},
 		LimitReached: func(c *fiber.Ctx) error {
-			return fail(c, fiber.StatusTooManyRequests, "rate_limited",
+			return fail(c, fiber.StatusTooManyRequests, CodeRateLimited,
 				"请求过于频繁，请稍后再试")
 		},
 	})
@@ -818,7 +825,7 @@ func authRateLimit(name string, limitPerMinute int) fiber.Handler {
 			return fmt.Sprintf("%s:user%d", name, userIDFrom(c))
 		},
 		LimitReached: func(c *fiber.Ctx) error {
-			return fail(c, fiber.StatusTooManyRequests, "rate_limited",
+			return fail(c, fiber.StatusTooManyRequests, CodeRateLimited,
 				"操作过于频繁，请稍后再试")
 		},
 	})

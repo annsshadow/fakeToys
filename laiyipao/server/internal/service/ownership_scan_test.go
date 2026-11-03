@@ -9,6 +9,7 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"sort"
 	"strings"
@@ -49,7 +50,7 @@ import (
 // userScopedTables 是必须带归属过滤的表（按前缀匹配）。
 const userTablePrefix = "user_"
 
-// battleScopedTables 是没有 `user_` 前缀但同样按用户分区的表，
+// ownerScopedTables 是没有 `user_` 前缀但同样按用户分区的表，
 // 映射到它们的**归属列名**。
 //
 // ⚠️ 归属列名**不统一**：绝大多数表叫 `user_id`，
@@ -59,11 +60,52 @@ const userTablePrefix = "user_"
 // 我第一版只认 `USER_ID`，于是那三张表的合法查询全被误报 ——
 // 而**守卫误报比漏报更危险**：它会让人以为某处没守，
 // 然后去「修」一个本来正确的地方，或者写一条多余的过滤。
-var battleScopedTables = map[string]string{
+//
+// ⚠️ R68：这份表原来只登记了 4 张（叫 battleScopedTables），
+// 而库里**还有 8 张带 user_id 却没有 user_ 前缀的表**在守卫视野之外：
+// `wallet_flows` / `orders` / `redeem_usages` / `ad_rewards` /
+// `offline_rewards` / `level_stars` / `defense_works` / `settle_recomputes`。
+//
+// 它们当前的查询**恰好**都带归属过滤 —— 所以今天没有可利用的越权。
+// 但那正是这类守卫最危险的状态：**保护范围比缺陷范围小**，
+// 而守卫的报告永远是绿的。
+//
+// 集合缩小（有人删表/改名）或新增无前缀的用户表时，守卫会**静默失效**。
+// 所以配套的 `TestOwnerScopedTableRegistryCoversSchema` 直接从
+// migrations 里读出「所有带 user_id 列的表」，逐张核对是否登记 ——
+// 集合完整性不再靠这份手写名单自觉。
+var ownerScopedTables = map[string]string{
 	"battle_records":     "user_id",
 	"battle_tokens":      "user_id",
 	"defenses":           "owner_id",
 	"defense_challenges": "challenger_id",
+	// R68 补齐的 8 张。
+	"wallet_flows":      "user_id",
+	"orders":            "user_id",
+	"redeem_usages":     "user_id",
+	"ad_rewards":        "user_id",
+	"offline_rewards":   "user_id",
+	"level_stars":       "user_id",
+	"defense_works":     "user_id",
+	"settle_recomputes": "user_id",
+}
+
+// nonOwnerScopedTables 是**查询不以归属为轴**的用户相关表。
+//
+// 它们有 user_id / verifier_id 列，但定位方式不是「调用方的 id」：
+// 会话按随机 token 定位、验真按 battle_id 定位。
+//
+// ⚠️ 必须逐条写理由：这张表存在的意义是「我确实看过这张表，
+// 并确认它不该按用户过滤」，而不是「扫描器看不见它」。
+// 理由为空时 `TestOwnerScopedTableRegistryCoversSchema` 会红。
+var nonOwnerScopedTables = map[string]string{
+	// 会话表：按 token_hash 定位（登录/刷新），按 user_id 过滤就找不到会话。
+	// 归属由 token 的持有者决定，属于认证机制本身。
+	"refresh_tokens": "按 token_hash 定位的会话表；归属由令牌持有者决定，不按 user_id 查询",
+	// 游客旧凭证 → 用户映射：按 token 定位。
+	"guest_token_aliases": "按 token 定位的凭证别名表，不按 user_id 查询",
+	// 验真流水：按 battle_id 定位；battle_records 的归属校验在写入前完成。
+	"replay_verifications": "按 battle_id 记录的验真流水；归属校验由 battle_records 的查询前置保证",
 }
 
 // ownerScopedVerbs 是本守卫管辖的语句类型。
@@ -171,6 +213,17 @@ var ownershipExemptions = map[string]string{
 	// 扫描器不再把它识别为独立查询 —— 豁免键因此失效。
 	// 「今日签到数」仍是跨用户 COUNT（理由见 stats.go 的 dashboard counters 注释），
 	// 但现在由扫描器覆盖不到，继续留着这条豁免只会让人误以为那里有约束。
+
+	// ---- R68：守卫扩到无前缀的用户表后，暴露出的三处「合法跨用户」----
+	//
+	// 三条都是**聚合**：只返回计数/均值，不返回任何一行的私有数据，
+	// 且端点都在 requireAdmin 之后。按 user_id 过滤会让看板只统计一个人。
+	"adminapi.go.adminEconomyUncached:wallet_flows": "运营经济看板按 reason/currency 聚合流水，只吐计数与 SUM，" +
+		"不返回单行明细；端点挂在 admin 路由组（requireAdmin 之后）。按 user_id 过滤会让看板只统计一个人。",
+	"stats.go.adminDashboardUncached:level_stars": "运营看板统计全服平均关卡星级/等级经验与满星人数，" +
+		"是跨用户聚合而非单行读取；端点挂在 admin 路由组（requireAdmin 之后）。",
+	"recompute_gate.go.recomputeMismatchRate:settle_recomputes": "重算不一致率是**全服健康指标**（按时间窗统计 COUNT），" +
+		"不读取任何单行明细；由管理端重算入口/巡检调用，不属于玩家面。",
 }
 
 // scanUnscopedQueries 扫出「按用户分区但没有 user_id 过滤」的查询。
@@ -181,7 +234,19 @@ type unscopedQuery struct {
 	Fn    string
 }
 
-func scanUnscopedQueries(t *testing.T) []unscopedQuery {
+// minOwnerScopedStatements 是「本守卫至少看到多少条用户数据语句」的下限。
+//
+// ⚠️ 为什么需要下限（R68，用户点名的通用形态）：
+// 扫描器**只在异常时报警**，而「扫到 0 条」与「全都合格」
+// 在输出里完全一样。一旦表清单被删空、目录结构变了、
+// 或 SQL 字面量被抽进变量，守卫就变成永远绿的摆设 ——
+// 没人会发现它已经停止工作。
+//
+// 下限让「集合缩小」本身成为失败：数字掉下来就红。
+// 取值低于当前实测值但留出合理删表/重构的余量。
+const minOwnerScopedStatements = 40
+
+func scanUnscopedQueries(t *testing.T) (out []unscopedQuery, scanned int) {
 	t.Helper()
 	_, thisFile, _, ok := runtime.Caller(0)
 	if !ok {
@@ -194,7 +259,6 @@ func scanUnscopedQueries(t *testing.T) []unscopedQuery {
 		t.Fatalf("读目录失败：%v", err)
 	}
 
-	var out []unscopedQuery
 	fset := token.NewFileSet()
 	for _, e := range entries {
 		name := e.Name()
@@ -233,7 +297,13 @@ func scanUnscopedQueries(t *testing.T) []unscopedQuery {
 						continue
 					}
 					tbl, filtered := classifySQL(sql)
-					if tbl == "" || filtered {
+					if tbl == "" {
+						continue
+					}
+					// 命中一张按用户分区的表：计入「守卫视野」，
+					// 不论它是否合规 —— 这是下限断言的分子。
+					scanned++
+					if filtered {
 						continue
 					}
 					// 管理面：函数名带 Admin 前缀（见 const 的风险标注）
@@ -252,7 +322,7 @@ func scanUnscopedQueries(t *testing.T) []unscopedQuery {
 		}
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Pos < out[j].Pos })
-	return out
+	return out, scanned
 }
 
 // filterClauseOf 取出 SQL 的**过滤子句**（WHERE 之后、GROUP/ORDER/LIMIT 之前）。
@@ -487,7 +557,7 @@ func firstUserTable(sql string) (table, ownerCol string) {
 		if strings.HasPrefix(name, userTablePrefix) {
 			return name, "user_id"
 		}
-		if col, ok := battleScopedTables[name]; ok {
+		if col, ok := ownerScopedTables[name]; ok {
 			return name, col
 		}
 	}
@@ -513,7 +583,16 @@ func TestUserScopedQueriesMustFilterByOwner(t *testing.T) {
 	//
 	// 「扫描器是否可用」由 `TestOwnershipClassifierRejectsKnownShapes`
 	// 喂已知形状来回答，与「代码是否合规」分开。
-	found := scanUnscopedQueries(t)
+	found, scanned := scanUnscopedQueries(t)
+
+	// R68：集合规模下限。低于该值说明守卫**没看到它本该看到的东西**
+	// （表清单被删/目录变了/SQL 被抽成变量），而不是「代码变干净了」。
+	if scanned < minOwnerScopedStatements {
+		t.Fatalf("守卫只扫到 %d 条用户数据语句（下限 %d）—— "+
+			"要么 ownerScopedTables 被删空，要么扫描器失效；"+
+			"在这种情况下「0 处违规」没有任何意义",
+			scanned, minOwnerScopedStatements)
+	}
 
 	var violations []string
 	for _, q := range found {
@@ -529,7 +608,8 @@ func TestUserScopedQueriesMustFilterByOwner(t *testing.T) {
 	}
 
 	if len(violations) == 0 {
-		t.Logf("扫到 %d 处按用户分区的查询，全部带归属过滤", len(found))
+		t.Logf("扫到 %d 条按用户分区的语句，全部带归属过滤（豁免 %d 处）",
+			scanned, len(found))
 		return
 	}
 	sort.Strings(violations)
@@ -852,13 +932,16 @@ func TestOwnershipClassifierRejectsKnownShapes(t *testing.T) {
 // 前者在**修复完成后依然成立**（它统计的是「被本守卫管辖的查询数」，
 // 不是「违规数」），所以不会像「扫不到就 Fatal」那样变成负担。
 func TestOwnershipScannerSeesTheRealPackage(t *testing.T) {
-	found := scanUnscopedQueries(t)
+	found, scanned := scanUnscopedQueries(t)
 	if len(found) == 0 {
 		t.Fatal("扫描器一个未过滤的查询都没扫到。\n" +
 			"两种可能：(a) service 包里真的一个都没有 —— 那么这道守卫是空转；\n" +
 			"          (b) 扫描范围/解析坏了 —— 那么它会永远报告绿灯。\n" +
 			"请用 `TestOwnershipClassifierRejectsKnownShapes` 区分这两种情况。")
 	}
+	// R68：这行日志给出「守卫实际看到了多少条」。
+	// `TestUserScopedQueriesMustFilterByOwner` 用它对照下限。
+	t.Logf("守卫视野：%d 条按用户分区的语句，其中 %d 条未带归属过滤", scanned, len(found))
 	sort.Slice(found, func(i, j int) bool { return found[i].Pos < found[j].Pos })
 	seen := map[string]int{}
 	for _, q := range found {
@@ -884,7 +967,7 @@ func TestOwnershipExemptionKeysAreStillPresent(t *testing.T) {
 	if len(ownershipExemptions) == 0 {
 		t.Skip("当前没有豁免 —— 无需检查")
 	}
-	found := scanUnscopedQueries(t)
+	found, _ := scanUnscopedQueries(t)
 	present := map[string]bool{}
 	for _, q := range found {
 		present[exemptionKey(q)] = true
@@ -927,4 +1010,121 @@ func TestOwnershipExemptionReasonMustBeNonEmpty(t *testing.T) {
 	// 本用例通过「表里每条都非空」间接保证它未来一旦失效会立刻暴露：
 	// 若有人加了条空豁免，本条与主守卫会同时红。
 	t.Logf("当前豁免 %d 条，理由均非空", len(ownershipExemptions))
+}
+
+// minOwnerScopedTables 是 ownerScopedTables 的规模下限。
+//
+// 同上：守卫的**保护范围**不能靠手写名单自觉。名单被删空时，
+// 主守卫只会报告「0 处违规」，看起来一切正常。
+const minOwnerScopedTables = 12
+
+// TestOwnerScopedTableRegistryCoversSchema 从 migrations 反查
+// 「库里到底有多少张按用户分区的表」，逐张核对本守卫是否登记（R68）。
+//
+// # 为什么这是 R68 的核心
+//
+// 主守卫只看它**认识**的表。此前的名单把无 `user_` 前缀的表
+// 只登记了 4 张，而库里实际有 12 张 —— 8 张（wallet_flows / orders /
+// redeem_usages / ad_rewards / offline_rewards / level_stars /
+// defense_works / settle_recomputes）完全在守卫视野之外。
+//
+// 它们当时的查询恰好都带归属过滤，所以**没有**可利用的越权；
+// 但守卫看不见的地方，未来新增一条不带过滤的查询不会有人发现。
+//
+// 本用例把「名单是否完整」变成从 schema 推导的事实：
+//
+//	带 user_id / owner_id / challenger_id / verifier_id 列的表
+//	必须 要么以 user_ 开头，要么登记在 ownerScopedTables，
+//	要么登记在 nonOwnerScopedTables 并写明「为什么不该按归属查询」。
+//
+// 新增一张用户表却忘了登记 → 本条直接红，而不是等下一个越权报告。
+func TestOwnerScopedTableRegistryCoversSchema(t *testing.T) {
+	_, thisFile, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("runtime.Caller 失败")
+	}
+	migrationsDir := filepath.Join(filepath.Dir(thisFile), "..", "..", "migrations")
+	entries, err := os.ReadDir(migrationsDir)
+	if err != nil {
+		t.Fatalf("读 migrations 失败：%v", err)
+	}
+
+	// CREATE TABLE 块：表名 + 列定义正文。
+	// 正文用 `[^;]*?` 而不是贪婪匹配 —— 每条建表语句都以 `);` 结束，
+	// 中间不会出现裸分号（默认值里也没有）。
+	re := regexp.MustCompile(`(?si)CREATE TABLE\s+(?:IF NOT EXISTS\s+)?(\w+)\s*\(([^;]*?)\s*\);`)
+	ownerCols := []string{"user_id", "owner_id", "challenger_id", "verifier_id"}
+
+	tables := map[string]string{} // 表名 → 匹配到的归属列（仅收用户相关表）
+	sqlFiles := 0
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".sql") {
+			continue
+		}
+		sqlFiles++
+		raw, err := os.ReadFile(filepath.Join(migrationsDir, e.Name()))
+		if err != nil {
+			t.Fatalf("读 %s 失败：%v", e.Name(), err)
+		}
+		for _, m := range re.FindAllStringSubmatch(string(raw), -1) {
+			name, body := m[1], m[2]
+			for _, col := range ownerCols {
+				if regexp.MustCompile(`\b` + col + `\b`).MatchString(body) {
+					tables[name] = col
+					break
+				}
+			}
+		}
+	}
+
+	// 集合规模下限：migrations 解析失败/目录变更时，
+	// 「所有表都登记了」同样会是一句空话。
+	if sqlFiles < 10 {
+		t.Fatalf("只读到 %d 个迁移文件（下限 10）—— 路径或解析器失效", sqlFiles)
+	}
+	if len(tables) < 20 {
+		t.Fatalf("只解析出 %d 张按用户分区的表（下限 20）—— 建表正则已失效，本守卫等于没跑",
+			len(tables))
+	}
+
+	var missing []string
+	registered := 0
+	for name := range tables {
+		if strings.HasPrefix(name, userTablePrefix) {
+			continue // 前缀天然被主守卫覆盖
+		}
+		if _, ok := ownerScopedTables[name]; ok {
+			registered++
+			continue
+		}
+		if why, ok := nonOwnerScopedTables[name]; ok {
+			if strings.TrimSpace(why) == "" {
+				t.Errorf("表 %s 在 nonOwnerScopedTables 里但没有理由", name)
+			}
+			continue
+		}
+		missing = append(missing, name+"（归属列 "+tables[name]+"）")
+	}
+	sort.Strings(missing)
+	if len(missing) > 0 {
+		t.Fatalf("以下 %d 张按用户分区的表**没有登记**，主守卫看不见它们：\n  %s\n\n"+
+			"修法：加进 ownerScopedTables（映射归属列），"+
+			"或在 nonOwnerScopedTables 写明「为什么不按归属查询」。",
+			len(missing), strings.Join(missing, "\n  "))
+	}
+
+	// 名单不能反过来「比 schema 大」：登记了但库里没有的表
+	// 说明改名/删表后没人清理，会让下一个人以为它还被守着。
+	for name := range ownerScopedTables {
+		if _, ok := tables[name]; !ok {
+			t.Errorf("ownerScopedTables 登记了 %s，但 migrations 里没有这张用户表 —— 名单已过期", name)
+		}
+	}
+
+	if len(ownerScopedTables) < minOwnerScopedTables {
+		t.Fatalf("ownerScopedTables 只有 %d 项（下限 %d）—— 名单被删空后主守卫会静默失效",
+			len(ownerScopedTables), minOwnerScopedTables)
+	}
+	t.Logf("schema 中 %d 张按用户分区的表：user_ 前缀若干，登记 %d 张，豁免 %d 张",
+		len(tables), registered, len(nonOwnerScopedTables))
 }
