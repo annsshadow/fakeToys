@@ -126,13 +126,22 @@ pub async fn subscribe_express(
     let code = payload.code.unwrap_or_default();
     let company = payload.company.unwrap_or_default();
     let callback = payload.callback.unwrap_or_default();
+    // 请求校验（O10）：快递单号/公司为空属于请求缺陷，400 指认字段；
+    // 不能放行进 DB 靠约束炸成 500。
+    if code.is_empty() {
+        return Err(AppError::BadRequest("code（快递单号）必填".into()));
+    }
+    if company.is_empty() {
+        return Err(AppError::BadRequest("company（快递公司）必填".into()));
+    }
 
     let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
 
     client
         .execute(
-            "INSERT INTO x_express_subscribe (xid, \"xtrackingNumber\", xcompany, xcallback) VALUES ($1, $2, $3, $4)",
+            // id 列 NOT NULL 无默认值（曾漏写 → 23502 → 500，O10 实证）；与 xid 同值。
+            "INSERT INTO x_express_subscribe (id, xid, \"xtrackingNumber\", xcompany, xcallback) VALUES ($1, $1, $2, $3, $4)",
             &[&id, &code, &company, &callback],
         )
         .await

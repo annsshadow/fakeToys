@@ -6,7 +6,6 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use deadpool_postgres::Pool;
 use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, QueryOrder, QuerySelect, Set};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
@@ -103,14 +102,15 @@ pub async fn create_query(
     ))))
 }
 
-pub fn query_express_router(_pool: Pool) -> Router {
+pub fn query_express_router(db: DatabaseConnection) -> Router {
     Router::new()
         .route("/api/query/list", get(query_list))
         .route("/api/query/create", post(create_query))
+        .layer(Extension(db))
 }
 
-pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    query_express_router(pool)
+pub fn router(db: sea_orm::DatabaseConnection) -> axum::Router {
+    query_express_router(db)
 }
 
 #[cfg(test)]

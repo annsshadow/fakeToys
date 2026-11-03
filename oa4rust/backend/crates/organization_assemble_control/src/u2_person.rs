@@ -15,6 +15,10 @@ type PgRow = deadpool_postgres::tokio_postgres::Row;
 const PERSON_TABLE: &str = "x_org_person";
 const PERSON_COLS: &str =
     "id, name, mobile, email, unit_id, icon, status, status_des, creator, create_time::text";
+/// DISTINCT + JOIN 场景专用：裸列名在多表（x_org_group_member/sub_groups/auth_person_role
+/// 均含 id）下歧义（42702 → 500，O10 PG 日志实证），必须带 `p.` 前缀。
+const PERSON_COLS_P: &str =
+    "p.id, p.name, p.mobile, p.email, p.unit_id, p.icon, p.status, p.status_des, p.creator, p.create_time::text";
 
 #[allow(non_snake_case)]
 pub async fn resolve_person_id(
@@ -254,7 +258,8 @@ pub async fn person_reserve_mock_delete_to_get(
 
 async fn cursor_page(pool: &Pool, flag: &str, count: i64, next: bool) -> HandlerResult {
     let client = client_of(pool).await?;
-    let limit = count.clamp(1, MAX_BATCH_IDS as i64).to_string();
+    // LIMIT 参数 PG 定 int8：String 绑定 WrongType 客户端 500（O10 实证）——保留 i64。
+    let limit = count.clamp(1, MAX_BATCH_IDS as i64);
     let rows = if flag == "0" || flag == "(0)" {
         let sql = format!(
             "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1"
@@ -304,7 +309,7 @@ async fn persons_in_group(pool: &Pool, group_flag: &str, nested: bool) -> Handle
             SELECT id FROM x_org_group WHERE (id = $1 OR name = $1) AND deleted_at IS NULL
             {edge}
         )
-        SELECT DISTINCT {PERSON_COLS} FROM x_org_person p
+        SELECT DISTINCT {PERSON_COLS_P} FROM x_org_person p
           JOIN x_org_group_member gm ON gm.person_id = p.id
           JOIN sub_groups sg ON gm.group_id = sg.id
          WHERE p.deleted_at IS NULL"
@@ -339,7 +344,7 @@ pub async fn person_list_with_role(
 ) -> HandlerResult {
     let client = client_of(&pool).await?;
     let sql = format!(
-        "SELECT DISTINCT {PERSON_COLS} FROM x_org_person p
+        "SELECT DISTINCT {PERSON_COLS_P} FROM x_org_person p
           JOIN auth_person_role pr ON pr.person_id = p.id
           JOIN x_org_role r ON r.id = pr.role_id
          WHERE (r.id = $1 OR r.name = $1) AND p.deleted_at IS NULL"
@@ -695,8 +700,8 @@ pub async fn person_list_filter_paging(
     let client = client_of(&pool).await?;
     let page = page.max(1);
     let size = size.clamp(1, MAX_PAGE_SIZE);
-    let offset = ((page - 1).saturating_mul(size)).to_string();
-    let size_str = size.to_string();
+    // LIMIT/OFFSET 参数 PG 定为 int8：绑 String 会 WrongType 客户端 500（O10 实证）——保留 i64。
+    let offset = (page - 1).saturating_mul(size);
 
     let name = shared::db::escape_like(&normalize_key(opt(&body, &["name"]).unwrap_or_default()));
     let mobile =
@@ -724,9 +729,7 @@ pub async fn person_list_filter_paging(
     let rows = client
         .query(
             &data_sql,
-            &[
-                &name, &mobile, &email, &status, &unit_flag, &size_str, &offset,
-            ],
+            &[&name, &mobile, &email, &status, &unit_flag, &size, &offset],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -752,13 +755,13 @@ pub async fn person_list_delete_paging(
     let client = client_of(&pool).await?;
     let page = page.max(1);
     let size = size.clamp(1, MAX_PAGE_SIZE);
-    let offset = ((page - 1).saturating_mul(size)).to_string();
-    let size_str = size.to_string();
+    // 同 filter 族：LIMIT/OFFSET 保留 i64（String 绑定 WrongType 500，O10 实证）。
+    let offset = (page - 1).saturating_mul(size);
     let sql = format!(
         "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NOT NULL ORDER BY create_time DESC LIMIT $1 OFFSET $2"
     );
     let rows = client
-        .query(&sql, &[&size_str, &offset])
+        .query(&sql, &[&size, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
     list_ok(rows.iter().map(person_row_json).collect())

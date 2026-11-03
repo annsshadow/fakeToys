@@ -11,9 +11,11 @@ pub struct Model {
     pub forum_id: String,
     pub name: String,
     pub description: Option<String>,
-    pub order_number: i32,
+    // O10：列实为 BIGINT（migration 032），i32 解码必炸
+    pub order_number: i64,
     pub disable: bool,
-    pub create_time: Option<DateTime>,
+    // O10：列实为 TEXT（migration 032），DateTime 解码必炸
+    pub create_time: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

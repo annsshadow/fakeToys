@@ -418,4 +418,74 @@ mod tests {
         .await
         .expect("清理 x_bbs_reply 应成功");
     }
+
+    /// O10 族①证据：sea-orm 实体 ↔ TEXT/BIGINT 列类型对齐。
+    /// 改前实证：order_number BIGINT→i32、create_time TEXT→Option<DateTime>，
+    /// insert 的 RETURNING 全列解码必炸 → POST 500（见台账 O10 族①）。
+    /// 修后：合法体 HTTP POST → 200，且行可读回（类型解码正确）。
+    #[tokio::test]
+    async fn o10_forum_create_roundtrip_decode_ok() {
+        if !shared::testing::is_db_available().await {
+            eprintln!("skip: PG unavailable");
+            return;
+        }
+        use sea_orm::{ConnectionTrait, Statement};
+        let db = shared::testing::test_sea_orm_pool()
+            .await
+            .expect("PG 连接应成功");
+        let sess = shared::testing::test_session("o10-rt-user");
+        let app = crate::bbs_core_entity_router(db.clone())
+            .layer(axum::extract::Extension(sess));
+
+        let name = format!("o10-rt-{}", uuid::Uuid::new_v4());
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method(axum::http::Method::POST)
+                    .uri("/api/bbs/core/entity/forum")
+                    .header("content-type", "application/json")
+                    .body(Body::from(
+                        serde_json::to_vec(&serde_json::json!({
+                            "name": name,
+                            "description": "O10 族①回读证据"
+                        }))
+                        .unwrap(),
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            response.status(),
+            StatusCode::OK,
+            "族①修复后 POST forum 合法体必须 200（改前 RETURNING 解码 500）"
+        );
+
+        // 读回：断言 name 落库 + order_number/create_time 按新类型（i64/String）解码正常
+        let backend = db.get_database_backend();
+        let row = db
+            .query_one(Statement::from_sql_and_values(
+                backend,
+                "SELECT name, order_number, create_time FROM bbs_forum_info WHERE name = $1",
+                vec![name.clone().into()],
+            ))
+            .await
+            .expect("读回应成功")
+            .expect("行必须存在");
+        let got_name: Option<String> = row.try_get("", "name").ok().flatten();
+        let got_order: Option<i64> = row.try_get("", "order_number").ok().flatten();
+        let got_ct: Option<String> = row.try_get("", "create_time").ok().flatten();
+        assert_eq!(got_name.as_deref(), Some(name.as_str()));
+        assert_eq!(got_order, Some(0), "order_number 默认 0 且按 i64 解码");
+        assert!(got_ct.is_some(), "create_time 文本列应可读（TEXT→String）");
+
+        // 清理
+        db.execute(Statement::from_sql_and_values(
+            backend,
+            "DELETE FROM bbs_forum_info WHERE name = $1",
+            vec![name.into()],
+        ))
+        .await
+        .expect("清理 bbs_forum_info 应成功");
+    }
 }

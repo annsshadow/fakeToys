@@ -131,6 +131,52 @@ async fn person_can_manage_event(
     })
 }
 
+/// O9：事件读面门禁——公开日历（is_public）内的事件全员可读；其余仅
+/// 事件属主 / 所属日历属主 / 管理员可读。此前 event_get / event_rfc 无校验，
+/// 任何登录用户可读他人私密日程（IDOR 矩阵 canary 实证）。
+/// 返回 Ok(false) 兼含「事件不存在」——handler 统一以 403 回应，
+/// 不区分「不存在」与「无权」，不暴露存在性。
+async fn person_can_read_event(pool: &Pool, person: &str, event_id: &str) -> Result<bool, AppError> {
+    if require_person_is_manager(pool, person).await? {
+        return Ok(true);
+    }
+    let client = shared::db::acquire(pool).await?;
+    let row = client
+        .query_opt(
+            "SELECT e.createor AS event_owner, c.is_public AS cal_public, c.createor AS cal_owner \
+             FROM cal_event e LEFT JOIN cal_calendar c ON c.id = e.calendar_id \
+             WHERE e.id = $1 AND e.status = 'OPEN'",
+            &[&event_id.to_string()],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(match row {
+        Some(r) => {
+            if r.get::<_, Option<bool>>("cal_public").unwrap_or(false) {
+                return Ok(true);
+            }
+            let owner: Option<String> = r.get("event_owner");
+            let cal_owner: Option<String> = r.get("cal_owner");
+            owner.as_deref() == Some(person) || cal_owner.as_deref() == Some(person)
+        }
+        None => false,
+    })
+}
+
+/// O9：日历读面门禁——公开日历全员可读；私有仅属主/管理员。
+async fn person_can_read_calendar(
+    pool: &Pool,
+    person: &str,
+    calendar_id: &str,
+    is_public: bool,
+) -> Result<bool, AppError> {
+    if is_public {
+        return Ok(true);
+    }
+    person_can_manage_calendar(pool, person, calendar_id).await
+}
+
+
 // ═══════════════════════════ 第 1 批（既有 7 条）═════════════════════════
 
 /// GET /api/calendar_assemble_control/calendar/list/my —— 我能访问的日历（个人域）
@@ -196,7 +242,11 @@ pub async fn calendar_list_public(pool: Extension<Pool>) -> ApiResult {
 
 /// GET /api/calendar_assemble_control/calendar/{id} —— 按 ID 获取日历信息
 #[allow(non_snake_case)]
-pub async fn calendar_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
+pub async fn calendar_get(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(id): Path<String>,
+) -> ApiResult {
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -207,7 +257,14 @@ pub async fn calendar_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiR
         .await
         .map_err(|_| AppError::Internal)?;
     match row {
-        Some(r) => Ok(Json(ActionResult::success(calendar_row_to_value(&r)))),
+        Some(r) => {
+            // O9：私有日历仅属主/管理员可读（原无校验，矩阵 canary 实证泄露）
+            let is_public: bool = r.get::<_, Option<bool>>("is_public").unwrap_or(false);
+            if !person_can_read_calendar(&pool, &session.person_unique, &id, is_public).await? {
+                return Err(AppError::Forbidden);
+            }
+            Ok(Json(ActionResult::success(calendar_row_to_value(&r))))
+        }
         None => Ok(Json(ActionResult::error("calendar not found"))),
     }
 }
@@ -224,7 +281,15 @@ pub async fn calendar_ismanager(
 
 /// GET /api/calendar_assemble_control/event/{id} —— 按 ID 获取日程事件
 #[allow(non_snake_case)]
-pub async fn event_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
+pub async fn event_get(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(id): Path<String>,
+) -> ApiResult {
+    // O9：读面门禁（公开日历内事件全员可读；其余仅属主/管理员）——403 不暴露存在性
+    if !person_can_read_event(&pool, &session.person_unique, &id).await? {
+        return Err(AppError::Forbidden);
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -406,7 +471,11 @@ pub async fn calendar_ismanager_calendar(
 
 /// PUT /api/calendar_assemble_control/calendar/list/filter —— 按条件过滤日历
 #[allow(non_snake_case)]
-pub async fn calendar_list_filter(pool: Extension<Pool>, Json(body): Json<Value>) -> ApiResult {
+pub async fn calendar_list_filter(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(body): Json<Value>,
+) -> ApiResult {
     let client = shared::db::acquire(&pool).await?;
     // LIKE 模式绑定值转义，防 % _ 通配注入
     let name: Option<String> = body
@@ -417,18 +486,29 @@ pub async fn calendar_list_filter(pool: Extension<Pool>, Json(body): Json<Value>
         .get("type")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
-    let rows = client
-        .query(
-            "SELECT id, name, type, target, color, description, createor, is_public, status \
-             FROM cal_calendar \
-             WHERE status = 'OPEN' \
-               AND ($1::text IS NULL OR name ILIKE '%' || $1 || '%') \
-               AND ($2::text IS NULL OR type = $2) \
-             ORDER BY create_time DESC LIMIT 200",
-            &[&name, &cal_type],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
+    // O9：非管理员仅见公开日历+本人日历（原全局遍历可枚举他人私有日历名）
+    let is_manager = require_person_is_manager(&pool, &session.person_unique).await?;
+    let scope = if is_manager {
+        ""
+    } else {
+        " AND (is_public = true OR createor = $3)"
+    };
+    let sql = format!(
+        "SELECT id, name, type, target, color, description, createor, is_public, status \
+         FROM cal_calendar \
+         WHERE status = 'OPEN' \
+           AND ($1::text IS NULL OR name ILIKE '%' || $1 || '%') \
+           AND ($2::text IS NULL OR type = $2){scope} \
+         ORDER BY create_time DESC LIMIT 200"
+    );
+    let rows = if is_manager {
+        client.query(&sql, &[&name, &cal_type]).await
+    } else {
+        client
+            .query(&sql, &[&name, &cal_type, &session.person_unique])
+            .await
+    }
+    .map_err(|_| AppError::Internal)?;
     let items: Vec<Value> = rows.iter().map(calendar_row_to_value).collect();
     let total_items = items.len();
     Ok(Json(ActionResult::legacy_success(
@@ -442,8 +522,14 @@ pub async fn calendar_list_filter(pool: Extension<Pool>, Json(body): Json<Value>
 #[allow(non_snake_case)]
 pub async fn calendar_manager_list_with_person(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> ApiResult {
+    // O9：日历管理员名单属管理面信息——仅该日历属主/管理员可见
+    // （原无校验，任何登录用户可探私有日历名与属主，矩阵 canary 实证）
+    if !person_can_manage_calendar(&pool, &session.person_unique, &id).await? {
+        return Err(AppError::Forbidden);
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -641,7 +727,11 @@ pub async fn event_delete_all(
 
 /// PUT /api/calendar_assemble_control/event/list/filter —— 事件过滤列表
 #[allow(non_snake_case)]
-pub async fn event_list_filter(pool: Extension<Pool>, Json(body): Json<Value>) -> ApiResult {
+pub async fn event_list_filter(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(body): Json<Value>,
+) -> ApiResult {
     let client = shared::db::acquire(&pool).await?;
     let calendar_id: Option<String> = body
         .get("calendarId")
@@ -652,19 +742,31 @@ pub async fn event_list_filter(pool: Extension<Pool>, Json(body): Json<Value>) -
         .get("title")
         .and_then(|v| v.as_str())
         .map(shared::db::escape_like);
-    let rows = client
-        .query(
-            "SELECT id, calendar_id, title, content, location, start_time, end_time, \
-             all_day, visibility, status, createor \
-             FROM cal_event \
-             WHERE status = 'OPEN' \
-               AND ($1::text IS NULL OR calendar_id = $1) \
-               AND ($2::text IS NULL OR title ILIKE '%' || $2 || '%') \
-             ORDER BY start_time ASC LIMIT 200",
-            &[&calendar_id, &title],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
+    // O9：非管理员仅见「公开日历内事件 + 本人创建/本人日历内事件」
+    // （原全局遍历可枚举他人私密日程标题，矩阵 canary 实证）
+    let is_manager = require_person_is_manager(&pool, &session.person_unique).await?;
+    let scope = if is_manager {
+        ""
+    } else {
+        " AND (c.is_public = true OR e.createor = $3 OR c.createor = $3)"
+    };
+    let sql = format!(
+        "SELECT e.id, e.calendar_id, e.title, e.content, e.location, e.start_time, e.end_time, \
+         e.all_day, e.visibility, e.status, e.createor \
+         FROM cal_event e LEFT JOIN cal_calendar c ON c.id = e.calendar_id \
+         WHERE e.status = 'OPEN' \
+           AND ($1::text IS NULL OR e.calendar_id = $1) \
+           AND ($2::text IS NULL OR e.title ILIKE '%' || $2 || '%'){scope} \
+         ORDER BY e.start_time ASC LIMIT 200"
+    );
+    let rows = if is_manager {
+        client.query(&sql, &[&calendar_id, &title]).await
+    } else {
+        client
+            .query(&sql, &[&calendar_id, &title, &session.person_unique])
+            .await
+    }
+    .map_err(|_| AppError::Internal)?;
     let items: Vec<Value> = rows.iter().map(event_row_to_value).collect();
     let total_items = items.len();
     Ok(Json(ActionResult::legacy_success(
@@ -676,22 +778,35 @@ pub async fn event_list_filter(pool: Extension<Pool>, Json(body): Json<Value>) -
 
 /// PUT /api/calendar_assemble_control/event/list/filter/sample —— 事件过滤样例（限量）
 #[allow(non_snake_case)]
-pub async fn event_list_filter_sample(pool: Extension<Pool>, Json(body): Json<Value>) -> ApiResult {
+pub async fn event_list_filter_sample(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(body): Json<Value>,
+) -> ApiResult {
     let client = shared::db::acquire(&pool).await?;
     let calendar_id: Option<String> = body
         .get("calendarId")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
-    let rows = client
-        .query(
-            "SELECT id, calendar_id, title, start_time, status, createor \
-             FROM cal_event \
-             WHERE status = 'OPEN' AND ($1::text IS NULL OR calendar_id = $1) \
-             ORDER BY start_time ASC LIMIT 10",
-            &[&calendar_id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
+    // O9：与 event_list_filter 同口径收窄（原可枚举他人私密日程标题）
+    let is_manager = require_person_is_manager(&pool, &session.person_unique).await?;
+    let scope = if is_manager {
+        ""
+    } else {
+        " AND (c.is_public = true OR e.createor = $2 OR c.createor = $2)"
+    };
+    let sql = format!(
+        "SELECT e.id, e.calendar_id, e.title, e.start_time, e.status, e.createor \
+         FROM cal_event e LEFT JOIN cal_calendar c ON c.id = e.calendar_id \
+         WHERE e.status = 'OPEN' AND ($1::text IS NULL OR e.calendar_id = $1){scope} \
+         ORDER BY e.start_time ASC LIMIT 10"
+    );
+    let rows = if is_manager {
+        client.query(&sql, &[&calendar_id]).await
+    } else {
+        client.query(&sql, &[&calendar_id, &session.person_unique]).await
+    }
+    .map_err(|_| AppError::Internal)?;
     let items: Vec<Value> = rows
         .iter()
         .map(|r| {
@@ -802,7 +917,15 @@ pub async fn event_manage(
 
 /// GET /api/calendar_assemble_control/event/rfc/{id} —— 返回事件 RFC2445(iCal) 文本
 #[allow(non_snake_case)]
-pub async fn event_rfc(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
+pub async fn event_rfc(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(id): Path<String>,
+) -> ApiResult {
+    // O9：读面门禁（与 event_get 同口径）——RFC 导出含标题/时间/地点
+    if !person_can_read_event(&pool, &session.person_unique, &id).await? {
+        return Err(AppError::Forbidden);
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -1052,6 +1175,11 @@ pub async fn setting_create(
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
+    // 请求校验（O10）：code 有唯一约束 uq_cal_setting_code——空串首插成功、再插 23505 → 500；
+    // 空 code 属请求缺陷，400 指认字段。
+    if code.is_empty() {
+        return Err(AppError::BadRequest("code 必填".into()));
+    }
     let name = body
         .get("name")
         .and_then(|v| v.as_str())

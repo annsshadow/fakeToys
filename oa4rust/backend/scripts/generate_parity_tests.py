@@ -336,7 +336,10 @@ def build_args(params_str: str) -> str:
         parts = raw.split(":", 1)
         name = parts[0].strip()
         typ = parts[1].strip() if len(parts) > 1 else ""
-        if "Option" in typ and ("Pool" in typ or "pool" in typ.lower()):
+        if "DatabaseConnection" in typ:
+            # sea-orm 连接参数：懒连接不可达库（路由存在性测试无需真库）
+            args.append("shared::testing::mock_db().await")
+        elif "Option" in typ and ("Pool" in typ or "pool" in typ.lower()):
             args.append(f"Some(shared::testing::test_pool())")
         elif name == "pool" or "Pool" in typ:
             args.append("shared::testing::test_pool()")

@@ -563,8 +563,10 @@ pub async fn list_schedule(
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
-            "SELECT id, title, content, room_id, start_time, end_time, creator, create_time FROM x_meeting WHERE start_time >= NOW() AND start_time <= NOW() + INTERVAL '1 day' * $1 ORDER BY start_time ASC LIMIT 100",
-            &[&days],
+            // O10：INTERVAL * $1 的 $1 被 PG 定为 float8，i64 客户端序列化炸（WrongType）；
+            // start_time 等为 timestamp 列，row.get::<_, String> 有数据必 panic——to_char 对齐文本。
+            "SELECT id, title, content, room_id, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE start_time >= NOW() AND start_time <= NOW() + INTERVAL '1 day' * $1 ORDER BY start_time ASC LIMIT 100",
+            &[&(days as f64)],
         )
         .await
         .map_err(|_| AppError::Internal)?;

@@ -573,4 +573,32 @@ mod tests {
         .await
         .unwrap();
     }
+
+    /// O10 族②+③c 证据：{} 空体的 startTime/endTime 直绑 timestamp 列（WrongType 客户端 500，
+    /// PG 无日志）。修复后：请求校验先解析，空/非法 → 400 指认字段（不进 DB）。
+    #[tokio::test]
+    async fn o10_save_meeting_empty_body_400_names_start_time() {
+        if !shared::testing::is_db_available().await {
+            eprintln!("skip: PG unavailable");
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let sess = shared::testing::test_session("o10-meeting");
+        let res = crate::save_meeting(
+            axum::extract::Extension(pool),
+            axum::extract::Extension(sess),
+            axum::extract::Path("o10-nonexistent".to_string()),
+            axum::extract::Json(serde_json::json!({})),
+        )
+        .await;
+        match res {
+            Err(shared::error::AppError::BadRequest(msg)) => {
+                assert!(msg.contains("startTime"), "错误信息须指认 startTime 字段，实收: {msg}")
+            }
+            other => panic!("空体必须 400 BadRequest，实收: {}", match &other {
+                Err(e) => format!("{e:?}"),
+                Ok(_) => "Ok(200)".to_string(),
+            }),
+        }
+    }
 }

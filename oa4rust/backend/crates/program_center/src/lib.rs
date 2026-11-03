@@ -7251,6 +7251,14 @@ pub async fn prompterrorlog_list_id_next_count_date_date(
     pool: Extension<Pool>,
     Path((id, count, date)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // O9：date 解析为 NaiveDate 再传参——`$2::date` 配 String 参数会让
+    // tokio_postgres 序列化失败（"error serializing parameter"），全员 500；
+    // 非法日期明确 400 而非 500。
+    let Ok(date) = chrono::NaiveDate::parse_from_str(&date, "%Y-%m-%d") else {
+        return Err(AppError::BadRequest(format!(
+            "invalid date format (expect YYYY-MM-DD): {date}"
+        )));
+    };
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
@@ -7491,6 +7499,12 @@ pub async fn prompterrorlog_list_id_prev_count_date_date(
     pool: Extension<Pool>,
     Path((id, count, date)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // O9：同 next 变体——date 先解析为 NaiveDate，非法输入 400。
+    let Ok(date) = chrono::NaiveDate::parse_from_str(&date, "%Y-%m-%d") else {
+        return Err(AppError::BadRequest(format!(
+            "invalid date format (expect YYYY-MM-DD): {date}"
+        )));
+    };
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
@@ -8827,6 +8841,12 @@ pub async fn unexpectederrorlog_list_id_next_count_date_date(
     pool: Extension<Pool>,
     Path((id, count, date)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // O9：date 先解析为 NaiveDate，非法输入 400（String 直传 `$2::date` 必 500）。
+    let Ok(date) = chrono::NaiveDate::parse_from_str(&date, "%Y-%m-%d") else {
+        return Err(AppError::BadRequest(format!(
+            "invalid date format (expect YYYY-MM-DD): {date}"
+        )));
+    };
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
@@ -8947,6 +8967,12 @@ pub async fn unexpectederrorlog_list_id_prev_count_date_date(
     pool: Extension<Pool>,
     Path((id, count, date)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // O9：date 先解析为 NaiveDate，非法输入 400（String 直传 `$2::date` 必 500）。
+    let Ok(date) = chrono::NaiveDate::parse_from_str(&date, "%Y-%m-%d") else {
+        return Err(AppError::BadRequest(format!(
+            "invalid date format (expect YYYY-MM-DD): {date}"
+        )));
+    };
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
@@ -9338,17 +9364,25 @@ pub async fn warnlog_id(
 async fn warnlog_list(
     pool: &Pool,
     where_clause: &str,
+    count: i64,
     params: &[&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)],
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // where_clause may contain $1..$N placeholders for filter params.
-    // We always append LIMIT 100 to ensure we never exceed it.
+    // count 作为 LIMIT 参数追加在最后（占位符序号 = params.len()+1），
+    // Rust 侧夹紧到 [1, 100]：尊重契约的 count 入参，同时保留原有限流意图。
+    // （修复前 count 传入 params 但 SQL 不引用 → bind 参数个数不符，全量 500。）
+    let limit = count.clamp(1, 100);
     let sql = format!(
-        "SELECT id, level, tag, logger_name, message, detail, host, port, create_time FROM x_program_warn_log {} ORDER BY id DESC LIMIT 100",
+        "SELECT id, level, tag, logger_name, message, detail, host, port, create_time FROM x_program_warn_log {} ORDER BY id DESC LIMIT ${}",
         where_clause,
+        params.len() + 1,
     );
+    let mut owned: Vec<&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)> =
+        params.to_vec();
+    owned.push(&limit);
     let client = shared::db::acquire(pool).await?;
     let rows = client
-        .query(&sql, params)
+        .query(&sql, &owned)
         .await
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(warnlog_row_to_value).collect();
@@ -9366,7 +9400,7 @@ pub async fn warnlog_list_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    warnlog_list(&pool, "WHERE id < $1", &[&id, &count]).await
+    warnlog_list(&pool, "WHERE id < $1", count, &[&id]).await
 }
 
 #[allow(non_snake_case)]
@@ -9374,10 +9408,17 @@ pub async fn warnlog_list_next_count_date_date(
     pool: Extension<Pool>,
     Path((id, count, date)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // O9：date 先解析为 NaiveDate，非法输入 400（String 直传 `$2::date` 必 500）。
+    let Ok(date) = chrono::NaiveDate::parse_from_str(&date, "%Y-%m-%d") else {
+        return Err(AppError::BadRequest(format!(
+            "invalid date format (expect YYYY-MM-DD): {date}"
+        )));
+    };
     warnlog_list(
         &pool,
         "WHERE id < $1 AND DATE(create_time) = $2::date",
-        &[&id, &date, &count],
+        count,
+        &[&id, &date],
     )
     .await
 }
@@ -9387,7 +9428,7 @@ pub async fn warnlog_list_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    warnlog_list(&pool, "WHERE id > $1", &[&id, &count]).await
+    warnlog_list(&pool, "WHERE id > $1", count, &[&id]).await
 }
 
 #[allow(non_snake_case)]
@@ -9395,10 +9436,17 @@ pub async fn warnlog_list_prev_count_date_date(
     pool: Extension<Pool>,
     Path((id, count, date)): Path<(String, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // O9：date 先解析为 NaiveDate，非法输入 400（String 直传 `$2::date` 必 500）。
+    let Ok(date) = chrono::NaiveDate::parse_from_str(&date, "%Y-%m-%d") else {
+        return Err(AppError::BadRequest(format!(
+            "invalid date format (expect YYYY-MM-DD): {date}"
+        )));
+    };
     warnlog_list(
         &pool,
         "WHERE id > $1 AND DATE(create_time) = $2::date",
-        &[&id, &date, &count],
+        count,
+        &[&id, &date],
     )
     .await
 }
@@ -9408,7 +9456,8 @@ pub async fn warnlog_view_system_log_tag_tag(
     pool: Extension<Pool>,
     Path(tag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    warnlog_list(&pool, "WHERE tag = $1", &[&tag]).await
+    // 路由无 count 入参：取上限 100（与夹紧语义一致）
+    warnlog_list(&pool, "WHERE tag = $1", 100, &[&tag]).await
 }
 
 // ── storagemappings / adminlogin / authentication / cachedispatch / center ──
@@ -11159,7 +11208,9 @@ pub async fn u3_invoke_list_all(
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
-            "SELECT id, name, alias, category, enable, enable_anonymous, validated, create_time FROM x_program_invoke ORDER BY create_time DESC",
+            // create_time 是 timestamp 列：裸读为 String 必 WrongType panic（有数据时，
+            // arity_probe 实证）。to_char 对齐文本（与 o2 响应格式一致）。
+            "SELECT id, name, alias, category, enable, enable_anonymous, validated, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_program_invoke ORDER BY create_time DESC",
             &[],
         )
         .await
@@ -11230,7 +11281,9 @@ pub async fn invoke_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
-            "SELECT id, name, alias, category, enable, enable_anonymous, validated, create_time FROM x_program_invoke ORDER BY create_time DESC",
+            // create_time 是 timestamp 列：裸读为 String 必 WrongType panic（有数据时，
+            // arity_probe 实证）。to_char 对齐文本（与 o2 响应格式一致）。
+            "SELECT id, name, alias, category, enable, enable_anonymous, validated, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_program_invoke ORDER BY create_time DESC",
             &[],
         )
         .await

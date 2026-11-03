@@ -125,10 +125,12 @@ pub async fn create_app(
         .merge(jpush::router(pool.clone()))
         .merge(meeting::router(pool.clone()))
         .merge(mind::router(pool.clone()))
-        .merge(cms_express::router(pool.clone()))
+        .merge(cms_express::router(pool.clone(), sea_orm_pool.clone()))
         .merge(cms_assemble_control::router(pool.clone()))
         .merge(process_express::router(pool.clone()))
-        .merge(query_express::router(pool.clone()))
+        // O9：query_express 需要 sea_orm DatabaseConnection（此前错传 deadpool
+        // Pool 且 router 内不注入，/api/query/create|list 生产恒定 500）
+        .merge(query_express::router(sea_orm_pool.clone()))
         .merge(process_designer::router(pool.clone()))
         .merge(program_center::router(pool.clone()))
         .merge(base::router(pool.clone()))
@@ -160,7 +162,7 @@ pub async fn create_app(
         .merge(query_core_entity::router(pool.clone()))
         .merge(general_core_entity::router(sea_orm_pool.clone()))
         .merge(organization_core_entity::router(sea_orm_pool.clone()))
-        .merge(cms_core_entity::router(sea_orm_pool.clone()))
+        .merge(cms_core_entity::router(sea_orm_pool.clone(), pool.clone()))
         .merge(query_assemble_designer::router(pool.clone()))
         .merge(query_assemble_surface::router(pool.clone()))
         .merge(search::router(pool.clone()))

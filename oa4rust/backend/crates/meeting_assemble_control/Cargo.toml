@@ -16,11 +16,12 @@ tracing.workspace = true
 uuid.workspace = true
 base64.workspace = true
 tower = "0.5"
+# lib 代码的日期入参解析（parse_ts_param/month_range/day_range，O10）需要 chrono
+chrono.workspace = true
 
 shared = { path = "../shared" }
 
 [dev-dependencies]
-chrono.workspace = true
 
 [lints]
 workspace = true

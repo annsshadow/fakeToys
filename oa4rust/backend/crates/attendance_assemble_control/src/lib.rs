@@ -6801,8 +6801,10 @@ async fn stat_unit_month_query(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(pool).await?;
 
+    // qywx unit 粒度表无 o2_user 列（dd 同名单元表有——schema 不对称，2026-11-03 O10 实证
+    // 42703 → 500）；unit 聚合本就无 person 语义，SELECT 去掉该列。
     let sql = format!(
-        "SELECT id, o2_user, o2_unit, statistic_year, statistic_month, work_day_count, on_duty_times, off_duty_times, \
+        "SELECT id, o2_unit, statistic_year, statistic_month, work_day_count, on_duty_times, off_duty_times, \
          result_normal, late_times, serious_late_times, leave_early_times, absenteeism_times, not_signed_count \
          FROM {st} WHERE o2_unit = $1 AND statistic_year = $2 AND statistic_month = $3",
         st = stat_table
@@ -6836,7 +6838,13 @@ fn stat_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
         ),
         (
             "o2User".to_string(),
-            Value::String(row.get::<_, Option<String>>("o2_user").unwrap_or_default()),
+            // unit 粒度表无 o2_user 列（见 stat_unit_month_query）：try_get 容错，person 表照常读出。
+            Value::String(
+                row.try_get::<_, Option<String>>("o2_user")
+                    .ok()
+                    .flatten()
+                    .unwrap_or_default(),
+            ),
         ),
         (
             "o2Unit".to_string(),

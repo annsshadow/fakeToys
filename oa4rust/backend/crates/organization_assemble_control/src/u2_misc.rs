@@ -450,8 +450,8 @@ async fn card_page(
     let client = client_of(pool).await?;
     let page = page.max(1);
     let size = size.clamp(1, MAX_PAGE_SIZE);
-    let offset = ((page - 1).saturating_mul(size)).to_string();
-    let size_str = size.to_string();
+    // LIMIT/OFFSET 参数 PG 定 int8：String 绑定 WrongType 客户端 500（O10 实证）——保留 i64。
+    let offset = (page - 1).saturating_mul(size);
     let key = shared::db::escape_like(&normalize_key(opt(body, &["key"]).unwrap_or_default()));
     let group_type = normalize_key(opt(body, &["groupType", "type"]).unwrap_or_default());
     let cond = if with_group {
@@ -465,17 +465,28 @@ async fn card_page(
                      OR office_phone ILIKE '%'||$1||'%' OR description ILIKE '%'||$1||'%')"
     };
     let total_sql = format!("SELECT COUNT(*)::bigint AS cnt FROM x_org_personcard WHERE {cond}");
+    // O10 实证：非 withgroup 分支 cond 不含 $2（group_type），多绑会触发
+    // tokio 客户端 Parameters(2,1) / PG 42P18（$2 类型无法推断）→ 500。按分支绑参。
+    let total_params: &[&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)] =
+        if with_group { &[&key, &group_type] } else { &[&key] };
     let total: i64 = client
-        .query_one(&total_sql, &[&key, &group_type])
+        .query_one(&total_sql, total_params)
         .await
         .map_err(|_| AppError::Internal)?
         .get("cnt");
+    let (limit_ph, offset_ph) = if with_group { ("$3", "$4") } else { ("$2", "$3") };
     let data_sql = format!(
         "SELECT id, name, group_type, distinguished_name, mobile, office_phone, address, description, creator, create_time::text
-           FROM x_org_personcard WHERE {cond} ORDER BY create_time DESC LIMIT $3 OFFSET $4"
+           FROM x_org_personcard WHERE {cond} ORDER BY create_time DESC LIMIT {limit_ph} OFFSET {offset_ph}"
     );
+    let data_params: &[&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)] =
+        if with_group {
+            &[&key, &group_type, &size, &offset]
+        } else {
+            &[&key, &size, &offset]
+        };
     let rows = client
-        .query(&data_sql, &[&key, &group_type, &size_str, &offset])
+        .query(&data_sql, data_params)
         .await
         .map_err(|_| AppError::Internal)?;
     let mut data = Vec::new();

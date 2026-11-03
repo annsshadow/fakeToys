@@ -245,12 +245,13 @@ pub async fn dict_edit(
         }
     }
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, name, category, COALESCE(data::text, '{}') AS data FROM x_application_dict WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     let raw: String = row
         .get::<_, Option<String>>("data")
         .unwrap_or_else(|| "{}".to_string());
@@ -288,12 +289,13 @@ async fn dict_set(pool: &Pool, parts: &[String], body: Value) -> H {
         .await
         .map_err(|_| AppError::Internal)?;
     let raw: String = client
-        .query_one(
+        .query_opt(
             "SELECT COALESCE(data::text, '{}') AS data FROM x_application_dict WHERE id = $1",
             &[&id],
         )
         .await
         .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?
         .get("data");
     let data: Value = serde_json::from_str(&raw).unwrap_or(json!({}));
     ok(json!({ "id": id, "value": data }))
@@ -833,12 +835,13 @@ pub async fn att_edit_id(
         return biz_err("attachment not found");
     }
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, work_id, workcompleted_id, name, creator FROM x_attachment WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     ok(row_to_json(&row))
 }
 
@@ -1362,13 +1365,14 @@ pub async fn record_edit(
             .map_err(|_| AppError::Internal)?;
     }
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, work_id, task_id, record_type, content, creator, create_time \
              FROM x_record WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     ok(row_to_json(&row))
 }
 
@@ -2253,12 +2257,13 @@ pub async fn work_edit(
         return biz_err("work not found");
     }
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, title, work_status FROM x_work WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     ok(row_to_json(&row))
 }
 

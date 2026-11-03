@@ -12,7 +12,7 @@ mod tests {
     #[tokio::test]
     async fn test_uuid_random() {
         let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let app = crate::router(pool, shared::testing::mock_db().await);
         let response = app
             .oneshot(
                 Request::builder()
@@ -33,7 +33,7 @@ mod tests {
     #[tokio::test]
     async fn test_template_form_list() {
         let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let app = crate::router(pool, shared::testing::mock_db().await);
         let response = app
             .oneshot(
                 Request::builder()
@@ -54,7 +54,7 @@ mod tests {
     #[tokio::test]
     async fn test_view_list_all() {
         let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let app = crate::router(pool, shared::testing::mock_db().await);
         let response = app
             .oneshot(
                 Request::builder()

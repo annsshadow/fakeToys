@@ -273,12 +273,13 @@ pub async fn get_process_instance(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, title, process, application, work_status, creator, create_time, start_time, end_time FROM x_work WHERE id = $1",
             &[&execution_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
 
     let tasks = client
         .query(
@@ -386,12 +387,13 @@ pub async fn cancel_process_instance(
         .await
         .map_err(|_| AppError::Internal)?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, title, process, application, work_status, creator, create_time, start_time, end_time FROM x_work WHERE id = $1",
             &[&execution_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -535,12 +537,13 @@ pub async fn work_id_processing(
     let session = u4_session(session)?;
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, title, process, application, work_status, creator, create_time FROM x_work WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     u4_require_actor(
         &pool.0,
         &session,
@@ -590,12 +593,13 @@ pub async fn work_v2_id_terminate(
         .await
         .map_err(|_| AppError::Internal)?;
     let row = tx
-        .query_one(
+        .query_opt(
             "SELECT id, title, process, application, work_status, creator, create_time, start_time, end_time FROM x_work WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     tx.commit().await?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -634,12 +638,13 @@ pub async fn work_v2_id_retract(
     .map_err(|_| AppError::Internal)?;
     tx.commit().await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, title, process, application, work_status, creator, create_time, start_time, end_time FROM x_work WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -669,12 +674,13 @@ async fn work_v2_id_goback_core(
         .await
         .map_err(|_| AppError::Internal)?;
     let row = tx
-        .query_one(
+        .query_opt(
             "SELECT id, title, process, application, work_status, creator, create_time, start_time, end_time FROM x_work WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     tx.commit().await?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -764,12 +770,13 @@ async fn work_v2_id_add_split_core(
     let mut client = shared::db::acquire(&pool).await?;
     let tx = client.transaction().await?;
     let row = tx
-        .query_one(
+        .query_opt(
             "SELECT id, title, process, application, work_status, creator FROM x_work WHERE id = $1 FOR UPDATE",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     let title: String = row.get("title");
     let new_id = Uuid::new_v4().to_string();
     tx.execute(
@@ -834,12 +841,13 @@ async fn work_v2_id_reroute_core(
     .await
     .map_err(|_| AppError::Internal)?;
     let row = tx
-        .query_one(
+        .query_opt(
             "SELECT id, title, process, application, work_status, creator, create_time, start_time, end_time FROM x_work WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     tx.commit().await?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -890,12 +898,13 @@ async fn work_id_manual_append_identity_core(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, title, process, application, work_status, creator FROM x_work WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -985,12 +994,13 @@ pub async fn work_process_processId(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, name, category, version, status, creator, create_time FROM x_process_definition WHERE id = $1",
             &[&process_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -1034,12 +1044,13 @@ pub async fn work_manual_after_processing(
     let mut client = shared::db::acquire(&pool).await?;
     let tx = client.transaction().await?;
     let row = tx
-        .query_one(
+        .query_opt(
             "SELECT id, title, process, application, work_status, creator FROM x_work WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     tx.execute(
             "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
             &[&Uuid::new_v4().to_string(), &id, &"manual", &"manual processing completed", &"system"],
@@ -1127,12 +1138,13 @@ pub async fn task_id_processing(
     u4_require_actors(&pool.0, &session, U4ActorKey::Task, &id).await?;
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, title, work, activity, activity_token, person, task_status, start_time FROM x_task WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     client
         .execute(
             "UPDATE x_task SET task_status = $1 WHERE id = $2",
@@ -1160,12 +1172,13 @@ pub async fn task_id_urge(
     .await
     .map_err(|_| AppError::Internal)?;
     let row = tx
-        .query_one(
+        .query_opt(
             "SELECT id, title, work, activity, activity_token, person FROM x_task WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     let id2 = Uuid::new_v4().to_string();
     tx.execute(
             "INSERT INTO x_record (id, task_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
@@ -1188,12 +1201,13 @@ pub async fn task_id_replace(
     let mut client = shared::db::acquire(&pool).await?;
     let tx = client.transaction().await?;
     let row = tx
-        .query_one(
+        .query_opt(
             "SELECT id, work, activity, activity_token, person, task_status FROM x_task WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     let work: String = row.get("work");
     let person: String = row.get::<_, Option<String>>("person").unwrap_or_default();
     tx.execute(
@@ -1235,12 +1249,13 @@ pub async fn task_id_press(
         .await
         .map_err(|_| AppError::Internal)?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -1261,12 +1276,13 @@ pub async fn task_id_expire(
         .await
         .map_err(|_| AppError::Internal)?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -1287,12 +1303,13 @@ pub async fn task_id_pass_expired(
         .await
         .map_err(|_| AppError::Internal)?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -1303,12 +1320,13 @@ pub async fn task_id_will(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, title, work, activity, activity_token, person, task_status FROM x_task WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -1319,12 +1337,13 @@ pub async fn task_v2_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -1345,12 +1364,13 @@ pub async fn task_v2_id_pause(
         .await
         .map_err(|_| AppError::Internal)?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -1372,12 +1392,13 @@ pub async fn task_v2_id_reset(
         .await
         .map_err(|_| AppError::Internal)?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -1398,12 +1419,13 @@ pub async fn task_v2_id_resume(
         .await
         .map_err(|_| AppError::Internal)?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -1418,12 +1440,13 @@ pub async fn task_v3_id_add(
     let mut client = shared::db::acquire(&pool).await?;
     let tx = client.transaction().await?;
     let row = tx
-        .query_one(
+        .query_opt(
             "SELECT id, title, process, application, work_status FROM x_work WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     let new_task_id = Uuid::new_v4().to_string();
     tx.execute(
             "INSERT INTO x_task (id, title, work, activity, activity_token, person, task_status, start_time) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
@@ -1447,12 +1470,13 @@ pub async fn task_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -1463,12 +1487,13 @@ pub async fn taskcompleted_next_task_identity(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, work, activity_token FROM x_task WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     let work: String = row.get("work");
     let activity_token: String = row
         .get::<_, Option<String>>("activity_token")
@@ -1493,12 +1518,13 @@ pub async fn taskcompleted_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, work_id, completed_time, creator, create_time FROM x_workcompleted WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -1524,12 +1550,13 @@ pub async fn taskcompleted_id_press_work_work(
     .await
     .map_err(|_| AppError::Internal)?;
     let row = tx
-        .query_one(
+        .query_opt(
             "SELECT id, work_id, completed_time, creator FROM x_workcompleted WHERE id = $1",
             &[&completed_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     tx.commit().await?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -1650,12 +1677,13 @@ pub async fn snap_workcompleted_workCompletedId_type_abandonedworkcompleted(
     let tx = client.transaction().await?;
     let id = Uuid::new_v4().to_string();
     let work_id_row = tx
-        .query_one(
+        .query_opt(
             "SELECT work_id FROM x_workcompleted WHERE id = $1",
             &[&work_completed_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     let work_id: String = work_id_row.get("work_id");
     tx.execute(
             "INSERT INTO x_snap (id, work_id, snap_type, snap_data, create_time) VALUES ($1, $2, $3, ($4::text)::jsonb, NOW())",
@@ -1676,12 +1704,13 @@ pub async fn snap_workcompleted_workCompletedId_type_snapworkcompleted(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, work_id, completed_time, creator FROM x_workcompleted WHERE id = $1",
             &[&work_completed_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     let work_id: String = row.get("work_id");
     let snap_rows = client
         .query(
@@ -1706,12 +1735,13 @@ pub async fn snap_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, work_id, snap_type, snap_data, create_time FROM x_snap WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -1726,12 +1756,13 @@ pub async fn snap_id_restore(
     let mut client = shared::db::acquire(&pool).await?;
     let tx = client.transaction().await?;
     let snap_row = tx
-        .query_one(
+        .query_opt(
             "SELECT id, work_id, snap_type, snap_data::text AS snap_data FROM x_snap WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     let work_id: String = snap_row.get("work_id");
     let snap_data_raw: String = snap_row.get("snap_data");
     let snap_data: Value = serde_json::from_str(&snap_data_raw).unwrap_or(serde_json::json!({}));
@@ -1783,12 +1814,13 @@ pub async fn touch_deletedraft(
         .await
         .map_err(|_| AppError::Internal)?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, work_id, content, creator, create_time FROM x_draft WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -1844,19 +1876,21 @@ pub async fn touch_merge(
     let mut client = shared::db::acquire(&pool).await?;
     let tx = client.transaction().await?;
     let row1 = tx
-        .query_one(
+        .query_opt(
             "SELECT id, title, process, application, work_status FROM x_work WHERE id = $1",
             &[&id1],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     let _row2 = tx
-        .query_one(
+        .query_opt(
             "SELECT id, title, process, application, work_status FROM x_work WHERE id = $2",
             &[&id2],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     tx.execute(
         "UPDATE x_work SET work_status = $1 WHERE id = $2",
         &[&"merged", &id2],
@@ -1886,12 +1920,13 @@ pub async fn touch_mergeitem(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, title, work, activity, activity_token, person FROM x_task WHERE id = $1",
             &[&item_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     client
         .execute(
             "UPDATE x_task SET work = $1 WHERE id = $2",
@@ -1910,12 +1945,13 @@ pub async fn touch_touchdelay(
     let mut client = shared::db::acquire(&pool).await?;
     let tx = client.transaction().await?;
     let row = tx
-        .query_one(
+        .query_opt(
             "SELECT id, title, work, activity, activity_token, person, task_status FROM x_task WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     let work_id: String = row.get("work");
     let id2 = Uuid::new_v4().to_string();
     tx.execute(
@@ -1949,12 +1985,13 @@ pub async fn touch_urge(
         .await
         .map_err(|_| AppError::Internal)?;
     let row = tx
-        .query_one(
+        .query_opt(
             "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     tx.commit().await?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -2044,12 +2081,13 @@ pub async fn review_init_review(
     let mut client = shared::db::acquire(&pool).await?;
     let tx = client.transaction().await?;
     let row = tx
-        .query_one(
+        .query_opt(
             "SELECT id, work_id, reviewer, comment, status, create_time FROM x_review WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     let reviewer = row.get::<_, Option<String>>("reviewer").unwrap_or_default();
     u4_require_actor(&pool.0, &session, &reviewer).await?;
     tx.execute(
@@ -2069,12 +2107,13 @@ pub async fn review_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, work_id, reviewer, comment, status, create_time FROM x_review WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -2085,12 +2124,13 @@ pub async fn data_job_job(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, work_id, person, activity_token, job_status, create_time FROM x_job WHERE id = $1",
             &[&job_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -2101,12 +2141,13 @@ pub async fn data_job_job_path(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, work_id, person, activity_token, job_status FROM x_job WHERE id = $1",
             &[&job_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     let work_id: String = row.get("work_id");
     let data_row = client
         .query_opt(
@@ -2133,12 +2174,13 @@ pub async fn data_work_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, title, process, application, work_status, creator, create_time, start_time, end_time FROM x_work WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -2158,12 +2200,13 @@ pub async fn data_work_id_delete(
         .await
         .map_err(|_| AppError::Internal)?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, title, process, application, work_status, creator, create_time, start_time, end_time FROM x_work WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -2224,12 +2267,13 @@ pub async fn data_work_id_path(
         }
         _ => {
             let row = client
-                .query_one(
+                .query_opt(
                     "SELECT id, title, process, application, work_status, creator FROM x_work WHERE id = $1",
                     &[&id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|_| AppError::Internal)?
+                .ok_or(AppError::NotFound)?;
             Ok(Json(ActionResult::success(row_to_json(&row))))
         }
     }
@@ -2322,7 +2366,8 @@ pub async fn process_id_complex(
         .map_err(|_| AppError::Internal)?;
     let work = match work_row {
         Some(r) => r,
-        None => return Err(AppError::Internal),
+        // 资源不存在 → 404（O10：曾手写成 Internal，与同 crate 其他分支口径一致为 NotFound）
+        None => return Err(AppError::NotFound),
     };
 
     let tasks = client
@@ -2423,12 +2468,13 @@ pub async fn data_work_id_path_delete(
         _ => {}
     }
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, title, process, application, work_status, creator FROM x_work WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -2439,12 +2485,13 @@ pub async fn data_workcompleted_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, work_id, completed_time, creator, create_time FROM x_workcompleted WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -2455,12 +2502,13 @@ pub async fn data_workcompleted_id_path(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, work_id, completed_time, creator FROM x_workcompleted WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -2563,12 +2611,13 @@ pub async fn job_v2_job_person_person_view(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, work_id, person, activity_token, job_status, create_time FROM x_job WHERE id = $1 AND person = $2",
             &[&job_id, &person],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -2578,12 +2627,13 @@ async fn job_v2_job_projection_core(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, work_id, person, activity_token, job_status FROM x_job WHERE id = $1",
             &[&job_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     let work_id: String = row.get("work_id");
     let tasks = client
         .query(
@@ -2646,12 +2696,13 @@ pub async fn readcompleted_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, work_id, person, completed_time FROM x_readcompleted WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -2756,12 +2807,13 @@ pub async fn record_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, work_id, task_id, record_type, content, creator, create_time FROM x_record WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -2772,12 +2824,13 @@ async fn service_work_id_touch_core(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, title, process, application, work_status, creator, create_time FROM x_work WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     // 四轮 R4-2 追加：两把 touch 注册在 PUT/POST 上但原先不取会话，
     // 任一有效会话按 work ID 就能往别人的 work 插 x_record 留痕（审计流水污染），
     // 且留痕 creator 硬写 "system"。按 work 发起人校归属，留痕写真实操作人。
@@ -2824,12 +2877,13 @@ pub async fn attachment_copy_work_workId(
     u4_require_work_owner(&pool.0, session, &work_id).await?;
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, work_id, name, content, creator FROM x_attachment WHERE id = $1",
             &[&source_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     let new_id = Uuid::new_v4().to_string();
     let name: String = row.get::<_, Option<String>>("name").unwrap_or_default();
     let content: String = row.get::<_, Option<String>>("content").unwrap_or_default();
@@ -2912,12 +2966,13 @@ pub async fn attachment_edit_id_text(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, work_id, name, content, creator, create_time FROM x_attachment WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -2928,12 +2983,13 @@ pub async fn attachment_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, work_id, workcompleted_id, name, content, creator, create_time FROM x_attachment WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -2988,12 +3044,13 @@ pub async fn applicationdict_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, name, category, version, status, creator, create_time FROM x_process_definition WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -3004,12 +3061,13 @@ pub async fn applicationdict_id_path0_data(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, name, category, version, status FROM x_process_definition WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     match _path.as_str() {
         "activities" => {
             let rows = client
@@ -3162,12 +3220,13 @@ pub async fn applicationdict_id_path0_path1_path2_path3_path4_path5_path6_data(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, title, process, application, work_status FROM x_work WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -3239,12 +3298,13 @@ pub async fn workcompleted_shift_time(
         .await
         .map_err(|_| AppError::Internal)?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, work_id, completed_time, creator FROM x_workcompleted WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -3311,12 +3371,13 @@ pub async fn workcompleted_flag_rollback(
     // 会留下 work 既 pending 又仍存在完成记录的自相矛盾态（孪生 wc_rollback_flag 已事务化）。
     let tx = client.transaction().await?;
     let row = tx
-        .query_one(
+        .query_opt(
             "SELECT id, work_id, completed_time, creator FROM x_workcompleted WHERE id = $1 FOR UPDATE",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     let work_id: String = row.get("work_id");
     tx.execute(
         "UPDATE x_work SET work_status = $1 WHERE id = $2",
@@ -3358,12 +3419,13 @@ pub async fn work_v3_retract(
     let session = u4_session(session)?;
     let mut client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, title, process, application, work_status, creator FROM x_work WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     u4_require_actor(
         &pool.0,
         &session,
@@ -3402,12 +3464,13 @@ pub async fn work_start(
     let mut client = shared::db::acquire(&pool).await?;
     let tx = client.transaction().await?;
     let row = tx
-        .query_one(
+        .query_opt(
             "SELECT id, title, process, application, work_status, creator FROM x_work WHERE id = $1 FOR UPDATE",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     u4_require_actor(
         &pool.0,
         &session,
@@ -3460,12 +3523,13 @@ pub async fn work_complete(
     let mut client = shared::db::acquire(&pool).await?;
     let tx = client.transaction().await?;
     let row = tx
-        .query_one(
+        .query_opt(
             "SELECT id, title, process, application, work_status, creator FROM x_work WHERE id = $1 FOR UPDATE",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     u4_require_actor(
         &pool.0,
         &session,
@@ -3521,12 +3585,13 @@ pub async fn task_claim(
     let mut client = shared::db::acquire(&pool).await?;
     let tx = client.transaction().await?;
     let row = tx
-        .query_one(
+        .query_opt(
             "SELECT id, title, work, activity, activity_token, person, task_status FROM x_task WHERE id = $1 FOR UPDATE",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     u4_require_actor(
         &pool.0,
         &session,
@@ -3559,12 +3624,13 @@ pub async fn task_claim(
         .map_err(|_| AppError::Internal)?;
     tx.commit().await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -3607,12 +3673,13 @@ pub async fn task_complete(
     let mut client = shared::db::acquire(&pool).await?;
     let tx = client.transaction().await?;
     let row = tx
-        .query_one(
+        .query_opt(
             "SELECT id, title, work, activity, activity_token, person, task_status FROM x_task WHERE id = $1 FOR UPDATE",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     u4_require_actor(
         &pool.0,
         &session,
@@ -3693,12 +3760,13 @@ pub async fn task_complete(
     }
     tx.commit().await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -3713,12 +3781,13 @@ pub async fn task_reject(
     let mut client = shared::db::acquire(&pool).await?;
     let tx = client.transaction().await?;
     let row = tx
-        .query_one(
+        .query_opt(
             "SELECT id, title, work, activity, activity_token, person, task_status FROM x_task WHERE id = $1 FOR UPDATE",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     u4_require_actor(
         &pool.0,
         &session,
@@ -3774,12 +3843,13 @@ pub async fn task_reject(
     }
     tx.commit().await?;
     let row = client
-        .query_one(
+        .query_opt(
             "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -3793,12 +3863,13 @@ pub async fn task_transfer(
     let mut client = shared::db::acquire(&pool).await?;
     let tx = client.transaction().await?;
     let row = tx
-        .query_one(
+        .query_opt(
             "SELECT id, title, work, activity, activity_token, person, task_status FROM x_task WHERE id = $1 FOR UPDATE",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
     u4_require_actor(
         &pool.0,
         &session,

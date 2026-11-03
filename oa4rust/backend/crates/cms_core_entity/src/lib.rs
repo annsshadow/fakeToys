@@ -788,7 +788,7 @@ pub async fn cms_entity_note_delete(
     ))))
 }
 
-pub fn cms_core_entity_router(db: DatabaseConnection) -> Router {
+pub fn cms_core_entity_router(db: DatabaseConnection, pool: deadpool_postgres::Pool) -> Router {
     Router::new()
         .route("/api/cms/category/list", get(category_list))
         .route("/api/cms/category/{id}", get(category_get))
@@ -915,7 +915,10 @@ pub fn cms_core_entity_router(db: DatabaseConnection) -> Router {
             "/api/cms/core/entity/note/delete/{id}",
             post(cms_entity_note_delete),
         )
+        // O9：22 个写 handler 同时取 Extension<Pool>（require_admin_opt）——
+        // 此前只注入 DatabaseConnection，写族恒定 500（Missing extension）。
         .layer(Extension(db))
+        .layer(Extension(pool))
 }
 
 #[cfg(test)]
@@ -924,6 +927,6 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
-pub fn router(db: DatabaseConnection) -> axum::Router {
-    crate::cms_core_entity_router(db)
+pub fn router(db: DatabaseConnection, pool: deadpool_postgres::Pool) -> axum::Router {
+    crate::cms_core_entity_router(db, pool)
 }

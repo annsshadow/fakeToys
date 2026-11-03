@@ -392,4 +392,35 @@ mod tests {
         // Verify router was built without panic — route registration is the main concern
         let _ = app;
     }
+
+    /// O10 族②证据：`{}` 空体曾无校验直打 DB（x_express_subscribe 漏 id 列 23502 → 500）。
+    /// 修复后：空 code/company → 400 且错误信息指认字段（请求校验挡住，不进 DB）。
+    #[tokio::test]
+    async fn o10_subscribe_empty_body_400_names_field() {
+        if !shared::testing::is_db_available().await {
+            eprintln!("skip: PG unavailable");
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let sess = shared::testing::test_session("o10-express");
+        let res = crate::subscribe_express(
+            axum::extract::Extension(pool),
+            Some(axum::extract::Extension(sess)),
+            axum::extract::Json(crate::ExpressSubscribeRequest {
+                code: None,
+                company: None,
+                callback: None,
+            }),
+        )
+        .await;
+        match res {
+            Err(shared::error::AppError::BadRequest(msg)) => {
+                assert!(msg.contains("code"), "错误信息须指认 code 字段，实收: {msg}")
+            }
+            other => panic!("空体必须 400 BadRequest，实收: {}", match &other {
+                Err(e) => format!("{e:?}"),
+                Ok(_) => "Ok(200)".to_string(),
+            }),
+        }
+    }
 }

@@ -112,6 +112,8 @@ pub async fn view_list_all(
     ))))
 }
 
-pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    cms_express_router().layer(Extension(pool))
+pub fn router(pool: deadpool_postgres::Pool, db: DatabaseConnection) -> axum::Router {
+    cms_express_router()
+        .layer(Extension(pool))
+        .layer(Extension(db))
 }

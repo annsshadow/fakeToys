@@ -1217,10 +1217,25 @@ pub async fn attachment_upload_folder_callback_callback_legacy(
     attachment_upload_folder_folderId(pool, session, axum::extract::Path(folder_id), form).await
 }
 
+/// O9：FILE_FILE 读面归属闸——与写侧 `attachment_id_update` / `office_preview`
+/// 同口径（require_owner：本人或 admin，否则 403）。读面各 handler 拿到行后调用；
+/// `person` 为空（历史脏数据）按非本人处理（fail-closed）。
+/// 此前读面（元数据/base64/下载/图片变体）完全无校验：任何登录用户可读
+/// 任意附件内容（IDOR 穷举矩阵以 canary 夹具实证，2026-11-03）。
+async fn require_file_read_owner(
+    pool: &Pool,
+    session: &shared::session::Session,
+    row: &deadpool_postgres::tokio_postgres::Row,
+) -> Result<(), AppError> {
+    let owner: String = row.get::<_, Option<String>>("person").unwrap_or_default();
+    shared::middleware::require_owner(pool, session, &owner).await
+}
+
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn attachment_id(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
@@ -1228,7 +1243,9 @@ pub async fn attachment_id(
         .query_opt("SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
         .await?;
     match row {
-        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+        Some(row) => {
+            require_file_read_owner(&pool, &session, &row).await?;
+            Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 (
@@ -1274,7 +1291,8 @@ pub async fn attachment_id(
                     ),
                 ),
             ]),
-        )))),
+            ))))
+        }
         None => Ok(Json(ActionResult::error("attachment not found"))),
     }
 }
@@ -1283,18 +1301,20 @@ pub async fn attachment_id(
 #[allow(non_snake_case)]
 pub async fn attachment_id_binary_base64(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
-            "SELECT content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT content, person FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
     match row {
         Some(row) => {
+            require_file_read_owner(&pool, &session, &row).await?;
             let content: Option<String> = row.get("content");
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
@@ -1314,18 +1334,20 @@ pub async fn attachment_id_binary_base64(
 #[allow(non_snake_case)]
 pub async fn attachment_id_download(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<axum::response::Response, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
-            "SELECT name, mime_type, content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT name, mime_type, content, person FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
     match row {
         Some(row) => {
+            require_file_read_owner(&pool, &session, &row).await?;
             let content: Option<String> = row.get("content");
             let mime: String = row
                 .get::<_, Option<String>>("mime_type")
@@ -1355,27 +1377,30 @@ pub async fn attachment_id_download(
 #[allow(non_snake_case)]
 pub async fn attachment_id_download_stream(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<axum::response::Response, AppError> {
-    attachment_id_download(pool, axum::extract::Path(id)).await
+    attachment_id_download(pool, session, axum::extract::Path(id)).await
 }
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn attachment_id_image_scale_scale_binary_base64(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path((id, _scale)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    attachment_id_binary_base64(pool, axum::extract::Path(id)).await
+    attachment_id_binary_base64(pool, session, axum::extract::Path(id)).await
 }
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn attachment_id_image_width_width_height_height_binary_base64(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path((id, _width, _height)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    attachment_id_binary_base64(pool, axum::extract::Path(id)).await
+    attachment_id_binary_base64(pool, session, axum::extract::Path(id)).await
 }
 
 #[axum::debug_handler]
@@ -1835,17 +1860,24 @@ fn attachment2_limit_offset(page: &str, size: &str) -> (i64, i64) {
 #[allow(non_snake_case)]
 pub async fn attachment2_list_type_page_size_size(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Path((_type, page, size)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let (page_size, offset) = attachment2_limit_offset(&page, &size);
-    let rows = client
-        .query(
-            "SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text
-             FROM FILE_FILE WHERE deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT $1 OFFSET $2",
-            &[&page_size, &offset],
-        )
-        .await?;
+    // O9：非 admin 仅列本人附件（原全局遍历可枚举他人附件名，矩阵 canary 实证）
+    let admin = shared::middleware::is_admin(&pool, &session.person_unique).await;
+    let sql = format!(
+        "SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text
+             FROM FILE_FILE WHERE deleted_at IS NULL{} ORDER BY create_time::timestamp DESC LIMIT $1 OFFSET $2",
+        owner_clause(admin, 3)
+    );
+    let mut params: Vec<&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)> =
+        vec![&page_size, &offset];
+    if !admin {
+        params.push(&session.person_unique);
+    }
+    let rows = client.query(&sql, &params).await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -2011,6 +2043,7 @@ pub async fn attachment2_user_capacity(
 #[allow(non_snake_case)]
 pub async fn attachment2_id(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
@@ -2018,7 +2051,9 @@ pub async fn attachment2_id(
         .query_opt("SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
         .await?;
     match row {
-        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+        Some(row) => {
+            require_file_read_owner(&pool, &session, &row).await?;
+            Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 (
@@ -2064,7 +2099,8 @@ pub async fn attachment2_id(
                     ),
                 ),
             ]),
-        )))),
+            ))))
+        }
         None => Ok(Json(ActionResult::error("attachment not found"))),
     }
 }
@@ -2073,18 +2109,20 @@ pub async fn attachment2_id(
 #[allow(non_snake_case)]
 pub async fn attachment2_id_binary_base64(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
-            "SELECT content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT content, person FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
     match row {
         Some(row) => {
+            require_file_read_owner(&pool, &session, &row).await?;
             let content: Option<String> = row.get("content");
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
@@ -2104,18 +2142,20 @@ pub async fn attachment2_id_binary_base64(
 #[allow(non_snake_case)]
 pub async fn attachment2_id_download(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<axum::response::Response, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
-            "SELECT name, mime_type, content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT name, mime_type, content, person FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
     match row {
         Some(row) => {
+            require_file_read_owner(&pool, &session, &row).await?;
             let content: Option<String> = row.get("content");
             let mime: String = row
                 .get::<_, Option<String>>("mime_type")
@@ -2145,36 +2185,40 @@ pub async fn attachment2_id_download(
 #[allow(non_snake_case)]
 pub async fn attachment2_id_download_image_width_width_height_height(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path((id, _width, _height)): axum::extract::Path<(String, String, String)>,
 ) -> Result<axum::response::Response, AppError> {
-    attachment2_id_download(pool, axum::extract::Path(id)).await
+    attachment2_id_download(pool, session, axum::extract::Path(id)).await
 }
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn attachment2_id_download_stream(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<axum::response::Response, AppError> {
-    attachment2_id_download(pool, axum::extract::Path(id)).await
+    attachment2_id_download(pool, session, axum::extract::Path(id)).await
 }
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn attachment2_id_image_scale_scale_binary_base64(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path((id, _scale)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    attachment2_id_binary_base64(pool, axum::extract::Path(id)).await
+    attachment2_id_binary_base64(pool, session, axum::extract::Path(id)).await
 }
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn attachment2_id_image_width_width_height_height_binary_base64(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path((id, _width, _height)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    attachment2_id_binary_base64(pool, axum::extract::Path(id)).await
+    attachment2_id_binary_base64(pool, session, axum::extract::Path(id)).await
 }
 
 /// .docx 本质是 ZIP 包：解压 word/document.xml，将 <w:p> 段落中的
@@ -2903,20 +2947,38 @@ pub async fn file_list_referencetype(
     )))
 }
 
+/// O9：list 读面收窄——非 admin 仅列本人附件（FILE_FILE.person = 会话人）。
+/// 此前各 list 端点全局遍历：任何登录用户可枚举他人附件名（IDOR 矩阵 canary
+/// 实证，2026-11-03）。引用共享场景（按业务实体列附件）需要实体级权限模型，
+/// 当前代码不存在该模型；收窄是 fail-loud 方向（共享方看到空列表而非静默泄露）。
+fn owner_clause(admin: bool, next_param_idx: usize) -> String {
+    if admin {
+        String::new()
+    } else {
+        format!(" AND person = ${next_param_idx}")
+    }
+}
+
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn file_list_referencetype_referenceType_reference_reference(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Path((reference_type, reference)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
-    let rows = client
-        .query(
-            "SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text
-             FROM FILE_FILE WHERE reference_type = $1 AND reference_id = $2 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT 100",
-            &[&reference_type, &reference],
-        )
-        .await?;
+    let admin = shared::middleware::is_admin(&pool, &session.person_unique).await;
+    let sql = format!(
+        "SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text
+             FROM FILE_FILE WHERE reference_type = $1 AND reference_id = $2{} AND deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT 100",
+        owner_clause(admin, 3)
+    );
+    let mut params: Vec<&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)> =
+        vec![&reference_type, &reference];
+    if !admin {
+        params.push(&session.person_unique);
+    }
+    let rows = client.query(&sql, &params).await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -3032,12 +3094,20 @@ pub async fn file_list_unused_referencetype_cmsdocument_manage(
 #[allow(non_snake_case)]
 pub async fn file_list_id_next_count(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
-    let rows = client
-        .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE id > $1 AND deleted_at IS NULL ORDER BY id LIMIT 20", &[&id])
-        .await?;
+    let admin = shared::middleware::is_admin(&pool, &session.person_unique).await;
+    let sql = format!(
+        "SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE id > $1{} AND deleted_at IS NULL ORDER BY id LIMIT 20",
+        owner_clause(admin, 2)
+    );
+    let mut params: Vec<&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)> = vec![&id];
+    if !admin {
+        params.push(&session.person_unique);
+    }
+    let rows = client.query(&sql, &params).await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -3086,15 +3156,17 @@ pub async fn file_list_id_next_count(
 #[allow(non_snake_case)]
 pub async fn file_list_id_next_count_all(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    file_list_id_next_count(pool, axum::extract::Path((id, count))).await
+    file_list_id_next_count(pool, session, axum::extract::Path((id, count))).await
 }
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn file_list_id_next_count_referencetype_referenceType(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Path((id, _count, reference_type)): axum::extract::Path<(
         String,
         String,
@@ -3102,9 +3174,17 @@ pub async fn file_list_id_next_count_referencetype_referenceType(
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
-    let rows = client
-        .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE id > $1 AND reference_type = $2 AND deleted_at IS NULL ORDER BY id LIMIT 20", &[&id, &reference_type])
-        .await?;
+    let admin = shared::middleware::is_admin(&pool, &session.person_unique).await;
+    let sql = format!(
+        "SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE id > $1 AND reference_type = $2{} AND deleted_at IS NULL ORDER BY id LIMIT 20",
+        owner_clause(admin, 3)
+    );
+    let mut params: Vec<&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)> =
+        vec![&id, &reference_type];
+    if !admin {
+        params.push(&session.person_unique);
+    }
+    let rows = client.query(&sql, &params).await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -3153,12 +3233,20 @@ pub async fn file_list_id_next_count_referencetype_referenceType(
 #[allow(non_snake_case)]
 pub async fn file_list_id_prev_count(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Path((id, _count)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
-    let rows = client
-        .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE id < $1 AND deleted_at IS NULL ORDER BY id DESC LIMIT 20", &[&id])
-        .await?;
+    let admin = shared::middleware::is_admin(&pool, &session.person_unique).await;
+    let sql = format!(
+        "SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE id < $1{} AND deleted_at IS NULL ORDER BY id DESC LIMIT 20",
+        owner_clause(admin, 2)
+    );
+    let mut params: Vec<&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)> = vec![&id];
+    if !admin {
+        params.push(&session.person_unique);
+    }
+    let rows = client.query(&sql, &params).await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -3207,15 +3295,17 @@ pub async fn file_list_id_prev_count(
 #[allow(non_snake_case)]
 pub async fn file_list_id_prev_count_all(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    file_list_id_prev_count(pool, axum::extract::Path((id, count))).await
+    file_list_id_prev_count(pool, session, axum::extract::Path((id, count))).await
 }
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn file_list_id_prev_count_referencetype_referenceType(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Path((id, _count, reference_type)): axum::extract::Path<(
         String,
         String,
@@ -3223,9 +3313,17 @@ pub async fn file_list_id_prev_count_referencetype_referenceType(
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
-    let rows = client
-        .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE id < $1 AND reference_type = $2 AND deleted_at IS NULL ORDER BY id DESC LIMIT 20", &[&id, &reference_type])
-        .await?;
+    let admin = shared::middleware::is_admin(&pool, &session.person_unique).await;
+    let sql = format!(
+        "SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE id < $1 AND reference_type = $2{} AND deleted_at IS NULL ORDER BY id DESC LIMIT 20",
+        owner_clause(admin, 3)
+    );
+    let mut params: Vec<&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)> =
+        vec![&id, &reference_type];
+    if !admin {
+        params.push(&session.person_unique);
+    }
+    let rows = client.query(&sql, &params).await?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -3527,18 +3625,20 @@ pub async fn file_id(
 #[allow(non_snake_case)]
 pub async fn file_id_binary_base64(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
-            "SELECT content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT content, person FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
     match row {
         Some(row) => {
+            require_file_read_owner(&pool, &session, &row).await?;
             let content: Option<String> = row.get("content");
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
@@ -3558,18 +3658,20 @@ pub async fn file_id_binary_base64(
 #[allow(non_snake_case)]
 pub async fn file_id_download(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<axum::response::Response, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
-            "SELECT name, mime_type, content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT name, mime_type, content, person FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
     match row {
         Some(row) => {
+            require_file_read_owner(&pool, &session, &row).await?;
             let content: Option<String> = row.get("content");
             let mime: String = row
                 .get::<_, Option<String>>("mime_type")
@@ -3599,9 +3701,10 @@ pub async fn file_id_download(
 #[allow(non_snake_case)]
 pub async fn file_id_download_stream(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<axum::response::Response, AppError> {
-    file_id_download(pool, axum::extract::Path(id)).await
+    file_id_download(pool, session, axum::extract::Path(id)).await
 }
 
 #[axum::debug_handler]
@@ -5431,10 +5534,12 @@ pub async fn u2_share_save_to_folder(
 #[allow(non_snake_case)]
 pub async fn u2_attachment2_list_type_page_size_size(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path((page, size)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     attachment2_list_type_page_size_size(
         pool,
+        session,
         axum::extract::Path((String::from("all"), page, size)),
     )
     .await

@@ -238,7 +238,9 @@ async fn qywx_exchange_code(config: &(String, String), code: &str) -> Result<Str
 pub async fn qiyeweixin_bind_callback(
     Path((meta, code)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let config = qywx_config().ok_or(AppError::Internal)?;
+    let config = qywx_config().ok_or_else(|| {
+        AppError::Unavailable("企业微信未配置（QYWX_APP_KEY/SECRET 缺失）".into())
+    })?;
     let userid = qywx_exchange_code(&config, &code).await?;
 
     let store = bind_store();
@@ -337,7 +339,9 @@ pub async fn qiyeweixin_login(
     session_manager: Extension<SessionManager>,
     Path(code): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let config = qywx_config().ok_or(AppError::Internal)?;
+    let config = qywx_config().ok_or_else(|| {
+        AppError::Unavailable("企业微信未配置（QYWX_APP_KEY/SECRET 缺失）".into())
+    })?;
     let userid = qywx_exchange_code(&config, &code).await?;
     let unique_id = format!("{}{}", QYWX_UNIQUE_PREFIX, userid);
 
@@ -447,7 +451,9 @@ async fn dingding_exchange_code(config: &(String, String), code: &str) -> Result
 pub async fn dingding_bind_callback(
     Path((meta, code)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let config = dingding_config().ok_or(AppError::Internal)?;
+    let config = dingding_config().ok_or_else(|| {
+        AppError::Unavailable("钉钉未配置（DINGDING_APP_KEY/SECRET 缺失）".into())
+    })?;
     let userid = dingding_exchange_code(&config, &code).await?;
 
     let store = bind_store();
@@ -528,7 +534,9 @@ pub async fn dingding_login(
     session_manager: Extension<SessionManager>,
     Path(code): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let config = dingding_config().ok_or(AppError::Internal)?;
+    let config = dingding_config().ok_or_else(|| {
+        AppError::Unavailable("钉钉未配置（DINGDING_APP_KEY/SECRET 缺失）".into())
+    })?;
     let userid = dingding_exchange_code(&config, &code).await?;
     let unique_id = format!("{}{}", DINGDING_UNIQUE_PREFIX, userid);
 
@@ -587,10 +595,13 @@ const ZWDINGDING_UNIQUE_PREFIX: &str = "zwding_";
 pub async fn zhengwudingding_bind_callback(
     Path((meta, code)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let api_base = std::env::var("ZWDINGDING_API_BASE").map_err(|_| AppError::Internal)?;
-    let corp_token =
-        std::env::var("ZWDINGDING_CORP_ACCESS_TOKEN").map_err(|_| AppError::Internal)?;
-    let app_token = std::env::var("ZWDINGDING_APP_ACCESS_TOKEN").map_err(|_| AppError::Internal)?;
+    // 政务钉钉配置缺失属「依赖未配置」（503），非内部错误（O10：曾 map 成 500）。
+    let api_base = std::env::var("ZWDINGDING_API_BASE")
+        .map_err(|_| AppError::Unavailable("政务钉钉未配置（ZWDINGDING_API_BASE 缺失）".into()))?;
+    let corp_token = std::env::var("ZWDINGDING_CORP_ACCESS_TOKEN")
+        .map_err(|_| AppError::Unavailable("政务钉钉未配置（ZWDINGDING_CORP_ACCESS_TOKEN 缺失）".into()))?;
+    let app_token = std::env::var("ZWDINGDING_APP_ACCESS_TOKEN")
+        .map_err(|_| AppError::Unavailable("政务钉钉未配置（ZWDINGDING_APP_ACCESS_TOKEN 缺失）".into()))?;
 
     let client = reqwest::Client::new();
 
@@ -708,10 +719,13 @@ pub async fn zhengwudingding_login(
     session_manager: Extension<SessionManager>,
     Path(code): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let api_base = std::env::var("ZWDINGDING_API_BASE").map_err(|_| AppError::Internal)?;
-    let corp_token =
-        std::env::var("ZWDINGDING_CORP_ACCESS_TOKEN").map_err(|_| AppError::Internal)?;
-    let app_token = std::env::var("ZWDINGDING_APP_ACCESS_TOKEN").map_err(|_| AppError::Internal)?;
+    // 政务钉钉配置缺失属「依赖未配置」（503），非内部错误（O10：曾 map 成 500）。
+    let api_base = std::env::var("ZWDINGDING_API_BASE")
+        .map_err(|_| AppError::Unavailable("政务钉钉未配置（ZWDINGDING_API_BASE 缺失）".into()))?;
+    let corp_token = std::env::var("ZWDINGDING_CORP_ACCESS_TOKEN")
+        .map_err(|_| AppError::Unavailable("政务钉钉未配置（ZWDINGDING_CORP_ACCESS_TOKEN 缺失）".into()))?;
+    let app_token = std::env::var("ZWDINGDING_APP_ACCESS_TOKEN")
+        .map_err(|_| AppError::Unavailable("政务钉钉未配置（ZWDINGDING_APP_ACCESS_TOKEN 缺失）".into()))?;
 
     let client = reqwest::Client::new();
 
@@ -830,10 +844,12 @@ pub async fn oauth_name(
 #[allow(non_snake_case)]
 pub async fn oauth_login_name_code_redirecturi(
     _pool: Extension<Pool>,
-    Path(name): Path<String>,
+    // 路由含 {name}/{code}/{redirectUri} 三段：Path 提取个数必须与路由一致，
+    // 否则 axum 提取失败 500（O10 矩阵实证）。code 同时兼容 query 携带。
+    Path((name, code_path, _redirect_uri)): Path<(String, String, String)>,
     axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let code = q.get("code").cloned().unwrap_or_default();
+    let code = q.get("code").cloned().unwrap_or(code_path);
     Ok(Json(ActionResult::success(
         serde_json::json!({"name": name, "code": code}),
     )))
@@ -862,10 +878,10 @@ pub async fn oauth_login_dingding_code(
 #[allow(non_snake_case)]
 pub async fn oauth_bind_name_code_redirecturi(
     _pool: Extension<Pool>,
-    Path(name): Path<String>,
+    Path((name, code_path, _redirect_uri)): Path<(String, String, String)>,
     axum::extract::Query(q): axum::extract::Query<std::collections::HashMap<String, String>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let code = q.get("code").cloned().unwrap_or_default();
+    let code = q.get("code").cloned().unwrap_or(code_path);
     Ok(Json(ActionResult::success(
         serde_json::json!({"name": name, "code": code}),
     )))
@@ -1192,8 +1208,11 @@ async fn oauth_code_store(
     let rt = shared::db::acquire(pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     rt.execute(
+        // expire_time 是 timestamp 列：`INTERVAL '10' || ' minutes'` 先把 NOW()+interval
+        // 算成 timestamptz 再 `|| ' minutes'` 拼成 text → 42804 → 500（O10 实证）。
+        // 合并为单个 interval 字面量。
         "INSERT INTO x_org_oauth_code (id, code, client, person_id, scope, expire_time, created_at) \
-         VALUES ($1, $2, $3, $4, $5, NOW() + INTERVAL '10' || ' minutes', NOW())",
+         VALUES ($1, $2, $3, $4, $5, NOW() + INTERVAL '10 minutes', NOW())",
         &[&id, &code.to_string(), &client.to_string(), &person_id.map(|s| s.to_string()), &scope.to_string()],
     )
     .await

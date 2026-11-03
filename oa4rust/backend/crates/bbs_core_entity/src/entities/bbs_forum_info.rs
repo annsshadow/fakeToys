@@ -10,9 +10,13 @@ pub struct Model {
     pub id: String,
     pub name: String,
     pub description: Option<String>,
-    pub order_number: i32,
+    // O10：列实为 BIGINT（migration 032）——i32 会在 insert RETURNING 解码时
+    // 恒定失败（INT8→i32 不兼容），create_forum 曾因此生产 500。
+    pub order_number: i64,
     pub disable: bool,
-    pub create_time: Option<DateTime>,
+    // O10：列实为 TEXT（migration 032）——DateTime 解码 TEXT 必炸，改 String
+    // （写入格式与 raw SQL 的 NOW() 前缀兼容："%Y-%m-%d %H:%M:%S"）。
+    pub create_time: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

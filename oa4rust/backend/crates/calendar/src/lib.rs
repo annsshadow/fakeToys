@@ -224,6 +224,7 @@ pub async fn calendar_list_my(
 #[allow(non_snake_case)]
 pub async fn calendar_get(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<CalendarItem>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
@@ -236,6 +237,15 @@ pub async fn calendar_get(
         )
         .await
         .map_err(|_| AppError::NotFound)?;
+
+    // O9：非公开日历仅本人/admin 可读（原无校验，任何登录用户可读他人私有日历，
+    // IDOR 矩阵 canary 实证）。公开日历（is_public）保持全登录用户可读。
+    let is_public: bool = row.get("is_public");
+    if !is_public {
+        let sess = require_session(session)?;
+        let createor: String = row.get::<_, Option<String>>("createor").unwrap_or_default();
+        shared::middleware::require_owner(&pool, &sess, &createor).await?;
+    }
 
     let item = CalendarItem {
         id: row.get::<_, Option<String>>("id").unwrap_or_default(),

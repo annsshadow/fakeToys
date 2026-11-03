@@ -1715,6 +1715,8 @@ pub async fn invoice_list_paging_page_size_size(
     let client = shared::db::acquire(&pool).await?;
 
     let offset = ((page.max(1) - 1) * size) as i64;
+    // LIMIT/OFFSET 参数 PG 定为 int8：size 是 i32 直绑 WrongType 客户端 500（O10 实证）。
+    let size_i64 = size as i64;
 
     let total_row = client
         .query_one(
@@ -1728,7 +1730,7 @@ pub async fn invoice_list_paging_page_size_size(
     let rows = client
         .query(
             "SELECT id, name, flag, status, creator, create_time FROM x_general_assemble_invoice ORDER BY create_time DESC LIMIT $1 OFFSET $2",
-            &[&size, &offset],
+            &[&size_i64, &offset],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -2084,7 +2086,8 @@ pub async fn qrcode_width_width_height_height_text_text(
     client
         .execute(
             "INSERT INTO x_general_assemble_qrcode (id, width, height, text, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
-            &[&id, &(width as i32), &(height as i32), &text, &content, &creator],
+            // width/height 列是 BIGINT：i32 绑定 WrongType 客户端 500（O10 实证）——对齐 i64。
+            &[&id, &(width as i64), &(height as i64), &text, &content, &creator],
         )
         .await
         .map_err(|_| AppError::Internal)?;

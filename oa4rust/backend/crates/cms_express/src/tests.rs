@@ -15,14 +15,15 @@ fn build_test_pool() -> Pool {
     Pool::builder(mgr).max_size(1).build().unwrap()
 }
 
-fn app() -> Router {
+async fn app() -> Router {
     let pool = build_test_pool();
-    crate::router(pool)
+    // O9：router 新增 DatabaseConnection 注入（view 族 handler 需要）
+    crate::router(pool, shared::testing::mock_db().await)
 }
 
 #[tokio::test]
 async fn test_uuid_random_returns_uuid() {
-    let response = app()
+    let response = app().await
         .oneshot(
             Request::builder()
                 .uri("/api/cms/uuid/random")
@@ -49,7 +50,7 @@ async fn test_uuid_random_returns_uuid() {
 
 #[tokio::test]
 async fn test_template_form_list_returns_data() {
-    let response = app()
+    let response = app().await
         .oneshot(
             Request::builder()
                 .uri("/api/cms/templateform/list")
@@ -64,7 +65,7 @@ async fn test_template_form_list_returns_data() {
 
 #[tokio::test]
 async fn test_view_publish_route_exists() {
-    let response = app()
+    let response = app().await
         .oneshot(
             Request::builder()
                 .uri("/api/cms/view/publish/view-001")
@@ -84,7 +85,7 @@ async fn test_view_publish_route_exists() {
 
 #[tokio::test]
 async fn test_view_unpublish_route_exists() {
-    let response = app()
+    let response = app().await
         .oneshot(
             Request::builder()
                 .uri("/api/cms/view/unpublish/view-001")
