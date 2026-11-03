@@ -37,11 +37,12 @@ type SettleTimings struct {
 	BuildLoadPre time.Duration // 事务前构筑快照（写库用 buildRaw）
 	Recompute    time.Duration // 整局引擎重算（CPU）
 	TxClaim      time.Duration // token 抢占 UPDATE
-	TxInsert     time.Duration // 战报 INSERT（触发器内联在此段）
+	TxPrefetch   time.Duration // R81：nextval 预取战报 id（让 INSERT 挪到事务尾）
 	TxWallet     time.Duration // 掉落 grantWallet（钱包 + 流水）
 	TxProgress   time.Duration // applyProgress
 	TxStars      time.Duration // level_stars upsert
 	TxTasks      time.Duration // bumpTasks
+	TxInsert     time.Duration // 战报 INSERT（触发器内联在此段；R81 起在事务尾）
 	TailLoad     time.Duration // 事务后钱包/构筑并行收尾
 	Total        time.Duration
 }
@@ -49,16 +50,16 @@ type SettleTimings struct {
 // SettleSegmentNames 给聚合与日志一个稳定的分段顺序（/metrics 渲染也用）。
 var SettleSegmentNames = []string{
 	"token_load", "skills_check", "build_load_pre", "recompute",
-	"tx_claim", "tx_insert", "tx_wallet", "tx_progress", "tx_stars", "tx_tasks",
-	"tail_load",
+	"tx_claim", "tx_prefetch", "tx_wallet", "tx_progress", "tx_stars", "tx_tasks",
+	"tx_insert", "tail_load",
 }
 
 // segments 按稳定顺序返回各分段值（与 settleSegmentNames 对齐）。
 func (t SettleTimings) segments() []time.Duration {
 	return []time.Duration{
 		t.TokenLoad, t.SkillsCheck, t.BuildLoadPre, t.Recompute,
-		t.TxClaim, t.TxInsert, t.TxWallet, t.TxProgress, t.TxStars, t.TxTasks,
-		t.TailLoad,
+		t.TxClaim, t.TxPrefetch, t.TxWallet, t.TxProgress, t.TxStars, t.TxTasks,
+		t.TxInsert, t.TailLoad,
 	}
 }
 
@@ -139,13 +140,13 @@ func (s *Service) recordSettleTiming(t SettleTimings, battleID, userID int64) {
 		// 加字段前先想「它会不会是凭证/昵称/IP」——是就别放。
 		fmt.Printf("[settle-slow] battle=%d user=%d total=%dms "+
 			"token_load=%d skills=%d build_pre=%d recompute=%d "+
-			"claim=%d insert=%d wallet=%d progress=%d stars=%d tasks=%d tail=%d\n",
+			"claim=%d prefetch=%d wallet=%d progress=%d stars=%d tasks=%d insert=%d tail=%d\n",
 			battleID, userID, t.Total.Milliseconds(),
 			t.TokenLoad.Milliseconds(), t.SkillsCheck.Milliseconds(),
 			t.BuildLoadPre.Milliseconds(), t.Recompute.Milliseconds(),
-			t.TxClaim.Milliseconds(), t.TxInsert.Milliseconds(), t.TxWallet.Milliseconds(),
+			t.TxClaim.Milliseconds(), t.TxPrefetch.Milliseconds(), t.TxWallet.Milliseconds(),
 			t.TxProgress.Milliseconds(), t.TxStars.Milliseconds(), t.TxTasks.Milliseconds(),
-			t.TailLoad.Milliseconds())
+			t.TxInsert.Milliseconds(), t.TailLoad.Milliseconds())
 	}
 }
 

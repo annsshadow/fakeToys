@@ -49,7 +49,7 @@ func starterOwned(t *testing.T, ts *testService, ctx context.Context, uid int64)
 func settleOnce(t *testing.T, ts *testService, ctx context.Context, uid int64, levelID int, kills int64) {
 	t.Helper()
 	if err := ts.DB.Tx(ctx, func(tx pgx.Tx) error {
-		_, err := ts.applyProgress(ctx, tx, uid, levelID, true, kills)
+		_, _, _, err := ts.applyProgress(ctx, tx, uid, levelID, true, kills)
 		return err
 	}); err != nil {
 		t.Fatalf("applyProgress 失败：%v", err)
