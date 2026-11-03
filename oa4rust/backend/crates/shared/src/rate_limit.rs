@@ -65,7 +65,7 @@ fn enforce_key_cap(table: &mut std::collections::HashMap<String, Vec<Instant>>) 
         .iter()
         .map(|(k, v)| (v.last().copied(), k.clone()))
         .collect();
-    entries.sort_unstable_by(|a, b| a.0.cmp(&b.0));
+    entries.sort_unstable_by_key(|a| a.0);
 
     let n = entries.len() - EVICT_TARGET;
     let evicted = n;
