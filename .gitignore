@@ -81,6 +81,9 @@ oa4rust/backend/scripts/**
 !oa4rust/backend/scripts/limit_scan.py
 # R7 只读挂写交叉验证脚本（2026-10-30）：独立判据复核尺子「R7 含写 SQL=0」读数
 !oa4rust/backend/scripts/cross_check_r7_readonly.py
+# O10 族①诊断工具：sea-orm 实体字段类型 ↔ 迁移列类型不一致扫描（TEXT/BIGINT 解码失败族），
+# 台账引用其结果，入库保证可复现。
+!oa4rust/backend/scripts/scan_entity_column_mismatch.py
 
 # log
 *.log
@@ -93,6 +96,9 @@ oa4rust/backend/deploy/.backups/
 
 *.txt
 !oa4rust/backend/docs/ops/*.txt
+# O10 棘轮基线：idor_matrix.rs 的 handler500 集合包含断言读此文件，
+# 删文件=废棘轮（测试硬编码 expect 存在），必须入库。
+!oa4rust/backend/tests/idor_handler500_baseline.txt
 # 审计/对账的文本证据（可读报告、候选路由对照）需入库，否则审计不可复现。
 !docs/audits/**/*.txt
 # augmentor 子项目的依赖清单必须纳入版本控制：CI 的 cache-dependency-path、

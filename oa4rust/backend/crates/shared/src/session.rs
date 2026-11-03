@@ -53,6 +53,17 @@ const NEGATIVE_CACHE_TTL: std::time::Duration = std::time::Duration::from_secs(5
 /// 负缓存容量上限：超限先清过期项，仍满则逐出最旧条目（简单 LRU）。
 const NEGATIVE_CACHE_MAX: usize = 1024;
 
+/// O9：禁用状态缓存 TTL（有意取舍 = 30s，测试 `person_status_cache_ttl_is_pinned` 钉住）。
+/// 调大 = 禁用后最坏生效延迟变大（安全回退），调小 = 每请求查库频次变高（性能）。
+/// 变更必须同步改测试断言并在台账写明理由。
+pub(crate) const PERSON_STATUS_CACHE_TTL: std::time::Duration =
+    std::time::Duration::from_secs(30);
+
+/// 缓存项是否新鲜（未过 TTL）。抽成纯函数以便边界测试不真等 30s。
+fn person_status_entry_fresh(at: std::time::Instant) -> bool {
+    at.elapsed() < PERSON_STATUS_CACHE_TTL
+}
+
 impl Default for SessionManager {
     fn default() -> Self {
         Self::new()
@@ -298,12 +309,16 @@ impl SessionManager {
     /// 禁用生效延迟 ≤30s，而正常请求每 30s 才多一次单行查询。
     /// 无池/查询失败时按「未禁用」放行（与 fail-closed 的会话校验不同：
     /// 这里失败只是禁用清单读不到，会话本身已有效）。
+    ///
+    /// 【有意的取舍】30s 是「禁用传播延迟」与「每请求一次单行查库」的折中：
+    /// 管理员禁用某人后，其在途会话最坏还能用 30 秒——这是接受的代价；
+    /// 若要求立即生效，需改 fail-closed 实时查询（每请求一次 DB），不支持。
+    /// 该值由 `PERSON_STATUS_CACHE_TTL` 钉住并有测试断言，不允许悄悄调大。
     async fn person_is_disabled(&self, person_unique: &str) -> bool {
-        const TTL: std::time::Duration = std::time::Duration::from_secs(30);
         {
             let cache = self.person_status_cache.read().await;
             if let Some((disabled, at)) = cache.get(person_unique) {
-                if at.elapsed() < TTL {
+                if person_status_entry_fresh(*at) {
                     return *disabled;
                 }
             }
@@ -689,6 +704,31 @@ mod tests {
             0,
             "拒绝未知 token 时不应写入任何条目"
         );
+    }
+
+    // O9：禁用缓存 TTL 边界钉——值必须恒为 30s（有意取舍：禁用传播延迟
+    // 上限 vs 每请求查库频次）。任何人调大这条测试必须同步改，并在台账写理由；
+    // 它存在就是为了防止 TTL 悄悄变成 5 分钟。
+    #[test]
+    fn person_status_cache_ttl_is_pinned() {
+        assert_eq!(
+            super::PERSON_STATUS_CACHE_TTL,
+            std::time::Duration::from_secs(30),
+            "禁用缓存 TTL 被改动——这是有意的安全/性能取舍，变更必须在台账写明理由"
+        );
+    }
+
+    // O9：fresh 判定边界——不真等 30s，直接构造时间点验证 <TTL 新鲜、>TTL 过期。
+    #[test]
+    fn person_status_entry_fresh_boundary() {
+        let now = std::time::Instant::now();
+        assert!(super::person_status_entry_fresh(now));
+        assert!(super::person_status_entry_fresh(
+            now - std::time::Duration::from_secs(29)
+        ));
+        assert!(!super::person_status_entry_fresh(
+            now - std::time::Duration::from_secs(31)
+        ));
     }
 
     // 第 46 轮：负缓存容量清理 —— 塞满后新条目逐出最旧，长度保持在上限内。

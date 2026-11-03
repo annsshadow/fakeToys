@@ -692,19 +692,37 @@ mod idor_matrix {
         drop(client);
         drop_scratch().await;
 
-        // handler 级 500 棘轮：只许减不许增。当前家族主体已定位（O10 实体/列
-        // 类型对齐：sea-orm RETURNING 解码 TEXT→DateTime / BIGINT→i32 失败；
-        // {} 体无校验直打 DB；非法参数；逐个修复后同步下调本基线）。
-        // 基线值 = 2026-11-03 run11 实测 161（全部 owner 同 500，无越权掩盖）。
-        const HANDLER500_BASELINE: usize = 161;
+        // handler 级 500 棘轮（O10 升级为集合基线）：基线文件逐条入库，
+        // 「当前 ⊆ 基线」才绿——新增 500 路由红；修复后从基线删条目收缩。
+        // 基线 = 2026-11-03 run15 实测 161 条（全部 owner 同 500，无越权掩盖）。
+        // O10 收官：161 条全修，基线收缩为空集（零容忍：任何新增 handler 级 500 即红）。
+        // 解析口径：跳过空行与 `#` 注释行。
+        let baseline_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/idor_handler500_baseline.txt");
+        let baseline: std::collections::BTreeSet<String> =
+            std::fs::read_to_string(&baseline_path)
+                .expect("handler500 基线文件必须存在（删文件=废棘轮）")
+                .lines()
+                .map(|l| l.trim().to_string())
+                .filter(|l| !l.is_empty() && !l.starts_with('#'))
+                .collect();
+        let current: std::collections::BTreeSet<String> =
+            handler500.keys().cloned().collect();
+        let new_entries: Vec<&String> = current.difference(&baseline).collect();
+        let fixed: Vec<&String> = baseline.difference(&current).collect();
+        if !fixed.is_empty() {
+            eprintln!("== handler500 基线可收缩 {} 条（已修复，请从基线文件删除）==", fixed.len());
+            for f in &fixed {
+                eprintln!("  [已修复] {f}");
+            }
+        }
         assert!(
-            handler500.len() <= HANDLER500_BASELINE,
-            "handler 级 500 棘轮回归：当前 {} > 基线 {}（新增族需修或记录）：\n{}",
-            handler500.len(),
-            HANDLER500_BASELINE,
-            handler500
+            new_entries.is_empty(),
+            "handler 级 500 棘轮回归：新增 {} 条不在基线的 500 路由（修复或记录入基线）：\n{}",
+            new_entries.len(),
+            new_entries
                 .iter()
-                .map(|(k, v)| format!("{k} {v}"))
+                .map(|k| format!("{k} {}", handler500.get(*k).map(|v| v.as_str()).unwrap_or("")))
                 .collect::<Vec<_>>()
                 .join("\n")
         );
