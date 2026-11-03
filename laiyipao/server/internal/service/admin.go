@@ -343,3 +343,44 @@ func (s *Service) writeAudit(ctx context.Context, q auditExecer, a AdminAuditCtx
 func (s *Service) AuditTx(ctx context.Context, tx txType, a AdminAuditCtx, action, target string, detail any) error {
 	return s.writeAudit(ctx, tx, a, action, target, detail)
 }
+
+// auditRowSnapshot 在事务内读一行并按键集合抽取审计「改前」快照（R75）。
+//
+// keys 非空时只抽这些列：patch 类编辑的 before 只含**被改字段**的旧值，
+// 体积与 patch 本身同级 —— 整关/整店配置全量进审计行会把单条审计从
+// ~200B 吹到几十 KB（levels 含 star_targets/terrain_config 两块 jsonb）。
+// keys 为 nil 时返回整行：删除类操作里对象即将消失，全量摘要是唯一遗迹。
+//
+// ⚠️ table 直接拼进 SQL，只允许调用点传**编译期常量**（全部调用点在本包内，
+// 传参来自外部的用法一眼可见，review 时拦下）。
+func auditRowSnapshot(ctx context.Context, tx txType, table string, id any, keys map[string]bool) (map[string]any, error) {
+	var raw []byte
+	if err := tx.QueryRow(ctx,
+		fmt.Sprintf(`SELECT row_to_json(t) FROM (SELECT * FROM %s WHERE id = $1) t`, table),
+		id).Scan(&raw); err != nil {
+		return nil, err
+	}
+	var row map[string]any
+	if err := json.Unmarshal(raw, &row); err != nil {
+		return nil, fmt.Errorf("snapshot %s row: %w", table, err)
+	}
+	if keys == nil {
+		return row, nil
+	}
+	out := make(map[string]any, len(keys))
+	for k := range keys {
+		if v, ok := row[k]; ok {
+			out[k] = v
+		}
+	}
+	return out, nil
+}
+
+// patchKeySet 把 patch 的键集合转成 map（供 auditRowSnapshot 抽取）。
+func patchKeySet(patch map[string]any) map[string]bool {
+	out := make(map[string]bool, len(patch))
+	for k := range patch {
+		out[k] = true
+	}
+	return out
+}

@@ -72,7 +72,7 @@ func TestAdminPagedListsReportTotal(t *testing.T) {
 	}
 
 	// ── 审计日志 ───────────────────────────────────────────────────────
-	logs, logTotal, err := ts.AdminListAuditLogs(ctx, 50, 0, "", 0, nil, nil)
+	logs, logTotal, err := ts.AdminListAuditLogs(ctx, 50, 0, "", 0, nil, nil, "")
 	if err != nil {
 		t.Fatalf("读审计日志失败：%v", err)
 	}

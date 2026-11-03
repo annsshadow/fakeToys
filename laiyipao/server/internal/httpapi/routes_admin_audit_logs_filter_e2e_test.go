@@ -66,4 +66,21 @@ func TestE2EAdminAuditLogsFilter(t *testing.T) {
 	if status != fiber.StatusBadRequest {
 		t.Errorf("非法 date_from 应 400，实际 %d %v", status, body)
 	}
+
+	// R74：target 对象过滤 —— 「这个对象被动过几次」一次查出。
+	status, body = e.get(t, "/api/v1/admin/audit-logs?limit=100&target=a", adminTok)
+	if status != fiber.StatusOK {
+		t.Fatalf("target 筛选应 200，实际 %d %v", status, body)
+	}
+	if totalTarget, ok := body["total"].(float64); !ok || totalTarget != 1 {
+		t.Errorf("target=a 应恰好 1 条，实际 %v", body["total"])
+	}
+	// 组合：target + action（target=a 的行 action 是 update_redeem）
+	status, body = e.get(t, "/api/v1/admin/audit-logs?limit=100&target=a&action=ban_user", adminTok)
+	if status != fiber.StatusOK {
+		t.Fatalf("组合筛选应 200，实际 %d %v", status, body)
+	}
+	if totalCombo, ok := body["total"].(float64); !ok || totalCombo != 0 {
+		t.Errorf("target=a+action=ban_user 应 0 条（对象 a 没有 ban 记录），实际 %v", body["total"])
+	}
 }

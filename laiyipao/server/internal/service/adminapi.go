@@ -508,6 +508,18 @@ func (s *Service) AdminListDefenses(ctx context.Context, limit, offset int, keyw
 func (s *Service) AdminDeleteDefense(ctx context.Context, defenseID int64,
 	audit ...AdminAuditCtx) error {
 	return s.DB.Tx(ctx, func(tx txType) error {
+		// R75：删除不可逆。记 before 摘要但不带 `snapshot` jsonb
+		//（构筑快照体积大且 snapshot_hash 已能标识内容）。
+		before, berr := auditRowSnapshot(ctx, tx, "defenses", defenseID, map[string]bool{
+			"owner_id": true, "name": true, "power": true,
+			"wins": true, "losses": true, "shielded_until": true, "snapshot_hash": true,
+		})
+		if berr != nil {
+			if errors.Is(berr, pgx.ErrNoRows) {
+				return fmt.Errorf("%w: 防线 %d 不存在", ErrNotFound, defenseID)
+			}
+			return fmt.Errorf("snapshot defense before delete: %w", berr)
+		}
 		ct, err := tx.Exec(ctx, `DELETE FROM defenses WHERE id = $1`, defenseID)
 		if err != nil {
 			return fmt.Errorf("delete defense: %w", err)
@@ -517,7 +529,7 @@ func (s *Service) AdminDeleteDefense(ctx context.Context, defenseID int64,
 		}
 		if len(audit) > 0 {
 			return s.AuditTx(ctx, tx, audit[0], "delete_defense",
-				strconv.FormatInt(defenseID, 10), nil)
+				strconv.FormatInt(defenseID, 10), map[string]any{"before": before})
 		}
 		return nil
 	})
@@ -1152,12 +1164,20 @@ func (s *Service) AdminUpdateShopItem(ctx context.Context, id int64, patch map[s
 	}
 	sql := fmt.Sprintf(`UPDATE shop_items SET %s, updated_at = now() WHERE id = $1`, joinComma(fields))
 	if err := s.DB.Tx(ctx, func(tx txType) error {
+		// R75：审计记「改前」——只抽 patch 触及字段的旧值。
+		before, berr := auditRowSnapshot(ctx, tx, "shop_items", id, patchKeySet(patch))
+		if berr != nil {
+			if errors.Is(berr, pgx.ErrNoRows) {
+				return fmt.Errorf("%w: 商品 %d 不存在", ErrNotFound, id)
+			}
+			return fmt.Errorf("update shop item: read before snapshot: %w", berr)
+		}
 		if _, err := tx.Exec(ctx, sql, args...); err != nil {
 			return fmt.Errorf("update shop item: %w", err)
 		}
 		if len(audit) > 0 {
 			return s.AuditTx(ctx, tx, audit[0], "update_shop_item",
-				strconv.FormatInt(id, 10), patch)
+				strconv.FormatInt(id, 10), map[string]any{"before": before, "patch": patch})
 		}
 		return nil
 	}); err != nil {
@@ -1318,6 +1338,15 @@ func (s *Service) AdminUpdateAnnouncement(ctx context.Context, id int, title, bo
 	// R39：更新与审计同一事务。改错内容/撤回是运营高频动作，
 	// 「内容变了但没人知道是谁改的」同样是无法追溯的事故。
 	err := s.DB.Tx(ctx, func(tx txType) error {
+		// R75：审计记 before/after（公告三字段体积都很小，全记）。
+		before, berr := auditRowSnapshot(ctx, tx, "announcements", id,
+			map[string]bool{"title": true, "body": true, "published": true})
+		if berr != nil {
+			if errors.Is(berr, pgx.ErrNoRows) {
+				return fmt.Errorf("%w: 公告 %d 不存在", ErrNotFound, id)
+			}
+			return fmt.Errorf("snapshot announcement before update: %w", berr)
+		}
 		// 首次发布：published_at 为空才补 now()；已发布的历史时间戳不动。
 		row := tx.QueryRow(ctx,
 			`UPDATE announcements
@@ -1334,7 +1363,10 @@ func (s *Service) AdminUpdateAnnouncement(ctx context.Context, id int, title, bo
 		}
 		if len(audit) > 0 {
 			if err := s.AuditTx(ctx, tx, audit[0], "update_announcement", strconv.Itoa(id),
-				map[string]any{"title": title, "body": body, "published": published}); err != nil {
+				map[string]any{
+					"before": before,
+					"after":  map[string]any{"title": title, "body": body, "published": published},
+				}); err != nil {
 				return err
 			}
 		}
@@ -1359,6 +1391,14 @@ func (s *Service) AdminDeleteAnnouncement(ctx context.Context, id int, audit ...
 	// R39：删除与审计同一事务。撤回违规公告是止损动作，
 	// 但「谁删的、删了哪一条」不能因为没有审计而消失。
 	err := s.DB.Tx(ctx, func(tx txType) error {
+		// R75：删除不可逆，审计是这条公告的唯一遗迹 —— 记全量 before。
+		before, berr := auditRowSnapshot(ctx, tx, "announcements", id, nil)
+		if berr != nil {
+			if errors.Is(berr, pgx.ErrNoRows) {
+				return fmt.Errorf("%w: 公告 %d 不存在", ErrNotFound, id)
+			}
+			return fmt.Errorf("snapshot announcement before delete: %w", berr)
+		}
 		ct, err := tx.Exec(ctx, `DELETE FROM announcements WHERE id = $1`, id)
 		if err != nil {
 			return fmt.Errorf("delete announcement: %w", err)
@@ -1367,7 +1407,8 @@ func (s *Service) AdminDeleteAnnouncement(ctx context.Context, id int, audit ...
 			return fmt.Errorf("%w: 公告 %d 不存在", ErrNotFound, id)
 		}
 		if len(audit) > 0 {
-			if err := s.AuditTx(ctx, tx, audit[0], "delete_announcement", strconv.Itoa(id), nil); err != nil {
+			if err := s.AuditTx(ctx, tx, audit[0], "delete_announcement", strconv.Itoa(id),
+				map[string]any{"before": before}); err != nil {
 				return err
 			}
 		}
@@ -1716,6 +1757,17 @@ func (s *Service) AdminSetRedeemCodeEnabled(ctx context.Context, id int, enabled
 	// R40：启停与审计同一事务。停用是止损动作（码泄露/发错奖励），
 	// 「停了但没人知道谁停的」同样是无法追溯的事故。
 	err := s.DB.Tx(ctx, func(tx txType) error {
+		// R74：审计要自包含 —— 先读改前值（同事务），detail 里记
+		// 码文本 + before/after。只记新值时，「停用前它是什么状态」
+		// 与「这是哪张码」都得靠人肉 join，且对象被删后就永远答不上。
+		var beforeEnabled bool
+		if err := tx.QueryRow(ctx,
+			`SELECT enabled FROM redeem_codes WHERE id = $1`, id).Scan(&beforeEnabled); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return fmt.Errorf("%w: 兑换码 %d 不存在", ErrNotFound, id)
+			}
+			return fmt.Errorf("read redeem code before toggle: %w", err)
+		}
 		row := tx.QueryRow(ctx,
 			`UPDATE redeem_codes SET enabled = $2
 			 WHERE id = $1
@@ -1729,7 +1781,11 @@ func (s *Service) AdminSetRedeemCodeEnabled(ctx context.Context, id int, enabled
 		}
 		if len(audit) > 0 {
 			if err := s.AuditTx(ctx, tx, audit[0], "set_redeem_enabled", strconv.Itoa(id),
-				map[string]any{"enabled": enabled}); err != nil {
+				map[string]any{
+					"code":   v.Code,
+					"before": map[string]any{"enabled": beforeEnabled},
+					"after":  map[string]any{"enabled": enabled},
+				}); err != nil {
 				return err
 			}
 		}
@@ -1771,6 +1827,24 @@ func (s *Service) AdminUpdateRedeemCode(ctx context.Context, id int, reward map[
 	// HTTP 层只会变成 500「update redeem code: ERROR: new row violates ...」。
 	// 放在 UPDATE 谓词里还能防并发：同时有玩家在兑换时，谓词会重判 used_count。
 	err = s.DB.Tx(ctx, func(tx txType) error {
+		// R74：先读改前快照（同事务）供审计。UPDATE 的零行歧义
+		// （不存在 vs 上限低于已用）沿用下方既有区分，不改语义。
+		var beforeCode string
+		var beforeRewardRaw []byte
+		var beforeMaxUses int
+		var beforeExpiresAt *time.Time
+		if rerr := tx.QueryRow(ctx,
+			`SELECT code, reward, max_uses, expires_at FROM redeem_codes WHERE id = $1`, id).
+			Scan(&beforeCode, &beforeRewardRaw, &beforeMaxUses, &beforeExpiresAt); rerr != nil {
+			if errors.Is(rerr, pgx.ErrNoRows) {
+				return fmt.Errorf("%w: 兑换码 %d 不存在", ErrNotFound, id)
+			}
+			return fmt.Errorf("read redeem code before update: %w", rerr)
+		}
+		var beforeReward map[string]int
+		if uerr := json.Unmarshal(beforeRewardRaw, &beforeReward); uerr != nil {
+			return fmt.Errorf("unmarshal before reward: %w", uerr)
+		}
 		row := tx.QueryRow(ctx,
 			`UPDATE redeem_codes SET reward = $2, max_uses = $3, expires_at = $4
 			 WHERE id = $1 AND used_count <= $3
@@ -1798,9 +1872,17 @@ func (s *Service) AdminUpdateRedeemCode(ctx context.Context, id int, reward map[
 		if len(audit) > 0 {
 			if err := s.AuditTx(ctx, tx, audit[0], "update_redeem_code", strconv.Itoa(id),
 				map[string]any{
-					"reward":     reward,
-					"max_uses":   maxUses,
-					"expires_at": expiresAt,
+					"code": beforeCode,
+					"before": map[string]any{
+						"reward":     beforeReward,
+						"max_uses":   beforeMaxUses,
+						"expires_at": beforeExpiresAt,
+					},
+					"after": map[string]any{
+						"reward":     reward,
+						"max_uses":   maxUses,
+						"expires_at": expiresAt,
+					},
 				}); err != nil {
 				return err
 			}
@@ -1882,7 +1964,9 @@ func (s *Service) AdminExportAnnouncements(ctx context.Context, published *bool,
 //
 // action / adminID / dateFrom / dateTo 均为可选筛选（2026-10-31 新一轮
 // 第 18 轮）：空 action 不过滤、adminID=0 不过滤、nil 日期不过滤。
-func (s *Service) AdminListAuditLogs(ctx context.Context, limit, offset int, action string, adminID int64, dateFrom, dateTo *time.Time) ([]AdminAuditLogView, int64, error) {
+// R74：新增 target 精确过滤 —— 「这个兑换码/这个玩家被动过几次、谁动的」
+// 必须能一次查出，全表翻页在实际运营里等于查不了。
+func (s *Service) AdminListAuditLogs(ctx context.Context, limit, offset int, action string, adminID int64, dateFrom, dateTo *time.Time, target string) ([]AdminAuditLogView, int64, error) {
 	limit = clampLimit(limit, 100, 500)
 	// ⚠️ 2026-10-21（二轮审计 P2）：负 offset / 负 limit 必须夹住 ——
 	// 否则 PostgreSQL 直接报 `OFFSET must not be negative` → 整页 500。
@@ -1892,15 +1976,18 @@ func (s *Service) AdminListAuditLogs(ctx context.Context, limit, offset int, act
 	// ⚠️ 2026-10-21（二轮审计 P2-6）：`total` 必须是**全量行数**，
 	// 不是当前页的条数 —— 前端要拿它算页数。
 	action = strings.TrimSpace(action)
+	target = strings.TrimSpace(target)
 	// 操作类型 / 管理员 / 日期范围筛选（2026-10-31 新一轮第 18 轮）。
 	// `$1 = ''` 与 `$2 = 0` 是「不过滤」哨兵；`$3/$4` 是日期（nil → NULL）。
-	// 列表查询的 limit/offset 占 $5/$6，COUNT 查询没有它们。
+	// `$5` 是 target（'' → 不过滤）。
+	// 列表查询的 limit/offset 占 $6/$7，COUNT 查询没有它们。
 	where := `($1 = '' OR action = $1)
 	          AND ($2 = 0 OR COALESCE(admin_id, 0) = $2)
 	          AND ($3::timestamptz IS NULL OR created_at >= $3)
-	          AND ($4::timestamptz IS NULL OR created_at < $4)`
-	countArgs := []any{action, adminID, dateFrom, dateTo}
-	listArgs := []any{action, adminID, dateFrom, dateTo, limit, offset}
+	          AND ($4::timestamptz IS NULL OR created_at < $4)
+	          AND ($5 = '' OR target = $5)`
+	countArgs := []any{action, adminID, dateFrom, dateTo, target}
+	listArgs := []any{action, adminID, dateFrom, dateTo, target, limit, offset}
 
 	var total int64
 	if err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM admin_audit_logs WHERE `+where, countArgs...).Scan(&total); err != nil {
@@ -1920,7 +2007,7 @@ func (s *Service) AdminListAuditLogs(ctx context.Context, limit, offset int, act
 	// 要改它 = 改一个有测试守卫的**刻意决定**，那是产品决策，不是修 bug。
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, admin_id, username, action, target, detail, created_at
-		 FROM admin_audit_logs WHERE `+where+` ORDER BY id DESC LIMIT $5 OFFSET $6`, listArgs...)
+		 FROM admin_audit_logs WHERE `+where+` ORDER BY id DESC LIMIT $6 OFFSET $7`, listArgs...)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -1958,17 +2045,19 @@ func (s *Service) AdminListAuditLogs(ctx context.Context, limit, offset int, act
 // 与列表的差异：detail 是原始 JSONB 文本**不解析**直接导出 ——
 // 列表对坏 jsonb 报 500 是 fail-loud 的有意取舍（见 AdminListAuditLogs），
 // 而导出是归档，应尽量把原始证据留下来，不能被一行坏数据中断。
-func (s *Service) AdminExportAuditLogs(ctx context.Context, action string, adminID int64, dateFrom, dateTo *time.Time) ([]byte, error) {
+func (s *Service) AdminExportAuditLogs(ctx context.Context, action string, adminID int64, dateFrom, dateTo *time.Time, target string) ([]byte, error) {
 	action = strings.TrimSpace(action)
-	// 与列表同口径的筛选（2026-10-31 新一轮第 18 轮）。
+	target = strings.TrimSpace(target)
+	// 与列表同口径的筛选（2026-10-31 新一轮第 18 轮；R74 补 target）。
 	where := `($1 = '' OR action = $1)
 	          AND ($2 = 0 OR COALESCE(admin_id, 0) = $2)
 	          AND ($3::timestamptz IS NULL OR created_at >= $3)
-	          AND ($4::timestamptz IS NULL OR created_at < $4)`
+	          AND ($4::timestamptz IS NULL OR created_at < $4)
+	          AND ($5 = '' OR target = $5)`
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, admin_id, username, action, target, detail, created_at
 		 FROM admin_audit_logs WHERE `+where+` ORDER BY id DESC LIMIT 100001`,
-		action, adminID, dateFrom, dateTo)
+		action, adminID, dateFrom, dateTo, target)
 	if err != nil {
 		return nil, fmt.Errorf("export audit logs: %w", err)
 	}

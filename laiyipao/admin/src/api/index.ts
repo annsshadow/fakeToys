@@ -779,18 +779,19 @@ export function exportRedeemCodesCsv() {
 export function fetchAuditLogs(
   limit = 100,
   offset = 0,
-  params: { action?: string; admin_id?: number; date_from?: string; date_to?: string } = {},
+  params: { action?: string; admin_id?: number; date_from?: string; date_to?: string; target?: string } = {},
 ) {
   // 2026-10-21（P5-1）：审计日志也要能翻页 —— 固定 100 条时，
   // 更早的操作**根本看不到**。
   const q = new URLSearchParams()
   q.set('limit', String(limit))
   q.set('offset', String(offset))
-  // 操作/管理员/日期筛选（2026-10-31 新一轮第 18 轮）
+  // 操作/管理员/日期筛选（2026-10-31 新一轮第 18 轮）；R74 补对象过滤
   if (params.action) q.set('action', params.action)
   if (params.admin_id) q.set('admin_id', String(params.admin_id))
   if (params.date_from) q.set('date_from', params.date_from)
   if (params.date_to) q.set('date_to', params.date_to)
+  if (params.target) q.set('target', params.target)
   return api.get<AdminAuditLogsResp>(`/admin/audit-logs?${q}`)
 }
 
@@ -805,11 +806,13 @@ export function exportAuditLogsCsv(params: {
   admin_id?: number
   date_from?: string
   date_to?: string
+  target?: string
 } = {}) {
   const q = new URLSearchParams()
   if (params.action) q.set('action', params.action)
   if (params.admin_id) q.set('admin_id', String(params.admin_id))
   if (params.date_from) q.set('date_from', params.date_from)
   if (params.date_to) q.set('date_to', params.date_to)
+  if (params.target) q.set('target', params.target)
   return api.getBlob(`/admin/audit-logs/export?${q}`)
 }
