@@ -16,9 +16,10 @@ process.env.AUTO_CHECKIN_DATA_DIR = DATA_DIR;
 // 锁目录与数据目录一起隔离，避免与并行测试文件抢同一把 .run.lock
 process.env.AUTO_CHECKIN_LOCK_DIR = DATA_DIR;
 
-// run 路由会触发 runAll/runSite → 浏览器启动；指向空目录让其确定性失败，
-// 测试绝不碰真实站点（必须在 server.js 加载 runner 链之前设置）
-process.env.PLAYWRIGHT_BROWSERS_PATH = "Z:" + join("nonexistent", "browsers");
+// run 路由会触发 runAll/runSite → 浏览器启动；指向存在但为空的目录让其确定性失败，
+// 测试绝不碰真实站点（必须在 server.js 加载 runner 链之前设置）。
+// 不能指向不存在路径：browser.ts 的 sanitizeBrowserEnv 会清理无效路径并回退默认目录。
+process.env.PLAYWRIGHT_BROWSERS_PATH = mkdtempSync(join(tmpdir(), "auto-checkin-empty-browsers-"));
 
 const { addRecord } = await import("../src/store.js");
 const { createApp } = await import("../src/server.js");

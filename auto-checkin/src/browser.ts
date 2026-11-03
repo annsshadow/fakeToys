@@ -1,16 +1,49 @@
 // Copyright (C) 2026 annsshadow
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { chromium, type BrowserContext, type Page } from "playwright";
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { ROOT_DIR } from "./config.js";
 import type { AppConfig } from "./types.js";
+// 只做类型导入：Playwright 在模块加载时就会缓存 PLAYWRIGHT_BROWSERS_PATH，
+// 必须先在下方清理无效路径，再通过动态 import 触发它真正加载。
+import type { BrowserContext, Page } from "playwright";
 
 const SESSION_DIR = join(ROOT_DIR, "sessions");
 const SHOT_DIR = join(ROOT_DIR, "screenshots");
 mkdirSync(SESSION_DIR, { recursive: true });
 mkdirSync(SHOT_DIR, { recursive: true });
+
+// 某些启动环境（IDE/终端/外部工具注入）可能带一个指向不存在目录的值
+// （如 Z:\nonexistent\browsers），会让 Playwright 永远找不到浏览器可执行文件，
+// 表现为"每天签到全部失败但浏览器其实已装好"。这里在 Playwright 加载前清掉它。
+const invalidBrowserPath = process.env.PLAYWRIGHT_BROWSERS_PATH && !existsSync(process.env.PLAYWRIGHT_BROWSERS_PATH);
+if (invalidBrowserPath) {
+  console.warn(
+    `[browser] 检测到无效的 PLAYWRIGHT_BROWSERS_PATH（${process.env.PLAYWRIGHT_BROWSERS_PATH}），已忽略并回退默认浏览器目录`,
+  );
+  delete process.env.PLAYWRIGHT_BROWSERS_PATH;
+}
+
+const { chromium } = await import("playwright");
+
+/**
+ * 清理无效的 PLAYWRIGHT_BROWSERS_PATH。
+ *
+ * 某些启动环境（IDE/终端/外部工具注入）可能带一个指向不存在目录的值
+ * （如 Z:\nonexistent\browsers），会让 launchPersistentContext 永远找不到
+ * 浏览器可执行文件，表现为"每天签到全部失败但浏览器其实已装好"。
+ *
+ * 若该环境变量存在且目录不存在，删除它，让 Playwright 回退到默认安装路径。
+ * 返回是否发生了回退（供日志/测试确认）。
+ */
+export function sanitizeBrowserEnv(): boolean {
+  const p = process.env.PLAYWRIGHT_BROWSERS_PATH;
+  if (!p) return false;
+  if (existsSync(p)) return false;
+  delete process.env.PLAYWRIGHT_BROWSERS_PATH;
+  return true;
+}
 
 /**
  * 为某站点打开一个持久化浏览器上下文。
@@ -22,6 +55,12 @@ export async function openSiteContext(
   config: AppConfig,
 ): Promise<BrowserContext> {
   const userDataDir = join(SESSION_DIR, siteId);
+  // 继承到无效浏览器路径时回退默认安装路径，避免"浏览器明明装好却天天失败"。
+  if (sanitizeBrowserEnv()) {
+    console.warn(
+      `[browser] 检测到无效的 PLAYWRIGHT_BROWSERS_PATH，已忽略并回退默认浏览器目录`,
+    );
+  }
   const context = await chromium.launchPersistentContext(userDataDir, {
     headless: config.browser.headless,
     timeout: config.browser.timeoutMs,

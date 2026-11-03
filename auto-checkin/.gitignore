@@ -26,3 +26,6 @@ node_modules/
 dist/
 .DS_Store
 *.local
+
+# 覆盖率报告产物（c8 / node --experimental-test-coverage 生成）
+coverage/
