@@ -508,6 +508,18 @@ func (s *Service) AdminListDefenses(ctx context.Context, limit, offset int, keyw
 func (s *Service) AdminDeleteDefense(ctx context.Context, defenseID int64,
 	audit ...AdminAuditCtx) error {
 	return s.DB.Tx(ctx, func(tx txType) error {
+		// R75：删除不可逆。记 before 摘要但不带 `snapshot` jsonb
+		//（构筑快照体积大且 snapshot_hash 已能标识内容）。
+		before, berr := auditRowSnapshot(ctx, tx, "defenses", defenseID, map[string]bool{
+			"owner_id": true, "name": true, "power": true,
+			"wins": true, "losses": true, "shielded_until": true, "snapshot_hash": true,
+		})
+		if berr != nil {
+			if errors.Is(berr, pgx.ErrNoRows) {
+				return fmt.Errorf("%w: 防线 %d 不存在", ErrNotFound, defenseID)
+			}
+			return fmt.Errorf("snapshot defense before delete: %w", berr)
+		}
 		ct, err := tx.Exec(ctx, `DELETE FROM defenses WHERE id = $1`, defenseID)
 		if err != nil {
 			return fmt.Errorf("delete defense: %w", err)
@@ -517,7 +529,7 @@ func (s *Service) AdminDeleteDefense(ctx context.Context, defenseID int64,
 		}
 		if len(audit) > 0 {
 			return s.AuditTx(ctx, tx, audit[0], "delete_defense",
-				strconv.FormatInt(defenseID, 10), nil)
+				strconv.FormatInt(defenseID, 10), map[string]any{"before": before})
 		}
 		return nil
 	})
@@ -1152,12 +1164,20 @@ func (s *Service) AdminUpdateShopItem(ctx context.Context, id int64, patch map[s
 	}
 	sql := fmt.Sprintf(`UPDATE shop_items SET %s, updated_at = now() WHERE id = $1`, joinComma(fields))
 	if err := s.DB.Tx(ctx, func(tx txType) error {
+		// R75：审计记「改前」——只抽 patch 触及字段的旧值。
+		before, berr := auditRowSnapshot(ctx, tx, "shop_items", id, patchKeySet(patch))
+		if berr != nil {
+			if errors.Is(berr, pgx.ErrNoRows) {
+				return fmt.Errorf("%w: 商品 %d 不存在", ErrNotFound, id)
+			}
+			return fmt.Errorf("update shop item: read before snapshot: %w", berr)
+		}
 		if _, err := tx.Exec(ctx, sql, args...); err != nil {
 			return fmt.Errorf("update shop item: %w", err)
 		}
 		if len(audit) > 0 {
 			return s.AuditTx(ctx, tx, audit[0], "update_shop_item",
-				strconv.FormatInt(id, 10), patch)
+				strconv.FormatInt(id, 10), map[string]any{"before": before, "patch": patch})
 		}
 		return nil
 	}); err != nil {
@@ -1318,6 +1338,15 @@ func (s *Service) AdminUpdateAnnouncement(ctx context.Context, id int, title, bo
 	// R39：更新与审计同一事务。改错内容/撤回是运营高频动作，
 	// 「内容变了但没人知道是谁改的」同样是无法追溯的事故。
 	err := s.DB.Tx(ctx, func(tx txType) error {
+		// R75：审计记 before/after（公告三字段体积都很小，全记）。
+		before, berr := auditRowSnapshot(ctx, tx, "announcements", id,
+			map[string]bool{"title": true, "body": true, "published": true})
+		if berr != nil {
+			if errors.Is(berr, pgx.ErrNoRows) {
+				return fmt.Errorf("%w: 公告 %d 不存在", ErrNotFound, id)
+			}
+			return fmt.Errorf("snapshot announcement before update: %w", berr)
+		}
 		// 首次发布：published_at 为空才补 now()；已发布的历史时间戳不动。
 		row := tx.QueryRow(ctx,
 			`UPDATE announcements
@@ -1334,7 +1363,10 @@ func (s *Service) AdminUpdateAnnouncement(ctx context.Context, id int, title, bo
 		}
 		if len(audit) > 0 {
 			if err := s.AuditTx(ctx, tx, audit[0], "update_announcement", strconv.Itoa(id),
-				map[string]any{"title": title, "body": body, "published": published}); err != nil {
+				map[string]any{
+					"before": before,
+					"after":  map[string]any{"title": title, "body": body, "published": published},
+				}); err != nil {
 				return err
 			}
 		}
@@ -1359,6 +1391,14 @@ func (s *Service) AdminDeleteAnnouncement(ctx context.Context, id int, audit ...
 	// R39：删除与审计同一事务。撤回违规公告是止损动作，
 	// 但「谁删的、删了哪一条」不能因为没有审计而消失。
 	err := s.DB.Tx(ctx, func(tx txType) error {
+		// R75：删除不可逆，审计是这条公告的唯一遗迹 —— 记全量 before。
+		before, berr := auditRowSnapshot(ctx, tx, "announcements", id, nil)
+		if berr != nil {
+			if errors.Is(berr, pgx.ErrNoRows) {
+				return fmt.Errorf("%w: 公告 %d 不存在", ErrNotFound, id)
+			}
+			return fmt.Errorf("snapshot announcement before delete: %w", berr)
+		}
 		ct, err := tx.Exec(ctx, `DELETE FROM announcements WHERE id = $1`, id)
 		if err != nil {
 			return fmt.Errorf("delete announcement: %w", err)
@@ -1367,7 +1407,8 @@ func (s *Service) AdminDeleteAnnouncement(ctx context.Context, id int, audit ...
 			return fmt.Errorf("%w: 公告 %d 不存在", ErrNotFound, id)
 		}
 		if len(audit) > 0 {
-			if err := s.AuditTx(ctx, tx, audit[0], "delete_announcement", strconv.Itoa(id), nil); err != nil {
+			if err := s.AuditTx(ctx, tx, audit[0], "delete_announcement", strconv.Itoa(id),
+				map[string]any{"before": before}); err != nil {
 				return err
 			}
 		}

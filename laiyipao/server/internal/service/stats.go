@@ -1533,12 +1533,22 @@ func (s *Service) AdminUpdateLevel(ctx context.Context, levelID int, patch map[s
 	sql := fmt.Sprintf(`UPDATE levels SET %s, updated_at = now() WHERE id = $1`,
 		joinComma(fields))
 	err := s.DB.Tx(ctx, func(tx txType) error {
+		// R75：审计记「改前」——只抽 patch 触及字段的旧值（整关配置
+		// 含 star_targets/terrain_config jsonb，全量进审计会吹到几十 KB）。
+		before, berr := auditRowSnapshot(ctx, tx, "levels", levelID, patchKeySet(patch))
+		if berr != nil {
+			// 顺手钉住语义：改前 UPDATE 零行不报错（改了个不存在的关卡也 200）。
+			if errors.Is(berr, pgx.ErrNoRows) {
+				return fmt.Errorf("%w: 关卡 %d 不存在", ErrNotFound, levelID)
+			}
+			return fmt.Errorf("update level: read before snapshot: %w", berr)
+		}
 		if _, err := tx.Exec(ctx, sql, args...); err != nil {
 			return fmt.Errorf("update level: %w", err)
 		}
 		if len(audit) > 0 {
 			return s.AuditTx(ctx, tx, audit[0], "update_level",
-				strconv.Itoa(levelID), patch)
+				strconv.Itoa(levelID), map[string]any{"before": before, "patch": patch})
 		}
 		return nil
 	})
@@ -1645,12 +1655,20 @@ func (s *Service) AdminUpdateSkill(ctx context.Context, skillID int, patch map[s
 	}
 	sql := fmt.Sprintf(`UPDATE skills SET %s WHERE id = $1`, joinComma(fields))
 	if err := s.DB.Tx(ctx, func(tx txType) error {
+		// R75：审计记「改前」——只抽 patch 触及字段（name/descr）的旧值。
+		before, berr := auditRowSnapshot(ctx, tx, "skills", skillID, patchKeySet(patch))
+		if berr != nil {
+			if errors.Is(berr, pgx.ErrNoRows) {
+				return fmt.Errorf("%w: 技能 %d 不存在", ErrNotFound, skillID)
+			}
+			return fmt.Errorf("update skill: read before snapshot: %w", berr)
+		}
 		if _, err := tx.Exec(ctx, sql, args...); err != nil {
 			return fmt.Errorf("update skill: %w", err)
 		}
 		if len(audit) > 0 {
 			return s.AuditTx(ctx, tx, audit[0], "update_skill",
-				strconv.Itoa(skillID), patch)
+				strconv.Itoa(skillID), map[string]any{"before": before, "patch": patch})
 		}
 		return nil
 	}); err != nil {
