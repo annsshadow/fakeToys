@@ -30,6 +30,7 @@
 | O6 | 路由元数缺陷修复 ×3（arity_probe 常红收口） | done | 缺口（arity 探针实测 2 条 + 评审发现 1 条隐形）：① `PUT /api/calendar_assemble_control/event` 死注册（模式无 {id}，handler 要 Path<String>，恒定 500 Wrong number of path arguments）→ 删 PUT 臂（正确入口 /event/update/all/{id} 已在）；② `POST .../upload/folder/callback/callback/{folderId}` 1 参模式挂 2 元组提取器 → 新增单参薄包装委托同实现；③ `attachment_id_update_callback_callback` 只注册在单参路径却提取 2 元组（因必需会话扩展先失败而对探针隐形）→ 收成 Path<String>（callback 未使用）。生成物：gen_mcp_tools.py 重生成注册表（含 ±80 条存量漂移同步，无路由语义改动）。证据：arity_probe 转绿；calendar/file/mcp 测试全绿；clippy 零告警。遗留（台账候选）：file upload scale/scale 两条 legacy 路径元数不符且 reference/scale 无来源，需先核实 o2server 契约 | a7965fa49 |
 | O7 | 查询执行期错误分类（SQLSTATE 锚点 + From 自动分类） | done | 缺口：查询/事务/提交失败的 tokio-postgres 错误全仓 237 处 `.map_err(|_| AppError::Internal)` 吞成 500——statement_timeout（57014）、断连（08xxx/被 kill）、停机窗口（57P0x）这类可重试故障客户端无法识别。改法：`shared::db::classify_query_error`（08*/57014/53300/53200/57P01-03/is_closed/io → 503 Unavailable；23505/42P01/语法错/ToSql/FromSql → 500）+ `From<tokio_postgres::Error> for AppError`，`.map_err(|_| Internal)?` → `?` 自动分类。清扫统计：294 候选 → 237 纳入分类、57 回退（sea-orm DbErr 56 + reqwest 1，未实现其分类故保留原状）、另 1 处 await 无 `?`（oidc res.json）与 3898 处非 await（serde/fs 同步调用）均非 DB 错误，明确不动。证据（真触发，非构造错误值）：真 statement_timeout=1s + pg_sleep(3) 实测 57014：改前 500 → 改后 503；真 pg_terminate_backend 杀连接后查询：→ 503；23505/42P01 保持 500；From 实现与分类器同口径。验证：4 条锚点测试 + workspace 全量绿 + clippy 零告警 | 4b08457c4 |
 | O8 | sea-orm DbErr 分类（消灭最大语义不一致面：56 处保留点） | done | 锚点实验（源码+真触发双证）：`DbErr::Conn/Exec/Query(RuntimeErr::SqlxError)` 公开携带底层 sqlx::Error，SQLSTATE 可稳定取（`sqlx::Error::Database(db).code()`）；池取连失败被 sea-orm 折叠为类型化的 `DbErr::ConnectionAcquire(ConnAcquireErr::{Timeout, ConnectionClosed})`（非字符串匹配）。改法：`classify_orm_error` 与 O7 共用 `sqlstate_is_retryable` 判据表；`From<DbErr> for AppError`；56 处回退点全部转正为 `?` 自动分类（另回退 2 处误转：ai reqwest json、surface storage String 错误）。证据（全真触发）：sea-orm 事务内 SET LOCAL statement_timeout=1s + pg_sleep(3) 实测 57014 → 锚点断言成立 → 503；未定义表 42P01 → 500；池 max=1 + 事务占连接 → ConnectionAcquire::Timeout → 503；文本列提取 i32 → TryGetErr → 500。回归：organization_core_entity 两处死池断言 500→503（io 断连新语义）；workspace 全量绿、clippy 零告警 | 82a76f4ef |
+| O9 | IDOR 穷举矩阵（活注册表 × 7 身份）+ 读面归属闸家族修复 + 接线缺陷族修复 | done | 矩阵（`tests/idor_matrix.rs` 新增）：扫 crates/*/src 非测试代码 `.route(` 字面量（修复多行注册漏扫后 4758 注册/3706 候选，候选数下限断言防注册表静默漂移）；7 身份格子（anon/forged/expired/disabled/non-owner/cross-org/owner 参照列）；判定写死——非豁免非公共面 anon/forged/expired 必 401、disabled 必 401/403、非所有者 403/404/400/422 通过、**canary 泄露与「owner 正常而非所有者 500」= 越权缺陷**、「owner 同 500」入 handler 级棘轮桶（基线 161 只减不增）；写后完整性复核夹具不被改动；探针全程跑专用 scratch 库 `oa_par_idor`（每轮重建+全量迁移+DROP——此前 `{}` 体探针在共享库 25 表写 280+ 垃圾行，把下游 arity_probe 打红，已清并隔离）。破坏实验：摘 `attachment2_id_binary_base64` 归属闸 → 矩阵精确红 12 格（3 注册路径×2 身份+2 委托变体×2）→ 还原转绿。真缺陷修复（改前 canary 实证/500、改后绿）：① FILE_FILE 读面 8 handler + 6 list 端点归属闸（require_owner 本人/admin，与写侧 attachment_id_update 既有约定同口径；list 收窄为本人+admin——引用共享场景需实体级权限模型，当前不存在，fail-loud 方向）；② calendar 族 8 处（calendar_get 两实现/event_get/event_rfc/detail/两个 list filter/manager list：公开日历放行、私有 403，事件读面=公开日历∨事件属主∨日历属主∨管理员）；③ 禁用用户（locked/deleted_at）在途会话两臂失效（person_status_cache 30s TTL，幽灵人放行兼容存量夹具，内存臂命中即逐出）；④ program_center warnlog 族参数个数不匹配（count 传入但 SQL 不引用，恒 500）修复为 LIMIT 参数化夹紧 [1,100]；三族 date 变体（warnlog/prompterrorlog/unexpectederrorlog）String 直传 `$n::date` 序列化必炸 → NaiveDate 解析（非法日期 500→400）。接线缺陷族（生产恒定 500，矩阵定位、非 IDOR 面）：empower router 的 with_state 错当 Extension（全族 14+ 端点）；component router 的 Extension(pool) 层被注释；query_express DatabaseConnection 从未注入（§五 遗留 30）；cms_express/cms_core_entity 双注入；calendar detail 路由注册于 layer 之后（axum Router::layer 不覆盖后注册路由）。decode panic 族：bbs section sort BIGINT→i64、hotpic application NULL 安全、get_calendar_detail 全列 Option 化。parity 生成器补 DatabaseConnection 参数形态。遗留：legacy 上传 scale/scale 两条 arity 基线路由显式豁免（reference/scale 无来源，无法确认 o2server 语义，不开轮）。验证：矩阵 run15 绿（0 越权缺陷）、破坏实验红绿对照、4 守卫绿、13 触及 crate 测试全绿、clippy 全 workspace 零告警 | 4c317dfdf |
 
 ## 不开轮记录（探针全绿 / 无真实后果）
 
@@ -39,12 +40,14 @@
 
 ## 候选方向池（按价值排序，执行时取舍）
 
-1. 迁移并发安全：多实例同时启动跑迁移无串行化（Track-A 在 laiyipao 已踩过同类问题）。
-2. sea-orm/sqlx 错误分类：`sqlx::Error` 全部 → 500，PoolTimedOut/Io 断连应与 R6 同口径 → 503。
+1. ~~迁移并发安全~~（O1 done）。
+2. ~~sea-orm/sqlx 错误分类~~（O7/O8 done）。
 3. 限流器 key 空间洪泛（唯一 key 1h 窗口内无总量上界）。
-4. IDOR / 越权：资源归属校验抽查→穷举。
+4. ~~IDOR / 越权~~（O9 done：矩阵 + 读面归属闸家族）。
 5. 管理端路由鉴权穷举扫描。
 6. 输入健壮性：超长字段/深嵌套/畸形 JSON 的上界缺失。
 7. 性能基线：真实数据量下关键路径 P95/P99。
 8. 数据完整性：业务写与审计写同事务、孤儿行、级联语义。
+9. **O10 候选（O9 棘轮桶，161 条 handler 级 500）**：sea-orm 实体类型与列类型系统性不匹配（实体 `Option<DateTime>` ↔ 列 TEXT、`i32` ↔ BIGINT——insert 的 RETURNING 全列解码必炸，bbs_forum_info 已实证根因）+ `{}` 体无校验直打 DB 族。逐族对齐实体定义与 migration 实态，修复一族下调棘轮基线。
+10. decode panic 族残部：`row.get::<String>` 裸读可空列的存量点（O9 修了 bbs sort/hotpic application/calendar detail 三处实证点，全仓仍有同类潜伏—— arity_probe/矩阵对有数据的表会逐个暴露）。
 
