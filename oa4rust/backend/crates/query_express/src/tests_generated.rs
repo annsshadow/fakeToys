@@ -11,8 +11,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_query_list() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        // O9：router 改注 sea_orm DatabaseConnection（接线修复）
+        let app = crate::router(shared::testing::mock_db().await);
         let response = app
             .oneshot(
                 Request::builder()
@@ -32,8 +32,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_query() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let app = crate::router(shared::testing::mock_db().await);
         let response = app
             .oneshot(
                 Request::builder()

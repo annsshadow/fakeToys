@@ -507,6 +507,7 @@ pub(crate) async fn upload_file_record(
 #[allow(non_snake_case)]
 pub async fn file_download(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
@@ -521,6 +522,10 @@ pub async fn file_download(
 
     match row {
         Some(row) => {
+            // O9：读面归属闸——与 file_assemble_control 写侧 require_owner 同口径
+            // （本人或 admin，否则 403；此前任何登录用户可读他人文件元数据）。
+            let owner: String = row.get::<_, Option<String>>("person").unwrap_or_default();
+            shared::middleware::require_owner(&pool, &session, &owner).await?;
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),

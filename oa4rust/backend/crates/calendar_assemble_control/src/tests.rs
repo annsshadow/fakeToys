@@ -334,7 +334,7 @@ async fn real_calendar_get_and_setting_by_code() {
         .unwrap();
 
     let app = crate::router(pool);
-    // 读日历
+    // 读日历（O9：calendar_get 加归属闸——注入 owner 会话，验证本人 200）
     let resp = app
         .clone()
         .oneshot(
@@ -343,6 +343,7 @@ async fn real_calendar_get_and_setting_by_code() {
                     "/api/calendar_assemble_control/calendar/{}",
                     cal_id
                 ))
+                .extension(shared::testing::test_session("u2tester"))
                 .body(Body::empty())
                 .unwrap(),
         )

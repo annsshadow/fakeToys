@@ -152,5 +152,12 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
             "/api/calendar_assemble_control/test/1",
             get(crate::u2::test_1),
         )
+        // O9：detail 路由必须在 layer(Extension(pool)) 之前注册——axum 的
+        // Router::layer 只覆盖已注册路由，layer 之后 .route() 的路由拿不到
+        // 扩展（此前 detail 恒定 500 Missing extension，matrix run7 实证）。
+        .route(
+            "/api/calendar/assemble/control/calendar/detail/{id}",
+            get(crate::get_calendar_detail),
+        )
         .layer(Extension(pool))
 }

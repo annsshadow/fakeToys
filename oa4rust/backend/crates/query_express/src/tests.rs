@@ -4,19 +4,17 @@
 use super::*;
 use axum::body::Body;
 use axum::http::{Method, Request, StatusCode};
-use deadpool_postgres::tokio_postgres::{Config, NoTls};
-use deadpool_postgres::{Manager, Pool};
 use tower::util::ServiceExt;
 
-fn build_test_pool() -> Pool {
-    let mgr = Manager::new(Config::new(), NoTls);
-    Pool::builder(mgr).max_size(1).build().unwrap()
+/// O9：router 改注 sea_orm DatabaseConnection（修复 DatabaseConnection 从未注入、
+/// /api/query/* 生产恒定 500 的接线缺陷）；路由存在性测试用不可达懒连接即可。
+async fn build_test_db() -> sea_orm::DatabaseConnection {
+    shared::testing::mock_db().await
 }
 
 #[tokio::test]
 async fn test_query_list_route_exists() {
-    let pool = build_test_pool();
-    let app = crate::router(pool);
+    let app = crate::router(build_test_db().await);
     let response = app
         .oneshot(
             Request::builder()
@@ -32,8 +30,7 @@ async fn test_query_list_route_exists() {
 
 #[tokio::test]
 async fn test_unknown_route_returns_404() {
-    let pool = build_test_pool();
-    let app = crate::router(pool);
+    let app = crate::router(build_test_db().await);
     let response = app
         .oneshot(
             Request::builder()
@@ -47,10 +44,9 @@ async fn test_unknown_route_returns_404() {
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
 }
 
-#[test]
-fn test_query_express_router_builds() {
-    let pool = build_test_pool();
-    let _ = crate::query_express_router(pool);
+#[tokio::test]
+async fn test_query_express_router_builds() {
+    let _ = crate::query_express_router(build_test_db().await);
 }
 
 // ── ActionResult serialization ─────────────────────────────────────────────
@@ -84,8 +80,7 @@ fn test_action_result_success_with_null_message() {
 
 #[tokio::test]
 async fn test_create_query_route_exists() {
-    let pool = build_test_pool();
-    let app = crate::router(pool);
+    let app = crate::router(build_test_db().await);
     let response = app
         .oneshot(
             Request::builder()
@@ -97,8 +92,11 @@ async fn test_create_query_route_exists() {
         )
         .await
         .unwrap();
+    // O9 接线修复后：扩展注入成功，无会话 → 401（会话门先于 DB 访问）；
+    // 带会话且 DB 不可达 → 500。路由缺失则是 404。
     assert!(
         response.status() == StatusCode::INTERNAL_SERVER_ERROR
             || response.status() == StatusCode::OK
+            || response.status() == StatusCode::UNAUTHORIZED
     );
 }

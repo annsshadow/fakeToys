@@ -35,7 +35,8 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        // O9：Extension 注入修复后走到 DB 层；不可达池经 acquire 分类为 503（O2 语义）
+        assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
     }
 
     #[tokio::test]
@@ -55,7 +56,8 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        // O9：Extension 注入修复后走到 DB 层；不可达池经 acquire 分类为 503（O2 语义）
+        assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
     }
 
     #[tokio::test]
@@ -75,7 +77,8 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        // O9：Extension 注入修复后走到 DB 层；不可达池经 acquire 分类为 503（O2 语义）
+        assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
     }
 
     #[test]

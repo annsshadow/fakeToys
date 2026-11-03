@@ -112,6 +112,9 @@ pub fn router(pool: Pool, session_manager: SessionManager) -> Router {
             "/api/organization/assemble/personal/empower/{id}/enable",
             get(enable),
         ) // <- GET /api/person/empower/{id}/enable [enable]
-        .with_state(pool)
-        .with_state(session_manager)
+        // O9：handler 取的是 Extension<Pool>/Extension<SessionManager>，
+        // with_state 提供的是 State（Extension 提取器不回退 State）——原写法
+        // 让全族 14+ 端点在生产恒定 500（Missing request extension）。
+        .layer(axum::Extension(pool))
+        .layer(axum::Extension(session_manager))
 }

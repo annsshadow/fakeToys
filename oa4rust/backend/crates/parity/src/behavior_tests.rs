@@ -516,7 +516,7 @@ parity_test!(
     handler: article_list,
     test_name: parity_behavior__cms_core_entity__article_list,
     behavior: "route_exists",
-    router_args: (shared::testing::mock_db().await),
+    router_args: (shared::testing::mock_db().await, shared::testing::test_pool()),
     body: String::new(),
 );
 
@@ -528,7 +528,7 @@ parity_test!(
     handler: category_list,
     test_name: parity_behavior__cms_core_entity__category_list,
     behavior: "route_exists",
-    router_args: (shared::testing::mock_db().await),
+    router_args: (shared::testing::mock_db().await, shared::testing::test_pool()),
     body: String::new(),
 );
 

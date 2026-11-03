@@ -8,17 +8,24 @@ mod tests {
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use chrono::NaiveDateTime;
+    use deadpool_postgres::tokio_postgres::{Config, NoTls};
     use deadpool_postgres::{Manager, Pool};
     use shared::response::ActionResult;
     use std::str::FromStr;
     use tower::ServiceExt;
+
+    // O9：router 新增 deadpool Pool 注入（写 handler 的 require_admin_opt 需要）
+    fn test_pool() -> Pool {
+        let mgr = Manager::new(Config::new(), NoTls);
+        Pool::builder(mgr).max_size(1).build().unwrap()
+    }
 
     #[test]
     fn test_category_list_returns_success() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let db = shared::testing::mock_db().await;
-            let app = crate::cms_core_entity_router(db);
+            let app = crate::cms_core_entity_router(db, test_pool());
 
             let response = app
                 .clone()
@@ -41,7 +48,7 @@ mod tests {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let db = shared::testing::mock_db().await;
-            let app = crate::cms_core_entity_router(db);
+            let app = crate::cms_core_entity_router(db, test_pool());
 
             let response = app
                 .clone()
@@ -66,7 +73,7 @@ mod tests {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let db = shared::testing::mock_db().await;
-            let app = crate::cms_core_entity_router(db);
+            let app = crate::cms_core_entity_router(db, test_pool());
 
             let response = app
                 .clone()
@@ -89,7 +96,7 @@ mod tests {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let db = shared::testing::mock_db().await;
-            let app = crate::cms_core_entity_router(db);
+            let app = crate::cms_core_entity_router(db, test_pool());
 
             // Note: cms uses GET for update route (category/{id}) - not a PUT endpoint
             let response = app
@@ -114,7 +121,7 @@ mod tests {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let db = shared::testing::mock_db().await;
-            let app = crate::cms_core_entity_router(db);
+            let app = crate::cms_core_entity_router(db, test_pool());
 
             let response = app
                 .clone()
@@ -129,7 +136,9 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+            // O9 接线修复后：扩展齐备，无会话先过 admin 门 → 401
+            //（修复前恒定 500 Missing extension，断言随行为修正翻转）
+            assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
         });
     }
 
@@ -138,7 +147,7 @@ mod tests {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let db = shared::testing::mock_db().await;
-            let app = crate::cms_core_entity_router(db);
+            let app = crate::cms_core_entity_router(db, test_pool());
 
             let response = app
                 .clone()
@@ -161,7 +170,7 @@ mod tests {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let db = shared::testing::mock_db().await;
-            let app = crate::cms_core_entity_router(db);
+            let app = crate::cms_core_entity_router(db, test_pool());
 
             let response = app
                 .clone()
@@ -229,7 +238,7 @@ mod tests {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let db = shared::testing::mock_db().await;
-            let app = crate::cms_core_entity_router(db);
+            let app = crate::cms_core_entity_router(db, test_pool());
             for uri in [
                 "/api/cms/core/entity/column/list",
                 "/api/cms/core/entity/column_manager/list",

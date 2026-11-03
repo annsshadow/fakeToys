@@ -194,8 +194,14 @@ mod tests {
     #[ignore = "requires a running PostgreSQL server"]
     async fn test_file_download_with_db() {
         let pool = test_pool();
-        let result: Result<Json<ActionResult<Value>>, AppError> =
-            file_download(Extension(pool), axum::extract::Path("test".to_string())).await;
+        // O9：file_download 新增归属闸（Extension<Session>）
+        let session = Extension(shared::testing::test_session("file-download-owner"));
+        let result: Result<Json<ActionResult<Value>>, AppError> = file_download(
+            Extension(pool),
+            session,
+            axum::extract::Path("test".to_string()),
+        )
+        .await;
 
         assert!(result.is_ok());
     }

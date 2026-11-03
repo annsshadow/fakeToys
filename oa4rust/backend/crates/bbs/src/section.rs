@@ -54,7 +54,9 @@ pub async fn view_forum(
             map.insert(
                 "sort".to_string(),
                 Value::Number(serde_json::Number::from(
-                    row.get::<_, Option<i32>>("sort").unwrap_or(0),
+                    // O9：sort 列是 BIGINT（migration 032），i32 解码在有行时恒定
+                    // panic（tokio_postgres INT8→i32 不兼容）——arity_probe 实证。
+                    row.get::<_, Option<i64>>("sort").unwrap_or(0),
                 )),
             );
             if let Some(v) = row.get::<_, Option<String>>("description") {
@@ -113,7 +115,9 @@ pub async fn view_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>
             map.insert(
                 "sort".to_string(),
                 Value::Number(serde_json::Number::from(
-                    row.get::<_, Option<i32>>("sort").unwrap_or(0),
+                    // O9：sort 列是 BIGINT（migration 032），i32 解码在有行时恒定
+                    // panic（tokio_postgres INT8→i32 不兼容）——arity_probe 实证。
+                    row.get::<_, Option<i64>>("sort").unwrap_or(0),
                 )),
             );
             if let Some(v) = row.get::<_, Option<String>>("description") {

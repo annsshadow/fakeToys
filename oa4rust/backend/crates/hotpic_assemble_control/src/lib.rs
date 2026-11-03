@@ -166,11 +166,15 @@ pub async fn list_control_applications(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            let application: String = row.get("application");
+            // O9：creator 可空（历史脏数据/探针写入），裸 get::<String> 遇 NULL 即
+            // panic（arity_probe 实证）——按空串处理（enabled=false）。
+            let application: String = row
+                .get::<_, Option<String>>("application")
+                .unwrap_or_default();
             Value::Object(serde_json::Map::from_iter([
                 (
                     "application".to_string(),
-                    Value::String(row.get("application")),
+                    Value::String(application.clone()),
                 ),
                 ("name".to_string(), Value::String(application.clone())),
                 ("enabled".to_string(), Value::Bool(!application.is_empty())),

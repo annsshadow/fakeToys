@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 #[allow(dead_code, non_snake_case)]
-use axum::{extract::Extension, routing::get, Json, Router};
+use axum::{extract::Extension, Json, Router};
 use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
@@ -162,6 +162,7 @@ pub async fn update_control_config(
 
 pub async fn get_calendar_detail(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
@@ -174,6 +175,18 @@ pub async fn get_calendar_detail(
         )
         .await
         .map_err(|_| AppError::NotFound)?;
+
+    // O9：日历详情含全部事件列表——私有日历仅属主/管理员可读
+    // （原无校验且本路由长期因接线缺陷 500；接线修复后泄露面暴露，矩阵实证）
+    let is_public: bool = calendar_row
+        .get::<_, Option<bool>>("is_public")
+        .unwrap_or(false);
+    if !is_public {
+        let createor: String = calendar_row
+            .get::<_, Option<String>>("createor")
+            .unwrap_or_default();
+        shared::middleware::require_owner(&pool, &session, &createor).await?;
+    }
 
     let event_rows = client
         .query(
@@ -188,7 +201,12 @@ pub async fn get_calendar_detail(
         .iter()
         .map(|row| {
             let mut map = serde_json::Map::new();
-            map.insert("id".to_string(), Value::String(row.get("id")));
+            // O9：NULL 安全——id/all_day 等列可空，裸 get::<String> 遇 NULL 即 panic
+            // （matrix run10 实证：fixture 未设 target/all_day → handler 崩）
+            map.insert(
+                "id".to_string(),
+                Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+            );
             map.insert(
                 "calendarId".to_string(),
                 Value::String(
@@ -217,7 +235,10 @@ pub async fn get_calendar_detail(
                 "endTime".to_string(),
                 Value::String(row.get::<_, Option<String>>("end_time").unwrap_or_default()),
             );
-            map.insert("allDay".to_string(), Value::Bool(row.get("all_day")));
+            map.insert(
+                "allDay".to_string(),
+                Value::Bool(row.get::<_, Option<bool>>("all_day").unwrap_or(false)),
+            );
             map.insert(
                 "visibility".to_string(),
                 Value::String(
@@ -234,16 +255,25 @@ pub async fn get_calendar_detail(
         .collect();
 
     let mut data_map = serde_json::Map::new();
-    data_map.insert("id".to_string(), Value::String(calendar_row.get("id")));
-    data_map.insert("name".to_string(), Value::String(calendar_row.get("name")));
-    data_map.insert("type".to_string(), Value::String(calendar_row.get("type")));
+    data_map.insert(
+        "id".to_string(),
+        Value::String(calendar_row.get::<_, Option<String>>("id").unwrap_or_default()),
+    );
+    data_map.insert(
+        "name".to_string(),
+        Value::String(calendar_row.get::<_, Option<String>>("name").unwrap_or_default()),
+    );
+    data_map.insert(
+        "type".to_string(),
+        Value::String(calendar_row.get::<_, Option<String>>("type").unwrap_or_default()),
+    );
     data_map.insert(
         "target".to_string(),
-        Value::String(calendar_row.get("target")),
+        Value::String(calendar_row.get::<_, Option<String>>("target").unwrap_or_default()),
     );
     data_map.insert(
         "color".to_string(),
-        Value::String(calendar_row.get("color")),
+        Value::String(calendar_row.get::<_, Option<String>>("color").unwrap_or_default()),
     );
     if let Some(description) = calendar_row.get::<_, Option<String>>("description") {
         data_map.insert("description".to_string(), Value::String(description));
@@ -281,10 +311,9 @@ pub async fn get_calendar_detail(
 pub fn calendar_assemble_control_router(pool: Pool) -> Router {
     // plan002 U2 的 7 条新路由注册于 routes::router 内部（Extension 层之前），
     // 确保共享连接池扩展对全部路由可见。
-    crate::routes::router(pool).route(
-        "/api/calendar/assemble/control/calendar/detail/{id}",
-        get(get_calendar_detail),
-    )
+    // O9：detail 路由已挪入 routes::router 的 layer 之前——此前在 layer 之后
+    // 追加注册，Extension<Pool> 对 detail 不可见，生产恒定 500。
+    crate::routes::router(pool)
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {

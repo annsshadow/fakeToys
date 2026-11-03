@@ -42,6 +42,10 @@ pub struct SessionManager {
     // 负缓存让「已确认无效」的 token 在 TTL 内被快速拒绝。合法 token
     // 命中后进内存 sessions（正结果不缓存），无安全回归。
     negative_cache: Arc<std::sync::Mutex<std::collections::HashMap<String, std::time::Instant>>>,
+    // O9：人员禁用状态缓存（TTL 30s）。改前 locked 只在登录时检查：
+    // 禁用用户的在途会话一直有效到自然过期（O9 IDOR 矩阵实测：禁用身份
+    // 在全部受保护路由上照常 200）。
+    person_status_cache: Arc<tokio::sync::RwLock<std::collections::HashMap<String, (bool, std::time::Instant)>>>,
 }
 
 /// 负缓存 TTL：无效 token 在 5 秒内的重放不再查库。
@@ -71,6 +75,7 @@ impl SessionManager {
             hmac_secret: std::env::var("SESSION_HMAC_SECRET").ok(),
             auth_config,
             negative_cache: Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
+            person_status_cache: Arc::new(tokio::sync::RwLock::new(std::collections::HashMap::new())),
         };
         manager.start_threshold_scanner().start_session_sweeper()
     }
@@ -92,6 +97,7 @@ impl SessionManager {
             pool: Some(pool),
             hmac_secret: std::env::var("SESSION_HMAC_SECRET").ok(),
             auth_config,
+            person_status_cache: Arc::new(tokio::sync::RwLock::new(std::collections::HashMap::new())),
             negative_cache: Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
         };
         manager.start_threshold_scanner().start_session_sweeper()
@@ -288,6 +294,48 @@ impl SessionManager {
         }
     }
 
+    /// O9：人员是否被禁用（locked 或已删除）。带 30s TTL 缓存：
+    /// 禁用生效延迟 ≤30s，而正常请求每 30s 才多一次单行查询。
+    /// 无池/查询失败时按「未禁用」放行（与 fail-closed 的会话校验不同：
+    /// 这里失败只是禁用清单读不到，会话本身已有效）。
+    async fn person_is_disabled(&self, person_unique: &str) -> bool {
+        const TTL: std::time::Duration = std::time::Duration::from_secs(30);
+        {
+            let cache = self.person_status_cache.read().await;
+            if let Some((disabled, at)) = cache.get(person_unique) {
+                if at.elapsed() < TTL {
+                    return *disabled;
+                }
+            }
+        }
+        let Some(pool) = &self.pool else {
+            return false;
+        };
+        let disabled = match pool.get().await {
+            Ok(client) => client
+                // 无行（会话指向的人根本不存在）按「未禁用」放行：兼容存量测试
+                // 夹具（cov-* 幽灵人）；显式禁用信号 locked / deleted_at 才关闭。
+                .query_opt(
+                    "SELECT locked, deleted_at FROM auth_person WHERE unique_id = $1",
+                    &[&person_unique],
+                )
+                .await
+                .map(|row| {
+                    row.map(|r| {
+                        r.get::<_, bool>("locked") || r.get::<_, Option<NaiveDateTime>>("deleted_at").is_some()
+                    })
+                    .unwrap_or(false)
+                })
+                .unwrap_or(false),
+            Err(_) => false,
+        };
+        self.person_status_cache
+            .write()
+            .await
+            .insert(person_unique.to_string(), (disabled, std::time::Instant::now()));
+        disabled
+    }
+
     pub async fn validate_session(&self, token: &str) -> Option<Session> {
         let session = {
             let sessions = self.sessions.read().await;
@@ -295,7 +343,14 @@ impl SessionManager {
         };
 
         match session {
-            Some(s) if s.expires_at > Utc::now().naive_utc() => Some(s),
+            Some(s) if s.expires_at > Utc::now().naive_utc() => {
+                // O9：内存命中也要过禁用闸（≤30s 缓存延迟）
+                if self.person_is_disabled(&s.person_unique).await {
+                    self.remove_session(token).await;
+                    return None;
+                }
+                Some(s)
+            }
             Some(s) => {
                 tracing::debug!(
                     token_prefix = %&token[..token.len().min(8)],
@@ -342,6 +397,11 @@ impl SessionManager {
                                     created_at,
                                     expires_at,
                                 };
+                                // O9：PG 命中也要过禁用闸
+                                if self.person_is_disabled(&session.person_unique).await {
+                                    self.remove_session(&session.token).await;
+                                    return None;
+                                }
                                 self.sessions
                                     .write()
                                     .await
@@ -533,6 +593,89 @@ mod tests {
 
     async fn count(manager: &SessionManager) -> usize {
         manager.sessions.read().await.len()
+    }
+
+    /// O9：禁用用户（locked=true）的会话必须被拒绝——内存命中臂与 PG 臂都要过闸。
+    /// 改前实测（IDOR 矩阵）：禁用身份在全部受保护路由照常 200。
+    #[tokio::test]
+    async fn disabled_person_session_is_rejected() {
+        if !crate::testing::is_db_available().await {
+            eprintln!("SKIP: no database available");
+            return;
+        }
+        let pool = crate::testing::test_pool();
+        let client = pool.get().await.unwrap();
+        // 夹具：一个 locked、一个正常
+        for (pid, locked) in [("o9-sess-lock", true), ("o9-sess-free", false)] {
+            client
+                .execute(
+                    "INSERT INTO auth_person (id, unique_id, name, password_hash, locked) \
+                     VALUES ($1, $2, $2, 'noop', $3) \
+                     ON CONFLICT (id) DO UPDATE SET locked = EXCLUDED.locked",
+                    &[&pid, &pid, &locked],
+                )
+                .await
+                .unwrap();
+        }
+
+        // 手动拼装带池管理器（不 spawn sweeper）
+        let manager = SessionManager {
+            sessions: Arc::new(RwLock::new(std::collections::HashMap::new())),
+            pool: Some(pool.clone()),
+            hmac_secret: None,
+            auth_config: AuthConfig {
+                public_origin: "http://localhost:3000".to_string(),
+                cookie_secure: false,
+                session_ttl_seconds: 7200,
+            },
+            negative_cache: Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
+            person_status_cache: Arc::new(tokio::sync::RwLock::new(std::collections::HashMap::new())),
+        };
+
+        let locked_sess = manager
+            .create_session("o9-sess-lock".to_string(), "o9-tok-lock".to_string())
+            .await
+            .unwrap();
+        let free_sess = manager
+            .create_session("o9-sess-free".to_string(), "o9-tok-free".to_string())
+            .await
+            .unwrap();
+
+        // 内存命中臂：locked 必须被拒
+        assert!(
+            manager.validate_session("o9-tok-lock").await.is_none(),
+            "禁用用户的会话必须无效（内存臂）"
+        );
+        // 且会话被逐出（不是每次请求都查库）
+        assert!(
+            manager.sessions.read().await.get("o9-tok-lock").is_none(),
+            "禁用会话必须被逐出"
+        );
+        // 正常用户不受影响（内存臂 + 缓存臂）
+        assert!(manager.validate_session("o9-tok-free").await.is_some());
+
+        // PG 臂：从内存抹掉后强制走 PG
+        manager.sessions.write().await.remove(&free_sess.token);
+        assert!(
+            manager.validate_session("o9-tok-free").await.is_some(),
+            "PG 臂正常用户必须通过"
+        );
+        let _ = locked_sess;
+
+        // 清理
+        for pid in ["o9-sess-lock", "o9-sess-free"] {
+            client
+                .execute("DELETE FROM auth_person WHERE id = $1", &[&pid])
+                .await
+                .unwrap();
+        }
+        client
+            .execute(
+                "DELETE FROM auth_session WHERE person_id LIKE 'o9-sess-%'",
+                &[],
+            )
+            .await
+            .unwrap();
     }
 
     #[tokio::test]
@@ -807,6 +950,7 @@ mod tests {
                 session_ttl_seconds: ttl_seconds,
             },
             negative_cache: Arc::new(std::sync::Mutex::new(std::collections::HashMap::new())),
+            person_status_cache: Arc::new(tokio::sync::RwLock::new(std::collections::HashMap::new())),
         }
     }
 

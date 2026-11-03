@@ -101,6 +101,10 @@ pub fn cms_express_router() -> Router {
         .route("/api/cms/view/unpublish/{id}", post(view_unpublish))
 }
 
-pub fn router(pool: Pool) -> axum::Router {
-    cms_express_router().layer(axum::extract::Extension(pool))
+pub fn router(pool: Pool, db: DatabaseConnection) -> axum::Router {
+    // O9：view_publish/view_unpublish/view_list_all 取 Extension<DatabaseConnection>，
+    // 此前只注入 Pool——三端点生产恒定 500（Missing extension）。
+    cms_express_router()
+        .layer(axum::extract::Extension(pool))
+        .layer(axum::extract::Extension(db))
 }
