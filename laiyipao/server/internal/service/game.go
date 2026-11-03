@@ -967,6 +967,10 @@ func (s *Service) LoadTasks(ctx context.Context, userID int64, scope string) ([]
 	if err != nil {
 		return nil, err
 	}
+	// R66：缓存里的 `Reward` 是 map，与所有并发请求共享。`TaskView` 会把它
+	// 原样带进响应，所以先克隆；否则调用方对响应做任何就地改写都会写缓存，
+	// 与别人的读取并发时是 fatal（R64 的 /admin/economy 同类问题）。
+	configs = cloneTaskConfigs(configs)
 
 	// 玩家当日进度：一条查询（走 idx_user_tasks_date）。
 	type userTask struct {

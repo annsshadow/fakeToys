@@ -1592,6 +1592,9 @@ var staticConfig = sync.OnceValue(func() GameConfig {
 func (s *Service) ConfigVersion() string { return staticConfig().Version }
 
 // configJSONCache 是 /config 序列化字节的缓存位（零值可用）。
+//
+// R66 审计：`prefix` / `suffix` 只被读取，输出缓冲每次新建（`ConfigJSON`
+// 里 append 到新切片），不存在对共享字节的就地写入。
 type configJSONCache struct {
 	mu           sync.Mutex
 	requireLogin bool

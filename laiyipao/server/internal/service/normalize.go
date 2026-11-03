@@ -150,6 +150,68 @@ func normalizeReflect(v reflect.Value) {
 	}
 }
 
+// --- 缓存出参的私有化拷贝（R66） ---
+//
+// 下面几个函数只做一件事：把**缓存里的 map**复制成调用方私有的一份。
+// 缓存值在多个并发请求之间是同一个对象，只要有一处就地写入（包括反射
+// 归一化、handler 里顺手 `delete`/赋值），就会与别人的遍历并发，触发
+// `fatal error: concurrent map iteration and map write` —— 这是进程级退出，
+// 中间件 recover 不了（R64 的 `/admin/economy` 就是这么挂的）。
+//
+// 只复制 map，不复制纯值类型切片：
+//   - map 的并发读写是 **fatal**；
+//   - 值类型切片的元素写入是普通 data race，且本仓库所有消费方都只做
+//     JSON 编码（只读），每请求复制 200 条榜单在 25k QPS 下是可见开销。
+//     榜单用三索引切片（append 会分配新数组）作为结构约束，
+//     见 `sliceLeaderboard`。
+func cloneStringIntMap(m map[string]int) map[string]int {
+	if m == nil {
+		return nil
+	}
+	out := make(map[string]int, len(m))
+	for k, v := range m {
+		out[k] = v
+	}
+	return out
+}
+
+func cloneShopItems(items []shopItem) []shopItem {
+	if items == nil {
+		return nil
+	}
+	out := make([]shopItem, len(items))
+	for i, it := range items {
+		out[i] = it
+		out[i].Price = cloneStringIntMap(it.Price)
+		out[i].Payload = cloneStringIntMap(it.Payload)
+	}
+	return out
+}
+
+func cloneTaskConfigs(cfgs []taskConfig) []taskConfig {
+	if cfgs == nil {
+		return nil
+	}
+	out := make([]taskConfig, len(cfgs))
+	for i, c := range cfgs {
+		out[i] = c
+		out[i].Reward = cloneStringIntMap(c.Reward)
+	}
+	return out
+}
+
+func cloneSignInCalendar(days []SignInCalendarDay) []SignInCalendarDay {
+	if days == nil {
+		return nil
+	}
+	out := make([]SignInCalendarDay, len(days))
+	for i, d := range days {
+		out[i] = d
+		out[i].Reward = cloneStringIntMap(d.Reward)
+	}
+	return out
+}
+
 func normalizeField(f reflect.Value) {
 	switch f.Kind() {
 	case reflect.Interface:

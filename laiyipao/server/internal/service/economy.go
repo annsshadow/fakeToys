@@ -105,6 +105,10 @@ func (s *Service) Leaderboard(ctx context.Context, kind string, limit int) ([]Le
 	if err != nil {
 		return nil, err
 	}
+	// R66 审计：返回的切片与缓存共享底层数组，元素是值类型（字符串/整数）。
+	// 这里刻意**不深拷贝** 200 条：所有消费方只做 JSON 编码（只读），
+	// 而 25k QPS 下每请求复制是可见开销。`append` 安全由三索引切片保证
+	// （见 sliceLeaderboard）；对元素就地写入仍属禁用操作。
 	return sliceLeaderboard(all, limit), nil
 }
 
@@ -358,7 +362,7 @@ func (s *Service) SignInCalendar(ctx context.Context) ([]SignInCalendarDay, erro
 	// 2026-10-30（实质优化第 17 轮）：日历是 seeder 写入的静态配置
 	// （后台没有修改入口），每次签到页打开都查库是纯浪费。
 	// TTL 缓存 + singleflight；0 = 关闭缓存（见 config.SignInCalendarCacheTTL）。
-	return s.signInCalendarCache.getOrLoad(ctx, time.Now(), s.Cfg().SignInCalendarCacheTTL, func(ctx context.Context) ([]SignInCalendarDay, error) {
+	days, err := s.signInCalendarCache.getOrLoad(ctx, time.Now(), s.Cfg().SignInCalendarCacheTTL, func(ctx context.Context) ([]SignInCalendarDay, error) {
 		rows, err := s.pool.Query(ctx,
 			`SELECT day_index, reward FROM sign_in_calendar ORDER BY day_index`)
 		if err != nil {
@@ -379,6 +383,13 @@ func (s *Service) SignInCalendar(ctx context.Context) ([]SignInCalendarDay, erro
 		}
 		return out, rows.Err()
 	})
+	if err != nil {
+		return nil, err
+	}
+	// R66：`Reward` 是 map，缓存值与所有并发请求共享。返回私有副本，
+	// 调用方（含 handler 的反射归一化）就地改写时不会污染缓存，
+	// 也不会与别人的遍历并发（并发 map 读写在 Go 里是 fatal，不是 panic）。
+	return cloneSignInCalendar(days), nil
 }
 
 // SignIn 执行每日签到。
@@ -867,6 +878,10 @@ func (s *Service) LoadShop(ctx context.Context, userID int64) ([]ShopItemView, e
 	if err != nil {
 		return nil, err
 	}
+	// R66：缓存里的 `Price` / `Payload` 是 map，且被所有并发请求共享。
+	// 先克隆成私有副本再拼响应；handler 之后的反射归一化（NormalizeNilSlices）
+	// 只写这份副本，缓存对象永远只读（R64 的 fatal 就是这么触发的）。
+	items = cloneShopItems(items)
 
 	// 玩家今日已购次数：一条分组查询替代原来每个商品的关联子查询。
 	bought := map[int]int{}

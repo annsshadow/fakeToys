@@ -104,6 +104,10 @@ type StageFunnel struct {
 // 报错，而第二次其实数据库已经好了。
 func (s *Service) AdminDashboard(ctx context.Context) (Dashboard, error) {
 	// singleflight：TTL 到期那一刻的并发未命中只跑一次查询，不惊群。
+	//
+	// R66 审计：返回值里的三段是**值类型切片**（无 map），与缓存共享底层数组；
+	// handler 只做 JSON 编码（只读）。不每请求深拷贝：看板 p95 3.28ms 里
+	// 复制 100+ 条结构没有收益，反而把只读路径变成写分配路径。
 	return s.dashboardCache.getOrLoad(ctx, time.Now(), s.Cfg().DashboardCacheTTL, func(ctx context.Context) (Dashboard, error) {
 		return s.adminDashboardUncached(ctx)
 	})

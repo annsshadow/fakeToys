@@ -43,10 +43,20 @@ const cacheLoadTimeout = 30 * time.Second
 // 手写而不引 `x/sync/singleflight`：那样会把「单值缓存」和
 // 「多键单飞组」两种语义揉在一起，而这里每个 `ttlCache` 只有一个键。
 //
-// # 缓存值是可共享的
+// # 缓存值是可共享的（R66 审计口径）
 //
-// `get` 返回的是**同一个值**（切片/结构体按值拷贝，但切片底层数组共享）。
-// 调用方必须只读。本仓库两个使用点都是直接 JSON 编码，满足这条。
+// `get` 返回的是**同一个值**（切片/结构体按值拷贝，但切片底层数组、
+// map 引用都共享）。调用方必须只读。
+//
+// 出参分三类：
+//   - **不可变**：`int64`（adminUsersCountCache）、`[]byte` 只读片段 —
+//     无共享写风险；
+//   - **返回处深拷贝**：含 map 的出参（`shopCache` / `tasksCache` /
+//     `signInCalendarCache`）在 loader 之外先 clone，见 normalize.go 的
+//     `clone*` 系列；`economyCache` 由 handler 的 `NormalizeNilSlices`
+//     深拷贝（R64）；
+//   - **共享只读**：纯值类型切片（`leaderboardCache` / `dashboardCache`）
+//     只做 JSON 编码，不复制 —— 见对应返回点注释与成本测算。
 type ttlCache[T any] struct {
 	mu  sync.Mutex
 	at  time.Time

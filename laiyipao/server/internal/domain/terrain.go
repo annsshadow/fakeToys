@@ -18,6 +18,7 @@ package domain
 import (
 	"fmt"
 	"math"
+	"sync"
 )
 
 // 坐标约定：地形配置用**逻辑单位**（0..1000），引擎内部实体坐标用
@@ -163,13 +164,22 @@ func NewTerrain(p TerrainPlacement) *Terrain {
 // 与 TS 的 `warnedUnknownKind` 同构：一个坏数据在 12000 tick 里
 // 打 12000 条日志，会把真正的错误淹掉。
 var unknownKindWarned = map[string]bool{}
+var unknownKindMu sync.Mutex
 
 // warnUnknownKind 打印一次未知地形告警。
+//
+// R66：`Terrain.Update` 在**并发结算**的请求 goroutine 里跑，而这个 map 是
+// 包级共享状态。原来「先读后写」没有同步，两个请求同时遇到同一个未知类型
+// 就是 `fatal error: concurrent map read and map write`（进程级退出）。
+// 潜在而非已证实：正常数据不会走到未知分支，但坏关卡行/灰度新地形会。
 func warnUnknownKind(kind string) {
+	unknownKindMu.Lock()
 	if unknownKindWarned[kind] {
+		unknownKindMu.Unlock()
 		return
 	}
 	unknownKindWarned[kind] = true
+	unknownKindMu.Unlock()
 	fmt.Printf("[terrain] 未知地形类型 %q，已按无效果处理。客户端与服务端的地形表可能不同步。\n", kind)
 }
 

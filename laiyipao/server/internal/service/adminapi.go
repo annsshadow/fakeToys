@@ -984,6 +984,11 @@ func (s *Service) AdminEconomy(ctx context.Context) (AdminEconomyResp, error) {
 	// 2026-10-31（新一轮第 28 轮）：wallet_flows 是全游戏增长最快的表，
 	// 每次打开经济页都做全表聚合是浪费。TTL 缓存（config.EconomyCacheTTL，
 	// 0 = 关闭），错误不缓存。
+	//
+	// R66 审计：出参含 map（Flows/Shop）。本函数返回的仍是缓存对象，
+	// **消费方必须像 handler 那样先 NormalizeNilSlices（深拷贝）再改写**；
+	// R64 的 fatal 正是缺了这一步。此处不再复制一次：handler 已做，
+	// 多复制一份 50 行流水在每次刷新上都是白花。
 	return s.economyCache.getOrLoad(ctx, time.Now(), s.Cfg().EconomyCacheTTL, func(ctx context.Context) (AdminEconomyResp, error) {
 		return s.adminEconomyUncached(ctx)
 	})
