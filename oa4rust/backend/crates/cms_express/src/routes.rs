@@ -44,7 +44,7 @@ pub async fn view_publish(
                 xapp_id: Set(m.xapp_id.clone()),
                 deleted_at: Set(None),
             };
-            active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+            active.update(&db.0).await?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(m.xid)),
@@ -79,7 +79,7 @@ pub async fn view_unpublish(
                 xapp_id: Set(m.xapp_id.clone()),
                 deleted_at: Set(Some(chrono::Utc::now().naive_utc())),
             };
-            active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+            active.update(&db.0).await?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(m.xid)),

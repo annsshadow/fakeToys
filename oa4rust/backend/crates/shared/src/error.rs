@@ -60,6 +60,15 @@ impl From<deadpool_postgres::tokio_postgres::Error> for AppError {
     }
 }
 
+/// O8：sea-orm DbErr 经 `?` 自动带上分类（与 O7 共用 SQLSTATE 判据）：
+/// sqlx Database 错误按 SQLSTATE 表；PoolTimedOut/PoolClosed/Io → 503；
+/// sea-orm Internal/类型转换/RowNotFound → 500。
+impl From<sea_orm::DbErr> for AppError {
+    fn from(e: sea_orm::DbErr) -> Self {
+        crate::db::classify_orm_error(e)
+    }
+}
+
 // 将 AppError 转换为 HTTP 响应：
 //   - Database / Internal / InternalAnyhow        → 500 Internal Server Error
 //   - BadRequest           → 400 Bad Request

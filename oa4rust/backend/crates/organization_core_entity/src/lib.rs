@@ -377,7 +377,7 @@ pub async fn definition_create(
         type_: Set(req.type_),
         deleted_at: Set(None),
     };
-    let model = active.insert(&db.0).await.map_err(|_| AppError::Internal)?;
+    let model = active.insert(&db.0).await?;
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(model.id.clone())),
@@ -417,7 +417,7 @@ pub async fn definition_update(
         active.type_ = Set(type_);
     }
 
-    let updated = active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+    let updated = active.update(&db.0).await?;
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(updated.id.clone())),
@@ -448,7 +448,7 @@ pub async fn definition_delete(
     let id = model.id.clone();
     let mut active: org_definition::ActiveModel = model.into();
     active.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));
-    active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+    active.update(&db.0).await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
@@ -473,7 +473,7 @@ pub async fn group_create(
         level: Set(req.level),
         deleted_at: Set(None),
     };
-    let model = active.insert(&db.0).await.map_err(|_| AppError::Internal)?;
+    let model = active.insert(&db.0).await?;
 
     let mut map = serde_json::Map::new();
     map.insert("id".to_string(), Value::String(model.id.clone()));
@@ -513,7 +513,7 @@ pub async fn group_update(
         active.level = Set(level);
     }
 
-    let updated = active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+    let updated = active.update(&db.0).await?;
 
     let mut map = serde_json::Map::new();
     map.insert("id".to_string(), Value::String(updated.id.clone()));
@@ -544,7 +544,7 @@ pub async fn group_delete(
     let id = model.id.clone();
     let mut active: org_group::ActiveModel = model.into();
     active.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));
-    active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+    active.update(&db.0).await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
@@ -574,7 +574,7 @@ pub async fn identity_create(
         type_: Set(req.type_),
         deleted_at: Set(None),
     };
-    let model = active.insert(&db.0).await.map_err(|_| AppError::Internal)?;
+    let model = active.insert(&db.0).await?;
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(model.id.clone())),
@@ -614,7 +614,7 @@ pub async fn identity_update(
         active.type_ = Set(type_);
     }
 
-    let updated = active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+    let updated = active.update(&db.0).await?;
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(updated.id.clone())),
@@ -645,7 +645,7 @@ pub async fn identity_delete(
     let id = model.id.clone();
     let mut active: org_identity::ActiveModel = model.into();
     active.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));
-    active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+    active.update(&db.0).await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
@@ -670,7 +670,7 @@ pub async fn person_create(
         email: Set(req.email),
         deleted_at: Set(None),
     };
-    let model = active.insert(&db.0).await.map_err(|_| AppError::Internal)?;
+    let model = active.insert(&db.0).await?;
 
     let mut map = serde_json::Map::new();
     map.insert("id".to_string(), Value::String(model.id.clone()));
@@ -709,7 +709,7 @@ pub async fn person_update(
         active.email = Set(Some(email));
     }
 
-    let updated = active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+    let updated = active.update(&db.0).await?;
 
     let mut map = serde_json::Map::new();
     map.insert("id".to_string(), Value::String(updated.id.clone()));
@@ -739,7 +739,7 @@ pub async fn person_delete(
     let id = model.id.clone();
     let mut active: org_person::ActiveModel = model.into();
     active.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));
-    active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+    active.update(&db.0).await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
@@ -771,7 +771,7 @@ pub async fn custom_create(
         field_value: Set(req.field_value),
         deleted_at: Set(None),
     };
-    let model = active.insert(&db.0).await.map_err(|_| AppError::Internal)?;
+    let model = active.insert(&db.0).await?;
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(model.id.clone())),
@@ -814,7 +814,7 @@ pub async fn custom_update(
         active.field_value = Set(field_value);
     }
 
-    let updated = active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+    let updated = active.update(&db.0).await?;
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(updated.id.clone())),
@@ -851,7 +851,7 @@ pub async fn custom_delete(
     let id = model.id.clone();
     let mut active: org_custom::ActiveModel = model.into();
     active.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));
-    active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+    active.update(&db.0).await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
@@ -881,7 +881,7 @@ pub async fn bind_create(
         create_time: Set(None),
         deleted_at: Set(None),
     };
-    let model = active.insert(&db.0).await.map_err(|_| AppError::Internal)?;
+    let model = active.insert(&db.0).await?;
 
     let mut map = serde_json::Map::new();
     map.insert("id".to_string(), Value::String(model.id.clone()));
@@ -923,7 +923,7 @@ pub async fn bind_update(
         active.role = Set(Some(role));
     }
 
-    let updated = active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+    let updated = active.update(&db.0).await?;
 
     let mut map = serde_json::Map::new();
     map.insert("id".to_string(), Value::String(updated.id.clone()));
@@ -959,7 +959,7 @@ pub async fn bind_delete(
     let id = model.id.clone();
     let mut active: org_bind::ActiveModel = model.into();
     active.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));
-    active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+    active.update(&db.0).await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),

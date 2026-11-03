@@ -217,7 +217,7 @@ pub async fn create_mind(
         create_time: sea_orm::ActiveValue::Set(None),
     };
 
-    active.insert(&db.0).await.map_err(|_| AppError::Internal)?;
+    active.insert(&db.0).await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -267,7 +267,7 @@ pub async fn update_mind(
     active.folder_id = sea_orm::ActiveValue::Set(folder_id.clone());
     active.description = sea_orm::ActiveValue::Set(Some(description.clone()));
 
-    active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+    active.update(&db.0).await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -350,7 +350,7 @@ pub async fn create_folder(
         creator: sea_orm::ActiveValue::Set(creator.clone()),
     };
 
-    active.insert(&db.0).await.map_err(|_| AppError::Internal)?;
+    active.insert(&db.0).await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -410,7 +410,7 @@ pub async fn update_folder(
     active.order_number = sea_orm::ActiveValue::Set(order_number);
     active.description = sea_orm::ActiveValue::Set(Some(description.clone()));
 
-    active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+    active.update(&db.0).await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -517,7 +517,7 @@ pub async fn create_version(
         update_time: sea_orm::ActiveValue::Set(None),
     };
 
-    active.insert(&db.0).await.map_err(|_| AppError::Internal)?;
+    active.insert(&db.0).await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([

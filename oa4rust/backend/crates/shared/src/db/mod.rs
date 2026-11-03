@@ -323,13 +323,19 @@ pub async fn acquire(pool: &Pool) -> Result<deadpool_postgres::Object, crate::Ap
 /// 不可重试（500 `Internal`）：23505 唯一冲突、42P01 未定义表、42601 语法错等
 /// 代码/数据缺陷；以及 ToSql/FromSql 这类客户端侧参数/类型错误（非 db、非 IO、
 /// 连接未断——重试不会自愈）。
+/// SQLSTATE 是否可重试（O7/O8 共用判据，唯一事实来源）：
+/// 08xxx 连接异常类、57014 语句取消（statement_timeout）、53300 连接耗尽、
+/// 53200 OOM、57P01-03 停机窗口。
+fn sqlstate_is_retryable(code: &str) -> bool {
+    code.starts_with("08")
+        || matches!(code, "57014" | "53300" | "53200" | "57P01" | "57P02" | "57P03")
+}
+
 pub fn classify_query_error(e: deadpool_postgres::tokio_postgres::Error) -> crate::AppError {
     use crate::AppError;
     if let Some(db) = e.as_db_error() {
         let code = db.code().code();
-        if code.starts_with("08")
-            || matches!(code, "57014" | "53300" | "53200" | "57P01" | "57P02" | "57P03")
-        {
+        if sqlstate_is_retryable(code) {
             return AppError::Unavailable(format!("database error {code}: {}", db.message()));
         }
         return AppError::Internal;
@@ -345,6 +351,50 @@ pub fn classify_query_error(e: deadpool_postgres::tokio_postgres::Error) -> crat
         src = s.source();
     }
     AppError::Internal
+}
+
+/// O8：sea-orm DbErr 分类，与 [`classify_query_error`] 共用 SQLSTATE 判据。
+///
+/// 锚点实验结论（sea-orm 1.1）：`DbErr::Conn/Exec/Query(RuntimeErr::SqlxError(_))`
+/// 公开携带底层 sqlx::Error，可稳定取到 `sqlx::Error::Database` 的 SQLSTATE——
+/// 不需要字符串匹配。
+/// - sqlx Database 错误按 [`sqlstate_is_retryable`] 判定（与 O7 同表）；
+/// - sqlx PoolTimedOut/PoolClosed/Io → 503（与 O2 取连分类同语义）；
+/// - 其余（sea-orm Internal、RowNotFound、类型转换、序列化）→ 500。
+pub fn classify_orm_error(e: sea_orm::DbErr) -> crate::AppError {
+    use crate::AppError;
+    // 池取连失败走独立变体（sea-orm 把 sqlx PoolTimedOut/PoolClosed 折叠为
+    // ConnAcquireErr::{Timeout, ConnectionClosed}——类型化，非字符串匹配）。
+    if matches!(
+        e,
+        sea_orm::DbErr::ConnectionAcquire(_)
+    ) {
+        return AppError::Unavailable(format!("database pool acquire failed: {e}"));
+    }
+    let sqlx_err = match &e {
+        sea_orm::DbErr::Conn(sea_orm::RuntimeErr::SqlxError(s))
+        | sea_orm::DbErr::Exec(sea_orm::RuntimeErr::SqlxError(s))
+        | sea_orm::DbErr::Query(sea_orm::RuntimeErr::SqlxError(s)) => Some(s),
+        _ => None,
+    };
+    match sqlx_err {
+        Some(sqlx::Error::Database(db)) => match db.code() {
+            Some(code) if sqlstate_is_retryable(&code) => AppError::Unavailable(format!(
+                "database error {code}: {}",
+                db.message()
+            )),
+            // 无 SQLSTATE 或不可重试 → 500
+            _ => AppError::Internal,
+        },
+        Some(sqlx::Error::PoolTimedOut) => {
+            AppError::Unavailable("database pool timeout (sea-orm)".to_string())
+        }
+        Some(sqlx::Error::PoolClosed) => {
+            AppError::Unavailable("database pool closed (sea-orm)".to_string())
+        }
+        Some(sqlx::Error::Io(io)) => AppError::Unavailable(format!("database io error: {io}")),
+        _ => AppError::Internal,
+    }
 }
 
 /// 用显式 URL 创建 SeaORM DatabaseConnection（sizing/TLS 与 deadpool 池同源，
@@ -1031,5 +1081,152 @@ mod o7_query_error_tests {
         }
         let err = fallible(&test_pool()).await.expect_err("42P01 必须失败");
         assert!(matches!(err, AppError::Internal), "42P01 经 ? 必须 500，实际 {err:?}");
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// O8：sea-orm DbErr 分类的真触发验证（与 O7 共用 SQLSTATE 判据）。
+// 锚点实验：确认 DbErr::Conn/Exec/Query(RuntimeErr::SqlxError) 能拿到
+// sqlx::Error::Database 的 SQLSTATE——每条用例都先断言「锚点成立」再断言分类。
+// ──────────────────────────────────────────────────────────────────────────────
+#[cfg(test)]
+mod o8_orm_error_tests {
+    use crate::error::AppError;
+    use crate::testing::{is_db_available, test_sea_orm_pool};
+    use axum::response::IntoResponse;
+    use sea_orm::{ConnectionTrait, DbErr, RuntimeErr, Statement, TransactionTrait};
+
+    fn status_of(e: AppError) -> axum::http::StatusCode {
+        e.into_response().status()
+    }
+
+    /// 锚点：从 DbErr 取底层 SQLSTATE（取不到则该用例失败——分类无从谈起）。
+    fn sqlstate_of(e: &DbErr) -> Option<String> {
+        match e {
+            DbErr::Conn(RuntimeErr::SqlxError(s))
+            | DbErr::Exec(RuntimeErr::SqlxError(s))
+            | DbErr::Query(RuntimeErr::SqlxError(s)) => match s {
+                sqlx::Error::Database(db) => db.code().map(|c| c.to_string()),
+                _ => None,
+            },
+            _ => None,
+        }
+    }
+
+    #[tokio::test]
+    async fn orm_statement_timeout_57014_becomes_503() {
+        if !is_db_available().await {
+            eprintln!("SKIP: no database available");
+            return;
+        }
+        let db = test_sea_orm_pool().await.expect("sea-orm pool");
+        let tx = db.begin().await.expect("begin tx");
+        tx.execute_unprepared("SET LOCAL statement_timeout = 1000")
+            .await
+            .expect("set local");
+        let err = tx
+            .execute(Statement::from_string(
+                sea_orm::DatabaseBackend::Postgres,
+                "SELECT pg_sleep(3)",
+            ))
+            .await
+            .expect_err("pg_sleep 必须被语句超时取消");
+
+        // 锚点成立：能拿到 SQLSTATE 57014
+        assert_eq!(sqlstate_of(&err).as_deref(), Some("57014"), "锚点: {err}");
+        // 改前（吞成 Internal）→ 500；改后 → 503
+        assert_eq!(
+            status_of(AppError::Internal),
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR
+        );
+        assert_eq!(
+            status_of(super::classify_orm_error(err)),
+            axum::http::StatusCode::SERVICE_UNAVAILABLE
+        );
+    }
+
+    #[tokio::test]
+    async fn orm_undefined_table_42p01_stays_500() {
+        if !is_db_available().await {
+            eprintln!("SKIP: no database available");
+            return;
+        }
+        let db = test_sea_orm_pool().await.expect("sea-orm pool");
+        let err = db
+            .execute(Statement::from_string(
+                sea_orm::DatabaseBackend::Postgres,
+                "SELECT 1 FROM o8_no_such_table",
+            ))
+            .await
+            .expect_err("必须 42P01");
+        assert_eq!(sqlstate_of(&err).as_deref(), Some("42P01"), "锚点: {err}");
+        assert_eq!(
+            status_of(super::classify_orm_error(err)),
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            "42P01 不得映射为可重试"
+        );
+    }
+
+    #[tokio::test]
+    async fn orm_pool_timeout_becomes_503() {
+        if !is_db_available().await {
+            eprintln!("SKIP: no database available");
+            return;
+        }
+        let raw = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
+            "postgres://o2server:password@localhost:5432/oa4rust".to_string()
+        });
+        let mut opt = sea_orm::ConnectOptions::new(raw);
+        opt.max_connections(1)
+            .acquire_timeout(std::time::Duration::from_secs(1))
+            .sqlx_logging(false);
+        let db = sea_orm::Database::connect(opt).await.expect("connect");
+
+        // 事务占住唯一连接；池内再取连必超时
+        let tx = db.begin().await.expect("begin tx");
+        let err = db
+            .execute(Statement::from_string(
+                sea_orm::DatabaseBackend::Postgres,
+                "SELECT 1",
+            ))
+            .await
+            .expect_err("池满必超时");
+        eprintln!("pool-timeout DbErr: {err}");
+        assert!(
+            matches!(
+                err,
+                DbErr::ConnectionAcquire(sea_orm::ConnAcquireErr::Timeout)
+            ),
+            "锚点: 期望 ConnectionAcquire::Timeout，实际 {err}"
+        );
+        assert_eq!(
+            status_of(super::classify_orm_error(err)),
+            axum::http::StatusCode::SERVICE_UNAVAILABLE
+        );
+        drop(tx);
+    }
+
+    #[tokio::test]
+    async fn orm_type_mismatch_stays_500() {
+        if !is_db_available().await {
+            eprintln!("SKIP: no database available");
+            return;
+        }
+        let db = test_sea_orm_pool().await.expect("sea-orm pool");
+        let row = db
+            .query_one(Statement::from_string(
+                sea_orm::DatabaseBackend::Postgres,
+                "SELECT 'not-an-int' AS v",
+            ))
+            .await
+            .expect("查询本身成功")
+            .expect("有一行");
+        // i32 提取文本列 → TryGetErr（客户端侧类型错误，非库故障）
+        let err = row.try_get::<i32>("", "v").expect_err("类型转换必须失败");
+        assert!(sqlstate_of(&err).is_none(), "类型错误无 SQLSTATE: {err}");
+        assert_eq!(
+            status_of(super::classify_orm_error(err)),
+            axum::http::StatusCode::INTERNAL_SERVER_ERROR
+        );
     }
 }

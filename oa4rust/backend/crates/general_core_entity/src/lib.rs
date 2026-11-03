@@ -225,7 +225,7 @@ pub async fn dict_update(
             let mut active: general_application_dict::ActiveModel = m.into();
             active.name = sea_orm::ActiveValue::Set(name.clone());
             active.application = sea_orm::ActiveValue::Set(application.clone());
-            active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+            active.update(&db.0).await?;
 
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
@@ -376,7 +376,7 @@ pub async fn dict_item_update(
             active.dict_id = sea_orm::ActiveValue::Set(dict_id.clone());
             active.name = sea_orm::ActiveValue::Set(name.clone());
             active.value = sea_orm::ActiveValue::Set(value.clone());
-            active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+            active.update(&db.0).await?;
 
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
@@ -614,7 +614,7 @@ pub async fn file_update(
             let mut active: general_file::ActiveModel = m.clone().into();
             active.name = sea_orm::ActiveValue::Set(name.clone());
             active.mime_type = sea_orm::ActiveValue::Set(mime_type.clone());
-            active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+            active.update(&db.0).await?;
 
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
@@ -859,7 +859,7 @@ pub async fn invoice_update(
             active.date = sea_orm::ActiveValue::Set(date.clone());
             active.amount = sea_orm::ActiveValue::Set(amount);
             active.status = sea_orm::ActiveValue::Set(status.clone());
-            active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+            active.update(&db.0).await?;
 
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([

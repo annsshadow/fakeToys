@@ -243,7 +243,7 @@ pub async fn page_create(
         deleted_at: sea_orm::ActiveValue::Set(None),
     };
 
-    active.insert(&db.0).await.map_err(|_| AppError::Internal)?;
+    active.insert(&db.0).await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
