@@ -119,7 +119,7 @@ func newE2EWith(t *testing.T, mutate func(*config.Config)) *e2e {
 	app := fiber.New(fiber.Config{ErrorHandler: httperr.Render, DisableStartupMessage: true})
 	srv := New(svc)
 	srv.Register(app)
-	return &e2e{app: app, svc: svc, pool: db.Pool, srv: srv}
+	return &e2e{app: app, svc: svc, pool: db.Pool.Raw(), srv: srv}
 }
 
 // 返回状态码与响应体；响应体不是 JSON 时（fiber 默认 404 文本）body 为 nil。

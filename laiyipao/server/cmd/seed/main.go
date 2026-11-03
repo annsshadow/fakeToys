@@ -52,7 +52,7 @@ func run(ctx context.Context, cfg config.Config) (seeder.SeedResult, error) {
 	}
 	fmt.Println("迁移已是最新，开始写入游戏内容...")
 
-	res, err = seeder.Run(ctx, db.Pool)
+	res, err = seeder.Run(ctx, db.Pool.Raw())
 	if err != nil {
 		return res, fmt.Errorf("种子写入失败: %w", err)
 	}

@@ -95,7 +95,7 @@ func e2eScratchDB(t *testing.T) {
 		t.Fatalf("迁移 scratch 库失败：%v", err)
 	}
 	// e2e 会给新号铺装备/技能，缺种子数据会外键失败 —— 必须先种子
-	if _, err := seeder.Run(ctx, scratch.Pool); err != nil {
+	if _, err := seeder.Run(ctx, scratch.Pool.Raw()); err != nil {
 		scratch.Close()
 		t.Fatalf("scratch 库种子失败：%v", err)
 	}

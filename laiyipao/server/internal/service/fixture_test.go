@@ -57,7 +57,7 @@ func openScratchService(t *testing.T) *testService {
 	if err := db.Migrate(ctx); err != nil {
 		t.Fatalf("scratch 库迁移失败：%v", err)
 	}
-	if _, err := seeder.Run(ctx, db.Pool); err != nil {
+	if _, err := seeder.Run(ctx, db.Pool.Raw()); err != nil {
 		t.Fatalf("scratch 库种子失败：%v", err)
 	}
 	return &testService{Service: New(db, cfg), db: db}
@@ -139,7 +139,7 @@ func migrateAndSeed(dsn string) error {
 	if err := db.Migrate(ctx); err != nil {
 		return fmt.Errorf("迁移共用库：%w", err)
 	}
-	if _, err := seeder.Run(ctx, db.Pool); err != nil {
+	if _, err := seeder.Run(ctx, db.Pool.Raw()); err != nil {
 		return fmt.Errorf("种子共用库：%w", err)
 	}
 	return nil

@@ -48,6 +48,26 @@ func TestValidateRejectsZeroTokenTTL(t *testing.T) {
 	}
 }
 
+// TestValidateRejectsZeroAcquireTimeout 守住 R90 的防护：
+// DB_ACQUIRE_TIMEOUT=0/负值意味着「池耗尽时请求无限挂起」（R89 F2 实测
+// 挂起 15.0s、无任何一层掐断）。这不是「关闭开关」，而是缺失防护 ——
+// 必须启动失败，而不是静默退化成 R89 的挂起语义。
+func TestValidateRejectsZeroAcquireTimeout(t *testing.T) {
+	for _, val := range []string{"0s", "0", "-1s"} {
+		t.Run(val, func(t *testing.T) {
+			clearEnv(t)
+			t.Setenv("DB_ACQUIRE_TIMEOUT", val)
+			err := Load().Validate()
+			if err == nil {
+				t.Fatalf("DB_ACQUIRE_TIMEOUT=%s 必须被拒绝", val)
+			}
+			if !strings.Contains(err.Error(), "DB_ACQUIRE_TIMEOUT") {
+				t.Errorf("错误信息应点名 DB_ACQUIRE_TIMEOUT，实际：%v", err)
+			}
+		})
+	}
+}
+
 // TestValidateRejectsUnknownRecomputeMode 守住安全默认：
 // 非法重算档位此前静默降级成 off（关掉 replay_skills 反作弊），
 // 现在必须让启动失败。

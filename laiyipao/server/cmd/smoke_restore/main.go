@@ -123,7 +123,7 @@ func main() {
 		ctx:      ctx,
 		base:     base,
 		pool:     pool,
-		svc:      service.New(&store.DB{Pool: pool}, cfg),
+		svc:      service.New(&store.DB{Pool: store.WrapPool(pool, cfg.DBAcquireTimeout)}, cfg),
 		hc:       &http.Client{Timeout: 30 * time.Second},
 		nickname: fmt.Sprintf("drill_%d", time.Now().UnixNano()),
 	}

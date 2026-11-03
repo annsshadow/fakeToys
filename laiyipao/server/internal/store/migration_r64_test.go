@@ -35,7 +35,7 @@ import (
 // downTo 把库回滚到指定迁移版本（测试用，scratch 库独占，无需会话锁）。
 func downTo(t *testing.T, d *DB, ctx context.Context, version int64) {
 	t.Helper()
-	sqlDB := stdlib.OpenDBFromPool(d.Pool)
+	sqlDB := stdlib.OpenDBFromPool(d.Pool.Raw())
 	defer sqlDB.Close()
 	p, err := goose.NewProvider(goose.DialectPostgres, sqlDB, migrations.FS)
 	if err != nil {

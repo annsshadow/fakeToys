@@ -130,6 +130,26 @@ type Config struct {
 	// DBStatementTimeout 是单条 SQL 的服务端执行上限（0 = 不限）。
 	// 详见 store.Open 的注释。
 	DBStatementTimeout time.Duration
+	// DBAcquireTimeout 是从池里**等一条连接**的上限（R90，默认 5s，
+	// 必须为正）——不含语句执行时间（那是 DB_STATEMENT_TIMEOUT 的事）。
+	//
+	// # 依据（不是拍脑袋）
+	//
+	// 正常负载下 Acquire 排队几乎为零：R90 实测 20 并发抢 10 连接的
+	// 全链路 p99=61ms（含执行与调度噪声）。5s 是正常 p99 的 ~80 倍，
+	// 只有真故障（慢锁/慢查询占满池）才会触达；同时 5s < 客户端
+	// 典型超时（小程序 10s+），503 + Retry-After 返回时客户端还活着、
+	// 来得及按 R67 契约重试。
+	//
+	// ⚠️ **设得太短会把正常突发变成假失败**：合法流量让池打满时，
+	// 排队超过阈值的请求会拿到 503，客户端重试放大流量——比挂起更糟。
+	// 阈值与「正常排队 p99」之间必须留数量级余量，调小之前先看
+	// R90 台账的实测分布。
+	//
+	// ⚠️ 不设上限（R89 F2 实测）时，池耗尽的请求挂起时长完全由故障
+	// 持有时间决定（20/241 个请求挂起 15.0s、p95=15032ms），且挂起
+	// 期间没有任何一层掐断。
+	DBAcquireTimeout time.Duration
 	// ExportMaxConcurrency 是同一时刻允许执行的 CSV 导出数量（默认 2）。
 	// 单次导出最多物化 10 万行、独占一条池连接最长 DBStatementTimeout，
 	// 不限并发时几个大导出就能吃满连接池与内存，把普通玩家请求拖垮。
@@ -457,6 +477,7 @@ func Load() Config {
 		// 默认 30s：足够覆盖现有导出（10 万行）与看板聚合，又能在
 		// 「某条查询写坏了」时把连接释放出来，而不是拖垮整池。
 		DBStatementTimeout: envDuration("DB_STATEMENT_TIMEOUT", 30*time.Second),
+		DBAcquireTimeout:   envDuration("DB_ACQUIRE_TIMEOUT", 5*time.Second),
 		// 导出并发默认 2：给 10 条池连接里的普通请求留足余量。
 		ExportMaxConcurrency: envInt("EXPORT_MAX_CONCURRENCY", 2),
 		ExportWait:           envDuration("EXPORT_WAIT", 3*time.Second),

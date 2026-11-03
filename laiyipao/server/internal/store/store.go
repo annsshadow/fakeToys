@@ -20,8 +20,12 @@ import (
 )
 
 // DB 包装 pgx 连接池，向上层暴露统一的 Query/Exec/事务接口。
+//
+// Pool 是 *store.Pool（R90 起）：方法签名与 *pgxpool.Pool 一致，但
+// Acquire 等待有 DB_ACQUIRE_TIMEOUT 上限。需要原始池的启动期一次性
+// 使用者（seeder / stdlib 迁移）走 Pool.Raw()。
 type DB struct {
-	Pool *pgxpool.Pool
+	Pool *Pool
 }
 
 // defaultDBTimeZone 是会话时区的兜底值。
@@ -119,7 +123,7 @@ func Open(ctx context.Context, cfg config.Config) (*DB, error) {
 		pool.Close()
 		return nil, fmt.Errorf("ping database: %w", err)
 	}
-	return &DB{Pool: pool}, nil
+	return &DB{Pool: WrapPool(pool, cfg.DBAcquireTimeout)}, nil
 }
 
 // Close 释放连接池。
@@ -161,7 +165,7 @@ func (d *DB) Migrate(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("goose session locker: %w", err)
 	}
-	sqlDB := stdlib.OpenDBFromPool(d.Pool)
+	sqlDB := stdlib.OpenDBFromPool(d.Pool.Raw())
 	defer sqlDB.Close()
 	provider, err := goose.NewProvider(goose.DialectPostgres, sqlDB, migrations.FS,
 		goose.WithSessionLocker(locker))
@@ -185,7 +189,7 @@ func (d *DB) MigrateDown(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("goose session locker: %w", err)
 	}
-	sqlDB := stdlib.OpenDBFromPool(d.Pool)
+	sqlDB := stdlib.OpenDBFromPool(d.Pool.Raw())
 	defer sqlDB.Close()
 	provider, err := goose.NewProvider(goose.DialectPostgres, sqlDB, migrations.FS,
 		goose.WithSessionLocker(locker))

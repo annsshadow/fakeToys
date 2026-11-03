@@ -59,7 +59,7 @@ func openPruneScratchDB(t *testing.T) *store.DB {
 	if err := db.Migrate(ctx); err != nil {
 		t.Fatalf("迁移失败：%v", err)
 	}
-	if _, err := seeder.Run(ctx, db.Pool); err != nil {
+	if _, err := seeder.Run(ctx, db.Pool.Raw()); err != nil {
 		t.Fatalf("种子失败：%v", err)
 	}
 	return db

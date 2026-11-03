@@ -20,7 +20,6 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/laiyipao/server/internal/auth"
 	"github.com/laiyipao/server/internal/config"
@@ -72,7 +71,9 @@ type Service struct {
 	// `if s.Cfg().A > 0 { ... s.Cfg().A ... }` —— 两次 Load 之间可能发生重载。
 	cfg atomic.Pointer[config.Config]
 
-	pool *pgxpool.Pool
+	// pool 是 *store.Pool（R90 起，Acquire 有 DB_ACQUIRE_TIMEOUT 上限）。
+	// 方法签名与 *pgxpool.Pool 一致；R83 的 AST 守卫按方法名匹配不受影响。
+	pool *store.Pool
 
 	// gate 是结算重算闸门（R1）。
 	//

@@ -235,7 +235,7 @@ func (s *Service) EnsureContentSeeded(ctx context.Context) (string, error) {
 	wantSkills = len(domain.SeedSkills) + len(domain.SeedCompositeSkills)
 
 	if enemiesN == 0 && skillsN == 0 {
-		if _, err := seeder.Run(ctx, s.pool); err != nil {
+		if _, err := seeder.Run(ctx, s.pool.Raw()); err != nil {
 			return "", fmt.Errorf("auto-seed content: %w", err)
 		}
 		return "内容表为空，已自动写入种子内容（等同 go run ./cmd/seed）", nil

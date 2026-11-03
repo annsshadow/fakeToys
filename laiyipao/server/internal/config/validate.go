@@ -56,6 +56,12 @@ func (c Config) Validate() error {
 	if c.DBStatementTimeout < 0 {
 		add("DB_STATEMENT_TIMEOUT 不能为负（0 = 不限），实际 %v", c.DBStatementTimeout)
 	}
+	// DB_ACQUIRE_TIMEOUT 必须为正（R90）：0/负值意味着「池耗尽时请求
+	// 无限挂起」（R89 F2 实测挂起 15s 无任何一层掐断）——那不是默认值，
+	// 是缺失的防护。过短的阈值会把正常突发打成 503 假失败，建议 3s-10s。
+	if c.DBAcquireTimeout <= 0 {
+		add("DB_ACQUIRE_TIMEOUT 必须为正（0/负值 = 池耗尽时请求无限挂起；过短会把正常突发变成假失败 503，建议 3s-10s），实际 %v", c.DBAcquireTimeout)
+	}
 
 	// 令牌有效期 <= 0 是最隐蔽的一种锁死：签发成功，但客户端拿到的
 	// access token 已过期、refresh token 也已过期 —— 既不能用新也不能用旧。

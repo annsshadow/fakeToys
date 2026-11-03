@@ -97,7 +97,7 @@ func openScratch(t *testing.T) (*pgxpool.Pool, string) {
 	if err := db.Migrate(ctx); err != nil {
 		t.Fatalf("scratch 库迁移失败：%v", err)
 	}
-	return db.Pool, dsn
+	return db.Pool.Raw(), dsn
 }
 
 func TestRunIsIdempotentAndComplete(t *testing.T) {
