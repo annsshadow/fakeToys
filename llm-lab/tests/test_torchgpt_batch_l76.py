@@ -8,10 +8,13 @@
 随机种子下，采样起点与 x/y 内容都和旧实现完全一致（含 dtype / 形状 / 边界）。
 """
 
-import numpy as np
-import torch
+import pytest
 
-from torchgpt.train import get_batch
+torch = pytest.importorskip("torch")  # 没装 torch 就跳过本文件全部用例
+
+import numpy as np  # noqa: E402
+
+from torchgpt.train import get_batch  # noqa: E402
 
 
 def reference_get_batch(data, batch_size, block_size, device):
