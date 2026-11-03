@@ -188,7 +188,10 @@ fn parse_created_name(text: &str, after_create: usize) -> Option<String> {
         i += 1;
     }
     // optional: or replace
-    if text.len() >= i + 10 && text[i..i + 10].eq_ignore_ascii_case("or replace") {
+    // O4：按字节比较而非 str 切片——`text[i..i+10]` 在 i+10 落入多字节字符
+    // 中间时直接 panic（实测：迁移里 `create` 后随中文注释「契」，守卫自己先崩，
+    // 真违例反而报不出来）。
+    if bytes.len() >= i + 10 && bytes[i..i + 10].eq_ignore_ascii_case(b"or replace") {
         i += 10;
         while i < bytes.len() && bytes[i].is_ascii_whitespace() {
             i += 1;
@@ -197,9 +200,10 @@ fn parse_created_name(text: &str, after_create: usize) -> Option<String> {
     // table | view（必须是独立词）。先算布尔再改 i——闭包捕获 i 会与后面的
     // `i += 5` 撞 borrow check（NLL 救不了：word 在 else-if 分支仍被使用）。
     let is_word = |w: &str| -> bool {
-        text.len() >= i + w.len()
-            && text[i..i + w.len()].eq_ignore_ascii_case(w)
-            && (i + w.len() >= bytes.len() || !is_ident_byte(bytes[i + w.len()]))
+        let wb = w.as_bytes();
+        bytes.len() >= i + wb.len()
+            && bytes[i..i + wb.len()].eq_ignore_ascii_case(wb)
+            && (i + wb.len() >= bytes.len() || !is_ident_byte(bytes[i + wb.len()]))
     };
     // 先算布尔再改 i——闭包捕获 i 会与后面的 `i += 5` 撞 borrow check
     // （NLL 在 is_word 最后一次使用后结束借用，无需显式 drop；显式 drop 反而会踩
@@ -217,7 +221,7 @@ fn parse_created_name(text: &str, after_create: usize) -> Option<String> {
         i += 1;
     }
     // optional: if not exists
-    if text.len() >= i + 13 && text[i..i + 13].eq_ignore_ascii_case("if not exists") {
+    if bytes.len() >= i + 13 && bytes[i..i + 13].eq_ignore_ascii_case(b"if not exists") {
         i += 13;
         while i < bytes.len() && bytes[i].is_ascii_whitespace() {
             i += 1;
@@ -326,6 +330,42 @@ fn every_quoted_uppercase_relation_is_created_by_a_migration() {
         violations.len(),
         violations.join("\n")
     );
+}
+
+/// O4 破坏实验（守卫自检）：`create` 关键字后随多字节字符（如中文注释）时，
+/// parse_created_name 不得 panic（改前 `text[i..i+10]` 切片撞字符边界，守卫
+/// 自身先崩、真违例报不出来）；且正常 CREATE TABLE/VIEW 解析不受影响。
+#[test]
+fn parse_created_name_survives_multibyte_and_still_parses() {
+    // 改前实测 panic 形态：create 后随「契」（3 字节，i+10 落在字符中间）
+    assert_eq!(parse_created_name("create 契约测试", 6), None);
+    assert_eq!(parse_created_name("create\t表结构注释", 6), None);
+
+    // 正常解析不受影响：or replace / if not exists / 大小写敏感
+    assert_eq!(
+        parse_created_name(r#"CREATE OR REPLACE VIEW "PP_X_VIEW" AS SELECT 1"#, 6),
+        Some("PP_X_VIEW".to_string())
+    );
+    assert_eq!(
+        parse_created_name(r#"create table if not exists "PP_Y_TABLE" (id int)"#, 6),
+        Some("PP_Y_TABLE".to_string())
+    );
+    // 非表/视图（索引/序列）不认
+    assert_eq!(parse_created_name(r#"CREATE INDEX "idx_x" ON t (c)"#, 6), None);
+    // 全小写引号关系不在本守卫管辖（大小写折叠后与小写表同名）
+    assert_eq!(parse_created_name(r#"CREATE TABLE "lower_t" (id int)"#, 6), None);
+
+    // 全链路：迁移文件里中文注释 + 真实建表混排，created_relations 不崩且收齐
+    let dir = std::env::temp_dir().join(format!("o4_guard_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(
+        dir.join("001_mixed.sql"),
+        "-- create 契约说明：这不是建表\nCREATE TABLE \"PP_REAL_T\" (id int);\n",
+    )
+    .unwrap();
+    let created = created_relations(&dir);
+    assert!(created.contains("PP_REAL_T"), "真实建表必须收齐: {created:?}");
+    std::fs::remove_dir_all(&dir).ok();
 }
 
 #[test]
