@@ -68,9 +68,10 @@ export const agentrouterAdapter: SiteAdapter = {
       // 4. 算差值；无法确认前后余额时必须失败，不能把未知状态伪装成 already。
       const fresh = await fetchSelf(page, BASE_URL, ctx.log);
       let afterQuota = fresh?.quota ?? second.user?.quota;
-      if (afterQuota === null) {
-        // 重登触发阿里云 WAF 滑块：有头模式下窗口还开着，等用户拖完再继续，
-        // 而不是直接判失败（否则每次 9:00 计划任务都白跑一轮）。
+      if (afterQuota == null) {
+        // fresh.quota 可能是 null（WAF 拦截但 localStorage 有用户对象），
+        // second.user 可能是 undefined（重登未确认）——两种都要等 WAF 放行。
+        // 用 == null 而非 === null，否则 undefined 漏判、滑块等待不触发。
         afterQuota = await waitForQuotaAfterWaf(page, ctx);
       }
       afterQuota ??= await readKnownQuota(page, ctx.log);
