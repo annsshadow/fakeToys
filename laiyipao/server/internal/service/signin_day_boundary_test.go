@@ -331,3 +331,82 @@ func readSourceFile(t *testing.T, name string) string {
 	}
 	return string(raw)
 }
+
+// TestSignInDayBoundaryIsShanghaiNotProcessTZ 是 R92 的**行为判据**：
+// 业务日界必须固定为 Asia/Shanghai，不能随宿主机时区漂移。
+//
+// # 缺陷形态
+//
+// 改前 `periodStart` 用的是 `t.Location()` —— 即 `time.Local`。
+// 生产容器里 `TZ` 未设时 `time.Local` 是 UTC，于是「今天」在北京时间
+// **08:00** 翻页；运营看板的 SQL 用 PG 会话时区（Asia/Shanghai），
+// 在北京 **00:00** 翻页。北京时间 00:00–08:00 这 8 小时里两者差一天。
+//
+// # 本用例怎么在「本机不是 UTC」时也测出这个问题
+//
+// 注入一个**带 UTC Location** 的时钟（`time.Date(..., time.UTC)`）——
+// 这正是容器里 `time.Now()` 的形态。改前 `periodStart` 会按 UTC 日界
+// 折出 2026-03-10；改后按业务时区折出 2026-03-11。
+//
+// # 业务后果（请求级，不只是断言）
+//
+// 北京 2026-03-11 00:05 签一次（UTC 03-10 16:05，改前记成 03-10），
+// 北京 08:05 再签一次（UTC 03-11 00:05，改前记成 03-11）——
+// **改前同一个北京自然日可以签到两次**，因为唯一键 (user_id, sign_date)
+// 落在两个不同的 DATE 上。改后第二次必须被拒。
+func TestSignInDayBoundaryIsShanghaiNotProcessTZ(t *testing.T) {
+	scratch := openScratchService(t)
+	ctx := context.Background()
+	uid := scratch.newUser(t, ctx)
+
+	orig := nowFunc
+	t.Cleanup(func() { nowFunc = orig })
+
+	// 北京 2026-03-11 00:05 = UTC 2026-03-10 16:05 —— 错算窗口内。
+	inWindow := time.Date(2026, 3, 10, 16, 5, 0, 0, time.UTC)
+	nowFunc = func() time.Time { return inWindow }
+
+	if _, err := scratch.SignIn(ctx, uid); err != nil {
+		t.Fatalf("错算窗口内首次签到失败：%v", err)
+	}
+
+	stored := readSignDate(t, scratch, ctx, uid)
+	const wantBeijingDate = "2026-03-11"
+	if stored != wantBeijingDate {
+		t.Errorf("sign_date = %s，期望 %s（北京 2026-03-11 00:05 的自然日）\n"+
+			"说明日界仍随宿主机时区漂移：t.Location() 是 UTC 时，"+
+			"签到会被算到前一天。", stored, wantBeijingDate)
+	}
+
+	// 同一北京自然日的 08:05（UTC 2026-03-11 00:05）必须被拒 ——
+	// 改前它会被算成「第二天」，于是第二次签到成功。
+	nowFunc = func() time.Time { return time.Date(2026, 3, 11, 0, 5, 0, 0, time.UTC) }
+	if _, err := scratch.SignIn(ctx, uid); err == nil {
+		t.Fatal("同一北京自然日签到两次竟然成功了 —— " +
+			"改前 periodStart 用 UTC 日界时正是这样（第二条被当成另一天）")
+	}
+
+	var n int
+	if err := scratch.pool.QueryRow(ctx,
+		`SELECT COUNT(*) FROM user_sign_ins WHERE user_id = $1`, uid).Scan(&n); err != nil {
+		t.Fatal(err)
+	}
+	if n != 1 {
+		t.Errorf("签到行数 = %d，应为 1", n)
+	}
+
+	// 第三个判据：**同一时刻**下 Go 与 SQL 折出的日期必须相同。
+	//
+	// 看板的 SQL 现在写 `now() AT TIME ZONE 'Asia/Shanghai'`；这里把同一个
+	// instant 作为参数传进去对拍，避免依赖运行测试时的真实时刻。
+	var pgDate string
+	if err := scratch.pool.QueryRow(ctx,
+		`SELECT ($1::timestamptz AT TIME ZONE 'Asia/Shanghai')::date::text`,
+		inWindow).Scan(&pgDate); err != nil {
+		t.Fatalf("读 SQL 侧日界失败：%v", err)
+	}
+	if goDate := periodStart(inWindow, "daily").Format("2006-01-02"); goDate != pgDate {
+		t.Errorf("同一时刻 Go 日界 = %s，SQL 日界 = %s —— "+
+			"运营看板与游戏内会落在不同的自然日", goDate, pgDate)
+	}
+}

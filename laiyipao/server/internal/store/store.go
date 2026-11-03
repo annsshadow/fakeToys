@@ -35,7 +35,9 @@ type DB struct {
 // 用 UTC 会让每日任务/签到在北京时间 08:00 翻页。
 //
 // 想改就在环境变量 `DB_TIMEZONE` 上改，不必改代码。
-const defaultDBTimeZone = "Asia/Shanghai"
+//
+// R92：默认值直接引用 config.BusinessTimeZone —— 「业务日界」只有一个来源。
+const defaultDBTimeZone = config.BusinessTimeZone
 
 // Open 建立连接池并做一次连通性探测。探测失败直接返回错误，
 // 不做"先启动后重试"——后端起不来时必须立刻让人知道原因。

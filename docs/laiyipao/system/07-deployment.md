@@ -49,7 +49,7 @@ CI 的 govulncheck 闸门会直接红。升级方式只是 `go.mod` 一行 —�
 | `DB_MAX_CONNS` | `10` | 否 | 连接池上限（越界回退默认） |
 | `DB_MIN_CONNS` | `2` | 否 | 连接池下限 |
 | `DB_CONN_LIFETIME` | `1h` | 否 | 连接最大存活 |
-| `DB_TIMEZONE` | `Asia/Shanghai` | 否 | **钉在每条连接上的会话时区** |
+| `DB_TIMEZONE` | `Asia/Shanghai` | 否 | 连接会话时区（R90）；业务日界由 `config.BusinessTimeZone` 固定，见 OPERATIONS |
 | `MIGRATIONS_ON_BOOT` | `true` | 否 | 启动时自动迁移；生产建议 `false` + 独立执行 |
 | `JWT_SECRET` | `dev-only-insecure-secret-change-me` | **是** | prod 下以 `dev-only` 开头会 panic |
 | `ACCESS_TTL` | `2h` | 否 | 玩家/管理员 access token 有效期 |
@@ -505,7 +505,7 @@ systemctl start laiyipao
 | 结算大量 422 | S 段校验误伤 / 引擎漂移 | 查 `/admin/recomputes/stats`；必要时 `SETTLE_RECOMPUTE_MODE=shadow` |
 | `demoted=true` | 熔断已降级，奖励在放行 | 查不符率与关卡分布，定位漂移 |
 | 兑换码创建 500 | `redeem_codes` 序列未对齐 | 跑 `cmd/seed`（含 setval） |
-| 每日任务/签到在早上 8 点翻页 | Go 与 PG 时区不一致 | 设 `DB_TIMEZONE` 并确认容器 `TZ` |
+| 每日任务/签到在早上 8 点翻页 | 运行的是 R92 之前的二进制（Go 日界曾随容器 `TZ`=UTC） | 升级到 R92+；业务日界已固定为 Asia/Shanghai，无需设置 `TZ` |
 | 后台图标全空 | 图标写成字符串名 | 传组件引用 |
 | 构建报 `Big integer literals are not available` | 构建 target < es2020 | 保持 `es2020` |
 

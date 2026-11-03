@@ -227,7 +227,7 @@ func lockChallengeStateOrdered(ctx context.Context, tx txType, userIDs []int64) 
 	// 而挑战次数要等到北京 00:00 才重置 —— 于是「今日」有两个定义。
 	//
 	// 传**日期字面量**（与第 89 轮签到、第 97 轮商城同一手法）。
-	today := periodStart(time.Now(), "daily").Format("2006-01-02")
+	today := periodStart(nowFunc(), "daily").Format("2006-01-02")
 	ids := dedupPositive(userIDs)
 	if len(ids) == 0 {
 		return nil
@@ -557,7 +557,7 @@ func (s *Service) dailyChallengeCounters(ctx context.Context, userID int64) (att
 	// 而挑战次数要等到北京 00:00 才重置 —— 于是「今日」有两个定义。
 	//
 	// 传**日期字面量**（与第 89 轮签到、第 97 轮商城同一手法）。
-	today := periodStart(time.Now(), "daily").Format("2006-01-02")
+	today := periodStart(nowFunc(), "daily").Format("2006-01-02")
 	err = s.pool.QueryRow(ctx,
 		`SELECT attempts, stolen_times FROM user_daily_challenges
 		 WHERE user_id = $1 AND challenge_date = $2`, userID, today).
@@ -952,7 +952,7 @@ func (s *Service) ChallengeDefense(ctx context.Context, userID, defenseID int64,
 	// 而挑战次数要等到北京 00:00 才重置 —— 于是「今日」有两个定义。
 	//
 	// 传**日期字面量**（与第 89 轮签到、第 97 轮商城同一手法）。
-	today := periodStart(time.Now(), "daily").Format("2006-01-02")
+	today := periodStart(nowFunc(), "daily").Format("2006-01-02")
 	// ⚠️ 第 69 轮：上报字段边界校验放在**事务之外**。
 	//
 	// 理由有两条，都不是风格问题：
@@ -1296,7 +1296,7 @@ func (s *Service) MyDefenseChallenges(ctx context.Context, userID int64, limit i
 func (s *Service) dailyChallengeCountersTx(ctx context.Context, tx txType, userID int64) (attempts, stolen int, err error) {
 	// ⚠️ 第 98 轮：`challenge_date` 由 **Go** 决定，与每日任务 / 签到 / 商城同一个口径。
 	// 详见 dailyChallengeCounters 上方的说明。
-	today := periodStart(time.Now(), "daily").Format("2006-01-02")
+	today := periodStart(nowFunc(), "daily").Format("2006-01-02")
 	err = tx.QueryRow(ctx, `
 		INSERT INTO user_daily_challenges (user_id, challenge_date, attempts, stolen_times)
 		VALUES ($1, $2, 0, 0)

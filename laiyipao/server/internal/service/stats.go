@@ -153,7 +153,7 @@ func (s *Service) adminDashboardUncached(ctx context.Context) (Dashboard, error)
 		       COUNT(*) FILTER (WHERE is_guest),
 		       COUNT(*) FILTER (WHERE NOT is_guest),
 		       COUNT(*) FILTER (WHERE status = 2),
-		       COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE)
+		       COUNT(*) FILTER (WHERE created_at >= ((now() AT TIME ZONE 'Asia/Shanghai')::date AT TIME ZONE 'Asia/Shanghai'))
 		FROM users`,
 			&d.Users.Total, &d.Users.Guests, &d.Users.Wechat, &d.Users.Banned, &d.Users.NewToday)
 	})
@@ -205,7 +205,8 @@ func (s *Service) adminDashboardUncached(ctx context.Context) (Dashboard, error)
 			})
 		}
 		// 今日战报：只扫「今天」这一段，走 created_at 索引，与增量表无关。
-		return scan(`SELECT COUNT(*) FROM battle_records WHERE created_at >= CURRENT_DATE`,
+		return scan(`SELECT COUNT(*) FROM battle_records
+			WHERE created_at >= ((now() AT TIME ZONE 'Asia/Shanghai')::date AT TIME ZONE 'Asia/Shanghai')`,
 			&d.Battles.Today)
 	})
 
@@ -234,16 +235,16 @@ func (s *Service) adminDashboardUncached(ctx context.Context) (Dashboard, error)
 		       v.checked, v.matched, v.mismatched,
 		       e.coin_in, e.coin_out, e.gem_in, e.gem_out
 		FROM
-		  (SELECT COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE) AS today_challenges
+		  (SELECT COUNT(*) FILTER (WHERE created_at >= ((now() AT TIME ZONE 'Asia/Shanghai')::date AT TIME ZONE 'Asia/Shanghai')) AS today_challenges
 		     FROM defense_challenges) c,
 		  (SELECT COUNT(*) AS total_defenses FROM defenses) d,
 		  (SELECT COUNT(*) FILTER (WHERE status IN ('paid','delivered')) AS paid_orders,
 		          COUNT(*) FILTER (WHERE status = 'pending') AS pending_orders
 		     FROM orders) o,
 		  (SELECT COUNT(*) AS sign_ins_today
-		     FROM user_sign_ins WHERE sign_date = CURRENT_DATE) s,
+		     FROM user_sign_ins WHERE sign_date = (now() AT TIME ZONE 'Asia/Shanghai')::date) s,
 		  (SELECT COUNT(*) AS redeems_today
-		     FROM redeem_usages WHERE created_at >= CURRENT_DATE) r,
+		     FROM redeem_usages WHERE created_at >= ((now() AT TIME ZONE 'Asia/Shanghai')::date AT TIME ZONE 'Asia/Shanghai')) r,
 		  (SELECT COUNT(*) AS checked,
 		          COUNT(*) FILTER (WHERE matched) AS matched,
 		          COUNT(*) FILTER (WHERE NOT matched) AS mismatched
@@ -347,8 +348,12 @@ func (s *Service) adminDashboardUncached(ctx context.Context) (Dashboard, error)
 			SELECT d::date AS day,
 			       (SELECT COUNT(DISTINCT br.user_id)
 			          FROM battle_records br
-			         WHERE br.created_at >= d AND br.created_at < d + INTERVAL '1 day') AS dau
-			FROM generate_series(CURRENT_DATE - INTERVAL '13 days', CURRENT_DATE, '1 day') d
+			         WHERE br.created_at >= (d AT TIME ZONE 'Asia/Shanghai')
+			           AND br.created_at < ((d + INTERVAL '1 day') AT TIME ZONE 'Asia/Shanghai')) AS dau
+			FROM generate_series(
+			       (now() AT TIME ZONE 'Asia/Shanghai')::date - INTERVAL '13 days',
+			       (now() AT TIME ZONE 'Asia/Shanghai')::date,
+			       '1 day') d
 			ORDER BY 1`)
 		if err != nil {
 			return err

@@ -1417,8 +1417,10 @@ func ValidTaskScope(scope string) bool {
 // 测试可以通过覆盖它来固定时钟（例如把周一的边界条件变成可重复的场景），
 // 而不必改任何业务函数的签名 —— 这是「可测性」的最小侵入点。
 //
-// ⚠️ 只有任务周期相关的路径使用它（LoadTasks / ClaimTask / bumpTasks / SettleBattle），
-// 其余路径继续直接 time.Now()，避免把时钟依赖扩散到整个包。
+// ⚠️ 所有决定「今天几号」的路径都必须走它（LoadTasks / ClaimTask /
+// bumpTasks / SettleBattle / SignIn / 商城限购 / 挑战次数）。
+// R92 之前签到与商城直接调 time.Now()，于是「可注入时钟」只在任务路径成立，
+// 无法在错算窗口里对签到做请求级验证。
 var nowFunc = time.Now
 
 func periodStart(t time.Time, scope string) time.Time {
@@ -1430,7 +1432,15 @@ func periodStart(t time.Time, scope string) time.Time {
 		// 终身累计，不按天分行。理由见 achievementEpoch 的注释。
 		return achievementEpoch
 	}
-	d := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+	// ⚠️ R92：先把时刻换算到**业务时区**，再截断到自然日。
+	//
+	// 改前这里是 `t.Location()` —— 也就是宿主机时区 `time.Local`。
+	// 生产容器 TZ 未设时是 UTC，于是「今天」在北京时间 08:00 翻页，
+	// 而运营看板（PG 会话时区 Asia/Shanghai）按北京 00:00 翻页。
+	// 两者在北京 00:00–08:00 相差一天：签到/每日限购/挑战次数
+	// 在该窗口内可对同一个自然日各做两轮。
+	lt := t.In(businessLocation)
+	d := time.Date(lt.Year(), lt.Month(), lt.Day(), 0, 0, 0, 0, businessLocation)
 	switch scope {
 	case "weekly":
 		weekday := int(d.Weekday())

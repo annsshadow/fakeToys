@@ -119,22 +119,25 @@ cd laiyipao/admin   && pnpm install && pnpm dev          # :5175
 | `DB_CONN_IDLE_TIME` | `30m` | 空闲连接回收时间（R91 补登记）。回收的是「很久没被用过」的连接，不是活跃连接；托管 PG 有连接数上限时靠它把空闲连接还回去 |
 | `DB_STATEMENT_TIMEOUT` | `30s` | **单条 SQL 的服务端执行上限**（R91 补登记），`0` = 不限。超时由 PG 以 `57014` 断开并释放连接，正常请求收到 503；默认值足以覆盖现有导出/看板聚合，又能在查询写坏时避免拖垮整池 |
 | `DB_ACQUIRE_TIMEOUT` | `5s` | **池耗尽的等待上限**（R90）。排队超过该值 → 请求快速失败 `503 + Retry-After: 5`，而不是无限挂起（R89 实测曾挂起 15s 且无任何一层掐断）。⚠️ **不要设得太短**：正常负载的排队 p99 只有几十毫秒，设成 100ms 级会把合法突发打成 503 **假失败**，客户端重试还会放大流量——建议 `3s`–`10s`，且必须小于客户端超时。`0`/负值**启动直接失败** |
-| `DB_TIMEZONE` | `Asia/Shanghai` | **连接会话时区**，第 90 轮新增 |
+| `DB_TIMEZONE` | `Asia/Shanghai` | **连接会话时区**（R90）。业务日界（R92）由 `config.BusinessTimeZone` 固定为 Asia/Shanghai，**不随此值或容器 `TZ` 漂移** |
 
-> ⚠️ **不要把它设成 UTC。**
+> ⚠️ **R92 起：业务日界不再由这个变量决定。**
 >
-> 这个值决定 PG 把 `TIMESTAMPTZ` 折成 `DATE` 时用哪个日界，
-> 进而决定「今天几号」。业务是中文小程序，
-> 「今天」必须等于**玩家所在时区的自然日** ——
-> 设成 UTC 会让每日任务与每日签到在北京时间 **08:00** 翻页，
-> 而玩家手机上显示的还是同一天。
+> 业务日界只有一个来源：`server/internal/config` 的 `BusinessTimeZone`
+> （固定 `Asia/Shanghai`）。每日任务 / 签到 / 每日限购 / 防御挑战次数
+> 都由 Go 侧 `periodStart` 按该时区截断自然日；运营看板的 SQL 则显式写
+> `AT TIME ZONE 'Asia/Shanghai'` —— **都不依赖**本环境变量的会话时区，
+> 也不依赖容器 `TZ`。以前「容器 TZ 未设（UTC）→ 早上 8 点才翻页」
+> 的故障形态已从代码层面消除。
 >
-> 服务端已在连接握手上钉死这个值（`RuntimeParams["TimeZone"]`），
-> 所以它**不依赖** `postgresql.conf` 或托管实例的默认时区。
-> 改这个环境变量是改**业务日界**，不是改部署细节。
+> 本变量现在只影响「SQL 没显式写时区」时的隐式折算（生产代码已无此类 SQL，
+> 由 `TestServiceHasNoCurrentDateInBusinessDaySQL` 守卫）。保留它作为
+> 连接默认值，是为了让人工排查的即席查询与业务口径一致。
+> 改它是改部署细节，**不再**改业务日界；要改业务日界请改 `config.BusinessTimeZone`。
 >
-> 守卫：`server/internal/store/timezone_test.go` 3 条
-> （含「5 条物理连接各自都必须是该值」与「赋值必须无条件执行」）。
+> 守卫：`server/internal/store/timezone_test.go` 3 条 + R92 的两条源码守卫
+> （禁裸 `CURRENT_DATE` / `date_trunc('day', now())`，且 SQL 时区字面量必须等于
+> `config.BusinessTimeZone`）。
 
 ### 导出
 

@@ -114,6 +114,20 @@ func LoadFile(path string) (map[string]string, error) {
 	return out, nil
 }
 
+// BusinessTimeZone 是**业务日界的唯一时区来源**（R92）。
+//
+// 「今天」= 该时区的自然日。任务周期、签到、每日限购、防御挑战次数、
+// 运营看板的「今日」全部必须指向同一个自然日，否则玩家会在
+// 「任务已刷新、商城还没刷新」这类半翻页状态里被算错。
+//
+// 之所以放在 config 而不是散在各处：此前 Go 用 `time.Local`
+// （容器里常为 UTC）、PG 用会话时区（默认 Asia/Shanghai），
+// 两者在北京时间 00:00–08:00 差一天 —— 同一个自然日可以签到两次。
+//
+// 改这个常量等于改「业务日界」，必须同步改动它引用的所有地方
+// （service 的 periodStart、store 的会话时区默认值、stats SQL 的显式时区）。
+const BusinessTimeZone = "Asia/Shanghai"
+
 // Config 是后端全部运行时配置。所有敏感项（数据库口令、JWT 密钥、微信 AppSecret）
 // 只从环境变量读取，仓库内不保存任何真实值。
 type Config struct {
@@ -499,7 +513,7 @@ func Load() Config {
 		// 64 MiB：10 万行 × 约 600 字节的常见宽度仍在上限内；
 		// 超过说明筛选范围过宽或行内容异常，直接 413 比 OOM 好。
 		ExportMaxBytes:   envInt("EXPORT_MAX_BYTES", 64<<20),
-		DBTimeZone:       env("DB_TIMEZONE", "Asia/Shanghai"),
+		DBTimeZone:       env("DB_TIMEZONE", BusinessTimeZone),
 		MigrationsOnBoot: envBool("MIGRATIONS_ON_BOOT", true),
 
 		JWTSecret:  env("JWT_SECRET", "dev-only-insecure-secret-change-me"),

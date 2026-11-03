@@ -464,7 +464,11 @@ func (s *Service) SignIn(ctx context.Context, userID int64) (SignInResult, error
 		// 传 `YYYY-MM-DD` 字符串则完全绕开 timestamptz：
 		// PG 只需要把它当字面量写进 DATE 列，不做任何时区换算。
 		// 这才是「日界由 Go 单层决定」的真含义。
-		today := periodStart(time.Now(), "daily").Format("2006-01-02")
+		// R92：同一个请求只取一次时钟 —— 「签到落在哪一天」与
+		// 「每日签到任务推进到哪一天」必须用**同一个时刻**，否则
+		// 恰好在午夜翻页时会出现「签到算今天、任务算昨天」。
+		now := nowFunc()
+		today := periodStart(now, "daily").Format("2006-01-02")
 		if _, err := tx.Exec(ctx,
 			`INSERT INTO user_sign_ins (user_id, sign_date, day_index, reward) VALUES ($1,$2,$3,$4)`,
 			userID, today, dayIndex, rewardRaw); err != nil {
@@ -509,7 +513,7 @@ func (s *Service) SignIn(ctx context.Context, userID int64) (SignInResult, error
 		// 守卫：`task_metric_coverage_test.go` —— 种子里出现的每个 metric
 		// 都必须在某个 `bumpTasks` 调用点出现。
 		if err := s.bumpTasks(ctx, tx, userID,
-			map[string]int64{"signin": 1}, time.Now()); err != nil {
+			map[string]int64{"signin": 1}, now); err != nil {
 			return err
 		}
 
@@ -558,7 +562,7 @@ type SignInStatus struct {
 // 「今天」的日界口径与 SignIn 完全相同（periodStart(now,"daily") 的 DATE 串），
 // 否则两处对「今天几号」的判断会裂开。
 func (s *Service) SignInStatus(ctx context.Context, userID int64) (SignInStatus, error) {
-	today := periodStart(time.Now(), "daily").Format("2006-01-02")
+	today := periodStart(nowFunc(), "daily").Format("2006-01-02")
 	var claimed int
 	var signedToday bool
 	if err := s.pool.QueryRow(ctx, `
@@ -834,7 +838,7 @@ func (s *Service) LoadShop(ctx context.Context, userID int64) ([]ShopItemView, e
 	// 玩家早上 8 点看到任务已刷新，商城却还显示昨天的限购次数。
 	//
 	// 传**日期字面量**（与第 89 轮签到同一手法）让日界只由一处决定。
-	today := periodStart(time.Now(), "daily").Format("2006-01-02")
+	today := periodStart(nowFunc(), "daily").Format("2006-01-02")
 
 	// 2026-10-31（新一轮第 6 轮）：商品静态部分走 TTL 缓存。
 	//
@@ -918,7 +922,7 @@ func (s *Service) LoadShop(ctx context.Context, userID int64) ([]ShopItemView, e
 // Buy 购买商城商品。
 func (s *Service) Buy(ctx context.Context, userID, itemID int64) (map[string]int, error) {
 	// 第 97 轮：与 LoadShop 同一个口径（Go 的日期字面量），见那里的说明。
-	today := periodStart(time.Now(), "daily").Format("2006-01-02")
+	today := periodStart(nowFunc(), "daily").Format("2006-01-02")
 	var out map[string]int
 	err := s.DB.Tx(ctx, func(tx pgx.Tx) error {
 		var priceRaw, payloadRaw []byte

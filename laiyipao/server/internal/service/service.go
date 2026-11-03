@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 	"sync"
@@ -39,6 +40,32 @@ func mustMarshalJSON(v any) []byte {
 		panic(fmt.Sprintf("service: 静态配置不可序列化（哈希输入无效）: %v", err))
 	}
 	return b
+}
+
+// businessLocation 是**业务日界**（「今天」）的时区对象（R92）。
+//
+// 唯一来源是 config.BusinessTimeZone；这里只负责把它加载成 *time.Location。
+//
+// ⚠️ 为什么不能直接用 `time.Local`：`time.Local` 由**进程环境**决定
+// （容器里 TZ 未设时通常是 UTC）。于是同一份代码在开发机（+08:00）与
+// 生产容器（UTC）上，「今天」差 8 小时 —— 北京时间 00:00–08:00 这 8 小时里，
+// 玩家可以在同一个自然日签到两次、买两轮每日限购、刷两轮防御挑战。
+//
+// 日期计算一旦带上宿主机时区，正确性就取决于部署环境，而不是代码。
+var businessLocation = loadBusinessLocation()
+
+func loadBusinessLocation() *time.Location {
+	loc, err := time.LoadLocation(config.BusinessTimeZone)
+	if err != nil {
+		// 镜像里缺 tzdata 时 LoadLocation 会失败。不能静默回退到 time.Local
+		// （那正是本轮要消灭的「随部署漂移」），退回**固定 +08:00**：
+		// Asia/Shanghai 自 1991 年起无夏令时，固定偏移与真实规则一致。
+		fmt.Fprintf(os.Stderr,
+			"[service] 加载业务时区 %q 失败（%v），回退固定 +08:00 —— 请确认镜像带 tzdata\n",
+			config.BusinessTimeZone, err)
+		return time.FixedZone("CST", 8*60*60)
+	}
+	return loc
 }
 
 // Errors 是服务层返回给上层的语义化错误。
