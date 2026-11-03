@@ -22,6 +22,10 @@ func TestNormalizeNilSlicesValueStruct(t *testing.T) {
 }
 
 // 指针调用是既有用法，修完必须保持可用。
+//
+// ⚠️ 第 64 轮改变了副作用：归一器**不再原地改写入参**（见 normalize.go 顶部
+// 说明 —— 命中缓存的共享响应被并发改写会让进程 fatal）。指针入参返回的是
+// 深拷贝后的副本，原对象保持不变。
 func TestNormalizeNilSlicesPointerStruct(t *testing.T) {
 	type resp struct {
 		Items []int `json:"items"`
@@ -31,8 +35,9 @@ func TestNormalizeNilSlicesPointerStruct(t *testing.T) {
 	if got != `{"items":[]}` {
 		t.Fatalf("指针归一失败：got %s", got)
 	}
-	if r.Items == nil {
-		t.Fatal("指针入参应就地修改")
+	// 入参本身必须保持不变：若它被就地改写过，r.Items 已经不是 nil。
+	if r.Items != nil {
+		t.Fatalf("归一器改写了入参（r.Items=%v）—— 缓存的共享响应会被并发写", r.Items)
 	}
 }
 

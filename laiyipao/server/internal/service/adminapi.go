@@ -73,14 +73,19 @@ func trimAdminKeyword(keyword string) (string, error) {
 // 看起来是对的；但一旦加了 limit，它就变成了「这次返回了几行」，
 // 于是前端分页器会显示「共 50 条」而实际有 100 关。
 func (s *Service) AdminListLevels(ctx context.Context, chapter int, keyword string, limit, offset int) ([]AdminLevelView, int64, error) {
+	// 第 64 轮：`LEFT JOIN battle_records` + `GROUP BY level_id` 实测 245ms
+	//（单跑）/ 501ms（并发 10），是管理端按总耗时排序的第一名。
+	// 改为读 R63 建立的 `dashboard_battle_stats`（迁移 00025/00026），
+	// 每关只有一行，不再需要聚合；`avg_wave = wave_sum / attempts`
+	// 与旧的 `AVG(wave_reached)` 在 numeric 除法下逐位相等。
 	query := `
 		SELECT l.id, l.chapter, l.name, l.seed, l.base_hp, l.wave_count, l.difficulty,
 		       l.energy_cost, l.star_targets, l.terrain_config, l.is_boss, l.enabled,
-		       COUNT(br.id) AS attempts,
-		       COUNT(br.id) FILTER (WHERE br.result = 'win') AS clears,
-		       COALESCE(AVG(br.wave_reached), 0) AS avg_wave
+		       COALESCE(s.attempts, 0) AS attempts,
+		       COALESCE(s.wins, 0) AS clears,
+		       COALESCE(s.wave_sum::numeric / NULLIF(s.attempts, 0), 0) AS avg_wave
 		FROM levels l
-		LEFT JOIN battle_records br ON br.level_id = l.id`
+		LEFT JOIN dashboard_battle_stats s ON s.level_id = l.id`
 	var args []any
 	conds := []string{}
 	if chapter > 0 {
@@ -108,7 +113,6 @@ func (s *Service) AdminListLevels(ctx context.Context, chapter int, keyword stri
 		query += "\n		" + whereClause
 	}
 	query += `
-		GROUP BY l.id
 		ORDER BY l.id`
 	// 真实总数：与列表用**同一组过滤条件**（否则分页器的「共 N 条」和
 	// 实际能翻到的条数对不上 —— 那是最容易被当成「数据丢了」的形状）。
@@ -227,13 +231,12 @@ func (s *Service) AdminLevelRow(ctx context.Context, levelID int) (AdminLevelVie
 	err := s.pool.QueryRow(ctx, `
 		SELECT l.id, l.chapter, l.name, l.seed, l.base_hp, l.wave_count, l.difficulty,
 		       l.energy_cost, l.star_targets, l.terrain_config, l.is_boss, l.enabled,
-		       COUNT(br.id) AS attempts,
-		       COUNT(br.id) FILTER (WHERE br.result = 'win') AS clears,
-		       COALESCE(AVG(br.wave_reached), 0) AS avg_wave
+		       COALESCE(s.attempts, 0) AS attempts,
+		       COALESCE(s.wins, 0) AS clears,
+		       COALESCE(s.wave_sum::numeric / NULLIF(s.attempts, 0), 0) AS avg_wave
 		FROM levels l
-		LEFT JOIN battle_records br ON br.level_id = l.id
-		WHERE l.id = $1
-		GROUP BY l.id`, levelID).
+		LEFT JOIN dashboard_battle_stats s ON s.level_id = l.id
+		WHERE l.id = $1`, levelID).
 		Scan(&id, &chapter, &name, &seed, &baseHP, &waveCount, &difficulty,
 			&energyCost, &starRaw, &terrainRaw, &isBoss, &enabled,
 			&attempts, &clears, &avgWave)

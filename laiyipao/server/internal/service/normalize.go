@@ -28,6 +28,18 @@ import "reflect"
 //  2. 更根本的：类型是从服务端 struct 生成的，服务端就该**让 wire 符合
 //     自己的类型声明** —— 否则「唯一事实源」又是假的。
 //
+// # 第 64 轮：必须先深拷贝，不能就地改写
+//
+// 原实现只把结构体**浅拷贝**一层，然后递归 `SetMapIndex` / 改切片元素 ——
+// map 与切片底层数组仍与入参共享。命中缓存的响应（如 `/admin/economy`
+// 缓存 30 秒内的 `AdminEconomyResp`）在多个并发请求间是**同一个对象**：
+// 一个 goroutine 正在 `MapRange` 遍历 `price`，另一个在 `SetMapIndex` 写它，
+// 触发 `fatal error: concurrent map iteration and map write`，**整个进程退出**
+// （这不是 panic，中间件 recover 不了）。
+//
+// 实测：对 `/admin/economy` 打 10 并发，8 秒内进程必挂。
+// 所以这里先 `deepCopy` 出**完全私有**的副本再归一，入参永远只读。
+//
 // # 边界
 //
 // 它是**响应边界**的归一，不是业务逻辑的改写：
@@ -37,25 +49,73 @@ func NormalizeNilSlices(v any) any {
 	if !rv.IsValid() {
 		return v
 	}
-	if rv.Kind() == reflect.Pointer {
-		if rv.IsNil() {
-			return v
-		}
-		normalizeReflect(rv.Elem())
-		return v
-	}
-	// ⚠️ 调用方全是**传值**（`c.JSON(NormalizeNilSlices(Resp{...}))`）。
-	// 从 interface 取出的值不可寻址，字段 `CanSet()` 恒为 false ——
-	// 直接 `normalizeReflect(rv)` 会让整个归一器空转，wire 仍是 `null`。
-	// 复制成可写副本，归一后由返回值交还给调用方。
-	c := reflect.New(rv.Type()).Elem()
-	c.Set(rv)
+	c := deepCopy(rv)
 	normalizeReflect(c)
 	return c.Interface()
 }
 
+// deepCopy 递归复制 struct / slice / map / pointer / interface。
+//
+// 目的只有一个：让归一化只写**自己的副本**，绝不碰调用方（尤其是缓存）里的
+// map 与切片底层数组。未导出字段不递归（归一器也改不了它们，CanSet=false），
+// 由 `out.Set(v)` 原样带过来。
+func deepCopy(v reflect.Value) reflect.Value {
+	switch v.Kind() {
+	case reflect.Pointer:
+		if v.IsNil() {
+			return v
+		}
+		out := reflect.New(v.Type().Elem())
+		out.Elem().Set(deepCopy(v.Elem()))
+		return out
+	case reflect.Interface:
+		if v.IsNil() {
+			return v
+		}
+		out := reflect.New(v.Type()).Elem()
+		out.Set(deepCopy(v.Elem()))
+		return out
+	case reflect.Struct:
+		out := reflect.New(v.Type()).Elem()
+		out.Set(v)
+		for i := 0; i < v.NumField(); i++ {
+			if v.Type().Field(i).PkgPath != "" {
+				continue
+			}
+			out.Field(i).Set(deepCopy(v.Field(i)))
+		}
+		return out
+	case reflect.Slice:
+		if v.IsNil() {
+			return v
+		}
+		out := reflect.MakeSlice(v.Type(), v.Len(), v.Len())
+		for i := 0; i < v.Len(); i++ {
+			out.Index(i).Set(deepCopy(v.Index(i)))
+		}
+		return out
+	case reflect.Map:
+		if v.IsNil() {
+			return v
+		}
+		out := reflect.MakeMapWithSize(v.Type(), v.Len())
+		iter := v.MapRange()
+		for iter.Next() {
+			out.SetMapIndex(deepCopy(iter.Key()), deepCopy(iter.Value()))
+		}
+		return out
+	default:
+		return v
+	}
+}
+
 func normalizeReflect(v reflect.Value) {
 	switch v.Kind() {
+	case reflect.Pointer:
+		// 指针入参（旧用法）在深拷贝后同样要走到被指向的结构体。
+		if !v.IsNil() {
+			normalizeReflect(v.Elem())
+		}
 	case reflect.Struct:
 		for i := 0; i < v.NumField(); i++ {
 			f := v.Field(i)
@@ -73,8 +133,9 @@ func normalizeReflect(v reflect.Value) {
 			normalizeReflect(v.Index(i))
 		}
 	case reflect.Map:
-		// 玩家端响应的顶层形状是 `fiber.Map{"items": items}`。
-		// 值不可寻址，必须复制成可写副本再回填。
+		// 这里是**副本**内部的 map（deepCopy 保证），就地写是安全的。
+		// 玩家端响应的顶层形状是 `fiber.Map{"items": items}`：
+		// map 值不可寻址，必须复制成可写副本再回填。
 		if v.IsNil() {
 			return
 		}
