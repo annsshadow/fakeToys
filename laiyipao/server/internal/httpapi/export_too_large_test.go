@@ -12,6 +12,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
+	"github.com/laiyipao/server/internal/httpapi/httperr"
+
 	"github.com/laiyipao/server/internal/config"
 	"github.com/laiyipao/server/internal/service"
 )
@@ -20,9 +22,9 @@ import (
 // 掉 500 的后果：运营看到「服务内部错误」，会以为系统坏了并反复重试，
 // 而真正要做的是缩小筛选范围。
 func TestFailErrMapsExportTooLargeTo413(t *testing.T) {
-	app := fiber.New()
+	app := fiber.New(fiber.Config{ErrorHandler: httperr.Render})
 	app.Get("/export", func(c *fiber.Ctx) error {
-		return failErr(c, service.ErrExportTooLarge)
+		return service.ErrExportTooLarge
 	})
 
 	resp, err := app.Test(httptest.NewRequest("GET", "/export", nil))

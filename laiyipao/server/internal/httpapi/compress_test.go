@@ -39,6 +39,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
+	"github.com/laiyipao/server/internal/httpapi/httperr"
+
 	"github.com/laiyipao/server/internal/service"
 )
 
@@ -49,7 +51,7 @@ import (
 // `&service.Service{}` 零值即可：`LoadGameConfig` 的方法体从未引用 `s`
 // （纯内存构造），所以这里不连数据库。
 func newConfigApp() *fiber.App {
-	app := fiber.New()
+	app := fiber.New(fiber.Config{ErrorHandler: httperr.Render})
 	New(&service.Service{}).Register(app)
 	return app
 }

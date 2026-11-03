@@ -23,6 +23,8 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+
+	"github.com/laiyipao/server/internal/httpapi/httperr"
 )
 
 func TestParseLogLevel(t *testing.T) {
@@ -61,11 +63,13 @@ func TestParseLogLevel(t *testing.T) {
 
 // newAccessLogApp 构一个只挂 requestLogger 的最小 app（不走真库）。
 func newAccessLogApp() *fiber.App {
-	app := fiber.New()
+	app := fiber.New(fiber.Config{ErrorHandler: httperr.Render})
 	app.Use(requestLogger())
 	app.Get("/ok", func(c *fiber.Ctx) error { return c.SendString("ok") })
-	app.Get("/nf", func(c *fiber.Ctx) error { return fail(c, fiber.StatusNotFound, "not_found", "没有") })
-	app.Get("/boom", func(c *fiber.Ctx) error { return failErr(c, errors.New("db down")) })
+	app.Get("/nf", func(c *fiber.Ctx) error {
+		return httperr.New(fiber.StatusNotFound, httperr.CodeNotFound, "没有")
+	})
+	app.Get("/boom", func(c *fiber.Ctx) error { return errors.New("db down") })
 	app.Get("/slow", func(c *fiber.Ctx) error {
 		time.Sleep(5 * time.Millisecond)
 		return c.SendString("slow")
@@ -150,7 +154,7 @@ func TestAccessLogLevels(t *testing.T) {
 func TestRequestDurationHeaderStillSet(t *testing.T) {
 	SetLogLevel("error")
 	read := captureAccessLog(t)
-	app := fiber.New()
+	app := fiber.New(fiber.Config{ErrorHandler: httperr.Render})
 	app.Use(requestLogger())
 	app.Get("/ok", func(c *fiber.Ctx) error { return c.SendString("ok") })
 	req, _ := http.NewRequest("GET", "/ok", nil)

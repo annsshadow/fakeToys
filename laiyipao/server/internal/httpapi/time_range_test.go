@@ -16,12 +16,14 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+
+	"github.com/laiyipao/server/internal/httpapi/httperr"
 )
 
 // queryTimeRangeVia 走真实 fiber app，避免手搓 Ctx 与真实解码路径分叉。
 func queryTimeRangeVia(t *testing.T, rawQuery string) (from, to string, errMsg string) {
 	t.Helper()
-	app := fiber.New()
+	app := fiber.New(fiber.Config{ErrorHandler: httperr.Render})
 	app.Get("/q", func(c *fiber.Ctx) error {
 		f, tt, err := queryTimeRange(c, "from", "to")
 		if err != nil {

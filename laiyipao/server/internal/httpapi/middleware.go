@@ -4,25 +4,18 @@
 package httpapi
 
 import (
-	"context"
-	"errors"
 	"fmt"
-	"io"
 	"log"
-	"net"
 	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync/atomic"
-	"syscall"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
-	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/puddle/v2"
 
-	"github.com/laiyipao/server/internal/domain"
+	"github.com/laiyipao/server/internal/httpapi/httperr"
 	"github.com/laiyipao/server/internal/service"
 )
 
@@ -36,167 +29,13 @@ var devMode bool
 // SetDevMode 告诉中间件层当前是不是开发环境。
 func SetDevMode(dev bool) { devMode = dev }
 
-// APIError 是统一的错误响应体。
-type APIError struct {
-	Error ErrorBody `json:"error"`
-}
-
-// ErrorBody 是错误详情。
-type ErrorBody struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
-}
-
-// fail 写出错误响应。
-func fail(c *fiber.Ctx, status int, code, message string) error {
-	// R68：Retry-After 由 errorcodes.go 的契约表**统一**写入。
-	//
-	// 此前它只在 failErr 的 503 分支里手动写了一次，于是同类的
-	// 503（export_busy / db_unavailable）与 429（rate_limited）
-	// 都不带这个头 —— 客户端只能猜等多久，或者干脆不重试。
-	if contract, ok := contractOf(code); ok && contract.RetryAfter != "" {
-		c.Set(fiber.HeaderRetryAfter, contract.RetryAfter)
-	}
-	return c.Status(status).JSON(APIError{Error: ErrorBody{Code: code, Message: message}})
-}
-
-// failErr 把服务层错误映射为 HTTP 响应。
+// APIError / ErrorBody 是 httperr 的别名。
 //
-// 关键：不对外暴露内部错误细节（数据库报错、SQL 片段）。
-// 500 只给一句通用文案，真实原因进日志。
-func failErr(c *fiber.Ctx, err error) error {
-	switch {
-	case errors.Is(err, service.ErrUnauthorized):
-		return fail(c, fiber.StatusUnauthorized, CodeUnauthorized, err.Error())
-	case errors.Is(err, service.ErrForbidden):
-		return fail(c, fiber.StatusForbidden, CodeForbidden, err.Error())
-	case errors.Is(err, service.ErrNotFound):
-		return fail(c, fiber.StatusNotFound, CodeNotFound, err.Error())
-	case errors.Is(err, service.ErrBadInput):
-		return fail(c, fiber.StatusBadRequest, CodeBadInput, err.Error())
-	case errors.Is(err, service.ErrExportTooLarge):
-		// 413 而不是 400：参数没写错，是筛选范围太宽导致结果超上限。
-		// 文案带上了实际行数与上限，运营能据此缩小范围。
-		return fail(c, fiber.StatusRequestEntityTooLarge, CodeExportTooLarge, err.Error())
-	case errors.Is(err, errExportBusy):
-		// 503 而不是 429/500：这是「资源暂时被占用」，可重试，且与限流
-		// （按 IP/分钟）区分开 —— 运营排队 3 秒后重试即可成功。
-		return fail(c, fiber.StatusServiceUnavailable, CodeExportBusy, "导出任务繁忙，请稍后重试")
-	}
-	// 结算拒绝类错误统一 422：请求格式对，但内容不可信
-	if isSettleRejection(err) {
-		return fail(c, fiber.StatusUnprocessableEntity, CodeSettleRejected, err.Error())
-	}
-	// 数据库/上游依赖的**瞬时**故障 → 503 + Retry-After。
-	//
-	// 与 500 的区别是给客户端的语义：503 表示「现在不行，稍后重试可能成功」，
-	// 客户端/网关可以按 Retry-After 退避重试；500 表示「请求本身有问题或
-	// 服务有 bug」，重试只会放大故障。此前断连/超时全部落到 500，
-	// 客户端既不能退避也不能区分，只能把「数据库抖一下」显示成「服务坏了」。
-	if transientDependencyError(err) {
-		// Retry-After 由 fail() 按 CodeServiceUnavailable 的契约写入（5 秒）。
-		logAt(logWarn, "[http] %s %s -> 503: %v", c.Method(), c.OriginalURL(), err)
-		return fail(c, fiber.StatusServiceUnavailable, CodeServiceUnavailable, "依赖服务暂时不可用，请稍后重试")
-	}
-	// 其余一律 500 + 通用文案。
-	// 真实原因必须落到服务端日志（error 级），出问题时线上才能定位。
-	logAt(logError, "[http] %s %s -> 500: %v", c.Method(), c.OriginalURL(), err)
-	return fail(c, fiber.StatusInternalServerError, CodeInternalError, "服务内部错误")
-}
-
-// transientDependencyError 判断错误是否属于「稍后重试可能成功」的依赖故障。
-//
-// 只收**已知的瞬时类别**，不做「所有非 nil 错误都当 503」的兜底：
-// 后者会把 SQL 语法错误、约束冲突、扫描类型不符这些真 bug 伪装成
-// 「服务暂时不可用」，客户端会无限重试，排障也会被误导。
-//
-// 分类依据：
-//   - 连接池已关闭（优雅停机/重建）→ puddle.ErrClosedPool；
-//   - 连接级故障 → PostgreSQL class 08（connection exception）、
-//     57P01/57P02/57P03（后台终止/崩溃/暂不可连）、53300（连接数满）、
-//     53200（内存不足）；
-//   - 语句被取消 → 57014（statement_timeout / 主动 cancel），
-//     这也是本仓库 `DB_STATEMENT_TIMEOUT` 超时的实际错误码；
-//   - 网络层 → *net.OpError、ECONNREFUSED/ECONNRESET/EPIPE、EOF
-//     （数据库断连与微信等上游不可达都会落到这里）；
-//   - 请求/加载超时 → context.DeadlineExceeded。
-//
-// 故意**不**包含 context.Canceled：那是客户端主动断开，响应已经无人接收，
-// 归为 503 只会制造一条误导性的告警。
-func transientDependencyError(err error) bool {
-	if err == nil {
-		return false
-	}
-	if errors.Is(err, puddle.ErrClosedPool) ||
-		errors.Is(err, context.DeadlineExceeded) ||
-		errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) ||
-		errors.Is(err, syscall.ECONNREFUSED) ||
-		errors.Is(err, syscall.ECONNRESET) ||
-		errors.Is(err, syscall.EPIPE) {
-		return true
-	}
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) {
-		switch {
-		case strings.HasPrefix(pgErr.Code, "08"):
-			return true
-		case pgErr.Code == "57014", pgErr.Code == "57P01", pgErr.Code == "57P02",
-			pgErr.Code == "57P03", pgErr.Code == "53300", pgErr.Code == "53200":
-			return true
-		}
-		return false
-	}
-	var netErr *net.OpError
-	return errors.As(err, &netErr)
-}
-
-// isSettleRejection 判断错误是否属于「结算被拒」类。
-//
-// ⚠️ 这份清单必须与 domain 包的结算错误**同步**，否则新错误会掉进 500。
-// 后果有两处，都很糟：
-//  1. 客户端收到「服务内部错误」，无法区分"你作弊了"和"我们坏了"；
-//  2. 服务端日志被大量假 500 刷满，真正的故障被淹没。
-//
-// 已经漂移过一次：给 reactions / shots / leaked / heat 上界时新增了四个
-// domain 错误，都没进这个清单，于是这些**用户输入不合理**的请求
-// 全部返回 500。
-//
-// 新增 domain 结算错误时记得同步这里 —— TestSettleRejectionsAllMapTo422
-// 会把两边的差集直接打出来。
-func isSettleRejection(err error) bool {
-	for _, target := range []error{
-		// 凭证类
-		domain.ErrTokenNotFound, domain.ErrTokenUsed, domain.ErrTokenExpired,
-		domain.ErrLevelMismatch,
-		// 数值越界类
-		domain.ErrTooManyKills, domain.ErrTooShort, domain.ErrScoreRateExceeded,
-		domain.ErrInvalidHitRate, domain.ErrWaveExceeded,
-		// 上界校验类（2026-09-26 补齐，此前全部误返回 500）
-		domain.ErrTooManyReactions, domain.ErrTooManyShots,
-		domain.ErrTooManyLeaked, domain.ErrInvalidField,
-		// HPLeft / slot-budget / replay_skills（第 58 轮补）。
-		//
-		// 这三个都是「用户输入被理解后拒绝」，此前一律落到兜底的 500：
-		//   - ErrHPLeftExceedsBase      结算时上报的剩余血量超过关卡初始血量
-		//   - ErrSlotBudgetExceeded     装备件数超过槽位预算（loadout 路径）
-		//   - ErrReplaySkillsMismatch   回放 S 段与构筑不符（第 56 轮加的校验）
-		//
-		// 500 的代价是具体的：客户端只能显示「服务内部错误」，
-		// 排查会滑向「服务端坏了」而不是「这个上报被拒了」，
-		// 而且它们会混进服务故障告警，把真正的故障淹掉。
-		//
-		// `TestEverySentinelErrorIsClassified` 保证这个名单不会再漏 ——
-		// 之前那份名单是硬编码的，漏一个测试照样绿。
-		domain.ErrHPLeftExceedsBase,
-		service.ErrSlotBudgetExceeded,
-		service.ErrReplaySkillsMismatch,
-	} {
-		if errors.Is(err, target) {
-			return true
-		}
-	}
-	return false
-}
+// ⚠️ 错误响应的**写法**只在 `internal/httpapi/httperr` 里（R69）。
+// 这里保留别名只为既有调用方（main.go 的 ErrorHandler、测试）不必改名；
+// 新代码请直接用 httperr.New 构造错误、return err，不要自己写响应。
+type APIError = httperr.APIError
+type ErrorBody = httperr.ErrorBody
 
 // --- 中间件 ---
 
@@ -266,14 +105,17 @@ func requestLogger() fiber.Handler {
 		dur := time.Since(start)
 		c.Set("X-Request-Duration", dur.String())
 		status := c.Response().StatusCode()
+		// R69：handler 改为「只 return err」，ErrorHandler 在中间件之后才写响应，
+		// 所以 `c.Response().StatusCode()` 此时仍是 200。必须先用错误**最终会写成**
+		// 的状态来分级 —— 否则所有 4xx 访问日志都会掉进 debug 档而消失
+		// （`TestAccessLogLevels` 抓到了这条）。
+		if err != nil {
+			status = httperr.StatusOf(err)
+		}
 		switch {
-		case err != nil:
-			// handler 返回错误：最终状态码由 ErrorHandler 写出，这里还看不到。
-			// 500 的真实原因 failErr 已按 error 级落日志，不重复；
-			// 本行在 debug 级补「哪个端点、哪个错误」的上下文。
-			logAt(logDebug, "[http] %s %s -> handler error (%s): %v",
-				c.Method(), c.OriginalURL(), dur, err)
 		case status >= 500:
+			// 5xx 的真实原因由 httperr.Render 按 error/warn 级落日志，不重复；
+			// 这里只补一行「哪个端点、耗时多少」的访问记录。
 			logAt(logError, "[http] %s %s -> %d (%s)",
 				c.Method(), c.OriginalURL(), status, dur)
 		case status >= 400:
@@ -295,11 +137,11 @@ func requireAdmin(s *service.Service) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		token := bearerToken(c)
 		if token == "" {
-			return fail(c, fiber.StatusUnauthorized, CodeUnauthorized, "缺少 Authorization 头")
+			return httperr.New(fiber.StatusUnauthorized, httperr.CodeUnauthorized, "缺少 Authorization 头")
 		}
 		adminID, role, err := s.ResolveAdminSession(c.Context(), token)
 		if err != nil {
-			return failErr(c, err)
+			return err
 		}
 		c.Locals("admin_id", adminID)
 		c.Locals("admin_role", role)
@@ -326,7 +168,7 @@ func requireWritable() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		role, _ := c.Locals("admin_role").(string)
 		if role != "admin" && role != "ops" {
-			return fail(c, fiber.StatusForbidden, CodeRoleNotWritable,
+			return httperr.New(fiber.StatusForbidden, httperr.CodeRoleNotWritable,
 				fmt.Sprintf("当前角色 %q 不可执行写操作（仅 admin/ops）", role))
 		}
 		return c.Next()
@@ -353,7 +195,7 @@ func recoverPanic() fiber.Handler {
 		defer func() {
 			if r := recover(); r != nil {
 				log.Printf("[panic] %s %s: %v\n%s", c.Method(), c.OriginalURL(), r, debug.Stack())
-				err = fail(c, fiber.StatusInternalServerError, CodeInternalError, "服务内部错误")
+				err = httperr.New(fiber.StatusInternalServerError, httperr.CodeInternalError, "服务内部错误")
 			}
 		}()
 		return c.Next()
@@ -365,11 +207,11 @@ func requireUser(s *service.Service) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		token := bearerToken(c)
 		if token == "" {
-			return fail(c, fiber.StatusUnauthorized, CodeUnauthorized, "缺少 Authorization 头")
+			return httperr.New(fiber.StatusUnauthorized, httperr.CodeUnauthorized, "缺少 Authorization 头")
 		}
 		userID, err := s.ResolveUser(c.Context(), token)
 		if err != nil {
-			return failErr(c, err)
+			return err
 		}
 		c.Locals("user_id", userID)
 		return c.Next()
@@ -748,7 +590,7 @@ func perIPLimiter(name string, limitPerMinute int) fiber.Handler {
 			return name + ":" + c.IP()
 		},
 		LimitReached: func(c *fiber.Ctx) error {
-			return fail(c, fiber.StatusTooManyRequests, CodeRateLimited,
+			return httperr.New(fiber.StatusTooManyRequests, httperr.CodeRateLimited,
 				"请求过于频繁，请稍后再试")
 		},
 	})
@@ -825,7 +667,7 @@ func authRateLimit(name string, limitPerMinute int) fiber.Handler {
 			return fmt.Sprintf("%s:user%d", name, userIDFrom(c))
 		},
 		LimitReached: func(c *fiber.Ctx) error {
-			return fail(c, fiber.StatusTooManyRequests, CodeRateLimited,
+			return httperr.New(fiber.StatusTooManyRequests, httperr.CodeRateLimited,
 				"操作过于频繁，请稍后再试")
 		},
 	})

@@ -18,14 +18,15 @@ package httpapi
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+
+	"github.com/laiyipao/server/internal/httpapi/httperr"
 )
 
-// errExportBusy 表示导出并发已达上限且排队超时。
-var errExportBusy = errors.New("导出并发已达上限")
+// errExportBusy 是 httperr.ErrExportBusy 的本地别名（既有测试按此名引用）。
+var errExportBusy = httperr.ErrExportBusy
 
 type exportGate struct {
 	sem  chan struct{}
@@ -92,7 +93,7 @@ func (s *Server) withExportSlot(h fiber.Handler) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		release, err := s.exportGate().acquire(c.UserContext())
 		if err != nil {
-			return failErr(c, err)
+			return err
 		}
 		defer release()
 		return h(c)

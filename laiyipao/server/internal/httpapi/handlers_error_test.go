@@ -24,6 +24,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
+	"github.com/laiyipao/server/internal/httpapi/httperr"
+
 	"github.com/laiyipao/server/internal/config"
 	"github.com/laiyipao/server/internal/service"
 	"github.com/laiyipao/server/internal/store"
@@ -160,7 +162,7 @@ func TestHandlerErrorBranchesOnBrokenPool(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			sub := fiber.New(fiber.Config{DisableStartupMessage: true})
+			sub := fiber.New(fiber.Config{ErrorHandler: httperr.Render, DisableStartupMessage: true})
 			sub.Use(func(c *fiber.Ctx) error {
 				// 身份注入：值不必真实（池已关，查询必失败），
 				// 但必须是 int64 以通过 userIDFrom/adminIDFrom 的类型断言。
@@ -194,7 +196,7 @@ func TestHandlerErrorBranchesOnBrokenPool(t *testing.T) {
 	}
 
 	// readyz 在真实 app 上的故障分支（healthz 不碰库，无需故障态）
-	app := fiber.New(fiber.Config{DisableStartupMessage: true})
+	app := fiber.New(fiber.Config{ErrorHandler: httperr.Render, DisableStartupMessage: true})
 	New(svc).Register(app)
 	if got := callAs(t, app, "GET", "/readyz", ""); got != fiber.StatusServiceUnavailable {
 		t.Errorf("池关闭时 readyz 应 503，实际 %d", got)

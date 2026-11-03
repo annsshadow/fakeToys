@@ -22,6 +22,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/puddle/v2"
+
+	"github.com/laiyipao/server/internal/httpapi/httperr"
 )
 
 // TestTransientDependencyErrorClassification 钉住分类边界：
@@ -48,7 +50,7 @@ func TestTransientDependencyErrorClassification(t *testing.T) {
 		{"nil", nil, false},
 	}
 	for _, tc := range cases {
-		if got := transientDependencyError(tc.err); got != tc.want {
+		if got := httperr.IsTransientDependency(tc.err); got != tc.want {
 			t.Errorf("%s：transientDependencyError=%v，期望 %v", tc.name, got, tc.want)
 		}
 	}

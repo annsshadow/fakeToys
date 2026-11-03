@@ -267,7 +267,7 @@ func TestNoHandlerDiscardsBodyParseError(t *testing.T) {
 			"正确写法（注意先判长度，「没 body」是合法调用）：\n"+
 			"    if len(bytes.TrimSpace(c.Body())) > 0 {\n"+
 			"        if err := c.BodyParser(&body); err != nil {\n"+
-			"            return fail(c, fiber.StatusBadRequest, \"bad_json\", \"请求体不是合法 JSON\")\n"+
+			"            return httperr.New(fiber.StatusBadRequest, httperr.CodeBadJSON, \"请求体不是合法 JSON\")\n"+
 			"        }\n"+
 			"    }\n\n"+
 			"若确实要显式忽略，请写进豁免表并说明理由（当前豁免 %d 条）。",

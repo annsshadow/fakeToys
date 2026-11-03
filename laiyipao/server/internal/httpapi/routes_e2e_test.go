@@ -30,7 +30,9 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/laiyipao/server/internal/httpapi/httperr"
 
 	"github.com/laiyipao/server/internal/config"
 	"github.com/laiyipao/server/internal/domain"
@@ -114,7 +116,7 @@ func newE2EWith(t *testing.T, mutate func(*config.Config)) *e2e {
 	t.Cleanup(db.Close)
 
 	svc := service.New(db, cfg)
-	app := fiber.New(fiber.Config{DisableStartupMessage: true})
+	app := fiber.New(fiber.Config{ErrorHandler: httperr.Render, DisableStartupMessage: true})
 	srv := New(svc)
 	srv.Register(app)
 	return &e2e{app: app, svc: svc, pool: db.Pool, srv: srv}

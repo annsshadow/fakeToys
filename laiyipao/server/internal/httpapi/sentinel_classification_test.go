@@ -15,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/laiyipao/server/internal/domain"
+	"github.com/laiyipao/server/internal/httpapi/httperr"
 	"github.com/laiyipao/server/internal/service"
 )
 
@@ -43,12 +44,12 @@ import (
 // `ErrXxx = errors.New(...)` 的**顶层变量声明**扫出来，
 // 要求每一个都落在下面三类之一：
 //
-//	settle   → 归入结算拒绝，并且 isSettleRejection(err) 必须为 true
+//	settle   → 归入结算拒绝，并且 httperr.IsSettleRejection(err) 必须为 true
 //	general  → 归入通用分支（failErr 前四条）
 //	exempt   → 在 exemptSentinels 里具名豁免，且必须写清理由
 //
 // ⚠️ 「在名单里」不等于「生效」。所以对 settle 类额外断言
-// `isSettleRejection(err)`：只比名单的话，名单写了而 isSettleRejection 漏了，
+// `httperr.IsSettleRejection(err)`：只比名单的话，名单写了而 isSettleRejection 漏了，
 // 这道守卫会绿而实际仍然返回 500 —— 装饰品就是这么伪装成守卫的。
 func TestEverySentinelErrorIsClassified(t *testing.T) {
 	settle := []error{
@@ -103,7 +104,7 @@ func TestEverySentinelErrorIsClassified(t *testing.T) {
 		}
 		switch {
 		case inList(err, settle):
-			if !isSettleRejection(err) {
+			if !httperr.IsSettleRejection(err) {
 				notRecognized = append(notRecognized,
 					name+"（在结算名单里，但 isSettleRejection 不认 -> 会返回 500）")
 			}

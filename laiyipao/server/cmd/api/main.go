@@ -24,6 +24,7 @@ import (
 
 	"github.com/laiyipao/server/internal/config"
 	"github.com/laiyipao/server/internal/httpapi"
+	"github.com/laiyipao/server/internal/httpapi/httperr"
 	"github.com/laiyipao/server/internal/service"
 	"github.com/laiyipao/server/internal/store"
 )
@@ -226,13 +227,13 @@ func buildApp(svc *service.Service) *fiber.App {
 		WriteTimeout:          20 * time.Second,
 		// 结算上报体积较小，但仍给足余量
 		BodyLimit: 1 << 20,
+		// R69：错误出口只有一个 —— httperr.Render。
+		//
+		// 此前这里只处理 `*fiber.Error`，其余错误直接 return 交给 Fiber
+		// 默认处理器（纯文本 500）；而 handler 里又各自 `failErr`/`fail`。
+		// 同一类错误走哪条路径取决于它是谁返回的，对外行为不可枚举。
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
-			if fe, ok := err.(*fiber.Error); ok {
-				return c.Status(fe.Code).JSON(httpapi.APIError{
-					Error: httpapi.ErrorBody{Code: "http_error", Message: fe.Message},
-				})
-			}
-			return err
+			return httperr.Render(c, err)
 		},
 	})
 	httpapi.New(svc).Register(app)

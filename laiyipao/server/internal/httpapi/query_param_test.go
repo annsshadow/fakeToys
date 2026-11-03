@@ -13,6 +13,8 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
+
+	"github.com/laiyipao/server/internal/httpapi/httperr"
 )
 
 // 查询参数解析失败**必须变成 400**，而不是静默退化成默认值（第 104 轮）。
@@ -388,7 +390,7 @@ func stripHTTPComments(src string) string {
 // `%20` 编码、缺参数时的默认值，全都按真实解码路径走一遍。
 func queryIntVia(t *testing.T, query string) (int, string) {
 	t.Helper()
-	app := fiber.New()
+	app := fiber.New(fiber.Config{ErrorHandler: httperr.Render})
 	app.Get("/q", func(c *fiber.Ctx) error {
 		v, err := queryInt(c, "k", 7)
 		if err != nil {

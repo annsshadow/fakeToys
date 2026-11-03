@@ -1,10 +1,10 @@
 // Copyright (C) 2026 annsshadow
 // SPDX-License-Identifier: AGPL-3.0-or-later
-package httpapi
+package httperr
 
 import "github.com/gofiber/fiber/v2"
 
-// 对外错误码的**唯一清单**（R68）。
+// 对外错误码的**唯一清单**（R68 建立，R69 随出口一起搬进本包）。
 //
 // # 为什么需要它
 //
@@ -20,12 +20,8 @@ import "github.com/gofiber/fiber/v2"
 //     漏写一条的症状是「偶发地显示未知错误」。
 //
 // 所以把所有码收进这一张表：码 → 状态码 → 是否带 Retry-After。
-// `fail` 按表**自动**写 Retry-After，`error_code_contract_test.go`
-// 用 AST 扫描**所有** `fail(...)` 调用点，断言码是常量、状态与表一致。
-//
-// ⚠️ 本轮只做「常量化 + 契约测试」，`failErr` 的**分类逻辑**仍在
-// middleware.go 原地。把它抽成单一映射入口（以及穷举每个 SQLSTATE
-// 的映射断言）是下一轮 R69 的事 —— 那是行为重构，不应与本轮混在一起。
+// Render 按表自动写 Retry-After；`error_entry_test.go` 用 AST 扫描
+// **全仓**所有 `httperr.New(...)` 调用点，断言码是常量、状态与表一致。
 const (
 	// 400：请求体/参数不合法。
 	//
@@ -66,6 +62,13 @@ const (
 	CodeServiceUnavailable = "service_unavailable"
 	CodeExportBusy         = "export_busy"
 	CodeDBUnavailable      = "db_unavailable"
+
+	// CodeHTTPError 由框架错误（未知路由/方法不允许/body 超限）使用。
+	//
+	// ⚠️ 它**不在**契约表里：状态码取自 `*fiber.Error`（404/405/413…），
+	// 不固定。这是唯一一个「码不绑定单一状态」的对外错误，
+	// 由 Render 的 `*fiber.Error` 分支直接写出。
+	CodeHTTPError = "http_error"
 )
 
 // errorContract 是一个错误码的对外契约。
@@ -77,9 +80,8 @@ type errorContract struct {
 
 // errorContracts 是「码 → 状态 → Retry-After」的权威表。
 //
-// ⚠️ 新增错误码时**必须**在这里登记：`TestErrorCodeContract` 会扫描
-// 所有 `fail(...)` 调用点，未登记的码直接红。这条不是形式要求 ——
-// R67 之前就出现过「新错误落到 500」的漂移，而当时没有任何测试在看。
+// ⚠️ 新增错误码时**必须**在这里登记：`error_entry_test.go` 会扫描
+// 所有 `httperr.New(...)` 调用点，未登记的码直接红。
 var errorContracts = map[string]errorContract{
 	CodeBadJSON:  {Status: fiber.StatusBadRequest},
 	CodeBadInput: {Status: fiber.StatusBadRequest},
@@ -96,8 +98,7 @@ var errorContracts = map[string]errorContract{
 	CodeSettleRejected: {Status: fiber.StatusUnprocessableEntity},
 
 	// 限流窗口是 1 分钟（limiter.Expiration），所以 Retry-After 取 60。
-	// 取 60 而不是「平均剩余时间」：客户端拿到确定的退避上界即可，
-	// 精确到剩余秒数会让响应多一个随请求变化的头，缓存与日志都更难读。
+	// 取 60 而不是「平均剩余时间」：客户端拿到确定的退避上界即可。
 	CodeRateLimited: {Status: fiber.StatusTooManyRequests, RetryAfter: "60"},
 
 	CodeInternalError: {Status: fiber.StatusInternalServerError},
@@ -110,8 +111,46 @@ var errorContracts = map[string]errorContract{
 	CodeDBUnavailable: {Status: fiber.StatusServiceUnavailable, RetryAfter: "5"},
 }
 
+// nonContractCodes 是「状态码不固定」的对外码。
+//
+// 只有 http_error：它来自框架错误，状态随框架给出（404/405/413…）。
+// 其余每个码都必须绑定唯一状态 —— 否则客户端无法按码分支。
+var nonContractCodes = map[string]string{
+	CodeHTTPError: "框架错误：状态由 *fiber.Error 给出（404/405/413…），码本身不绑定单一状态",
+}
+
 // contractOf 返回错误码的契约；未登记时 ok=false。
 func contractOf(code string) (errorContract, bool) {
 	c, ok := errorContracts[code]
 	return c, ok
+}
+
+// Contract 供契约测试读取（只读视图）。
+func Contract(code string) (status int, retryAfter string, ok bool) {
+	c, ok := contractOf(code)
+	return c.Status, c.RetryAfter, ok
+}
+
+// Contracts 返回契约表的副本，供测试遍历。
+func Contracts() map[string]errorContractView {
+	out := make(map[string]errorContractView, len(errorContracts))
+	for k, v := range errorContracts {
+		out[k] = errorContractView{Status: v.Status, RetryAfter: v.RetryAfter}
+	}
+	return out
+}
+
+// errorContractView 是契约的只读投影。
+type errorContractView struct {
+	Status     int
+	RetryAfter string
+}
+
+// NonContractCodes 返回不绑定单一状态的码及理由（供测试做完整性核对）。
+func NonContractCodes() map[string]string {
+	out := make(map[string]string, len(nonContractCodes))
+	for k, v := range nonContractCodes {
+		out[k] = v
+	}
+	return out
 }

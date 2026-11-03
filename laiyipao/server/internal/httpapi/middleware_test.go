@@ -21,6 +21,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
+	"github.com/laiyipao/server/internal/httpapi/httperr"
+
 	"github.com/laiyipao/server/internal/domain"
 	"github.com/laiyipao/server/internal/service"
 )
@@ -74,7 +76,7 @@ func TestBearerTokenParsing(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			app := fiber.New()
+			app := fiber.New(fiber.Config{ErrorHandler: httperr.Render})
 			var got string
 			app.Use(func(ctx *fiber.Ctx) error {
 				got = bearerToken(ctx)
@@ -100,7 +102,7 @@ func TestRequireUserRejectsMissingHeader(t *testing.T) {
 	// requireUser 需要 service.Service，但拒绝发生在调用 ResolveUser **之前**，
 	// 所以可以传 nil —— 这既验证了"缺 header 不会碰 DB"，
 	// 也让这条用例零 DB 依赖。
-	app := fiber.New()
+	app := fiber.New(fiber.Config{ErrorHandler: httperr.Render})
 	app.Use("/api/v1/me", requireUser(nil), func(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusOK)
 	})
@@ -115,7 +117,7 @@ func TestRequireUserRejectsMissingHeader(t *testing.T) {
 }
 
 func TestRequireAdminRejectsMissingHeader(t *testing.T) {
-	app := fiber.New()
+	app := fiber.New(fiber.Config{ErrorHandler: httperr.Render})
 	app.Use("/api/v1/admin/stats", requireAdmin(nil), func(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusOK)
 	})
@@ -131,7 +133,7 @@ func TestRequireAdminRejectsMissingHeader(t *testing.T) {
 // TestRequireUserRejectsMalformedHeader 确认畸形 header 也在碰 DB 之前被拒。
 func TestRequireUserRejectsMalformedHeader(t *testing.T) {
 	for _, h := range []string{"Bearer", "Bearer   ", "Basic xyz", "bearer"} {
-		app := fiber.New()
+		app := fiber.New(fiber.Config{ErrorHandler: httperr.Render})
 		app.Use("/x", requireUser(nil), func(c *fiber.Ctx) error {
 			return c.SendStatus(fiber.StatusOK)
 		})
@@ -151,11 +153,11 @@ func TestRequireUserRejectsMalformedHeader(t *testing.T) {
 // 但 ResolveAdmin 需要 DB，所以这里只验证"没有 Authorization 头"这一档；
 // 跨角色那条由 service 层的 ResolveAdmin 状态查询保证（见 TestResolveAdmin*）。
 func TestAdminRouteIsGuarded(t *testing.T) {
-	app := fiber.New()
+	app := fiber.New(fiber.Config{ErrorHandler: httperr.Render})
 	// 模拟一个"守卫被摘掉"的错误配置：此时应当能到达处理器。
 	// 这条断言是为了确认 app.Use 的路径匹配本身是对的，
 	// 否则上面的"应 401"可能是因为路由根本没注册。
-	guarded := fiber.New()
+	guarded := fiber.New(fiber.Config{ErrorHandler: httperr.Render})
 	guarded.Use("/api/v1/admin/stats", requireAdmin(nil), func(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusOK)
 	})
@@ -172,7 +174,7 @@ func TestLocalsAccessorsReturnZeroWhenAbsent(t *testing.T) {
 	// 中间件被摘掉时这些函数返回 0 而不是 panic。
 	// 但 0 是**合法的 user_id 吗**？不是 —— users.id 是 BIGSERIAL 从 1 开始，
 	// 所以 0 一定查不到任何用户。这是"安全地失败"的前提。
-	app := fiber.New()
+	app := fiber.New(fiber.Config{ErrorHandler: httperr.Render})
 	var adminID, userID int64
 	app.Use(func(c *fiber.Ctx) error {
 		adminID = adminIDFrom(c)
@@ -190,7 +192,7 @@ func TestLocalsAccessorsReturnZeroWhenAbsent(t *testing.T) {
 func TestLocalsAccessorsRejectWrongType(t *testing.T) {
 	// 若有人把 Locals 写成字符串 id（JSON 反序列化的常见做法），
 	// 类型断言会失败并返回 0。这里锁住该行为。
-	app := fiber.New()
+	app := fiber.New(fiber.Config{ErrorHandler: httperr.Render})
 	var got int64
 	app.Use(func(c *fiber.Ctx) error {
 		c.Locals("user_id", "42")
@@ -221,9 +223,9 @@ func TestFailErrStatusMapping(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			app := fiber.New()
+			app := fiber.New(fiber.Config{ErrorHandler: httperr.Render})
 			app.Get("/x", func(ctx *fiber.Ctx) error {
-				return failErr(ctx, fmt.Errorf("包装过: %w", c.err))
+				return fmt.Errorf("包装过: %w", c.err)
 			})
 			status, body := callWith(t, app, get("/x"))
 			if status != c.wantHTTP {
@@ -272,13 +274,13 @@ func TestSettleRejectionsAllMapTo422(t *testing.T) {
 		service.ErrReplaySkillsMismatch,
 	}
 	for _, target := range settleErrors {
-		if !isSettleRejection(target) {
+		if !httperr.IsSettleRejection(target) {
 			t.Errorf("结算错误 %v 未被 isSettleRejection 识别 -> 会返回 500", target)
 		}
 		// 再端到端确认一遍：真实响应必须是 422
-		app := fiber.New()
+		app := fiber.New(fiber.Config{ErrorHandler: httperr.Render})
 		app.Get("/x", func(ctx *fiber.Ctx) error {
-			return failErr(ctx, fmt.Errorf("包装: %w", target))
+			return fmt.Errorf("包装: %w", target)
 		})
 		status, body := callWith(t, app, get("/x"))
 		if status != fiber.StatusUnprocessableEntity {
@@ -293,9 +295,9 @@ func TestSettleRejectionsAllMapTo422(t *testing.T) {
 // TestNonSettleErrorsMapTo500AndHideDetails 确认 500 不泄露内部细节。
 func TestNonSettleErrorsMapTo500AndHideDetails(t *testing.T) {
 	secret := "pq: duplicate key value violates unique constraint \"users_nickname_key\""
-	app := fiber.New()
+	app := fiber.New(fiber.Config{ErrorHandler: httperr.Render})
 	app.Get("/x", func(ctx *fiber.Ctx) error {
-		return failErr(ctx, errors.New(secret))
+		return errors.New(secret)
 	})
 	status, body := callWith(t, app, get("/x"))
 	if status != fiber.StatusInternalServerError {
@@ -333,7 +335,7 @@ func TestIsSettleRejectionIgnoresUnrelated(t *testing.T) {
 		service.ErrBadInput,
 		errors.New("完全无关的错误"),
 	} {
-		if isSettleRejection(err) {
+		if httperr.IsSettleRejection(err) {
 			t.Errorf("%v 不应被判为结算拒绝", err)
 		}
 	}
@@ -342,7 +344,7 @@ func TestIsSettleRejectionIgnoresUnrelated(t *testing.T) {
 // --- panic 兜底 ---
 
 func TestRecoverPanicDoesNotKillProcess(t *testing.T) {
-	app := fiber.New()
+	app := fiber.New(fiber.Config{ErrorHandler: httperr.Render})
 	app.Use(recoverPanic())
 	app.Get("/boom", func(c *fiber.Ctx) error {
 		panic("故意的 panic")
@@ -382,7 +384,7 @@ func withDevMode(t *testing.T, dev bool) {
 
 func TestCORSHeadersAndPreflight(t *testing.T) {
 	withDevMode(t, true) // dev：前后端不同端口，必须放行
-	app := fiber.New()
+	app := fiber.New(fiber.Config{ErrorHandler: httperr.Render})
 	app.Use(cors(nil))
 	app.Get("/x", func(c *fiber.Ctx) error { return c.SendString("ok") })
 
@@ -420,7 +422,7 @@ func TestCORSHeadersAndPreflight(t *testing.T) {
 // 而没有任何东西会提醒。所以默认必须取安全的一侧。
 func TestCORSProdDoesNotDefaultToWildcard(t *testing.T) {
 	withDevMode(t, false) // prod
-	app := fiber.New()
+	app := fiber.New(fiber.Config{ErrorHandler: httperr.Render})
 	app.Use(cors(nil))
 	app.Get("/x", func(c *fiber.Ctx) error { return c.SendString("ok") })
 
@@ -442,7 +444,7 @@ func TestCORSProdDoesNotDefaultToWildcard(t *testing.T) {
 // 也会让它变绿 —— 而那正是本条要防的回归形态。
 func TestCORSAllowListEchoesOnlyListedOrigin(t *testing.T) {
 	withDevMode(t, false)
-	app := fiber.New()
+	app := fiber.New(fiber.Config{ErrorHandler: httperr.Render})
 	app.Use(cors([]string{"https://admin.example.com"}))
 	app.Get("/x", func(c *fiber.Ctx) error { return c.SendString("ok") })
 
@@ -472,7 +474,7 @@ func TestCORSAllowListEchoesOnlyListedOrigin(t *testing.T) {
 
 // TestRequestLoggerSetsDuration 确认耗时头被写入。
 func TestRequestLoggerSetsDuration(t *testing.T) {
-	app := fiber.New()
+	app := fiber.New(fiber.Config{ErrorHandler: httperr.Render})
 	app.Use(requestLogger())
 	app.Get("/x", func(c *fiber.Ctx) error { return c.SendString("ok") })
 	resp, err := app.Test(get("/x"), 5000)
