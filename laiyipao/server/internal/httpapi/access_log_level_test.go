@@ -166,3 +166,88 @@ func TestRequestDurationHeaderStillSet(t *testing.T) {
 		t.Error("error 档不应记成功访问")
 	}
 }
+
+// TestEveryErrorCodeLogsAtContractLevel 是 R69 重构的**可观测性守卫**。
+//
+// 背景：R69 把 handler 改成「只 return err」，ErrorHandler 在中间件之后才写响应。
+// 于是 requestLogger 在 `c.Next()` 返回时看到的 `StatusCode()` 恒为 200 ——
+// 4xx 访问日志一度整体掉进 debug 档（`TestAccessLogLevels` 抓到了）。
+//
+// 当时的修复是在 requestLogger 里调用 `httperr.StatusOf(err)`。本条把
+// 「每个对外错误码 → 正确的日志级别」写成**全表**断言，防止下一次：
+//   - 新增错误码时忘了它会在中间件阶段出现；
+//   - 有人在 requestLogger 里又把 `err` 分支改回「只打 debug」；
+//   - 有人改了 Render 的判定顺序，让 StatusOf 与契约表分叉。
+//
+// 判据与用户要求一致：4xx 必须在 warn 档可见、error 档不可见；
+// 5xx 必须在 error 档可见（且 Render 的原因行也在 error 档）。
+func TestEveryErrorCodeLogsAtContractLevel(t *testing.T) {
+	contracts := httperr.Contracts()
+	// 集合规模下限：契约表被删空时本测试会静默通过 —— 那是它自己失效。
+	if len(contracts) < 10 {
+		t.Fatalf("契约表只有 %d 个码（下限 10）—— 全表断言失去意义", len(contracts))
+	}
+	for code, c := range contracts {
+		code, c := code, c
+		t.Run(code, func(t *testing.T) {
+			err := httperr.New(c.Status, code, "x")
+			// 先钉住 StatusOf 与契约表同源（中间件依赖的就是这个值）。
+			if got := httperr.StatusOf(err); got != c.Status {
+				t.Fatalf("StatusOf(%s) = %d，契约表是 %d —— 两处判定已分叉", code, got, c.Status)
+			}
+
+			app := fiber.New(fiber.Config{ErrorHandler: httperr.Render})
+			app.Use(requestLogger())
+			app.Get("/x", func(ctx *fiber.Ctx) error { return err })
+			req, _ := http.NewRequest("GET", "/x", nil)
+
+			SetLogLevel("error")
+			readErr := captureAccessLog(t)
+			if _, testErr := app.Test(req); testErr != nil {
+				t.Fatalf("请求失败：%v", testErr)
+			}
+			visibleAtError := strings.Contains(readErr(), "/x")
+
+			SetLogLevel("warn")
+			readWarn := captureAccessLog(t)
+			if _, testErr := app.Test(req); testErr != nil {
+				t.Fatalf("请求失败：%v", testErr)
+			}
+			visibleAtWarn := strings.Contains(readWarn(), "/x")
+
+			if !visibleAtWarn {
+				t.Errorf("%s（HTTP %d）在 warn 档不可见 —— 4xx 访问日志会整体消失",
+					code, c.Status)
+			}
+			wantErr := c.Status >= 500
+			if visibleAtError != wantErr {
+				t.Errorf("%s（HTTP %d）在 error 档可见=%v，期望 %v",
+					code, c.Status, visibleAtError, wantErr)
+			}
+		})
+	}
+
+	// 框架错误（http_error）状态由 *fiber.Error 给出，也必须按同一规则分级。
+	for _, fe := range []*fiber.Error{
+		fiber.ErrNotFound,              // 404
+		fiber.ErrMethodNotAllowed,      // 405
+		fiber.ErrRequestEntityTooLarge, // 413
+	} {
+		fe := fe
+		t.Run("fiber_"+fe.Message, func(t *testing.T) {
+			app := fiber.New(fiber.Config{ErrorHandler: httperr.Render})
+			app.Use(requestLogger())
+			app.Get("/x", func(ctx *fiber.Ctx) error { return fe })
+			req, _ := http.NewRequest("GET", "/x", nil)
+			SetLogLevel("warn")
+			read := captureAccessLog(t)
+			if _, err := app.Test(req); err != nil {
+				t.Fatalf("请求失败：%v", err)
+			}
+			if !strings.Contains(read(), "/x") {
+				t.Errorf("框架错误 %d 在 warn 档不可见", fe.Code)
+			}
+		})
+	}
+	SetLogLevel("info")
+}
