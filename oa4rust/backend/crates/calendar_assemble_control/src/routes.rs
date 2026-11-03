@@ -69,9 +69,12 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
             "/api/calendar_assemble_control/calendar/{id}",
             get(crate::u2::calendar_get),
         )
+        // O6：删掉 `/event` 上的死 PUT 注册——event_update_all 要求 Path<String>，
+        // 而本路径无 {id} 参数，提取器恒定 500（Wrong number of path arguments）；
+        // 正确的更新入口是下方 /event/update/all/{id}。
         .route(
             "/api/calendar_assemble_control/event",
-            post(crate::u2::event_create).put(crate::u2::event_update_all),
+            post(crate::u2::event_create),
         )
         .route(
             "/api/calendar_assemble_control/event/after/{id}",

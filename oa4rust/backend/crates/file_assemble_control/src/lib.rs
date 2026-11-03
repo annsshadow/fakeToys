@@ -1200,6 +1200,23 @@ pub async fn attachment_upload_folder_folderId_callback_callback(
     attachment_upload_folder_folderId(pool, session, axum::extract::Path(folder_id), form).await
 }
 
+/// O6：legacy 路径 `/upload/folder/callback/callback/{folderId}` 只有 1 个路径参数，
+/// 双参版 handler（Path<(String, String)>）在该注册下恒定 500（Wrong number of
+/// path arguments，arity 探针实测）。薄包装：单参提取后委托同一实现
+/// （callback 参数在实现里本就未被使用）。
+#[axum::debug_handler]
+#[allow(non_snake_case)]
+pub async fn attachment_upload_folder_callback_callback_legacy(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    axum::extract::Path(folder_id): axum::extract::Path<String>,
+    form: axum::extract::Multipart,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 透传臂也收会话门：与双参版同一判定口径。
+    require_session(session.clone())?;
+    attachment_upload_folder_folderId(pool, session, axum::extract::Path(folder_id), form).await
+}
+
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn attachment_id(
@@ -1409,16 +1426,14 @@ pub async fn attachment_id_update(
 pub async fn attachment_id_update_callback_callback(
     pool: Extension<Pool>,
     Extension(session): Extension<shared::session::Session>,
-    axum::extract::Path((id, _callback)): axum::extract::Path<(String, String)>,
+    // O6：本 handler 只注册在单参路径 /update/callback/callback/{id} 上，
+    // 原 Path<(String, String)> 双元组与该模式恒定不匹配（提取器 500，
+    // 且因必需会话扩展在前失败而对 arity 探针隐形）。callback 参数从未被
+    // 委托实现使用，按注册模式收成单参。
+    axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    attachment_id_update(
-        pool,
-        Extension(session),
-        axum::extract::Path(id),
-        axum::extract::Json(body),
-    )
-    .await
+    attachment_id_update(pool, Extension(session), axum::extract::Path(id), axum::extract::Json(body)).await
 }
 
 #[axum::debug_handler]

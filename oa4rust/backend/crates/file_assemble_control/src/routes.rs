@@ -177,7 +177,7 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/attachment/update/{id}", post(crate::attachment_id_update))
         .route("/api/attachment/update/callback/callback/{id}", post(crate::attachment_id_update_callback_callback))
         .route("/api/attachment/upload/folder/{folderId}", post(crate::attachment_upload_folder_folderId))
-        .route("/api/attachment/upload/folder/callback/callback/{folderId}", post(crate::attachment_upload_folder_folderId_callback_callback))
+        .route("/api/attachment/upload/folder/callback/callback/{folderId}", post(crate::attachment_upload_folder_callback_callback_legacy))
         .route("/api/attachment/upload/folder/{folderId}/callback/{callback}", post(crate::attachment_upload_folder_folderId_callback_callback))
         .route("/api/file/upload/referencetype/reference/reference/scale/scale/{referenceType}", post(crate::file_upload_referencetype_referenceType_reference_reference_scale_scale))
         .route("/api/file/upload/referencetype/reference/reference/scale/scale/callback/callback/{referenceType}", post(crate::file_upload_referencetype_referenceType_reference_reference_scale_scale_callback_callback))
