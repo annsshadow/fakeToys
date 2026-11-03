@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // chaos-drill.mjs — R89 混沌演练：边压边打，三种真实故障注入 × 四项断言。
 //
 // 用法：

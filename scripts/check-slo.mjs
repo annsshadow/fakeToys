@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // check-slo.mjs — R82 玩家主链路 SLO 基线守卫（第 5 条要求：
 // 「任何一轮让某条路径 p95 劣化超过 20% 就该在下一轮被复核」的自动化）。
 //

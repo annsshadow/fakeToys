@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
 // trace-pull.mjs — 按 trace id 从日志里拉出一次请求的全部行（R84 验收工具）。
 //
 // # 用法
