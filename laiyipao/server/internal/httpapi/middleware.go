@@ -111,18 +111,24 @@ func traceIDOf(c *fiber.Ctx) string {
 //
 // # 脱敏边界（测试钉住，别破）
 //
-// 访问日志只允许出现三种身份形态：
+// 访问日志只允许出现四种身份形态：
 //   - `user#N`：内部数字 user id（认证成功，Locals 已有 —— **零新增查询**，
 //     身份来自 requireUser 的认证结果）；
+//   - `admin#N`：内部数字 admin id（requireAdmin 的认证结果。
+//     R86 实抓：没有它时管理端请求全部误标 bad_token，
+//     运营会以为后台正在被爆破）；
 //   - `bad_token`：带了 Authorization 头但没认证上（无效/过期/伪造 ——
 //     这本身就是「有人在拿坏令牌探路」的运营信号；令牌内容绝不写出）；
 //   - `anon`：没带凭证的公开请求。
 //
-// 绝不出现：昵称、openid、guest_token、JWT 串、手机号。
+// 绝不出现：昵称、openid、guest_token、JWT 串、手机号、admin 用户名。
 // 昵称恰好是数字时也不会混进 user# 字段（值只来自 Locals 的 int64）。
 func accessIdentity(c *fiber.Ctx) string {
 	if uid, ok := c.Locals("user_id").(int64); ok && uid > 0 {
 		return "user#" + strconv.FormatInt(uid, 10)
+	}
+	if aid, ok := c.Locals("admin_id").(int64); ok && aid > 0 {
+		return "admin#" + strconv.FormatInt(aid, 10)
 	}
 	if c.Get("Authorization") != "" {
 		return "bad_token"

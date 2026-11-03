@@ -479,6 +479,7 @@ func (s *Server) adminGrantUser(c *fiber.Ctx) error {
 	if err != nil {
 		return httperr.New(fiber.StatusBadRequest, httperr.CodeBadInput, "user id 非法")
 	}
+	rawBody := c.Body()
 	var body struct {
 		Currency string `json:"currency"`
 		Amount   int64  `json:"amount"`
@@ -486,13 +487,51 @@ func (s *Server) adminGrantUser(c *fiber.Ctx) error {
 	if err := c.BodyParser(&body); err != nil {
 		return httperr.New(fiber.StatusBadRequest, httperr.CodeBadJSON, "请求体不是合法 JSON")
 	}
+	key, err := idemKey(c)
+	if err != nil {
+		return err
+	}
 	// R37：钱包变动与审计同一事务（符号仍由服务层按 R109 口径落进事件名）。
-	wallet, err := s.Svc.AdminGrantCurrency(c.Context(), id, body.Currency, body.Amount,
+	if key == "" {
+		// 无幂等键：现状行为（R86 要求 6，老客户端零影响）。
+		wallet, err := s.Svc.AdminGrantCurrency(c.Context(), id, body.Currency, body.Amount,
+			service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()})
+		if err != nil {
+			return err
+		}
+		return c.JSON(service.AdminGrantResp{Wallet: wallet})
+	}
+	bodyBytes, replayed, err := s.Svc.AdminGrantCurrencyIdem(c.Context(), id, body.Currency, body.Amount,
+		key, service.HashRequestBody(rawBody),
 		service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()})
 	if err != nil {
 		return err
 	}
-	return c.JSON(service.AdminGrantResp{Wallet: wallet})
+	return sendIdempotent(c, bodyBytes, replayed)
+}
+
+// idemKey 读 Idempotency-Key 头并按白名单校验（R86）。
+// 无头返回 ""（走现状路径）；有头但非法**拒绝**（400，绝不截断——
+// 截断会让两个不同的长 key 静默撞成一个，那比报错糟得多）。
+func idemKey(c *fiber.Ctx) (string, error) {
+	key := strings.TrimSpace(c.Get("Idempotency-Key"))
+	if key == "" {
+		return "", nil
+	}
+	if !service.IdemKeyPattern.MatchString(key) {
+		return "", httperr.New(fiber.StatusBadRequest, httperr.CodeBadInput,
+			"Idempotency-Key 须为 8~128 位字母数字或 _-.: 字符")
+	}
+	return key, nil
+}
+
+// sendIdempotent 写幂等响应（重放带 X-Idempotent-Replay 便于客户端分辨）。
+func sendIdempotent(c *fiber.Ctx, body []byte, replayed bool) error {
+	if replayed {
+		c.Set("X-Idempotent-Replay", "true")
+	}
+	c.Set("Content-Type", "application/json; charset=utf-8")
+	return c.Send(body)
 }
 
 // adminResetPlayerPassword 后台重置玩家账号密码（2026-10-30 实质优化第 11 轮）。
@@ -1040,6 +1079,7 @@ func (s *Server) adminExportAnnouncements(c *fiber.Ctx) error {
 }
 
 func (s *Server) adminCreateAnnouncement(c *fiber.Ctx) error {
+	rawBody := c.Body()
 	var body struct {
 		Title     string `json:"title"`
 		Body      string `json:"body"`
@@ -1051,12 +1091,25 @@ func (s *Server) adminCreateAnnouncement(c *fiber.Ctx) error {
 	if body.Title == "" || body.Body == "" {
 		return httperr.New(fiber.StatusBadRequest, httperr.CodeBadInput, "标题与正文不能为空")
 	}
-	item, err := s.Svc.AdminCreateAnnouncement(c.Context(), body.Title, body.Body, body.Published,
+	key, err := idemKey(c)
+	if err != nil {
+		return err
+	}
+	if key == "" {
+		item, err := s.Svc.AdminCreateAnnouncement(c.Context(), body.Title, body.Body, body.Published,
+			service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()})
+		if err != nil {
+			return err
+		}
+		return c.JSON(service.AdminAnnouncementResp{Item: item})
+	}
+	bodyBytes, replayed, err := s.Svc.AdminCreateAnnouncementIdem(c.Context(),
+		body.Title, body.Body, body.Published, key, service.HashRequestBody(rawBody),
 		service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()})
 	if err != nil {
 		return err
 	}
-	return c.JSON(service.AdminAnnouncementResp{Item: item})
+	return sendIdempotent(c, bodyBytes, replayed)
 }
 
 // adminUpdateAnnouncement 更新公告（2026-10-31 实质优化第 23 轮）。
@@ -1240,6 +1293,7 @@ func (s *Server) adminCreateRedeemCode(c *fiber.Ctx) error {
 //
 // 一次生成 count 个随机码（服务端 crypto/rand 生成，避免可预测）。
 func (s *Server) adminCreateRedeemCodesBatch(c *fiber.Ctx) error {
+	rawBody := c.Body()
 	var body struct {
 		Count     int            `json:"count"`
 		Reward    map[string]int `json:"reward"`
@@ -1267,13 +1321,27 @@ func (s *Server) adminCreateRedeemCodesBatch(c *fiber.Ctx) error {
 		}
 		expiresAt = &parsed
 	}
-	// R34：整批码与审计同一事务 —— 审计失败则一个码都不落库。
-	items, err := s.Svc.AdminCreateRedeemCodes(c.Context(), body.Count, body.Reward, body.MaxUses, expiresAt,
+	key, err := idemKey(c)
+	if err != nil {
+		return err
+	}
+	if key == "" {
+		// R34：整批码与审计同一事务 —— 审计失败则一个码都不落库。
+		items, err := s.Svc.AdminCreateRedeemCodes(c.Context(), body.Count, body.Reward, body.MaxUses, expiresAt,
+			service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()})
+		if err != nil {
+			return err
+		}
+		return c.JSON(fiber.Map{"items": items})
+	}
+	bodyBytes, replayed, err := s.Svc.AdminCreateRedeemCodesIdem(c.Context(),
+		body.Count, body.Reward, body.MaxUses, expiresAt,
+		key, service.HashRequestBody(rawBody),
 		service.AdminAuditCtx{AdminID: adminIDFrom(c), IP: c.IP()})
 	if err != nil {
 		return err
 	}
-	return c.JSON(fiber.Map{"items": items})
+	return sendIdempotent(c, bodyBytes, replayed)
 }
 
 // adminSetRedeemCodeEnabled 启用/禁用兑换码（2026-10-31 实质优化第 24 轮）。

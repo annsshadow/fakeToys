@@ -155,6 +155,10 @@ func classify(err error) (status int, code, message string, logAs int) {
 		return fiber.StatusNotFound, CodeNotFound, err.Error(), logNone
 	case errors.Is(err, service.ErrBadInput):
 		return fiber.StatusBadRequest, CodeBadInput, err.Error(), logNone
+	case errors.Is(err, service.ErrIdemConflict):
+		// 409 而不是 400：key 与请求体各自合法，只是「同键换了体」，
+		// 客户端必须能区分「重放成功」与「键被撞」。
+		return fiber.StatusConflict, CodeIdempotencyConflict, err.Error(), logNone
 	case errors.Is(err, service.ErrExportTooLarge):
 		// 413 而不是 400：参数没写错，是筛选范围太宽导致结果超上限。
 		return fiber.StatusRequestEntityTooLarge, CodeExportTooLarge, err.Error(), logNone

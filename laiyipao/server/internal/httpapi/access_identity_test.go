@@ -30,6 +30,11 @@ func TestAccessIdentityClassification(t *testing.T) {
 		c.Locals("user_id", int64(42))
 		return c.SendString("ok")
 	})
+	// 模拟管理端路由：Locals 写入 admin_id（requireAdmin 的效果）。
+	app.Get("/admined", func(c *fiber.Ctx) error {
+		c.Locals("admin_id", int64(7))
+		return c.SendString("ok")
+	})
 	app.Get("/pub", func(c *fiber.Ctx) error { return c.SendString("ok") })
 	app.Get("/nf", func(c *fiber.Ctx) error {
 		return httperr.New(fiber.StatusNotFound, httperr.CodeNotFound, "没有")
@@ -47,13 +52,17 @@ func TestAccessIdentityClassification(t *testing.T) {
 		}
 		resp.Body.Close()
 	}
-	do("/authed", "Bearer valid-but-unparsed") // Locals 由路由写入 → user#42
-	do("/pub", "")                             // 无凭证 → anon
-	do("/nf", "Bearer garbage-token-xyz")      // 坏凭证 → bad_token
+	do("/authed", "Bearer valid-but-unparsed")  // Locals 由路由写入 → user#42
+	do("/admined", "Bearer admin-token-string") // admin_id 写入 → admin#7
+	do("/pub", "")                              // 无凭证 → anon
+	do("/nf", "Bearer garbage-token-xyz")       // 坏凭证 → bad_token
 
 	logged := read()
 	if !strings.Contains(logged, "id=user#42 ") {
 		t.Errorf("认证请求应记 id=user#42：%q", logged)
+	}
+	if !strings.Contains(logged, "id=admin#7 ") {
+		t.Errorf("管理端请求应记 id=admin#7（R86 实抓：此前误标 bad_token）：%q", logged)
 	}
 	if !strings.Contains(logged, "id=anon ") {
 		t.Errorf("无凭证请求应记 id=anon：%q", logged)

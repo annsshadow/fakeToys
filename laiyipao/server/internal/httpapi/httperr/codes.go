@@ -44,6 +44,11 @@ const (
 	// 404：资源不存在或不属于调用方（两者刻意同码，避免 id 预言机）。
 	CodeNotFound = "not_found"
 
+	// 409：幂等键冲突 —— 同一个 Idempotency-Key 换了请求体（R86）。
+	// 客户端必须知道「这不是第一次执行的结果」，
+	// 所以与 400（输入坏）分开：key 与输入各自合法，只是组合冲突。
+	CodeIdempotencyConflict = "idempotency_conflict"
+
 	// 413：筛选范围太宽导致导出超上限（参数没写错，不该报 400）。
 	CodeExportTooLarge = "export_too_large"
 
@@ -92,6 +97,8 @@ var errorContracts = map[string]errorContract{
 	CodeLoginRequired:   {Status: fiber.StatusForbidden},
 
 	CodeNotFound: {Status: fiber.StatusNotFound},
+
+	CodeIdempotencyConflict: {Status: fiber.StatusConflict},
 
 	CodeExportTooLarge: {Status: fiber.StatusRequestEntityTooLarge},
 

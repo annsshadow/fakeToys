@@ -44,7 +44,8 @@ func renderMetrics(st service.CacheStats, ps service.PoolStats, ss service.Settl
 
 	// R85：访问身份 × 状态段计数（认证失败率=bad_token 4xx / 请求总数）；
 	// 错误 top-N（谁在被打/谁在刷）。进程内口径，多实例用 sum() 聚合。
-	for _, identity := range []string{"anon", "bad_token", "user"} {
+	// admin#N 是 R86 补的第四态（此前管理端请求全被误标 bad_token）。
+	for _, identity := range []string{"anon", "bad_token", "user", "admin"} {
 		for _, class := range []string{"2xx", "4xx", "5xx"} {
 			fmt.Fprintf(&b,
 				"# HELP laiyipao_access_requests_total 访问请求计数（身份类 × 状态段）\n"+
