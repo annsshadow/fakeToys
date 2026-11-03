@@ -12,6 +12,55 @@ use shared::{error::AppError, response::ActionResult};
 pub const API_BASE: &str = "/api/meeting_assemble_control";
 pub mod routes;
 
+/// O10：`$n::timestamp` cast / timestamp 列比较会把 PG 参数类型定死为 timestamp，
+/// tokio_postgres 的 String 无法序列化到 timestamp（WrongType 客户端侧 500，PG 无日志，
+/// 矩阵实测实证）。统一在 Rust 侧解析：非法输入 → 400 指认字段（入参缺陷，不进 DB），
+/// 合法 → 绑 NaiveDateTime。
+fn parse_ts_param(s: &str, field: &str) -> Result<chrono::NaiveDateTime, AppError> {
+    chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S")
+        .or_else(|_| {
+            chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d")
+                .map(|d| d.and_hms_opt(0, 0, 0).expect("00:00:00 恒合法"))
+        })
+        .map_err(|_| {
+            AppError::BadRequest(format!("{field} 需为 YYYY-MM-DD[ HH:MM:SS]，实收 {s:?}"))
+        })
+}
+
+/// 年月 → [月首 00:00:00, 次月首 00:00:00)（NaiveDateTime，直绑 timestamp 列）。
+/// 非法年月（month=0/13、负数）→ 400 指认字段。
+fn month_range(
+    year: i32,
+    month: i32,
+) -> Result<(chrono::NaiveDateTime, chrono::NaiveDateTime), AppError> {
+    let (ny, nm) = if month == 12 { (year + 1, 1) } else { (year, month + 1) };
+    let start = chrono::NaiveDate::from_ymd_opt(year, month as u32, 1);
+    let end = chrono::NaiveDate::from_ymd_opt(ny, nm as u32, 1);
+    match (start, end) {
+        (Some(s), Some(e)) => Ok((
+            s.and_hms_opt(0, 0, 0).expect("00:00:00 恒合法"),
+            e.and_hms_opt(0, 0, 0).expect("00:00:00 恒合法"),
+        )),
+        _ => Err(AppError::BadRequest(format!("非法年月: {year}-{month}"))),
+    }
+}
+
+/// 年月日 → [当日 00:00:00, 当日 23:59:59]（NaiveDateTime）。非法日期 → 400 指认字段。
+fn day_range(
+    year: i32,
+    month: i32,
+    day: i32,
+) -> Result<(chrono::NaiveDateTime, chrono::NaiveDateTime), AppError> {
+    chrono::NaiveDate::from_ymd_opt(year, month as u32, day as u32)
+        .map(|d| {
+            (
+                d.and_hms_opt(0, 0, 0).expect("00:00:00 恒合法"),
+                d.and_hms_opt(23, 59, 59).expect("23:59:59 恒合法"),
+            )
+        })
+        .ok_or_else(|| AppError::BadRequest(format!("非法日期: {year}-{month}-{day}")))
+}
+
 #[cfg(test)]
 mod security_gate_tests;
 #[cfg(test)]
@@ -425,12 +474,14 @@ pub async fn building_list_start_start_completed_completed(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // o2server 语义：按 [start, completed] 时段列会议（codegen 把 Action 前缀
     // 误写为 building，但 building 表无时段列——数据源是 x_meeting）。
+    let start_ts = parse_ts_param(&start, "start")?;
+    let completed_ts = parse_ts_param(&completed, "completed")?;
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
-            "SELECT id, title, status, room_id, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE start_time >= $1::timestamp AND end_time <= $2::timestamp ORDER BY start_time",
-            &[&start, &completed],
+            "SELECT id, title, status, room_id, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE start_time >= $1 AND end_time <= $2 ORDER BY start_time",
+            &[&start_ts, &completed_ts],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -450,12 +501,14 @@ pub async fn building_list_start_start_completed_completed_allmeeting(
     pool: Extension<Pool>,
     axum::extract::Path((start, completed)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let start_ts = parse_ts_param(&start, "start")?;
+    let completed_ts = parse_ts_param(&completed, "completed")?;
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
-            "SELECT id, title, status, room_id, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE start_time >= $1::timestamp AND end_time <= $2::timestamp ORDER BY start_time",
-            &[&start, &completed],
+            "SELECT id, title, status, room_id, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE start_time >= $1 AND end_time <= $2 ORDER BY start_time",
+            &[&start_ts, &completed_ts],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -480,12 +533,14 @@ pub async fn building_list_start_start_completed_completed_room_room_meeting_mee
         String,
     )>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let start_ts = parse_ts_param(&start, "start")?;
+    let completed_ts = parse_ts_param(&completed, "completed")?;
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
-            "SELECT id, title, status, room_id, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE start_time >= $1::timestamp AND end_time <= $2::timestamp AND room_id = $3 AND id = $4 ORDER BY start_time",
-            &[&start, &completed, &room, &meeting],
+            "SELECT id, title, status, room_id, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE start_time >= $1 AND end_time <= $2 AND room_id = $3 AND id = $4 ORDER BY start_time",
+            &[&start_ts, &completed_ts, &room, &meeting],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -923,8 +978,10 @@ pub async fn meeting_list_coming_day_count(
 
     let rows = match client
         .query(
+            // INTERVAL * $1：PG 将 $1 定为 float8，i64 客户端序列化炸（WrongType，
+            // PG 无日志，O10 实证）——绑 f64 对齐。
             "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE start_time >= NOW() AND start_time <= NOW() + INTERVAL '1 day' * $1 ORDER BY start_time ASC",
-            &[&count],
+            &[&(count as f64)],
         )
         .await
     {
@@ -980,7 +1037,7 @@ async fn meeting_list_coming_month_count_core(
     let rows = client
         .query(
             "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE start_time >= NOW() AND start_time <= NOW() + INTERVAL '1 month' * $1 ORDER BY start_time ASC",
-            &[&count],
+            &[&(count as f64)],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -1046,7 +1103,7 @@ pub async fn meeting_list_forward_monthcount_monthCount(
     let rows = client
         .query(
             "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE start_time >= NOW() AND start_time <= NOW() + INTERVAL '1 month' * $1 ORDER BY start_time ASC",
-            &[&month_count],
+            &[&(month_count as f64)],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -1096,7 +1153,7 @@ pub async fn meeting_list_forward_monthcount_monthCount_all(
     let rows = client
         .query(
             "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE start_time >= NOW() AND start_time <= NOW() + INTERVAL '1 month' * $1 ORDER BY start_time ASC",
-            &[&month_count],
+            &[&(month_count as f64)],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -1507,17 +1564,12 @@ pub async fn meeting_list_year_year_month_month(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
 
-    let start_date = format!("{}-{:02}-01", year, month);
-    let end_date = if month == 12 {
-        format!("{}-01-01", year + 1)
-    } else {
-        format!("{}-{:02}-01", year, month + 1)
-    };
+    let (start_ts, end_ts) = month_range(year, month)?;
 
     let rows = client
         .query(
             "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE start_time >= $1 AND start_time < $2 ORDER BY start_time ASC",
-            &[&start_date, &end_date],
+            &[&start_ts, &end_ts],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -1564,17 +1616,12 @@ pub async fn meeting_list_year_year_month_month_all(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
 
-    let start_date = format!("{}-{:02}-01", year, month);
-    let end_date = if month == 12 {
-        format!("{}-01-01", year + 1)
-    } else {
-        format!("{}-{:02}-01", year, month + 1)
-    };
+    let (start_ts, end_ts) = month_range(year, month)?;
 
     let rows = client
         .query(
             "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE start_time >= $1 AND start_time < $2 ORDER BY start_time ASC",
-            &[&start_date, &end_date],
+            &[&start_ts, &end_ts],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -1621,13 +1668,12 @@ pub async fn meeting_list_year_year_month_month_day_day(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
 
-    let start_date = format!("{}-{:02}-{:02} 00:00:00", year, month, day);
-    let end_date = format!("{}-{:02}-{:02} 23:59:59", year, month, day);
+    let (start_ts, end_ts) = day_range(year, month, day)?;
 
     let rows = client
         .query(
             "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE start_time >= $1 AND start_time <= $2 ORDER BY start_time ASC",
-            &[&start_date, &end_date],
+            &[&start_ts, &end_ts],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -1674,13 +1720,12 @@ pub async fn meeting_list_year_year_month_month_day_day_all(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
 
-    let start_date = format!("{}-{:02}-{:02} 00:00:00", year, month, day);
-    let end_date = format!("{}-{:02}-{:02} 23:59:59", year, month, day);
+    let (start_ts, end_ts) = day_range(year, month, day)?;
 
     let rows = client
         .query(
             "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE start_time >= $1 AND start_time <= $2 ORDER BY start_time ASC",
-            &[&start_date, &end_date],
+            &[&start_ts, &end_ts],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -1730,13 +1775,12 @@ async fn meeting_list_year_year_month_month_day_day_roomId_core(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
 
-    let start_date = format!("{}-{:02}-{:02} 00:00:00", year, month, day);
-    let end_date = format!("{}-{:02}-{:02} 23:59:59", year, month, day);
+    let (start_ts, end_ts) = day_range(year, month, day)?;
 
     let rows = client
         .query(
             "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE start_time >= $1 AND start_time <= $2 AND room_id = $3 ORDER BY start_time ASC LIMIT 100",
-            &[&start_date, &end_date, &room_id],
+            &[&start_ts, &end_ts, &room_id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -2207,11 +2251,15 @@ pub async fn save_meeting(
         .get("endTime")
         .and_then(|v| v.as_str())
         .unwrap_or_default();
+    // O10：start_time/end_time 是 timestamp 列，String 直绑 WrongType 500（PG 无日志）。
+    // 请求校验：空/非法 → 400 指认字段；合法 → NaiveDateTime 绑定。
+    let start_ts = parse_ts_param(start_time, "startTime")?;
+    let end_ts = parse_ts_param(end_time, "endTime")?;
 
     let result = client
         .execute(
             "UPDATE x_meeting SET title = $1, content = $2, start_time = $3, end_time = $4 WHERE id = $5",
-            &[&title, &content, &start_time, &end_time, &id],
+            &[&title, &content, &start_ts, &end_ts, &id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -3870,7 +3918,9 @@ pub async fn u2_config_manage_get(
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
-            "SELECT config_key, config_value, to_char(update_time, 'YYYY-MM-DD HH24:MI:SS') AS update_time FROM x_meeting_config ORDER BY config_key",
+            // update_time 列是 TEXT（o2 风格格式化时间串），to_char(text, ...) 在 PG 不存在
+            // 该重载（42883 → 500，O10 实证）；文本列直接 SELECT 即是展示格式。
+            "SELECT config_key, config_value, update_time FROM x_meeting_config ORDER BY config_key",
             &[],
         )
         .await

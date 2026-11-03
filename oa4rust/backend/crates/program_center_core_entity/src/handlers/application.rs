@@ -211,7 +211,10 @@ pub async fn application_delete(
 
     let id = model.id.clone();
     let mut active: entities::application::ActiveModel = model.into();
-    active.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));
+    // O10：deleted_at 列实为 TEXT，写文本时间戳（与 raw SQL NOW() 前缀兼容）
+    active.deleted_at = Set(Some(
+        chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
+    ));
     active.update(&db.0).await?;
 
     Ok(Json(ActionResult::success(Value::Object(

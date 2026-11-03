@@ -30,6 +30,12 @@ fn require_session(
     session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
 }
 
+/// O10：create_time 列实为 TEXT（migration 032）——实体改 Option<String> 后，
+/// 写入统一用该格式（与 raw SQL 的 NOW() 文本前缀字典序兼容，排序不乱）。
+fn now_text() -> String {
+    chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string()
+}
+
 #[allow(non_snake_case)]
 pub async fn forum_list(
     db: Extension<DatabaseConnection>,
@@ -195,7 +201,7 @@ pub async fn subject_list(
                 ("isTop".to_string(), Value::Bool(m.is_top)),
                 (
                     "createTime".to_string(),
-                    Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
+                    Value::String(m.create_time.clone().unwrap_or_default()),
                 ),
             ]))
         })
@@ -237,7 +243,7 @@ pub async fn create_forum(
         description: Set(description),
         order_number: Set(0),
         disable: Set(false),
-        create_time: Set(Some(chrono::Utc::now().naive_utc())),
+        create_time: Set(Some(now_text())),
     };
 
     active_model
@@ -361,7 +367,7 @@ pub async fn create_section(
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
-    let sort = payload.get("sort").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
+    let sort = payload.get("sort").and_then(|v| v.as_i64()).unwrap_or(0);
     let description = payload
         .get("description")
         .and_then(|v| v.as_str())
@@ -374,7 +380,7 @@ pub async fn create_section(
         description: Set(description),
         order_number: Set(sort),
         disable: Set(false),
-        create_time: Set(Some(chrono::Utc::now().naive_utc())),
+        create_time: Set(Some(now_text())),
     };
 
     active_model
@@ -427,7 +433,6 @@ pub async fn update_section(
     let sort = payload
         .get("sort")
         .and_then(|v| v.as_i64())
-        .map(|i| i as i32)
         .unwrap_or(m_order_number);
     let description = payload
         .get("description")
@@ -533,7 +538,7 @@ pub async fn create_subject(
         view_count: Set(0),
         is_top: Set(false),
         disable: Set(false),
-        create_time: Set(Some(chrono::Utc::now().naive_utc())),
+        create_time: Set(Some(now_text())),
     };
 
     active_model
@@ -574,7 +579,7 @@ pub async fn update_subject(
     let m_reply_count = m.reply_count;
     let m_view_count = m.view_count;
     let m_is_top = m.is_top;
-    let m_create_time_str = m.create_time.map(|dt| dt.to_string()).unwrap_or_default();
+    let m_create_time_str = m.create_time.clone().unwrap_or_default();
 
     let title = payload
         .get("title")
@@ -767,7 +772,7 @@ pub async fn search_subjects(
                 ("isTop".to_string(), Value::Bool(m.is_top)),
                 (
                     "createTime".to_string(),
-                    Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
+                    Value::String(m.create_time.clone().unwrap_or_default()),
                 ),
             ]))
         })

@@ -14,8 +14,10 @@ pub struct Model {
     pub version: String,
     pub publisher: String,
     pub creator_person: String,
-    #[sea_orm(column_type = "Text", nullable)]
-    pub deleted_at: Option<DateTime>,
+    // O10：x_application.deleted_at 列实为 TEXT（同族 cte_*/script 是 TIMESTAMP
+    // 真列，不动）。DateTime 解码 TEXT 必炸；column_type="Text" 标注与 DateTime
+    // 字段自相矛盾。改 String。
+    pub deleted_at: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

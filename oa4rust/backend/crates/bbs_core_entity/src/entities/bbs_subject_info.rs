@@ -16,7 +16,8 @@ pub struct Model {
     pub view_count: i32,
     pub is_top: bool,
     pub disable: bool,
-    pub create_time: Option<DateTime>,
+    // O10：列实为 TEXT（migration 032），DateTime 解码必炸
+    pub create_time: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

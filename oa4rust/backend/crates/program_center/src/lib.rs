@@ -11208,7 +11208,9 @@ pub async fn u3_invoke_list_all(
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
-            "SELECT id, name, alias, category, enable, enable_anonymous, validated, create_time FROM x_program_invoke ORDER BY create_time DESC",
+            // create_time 是 timestamp 列：裸读为 String 必 WrongType panic（有数据时，
+            // arity_probe 实证）。to_char 对齐文本（与 o2 响应格式一致）。
+            "SELECT id, name, alias, category, enable, enable_anonymous, validated, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_program_invoke ORDER BY create_time DESC",
             &[],
         )
         .await
@@ -11279,7 +11281,9 @@ pub async fn invoke_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
-            "SELECT id, name, alias, category, enable, enable_anonymous, validated, create_time FROM x_program_invoke ORDER BY create_time DESC",
+            // create_time 是 timestamp 列：裸读为 String 必 WrongType panic（有数据时，
+            // arity_probe 实证）。to_char 对齐文本（与 o2 响应格式一致）。
+            "SELECT id, name, alias, category, enable, enable_anonymous, validated, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_program_invoke ORDER BY create_time DESC",
             &[],
         )
         .await

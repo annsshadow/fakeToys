@@ -325,7 +325,7 @@ pub async fn create_mind(
     let file_version = payload
         .get("fileVersion")
         .and_then(|v| v.as_i64())
-        .unwrap_or(1) as i32;
+        .unwrap_or(1);
 
     client
         .execute(
@@ -397,8 +397,7 @@ pub async fn update_mind(
     let file_version = payload
         .get("fileVersion")
         .and_then(|v| v.as_i64())
-        .map(|i| i as i32)
-        .unwrap_or_else(|| row.get::<_, i32>("file_version"));
+        .unwrap_or_else(|| row.get::<_, i64>("file_version"));
 
     let count = client
         .execute(
@@ -471,7 +470,7 @@ pub async fn create_folder(
     let order_number = payload
         .get("orderNumber")
         .and_then(|v| v.as_i64())
-        .unwrap_or(0) as i32;
+        .unwrap_or(0);
     let description = payload
         .get("description")
         .and_then(|v| v.as_str())
@@ -537,8 +536,7 @@ pub async fn update_folder(
     let order_number = payload
         .get("orderNumber")
         .and_then(|v| v.as_i64())
-        .map(|i| i as i32)
-        .unwrap_or_else(|| row.get::<_, i32>("order_number"));
+        .unwrap_or_else(|| row.get::<_, i64>("order_number"));
     let description = payload
         .get("description")
         .and_then(|v| v.as_str())
@@ -637,7 +635,7 @@ pub async fn create_version(
     let file_version = payload
         .get("fileVersion")
         .and_then(|v| v.as_i64())
-        .unwrap_or(1) as i32;
+        .unwrap_or(1);
     let shared = payload
         .get("shared")
         .and_then(|v| v.as_bool())
