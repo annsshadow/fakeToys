@@ -415,12 +415,18 @@ mod tests {
         .await;
         match res {
             Err(shared::error::AppError::BadRequest(msg)) => {
-                assert!(msg.contains("code"), "错误信息须指认 code 字段，实收: {msg}")
+                assert!(
+                    msg.contains("code"),
+                    "错误信息须指认 code 字段，实收: {msg}"
+                )
             }
-            other => panic!("空体必须 400 BadRequest，实收: {}", match &other {
-                Err(e) => format!("{e:?}"),
-                Ok(_) => "Ok(200)".to_string(),
-            }),
+            other => panic!(
+                "空体必须 400 BadRequest，实收: {}",
+                match &other {
+                    Err(e) => format!("{e:?}"),
+                    Ok(_) => "Ok(200)".to_string(),
+                }
+            ),
         }
     }
 }

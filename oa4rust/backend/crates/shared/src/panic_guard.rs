@@ -106,7 +106,11 @@ mod tests {
         assert_eq!(first.status(), StatusCode::INTERNAL_SERVER_ERROR);
 
         let second = app.oneshot(request("/ok")).await.unwrap();
-        assert_eq!(second.status(), StatusCode::OK, "panic 之后的请求不应受影响");
+        assert_eq!(
+            second.status(),
+            StatusCode::OK,
+            "panic 之后的请求不应受影响"
+        );
         let bytes = axum::body::to_bytes(second.into_body(), 1 << 20)
             .await
             .unwrap();
@@ -116,9 +120,7 @@ mod tests {
     /// 正常请求必须原样透传（捕获层不能改写成功响应）。
     #[tokio::test]
     async fn normal_request_is_untouched() {
-        let app = apply_panic_guard(
-            axum::Router::new().route("/ok", get(|| async { "ok" })),
-        );
+        let app = apply_panic_guard(axum::Router::new().route("/ok", get(|| async { "ok" })));
         let resp = app.oneshot(request("/ok")).await.unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
     }

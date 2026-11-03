@@ -106,7 +106,10 @@ pub async fn run_migrations(pool: &Pool) -> anyhow::Result<MigrationReport> {
     let mut client = pool.get().await?;
 
     client
-        .query_one("SELECT pg_advisory_lock($1)", &[&MIGRATION_ADVISORY_LOCK_KEY])
+        .query_one(
+            "SELECT pg_advisory_lock($1)",
+            &[&MIGRATION_ADVISORY_LOCK_KEY],
+        )
         .await
         .map_err(|e| {
             anyhow::anyhow!(
@@ -120,7 +123,10 @@ pub async fn run_migrations(pool: &Pool) -> anyhow::Result<MigrationReport> {
     // 无论成败都显式释放锁；释放失败只在迁移本身成功时才上抛
     // （迁移已失败时保留根因，不用锁释放错误覆盖它）。
     let unlock = client
-        .query_one("SELECT pg_advisory_unlock($1)", &[&MIGRATION_ADVISORY_LOCK_KEY])
+        .query_one(
+            "SELECT pg_advisory_unlock($1)",
+            &[&MIGRATION_ADVISORY_LOCK_KEY],
+        )
         .await;
     match (result, unlock) {
         (Ok(report), Ok(_)) => Ok(report),
@@ -579,7 +585,11 @@ mod tests {
             "CREATE TABLE o1_probe_t (id int);",
         )
         .unwrap();
-        std::fs::write(dir.join("003_seed.sql"), "INSERT INTO o1_probe_t VALUES (1);").unwrap();
+        std::fs::write(
+            dir.join("003_seed.sql"),
+            "INSERT INTO o1_probe_t VALUES (1);",
+        )
+        .unwrap();
 
         let saved = std::env::var(MIGRATIONS_DIR_KEY).ok();
         std::env::set_var(MIGRATIONS_DIR_KEY, dir.to_str().expect("UTF-8 路径"));
@@ -593,8 +603,14 @@ mod tests {
             None => std::env::remove_var(MIGRATIONS_DIR_KEY),
         }
 
-        let ok_a = ra.as_ref().map(|r| r.applied.len()).map_err(|e| e.to_string());
-        let ok_b = rb.as_ref().map(|r| r.applied.len()).map_err(|e| e.to_string());
+        let ok_a = ra
+            .as_ref()
+            .map(|r| r.applied.len())
+            .map_err(|e| e.to_string());
+        let ok_b = rb
+            .as_ref()
+            .map(|r| r.applied.len())
+            .map_err(|e| e.to_string());
         eprintln!("runner A: {ok_a:?}; runner B: {ok_b:?}");
 
         // 两个实例都必须启动成功；全部迁移恰好被应用一次。

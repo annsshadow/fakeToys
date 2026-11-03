@@ -434,8 +434,7 @@ mod tests {
             .await
             .expect("PG 连接应成功");
         let sess = shared::testing::test_session("o10-rt-user");
-        let app = crate::bbs_core_entity_router(db.clone())
-            .layer(axum::extract::Extension(sess));
+        let app = crate::bbs_core_entity_router(db.clone()).layer(axum::extract::Extension(sess));
 
         let name = format!("o10-rt-{}", uuid::Uuid::new_v4());
         let response = app

@@ -257,23 +257,43 @@ pub async fn get_calendar_detail(
     let mut data_map = serde_json::Map::new();
     data_map.insert(
         "id".to_string(),
-        Value::String(calendar_row.get::<_, Option<String>>("id").unwrap_or_default()),
+        Value::String(
+            calendar_row
+                .get::<_, Option<String>>("id")
+                .unwrap_or_default(),
+        ),
     );
     data_map.insert(
         "name".to_string(),
-        Value::String(calendar_row.get::<_, Option<String>>("name").unwrap_or_default()),
+        Value::String(
+            calendar_row
+                .get::<_, Option<String>>("name")
+                .unwrap_or_default(),
+        ),
     );
     data_map.insert(
         "type".to_string(),
-        Value::String(calendar_row.get::<_, Option<String>>("type").unwrap_or_default()),
+        Value::String(
+            calendar_row
+                .get::<_, Option<String>>("type")
+                .unwrap_or_default(),
+        ),
     );
     data_map.insert(
         "target".to_string(),
-        Value::String(calendar_row.get::<_, Option<String>>("target").unwrap_or_default()),
+        Value::String(
+            calendar_row
+                .get::<_, Option<String>>("target")
+                .unwrap_or_default(),
+        ),
     );
     data_map.insert(
         "color".to_string(),
-        Value::String(calendar_row.get::<_, Option<String>>("color").unwrap_or_default()),
+        Value::String(
+            calendar_row
+                .get::<_, Option<String>>("color")
+                .unwrap_or_default(),
+        ),
     );
     if let Some(description) = calendar_row.get::<_, Option<String>>("description") {
         data_map.insert("description".to_string(), Value::String(description));

@@ -55,7 +55,10 @@ mod tests {
 
         assert!(matches!(
             response.status(),
-            StatusCode::OK | StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE | StatusCode::NOT_FOUND
+            StatusCode::OK
+                | StatusCode::INTERNAL_SERVER_ERROR
+                | StatusCode::SERVICE_UNAVAILABLE
+                | StatusCode::NOT_FOUND
         ));
     }
 
@@ -78,7 +81,10 @@ mod tests {
 
         assert!(matches!(
             response.status(),
-            StatusCode::OK | StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE | StatusCode::NOT_FOUND
+            StatusCode::OK
+                | StatusCode::INTERNAL_SERVER_ERROR
+                | StatusCode::SERVICE_UNAVAILABLE
+                | StatusCode::NOT_FOUND
         ));
     }
 

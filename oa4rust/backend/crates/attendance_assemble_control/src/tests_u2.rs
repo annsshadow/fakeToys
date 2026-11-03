@@ -332,8 +332,13 @@ mod u2_tests {
             let got = status_of(method, uri).await;
             assert!(
                 got == expect
-                    || (matches!(expect, StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE)
-                        && matches!(got, StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE)),
+                    || (matches!(
+                        expect,
+                        StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE
+                    ) && matches!(
+                        got,
+                        StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE
+                    )),
                 "{method} {uri} not routed: got {got}"
             );
         }

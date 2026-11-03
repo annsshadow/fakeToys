@@ -30,9 +30,10 @@ pub async fn ldap_fallback_flow() {
         .expect("test database not initialized; call init_test_database() first")
         .clone();
 
-    let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
-        .await
-        .expect("failed to start test server");
+    let (_addr, server_handle, token) =
+        crate::integration_tests::helpers::setup_test_server(pool.clone())
+            .await
+            .expect("failed to start test server");
 
     let client = Client::builder()
         .timeout(Duration::from_secs(10))

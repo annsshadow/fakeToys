@@ -328,7 +328,10 @@ pub async fn acquire(pool: &Pool) -> Result<deadpool_postgres::Object, crate::Ap
 /// 53200 OOM、57P01-03 停机窗口。
 fn sqlstate_is_retryable(code: &str) -> bool {
     code.starts_with("08")
-        || matches!(code, "57014" | "53300" | "53200" | "57P01" | "57P02" | "57P03")
+        || matches!(
+            code,
+            "57014" | "53300" | "53200" | "57P01" | "57P02" | "57P03"
+        )
 }
 
 pub fn classify_query_error(e: deadpool_postgres::tokio_postgres::Error) -> crate::AppError {
@@ -365,10 +368,7 @@ pub fn classify_orm_error(e: sea_orm::DbErr) -> crate::AppError {
     use crate::AppError;
     // 池取连失败走独立变体（sea-orm 把 sqlx PoolTimedOut/PoolClosed 折叠为
     // ConnAcquireErr::{Timeout, ConnectionClosed}——类型化，非字符串匹配）。
-    if matches!(
-        e,
-        sea_orm::DbErr::ConnectionAcquire(_)
-    ) {
+    if matches!(e, sea_orm::DbErr::ConnectionAcquire(_)) {
         return AppError::Unavailable(format!("database pool acquire failed: {e}"));
     }
     let sqlx_err = match &e {
@@ -379,10 +379,9 @@ pub fn classify_orm_error(e: sea_orm::DbErr) -> crate::AppError {
     };
     match sqlx_err {
         Some(sqlx::Error::Database(db)) => match db.code() {
-            Some(code) if sqlstate_is_retryable(&code) => AppError::Unavailable(format!(
-                "database error {code}: {}",
-                db.message()
-            )),
+            Some(code) if sqlstate_is_retryable(&code) => {
+                AppError::Unavailable(format!("database error {code}: {}", db.message()))
+            }
             // 无 SQLSTATE 或不可重试 → 500
             _ => AppError::Internal,
         },
@@ -760,12 +759,16 @@ mod pool_construction_tests {
             eprintln!("skip: 无 TEST_DATABASE_URL / DATABASE_URL，statement_timeout 需真库");
             return;
         };
-        let kill = |v: Option<&str>| EnvRestore::apply(&[("DB_TLS", None), ("DB_STATEMENT_TIMEOUT_SECONDS", v)]);
+        let kill = |v: Option<&str>| {
+            EnvRestore::apply(&[("DB_TLS", None), ("DB_STATEMENT_TIMEOUT_SECONDS", v)])
+        };
 
         // 默认：未配置时为 30s（connection startup options 生效）。
         {
             let _env = kill(None);
-            let pool = create_pool_with_url(url.clone()).await.expect("pool construction");
+            let pool = create_pool_with_url(url.clone())
+                .await
+                .expect("pool construction");
             let client = pool.get().await.expect("get");
             let shown: String = client
                 .query_one("SHOW statement_timeout", &[])
@@ -835,11 +838,9 @@ mod pool_construction_tests {
             }
         });
 
-        let pool = create_pool_with_url(format!(
-            "postgres://user:pass@127.0.0.1:{port}/db"
-        ))
-        .await
-        .expect("pool construction");
+        let pool = create_pool_with_url(format!("postgres://user:pass@127.0.0.1:{port}/db"))
+            .await
+            .expect("pool construction");
 
         let started = std::time::Instant::now();
         let got = pool.get().await;
@@ -1021,7 +1022,11 @@ mod o7_query_error_tests {
                 Ok(_) => tokio::time::sleep(std::time::Duration::from_millis(20)).await,
             }
         };
-        eprintln!("terminated error: code={:?} closed={} {err}", err.code().map(|c| c.code()), err.is_closed());
+        eprintln!(
+            "terminated error: code={:?} closed={} {err}",
+            err.code().map(|c| c.code()),
+            err.is_closed()
+        );
 
         assert_eq!(
             status_of(super::classify_query_error(err)),
@@ -1043,7 +1048,10 @@ mod o7_query_error_tests {
             .execute("CREATE TEMP TABLE o7_dup (id int PRIMARY KEY)", &[])
             .await
             .unwrap();
-        client.execute("INSERT INTO o7_dup VALUES (1)", &[]).await.unwrap();
+        client
+            .execute("INSERT INTO o7_dup VALUES (1)", &[])
+            .await
+            .unwrap();
         let dup = client
             .execute("INSERT INTO o7_dup VALUES (1)", &[])
             .await
@@ -1076,11 +1084,16 @@ mod o7_query_error_tests {
         }
         async fn fallible(pool: &deadpool_postgres::Pool) -> Result<i64, AppError> {
             let client = pool.get().await.unwrap();
-            let row = client.query_one("SELECT 1 FROM o7_no_such_table_either", &[]).await?;
+            let row = client
+                .query_one("SELECT 1 FROM o7_no_such_table_either", &[])
+                .await?;
             Ok(row.get(0))
         }
         let err = fallible(&test_pool()).await.expect_err("42P01 必须失败");
-        assert!(matches!(err, AppError::Internal), "42P01 经 ? 必须 500，实际 {err:?}");
+        assert!(
+            matches!(err, AppError::Internal),
+            "42P01 经 ? 必须 500，实际 {err:?}"
+        );
     }
 }
 
@@ -1173,9 +1186,8 @@ mod o8_orm_error_tests {
             eprintln!("SKIP: no database available");
             return;
         }
-        let raw = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
-            "postgres://o2server:password@localhost:5432/oa4rust".to_string()
-        });
+        let raw = std::env::var("DATABASE_URL")
+            .unwrap_or_else(|_| "postgres://o2server:password@localhost:5432/oa4rust".to_string());
         let mut opt = sea_orm::ConnectOptions::new(raw);
         opt.max_connections(1)
             .acquire_timeout(std::time::Duration::from_secs(1))

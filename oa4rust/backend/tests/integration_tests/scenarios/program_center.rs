@@ -26,9 +26,10 @@ pub async fn program_center_flow() {
         .expect("test database not initialized; call init_test_database() first")
         .clone();
 
-    let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
-        .await
-        .expect("failed to start test server");
+    let (_addr, server_handle, token) =
+        crate::integration_tests::helpers::setup_test_server(pool.clone())
+            .await
+            .expect("failed to start test server");
 
     let client = Client::builder()
         .timeout(Duration::from_secs(10))
@@ -45,7 +46,12 @@ pub async fn program_center_flow() {
 
     // Seed a program module directly so modules_all reflects a real row.
     {
-        let db = pool.as_pg().unwrap().get().await.expect("seed: failed to get client");
+        let db = pool
+            .as_pg()
+            .unwrap()
+            .get()
+            .await
+            .expect("seed: failed to get client");
         db.execute(
             "INSERT INTO x_program_module (id, name, entity, creator, create_time) \
              VALUES ($1, $2, $3, $4, NOW())",
@@ -77,8 +83,13 @@ pub async fn program_center_flow() {
         create_resp.text().await.unwrap_or_default()
     );
     let create_body: serde_json::Value = create_resp.json().await.expect("invalid create response");
-    let created_id = create_body["data"]["id"].as_str().expect("created id missing");
-    assert_eq!(create_body["data"]["name"].as_str(), Some("PC Integration App"));
+    let created_id = create_body["data"]["id"]
+        .as_str()
+        .expect("created id missing");
+    assert_eq!(
+        create_body["data"]["name"].as_str(),
+        Some("PC Integration App")
+    );
     assert_eq!(create_body["data"]["appId"].as_str(), Some(app_id));
     info!(created_id = %created_id, "application created");
 
@@ -91,7 +102,9 @@ pub async fn program_center_flow() {
         .expect("list applications request failed");
     assert_eq!(list_resp.status(), reqwest::StatusCode::OK);
     let list_body: serde_json::Value = list_resp.json().await.expect("invalid list response");
-    let apps = list_body["data"]["data"].as_array().expect("data array missing");
+    let apps = list_body["data"]["data"]
+        .as_array()
+        .expect("data array missing");
     assert!(
         apps.iter().any(|a| a["id"].as_str() == Some(created_id)),
         "created application not present in list"
@@ -107,9 +120,13 @@ pub async fn program_center_flow() {
         .expect("modules_all request failed");
     assert_eq!(mod_resp.status(), reqwest::StatusCode::OK);
     let mod_body: serde_json::Value = mod_resp.json().await.expect("invalid modules response");
-    let modules = mod_body["data"]["data"].as_array().expect("modules array missing");
+    let modules = mod_body["data"]["data"]
+        .as_array()
+        .expect("modules array missing");
     assert!(
-        modules.iter().any(|m| m["name"].as_str() == Some("PC IT Module")),
+        modules
+            .iter()
+            .any(|m| m["name"].as_str() == Some("PC IT Module")),
         "seeded module not present in modules_all"
     );
     info!(module_count = %mod_body["data"]["count"], "modules listed");
@@ -128,7 +145,10 @@ pub async fn program_center_flow() {
         .await
         .expect("config save request failed");
     assert_eq!(cfg_save_resp.status(), reqwest::StatusCode::OK);
-    let cfg_save_body: serde_json::Value = cfg_save_resp.json().await.expect("invalid config save response");
+    let cfg_save_body: serde_json::Value = cfg_save_resp
+        .json()
+        .await
+        .expect("invalid config save response");
     assert_eq!(cfg_save_body["data"]["key"].as_str(), Some(cfg_key));
     info!(config_key = %cfg_key, "config saved");
 
@@ -140,7 +160,10 @@ pub async fn program_center_flow() {
         .await
         .expect("config get request failed");
     assert_eq!(cfg_get_resp.status(), reqwest::StatusCode::OK);
-    let cfg_get_body: serde_json::Value = cfg_get_resp.json().await.expect("invalid config get response");
+    let cfg_get_body: serde_json::Value = cfg_get_resp
+        .json()
+        .await
+        .expect("invalid config get response");
     assert_eq!(cfg_get_body["data"]["key"].as_str(), Some(cfg_key));
     assert_eq!(cfg_get_body["data"]["value"].as_str(), Some("enabled"));
     info!(config_value = %cfg_get_body["data"]["value"], "config fetched");

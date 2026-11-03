@@ -121,10 +121,7 @@ mod u2_tests {
     #[tokio::test]
     async fn u2_attachment_by_work_verbs_chained_on_same_path() {
         let uri = "/api/processplatform/assemble/surface/attachment/att-1/work/work-1";
-        assert_eq!(
-            status_of("GET", uri).await,
-            StatusCode::SERVICE_UNAVAILABLE
-        );
+        assert_eq!(status_of("GET", uri).await, StatusCode::SERVICE_UNAVAILABLE);
         assert_eq!(
             status_of("DELETE", uri).await,
             StatusCode::INTERNAL_SERVER_ERROR

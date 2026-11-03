@@ -369,7 +369,13 @@ mod tests {
             matches!(err, AppError::BadRequest(_)),
             "新 key 超限仍须 429，实际 {err:?}"
         );
-        let counted = limiter.attempts.read().await.get(fresh).cloned().unwrap_or_default();
+        let counted = limiter
+            .attempts
+            .read()
+            .await
+            .get(fresh)
+            .cloned()
+            .unwrap_or_default();
         assert_eq!(counted.len(), 2, "计数必须准确（被拒的第 3 次不入表）");
     }
 

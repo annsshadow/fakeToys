@@ -416,9 +416,7 @@ mod u3_tests {
         .await;
         // DB 不可用：owner 查询失败 → Unavailable(503) fail-closed（O2 起池取连失败 500→503）
         match r {
-            Err(AppError::Internal)
-            | Err(AppError::Forbidden)
-            | Err(AppError::Unavailable(_)) => {}
+            Err(AppError::Internal) | Err(AppError::Forbidden) | Err(AppError::Unavailable(_)) => {}
             other => panic!("expected gate denial, got {:?}", other.map(|_| "ok")),
         }
     }
