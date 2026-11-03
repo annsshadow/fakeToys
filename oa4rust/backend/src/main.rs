@@ -384,7 +384,8 @@ mod tests {
         let first = openapi_json().expect("openapi json 应可生成");
         let second = openapi_json().expect("openapi json 再次生成");
         assert_eq!(first, second, "缓存命中必须返回同一份文档");
-        assert!(first.contains("\"paths\""), "OpenAPI 文档应包含 paths");
+        // raw string 写法：避免 quoted_key_guard 误报转义引号键（O3）
+        assert!(first.contains(r#""paths""#), "OpenAPI 文档应包含 paths");
         assert!(first.len() > 1000, "文档应包含全部路由（不应是空文档）");
     }
 }

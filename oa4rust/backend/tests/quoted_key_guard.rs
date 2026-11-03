@@ -56,6 +56,27 @@ fn collect_rs(dir: &Path, out: &mut Vec<PathBuf>) {
     }
 }
 
+/// 扫描单行，命中「转义引号键」返回 Some(键名)。
+/// 抽成独立函数的原因（O3）：守卫必须自带破坏实验，证明修复误报后仍能抓真问题。
+fn find_violation_in_line(line: &str) -> Option<String> {
+    if SKIP_MARKERS.iter().any(|m| line.contains(m)) {
+        return None;
+    }
+    let mut search_from = 0usize;
+    while let Some(rel_idx) = line[search_from..].find(OPEN) {
+        let start = search_from + rel_idx + OPEN.len();
+        let Some(close_rel) = line[start..].find(CLOSE) else {
+            break;
+        };
+        let key = &line[start..start + close_rel];
+        if is_ident(key) {
+            return Some(key.to_string());
+        }
+        search_from = start + close_rel + CLOSE.len();
+    }
+    None
+}
+
 #[test]
 fn no_escaped_quote_keys() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
@@ -77,21 +98,8 @@ fn no_escaped_quote_keys() {
             continue;
         };
         for (i, line) in text.lines().enumerate() {
-            if SKIP_MARKERS.iter().any(|m| line.contains(m)) {
-                continue;
-            }
-            let mut search_from = 0usize;
-            while let Some(rel_idx) = line[search_from..].find(OPEN) {
-                let start = search_from + rel_idx + OPEN.len();
-                let Some(close_rel) = line[start..].find(CLOSE) else {
-                    break;
-                };
-                let key = &line[start..start + close_rel];
-                if is_ident(key) {
-                    violations.push(format!("{}:{}: {}", rel, i + 1, line.trim()));
-                    break;
-                }
-                search_from = start + close_rel + CLOSE.len();
+            if find_violation_in_line(line).is_some() {
+                violations.push(format!("{}:{}: {}", rel, i + 1, line.trim()));
             }
         }
     }
@@ -101,5 +109,46 @@ fn no_escaped_quote_keys() {
         "发现 {} 处「转义引号键缺陷」（键名里字面包含引号）——见 docs/plans/2026-09-20-001 §6.7：\n{}",
         violations.len(),
         violations.join("\n")
+    );
+}
+
+/// O3 破坏实验（守卫自检）：修好误报后，守卫必须仍能抓住真缺陷。
+/// 三类历史真实缺陷形态（row.get 带引号列名 / 带引号响应键 / 带引号请求键）
+/// 都必须被同一扫描逻辑捕获；合法形态（raw string、SQL 标识符引用、
+/// 普通字符串）必须放行——后者正是 O3 修掉的误报类。
+#[test]
+fn guard_still_catches_real_violations() {
+    // 破坏样本：与历史缺陷同型
+    assert_eq!(
+        find_violation_in_line(r#"let x = row.get("\"name\"");"#).as_deref(),
+        Some("name"),
+        "row.get 带引号列名必须被捕获"
+    );
+    assert_eq!(
+        find_violation_in_line(r#"m.insert("\"key\"".to_string(), v);"#).as_deref(),
+        Some("key"),
+        "带引号响应键必须被捕获"
+    );
+    assert_eq!(
+        find_violation_in_line(r#"payload.get("\"id\"")"#).as_deref(),
+        Some("id"),
+        "带引号请求键必须被捕获"
+    );
+
+    // 放行样本：O3 误报类（raw string 的 "paths"）与 SQL 标识符引用
+    assert_eq!(
+        find_violation_in_line(r##"assert!(first.contains(r#""paths""#));"##),
+        None,
+        "raw string 不含转义引号序列，不得误报"
+    );
+    assert_eq!(
+        find_violation_in_line(r#"assert_eq!(d.quote_ident("clueId"), "\"clueId\"");"#),
+        None,
+        "quote_ident 行必须跳过（SQL 标识符语义）"
+    );
+    assert_eq!(
+        find_violation_in_line(r#"let s = "plain text";"#),
+        None,
+        "普通字符串不得误报"
     );
 }
