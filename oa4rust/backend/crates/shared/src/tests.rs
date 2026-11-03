@@ -528,7 +528,11 @@ mod tests {
     // ──────────────────────────────────────────────────────────────────────────
 
     #[tokio::test]
+    #[allow(clippy::await_holding_lock)] // 阈值来自进程级 env，整个用例期间必须独占
     async fn test_auth_path_rate_limited() {
+        let _env_guard = crate::testing::ENV_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         let app = test_app(security_state());
         let max = crate::middleware::auth_rate_limit();
         assert!(max > 0, "auth rate limit must be positive");
@@ -548,7 +552,11 @@ mod tests {
     }
 
     #[tokio::test]
+    #[allow(clippy::await_holding_lock)] // 阈值来自进程级 env，整个用例期间必须独占
     async fn test_reset_path_counted_in_auth_rate_limit() {
+        let _env_guard = crate::testing::ENV_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         let app = test_app(security_state());
         let max = crate::middleware::auth_rate_limit();
         assert!(max > 0, "auth rate limit must be positive");
@@ -568,7 +576,11 @@ mod tests {
     }
 
     #[tokio::test]
+    #[allow(clippy::await_holding_lock)] // 阈值来自进程级 env，整个用例期间必须独占
     async fn test_rate_limit_keys_are_per_client_ip() {
+        let _env_guard = crate::testing::ENV_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         let app = test_app(security_state());
         let max = crate::middleware::auth_rate_limit() as usize;
         assert!(max > 1, "test needs at least two attempts of headroom");
@@ -613,7 +625,11 @@ mod tests {
     }
 
     #[tokio::test]
+    #[allow(clippy::await_holding_lock)] // 阈值来自进程级 env，整个用例期间必须独占
     async fn test_general_traffic_does_not_consume_auth_rate_limit() {
+        let _env_guard = crate::testing::ENV_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         let app = test_app(security_state());
         let auth_max = crate::middleware::auth_rate_limit() as usize;
         assert!(auth_max > 1, "test needs at least two attempts of headroom");

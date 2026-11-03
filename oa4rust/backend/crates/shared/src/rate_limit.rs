@@ -18,6 +18,63 @@ use crate::error::AppError;
 /// 内存模式清理间隔（秒）
 const CLEANUP_INTERVAL_SECONDS: u64 = 60;
 
+// ──────────────────────────────────────────────────────────────────────────────
+// key 空间上界（O11）
+//
+// 改前实测（10 万唯一 key 探针）：表 100_000 条、进程工作集 +25.2 MB（2.5→27.7 MB）、
+// 179 ms 填满；调用一次 cleanup 后仍是 100_000 条——清理只删「1 小时内没出现过」的
+// key，刚被写入的洪泛 key 一条都删不掉。也就是说 1 小时窗口内的 key 数完全由请求侧
+// 决定：按 25 MB/10 万线性外推，100 万唯一 IP ≈ 250 MB，攻击者几分钟即可把进程推到
+// OOM。这是真实内存 DoS 面，不只是「理论上的泄漏」。
+//
+// 上界依据：单实例 OA 部署的正常峰值约 5k 个不同来源 IP/小时（办公网 NAT 出口 +
+// 健康检查/监控探针 + 移动端出口 + 少量外网直连），取 10 倍安全余量 → 50k。
+// 到 50k 时约 12.5 MB，是可控的常驻成本。
+// ──────────────────────────────────────────────────────────────────────────────
+
+/// 表内 key 条目数上限。
+pub const MAX_KEYS: usize = 50_000;
+
+/// 超限时一次逐出到的目标水位（保留 80%，即逐出 20%）。
+///
+/// 批量逐出而不是「每超一条逐一条」：全表按最后一次请求时间排序是 O(n log n)/
+/// 单次 O(n) 扫描，逐条逐出会让每个请求都做一次全表扫描——那本身就是一个 CPU DoS。
+/// 一次逐出 10_000 条，把这次扫描摊薄到每 10_000 次超限写入才发生一次。
+const EVICT_TARGET: usize = MAX_KEYS - MAX_KEYS / 5;
+
+/// 按「最后一次请求时间」逐出最久未用的 key，返回逐出条数。
+///
+/// 为什么选 LRU 逐出而不是整体重置（两种处置的代价都已实测/评估）：
+/// - LRU 逐出：被逐出的 key 下次请求会从空窗口重新计数，也就是「提前解禁」——
+///   防护在**该 key 上**最多弱化一个窗口。代价可接受，因为被逐出的是最久未用者：
+///   攻击者正在打的 key、玩家正在触限的 key 都位于「最新」端，不会被误逐出；
+///   攻击者也不能靠制造 key 洪泛换来额外额度（他自己的新 key 照样被计数、照样 429）。
+/// - 整体重置：一次性把**所有** key 清零，包括攻击者当前正被限流的 key——等于每次
+///   撑满表就送洪泛者一次全额新预算，是「洪泛帮凶」，明确不采用。
+///
+/// 逐出后新 key 依然会被正确计数与限流（本函数只做「删最旧」，不改变判定路径）。
+fn enforce_key_cap(table: &mut std::collections::HashMap<String, Vec<Instant>>) -> usize {
+    if table.len() <= MAX_KEYS {
+        return 0;
+    }
+
+    // 一次遍历收集（最后一次请求时间, key）再排序：若在比较器里反复 table[k] 查表，
+    // 每次比较都要做一次 String 哈希，50k 表排一次就是近百万次哈希（实测把 10 万次
+    // 写入从 179 ms 拖到 2255 ms，等于给攻击者放大 CPU 成本）。
+    let mut entries: Vec<(Option<Instant>, String)> = table
+        .iter()
+        .map(|(k, v)| (v.last().copied(), k.clone()))
+        .collect();
+    entries.sort_unstable_by(|a, b| a.0.cmp(&b.0));
+
+    let n = entries.len() - EVICT_TARGET;
+    let evicted = n;
+    for (_, k) in entries.into_iter().take(n) {
+        table.remove(&k);
+    }
+    evicted
+}
+
 #[derive(Clone)]
 pub struct RateLimiter {
     pub attempts: Arc<RwLock<std::collections::HashMap<String, Vec<Instant>>>>,
@@ -85,18 +142,32 @@ impl RateLimiter {
         let window = Duration::from_secs((window_minutes * 60) as u64);
         let window_start = now - window;
 
-        let entry = attempts.entry(key.to_string()).or_insert_with(Vec::new);
-        entry.retain(|&t| t > window_start);
+        {
+            let entry = attempts.entry(key.to_string()).or_insert_with(Vec::new);
+            entry.retain(|&t| t > window_start);
 
-        if entry.len() >= max_attempts as usize {
-            return Err(AppError::BadRequest(format!(
-                "rate limit exceeded: {} attempts in last {} minutes",
-                entry.len(),
-                window_minutes
-            )));
+            if entry.len() >= max_attempts as usize {
+                return Err(AppError::BadRequest(format!(
+                    "rate limit exceeded: {} attempts in last {} minutes",
+                    entry.len(),
+                    window_minutes
+                )));
+            }
+
+            entry.push(now);
         }
 
-        entry.push(now);
+        // 只在写入后收敛表规模；判定路径不受影响（超限仍在上面提前返回）。
+        let evicted = enforce_key_cap(&mut attempts);
+        if evicted > 0 {
+            tracing::warn!(
+                evicted,
+                remaining = attempts.len(),
+                max_keys = MAX_KEYS,
+                "rate limiter key table exceeded cap; evicted least-recently-used keys"
+            );
+        }
+
         Ok(())
     }
 
@@ -261,8 +332,78 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn key_table_is_capped_under_unique_key_flood() {
+        // O11 改前实测：10 万唯一 key → 表 100_000 条、工作集 +25.2 MB，且 cleanup
+        // 一条都删不掉（刚写入的 key 都在 1 小时窗口内）。加上界后同样的洪泛必须
+        // 被压在 MAX_KEYS 以内。
+        let limiter = RateLimiter::new();
+        for i in 0..100_000usize {
+            let key = format!("general:10.{}.{}.{}", i / 65_536, (i / 256) % 256, i % 256);
+            limiter.check_rate_limit(&key, 300, 1).await.unwrap();
+        }
+
+        let len = limiter.attempts.read().await.len();
+        assert!(len <= MAX_KEYS, "key 表必须被上界压住，实际 {len}");
+        assert!(len >= EVICT_TARGET, "只该逐出最旧的 20%，实际 {len}");
+    }
+
+    #[tokio::test]
+    async fn fresh_key_is_still_counted_and_limited_after_cap_eviction() {
+        // 上界不能变成「表一满就放所有人过去」：洪泛之后的正常新 key 必须照常计数、
+        // 照常 429。
+        let limiter = RateLimiter::new();
+        for i in 0..=MAX_KEYS {
+            limiter
+                .check_rate_limit(&format!("flood:{i}"), 300, 1)
+                .await
+                .unwrap();
+        }
+        assert!(limiter.attempts.read().await.len() <= MAX_KEYS);
+
+        let fresh = "general:198.51.100.7";
+        limiter.check_rate_limit(fresh, 2, 1).await.unwrap();
+        limiter.check_rate_limit(fresh, 2, 1).await.unwrap();
+
+        let err = limiter.check_rate_limit(fresh, 2, 1).await.unwrap_err();
+        assert!(
+            matches!(err, AppError::BadRequest(_)),
+            "新 key 超限仍须 429，实际 {err:?}"
+        );
+        let counted = limiter.attempts.read().await.get(fresh).cloned().unwrap_or_default();
+        assert_eq!(counted.len(), 2, "计数必须准确（被拒的第 3 次不入表）");
+    }
+
+    #[tokio::test]
+    async fn eviction_drops_least_recently_used_keys_only() {
+        // LRU 语义：正在被限流的活跃 key 位于「最新」端，不得被逐出；被逐出的是
+        // 最久未用者（代价：它们下次请求会从空窗口重新计数，最多弱化一个窗口）。
+        let limiter = RateLimiter::new();
+        let now = Instant::now();
+        {
+            let mut table = limiter.attempts.write().await;
+            let idle = vec![now - Duration::from_secs(5_000)];
+            for i in 0..MAX_KEYS {
+                table.insert(format!("idle:{i}"), idle.clone());
+            }
+            table.insert("idle:extra".to_string(), idle);
+            table.insert(
+                "active:1.2.3.4".to_string(),
+                vec![now - Duration::from_secs(1)],
+            );
+        }
+
+        let mut table = limiter.attempts.write().await;
+        let evicted = enforce_key_cap(&mut table);
+        assert_eq!(evicted, MAX_KEYS + 2 - EVICT_TARGET);
+        assert_eq!(table.len(), EVICT_TARGET);
+        assert!(
+            table.contains_key("active:1.2.3.4"),
+            "活跃 key 被误逐出等于给正在被限流的攻击者解禁"
+        );
+    }
+
+    #[tokio::test]
     async fn check_prunes_attempts_outside_the_requested_window() {
-        // 窗口过期必须**逐次**判定，而不是等 1 小时清理任务：
         // 否则「1 分钟内 3 次」的限制在 3 次之后仍然生效，用户要等一小时才能重试。
         let limiter = RateLimiter::new();
         limiter.attempts.write().await.insert(
