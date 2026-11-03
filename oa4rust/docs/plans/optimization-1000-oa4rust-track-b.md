@@ -38,7 +38,8 @@
 
 | 日期 | 探针主题 | 结论 |
 |------|----------|------|
-| - | - | - |
+| 2026-11-04 | O12 限流器整表写锁成本（`Arc<RwLock<HashMap>>` 单点串行） | **不是瓶颈，不开轮**。方法：release 直调 `check_rate_limit`，3 场景（normal5k / nearcap50k=表逼近 50k 上界 / hot1 单 key）× 并发 1/100/200 × 3 变体（noop=只做 key 格式化、lockonly=只拿写锁即放、full=现行路径），每格 10 万次 × 2 轮，32 线程机。**无竞争**：c=1 时 full p50 0.1–0.3 µs（mean 0.18–0.32 µs），lockonly 0.06 µs——锁本身开销在噪声内。**饱和吞吐（全局锁的真实上界）**：full 2.18–2.29 M ops/s（≈438 ns/次串行），lockonly 3.13–3.40 M ops/s，noop 75–92 M/s。**排队读数**：c=200 时 full p50 80.8–104.2 µs / p99 145–194 µs，但这是闭环压满（200 任务零 think time）的 Little 定律排队（W≈c/λ≈200/2.3 M≈87 µs），锁内工作在 c=1 只占 0.14 µs（full−lockonly），不是额外锁成本。**表规模无额外成本**：nearcap50k 2.28 M/s 与 normal5k 2.25 M/s 同档（50k key 的哈希查找/逐出摊销可忽略）。**判定依据**：2.3 M rps 的串行上限 vs 现实需求——general 阈值 300/min/IP（5 rps/合法 IP），1 万个 IP 全打满也只有 50 k rps（约 2 % 占用率）；HTTP/DB 层远先于限流器成为瓶颈。分片锁只能把上限抬到 N×2.3 M，代价是 LRU 退化成分片 LRU、总上界改为每片 `MAX_KEYS/N`（可观察语义变化），在无真实 QPS 基线下属无据优化 → **不改架构**。顺带修复合并后 main 验证暴露的两处门禁（均为本线遗留）：`50b724b45`（clippy `unnecessary_sort_by`，O11 代码）、`7734da323`（O10 脚本缺 SPDX header）。 |
+
 
 ## 候选方向池（按价值排序，执行时取舍）
 
@@ -52,4 +53,5 @@
 8. 数据完整性：业务写与审计写同事务、孤儿行、级联语义。
 9. **O10 候选（O9 棘轮桶，161 条 handler 级 500）**：sea-orm 实体类型与列类型系统性不匹配（实体 `Option<DateTime>` ↔ 列 TEXT、`i32` ↔ BIGINT——insert 的 RETURNING 全列解码必炸，bbs_forum_info 已实证根因）+ `{}` 体无校验直打 DB 族。逐族对齐实体定义与 migration 实态，修复一族下调棘轮基线。
 10. decode panic 族残部：`row.get::<String>` 裸读可空列的存量点（O9 修了 bbs sort/hotpic application/calendar detail 三处实证点，全仓仍有同类潜伏—— arity_probe/矩阵对有数据的表会逐个暴露）。
+11. ~~限流器整表写锁分片化~~（O12 判定不开轮：饱和上限 2.3 M rps，现实需求低约 2 个数量级，数据见「不开轮记录」；若未来单实例 QPS 显著上升再带基线重开）。
 
