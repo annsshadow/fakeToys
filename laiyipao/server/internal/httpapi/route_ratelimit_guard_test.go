@@ -64,3 +64,34 @@ func TestEconomyWriteRoutesAreRateLimited(t *testing.T) {
 		}
 	}
 }
+
+// TestGlobalRateLimitWired 锁住 R72 的全局限流层（登录/建号/兑换/结算）。
+//
+// 全局层同样是**安全属性**：删掉某条路由的 globalLimiter，编译照过、
+// 窄层测试全绿，而「分布式刷量无总闸」这个缺口就悄悄回来了
+// （改前实测：3 账号 × 40 次结算 = 120×200、0×429）。
+// 行为证据在 route_global_ratelimit_test.go；这里把它变成结构约束。
+//
+// 每个模式都编码了**顺序**：窄层（per-IP/per-user）在前，全局层在后 ——
+// 反过来的话一个滥用 IP 会把全站共享预算吃完（见 globalLimiter 注释）。
+func TestGlobalRateLimitWired(t *testing.T) {
+	src := readHTTPFile(t, "routes.go")
+	// 压平空白：路由装配可能折行，模式匹配不该依赖排版。
+	flat := strings.Join(strings.Fields(stripHTTPComments(src)), " ")
+
+	required := []string{
+		`authAPI.Post("/guest", perIPLimiter("guest", guestLoginLimit), globalLimiter("auth_guest", globalAuthGuestLimit), s.guestLogin)`,
+		`authAPI.Post("/wechat", perIPLimiter("wechat", guestLoginLimit), globalLimiter("auth_wechat", globalAuthGuestLimit), s.wechatLogin)`,
+		`authAPI.Post("/login", perIPLimiter("playerlogin", playerLoginLimit), globalLimiter("auth_login", globalAuthLoginLimit), s.playerLogin)`,
+		`battle.Post("/settle", authRateLimit("settle", settleLimit), globalLimiter("settle", globalSettleLimit), s.settleBattle)`,
+		`redeem.Post("/", perIPLimiter("redeem", redeemLimit), authRateLimit("redeem", perUserRedeem), globalLimiter("redeem", globalRedeemLimit), s.redeem)`,
+	}
+	for _, want := range required {
+		if !strings.Contains(flat, want) {
+			t.Errorf("路由缺少全局层限流（或窄层/全局层顺序被颠倒）：%q —— 分布式刷量将无总闸", want)
+		}
+	}
+	if n := strings.Count(flat, "globalLimiter("); n < 5 {
+		t.Errorf("routes.go 里 globalLimiter 只有 %d 处（应 ≥5）—— 守卫可能扫错文件或全局层被拆走", n)
+	}
+}

@@ -90,15 +90,20 @@ func (s *Server) Register(app *fiber.App) {
 	// 限流挂在**未认证**这一侧：这三个端点都不需要令牌，
 	// 所以只能按来源 IP 计。理由与额度见 middleware.go 的 perIPLimiter。
 	authAPI := v1.Group("/auth")
-	authAPI.Post("/guest", perIPLimiter("guest", guestLoginLimit), s.guestLogin)
-	authAPI.Post("/wechat", perIPLimiter("wechat", guestLoginLimit), s.wechatLogin)
+	// R72 全局层挂在 per-IP **之后**：窄层先拦单源，全局层只统计过了窄层的
+	// 请求，单点滥用不至于吃完全站共享预算。阈值依据见 middleware.go。
+	authAPI.Post("/guest", perIPLimiter("guest", guestLoginLimit),
+		globalLimiter("auth_guest", globalAuthGuestLimit), s.guestLogin)
+	authAPI.Post("/wechat", perIPLimiter("wechat", guestLoginLimit),
+		globalLimiter("auth_wechat", globalAuthGuestLimit), s.wechatLogin)
 	authAPI.Post("/refresh", perIPLimiter("refresh", refreshLimit), s.refresh)
 	// 玩家账号登录（用户名 + 密码）。
 	//
 	// ⚠️ 限流比游客建号严得多：这个端点做 bcrypt（cost 10，单次 50~100ms
 	// 纯 CPU），而且**测试环境的共享账号口令与运营超管相同** ——
 	// 它同时是超管口令的爆破面。理由与额度见 middleware.go 的 playerLoginLimit。
-	authAPI.Post("/login", perIPLimiter("playerlogin", playerLoginLimit), s.playerLogin)
+	authAPI.Post("/login", perIPLimiter("playerlogin", playerLoginLimit),
+		globalLimiter("auth_login", globalAuthLoginLimit), s.playerLogin)
 
 	v1.Get("/config", s.getConfig)
 	v1.Get("/leaderboard", s.leaderboard)
@@ -206,7 +211,8 @@ func (s *Server) Register(app *fiber.App) {
 	// 结算与验真是**写放大**路径：每次调用都无条件落库一行，
 	// 且没有幂等键挡住重复（实测同一场战报重复验真 200 次 → 200 行）。
 	// 额度与理由见 middleware.go 的 authRateLimit。
-	battle.Post("/settle", authRateLimit("settle", settleLimit), s.settleBattle)
+	battle.Post("/settle", authRateLimit("settle", settleLimit),
+		globalLimiter("settle", globalSettleLimit), s.settleBattle)
 	battle.Post("/verify", authRateLimit("verify", verifyLimit), s.verifyReplay)
 	// 2026-10-21（P4-5）：放弃战斗并退回开战时扣掉的资源。
 	battle.Post("/abandon", authRateLimit("battleabandon", economyWriteLimit), s.abandonBattle)
@@ -286,7 +292,8 @@ func (s *Server) Register(app *fiber.App) {
 	// 兑换码既按 IP 也按身份限：IP 额度挡单点爆破，
 	// 身份额度挡「同一个号换 IP 继续试」。
 	redeem := v1.Group("/redeem", requireUser(s.Svc))
-	redeem.Post("/", perIPLimiter("redeem", redeemLimit), authRateLimit("redeem", perUserRedeem), s.redeem)
+	redeem.Post("/", perIPLimiter("redeem", redeemLimit), authRateLimit("redeem", perUserRedeem),
+		globalLimiter("redeem", globalRedeemLimit), s.redeem)
 
 	diagnose := v1.Group("/diagnose", requireUser(s.Svc))
 	diagnose.Get("/", s.diagnose)

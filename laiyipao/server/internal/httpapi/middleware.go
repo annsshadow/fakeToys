@@ -658,6 +658,69 @@ const (
 	nicknameChangeLimit = 10
 )
 
+// 全局层限流阈值（R72）。
+//
+// # 为什么还需要一层：per-IP / per-user 都拦不住「分布式」
+//
+// R52 的两层（按 IP、按身份）只挡单源。实测改前行为（单 IP 单账号连打）：
+// 登录 401×10+429×190、游客建号 200×60+429×140、兑换 400×5+429×195、
+// 结算 200×60+429×10 —— 单源确实都已被节流。
+// 但 **3 个账号各打 40 次结算（各自低于单用户额度 60）= 120 次全部 200、
+// 0 次 429**（7.3s 内全部落库，≈980 次/分）。换成 100 个号就是 6000 次/分的
+// 结算写 —— 没有任何一层拦它。这一层就是补这个缺口。
+//
+// # 阈值依据（不是拍数字）
+//
+// 本库无真实在线基线（users=9581 多为测试数据，battle_records 无有机流量），
+// 所以阈值按「物理上限 × 单实例成功规模」取，并写明复核条件：
+//
+//   - 结算 1200/分：一场战斗最短约 30s，正常玩家 ≤2 次/分；
+//     1200/分 = 600 名玩家**同时**结算的物理上限，超出即非正常流量。
+//   - 账号登录 600/分：bcrypt cost 10 单次 50~100ms 纯 CPU，600/分 ≈ 占满
+//     0.5~1 核；且 9581 注册用户即便全部每天登一次，均值也只有 ~7 次/分。
+//   - 游客/微信建号 1200/分：每次建号写 7 行，1200/分 ≈ 173 万号/天，
+//     远超自然增长（本库 24h 峰值 1529，且多为测试灌入）；
+//     给宽是因为 App 冷启动会在打开高峰同时发生。
+//   - 兑换 120/分：正常玩家一天兑 1~2 个码；千级 DAU 同时兑均值也远
+//     低于 120/分。per-IP 5 与 per-user 20 已存在，这层防多 IP 多账号批兑。
+//
+// 复核条件：DAU 起来后，用 battle_records / users 的分钟级峰值复核这些值。
+//
+// # 为什么用 var 而不是 const
+//
+// e2e 需要在装配路由前把它们改小（例如 3），才能用个位数请求证明
+// 「全局层真的会拦」；生产代码只读不写。
+//
+// ⚠️ **进程内计数**：多副本部署时实际全局限额 = N × 这里的值。
+// 本项目当前是单实例部署（`cmd/api` 单进程监听 :8080），所以是准确的；
+// 上多副本时必须换成 Redis 之类的共享计数器，否则全局层被放大 N 倍。
+var (
+	globalAuthLoginLimit = 600
+	globalAuthGuestLimit = 1200
+	globalRedeemLimit    = 120
+	globalSettleLimit    = 1200
+)
+
+// globalLimiter 返回「全端点每分钟 N 次」的限流中间件（所有 IP、所有账号
+// 共享一个桶）。
+//
+// ⚠️ 挂载顺序：必须排在 perIPLimiter / authRateLimit **之后**。
+// 窄层先拦单源，全局层只统计通过了窄层的请求 —— 否则一个滥用 IP
+// 会把全站共享预算吃完，把单点故障变成全站故障。
+func globalLimiter(name string, limitPerMinute int) fiber.Handler {
+	return limiter.New(limiter.Config{
+		Max:        limitPerMinute,
+		Expiration: time.Minute,
+		KeyGenerator: func(c *fiber.Ctx) string {
+			return name
+		},
+		LimitReached: func(c *fiber.Ctx) error {
+			return httperr.New(fiber.StatusTooManyRequests, httperr.CodeRateLimited,
+				"服务繁忙，请稍后再试")
+		},
+	})
+}
+
 // authRateLimit 返回按登录身份计数的限流中间件。
 func authRateLimit(name string, limitPerMinute int) fiber.Handler {
 	return limiter.New(limiter.Config{
