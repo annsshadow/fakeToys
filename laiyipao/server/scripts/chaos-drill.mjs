@@ -10,6 +10,9 @@
 //   F1 批量断连  pg_terminate_backend 每 300ms 杀一波池后端，15s
 //   F2 池耗尽    psql 持 LOCK TABLE users ACCESS EXCLUSIVE 15s（R82 死锁同机理：
 //                认证中间件每请求读 users → 全端点排队 → 池占满）
+//                R90 后语义变化：占满池的请求仍会等到锁释放（语句级等待），
+//                但**排不进池**的请求在 DB_ACQUIRE_TIMEOUT（默认 5s）后快速
+//                返回 503 + Retry-After，不再无限挂起（R89 时窗口内零 503）
 //   F3 语句取消  pg_cancel_backend 每 100ms 取消执行中语句，15s
 //                （57014 = statement_timeout 与主动 cancel 同一个码）
 //
@@ -33,7 +36,10 @@ const opt = (n, d) => { const i = args.indexOf('--' + n); return i >= 0 ? args[i
 const KEEP = args.includes('--keep');
 const API_PORT = opt('api', '8190');
 const API = `http://127.0.0.1:${API_PORT}`;
-const PPROF = opt('pprof', '6061');
+// ⚠️ pprof 端口别用 6060/6061：Windows 的「保留端口段」会把它整段占掉
+// （netsh interface ipv4 show excludedportrange protocol=tcp，实测 6001-6100），
+// 表现是 bind 失败后进程照常服务、只有 pprof 连不上 —— 演练会在基线采集处炸。
+const PPROF = opt('pprof', '6121');
 const PG = opt('pg', 'lyp-pg');
 const DB = opt('db', 'laiyipao_chaos');
 const DSN = `postgres://postgres@127.0.0.1:5432/${DB}?sslmode=disable`;
@@ -225,14 +231,22 @@ function windowStats(t0, t1) {
   const byStatus = {};
   const e500 = [];
   let bad503 = 0;
-  let slow = 0; // dur>10s：挂起的直接证据
+  let slow = 0; // dur>10s：锁阻塞请求的证据（语句级等待，不是 Acquire 挂起）
+  let s503 = 0; // 503 计数
+  let max503 = 0; // 503 的最长耗时
+  let slow503 = 0; // 503 且 dur>6s（超时 5s + 1s 余量之后）——R90 的失败判据
   for (const r of w) {
     byStatus[r.status] = (byStatus[r.status] ?? 0) + 1;
     if (r.status === 500) e500.push(r);
     if (r.status === 503 && (r.ra !== '5' || r.code !== 'service_unavailable')) bad503++;
     if (r.dur > 10000) slow++;
+    if (r.status === 503) {
+      s503++;
+      if (r.dur > max503) max503 = r.dur;
+      if (r.dur > 6000) slow503++;
+    }
   }
-  return { n: w.length, byStatus, e500, bad503, slow };
+  return { n: w.length, byStatus, e500, bad503, slow, s503, max503, slow503 };
 }
 // measureRecovery：真实轮询（不是逻辑遍历——首跑 bug：遍历「未来时间桶」
 // 时记录尚未产生，永远 '>60'）。每 500ms 看最近 3s 的实际记录，
@@ -332,13 +346,16 @@ await drillPhase('F2 池耗尽（锁 users 表）',
     } catch { /* 忽略 */ }
     try { p.kill('SIGKILL'); } catch { /* 已退 */ }
   }, 15,
-  // F2 专属：挂起语义——窗口内发起的请求必须全部等到终局（无 500、
-  // 无 client_abort 超时；锁 15s < PG statement_timeout 30s < fetch 45s），
-  // 且必须有「dur>10s 的挂起请求」作为锁真实生效的行为证据。
+  // F2 专属：R90 快速失败语义——池耗尽时排不进池的请求必须在
+  // DB_ACQUIRE_TIMEOUT（默认 5s）+1s 余量内拿到 503；同时保留两项旧证据：
+  // client_abort=0（服务端确实回了响应）与 dur>10s 的锁阻塞请求（证明锁
+  // 真的生效、与 Acquire 挂起无关）。
   (w) => {
     const aborted = w.byStatus['-1'] ?? 0;
-    note(aborted === 0, `F2 挂起语义：窗口 client_abort=${aborted}（挂起请求应全部等到终局）`);
-    note(w.slow > 0, `F2 挂起证据：窗口 dur>10s 请求数=${w.slow}（锁生效期间请求必须真实挂起过）`);
+    note(aborted === 0, `F2 语义：窗口 client_abort=${aborted}（请求应由服务端给出终局）`);
+    note(w.s503 > 0, `F2 快速失败证据：窗口 503 计数=${w.s503}（R90 后池耗尽必须出现快速 503）`);
+    note(w.slow503 === 0, `F2 503 全部在 5s+1s 内返回（窗口最长 503 ${w.max503}ms，>6s 的 503=${w.slow503}）`);
+    note(w.slow > 0, `F2 锁生效证据：窗口 dur>10s 请求数=${w.slow}（占满池的语句级等待，正常形态）`);
   });
 
 // F3 语句取消：每 100ms cancel 执行中的语句（57014）。

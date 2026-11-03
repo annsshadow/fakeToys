@@ -52,8 +52,10 @@ func TestValidateRejectsZeroTokenTTL(t *testing.T) {
 // DB_ACQUIRE_TIMEOUT=0/负值意味着「池耗尽时请求无限挂起」（R89 F2 实测
 // 挂起 15.0s、无任何一层掐断）。这不是「关闭开关」，而是缺失防护 ——
 // 必须启动失败，而不是静默退化成 R89 的挂起语义。
+// 无法解析的值（"5" 少了单位、"5秒"）同样必须失败：envDurationStrict
+// 不回落默认值，否则写错的防护会悄悄消失。
 func TestValidateRejectsZeroAcquireTimeout(t *testing.T) {
-	for _, val := range []string{"0s", "0", "-1s"} {
+	for _, val := range []string{"0s", "0", "-1s", "5", "5秒", "abc"} {
 		t.Run(val, func(t *testing.T) {
 			clearEnv(t)
 			t.Setenv("DB_ACQUIRE_TIMEOUT", val)

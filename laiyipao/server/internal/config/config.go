@@ -461,6 +461,21 @@ func envDuration(key string, def time.Duration) time.Duration {
 	return def
 }
 
+// envDurationStrict 用于「写错必须启动失败」的键（R90 DB_ACQUIRE_TIMEOUT）：
+// 未设置时取 def，设置但无法解析时返回 0（由 Validate 拒绝并点名），
+// **不静默回落到默认值**——把 5s 敲成 "5" 或 "5秒" 会让防护悄悄失效。
+func envDurationStrict(key string, def time.Duration) time.Duration {
+	v := strings.TrimSpace(rawEnv(key))
+	if v == "" {
+		return def
+	}
+	d, err := time.ParseDuration(v)
+	if err != nil {
+		return 0
+	}
+	return d
+}
+
 // Load 组装配置。生产环境（Env=prod）下若 JWT 密钥或数据库 DSN 仍为默认值，
 // 直接 panic —— 宁可启动失败，也不要用可预测的密钥上线。
 func Load() Config {
@@ -477,7 +492,7 @@ func Load() Config {
 		// 默认 30s：足够覆盖现有导出（10 万行）与看板聚合，又能在
 		// 「某条查询写坏了」时把连接释放出来，而不是拖垮整池。
 		DBStatementTimeout: envDuration("DB_STATEMENT_TIMEOUT", 30*time.Second),
-		DBAcquireTimeout:   envDuration("DB_ACQUIRE_TIMEOUT", 5*time.Second),
+		DBAcquireTimeout:   envDurationStrict("DB_ACQUIRE_TIMEOUT", 5*time.Second),
 		// 导出并发默认 2：给 10 条池连接里的普通请求留足余量。
 		ExportMaxConcurrency: envInt("EXPORT_MAX_CONCURRENCY", 2),
 		ExportWait:           envDuration("EXPORT_WAIT", 3*time.Second),
