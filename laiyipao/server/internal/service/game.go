@@ -1075,6 +1075,11 @@ func (s *Service) taskConfigsForTx(ctx context.Context, tx pgx.Tx, now time.Time
 }
 
 // LoadTasks 返回指定周期的任务列表。
+//
+// ⚠️ **禁止在事务作用域内调用**（DB.Tx 闭包及其下游）：本方法经
+// tasksCache.getOrLoad 取配置，未命中时 loader 要从池再取一条连接，
+// 与事务持有的连接互等死锁（R82/R83；静态守卫 tx_pool_guard_test 会拦）。
+// 事务内要读任务配置走 taskConfigsForTx（命中走内存、未命中用 tx 加载）。
 func (s *Service) LoadTasks(ctx context.Context, userID int64, scope string) ([]TaskView, error) {
 	day := periodStart(nowFunc(), scope)
 
