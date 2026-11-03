@@ -201,6 +201,25 @@ type Config struct {
 	// SettleSlowMs 是慢结算日志阈值（毫秒，R80；0=关闭日志，聚合仍记）。
 	SettleSlowMs int
 
+	// RateLimitScale 按比例缩放全部限流阈值（R82；默认 1.0=不缩放）。
+	//
+	// # 为什么存在
+	//
+	// 两个正当用途：
+	//   1. 压测/SLO 基线测量：要测的是**路径本身**的延迟，不是限流阈值。
+	//      阈值是编译期 var（R72 为了让 e2e 改小而选 var），运行中的
+	//      二进制改不了 —— 没有缩放开关时，压测打出的全是 429，
+	//      延迟样本被错误响应污染。
+	//   2. 运维临时放宽：可预期的突发（活动、开服高峰）期间临时上调，
+	//      过后调回 1.0 —— 这是需要人做的决定，所以走显式环境变量。
+	//
+	// ⚠️ 它不是「关闭限流」：合法范围钳在 [0.01, 100000]，0 或负数
+	// 回退 1.0。上限为什么这么大：压测单 IP 闭环 QPS 可达数千
+	// （RT 3ms × 20 并发 ≈ 6600/s），per-IP 60/分 × 100000 才压得住 ——
+	// 上限防的是手滑多打零，不是安全边界（本 env 只在显式设置时生效，
+	// 生产默认 1.0；压测口径见 cmd/playertest 文件头）。
+	RateLimitScale float64
+
 	// 战斗结算上限校验
 	BattleTokenTTL    time.Duration
 	MinBattleDuration time.Duration
@@ -358,6 +377,16 @@ func envInt(key string, def int) int {
 	return def
 }
 
+// envFloat 读浮点环境变量，非法值回退默认（与 envInt 同口径）。
+func envFloat(key string, def float64) float64 {
+	if v := strings.TrimSpace(rawEnv(key)); v != "" {
+		if f, err := strconv.ParseFloat(v, 64); err == nil {
+			return f
+		}
+	}
+	return def
+}
+
 // envInt32 带范围裁剪：envInt 返回平台 int（64 位），直接 int32 截断会让
 // 越界值（如 DB_MAX_CONNS=99999999999）静默回绕成负数/错值，超界一律回退默认。
 func envInt32(key string, def int32) int32 {
@@ -456,6 +485,8 @@ func Load() Config {
 		// 低于它不打日志（噪声），达到它说明某分段已经值得归因。
 		// 0 = 关闭慢结算日志（聚合统计不受影响）。
 		SettleSlowMs: envInt("SETTLE_SLOW_MS", 500),
+
+		RateLimitScale: envFloat("RATE_LIMIT_SCALE", 1.0),
 
 		OfflineCapHours:    envInt("OFFLINE_CAP_HOURS", 12),
 		OfflineCoinPerHour: envInt("OFFLINE_COIN_PER_HOUR", 600),

@@ -584,7 +584,7 @@ const (
 // 否则限流形同虚设。这一点写在这里而不是等出事时再想起来。
 func perIPLimiter(name string, limitPerMinute int) fiber.Handler {
 	return limiter.New(limiter.Config{
-		Max:        limitPerMinute,
+		Max:        scaleLimit(limitPerMinute),
 		Expiration: time.Minute,
 		KeyGenerator: func(c *fiber.Ctx) string {
 			return name + ":" + c.IP()
@@ -701,6 +701,32 @@ var (
 	globalSettleLimit    = 1200
 )
 
+// rateLimitScale 按 RATE_LIMIT_SCALE 缩放全部限流阈值（R82）。
+//
+// 默认 1.0；由 `cmd/api` 启动时 `SetRateLimitScale(cfg.RateLimitScale)`
+// 写入一次，之后只读（与 R72 的 var 阈值「生产代码只读不写」同一约定；
+// 路由装配发生在启动期，limiter 构造时取值即可，无需原子类型）。
+var rateLimitScale = 1.0
+
+// SetRateLimitScale 设置限流阈值缩放系数；合法范围 [0.01, 100000]，
+// 越界/非正回退 1.0 —— 这个 env 不是「关闭限流」的后门（config 注释同理；
+// 上限取大的理由见 config.RateLimitScale：压测单 IP 闭环 QPS 可达数千）。
+func SetRateLimitScale(f float64) {
+	if f < 0.01 || f > 100000 {
+		f = 1.0
+	}
+	rateLimitScale = f
+}
+
+// scaleLimit 应用缩放；下限 1（缩放不能把端点封死成 0 次）。
+func scaleLimit(limitPerMinute int) int {
+	n := int(float64(limitPerMinute) * rateLimitScale)
+	if n < 1 {
+		return 1
+	}
+	return n
+}
+
 // globalLimiter 返回「全端点每分钟 N 次」的限流中间件（所有 IP、所有账号
 // 共享一个桶）。
 //
@@ -709,7 +735,7 @@ var (
 // 会把全站共享预算吃完，把单点故障变成全站故障。
 func globalLimiter(name string, limitPerMinute int) fiber.Handler {
 	return limiter.New(limiter.Config{
-		Max:        limitPerMinute,
+		Max:        scaleLimit(limitPerMinute),
 		Expiration: time.Minute,
 		KeyGenerator: func(c *fiber.Ctx) string {
 			return name
@@ -724,7 +750,7 @@ func globalLimiter(name string, limitPerMinute int) fiber.Handler {
 // authRateLimit 返回按登录身份计数的限流中间件。
 func authRateLimit(name string, limitPerMinute int) fiber.Handler {
 	return limiter.New(limiter.Config{
-		Max:        limitPerMinute,
+		Max:        scaleLimit(limitPerMinute),
 		Expiration: time.Minute,
 		KeyGenerator: func(c *fiber.Ctx) string {
 			return fmt.Sprintf("%s:user%d", name, userIDFrom(c))
