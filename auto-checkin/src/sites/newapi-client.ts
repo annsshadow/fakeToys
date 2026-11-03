@@ -173,11 +173,12 @@ export async function fetchSelf(
       }
     } catch {}
 
-    // token 刷新型分支（如 JustWoker）：先用 refresh cookie 换 access_token，再带头重试
+    // token 刷新型分支（如 JustWoker）：先用 refresh cookie 换 access_token，再带头重试。
+    // 先查状态码：agentrouter 等站点没有这个端点（404），不解析错误体、不产生噪音。
     try {
       const rr = await requestText("/api/user/auth/refresh", { method: "POST", credentials: "include" });
       const rt = rr.text;
-      if (rt.trim().startsWith("{")) {
+      if (rr.status === 200 && rt.trim().startsWith("{")) {
         const rj = JSON.parse(rt);
         const at = rj?.data?.access_token;
         if (at) {
