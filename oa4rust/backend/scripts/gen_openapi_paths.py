@@ -13,6 +13,8 @@ gen_openapi_paths.py — 从 oa4rust crates 源码扫描路由，生成完整的
 """
 
 import re
+import shutil
+import subprocess
 import sys
 import tempfile
 import os
@@ -20,6 +22,26 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 CRATES_DIR = ROOT / "crates"
+
+
+def run_rustfmt(paths):
+    """生成物直接过 rustfmt（与 `cargo fmt --all -- --check` 同一工具链）。
+
+    O13：生成器产出的长行若不过 rustfmt，会和 CI 的格式化门禁互相打架——
+    `cargo fmt --check` 要求换行，regen diff 门禁要求逐字相等，两者不可能同时绿。
+    """
+    exe = shutil.which("rustfmt")
+    if not exe:
+        print("WARN: rustfmt 不在 PATH，跳过生成物格式化（提交前请手动跑 cargo fmt）")
+        return
+    for path in paths:
+        subprocess.run(
+            [exe, "--edition", "2021", str(path)],
+            check=True,
+            capture_output=True,
+        )
+
+
 OUTPUT_FILE = CRATES_DIR / "openapi" / "src" / "lib.rs"
 
 TAG_MAP = {
@@ -473,6 +495,7 @@ def main():
         raise
 
     print(f"Generated {len(funcs)} path items, {len(tags)} tags -> {OUTPUT_FILE}")
+    run_rustfmt([rt_path, OUTPUT_FILE])
 
 
 if __name__ == "__main__":

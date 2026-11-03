@@ -1,0 +1,6 @@
+[toolchain]
+# 钉死工具链：CI（.github/workflows/oa4rust-ci.yml）与本地必须同一个 rustfmt，
+# 否则格式化门禁的判定会随开发机的 stable 版本漂移（O13 实测 1.99 vs 1.98.1
+# 相差 1186 个 hunk / 45 个文件）。1.99.0 会 ICE openapi crate，不能用。
+channel = "1.98.1"
+components = ["rustfmt", "clippy"]

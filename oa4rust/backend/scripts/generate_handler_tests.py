@@ -13,9 +13,28 @@ The script also reads routes.rs to map handler names to URL paths.
 
 import os
 import re
+import shutil
+import subprocess
 import sys
 import argparse
 from typing import List, Tuple, Dict, Optional
+
+
+def run_rustfmt(path):
+    """生成物直接过 rustfmt（与 `cargo fmt --all -- --check` 同一工具链）。
+
+    O13：生成器产出的长行若不过 rustfmt，会和 CI 的格式化门禁互相打架——
+    `cargo fmt --check` 要求换行，regen 期望逐字相等，两者不可能同时绿。
+    """
+    exe = shutil.which("rustfmt")
+    if not exe:
+        print("WARN: rustfmt 不在 PATH，跳过生成物格式化（提交前请手动跑 cargo fmt）")
+        return
+    subprocess.run(
+        [exe, "--edition", "2021", str(path)],
+        check=True,
+        capture_output=True,
+    )
 
 CRATES_DIR = os.path.join(os.path.dirname(__file__), '..', 'crates')
 EXCLUDE_CRATES = {'mcp_server', 'openapi'}
@@ -459,6 +478,9 @@ def process_crate(crate_name: str) -> Tuple[int, int, int, List[str]]:
     output_path = os.path.join(crate_dir, 'src', 'tests_generated.rs')
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(test_module)
+    # 生成器自己过 rustfmt：否则 `cargo fmt --check`（要求换行）与本生成器
+    # 的产物（长行）互相打架，两个门禁不可能同时绿。
+    run_rustfmt(output_path)
     
     # Add module declaration to lib.rs if needed
     lib_rs = os.path.join(crate_dir, 'src', 'lib.rs')
