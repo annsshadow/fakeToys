@@ -1378,5 +1378,16 @@ func (s *Server) adminExportAuditLogs(c *fiber.Ctx) error {
 	return c.Send(data)
 }
 
+// adminReconcile 一致性对账（R78，只读；readonly 可读）。
+//
+// 不写审计：它是纯读（与看板/列表同族），审计守卫只覆盖写路由。
+func (s *Server) adminReconcile(c *fiber.Ctx) error {
+	rep, err := s.Svc.AdminReconcile(c.Context())
+	if err != nil {
+		return err
+	}
+	return c.JSON(rep)
+}
+
 // ctxUnused 保留下划线避免未使用告警（中间件已封装 Context 传递）。
 var _ = context.Background

@@ -407,6 +407,10 @@ func (s *Server) Register(app *fiber.App) {
 	// 改奖励/次数/过期时间此前只能停用后重建（码会变，已分享的全作废）。
 	adm.Put("/redeem-codes/:id", requireWritable(), s.adminUpdateRedeemCode)
 	adm.Get("/audit-logs", s.adminAuditLogs)
+	// R78：一致性对账（只读）。把「同一份事实写两遍」的机制（增量表/流水账本/
+	// 兑换计数/token 消耗）逐项与直接聚合对在一起；全绿证明无漂移，
+	// 有差异精确到键。1M 规模实测秒级（见 service/reconcile.go 注释）。
+	adm.Get("/reconcile", s.adminReconcile)
 	// 审计日志导出（2026-10-30 实质优化第 15 轮）：合规归档，读操作。
 	adm.Get("/audit-logs/export", s.withExportSlot(s.adminExportAuditLogs))
 }

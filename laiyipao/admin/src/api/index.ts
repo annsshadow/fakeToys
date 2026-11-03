@@ -816,3 +816,20 @@ export function exportAuditLogsCsv(params: {
   if (params.target) q.set('target', params.target)
   return api.getBlob(`/admin/audit-logs/export?${q}`)
 }
+
+/** ReconcileReport 是 `GET /admin/reconcile` 的响应（R78 一致性对账）。 */
+export interface ReconcileReport {
+  ok: boolean
+  checks: number
+  diffs: { check: string; key: string; expected: string; actual: string }[]
+  violation_counts: Record<string, number>
+  truncated: boolean
+  notes: string[]
+  duration_ms: number
+  checked_at: string
+}
+
+/** R78：一致性对账（只读）。返回九项不变量的核对报告。 */
+export function fetchReconcile() {
+  return api.get<ReconcileReport>('/admin/reconcile')
+}
