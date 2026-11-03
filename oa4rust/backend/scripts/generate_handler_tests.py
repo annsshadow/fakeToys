@@ -19,6 +19,28 @@ import sys
 import argparse
 from typing import List, Tuple, Dict, Optional
 
+BACKEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+
+def resolve_rustfmt() -> Optional[str]:
+    """按 rust-toolchain.toml 解析 rustfmt，而不是取 PATH 上的任意版本。
+
+    开发机 PATH 上的 rustfmt 可能是与 CI 不同的 stable（实测 1.10 vs 1.98.1
+    自带的 1.9），换行/排版策略不同，生成物会随机器漂移。`rustup which`
+    在 backend 目录下会按 rust-toolchain.toml 选工具链。
+    """
+    rustup = shutil.which("rustup")
+    if rustup:
+        proc = subprocess.run(
+            [rustup, "which", "rustfmt"],
+            cwd=BACKEND_DIR,
+            capture_output=True,
+            text=True,
+        )
+        if proc.returncode == 0 and proc.stdout.strip():
+            return proc.stdout.strip()
+    return shutil.which("rustfmt")
+
 
 def run_rustfmt(path):
     """生成物直接过 rustfmt（与 `cargo fmt --all -- --check` 同一工具链）。
@@ -26,7 +48,7 @@ def run_rustfmt(path):
     O13：生成器产出的长行若不过 rustfmt，会和 CI 的格式化门禁互相打架——
     `cargo fmt --check` 要求换行，regen 期望逐字相等，两者不可能同时绿。
     """
-    exe = shutil.which("rustfmt")
+    exe = resolve_rustfmt()
     if not exe:
         print("WARN: rustfmt 不在 PATH，跳过生成物格式化（提交前请手动跑 cargo fmt）")
         return
@@ -36,7 +58,7 @@ def run_rustfmt(path):
         capture_output=True,
     )
 
-CRATES_DIR = os.path.join(os.path.dirname(__file__), '..', 'crates')
+CRATES_DIR = os.path.join(BACKEND_DIR, 'crates')
 EXCLUDE_CRATES = {'mcp_server', 'openapi'}
 
 
