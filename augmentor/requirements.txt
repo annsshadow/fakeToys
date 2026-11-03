@@ -21,7 +21,7 @@ matplotlib>=3.5.0,<4.0.0
 fastapi>=0.162.0,<1.0.0
 uvicorn>=0.54.0,<1.0.0
 # 平台代码使用 pydantic v2 的 model_dump()，必须锁 v2
-pydantic>=2.0.0,<3.0.0
+pydantic>=2.14.2,<3.0.0
 python-multipart>=0.0.32
 
 # ============ 旧版脚本 enhanceTXT.py 专用 ============
