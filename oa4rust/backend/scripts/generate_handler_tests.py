@@ -61,6 +61,76 @@ def run_rustfmt(path):
 CRATES_DIR = os.path.join(BACKEND_DIR, 'crates')
 EXCLUDE_CRATES = {'mcp_server', 'openapi'}
 
+# ── 测试入口形态配置 ─────────────────────────────────────────────────────────
+# 路由注册测试要调用 crate 的路由入口。默认是 `crate::router(pool)`（router 只
+# 接收 deadpool_postgres::Pool）。其它形态必须在本表登记：**新增 crate 必须
+# 在此登记入口形态**，否则重生成后的 tests_generated.rs 会编译失败——生成物
+# 不允许再靠人工补丁修正（O14 的教训）。
+#
+# kind 取值：
+#   pool        let pool = shared::testing::test_pool();
+#               crate::router(pool)
+#   db          let db = shared::testing::mock_db().await;
+#               crate::router(db)
+#   db_pool     let db = shared::testing::mock_db().await;
+#               crate::router(db, shared::testing::mock_pool())
+#   pool_db     let pool = shared::testing::test_pool();
+#               crate::router(pool, shared::testing::mock_db().await)
+#   test_router let pool = shared::testing::test_pool();
+#               crate::test_router(pool)   # router 需要 rate_limiter/session 等额外依赖
+#   ws          crate::ws_route()
+ROUTER_ENTRY_KINDS: Dict[str, str] = {
+    # router(db: DatabaseConnection)
+    'ai_core_entity': 'db',
+    'attendance_core_entity': 'db',
+    'bbs_core_entity': 'db',
+    'calendar_core_entity': 'db',
+    'correlation_core_entity': 'db',
+    'file_core_entity': 'db',
+    'general_core_entity': 'db',
+    'hotpic_core_entity': 'db',
+    'jpush_core_entity': 'db',
+    'message_core_entity': 'db',
+    'mind_core_entity': 'db',
+    'organization_core_entity': 'db',
+    'portal_core_entity': 'db',
+    'processplatform_core_entity': 'db',
+    'query_express': 'db',
+    # router(db, pool)
+    'cms_core_entity': 'db_pool',
+    'meeting_core_entity': 'db_pool',
+    # router(pool, db)
+    'cms_express': 'pool_db',
+    # router 需要额外依赖（test_router 是 crate 提供的测试入口）
+    'auth': 'test_router',
+    'program_center_core_entity': 'test_router',
+    # WebSocket 路由
+    'realtime': 'ws',
+}
+DEFAULT_ENTRY_KIND = 'pool'
+
+
+def entry_lines(kind: str) -> str:
+    """返回构造 `let app = ...;` 的代码片段（含前置换行，已缩进）。"""
+    if kind == 'pool':
+        return ('        let pool = shared::testing::test_pool();\n'
+                '        let app = crate::router(pool);')
+    if kind == 'db':
+        return ('        let db = shared::testing::mock_db().await;\n'
+                '        let app = crate::router(db);')
+    if kind == 'db_pool':
+        return ('        let db = shared::testing::mock_db().await;\n'
+                '        let app = crate::router(db, shared::testing::mock_pool());')
+    if kind == 'pool_db':
+        return ('        let pool = shared::testing::test_pool();\n'
+                '        let app = crate::router(pool, shared::testing::mock_db().await);')
+    if kind == 'test_router':
+        return ('        let pool = shared::testing::test_pool();\n'
+                '        let app = crate::test_router(pool);')
+    if kind == 'ws':
+        return '        let app = crate::ws_route();'
+    raise ValueError(f'未知的 ROUTER_ENTRY_KINDS 取值: {kind}')
+
 
 def find_all_rs_files(crate_dir: str) -> List[str]:
     """Recursively find all .rs files under crate_dir/src/."""
@@ -306,7 +376,8 @@ def has_unresolvable_params(params: List[str]) -> bool:
 
 def generate_test_fn(handler_name: str, routes: Dict[str, Tuple[str, str]], 
                      exported: set, params: List[str], warnings: List[str],
-                     can_router: bool = True) -> Tuple[str, bool]:
+                     can_router: bool = True,
+                     entry_kind: str = DEFAULT_ENTRY_KIND) -> Tuple[str, bool]:
     """Generate a test function for a handler.
     
     Uses direct call if handler is re-exported from crate root,
@@ -354,8 +425,7 @@ def generate_test_fn(handler_name: str, routes: Dict[str, Tuple[str, str]],
 
         test_code = f'''    #[tokio::test]
     async fn test_{handler_name}() {{
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+{entry_lines(entry_kind)}
         let response = app
             .oneshot(
                 Request::builder()
@@ -425,7 +495,8 @@ def generate_test_module(crate_name: str, handlers: List[Tuple[str, str, List[st
                          routes: Dict[str, Tuple[str, str]],
                          exported: set,
                          warnings: List[str],
-                         has_tower: bool = True) -> str:
+                         has_tower: bool = True,
+                         entry_kind: str = DEFAULT_ENTRY_KIND) -> str:
     """Generate the full tests_generated.rs content for a crate."""
     has_direct = any(h in exported for h, _, _ in handlers)
     # Router-based tests require tower; skip them if not available
@@ -433,28 +504,29 @@ def generate_test_module(crate_name: str, handlers: List[Tuple[str, str, List[st
     has_router_test = can_router and any(h not in exported and h in routes for h, _, _ in handlers)
 
     lines = []
+    # SPDX 头与 allow 由生成器自己产出：以前靠仓库级补丁给 91 个产物加这两样，
+    # 每次重生成都会被抹掉（O14 漂移的噪声部分就来自这里）。
+    lines.append('// Copyright (C) 2026 annsshadow')
+    lines.append('// SPDX-License-Identifier: AGPL-3.0-or-later')
+    lines.append('')
     lines.append('#[cfg(test)]')
     lines.append('mod tests {')
+    lines.append('    #![allow(non_snake_case)]')
 
-    if has_direct and has_router_test:
+    # 只导入路由测试真正用到的符号；生成代码里的参数构造全是全限定路径，
+    # 旧的 `use shared::testing::...` / `use axum::http::Method` 实际未被使用，
+    # 会产生 unused import 警告（--all-targets + deny(warnings) 下直接红）。
+    if has_router_test:
         lines.append('    use axum::body::Body;')
-        lines.append('    use axum::extract::{Extension, Path, Json};')
-        lines.append('    use axum::http::{Request, Method, StatusCode};')
-        lines.append('    use shared::testing::{test_pool, test_sea_orm_pool};')
-        lines.append('    use tower::util::ServiceExt;')
-    elif has_direct:
-        lines.append('    use axum::extract::{Extension, Path, Json};')
-        lines.append('    use shared::testing::{test_pool, test_sea_orm_pool};')
-    elif has_router_test:
-        lines.append('    use axum::body::Body;')
-        lines.append('    use axum::http::{Request, Method, StatusCode};')
-        lines.append('    use shared::testing::test_pool;')
+        lines.append('    use axum::http::{Request, StatusCode};')
+        lines.append('')
         lines.append('    use tower::util::ServiceExt;')
     lines.append('')
 
     skipped = 0
     for handler_name, sig_line, params in handlers:
-        test_code, is_skipped = generate_test_fn(handler_name, routes, exported, params, warnings, can_router)
+        test_code, is_skipped = generate_test_fn(
+            handler_name, routes, exported, params, warnings, can_router, entry_kind)
         if is_skipped:
             skipped += 1
         lines.append(test_code)
@@ -476,8 +548,12 @@ def has_tower_dep(crate_dir: str) -> bool:
         return False
 
 
-def process_crate(crate_name: str) -> Tuple[int, int, int, List[str]]:
-    """Process a single crate. Returns (total_handlers, generated_count, skipped_count, warnings)."""
+def process_crate(crate_name: str, out_dir: Optional[str] = None) -> Tuple[int, int, int, List[str]]:
+    """Process a single crate. Returns (total_handlers, generated_count, skipped_count, warnings).
+
+    out_dir 非空时不改工作树：产物写到 <out_dir>/<crate>/tests_generated.rs，
+    供漂移门禁逐字比对；lib.rs 的模块声明也不动。
+    """
     crate_dir = os.path.join(CRATES_DIR, crate_name)
     if not os.path.isdir(crate_dir):
         return (0, 0, 0, [f'  SKIP {crate_name}: directory not found'])
@@ -493,17 +569,27 @@ def process_crate(crate_name: str) -> Tuple[int, int, int, List[str]]:
     routes = extract_routes(crate_dir)
     exported = get_exported_handlers(crate_dir)
     has_tower = has_tower_dep(crate_dir)
+    entry_kind = ROUTER_ENTRY_KINDS.get(crate_name, DEFAULT_ENTRY_KIND)
     warnings = []
-    test_module = generate_test_module(crate_name, handlers, routes, exported, warnings, has_tower)
-    
-    # Always write to tests_generated.rs
-    output_path = os.path.join(crate_dir, 'src', 'tests_generated.rs')
-    with open(output_path, 'w', encoding='utf-8') as f:
+    test_module = generate_test_module(
+        crate_name, handlers, routes, exported, warnings, has_tower, entry_kind)
+
+    if out_dir:
+        output_path = os.path.join(out_dir, crate_name, 'tests_generated.rs')
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    else:
+        output_path = os.path.join(crate_dir, 'src', 'tests_generated.rs')
+    # newline='\n'：固定行尾，产物不随平台（Windows CRLF）漂移，门禁可逐字比对。
+    with open(output_path, 'w', encoding='utf-8', newline='\n') as f:
         f.write(test_module)
     # 生成器自己过 rustfmt：否则 `cargo fmt --check`（要求换行）与本生成器
     # 的产物（长行）互相打架，两个门禁不可能同时绿。
     run_rustfmt(output_path)
-    
+
+    if out_dir:
+        generated = len([h for h, _, params in handlers if get_pool_type(params) != 'session'])
+        return (len(handlers), generated, len(handlers) - generated, warnings)
+
     # Add module declaration to lib.rs if needed
     lib_rs = os.path.join(crate_dir, 'src', 'lib.rs')
     needs_module_decl = True
@@ -512,7 +598,7 @@ def process_crate(crate_name: str) -> Tuple[int, int, int, List[str]]:
             lib_content = f.read()
         if 'mod tests_generated;' in lib_content:
             needs_module_decl = False
-    
+
     if needs_module_decl and os.path.exists(lib_rs):
         with open(lib_rs, 'r', encoding='utf-8') as f:
             lib_content = f.read()
@@ -525,7 +611,7 @@ def process_crate(crate_name: str) -> Tuple[int, int, int, List[str]]:
                              lib_content[end_of_line:])
         else:
             new_lib_content = lib_content.rstrip() + '\n\n#[cfg(test)]\nmod tests_generated;\n'
-        with open(lib_rs, 'w', encoding='utf-8') as f:
+        with open(lib_rs, 'w', encoding='utf-8', newline='\n') as f:
             f.write(new_lib_content)
     
     skipped = sum(1 for _, _, params in handlers if get_pool_type(params) == 'session' or 
@@ -547,7 +633,10 @@ def main():
     parser.add_argument('--crate', help='Process a single crate')
     parser.add_argument('--dry-run', action='store_true', help='Print handlers without writing files')
     parser.add_argument('--verbose', action='store_true', help='Show detailed output')
+    parser.add_argument('--out-dir', help='写到该目录而不改工作树（门禁逐字比对用）')
     args = parser.parse_args()
+    if args.out_dir:
+        args.out_dir = os.path.abspath(args.out_dir)
     
     if not os.path.isdir(CRATES_DIR):
         print(f'ERROR: crates directory not found at {CRATES_DIR}', file=sys.stderr)
@@ -570,7 +659,7 @@ def main():
     all_warnings = []
     
     for crate_name in crate_names:
-        handlers_count, generated_count, skipped_count, warnings = process_crate(crate_name)
+        handlers_count, generated_count, skipped_count, warnings = process_crate(crate_name, args.out_dir)
         total_handlers += handlers_count
         total_generated += generated_count
         total_skipped += skipped_count
