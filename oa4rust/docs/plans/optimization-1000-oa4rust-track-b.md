@@ -42,7 +42,90 @@
 | 2026-11-04 | O12 限流器整表写锁成本（`Arc<RwLock<HashMap>>` 单点串行） | **不是瓶颈，不开轮**。方法：release 直调 `check_rate_limit`，3 场景（normal5k / nearcap50k=表逼近 50k 上界 / hot1 单 key）× 并发 1/100/200 × 3 变体（noop=只做 key 格式化、lockonly=只拿写锁即放、full=现行路径），每格 10 万次 × 2 轮，32 线程机。**无竞争**：c=1 时 full p50 0.1–0.3 µs（mean 0.18–0.32 µs），lockonly 0.06 µs——锁本身开销在噪声内。**饱和吞吐（全局锁的真实上界）**：full 2.18–2.29 M ops/s（≈438 ns/次串行），lockonly 3.13–3.40 M ops/s，noop 75–92 M/s。**排队读数**：c=200 时 full p50 80.8–104.2 µs / p99 145–194 µs，但这是闭环压满（200 任务零 think time）的 Little 定律排队（W≈c/λ≈200/2.3 M≈87 µs），锁内工作在 c=1 只占 0.14 µs（full−lockonly），不是额外锁成本。**表规模无额外成本**：nearcap50k 2.28 M/s 与 normal5k 2.25 M/s 同档（50k key 的哈希查找/逐出摊销可忽略）。**判定依据**：2.3 M rps 的串行上限 vs 现实需求——general 阈值 300/min/IP（5 rps/合法 IP），1 万个 IP 全打满也只有 50 k rps（约 2 % 占用率）；HTTP/DB 层远先于限流器成为瓶颈。分片锁只能把上限抬到 N×2.3 M，代价是 LRU 退化成分片 LRU、总上界改为每片 `MAX_KEYS/N`（可观察语义变化），在无真实 QPS 基线下属无据优化 → **不改架构**。顺带修复合并后 main 验证暴露的两处门禁（均为本线遗留）：`50b724b45`（clippy `unnecessary_sort_by`，O11 代码）、`7734da323`（O10 脚本缺 SPDX header）。 |
 
 
-## 候选方向池（按价值排序，执行时取舍）
+| 2026-11-04 | O14 生成物漂移治理（33 个含人工内容的 tests_generated.rs） | **不开轮**（纯测试/门禁基础设施，无运行时行为改动）。按用户决策走「方向 1（治本）」：生成器获得 per-crate 入口配置，人工内容迁入人工维护的 `tests_manual.rs`，91 个产物统一重生成，并补两道门禁把「生成物 + 无校验」模式堵死。明细见下方「O14 明细」。 |
+
+## O14 明细（生成物漂移治理）
+
+> 定性沿用 O14 首轮重跑 diff：①纯噪声 7 个（仅少 SPDX + `#![allow]`，生成器不产出、靠仓库级补丁）②模板/源过期 83 个（旧模板 `assert_ne!` 未重生成，59 个受影响）③人工改过 33 个（29 个同时属于②）。③中又分两类：**18 个仅入口形态被人工改**（机械改动，收进配置）、**15 个含真手写测试**（迁入 tests_manual.rs）。`message_assemble_communicate` 的手写探针不在原标记集里，本轮由「非模板形状」扫描补入，故 33 = 18 + 15。
+
+### O14-1 入口配置表（`ROUTER_ENTRY_KINDS`，生成器内显式字典）
+
+| kind | 生成代码 | crate |
+|------|----------|-------|
+| `pool`（默认，未登记即此形态） | `let pool = shared::testing::test_pool(); crate::router(pool)` | 其余有路由测试的 crate |
+| `db` | `let db = shared::testing::mock_db().await; crate::router(db)` | ai_core_entity, attendance_core_entity, bbs_core_entity, calendar_core_entity, correlation_core_entity, file_core_entity, general_core_entity, hotpic_core_entity, jpush_core_entity, message_core_entity, mind_core_entity, organization_core_entity, portal_core_entity, processplatform_core_entity, query_express |
+| `db_pool` | `let db = mock_db().await; crate::router(db, mock_pool())` | cms_core_entity, meeting_core_entity |
+| `pool_db` | `let pool = test_pool(); crate::router(pool, mock_db().await)` | cms_express |
+| `test_router` | `let pool = test_pool(); crate::test_router(pool)` | auth, program_center_core_entity |
+| `ws` | `crate::ws_route()` | realtime |
+
+配置注释明确「新增 crate 必须在此登记入口形态」；未登录形态会让 `--all-targets` 编译失败，门禁可见。生成器另自产 SPDX 头与 `#![allow(non_snake_case)]`，并按生成结果计算 import（消除旧版 `use shared::testing::*` / `Method` 的 unused import）。
+
+### O14-2 手写测试迁移清单（15 crate / 84 用例 / 8 处 ignore）
+
+| crate | 数量 | 内容 |
+|-------|------|------|
+| ai | 1 | F6：`test_index_delete` |
+| base | 7 | plan002 U2 批量 5 条 + 纯逻辑路径穿越 2 条 |
+| calendar_assemble_control | 7 | plan002 U2 `test_u2_*` |
+| cms_core_express | 1 | `#[ignore]`：`test_content_detail` |
+| component_core_entity | 1 | `#[ignore]`：`test_component_get` |
+| file_assemble_control | 9 | 手写 `let __st/__body` 探针 6 条 + 2 处 `#[ignore]`（list_top）+ `folder2` 特例 |
+| message_assemble_communicate | 1 | 手写探针 `test_im_msg_download_id`（原标记集遗漏） |
+| organization_assemble_authentication | 2 | 2 处 `#[ignore]`（icon/identity） |
+| organization_assemble_personal | 2 | O10 回归（user_setting / role_list） |
+| processplatform_assemble_designer | 1 | `#[ignore]`：`test_get_flow` |
+| processplatform_core_express | 6 | O10 回归（work/task 系列） |
+| processplatform_service_processing | 21 | O10 回归 20 条 + `#[ignore]` gateway_join |
+| program_center | 9 | plan002 U2（config 3 + invoke 4 + appstyle 2） |
+| program_init | 15 | plan002 U2 12 条 + 纯逻辑 JDBC URL 解析 3 条 |
+| query_express | 1 | O9 回归 `test_query_list` |
+
+**与预期差异（如实记录）**：用户口径为「6 处 `#[ignore]`」，实际在 HEAD 上是 **8 处**（上述表内逐条列出）。迁移后 8 条全部保留，运行输出中 8 ignored、76 passed。`file_assemble_control` 的探针为 6 条（`let __st` 5 条 + `folder2` 1 条），加 2 条 `#[ignore]` 共 9 条。迁移只搬不改语义：原块逐行复制（含分节注释与中文说明），仅 rustfmt 归一空白；`tests_manual.rs` 由人工维护，生成器不覆盖。
+
+### O14-3 重生成前后测试数对比
+
+| 指标 | 重生成前 | 重生成后 |
+|------|----------|----------|
+| tests_generated.rs 文件数 | 90 | 91（+base_core_project 首次产出） |
+| tests_generated 测试函数 | 1705（1700 tokio + 5 纯逻辑） | 1314（全 tokio） |
+| tests_manual 测试函数 | 0 | 84（79 tokio + 5 纯逻辑，其中 8 ignored） |
+| `#[tokio::test]` 合计 | 1700 | 1393（1314 + 79） |
+
+减少的 391 条（1705→1314）不是丢测试，而是旧产物里已不存在的历史集合：过期模板/已删除路由（如 processplatform_assemble_surface 538→414、cms_assemble_control 255→211、ai_assemble_control 31→3）与同名 handler 重复（去重优先保留路由表那份）。反向新增来自内核 crate 首次被路由抽取器识别：organization_assemble_express 4→40、processplatform_assemble_bam 5→48、organization_assemble_authentication 2→24、query_assemble_designer 5→20、base_core_project 0→5。全部变化均可由生成器从源码复现（门禁逐字证明）。
+
+### O14-4 门禁与破坏实验证据
+
+| 门禁 | 判定方式 | 破坏实验 |
+|------|----------|----------|
+| `generated-tests`（新增） | 生成器跑临时目录 → 与 91 个已提交产物逐字节比对；附首个差异行号；同时校验生成器被 git 跟踪、每个 lib.rs 有 `mod tests_generated;`、规模下限（≥90 文件 / ≥1200 tokio 测试） | 手改 `ai/src/tests_generated.rs` 第 5 行 → FAIL 并精确报出该行；`git checkout` 还原 → PASS。把 `MIN_TESTS` 临时抬到 2000 → 规模断言 FAIL；还原 → PASS |
+| `generated-artifacts`（新增） | 快照 → 就地重生成（`gen_mcp_tools.py`）→ 逐字节比对（CRLF 归一）→ 写回快照 | 首次运行即抓到真实漂移：`generated_routes.rs` 1 行（路由源码改为 `crate::get_calendar_detail`，描述未同步）；重生成后 PASS |
+| `script-paths`（元守卫，O13） | 各检查项引用的 `scripts/*` 必须存在且被 git 跟踪 | 新判定器两次踩到 `scripts/**` 忽略规则：首次提交只入了 check-warnings，脚本本身被忽略 → 补 `.gitignore` 白名单后 PASS |
+
+### O14-5 全仓生成物清单审计
+
+| 产物 | 生成器 | 门禁 | 结论 |
+|------|--------|------|------|
+| `crates/*/src/tests_generated.rs`（91） | `generate_handler_tests.py` | **有**：`generated-tests`（本轮新增） | 逐字 + 规模下限 + 生成器跟踪 |
+| `crates/openapi/src/{lib.rs,request_types.rs}` | `gen_openapi_paths.py` | **有**：`openapi-paths`（O13 修复） | 逐字比对（行尾无关），跑完恢复原产物 |
+| `crates/mcp_server/src/generated_routes.rs` | `gen_mcp_tools.py` | **有**：`generated-artifacts`（本轮新增） | 快照→重生成→比对→还原 |
+| `crates/parity/src/generated_tests.rs` | `generate_parity_tests.py` | **无** | 输入 `docs/audits/o2server-parity-report.json` 已在 `c158a0251` 归档清理中删除，干净克隆无法重生成。**登记 O15 债务**：恢复输入并补门禁，或退役该产物 |
+| `crates/parity/src/behavior_tests.rs` | 无（头注释误写 AUTO-GENERATED，下一行自称 Hand-written） | **无** | 非脚本产出，实为手工维护；无漂移源。**O15 更正误导性头注释** |
+| `frontend/packages/apis/src/api-coverage-generated.test.ts` | `oa4rust/scripts/generate-api-tests.ts` | **无** | 依赖前端 TS 工具链（npm ci/tsx），不在 `check-warnings.mjs` 轻量脚本集合。**登记 O15 债务**（在 web CI 里跑生成+diff） |
+| `tests/contracts/backend-route-methods.fixture.ts` | 无（注释称 AUTO-GENERATED from generated_routes.rs，仓库内无脚本） | **无** | 一次性产物，消费方 `route-methods.test.ts`；无法从源头复现。**登记 O15 债务**（补生成器或退役） |
+| `backend/tests/behavior_comparison/endpoints.rs` | `extract_endpoints.py` | 无 | 未入库（.gitignore），运行期产物 → 不需要门禁 |
+| `scripts/extract_routes.py` 输出（stdout JSON） | `extract_routes.py` | 无 | 不落盘、不入库 → 不需要门禁 |
+| `backend/docs/audits/artifacts/fi002_unknown_columns.tsv` | `fi002_column_scan.py --update-baseline` | **有**（CI `oa4rust-ci.yml:341` 跑扫描，新增未知列即 exit 1） | 人工复核后更新的棘轮基线 |
+| `limit-scan` 基线 | `limit_scan.py` | **有**：`limit-scan`（O13 修复） | 同上（棘轮基线） |
+
+### O14-6 验证与遗留
+
+- `cargo clippy --all-targets --workspace`：通过（零告警）。
+- `cargo test`：除 `shared` 外全部 crate 通过；`tests_manual::` 84 条通过（8 ignored）；`cargo fmt --all --check` 通过。
+- `shared` 的 `migrate::tests` 用例因本地 `DATABASE_URL` 指向的库状态失败（`column person_unique does not exist`），串行可复现、与生成物无关（本分支未改 `shared` 源码/迁移），属环境/产品前置问题，不计入 O14 产物问题。
+- O15 候选（本轮回调出的无门禁项）：parity `generated_tests.rs`、`api-coverage-generated.test.ts`、`backend-route-methods.fixture.ts`、`behavior_tests.rs` 误导头注释。
+- 已知债务（不在本轮范围）：laiyipao `Server build` 时序断言（另一条线的可注入时钟改造）、auto-checkin 两条覆盖红。
+
 
 1. ~~迁移并发安全~~（O1 done）。
 2. ~~sea-orm/sqlx 错误分类~~（O7/O8 done）。
