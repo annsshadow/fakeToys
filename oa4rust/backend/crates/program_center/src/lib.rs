@@ -10629,6 +10629,7 @@ async fn u3_bar_mass_page(
     label: &str,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let count = shared::response::page_size(count)?;
+    let from = shared::response::page_offset(from)?;
     let client = shared::db::acquire(pool).await?;
     let rows = client
         .query(

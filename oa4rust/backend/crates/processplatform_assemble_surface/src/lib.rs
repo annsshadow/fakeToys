@@ -7339,6 +7339,7 @@ async fn draft_list_my_paging_page_size_size_core(
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let size = shared::response::page_size(size)?;
+    let page = shared::response::page_offset(page)?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
@@ -8372,6 +8373,7 @@ async fn handover_list_paging_page_size_size_core(
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let size = shared::response::page_size(size)?;
+    let page = shared::response::page_offset(page)?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
@@ -9956,6 +9958,7 @@ async fn read_list_my_filter_page_size_size_core(
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let size = shared::response::page_size(size)?;
+    let page = shared::response::page_offset(page)?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
@@ -10024,6 +10027,7 @@ async fn read_list_my_paging_page_size_size_core(
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let size = shared::response::page_size(size)?;
+    let page = shared::response::page_offset(page)?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
@@ -10696,6 +10700,7 @@ async fn read_v2_list_create_paging_page_size_size_core(
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let size = shared::response::page_size(size)?;
+    let page = shared::response::page_offset(page)?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
@@ -10864,6 +10869,7 @@ async fn read_v2_list_paging_page_size_size_core(
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let size = shared::response::page_size(size)?;
+    let page = shared::response::page_offset(page)?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
@@ -12055,6 +12061,7 @@ async fn readcompleted_list_my_filter_page_size_size_core(
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let size = shared::response::page_size(size)?;
+    let page = shared::response::page_offset(page)?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
@@ -12123,6 +12130,7 @@ async fn readcompleted_list_my_paging_page_size_size_core(
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let size = shared::response::page_size(size)?;
+    let page = shared::response::page_offset(page)?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
@@ -12757,6 +12765,7 @@ async fn readcompleted_v2_list_create_paging_page_size_size_core(
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let size = shared::response::page_size(size)?;
+    let page = shared::response::page_offset(page)?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
@@ -12925,6 +12934,7 @@ async fn readcompleted_v2_list_paging_page_size_size_core(
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let size = shared::response::page_size(size)?;
+    let page = shared::response::page_offset(page)?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
@@ -13514,6 +13524,7 @@ pub async fn record_list_job_job_paging_page_size_size(
     axum::extract::Path((job, page, size)): axum::extract::Path<(String, i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let size = shared::response::page_size(size)?;
+    let page = shared::response::page_offset(page)?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
@@ -13617,6 +13628,7 @@ async fn record_list_workorworkcompleted_workOrWorkCompleted_paging_page_size_si
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let size = shared::response::page_size(size)?;
+    let page = shared::response::page_offset(page)?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
@@ -14212,6 +14224,7 @@ async fn review_v2_list_create_paging_page_size_size_core(
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let size = shared::response::page_size(size)?;
+    let page = shared::response::page_offset(page)?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
@@ -14380,6 +14393,7 @@ async fn review_v2_list_paging_page_size_size_core(
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let size = shared::response::page_size(size)?;
+    let page = shared::response::page_offset(page)?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
@@ -15200,6 +15214,7 @@ async fn serialnumber_list_paging_page_size_size_core(
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let size = shared::response::page_size(size)?;
+    let page = shared::response::page_offset(page)?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
@@ -16282,6 +16297,7 @@ async fn task_list_my_filter_page_size_size_core(
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let size = shared::response::page_size(size)?;
+    let page = shared::response::page_offset(page)?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
@@ -17155,6 +17171,7 @@ async fn task_v2_list_create_paging_page_size_size_core(
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let size = shared::response::page_size(size)?;
+    let page = shared::response::page_offset(page)?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
@@ -17323,6 +17340,7 @@ async fn task_v2_list_paging_page_size_size_core(
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let size = shared::response::page_size(size)?;
+    let page = shared::response::page_offset(page)?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
@@ -18890,6 +18908,7 @@ async fn taskcompleted_list_my_filter_page_size_size_core(
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let size = shared::response::page_size(size)?;
+    let page = shared::response::page_offset(page)?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
@@ -18958,6 +18977,7 @@ async fn taskcompleted_list_my_paging_page_size_size_core(
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let size = shared::response::page_size(size)?;
+    let page = shared::response::page_offset(page)?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
@@ -19684,6 +19704,7 @@ async fn taskcompleted_v2_list_create_paging_page_size_size_core(
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let size = shared::response::page_size(size)?;
+    let page = shared::response::page_offset(page)?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
@@ -19852,6 +19873,7 @@ async fn taskcompleted_v2_list_paging_page_size_size_core(
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let size = shared::response::page_size(size)?;
+    let page = shared::response::page_offset(page)?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
@@ -21789,6 +21811,7 @@ async fn work_v2_list_paging_page_size_size_core(
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let size = shared::response::page_size(size)?;
+    let page = shared::response::page_offset(page)?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
