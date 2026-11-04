@@ -144,9 +144,8 @@ pub async fn create_room(
         .get("capacity")
         .and_then(|v| v.as_i64())
         .map(|v| v as i32);
-    let equipment = payload
-        .get("equipment")
-        .and_then(|v| serde_json::to_string(v).ok());
+    // 列是 jsonb，ActiveModel 的 equipment 已是 Option<Json>，直接透传。
+    let equipment = payload.get("equipment").cloned();
     let description = payload
         .get("description")
         .and_then(|v| v.as_str())
@@ -235,11 +234,7 @@ pub async fn get_room(
             ) {
                 map.insert("capacity".to_string(), val);
             }
-            if let Some(val) = option_to_json(
-                m.equipment
-                    .clone()
-                    .and_then(|s| serde_json::from_str::<Value>(&s).ok()),
-            ) {
+            if let Some(val) = option_to_json(m.equipment.clone()) {
                 map.insert("equipment".to_string(), val);
             }
             if let Some(val) = option_to_json(m.description.clone().map(Value::String)) {

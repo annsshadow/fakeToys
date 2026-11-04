@@ -998,11 +998,11 @@ GET /api/meeting/core/entity/room/{id}   column:equipment
 基线因此 **40 → 42（GET 11 / 非 GET 31）**，`BASELINE_COUNT=42`，集合相等。CI 的旧 40
 不是「更干净」，而是**扫描器当时没读到种子库**——这也是本次把口径写进台账的原因。
 
-### O24-3 待修 4 条（全部 GET，批次 1-13 已清 38）
+### O24-3 待修 2 条（全部 GET，批次 1-14 已清 40）
 
-**口径**：非 GET 0 条 + GET 4 条 = 4（原 42；批次 1 清 1、批次 2 清 4、批次 3 清 4、批次 4 清 3、
+**口径**：非 GET 0 条 + GET 2 条 = 2（原 42；批次 1 清 1、批次 2 清 4、批次 3 清 4、批次 4 清 3、
 批次 5 清 2、批次 6 清 7、批次 7 清 4、批次 8 清 3、批次 9 清 4、批次 10 清 3、批次 11 清 1、
-批次 12 清 1、批次 13 清 1）。
+批次 12 清 1、批次 13 清 1、批次 14 清 2）。
 
 排序按真实用户后果，不按条数：
 
@@ -1426,6 +1426,28 @@ x_timer_job.work_id → x_work.id，delete_rule = NO ACTION
 **收口**：删 1 条基线路，`BASELINE_COUNT 5 → 4`；门禁实测
 `== 棘轮基线：4 条（当前 4 条），集合相等 ==`。
 
+### O24-3 批次 14：`column:equipment` meeting room jsonb（2 条）
+
+**schema 现场证据**：`x_meeting_room.equipment` 是 `jsonb`（nullable），而 SeaORM 实体
+`meeting_room::Model` 声明 `Option<String>` → `Entity::find` 解码失败
+（`error deserializing column 3`），`GET room/list` 与 `GET room/{id}` 均 500。
+
+修法（`meeting_core_entity`）：
+
+- 实体字段改 `Option<Json>`（`sea_orm` 的 `Json = serde_json::Value`）；
+- `create_room` 的 equipment 由 `serde_json::to_string` 改为直接透传 `Value`；
+- `get_room` 响应的 equipment 不再 `from_str`，直接输出。
+
+**先红**：`meeting_room_jsonb_contract` 未改代码时实测 500（`error deserializing column`）。
+
+**行为断言**（读 + 写后必读）：list 含种子行；`room/{id}` 返回 `equipment` 原值
+`[{"name":"projector"}]`；`POST room/create` 200 后回库 `equipment::text` 与写入值一致。
+
+**破坏实验**：把 ActiveModel 写入值改成固定错误值 → 写后必读断言红；复原后绿。
+
+**收口**：删 2 条基线路，`BASELINE_COUNT 4 → 2`；门禁实测
+`== 棘轮基线：2 条（当前 2 条），集合相等 ==`。
+
 ### 写路径修复规矩：「写后必读」（批次 7 起，强制执行）
 
 任何写路径修复都必须补一条**写入后立即读回并断言同一值**的用例（SQL 直读同库），
@@ -1476,6 +1498,7 @@ x_timer_job.work_id → x_work.id，delete_rule = NO ACTION
 | O24-3 批次 11（E42601 document filter 纯 tail） | 0 | **1** | **-1**（7→6） | 6 |
 | O24-3 批次 12（E23503 work 删除顺序） | 0 | **1** | **-1**（6→5） | 5 |
 | O24-3 批次 13（E42P18 ai chat 分页） | 0 | **1** | **-1**（5→4） | 4 |
+| O24-3 批次 14（meeting room jsonb equipment） | 0 | **2** | **-2**（4→2） | 2 |
 
 **清除清单**：
 
@@ -1494,4 +1517,5 @@ x_timer_job.work_id → x_work.id，delete_rule = NO ACTION
 | O24-3 批次 11 | `E42601` document filter 纯 tail 拼进 WHERE | `POST /api/document/filter/list/{page}/size/{size}/manager` | `document_filter_paths_contract`：先红 500（E42601，position 48）→ 改后 manager 与常规分页均 200 且返回种子文档；破坏实验把关键字改回带前导空格 → 红；门禁 6/6 集合相等 |
 | O24-3 批次 12 | `E23503` work 删除先删父表 | `DELETE /api/processplatform/service/processing/work/{id}` | `work_delete_paths_contract`：先红 500（E23503 `x_timer_job_work_id_fkey`）→ 改后 200 且四张表均无残留（写后必读）、not-found 仍 `type=error`；破坏实验跳过 timer_job 删除 → 红；门禁 5/5 集合相等 |
 | O24-3 批次 13 | `E42P18` ai chat 分页占位符编号错位 | `GET /api/ai_assemble_control/chat/list/completion/{clueId}/paging/{page}/size/{size}` | `ai_chat_paging_contract`：先红 500（E42P18 `could not determine data type of parameter $2`）→ 改后 200、倒序与分页窗口均断言；破坏实验改回 `$4/$3` → 红；门禁 4/4 集合相等 |
+| O24-3 批次 14 | `column:equipment` meeting room jsonb | `GET /api/meeting/core/entity/room/list`；`GET /api/meeting/core/entity/room/{id}` | `meeting_room_jsonb_contract`：先红 500（`error deserializing column equipment`）→ 改后 200、equipment 原值返回、create 后回读 `equipment::text` 同值（写后必读）；破坏实验写入固定错误值 → 红；门禁 2/2 集合相等 |
 

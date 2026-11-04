@@ -89,6 +89,15 @@ async fn attribute_paths_contract() {
     integration_tests::scenarios::attribute_paths::attribute_paths_flow(ctx.pool.clone()).await;
 }
 
+/// O24-3 批次 14：meeting room 的 jsonb equipment 按 String 解码。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn meeting_room_jsonb_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::meeting_room_jsonb::meeting_room_jsonb_flow(ctx.pool.clone())
+        .await;
+}
+
 /// O24-3 批次 13：E42P18 ai chat 分页占位符编号错位。
 #[ignore = "requires a running database server"]
 #[tokio::test]

@@ -12,7 +12,10 @@ pub struct Model {
     pub building_id: Option<String>,
     pub floor: Option<String>,
     pub capacity: Option<i32>,
-    pub equipment: Option<String>,
+    // x_meeting_room.equipment 实列是 jsonb（information_schema 现场确认）；
+    // 旧声明 Option<String> 在 Entity::find 解码时报
+    // "error deserializing column equipment" → GET room/list、room/{id} 500。
+    pub equipment: Option<Json>,
     pub description: Option<String>,
     pub photo: Option<String>,
     pub open_meeting: Option<bool>,

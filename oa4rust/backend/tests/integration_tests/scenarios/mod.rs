@@ -14,6 +14,7 @@ pub mod file_portal;
 pub mod insert_required_id;
 pub mod jsonb_param_binding;
 pub mod ldap_fallback;
+pub mod meeting_room_jsonb;
 pub mod new_real_endpoints;
 pub mod organization_core_express;
 pub mod portal_surface_publish;
