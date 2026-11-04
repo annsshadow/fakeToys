@@ -387,13 +387,17 @@ async fn list_from_table_filtered_inner(
     // where_clause 实参历史上允许携带 ORDER BY/LIMIT tail（document_filter 三处）；
     // COUNT 聚合带 ORDER BY 裸列在 PG 直接 42P10 → 500（O10 PG 日志实证）。
     // count 语义=过滤后的总条数（legacy 分页字段），ORDER BY/LIMIT 仅作用于数据查询。
+    // 关键字不能带前导空格参与匹配：`document_filter_paging_manager` 传的
+    // where_clause 是**纯 tail**（`ORDER BY create_time DESC LIMIT 200`），带前导空格
+    // 会漏掉 `ORDER BY` 并把整串塞进 `WHERE` → E42601 语法错误。
     let upper = where_clause.to_ascii_uppercase();
-    let cut = [" ORDER BY ", " LIMIT "]
+    let cut = ["ORDER BY", "LIMIT"]
         .iter()
         .filter_map(|kw| upper.find(kw))
         .min()
         .unwrap_or(where_clause.len());
-    let filter_only = &where_clause[..cut];
+    let filter_only = where_clause[..cut].trim_end();
+    let tail = where_clause[cut..].trim();
 
     let count_sql = format!(
         "SELECT COUNT(*) FROM {}{}",
@@ -410,13 +414,19 @@ async fn list_from_table_filtered_inner(
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let count: i64 = count_row.get("count");
 
+    // 数据查询：filter 进 WHERE，ORDER BY/LIMIT 只作为 tail 追加（纯 tail 时无 WHERE）。
     let data_sql = format!(
-        "SELECT * FROM {}{}",
+        "SELECT * FROM {}{}{}",
         table,
-        if where_clause.is_empty() {
+        if filter_only.is_empty() {
             String::new()
         } else {
-            format!(" WHERE {}", where_clause)
+            format!(" WHERE {}", filter_only)
+        },
+        if tail.is_empty() {
+            String::new()
+        } else {
+            format!(" {}", tail)
         }
     );
     let rows = client

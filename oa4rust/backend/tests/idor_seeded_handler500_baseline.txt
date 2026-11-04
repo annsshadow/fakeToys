@@ -76,8 +76,12 @@
 # 旧 DELETE 写 `to_char(...)`（text）→ datatype mismatch，改 `NOW()`；
 # `x_attachment.create_time` 是 timestamp，旧 mergeitem 用 `COALESCE(create_time, id)`
 # （timestamp vs varchar）→ 改 `COALESCE(create_time, TIMESTAMP 'epoch')`（NULL 视作最旧）。
+#
+# 2026-11-05 基线 7 → 6（GET 5 / 非 GET 1）：O24-3 批次 11 清掉 E42601 的 document filter 1 条。
+# `list_from_table_filtered_inner` 拆分 where_clause 时只认带前导空格的 `" ORDER BY "`，
+# manager 变体传的是**纯 tail**（`ORDER BY create_time DESC LIMIT 200`）→ 漏匹配后拼成
+# `SELECT ... WHERE ORDER BY ...`。改为无前导空格的关键字匹配，tail 单独追加。
 GET /api/ai_assemble_control/chat/list/completion/{clueId}/paging/{page}/size/{size}	category:E42P18	owner:O24数据层对齐(后端)	due:2026-11-12	cond:给 $2 显式 ::text/CAST；200 后删行
-POST /api/document/filter/list/{page}/size/{size}/manager	category:E42601	owner:O24数据层对齐(后端)	due:2026-12-10	cond:改参数化/正确拼 ORDER BY；200 后删行
 GET /api/meeting/core/entity/room/list	column:equipment	owner:O24数据层对齐(后端)	due:2026-11-26	cond:改 try_get/Option 类型对齐实体；200 后删行
 GET /api/meeting/core/entity/room/{id}	column:equipment	owner:O24数据层对齐(后端)	due:2026-11-26	cond:改 try_get/Option 类型对齐实体；200 后删行
 GET /api/organization/assemble/control/identity/{flag}/order/before/{followFlag}	category:wrong-type	owner:O24数据层对齐(后端)	due:2026-11-26	cond:按列真实类型改写绑定参数；200 后删行

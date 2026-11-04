@@ -6,6 +6,7 @@ pub mod bbs_correlation;
 pub mod bpmn_process;
 pub mod cms_document;
 pub mod cms_extended;
+pub mod document_filter_paths;
 pub mod draft_start_status;
 pub mod entity_reference_required;
 pub mod file_portal;

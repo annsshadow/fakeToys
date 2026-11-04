@@ -89,6 +89,17 @@ async fn attribute_paths_contract() {
     integration_tests::scenarios::attribute_paths::attribute_paths_flow(ctx.pool.clone()).await;
 }
 
+/// O24-3 批次 11：E42601 document filter 纯 tail 拼进 WHERE。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn document_filter_paths_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::document_filter_paths::document_filter_paths_flow(
+        ctx.pool.clone(),
+    )
+    .await;
+}
+
 /// O24-3 批次 10：E42804 脚本软删 / mergeitem 类型不匹配。
 #[ignore = "requires a running database server"]
 #[tokio::test]
