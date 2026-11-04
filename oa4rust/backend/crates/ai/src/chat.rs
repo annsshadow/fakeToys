@@ -21,16 +21,16 @@ pub async fn chat_list_paging(
     let total_row = client
         .query_one("SELECT COUNT(*) as cnt FROM x_ai_clue", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total: i64 = total_row.get("cnt");
 
     let rows = client
         .query(
-            "SELECT id, title, person, create_time FROM x_ai_clue ORDER BY create_time DESC LIMIT $1 OFFSET $2",
+            "SELECT id, title, person, create_time::text AS create_time FROM x_ai_clue ORDER BY create_time DESC LIMIT $1 OFFSET $2",
             &[&size, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -75,16 +75,16 @@ pub async fn chat_list_completion_paging(
             &[&clue_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total: i64 = total_row.get("cnt");
 
     let rows = client
         .query(
-            "SELECT id, person, \"clueId\", input, content, \"generateType\", create_time FROM x_ai_completion WHERE \"clueId\" = $1 ORDER BY create_time DESC LIMIT $2 OFFSET $3",
+            "SELECT id, person, \"clueId\", input, content, \"generateType\", create_time::text AS create_time FROM x_ai_completion WHERE \"clueId\" = $1 ORDER BY create_time DESC LIMIT $2 OFFSET $3",
             &[&clue_id, &size, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -134,7 +134,7 @@ pub async fn chat_delete(
     let row = client
         .query_opt("SELECT person FROM x_ai_clue WHERE id = $1", &[&clue_id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let Some(row) = row else {
         return Ok(Json(ActionResult::success(Value::Object(
@@ -152,12 +152,12 @@ pub async fn chat_delete(
         &[&clue_id],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = tx
         .execute("DELETE FROM x_ai_clue WHERE id = $1", &[&clue_id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     tx.commit().await?;
 

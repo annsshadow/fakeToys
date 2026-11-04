@@ -179,7 +179,7 @@ pub async fn get_control_config(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data = Value::Object(serde_json::Map::from_iter([
         (
@@ -189,7 +189,7 @@ pub async fn get_control_config(
         (
             "maxForumCount".to_string(),
             Value::Number(serde_json::Number::from(
-                row.get::<_, i64>("max_forum_count"),
+                row.get::<_, i32>("max_forum_count"),
             )),
         ),
         (
@@ -217,7 +217,7 @@ pub async fn list_control_sections(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let sections: Vec<Value> = rows
         .iter()
@@ -361,10 +361,13 @@ pub async fn update_control_config(
         .get("enabled")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
-    let max_forum_count = body
+    // 实列 `max_forum_count` 是 `integer`（information_schema 现场），绑 `i64` 会
+    // `ToSql(1) WrongType { Int4, i64 }`；按列真实类型收窄到 i32。
+    let max_forum_count_i64 = body
         .get("maxForumCount")
         .and_then(|v| v.as_i64())
         .unwrap_or(1000);
+    let max_forum_count = i32::try_from(max_forum_count_i64).unwrap_or(1000);
     let allow_anonymous = body
         .get("allowAnonymous")
         .and_then(|v| v.as_bool())
@@ -376,7 +379,7 @@ pub async fn update_control_config(
             &[&enabled, &max_forum_count, &allow_anonymous],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -396,7 +399,7 @@ pub async fn list_forums(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -425,7 +428,7 @@ pub async fn get_forum(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => Ok(Json(ActionResult::success(
@@ -466,7 +469,7 @@ pub async fn create_topic(
             &[&id, &forum_id, &title, &content, &creator, &author_id, &section_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
@@ -490,7 +493,7 @@ pub async fn list_topics_by_forum(
             &[&forum_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -537,7 +540,7 @@ pub async fn create_reply(
             &[&id, &subject_id, &creator, &subject_id, &req.content.clone().unwrap_or_default(), &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
@@ -564,7 +567,7 @@ pub async fn forum_view_all(pool: Extension<Pool>) -> Result<Json<ActionResult<V
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -592,7 +595,7 @@ pub async fn forum_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => Ok(Json(ActionResult::success(
@@ -611,7 +614,7 @@ pub async fn mobile_view_all(pool: Extension<Pool>) -> Result<Json<ActionResult<
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -639,7 +642,7 @@ pub async fn permission_replyPublishable_subjectId(
             &[&subject_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let publishable = row.is_some();
     Ok(Json(ActionResult::success(Value::Object(
@@ -659,7 +662,7 @@ pub async fn permission_subjectPublishable_sectionId(
             &[&section_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .is_some();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([(
@@ -683,7 +686,7 @@ pub async fn reply_filter_list_page_page_count_count(
             &[&offset, &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -712,7 +715,7 @@ pub async fn reply_list_sub_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -740,7 +743,7 @@ pub async fn subject_view_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => Ok(Json(ActionResult::success(
@@ -763,7 +766,7 @@ pub async fn subject_top_sectionId(
             &[&section_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -791,7 +794,7 @@ pub async fn permission_section_sectionId(
             &[&section_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .is_some();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -813,7 +816,7 @@ pub async fn permission_subject_subjectId(
             &[&subject_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .is_some();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -836,7 +839,7 @@ pub async fn section_viewforum_forumId(
             &[&forum_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -884,7 +887,7 @@ pub async fn delete_forum(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(rows_affected > 0))]),
     ))))
@@ -906,7 +909,7 @@ pub async fn delete_reply(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(rows_affected > 0))]),
     ))))
@@ -928,7 +931,7 @@ pub async fn delete_subject(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(rows_affected > 0))]),
     ))))
@@ -961,7 +964,7 @@ pub async fn delete_forum_body(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(rows_affected > 0))]),
     ))))
@@ -984,7 +987,7 @@ pub async fn delete_reply_body(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(rows_affected > 0))]),
     ))))
@@ -1007,7 +1010,7 @@ pub async fn delete_subject_body(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(rows_affected > 0))]),
     ))))
@@ -1033,7 +1036,7 @@ pub async fn list_reply_filter(
                 &[&count, &offset],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else {
         client
             .query(
@@ -1043,7 +1046,7 @@ pub async fn list_reply_filter(
                 &[&subject_id, &count, &offset],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     };
     let total_row = client
         .query_one(
@@ -1051,7 +1054,7 @@ pub async fn list_reply_filter(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total: i64 = total_row.get(0);
     let data: Vec<Value> = rows
         .iter()
@@ -1084,14 +1087,14 @@ pub async fn list_topics_creamed(
             &[&count, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total_row = client
         .query_one(
             "SELECT COUNT(*) FROM x_bbs_topic WHERE deleted_at IS NULL AND is_cream = true",
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total: i64 = total_row.get(0);
     let data: Vec<Value> = rows
         .iter()
@@ -1124,14 +1127,14 @@ pub async fn list_topics_recommended(
             &[&count, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total_row = client
         .query_one(
             "SELECT COUNT(*) FROM x_bbs_topic WHERE deleted_at IS NULL AND is_recommend = true",
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total: i64 = total_row.get(0);
     let data: Vec<Value> = rows
         .iter()
@@ -1163,14 +1166,14 @@ pub async fn list_subjects_filtered(
             &[&count, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total_row = client
         .query_one(
             "SELECT COUNT(*) FROM x_bbs_topic WHERE deleted_at IS NULL",
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total: i64 = total_row.get(0);
     let data: Vec<Value> = rows
         .iter()
@@ -1203,14 +1206,14 @@ pub async fn list_subjects_index(
             &[&count, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total_row = client
         .query_one(
             "SELECT COUNT(*) FROM x_bbs_topic WHERE deleted_at IS NULL AND is_top = true",
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total: i64 = total_row.get(0);
     let data: Vec<Value> = rows
         .iter()
@@ -1243,14 +1246,14 @@ pub async fn list_subjects_recommended_index(
             &[&count, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total_row = client
         .query_one(
             "SELECT COUNT(*) FROM x_bbs_topic WHERE deleted_at IS NULL AND is_recommend = true",
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total: i64 = total_row.get(0);
     let data: Vec<Value> = rows
         .iter()
@@ -1286,7 +1289,7 @@ pub async fn login(
             &[&credential],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("invalid credentials")));
     };
@@ -1366,7 +1369,7 @@ pub async fn picture_list(
             &[&subject_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let urls: Vec<Value> = match row {
         Some(r) => {
             let content: String = r.get::<_, Option<String>>("content").unwrap_or_default();
@@ -1446,7 +1449,7 @@ pub async fn shutup_delete(
     let rows_affected = client
         .execute("DELETE FROM x_bbs_shutup WHERE person = $1", &[&person])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(rows_affected > 0))]),
     ))))
@@ -1466,11 +1469,11 @@ pub async fn shutup_list(
             &[&count, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total_row = client
         .query_one("SELECT COUNT(*) FROM x_bbs_shutup", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total: i64 = total_row.get(0);
     let data: Vec<Value> = rows
         .iter()
@@ -1543,12 +1546,12 @@ pub async fn subject_filter_listsubjectinfo(
         client
             .query(sql, &[&limit_val, &offset])
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else {
         client
             .query(sql, &[&limit_val, &offset, &forum_id])
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     };
     let total_row = if forum_id.is_empty() {
         client
@@ -1557,7 +1560,7 @@ pub async fn subject_filter_listsubjectinfo(
                 &[],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else {
         client
             .query_one(
@@ -1565,7 +1568,7 @@ pub async fn subject_filter_listsubjectinfo(
                 &[&forum_id],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     };
     let total: i64 = total_row.get(0);
     let data: Vec<Value> = rows
@@ -1607,14 +1610,14 @@ pub async fn subject_search(
             &[&"%".to_string(), &count, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total_row = client
         .query_one(
             "SELECT COUNT(*) FROM x_bbs_topic WHERE deleted_at IS NULL AND (title ILIKE $1 OR content ILIKE $1)",
             &[&"%".to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total: i64 = total_row.get(0);
     let data: Vec<Value> = rows
         .iter()
@@ -1643,7 +1646,7 @@ pub async fn subject_statgrade(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total: i64 = total_row.get(0);
     let cream_row = client
         .query_one(
@@ -1651,7 +1654,7 @@ pub async fn subject_statgrade(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let cream: i64 = cream_row.get(0);
     let rec_row = client
         .query_one(
@@ -1659,7 +1662,7 @@ pub async fn subject_statgrade(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let recommended: i64 = rec_row.get(0);
     let top_row = client
         .query_one(
@@ -1667,7 +1670,7 @@ pub async fn subject_statgrade(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let top: i64 = top_row.get(0);
     let data = Value::Object(serde_json::Map::from_iter([
         (
@@ -1735,7 +1738,7 @@ pub async fn topic_recommended_index(
             &[&count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(row_to_topic)
@@ -1772,14 +1775,14 @@ pub async fn topic_search(
             &[&"%".to_string(), &count, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total_row = client
         .query_one(
             "SELECT COUNT(*) FROM x_bbs_topic WHERE deleted_at IS NULL AND (title ILIKE $1 OR content ILIKE $1)",
             &[&"%".to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total: i64 = total_row.get(0);
     let data: Vec<Value> = rows
         .iter()
@@ -1807,7 +1810,7 @@ pub async fn user_forum_list(pool: Extension<Pool>) -> Result<Json<ActionResult<
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -1862,7 +1865,7 @@ pub async fn user_info(
             &[&session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let id: String = row.get("id");
@@ -1914,7 +1917,7 @@ pub async fn user_reply_list(pool: Extension<Pool>) -> Result<Json<ActionResult<
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(row_to_reply)
@@ -1937,7 +1940,7 @@ pub async fn user_role_list(pool: Extension<Pool>) -> Result<Json<ActionResult<V
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -1970,7 +1973,7 @@ pub async fn user_section_list(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -2007,7 +2010,7 @@ pub async fn user_setting(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data = match row {
         Some(r) => {
             let s: String = r.get("settings");
@@ -2030,7 +2033,7 @@ pub async fn user_subject_list(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(row_to_topic)

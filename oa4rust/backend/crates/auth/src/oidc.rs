@@ -114,9 +114,12 @@ async fn exchange_code(code: String) -> Result<OidcTokenResponse, AppError> {
         .form(&params)
         .send()
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
-    let token: OidcTokenResponse = res.json().await.map_err(|_| AppError::Internal)?;
+    let token: OidcTokenResponse = res
+        .json()
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(token)
 }
 
@@ -199,9 +202,11 @@ async fn fetch_jwks() -> Result<Value, AppError> {
         .get(&jwks_url)
         .send()
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
-    res.json().await.map_err(|_| AppError::Internal)
+    res.json()
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))
 }
 
 pub(crate) fn extract_rsa_components(
@@ -251,7 +256,7 @@ pub(crate) async fn get_or_create_person(pool: &Pool, sub: &str) -> Result<Value
             &[&unique_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if let Some(r) = row {
         return Ok(row_to_json(&r));
@@ -269,7 +274,7 @@ pub(crate) async fn get_or_create_person(pool: &Pool, sub: &str) -> Result<Value
             ],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(new_id)),

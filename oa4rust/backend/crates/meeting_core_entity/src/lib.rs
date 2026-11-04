@@ -64,7 +64,7 @@ async fn meeting_require_owner(
     let row = client
         .query_opt("SELECT creator FROM x_meeting WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if let Some(row) = row {
         let creator: String = row.get::<_, Option<String>>("creator").unwrap_or_default();
         shared::middleware::require_owner(pool, session, &creator).await?;
@@ -83,7 +83,7 @@ pub async fn room_list(
         .limit(20)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -144,9 +144,8 @@ pub async fn create_room(
         .get("capacity")
         .and_then(|v| v.as_i64())
         .map(|v| v as i32);
-    let equipment = payload
-        .get("equipment")
-        .and_then(|v| serde_json::to_string(v).ok());
+    // 列是 jsonb，ActiveModel 的 equipment 已是 Option<Json>，直接透传。
+    let equipment = payload.get("equipment").cloned();
     let description = payload
         .get("description")
         .and_then(|v| v.as_str())
@@ -180,7 +179,7 @@ pub async fn create_room(
     let m = active_model
         .insert(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object({
         let mut map = serde_json::Map::new();
@@ -216,7 +215,7 @@ pub async fn get_room(
     let model = meeting_room::Entity::find_by_id(&id)
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match model {
         Some(m) => {
@@ -235,11 +234,7 @@ pub async fn get_room(
             ) {
                 map.insert("capacity".to_string(), val);
             }
-            if let Some(val) = option_to_json(
-                m.equipment
-                    .clone()
-                    .and_then(|s| serde_json::from_str::<Value>(&s).ok()),
-            ) {
+            if let Some(val) = option_to_json(m.equipment.clone()) {
                 map.insert("equipment".to_string(), val);
             }
             if let Some(val) = option_to_json(m.description.clone().map(Value::String)) {
@@ -310,14 +305,17 @@ pub async fn update_room(
     let client = shared::db::acquire(&pool).await?;
     let rows_affected = client
         .execute(
-            "UPDATE x_meeting_room SET name = $1, building_id = $2, floor = $3, capacity = $4, equipment = $5, description = $6, photo = $7, order_number = $8 WHERE id = $9",
+            // O24-3 批次 2：`equipment` 真实类型是 JSONB（information_schema 现场确认）。
+            // `$5` 直接参与赋值会被推断为 JSONB，而 Rust 侧绑定的是 Option<String>
+            // → ToSql WrongType。显式 `$5::text::jsonb` 让绑定保持文本，服务端再转 JSONB。
+            "UPDATE x_meeting_room SET name = $1, building_id = $2, floor = $3, capacity = $4, equipment = $5::text::jsonb, description = $6, photo = $7, order_number = $8 WHERE id = $9",
             &[
                 &name, &building_id, &floor, &capacity, &equipment, &description,
                 &photo, &order_number, &id,
             ],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if rows_affected == 0 {
         return Ok(Json(ActionResult::error("room not found")));
@@ -345,7 +343,7 @@ pub async fn delete_room(
     let rows_affected = client
         .execute("DELETE FROM x_meeting_room WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if rows_affected == 0 {
         return Ok(Json(ActionResult::error("room not found")));
@@ -370,7 +368,7 @@ pub async fn meeting_list(
         .limit(20)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -419,7 +417,7 @@ pub async fn meeting_list_by_room(
         .limit(20)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -513,7 +511,7 @@ pub async fn create_meeting(
     let m = active_model
         .insert(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -541,7 +539,7 @@ pub async fn get_meeting(
     let model = meeting::Entity::find_by_id(&id)
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match model {
         Some(m) => {
@@ -618,7 +616,7 @@ pub async fn update_meeting(
             &[&title, &content, &start_time.to_string(), &end_time.to_string(), &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if rows_affected == 0 {
         return Ok(Json(ActionResult::error("meeting not found")));
@@ -647,7 +645,7 @@ pub async fn delete_meeting(
     let rows_affected = client
         .execute("DELETE FROM x_meeting WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if rows_affected == 0 {
         return Ok(Json(ActionResult::error("meeting not found")));

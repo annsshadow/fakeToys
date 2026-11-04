@@ -141,7 +141,7 @@ async fn upsert_targets(
                 &[&from_type.to_string(), &from_bundle.to_string()],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         for row in rows {
             let id: String = row.get("id");
             let ty: String = row.get("target_type");
@@ -170,7 +170,7 @@ async fn upsert_targets(
                     &[&view, id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             }
             None => {
                 let id = uuid::Uuid::new_v4().to_string();
@@ -191,7 +191,7 @@ async fn upsert_targets(
                     ],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
                 // 同请求内重复目标与原逐条 SELECT 语义一致：第二条命中视为已存在
                 existing_keys.insert((ty.clone(), bundle.clone(), site.clone()), id);
             }
@@ -292,7 +292,7 @@ async fn update_impl(
             &[&from_type.to_string(), &from_bundle.to_string(), &site],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
         let owned: Vec<TargetWi> = site_target
             .target_list
@@ -359,7 +359,7 @@ async fn delete_impl(
             &[&wi.id_list],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     for row in &rows {
         let row_type: String = row
@@ -388,7 +388,7 @@ async fn delete_impl(
             &[&wi.id_list],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(json!({
         "value": true,
@@ -443,7 +443,7 @@ async fn readable_impl(
             &[&target_type.to_string(), &target_bundle.to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let mut pp_bundles: Vec<String> = Vec::new();
     let mut cms_bundles: Vec<String> = Vec::new();
@@ -594,7 +594,7 @@ async fn list_impl(
                 .await
         }
     }
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows.iter().map(row_to_item).collect();
     let count = data.len() as i64;

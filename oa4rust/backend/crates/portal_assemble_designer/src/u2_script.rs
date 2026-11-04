@@ -42,7 +42,7 @@ async fn next_version(
             &[&script_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(row.get::<_, i64>("next"))
 }
 
@@ -74,7 +74,7 @@ pub async fn create(
         &[&id, &name, &category, &content, &portal_id, &creator],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let version = next_version(&tx, &id).await?;
     tx.execute(
         "INSERT INTO x_portal_script_version (id, script_id, version, content, creator, creator_person, create_time) \
@@ -82,7 +82,7 @@ pub async fn create(
         &[&Uuid::new_v4().to_string(), &id, &version.to_string(), &content, &creator],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -120,7 +120,7 @@ pub async fn update(
             &[&id, &name, &content, &category, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if n == 0 {
         return Ok(Json(ActionResult::error("script not found")));
     }
@@ -132,7 +132,7 @@ pub async fn update(
         &[&Uuid::new_v4().to_string(), &id, &version.to_string(), &content_snapshot, &creator],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -154,12 +154,14 @@ pub async fn delete(
     let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
-            "UPDATE x_portal_script SET deleted_at = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') \
+            // x_portal_script.deleted_at 是 timestamp（information_schema 现场确认），
+            // 旧的 to_char(...) 是 text → E42804 datatype mismatch。
+            "UPDATE x_portal_script SET deleted_at = NOW() \
              WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if n == 0 {
         return Ok(Json(ActionResult::error("script not found")));
     }

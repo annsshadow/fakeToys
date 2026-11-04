@@ -174,7 +174,7 @@ pub async fn check_credential(
             &[&credential],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let registered: bool = row.get("exists");
     Ok(Json(ActionResult::success(json!({ "value": registered }))))
@@ -227,7 +227,7 @@ pub async fn send_code(
             &[&credential],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if exists.is_none() {
         return Ok(Json(ActionResult::error("用户不存在或不可用")));
@@ -300,7 +300,7 @@ async fn apply_reset(
             &[&credential],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(r) => {
@@ -312,7 +312,7 @@ async fn apply_reset(
                     &[&new_hash, &person_id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
             Ok(Json(ActionResult::success(json!({ "success": true }))))
         }

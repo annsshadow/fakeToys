@@ -176,14 +176,20 @@ pub async fn ai_endpoints_flow() {
     )
     .await;
     // 新语义：config/list/mcp 走 legacy_success，顶层 data 即数组
-    // （出处：ai_assemble_control/src/lib.rs:1028）。
+    // （出处：ai_assemble_control/src/lib.rs:1028）。O20 之前这条旧词路径挂在
+    // ai crate 的空桩上（恒返回空数组），故这些断言改前必红。
     let mcp_items = list["data"].as_array().expect("mcp data array");
-    assert!(
-        mcp_items
-            .iter()
-            .any(|r| r["id"].as_str() == Some(mcp_id.as_str())),
-        "seeded mcp config not returned in list"
+    assert!(!mcp_items.is_empty(), "mcp list must not be empty");
+    let seeded = mcp_items
+        .iter()
+        .find(|r| r["id"].as_str() == Some(mcp_id.as_str()))
+        .expect("seeded mcp config not returned in list");
+    assert_eq!(
+        seeded["name"].as_str(),
+        Some(format!("mcp-{}", mcp_id).as_str())
     );
+    assert_eq!(seeded["url"].as_str(), Some("http://example.test/mcp"));
+    assert_eq!(seeded["enabled"].as_bool(), Some(true));
     info!(mcp_id = %mcp_id, "config_list_mcp_paging returned real row");
 
     let get_mcp = get_ok(
@@ -194,6 +200,15 @@ pub async fn ai_endpoints_flow() {
     )
     .await;
     assert_eq!(get_mcp["data"]["id"].as_str(), Some(mcp_id.as_str()));
+    assert_eq!(
+        get_mcp["data"]["name"].as_str(),
+        Some(format!("mcp-{}", mcp_id).as_str())
+    );
+    assert_eq!(
+        get_mcp["data"]["url"].as_str(),
+        Some("http://example.test/mcp")
+    );
+    assert_eq!(get_mcp["data"]["enabled"].as_bool(), Some(true));
     info!(mcp_id = %mcp_id, "config_get_mcp returned real row");
 
     // Seed an x_ai_index row then delete it (side effect).
@@ -671,6 +686,435 @@ pub async fn console_jpush_express_flow() {
     .await;
     assert!(express["data"]["status"].as_str().is_some());
     info!("organization_assemble_express get_express_status returned real status");
+
+    server_handle.abort();
+    let _ = server_handle.await;
+}
+
+// ── O19 批次 1：auth / organization 列类型错配回归 ─────────────────────────────
+//
+// 这里走真实数据库路径（seed 真行 → HTTP 调用 → 断言响应字段），
+// 不做单元里手工造 Row。三处错配各自对应一个可独立变红的断言：
+//   auth_person.change_password_time（TIMESTAMP，代码按 String 读）
+//   x_org_unit.level / sort（INTEGER，代码按 String 读）
+
+#[tokio::test]
+#[ignore = "requires a running database server"]
+pub async fn auth_switch_user_change_password_time_regression() {
+    let pool = TEST_DB.get().expect("db not initialized").clone();
+    let (_addr, server_handle, token) =
+        crate::integration_tests::helpers::setup_test_server(pool.clone())
+            .await
+            .expect("start server");
+    let client = Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .unwrap();
+    let base = format!("http://{}", _addr);
+    let auth = format!("Bearer {}", token);
+
+    let target_id = uniq("switch-person");
+    let target_unique = uniq("switch-unique");
+    {
+        let c = pool.as_pg().unwrap().get().await.expect("pool");
+        c.execute(
+            "INSERT INTO auth_person \
+             (id, unique_id, name, password_hash, locked, deleted_at, change_password_time) \
+             VALUES ($1, $2, $3, 'seed-hash', false, NULL, '2024-01-01 00:00:00'::timestamp)",
+            &[&target_id, &target_unique, &"Switch Target"],
+        )
+        .await
+        .expect("seed auth_person with change_password_time");
+    }
+
+    let resp = post_ok(
+        &base,
+        &client,
+        &auth,
+        "/api/authentication/switchuser",
+        json!({ "credential": target_unique }),
+    )
+    .await;
+
+    assert_eq!(
+        resp["data"]["person"]["unique"].as_str(),
+        Some(target_unique.as_str()),
+        "switchuser 未返回目标用户"
+    );
+    assert_eq!(
+        resp["data"]["passwordExpired"].as_bool(),
+        Some(false),
+        "change_password_time 非空时 passwordExpired 应为 false"
+    );
+    println!("switchuser 响应体: {}", resp);
+
+    server_handle.abort();
+    let _ = server_handle.await;
+}
+
+#[tokio::test]
+#[ignore = "requires a running database server"]
+pub async fn org_unit_list_level_sort_regression() {
+    let pool = TEST_DB.get().expect("db not initialized").clone();
+    let (_addr, server_handle, token) =
+        crate::integration_tests::helpers::setup_test_server(pool.clone())
+            .await
+            .expect("start server");
+    let client = Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .unwrap();
+    let base = format!("http://{}", _addr);
+    let auth = format!("Bearer {}", token);
+
+    let unit_id = uniq("unit-list");
+    {
+        let c = pool.as_pg().unwrap().get().await.expect("pool");
+        c.execute(
+            "INSERT INTO x_org_unit (id, name, parent_id, level, sort) VALUES ($1, $2, NULL, 1, 7)",
+            &[&unit_id, &"Unit List Root"],
+        )
+        .await
+        .expect("seed x_org_unit with level/sort");
+    }
+
+    let listed = get_ok(
+        &base,
+        &client,
+        &auth,
+        "/api/organization/assemble/control/unit/list/0/next/10",
+    )
+    .await;
+    let rows = listed["data"].as_array().expect("unit list data");
+    let row = rows
+        .iter()
+        .find(|r| r["id"].as_str() == Some(unit_id.as_str()))
+        .unwrap_or_else(|| panic!("unit {} 不在列表响应中", unit_id));
+
+    assert_eq!(
+        row["level"].as_str(),
+        Some("1"),
+        "level 为 INTEGER，响应应按字符串回写"
+    );
+    assert_eq!(
+        row["sort"].as_str(),
+        Some("7"),
+        "sort 为 INTEGER，响应应按字符串回写"
+    );
+    println!("unit/list 响应行: {}", row);
+
+    server_handle.abort();
+    let _ = server_handle.await;
+}
+
+// ── O19 批次 2：processplatform_service_processing + bam 列类型错配回归 ─────────
+
+#[tokio::test]
+#[ignore = "requires a running database server"]
+pub async fn process_timestamp_columns_regression() {
+    let pool = TEST_DB.get().expect("db not initialized").clone();
+    let (_addr, server_handle, token) =
+        crate::integration_tests::helpers::setup_test_server(pool.clone())
+            .await
+            .expect("start server");
+    let client = Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .unwrap();
+    let base = format!("http://{}", _addr);
+    let auth = format!("Bearer {}", token);
+
+    let work_id = uniq("work-ts");
+    let task_id = uniq("task-ts");
+    {
+        let c = pool.as_pg().unwrap().get().await.expect("pool");
+        c.execute(
+            "INSERT INTO x_work (id, title, process, create_time, start_time, end_time) \
+             VALUES ($1, $2, $3, '2024-01-01 00:00:00'::timestamp, \
+                     '2024-01-02 03:04:05'::timestamp, '2024-01-03 06:07:08'::timestamp)",
+            &[&work_id, &"Work TS", &"proc-ts"],
+        )
+        .await
+        .expect("seed x_work timestamp columns");
+        c.execute(
+            "INSERT INTO x_task (id, work, title, activity, activity_token, person, start_time, end_time) \
+             VALUES ($1, $2, $3, $4, $5, $6, \
+                     '2024-01-02 03:04:05'::timestamp, '2024-01-03 06:07:08'::timestamp)",
+            &[
+                &task_id,
+                &work_id,
+                &"Task TS",
+                &"act-ts",
+                &"token-ts",
+                &"it-person",
+            ],
+        )
+        .await
+        .expect("seed x_task timestamp columns");
+    }
+
+    let got = get_ok(
+        &base,
+        &client,
+        &auth,
+        &format!("/api/processplatform/service/processing/get/{}", work_id),
+    )
+    .await;
+    assert_eq!(
+        got["data"]["createTime"].as_str(),
+        Some("2024-01-01 00:00:00"),
+        "get 的 createTime 应来自 x_work.create_time"
+    );
+    assert_eq!(
+        got["data"]["startTime"].as_str(),
+        Some("2024-01-02 03:04:05"),
+        "get 的 startTime 应来自 x_work.start_time"
+    );
+    assert_eq!(
+        got["data"]["endTime"].as_str(),
+        Some("2024-01-03 06:07:08"),
+        "get 的 endTime 应来自 x_work.end_time"
+    );
+    assert_eq!(
+        got["data"]["tasks"][0]["startTime"].as_str(),
+        Some("2024-01-02 03:04:05"),
+        "get 的 tasks[0].startTime 应来自 x_task.start_time"
+    );
+    assert_eq!(
+        got["data"]["tasks"][0]["endTime"].as_str(),
+        Some("2024-01-03 06:07:08"),
+        "get 的 tasks[0].endTime 应来自 x_task.end_time"
+    );
+    println!("processing/get 响应体: {}", got);
+
+    let inst = get_ok(
+        &base,
+        &client,
+        &auth,
+        &format!(
+            "/api/processplatform/service/processing/instance/{}",
+            work_id
+        ),
+    )
+    .await;
+    assert_eq!(
+        inst["data"]["createTime"].as_str(),
+        Some("2024-01-01 00:00:00"),
+        "instance 的 createTime 应来自 x_work.create_time"
+    );
+    assert_eq!(
+        inst["data"]["startTime"].as_str(),
+        Some("2024-01-02 03:04:05"),
+        "instance 的 startTime 应来自 x_work.start_time"
+    );
+    assert_eq!(
+        inst["data"]["endTime"].as_str(),
+        Some("2024-01-03 06:07:08"),
+        "instance 的 endTime 应来自 x_work.end_time"
+    );
+    assert_eq!(
+        inst["data"]["tasks"][0]["startTime"].as_str(),
+        Some("2024-01-02 03:04:05"),
+        "instance 的 tasks[0].startTime 应来自 x_task.start_time"
+    );
+    assert_eq!(
+        inst["data"]["tasks"][0]["endTime"].as_str(),
+        Some("2024-01-03 06:07:08"),
+        "instance 的 tasks[0].endTime 应来自 x_task.end_time"
+    );
+    println!("processing/instance 响应体: {}", inst);
+
+    // process_id_complex 的 tasks 走另一条 SQL（裸 start_time/end_time 读取），
+    // 修 get/instance 不会连带修好它，必须单独断言真实时间值。
+    let complex = get_ok(
+        &base,
+        &client,
+        &auth,
+        &format!(
+            "/api/processplatform/service/processing/process/{}/complex",
+            work_id
+        ),
+    )
+    .await;
+    assert_eq!(
+        complex["data"]["tasks"][0]["startTime"].as_str(),
+        Some("2024-01-02 03:04:05"),
+        "complex 的 tasks[0].startTime 应来自 x_task.start_time"
+    );
+    assert_eq!(
+        complex["data"]["tasks"][0]["endTime"].as_str(),
+        Some("2024-01-03 06:07:08"),
+        "complex 的 tasks[0].endTime 应来自 x_task.end_time"
+    );
+    println!("processing/process/{{id}}/complex 响应体: {}", complex);
+
+    server_handle.abort();
+    let _ = server_handle.await;
+}
+
+#[tokio::test]
+#[ignore = "requires a running database server"]
+pub async fn timer_restore_timestamp_columns_regression() {
+    let pool = TEST_DB.get().expect("db not initialized").clone();
+    let job_id = uniq("timer-job");
+    let work_id = uniq("timer-work");
+    {
+        let c = pool.as_pg().unwrap().get().await.expect("pool");
+        c.execute(
+            "INSERT INTO x_work (id, title, process) VALUES ($1, 'Timer Work', 'proc-timer')",
+            &[&work_id],
+        )
+        .await
+        .expect("seed x_work for x_timer_job FK");
+        c.execute(
+            "INSERT INTO x_timer_job (id, work_id, task_id, fire_at, cron, created_at, kind) \
+             VALUES ($1, $2, NULL, '2024-01-02 03:04:05'::timestamp, NULL, \
+                     '2024-01-01 00:00:00'::timestamp, 'expire')",
+            &[&job_id, &work_id],
+        )
+        .await
+        .expect("seed x_timer_job timestamp columns");
+    }
+
+    let registry = processplatform_service_processing::timer::TimerRegistry::new();
+    registry
+        .restore(pool.as_pg().unwrap())
+        .await
+        .expect("restore 应读回 x_timer_job 真行");
+    let jobs = registry.jobs.read().await;
+    let job = jobs
+        .get(&job_id)
+        .unwrap_or_else(|| panic!("timer {} 未被 restore 读回", job_id));
+    assert_eq!(
+        job.fire_at.to_string(),
+        "2024-01-02 03:04:05",
+        "fire_at 应保持真实时间值"
+    );
+    assert_eq!(
+        job.created_at.to_string(),
+        "2024-01-01 00:00:00",
+        "created_at 应保持真实时间值"
+    );
+    println!(
+        "timer restore 读回: fire_at={} created_at={}",
+        job.fire_at, job.created_at
+    );
+}
+
+#[tokio::test]
+#[ignore = "requires a running database server"]
+pub async fn bam_config_enabled_column_regression() {
+    let pool = TEST_DB.get().expect("db not initialized").clone();
+    let (_addr, server_handle, token) =
+        crate::integration_tests::helpers::setup_test_server(pool.clone())
+            .await
+            .expect("start server");
+    let client = Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .unwrap();
+    let base = format!("http://{}", _addr);
+    let auth = format!("Bearer {}", token);
+
+    let bam_id = uniq("bam");
+    {
+        let c = pool.as_pg().unwrap().get().await.expect("pool");
+        c.execute(
+            "INSERT INTO x_bam_config (id, xid, xname, xdefinition, xenabled) \
+             VALUES ($1, $1, 'Seeded BAM', '{}', 'true')",
+            &[&bam_id],
+        )
+        .await
+        .expect("seed x_bam_config xenabled varchar");
+    }
+
+    let got = get_ok(
+        &base,
+        &client,
+        &auth,
+        &format!("/api/processplatform/assemble/bam/get/{}", bam_id),
+    )
+    .await;
+    assert_eq!(
+        got["data"]["enabled"].as_bool(),
+        Some(true),
+        "xenabled 为 VARCHAR 'true'，enabled 应为 true"
+    );
+    println!("bam/get 响应体: {}", got);
+
+    let created = post_ok(
+        &base,
+        &client,
+        &auth,
+        "/api/processplatform/assemble/bam/create",
+        json!({ "name": "Created BAM", "definition": "{}" }),
+    )
+    .await;
+    let created_id = created["data"]["id"].as_str().expect("create id");
+    assert_eq!(
+        created["data"]["created"].as_bool(),
+        Some(true),
+        "create 应写入成功（id 非空且 xenabled 为 VARCHAR）"
+    );
+    let readback = get_ok(
+        &base,
+        &client,
+        &auth,
+        &format!("/api/processplatform/assemble/bam/get/{}", created_id),
+    )
+    .await;
+    assert_eq!(
+        readback["data"]["enabled"].as_bool(),
+        Some(true),
+        "create 后回读 enabled 应为 true"
+    );
+    println!("bam/create 响应体: {}", created);
+
+    server_handle.abort();
+    let _ = server_handle.await;
+}
+
+#[tokio::test]
+#[ignore = "requires a running database server"]
+pub async fn component_order_number_text_column_regression() {
+    let pool = TEST_DB.get().expect("db not initialized").clone();
+    let (_addr, server_handle, token) =
+        crate::integration_tests::helpers::setup_test_server(pool.clone())
+            .await
+            .expect("start server");
+    let client = Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .unwrap();
+    let base = format!("http://{}", _addr);
+    let auth = format!("Bearer {}", token);
+
+    // x_component.order_number 是 TEXT（真实数据里存数字字符串）。
+    // 旧实现用 try_get(i32/i64) 静默失败 → 响应里根本没有 orderNumber。
+    // 断言必须是具体数值 7，字段缺失或为 null 都算没修。
+    let comp_id = uniq("component");
+    {
+        let c = pool.as_pg().unwrap().get().await.expect("pool");
+        c.execute(
+            "INSERT INTO x_component (id, name, order_number) VALUES ($1, $2, '7')",
+            &[&comp_id, &"Seeded Component"],
+        )
+        .await
+        .expect("seed x_component order_number text");
+    }
+
+    let got = get_ok(&base, &client, &auth, "/api/component/list/all").await;
+    let rows = got["data"].as_array().expect("component data 应为数组");
+    let row = rows
+        .iter()
+        .find(|r| r["id"].as_str() == Some(comp_id.as_str()))
+        .unwrap_or_else(|| panic!("seed 的 component {} 未出现在响应中", comp_id));
+    assert_eq!(
+        row["orderNumber"].as_i64(),
+        Some(7),
+        "order_number 为 TEXT '7'，orderNumber 必须是 7（缺失/null=静默丢字段）"
+    );
+    println!("component/list/all 响应行: {}", row);
 
     server_handle.abort();
     let _ = server_handle.await;

@@ -96,7 +96,7 @@ pub async fn room_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -160,7 +160,7 @@ pub async fn building_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -215,7 +215,7 @@ pub async fn openmeeting_list_room(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -293,7 +293,7 @@ pub async fn create_meeting(
             &[&id, &title, &content, &room_id, &start_time, &end_time, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -331,11 +331,11 @@ pub async fn get_meeting(
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
-            "SELECT id, title, content, room_id, start_time, end_time, creator, create_time FROM x_meeting WHERE id = $1",
+            "SELECT id, title, content, room_id, start_time::text AS start_time, end_time::text AS end_time, creator, create_time::text AS create_time FROM x_meeting WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -390,7 +390,7 @@ pub async fn list_meetings(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -471,7 +471,7 @@ pub async fn add_participant(
             &[&id, &meeting_id, &invitee],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -505,11 +505,11 @@ pub async fn list_participants(
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
-            "SELECT id, meeting_id, invitee, status, create_time FROM x_meeting_invite WHERE meeting_id = $1 ORDER BY create_time",
+            "SELECT id, meeting_id, invitee, status, create_time::text AS create_time FROM x_meeting_invite WHERE meeting_id = $1 ORDER BY create_time",
             &[&meeting_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -569,7 +569,7 @@ pub async fn list_schedule(
             &[&(days as f64)],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()

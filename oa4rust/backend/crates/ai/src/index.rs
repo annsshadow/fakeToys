@@ -19,7 +19,7 @@ pub async fn index_cms_doc(
     let row = client
         .query_opt("SELECT xid FROM x_cms_document WHERE xid = $1", &[&doc_id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if row.is_none() {
         return Ok(Json(ActionResult::error("document not found")));
@@ -43,7 +43,7 @@ pub async fn index_cms_doc_with_app(
             &[&app_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let doc_ids: Vec<String> = rows
         .iter()
@@ -81,7 +81,7 @@ pub async fn index_delete(
     let result = client
         .execute("DELETE FROM x_ai_index WHERE id = $1", &[&flag])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([

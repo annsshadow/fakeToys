@@ -89,40 +89,6 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_config_list_mcp_paging_route_exists() {
-        let pool = build_test_pool();
-        let app = crate::ai_router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/ai/config/list/mcp/paging/1/size/10")
-                    .method(axum::http::Method::GET)
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND);
-    }
-
-    #[tokio::test]
-    async fn test_config_get_mcp_route_exists() {
-        let pool = build_test_pool();
-        let app = crate::ai_router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/ai/config/get/mcp/test-mcp")
-                    .method(axum::http::Method::GET)
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND);
-    }
-
-    #[tokio::test]
     async fn test_chat_list_paging_route_exists() {
         let pool = build_test_pool();
         let app = crate::ai_router(pool);

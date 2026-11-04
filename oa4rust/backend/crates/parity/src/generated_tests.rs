@@ -15,7 +15,7 @@
 use axum::http::StatusCode;
 use tower::util::ServiceExt;
 
-    // ── x_ai_assemble_control → ai_assemble_control (49 routes) ──
+    // ── x_ai_assemble_control → ai_assemble_control (51 routes) ──
     #[tokio::test]
     async fn parity__ai_assemble_control__ann_create() {
         let router = oa4rust::ai_assemble_control::router(shared::testing::test_pool());
@@ -256,6 +256,50 @@ use tower::util::ServiceExt;
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on ai_assemble_control: /api/ai/assemble/control/config/update/mcp/{{id}} (POST)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__ai_assemble_control__config_get_mcp_flag_1() {
+        let router = oa4rust::ai_assemble_control::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/ai/config/get/mcp/test-id")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on ai_assemble_control: /api/ai/config/get/mcp/{{flag}} (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__ai_assemble_control__config_list_mcp_paging_page_size_size_1() {
+        let router = oa4rust::ai_assemble_control::router(shared::testing::test_pool());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/ai/config/list/mcp/paging/test-id/size/test-id")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on ai_assemble_control: /api/ai/config/list/mcp/paging/{{page}}/size/{{size}} (GET)"
         );
     }
     #[tokio::test]
@@ -545,7 +589,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__ai_assemble_control__config_get_mcp_flag_1() {
+    async fn parity__ai_assemble_control__config_get_mcp_flag_2() {
         let router = oa4rust::ai_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -611,7 +655,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__ai_assemble_control__config_list_mcp_paging_page_size_size_1() {
+    async fn parity__ai_assemble_control__config_list_mcp_paging_page_size_size_2() {
         let router = oa4rust::ai_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -1095,7 +1139,7 @@ use tower::util::ServiceExt;
         );
     }
 
-    // ── x_ai_core_entity → ai (21 routes) ──
+    // ── x_ai_core_entity → ai (19 routes) ──
     #[tokio::test]
     async fn parity__ai__app_list() {
         let router = oa4rust::ai::router(shared::testing::test_pool());
@@ -1229,28 +1273,6 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__ai__config_get_mcp() {
-        let router = oa4rust::ai::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/ai/config/get/mcp/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on ai: /api/ai/config/get/mcp/{{flag}} (GET)"
-        );
-    }
-    #[tokio::test]
     async fn parity__ai__config_get_model() {
         let router = oa4rust::ai::router(shared::testing::test_pool());
         let response = router
@@ -1292,28 +1314,6 @@ use tower::util::ServiceExt;
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
             "parity: route missing on ai: /api/ai/config/list/enable/model (GET)"
-        );
-    }
-    #[tokio::test]
-    async fn parity__ai__config_list_mcp_paging() {
-        let router = oa4rust::ai::router(shared::testing::test_pool());
-        let response = router
-            .oneshot(
-                axum::http::Request::builder()
-                    .uri("/api/ai/config/list/mcp/paging/test-id/size/test-id")
-                    .method(axum::http::Method::GET)
-                    .body(axum::body::Body::empty())
-                    .expect("build request"),
-            )
-            .await
-            .expect("oneshot dispatch");
-        let (parts, body) = response.into_parts();
-        let bytes = axum::body::to_bytes(body, usize::MAX)
-            .await
-            .expect("read parity body");
-        assert!(
-            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on ai: /api/ai/config/list/mcp/paging/{{page}}/size/{{size}} (GET)"
         );
     }
     #[tokio::test]

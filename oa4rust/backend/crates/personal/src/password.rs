@@ -83,7 +83,7 @@ pub async fn change(
             &[&new_hash, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),

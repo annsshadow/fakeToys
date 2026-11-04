@@ -342,11 +342,11 @@ parity_test!(
 );
 
 parity_test!(
-    crate: ai,
+    crate: ai_assemble_control,
     router_fn: router,
     route: "/api/ai/config/list/mcp/paging/1/size/1",
     method: GET,
-    handler: config_list_mcp_paging,
+    handler: config_list_mcp_paging_page_size_size,
     test_name: parity_behavior__ai__config_list_mcp_paging,
     behavior: "list_returns_array",
     router_args: (shared::testing::test_pool()),
@@ -1184,11 +1184,11 @@ parity_test!(
 );
 
 parity_test!(
-    crate: ai,
+    crate: ai_assemble_control,
     router_fn: router,
     route: "/api/ai/config/get/mcp/test-id",
     method: GET,
-    handler: config_get_mcp,
+    handler: config_get_mcp_flag,
     test_name: parity_behavior__ai__config_get_mcp,
     behavior: "route_exists",
     router_args: (shared::testing::test_pool()),

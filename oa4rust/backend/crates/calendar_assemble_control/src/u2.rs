@@ -95,7 +95,7 @@ async fn person_can_manage_calendar(
             &[&calendar_id.to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(match row {
         Some(r) => {
             let owner: Option<String> = r.get("createor");
@@ -121,7 +121,7 @@ async fn person_can_manage_event(
             &[&event_id.to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(match row {
         Some(r) => {
             let owner: Option<String> = r.get("createor");
@@ -153,7 +153,7 @@ async fn person_can_read_event(
             &[&event_id.to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(match row {
         Some(r) => {
             if r.get::<_, Option<bool>>("cal_public").unwrap_or(false) {
@@ -198,7 +198,7 @@ pub async fn calendar_list_my(
             &[&session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let mut my_calendars = Vec::new();
     let mut unit_calendars = Vec::new();
@@ -233,7 +233,7 @@ pub async fn calendar_list_public(pool: Extension<Pool>) -> ApiResult {
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let items: Vec<Value> = rows.iter().map(calendar_row_to_value).collect();
     let total_items = items.len();
     Ok(Json(ActionResult::legacy_success(
@@ -258,7 +258,7 @@ pub async fn calendar_get(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(r) => {
             // O9：私有日历仅属主/管理员可读（原无校验，矩阵 canary 实证泄露）
@@ -302,7 +302,7 @@ pub async fn event_get(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(r) => Ok(Json(ActionResult::success(event_row_to_value(&r)))),
         None => Ok(Json(ActionResult::error("event not found"))),
@@ -320,7 +320,7 @@ pub async fn setting_list_all(pool: Extension<Pool>) -> ApiResult {
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let items: Vec<Value> = rows
         .iter()
@@ -411,7 +411,7 @@ pub async fn calendar_create(
             ],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(json!({
         "id": id,
@@ -436,7 +436,7 @@ pub async fn calendar_follow_get(
             &[&id, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get("c");
     // W12 收敛：对齐 o2server ActionFollowCalendar——Wo extends WrapOutBoolean（仅 value 键）
     Ok(Json(ActionResult::success(json!({ "value": count > 0 }))))
@@ -456,7 +456,7 @@ pub async fn calendar_follow_cancel(
             &[&id, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     // W12 收敛：对齐 o2server ActionFollowCalendarCancel——WrapOutBoolean（仅 value 键）
     Ok(Json(ActionResult::success(json!({ "value": n > 0 }))))
 }
@@ -511,7 +511,7 @@ pub async fn calendar_list_filter(
             .query(&sql, &[&name, &cal_type, &session.person_unique])
             .await
     }
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let items: Vec<Value> = rows.iter().map(calendar_row_to_value).collect();
     let total_items = items.len();
     Ok(Json(ActionResult::legacy_success(
@@ -540,7 +540,7 @@ pub async fn calendar_manager_list_with_person(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let managers: Vec<Value> = match row {
         Some(r) => vec![json!({
             "calendarId": r.get::<_, Option<String>>("id").unwrap_or_default(),
@@ -575,7 +575,7 @@ pub async fn calendar_delete(
     let n = client
         .execute("DELETE FROM cal_calendar WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if n == 0 {
         return Ok(Json(ActionResult::error("calendar not found")));
     }
@@ -651,7 +651,7 @@ pub async fn event_create(
             ],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(json!({
         "id": id,
@@ -681,7 +681,7 @@ pub async fn event_delete_after(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let (master_id, start_time): (Option<String>, Option<String>) = match anchor {
         Some(r) => (r.get("master_id"), r.get("start_time")),
         None => return Ok(Json(ActionResult::error("event not found"))),
@@ -695,7 +695,7 @@ pub async fn event_delete_after(
             &[&master_id, &start_time],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(json!({ "deleted": n }))))
 }
 
@@ -716,7 +716,7 @@ pub async fn event_delete_all(
     let master_id: Option<String> = client
         .query_opt("SELECT master_id FROM cal_event WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .and_then(|r| r.get("master_id"));
     let n = client
         .execute(
@@ -724,7 +724,7 @@ pub async fn event_delete_all(
             &[&master_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(json!({ "deleted": n }))))
 }
 
@@ -769,7 +769,7 @@ pub async fn event_list_filter(
             .query(&sql, &[&calendar_id, &title, &session.person_unique])
             .await
     }
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let items: Vec<Value> = rows.iter().map(event_row_to_value).collect();
     let total_items = items.len();
     Ok(Json(ActionResult::legacy_success(
@@ -811,7 +811,7 @@ pub async fn event_list_filter_sample(
             .query(&sql, &[&calendar_id, &session.person_unique])
             .await
     }
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let items: Vec<Value> = rows
         .iter()
         .map(|r| {
@@ -856,7 +856,7 @@ pub async fn event_list_filter_sample_manager(
             &[&calendar_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let items: Vec<Value> = rows
         .iter()
         .map(|r| {
@@ -913,7 +913,7 @@ pub async fn event_manage(
             &[&id, &status, &visibility],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if n == 0 {
         return Ok(Json(ActionResult::error("event not found")));
     }
@@ -939,7 +939,7 @@ pub async fn event_rfc(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(r) => {
             let rfc: Option<String> = r.get("rfc_text");
@@ -982,7 +982,7 @@ pub async fn event_delete_single(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if n == 0 {
         return Ok(Json(ActionResult::error("event not found")));
     }
@@ -1010,7 +1010,7 @@ pub async fn event_update_after(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let (master_id, start_time): (Option<String>, Option<String>) = match anchor {
         Some(r) => (r.get("master_id"), r.get("start_time")),
         None => return Ok(Json(ActionResult::error("event not found"))),
@@ -1032,7 +1032,7 @@ pub async fn event_update_after(
             &[&master_id, &start_time, &title, &location],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(json!({ "updated": n }))))
 }
 
@@ -1054,7 +1054,7 @@ pub async fn event_update_all(
     let master_id: Option<String> = client
         .query_opt("SELECT master_id FROM cal_event WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .and_then(|r| r.get("master_id"));
     let title = body
         .get("title")
@@ -1071,7 +1071,7 @@ pub async fn event_update_all(
             &[&master_id, &title, &location],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(json!({ "updated": n }))))
 }
 
@@ -1118,7 +1118,7 @@ pub async fn event_update_single(
             &[&id, &title, &content, &location, &start_time, &end_time],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if n == 0 {
         return Ok(Json(ActionResult::error("event not found")));
     }
@@ -1156,7 +1156,7 @@ pub async fn message_create(
             &[&id, &calendar_id, &title, &msg_body, &person],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(json!({
         "id": id,
         "calendarId": calendar_id,
@@ -1209,7 +1209,7 @@ pub async fn setting_create(
             &[&id, &code, &name, &description, &value, &order_no, &person],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(json!({
         "id": id,
         "code": code,
@@ -1228,7 +1228,7 @@ pub async fn setting_get_by_code(pool: Extension<Pool>, Path(code): Path<String>
             &[&code],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(r) => Ok(Json(ActionResult::success(json!({
             "id": r.get::<_, String>("id"),
@@ -1253,7 +1253,7 @@ pub async fn setting_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiRe
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(r) => Ok(Json(ActionResult::success(json!({
             "id": r.get::<_, String>("id"),

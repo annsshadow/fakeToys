@@ -45,10 +45,15 @@ struct WelinkConfig {
     app_secret: String,
 }
 
-fn welink_config() -> Option<WelinkConfig> {
-    Some(WelinkConfig {
-        app_key: std::env::var("WELINK_APP_KEY").ok()?,
-        app_secret: std::env::var("WELINK_APP_SECRET").ok()?,
+/// O23：缺配置 → 503 并写明缺哪一项（不再返回 Option 后被 `ok_or(Internal)` 吞成 500）。
+fn welink_config() -> Result<WelinkConfig, AppError> {
+    let app_key =
+        std::env::var("WELINK_APP_KEY").map_err(|_| AppError::missing_config("WELINK_APP_KEY"))?;
+    let app_secret = std::env::var("WELINK_APP_SECRET")
+        .map_err(|_| AppError::missing_config("WELINK_APP_SECRET"))?;
+    Ok(WelinkConfig {
+        app_key,
+        app_secret,
     })
 }
 
@@ -68,15 +73,20 @@ async fn welink_access_token(config: &WelinkConfig) -> Result<String, AppError> 
         ])
         .send()
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .json()
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     resp.get("access_token")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
-        .ok_or(AppError::Internal)
+        .ok_or_else(|| {
+            AppError::internal_with_source(
+                concat!(file!(), ":", line!()),
+                "welink token response missing access_token",
+            )
+        })
 }
 
 /// 用 code 换取 WeLink userId
@@ -89,15 +99,20 @@ async fn welink_user_id(config: &WelinkConfig, code: &str) -> Result<String, App
         .header("WeLink-Auth-Key", &access_token)
         .send()
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .json()
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     resp.get("userid")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
-        .ok_or(AppError::Internal)
+        .ok_or_else(|| {
+            AppError::internal_with_source(
+                concat!(file!(), ":", line!()),
+                "welink userid response missing userid",
+            )
+        })
 }
 
 /// 查询用户角色列表
@@ -113,7 +128,7 @@ async fn fetch_role_list(pool: &Pool, person_id: &str) -> Result<Vec<String>, Ap
             &[&person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(rows.iter().map(|r| r.get::<_, String>("name")).collect())
 }
@@ -124,7 +139,7 @@ pub async fn welink_login(
     session_manager: Extension<SessionManager>,
     Path(code): Path<String>,
 ) -> Result<Response, AppError> {
-    let config = welink_config().ok_or(AppError::Internal)?;
+    let config = welink_config()?;
     let user_id = welink_user_id(&config, &code).await?;
     let unique_id = format!("{WELINK_UNIQUE_PREFIX}{user_id}");
 
@@ -136,7 +151,7 @@ pub async fn welink_login(
             &[&unique_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let (person_id, person_unique, person_name, person_mobile, person_email, person_icon) =
         match row {

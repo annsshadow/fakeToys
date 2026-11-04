@@ -131,12 +131,12 @@ async fn login_recent(
         client
             .query(&sql, &[&limit])
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else {
         client
             .query(&sql, &[])
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     };
     if objects {
         let data: Vec<Value> = rows.iter().map(row_to_map).collect();
@@ -198,7 +198,7 @@ pub async fn person_list_pair_identity(
             &[&flags],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let pairs: Vec<Value> = flags
         .iter()
         .map(|flag| {
@@ -257,7 +257,7 @@ pub async fn person_detail_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let Some(pid) = person_rows.first().map(|r| r.get::<_, String>("id")) else {
         return ok_json(Value::Object(serde_json::Map::new()));
     };
@@ -271,7 +271,7 @@ pub async fn person_detail_flag(
                 &[&pid],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
             .iter()
             .map(|r| r.get(0))
             .collect()
@@ -294,7 +294,7 @@ pub async fn person_detail_flag(
                 &[&pid],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
             .iter()
             .map(|r| r.get(0))
             .collect()
@@ -309,7 +309,7 @@ pub async fn person_detail_flag(
                 &[&identity_ids],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
             .iter()
             .map(|r| r.get(0))
             .collect()
@@ -331,7 +331,7 @@ pub async fn person_detail_flag(
                 &[&pid],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
             .iter()
             .map(|r| r.get(0))
             .collect()
@@ -348,7 +348,7 @@ pub async fn person_detail_flag(
                 &[&group_ids],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
             .iter()
             .map(|r| r.get(0))
             .collect()
@@ -363,7 +363,7 @@ pub async fn person_detail_flag(
                 &[&pid],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
             .iter()
             .map(|r| r.get(0))
             .collect()
@@ -484,7 +484,7 @@ async fn person_flag_objects(
     let rows = client
         .query(sql, &[&flags])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
     ok_legacy_list(data.len(), data)
 }
@@ -537,7 +537,7 @@ async fn attr_persons(
     let rows = client
         .query(&sql, &[&name, &attribute])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if objects {
         let data: Vec<Value> = rows.iter().map(row_to_map).collect();
         ok_legacy_list(data.len(), data)
@@ -622,7 +622,7 @@ async fn person_tree_scope(
     let rows = client
         .query(&select_sql, &[&flags])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if objects {
         let data: Vec<Value> = rows.iter().map(row_to_map).collect();
         ok_legacy_list(data.len(), data)
@@ -731,12 +731,12 @@ async fn person_of_units(
         client
             .query(&final_sql, &[&flags, &key])
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else {
         client
             .query(&final_sql, &[&flags])
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     };
     if objects {
         let data: Vec<Value> = rows.iter().map(row_to_map).collect();

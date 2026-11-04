@@ -103,7 +103,7 @@ async fn query_page(
                 &[&flag, &count],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else {
         client
             .query(
@@ -113,7 +113,7 @@ async fn query_page(
                 &[&flag, &count],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     };
 
     let total: i64 = client
@@ -122,7 +122,7 @@ async fn query_page(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get("count");
 
     let mut data: Vec<Value> = rows
@@ -245,7 +245,7 @@ pub async fn create(
             &[&id, &req.name, &description],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
@@ -288,7 +288,7 @@ pub async fn update(
             &[&req.name, &req.description, &req.disable, &flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("group not found")));
@@ -355,7 +355,7 @@ pub async fn delete(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let Some(row) = row else {
         return Ok(Json(ActionResult::error(

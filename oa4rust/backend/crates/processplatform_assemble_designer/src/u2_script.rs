@@ -46,14 +46,14 @@ pub async fn create(
         &[&id, &name, &application, &code, &creator],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.execute(
         "INSERT INTO PP_E_SCRIPTVERSION (xid, xscript, xname, xcode, xversion, \"xcreatorPerson\", \"xcreateTime\", id) \
          VALUES ($1, $2, $3, $4, 1, $5, to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'), $1)",
         &[&Uuid::new_v4().to_string(), &id, &name, &code, &creator],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -86,7 +86,7 @@ pub async fn update(
             &[&id, &name, &code],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if n == 0 {
         return Ok(Json(ActionResult::error("script not found")));
     }
@@ -98,7 +98,7 @@ pub async fn update(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get::<_, i64>("next");
     tx.execute(
         "INSERT INTO PP_E_SCRIPTVERSION (xid, xscript, xname, xcode, xversion, \"xcreatorPerson\", \"xcreateTime\", id) \
@@ -106,7 +106,7 @@ pub async fn update(
         &[&Uuid::new_v4().to_string(), &id, &name_snapshot, &code_snapshot, &version, &creator],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -131,12 +131,14 @@ pub async fn delete(
     let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
-            "UPDATE PP_E_SCRIPT SET deleted_at = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') \
+            // PP_E_SCRIPT.deleted_at 是 timestamp（information_schema 现场确认），
+            // 旧的 to_char(...) 是 text → E42804 datatype mismatch。
+            "UPDATE PP_E_SCRIPT SET deleted_at = NOW() \
              WHERE xid = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if n == 0 {
         return Ok(Json(ActionResult::error("script not found")));
     }

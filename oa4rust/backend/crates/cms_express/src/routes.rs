@@ -34,7 +34,7 @@ pub async fn view_publish(
     let model = cms_view::Entity::find_by_id(&xid)
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match model {
         Some(m) => {
@@ -69,7 +69,7 @@ pub async fn view_unpublish(
     let model = cms_view::Entity::find_by_id(&xid)
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match model {
         Some(m) => {

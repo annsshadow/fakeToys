@@ -64,7 +64,7 @@ pub async fn group_has_role(
     let row = client
         .query_one(SQL, &[&group, &roles])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(AxumJson(ActionResult::success(wrap_bool(
         row.get::<_, bool>(0),
     ))))
@@ -125,7 +125,7 @@ async fn group_tree_scope(
     let rows = client
         .query(&sql, &[&flags])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     finish_group_rows(rows, objects)
 }
 
@@ -175,7 +175,7 @@ pub async fn group_list_person_object(
     let rows = client
         .query(SQL, &[&flags])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
     ok_legacy_list(data.len(), data)
 }
@@ -214,7 +214,7 @@ pub async fn group_list_identity_object(
     let rows = client
         .query(SQL, &[&flags])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
     ok_legacy_list(data.len(), data)
 }
@@ -239,7 +239,7 @@ async fn named_list_response_group(
     let rows = client
         .query(sql, &[&flags])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
     let count = list.len() as i64;
     Ok(AxumJson(ActionResult::legacy_success(
@@ -284,7 +284,7 @@ pub async fn group_list_group_tree(
     let rows = client
         .query(SQL, &[&flags])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     use std::collections::{HashMap, HashSet};
     let mut base: HashMap<String, Value> = HashMap::new();
@@ -332,21 +332,21 @@ pub async fn group_list_group_tree(
         client
             .query(CHILD_COUNT_SQL, &[&all_ids])
             .await
-            .map_err(|_| AppError::Internal)?,
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?,
         "subDirectGroupCount",
     );
     fill_counts(
         client
             .query(PERSON_COUNT_SQL, &[&all_ids])
             .await
-            .map_err(|_| AppError::Internal)?,
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?,
         "subDirectPersonCount",
     );
     fill_counts(
         client
             .query(IDENTITY_COUNT_SQL, &[&all_ids])
             .await
-            .map_err(|_| AppError::Internal)?,
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?,
         "subDirectIdentityCount",
     );
 

@@ -8,6 +8,28 @@ use shared::{error::AppError, response::ActionResult};
 
 pub mod routes;
 
+/// O23：`config_value` 是 TEXT，不能直接 `.get::<bool>()`（类型错配会 500）。
+/// 缺行是「没初始化配置」→ 503；有行但值不是 true/false 是真数据缺陷 → 500。
+async fn read_sync_enabled(client: &deadpool_postgres::Object) -> Result<bool, AppError> {
+    let row = client
+        .query_opt(
+            "SELECT config_value FROM x_org_config WHERE config_key = 'sync_enabled'",
+            &[],
+        )
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    let Some(row) = row else {
+        return Err(AppError::missing_config("x_org_config.sync_enabled"));
+    };
+    let raw: String = row.get("config_value");
+    raw.parse::<bool>().map_err(|e| {
+        AppError::internal_with_source(
+            concat!(file!(), ":", line!()),
+            format!("x_org_config.sync_enabled={raw:?}: {e}"),
+        )
+    })
+}
+
 /// 获取组织服务状态
 /// 检查组织服务是否正常运行
 pub async fn get_status(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -18,21 +40,14 @@ pub async fn get_status(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get("count");
     let group_count: i64 = client
         .query_one("SELECT COUNT(*) FROM x_org_group", &[])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get("count");
-    let enabled: bool = client
-        .query_one(
-            "SELECT config_value FROM x_org_config WHERE config_key = 'sync_enabled'",
-            &[],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?
-        .get("config_value");
+    let enabled = read_sync_enabled(&client).await?;
 
     let data = Value::Object(serde_json::Map::from_iter([
         ("status".to_string(), Value::String("running".to_string())),
@@ -62,7 +77,7 @@ pub async fn sync_organization(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get("count");
 
     let data = Value::Object(serde_json::Map::from_iter([
@@ -82,14 +97,7 @@ pub async fn sync_organization(
 /// 返回组织服务的配置信息
 pub async fn get_config(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
-    let enabled: bool = client
-        .query_one(
-            "SELECT config_value FROM x_org_config WHERE config_key = 'sync_enabled'",
-            &[],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?
-        .get("config_value");
+    let enabled = read_sync_enabled(&client).await?;
 
     let data = Value::Object(serde_json::Map::from_iter([
         ("enabled".to_string(), Value::Bool(enabled)),

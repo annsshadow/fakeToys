@@ -294,10 +294,10 @@ async fn qywx_user_id(config: &OAuthConfig, code: &str) -> Result<String, AppErr
         ])
         .send()
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .json()
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let errcode = token_resp
         .get("errcode")
@@ -316,10 +316,10 @@ async fn qywx_user_id(config: &OAuthConfig, code: &str) -> Result<String, AppErr
         .query(&[("access_token", access_token), ("code", code)])
         .send()
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .json()
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let errcode = user_resp
         .get("errcode")
@@ -346,10 +346,10 @@ async fn dingding_user_id(config: &OAuthConfig, code: &str) -> Result<String, Ap
         ])
         .send()
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .json()
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let errcode = token_resp
         .get("errcode")
@@ -371,10 +371,10 @@ async fn dingding_user_id(config: &OAuthConfig, code: &str) -> Result<String, Ap
         .json(&json!({ "code": code }))
         .send()
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .json()
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let errcode = user_resp
         .get("errcode")
@@ -444,7 +444,7 @@ async fn login_or_create_user(
             &[&unique_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let (person_id, person_unique, person_name) = match row {
         Some(r) => (
@@ -462,7 +462,7 @@ async fn login_or_create_user(
                     &[&id, &unique_id, &unique_id, &password_hash],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             (id, unique_id.clone(), unique_id)
         }
     };
@@ -510,8 +510,12 @@ pub async fn oauth_list() -> Result<Json<ActionResult<Value>>, AppError> {
 
 fn provider_config(name: &str) -> Result<OAuthConfig, AppError> {
     match name {
-        QYWX_NAME => qywx_config().ok_or(AppError::Internal),
-        DINGDING_NAME => dingding_config().ok_or(AppError::Internal),
+        // O23：第三方登录未配置是部署问题 → 503 且写明缺哪组配置。
+        QYWX_NAME => {
+            qywx_config().ok_or_else(|| AppError::missing_config("QYWX_CORP_ID/QYWX_APP_SECRET"))
+        }
+        DINGDING_NAME => dingding_config()
+            .ok_or_else(|| AppError::missing_config("DINGDING_APP_KEY/DINGDING_APP_SECRET")),
         _ => Err(AppError::BadRequest(format!(
             "unknown oauth provider: {name}"
         ))),

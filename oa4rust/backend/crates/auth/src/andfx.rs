@@ -51,8 +51,11 @@ pub async fn andfx_moa_sso(
         .into_response());
     }
 
-    let key = std::env::var("ANDFX_KEY").map_err(|_| AppError::Internal)?;
-    let expected_enter_id = std::env::var("ANDFX_ENTER_ID").map_err(|_| AppError::Internal)?;
+    // O23：外部连接器缺配置是「部署没配好」→ 503，并写明缺哪一项；
+    // 不能与代码缺陷（500）混桶，否则运维会被误导去查代码。
+    let key = std::env::var("ANDFX_KEY").map_err(|_| AppError::missing_config("ANDFX_KEY"))?;
+    let expected_enter_id =
+        std::env::var("ANDFX_ENTER_ID").map_err(|_| AppError::missing_config("ANDFX_ENTER_ID"))?;
 
     if enter_id != expected_enter_id {
         return Ok(
@@ -74,7 +77,7 @@ pub async fn andfx_moa_sso(
             &[&unique_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let (person_unique, person_name, person_mobile, person_email, person_icon) = match row {
         Some(r) => (

@@ -74,7 +74,7 @@ pub async fn list_control_calendars(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let mut calendars = Vec::new();
     for row in rows.iter() {
@@ -139,15 +139,31 @@ pub async fn update_control_config(
         "allowSharing": allow_sharing,
     });
 
+    // `cal_control_config` 只有 `id` 主键，没有 `config_key` 唯一索引；
+    // 旧 SQL 的 `ON CONFLICT (config_key)` → E42P10，且未写 NOT NULL 的 id。
+    // 改为 UPDATE-then-INSERT（`config_key='global'` 单行幂等）；`update_time` 是 text，
+    // 必须 `NOW()::text`（timestamptz 不能隐式赋给 text）。
     let config_key = "global";
-    let result = client
+    let config_text = config_value.to_string();
+    let updated = client
         .execute(
-            "INSERT INTO cal_control_config (config_key, config_value) VALUES ($1, $2) \
-              ON CONFLICT (config_key) DO UPDATE SET config_value = EXCLUDED.config_value, update_time = NOW()",
-            &[&config_key, &config_value.to_string()],
+            "UPDATE cal_control_config SET config_value = $1, update_time = NOW()::text WHERE config_key = $2",
+            &[&config_text, &config_key],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    let result = if updated > 0 {
+        updated
+    } else {
+        client
+            .execute(
+                "INSERT INTO cal_control_config (id, config_key, config_value, create_time, update_time) \
+                 VALUES ($1, $2, $3, NOW()::text, NOW()::text)",
+                &[&uuid::Uuid::new_v4().to_string(), &config_key, &config_text],
+            )
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+    };
 
     tracing::info!(
         "Updated calendar assemble control config: {:?}",
@@ -197,7 +213,7 @@ pub async fn get_calendar_detail(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let events: Vec<Value> = event_rows
         .iter()

@@ -142,7 +142,7 @@ pub async fn captcha_login(
             &[&req.credential],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let Some(row) = row else {
         // 统一错误文案，防止凭据枚举
@@ -275,7 +275,7 @@ pub async fn bind_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let items: Vec<Value> = rows
         .iter()

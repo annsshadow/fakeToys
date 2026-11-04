@@ -39,7 +39,7 @@ pub async fn organization_assemble_control_role_list_flag_next_count(
                 &[&count],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else {
         client
             .query(
@@ -47,7 +47,7 @@ pub async fn organization_assemble_control_role_list_flag_next_count(
                 &[&flag, &count],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     };
 
     let data: Vec<Value> = rows
@@ -96,7 +96,7 @@ pub async fn organization_assemble_control_role_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -140,7 +140,7 @@ pub async fn organization_assemble_control_unit_list_flag_next_count(
                 &[&count],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else {
         client
             .query(
@@ -148,24 +148,28 @@ pub async fn organization_assemble_control_unit_list_flag_next_count(
                 &[&flag, &count],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     };
 
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
             let parent_id: Option<String> = row.get("parent_id");
+            // x_org_unit.level / sort 是 INTEGER（同 unit_flag 处理），
+            // 读取后用字符串回写，保持既有响应形状不变。
+            let level: Option<i32> = row.get("level");
+            let sort: Option<i32> = row.get("sort");
             Value::Object(serde_json::Map::from_iter(
                 [
                     ("id".to_string(), Value::String(row.get("id"))),
                     ("name".to_string(), Value::String(row.get("name"))),
                     (
                         "level".to_string(),
-                        Value::String(row.get::<_, Option<String>>("level").unwrap_or_default()),
+                        Value::String(level.map(|v| v.to_string()).unwrap_or_default()),
                     ),
                     (
                         "sort".to_string(),
-                        Value::String(row.get::<_, Option<String>>("sort").unwrap_or_default()),
+                        Value::String(sort.map(|v| v.to_string()).unwrap_or_default()),
                     ),
                     (
                         "creator".to_string(),
@@ -203,7 +207,7 @@ pub async fn organization_assemble_control_unit_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -263,7 +267,7 @@ pub async fn organization_assemble_control_unit_list_flag_sub_nested(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -335,7 +339,7 @@ pub async fn organization_assemble_control_unit_list_flag_sup_nested(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -412,7 +416,7 @@ pub async fn organization_assemble_control_person_list_like(
             &[&like_pattern],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -465,7 +469,7 @@ pub async fn export_export_all(
     client
         .execute("INSERT INTO x_org_export (id, type, status, create_time) VALUES ($1, 'all', 'pending', NOW())", &[&export_id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let row = client
         .query_opt(
@@ -473,7 +477,7 @@ pub async fn export_export_all(
             &[&export_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -513,7 +517,7 @@ pub async fn export_result_flag_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -555,7 +559,7 @@ pub async fn export_zhengwudingding_person(
     client
         .execute("INSERT INTO x_org_export (id, type, status, create_time) VALUES ($1, 'zhengwudingding', 'pending', NOW())", &[&export_id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let row = client
         .query_opt(
@@ -563,7 +567,7 @@ pub async fn export_zhengwudingding_person(
             &[&export_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -599,7 +603,7 @@ pub async fn group_list_like_mockputtopost(
     let rows = client
         .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time DESC", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -643,7 +647,7 @@ pub async fn group_list_like_pinyin(
     let rows = client
         .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time DESC", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -687,7 +691,7 @@ pub async fn group_list_like_pinyin_mockputtopost(
     let rows = client
         .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time DESC", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -732,7 +736,7 @@ pub async fn group_list_pinyininitial(
     let rows = client
         .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time DESC", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -776,7 +780,7 @@ pub async fn group_list_pinyininitial_mockputtopost(
     let rows = client
         .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time DESC", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -874,7 +878,7 @@ pub async fn group_list_flag_sub_nested(
             &[&flag, &flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -938,7 +942,7 @@ pub async fn group_list_flag_sup_direct(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -995,7 +999,7 @@ pub async fn group_list_flag_sup_nested(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1053,7 +1057,7 @@ pub async fn group_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1101,7 +1105,7 @@ pub async fn group_flag_add_member(
             &[&flag, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("saved".to_string(), Value::Bool(result > 0))]),
@@ -1125,7 +1129,7 @@ pub async fn group_flag_add_member_mockputtopost(
             &[&flag, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("saved".to_string(), Value::Bool(result > 0))]),
@@ -1149,7 +1153,7 @@ pub async fn group_flag_delete_member(
             &[&flag, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(result > 0))]),
@@ -1173,7 +1177,7 @@ pub async fn group_flag_delete_member_mockputtopost(
             &[&flag, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(result > 0))]),
@@ -1196,7 +1200,7 @@ pub async fn group_flag_mockdeletetoget(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if let Some(row) = row {
         client
@@ -1205,7 +1209,7 @@ pub async fn group_flag_mockdeletetoget(
                 &[&flag],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
         let result = Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
@@ -1237,7 +1241,7 @@ pub async fn group_flag_mockputtopost(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1279,7 +1283,7 @@ pub async fn identity_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1306,7 +1310,7 @@ pub async fn identity_list_like_mockputtopost(
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time DESC", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1353,7 +1357,7 @@ pub async fn identity_list_like_pinyin(
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time DESC", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1400,7 +1404,7 @@ pub async fn identity_list_like_pinyin_mockputtopost(
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time DESC", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1448,7 +1452,7 @@ pub async fn identity_list_pinyininitial(
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time DESC", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1495,7 +1499,7 @@ pub async fn identity_list_pinyininitial_mockputtopost(
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time DESC", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1547,7 +1551,7 @@ pub async fn identity_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1596,7 +1600,7 @@ pub async fn identity_flag_mockdeletetoget(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if let Some(row) = row {
         client
@@ -1605,7 +1609,7 @@ pub async fn identity_flag_mockdeletetoget(
                 &[&flag],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
         let result = Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
@@ -1643,7 +1647,7 @@ pub async fn identity_flag_mockputtopost(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1685,7 +1689,7 @@ pub async fn inputperson_template(
     let rows = client
         .query("SELECT id, person_id, status, message, create_time::text FROM x_org_import_result ORDER BY create_time DESC", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1731,7 +1735,7 @@ pub async fn inputperson_wipe(
     let rows = client
         .query("SELECT id, person_id, status, message, create_time::text FROM x_org_import_result ORDER BY create_time DESC", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1778,7 +1782,7 @@ pub async fn permissionsetting_list(
     let rows = client
         .query("SELECT id, name, creator, create_time::text FROM x_org_permission_setting ORDER BY create_time DESC", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1821,7 +1825,7 @@ pub async fn permissionsetting_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1866,13 +1870,13 @@ pub async fn permissionsetting_flag_mockdeletetoget(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if let Some(row) = row {
         client
             .execute("UPDATE x_org_permission_setting SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&flag])
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
         let result = Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
@@ -1903,7 +1907,7 @@ pub async fn permissionsetting_flag_mockputtopost(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1945,7 +1949,7 @@ pub async fn personattribute_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1994,13 +1998,13 @@ pub async fn personattribute_flag_mockdeletetoget(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if let Some(row) = row {
         client
             .execute("UPDATE x_org_person_attribute SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&flag])
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
         let result = Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
@@ -2038,7 +2042,7 @@ pub async fn personattribute_flag_mockputtopost(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2080,7 +2084,7 @@ pub async fn personcard_listgrouptypes(
     let rows = client
         .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time DESC", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2124,7 +2128,7 @@ pub async fn personcard_listpaging_page_page_size_size_mockputtopost(
     let rows = client
         .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2176,7 +2180,7 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size_mockputtopost(
     let rows = client
         .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2225,7 +2229,7 @@ pub async fn personcard_mylist(
     let rows = client
         .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time DESC", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2270,7 +2274,7 @@ pub async fn personcard_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2320,7 +2324,7 @@ pub async fn personcard_flag_mockdeletetoget(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if let Some(row) = row {
         client
@@ -2329,7 +2333,7 @@ pub async fn personcard_flag_mockdeletetoget(
                 &[&flag],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
         let result = Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
@@ -2358,7 +2362,7 @@ pub async fn role_list_like_mockputtopost(
     let rows = client
         .query("SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time DESC", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2401,7 +2405,7 @@ pub async fn role_list_like_pinyin(
     let rows = client
         .query("SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time DESC", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2444,7 +2448,7 @@ pub async fn role_list_like_pinyin_mockputtopost(
     let rows = client
         .query("SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time DESC", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2488,7 +2492,7 @@ pub async fn role_list_pinyininitial(
     let rows = client
         .query("SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time DESC", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2531,7 +2535,7 @@ pub async fn role_list_pinyininitial_mockputtopost(
     let rows = client
         .query("SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time DESC", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2582,7 +2586,7 @@ pub async fn role_flag_mockdeletetoget(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if let Some(row) = row {
         client
@@ -2591,7 +2595,7 @@ pub async fn role_flag_mockdeletetoget(
                 &[&flag],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
         let result = Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
@@ -2625,7 +2629,7 @@ pub async fn role_flag_mockputtopost(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2667,7 +2671,7 @@ pub async fn unitattribute_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2716,13 +2720,13 @@ pub async fn unitattribute_flag_mockdeletetoget(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if let Some(row) = row {
         client
             .execute("UPDATE x_org_unit_attribute SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&flag])
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
         let result = Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
@@ -2760,7 +2764,7 @@ pub async fn unitattribute_flag_mockputtopost(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2802,7 +2806,7 @@ pub async fn unitduty_distinct_name(
     let rows = client
         .query("SELECT DISTINCT name FROM x_org_duty ORDER BY name", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2838,7 +2842,7 @@ pub async fn unitduty_flag_mockputtopost(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("saved".to_string(), Value::Bool(result > 0))]),
@@ -2858,7 +2862,7 @@ pub async fn unitduty_flag_mockdeletetoget(
     let result = client
         .execute("DELETE FROM x_org_duty WHERE id = $1", &[&flag])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(result > 0))]),
@@ -2878,7 +2882,7 @@ pub async fn unitduty_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2920,7 +2924,7 @@ pub async fn unitduty_update_member(
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty ORDER BY create_time DESC", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3083,7 +3087,7 @@ pub async fn unitduty_list_unit_unitFlag(
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE unit_id = $1 ORDER BY create_time DESC LIMIT 100", &[&unit_flag])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3133,7 +3137,7 @@ pub async fn unitduty_list_name_name(
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE name ILIKE $1 ORDER BY create_time DESC", &[&pattern])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3184,7 +3188,7 @@ pub async fn unitduty_list_like(
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE name ILIKE $1 ORDER BY create_time DESC", &[&pattern])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3233,7 +3237,7 @@ pub async fn unitduty_list_identity_identityFlag(
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE identity_id = $1 ORDER BY create_time DESC LIMIT 100", &[&identity_flag])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3286,7 +3290,7 @@ pub async fn unitduty_distinct_name_like_key(
             &[&pattern],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3430,7 +3434,7 @@ pub async fn unitattribute_list_unit_flag(
     let rows = client
         .query("SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute WHERE unit_id = $1 ORDER BY create_time DESC LIMIT 100", &[&unit_flag])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3532,7 +3536,7 @@ pub async fn role_list_person_personFlag(
     let rows = client
         .query("SELECT id, name, description, creator, create_time::text FROM x_org_role WHERE creator = $1 ORDER BY create_time DESC", &[&person_flag])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3579,7 +3583,7 @@ pub async fn role_list_like(
     let rows = client
         .query("SELECT id, name, description, creator, create_time::text FROM x_org_role WHERE name ILIKE $1 ORDER BY create_time DESC", &[&pattern])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3624,7 +3628,7 @@ pub async fn role_list_group_groupFlag(
     let rows = client
         .query("SELECT r.id, r.name, r.description, r.creator, r.create_time::text FROM x_org_role r JOIN x_org_group_role gr ON gr.role_id = r.id WHERE gr.group_id = $1 AND r.deleted_at IS NULL ORDER BY r.create_time DESC", &[&group_flag])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3677,7 +3681,7 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size(
     let rows = client
         .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3729,7 +3733,7 @@ pub async fn personcard_listpaging_page_page_size_size(
     let rows = client
         .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3780,7 +3784,7 @@ pub async fn personcard_listVCf_idList(
     let rows = client
         .query("SELECT id, name, mobile, email, unit_id FROM x_org_person WHERE id = ANY($1) AND deleted_at IS NULL", &[&ids])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3823,7 +3827,7 @@ pub async fn personcard_listPersonalVCf_idList(
     let rows = client
         .query("SELECT id, name, mobile, email, unit_id FROM x_org_person WHERE id = ANY($1) AND deleted_at IS NULL", &[&ids])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3874,7 +3878,7 @@ pub async fn personcard_createQR_cardId(
             &[&qr_code, &card_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let row = client
         .query_opt(
@@ -3882,7 +3886,7 @@ pub async fn personcard_createQR_cardId(
             &[&card_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -3933,7 +3937,7 @@ pub async fn personcard_createCode_cardId(
             &[&code, &card_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let row = client
         .query_opt(
@@ -3941,7 +3945,7 @@ pub async fn personcard_createCode_cardId(
             &[&card_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -4099,7 +4103,7 @@ pub async fn personattribute_list_person_personFlag(
     let rows = client
         .query("SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute WHERE person_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC LIMIT 100", &[&person_flag])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -4148,7 +4152,7 @@ pub async fn loginrecord_stream(
     let rows = client
         .query("SELECT id, person_id, login_time, ip, device FROM x_org_login_record WHERE stream = $1 ORDER BY login_time DESC LIMIT 100", &[&stream])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -4196,7 +4200,7 @@ pub async fn inputperson_result_flag_flag(
     let rows = client
         .query("SELECT id, person_id, status, message, create_time::text FROM x_org_import_result WHERE import_id = $1 ORDER BY create_time DESC", &[&flag])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -4250,7 +4254,7 @@ pub async fn identity_flag_order_before_followFlag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let identity_row = match identity_row {
         Some(row) => row,
@@ -4268,7 +4272,7 @@ pub async fn identity_flag_order_before_followFlag(
                 &[&follow_flag],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else {
         None
     };
@@ -4279,7 +4283,7 @@ pub async fn identity_flag_order_before_followFlag(
             &[&unit_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let mut ids: Vec<String> = rows.iter().map(|row| row.get("id")).collect();
 
@@ -4305,14 +4309,16 @@ pub async fn identity_flag_order_before_followFlag(
     // 的错乱/重号身份顺序。
     let tx = client.transaction().await?;
     for (index, id) in ids.iter().enumerate() {
-        let order_num = (index + 1) as i32;
+        // x_org_identity.order_number 实列是 bigint（information_schema 现场确认），
+        // 绑定 i32 会 ToSql WrongType → 500；改用 i64。
+        let order_num = (index + 1) as i64;
         order_result += tx
             .execute(
                 "UPDATE x_org_identity SET order_number = $1 WHERE id = $2",
                 &[&order_num, id],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     }
     tx.commit().await?;
 
@@ -4331,7 +4337,7 @@ pub async fn identity_list_flag_unitduty_name_unitDutyName(
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE id > $1 AND unit_id IN (SELECT id FROM x_org_duty WHERE name = $2) ORDER BY create_time DESC LIMIT 10", &[&flag, &unit_duty_name])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -4494,7 +4500,7 @@ pub async fn identity_list_unitduty_name_unitDutyName(
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE unit_id IN (SELECT id FROM x_org_duty WHERE name = $1) ORDER BY create_time DESC", &[&unit_duty_name])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -4543,7 +4549,7 @@ pub async fn identity_list_unit_unitFlag(
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE unit_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC", &[&unit_flag])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -4592,7 +4598,7 @@ pub async fn identity_list_person_personFlag(
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE person_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC", &[&person_flag])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -4643,7 +4649,7 @@ pub async fn identity_list_like(
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE name ILIKE $1 ORDER BY create_time DESC", &[&pattern])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -4800,7 +4806,7 @@ pub async fn group_list_role_roleFlag(
     let rows = client
         .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE id IN (SELECT group_id FROM x_org_group_role WHERE role_id = $1) AND deleted_at IS NULL ORDER BY create_time DESC", &[&role_flag])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -4855,7 +4861,7 @@ pub async fn group_list_person_personFlag_sup_nested(
         // 同时避开「cast 后直连排序词」的守卫禁例；定宽格式字典序=时间序。
         .query("WITH RECURSIVE sup AS (SELECT id, name, unit_id, parent_id FROM x_org_unit WHERE id IN (SELECT unit_id FROM x_org_group WHERE id IN (SELECT group_id FROM x_org_group_member WHERE person_id = $1) AND deleted_at IS NULL) AND deleted_at IS NULL UNION ALL SELECT u.id, u.name, u.unit_id, u.parent_id FROM x_org_unit u JOIN sup s ON u.id = s.parent_id WHERE u.deleted_at IS NULL) SELECT DISTINCT g.id, g.name, g.unit_id, g.type, g.creator, g.create_time::text AS create_time FROM x_org_group g JOIN sup s ON g.unit_id = s.id WHERE g.deleted_at IS NULL ORDER BY create_time DESC", &[&person_flag])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -4910,7 +4916,7 @@ pub async fn group_list_person_personFlag_sup_direct(
     let rows = client
         .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE unit_id IN (SELECT unit_id FROM x_org_group WHERE id IN (SELECT group_id FROM x_org_group_member WHERE person_id = $1) AND deleted_at IS NULL) AND deleted_at IS NULL ORDER BY create_time DESC", &[&person_flag])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -4964,7 +4970,7 @@ pub async fn group_list_like(
     let rows = client
         .query("SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE name ILIKE $1 ORDER BY create_time DESC", &[&pattern])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()

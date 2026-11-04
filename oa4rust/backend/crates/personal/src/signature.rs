@@ -84,7 +84,7 @@ pub async fn upload(
             &[&signature_id, &name, &person_unique, &encoded],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let info = SignatureInfo {
         id: signature_id,
@@ -117,7 +117,7 @@ pub async fn list(
             &[&person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let signatures: Vec<Value> = rows
         .iter()
@@ -161,7 +161,7 @@ pub async fn delete(
             &[&id, &person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if rows_affected == 0 {
         return Ok(Json(ActionResult::error("签名不存在或无权删除")));
@@ -194,7 +194,7 @@ pub async fn manager_list(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let signatures: Vec<Value> = rows
         .iter()

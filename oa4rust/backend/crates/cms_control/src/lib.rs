@@ -26,7 +26,7 @@ pub async fn get_control_config(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data = Value::Object(serde_json::Map::from_iter([
         (
@@ -63,7 +63,7 @@ pub async fn list_control_sections(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let sections: Vec<Value> = rows
         .iter()

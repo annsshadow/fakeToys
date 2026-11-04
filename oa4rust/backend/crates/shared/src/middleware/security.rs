@@ -15,7 +15,7 @@ use tracing::{info, warn};
 
 use super::constants::*;
 use crate::config::AuthConfig;
-use crate::error::AppError;
+use crate::error::{AppError, RequestContext, REQUEST_CONTEXT};
 use crate::rate_limit::RateLimiter;
 use crate::session::SessionManager;
 
@@ -302,8 +302,16 @@ pub async fn trace_middleware(request: Request<Body>, next: Next) -> Response {
         .and_then(sanitize_request_id)
         .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
 
+    // O23：把请求上下文放进 task-local，供 `IntoResponse` 在 5xx 日志里带上
+    // method/path/trace id（`IntoResponse` 拿不到原请求）。
+    let request_ctx = RequestContext {
+        method: method.to_string(),
+        path: uri.path().to_string(),
+        trace_id: Some(request_id.clone()),
+    };
+
     let started = std::time::Instant::now();
-    let mut response = next.run(request).await;
+    let mut response = REQUEST_CONTEXT.scope(request_ctx, next.run(request)).await;
     let latency_ms = started.elapsed().as_millis() as u64;
     let status = response.status().as_u16();
 

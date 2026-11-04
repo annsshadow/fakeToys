@@ -25,7 +25,7 @@ pub async fn state_summary(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let total: i64 = row.get("total");
     let running: i64 = row.get("running");
@@ -69,7 +69,7 @@ pub async fn state_running(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let applications: Vec<Value> = rows
         .iter()
@@ -133,7 +133,7 @@ pub async fn state_organization(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let organizations: Vec<Value> = rows
         .iter()

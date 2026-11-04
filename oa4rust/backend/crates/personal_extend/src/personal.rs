@@ -112,7 +112,7 @@ pub async fn update_info(
             &[&name, &mobile, &email, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let updated = PersonInfo {
         id: person_id,
@@ -205,7 +205,7 @@ pub async fn save_signature(
             &[&session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if let Some(row) = existing {
         let eid: String = row.get("id");
@@ -215,7 +215,7 @@ pub async fn save_signature(
                 &[&signature, &mime, &eid],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         Ok(Json(ActionResult::success(serde_json::Value::Object(
             serde_json::Map::from_iter([
                 ("id".to_string(), serde_json::Value::String(eid)),
@@ -231,7 +231,7 @@ pub async fn save_signature(
                 &[&id, &session.person_unique, &signature, &mime, &session.person_unique],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         Ok(Json(ActionResult::success(serde_json::Value::Object(
             serde_json::Map::from_iter([
                 ("id".to_string(), serde_json::Value::String(id)),
@@ -262,7 +262,7 @@ pub async fn face_list(
             &[&session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<serde_json::Value> = rows
         .iter()

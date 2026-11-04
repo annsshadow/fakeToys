@@ -209,7 +209,7 @@ pub async fn update_control_config(
             ],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -290,7 +290,7 @@ pub async fn list_files(
             &[&folder_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -356,7 +356,7 @@ pub async fn get_file(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -438,7 +438,7 @@ pub async fn upload_file(
             &[&id, &name, &path, &size, &creator, &folder_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
@@ -492,7 +492,7 @@ pub async fn create_file(
             &[&id, &name, &path, &size, &creator, &folder_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
@@ -517,7 +517,7 @@ pub async fn delete_file(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("file not found")));
     };
@@ -530,7 +530,7 @@ pub async fn delete_file(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("file not found")));
@@ -582,7 +582,7 @@ pub async fn create_file_entity(
             &[&id, &name, &path, &size, &creator, &folder_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -611,7 +611,7 @@ pub async fn update_file_entity(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("file not found")));
@@ -642,7 +642,7 @@ pub async fn update_file_entity(
                 &[&id, &name, &path, &size],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else if has_name && has_path {
         client
             .query_opt(
@@ -650,7 +650,7 @@ pub async fn update_file_entity(
                 &[&id, &name, &path],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else if has_name && has_size {
         client
             .query_opt(
@@ -658,7 +658,7 @@ pub async fn update_file_entity(
                 &[&id, &name, &size],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else if has_path && has_size {
         client
             .query_opt(
@@ -666,7 +666,7 @@ pub async fn update_file_entity(
                 &[&id, &path, &size],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else if has_name {
         client
             .query_opt(
@@ -674,7 +674,7 @@ pub async fn update_file_entity(
                 &[&id, &name],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else if has_path {
         client
             .query_opt(
@@ -682,7 +682,7 @@ pub async fn update_file_entity(
                 &[&id, &path],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else if has_size {
         client
             .query_opt(
@@ -690,7 +690,7 @@ pub async fn update_file_entity(
                 &[&id, &size],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else {
         client
             .query_opt(
@@ -698,7 +698,7 @@ pub async fn update_file_entity(
                 &[&id],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     };
 
     match row {
@@ -741,7 +741,7 @@ pub async fn delete_file_entity(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let Some(row) = row else {
         return Ok(Json(ActionResult::error(
@@ -755,7 +755,7 @@ pub async fn delete_file_entity(
     let result = client
         .execute("DELETE FROM x_file WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error(
@@ -784,7 +784,7 @@ pub async fn anonymous_file_id_download(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let content: Option<String> = row.get("content");
@@ -835,7 +835,7 @@ pub async fn attachment_list_editor_owner(
             &[&session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -908,7 +908,7 @@ pub async fn attachment_list_folder_folderId(
             &[&folder_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -981,7 +981,7 @@ pub async fn attachment_list_share_owner(
             &[&session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -1053,7 +1053,7 @@ pub async fn attachment_list_top(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -1313,7 +1313,7 @@ pub async fn attachment_id_binary_base64(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             require_file_read_owner(&pool, &session, &row).await?;
@@ -1346,7 +1346,7 @@ pub async fn attachment_id_download(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             require_file_read_owner(&pool, &session, &row).await?;
@@ -1420,7 +1420,7 @@ pub async fn attachment_id_update(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("attachment not found")));
     };
@@ -1482,7 +1482,7 @@ pub async fn attachment2_exist_file_fileMd5(
             &[&md5],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get("count");
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2030,7 +2030,7 @@ pub async fn attachment2_user_capacity(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_opt("SELECT COALESCE(SUM(length), 0) AS total FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL", &[&session.person_unique])
+        .query_opt("SELECT COALESCE(SUM(length), 0)::bigint AS total FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL", &[&session.person_unique])
         .await?;
     let total: i64 = row.map(|r| r.get("total")).unwrap_or(0);
     Ok(Json(ActionResult::success(Value::Object(
@@ -2128,7 +2128,7 @@ pub async fn attachment2_id_binary_base64(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             require_file_read_owner(&pool, &session, &row).await?;
@@ -2161,7 +2161,7 @@ pub async fn attachment2_id_download(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             require_file_read_owner(&pool, &session, &row).await?;
@@ -2505,7 +2505,7 @@ pub async fn attachment2_id_office_preview_type_type(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("attachment not found")));
@@ -2737,7 +2737,7 @@ pub async fn config_system_config(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -2824,7 +2824,7 @@ pub async fn file_clean_unused_referencetype_cmsdocument_manage(
             &[&String::from("cmsdocument_manage")],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             (
@@ -3518,7 +3518,8 @@ pub async fn file_upload_with_url(
         .to_string();
     // 真拉取远程内容（SSRF 防护见 shared::netguard）。此前这里把 URL 字符串本身
     // base64 当文件内容入库——假实现且污染数据。
-    let fetcher = shared::netguard::fetch_client().map_err(|_| AppError::Internal)?;
+    let fetcher = shared::netguard::fetch_client()
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let (final_url, bytes) = shared::netguard::fetch_limited(&fetcher, &url)
         .await
         .map_err(|e| {
@@ -3551,7 +3552,7 @@ pub async fn file_upload_with_url(
             &[&id, &name, &creator, &folder_id, &String::from("file"), &ext, &size, &mime_type, &content_b64],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -3644,7 +3645,7 @@ pub async fn file_id_binary_base64(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             require_file_read_owner(&pool, &session, &row).await?;
@@ -3677,7 +3678,7 @@ pub async fn file_id_download(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             require_file_read_owner(&pool, &session, &row).await?;
@@ -3766,7 +3767,7 @@ pub async fn folder_list_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -3846,7 +3847,7 @@ pub async fn folder2_batch_download(
             &[&session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let entries: Vec<(String, Vec<u8>)> = rows
         .iter()
         .map(|row| {
@@ -3931,7 +3932,7 @@ pub async fn folder2_id_download(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let folder_name: String = match folder {
         Some(row) => row.get("name"),
         None => return Err(AppError::NotFound),
@@ -3942,7 +3943,7 @@ pub async fn folder2_id_download(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let entries: Vec<(String, Vec<u8>)> = rows
         .iter()
         .map(|row| {
@@ -3969,7 +3970,7 @@ pub async fn recycle_empty(
             &[&session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let _ = result;
     // W12 收敛：对齐 o2server ActionEmpty——Wo extends WrapBoolean，成功路径恒回 value=true
     // （即便回收站为空，o2server 也先 setValue(true) 再短路返回）
@@ -3987,12 +3988,12 @@ pub async fn recycle_list(
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
-            "SELECT id, name, person, reference_type, extension, length, mime_type, deleted_at \
+            "SELECT id, name, person, reference_type, extension, length, mime_type, deleted_at::text AS deleted_at \
              FROM FILE_FILE WHERE deleted_at IS NOT NULL AND person = $1 ORDER BY deleted_at DESC",
             &[&session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -4056,7 +4057,7 @@ pub async fn recycle_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_opt("SELECT id, name, person, deleted_at FROM FILE_FILE WHERE id = $1 AND deleted_at IS NOT NULL", &[&id])
+        .query_opt("SELECT id, name, person, deleted_at::text AS deleted_at FROM FILE_FILE WHERE id = $1 AND deleted_at IS NOT NULL", &[&id])
         .await?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
@@ -4094,7 +4095,7 @@ pub async fn recycle_id_delete(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("file not in recycle bin")));
     };
@@ -4106,7 +4107,7 @@ pub async fn recycle_id_delete(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if result == 0 {
         return Ok(Json(ActionResult::error("file not in recycle bin")));
     }
@@ -4132,7 +4133,7 @@ pub async fn recycle_id_resume(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("file not in recycle bin")));
     };
@@ -4144,7 +4145,7 @@ pub async fn recycle_id_resume(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -4167,7 +4168,7 @@ pub async fn share_download_share_shareId_file_fileId(
             &[&file_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let content: Option<String> = row.get("content");
@@ -4574,12 +4575,14 @@ fn build_zip_archive(entries: Vec<(String, Vec<u8>)>) -> Result<Vec<u8>, AppErro
         }
         writer
             .start_file(entry.as_str(), SimpleFileOptions::default())
-            .map_err(|_| AppError::Internal)?;
-        writer.write_all(&bytes).map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+        writer
+            .write_all(&bytes)
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     }
     Ok(writer
         .finish()
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .into_inner())
 }
 
@@ -4839,7 +4842,7 @@ pub async fn u2_attachment_update_content(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("attachment not found")));
     };
@@ -4901,7 +4904,7 @@ pub async fn u2_attachment_delete(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("attachment not found")));
     };
@@ -4933,7 +4936,7 @@ pub async fn u2_attachment2_update(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("attachment not found")));
     };
@@ -4978,7 +4981,7 @@ pub async fn u2_attachment2_delete(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("attachment not found")));
     };
@@ -5009,7 +5012,7 @@ pub async fn u2_file_delete_by_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("file not found")));
     };
@@ -5042,7 +5045,7 @@ pub async fn u2_file_delete_by_reference(
             &[&reference, &reference_type],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("value".to_string(), Value::Bool(true)),
@@ -5128,7 +5131,7 @@ pub async fn u2_folder_create(
             &[&id, &name, &sess.person_unique, &superior],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let mut map = serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id.clone())),
         ("name".to_string(), Value::String(name)),
@@ -5167,7 +5170,7 @@ pub async fn u2_folder_rename(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("folder not found")));
     };
@@ -5202,7 +5205,7 @@ pub async fn u2_folder_delete(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("folder not found")));
     };
@@ -5321,14 +5324,14 @@ pub async fn u2_share_create(
             &[&session.person_unique, &file_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let meta = client
         .query_opt(
             "SELECT extension, length FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
             &[&file_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let (extension, length): (Option<String>, i64) = match &meta {
         Some(m) => (
             m.get("extension"),
@@ -5380,7 +5383,7 @@ pub async fn u2_share_get(
     let row = client
         .query_opt(&format!("{U2_SHARE_SELECT} WHERE id = $1"), &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(u2_share_row_to_json(&row)))),
         None => Ok(Json(ActionResult::error("share not found"))),
@@ -5398,7 +5401,7 @@ pub async fn u2_share_delete(
     let row = client
         .query_opt("SELECT person FROM FILE_SHARE WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("share not found")));
     };
@@ -5407,7 +5410,7 @@ pub async fn u2_share_delete(
     client
         .execute("DELETE FROM FILE_SHARE WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -5428,7 +5431,7 @@ pub async fn u2_share_shield(
     let row = client
         .query_opt("SELECT person FROM FILE_SHARE WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("share not found")));
     };
@@ -5479,7 +5482,7 @@ pub async fn u2_share_password_verify(
             &[&id, &password],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(u2_share_row_to_json(&row)))),
         None => Ok(Json(ActionResult::error(
@@ -5509,7 +5512,7 @@ pub async fn u2_share_save_to_folder(
             &[&share_id, &file_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if share_valid.is_none() {
         return Ok(Json(ActionResult::error("share not found or expired")));
     }
@@ -5603,7 +5606,7 @@ pub async fn u2_config_save_system_config(
                 &[&value, &category, &name],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         if updated == 0 {
             let id = uuid::Uuid::new_v4().to_string();
             client
@@ -5612,7 +5615,7 @@ pub async fn u2_config_save_system_config(
                     &[&id, &name, &value, &category],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         }
         saved += 1;
     }

@@ -33,7 +33,7 @@ pub async fn get_process(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let row = match rows.first() {
         Some(r) => r,
@@ -60,6 +60,8 @@ pub async fn get_process(
         .await
         .unwrap_or_default();
 
+    // x_task.start_time / end_time 是 TIMESTAMP，按 String 读取会在 FromSql 失败。
+    let fmt_ts = |v: Option<chrono::NaiveDateTime>| v.map(|t| t.to_string()).unwrap_or_default();
     let task_list: Vec<Value> = tasks
         .iter()
         .map(|row| {
@@ -86,14 +88,11 @@ pub async fn get_process(
                 ),
                 (
                     "startTime".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("start_time")
-                            .unwrap_or_default(),
-                    ),
+                    Value::String(fmt_ts(row.get("start_time"))),
                 ),
                 (
                     "endTime".to_string(),
-                    Value::String(row.get::<_, Option<String>>("end_time").unwrap_or_default()),
+                    Value::String(fmt_ts(row.get("end_time"))),
                 ),
             ]))
         })
@@ -130,21 +129,15 @@ pub async fn get_process(
             ),
             (
                 "createTime".to_string(),
-                Value::String(
-                    row.get::<_, Option<String>>("create_time")
-                        .unwrap_or_default(),
-                ),
+                Value::String(fmt_ts(row.get("create_time"))),
             ),
             (
                 "startTime".to_string(),
-                Value::String(
-                    row.get::<_, Option<String>>("start_time")
-                        .unwrap_or_default(),
-                ),
+                Value::String(fmt_ts(row.get("start_time"))),
             ),
             (
                 "endTime".to_string(),
-                Value::String(row.get::<_, Option<String>>("end_time").unwrap_or_default()),
+                Value::String(fmt_ts(row.get("end_time"))),
             ),
             ("tasks".to_string(), Value::Array(task_list)),
         ]),
@@ -172,7 +165,7 @@ pub async fn create_process(
             &[&id, &title, &process, &application, &"pending", &"system"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
@@ -192,7 +185,7 @@ pub async fn list_processes(
             &[&category],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -234,7 +227,7 @@ pub async fn execute_process(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .and_then(|row| row.get::<_, Option<String>>("creator"));
     u4_require_actor(&pool.0, &session, creator.as_deref().unwrap_or("")).await?;
     tx.execute(
@@ -242,7 +235,7 @@ pub async fn execute_process(
         &[&"processing", &id],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let task_id = Uuid::new_v4().to_string();
     tx.execute(
@@ -251,7 +244,7 @@ pub async fn execute_process(
         &[&task_id, &"Process Task", &id, &"start", &"", &""],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -278,7 +271,7 @@ pub async fn get_process_instance(
             &[&execution_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
 
     let tasks = client
@@ -287,8 +280,10 @@ pub async fn get_process_instance(
             &[&execution_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
+    // x_work/x_task 的时间列都是 TIMESTAMP，统一按 NaiveDateTime 读取再回写字符串。
+    let fmt_ts = |v: Option<chrono::NaiveDateTime>| v.map(|t| t.to_string()).unwrap_or_default();
     let task_list: Vec<Value> = tasks
         .iter()
         .map(|row| {
@@ -315,9 +310,12 @@ pub async fn get_process_instance(
                 ),
                 (
                     "startTime".to_string(),
-                    Value::String(row.get("start_time")),
+                    Value::String(fmt_ts(row.get("start_time"))),
                 ),
-                ("endTime".to_string(), Value::String(row.get("end_time"))),
+                (
+                    "endTime".to_string(),
+                    Value::String(fmt_ts(row.get("end_time"))),
+                ),
             ]))
         })
         .collect();
@@ -353,13 +351,16 @@ pub async fn get_process_instance(
             ),
             (
                 "createTime".to_string(),
-                Value::String(row.get("create_time")),
+                Value::String(fmt_ts(row.get("create_time"))),
             ),
             (
                 "startTime".to_string(),
-                Value::String(row.get("start_time")),
+                Value::String(fmt_ts(row.get("start_time"))),
             ),
-            ("endTime".to_string(), Value::String(row.get("end_time"))),
+            (
+                "endTime".to_string(),
+                Value::String(fmt_ts(row.get("end_time"))),
+            ),
             ("tasks".to_string(), Value::Array(task_list)),
         ]),
     ))))
@@ -376,7 +377,7 @@ pub async fn cancel_process_instance(
     let creator: Option<String> = client
         .query_opt("SELECT creator FROM x_work WHERE id = $1", &[&execution_id])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .and_then(|row| row.get::<_, Option<String>>("creator"));
     u4_require_actor(&pool.0, &session, creator.as_deref().unwrap_or("")).await?;
     client
@@ -385,14 +386,14 @@ pub async fn cancel_process_instance(
             &[&"cancelled", &execution_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = client
         .query_opt(
             "SELECT id, title, process, application, work_status, creator, create_time, start_time, end_time FROM x_work WHERE id = $1",
             &[&execution_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -443,7 +444,7 @@ async fn u4_require_work_owner(
     let creator = client
         .query_opt("SELECT creator FROM x_work WHERE id = $1", &[&work_id])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .and_then(|r| r.get::<_, Option<String>>("creator"))
         .map(|c| c.trim().to_string())
         .filter(|c| !c.is_empty());
@@ -507,13 +508,13 @@ async fn u4_require_actors(
     let row = client
         .query_opt(sql, &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let me = session.person_unique.as_str();
     if let Some(r) = row.as_ref() {
         for col in cols {
             let actor = r
                 .try_get::<_, Option<String>>(*col)
-                .map_err(|_| AppError::Internal)?
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
                 .unwrap_or_default();
             let actor = actor.trim();
             if !actor.is_empty() && actor == me {
@@ -542,7 +543,7 @@ pub async fn work_id_processing(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     u4_require_actor(
         &pool.0,
@@ -556,7 +557,7 @@ pub async fn work_id_processing(
             &[&"processing", &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -576,7 +577,7 @@ pub async fn work_v2_id_terminate(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .and_then(|row| row.get::<_, Option<String>>("creator"));
     u4_require_actor(&pool.0, &session, creator.as_deref().unwrap_or("")).await?;
     tx.execute(
@@ -584,21 +585,21 @@ pub async fn work_v2_id_terminate(
         &[&"terminated", &id],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let id2 = Uuid::new_v4().to_string();
     tx.execute(
             "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
             &[&id2, &id, &"terminate", &"workflow terminated", &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = tx
         .query_opt(
             "SELECT id, title, process, application, work_status, creator, create_time, start_time, end_time FROM x_work WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     tx.commit().await?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
@@ -621,7 +622,7 @@ pub async fn work_v2_id_retract(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .and_then(|row| row.get::<_, Option<String>>("creator"));
     u4_require_actor(&pool.0, &session, creator.as_deref().unwrap_or("")).await?;
     tx.execute(
@@ -629,13 +630,13 @@ pub async fn work_v2_id_retract(
         &[&"retracted", &id],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.execute(
         "UPDATE x_task SET task_status = $1 WHERE work = $2",
         &[&"cancelled", &id],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
     let row = client
         .query_opt(
@@ -643,7 +644,7 @@ pub async fn work_v2_id_retract(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -659,27 +660,27 @@ async fn work_v2_id_goback_core(
         &[&"pending", &id],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.execute(
         "UPDATE x_task SET task_status = $1 WHERE work = $2 AND task_status = $3",
         &[&"pending", &id, &"active"],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let id2 = Uuid::new_v4().to_string();
     tx.execute(
             "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
             &[&id2, &id, &"goback", &"workflow back to pending", &"system"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = tx
         .query_opt(
             "SELECT id, title, process, application, work_status, creator, create_time, start_time, end_time FROM x_work WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     tx.commit().await?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
@@ -718,7 +719,7 @@ async fn work_v2_id_rollback_core(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if let Some(snap) = snap_row {
         let tx = client.transaction().await?;
         let snap_data_raw: String = snap.get("snap_data");
@@ -730,7 +731,7 @@ async fn work_v2_id_rollback_core(
                 &[&id2, &id, &"rollback", &snap_data.to_string(), &"system"],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         tx.commit().await?;
         return Ok(Json(ActionResult::success(snap_data)));
     }
@@ -775,7 +776,7 @@ async fn work_v2_id_add_split_core(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     let title: String = row.get("title");
     let new_id = Uuid::new_v4().to_string();
@@ -784,13 +785,13 @@ async fn work_v2_id_add_split_core(
             &[&new_id, &title, &row.get::<_, String>("process"), &row.get::<_, Option<String>>("application").unwrap_or_default(), &"pending", &row.get::<_, String>("creator")],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.execute(
             "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
             &[&Uuid::new_v4().to_string(), &id, &"split", &format!("split to {}", new_id), &"system"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -833,20 +834,20 @@ async fn work_v2_id_reroute_core(
         &[&"rerouted", &id],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.execute(
         "UPDATE x_task SET task_status = $1 WHERE work = $2 AND task_status != $3",
         &[&"cancelled", &id, &"cancelled"],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = tx
         .query_opt(
             "SELECT id, title, process, application, work_status, creator, create_time, start_time, end_time FROM x_work WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     tx.commit().await?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
@@ -885,7 +886,7 @@ pub async fn work_id_draft(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(r) => Ok(Json(ActionResult::success(row_to_json(&r)))),
         None => Err(AppError::NotFound),
@@ -903,7 +904,7 @@ async fn work_id_manual_append_identity_core(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -935,7 +936,7 @@ async fn work_id_projection_core(
             &[&id, &"completed"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
     Ok(Json(ActionResult::legacy_success(
@@ -977,7 +978,7 @@ pub async fn work_id_series_series_activitytoken_activityToken_processing_signal
             &[&activity_token, &"processing"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -999,7 +1000,7 @@ pub async fn work_process_processId(
             &[&process_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -1022,7 +1023,7 @@ pub async fn work_process_processId_name_name_serial(
             &[&process_id, &_name],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let next = max_val
         .and_then(|r| r.try_get::<_, Option<i64>>("max_n").ok().flatten())
         .unwrap_or(0)
@@ -1049,14 +1050,14 @@ pub async fn work_manual_after_processing(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     tx.execute(
             "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
             &[&Uuid::new_v4().to_string(), &id, &"manual", &"manual processing completed", &"system"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -1076,7 +1077,7 @@ pub async fn task_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -1143,7 +1144,7 @@ pub async fn task_id_processing(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     client
         .execute(
@@ -1151,7 +1152,7 @@ pub async fn task_id_processing(
             &[&"processing", &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -1170,14 +1171,14 @@ pub async fn task_id_urge(
         &[&"urged", &id],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = tx
         .query_opt(
             "SELECT id, title, work, activity, activity_token, person FROM x_task WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     let id2 = Uuid::new_v4().to_string();
     tx.execute(
@@ -1185,7 +1186,7 @@ pub async fn task_id_urge(
             &[&id2, &id, &"urge", &"task urged", &"system"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -1206,7 +1207,7 @@ pub async fn task_id_replace(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     let work: String = row.get("work");
     let person: String = row.get::<_, Option<String>>("person").unwrap_or_default();
@@ -1215,14 +1216,14 @@ pub async fn task_id_replace(
         &[&"replaced", &id],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let new_id = Uuid::new_v4().to_string();
     tx.execute(
             "INSERT INTO x_task (id, title, work, activity, activity_token, person, task_status, start_time) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
             &[&new_id, &"Replaced Task", &work, &row.get::<_, String>("activity"), &row.get::<_, String>("activity_token"), &person, &"pending"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1247,14 +1248,14 @@ pub async fn task_id_press(
             &[&"pressed", &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = client
         .query_opt(
             "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -1274,14 +1275,14 @@ pub async fn task_id_expire(
             &[&"expired", &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = client
         .query_opt(
             "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -1301,14 +1302,14 @@ pub async fn task_id_pass_expired(
             &[&"pending", &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = client
         .query_opt(
             "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -1325,7 +1326,7 @@ pub async fn task_id_will(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -1342,7 +1343,7 @@ pub async fn task_v2_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -1362,14 +1363,14 @@ pub async fn task_v2_id_pause(
             &[&"paused", &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = client
         .query_opt(
             "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -1390,14 +1391,14 @@ pub async fn task_v2_id_reset(
             &[&"pending", &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = client
         .query_opt(
             "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -1417,14 +1418,14 @@ pub async fn task_v2_id_resume(
             &[&"active", &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = client
         .query_opt(
             "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -1445,7 +1446,7 @@ pub async fn task_v3_id_add(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     let new_task_id = Uuid::new_v4().to_string();
     tx.execute(
@@ -1453,7 +1454,7 @@ pub async fn task_v3_id_add(
             &[&new_task_id, &row.get::<_, String>("title"), &id, &"default", &"", &"", &"pending"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1475,7 +1476,7 @@ pub async fn task_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -1492,7 +1493,7 @@ pub async fn taskcompleted_next_task_identity(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     let work: String = row.get("work");
     let activity_token: String = row
@@ -1504,7 +1505,7 @@ pub async fn taskcompleted_next_task_identity(
             &[&work, &activity_token, &"pending"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match next_row {
         Some(r) => Ok(Json(ActionResult::success(row_to_json(&r)))),
         None => Err(AppError::NotFound),
@@ -1523,7 +1524,7 @@ pub async fn taskcompleted_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -1548,14 +1549,14 @@ pub async fn taskcompleted_id_press_work_work(
         &[&work_id, &completed_id],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = tx
         .query_opt(
             "SELECT id, work_id, completed_time, creator FROM x_workcompleted WHERE id = $1",
             &[&completed_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     tx.commit().await?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
@@ -1592,7 +1593,7 @@ pub async fn snap_upload(
             &[&id, &work_id, &snap_type, &snap_data.to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
     ))))
@@ -1613,7 +1614,7 @@ pub async fn snap_work_workId_type_abandoned(
             &[&id, &work_id, &"abandoned", &"null"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
     ))))
@@ -1631,7 +1632,7 @@ pub async fn snap_work_workId_type_snap(
             &[&work_id, &_type],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(r) => Ok(Json(ActionResult::success(row_to_json(&r)))),
         None => Err(AppError::NotFound),
@@ -1653,7 +1654,7 @@ pub async fn snap_work_workId_type_suspend(
             &[&id, &work_id, &"suspend", &"null"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
     ))))
@@ -1682,7 +1683,7 @@ pub async fn snap_workcompleted_workCompletedId_type_abandonedworkcompleted(
             &[&work_completed_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     let work_id: String = work_id_row.get("work_id");
     tx.execute(
@@ -1690,7 +1691,7 @@ pub async fn snap_workcompleted_workCompletedId_type_abandonedworkcompleted(
             &[&id, &work_id, &"abandonedworkcompleted", &"null"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
@@ -1709,7 +1710,7 @@ pub async fn snap_workcompleted_workCompletedId_type_snapworkcompleted(
             &[&work_completed_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     let work_id: String = row.get("work_id");
     let snap_rows = client
@@ -1718,7 +1719,7 @@ pub async fn snap_workcompleted_workCompletedId_type_snapworkcompleted(
             &[&work_id, &_type],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let snaps: Vec<Value> = snap_rows.iter().map(row_to_json).collect();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1740,7 +1741,7 @@ pub async fn snap_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -1761,7 +1762,7 @@ pub async fn snap_id_restore(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     let work_id: String = snap_row.get("work_id");
     let snap_data_raw: String = snap_row.get("snap_data");
@@ -1771,14 +1772,14 @@ pub async fn snap_id_restore(
         &[&"restored", &work_id],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let id2 = Uuid::new_v4().to_string();
     tx.execute(
             "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
             &[&id2, &work_id, &"restore", &format!("restored from snap {}", id), &"system"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
     Ok(Json(ActionResult::success(snap_data)))
 }
@@ -1791,7 +1792,7 @@ pub async fn touch_cleanevent(
     let result = client
         .execute("DELETE FROM x_record WHERE record_type = $1 AND create_time < NOW() - INTERVAL '30 days'", &[&"event"])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([(
             "cleaned".to_string(),
@@ -1812,14 +1813,14 @@ pub async fn touch_deletedraft(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = client
         .query_opt(
             "SELECT id, work_id, content, creator, create_time FROM x_draft WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -1837,7 +1838,7 @@ pub async fn touch_handoverjob(
             &[&id, &work_id, &person, &"handover", &"pending"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -1858,7 +1859,7 @@ pub async fn touch_loglongdetained(
             &[&"active"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
     Ok(Json(ActionResult::legacy_success(
@@ -1881,7 +1882,7 @@ pub async fn touch_merge(
             &[&id1],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     let _row2 = tx
         .query_opt(
@@ -1889,21 +1890,21 @@ pub async fn touch_merge(
             &[&id2],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     tx.execute(
         "UPDATE x_work SET work_status = $1 WHERE id = $2",
         &[&"merged", &id2],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let id3 = Uuid::new_v4().to_string();
     tx.execute(
             "INSERT INTO x_workcompleted (id, work_id, completed_time, creator, create_time) VALUES ($1, $2, NOW(), $3, NOW())",
             &[&id3, &id1, &row1.get::<_, String>("creator")],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1925,7 +1926,7 @@ pub async fn touch_mergeitem(
             &[&item_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     client
         .execute(
@@ -1933,7 +1934,7 @@ pub async fn touch_mergeitem(
             &[&work_id, &item_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -1950,7 +1951,7 @@ pub async fn touch_touchdelay(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     let work_id: String = row.get("work");
     let id2 = Uuid::new_v4().to_string();
@@ -1959,7 +1960,7 @@ pub async fn touch_touchdelay(
             &[&id2, &work_id, &id, &"delay", &"task delayed", &"system"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -1976,21 +1977,21 @@ pub async fn touch_urge(
         &[&"urged", &id],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let id2 = Uuid::new_v4().to_string();
     tx.execute(
             "INSERT INTO x_record (id, task_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
             &[&id2, &id, &"urge", &"task urged via touch", &"system"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = tx
         .query_opt(
             "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     tx.commit().await?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
@@ -2024,7 +2025,7 @@ pub async fn review_create_work(
             &[&id, &work_id, &reviewer, &comment, &"pending"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -2056,7 +2057,7 @@ pub async fn review_create_workcompleted(
             &[&id, &work_completed_id, &reviewer, &"work completed review", &"pending"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -2086,7 +2087,7 @@ pub async fn review_init_review(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     let reviewer = row.get::<_, Option<String>>("reviewer").unwrap_or_default();
     u4_require_actor(&pool.0, &session, &reviewer).await?;
@@ -2095,7 +2096,7 @@ pub async fn review_init_review(
         &[&"initiated", &id],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -2112,7 +2113,7 @@ pub async fn review_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -2129,7 +2130,7 @@ pub async fn data_job_job(
             &[&job_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -2146,7 +2147,7 @@ pub async fn data_job_job_path(
             &[&job_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     let work_id: String = row.get("work_id");
     let data_row = client
@@ -2155,7 +2156,7 @@ pub async fn data_job_job_path(
             &[&work_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match data_row {
         Some(r) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
@@ -2179,7 +2180,7 @@ pub async fn data_work_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -2198,14 +2199,14 @@ pub async fn data_work_id_delete(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = client
         .query_opt(
             "SELECT id, title, process, application, work_status, creator, create_time, start_time, end_time FROM x_work WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -2224,7 +2225,7 @@ pub async fn data_work_id_path(
                     &[&id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             let list: Vec<Value> = rows.iter().map(row_to_json).collect();
             let total_list = list.len();
             Ok(Json(ActionResult::legacy_success(
@@ -2240,7 +2241,7 @@ pub async fn data_work_id_path(
                     &[&id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             let list: Vec<Value> = rows.iter().map(row_to_json).collect();
             let total_list = list.len();
             Ok(Json(ActionResult::legacy_success(
@@ -2256,7 +2257,7 @@ pub async fn data_work_id_path(
                     &[&id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             let list: Vec<Value> = rows.iter().map(row_to_json).collect();
             let total_list = list.len();
             Ok(Json(ActionResult::legacy_success(
@@ -2272,7 +2273,7 @@ pub async fn data_work_id_path(
                     &[&id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
                 .ok_or(AppError::NotFound)?;
             Ok(Json(ActionResult::success(row_to_json(&row))))
         }
@@ -2299,7 +2300,7 @@ pub async fn work_list(
             &[&application],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total: i64 = count_row.get("count");
 
     let rows = client
@@ -2308,7 +2309,7 @@ pub async fn work_list(
             &[&application, &size, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2363,7 +2364,7 @@ pub async fn process_id_complex(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let work = match work_row {
         Some(r) => r,
         // 资源不存在 → 404（O10：曾手写成 Internal，与同 crate 其他分支口径一致为 NotFound）
@@ -2372,11 +2373,11 @@ pub async fn process_id_complex(
 
     let tasks = client
         .query(
-            "SELECT id, title, activity, activity_token, person, start_time, end_time FROM x_task WHERE work = $1",
+            "SELECT id, title, activity, activity_token, person, start_time::text AS start_time, end_time::text AS end_time FROM x_task WHERE work = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let task_list: Vec<Value> = tasks
         .iter()
         .map(|row| {
@@ -2416,7 +2417,7 @@ pub async fn process_id_complex(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let review_list: Vec<Value> = reviews.iter().map(row_to_json).collect();
 
     let snaps = client
@@ -2425,7 +2426,7 @@ pub async fn process_id_complex(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let snap_list: Vec<Value> = snaps.iter().map(row_to_json).collect();
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -2454,7 +2455,7 @@ pub async fn data_work_id_path_delete(
                     &[&"deleted", &id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         }
         "reviews" => {
             client
@@ -2463,7 +2464,7 @@ pub async fn data_work_id_path_delete(
                     &[&id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         }
         _ => {}
     }
@@ -2473,7 +2474,7 @@ pub async fn data_work_id_path_delete(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -2490,7 +2491,7 @@ pub async fn data_workcompleted_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -2507,7 +2508,7 @@ pub async fn data_workcompleted_id_path(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -2524,7 +2525,7 @@ pub async fn documentversion_work_work(
             &[&work_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
     Ok(Json(ActionResult::legacy_success(
@@ -2566,7 +2567,7 @@ pub async fn event_add_update_table(
             &[&id, &record_id, &type_val, &content.to_string(), &"system"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -2588,7 +2589,7 @@ pub async fn form_suitable_activity_activityId(
             &[&activity_id, &"completed"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
     Ok(Json(ActionResult::legacy_success(
@@ -2616,7 +2617,7 @@ pub async fn job_v2_job_person_person_view(
             &[&job_id, &person],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -2632,7 +2633,7 @@ async fn job_v2_job_projection_core(
             &[&job_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     let work_id: String = row.get("work_id");
     let tasks = client
@@ -2641,7 +2642,7 @@ async fn job_v2_job_projection_core(
             &[&work_id, &"active"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let task_list: Vec<Value> = tasks.iter().map(row_to_json).collect();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2679,7 +2680,7 @@ pub async fn job_job(
             &[&person, &"pending"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
     Ok(Json(ActionResult::legacy_success(
@@ -2701,7 +2702,7 @@ pub async fn readcompleted_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -2718,7 +2719,7 @@ pub async fn record_job_job(
             &[&job_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
     Ok(Json(ActionResult::legacy_success(
@@ -2746,7 +2747,7 @@ pub async fn record_task_processing(
             &[&task_id, &"processing"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
     Ok(Json(ActionResult::legacy_success(
@@ -2768,7 +2769,7 @@ pub async fn record_work_processing(
             &[&work_id, &"processing"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
     Ok(Json(ActionResult::legacy_success(
@@ -2790,7 +2791,7 @@ pub async fn record_work_terminate(
             &[&work_id, &"terminate"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
     Ok(Json(ActionResult::legacy_success(
@@ -2812,7 +2813,7 @@ pub async fn record_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -2829,7 +2830,7 @@ async fn service_work_id_touch_core(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     // 四轮 R4-2 追加：两把 touch 注册在 PUT/POST 上但原先不取会话，
     // 任一有效会话按 work ID 就能往别人的 work 插 x_record 留痕（审计流水污染），
@@ -2843,7 +2844,7 @@ async fn service_work_id_touch_core(
             &[&id2, &id, &"touch", &"work touched", &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -2882,7 +2883,7 @@ pub async fn attachment_copy_work_workId(
             &[&source_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     let new_id = Uuid::new_v4().to_string();
     let name: String = row.get::<_, Option<String>>("name").unwrap_or_default();
@@ -2894,7 +2895,7 @@ pub async fn attachment_copy_work_workId(
             &[&new_id, &work_id, &name, &content, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(new_id)),
@@ -2932,7 +2933,7 @@ pub async fn attachment_copy_workcompleted_workCompletedId(
             &[&source_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = match row {
         Some(r) => r,
         None => return Ok(Json(ActionResult::error("source attachment not found"))),
@@ -2947,7 +2948,7 @@ pub async fn attachment_copy_workcompleted_workCompletedId(
             &[&new_id, &work_completed_id, &name, &content, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(new_id)),
@@ -2971,7 +2972,7 @@ pub async fn attachment_edit_id_text(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -2988,7 +2989,7 @@ pub async fn attachment_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -3005,7 +3006,7 @@ pub async fn attachment_id_work_workId(
             &[&work_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
     Ok(Json(ActionResult::legacy_success(
@@ -3027,7 +3028,7 @@ pub async fn attachment_id_workcompleted_workCompletedId(
             &[&work_completed_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
     Ok(Json(ActionResult::legacy_success(
@@ -3049,7 +3050,7 @@ pub async fn applicationdict_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -3066,7 +3067,7 @@ pub async fn applicationdict_id_path0_data(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     match _path.as_str() {
         "activities" => {
@@ -3076,7 +3077,7 @@ pub async fn applicationdict_id_path0_data(
                     &[&id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             let list: Vec<Value> = rows.iter().map(row_to_json).collect();
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
@@ -3101,7 +3102,7 @@ pub async fn applicationdict_id_path0_path1_data(
             &[&id, &_p1],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -3122,7 +3123,7 @@ pub async fn applicationdict_id_path0_path1_path2_data(
             &[&_p1, &_p2],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
     Ok(Json(ActionResult::legacy_success(
@@ -3150,7 +3151,7 @@ pub async fn applicationdict_id_path0_path1_path2_path3_data(
             &[&id, &_p1, &_p2],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
     Ok(Json(ActionResult::legacy_success(
@@ -3179,7 +3180,7 @@ pub async fn applicationdict_id_path0_path1_path2_path3_path4_data(
             &[&id, &_p1, &_p2],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -3203,7 +3204,7 @@ pub async fn applicationdict_id_path0_path1_path2_path3_path4_path5_data(
             &[&_p1, &_p2],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
     Ok(Json(ActionResult::legacy_success(
@@ -3225,7 +3226,7 @@ pub async fn applicationdict_id_path0_path1_path2_path3_path4_path5_path6_data(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -3252,7 +3253,7 @@ pub async fn applicationdict_id_path0_path1_path2_path3_path4_path5_path6_path7_
             &[&_p1],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
     Ok(Json(ActionResult::legacy_success(
@@ -3274,7 +3275,7 @@ pub async fn workcompleted_process_processFlag(
             &[&process_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let list: Vec<Value> = rows.iter().map(row_to_json).collect();
     let total_list = list.len();
     Ok(Json(ActionResult::legacy_success(
@@ -3296,14 +3297,14 @@ pub async fn workcompleted_shift_time(
             &[&_time, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = client
         .query_opt(
             "SELECT id, work_id, completed_time, creator FROM x_workcompleted WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -3334,7 +3335,7 @@ pub async fn workcompleted_flag_merge(
             &[&id1],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     {
         Some(r) => r,
         None => return Ok(Json(ActionResult::error("workcompleted not found"))),
@@ -3350,11 +3351,11 @@ pub async fn workcompleted_flag_merge(
             &[&row1.get::<_, String>("work_id"), &id2],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     client
         .execute("DELETE FROM x_workcompleted WHERE id = $1", &[&id2])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(row_to_json(&row1))))
 }
 
@@ -3376,7 +3377,7 @@ pub async fn workcompleted_flag_rollback(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     let work_id: String = row.get("work_id");
     tx.execute(
@@ -3384,10 +3385,10 @@ pub async fn workcompleted_flag_rollback(
         &[&"pending", &work_id],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.execute("DELETE FROM x_workcompleted WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
 
     // 回滚提交后再读快照（复用同一 client，无需再取连接）。
@@ -3397,7 +3398,7 @@ pub async fn workcompleted_flag_rollback(
             &[&work_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match snap_row {
         Some(s) => {
             let raw: String = s.get("snap_data");
@@ -3424,7 +3425,7 @@ pub async fn work_v3_retract(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     u4_require_actor(
         &pool.0,
@@ -3439,13 +3440,13 @@ pub async fn work_v3_retract(
         &[&"retracted", &id],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.execute(
         "UPDATE x_task SET task_status = $1 WHERE work = $2",
         &[&"cancelled", &id],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -3469,7 +3470,7 @@ pub async fn work_start(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     u4_require_actor(
         &pool.0,
@@ -3492,14 +3493,14 @@ pub async fn work_start(
         &[&"processing", &id],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let task_id = Uuid::new_v4().to_string();
     tx.execute(
             "INSERT INTO x_task (id, title, work, activity, activity_token, person, task_status, start_time) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
             &[&task_id, &"Start Event", &id, &"start", &"", &"system", &"active"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -3528,7 +3529,7 @@ pub async fn work_complete(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     u4_require_actor(
         &pool.0,
@@ -3551,20 +3552,20 @@ pub async fn work_complete(
         &[&"completed", &id],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.execute(
         "UPDATE x_task SET task_status = $1 WHERE work = $2 AND task_status != $3",
         &[&"completed", &id, &"completed"],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let completed_id = Uuid::new_v4().to_string();
     tx.execute(
             "INSERT INTO x_workcompleted (id, work_id, completed_time, creator, create_time) VALUES ($1, $2, NOW(), $3, NOW())",
             &[&completed_id, &id, &row.get::<_, String>("creator")],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -3590,7 +3591,7 @@ pub async fn task_claim(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     u4_require_actor(
         &pool.0,
@@ -3613,7 +3614,7 @@ pub async fn task_claim(
         &[&"active", &id],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let id2 = Uuid::new_v4().to_string();
     let work_id: String = row.get("work");
     tx.execute(
@@ -3621,7 +3622,7 @@ pub async fn task_claim(
             &[&id2, &work_id, &id, &"claim", &"task claimed", &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
     let row = client
         .query_opt(
@@ -3629,7 +3630,7 @@ pub async fn task_claim(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -3678,7 +3679,7 @@ pub async fn task_complete(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     u4_require_actor(
         &pool.0,
@@ -3701,7 +3702,7 @@ pub async fn task_complete(
         &[&"completed", &id],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let work_id: String = row.get("work");
     let activity_token: String = row.get("activity_token");
     // 处理意见与操作人：此前本 handler 完全忽略请求体，导致桌面端/移动端填写的
@@ -3716,7 +3717,7 @@ pub async fn task_complete(
             &[&id2, &work_id, &id, &"complete", &content, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     // FOR UPDATE 防并发双取：两个审批人同时 complete 时各自事务都认领同一 pending
     // 任务（后写覆盖前写）；加行锁后后者阻塞至前者提交，EvalPlanQual 重估发现
     // task_status 已非 pending → 正确走终点分支。
@@ -3726,7 +3727,7 @@ pub async fn task_complete(
             &[&work_id, &activity_token, &"pending"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if let Some(next) = next_row {
         let next_id: String = next.get("id");
         tx.execute(
@@ -3734,14 +3735,14 @@ pub async fn task_complete(
             &[&"active", &next_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         let id3 = Uuid::new_v4().to_string();
         tx.execute(
                 "INSERT INTO x_record (id, work_id, task_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
                 &[&id3, &work_id, &next_id, &"auto_claim", &"next task auto claimed", &"system"],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     } else {
         // W12/E2E：无后续任务 = 流程终点，work 收尾为 completed
         tx.execute(
@@ -3749,14 +3750,14 @@ pub async fn task_complete(
             &[&"completed", &work_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         let id4 = Uuid::new_v4().to_string();
         tx.execute(
                 "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
                 &[&id4, &work_id, &"complete", &"work completed at terminal activity", &"system"],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     }
     tx.commit().await?;
     let row = client
@@ -3765,7 +3766,7 @@ pub async fn task_complete(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -3786,7 +3787,7 @@ pub async fn task_reject(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     u4_require_actor(
         &pool.0,
@@ -3809,7 +3810,7 @@ pub async fn task_reject(
         &[&"rejected", &id],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let work_id: String = row.get("work");
     let activity_token: String = row.get("activity_token");
     // 同 task_complete：接收处理意见并记录真实操作人（此前恒为 "system"）。
@@ -3823,7 +3824,7 @@ pub async fn task_reject(
             &[&id2, &work_id, &id, &"reject", &reason, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let prev_row = tx
         .query_opt(
             // 同 task_complete：FOR UPDATE 防两并发 reject 抢同一 completed 任务
@@ -3831,7 +3832,7 @@ pub async fn task_reject(
             &[&work_id, &activity_token, &"completed"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if let Some(prev) = prev_row {
         let prev_id: String = prev.get("id");
         tx.execute(
@@ -3839,7 +3840,7 @@ pub async fn task_reject(
             &[&"pending", &prev_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     }
     tx.commit().await?;
     let row = client
@@ -3848,7 +3849,7 @@ pub async fn task_reject(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
@@ -3868,7 +3869,7 @@ pub async fn task_transfer(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
     u4_require_actor(
         &pool.0,
@@ -3892,7 +3893,7 @@ pub async fn task_transfer(
         &[&new_person, &id],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let work_id: String = row.get("work");
     let id2 = Uuid::new_v4().to_string();
     let content = format!("transferred from {} to {}", old_person, new_person);
@@ -3901,7 +3902,7 @@ pub async fn task_transfer(
             &[&id2, &work_id, &id, &"transfer", &content, &"system"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -3926,7 +3927,7 @@ pub async fn gateway_join(
             &[&work_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .and_then(|row| row.get::<_, Option<String>>("creator"));
     u4_require_actor(&pool.0, &session, creator.as_deref().unwrap_or("")).await?;
     let rows = tx
@@ -3935,7 +3936,7 @@ pub async fn gateway_join(
             &[&work_id, &activity_token],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if rows.is_empty() {
         tx.commit().await?;
         return Err(AppError::NotFound);
@@ -3958,7 +3959,7 @@ pub async fn gateway_join(
             &[&id2, &work_id, &"gateway_join", &format!("gateway {} joined", activity_token), &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -3989,7 +3990,7 @@ pub async fn gateway_fork(
             &[&gateway_instance_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let mut created_tasks = Vec::new();
     for row in &transitions {
@@ -4005,7 +4006,7 @@ pub async fn gateway_fork(
                 &[&task_id, &title, &work_id, &to_activity, &token_id.to_string(), &"", &"pending"],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         created_tasks.push(Value::String(task_id));
     }
 
@@ -4096,7 +4097,9 @@ pub mod timer {
                             &[&"expired", task_id, &"active"],
                         )
                         .await
-                        .map_err(|_| AppError::Internal)?;
+                        .map_err(|e| {
+                            AppError::internal_with_source(concat!(file!(), ":", line!()), e)
+                        })?;
                 }
             }
             client
@@ -4105,7 +4108,7 @@ pub mod timer {
                     &[&job.id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(())
         }
 
@@ -4141,7 +4144,7 @@ pub mod timer {
                     &[&id, &work_id, &task_id, &fire_at_str, &cron, &now_str, &kind],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             }
 
             let mut jobs = self.jobs.write().await;
@@ -4159,7 +4162,9 @@ pub mod timer {
                         &[&job_id],
                     )
                     .await
-                    .map_err(|_| AppError::Internal)?;
+                    .map_err(|e| {
+                        AppError::internal_with_source(concat!(file!(), ":", line!()), e)
+                    })?;
             }
 
             let mut jobs = self.jobs.write().await;
@@ -4178,17 +4183,14 @@ pub mod timer {
                     &[],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
             let mut jobs = self.jobs.write().await;
             for row in rows.iter() {
-                let fire_at_str: String = row.get("fire_at");
-                let created_at_str: String = row.get("created_at");
-                let fire_at = NaiveDateTime::parse_from_str(&fire_at_str, "%Y-%m-%d %H:%M:%S")
-                    .unwrap_or_else(|_| chrono::Utc::now().naive_utc());
-                let created_at =
-                    NaiveDateTime::parse_from_str(&created_at_str, "%Y-%m-%d %H:%M:%S")
-                        .unwrap_or_else(|_| chrono::Utc::now().naive_utc());
+                // fire_at / created_at 是 TIMESTAMP，直接按 NaiveDateTime 读取；
+                // 不再走 String + parse（FromSql 早在 get 时就失败）。
+                let fire_at: NaiveDateTime = row.get("fire_at");
+                let created_at: NaiveDateTime = row.get("created_at");
                 let job = TimerJob {
                     id: row.get("id"),
                     work_id: row.get("work_id"),

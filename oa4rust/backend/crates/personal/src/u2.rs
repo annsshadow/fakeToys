@@ -52,7 +52,7 @@ pub async fn get_my_icon(
             &[&person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(r) => {
             let icon: Option<String> = r.get("icon");
@@ -112,7 +112,7 @@ async fn write_icon(
             &[&encoded.to_string(), &person_unique.to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(json!({
         "icon": encoded,
         "exists": true,
@@ -205,7 +205,7 @@ async fn custom_find(
             &[&person.to_string(), &name.to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(row.map(|r| {
         (
             r.get::<_, Option<String>>("id").unwrap_or_default(),
@@ -257,7 +257,7 @@ pub async fn custom_edit(
                     &[&body, &id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(Json(ActionResult::success(json!({ "id": id }))))
         }
         None => {
@@ -269,7 +269,7 @@ pub async fn custom_edit(
                     &[&id, &name, &person, &body],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(Json(ActionResult::success(json!({ "id": id }))))
         }
     }
@@ -296,7 +296,7 @@ pub async fn custom_delete(
             &[&person, &name],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     client
         .execute(
             "UPDATE x_custom SET deleted_at = NOW() \
@@ -304,7 +304,7 @@ pub async fn custom_delete(
             &[&person, &name],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let mut data = serde_json::Map::new();
     if let Some(row) = found {
         data.insert("id".to_string(), Value::String(row.get("id")));
@@ -325,7 +325,7 @@ async fn resolve_person_flag(
             &[&flag.to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(row.map(|r| r.get::<_, String>("unique_id")))
 }
 
@@ -389,7 +389,7 @@ pub async fn custom_manager_edit(
                     &[&body, &id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(Json(ActionResult::success(json!({ "id": id }))))
         }
         None => {
@@ -401,7 +401,7 @@ pub async fn custom_manager_edit(
                     &[&id, &name, &person_unique, &body],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(Json(ActionResult::success(json!({ "id": id }))))
         }
     }
@@ -430,7 +430,7 @@ pub async fn definition_get(
             &[&name],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(
         row.map(|r| r.get::<_, String>(0)).unwrap_or_default(),
     )))
@@ -463,7 +463,7 @@ pub async fn definition_edit(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let extra: Vec<String> = extra_cols.iter().map(|r| r.get::<_, String>(0)).collect();
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -524,11 +524,11 @@ pub async fn definition_delete(
             &[&name],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     client
         .execute("DELETE FROM x_org_definition WHERE name = $1", &[&name])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let mut data = serde_json::Map::new();
     if let Some(row) = found {
         data.insert("id".to_string(), Value::String(row.get("id")));
@@ -559,7 +559,7 @@ async fn empower_anchor_exists(
             &[&anchor_id.to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(row.is_some())
 }
 
@@ -616,7 +616,7 @@ async fn empower_page(
             }
         }
     }
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(rows
         .iter()
@@ -713,7 +713,7 @@ pub async fn empower_list_with_person(
             &[&person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let items: Vec<Value> = rows
         .iter()
         .map(|r| {
@@ -787,7 +787,7 @@ pub async fn log_list_next(
             )
             .await
     }
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let items: Vec<Value> = rows.iter().map(log_row_json).collect();
     let count = items.len() as i64;
@@ -829,7 +829,7 @@ pub async fn log_list_prev(
             )
             .await
     }
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let mut items: Vec<Value> = rows.iter().map(log_row_json).collect();
     items.reverse();
@@ -925,7 +925,7 @@ async fn log_paging(
                 .collect::<Vec<_>>(),
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total: i64 = count_row.get("c");
 
     let rows = client
@@ -941,7 +941,7 @@ async fn log_paging(
                 .collect::<Vec<_>>(),
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let items: Vec<Value> = rows.iter().map(log_row_json).collect();
     Ok(Json(ActionResult::legacy_success(
@@ -1010,7 +1010,7 @@ pub async fn log_delete(
     let n = client
         .execute("DELETE FROM x_org_empower_log WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(json!({ "value": n > 0 }))))
 }
 
@@ -1031,7 +1031,7 @@ async fn read_exmail_extend(
             &[&person.to_string(), &EXMAIL_EXTEND_TYPE.to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(row.and_then(|r| {
         let raw: String = r.get("extend");
         serde_json::from_str(&raw).ok()
@@ -1319,7 +1319,7 @@ pub async fn signature_list_person(
             &[&person_unique, &pattern],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let signatures: Vec<Value> = rows
         .iter()

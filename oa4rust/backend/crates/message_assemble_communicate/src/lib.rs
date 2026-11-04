@@ -30,7 +30,7 @@ pub async fn unread_count(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let count: i32 = row.get("c");
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -81,14 +81,14 @@ pub async fn send_message(
     let result = tx
         .execute("INSERT INTO x_message (id, conversation_id, content, sender, type, create_time) VALUES ($1, $2, $3, $4, $5, NOW())", &[&id, &conversation_id, &content, &sender, &msg_type])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     tx.execute(
         "UPDATE x_message_conversation SET last_message_time = NOW() WHERE id = $1",
         &[&conversation_id],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -123,7 +123,7 @@ pub async fn receive_list(
             &[&consume],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -181,7 +181,7 @@ pub async fn mark_read(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let Some(row) = owner else {
         return Ok(Json(ActionResult::error("consume not found")));
     };
@@ -194,7 +194,7 @@ pub async fn mark_read(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("marked_read".to_string(), Value::Bool(result > 0))]),
@@ -227,7 +227,7 @@ pub async fn consume_list_consume_count_count(
     let rows = client
         .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consume = $1 ORDER BY create_time DESC LIMIT $2", &[&consume, &limit])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -279,7 +279,7 @@ pub async fn consume_list_consume_currentperson_count_count(
     let rows = client
         .query("SELECT id, consume, content, sender, read_status, create_time FROM x_message_consume WHERE consume = $1 AND sender = consume ORDER BY create_time DESC LIMIT $2", &[&consume, &limit])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -338,7 +338,7 @@ pub async fn consume_list_consume_person_person_count_count(
     let rows = client
         .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consume = $1 AND sender = $2 ORDER BY create_time DESC LIMIT $3", &[&consume, &person, &limit])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -389,7 +389,7 @@ pub async fn consume_type_type(
     let rows = client
         .query("SELECT id, consume, content, type, sender, create_time FROM x_message_consume WHERE type = $1 ORDER BY create_time DESC", &[&msg_type])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -464,7 +464,7 @@ pub async fn consume_type_type_mockputtopost(
                 &[&id_list],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         // o2server 回 os.size()（按 idList 命中）；UPDATE 影响行数为最接近的可观测代理
         let _ = msg_type;
         n as i64
@@ -499,7 +499,7 @@ pub async fn consume_id_type_type(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let Some(row) = owner else {
         return Ok(Json(ActionResult::error("consume not found")));
     };
@@ -512,7 +512,7 @@ pub async fn consume_id_type_type(
             &[&msg_type, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("consume not found")));
@@ -539,7 +539,7 @@ pub async fn im_conversation(
     let result = client
         .execute("INSERT INTO x_message_conversation (id, name, type, create_time) VALUES ($1, $2, $3, NOW())", &[&id, &name, &conversation_type])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -564,7 +564,7 @@ pub async fn im_conversation_business_businessId(
     let row = client
         .query_opt("SELECT id, name, type, business_id, create_time FROM x_message_conversation WHERE business_id = $1 LIMIT 1", &[&business_id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -608,7 +608,7 @@ pub async fn im_conversation_list_my(
     let rows = client
         .query("SELECT id, name, type, last_message, create_time FROM x_message_conversation ORDER BY update_time DESC", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -661,7 +661,7 @@ pub async fn im_conversation_list_with_person(
     let rows = client
         .query("SELECT id, name, type, create_time FROM x_message_conversation WHERE type = 'single' ORDER BY create_time DESC", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -722,7 +722,7 @@ pub async fn im_conversation_mockputtopost(
     let result = client
         .execute("UPDATE x_message_conversation SET title = COALESCE($2, title), note = COALESCE($3, note), update_time = NOW() WHERE id = $1", &[&id, &title, &note])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("updated".to_string(), Value::Bool(result > 0))]),
@@ -739,7 +739,7 @@ pub async fn im_conversation_id(
     let row = client
         .query_opt("SELECT id, name, type, last_message, create_time FROM x_message_conversation WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -787,7 +787,7 @@ pub async fn im_conversation_id_group(
     let rows = client
         .query("SELECT id, conversation_id, person_id, role, join_time FROM x_message_conversation_member WHERE conversation_id = $1 ORDER BY join_time LIMIT 100", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -858,20 +858,20 @@ pub async fn im_manager_config_post(
     let result = client
         .execute("UPDATE x_message_config SET config_key = $1, config_value = $2, update_time = NOW() WHERE id = (SELECT id FROM x_message_config ORDER BY create_time DESC LIMIT 1)", &[&config_key, &config_value])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         let id = Uuid::new_v4().to_string();
         client
             .execute("INSERT INTO x_message_config (id, config_key, config_value, create_time) VALUES ($1, $2, $3, NOW())", &[&id, &config_key, &config_value])
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     }
 
     let row = client
-        .query_opt("SELECT id, config_key, config_value, create_time FROM x_message_config ORDER BY create_time DESC LIMIT 1", &[])
+        .query_opt("SELECT id, config_key, config_value, create_time::text AS create_time FROM x_message_config ORDER BY create_time DESC LIMIT 1", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -926,7 +926,7 @@ pub async fn im_conversation_update(
     let result = client
         .execute("UPDATE x_message_conversation SET name = COALESCE($2, name), type = COALESCE($3, type), update_time = NOW() WHERE id = $1", &[&id, &name, &conversation_type])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("conversation not found")));
@@ -938,7 +938,7 @@ pub async fn im_conversation_update(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -991,7 +991,7 @@ pub async fn im_conversation_id_group_mockdeletetoget(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(result > 0))]),
@@ -1020,7 +1020,7 @@ pub async fn im_conversation_id_group_quit_self(
     let result = client
         .execute("DELETE FROM x_message_conversation_member WHERE conversation_id = $1 AND person_id = $2", &[&id, &session.person_unique])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("quit".to_string(), Value::Bool(result > 0))]),
@@ -1035,9 +1035,9 @@ pub async fn im_conversation_id_icon(
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
-        .query_opt("SELECT icon_url, icon_name, create_time FROM x_message_conversation_icon WHERE conversation_id = $1 ORDER BY create_time DESC LIMIT 1", &[&id])
+        .query_opt("SELECT icon_url, icon_name, create_time::text AS create_time FROM x_message_conversation_icon WHERE conversation_id = $1 ORDER BY create_time DESC LIMIT 1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1084,7 +1084,7 @@ pub async fn im_conversation_id_read(
     let result = client
         .execute("UPDATE x_message_conversation SET read_status = 'read', read_time = NOW() WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("read".to_string(), Value::Bool(result > 0))]),
@@ -1108,7 +1108,7 @@ pub async fn im_conversation_id_read_mockputtopost(
     let result = client
         .execute("UPDATE x_message_conversation SET read_status = 'read', read_time = NOW() WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("read".to_string(), Value::Bool(result > 0))]),
@@ -1125,7 +1125,7 @@ pub async fn im_conversation_id_single(
     let row = client
         .query_opt("SELECT id, name, type, create_time FROM x_message_conversation WHERE id = $1 AND type = 'single'", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1175,7 +1175,7 @@ pub async fn im_conversation_id_single_mockdeletetoget(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(result > 0))]),
@@ -1202,7 +1202,7 @@ pub async fn im_conversation_id_top_cancel(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("topCancelled".to_string(), Value::Bool(result > 0))]),
@@ -1229,7 +1229,7 @@ pub async fn im_conversation_id_top_cancel_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("topCancelled".to_string(), Value::Bool(result > 0))]),
@@ -1256,7 +1256,7 @@ pub async fn im_conversation_id_top_set(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("topSet".to_string(), Value::Bool(result > 0))]),
@@ -1283,7 +1283,7 @@ pub async fn im_conversation_id_top_set_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("topSet".to_string(), Value::Bool(result > 0))]),
@@ -1297,9 +1297,9 @@ pub async fn im_manager_config(
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
-        .query_opt("SELECT id, config_key, config_value, create_time FROM x_message_config ORDER BY create_time DESC LIMIT 1", &[])
+        .query_opt("SELECT id, config_key, config_value, create_time::text AS create_time FROM x_message_config ORDER BY create_time DESC LIMIT 1", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1365,7 +1365,7 @@ pub async fn im_msg(
     let result = client
         .execute("INSERT INTO x_message (id, conversation_id, content, sender, type, create_time) VALUES ($1, $2, $3, $4, $5, NOW())", &[&id, &conversation_id, &content, &sender, &msg_type])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1409,7 +1409,7 @@ pub async fn im_msg_clear(
             &[&conversation_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("cleared".to_string(), Value::Bool(result > 0))]),
@@ -1438,7 +1438,7 @@ pub async fn im_msg_collection(
             &[&Uuid::new_v4().to_string(), &message_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("collected".to_string(), Value::Bool(result > 0))]),
@@ -1456,7 +1456,7 @@ pub async fn im_msg_collection_list_page_size_size(
     let rows = client
         .query("SELECT id, message_id, create_time FROM x_message_collection ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1514,7 +1514,7 @@ pub async fn im_msg_collection_remove(
             &[&message_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("removed".to_string(), Value::Bool(result > 0))]),
@@ -1597,7 +1597,7 @@ pub async fn im_msg_download_id(
     let row = client
         .query_opt("SELECT file_name, type, mime, content FROM x_message_file WHERE message_id = $1 LIMIT 1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let (file_name, mime, content_b64) = match row {
         Some(row) => (
@@ -1614,7 +1614,7 @@ pub async fn im_msg_download_id(
     };
     let data = base64::engine::general_purpose::STANDARD
         .decode(content_b64)
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let mime = mime
         .or(file_type_fallback(&file_name))
@@ -1661,7 +1661,7 @@ pub async fn im_msg_download_id_image_width_width_height_height(
     let row = client
         .query_opt("SELECT id, file_url, file_name, create_time FROM x_message_file WHERE message_id = $1 LIMIT 1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1708,7 +1708,7 @@ pub async fn im_msg_list_object(
     let rows = client
         .query("SELECT id, conversation_id, content, sender, type, create_time FROM x_message WHERE type != 'text' ORDER BY create_time DESC LIMIT 50", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1778,12 +1778,12 @@ pub async fn im_msg_list_page_size_size(
         client
             .query("SELECT id, conversation_id, content, sender, type, create_time FROM x_message ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else {
         client
             .query("SELECT id, conversation_id, content, sender, type, create_time FROM x_message WHERE conversation_id = $1 ORDER BY create_time DESC LIMIT $2 OFFSET $3", &[&conversation_id, &limit, &offset])
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     };
 
     let data: Vec<Value> = rows
@@ -1852,7 +1852,7 @@ pub async fn im_msg_revoke_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let Some(row) = owner else {
         return Ok(Json(ActionResult::error("message not found")));
     };
@@ -1865,7 +1865,7 @@ pub async fn im_msg_revoke_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("revoked".to_string(), Value::Bool(result > 0))]),
@@ -1935,7 +1935,7 @@ pub async fn im_msg_upload_conversationId_type_type(
     let result = client
         .execute("INSERT INTO x_message_file (id, message_id, conversation_id, file_url, file_name, file_size, type, mime, content, create_time) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())", &[&id, &id, &conversation_id, &file_url, &name, &file_size, &msg_type, &file_mime, &content_b64])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1958,7 +1958,7 @@ pub async fn instant_currentperson_consumed(
     let rows = client
         .query("SELECT id, consume, content, sender, consume_time FROM x_message_consume WHERE consumed = true ORDER BY consume_time DESC LIMIT 50", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2008,7 +2008,7 @@ pub async fn instant_currentperson_consumed_all(
     let rows = client
         .query("SELECT id, consume, content, sender, consume_time FROM x_message_consume WHERE consumed = true ORDER BY consume_time DESC", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2076,7 +2076,7 @@ pub async fn instant_currentperson_consumed_mockputtopost(
                     &[&id_list],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?,
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?,
         )
     } else {
         None
@@ -2100,7 +2100,7 @@ pub async fn instant_list_currentperson_consumed_count_count_asc(
     let rows = client
         .query("SELECT id, consume, content, sender, consume_time FROM x_message_consume WHERE consumed = true ORDER BY consume_time ASC LIMIT $1", &[&count])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2151,7 +2151,7 @@ pub async fn instant_list_currentperson_consumed_count_count_desc(
     let rows = client
         .query("SELECT id, consume, content, sender, consume_time FROM x_message_consume WHERE consumed = true ORDER BY consume_time DESC LIMIT $1", &[&count])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2202,7 +2202,7 @@ pub async fn instant_list_currentperson_count_count_asc(
     let rows = client
         .query("SELECT id, consume, content, sender, create_time FROM x_message_consume ORDER BY create_time ASC LIMIT $1", &[&count])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2253,7 +2253,7 @@ pub async fn instant_list_currentperson_count_count_desc(
     let rows = client
         .query("SELECT id, consume, content, sender, create_time FROM x_message_consume ORDER BY create_time DESC LIMIT $1", &[&count])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2304,7 +2304,7 @@ pub async fn instant_list_currentperson_noim_count_count_desc(
     let rows = client
         .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE type != 'im' ORDER BY create_time DESC LIMIT $1", &[&count])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2355,7 +2355,7 @@ pub async fn instant_list_currentperson_not_consumed_count_count_asc(
     let rows = client
         .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consumed = false ORDER BY create_time ASC LIMIT $1", &[&count])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2406,7 +2406,7 @@ pub async fn instant_list_currentperson_not_consumed_count_count_desc(
     let rows = client
         .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consumed = false ORDER BY create_time DESC LIMIT $1", &[&count])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2457,7 +2457,7 @@ pub async fn instant_list_id_next_count(
     let rows = client
         .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE id > $1 ORDER BY create_time ASC LIMIT $2", &[&id, &count])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2508,7 +2508,7 @@ pub async fn instant_list_id_prev_count(
     let rows = client
         .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE id < $1 ORDER BY create_time DESC LIMIT $2", &[&id, &count])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2570,7 +2570,7 @@ pub async fn mass_enable_type(
             &[&enabled, &msg_type],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2590,7 +2590,7 @@ pub async fn mass_list_id_next_count(
     let rows = client
         .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE id > $1 ORDER BY create_time ASC LIMIT $2", &[&id, &count])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2641,7 +2641,7 @@ pub async fn mass_list_id_prev_count(
     let rows = client
         .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE id < $1 ORDER BY create_time DESC LIMIT $2", &[&id, &count])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2695,7 +2695,7 @@ pub async fn mass_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2758,7 +2758,7 @@ pub async fn message_custom_create(
     let result = client
         .execute("INSERT INTO x_message (id, conversation_id, content, sender, type, create_time) VALUES ($1, $2, $3, $4, 'custom', NOW())", &[&id, &conversation_id, &content, &sender])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2785,7 +2785,7 @@ pub async fn message_list_paging_page_size_size(
     let rows = client
         .query("SELECT id, conversation_id, content, sender, type, create_time FROM x_message ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2863,7 +2863,7 @@ async fn is_conversation_member(
             &[&conversation_id, &person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(member.is_some())
 }
 
@@ -2877,7 +2877,7 @@ async fn conversation_type(
             &[&conversation_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(row.map(|r| r.get::<_, Option<String>>("type").unwrap_or_default()))
 }
 
@@ -2919,7 +2919,7 @@ pub async fn connector_create(
             &[&instant_id, &body, &msg_type, &person, &title],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     // 启用的 consumer 渠道来自消息配置；无配置时仅保留 Instant 落库。
     let consumers = client
@@ -2928,7 +2928,7 @@ pub async fn connector_create(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let mut dispatched: u64 = 0;
     for row in consumers {
@@ -2943,7 +2943,7 @@ pub async fn connector_create(
                 &[&message_id, &body, &person, &consumer],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     }
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -2990,7 +2990,7 @@ pub async fn ws_create(
             &[&person],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let mut delivered = false;
     if open.is_some() {
@@ -3001,7 +3001,7 @@ pub async fn ws_create(
                 &[&id, &body, &sender],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         delivered = true;
     }
 
@@ -3021,7 +3021,7 @@ pub async fn ws_count_person(pool: Extension<Pool>) -> Result<Json<ActionResult<
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get("cnt");
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -3045,7 +3045,7 @@ pub async fn ws_list_person_current_node(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3076,7 +3076,7 @@ pub async fn ws_list_person(pool: Extension<Pool>) -> Result<Json<ActionResult<V
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let mut groups: std::collections::BTreeMap<String, Vec<String>> =
         std::collections::BTreeMap::new();
@@ -3169,7 +3169,7 @@ pub async fn mass_create(
             &[&id, &title, &body, &msg_type, &send_person_list, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -3196,7 +3196,7 @@ pub async fn mass_enable_type_get(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3226,7 +3226,7 @@ pub async fn mass_id_mockdeletetoget(
     let exists = client
         .query_opt("SELECT id FROM x_message_mass WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if exists.is_none() {
         return Ok(Json(ActionResult::error("mass message not found")));
     }
@@ -3234,7 +3234,7 @@ pub async fn mass_id_mockdeletetoget(
     client
         .execute("DELETE FROM x_message_mass WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -3276,7 +3276,7 @@ pub async fn im_conversation_id_single_delete_virtual(
             &[&id, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match ext {
         Some(row) => {
@@ -3287,7 +3287,7 @@ pub async fn im_conversation_id_single_delete_virtual(
                     &[&ext_id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         }
         None => {
             let ext_id = Uuid::new_v4().to_string();
@@ -3298,7 +3298,7 @@ pub async fn im_conversation_id_single_delete_virtual(
                     &[&ext_id, &id, &session.person_unique],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         }
     }
 
@@ -3321,7 +3321,7 @@ pub async fn instant_currentperson_consumed_put(
             &[&session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([

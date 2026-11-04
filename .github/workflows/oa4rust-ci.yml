@@ -220,6 +220,111 @@ jobs:
           DATABASE_DIALECT: postgres
           DATABASE_URL: postgres://o2server:password@localhost:5432/oa4rust
 
+  # ── 集成场景（真跑 #[ignore] 用例）───────────────────────────────────────────
+  # 2026-11-04：上面的 integration-tests job 跑 `cargo test --test integration_runner`
+  # 但没带 `--ignored`，而全部场景都标了 `#[ignore]` —— 这些用例在 CI 里从未执行过，
+  # 长期红灯因此没人发现。本 job 真跑，且只允许清单文件里的一条显式豁免
+  # （tests/integration_skip_list.txt，守卫见 scripts/run_integration_scenarios.py）。
+  integration-scenarios:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: oa4rust/backend
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: sccache
+      DATABASE_DIALECT: postgres
+      DATABASE_URL: postgres://o2server:password@localhost:5432/oa4rust
+    services:
+      postgres:
+        image: postgres@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
+        env:
+          POSTGRES_USER: o2server
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: oa4rust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
+        with:
+          toolchain: 1.98.1
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@7d986dd989559c6ecdb630a3fd2557667be217ad # v0.0.9
+      - name: Cache cargo registry
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('oa4rust/backend/Cargo.lock') }}
+      - name: Apply migrations
+        run: cargo run --bin oa4rust -- --migrate-only
+      - name: Run integration scenarios (ignored)
+        run: python3 scripts/run_integration_scenarios.py
+
+  # ── 种子化路由扫描（行为级门禁，棘轮基线）─────────────────────────────
+  # 2026-11-05：静态扫描器认不出裸 row.get，且 500 只在「表里有行」时才触发。
+  # 本 job 真的往每张 public 表种 1 行、真的打全量路由，断言当前 500 集合与
+  # tests/idor_seeded_handler500_baseline.txt 完全相等：
+  #   - 基线外的新 500 → 红（新写的类型错配当天被拦）
+  #   - 基线条目复现不出来 → 红（已修但没删行）
+  # 基线只许变小：行数必须等于 tests/idor_matrix.rs 的 BASELINE_COUNT，
+  # 每修一条删一行并下调该常量，diff 强制可见。
+  seeded-route-scan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: oa4rust/backend
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: sccache
+      DATABASE_DIALECT: postgres
+      DATABASE_URL: postgres://o2server:password@localhost:5432/oa4rust
+    services:
+      postgres:
+        image: postgres@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
+        env:
+          POSTGRES_USER: o2server
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: oa4rust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
+        with:
+          toolchain: 1.98.1
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@7d986dd989559c6ecdb630a3fd2557667be217ad # v0.0.9
+      - name: Cache cargo registry
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('oa4rust/backend/Cargo.lock') }}
+      # 种子库（sqlx 路由）由测试自身 DROP/CREATE + 迁移（shared::testing::fresh_scratch）；
+      # 但 sea-orm entity 路由用的是 DATABASE_URL 指向的 oa4rust，空库无表会全部 500，
+      # 所以这里必须与 integration-scenarios 一样先建表（环境差异不能靠本地已迁移库蒙混）。
+      - name: Apply migrations
+        run: cargo run --bin oa4rust -- --migrate-only
+        env:
+          DATABASE_URL: postgres://o2server:password@localhost:5432/oa4rust
+          DATABASE_DIALECT: postgres
+      - name: Run seeded route scan (handler500 ratchet)
+        run: cargo test --test idor_matrix seeded_route_scan_handler500_ratchet -- --nocapture --test-threads=1
+
   # ── 启动冒烟：迁移 → 起服务 → /health ────────────────────────────────────
   # 2026-10-29：oa4rust 是**独立系统**，Java 契约奇偶不再是目标。
   # 原 behavior-compare / behavior-gate 两个 job 随之删除，理由（都是可核验的）：

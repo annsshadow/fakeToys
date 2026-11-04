@@ -26,7 +26,7 @@ pub async fn list_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -52,19 +52,25 @@ pub async fn list_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>
                 "visible".to_string(),
                 Value::Bool(row.get::<_, Option<bool>>("visible").unwrap_or(false)),
             );
-            // order_number 在历史库可能是 int4 或 int8：try_get 兼容两种，避免 row.get panic。
-            let order_number: Option<i64> = row
-                .try_get::<_, Option<i32>>("order_number")
+            // order_number 在当前 schema 是 TEXT（历史库可能是 int4/int8）：
+            // 三种类型逐个尝试，任何情况下都必须输出 orderNumber（缺字段=静默丢数据）。
+            let order_number: i64 = row
+                .try_get::<_, Option<String>>("order_number")
                 .ok()
                 .flatten()
-                .map(i64::from)
-                .or_else(|| row.try_get::<_, Option<i64>>("order_number").ok().flatten());
-            if let Some(v) = order_number {
-                map.insert(
-                    "orderNumber".to_string(),
-                    serde_json::Number::from(v).into(),
-                );
-            }
+                .and_then(|s| s.parse::<i64>().ok())
+                .or_else(|| row.try_get::<_, Option<i64>>("order_number").ok().flatten())
+                .or_else(|| {
+                    row.try_get::<_, Option<i32>>("order_number")
+                        .ok()
+                        .flatten()
+                        .map(i64::from)
+                })
+                .unwrap_or(0);
+            map.insert(
+                "orderNumber".to_string(),
+                serde_json::Number::from(order_number).into(),
+            );
             map.insert(
                 "path".to_string(),
                 Value::String(row.get::<_, Option<String>>("path").unwrap_or_default()),
@@ -99,7 +105,7 @@ pub async fn get_component(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -124,19 +130,25 @@ pub async fn get_component(
                 "visible".to_string(),
                 Value::Bool(row.get::<_, Option<bool>>("visible").unwrap_or(false)),
             );
-            // order_number 在历史库可能是 int4 或 int8：try_get 兼容两种，避免 row.get panic。
-            let order_number: Option<i64> = row
-                .try_get::<_, Option<i32>>("order_number")
+            // order_number 在当前 schema 是 TEXT（历史库可能是 int4/int8）：
+            // 三种类型逐个尝试，任何情况下都必须输出 orderNumber（缺字段=静默丢数据）。
+            let order_number: i64 = row
+                .try_get::<_, Option<String>>("order_number")
                 .ok()
                 .flatten()
-                .map(i64::from)
-                .or_else(|| row.try_get::<_, Option<i64>>("order_number").ok().flatten());
-            if let Some(v) = order_number {
-                map.insert(
-                    "orderNumber".to_string(),
-                    serde_json::Number::from(v).into(),
-                );
-            }
+                .and_then(|s| s.parse::<i64>().ok())
+                .or_else(|| row.try_get::<_, Option<i64>>("order_number").ok().flatten())
+                .or_else(|| {
+                    row.try_get::<_, Option<i32>>("order_number")
+                        .ok()
+                        .flatten()
+                        .map(i64::from)
+                })
+                .unwrap_or(0);
+            map.insert(
+                "orderNumber".to_string(),
+                serde_json::Number::from(order_number).into(),
+            );
             map.insert(
                 "path".to_string(),
                 Value::String(row.get::<_, Option<String>>("path").unwrap_or_default()),
@@ -162,7 +174,7 @@ pub async fn count(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, A
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let count: i64 = row.get("cnt");
 
     Ok(Json(ActionResult::success(Value::Object(

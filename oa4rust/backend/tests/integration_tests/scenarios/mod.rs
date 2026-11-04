@@ -1,15 +1,32 @@
 // Copyright (C) 2026 annsshadow
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+pub mod ai_chat_paging;
+pub mod attribute_paths;
 pub mod bbs_correlation;
 pub mod bpmn_process;
 pub mod cms_document;
 pub mod cms_extended;
+pub mod document_filter_paths;
+pub mod draft_start_status;
+pub mod entity_reference_required;
 pub mod file_portal;
+pub mod identity_order;
+pub mod insert_required_id;
+pub mod jsonb_param_binding;
 pub mod ldap_fallback;
+pub mod meeting_room_jsonb;
 pub mod new_real_endpoints;
+pub mod organization_core_express;
+pub mod portal_surface_publish;
 pub mod program_center;
+pub mod program_deploy_status;
 pub mod query_assemble;
+pub mod query_permission_binding;
+pub mod script_delete_paths;
+pub mod upsert_paths;
+pub mod work_delete_paths;
+pub mod wrong_type_config;
 
 pub mod core_crud_lifecycle;
 pub mod data_integrity;

@@ -47,7 +47,7 @@ pub async fn get_control_config(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let count: i64 = row.map(|r| r.get("cnt")).unwrap_or(0);
     let enabled = count > 0;
@@ -79,7 +79,7 @@ pub async fn list_control_apps(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -142,7 +142,7 @@ pub async fn update_control_config(
             &[&id, &title, &"", &"all", &"system"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -177,7 +177,7 @@ pub async fn list_jpushs(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -235,7 +235,7 @@ pub async fn get_jpush(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -302,7 +302,7 @@ pub async fn create_jpush(
             &[&id, &title, &content, &target, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
@@ -331,7 +331,7 @@ async fn jpush_owner_gate(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let Some(row) = row else {
         return Ok(false);
     };
@@ -369,7 +369,7 @@ pub async fn save_jpush(
             &[&title, &content, &target, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("jpush not found")));
@@ -406,7 +406,7 @@ pub async fn delete_jpush(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error(
@@ -453,7 +453,7 @@ pub async fn device_admin_unbind_all_person(
             &[&person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -505,7 +505,7 @@ pub async fn device_bind(
             &[&id, &device_name, &device_type, &push_type, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::new(),
@@ -524,7 +524,7 @@ pub async fn device_check_deviceName_deviceType_pushType(
             &[&device_name, &device_type, &push_type],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let exists = row.is_some();
     Ok(Json(ActionResult::success(Value::Object(
@@ -543,7 +543,7 @@ pub async fn device_config_push_type(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let count: i64 = row.get("cnt");
     let push_type: String = row.get::<_, Option<String>>("target").unwrap_or_default();
@@ -570,7 +570,7 @@ pub async fn device_list_pushType(
             &[&push_type],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -633,7 +633,7 @@ pub async fn device_unbind_new_deviceName_deviceType_pushType(
             &[&device_name, &device_type, &push_type],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .map(|r| r.get::<_, Option<String>>("creator").unwrap_or_default());
     let owner = match owner {
         Some(o) if !o.is_empty() => o,
@@ -650,7 +650,7 @@ pub async fn device_unbind_new_deviceName_deviceType_pushType(
             &[&device_name, &device_type, &push_type],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error(
@@ -683,7 +683,7 @@ pub async fn device_unbind_deviceName_deviceType(
             &[&device_name, &device_type],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error(
@@ -711,7 +711,7 @@ pub async fn message_test_send(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let messages: Vec<Value> = rows
         .iter()
@@ -1003,7 +1003,7 @@ pub async fn message_send(
             &[&id, &title, &content, &target, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::new(),
     ))))

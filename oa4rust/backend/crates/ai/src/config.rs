@@ -19,7 +19,7 @@ pub async fn config_get(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data = if rows.is_empty() {
         Value::Object(serde_json::Map::from_iter([
@@ -119,7 +119,7 @@ pub async fn config_base_config(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data = if rows.is_empty() {
         Value::Object(serde_json::Map::from_iter([
@@ -159,16 +159,16 @@ pub async fn config_list_model_paging(
     let total_row = client
         .query_one("SELECT COUNT(*) as cnt FROM x_ai_model", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total: i64 = total_row.get("cnt");
 
     let rows = client
         .query(
-            "SELECT id, name, xtype as type, xmodel as model, xcompletionurl as \"completionUrl\", xapikey as \"apiKey\", xenable as enable, xasdefault as \"asDefault\", xdesc as desc FROM x_ai_model ORDER BY create_time DESC LIMIT $1 OFFSET $2",
+            "SELECT id, name, xtype as type, xmodel as model, xcompletionurl as \"completionUrl\", xapikey as \"apiKey\", xenable as enable, (xasdefault = 'true') as \"asDefault\", xdesc as desc FROM x_ai_model ORDER BY create_time DESC LIMIT $1 OFFSET $2",
             &[&size, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -232,11 +232,11 @@ pub async fn config_get_model(
 
     let row = client
         .query_opt(
-            "SELECT id, name, xtype as type, xmodel as model, xcompletionurl as \"completionUrl\", xapikey as \"apiKey\", xenable as enable, xasdefault as \"asDefault\", xdesc as desc FROM x_ai_model WHERE id = $1 OR xname = $1",
+            "SELECT id, name, xtype as type, xmodel as model, xcompletionurl as \"completionUrl\", xapikey as \"apiKey\", xenable as enable, (xasdefault = 'true') as \"asDefault\", xdesc as desc FROM x_ai_model WHERE id = $1 OR xname = $1",
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -286,32 +286,10 @@ pub async fn config_get_model(
     }
 }
 
-#[axum::debug_handler]
-#[allow(non_snake_case)]
-pub async fn config_list_mcp_paging(
-    _pool: Extension<Pool>,
-    Path((page, size)): Path<(i32, i32)>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    let (size, _offset) = shared::response::page_window(page as i64, size as i64)?;
-    let total: i64 = 0;
-
-    let data: Vec<Value> = vec![];
-
-    Ok(Json(ActionResult::legacy_success(
-        Value::Array(data),
-        total,
-        size,
-    )))
-}
-
-#[axum::debug_handler]
-#[allow(non_snake_case)]
-pub async fn config_get_mcp(
-    _pool: Extension<Pool>,
-    Path(_flag): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::error("mcp not found")))
-}
+// O20：原 config_list_mcp_paging / config_get_mcp 是本 crate 的空桩
+// （恒返回空数组 / "mcp not found"），旧词路由 /api/ai/config/list|get/mcp
+// 因此长期返回假数据。旧词路由已改挂 ai_assemble_control 的真实现，
+// 本文件不再保留桩函数。
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
@@ -325,7 +303,7 @@ pub async fn list_enable_model(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()

@@ -27,7 +27,7 @@ pub async fn work_terminate(
     let creator: Option<String> = client
         .query_opt("SELECT creator FROM x_work WHERE id = $1", &[&work_id])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .and_then(|row| row.get::<_, Option<String>>("creator"));
     // 行不存在时放行到下面的 UPDATE（0 行结果，保持既有 not-found 语义）；
     // creator 为空的历史行同样放行，避免把数据修复问题伪装成权限问题。
@@ -40,7 +40,7 @@ pub async fn work_terminate(
             &[&"terminated", &work_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -66,7 +66,7 @@ pub async fn work_retract(
             &[&work_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if rows.is_empty() {
         return Ok(Json(ActionResult::error("work not found")));
@@ -99,7 +99,7 @@ pub async fn work_processing(
             &[&work_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -133,7 +133,7 @@ pub async fn task_processing(
             &[&task_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -167,7 +167,7 @@ pub async fn work_count_with_person(
             &[&person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let count: i64 = row.get("count");
 
@@ -194,7 +194,7 @@ pub async fn task_count_with_person(
             &[&person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let count: i64 = row.get("count");
 

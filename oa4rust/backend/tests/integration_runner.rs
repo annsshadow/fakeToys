@@ -17,6 +17,7 @@
 mod integration_tests;
 
 use integration_tests::db::init_test_database_async;
+use integration_tests::db_isolated::init_isolated;
 
 /// 集成测试主入口。
 ///
@@ -58,6 +59,165 @@ async fn data_integrity_scenarios() {
 async fn pagination_contract() {
     let _ctx = init_test_database_async().await;
     integration_tests::scenarios::pagination_contract::pagination_contract_flow().await;
+}
+
+/// O24：`organization/core/express` 的 200/500/503 三条行为级用例。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn organization_express_config_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::organization_core_express::organization_express_config_contract_flow(
+        ctx.pool.clone(),
+    )
+    .await;
+}
+
+/// O24-3 批次 5：draft/start 写 xstatus='started'（GET/POST 共用 handler）。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn draft_start_status_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::draft_start_status::draft_start_status_flow(ctx.pool.clone())
+        .await;
+}
+
+/// O24-3 批次 9：E42703 属性表路径（personattribute / unitattribute 无 name 列）。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn attribute_paths_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::attribute_paths::attribute_paths_flow(ctx.pool.clone()).await;
+}
+
+/// O24-3 批次 16：program deploy 的 nullable status 按非 Option 读。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn program_deploy_status_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::program_deploy_status::program_deploy_status_flow(
+        ctx.pool.clone(),
+    )
+    .await;
+}
+
+/// O24-3 批次 15：E identity order_number bigint 按 i32 绑定（WrongType）。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn identity_order_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::identity_order::identity_order_flow(ctx.pool.clone()).await;
+}
+
+/// O24-3 批次 14：meeting room 的 jsonb equipment 按 String 解码。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn meeting_room_jsonb_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::meeting_room_jsonb::meeting_room_jsonb_flow(ctx.pool.clone())
+        .await;
+}
+
+/// O24-3 批次 13：E42P18 ai chat 分页占位符编号错位。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn ai_chat_paging_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::ai_chat_paging::ai_chat_paging_flow(ctx.pool.clone()).await;
+}
+
+/// O24-3 批次 12：E23503 work 删除的「先子后父」顺序。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn work_delete_paths_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::work_delete_paths::work_delete_paths_flow(ctx.pool.clone()).await;
+}
+
+/// O24-3 批次 11：E42601 document filter 纯 tail 拼进 WHERE。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn document_filter_paths_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::document_filter_paths::document_filter_paths_flow(
+        ctx.pool.clone(),
+    )
+    .await;
+}
+
+/// O24-3 批次 10：E42804 脚本软删 / mergeitem 类型不匹配。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn script_delete_paths_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::script_delete_paths::script_delete_paths_flow(ctx.pool.clone())
+        .await;
+}
+
+/// O24-3 批次 8：E42P10 upsert 路径（attendance statistic/do、calendar control config）。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn upsert_paths_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::upsert_paths::upsert_paths_flow(ctx.pool.clone()).await;
+}
+
+/// O24-3 批次 7：wrong-type 配置写路径（bbs max_forum_count、general 文本布尔列）。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn wrong_type_config_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::wrong_type_config::wrong_type_config_flow(ctx.pool.clone()).await;
+}
+
+/// O24-3 批次 6：E23502 实体引用必填（hotpic application/info_id、portal page portal_id）。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn entity_reference_required_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::entity_reference_required::entity_reference_required_flow(
+        ctx.pool.clone(),
+    )
+    .await;
+}
+
+/// O24-3 批次 4：INSERT 未写必填主键/规范列的遗留给定族（3 条 E23502）。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn insert_required_id_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::insert_required_id::insert_required_id_flow(ctx.pool.clone())
+        .await;
+}
+
+/// O24-3 批次 3：查询设计器 permission 的 `$1` 复用冲突（4 条基线）。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn query_permission_binding_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::query_permission_binding::query_permission_binding_flow(
+        ctx.pool.clone(),
+    )
+    .await;
+}
+
+/// O24-3 批次 2：JSONB 列按 String 绑定的同根因族（4 条基线）。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn jsonb_param_binding_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::jsonb_param_binding::jsonb_param_binding_flow(ctx.pool.clone())
+        .await;
+}
+
+/// O24-3 批次 1：门户表面发布「写库后 500」的行为级用例。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn portal_surface_publish_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::portal_surface_publish::portal_surface_publish_flow(
+        ctx.pool.clone(),
+    )
+    .await;
 }
 
 #[cfg(test)]

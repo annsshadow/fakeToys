@@ -151,7 +151,7 @@ pub async fn calendar_list_public(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<CalendarItem> = rows
         .iter()
@@ -185,7 +185,7 @@ pub async fn calendar_list_my(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let mut my_calendars = Vec::new();
     let mut unit_calendars = Vec::new();
@@ -295,7 +295,7 @@ pub async fn calendar_create(
             &[&id, &name, &calendar_type, &target, &color, &description, &source, &createor, &is_public],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let item = CalendarItem {
         id,
@@ -360,7 +360,7 @@ pub async fn calendar_update(
             &[&name, &calendar_type, &target, &color, &description, &is_public, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let item = CalendarItem {
         id,
@@ -413,7 +413,7 @@ pub async fn calendar_remove(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let item = CalendarItem {
         id: existing.get("id"),
@@ -468,7 +468,7 @@ pub async fn event_create(
             &[&id, &calendar_id, &title, &content, &location, &start_time, &end_time, &all_day, &visibility, &createor],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let event = CalendarEvent {
         id,
@@ -539,7 +539,7 @@ pub async fn event_update(
             &[&title, &content, &location, &start_time, &end_time, &all_day, &visibility, &status, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let event = CalendarEvent {
         id,
@@ -593,7 +593,7 @@ pub async fn event_remove(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let event = CalendarEvent {
         id: existing.get("id"),
@@ -626,7 +626,7 @@ pub async fn event_list(
             &[&calendar_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<CalendarEvent> = rows
         .iter()

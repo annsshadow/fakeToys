@@ -76,7 +76,7 @@ async fn u4_require_ppc_actor(
             &[&id.to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .map(|r| {
             r.get::<_, Option<String>>("xcreatorPerson")
                 .unwrap_or_default()
@@ -111,7 +111,7 @@ async fn u4_require_ppc_person(
             &[&id.to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .map(|r| r.get::<_, Option<String>>("xperson").unwrap_or_default());
     require_actor_opt(pool, &session, owner.as_deref()).await
 }
@@ -210,7 +210,8 @@ pub async fn create_surface(
     let version = "1.0".to_string();
     let creator = sess.person_unique.clone();
 
-    let content_str = serde_json::to_string(&content).map_err(|_| AppError::Internal)?;
+    let content_str = serde_json::to_string(&content)
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     client
         .execute(
@@ -219,7 +220,7 @@ pub async fn create_surface(
             &[&id, &name, &category, &content_str, &version, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
@@ -244,7 +245,7 @@ pub async fn list_surfaces(
             &[&category],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -309,7 +310,7 @@ pub async fn process_manager_list(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -372,7 +373,7 @@ pub async fn preview_surface(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -419,7 +420,7 @@ pub async fn publish_surface(
             &[&"published", &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("surface not found")));
@@ -432,7 +433,7 @@ pub async fn publish_surface(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
@@ -492,12 +493,12 @@ pub async fn delete_surface(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute("DELETE FROM x_process_surface WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("surface not found")));
@@ -554,15 +555,19 @@ pub async fn save_surface(
     // A3-N9：表面内容按 id 覆写，收 admin 门（无会话 401 / 非 admin 403）。
     require_admin_opt(&pool.0, session.as_deref()).await?;
     let client = shared::db::acquire(&pool).await?;
-    let content_str = serde_json::to_string(&content).map_err(|_| AppError::Internal)?;
+    let content_str = serde_json::to_string(&content)
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute(
-            "UPDATE x_process_surface SET content = $1::jsonb, update_time = NOW() WHERE id = $2",
+            // O24-3 批次 2：`content` 真实类型是 TEXT（information_schema 现场确认）。
+            // 旧 SQL 的 `$1::jsonb` 会把参数推断成 JSONB，而 Rust 侧绑定 String
+            // → ToSql WrongType；写成 `$1::text` 即可原样存 JSON 文本。
+            "UPDATE x_process_surface SET content = $1::text, update_time = NOW() WHERE id = $2",
             &[&content_str, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("surface not found")));
@@ -575,7 +580,7 @@ pub async fn save_surface(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
@@ -636,7 +641,7 @@ async fn anonymous_read_count_credential_core(
             &[&credential],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -675,7 +680,7 @@ async fn anonymous_task_count_credential_core(
             &[&credential],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -713,7 +718,7 @@ pub async fn application_list(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -778,7 +783,7 @@ pub async fn application_list_complex(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -831,7 +836,7 @@ pub async fn application_list_complex_manage_person(
             &[&person],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("application not found")));
@@ -843,7 +848,7 @@ pub async fn application_list_complex_manage_person(
             &[&person],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -888,7 +893,7 @@ pub async fn application_list_key_key(
             &[&key],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -928,7 +933,7 @@ pub async fn application_list_range(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -976,7 +981,7 @@ pub async fn application_list_terminal_terminal(
             &[&terminal],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1017,7 +1022,7 @@ pub async fn application_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1059,7 +1064,7 @@ pub async fn application_flag_icon(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1101,7 +1106,7 @@ pub async fn application_flag_is_manager(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1143,7 +1148,7 @@ pub async fn application_flag_onlyRemoveNotCompleted(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1185,7 +1190,7 @@ pub async fn applicationdict_list_application_applicationFlag(
             &[&applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1238,7 +1243,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag(
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1283,7 +1288,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_dat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1329,7 +1334,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1380,7 +1385,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("applicationdict not found")));
@@ -1392,7 +1397,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute(
@@ -1400,7 +1405,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("applicationdict not found")));
@@ -1455,7 +1460,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("applicationdict not found")));
@@ -1467,7 +1472,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1509,7 +1514,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1556,7 +1561,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("applicationdict not found")));
@@ -1568,7 +1573,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute(
@@ -1576,7 +1581,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("applicationdict not found")));
@@ -1627,7 +1632,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("applicationdict not found")));
@@ -1639,7 +1644,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1681,7 +1686,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1728,7 +1733,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("applicationdict not found")));
@@ -1740,7 +1745,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute(
@@ -1748,7 +1753,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("applicationdict not found")));
@@ -1799,7 +1804,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("applicationdict not found")));
@@ -1811,7 +1816,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1853,7 +1858,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1900,7 +1905,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("applicationdict not found")));
@@ -1912,7 +1917,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute(
@@ -1920,7 +1925,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("applicationdict not found")));
@@ -1971,7 +1976,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("applicationdict not found")));
@@ -1983,7 +1988,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2033,7 +2038,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2088,7 +2093,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("applicationdict not found")));
@@ -2100,7 +2105,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute(
@@ -2108,7 +2113,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("applicationdict not found")));
@@ -2167,7 +2172,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("applicationdict not found")));
@@ -2179,7 +2184,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2239,7 +2244,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2304,7 +2309,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("applicationdict not found")));
@@ -2316,7 +2321,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute(
@@ -2324,7 +2329,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("applicationdict not found")));
@@ -2393,7 +2398,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("applicationdict not found")));
@@ -2405,7 +2410,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2467,7 +2472,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2534,7 +2539,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("applicationdict not found")));
@@ -2546,7 +2551,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute(
@@ -2554,7 +2559,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("applicationdict not found")));
@@ -2625,7 +2630,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("applicationdict not found")));
@@ -2637,7 +2642,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2701,7 +2706,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2770,7 +2775,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("applicationdict not found")));
@@ -2782,7 +2787,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute(
@@ -2790,7 +2795,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("applicationdict not found")));
@@ -2863,7 +2868,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("applicationdict not found")));
@@ -2875,7 +2880,7 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
             &[&applicationDictFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2917,7 +2922,7 @@ pub async fn control_workorworkcompleted_workOrWorkCompleted(
             &[&workOrWorkCompleted],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2950,7 +2955,7 @@ pub async fn correlation_job_job(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2992,7 +2997,7 @@ pub async fn correlation_job_job_delete(
     let result = client
         .execute("DELETE FROM PP_C_JOB WHERE xid = $1", &[&job])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("job not found")));
@@ -3004,12 +3009,12 @@ pub async fn correlation_job_job_delete(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute("DELETE FROM PP_C_JOB WHERE xid = $1", &[&job])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("job not found")));
@@ -3055,7 +3060,7 @@ pub async fn correlation_list_job_job(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3105,7 +3110,7 @@ pub async fn correlation_list_job_job_site_site(
             &[&job, &site],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3155,7 +3160,7 @@ pub async fn correlation_update_job_job(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -3197,7 +3202,7 @@ pub async fn data_fetch_job_job(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3247,7 +3252,7 @@ pub async fn data_job_job(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3297,7 +3302,7 @@ pub async fn data_job_job_array_data(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3349,7 +3354,7 @@ pub async fn data_job_job_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("job not found")));
@@ -3361,7 +3366,7 @@ pub async fn data_job_job_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -3403,7 +3408,7 @@ pub async fn data_job_job_path0(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3455,7 +3460,7 @@ pub async fn data_job_job_path0_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("job not found")));
@@ -3467,7 +3472,7 @@ pub async fn data_job_job_path0_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -3509,7 +3514,7 @@ pub async fn data_job_job_path0_path1(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3561,7 +3566,7 @@ pub async fn data_job_job_path0_path1_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("job not found")));
@@ -3573,7 +3578,7 @@ pub async fn data_job_job_path0_path1_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -3620,7 +3625,7 @@ pub async fn data_job_job_path0_path1_path2(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3677,7 +3682,7 @@ pub async fn data_job_job_path0_path1_path2_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("job not found")));
@@ -3689,7 +3694,7 @@ pub async fn data_job_job_path0_path1_path2_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -3737,7 +3742,7 @@ pub async fn data_job_job_path0_path1_path2_path3(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3795,7 +3800,7 @@ pub async fn data_job_job_path0_path1_path2_path3_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("job not found")));
@@ -3807,7 +3812,7 @@ pub async fn data_job_job_path0_path1_path2_path3_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -3856,7 +3861,7 @@ pub async fn data_job_job_path0_path1_path2_path3_path4(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3915,7 +3920,7 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("job not found")));
@@ -3927,7 +3932,7 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -3971,7 +3976,7 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -4025,7 +4030,7 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("job not found")));
@@ -4037,7 +4042,7 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -4079,7 +4084,7 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -4131,7 +4136,7 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6_mockputtopos
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("job not found")));
@@ -4143,7 +4148,7 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6_mockputtopos
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -4185,7 +4190,7 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6_path7(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -4237,7 +4242,7 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6_path7_mockpu
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("job not found")));
@@ -4249,7 +4254,7 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6_path7_mockpu
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -4293,7 +4298,7 @@ pub async fn data_work_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let bundle: Value = match row {
         Some(row) => row
             .get::<_, Option<String>>("data")
@@ -4322,7 +4327,7 @@ pub async fn data_work_id_mockdeletetoget(
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -4334,12 +4339,12 @@ pub async fn data_work_id_mockdeletetoget(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -4387,7 +4392,7 @@ pub async fn data_work_id_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -4399,7 +4404,7 @@ pub async fn data_work_id_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -4441,7 +4446,7 @@ pub async fn data_work_id_path0(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -4490,7 +4495,7 @@ pub async fn data_work_id_path0_mockdeletetoget(
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -4502,12 +4507,12 @@ pub async fn data_work_id_path0_mockdeletetoget(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -4555,7 +4560,7 @@ pub async fn data_work_id_path0_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -4567,7 +4572,7 @@ pub async fn data_work_id_path0_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -4609,7 +4614,7 @@ pub async fn data_work_id_path0_path1(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -4658,7 +4663,7 @@ pub async fn data_work_id_path0_path1_mockdeletetoget(
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -4670,12 +4675,12 @@ pub async fn data_work_id_path0_path1_mockdeletetoget(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -4723,7 +4728,7 @@ pub async fn data_work_id_path0_path1_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -4735,7 +4740,7 @@ pub async fn data_work_id_path0_path1_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -4782,7 +4787,7 @@ pub async fn data_work_id_path0_path1_path2(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -4836,7 +4841,7 @@ pub async fn data_work_id_path0_path1_path2_mockdeletetoget(
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -4848,12 +4853,12 @@ pub async fn data_work_id_path0_path1_path2_mockdeletetoget(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -4906,7 +4911,7 @@ pub async fn data_work_id_path0_path1_path2_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -4918,7 +4923,7 @@ pub async fn data_work_id_path0_path1_path2_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -4966,7 +4971,7 @@ pub async fn data_work_id_path0_path1_path2_path3(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -5021,7 +5026,7 @@ pub async fn data_work_id_path0_path1_path2_path3_mockdeletetoget(
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -5033,12 +5038,12 @@ pub async fn data_work_id_path0_path1_path2_path3_mockdeletetoget(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -5092,7 +5097,7 @@ pub async fn data_work_id_path0_path1_path2_path3_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -5104,7 +5109,7 @@ pub async fn data_work_id_path0_path1_path2_path3_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -5153,7 +5158,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -5209,7 +5214,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_mockdeletetoget(
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -5221,12 +5226,12 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_mockdeletetoget(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -5281,7 +5286,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -5293,7 +5298,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -5337,7 +5342,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -5388,7 +5393,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_mockdeletetoget(
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -5400,12 +5405,12 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_mockdeletetoget(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -5455,7 +5460,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -5467,7 +5472,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -5509,7 +5514,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -5558,7 +5563,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_mockdeleteto
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -5570,12 +5575,12 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_mockdeleteto
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -5623,7 +5628,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_mockputtopos
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -5635,7 +5640,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_mockputtopos
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -5677,7 +5682,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -5726,7 +5731,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockde
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -5738,12 +5743,12 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockde
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -5791,7 +5796,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockpu
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -5803,7 +5808,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockpu
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -5845,7 +5850,7 @@ pub async fn data_workcompleted_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -5895,7 +5900,7 @@ pub async fn data_workcompleted_id_from_data(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -5945,7 +5950,7 @@ pub async fn data_workcompleted_id_from_item(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -5997,7 +6002,7 @@ pub async fn data_workcompleted_id_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("workcompleted not found")));
@@ -6009,7 +6014,7 @@ pub async fn data_workcompleted_id_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -6051,7 +6056,7 @@ pub async fn data_workcompleted_id_path0(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -6103,7 +6108,7 @@ pub async fn data_workcompleted_id_path0_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("workcompleted not found")));
@@ -6115,7 +6120,7 @@ pub async fn data_workcompleted_id_path0_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -6157,7 +6162,7 @@ pub async fn data_workcompleted_id_path0_path1(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -6209,7 +6214,7 @@ pub async fn data_workcompleted_id_path0_path1_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("workcompleted not found")));
@@ -6221,7 +6226,7 @@ pub async fn data_workcompleted_id_path0_path1_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -6268,7 +6273,7 @@ pub async fn data_workcompleted_id_path0_path1_path2(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -6325,7 +6330,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("workcompleted not found")));
@@ -6337,7 +6342,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -6385,7 +6390,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -6443,7 +6448,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("workcompleted not found")));
@@ -6455,7 +6460,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -6504,7 +6509,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -6563,7 +6568,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("workcompleted not found")));
@@ -6575,7 +6580,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -6619,7 +6624,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -6673,7 +6678,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_mockputto
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("workcompleted not found")));
@@ -6685,7 +6690,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_mockputto
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -6727,7 +6732,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -6779,7 +6784,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_moc
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("workcompleted not found")));
@@ -6791,7 +6796,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_moc
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -6833,7 +6838,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_pat
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -6885,7 +6890,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_pat
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("workcompleted not found")));
@@ -6897,7 +6902,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_pat
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -6939,7 +6944,7 @@ pub async fn datarecord_get_job_job_path_path(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -6981,7 +6986,7 @@ pub async fn datarecord_list_job_job(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -7029,7 +7034,7 @@ pub async fn documentversion_list_job_job(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -7079,7 +7084,7 @@ pub async fn documentversion_list_job_job_category_category(
             &[&job, &category],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -7129,7 +7134,7 @@ pub async fn documentversion_list_workorworkcompleted_workOrWorkCompleted(
             &[&workOrWorkCompleted],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -7180,7 +7185,7 @@ async fn documentversion_list_workorworkcompleted_workOrWorkCompleted_category_c
             &[&workOrWorkCompleted, &category],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -7260,7 +7265,7 @@ pub async fn documentversion_work_work(
             &[&work],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -7302,7 +7307,7 @@ pub async fn documentversion_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -7347,7 +7352,7 @@ async fn draft_list_my_paging_page_size_size_core(
             &[&size, &page],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -7413,7 +7418,7 @@ pub async fn draft_list_id_next_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -7463,7 +7468,7 @@ pub async fn draft_list_id_prev_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -7513,7 +7518,7 @@ pub async fn draft_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("draft not found")));
@@ -7525,7 +7530,7 @@ pub async fn draft_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -7567,7 +7572,7 @@ pub async fn draft_process_processFlag(
             &[&processFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -7609,7 +7614,7 @@ pub async fn draft_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -7650,7 +7655,7 @@ pub async fn draft_id_mockdeletetoget(
     let result = client
         .execute("DELETE FROM PP_C_DRAFT WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("draft not found")));
@@ -7662,12 +7667,12 @@ pub async fn draft_id_mockdeletetoget(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute("DELETE FROM PP_C_DRAFT WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("draft not found")));
@@ -7701,6 +7706,16 @@ pub async fn draft_id_mockdeletetoget(
     }
 }
 
+/// `pp_c_draft.xstatus` 当前只有写方、无读方；值集暂为 {started}。
+///
+/// 三项证据（O24-3 批次 5 台账）：
+/// - 无 CHECK 约束：`pg_constraint` 中 `pp_c_draft.xstatus` 无任何检查约束；
+/// - 无 DEFAULT：`information_schema.columns` 该列 `column_default` 为空；
+/// - 无读方：全仓（含前端 desktop/mobile/packages/apis）无读取 `xstatus` 做状态判断的代码。
+///
+/// 契约项：将来若引入状态词表，必须迁移已存在的 `started` 行，不许新旧混用。
+const DRAFT_STARTED_STATUS: &str = "started";
+
 #[allow(non_snake_case)]
 pub async fn draft_id_start(
     pool: Extension<Pool>,
@@ -7712,10 +7727,10 @@ pub async fn draft_id_start(
     let result = client
         .execute(
             "UPDATE PP_C_DRAFT SET xstatus = $1, \"xupdateTime\" = NOW() WHERE xid = $2",
-            &[&id],
+            &[&DRAFT_STARTED_STATUS, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("draft not found")));
@@ -7727,7 +7742,7 @@ pub async fn draft_id_start(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -7769,7 +7784,7 @@ pub async fn file_list_application_applicationFlag(
             &[&applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -7819,7 +7834,7 @@ pub async fn file_flag_application_applicationFlag_content(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -7861,7 +7876,7 @@ pub async fn file_flag_application_applicationFlag_download(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -7903,7 +7918,7 @@ pub async fn form_v2_lookup_taskcompleted_taskcompleted(
             &[&taskcompleted],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -7945,7 +7960,7 @@ pub async fn form_v2_lookup_taskcompleted_taskcompleted_mobile(
             &[&taskcompleted],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -7990,7 +8005,7 @@ pub async fn form_v2_lookup_workorworkcompleted_workOrWorkCompleted(
             &[&workOrWorkCompleted],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .and_then(|row| row.get::<_, Option<String>>("process"));
     if let Some(process_flag) = process_flag {
         let definition_row = client
@@ -7999,7 +8014,7 @@ pub async fn form_v2_lookup_workorworkcompleted_workOrWorkCompleted(
                 &[&process_flag],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         if let Some(definition_row) = definition_row {
             let raw: String = definition_row.get("definition");
             let parsed: Value = serde_json::from_str(&raw).unwrap_or(Value::Null);
@@ -8024,7 +8039,9 @@ pub async fn form_v2_lookup_workorworkcompleted_workOrWorkCompleted(
                         &[&form_flag],
                     )
                     .await
-                    .map_err(|_| AppError::Internal)?;
+                    .map_err(|e| {
+                        AppError::internal_with_source(concat!(file!(), ":", line!()), e)
+                    })?;
                 if let Some(form_row) = form_row {
                     let definition_text: Option<String> = form_row.get("definition");
                     let definition_value: Value = definition_text
@@ -8042,7 +8059,7 @@ pub async fn form_v2_lookup_workorworkcompleted_workOrWorkCompleted(
             &[&workOrWorkCompleted],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -8084,7 +8101,7 @@ pub async fn form_v2_lookup_workorworkcompleted_workOrWorkCompleted_mobile(
             &[&workOrWorkCompleted],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -8126,7 +8143,7 @@ pub async fn form_v2_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -8168,7 +8185,7 @@ pub async fn form_v2_id_mobile(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -8210,7 +8227,7 @@ pub async fn form_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -8252,7 +8269,7 @@ pub async fn form_flag_application_applicationFlag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -8294,7 +8311,7 @@ pub async fn form_flag_application_applicationFlag_mobile(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -8336,7 +8353,7 @@ pub async fn form_flag_mobile(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -8381,7 +8398,7 @@ async fn handover_list_paging_page_size_size_core(
             &[&size, &page],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -8447,7 +8464,7 @@ pub async fn handover_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -8491,7 +8508,7 @@ pub async fn handover_id_cancel(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("handover not found")));
@@ -8503,7 +8520,7 @@ pub async fn handover_id_cancel(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -8547,7 +8564,7 @@ pub async fn handover_id_process(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("handover not found")));
@@ -8559,7 +8576,7 @@ pub async fn handover_id_process(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -8601,7 +8618,7 @@ pub async fn job_latest_work_workcompleted_serial_serial(
             &[&serial],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -8643,7 +8660,7 @@ pub async fn job_v2_job_projection(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -8685,7 +8702,7 @@ pub async fn job_job_allow_visit_person_person(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -8727,7 +8744,7 @@ pub async fn job_job_find_work_workcompleted(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -8769,7 +8786,7 @@ pub async fn keylock_lock(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -8802,7 +8819,7 @@ pub async fn keylock_lock_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("keylock not found")));
@@ -8814,7 +8831,7 @@ pub async fn keylock_lock_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -8847,7 +8864,7 @@ pub async fn mode_clear_person_person_manager(
             &[&person],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -8886,7 +8903,7 @@ pub async fn mode_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -8945,7 +8962,7 @@ pub async fn mode_save(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("mode not found")));
@@ -8957,7 +8974,7 @@ pub async fn mode_save(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -9001,12 +9018,12 @@ pub async fn mode_id_delete(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute("DELETE FROM PP_C_TASK_PROCESS_MODE WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("mode not found")));
@@ -9052,7 +9069,7 @@ pub async fn process_activity_activity_activityType_activityType(
             &[&activity],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -9094,7 +9111,7 @@ pub async fn process_list_application_applicationFlag(
             &[&applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -9144,7 +9161,7 @@ pub async fn process_list_application_applicationFlag_filter(
             &[&applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -9194,7 +9211,7 @@ pub async fn process_list_available_identity_process_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -9244,7 +9261,7 @@ pub async fn process_list_controllable_application_applicationFlag(
             &[&applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -9293,7 +9310,7 @@ pub async fn process_list_ids(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -9341,7 +9358,7 @@ pub async fn process_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -9383,7 +9400,7 @@ pub async fn process_flag_allowrerouteto(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -9425,7 +9442,7 @@ pub async fn process_flag_application_applicationFlag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -9467,7 +9484,7 @@ pub async fn process_flag_complex(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -9509,7 +9526,7 @@ pub async fn process_flag_onlyRemoveNotCompleted(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -9547,7 +9564,7 @@ pub async fn read_count_filter(
     let count: i64 = client
         .query_one("SELECT COUNT(*) FROM PP_C_READ WHERE 1=1", &[])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -9570,7 +9587,7 @@ async fn read_count_credential_core(
             &[&credential],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -9618,7 +9635,7 @@ async fn filter_attr_options(
     let rows = client
         .query(&sql, &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Value::Array(
         rows.iter()
             .map(|r| {
@@ -9674,7 +9691,7 @@ pub async fn read_filter_attribute_filter(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -9712,7 +9729,7 @@ pub async fn read_list_count_application(
     let count: i64 = client
         .query_one("SELECT COUNT(*) FROM PP_C_READ WHERE 1=1", &[])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     Ok(Json(ActionResult::legacy_success(
@@ -9734,7 +9751,7 @@ async fn read_list_count_application_applicationFlag_process_core(
             &[&applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("read not found")));
@@ -9746,7 +9763,7 @@ async fn read_list_count_application_applicationFlag_process_core(
             &[&applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -9808,7 +9825,7 @@ pub async fn read_list_date_date_manage(
             &[&date],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -9855,7 +9872,7 @@ async fn read_list_filter_page_size_size_manage_core(
             &[&page.to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -9913,7 +9930,7 @@ pub async fn read_list_job_job(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -9966,7 +9983,7 @@ async fn read_list_my_filter_page_size_size_core(
             &[&size, &page],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -10035,7 +10052,7 @@ async fn read_list_my_paging_page_size_size_core(
             &[&size, &page],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -10101,7 +10118,7 @@ pub async fn read_list_person_person_manage(
             &[&person],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -10143,7 +10160,7 @@ pub async fn read_list_work_work(
             &[&work],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -10193,7 +10210,7 @@ pub async fn read_list_workorworkcompleted_workOrWorkCompleted(
             &[&workOrWorkCompleted],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -10243,7 +10260,7 @@ pub async fn read_list_id_next_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -10293,7 +10310,7 @@ pub async fn read_list_id_next_count_application_applicationFlag(
             &[&id, &applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -10343,7 +10360,7 @@ pub async fn read_list_id_next_count_filter(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -10393,7 +10410,7 @@ pub async fn read_list_id_next_count_process_processFlag(
             &[&id, &processFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -10443,7 +10460,7 @@ pub async fn read_list_id_prev_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -10493,7 +10510,7 @@ pub async fn read_list_id_prev_count_application_applicationFlag(
             &[&id, &applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -10543,7 +10560,7 @@ pub async fn read_list_id_prev_count_filter(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -10593,7 +10610,7 @@ pub async fn read_list_id_prev_count_process_processFlag(
             &[&id, &processFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -10637,7 +10654,7 @@ pub async fn read_v2_count(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
     let count: i64 = client
         .query_one("SELECT COUNT(*) FROM PP_C_READ WHERE 1=1", &[])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -10657,7 +10674,7 @@ pub async fn read_v2_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -10708,7 +10725,7 @@ async fn read_v2_list_create_paging_page_size_size_core(
             &[&size, &page],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -10774,7 +10791,7 @@ pub async fn read_v2_list_create_id_next_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -10824,7 +10841,7 @@ pub async fn read_v2_list_create_id_prev_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -10877,7 +10894,7 @@ async fn read_v2_list_paging_page_size_size_core(
             &[&size, &page],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -10943,7 +10960,7 @@ pub async fn read_v2_list_id_next_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -10993,7 +11010,7 @@ pub async fn read_v2_list_id_prev_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -11043,7 +11060,7 @@ pub async fn read_work_workId(
             &[&workId],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -11085,7 +11102,7 @@ pub async fn read_workcompleted_workCompletedId(
             &[&workCompletedId],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -11127,7 +11144,7 @@ pub async fn read_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -11169,7 +11186,7 @@ pub async fn read_id_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -11210,7 +11227,7 @@ pub async fn read_id_manage_mockdeletetoget(
     let result = client
         .execute("DELETE FROM PP_C_READ WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("read not found")));
@@ -11222,12 +11239,12 @@ pub async fn read_id_manage_mockdeletetoget(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute("DELETE FROM PP_C_READ WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("read not found")));
@@ -11275,7 +11292,7 @@ pub async fn read_id_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("read not found")));
@@ -11287,7 +11304,7 @@ pub async fn read_id_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -11329,7 +11346,7 @@ pub async fn read_id_opinion_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -11374,7 +11391,7 @@ pub async fn read_id_opinion_manage_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("read not found")));
@@ -11386,7 +11403,7 @@ pub async fn read_id_opinion_manage_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -11428,7 +11445,7 @@ pub async fn read_id_processing(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -11470,7 +11487,7 @@ pub async fn read_id_processing_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -11515,7 +11532,7 @@ pub async fn read_id_processing_manage_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("read not found")));
@@ -11527,7 +11544,7 @@ pub async fn read_id_processing_manage_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -11569,7 +11586,7 @@ pub async fn read_id_reference(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -11611,7 +11628,7 @@ pub async fn read_id_reset_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -11656,7 +11673,7 @@ pub async fn read_id_reset_manage_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("read not found")));
@@ -11668,7 +11685,7 @@ pub async fn read_id_reset_manage_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -11710,7 +11727,7 @@ async fn readcompleted_count_credential_core(
             &[&credential],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -11777,7 +11794,7 @@ pub async fn readcompleted_filter_attribute_filter(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -11815,7 +11832,7 @@ pub async fn readcompleted_list_count_application(
     let count: i64 = client
         .query_one("SELECT COUNT(*) FROM PP_C_READCOMPLETED WHERE 1=1", &[])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     Ok(Json(ActionResult::legacy_success(
@@ -11837,7 +11854,7 @@ async fn readcompleted_list_count_application_applicationFlag_process_core(
             &[&applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("readcompleted not found")));
@@ -11849,7 +11866,7 @@ async fn readcompleted_list_count_application_applicationFlag_process_core(
             &[&applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -11911,7 +11928,7 @@ pub async fn readcompleted_list_date_date_manage(
             &[&date],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -11958,7 +11975,7 @@ async fn readcompleted_list_filter_page_size_size_manage_core(
             &[&page.to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -12016,7 +12033,7 @@ pub async fn readcompleted_list_job_job(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -12069,7 +12086,7 @@ async fn readcompleted_list_my_filter_page_size_size_core(
             &[&size, &page],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -12138,7 +12155,7 @@ async fn readcompleted_list_my_paging_page_size_size_core(
             &[&size, &page],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -12204,7 +12221,7 @@ pub async fn readcompleted_list_work_work(
             &[&work],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -12254,7 +12271,7 @@ pub async fn readcompleted_list_workorworkcompleted_workOrWorkCompleted(
             &[&workOrWorkCompleted],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -12304,7 +12321,7 @@ pub async fn readcompleted_list_id_next_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -12354,7 +12371,7 @@ pub async fn readcompleted_list_id_next_count_application_applicationFlag(
             &[&id, &applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -12404,7 +12421,7 @@ pub async fn readcompleted_list_id_next_count_filter(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -12454,7 +12471,7 @@ pub async fn readcompleted_list_id_next_count_process_processFlag(
             &[&id, &processFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -12504,7 +12521,7 @@ pub async fn readcompleted_list_id_prev_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -12554,7 +12571,7 @@ pub async fn readcompleted_list_id_prev_count_application_applicationFlag(
             &[&id, &applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -12604,7 +12621,7 @@ pub async fn readcompleted_list_id_prev_count_filter(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -12654,7 +12671,7 @@ pub async fn readcompleted_list_id_prev_count_process_processFlag(
             &[&id, &processFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -12700,7 +12717,7 @@ pub async fn readcompleted_v2_count(
     let count: i64 = client
         .query_one("SELECT COUNT(*) FROM PP_C_READCOMPLETED WHERE 1=1", &[])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -12722,7 +12739,7 @@ pub async fn readcompleted_v2_list(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -12773,7 +12790,7 @@ async fn readcompleted_v2_list_create_paging_page_size_size_core(
             &[&size, &page],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -12839,7 +12856,7 @@ pub async fn readcompleted_v2_list_create_id_next_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -12889,7 +12906,7 @@ pub async fn readcompleted_v2_list_create_id_prev_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -12942,7 +12959,7 @@ async fn readcompleted_v2_list_paging_page_size_size_core(
             &[&size, &page],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -13008,7 +13025,7 @@ pub async fn readcompleted_v2_list_id_next_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -13058,7 +13075,7 @@ pub async fn readcompleted_v2_list_id_prev_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -13108,7 +13125,7 @@ pub async fn readcompleted_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -13150,7 +13167,7 @@ pub async fn readcompleted_id_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -13191,7 +13208,7 @@ pub async fn readcompleted_id_manage_mockdeletetoget(
     let result = client
         .execute("DELETE FROM PP_C_READCOMPLETED WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("readcompleted not found")));
@@ -13203,12 +13220,12 @@ pub async fn readcompleted_id_manage_mockdeletetoget(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute("DELETE FROM PP_C_READCOMPLETED WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("readcompleted not found")));
@@ -13254,7 +13271,7 @@ pub async fn readcompleted_id_opinion_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -13296,7 +13313,7 @@ pub async fn readcompleted_id_reference(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -13338,7 +13355,7 @@ pub async fn readrecord_list_job_job(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -13388,7 +13405,7 @@ pub async fn readrecord_list_workorworkcompleted_workOrWorkCompleted(
             &[&workOrWorkCompleted],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -13438,7 +13455,7 @@ pub async fn record_job_job_manage(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -13480,7 +13497,7 @@ pub async fn record_list_job_job(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -13532,7 +13549,7 @@ pub async fn record_list_job_job_paging_page_size_size(
             &[&job, &size, &page],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -13582,7 +13599,7 @@ pub async fn record_list_workorworkcompleted_workOrWorkCompleted(
             &[&workOrWorkCompleted],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -13636,7 +13653,7 @@ async fn record_list_workorworkcompleted_workOrWorkCompleted_paging_page_size_si
             &[&workOrWorkCompleted, &size, &page],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -13719,7 +13736,7 @@ pub async fn record_id_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -13760,7 +13777,7 @@ pub async fn record_id_manage_mockdeletetoget(
     let result = client
         .execute("DELETE FROM PP_C_RECORD WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("record not found")));
@@ -13772,12 +13789,12 @@ pub async fn record_id_manage_mockdeletetoget(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute("DELETE FROM PP_C_RECORD WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("record not found")));
@@ -13825,7 +13842,7 @@ pub async fn record_id_manage_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("record not found")));
@@ -13837,7 +13854,7 @@ pub async fn record_id_manage_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -13875,7 +13892,7 @@ pub async fn review_count_application(
     let count: i64 = client
         .query_one("SELECT COUNT(*) FROM PP_C_REVIEW WHERE 1=1", &[])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -13898,7 +13915,7 @@ async fn review_count_person_credential_core(
             &[&credential],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -13942,7 +13959,7 @@ pub async fn review_create_work(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -13989,7 +14006,7 @@ pub async fn review_create_workcompleted(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -14053,7 +14070,7 @@ pub async fn review_filter_create_entry(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -14117,7 +14134,7 @@ pub async fn review_list_job_job(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -14161,7 +14178,7 @@ pub async fn review_v2_count(pool: Extension<Pool>) -> Result<Json<ActionResult<
     let count: i64 = client
         .query_one("SELECT COUNT(*) FROM PP_C_REVIEW WHERE 1=1", &[])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -14181,7 +14198,7 @@ pub async fn review_v2_list(pool: Extension<Pool>) -> Result<Json<ActionResult<V
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -14232,7 +14249,7 @@ async fn review_v2_list_create_paging_page_size_size_core(
             &[&size, &page],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -14298,7 +14315,7 @@ pub async fn review_v2_list_create_id_next_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -14348,7 +14365,7 @@ pub async fn review_v2_list_create_id_prev_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -14401,7 +14418,7 @@ async fn review_v2_list_paging_page_size_size_core(
             &[&size, &page],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -14472,7 +14489,7 @@ async fn review_v2_list_paging_page_size_size_manage_core(
             &[&page.to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -14530,7 +14547,7 @@ pub async fn review_v2_list_id_next_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -14580,7 +14597,7 @@ pub async fn review_v2_list_id_prev_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -14630,7 +14647,7 @@ pub async fn review_v2_search(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -14672,7 +14689,7 @@ pub async fn review_workorworkcompleted_workOrWorkCompleted(
             &[&workOrWorkCompleted],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -14714,7 +14731,7 @@ pub async fn review_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -14756,7 +14773,7 @@ pub async fn review_id_application_applicationFlag_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -14797,7 +14814,7 @@ pub async fn review_id_application_applicationFlag_manage_mockdeletetoget(
     let result = client
         .execute("DELETE FROM PP_C_REVIEW WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("review not found")));
@@ -14809,12 +14826,12 @@ pub async fn review_id_application_applicationFlag_manage_mockdeletetoget(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute("DELETE FROM PP_C_REVIEW WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("review not found")));
@@ -14857,7 +14874,7 @@ pub async fn route_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -14905,7 +14922,7 @@ pub async fn route_list_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("route not found")));
@@ -14917,7 +14934,7 @@ pub async fn route_list_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -14959,7 +14976,7 @@ pub async fn route_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -15001,7 +15018,7 @@ pub async fn route_id_selectconfig(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -15043,7 +15060,7 @@ pub async fn script_flag_application_applicationFlag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -15085,7 +15102,7 @@ pub async fn script_flag_application_applicationFlag_imported(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -15127,7 +15144,7 @@ pub async fn serialnumber_generate_process_processId_name_name_serial(
             &[&processId],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -15169,7 +15186,7 @@ pub async fn serialnumber_list_application_applicationFlag(
             &[&applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -15222,7 +15239,7 @@ async fn serialnumber_list_paging_page_size_size_core(
             &[&size, &page],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -15288,7 +15305,7 @@ pub async fn serialnumber_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -15329,7 +15346,7 @@ pub async fn serialnumber_id_mockdeletetoget(
     let result = client
         .execute("DELETE FROM PP_C_SERIALNUMBER WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("serialnumber not found")));
@@ -15341,12 +15358,12 @@ pub async fn serialnumber_id_mockdeletetoget(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute("DELETE FROM PP_C_SERIALNUMBER WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("serialnumber not found")));
@@ -15394,7 +15411,7 @@ pub async fn serialnumber_id_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("serialnumber not found")));
@@ -15406,7 +15423,7 @@ pub async fn serialnumber_id_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -15452,7 +15469,7 @@ pub async fn service_work_id_touch(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .map(|r| {
             r.get::<_, Option<String>>("xcreatorPerson")
                 .unwrap_or_default()
@@ -15464,7 +15481,7 @@ pub async fn service_work_id_touch(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -15476,7 +15493,7 @@ pub async fn service_work_id_touch(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -15521,7 +15538,7 @@ pub async fn service_work_id_touch_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .map(|r| {
             r.get::<_, Option<String>>("xcreatorPerson")
                 .unwrap_or_default()
@@ -15533,7 +15550,7 @@ pub async fn service_work_id_touch_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -15545,7 +15562,7 @@ pub async fn service_work_id_touch_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -15587,7 +15604,7 @@ pub async fn sign_download_scrawlId(
             &[&scrawlId],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -15629,7 +15646,7 @@ pub async fn sign_list_job_job(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -15679,7 +15696,7 @@ pub async fn sign_save_task_taskId(
             &[&taskId],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -15721,7 +15738,7 @@ pub async fn sign_task_taskId(
             &[&taskId],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -15762,7 +15779,7 @@ pub async fn sign_task_taskId_mockdeletetoget(
     let result = client
         .execute("DELETE FROM PP_C_DOC_SIGN WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("sign not found")));
@@ -15774,12 +15791,12 @@ pub async fn sign_task_taskId_mockdeletetoget(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute("DELETE FROM PP_C_DOC_SIGN WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("sign not found")));
@@ -15825,7 +15842,7 @@ pub async fn sign_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -15866,7 +15883,7 @@ pub async fn sign_id_mockdeletetoget(
     let result = client
         .execute("DELETE FROM PP_C_DOC_SIGN WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("sign not found")));
@@ -15878,12 +15895,12 @@ pub async fn sign_id_mockdeletetoget(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute("DELETE FROM PP_C_DOC_SIGN WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("sign not found")));
@@ -15925,7 +15942,7 @@ pub async fn task_count_filter(
     let count: i64 = client
         .query_one("SELECT COUNT(*) FROM PP_C_TASK WHERE 1=1", &[])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -15948,7 +15965,7 @@ async fn task_count_credential_core(
             &[&credential],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -16013,7 +16030,7 @@ pub async fn task_filter_attribute_filter(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -16051,7 +16068,7 @@ pub async fn task_list_count_application(
     let count: i64 = client
         .query_one("SELECT COUNT(*) FROM PP_C_TASK WHERE 1=1", &[])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     Ok(Json(ActionResult::legacy_success(
@@ -16073,7 +16090,7 @@ async fn task_list_count_application_applicationFlag_process_core(
             &[&applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("task not found")));
@@ -16085,7 +16102,7 @@ async fn task_list_count_application_applicationFlag_process_core(
             &[&applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -16147,7 +16164,7 @@ pub async fn task_list_date_date_hour_hour_exclude_draft_isExcludeDraft_manage(
             &[&date],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -16194,7 +16211,7 @@ async fn task_list_filter_page_size_size_manage_core(
             &[&page.to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -16252,7 +16269,7 @@ pub async fn task_list_job_job(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -16305,7 +16322,7 @@ async fn task_list_my_filter_page_size_size_core(
             &[&size, &page],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -16379,7 +16396,7 @@ async fn task_list_my_paging_page_size_size_core(
             &[&size, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -16454,7 +16471,7 @@ pub async fn task_list_person_person_exclude_draft_isExcludeDraft_manage(
             &[&person],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -16496,7 +16513,7 @@ pub async fn task_list_work_work(
             &[&work],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -16546,7 +16563,7 @@ pub async fn task_list_id_next_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -16596,7 +16613,7 @@ pub async fn task_list_id_next_count_application_applicationFlag(
             &[&id, &applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -16646,7 +16663,7 @@ pub async fn task_list_id_next_count_filter(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -16696,7 +16713,7 @@ pub async fn task_list_id_next_count_filter_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -16738,7 +16755,7 @@ pub async fn task_list_id_next_count_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -16780,7 +16797,7 @@ pub async fn task_list_id_next_count_process_processFlag(
             &[&id, &processFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -16830,7 +16847,7 @@ pub async fn task_list_id_prev_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -16880,7 +16897,7 @@ pub async fn task_list_id_prev_count_application_applicationFlag(
             &[&id, &applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -16930,7 +16947,7 @@ pub async fn task_list_id_prev_count_filter(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -16980,7 +16997,7 @@ pub async fn task_list_id_prev_count_filter_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -17022,7 +17039,7 @@ pub async fn task_list_id_prev_count_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -17064,7 +17081,7 @@ pub async fn task_list_id_prev_count_process_processFlag(
             &[&id, &processFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -17108,7 +17125,7 @@ pub async fn task_v2_count(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
     let count: i64 = client
         .query_one("SELECT COUNT(*) FROM PP_C_TASK WHERE 1=1", &[])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -17128,7 +17145,7 @@ pub async fn task_v2_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -17179,7 +17196,7 @@ async fn task_v2_list_create_paging_page_size_size_core(
             &[&size, &page],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -17245,7 +17262,7 @@ pub async fn task_v2_list_create_id_next_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -17295,7 +17312,7 @@ pub async fn task_v2_list_create_id_prev_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -17348,7 +17365,7 @@ async fn task_v2_list_paging_page_size_size_core(
             &[&size, &page],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -17414,7 +17431,7 @@ pub async fn task_v2_list_id_next_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -17464,7 +17481,7 @@ pub async fn task_v2_list_id_prev_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -17514,7 +17531,7 @@ pub async fn task_v2_id_pause(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -17559,7 +17576,7 @@ pub async fn task_v2_id_reset(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("task not found")));
@@ -17571,7 +17588,7 @@ pub async fn task_v2_id_reset(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -17616,7 +17633,7 @@ pub async fn task_v2_id_reset_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("task not found")));
@@ -17628,7 +17645,7 @@ pub async fn task_v2_id_reset_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -17670,7 +17687,7 @@ pub async fn task_v2_id_resume(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -17712,7 +17729,7 @@ pub async fn task_v2_id_trigger_processing(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -17754,7 +17771,7 @@ pub async fn task_v3_id_add(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -17796,7 +17813,7 @@ pub async fn task_v3_id_pin(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -17838,7 +17855,7 @@ pub async fn task_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -17880,7 +17897,7 @@ pub async fn task_id_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -17921,7 +17938,7 @@ pub async fn task_id_manage_mockdeletetoget(
     let result = client
         .execute("DELETE FROM PP_C_TASK WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("task not found")));
@@ -17933,12 +17950,12 @@ pub async fn task_id_manage_mockdeletetoget(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute("DELETE FROM PP_C_TASK WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("task not found")));
@@ -17986,7 +18003,7 @@ pub async fn task_id_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("task not found")));
@@ -17998,7 +18015,7 @@ pub async fn task_id_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -18040,7 +18057,7 @@ pub async fn task_id_opinion_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -18085,7 +18102,7 @@ pub async fn task_id_opinion_manage_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("task not found")));
@@ -18097,7 +18114,7 @@ pub async fn task_id_opinion_manage_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -18139,7 +18156,7 @@ pub async fn task_id_press_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -18181,7 +18198,7 @@ pub async fn task_id_processing(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -18223,7 +18240,7 @@ pub async fn task_id_processing_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -18268,7 +18285,7 @@ pub async fn task_id_processing_manage_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("task not found")));
@@ -18280,7 +18297,7 @@ pub async fn task_id_processing_manage_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -18322,7 +18339,7 @@ pub async fn task_id_processing_neural(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -18364,7 +18381,7 @@ pub async fn task_id_reference(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -18406,7 +18423,7 @@ pub async fn task_id_reset_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -18451,7 +18468,7 @@ pub async fn task_id_reset_manage_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("task not found")));
@@ -18463,7 +18480,7 @@ pub async fn task_id_reset_manage_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -18505,7 +18522,7 @@ pub async fn task_id_will(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -18547,7 +18564,7 @@ async fn taskcompleted_count_credential_core(
             &[&credential],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -18624,7 +18641,7 @@ pub async fn taskcompleted_filter_attribute_filter(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -18662,7 +18679,7 @@ pub async fn taskcompleted_list_count_application(
     let count: i64 = client
         .query_one("SELECT COUNT(*) FROM PP_C_TASKCOMPLETED WHERE 1=1", &[])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     Ok(Json(ActionResult::legacy_success(
@@ -18684,7 +18701,7 @@ async fn taskcompleted_list_count_application_applicationFlag_process_core(
             &[&applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("taskcompleted not found")));
@@ -18696,7 +18713,7 @@ async fn taskcompleted_list_count_application_applicationFlag_process_core(
             &[&applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -18758,7 +18775,7 @@ pub async fn taskcompleted_list_date_date_hour_hour_manage(
             &[&date],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -18805,7 +18822,7 @@ async fn taskcompleted_list_filter_page_size_size_manage_core(
             &[&page.to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -18863,7 +18880,7 @@ pub async fn taskcompleted_list_job_job(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -18916,7 +18933,7 @@ async fn taskcompleted_list_my_filter_page_size_size_core(
             &[&size, &page],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -18985,7 +19002,7 @@ async fn taskcompleted_list_my_paging_page_size_size_core(
             &[&size, &page],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -19051,7 +19068,7 @@ pub async fn taskcompleted_list_prev_manual_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -19101,7 +19118,7 @@ pub async fn taskcompleted_list_work_work(
             &[&work],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -19151,7 +19168,7 @@ pub async fn taskcompleted_list_workorworkcompleted_workOrWorkCompleted(
             &[&workOrWorkCompleted],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -19201,7 +19218,7 @@ pub async fn taskcompleted_list_id_next_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -19251,7 +19268,7 @@ pub async fn taskcompleted_list_id_next_count_application_applicationFlag(
             &[&id, &applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -19301,7 +19318,7 @@ pub async fn taskcompleted_list_id_next_count_filter(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -19351,7 +19368,7 @@ pub async fn taskcompleted_list_id_next_count_process_processFlag(
             &[&id, &processFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -19401,7 +19418,7 @@ pub async fn taskcompleted_list_id_prev_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -19451,7 +19468,7 @@ pub async fn taskcompleted_list_id_prev_count_application_applicationFlag(
             &[&id, &applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -19501,7 +19518,7 @@ pub async fn taskcompleted_list_id_prev_count_filter(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -19551,7 +19568,7 @@ pub async fn taskcompleted_list_id_prev_count_process_processFlag(
             &[&id, &processFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -19601,7 +19618,7 @@ pub async fn taskcompleted_press_work_work(
             &[&work],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -19639,7 +19656,7 @@ pub async fn taskcompleted_v2_count(
     let count: i64 = client
         .query_one("SELECT COUNT(*) FROM PP_C_TASKCOMPLETED WHERE 1=1", &[])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -19661,7 +19678,7 @@ pub async fn taskcompleted_v2_list(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -19712,7 +19729,7 @@ async fn taskcompleted_v2_list_create_paging_page_size_size_core(
             &[&size, &page],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -19778,7 +19795,7 @@ pub async fn taskcompleted_v2_list_create_id_next_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -19828,7 +19845,7 @@ pub async fn taskcompleted_v2_list_create_id_prev_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -19881,7 +19898,7 @@ async fn taskcompleted_v2_list_paging_page_size_size_core(
             &[&size, &page],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -19947,7 +19964,7 @@ pub async fn taskcompleted_v2_list_id_next_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -19997,7 +20014,7 @@ pub async fn taskcompleted_v2_list_id_prev_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -20047,7 +20064,7 @@ pub async fn taskcompleted_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -20089,7 +20106,7 @@ pub async fn taskcompleted_id_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -20130,7 +20147,7 @@ pub async fn taskcompleted_id_manage_mockdeletetoget(
     let result = client
         .execute("DELETE FROM PP_C_TASKCOMPLETED WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("taskcompleted not found")));
@@ -20142,12 +20159,12 @@ pub async fn taskcompleted_id_manage_mockdeletetoget(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute("DELETE FROM PP_C_TASKCOMPLETED WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("taskcompleted not found")));
@@ -20193,7 +20210,7 @@ pub async fn taskcompleted_id_opinion_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -20238,7 +20255,7 @@ pub async fn taskcompleted_id_opinion_manage_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("taskcompleted not found")));
@@ -20250,7 +20267,7 @@ pub async fn taskcompleted_id_opinion_manage_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -20292,7 +20309,7 @@ pub async fn taskcompleted_id_reference(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -20334,7 +20351,7 @@ pub async fn taskcompleted_id_reference_control(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -20374,7 +20391,7 @@ pub async fn touch_expire(
     let count = client
         .execute("UPDATE pp_c_touch_expire SET xupdatetime = NOW()", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([(
@@ -20394,7 +20411,7 @@ pub async fn touch_passexpired(
     let count = client
         .execute("UPDATE pp_c_touch_passexpired SET xupdatetime = NOW()", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([(
@@ -20414,7 +20431,7 @@ pub async fn touch_touchdetained(
     let count = client
         .execute("UPDATE pp_c_touch_detained SET xupdatetime = NOW()", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([(
@@ -20436,7 +20453,7 @@ pub async fn work_application_applicationFlag_process_processFlag(
             &[&applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -20478,7 +20495,7 @@ async fn work_count_credential_core(
             &[&credential],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -20517,7 +20534,7 @@ pub async fn work_count_credential_application_appId(
             &[&credential],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -20540,7 +20557,7 @@ pub async fn work_count_credential_application_appId_u2(
             &[&credential, &app_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -20563,7 +20580,7 @@ pub async fn work_filter_attribute_application_applicationFlag(
             &[&applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -20605,7 +20622,7 @@ pub async fn work_filter_attribute_application_applicationFlag_manage(
             &[&applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -20643,7 +20660,7 @@ pub async fn work_list_count_application(
     let count: i64 = client
         .query_one("SELECT COUNT(*) FROM PP_C_WORK WHERE 1=1", &[])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     Ok(Json(ActionResult::legacy_success(
@@ -20665,7 +20682,7 @@ async fn work_list_count_application_applicationFlag_process_core(
             &[&applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -20677,7 +20694,7 @@ async fn work_list_count_application_applicationFlag_process_core(
             &[&applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -20739,7 +20756,7 @@ async fn work_list_count_application_applicationFlag_process_manage_core(
             &[&applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -20802,7 +20819,7 @@ async fn work_list_filter_page_size_size_manage_core(
             &[&page.to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -20867,7 +20884,7 @@ async fn work_list_my_paging_page_size_size_core(
             &[&size, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -20944,7 +20961,7 @@ async fn work_list_paging_page_size_size_application_applicationFlag_filter_mana
             &[&page.to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -21019,7 +21036,7 @@ pub async fn work_list_id_next_count_application_applicationFlag(
             &[&id, &applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -21069,7 +21086,7 @@ pub async fn work_list_id_next_count_application_applicationFlag_filter(
             &[&id, &applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -21119,7 +21136,7 @@ pub async fn work_list_id_next_count_application_applicationFlag_filter_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -21161,7 +21178,7 @@ pub async fn work_list_id_next_count_application_applicationFlag_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -21203,7 +21220,7 @@ pub async fn work_list_id_next_count_creator_current(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -21253,7 +21270,7 @@ pub async fn work_list_id_next_count_creator_current_filter(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -21303,7 +21320,7 @@ pub async fn work_list_id_next_count_process_processFlag(
             &[&id, &processFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -21353,7 +21370,7 @@ pub async fn work_list_id_prev_count_application_applicationFlag(
             &[&id, &applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -21403,7 +21420,7 @@ pub async fn work_list_id_prev_count_application_applicationFlag_filter(
             &[&id, &applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -21453,7 +21470,7 @@ pub async fn work_list_id_prev_count_application_applicationFlag_filter_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -21495,7 +21512,7 @@ pub async fn work_list_id_prev_count_application_applicationFlag_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -21537,7 +21554,7 @@ pub async fn work_list_id_prev_count_creator_current(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -21587,7 +21604,7 @@ pub async fn work_list_id_prev_count_creator_current_filter(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -21637,7 +21654,7 @@ pub async fn work_list_id_prev_count_process_processFlag(
             &[&id, &processFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -21687,7 +21704,7 @@ pub async fn work_process_processFlag(
             &[&processFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -21729,7 +21746,7 @@ pub async fn work_process_processFlag_force(
             &[&processFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -21768,7 +21785,7 @@ pub async fn work_v2_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -21819,7 +21836,7 @@ async fn work_v2_list_paging_page_size_size_core(
             &[&size, &page],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -21885,7 +21902,7 @@ pub async fn work_v2_list_id_activity_goback(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -21935,7 +21952,7 @@ pub async fn work_v2_list_id_next_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -21985,7 +22002,7 @@ pub async fn work_v2_list_id_prev_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -22035,7 +22052,7 @@ pub async fn work_v2_workorworkcompleted_workOrWorkCompleted(
             &[&workOrWorkCompleted],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -22077,7 +22094,7 @@ pub async fn work_v2_id_add_split(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -22122,7 +22139,7 @@ pub async fn work_v2_id_add_split_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -22134,7 +22151,7 @@ pub async fn work_v2_id_add_split_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -22176,7 +22193,7 @@ pub async fn work_v2_id_reroute(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -22220,7 +22237,7 @@ pub async fn work_v2_id_reroute_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -22232,7 +22249,7 @@ pub async fn work_v2_id_reroute_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -22274,7 +22291,7 @@ pub async fn work_v2_id_retract(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -22318,7 +22335,7 @@ pub async fn work_v2_id_retract_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -22330,7 +22347,7 @@ pub async fn work_v2_id_retract_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -22372,7 +22389,7 @@ pub async fn work_v2_id_rollback(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -22416,7 +22433,7 @@ pub async fn work_v2_id_rollback_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -22428,7 +22445,7 @@ pub async fn work_v2_id_rollback_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -22470,7 +22487,7 @@ pub async fn work_v2_id_terminate(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -22512,7 +22529,7 @@ pub async fn work_v2_id_terminate_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -22554,7 +22571,7 @@ pub async fn work_v2_id_trigger_processing(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -22596,7 +22613,7 @@ pub async fn work_v3_retract(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -22638,7 +22655,7 @@ pub async fn work_v3_retract_stage_job_job(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -22680,7 +22697,7 @@ pub async fn work_v3_workorworkcompleted_workOrWorkCompleted_permission(
             &[&workOrWorkCompleted],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -22722,7 +22739,7 @@ pub async fn work_workorworkcompleted_workOrWorkCompleted(
             &[&workOrWorkCompleted],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -22764,7 +22781,7 @@ pub async fn work_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -22806,7 +22823,7 @@ pub async fn work_id_assignment_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -22848,7 +22865,7 @@ pub async fn work_id_close_check(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -22890,7 +22907,7 @@ pub async fn work_id_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -22931,7 +22948,7 @@ pub async fn work_id_mockdeletetoget(
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -22943,12 +22960,12 @@ pub async fn work_id_mockdeletetoget(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -22994,7 +23011,7 @@ pub async fn work_id_processing(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -23039,7 +23056,7 @@ pub async fn work_id_processing_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -23051,7 +23068,7 @@ pub async fn work_id_processing_mockputtopost(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -23093,7 +23110,7 @@ pub async fn work_id_projection(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -23135,7 +23152,7 @@ pub async fn work_id_refer(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -23177,7 +23194,7 @@ pub async fn work_id_relative_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -23218,7 +23235,7 @@ pub async fn work_id_relative_manage_mockdeletetoget(
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -23230,12 +23247,12 @@ pub async fn work_id_relative_manage_mockdeletetoget(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -23281,7 +23298,7 @@ pub async fn work_id_single_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -23322,7 +23339,7 @@ pub async fn work_id_single_manage_mockdeletetoget(
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -23334,12 +23351,12 @@ pub async fn work_id_single_manage_mockdeletetoget(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute("DELETE FROM PP_C_WORK WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("work not found")));
@@ -23385,7 +23402,7 @@ pub async fn workcompleted_filter_attribute_application_applicationFlag(
             &[&applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -23427,7 +23444,7 @@ pub async fn workcompleted_filter_attribute_application_applicationFlag_manage(
             &[&applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -23469,7 +23486,7 @@ pub async fn workcompleted_filter_list_id_prev_count_application_applicationFlag
             &[&id, &applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -23515,7 +23532,7 @@ pub async fn workcompleted_list_count_application(
     let count: i64 = client
         .query_one("SELECT COUNT(*) FROM PP_C_WORKCOMPLETED WHERE 1=1", &[])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     Ok(Json(ActionResult::legacy_success(
@@ -23537,7 +23554,7 @@ async fn workcompleted_list_count_application_applicationFlag_process_core(
             &[&applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("workcompleted not found")));
@@ -23549,7 +23566,7 @@ async fn workcompleted_list_count_application_applicationFlag_process_core(
             &[&applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -23611,7 +23628,7 @@ async fn workcompleted_list_count_application_applicationFlag_process_manage_cor
             &[&applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -23676,7 +23693,7 @@ async fn workcompleted_list_filter_page_size_size_manage_core(
             &[&page.to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -23740,7 +23757,7 @@ async fn workcompleted_list_paging_page_size_size_application_applicationFlag_fi
             &[&page.to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -23815,7 +23832,7 @@ pub async fn workcompleted_list_id_next_count_application_applicationFlag(
             &[&id, &applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -23865,7 +23882,7 @@ pub async fn workcompleted_list_id_next_count_application_applicationFlag_filter
             &[&id, &applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -23915,7 +23932,7 @@ pub async fn workcompleted_list_id_next_count_application_applicationFlag_filter
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -23957,7 +23974,7 @@ pub async fn workcompleted_list_id_next_count_application_applicationFlag_manage
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -23999,7 +24016,7 @@ pub async fn workcompleted_list_id_prev_count_application_applicationFlag(
             &[&id, &applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -24049,7 +24066,7 @@ pub async fn workcompleted_list_id_prev_count_application_applicationFlag_filter
             &[&id, &applicationFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -24099,7 +24116,7 @@ pub async fn workcompleted_list_id_prev_count_application_applicationFlag_manage
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -24141,7 +24158,7 @@ pub async fn workcompleted_process_processFlag(
             &[&processFlag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -24183,7 +24200,7 @@ pub async fn workcompleted_shift_time(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -24225,7 +24242,7 @@ pub async fn workcompleted_flag_rollback(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -24269,7 +24286,7 @@ pub async fn workcompleted_flag_rollback_mockputtopost(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("workcompleted not found")));
@@ -24281,7 +24298,7 @@ pub async fn workcompleted_flag_rollback_mockputtopost(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -24323,7 +24340,7 @@ pub async fn workcompleted_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -24365,7 +24382,7 @@ pub async fn workcompleted_id_assignment_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -24407,7 +24424,7 @@ pub async fn workcompleted_id_delete_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -24448,7 +24465,7 @@ pub async fn workcompleted_id_delete_manage_mockdeletetoget(
     let result = client
         .execute("DELETE FROM PP_C_WORKCOMPLETED WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("workcompleted not found")));
@@ -24460,12 +24477,12 @@ pub async fn workcompleted_id_delete_manage_mockdeletetoget(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute("DELETE FROM PP_C_WORKCOMPLETED WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("workcompleted not found")));
@@ -24511,7 +24528,7 @@ pub async fn workcompleted_id_manage(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -24553,7 +24570,7 @@ pub async fn worklog_list_add_split_work_workId(
             &[&workId],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -24603,7 +24620,7 @@ pub async fn worklog_list_job_job(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -24653,7 +24670,7 @@ pub async fn worklog_list_rollback_workorworkcompleted_workOrWorkCompleted(
             &[&workOrWorkCompleted],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -24703,7 +24720,7 @@ pub async fn worklog_list_workorworkcompleted_workOrWorkCompleted(
             &[&workOrWorkCompleted],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -24763,7 +24780,7 @@ async fn u2_gate_by_sql(
     let row = client
         .query_opt(sql, &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         None => Ok(U2Gate::NotFound),
         Some(r) => {
@@ -24857,7 +24874,7 @@ pub async fn snap_u2_get(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(u2_snap_json(&row)))),
         None => Ok(Json(ActionResult::error("snap not found"))),
@@ -24886,7 +24903,7 @@ pub async fn snap_u2_delete(
             let n = client
                 .execute("DELETE FROM \"pp_c_snap\" WHERE id = $1", &[&id])
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
@@ -24926,7 +24943,7 @@ pub async fn snap_u2_restore(
                     &[&id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             let Some(snap) = row else {
                 return Ok(Json(ActionResult::error("snap not found")));
             };
@@ -24962,10 +24979,10 @@ pub async fn snap_u2_restore(
                 ],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             tx.execute("DELETE FROM \"pp_c_snap\" WHERE id = $1", &[&id])
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             tx.commit().await?;
 
             Ok(Json(ActionResult::success(Value::Object(
@@ -24997,7 +25014,7 @@ async fn u2_snap_page(
     client
         .query(&sql, &[&anchor_id, &limit])
         .await
-        .map_err(|_| AppError::Internal)
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))
 }
 
 async fn u2_snap_page_all(
@@ -25019,7 +25036,7 @@ async fn u2_snap_page_all(
     client
         .query(&sql, &[&anchor_id, &limit])
         .await
-        .map_err(|_| AppError::Internal)
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))
 }
 
 #[allow(non_snake_case)]
@@ -25110,7 +25127,7 @@ async fn u2_snap_by_type(
     let rows = client
         .query(&sql, &[&work_id, &snap_type])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(u2_snap_json).collect();
     let count = data.len() as i64;
     Ok(Json(ActionResult::legacy_success(
@@ -25234,7 +25251,7 @@ async fn u2_att_list_shaped(
     let rows = client
         .query(&sql, &[&param])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(u2_att_json).collect();
     if legacy_shape {
         let count = data.len() as i64;
@@ -25302,7 +25319,7 @@ pub async fn attachment_u2_id_available(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         None => Ok(Json(ActionResult::error("attachment not found"))),
         Some(r) => {
@@ -25334,7 +25351,7 @@ async fn u2_att_get_with_check(
     client
         .query_opt(&sql, &[&id, &ref_value])
         .await
-        .map_err(|_| AppError::Internal)
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))
 }
 
 #[allow(non_snake_case)]
@@ -25377,7 +25394,7 @@ pub async fn attachment_u2_delete_by_work(
                     &[&id, &work],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
@@ -25400,7 +25417,7 @@ pub async fn attachment_u2_text_by_work(
             &[&id, &work],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         None => Ok(Json(ActionResult::error("attachment not found"))),
         Some(r) => Ok(Json(ActionResult::success(Value::Object(
@@ -25468,7 +25485,7 @@ async fn u2_snap_list_offset(
             client
                 .query(&sql, &[&limit, &offset])
                 .await
-                .map_err(|_| AppError::Internal)
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))
         }
         Some((col, val)) => {
             let sql = format!(
@@ -25480,7 +25497,7 @@ async fn u2_snap_list_offset(
             client
                 .query(&sql, &[&val, &limit, &offset])
                 .await
-                .map_err(|_| AppError::Internal)
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))
         }
     }
 }
@@ -25526,7 +25543,7 @@ async fn u2_snap_cursor_filtered(
     client
         .query(&sql, &[&val, &anchor_id, &limit])
         .await
-        .map_err(|_| AppError::Internal)
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))
 }
 
 fn u2_snap_cursor_response(
@@ -25613,7 +25630,7 @@ pub async fn attachment_id_mockdeletetoget(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(r) => Ok(Json(ActionResult::success(u2_att_json(&r)))),
         None => Ok(Json(ActionResult::error("attachment not found"))),
@@ -25643,7 +25660,7 @@ pub async fn attachment_id(
             let n = client
                 .execute("DELETE FROM \"pp_c_attachment\" WHERE id = $1", &[&id])
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
@@ -25818,7 +25835,7 @@ async fn u2_att_load_blob_row(
         Some(p2v) => client.query_opt(&sql, &[&p1, &p2v]).await,
         None => client.query_opt(&sql, &[&p1]).await,
     }
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(row.map(|r| U2AttBlobRow {
         name: r.get("xname"),
         key: r.get("xstorage"),
@@ -26240,7 +26257,7 @@ async fn doc_to_word_for_job(
     let job: String = client
         .query_opt(&sql, &[&work_id])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .map(|row| row.get::<_, Option<String>>("xjob").unwrap_or_default())
         .filter(|j| !j.is_empty())
         .ok_or(AppError::NotFound)?;
@@ -26257,7 +26274,7 @@ async fn doc_to_word_for_job(
             &[&job, &site, &file_name],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let storage = shared::storage::storage_with_pool(pool.clone());
     let attachment_id = match existing {
@@ -26273,7 +26290,7 @@ async fn doc_to_word_for_job(
                     &[&key, &file_name, &ext, &(bytes.len() as i64), &id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             id
         }
         None => {
@@ -26497,7 +26514,7 @@ async fn preview_result_file(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let (name, content_b64, creator) = match row {
         Some(row) => (
             row.get::<_, Option<String>>("name").unwrap_or_default(),
@@ -26543,7 +26560,7 @@ async fn read_attachment_blob(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let (name, key) = match row {
         Some(row) => (
             row.get::<_, Option<String>>("xname").unwrap_or_default(),
@@ -26557,7 +26574,10 @@ async fn read_attachment_blob(
         return Err(u2_capability_unavailable("attachment blob conversion"));
     }
     let storage = shared::storage::storage_with_pool(pool.clone());
-    let bytes = storage.get(&key).await.map_err(|_| AppError::Internal)?;
+    let bytes = storage
+        .get(&key)
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok((name, bytes))
 }
 
@@ -26579,7 +26599,7 @@ pub async fn attachment_u2b_invoice_info(
                     &[&flag],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             match row {
                 Some(row) => {
                     let amount: f64 = row.get("amount");
@@ -26659,7 +26679,7 @@ pub async fn attachment_u2b_invoice_download(
                     &[&flag],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             let blob = row.map(|r| U2AttBlobRow {
                 name: r.get::<_, Option<String>>("xname"),
                 key: r.get::<_, Option<String>>("xstorage"),
@@ -26695,7 +26715,8 @@ pub async fn attachment_u2b_upload_with_url(
         .unwrap_or("url-upload")
         .to_string();
 
-    let client = shared::netguard::fetch_client().map_err(|_| AppError::Internal)?;
+    let client = shared::netguard::fetch_client()
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let (final_url, bytes) = shared::netguard::fetch_limited(&client, &url)
         .await
         .map_err(|e| {
@@ -26749,7 +26770,7 @@ async fn u2_att_batch_zip(
     let rows = client
         .query(&sql, &[&id, &site])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let storage = shared::storage::storage_with_pool(pool.clone());
     let mut entries: Vec<(String, Vec<u8>)> = Vec::with_capacity(rows.len());
     for row in rows {
@@ -26803,12 +26824,14 @@ fn u2_build_zip_archive(entries: Vec<(String, Vec<u8>)>) -> Result<Vec<u8>, AppE
         }
         writer
             .start_file(entry.as_str(), SimpleFileOptions::default())
-            .map_err(|_| AppError::Internal)?;
-        writer.write_all(&bytes).map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+        writer
+            .write_all(&bytes)
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     }
     Ok(writer
         .finish()
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .into_inner())
 }
 
@@ -26845,7 +26868,7 @@ async fn u2_att_update_meta(
             &[&new_name, &person, &chrono_now_str(), &id, &work],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if n == 0 {
         return Ok(Json(ActionResult::error("attachment not found")));
     }
@@ -26887,7 +26910,7 @@ async fn u2_att_update_text(
             &[&text_val, &person, &now, &id, &work],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if n == 0 {
         return Ok(Json(ActionResult::error("attachment not found")));
     }
@@ -27059,7 +27082,7 @@ async fn u2_att_copy(
                 &[&target_value, &new_id, &site_tag, &person, &now, src],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         if n > 0 {
             copied.push(new_id);
         }
@@ -27167,7 +27190,7 @@ pub async fn attachment_u2b_batch_delete_manage(
             &[&ids],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("deleted".to_string(), Value::Number(n.into()))]),
     ))))
@@ -27205,7 +27228,7 @@ pub async fn attachment_u2b_batch_update_manage(
             &[&site, &now, &ids],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("updated".to_string(), Value::Number(n.into()))]),
     ))))
@@ -27226,7 +27249,7 @@ pub async fn attachment_u2b_online_info(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(r) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
@@ -27252,7 +27275,7 @@ pub async fn attachment_u2b_change_order_number(
             &[&order_number, &id, &work],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if n == 0 {
         return Ok(Json(ActionResult::error("attachment not found")));
     }
@@ -27283,7 +27306,7 @@ pub async fn attachment_u2b_change_site(
             &[&site, &now, &id, &work],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if n == 0 {
         return Ok(Json(ActionResult::error("attachment not found")));
     }
@@ -27323,7 +27346,7 @@ pub async fn attachment_u2b_delete_by_workcompleted(
                     &[&id, &wc],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
@@ -27549,7 +27572,7 @@ async fn u2_snap_manage_paging(
     let total: i64 = client
         .query_one(&count_sql, &fs.bind(&[]))
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     let list_sql = format!(
@@ -27564,7 +27587,7 @@ async fn u2_snap_manage_paging(
             &fs.bind(&[&adj_size as &(dyn ToSql + Sync), &offset]),
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -27616,7 +27639,7 @@ async fn u2_snap_manage_cursor(
     let exists = client
         .query_opt("SELECT id FROM \"pp_c_snap\" WHERE id = $1", &[&anchor_id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if exists.is_none() {
         return Ok(Json(ActionResult::error("snap not found")));
     }
@@ -27639,7 +27662,7 @@ async fn u2_snap_manage_cursor(
             ]),
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(u2_snap_json).collect();
     let count = data.len() as i64;
     Ok(Json(ActionResult::legacy_success(
@@ -27708,7 +27731,7 @@ async fn u2_attr_group_counts(
     } else {
         client.query(&sql, &[]).await
     }
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(rows
         .iter()
         .map(|row| {
@@ -27742,7 +27765,7 @@ async fn u2_attr_month_counts(
     } else {
         client.query(&sql, &[]).await
     }
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(rows
         .iter()
         .map(|row| {
@@ -27918,7 +27941,7 @@ pub async fn review_u2_v2_search(
     let total: i64 = client
         .query_one(&count_sql, &fs.bind(&[]))
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     let list_sql = format!(
@@ -27934,7 +27957,7 @@ pub async fn review_u2_v2_search(
             &fs.bind(&[&size as &(dyn ToSql + Sync), &offset]),
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -27995,7 +28018,7 @@ async fn u2_draft_save(
         .as_ref()
         .map(serde_json::to_string)
         .transpose()
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let client = shared::db::acquire(pool).await?;
     client
         .execute(
@@ -28017,7 +28040,7 @@ async fn u2_draft_save(
             ],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
     ))))
@@ -28071,7 +28094,7 @@ async fn u2_keylock_lock(
             &[&key, me],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match holder {
         None => {
             let id = uuid::Uuid::new_v4().to_string();
@@ -28082,7 +28105,7 @@ async fn u2_keylock_lock(
                     &[&id, &key, me],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(Json(ActionResult::success(serde_json::json!({
                 "success": true, "person": me,
             }))))
@@ -28161,7 +28184,7 @@ pub async fn serialnumber_u2_create(
             ],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
     ))))
@@ -28184,7 +28207,7 @@ pub async fn serialnumber_u2_generate(
             &[&process_id, &name],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         None => Err(AppError::NotFound),
         Some(row) => {
@@ -28259,7 +28282,7 @@ pub async fn handover_u2_create(
             ],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
     ))))
@@ -28351,7 +28374,7 @@ pub async fn work_u2_v3_retract(
             &[&wi.retractTaskList],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if rows.len() != wi.retractTaskList.len() {
         return Ok(Json(ActionResult::error("task not found")));
     }
@@ -28376,7 +28399,7 @@ pub async fn work_u2_v3_retract(
             &[&job, &sess.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if tc.is_none() {
         return Ok(Json(ActionResult::error("taskCompleted not found")));
     }
@@ -28385,20 +28408,20 @@ pub async fn work_u2_v3_retract(
     let tx = tx_client
         .transaction()
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let deleted = tx
         .execute(
             "DELETE FROM \"pp_c_task\" WHERE xid = ANY($1)",
             &[&wi.retractTaskList],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.execute(
         "UPDATE \"pp_c_work\" SET \"xupdateTime\" = NOW() WHERE xjob = $1",
         &[&job],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
     drop(client);
     Ok(Json(ActionResult::success(serde_json::json!({
@@ -28451,7 +28474,7 @@ pub async fn workcompleted_u2_shift_time(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let current: Option<Option<String>> = row.map(|r| r.get("xcompletedTime"));
     let Some(Some(text)) = current else {
         return Ok(Json(ActionResult::error("completedTime is not set")));
@@ -28471,7 +28494,7 @@ pub async fn workcompleted_u2_shift_time(
             &[&id, &shifted_text],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(serde_json::json!({
         "id": id, "completedTime": shifted_text,
     }))))
@@ -28551,7 +28574,7 @@ pub async fn snap_u2_upload(
             ],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
     ))))
@@ -28585,7 +28608,7 @@ pub async fn snap_u2_download(
                     &[&id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             let Some(row) = row else {
                 return Ok(Json(ActionResult::error("snap not found")));
             };
@@ -28686,7 +28709,7 @@ async fn u2_invoice_check_owner(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         None => Ok(U2Gate::NotFound),
         Some(r) => {
@@ -28726,7 +28749,7 @@ pub async fn review_u2_filter_create_entry(
         let rows = client
             .query(&sql, &[&me])
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         Ok(rows
             .iter()
             .map(|r| {
@@ -28749,7 +28772,7 @@ pub async fn review_u2_filter_create_entry(
     let month_rows = client
         .query(month_sql, &[&me])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let start_month_list: Vec<Value> = month_rows
         .iter()
         .map(|r| {
@@ -28800,7 +28823,7 @@ pub async fn route_u2_list_by_ids(
             &[&wi.valueList],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -28858,7 +28881,7 @@ pub async fn task_list_date_hour_exclude_draft_manage(
             &[&date],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -28896,7 +28919,7 @@ pub async fn task_list_person_exclude_draft_manage(
             &[&person],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {

@@ -54,7 +54,7 @@ pub async fn personattr_list_attribute_person_name(
     let rows = client
         .query(SQL, &[&person, &name])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let values: Vec<String> = rows
         .iter()
         .map(|r| r.get::<_, Option<String>>(0).unwrap_or_default())
@@ -90,7 +90,7 @@ pub async fn personattr_list_person_object(
     let rows = client
         .query(SQL, &[&flags])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let mut data: Vec<Value> = Vec::new();
     let mut cur: Option<(String, String)> = None;
     for row in &rows {
@@ -160,7 +160,7 @@ async fn attr_write_values(
         );
         tx.query(&real_sql, &[&name, &owner])
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
             .iter()
             .map(|r| r.get::<_, String>(0))
             .collect()
@@ -193,7 +193,7 @@ async fn attr_write_values(
         );
         tx.execute(&delete_sql, &[&name, &owner])
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     }
     // Single UNNEST insert instead of one INSERT per attribute value: the owner
     // subquery and attribute_key are identical for every row, so only id/value
@@ -207,7 +207,7 @@ async fn attr_write_values(
         let vals: Vec<String> = to_insert.iter().map(|v| (*v).clone()).collect();
         tx.execute(&insert_sql, &[&ids, &owner, &name, &vals])
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     }
     tx.commit().await?;
     Ok(())
@@ -269,7 +269,7 @@ async fn named_keys(
     let rows = client
         .query(sql, &[&flags])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
     let count = list.len() as i64;
     Ok(AxumJson(ActionResult::legacy_success(
@@ -320,7 +320,7 @@ pub async fn unitattr_list_attribute_unit_name(
     let rows = client
         .query(SQL, &[&unit, &name])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let values: Vec<String> = rows
         .iter()
         .map(|r| r.get::<_, Option<String>>(0).unwrap_or_default())
@@ -355,7 +355,7 @@ pub async fn unitattr_list_unit_object(
     let rows = client
         .query(SQL, &[&flags])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let mut data: Vec<Value> = Vec::new();
     let mut cur: Option<(String, String)> = None;
     for row in &rows {
@@ -426,7 +426,7 @@ pub async fn empower_list_identity_object(
     let rows = client
         .query(SQL, &[&flags])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let mut data: Vec<Value> = Vec::new();
     for row in &rows {
         let mut obj = serde_json::Map::new();
@@ -488,7 +488,7 @@ pub async fn empowerlog_create(
             ],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(AxumJson(ActionResult::success(wrap_true())))
 }
 
@@ -524,7 +524,7 @@ pub async fn distinguishedname_list(
     let rows = client
         .query(&sql, &[&flags])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     use std::collections::HashSet;
     let found: HashSet<String> = rows.iter().map(|r| r.get::<_, String>(0)).collect();
     let valid: Vec<String> = flags.into_iter().filter(|f| found.contains(f)).collect();

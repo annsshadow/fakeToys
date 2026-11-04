@@ -16,7 +16,7 @@ pub async fn area_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
             &[&"province"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -60,7 +60,7 @@ pub async fn security_clearance_enable(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let count: i64 = row.get("cnt");
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -82,7 +82,7 @@ pub async fn is_workday(
             &[&date],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let is_work = row.is_some();
 

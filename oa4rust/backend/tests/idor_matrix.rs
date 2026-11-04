@@ -45,12 +45,18 @@
 //! `cargo test --test idor_matrix`（无库自动 skip）
 
 #[cfg(test)]
+#[path = "integration_tests/error_capture.rs"]
+mod error_capture;
+
+#[cfg(test)]
 mod idor_matrix {
     use axum::body::Body;
     use axum::http::{Method, Request, StatusCode};
-    use std::collections::BTreeMap;
+    use std::collections::{BTreeMap, BTreeSet};
     use std::path::Path;
     use tower::ServiceExt;
+
+    use crate::error_capture;
 
     /// create_app 需要大栈（与 cors_guard 同因）
     const STACK: usize = 64 * 1024 * 1024;
@@ -65,6 +71,10 @@ mod idor_matrix {
     const UID_C: &str = "idor-o9-cross-c";
     const UID_D: &str = "idor-o9-disabled-d";
     const UID_E: &str = "idor-o9-expired-e";
+    /// O23：扫描专用 admin 身份。handler 级 `require_admin` 大量存在，
+    /// 非 admin 的 TOK_B 曾让写路由大面积 401，等于从没执行过。
+    const UID_ADMIN: &str = "idor-o9-admin";
+    const TOK_ADMIN: &str = "tok-o9-admin";
 
     const TOK_A: &str = "tok-o9-a";
     const TOK_B: &str = "tok-o9-b";
@@ -78,15 +88,21 @@ mod idor_matrix {
 
     /// 探针专用 scratch 库（每轮重建，跑完 DROP）
     const SCRATCH_DB: &str = "oa_par_idor";
+    /// 种子化全路由扫描专用 scratch 库（与 IDOR 矩阵隔离，两测试可并行）
+    const SEEDED_DB: &str = "oa_par_seeded";
 
     /// 已知存量缺陷豁免（非 IDOR 面）：
     /// 这两条 legacy 上传路由的 handler 元数（3/4 参 Path）与路径槽位（1 参）
     /// 恒定不符（"Wrong number of path arguments" 500），已被 arity_probe 的
     /// 棘轮基线收录。语义修复需先核 o2server 契约（reference/scale 双段字面量
     /// 无来源），按约定「核不到不开轮」——矩阵显式豁免并计数，防静默扩大。
+    /// 后两条同理：注册路径字面量缺 `{param}` 但 handler 提取 Path（arity 家族，
+    /// 与「表里有行」无关），同属 arity_probe 面，种子化扫描不重复计。
     const KNOWN_ARTIFACT_ROUTES: &[&str] = &[
         "/api/file/upload/referencetype/reference/reference/scale/scale/{referenceType}",
         "/api/file/upload/referencetype/reference/reference/scale/scale/callback/callback/{referenceType}",
+        "/api/file/share/share/shareId/file/fileId/folder/folderId",
+        "/api/file/share/shield/id",
     ];
 
     #[derive(Clone, Copy, PartialEq)]
@@ -362,37 +378,60 @@ mod idor_matrix {
             .unwrap()
     }
 
+    /// `DATABASE_URL` 解析后覆盖 dbname 的完整 URL（给 SeaORM 用）。
+    fn db_url(dbname: &str) -> String {
+        let url = std::env::var("DATABASE_URL")
+            .unwrap_or_else(|_| "postgres://o2server:password@localhost:5432/oa4rust_test".into());
+        let mut parsed = url::Url::parse(&url).expect("DATABASE_URL 解析失败");
+        parsed.set_path(dbname);
+        parsed.to_string()
+    }
+
     /// 重建 scratch 库（存在则强删），全量迁移。
-    async fn fresh_scratch() {
+    async fn fresh_scratch(dbname: &str) {
         let admin = pool_to("postgres");
         let c = admin.get().await.expect("admin 连接");
         c.execute(
-            &format!("DROP DATABASE IF EXISTS {SCRATCH_DB} WITH (FORCE)"),
+            &format!("DROP DATABASE IF EXISTS {dbname} WITH (FORCE)"),
             &[],
         )
         .await
         .expect("drop scratch");
-        c.execute(&format!("CREATE DATABASE {SCRATCH_DB}"), &[])
+        c.execute(&format!("CREATE DATABASE {dbname}"), &[])
             .await
             .expect("create scratch");
-        let pool = pool_to(SCRATCH_DB);
+        let pool = pool_to(dbname);
         shared::migrate::run_migrations(&pool)
             .await
             .expect("scratch 库迁移");
     }
 
-    async fn drop_scratch() {
+    async fn drop_scratch(dbname: &str) {
         if let Ok(c) = pool_to("postgres").get().await {
             let _ = c
                 .execute(
-                    &format!("DROP DATABASE IF EXISTS {SCRATCH_DB} WITH (FORCE)"),
+                    &format!("DROP DATABASE IF EXISTS {dbname} WITH (FORCE)"),
                     &[],
                 )
                 .await;
         }
     }
 
-    async fn setup() -> Option<(axum::Router, deadpool_postgres::Pool)> {
+    async fn setup() -> Option<(
+        axum::Router,
+        deadpool_postgres::Pool,
+        shared::session::SessionManager,
+    )> {
+        setup_with_db(SCRATCH_DB).await
+    }
+
+    async fn setup_with_db(
+        dbname: &str,
+    ) -> Option<(
+        axum::Router,
+        deadpool_postgres::Pool,
+        shared::session::SessionManager,
+    )> {
         if !shared::testing::is_db_available().await {
             eprintln!("SKIP: no database available");
             return None;
@@ -403,8 +442,8 @@ mod idor_matrix {
         std::env::set_var("OA4RUST_AUTH_RATE_LIMIT", "1000000");
 
         // 探针写流量全部落在 scratch 库（见文件头「探针卫生」）
-        fresh_scratch().await;
-        let pool = pool_to(SCRATCH_DB);
+        fresh_scratch(dbname).await;
+        let pool = pool_to(dbname);
         let client = pool.get().await.expect("pool client");
 
         // 身份夹具：A（UA 单元，非所有者）、B（UB 单元，受害者）、C（UC 单元，跨组织）、
@@ -415,6 +454,7 @@ mod idor_matrix {
             (UID_C, UID_C, "unit-o9-UC", false),
             (UID_D, UID_D, "unit-o9-UD", true),
             (UID_E, UID_E, "unit-o9-UE", false),
+            (UID_ADMIN, UID_ADMIN, "unit-root", false),
         ] {
             client
                 .execute(
@@ -452,7 +492,18 @@ mod idor_matrix {
             .await
             .expect("文件夹具");
 
-        // 会话：A/B/C/D 有效，E 稍后过期化
+        // O23：给扫描身份补 admin 角色最小集（auth_role.name='admin' 关联）。
+        // 只影响扫描；IDOR 矩阵的 A/B/C/D/E 语义不变。
+        client
+            .execute(
+                "INSERT INTO auth_person_role (person_id, role_id, unit_id) \
+                 VALUES ($1, 'role-admin', 'unit-root') ON CONFLICT DO NOTHING",
+                &[&UID_ADMIN],
+            )
+            .await
+            .expect("绑定 admin 角色");
+
+        // 会话：A/B/C/D/admin 有效，E 稍后过期化
         let session_manager = shared::session::SessionManager::with_pool(pool.clone());
         for (uid, tok) in [
             (UID_A, TOK_A),
@@ -460,6 +511,7 @@ mod idor_matrix {
             (UID_C, TOK_C),
             (UID_D, TOK_D),
             (UID_E, TOK_E),
+            (UID_ADMIN, TOK_ADMIN),
         ] {
             session_manager
                 .create_session(uid.to_string(), tok.to_string())
@@ -477,15 +529,56 @@ mod idor_matrix {
             .expect("过期化会话");
 
         let rate_limiter = shared::rate_limit::RateLimiter::new();
-        let app = create_app_big_stack(pool.clone(), session_manager, rate_limiter);
-        Some((app, pool))
+        let app = create_app_big_stack(pool.clone(), dbname, session_manager.clone(), rate_limiter);
+        Some((app, pool, session_manager))
     }
 
+    /// O23：写路由里有 logout/删会话/改人，会让扫描 token 在写阶段被前一条路由销毁。
+    /// 每条写路由执行前恢复「人员 + admin 角色 + 会话」最小集合，使写路由真的被执行；
+    /// 这样 401 只可能来自 handler 权限本身（或被收紧），不会来自身份已失效。
+    async fn ensure_scan_admin(
+        pool: &deadpool_postgres::Pool,
+        sessions: &shared::session::SessionManager,
+    ) {
+        let client = pool.get().await.expect("恢复扫描 admin：取连接");
+        client
+            .execute(
+                "INSERT INTO auth_person (id, unique_id, name, password_hash, locked, unit) \
+                 VALUES ($1, $2, $3, 'idor-o9-noop', false, 'unit-root') \
+                 ON CONFLICT (id) DO NOTHING",
+                &[&UID_ADMIN, &UID_ADMIN, &UID_ADMIN],
+            )
+            .await
+            .expect("恢复扫描 admin 人员");
+        client
+            .execute(
+                "INSERT INTO auth_person_role (person_id, role_id, unit_id) \
+                 VALUES ($1, 'role-admin', 'unit-root') ON CONFLICT DO NOTHING",
+                &[&UID_ADMIN],
+            )
+            .await
+            .expect("恢复扫描 admin 角色");
+        drop(client);
+        sessions
+            .create_session(UID_ADMIN.to_string(), TOK_ADMIN.to_string())
+            .await
+            .expect("恢复扫描 admin 会话");
+    }
+
+    /// O24：应用必须完全落在 scratch 库。
+    ///
+    /// `oa4rust::create_app` 会用进程级 `DATABASE_URL` 建 SeaORM 连接，那条连接指向
+    /// **开发库**；探针因此一直在「PG 走 scratch、ORM 走开发库」的混合状态下跑，
+    /// 结果随本机开发库里的历史垃圾行漂移（实证：cms 500 在本机时有时无）。
+    /// 改为 `create_app_with_sea_orm` + 显式 scratch URL（与
+    /// `tests/integration_tests/helpers.rs` 同一做法），本地与 CI 才等价。
     fn create_app_big_stack(
         pool: deadpool_postgres::Pool,
+        dbname: &str,
         session_manager: shared::session::SessionManager,
         rate_limiter: shared::rate_limit::RateLimiter,
     ) -> axum::Router {
+        let sea_url = db_url(dbname);
         std::thread::Builder::new()
             .name("idor-app".to_string())
             .stack_size(STACK)
@@ -495,9 +588,17 @@ mod idor_matrix {
                     .build()
                     .expect("runtime")
                     .block_on(async move {
-                        oa4rust::create_app(pool, session_manager, rate_limiter)
+                        let sea_orm = shared::db::create_sea_orm_pool_with_url(sea_url)
                             .await
-                            .expect("create_app")
+                            .expect("scratch SeaORM 池");
+                        oa4rust::create_app_with_sea_orm(
+                            pool,
+                            sea_orm,
+                            session_manager,
+                            rate_limiter,
+                        )
+                        .await
+                        .expect("create_app")
                     })
             })
             .expect("spawn")
@@ -534,7 +635,7 @@ mod idor_matrix {
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
     async fn idor_exhaustive_matrix() {
-        let Some((app, pool)) = setup().await else {
+        let Some((app, pool, _sessions)) = setup().await else {
             return;
         };
 
@@ -702,7 +803,7 @@ mod idor_matrix {
 
         // 探针卫生收尾：DROP scratch 库（在 assert 之前，缺陷红也执行清理）
         drop(client);
-        drop_scratch().await;
+        drop_scratch(SCRATCH_DB).await;
 
         // handler 级 500 棘轮（O10 升级为集合基线）：基线文件逐条入库，
         // 「当前 ⊆ 基线」才绿——新增 500 路由红；修复后从基线删条目收缩。
@@ -748,5 +849,886 @@ mod idor_matrix {
             defects.len(),
             defects.join("\n")
         );
+    }
+
+    // ── 种子化全路由扫描（行为级守卫）──────────────────────────────────
+    //
+    // 静态扫描器（scripts/scan_row_get_column_mismatch.py）只能做「SQL 列类型 vs
+    // Rust 取值类型」的静态推断，裸 `row.get("x")` 无法识别 → 必然有残余漏报。
+    // 本守卫是行为级：真的往每张表写 ≥1 行非空/非默认值，再真的发全量路由请求，
+    // 只要 handler 真的读到了行，反序列化错配就会变成 500 被抓到。
+    // 门禁口径：handler500 == 0（不做棘轮基线，零容忍）。
+
+    struct SeedCol {
+        name: String,
+        coltype: String,
+        notnull: bool,
+        has_default: bool,
+        is_pk: bool,
+    }
+
+    fn q(s: &str) -> String {
+        format!("'{}'", s.replace('\'', "''"))
+    }
+
+    /// 列名启发式：这些 varchar/text 列若被代码按 bool 读，就是已知缺陷形态
+    /// （bam `xenabled` 等）。种成布尔字面量才能触发转换失败。
+    fn boolish_name(name: &str) -> bool {
+        let n = name.to_lowercase();
+        const KEYS: [&str; 12] = [
+            "enabled", "disabled", "active", "flag", "allowed", "valid", "locked", "deleted",
+            "public", "visible", "need", "has_",
+        ];
+        KEYS.iter().any(|k| n.contains(k)) || n.starts_with("is_") || n.ends_with("_is")
+    }
+
+    /// 列名启发式：文本列存时间串、代码按时间读（process_id_complex 那类）
+    fn timeish_name(name: &str) -> bool {
+        let n = name.to_lowercase();
+        n.ends_with("_at")
+            || n.ends_with("time")
+            || n.ends_with("date")
+            || n.starts_with("create_")
+            || n.starts_with("update_")
+            || n.starts_with("start_")
+            || n.starts_with("end_")
+            || n.starts_with("begin_")
+            || n.starts_with("finish_")
+            || n.starts_with("fire_")
+            || n.starts_with("expire")
+    }
+
+    fn pk_literal(t: &str) -> String {
+        if t == "uuid" {
+            "'00000000-0000-0000-0000-000000000001'".to_string()
+        } else if t.contains("int") {
+            "1".to_string()
+        } else {
+            "'1'".to_string()
+        }
+    }
+
+    fn array_literal(t: &str) -> Option<String> {
+        let base = t.trim_end_matches("[]").trim();
+        let elem = if base == "boolean" {
+            "true"
+        } else if base == "uuid" {
+            "00000000-0000-0000-0000-000000000001"
+        } else if base.contains("int")
+            || matches!(
+                base,
+                "numeric" | "decimal" | "real" | "double precision" | "money"
+            )
+        {
+            "1"
+        } else if base.contains("timestamp") {
+            "2026-01-01 10:00:00"
+        } else if base == "date" {
+            "2026-01-01"
+        } else if base == "jsonb" || base == "json" {
+            return Some(format!("ARRAY['{{\"seed\":1}}'::{base}]"));
+        } else {
+            "seed"
+        };
+        Some(format!("'{{{elem}}}'::{t}"))
+    }
+
+    /// CHECK 约束把文本列限死在枚举值上（migrations 实证）：
+    /// 通用 'seed' 会撞 23514，按约束给合法值才能种进去。
+    fn constrained_text(table: &str, col: &str) -> Option<&'static str> {
+        match (table, col) {
+            ("init_server_command", "command") => Some("'execute'"),
+            ("x_query_neural_job", "action") => Some("'learn'"),
+            _ => None,
+        }
+    }
+
+    /// 单列种子字面量；None = 该类型无法安全生成（列被跳过，失败由重试兜底）
+    fn seed_literal(
+        col: &SeedCol,
+        enums: &BTreeMap<String, String>,
+        table: &str,
+    ) -> Option<String> {
+        let t = col.coltype.to_lowercase();
+        let n = col.name.to_lowercase();
+        if col.is_pk {
+            return Some(pk_literal(&t));
+        }
+        if t.ends_with("[]") {
+            return array_literal(&t);
+        }
+        if t.starts_with("timestamp") || t.contains("timestamp") {
+            return Some("'2026-01-01 10:00:00'".into());
+        }
+        if t == "date" {
+            return Some("'2026-01-01'".into());
+        }
+        if t == "time" || t == "time without time zone" || t == "time with time zone" {
+            return Some("'10:00:00'".into());
+        }
+        if t == "boolean" {
+            return Some("true".into());
+        }
+        if t == "uuid" {
+            return Some("'00000000-0000-0000-0000-000000000001'".into());
+        }
+        if t == "json" || t == "jsonb" {
+            return Some("'{\"seed\":1}'".into());
+        }
+        if t == "bytea" {
+            return Some("decode('01','hex')".into());
+        }
+        if t.contains("int")
+            || matches!(
+                t.as_str(),
+                "numeric" | "decimal" | "real" | "double precision" | "money"
+            )
+        {
+            return Some("1".into());
+        }
+        if t == "inet" {
+            return Some("'127.0.0.1'".into());
+        }
+        if t == "cidr" {
+            return Some("'127.0.0.0/8'".into());
+        }
+        if t == "macaddr" {
+            return Some("'00:00:00:00:00:00'".into());
+        }
+        if t == "interval" {
+            return Some("'1 hour'".into());
+        }
+        if t.starts_with("bit") || t.starts_with("varbit") {
+            return Some("B'1'".into());
+        }
+        if t == "xml" {
+            return Some("'<seed/>'".into());
+        }
+        if t.contains("char") || t == "text" || t == "citext" || t == "name" {
+            if let Some(v) = constrained_text(table, &n) {
+                return Some(v.to_string());
+            }
+            // 缺陷形态优先：文本列存布尔/时间字面量，代码按 bool/时间读
+            if boolish_name(&n) {
+                return Some("'true'".into());
+            }
+            if timeish_name(&n) {
+                return Some("'2026-01-01 10:00:00'".into());
+            }
+            if n.ends_with("id") || n == "id" {
+                return Some("'1'".into());
+            }
+            return Some("'seed'".into());
+        }
+        // 枚举类型（format_type 返回类型名）：取第一个 label
+        if let Some(label) = enums.get(&col.coltype) {
+            return Some(q(label));
+        }
+        None
+    }
+
+    async fn try_insert_seed(
+        client: &deadpool_postgres::Client,
+        table: &str,
+        cols: &[SeedCol],
+        enums: &BTreeMap<String, String>,
+        only_required: bool,
+    ) -> Result<u64, deadpool_postgres::tokio_postgres::Error> {
+        let mut names = Vec::new();
+        let mut vals = Vec::new();
+        for c in cols {
+            if only_required && !(c.is_pk || (c.notnull && !c.has_default)) {
+                continue;
+            }
+            if let Some(v) = seed_literal(c, enums, table) {
+                names.push(format!("\"{}\"", c.name));
+                vals.push(v);
+            }
+        }
+        if names.is_empty() {
+            return client
+                .execute(
+                    &format!("INSERT INTO public.\"{table}\" DEFAULT VALUES"),
+                    &[],
+                )
+                .await;
+        }
+        let sql = format!(
+            "INSERT INTO public.\"{table}\" ({}) VALUES ({}) ON CONFLICT DO NOTHING",
+            names.join(", "),
+            vals.join(", ")
+        );
+        client.execute(&sql, &[]).await
+    }
+
+    /// tokio_postgres 的 Display 只有 "db error"；取真实 SQLSTATE/message
+    fn pg_err(e: &deadpool_postgres::tokio_postgres::Error) -> String {
+        match e.as_db_error() {
+            Some(d) => format!("{} (SQLSTATE {})", d.message(), d.code().code()),
+            None => e.to_string(),
+        }
+    }
+
+    /// 每张 public 表种 ≥1 行。返回（成功表集合，失败表+原因）。
+    /// 失败必须显式返回并打印——静默少种表 = 守卫静默变绿。
+    async fn seed_all_tables(pool: &deadpool_postgres::Pool) -> (Vec<String>, Vec<String>) {
+        let client = pool.get().await.expect("seeded pool client");
+        if client
+            .execute("SET session_replication_role = replica", &[])
+            .await
+            .is_err()
+        {
+            eprintln!("WARN: 无法关闭 FK/触发器（session_replication_role 需超级用户），依赖 FK 的种子会失败并列出");
+        }
+
+        let mut enums: BTreeMap<String, String> = BTreeMap::new();
+        if let Ok(rows) = client
+            .query(
+                "SELECT t.typname, e.enumlabel FROM pg_type t \
+                 JOIN pg_enum e ON e.enumtypid = t.oid \
+                 ORDER BY t.typname, e.enumsortorder",
+                &[],
+            )
+            .await
+        {
+            for r in rows {
+                let t: String = r.get(0);
+                let l: String = r.get(1);
+                enums.entry(t).or_insert(l);
+            }
+        }
+
+        let tables: Vec<String> = client
+            .query(
+                "SELECT c.relname::text FROM pg_class c \
+                 JOIN pg_namespace n ON n.oid = c.relnamespace \
+                 WHERE n.nspname = 'public' AND c.relkind IN ('r','p') \
+                 ORDER BY c.relname",
+                &[],
+            )
+            .await
+            .expect("枚举表失败")
+            .iter()
+            .map(|r| r.get(0))
+            .collect();
+
+        let mut seeded = Vec::new();
+        let mut failures = Vec::new();
+        for table in &tables {
+            let rows = match client
+                .query(
+                    "SELECT a.attname::text, format_type(a.atttypid, a.atttypmod), \
+                            a.attnotnull, (d.adbin IS NOT NULL), \
+                            EXISTS(SELECT 1 FROM pg_constraint pc \
+                                   WHERE pc.conrelid = a.attrelid AND pc.contype = 'p' \
+                                     AND a.attnum = ANY(pc.conkey)) \
+                     FROM pg_attribute a \
+                     LEFT JOIN pg_attrdef d ON d.adrelid = a.attrelid AND d.adnum = a.attnum \
+                     WHERE a.attrelid = to_regclass($1) AND a.attnum > 0 \
+                       AND NOT a.attisdropped AND a.attgenerated = '' AND a.attidentity = '' \
+                     ORDER BY a.attnum",
+                    &[&format!("public.\"{table}\"")],
+                )
+                .await
+            {
+                Ok(rows) => rows,
+                Err(e) => {
+                    failures.push(format!("{table}: 取列失败: {}", pg_err(&e)));
+                    continue;
+                }
+            };
+            let cols: Vec<SeedCol> = rows
+                .iter()
+                .map(|r| SeedCol {
+                    name: r.get(0),
+                    coltype: r.get(1),
+                    notnull: r.get(2),
+                    has_default: r.get(3),
+                    is_pk: r.get(4),
+                })
+                .collect();
+            if cols.is_empty() {
+                continue;
+            }
+            let mut last_err = None;
+            let mut ok = false;
+            for only_required in [false, true] {
+                match try_insert_seed(&client, table, &cols, &enums, only_required).await {
+                    Ok(_) => {
+                        ok = true;
+                        break;
+                    }
+                    Err(e) => last_err = Some(e),
+                }
+            }
+            if ok {
+                seeded.push(table.clone());
+            } else {
+                failures.push(format!(
+                    "{table}: {}",
+                    last_err
+                        .as_ref()
+                        .map(pg_err)
+                        .unwrap_or_else(|| "未知".into())
+                ));
+            }
+        }
+
+        // O24：`organization/core/express` 读 `config_key='sync_enabled'`。只种通用
+        // 「seed」行时两条路由永远走 503 分支，等于新加的 200 分支从没被执行过。
+        // 这里补一条合法行，让种子化扫描真的进入 200 分支。
+        if let Err(e) = client
+            .execute(
+                "INSERT INTO x_org_config (id, config_key, config_value) \
+                 VALUES ('seed-sync-enabled', 'sync_enabled', 'true') \
+                 ON CONFLICT (id) DO UPDATE SET config_key = EXCLUDED.config_key, \
+                 config_value = EXCLUDED.config_value",
+                &[],
+            )
+            .await
+        {
+            failures.push(format!("x_org_config(sync_enabled): {}", pg_err(&e)));
+        }
+
+        // 恢复会话设置：该连接回池后仍会被 app 查询复用，不能留下 replica 语义
+        let _ = client
+            .execute("SET session_replication_role = DEFAULT", &[])
+            .await;
+        (seeded, failures)
+    }
+
+    /// 当前基线条目数上限（必须与基线文件行数相等）。O24-3 批次 4 起为 30。
+    /// 每修复一条：删对应基线路 → 下调本常量，同 PR 可见。
+    /// O23 第二步写路由首次真正执行后，存量 500 从 1 暴露到 40；O24 修掉探针
+    /// 库隔离缺陷后 ORM 路由首次读种子库，再 +2（meeting room 的 equipment 解码）。
+    /// O24-3 批次 1 修掉 portal surface publish（写库后才 ColumnDecode panic）：42 → 41。
+    /// O24-3 批次 2 修掉 JSONB 参数绑定族（meeting/processplatform/queryview×2）：41 → 37。
+    /// O24-3 批次 3 修掉查询设计器 permission 族（query/stat/table/view）：37 → 33。
+    /// O24-3 批次 4 修掉 INSERT 缺必填 id/规范列族（console/document/message）：33 → 30。
+    /// O24-3 批次 5 修掉 draft/start 参数失配（POST + GET 共用 handler）：30 → 28。
+    /// O24-3 批次 6 把 E23502 实体引用族（hotpic application/info_id、portal page
+    /// portal_id）改为「可推导则绑定、否则 400」：28 → 21。
+    /// O24-3 批次 7 修掉 wrong-type 配置写路径（bbs Int4↔i64、general Text↔bool）：21 → 17。
+    /// O24-3 批次 8 修掉 E42P10 upsert（attendance / calendar 缺唯一索引）：17 → 14。
+    /// O24-3 批次 9 修掉 E42703 属性表（person/unit attribute 无 name 列）：14 → 10。
+    /// O24-3 批次 10 修掉 E42804 脚本软删 text→timestamp / mergeitem COALESCE 类型：10 → 7。
+    /// O24-3 批次 11 修掉 E42601 document filter 纯 tail 拼进 WHERE：7 → 6。
+    /// O24-3 批次 12 修掉 E23503 work 删除的「先子后父」顺序：6 → 5。
+    /// O24-3 批次 13 修掉 E42P18 ai chat 分页占位符编号错位：5 → 4。
+    /// O24-3 批次 14 修掉 meeting room 的 jsonb equipment 按 String 解码：4 → 2。
+    /// O24-3 批次 15 修掉 identity order_number bigint 按 i32 绑定：2 → 1。
+    /// O24-3 批次 16 修掉 program deploy 的 nullable status 按非 Option 读：1 → 0。
+    const BASELINE_COUNT: usize = 0;
+
+    /// 棘轮基线：`<METHOD> <route>\t<reason>`，reason 见文件头。
+    const BASELINE_RAW: &str = include_str!("idor_seeded_handler500_baseline.txt");
+
+    // O23：扫描门禁的下限。枚举数量与执行数量都要卡，且读/写分别计数——
+    // 只数总数会让「写路由从未执行」静默变绿。
+    // 数值按 2026-11-05 实测（读 1603 / 写 1980）留 ~5% 余量；目录枚举顺序
+    // 变化不再影响执行顺序（执行前按 path+method 稳定排序）。
+    const MIN_SCANNED_READ_ROUTES: usize = 1500;
+    const MIN_SCANNED_WRITE_ROUTES: usize = 1850;
+    const MIN_EXECUTED_READ_ROUTES: usize = 1450;
+    const MIN_EXECUTED_WRITE_ROUTES: usize = 1800;
+    const MIN_EXECUTED_ROUTES: usize = 3300;
+    /// 扫描身份是 admin：401 比例异常高说明夹具/权限层级没打通。
+    const MAX_401_RATIO: f64 = 0.20;
+    /// 写路由里**按设计**不会用 Bearer 会话执行的两条，逐条留理由：
+    /// - refresh 只接受 Cookie 凭据（auth/src/lib.rs `refresh`，Bearer → 401）；
+    /// - meeting config/system/config/manage 刻意注册在匿名可达 router
+    ///   （模块前缀契约），session 不注入，handler 内 401 拦截。
+    ///
+    /// 新增任何允许项都必须写理由；未登记的 401 一律红（破坏实验锚点）。
+    const WRITE_401_ALLOWED: &[&str] = &[
+        "POST /api/authentication/refresh",
+        "POST /api/meeting/assemble/control/config/system/config/manage",
+    ];
+
+    /// 从本次请求捕获的 ERROR 串里判定类别：优先取失败列名 / SQLSTATE /
+    /// 类型错配家族，最后才归入无日志类。O23 起 500 一定有日志，类别用于
+    /// 把同类根因归并，便于按族修复后一次删多行。
+    fn classify_error(joined: &str) -> String {
+        if let Some(idx) = joined.find("error retrieving column ") {
+            let rest = &joined[idx + "error retrieving column ".len()..];
+            let col: String = rest
+                .chars()
+                .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
+                .collect();
+            if !col.is_empty() {
+                return format!("column:{col}");
+            }
+        }
+        // sqlx 的 ColumnDecode 形态：`index: "\"equipment\""`（不是 "error retrieving column"）
+        if let Some(idx) = joined.find("ColumnDecode { index: \"\\\"") {
+            let rest = &joined[idx + "ColumnDecode { index: \"\\\"".len()..];
+            let col: String = rest
+                .chars()
+                .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
+                .collect();
+            if !col.is_empty() {
+                return format!("column:{col}");
+            }
+        }
+        if let Some(idx) = joined.find("code: SqlState(") {
+            let rest = &joined[idx + "code: SqlState(".len()..];
+            let code: String = rest
+                .chars()
+                .take_while(|c| c.is_ascii_alphanumeric())
+                .collect();
+            if !code.is_empty() {
+                return format!("category:{code}");
+            }
+        }
+        if joined.contains("WrongType") {
+            return "category:wrong-type".to_string();
+        }
+        if joined.contains("kind: Parameters(") {
+            return "category:param-count".to_string();
+        }
+        if joined.contains("source=-") {
+            return "category:no-source".to_string();
+        }
+        "category:no-error-log".to_string()
+    }
+
+    /// 基线的一行：`key\t<reason>` 决定棘轮相等性，`owner/due/cond` 是到期门禁的
+    /// 元数据（缺项、非法日期、超期都会让门禁红）。
+    struct BaselineRow {
+        key: String,
+        reason: String,
+        owner: String,
+        due: String,
+        cond: String,
+    }
+
+    impl BaselineRow {
+        /// 棘轮比较用的身份串（不含元数据，改责任人/日期不会影响相等性）。
+        fn identity(&self) -> String {
+            format!("{}\t{}", self.key, self.reason)
+        }
+    }
+
+    fn parse_baseline(raw: &str) -> Vec<BaselineRow> {
+        raw.lines()
+            .map(|l| l.trim_end())
+            .filter(|l| !l.is_empty() && !l.starts_with('#'))
+            .map(|l| {
+                let fields: Vec<&str> = l.split('\t').collect();
+                BaselineRow {
+                    key: fields.first().copied().unwrap_or("").to_string(),
+                    reason: fields.get(1).copied().unwrap_or("").to_string(),
+                    owner: fields
+                        .get(2)
+                        .and_then(|f| f.strip_prefix("owner:"))
+                        .unwrap_or("")
+                        .to_string(),
+                    due: fields
+                        .get(3)
+                        .and_then(|f| f.strip_prefix("due:"))
+                        .unwrap_or("")
+                        .to_string(),
+                    cond: fields
+                        .get(4)
+                        .and_then(|f| f.strip_prefix("cond:"))
+                        .unwrap_or("")
+                        .to_string(),
+                }
+            })
+            .collect()
+    }
+
+    /// 业务时区（UTC+8）的「当天」。不用 CI 的 UTC 日界：否则北京时间 00:00-08:00
+    /// 会晚一天才判超期。
+    fn business_today() -> chrono::NaiveDate {
+        let offset = chrono::FixedOffset::east_opt(8 * 3600).expect("UTC+8");
+        chrono::Utc::now().with_timezone(&offset).date_naive()
+    }
+
+    /// 行为级守卫：种子化全路由扫描 + 棘轮基线。
+    ///
+    /// 规则：当前 500 集合必须与基线集合**完全相等**。
+    /// - 基线外的新 500 → 红（新写的类型错配当天被拦）；
+    /// - 基线里复现不出来的条目 → 红（已修但没删行 / 没下调上限）。
+    #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+    async fn seeded_route_scan_handler500_ratchet() {
+        error_capture::init();
+        let Some((app, pool, sessions)) = setup_with_db(SEEDED_DB).await else {
+            return;
+        };
+        let (seeded, failures) = seed_all_tables(&pool).await;
+        eprintln!(
+            "== 种子化：成功 {} 表，失败 {} 表 ==",
+            seeded.len(),
+            failures.len()
+        );
+        for f in &failures {
+            eprintln!("  [种子失败] {f}");
+        }
+
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let mut all = scan_routes(root);
+        // O23：扫描结果不得依赖目录枚举顺序。先按 path+method 稳定排序再执行；
+        // 同 path 下按 method 排，保证每次运行的执行序列一致、失败可复现。
+        all.sort_by(|a, b| a.path.cmp(&b.path).then_with(|| a.method.cmp(b.method)));
+
+        let candidates: Vec<&Route> = all
+            .iter()
+            .filter(|r| {
+                !KNOWN_ARTIFACT_ROUTES.contains(&r.path.as_str())
+                    // mock 路由（Handler 元数错配家族，O9 is_candidate 同口径排除）
+                    && !r.path.contains("mock")
+            })
+            .collect();
+        let read_total = candidates.iter().filter(|r| r.method == "GET").count();
+        let write_total = candidates.iter().filter(|r| r.method != "GET").count();
+        assert!(
+            read_total >= MIN_SCANNED_READ_ROUTES,
+            "枚举到的读路由 {read_total} 条，低于下限 {MIN_SCANNED_READ_ROUTES}（扫描器坏了？）"
+        );
+        assert!(
+            write_total >= MIN_SCANNED_WRITE_ROUTES,
+            "枚举到的写路由 {write_total} 条，低于下限 {MIN_SCANNED_WRITE_ROUTES}（写路由没收全，门禁不可信）"
+        );
+
+        // 先读后写：写路由（DELETE/UPDATE）会销毁种子行，必须放在读之后。
+        // candidates 已排序，两段都保序。
+        let mut ordered: Vec<&Route> = candidates
+            .iter()
+            .copied()
+            .filter(|r| r.method == "GET")
+            .collect();
+        ordered.extend(candidates.iter().copied().filter(|r| r.method != "GET"));
+
+        // setup 阶段的 ERROR（迁移/夹具）不计入任何路由
+        let _ = error_capture::drain();
+        let mut handler500: BTreeMap<String, String> = BTreeMap::new();
+        let mut executed = 0usize;
+        let mut executed_read = 0usize;
+        let mut executed_write = 0usize;
+        let mut read_401 = 0usize;
+        let mut read_403 = 0usize;
+        let mut write_401 = 0usize;
+        let mut write_403 = 0usize;
+        let mut write_401_routes: Vec<String> = Vec::new();
+        for r in ordered {
+            let is_write = r.method != "GET";
+            if is_write {
+                ensure_scan_admin(&pool, &sessions).await;
+            }
+            let url = fill_params(&r.path);
+            let _ = error_capture::drain();
+            // 「执行到」= 请求真的发出去并拿到响应；枚举到但 401/panic 的不算。
+            let Some((status, body)) = fire(&app, r.method, &url, Some(TOK_ADMIN)).await else {
+                continue;
+            };
+            executed += 1;
+            if is_write {
+                executed_write += 1;
+                match status.as_u16() {
+                    401 => {
+                        write_401 += 1;
+                        write_401_routes.push(format!("{} {}", r.method, r.path));
+                    }
+                    403 => write_403 += 1,
+                    _ => {}
+                }
+            } else {
+                executed_read += 1;
+                match status.as_u16() {
+                    401 => read_401 += 1,
+                    403 => read_403 += 1,
+                    _ => {}
+                }
+            }
+            let errs = error_capture::drain();
+            if status.as_u16() == 500 {
+                handler500.insert(
+                    format!("{} {}", r.method, r.path),
+                    format!(
+                        "body={} | errs={}",
+                        body.chars().take(200).collect::<String>(),
+                        if errs.is_empty() {
+                            "<handler 未输出 ERROR 日志>".to_string()
+                        } else {
+                            errs.join(" || ")
+                        }
+                    ),
+                );
+            }
+        }
+
+        eprintln!("== 种子化扫描 handler500：{} 条 ==", handler500.len());
+        for (k, v) in &handler500 {
+            eprintln!("  {k} → {v}");
+        }
+
+        let unauthorized_total = read_401 + write_401;
+        let unauthorized_ratio = if executed == 0 {
+            1.0
+        } else {
+            unauthorized_total as f64 / executed as f64
+        };
+        eprintln!(
+            "== 扫描覆盖：枚举 读 {read_total} / 写 {write_total}；执行 读 {executed_read} / 写 {executed_write}（共 {executed}）；\
+             401 读 {read_401} / 写 {write_401}；403 读 {read_403} / 写 {write_403}；401 比例 {:.1}% ==",
+            unauthorized_ratio * 100.0
+        );
+        assert!(
+            executed_read >= MIN_EXECUTED_READ_ROUTES,
+            "实际执行的读路由 {executed_read} 条，低于下限 {MIN_EXECUTED_READ_ROUTES}（枚举到但没执行）"
+        );
+        assert!(
+            executed_write >= MIN_EXECUTED_WRITE_ROUTES,
+            "实际执行的写路由 {executed_write} 条，低于下限 {MIN_EXECUTED_WRITE_ROUTES}（写路由没真正被执行，门禁不可信）"
+        );
+        assert!(
+            executed >= MIN_EXECUTED_ROUTES,
+            "实际执行的路由 {executed} 条，低于下限 {MIN_EXECUTED_ROUTES}"
+        );
+        // 破坏实验锚点：任意一条写路由被收紧成 401，这里必须红（不允许静默少扫）。
+        let unexpected_write_401: Vec<&str> = write_401_routes
+            .iter()
+            .map(|r| r.as_str())
+            .filter(|r| !WRITE_401_ALLOWED.contains(r))
+            .collect();
+        assert!(
+            unexpected_write_401.is_empty(),
+            "写路由出现未登记的 401 共 {} 条（admin 扫描身份未生效，或权限被收紧）：\n{}",
+            unexpected_write_401.len(),
+            unexpected_write_401.join("\n")
+        );
+        assert!(
+            unauthorized_ratio <= MAX_401_RATIO,
+            "401 比例 {:.1}% 超过上限 {:.1}%（枚举 {} 条 / 执行 {} 条）",
+            unauthorized_ratio * 100.0,
+            MAX_401_RATIO * 100.0,
+            candidates.len(),
+            executed
+        );
+
+        drop_scratch(SEEDED_DB).await;
+
+        assert!(
+            seeded.len() >= 300,
+            "种子成功表数 {} 低于下限 300（种子器坏了，守卫会静默变绿）",
+            seeded.len()
+        );
+        assert!(
+            failures.is_empty(),
+            "种子化失败表 {} 张（这些表的读路径不被覆盖）：\n{}",
+            failures.len(),
+            failures.join("\n")
+        );
+
+        let current: BTreeSet<String> = handler500
+            .iter()
+            .map(|(k, v)| format!("{k}\t{}", classify_error(v)))
+            .collect();
+        let baseline_rows = parse_baseline(BASELINE_RAW);
+        let baseline: BTreeSet<String> = baseline_rows.iter().map(BaselineRow::identity).collect();
+
+        // 下限断言：解析器若静默失效（行被吞、分隔符变更），这里先红，
+        // 避免「基线 0 行 / 当前 0 条」的假绿。
+        assert!(
+            baseline_rows.len() >= current.len(),
+            "解析出的基线行数 {} < 当前实际 500 条数 {}（解析器静默失效？）",
+            baseline_rows.len(),
+            current.len()
+        );
+
+        // 元校验：条目格式、元数据齐全、due 合法、去重、条目数 == BASELINE_COUNT
+        let mut bad_format = Vec::new();
+        for row in &baseline_rows {
+            if !row.key.contains(' ') {
+                bad_format.push(format!("缺少 METHOD/路径: {}", row.key));
+            }
+            if !(row.reason.starts_with("column:") || row.reason.starts_with("category:")) {
+                bad_format.push(format!("reason 不合规: {} ({})", row.key, row.reason));
+            }
+            if row.owner.is_empty() {
+                bad_format.push(format!("缺少 owner（责任人）: {}", row.key));
+            }
+            if row.cond.is_empty() {
+                bad_format.push(format!("缺少 cond（转绿条件）: {}", row.key));
+            }
+            if chrono::NaiveDate::parse_from_str(&row.due, "%Y-%m-%d").is_err() {
+                bad_format.push(format!(
+                    "due 非法（必须是 YYYY-MM-DD）: {} → {:?}",
+                    row.key, row.due
+                ));
+            }
+        }
+        assert!(
+            bad_format.is_empty(),
+            "基线条目格式/元数据错误：\n{}",
+            bad_format.join("\n")
+        );
+
+        // 到期门禁：当天（UTC+8）超过 due 且该行仍在基线 → FAIL。
+        // 报出超期行、超期天数、原定转绿条件，避免「写了期限没人执行」。
+        let today = business_today();
+        let mut overdue = Vec::new();
+        for row in &baseline_rows {
+            if let Ok(due) = chrono::NaiveDate::parse_from_str(&row.due, "%Y-%m-%d") {
+                if today > due {
+                    overdue.push(format!(
+                        "{} | due {} | 超期 {} 天 | 责任人 {} | 原定转绿条件：{}",
+                        row.key,
+                        row.due,
+                        (today - due).num_days(),
+                        row.owner,
+                        row.cond
+                    ));
+                }
+            }
+        }
+        assert!(
+            overdue.is_empty(),
+            "基线中有 {} 行已超过期限仍在基线（今天 {}，UTC+8）：\n{}",
+            overdue.len(),
+            today,
+            overdue.join("\n")
+        );
+        assert_eq!(
+            baseline.len(),
+            baseline_rows.len(),
+            "基线里有重复条目（会造成『相等』假象）"
+        );
+        assert_eq!(
+            baseline_rows.len(),
+            BASELINE_COUNT,
+            "基线行数 {} ≠ BASELINE_COUNT {}；修复时必须删行并下调该常量",
+            baseline_rows.len(),
+            BASELINE_COUNT
+        );
+
+        let new_500: Vec<&String> = current.difference(&baseline).collect();
+        let stale: Vec<&String> = baseline.difference(&current).collect();
+
+        assert!(
+            new_500.is_empty(),
+            "新增 / 未登记 handler500：{} 条（先修，禁止往基线里加行）：\n{}",
+            new_500.len(),
+            new_500
+                .iter()
+                .map(|e| format!("  {e}"))
+                .collect::<Vec<_>>()
+                .join("\n")
+        );
+        assert!(
+            stale.is_empty(),
+            "基线里 {} 条在本轮复现不出来（已修复但没删行 / 没下调 BASELINE_COUNT）：\n{}",
+            stale.len(),
+            stale
+                .iter()
+                .map(|e| format!("  {e}"))
+                .collect::<Vec<_>>()
+                .join("\n")
+        );
+        eprintln!(
+            "== 棘轮基线：{} 条（当前 {} 条），集合相等 ==",
+            baseline.len(),
+            current.len()
+        );
+    }
+
+    /// O24：改前/改后契约快照。
+    ///
+    /// 只在显式设置 `O24_DUMP_DIR` 时执行；未设置时零成本返回，不影响常规测试与 CI。
+    /// 输出 `routes.tsv`：`METHOD\tPATH\tSTATUS\t<归一化后的响应体>`。
+    /// 响应体里的 `date` 是请求时刻，跨版本比较时归一化为 `<NOW>`。
+    #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+    async fn o24_contract_snapshot() {
+        let Ok(dir) = std::env::var("O24_DUMP_DIR") else {
+            return;
+        };
+        error_capture::init();
+        let Some((app, pool, sessions)) = setup_with_db(SEEDED_DB).await else {
+            return;
+        };
+        let (seeded, failures) = seed_all_tables(&pool).await;
+
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let mut all = scan_routes(root);
+        all.sort_by(|a, b| a.path.cmp(&b.path).then_with(|| a.method.cmp(b.method)));
+        let candidates: Vec<&Route> = all
+            .iter()
+            .filter(|r| {
+                !KNOWN_ARTIFACT_ROUTES.contains(&r.path.as_str()) && !r.path.contains("mock")
+            })
+            .collect();
+        let mut ordered: Vec<&Route> = candidates
+            .iter()
+            .copied()
+            .filter(|r| r.method == "GET")
+            .collect();
+        ordered.extend(candidates.iter().copied().filter(|r| r.method != "GET"));
+
+        let _ = error_capture::drain();
+        let mut rows = String::new();
+        let mut error_rows = String::new();
+        let mut executed = 0usize;
+        for r in ordered {
+            if r.method != "GET" {
+                ensure_scan_admin(&pool, &sessions).await;
+            }
+            let url = fill_params(&r.path);
+            let _ = error_capture::drain();
+            let Some((status, body)) = fire(&app, r.method, &url, Some(TOK_ADMIN)).await else {
+                continue;
+            };
+            executed += 1;
+            rows.push_str(&format!(
+                "{}\t{}\t{}\t{}\n",
+                r.method,
+                r.path,
+                status.as_u16(),
+                o24_normalize(&body)
+            ));
+            if status.as_u16() >= 400 {
+                let errs = error_capture::drain();
+                error_rows.push_str(&format!(
+                    "{}\t{}\t{}\t{}\n",
+                    r.method,
+                    r.path,
+                    status.as_u16(),
+                    errs.join(" || ").replace(['\t', '\n'], " ")
+                ));
+            }
+        }
+
+        let dir = Path::new(&dir);
+        std::fs::create_dir_all(dir).expect("创建快照目录");
+        std::fs::write(dir.join("routes.tsv"), &rows).expect("写 routes.tsv");
+        std::fs::write(dir.join("errors.tsv"), &error_rows).expect("写 errors.tsv");
+        std::fs::write(
+            dir.join("meta.txt"),
+            format!(
+                "executed={executed}\nseeded={}\nseed_failures={}\n",
+                seeded.len(),
+                failures.len()
+            ),
+        )
+        .expect("写 meta.txt");
+        eprintln!("O24 快照已写入 {}：{executed} 条路由", dir.display());
+        drop_scratch(SEEDED_DB).await;
+    }
+
+    /// 响应体归一化：`date`（请求时刻）→ `<NOW>`；制表符/换行压成空格保证一行一路由。
+    fn o24_normalize(body: &str) -> String {
+        let mut s = String::with_capacity(body.len());
+        let mut rest = body;
+        while let Some(pos) = rest.find("\"date\":\"") {
+            s.push_str(&rest[..pos]);
+            let after = &rest[pos + "\"date\":\"".len()..];
+            let Some(end) = after.find('"') else {
+                break;
+            };
+            s.push_str("\"date\":\"<NOW>\"");
+            rest = &after[end + 1..];
+        }
+        s.push_str(rest);
+        s.replace(['\t', '\n'], " ")
     }
 }

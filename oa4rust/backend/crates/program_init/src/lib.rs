@@ -71,7 +71,8 @@ impl SecretCipher {
             Aes128Gcm, Nonce,
         };
 
-        let cipher = Aes128Gcm::new_from_slice(&Self::key()?).map_err(|_| AppError::Internal)?;
+        let cipher = Aes128Gcm::new_from_slice(&Self::key()?)
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
         let uuid = uuid::Uuid::new_v4();
         let mut nonce_bytes = [0u8; 12];
@@ -79,7 +80,7 @@ impl SecretCipher {
 
         let ciphertext = cipher
             .encrypt(Nonce::from_slice(&nonce_bytes), plain.as_bytes())
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
         let mut out = nonce_bytes.to_vec();
         out.extend_from_slice(&ciphertext);
@@ -95,18 +96,20 @@ impl SecretCipher {
 
         let raw = base64::engine::general_purpose::STANDARD
             .decode(encoded)
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         if raw.len() < 13 {
             return Err(AppError::Internal);
         }
 
         let (nonce_bytes, ciphertext) = raw.split_at(12);
-        let cipher = Aes128Gcm::new_from_slice(&Self::key()?).map_err(|_| AppError::Internal)?;
+        let cipher = Aes128Gcm::new_from_slice(&Self::key()?)
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         let plain = cipher
             .decrypt(Nonce::from_slice(nonce_bytes), ciphertext)
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
-        String::from_utf8(plain).map_err(|_| AppError::Internal)
+        String::from_utf8(plain)
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))
     }
 }
 
@@ -128,13 +131,13 @@ pub async fn check(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, A
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let has_person: bool = person_row.get("exists");
 
     let secret_set = client
         .query_opt("SELECT 1 FROM secret_config LIMIT 1", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let initialized = has_person || secret_set.is_some();
 
@@ -167,7 +170,7 @@ pub async fn set(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get::<_, bool>("exists");
 
     if has_person {
@@ -186,7 +189,7 @@ pub async fn set(
             &[&SECRET_ROW_ID, &encrypted],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(json!({ "set": true }))))
 }
@@ -202,7 +205,7 @@ pub async fn set_cancel(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get::<_, bool>("exists");
 
     if has_person {
@@ -214,7 +217,7 @@ pub async fn set_cancel(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
     let rows_affected = client
         .execute("DELETE FROM secret_config WHERE id = $1", &[&SECRET_ROW_ID])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if rows_affected == 0 {
         return Ok(Json(ActionResult::success(json!({ "canceled": false }))));
@@ -300,7 +303,7 @@ pub async fn external_datasources_check(
     let count: i64 = client
         .query_one("SELECT count(*) AS n FROM init_external_datasource", &[])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get("n");
     Ok(Json(ActionResult::success(json!({
         "configured": count > 0,
@@ -321,7 +324,7 @@ pub async fn external_datasources_list(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let items: Vec<Value> = rows
         .iter()
         .map(|r| {
@@ -368,7 +371,7 @@ pub async fn external_datasources_set(
     let configured: i64 = client
         .query_one("SELECT count(*) AS n FROM init_external_datasource", &[])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get("n");
     if configured > 0 {
         return Ok(Json(ActionResult::error(
@@ -439,7 +442,7 @@ pub async fn external_datasources_set(
             .collect();
         tx.execute(&sql, &refs)
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     }
     tx.commit().await?;
     Ok(Json(ActionResult::success(json!({ "value": true }))))
@@ -481,7 +484,7 @@ pub async fn external_datasources_set_cancel(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(
         json!({ "value": affected > 0 }),
     )))
@@ -547,7 +550,7 @@ pub async fn h2_check(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>
     let version: String = client
         .query_one("SELECT version() AS v", &[])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get("v");
     let configured: bool = client
         .query_one(
@@ -556,7 +559,7 @@ pub async fn h2_check(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get("exists");
     Ok(Json(ActionResult::success(json!({
         "configured": configured,
@@ -588,9 +591,11 @@ pub async fn restore_upload(
     // stamp 对齐 o2server DateTools compact 格式 yyyyMMddHHmmss
     let stamp = chrono::Utc::now().format("%Y%m%d%H%M%S").to_string();
     let dir = std::env::temp_dir().join("oa4rust_restore");
-    std::fs::create_dir_all(&dir).map_err(|_| AppError::Internal)?;
+    std::fs::create_dir_all(&dir)
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let path = dir.join(format!("{}.zip", stamp));
-    std::fs::write(&path, &body).map_err(|_| AppError::Internal)?;
+    std::fs::write(&path, &body)
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let path_str = path.to_string_lossy().to_string();
@@ -603,7 +608,7 @@ pub async fn restore_upload(
             &[&id, &stamp, &path_str, &size],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(
         json!({ "value": true, "id": id, "stamp": stamp }),
@@ -626,7 +631,7 @@ pub async fn restore_upload_cancel(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(
         json!({ "value": affected > 0 }),
     )))
@@ -697,7 +702,7 @@ pub async fn server_execute_status(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(r) => {
             let raw: String = r.get("messages");
@@ -727,7 +732,7 @@ pub async fn server_license(pool: Extension<Pool>) -> Result<Json<ActionResult<V
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let mut info = serde_json::Map::new();
     info.insert("version".into(), Value::String("1.0.0".into()));
     if let Some(r) = row {
@@ -758,7 +763,7 @@ pub async fn server_stop(
             &[&uuid::Uuid::new_v4().to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tracing::warn!("server stop command recorded via program_init");
     Ok(Json(ActionResult::success(json!({ "value": true }))))
 }

@@ -69,7 +69,7 @@ pub async fn crud_create(
     client
         .execute(&sql, &refs)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(id)
 }
 
@@ -114,7 +114,7 @@ pub async fn crud_save(
         let hit = client
             .query_opt(&sql, &refs)
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
             .is_some();
         return Ok(hit);
     }
@@ -133,7 +133,7 @@ pub async fn crud_save(
     let n = client
         .execute(&sql, &refs)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(n > 0)
 }
 
@@ -155,7 +155,7 @@ pub async fn crud_delete(pool: &Pool, spec: &CrudSpec, id: &str) -> Result<bool,
     let n = client
         .execute(&sql, &refs)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(n > 0)
 }
 
@@ -187,7 +187,7 @@ async fn crud_owner_ok(
     let owner: Option<String> = client
         .query_opt(&sql, &[&id])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .map(|r| r.get::<_, Option<String>>("owner").unwrap_or_default());
     match owner {
         None => Ok(false),
@@ -311,7 +311,7 @@ pub async fn crud_create_many(
             params.iter().map(|v| v as &(dyn ToSql + Sync)).collect();
         tx.execute(&sql, &refs)
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     }
     tx.commit().await?;
 

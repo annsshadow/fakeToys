@@ -41,7 +41,7 @@
 //!         .limit(20)
 //!         .all(&db)
 //!         .await
-//!         .map_err(|_| AppError::Internal)?;
+//!         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 //!     // 转换为 ActionResult<Value>
 //!     Ok(Json(ActionResult::success(...)))
 //! }

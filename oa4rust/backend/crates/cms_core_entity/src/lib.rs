@@ -46,7 +46,7 @@ pub async fn category_list(
         .limit(20)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -87,7 +87,7 @@ pub async fn category_get(
         .filter(cms_category::Column::DeletedAt.is_null())
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match model {
         Some(m) => {
@@ -156,7 +156,7 @@ pub async fn category_create(
     active_model
         .insert(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -180,7 +180,7 @@ pub async fn article_list(
         .limit(20)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -227,7 +227,7 @@ pub async fn article_get(
         .filter(cms_article::Column::DeletedAt.is_null())
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match model {
         Some(m) => {
@@ -309,7 +309,7 @@ pub async fn article_create(
     active_model
         .insert(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -358,7 +358,7 @@ async fn list_cms_entity_table(
     let rows = client
         .query(sql, &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(shared::response::row_to_json).collect();
     let count = data.len() as i64;
     Ok(Json(ActionResult::legacy_success(
@@ -424,7 +424,7 @@ async fn cms_entity_soft_delete(
             &refs,
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(n > 0)
 }
 
@@ -476,7 +476,7 @@ async fn cms_entity_create(
     client
         .execute(&sql, &params)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(id)
 }
 
@@ -523,7 +523,7 @@ async fn cms_entity_save(
     let n = client
         .execute(&sql, &params)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(n > 0)
 }
 

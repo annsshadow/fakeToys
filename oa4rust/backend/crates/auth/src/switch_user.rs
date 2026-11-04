@@ -64,8 +64,10 @@ pub async fn switch_user(
     let target_department: Option<String> = row.get("department");
     let target_unit: Option<String> = row.get("unit");
     let target_position: Option<String> = row.get("position");
-    let change_password_time: Option<String> = row.get("change_password_time");
-    let _password_expired_time: Option<String> = row.get("password_expired_time");
+    // auth_person.change_password_time / password_expired_time 是 TIMESTAMP，
+    // 按 String 读取会在运行期 FromSql 失败（panic_guard 转 500）。
+    let change_password_time: Option<chrono::NaiveDateTime> = row.get("change_password_time");
+    let _password_expired_time: Option<chrono::NaiveDateTime> = row.get("password_expired_time");
 
     // 检查密码是否过期（简化实现：如果 change_password_time 为 NULL 则密码过期）
     let password_expired = change_password_time.is_none();

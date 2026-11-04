@@ -62,7 +62,7 @@ pub async fn portal_list(
         .order_by_asc(portal::Column::Name)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -102,7 +102,7 @@ pub async fn widget_list(
         .order_by_asc(widget::Column::Name)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -137,7 +137,7 @@ pub async fn page_list(
         .order_by_desc(portal_page::Column::CreateTime)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -179,7 +179,7 @@ pub async fn page_get(
         .filter(portal_page::Column::DeletedAt.is_null())
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match model {
         Some(m) => {
@@ -288,7 +288,7 @@ pub async fn page_update(
             vec![name.into(), content.into(), status.into(), id.clone().into()],
         ))
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result.rows_affected() == 0 {
         return Err(AppError::NotFound);
@@ -327,7 +327,7 @@ pub async fn page_remove(
             vec![now.into(), id.clone().into()],
         ))
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result.rows_affected() == 0 {
         return Err(AppError::NotFound);
@@ -352,7 +352,7 @@ pub async fn script_list(
         .order_by_asc(script::Column::Name)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()

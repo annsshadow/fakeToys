@@ -46,7 +46,7 @@ pub async fn user_setting(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
 
     let mut map = serde_json::Map::new();
@@ -83,7 +83,7 @@ pub async fn user_role_list(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let roles: Vec<Value> = rows
         .iter()
@@ -137,7 +137,7 @@ pub async fn custom_mockputtopost(
             &[&id, &value],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(serde_json::json!({
         "id": id, "updated": n
     }))))

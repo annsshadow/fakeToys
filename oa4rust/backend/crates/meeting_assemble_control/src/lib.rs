@@ -98,7 +98,7 @@ pub async fn list_meeting_controls(
             &[&meeting_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -182,7 +182,7 @@ pub async fn create_meeting_control(
             &[&id, &meeting_id, &control_type, &enabled, &config],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -218,7 +218,7 @@ pub async fn delete_meeting_control(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -246,7 +246,7 @@ pub async fn building_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -306,7 +306,7 @@ pub async fn building_list_like_pinyin_key(
             &[&pattern],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -366,7 +366,7 @@ pub async fn building_list_like_key(
             &[&pattern],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -425,7 +425,7 @@ pub async fn building_list_pinyininitial_key(
             &[&key],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -488,7 +488,7 @@ pub async fn building_list_start_start_completed_completed(
             &[&start_ts, &completed_ts],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows.iter().map(meeting_row_json).collect();
 
@@ -515,7 +515,7 @@ pub async fn building_list_start_start_completed_completed_allmeeting(
             &[&start_ts, &completed_ts],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows.iter().map(meeting_row_json).collect();
 
@@ -547,7 +547,7 @@ pub async fn building_list_start_start_completed_completed_room_room_meeting_mee
             &[&start_ts, &completed_ts, &room, &meeting],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows.iter().map(meeting_row_json).collect();
 
@@ -609,7 +609,7 @@ pub async fn building_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -661,7 +661,7 @@ pub async fn config_system_config(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     // Build config object: o2server returns single MeetingConfigProperties object
     // (not an array of rows). Map key-value rows to object fields.
@@ -752,7 +752,7 @@ pub async fn config_system_config_manage(
             &[&config_value, &description, &config_key],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("config not found")));
@@ -785,7 +785,7 @@ pub async fn meeting_list_applied_completed(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -834,7 +834,7 @@ pub async fn meeting_list_applied_processing(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -883,7 +883,7 @@ pub async fn meeting_list_applied_wait(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -935,7 +935,7 @@ pub async fn meeting_list_apply_page_size_size(
             &[&limit, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1043,7 +1043,7 @@ async fn meeting_list_coming_month_count_core(
             &[&(count as f64)],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1109,7 +1109,7 @@ pub async fn meeting_list_forward_monthcount_monthCount(
             &[&(month_count as f64)],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1159,7 +1159,7 @@ pub async fn meeting_list_forward_monthcount_monthCount_all(
             &[&(month_count as f64)],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1212,7 +1212,7 @@ async fn meeting_list_invite_page_size_size_core(
             &[&limit, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1277,7 +1277,7 @@ pub async fn meeting_list_invited_completed(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1326,7 +1326,7 @@ pub async fn meeting_list_invited_processing(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1375,7 +1375,7 @@ pub async fn meeting_list_invited_rejected(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1424,7 +1424,7 @@ pub async fn meeting_list_invited_wait(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1473,7 +1473,7 @@ pub async fn meeting_list_wait_accept(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1522,7 +1522,7 @@ pub async fn meeting_list_wait_confirm(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1574,7 +1574,7 @@ pub async fn meeting_list_year_year_month_month(
             &[&start_ts, &end_ts],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1626,7 +1626,7 @@ pub async fn meeting_list_year_year_month_month_all(
             &[&start_ts, &end_ts],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1678,7 +1678,7 @@ pub async fn meeting_list_year_year_month_month_day_day(
             &[&start_ts, &end_ts],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1730,7 +1730,7 @@ pub async fn meeting_list_year_year_month_month_day_day_all(
             &[&start_ts, &end_ts],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1785,7 +1785,7 @@ async fn meeting_list_year_year_month_month_day_day_roomId_core(
             &[&start_ts, &end_ts, &room_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1863,7 +1863,7 @@ async fn meeting_list_id_next_count_core(
                 &[&count],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else {
         client
             .query(
@@ -1871,7 +1871,7 @@ async fn meeting_list_id_next_count_core(
                 &[&flag, &count],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     };
 
     let data: Vec<Value> = rows
@@ -1940,7 +1940,7 @@ pub async fn meeting_list_id_prev_count(
             &[&id, &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1992,7 +1992,7 @@ pub async fn meeting_list_page_size_size(
             &[&limit, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2045,7 +2045,7 @@ async fn meeting_list_page_size_size_manage_core(
             &[&limit, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2111,7 +2111,7 @@ pub async fn meeting_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2157,7 +2157,7 @@ async fn u2_meeting_owner_gate(
             &[&meeting_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(r) => {
             let creator: String = r.get::<_, Option<String>>("creator").unwrap_or_default();
@@ -2209,7 +2209,7 @@ pub async fn create_meeting(
             &[&id, &title, &content, &room_id, &start_time, &end_time, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2262,7 +2262,7 @@ pub async fn save_meeting(
             &[&title, &content, &start_ts, &end_ts, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("meeting not found")));
@@ -2303,7 +2303,7 @@ pub async fn delete_meeting(
             &[&id, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("meeting not found")));
@@ -2334,7 +2334,7 @@ pub async fn meeting_id_accept(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2366,7 +2366,7 @@ pub async fn meeting_id_add_invite(
             &[&invite_id, &id, &invitee],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2398,7 +2398,7 @@ pub async fn meeting_id_checkin(
             &[&checkin_id, &id, &person],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2423,7 +2423,7 @@ pub async fn meeting_id_checkin_code(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2462,7 +2462,7 @@ pub async fn meeting_id_confirm_allow(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2487,7 +2487,7 @@ pub async fn meeting_id_confirm_deny(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2522,7 +2522,7 @@ pub async fn meeting_id_delete_invite(
             &[&id, &invitee],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2552,7 +2552,7 @@ pub async fn meeting_id_manual_completed(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2589,7 +2589,7 @@ pub async fn meeting_id_modify_completedtime(
             &[&completed_time, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2630,7 +2630,7 @@ pub async fn meeting_id_modify_starttime(
                 &[&start_time, &end_time, &id],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else {
         client
             .execute(
@@ -2638,7 +2638,7 @@ pub async fn meeting_id_modify_starttime(
                 &[&start_time, &id],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     };
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -2672,7 +2672,7 @@ pub async fn meeting_id_reject(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2694,7 +2694,7 @@ pub async fn openmeeting_list_room(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2750,7 +2750,7 @@ pub async fn room_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2810,7 +2810,7 @@ pub async fn room_list_like_pinyin_key(
             &[&pattern],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2870,7 +2870,7 @@ pub async fn room_list_like_key(
             &[&pattern],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2929,7 +2929,7 @@ pub async fn room_list_pinyininitial_key(
             &[&key],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2988,7 +2988,7 @@ pub async fn room_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -3041,7 +3041,7 @@ pub async fn room_id_photo(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -3159,7 +3159,7 @@ async fn u2_meeting_creator(
     let row = client
         .query_opt("SELECT creator FROM x_meeting WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(row.map(|r| r.get::<_, Option<String>>("creator").unwrap_or_default()))
 }
 
@@ -3176,7 +3176,7 @@ async fn u2_attachment_guard(
             &[&attachment_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let Some(row) = row else {
         return Err(AppError::NotFound);
     };
@@ -3335,7 +3335,7 @@ pub async fn u2_attachment_list_with_meeting(
             &[&meeting_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(u2_attachment_json).collect();
     let count = data.len() as i64;
     Ok(Json(ActionResult::legacy_success(
@@ -3357,7 +3357,7 @@ pub async fn u2_attachment_get(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(u2_attachment_json(&row)))),
         None => Err(AppError::NotFound),
@@ -3378,7 +3378,7 @@ pub async fn u2_attachment_download(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let Some(row) = row else {
         return Err(AppError::NotFound);
     };
@@ -3457,7 +3457,7 @@ async fn u2_attachment_update_inner(
                 &[&id],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         let current_name: String = row
             .map(|r| r.get::<_, Option<String>>("file_name").unwrap_or_default())
             .unwrap_or_default();
@@ -3479,7 +3479,7 @@ async fn u2_attachment_update_inner(
             &[&id, &file_name, &content_b64, &new_length],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if count == 0 {
         return Err(AppError::NotFound);
     }
@@ -3560,7 +3560,7 @@ async fn u2_attachment_paged(
     let exists = client
         .query_opt("SELECT id FROM x_meeting_attachment WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .is_some();
     if !exists {
         return Err(AppError::NotFound);
@@ -3575,7 +3575,7 @@ async fn u2_attachment_paged(
     let rows = client
         .query(&sql, &[&id, &count])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let mut data: Vec<Value> = rows.iter().map(u2_attachment_json).collect();
     // O2 next/prev 语义均按时间正序呈现窗口内容
     if backward {
@@ -3676,11 +3676,11 @@ pub async fn u2_attachment_delete(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let count = client
         .execute("DELETE FROM x_meeting_attachment WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if count == 0 {
         return Err(AppError::NotFound);
     }
@@ -3719,7 +3719,7 @@ async fn u2_building_name_taken(
             &[&exclude_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(rows
         .iter()
         .any(|r| u2_normalize_name(&r.get::<_, String>("name")) == target))
@@ -3757,7 +3757,7 @@ pub async fn u2_building_create(
             &[&id, &name, &address, &description],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -3780,7 +3780,7 @@ pub async fn u2_building_edit(
     let exists = client
         .query_opt("SELECT id FROM x_meeting_building WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .is_some();
     if !exists {
         return Err(AppError::NotFound);
@@ -3810,7 +3810,7 @@ pub async fn u2_building_edit(
             &[&id, &name, &address, &description],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -3834,7 +3834,7 @@ pub async fn u2_building_delete(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get("n");
     if in_use > 0 {
         return Err(AppError::BadRequest(format!(
@@ -3844,7 +3844,7 @@ pub async fn u2_building_delete(
     let count = client
         .execute("DELETE FROM x_meeting_building WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if count == 0 {
         return Err(AppError::NotFound);
     }
@@ -3890,7 +3890,7 @@ pub async fn u2_config_save(
             &[&config_key, &config_value],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if updated == 0 {
         client
             .execute(
@@ -3899,7 +3899,7 @@ pub async fn u2_config_save(
                 &[&uuid::Uuid::new_v4().to_string(), &config_key, &config_value],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     }
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -3924,7 +3924,7 @@ pub async fn u2_config_manage_get(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -3977,10 +3977,10 @@ pub async fn u2_meeting_delete_owned(
     let tx = client.transaction().await?;
     tx.execute("DELETE FROM x_meeting_invite WHERE meeting_id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.execute("DELETE FROM x_meeting WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -4023,7 +4023,7 @@ pub async fn u2_meeting_modify(
             &[&id, &title, &content, &room_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -4066,7 +4066,7 @@ pub async fn u2_meeting_put_save(
             &[&id, &title, &content, &start_time, &end_time],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if count == 0 {
         return Err(AppError::NotFound);
     }
@@ -4098,7 +4098,7 @@ pub async fn u2_meeting_checkin_get(
             &[&checkin_id, &id, &person],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(checkin_id)),
@@ -4122,7 +4122,7 @@ pub async fn u2_openmeeting_get(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let mut map = serde_json::Map::new();
     map.insert("enable".to_string(), Value::Bool(false));
     for row in &rows {
@@ -4160,7 +4160,7 @@ async fn u2_room_name_taken(
             &[&exclude_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(rows
         .iter()
         .any(|r| u2_normalize_name(&r.get::<_, String>("name")) == target))
@@ -4212,7 +4212,7 @@ pub async fn u2_room_create(
             &[&id, &name, &building_id, &floor, &capacity, &equipment, &description],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -4235,7 +4235,7 @@ pub async fn u2_room_edit(
     let exists = client
         .query_opt("SELECT id FROM x_meeting_room WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .is_some();
     if !exists {
         return Err(AppError::NotFound);
@@ -4268,7 +4268,7 @@ pub async fn u2_room_edit(
             &[&id, &name, &capacity, &description],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -4289,7 +4289,7 @@ pub async fn u2_room_delete(
     let count = client
         .execute("DELETE FROM x_meeting_room WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if count == 0 {
         return Err(AppError::NotFound);
     }
@@ -4319,7 +4319,7 @@ pub async fn u2_room_set_photo(
     let exists = client
         .query_opt("SELECT id FROM x_meeting_room WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .is_some();
     if !exists {
         return Err(AppError::NotFound);

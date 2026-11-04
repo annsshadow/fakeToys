@@ -82,7 +82,10 @@ pub async fn ldap_fallback_flow() {
     );
     info!(cookie_len = %set_cookie.len(), "admin login succeeded via DB fallback");
 
-    // (b) LDAP config endpoint — must report enabled == false (no LDAP configured).
+    // (b) LDAP config endpoint —— O20 定性 A：backend 全仓无此路由，但
+    // tests/parity/corpus/oa4rust-ldap_config.json 明确要求 GET 返回 200
+    // JSON（parity_runner.rs:157）。本 PR 不修，另开轮；此处保留红灯并给出
+    // 可读失败信息，而不是 JSON 解析 panic。
     let config_resp = client
         .get(format!("{}/api/ldap/config", base))
         .header("Authorization", &auth_header)
@@ -93,10 +96,16 @@ pub async fn ldap_fallback_flow() {
     assert_eq!(
         config_resp.status(),
         reqwest::StatusCode::OK,
-        "ldap config request failed: {}",
-        config_resp.text().await.unwrap_or_default()
+        "A-class gap: GET /api/ldap/config must return 200 (O2OA parity)"
     );
-    let config_body: serde_json::Value = config_resp.json().await.expect("invalid config response");
+    let config_text = config_resp.text().await.expect("ldap config body");
+    let config_body: serde_json::Value = serde_json::from_str(&config_text).unwrap_or_else(|err| {
+        panic!(
+            "A-class gap: GET /api/ldap/config has no route (O2OA parity requires JSON 200); \
+             raw body = {:?}, parse error = {}",
+            config_text, err
+        )
+    });
     assert_eq!(
         config_body["data"]["enabled"].as_bool(),
         Some(false),

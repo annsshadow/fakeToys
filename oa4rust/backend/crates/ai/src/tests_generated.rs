@@ -77,15 +77,6 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_config_get_mcp() {
-        let _result = crate::config_get_mcp(
-            axum::extract::Extension(shared::testing::test_pool()),
-            axum::extract::Path("test-id".to_string()),
-        )
-        .await;
-    }
-
-    #[tokio::test]
     async fn test_list_enable_model() {
         let _result =
             crate::list_enable_model(axum::extract::Extension(shared::testing::test_pool())).await;
@@ -150,15 +141,6 @@ mod tests {
     #[tokio::test]
     async fn test_config_list_model_paging() {
         let _result = crate::config_list_model_paging(
-            axum::extract::Extension(shared::testing::test_pool()),
-            axum::extract::Path((1i32, 1i32)),
-        )
-        .await;
-    }
-
-    #[tokio::test]
-    async fn test_config_list_mcp_paging() {
-        let _result = crate::config_list_mcp_paging(
             axum::extract::Extension(shared::testing::test_pool()),
             axum::extract::Path((1i32, 1i32)),
         )

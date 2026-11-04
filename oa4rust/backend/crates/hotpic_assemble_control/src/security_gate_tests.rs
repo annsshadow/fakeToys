@@ -29,6 +29,9 @@ mod security_gate_tests {
                     axum::Json(crate::HotpicRequest {
                         title: Some("t".to_string()),
                         imageUrl: None,
+                        // 本用例只验 admin 门（父实体校验在其之后才执行），留空即可。
+                        application: None,
+                        infoId: None,
                     })
                 )
                 .await,
@@ -45,6 +48,9 @@ mod security_gate_tests {
                     axum::Json(crate::HotpicRequest {
                         title: Some("t".to_string()),
                         imageUrl: None,
+                        // 本用例只验 admin 门（父实体校验在其之后才执行），留空即可。
+                        application: None,
+                        infoId: None,
                     })
                 )
                 .await,

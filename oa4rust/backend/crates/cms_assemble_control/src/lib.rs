@@ -42,7 +42,7 @@ pub async fn application_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -85,7 +85,7 @@ pub async fn get_control_config(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data = if let Some(row) = rows.first() {
         Value::Object(serde_json::Map::from_iter([
@@ -134,7 +134,7 @@ pub async fn list_control_sections(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let sections: Vec<Value> = rows
         .iter()
@@ -193,7 +193,7 @@ pub async fn update_control_config(
             &[&enabled, &max_category_count, &allow_anonymous],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -264,7 +264,8 @@ impl FormDefinition {
     }
 
     fn to_db(&self) -> Result<String, AppError> {
-        serde_json::to_string(&self.0).map_err(|_| AppError::Internal)
+        serde_json::to_string(&self.0)
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))
     }
 
     fn into_value(self) -> Value {
@@ -316,7 +317,7 @@ async fn list_from_table_inner(
             &params.iter().map(|(p, _)| *p).collect::<Vec<_>>()[..],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let count: i64 = count_row.get("count");
 
     let data_sql = format!(
@@ -334,7 +335,7 @@ async fn list_from_table_inner(
             &params.iter().map(|(p, _)| *p).collect::<Vec<_>>()[..],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows.iter().map(row_to_json).collect();
 
@@ -386,13 +387,17 @@ async fn list_from_table_filtered_inner(
     // where_clause 实参历史上允许携带 ORDER BY/LIMIT tail（document_filter 三处）；
     // COUNT 聚合带 ORDER BY 裸列在 PG 直接 42P10 → 500（O10 PG 日志实证）。
     // count 语义=过滤后的总条数（legacy 分页字段），ORDER BY/LIMIT 仅作用于数据查询。
+    // 关键字不能带前导空格参与匹配：`document_filter_paging_manager` 传的
+    // where_clause 是**纯 tail**（`ORDER BY create_time DESC LIMIT 200`），带前导空格
+    // 会漏掉 `ORDER BY` 并把整串塞进 `WHERE` → E42601 语法错误。
     let upper = where_clause.to_ascii_uppercase();
-    let cut = [" ORDER BY ", " LIMIT "]
+    let cut = ["ORDER BY", "LIMIT"]
         .iter()
         .filter_map(|kw| upper.find(kw))
         .min()
         .unwrap_or(where_clause.len());
-    let filter_only = &where_clause[..cut];
+    let filter_only = where_clause[..cut].trim_end();
+    let tail = where_clause[cut..].trim();
 
     let count_sql = format!(
         "SELECT COUNT(*) FROM {}{}",
@@ -406,22 +411,28 @@ async fn list_from_table_filtered_inner(
     let count_row = client
         .query_one(&count_sql, params)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let count: i64 = count_row.get("count");
 
+    // 数据查询：filter 进 WHERE，ORDER BY/LIMIT 只作为 tail 追加（纯 tail 时无 WHERE）。
     let data_sql = format!(
-        "SELECT * FROM {}{}",
+        "SELECT * FROM {}{}{}",
         table,
-        if where_clause.is_empty() {
+        if filter_only.is_empty() {
             String::new()
         } else {
-            format!(" WHERE {}", where_clause)
+            format!(" WHERE {}", filter_only)
+        },
+        if tail.is_empty() {
+            String::new()
+        } else {
+            format!(" {}", tail)
         }
     );
     let rows = client
         .query(&data_sql, params)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows.iter().map(row_to_json).collect();
 
@@ -466,7 +477,7 @@ async fn delete_by_id(pool: &Pool, table: &str, id: &str) -> Result<Value, AppEr
     client
         .execute(&format!("DELETE FROM {} WHERE id = $1", table), &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Value::Object(serde_json::Map::from_iter([(
         "deleted".to_string(),
         Value::Bool(true),
@@ -484,7 +495,7 @@ async fn get_by_id(pool: &Pool, table: &str, id: &str) -> Result<Option<Value>, 
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(r) => Ok(Some(row_to_json(&r))),
         None => Ok(None),
@@ -503,7 +514,7 @@ async fn soft_delete_by_id(pool: &Pool, table: &str, id: &str) -> Result<Value, 
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Value::Object(serde_json::Map::from_iter([
         ("deleted".to_string(), Value::Bool(true)),
         (
@@ -600,7 +611,7 @@ async fn upsert_by_id(pool: &Pool, table: &str, body: &Value) -> Result<Value, A
     client
         .execute(&sql, &params_refs)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Value::Object(serde_json::Map::from_iter([(
         "saved".to_string(),
         Value::Bool(true),
@@ -654,7 +665,7 @@ pub async fn anonymous_document_id_view(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -712,7 +723,7 @@ pub async fn appinfo_alias_alias(
             &[&alias],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -823,7 +834,7 @@ pub async fn appinfo_get_user_publish_appId(
             &[&app_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -1357,7 +1368,7 @@ pub async fn appinfo_appId_icon_size_size(
             &[&app_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -1405,7 +1416,7 @@ pub async fn appinfo_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -1447,7 +1458,7 @@ pub async fn appinfo_id_control(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -1503,7 +1514,7 @@ pub async fn appinfo_id_permission(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -1567,7 +1578,7 @@ pub async fn categoryinfo_alias_alias(
             &[&alias],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -1621,7 +1632,7 @@ pub async fn categoryinfo_bind_categoryId_view(
             &[&category_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -1668,14 +1679,14 @@ pub async fn categoryinfo_bind_categoryId_view_mockputtopost(
             &[&category_id, &name, &parent_id, &app_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = client
         .query_opt(
             "SELECT id, name, parent_id, app_id, sort_order, status, ext_content, creator, create_time::text FROM x_cms_categoryinfo WHERE id = $1 AND deleted_at IS NULL",
             &[&category_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -1755,7 +1766,7 @@ pub async fn categoryinfo_extContent(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -1899,7 +1910,7 @@ pub async fn categoryinfo_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -1953,7 +1964,7 @@ pub async fn categoryinfo_id_control(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -2000,7 +2011,7 @@ pub async fn categoryinfo_id_execute_projection(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -2048,7 +2059,7 @@ pub async fn categoryinfo_id_permission(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -2120,7 +2131,7 @@ pub async fn commend_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -2208,7 +2219,7 @@ pub async fn comment_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -2259,7 +2270,7 @@ pub async fn comment_id_commend(
             &[&comment_id, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let new_id: String = row_id.get("id");
     let row = client
         .query_opt(
@@ -2267,7 +2278,7 @@ pub async fn comment_id_commend(
             &[&new_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -2326,7 +2337,7 @@ pub async fn comment_id_uncommend(
             &[&comment_id, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([(
             "deleted".to_string(),
@@ -2358,14 +2369,14 @@ pub async fn correlation_doc_docId_delete(
             &[&doc_id, &related_doc_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = client
         .query_opt(
             "SELECT id, doc_id, related_doc_id, correlation_type, create_time::text FROM x_cms_correlation WHERE doc_id = $1 AND related_doc_id = $2",
             &[&doc_id, &related_doc_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -2430,14 +2441,14 @@ pub async fn correlation_update_doc_docId(
             &[&doc_id, &related_doc_id, &correlation_type],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = client
         .query_opt(
             "SELECT id, doc_id, related_doc_id, correlation_type, create_time::text FROM x_cms_correlation WHERE doc_id = $1 AND related_doc_id = $2 AND deleted_at IS NULL",
             &[&doc_id, &related_doc_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -2527,7 +2538,7 @@ async fn query_doc_fields_by_name(
             &[&doc_id, &field_name],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(rows.iter().map(field_row_to_value).collect())
 }
 
@@ -2547,7 +2558,7 @@ async fn upsert_doc_field(
             &[&doc_id, &field_name, &field_value],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if updated == 0 {
         client
             .execute(
@@ -2556,7 +2567,7 @@ async fn upsert_doc_field(
                 &[&doc_id, &field_name, &field_value],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     }
     Ok(())
 }
@@ -2623,7 +2634,7 @@ async fn write_doc_fields_base(
                     &[&id, &key, &value_str],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             affected += inserted as i64;
         } else {
             upsert_doc_field(pool, id, key, &value_str).await?;
@@ -2665,7 +2676,7 @@ async fn delete_doc_fields_base(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("documentId".to_string(), Value::String(id.to_string())),
@@ -2730,7 +2741,7 @@ async fn write_doc_field_path(
                     &[&doc_id, &field_name, &value_str],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             if inserted == 0 {
                 return Ok(Json(ActionResult::error("field already exists")));
             }
@@ -2751,7 +2762,7 @@ async fn write_doc_field_path(
                     &[&doc_id, &field_name],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             if deleted == 0 {
                 return Ok(Json(ActionResult::error("field not found")));
             }
@@ -3037,7 +3048,7 @@ pub async fn data_document_id_array_data(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let data = vec![Value::Object(serde_json::Map::from_iter([
@@ -3134,7 +3145,7 @@ pub async fn data_document_id_path0(
             &[&doc_id, &path0],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -3201,7 +3212,7 @@ pub async fn design_appdict_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -3289,14 +3300,14 @@ pub async fn design_appdict_id_mockputtopost(
             &[&id, &data_value],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = client
         .query_opt(
             "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -3361,7 +3372,7 @@ pub async fn designer_search(
             &[&format!("%{}%", shared::db::escape_like(&keyword))],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -3452,14 +3463,14 @@ pub async fn document_cipher_publish_content(
             &[&id, &cipher_text, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = client
         .query_opt(
             "SELECT id, doc_id, cipher_text, person_id, create_time::text FROM x_cms_document_cipher WHERE doc_id = $1 AND person_id = $2 AND deleted_at IS NULL",
             &[&id, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -3512,14 +3523,14 @@ pub async fn document_cipher_publish_content_mockputtopost(
             &[&id, &cipher_text, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = client
         .query_opt(
             "SELECT id, doc_id, cipher_text, person_id, create_time::text FROM x_cms_document_cipher WHERE doc_id = $1 AND person_id = $2 AND deleted_at IS NULL",
             &[&id, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -3566,7 +3577,7 @@ pub async fn document_cipher_id_permission_read_person_person(
             &[&doc_id, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -3616,20 +3627,23 @@ pub async fn document_cipher_id_persist_view_record(
     u2_require_admin(&pool, &session).await?;
     let client = shared::db::acquire(&pool).await?;
     let person_id = body.get("personId").and_then(|v| v.as_str()).unwrap_or("");
+    // O24-3 批次 4：`x_cms_viewrecord.id` 是 NOT NULL（information_schema 现场确认），
+    // 旧 SQL 未写主键 → E23502。主键由服务端生成，doc_id 仍为路径 id。
+    let record_id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
-            "INSERT INTO x_cms_viewrecord (doc_id, view_id, record_data, person_id) VALUES ($1, $2, $3, $4)",
-            &[&id, &"", &"{}", &person_id],
+            "INSERT INTO x_cms_viewrecord (id, doc_id, view_id, record_data, person_id) VALUES ($1, $2, $3, $4, $5)",
+            &[&record_id, &id, &"", &"{}", &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = client
         .query_opt(
             "SELECT doc_id, view_id, record_data, person_id FROM x_cms_viewrecord WHERE doc_id = $1 AND person_id = $2",
             &[&id, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -3712,7 +3726,7 @@ pub async fn file_flag_appInfo_appInfoFlag_content(
             &[&app_info_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -3776,7 +3790,7 @@ pub async fn file_flag_appInfo_appInfoFlag_download(
             &[&app_info_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -3847,7 +3861,7 @@ pub async fn file_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -3904,7 +3918,7 @@ pub async fn file_id_content(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -3943,7 +3957,7 @@ pub async fn file_id_download(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -4003,7 +4017,7 @@ pub async fn file_id_mockputtopost(
             &[&id, &name, &content_base64, &content_type, &size],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -4035,7 +4049,7 @@ pub async fn file_id_upload(
             &[&id, &name, &content_base64, &content_type, &size],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -4052,7 +4066,7 @@ pub async fn anonymous_fileinfo_download_document_id(
             &[&doc_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -4124,7 +4138,7 @@ pub async fn anonymous_fileinfo_download_document_id_stream(
             &[&doc_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -4196,7 +4210,7 @@ pub async fn fileinfo_batch_download_doc_docId_site_site(
             &[&doc_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -4264,7 +4278,7 @@ pub async fn fileinfo_copy_to_doc_docId(
             &[&doc_id, &file_id, &original_name, &size, &content_type],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -4281,7 +4295,7 @@ pub async fn fileinfo_download_document_id(
             &[&doc_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -4353,7 +4367,7 @@ pub async fn fileinfo_download_document_id_stream(
             &[&doc_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -4411,7 +4425,7 @@ pub async fn fileinfo_download_transfer_flag_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -4489,7 +4503,7 @@ pub async fn fileinfo_edit_id_doc_docId(
             &[&original_name, &size, &content_type, &file_id, &doc_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(row_to_json(&row)))),
         None => Ok(Json(ActionResult::error("fileinfo not found"))),
@@ -4529,7 +4543,7 @@ pub async fn fileinfo_edit_id_doc_docId_mockputtopost(
             &[&original_name, &size, &content_type, &file_id, &doc_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(row_to_json(&row)))),
         None => Ok(Json(ActionResult::error("fileinfo not found"))),
@@ -4583,7 +4597,7 @@ pub async fn fileinfo_replace_to_doc_docId(
             &[&original_name, &size, &content_type, &file_id, &doc_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(row_to_json(&row)))),
         None => Ok(Json(ActionResult::error("fileinfo not found"))),
@@ -4623,7 +4637,7 @@ pub async fn fileinfo_update_document_docId_attachment_id(
             &[&original_name, &size, &content_type, &doc_id, &attachment_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(row_to_json(&row)))),
         None => Ok(Json(ActionResult::error("fileinfo not found"))),
@@ -4667,7 +4681,7 @@ pub async fn fileinfo_update_document_docId_attachment_id_callback_callback(
             &[&original_name, &size, &content_type, &doc_id, &attachment_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(row_to_json(&row)))),
         None => Ok(Json(ActionResult::error("fileinfo not found"))),
@@ -4701,7 +4715,7 @@ pub async fn fileinfo_update_id_content(
             &[&original_name, &size, &content_type, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(row_to_json(&row)))),
         None => Ok(Json(ActionResult::error("fileinfo not found"))),
@@ -4741,7 +4755,7 @@ pub async fn fileinfo_upload_doc_docId_save_as_flag(
             &[&doc_id, &original_name, &size, &content_type],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -4778,7 +4792,7 @@ pub async fn fileinfo_upload_document_docId(
             &[&doc_id, &original_name, &size, &content_type],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -4815,7 +4829,7 @@ pub async fn fileinfo_upload_document_docId_callback_callback(
             &[&doc_id, &original_name, &size, &content_type],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -4842,7 +4856,7 @@ pub async fn fileinfo_upload_with_url(
             &[&doc_id, &original_name, &size, &content_type],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -4859,7 +4873,7 @@ pub async fn fileinfo_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -4926,7 +4940,7 @@ pub async fn fileinfo_id_binary_base64_size(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -4986,7 +5000,7 @@ pub async fn fileinfo_id_doc_docId_change_seqnumber_seqNumber(
             &[&file_id, &doc_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(row_to_json(&row)))),
         None => Ok(Json(ActionResult::error("fileinfo not found"))),
@@ -5006,7 +5020,7 @@ pub async fn fileinfo_id_document_documentId(
             &[&file_id, &doc_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -5078,7 +5092,7 @@ pub async fn fileinfo_id_online_info(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -5145,7 +5159,7 @@ pub async fn fileinfo_id_preview_pdf(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -5196,22 +5210,30 @@ fn form_definition_from_body(body: &Value) -> Result<Option<FormDefinition>, App
 fn form_row_to_json(row: &deadpool_postgres::tokio_postgres::Row) -> Result<Value, AppError> {
     let definition = FormDefinition::from_db(
         row.try_get::<_, Option<String>>("definition")
-            .map_err(|_| AppError::Internal)?,
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?,
     )?;
     let mut form = serde_json::Map::from_iter([
         (
             "id".to_string(),
-            Value::String(row.try_get("id").map_err(|_| AppError::Internal)?),
+            Value::String(
+                row.try_get("id").map_err(|e| {
+                    AppError::internal_with_source(concat!(file!(), ":", line!()), e)
+                })?,
+            ),
         ),
         (
             "appId".to_string(),
-            Value::String(row.try_get("app_id").map_err(|_| AppError::Internal)?),
+            Value::String(
+                row.try_get("app_id").map_err(|e| {
+                    AppError::internal_with_source(concat!(file!(), ":", line!()), e)
+                })?,
+            ),
         ),
         (
             "name".to_string(),
             Value::String(
                 row.try_get::<_, Option<String>>("name")
-                    .map_err(|_| AppError::Internal)?
+                    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
                     .unwrap_or_default(),
             ),
         ),
@@ -5220,7 +5242,7 @@ fn form_row_to_json(row: &deadpool_postgres::tokio_postgres::Row) -> Result<Valu
             "status".to_string(),
             Value::String(
                 row.try_get::<_, Option<String>>("status")
-                    .map_err(|_| AppError::Internal)?
+                    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
                     .unwrap_or_default(),
             ),
         ),
@@ -5239,7 +5261,7 @@ fn form_runtime_envelope(
 ) -> Result<Value, AppError> {
     let definition = FormDefinition::from_db(
         row.try_get::<_, Option<String>>("definition")
-            .map_err(|_| AppError::Internal)?,
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?,
     )?;
     let has_mobile =
         definition.0.get("mobileData").is_some() || definition.0.get("mobile").is_some();
@@ -5255,11 +5277,12 @@ fn form_runtime_envelope(
             .or_else(|| definition.0.get("desktop"))
     }
     .unwrap_or(&definition.0);
-    let data = serde_json::to_string(layout).map_err(|_| AppError::Internal)?;
+    let data = serde_json::to_string(layout)
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let form = serde_json::json!({
-        "id": row.try_get::<_, String>("id").map_err(|_| AppError::Internal)?,
-        "appId": row.try_get::<_, String>("app_id").map_err(|_| AppError::Internal)?,
-        "name": row.try_get::<_, Option<String>>("name").map_err(|_| AppError::Internal)?.unwrap_or_default(),
+        "id": row.try_get::<_, String>("id").map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?,
+        "appId": row.try_get::<_, String>("app_id").map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?,
+        "name": row.try_get::<_, Option<String>>("name").map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?.unwrap_or_default(),
         "hasMobile": has_mobile,
         "data": data,
         "definition": definition,
@@ -5284,7 +5307,7 @@ async fn form_runtime_by_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(form_runtime_envelope(
             &row, mobile,
@@ -5307,7 +5330,7 @@ async fn form_runtime_by_document(
             &[&doc_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(form_runtime_envelope(
             &row, mobile,
@@ -5333,7 +5356,7 @@ async fn form_filter_list(
             &[&app_id, &limit],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let forms = rows
         .iter()
         .map(form_row_to_json)
@@ -5393,7 +5416,7 @@ pub async fn form_list_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let forms = rows
         .iter()
         .map(form_row_to_json)
@@ -5420,7 +5443,7 @@ pub async fn form_list_app_appId(
             &[&app_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let forms = rows
         .iter()
         .map(form_row_to_json)
@@ -5498,7 +5521,7 @@ pub async fn anonymous_form_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(form_row_to_json(&row)?))),
         None => Ok(Json(ActionResult::error("form not found"))),
@@ -5518,7 +5541,7 @@ pub async fn form_formFlag_appinfo_appFlag(
             &[&app_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data = rows
         .iter()
         .map(form_row_to_json)
@@ -5544,7 +5567,7 @@ pub async fn form_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(form_row_to_json(&row)?))),
         None => Ok(Json(ActionResult::error("form not found"))),
@@ -5594,7 +5617,7 @@ pub async fn form_id_mockputtopost(
             &[&id, &app_id, &name, &definition, &status],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(form_row_to_json(&row)?)))
 }
 
@@ -5662,7 +5685,7 @@ pub async fn formversion_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -5783,7 +5806,7 @@ pub async fn output_appInfoFlag_select(
             &[&app_info_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -5845,7 +5868,7 @@ pub async fn output_appInfoFlag_select_mockputtopost(
             &[&app_info_flag, &name, &config],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -5977,7 +6000,7 @@ pub async fn permission_management_refresh_all(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([(
             "deleted".to_string(),
@@ -6000,7 +6023,7 @@ pub async fn permission_management_refresh_category_categoryId(
     let affected = client
         .execute("UPDATE x_cms_permission SET deleted_at = NOW() WHERE category_id = $1 AND deleted_at IS NULL", &[&category_id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([(
             "deleted".to_string(),
@@ -6109,7 +6132,7 @@ pub async fn review_v2_search(
             &[&format!("%{}%", shared::db::escape_like(&keyword))],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -6212,7 +6235,7 @@ pub async fn script_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
@@ -6286,14 +6309,14 @@ pub async fn script_id_mockputtopost(
             &[&id, &name, &script_content],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = client
         .query_opt(
             "SELECT id, name, script_content, creator, create_time::text FROM x_cms_script WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -6337,7 +6360,7 @@ pub async fn script_uniqueName_app_flag(
             &[&app_flag, &unique_name],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -6396,7 +6419,7 @@ pub async fn script_uniqueName_app_flag_imported(
             &[&app_flag, &unique_name],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -6459,7 +6482,7 @@ pub async fn scriptversion_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -6604,7 +6627,7 @@ async fn appdict_data_get(
     let rows = client
         .query(sql.as_str(), &params[..])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(appdict_row_to_value).collect();
     let count = data.len() as i64;
     Ok(Json(ActionResult::legacy_success(
@@ -6631,7 +6654,7 @@ async fn gate_appdict_writer(
             &[&app_dict_flag, &app_info_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         None => Ok(U2Gate::Allowed),
         Some(r) => {
@@ -6699,7 +6722,7 @@ async fn appdict_data_write(
             let deleted = client
                 .execute(sql.as_str(), &params[..])
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             if deleted == 0 {
                 return Ok(Json(ActionResult::error("appdict data not found")));
             }
@@ -6720,7 +6743,7 @@ async fn appdict_data_write(
             let updated = client
                 .execute(update_sql.as_str(), &params[..])
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
             if mode == AppdictWriteMode::InsertIfAbsent && updated > 0 {
                 return Ok(Json(ActionResult::error("appdict data already exists")));
@@ -6749,7 +6772,9 @@ async fn appdict_data_write(
                 let inserted = client
                     .execute(insert_sql.as_str(), &params[..])
                     .await
-                    .map_err(|_| AppError::Internal)?;
+                    .map_err(|e| {
+                        AppError::internal_with_source(concat!(file!(), ":", line!()), e)
+                    })?;
                 created = inserted > 0;
                 if !created && mode == AppdictWriteMode::InsertIfAbsent {
                     return Ok(Json(ActionResult::error("appdict data already exists")));
@@ -6883,7 +6908,7 @@ pub async fn anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag(
             &[&app_dict_flag, &app_info_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(appdict_row_to_value).collect();
     let count = data.len() as i64;
     Ok(Json(ActionResult::legacy_success(
@@ -6966,7 +6991,7 @@ pub async fn anonymous_surface_appdict_list_appInfo_appInfoFlag(
             &[&app_info_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(appdict_row_to_value).collect();
     let count = data.len() as i64;
     Ok(Json(ActionResult::legacy_success(
@@ -7085,7 +7110,7 @@ pub async fn templateform_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -7225,14 +7250,14 @@ pub async fn view_id_mockputtopost(
             &[&id, &name, &view_config],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = client
         .query_opt(
             "SELECT id, name, view_config, creator, create_time::text FROM x_cms_view WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -7388,14 +7413,14 @@ pub async fn viewfieldconfig_id_mockputtopost(
             &[&id, &field_name, &field_config],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = client
         .query_opt(
             "SELECT id, field_name, field_config, creator, create_time::text FROM x_cms_viewfieldconfig WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -7450,7 +7475,7 @@ pub async fn viewrecord_document_docId_has_view(
             &[&doc_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let count: i64 = row.map(|r| r.get("cnt")).unwrap_or(0);
     // W12 收敛：对齐 o2server ActionQueryHasViewDocument 信封——Wo extends WrapBoolean，
     // 键名为 `value`（非 `hasView`）。o2server 按 viewerName=当前用户 DN 计数；当前
@@ -7624,7 +7649,7 @@ async fn input_resolve_appinfo(
                 &[&id],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         if row.is_some() {
             return Ok(row);
         }
@@ -7637,7 +7662,7 @@ async fn input_resolve_appinfo(
                 &[&key],
             )
             .await
-            .map_err(|_| AppError::Internal);
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e));
     }
     Ok(None)
 }
@@ -7689,7 +7714,7 @@ async fn input_create_impl(
                 &[&id],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         row.is_some()
     };
     if exists {
@@ -7705,7 +7730,7 @@ async fn input_create_impl(
             &[&id, &alias],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
     ))))
@@ -7731,7 +7756,7 @@ async fn input_cover_impl(
             &[&id, &alias],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
     ))))
@@ -7873,7 +7898,7 @@ pub async fn document_id_view_count(
     let exists = client
         .query_opt("SELECT 1 FROM x_cms_document WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if exists.is_none() {
         return Err(AppError::NotFound);
     }
@@ -7884,7 +7909,7 @@ pub async fn document_id_view_count(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .map(|r| r.get::<_, i32>(0) as i64)
         .unwrap_or(0);
 
@@ -8024,7 +8049,7 @@ pub async fn commend_list_paging(
             &[&doc_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let count: i64 = count_row.get("count");
 
     let (size, offset) = shared::response::page_window(page, size)?;
@@ -8034,7 +8059,7 @@ pub async fn commend_list_paging(
             &[&doc_id, &size, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -8127,7 +8152,7 @@ pub async fn queryview_flag_definition(
             &[&view_flag, &query_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(r) => {
@@ -8189,7 +8214,7 @@ async fn u2_gate_by_sql(
     let row = client
         .query_opt(sql, &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         None => Ok(U2Gate::NotFound),
         Some(r) => {
@@ -8317,7 +8342,7 @@ pub async fn document_u2_create(
             &[&id, &app_id, &category_id, &title, &content, &sess.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -8361,7 +8386,7 @@ pub async fn document_u2_update(
                     &[&id, &title, &content, &category_id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             if affected == 0 {
                 return Ok(Json(ActionResult::error("document not found")));
             }
@@ -8387,7 +8412,7 @@ async fn document_u2_set_status(pool: &Pool, id: &str, status: &str) -> Result<b
     let affected = client
         .execute(sql, &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(affected > 0)
 }
 
@@ -8471,7 +8496,7 @@ pub async fn document_u2_commend(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if doc.is_none() {
         return Ok(Json(ActionResult::error("document not found")));
     }
@@ -8484,7 +8509,7 @@ pub async fn document_u2_commend(
             &[&id, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("docId".to_string(), Value::String(id)),
@@ -8507,7 +8532,7 @@ pub async fn document_u2_uncommend(
             &[&id, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("docId".to_string(), Value::String(id)),
@@ -8544,7 +8569,7 @@ async fn document_u2_set_top(
                     &[&id, &top],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             if affected == 0 {
                 return Ok(Json(ActionResult::error("document not found")));
             }
@@ -8602,7 +8627,7 @@ pub async fn document_u2_category_change(
             &[&category_id, &doc_ids],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("categoryId".to_string(), Value::String(category_id)),
@@ -8628,7 +8653,7 @@ pub async fn document_u2_document_data(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let mut fields = serde_json::Map::new();
     for row in rows.iter() {
         let name: String = row.get("field_name");
@@ -8671,7 +8696,7 @@ pub async fn document_u2_fields(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let names: Vec<Value> = rows
         .iter()
         .map(|r| Value::String(r.get::<_, String>("name")))
@@ -8707,7 +8732,7 @@ pub async fn document_u2_filter_count(
             &[&app_id, &category_id, &status],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total: i64 = row.get("total");
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([(
@@ -8738,7 +8763,7 @@ pub async fn comment_u2_create(
             &[&doc_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if doc.is_none() {
         return Ok(Json(ActionResult::error("document not found")));
     }
@@ -8752,7 +8777,7 @@ pub async fn comment_u2_create(
             &[&id, &doc_id, &sess.person_unique, &content, &parent_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -8803,7 +8828,7 @@ pub async fn comment_u2_list_page_size_size(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total: i64 = count_row.get("total");
     let rows = client
         .query(
@@ -8812,7 +8837,7 @@ pub async fn comment_u2_list_page_size_size(
             &[&size, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(row_to_json).collect();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -8855,7 +8880,7 @@ pub async fn correlation_u2_doc_delete(
                     &[&doc_id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("docId".to_string(), Value::String(doc_id)),
@@ -8894,7 +8919,7 @@ pub async fn file_u2_create(
             &[&id, &app_id, &name, &size, &content_type, &content_base64, &sess.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -8930,7 +8955,7 @@ pub async fn file_u2_update(
                     &[&id, &name, &content_type, &content_base64],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             if affected == 0 {
                 return Ok(Json(ActionResult::error("file not found")));
             }
@@ -8989,7 +9014,7 @@ pub async fn fileinfo_u2_filter(
             &[&doc_id, &original_name],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total: i64 = count_row.get("total");
     let rows = client
         .query(
@@ -9001,7 +9026,7 @@ pub async fn fileinfo_u2_filter(
             &[&doc_id, &original_name],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(row_to_json).collect();
     Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
@@ -9045,7 +9070,7 @@ pub async fn fileinfo_u2_copy_to_doc(
                     &[&doc_id, &attachment_ids],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("docId".to_string(), Value::String(doc_id)),
@@ -9083,7 +9108,7 @@ pub async fn fileinfo_u2_replace_to_doc(
                     &[&doc_id, &attachment_ids],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("docId".to_string(), Value::String(doc_id)),
@@ -9124,7 +9149,7 @@ pub async fn form_u2_create(
                 &[&app_id],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         if app.is_none() {
             return Ok(Json(ActionResult::error("application not found")));
         }
@@ -9147,7 +9172,7 @@ pub async fn form_u2_create(
             ],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(form_row_to_json(&row)?)))
 }
 
@@ -9186,7 +9211,7 @@ pub async fn form_submit(
             &[&form_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or_else(|| AppError::BadRequest("form not found".to_string()))?;
     let definition = FormDefinition::from_db(row.get("definition"))?;
 
@@ -9262,7 +9287,7 @@ pub async fn form_u2_update(
                     &[&id, &name, &definition, &status],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(Json(ActionResult::success(form_row_to_json(&row)?)))
         }
     }
@@ -9311,7 +9336,7 @@ pub async fn script_u2_create(
                 &[&app_id],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         if app.is_none() {
             return Ok(Json(ActionResult::error("application not found")));
         }
@@ -9327,7 +9352,7 @@ pub async fn script_u2_create(
             &[&id, &app_id, &name, &unique_name, &content, &sess.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -9372,7 +9397,7 @@ pub async fn script_u2_update(
                     &[&id, &name, &unique_name, &content, &imported],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             if affected == 0 {
                 return Ok(Json(ActionResult::error("script not found")));
             }
@@ -9444,7 +9469,7 @@ pub async fn templateform_u2_create(
             &[&id, &name, &category, &sess.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
     ))))
@@ -9508,7 +9533,7 @@ pub async fn view_u2_create(
             ],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
     ))))
@@ -9538,7 +9563,7 @@ pub async fn view_u2_update(
                     &[&id, &name, &view_config],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             if affected == 0 {
                 return Ok(Json(ActionResult::error("view not found")));
             }
@@ -9593,7 +9618,7 @@ pub async fn viewcategory_u2_create(
             &[&id, &name, &parent_id, &sess.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
     ))))
@@ -9660,7 +9685,7 @@ pub async fn viewfieldconfig_u2_create(
                     &[&id, &view_id, &field_name, &field_config, &sort_order],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
@@ -9695,7 +9720,7 @@ pub async fn viewfieldconfig_u2_update(
                     &[&id, &field_config, &sort_order],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             if affected == 0 {
                 return Ok(Json(ActionResult::error("viewfieldconfig not found")));
             }
@@ -9761,7 +9786,7 @@ pub async fn appinfo_u2_create(
             ],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -9825,7 +9850,7 @@ pub async fn categoryinfo_u2_create(
                     &[&id, &name, &parent_id, &app_id, &session.person_unique],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
@@ -9876,7 +9901,7 @@ async fn u2_write_permissions(
         &[&scope_id, &role_type],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let mut granted: u64 = 0;
     for pid in &person_ids {
         granted += tx
@@ -9886,7 +9911,7 @@ async fn u2_write_permissions(
                 &[&role_type, &pid],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     }
     tx.commit().await?;
     let _ = pool;
@@ -9919,7 +9944,7 @@ pub async fn permission_u2_app_info(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if app.is_none() {
         return Ok(Json(ActionResult::error("application not found")));
     }
@@ -9942,7 +9967,7 @@ pub async fn permission_u2_category_info(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if cat.is_none() {
         return Ok(Json(ActionResult::error("category not found")));
     }
@@ -9977,7 +10002,7 @@ pub async fn appconfig_u2_update(
                     &[&config_text, &app_id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             if affected == 0 {
                 return Ok(Json(ActionResult::error("application not found")));
             }
@@ -10004,7 +10029,7 @@ pub async fn appconfig_u2_get(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         None => Ok(Json(ActionResult::error("application not found"))),
         Some(r) => {
@@ -10051,7 +10076,7 @@ pub async fn designer_u2_search(
             &[&pattern],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let results: Vec<Value> = rows
         .iter()
         .map(|r| {
@@ -10107,7 +10132,7 @@ async fn u3_field_upsert(
             &[&doc_id, &field_name],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     client
         .execute(
             "INSERT INTO x_cms_data_document_field (id, doc_id, field_name, field_value) \
@@ -10115,7 +10140,7 @@ async fn u3_field_upsert(
             &[&doc_id, &field_name, &field_value],
         )
         .await
-        .map_err(|_| AppError::Internal)
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))
 }
 
 async fn u3_bulk_publish_status(
@@ -10135,7 +10160,7 @@ async fn u3_bulk_publish_status(
                 &[&ids.to_vec()],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else {
         client
             .execute(
@@ -10144,7 +10169,7 @@ async fn u3_bulk_publish_status(
                 &[&ids.to_vec()],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     };
     Ok(affected)
 }
@@ -10171,7 +10196,7 @@ async fn u3_cipher_upsert(
                 &[&doc_id, &cipher_text, &person_id],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     }
     tx.commit().await?;
     Ok(written)
@@ -10229,7 +10254,7 @@ async fn u3_save_scope_permissions(
                     &[&id, &role_type],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             let mut granted = 0u64;
             for pid in &person_ids {
                 granted += tx
@@ -10242,7 +10267,7 @@ async fn u3_save_scope_permissions(
                         &[&id, &role_type, &pid],
                     )
                     .await
-                    .map_err(|_| AppError::Internal)?;
+                    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             }
             tx.commit().await?;
             Ok(Json(ActionResult::success(Value::Object(
@@ -10285,7 +10310,7 @@ pub async fn categoryinfo_ext_content_save_u3(
                     &[&category_id, &ext_content],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             if affected == 0 {
                 return Ok(Json(ActionResult::error("category not found")));
             }
@@ -10333,7 +10358,7 @@ pub async fn comment_commend_u3(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let doc_id: String = match exists {
         Some(r) => r.get::<_, Option<String>>("doc_id").unwrap_or_default(),
         None => return Ok(Json(ActionResult::error("comment not found"))),
@@ -10344,7 +10369,7 @@ pub async fn comment_commend_u3(
             &[&doc_id, &sess.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("commended".to_string(), Value::Bool(true))]),
     ))))
@@ -10364,7 +10389,7 @@ pub async fn comment_uncommend_u3(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let doc_id: String = match doc_id {
         Some(r) => r.get::<_, Option<String>>("doc_id").unwrap_or_default(),
         None => return Ok(Json(ActionResult::error("comment not found"))),
@@ -10375,7 +10400,7 @@ pub async fn comment_uncommend_u3(
             &[&doc_id, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("uncommended".to_string(), Value::Bool(true)),
@@ -10433,7 +10458,7 @@ pub async fn correlation_create_u3(
         &[&doc_id, &related],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     use deadpool_postgres::tokio_postgres::types::ToSql;
     let mut values_sql = Vec::with_capacity(related.len());
     // 占位符：$1 = doc_id；targets 依次占 $2..；correlation_type 收尾。
@@ -10459,7 +10484,7 @@ pub async fn correlation_create_u3(
     let _ = tx
         .execute(&sql, &refs)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -10516,7 +10541,7 @@ pub async fn correlation_update_u3(
         &[&doc_id, &related],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     use deadpool_postgres::tokio_postgres::types::ToSql;
     let mut values_sql = Vec::with_capacity(related.len());
     // 占位符：$1 = doc_id；targets 依次占 $2..；correlation_type 收尾。
@@ -10542,7 +10567,7 @@ pub async fn correlation_update_u3(
     let _ = tx
         .execute(&sql, &refs)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -10600,7 +10625,7 @@ pub async fn design_appdict_create_u3(
             &[&app_info_flag, &app_dict_flag, &path_levels],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if dup.is_some() {
         return Ok(Json(ActionResult::error("appdict data already exists")));
     }
@@ -10612,7 +10637,7 @@ pub async fn design_appdict_create_u3(
             &[&id, &app_info_flag, &app_dict_flag, &path_levels, &data_value, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
     ))))
@@ -10640,7 +10665,7 @@ pub async fn design_appdict_update_u3(
                 &[&id, &data_value],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else {
         let normalized = u3_normalize_path_levels(&path_levels);
         client
@@ -10649,7 +10674,7 @@ pub async fn design_appdict_update_u3(
                 &[&id, &data_value, &normalized],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     };
     if affected == 0 {
         return Ok(Json(ActionResult::error("appdict not found")));
@@ -10698,7 +10723,7 @@ pub async fn review_v2_search_u3(
             &[&pattern, &size],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(row_to_json).collect();
     let count = data.len() as i64;
     Ok(Json(ActionResult::legacy_success(
@@ -10728,7 +10753,7 @@ pub async fn document_achive_u3(
                     &[&id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             if affected == 0 {
                 return Ok(Json(ActionResult::error("document not found")));
             }
@@ -10810,7 +10835,7 @@ pub async fn document_batch_status_u3(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|r| {
@@ -10845,7 +10870,7 @@ pub async fn document_batch_name_status_u3(
             &[&batch_name],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("batchName".to_string(), Value::String(batch_name)),
@@ -10873,7 +10898,7 @@ pub async fn document_batch_delete_u3(
             &[&batch_name],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("batchName".to_string(), Value::String(batch_name)),
@@ -10899,7 +10924,7 @@ pub async fn document_batch_delete_mock_u3(
             &[&batch_name],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("batchName".to_string(), Value::String(batch_name)),
@@ -11015,7 +11040,7 @@ pub async fn document_cipher_permission_read_u3(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let doc = match doc {
         Some(d) => d,
         None => return Ok(Json(ActionResult::error("document not found"))),
@@ -11125,7 +11150,7 @@ pub async fn document_control_u3(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = match row {
         Some(r) => r,
         None => return Ok(Json(ActionResult::error("document not found"))),
@@ -11166,7 +11191,7 @@ pub async fn document_notify_u3(
                     &[&id, &session.person_unique],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
@@ -11191,7 +11216,7 @@ pub async fn document_permission_read_u3(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = match row {
         Some(r) => r,
         None => return Ok(Json(ActionResult::error("document not found"))),
@@ -11225,7 +11250,7 @@ pub async fn document_persons_u3(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let doc = match doc {
         Some(d) => d,
         None => return Ok(Json(ActionResult::error("document not found"))),
@@ -11244,7 +11269,7 @@ pub async fn document_persons_u3(
             &[&app_id, &category_id, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let persons: Vec<Value> = rows
         .iter()
         .filter_map(|r| r.try_get::<_, Option<String>>(0).ok().flatten())
@@ -11280,7 +11305,7 @@ pub async fn document_publish_html_u3(
                     &[&id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             let row = match row {
                 Some(r) => r,
                 None => return Ok(Json(ActionResult::error("document not found"))),
@@ -11315,7 +11340,7 @@ pub async fn document_list_document_data_u3(
                 &[],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else {
         client
             .query(
@@ -11323,7 +11348,7 @@ pub async fn document_list_document_data_u3(
                 &[&ids],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     };
     // 字段批量取回（原逐 doc N+1 → 1 次 ANY 查询），按 doc_id 分组后按文档序装配。
     let doc_ids: Vec<String> = docs.iter().map(|d| d.get::<_, String>("id")).collect();
@@ -11336,7 +11361,7 @@ pub async fn document_list_document_data_u3(
                 &[&doc_ids],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         for fr in &field_rows {
             let doc_id: String = fr.get("doc_id");
             let name: String = fr.get("field_name");
@@ -11395,7 +11420,7 @@ pub async fn file_update_u3(
                     &[&id, &name, &content_type],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             if affected == 0 {
                 return Ok(Json(ActionResult::error("file not found")));
             }
@@ -11449,7 +11474,7 @@ pub async fn file_copy_u3(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let source = match source {
         Some(s) => s,
         None => return Ok(Json(ActionResult::error("file not found"))),
@@ -11470,7 +11495,7 @@ pub async fn file_copy_u3(
             ],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("copiedTo".to_string(), Value::String(new_id)),
@@ -11493,7 +11518,7 @@ pub async fn file_download_with_app_u3(
             &[&flag, &app_info_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(row_to_json(&row)))),
         None => Ok(Json(ActionResult::error("file not found"))),
@@ -11517,7 +11542,7 @@ pub async fn fileinfo_binary_base64_u3(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let row = match row {
         Some(r) => r,
         None => return Ok(Json(ActionResult::error("fileinfo not found"))),
@@ -11578,7 +11603,7 @@ pub async fn fileinfo_upload_with_url_u3(
             &[&doc_id, &original_name, &size, &content_type],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -11597,7 +11622,7 @@ pub async fn form_get_with_appinfo_u3(
             &[&form_flag, &app_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(form_row_to_json(&row)?))),
         None => Ok(Json(ActionResult::error("form not found"))),
@@ -11681,7 +11706,7 @@ pub async fn script_post_nested_u3(
                         &[&flag, &name, &content, &session.person_unique],
                     )
                     .await
-                    .map_err(|_| AppError::Internal)?;
+                    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             }
             tx.commit().await?;
             let _ = unique_name;
@@ -11724,7 +11749,7 @@ pub async fn script_load_u3(
             &[&unique_name, &app_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let scripts: Vec<Value> = rows.iter().map(row_to_json).collect();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -11770,7 +11795,7 @@ pub async fn viewrecord_unread_u3(
             &[&session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let unread: Vec<Value> = rows
         .iter()
         .map(|r| Value::String(r.get::<_, String>("id")))

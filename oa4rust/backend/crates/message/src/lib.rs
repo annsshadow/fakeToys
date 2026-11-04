@@ -59,7 +59,7 @@ pub async fn consume_list(
             &[&consume, &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -118,7 +118,7 @@ pub async fn update_single(
     let rows = client
         .query("SELECT xid FROM x_msg_message WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if rows.is_empty() {
         return Ok(Json(ActionResult::success(Value::Object(
@@ -137,7 +137,7 @@ pub async fn update_single(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -161,13 +161,20 @@ pub async fn custom_create(
     let body = req.body.unwrap_or_default();
     let msg_type = req.r#type.unwrap_or_default();
 
+    let consumer = req.consumer.unwrap_or_default();
+    // O24-3 批次 4：`x_msg_message` 的 NOT NULL 列是规范列 id/title/type/consumer/is_read
+    // （information_schema 现场确认），旧 SQL 只写 x* 遗留列 → E23502。
+    // 规范列与遗留列同值写入，consumer 取请求字段。`id` 是 varchar、`xid` 是 text，
+    // 同一个占位符会触发 `inconsistent types deduced`（E42P08），故主键值绑两次。
     let created = client
         .execute(
-            "INSERT INTO x_msg_message (xid, xtitle, xbody, xtype, xconsumed) VALUES ($1, $2, $3, $4, false)",
-            &[&id, &title, &body, &msg_type],
+            "INSERT INTO x_msg_message \
+             (id, title, body, type, consumer, is_read, xid, xtitle, xbody, xtype, xconsumed) \
+             VALUES ($1, $2, $3, $4, $5, false, $6, $2, $3, $4, false)",
+            &[&id, &title, &body, &msg_type, &consumer, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -188,7 +195,7 @@ pub async fn mark_read(
     let rows = client
         .query("SELECT xid FROM x_msg_message WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let marked_read = if !rows.is_empty() {
         client
@@ -197,7 +204,7 @@ pub async fn mark_read(
                 &[&id],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
             > 0
     } else {
         false
@@ -222,7 +229,7 @@ pub async fn unread_count(
             &[&consume],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let count: i64 = rows[0].get("cnt");
 
