@@ -828,4 +828,11 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
   `cargo clippy --workspace --all-targets -- -D warnings` 零告警。
 - 已知无关失败：`cargo test -p shared --lib` 的 `shared::migrate` 用例在本地开发库因 019
   历史 schema 漂移失败（与 O17/O18 记录同因，CI 用全新库，非本次改动引入）。
+- **基线随修法下调 10 → 1**（同 PR 删行 + `BASELINE_COUNT=1`）：6 组连接器 + express
+  config/status 由 500 改 503 后扫描复现不出来，按棘轮规则必须删；剩余 1 条为 ai chat list
+  的 `E42P18 could not determine data type of parameter $2`（真实 SQL 参数缺陷，转绿条件见第三步）。
+  本地 `seeded_route_scan_handler500_ratchet` 复跑：`种子化 383 表 / 失败 0`，
+  `handler500：1 条`，`棘轮基线：1 条（当前 1 条），集合相等` → ok。
+  该条 500 的捕获日志实证第一步生效：`ERROR ... method=GET path=... trace_id=<uuid> status=500
+  source=DbError { code: E42P18, message: "could not determine data type of parameter $2" }`。
 
