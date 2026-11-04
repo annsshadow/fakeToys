@@ -2154,9 +2154,15 @@ export const BACKEND_ROUTE_METHODS: Record<string, string[]> = {
   '/api/processplatform/assemble/bam/period/list/completed/by/application/{}/{}/{}/{}/{}/{}': ['GET'],
   '/api/processplatform/assemble/bam/period/list/completed/task/application': ['GET'],
   '/api/processplatform/assemble/bam/period/list/completed/task/application/by/process/{}/{}/{}/{}/{}/{}': ['GET'],
-  '/api/processplatform/assemble/bam/period/list/completed/task/application/process/activity/by/{}/{}/{}/{}/{}': ['GET'],
-  '/api/processplatform/assemble/bam/period/list/completed/task/application/process/activity/{}/{}/{}/{}/{}/{}/{}/{}': ['GET'],
-  '/api/processplatform/assemble/bam/period/list/completed/task/application/process/by/activity/{}/{}/{}/{}/{}/{}/{}': ['GET'],
+  '/api/processplatform/assemble/bam/period/list/completed/task/application/process/activity/by/{}/{}/{}/{}/{}': [
+    'GET',
+  ],
+  '/api/processplatform/assemble/bam/period/list/completed/task/application/process/activity/{}/{}/{}/{}/{}/{}/{}/{}': [
+    'GET',
+  ],
+  '/api/processplatform/assemble/bam/period/list/completed/task/application/process/by/activity/{}/{}/{}/{}/{}/{}/{}': [
+    'GET',
+  ],
   '/api/processplatform/assemble/bam/period/list/completed/task/applicationstubs': ['GET'],
   '/api/processplatform/assemble/bam/period/list/completed/task/by/application/{}/{}/{}/{}/{}': ['GET'],
   '/api/processplatform/assemble/bam/period/list/completed/task/unitstubs': ['GET'],
@@ -2164,27 +2170,51 @@ export const BACKEND_ROUTE_METHODS: Record<string, string[]> = {
   '/api/processplatform/assemble/bam/period/list/completed/work/applicationstubs': ['GET'],
   '/api/processplatform/assemble/bam/period/list/completed/work/unitstubs': ['GET'],
   '/api/processplatform/assemble/bam/period/list/completed/{}/{}': ['GET'],
-  '/api/processplatform/assemble/bam/period/list/count/completed/task/application/{}/process/{}/activity/{}/by/unit': ['GET'],
-  '/api/processplatform/assemble/bam/period/list/count/completed/task/application/{}/process/{}/activity/{}/unit/{}/person/{}': ['GET'],
-  '/api/processplatform/assemble/bam/period/list/count/completed/task/application/{}/process/{}/unit/{}/person/{}/by/activity': ['GET'],
-  '/api/processplatform/assemble/bam/period/list/count/completed/task/application/{}/unit/{}/person/{}/by/process': ['GET'],
+  '/api/processplatform/assemble/bam/period/list/count/completed/task/application/{}/process/{}/activity/{}/by/unit': [
+    'GET',
+  ],
+  '/api/processplatform/assemble/bam/period/list/count/completed/task/application/{}/process/{}/activity/{}/unit/{}/person/{}':
+    ['GET'],
+  '/api/processplatform/assemble/bam/period/list/count/completed/task/application/{}/process/{}/unit/{}/person/{}/by/activity':
+    ['GET'],
+  '/api/processplatform/assemble/bam/period/list/count/completed/task/application/{}/unit/{}/person/{}/by/process': [
+    'GET',
+  ],
   '/api/processplatform/assemble/bam/period/list/count/completed/task/unit/{}/person/{}/by/application': ['GET'],
   '/api/processplatform/assemble/bam/period/list/count/completed/work/application/{}/process/{}/by/unit': ['GET'],
-  '/api/processplatform/assemble/bam/period/list/count/completed/work/application/{}/process/{}/unit/{}/person/{}': ['GET'],
-  '/api/processplatform/assemble/bam/period/list/count/completed/work/application/{}/unit/{}/person/{}/by/process': ['GET'],
+  '/api/processplatform/assemble/bam/period/list/count/completed/work/application/{}/process/{}/unit/{}/person/{}': [
+    'GET',
+  ],
+  '/api/processplatform/assemble/bam/period/list/count/completed/work/application/{}/unit/{}/person/{}/by/process': [
+    'GET',
+  ],
   '/api/processplatform/assemble/bam/period/list/count/completed/work/unit/{}/person/{}/by/application': ['GET'],
-  '/api/processplatform/assemble/bam/period/list/count/expired/task/application/{}/process/{}/activity/{}/by/unit': ['GET'],
-  '/api/processplatform/assemble/bam/period/list/count/expired/task/application/{}/process/{}/activity/{}/unit/{}/person/{}': ['GET'],
-  '/api/processplatform/assemble/bam/period/list/count/expired/task/application/{}/process/{}/unit/{}/person/{}/by/activity': ['GET'],
-  '/api/processplatform/assemble/bam/period/list/count/expired/task/application/{}/unit/{}/person/{}/by/process': ['GET'],
+  '/api/processplatform/assemble/bam/period/list/count/expired/task/application/{}/process/{}/activity/{}/by/unit': [
+    'GET',
+  ],
+  '/api/processplatform/assemble/bam/period/list/count/expired/task/application/{}/process/{}/activity/{}/unit/{}/person/{}':
+    ['GET'],
+  '/api/processplatform/assemble/bam/period/list/count/expired/task/application/{}/process/{}/unit/{}/person/{}/by/activity':
+    ['GET'],
+  '/api/processplatform/assemble/bam/period/list/count/expired/task/application/{}/unit/{}/person/{}/by/process': [
+    'GET',
+  ],
   '/api/processplatform/assemble/bam/period/list/count/expired/task/unit/{}/person/{}/by/application': ['GET'],
   '/api/processplatform/assemble/bam/period/list/count/expired/work/application/{}/process/{}/by/unit': ['GET'],
-  '/api/processplatform/assemble/bam/period/list/count/expired/work/application/{}/process/{}/unit/{}/person/{}': ['GET'],
-  '/api/processplatform/assemble/bam/period/list/count/expired/work/application/{}/unit/{}/person/{}/by/process': ['GET'],
+  '/api/processplatform/assemble/bam/period/list/count/expired/work/application/{}/process/{}/unit/{}/person/{}': [
+    'GET',
+  ],
+  '/api/processplatform/assemble/bam/period/list/count/expired/work/application/{}/unit/{}/person/{}/by/process': [
+    'GET',
+  ],
   '/api/processplatform/assemble/bam/period/list/count/expired/work/unit/{}/person/{}/by/application': ['GET'],
-  '/api/processplatform/assemble/bam/period/list/count/start/task/application/{}/process/{}/activity/{}/by/unit': ['GET'],
-  '/api/processplatform/assemble/bam/period/list/count/start/task/application/{}/process/{}/activity/{}/unit/{}/person/{}': ['GET'],
-  '/api/processplatform/assemble/bam/period/list/count/start/task/application/{}/process/{}/unit/{}/person/{}/by/activity': ['GET'],
+  '/api/processplatform/assemble/bam/period/list/count/start/task/application/{}/process/{}/activity/{}/by/unit': [
+    'GET',
+  ],
+  '/api/processplatform/assemble/bam/period/list/count/start/task/application/{}/process/{}/activity/{}/unit/{}/person/{}':
+    ['GET'],
+  '/api/processplatform/assemble/bam/period/list/count/start/task/application/{}/process/{}/unit/{}/person/{}/by/activity':
+    ['GET'],
   '/api/processplatform/assemble/bam/period/list/count/start/task/application/{}/unit/{}/person/{}/by/process': ['GET'],
   '/api/processplatform/assemble/bam/period/list/count/start/task/unit/{}/person/{}/by/application': ['GET'],
   '/api/processplatform/assemble/bam/period/list/count/start/work/application/{}/process/{}/by/unit': ['GET'],
@@ -2199,8 +2229,12 @@ export const BACKEND_ROUTE_METHODS: Record<string, string[]> = {
   '/api/processplatform/assemble/bam/period/list/expired/task/application': ['GET'],
   '/api/processplatform/assemble/bam/period/list/expired/task/application/by/process/{}/{}/{}/{}/{}/{}': ['GET'],
   '/api/processplatform/assemble/bam/period/list/expired/task/application/process/activity/by/{}/{}/{}/{}/{}': ['GET'],
-  '/api/processplatform/assemble/bam/period/list/expired/task/application/process/activity/{}/{}/{}/{}/{}/{}/{}/{}': ['GET'],
-  '/api/processplatform/assemble/bam/period/list/expired/task/application/process/by/activity/{}/{}/{}/{}/{}/{}/{}': ['GET'],
+  '/api/processplatform/assemble/bam/period/list/expired/task/application/process/activity/{}/{}/{}/{}/{}/{}/{}/{}': [
+    'GET',
+  ],
+  '/api/processplatform/assemble/bam/period/list/expired/task/application/process/by/activity/{}/{}/{}/{}/{}/{}/{}': [
+    'GET',
+  ],
   '/api/processplatform/assemble/bam/period/list/expired/task/applicationstubs': ['GET'],
   '/api/processplatform/assemble/bam/period/list/expired/task/by/application/{}/{}/{}/{}/{}': ['GET'],
   '/api/processplatform/assemble/bam/period/list/expired/task/unitstubs': ['GET'],
@@ -2214,8 +2248,12 @@ export const BACKEND_ROUTE_METHODS: Record<string, string[]> = {
   '/api/processplatform/assemble/bam/period/list/start/work/unitstubs': ['GET'],
   '/api/processplatform/assemble/bam/period/list/task/application/by/process/{}/{}/{}/{}/{}/{}/{}': ['POST'],
   '/api/processplatform/assemble/bam/period/list/task/application/process/activity/by/{}/{}/{}/{}/{}/{}': ['POST'],
-  '/api/processplatform/assemble/bam/period/list/task/application/process/activity/{}/{}/{}/{}/{}/{}/{}/{}/{}': ['POST'],
-  '/api/processplatform/assemble/bam/period/list/task/application/process/by/activity/{}/{}/{}/{}/{}/{}/{}/{}': ['POST'],
+  '/api/processplatform/assemble/bam/period/list/task/application/process/activity/{}/{}/{}/{}/{}/{}/{}/{}/{}': [
+    'POST',
+  ],
+  '/api/processplatform/assemble/bam/period/list/task/application/process/by/activity/{}/{}/{}/{}/{}/{}/{}/{}': [
+    'POST',
+  ],
   '/api/processplatform/assemble/bam/period/list/task/application/{}': ['POST'],
   '/api/processplatform/assemble/bam/period/list/task/by/application/{}/{}/{}/{}/{}/{}': ['POST'],
   '/api/processplatform/assemble/bam/period/list/task/{}/{}': ['POST'],
@@ -2383,27 +2421,76 @@ export const BACKEND_ROUTE_METHODS: Record<string, string[]> = {
   '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/data': ['DELETE', 'GET', 'POST', 'PUT'],
   '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/data/mockdeletetoget': ['GET'],
   '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/data/mockputtopost': ['POST'],
-  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/data': ['DELETE', 'GET', 'POST', 'PUT'],
+  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/data': [
+    'DELETE',
+    'GET',
+    'POST',
+    'PUT',
+  ],
   '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/data/mockdeletetoget': ['GET'],
   '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/data/mockputtopost': ['POST'],
-  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/data': ['DELETE', 'GET', 'POST', 'PUT'],
+  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/data': [
+    'DELETE',
+    'GET',
+    'POST',
+    'PUT',
+  ],
   '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/data/mockdeletetoget': ['GET'],
   '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/data/mockputtopost': ['POST'],
-  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/data': ['DELETE', 'GET', 'POST', 'PUT'],
-  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/data/mockdeletetoget': ['DELETE'],
+  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/data': [
+    'DELETE',
+    'GET',
+    'POST',
+    'PUT',
+  ],
+  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/data/mockdeletetoget': [
+    'DELETE',
+  ],
   '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/data/mockputtopost': ['POST'],
-  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/{}/data': ['DELETE', 'GET', 'POST', 'PUT'],
-  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/{}/data/mockdeletetoget': ['GET'],
+  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/{}/data': [
+    'DELETE',
+    'GET',
+    'POST',
+    'PUT',
+  ],
+  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/{}/data/mockdeletetoget': [
+    'GET',
+  ],
   '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/{}/data/mockputtopost': ['POST'],
-  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/{}/{}/data': ['DELETE', 'GET', 'POST', 'PUT'],
-  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/{}/{}/data/mockdeletetoget': ['GET'],
-  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/{}/{}/data/mockputtopost': ['POST'],
-  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/{}/{}/{}/data': ['DELETE', 'GET', 'POST', 'PUT'],
-  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/{}/{}/{}/data/mockdeletetoget': ['GET'],
-  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/{}/{}/{}/data/mockputtopost': ['POST'],
-  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/{}/{}/{}/{}/data': ['DELETE', 'GET', 'POST', 'PUT'],
-  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/{}/{}/{}/{}/data/mockdeletetoget': ['GET'],
-  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/{}/{}/{}/{}/data/mockputtopost': ['POST'],
+  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/{}/{}/data': [
+    'DELETE',
+    'GET',
+    'POST',
+    'PUT',
+  ],
+  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/{}/{}/data/mockdeletetoget': [
+    'GET',
+  ],
+  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/{}/{}/data/mockputtopost': [
+    'POST',
+  ],
+  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/{}/{}/{}/data': [
+    'DELETE',
+    'GET',
+    'POST',
+    'PUT',
+  ],
+  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/{}/{}/{}/data/mockdeletetoget': [
+    'GET',
+  ],
+  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/{}/{}/{}/data/mockputtopost': [
+    'POST',
+  ],
+  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/{}/{}/{}/{}/data': [
+    'DELETE',
+    'GET',
+    'POST',
+    'PUT',
+  ],
+  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/{}/{}/{}/{}/data/mockdeletetoget':
+    ['GET'],
+  '/api/processplatform/assemble/surface/applicationdict/{}/application/{}/{}/{}/{}/{}/{}/{}/{}/{}/data/mockputtopost':
+    ['POST'],
   '/api/processplatform/assemble/surface/attachment/batch/delete/manage': ['POST'],
   '/api/processplatform/assemble/surface/attachment/batch/download/job/{}/site/{}': ['GET'],
   '/api/processplatform/assemble/surface/attachment/batch/download/work/{}/site/{}': ['GET'],
@@ -2487,7 +2574,9 @@ export const BACKEND_ROUTE_METHODS: Record<string, string[]> = {
   '/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/mockputtopost': ['GET'],
   '/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/mockputtopost': ['GET'],
   '/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6/mockputtopost': ['GET'],
-  '/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6/path7/mockputtopost': ['GET'],
+  '/api/processplatform/assemble/surface/data/job/job/path0/path1/path2/path3/path4/path5/path6/path7/mockputtopost': [
+    'GET',
+  ],
   '/api/processplatform/assemble/surface/data/job/{}': ['GET', 'PUT'],
   '/api/processplatform/assemble/surface/data/job/{}/array/data': ['POST'],
   '/api/processplatform/assemble/surface/data/job/{}/mockputtopost': ['POST'],

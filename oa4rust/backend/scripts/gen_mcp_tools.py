@@ -703,6 +703,32 @@ def write_registered_routes_fixture(routes):
         f.write("\n".join(lines))
 
 
+def _biome_record_entry(path: str, methods) -> list:
+    """按 Biome formatter 规则（lineWidth=120）输出一行 `Record` 成员。
+
+    前端 CI 的 Biome format 会对单行超宽的数组强制换行；之前生成器固定输出
+    `'p': ['GET'],`，每次重跑都会让 frontend-qa 再红一次，逼人手工改产物——
+    正是 O16 要消灭的坏习惯。这里直接生成 Biome 的规范形态，避免引入 Node
+    依赖（generated-artifacts 门禁在纯 Python 环境运行）。
+
+    规则实测（oa4rust/biome.json：indent 2、lineWidth 120、single quote）：
+      ① 单行 ≤120 → 单行；
+      ② 否则若 `  'key': [` ≤120 → 数组换行、元素逐行；
+      ③ 否则 key 独占一行，数组整体挪到下一行（4 空格缩进）。
+    """
+    elems = [f"'{m}'" for m in methods]
+    single = f"  '{path}': [{', '.join(elems)}],"
+    if len(single) <= 120:
+        return [single]
+    key_prefix = f"  '{path}':"
+    if len(key_prefix) + 2 <= 120:
+        return [f"{key_prefix} [", *[f"    {e}," for e in elems], "  ],"]
+    arr_single = f"    [{', '.join(elems)}],"
+    if len(arr_single) <= 120:
+        return [key_prefix, arr_single]
+    return [key_prefix, "    [", *[f"      {e}," for e in elems], "    ],"]
+
+
 def write_route_methods_fixture(routes):
     """与 generated_routes.rs 同源输出前端契约 fixture（path 归一化 → 方法集）。"""
     by_path = {}
@@ -722,8 +748,7 @@ def write_route_methods_fixture(routes):
         "export const BACKEND_ROUTE_METHODS: Record<string, string[]> = {",
     ]
     for p in sorted(by_path):
-        methods = "', '".join(sorted(by_path[p]))
-        lines.append(f"  '{p}': ['{methods}'],")
+        lines.extend(_biome_record_entry(p, sorted(by_path[p])))
     lines.append("}")
     lines.append("")
     FIXTURE_FILE.parent.mkdir(parents=True, exist_ok=True)
