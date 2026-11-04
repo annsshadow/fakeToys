@@ -244,7 +244,17 @@ pub async fn get_metric(
         (42, "count".to_string())
     } else {
         let row = &rows[0];
-        (row.get("xvalue"), row.get("xunit"))
+        // x_console_metric.xvalue / xunit 在迁移里都是 VARCHAR，不能按整数读取；
+        // 指标值以文本存储，响应仍按数值输出，无法解析时沿用缺省值。
+        let value = row
+            .get::<_, Option<String>>("xvalue")
+            .and_then(|raw| raw.trim().parse::<i64>().ok())
+            .unwrap_or(42);
+        let unit = row
+            .get::<_, Option<String>>("xunit")
+            .filter(|u| !u.is_empty())
+            .unwrap_or_else(|| "count".to_string());
+        (value, unit)
     };
 
     Ok(Json(ActionResult::success(Value::Object(
