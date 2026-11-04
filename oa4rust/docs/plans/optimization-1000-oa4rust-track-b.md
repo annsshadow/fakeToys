@@ -878,6 +878,13 @@ test result: FAILED. 0 passed; 1 failed
 预期红 → 已还原；复跑 `== 棘轮基线：40 条（当前 40 条），集合相等 ==`、
 `test result: ok. 1 passed`（种子化 383 表 / 失败 0）。
 
+### CI 验收
+
+- 第一步：run **41890728872**（sha 87c6d44c7）全绿（unit/integration/seeded-route-scan 等）。
+- 第二步：run **41894547475**（sha 555855821）全绿，其中 **`seeded-route-scan` = success**
+  （写路由首次真正执行、基线 40 条集合相等、401 白名单断言通过）。
+  关键 job：`unit-tests / integration-tests / seeded-route-scan / integration-scenarios / quality` 均 success。
+
 ### 基线 1 → 40（写路由第一次真正执行暴露的存量债）
 
 写路由从未执行是「本地 10 条 / CI 14 条」的另一半根因。补 admin 后，存量 500 从 1 条
