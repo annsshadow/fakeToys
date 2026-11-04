@@ -17,6 +17,44 @@
 
 处理原则：能从请求上下文推导就推导并断言落库值指向正确父实体；推导不出来 → 400，**不许编造合法 id**（会产生悬挂外键或写到别人的资源下）。
 
+## 2026-11-05 裁定后的查证（A / B）
+
+### A. portal page：前端写死的 `default` 不是真实门户 → 停止修复
+
+现场 SQL（本地库 `oa4rust`，容器 `lyp-pg`）：
+
+```sql
+SELECT count(*) FROM x_portal;                              -- 0
+SELECT count(*) FROM x_portal WHERE id = 'default';         -- 0
+SELECT count(*) FROM x_portal WHERE alias = 'default';      -- 0
+SELECT count(*) FROM x_portal WHERE name = 'default';       -- 0
+SELECT count(*) FROM x_portal_page;                         -- 0
+SELECT count(*) FROM x_portal_widget;                       -- 0
+```
+
+- `x_portal` **一行都没有**，`id/alias/name` 都没有 `default`；迁移目录里也没有 `INSERT INTO x_portal`（0 命中）。
+- 因此前端 [`PortalApp.vue:437`](../../frontend/apps/desktop/src/views/PortalApp.vue#L437) 用 `portal/default` 当作门户标识，**本身就是错的**：`x_portal_page.portal_id` 存的是门户 id，而 `default` 不是任何门户的 id。
+- 按裁定 A.3：**停止**，不改前端、不用 `default` 当默认值、不编造门户 id。页面创建的前置条件是先有一个真实门户行；当前部署没有，所以这两条无法通过“前端带真实 portalId”转绿。
+
+### B. hotpic：`application='default'` / `infoId='0'` 不存在 → 登记为未完成功能（空壳）
+
+```sql
+SELECT count(*) FROM x_hotpic WHERE application = 'default';   -- 0
+SELECT count(*) FROM x_hotpic WHERE info_id = '0';             -- 0
+SELECT application, info_id, count(*) FROM x_hotpic GROUP BY 1,2 ORDER BY 3 DESC;
+--  ''      | ''       | 51
+--  'test'  | 'test-id'|  1
+```
+
+- 没有任何行以 `default`/`0` 为键；`x_hotpic` 上也没有指向“应用表”的外键（`pg_constraint` 查 `x_portal_page`/`x_hotpic` 的外键，0 行）。
+- 全仓按 `application` 过滤的读路径只有 hotpic 消费方，且都是**精确匹配 (application, info_id)**：
+  - [`hotpic/src/lib.rs:29`](../../backend/crates/hotpic/src/lib.rs#L29)（`exists_check`）
+  - [`hotpic/src/lib.rs:105`](../../backend/crates/hotpic/src/lib.rs#L105)（`list_by_app_and_info`）
+  - [`hotpic_core_entity/src/lib.rs:140-142`](../../backend/crates/hotpic_core_entity/src/lib.rs#L140-L142)（`count`）
+  - [`hotpic_core_entity/src/lib.rs:92-94`](../../backend/crates/hotpic_core_entity/src/lib.rs#L92-L94)（`list_by_app_and_info`）
+- 结论：`default`/`0` 不是真实键，读路径也不认可占位值。按裁定 B.3：**登记为「未完成功能（无后端支撑的空壳）」**，保留 400，不删前端入口，等产品决定。
+- 旁证：`hotpic_core_entity::create`（[`lib.rs:159-176`](../../backend/crates/hotpic_core_entity/src/lib.rs#L159-L176)）对 `application`/`infoId` **不校验**，缺省写空串；前端「建实体热图」只发 `{ title }`，这解释了库里 51 行空键数据。它是“能写但写的是空壳”，不是可用功能。
+
 ## 总表
 
 | # | 端点 | 前端入口（文件:行 · 页面 · 按钮） | 缺的字段 | 字段业务来源 | 前端现有能力 |
@@ -80,9 +118,8 @@
 
 ## 结论
 
-- 2026-11-05 状态：**7 条全部为 400（缺参数），0 条可用**。
+- 2026-11-05 状态：**7 条全部为 400（缺参数），0 条可用**；查证后 **7 条全部保留 400**。
+- hotpic 5 条：登记为「未完成功能（无后端支撑的空壳）」——`application`/`infoId` 没有真实键、没有外键、没有可推导的父上下文，等产品决定是否做应用选择器或由业务页带入。
+- portal page 2 条：**停止修复**——`x_portal` 没有任何行（也就没有 `default`），前端写死 `portal/default` 本身是错的；先要有真实门户，才谈得上带 `portalId`。
 - 这 7 条不占基线（基线 0 行），不影响棘轮；它们是产品层面的待补项，不是回归。
-- 要转绿，必须先回答“父实体从哪来”：
-  - hotpic 的 `application`/`infoId`：入口页没有应用上下文 → 需要产品决定“用户选”还是“由业务页带入”；
-  - portal page 的 `portalId`：应由所在门户自动带出（同 `create_widget` 口径），页面设计器需要补门户上下文或选择器。
 - 在来源确定前，保持 400，不写占位 id。
