@@ -45,6 +45,26 @@ func TraceIDFrom(ctx context.Context) string {
 	return "-"
 }
 
+// settleNow 是结算分段计时的**统一可替换时间源**（R93）。
+//
+// # 为什么需要它
+//
+// 分段覆盖率（已计时之和 / 端到端）曾经直接读真实墙钟。真实墙钟里
+// 夹杂着未计时的窗口（ValidateSettle、序列化、榜单 flush、评分），
+// 这些窗口在慢 CI 上会被放大 —— 于是同一条「覆盖 ≥50%」断言在快机器上
+// 绿、在慢机器上只有 42.9%，门禁变成随机事件。
+//
+// 计时点全部读同一个变量后，测试可以替换成假时钟：
+// 每段耗时由测试决定，覆盖率断言变成确定性的。
+// 生产默认仍是 time.Now，行为不变。
+var settleNow = time.Now
+
+// settleSince 用**同一个**时间源计算一段耗时。
+//
+// 不要写回 `time.Since(x)` —— 那会让某一段偷偷绕开假时钟，
+// 覆盖率就又不是确定性的了。
+func settleSince(t time.Time) time.Duration { return settleNow().Sub(t) }
+
 // SettleTimings 是一次结算的分段耗时。
 type SettleTimings struct {
 	TokenLoad    time.Duration // 事务前读 token
