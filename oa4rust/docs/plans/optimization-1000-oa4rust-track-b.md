@@ -633,7 +633,11 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 
 **首次运行结果（2026-11-05，46 条入基线）**：种子 **383 表成功 / 0 失败**；全量路由扫描得 **46 条 handler500**：**35 条带 `error retrieving column ... / error deserializing column N`**（23×`create_time`、3×`xversion`、2×`file_version`、2×`asDefault`、1×`start_time`、1×`total`、1×`max_forum_count`、1×`order_number`、1×`deleted_at`），**11 条 handler 未输出任何 ERROR 日志**（O21 待定性，其中「出错却无记录」本身是观测缺陷）。**这直接证明「28 不是真数」**：静态扫描器没报的 `asDefault` / `max_forum_count` / `total` / `file_version` / `order_number` / `deleted_at` 都被抓到了。
 
-**CI job 已写入（`seeded-route-scan`，与 `integration-scenarios` 并列），验收进行中**：不等清零，改棘轮基线，今天就有保护。本地三步：① 基线态绿（46/46 集合相等）；② 人为把 `processing/get` 的 `x_work.start_time` 改回按 String 读 → 红，报 2 条基线外新 500（`get/{id}`、`instance/{executionId}`，`error deserializing column 7`）；③ 还原后绿。**PR #162 的三步记录（绿 run id → 塞坏点红 run id → 还原绿 run id）没有齐之前，不得把状态写成「已接入」或「门禁验收通过」。**
+**CI job 已接入并完成三步验收（`seeded-route-scan`，与 `integration-scenarios` 并列）**：不等清零，改棘轮基线，今天就有保护。**PR #162 三步记录（2026-11-05）**：
+1. 绿：run `41878588203`（commit `be2ab0560`），`seeded-route-scan` 与 `integration-scenarios` 均 success，扫描 **10/10**；
+2. 人为塞一条新 500（`x_meeting.start_time` 去掉 `::text`，commit `d63b575a9`）：run `41881217384` 的 `seeded-route-scan` **failure**，原文 `新增 / 未登记 handler500：1 条` / `column:start_time`；`GET /api/meeting/{id}` → 500，`errs=... panic=error retrieving column start_time: error deserializing column 4`；
+3. 还原（commit `879913be8`）：run `41883003626` 全绿，扫描 **10/10**。
+三次记录齐，状态改为**已接入 / 门禁验收通过**。
 
 **规矩（每批引用）**：**同一条 SQL 字符串在不同 handler 里可能有不同读法，批量替换前必须逐 handler 核对读取类型，并以该 handler 的行为级回归验证。** 依据批次 3 实测：`get_process_instance` 与 `process_id_complex` 的 `x_task` SELECT 文本完全相同，但前者按 `NaiveDateTime` 读、后者按 `String` 读；批量把整段 SQL 改成 `::text` 后，前者在 `lib.rs:91` 直接红（`error deserializing column 5`）。
 
