@@ -261,3 +261,104 @@ Wechat 8s 超时 + 1MB 响应上限、Fiber 读写超时与 body limit、laiyipa
 > 为 `/admin/users` 直查 p95 153.6ms vs 136ms，环境噪声级；二次采样 10.1ms/9.1ms 口径一致）。
 > 新增一行复核记录：`/admin/battles`（c=10）p50 48.3ms / p95 84.9ms / 179 QPS
 > （R64 记录 44.6/81.4/194，无回归）。详见 R76 行。
+
+### 覆盖率门禁口径修正（R96）
+
+**结论先行**：这次修的是**门禁口径**，不是刷数字。改前 `go test ./...` 的 profile 把四个只有 `main()` 的开发/运维 CLI 工具包按 0.0% 计入分母，它们合计 841 条语句，把总数从 85.08% 压到 **78.27%（8228/10512）**，于是 85% 门禁从上线起就恒红 —— 与 `openapi-paths` 长期不工作同属「长期红 = 没有门禁」。这 841 条全部属于「CI 不执行、也无法在单测里复制运行形态」的工具，故按**显式清单**排除；**阈值保持 85，一个数字都没动**。
+
+| 口径 | 覆盖/总数 | 百分比 |
+| --- | --- | --- |
+| 改前（含四个 cmd 工具包） | 8228 / 10512 | 78.27% |
+| 口径修正后（补测前基线） | 8228 / 9671 | 85.08% |
+| 补测后第一次读数 | 8509 / 9671 | **87.98%** |
+| 补测后第二次读数（复跑） | 8510 / 9671 | **88.00%** |
+| 第二次读数按旧口径反算 | 8510 / 10512 | 80.96% |
+
+> 两次读数差 **1 条语句**（8509 vs 8510），来自条件表达式的边覆盖抖动；两次都 `PASS`，阈值 85% 未调整。分母 9671 是排除清单生效后的真实分母。
+
+**排除清单落盘（唯一来源）**：`laiyipao/server/scripts/coverage-scope.list`，每行 `包路径  # 理由`，CI 由 `scripts/coverage-gate.mjs` 读取；workflow 里没有任何 `-coverpkg` / 排除 flag。文件名用 `.list` 而非用户建议的 `.txt`：仓库根 `.gitignore` 全局忽略 `*.txt`，用 `.txt` 清单根本进不了库。
+
+| 排除项 | 语句 | 为什么不可测 |
+| --- | --- | --- |
+| `cmd/loadtest` | 83 | 开发期压测器，CI 不执行；伪造目标服务只能测 flag 解析，对真实故障零信号 |
+| `cmd/playertest` | 252 | R82 SLO 压测器，必须预置库状态 + 压真 API 才产生有效延迟/限流信号 |
+| `cmd/smoke_restore` | 475 | 恢复库巡检，设计前提是「真实 dump/restore 产物」；CI 临时库不具备恢复形态，它在 `scripts/db_restore_drill.sh` 中被真实执行 |
+| `cmd/tygen` | 31 | 生成逻辑已由 `internal/tygen`（81.5%）覆盖；CI 用 `go run ./cmd/tygen -check` 真实执行，未计的只剩 flag 解析 |
+
+**被排除包仍受编译约束**：CI 的 `go build ./...`、`go vet ./...`、`gofmt -l .` 覆盖全部包；`Test (with coverage)` 仍是 `go test ./...`（含被排除包），排除只影响覆盖率统计。本轮收口三项均零失败/零输出。
+
+**三条反漂移守卫**（`coverage-gate.mjs::evaluate`，纯函数；配套 `coverage-gate.test.mjs` 用例 A–G 全绿）：
+
+1. **零覆盖包必须进清单**：计入包若 `covered == 0` 且不在清单 → 失败并报包名与语句数。防「新加一个没测试的包，总量被悄悄拉低」。
+2. **清单不得陈旧**：清单内包若 `covered > 0` → 失败并提示删行。防「有人开始测了，豁免还留着」。
+3. **清单不得指向空气**：清单内包不在 profile → 失败。防「包改名/删除后清单形同虚设」。
+   附加：理由为空、同一包重复出现同样失败（排除必须逐条说明「为什么不可测」，不是「为了到线」）。
+
+**守卫破坏实验（各做一次，实跑红后还原；`coverage-gate.test.mjs` 对应行见括号）**：
+
+| 破坏 | 守卫 | 实跑结果 |
+| --- | --- | --- |
+| 从清单删掉 `cmd/loadtest` 行（B） | 1 | 红：`::error::cmd/loadtest 覆盖率为 0.0%（83 条语句）且不在 coverage-scope.list 里 —— 新包必须写测试；确实不可测的，写明理由再进清单`（总数因此变成 87.25%/9754，仍被守卫拦下） |
+| 清单插入 `internal/service`（C） | 2 | 红：`::error::清单里的 internal/service 实际覆盖率 87.9%（4467/5082）> 0 —— 说明它已经有测试了，请从 coverage-scope.list 删除该行` |
+| 清单插入 `cmd/ghost`（D） | 3 | 红：`::error::清单里的 cmd/ghost 在 coverage profile 中不存在 —— 该包可能已删除或改名，请同步 coverage-scope.list（第 43 行）` |
+| 清单某行理由清空（E1）/ 重复一行（E2） | 附加 | 红：`缺少理由 —— 排除某段代码必须逐条说明「为什么不可测」` / `重复项（首次出现在第 2 行）` |
+
+> 三次破坏后均 `git checkout -- scripts/coverage-scope.list` 还原；还原后同一条 profile 复跑 **PASS 88.00%（8510/9671）**，`coverage-gate.test.mjs` 用例 A–G 全绿。
+
+**补测增量（按风险顺序；语句数为「该组测试首次覆盖的语句」，逐组移出测试文件后重跑同包测得）**：
+
+| 组 | 内容 | 新增语句 | 新增测试行 |
+| --- | --- | --- | --- |
+| P0 资金/幂等 | `idempotency_test.go`：请求体哈希、重放一次、三处 `*Idem`、先校验后开事务 | 68 | 343 |
+| P1 身份/玩家路由 | `/me`、登出轮换、宝石空列表、装备目录、放弃战斗退体力、技能合成 | 30 | 325 |
+| P2 审计/重算 | 重算档位三档一致、confirm 必填、非法档位 400、superadmin 403、审计恰一条 | 10 | 99 |
+| P3 反作弊重放 | `ReplayEvents` 副本契约、字段原样、空局非 nil、`GemQualityAffixCount` 表值+回退 | 8 | 87 |
+| P4 故障分支/scratchdb | 宝石佩戴洗练边界、关卡补丁全字段拒绝、jsonb 坏值、后台写守卫、scratchdb 生命周期 | 57（service）+ 73（scratchdb）= 130 | 549（service）+ 278（scratchdb）+ 89（adminbattledetail）= 916 |
+| 收尾批 | 后台读路径 fail-loud/负 offset/超长词、封禁解封审计、httperr 契约、config 拒绝路径 | 35 | 240 + 91 + 73 = 404 |
+| 合计 | — | **+281**（8228 → 8509） | **2174** |
+
+> 实测“移出测试文件后重跑同包”的增量为 281，第二次全量读数多出 1 条（8509→8510），即上表的 ±1 抖动，不是统计错误。
+
+**P4 的比例为什么低（必须写清，不让读者猜）**：P4 批次（含收尾）用 **1320 行测试**换 **165 条新语句**（=130 + 35）；若只按用户口径的纯 P4 算，是 1320 行对约 130 条。这个比例（约 8 行测试 / 1 条语句）低得不正常，原因有两面，两面都成立：
+
+- **路径本身难覆盖（主因）**：P4 专攻**错误分支与 fail-loud**，每一条语句前面都要先造出它专属的故障状态——把 14 张表逐张改名再 `t.Cleanup` 还原、把 jsonb 改成坏值再还原、对 16 个关卡补丁字段逐个子用例验证“全有或全无”、scratchdb 真建/真删库并断言 DSN 与前缀清理。这些前置本身不产生业务语句覆盖，却占掉大部分行数；同一函数只测到第一个失败点时，后续失败点确实还没被覆盖。
+- **测试确有脚手架冗余**：1320 行里断言行约 110 行、设置/清理约 62 行、注释约 150 行、空行约 109 行，其余约 800 行是表驱动用例数据、循环与多行 SQL/JSON 夹具；`renameTable`/`openScratchService`/`newAdminUser` 这类前置在多个文件重复出现。合并公共前置可以省下上百行，但这属于重构，本轮按“外科手术式改动”没有动它——记录为可后续清理的冗余，而不是假装每行都是必要断言。
+
+**生成物悬挂改动查证（A）**：`oa4rust/backend/crates/ai/src/tests_generated.rs` 在工作树里曾有未提交改动。`git diff` 显示**仅 1 行**：`mod tests {` → `mod tests {  // O14 破坏实验`；`git log --all -- <file>` 显示该文件属于 O14 分支产物（`29a5f6bca test(o14): 统一重生成 91 个 tests_generated.rs` 等），`git show HEAD:<file>` 的首行为 `mod tests {`、无该注释。结论：**O14 破坏实验未还原干净的遗留注释，不是语义改动，也不该在 HEAD 上有差异**；已 `git checkout --` 还原，还原后工作树只剩台账一处 `M`。
+
+**破坏实验（P0–P3 各一次；改前红、还原后绿）**：
+
+| 组 | 注入的破坏 | 变红的断言（原文） |
+| --- | --- | --- |
+| P0① | `storedHash != reqHash` 改为 `if false && storedHash != reqHash`（冲突恒不报） | `idempotency_test.go:133: 同 key 不同请求体应返回 ErrIdemConflict，实际 <nil>`；同批 4 个测试 FAIL。还原后 `ok github.com/laiyipao/server/internal/service 1.3xx s` |
+| P0② | 把幂等记录 INSERT 挪到业务 `fn(tx)` 之前 | `idempotency_test.go:67: 首次执行失败：idempotency race retry: no rows in result set`（外加 `GrantCurrency` 用例 FAIL）。还原后 `ok` |
+| P1 | 登出时 `UPDATE users SET guest_token = guest_token`（不轮换旧凭证） | `routes_r96_coverage_e2e_test.go:91: 登出后 guest_token 必须变 —— 没变等于旧凭证仍可换令牌`。还原后 `ok ... 0.09s` |
+| P2 | `ValidRecomputeMode` 顶部直接 `return true`（非法档位放行） | `routes_r96_recompute_mode_e2e_test.go:75: 非法档位应 400，实际 200 map[configured_mode:bogus mode:bogus skills_mode:bogus ...]`。还原后 `PASS ... 0.09s` |
+| P3 | `ReplayEventCount` 改为 `len(e.replay) + 1`（计数错一位） | `engine_replay_r96_test.go:33: 空局计数应为 0，实际 1`。还原后 `PASS ... 0.00s` |
+
+> 每条破坏改的都是产品代码，跑完均 `git checkout -- <file>` 还原；还原后 `git status --porcelain` 只剩台账一处 `M`，再复跑对应测试转绿才写进上表。
+
+**新测试的宿主机独立性**：全部走真库/临时目录（`t.TempDir()`），不读宿主机时区、不 exec 本机 PATH 上的工具；P4 的日期断言只比较服务端返回的 `created_at`，不构造本地时区期望。
+
+**剩余缺口（为什么停在 88.00%，两次读数 87.98%–88.00%）**：剩余未覆盖几乎全是三类：①数据库故障分支（同一函数只测到第一个失败点，后续失败点需要更细的故障注入）；②死代码（`ReplaySegmentA`、`hexInt64`、`Serialize`、`Snapshot`、`skillIndexOf`）；③薄包装（`store/pool_wrap.go` 51 条、`httperr` 的 `SetLoggers`/`Error()`）。没有 `//coverage:ignore`，没有只调用不断言，没有为行数去测 getter。
+
+**收口状态（2026-11-04 16:34 快照）**：
+
+- **覆盖率**：88.00%（8510/9671，第二次读数；第一次 87.98%/8509），阈值 85 未动，门禁 `PASS`；按旧口径反算 80.96%。
+- **静态检查**：`go build ./...`、`go vet ./...`、`gofmt -l .` 均零失败/零输出（含四个被排除的 `cmd/*`）。
+- **全量测试**：`go test ./... -count=1 -timeout 1200s` 全部包 `ok`（`internal/service` 402.4s、`internal/httpapi` 235.8s、`internal/domain` 15.7s）；四个 `cmd/*` 工具仍是 `[no test files]`，与本节点债务一致。
+- **破坏实验**：P0①、P0②、P1、P2、P3 各一次，均为「改产品代码 → 对应断言红 → `git checkout --` 还原 → 复跑绿」；三条反漂移守卫各一次，均红后还原。还原后 `git status --porcelain` 只剩台账一处 `M`。
+- **PR #157（`opt1000/oa4rust-o14`，base `main` = 267d82416）**：上一轮 run（head `5115ecd1`）除 `test` 外各检查通过（`Server build, vet & test (PostgreSQL)` 3m22s PASS、`quality` 3m34s PASS、`integration-tests` 4m9s PASS、`startup-smoke` 2m3s PASS、CodeQL 四条中三条 PASS），`unit-tests`/`pinned-rustsec`/`Analyze (rust)` 当时仍在跑。**唯一的红是 auto-checkin 的行覆盖地板**：`agentrouter.ts 75% < 94.44%`、`newapi-client.ts 90.75% < 92.01%`；这两个文件不在本 PR 改动清单里，且同一 workflow 在 `main` 的最近三次运行（`267d82416`/`d8576c54e`/`5f2c0e818`）都是 failure —— **属既有红，不是本 PR 引入**。快照时 head 已被推进到 `d5fd1a66`（第 11 个提交），新一轮 run 刚启动，`test` 再次红、其余 pending。`mergeable=MERGEABLE`、`mergeStateStatus=BLOCKED`：**当前不能干净合**，差的不是本 PR 的代码检查，而是那条 main 上既有的 auto-checkin 覆盖地板红灯（需单独修）与新一轮 run 未跑完。
+
+### 债务：四个 `cmd/*` 工具包零 `go test` 信号
+
+**现状（不粉饰）**：`cmd/loadtest`（83 条）、`cmd/playertest`（252 条）、`cmd/smoke_restore`（475 条）、`cmd/tygen`（31 条）合计 **841 条语句，`go test ./...` 下 0.0%**。它们不是「被测了但跨包不计」，而是**没有任何 Go 测试**。`smoke_restore` 只在恢复演练脚本里被真实执行——演练跑的是编译出的二进制，不进 `go test` 统计，所以它的 flag 解析/输出契约一旦坏掉，CI 不会红。本轮覆盖率口径修正只把这四个包移出**分母**，没有给它们任何测试信号；**这不等于它们被覆盖**。
+
+**后续方向（按性价比排序，均不伪造运行形态）**：
+
+1. `cmd/tygen`：补 `-check` 的 flag 级测试。生成正确性已由 `internal/tygen`（81.5%）守住，缺的是「flag 解析 + 退出码」这两段。
+2. `cmd/smoke_restore`：抽出 `Run(args, deps)`，测试注入假恢复产物目录，断言「缺文件 / 校验和不符 / 表数不符」各自非零退出；真实演练脚本保留。
+3. `cmd/migrate`（59.1%）/ `cmd/prune`（65.0%）已有包内测试，是正确范式，可继续按缺口补，不要再走「0 覆盖进分母」的老路。
+4. `cmd/loadtest` / `cmd/playertest`：不做覆盖率补测（假目标服务只能测 flag），但可给「压测计划生成」这类纯函数加测试（请求序列、并发档位、时长预算），把「参数算错」的后果从覆盖率里分离出来。
+
+**判定**：这是**已知债务**，不是已解决项；等上述 1/2 落地后才谈得上「这四个工具有测试信号」。
