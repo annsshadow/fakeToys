@@ -3064,10 +3064,17 @@ pub async fn statistic_do(
         .unwrap_or("")
         .to_string();
 
+    // `x_attendance_statistic` 只有 `id` 主键（无 (person_id,year,month) 唯一索引），
+    // 旧 SQL 的 `ON CONFLICT (person_id, year, month)` → E42P10，且未写 NOT NULL 的 id。
+    // 改为确定性 id（同键同值）+ `ON CONFLICT (id)`；`create_time/update_time` 是 text，
+    // 必须 `NOW()::text`（timestamptz 不能隐式赋给 text）。
+    let id = format!("{}-{}-{}", person_id, year, month);
     let result = client
         .execute(
-            "INSERT INTO x_attendance_statistic (person_id, year, month, create_time) VALUES ($1, $2, $3, NOW()) ON CONFLICT (person_id, year, month) DO UPDATE SET update_time = NOW()",
-            &[&person_id, &year, &month],
+            "INSERT INTO x_attendance_statistic (id, person_id, year, month, create_time, update_time) \
+             VALUES ($1, $2, $3, $4, NOW()::text, NOW()::text) \
+             ON CONFLICT (id) DO UPDATE SET update_time = NOW()::text",
+            &[&id, &person_id, &year, &month],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;

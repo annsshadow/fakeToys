@@ -915,7 +915,7 @@ test result: FAILED. 0 passed; 1 failed
 | `category:E42703`（4） | `DELETE/PUT /api/organization/assemble/control/personattribute/{flag}`；`DELETE/PUT /api/organization/assemble/control/unitattribute/{flag}` | SQL 引用不存在的列 `name` | 按 migration 实态改列名（或补列）；200 后删 4 行 | O24 数据层对齐（后端） | 2026-11-26 |
 | `category:E42804`（3） | `DELETE /api/portal/assemble/designer/script/{id}`；`DELETE /api/processplatform/assemble/designer/script/{id}`；`GET /api/processplatform/service/processing/touch/mergeitem` | `deleted_at` TEXT 对 timestamp；`COALESCE` 两侧类型不一致 | 统一 timestamp 绑定/强转；200 后删 3 行 | O24 数据层对齐（后端） | 2026-11-26 |
 | `category:E23502`（0，原 10） | 已全部清除（缺 id 3 条 → 批次 4；实体引用 7 条 → 批次 6） | INSERT 未生成必填 `id` / `application` / `portal_id` | — | O24 数据层对齐（后端） | 已收口 |
-| `category:E42P10`（3） | `GET/POST /api/attendance/assemble/control/statistic/do`；`GET /api/calendar_assemble_control/update/control/config` | `ON CONFLICT` 无匹配唯一索引 | 指向真实唯一索引或改 UPDATE-then-INSERT；200 后删 3 行 | O24 数据层对齐（后端） | 2026-12-10 |
+| `category:E42P10`（0，原 3） | 已清除（批次 8） | `ON CONFLICT` 无匹配唯一索引 | 已收口 | O24 数据层对齐（后端） | 已收口 |
 | `category:param-count`（0，原 6） | 已全部清除（permission 4 条 → 批次 3；draft/start 2 条 → 批次 5） | SQL 占位符数量与绑定参数不一致 | — | O24 数据层对齐（后端） | 已收口 |
 | `category:E42P18`（1） | `GET /api/ai_assemble_control/chat/list/completion/{clueId}/paging/{page}/size/{size}` | `$2` 类型无法推断 | 给 `$2` 显式 `::text`/CAST；200 后删行 | O24 数据层对齐（后端） | 2026-11-12 |
 | `column:status`（1，原 2） | `GET /api/program_center/market/{flag}/installed/version` | 裸 `row.get` 把非 TEXT 列按 TEXT 解码（panic → 500） | 改 `try_get` 并统一实体/列类型；200 后删行 | O24 数据层对齐（后端） | 2026-11-12 |
@@ -998,10 +998,10 @@ GET /api/meeting/core/entity/room/{id}   column:equipment
 基线因此 **40 → 42（GET 11 / 非 GET 31）**，`BASELINE_COUNT=42`，集合相等。CI 的旧 40
 不是「更干净」，而是**扫描器当时没读到种子库**——这也是本次把口径写进台账的原因。
 
-### O24-3 待修 17 条（顺序与纪律，批次 1-7 已清 25）
+### O24-3 待修 14 条（顺序与纪律，批次 1-8 已清 28）
 
-**口径**：非 GET 12 条 + GET 5 条 = 17（原 42；批次 1 清 1、批次 2 清 4、批次 3 清 4、批次 4 清 3、
-批次 5 清 2、批次 6 清 7、批次 7 清 4，均为「非 GET + GET 共用 handler」）。
+**口径**：非 GET 8 条 + GET 6 条 = 14（原 42；批次 1 清 1、批次 2 清 4、批次 3 清 4、批次 4 清 3、
+批次 5 清 2、批次 6 清 7、批次 7 清 4、批次 8 清 3）。
 
 排序按真实用户后果，不按条数：
 
@@ -1281,6 +1281,44 @@ general POST/PUT 各一次 → 200 + 回库 `maintenance_mode`/`allow_registrati
 **收口**：删 4 条基线路，`BASELINE_COUNT 21 → 17`；门禁实测
 `== 棘轮基线：17 条（当前 17 条），集合相等 ==`。
 
+### O24-3 批次 8：`E42P10` upsert 路径（attendance + calendar，3 条）
+
+**schema 现场证据**：
+
+| 表 | 唯一约束 | 旧 SQL 冲突目标 | 结论 |
+|---|---|---|---|
+| `x_attendance_statistic` | 仅 `id` 主键 | `(person_id, year, month)` | E42P10 + 缺 `id` → 确定性 id + `ON CONFLICT (id)` |
+| `cal_control_config` | 仅 `id` 主键 | `(config_key)` | E42P10 + 缺 `id` → UPDATE-then-INSERT 单行幂等 |
+
+两表 `create_time`/`update_time` 均为 **text**，`NOW()` 不能隐式赋值 → 统一 `NOW()::text`
+（否则即使修好冲突目标也会转成 E42804）。
+
+- attendance id = `person_id-year-month`（同键同值，可重复 upsert）；无读取方解析 id。
+- calendar 用 `WHERE config_key='global'` 的 UPDATE；影响 0 行才 INSERT（uuid id）。
+
+**先红**：`upsert_paths_contract`（`tests/.../upsert_paths.rs`）未改代码时实测红：
+attendance POST 500（E42P10），断言文案「应为 200…实际 500」。
+
+**行为断言**：attendance POST 两次 → 200、同键**仍 1 行**、`update_time` 非空（写后必读）；
+GET 变体 200；calendar 写两次 → 200、`config_key='global'` **仍 1 行**、读回 `config_value`
+与写入同值（写后必读）。
+
+**破坏实验**：还原 attendance 冲突目标 → 红；还原 calendar 为 `ON CONFLICT (config_key)` → 红。
+
+**收口**：删 3 条基线路，`BASELINE_COUNT 17 → 14`；门禁实测
+`== 棘轮基线：14 条（当前 14 条），集合相等 ==`。
+
+### 写路径修复规矩：「写后必读」（批次 7 起，强制执行）
+
+任何写路径修复都必须补一条**写入后立即读回并断言同一值**的用例（SQL 直读同库），
+防止「只修罗盘、不修读写」。判据：
+
+1. 写返回 200 后，用同库连接按业务键读回，断言值等于请求值；
+2. upsert 类再断言**行数不变**（幂等），并断言 `update_time` 已更新；
+3. 若读路径自身依赖类型强转（如 `::bool`、`::text`），读回断言必须走该读路径（HTTP GET）。
+
+
+
 
 ### O24-1 收口：express 成功路径（裁定执行）
 
@@ -1314,6 +1352,7 @@ general POST/PUT 各一次 → 200 + 回库 `maintenance_mode`/`allow_registrati
 | O24-3 批次 5（draft/start 写 started） | 0 | **2** | **-2**（30→28） | 28 |
 | O24-3 批次 6（E23502 实体引用族） | 0 | **7** | **-7**（28→21） | 21 |
 | O24-3 批次 7（wrong-type 配置写路径） | 0 | **4** | **-4**（21→17） | 17 |
+| O24-3 批次 8（E42P10 upsert 路径） | 0 | **3** | **-3**（17→14） | 14 |
 
 **清除清单**：
 
@@ -1326,4 +1365,5 @@ general POST/PUT 各一次 → 200 + 回库 `maintenance_mode`/`allow_registrati
 | O24-3 批次 5 | `param-count` 的 draft/start 子族（唯一写方） | `POST /api/processplatform/assemble/surface/draft/start/{id}`；`GET /api/processplatform/assemble/surface/draft/{id}/start` | `draft_start_status_contract`：先红 500（`Parameters(1, 2)`）→ 改后 POST/GET 均 200 且回库 `xstatus='started'`、`xupdateTime` 非空；破坏实验退回 `&[&id]` → 红；门禁 28/28 集合相等 |
 | O24-3 批次 6 | `E23502` 的实体引用子族 | `POST/GET /api/hotpic*`（create/hotpic ×2、update/control/config ×2、user/hotpic ×1）；`POST /api/portal/assemble/designer/page`；`POST /api/portal/assemble/designer/page/create` | `entity_reference_required_contract`：先红 500（E23502 `application`/`portal_id`）→ 改后缺参 400、有参 200 且回库指向父实体；破坏实验逐个还原 3 处 handler → 各自红；门禁 21/21 集合相等 |
 | O24-3 批次 7 | `wrong-type` 的配置写路径 | `POST/PUT /api/bbs/assemble/control/update/control/config`；`POST/PUT /api/general/assemble/control/status/update` | `wrong_type_config_contract`：先红 500（WrongType）→ 改后 POST/PUT 均 200 且回库正确；破坏实验逐个还原 bbs/general 写/读 → 各自红；门禁 17/17 集合相等 |
+| O24-3 批次 8 | `E42P10` 的 upsert 路径 | `GET/POST /api/attendance/assemble/control/statistic/do`；`GET /api/calendar_assemble_control/update/control/config` | `upsert_paths_contract`：先红 500（E42P10）→ 改后 200、同键仍 1 行且 update_time 更新、config 写后必读同值；破坏实验逐个还原 → 各自红；门禁 14/14 集合相等 |
 

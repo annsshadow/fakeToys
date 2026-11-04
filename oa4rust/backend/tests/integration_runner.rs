@@ -81,6 +81,14 @@ async fn draft_start_status_contract() {
         .await;
 }
 
+/// O24-3 批次 8：E42P10 upsert 路径（attendance statistic/do、calendar control config）。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn upsert_paths_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::upsert_paths::upsert_paths_flow(ctx.pool.clone()).await;
+}
+
 /// O24-3 批次 7：wrong-type 配置写路径（bbs max_forum_count、general 文本布尔列）。
 #[ignore = "requires a running database server"]
 #[tokio::test]

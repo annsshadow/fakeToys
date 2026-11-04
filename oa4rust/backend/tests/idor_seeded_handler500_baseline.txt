@@ -47,21 +47,23 @@
 # 裁定：不删路由、不降级，写 xstatus='started'；字面量收进唯一写方常量
 # DRAFT_STARTED_STATUS。契约项：将来若引入状态词表，必须迁移已存在的 started 行。
 #
-# 2026-11-05 基线 28 → 21（GET 6 / 非 GET 15）：O24-3 批次 6 清掉 E23502 实体引用族 7 条。
+# 2026-11-05 基线 28 → 21（GET 8 / 非 GET 13）：O24-3 批次 6 清掉 E23502 实体引用族 7 条。
 # hotpic（application/info_id）与 portal page（portal_id）本身是实体引用，不是状态值：
 # 唯一信息来源是 body 字段（hotpic `application`/`infoId`、portal page `portalId`，后者与
 # create_widget 同口径），能提供就绑定并断言落库指向该父实体；当前前端只发 title/name，
 # 推导不出来 → 一律 400（缺必要参数），不编造父实体 id。GET 变体
 # /api/hotpic_assemble_control/create/hotpic 与 update/control/config 同 handler、同口径。
 #
-# 2026-11-05 基线 21 → 17（GET 5 / 非 GET 12）：O24-3 批次 7 清掉 wrong-type 配置写路径 4 条。
+# 2026-11-05 基线 21 → 17（GET 8 / 非 GET 9）：O24-3 批次 7 清掉 wrong-type 配置写路径 4 条。
 # bbs `max_forum_count` 实列 integer，绑定由 i64 收窄为 i32；general
 # `maintenance_mode`/`allow_registration` 实列 text（无 CHECK/DEFAULT/行），写入用
 # `$n::bool::text`、读取用 `::bool` 强转，两侧同一 `true`/`false` 契约。
+#
+# 2026-11-05 基线 17 → 14（GET 6 / 非 GET 8）：O24-3 批次 8 清掉 E42P10 的 upsert 路径 3 条。
+# 两表都只有 `id` 主键、无 (person_id,year,month)/config_key 唯一索引：attendance 改确定性
+# id + `ON CONFLICT (id)`；calendar 改 UPDATE-then-INSERT 单行幂等。两者 text 时间列一律
+# `NOW()::text`（timestamptz 不能隐式赋给 text）。
 GET /api/ai_assemble_control/chat/list/completion/{clueId}/paging/{page}/size/{size}	category:E42P18	owner:O24数据层对齐(后端)	due:2026-11-12	cond:给 $2 显式 ::text/CAST；200 后删行
-GET /api/attendance/assemble/control/statistic/do	category:E42P10	owner:O24数据层对齐(后端)	due:2026-12-10	cond:指向真实唯一索引或改 UPDATE-then-INSERT；200 后删行
-POST /api/attendance/assemble/control/statistic/do	category:E42P10	owner:O24数据层对齐(后端)	due:2026-12-10	cond:指向真实唯一索引或改 UPDATE-then-INSERT；200 后删行
-GET /api/calendar_assemble_control/update/control/config	category:E42P10	owner:O24数据层对齐(后端)	due:2026-12-10	cond:指向真实唯一索引或改 UPDATE-then-INSERT；200 后删行
 POST /api/document/filter/list/{page}/size/{size}/manager	category:E42601	owner:O24数据层对齐(后端)	due:2026-12-10	cond:改参数化/正确拼 ORDER BY；200 后删行
 GET /api/meeting/core/entity/room/list	column:equipment	owner:O24数据层对齐(后端)	due:2026-11-26	cond:改 try_get/Option 类型对齐实体；200 后删行
 GET /api/meeting/core/entity/room/{id}	column:equipment	owner:O24数据层对齐(后端)	due:2026-11-26	cond:改 try_get/Option 类型对齐实体；200 后删行
