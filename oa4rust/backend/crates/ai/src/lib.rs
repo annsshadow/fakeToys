@@ -16,6 +16,8 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
+#[cfg(test)]
+mod tests_manual;
 pub fn ai_router(pool: Pool) -> axum::Router {
     routes::ai_router(pool)
 }

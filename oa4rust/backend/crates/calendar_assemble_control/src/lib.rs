@@ -20,6 +20,8 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
+#[cfg(test)]
+mod tests_manual;
 #[axum::debug_handler]
 pub async fn get_control_config(
     pool: Extension<Pool>,
