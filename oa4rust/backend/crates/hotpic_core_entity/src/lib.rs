@@ -7,8 +7,8 @@ use axum::{
     Json, Router,
 };
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter,
-    QueryOrder, QuerySelect, Set,
+    ActiveModelTrait, ColumnTrait, Condition, DatabaseConnection, EntityTrait, PaginatorTrait,
+    QueryFilter, QueryOrder, QuerySelect, Set,
 };
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
@@ -81,6 +81,24 @@ pub async fn list(
     ))))
 }
 
+/// 读路径可见范围：精确键 OR 全局（空键对）。
+///
+/// `(application, info_id)` 两列皆空 = 部署级全局热点图，在任何 application 视图下可见；
+/// 具体键只在自己的视图可见。这里只用 AND/OR 精确比较，不做 LIKE/COALESCE 之类的模糊匹配。
+fn visible_scope(application: &str, info_id: &str) -> Condition {
+    Condition::any()
+        .add(
+            Condition::all()
+                .add(hotpic::Column::Application.eq(application))
+                .add(hotpic::Column::InfoId.eq(info_id)),
+        )
+        .add(
+            Condition::all()
+                .add(hotpic::Column::Application.eq(""))
+                .add(hotpic::Column::InfoId.eq("")),
+        )
+}
+
 /// 根据应用和信息ID获取热图
 /// 查询 x_hotpic 表中指定应用和信息ID的热图
 pub async fn list_by_app_and_info(
@@ -88,11 +106,7 @@ pub async fn list_by_app_and_info(
     axum::extract::Path((application, info_id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let models = hotpic::Entity::find()
-        .filter(
-            hotpic::Column::Application
-                .eq(&application)
-                .and(hotpic::Column::InfoId.eq(&info_id)),
-        )
+        .filter(visible_scope(&application, &info_id))
         .order_by_desc(hotpic::Column::CreateTime)
         .limit(20)
         .all(&db.0)
@@ -136,11 +150,7 @@ pub async fn exists_check(
     axum::extract::Path((application, info_id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let count: u64 = hotpic::Entity::find()
-        .filter(
-            hotpic::Column::Application
-                .eq(&application)
-                .and(hotpic::Column::InfoId.eq(&info_id)),
-        )
+        .filter(visible_scope(&application, &info_id))
         .count(&db.0)
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;

@@ -169,7 +169,7 @@ async fn wrong_type_config_contract() {
     integration_tests::scenarios::wrong_type_config::wrong_type_config_flow(ctx.pool.clone()).await;
 }
 
-/// O24-3 批次 6：E23502 实体引用必填（hotpic application/info_id、portal page portal_id）。
+/// O24-3 批次 6：E23502 实体引用必填（portal page portal_id）。
 #[ignore = "requires a running database server"]
 #[tokio::test]
 async fn entity_reference_required_contract() {
@@ -178,6 +178,15 @@ async fn entity_reference_required_contract() {
         ctx.pool.clone(),
     )
     .await;
+}
+
+/// O24-3：hotpic「空键 = 部署级全局热点图」——5 条写端点 + 三条可见性断言 + 51 行规模。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn hotpic_global_scope_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::hotpic_global_scope::hotpic_global_scope_flow(ctx.pool.clone())
+        .await;
 }
 
 /// O24-3 批次 4：INSERT 未写必填主键/规范列的遗留给定族（3 条 E23502）。
