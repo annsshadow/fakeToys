@@ -215,3 +215,99 @@ func TestChangePasswordBrokenPool(t *testing.T) {
 		t.Fatal("连接池已关闭时改密必须报错，不能静默成功")
 	}
 }
+
+// R100：并发改密的「先读后写」丢失更新。
+//
+// 缺陷形态：ChangePassword 先 `SELECT password_hash`，然后 bcrypt 校验 +
+// 生成新哈希（两步各约 60ms），最后**无条件** `UPDATE users SET
+// password_hash=$2 WHERE id=$1`。两个并发请求都能通过「旧密码正确」
+// 的检查，再各自写回 —— 后提交者覆盖先提交者，但**两条都返回成功**。
+// 先返回成功的那枚新密码从未落库。
+//
+// 后果不是「谁赢谁输无所谓」：
+//   - 玩家拿到成功回执、以为密码已改，下次登录却失败，而旧密码也已失效
+//     → 账号临时锁死，服务端没有任何冲突记录（投诉无法复现）；
+//   - 运营强制重置密码（账号被盗应急）时，在途的玩家改密会把运营刚写的
+//     新哈希静默覆盖掉 —— 强制轮换等于没做。
+//
+// 注入方式：BEFORE UPDATE OF password_hash 触发器在拿到行锁后 pg_sleep，
+// 把「读到旧哈希」与「写回」之间的窗口拉成必现。sleep 必须小于
+// `DB_LOCK_TIMEOUT`（默认 2s），否则后一条 UPDATE 会先被 55P03 取消，
+// 复现的就不是丢失更新而是锁超时。
+//
+// 判据：并发改密的成功回执必须恰好 1 条；落库的必须是成功那条的新密码。
+func TestChangePasswordConcurrentLostUpdate(t *testing.T) {
+	ts := openTestService(t)
+	ctx := context.Background()
+
+	id, oldPassword := newPasswordAccount(t, ts, "lostupdate")
+
+	ts.exec(t, `CREATE OR REPLACE FUNCTION r100_slow_password_update() RETURNS trigger AS $$
+		BEGIN
+			PERFORM pg_sleep(1.2);
+			RETURN NEW;
+		END;
+	$$ LANGUAGE plpgsql`)
+	ts.exec(t, fmt.Sprintf(`CREATE TRIGGER r100_slow_password_update_trg
+		BEFORE UPDATE OF password_hash ON users
+		FOR EACH ROW WHEN (NEW.id = %d) EXECUTE FUNCTION r100_slow_password_update()`, id))
+	t.Cleanup(func() {
+		_, _ = ts.pool.Exec(context.Background(),
+			`DROP TRIGGER IF EXISTS r100_slow_password_update_trg ON users`)
+		_, _ = ts.pool.Exec(context.Background(),
+			`DROP FUNCTION IF EXISTS r100_slow_password_update()`)
+	})
+
+	const (
+		firstNew  = "r100-first-new-password"
+		secondNew = "r100-second-new-password"
+	)
+	type outcome struct {
+		name string
+		err  error
+	}
+	results := make(chan outcome, 2)
+
+	go func() {
+		_, err := ts.ChangePassword(ctx, id, oldPassword, firstNew)
+		results <- outcome{"first", err}
+	}()
+	// 等第一条读完哈希并进入触发器的 sleep（此时尚未提交）。
+	time.Sleep(400 * time.Millisecond)
+	go func() {
+		_, err := ts.ChangePassword(ctx, id, oldPassword, secondNew)
+		results <- outcome{"second", err}
+	}()
+
+	got := map[string]error{}
+	for i := 0; i < 2; i++ {
+		res := <-results
+		got[res.name] = res.err
+	}
+
+	var hash string
+	if err := ts.db.Pool.QueryRow(ctx,
+		`SELECT password_hash FROM users WHERE id = $1`, id).Scan(&hash); err != nil {
+		t.Fatalf("回读密码哈希失败：%v", err)
+	}
+	firstOK := VerifyPassword(hash, firstNew) == nil
+	secondOK := VerifyPassword(hash, secondNew) == nil
+
+	if got["first"] != nil {
+		t.Fatalf("先提交的改密必须成功，实际 %v（落库 first=%v second=%v）",
+			got["first"], firstOK, secondOK)
+	}
+	if got["second"] == nil {
+		t.Fatalf("并发改密的第二条请求返回成功，但落库 first=%v second=%v —— 第二条的成功回执是假的",
+			firstOK, secondOK)
+	}
+	if !errors.Is(got["second"], ErrBadInput) {
+		t.Fatalf("后到的改密应返回 ErrBadInput（密码已被改过），实际 %v", got["second"])
+	}
+	if !firstOK {
+		t.Fatalf("最终密码必须是成功那条的新密码，实际 first=%v second=%v", firstOK, secondOK)
+	}
+	if secondOK {
+		t.Fatalf("失败那条的新密码不应落库，实际 first=%v second=%v", firstOK, secondOK)
+	}
+}

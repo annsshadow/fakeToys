@@ -281,9 +281,23 @@ func (s *Service) ChangePassword(ctx context.Context, userID int64, oldPassword,
 	}
 	defer tx.Rollback(ctx) //nolint:errcheck // 提交后回滚是无害的 ErrTxClosed
 
-	if _, err := tx.Exec(ctx,
-		`UPDATE users SET password_hash = $2 WHERE id = $1`, userID, newHash); err != nil {
+	// R100：把「校验过的旧哈希」作为写入条件（CAS），不能无条件覆盖。
+	//
+	// 上面的校验与 bcrypt 生成新哈希都在事务外、耗时约 100ms 以上，
+	// 两笔并发改密（重试 / 多设备 / 运营在途强制重置）都会基于同一份旧哈希
+	// 通过校验，再各自写回 —— 后提交者覆盖先提交者，而两条请求都返回成功。
+	// 先返回成功的那枚新密码从未落库；运营刚写的重置哈希也会被静默覆盖。
+	//
+	// 条件不成立（0 行）说明这期间密码已被别的写入改掉，本请求的结论
+	// 已经过期，必须如实告诉调用方，而不是假装成功。
+	tag, err := tx.Exec(ctx,
+		`UPDATE users SET password_hash = $2 WHERE id = $1 AND password_hash = $3`,
+		userID, newHash, *hash)
+	if err != nil {
 		return 0, fmt.Errorf("update password hash: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return 0, fmt.Errorf("%w: 密码已被其他请求修改，请用当前密码重新登录后再试", ErrBadInput)
 	}
 	ct, err := tx.Exec(ctx,
 		`UPDATE refresh_tokens SET revoked_at = now()
