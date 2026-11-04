@@ -1278,7 +1278,7 @@ export const messageCommunicateApi = {
 
 /**
  * Extra API modules for remaining backend crates
- * Auto-generated — do not edit manually
+ * Hand-maintained（早期一次性生成，仓库内无生成器）— 修改时同步后端路由
  */
 
 // ─────────────────────────────────────────────────────────────

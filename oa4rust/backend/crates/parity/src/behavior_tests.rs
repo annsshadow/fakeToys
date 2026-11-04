@@ -1,9 +1,10 @@
 // Copyright (C) 2026 annsshadow
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-// AUTO-GENERATED behavior contract tests — DO NOT EDIT by script.
-// Hand-written Top 100 high-frequency routes with behavior contracts.
-// Generated from: docs/audits/o2server-parity-report.json
+// Hand-written behavior contract tests — 手工维护，非生成物。
+// Top 100 high-frequency routes with behavior contracts.
+// 路由/方法参考 docs/audits/o2server-parity-report.json，但本文件不由任何脚本产出；
+// 修改后直接提交，生成的 route_exists 用例在 generated_tests.rs（另一个文件）。
 
 use tower::util::ServiceExt;
 

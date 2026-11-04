@@ -4,7 +4,8 @@
 //!
 //! This integration test target compiles against the full oa4rust crate
 //! and runs:
-//! 1. The auto-generated 785-route parity contract tests (route_exists checks).
+//! 1. The auto-generated parity route_exists tests (see the count in the
+//!    header of `crates/parity/src/generated_tests.rs`).
 //! 2. The Top 100 behavior contract tests (login_returns_token, list_returns_array).
 //!
 //! Run:
@@ -17,8 +18,8 @@
 // behavior_tests.rs which is included from the parity crate's lib.rs.
 
 // The actual per-route tests are in the parity crate:
-//   crates/parity/src/generated_tests.rs   (785 route_exists tests)
-//   crates/parity/src/behavior_tests.rs    (100 behavior contract tests)
+//   crates/parity/src/generated_tests.rs   (route_exists tests; 条数见文件头)
+//   crates/parity/src/behavior_tests.rs    (100 hand-written behavior contract tests)
 // Both are included via #[cfg(test)] mod in the parity crate's lib.rs.
 // This file serves as an integration-test entry-point so CI can run:
 //   cargo test --test parity_suite
