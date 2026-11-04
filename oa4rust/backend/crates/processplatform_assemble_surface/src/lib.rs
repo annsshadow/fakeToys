@@ -7706,6 +7706,16 @@ pub async fn draft_id_mockdeletetoget(
     }
 }
 
+/// `pp_c_draft.xstatus` 当前只有写方、无读方；值集暂为 {started}。
+///
+/// 三项证据（O24-3 批次 5 台账）：
+/// - 无 CHECK 约束：`pg_constraint` 中 `pp_c_draft.xstatus` 无任何检查约束；
+/// - 无 DEFAULT：`information_schema.columns` 该列 `column_default` 为空；
+/// - 无读方：全仓（含前端 desktop/mobile/packages/apis）无读取 `xstatus` 做状态判断的代码。
+///
+/// 契约项：将来若引入状态词表，必须迁移已存在的 `started` 行，不许新旧混用。
+const DRAFT_STARTED_STATUS: &str = "started";
+
 #[allow(non_snake_case)]
 pub async fn draft_id_start(
     pool: Extension<Pool>,
@@ -7717,7 +7727,7 @@ pub async fn draft_id_start(
     let result = client
         .execute(
             "UPDATE PP_C_DRAFT SET xstatus = $1, \"xupdateTime\" = NOW() WHERE xid = $2",
-            &[&id],
+            &[&DRAFT_STARTED_STATUS, &id],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;

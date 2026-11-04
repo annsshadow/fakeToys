@@ -916,7 +916,7 @@ test result: FAILED. 0 passed; 1 failed
 | `category:E42804`（3） | `DELETE /api/portal/assemble/designer/script/{id}`；`DELETE /api/processplatform/assemble/designer/script/{id}`；`GET /api/processplatform/service/processing/touch/mergeitem` | `deleted_at` TEXT 对 timestamp；`COALESCE` 两侧类型不一致 | 统一 timestamp 绑定/强转；200 后删 3 行 | O24 数据层对齐（后端） | 2026-11-26 |
 | `category:E23502`（7，原 10） | `POST/GET /api/hotpic*/create/hotpic`；`POST/GET /api/hotpic*/update/control/config`；`POST /api/hotpic/assemble/control/user/hotpic`；`POST /api/portal/assemble/designer/page`；`POST /api/portal/assemble/designer/page/create` | INSERT 未生成必填 `id` / `application` / `portal_id`（缺 id 的 3 条已在批次 4 清除） | 补 UUID/默认值或返回 400；200/400 后删行 | O24 数据层对齐（后端） | 2026-12-10 |
 | `category:E42P10`（3） | `GET/POST /api/attendance/assemble/control/statistic/do`；`GET /api/calendar_assemble_control/update/control/config` | `ON CONFLICT` 无匹配唯一索引 | 指向真实唯一索引或改 UPDATE-then-INSERT；200 后删 3 行 | O24 数据层对齐（后端） | 2026-12-10 |
-| `category:param-count`（2，原 6） | `GET/POST /api/processplatform/assemble/surface/draft*` | SQL 占位符数量与绑定参数不一致（permission 4 条已在批次 3 清除） | 对齐 `$1..$n` 与参数；200/400 后删行 | O24 数据层对齐（后端） | 2026-11-19 |
+| `category:param-count`（0，原 6） | 已全部清除（permission 4 条 → 批次 3；draft/start 2 条 → 批次 5） | SQL 占位符数量与绑定参数不一致 | — | O24 数据层对齐（后端） | 已收口 |
 | `category:E42P18`（1） | `GET /api/ai_assemble_control/chat/list/completion/{clueId}/paging/{page}/size/{size}` | `$2` 类型无法推断 | 给 `$2` 显式 `::text`/CAST；200 后删行 | O24 数据层对齐（后端） | 2026-11-12 |
 | `column:status`（1，原 2） | `GET /api/program_center/market/{flag}/installed/version` | 裸 `row.get` 把非 TEXT 列按 TEXT 解码（panic → 500） | 改 `try_get` 并统一实体/列类型；200 后删行 | O24 数据层对齐（后端） | 2026-11-12 |
 | `column:equipment`（2，O24 新增） | `GET /api/meeting/core/entity/room/list`；`GET /api/meeting/core/entity/room/{id}` | SeaORM 实体 `Option<String>`/TEXT 对 JSONB 列解码不匹配 | 改 `try_get`/`Option` 类型对齐实体；200 后删 2 行 | O24 数据层对齐（后端） | 2026-11-26 |
@@ -998,15 +998,16 @@ GET /api/meeting/core/entity/room/{id}   column:equipment
 基线因此 **40 → 42（GET 11 / 非 GET 31）**，`BASELINE_COUNT=42`，集合相等。CI 的旧 40
 不是「更干净」，而是**扫描器当时没读到种子库**——这也是本次把口径写进台账的原因。
 
-### O24-3 待修 30 条（顺序与纪律，批次 1-4 已清 12）
+### O24-3 待修 28 条（顺序与纪律，批次 1-5 已清 14）
 
-**口径**：非 GET 19 条 + GET 11 条 = 30（原 42；批次 1 清 1、批次 2 清 4、批次 3 清 4、批次 4 清 3，均为非 GET）。用户说的「GET 9 条」是旧 40 口径；O24 库隔离
-修复新增的 2 条 `column:equipment` 也是 GET，故 GET 现为 11（旧的 9 条包含在内）。
+**口径**：非 GET 18 条 + GET 10 条 = 28（原 42；批次 1 清 1、批次 2 清 4、批次 3 清 4、批次 4 清 3、
+批次 5 清 2，均为「非 GET + GET 共用 handler」）。用户说的「GET 9 条」是旧 40 口径；O24 库隔离
+修复新增的 2 条 `column:equipment` 也是 GET，故 GET 现为 10（旧的 9 条包含在内）。
 
 排序按真实用户后果，不按条数：
 
 1. **写路径里「会写库但报错」的族**（用户以为失败、实际可能已落库）优先；
-2. 再按条数多的可批量验证族（`wrong-type` 剩 5、`param-count` 剩 2 等）；
+2. 再按条数多的可批量验证族（`E23502` 实体引用族剩 7、`wrong-type` 剩 5 等）；
 3. GET 留最后。
 
 每批固定流程：`information_schema` 现场确认真实列类型 → **先红**（复现当前 500）→ 改 →
@@ -1161,24 +1162,51 @@ console 发消息 → 200 `sent=true` 且回库 `id` 非空；message 自定义�
 **收口**：删 3 条基线路，`BASELINE_COUNT 33 → 30`；门禁实测
 `== 棘轮基线：30 条（当前 30 条），集合相等 ==`。
 
-### O24-3 `draft/start` 的 xstatus：调查结论（停在裁定点）
+### O24-3 批次 5：`draft/start` 写 `xstatus='started'`（裁定执行，2 条）
 
-按顺序取证：
+**裁定**：不删路由、不降级（不改写成只 touch `xupdateTime`），写 `'started'`。
 
-1. **schema**：`information_schema.columns` → `pp_c_draft.xstatus` 为 `text`、可空、
-   **无 DEFAULT**；`pg_constraint` 对该表**无任何 CHECK 约束**；`pg_class` 无表注释。
-   迁移注释（`migrations/111_add_fi002_missing_columns.sql`）只写「补 fi002 列」，未定义值域。
-2. **后端消费者**：全仓 `xstatus` 读取均属 `x_console_status` / `x_express_info` /
-   `PP_E_PROCESS` / `PP_C_JOB`；**没有一处读 `pp_c_draft.xstatus`**。唯一写入就是本路由。
-3. **前端调用方**：`apps/desktop/src/views/ProcessManagerApp.vue:584` POST
-   `/api/processplatform/assemble/surface/draft/start/{id}`，成功后仅 toast「草稿已发起」，
-   **不读 xstatus、不判断状态**；`frontend` 全目录 grep `xstatus` 仅命中一行无关注释
-   （`ProcessManagerApp.vue:913`，讲 `PP_E_PROCESS`）。
-4. **契约面**：parity fixture / generated_tests 只断言路由存在，不涉及 xstatus 值。
+**xstatus 取证（裁定依据，三项证据）**：
 
-**因此不是「既无约束又无消费者」**：路由有调用方，但没有 xstatus 值域定义，也没有任何
-状态读取方。按裁定第 4 条**停下来**，请判定：删路由（连同前端入口）还是给出合法值
-（例如 `started`）并要求行为断言。未按「只 touch xupdateTime」降级。
+| 证据 | 结论 | 来源 |
+|---|---|---|
+| 无 CHECK | 该表无任何检查约束 | `pg_constraint`（`information_schema` 现场） |
+| 无 DEFAULT | `column_default` 为空、列可空 | `information_schema.columns` → `pp_c_draft.xstatus text` |
+| 无读方 | 全仓无读取 `pp_c_draft.xstatus` 做状态判断 | 后端 grep：`xstatus` 读取只属 `x_console_status`/`x_express_info`/`PP_E_PROCESS`/`PP_C_JOB`；前端 `apps/desktop/src/views/ProcessManagerApp.vue:584` 仅 POST + toast「草稿已发起」，不读状态；parity 只断言路由存在 |
+
+**契约项（必须遵守）**：`pp_c_draft.xstatus` 当前只有写方、无读方，值集暂为 `{started}`。
+将来若引入状态词表，**必须迁移已存在的 `started` 行**，不许新旧值混用。字面量收进唯一写方
+常量 `DRAFT_STARTED_STATUS`（`crates/processplatform_assemble_surface/src/lib.rs`），注释内嵌上述三项证据。
+
+**根因**：`UPDATE PP_C_DRAFT SET xstatus = $1, "xupdateTime" = NOW() WHERE xid = $2`
+只绑了 `&[&id]` 一个参数 → `Parameters(1, 2)`，500。
+
+**先红**：`tests/integration_tests/scenarios/draft_start_status.rs`
+（`integration_runner` 独立 `#[ignore]` 用例 `draft_start_status_contract`）；未改代码时实测红：
+`source=crates\processplatform_assemble_surface\src\lib.rs:7723: Error { kind: Parameters(1, 2) }`，
+断言文案「draft/start 应为 200（旧实现 SET xstatus = $1 只绑 id → Parameters 失配），实际 500」。
+
+**行为断言**（POST + GET 共用 handler，两路都跑）：
+
+- POST 返回 **200**、`type=success`、`data.id == seed id`、`data.updateTime` 非空（前端 toast 语义不变）；
+- GET 同路由返回 200 且回显非空 `createTime/updateTime`；
+- 回库校验 `xstatus = 'started'` 且 `xupdateTime` 已更新（种子行 `xupdateTime=''` → 非空）。
+
+**破坏实验**：把绑定退回 `&[&id]` → 测试红（`Parameters(1, 2)`，日志 500）；复原 → 绿。
+
+**收口**：删 2 条基线路，`BASELINE_COUNT 30 → 28`；门禁实测
+`== 棘轮基线：28 条（当前 28 条），集合相等 ==`。
+
+### O24-3 后续 7 条 E23502 的口径（实体引用，不是状态值）
+
+`hotpic` 的 `application`、`portal page` 的 `portal_id` 是**实体引用**，按以下顺序处理，每条都要在
+台账写「信息来源」证据：
+
+1. 先查请求上下文（路径参数 / body / 父资源）是否携带该实体标识；
+2. 能推导 → 用推导值绑定，断言落库值指向**正确父实体**；
+3. 推导不出来 → 返回 **400（缺必要参数）**，**不许编造合法 id**（会生成悬挂外键或写到别人资源下）；
+4. 没有来源的一律 400，并在台账记录理由。
+
 
 ### O24-1 收口：express 成功路径（裁定执行）
 
@@ -1209,6 +1237,7 @@ console 发消息 → 200 `sent=true` 且回库 `id` 非空；message 自定义�
 | O24-3 批次 2（JSONB 参数绑定族） | 0 | **4** | **-4**（41→37） | 37 |
 | O24-3 批次 3（查询设计器 permission 族） | 0 | **4** | **-4**（37→33） | 33 |
 | O24-3 批次 4（INSERT 缺必填 id/规范列族） | 0 | **3** | **-3**（33→30） | 30 |
+| O24-3 批次 5（draft/start 写 started） | 0 | **2** | **-2**（30→28） | 28 |
 
 **清除清单**：
 
@@ -1218,4 +1247,5 @@ console 发消息 → 200 `sent=true` 且回库 `id` 非空；message 自定义�
 | O24-3 批次 2 | `wrong-type` 的 Jsonb↔String 子族 | `POST /api/meeting/core/entity/room/save/{id}`；`POST /api/processplatform/assemble/surface/save/{id}`；`POST /api/queryview/table/row/part/update/{tableFlag}/{id}`；`POST /api/queryview/table/{flag}/row/{rid}/part/update` | `jsonb_param_binding_contract`：先红 500（ToSql Jsonb vs String）→ 改后 200 且回库校验 JSON；破坏实验逐个复原三处 → 各自红；门禁 37/37 集合相等 |
 | O24-3 批次 3 | `param-count` 的 permission 子族 | `POST /api/query/assemble/designer/query/{flag}/permission`；`POST .../stat/{id}/permission`；`POST .../table/{flag}/permission`；`POST .../view/{id}/permission` | `query_permission_binding_contract`：先红 500（`Parameters(2, 1)`）→ 改后 200 且回库 permission/update_time；破坏实验还原谓词 → 红；门禁 33/33 集合相等 |
 | O24-3 批次 4 | `E23502` 的「INSERT 缺必填 id/规范列」子族 | `POST /api/console/send/message`；`POST /api/document/cipher/{id}/persist/view/record`；`POST /api/message/custom/create` | `insert_required_id_contract`：先红 500（E23502 `x_console_message.id`）→ 改后 200 且回库 id/title/type/consumer/is_read；破坏实验逐个复原 message/cms → 各自红；门禁 30/30 集合相等 |
+| O24-3 批次 5 | `param-count` 的 draft/start 子族（唯一写方） | `POST /api/processplatform/assemble/surface/draft/start/{id}`；`GET /api/processplatform/assemble/surface/draft/{id}/start` | `draft_start_status_contract`：先红 500（`Parameters(1, 2)`）→ 改后 POST/GET 均 200 且回库 `xstatus='started'`、`xupdateTime` 非空；破坏实验退回 `&[&id]` → 红；门禁 28/28 集合相等 |
 

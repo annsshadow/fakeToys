@@ -40,6 +40,12 @@
 # 2026-11-05 基线 33 → 30（GET 11 / 非 GET 19）：O24-3 批次 4 清掉「INSERT 未写必填主键/
 # 规范列」族 3 条 —— console/send/message（缺 id）、document/.../persist/view/record（缺 id）、
 # message/custom/create（缺 id/title/type/consumer/is_read）。均按 information_schema 现场确认补列。
+#
+# 2026-11-05 基线 30 → 28（GET 10 / 非 GET 18）：O24-3 批次 5 清掉 draft/start 两路由
+# （POST /draft/start/{id} 与 GET /draft/{id}/start 共用 handler）。根因是 UPDATE
+# `SET xstatus = $1 ... WHERE xid = $2` 只绑了 id，Parameters(1,2) 失配。
+# 裁定：不删路由、不降级，写 xstatus='started'；字面量收进唯一写方常量
+# DRAFT_STARTED_STATUS。契约项：将来若引入状态词表，必须迁移已存在的 started 行。
 GET /api/ai_assemble_control/chat/list/completion/{clueId}/paging/{page}/size/{size}	category:E42P18	owner:O24数据层对齐(后端)	due:2026-11-12	cond:给 $2 显式 ::text/CAST；200 后删行
 GET /api/attendance/assemble/control/statistic/do	category:E42P10	owner:O24数据层对齐(后端)	due:2026-12-10	cond:指向真实唯一索引或改 UPDATE-then-INSERT；200 后删行
 POST /api/attendance/assemble/control/statistic/do	category:E42P10	owner:O24数据层对齐(后端)	due:2026-12-10	cond:指向真实唯一索引或改 UPDATE-then-INSERT；200 后删行
@@ -65,8 +71,6 @@ POST /api/portal/assemble/designer/page	category:E23502	owner:O24数据层对齐
 POST /api/portal/assemble/designer/page/create	category:E23502	owner:O24数据层对齐(后端)	due:2026-12-10	cond:补必填 portal_id/默认值或返回 400；后删行
 DELETE /api/portal/assemble/designer/script/{id}	category:E42804	owner:O24数据层对齐(后端)	due:2026-11-26	cond:统一 timestamp 绑定或强转；200 后删行
 DELETE /api/processplatform/assemble/designer/script/{id}	category:E42804	owner:O24数据层对齐(后端)	due:2026-11-26	cond:统一 timestamp 绑定或强转；200 后删行
-POST /api/processplatform/assemble/surface/draft/start/{id}	category:param-count	owner:O24数据层对齐(后端)	due:2026-11-19	cond:对齐 $1..$n 与绑定参数；200/400 后删行
-GET /api/processplatform/assemble/surface/draft/{id}/start	category:param-count	owner:O24数据层对齐(后端)	due:2026-11-19	cond:对齐 $1..$n 与绑定参数；200/400 后删行
 GET /api/processplatform/service/processing/touch/mergeitem	category:E42804	owner:O24数据层对齐(后端)	due:2026-11-26	cond:统一 timestamp 绑定或强转；200 后删行
 DELETE /api/processplatform/service/processing/work/{id}	category:E23503	owner:O24数据层对齐(后端)	due:2026-12-10	cond:先清子表或改 ON DELETE CASCADE；200 后删行
 GET /api/program_center/market/{flag}/installed/version	column:status	owner:O24数据层对齐(后端)	due:2026-11-12	cond:改 try_get 并统一实体/列类型；200 后删行

@@ -72,6 +72,15 @@ async fn organization_express_config_contract() {
     .await;
 }
 
+/// O24-3 批次 5：draft/start 写 xstatus='started'（GET/POST 共用 handler）。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn draft_start_status_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::draft_start_status::draft_start_status_flow(ctx.pool.clone())
+        .await;
+}
+
 /// O24-3 批次 4：INSERT 未写必填主键/规范列的遗留给定族（3 条 E23502）。
 #[ignore = "requires a running database server"]
 #[tokio::test]

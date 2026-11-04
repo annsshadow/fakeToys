@@ -1205,7 +1205,8 @@ mod idor_matrix {
     /// O24-3 批次 2 修掉 JSONB 参数绑定族（meeting/processplatform/queryview×2）：41 → 37。
     /// O24-3 批次 3 修掉查询设计器 permission 族（query/stat/table/view）：37 → 33。
     /// O24-3 批次 4 修掉 INSERT 缺必填 id/规范列族（console/document/message）：33 → 30。
-    const BASELINE_COUNT: usize = 30;
+    /// O24-3 批次 5 修掉 draft/start 参数失配（POST + GET 共用 handler）：30 → 28。
+    const BASELINE_COUNT: usize = 28;
 
     /// 棘轮基线：`<METHOD> <route>\t<reason>`，reason 见文件头。
     const BASELINE_RAW: &str = include_str!("idor_seeded_handler500_baseline.txt");
