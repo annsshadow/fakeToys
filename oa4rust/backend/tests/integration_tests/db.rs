@@ -127,6 +127,7 @@ fn is_mysql_dialect() -> bool {
 
 /// Initialize the test database and run migrations (async version for use within tokio runtime).
 pub async fn init_test_database_async() -> Arc<TestContext> {
+    super::error_capture::init();
     let db_name = format!("oa4rust_test_{}", std::process::id());
     TEST_DB_NAME.get_or_init(|| db_name.clone());
 
@@ -169,6 +170,7 @@ pub async fn init_test_database_async() -> Arc<TestContext> {
 
 /// Initialize the test database and run migrations.
 pub fn init_test_database() -> Arc<TestContext> {
+    super::error_capture::init();
     let db_name = format!("oa4rust_test_{}", std::process::id());
     TEST_DB_NAME.get_or_init(|| db_name.clone());
 

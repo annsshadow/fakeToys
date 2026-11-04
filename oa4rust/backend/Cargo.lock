@@ -3950,6 +3950,7 @@ dependencies = [
  "query_service_processing",
  "realtime",
  "reqwest",
+ "sea-orm",
  "search",
  "serde",
  "serde_json",
