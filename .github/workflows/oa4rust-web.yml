@@ -57,6 +57,13 @@ jobs:
           pnpm --version
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Verify generated API coverage tests are current
+        # 产物含人工增强（SPDX / 真实调用驱动 V8 覆盖），生成器已能复现；
+        # 谁改了 index.ts 却没重生成，这里直接红。
+        run: |
+          set -euo pipefail
+          pnpm gen-api-tests
+          git diff --exit-code -- frontend/packages/apis/src/api-coverage-generated.test.ts
       - name: Run Vitest tests
         run: pnpm test
       - name: Run mobile Vitest tests
