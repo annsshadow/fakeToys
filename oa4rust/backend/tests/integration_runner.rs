@@ -53,6 +53,13 @@ async fn data_integrity_scenarios() {
     integration_tests::scenarios::data_integrity::soft_delete_isolation().await;
 }
 
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn pagination_contract() {
+    let _ctx = init_test_database_async().await;
+    integration_tests::scenarios::pagination_contract::pagination_contract_flow().await;
+}
+
 #[cfg(test)]
 mod contract {
     use shared::response::ActionResult;
