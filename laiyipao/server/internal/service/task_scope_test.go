@@ -111,10 +111,20 @@ func TestTaskScopeListMatchesSeedData(t *testing.T) {
 func TestPeriodStartHandlesEveryKnownScope(t *testing.T) {
 	// 2026-10-07 是**周三**。刻意避开周一：
 	// daily 与 weekly 在周一是同一个日期，那样就分不出「忘加 weekly case」。
-	wed := time.Date(2026, 10, 7, 15, 30, 0, 0, time.Local)
-	mon := time.Date(2026, 10, 5, 15, 30, 0, 0, time.Local)
+	//
+	// ⚠️ R95：输入时刻固定用 **UTC** 构造，不随宿主机 `TZ` 漂移；期望值按
+	// R92 的契约（业务日界 = Asia/Shanghai 自然日）从**同一 instant** 推出。
+	//
+	// 改前这里用 `time.Local` 构造输入、`dayOf` 又按 `tm.Location()` 截断，
+	// 等于把「实现当时恰好用 t.Location()」当成了契约：
+	// CI 宿主机 `time.Local=UTC` 时期望 `+0000 UTC`，而 R92 的实现已改成
+	// `+0800 CST`，于是同一条断言 CI 红、开发机（+08:00）绿。
+	// 断言该检查的是「日界换算结果」，不是「偏移量恰好为 0」。
+	wed := time.Date(2026, 10, 7, 15, 30, 0, 0, time.UTC)
+	mon := time.Date(2026, 10, 5, 15, 30, 0, 0, time.UTC)
 	dayOf := func(tm time.Time) time.Time {
-		return time.Date(tm.Year(), tm.Month(), tm.Day(), 0, 0, 0, 0, tm.Location())
+		lt := tm.In(businessLocation)
+		return time.Date(lt.Year(), lt.Month(), lt.Day(), 0, 0, 0, 0, businessLocation)
 	}
 
 	want := map[string]time.Time{
@@ -140,6 +150,14 @@ func TestPeriodStartHandlesEveryKnownScope(t *testing.T) {
 		if got.Weekday() != expected.Weekday() {
 			t.Errorf("scope=%q 的星期不对：期望 %v，实际 %v", sc, expected.Weekday(), got.Weekday())
 		}
+	}
+
+	// R92 的真实错算窗口：UTC 16:00–24:00 = 北京 00:00–08:00。
+	// 该窗口内业务日界必须已经翻到**新的一天**；若实现退回按宿主机/UTC
+	// 截断，这里会算成前一天的零点（日期级错误，不只是偏移不同）。
+	utcLate := time.Date(2026, 10, 6, 16, 30, 0, 0, time.UTC) // = 北京 2026-10-07 00:30
+	if got, want := periodStart(utcLate, "daily"), time.Date(2026, 10, 7, 0, 0, 0, 0, businessLocation); !got.Equal(want) {
+		t.Errorf("UTC 16:00–24:00 窗口内 daily 应翻到业务时区的新一天，期望 %v，实际 %v", want, got)
 	}
 
 	// 清单里不得有重复项
