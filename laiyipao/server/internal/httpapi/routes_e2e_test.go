@@ -944,14 +944,15 @@ func TestE2ETasksClaim(t *testing.T) {
 
 	// 完成后领取 → 200；重复领取 → 403
 	//
-	// ⚠️ 日期必须用**服务端口径**的「今天」（Go 本地日期的零点，即 service 包里
-	// periodStart(now,"daily") 的算法），不能用 SQL 的 CURRENT_DATE：
-	// 本环境 PG 会话是 Asia/Shanghai、Go 本地是 UTC，16:00–24:00 UTC 这 8 小时里
-	// 两者差一天 —— 夹具按 PG 日写行、ClaimTask 按 Go 日读行，会读成 0/30。
-	// 跨包拿不到 periodStart（未导出），这里按同一算法算一次；两处若漂了，
-	// service 包的 TestTaskFixturesUseServiceDay 会红。
-	nowLocal := time.Now()
-	day := time.Date(nowLocal.Year(), nowLocal.Month(), nowLocal.Day(), 0, 0, 0, 0, nowLocal.Location())
+	// ⚠️ 日期必须用**服务端口径**的「今天」，不能用 SQL 的 CURRENT_DATE，
+	// 也不能用宿主机 `time.Local`：R92 把业务日界钉在 config.BusinessTimeZone，
+	// 而 CI 容器里 `time.Local` 是 UTC —— 北京 00:00–08:00（= UTC 16:00–24:00）
+	// 这 8 小时里两者差一天，夹具按 UTC 日写行、ClaimTask 按业务日读行，
+	// 会读成「任务未完成（0/30）」。2026-11-05 00:2x（= 11-04 16:2x UTC）
+	// 的 CI 就是这样红的（`TestE2ETasksClaim`），本地因为 Local=+08:00 复现不到。
+	// 跨包拿不到 periodStart（未导出），这里按同一**时区来源**算一次；
+	// taskFixtureDay 的日界口径由 TestTaskFixtureDayUsesBusinessZone 钉住。
+	day := taskFixtureDay(time.Now())
 	e.exec(t, `INSERT INTO user_tasks (user_id, task_id, task_date, progress)
 	           VALUES ($1,$2,$3,(SELECT target FROM tasks WHERE id=$2))
 	           ON CONFLICT (user_id, task_id, task_date) DO UPDATE SET progress = EXCLUDED.progress`,
@@ -966,6 +967,46 @@ func TestE2ETasksClaim(t *testing.T) {
 	status, _ = e.post(t, fmt.Sprintf("/api/v1/tasks/%d/claim", taskID), tok, nil)
 	if status != fiber.StatusForbidden {
 		t.Errorf("重复领取应 403，实际 %d", status)
+	}
+}
+
+// taskFixtureDay 返回任务夹具应写入的「今天」——业务时区的零点。
+//
+// 与服务端 periodStart(now,"daily") 同源：时区取自 config.BusinessTimeZone，
+// 不用宿主机 time.Local。`time.LoadLocation` 失败时退回固定 +08:00，
+// 与服务包的 loadBusinessLocation 一致（Asia/Shanghai 自 1991 年起无夏令时）。
+//
+// pgx 编码 DATE 时取该 time.Time 的 Year/Month/Day（不转 UTC），
+// 所以这里的 Location 必须就是业务时区，否则日期会差一天。
+func taskFixtureDay(now time.Time) time.Time {
+	loc, err := time.LoadLocation(config.BusinessTimeZone)
+	if err != nil {
+		loc = time.FixedZone("CST", 8*60*60)
+	}
+	lt := now.In(loc)
+	return time.Date(lt.Year(), lt.Month(), lt.Day(), 0, 0, 0, 0, loc)
+}
+
+// TestTaskFixtureDayUsesBusinessZone 钉住夹具日界：UTC 16:00–24:00（北京
+// 00:00–08:00）必须已经翻到**业务时区的新一天**。
+//
+// 这里用固定 instant 而不是 time.Now()，所以 CI（Local=UTC）与开发机
+// （Local=+08:00）跑出同一个结论 —— 2026-11-04 16:2x UTC 的 CI 红
+// （TestE2ETasksClaim 报「任务未完成（0/30）」）就是这条口径漂了。
+func TestTaskFixtureDayUsesBusinessZone(t *testing.T) {
+	// 2026-11-04 16:30 UTC = 北京 2026-11-05 00:30。
+	got := taskFixtureDay(time.Date(2026, 11, 4, 16, 30, 0, 0, time.UTC))
+	if y, m, d := got.Date(); y != 2026 || m != 11 || d != 5 {
+		t.Fatalf("UTC 16:30 的业务日应为 2026-11-05，实际 %04d-%02d-%02d", y, m, d)
+	}
+	// 另一侧边界：07:30 UTC（= 北京 15:30）仍是 11-04，防止把业务日
+	// 算成「永远比 UTC 多一天」这类错法也蒙对。
+	got = taskFixtureDay(time.Date(2026, 11, 4, 7, 30, 0, 0, time.UTC))
+	if y, m, d := got.Date(); y != 2026 || m != 11 || d != 4 {
+		t.Fatalf("UTC 07:30 的业务日应为 2026-11-04，实际 %04d-%02d-%02d", y, m, d)
+	}
+	if h, mi, s := got.Clock(); h != 0 || mi != 0 || s != 0 {
+		t.Fatalf("夹具日必须是零点，实际 %02d:%02d:%02d", h, mi, s)
 	}
 }
 
