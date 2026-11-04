@@ -205,10 +205,10 @@ def generate_crate_block(
     router_fn: Optional[str],
     router_params: str,
     is_async_router: bool = False,
-) -> Tuple[str, int]:
-    """Generate the test block for one crate. Returns (code_str, route_count)."""
+) -> Tuple[str, int, int]:
+    """Generate the test block for one crate. Returns (code_str, route_count, test_count)."""
     if not routes:
-        return "", 0
+        return "", 0, 0
 
     lines: List[str] = []
     async_tag = " async" if is_async_router else ""
@@ -217,6 +217,7 @@ def generate_crate_block(
     # Deduplicate test names: same handler can serve multiple routes.
     # Track {base_name: count} and append _<n> for duplicates.
     name_counts: Dict[str, int] = {}
+    emitted = 0
 
     for handler, method, path in sorted(routes, key=lambda r: (r[2], r[1], r[0])):
         base = f"parity__{rust_safe_name(rust_crate)}__{rust_safe_name(handler)}"
@@ -232,9 +233,12 @@ def generate_crate_block(
         )
         if test_code is not None:
             lines.append(test_code)
+            # skipped 路由只产出注释，不计入 Tests 计数（文件头不能谎报条数）
+            if not test_code.lstrip().startswith("// skipped:"):
+                emitted += 1
 
     lines.append("")
-    return "\n".join(lines), len(routes)
+    return "\n".join(lines), len(routes), emitted
 
 
 # Characters that are invalid in an HTTP request-target and would make
@@ -402,10 +406,12 @@ def main() -> None:
             router_fn, router_params, is_async = None, "", False
 
         if routes:
-            block, count = generate_crate_block(legacy_mod, rust_crate, routes, router_fn, router_params, is_async)
+            block, route_count, test_count = generate_crate_block(
+                legacy_mod, rust_crate, routes, router_fn, router_params, is_async
+            )
             module_blocks.append(block)
-            total_routes += count
-            total_tests += count
+            total_routes += route_count
+            total_tests += test_count
 
     header = build_header(total_crates, total_routes, total_tests)
     body = "\n".join(module_blocks)

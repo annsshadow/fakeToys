@@ -10,7 +10,7 @@
 // is registered on the crate's Router.  A NOT_FOUND (404) response means the
 // route is missing from the Rust implementation — a parity gap.
 //
-// Crates: 55   Routes: 4099   Tests: 4099
+// Crates: 55   Routes: 4099   Tests: 4098
 
 use axum::http::StatusCode;
 use tower::util::ServiceExt;
@@ -90282,5 +90282,5 @@ use tower::util::ServiceExt;
 // ──────────────────────────────────────────────────────────────────────────────
 #[test]
 fn parity_generated_test_count() {
-    assert!(4099 > 0, "no parity tests generated — check the Python script output");
+    assert!(4098 > 0, "no parity tests generated — check the Python script output");
 }

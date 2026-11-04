@@ -1,4 +1,4 @@
--- Auto-generated: add universal O2OA soft-delete column deleted_at.
+-- One-off generated (no reproducible generator): add universal O2OA soft-delete column deleted_at.
 -- Handlers filter WHERE deleted_at IS NULL on essentially every table.
 
 ALTER TABLE "schema_migrations" ADD COLUMN IF NOT EXISTS "deleted_at" TIMESTAMP WITHOUT TIME ZONE;

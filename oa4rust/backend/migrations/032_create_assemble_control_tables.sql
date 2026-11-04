@@ -1,4 +1,4 @@
--- Auto-generated: missing raw-SQL tables for *_assemble_control/*_express/*_service_processing handlers.
+-- One-off generated (no reproducible generator): missing raw-SQL tables for *_assemble_control/*_express/*_service_processing handlers.
 -- Types derived from handler row.get read types.
 
 CREATE TABLE IF NOT EXISTS "application" (

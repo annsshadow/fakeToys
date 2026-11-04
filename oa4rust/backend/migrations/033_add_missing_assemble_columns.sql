@@ -1,4 +1,4 @@
--- Auto-generated: missing columns referenced by handlers but absent from deployed tables.
+-- One-off generated (no reproducible generator): missing columns referenced by handlers but absent from deployed tables.
 
 ALTER TABLE "auth_group" ADD COLUMN IF NOT EXISTS "has_group" BOOLEAN;
 ALTER TABLE "auth_group" ADD COLUMN IF NOT EXISTS "has_role" BOOLEAN;

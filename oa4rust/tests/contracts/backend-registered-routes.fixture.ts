@@ -1,8 +1,10 @@
 // Copyright (C) 2026 annsshadow
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Auto-generated fixture: routes the oa4rust backend registers (axum .route literals).
-// Source: crates/*/src/{routes,u2_router,lib}.rs .route("/api/..."). Committed so the
-// desktop/mobile endpoint guards can verify frontend calls hit real backend routes.
+// 手工维护的快照 —— 仓库内没有生成器（此前的 "Auto-generated" 标注不实）。
+// 真源头是后端 crates/*/src 里的 axum .route() 字面量；本文件已知落后：
+// O15 扫描为 131 条已删路由残留、62 条后端新路由缺失；若按当前后端重生成，
+// desktop 守卫会暴露 132 个指向已删路由的 /api 调用（需先修前端或登记豁免）。
+// 详见 docs/plans/optimization-1000-oa4rust-track-b.md 的 O15 节。
 
 export const REGISTERED_BACKEND_ROUTES: string[] = [
   '/api/ai/app/list',

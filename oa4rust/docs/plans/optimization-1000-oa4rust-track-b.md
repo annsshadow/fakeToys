@@ -148,9 +148,23 @@
 
 ### 非生成物、仅需更正
 
-| 产物 | 问题 | 下一步 |
-|------|------|--------|
-| `crates/parity/src/behavior_tests.rs` | 头注释误写 AUTO-GENERATED（下一行自称 Hand-written） | 改注释即可，不涉及门禁 |
+| 产物 | 问题 | 处理结果 |
+|------|------|----------|
+| `crates/parity/src/behavior_tests.rs` | 头注释误写 AUTO-GENERATED（下一行自称 Hand-written） | 已改为「Hand-written behavior contract tests — 手工维护，非生成物」，并注明生成的 route_exists 用例在 `generated_tests.rs` |
+| `backend/tests/parity_suite.rs` | 头注释写死「785-route」，实际已 4099 路由 / 4098 用例 | 去掉硬编码数字，改为「条数见 generated_tests.rs 文件头」，避免再次腐化 |
+| `backend/migrations/032/033/037` | 头注释写「Auto-generated」，仓库内无生成器（一次性产出） | 改为「One-off generated (no reproducible generator)」，如实标注来源 |
+| `frontend/packages/apis/src/index.ts:1281` | 段落注释「Auto-generated — do not edit manually」，但该文件长期由人工修改（多个 fix 提交） | 改为「Hand-maintained（早期一次性生成，仓库内无生成器）— 修改时同步后端路由」 |
+| `crates/parity/src/generated_tests.rs` 文件头 | 「Tests: 4099」与实际 4098 条不符：1 条路径含空格无法构造 URI，只产出 skipped 注释 | `generate_parity_tests.py` 改为按实际产出计数；重生成后 `Routes: 4099   Tests: 4098`。门禁 `generated-artifacts` 仍绿 |
+| `tests/contracts/backend-registered-routes.fixture.ts` | 头注释称 Auto-generated，仓库无生成器；且快照落后：131 条已删路由残留、62 条后端新路由缺失 | 头注释改为「手工维护快照」并写明落后事实；不直接重生成——按当前后端重生成会让 desktop 守卫暴露 **132 个指向已删路由的 /api 调用**（bbs/assemble 与旧 `query_service_processing` 前缀），需与前端修复一并做，登记为下方追加债务 |
+
+### O15 追加发现（第 4 项全仓扫描）
+
+全仓扫描口径：源码前 25 行匹配 `AUTO-GENERATED` / `auto-generated` / `自动生成` / `DO NOT EDIT` / `请勿手动修改`。结论：除上表已更正的条目，其余声明都有真实生成器且已接门禁（`generated_routes.rs`、`openapi/src/{lib,request_types}.rs`、`generated_tests.rs`、route-methods fixture）或属于生成器脚本自身的输出模板，不再有「声称自动生成但无生成器」的文件头。
+
+| 产物 | 现状证据 | 下一步（可执行） |
+|------|----------|------------------|
+| `tests/contracts/backend-registered-routes.fixture.ts` | 4108 条 vs 后端生成路由：**131 条只在 fixture**（102 条 `/api/bbs/assemble/...` 已删 + 24 条旧 `query_service_processing` 前缀 + 3 条 processplatform 残留 + `/health`、`/openapi.json` 框架路由）、**62 条只在后端**（61 条 personal 别名 + `/ready`）。按后端重生成后模拟 desktop 守卫：**132 条 desktop `/api` 字面量命中失败**，全部是 bbs/assemble 与旧 query 前缀 | 修：先处理 132 条前端调用（改到新路由或逐条登记 `KNOWN_BACKEND_GAPS`），再让 `gen_mcp_tools.py` 同时输出本 fixture（与 route-methods 同一扫描、同一门禁 job）；在此之前保留手工快照，避免直接重生成导致 CI 红 |
+
 
 
 1. ~~迁移并发安全~~（O1 done）。
