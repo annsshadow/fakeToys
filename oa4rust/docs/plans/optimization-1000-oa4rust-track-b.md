@@ -18,6 +18,21 @@
 - 每轮先探针证明真实后果（改前证据），修复后证明「改后好 + 原功能没坏」（三段证据）。
 - 探针打不出真实后果 → 判定「不开轮」，记录结论换题。
 
+### 合并 main 后的强制流程（2026-11-04 三次事故固化）
+
+三次事故同源：**合并结果与生成物/路由表/基线不一致，而流程里没有任何一步会主动发现**。
+
+1. **行注释被当成表达式内容**：`.route(` 首参是多行表达式时，生成器把首参前一行的行注释并入了表达式，2 条路由在生成物里不可达 → CI 暴露、线上 404（O16-0a）。
+2. **自动合并静默丢路由**：合并 main 时两侧都改过路由表，文本合并无冲突，但语义已错——105 条 bbs 路由被静默合并掉。
+3. **基线被回退**：`coverage-baseline.json` 在合并中被回退到旧值，门禁因此「变绿」而非报警。
+
+规矩（任何 merge main 之后、push 之前强制执行，无例外）：
+
+1. 重跑生成器（`gen_mcp_tools.py` 等），`git diff` 必须为空或仅含本次真实改动；
+2. 跑生成物门禁（`check_generated_artifacts_up_to_date.py`、`check_openapi_up_to_date.py`）；
+3. 核对三份路由产物条数，与台账基线逐项对齐（`generated_routes.rs` 4874 方法 / 两份 fixture 4170 路径）；条数下降即视为合并丢失，查清再 push；
+4. 基线类文件（`coverage-baseline.json`、`idor_handler500_baseline.txt`、limit-scan 基线）逐文件确认未被合并回退（值比对，不看「门禁是否绿」）。
+
 ## 逐轮台账
 
 | 轮次 | 主题 | 状态 | 缺口/改法/证据摘要 | commit |
@@ -263,6 +278,56 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 ### O16 剩余
 无 A/B 类处置项；24 条 C 类已迁移。未给后端加旧前缀 alias：仓库内无外部客户端依赖旧路径的证据，不为假设性兼容加层。
 
+## O17 分页入口统一钳制（实质轮次：单请求读放大 / 内存 DoS 面）
+
+### 为什么是它
+
+「既有后续清单」第 6 项（输入上界缺失）里，分页 `size/page` 是唯一同时满足「真实生产后果 + 可实测 + 没做过」的开放项：任意已登录用户把 `size` 改成 `1e9`，一个本该 20 行的列表请求就变成全表读取，响应体/DB 传输/进程驻留都随数据量线性放大；`(page-1)*size` 在极端值下还会溢出（debug panic / release 负 offset → PG 500）。这不是「更快一点」，是把一个单请求即可触发的读放大面关掉。
+
+### 改前（探针：5 万行 `x_org_person`，同一台机/同一库/同一并发）
+
+| 场景 | p50 | p95 | 吞吐 | 错误率 | 响应/传输字节 |
+|------|-----|-----|------|--------|----------------|
+| 正常 `page/1/size/20`（20 次） | 23 ms | 26 ms | — | 0 | — |
+| `size=1e9` 单请求 ×5 | 688 ms | 862 ms | — | 0/5 | 8,316,806 B（8.3 MB） |
+| `size=1e9` 并发 8×5 | 1121 ms | 1166 ms | **7.08 req/s** | 0/40 | 332,672,240 B（317 MB） |
+
+### 改后（同一探针、同一数据、同一并发）
+
+| 场景 | p50 | p95 | 吞吐 | 错误率 | 响应/传输字节 |
+|------|-----|-----|------|--------|----------------|
+| 正常 `page/1/size/20`（20 次） | 23 ms | 26 ms | — | 0 | — |
+| `size=1e9` 单请求 ×5 | 27 ms | 28 ms | — | 0/5 | 31,998 B（≈32 KB） |
+| `size=1e9` 并发 8×5 | 33 ms | 41 ms | **223.46 req/s** | 0/40 | 1,279,920 B（1.2 MB） |
+
+同一场景改前→改后：响应字节 260×、并发吞吐 31.6×、p95 28×；正常分页 p50/p95 无回归（23/26 ms 不变）。
+
+### 缺口的量化口径
+
+- 静态盘点：`Path` 形态分页 handler 153 个，其中 **133 个没有任何 size 上界**（只有 `size.max(1)`、或直接把 `size` 绑进 `LIMIT`）；`page_window` 此前只被 20 处采用。
+- 另有 `page` 被当作 OFFSET 传入的 23 个 processplatform 旧式端点（`LIMIT size OFFSET page`），以及 body/query 派生分页（bbs subject filter、processplatform_service_processing）。
+
+### 改法
+
+- `shared::response::page_size(size) = size.clamp(1, 200)`；`page_window` 复用它。上界 200 与项目既有 `page_window` 约定一致（前端实测最大 `pageSize=100`）。
+- 静态盘点出的 133 个无上界 handler 中，实际改写 80 个计算点（含 23 个旧式端点核心、7 处 SQL 侧 offset）；其余是薄包装，经其核心函数间接覆盖。先脚本预演、逐文件 diff 复核；已钳制的 100/500/1000 点不动。
+- `page` 当 OFFSET 的 23 个旧式端点只钳 `size`，不改既有 offset 语义。
+- SQL 侧 `LIMIT $n OFFSET ($m-1)*$n` 的 7 处（program_center deploy/dict/script、portal script、query table/import/view）改为 Rust 先算 offset 再绑 `LIMIT $1 OFFSET $2`，避免 PG 侧 bigint 溢出。
+- 溢出点统一 `saturating_mul`（designer 4 处、personal log、program_center u3_snap、bbs subject 列表、service_processing）。
+- 顺带覆盖 body/query 派生分页（bbs subject filter 的 `count`、service_processing 的 `size`）。
+
+### 验证
+
+- `cargo clippy --all-targets -- -D warnings` 零告警；`cargo fmt --all --check` 绿。
+- 全新库 `oa4rust_o17_check`：先跑 migrate 用例建全表，再 `cargo test --workspace --lib` 全绿（0 FAILED）。
+  - 环境说明：本机开发库 `oa4rust` 有历史 schema 漂移（`auth_person_identity` 是旧版 `person_id` 列），迁移 019 在该库失败；这是存量环境问题、与本次改动无关，全新库上 migrate 用例 2/2 绿。
+- 探针是临时文件，跑完即删（不引入需要 DB + 5 万行数据的常驻测试）。
+
+### 遗留
+
+- 每页 200 上界现已成为对外行为的一部分：确有 >200 的导出场景应开显式 export 端点，不放开通用分页。
+- 字段类上界（超长字段/深嵌套/畸形 JSON）仍未做，保留在清单第 6 项。
+
 ## 既有后续清单
 
 1. ~~迁移并发安全~~（O1 done）。
@@ -270,7 +335,7 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 3. ~~限流器 key 空间洪泛~~（O11 done：50k 上界 + LRU 逐出）。
 4. ~~IDOR / 越权~~（O9 done：矩阵 + 读面归属闸家族）。
 5. 管理端路由鉴权穷举扫描。
-6. 输入健壮性：超长字段/深嵌套/畸形 JSON 的上界缺失。
+6. 输入健壮性：超长字段/深嵌套/畸形 JSON 的上界缺失（O17 已收口分页 `size/page` 上界；字段长度与嵌套深度仍未做）。
 7. 性能基线：真实数据量下关键路径 P95/P99。
 8. 数据完整性：业务写与审计写同事务、孤儿行、级联语义。
 9. **O10 候选（O9 棘轮桶，161 条 handler 级 500）**：sea-orm 实体类型与列类型系统性不匹配（实体 `Option<DateTime>` ↔ 列 TEXT、`i32` ↔ BIGINT——insert 的 RETURNING 全列解码必炸，bbs_forum_info 已实证根因）+ `{}` 体无校验直打 DB 族。逐族对齐实体定义与 migration 实态，修复一族下调棘轮基线。
