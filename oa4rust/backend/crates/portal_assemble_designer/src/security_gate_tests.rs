@@ -78,6 +78,8 @@ mod security_gate_tests {
                 name: Some("p".into()),
                 category: None,
                 content: None,
+                // 本用例只验 admin 门（portalId 校验在其之后才执行），父实体参数留空即可。
+                portalId: None,
             })
         };
         let savepage = || axum::Json(crate::SavePageRequest { content: None });
