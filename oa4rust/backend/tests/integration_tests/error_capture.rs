@@ -66,6 +66,17 @@ fn dump() {
     eprintln!("--- end captured ERROR logs ---");
 }
 
+/// Drain the buffered ERROR lines.
+///
+/// Used by tests that need **per-request** attribution (e.g. the seeded route
+/// scan records which SQL error belongs to which route) instead of a single
+/// dump at the end of the run.
+#[allow(dead_code)] // 供按需逐请求归因；integration_runner 自身仍只用末尾 dump
+pub fn drain() -> Vec<String> {
+    let mut buf = buffer().lock().unwrap_or_else(|e| e.into_inner());
+    std::mem::take(&mut *buf)
+}
+
 /// Install the capturing subscriber and panic hook. Idempotent.
 ///
 /// Safe to call from any test setup path; only the first call takes effect.

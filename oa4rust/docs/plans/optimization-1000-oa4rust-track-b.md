@@ -607,6 +607,34 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 
 **结果**：`run_integration_scenarios.py` → **27 passed / 0 failed**（ldap 豁免）；扫描器 `FAIL=35 → 28`，SILENT=4 / LOOSE=10 未变；fmt / clippy / 三个生成物检查全绿。
 
+### O19 行为级守卫：种子化全路由扫描（门禁补齐，不计实质轮）
+
+**为什么必须换判据**：批次 1/2 已实证静态扫描器认不出裸 `row.get("x")`（`get_process_instance` 5 处、`process_id_complex` 2 处整段漏报），`FAIL=28` 不是真数。根因是**这些 500 只在表里有行时才触发**：O9 的全路由扫描跑在空库上，反序列化永远不会发生。
+
+**做法**（`backend/tests/idor_matrix.rs::seeded_route_scan_must_have_zero_handler500`）：
+1. 独立 scratch 库 `oa_par_seeded`（每轮 DROP/CREATE + 全量迁移，与 IDOR 矩阵的 `oa_par_idor` 隔离，两测试可并行）；
+2. 从 `pg_attribute` 枚举 `public` 全部 383 张表，每表 ≥1 行；按 `format_type` 生成值：时间列真实 TIMESTAMP、布尔列 `true`、数组真数组、uuid 固定值、enum 取首个 label；文本列按列名启发式给「能触发转换失败」的值（布尔名 → `'true'`、时间名 → `'2026-01-01 10:00:00'`）；主键统一给 `1`，使 `{id}` 型路由能命中种子行；
+3. `session_replication_role=replica` 绕过 FK/触发器，用完恢复 `DEFAULT`（该连接回池后 app 复用，不能留 replica 语义）；
+4. 复用 O9 的 `scan_routes` / `fill_params` / `fire`：全量注册路由 × 有效 Owner 身份（`GET` 先、写路由后，避免写路由销毁种子行）；`mock` 路由与 arity 家族（`KNOWN_ARTIFACT_ROUTES` 4 条）显式排除并说明；
+5. **断言 `handler500 == 0`**（零容忍，不设棘轮基线）；失败按路由列出，并附本次请求 `error_capture` 捕获的真实 ERROR 串（新增 `drain()` 做逐请求归因）。
+
+**种子器特例（实库确认，均非豁免而是给合法值）**：
+- `public.pg_class` 是业务表（不是系统目录），`to_regclass('pg_class')` 会因 pg_catalog 隐式优先解析到系统表 → 全部改为 `public."<table>"` 限定；
+- `init_server_command.command` CHECK ∈ {`execute`,`stop`}；`x_query_neural_job.action` CHECK ∈ {`learn`,`generate`} → 按约束给合法值。
+
+**与「列类型扫描器」的区别（两者保留，门禁以行为级为准）**：
+
+| | 静态扫描器 `scan_row_get_column_mismatch.py` | 本守卫 |
+|---|---|---|
+| 判据 | 静态推断 SQL 列类型 vs Rust 泛型 | **行为级**：真的写行、真的发请求、真的读行 |
+| 裸 `row.get` | 认不出（必须报 UNKNOWN，当前漏报） | 会命中 |
+| 空库/无种子 | 仍可跑 | 必须有种子数据才有意义 |
+| 结论强度 | 线索 | 门禁 |
+
+**首次运行结果（2026-11-04，red）**：种子 **383 表成功 / 0 失败**；全量路由扫描得 **46 条 handler500**（36 条带 `error retrieving column ... / error deserializing column N`，覆盖 30 个唯一 panic 站点；10 条 handler 未输出 ERROR 日志，待逐条定性）。列名分布：`create_time`（22）、`xversion`（3）、`file_version`（2）、`asDefault`（2）、`start_time`、`total`、`deleted_at`、`max_forum_count`、`order_number` 各 1。**这直接证明「28 不是真数」**：静态扫描器没报的 `asDefault` / `max_forum_count` / `total` / `file_version` / `order_number` / `deleted_at` 都被抓到了。
+
+**CI job 状态（未接入，原因明确）**：守卫当前是红的，红的门禁不能进 CI——否则每个 PR 都被真实存量缺陷挡住，也无法完成「先绿 → 推临时坏点确认红 → 回滚再绿」的验证。接入前置条件：46 条清零（或用户明确同意改为棘轮基线），然后按上述三步验证后加 job，与 `integration-scenarios` 并列。**在此之前不允许把它写成 CI job 或改成 `continue-on-error` 蒙混过关。**
+
 ## O20 消费者证据判定（O18 六条红灯收口）
 
 判定规则只有一条：**有没有真实消费者**。证据源三处：前端/移动端调用、文档/契约（OpenAPI / MCP 路由表 / parity corpus）、O2OA parity 书面要求。下表每条都有可复核的引用，不做「应该有」式推断。

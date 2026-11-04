@@ -45,12 +45,18 @@
 //! `cargo test --test idor_matrix`（无库自动 skip）
 
 #[cfg(test)]
+#[path = "integration_tests/error_capture.rs"]
+mod error_capture;
+
+#[cfg(test)]
 mod idor_matrix {
     use axum::body::Body;
     use axum::http::{Method, Request, StatusCode};
     use std::collections::BTreeMap;
     use std::path::Path;
     use tower::ServiceExt;
+
+    use crate::error_capture;
 
     /// create_app 需要大栈（与 cors_guard 同因）
     const STACK: usize = 64 * 1024 * 1024;
@@ -78,15 +84,21 @@ mod idor_matrix {
 
     /// 探针专用 scratch 库（每轮重建，跑完 DROP）
     const SCRATCH_DB: &str = "oa_par_idor";
+    /// 种子化全路由扫描专用 scratch 库（与 IDOR 矩阵隔离，两测试可并行）
+    const SEEDED_DB: &str = "oa_par_seeded";
 
     /// 已知存量缺陷豁免（非 IDOR 面）：
     /// 这两条 legacy 上传路由的 handler 元数（3/4 参 Path）与路径槽位（1 参）
     /// 恒定不符（"Wrong number of path arguments" 500），已被 arity_probe 的
     /// 棘轮基线收录。语义修复需先核 o2server 契约（reference/scale 双段字面量
     /// 无来源），按约定「核不到不开轮」——矩阵显式豁免并计数，防静默扩大。
+    /// 后两条同理：注册路径字面量缺 `{param}` 但 handler 提取 Path（arity 家族，
+    /// 与「表里有行」无关），同属 arity_probe 面，种子化扫描不重复计。
     const KNOWN_ARTIFACT_ROUTES: &[&str] = &[
         "/api/file/upload/referencetype/reference/reference/scale/scale/{referenceType}",
         "/api/file/upload/referencetype/reference/reference/scale/scale/callback/callback/{referenceType}",
+        "/api/file/share/share/shareId/file/fileId/folder/folderId",
+        "/api/file/share/shield/id",
     ];
 
     #[derive(Clone, Copy, PartialEq)]
@@ -363,29 +375,29 @@ mod idor_matrix {
     }
 
     /// 重建 scratch 库（存在则强删），全量迁移。
-    async fn fresh_scratch() {
+    async fn fresh_scratch(dbname: &str) {
         let admin = pool_to("postgres");
         let c = admin.get().await.expect("admin 连接");
         c.execute(
-            &format!("DROP DATABASE IF EXISTS {SCRATCH_DB} WITH (FORCE)"),
+            &format!("DROP DATABASE IF EXISTS {dbname} WITH (FORCE)"),
             &[],
         )
         .await
         .expect("drop scratch");
-        c.execute(&format!("CREATE DATABASE {SCRATCH_DB}"), &[])
+        c.execute(&format!("CREATE DATABASE {dbname}"), &[])
             .await
             .expect("create scratch");
-        let pool = pool_to(SCRATCH_DB);
+        let pool = pool_to(dbname);
         shared::migrate::run_migrations(&pool)
             .await
             .expect("scratch 库迁移");
     }
 
-    async fn drop_scratch() {
+    async fn drop_scratch(dbname: &str) {
         if let Ok(c) = pool_to("postgres").get().await {
             let _ = c
                 .execute(
-                    &format!("DROP DATABASE IF EXISTS {SCRATCH_DB} WITH (FORCE)"),
+                    &format!("DROP DATABASE IF EXISTS {dbname} WITH (FORCE)"),
                     &[],
                 )
                 .await;
@@ -393,6 +405,10 @@ mod idor_matrix {
     }
 
     async fn setup() -> Option<(axum::Router, deadpool_postgres::Pool)> {
+        setup_with_db(SCRATCH_DB).await
+    }
+
+    async fn setup_with_db(dbname: &str) -> Option<(axum::Router, deadpool_postgres::Pool)> {
         if !shared::testing::is_db_available().await {
             eprintln!("SKIP: no database available");
             return None;
@@ -403,8 +419,8 @@ mod idor_matrix {
         std::env::set_var("OA4RUST_AUTH_RATE_LIMIT", "1000000");
 
         // 探针写流量全部落在 scratch 库（见文件头「探针卫生」）
-        fresh_scratch().await;
-        let pool = pool_to(SCRATCH_DB);
+        fresh_scratch(dbname).await;
+        let pool = pool_to(dbname);
         let client = pool.get().await.expect("pool client");
 
         // 身份夹具：A（UA 单元，非所有者）、B（UB 单元，受害者）、C（UC 单元，跨组织）、
@@ -702,7 +718,7 @@ mod idor_matrix {
 
         // 探针卫生收尾：DROP scratch 库（在 assert 之前，缺陷红也执行清理）
         drop(client);
-        drop_scratch().await;
+        drop_scratch(SCRATCH_DB).await;
 
         // handler 级 500 棘轮（O10 升级为集合基线）：基线文件逐条入库，
         // 「当前 ⊆ 基线」才绿——新增 500 路由红；修复后从基线删条目收缩。
@@ -747,6 +763,427 @@ mod idor_matrix {
             "IDOR 矩阵：{} 处越权缺陷：\n{}",
             defects.len(),
             defects.join("\n")
+        );
+    }
+
+    // ── 种子化全路由扫描（行为级守卫）──────────────────────────────────
+    //
+    // 静态扫描器（scripts/scan_row_get_column_mismatch.py）只能做「SQL 列类型 vs
+    // Rust 取值类型」的静态推断，裸 `row.get("x")` 无法识别 → 必然有残余漏报。
+    // 本守卫是行为级：真的往每张表写 ≥1 行非空/非默认值，再真的发全量路由请求，
+    // 只要 handler 真的读到了行，反序列化错配就会变成 500 被抓到。
+    // 门禁口径：handler500 == 0（不做棘轮基线，零容忍）。
+
+    struct SeedCol {
+        name: String,
+        coltype: String,
+        notnull: bool,
+        has_default: bool,
+        is_pk: bool,
+    }
+
+    fn q(s: &str) -> String {
+        format!("'{}'", s.replace('\'', "''"))
+    }
+
+    /// 列名启发式：这些 varchar/text 列若被代码按 bool 读，就是已知缺陷形态
+    /// （bam `xenabled` 等）。种成布尔字面量才能触发转换失败。
+    fn boolish_name(name: &str) -> bool {
+        let n = name.to_lowercase();
+        const KEYS: [&str; 12] = [
+            "enabled", "disabled", "active", "flag", "allowed", "valid", "locked", "deleted",
+            "public", "visible", "need", "has_",
+        ];
+        KEYS.iter().any(|k| n.contains(k)) || n.starts_with("is_") || n.ends_with("_is")
+    }
+
+    /// 列名启发式：文本列存时间串、代码按时间读（process_id_complex 那类）
+    fn timeish_name(name: &str) -> bool {
+        let n = name.to_lowercase();
+        n.ends_with("_at")
+            || n.ends_with("time")
+            || n.ends_with("date")
+            || n.starts_with("create_")
+            || n.starts_with("update_")
+            || n.starts_with("start_")
+            || n.starts_with("end_")
+            || n.starts_with("begin_")
+            || n.starts_with("finish_")
+            || n.starts_with("fire_")
+            || n.starts_with("expire")
+    }
+
+    fn pk_literal(t: &str) -> String {
+        if t == "uuid" {
+            "'00000000-0000-0000-0000-000000000001'".to_string()
+        } else if t.contains("int") {
+            "1".to_string()
+        } else {
+            "'1'".to_string()
+        }
+    }
+
+    fn array_literal(t: &str) -> Option<String> {
+        let base = t.trim_end_matches("[]").trim();
+        let elem = if base == "boolean" {
+            "true"
+        } else if base == "uuid" {
+            "00000000-0000-0000-0000-000000000001"
+        } else if base.contains("int")
+            || matches!(
+                base,
+                "numeric" | "decimal" | "real" | "double precision" | "money"
+            )
+        {
+            "1"
+        } else if base.contains("timestamp") {
+            "2026-01-01 10:00:00"
+        } else if base == "date" {
+            "2026-01-01"
+        } else if base == "jsonb" || base == "json" {
+            return Some(format!("ARRAY['{{\"seed\":1}}'::{base}]"));
+        } else {
+            "seed"
+        };
+        Some(format!("'{{{elem}}}'::{t}"))
+    }
+
+    /// CHECK 约束把文本列限死在枚举值上（migrations 实证）：
+    /// 通用 'seed' 会撞 23514，按约束给合法值才能种进去。
+    fn constrained_text(table: &str, col: &str) -> Option<&'static str> {
+        match (table, col) {
+            ("init_server_command", "command") => Some("'execute'"),
+            ("x_query_neural_job", "action") => Some("'learn'"),
+            _ => None,
+        }
+    }
+
+    /// 单列种子字面量；None = 该类型无法安全生成（列被跳过，失败由重试兜底）
+    fn seed_literal(
+        col: &SeedCol,
+        enums: &BTreeMap<String, String>,
+        table: &str,
+    ) -> Option<String> {
+        let t = col.coltype.to_lowercase();
+        let n = col.name.to_lowercase();
+        if col.is_pk {
+            return Some(pk_literal(&t));
+        }
+        if t.ends_with("[]") {
+            return array_literal(&t);
+        }
+        if t.starts_with("timestamp") || t.contains("timestamp") {
+            return Some("'2026-01-01 10:00:00'".into());
+        }
+        if t == "date" {
+            return Some("'2026-01-01'".into());
+        }
+        if t == "time" || t == "time without time zone" || t == "time with time zone" {
+            return Some("'10:00:00'".into());
+        }
+        if t == "boolean" {
+            return Some("true".into());
+        }
+        if t == "uuid" {
+            return Some("'00000000-0000-0000-0000-000000000001'".into());
+        }
+        if t == "json" || t == "jsonb" {
+            return Some("'{\"seed\":1}'".into());
+        }
+        if t == "bytea" {
+            return Some("decode('01','hex')".into());
+        }
+        if t.contains("int")
+            || matches!(
+                t.as_str(),
+                "numeric" | "decimal" | "real" | "double precision" | "money"
+            )
+        {
+            return Some("1".into());
+        }
+        if t == "inet" {
+            return Some("'127.0.0.1'".into());
+        }
+        if t == "cidr" {
+            return Some("'127.0.0.0/8'".into());
+        }
+        if t == "macaddr" {
+            return Some("'00:00:00:00:00:00'".into());
+        }
+        if t == "interval" {
+            return Some("'1 hour'".into());
+        }
+        if t.starts_with("bit") || t.starts_with("varbit") {
+            return Some("B'1'".into());
+        }
+        if t == "xml" {
+            return Some("'<seed/>'".into());
+        }
+        if t.contains("char") || t == "text" || t == "citext" || t == "name" {
+            if let Some(v) = constrained_text(table, &n) {
+                return Some(v.to_string());
+            }
+            // 缺陷形态优先：文本列存布尔/时间字面量，代码按 bool/时间读
+            if boolish_name(&n) {
+                return Some("'true'".into());
+            }
+            if timeish_name(&n) {
+                return Some("'2026-01-01 10:00:00'".into());
+            }
+            if n.ends_with("id") || n == "id" {
+                return Some("'1'".into());
+            }
+            return Some("'seed'".into());
+        }
+        // 枚举类型（format_type 返回类型名）：取第一个 label
+        if let Some(label) = enums.get(&col.coltype) {
+            return Some(q(label));
+        }
+        None
+    }
+
+    async fn try_insert_seed(
+        client: &deadpool_postgres::Client,
+        table: &str,
+        cols: &[SeedCol],
+        enums: &BTreeMap<String, String>,
+        only_required: bool,
+    ) -> Result<u64, deadpool_postgres::tokio_postgres::Error> {
+        let mut names = Vec::new();
+        let mut vals = Vec::new();
+        for c in cols {
+            if only_required && !(c.is_pk || (c.notnull && !c.has_default)) {
+                continue;
+            }
+            if let Some(v) = seed_literal(c, enums, table) {
+                names.push(format!("\"{}\"", c.name));
+                vals.push(v);
+            }
+        }
+        if names.is_empty() {
+            return client
+                .execute(
+                    &format!("INSERT INTO public.\"{table}\" DEFAULT VALUES"),
+                    &[],
+                )
+                .await;
+        }
+        let sql = format!(
+            "INSERT INTO public.\"{table}\" ({}) VALUES ({}) ON CONFLICT DO NOTHING",
+            names.join(", "),
+            vals.join(", ")
+        );
+        client.execute(&sql, &[]).await
+    }
+
+    /// tokio_postgres 的 Display 只有 "db error"；取真实 SQLSTATE/message
+    fn pg_err(e: &deadpool_postgres::tokio_postgres::Error) -> String {
+        match e.as_db_error() {
+            Some(d) => format!("{} (SQLSTATE {})", d.message(), d.code().code()),
+            None => e.to_string(),
+        }
+    }
+
+    /// 每张 public 表种 ≥1 行。返回（成功表集合，失败表+原因）。
+    /// 失败必须显式返回并打印——静默少种表 = 守卫静默变绿。
+    async fn seed_all_tables(pool: &deadpool_postgres::Pool) -> (Vec<String>, Vec<String>) {
+        let client = pool.get().await.expect("seeded pool client");
+        if client
+            .execute("SET session_replication_role = replica", &[])
+            .await
+            .is_err()
+        {
+            eprintln!("WARN: 无法关闭 FK/触发器（session_replication_role 需超级用户），依赖 FK 的种子会失败并列出");
+        }
+
+        let mut enums: BTreeMap<String, String> = BTreeMap::new();
+        if let Ok(rows) = client
+            .query(
+                "SELECT t.typname, e.enumlabel FROM pg_type t \
+                 JOIN pg_enum e ON e.enumtypid = t.oid \
+                 ORDER BY t.typname, e.enumsortorder",
+                &[],
+            )
+            .await
+        {
+            for r in rows {
+                let t: String = r.get(0);
+                let l: String = r.get(1);
+                enums.entry(t).or_insert(l);
+            }
+        }
+
+        let tables: Vec<String> = client
+            .query(
+                "SELECT c.relname::text FROM pg_class c \
+                 JOIN pg_namespace n ON n.oid = c.relnamespace \
+                 WHERE n.nspname = 'public' AND c.relkind IN ('r','p') \
+                 ORDER BY c.relname",
+                &[],
+            )
+            .await
+            .expect("枚举表失败")
+            .iter()
+            .map(|r| r.get(0))
+            .collect();
+
+        let mut seeded = Vec::new();
+        let mut failures = Vec::new();
+        for table in &tables {
+            let rows = match client
+                .query(
+                    "SELECT a.attname::text, format_type(a.atttypid, a.atttypmod), \
+                            a.attnotnull, (d.adbin IS NOT NULL), \
+                            EXISTS(SELECT 1 FROM pg_constraint pc \
+                                   WHERE pc.conrelid = a.attrelid AND pc.contype = 'p' \
+                                     AND a.attnum = ANY(pc.conkey)) \
+                     FROM pg_attribute a \
+                     LEFT JOIN pg_attrdef d ON d.adrelid = a.attrelid AND d.adnum = a.attnum \
+                     WHERE a.attrelid = to_regclass($1) AND a.attnum > 0 \
+                       AND NOT a.attisdropped AND a.attgenerated = '' AND a.attidentity = '' \
+                     ORDER BY a.attnum",
+                    &[&format!("public.\"{table}\"")],
+                )
+                .await
+            {
+                Ok(rows) => rows,
+                Err(e) => {
+                    failures.push(format!("{table}: 取列失败: {}", pg_err(&e)));
+                    continue;
+                }
+            };
+            let cols: Vec<SeedCol> = rows
+                .iter()
+                .map(|r| SeedCol {
+                    name: r.get(0),
+                    coltype: r.get(1),
+                    notnull: r.get(2),
+                    has_default: r.get(3),
+                    is_pk: r.get(4),
+                })
+                .collect();
+            if cols.is_empty() {
+                continue;
+            }
+            let mut last_err = None;
+            let mut ok = false;
+            for only_required in [false, true] {
+                match try_insert_seed(&client, table, &cols, &enums, only_required).await {
+                    Ok(_) => {
+                        ok = true;
+                        break;
+                    }
+                    Err(e) => last_err = Some(e),
+                }
+            }
+            if ok {
+                seeded.push(table.clone());
+            } else {
+                failures.push(format!(
+                    "{table}: {}",
+                    last_err
+                        .as_ref()
+                        .map(pg_err)
+                        .unwrap_or_else(|| "未知".into())
+                ));
+            }
+        }
+
+        // 恢复会话设置：该连接回池后仍会被 app 查询复用，不能留下 replica 语义
+        let _ = client
+            .execute("SET session_replication_role = DEFAULT", &[])
+            .await;
+        (seeded, failures)
+    }
+
+    /// 行为级守卫：种子化全路由扫描，断言 handler500 == 0。
+    #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+    async fn seeded_route_scan_must_have_zero_handler500() {
+        error_capture::init();
+        let Some((app, pool)) = setup_with_db(SEEDED_DB).await else {
+            return;
+        };
+        let (seeded, failures) = seed_all_tables(&pool).await;
+        eprintln!(
+            "== 种子化：成功 {} 表，失败 {} 表 ==",
+            seeded.len(),
+            failures.len()
+        );
+        for f in &failures {
+            eprintln!("  [种子失败] {f}");
+        }
+
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let all = scan_routes(root);
+        assert!(
+            all.len() >= 4000,
+            "路由数 {} 低于下限 4000（扫描器坏了？）",
+            all.len()
+        );
+        // 先读后写：写路由（DELETE/UPDATE）会销毁种子行，必须放在读之后
+        let mut ordered: Vec<&Route> = all.iter().filter(|r| r.method == "GET").collect();
+        ordered.extend(all.iter().filter(|r| r.method != "GET"));
+
+        // setup 阶段的 ERROR（迁移/夹具）不计入任何路由
+        let _ = error_capture::drain();
+        let mut handler500: BTreeMap<String, String> = BTreeMap::new();
+        for r in ordered {
+            if KNOWN_ARTIFACT_ROUTES.contains(&r.path.as_str()) {
+                continue;
+            }
+            // mock 路由（Handler 元数错配家族，O9 is_candidate 同口径排除）
+            if r.path.contains("mock") {
+                continue;
+            }
+            let url = fill_params(&r.path);
+            let _ = error_capture::drain();
+            let Some((status, body)) = fire(&app, r.method, &url, Some(TOK_B)).await else {
+                continue;
+            };
+            let errs = error_capture::drain();
+            if status.as_u16() == 500 {
+                handler500.insert(
+                    format!("{} {}", r.method, r.path),
+                    format!(
+                        "body={} | errs={}",
+                        body.chars().take(200).collect::<String>(),
+                        if errs.is_empty() {
+                            "<handler 未输出 ERROR 日志>".to_string()
+                        } else {
+                            errs.join(" || ")
+                        }
+                    ),
+                );
+            }
+        }
+
+        eprintln!("== 种子化扫描 handler500：{} 条 ==", handler500.len());
+        for (k, v) in &handler500 {
+            eprintln!("  {k} → {v}");
+        }
+
+        drop_scratch(SEEDED_DB).await;
+
+        assert!(
+            seeded.len() >= 300,
+            "种子成功表数 {} 低于下限 300（种子器坏了，守卫会静默变绿）",
+            seeded.len()
+        );
+        assert!(
+            failures.is_empty(),
+            "种子化失败表 {} 张（这些表的读路径不被覆盖）：\n{}",
+            failures.len(),
+            failures.join("\n")
+        );
+        assert!(
+            handler500.is_empty(),
+            "种子化路由扫描：{} 条 handler 级 500（读取种子行时反序列化失败）：\n{}",
+            handler500.len(),
+            handler500
+                .iter()
+                .map(|(k, v)| format!("{k}\n    body={v}"))
+                .collect::<Vec<_>>()
+                .join("\n")
         );
     }
 }
