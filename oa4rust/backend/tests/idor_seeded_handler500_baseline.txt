@@ -1,51 +1,65 @@
 # 种子化全路由扫描的 handler 500 基线（棘轮：当前集合必须与基线完全相等）
 #
-# 格式：<METHOD> <route>	<category:... | column:...>
-# 规则：修复一族后删对应行并下调 idor_matrix.rs 的 BASELINE_COUNT；
-#       复现不出来的行必须立刻删；基线外的新 500 一律红。
-# 每一行的转绿条件 / 责任人 / 期限见
-# docs/plans/optimization-1000-oa4rust-track-b.md「O23 第二步」表。
+# 格式（TAB 分隔 5 字段）：
+#   <METHOD> <route>\t<category:... | column:...>\towner:<责任人>\tdue:YYYY-MM-DD\tcond:<转绿条件>
+#
+# 规则：
+#   - 修复一族后删对应行并下调 idor_matrix.rs 的 BASELINE_COUNT；
+#   - 复现不出来的行必须立刻删；基线外的新 500 一律红；
+#   - 每行必须填齐 owner / due / cond；缺项或 due 非法 → 门禁 FAIL；
+#   - 当天日期（UTC+8）超过 due 而该行仍在基线 → 门禁 FAIL，
+#     报出超期行、超期天数、原定转绿条件（机器执行，不靠人记）。
 #
 # 2026-11-05 基线 1 → 40：O23 第二步给扫描身份补 admin 最小集 + 每条写路由前恢复
 # admin 会话，写路由第一次真正被执行，暴露出 39 条存量 500（GET 9 / 非 GET 31）。
 # 旧条目 ai chat list 的类别由 no-error-log 细化为 E42P18；其 500 本身仍在。
-GET /api/ai_assemble_control/chat/list/completion/{clueId}/paging/{page}/size/{size}	category:E42P18
-GET /api/attendance/assemble/control/statistic/do	category:E42P10
-POST /api/attendance/assemble/control/statistic/do	category:E42P10
-POST /api/bbs/assemble/control/update/control/config	category:wrong-type
-PUT /api/bbs/assemble/control/update/control/config	category:wrong-type
-GET /api/calendar_assemble_control/update/control/config	category:E42P10
-POST /api/console/send/message	category:E23502
-POST /api/document/cipher/{id}/persist/view/record	category:E23502
-POST /api/document/filter/list/{page}/size/{size}/manager	category:E42601
-POST /api/general/assemble/control/status/update	category:wrong-type
-PUT /api/general/assemble/control/status/update	category:wrong-type
-POST /api/hotpic/assemble/control/update/control/config	category:E23502
-POST /api/hotpic/assemble/control/user/hotpic	category:E23502
-POST /api/hotpic/create/hotpic	category:E23502
-GET /api/hotpic_assemble_control/create/hotpic	category:E23502
-GET /api/hotpic_assemble_control/update/control/config	category:E23502
-POST /api/meeting/core/entity/room/save/{id}	category:wrong-type
-POST /api/message/custom/create	category:E23502
-GET /api/organization/assemble/control/identity/{flag}/order/before/{followFlag}	category:wrong-type
-DELETE /api/organization/assemble/control/personattribute/{flag}	category:E42703
-PUT /api/organization/assemble/control/personattribute/{flag}	category:E42703
-DELETE /api/organization/assemble/control/unitattribute/{flag}	category:E42703
-PUT /api/organization/assemble/control/unitattribute/{flag}	category:E42703
-POST /api/portal/assemble/designer/page	category:E23502
-POST /api/portal/assemble/designer/page/create	category:E23502
-DELETE /api/portal/assemble/designer/script/{id}	category:E42804
-POST /api/portal/assemble/surface/publish/{id}	column:published
-DELETE /api/processplatform/assemble/designer/script/{id}	category:E42804
-POST /api/processplatform/assemble/surface/draft/start/{id}	category:param-count
-GET /api/processplatform/assemble/surface/draft/{id}/start	category:param-count
-POST /api/processplatform/assemble/surface/save/{id}	category:wrong-type
-GET /api/processplatform/service/processing/touch/mergeitem	category:E42804
-DELETE /api/processplatform/service/processing/work/{id}	category:E23503
-GET /api/program_center/market/{flag}/installed/version	column:status
-POST /api/query/assemble/designer/query/{flag}/permission	category:param-count
-POST /api/query/assemble/designer/stat/{id}/permission	category:param-count
-POST /api/query/assemble/designer/table/{flag}/permission	category:param-count
-POST /api/query/assemble/designer/view/{id}/permission	category:param-count
-POST /api/queryview/table/row/part/update/{tableFlag}/{id}	category:wrong-type
-POST /api/queryview/table/{flag}/row/{rid}/part/update	category:wrong-type
+# 计数口径：这里的 500 条数只统计**真正被执行到的路由**；「handler 500 → 0」
+# 若指枚举到的全部路由，历史上从未成立（写路由曾大面积 401 而从未执行）。
+#
+# 2026-11-05 基线 40 → 42（GET 11 / 非 GET 31）：O24 修掉探针的库隔离缺陷——
+# 原 create_app 用进程级 DATABASE_URL 建 SeaORM 连接，ORM 路由读的是**本机开发库**
+# 而非 scratch 种子库，基线随开发库垃圾行漂移（本地一度 41、CI 40）。
+# 改为 create_app_with_sea_orm + scratch URL 后，meeting_core_entity 两条 ORM 路由
+# 首次读到种子行，暴露 column:equipment 解码 500。CI 的旧 40 也因此漏了这两条。
+GET /api/ai_assemble_control/chat/list/completion/{clueId}/paging/{page}/size/{size}	category:E42P18	owner:O24数据层对齐(后端)	due:2026-11-12	cond:给 $2 显式 ::text/CAST；200 后删行
+GET /api/attendance/assemble/control/statistic/do	category:E42P10	owner:O24数据层对齐(后端)	due:2026-12-10	cond:指向真实唯一索引或改 UPDATE-then-INSERT；200 后删行
+POST /api/attendance/assemble/control/statistic/do	category:E42P10	owner:O24数据层对齐(后端)	due:2026-12-10	cond:指向真实唯一索引或改 UPDATE-then-INSERT；200 后删行
+POST /api/bbs/assemble/control/update/control/config	category:wrong-type	owner:O24数据层对齐(后端)	due:2026-11-26	cond:按列真实类型改写绑定参数；200 后删行
+PUT /api/bbs/assemble/control/update/control/config	category:wrong-type	owner:O24数据层对齐(后端)	due:2026-11-26	cond:按列真实类型改写绑定参数；200 后删行
+GET /api/calendar_assemble_control/update/control/config	category:E42P10	owner:O24数据层对齐(后端)	due:2026-12-10	cond:指向真实唯一索引或改 UPDATE-then-INSERT；200 后删行
+POST /api/console/send/message	category:E23502	owner:O24数据层对齐(后端)	due:2026-12-10	cond:补必填 id/默认值或返回 400；后删行
+POST /api/document/cipher/{id}/persist/view/record	category:E23502	owner:O24数据层对齐(后端)	due:2026-12-10	cond:补必填 id/默认值或返回 400；后删行
+POST /api/document/filter/list/{page}/size/{size}/manager	category:E42601	owner:O24数据层对齐(后端)	due:2026-12-10	cond:改参数化/正确拼 ORDER BY；200 后删行
+POST /api/general/assemble/control/status/update	category:wrong-type	owner:O24数据层对齐(后端)	due:2026-11-26	cond:按列真实类型改写绑定参数；200 后删行
+PUT /api/general/assemble/control/status/update	category:wrong-type	owner:O24数据层对齐(后端)	due:2026-11-26	cond:按列真实类型改写绑定参数；200 后删行
+POST /api/hotpic/assemble/control/update/control/config	category:E23502	owner:O24数据层对齐(后端)	due:2026-12-10	cond:补必填 application/默认值或返回 400；后删行
+POST /api/hotpic/assemble/control/user/hotpic	category:E23502	owner:O24数据层对齐(后端)	due:2026-12-10	cond:补必填 application/默认值或返回 400；后删行
+POST /api/hotpic/create/hotpic	category:E23502	owner:O24数据层对齐(后端)	due:2026-12-10	cond:补必填 application/默认值或返回 400；后删行
+GET /api/hotpic_assemble_control/create/hotpic	category:E23502	owner:O24数据层对齐(后端)	due:2026-12-10	cond:补必填 application/默认值或返回 400；后删行
+GET /api/hotpic_assemble_control/update/control/config	category:E23502	owner:O24数据层对齐(后端)	due:2026-12-10	cond:补必填 application/默认值或返回 400；后删行
+POST /api/meeting/core/entity/room/save/{id}	category:wrong-type	owner:O24数据层对齐(后端)	due:2026-11-26	cond:按列真实类型改写绑定参数；200 后删行
+GET /api/meeting/core/entity/room/list	column:equipment	owner:O24数据层对齐(后端)	due:2026-11-26	cond:改 try_get/Option 类型对齐实体；200 后删行
+GET /api/meeting/core/entity/room/{id}	column:equipment	owner:O24数据层对齐(后端)	due:2026-11-26	cond:改 try_get/Option 类型对齐实体；200 后删行
+POST /api/message/custom/create	category:E23502	owner:O24数据层对齐(后端)	due:2026-12-10	cond:补必填 id/默认值或返回 400；后删行
+GET /api/organization/assemble/control/identity/{flag}/order/before/{followFlag}	category:wrong-type	owner:O24数据层对齐(后端)	due:2026-11-26	cond:按列真实类型改写绑定参数；200 后删行
+DELETE /api/organization/assemble/control/personattribute/{flag}	category:E42703	owner:O24数据层对齐(后端)	due:2026-11-26	cond:按 migration 实态改列名/补列；200 后删行
+PUT /api/organization/assemble/control/personattribute/{flag}	category:E42703	owner:O24数据层对齐(后端)	due:2026-11-26	cond:按 migration 实态改列名/补列；200 后删行
+DELETE /api/organization/assemble/control/unitattribute/{flag}	category:E42703	owner:O24数据层对齐(后端)	due:2026-11-26	cond:按 migration 实态改列名/补列；200 后删行
+PUT /api/organization/assemble/control/unitattribute/{flag}	category:E42703	owner:O24数据层对齐(后端)	due:2026-11-26	cond:按 migration 实态改列名/补列；200 后删行
+POST /api/portal/assemble/designer/page	category:E23502	owner:O24数据层对齐(后端)	due:2026-12-10	cond:补必填 portal_id/默认值或返回 400；后删行
+POST /api/portal/assemble/designer/page/create	category:E23502	owner:O24数据层对齐(后端)	due:2026-12-10	cond:补必填 portal_id/默认值或返回 400；后删行
+DELETE /api/portal/assemble/designer/script/{id}	category:E42804	owner:O24数据层对齐(后端)	due:2026-11-26	cond:统一 timestamp 绑定或强转；200 后删行
+POST /api/portal/assemble/surface/publish/{id}	column:published	owner:O24数据层对齐(后端)	due:2026-11-12	cond:改 try_get 并统一实体/列类型；200 后删行
+DELETE /api/processplatform/assemble/designer/script/{id}	category:E42804	owner:O24数据层对齐(后端)	due:2026-11-26	cond:统一 timestamp 绑定或强转；200 后删行
+POST /api/processplatform/assemble/surface/draft/start/{id}	category:param-count	owner:O24数据层对齐(后端)	due:2026-11-19	cond:对齐 $1..$n 与绑定参数；200/400 后删行
+GET /api/processplatform/assemble/surface/draft/{id}/start	category:param-count	owner:O24数据层对齐(后端)	due:2026-11-19	cond:对齐 $1..$n 与绑定参数；200/400 后删行
+POST /api/processplatform/assemble/surface/save/{id}	category:wrong-type	owner:O24数据层对齐(后端)	due:2026-11-26	cond:按列真实类型改写绑定参数；200 后删行
+GET /api/processplatform/service/processing/touch/mergeitem	category:E42804	owner:O24数据层对齐(后端)	due:2026-11-26	cond:统一 timestamp 绑定或强转；200 后删行
+DELETE /api/processplatform/service/processing/work/{id}	category:E23503	owner:O24数据层对齐(后端)	due:2026-12-10	cond:先清子表或改 ON DELETE CASCADE；200 后删行
+GET /api/program_center/market/{flag}/installed/version	column:status	owner:O24数据层对齐(后端)	due:2026-11-12	cond:改 try_get 并统一实体/列类型；200 后删行
+POST /api/query/assemble/designer/query/{flag}/permission	category:param-count	owner:O24数据层对齐(后端)	due:2026-11-19	cond:对齐 $1..$n 与绑定参数；200/400 后删行
+POST /api/query/assemble/designer/stat/{id}/permission	category:param-count	owner:O24数据层对齐(后端)	due:2026-11-19	cond:对齐 $1..$n 与绑定参数；200/400 后删行
+POST /api/query/assemble/designer/table/{flag}/permission	category:param-count	owner:O24数据层对齐(后端)	due:2026-11-19	cond:对齐 $1..$n 与绑定参数；200/400 后删行
+POST /api/query/assemble/designer/view/{id}/permission	category:param-count	owner:O24数据层对齐(后端)	due:2026-11-19	cond:对齐 $1..$n 与绑定参数；200/400 后删行
+POST /api/queryview/table/row/part/update/{tableFlag}/{id}	category:wrong-type	owner:O24数据层对齐(后端)	due:2026-11-26	cond:按列真实类型改写绑定参数；200 后删行
+POST /api/queryview/table/{flag}/row/{rid}/part/update	category:wrong-type	owner:O24数据层对齐(后端)	due:2026-11-26	cond:按列真实类型改写绑定参数；200 后删行

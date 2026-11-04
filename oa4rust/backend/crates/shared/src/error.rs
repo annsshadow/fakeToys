@@ -94,7 +94,7 @@ pub enum AppError {
     /// 与 500 分桶：这是「部署没配好」，不是「代码炸了」。`item` 写明缺哪一项
     ///（如 `ANDFX_KEY`、`ZWDINGDING_API_BASE`），便于运维直接定位。
     #[error("service not configured: missing {item}")]
-    MissingConfig { item: String },
+    MissingConfig { item: String, context: String },
 }
 
 impl AppError {
@@ -113,8 +113,13 @@ impl AppError {
     }
 
     /// 缺少配置项（环境变量/配置行），映射 503 并在响应体中写明缺失项。
+    #[track_caller]
     pub fn missing_config(item: impl Into<String>) -> Self {
-        Self::MissingConfig { item: item.into() }
+        let loc = std::panic::Location::caller();
+        Self::MissingConfig {
+            item: item.into(),
+            context: format!("{}:{}", loc.file(), loc.line()),
+        }
     }
 
     /// 500 日志中的原始错误链；无 source 的变体返回 `-`。
@@ -122,7 +127,13 @@ impl AppError {
         match self {
             AppError::Database(e) => format!("{e:?}"),
             AppError::InternalAnyhow(e) => format!("{e:?}"),
-            AppError::InternalWithSource { cause, .. } => cause.clone(),
+            // O24：file:line 必须进日志。此前只记 cause，`at` 上下文只活在对象里，
+            // 日志无法定位「哪一行丢的 source」。
+            AppError::InternalWithSource { context, cause } => {
+                format!("{context}: {cause}")
+            }
+            // 503 没有 source 链，但同样要给出「哪一行读的配置」。
+            AppError::MissingConfig { context, .. } => context.clone(),
             _ => "-".to_string(),
         }
     }
@@ -382,6 +393,10 @@ mod o23_tests {
         assert!(
             logged.contains("marker-source"),
             "日志缺原始 source 链: {logged}"
+        );
+        assert!(
+            logged.contains("unit:9"),
+            "日志缺 file:line 上下文: {logged}"
         );
     }
 }

@@ -1,7 +1,10 @@
 // Copyright (C) 2026 annsshadow
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-//! Captures ERROR-level tracing events in memory for integration tests.
+//! Captures WARN/ERROR-level tracing events in memory for integration tests.
+//!
+//! 5xx 中 500 走 ERROR、503（缺配置/依赖不可用）走 WARN；O24 的 source 自证
+//! 需要同时拿到这两类日志行，故上限放到 WARN。
 //!
 //! The integration suite drives real HTTP requests against the full app. When a
 //! handler returns `500 ExceptionInternal`, the underlying cause (usually an SQL
@@ -84,7 +87,7 @@ pub fn init() {
     static INIT: Once = Once::new();
     INIT.call_once(|| {
         let subscriber = tracing_subscriber::fmt()
-            .with_max_level(tracing::Level::ERROR)
+            .with_max_level(tracing::Level::WARN)
             .with_ansi(false)
             .with_writer(|| CaptureWriter)
             .finish();

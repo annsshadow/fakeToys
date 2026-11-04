@@ -838,6 +838,23 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 
 ## O23 门禁可信度（第二步：不依赖枚举顺序）
 
+### 计数口径（O24 收口，引用本台账前必读）
+
+**本台账所有「handler 500 → N 条」的数字，统计口径都是「真正被执行到的路由」，不是
+「枚举到的全部路由」。** 这不是同义词，差别曾让结论偏乐观：
+
+- O9/O21 时期写路由从未真正执行（非 admin 身份 → 大面积 401，加上 logout/删会话把扫描
+  token 自我注销），枚举到的写路由有 1980 条，但执行到的写路由 ≈ 0；
+- 因此那段时间写的「handler 500 → 0」实际含义是「**在被执行到的路由上 → 0**」；
+- O23 第二步补齐 admin 身份 + 每条写路由前恢复会话后，写路由首次真正执行，存量 500
+  从 1 暴露到 40（GET 9 / 非 GET 31）。**O24 修掉探针库隔离缺陷后复测为 42**
+  （GET 11 / 非 GET 31）：ORM 路由此前读的是开发库而非种子库，漏了 2 条
+  `column:equipment`。引用 40 这个数字时，必须注明它是「O23 第二步当时的实测」。
+
+**引用规则**：以后任何「500 已清零 / 只剩 N 条」的结论，必须同时给出该轮
+`执行 读 x / 写 y（共 z）` 的覆盖行；只引用条数、不引用覆盖面的，一律视为口径不完整。
+基线文件头与本节都保留这条说明，防止后人拿旧数字当结论。
+
 ### 改法（`backend/tests/idor_matrix.rs`）
 
 1. **稳定排序**：`scan_routes` 结果先按 `path`、再按 `method` 排序，读段/写段都保持该顺序；
@@ -888,7 +905,8 @@ test result: FAILED. 0 passed; 1 failed
 ### 基线 1 → 40（写路由第一次真正执行暴露的存量债）
 
 写路由从未执行是「本地 10 条 / CI 14 条」的另一半根因。补 admin 后，存量 500 从 1 条
-暴露到 **40 条（GET 9 / 非 GET 31）**。全部按族登记条件如下
+暴露到 **40 条（GET 9 / 非 GET 31）**；O24 修复探针库隔离后复测 **42 条
+（GET 11 / 非 GET 31）**（下表已含新增的 `column:equipment` 2 条）。全部按族登记条件如下
 （完整 key 在 `backend/tests/idor_seeded_handler500_baseline.txt`，行数==`BASELINE_COUNT`）：
 
 | 族（reason） | 路由（方法 + 路径） | 根因 | 转绿条件 | 责任人 | 期限 |
@@ -901,6 +919,7 @@ test result: FAILED. 0 passed; 1 failed
 | `category:param-count`（6） | `GET/POST /api/processplatform/assemble/surface/draft*`；`POST /api/query/assemble/designer/{query,stat,table,view}/.../permission` | SQL 占位符数量与绑定参数不一致 | 对齐 `$1..$n` 与参数；200/400 后删 6 行 | O24 数据层对齐（后端） | 2026-11-19 |
 | `category:E42P18`（1） | `GET /api/ai_assemble_control/chat/list/completion/{clueId}/paging/{page}/size/{size}` | `$2` 类型无法推断 | 给 `$2` 显式 `::text`/CAST；200 后删行 | O24 数据层对齐（后端） | 2026-11-12 |
 | `column:status` / `column:published`（2） | `GET /api/program_center/market/{flag}/installed/version`；`POST /api/portal/assemble/surface/publish/{id}` | 裸 `row.get` 解码列类型错配（panic → 500） | 改 `try_get` 并统一实体/列类型；200 后删 2 行 | O24 数据层对齐（后端） | 2026-11-12 |
+| `column:equipment`（2，O24 新增） | `GET /api/meeting/core/entity/room/list`；`GET /api/meeting/core/entity/room/{id}` | SeaORM 实体 `Option<String>`/TEXT 对 JSONB 列解码不匹配 | 改 `try_get`/`Option` 类型对齐实体；200 后删 2 行 | O24 数据层对齐（后端） | 2026-11-26 |
 | `category:E23503`（1） | `DELETE /api/processplatform/service/processing/work/{id}` | `x_timer_job` 外键阻断删除 | 先清子表或改 `ON DELETE CASCADE`；200 后删行 | O24 数据层对齐（后端） | 2026-12-10 |
 | `category:E42601`（1） | `POST /api/document/filter/list/{page}/size/{size}/manager` | 动态 SQL 拼接 `ORDER` 语法错 | 改参数化/正确拼 ORDER BY；200 后删行 | O24 数据层对齐（后端） | 2026-12-10 |
 
@@ -914,4 +933,75 @@ test result: FAILED. 0 passed; 1 failed
 
 **纪律**：基线是「已登记的技术债」，不是「有基线所以能绿」。新增任何基线路必须同时
 在这两张表登记 转绿条件/责任人/期限；没有到期条件的行不许加。
+
+## O24 防退化（语义自证 + 期限机检）
+
+### O24-1 3895 处机械替换语义未变（证据）
+
+完整证据（方法、逐类逐字对照、日志原文、14 处 `missing_config` 逐条）：
+[`docs/plans/o24-mechanical-replacement-evidence.md`](./o24-mechanical-replacement-evidence.md)。
+
+同一 harness、同一 scratch 库、同一份种子（383/383），改前 `e2e9beec5` / 改后工作树：
+
+| 断言 | 结果 |
+|---|---|
+| 唯一路由键 | 4355 / 4355，集合完全相同（`only_before=0`、`only_after=0`） |
+| 状态码分布 | 除 500 51→42、503 7→16 外，200/307/400/401/403/404/405/422 **逐项相等** |
+| 4xx→5xx / 5xx→4xx | **0 条 / 0 条** |
+| 状态变化 | 9 条，全部 500→503（全部缺配置；`prompt` 不变，仅 `message` 变为 `service not configured: missing <项>`） |
+| 同状态 body 差异 | 642 条，**全部 200**；641 条 JSON 的 key 集合 / `type` / `message` / `prompt` / `count`/`size`/`position`/`spent` 逐字相同，1 条 SSE 仅 `conversationId` 不同 |
+| source 保全 | 500 日志含 `file:line` + `ColumnDecode` 完整链；503 日志含 `MissingConfig` 的 `file:line`（两行原文见证据文档第 5 节） |
+| 409 | 本仓无 409 生产者，**不可达**，不伪造样本 |
+
+**发现（先报告，未自行裁定）**：`organization/core/express` 的 `/config`、`/status` 不只是
+换措辞——改前 `config_value`（TEXT）被直接按 `bool` 解码，**有合法行时也会 500**；改后
+按 `String` 读再 `parse::<bool>()`，有合法行时是 200。这是 O23 台账已写明的设计内修复，
+但确属成功路径上的行为变化；本地种子库没有 `sync_enabled` 行，扫描只观测到 503 分支。
+**缺口**：目前没有「有 `sync_enabled` 行」的集成用例钉住 200 分支，列入后续。
+
+`missing_config` 实际落点 **14 处**（用户口径 12 处是 O23 早期统计；后续把
+`ANDFX_ENTER_ID` 与 `ZWDINGDING_APP_ACCESS_TOKEN` 也纳入）。逐处改前/改后见证据文档第 7 节。
+
+### O24-2 期限由机器执行（`backend/tests/idor_matrix.rs`）
+
+基线文件改为 **5 字段 TAB**：`<METHOD> <route>\t<reason>\towner:<责任人>\tdue:YYYY-MM-DD\tcond:<转绿条件>`。
+
+门禁顺序（任何一项失败即 FAIL，不继续）：
+
+1. 解析 → **下限断言**：解析行数 ≥ 当前实际 500 条数（防解析器静默失效后「0 行 / 0 条」假绿）；
+2. 元数据：每行必须有 `METHOD`+路径、`column:`/`category:` reason、`owner`、`cond`、
+   `due` 合法 `YYYY-MM-DD`；
+3. **到期**：以 UTC+8 业务日判断，`today > due` 且该行仍在基线 → 报出
+   `行 | due | 超期 N 天 | 责任人 | 原定转绿条件`；
+4. 去重；行数 == `BASELINE_COUNT`；棘轮集合相等。
+
+破坏实验（全部实际执行）：
+
+| 实验 | 预期 | 实际 |
+|---|---|---|
+| `E42P18` 行 due 改 `2026-11-04` | 红 | `基线中有 1 行已超过期限仍在基线（今天 2026-11-05，UTC+8）：GET /api/ai_assemble_control/chat/... | due 2026-11-04 | 超期 1 天 | 责任人 O24数据层对齐(后端) | 原定转绿条件：给 $2 显式 ::text/CAST；200 后删行` |
+| 删 `GET /api/meeting/core/entity/room/list` 的 `owner:` | 红 | `基线条目格式/元数据错误：缺少 owner（责任人）: GET /api/meeting/core/entity/room/list` |
+| 复原 | 绿 | `== 棘轮基线：42 条（当前 42 条），集合相等 ==`，`test result: ok` |
+
+### 计数口径校准：基线 40 → 42
+
+O24 修掉探针的**库隔离缺陷**（`create_app` 用进程级 `DATABASE_URL` 建 SeaORM 连接，
+ORM 路由读的是本机开发库而非 scratch 种子库，导致基线随开发库垃圾行漂移：本地 41 / CI 40）。
+改为 `create_app_with_sea_orm` + `create_sea_orm_pool_with_url(scratch)` 后，
+`meeting_core_entity` 两条 ORM 路由首次读到种子行，暴露 `column:equipment` 500：
+
+```text
+GET /api/meeting/core/entity/room/list   column:equipment
+GET /api/meeting/core/entity/room/{id}   column:equipment
+```
+
+基线因此 **40 → 42（GET 11 / 非 GET 31）**，`BASELINE_COUNT=42`，集合相等。CI 的旧 40
+不是「更干净」，而是**扫描器当时没读到种子库**——这也是本次把口径写进台账的原因。
+
+### O24-3 待修 42 条（顺序与纪律）
+
+先修**非 GET 31 条**（写路径报错会让用户以为操作成功/失败不确定），GET 11 条其后。
+按根因族分批（`wrong-type` 9 → `E23502` 10 → `param-count` 6 → `E42703` 4 →
+`E42804` 3 → `E42P10` 3 → `column:*` 4 → 其余 3），**每批单独提交、单独破坏实验**，
+每修一族删对应行并同步下调 `BASELINE_COUNT`；禁止一次性全清。
 

@@ -378,6 +378,15 @@ mod idor_matrix {
             .unwrap()
     }
 
+    /// `DATABASE_URL` 解析后覆盖 dbname 的完整 URL（给 SeaORM 用）。
+    fn db_url(dbname: &str) -> String {
+        let url = std::env::var("DATABASE_URL")
+            .unwrap_or_else(|_| "postgres://o2server:password@localhost:5432/oa4rust_test".into());
+        let mut parsed = url::Url::parse(&url).expect("DATABASE_URL 解析失败");
+        parsed.set_path(dbname);
+        parsed.to_string()
+    }
+
     /// 重建 scratch 库（存在则强删），全量迁移。
     async fn fresh_scratch(dbname: &str) {
         let admin = pool_to("postgres");
@@ -520,7 +529,7 @@ mod idor_matrix {
             .expect("过期化会话");
 
         let rate_limiter = shared::rate_limit::RateLimiter::new();
-        let app = create_app_big_stack(pool.clone(), session_manager.clone(), rate_limiter);
+        let app = create_app_big_stack(pool.clone(), dbname, session_manager.clone(), rate_limiter);
         Some((app, pool, session_manager))
     }
 
@@ -556,11 +565,20 @@ mod idor_matrix {
             .expect("恢复扫描 admin 会话");
     }
 
+    /// O24：应用必须完全落在 scratch 库。
+    ///
+    /// `oa4rust::create_app` 会用进程级 `DATABASE_URL` 建 SeaORM 连接，那条连接指向
+    /// **开发库**；探针因此一直在「PG 走 scratch、ORM 走开发库」的混合状态下跑，
+    /// 结果随本机开发库里的历史垃圾行漂移（实证：cms 500 在本机时有时无）。
+    /// 改为 `create_app_with_sea_orm` + 显式 scratch URL（与
+    /// `tests/integration_tests/helpers.rs` 同一做法），本地与 CI 才等价。
     fn create_app_big_stack(
         pool: deadpool_postgres::Pool,
+        dbname: &str,
         session_manager: shared::session::SessionManager,
         rate_limiter: shared::rate_limit::RateLimiter,
     ) -> axum::Router {
+        let sea_url = db_url(dbname);
         std::thread::Builder::new()
             .name("idor-app".to_string())
             .stack_size(STACK)
@@ -570,9 +588,17 @@ mod idor_matrix {
                     .build()
                     .expect("runtime")
                     .block_on(async move {
-                        oa4rust::create_app(pool, session_manager, rate_limiter)
+                        let sea_orm = shared::db::create_sea_orm_pool_with_url(sea_url)
                             .await
-                            .expect("create_app")
+                            .expect("scratch SeaORM 池");
+                        oa4rust::create_app_with_sea_orm(
+                            pool,
+                            sea_orm,
+                            session_manager,
+                            rate_limiter,
+                        )
+                        .await
+                        .expect("create_app")
                     })
             })
             .expect("spawn")
@@ -1155,11 +1181,11 @@ mod idor_matrix {
         (seeded, failures)
     }
 
-    /// 当前基线条目数上限（必须与基线文件行数相等）。
+    /// 当前基线条目数上限（必须与基线文件行数相等）。O24 起为 42。
     /// 每修复一条：删对应基线路 → 下调本常量，同 PR 可见。
-    /// O23 第二步写路由首次真正执行后，存量 500 从 1 暴露到 40；每行的
-    /// 转绿条件/责任人/期限登记在台账「O23 第二步」表。
-    const BASELINE_COUNT: usize = 40;
+    /// O23 第二步写路由首次真正执行后，存量 500 从 1 暴露到 40；O24 修掉探针
+    /// 库隔离缺陷后 ORM 路由首次读种子库，再 +2（meeting room 的 equipment 解码）。
+    const BASELINE_COUNT: usize = 42;
 
     /// 棘轮基线：`<METHOD> <route>\t<reason>`，reason 见文件头。
     const BASELINE_RAW: &str = include_str!("idor_seeded_handler500_baseline.txt");
@@ -1200,6 +1226,17 @@ mod idor_matrix {
                 return format!("column:{col}");
             }
         }
+        // sqlx 的 ColumnDecode 形态：`index: "\"equipment\""`（不是 "error retrieving column"）
+        if let Some(idx) = joined.find("ColumnDecode { index: \"\\\"") {
+            let rest = &joined[idx + "ColumnDecode { index: \"\\\"".len()..];
+            let col: String = rest
+                .chars()
+                .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
+                .collect();
+            if !col.is_empty() {
+                return format!("column:{col}");
+            }
+        }
         if let Some(idx) = joined.find("code: SqlState(") {
             let rest = &joined[idx + "code: SqlState(".len()..];
             let code: String = rest
@@ -1222,11 +1259,57 @@ mod idor_matrix {
         "category:no-error-log".to_string()
     }
 
-    fn parse_baseline(raw: &str) -> Vec<String> {
+    /// 基线的一行：`key\t<reason>` 决定棘轮相等性，`owner/due/cond` 是到期门禁的
+    /// 元数据（缺项、非法日期、超期都会让门禁红）。
+    struct BaselineRow {
+        key: String,
+        reason: String,
+        owner: String,
+        due: String,
+        cond: String,
+    }
+
+    impl BaselineRow {
+        /// 棘轮比较用的身份串（不含元数据，改责任人/日期不会影响相等性）。
+        fn identity(&self) -> String {
+            format!("{}\t{}", self.key, self.reason)
+        }
+    }
+
+    fn parse_baseline(raw: &str) -> Vec<BaselineRow> {
         raw.lines()
-            .map(|l| l.trim_end().to_string())
+            .map(|l| l.trim_end())
             .filter(|l| !l.is_empty() && !l.starts_with('#'))
+            .map(|l| {
+                let fields: Vec<&str> = l.split('\t').collect();
+                BaselineRow {
+                    key: fields.first().copied().unwrap_or("").to_string(),
+                    reason: fields.get(1).copied().unwrap_or("").to_string(),
+                    owner: fields
+                        .get(2)
+                        .and_then(|f| f.strip_prefix("owner:"))
+                        .unwrap_or("")
+                        .to_string(),
+                    due: fields
+                        .get(3)
+                        .and_then(|f| f.strip_prefix("due:"))
+                        .unwrap_or("")
+                        .to_string(),
+                    cond: fields
+                        .get(4)
+                        .and_then(|f| f.strip_prefix("cond:"))
+                        .unwrap_or("")
+                        .to_string(),
+                }
+            })
             .collect()
+    }
+
+    /// 业务时区（UTC+8）的「当天」。不用 CI 的 UTC 日界：否则北京时间 00:00-08:00
+    /// 会晚一天才判超期。
+    fn business_today() -> chrono::NaiveDate {
+        let offset = chrono::FixedOffset::east_opt(8 * 3600).expect("UTC+8");
+        chrono::Utc::now().with_timezone(&offset).date_naive()
     }
 
     /// 行为级守卫：种子化全路由扫描 + 棘轮基线。
@@ -1410,26 +1493,69 @@ mod idor_matrix {
             .map(|(k, v)| format!("{k}\t{}", classify_error(v)))
             .collect();
         let baseline_rows = parse_baseline(BASELINE_RAW);
-        let baseline: BTreeSet<String> = baseline_rows.iter().cloned().collect();
+        let baseline: BTreeSet<String> = baseline_rows.iter().map(BaselineRow::identity).collect();
 
-        // 元校验：条目格式、去重、条目数 == BASELINE_COUNT
+        // 下限断言：解析器若静默失效（行被吞、分隔符变更），这里先红，
+        // 避免「基线 0 行 / 当前 0 条」的假绿。
+        assert!(
+            baseline_rows.len() >= current.len(),
+            "解析出的基线行数 {} < 当前实际 500 条数 {}（解析器静默失效？）",
+            baseline_rows.len(),
+            current.len()
+        );
+
+        // 元校验：条目格式、元数据齐全、due 合法、去重、条目数 == BASELINE_COUNT
         let mut bad_format = Vec::new();
         for row in &baseline_rows {
-            let Some((key, reason)) = row.split_once('\t') else {
-                bad_format.push(format!("缺少 TAB 分隔: {row}"));
-                continue;
-            };
-            if !key.contains(' ') {
-                bad_format.push(format!("缺少 METHOD/路径: {row}"));
+            if !row.key.contains(' ') {
+                bad_format.push(format!("缺少 METHOD/路径: {}", row.key));
             }
-            if !(reason.starts_with("column:") || reason.starts_with("category:")) {
-                bad_format.push(format!("reason 不合规: {row}"));
+            if !(row.reason.starts_with("column:") || row.reason.starts_with("category:")) {
+                bad_format.push(format!("reason 不合规: {} ({})", row.key, row.reason));
+            }
+            if row.owner.is_empty() {
+                bad_format.push(format!("缺少 owner（责任人）: {}", row.key));
+            }
+            if row.cond.is_empty() {
+                bad_format.push(format!("缺少 cond（转绿条件）: {}", row.key));
+            }
+            if chrono::NaiveDate::parse_from_str(&row.due, "%Y-%m-%d").is_err() {
+                bad_format.push(format!(
+                    "due 非法（必须是 YYYY-MM-DD）: {} → {:?}",
+                    row.key, row.due
+                ));
             }
         }
         assert!(
             bad_format.is_empty(),
-            "基线条目格式错误：\n{}",
+            "基线条目格式/元数据错误：\n{}",
             bad_format.join("\n")
+        );
+
+        // 到期门禁：当天（UTC+8）超过 due 且该行仍在基线 → FAIL。
+        // 报出超期行、超期天数、原定转绿条件，避免「写了期限没人执行」。
+        let today = business_today();
+        let mut overdue = Vec::new();
+        for row in &baseline_rows {
+            if let Ok(due) = chrono::NaiveDate::parse_from_str(&row.due, "%Y-%m-%d") {
+                if today > due {
+                    overdue.push(format!(
+                        "{} | due {} | 超期 {} 天 | 责任人 {} | 原定转绿条件：{}",
+                        row.key,
+                        row.due,
+                        (today - due).num_days(),
+                        row.owner,
+                        row.cond
+                    ));
+                }
+            }
+        }
+        assert!(
+            overdue.is_empty(),
+            "基线中有 {} 行已超过期限仍在基线（今天 {}，UTC+8）：\n{}",
+            overdue.len(),
+            today,
+            overdue.join("\n")
         );
         assert_eq!(
             baseline.len(),
@@ -1472,5 +1598,104 @@ mod idor_matrix {
             baseline.len(),
             current.len()
         );
+    }
+
+    /// O24：改前/改后契约快照。
+    ///
+    /// 只在显式设置 `O24_DUMP_DIR` 时执行；未设置时零成本返回，不影响常规测试与 CI。
+    /// 输出 `routes.tsv`：`METHOD\tPATH\tSTATUS\t<归一化后的响应体>`。
+    /// 响应体里的 `date` 是请求时刻，跨版本比较时归一化为 `<NOW>`。
+    #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+    async fn o24_contract_snapshot() {
+        let Ok(dir) = std::env::var("O24_DUMP_DIR") else {
+            return;
+        };
+        error_capture::init();
+        let Some((app, pool, sessions)) = setup_with_db(SEEDED_DB).await else {
+            return;
+        };
+        let (seeded, failures) = seed_all_tables(&pool).await;
+
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let mut all = scan_routes(root);
+        all.sort_by(|a, b| a.path.cmp(&b.path).then_with(|| a.method.cmp(b.method)));
+        let candidates: Vec<&Route> = all
+            .iter()
+            .filter(|r| {
+                !KNOWN_ARTIFACT_ROUTES.contains(&r.path.as_str()) && !r.path.contains("mock")
+            })
+            .collect();
+        let mut ordered: Vec<&Route> = candidates
+            .iter()
+            .copied()
+            .filter(|r| r.method == "GET")
+            .collect();
+        ordered.extend(candidates.iter().copied().filter(|r| r.method != "GET"));
+
+        let _ = error_capture::drain();
+        let mut rows = String::new();
+        let mut error_rows = String::new();
+        let mut executed = 0usize;
+        for r in ordered {
+            if r.method != "GET" {
+                ensure_scan_admin(&pool, &sessions).await;
+            }
+            let url = fill_params(&r.path);
+            let _ = error_capture::drain();
+            let Some((status, body)) = fire(&app, r.method, &url, Some(TOK_ADMIN)).await else {
+                continue;
+            };
+            executed += 1;
+            rows.push_str(&format!(
+                "{}\t{}\t{}\t{}\n",
+                r.method,
+                r.path,
+                status.as_u16(),
+                o24_normalize(&body)
+            ));
+            if status.as_u16() >= 400 {
+                let errs = error_capture::drain();
+                error_rows.push_str(&format!(
+                    "{}\t{}\t{}\t{}\n",
+                    r.method,
+                    r.path,
+                    status.as_u16(),
+                    errs.join(" || ").replace(['\t', '\n'], " ")
+                ));
+            }
+        }
+
+        let dir = Path::new(&dir);
+        std::fs::create_dir_all(dir).expect("创建快照目录");
+        std::fs::write(dir.join("routes.tsv"), &rows).expect("写 routes.tsv");
+        std::fs::write(dir.join("errors.tsv"), &error_rows).expect("写 errors.tsv");
+        std::fs::write(
+            dir.join("meta.txt"),
+            format!(
+                "executed={executed}\nseeded={}\nseed_failures={}\n",
+                seeded.len(),
+                failures.len()
+            ),
+        )
+        .expect("写 meta.txt");
+        eprintln!("O24 快照已写入 {}：{executed} 条路由", dir.display());
+        drop_scratch(SEEDED_DB).await;
+    }
+
+    /// 响应体归一化：`date`（请求时刻）→ `<NOW>`；制表符/换行压成空格保证一行一路由。
+    fn o24_normalize(body: &str) -> String {
+        let mut s = String::with_capacity(body.len());
+        let mut rest = body;
+        while let Some(pos) = rest.find("\"date\":\"") {
+            s.push_str(&rest[..pos]);
+            let after = &rest[pos + "\"date\":\"".len()..];
+            let Some(end) = after.find('"') else {
+                break;
+            };
+            s.push_str("\"date\":\"<NOW>\"");
+            rest = &after[end + 1..];
+        }
+        s.push_str(rest);
+        s.replace(['\t', '\n'], " ")
     }
 }
