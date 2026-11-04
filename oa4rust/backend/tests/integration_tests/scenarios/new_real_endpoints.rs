@@ -690,3 +690,119 @@ pub async fn console_jpush_express_flow() {
     server_handle.abort();
     let _ = server_handle.await;
 }
+
+// ── O19 批次 1：auth / organization 列类型错配回归 ─────────────────────────────
+//
+// 这里走真实数据库路径（seed 真行 → HTTP 调用 → 断言响应字段），
+// 不做单元里手工造 Row。三处错配各自对应一个可独立变红的断言：
+//   auth_person.change_password_time（TIMESTAMP，代码按 String 读）
+//   x_org_unit.level / sort（INTEGER，代码按 String 读）
+
+#[tokio::test]
+#[ignore = "requires a running database server"]
+pub async fn auth_switch_user_change_password_time_regression() {
+    let pool = TEST_DB.get().expect("db not initialized").clone();
+    let (_addr, server_handle, token) =
+        crate::integration_tests::helpers::setup_test_server(pool.clone())
+            .await
+            .expect("start server");
+    let client = Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .unwrap();
+    let base = format!("http://{}", _addr);
+    let auth = format!("Bearer {}", token);
+
+    let target_id = uniq("switch-person");
+    let target_unique = uniq("switch-unique");
+    {
+        let c = pool.as_pg().unwrap().get().await.expect("pool");
+        c.execute(
+            "INSERT INTO auth_person \
+             (id, unique_id, name, password_hash, locked, deleted_at, change_password_time) \
+             VALUES ($1, $2, $3, 'seed-hash', false, NULL, '2024-01-01 00:00:00'::timestamp)",
+            &[&target_id, &target_unique, &"Switch Target"],
+        )
+        .await
+        .expect("seed auth_person with change_password_time");
+    }
+
+    let resp = post_ok(
+        &base,
+        &client,
+        &auth,
+        "/api/authentication/switchuser",
+        json!({ "credential": target_unique }),
+    )
+    .await;
+
+    assert_eq!(
+        resp["data"]["person"]["unique"].as_str(),
+        Some(target_unique.as_str()),
+        "switchuser 未返回目标用户"
+    );
+    assert_eq!(
+        resp["data"]["passwordExpired"].as_bool(),
+        Some(false),
+        "change_password_time 非空时 passwordExpired 应为 false"
+    );
+    println!("switchuser 响应体: {}", resp);
+
+    server_handle.abort();
+    let _ = server_handle.await;
+}
+
+#[tokio::test]
+#[ignore = "requires a running database server"]
+pub async fn org_unit_list_level_sort_regression() {
+    let pool = TEST_DB.get().expect("db not initialized").clone();
+    let (_addr, server_handle, token) =
+        crate::integration_tests::helpers::setup_test_server(pool.clone())
+            .await
+            .expect("start server");
+    let client = Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .unwrap();
+    let base = format!("http://{}", _addr);
+    let auth = format!("Bearer {}", token);
+
+    let unit_id = uniq("unit-list");
+    {
+        let c = pool.as_pg().unwrap().get().await.expect("pool");
+        c.execute(
+            "INSERT INTO x_org_unit (id, name, parent_id, level, sort) VALUES ($1, $2, NULL, 1, 7)",
+            &[&unit_id, &"Unit List Root"],
+        )
+        .await
+        .expect("seed x_org_unit with level/sort");
+    }
+
+    let listed = get_ok(
+        &base,
+        &client,
+        &auth,
+        "/api/organization/assemble/control/unit/list/0/next/10",
+    )
+    .await;
+    let rows = listed["data"].as_array().expect("unit list data");
+    let row = rows
+        .iter()
+        .find(|r| r["id"].as_str() == Some(unit_id.as_str()))
+        .unwrap_or_else(|| panic!("unit {} 不在列表响应中", unit_id));
+
+    assert_eq!(
+        row["level"].as_str(),
+        Some("1"),
+        "level 为 INTEGER，响应应按字符串回写"
+    );
+    assert_eq!(
+        row["sort"].as_str(),
+        Some("7"),
+        "sort 为 INTEGER，响应应按字符串回写"
+    );
+    println!("unit/list 响应行: {}", row);
+
+    server_handle.abort();
+    let _ = server_handle.await;
+}

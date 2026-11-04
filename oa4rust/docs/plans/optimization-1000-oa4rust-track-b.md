@@ -509,7 +509,7 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 
 | 批次 | crate | 预计处数 | 理由 |
 |------|-------|----------|------|
-| 1 | auth + organization_assemble_control | 3 | 登录/组织是每条请求的前置路径，引用热度最高；org 2 处已在 O18 修，auth 只剩 switch_user 1 处 |
+| 1 | auth + organization_assemble_control | 3 | 登录/组织是每条请求的前置路径，引用热度最高；org 详情 handler 已在 O18 修，**列表 handler 仍有 2 处**（见下节现场确认） |
 | 2 | processplatform_service_processing + processplatform_assemble_bam | 7 | 工作流/任务页引用 18 次；x_task 起止时间 + timer job |
 | 3 | SILENT（component `order_number`） | 4 | **静默错数据比 500 更隐蔽**：`try_get` 吞错导致字段恒空，不报错就没人发现；按用户要求挪到第 2 批之后，先于其余 FAIL 批次 |
 | 4 | message_assemble_communicate + personal | 5 | IM 10 次、个人签名；时间戳同型，可批量验证同一改法 |
@@ -520,6 +520,31 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 
 门禁策略：扫描器**先不接 CI**（接上去就是 38 条永久红）。全部 FAIL=0 后再接门禁，并做破坏实验：手工把一个正确的 `row.get` 改成错类型 → 门禁必须红。
 
+### O19 批次 1 收口（auth + organization_assemble_control，3 处）
+
+**SQL 现场逐条确认**（连接 `oa4rust` 实库查 `information_schema.columns`，不采信脚本结论）：
+
+| # | 位置 | SELECT 原文（关键列） | 列真实类型 | 代码取值类型 | 现场结论 |
+|---|------|----------------------|-----------|-------------|---------|
+| 1 | `crates/auth/src/switch_user.rs:49-68` | `SELECT id, unique_id, name, mobile, email, icon, job, department, unit, position, change_password_time, password_expired_time FROM auth_person WHERE unique_id = $1 AND locked = false AND deleted_at IS NULL` | `change_password_time` / `password_expired_time` 均为 `timestamp without time zone`（nullable=YES） | `Option<String>`（两列） | 错配成立；同一条 SELECT 两列同型，一并修 |
+| 2 | `crates/organization_assemble_control/src/lib.rs:139`（flag=0 分支） | `SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id IS NULL ORDER BY sort ASC, create_time DESC LIMIT $1` | `level` = `integer` | `Option<String>`（第 164 行） | 错配成立 |
+| 3 | 同上；另一分支 `:147`（`WHERE parent_id = $1`） | `SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE parent_id = $1 ORDER BY sort ASC, create_time DESC LIMIT $2` | `sort` = `integer` | `Option<String>`（第 168 行） | 错配成立 |
+
+「最近 SELECT 误归属」残余风险核对：扫描器指到的不是 O18 已修的 `organization_assemble_control_unit_flag`，而是**同表同列、另一个 handler** `..._unit_list_flag_next_count`。回代码逐行确认后排除了误归属——O18 只修了详情 handler，列表 handler 确实漏改。
+
+**固定流程证据**（真实数据路径：seed 真行 → 起真实服务 → HTTP 调用；测试见 `tests/integration_tests/scenarios/new_real_endpoints.rs` 的两个 `*_regression` 用例）：
+
+| # | 改前（红原文 + 状态） | 改后（状态 + 响应关键字段） | 破坏实验（改回错类型） |
+|---|---------------------|--------------------------|----------------------|
+| 1 | `switch_user.rs:69` panic `error retrieving column change_password_time: error deserializing column 10` → panic_guard 转 **500** `{"type":"error","message":"internal server error",...}` | **200** `{"type":"success","data":{"passwordExpired":false,"person":{"unique":"switch-unique-...","name":"Switch Target",...},"roleList":[]},...}` | 回退为 `Option<String>` → 同一用例红在 column 10 |
+| 2 | `lib.rs:160` panic `error retrieving column level: error deserializing column 3` → **500** 同上 | **200** 列表命中行 `{"id":"unit-list-...","level":"1","sort":"7","creator":"","createTime":"..."}` | 回退 level 为 `Option<String>` → 同一用例红在 column 3 |
+| 3 | level 修好后暴露：`lib.rs:161` panic `error retrieving column sort: error deserializing column 4` → **500** 同上 | 同上响应行 `"sort":"7"` | 回退 sort 为 `Option<String>` → 同一用例红在 column 4 |
+
+- 修复方式：按列真实类型读（`Option<chrono::NaiveDateTime>` / `Option<i32>`），再按既有响应形状回写成字符串（与 O18 已修的 `unit_flag` 一致），不改对外契约。
+- 全量回归：`integration_runner --ignored --test-threads=1` → **24 passed / 1 failed**（唯一失败仍是 ldap A 类，见 O20 表 #2）。
+- 扫描器复核：`FAIL=38 → 35`（本批 3 处全消），`SILENT=4` / `LOOSE=10` 未变，确认没有把别处读成新 FAIL。
+- 门禁：`cargo clippy --workspace --all-targets -- -D warnings` 零告警；`cargo fmt --all --check` 绿。仅改 handler 取值类型，未动路由，生成物（openapi/mcp/parity/handler-tests）无需重生成。
+
 ## O20 消费者证据判定（O18 六条红灯收口）
 
 判定规则只有一条：**有没有真实消费者**。证据源三处：前端/移动端调用、文档/契约（OpenAPI / MCP 路由表 / parity corpus）、O2OA parity 书面要求。下表每条都有可复核的引用，不做「应该有」式推断。
@@ -527,7 +552,7 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 | # | 用例 | 原红点 | 证据 | 归类 | 处置 |
 |---|------|--------|------|------|------|
 | 1 | `new_real_endpoints::ai_endpoints_flow` | `/api/ai/config/list` 与 `/api/ai/config/get/mcp` 恒空 / `mcp not found` | 前端 `frontend/apps/desktop/src/views/AIChatApp.vue:211`（`/api/ai/config/get/mcp/${mcpFlag}`）、`:596`（`/api/ai/config/list/mcp/paging/1/size/50`）；契约 fixture / openapi / mcp generated_routes 均列旧词路径；真实现 `crates/ai_assemble_control/src/lib.rs:971`（list）、`:794`（get）早已存在 | **接线缺陷**（非缺功能） | **已修**：旧词路由从 `ai` crate 空桩改挂 `ai_assemble_control::router`；单独提交 `fix(o20)`。同一空桩只被 2 条路由使用（list paging、get mcp），随路由一并删除，全仓无其他挂载点 |
-| 2 | `new_real_endpoints::ldap_fallback_flow` | `GET /api/ldap/config` 返回 `not found`（非 JSON） | `backend/tests/parity/corpus/oa4rust-ldap_config.json`（`path=/api/ldap/config`、`method=GET`、`status=200`）+ `backend/tests/parity_runner.rs:157` 的 `("ldap_config","GET","/api/ldap/config")` | **A**（真缺） | **本 PR 不修，另开轮**。backend 全仓无此路由；红灯保留并改成可读的 A 类失败信息 |
+| 2 | `new_real_endpoints::ldap_fallback_flow` | `GET /api/ldap/config` 返回 `not found`（非 JSON） | `backend/tests/parity/corpus/oa4rust-ldap_config.json`（`path=/api/ldap/config`、`method=GET`、`status=200`）+ `backend/tests/parity_runner.rs:157` 的 `("ldap_config","GET","/api/ldap/config")` | **A**（真缺） | **本 PR 不修，另开轮**。backend 全仓无此路由；红灯保留并改成可读的 A 类失败信息。**转绿条件（二者之一）**：① 有人实现该端点并过 parity corpus 断言；② parity 承诺被正式撤销——同时删 `oa4rust-ldap_config.json` 与 `parity_runner.rs:157` 条目，并把本条改为 C。**是否挡 CI**：不挡。`oa4rust-ci.yml:218` 的 integration job 跑的是 `cargo test --test integration_runner`（**无 `--ignored`**），而全部场景用例都标了 `#[ignore]`，该红灯只在本机执行 `-- --ignored` 时出现。**定期检查人**：目前无自动化任务兜底，由当轮 O 系列收口责任人本地跑一次全量 `--ignored --test-threads=1` 并在台账记结果；连续两轮未跑视为台账违约（此条即“墙纸”判定线） |
 | 3 | `cms_extended::cms_extended_crud_flow`（旧前缀部分） | 6 实体全打 `/api/cms_assemble_control/...` | 前端 `frontend/packages/apis/src/index.ts` 只出现 `/api/appinfo`、`/api/categoryinfo`、`/api/comment`、`/api/categoryinfo/extContent`；全仓 `.vue` 无 `cms_assemble_control` 前缀调用；旧前缀仅存于测试与台账 | **B**（旧词 → canonical） | **已改测试**：`/api/cms_assemble_control/{appinfo,categoryinfo,comment,file,form,view}` → `/api/{appinfo,categoryinfo,comment,file,form,view}` |
 | 4 | 同上（update 部分） | appinfo/categoryinfo/comment 的 update 断言 | canonical 只注册 create/get/delete(+list)，无 PUT/POST update 路由；前端无三者的 update 调用 | **C**（能力缺口，已确认无人使用） | **已删断言**，台账记缺口；file/form/view 的 update 真实存在，保留并改打 canonical |
 | 5 | 同上（category 字段部分） | `sortOrder` / `extContent` 写入后读回 | canonical `categoryinfo_u2_create` 只收 `name` / `parentCategoryId` / `appId`（`cms_assemble_control/src/lib.rs:9802`），无这两个字段的写入面 | **C** | **已删断言** |
@@ -548,7 +573,7 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 | `POST /work/create`、`/execute/{id}` | `POST /api/processplatform/service/processing/work`、`PUT /api/work/{id}/processing` |
 | `/api/task/{id}/agree`（disagree/return 同族） | `/api/task/{id}/claim`、`/complete`、`/reject`、`/transfer/{person}` |
 
-验证结果：`integration_runner --ignored --test-threads=1` → **22 passed / 1 failed**，唯一失败是 #2 ldap（A 类，按决定本轮不修）。
+验证结果：`integration_runner --ignored --test-threads=1` → **24 passed / 1 failed**，唯一失败是 #2 ldap（A 类，按决定本轮不修）。O19 批次 1 新增 2 条回归用例后由 22 passed 增至 24 passed。
 
 ## 既有后续清单
 
