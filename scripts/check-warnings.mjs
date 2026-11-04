@@ -331,6 +331,17 @@ const CHECKS = [
     pattern: /落后于路由源码|gen_openapi_paths\.py 执行失败/,
     timeout: 2 * 60 * 1000,
   },
+  {
+    id: 'generated-tests',
+    label: 'oa4rust tests_generated.rs 与生成器逐字一致（O14 门禁）',
+    cwd: 'oa4rust/backend',
+    cmd: 'python scripts/check_generated_tests_up_to_date.py',
+    // O14：生成器跑到临时目录，与已提交的 91 个产物逐字节比对；不一致 exit 1。
+    // 同时校验生成器被 git 跟踪、lib.rs 有 mod tests_generated;、集合规模下限。
+    // pattern 只匹配失败详情行（成功时输出「OK:」，不能被命中）。
+    pattern: /与生成器不一致|低于下限|未被 git 跟踪|缺少 `mod tests_generated;`|执行失败/,
+    timeout: 5 * 60 * 1000,
+  },
 ]
 
 const args = process.argv.slice(2)
