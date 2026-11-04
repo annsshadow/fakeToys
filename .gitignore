@@ -65,6 +65,7 @@ oa4rust/backend/scripts/**
 # O14 生成物门禁判定器（check-warnings.mjs 的 generated-tests 项直接调用）：
 # 必须入库，否则干净克隆 / CI 上永远找不到文件（与 openapi-paths 同一类空转）。
 !oa4rust/backend/scripts/check_generated_tests_up_to_date.py
+!oa4rust/backend/scripts/check_generated_artifacts_up_to_date.py
 # 端点/路由/测试生成器：其产物（openapi/src/lib.rs、tests_generated.rs、
 # generated_tests.rs、generated_routes.rs、tests/behavior_comparison/endpoints.rs）
 # 已纳入版本控制，故生成器自身也须纳入以保证可复现（plan002 U9 / R8）。

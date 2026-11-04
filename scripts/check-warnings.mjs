@@ -342,6 +342,16 @@ const CHECKS = [
     pattern: /与生成器不一致|低于下限|未被 git 跟踪|缺少 `mod tests_generated;`|执行失败/,
     timeout: 5 * 60 * 1000,
   },
+  {
+    id: 'generated-artifacts',
+    label: 'oa4rust 其余 Python 生成器产物与源码一致（MCP 路由表）',
+    cwd: 'oa4rust/backend',
+    cmd: 'python scripts/check_generated_artifacts_up_to_date.py',
+    // O14 审计补上的第三类生成物：gen_mcp_tools.py → mcp_server/generated_routes.rs。
+    // parity 的生成器因输入 JSON 已被删除无法真实判定，登记为债务（见台账）。
+    pattern: /生成物与生成器不一致|执行失败|生成物缺失|生成器不存在/,
+    timeout: 2 * 60 * 1000,
+  },
 ]
 
 const args = process.argv.slice(2)

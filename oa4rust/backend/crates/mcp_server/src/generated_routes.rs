@@ -3641,7 +3641,7 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
         tool_name: "legacy_calendar_assemble_control_calendar_assemble_control_calendar_detail_id",
         method: HttpMethod::Get,
         path: "/api/calendar/assemble/control/calendar/detail/{id}",
-        description: "get_calendar_detail handler",
+        description: "crate::get_calendar_detail handler",
         path_params: &["id"],
         body_params: &[],
     },
