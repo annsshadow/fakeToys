@@ -998,10 +998,10 @@ GET /api/meeting/core/entity/room/{id}   column:equipment
 基线因此 **40 → 42（GET 11 / 非 GET 31）**，`BASELINE_COUNT=42`，集合相等。CI 的旧 40
 不是「更干净」，而是**扫描器当时没读到种子库**——这也是本次把口径写进台账的原因。
 
-### O24-3 待修 10 条（顺序与纪律，批次 1-9 已清 32）
+### O24-3 待修 7 条（顺序与纪律，批次 1-10 已清 35）
 
-**口径**：非 GET 4 条 + GET 6 条 = 10（原 42；批次 1 清 1、批次 2 清 4、批次 3 清 4、批次 4 清 3、
-批次 5 清 2、批次 6 清 7、批次 7 清 4、批次 8 清 3、批次 9 清 4）。
+**口径**：非 GET 2 条 + GET 5 条 = 7（原 42；批次 1 清 1、批次 2 清 4、批次 3 清 4、批次 4 清 3、
+批次 5 清 2、批次 6 清 7、批次 7 清 4、批次 8 清 3、批次 9 清 4、批次 10 清 3）。
 
 排序按真实用户后果，不按条数：
 
@@ -1339,6 +1339,31 @@ person DELETE → 200 + `deleted_at` 非空，且已软删记录再 PUT → 200 
 **收口**：删 4 条基线路，`BASELINE_COUNT 14 → 10`；门禁实测
 `== 棘轮基线：10 条（当前 10 条），集合相等 ==`。
 
+### O24-3 批次 10：`E42804` 脚本软删 + mergeitem（3 条）
+
+**schema 现场证据**（`information_schema.columns`）：
+
+| 表.列 | 实列类型 | 旧写法 | 结论 |
+|---|---|---|---|
+| `x_portal_script.deleted_at` | timestamp | `to_char(NOW(), ...)`（text） | 改 `NOW()` |
+| `PP_E_SCRIPT.deleted_at` | timestamp | `to_char(NOW(), ...)`（text） | 改 `NOW()` |
+| `x_attachment.create_time` | timestamp | `COALESCE(create_time, id)`（timestamp vs varchar） | 改 `COALESCE(..., TIMESTAMP 'epoch')` |
+
+mergeitem 的 NULL 语义：`create_time` 为 NULL 时按「最旧」参与去重（保留最早创建的行），
+与既有「保留最早」行为一致。
+
+**先红**：`script_delete_paths_contract`（`tests/.../script_delete_paths.rs`）未改代码时
+实测 500 + `E42804 column "deleted_at" is of type timestamp ... but expression is of type text`。
+
+**行为断言**（每条写后必读）：portal/pp 脚本 DELETE → 200 + `deleted=true`，回库
+`deleted_at` 非空；mergeitem → 200 且 `data.merged == 1`，回库同键只剩 1 行、保留最早行。
+
+**破坏实验**：分别还原 psp `to_char`、mergeitem 的 `COALESCE(..., id)` → 各自红
+（E42804）；复原后绿。
+
+**收口**：删 3 条基线路，`BASELINE_COUNT 10 → 7`；门禁实测
+`== 棘轮基线：7 条（当前 7 条），集合相等 ==`。
+
 ### 写路径修复规矩：「写后必读」（批次 7 起，强制执行）
 
 任何写路径修复都必须补一条**写入后立即读回并断言同一值**的用例（SQL 直读同库），
@@ -1385,6 +1410,7 @@ person DELETE → 200 + `deleted_at` 非空，且已软删记录再 PUT → 200 
 | O24-3 批次 7（wrong-type 配置写路径） | 0 | **4** | **-4**（21→17） | 17 |
 | O24-3 批次 8（E42P10 upsert 路径） | 0 | **3** | **-3**（17→14） | 14 |
 | O24-3 批次 9（E42703 属性表路径） | 0 | **4** | **-4**（14→10） | 10 |
+| O24-3 批次 10（E42804 脚本软删 + mergeitem） | 0 | **3** | **-3**（10→7） | 7 |
 
 **清除清单**：
 
@@ -1399,4 +1425,5 @@ person DELETE → 200 + `deleted_at` 非空，且已软删记录再 PUT → 200 
 | O24-3 批次 7 | `wrong-type` 的配置写路径 | `POST/PUT /api/bbs/assemble/control/update/control/config`；`POST/PUT /api/general/assemble/control/status/update` | `wrong_type_config_contract`：先红 500（WrongType）→ 改后 POST/PUT 均 200 且回库正确；破坏实验逐个还原 bbs/general 写/读 → 各自红；门禁 17/17 集合相等 |
 | O24-3 批次 8 | `E42P10` 的 upsert 路径 | `GET/POST /api/attendance/assemble/control/statistic/do`；`GET /api/calendar_assemble_control/update/control/config` | `upsert_paths_contract`：先红 500（E42P10）→ 改后 200、同键仍 1 行且 update_time 更新、config 写后必读同值；破坏实验逐个还原 → 各自红；门禁 14/14 集合相等 |
 | O24-3 批次 9 | `E42703` 的属性表路径（无 `name` 列） | `PUT/DELETE /api/organization/assemble/control/personattribute/{flag}`；`PUT/DELETE /api/organization/assemble/control/unitattribute/{flag}` | `attribute_paths_contract`：先红 500（E42703 `column "name"`）→ 改后 200 且回库 `attribute_value`/`deleted_at` 命中（写后必读）、软删后再 PUT `type=error`；破坏实验分别还原 person 解析 / unit 软删 → 各自红；门禁 10/10 集合相等 |
+| O24-3 批次 10 | `E42804` 脚本软删 text→timestamp；mergeitem `COALESCE` 类型 | `DELETE /api/portal/assemble/designer/script/{id}`；`DELETE /api/processplatform/assemble/designer/script/{id}`；`GET /api/processplatform/service/processing/touch/mergeitem` | `script_delete_paths_contract`：先红 500（E42804）→ 改后 200 且回库 `deleted_at` 非空、mergeitem 只剩最早 1 行（写后必读）；破坏实验分别还原 psp `to_char` / `COALESCE(..., id)` → 各自红；门禁 7/7 集合相等 |
 

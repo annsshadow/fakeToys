@@ -131,7 +131,9 @@ pub async fn delete(
     let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
-            "UPDATE PP_E_SCRIPT SET deleted_at = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') \
+            // PP_E_SCRIPT.deleted_at 是 timestamp（information_schema 现场确认），
+            // 旧的 to_char(...) 是 text → E42804 datatype mismatch。
+            "UPDATE PP_E_SCRIPT SET deleted_at = NOW() \
              WHERE xid = $1 AND deleted_at IS NULL",
             &[&id],
         )

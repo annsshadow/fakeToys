@@ -18,6 +18,7 @@ pub mod portal_surface_publish;
 pub mod program_center;
 pub mod query_assemble;
 pub mod query_permission_binding;
+pub mod script_delete_paths;
 pub mod upsert_paths;
 pub mod wrong_type_config;
 

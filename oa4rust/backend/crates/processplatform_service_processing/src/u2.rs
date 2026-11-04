@@ -2030,7 +2030,7 @@ pub async fn touch_merge_item(
                AND COALESCE(a.name,'') = COALESCE(b.name,'') \
                AND COALESCE(a.work_id,'') = COALESCE(b.work_id,'') \
                AND COALESCE(a.workcompleted_id,'') = COALESCE(b.workcompleted_id,'') \
-               AND (COALESCE(b.create_time, b.id), b.id) < (COALESCE(a.create_time, a.id), a.id)",
+               AND (COALESCE(b.create_time, TIMESTAMP 'epoch'), b.id) < (COALESCE(a.create_time, TIMESTAMP 'epoch'), a.id)",
             &[],
         )
         .await

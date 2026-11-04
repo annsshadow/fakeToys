@@ -70,13 +70,16 @@
 # **没有 name**；旧实现走 `resolve_generic_id`（`id = $1 OR name = $1`）→ undefined column。
 # 两表路径参数本就是记录 id（GET 变体同样按 id 查），新增 `resolve_id_exact` /
 # `soft_delete_exact` 按 id 精确解析并软删；写入后立即读回断言同一值（写后必读规矩）。
+#
+# 2026-11-05 基线 10 → 7（GET 5 / 非 GET 2）：O24-3 批次 10 清掉 E42804 族 3 条。
+# `x_portal_script.deleted_at` / `PP_E_SCRIPT.deleted_at` 实列是 timestamp，
+# 旧 DELETE 写 `to_char(...)`（text）→ datatype mismatch，改 `NOW()`；
+# `x_attachment.create_time` 是 timestamp，旧 mergeitem 用 `COALESCE(create_time, id)`
+# （timestamp vs varchar）→ 改 `COALESCE(create_time, TIMESTAMP 'epoch')`（NULL 视作最旧）。
 GET /api/ai_assemble_control/chat/list/completion/{clueId}/paging/{page}/size/{size}	category:E42P18	owner:O24数据层对齐(后端)	due:2026-11-12	cond:给 $2 显式 ::text/CAST；200 后删行
 POST /api/document/filter/list/{page}/size/{size}/manager	category:E42601	owner:O24数据层对齐(后端)	due:2026-12-10	cond:改参数化/正确拼 ORDER BY；200 后删行
 GET /api/meeting/core/entity/room/list	column:equipment	owner:O24数据层对齐(后端)	due:2026-11-26	cond:改 try_get/Option 类型对齐实体；200 后删行
 GET /api/meeting/core/entity/room/{id}	column:equipment	owner:O24数据层对齐(后端)	due:2026-11-26	cond:改 try_get/Option 类型对齐实体；200 后删行
 GET /api/organization/assemble/control/identity/{flag}/order/before/{followFlag}	category:wrong-type	owner:O24数据层对齐(后端)	due:2026-11-26	cond:按列真实类型改写绑定参数；200 后删行
-DELETE /api/portal/assemble/designer/script/{id}	category:E42804	owner:O24数据层对齐(后端)	due:2026-11-26	cond:统一 timestamp 绑定或强转；200 后删行
-DELETE /api/processplatform/assemble/designer/script/{id}	category:E42804	owner:O24数据层对齐(后端)	due:2026-11-26	cond:统一 timestamp 绑定或强转；200 后删行
-GET /api/processplatform/service/processing/touch/mergeitem	category:E42804	owner:O24数据层对齐(后端)	due:2026-11-26	cond:统一 timestamp 绑定或强转；200 后删行
 DELETE /api/processplatform/service/processing/work/{id}	category:E23503	owner:O24数据层对齐(后端)	due:2026-12-10	cond:先清子表或改 ON DELETE CASCADE；200 后删行
 GET /api/program_center/market/{flag}/installed/version	column:status	owner:O24数据层对齐(后端)	due:2026-11-12	cond:改 try_get 并统一实体/列类型；200 后删行

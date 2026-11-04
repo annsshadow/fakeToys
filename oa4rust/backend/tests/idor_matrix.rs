@@ -1211,7 +1211,8 @@ mod idor_matrix {
     /// O24-3 批次 7 修掉 wrong-type 配置写路径（bbs Int4↔i64、general Text↔bool）：21 → 17。
     /// O24-3 批次 8 修掉 E42P10 upsert（attendance / calendar 缺唯一索引）：17 → 14。
     /// O24-3 批次 9 修掉 E42703 属性表（person/unit attribute 无 name 列）：14 → 10。
-    const BASELINE_COUNT: usize = 10;
+    /// O24-3 批次 10 修掉 E42804 脚本软删 text→timestamp / mergeitem COALESCE 类型：10 → 7。
+    const BASELINE_COUNT: usize = 7;
 
     /// 棘轮基线：`<METHOD> <route>\t<reason>`，reason 见文件头。
     const BASELINE_RAW: &str = include_str!("idor_seeded_handler500_baseline.txt");
