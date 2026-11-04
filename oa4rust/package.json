@@ -20,6 +20,7 @@
     "test:e2e": "playwright test",
     "test:e2e:list": "playwright test --list",
     "gen-api": "tsx scripts/gen-api.ts",
+    "gen-api-tests": "tsx scripts/generate-api-tests.ts",
     "lint:check": "biome check --error-on-warnings ."
   },
   "devDependencies": {

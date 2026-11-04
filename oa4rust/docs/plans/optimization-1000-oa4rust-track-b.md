@@ -140,11 +140,11 @@
 | 产物 | 最终判定 | 证据 |
 |------|----------|------|
 | `crates/parity/src/generated_tests.rs` | **保留**（已接门禁） | 三分类：① 噪声＝CRLF + 时间戳 + 98 个序号名位移；② 源码/生成器过期＝新增 57 条 personal 别名路由、3 条路径/方法纠正（`message consume` GET→POST、program_center 重复段与 GET→POST）；③ 手工＝1 条 `get_calendar_detail` 语义命名，无独有断言，已原样迁入 `parity/src/tests_manual.rs`。输入 `generated_at=2026-08-12`、文件最后修改 2026-09-17，不是「两年未更新」；4098 条机械用例仅 1 条手工痕迹，不构成「大量人手增强」→ 保留。生成器已去时间戳、固定 LF；parity 已加入 `check_generated_artifacts_up_to_date.py`；破坏实验：插入一行→`首个差异：...:3`、exit 1，还原→exit 0 |
+| `frontend/packages/apis/src/api-coverage-generated.test.ts` | **保留**（生成器已升级，接 CI 门禁） | 差异三分类：① 格式/头＝SPDX、import 顺序、prettier 缩进、末尾换行，生成器已复现；③ 手工增强＝每条用例的 `try { await fn?.() } catch`（驱动 V8 覆盖），生成器已按原样固化，未降级产物；② 源码过期＝`index.ts` 新增 28 个函数（attendanceDeepApi 8、processApi 5、documentApi 5、calendarCoreApi 5、attendanceControlApi 2、viewApi/viewCategoryApi/viewFieldConfigApi 各 1），重生成后 367 行纯新增、**0 删除**。门禁：`oa4rust-web.yml` 在 Vitest 前跑 `pnpm gen-api-tests` + `git diff --exit-code`；破坏实验：暂存一条 `// BREAK EXPERIMENT`→红在 `:8718`，还原→exit 0 |
 
 ### 可恢复（剩余）
 | 产物 | 现状证据 | 下一步（可执行） |
 |------|----------|------------------|
-| `frontend/packages/apis/src/api-coverage-generated.test.ts` | `npx --prefix oa4rust tsx oa4rust/scripts/generate-api-tests.ts` 可跑（78 模块 / 666 函数），但产物与生成器差 **+4680 / -8221 行**：已提交产物含人工增强（SPDX 头、实际 `await fn?.()` 调用以驱动 V8 覆盖、单行格式） | 修：先把生成器升级到当前产物形态（SPDX + 实际调用 + 格式），重生成后把「生成 + `git diff --exit-code`」放进 `oa4rust-web.yml` 的 Vitest 步骤之前 |
 | `tests/contracts/backend-route-methods.fixture.ts` | 头注释称 AUTO-GENERATED，仓库内无生成器。临时比对：fixture 4108 条 vs `generated_routes.rs` 归一后 4040 条；**131 条只在 fixture、63 条只在后端、2 条方法集不符**（`/api/calendar_assemble_control/event`、`/mcp`） | 修：让 `gen_mcp_tools.py` 在写 `generated_routes.rs` 的同时输出该 fixture（单一源头），或新增 `gen_route_methods_fixture.py`；接进 `generated-artifacts` 门禁；重生成后跑 `vitest run tests/contracts/route-methods.test.ts` |
 
 ### 非生成物、仅需更正
