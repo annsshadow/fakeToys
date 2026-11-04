@@ -1550,7 +1550,7 @@ pub async fn attendancedetail_mobile_filter_list_page_page_count_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
 
-    let (count, offset) = shared::response::page_window(page, count);
+    let (count, offset) = shared::response::page_window(page, count)?;
     let rows = client
         .query(
             "SELECT id, person_id, date, status FROM x_attendance_detail ORDER BY date DESC LIMIT $2 OFFSET $1",

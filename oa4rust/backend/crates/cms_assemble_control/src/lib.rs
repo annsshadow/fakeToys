@@ -8027,7 +8027,7 @@ pub async fn commend_list_paging(
         .map_err(|_| AppError::Internal)?;
     let count: i64 = count_row.get("count");
 
-    let (size, offset) = shared::response::page_window(page, size);
+    let (size, offset) = shared::response::page_window(page, size)?;
     let rows = client
         .query(
             "SELECT id, doc_id, person_id, create_time::text FROM x_cms_commend WHERE doc_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC LIMIT $2 OFFSET $3",

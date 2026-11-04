@@ -2114,7 +2114,7 @@ pub async fn personcard_listpaging_page_page_size_size_mockputtopost(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
 
-    let (limit, offset) = shared::response::page_window(page, size);
+    let (limit, offset) = shared::response::page_window(page, size)?;
 
     let rows = client
         .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
@@ -2166,7 +2166,7 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size_mockputtopost(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
 
-    let (limit, offset) = shared::response::page_window(page, size);
+    let (limit, offset) = shared::response::page_window(page, size)?;
 
     let rows = client
         .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
@@ -3667,7 +3667,7 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
 
-    let (limit, offset) = shared::response::page_window(page, size);
+    let (limit, offset) = shared::response::page_window(page, size)?;
 
     let rows = client
         .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
@@ -3719,7 +3719,7 @@ pub async fn personcard_listpaging_page_page_size_size(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
 
-    let (limit, offset) = shared::response::page_window(page, size);
+    let (limit, offset) = shared::response::page_window(page, size)?;
 
     let rows = client
         .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])

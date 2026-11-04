@@ -2290,7 +2290,7 @@ pub async fn work_list(
         .get("size")
         .and_then(|s| s.parse().ok())
         .unwrap_or(20);
-    let (size, offset) = shared::response::page_window(page as i64, size as i64);
+    let (size, offset) = shared::response::page_window(page as i64, size as i64)?;
 
     let client = shared::db::acquire(&pool).await?;
     let count_row = client

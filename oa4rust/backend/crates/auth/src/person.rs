@@ -6,6 +6,7 @@ use axum::Json;
 use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::response::{option_to_json, row_opt_json, ActionResult};
+use shared::AppError;
 
 pub async fn get(pool: Extension<Pool>, Path(flag): Path<String>) -> Json<ActionResult<Value>> {
     let client = match pool.get().await {
@@ -48,10 +49,10 @@ pub async fn get(pool: Extension<Pool>, Path(flag): Path<String>) -> Json<Action
 pub async fn list(
     pool: Extension<Pool>,
     Query(params): Query<std::collections::HashMap<String, String>>,
-) -> Json<ActionResult<Value>> {
+) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool.get().await {
         Ok(c) => c,
-        Err(_) => return Json(ActionResult::error("database connection error")),
+        Err(_) => return Ok(Json(ActionResult::error("database connection error"))),
     };
 
     let page = params
@@ -62,7 +63,7 @@ pub async fn list(
         .get("size")
         .and_then(|s| s.parse::<i64>().ok())
         .unwrap_or(20);
-    let (size, offset) = shared::response::page_window(page, size);
+    let (size, offset) = shared::response::page_window(page, size)?;
 
     let count_result = client
         .query_one("SELECT COUNT(*) as count FROM auth_person", &[])
@@ -78,7 +79,7 @@ pub async fn list(
         .await
     {
         Ok(rows) => rows,
-        Err(_) => return Json(ActionResult::error("query failed")),
+        Err(_) => return Ok(Json(ActionResult::error("query failed"))),
     };
 
     let data: Vec<Value> = rows
@@ -98,9 +99,9 @@ pub async fn list(
         })
         .collect();
 
-    Json(ActionResult::legacy_success(
+    Ok(Json(ActionResult::legacy_success(
         Value::Array(data),
         total,
         size,
-    ))
+    )))
 }

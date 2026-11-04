@@ -552,7 +552,7 @@ async fn execute_statement_by_flag(
         );
     }
 
-    let (size, offset) = shared::response::page_window(page, size);
+    let (size, offset) = shared::response::page_window(page, size)?;
     let paged_sql = format!(
         "SELECT * FROM ({}) AS stmt_page_sub LIMIT ${} OFFSET ${}",
         parameterized_sql.trim().trim_end_matches(';'),
