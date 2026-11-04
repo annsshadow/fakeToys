@@ -836,3 +836,75 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
   该条 500 的捕获日志实证第一步生效：`ERROR ... method=GET path=... trace_id=<uuid> status=500
   source=DbError { code: E42P18, message: "could not determine data type of parameter $2" }`。
 
+## O23 门禁可信度（第二步：不依赖枚举顺序）
+
+### 改法（`backend/tests/idor_matrix.rs`）
+
+1. **稳定排序**：`scan_routes` 结果先按 `path`、再按 `method` 排序，读段/写段都保持该顺序；
+   扫描结果不再取决于 `read_dir` 枚举顺序，本地与 CI 的执行序列一致。
+2. **读写分别计数 + 下限**：`read_total` / `write_total` 分别断言 ≥ `MIN_SCANNED_*`；
+   本次实测 **读 2393 / 写 1980**，下限设 1500 / 1850（约 5% 余量）。
+   只数总数会让「写路由从未执行」静默变绿，这是本条的修复点。
+3. **扫描身份真正能写**：新增 `UID_ADMIN/TOK_ADMIN`，绑定 `role-admin`（`role-admin` 在
+   migration seed 中 `name='admin' and disable=false`，满足 `is_admin` 查询）；扫描改用该身份。
+   写阶段每条路由执行前 `ensure_scan_admin` 恢复「auth_person + auth_person_role + 会话」，
+   因为写路由本身含 logout/删会话/改人——否则 token 自杀后余下写路由全 401。
+4. **断言执行数而非枚举数**：统计 `executed_read` / `executed_write` / `executed` 并分别下限
+   （1450 / 1800 / 3300）。实测 **执行 读 2393 / 写 1979（共 4372）**。
+5. **401/403 显式打印 + 异常上报**：每轮打印 `401 读 x / 写 y；403 读 x / 写 y`。
+   两条按设计的 401 进 `WRITE_401_ALLOWED`（逐条写理由）：
+   - `POST /api/authentication/refresh`：只接受 Cookie 凭据，Bearer 按契约 401；
+   - `POST /api/meeting/assemble/control/config/system/config/manage`：刻意注册在匿名可达
+     router（模块前缀契约），session 不注入，handler 内 401。
+   其余任何写路由 401 一律红；总 401 比例上限 20%。实测 **401 读 2 / 写 2，比例 0.1%**。
+6. **类别细粒度**：`classify_error` 增补 SQLSTATE / `wrong-type` / `param-count` / `no-source`，
+   同类根因可归并成族、修一族删多行；不再一律写 `no-error-log`。
+
+### 破坏实验（写路由权限收紧 → 401）
+
+在 `POST/PUT /api/bbs/assemble/control/update/control/config` 入口临时加入 401 返回
+（`O23_FORCE_401` 环境开关，仅实验期），复跑守卫：
+
+```text
+== 扫描覆盖：枚举 读 2393 / 写 1980；执行 读 2393 / 写 1979（共 4372）；
+   401 读 2 / 写 4；403 读 1 / 写 3；401 比例 0.1% ==
+thread 'idor_matrix::seeded_route_scan_handler500_ratchet' panicked at tests\idor_matrix.rs:1378:9:
+写路由出现未登记的 401 共 2 条（admin 扫描身份未生效，或权限被收紧）：
+POST /api/bbs/assemble/control/update/control/config
+PUT /api/bbs/assemble/control/update/control/config
+test result: FAILED. 0 passed; 1 failed
+```
+
+预期红 → 已还原；复跑 `== 棘轮基线：40 条（当前 40 条），集合相等 ==`、
+`test result: ok. 1 passed`（种子化 383 表 / 失败 0）。
+
+### 基线 1 → 40（写路由第一次真正执行暴露的存量债）
+
+写路由从未执行是「本地 10 条 / CI 14 条」的另一半根因。补 admin 后，存量 500 从 1 条
+暴露到 **40 条（GET 9 / 非 GET 31）**。全部按族登记条件如下
+（完整 key 在 `backend/tests/idor_seeded_handler500_baseline.txt`，行数==`BASELINE_COUNT`）：
+
+| 族（reason） | 路由（方法 + 路径） | 根因 | 转绿条件 | 责任人 | 期限 |
+|---|---|---|---|---|---|
+| `category:wrong-type`（9） | `POST/PUT /api/bbs/assemble/control/update/control/config`；`POST/PUT /api/general/assemble/control/status/update`；`POST /api/meeting/core/entity/room/save/{id}`；`GET /api/organization/assemble/control/identity/{flag}/order/before/{followFlag}`；`POST /api/processplatform/assemble/surface/save/{id}`；`POST /api/queryview/table/row/part/update/{tableFlag}/{id}`；`POST /api/queryview/table/{flag}/row/{rid}/part/update` | Rust 参数与列类型不一致（Int4↔i64、Text↔bool、Jsonb↔String、Int8↔i32） | 按列真实类型改写绑定参数/`serde_json::Value`；对应路由 200 后删行并下调 `BASELINE_COUNT` | O24 数据层对齐（后端） | 2026-11-26 |
+| `category:E42703`（4） | `DELETE/PUT /api/organization/assemble/control/personattribute/{flag}`；`DELETE/PUT /api/organization/assemble/control/unitattribute/{flag}` | SQL 引用不存在的列 `name` | 按 migration 实态改列名（或补列）；200 后删 4 行 | O24 数据层对齐（后端） | 2026-11-26 |
+| `category:E42804`（3） | `DELETE /api/portal/assemble/designer/script/{id}`；`DELETE /api/processplatform/assemble/designer/script/{id}`；`GET /api/processplatform/service/processing/touch/mergeitem` | `deleted_at` TEXT 对 timestamp；`COALESCE` 两侧类型不一致 | 统一 timestamp 绑定/强转；200 后删 3 行 | O24 数据层对齐（后端） | 2026-11-26 |
+| `category:E23502`（10） | `POST /api/console/send/message`；`POST /api/document/cipher/{id}/persist/view/record`；`POST /api/message/custom/create`；`POST/GET /api/hotpic*/create/hotpic`；`POST/GET /api/hotpic*/update/control/config`；`POST /api/hotpic/assemble/control/user/hotpic`；`POST /api/portal/assemble/designer/page`；`POST /api/portal/assemble/designer/page/create` | INSERT 未生成必填 `id` / `application` / `portal_id` | 补 UUID/默认值或返回 400；200/400 后删 10 行 | O24 数据层对齐（后端） | 2026-12-10 |
+| `category:E42P10`（3） | `GET/POST /api/attendance/assemble/control/statistic/do`；`GET /api/calendar_assemble_control/update/control/config` | `ON CONFLICT` 无匹配唯一索引 | 指向真实唯一索引或改 UPDATE-then-INSERT；200 后删 3 行 | O24 数据层对齐（后端） | 2026-12-10 |
+| `category:param-count`（6） | `GET/POST /api/processplatform/assemble/surface/draft*`；`POST /api/query/assemble/designer/{query,stat,table,view}/.../permission` | SQL 占位符数量与绑定参数不一致 | 对齐 `$1..$n` 与参数；200/400 后删 6 行 | O24 数据层对齐（后端） | 2026-11-19 |
+| `category:E42P18`（1） | `GET /api/ai_assemble_control/chat/list/completion/{clueId}/paging/{page}/size/{size}` | `$2` 类型无法推断 | 给 `$2` 显式 `::text`/CAST；200 后删行 | O24 数据层对齐（后端） | 2026-11-12 |
+| `column:status` / `column:published`（2） | `GET /api/program_center/market/{flag}/installed/version`；`POST /api/portal/assemble/surface/publish/{id}` | 裸 `row.get` 解码列类型错配（panic → 500） | 改 `try_get` 并统一实体/列类型；200 后删 2 行 | O24 数据层对齐（后端） | 2026-11-12 |
+| `category:E23503`（1） | `DELETE /api/processplatform/service/processing/work/{id}` | `x_timer_job` 外键阻断删除 | 先清子表或改 `ON DELETE CASCADE`；200 后删行 | O24 数据层对齐（后端） | 2026-12-10 |
+| `category:E42601`（1） | `POST /api/document/filter/list/{page}/size/{size}/manager` | 动态 SQL 拼接 `ORDER` 语法错 | 改参数化/正确拼 ORDER BY；200 后删行 | O24 数据层对齐（后端） | 2026-12-10 |
+
+## O23 第三步：O21 原 10 条的逐条条件
+
+| # | 路由 | 处置/当前状态 | 转绿条件 | 责任人 | 期限 |
+|---|---|---|---|---|---|
+| 1 | GET `/api/ai_assemble_control/chat/list/completion/...` | 仍在基线（`category:E42P18`） | `$2` 显式类型后 200，删行并下调 `BASELINE_COUNT` | O24 数据层对齐（后端） | 2026-11-12 |
+| 2-8 | andfx / mpweixin(bind,login) / qiyeweixin(code,update) / welink / zhengwudingding | **已按 A 类收口**：缺配置 → 503 `MissingConfig(项名)`；扫描不再落 500（已删行） | 部署注入对应环境变量后 200 空态/正常登录；若引入真实连接器再补一次 e2e | 部署配置责任人 + O23 收口人 | 2026-11-12 |
+| 9-10 | GET `/api/organization/core/express/config`、`/status` | **已按 B 类收口**：缺 `x_org_config.sync_enabled` → 503；有行按 TEXT→`parse::<bool>`（坏值 500 带原始值） | 种子/迁移补 `sync_enabled` 行后 200；坏值分支由 500 日志断言守护 | O24 数据层对齐（后端） | 2026-11-12 |
+
+**纪律**：基线是「已登记的技术债」，不是「有基线所以能绿」。新增任何基线路必须同时
+在这两张表登记 转绿条件/责任人/期限；没有到期条件的行不许加。
+
