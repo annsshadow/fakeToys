@@ -654,6 +654,7 @@ DATABASE_URL=<TEST_DATABASE_URL> cargo +1.98.1 test --test perf_baseline perf_ba
 | 2026-11-04 | B7 补测 | `newapi-client.test.ts` 补 7 条：refresh 404 不重试 / 非 JSON 不重试 / 重试必须带 refresh token / 重试仍被 WAF 拦走而 quota 为 null；domLogin 展开表单 + Turnstile 就绪 / Turnstile 超时仍提交 / placeholder 路径 / 兜底文本框路径 | 单文件 89.63→**93.46%**；全量 90.75→**94.58%**（地板 92.01） |
 | 2026-11-04 | B7 补测 | 本地 `npm run test:ratchet` | `agentrouter.ts 行覆盖 95.51%（地板 94.44%）`、`newapi-client.ts 行覆盖 94.58%（地板 92.01%）`，exit 0 |
 | 2026-11-04 | B7 补测 | 破坏实验 | ① `waitForQuotaAfterWaf` 改为恒返回 null → 3 条新 WAF 用例红（pass 7 / fail 3）；② 去掉 `rr.status === 200` 状态闸 → refresh 404 用例红（pass 25 / fail 1）；两条还原后棘轮复绿 |
+| 2026-11-04 | B7 收紧 | `coverage-baseline.json`：`agentrouter.ts 94.44→95.51`、`newapi-client.ts 92.01→94.58`（钉当前实测，不留余量、不高于实测）；理由「棘轮只能往前走」 | 本地 `npm run test:ratchet` 九文件全部持平地板，exit 0 |
 
 ### 虚假验证登记（2026-11-04）
 
