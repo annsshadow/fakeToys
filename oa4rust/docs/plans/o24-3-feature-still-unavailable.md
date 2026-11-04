@@ -4,7 +4,10 @@
 基线只统计「真正被执行到且返回 500」的路由；本清单记录的是被**降级为 `400 missing required parameter`** 的端点——它们不再 500、报错也更明确，但**功能对用户仍然不可用**。
 
 来源：批次 6（`E23502` 实体引用族）把无法推导的父实体参数改为 400 而不是编造 id，删掉了 5 条 hotpic + 2 条 portal page 共 7 条基线行。
-清空基线（批次 16）不等于这个族完成，7 条仍在这里。
+清空基线（批次 16）不等于这个族完成，7 条当时仍在这里。
+
+**2026-11-05 后续裁定后：hotpic 5 条已按「全局热点图」模型转可用（见下节 A′），本清单当前只剩 portal page 2 条 400。**
+历史记录保留在下方，不用 7 条旧数字覆盖现状。
 
 ## 判定口径
 
@@ -36,7 +39,7 @@ SELECT count(*) FROM x_portal_widget;                       -- 0
 - 因此前端 [`PortalApp.vue:437`](../../frontend/apps/desktop/src/views/PortalApp.vue#L437) 用 `portal/default` 当作门户标识，**本身就是错的**：`x_portal_page.portal_id` 存的是门户 id，而 `default` 不是任何门户的 id。
 - 按裁定 A.3：**停止**，不改前端、不用 `default` 当默认值、不编造门户 id。页面创建的前置条件是先有一个真实门户行；当前部署没有，所以这两条无法通过“前端带真实 portalId”转绿。
 
-### B. hotpic：`application='default'` / `infoId='0'` 不存在 → 登记为未完成功能（空壳）
+### B. hotpic：`application='default'` / `infoId='0'` 不存在 → 登记为未完成功能（空壳）（**已被下方 A′ 取代**）
 
 ```sql
 SELECT count(*) FROM x_hotpic WHERE application = 'default';   -- 0
@@ -55,7 +58,35 @@ SELECT application, info_id, count(*) FROM x_hotpic GROUP BY 1,2 ORDER BY 3 DESC
 - 结论：`default`/`0` 不是真实键，读路径也不认可占位值。按裁定 B.3：**登记为「未完成功能（无后端支撑的空壳）」**，保留 400，不删前端入口，等产品决定。
 - 旁证：`hotpic_core_entity::create`（[`lib.rs:159-176`](../../backend/crates/hotpic_core_entity/src/lib.rs#L159-L176)）对 `application`/`infoId` **不校验**，缺省写空串；前端「建实体热图」只发 `{ title }`，这解释了库里 51 行空键数据。它是“能写但写的是空壳”，不是可用功能。
 
-## 总表
+### A′（2026-11-05 二次裁定）hotpic：改判「全局热点图」→ 5 条已转可用
+
+**依据**：`x_hotpic` 已有 51 行 `application=''`/`info_id=''`，证明「无所属应用 = 全局」这条生产路径事实上存在，
+只是读路径不认——数据写成功了、读的时候被精确匹配丢掉（**写成功、读不到**，规模 51 行）。
+
+**隐式约定显式化（此前只存在于数据里，没写在任何文档）**：
+
+> `x_hotpic` 的归属键 `(application, info_id)` **两列皆为空串 = 部署级全局热点图**，在任何 application 视图下可见。
+
+- 代码以 `GLOBAL_APPLICATION` / `GLOBAL_INFO_ID` 常量 + `HotpicScope::global()` 具名表达（`hotpic_assemble_control`），
+  写路径注释写明「空键 = 部署级全局热点图」；缺省即落全局行，半截参数（只给一列）→ 400。
+- 读路径统一为**精确匹配 `(application, info_id)` 或全局（两列皆 `''`）**，只用 AND/OR 精确比较：
+  `hotpic::{exists_check,list_by_application_and_info_id}`、`hotpic_assemble_control::user_hotpic_application_infoId`、
+  `hotpic_core_entity::{list_by_app_and_info,exists_check}`。不使用 `LIKE` / `IS NULL` 混用 / `COALESCE` 兜底。
+
+**行为断言**（`hotpic_global_scope_contract`）：
+
+1. 5 条写端点缺省创建 → 200，回库 `application=''`/`info_id=''` 且 title/image_url 同值（写后必读）；
+2. 半截参数（只给 `application` 或只给 `infoId`）→ 400；
+3. 全局行在任意 application 视图可见；特定 `(application, infoId)` 行只在该视图可见；
+4. 写错 `(application, info_id)` 的行（如 `('default','0')`）仍然读不到——写侧错误不被读侧全局兜底掩盖；
+5. 51 行空键在任意视图全部可见（隔离库造 51 行，`hotpic` 列表返回 51 条）。
+
+**51 行存活证据（真实请求）**：对开发库 `oa4rust` 发 `GET /api/hotpic/user/hotpic/it-probe-view/it-probe-info`，
+实测 `type=success`、`count=51`、`data` 长度 **51**。（探针测试跑完即删，不入库。）
+
+**当前状态**：hotpic 5 条 = **可用**（真实 200 + 行为断言），不再是「无后端支撑的空壳」。
+
+### 总表
 
 | # | 端点 | 前端入口（文件:行 · 页面 · 按钮） | 缺的字段 | 字段业务来源 | 前端现有能力 |
 |---|---|---|---|---|---|
@@ -66,6 +97,9 @@ SELECT application, info_id, count(*) FROM x_hotpic GROUP BY 1,2 ORDER BY 3 DESC
 | 5 | `GET /api/hotpic_assemble_control/update/control/config` | [`HotpicApp.vue:23`](../../frontend/apps/desktop/src/views/HotpicApp.vue#L23) ·「孪生端点」→ `:274` | `application`、`infoId` | 同上 | **无**（裸 GET） |
 | 6 | `POST /api/portal/assemble/designer/page` | [`PortalApp.vue:30`](../../frontend/apps/desktop/src/views/PortalApp.vue#L30) · 门户管理 ·「建页面」→ `:296-302` | `portalId` | 父资源上下文（页面所属门户） | **无**（body 只有 `name/category/content`；页面列表 `:437` 还写死门户 flag `default`） |
 | 7 | `POST /api/portal/assemble/designer/page/create` | [`PortalPageDesignerApp.vue:11`](../../frontend/apps/desktop/src/views/PortalPageDesignerApp.vue#L11) · 门户页面设计器 ·「+ 新建」→ 弹窗 `:54`「保存」→ `:247-251` | `portalId` | 父资源上下文（页面所属门户） | **无**（表单 `:48-50` / `PageForm` `:73-77` 只有 name/category/content） |
+
+> 上表 #1–#5 为**历史登记**：2026-11-05 二次裁定后已按「全局热点图」模型转可用（见 A′），
+> 缺省不再 400，而是落 `('' ,'')` 全局行；只有半截参数仍 400。#6–#7（portal page）保持 400。
 
 > 对照：同 crate 的组件设计器 [`PortalWidgetDesignerApp.vue:40`](../../frontend/apps/desktop/src/views/PortalWidgetDesignerApp.vue#L40) 有「门户 ID」输入框（`form.portalId`，`:107` 初始化），说明前端**有能力**做这件事，只是页面这一支没做。
 
@@ -118,8 +152,12 @@ SELECT application, info_id, count(*) FROM x_hotpic GROUP BY 1,2 ORDER BY 3 DESC
 
 ## 结论
 
-- 2026-11-05 状态：**7 条全部为 400（缺参数），0 条可用**；查证后 **7 条全部保留 400**。
-- hotpic 5 条：登记为「未完成功能（无后端支撑的空壳）」——`application`/`infoId` 没有真实键、没有外键、没有可推导的父上下文，等产品决定是否做应用选择器或由业务页带入。
-- portal page 2 条：**停止修复**——`x_portal` 没有任何行（也就没有 `default`），前端写死 `portal/default` 本身是错的；先要有真实门户，才谈得上带 `portalId`。
-- 这 7 条不占基线（基线 0 行），不影响棘轮；它们是产品层面的待补项，不是回归。
+- 2026-11-05 状态：**当前 2 条仍为 400，5 条已转可用**（不是最初「7 条全部 400」的口径）。
+- hotpic 5 条：**已修好**——采用「全局热点图」模型（`(application, info_id)` 两列空串 = 部署级全局），
+  缺省写全局行、任意视图可读；真实请求读回开发库 **51 行**（`count=51`）。半截参数仍 400。
+- portal page 2 条：**保持 400，不动**——`x_portal` 没有任何行（也就没有 `default`），迁移无
+  `INSERT INTO x_portal` = 门户功能没有数据底座。依赖：**先有门户创建流程与至少一条真实门户行，才谈页面创建**。
+  前端 [`PortalApp.vue:437`](../../frontend/apps/desktop/src/views/PortalApp.vue#L437) 写死的 `portal/default`
+  单独登记为**错误常量**（不是待办默认值）。
+- 这些条目不占基线（基线 0 行），不影响棘轮；它们是产品层面的待补项，不是回归。
 - 在来源确定前，保持 400，不写占位 id。
