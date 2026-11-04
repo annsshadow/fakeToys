@@ -134,7 +134,7 @@ func (s *Server) adminLevels(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	offset, err := queryInt(c, "offset", 0)
+	offset, err := queryOffset(c)
 	if err != nil {
 		return err
 	}
@@ -281,7 +281,7 @@ func (s *Server) adminUsers(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	offset, err := queryInt(c, "offset", 0)
+	offset, err := queryOffset(c)
 	if err != nil {
 		return err
 	}
@@ -583,7 +583,7 @@ func (s *Server) adminBattles(c *fiber.Ctx) error {
 	// 这一步是为了能直接回答「**哪一场**对局对不上」——
 	// 否则还得手工按 user_id 查战报再交叉比对 replay_verifications。
 	onlyMismatched := c.Query("only_mismatched") == "1" || c.Query("only_mismatched") == "true"
-	offset, err := queryInt(c, "offset", 0)
+	offset, err := queryOffset(c)
 	if err != nil {
 		return err
 	}
@@ -649,7 +649,7 @@ func (s *Server) adminRecomputes(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	offset, err := queryInt(c, "offset", 0)
+	offset, err := queryOffset(c)
 	if err != nil {
 		return err
 	}
@@ -861,7 +861,7 @@ func (s *Server) adminDefenses(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	offset, err := queryInt(c, "offset", 0)
+	offset, err := queryOffset(c)
 	if err != nil {
 		return err
 	}
@@ -893,7 +893,7 @@ func (s *Server) adminDefenseChallenges(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	offset, err := queryInt(c, "offset", 0)
+	offset, err := queryOffset(c)
 	if err != nil {
 		return err
 	}
@@ -968,7 +968,7 @@ func (s *Server) adminOrders(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	offset, err := queryInt(c, "offset", 0)
+	offset, err := queryOffset(c)
 	if err != nil {
 		return err
 	}
@@ -1028,7 +1028,7 @@ func (s *Server) adminAnnouncements(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	offset, err := queryInt(c, "offset", 0)
+	offset, err := queryOffset(c)
 	if err != nil {
 		return err
 	}
@@ -1152,7 +1152,7 @@ func (s *Server) adminRedeemCodes(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	offset, err := queryInt(c, "offset", 0)
+	offset, err := queryOffset(c)
 	if err != nil {
 		return err
 	}
@@ -1188,7 +1188,7 @@ func (s *Server) adminRedeemUsages(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	offset, err := queryInt(c, "offset", 0)
+	offset, err := queryOffset(c)
 	if err != nil {
 		return err
 	}
@@ -1401,7 +1401,7 @@ func (s *Server) adminAuditLogs(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	offset, err := queryInt(c, "offset", 0)
+	offset, err := queryOffset(c)
 	if err != nil {
 		return err
 	}

@@ -816,7 +816,7 @@ func (s *Server) myBattleHistory(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	offset, err := queryInt(c, "offset", 0)
+	offset, err := queryOffset(c)
 	if err != nil {
 		return err
 	}

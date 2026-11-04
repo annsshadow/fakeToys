@@ -12,6 +12,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -119,6 +120,76 @@ func TestE2EListNegativeOffsetIsClamped(t *testing.T) {
 	_, pageNeg := e.get(t, "/api/v1/admin/defenses?limit=3&offset=-1", tok)
 	if !reflect.DeepEqual(page0["items"], pageNeg["items"]) {
 		t.Errorf("defenses offset=-1 应等价于 offset=0，实际 %v vs %v", pageNeg["items"], page0["items"])
+	}
+}
+
+// TestE2EOffsetOverCapRejected 客户端可控的 offset 必须有上界（第 97 轮）。
+//
+// # 缺陷（实测，1M users）
+//
+// 改前 offset 只校验「是不是整数」，没有上界。于是 `?offset=5000000`
+// 是一条**合法**请求：PostgreSQL 必须先扫掉前 500 万行再丢弃。
+// 单请求 1.2s、返回**空列表**（28 字节）；20 并发下 2.8 qps、p50 7.1s，
+// 同一时刻 `offset=0` 是 2572 qps、p50 7.6ms。
+// 也就是说：一个合法管理员令牌 + 一条拼错的 offset，就能让后台列表整体停摆。
+//
+// # 修法
+//
+// `queryOffset` 在 handler 里拒绝 offset > maxQueryOffset（400），
+// 不进 service、不占池连接；文案指向 R77 已有的 keyset 游标。
+//
+// 这条测试同时钉住两件事：
+//   - 边界内（offset=maxQueryOffset）仍必须 200 —— 不能顺手把正常翻页砍掉；
+//   - 边界外（+1）必须 400，且**不能**是 200 + 一个被悄悄夹到别处的页
+//     （offset 夹取会静默返回另一页，属于「看起来可信的错误答案」）。
+func TestE2EOffsetOverCapRejected(t *testing.T) {
+	e := newE2E(t)
+	_, tok := e.newAdmin(t, "offsetcap")
+	_, playerTok := e.newPlayer(t, "offsetcap")
+
+	// 边界内：深但合法，仍要能翻。
+	status, body := e.get(t,
+		fmt.Sprintf("/api/v1/admin/users?limit=3&offset=%d", maxQueryOffset), tok)
+	if status != fiber.StatusOK {
+		t.Fatalf("offset=%d（等于上限）应 200，实际 %d %v", maxQueryOffset, status, body)
+	}
+
+	adminPaths := []string{
+		"/api/v1/admin/levels",
+		"/api/v1/admin/users",
+		"/api/v1/admin/battles",
+		"/api/v1/admin/recomputes",
+		"/api/v1/admin/defenses",
+		"/api/v1/admin/defense-challenges",
+		"/api/v1/admin/orders",
+		"/api/v1/admin/announcements",
+		"/api/v1/admin/redeem-codes",
+		"/api/v1/admin/redeem-usages",
+		"/api/v1/admin/audit-logs",
+	}
+	for _, p := range adminPaths {
+		status, body := e.get(t,
+			fmt.Sprintf("%s?limit=3&offset=%d", p, maxQueryOffset+1), tok)
+		if status != fiber400 {
+			t.Errorf("%s offset=%d 应 400（超上界），实际 %d %v",
+				p, maxQueryOffset+1, status, body)
+		}
+	}
+
+	// 玩家端同一条链：myBattleHistory 原本也没有上界。
+	status, body = e.get(t,
+		fmt.Sprintf("/api/v1/me/battles?limit=3&offset=%d", maxQueryOffset+1), playerTok)
+	if status != fiber400 {
+		t.Errorf("me/battles offset=%d 应 400，实际 %d %v", maxQueryOffset+1, status, body)
+	}
+
+	// 错误文案必须指路：深分页改 cursor。否则调用方只知道「不行」。
+	_, body = e.get(t,
+		fmt.Sprintf("/api/v1/admin/users?offset=%d", maxQueryOffset+1), tok)
+	errObj, _ := body["error"].(map[string]any)
+	msg, _ := errObj["message"].(string)
+	if !strings.Contains(msg, "cursor") {
+		t.Errorf("拒绝文案应提示改用 cursor，实际 %q", msg)
 	}
 }
 

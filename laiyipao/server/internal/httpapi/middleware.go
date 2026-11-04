@@ -490,6 +490,54 @@ func queryInt(c *fiber.Ctx, name string, def int) (int, error) {
 	return v, nil
 }
 
+// maxQueryOffset 是 offset 的硬上限（2026-11-04 第 97 轮）。
+//
+// # 为什么必须有上界
+//
+// `OFFSET n` 的代价由**客户端**决定：PostgreSQL 必须先把前 n 行
+// （users 还要 LEFT JOIN user_progress / user_wallets）扫出来再丢弃，
+// 没有缓存能救。实测（1M users，`GET /admin/users?limit=50`，单请求）：
+//
+//	offset=0       →   37ms
+//	offset=200,000 →  242ms
+//	offset=500,000 →  603ms
+//	offset=1,500,000 → 1,844ms
+//	offset=5,000,000 → 1,240ms（**返回空列表**，28 字节，纯白烧）
+//
+// 20 并发下 1.5M / 5M 档只有 2.8 qps（p50 7.0s），同一时刻 offset=0 是
+// 2572 qps（p50 7.6ms）—— 即：一个合法管理员令牌 + 一条拼错的 offset
+// 就能把整个后台列表打停，而它**不返回任何数据**。
+//
+// 上界取 200,000：实测该档仍是 242ms（约为首页的 6 倍，但仍有界），
+// 再深的分页在 R77 已经有 keyset 游标（cursor 参数，代价与页大小成正比，
+// 与深度无关）。所以「深了改用 cursor」不是降级，是走另一条**更便宜**的路。
+//
+// # 为什么超限是 400 而不是像 limit 那样夹取
+//
+// limit 夹取是安全的：客户端要 9999 行、拿到 200 行，语义上就是「最多这些」，
+// 不会误解。offset 夹取则是**静默答错**：客户端要第 4001 页、服务端悄悄给
+// 第 2001 页，200 + 数据，翻页的人以为自己在看第 4001 页。
+// 这个仓库对「静默错误答案」的口径是明确的（见 queryInt 的注释）——
+// 宁可 400 说清楚，也不给一个看起来可信的错误页。
+//
+// 校验必须在 handler 里、进 service / 连接池**之前**完成：
+// 被拒请求不占用池连接，也就不会排队挤掉正常请求。
+const maxQueryOffset = 200_000
+
+// queryOffset 解析 offset 并施加上界；负数保持原样（服务层统一夹到 0，
+// 见 handlers_admin_e2e_test.go 的 TestE2EListNegativeOffsetIsClamped）。
+func queryOffset(c *fiber.Ctx) (int, error) {
+	v, err := queryInt(c, "offset", 0)
+	if err != nil {
+		return 0, err
+	}
+	if v > maxQueryOffset {
+		return 0, fmt.Errorf("%w: 查询参数 offset=%d 超过上限 %d；深分页请改用 cursor（keyset）参数",
+			service.ErrBadInput, v, maxQueryOffset)
+	}
+	return v, nil
+}
+
 // queryTime 解析可选的日期/时间查询参数（2026-10-31 新一轮第 14 轮）。
 //
 // 键不在 → nil（不过滤）。值支持两种格式：
