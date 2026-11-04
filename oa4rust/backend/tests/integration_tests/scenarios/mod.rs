@@ -20,6 +20,7 @@ pub mod new_real_endpoints;
 pub mod organization_core_express;
 pub mod portal_surface_publish;
 pub mod program_center;
+pub mod program_deploy_status;
 pub mod query_assemble;
 pub mod query_permission_binding;
 pub mod script_delete_paths;

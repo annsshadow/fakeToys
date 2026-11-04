@@ -998,17 +998,20 @@ GET /api/meeting/core/entity/room/{id}   column:equipment
 基线因此 **40 → 42（GET 11 / 非 GET 31）**，`BASELINE_COUNT=42`，集合相等。CI 的旧 40
 不是「更干净」，而是**扫描器当时没读到种子库**——这也是本次把口径写进台账的原因。
 
-### O24-3 待修 1 条（GET，批次 1-15 已清 41）
+### O24-3 待修 0 条（批次 1-16 已清 42）
 
-**口径**：非 GET 0 条 + GET 1 条 = 1（原 42；批次 1 清 1、批次 2 清 4、批次 3 清 4、批次 4 清 3、
+**口径**：非 GET 0 条 + GET 0 条 = 0（原 42；批次 1 清 1、批次 2 清 4、批次 3 清 4、批次 4 清 3、
 批次 5 清 2、批次 6 清 7、批次 7 清 4、批次 8 清 3、批次 9 清 4、批次 10 清 3、批次 11 清 1、
-批次 12 清 1、批次 13 清 1、批次 14 清 2、批次 15 清 1）。
+批次 12 清 1、批次 13 清 1、批次 14 清 2、批次 15 清 1、批次 16 清 1）。
 
-排序按真实用户后果，不按条数：
+**注意**：基线归零 ≠ 这个族「完成」——仍有 7 条端点因为缺实体引用参数被改成 **400（缺参数）**，
+功能对用户依旧不可用，见 [`o24-3-feature-still-unavailable.md`](./o24-3-feature-still-unavailable.md)。
 
-1. **写路径里「会写库但报错」的族**（用户以为失败、实际可能已落库）优先；
-2. 再按条数多的可批量验证族（非 GET 已清零）；
-3. GET 留最后（当前剩余 5 条全部属于此档）。
+**已执行的排序（按真实用户后果，不按条数）**：
+
+1. 写路径里「会写库但报错」的族（用户以为失败、实际可能已落库）优先；
+2. 再按条数多的可批量验证族；
+3. GET 留最后（批次 13-16 即这一段）。
 
 每批固定流程：`information_schema` 现场确认真实列类型 → **先红**（复现当前 500）→ 改 →
 行为级响应体断言 → 破坏实验 → **单独提交** → **删对应基线行并下调 `BASELINE_COUNT`**。
@@ -1465,6 +1468,24 @@ x_timer_job.work_id → x_work.id，delete_rule = NO ACTION
 **收口**：删 1 条基线路，`BASELINE_COUNT 2 → 1`；门禁实测
 `== 棘轮基线：1 条（当前 1 条），集合相等 ==`。
 
+### O24-3 批次 16：`column:status` program deploy（1 条）
+
+**schema 现场证据**：`x_program_deploy.status` 是 `text` 且 **nullable**；
+`market_flag_installed_version` 与 `deploy_id` 都用非 Option 的 `row.get("status")`，
+NULL 时 tokio-postgres 解包 panic（`error deserializing column status`）被守护成 500。
+两处同根因一并改为 `Option<String>` + 空串兜底（`deploy_id` 不在基线里，但同一张表同一种读法）。
+
+**先红**：`program_deploy_status_contract` 未改代码时实测 500（panic
+`error deserializing column 3`）。
+
+**行为断言**：`installed/version` 与 `deploy/{id}` 均 200，status 为 NULL 的行输出
+`""`（不是 500）。这两条是读路径，不适用「写后必读」。
+
+**破坏实验**：把 `deploy_id` 那处改回非 Option 读 → 第二条断言红；复原后绿。
+
+**收口**：删最后 1 条基线路，`BASELINE_COUNT 1 → 0`；门禁实测
+`== 棘轮基线：0 条（当前 0 条），集合相等 ==`。
+
 ### 写路径修复规矩：「写后必读」（批次 7 起，强制执行）
 
 任何写路径修复都必须补一条**写入后立即读回并断言同一值**的用例（SQL 直读同库），
@@ -1517,6 +1538,7 @@ x_timer_job.work_id → x_work.id，delete_rule = NO ACTION
 | O24-3 批次 13（E42P18 ai chat 分页） | 0 | **1** | **-1**（5→4） | 4 |
 | O24-3 批次 14（meeting room jsonb equipment） | 0 | **2** | **-2**（4→2） | 2 |
 | O24-3 批次 15（identity order_number bigint） | 0 | **1** | **-1**（2→1） | 1 |
+| O24-3 批次 16（program deploy nullable status） | 0 | **1** | **-1**（1→0） | **0** |
 
 **清除清单**：
 
@@ -1537,4 +1559,5 @@ x_timer_job.work_id → x_work.id，delete_rule = NO ACTION
 | O24-3 批次 13 | `E42P18` ai chat 分页占位符编号错位 | `GET /api/ai_assemble_control/chat/list/completion/{clueId}/paging/{page}/size/{size}` | `ai_chat_paging_contract`：先红 500（E42P18 `could not determine data type of parameter $2`）→ 改后 200、倒序与分页窗口均断言；破坏实验改回 `$4/$3` → 红；门禁 4/4 集合相等 |
 | O24-3 批次 14 | `column:equipment` meeting room jsonb | `GET /api/meeting/core/entity/room/list`；`GET /api/meeting/core/entity/room/{id}` | `meeting_room_jsonb_contract`：先红 500（`error deserializing column equipment`）→ 改后 200、equipment 原值返回、create 后回读 `equipment::text` 同值（写后必读）；破坏实验写入固定错误值 → 红；门禁 2/2 集合相等 |
 | O24-3 批次 15 | `wrong-type` identity order_number bigint | `GET /api/organization/assemble/control/identity/{flag}/order/before/{followFlag}` | `identity_order_contract`：先红 500（`ToSql(0) WrongType { postgres: Int8, rust: "i32" }`）→ 改后 200 且回库 order_number A=1/B=2（写后必读）；破坏实验改回 i32 → 红；门禁 1/1 集合相等 |
+| O24-3 批次 16 | `column:status` program deploy nullable status | `GET /api/program_center/market/{flag}/installed/version` | `program_deploy_status_contract`：先红 500（panic `error deserializing column 3`）→ 改后 installed/version 与 deploy/{id} 均 200、NULL status 输出 `""`；破坏实验改回非 Option 读 → 红；门禁 0/0 集合相等 |
 

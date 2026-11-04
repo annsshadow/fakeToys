@@ -89,6 +89,17 @@ async fn attribute_paths_contract() {
     integration_tests::scenarios::attribute_paths::attribute_paths_flow(ctx.pool.clone()).await;
 }
 
+/// O24-3 批次 16：program deploy 的 nullable status 按非 Option 读。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn program_deploy_status_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::program_deploy_status::program_deploy_status_flow(
+        ctx.pool.clone(),
+    )
+    .await;
+}
+
 /// O24-3 批次 15：E identity order_number bigint 按 i32 绑定（WrongType）。
 #[ignore = "requires a running database server"]
 #[tokio::test]

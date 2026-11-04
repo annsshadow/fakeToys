@@ -4233,7 +4233,12 @@ pub async fn deploy_id(
                     "version".to_string(),
                     Value::String(row.get::<_, Option<String>>("version").unwrap_or_default()),
                 ),
-                ("status".to_string(), Value::String(row.get("status"))),
+                // status 列 nullable（information_schema 现场确认），按非 Option 读会 panic
+                // "error deserializing column status" → 500；改 Option + 空串兜底。
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
@@ -6240,7 +6245,12 @@ pub async fn market_flag_installed_version(
                     "version".to_string(),
                     Value::String(row.get::<_, Option<String>>("version").unwrap_or_default()),
                 ),
-                ("status".to_string(), Value::String(row.get("status"))),
+                // status 列 nullable（information_schema 现场确认），按非 Option 读会 panic
+                // "error deserializing column status" → 500；改 Option + 空串兜底。
+                (
+                    "status".to_string(),
+                    Value::String(row.get::<_, Option<String>>("status").unwrap_or_default()),
+                ),
                 (
                     "creator".to_string(),
                     Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),

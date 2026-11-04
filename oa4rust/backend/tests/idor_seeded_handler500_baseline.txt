@@ -100,4 +100,9 @@
 # 2026-11-05 基线 2 → 1（GET 1 / 非 GET 0）：O24-3 批次 15 清掉 identity order 1 条 wrong-type。
 # `x_org_identity.order_number` 实列是 bigint（information_schema 现场确认），旧代码
 # `(index + 1) as i32` 绑定 → ToSql WrongType（postgres Int8 / rust i32）。改绑 i64。
-GET /api/program_center/market/{flag}/installed/version	column:status	owner:O24数据层对齐(后端)	due:2026-11-12	cond:改 try_get 并统一实体/列类型；200 后删行
+#
+# 2026-11-05 基线 1 → 0（GET 0 / 非 GET 0）：O24-3 批次 16 清掉 program deploy 1 条 column:status。
+# `x_program_deploy.status` 是 nullable text（information_schema 现场确认），
+# `market_flag_installed_version` 与 `deploy_id` 都用非 Option 的 `row.get("status")`
+# → NULL 时 panic "error deserializing column status" 被守护成 500；改 Option + 空串兜底。
+# 至此 O24-3 种子化路由扫描的 handler-500 基线清零。
