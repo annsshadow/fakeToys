@@ -210,7 +210,10 @@ pub async fn cms_extended_crud_flow() {
         .as_str()
         .expect("create comment missing id")
         .to_string();
-    assert_eq!(create_cmt_body["data"]["docId"].as_str(), Some(doc_id.as_str()));
+    assert_eq!(
+        create_cmt_body["data"]["docId"].as_str(),
+        Some(doc_id.as_str())
+    );
 
     let get_cmt = client
         .get(format!("{}/api/comment/{}", base, comment_id))
@@ -220,7 +223,10 @@ pub async fn cms_extended_crud_flow() {
         .expect("get comment failed");
     assert_eq!(get_cmt.status(), reqwest::StatusCode::OK);
     let get_cmt_body: serde_json::Value = get_cmt.json().await.expect("bad get cmt");
-    assert_eq!(get_cmt_body["data"]["docId"].as_str(), Some(doc_id.as_str()));
+    assert_eq!(
+        get_cmt_body["data"]["docId"].as_str(),
+        Some(doc_id.as_str())
+    );
     assert_eq!(get_cmt_body["data"]["personId"].as_str(), Some("it-admin"));
     assert_eq!(
         get_cmt_body["data"]["content"].as_str(),

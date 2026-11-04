@@ -204,7 +204,10 @@ pub async fn ai_endpoints_flow() {
         get_mcp["data"]["name"].as_str(),
         Some(format!("mcp-{}", mcp_id).as_str())
     );
-    assert_eq!(get_mcp["data"]["url"].as_str(), Some("http://example.test/mcp"));
+    assert_eq!(
+        get_mcp["data"]["url"].as_str(),
+        Some("http://example.test/mcp")
+    );
     assert_eq!(get_mcp["data"]["enabled"].as_bool(), Some(true));
     info!(mcp_id = %mcp_id, "config_get_mcp returned real row");
 

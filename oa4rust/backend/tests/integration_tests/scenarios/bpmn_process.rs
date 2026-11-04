@@ -49,7 +49,12 @@ async fn seed_process(pool: &TestPool, process_id: &str) -> bool {
     affected > 0
 }
 
-async fn create_work(client: &Client, base: &str, auth: &str, process_id: &str) -> (String, String) {
+async fn create_work(
+    client: &Client,
+    base: &str,
+    auth: &str,
+    process_id: &str,
+) -> (String, String) {
     let response = client
         .post(format!(
             "{}/api/processplatform/service/processing/work",
@@ -146,7 +151,10 @@ pub async fn bpmn_process_flow() {
     let auth_header = format!("Bearer {}", token);
 
     let process_id = format!("bpmn-it-process-{}", std::process::id());
-    assert!(seed_process(&pool, &process_id).await, "seed process failed");
+    assert!(
+        seed_process(&pool, &process_id).await,
+        "seed process failed"
+    );
 
     // Step 1: 原生 work create —— 建 x_work（pending）+ 首个 active 任务。
     let (work_id, task_id) = create_work(&client, &base, &auth_header, &process_id).await;
@@ -185,7 +193,8 @@ pub async fn bpmn_process_flow() {
         "task complete failed: {}",
         complete.text().await.unwrap_or_default()
     );
-    let complete_body: serde_json::Value = complete.json().await.expect("invalid complete response");
+    let complete_body: serde_json::Value =
+        complete.json().await.expect("invalid complete response");
     assert_eq!(
         complete_body["data"]["task_status"].as_str(),
         Some("completed")
@@ -241,7 +250,10 @@ pub async fn bpmn_task_actions_flow() {
 
     // ── Part A: claim（pending → active）────────────────────────────────────
     let pid_a = format!("bpmn-it-claim-{}", std::process::id());
-    assert!(seed_process(&pool, &pid_a).await, "seed claim process failed");
+    assert!(
+        seed_process(&pool, &pid_a).await,
+        "seed claim process failed"
+    );
     let (_work_a, task_a) = create_work(&client, &base, &auth_header, &pid_a).await;
     // canonical 语义：只有 pending 任务可认领；create 出来的是 active，先置 pending。
     set_task_status(&pool, &task_a, "pending").await;
@@ -268,7 +280,10 @@ pub async fn bpmn_task_actions_flow() {
 
     // ── Part B: transfer（改派）─────────────────────────────────────────────
     let pid_b = format!("bpmn-it-xfer-{}", std::process::id());
-    assert!(seed_process(&pool, &pid_b).await, "seed transfer process failed");
+    assert!(
+        seed_process(&pool, &pid_b).await,
+        "seed transfer process failed"
+    );
     let (_work_b, task_b) = create_work(&client, &base, &auth_header, &pid_b).await;
     let xfer = client
         .post(format!("{}/api/task/{}/transfer/{}", base, task_b, "bob"))
@@ -304,7 +319,10 @@ pub async fn bpmn_task_actions_flow() {
 
     // ── Part C: reject（active → rejected，work 不受影响）────────────────────
     let pid_c = format!("bpmn-it-reject-{}", std::process::id());
-    assert!(seed_process(&pool, &pid_c).await, "seed reject process failed");
+    assert!(
+        seed_process(&pool, &pid_c).await,
+        "seed reject process failed"
+    );
     let (work_c, task_c) = create_work(&client, &base, &auth_header, &pid_c).await;
     let processing = client
         .put(format!("{}/api/work/{}/processing", base, work_c))
