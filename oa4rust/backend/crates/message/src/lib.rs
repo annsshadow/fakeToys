@@ -51,11 +51,12 @@ pub async fn consume_list(
     pool: Extension<Pool>,
     axum::extract::Path((consume, count)): axum::extract::Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let count = shared::response::page_size(count)?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
             "SELECT xid, xtitle, xbody, xtype, xconsumer, xperson, \"xcreateTime\" FROM x_msg_message WHERE xconsumer = $1 AND xconsumed = false ORDER BY \"xcreateTime\" ASC LIMIT $2",
-            &[&consume, &{ count.clamp(1, 200) }],
+            &[&consume, &count],
         )
         .await
         .map_err(|_| AppError::Internal)?;

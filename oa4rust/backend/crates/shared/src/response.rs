@@ -1,6 +1,7 @@
 // Copyright (C) 2026 annsshadow
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+use crate::AppError;
 use axum::response::{IntoResponse, Json};
 use deadpool_postgres::tokio_postgres::types::{FromSql, Type};
 use deadpool_postgres::tokio_postgres::Row;
@@ -239,19 +240,46 @@ pub fn legacy_exception_for(kind: &str) -> String {
     format!("com.x.base.core.project.exception.{class}")
 }
 
-/// 分页窗口钳制：page<1 归 1、size 钳到 1..=200，返回 `(size, offset)`。
-/// 此前多处 handler 把路径/查询里的 (page,size) 直接算 `(page-1)*size`：
-/// page=0 → 负 OFFSET → Postgres 报错变 500；极端值 → i64 乘法溢出
-/// （debug panic / release 回绕）。统一在此钳制，杜绝非法分页输入。
-pub fn page_window(page: i64, size: i64) -> (i64, i64) {
-    let size = page_size(size);
-    let page = page.max(1);
-    (size, (page - 1).saturating_mul(size))
+/// 每页条数上限。超出直接 400，不做静默截断：客户端按自己的 size 算下一页时，
+/// 静默钳位会让服务端 offset 与客户端预期错位且全程无错误码。
+pub const MAX_PAGE_SIZE: i64 = 200;
+
+/// 页码上限。10,000 页 × 200 条/页 ≈ 200 万行，相对 O17 实测的 5 万行数据集
+/// 有约 40 倍余量；正常前端每页 20/50/200 对应 10 万/5 万/1 万页。
+pub const MAX_PAGE_NUMBER: i64 = 10_000;
+
+/// OFFSET 上限（行）。旧式 `page`/`from` 直接当 OFFSET 的端点也套用同一上界，
+/// 避免 `page=1e18` 这类请求把超大偏移送进 PostgreSQL。
+pub const MAX_PAGE_OFFSET: i64 = (MAX_PAGE_NUMBER - 1) * MAX_PAGE_SIZE;
+
+/// 校验每页条数：必须在 `1..=MAX_PAGE_SIZE`，否则 400。
+pub fn page_size(size: i64) -> Result<i64, AppError> {
+    if !(1..=MAX_PAGE_SIZE).contains(&size) {
+        return Err(AppError::BadRequest(format!(
+            "size must be between 1 and {MAX_PAGE_SIZE}, got {size}"
+        )));
+    }
+    Ok(size)
 }
 
-/// 只钳制每页条数（`1..=200`）。用于 `page` 被当作 OFFSET 传入的旧式分页端点。
-pub fn page_size(size: i64) -> i64 {
-    size.clamp(1, 200)
+/// 校验 OFFSET：必须在 `0..=MAX_PAGE_OFFSET`，否则 400。用于把客户端
+/// `page`/`from` 直接当 OFFSET 的旧式分页端点；校验发生在任何 DB 访问之前。
+pub fn page_offset(offset: i64) -> Result<i64, AppError> {
+    if !(0..=MAX_PAGE_OFFSET).contains(&offset) {
+        return Err(AppError::BadRequest(format!(
+            "offset must be between 0 and {MAX_PAGE_OFFSET}, got {offset}"
+        )));
+    }
+    Ok(offset)
+}
+
+/// 分页窗口：page<1 归 1、size 必须在 `1..=200`、offset 不得超过 `MAX_PAGE_OFFSET`，
+/// 返回 `(size, offset)`。越界一律 400，不再静默钳位。
+pub fn page_window(page: i64, size: i64) -> Result<(i64, i64), AppError> {
+    let size = page_size(size)?;
+    let page = page.max(1);
+    let offset = page_offset((page - 1).saturating_mul(size))?;
+    Ok((size, offset))
 }
 
 /// RFC 6266/5987 安全的附件 `Content-Disposition` 头值。
@@ -471,24 +499,38 @@ mod tests {
         assert!(!fallback.contains('\n'));
     }
     #[test]
-    fn page_size_clamps_only_page_length() {
-        assert_eq!(super::page_size(0), 1);
-        assert_eq!(super::page_size(-5), 1);
-        assert_eq!(super::page_size(20), 20);
-        assert_eq!(super::page_size(999), 200);
+    fn page_size_rejects_out_of_range() {
+        assert!(super::page_size(0).is_err());
+        assert!(super::page_size(-5).is_err());
+        assert_eq!(super::page_size(20).unwrap(), 20);
+        assert_eq!(super::page_size(200).unwrap(), 200);
+        assert!(super::page_size(201).is_err());
+        assert!(super::page_size(999).is_err());
+        assert!(super::page_size(i64::MAX).is_err());
     }
 
     #[test]
-    fn page_window_clamps_invalid_and_extreme_input() {
-        assert_eq!(super::page_window(1, 20), (20, 0));
-        assert_eq!(super::page_window(0, 20), (20, 0));
-        assert_eq!(super::page_window(-3, 20), (20, 0));
-        assert_eq!(super::page_window(2, 0), (1, 1));
-        assert_eq!(super::page_window(3, -5), (1, 2));
-        assert_eq!(super::page_window(2, 999), (200, 200));
-        let (s, off) = super::page_window(i64::MAX, 200);
-        assert_eq!(s, 200);
-        assert!(off > 0);
+    fn page_window_rejects_invalid_and_extreme_input() {
+        assert_eq!(super::page_window(1, 20).unwrap(), (20, 0));
+        assert_eq!(super::page_window(0, 20).unwrap(), (20, 0));
+        assert_eq!(super::page_window(-3, 20).unwrap(), (20, 0));
+        assert!(super::page_window(2, 0).is_err());
+        assert!(super::page_window(3, -5).is_err());
+        assert!(super::page_window(2, 999).is_err());
+        assert_eq!(super::page_window(2, 200).unwrap(), (200, 200));
+        assert!(super::page_window(i64::MAX, 200).is_err());
+    }
+
+    #[test]
+    fn page_offset_enforces_upper_bound() {
+        assert_eq!(super::page_offset(0).unwrap(), 0);
+        assert!(super::page_offset(-1).is_err());
+        assert_eq!(
+            super::page_offset(super::MAX_PAGE_OFFSET).unwrap(),
+            super::MAX_PAGE_OFFSET
+        );
+        assert!(super::page_offset(super::MAX_PAGE_OFFSET + 1).is_err());
+        assert!(super::page_offset(i64::MAX).is_err());
     }
     #[test]
     fn sanitize_mime_neutralizes_non_ascii_and_injection() {

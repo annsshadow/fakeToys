@@ -15,4 +15,5 @@ pub mod core_crud_lifecycle;
 pub mod data_integrity;
 pub mod file_upload;
 pub mod org_person_meeting;
+pub mod pagination_contract;
 pub mod program_center_core_entity;

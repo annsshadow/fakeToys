@@ -323,9 +323,93 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
   - 环境说明：本机开发库 `oa4rust` 有历史 schema 漂移（`auth_person_identity` 是旧版 `person_id` 列），迁移 019 在该库失败；这是存量环境问题、与本次改动无关，全新库上 migrate 用例 2/2 绿。
 - 探针是临时文件，跑完即删（不引入需要 DB + 5 万行数据的常驻测试）。
 
+### O17 收口（B1：可失败的分页语义 + OFFSET 上界，仍属同一轮）
+
+#### 为什么 B1 而不是 B2
+
+原 O17 的做法是「静默钳位」：`size` 超 200 就钳到 200，照常返回 200。复核把风险拆成三个可验证的问题，结论是**钳位本身比读放大更难查**：
+
+- 77 个钳制点 / 77 个 handler 里，53 个的 offset 由服务端推导（52 个 `page_window` + 1 个 bbs 手工），而 **24 落点 / 25 条路由把客户端 `page`/`from` 直接当 OFFSET 绑定**——钳 `size` 管不到这些落点。
+- **0/77 回显实际生效的 size**；另有 **11 个端点回显客户端原始请求 size**（organization ×4、meeting ×4、message ×2、general ×1）。信封因此撒谎：客户端看到 `size=1000`，实际只拿到 200 行，再按「下一页从第 1001 行开始」算就会重复/漏行，全程零错误码。
+- 前端（桌面 + 移动端）扫描 **0 处 >200**：最大 200（移动端聊天），桌面 BBS 20、IM 50、AI 20/50、考勤 50；`QueryManagerDeep` 的 500 只用于本地 `slice`；BBS 的 `rows.length >= pageSize` 判据在 20 上不受影响。改成 400 对既有前端零破坏。
+
+三个候选里选 **B1（单一语义、可失败）** 而不是 B2（保留钳位另加 `checked_page_*` 并存）：并存语义等于让 88 个调用点继续各自挑选，钳位路径永久保留，每新增一个端点都要再判断一次；改成 `Result` 后编译器强制每个调用点适配（88 处全部 `?`），不存在「漏检」的调用点。B1 的适配成本是一次性的机械改动，并存是长期的判断成本。
+
+- `page_size(size)` / `page_offset(offset)` / `page_window(page,size)` 返回 `Result<_, AppError>`，越界 `AppError::BadRequest`（复用既有 400 分类，不新增错误体系）。
+- 88 个调用点全部补 `?`；`auth::person::list` 原返回 `Json<ActionResult<Value>>` 无法 `?`，改为 `Result<Json<...>, AppError>`。
+- 11 个「钳位 + 回显原始 size」端点一并变 400；信封撒谎问题随拒绝一起消失，**没有**给 `ActionResult` 加「生效页大小」字段（不为已消失的问题扩一轮）。
+- B1 适配时静态盘点又发现 **10 处内联 `size.clamp(1, 200)`**（不经过 shared helper，编译器抓不到）：`ai` ×4、`cms`、`file`、`personal`、`organization_assemble_express`、`message`、`processplatform_assemble_surface` 的 `u2_adjust_size`（后被 2 处调用）。这些同样是「静默钳位」，一并改为 `page_window` / `page_size`；对应单测从「钳位断言」改成「越界 400 断言」（`file` 的 `attachment2_limit_offset`、`processplatform` 的 `u2_adjust_size`）。改完后全仓不再有 200 上限的内联 clamp。
+
+#### OFFSET 洞是 O17 原本没收的
+
+原 O17 明文写的是「`page` 当 OFFSET 的 23 个旧式端点**只钳 `size`，不改既有 offset 语义**」——也就是当时只封了 `size` 侧读放大，**offset 上界是这一轮才补的**。台账不能把它记成「一开始就设计好了」。
+
+- 范围：23 个 `processplatform_assemble_surface` 的 `*_paging_page_size_size_core`（path `page` 直接绑 OFFSET）+ `program_center::u3_bar_mass_page`（path `from` 直接绑 OFFSET，bar/foo 两条路由）= **24 落点 / 25 条路由**。
+- 上界：`MAX_PAGE_OFFSET = (MAX_PAGE_NUMBER - 1) * MAX_PAGE_SIZE = 1,999,800` 行（不是早期 commit message 里误写的 1,998,000）。依据：`MAX_PAGE_NUMBER=10,000` 页 × 每页最大 200 行 ≈ 200 万行；O17 实测数据集 5 万行、余量约 40×；正常前端每页 20/50/200 对应 10 万/5 万/1 万页，5 万行 × 每页 20 只需 2,500 页、offset 49,980，离上界两个数量级。上界与 `page_window` 共用同一组常量，避免两套阈值漂移。
+- 校验位置：`let page = shared::response::page_offset(page)?;` / `let from = ...` 插在取 DB 连接之前，越界请求进 DB 前即被拒。
+- keyset（seek）化列为后续项，不混进本轮：它改变分页语义与前端「下一页」契约，需要单独一轮带回归。
+
+#### 契约测试（`tests/integration_tests/scenarios/pagination_contract.rs`）
+
+覆盖三类落点，逐条记录实际响应体（`[pagination-contract]` 日志）：
+
+| 落点 | 请求 | 期望 | 实测 |
+|------|------|------|------|
+| personcard（`page_window`） | `size=1000000000` | 400 | 400，`prompt=ExceptionBadRequest` |
+| personcard | `size=201` | 400 | 400 |
+| personcard | `size=0` / `size=-1` | 400 | 400 |
+| personcard | `size=abc` | 400 | 400（axum 路径解析失败，纯文本体） |
+| personcard | `size=200` | 200 且行数 ≤200 | 200，行数 ≤200 |
+| personcard | `page=1 size=20` | 200 | 200 |
+| personcard | `page=1e18` | 400（offset 上界） | 400 |
+| draft（`page` 即 OFFSET） | `page=1e18` / `1999801` | 400 | 400 |
+| draft | `page=1999800` / `page=0` | 200 | 200 |
+| draft | `size=201` | 400 | 400 |
+| bar（`from` 即 OFFSET） | `from=1e18` / `1999801` | 400 | 400 |
+| bar | `from=0 count=51` | 200 | 200 |
+| bar | `count=201` | 400 | 400 |
+| person_filter（内联 clamp 补收） | `size=201` / `size=0` | 400 | 400 |
+| person_filter | `size=20` | 200 | 200 |
+
+#### 破坏实验
+
+| 实验 | 改动 | 红的具体断言 | 恢复后 |
+|------|------|--------------|--------|
+| 1. 拿掉 size 的 400 | `page_size` 改回 `Ok(size.clamp(1,200))` | `size=1e9: expected 400, left:200 right:400`，响应回显 `"size":1000000000` | 全绿 |
+| 2a. 全局拿掉 offset 上界 | `page_offset` 直接 `Ok(offset)` | `page_window page=1e18: left:200 right:400`，响应 `size:200,count:0` | 全绿 |
+| 2b. 只拿掉 24 个旧式落点的校验 | 删除 23+1 处 `page_offset`/`from` 校验，保留 `page_window` | `draft page=1e18: left:200 right:400`，响应 `size:0,count:0` | 全绿 |
+
+#### 改前 / 改后数字（同一探针、同一 50k `x_org_person` 数据集、20 次请求）
+
+| 场景 | 基线 `origin/main`（静默钳位） | B1 改后 | 变化 |
+|------|-------------------------------|---------|------|
+| 正常 `page=1 size=20` | p50 17.65 ms / p95 18.83 ms / 2,615 B / 0 错误 | p50 17.81 ms / p95 20.05 ms / 2,615 B / 0 错误 | 零回归（p50 +0.9%、p95 +6.5%，同 harness 噪声级） |
+| `size=1e9` | p50 19.29 ms / p95 20.56 ms / 25,506 B / 20×200 | p50 4.26 ms / p95 5.00 ms / 225 B / 20×400 | 400 拦截；字节 113×↓、p50 约 4.5×↓ |
+| personcard `page=1e18` | p50 27.95 ms / p95 31.08 ms / 114 B / 20×200 | p50 4.29 ms / p95 4.97 ms / 240 B / 20×400 | 400 拦截；p50 6.5×↓ |
+| draft `page=1e18` | p50 6.10 ms / p95 6.52 ms / 112 B / 20×200 | p50 4.54 ms / p95 4.91 ms / 240 B / 20×400 | 400 拦截 |
+
+口径说明：本节 harness 为预热后 20 样本，基线/改后均约 17.7 ms；上方 O17 原表的 23 ms 是 5 次冷样本的不同口径。零回归以**同一 harness 的基线 vs 改后**对比为准，不宣称复现 23 ms。
+
+#### 「请求在进 DB 前被拒」的侧证据（pg_stat，100 次 `page=1e18`）
+
+| | `pp_c_draft`（draft 表扫描计数） | `x_org_person`（personcard 表扫描计数） |
+|---|---|---|
+| 基线 | 8 → 118（delta **110**） | 67 → 169（delta **102**） |
+| B1 改后 | 2 → 2（delta **0**） | 23 → 23（delta **0**） |
+| 控制组 20 次正常请求 | — | delta **5**（证明计数器本身有效，0 不是「统计没刷新」） |
+
+#### 验证
+
+- 全新库 `oa4rust_o17_b1_check`：先 `cargo test -p shared --lib migrate::tests -- --test-threads=1` 建全表（2/2 绿），再 `cargo test --workspace --lib`（97 个测试目标全绿，0 FAILED）。
+- `cargo test --test integration_runner -- --ignored --test-threads=1`：**8 passed / 16 failed**；同样的 16 条在基线 `origin/main 31238a2cb` 上**逐条同名失败**（7 passed / 16 failed），即存量问题、与本次改动无关（`bpmn work/create 405`、`cms` 非 JSON 体、`console`/`organization` 列反序列化等，属 O10 候选与存量路由/实体漂移）。新增 `pagination_contract` 是唯一增量，通过。
+  - 这 16 条 DB 场景均带 `#[ignore]`，CI 的 `cargo test --test integration_runner` 只跑非 ignore 用例，因此本来就不在 CI 门禁内；本轮未改 CI 范围。
+- `cargo clippy --all-targets -- -D warnings` 零告警；`cargo fmt --all --check` 绿。
+
 ### 遗留
 
-- 每页 200 上界现已成为对外行为的一部分：确有 >200 的导出场景应开显式 export 端点，不放开通用分页。
+- 每页 200 / offset 1,999,800 已成为对外行为的一部分且**失败即 400**（不再静默钳位）；确有 >200 的导出场景应开显式 export 端点，不放开通用分页。
+- `size`/`page` 校验在 HTTP 层完成，但 keyset（seek）化未做（后续单独一轮）。
+- **登记债务**：`IMChat.vue` 的 `page++` 从未进入请求（翻页是假的，前端既有行为），本轮不修。
 - 字段类上界（超长字段/深嵌套/畸形 JSON）仍未做，保留在清单第 6 项。
 
 ## 既有后续清单
@@ -335,7 +419,7 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 3. ~~限流器 key 空间洪泛~~（O11 done：50k 上界 + LRU 逐出）。
 4. ~~IDOR / 越权~~（O9 done：矩阵 + 读面归属闸家族）。
 5. 管理端路由鉴权穷举扫描。
-6. 输入健壮性：超长字段/深嵌套/畸形 JSON 的上界缺失（O17 已收口分页 `size/page` 上界；字段长度与嵌套深度仍未做）。
+6. 输入健壮性：超长字段/深嵌套/畸形 JSON 的上界缺失（O17 已收口分页 `size` / `page` / `offset` 上界，超限 400；字段长度与嵌套深度仍未做；keyset 分页化另列后续）。
 7. 性能基线：真实数据量下关键路径 P95/P99。
 8. 数据完整性：业务写与审计写同事务、孤儿行、级联语义。
 9. **O10 候选（O9 棘轮桶，161 条 handler 级 500）**：sea-orm 实体类型与列类型系统性不匹配（实体 `Option<DateTime>` ↔ 列 TEXT、`i32` ↔ BIGINT——insert 的 RETURNING 全列解码必炸，bbs_forum_info 已实证根因）+ `{}` 体无校验直打 DB 族。逐族对齐实体定义与 migration 实态，修复一族下调棘轮基线。

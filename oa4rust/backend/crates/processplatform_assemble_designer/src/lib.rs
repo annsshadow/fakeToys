@@ -3898,7 +3898,7 @@ pub async fn applicationdict_paging_post(
         return Ok(Json(ActionResult::error("page and size must be >= 1")));
     }
     let client = shared::db::acquire(&pool).await?;
-    let (size, offset) = shared::response::page_window(page, size);
+    let (size, offset) = shared::response::page_window(page, size)?;
     let total: i64 = client
         .query_one(
             "SELECT COUNT(*)::bigint FROM pp_e_applicationdict WHERE deleted_at IS NULL",
@@ -4500,7 +4500,7 @@ pub async fn mergeitemplan_paging_by_application(
         return Ok(Json(ActionResult::error("page and size must be >= 1")));
     }
     let client = shared::db::acquire(&pool).await?;
-    let (size, offset) = shared::response::page_window(page, size);
+    let (size, offset) = shared::response::page_window(page, size)?;
     let total: i64 = client
         .query_one(
             "SELECT COUNT(*)::bigint FROM pp_e_mergeitemplan WHERE xapplication = $1",
@@ -4547,7 +4547,7 @@ pub async fn mergeitemplan_paging_exact(
         return Ok(Json(ActionResult::error("page and size must be >= 1")));
     }
     let client = shared::db::acquire(&pool).await?;
-    let (size, offset) = shared::response::page_window(page, size);
+    let (size, offset) = shared::response::page_window(page, size)?;
     let total: i64 = client
         .query_one("SELECT COUNT(*)::bigint FROM pp_e_mergeitemplan", &[])
         .await

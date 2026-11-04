@@ -350,7 +350,7 @@ async fn execute_statement_by_flag(
         );
     }
 
-    let (size, offset) = shared::response::page_window(page, size);
+    let (size, offset) = shared::response::page_window(page, size)?;
     let paged_sql = format!(
         "SELECT * FROM ({}) AS stmt_page_sub LIMIT ${} OFFSET ${}",
         parameterized_sql.trim().trim_end_matches(';'),
@@ -1260,7 +1260,7 @@ pub async fn view_execute_v2_flag_query(
     Path((flag, query_flag, page, size)): Path<(String, String, i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
-    let (size, offset) = shared::response::page_window(page, size);
+    let (size, offset) = shared::response::page_window(page, size)?;
     let rows = client
         .query(
             "SELECT id, name, view_flag, query_flag, content, creator, to_char(create_time,'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_query_view \
@@ -1280,7 +1280,7 @@ pub async fn view_execute_v2_id(
     Path((id, page, size)): Path<(String, i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
-    let (size, offset) = shared::response::page_window(page, size);
+    let (size, offset) = shared::response::page_window(page, size)?;
     let rows = client
         .query(
             "SELECT id, name, view_flag, query_flag, content, creator, to_char(create_time,'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_query_view \

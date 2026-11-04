@@ -8027,7 +8027,7 @@ pub async fn commend_list_paging(
         .map_err(|_| AppError::Internal)?;
     let count: i64 = count_row.get("count");
 
-    let (size, offset) = shared::response::page_window(page, size);
+    let (size, offset) = shared::response::page_window(page, size)?;
     let rows = client
         .query(
             "SELECT id, doc_id, person_id, create_time::text FROM x_cms_commend WHERE doc_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC LIMIT $2 OFFSET $3",
@@ -8795,8 +8795,7 @@ pub async fn comment_u2_list_page_size_size(
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let page = page.max(1);
-    let size = size.clamp(1, 200);
-    let offset = (page - 1).saturating_mul(size);
+    let (size, offset) = shared::response::page_window(page, size)?;
     let client = shared::db::acquire(&pool).await?;
     let count_row = client
         .query_one(

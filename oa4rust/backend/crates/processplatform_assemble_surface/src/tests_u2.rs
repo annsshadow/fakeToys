@@ -1282,14 +1282,16 @@ mod u2c_tests {
     }
 
     #[test]
-    fn u2c_paging_adjust_clamps_prevent_unbounded_scan() {
+    fn u2c_paging_adjust_rejects_out_of_range_size() {
         use crate::{u2_adjust_page, u2_adjust_size};
         assert_eq!(u2_adjust_page(0), 1);
         assert_eq!(u2_adjust_page(-5), 1);
         assert_eq!(u2_adjust_page(3), 3);
-        assert_eq!(u2_adjust_size(0), 1);
-        assert_eq!(u2_adjust_size(999_999), 200, "超大 size 必须被钳制");
-        assert_eq!(u2_adjust_size(-1), 1);
+        // O17 B1：超限不再静默钳位，直接 400
+        assert!(u2_adjust_size(0).is_err());
+        assert!(u2_adjust_size(999_999).is_err(), "超大 size 必须 400");
+        assert!(u2_adjust_size(-1).is_err());
+        assert_eq!(u2_adjust_size(200).unwrap(), 200);
     }
 
     #[test]

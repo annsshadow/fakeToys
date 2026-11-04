@@ -16,9 +16,7 @@ pub async fn chat_list_paging(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
 
-    let size = size.clamp(1, 200) as i64;
-    let page = page.max(1) as i64;
-    let offset = (page - 1).saturating_mul(size);
+    let (size, offset) = shared::response::page_window(page as i64, size as i64)?;
 
     let total_row = client
         .query_one("SELECT COUNT(*) as cnt FROM x_ai_clue", &[])
@@ -69,9 +67,7 @@ pub async fn chat_list_completion_paging(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
 
-    let size = size.clamp(1, 200) as i64;
-    let page = page.max(1) as i64;
-    let offset = (page - 1).saturating_mul(size);
+    let (size, offset) = shared::response::page_window(page as i64, size as i64)?;
 
     let total_row = client
         .query_one(

@@ -491,7 +491,7 @@ pub async fn manager_list_paging(
     }
 
     let client = shared::db::acquire(&pool).await?;
-    let (size, offset) = shared::response::page_window(page, size);
+    let (size, offset) = shared::response::page_window(page, size)?;
 
     let total_row = client
         .query_opt(

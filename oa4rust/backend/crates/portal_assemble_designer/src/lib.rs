@@ -2479,7 +2479,7 @@ pub async fn script_list_paging_page_size_size(
     pool: Extension<Pool>,
     Path((page, size, _s2)): Path<(i64, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let (size, offset) = shared::response::page_window(page, size);
+    let (size, offset) = shared::response::page_window(page, size)?;
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client

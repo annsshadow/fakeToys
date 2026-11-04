@@ -515,7 +515,7 @@ pub async fn person_list_filter_page_size(
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
     let page = page.max(1);
-    let size = size.clamp(1, 200);
+    let (size, offset) = shared::response::page_window(page, size)?;
     let name_like = body
         .get("name")
         .and_then(|v| v.as_str())
@@ -546,12 +546,7 @@ pub async fn person_list_filter_page_size(
                 "SELECT id, name, unit_id FROM x_org_person {} ORDER BY id LIMIT $3 OFFSET $4",
                 where_clause
             ),
-            &[
-                &name_like,
-                &unit_id,
-                &size,
-                &((page - 1).saturating_mul(size)),
-            ],
+            &[&name_like, &unit_id, &size, &offset],
         )
         .await
         .map_err(|_| AppError::Internal)?;

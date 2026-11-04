@@ -1010,7 +1010,7 @@ async fn importmodel_list_record_item_paging_page_size_size_core(
     page: i64,
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let (size, offset) = shared::response::page_window(page, size);
+    let (size, offset) = shared::response::page_window(page, size)?;
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
@@ -1085,7 +1085,7 @@ async fn importmodel_list_record_paging_page_size_size_core(
     page: i64,
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let (size, offset) = shared::response::page_window(page, size);
+    let (size, offset) = shared::response::page_window(page, size)?;
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
@@ -1685,7 +1685,7 @@ async fn table_list_paging_page_size_size_core(
     page: i64,
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let (size, offset) = shared::response::page_window(page, size);
+    let (size, offset) = shared::response::page_window(page, size)?;
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
@@ -1761,7 +1761,7 @@ async fn table_list_table_tableFlag_row_paging_page_size_size_core(
     page: i64,
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let (size, offset) = shared::response::page_window(page, size);
+    let (size, offset) = shared::response::page_window(page, size)?;
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
@@ -2972,7 +2972,7 @@ pub async fn view_flag_flag_query_queryFlag_execute_v2_page_page_size_size(
     pool: Extension<Pool>,
     Path((view, app, page, size)): Path<(String, String, i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let (size, offset) = shared::response::page_window(page, size);
+    let (size, offset) = shared::response::page_window(page, size)?;
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
@@ -3435,7 +3435,7 @@ pub async fn view_id_execute_v2_page_page_size_size(
     pool: Extension<Pool>,
     Path((_s0, id, page, size)): Path<(String, String, i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let (size, offset) = shared::response::page_window(page, size);
+    let (size, offset) = shared::response::page_window(page, size)?;
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
