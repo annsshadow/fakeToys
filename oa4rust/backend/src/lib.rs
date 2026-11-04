@@ -69,6 +69,22 @@ pub async fn create_app(
     session_manager: SessionManager,
     rate_limiter: RateLimiter,
 ) -> anyhow::Result<Router> {
+    // B3：*_core_entity 的 handler 用 sea_orm ORM 访问库，需要独立的
+    // DatabaseConnection（与 deadpool 池同源，sizing/TLS 见 create_sea_orm_pool）。
+    let sea_orm_pool = shared::db::create_sea_orm_pool().await?;
+    create_app_with_sea_orm(pool, sea_orm_pool, session_manager, rate_limiter).await
+}
+
+/// 与 [`create_app`] 相同，但由调用方显式提供 SeaORM 连接。
+///
+/// 生产路径由 `create_app` 从环境变量构建（两个连接同源）；测试路径需要在
+/// 一次性测试库上跑，而环境变量指向的是开发库，因此必须能注入同库连接。
+pub async fn create_app_with_sea_orm(
+    pool: Pool,
+    sea_orm_pool: sea_orm::DatabaseConnection,
+    session_manager: SessionManager,
+    rate_limiter: RateLimiter,
+) -> anyhow::Result<Router> {
     let auth_config = shared::config::AuthConfig::from_env()?;
     let public_origin = auth_config.public_origin.clone();
     let mut session_manager = session_manager;
@@ -78,9 +94,6 @@ pub async fn create_app(
         rate_limiter: rate_limiter.clone(),
         pool: pool.clone(),
     };
-    // B3：*_core_entity 的 handler 用 sea_orm ORM 访问库，需要独立的
-    // DatabaseConnection（与 deadpool 池同源，sizing/TLS 见 create_sea_orm_pool）。
-    let sea_orm_pool = shared::db::create_sea_orm_pool().await?;
 
     let app = Router::new()
         .merge(shared::router::router(pool.clone()))

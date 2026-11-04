@@ -14,7 +14,7 @@ use base64::Engine;
 use chrono::NaiveDateTime;
 use deadpool_postgres::Pool;
 use hmac::{KeyInit, Mac};
-use oa4rust::create_app;
+use oa4rust::create_app_with_sea_orm;
 use shared::{rate_limit::RateLimiter, session::SessionManager};
 use tokio::net::TcpListener;
 use tokio::task::JoinHandle;
@@ -32,6 +32,7 @@ use tokio::task::JoinHandle;
 pub async fn setup_test_server(
     pool: Arc<TestPool>,
 ) -> anyhow::Result<(SocketAddr, JoinHandle<()>, String)> {
+    super::error_capture::init();
     let pg_pool = pool.as_pg().cloned().expect(
         "setup_test_server requires PostgreSQL pool; MySQL scenario tests are not yet supported",
     );
@@ -39,9 +40,37 @@ pub async fn setup_test_server(
     let session_manager = SessionManager::with_pool(pg_pool.clone());
     let rate_limiter = RateLimiter::new();
 
-    let app = create_app(pg_pool.clone(), session_manager.clone(), rate_limiter)
+    // `create_app` 默认会按 DATABASE_URL 另建 SeaORM 连接；若不注入，
+    // *_core_entity 的写入会与 deadpool 池（一次性测试库）分裂成两个库，
+    // 测试按测试库断言必然读不到行。这里按池的实际库名构造 SeaORM 连接，
+    // 保证应用内两种连接同源。
+    let db_name = {
+        let client = pg_pool
+            .get()
+            .await
+            .context("failed to acquire client for database name")?;
+        let row = client
+            .query_one("SELECT current_database()", &[])
+            .await
+            .context("failed to read current_database()")?;
+        row.get::<_, String>(0)
+    };
+    let base_url = std::env::var("DATABASE_URL")
+        .unwrap_or_else(|_| "postgres://o2server:password@localhost:5432/postgres".to_string());
+    let mut url = url::Url::parse(&base_url).context("invalid DATABASE_URL")?;
+    url.set_path(&db_name);
+    let sea_orm_pool = shared::db::create_sea_orm_pool_with_url(url.to_string())
         .await
-        .context("failed to build app for integration test")?;
+        .context("failed to build SeaORM pool for the test database")?;
+
+    let app = create_app_with_sea_orm(
+        pg_pool.clone(),
+        sea_orm_pool,
+        session_manager.clone(),
+        rate_limiter,
+    )
+    .await
+    .context("failed to build app for integration test")?;
 
     let listener = TcpListener::bind("127.0.0.1:0")
         .await
@@ -83,16 +112,23 @@ pub async fn seed_test_data(
         .await
         .context("failed to get pool client for seeding")?;
 
+    // 种子口令必须是真实 bcrypt 哈希（此前是伪造串，login 永远失败，
+    // ldap_fallback 断言因此一直红）。4 轮足够测试使用且成本极低。
+    let admin_password_hash = format!(
+        "{{bcrypt}}{}",
+        bcrypt::hash("password123", 4).expect("failed to hash integration-test admin password")
+    );
     client
         .execute(
             "INSERT INTO auth_person (id, unique_id, name, password_hash, locked, deleted_at) \
              VALUES ($1, $2, $3, $4, false, NULL) \
-             ON CONFLICT (unique_id) DO UPDATE SET name = EXCLUDED.name",
+             ON CONFLICT (unique_id) DO UPDATE SET name = EXCLUDED.name, \
+             password_hash = EXCLUDED.password_hash",
             &[
                 &"person-it-admin",
                 &"it-admin",
                 &"IT Admin",
-                &"$2b$04$eKzG7rDxhGXY/bIqz.WZHO0E4XLhK.1qZJ9IoG6q7oB7IoG6q7oBm",
+                &admin_password_hash,
             ],
         )
         .await

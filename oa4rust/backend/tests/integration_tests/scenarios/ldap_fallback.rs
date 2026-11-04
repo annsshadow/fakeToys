@@ -60,16 +60,27 @@ pub async fn ldap_fallback_flow() {
         "login failed: {}",
         login_resp.text().await.unwrap_or_default()
     );
-    let login_body: serde_json::Value = login_resp.json().await.expect("invalid login response");
-    let login_token = login_body["data"]["token"]
-        .as_str()
+    // 新语义：会话经 HttpOnly cookie 下发，响应体不再返回 token
+    // （依据 auth/src/lib.rs with_session_cookie；docs/security 会话 cookie 说明）。
+    let set_cookie = login_resp
+        .headers()
+        .get(reqwest::header::SET_COOKIE)
+        .and_then(|v| v.to_str().ok())
         .unwrap_or("")
         .to_string();
     assert!(
-        !login_token.is_empty(),
-        "login should return a non-empty session token (DB-fallback path)"
+        !set_cookie.is_empty(),
+        "login should set a non-empty session cookie (DB-fallback path)"
     );
-    info!(token_len = %login_token.len(), "admin login succeeded via DB fallback");
+    let login_body: serde_json::Value = login_resp.json().await.expect("invalid login response");
+    assert!(
+        login_body["data"]["token"]
+            .as_str()
+            .unwrap_or("")
+            .is_empty(),
+        "login must not expose the session token in the response body"
+    );
+    info!(cookie_len = %set_cookie.len(), "admin login succeeded via DB fallback");
 
     // (b) LDAP config endpoint — must report enabled == false (no LDAP configured).
     let config_resp = client

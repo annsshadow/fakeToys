@@ -20,6 +20,7 @@ dotenvy.workspace = true
 anyhow.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+sea-orm.workspace = true
 
 utoipa = { version = "6", features = ["axum_extras"] }
 utoipa-swagger-ui = { version = "10", features = ["axum"] }
@@ -265,6 +266,7 @@ serde.workspace = true
 mysql_async = "0.37.0"
 mysql_common = "0.37"
 tower.workspace = true
+bcrypt.workspace = true
 parity = { path = "crates/parity" }
 mcp_server = { path = "crates/mcp_server" }
 shared = { path = "crates/shared" }

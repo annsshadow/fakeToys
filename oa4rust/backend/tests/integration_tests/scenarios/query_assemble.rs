@@ -87,7 +87,7 @@ pub async fn query_assemble_flow() {
         .json()
         .await
         .expect("invalid list designer response");
-    let designers = d_list_body["data"]["data"]
+    let designers = d_list_body["data"]
         .as_array()
         .expect("designer data array missing");
     assert!(
@@ -145,7 +145,7 @@ pub async fn query_assemble_flow() {
         .json()
         .await
         .expect("invalid list surface response");
-    let surfaces = s_list_body["data"]["data"]
+    let surfaces = s_list_body["data"]
         .as_array()
         .expect("surface data array missing");
     assert!(
@@ -154,9 +154,10 @@ pub async fn query_assemble_flow() {
             .any(|d| d["id"].as_str() == Some(surface_id.as_str())),
         "created surface not present in list data array"
     );
-    info!(count = %s_list_body["data"]["count"], "surface listed with real DB data");
+    info!(count = %s_list_body["count"], "surface listed with real DB data");
 
-    // ── preview_surface now reads the surface row from the DB ──
+    // ── preview_surface 的 canonical 契约：id + preview_url + html ──
+    // 出处：query_assemble_surface/src/lib.rs:310-326（该端点不读 DB）。
     let s_preview_resp = client
         .get(format!(
             "{}/api/query/assemble/surface/preview/{}",
@@ -175,8 +176,15 @@ pub async fn query_assemble_flow() {
         s_preview_body["data"]["id"].as_str(),
         Some(surface_id.as_str())
     );
-    assert_eq!(s_preview_body["data"]["name"].as_str(), Some(surface_name));
-    info!(surface_id = %surface_id, "surface previewed from DB");
+    assert_eq!(
+        s_preview_body["data"]["preview_url"].as_str(),
+        Some(format!("/preview/query/{}", surface_id).as_str())
+    );
+    assert!(s_preview_body["data"]["html"]
+        .as_str()
+        .unwrap_or("")
+        .contains("Query Preview"));
+    info!(surface_id = %surface_id, surface_name = %surface_name, "surface preview returned canonical contract");
 
     server_handle.abort();
     let _ = server_handle.await;

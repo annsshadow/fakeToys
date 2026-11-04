@@ -11,6 +11,7 @@ static SEQ: AtomicUsize = AtomicUsize::new(0);
 
 /// Create a fresh test database with a unique name.
 pub async fn init_isolated() -> Arc<TestContext> {
+    super::error_capture::init();
     let seq = SEQ.fetch_add(1, Ordering::Relaxed);
     let db_name = format!("oa4rust_test_iso_{}", seq);
     let p = setup_postgres_database(&db_name)

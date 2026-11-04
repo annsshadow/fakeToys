@@ -208,17 +208,22 @@ pub async fn organization_assemble_control_unit_flag(
     match row {
         Some(row) => {
             let parent_id: Option<String> = row.get("parent_id");
+            // x_org_unit.level / sort 是 INTEGER（022_create_org_assemble_tables），
+            // 按 String 读取会在运行期 FromSql 失败并 500；读取后用字符串回写，
+            // 保持既有响应形状不变。
+            let level: Option<i32> = row.get("level");
+            let sort: Option<i32> = row.get("sort");
             let result = Value::Object(serde_json::Map::from_iter(
                 [
                     ("id".to_string(), Value::String(row.get("id"))),
                     ("name".to_string(), Value::String(row.get("name"))),
                     (
                         "level".to_string(),
-                        Value::String(row.get::<_, Option<String>>("level").unwrap_or_default()),
+                        Value::String(level.map(|v| v.to_string()).unwrap_or_default()),
                     ),
                     (
                         "sort".to_string(),
-                        Value::String(row.get::<_, Option<String>>("sort").unwrap_or_default()),
+                        Value::String(sort.map(|v| v.to_string()).unwrap_or_default()),
                     ),
                     (
                         "creator".to_string(),

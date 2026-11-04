@@ -338,6 +338,7 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 - `page_size(size)` / `page_offset(offset)` / `page_window(page,size)` 返回 `Result<_, AppError>`，越界 `AppError::BadRequest`（复用既有 400 分类，不新增错误体系）。
 - 88 个调用点全部补 `?`；`auth::person::list` 原返回 `Json<ActionResult<Value>>` 无法 `?`，改为 `Result<Json<...>, AppError>`。
 - 11 个「钳位 + 回显原始 size」端点一并变 400；信封撒谎问题随拒绝一起消失，**没有**给 `ActionResult` 加「生效页大小」字段（不为已消失的问题扩一轮）。
+
 - B1 适配时静态盘点又发现 **10 处内联 `size.clamp(1, 200)`**（不经过 shared helper，编译器抓不到）：`ai` ×4、`cms`、`file`、`personal`、`organization_assemble_express`、`message`、`processplatform_assemble_surface` 的 `u2_adjust_size`（后被 2 处调用）。这些同样是「静默钳位」，一并改为 `page_window` / `page_size`；对应单测从「钳位断言」改成「越界 400 断言」（`file` 的 `attachment2_limit_offset`、`processplatform` 的 `u2_adjust_size`）。改完后全仓不再有 200 上限的内联 clamp。
 
 #### OFFSET 洞是 O17 原本没收的
@@ -411,6 +412,113 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 - `size`/`page` 校验在 HTTP 层完成，但 keyset（seek）化未做（后续单独一轮）。
 - **登记债务**：`IMChat.vue` 的 `page++` 从未进入请求（翻页是假的，前端既有行为），本轮不修。
 - 字段类上界（超长字段/深嵌套/畸形 JSON）仍未做，保留在清单第 6 项。
+
+## O18 集成测试长期 8/16 收口（可观测失败 + 双库分裂 + 列类型错配）
+
+### 第一步定性（16 红，A 3 / B 12 / C 1 / D 0）
+
+| 用例 | 失败原文首行（截断） | 第一步归类 | 依据 |
+|------|----------------------|-----------|------|
+| console_jpush_express_flow | `error retrieving column xvalue: error deserializing column 0` | A | `x_console_status.xvalue` 是 VARCHAR，代码读 i64 |
+| org_assemble_control_flow | `error retrieving column level: deserializing column 3` | A | `x_org_unit.level/sort` 是 INTEGER，代码读 String |
+| bbs_endpoints_flow | repository 层 500，无 ERROR 日志 | A→C | 加捕获式 subscriber 后无 ERROR；行落开发库 `oa4rust`，实证双库分裂 |
+| query_endpoints_flow | `seeded x_query_import_record not returned` | C | 未显式种子前置，依赖残留数据 |
+| 其余 12 条 | 路径/形状/token 断言过期 | B | 逐条对照实装路由与 handler |
+
+`A>3` 未触发（A=3），但第二步复核把 5 条 B 的深层断言重新判成 A，见下。
+
+### 第二步基础设施与断依赖验证
+
+- `tests/integration_tests/error_capture.rs`：捕获式 `tracing_subscriber::fmt()`（ERROR 入内存 200 行），panic hook 在 panic 旁打印 `captured ERROR logs`；`init()` 幂等，`db.rs`/`db_isolated.rs`/`helpers.rs` 首行调用。没有真实 SQL 错误前不允许按猜测改。
+- 双库分裂：`create_app` 会按 `DATABASE_URL` 另建 SeaORM 池，deadpool 池却指向一次性测试库；`*_core_entity` 写入落开发库。新增 `create_app_with_sea_orm(pool, sea_orm_pool, ...)`，测试用 `SELECT current_database()` 取池真实库名后注入同库 SeaORM 连接。bbs 由 A 改判 C 并转绿。
+- **断依赖验证**：`DATABASE_URL=postgres://o2server:password@localhost:5432/oa4rust_no_such_db` 跑整套 `integration_runner --ignored`，结果与正常配置**完全一致**（当时 24 条基线：9 passed / 15 failed，同一批用例）。说明测试只依赖自己创建的一次性库 `oa4rust_test_<pid>`，没有偷偷依赖开发库残留数据；`db.rs` 只从 URL 解析 host/port/user/pass，CREATE/DROP 固定连 `postgres`，所以库名不存在不影响建库。
+- `DATABASE_URL` 造连接的全部调用点：
+  - `src/lib.rs:74` —— `create_app` 生产路径；测试已改走 `create_app_with_sea_orm` 注入，不再可达。
+  - `crates/mcp_server/src/tool_bridge.rs:1384` —— `build_core_router`，仅 `main.rs` 路径使用，测试不可达。
+  - `tests/integration_tests/db.rs`、`tests/integration_tests/helpers.rs`、`tests/idor_matrix.rs` —— 仅测试路径，且都指向一次性库或只取连接元信息。
+  结论：生产路径保留 `DATABASE_URL`；测试路径全部显式注入，不再有第二条隐式连接。
+
+### A 类修复证据（修前 500 / 修后 200）
+
+| 端点 | 修前 | 修后响应体 |
+|------|------|-----------|
+| `GET /api/console/metric/cpu` | 500 `error retrieving column xvalue` | `{"type":"success","data":{"name":"cpu","value":42,"unit":"%"}}` |
+| `GET /api/organization/unit/{id}` | 500 `error retrieving column level` | `{"type":"success","data":{"id":"...","name":"IT","level":"0","sort":"0"}}` |
+
+### 系统性扫描（资产：`backend/scripts/scan_row_get_column_mismatch.py`，`git add -f`）
+
+迁移按 CREATE + `ALTER ADD COLUMN` + `ALTER COLUMN TYPE` 累积（跳过 `*_rollback.sql`），取值点必须关联最近 SELECT；`try_get` 失败归 SILENT。结果 **FAIL=38 / SILENT=4 / LOOSE=10**，退出码 1。
+
+| crate | FAIL | 主要列（声明类型→代码类型） |
+|-------|------|------------------------------|
+| general_assemble_control | 8 | `create_time` TIMESTAMPTZ→String ×4；`maintenance_mode/allow_registration` TEXT→bool ×4 |
+| processplatform_service_processing | 6 | `x_task.start_time/end_time` TIMESTAMP→String ×4；`x_timer_job.fire_at/created_at` ×2 |
+| cms_assemble_control | 3 | `path_levels` TEXT[]→String ×3 |
+| message_assemble_communicate | 3 | `create_time` TIMESTAMPTZ→String ×3 |
+| query_assemble_designer | 3 | `update_time` TIMESTAMP→String ×3 |
+| component_core_entity | 2 | `order_number` TEXT→i32 ×2 |
+| correlation | 2 | `order_number` TEXT→i32 ×2 |
+| organization_assemble_control | 2 | `level/sort` INTEGER→String ×2（已修） |
+| personal | 2 | `created_at` TIMESTAMP→String ×2 |
+| query_assemble_surface | 2 | `x_query_view.create_time/update_time` ×2 |
+| auth / console / portal_assemble_surface / processplatform_assemble_bam / program_center | 各 1 | `change_password_time`、`xuptime`、`published`、`xenabled`、`create_time` |
+
+病因分布：时间戳 22、布尔 6、整数↔字符串 7、数组 3。已抽查 8 处均为真实错配。SILENT=4 全在 `crates/component/src/lib.rs:57/61/129/133`（`x_component.order_number TEXT` 读 `Option<i32/i64>`，`try_get` 吞错→字段恒空）。LOOSE=10 仅登记，不在本轮修。
+
+### B 类测试修复（只改测试；每条新语义与出处）
+
+| 用例 | 新语义 | 出处 |
+|------|--------|------|
+| `new_real_endpoints::portal` | `/api/portalcategory/list` 读 `x_portal.category`，返回 `{id, name, count}` | `portal/src/lib.rs:169-199` |
+| `new_real_endpoints::org` | 人员列表 `data` 直接是数组（`ActionResult::success`） | `organization_assemble_control` handler |
+| `new_real_endpoints::console` | `jpush hello` 的 `data` 是字符串 `"hello"` | `jpush/src/lib.rs:23-27` |
+| `file_portal` | 顶层 `data` 数组 | `legacy_success` |
+| `program_center` | `applications/modules_all` 顶层 `data` 数组；配置读取走 `/config/list`（无 `/config/{key}`） | `program_center/src/lib.rs:47-87`、`routes.rs:409` |
+| `query_assemble` | designer/surface 列表顶层 `data` 数组；preview 契约是 `id + preview_url + html`（该端点不读 DB） | `query_assemble_surface/src/lib.rs:310-326` |
+| `program_center_core_entity` | 只断言 `id + name`，无 `category=="Office"` 约束 | O14 重生成测试 `9e59942ac` |
+| `cms_document` | 改用 canonical `/api/document`：create→publish→get→update→delete→list；创建固定 `status=draft`，id 服务端生成 | `cms_assemble_control/src/routes.rs` plan002 U2 段，`b63d277b8` |
+| `ldap_fallback` | 登录成功以 `Set-Cookie` 为准，响应体不含 token；种子口令必须是 `{bcrypt}` 前缀的真实哈希 | `auth/src/lib.rs:53/384`；此前伪造哈希导致 login 永远失败 |
+| `new_real_endpoints::ai` | `config/list/mcp` 走 `legacy_success`，顶层 `data` 即数组 | `ai_assemble_control/src/lib.rs:1028` |
+
+`/work/create` 判定：全仓仅测试与台账出现；实装路由是 `POST /api/processplatform/service/processing/work`（`u2::work_create`，`2fe0b8212`），前端/文档 0 处引用 → **测试路径过期，不是产品漏注册**。但 bpmn 测试后续的 `agree/disagree/return/countersign` 在 backend 0 命中，属产品语义缺口，见下。
+
+### 当前红（18 passed / 6 failed）与书面归类
+
+| 用例 | 现在红在第几步 | 现在归哪类 | 为什么 | 谁还没定 | 下一轮处理 |
+|------|----------------|-----------|--------|----------|-----------|
+| `new_real_endpoints::ai_endpoints_flow` | `mcp data array` 为空 | A（接线缺陷） | 路由挂到桩 `crates/ai/src/config.rs:291-305`；真实现 `ai_assemble_control/src/lib.rs:971` 未被使用 | 已定（用户）：直接修接线 | 单独提交：改挂真实现 + 红→绿测试，并列出所有挂该桩的路由 |
+| `ldap_fallback_flow` | `GET /api/ldap/config` 非 JSON | D（待证据） | 全 backend 无该路由；登录+cookie 部分已绿；parity 是否承诺未查 | 待 O20 消费者证据 | 查 `frontend/`、`mobile/`、`docs/`、OpenAPI/MCP 路由表；有承诺→A，无→C 删断言 |
+| `cms_extended_crud_flow` | `POST /api/cms_assemble_control/appinfo/create` 405 | B+A（混合） | `/api/cms_assemble_control/*` 全不存在；canonical `/api/appinfo` 等存在，但 app/category/comment 无 update，`sort_order/ext_content` 不在模型 | 待 O20 消费者证据 | 逐端点查消费者：无消费者且 canonical 有→改测试；无消费者且无实现→删该断言并记录能力缺口 |
+| `bpmn_process_flow` | `POST /work/create` 405 | B+A（混合） | 路径过期（B）；后续 `agree` 在 backend 0 命中（A） | 待 O20 消费者证据 | 查前端流程页实际调 canonical 还是 agree 系；canonical→改测试 |
+| `bpmn_task_actions_flow` | 同 | B+A（混合） | `disagree/return` 不存在；canonical 是 `claim/complete/reject/transfer` | 待 O20 消费者证据 | 同上 |
+| `bpmn_countersign_flow` | 同 | D（待证据） | 会签语义 backend 0 命中 | 待 O20 消费者证据 | 查前端/文档/parity；无消费者→C 删测试，有→A 写 O20 |
+
+**本 PR 不修这 6 条，另开轮（O20「消费者证据判定」）。** 依据：O18 已验证的独立成果（捕获式日志、双库分裂、console/org 两个 500、10 条测试修正、断依赖验证）不应被待判定的产品问题扣住。按「A>3 先停」，本轮**没有擅自实现产品端点、也没有删测试或放宽断言**。
+
+### 验证
+
+- `integration_runner --ignored --test-threads=1`：**18 passed / 6 failed**（起点 8/16，16 红中 10 条已转绿；剩余 6 条全部有本文归类）。
+- `cargo test --workspace --lib`：在全新库 `oa4rust_o18_lib_check`（先跑 migrate 用例建表）全绿，最后一次 **FAILED=0**。直接指向开发库 `oa4rust` 时 `shared::migrate` 因 019 历史 schema 漂移（`auth_person_identity` 旧 `person_id`）失败——存量环境问题，与本次改动无关，与 O17 记录一致。
+- `cargo clippy --all-targets -- -D warnings`：零告警；`cargo fmt --all --check`：绿（已执行 `cargo fmt --all`）。
+
+## O19 分批计划（已确认；O18 合并后开工）
+
+前置：O18 合并后开工；每批必须回到 SQL 现场逐条确认（扫描器有「最近 SELECT 误归属」残余风险，**不许按脚本输出直接改**），每批提交「SQL 现场逐条确认记录」→ 先写一条能红的回归测试 → 再改类型 → 报「改前 500 / 改后 200 及响应体」。批次顺序按前端引用热度，唯一调整：SILENT 从最后挪到第 3 批。
+
+排序依据：`frontend/src + mobile/src` 中对各 API 前缀的引用次数（authentication 21、processplatform 18、message 10、organization 8、query 7、portal 4、program_center 4、cms 3、general 2；component/correlation/bam/console 直接引用 0，按管理端低频处理）。
+
+| 批次 | crate | 预计处数 | 理由 |
+|------|-------|----------|------|
+| 1 | auth + organization_assemble_control | 3 | 登录/组织是每条请求的前置路径，引用热度最高；org 2 处已在 O18 修，auth 只剩 switch_user 1 处 |
+| 2 | processplatform_service_processing + processplatform_assemble_bam | 7 | 工作流/任务页引用 18 次；x_task 起止时间 + timer job |
+| 3 | SILENT（component `order_number`） | 4 | **静默错数据比 500 更隐蔽**：`try_get` 吞错导致字段恒空，不报错就没人发现；按用户要求挪到第 2 批之后，先于其余 FAIL 批次 |
+| 4 | message_assemble_communicate + personal | 5 | IM 10 次、个人签名；时间戳同型，可批量验证同一改法 |
+| 5 | query_assemble_designer + query_assemble_surface | 5 | 查询设计/展示页 7 次；`update_time/create_time` |
+| 6 | portal_assemble_surface + program_center + console | 3 | 门户首页/应用中心/系统监控，热度中等但单点少 |
+| 7 | general_assemble_control | 8 | 系统配置页引用仅 2 次，但含 4 个 bool 读 TEXT + 4 个时间戳，改动面最大，放中后段 |
+| 8 | cms_assemble_control + component_core_entity + correlation | 7 | CMS/设计器/关联，前端直接引用 3/0/0，属长尾；含 TEXT[] 数组 3 处 |
+
+门禁策略：扫描器**先不接 CI**（接上去就是 38 条永久红）。全部 FAIL=0 后再接门禁，并做破坏实验：手工把一个正确的 `row.get` 改成错类型 → 门禁必须红。
 
 ## 既有后续清单
 
