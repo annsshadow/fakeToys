@@ -331,7 +331,7 @@ pub async fn get_meeting(
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
-            "SELECT id, title, content, room_id, start_time::text AS start_time, end_time::text AS end_time, creator, create_time::text AS create_time FROM x_meeting WHERE id = $1",
+            "SELECT id, title, content, room_id, start_time, end_time, creator, create_time::text AS create_time FROM x_meeting WHERE id = $1",
             &[&id],
         )
         .await
