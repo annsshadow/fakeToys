@@ -141,11 +141,10 @@
 |------|----------|------|
 | `crates/parity/src/generated_tests.rs` | **保留**（已接门禁） | 三分类：① 噪声＝CRLF + 时间戳 + 98 个序号名位移；② 源码/生成器过期＝新增 57 条 personal 别名路由、3 条路径/方法纠正（`message consume` GET→POST、program_center 重复段与 GET→POST）；③ 手工＝1 条 `get_calendar_detail` 语义命名，无独有断言，已原样迁入 `parity/src/tests_manual.rs`。输入 `generated_at=2026-08-12`、文件最后修改 2026-09-17，不是「两年未更新」；4098 条机械用例仅 1 条手工痕迹，不构成「大量人手增强」→ 保留。生成器已去时间戳、固定 LF；parity 已加入 `check_generated_artifacts_up_to_date.py`；破坏实验：插入一行→`首个差异：...:3`、exit 1，还原→exit 0 |
 | `frontend/packages/apis/src/api-coverage-generated.test.ts` | **保留**（生成器已升级，接 CI 门禁） | 差异三分类：① 格式/头＝SPDX、import 顺序、prettier 缩进、末尾换行，生成器已复现；③ 手工增强＝每条用例的 `try { await fn?.() } catch`（驱动 V8 覆盖），生成器已按原样固化，未降级产物；② 源码过期＝`index.ts` 新增 28 个函数（attendanceDeepApi 8、processApi 5、documentApi 5、calendarCoreApi 5、attendanceControlApi 2、viewApi/viewCategoryApi/viewFieldConfigApi 各 1），重生成后 367 行纯新增、**0 删除**。门禁：`oa4rust-web.yml` 在 Vitest 前跑 `pnpm gen-api-tests` + `git diff --exit-code`；破坏实验：暂存一条 `// BREAK EXPERIMENT`→红在 `:8718`，还原→exit 0 |
+| `tests/contracts/backend-route-methods.fixture.ts` | **保留**（`gen_mcp_tools.py` 单一源头同步输出，已接门禁） | 131/63/2 三分类：**131 只在 fixture** ＝ 102 条 `/api/bbs/assemble/...` 已删路由残留 + 24 条旧前缀 `/api/query_service_processing/{}`（源码已改为 `/api/query/service/processing/...`）+ 3 条 processplatform 残留 + `/health`、`/openapi.json`（框架路由，非残留，保留进 fixture）；**63 只在后端** ＝ 61 条 personal 别名路由（fixture 侧漏同步，已补）+ `/ready`（产品路由，已补）+ `/boom`（`#[cfg(test)]` 测试路由，生成器新增 cfg(test) 剥离后不再产出）；**2 条方法集不符** ＝ `/api/calendar_assemble_control/event` fixture 多 PUT（`routes.rs:72-78` 注释明确 O6 删除死 PUT，属 fixture 残留，已随重生成消失）、`/mcp` fixture 有 GET+POST 而工具表仅 POST（GET 真实存在于 `mcp_server/src/main.rs:71-76` 闭包，正则漏扫；GET /mcp 不是工具，用 `EXTRA_FIXTURE_ROUTES` 显式保留在 fixture）。重生成 fixture 4108→4041（`+102/−258`），`generated_routes.rs` 4736→4735（删 `legacy_shared_boom`）；重生成后 fixture-vs-后端差异仅剩设计内 extras。门禁：fixture 加入 `check_generated_artifacts_up_to_date.py` 的 mcp job；破坏实验：插入 `// BREAK EXPERIMENT`→`首个差异：tests/contracts/backend-route-methods.fixture.ts:3`、exit 1，还原→exit 0。本地无 vitest（`node_modules/.bin/vitest` 不存在），`route-methods.test.ts` 交 CI 验证 |
 
 ### 可恢复（剩余）
-| 产物 | 现状证据 | 下一步（可执行） |
-|------|----------|------------------|
-| `tests/contracts/backend-route-methods.fixture.ts` | 头注释称 AUTO-GENERATED，仓库内无生成器。临时比对：fixture 4108 条 vs `generated_routes.rs` 归一后 4040 条；**131 条只在 fixture、63 条只在后端、2 条方法集不符**（`/api/calendar_assemble_control/event`、`/mcp`） | 修：让 `gen_mcp_tools.py` 在写 `generated_routes.rs` 的同时输出该 fixture（单一源头），或新增 `gen_route_methods_fixture.py`；接进 `generated-artifacts` 门禁；重生成后跑 `vitest run tests/contracts/route-methods.test.ts` |
+（无。第 3 项已转为单一源头 + 门禁，见上表）
 
 ### 非生成物、仅需更正
 
