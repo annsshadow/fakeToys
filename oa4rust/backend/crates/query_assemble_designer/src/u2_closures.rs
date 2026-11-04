@@ -2026,9 +2026,13 @@ async fn set_permission_generic(
     )
     .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
+    // O24-3 批次 3：谓词是给守卫 SELECT 复用的（只绑 flag，$1），但 UPDATE 的 $1
+    // 已被 permission 占用。直接把谓词拼进 UPDATE 会让 2 个绑定只对应 1 个占位符
+    // → Parameters 失配 500。谓词是编译期常量，这里确定性把 $1 改成 $2 即可。
+    let update_predicate = resource.predicate.replace("$1", "$2");
     let update_sql = format!(
         "UPDATE {} SET permission = $1, update_time = {} WHERE {}",
-        resource.table, resource.time_expr, resource.predicate
+        resource.table, resource.time_expr, update_predicate
     );
     let result = client
         .execute(update_sql.as_str(), &[&permission, &flag])

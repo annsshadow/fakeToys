@@ -72,6 +72,17 @@ async fn organization_express_config_contract() {
     .await;
 }
 
+/// O24-3 批次 3：查询设计器 permission 的 `$1` 复用冲突（4 条基线）。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn query_permission_binding_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::query_permission_binding::query_permission_binding_flow(
+        ctx.pool.clone(),
+    )
+    .await;
+}
+
 /// O24-3 批次 2：JSONB 列按 String 绑定的同根因族（4 条基线）。
 #[ignore = "requires a running database server"]
 #[tokio::test]

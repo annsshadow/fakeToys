@@ -13,6 +13,7 @@ pub mod organization_core_express;
 pub mod portal_surface_publish;
 pub mod program_center;
 pub mod query_assemble;
+pub mod query_permission_binding;
 
 pub mod core_crud_lifecycle;
 pub mod data_integrity;

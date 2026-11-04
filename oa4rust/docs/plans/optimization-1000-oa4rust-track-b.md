@@ -916,7 +916,7 @@ test result: FAILED. 0 passed; 1 failed
 | `category:E42804`（3） | `DELETE /api/portal/assemble/designer/script/{id}`；`DELETE /api/processplatform/assemble/designer/script/{id}`；`GET /api/processplatform/service/processing/touch/mergeitem` | `deleted_at` TEXT 对 timestamp；`COALESCE` 两侧类型不一致 | 统一 timestamp 绑定/强转；200 后删 3 行 | O24 数据层对齐（后端） | 2026-11-26 |
 | `category:E23502`（10） | `POST /api/console/send/message`；`POST /api/document/cipher/{id}/persist/view/record`；`POST /api/message/custom/create`；`POST/GET /api/hotpic*/create/hotpic`；`POST/GET /api/hotpic*/update/control/config`；`POST /api/hotpic/assemble/control/user/hotpic`；`POST /api/portal/assemble/designer/page`；`POST /api/portal/assemble/designer/page/create` | INSERT 未生成必填 `id` / `application` / `portal_id` | 补 UUID/默认值或返回 400；200/400 后删 10 行 | O24 数据层对齐（后端） | 2026-12-10 |
 | `category:E42P10`（3） | `GET/POST /api/attendance/assemble/control/statistic/do`；`GET /api/calendar_assemble_control/update/control/config` | `ON CONFLICT` 无匹配唯一索引 | 指向真实唯一索引或改 UPDATE-then-INSERT；200 后删 3 行 | O24 数据层对齐（后端） | 2026-12-10 |
-| `category:param-count`（6） | `GET/POST /api/processplatform/assemble/surface/draft*`；`POST /api/query/assemble/designer/{query,stat,table,view}/.../permission` | SQL 占位符数量与绑定参数不一致 | 对齐 `$1..$n` 与参数；200/400 后删 6 行 | O24 数据层对齐（后端） | 2026-11-19 |
+| `category:param-count`（2，原 6） | `GET/POST /api/processplatform/assemble/surface/draft*` | SQL 占位符数量与绑定参数不一致（permission 4 条已在批次 3 清除） | 对齐 `$1..$n` 与参数；200/400 后删行 | O24 数据层对齐（后端） | 2026-11-19 |
 | `category:E42P18`（1） | `GET /api/ai_assemble_control/chat/list/completion/{clueId}/paging/{page}/size/{size}` | `$2` 类型无法推断 | 给 `$2` 显式 `::text`/CAST；200 后删行 | O24 数据层对齐（后端） | 2026-11-12 |
 | `column:status`（1，原 2） | `GET /api/program_center/market/{flag}/installed/version` | 裸 `row.get` 把非 TEXT 列按 TEXT 解码（panic → 500） | 改 `try_get` 并统一实体/列类型；200 后删行 | O24 数据层对齐（后端） | 2026-11-12 |
 | `column:equipment`（2，O24 新增） | `GET /api/meeting/core/entity/room/list`；`GET /api/meeting/core/entity/room/{id}` | SeaORM 实体 `Option<String>`/TEXT 对 JSONB 列解码不匹配 | 改 `try_get`/`Option` 类型对齐实体；200 后删 2 行 | O24 数据层对齐（后端） | 2026-11-26 |
@@ -998,15 +998,15 @@ GET /api/meeting/core/entity/room/{id}   column:equipment
 基线因此 **40 → 42（GET 11 / 非 GET 31）**，`BASELINE_COUNT=42`，集合相等。CI 的旧 40
 不是「更干净」，而是**扫描器当时没读到种子库**——这也是本次把口径写进台账的原因。
 
-### O24-3 待修 37 条（顺序与纪律，批次 1-2 已清 5）
+### O24-3 待修 33 条（顺序与纪律，批次 1-3 已清 9）
 
-**口径**：非 GET 26 条 + GET 11 条 = 37（原 42；批次 1 清 1 条非 GET，批次 2 清 4 条非 GET）。用户说的「GET 9 条」是旧 40 口径；O24 库隔离
+**口径**：非 GET 22 条 + GET 11 条 = 33（原 42；批次 1 清 1 条非 GET，批次 2 清 4 条非 GET，批次 3 清 4 条非 GET）。用户说的「GET 9 条」是旧 40 口径；O24 库隔离
 修复新增的 2 条 `column:equipment` 也是 GET，故 GET 现为 11（旧的 9 条包含在内）。
 
 排序按真实用户后果，不按条数：
 
 1. **写路径里「会写库但报错」的族**（用户以为失败、实际可能已落库）优先；
-2. 再按条数多的可批量验证族（`wrong-type` 剩 5、`param-count` 6 等）；
+2. 再按条数多的可批量验证族（`wrong-type` 剩 5、`param-count` 剩 2 等）；
 3. GET 留最后。
 
 每批固定流程：`information_schema` 现场确认真实列类型 → **先红**（复现当前 500）→ 改 →
@@ -1094,6 +1094,33 @@ payload → 200 且 `data.content` 原样回显、回库内容等于 payload；q
 **收口**：删 4 条基线路，`BASELINE_COUNT 41 → 37`；门禁实测
 `== 棘轮基线：37 条（当前 37 条），集合相等 ==`。
 
+### O24-3 批次 3：查询设计器 permission 族（4 条，同一 handler 工厂）
+
+**族判定**：`POST /designer/{query,stat,table,view}/.../permission` 四条路由都走
+`set_permission_generic`，共用同一条编译期 `predicate`（如 `(flag = $1 OR id = $1)`）：
+
+```text
+守卫 SELECT: SELECT owner FROM {table} WHERE (flag = $1 OR id = $1)      ← 只绑 flag ✓
+UPDATE     : UPDATE {table} SET permission = $1, update_time = ... WHERE (flag = $1 OR id = $1)
+             ↑ 绑定 [permission, flag]，$1 已被 permission 占用 → 2 绑定对 1 占位符
+```
+
+**先红**：新增 `tests/integration_tests/scenarios/query_permission_binding.rs`
+（`integration_runner` 独立 `#[ignore]` 用例 `query_permission_binding_contract`），
+四条路由逐条真实 HTTP + 真实库：200 `type=success`、`data.id` 等于路径键、
+`permissionSet=true`，回库 `permission` 等于 `permissionList` 的序列化文本且
+`update_time::text` 非空。未改代码时第 1 条实测红：
+`source=crates\query_assemble_designer\src\u2_closures.rs:2036: Error { kind: Parameters(2, 1) }`。
+
+**改**：仅 UPDATE 侧拼接谓词时确定性替换 `$1` → `$2`
+（谓词是编译期常量，无注入面；守卫 SELECT 保持原样）。
+
+**破坏实验**：把 `resource.predicate.replace("$1", "$2")` 还原为 `resource.predicate`
+→ 第 1 条红（500 / `Parameters(2, 1)`）；复原后四条全绿。
+
+**收口**：删 4 条基线路，`BASELINE_COUNT 37 → 33`；门禁实测
+`== 棘轮基线：33 条（当前 33 条），集合相等 ==`。
+
 ### O24-1 收口：express 成功路径（裁定执行）
 
 `organization/core/express` 的 500→200 不再只靠推断：
@@ -1121,6 +1148,7 @@ payload → 200 且 `data.content` 原样回显、回库内容等于 payload；q
 | O24-1 收口（express 用例 + 种子行） | 0 | 0 | 0 | 42 |
 | O24-3 批次 1（portal surface publish） | 0 | **1** | **-1**（42→41） | 41 |
 | O24-3 批次 2（JSONB 参数绑定族） | 0 | **4** | **-4**（41→37） | 37 |
+| O24-3 批次 3（查询设计器 permission 族） | 0 | **4** | **-4**（37→33） | 33 |
 
 **清除清单**：
 
@@ -1128,4 +1156,5 @@ payload → 200 且 `data.content` 原样回显、回库内容等于 payload；q
 |---|---|---|---|
 | O24-3 批次 1 | `column:published`（写库后 500） | `POST /api/portal/assemble/surface/publish/{id}` | `portal_surface_publish_contract`：先红 500（panic 解码）→ 改后 200 且回库 `published=true`；破坏实验改回 `Option<String>` → 红；门禁 41/41 集合相等 |
 | O24-3 批次 2 | `wrong-type` 的 Jsonb↔String 子族 | `POST /api/meeting/core/entity/room/save/{id}`；`POST /api/processplatform/assemble/surface/save/{id}`；`POST /api/queryview/table/row/part/update/{tableFlag}/{id}`；`POST /api/queryview/table/{flag}/row/{rid}/part/update` | `jsonb_param_binding_contract`：先红 500（ToSql Jsonb vs String）→ 改后 200 且回库校验 JSON；破坏实验逐个复原三处 → 各自红；门禁 37/37 集合相等 |
+| O24-3 批次 3 | `param-count` 的 permission 子族 | `POST /api/query/assemble/designer/query/{flag}/permission`；`POST .../stat/{id}/permission`；`POST .../table/{flag}/permission`；`POST .../view/{id}/permission` | `query_permission_binding_contract`：先红 500（`Parameters(2, 1)`）→ 改后 200 且回库 permission/update_time；破坏实验还原谓词 → 红；门禁 33/33 集合相等 |
 
