@@ -106,23 +106,28 @@ jobs:
             exit 1
           fi
       - name: Test (with coverage)
-        # 覆盖率不是「顺手打印」：B1 的基线是 85.8%（2026-10-28），
-        # 门禁钉 85 留 0.8 个点给噪声。低于它说明新代码没测试或旧测试被删。
         # DSN 显式注入，避免依赖测试里的本机缺省值：连不上时 e2e 是 Skip 而不是失败。
+        #
+        # ⚠️ 这里仍然跑 `./...`（含被排除出覆盖率的 cmd/* 工具）：被排除的包
+        # 照样要编译、要跑测试。排除的只是**统计口径**，不是构建与静态检查。
         run: go test ./... -count=1 -timeout 1200s -coverprofile=coverage.out -covermode=atomic
         env:
           TEST_DATABASE_URL: postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable
       - name: Coverage gate (total statements >= 85%)
-        run: |
-          set -euo pipefail
-          go tool cover -func=coverage.out | tail -1
-          total=$(go tool cover -func=coverage.out | tail -1 | awk '{print $3}' | tr -d '%')
-          awk -v total="$total" 'BEGIN {
-            if (total + 0 < 85) {
-              printf "::error::total coverage %.2f%% < 85%%\n", total
-              exit 1
-            }
-          }'
+        # 2026-11-04 口径修正：此前是裸 `go tool cover -func | tail -1`，
+        # 而 `go test ./...` 会把**没有测试文件**的 cmd/* 工具也按 0% 计入分母
+        # （4 个包 841 条语句），把总数从 85.08% 压到 78.27% —— 门禁长期红着，
+        # 等于没有门禁。
+        #
+        # 现在：哪些包计入由 scripts/coverage-scope.list 显式决定（每行带理由，
+        # 可 review）；阈值 85 固定在 scripts/coverage-gate.mjs 里，**没有下调**。
+        # 门禁还会做三条反漂移守卫（零覆盖包必须进清单 / 清单里的包一旦有覆盖
+        # 必须移除 / 清单里的包必须仍存在），三条都失败即红。
+        run: node scripts/coverage-gate.mjs coverage.out
+      - name: Coverage gate must actually fail when it should
+        # 守卫的守卫：门禁判据写反或永远放行，比没有门禁更糟。
+        # 用例覆盖三条反漂移守卫、85% 边界（84.5 必红 / 85.0 必绿）与异常输入。
+        run: node scripts/coverage-gate.test.mjs
 
   # ── admin 管理端（Vue3 + Vite）：类型检查 + 单测 + 构建 ─────────────────
   admin:
