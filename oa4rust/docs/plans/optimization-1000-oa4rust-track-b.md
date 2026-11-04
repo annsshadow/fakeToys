@@ -397,7 +397,9 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 
 #### 验证
 
-- 全新库 `oa4rust_o17_b1_check`：先 `cargo test -p shared --lib migrate::tests -- --test-threads=1` 建全表（2/2 绿），再 `cargo test --workspace --lib`；`cargo test --test integration_runner -- --ignored --test-threads=1` 全场景（含新契约测试）。
+- 全新库 `oa4rust_o17_b1_check`：先 `cargo test -p shared --lib migrate::tests -- --test-threads=1` 建全表（2/2 绿），再 `cargo test --workspace --lib`（97 个测试目标全绿，0 FAILED）。
+- `cargo test --test integration_runner -- --ignored --test-threads=1`：**8 passed / 16 failed**；同样的 16 条在基线 `origin/main 31238a2cb` 上**逐条同名失败**（7 passed / 16 failed），即存量问题、与本次改动无关（`bpmn work/create 405`、`cms` 非 JSON 体、`console`/`organization` 列反序列化等，属 O10 候选与存量路由/实体漂移）。新增 `pagination_contract` 是唯一增量，通过。
+  - 这 16 条 DB 场景均带 `#[ignore]`，CI 的 `cargo test --test integration_runner` 只跑非 ignore 用例，因此本来就不在 CI 门禁内；本轮未改 CI 范围。
 - `cargo clippy --all-targets -- -D warnings` 零告警；`cargo fmt --all --check` 绿。
 
 ### 遗留
