@@ -338,6 +338,7 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 - `page_size(size)` / `page_offset(offset)` / `page_window(page,size)` 返回 `Result<_, AppError>`，越界 `AppError::BadRequest`（复用既有 400 分类，不新增错误体系）。
 - 88 个调用点全部补 `?`；`auth::person::list` 原返回 `Json<ActionResult<Value>>` 无法 `?`，改为 `Result<Json<...>, AppError>`。
 - 11 个「钳位 + 回显原始 size」端点一并变 400；信封撒谎问题随拒绝一起消失，**没有**给 `ActionResult` 加「生效页大小」字段（不为已消失的问题扩一轮）。
+- B1 适配时静态盘点又发现 **10 处内联 `size.clamp(1, 200)`**（不经过 shared helper，编译器抓不到）：`ai` ×4、`cms`、`file`、`personal`、`organization_assemble_express`、`message`、`processplatform_assemble_surface` 的 `u2_adjust_size`（后被 2 处调用）。这些同样是「静默钳位」，一并改为 `page_window` / `page_size`；对应单测从「钳位断言」改成「越界 400 断言」（`file` 的 `attachment2_limit_offset`、`processplatform` 的 `u2_adjust_size`）。改完后全仓不再有 200 上限的内联 clamp。
 
 #### OFFSET 洞是 O17 原本没收的
 
@@ -367,6 +368,8 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 | bar（`from` 即 OFFSET） | `from=1e18` / `1999801` | 400 | 400 |
 | bar | `from=0 count=51` | 200 | 200 |
 | bar | `count=201` | 400 | 400 |
+| person_filter（内联 clamp 补收） | `size=201` / `size=0` | 400 | 400 |
+| person_filter | `size=20` | 200 | 200 |
 
 #### 破坏实验
 

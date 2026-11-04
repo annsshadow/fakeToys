@@ -8795,8 +8795,7 @@ pub async fn comment_u2_list_page_size_size(
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let page = page.max(1);
-    let size = size.clamp(1, 200);
-    let offset = (page - 1).saturating_mul(size);
+    let (size, offset) = shared::response::page_window(page, size)?;
     let client = shared::db::acquire(&pool).await?;
     let count_row = client
         .query_one(

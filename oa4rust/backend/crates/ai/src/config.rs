@@ -154,9 +154,7 @@ pub async fn config_list_model_paging(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
 
-    let size = size.clamp(1, 200) as i64;
-    let page = page.max(1) as i64;
-    let offset = (page - 1).saturating_mul(size);
+    let (size, offset) = shared::response::page_window(page as i64, size as i64)?;
 
     let total_row = client
         .query_one("SELECT COUNT(*) as cnt FROM x_ai_model", &[])
@@ -294,9 +292,7 @@ pub async fn config_list_mcp_paging(
     _pool: Extension<Pool>,
     Path((page, size)): Path<(i32, i32)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let size = size.clamp(1, 200) as i64;
-    let page = page.max(1) as i64;
-    let _offset = (page - 1).saturating_mul(size);
+    let (size, _offset) = shared::response::page_window(page as i64, size as i64)?;
     let total: i64 = 0;
 
     let data: Vec<Value> = vec![];

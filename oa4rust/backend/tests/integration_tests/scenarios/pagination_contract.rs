@@ -24,6 +24,7 @@ const PERSONCARD: &str =
     "/api/organization/assemble/control/personcard/listpaging/page/{page}/size/{size}";
 const DRAFT: &str = "/api/processplatform/assemble/surface/draft/list/my/paging/{page}/size/{size}";
 const BAR: &str = "/api/program_center/bar/create/mass/{from}/{count}";
+const PERSON_FILTER: &str = "/api/person/list/filter/{page}/size/{size}";
 
 async fn call(
     client: &Client,
@@ -215,6 +216,61 @@ pub async fn pagination_contract_flow() {
     let (st, body) = call(&client, reqwest::Method::GET, &url, &auth).await;
     eprintln!("[pagination-contract] bar count=201: status={st} body={body}");
     assert_bad_request(st, &body, "bar count=201");
+
+    // ── 4. 内联 clamp 端点（B1 补收的残余点）：size 越界同样 400 ──────────────
+    for (size, ctx) in [
+        (201_i64, "person_filter size=201"),
+        (0, "person_filter size=0"),
+    ] {
+        let url = format!(
+            "{base}{}",
+            PERSON_FILTER
+                .replace("{page}", "1")
+                .replace("{size}", &size.to_string())
+        );
+        let resp = client
+            .request(reqwest::Method::POST, &url)
+            .header("Authorization", &auth)
+            .json(&serde_json::json!({}))
+            .send()
+            .await
+            .expect("request failed");
+        let st = resp.status();
+        let body = resp.text().await.expect("read body failed");
+        eprintln!("[pagination-contract] {ctx}: status={st} body={body}");
+        assert_bad_request(st, &body, ctx);
+    }
+
+    let url = format!(
+        "{base}{}",
+        PERSON_FILTER.replace("{page}", "1").replace("{size}", "20")
+    );
+    let resp = client
+        .request(reqwest::Method::POST, &url)
+        .header("Authorization", &auth)
+        .json(&serde_json::json!({}))
+        .send()
+        .await
+        .expect("request failed");
+    let st = resp.status();
+    let body = resp.text().await.expect("read body failed");
+    eprintln!("[pagination-contract] person_filter size=20: status={st}");
+    assert_eq!(
+        st,
+        reqwest::StatusCode::OK,
+        "person_filter size=20: body={body}"
+    );
+    let v: Value = serde_json::from_str(&body).expect("person_filter body is not JSON");
+    let rows = v
+        .get("data")
+        .and_then(|d| d.get("data"))
+        .and_then(Value::as_array)
+        .expect("person_filter missing data.data array");
+    assert!(
+        rows.len() <= 20,
+        "person_filter returned {} rows",
+        rows.len()
+    );
 
     server_handle.abort();
 }

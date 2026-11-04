@@ -295,20 +295,26 @@ mod tests {
     }
 
     // 优化二轮 47：attachment2 列表分页 offset 原 page*size（page=1 跳过首页）
-    // + size 无上限 → 修为 (page-1)*size + size 夹到 1..=200。
+    // + size 无上限 → 修为 (page-1)*size + size 越界 400（O17 B1：不再静默钳位）。
     #[test]
-    fn attachment2_limit_offset_is_one_based_and_clamped() {
+    fn attachment2_limit_offset_is_one_based_and_rejects_out_of_range() {
         // page=1 必须 offset=0（修复前为 size）
-        assert_eq!(crate::attachment2_limit_offset("1", "20"), (20, 0));
-        assert_eq!(crate::attachment2_limit_offset("2", "20"), (20, 20));
-        assert_eq!(crate::attachment2_limit_offset("3", "50"), (50, 100));
+        assert_eq!(crate::attachment2_limit_offset("1", "20").unwrap(), (20, 0));
+        assert_eq!(
+            crate::attachment2_limit_offset("2", "20").unwrap(),
+            (20, 20)
+        );
+        assert_eq!(
+            crate::attachment2_limit_offset("3", "50").unwrap(),
+            (50, 100)
+        );
         // page<=0 / 非法 → 兜底第一页
-        assert_eq!(crate::attachment2_limit_offset("0", "20"), (20, 0));
-        assert_eq!(crate::attachment2_limit_offset("x", "20"), (20, 0));
-        // size 非法回退 20、上限夹到 200、下限 1
-        assert_eq!(crate::attachment2_limit_offset("1", "bad"), (20, 0));
-        assert_eq!(crate::attachment2_limit_offset("1", "9999"), (200, 0));
-        assert_eq!(crate::attachment2_limit_offset("2", "0"), (1, 1));
+        assert_eq!(crate::attachment2_limit_offset("0", "20").unwrap(), (20, 0));
+        assert_eq!(crate::attachment2_limit_offset("x", "20").unwrap(), (20, 0));
+        // size 非数字 / 超上限 / 低于下限 → 400
+        assert!(crate::attachment2_limit_offset("1", "bad").is_err());
+        assert!(crate::attachment2_limit_offset("1", "9999").is_err());
+        assert!(crate::attachment2_limit_offset("2", "0").is_err());
     }
 
     // ── route existence: routes defined in file_assemble_control_router ──────

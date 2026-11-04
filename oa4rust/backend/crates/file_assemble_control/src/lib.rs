@@ -1855,13 +1855,14 @@ pub async fn attachment2_list_top(
 }
 
 /// attachment2 列表分页量（纯函数，便于单测）：page/size 为路径字符串。
-/// page 为 1 基 → offset=(page-1)*limit；size 解析失败回退 20、夹到 1..=200。
-/// 修复原 `page*size`（page=1 跳过首页 off-by-one）+ size 无上限（无界 LIMIT），
-/// 对齐全库 1 基 `(page-1)*size` 约定与 size 上限夹取。
-fn attachment2_limit_offset(page: &str, size: &str) -> (i64, i64) {
-    let limit = size.parse::<i64>().unwrap_or(20).clamp(1, 200);
-    let offset = (page.parse::<i64>().unwrap_or(1).max(1) - 1).saturating_mul(limit);
-    (limit, offset)
+/// page 为 1 基 → offset=(page-1)*limit；size 必须是 `1..=200` 的数字，越界 400。
+/// 修复原 `page*size`（page=1 跳过首页 off-by-one）+ size 无上限（无界 LIMIT）。
+fn attachment2_limit_offset(page: &str, size: &str) -> Result<(i64, i64), AppError> {
+    let size: i64 = size
+        .parse()
+        .map_err(|_| AppError::BadRequest(format!("size must be a number, got {size}")))?;
+    let page: i64 = page.parse().unwrap_or(1);
+    shared::response::page_window(page, size)
 }
 
 #[axum::debug_handler]
@@ -1872,7 +1873,7 @@ pub async fn attachment2_list_type_page_size_size(
     axum::extract::Path((_type, page, size)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
-    let (page_size, offset) = attachment2_limit_offset(&page, &size);
+    let (page_size, offset) = attachment2_limit_offset(&page, &size)?;
     // O9：非 admin 仅列本人附件（原全局遍历可枚举他人附件名，矩阵 canary 实证）
     let admin = shared::middleware::is_admin(&pool, &session.person_unique).await;
     let sql = format!(

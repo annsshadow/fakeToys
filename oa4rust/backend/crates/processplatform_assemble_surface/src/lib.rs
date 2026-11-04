@@ -27404,8 +27404,8 @@ fn u2_adjust_page(page: i64) -> i64 {
     }
 }
 
-fn u2_adjust_size(size: i64) -> i64 {
-    size.clamp(1, 200)
+fn u2_adjust_size(size: i64) -> Result<i64, AppError> {
+    shared::response::page_size(size)
 }
 
 /// 过滤条件 → 参数化 WHERE 片段构建器（占位符从 1 连续编号）。
@@ -27540,7 +27540,7 @@ async fn u2_snap_manage_paging(
     size: i64,
     fs: U2FilterSql,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let adj_size = u2_adjust_size(size);
+    let adj_size = u2_adjust_size(size)?;
     let offset = (u2_adjust_page(page) - 1).saturating_mul(adj_size);
     let where_clause = fs.where_sql();
 
@@ -27897,7 +27897,10 @@ pub async fn review_u2_v2_search(
         Some(session.person_unique.clone())
     };
 
-    let size = wi.size.map(u2_adjust_size).unwrap_or(20); // o2server DEFAULT_PAGESIZE = 20
+    let size = match wi.size {
+        Some(s) => u2_adjust_size(s)?,
+        None => 20, // o2server DEFAULT_PAGESIZE = 20
+    };
     let page = wi.page.map(u2_adjust_page).unwrap_or(1);
     let (size, offset) = shared::response::page_window(page, size)?;
 
