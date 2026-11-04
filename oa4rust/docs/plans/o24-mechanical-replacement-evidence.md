@@ -216,8 +216,21 @@ raw.parse::<bool>().map_err(...)
 
 **判定**：这属于 O23 第一步台账里已写明的设计（`config_value` 是 TEXT，必须改读取方式；
 坏值 → 500 并带原始值）。但它确实是一次成功路径上的行为变化，不是单纯换日志措辞。
-按用户要求在此单列，**不把它当作「应该没影响」略过**；后续若需要，应补一条有
-`sync_enabled` 行的集成用例把 200 分支钉住（当前没有这样的用例）。
+按用户要求在此单列，**不把它当作「应该没影响」略过**。
+
+**该缺口已收口（2026-11-05）**：
+
+- 行为级三条用例：`tests/integration_tests/scenarios/organization_core_express.rs`
+  （真实 HTTP + 真实 PostgreSQL）
+  1. 有 `sync_enabled=true` 行 → `/config`、`/status` 200，字段级断言
+     `enabled/syncInterval/maxRecords/status/personCount/groupCount`；
+  2. 有行但值 `maybe` → 500，body 为 `internal server error`，日志含
+     `x_org_config.sync_enabled=\"maybe\"` 与 `source=...lib.rs:27`；
+  3. 无行 → `/config`、`/status` 503，文案 `service missing x_org_config.sync_enabled`。
+- 种子器补合法行：`seed_all_tables` 写 `config_key='sync_enabled' / config_value='true'`，
+  种子化扫描实测 `/config`、`/status` 均 **200**（不再是 503），200 分支真的被执行。
+- 破坏实验：临时改回 `row.get::<bool>()` → 第 1 条红（`500`，panic
+  `error retrieving column config_value`）；复原后绿。
 
 其余 3895 处替换：只改变错误对象的构造，`InternalWithSource` 仍映射 500、响应体仍为
 `internal server error`，所以状态码与响应体都不变——上表已逐类证明。

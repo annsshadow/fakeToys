@@ -1174,6 +1174,22 @@ mod idor_matrix {
             }
         }
 
+        // O24：`organization/core/express` 读 `config_key='sync_enabled'`。只种通用
+        // 「seed」行时两条路由永远走 503 分支，等于新加的 200 分支从没被执行过。
+        // 这里补一条合法行，让种子化扫描真的进入 200 分支。
+        if let Err(e) = client
+            .execute(
+                "INSERT INTO x_org_config (id, config_key, config_value) \
+                 VALUES ('seed-sync-enabled', 'sync_enabled', 'true') \
+                 ON CONFLICT (id) DO UPDATE SET config_key = EXCLUDED.config_key, \
+                 config_value = EXCLUDED.config_value",
+                &[],
+            )
+            .await
+        {
+            failures.push(format!("x_org_config(sync_enabled): {}", pg_err(&e)));
+        }
+
         // 恢复会话设置：该连接回池后仍会被 app 查询复用，不能留下 replica 语义
         let _ = client
             .execute("SET session_replication_role = DEFAULT", &[])

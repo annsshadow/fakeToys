@@ -1000,8 +1000,46 @@ GET /api/meeting/core/entity/room/{id}   column:equipment
 
 ### O24-3 待修 42 条（顺序与纪律）
 
-先修**非 GET 31 条**（写路径报错会让用户以为操作成功/失败不确定），GET 11 条其后。
-按根因族分批（`wrong-type` 9 → `E23502` 10 → `param-count` 6 → `E42703` 4 →
-`E42804` 3 → `E42P10` 3 → `column:*` 4 → 其余 3），**每批单独提交、单独破坏实验**，
-每修一族删对应行并同步下调 `BASELINE_COUNT`；禁止一次性全清。
+**口径**：非 GET 31 条 + GET 11 条 = 42。用户说的「GET 9 条」是旧 40 口径；O24 库隔离
+修复新增的 2 条 `column:equipment` 也是 GET，故 GET 现为 11（旧的 9 条包含在内）。
+
+排序按真实用户后果，不按条数：
+
+1. **写路径里「会写库但报错」的族**（用户以为失败、实际可能已落库）优先；
+2. 再按条数多的可批量验证族（`wrong-type` 9、`param-count` 6 等）；
+3. GET 留最后。
+
+每批固定流程：`information_schema` 现场确认真实列类型 → **先红**（复现当前 500）→ 改 →
+行为级响应体断言 → 破坏实验 → **单独提交** → **删对应基线行并下调 `BASELINE_COUNT`**。
+禁止「修好了但基线行留着」，也禁止一次性全清。
+
+### O24-1 收口：express 成功路径（裁定执行）
+
+`organization/core/express` 的 500→200 不再只靠推断：
+
+- 新增 `tests/integration_tests/scenarios/organization_core_express.rs`，三条真实 HTTP +
+  真实 PostgreSQL 用例，并在 `integration_runner` 以独立 `#[ignore]` 用例注册
+  （CI 的 `run_integration_scenarios.py` 会跑它）：
+  1. `sync_enabled=true` → `/config`、`/status` **200**，断言 `enabled/syncInterval/
+     maxRecords/status/personCount/groupCount` 具体值；
+  2. `sync_enabled=maybe` → **500**，body `internal server error`，日志含原始值
+     `x_org_config.sync_enabled=\"maybe\"` 与 `source=...lib.rs:27`；
+  3. 无行 → **503**，文案 `service not configured: missing x_org_config.sync_enabled`。
+- `seed_all_tables` 补合法 `sync_enabled=true` 行；种子化为扫描实测 `/config`、`/status`
+  均 **200**（此前只到 503，200 分支从未执行）。
+- 破坏实验：临时改回 `row.get::<bool>()` → 第 1 条红（500 / panic
+  `error retrieving column config_value`）；复原后三条全绿。
+
+### O24 计数看板（每轮固定报）
+
+区分「更多缺陷变可见」与「修不动在堆债」，不靠「全绿」：
+
+| 轮次 | 新暴露 | 已清除 | 基线净变化 | 基线总量 |
+|---|---|---|---|---|
+| O24-1/2（自证 + 门禁 + 库隔离校准） | **2**（`column:equipment`，此前读错库未暴露） | 0 | **+2**（40→42） | 42 |
+| O24-1 收口（express 用例 + 种子行） | 0 | 0 | 0 | 42 |
+| O24-3 批次 1（待开工） | — | — | — | — |
+
+**清除清单**：暂无（尚未开始修基线行）。每批完成后在此追加「批次 / 族 / 删除行 key 列表 /
+测试与破坏实验结论」。
 

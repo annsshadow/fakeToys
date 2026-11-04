@@ -17,6 +17,7 @@
 mod integration_tests;
 
 use integration_tests::db::init_test_database_async;
+use integration_tests::db_isolated::init_isolated;
 
 /// 集成测试主入口。
 ///
@@ -58,6 +59,17 @@ async fn data_integrity_scenarios() {
 async fn pagination_contract() {
     let _ctx = init_test_database_async().await;
     integration_tests::scenarios::pagination_contract::pagination_contract_flow().await;
+}
+
+/// O24：`organization/core/express` 的 200/500/503 三条行为级用例。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn organization_express_config_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::organization_core_express::organization_express_config_contract_flow(
+        ctx.pool.clone(),
+    )
+    .await;
 }
 
 #[cfg(test)]
