@@ -214,6 +214,8 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
+#[cfg(test)]
+mod tests_manual;
 #[allow(non_snake_case)]
 pub async fn consume_list_consume_count_count(
     pool: Extension<Pool>,

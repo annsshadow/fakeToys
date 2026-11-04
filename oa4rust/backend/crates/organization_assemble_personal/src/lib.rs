@@ -31,6 +31,8 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
+#[cfg(test)]
+mod tests_manual;
 #[axum::debug_handler]
 pub async fn user_setting(
     pool: Extension<Pool>,

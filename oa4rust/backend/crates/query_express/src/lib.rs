@@ -120,3 +120,5 @@ mod security_gate_tests_b84;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod tests_manual;

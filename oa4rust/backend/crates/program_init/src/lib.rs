@@ -816,3 +816,5 @@ mod security_gate_tests;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod tests_manual;

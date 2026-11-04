@@ -441,6 +441,8 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
+#[cfg(test)]
+mod tests_manual;
 #[allow(non_snake_case)]
 pub async fn agent_flag(
     pool: Extension<Pool>,

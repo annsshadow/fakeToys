@@ -18,6 +18,8 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
+#[cfg(test)]
+mod tests_manual;
 /// Echo 接口（健康检查）
 ///
 /// 返回固定的 `{"type":"echo","message":"pong"}` 响应，用于验证服务是否正常运行。

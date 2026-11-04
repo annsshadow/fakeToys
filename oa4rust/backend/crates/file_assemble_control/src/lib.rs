@@ -30,6 +30,8 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
+#[cfg(test)]
+mod tests_manual;
 pub fn file_assemble_control_router(pool: Pool) -> axum::Router {
     routes::router(pool)
 }

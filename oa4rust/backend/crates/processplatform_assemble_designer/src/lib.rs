@@ -3615,6 +3615,8 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
+#[cfg(test)]
+mod tests_manual;
 // ──────────────────────────────────────────────────────────────────────────────
 // plan002 U2 · o2server 端点缺口闭合（51 个）
 //
