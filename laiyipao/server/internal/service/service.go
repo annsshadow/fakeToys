@@ -1362,26 +1362,55 @@ func (s *Service) LoadWallet(ctx context.Context, userID int64) (Wallet, error) 
 		tokens, tokErr = s.TokenBalance(ctx, userID, WalletTokenKinds)
 	}()
 
-	err := s.pool.QueryRow(ctx, `
-		WITH cur AS (
-		  SELECT coin, gem, energy, keys, energy_updated_at,
-		         GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - energy_updated_at)) / $3))::int AS n
-		    FROM user_wallets WHERE user_id = $1
-		), regen AS (
-		  UPDATE user_wallets w
-		     SET energy = LEAST($2::int, w.energy + cur.n),
-		         energy_updated_at = w.energy_updated_at
-		                         + make_interval(secs => (cur.n * $3)::double precision),
-		         updated_at = now()
-		    FROM cur
-		   WHERE w.user_id = $1 AND cur.n > 0
-		  RETURNING w.coin, w.gem, w.energy, w.keys, w.energy_updated_at
-		)
-		SELECT coin, gem, energy, keys, energy_updated_at FROM regen
-		UNION ALL
-		SELECT coin, gem, energy, keys, energy_updated_at FROM cur WHERE cur.n = 0`,
-		userID, energyMax, energyIntervalSecs).
-		Scan(&w.Coin, &w.Gem, &w.Energy, &w.Keys, &w.EnergyUpdatedAt)
+	// R99：并发安全的两段式 regen。
+	//
+	// 原实现用 `WITH cur AS (SELECT …)` 先按**语句快照**算 n，再
+	// `UPDATE … FROM cur`。同一 user 的两个 LoadWallet 并发时，第二个事务
+	// 在行锁上等待；恢复后 PostgreSQL 的 EPQ 用**新行**的
+	// energy/energy_updated_at，但 `cur.n` 仍是旧快照 —— 同一段离线时间
+	// 被算两次：体力多加 n，时间戳也被推进两次。
+	// 故障注入（r99_regen_race_test）：离线 720s（2 格）、20 并发 →
+	// 体力 4（应为 2），第二笔的 energy_updated_at 已越过 now。
+	//
+	// 现在：
+	//   1) 先无锁读。`n = 0` 的绝大多数请求仍是**一次往返、不抢锁**
+	//      （2026-10-29 的读优化逐位不变）；
+	//   2) 只有 `n > 0` 才进事务：`FOR UPDATE` 锁住钱包行，**用锁定后的
+	//      新值重算 n** 再 UPDATE。锁一直持有到事务提交，并发的第二笔
+	//      会在行锁上等，拿到第一笔的提交结果后 n = 0 → 只读不写。
+	//
+	// 不能把 SELECT FOR UPDATE 与 UPDATE 分成两个自动提交语句：
+	// SELECT 结束即释放行锁，两个请求仍可能各自算出同一个 n 再加两次。
+	const loadWalletSQL = `SELECT coin, gem, energy, keys, energy_updated_at,
+		         GREATEST(0, FLOOR(EXTRACT(EPOCH FROM (now() - energy_updated_at)) / $2))::int AS n
+		    FROM user_wallets WHERE user_id = $1`
+
+	var n int
+	err := s.pool.QueryRow(ctx, loadWalletSQL, userID, energyIntervalSecs).
+		Scan(&w.Coin, &w.Gem, &w.Energy, &w.Keys, &w.EnergyUpdatedAt, &n)
+	if err == nil && n > 0 {
+		err = s.DB.Tx(ctx, func(tx txType) error {
+			var lockedN int
+			if err := tx.QueryRow(ctx, loadWalletSQL+` FOR UPDATE`, userID, energyIntervalSecs).
+				Scan(&w.Coin, &w.Gem, &w.Energy, &w.Keys, &w.EnergyUpdatedAt, &lockedN); err != nil {
+				return err
+			}
+			if lockedN <= 0 {
+				// 并发的另一笔已经恢复过：返回它提交后的值，不再写。
+				return nil
+			}
+			return tx.QueryRow(ctx, `
+				UPDATE user_wallets
+				   SET energy = LEAST($3::int, energy + $2),
+				       energy_updated_at = energy_updated_at
+				                         + make_interval(secs => ($2 * $4)::double precision),
+				       updated_at = now()
+				 WHERE user_id = $1
+				 RETURNING coin, gem, energy, keys, energy_updated_at`,
+				userID, lockedN, energyMax, energyIntervalSecs).
+				Scan(&w.Coin, &w.Gem, &w.Energy, &w.Keys, &w.EnergyUpdatedAt)
+		})
+	}
 	wg.Wait()
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Wallet{}, fmt.Errorf("%w: wallet for user %d", ErrNotFound, userID)
