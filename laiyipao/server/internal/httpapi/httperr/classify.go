@@ -57,7 +57,8 @@ func IsTransientDependency(err error) bool {
 		case strings.HasPrefix(pgErr.Code, "08"):
 			return true
 		case pgErr.Code == "57014", pgErr.Code == "57P01", pgErr.Code == "57P02",
-			pgErr.Code == "57P03", pgErr.Code == "53300", pgErr.Code == "53200":
+			pgErr.Code == "57P03", pgErr.Code == "53300", pgErr.Code == "53200",
+			pgErr.Code == "55P03": // lock_not_available：R94 锁等待预算超时
 			return true
 		}
 		return false

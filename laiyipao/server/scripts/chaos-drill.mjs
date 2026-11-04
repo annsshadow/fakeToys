@@ -12,9 +12,9 @@
 //   F1 批量断连  pg_terminate_backend 每 300ms 杀一波池后端，15s
 //   F2 池耗尽    psql 持 LOCK TABLE users ACCESS EXCLUSIVE 15s（R82 死锁同机理：
 //                认证中间件每请求读 users → 全端点排队 → 池占满）
-//                R90 后语义变化：占满池的请求仍会等到锁释放（语句级等待），
-//                但**排不进池**的请求在 DB_ACQUIRE_TIMEOUT（默认 5s）后快速
-//                返回 503 + Retry-After，不再无限挂起（R89 时窗口内零 503）
+//                R90：排不进池的请求在 DB_ACQUIRE_TIMEOUT（默认 5s）后快速 503。
+//                R94：占满池、已在等锁的语句在 DB_LOCK_TIMEOUT（默认 2s）被 PG
+//                取消（55P03）并 503 —— 不再挂到锁释放（R89 实测 p95=15032ms）。
 //   F3 语句取消  pg_cancel_backend 每 100ms 取消执行中语句，15s
 //                （57014 = statement_timeout 与主动 cancel 同一个码）
 //
@@ -348,16 +348,21 @@ await drillPhase('F2 池耗尽（锁 users 表）',
     } catch { /* 忽略 */ }
     try { p.kill('SIGKILL'); } catch { /* 已退 */ }
   }, 15,
-  // F2 专属：R90 快速失败语义——池耗尽时排不进池的请求必须在
-  // DB_ACQUIRE_TIMEOUT（默认 5s）+1s 余量内拿到 503；同时保留两项旧证据：
-  // client_abort=0（服务端确实回了响应）与 dur>10s 的锁阻塞请求（证明锁
-  // 真的生效、与 Acquire 挂起无关）。
+  // F2 专属：R90+R94 快速失败语义——池耗尽时排不进池的请求必须在
+  // DB_ACQUIRE_TIMEOUT（默认 5s）+1s 余量内拿到 503；同时 client_abort=0
+  // （服务端确实回了终局）。
+  //
+  // ⚠️ 锁生效的证据**不再**靠「dur>10s 挂起请求」——那是 R89/R90 的旧
+  // 语义，把故障后果当成了生效证据。R94 的 DB_LOCK_TIMEOUT（默认 2s）
+  // 落地后，锁阻塞语句会在 ~2s 被 PG 取消并快速 503，窗口内**不该再有**
+  // dur>10s 的请求。锁真的生效由注入时的 pg_locks 确认（上方已 fail-loud），
+  // 这里断言的是它的**后果**：没有语句被允许挂到 10s 以上。
   (w) => {
     const aborted = w.byStatus['-1'] ?? 0;
     note(aborted === 0, `F2 语义：窗口 client_abort=${aborted}（请求应由服务端给出终局）`);
     note(w.s503 > 0, `F2 快速失败证据：窗口 503 计数=${w.s503}（R90 后池耗尽必须出现快速 503）`);
     note(w.slow503 === 0, `F2 503 全部在 5s+1s 内返回（窗口最长 503 ${w.max503}ms，>6s 的 503=${w.slow503}）`);
-    note(w.slow > 0, `F2 锁生效证据：窗口 dur>10s 请求数=${w.slow}（占满池的语句级等待，正常形态）`);
+    note(w.slow === 0, `F2 锁等待预算生效：窗口 dur>10s 请求数=${w.slow}（R94 后应为 0——锁阻塞语句 ~2s 被 lock_timeout 取消，不再挂到锁释放）`);
   });
 
 // F3 语句取消：每 100ms cancel 执行中的语句（57014）。

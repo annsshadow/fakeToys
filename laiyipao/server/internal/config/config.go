@@ -144,6 +144,28 @@ type Config struct {
 	// DBStatementTimeout 是单条 SQL 的服务端执行上限（0 = 不限）。
 	// 详见 store.Open 的注释。
 	DBStatementTimeout time.Duration
+	// DBLockTimeout 是**等待任何一把锁**的预算（R94，默认 2s，0 = 不限）。
+	//
+	// # 为什么单独一个，而不是复用 statement_timeout
+	//
+	// `statement_timeout` 计量的是「整条语句从发出到结束」—— 它要够大，
+	// 才能容下正常的慢查询（看板聚合、大导出，默认 30s）。
+	// 而「等一把锁」在正常情况下应当**几乎为零**：等待说明别人正在持锁
+	// 写同一行/同一张表，那本身就是故障形态（R89 F2 实测：锁 users 15s，
+	// 241 个请求挂起 p95=15032ms）。
+	//
+	// 用同一个 30s 上限去管锁等待，等于故障期每个请求都要挂 30s 才终局，
+	// 远超客户端 10s 超时 —— 终局来时客户端早已断开，503 无人接收。
+	//
+	// 所以锁等待单独给 2s 预算：
+	//   - 正常短事务持锁毫秒级，2s 是正常等待的 ~3 个数量级；
+	//   - 2s < 客户端 10s 超时，503 + Retry-After 返回时客户端还活着；
+	//   - 超时错误码 57014（lock_timeout 与 statement_timeout 同码），
+	//     R67 的 IsTransientDependency 已映射为 503，错误路径零改动。
+	//
+	// ⚠️ 迁移（goose）可能持锁远超 2s：迁移复用同一池时，
+	// 应在该次启动显式设 DB_LOCK_TIMEOUT=0。
+	DBLockTimeout time.Duration
 	// DBAcquireTimeout 是从池里**等一条连接**的上限（R90，默认 5s，
 	// 必须为正）——不含语句执行时间（那是 DB_STATEMENT_TIMEOUT 的事）。
 	//
@@ -506,6 +528,7 @@ func Load() Config {
 		// 默认 30s：足够覆盖现有导出（10 万行）与看板聚合，又能在
 		// 「某条查询写坏了」时把连接释放出来，而不是拖垮整池。
 		DBStatementTimeout: envDuration("DB_STATEMENT_TIMEOUT", 30*time.Second),
+		DBLockTimeout:      envDuration("DB_LOCK_TIMEOUT", 2*time.Second),
 		DBAcquireTimeout:   envDurationStrict("DB_ACQUIRE_TIMEOUT", 5*time.Second),
 		// 导出并发默认 2：给 10 条池连接里的普通请求留足余量。
 		ExportMaxConcurrency: envInt("EXPORT_MAX_CONCURRENCY", 2),

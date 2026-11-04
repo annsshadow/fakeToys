@@ -114,6 +114,30 @@ func Open(ctx context.Context, cfg config.Config) (*DB, error) {
 		poolCfg.ConnConfig.RuntimeParams["statement_timeout"] = strconv.FormatInt(ms, 10)
 	}
 
+	// ⚠️ 锁等待预算（R94）：与语句执行预算**分开**。
+	//
+	// statement_timeout 管「整条语句」，默认 30s 是为了容下看板聚合与大导出；
+	// 用它管锁等待，故障期每个请求要挂 30s 才终局 —— 远超客户端 10s 超时。
+	//
+	// R89 F2 实测就是这个形态：锁 users 15s，241 个请求挂起 p95=15032ms，
+	// 全部等到锁释放（15s < 30s statement_timeout，根本没触发取消）。
+	// 终局到来时客户端早已断开，503 无人接收。
+	//
+	// lock_timeout 只计量「等锁」这段：正常短事务持锁毫秒级，
+	// 2s 预算 ~3 个数量级余量，只有真故障（长事务/死锁边缘/DDL）才触达。
+	// 超时错误码同样是 57014，R67 的 IsTransientDependency 已映射 503，
+	// 错误路径零改动。
+	//
+	// ⚠️ 迁移（goose）可能持锁远超 2s：迁移复用同一池时，
+	// 应显式设 DB_LOCK_TIMEOUT=0。
+	if cfg.DBLockTimeout > 0 {
+		ms := cfg.DBLockTimeout.Milliseconds()
+		if ms < 1 {
+			ms = 1
+		}
+		poolCfg.ConnConfig.RuntimeParams["lock_timeout"] = strconv.FormatInt(ms, 10)
+	}
+
 	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
 	if err != nil {
 		return nil, fmt.Errorf("create pool: %w", err)

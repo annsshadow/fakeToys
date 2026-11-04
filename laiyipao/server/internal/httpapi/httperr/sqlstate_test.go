@@ -162,6 +162,39 @@ func TestSQLSTATEAnchorsFromRealDatabase(t *testing.T) {
 		t.Fatalf("恢复 statement_timeout 失败：%v", err)
 	}
 
+	// --- 55P03：lock_timeout 取消锁等待（R94）---
+	//
+	// 这是 `DB_LOCK_TIMEOUT` 触发的真实错误码，**不是** 57014。
+	// 它若不进瞬时依赖清单，锁故障会从「挂 15s」变成「秒返回 500」，
+	// 比不修更糟 —— 所以这条用真库锁等待钉住映射。
+	if _, err := conn.Exec(ctx, `CREATE TABLE IF NOT EXISTS r94_lock_probe (id int)`); err != nil {
+		t.Fatalf("建锁探针表失败：%v", err)
+	}
+	locker, err := pgx.Connect(ctx, dsn)
+	if err != nil {
+		t.Fatalf("连接 locker 失败：%v", err)
+	}
+	defer func() { _ = locker.Close(context.Background()) }()
+	ltx, err := locker.Begin(ctx)
+	if err != nil {
+		t.Fatalf("起锁事务失败：%v", err)
+	}
+	defer func() { _ = ltx.Rollback(context.Background()) }()
+	if _, err := ltx.Exec(ctx, `LOCK TABLE r94_lock_probe IN ACCESS EXCLUSIVE MODE`); err != nil {
+		t.Fatalf("持锁失败：%v", err)
+	}
+	if _, err := conn.Exec(ctx, `SET lock_timeout = 80`); err != nil {
+		t.Fatalf("设置 lock_timeout 失败：%v", err)
+	}
+	_, err = conn.Exec(ctx, `INSERT INTO r94_lock_probe (id) VALUES (1)`)
+	if err == nil {
+		t.Fatal("锁等待未被 lock_timeout 打断")
+	}
+	assertRender(t, "真库 55P03", err, 503, "service_unavailable", "5")
+	if _, err := conn.Exec(ctx, `SET lock_timeout = 0`); err != nil {
+		t.Fatalf("恢复 lock_timeout 失败：%v", err)
+	}
+
 	// --- 57P01：从另一个连接杀掉本连接的后端 ---
 	victim, err := pgx.Connect(ctx, dsn)
 	if err != nil {
