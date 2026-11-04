@@ -90,6 +90,52 @@ def strip_rust_strings(text):
     return "".join(out)
 
 
+def strip_rust_comments(text):
+    """只移除 // 与 /* */ 注释，保留字符串字面量（供解析首参表达式）。
+
+    strip_rust_strings 会把字符串内容一起抹掉，不能用于取值；但注释同样
+    会被留下，导致 `.route(` 首参前带行注释时解析失败（个人中心两条口令校验）。
+    """
+    out = []
+    i, n = 0, len(text)
+    while i < n:
+        c = text[i]
+        if c == "/" and i + 1 < n and text[i + 1] == "/":
+            j = text.find("\n", i)
+            i = n if j == -1 else j
+            continue
+        if c == "/" and i + 1 < n and text[i + 1] == "*":
+            j = text.find("*/", i + 2)
+            i = n if j == -1 else j + 2
+            out.append(" ")
+            continue
+        if c == "r" and i + 1 < n and text[i + 1] in '"#':
+            m = re.match(r'r(#*)"', text[i:])
+            if m:
+                endpat = '"' + m.group(1)
+                j = text.find(endpat, i + len(m.group(0)))
+                j = n if j == -1 else j + len(endpat)
+                out.append(text[i:j])
+                i = j
+                continue
+        if c == '"':
+            j = i + 1
+            while j < n:
+                if text[j] == "\\":
+                    j += 2
+                    continue
+                if text[j] == '"':
+                    j += 1
+                    break
+                j += 1
+            out.append(text[i:j])
+            i = j
+            continue
+        out.append(c)
+        i += 1
+    return "".join(out)
+
+
 def cfg_test_ranges(masked):
     """返回 #[cfg(test)] 后随 { } 块的 (start, end) 区间列表。"""
     ranges = []
@@ -268,7 +314,7 @@ def normalize_legacy_path(class_path, method_path):
 
 
 def resolve_route_path(expr, src, before):
-    expr = expr.strip()
+    expr = strip_rust_comments(expr).strip()
     m = re.fullmatch(r'"((?:[^"\\]|\\.)*)"', expr)
     if m:
         return m.group(1)
