@@ -23,11 +23,15 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "app_list route should be registered"
-        );
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(!bytes.is_empty(), "app_list route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -44,11 +48,15 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "model_list route should be registered"
-        );
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(!bytes.is_empty(), "model_list route should be registered");
+        }
     }
 
     // SKIPPED: conversation_list not accessible

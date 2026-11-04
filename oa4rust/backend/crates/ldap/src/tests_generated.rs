@@ -6,4 +6,6 @@ mod tests {
     #![allow(non_snake_case)]
 
     // SKIPPED: authenticate not accessible
+    // SKIPPED: sync_from_directory not accessible
+    // SKIPPED: sync_users_once not accessible
 }

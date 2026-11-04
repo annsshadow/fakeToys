@@ -11,7 +11,7 @@ mod tests {
     // SKIPPED: list_check_in_records not accessible
     // SKIPPED: list_schedule_rules not accessible
     // SKIPPED: list_appeal_records not accessible
-    // SKIPPED: submit_appeal not accessible
-    // SKIPPED: audit_appeal not accessible
-    // SKIPPED: archive_appeal not accessible
+    // SKIPPED: submit_appeal requires Session parameter
+    // SKIPPED: audit_appeal requires Session parameter
+    // SKIPPED: archive_appeal requires Session parameter
 }

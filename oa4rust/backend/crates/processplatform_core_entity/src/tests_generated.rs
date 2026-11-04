@@ -23,11 +23,15 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "work_list route should be registered"
-        );
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(!bytes.is_empty(), "work_list route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -44,11 +48,15 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "work_get route should be registered"
-        );
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(!bytes.is_empty(), "work_get route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -65,11 +73,15 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "task_list route should be registered"
-        );
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(!bytes.is_empty(), "task_list route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -86,11 +98,15 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "task_get route should be registered"
-        );
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(!bytes.is_empty(), "task_get route should be registered");
+        }
     }
 
     #[tokio::test]
@@ -107,12 +123,42 @@ mod tests {
             )
             .await
             .unwrap();
-        assert_ne!(
-            response.status(),
-            StatusCode::NOT_FOUND,
-            "ticket_list route should be registered"
-        );
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(!bytes.is_empty(), "ticket_list route should be registered");
+        }
     }
 
-    // SKIPPED: workcompleted_list not accessible
+    #[tokio::test]
+    async fn test_workcompleted_list() {
+        let db = shared::testing::mock_db().await;
+        let app = crate::router(db);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/process/workcompleted/list")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "workcompleted_list route should be registered"
+            );
+        }
+    }
 }

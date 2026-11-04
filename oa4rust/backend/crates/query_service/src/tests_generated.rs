@@ -5,7 +5,7 @@
 mod tests {
     #![allow(non_snake_case)]
 
-    // SKIPPED: neural_generate_model not accessible
+    // SKIPPED: neural_generate_model requires Session parameter
     // SKIPPED: neural_list_model not accessible
-    // SKIPPED: processing_execute not accessible
+    // SKIPPED: processing_execute requires Session parameter
 }

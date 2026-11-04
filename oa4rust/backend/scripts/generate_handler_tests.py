@@ -317,17 +317,27 @@ def gen_arg_value(raw_param: str) -> str:
     m = re.match(r'!?(\w+)\s*:\s*(.+)', raw_param)
     if m:
         ptype = m.group(2).strip()
-        if ptype in ('String', 'str'):
-            return '"test-value".to_string()'
-        if ptype in ('i64', 'i32', 'u64', 'u32', 'usize'):
-            return '1'
-        if ptype == 'bool':
-            return 'true'
-        if ptype == 'Value':
-            return 'serde_json::json!({})'
+        by_ref = ptype.startswith('&')
+        base = ptype.lstrip('&').strip()
+        base = re.sub(r'^mut\s+', '', base)
+        val = None
+        if base in ('String',):
+            val = '"test-value".to_string()'
+        elif base in ('str',):
+            return '"test-value"'
+        elif base in ('i64', 'i32', 'u64', 'u32', 'usize'):
+            val = '1'
+        elif base == 'bool':
+            val = 'true'
+        elif base == 'Value':
+            val = 'serde_json::json!({})'
+        if val is not None:
+            return ('&' + val) if by_ref else val
 
-    # Default fallback
-    return 'serde_json::json!({})'
+    # 无法构造的参数类型：返回 SKIP 标记，由调用方跳过该用例。
+    # 以前这里默认返回 `json!({})`，会给 `&Pool` / 自定义结构体生成类型错误的
+    # 直调测试（shared 的 crud_create 就是这么炸的）。
+    return '/* SKIP: unresolvable param */'
 
 
 def gen_path_inner(inner: str, ptype: str) -> str:
@@ -501,7 +511,16 @@ def generate_test_module(crate_name: str, handlers: List[Tuple[str, str, List[st
     has_direct = any(h in exported for h, _, _ in handlers)
     # Router-based tests require tower; skip them if not available
     can_router = has_tower
-    has_router_test = can_router and any(h not in exported and h in routes for h, _, _ in handlers)
+
+    skipped = 0
+    tests = []
+    for handler_name, sig_line, params in handlers:
+        test_code, is_skipped = generate_test_fn(
+            handler_name, routes, exported, params, warnings, can_router, entry_kind)
+        if is_skipped:
+            skipped += 1
+        tests.append(test_code)
+    joined = '\n'.join(tests)
 
     lines = []
     # SPDX 头与 allow 由生成器自己产出：以前靠仓库级补丁给 91 个产物加这两样，
@@ -513,24 +532,17 @@ def generate_test_module(crate_name: str, handlers: List[Tuple[str, str, List[st
     lines.append('mod tests {')
     lines.append('    #![allow(non_snake_case)]')
 
-    # 只导入路由测试真正用到的符号；生成代码里的参数构造全是全限定路径，
-    # 旧的 `use shared::testing::...` / `use axum::http::Method` 实际未被使用，
-    # 会产生 unused import 警告（--all-targets + deny(warnings) 下直接红）。
-    if has_router_test:
+    # 只导入实际用到的符号（按生成后的代码判断，而不是按 handlers 推断）：
+    # 旧版按 has_router_test 推断，遇到「在路由表但要求 Session 被跳过」的 crate
+    # 会留下 unused import，--all-targets 下直接编译失败。
+    if 'Request::builder()' in joined:
         lines.append('    use axum::body::Body;')
         lines.append('    use axum::http::{Request, StatusCode};')
         lines.append('')
         lines.append('    use tower::util::ServiceExt;')
     lines.append('')
 
-    skipped = 0
-    for handler_name, sig_line, params in handlers:
-        test_code, is_skipped = generate_test_fn(
-            handler_name, routes, exported, params, warnings, can_router, entry_kind)
-        if is_skipped:
-            skipped += 1
-        lines.append(test_code)
-
+    lines.append(joined)
     lines.append('}')
     return '\n'.join(lines)
 
@@ -567,6 +579,19 @@ def process_crate(crate_name: str, out_dir: Optional[str] = None) -> Tuple[int, 
         return (0, 0, 0, [])
 
     routes = extract_routes(crate_dir)
+    # 同名 handler 可能同时定义在 lib.rs 与某个子模块（如 oauth_list 在
+    # lib.rs 和 new_handlers.rs 各有一份）。测试函数按 handler 名命名，
+    # 必须去重；优先保留在路由表里的那一份（否则会丢掉路由注册测试）。
+    handlers.sort(key=lambda h: 0 if h[0] in routes else 1)
+    seen = set()
+    deduped = []
+    for h in handlers:
+        if h[0] in seen:
+            continue
+        seen.add(h[0])
+        deduped.append(h)
+    handlers = deduped
+
     exported = get_exported_handlers(crate_dir)
     has_tower = has_tower_dep(crate_dir)
     entry_kind = ROUTER_ENTRY_KINDS.get(crate_name, DEFAULT_ENTRY_KIND)
@@ -611,6 +636,8 @@ def process_crate(crate_name: str, out_dir: Optional[str] = None) -> Tuple[int, 
                              lib_content[end_of_line:])
         else:
             new_lib_content = lib_content.rstrip() + '\n\n#[cfg(test)]\nmod tests_generated;\n'
+        # 固定文件尾：不多留空行，否则 `cargo fmt --check` 红。
+        new_lib_content = new_lib_content.rstrip() + '\n'
         with open(lib_rs, 'w', encoding='utf-8', newline='\n') as f:
             f.write(new_lib_content)
     

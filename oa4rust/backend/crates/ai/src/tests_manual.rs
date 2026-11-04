@@ -4,7 +4,7 @@
 // 手写测试（O14 从 tests_generated.rs 原样迁出；本文件由人工维护，
 // 生成器不会覆盖）。新增手写用例请直接加在这里。
 #[cfg(test)]
-mod tests_manual {
+mod tests {
     #![allow(non_snake_case)]
 
     /// 四轮安全审计 F6 回归：`x_ai_index` 无 creator 列可依据属主，销毁索引条目
