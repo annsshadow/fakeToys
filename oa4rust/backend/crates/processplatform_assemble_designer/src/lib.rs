@@ -774,7 +774,7 @@ pub async fn applicationdict_list_paging_page_size_size(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let size = size.clamp(1, 100);
-    let offset = (page - 1).max(0) * size;
+    let offset = (page.max(1) - 1).saturating_mul(size);
     let rows = client
         .query(
             "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATIONDICT WHERE 1=1 ORDER BY \"xcreateTime\" DESC LIMIT $1::bigint OFFSET $2::bigint",
@@ -2061,7 +2061,7 @@ pub async fn mergeitemplan_list_application_applicationId_paging_page_size_size(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let size = size.clamp(1, 100);
-    let offset = (page - 1).max(0) * size;
+    let offset = (page.max(1) - 1).saturating_mul(size);
     let rows = client
         .query(
             "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_MERGEITEMPLAN WHERE xapplication = $1 ORDER BY \"xcreateTime\" DESC LIMIT $2::bigint OFFSET $3::bigint",
@@ -2098,7 +2098,7 @@ pub async fn mergeitemplan_list_paging_page_size_size(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let size = size.clamp(1, 100);
-    let offset = (page - 1).max(0) * size;
+    let offset = (page.max(1) - 1).saturating_mul(size);
     let rows = client
         .query(
             "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_MERGEITEMPLAN WHERE 1=1 ORDER BY \"xcreateTime\" DESC LIMIT $1::bigint OFFSET $2::bigint",
@@ -3111,7 +3111,7 @@ pub async fn script_list_paging_page_size_size(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let size = size.clamp(1, 100);
-    let offset = (page - 1).max(0) * size;
+    let offset = (page.max(1) - 1).saturating_mul(size);
     let rows = client
         .query(
             "SELECT xid, xname, xapplication, \"xapplicationName\", \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_SCRIPT WHERE 1=1 ORDER BY \"xcreateTime\" DESC LIMIT $1::bigint OFFSET $2::bigint",
@@ -3898,7 +3898,7 @@ pub async fn applicationdict_paging_post(
         return Ok(Json(ActionResult::error("page and size must be >= 1")));
     }
     let client = shared::db::acquire(&pool).await?;
-    let offset = (page - 1).saturating_mul(size);
+    let (size, offset) = shared::response::page_window(page, size);
     let total: i64 = client
         .query_one(
             "SELECT COUNT(*)::bigint FROM pp_e_applicationdict WHERE deleted_at IS NULL",
@@ -4500,7 +4500,7 @@ pub async fn mergeitemplan_paging_by_application(
         return Ok(Json(ActionResult::error("page and size must be >= 1")));
     }
     let client = shared::db::acquire(&pool).await?;
-    let offset = (page - 1).saturating_mul(size);
+    let (size, offset) = shared::response::page_window(page, size);
     let total: i64 = client
         .query_one(
             "SELECT COUNT(*)::bigint FROM pp_e_mergeitemplan WHERE xapplication = $1",
@@ -4547,7 +4547,7 @@ pub async fn mergeitemplan_paging_exact(
         return Ok(Json(ActionResult::error("page and size must be >= 1")));
     }
     let client = shared::db::acquire(&pool).await?;
-    let offset = (page - 1).saturating_mul(size);
+    let (size, offset) = shared::response::page_window(page, size);
     let total: i64 = client
         .query_one("SELECT COUNT(*)::bigint FROM pp_e_mergeitemplan", &[])
         .await

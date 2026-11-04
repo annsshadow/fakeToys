@@ -4018,12 +4018,13 @@ pub async fn deploy_list_paging_page_size_size(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (size, offset) = shared::response::page_window(page, size);
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
-            "SELECT id, name, version, creator, create_time FROM x_program_deploy ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1::bigint - 1) * $2::bigint",
-            &[&page, &size],
+            "SELECT id, name, version, creator, create_time FROM x_program_deploy ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint",
+            &[&size, &offset],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -4374,12 +4375,13 @@ pub async fn dict_list_paging_page_size_size(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (size, offset) = shared::response::page_window(page, size);
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
-            "SELECT id, name, key_name, app_name, creator, create_time FROM x_program_dict WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1::bigint - 1) * $2::bigint",
-            &[&page, &size],
+            "SELECT id, name, key_name, app_name, creator, create_time FROM x_program_dict WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint",
+            &[&size, &offset],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -8476,12 +8478,13 @@ pub async fn script_list_paging_page_size_size(
     pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (size, offset) = shared::response::page_window(page, size);
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
-            "SELECT id, name, flag, category, creator, create_time FROM x_program_script WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1::bigint - 1) * $2::bigint",
-            &[&page, &size],
+            "SELECT id, name, flag, category, creator, create_time FROM x_program_script WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint",
+            &[&size, &offset],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -10625,6 +10628,7 @@ async fn u3_bar_mass_page(
     count: i64,
     label: &str,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let count = shared::response::page_size(count);
     let client = shared::db::acquire(pool).await?;
     let rows = client
         .query(
@@ -11609,11 +11613,7 @@ async fn u3_market_list_paged(
     category: Option<&str>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(pool).await?;
-    let offset = if page > 0 {
-        (page - 1).saturating_mul(size)
-    } else {
-        0
-    };
+    let (size, offset) = shared::response::page_window(page, size);
     let rows = match category {
         Some(category) => {
             client
@@ -11683,11 +11683,7 @@ pub async fn u3_market_install_log_paging_post(
     Json(_body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
-    let offset = if page > 0 {
-        (page - 1).saturating_mul(size)
-    } else {
-        0
-    };
+    let (size, offset) = shared::response::page_window(page, size);
     let rows = client
         .query(
             "SELECT id, schedule_id, application, status, message, create_time FROM x_program_schedule_log \

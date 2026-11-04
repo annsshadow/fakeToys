@@ -960,7 +960,7 @@ pub async fn u2_voterecord_list(
         Some(v) => v,
         None => return Err(AppError::BadRequest("subjectId is required".to_string())),
     };
-    let offset = page.saturating_sub(1).saturating_mul(count);
+    let (count, offset) = shared::response::page_window(page, count);
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
@@ -1025,7 +1025,7 @@ pub async fn u2_my_subject_list(
     // 会话优先，兼容 body 显式传 creator 的管理查询。
     let person =
         body_str(&body, &["creator", "person"]).unwrap_or_else(|| session.person_unique.clone());
-    let offset = page.saturating_sub(1).saturating_mul(count);
+    let (count, offset) = shared::response::page_window(page, count);
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
@@ -1095,7 +1095,7 @@ pub async fn u2_my_reply_list(
 ) -> ApiResult {
     let person =
         body_str(&body, &["creator", "person"]).unwrap_or_else(|| session.person_unique.clone());
-    let offset = page.saturating_sub(1).saturating_mul(count);
+    let (count, offset) = shared::response::page_window(page, count);
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
@@ -1199,7 +1199,7 @@ pub async fn u2_reply_filter_list(
     Path((page, count)): Path<(i64, i64)>,
     body: axum::extract::Json<Value>,
 ) -> ApiResult {
-    let offset = page.saturating_sub(1).saturating_mul(count);
+    let (count, offset) = shared::response::page_window(page, count);
     let client = shared::db::acquire(&pool).await?;
     let (rows, total) = match body_str(&body, &["topicId", "subjectId"]) {
         Some(topic_id) => {
@@ -2800,7 +2800,7 @@ pub async fn u2_subject_search_page(
     body: axum::extract::Json<Value>,
 ) -> ApiResult {
     let keyword = body_str(&body, &["keyword", "key", "title", "search"]).unwrap_or_default();
-    let offset = page.saturating_sub(1).saturating_mul(count);
+    let (count, offset) = shared::response::page_window(page, count);
     let client = shared::db::acquire(&pool).await?;
 
     if keyword.is_empty() {
@@ -2890,7 +2890,7 @@ pub async fn u2_subject_listsubjectinfo_page(
     Path((page, count)): Path<(i64, i64)>,
     body: axum::extract::Json<Value>,
 ) -> ApiResult {
-    let offset = page.saturating_sub(1).saturating_mul(count);
+    let (count, offset) = shared::response::page_window(page, count);
     let forum_id = body_str(&body, &["forumId"]);
     let subject_type = body_str(&body, &["subjectType"]);
     let creator = body_str(&body, &["creator", "person"]);

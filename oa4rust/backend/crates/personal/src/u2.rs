@@ -865,7 +865,7 @@ async fn log_paging(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(pool).await?;
     let limit = size.clamp(1, 200);
-    let offset = (page - 1).clamp(0, i64::MAX) * limit;
+    let offset = (page.max(1) - 1).saturating_mul(limit);
 
     // 参数化谓词拼装（值全部走绑定参数，LIKE 关键字转义）
     let mut where_parts: Vec<String> = Vec::new();

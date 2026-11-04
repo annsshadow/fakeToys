@@ -244,9 +244,14 @@ pub fn legacy_exception_for(kind: &str) -> String {
 /// page=0 → 负 OFFSET → Postgres 报错变 500；极端值 → i64 乘法溢出
 /// （debug panic / release 回绕）。统一在此钳制，杜绝非法分页输入。
 pub fn page_window(page: i64, size: i64) -> (i64, i64) {
-    let size = size.clamp(1, 200);
+    let size = page_size(size);
     let page = page.max(1);
     (size, (page - 1).saturating_mul(size))
+}
+
+/// 只钳制每页条数（`1..=200`）。用于 `page` 被当作 OFFSET 传入的旧式分页端点。
+pub fn page_size(size: i64) -> i64 {
+    size.clamp(1, 200)
 }
 
 /// RFC 6266/5987 安全的附件 `Content-Disposition` 头值。
@@ -465,6 +470,14 @@ mod tests {
         assert!(!fallback.contains('"'));
         assert!(!fallback.contains('\n'));
     }
+    #[test]
+    fn page_size_clamps_only_page_length() {
+        assert_eq!(super::page_size(0), 1);
+        assert_eq!(super::page_size(-5), 1);
+        assert_eq!(super::page_size(20), 20);
+        assert_eq!(super::page_size(999), 200);
+    }
+
     #[test]
     fn page_window_clamps_invalid_and_extreme_input() {
         assert_eq!(super::page_window(1, 20), (20, 0));

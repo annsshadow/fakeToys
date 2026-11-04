@@ -2290,7 +2290,7 @@ pub async fn work_list(
         .get("size")
         .and_then(|s| s.parse().ok())
         .unwrap_or(20);
-    let offset = page.saturating_sub(1).saturating_mul(size);
+    let (size, offset) = shared::response::page_window(page as i64, size as i64);
 
     let client = shared::db::acquire(&pool).await?;
     let count_row = client
@@ -2305,7 +2305,7 @@ pub async fn work_list(
     let rows = client
         .query(
             "SELECT id, title, process, COALESCE(application, '') as application, work_status, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') as create_time FROM x_work WHERE deleted_at IS NULL AND ($1 = '' OR application = $1) ORDER BY create_time DESC LIMIT $2 OFFSET $3",
-            &[&application, &(size as i64), &(offset as i64)],
+            &[&application, &size, &offset],
         )
         .await
         .map_err(|_| AppError::Internal)?;
