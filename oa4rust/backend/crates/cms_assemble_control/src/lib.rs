@@ -3617,10 +3617,13 @@ pub async fn document_cipher_id_persist_view_record(
     u2_require_admin(&pool, &session).await?;
     let client = shared::db::acquire(&pool).await?;
     let person_id = body.get("personId").and_then(|v| v.as_str()).unwrap_or("");
+    // O24-3 批次 4：`x_cms_viewrecord.id` 是 NOT NULL（information_schema 现场确认），
+    // 旧 SQL 未写主键 → E23502。主键由服务端生成，doc_id 仍为路径 id。
+    let record_id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
-            "INSERT INTO x_cms_viewrecord (doc_id, view_id, record_data, person_id) VALUES ($1, $2, $3, $4)",
-            &[&id, &"", &"{}", &person_id],
+            "INSERT INTO x_cms_viewrecord (id, doc_id, view_id, record_data, person_id) VALUES ($1, $2, $3, $4, $5)",
+            &[&record_id, &id, &"", &"{}", &person_id],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;

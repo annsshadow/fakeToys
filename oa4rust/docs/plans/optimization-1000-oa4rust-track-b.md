@@ -914,7 +914,7 @@ test result: FAILED. 0 passed; 1 failed
 | `category:wrong-type`（5，原 9） | `POST/PUT /api/bbs/assemble/control/update/control/config`；`POST/PUT /api/general/assemble/control/status/update`；`GET /api/organization/assemble/control/identity/{flag}/order/before/{followFlag}` | Rust 参数与列类型不一致（Int4↔i64、Text↔bool、Int8↔i32）（Jsonb↔String 子族已在批次 2 清除） | 按列真实类型改写绑定参数/`serde_json::Value`；对应路由 200 后删行并下调 `BASELINE_COUNT` | O24 数据层对齐（后端） | 2026-11-26 |
 | `category:E42703`（4） | `DELETE/PUT /api/organization/assemble/control/personattribute/{flag}`；`DELETE/PUT /api/organization/assemble/control/unitattribute/{flag}` | SQL 引用不存在的列 `name` | 按 migration 实态改列名（或补列）；200 后删 4 行 | O24 数据层对齐（后端） | 2026-11-26 |
 | `category:E42804`（3） | `DELETE /api/portal/assemble/designer/script/{id}`；`DELETE /api/processplatform/assemble/designer/script/{id}`；`GET /api/processplatform/service/processing/touch/mergeitem` | `deleted_at` TEXT 对 timestamp；`COALESCE` 两侧类型不一致 | 统一 timestamp 绑定/强转；200 后删 3 行 | O24 数据层对齐（后端） | 2026-11-26 |
-| `category:E23502`（10） | `POST /api/console/send/message`；`POST /api/document/cipher/{id}/persist/view/record`；`POST /api/message/custom/create`；`POST/GET /api/hotpic*/create/hotpic`；`POST/GET /api/hotpic*/update/control/config`；`POST /api/hotpic/assemble/control/user/hotpic`；`POST /api/portal/assemble/designer/page`；`POST /api/portal/assemble/designer/page/create` | INSERT 未生成必填 `id` / `application` / `portal_id` | 补 UUID/默认值或返回 400；200/400 后删 10 行 | O24 数据层对齐（后端） | 2026-12-10 |
+| `category:E23502`（7，原 10） | `POST/GET /api/hotpic*/create/hotpic`；`POST/GET /api/hotpic*/update/control/config`；`POST /api/hotpic/assemble/control/user/hotpic`；`POST /api/portal/assemble/designer/page`；`POST /api/portal/assemble/designer/page/create` | INSERT 未生成必填 `id` / `application` / `portal_id`（缺 id 的 3 条已在批次 4 清除） | 补 UUID/默认值或返回 400；200/400 后删行 | O24 数据层对齐（后端） | 2026-12-10 |
 | `category:E42P10`（3） | `GET/POST /api/attendance/assemble/control/statistic/do`；`GET /api/calendar_assemble_control/update/control/config` | `ON CONFLICT` 无匹配唯一索引 | 指向真实唯一索引或改 UPDATE-then-INSERT；200 后删 3 行 | O24 数据层对齐（后端） | 2026-12-10 |
 | `category:param-count`（2，原 6） | `GET/POST /api/processplatform/assemble/surface/draft*` | SQL 占位符数量与绑定参数不一致（permission 4 条已在批次 3 清除） | 对齐 `$1..$n` 与参数；200/400 后删行 | O24 数据层对齐（后端） | 2026-11-19 |
 | `category:E42P18`（1） | `GET /api/ai_assemble_control/chat/list/completion/{clueId}/paging/{page}/size/{size}` | `$2` 类型无法推断 | 给 `$2` 显式 `::text`/CAST；200 后删行 | O24 数据层对齐（后端） | 2026-11-12 |
@@ -998,9 +998,9 @@ GET /api/meeting/core/entity/room/{id}   column:equipment
 基线因此 **40 → 42（GET 11 / 非 GET 31）**，`BASELINE_COUNT=42`，集合相等。CI 的旧 40
 不是「更干净」，而是**扫描器当时没读到种子库**——这也是本次把口径写进台账的原因。
 
-### O24-3 待修 33 条（顺序与纪律，批次 1-3 已清 9）
+### O24-3 待修 30 条（顺序与纪律，批次 1-4 已清 12）
 
-**口径**：非 GET 22 条 + GET 11 条 = 33（原 42；批次 1 清 1 条非 GET，批次 2 清 4 条非 GET，批次 3 清 4 条非 GET）。用户说的「GET 9 条」是旧 40 口径；O24 库隔离
+**口径**：非 GET 19 条 + GET 11 条 = 30（原 42；批次 1 清 1、批次 2 清 4、批次 3 清 4、批次 4 清 3，均为非 GET）。用户说的「GET 9 条」是旧 40 口径；O24 库隔离
 修复新增的 2 条 `column:equipment` 也是 GET，故 GET 现为 11（旧的 9 条包含在内）。
 
 排序按真实用户后果，不按条数：
@@ -1012,6 +1012,12 @@ GET /api/meeting/core/entity/room/{id}   column:equipment
 每批固定流程：`information_schema` 现场确认真实列类型 → **先红**（复现当前 500）→ 改 →
 行为级响应体断言 → 破坏实验 → **单独提交** → **删对应基线行并下调 `BASELINE_COUNT`**。
 禁止「修好了但基线行留着」，也禁止一次性全清。
+
+**筛序规矩（批次 1 判据，每批先扫一遍）**：写路径里先找「**写语句已提交、错误发生在提交之后**」
+的族——响应是 5xx，但数据已经落库；用户重试会造成重复写（唯一性冲突、双份记录、状态错乱）。
+判据：handler 里能指出「某条写 SQL 成功返回后，仍执行了会失败的语句（解码 panic / 二次校验 /
+后续写）」。这类永远排在最前，优先级高于任何按条数聚合的族。批次 1 的 portal surface publish
+就是基线里唯一一条（UPDATE 已提交 → SELECT 解码 panic）。
 
 ### O24-3 批次 1：portal surface publish（唯一「先落库、后 500」的基线项）
 
@@ -1121,6 +1127,59 @@ UPDATE     : UPDATE {table} SET permission = $1, update_time = ... WHERE (flag =
 **收口**：删 4 条基线路，`BASELINE_COUNT 37 → 33`；门禁实测
 `== 棘轮基线：33 条（当前 33 条），集合相等 ==`。
 
+### O24-3 批次 4：INSERT 未写必填主键/规范列的「遗留给定」族（3 条 E23502）
+
+**族判定**：三条 handler 都按遗留 `x*` 列写 INSERT，但表的 NOT NULL 列是规范列。全是
+「写语句本身失败」，不属于「先落库后 500」族。
+
+**SQL 现场确认**（`information_schema.columns`，测试库现场）：
+
+```text
+x_console_message : id varchar NOT NULL；另有遗留 xid
+x_cms_viewrecord  : id varchar NOT NULL, doc_id varchar NOT NULL
+x_msg_message     : id/title/type/consumer/is_read NOT NULL；另有遗留 xid/xtitle/...
+```
+
+**先红**：新增 `tests/integration_tests/scenarios/insert_required_id.rs`
+（`integration_runner` 独立 `#[ignore]` 用例 `insert_required_id_contract`）：
+console 发消息 → 200 `sent=true` 且回库 `id` 非空；message 自定义创建 → 200 `created=true`、
+`data.id` 回库一致且 title/type/consumer/is_read 落库；document 浏览记录 → 200 `docId` 回显
+且回库 `id` 非空。未改代码时首条实测红：
+`source=crates\console\src\lib.rs:189: E23502 null value in column "id" of relation "x_console_message"`。
+
+**改**（按列实态补写，遗留列同值保留）：
+
+| handler | 旧 INSERT | 新 INSERT |
+|---|---|---|
+| `console::send_message` | `(xid, xtoken, xmessage)` | `(id, xid, xtoken, xmessage)`，id=xid=uuid |
+| `cms::document_cipher_id_persist_view_record` | `(doc_id, view_id, record_data, person_id)` | 增加 `id = uuid` |
+| `message::custom_create` | `(xid, xtitle, xbody, xtype, xconsumed)` | 增加 `(id, title, type, consumer, is_read)`；id/xid 因 varchar/text 类型不同绑两个占位符（否则 E42P08） |
+
+**破坏实验**（逐个复原，证明三条各自被钉住）：仅还原 message → 第 2 条红（E23502 `x_msg_message.id`）；
+仅还原 cms → 第 3 条红（E23502 `x_cms_viewrecord.id`）；全复原（先红阶段）→ 第 1 条红。
+
+**收口**：删 3 条基线路，`BASELINE_COUNT 33 → 30`；门禁实测
+`== 棘轮基线：30 条（当前 30 条），集合相等 ==`。
+
+### O24-3 `draft/start` 的 xstatus：调查结论（停在裁定点）
+
+按顺序取证：
+
+1. **schema**：`information_schema.columns` → `pp_c_draft.xstatus` 为 `text`、可空、
+   **无 DEFAULT**；`pg_constraint` 对该表**无任何 CHECK 约束**；`pg_class` 无表注释。
+   迁移注释（`migrations/111_add_fi002_missing_columns.sql`）只写「补 fi002 列」，未定义值域。
+2. **后端消费者**：全仓 `xstatus` 读取均属 `x_console_status` / `x_express_info` /
+   `PP_E_PROCESS` / `PP_C_JOB`；**没有一处读 `pp_c_draft.xstatus`**。唯一写入就是本路由。
+3. **前端调用方**：`apps/desktop/src/views/ProcessManagerApp.vue:584` POST
+   `/api/processplatform/assemble/surface/draft/start/{id}`，成功后仅 toast「草稿已发起」，
+   **不读 xstatus、不判断状态**；`frontend` 全目录 grep `xstatus` 仅命中一行无关注释
+   （`ProcessManagerApp.vue:913`，讲 `PP_E_PROCESS`）。
+4. **契约面**：parity fixture / generated_tests 只断言路由存在，不涉及 xstatus 值。
+
+**因此不是「既无约束又无消费者」**：路由有调用方，但没有 xstatus 值域定义，也没有任何
+状态读取方。按裁定第 4 条**停下来**，请判定：删路由（连同前端入口）还是给出合法值
+（例如 `started`）并要求行为断言。未按「只 touch xupdateTime」降级。
+
 ### O24-1 收口：express 成功路径（裁定执行）
 
 `organization/core/express` 的 500→200 不再只靠推断：
@@ -1149,6 +1208,7 @@ UPDATE     : UPDATE {table} SET permission = $1, update_time = ... WHERE (flag =
 | O24-3 批次 1（portal surface publish） | 0 | **1** | **-1**（42→41） | 41 |
 | O24-3 批次 2（JSONB 参数绑定族） | 0 | **4** | **-4**（41→37） | 37 |
 | O24-3 批次 3（查询设计器 permission 族） | 0 | **4** | **-4**（37→33） | 33 |
+| O24-3 批次 4（INSERT 缺必填 id/规范列族） | 0 | **3** | **-3**（33→30） | 30 |
 
 **清除清单**：
 
@@ -1157,4 +1217,5 @@ UPDATE     : UPDATE {table} SET permission = $1, update_time = ... WHERE (flag =
 | O24-3 批次 1 | `column:published`（写库后 500） | `POST /api/portal/assemble/surface/publish/{id}` | `portal_surface_publish_contract`：先红 500（panic 解码）→ 改后 200 且回库 `published=true`；破坏实验改回 `Option<String>` → 红；门禁 41/41 集合相等 |
 | O24-3 批次 2 | `wrong-type` 的 Jsonb↔String 子族 | `POST /api/meeting/core/entity/room/save/{id}`；`POST /api/processplatform/assemble/surface/save/{id}`；`POST /api/queryview/table/row/part/update/{tableFlag}/{id}`；`POST /api/queryview/table/{flag}/row/{rid}/part/update` | `jsonb_param_binding_contract`：先红 500（ToSql Jsonb vs String）→ 改后 200 且回库校验 JSON；破坏实验逐个复原三处 → 各自红；门禁 37/37 集合相等 |
 | O24-3 批次 3 | `param-count` 的 permission 子族 | `POST /api/query/assemble/designer/query/{flag}/permission`；`POST .../stat/{id}/permission`；`POST .../table/{flag}/permission`；`POST .../view/{id}/permission` | `query_permission_binding_contract`：先红 500（`Parameters(2, 1)`）→ 改后 200 且回库 permission/update_time；破坏实验还原谓词 → 红；门禁 33/33 集合相等 |
+| O24-3 批次 4 | `E23502` 的「INSERT 缺必填 id/规范列」子族 | `POST /api/console/send/message`；`POST /api/document/cipher/{id}/persist/view/record`；`POST /api/message/custom/create` | `insert_required_id_contract`：先红 500（E23502 `x_console_message.id`）→ 改后 200 且回库 id/title/type/consumer/is_read；破坏实验逐个复原 message/cms → 各自红；门禁 30/30 集合相等 |
 

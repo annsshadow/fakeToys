@@ -72,6 +72,15 @@ async fn organization_express_config_contract() {
     .await;
 }
 
+/// O24-3 批次 4：INSERT 未写必填主键/规范列的遗留给定族（3 条 E23502）。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn insert_required_id_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::insert_required_id::insert_required_id_flow(ctx.pool.clone())
+        .await;
+}
+
 /// O24-3 批次 3：查询设计器 permission 的 `$1` 复用冲突（4 条基线）。
 #[ignore = "requires a running database server"]
 #[tokio::test]

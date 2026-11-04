@@ -182,7 +182,9 @@ pub async fn send_message(
 
     let result = client
         .execute(
-            "INSERT INTO x_console_message (xid, xtoken, xmessage) VALUES ($1, $2, $3)",
+            // O24-3 批次 4：`x_console_message.id` 是 NOT NULL（information_schema 现场确认），
+            // 旧 SQL 只写遗留列 xid → E23502。主键 id 与 xid 用同一个 uuid，兼容读旧列的一方。
+            "INSERT INTO x_console_message (id, xid, xtoken, xmessage) VALUES ($1, $1, $2, $3)",
             &[&id, &token, &message],
         )
         .await

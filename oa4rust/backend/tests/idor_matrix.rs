@@ -1197,14 +1197,15 @@ mod idor_matrix {
         (seeded, failures)
     }
 
-    /// 当前基线条目数上限（必须与基线文件行数相等）。O24-3 批次 3 起为 33。
+    /// 当前基线条目数上限（必须与基线文件行数相等）。O24-3 批次 4 起为 30。
     /// 每修复一条：删对应基线路 → 下调本常量，同 PR 可见。
     /// O23 第二步写路由首次真正执行后，存量 500 从 1 暴露到 40；O24 修掉探针
     /// 库隔离缺陷后 ORM 路由首次读种子库，再 +2（meeting room 的 equipment 解码）。
     /// O24-3 批次 1 修掉 portal surface publish（写库后才 ColumnDecode panic）：42 → 41。
     /// O24-3 批次 2 修掉 JSONB 参数绑定族（meeting/processplatform/queryview×2）：41 → 37。
     /// O24-3 批次 3 修掉查询设计器 permission 族（query/stat/table/view）：37 → 33。
-    const BASELINE_COUNT: usize = 33;
+    /// O24-3 批次 4 修掉 INSERT 缺必填 id/规范列族（console/document/message）：33 → 30。
+    const BASELINE_COUNT: usize = 30;
 
     /// 棘轮基线：`<METHOD> <route>\t<reason>`，reason 见文件头。
     const BASELINE_RAW: &str = include_str!("idor_seeded_handler500_baseline.txt");
