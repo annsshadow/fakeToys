@@ -25,6 +25,7 @@ import {
   type AdminRedeemUsageView,
 } from '@/api'
 import { fmtTime } from '@/utils/format'
+import { cappedTotal } from '@/utils/offsetPager'
 
 const activeTab = ref('announcements')
 /** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
@@ -835,7 +836,7 @@ loadAll()
                 v-if="annTotal > PAGE_SIZE"
                 v-model:current-page="annPage"
                 :page-size="PAGE_SIZE"
-                :total="annTotal"
+                :total="cappedTotal(annTotal, PAGE_SIZE)"
                 layout="prev, pager, next, total"
                 size="small"
                 background
@@ -974,7 +975,7 @@ loadAll()
             v-if="codeTotal > PAGE_SIZE"
             v-model:current-page="codePage"
             :page-size="PAGE_SIZE"
-            :total="codeTotal"
+            :total="cappedTotal(codeTotal, PAGE_SIZE)"
             layout="prev, pager, next, total"
             size="small"
             background
@@ -1042,7 +1043,7 @@ loadAll()
             v-if="redeemUsageTotal > PAGE_SIZE"
             v-model:current-page="redeemUsagePage"
             :page-size="PAGE_SIZE"
-            :total="redeemUsageTotal"
+            :total="cappedTotal(redeemUsageTotal, PAGE_SIZE)"
             layout="prev, pager, next, total"
             size="small"
             background
@@ -1152,7 +1153,7 @@ loadAll()
             v-if="logTotal > PAGE_SIZE"
             v-model:current-page="logPage"
             :page-size="PAGE_SIZE"
-            :total="logTotal"
+            :total="cappedTotal(logTotal, PAGE_SIZE)"
             layout="prev, pager, next, total"
             size="small"
             background

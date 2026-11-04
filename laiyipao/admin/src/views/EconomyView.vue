@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAdminRole } from '@/utils/adminRole'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { isCancel, fmtTime } from '@/utils/format'
+import { cappedTotal } from '@/utils/offsetPager'
 import {
   fetchEconomy,
   fetchAdminOrders,
@@ -510,7 +511,7 @@ loadOrders()
         v-if="orderTotal > ORDER_PAGE_SIZE"
         v-model:current-page="orderPage"
         :page-size="ORDER_PAGE_SIZE"
-        :total="orderTotal"
+        :total="cappedTotal(orderTotal, ORDER_PAGE_SIZE)"
         layout="prev, pager, next, total"
         size="small"
         background

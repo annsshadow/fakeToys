@@ -16,6 +16,7 @@ import {
 } from '@/api'
 import { useAdminRole } from '@/utils/adminRole'
 import { fmtTime, isCancel } from '@/utils/format'
+import { canGoNext, cappedTotal } from '@/utils/offsetPager'
 
 /** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
 const emptyText = '没有匹配的用户'
@@ -126,7 +127,7 @@ function flowReasonLabel(reason: string): string {
 }
 
 const page = computed(() => Math.floor(offset.value / limit.value) + 1)
-const pageCount = computed(() => Math.max(1, Math.ceil(total.value / limit.value)))
+const pageCount = computed(() => Math.max(1, Math.ceil(cappedTotal(total.value, limit.value) / limit.value)))
 
 /** status: 1=正常 2=封禁（与迁移中的 CHECK 约束一致） */
 function statusOf(u: AdminUserView): { text: string; type: 'success' | 'danger' } {
@@ -243,7 +244,9 @@ function prevPage() {
 }
 
 function nextPage() {
-  if (offset.value + limit.value >= total.value) return
+  // 上界与后端 maxQueryOffset 对齐（R97）：越过 25,000 的 offset 后端必拒，
+  // 所以这里直接停住，不发那条注定 400 的请求。
+  if (!canGoNext(offset.value, limit.value, total.value)) return
   offset.value += limit.value
   load()
 }
@@ -550,7 +553,7 @@ const asRow = (r: unknown) => r as AdminUserView
         <span class="toolbar-spacer" />
         <span class="muted">共 {{ total }} 名用户 · 第 {{ page }} / {{ pageCount }} 页</span>
         <el-button size="small" :disabled="offset <= 0" @click="prevPage">上一页</el-button>
-        <el-button size="small" :disabled="offset + limit >= total" @click="nextPage">下一页</el-button>
+        <el-button size="small" :disabled="!canGoNext(offset, limit, total)" @click="nextPage">下一页</el-button>
       </div>
 
       <el-table :data="users" size="small" stripe>

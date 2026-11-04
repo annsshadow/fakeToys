@@ -32,6 +32,7 @@ import {
   type RecomputeSummary,
 } from '@/api'
 import { fmtTime } from '@/utils/format'
+import { cappedTotal } from '@/utils/offsetPager'
 
 /** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
 const emptyText = '没有匹配的重算记录'
@@ -432,7 +433,7 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
           v-if="total > LEDGER_PAGE_SIZE"
           v-model:current-page="ledgerPage"
           :page-size="LEDGER_PAGE_SIZE"
-          :total="total"
+          :total="cappedTotal(total, LEDGER_PAGE_SIZE)"
           layout="prev, pager, next, total"
           size="small"
           background

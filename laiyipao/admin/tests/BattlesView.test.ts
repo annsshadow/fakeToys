@@ -687,5 +687,30 @@ describe('BattlesView 复制战报 ID（第 92 轮）', () => {
     expect(document.body.textContent).toContain('已复制战报 ID 123')
     wrapper.unmount()
   })
+
+  it('total 远超上界时页码封顶到 501，最后一页「下一页」禁用且不发超界请求（R97）', async () => {
+    const wrapper = await mountBattles([battleFixture()], 1_000_000)
+    const pager = wrapper.findComponent({ name: 'ElPagination' })
+    expect(pager.exists()).toBe(true)
+    // limit=50 → 封顶 25,050 → 501 页（第 501 页 offset=25,000 合法）。
+    expect(pager.props('total')).toBe(25_050)
+
+    const vm = wrapper.vm as unknown as { page: number }
+    vm.page = 501
+    await flushPromises()
+
+    const nextBtn = pager.find('.btn-next')
+    expect(nextBtn.attributes('disabled')).toBeDefined()
+
+    const before = fetchBattles.mock.calls.length
+    await nextBtn.trigger('click')
+    await flushPromises()
+    // 不是「发了再处理 400」：越界请求根本没有出现。
+    expect(fetchBattles.mock.calls.length).toBe(before)
+    for (const call of fetchBattles.mock.calls) {
+      expect((call[0] as { offset?: number }).offset ?? 0).toBeLessThanOrEqual(25_000)
+    }
+    wrapper.unmount()
+  })
 })
 

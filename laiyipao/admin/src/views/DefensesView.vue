@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { fetchDefenses, fetchAdminDefenseChallenges, exportDefenseChallengesCsv, deleteDefense, type AdminDefenseView, type AdminDefenseChallengeView } from '@/api'
 import { fmtTime } from '@/utils/format'
+import { cappedTotal } from '@/utils/offsetPager'
 
 const router = useRouter()
 
@@ -306,7 +307,7 @@ load()
           v-if="total > PAGE_SIZE"
           v-model:current-page="page"
           :page-size="PAGE_SIZE"
-          :total="total"
+          :total="cappedTotal(total, PAGE_SIZE)"
           layout="prev, pager, next, total"
           size="small"
           background
@@ -458,7 +459,7 @@ load()
         v-if="challengeTotal > 50"
         v-model:current-page="challengePage"
         :page-size="50"
-        :total="challengeTotal"
+        :total="cappedTotal(challengeTotal, 50)"
         layout="prev, pager, next, total"
         size="small"
         background

@@ -13,6 +13,7 @@ import {
 } from '@/api'
 import { fetchReactionLabels, labelOfReaction, type ReactionLabels } from '@/reactions'
 import { fmtTime } from '@/utils/format'
+import { cappedTotal } from '@/utils/offsetPager'
 
 /** 空态文案（2026-10-21 P5-8）：空表要说清「为什么空」。 */
 const emptyText = '没有匹配的战报'
@@ -316,7 +317,7 @@ const asRow = (r: unknown) => r as AdminBattleView
           v-if="total > PAGE_SIZE"
           v-model:current-page="page"
           :page-size="PAGE_SIZE"
-          :total="total"
+          :total="cappedTotal(total, PAGE_SIZE)"
           layout="prev, pager, next, total"
           size="small"
           background

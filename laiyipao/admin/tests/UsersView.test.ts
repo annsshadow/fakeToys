@@ -309,6 +309,29 @@ describe('UsersView 分页', () => {
     wrapper.unmount()
   })
 
+  it('offset 到 25,000 上界后「下一页」禁用，且不再发 offset=25,050 的请求（R97）', async () => {
+    const wrapper = await mountUsers([userFixture()], 1_000_000)
+    const vm = wrapper.vm as unknown as Vm
+    vm.offset = 25_000
+    await flushPromises()
+
+    const nextBtn = wrapper.findAll('button').find((b) => b.text() === '下一页')
+    expect(nextBtn, '找不到「下一页」按钮').toBeTruthy()
+    // 后端 maxQueryOffset=25,000：下一档 25,050 必 400，所以按钮先禁用。
+    expect(nextBtn!.attributes('disabled')).toBeDefined()
+
+    const before = fetchUsers.mock.calls.length
+    vm.nextPage()
+    await flushPromises()
+    expect(vm.offset).toBe(25_000)
+    expect(fetchUsers.mock.calls.length).toBe(before)
+    // 不是「发了再处理错误」：这条必然被拒的请求根本没出现。
+    expect(fetchUsers).not.toHaveBeenCalledWith(
+      expect.objectContaining({ offset: 25_050 }),
+    )
+    wrapper.unmount()
+  })
+
   it('搜索按钮重置 offset 到第一页并携带关键词', async () => {
     const wrapper = await mountUsers([userFixture()], 120)
     const vm = wrapper.vm as unknown as Vm
