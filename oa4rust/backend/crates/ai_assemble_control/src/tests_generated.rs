@@ -37,6 +37,34 @@ mod tests {
     // SKIPPED: ann_create requires Session parameter
     // SKIPPED: ann_save requires Session parameter
     // SKIPPED: ann_delete requires Session parameter
+    #[tokio::test]
+    async fn test_config_get_mcp_flag() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/ai/config/get/mcp/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "config_get_mcp_flag route should be registered"
+            );
+        }
+    }
+
     // SKIPPED: config_save requires Session parameter
     // SKIPPED: file_upload requires Session parameter
     #[tokio::test]
@@ -99,7 +127,6 @@ mod tests {
     // SKIPPED: config_delete_mcp_flag requires Session parameter
     // SKIPPED: config_delete_model_flag requires Session parameter
     // SKIPPED: config_get_mcp_ext_flag not accessible
-    // SKIPPED: config_get_mcp_flag not accessible
     // SKIPPED: config_get_model_flag not accessible
     // SKIPPED: config_list_enable_model not accessible
     // SKIPPED: config_list_mcp_paging_page_size_size not accessible

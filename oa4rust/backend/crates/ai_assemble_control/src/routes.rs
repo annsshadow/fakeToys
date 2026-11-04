@@ -235,6 +235,14 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
             "/api/ai/assemble/control/config/delete/mcp/{id}",
             post(config_delete_mcp_flag),
         )
+        // ── /api/ai/config 旧词 → 真实现（O20 接线修复）─────────────────────
+        // 前端 AIChatApp.vue:211/596 调用的是这条旧词路径；此前它挂在
+        // ai crate 的空桩上（恒空数组 / "mcp not found"）。此处改挂真实现。
+        .route(
+            "/api/ai/config/list/mcp/paging/{page}/size/{size}",
+            get(config_list_mcp_paging_page_size_size),
+        )
+        .route("/api/ai/config/get/mcp/{flag}", get(config_get_mcp_flag))
         // ── ann 斜杠路径家族（补齐 KNOWN_BACKEND_GAPS，查 x_ai_ann 096）──
         .route("/api/ai/assemble/control/ann/list", get(ann_list))
         .route("/api/ai/assemble/control/ann/create", post(ann_create))

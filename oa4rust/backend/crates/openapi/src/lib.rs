@@ -98,20 +98,6 @@ async fn ai_config_base_config_config_base_config_get() {}
 )]
 async fn ai_config_get_config_get_get() {}
 #[utoipa::path(get,
-    path = "/api/ai/config/get/mcp/{flag}",
-    tag = "ai",
-    params(
-        ("flag" = String, Path, description = "flag parameter")
-    ),
-    responses(
-        (status = 200, description = "Success", body = serde_json::Value),
-        (status = 400, description = "Bad Request"),
-        (status = 401, description = "Unauthorized"),
-        (status = 500, description = "Internal Server Error")
-    ),
-)]
-async fn ai_config_get_mcp_flag_config_get_mcp_get() {}
-#[utoipa::path(get,
     path = "/api/ai/config/get/model/{flag}",
     tag = "ai",
     params(
@@ -136,21 +122,6 @@ async fn ai_config_get_model_flag_config_get_model_get() {}
     ),
 )]
 async fn ai_config_list_enable_model_list_enable_model_get() {}
-#[utoipa::path(get,
-    path = "/api/ai/config/list/mcp/paging/{page}/size/{size}",
-    tag = "ai",
-    params(
-        ("page" = String, Path, description = "page parameter"),
-        ("size" = String, Path, description = "size parameter")
-    ),
-    responses(
-        (status = 200, description = "Success", body = serde_json::Value),
-        (status = 400, description = "Bad Request"),
-        (status = 401, description = "Unauthorized"),
-        (status = 500, description = "Internal Server Error")
-    ),
-)]
-async fn ai_config_list_mcp_paging_page_size_size_config_list_mcp_paging_get() {}
 #[utoipa::path(get,
     path = "/api/ai/config/list/model/paging/{page}/size/{size}",
     tag = "ai",
@@ -379,6 +350,35 @@ async fn ai_assemble_control_ai_assemble_control_config_get_mcp_id_config_get_mc
     ),
 )]
 async fn ai_assemble_control_1792a5_get() {}
+#[utoipa::path(get,
+    path = "/api/ai/config/get/mcp/{flag}",
+    tag = "ai",
+    params(
+        ("flag" = String, Path, description = "flag parameter")
+    ),
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+)]
+async fn ai_assemble_control_ai_config_get_mcp_flag_config_get_mcp_flag_get() {}
+#[utoipa::path(get,
+    path = "/api/ai/config/list/mcp/paging/{page}/size/{size}",
+    tag = "ai",
+    params(
+        ("page" = String, Path, description = "page parameter"),
+        ("size" = String, Path, description = "size parameter")
+    ),
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+)]
+async fn ai_assemble_control_d8cdfa_get() {}
 #[utoipa::path(get,
     path = "/api/ai_assemble_control/chat/delete/{clueId}",
     tag = "ai",
@@ -66178,10 +66178,8 @@ async fn signature_pdf_verify_verify_pdf_handler_post() {}
         ai_chat_list_paging_page_size_size_chat_list_paging_get,
         ai_config_base_config_config_base_config_get,
         ai_config_get_config_get_get,
-        ai_config_get_mcp_flag_config_get_mcp_get,
         ai_config_get_model_flag_config_get_model_get,
         ai_config_list_enable_model_list_enable_model_get,
-        ai_config_list_mcp_paging_page_size_size_config_list_mcp_paging_get,
         ai_config_list_model_paging_page_size_size_config_list_model_paging_get,
         ai_conversation_list_conversation_list_get,
         ai_file_delete_flag_file_delete_get,
@@ -66199,6 +66197,8 @@ async fn signature_pdf_verify_verify_pdf_handler_post() {}
         ai_assemble_control_ai_assemble_control_ann_list_ann_list_get,
         ai_assemble_control_ai_assemble_control_config_get_mcp_id_config_get_mcp_flag_get,
         ai_assemble_control_1792a5_get,
+        ai_assemble_control_ai_config_get_mcp_flag_config_get_mcp_flag_get,
+        ai_assemble_control_d8cdfa_get,
         ai_assemble_control_chat_delete_clueid_chat_delete_clue_id_get,
         ai_assemble_control_c2cd06_get,
         ai_assemble_control_chat_list_paging_page_size_size_chat_list_paging_page_size_size_get,

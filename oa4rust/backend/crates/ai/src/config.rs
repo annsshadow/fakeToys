@@ -286,32 +286,10 @@ pub async fn config_get_model(
     }
 }
 
-#[axum::debug_handler]
-#[allow(non_snake_case)]
-pub async fn config_list_mcp_paging(
-    _pool: Extension<Pool>,
-    Path((page, size)): Path<(i32, i32)>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    let (size, _offset) = shared::response::page_window(page as i64, size as i64)?;
-    let total: i64 = 0;
-
-    let data: Vec<Value> = vec![];
-
-    Ok(Json(ActionResult::legacy_success(
-        Value::Array(data),
-        total,
-        size,
-    )))
-}
-
-#[axum::debug_handler]
-#[allow(non_snake_case)]
-pub async fn config_get_mcp(
-    _pool: Extension<Pool>,
-    Path(_flag): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::error("mcp not found")))
-}
+// O20：原 config_list_mcp_paging / config_get_mcp 是本 crate 的空桩
+// （恒返回空数组 / "mcp not found"），旧词路由 /api/ai/config/list|get/mcp
+// 因此长期返回假数据。旧词路由已改挂 ai_assemble_control 的真实现，
+// 本文件不再保留桩函数。
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]

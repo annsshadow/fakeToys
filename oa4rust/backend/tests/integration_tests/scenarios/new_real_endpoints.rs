@@ -176,14 +176,20 @@ pub async fn ai_endpoints_flow() {
     )
     .await;
     // 新语义：config/list/mcp 走 legacy_success，顶层 data 即数组
-    // （出处：ai_assemble_control/src/lib.rs:1028）。
+    // （出处：ai_assemble_control/src/lib.rs:1028）。O20 之前这条旧词路径挂在
+    // ai crate 的空桩上（恒返回空数组），故这些断言改前必红。
     let mcp_items = list["data"].as_array().expect("mcp data array");
-    assert!(
-        mcp_items
-            .iter()
-            .any(|r| r["id"].as_str() == Some(mcp_id.as_str())),
-        "seeded mcp config not returned in list"
+    assert!(!mcp_items.is_empty(), "mcp list must not be empty");
+    let seeded = mcp_items
+        .iter()
+        .find(|r| r["id"].as_str() == Some(mcp_id.as_str()))
+        .expect("seeded mcp config not returned in list");
+    assert_eq!(
+        seeded["name"].as_str(),
+        Some(format!("mcp-{}", mcp_id).as_str())
     );
+    assert_eq!(seeded["url"].as_str(), Some("http://example.test/mcp"));
+    assert_eq!(seeded["enabled"].as_bool(), Some(true));
     info!(mcp_id = %mcp_id, "config_list_mcp_paging returned real row");
 
     let get_mcp = get_ok(
@@ -194,6 +200,12 @@ pub async fn ai_endpoints_flow() {
     )
     .await;
     assert_eq!(get_mcp["data"]["id"].as_str(), Some(mcp_id.as_str()));
+    assert_eq!(
+        get_mcp["data"]["name"].as_str(),
+        Some(format!("mcp-{}", mcp_id).as_str())
+    );
+    assert_eq!(get_mcp["data"]["url"].as_str(), Some("http://example.test/mcp"));
+    assert_eq!(get_mcp["data"]["enabled"].as_bool(), Some(true));
     info!(mcp_id = %mcp_id, "config_get_mcp returned real row");
 
     // Seed an x_ai_index row then delete it (side effect).
