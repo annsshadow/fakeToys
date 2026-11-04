@@ -28,11 +28,12 @@ const SRC_ROOTS = [
 const EXEMPT = new Set<string>([])
 
 // O16-1：未注册路径不能再静默 continue。
-// 864 是历史存量基线（多为运行时拼数字段导致路径不匹配，如
+// 860 是历史存量基线（多为运行时拼数字段导致路径不匹配，如
 // /paging/1/size/20 对不上 /paging/{page}/size/{size}，不是后端缺路由）。
 // 只允许下降：每修好一批就同步下调；新增未注册调用会让计数超过基线即红。
-// O16-2 迁移 24 条 query 旧前缀后会降到 840。
-const UNREGISTERED_BASELINE = 864
+// O16-2 迁移 24 条 query 旧前缀后从 864 → 860：其中 4 条无动态段的路由命中，
+// 另 20 条带 0 等实参、仍按精确字符串匹配算未注册。
+const UNREGISTERED_BASELINE = 860
 
 // fixture 唯一路径数下限（O16-0 恢复 129 条后的实测值）。
 // 从 fixture 删掉任何一条真实路由都会让它下降，从而红。
