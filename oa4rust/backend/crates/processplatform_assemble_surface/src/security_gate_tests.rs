@@ -1651,7 +1651,12 @@ mod r419_gate_tests {
             .collect();
         let broke: Vec<&str> = owner
             .iter()
-            .filter(|(_, r)| matches!(r, Err(AppError::Internal)))
+            .filter(|(_, r)| {
+                matches!(
+                    r,
+                    Err(AppError::Internal) | Err(AppError::InternalWithSource { .. })
+                )
+            })
             .map(|(k, _)| *k)
             .collect();
         assert_eq!(
