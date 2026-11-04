@@ -73,7 +73,7 @@ pub async fn register(
             &[&req.credential],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if name_exists.is_some() {
         return Ok(Json(ActionResult::error("username already exists")));
     }
@@ -86,7 +86,7 @@ pub async fn register(
                 &[mobile],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         if mobile_exists.is_some() {
             return Ok(Json(ActionResult::error("mobile already exists")));
         }
@@ -100,7 +100,7 @@ pub async fn register(
                 &[email],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         if email_exists.is_some() {
             return Ok(Json(ActionResult::error("email already exists")));
         }
@@ -155,7 +155,7 @@ pub async fn check_name(
             &[&name],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(serde_json::json!({
         "available": exists.is_none(),
     }))))
@@ -173,7 +173,7 @@ pub async fn check_mobile(
             &[&mobile],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(serde_json::json!({
         "available": exists.is_none(),
     }))))
@@ -191,7 +191,7 @@ pub async fn check_email(
             &[&email],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(serde_json::json!({
         "available": exists.is_none(),
     }))))

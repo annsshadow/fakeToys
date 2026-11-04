@@ -37,7 +37,7 @@ pub async fn neural_generate_model(
             &[&model_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("model not found")));
@@ -62,7 +62,7 @@ pub async fn neural_list_model(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -166,7 +166,7 @@ pub async fn processing_execute(
                 &[&id, &query, &model_flag, &params_str, &creator],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         (id, result > 0)
     } else {
         let id = uuid::Uuid::new_v4().to_string();
@@ -179,7 +179,7 @@ pub async fn processing_execute(
                 &[&id, &query, &model_flag, &params_str, &creator],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
         let resolved_id = row.as_ref().map(|r| r.get::<_, String>("id")).unwrap_or(id);
         (resolved_id, row.is_some())
@@ -194,7 +194,7 @@ pub async fn processing_execute(
                 &[&model_flag],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
         if model_result > 0 {
             "processing".to_string()

@@ -36,10 +36,13 @@ pub async fn zwdingding_login(
     session_manager: Extension<SessionManager>,
     Path(code): Path<String>,
 ) -> Result<Response, AppError> {
-    let api_base = std::env::var("ZWDINGDING_API_BASE").map_err(|_| AppError::Internal)?;
-    let corp_token =
-        std::env::var("ZWDINGDING_CORP_ACCESS_TOKEN").map_err(|_| AppError::Internal)?;
-    let app_token = std::env::var("ZWDINGDING_APP_ACCESS_TOKEN").map_err(|_| AppError::Internal)?;
+    // O23：缺配置 → 503 且写明具体项（与代码缺陷 500 分桶）。
+    let api_base = std::env::var("ZWDINGDING_API_BASE")
+        .map_err(|_| AppError::missing_config("ZWDINGDING_API_BASE"))?;
+    let corp_token = std::env::var("ZWDINGDING_CORP_ACCESS_TOKEN")
+        .map_err(|_| AppError::missing_config("ZWDINGDING_CORP_ACCESS_TOKEN"))?;
+    let app_token = std::env::var("ZWDINGDING_APP_ACCESS_TOKEN")
+        .map_err(|_| AppError::missing_config("ZWDINGDING_APP_ACCESS_TOKEN"))?;
 
     let client = reqwest::Client::new();
 
@@ -49,16 +52,21 @@ pub async fn zwdingding_login(
         .query(&[("access_token", &corp_token), ("code", &code)])
         .send()
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .json()
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let ding_user_id = step1_resp
         .get("result")
         .and_then(|r| r.get("dingUserId"))
         .and_then(|v| v.as_str())
-        .ok_or(AppError::Internal)?
+        .ok_or_else(|| {
+            AppError::internal_with_source(
+                concat!(file!(), ":", line!()),
+                "zwdingding getuserinfo response missing result.dingUserId",
+            )
+        })?
         .to_string();
 
     // Step 2: dingUserId → userId
@@ -67,16 +75,21 @@ pub async fn zwdingding_login(
         .query(&[("access_token", &app_token), ("dingUserId", &ding_user_id)])
         .send()
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .json()
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let user_id = step2_resp
         .get("result")
         .and_then(|r| r.get("userId"))
         .and_then(|v| v.as_str())
-        .ok_or(AppError::Internal)?
+        .ok_or_else(|| {
+            AppError::internal_with_source(
+                concat!(file!(), ":", line!()),
+                "zwdingding singleGetUserIdByDingId response missing result.userId",
+            )
+        })?
         .to_string();
 
     let unique_id = format!("zwding_{user_id}");
@@ -90,7 +103,7 @@ pub async fn zwdingding_login(
             &[&unique_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let (person_unique, person_name, person_mobile, person_email, person_icon) = match row {
         Some(r) => (

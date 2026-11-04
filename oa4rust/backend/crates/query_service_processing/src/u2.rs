@@ -124,7 +124,7 @@ async fn search_module(
         }
         _ => Ok(vec![]),
     }
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(rows
         .iter()
@@ -212,7 +212,7 @@ pub async fn index_directory_document_count(
         client
             .query_one("SELECT COUNT(*) AS c FROM x_cms_document", &[])
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
             .get("c")
     } else {
         0
@@ -338,7 +338,7 @@ async fn touch_impl(
                     &[&state_id, &entity_type.to_string(), &freq_val, &node.to_string()],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         }
         TouchAction::Reset => {
             client
@@ -352,7 +352,7 @@ async fn touch_impl(
                     &[&state_id, &entity_type.to_string(), &freq_val, &node.to_string()],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         }
     }
 
@@ -363,7 +363,7 @@ async fn touch_impl(
             &[&entity_type.to_string(), &freq_val, &node.to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let status: String = row.get("status");
     Ok(Json(ActionResult::success(json!({
@@ -466,7 +466,7 @@ pub async fn table_insert(
             &[&row_id, &flag, &data.to_string(), &bundle],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(json!({
         "id": row_id,
@@ -496,7 +496,7 @@ pub async fn table_update_with_bundle(
             &[&flag, &bundle],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let row_id = match existing {
         Some(row) => {
@@ -508,7 +508,7 @@ pub async fn table_update_with_bundle(
                     &[&data.to_string(), &flag, &bundle],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             id
         }
         None => {
@@ -520,7 +520,7 @@ pub async fn table_update_with_bundle(
                     &[&id, &flag, &data.to_string(), &bundle],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             id
         }
     };
@@ -563,7 +563,7 @@ async fn neural_start(
             &[&model_flag.to_string(), &action.to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let id = match running {
         Some(row) => row.get::<_, String>("id"),
@@ -576,7 +576,7 @@ async fn neural_start(
                     &[&id, &model_flag.to_string(), &action.to_string()],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             id
         }
     };
@@ -603,7 +603,7 @@ async fn neural_stop(
             &[&model_flag.to_string(), &action.to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if n == 0 {
         // 对齐 o2server ExceptionModelNotReady：无可停止的运行中任务
@@ -680,7 +680,7 @@ pub async fn neural_list_calculate_with_work(
             &[&model_flag.to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if learned.is_none() {
         return Ok(Json(ActionResult::error(NEURAL_NOT_READY)));

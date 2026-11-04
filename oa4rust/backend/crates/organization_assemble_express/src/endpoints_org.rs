@@ -50,7 +50,7 @@ async fn unit_batch(
             &[&flags],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(crate::endpoints::row_to_map).collect();
     ok_legacy_list(data.len(), data)
 }
@@ -66,7 +66,7 @@ pub async fn unit_list_all(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let list: Vec<Value> = rows
         .iter()
         .map(|r| Value::String(r.get::<_, String>("id")))
@@ -85,7 +85,7 @@ pub async fn unit_list_all_object(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(crate::endpoints::row_to_map).collect();
     crate::endpoints::ok_legacy_list(data.len(), data)
 }
@@ -159,7 +159,7 @@ async fn unit_tree_scope(
     let rows = client
         .query(sql, &[&flags])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if objects {
         let data: Vec<Value> = rows.iter().map(crate::endpoints::row_to_map).collect();
         ok_legacy_list(data.len(), data)
@@ -271,14 +271,14 @@ pub async fn unit_check_unit_has_person(
                 &[&person, &person],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         let target_row = client
             .query_opt(
                 "SELECT id FROM x_org_unit WHERE deleted_at IS NULL AND (id = $1 OR name = $1)",
                 &[&unit, &unit],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         if let (Some(prow), Some(trow)) = (person_row, target_row) {
             let person_id: String = prow.get("id");
             let target_id: String = trow.get("id");
@@ -289,7 +289,7 @@ pub async fn unit_check_unit_has_person(
                     &[&person_id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             let seeds: Vec<String> = seed_rows
                 .iter()
                 .map(|r| r.get::<_, Option<String>>("unit_id").unwrap_or_default())
@@ -306,7 +306,7 @@ pub async fn unit_check_unit_has_person(
                         &[&seeds],
                     )
                     .await
-                    .map_err(|_| AppError::Internal)?;
+                    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
                 value = sub_rows
                     .iter()
                     .any(|r| r.get::<_, Option<String>>("id").unwrap_or_default() == target_id);
@@ -322,7 +322,7 @@ pub async fn unit_check_unit_has_person(
                             &[&seeds],
                         )
                         .await
-                        .map_err(|_| AppError::Internal)?;
+                        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
                     value = sup_rows
                         .iter()
                         .any(|r| r.get::<_, Option<String>>("id").unwrap_or_default() == target_id);
@@ -357,7 +357,7 @@ pub async fn group_list(
             &[&flags],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(crate::endpoints::row_to_map).collect();
     ok_legacy_list(data.len(), data)
 }
@@ -441,7 +441,7 @@ pub async fn group_list_object(
             &[&flags],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data = fold_group_members(rows.iter().map(|row| GroupMemberRow {
         id: row.get("id"),
         name: row.get("name"),
@@ -472,7 +472,7 @@ pub async fn group_list_person(
             &[&flags],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(crate::endpoints::row_to_map).collect();
     ok_legacy_list(data.len(), data)
 }
@@ -499,7 +499,7 @@ pub async fn role_list(
             &[&flags],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(crate::endpoints::row_to_map).collect();
     ok_legacy_list(data.len(), data)
 }
@@ -525,7 +525,7 @@ pub async fn role_list_person(
             &[&flags],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(crate::endpoints::row_to_map).collect();
     ok_legacy_list(data.len(), data)
 }
@@ -553,7 +553,7 @@ pub async fn unitduty_list_name(
             &[&flags],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(crate::endpoints::row_to_map).collect();
     ok_legacy_list(data.len(), data)
 }

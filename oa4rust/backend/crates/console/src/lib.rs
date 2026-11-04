@@ -84,7 +84,7 @@ pub async fn get_status(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data = if rows.is_empty() {
         Value::Object(serde_json::Map::from_iter([
@@ -130,7 +130,7 @@ pub async fn get_logs(
             &[&log_type],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -186,7 +186,7 @@ pub async fn send_message(
             &[&id, &token, &message],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -214,7 +214,7 @@ pub async fn clear_cache(
             &[&cache_type],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let now = chrono::Local::now().to_rfc3339();
     Ok(Json(ActionResult::success(Value::Object(
@@ -238,7 +238,7 @@ pub async fn get_metric(
             &[&metric_name],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let (value, unit) = if rows.is_empty() {
         (42, "count".to_string())
@@ -393,7 +393,7 @@ pub async fn config_create(
             &[&id, &name, &value, &category, &description],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -445,7 +445,7 @@ pub async fn config_update(
             &[&name, &value, &category, &description, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -470,7 +470,7 @@ pub async fn config_delete(
     let result = client
         .execute("DELETE FROM x_system_config WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(result > 0))]),
     ))))
@@ -489,7 +489,7 @@ pub async fn server_deploy_list(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()

@@ -53,7 +53,7 @@ pub async fn get_express_info(
             &[&code, &company],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data = if rows.is_empty() {
         Value::Object(serde_json::Map::from_iter([
@@ -88,7 +88,7 @@ pub async fn list_express_companies(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let companies: Vec<Value> = rows
         .iter()
@@ -145,7 +145,7 @@ pub async fn subscribe_express(
             &[&id, &code, &company, &callback],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([

@@ -50,7 +50,7 @@ pub async fn list(
         .limit(20)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -89,7 +89,7 @@ pub async fn folder_list(
         .limit(20)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -137,7 +137,7 @@ pub async fn version_list(
         .limit(20)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -242,7 +242,7 @@ pub async fn update_mind(
     let model = mind_mind::Entity::find_by_id(id.clone())
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or_else(|| AppError::NotFound)?;
 
     let name = payload
@@ -290,7 +290,7 @@ pub async fn delete_mind(
     let deleted = mind_mind::Entity::delete_by_id(id.clone())
         .exec(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if deleted.rows_affected == 0 {
         return Ok(Json(ActionResult::error("mind not found")));
@@ -378,7 +378,7 @@ pub async fn update_folder(
     let model = mind_folder::Entity::find_by_id(id.clone())
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or_else(|| AppError::NotFound)?;
 
     let name = payload
@@ -437,7 +437,7 @@ pub async fn delete_folder(
     let deleted = mind_folder::Entity::delete_by_id(id.clone())
         .exec(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if deleted.rows_affected == 0 {
         return Ok(Json(ActionResult::error("folder not found")));

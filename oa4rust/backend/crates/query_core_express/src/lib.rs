@@ -208,7 +208,7 @@ pub async fn get_query_history(
             &[&limit],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -265,7 +265,7 @@ pub async fn cache_query_result(
     let query_row = client
         .query_opt("SELECT id, name FROM x_query WHERE id = $1", &[&query_id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let cached = match query_row {
         Some(row) => {
@@ -277,7 +277,7 @@ pub async fn cache_query_result(
                     &[&cache_id, &query_name, &session.person_unique],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             true
         }
         None => false,
@@ -308,7 +308,7 @@ pub async fn get_cache_status(
     let query_row = client
         .query_opt("SELECT name FROM x_query WHERE id = $1", &[&query_id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let (cached, hits, misses) = match query_row {
         Some(row) => {
@@ -319,7 +319,7 @@ pub async fn get_cache_status(
                     &[&query_name],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             let count: i64 = count_row.get("cnt");
             (count > 0, count, 0)
         }

@@ -70,7 +70,7 @@ async fn identities_of_persons_full(
     let rows = client
         .query(&sql_final, &[&flags])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     finish_identity_rows(rows, objects)
 }
 
@@ -120,7 +120,7 @@ async fn unit_person_identities(
     let rows = client
         .query(sql, &[&persons, &units])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     finish_identity_rows(rows, objects)
 }
 
@@ -156,7 +156,7 @@ async fn identities_in_groups(
     let rows = client
         .query(sql, &[&flags])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     finish_identity_rows(rows, objects)
 }
 
@@ -199,7 +199,7 @@ async fn major_identities_of_persons(
     let rows = client
         .query(&sql, &[&flags])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     finish_identity_rows(rows, objects)
 }
 
@@ -245,7 +245,7 @@ pub async fn identity_list_unit_sub_direct_object(
     let rows = client
         .query(OBJ_SQL, &[&flags])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     finish_identity_rows(rows, true)
 }
 
@@ -269,6 +269,6 @@ pub async fn identity_list_unit_sub_nested_object(
     let rows = client
         .query(OBJ_SQL, &[&flags])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     finish_identity_rows(rows, true)
 }

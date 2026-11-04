@@ -30,7 +30,7 @@ pub async fn exists_check(
             &[&application, &info_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get("count");
 
     let data = Value::Object(serde_json::Map::from_iter([
@@ -60,7 +60,7 @@ pub async fn get_by_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
@@ -106,7 +106,7 @@ pub async fn list_by_application_and_info_id(
             &[&application, &info_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()

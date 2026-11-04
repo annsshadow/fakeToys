@@ -14,7 +14,7 @@ pub async fn sync_to_knowledge(
     let rows = client
         .query("SELECT COUNT(*) as cnt FROM x_ai_completion", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let count: i64 = rows[0].get("cnt");
 
@@ -42,7 +42,7 @@ pub async fn app_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -83,7 +83,7 @@ pub async fn model_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -116,7 +116,7 @@ pub async fn conversation_list(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()

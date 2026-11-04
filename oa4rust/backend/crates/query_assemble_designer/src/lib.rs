@@ -46,7 +46,7 @@ pub async fn require_row_owner(
             &[&key.to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .map(|r| r.get::<_, Option<String>>("owner").unwrap_or_default());
     match owner.as_deref().map(str::trim).filter(|o| !o.is_empty()) {
         Some(o) => shared::middleware::require_owner(pool, &session, o).await,
@@ -195,7 +195,8 @@ pub fn add_column_ddl(
 }
 
 fn table_columns_json(columns: &[TableColumnDefinition]) -> Result<String, AppError> {
-    serde_json::to_string(columns).map_err(|_| AppError::Internal)
+    serde_json::to_string(columns)
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))
 }
 
 #[allow(non_snake_case)]
@@ -223,7 +224,7 @@ pub async fn create_table_definition(
             &[&name.to_lowercase()],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if duplicate.get::<_, i64>("cnt") > 0 {
         return Ok(Json(ActionResult::error("table name already exists")));
     }
@@ -240,7 +241,7 @@ pub async fn create_table_definition(
             &[&id, &name, &table_flag, &query_flag, &columns_json],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(serde_json::json!({
         "id": id,
         "tableFlag": table_flag,
@@ -270,7 +271,7 @@ pub async fn update_table_definition(
             &[&name, &columns_json, &flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if result == 0 {
         return Ok(Json(ActionResult::error("table not found")));
     }
@@ -296,7 +297,7 @@ pub async fn execute_table_definition(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("table not found")));
     };
@@ -315,7 +316,7 @@ pub async fn execute_table_definition(
             &[&table_name],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get::<_, bool>("exists");
     let mut applied = Vec::new();
     if exists {
@@ -326,7 +327,7 @@ pub async fn execute_table_definition(
                 &[&table_name],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         let stored_by_name = columns
             .iter()
             .map(|column| (column.name.as_str(), column))
@@ -359,7 +360,7 @@ pub async fn execute_table_definition(
                 &[&table_name],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
             .into_iter()
             .map(|row| row.get::<_, String>("column_name"))
             .collect::<std::collections::HashSet<_>>();
@@ -381,7 +382,7 @@ pub async fn execute_table_definition(
 ",
                 ))
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             applied.extend(missing.iter().map(|c| c.name.clone()));
         }
     } else {
@@ -389,7 +390,7 @@ pub async fn execute_table_definition(
         client
             .batch_execute(&ddl)
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         applied.extend(columns.iter().map(|column| column.name.clone()));
     }
     client
@@ -398,7 +399,7 @@ pub async fn execute_table_definition(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(serde_json::json!({
         "tableFlag": flag,
         "physicalTable": table_name,
@@ -431,7 +432,7 @@ pub async fn get_designer(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -503,7 +504,7 @@ pub async fn create_designer(
             &[&id, &name, &category, &query_definition, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
@@ -529,7 +530,7 @@ pub async fn list_designers(
             &[&category],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -595,7 +596,7 @@ pub async fn save_designer(
             &[&name, &category, &query_definition, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("query design not found")));
@@ -630,7 +631,7 @@ pub async fn delete_designer(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error(
@@ -662,7 +663,7 @@ pub async fn list_designers_all(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -728,7 +729,7 @@ pub async fn save_designer_bare(
             &[&name, &category, &query, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let saved = if updated > 0 {
         updated
@@ -746,7 +747,7 @@ pub async fn save_designer_bare(
                 &[&new_id, &name, &category, &query],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         r
     };
 
@@ -781,7 +782,7 @@ pub async fn delete_designer_bare(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error(
@@ -998,7 +999,7 @@ pub async fn designer_search(pool: Extension<Pool>) -> Result<Json<ActionResult<
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1055,7 +1056,7 @@ pub async fn id_count(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let total: i64 = row.get("cnt");
 
@@ -1086,7 +1087,7 @@ async fn importmodel_list_query_flag_core(
             &[&query_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1166,7 +1167,7 @@ pub async fn importmodel_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1228,7 +1229,7 @@ pub async fn importmodel_id_permission(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
@@ -1265,7 +1266,7 @@ pub async fn input_compare(
             &[&input_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1314,7 +1315,7 @@ pub async fn input_cover(
             &[&content_str, &input_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("input not found")));
@@ -1354,7 +1355,7 @@ pub async fn input_create(
             &[&id, &content, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1381,7 +1382,7 @@ pub async fn input_prepare_cover(
             &[&input_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1425,7 +1426,7 @@ pub async fn input_prepare_create(
             &[&id, &content, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1460,7 +1461,7 @@ pub async fn neural_generate_model_modelFlag(
             &[&model_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("model not found")));
@@ -1499,7 +1500,7 @@ pub async fn neural_learn_model_modelFlag(
             &[&model_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("model not found")));
@@ -1528,7 +1529,7 @@ pub async fn neural_list_model(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1600,7 +1601,7 @@ pub async fn neural_model(
             &[&id, &name, &flag, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1628,7 +1629,7 @@ pub async fn neural_model_modelFlag(
             &[&model_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1680,7 +1681,7 @@ async fn neural_model_modelFlag_reset_status_core(
             &[&model_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("model not found")));
@@ -1753,7 +1754,7 @@ pub async fn neural_stop_generating_model_modelFlag(
             &[&model_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error(
@@ -1794,7 +1795,7 @@ pub async fn neural_stop_learn_model_modelFlag(
             &[&model_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("model not found or not learning")));
@@ -1821,7 +1822,7 @@ pub async fn output_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1879,7 +1880,7 @@ pub async fn output_flag_select_file(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1923,7 +1924,7 @@ pub async fn output_queryFlag_select(
             &[&query_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1982,7 +1983,7 @@ async fn query_entity_entity_category_entityCategory_properties_core(
             &[&entity, &entity_category],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2048,7 +2049,7 @@ pub async fn query_list_all(pool: Extension<Pool>) -> Result<Json<ActionResult<V
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2102,7 +2103,7 @@ async fn query_list_querycategory_queryCategory_core(
             &[&query_category],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2171,7 +2172,7 @@ pub async fn query_list_summary(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2214,7 +2215,7 @@ async fn query_list_summary_querycategory_queryCategory_core(
             &[&query_category],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2272,7 +2273,7 @@ pub async fn query_querycategory_list(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2305,7 +2306,7 @@ pub async fn query_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2360,7 +2361,7 @@ pub async fn query_flag_icon(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
@@ -2392,7 +2393,7 @@ pub async fn query_id_permission(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
@@ -2427,7 +2428,7 @@ async fn stat_list_query_flag_core(
             &[&query_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2508,7 +2509,7 @@ async fn stat_list_id_next_count_core(
             &[&id, &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2577,7 +2578,7 @@ pub async fn stat_list_id_prev_count(
             &[&id, &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2630,7 +2631,7 @@ pub async fn stat_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2692,7 +2693,7 @@ pub async fn stat_id_permission(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
@@ -2727,7 +2728,7 @@ pub async fn stat_id_simulate(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2766,7 +2767,7 @@ async fn table_export_tableFlag_count_count_core(
             &[&table_flag, &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2827,7 +2828,7 @@ pub async fn table_list_manage(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2909,7 +2910,7 @@ async fn table_list_query_flag_core(
             &[&query_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2989,7 +2990,7 @@ pub async fn table_list_tableFlag_row_select_where_where(
             &[&table_flag, &format!("%{}%", shared::db::escape_like(&_where))],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3037,7 +3038,7 @@ async fn table_list_tableFlag_row_id_next_count_core(
             &[&table_flag, &id, &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3104,7 +3105,7 @@ pub async fn table_list_tableFlag_row_id_prev_count(
             &[&table_flag, &id, &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3152,7 +3153,7 @@ pub async fn table_query_query_build(
             &[&query],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -3179,7 +3180,7 @@ pub async fn table_reload_dynamic(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -3208,7 +3209,7 @@ pub async fn table_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -3287,7 +3288,7 @@ pub async fn table_flag_execute(
     let rows = client
         .query(&limited_sql, &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows.iter().map(row_to_json).collect();
 
@@ -3312,7 +3313,7 @@ async fn table_flag_status_build_core(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("table not found")));
@@ -3359,7 +3360,7 @@ async fn table_flag_status_draft_core(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("table not found")));
@@ -3406,7 +3407,7 @@ pub async fn table_id_permission(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
@@ -3443,7 +3444,7 @@ pub async fn table_query_build_dispatch(
             &[&query],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -3469,7 +3470,7 @@ pub async fn table_tableFlag_row(
             &[&table_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3515,7 +3516,7 @@ pub async fn table_tableFlag_row_count_where_where(
             &[&table_flag, &format!("%{}%", shared::db::escape_like(&_where))],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let count: i64 = row.get("cnt");
 
@@ -3546,7 +3547,7 @@ pub async fn table_tableFlag_row_delete_all(
             &[&table_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -3575,7 +3576,8 @@ pub async fn table_tableFlag_row_save(
     let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
-    let data_str = serde_json::to_string(&body).map_err(|_| AppError::Internal)?;
+    let data_str = serde_json::to_string(&body)
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute(
@@ -3583,7 +3585,7 @@ pub async fn table_tableFlag_row_save(
             &[&id, &table_flag, &data_str],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -3610,7 +3612,7 @@ pub async fn table_tableFlag_row_id(
             &[&table_flag, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -3650,7 +3652,7 @@ async fn view_list_query_flag_core(
             &[&query_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3722,7 +3724,7 @@ async fn view_list_id_next_count_core(
             &[&id, &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3786,7 +3788,7 @@ pub async fn view_list_id_prev_count(
             &[&id, &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3834,7 +3836,7 @@ pub async fn view_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -3887,7 +3889,7 @@ pub async fn view_id_bundle(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
@@ -3926,7 +3928,7 @@ pub async fn view_id_permission(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
@@ -3958,7 +3960,7 @@ pub async fn view_id_simulate(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -3992,7 +3994,7 @@ pub async fn importer_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -4140,7 +4142,7 @@ pub async fn stat_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()

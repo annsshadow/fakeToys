@@ -192,10 +192,10 @@ async fn qywx_exchange_code(config: &(String, String), code: &str) -> Result<Str
         .query(&[("corpid", &config.0), ("corpsecret", &config.1)])
         .send()
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .json()
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let errcode = token_resp
         .get("errcode")
@@ -214,10 +214,10 @@ async fn qywx_exchange_code(config: &(String, String), code: &str) -> Result<Str
         .query(&[("access_token", access_token), ("code", code)])
         .send()
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .json()
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let errcode = user_resp
         .get("errcode")
@@ -306,7 +306,7 @@ pub async fn qiyeweixin_bind_confirm(
             &[&unique_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match existing {
         Some(_) => {
@@ -355,7 +355,7 @@ pub async fn qiyeweixin_login(
             &[&unique_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(r) => {
@@ -409,10 +409,10 @@ async fn dingding_exchange_code(config: &(String, String), code: &str) -> Result
         .query(&[("appkey", &config.0), ("appsecret", &config.1)])
         .send()
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .json()
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let errcode = resp.get("errcode").and_then(|v| v.as_i64()).unwrap_or(-1);
     if errcode != 0 {
@@ -428,10 +428,10 @@ async fn dingding_exchange_code(config: &(String, String), code: &str) -> Result
         .query(&[("access_token", access_token), ("code", code)])
         .send()
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .json()
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let errcode = user_resp
         .get("errcode")
@@ -507,7 +507,7 @@ pub async fn dingding_bind_confirm(
             &[&unique_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match existing {
         Some(_) => Ok(Json(ActionResult::success(json!({
@@ -550,7 +550,7 @@ pub async fn dingding_login(
             &[&unique_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(r) => {
@@ -615,10 +615,10 @@ pub async fn zhengwudingding_bind_callback(
         .query(&[("access_token", &corp_token), ("code", &code)])
         .send()
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .json()
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let ding_user_id = step1_resp
         .get("result")
@@ -633,10 +633,10 @@ pub async fn zhengwudingding_bind_callback(
         .query(&[("access_token", &app_token), ("dingUserId", &ding_user_id)])
         .send()
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .json()
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let user_id = step2_resp
         .get("result")
@@ -694,7 +694,7 @@ pub async fn zhengwudingding_bind_confirm(
             &[&unique_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match existing {
         Some(_) => Ok(Json(ActionResult::success(json!({
@@ -740,10 +740,10 @@ pub async fn zhengwudingding_login(
         .query(&[("access_token", &corp_token), ("code", &code)])
         .send()
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .json()
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let ding_user_id = step1_resp
         .get("result")
@@ -757,10 +757,10 @@ pub async fn zhengwudingding_login(
         .query(&[("access_token", &app_token), ("dingUserId", &ding_user_id)])
         .send()
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .json()
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let user_id = step2_resp
         .get("result")
@@ -779,7 +779,7 @@ pub async fn zhengwudingding_login(
             &[&unique_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let (person_unique, person_name, person_mobile, person_email, person_icon) = match row {
         Some(r) => (
@@ -1222,7 +1222,7 @@ async fn oauth_code_store(
         &[&id, &code.to_string(), &client.to_string(), &person_id.map(|s| s.to_string()), &scope.to_string()],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(id)
 }
 

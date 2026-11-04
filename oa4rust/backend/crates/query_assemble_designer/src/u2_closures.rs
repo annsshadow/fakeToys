@@ -211,7 +211,7 @@ async fn statement_duplicate_exists(
             &[&norm_name, &norm_alias],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(row.get::<_, i64>("cnt") > 0)
 }
 
@@ -279,7 +279,7 @@ pub async fn statement_create(
             &[&id, &name, &alias, &query_flag, &entity_class, &entity_category, &stmt_type, &data, &counting_data, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -317,7 +317,7 @@ pub async fn statement_edit(
                 &[&normalize_identifier(alias), &flag],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         if dup_row.get::<_, i64>("cnt") > 0 {
             return Ok(Json(ActionResult::error("statement alias already exists")));
         }
@@ -329,7 +329,7 @@ pub async fn statement_edit(
             &[&alias, &data, &counting_data, &flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("statement not found")));
@@ -372,7 +372,7 @@ pub async fn statement_delete(
     let result = client
         .execute("DELETE FROM x_query_statement WHERE id = $1", &[&flag])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("statement not found")));
@@ -396,7 +396,7 @@ pub async fn statement_get_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => Ok(Json(ActionResult::success(statement_row_json(&row)))),
@@ -416,7 +416,7 @@ pub async fn statement_manage_list(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows.iter().map(statement_row_json).collect();
 
@@ -441,7 +441,7 @@ pub async fn statement_list_with_query(
             &[&query_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows.iter().map(statement_row_json).collect();
 
@@ -471,7 +471,7 @@ pub async fn statement_permission(
         body.get("permissionList")
             .unwrap_or(&Value::Array(Vec::new())),
     )
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute(
@@ -479,7 +479,7 @@ pub async fn statement_permission(
             &[&permission, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("statement not found")));
@@ -508,7 +508,7 @@ async fn execute_statement_by_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let row = match row {
         Some(r) => r,
@@ -544,7 +544,7 @@ async fn execute_statement_by_flag(
         let count_row = client
             .query_one(&count_sql, &binds[..])
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         let total: i64 = count_row.get("total");
         payload.insert(
             "total".to_string(),
@@ -567,7 +567,7 @@ async fn execute_statement_by_flag(
     let rows = client
         .query(&paged_sql, &page_binds[..])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows.iter().map(row_to_json).collect();
     payload.insert(
@@ -634,7 +634,7 @@ pub async fn importmodel_create(
             &[&norm],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if dup_row.get::<_, i64>("cnt") > 0 {
         return Ok(Json(ActionResult::error(
             "import model name already exists",
@@ -654,7 +654,7 @@ pub async fn importmodel_create(
             &[&id, &name, &model_flag, &query_flag, &content, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -687,7 +687,7 @@ pub async fn importmodel_edit(
             &[&name, &content, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("import model not found")));
@@ -733,7 +733,7 @@ pub async fn importmodel_delete(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("import model not found")));
@@ -774,7 +774,7 @@ pub async fn neural_delete_model_modelFlag(
             &[&model_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("neural model not found")));
@@ -807,7 +807,7 @@ pub async fn neural_update_model_modelFlag(
             &[&name, &model_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("neural model not found")));
@@ -852,7 +852,7 @@ pub async fn stat_create(
             &[&norm],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if dup_row.get::<_, i64>("cnt") > 0 {
         return Ok(Json(ActionResult::error("stat name already exists")));
     }
@@ -864,7 +864,8 @@ pub async fn stat_create(
         .and_then(|v| v.as_str())
         .unwrap_or("select");
     let config = match body.get("config") {
-        Some(v) => serde_json::to_string(v).map_err(|_| AppError::Internal)?,
+        Some(v) => serde_json::to_string(v)
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?,
         None => String::new(),
     };
     let creator = "system";
@@ -876,7 +877,7 @@ pub async fn stat_create(
             &[&id, &name, &query_flag, &stat_type, &config, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
@@ -899,7 +900,8 @@ pub async fn stat_edit(
 
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
     let config = match body.get("config") {
-        Some(v) => serde_json::to_string(v).map_err(|_| AppError::Internal)?,
+        Some(v) => serde_json::to_string(v)
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?,
         None => String::new(),
     };
 
@@ -909,7 +911,7 @@ pub async fn stat_edit(
             &[&name, &config, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("stat not found")));
@@ -954,7 +956,7 @@ pub async fn stat_delete(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("stat not found")));
@@ -990,7 +992,7 @@ pub async fn table_create(
             &[&norm],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if dup_row.get::<_, i64>("cnt") > 0 {
         return Ok(Json(ActionResult::error("table name already exists")));
     }
@@ -1007,7 +1009,7 @@ pub async fn table_create(
             &[&id, &name, &table_flag, &query_flag, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1033,7 +1035,7 @@ pub async fn table_edit(
             &[&name, &flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("table not found")));
@@ -1078,7 +1080,7 @@ pub async fn table_delete(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("table not found")));
@@ -1107,7 +1109,8 @@ pub async fn table_tableFlag_row_insert(
     let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
-    let data_str = serde_json::to_string(&body).map_err(|_| AppError::Internal)?;
+    let data_str = serde_json::to_string(&body)
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute(
@@ -1115,7 +1118,7 @@ pub async fn table_tableFlag_row_insert(
             &[&id, &table_flag, &data_str],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1142,7 +1145,8 @@ pub async fn table_tableFlag_row_update(
     require_admin_gate(&pool, &sess).await?;
     let client = shared::db::acquire(&pool).await?;
 
-    let data_str = serde_json::to_string(&body).map_err(|_| AppError::Internal)?;
+    let data_str = serde_json::to_string(&body)
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute(
@@ -1150,7 +1154,7 @@ pub async fn table_tableFlag_row_update(
             &[&data_str, &table_flag, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("row not found")));
@@ -1195,7 +1199,7 @@ pub async fn table_tableFlag_row_delete(
             &[&table_flag, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("row not found")));
@@ -1240,7 +1244,7 @@ pub async fn view_create(
             &[&norm],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if dup_row.get::<_, i64>("cnt") > 0 {
         return Ok(Json(ActionResult::error("view name already exists")));
     }
@@ -1249,7 +1253,8 @@ pub async fn view_create(
     let view_flag = uuid::Uuid::new_v4().to_string();
     let query_flag = body.get("queryFlag").and_then(|v| v.as_str()).unwrap_or("");
     let content = match body.get("data") {
-        Some(v) => serde_json::to_string(v).map_err(|_| AppError::Internal)?,
+        Some(v) => serde_json::to_string(v)
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?,
         None => String::new(),
     };
     let creator = "system";
@@ -1261,7 +1266,7 @@ pub async fn view_create(
             &[&id, &name, &view_flag, &query_flag, &content, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1287,7 +1292,8 @@ pub async fn view_edit(
 
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
     let content = match body.get("data") {
-        Some(v) => serde_json::to_string(v).map_err(|_| AppError::Internal)?,
+        Some(v) => serde_json::to_string(v)
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?,
         None => String::new(),
     };
 
@@ -1297,7 +1303,7 @@ pub async fn view_edit(
             &[&name, &content, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("view not found")));
@@ -1342,7 +1348,7 @@ pub async fn view_delete(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("view not found")));
@@ -1375,7 +1381,7 @@ pub async fn query_set_icon(
             &[&icon, &flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("query not found")));
@@ -1423,7 +1429,7 @@ async fn guard_write(
     let row = client
         .query_opt(select_owner_sql, &[&key])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         None => Ok(false),
         Some(row) => {
@@ -1469,7 +1475,7 @@ pub async fn designer_search_v2(
             &[&pattern],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1529,7 +1535,7 @@ pub async fn importmodel_get_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
@@ -1610,7 +1616,7 @@ pub async fn importmodel_edit_flag(
                 &[&norm, &flag],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         if dup_row.get::<_, i64>("cnt") > 0 {
             return Ok(Json(ActionResult::error(
                 "import model name already exists",
@@ -1628,7 +1634,7 @@ pub async fn importmodel_edit_flag(
             &[&name, &content, &flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("import model not found")));
@@ -1675,7 +1681,7 @@ pub async fn importmodel_delete_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("import model not found")));
@@ -1713,7 +1719,7 @@ pub async fn importmodel_permission_set(
         body.get("permissionList")
             .unwrap_or(&Value::Array(Vec::new())),
     )
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = client
         .execute(
@@ -1722,7 +1728,7 @@ pub async fn importmodel_permission_set(
             &[&permission, &flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("import model not found")));
@@ -1772,7 +1778,7 @@ pub async fn output_select_put(
             &[&select_file, &query_flag, &flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("output not found")));
@@ -1809,7 +1815,7 @@ pub async fn query_create_v2(
             &[&norm],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if dup_row.get::<_, i64>("cnt") > 0 {
         return Ok(Json(ActionResult::error("query name already exists")));
     }
@@ -1826,7 +1832,7 @@ pub async fn query_create_v2(
             &[&id, &flag, &name, &category, &query_definition, &sess.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1864,7 +1870,7 @@ pub async fn query_delete_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error(
@@ -1910,7 +1916,7 @@ pub async fn query_edit_flag(
                 &[&norm, &flag],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         if dup_row.get::<_, i64>("cnt") > 0 {
             return Ok(Json(ActionResult::error("query name already exists")));
         }
@@ -1929,7 +1935,7 @@ pub async fn query_edit_flag(
             &[&name, &category, &query_definition, &flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("query not found")));
@@ -1977,7 +1983,7 @@ pub async fn query_icon_set(
             &[&icon, &flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("query not found")));
@@ -2018,7 +2024,7 @@ async fn set_permission_generic(
         body.get("permissionList")
             .unwrap_or(&Value::Array(Vec::new())),
     )
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let update_sql = format!(
         "UPDATE {} SET permission = $1, update_time = {} WHERE {}",
@@ -2027,7 +2033,7 @@ async fn set_permission_generic(
     let result = client
         .execute(update_sql.as_str(), &[&permission, &flag])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error(format!(
@@ -2149,7 +2155,7 @@ pub async fn table_build_dispatch_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2182,7 +2188,7 @@ async fn execute_configured_sql(
             let rows = client
                 .query(&limited, &[])
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             let data: Vec<Value> = rows.iter().map(row_to_json).collect();
             let mut payload = serde_json::Map::new();
             payload.insert("calculated".to_string(), Value::Bool(true));
@@ -2233,7 +2239,7 @@ pub async fn stat_simulate_put(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let row = match row {
         Some(r) => r,
@@ -2280,14 +2286,15 @@ pub async fn view_bundle_put(
         return Ok(Json(ActionResult::error("view not found")));
     }
 
-    let bundle_str = serde_json::to_string(&body).map_err(|_| AppError::Internal)?;
+    let bundle_str = serde_json::to_string(&body)
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let result = client
         .execute(
             "UPDATE x_query_view SET bundle_data = $1, update_time = NOW() WHERE id = $2",
             &[&bundle_str, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("view not found")));
@@ -2329,7 +2336,7 @@ pub async fn view_simulate_put(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let row = match row {
         Some(r) => r,
@@ -2386,7 +2393,7 @@ pub async fn designer_execute(
                 &[&id],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
             .and_then(|r| r.get::<_, Option<String>>("data"))
             .unwrap_or_default()
     } else {
@@ -2398,7 +2405,7 @@ pub async fn designer_execute(
     let rows = client
         .query(&limited, &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows.iter().map(row_to_json).collect();
     let count = data.len() as i64;
@@ -2435,7 +2442,7 @@ pub async fn stat_do(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or_else(|| AppError::BadRequest("stat not found".to_string()))?;
     let query_flag: String = stat
         .get::<_, Option<String>>("query_flag")
@@ -2447,7 +2454,7 @@ pub async fn stat_do(
             &[&query_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or_else(|| AppError::BadRequest("no query table bound to this stat".to_string()))?;
     let table_flag: String = table
         .get::<_, Option<String>>("table_flag")
@@ -2463,7 +2470,7 @@ pub async fn stat_do(
             &[&dimension, &metric, &table_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()

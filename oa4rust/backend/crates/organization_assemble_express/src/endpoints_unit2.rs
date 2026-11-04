@@ -89,14 +89,14 @@ async fn unit_pick_on_identity_chain(
         client
             .query(&sql, &[&identity, &second])
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else {
         let lvl: Option<i32> = second.parse().ok();
         match lvl {
             Some(lvl) => client
                 .query(&sql, &[&identity, &lvl])
                 .await
-                .map_err(|_| AppError::Internal)?,
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?,
             None => return ok_json(Value::Object(serde_json::Map::new())),
         }
     };
@@ -175,7 +175,7 @@ async fn units_of_identities(
     let rows = client
         .query(&sql, &[&flags])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     finish_rows(rows, objects)
 }
 
@@ -225,7 +225,7 @@ async fn sup_nested_of_units(
     let rows = client
         .query(&sql, &[&flags])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     finish_rows(rows, objects)
 }
 
@@ -268,7 +268,7 @@ async fn level_query(
     let rows = client
         .query(&sql, &[&levels])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     finish_rows(rows, objects)
 }
 
@@ -318,7 +318,7 @@ pub async fn unit_list_level_name_object(
     let rows = client
         .query(SQL, &[&flags])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let mut data: Vec<Value> = Vec::new();
     for row in &rows {
         let mut obj = row_to_map(row);
@@ -377,7 +377,7 @@ async fn units_of_persons(
     let rows = client
         .query(&sql, &[&flags])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     finish_rows(rows, objects)
 }
 
@@ -445,7 +445,7 @@ async fn attr_units(
     let rows = client
         .query(&sql, &[&name, &attribute])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     finish_rows(rows, objects)
 }
 
@@ -489,7 +489,7 @@ async fn duty_units(
     let rows = client
         .query(&sql, &[&name, &identity])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     finish_rows(rows, objects)
 }
 
@@ -540,7 +540,7 @@ pub async fn unit_check_unit_has_identity(
     let row = client
         .query_one(sql, &[&unit, &identity])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(AxumJson(ActionResult::success(wrap_bool(
         row.get::<_, bool>(0),
     ))))
@@ -562,7 +562,7 @@ pub async fn unit_check_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let exists = row.is_some();
     let (unit_id, unit_name) = match row {
         Some(r) => (
@@ -607,7 +607,7 @@ pub async fn unit_check_unit_has_unit(
     let row = client
         .query_one(sql, &[&unit, &sub_unit])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(AxumJson(ActionResult::success(wrap_bool(
         row.get::<_, bool>(0),
     ))))
@@ -630,7 +630,7 @@ async fn types_query(
     let rows = client
         .query(&sql, &[&types])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
     ok_legacy_list(data.len(), data)
 }
@@ -683,7 +683,7 @@ pub async fn unit_list_unit_tree(
     let rows = client
         .query(SQL, &[&flags])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     use std::collections::{HashMap, HashSet};
     let mut base: HashMap<String, Value> = HashMap::new();

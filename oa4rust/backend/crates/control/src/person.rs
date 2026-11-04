@@ -152,7 +152,7 @@ async fn query_page(
                 &[&flag, &limit],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         (rows, ())
     } else {
         let limit = count;
@@ -164,7 +164,7 @@ async fn query_page(
                 &[&flag, &limit],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         (rows, ())
     };
 
@@ -174,7 +174,7 @@ async fn query_page(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get("count");
 
     let mut data: Vec<Value> = rows
@@ -311,7 +311,7 @@ pub async fn create(
             &[&id, &req.unique_id, &req.name, &mobile, &email, &password_hash],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
@@ -360,7 +360,7 @@ pub async fn update(
             &[&req.name, &req.mobile, &req.email, &req.locked, &flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("person not found")));
@@ -427,7 +427,7 @@ pub async fn delete(
     let row = client
         .query_opt(&where_clause, &[&flag])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let Some(row) = row else {
         return Ok(Json(ActionResult::error(

@@ -59,7 +59,7 @@ pub async fn consume_list(
             &[&consume, &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -118,7 +118,7 @@ pub async fn update_single(
     let rows = client
         .query("SELECT xid FROM x_msg_message WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if rows.is_empty() {
         return Ok(Json(ActionResult::success(Value::Object(
@@ -137,7 +137,7 @@ pub async fn update_single(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -167,7 +167,7 @@ pub async fn custom_create(
             &[&id, &title, &body, &msg_type],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -188,7 +188,7 @@ pub async fn mark_read(
     let rows = client
         .query("SELECT xid FROM x_msg_message WHERE xid = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let marked_read = if !rows.is_empty() {
         client
@@ -197,7 +197,7 @@ pub async fn mark_read(
                 &[&id],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
             > 0
     } else {
         false
@@ -222,7 +222,7 @@ pub async fn unread_count(
             &[&consume],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let count: i64 = rows[0].get("cnt");
 

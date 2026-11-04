@@ -57,7 +57,7 @@ pub async fn unit_create(
             &[&id, &name, &parent_id, &sort, &unit_type, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     ok(Value::Object(
         vec![
             ("id".to_string(), Value::String(id)),
@@ -101,7 +101,7 @@ pub async fn unit_edit(
             &[&uid, &name, &unit_type, &pinyin, &sort],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if updated == 0 {
         return err("unit not updated");
     }
@@ -162,7 +162,7 @@ async fn top_units(pool: &Pool, unit_type: Option<&str>, legacy_bare: bool) -> H
                     &[&t.to_string()],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         }
         None => {
             client
@@ -171,7 +171,7 @@ async fn top_units(pool: &Pool, unit_type: Option<&str>, legacy_bare: bool) -> H
                     &[],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         }
     };
     if legacy_bare {
@@ -213,7 +213,7 @@ pub async fn unit_list_types(pool: Extension<Pool>) -> HandlerResult {
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .filter_map(|r| r.try_get::<_, Option<String>>(0).ok().flatten())
@@ -237,7 +237,7 @@ pub async fn unit_list_prev(
                 &[&limit],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else {
         client
             .query(
@@ -245,7 +245,7 @@ pub async fn unit_list_prev(
                 &[&flag, &limit],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     };
     list_ok(rows.iter().map(unit_row_json).collect())
 }
@@ -262,7 +262,7 @@ pub async fn unit_list_sub_direct(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     list_ok(rows.iter().map(unit_row_json).collect())
 }
 
@@ -278,7 +278,7 @@ pub async fn unit_list_sub_direct_with_type(
             &[&flag, &unit_type],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     list_ok(rows.iter().map(unit_row_json).collect())
 }
 
@@ -292,7 +292,7 @@ async fn identity_unit_id(
             &[&identity_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(row.and_then(|r| r.try_get::<_, Option<String>>(0).ok().flatten()))
 }
 
@@ -321,7 +321,7 @@ pub async fn unit_get_with_identity_level(
     match client
         .query_opt(&sql, &[&unit_id, &level_str])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     {
         Some(row) => ok(unit_row_json(&row)),
         None => err("unit with level not found"),
@@ -346,7 +346,7 @@ pub async fn unit_get_with_identity_type(
     let rows = client
         .query(&sql, &[&unit_id, &unit_type])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     list_ok(rows.iter().map(unit_row_json).collect())
 }
 
@@ -361,7 +361,7 @@ pub async fn unit_get_sup_direct(pool: Extension<Pool>, Path(flag): Path<String>
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => ok(unit_row_json(&row)),
         None => err("superior unit not found"),
@@ -382,7 +382,7 @@ async fn units_by_flags(pool: &Pool, flags: &[String]) -> HandlerResult {
             &[&flags],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     use std::collections::HashMap;
     type Row = deadpool_postgres::tokio_postgres::Row;
     let mut by_id: HashMap<&str, &Row> = HashMap::new();
@@ -441,7 +441,7 @@ pub async fn unit_list_with_unit_type(
                 &[&unit_type],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else {
         // Single query instead of per-flag resolve_generic_id (N+1): filter the
         // typed units directly by (id or name) in the flag batch. Equivalent to
@@ -453,7 +453,7 @@ pub async fn unit_list_with_unit_type(
                 &[&unit_type, &flags],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     };
     list_ok(rows.iter().map(unit_row_json).collect())
 }
@@ -525,7 +525,7 @@ pub async fn identity_create(
             &[&id, &name, &unit_id, &person_id, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     ok(Value::Object(
         vec![
             ("id".to_string(), Value::String(id)),
@@ -559,7 +559,7 @@ pub async fn identity_edit(
             &[&iid, &name, &unit_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if updated == 0 {
         return err("identity not updated");
     }
@@ -662,7 +662,7 @@ pub async fn group_create(
             &[&id, &name, &unit_id, &group_type, &description, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     ok(Value::Object(
         vec![
             ("id".to_string(), Value::String(id)),
@@ -698,7 +698,7 @@ pub async fn group_edit(
             &[&gid, &name, &group_type, &description],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if updated == 0 {
         return err("group not updated");
     }
@@ -737,7 +737,7 @@ pub async fn group_delete(
     let Some(gid) = tx
         .query_opt(&find_sql, &[&flag])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .map(|r| r.get::<_, String>(0))
     else {
         tx.commit().await?;
@@ -747,16 +747,16 @@ pub async fn group_delete(
         format!("UPDATE {GROUP_TABLE} SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL");
     tx.execute(&del_sql, &[&gid])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.execute(
         "DELETE FROM x_org_group_member WHERE group_id = $1",
         &[&gid],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.execute("DELETE FROM x_org_group_role WHERE group_id = $1", &[&gid])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
     ok(Value::Object(
         vec![("id".to_string(), Value::String(gid))]
@@ -794,7 +794,7 @@ pub async fn group_add_member(
                 &[&gid, &pid],
             )
             .await
-            .map_err(|_| AppError::Internal)? as i64;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))? as i64;
     }
     ok(Value::Object(
         vec![
@@ -841,7 +841,8 @@ pub async fn group_delete_member(
                 &[&gid, m],
             )
             .await
-            .map_err(|_| AppError::Internal)? as i64;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+            as i64;
     }
     ok(Value::Object(
         vec![
@@ -913,7 +914,7 @@ pub async fn role_create(
             &[&id, &name, &description, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     ok(Value::Object(
         vec![
             ("id".to_string(), Value::String(id)),
@@ -947,7 +948,7 @@ pub async fn role_edit(
             &[&rid, &name, &description],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if updated == 0 {
         return err("role not updated");
     }
@@ -986,7 +987,7 @@ pub async fn role_delete(
     let Some(rid) = tx
         .query_opt(&find_sql, &[&flag])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .map(|r| r.get::<_, String>(0))
     else {
         tx.commit().await?;
@@ -996,10 +997,10 @@ pub async fn role_delete(
         format!("UPDATE {ROLE_TABLE} SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL");
     tx.execute(&del_sql, &[&rid])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.execute("DELETE FROM auth_person_role WHERE role_id = $1", &[&rid])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
     ok(Value::Object(
         vec![("id".to_string(), Value::String(rid))]
@@ -1070,7 +1071,7 @@ pub async fn duty_create(
             &[&id, &name, &unit_id, &identity_first, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     ok(Value::Object(
         vec![
             ("id".to_string(), Value::String(id)),
@@ -1106,7 +1107,7 @@ pub async fn duty_edit(
             &[&did, &name, &identity_first],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if updated == 0 {
         return err("unitduty not updated");
     }
@@ -1174,7 +1175,7 @@ pub async fn duty_update_member(
             &[&duty_name, &unit_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .map(|r| r.get::<_, String>(0));
     let Some(did) = did else {
         return err("unitduty not found");
@@ -1188,7 +1189,7 @@ pub async fn duty_update_member(
             &[&did, &identity_first],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if updated == 0 {
         return err("unitduty not updated");
     }
@@ -1220,7 +1221,7 @@ pub async fn users_list(pool: Extension<Pool>) -> HandlerResult {
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
@@ -1259,7 +1260,7 @@ pub async fn departments_tree(pool: Extension<Pool>) -> HandlerResult {
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let mut nodes: Vec<Value> = rows
         .iter()
         .map(|row| {

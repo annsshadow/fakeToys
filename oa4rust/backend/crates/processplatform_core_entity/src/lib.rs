@@ -25,7 +25,7 @@ pub async fn work_list(
         .limit(20)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -73,7 +73,7 @@ pub async fn work_get(
         .filter(pp_work::Column::DeletedAt.is_null())
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or_else(|| AppError::NotFound)?;
 
     let result = Value::Object(serde_json::Map::from_iter([
@@ -122,7 +122,7 @@ pub async fn task_list(
         .limit(20)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -165,7 +165,7 @@ pub async fn task_get(
         .filter(pp_task::Column::DeletedAt.is_null())
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or_else(|| AppError::NotFound)?;
 
     let result = Value::Object(serde_json::Map::from_iter([
@@ -201,7 +201,7 @@ pub async fn ticket_list(
         .limit(20)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -244,7 +244,7 @@ pub async fn workcompleted_list(
         .limit(20)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()

@@ -129,7 +129,7 @@ async fn lookup_sso_key(pool: &Pool, client: &str) -> Result<String, AppError> {
             &[&client],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(r) => Ok(r.get("key")),
         None => Err(AppError::BadRequest(format!("client not found: {client}"))),

@@ -56,7 +56,7 @@ pub async fn link_service(
             &[&source_type, &source_id, &target_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let linked = row.is_some();
 
@@ -84,7 +84,7 @@ pub async fn get_link(
             &[&source_type, &source_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
@@ -121,7 +121,7 @@ pub async fn list_correlations(
             &[&person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -182,7 +182,7 @@ pub async fn get_correlation(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -245,7 +245,7 @@ pub async fn create_correlation(
             &[&id, &person_id, &target_id, &r#type, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
@@ -275,7 +275,7 @@ pub async fn save_correlation(
             &[&target_id, &r#type, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("correlation not found")));
@@ -302,7 +302,7 @@ pub async fn delete_correlation(
     let result = client
         .execute("DELETE FROM x_correlation WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error(
@@ -337,7 +337,7 @@ pub async fn unlink_service(
             &[&source_type, &source_id, &target_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error(
@@ -458,7 +458,7 @@ pub async fn correlation_type_cms_document_document(
             &[&document],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -486,7 +486,7 @@ pub async fn correlation_type_processplatform_job_job(
             &[&job],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {

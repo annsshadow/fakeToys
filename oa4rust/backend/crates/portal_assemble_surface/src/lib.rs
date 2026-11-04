@@ -60,7 +60,7 @@ pub async fn get_surface(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -135,7 +135,7 @@ pub async fn create_surface(
             &[&id, &name, &category, &html, &template, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
@@ -161,7 +161,7 @@ pub async fn list_surfaces(
             &[&category],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -230,7 +230,7 @@ pub async fn preview_surface(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
@@ -269,7 +269,7 @@ pub async fn publish_surface(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("surface not found")));
@@ -281,7 +281,7 @@ pub async fn publish_surface(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -316,7 +316,7 @@ pub async fn surface_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -379,7 +379,7 @@ pub async fn surface_preview(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
@@ -421,7 +421,7 @@ pub async fn surface_publish(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("surface not found")));
@@ -433,7 +433,7 @@ pub async fn surface_publish(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -469,7 +469,7 @@ pub async fn page_id_delete(
     let result = client
         .execute("DELETE FROM x_portal_page WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(result > 0))]),
     ))))
@@ -574,7 +574,7 @@ pub async fn get_layout(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -622,7 +622,7 @@ pub async fn list_layouts(
             &[&category],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -686,7 +686,7 @@ pub async fn create_layout(
             &[&id, &name, &category, &content, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
@@ -723,7 +723,7 @@ pub async fn save_layout(
             &[&name, &category, &content, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if updated == 0 {
         client
@@ -733,7 +733,7 @@ pub async fn save_layout(
                 &[&id, &name, &category, &content],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     }
 
     let row = client
@@ -742,7 +742,7 @@ pub async fn save_layout(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -780,7 +780,7 @@ pub async fn delete_layout(
     let result = client
         .execute("DELETE FROM x_portal_layout WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("layout not found")));
@@ -814,7 +814,7 @@ pub async fn dict_list_portal_portalFlag(
             &[&portal_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -872,7 +872,7 @@ pub async fn dict_dictFlag_portal_portalFlag(
             &[&dict_flag, &portal_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -928,7 +928,7 @@ pub async fn dict_dictFlag_portal_portalFlag_data(
             &[&dict_flag, &portal_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -961,7 +961,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data(
             &[&dict_flag, &portal_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1008,7 +1008,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_mockdeletetoget(
             &[&dict_flag, &portal_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1050,7 +1050,8 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_mockputtopost(
 
     let data_str = match body {
         Value::String(s) => s,
-        _ => serde_json::to_string(&body).map_err(|_| AppError::Internal)?,
+        _ => serde_json::to_string(&body)
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?,
     };
 
     let result = client
@@ -1059,7 +1060,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_mockputtopost(
             &[&data_str, &dict_flag, &portal_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("dict not found")));
@@ -1071,7 +1072,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_mockputtopost(
             &[&dict_flag, &portal_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1123,7 +1124,7 @@ pub async fn file_list_portal_portalFlag(
             &[&portal_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1184,7 +1185,7 @@ pub async fn file_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1239,7 +1240,7 @@ pub async fn file_flag_download(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1287,7 +1288,7 @@ pub async fn file_flag_portal_portalFlag_content(
             &[&flag, &portal_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
@@ -1323,7 +1324,7 @@ pub async fn file_flag_portal_portalFlag_download(
             &[&flag, &portal_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1371,7 +1372,7 @@ pub async fn page_list_portal_portal(
             &[&portal],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1417,7 +1418,7 @@ async fn page_v2_flag_portal_portalFlag_core(
             &[&flag, &portal_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1473,7 +1474,7 @@ async fn page_v2_flag_portal_portalFlag_mobile_core(
             &[&flag, &portal_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1531,7 +1532,7 @@ async fn page_v2_id_core(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1586,7 +1587,7 @@ async fn page_v2_id_mobile_core(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1645,7 +1646,7 @@ async fn page_flag_portal_portalFlag_core(
             &[&flag, &portal_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1701,7 +1702,7 @@ async fn page_flag_portal_portalFlag_mobile_core(
             &[&flag, &portal_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1759,7 +1760,7 @@ pub async fn page_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1798,7 +1799,7 @@ async fn page_id_mobile_core(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1853,7 +1854,7 @@ pub async fn portal_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1904,7 +1905,7 @@ pub async fn portal_list_mobile(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1956,7 +1957,7 @@ pub async fn portal_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2006,7 +2007,7 @@ pub async fn portal_flag_corner_mark(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
@@ -2038,7 +2039,7 @@ pub async fn portal_id_icon(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
@@ -2067,7 +2068,7 @@ pub async fn portal_id_icon_base64(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
@@ -2099,7 +2100,7 @@ pub async fn script_list_portal_portal(
             &[&portal],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2157,7 +2158,7 @@ pub async fn script_portal_portal_name_name(
             &[&portal, &name],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2209,7 +2210,7 @@ pub async fn script_portal_portal_name_name_imported(
             &[&portal, &name],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2264,7 +2265,7 @@ pub async fn script_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2316,7 +2317,7 @@ pub async fn widget_list_portal_portal(
             &[&portal],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2381,7 +2382,7 @@ pub async fn widget_flag_portal_portalFlag(
             &[&flag, &portal_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2440,7 +2441,7 @@ pub async fn widget_flag_portal_portalFlag_mobile(
             &[&flag, &portal_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2498,7 +2499,7 @@ pub async fn widget_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2564,7 +2565,7 @@ pub async fn widget_id_mobile(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2636,7 +2637,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_delete(
             &[&dict_flag, &portal_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([(
@@ -2658,7 +2659,8 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_post(
 
     let data_str = match body {
         Value::String(s) => s,
-        _ => serde_json::to_string(&body).map_err(|_| AppError::Internal)?,
+        _ => serde_json::to_string(&body)
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?,
     };
 
     let result = client
@@ -2667,7 +2669,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_post(
             &[&data_str, &dict_flag, &portal_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("dict not found")));
@@ -2679,7 +2681,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_post(
             &[&dict_flag, &portal_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2730,7 +2732,8 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_put(
 
     let data_str = match body {
         Value::String(s) => s,
-        _ => serde_json::to_string(&body).map_err(|_| AppError::Internal)?,
+        _ => serde_json::to_string(&body)
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?,
     };
 
     let updated = client
@@ -2739,7 +2742,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_put(
             &[&data_str, &dict_flag, &portal_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if updated == 0 {
         let id = uuid::Uuid::new_v4().to_string();
@@ -2752,7 +2755,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_put(
                 &[&id, &name, &dict_flag, &portal_flag, &data_str, &creator],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         return Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(id)),
@@ -2771,7 +2774,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_put(
             &[&dict_flag, &portal_flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2827,7 +2830,7 @@ pub async fn script_portal_portal_name_post(
             &[&portal, &name],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if existing.is_some() {
         return Ok(Json(ActionResult::error("script already exists")));
     }
@@ -2852,7 +2855,7 @@ pub async fn script_portal_portal_name_post(
             &[&id, &name, &flag, &category, &portal, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([

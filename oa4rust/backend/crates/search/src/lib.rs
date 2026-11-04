@@ -61,7 +61,7 @@ pub async fn search_documents(
             &[&query, &limit],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(rows
         .iter()
@@ -100,7 +100,7 @@ pub async fn search_subjects(
             &[&query, &limit],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(rows
         .iter()
@@ -138,7 +138,7 @@ pub async fn search_messages(
             &[&query, &limit],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(rows
         .iter()
@@ -296,7 +296,7 @@ pub async fn ftsearch_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()

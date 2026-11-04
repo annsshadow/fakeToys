@@ -150,7 +150,7 @@ pub async fn express_person_list(
         let rows = client
             .query(sql, &[&ids])
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         for row in &rows {
             let pid = row.get::<_, String>("id");
             persons
@@ -166,7 +166,7 @@ pub async fn express_person_list(
         let rows = client
             .query(identity_ids_sql, &[&identities])
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         let existing: HashSet<String> = rows.iter().map(|r| r.get("id")).collect();
         let identity_ids: Vec<String> = identities
             .iter()
@@ -178,7 +178,7 @@ pub async fn express_person_list(
             let rows = client
                 .query(person_ids_sql, &[&identity_ids])
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             let person_id_set: Vec<String> = rows
                 .iter()
                 .map(|r| r.get::<_, String>("person_id"))
@@ -188,7 +188,9 @@ pub async fn express_person_list(
                 let rows = client
                     .query(person_sql, &[&person_id_set])
                     .await
-                    .map_err(|_| AppError::Internal)?;
+                    .map_err(|e| {
+                        AppError::internal_with_source(concat!(file!(), ":", line!()), e)
+                    })?;
                 for row in &rows {
                     let pid = row.get::<_, String>("id");
                     persons
@@ -235,7 +237,7 @@ pub async fn express_unit_list(
     let rows = client
         .query(sql, &[&ids])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let mut by_id: HashMap<String, Value> = HashMap::new();
     for row in &rows {
@@ -282,7 +284,7 @@ pub async fn express_identity_list(
     let rows = client
         .query(sql, &[&ids])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let mut by_id: HashMap<String, Value> = HashMap::new();
     for row in &rows {
@@ -323,7 +325,7 @@ pub async fn express_group_list(
     let rows = client
         .query(sql, &[&ids])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let mut by_id: HashMap<String, Value> = HashMap::new();
     for row in &rows {
@@ -365,7 +367,7 @@ pub async fn express_role_list(
     let rows = client
         .query(sql, &[&ids])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let mut by_id: HashMap<String, Value> = HashMap::new();
     for row in &rows {
@@ -408,7 +410,7 @@ pub async fn express_person_with_unit(
     let rows = client
         .query(sql, &[&ids])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let mut by_id: HashMap<String, Value> = HashMap::new();
     for row in &rows {
@@ -466,7 +468,7 @@ pub async fn express_person_with_identity(
     let rows = client
         .query(sql, &[&ids])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     // person_id → (unique, name, identities)；缺失 id 仍按原语义产出 {id, identities:[]}
     let mut acc: HashMap<String, (String, String, Vec<Value>)> = HashMap::new();

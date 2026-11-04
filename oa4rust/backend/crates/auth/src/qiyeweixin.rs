@@ -18,11 +18,13 @@ use std::sync::OnceLock;
 
 const QYWXPOS_UNIQUE_PREFIX: &str = "qywxpos_";
 
-fn qywxpos_config() -> Option<(String, String)> {
-    Some((
-        std::env::var("QYWX_CORP_ID").ok()?,
-        std::env::var("QYWX_APP_SECRET").ok()?,
-    ))
+/// O23：缺配置 → 503 并写明缺哪一项（不再返回 Option 后被 `ok_or(Internal)` 吞成 500）。
+fn qywxpos_config() -> Result<(String, String), AppError> {
+    let corp_id =
+        std::env::var("QYWX_CORP_ID").map_err(|_| AppError::missing_config("QYWX_CORP_ID"))?;
+    let app_secret = std::env::var("QYWX_APP_SECRET")
+        .map_err(|_| AppError::missing_config("QYWX_APP_SECRET"))?;
+    Ok((corp_id, app_secret))
 }
 
 fn qywx_client() -> &'static reqwest::Client {
@@ -40,45 +42,61 @@ async fn exchange_code_for_userid(
         .query(&[("corpid", &config.0), ("corpsecret", &config.1)])
         .send()
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .json()
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let errcode = token_resp
         .get("errcode")
         .and_then(|v| v.as_i64())
         .unwrap_or(-1);
     if errcode != 0 {
-        return Err(AppError::Internal);
+        return Err(AppError::internal_with_source(
+            concat!(file!(), ":", line!()),
+            format!("qyapi gettoken errcode={errcode}"),
+        ));
     }
     let access_token = token_resp
         .get("access_token")
         .and_then(|v| v.as_str())
-        .ok_or(AppError::Internal)?;
+        .ok_or_else(|| {
+            AppError::internal_with_source(
+                concat!(file!(), ":", line!()),
+                "qyapi gettoken response missing access_token",
+            )
+        })?;
 
     let user_resp: Value = client
         .get("https://qyapi.weixin.qq.com/cgi-bin/auth/getuserinfo")
         .query(&[("access_token", access_token), ("code", code)])
         .send()
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .json()
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let errcode = user_resp
         .get("errcode")
         .and_then(|v| v.as_i64())
         .unwrap_or(-1);
     if errcode != 0 {
-        return Err(AppError::Internal);
+        return Err(AppError::internal_with_source(
+            concat!(file!(), ":", line!()),
+            format!("qyapi getuserinfo errcode={errcode}"),
+        ));
     }
     user_resp
         .get("userid")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
-        .ok_or(AppError::Internal)
+        .ok_or_else(|| {
+            AppError::internal_with_source(
+                concat!(file!(), ":", line!()),
+                "qyapi getuserinfo response missing userid",
+            )
+        })
 }
 
 async fn get_user_detail(config: &(String, String), userid: &str) -> Result<Value, AppError> {
@@ -88,32 +106,40 @@ async fn get_user_detail(config: &(String, String), userid: &str) -> Result<Valu
         .query(&[("corpid", &config.0), ("corpsecret", &config.1)])
         .send()
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .json()
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let access_token = token_resp
         .get("access_token")
         .and_then(|v| v.as_str())
-        .ok_or(AppError::Internal)?;
+        .ok_or_else(|| {
+            AppError::internal_with_source(
+                concat!(file!(), ":", line!()),
+                "qyapi gettoken response missing access_token",
+            )
+        })?;
 
     let user_resp: Value = client
         .get("https://qyapi.weixin.qq.com/cgi-bin/user/get")
         .query(&[("access_token", access_token), ("userid", userid)])
         .send()
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .json()
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let errcode = user_resp
         .get("errcode")
         .and_then(|v| v.as_i64())
         .unwrap_or(-1);
     if errcode != 0 {
-        return Err(AppError::Internal);
+        return Err(AppError::internal_with_source(
+            concat!(file!(), ":", line!()),
+            format!("qyapi user/get errcode={errcode}"),
+        ));
     }
     Ok(user_resp)
 }
@@ -135,7 +161,7 @@ pub async fn qiyeweixin_login(
     session_manager: Extension<SessionManager>,
     Path(code): Path<String>,
 ) -> Result<Response, AppError> {
-    let config = qywxpos_config().ok_or(AppError::Internal)?;
+    let config = qywxpos_config()?;
     let userid = exchange_code_for_userid(&config, &code).await?;
     let unique_id = format!("{}{}", QYWXPOS_UNIQUE_PREFIX, userid);
 
@@ -147,7 +173,7 @@ pub async fn qiyeweixin_login(
             &[&unique_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(r) => {
@@ -192,7 +218,7 @@ pub async fn qiyeweixin_update_person_detail(
     session_manager: Extension<SessionManager>,
     Path(code): Path<String>,
 ) -> Result<Response, AppError> {
-    let config = qywxpos_config().ok_or(AppError::Internal)?;
+    let config = qywxpos_config()?;
     let userid = exchange_code_for_userid(&config, &code).await?;
     let unique_id = format!("{}{}", QYWXPOS_UNIQUE_PREFIX, userid);
 
@@ -218,7 +244,7 @@ pub async fn qiyeweixin_update_person_detail(
             &[&unique_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let (person_id, person_unique, _person_name, _person_mobile, _person_email) = match row {
         Some(r) => (
@@ -238,7 +264,7 @@ pub async fn qiyeweixin_update_person_detail(
                     &[&id, &unique_id, &name.clone().unwrap_or_default(), &mobile.clone().unwrap_or_default(), &email.clone().unwrap_or_default(), &password_hash],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             (
                 id,
                 unique_id.clone(),
@@ -273,7 +299,7 @@ pub async fn qiyeweixin_update_person_detail(
             &[&unique_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .and_then(|r| r.get::<_, Option<String>>("icon"));
 
     Ok(crate::session_response(
@@ -318,7 +344,8 @@ pub async fn qiyeweixin_jssdk_sign(
         .nonce_str
         .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
     let timestamp = chrono::Utc::now().timestamp() as u64;
-    let corpid = std::env::var("QYWX_CORP_ID").map_err(|_| AppError::Internal)?;
+    let corpid = std::env::var("QYWX_CORP_ID")
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let agentid = get_qywx_agent_id().ok_or(AppError::Internal)?;
 
     let text = format!(

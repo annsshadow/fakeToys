@@ -50,7 +50,7 @@ pub async fn unit_attribute_create(
             &[&id, &unit_id, &attr_key, &attr_value, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     ok(Value::Object(
         vec![("id".to_string(), Value::String(id))]
             .into_iter()
@@ -79,7 +79,7 @@ pub async fn unit_attribute_edit(
             &[&aid, &attr_value],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if updated == 0 {
         return err("unitattribute not updated");
     }
@@ -161,7 +161,7 @@ pub async fn person_attribute_create(
             &[&id, &person_id, &attr_key, &attr_value, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     ok(Value::Object(
         vec![("id".to_string(), Value::String(id))]
             .into_iter()
@@ -190,7 +190,7 @@ pub async fn person_attribute_edit(
             &[&aid, &attr_value],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if updated == 0 {
         return err("personattribute not updated");
     }
@@ -265,7 +265,7 @@ pub async fn permission_setting_create(
             &[&id, &name, &unit_id, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     ok(Value::Object(
         vec![("id".to_string(), Value::String(id))]
             .into_iter()
@@ -292,7 +292,7 @@ pub async fn permission_setting_edit(
             &[&pid, &name],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if updated == 0 {
         return err("permission setting not updated");
     }
@@ -368,7 +368,7 @@ pub async fn person_card_create(
             &[&id, &name, &group_type, &distinguished_name, &mobile, &office_phone, &address, &description, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     ok(Value::Object(
         vec![
             ("id".to_string(), Value::String(id)),
@@ -408,7 +408,7 @@ pub async fn person_card_edit(
             &[&cid, &name, &mobile, &office_phone, &address, &description],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if updated == 0 {
         return err("person card not updated");
     }
@@ -476,7 +476,7 @@ async fn card_page(
     let total: i64 = client
         .query_one(&total_sql, total_params)
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get("cnt");
     let (limit_ph, offset_ph) = if with_group {
         ("$3", "$4")
@@ -496,7 +496,7 @@ async fn card_page(
     let rows = client
         .query(&data_sql, data_params)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let mut data = Vec::new();
     for row in &rows {
         let mut item = serde_json::Map::new();
@@ -598,7 +598,7 @@ pub async fn input_person_import(
             &[&normalized_names],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .iter()
         .filter_map(|r| r.get::<_, Option<String>>(0))
         .collect();
@@ -634,7 +634,7 @@ pub async fn input_person_import(
             &[&id, &name, &mobile, &email, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         // 同批次重复姓名与原逐条判重语义一致：第一条插入后即视为已存在
         existing.insert(name);
         inserted += 1;
@@ -646,7 +646,7 @@ pub async fn input_person_import(
         &[&batch_id, &message],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
     ok(Value::Object(
         vec![

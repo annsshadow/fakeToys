@@ -45,7 +45,7 @@ pub async fn forum_list(
         .limit(50)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -83,7 +83,7 @@ pub async fn section_list(
         .limit(50)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -131,7 +131,7 @@ pub async fn subject_top_list(
         .limit(20)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -180,7 +180,7 @@ pub async fn subject_list(
         .limit(50)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -249,7 +249,7 @@ pub async fn create_forum(
     active_model
         .insert(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -271,7 +271,7 @@ pub async fn update_forum(
     let existing = bbs_forum_info::Entity::find_by_id(&id)
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let Some(m) = existing else {
         return Ok(Json(ActionResult::error("forum not found")));
@@ -304,7 +304,7 @@ pub async fn update_forum(
     active_model
         .update(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -329,7 +329,7 @@ pub async fn delete_forum(
     let existing = bbs_forum_info::Entity::find_by_id(&id)
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if existing.is_none() {
         return Ok(Json(ActionResult::error("forum not found")));
@@ -341,7 +341,7 @@ pub async fn delete_forum(
     active_model
         .delete(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(deleted_id))]),
@@ -386,7 +386,7 @@ pub async fn create_section(
     active_model
         .insert(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -409,7 +409,7 @@ pub async fn update_section(
     let existing = bbs_section_info::Entity::find_by_id(&id)
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let Some(m) = existing else {
         return Ok(Json(ActionResult::error("section not found")));
@@ -454,7 +454,7 @@ pub async fn update_section(
     active_model
         .update(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -484,7 +484,7 @@ pub async fn delete_section(
     let existing = bbs_section_info::Entity::find_by_id(&id)
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if existing.is_none() {
         return Ok(Json(ActionResult::error("section not found")));
@@ -496,7 +496,7 @@ pub async fn delete_section(
     active_model
         .delete(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(deleted_id))]),
@@ -544,7 +544,7 @@ pub async fn create_subject(
     active_model
         .insert(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -567,7 +567,7 @@ pub async fn update_subject(
     let existing = bbs_subject_info::Entity::find_by_id(&id)
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let Some(m) = existing else {
         return Ok(Json(ActionResult::error("subject not found")));
@@ -616,7 +616,7 @@ pub async fn update_subject(
     active_model
         .update(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -649,7 +649,7 @@ pub async fn delete_subject(
     let existing = bbs_subject_info::Entity::find_by_id(&id)
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if existing.is_none() {
         return Ok(Json(ActionResult::error("subject not found")));
@@ -661,7 +661,7 @@ pub async fn delete_subject(
     active_model
         .delete(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(deleted_id))]),
@@ -751,7 +751,7 @@ pub async fn search_subjects(
         .limit(20)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()

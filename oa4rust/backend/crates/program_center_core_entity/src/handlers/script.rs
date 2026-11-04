@@ -34,7 +34,7 @@ pub async fn script_list(
         .limit(20)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -111,7 +111,7 @@ pub async fn script_update(
     let model = entities::script::Entity::find_by_id(&id)
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
 
     require_owner(&pool, &session, &model.creator_person).await?;
@@ -161,7 +161,7 @@ pub async fn script_delete(
     let model = entities::script::Entity::find_by_id(&id)
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
 
     require_owner(&pool, &session, &model.creator_person).await?;

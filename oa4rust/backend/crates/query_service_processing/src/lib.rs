@@ -49,7 +49,7 @@ pub async fn process_query(
             &[&query_type],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -121,7 +121,7 @@ pub async fn batch_process(
             &[&wanted],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let mut by_type: HashMap<&str, &QRow> = HashMap::new();
     for row in &prefetched {
         if let Some(t) = row.get::<_, Option<&str>>("query_type") {
@@ -207,7 +207,7 @@ pub async fn get_service_status(
     let row = client
         .query_one("SELECT COUNT(*) as count FROM x_query", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let count: i64 = row.get("count");
 
     let active = client
@@ -265,7 +265,7 @@ pub async fn reset_service(
     let row = tx
         .query_one("SELECT COUNT(*) as count FROM x_query", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let count: i64 = row.get("count");
 
     let cleared_count = tx
@@ -274,12 +274,12 @@ pub async fn reset_service(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let reset = tx
         .execute("UPDATE x_query SET count = '1', update_time = NOW()", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
 
     let now = chrono::Utc::now()

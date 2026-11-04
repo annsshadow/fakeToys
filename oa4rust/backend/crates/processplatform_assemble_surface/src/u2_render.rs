@@ -71,7 +71,7 @@ pub fn html_to_word_binary(content: &str) -> Result<Vec<u8>, AppError> {
         })?;
         stream
             .write_all(html.as_bytes())
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     }
     Ok(cfb.into_inner().into_inner())
 }
@@ -212,8 +212,10 @@ pub fn html_to_pdf_bytes(html: &str) -> Result<Option<Vec<u8>>, AppError> {
         return Ok(None);
     };
     // bold/italic/合成体统一复用 regular 字形（简化排版无字重变化）
-    let mk_font =
-        || genpdf::fonts::FontData::new(font_bytes.clone(), None).map_err(|_| AppError::Internal);
+    let mk_font = || {
+        genpdf::fonts::FontData::new(font_bytes.clone(), None)
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))
+    };
     let family = genpdf::fonts::FontFamily {
         regular: mk_font()?,
         bold: mk_font()?,
@@ -278,7 +280,7 @@ pub fn image_to_png(bytes: &[u8]) -> Result<Option<Vec<u8>>, AppError> {
     })?;
     let mut out = Vec::new();
     img.write_to(&mut Cursor::new(&mut out), image::ImageFormat::Png)
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Some(out))
 }
 
@@ -372,7 +374,7 @@ pub fn html_to_image_bytes(html: &str) -> Result<Option<Vec<u8>>, AppError> {
     let mut out = Vec::new();
     image::DynamicImage::ImageRgba8(canvas)
         .write_to(&mut Cursor::new(&mut out), image::ImageFormat::Png)
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Some(out))
 }
 
@@ -398,8 +400,10 @@ pub fn image_to_pdf_bytes(bytes: &[u8]) -> Result<Option<Vec<u8>>, AppError> {
         image::DynamicImage::ImageRgb8(rgb)
     };
     // bold/italic/合成体统一复用 regular 字形（简化排版无字重变化）
-    let mk_font =
-        || genpdf::fonts::FontData::new(font_bytes.clone(), None).map_err(|_| AppError::Internal);
+    let mk_font = || {
+        genpdf::fonts::FontData::new(font_bytes.clone(), None)
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))
+    };
     let family = genpdf::fonts::FontFamily {
         regular: mk_font()?,
         bold: mk_font()?,
@@ -413,7 +417,8 @@ pub fn image_to_pdf_bytes(bytes: &[u8]) -> Result<Option<Vec<u8>>, AppError> {
     })?;
     doc.push(image);
     let mut out = Vec::new();
-    doc.render(&mut out).map_err(|_| AppError::Internal)?;
+    doc.render(&mut out)
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Some(out))
 }
 

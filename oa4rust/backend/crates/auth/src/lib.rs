@@ -491,7 +491,7 @@ pub async fn whoami(
             &[&session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -728,7 +728,7 @@ pub async fn code_send(
             &[&credential],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if exists.is_none() {
         // 返回通用成功消息，防止凭据枚举
         return Ok(Json(ActionResult::success(Value::Object(
@@ -864,7 +864,7 @@ pub async fn unit_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -901,7 +901,7 @@ pub async fn role_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -934,7 +934,7 @@ pub async fn group_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()

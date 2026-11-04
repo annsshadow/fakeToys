@@ -110,7 +110,7 @@ pub async fn application_list(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -228,7 +228,7 @@ pub async fn application_create(
             &[&id, &req.name, &description, &form_definition, &status],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
@@ -257,7 +257,7 @@ pub async fn application_update(
             &[&req.name, &req.description, &req.form_definition, &req.status, &req.id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("application not found")));
@@ -320,7 +320,7 @@ pub async fn application_remove(
             &[&req.id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error(

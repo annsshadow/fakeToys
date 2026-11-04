@@ -137,7 +137,7 @@ pub async fn calendar_list_public(
         .limit(50)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -179,7 +179,7 @@ pub async fn calendar_list_my(
         .limit(50)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let mut my_calendars = Vec::new();
     let mut unit_calendars = Vec::new();
@@ -227,7 +227,7 @@ pub async fn calendar_get(
         .filter(cal_calendar::Column::Status.eq("OPEN"))
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match model {
         Some(m) => {
@@ -290,7 +290,7 @@ pub async fn calendar_create(
     let m = active_model
         .insert(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let mut map = serde_json::Map::new();
     map.insert("id".to_string(), Value::String(m.id.clone()));
@@ -327,7 +327,7 @@ pub async fn calendar_update(
         .filter(cal_calendar::Column::Status.eq("OPEN"))
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let m = existing.ok_or_else(|| AppError::NotFound)?;
 
@@ -355,7 +355,7 @@ pub async fn calendar_update(
     let updated = active_model
         .update(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let mut map = serde_json::Map::new();
     map.insert("id".to_string(), Value::String(id));
@@ -395,7 +395,7 @@ pub async fn calendar_remove(
         .filter(cal_calendar::Column::Status.eq("OPEN"))
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let m = existing.ok_or_else(|| AppError::NotFound)?;
 
@@ -416,7 +416,7 @@ pub async fn calendar_remove(
     let _updated = active_model
         .update(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
@@ -482,7 +482,7 @@ pub async fn event_create(
     let m = active_model
         .insert(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let mut map = serde_json::Map::new();
     map.insert("id".to_string(), Value::String(m.id.clone()));
@@ -529,7 +529,7 @@ pub async fn event_update(
         .filter(cal_event::Column::Status.eq("OPEN"))
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let m = existing.ok_or_else(|| AppError::NotFound)?;
 
@@ -567,7 +567,7 @@ pub async fn event_update(
     let updated = active_model
         .update(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let mut map = serde_json::Map::new();
     map.insert("id".to_string(), Value::String(id));
@@ -620,7 +620,7 @@ pub async fn event_remove(
         .filter(cal_event::Column::Status.eq("OPEN"))
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let m = existing.ok_or_else(|| AppError::NotFound)?;
 
@@ -642,7 +642,7 @@ pub async fn event_remove(
     let _updated = active_model
         .update(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
@@ -668,7 +668,7 @@ pub async fn event_list_by_calendar(
         .limit(100)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()

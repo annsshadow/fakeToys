@@ -37,7 +37,7 @@ pub async fn get_bam_config(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if rows.is_empty() {
         return Ok(Json(ActionResult::error("not found")));
@@ -94,7 +94,7 @@ pub async fn create_bam(
             &[&id, &name, &definition],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -120,7 +120,7 @@ pub async fn list_bams(
             &[&category],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -185,7 +185,7 @@ pub async fn get_bam_status(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let active_metrics: i64 = if !task_count_rows.is_empty() {
         task_count_rows[0].get("cnt")
@@ -337,7 +337,7 @@ pub async fn period_list_completed_task_application(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -395,7 +395,7 @@ pub async fn period_list_completed_task_unit(
             &[&unit_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -451,7 +451,7 @@ pub async fn period_list_completed_work_application(
             &[&application_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -495,7 +495,7 @@ pub async fn period_list_completed_work_unit(
             &[&unit_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -557,7 +557,7 @@ pub async fn period_list_count_completed_task_application_applicationId_process_
             &[&application_id, &process_id, &activity_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -590,7 +590,7 @@ pub async fn period_list_count_completed_task_application_applicationId_process_
             &[&application_id, &process_id, &activity_id, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let cnt: i64 = if !rows.is_empty() {
         rows[0].get("cnt")
@@ -621,7 +621,7 @@ pub async fn period_list_count_completed_task_application_applicationId_process_
             &[&application_id, &process_id, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -668,7 +668,7 @@ pub async fn period_list_count_completed_task_application_applicationId_unit_uni
             &[&application_id, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -714,7 +714,7 @@ pub async fn period_list_count_completed_task_unit_unit_person_person_by_applica
             &[&person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -765,7 +765,7 @@ pub async fn period_list_count_completed_work_application_applicationId_process_
             &[&application_id, &process_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let cnt: i64 = if !rows.is_empty() {
         rows[0].get("cnt")
@@ -792,7 +792,7 @@ pub async fn period_list_count_completed_work_application_applicationId_process_
             &[&application_id, &process_id, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let cnt: i64 = if !rows.is_empty() {
         rows[0].get("cnt")
@@ -827,7 +827,7 @@ pub async fn period_list_count_completed_work_application_applicationId_unit_uni
             &[&application_id, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -869,7 +869,7 @@ pub async fn period_list_count_completed_work_unit_unit_person_person_by_applica
             &[&person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -922,7 +922,7 @@ pub async fn period_list_count_expired_task_application_applicationId_process_pr
             &[&application_id, &process_id, &activity_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -961,7 +961,7 @@ pub async fn period_list_count_expired_task_application_applicationId_process_pr
             &[&application_id, &process_id, &activity_id, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let cnt: i64 = if !rows.is_empty() {
         rows[0].get("cnt")
@@ -992,7 +992,7 @@ pub async fn period_list_count_expired_task_application_applicationId_process_pr
             &[&application_id, &process_id, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1039,7 +1039,7 @@ pub async fn period_list_count_expired_task_application_applicationId_unit_unit_
             &[&application_id, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1085,7 +1085,7 @@ pub async fn period_list_count_expired_task_unit_unit_person_person_by_applicati
             &[&person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1136,7 +1136,7 @@ pub async fn period_list_count_expired_work_application_applicationId_process_pr
             &[&application_id, &process_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let cnt: i64 = if !rows.is_empty() {
         rows[0].get("cnt")
@@ -1163,7 +1163,7 @@ pub async fn period_list_count_expired_work_application_applicationId_process_pr
             &[&application_id, &process_id, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let cnt: i64 = if !rows.is_empty() {
         rows[0].get("cnt")
@@ -1198,7 +1198,7 @@ pub async fn period_list_count_expired_work_application_applicationId_unit_unit_
             &[&application_id, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1240,7 +1240,7 @@ pub async fn period_list_count_expired_work_unit_unit_person_person_by_applicati
             &[&person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1294,7 +1294,7 @@ pub async fn period_list_count_start_task_application_applicationId_process_proc
             &[&application_id, &process_id, &activity_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1333,7 +1333,7 @@ pub async fn period_list_count_start_task_application_applicationId_process_proc
             &[&application_id, &process_id, &activity_id, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let cnt: i64 = if !rows.is_empty() {
         rows[0].get("cnt")
@@ -1362,7 +1362,7 @@ pub async fn period_list_count_start_task_application_applicationId_process_proc
             &[&application_id, &process_id, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1410,7 +1410,7 @@ pub async fn period_list_count_start_task_application_applicationId_unit_unit_pe
             &[&application_id, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1457,7 +1457,7 @@ pub async fn period_list_count_start_task_unit_unit_person_person_by_application
             &[&person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1509,7 +1509,7 @@ pub async fn period_list_count_start_work_application_applicationId_process_proc
             &[&application_id, &process_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let cnt: i64 = if !rows.is_empty() {
         rows[0].get("cnt")
@@ -1536,7 +1536,7 @@ pub async fn period_list_count_start_work_application_applicationId_process_proc
             &[&application_id, &process_id, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let cnt: i64 = if !rows.is_empty() {
         rows[0].get("cnt")
@@ -1572,7 +1572,7 @@ pub async fn period_list_count_start_work_application_applicationId_unit_unit_pe
             &[&application_id, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1615,7 +1615,7 @@ pub async fn period_list_count_start_work_unit_unit_person_person_by_application
             &[&person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1662,7 +1662,7 @@ pub async fn period_list_expired_task_application(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1713,7 +1713,7 @@ pub async fn period_list_expired_task_unit(
             &[&unit_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1769,7 +1769,7 @@ pub async fn period_list_expired_work_application(
             &[&application_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1813,7 +1813,7 @@ pub async fn period_list_expired_work_unit(
             &[&unit_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1870,7 +1870,7 @@ pub async fn period_list_start_task_application(
             &[&application_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1921,7 +1921,7 @@ pub async fn period_list_start_task_unit(
             &[&unit_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1978,7 +1978,7 @@ pub async fn period_list_start_work_application(
             &[&application_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2022,7 +2022,7 @@ pub async fn period_list_start_work_unit(
             &[&unit_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2076,7 +2076,7 @@ pub async fn state_applicationtstubs_trigger(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total_works: i64 = if !total_works.is_empty() {
         total_works[0].get("cnt")
     } else {
@@ -2086,7 +2086,7 @@ pub async fn state_applicationtstubs_trigger(
     let pending_works = client
         .query("SELECT COUNT(*) as cnt FROM x_work WHERE work_status = 'pending' AND deleted_at IS NULL", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let pending_works: i64 = if !pending_works.is_empty() {
         pending_works[0].get("cnt")
     } else {
@@ -2096,7 +2096,7 @@ pub async fn state_applicationtstubs_trigger(
     let triggered_apps = client
         .query("SELECT COALESCE(application, '') AS application FROM x_work WHERE deleted_at IS NULL AND application IS NOT NULL GROUP BY application ORDER BY application", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = triggered_apps
         .iter()
@@ -2148,7 +2148,7 @@ pub async fn state_category(pool: Extension<Pool>) -> Result<Json<ActionResult<V
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2215,7 +2215,7 @@ pub async fn state_category_trigger(
             &[&category],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let row = if !rows.is_empty() {
         &rows[0]
@@ -2291,7 +2291,7 @@ pub async fn state_organization(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total_persons: i64 = row.get("persons");
     let total_units: i64 = row.get("units");
     let total_groups: i64 = row.get("grps");
@@ -2328,7 +2328,7 @@ pub async fn state_running(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let task_row = client
         .query_one(
             "SELECT COUNT(*) FILTER (WHERE task_status = 'pending') AS pending, \
@@ -2338,7 +2338,7 @@ pub async fn state_running(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let pending_works: i64 = work_row.get("pending");
     let processing_works: i64 = work_row.get("processing");
@@ -2391,7 +2391,7 @@ pub async fn state_summary(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let task_row = client
         .query_one(
             "SELECT COUNT(*) AS total, \
@@ -2402,7 +2402,7 @@ pub async fn state_summary(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let total_works: i64 = work_row.get("total");
     let completed_works: i64 = work_row.get("completed");
@@ -2573,7 +2573,7 @@ async fn period_count_query_shaped(
     let rows = client
         .query(sql.as_str(), &params)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match group {
         Some(_) => {
@@ -3333,7 +3333,7 @@ pub async fn state_category_trigger_all(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()

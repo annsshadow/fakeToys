@@ -49,7 +49,7 @@ pub async fn get_express_config(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let count: i64 = row.get("cnt");
 
     let data = Value::Object(serde_json::Map::from_iter([
@@ -78,7 +78,7 @@ pub async fn list_organization_units(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -126,7 +126,7 @@ pub async fn sync_organization_data(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let count: i64 = row.get("cnt");
 
     let data = Value::Object(serde_json::Map::from_iter([

@@ -56,7 +56,7 @@ pub async fn get_control_config(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let count: i64 = row.map(|r| r.get("cnt")).unwrap_or(0);
     let enabled = count > 0;
@@ -85,7 +85,7 @@ pub async fn list_control_panels(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -139,7 +139,7 @@ pub async fn update_control_config(
             &[&id, &name, &"", &"system"],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -161,7 +161,7 @@ pub async fn list_control_applications(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -211,7 +211,7 @@ pub async fn list_hotpics(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -259,7 +259,7 @@ pub async fn get_hotpic(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -310,7 +310,7 @@ pub async fn create_hotpic(
             &[&id, &title, &image_url, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
@@ -341,7 +341,7 @@ pub async fn save_hotpic(
             &[&title, &image_url, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("hotpic not found")));
@@ -373,7 +373,7 @@ pub async fn delete_hotpic(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error(
@@ -401,7 +401,7 @@ pub async fn cipher_hotpic_bbs_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -442,7 +442,7 @@ pub async fn cipher_hotpic_cms_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -484,7 +484,7 @@ pub async fn cipher_hotpic_filter_list_page_page_count_count(
             &[&offset, &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -531,7 +531,7 @@ pub async fn cipher_hotpic_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -592,7 +592,7 @@ pub async fn user_hotpic_changeTitle(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .map(|r| r.get::<_, Option<String>>("creator").unwrap_or_default());
     let owner = match owner {
         Some(o) if !o.is_empty() => o,
@@ -606,7 +606,7 @@ pub async fn user_hotpic_changeTitle(
             &[&title, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("hotpic not found")));
@@ -643,7 +643,7 @@ pub async fn user_hotpic_exists_check(
             &[&person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let count: i64 = row.get("cnt");
     Ok(Json(ActionResult::success(Value::Bool(count > 0))))
@@ -662,7 +662,7 @@ pub async fn user_hotpic_filter_list_page_page_count_count(
             &[&offset, &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -709,7 +709,7 @@ pub async fn user_hotpic_application_infoId(
             &[&info_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -758,7 +758,7 @@ pub async fn user_hotpic_id(
                 &[&id],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
             .map(|r| r.get::<_, Option<String>>("creator").unwrap_or_default());
         let owner = match owner {
             Some(o) if !o.is_empty() => o,
@@ -778,7 +778,7 @@ pub async fn user_hotpic_id(
                 &[&id],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         return Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(id)),
@@ -794,7 +794,7 @@ pub async fn user_hotpic_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -840,7 +840,7 @@ pub async fn user_hotpic_delete_by_ids(
             &[&ids],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),

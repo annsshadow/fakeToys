@@ -15,7 +15,7 @@ pub async fn get_status(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
     let count: i64 = client
         .query_one("SELECT COUNT(*) FROM x_correlation", &[])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get("count");
 
     let data = Value::Object(serde_json::Map::from_iter([
@@ -39,7 +39,7 @@ pub async fn sync_correlation(
     let synced: i64 = client
         .query_one("SELECT COUNT(*) FROM x_correlation", &[])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get("count");
 
     let data = Value::Object(serde_json::Map::from_iter([

@@ -77,7 +77,7 @@ async fn u2_gate_by_sql(
     let row = client
         .query_opt(sql, &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         None => Ok(U2Gate::NotFound),
         Some(r) => {
@@ -265,7 +265,7 @@ async fn attachment_download_base64(pool: &Pool, id: &str) -> ApiResult {
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(r) => {
             let content: Option<Vec<u8>> = r.get("content");
@@ -369,7 +369,7 @@ async fn attachment_upload_store(
             ],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -398,7 +398,7 @@ pub async fn picture_encode(Path(size): Path<u32>, Json(body): Json<Value>) -> A
     let mut png: Vec<u8> = Vec::new();
     scaled
         .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             (
@@ -437,7 +437,7 @@ pub async fn picture_section_icon(
     let mut png: Vec<u8> = Vec::new();
     icon_png
         .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let client = shared::db::acquire(&pool).await?;
     let exists: bool = client
         .query_one(
@@ -445,7 +445,7 @@ pub async fn picture_section_icon(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
     if !exists {
         return Err(AppError::NotFound);
@@ -457,7 +457,7 @@ pub async fn picture_section_icon(
             &[&id, &stored],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -479,7 +479,7 @@ pub async fn section_syn(pool: Extension<Pool>) -> ApiResult {
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .iter()
         .map(|r| r.get::<_, Option<String>>(0).unwrap_or_default())
         .filter(|n| !n.is_empty())
@@ -490,7 +490,7 @@ pub async fn section_syn(pool: Extension<Pool>) -> ApiResult {
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .iter()
         .map(|r| r.get::<_, Option<String>>(0).unwrap_or_default())
         .collect();
@@ -562,7 +562,7 @@ async fn set_topic_flag(
             let affected = client
                 .execute(sql.as_str(), &[&value, &id])
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
@@ -622,7 +622,7 @@ pub async fn u2_subject_get(pool: Extension<Pool>, Path(id): Path<String>) -> Ap
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(r) => {
             let map = serde_json::Map::from_iter([
@@ -731,7 +731,7 @@ pub async fn u2_subject_save(
             ],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -764,13 +764,13 @@ pub async fn u2_subject_accept_reply(
                     &[&reply_id, &id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             tx.execute(
                 "UPDATE x_bbs_reply SET accepted = true WHERE id = $1 AND deleted_at IS NULL",
                 &[&reply_id],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             tx.commit().await?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
@@ -805,7 +805,7 @@ pub async fn u2_subject_unaccept_reply(
                     &[&id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
                 .and_then(|r| r.get::<_, Option<String>>("accept_reply_id"));
             if prev.is_none() {
                 tx.commit().await?;
@@ -821,14 +821,14 @@ pub async fn u2_subject_unaccept_reply(
                 &[&id],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             if let Some(prev_id) = prev {
                 tx.execute(
                     "UPDATE x_bbs_reply SET accepted = false WHERE id = $1",
                     &[&prev_id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             }
             tx.commit().await?;
             Ok(Json(ActionResult::success(Value::Object(
@@ -860,7 +860,7 @@ pub async fn u2_subject_soft_delete(
                     &[&id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(affected > 0))]),
             ))))
@@ -892,7 +892,7 @@ pub async fn u2_subject_change_section(
                     &[&section_id, &section_name, &id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
@@ -931,13 +931,13 @@ pub async fn u2_vote_submit(
         &[&record_id, &topic_id, &person, &option_id, &option_name],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.execute(
         "UPDATE x_bbs_topic SET vote_count = vote_count + 1 WHERE id = $1 AND deleted_at IS NULL",
         &[&topic_id],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -969,14 +969,14 @@ pub async fn u2_voterecord_list(
             &[&topic_id, &count, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total_row = client
         .query_one(
             "SELECT COUNT(*) FROM x_bbs_vote_record WHERE topic_id = $1",
             &[&topic_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|r| {
@@ -1035,14 +1035,14 @@ pub async fn u2_my_subject_list(
             &[&person, &count, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total_row = client
         .query_one(
             "SELECT COUNT(*) FROM x_bbs_topic WHERE deleted_at IS NULL AND (creator = $1 OR author_id = $1)",
             &[&person],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|r| {
@@ -1105,14 +1105,14 @@ pub async fn u2_my_reply_list(
             &[&person, &count, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total_row = client
         .query_one(
             "SELECT COUNT(*) FROM x_bbs_reply WHERE deleted_at IS NULL AND (creator = $1 OR author_id = $1)",
             &[&person],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|r| {
@@ -1164,7 +1164,7 @@ pub async fn u2_reply_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiR
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(r) => Ok(Json(ActionResult::success(Value::Object(
             serde_json::Map::from_iter([
@@ -1211,14 +1211,14 @@ pub async fn u2_reply_filter_list(
                     &[&topic_id, &count, &offset],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             let t = client
                 .query_one(
                     "SELECT COUNT(*) FROM x_bbs_reply WHERE deleted_at IS NULL AND topic_id = $1",
                     &[&topic_id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             (rows, t.get::<_, i64>(0))
         }
         None => {
@@ -1229,14 +1229,14 @@ pub async fn u2_reply_filter_list(
                     &[&count, &offset],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             let t = client
                 .query_one(
                     "SELECT COUNT(*) FROM x_bbs_reply WHERE deleted_at IS NULL",
                     &[],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             (rows, t.get::<_, i64>(0))
         }
     };
@@ -1297,7 +1297,7 @@ pub async fn u2_user_reply_save(
             &[&id, &topic_id, &content, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1334,13 +1334,13 @@ pub async fn u2_user_reply_accept(
                 &[&reply_id],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             tx.execute(
                 "UPDATE x_bbs_topic SET accept_reply_id = $1 WHERE id = $2 AND deleted_at IS NULL",
                 &[&reply_id, &subject_id],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             tx.commit().await?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
@@ -1371,7 +1371,7 @@ pub async fn u2_user_reply_delete(
                     &[&id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(affected > 0))]),
             ))))
@@ -1408,7 +1408,7 @@ pub async fn u2_user_forum_save(
             &[&id, &name, &description, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1434,7 +1434,7 @@ pub async fn u2_user_forum_delete(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(affected > 0))]),
     ))))
@@ -1482,7 +1482,7 @@ async fn query_sections(
     let rows = client
         .query(sql.as_str(), &[&param])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(rows.iter().map(section_row_to_value).collect())
 }
 
@@ -1562,7 +1562,7 @@ pub async fn u2_user_section_save(
             &[&id, &forum_id, &name, &parent_id, &description, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1589,7 +1589,7 @@ pub async fn u2_user_section_delete(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(affected > 0))]),
     ))))
@@ -1608,7 +1608,7 @@ pub async fn u2_user_section_delete_force(
     let affected = client
         .execute("DELETE FROM x_bbs_section WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(affected > 0))]),
     ))))
@@ -1655,7 +1655,7 @@ pub async fn u2_role_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiRe
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match rows.first() {
         Some(r) => Ok(Json(ActionResult::success(role_row_to_value(r)))),
         None => Ok(Json(ActionResult::error("role not found"))),
@@ -1673,7 +1673,7 @@ pub async fn u2_role_all(pool: Extension<Pool>) -> ApiResult {
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(role_row_to_value).collect();
     let total_data = data.len();
     Ok(Json(ActionResult::legacy_success(
@@ -1719,7 +1719,7 @@ pub async fn u2_role_save(
             ],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1746,7 +1746,7 @@ pub async fn u2_role_delete(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(affected > 0))]),
     ))))
@@ -1763,7 +1763,7 @@ async fn list_roles_by_column(pool: Extension<Pool>, column: &str, value: &str) 
     let rows = client
         .query(sql.as_str(), &[&value])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(role_row_to_value).collect();
     let total_data = data.len();
     Ok(Json(ActionResult::legacy_success(
@@ -1803,7 +1803,7 @@ async fn resolve_role_id(
                 &[&code],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         return Ok(row.map(|r| r.get::<_, String>("id")));
     }
     Ok(None)
@@ -1825,7 +1825,7 @@ async fn insert_bind(
             &[&id, &role_id, &object_type, &object_code, &object_name, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(())
 }
 
@@ -1979,7 +1979,7 @@ async fn binds_for_role(client: &PgClient, role_id: &str) -> Result<Vec<Value>, 
             &[&role_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(rows.iter().map(bind_row_to_value).collect())
 }
 
@@ -2022,7 +2022,7 @@ async fn roles_bound_to(
     let rows = client
         .query(sql.as_str(), &[&object_code])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(rows.iter().map(role_row_to_value).collect())
 }
 
@@ -2107,7 +2107,7 @@ pub async fn u2_permission_root(pool: Extension<Pool>) -> ApiResult {
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             (
@@ -2132,7 +2132,7 @@ async fn permissions_by_column(pool: Extension<Pool>, column: &str, value: &str)
     let rows = client
         .query(sql.as_str(), &[&value])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(permission_row_to_value).collect();
     let total_data = data.len();
     Ok(Json(ActionResult::legacy_success(
@@ -2209,7 +2209,7 @@ async fn query_settings(
                 .await
         }
     }
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(rows.iter().map(setting_row_to_value).collect())
 }
 
@@ -2279,7 +2279,7 @@ pub async fn u2_setting_update(
             &[&value, &name, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if affected == 0 {
         client
             .execute(
@@ -2287,7 +2287,7 @@ pub async fn u2_setting_update(
                 &[&id, &name, &code, &value, &creator],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     }
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2353,7 +2353,7 @@ pub async fn u2_userinfo_update_nick(
             &[&person],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match existing {
         Some(row) => {
             let id: String = row.get("id");
@@ -2363,7 +2363,7 @@ pub async fn u2_userinfo_update_nick(
                     &[&nickname, &id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("person".to_string(), Value::String(person)),
@@ -2380,7 +2380,7 @@ pub async fn u2_userinfo_update_nick(
                     &[&id, &person, &nickname],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("person".to_string(), Value::String(person)),
@@ -2421,7 +2421,7 @@ pub async fn u2_userinfo_filter(
                 .await
         }
     }
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|r| {
@@ -2512,7 +2512,7 @@ pub async fn u2_attachment_get(pool: Extension<Pool>, Path(id): Path<String>) ->
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match rows.first() {
         Some(r) => Ok(Json(ActionResult::success(attachment_row_to_value(r)))),
         None => Ok(Json(ActionResult::error("attachment not found"))),
@@ -2533,7 +2533,7 @@ pub async fn u2_attachment_list_by_subject(
             &[&subject_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(attachment_row_to_value).collect();
     let total_data = data.len();
     Ok(Json(ActionResult::legacy_success(
@@ -2562,7 +2562,7 @@ pub async fn u2_attachment_delete(
                     &[&id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(affected > 0))]),
             ))))
@@ -2581,7 +2581,7 @@ pub async fn u2_subjectattach_get(pool: Extension<Pool>, Path(id): Path<String>)
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match rows.first() {
         Some(r) => Ok(Json(ActionResult::success(attachment_row_to_value(r)))),
         None => Ok(Json(ActionResult::error("attachment not found"))),
@@ -2602,7 +2602,7 @@ pub async fn u2_subjectattach_list(
             &[&subject_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(attachment_row_to_value).collect();
     let total_data = data.len();
     Ok(Json(ActionResult::legacy_success(
@@ -2631,7 +2631,7 @@ pub async fn u2_subjectattach_base64(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(r) => {
             let content: Option<Vec<u8>> = r.get("content");
@@ -2676,7 +2676,7 @@ pub async fn u2_subjectattach_delete(
                     &[&id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(affected > 0))]),
             ))))
@@ -2703,7 +2703,7 @@ pub async fn u2_shutup_get_mine(
             &[&person],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows
         .iter()
         .map(|r| {
@@ -2753,7 +2753,7 @@ pub async fn u2_shutup_delete_admin(
     let affected = client
         .execute("DELETE FROM x_bbs_shutup WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(affected > 0))]),
     ))))
@@ -2774,7 +2774,7 @@ pub async fn u2_statgrade(
             &[&section_name, &subject_type],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let mut grades = serde_json::Map::new();
     let mut total = 0i64;
     for r in &rows {
@@ -2811,14 +2811,14 @@ pub async fn u2_subject_search_page(
                 &[&count, &offset],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         let total_row = client
             .query_one(
                 "SELECT COUNT(*) FROM x_bbs_topic WHERE deleted_at IS NULL",
                 &[],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         return search_response(&rows, total_row.get::<_, i64>(0));
     }
 
@@ -2832,7 +2832,7 @@ pub async fn u2_subject_search_page(
             &[&pattern, &count, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total_row = client
         .query_one(
             "SELECT COUNT(*) FROM x_bbs_topic \
@@ -2840,7 +2840,7 @@ pub async fn u2_subject_search_page(
             &[&pattern],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     search_response(&rows, total_row.get::<_, i64>(0))
 }
 
@@ -2931,11 +2931,11 @@ pub async fn u2_subject_listsubjectinfo_page(
     let total_row = client
         .query_one(count_sql.as_str(), &filter_params[..])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let rows = client
         .query(select_sql.as_str(), &filter_params[..])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()

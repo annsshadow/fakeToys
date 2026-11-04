@@ -114,8 +114,11 @@ fn mpweixin_client() -> &'static reqwest::Client {
 }
 
 fn mpweixin_config() -> Result<(String, String), AppError> {
-    let app_id = std::env::var("MPWEXIN_APP_ID").map_err(|_| AppError::Internal)?;
-    let app_secret = std::env::var("MPWEXIN_APP_SECRET").map_err(|_| AppError::Internal)?;
+    // O23：缺配置 → 503 并写明缺哪一项。
+    let app_id =
+        std::env::var("MPWEXIN_APP_ID").map_err(|_| AppError::missing_config("MPWEXIN_APP_ID"))?;
+    let app_secret = std::env::var("MPWEXIN_APP_SECRET")
+        .map_err(|_| AppError::missing_config("MPWEXIN_APP_SECRET"))?;
     Ok((app_id, app_secret))
 }
 
@@ -133,19 +136,27 @@ async fn mpweixin_openid(code: &str) -> Result<String, AppError> {
         ])
         .send()
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .json()
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let errcode = resp.get("errcode").and_then(|v| v.as_i64()).unwrap_or(-1);
     if errcode != 0 {
-        return Err(AppError::Internal);
+        return Err(AppError::internal_with_source(
+            concat!(file!(), ":", line!()),
+            format!("wechat oauth access_token errcode={errcode}"),
+        ));
     }
     resp.get("openid")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
-        .ok_or(AppError::Internal)
+        .ok_or_else(|| {
+            AppError::internal_with_source(
+                concat!(file!(), ":", line!()),
+                "wechat oauth access_token response missing openid",
+            )
+        })
 }
 
 /// 获取微信 access_token（带缓存）
@@ -182,21 +193,29 @@ async fn mpweixin_access_token() -> Result<String, AppError> {
         ])
         .send()
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .json()
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let errcode = resp.get("errcode").and_then(|v| v.as_i64()).unwrap_or(-1);
     if errcode != 0 {
-        return Err(AppError::Internal);
+        return Err(AppError::internal_with_source(
+            concat!(file!(), ":", line!()),
+            format!("wechat cgi-bin/token errcode={errcode}"),
+        ));
     }
 
     let token = resp
         .get("access_token")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
-        .ok_or(AppError::Internal)?;
+        .ok_or_else(|| {
+            AppError::internal_with_source(
+                concat!(file!(), ":", line!()),
+                "wechat cgi-bin/token response missing access_token",
+            )
+        })?;
 
     {
         let mut guard = cache.lock().unwrap();
@@ -223,7 +242,7 @@ async fn mpweixin_login_or_create(
             &[&unique_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(r) => {
@@ -301,7 +320,7 @@ pub async fn mpweixin_bind_code(
             &[&openid, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(
         serde_json::json!({ "value": true }),
@@ -332,7 +351,7 @@ pub async fn mpweixin_bind_openid(
             &[&openid, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if affected == 0 {
         return Ok(Json(ActionResult::error("user not found")));
@@ -402,10 +421,10 @@ pub async fn mpweixin_test_send(
         }))
         .send()
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .json()
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let errcode = send_resp
         .get("errcode")

@@ -22,7 +22,7 @@ pub async fn file_get(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -72,7 +72,7 @@ pub async fn file_download(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(_) => Ok(Json(ActionResult::success(Value::Object(
@@ -130,7 +130,7 @@ pub async fn file_delete(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("file not found")));
@@ -145,7 +145,7 @@ pub async fn file_delete(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(flag))]),

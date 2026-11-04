@@ -141,7 +141,7 @@ pub(crate) async fn named_list_response(
     let rows = client
         .query(sql, &[&flags])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
     Ok(AxumJson(ActionResult::legacy_success(
         named_list(key, &list),
@@ -212,7 +212,7 @@ pub(crate) async fn resolve_person_ids(
             &[&flags],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(rows.iter().map(|r| r.get("id")).collect())
 }
 
@@ -234,7 +234,7 @@ pub async fn person_auth_info_flag(
             &[&pid],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let group_rows = client
         .query(
@@ -243,7 +243,7 @@ pub async fn person_auth_info_flag(
             &[&pid],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let role_rows = client
         .query(
@@ -254,7 +254,7 @@ pub async fn person_auth_info_flag(
             &[&pid],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let person_rows = client
         .query(
@@ -262,7 +262,7 @@ pub async fn person_auth_info_flag(
             &[&pid],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if person_rows.is_empty() {
         return ok_json(Value::Object(serde_json::Map::new()));
     }
@@ -298,7 +298,7 @@ pub async fn person_nick_name_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match rows.first() {
         // W12 收敛：对齐 o2server ActionGetNickName——查无 person 时回退 value=flag
         // （Wo extends WrapString，恒有 value 键）
@@ -329,7 +329,7 @@ pub async fn person_mobile_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match rows.first() {
         None => ok_json(Value::Object(serde_json::Map::new())),
         Some(row) => ok_json(row_to_map(row)),
@@ -357,7 +357,7 @@ async fn person_batch(
             &[&flags],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
     ok_legacy_list(data.len(), data)
 }
@@ -390,7 +390,7 @@ pub async fn person_list_all(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let list: Vec<Value> = rows
         .iter()
         .map(|r| Value::String(r.get::<_, String>("id")))
@@ -409,7 +409,7 @@ pub async fn person_list_all_object(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
     ok_legacy_list(data.len(), data)
 }
@@ -439,7 +439,7 @@ pub async fn person_has_role(
             &[&persons, &roles],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let list: Vec<Value> = rows
         .iter()
         .map(|r| Value::String(r.get::<_, Option<String>>("id").unwrap_or_default()))
@@ -460,7 +460,7 @@ async fn identities_of_persons(pool: &Pool, flags: &[String]) -> Result<Vec<Stri
             &[&flags],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(rows.iter().map(|r| r.get("id")).collect())
 }
 
@@ -537,7 +537,7 @@ pub async fn person_list_filter_page_size(
             &[&name_like, &unit_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total: i64 = total_rows.get("cnt");
 
     let rows = client
@@ -549,7 +549,7 @@ pub async fn person_list_filter_page_size(
             &[&name_like, &unit_id, &size, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
     Ok(AxumJson(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -583,7 +583,7 @@ async fn identity_batch(
             &[&flags],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
     ok_legacy_list(data.len(), data)
 }

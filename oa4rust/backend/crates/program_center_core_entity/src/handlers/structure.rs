@@ -41,7 +41,7 @@ pub async fn structure_list(
         .limit(20)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -145,7 +145,7 @@ pub async fn structure_update(
     let model = entities::cte_structure::Entity::find_by_id(&id)
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
 
     if !is_admin(&pool, &session.person_unique).await {
@@ -223,7 +223,7 @@ pub async fn structure_delete(
     let model = entities::cte_structure::Entity::find_by_id(&id)
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
 
     if !is_admin(&pool, &session.person_unique).await {

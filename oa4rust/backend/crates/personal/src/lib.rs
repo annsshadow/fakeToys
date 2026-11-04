@@ -135,7 +135,7 @@ pub async fn edit_person(
             &[&name, &mobile, &email, &person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let updated = PersonInfo {
         id: person_id,

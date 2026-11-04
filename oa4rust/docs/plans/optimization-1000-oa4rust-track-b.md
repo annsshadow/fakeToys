@@ -771,3 +771,61 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 10. decode panic 族残部：`row.get::<String>` 裸读可空列的存量点（O9 修了 bbs sort/hotpic application/calendar detail 三处实证点，全仓仍有同类潜伏—— arity_probe/矩阵对有数据的表会逐个暴露）。
 11. ~~限流器整表写锁分片化~~（O12 判定不开轮：饱和上限 2.3 M rps，现实需求低约 2 个数量级，数据见「不开轮记录」；若未来单实例 QPS 显著上升再带基线重开）。
 
+## O23 可诊断性（第一步：产品代码）
+
+### 根因：为什么过去 500 一条 ERROR 都没有
+
+1. `impl IntoResponse for AppError` **完全没有日志**：错误只在最外层 `trace_middleware` 留一条
+   `warn!("server error", method, uri, status, request_id)`，**没有原始错误链**（`AppError` 的
+   `Display` 大多是固定文案，`Database`/`InternalAnyhow` 的真实 cause 也没进日志）。
+2. handler 里 **`.map_err(|_| AppError::Internal)` 把 source 当场丢弃**：全仓 **3895 处 / 137 个 .rs 文件**。
+   错误到 `IntoResponse` 时已经只剩一个不带任何信息的 `Internal` 变体。
+3. 外部连接器「没配」和「代码炸了」共用 `AppError::Internal`（500）：缺 `ANDFX_KEY` 这类部署问题
+   被当成代码缺陷报出去，既误导排查，又无法自动区分可重试/不可重试。
+
+**影响面**：种子化扫描 46 条 500 中 11 条完全无 ERROR（现基线 10 条），生产上只知道「500」，
+无法回答 method/path/trace id/根因；新写的类型错配也难以当天定位。
+
+### 修法
+
+1. **请求上下文注入**：`trace_middleware` 把 `method/path/trace_id(x-request-id)` 放进
+   `tokio::task_local! { REQUEST_CONTEXT }`，`IntoResponse` 在 5xx 时读回。
+2. **500 日志**：`IntoResponse` 对 500 打一条 `ERROR`（503 打 `WARN`），字段固定为
+   `method/path/trace_id/status/error/source`；响应体不变，`InternalWithSource` 对外仍是
+   `"internal server error"`，不泄内部信息。
+3. **不丢 source**：新增 `AppError::InternalWithSource { context, cause }` 与
+   `AppError::internal_with_source(ctx, source)`（`cause` 保存 `Debug` 形态，anyhow 会带完整
+   `Caused by` 链）；`context` 用 `concat!(file!(), ":", line!())` 标出出错点。
+4. **缺配置 → 503**：新增 `AppError::MissingConfig { item }`，响应 `message` 写明缺哪一项。
+   - 连接器：`ANDFX_KEY`/`ANDFX_ENTER_ID`、`ZWDINGDING_API_BASE`/`..._CORP_ACCESS_TOKEN`/
+     `..._APP_ACCESS_TOKEN`、`QYWX_CORP_ID`/`QYWX_APP_SECRET`、`WELINK_APP_KEY`/`WELINK_APP_SECRET`、
+     `MPWEXIN_APP_ID`/`MPWEXIN_APP_SECRET`；`oauth::provider_config` 同步改为 503。
+   - `organization/core/express/config|status`：`config_value` 是 **TEXT**，改为 `query_opt` +
+     `String` 读取 + `parse::<bool>()`。**缺行 → 503（`x_org_config.sync_enabled`）**；
+     **有行但值不是 true/false → 500 并带原始值/parse 错误**（真数据缺陷，不再伪装成「缺配置」）。
+
+### 命中数与例外（完整逐处清单见 `docs/plans/o23-internal-source-inventory.md`）
+
+| 项 | 数量 | 处理 |
+|---|---|---|
+| `.map_err(|_| AppError::Internal)` | 3895 处 / 137 文件 | 机械替换为带 `file:line` + source 的构造 |
+| 其中缺环境变量 | 7 处（andfx 2、zhengwudingding 3、mpweixin 2） | 改 `missing_config(<项名>)`（503） |
+| 其余统一替换 | 3888 处 | `internal_with_source(concat!(file!(), ":", line!()), e)` |
+| 手工补上下文 | 18 处（连接器 upstream `errcode`/缺字段、express 配置读取） | 同上，source 为说明串 |
+| 保留直接 `AppError::Internal` | 125 处 / 36 文件 | 例外：测试断言；无底层错误对象的 `ok_or` 不变量；生成器脚本非运行时代码 |
+
+### 验收与破坏实验（本地）
+
+- 新增 `shared::error::o23_tests` 4 条：source 保留、500 不泄露、缺配置 503 且带项名、
+  500 日志含 method/path/trace_id/source。
+- **破坏实验 A（丢 source）**：把 `source_for_log` 对 `InternalWithSource` 返回 `"-"` →
+  `five_hundred_logs_context_and_source` **FAILED**，原文
+  `日志缺原始 source 链: ... ERROR ... method=GET path=/api/demo trace_id=trace-123 status=500 error=internal server error source=-`；已还原。
+- **破坏实验 B（缺配置改回 500）**：把 `MissingConfig` 映射改回 500 →
+  `missing_config_maps_503_and_names_item` **FAILED**，`left: 500 right: 503`；已还原。
+- 本地：`cargo test -p shared o23_tests` 4/4 通过；`-p auth --lib` 100 passed；
+  `-p organization_core_express` 6 passed；`cargo fmt --all --check` 绿；
+  `cargo clippy --workspace --all-targets -- -D warnings` 零告警。
+- 已知无关失败：`cargo test -p shared --lib` 的 `shared::migrate` 用例在本地开发库因 019
+  历史 schema 漂移失败（与 O17/O18 记录同因，CI 用全新库，非本次改动引入）。
+

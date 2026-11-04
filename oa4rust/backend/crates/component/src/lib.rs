@@ -26,7 +26,7 @@ pub async fn list_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -105,7 +105,7 @@ pub async fn get_component(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -174,7 +174,7 @@ pub async fn count(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, A
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let count: i64 = row.get("cnt");
 
     Ok(Json(ActionResult::success(Value::Object(

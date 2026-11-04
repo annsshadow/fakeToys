@@ -36,7 +36,7 @@ pub async fn record_list(
         .limit(20)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -82,7 +82,7 @@ pub async fn rule_list(
         .limit(20)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -148,11 +148,12 @@ pub async fn record_create(
     let created = attendance_record::Entity::find_by_id(new_id.clone())
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or_else(|| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(
-        serde_json::to_value(created).map_err(|_| AppError::Internal)?,
+        serde_json::to_value(created)
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?,
     )))
 }
 
@@ -179,7 +180,7 @@ pub async fn record_update(
     let model = attendance_record::Entity::find_by_id(id.clone())
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or_else(|| AppError::NotFound)?;
 
     let mut active: ActiveModel = model.clone().into();
@@ -192,11 +193,12 @@ pub async fn record_update(
     let updated = attendance_record::Entity::find_by_id(id.clone())
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or_else(|| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(
-        serde_json::to_value(updated).map_err(|_| AppError::Internal)?,
+        serde_json::to_value(updated)
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?,
     )))
 }
 
@@ -211,7 +213,7 @@ pub async fn record_delete(
     let deleted = attendance_record::Entity::delete_by_id(id.clone())
         .exec(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if deleted.rows_affected == 0 {
         return Ok(Json(ActionResult::error("attendance record not found")));
@@ -270,11 +272,12 @@ pub async fn rule_create(
     let created = attendance_rule::Entity::find_by_id(new_id.clone())
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or_else(|| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(
-        serde_json::to_value(created).map_err(|_| AppError::Internal)?,
+        serde_json::to_value(created)
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?,
     )))
 }
 
@@ -306,7 +309,7 @@ pub async fn rule_update(
     let model = attendance_rule::Entity::find_by_id(id.clone())
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or_else(|| AppError::NotFound)?;
 
     let mut active: ActiveModel = model.clone().into();
@@ -330,11 +333,12 @@ pub async fn rule_update(
     let updated = attendance_rule::Entity::find_by_id(id.clone())
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or_else(|| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(
-        serde_json::to_value(updated).map_err(|_| AppError::Internal)?,
+        serde_json::to_value(updated)
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?,
     )))
 }
 
@@ -349,7 +353,7 @@ pub async fn rule_delete(
     let deleted = attendance_rule::Entity::delete_by_id(id.clone())
         .exec(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if deleted.rows_affected == 0 {
         return Ok(Json(ActionResult::error("attendance rule not found")));

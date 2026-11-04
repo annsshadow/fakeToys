@@ -83,7 +83,7 @@ pub async fn folder_list_top(
         .limit(50)
         .all(&db)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -138,7 +138,7 @@ pub async fn folder_list_with_folder(
         .limit(50)
         .all(&db)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -188,7 +188,7 @@ pub async fn file_list(
         .limit(50)
         .all(&db)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -239,7 +239,7 @@ pub async fn complex_top(
         .limit(20)
         .all(&db)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let folder_list: Vec<Value> = folder_models
         .iter()
@@ -274,7 +274,7 @@ pub async fn complex_top(
         .limit(20)
         .all(&db)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let attachment_list: Vec<Value> = file_models
         .iter()
@@ -356,7 +356,7 @@ pub async fn folder_delete(
     let model = file_folder::Entity::find_by_id(&id)
         .one(&db)
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
 
     let mut active: file_folder::ActiveModel = model.into();

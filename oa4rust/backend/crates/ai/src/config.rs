@@ -19,7 +19,7 @@ pub async fn config_get(pool: Extension<Pool>) -> Result<Json<ActionResult<Value
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data = if rows.is_empty() {
         Value::Object(serde_json::Map::from_iter([
@@ -119,7 +119,7 @@ pub async fn config_base_config(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data = if rows.is_empty() {
         Value::Object(serde_json::Map::from_iter([
@@ -159,7 +159,7 @@ pub async fn config_list_model_paging(
     let total_row = client
         .query_one("SELECT COUNT(*) as cnt FROM x_ai_model", &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total: i64 = total_row.get("cnt");
 
     let rows = client
@@ -168,7 +168,7 @@ pub async fn config_list_model_paging(
             &[&size, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -236,7 +236,7 @@ pub async fn config_get_model(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -303,7 +303,7 @@ pub async fn list_enable_model(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()

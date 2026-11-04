@@ -34,7 +34,7 @@ pub async fn role_list_object(
     let rows = client
         .query(SQL, &[&flags])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
     ok_legacy_list(data.len(), data)
 }
@@ -58,7 +58,7 @@ pub async fn role_list_person_object(
     let rows = client
         .query(SQL, &[&flags])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
     ok_legacy_list(data.len(), data)
 }
@@ -137,7 +137,7 @@ async fn duty_identities_by_unit_name(
     let rows = client
         .query(&final_sql, &[&units, &names])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     finish_duty_rows(rows, objects)
 }
 
@@ -189,7 +189,7 @@ async fn named_list_duty(
     let rows = client
         .query(sql, &[&flags])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let list: Vec<String> = rows.iter().map(|r| r.get(0)).collect();
     Ok(AxumJson(ActionResult::legacy_success(
         named_list("nameList", &list),
@@ -216,7 +216,7 @@ pub async fn unitduty_list_unit_object(
     let rows = client
         .query(SQL, &[&flags])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let data: Vec<Value> = rows.iter().map(row_to_map).collect();
     ok_legacy_list(data.len(), data)
 }
@@ -241,7 +241,7 @@ pub async fn unitduty_find_by_unit_name(
     let rows = client
         .query(SQL, &[&name, &unit])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match rows.first() {
         None => ok_json(Value::Null),
         Some(row) => ok_json(row_to_map(row)),

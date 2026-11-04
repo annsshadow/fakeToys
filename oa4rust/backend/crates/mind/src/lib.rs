@@ -43,7 +43,7 @@ async fn mind_owner_gate(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if let Some(row) = row {
         let owner: String = row.get::<_, Option<String>>("creator").unwrap_or_default();
         shared::middleware::require_owner(pool, session, &owner).await?;
@@ -134,7 +134,7 @@ pub async fn list_my_folders(pool: Extension<Pool>) -> Result<Json<ActionResult<
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -204,7 +204,7 @@ pub async fn list_versions_with_mind_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -333,7 +333,7 @@ pub async fn create_mind(
             &[&id, &name, &folder_id, &icon, &description, &creator, &creator_unit, &shared, &file_version],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -405,7 +405,7 @@ pub async fn update_mind(
             &[&name, &folder_id, &icon, &description, &shared, &file_version, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -431,7 +431,7 @@ pub async fn delete_mind(
     let count = client
         .execute("DELETE FROM mind_base_info WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if count == 0 {
         return Ok(Json(ActionResult::error("mind not found")));
@@ -489,7 +489,7 @@ pub async fn create_folder(
             &[&id, &name, &parent_id, &order_number, &description, &creator, &creator_unit],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -550,7 +550,7 @@ pub async fn update_folder(
             &[&name, &parent_id, &order_number, &description, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -576,7 +576,7 @@ pub async fn delete_folder(
     let count = client
         .execute("DELETE FROM mind_folder_info WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if count == 0 {
         return Ok(Json(ActionResult::error("folder not found")));
@@ -647,7 +647,7 @@ pub async fn create_version(
             &[&id, &mind_id, &name, &folder_id, &description, &creator, &creator_unit, &file_version, &shared],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([

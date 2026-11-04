@@ -64,7 +64,7 @@ async fn meeting_require_owner(
     let row = client
         .query_opt("SELECT creator FROM x_meeting WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if let Some(row) = row {
         let creator: String = row.get::<_, Option<String>>("creator").unwrap_or_default();
         shared::middleware::require_owner(pool, session, &creator).await?;
@@ -83,7 +83,7 @@ pub async fn room_list(
         .limit(20)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -180,7 +180,7 @@ pub async fn create_room(
     let m = active_model
         .insert(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object({
         let mut map = serde_json::Map::new();
@@ -216,7 +216,7 @@ pub async fn get_room(
     let model = meeting_room::Entity::find_by_id(&id)
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match model {
         Some(m) => {
@@ -317,7 +317,7 @@ pub async fn update_room(
             ],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if rows_affected == 0 {
         return Ok(Json(ActionResult::error("room not found")));
@@ -345,7 +345,7 @@ pub async fn delete_room(
     let rows_affected = client
         .execute("DELETE FROM x_meeting_room WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if rows_affected == 0 {
         return Ok(Json(ActionResult::error("room not found")));
@@ -370,7 +370,7 @@ pub async fn meeting_list(
         .limit(20)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -419,7 +419,7 @@ pub async fn meeting_list_by_room(
         .limit(20)
         .all(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = models
         .iter()
@@ -513,7 +513,7 @@ pub async fn create_meeting(
     let m = active_model
         .insert(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -541,7 +541,7 @@ pub async fn get_meeting(
     let model = meeting::Entity::find_by_id(&id)
         .one(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match model {
         Some(m) => {
@@ -618,7 +618,7 @@ pub async fn update_meeting(
             &[&title, &content, &start_time.to_string(), &end_time.to_string(), &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if rows_affected == 0 {
         return Ok(Json(ActionResult::error("meeting not found")));
@@ -647,7 +647,7 @@ pub async fn delete_meeting(
     let rows_affected = client
         .execute("DELETE FROM x_meeting WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if rows_affected == 0 {
         return Ok(Json(ActionResult::error("meeting not found")));

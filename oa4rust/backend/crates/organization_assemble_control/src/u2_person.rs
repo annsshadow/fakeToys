@@ -60,7 +60,7 @@ pub async fn person_get(pool: Extension<Pool>, Path(flag): Path<String>) -> Hand
     match client
         .query_opt(&sql, &[&pid])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     {
         Some(row) => ok(person_row_json(&row)),
         None => err("person not found"),
@@ -85,7 +85,7 @@ pub async fn person_create(
             &[&name],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if dup.is_some() {
         return err("person already exists");
     }
@@ -100,7 +100,7 @@ pub async fn person_create(
             &[&id, &name, &mobile, &email, &unit_id, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     ok(Value::Object(
         vec![
             ("id".to_string(), Value::String(id)),
@@ -142,7 +142,7 @@ pub async fn person_edit(
             &[&pid, &name, &mobile, &email, &unit_id, &pinyin],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if updated == 0 {
         return err("person not updated");
     }
@@ -179,7 +179,7 @@ async fn soft_delete_person(
             &[&pid],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Some(pid))
 }
 
@@ -231,14 +231,14 @@ pub async fn person_reserve_delete(
     ] {
         tx.execute(sql, &[&pid])
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     }
     tx.execute(
         "UPDATE x_org_person SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
         &[&pid],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
     ok(Value::Object(
         vec![("id".to_string(), Value::String(pid))]
@@ -267,7 +267,7 @@ async fn cursor_page(pool: &Pool, flag: &str, count: i64, next: bool) -> Handler
         client
             .query(&sql, &[&limit])
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else {
         let op = if next { ">" } else { "<" };
         let sql = format!(
@@ -276,7 +276,7 @@ async fn cursor_page(pool: &Pool, flag: &str, count: i64, next: bool) -> Handler
         client
             .query(&sql, &[&flag.to_string(), &limit])
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     };
     list_ok(rows.iter().map(person_row_json).collect())
 }
@@ -317,7 +317,7 @@ async fn persons_in_group(pool: &Pool, group_flag: &str, nested: bool) -> Handle
     let rows = client
         .query(&sql, &[&group_flag.to_string()])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     list_ok(rows.iter().map(person_row_json).collect())
 }
 
@@ -352,7 +352,7 @@ pub async fn person_list_with_role(
     let rows = client
         .query(&sql, &[&role_flag])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     list_ok(rows.iter().map(person_row_json).collect())
 }
 
@@ -369,7 +369,7 @@ pub async fn person_list_pinyininitial(
         let rows = client
             .query(&sql, &[])
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         return list_ok_legacy(rows.iter().map(person_row_json).collect());
     }
     let sql = format!(
@@ -379,7 +379,7 @@ pub async fn person_list_pinyininitial(
     let rows = client
         .query(&sql, &[&initials])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     list_ok_legacy(rows.iter().map(person_row_json).collect())
 }
 
@@ -393,7 +393,7 @@ pub async fn person_list_like(pool: Extension<Pool>, Json(body): Json<Value>) ->
         let rows = client
             .query(&sql, &[])
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         return list_ok_legacy(rows.iter().map(person_row_json).collect());
     }
     let pattern = format!("%{}%", shared::db::escape_like(&key));
@@ -403,7 +403,7 @@ pub async fn person_list_like(pool: Extension<Pool>, Json(body): Json<Value>) ->
     let rows = client
         .query(&sql, &[&pattern])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     list_ok_legacy(rows.iter().map(person_row_json).collect())
 }
 
@@ -419,7 +419,7 @@ pub async fn person_list_like_pinyin(
         let rows = client
             .query(&sql, &[])
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         return list_ok_legacy(rows.iter().map(person_row_json).collect());
     }
     let pattern = format!("{}%", shared::db::escape_like(&key.to_lowercase()));
@@ -430,7 +430,7 @@ pub async fn person_list_like_pinyin(
     let rows = client
         .query(&sql, &[&pattern])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     list_ok_legacy(rows.iter().map(person_row_json).collect())
 }
 
@@ -460,7 +460,7 @@ pub async fn person_set_password(
             &[&pid, &value],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     ok(Value::Bool(true))
 }
 
@@ -491,7 +491,7 @@ pub async fn person_reset_password(
             &[&pid],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     ok(Value::Object(
         vec![("value".to_string(), Value::Bool(true))]
             .into_iter()
@@ -529,7 +529,7 @@ pub async fn person_get_icon(pool: Extension<Pool>, Path(flag): Path<String>) ->
             &[&pid],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     {
         Some(row) => {
             let icon: Option<String> = row.try_get(0).ok().flatten();
@@ -558,7 +558,7 @@ pub async fn person_set_icon(
             &[&pid, &icon],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if updated == 0 {
         return err("person not updated");
     }
@@ -599,7 +599,7 @@ pub async fn person_lock(
             &[&pid, &desc, &lock_expired_time],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     ok(Value::Bool(true))
 }
 
@@ -620,7 +620,7 @@ pub async fn person_unlock(
             &[&pid],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     ok(Value::Bool(true))
 }
 
@@ -641,7 +641,7 @@ pub async fn person_ban(
             &[&pid],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     ok(Value::Bool(true))
 }
 
@@ -662,7 +662,7 @@ pub async fn person_unban(
             &[&pid],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     ok(Value::Bool(true))
 }
 
@@ -687,7 +687,7 @@ pub async fn person_set_password_expired_time(
             &[&pid, &date_value],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     ok(Value::Bool(true))
 }
 
@@ -720,7 +720,7 @@ pub async fn person_list_filter_paging(
     let total_row = client
         .query_one(&total_sql, &[&name, &mobile, &email, &status, &unit_flag])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total: i64 = total_row.get("cnt");
 
     let data_sql = format!(
@@ -732,7 +732,7 @@ pub async fn person_list_filter_paging(
             &[&name, &mobile, &email, &status, &unit_flag, &size, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows.iter().map(person_row_json).collect();
     ok(Value::Object(
@@ -763,7 +763,7 @@ pub async fn person_list_delete_paging(
     let rows = client
         .query(&sql, &[&size, &offset])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     list_ok(rows.iter().map(person_row_json).collect())
 }
 
@@ -777,7 +777,7 @@ pub async fn threemember_list(pool: Extension<Pool>) -> HandlerResult {
     let rows = client
         .query(&sql, &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     list_ok_legacy(rows.iter().map(person_row_json).collect())
 }
 

@@ -57,7 +57,7 @@ async fn person_can_manage_mind(
             &[&mind_id.to_string()],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(match row {
         Some(r) => {
             let owner: Option<String> = r.get("creator");
@@ -89,7 +89,7 @@ pub async fn folder_delete(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if n == 0 {
         return Ok(Json(ActionResult::error(
             "folder not found or already deleted",
@@ -122,7 +122,7 @@ pub async fn mind_filter_list(
             &[&id, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let items: Vec<Value> = rows.iter().map(mind_row_to_value).collect();
     let total_items = items.len();
     Ok(Json(ActionResult::legacy_success(
@@ -156,7 +156,7 @@ pub async fn mind_filter_received(
             &[&me, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let items: Vec<Value> = rows.iter().map(mind_row_to_value).collect();
     let total_items = items.len();
     Ok(Json(ActionResult::legacy_success(
@@ -189,7 +189,7 @@ pub async fn mind_filter_recycle(
             &[&me, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let items: Vec<Value> = rows.iter().map(mind_row_to_value).collect();
     let total_items = items.len();
     Ok(Json(ActionResult::legacy_success(
@@ -222,7 +222,7 @@ pub async fn mind_filter_shared(
             &[&me, &offset],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let items: Vec<Value> = rows.iter().map(mind_row_to_value).collect();
     let total_items = items.len();
     Ok(Json(ActionResult::legacy_success(
@@ -243,7 +243,7 @@ pub async fn mind_share_records(pool: Extension<Pool>, Path(id): Path<String>) -
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let items: Vec<Value> = rows
         .iter()
         .map(|r| {
@@ -274,7 +274,7 @@ pub async fn mind_version_list(pool: Extension<Pool>, Path(id): Path<String>) ->
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let items: Vec<Value> = rows
         .iter()
         .map(|r| {
@@ -315,7 +315,7 @@ pub async fn mind_recycle(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if n == 0 {
         return Ok(Json(ActionResult::error(
             "mind not found or already recycled",
@@ -345,7 +345,7 @@ pub async fn mind_restore(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if n == 0 {
         return Ok(Json(ActionResult::error(
             "mind not found or not in recycle",
@@ -420,7 +420,7 @@ pub async fn mind_save(
                     ],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             if n > 0 {
                 // 记录版本
                 let vid = uuid::Uuid::new_v4().to_string();
@@ -430,7 +430,7 @@ pub async fn mind_save(
                         &[&eid],
                     )
                     .await
-                    .map_err(|_| AppError::Internal)?
+                    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
                     .get("v");
                 tx.execute(
                     "INSERT INTO x_mind_version_info (id, mind_id, name, file_version, creator, creator_unit, description, create_time) \
@@ -438,7 +438,7 @@ pub async fn mind_save(
                     &[&vid, &eid, &name, &ver, &person, &body.get("creatorUnit").and_then(|v| v.as_str()).map(|s| s.to_string()), &description],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
                 tx.commit().await?;
                 return Ok(Json(ActionResult::success(
                     json!({ "id": eid, "updated": n, "fileVersion": ver }),
@@ -469,7 +469,7 @@ pub async fn mind_save(
             ],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(json!({
         "id": id,
         "name": name,
@@ -508,11 +508,11 @@ pub async fn mind_share(
             &[&sid, &id, &person],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     client
         .execute("UPDATE x_mind SET shared = true WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(
         json!({ "id": sid, "mindId": id, "person": person }),
     )))
@@ -543,7 +543,7 @@ pub async fn mind_share_cancel(
             &[&id, &person],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Json(ActionResult::success(json!({ "canceled": n }))))
 }
 
@@ -558,7 +558,7 @@ pub async fn mind_version_get(pool: Extension<Pool>, Path(id): Path<String>) -> 
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(r) => Ok(Json(ActionResult::success(json!({
             "id": r.get::<_, String>("id"),
@@ -583,7 +583,7 @@ pub async fn mind_view(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResu
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(r) => Ok(Json(ActionResult::success(mind_row_to_value(&r)))),
         None => Ok(Json(ActionResult::error("mind not found"))),
@@ -602,7 +602,7 @@ pub async fn mind_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResul
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(r) => Ok(Json(ActionResult::success(mind_row_to_value(&r)))),
         None => Ok(Json(ActionResult::error("mind not found"))),
@@ -625,7 +625,7 @@ pub async fn mind_destroy(
     let n = client
         .execute("DELETE FROM x_mind WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if n == 0 {
         return Ok(Json(ActionResult::error("mind not found")));
     }
@@ -653,7 +653,7 @@ pub async fn mind_destroy_recycle(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if n == 0 {
         return Ok(Json(ActionResult::error("mind not found in recycle")));
     }
@@ -672,7 +672,7 @@ pub async fn mind_icon_get(pool: Extension<Pool>, Path(id): Path<String>) -> Api
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(r) => {
             let icon: Option<String> = r.get("icon");
@@ -710,7 +710,7 @@ pub async fn mind_icon_set(
             &[&id, &icon],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if n == 0 {
         return Ok(Json(ActionResult::error("mind not found")));
     }

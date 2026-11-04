@@ -65,7 +65,7 @@ pub async fn get_ai_control_config(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -195,7 +195,7 @@ pub async fn list_ai_models(pool: Extension<Pool>) -> Result<Json<ActionResult<V
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -241,7 +241,7 @@ pub async fn ann_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -409,7 +409,7 @@ pub async fn update_ai_control_config(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = if existing.is_some() {
         client
@@ -418,7 +418,7 @@ pub async fn update_ai_control_config(
                 &[&name, &default_model, &temperature, &max_tokens, &enabled],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else {
         let id = uuid::Uuid::new_v4().to_string();
         client
@@ -427,7 +427,7 @@ pub async fn update_ai_control_config(
                 &[&id, &name, &default_model, &temperature, &max_tokens, &enabled, &"system"],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     };
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -446,13 +446,13 @@ pub async fn get_usage_stats(pool: Extension<Pool>) -> Result<Json<ActionResult<
     let file_count: i64 = client
         .query_one("SELECT COUNT(*) as cnt FROM x_ai_file", &[])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get("cnt");
 
     let index_count: i64 = client
         .query_one("SELECT COUNT(*) as cnt FROM x_ai_index", &[])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get("cnt");
 
     let total = file_count + index_count;
@@ -521,7 +521,7 @@ pub async fn config_base_config(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -620,7 +620,7 @@ pub async fn config_create_mcp(
             &[&id, &name, &url, &enabled, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
@@ -672,7 +672,7 @@ pub async fn config_create_model(
             &[&id, &name, &url, &enabled, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
@@ -697,7 +697,7 @@ pub async fn config_delete_mcp_flag(
     let result = client
         .execute("DELETE FROM x_ai_mcp_config WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("mcp config not found")));
@@ -723,7 +723,7 @@ pub async fn config_delete_model_flag(
     let result = client
         .execute("DELETE FROM x_ai_model_config WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("model config not found")));
@@ -749,7 +749,7 @@ pub async fn config_get_mcp_ext_flag(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -803,7 +803,7 @@ pub async fn config_get_mcp_flag(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -856,7 +856,7 @@ pub async fn config_get_model_flag(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -914,7 +914,7 @@ pub async fn config_list_enable_model(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -986,7 +986,7 @@ pub async fn config_list_mcp_paging_page_size_size(
     let rows = client
         .query(&sql, &[&offset, &size])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1049,7 +1049,7 @@ pub async fn config_list_model_paging_page_size_size(
     let rows = client
         .query(&sql, &[&offset, &size])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1148,7 +1148,7 @@ pub async fn config_save(
     let existing = client
         .query_opt("SELECT id FROM x_ai_mcp_config WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = if existing.is_some() {
         client
@@ -1157,7 +1157,7 @@ pub async fn config_save(
                 &[&name, &url, &default_model, &temperature, &max_tokens, &enabled, &id],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else {
         let new_id = if id.is_empty() {
             uuid::Uuid::new_v4().to_string()
@@ -1170,7 +1170,7 @@ pub async fn config_save(
                 &[&new_id, &name, &url, &default_model, &temperature, &max_tokens, &enabled, &creator],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     };
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -1229,7 +1229,7 @@ pub async fn config_update_mcp_flag(
             &[&name, &url, &enabled, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("mcp config not found")));
@@ -1275,7 +1275,7 @@ pub async fn config_update_model_flag(
             &[&name, &url, &enabled, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("model config not found")));
@@ -1322,7 +1322,7 @@ pub async fn file_copy_file(
             &[&new_id, &new_name, &creator, &source_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1347,7 +1347,7 @@ pub async fn file_delete_flag(
     let owner: Option<String> = client
         .query_opt("SELECT creator FROM x_ai_file WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .map(|r| r.get::<_, Option<String>>("creator").unwrap_or_default());
     let owner = match owner {
         Some(o) if !o.is_empty() => o,
@@ -1357,7 +1357,7 @@ pub async fn file_delete_flag(
     let result = client
         .execute("DELETE FROM x_ai_file WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("file not found")));
@@ -1414,7 +1414,7 @@ pub async fn file_list_with_ids(
             &[&ids],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1482,7 +1482,7 @@ pub async fn file_list_paging_page_size_size(
             &[&offset, &size],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1568,7 +1568,7 @@ pub async fn file_upload(
             &[&id, &name, &file_name, &file_size, &file_type, &enabled, &creator],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1619,7 +1619,7 @@ pub async fn file_flag(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1680,7 +1680,7 @@ pub async fn file_id_download(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1726,7 +1726,7 @@ pub async fn file_id_download_scale(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(_) => {
@@ -1760,7 +1760,7 @@ pub async fn index_cms_doc_with_app_appId(
             &[&app_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1803,7 +1803,7 @@ pub async fn index_cms_doc_docId(
             &[&doc_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1846,7 +1846,7 @@ pub async fn index_delete_flag(
     let owner: Option<String> = client
         .query_opt("SELECT creator FROM x_ai_index WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .map(|r| r.get::<_, Option<String>>("creator").unwrap_or_default());
     let owner = match owner {
         Some(o) if !o.is_empty() => o,
@@ -1856,7 +1856,7 @@ pub async fn index_delete_flag(
     let result = client
         .execute("DELETE FROM x_ai_index WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("index not found")));
@@ -1884,7 +1884,7 @@ pub async fn index_list_paging_page_size_size(
             &[&offset, &size],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1943,7 +1943,7 @@ pub async fn index_sync_to_knowledge(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1962,7 +1962,8 @@ fn ai_client() -> &'static reqwest::Client {
 }
 
 async fn call_llm(messages: &[ChatMessage]) -> Result<String, AppError> {
-    let api_key = std::env::var("AI_API_KEY").map_err(|_| AppError::Internal)?;
+    let api_key = std::env::var("AI_API_KEY")
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let api_base =
         std::env::var("AI_API_BASE").unwrap_or_else(|_| "https://api.openai.com/v1".to_string());
     let model = std::env::var("AI_MODEL").unwrap_or_else(|_| "gpt-4".to_string());
@@ -1981,9 +1982,12 @@ async fn call_llm(messages: &[ChatMessage]) -> Result<String, AppError> {
         .json(&body)
         .send()
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
-    let value: Value = resp.json().await.map_err(|_| AppError::Internal)?;
+    let value: Value = resp
+        .json()
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     value["choices"][0]["message"]["content"]
         .as_str()
         .map(|s| s.to_string())
@@ -2025,7 +2029,7 @@ pub async fn chat_completion(
             &[&conversation_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let owners: Vec<String> = owner_rows
         .iter()
@@ -2052,7 +2056,7 @@ pub async fn chat_completion(
             &[&conversation_id, &context_window],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let history: Vec<ChatMessage> = history_rows
         .iter()
@@ -2075,7 +2079,7 @@ pub async fn chat_completion(
             ],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     // 当前请求消息 + 历史作为完整上下文
     let mut full_messages = history.clone();
@@ -2099,7 +2103,7 @@ pub async fn chat_completion(
             ],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     // 响应 messages：历史 + 最新 user 消息 + 最新回复
     let mut response_messages: Vec<Value> = history
@@ -2163,7 +2167,7 @@ async fn process_chat_request(
             &[&conversation_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let owners: Vec<String> = owner_rows
         .iter()
@@ -2189,7 +2193,7 @@ async fn process_chat_request(
             &[&conversation_id, &context_window],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let history: Vec<ChatMessage> = history_rows
         .iter()
@@ -2212,7 +2216,7 @@ async fn process_chat_request(
             ],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let mut full_messages = history.clone();
     full_messages.extend(req.messages.iter().cloned());
@@ -2263,7 +2267,7 @@ async fn call_llm_stream(messages: &[ChatMessage]) -> Result<LlmTokenStream, App
         .json(&body)
         .send()
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if !resp.status().is_success() {
         return Err(AppError::Internal);
@@ -2387,7 +2391,7 @@ async fn u2_normalized_name_dup(
     let cnt: i64 = client
         .query_one(&sql, &[&norm])
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
     Ok(cnt > 0)
 }
@@ -2428,7 +2432,7 @@ pub async fn chat_list_paging_page_size_size(
     let rows = client
         .query(&sql, &[&session.person_unique, &offset, &size])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2484,7 +2488,7 @@ pub async fn chat_list_completion_clue_id_paging_page_size_size(
     let rows = client
         .query(&sql, &[&clue_id, &offset, &size])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2537,7 +2541,7 @@ pub async fn chat_delete_clue_id(
             &[&clue_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .map(|row| row.get("user_id"));
 
     match owner {
@@ -2563,7 +2567,7 @@ pub async fn chat_delete_clue_id(
             &[&clue_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let clue = tx
         .execute(
@@ -2571,7 +2575,7 @@ pub async fn chat_delete_clue_id(
             &[&clue_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -2619,7 +2623,7 @@ pub async fn chat_write_completion_extra(
             &[&id, &extra_text],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if updated == 0 {
         return Err(AppError::NotFound);

@@ -100,7 +100,7 @@ pub async fn create(
             &[&req.to_person],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if to_exists.is_none() {
         return Ok(Json(ActionResult::error("to_person not found")));
     }
@@ -115,7 +115,7 @@ pub async fn create(
             &[&id, &from_person, &req.to_person, &role_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let info = EmpowerInfo {
         id: id.clone(),
@@ -146,7 +146,7 @@ pub async fn get(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
 
     check_owner(
@@ -187,7 +187,7 @@ pub async fn update(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
 
     let from_person: String = row.get("from_person");
@@ -202,7 +202,7 @@ pub async fn update(
             &[&new_role_id, &new_enabled, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let info = EmpowerInfo {
         id,
@@ -232,7 +232,7 @@ pub async fn delete(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
 
     let from_person: String = row.get("from_person");
@@ -244,7 +244,7 @@ pub async fn delete(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(
         serde_json::json!({ "success": true }),
@@ -268,7 +268,7 @@ pub async fn enable(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
 
     let from_person: String = row.get("from_person");
@@ -280,7 +280,7 @@ pub async fn enable(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let info = EmpowerInfo {
         id: row.get("id"),
@@ -311,7 +311,7 @@ pub async fn disable(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
 
     let from_person: String = row.get("from_person");
@@ -323,7 +323,7 @@ pub async fn disable(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let info = EmpowerInfo {
         id: row.get("id"),
@@ -363,7 +363,7 @@ pub async fn manager_create(
             &[&req.to_person],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if to_exists.is_none() {
         return Ok(Json(ActionResult::error("to_person not found")));
     }
@@ -378,7 +378,7 @@ pub async fn manager_create(
             &[&id, &current_person, &req.to_person, &role_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let info = EmpowerInfo {
         id: id.clone(),
@@ -416,7 +416,7 @@ pub async fn manager_update(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
 
     let from_person: String = row.get("from_person");
@@ -429,7 +429,7 @@ pub async fn manager_update(
             &[&new_role_id, &new_enabled, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let info = EmpowerInfo {
         id,
@@ -465,7 +465,7 @@ pub async fn manager_delete(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if deleted == 0 {
         return Ok(Json(ActionResult::error("not found")));
@@ -499,7 +499,7 @@ pub async fn manager_list_paging(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::Internal)?;
     let total: i64 = total_row.get("cnt");
 
@@ -510,7 +510,7 @@ pub async fn manager_list_paging(
             &[&offset, &size],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<EmpowerInfo> = rows
         .iter()
@@ -545,7 +545,7 @@ pub async fn list_current_person(
             &[&current_person],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::Internal)?;
     let total: i64 = total_row.get("cnt");
 
@@ -556,7 +556,7 @@ pub async fn list_current_person(
             &[&current_person],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<EmpowerInfo> = rows
         .iter()
@@ -591,7 +591,7 @@ pub async fn list_current_person_enable(
             &[&current_person],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::Internal)?;
     let total: i64 = total_row.get("cnt");
 
@@ -602,7 +602,7 @@ pub async fn list_current_person_enable(
             &[&current_person],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<EmpowerInfo> = rows
         .iter()
@@ -637,7 +637,7 @@ pub async fn list_to(
             &[&current_person],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::Internal)?;
     let total: i64 = total_row.get("cnt");
 
@@ -648,7 +648,7 @@ pub async fn list_to(
             &[&current_person],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<EmpowerInfo> = rows
         .iter()
@@ -683,7 +683,7 @@ pub async fn list_to_enable(
             &[&current_person],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::Internal)?;
     let total: i64 = total_row.get("cnt");
 
@@ -694,7 +694,7 @@ pub async fn list_to_enable(
             &[&current_person],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<EmpowerInfo> = rows
         .iter()

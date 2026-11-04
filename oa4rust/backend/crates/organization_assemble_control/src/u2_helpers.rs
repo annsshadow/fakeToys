@@ -147,7 +147,7 @@ pub async fn resolve_generic_id(
     let row = client
         .query_opt(&sql, &[&flag])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(row.map(|r| r.get::<_, String>(0)))
 }
 
@@ -164,7 +164,7 @@ pub async fn soft_delete_generic(
     client
         .execute(&sql, &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(Some(id))
 }
 
@@ -182,7 +182,7 @@ pub async fn normalized_name_dup(
     let row = client
         .query_opt(&sql, &[&name, &scope_val])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     Ok(row.is_some())
 }
 
@@ -234,7 +234,7 @@ pub async fn generic_list_all(pool: &Pool, table: &str, extra_cols: &[&str]) -> 
     let rows = client
         .query(&sql, &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     list_ok_legacy(
         rows.iter()
             .map(|r| entity_row_json(r, extra_cols))
@@ -261,7 +261,7 @@ pub async fn generic_like_search(
         let rows = client
             .query(&sql, &[])
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         return if legacy_bare {
             list_ok_legacy(
                 rows.iter()
@@ -294,7 +294,7 @@ pub async fn generic_like_search(
     let rows = client
         .query(&sql, &[&pattern])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if legacy_bare {
         list_ok_legacy(
             rows.iter()
@@ -328,7 +328,7 @@ pub async fn generic_pinyininitial_filter(
         let rows = client
             .query(&sql, &[])
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         return if legacy_bare {
             list_ok_legacy(
                 rows.iter()
@@ -350,7 +350,7 @@ pub async fn generic_pinyininitial_filter(
     let rows = client
         .query(&sql, &[&owned])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if legacy_bare {
         list_ok_legacy(
             rows.iter()

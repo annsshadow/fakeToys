@@ -118,10 +118,10 @@ pub async fn upload(
     // 写入本地存储目录（不接入 file 模块、不承担文件迁移方案）
     tokio::fs::create_dir_all(AVATAR_DIR)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tokio::fs::write(&rel_path, &data)
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let client = shared::db::acquire(&pool).await?;
     let rows_affected = client
@@ -131,7 +131,7 @@ pub async fn upload(
             &[&rel_path, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if rows_affected == 0 {
         let _ = tokio::fs::remove_file(&rel_path).await;
@@ -188,7 +188,7 @@ pub async fn get_icon(
             &[&person],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(r) => {
@@ -211,7 +211,7 @@ async fn load_icon_for_unique(
             &[&person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(r) => {

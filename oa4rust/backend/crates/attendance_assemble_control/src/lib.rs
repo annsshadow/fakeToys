@@ -56,7 +56,7 @@ pub async fn list_control_rules(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -148,7 +148,7 @@ pub async fn create_control_rule(
             ],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -172,7 +172,7 @@ pub async fn list_statistics(pool: Extension<Pool>) -> Result<Json<ActionResult<
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -220,7 +220,7 @@ pub async fn delete_control_rule(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(result > 0))]),
@@ -250,7 +250,7 @@ pub async fn toggle_control_rule(
             &[&enabled, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("control rule not found")));
@@ -288,7 +288,7 @@ pub async fn attendanceadmin_list_all(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -347,7 +347,7 @@ pub async fn attendanceadmin_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -407,7 +407,7 @@ pub async fn attendanceappealInfo_appeal_id(
             &[&status, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("attendance appeal not found")));
@@ -437,7 +437,7 @@ pub async fn attendanceconfig_list(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -510,7 +510,7 @@ pub async fn attendanceconfig_save(
     let existing = client
         .query_opt("SELECT id FROM x_attendance_config WHERE id = $1", &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let result = if existing.is_some() {
         client
@@ -519,7 +519,7 @@ pub async fn attendanceconfig_save(
                 &[&name, &value, &category, &id],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else {
         let new_id = if id.is_empty() {
             uuid::Uuid::new_v4().to_string()
@@ -532,7 +532,7 @@ pub async fn attendanceconfig_save(
                 &[&new_id, &name, &value, &category, &creator],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     };
 
     if result == 0 {
@@ -568,7 +568,7 @@ pub async fn attendanceappealInfo_archive_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("attendance appeal not found")));
@@ -610,7 +610,7 @@ pub async fn attendanceappealInfo_audit(
             &[&audit_status, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("attendance appeal not found")));
@@ -652,7 +652,7 @@ pub async fn attendanceappealInfo_check(
             &[&checked, &id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("attendance appeal not found")));
@@ -681,7 +681,7 @@ pub async fn attendanceappealInfo_filter_list_id_next_count(
     let rows = client
         .query(&sql, &[&id, &count])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -732,7 +732,7 @@ pub async fn attendanceappealInfo_filter_list_id_prev_count(
     let rows = client
         .query(&sql, &[&id, &count])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -781,7 +781,7 @@ pub async fn attendanceappealInfo_manager_list_id_next_count(
             &[&id, &"manager", &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -834,7 +834,7 @@ pub async fn attendanceappealInfo_workflow_appeal_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("attendance appeal not found")));
@@ -872,7 +872,7 @@ pub async fn attendanceappealInfo_workflow_sync(
             &[&appeal_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("attendance appeal not found")));
@@ -899,7 +899,7 @@ pub async fn attendanceappealInfo_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -966,7 +966,7 @@ pub async fn attendancedetail_analyse(
             &[&person_id, &start_date, &end_date],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([(
@@ -993,7 +993,7 @@ pub async fn attendancedetail_analyse_id_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1027,7 +1027,7 @@ pub async fn attendancedetail_analyse_redo(
             &[&person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([(
@@ -1053,7 +1053,7 @@ pub async fn attendancedetail_analyse_startDate_endDate(
             &[&start_date, &end_date],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([(
@@ -1080,7 +1080,7 @@ pub async fn attendancedetail_archive_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("attendance detail not found")));
@@ -1127,7 +1127,7 @@ pub async fn attendancedetail_checkDetailWithPersonByCycle_cycleYear_cycleMonth(
             &[&cycle_year, &cycle_month],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -1156,7 +1156,7 @@ pub async fn attendancedetail_filter_list(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1205,7 +1205,7 @@ pub async fn attendancedetail_filter_list_topUnit(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1254,7 +1254,7 @@ pub async fn attendancedetail_filter_list_unit(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1307,7 +1307,7 @@ pub async fn attendancedetail_filter_list_user(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1357,7 +1357,7 @@ pub async fn attendancedetail_filter_list_id_next_count(
             &[&id, &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1407,7 +1407,7 @@ pub async fn attendancedetail_filter_list_id_prev_count(
             &[&id, &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1456,7 +1456,7 @@ pub async fn attendancedetail_list_persons_nonesign(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1506,7 +1506,7 @@ pub async fn attendancedetail_list_file_id(
             &[&file_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1557,7 +1557,7 @@ pub async fn attendancedetail_mobile_filter_list_page_page_count_count(
             &[&offset, &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1618,7 +1618,7 @@ pub async fn attendancedetail_mobile_mobilepreview(
             &[&person_id, &date],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1668,7 +1668,7 @@ pub async fn attendancedetail_mobile_my(
             &[&person_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1732,7 +1732,7 @@ pub async fn attendancedetail_mobile_recive(
             &[&person_id, &date],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([(
@@ -1755,7 +1755,7 @@ pub async fn attendancedetail_mobile_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1808,7 +1808,7 @@ pub async fn attendancedetail_recive(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([(
@@ -1840,7 +1840,7 @@ pub async fn attendancedetail_reciveSingle(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([(
@@ -1863,7 +1863,7 @@ pub async fn attendancedetail_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1906,7 +1906,7 @@ pub async fn attendanceemployeeconfig_list_all(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -1955,7 +1955,7 @@ pub async fn attendanceemployeeconfig_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -1997,7 +1997,7 @@ pub async fn attendanceimportfileinfo_list_all(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2045,7 +2045,7 @@ pub async fn attendanceimportfileinfo_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2086,7 +2086,7 @@ pub async fn attendanceschedulesetting_list_all(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2132,7 +2132,7 @@ pub async fn attendanceschedulesetting_list_topUnit_name(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2178,7 +2178,7 @@ pub async fn attendanceschedulesetting_list_unit_name(
             &[&name],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2228,7 +2228,7 @@ pub async fn attendanceschedulesetting_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2268,7 +2268,7 @@ pub async fn attendanceselfholiday_filter_list_id_next_count(
             &[&id, &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2317,7 +2317,7 @@ pub async fn attendanceselfholiday_filter_list_id_prev_count(
             &[&id, &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2365,7 +2365,7 @@ pub async fn attendanceselfholiday_list_all(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2418,7 +2418,7 @@ pub async fn attendanceselfholiday_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2465,7 +2465,7 @@ pub async fn attendancesetting_code_code(
             &[&code],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2521,7 +2521,7 @@ pub async fn attendancesetting_enable_type(
             &[&enabled, &code],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
         return Ok(Json(ActionResult::error("setting not found")));
@@ -2551,7 +2551,7 @@ pub async fn attendancesetting_list_all(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2598,7 +2598,7 @@ pub async fn attendancesetting_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2639,7 +2639,7 @@ pub async fn attendancestatisticalcycle_cycleDetail_year_month(
             &[&year, &month],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2682,7 +2682,7 @@ pub async fn attendancestatisticalcycle_list_all(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2732,7 +2732,7 @@ pub async fn attendancestatisticalcycle_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2775,7 +2775,7 @@ pub async fn attendancestatisticrequirelog_list_all(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2821,7 +2821,7 @@ pub async fn attendancestatisticrequirelog_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -2872,7 +2872,7 @@ pub async fn attendanceworkdayconfig_filter(
             &[&start_date, &end_date],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2917,7 +2917,7 @@ pub async fn attendanceworkdayconfig_list_all(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -2963,7 +2963,7 @@ pub async fn attendanceworkdayconfig_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -3003,7 +3003,7 @@ pub async fn selfholidaysimple_docId_docId(
             &[&doc_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -3070,7 +3070,7 @@ pub async fn statistic_do(
             &[&person_id, &year, &month],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([(
@@ -3093,7 +3093,7 @@ pub async fn statisticshow_filter_personMonth_list_id_next_count(
             &[&id, &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3143,7 +3143,7 @@ pub async fn statisticshow_filter_personMonth_list_id_prev_count(
             &[&id, &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3193,7 +3193,7 @@ pub async fn statisticshow_filter_topUnitDay_list_id_next_count(
             &[&id, &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3239,7 +3239,7 @@ pub async fn statisticshow_filter_topUnitDay_list_id_prev_count(
             &[&id, &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3285,7 +3285,7 @@ pub async fn statisticshow_filter_topUnitMonth_list_id_next_count(
             &[&id, &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3332,7 +3332,7 @@ pub async fn statisticshow_filter_topUnitMonth_list_id_prev_count(
             &[&id, &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3379,7 +3379,7 @@ pub async fn statisticshow_filter_unitDay_list_id_next_count(
             &[&id, &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3429,7 +3429,7 @@ pub async fn statisticshow_filter_unitDay_list_id_prev_count(
             &[&id, &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3479,7 +3479,7 @@ pub async fn statisticshow_filter_unitMonth_list_id_next_count(
             &[&id, &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3530,7 +3530,7 @@ pub async fn statisticshow_filter_unitMonth_list_id_prev_count(
             &[&id, &count],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3581,7 +3581,7 @@ pub async fn statisticshow_person_name_year_month(
             &[&name, &year, &month],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -3629,7 +3629,7 @@ pub async fn statisticshow_persons_unit_subnested_name_year_month(
             &[&name, &year, &month],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3675,7 +3675,7 @@ pub async fn statisticshow_persons_unit_name_year_month(
             &[&name, &year, &month],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3721,7 +3721,7 @@ pub async fn statisticshow_topUnit_day_name_year_month(
             &[&year, &month],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3767,7 +3767,7 @@ pub async fn statisticshow_topUnit_name_year_month(
             &[&year, &month],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3814,7 +3814,7 @@ pub async fn statisticshow_unit_day_topUnit_name_date(
             &[&name, &date],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3860,7 +3860,7 @@ pub async fn statisticshow_unit_day_name_date(
             &[&name, &date],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3910,7 +3910,7 @@ pub async fn statisticshow_unit_day_name_year_month(
             &[&name, &year, &month],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -3956,7 +3956,7 @@ pub async fn statisticshow_unit_subnested_name_year_month(
             &[&name, &year, &month],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -4002,7 +4002,7 @@ pub async fn statisticshow_unit_sum_name_year_month(
             &[&name, &year, &month],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -4054,7 +4054,7 @@ pub async fn statisticshow_unit_topUnit_name_year_month(
             &[&name, &year, &month],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -4105,7 +4105,7 @@ pub async fn statisticshow_unit_name_year_month(
             &[&name, &year, &month],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -4162,7 +4162,7 @@ pub async fn workplace_list_all(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -4205,7 +4205,7 @@ pub async fn workplace_id(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -4313,7 +4313,7 @@ async fn delete_admin_record(
     let n = client
         .execute(&format!("DELETE FROM {} WHERE id = $1", table), &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if n == 0 {
         return Ok(Json(ActionResult::error(format!("{} not found", label))));
@@ -4341,7 +4341,7 @@ async fn delete_owned_record(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("record not found")));
@@ -4355,7 +4355,7 @@ async fn delete_owned_record(
     let n = client
         .execute(&format!("DELETE FROM {} WHERE id = $1", table), &[&id])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if n == 0 {
         return Ok(Json(ActionResult::error("record not found")));
@@ -4404,7 +4404,7 @@ pub async fn attendanceadmin_create(
             &[&id, &admin_name, &admin_level, &person_id, &unit_id, &unit_name, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -4444,7 +4444,7 @@ pub async fn attendanceemployeeconfig_create(
             &[&id, &top_unit_name, &unit_name, &employee_name, &employee_number, &config_type, &person_id, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -4483,7 +4483,7 @@ pub async fn attendanceschedulesetting_create(
             &[&id, &name, &setting_data, &unit_id, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -4526,7 +4526,7 @@ pub async fn attendanceselfholiday_create(
             &[&id, &person_id, &holiday_date, &reason, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -4574,7 +4574,7 @@ pub async fn attendancedetail_create(
             &[&id, &person_id, &date, &status, &unit_id, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -4617,7 +4617,7 @@ pub async fn selfholidaysimple_create(
             &[&id, &person_id, &holiday_date, &reason, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -4655,7 +4655,7 @@ pub async fn attendancesetting_create(
             &[&id, &code, &name, &value, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -4695,7 +4695,7 @@ pub async fn attendancestatisticalcycle_create(
             &[&id, &top_unit_name, &unit_name, &cycle_year, &cycle_month, &description, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -4733,7 +4733,7 @@ pub async fn attendancestatisticrequirelog_create(
             &[&id, &require_type, &status, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -4771,7 +4771,7 @@ pub async fn attendanceworkdayconfig_create(
             &[&id, &work_date, &is_workday, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -4807,7 +4807,7 @@ pub async fn workplace_create(
             &[&id, &name, &address, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -5018,7 +5018,7 @@ pub async fn v2_group_get(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -5107,7 +5107,7 @@ pub async fn v2_group_refresh_participate(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("attendance group not found")));
     };
@@ -5122,7 +5122,7 @@ pub async fn v2_group_refresh_participate(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if n == 0 {
         return Ok(Json(ActionResult::error("attendance group not found")));
@@ -5160,7 +5160,7 @@ pub async fn v2_group_person_date(
             &[&person, &date],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -5238,7 +5238,7 @@ pub async fn v2_group_create(
             &[&id, &group_name, &check_type, &top_unit, &unit_list, &shift_id, &status, &assist_admin_list, &participate_list, &work_place_id_list, &work_date_list, &start_date, &end_date, &session.person_unique, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -5275,7 +5275,7 @@ pub async fn v2_group_list_page_size(
             &[&filter_name],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     let sql = format!(
@@ -5288,7 +5288,7 @@ pub async fn v2_group_list_page_size(
     let rows = client
         .query(&sql, &[&filter_name, &limit, &offset])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -5360,7 +5360,7 @@ pub async fn v2_shift_get(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -5445,7 +5445,7 @@ pub async fn v2_shift_create(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -5456,7 +5456,7 @@ pub async fn v2_shift_create(
             &[&id, &shift_name, &on_duty_time, &off_duty_time, &work_time, &serial_no, &properties_json, &session.person_unique, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -5499,7 +5499,7 @@ pub async fn v2_shift_list_page_size(
             &[&filter_name],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     let sql = format!(
@@ -5511,7 +5511,7 @@ pub async fn v2_shift_list_page_size(
     let rows = client
         .query(&sql, &[&filter_name, &limit, &offset])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -5581,7 +5581,7 @@ pub async fn v2_shift_update(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("shift not found")));
@@ -5628,7 +5628,7 @@ pub async fn v2_shift_update(
             &[&id, &shift_name, &on_duty_time, &off_duty_time, &work_time],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -5663,7 +5663,7 @@ pub async fn v2_leave_import_result_flag(
             &[&flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -5712,7 +5712,7 @@ pub async fn v2_leave_create(
             &[&id, &person, &leave_type, &start_time, &end_time, &description, &job_id, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -5756,7 +5756,7 @@ pub async fn v2_leave_list_page_size(
             &[&filter_person],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     let sql = format!(
@@ -5769,7 +5769,7 @@ pub async fn v2_leave_list_page_size(
     let rows = client
         .query(&sql, &[&filter_person, &limit, &offset])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -5895,7 +5895,7 @@ pub async fn v2_leave_import(
                 &[&id, &person, &leave_type, &start_time, &end_time, &description, &job_id, &flag, &session.person_unique],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         inserted += n as i64;
     }
 
@@ -5922,7 +5922,7 @@ pub async fn v2_config_get(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let mut result = serde_json::Map::new();
     for row in &rows {
@@ -5956,7 +5956,7 @@ pub async fn v2_config_post(
             &[&name],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let id = match existing {
         Some(row) => {
@@ -5967,7 +5967,7 @@ pub async fn v2_config_post(
                     &[&id, &value],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             id
         }
         None => {
@@ -5979,7 +5979,7 @@ pub async fn v2_config_post(
                     &[&id, &name, &value, &session.person_unique],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             id
         }
     };
@@ -6006,7 +6006,7 @@ pub async fn v2_config_person_get(
             &[&session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let mut result = serde_json::Map::new();
     for row in &rows {
@@ -6040,7 +6040,7 @@ pub async fn v2_config_person_post(
             &[&name, &sess.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let id = match existing {
         Some(row) => {
@@ -6051,7 +6051,7 @@ pub async fn v2_config_person_post(
                     &[&id, &value],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             id
         }
         None => {
@@ -6063,7 +6063,7 @@ pub async fn v2_config_person_post(
                     &[&id, &name, &value, &sess.person_unique],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             id
         }
     };
@@ -6092,7 +6092,7 @@ pub async fn v2_record_get(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => {
@@ -6151,7 +6151,7 @@ pub async fn v2_record_list_page_size(
             &[&filter_user],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     let sql = format!(
@@ -6164,7 +6164,7 @@ pub async fn v2_record_list_page_size(
     let rows = client
         .query(&sql, &[&filter_user, &limit, &offset])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -6238,7 +6238,7 @@ pub async fn v2_detail_list_page_size(
             &[&filter_person, &filter_status],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     let sql = format!(
@@ -6251,7 +6251,7 @@ pub async fn v2_detail_list_page_size(
     let rows = client
         .query(&sql, &[&filter_person, &filter_status, &limit, &offset])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -6333,7 +6333,7 @@ pub async fn v2_my_statistic(
             &[&session.person_unique, &pattern],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let by_status: Vec<Value> = rows
         .iter()
@@ -6357,7 +6357,7 @@ pub async fn v2_my_statistic(
             &[&session.person_unique, &pattern],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -6438,14 +6438,14 @@ async fn ddqy_delete_all(
     let n_detail = client
         .execute(&format!("DELETE FROM {} WHERE 1 = 1", detail_table), &[])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let n_sync = client
         .execute(
             "DELETE FROM x_attendance_sync_record WHERE type = $1",
             &[&sync_type],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -6483,7 +6483,7 @@ async fn ddqy_sync_start(
             &[&id, &sync_type, &status, &from, &to],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -6506,7 +6506,7 @@ async fn ddqy_sync_list(
             &[&sync_type],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -6593,7 +6593,7 @@ async fn ddqy_attendance_list_next(
     let rows = client
         .query(&sql, &[&filter_user, &id, &count])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -6663,7 +6663,7 @@ async fn ddqy_statistic_person_trigger(
     client
         .execute(&delete_sql, &[&year, &month])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let insert_sql = format!(
         "INSERT INTO {st} (id, o2_user, o2_unit, statistic_year, statistic_month, \
@@ -6687,7 +6687,7 @@ async fn ddqy_statistic_person_trigger(
     let n = client
         .execute(&insert_sql, &[&year, &month])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -6724,7 +6724,7 @@ async fn ddqy_statistic_unit_day_trigger(
     client
         .execute(&delete_sql, &[&year, &month, &date])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let insert_sql = format!(
         "INSERT INTO {st} (id, o2_unit, statistic_year, statistic_month, statistic_date, \
@@ -6746,7 +6746,7 @@ async fn ddqy_statistic_unit_day_trigger(
     let n = client
         .execute(&insert_sql, &[&year, &month, &date, &day])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -6781,7 +6781,7 @@ async fn stat_person_month_query(
     let rows = client
         .query(&sql, &[&person_v, &year, &month, &unit])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows.iter().map(stat_row_to_value).collect();
     let count = data.len() as i64;
@@ -6812,7 +6812,7 @@ async fn stat_unit_month_query(
     let rows = client
         .query(&sql, &[&unit, &year, &month])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows.iter().map(stat_row_to_value).collect();
 
@@ -7003,7 +7003,7 @@ pub async fn dingdingstatistic_unit(
     let mut rows = client
         .query(sql, &[&unit, &year, &month])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if rows.is_empty() {
         rows = client
             .query(
@@ -7013,7 +7013,7 @@ pub async fn dingdingstatistic_unit(
                 &[&unit, &year, &month],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     }
 
     let data: Vec<Value> = rows.iter().map(stat_row_to_value).collect();
@@ -7180,7 +7180,7 @@ pub async fn v2_appeal_list_page_size(
             &[&filter_user],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     let sql = format!(
@@ -7193,7 +7193,7 @@ pub async fn v2_appeal_list_page_size(
     let rows = client
         .query(&sql, &[&filter_user, &limit, &offset])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -7290,7 +7290,7 @@ pub async fn v2_appeal_manager_list_page_size(
             &[&filter_status],
         )
         .await
-        .map_err(|_| AppError::Internal)?
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .get(0);
 
     let sql = format!(
@@ -7303,7 +7303,7 @@ pub async fn v2_appeal_manager_list_page_size(
     let rows = client
         .query(&sql, &[&filter_status, &limit, &offset])
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -7333,7 +7333,7 @@ pub async fn v2_appeal_get(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => Ok(Json(ActionResult::success(v2_appeal_row(&row)))),
@@ -7354,7 +7354,7 @@ async fn appeal_owner_gate(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let Some(row) = row else { return Ok(None) };
 
@@ -7381,7 +7381,7 @@ pub async fn v2_appeal_manager_status(
             &[&id, &4i32, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if n == 0 {
         return Ok(Json(ActionResult::error("appeal not found")));
@@ -7412,7 +7412,7 @@ pub async fn v2_appeal_start_check(
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let Some(row) = row else {
         return Ok(Json(ActionResult::error("appeal not found")));
@@ -7465,7 +7465,7 @@ pub async fn v2_appeal_start_process(
             &[&id, &1i32, &job_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if n == 0 {
         return Ok(Json(ActionResult::error("appeal not found")));
@@ -7501,7 +7501,7 @@ pub async fn v2_appeal_reset_status(
             &[&id, &0i32],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if n == 0 {
         return Ok(Json(ActionResult::error("appeal not found")));
@@ -7545,7 +7545,7 @@ pub async fn v2_appeal_end_process(
             &[&id, &end_status, &job_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if n == 0 {
         return Ok(Json(ActionResult::error("appeal not found")));
@@ -7591,7 +7591,7 @@ pub async fn v2_detail_rebuild_person_date(
             &[&person, &date],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let new_id = uuid::Uuid::new_v4().to_string();
     client
@@ -7601,7 +7601,7 @@ pub async fn v2_detail_rebuild_person_date(
             &[&new_id, &person, &date, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -7625,7 +7625,7 @@ pub async fn v2_detail_statistic_record_list(
             &[&detail_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let Some(detail) = detail else {
         return Ok(Json(ActionResult::error("detail not found")));
@@ -7643,7 +7643,7 @@ pub async fn v2_detail_statistic_record_list(
             &[&person, &pattern],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -7703,7 +7703,7 @@ async fn detail_statistic_aggregate(
             &[&filter_person, &filter_start, &filter_end],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(rows
         .iter()
@@ -7802,7 +7802,7 @@ pub async fn v2_group_rebuild_detail_group_date(
             &[&group_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let Some(group) = group else {
         return Ok(Json(ActionResult::error("attendance group not found")));
@@ -7845,7 +7845,7 @@ pub async fn v2_group_rebuild_detail_group_date(
         &[&date, &participate],
     )
     .await
-    .map_err(|_| AppError::Internal)?;
+    .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     use deadpool_postgres::tokio_postgres::types::ToSql;
     // 每行 4 个参数（id / person_id / date / creator_person）；
@@ -7882,7 +7882,7 @@ pub async fn v2_group_rebuild_detail_group_date(
             .collect();
         tx.execute(&sql, &refs)
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     }
     tx.commit().await?;
 
@@ -7928,7 +7928,7 @@ pub async fn v2_groupschedule_post(
             &[&group_id, &user_id, &date_str],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match existing {
         Some(row) => {
@@ -7948,7 +7948,7 @@ pub async fn v2_groupschedule_post(
                     &[&exist_id, &shift_id],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(exist_id)),
@@ -7965,7 +7965,7 @@ pub async fn v2_groupschedule_post(
                     &[&id, &group_id, &user_id, &month, &date_str, &shift_id, &session.person_unique],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
@@ -7989,7 +7989,7 @@ pub async fn v2_groupschedule_config_get(
             &[&group_id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
@@ -8036,7 +8036,7 @@ pub async fn v2_groupschedule_list_group_month(
             &[&group_id, &month],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -8103,7 +8103,7 @@ pub async fn v2_groupschedule_list_filter(
             &[&group_id, &user_id, &month],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -8201,7 +8201,7 @@ pub async fn v2_mobile_pre_check(
             &[&session.person_unique, &today],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let pattern = format!("{}%", today);
     let record_rows = client
@@ -8212,7 +8212,7 @@ pub async fn v2_mobile_pre_check(
             &[&session.person_unique, &pattern],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let records: Vec<Value> = record_rows
         .iter()
@@ -8337,7 +8337,7 @@ async fn mobile_check_impl(
             &[&user_id, &date_str, &check_in_type],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     if let Some(row) = dup {
         let exist_id: String = row.get("id");
         return Ok((exist_id, true));
@@ -8359,7 +8359,7 @@ async fn mobile_check_impl(
             &[&id, &user_id, &date_str, &source_type, &result, &check_in_type, &description, &address, &longitude, &latitude, &group_id, &shift_id, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok((id, false))
 }
@@ -8431,7 +8431,7 @@ pub async fn v2_my_controls(
             &[&session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -8472,7 +8472,7 @@ pub async fn v2_my_detail_list(
                 &[&session.person_unique],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else {
         client
             .query(
@@ -8481,7 +8481,7 @@ pub async fn v2_my_detail_list(
                 &[&session.person_unique, &date],
             )
             .await
-            .map_err(|_| AppError::Internal)?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     };
 
     let data: Vec<Value> = rows
@@ -8556,7 +8556,7 @@ pub async fn v2_my_rest_date_check(
             &[&date],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let is_rest = match row {
         Some(row) => !row.get::<_, Option<bool>>("is_workday").unwrap_or(true),
@@ -8601,14 +8601,14 @@ pub async fn v2_record_delete_people_date(
             &[&people, &pattern],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let n_checkin = tx
         .execute(
             "DELETE FROM x_attendance_v2_checkin_record WHERE user_id = $1 AND record_date_string = $2",
             &[&people, &date],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -8740,7 +8740,7 @@ async fn import_checkin_rows(
             &[&u_all, &d_all, &t_all],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let mut by_key: HashMap<(String, String, String), String> = HashMap::new();
     for row in &existing {
         let key = (
@@ -8794,7 +8794,7 @@ async fn import_checkin_rows(
             &[&ins_id, &ins_user, &ins_date, &ins_source, &ins_result, &ins_type, &ins_desc, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         inserted = ins_id.len() as i64;
     }
 
@@ -8917,7 +8917,7 @@ pub async fn v2_workplace_post(
             let exists = client
                 .query_opt("SELECT id FROM x_attendance_workplace WHERE id = $1", &[id])
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             exists.map(|row| row.get::<_, Option<String>>("id").unwrap_or_default())
         }
         None => {
@@ -8928,7 +8928,7 @@ pub async fn v2_workplace_post(
                     &[&norm],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
                 .map(|row| row.get::<_, Option<String>>("id").unwrap_or_default())
         }
     };
@@ -8941,7 +8941,7 @@ pub async fn v2_workplace_post(
                     &[&id, &name, &address, &session.person_unique],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
@@ -8959,7 +8959,7 @@ pub async fn v2_workplace_post(
                     &[&id, &name, &address, &session.person_unique],
                 )
                 .await
-                .map_err(|_| AppError::Internal)?;
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
@@ -8992,7 +8992,7 @@ pub async fn v2_workplace_list_all(
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows.iter().map(workplace_row_value).collect();
 
@@ -9066,7 +9066,7 @@ pub async fn v2_workplace_list_ids(
             &[&ids],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let data: Vec<Value> = rows.iter().map(workplace_row_value).collect();
 
