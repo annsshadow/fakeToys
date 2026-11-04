@@ -164,7 +164,7 @@ pub async fn config_list_model_paging(
 
     let rows = client
         .query(
-            "SELECT id, name, xtype as type, xmodel as model, xcompletionurl as \"completionUrl\", xapikey as \"apiKey\", xenable as enable, xasdefault as \"asDefault\", xdesc as desc FROM x_ai_model ORDER BY create_time DESC LIMIT $1 OFFSET $2",
+            "SELECT id, name, xtype as type, xmodel as model, xcompletionurl as \"completionUrl\", xapikey as \"apiKey\", xenable as enable, (xasdefault = 'true') as \"asDefault\", xdesc as desc FROM x_ai_model ORDER BY create_time DESC LIMIT $1 OFFSET $2",
             &[&size, &offset],
         )
         .await
@@ -232,7 +232,7 @@ pub async fn config_get_model(
 
     let row = client
         .query_opt(
-            "SELECT id, name, xtype as type, xmodel as model, xcompletionurl as \"completionUrl\", xapikey as \"apiKey\", xenable as enable, xasdefault as \"asDefault\", xdesc as desc FROM x_ai_model WHERE id = $1 OR xname = $1",
+            "SELECT id, name, xtype as type, xmodel as model, xcompletionurl as \"completionUrl\", xapikey as \"apiKey\", xenable as enable, (xasdefault = 'true') as \"asDefault\", xdesc as desc FROM x_ai_model WHERE id = $1 OR xname = $1",
             &[&flag],
         )
         .await

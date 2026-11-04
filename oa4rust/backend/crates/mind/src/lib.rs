@@ -116,7 +116,7 @@ pub async fn get_mind_with_id(
         (
             "fileVersion".to_string(),
             Value::Number(serde_json::Number::from(
-                row.get::<_, Option<i32>>("file_version").unwrap_or(0),
+                row.get::<_, Option<i64>>("file_version").unwrap_or(0),
             )),
         ),
     ])));
@@ -158,7 +158,7 @@ pub async fn list_my_folders(pool: Extension<Pool>) -> Result<Json<ActionResult<
                 (
                     "orderNumber".to_string(),
                     Value::Number(serde_json::Number::from(
-                        row.get::<_, Option<i32>>("order_number").unwrap_or(0),
+                        row.get::<_, Option<i64>>("order_number").unwrap_or(0),
                     )),
                 ),
                 (
@@ -250,7 +250,7 @@ pub async fn list_versions_with_mind_id(
                 (
                     "fileVersion".to_string(),
                     Value::Number(serde_json::Number::from(
-                        row.get::<_, Option<i32>>("file_version").unwrap_or(0),
+                        row.get::<_, Option<i64>>("file_version").unwrap_or(0),
                     )),
                 ),
                 (

@@ -2373,7 +2373,7 @@ pub async fn process_id_complex(
 
     let tasks = client
         .query(
-            "SELECT id, title, activity, activity_token, person, start_time, end_time FROM x_task WHERE work = $1",
+            "SELECT id, title, activity, activity_token, person, start_time::text AS start_time, end_time::text AS end_time FROM x_task WHERE work = $1",
             &[&id],
         )
         .await

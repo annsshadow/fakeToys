@@ -1408,7 +1408,7 @@ pub async fn formversion_list_form_formId(
                 (
                     "version".to_string(),
                     Value::Number(serde_json::Number::from(
-                        row.get::<_, Option<i32>>("xversion").unwrap_or(0),
+                        row.get::<_, Option<i64>>("xversion").unwrap_or(0),
                     )),
                 ),
                 (
@@ -1467,7 +1467,7 @@ pub async fn formversion_id(
                 (
                     "version".to_string(),
                     Value::Number(serde_json::Number::from(
-                        row.get::<_, Option<i32>>("xversion").unwrap_or(0),
+                        row.get::<_, Option<i64>>("xversion").unwrap_or(0),
                     )),
                 ),
                 (
@@ -2940,7 +2940,7 @@ pub async fn processversion_list_process_processId(
                 (
                     "version".to_string(),
                     Value::Number(serde_json::Number::from(
-                        row.get::<_, Option<i32>>("xversion").unwrap_or(0),
+                        row.get::<_, Option<i64>>("xversion").unwrap_or(0),
                     )),
                 ),
                 (
@@ -2999,7 +2999,7 @@ pub async fn processversion_id(
                 (
                     "version".to_string(),
                     Value::Number(serde_json::Number::from(
-                        row.get::<_, Option<i32>>("xversion").unwrap_or(0),
+                        row.get::<_, Option<i64>>("xversion").unwrap_or(0),
                     )),
                 ),
                 (
@@ -3258,7 +3258,7 @@ pub async fn scriptversion_list_script_scriptId(
                 (
                     "version".to_string(),
                     Value::Number(serde_json::Number::from(
-                        row.get::<_, Option<i32>>("xversion").unwrap_or(0),
+                        row.get::<_, Option<i64>>("xversion").unwrap_or(0),
                     )),
                 ),
                 (
@@ -3318,7 +3318,7 @@ pub async fn scriptversion_id(
                     (
                         "version".to_string(),
                         Value::Number(serde_json::Number::from(
-                            row.get::<_, Option<i32>>("xversion").unwrap_or(0),
+                            row.get::<_, Option<i64>>("xversion").unwrap_or(0),
                         )),
                     ),
                     ("code".to_string(), Value::String(code.unwrap_or_default())),

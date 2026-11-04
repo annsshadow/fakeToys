@@ -611,12 +611,12 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 
 **为什么必须换判据**：批次 1/2 已实证静态扫描器认不出裸 `row.get("x")`（`get_process_instance` 5 处、`process_id_complex` 2 处整段漏报），`FAIL=28` 不是真数。根因是**这些 500 只在表里有行时才触发**：O9 的全路由扫描跑在空库上，反序列化永远不会发生。
 
-**做法**（`backend/tests/idor_matrix.rs::seeded_route_scan_must_have_zero_handler500`）：
+**做法**（`backend/tests/idor_matrix.rs::seeded_route_scan_handler500_ratchet`）：
 1. 独立 scratch 库 `oa_par_seeded`（每轮 DROP/CREATE + 全量迁移，与 IDOR 矩阵的 `oa_par_idor` 隔离，两测试可并行）；
 2. 从 `pg_attribute` 枚举 `public` 全部 383 张表，每表 ≥1 行；按 `format_type` 生成值：时间列真实 TIMESTAMP、布尔列 `true`、数组真数组、uuid 固定值、enum 取首个 label；文本列按列名启发式给「能触发转换失败」的值（布尔名 → `'true'`、时间名 → `'2026-01-01 10:00:00'`）；主键统一给 `1`，使 `{id}` 型路由能命中种子行；
 3. `session_replication_role=replica` 绕过 FK/触发器，用完恢复 `DEFAULT`（该连接回池后 app 复用，不能留 replica 语义）；
 4. 复用 O9 的 `scan_routes` / `fill_params` / `fire`：全量注册路由 × 有效 Owner 身份（`GET` 先、写路由后，避免写路由销毁种子行）；`mock` 路由与 arity 家族（`KNOWN_ARTIFACT_ROUTES` 4 条）显式排除并说明；
-5. **棘轮基线**（`tests/idor_seeded_handler500_baseline.txt`，2026-11-05 起）：当前 500 集合必须与基线**完全相等**——基线外的新 500 红（新类型错配当天被拦）；基线里复现不出来的条目红（已修但没删行）。条目数必须等于 `BASELINE_COUNT`（当前 46），修复时同 PR 删行并下调，基线只许变小。失败时按路由列出，并附本次请求 `error_capture` 捕获的真实 ERROR 串（`drain()` 做逐请求归因）。
+5. **棘轮基线**（`tests/idor_seeded_handler500_baseline.txt`，2026-11-05 起）：当前 500 集合必须与基线**完全相等**——基线外的新 500 红（新类型错配当天被拦）；基线里复现不出来的条目红（已修但没删行）。条目数必须等于 `BASELINE_COUNT`（当前 11，批次 3 已由 46 下调），修复时同 PR 删行并下调，基线只许变小。失败时按路由列出，并附本次请求 `error_capture` 捕获的真实 ERROR 串（`drain()` 做逐请求归因）。
 
 **种子器特例（实库确认，均非豁免而是给合法值）**：
 - `public.pg_class` 是业务表（不是系统目录），`to_regclass('pg_class')` 会因 pg_catalog 隐式优先解析到系统表 → 全部改为 `public."<table>"` 限定；
@@ -634,6 +634,53 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 **首次运行结果（2026-11-05，46 条入基线）**：种子 **383 表成功 / 0 失败**；全量路由扫描得 **46 条 handler500**：**35 条带 `error retrieving column ... / error deserializing column N`**（23×`create_time`、3×`xversion`、2×`file_version`、2×`asDefault`、1×`start_time`、1×`total`、1×`max_forum_count`、1×`order_number`、1×`deleted_at`），**11 条 handler 未输出任何 ERROR 日志**（O21 待定性，其中「出错却无记录」本身是观测缺陷）。**这直接证明「28 不是真数」**：静态扫描器没报的 `asDefault` / `max_forum_count` / `total` / `file_version` / `order_number` / `deleted_at` 都被抓到了。
 
 **CI 接入（已做，`seeded-route-scan` job，与 `integration-scenarios` 并列）**：不等清零，改棘轮基线，今天就有保护。三步验收（本地已完成）：① 基线态绿（46/46 集合相等）；② 人为把 `processing/get` 的 `x_work.start_time` 改回按 String 读 → 红，报 2 条基线外新 500（`get/{id}`、`instance/{executionId}`，`error deserializing column 7`）；③ 还原后绿。**PR 上的红/绿验证**待网络恢复推送后在 PR 上复跑一次才可报「门禁验收通过」。
+
+### O19 批次 3 收口（30 个列类型站点 + SILENT 4 处 + process_id_complex）
+
+**范围**：种子化守卫首跑的 35 条列错配（对应 30 个唯一 panic 站点），加静态扫描器 SILENT 4 处（`component/src/lib.rs` 的两个 handler），加批次 2 记账的两处盲区（`process_id_complex` 的 `x_task.start_time/end_time`）。
+
+**SQL 现场确认**（`oa4rust` 实库 `information_schema.columns` + 行值抽样；完整 SELECT 见各 crate 编辑）：
+
+| 站点族 | SELECT 关键列 | 列真实类型 | 原代码取值 | 现场结论 |
+|---|---|---|---|---|
+| `ai` chat list completion / paging | `x_ai_clue.create_time`、`x_ai_completion.create_time` | `timestamp with time zone` | `Value::String(row.get(...))` | 错配 |
+| `ai` conversation list | `x_ai_conversation.create_time` | `timestamp` | 同上 | 错配 |
+| `ai` config get/list model | `x_ai_model.xasdefault`（另 `xenable` 是 boolean） | `text`，真实行存 `'true'`/`'false'` | `Option<bool>` | 错配 |
+| `portal` / `portal_assemble_designer` / `portal_assemble_surface` 共 13 条路由 | `x_portal_page.create_time`、`update_time` | `timestamp` | `Option<String>` | 错配 |
+| `query_assemble_surface` / `query_assemble_designer` 共 4 条路由 | `x_query_view.create_time`、`update_time` | `timestamp` | `Option<String>` | 错配 |
+| `meeting` 详情 / 参会人列表 | `x_meeting.start_time/end_time/create_time`、`x_meeting_invite.create_time` | `timestamp` | `Option<String>` | 错配 |
+| `message_assemble_communicate` 会话图标 / IM 配置 | `x_message_conversation_icon.create_time`、`x_message_config.create_time` | `timestamp with time zone` | `Option<String>` | 错配 |
+| `attachment2` 用户容量 | `COALESCE(SUM(FILE_FILE.length),0)` | `numeric`（SUM(bigint) 返回 numeric） | `i64` | 错配 |
+| `file_assemble_control` 回收站列表/详情 | `FILE_FILE.deleted_at` | `timestamp` | `Option<String>` | 错配 |
+| `mind` 列表/树/版本 | legacy `mind_base_info.file_version`、`mind_folder_info.order_number`、`mind_version_info.file_version` | `bigint` | `Option<i32>` | 错配 |
+| `processplatform_assemble_designer` 三个 version 端点 | `pp_e_formversion/xprocessversion/xscriptversion.xversion` | `bigint` | `Option<i32>` | 错配 |
+| `bbs_assemble_control` 配置 | `x_bbs_assemble_control_config.max_forum_count` | `integer` | `i64` | 错配 |
+| `component` 两个 handler（SILENT） | `x_component.order_number` | `text`（真实行存 `'1'` 数字串） | `try_get::<Option<i32>>` 后 `try_get::<Option<i64>>`，两者都静默失败 → **字段直接不存在** | SILENT |
+| `process_id_complex` | `x_task.start_time/end_time` | `timestamp` | 裸 `row.get::<_, String>` | 错配（静态扫描器漏报） |
+
+**根因归纳**：① 时间列统一改为 SQL 侧 `::text AS <列名>`，保持既有 JSON 字符串契约（与同 crate 已用 `to_char`/`dialect.cast_text` 的约定一致）；② 整数列按实库位宽修正（bigint→i64、integer→i32）；③ `SUM()` 显式 `::bigint`；④ `xasdefault` 是 TEXT 布尔字面量，SQL 侧 `(xasdefault = 'true')` 转 bool；⑤ SILENT 改为「TEXT 解析 → i64/i32 回退 → 一律输出 orderNumber（不可解析给 0）」——**任何情况下字段都在，不再静默消失**。
+
+**先红证据（同一守卫/用例）**：
+- 种子化守卫首跑：46 条 500，其中 35 条带 `error retrieving column <col>: error deserializing column N`（逐条见修订前的 `idor_seeded_handler500_baseline.txt`）。
+- SILENT 用例破坏实验（把 TEXT 解析回退为 `None`）：`assertion left == right failed: order_number 为 TEXT '7'，orderNumber 必须是 7（缺失/null=静默丢字段）`。
+- `process_id_complex` 破坏实验（回退 `::text`）：`error retrieving column start_time: error deserializing column 5`，路由 `/api/processplatform/service/processing/process/{id}/complex` 返回 500。
+
+**改后响应体（关键字段有具体值）**：
+- `processing/process/{id}/complex`：`"tasks":[{"activity":"act-ts","endTime":"2024-01-03 06:07:08","startTime":"2024-01-02 03:04:05","title":"Task TS"}]`
+- `component/list/all`：`{"id":"component-...","name":"Seeded Component","orderNumber":7,...}`（`order_number` 存 TEXT `'7'`，输出数字 7）
+
+**回归用例**：新增 `new_real_endpoints::component_order_number_text_column_regression`；`process_timestamp_columns_regression` 追加 complex 路由断言（防止「修 get/instance 不修 complex」再次发生）。
+
+**破坏实验回合（均先红后还原绿）**：
+| 回退点 | 红原文 | 验证对象 |
+|---|---|---|
+| `x_meeting.start_time` 去掉 `::text` | `error deserializing column 4`，`GET /api/meeting/{id}` 新增 500 | 棘轮守卫 |
+| component TEXT 解析改为 `None` | `orderNumber` 断言失败（实际 0/缺失） | `component_order_number_text_column_regression` |
+| complex `start_time/end_time` 去掉 `::text` | `error deserializing column 5`，complex 返回 500 | `process_timestamp_columns_regression` |
+
+**结果**：棘轮守卫 **46 → 11**（`BASELINE_COUNT` 已下调为 11，基线文件仅余 11 条 O21 无日志条目）；`integration_runner --ignored --test-threads=1 --skip ldap_fallback` → **28 passed / 0 failed**；fmt 绿。
+
+**成串暴露记录**：批次 3 第一次整套集成测试时，`process_timestamp_columns_regression` 在 `lib.rs:91` 再次红（`error deserializing column 5`）——原因是 `get_process_instance` 与 `process_id_complex` 的 SELECT 文本完全相同，批量替换误把该处也改成 `::text`，而它仍按 `NaiveDateTime` 读。已按「读法决定 SQL」逐处区分：该处保留裸时间列，complex 保留 `::text`。**这条证明批量替换必须配行为级回归，SQL 字符串相同不等于读法相同。**
 
 ## O20 消费者证据判定（O18 六条红灯收口）
 

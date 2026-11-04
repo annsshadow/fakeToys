@@ -3830,7 +3830,7 @@ pub async fn view_id(
 
     let row = client
         .query_opt(
-            "SELECT id, name, view_flag, query_flag, content, creator, create_time FROM x_query_view WHERE id = $1",
+            "SELECT id, name, view_flag, query_flag, content, creator, create_time::text AS create_time FROM x_query_view WHERE id = $1",
             &[&id],
         )
         .await

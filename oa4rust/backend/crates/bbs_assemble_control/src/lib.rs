@@ -189,7 +189,7 @@ pub async fn get_control_config(
         (
             "maxForumCount".to_string(),
             Value::Number(serde_json::Number::from(
-                row.get::<_, i64>("max_forum_count"),
+                row.get::<_, i32>("max_forum_count"),
             )),
         ),
         (

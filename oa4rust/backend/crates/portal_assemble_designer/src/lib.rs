@@ -275,7 +275,7 @@ pub async fn get_page(
 
     let row = client
         .query_opt(
-            "SELECT id, name, category, content, creator, create_time, update_time FROM x_portal_page WHERE id = $1",
+            "SELECT id, name, category, content, creator, create_time::text AS create_time, update_time::text AS update_time FROM x_portal_page WHERE id = $1",
             &[&id],
         )
         .await
@@ -1794,7 +1794,7 @@ pub async fn page_list_portal_portalId(
 
     let rows = client
         .query(
-            "SELECT id, name, category, creator, create_time, update_time FROM x_portal_page WHERE portal_id = $1 ORDER BY update_time DESC LIMIT 100",
+            "SELECT id, name, category, creator, create_time::text AS create_time, update_time::text AS update_time FROM x_portal_page WHERE portal_id = $1 ORDER BY update_time DESC LIMIT 100",
             &[&portal_id],
         )
         .await
@@ -1846,7 +1846,7 @@ pub async fn page_id(
 
     let row = client
         .query_opt(
-            "SELECT id, name, category, content, creator, create_time, update_time FROM x_portal_page WHERE id = $1",
+            "SELECT id, name, category, content, creator, create_time::text AS create_time, update_time::text AS update_time FROM x_portal_page WHERE id = $1",
             &[&id],
         )
         .await

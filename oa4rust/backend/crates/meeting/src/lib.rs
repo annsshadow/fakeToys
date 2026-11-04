@@ -331,7 +331,7 @@ pub async fn get_meeting(
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
-            "SELECT id, title, content, room_id, start_time, end_time, creator, create_time FROM x_meeting WHERE id = $1",
+            "SELECT id, title, content, room_id, start_time::text AS start_time, end_time::text AS end_time, creator, create_time::text AS create_time FROM x_meeting WHERE id = $1",
             &[&id],
         )
         .await
@@ -505,7 +505,7 @@ pub async fn list_participants(
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
-            "SELECT id, meeting_id, invitee, status, create_time FROM x_meeting_invite WHERE meeting_id = $1 ORDER BY create_time",
+            "SELECT id, meeting_id, invitee, status, create_time::text AS create_time FROM x_meeting_invite WHERE meeting_id = $1 ORDER BY create_time",
             &[&meeting_id],
         )
         .await

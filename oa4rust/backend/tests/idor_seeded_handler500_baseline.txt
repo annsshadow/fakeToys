@@ -12,50 +12,15 @@
 #      每修一条就删一行并下调 BASELINE_COUNT —— 基线只许变小，diff 强制可见。
 #   3. 禁止为了变绿而往这里加行：加了 BASELINE_COUNT 也要加，评审可见。
 #
-# 当前 46 条（2026-11-05）：35 条列错配 + 11 条无日志待定性（O21）。
-GET /api/ai/chat/list/completion/{clue_id}/paging/{page}/size/{size}	column:create_time
-GET /api/ai/chat/list/paging/{page}/size/{size}	column:create_time
-GET /api/ai/config/get/model/{flag}	column:asDefault
-GET /api/ai/config/list/model/paging/{page}/size/{size}	column:asDefault
-GET /api/ai/conversation/list	column:create_time
+# 当前 11 条（2026-11-05）：35 条列错配已清零，余 11 条无日志待定性（O21）。
 GET /api/ai_assemble_control/chat/list/completion/{clueId}/paging/{page}/size/{size}	category:no-error-log
 GET /api/andfx/moa/sso/token/{token}/enter/{enterId}	category:no-error-log
-GET /api/attachment2/user/capacity	column:total
-GET /api/bbs/assemble/control/config	column:max_forum_count
 GET /api/cms/view/list/all	category:no-error-log
-GET /api/meeting/{id}	column:start_time
-GET /api/meeting/{meetingId}/participant/list	column:create_time
-GET /api/message/assemble/communicate/im/conversation/{id}/icon	column:create_time
-GET /api/message/assemble/communicate/im/manager/config	column:create_time
-GET /api/mind/folder/tree/my	column:order_number
-GET /api/mind/mind/list/{id}/version	column:file_version
-GET /api/mind/mind/{id}	column:file_version
 GET /api/mpweixin/bind/code/{code}	category:no-error-log
 GET /api/mpweixin/login/code/{code}	category:no-error-log
 GET /api/organization/core/express/config	category:no-error-log
 GET /api/organization/core/express/status	category:no-error-log
-GET /api/portal/assemble/designer/list/portal/{page}/{portalId}	column:create_time
-GET /api/portal/assemble/designer/page/list/portal/{portalId}	column:create_time
-GET /api/portal/assemble/designer/page/{id}	column:create_time
-GET /api/portal/assemble/surface/list/portal/portal/{page}	column:create_time
-GET /api/portal/assemble/surface/mobile/{page}/{id}	column:create_time
-GET /api/portal/assemble/surface/page/list/portal/{portal}	column:create_time
-GET /api/portal/assemble/surface/page/v2/{id}	column:create_time
-GET /api/portal/assemble/surface/page/v2/{id}/mobile	column:create_time
-GET /api/portal/assemble/surface/page/{id}/mobile	column:create_time
-GET /api/portal/assemble/surface/v2/mobile/{page}/{id}	column:create_time
-GET /api/portal/assemble/surface/v2/{page}/{id}	column:create_time
-GET /api/portal/assemble/surface/{page}/{id}	column:create_time
-GET /api/portal/page/{id}	column:create_time
-GET /api/processplatform/assemble/designer/formversion/{id}	column:xversion
-GET /api/processplatform/assemble/designer/processversion/{id}	column:xversion
-GET /api/processplatform/assemble/designer/scriptversion/{id}	column:xversion
 GET /api/qiyeweixin/code/{code}	category:no-error-log
 GET /api/qiyeweixin/update/person/detail/{code}	category:no-error-log
-GET /api/query/assemble/designer/view/{id}	column:create_time
-GET /api/queryview/execute/v2/{view}/{id}/{page}/{size}	column:create_time
-GET /api/queryview/execute/{view}/{id}	column:create_time
-GET /api/queryview/view/{id}	column:create_time
-GET /api/recycle/{id}	column:deleted_at
 GET /api/welink/code/{code}	category:no-error-log
 GET /api/zhengwudingding/code/{code}	category:no-error-log

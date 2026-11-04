@@ -112,7 +112,7 @@ pub async fn conversation_list(
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
-            "SELECT id, title, user_id, create_time FROM x_ai_conversation ORDER BY create_time DESC LIMIT 20",
+            "SELECT id, title, user_id, create_time::text AS create_time FROM x_ai_conversation ORDER BY create_time DESC LIMIT 20",
             &[],
         )
         .await

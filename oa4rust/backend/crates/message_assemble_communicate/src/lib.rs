@@ -869,7 +869,7 @@ pub async fn im_manager_config_post(
     }
 
     let row = client
-        .query_opt("SELECT id, config_key, config_value, create_time FROM x_message_config ORDER BY create_time DESC LIMIT 1", &[])
+        .query_opt("SELECT id, config_key, config_value, create_time::text AS create_time FROM x_message_config ORDER BY create_time DESC LIMIT 1", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1035,7 +1035,7 @@ pub async fn im_conversation_id_icon(
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
-        .query_opt("SELECT icon_url, icon_name, create_time FROM x_message_conversation_icon WHERE conversation_id = $1 ORDER BY create_time DESC LIMIT 1", &[&id])
+        .query_opt("SELECT icon_url, icon_name, create_time::text AS create_time FROM x_message_conversation_icon WHERE conversation_id = $1 ORDER BY create_time DESC LIMIT 1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1297,7 +1297,7 @@ pub async fn im_manager_config(
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
-        .query_opt("SELECT id, config_key, config_value, create_time FROM x_message_config ORDER BY create_time DESC LIMIT 1", &[])
+        .query_opt("SELECT id, config_key, config_value, create_time::text AS create_time FROM x_message_config ORDER BY create_time DESC LIMIT 1", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 

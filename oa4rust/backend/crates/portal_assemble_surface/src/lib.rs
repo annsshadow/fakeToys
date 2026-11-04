@@ -1367,7 +1367,7 @@ pub async fn page_list_portal_portal(
 
     let rows = client
         .query(
-            "SELECT id, name, category, creator, create_time FROM x_portal_page WHERE portal_id = $1 ORDER BY create_time DESC LIMIT 100",
+            "SELECT id, name, category, creator, create_time::text AS create_time FROM x_portal_page WHERE portal_id = $1 ORDER BY create_time DESC LIMIT 100",
             &[&portal],
         )
         .await
@@ -1527,7 +1527,7 @@ async fn page_v2_id_core(
 
     let row = client
         .query_opt(
-            "SELECT id, name, content, creator, create_time FROM x_portal_page WHERE id = $1",
+            "SELECT id, name, content, creator, create_time::text AS create_time FROM x_portal_page WHERE id = $1",
             &[&id],
         )
         .await
@@ -1582,7 +1582,7 @@ async fn page_v2_id_mobile_core(
 
     let row = client
         .query_opt(
-            "SELECT id, name, mobile_content, creator, create_time FROM x_portal_page WHERE id = $1",
+            "SELECT id, name, mobile_content, creator, create_time::text AS create_time FROM x_portal_page WHERE id = $1",
             &[&id],
         )
         .await
@@ -1755,7 +1755,7 @@ pub async fn page_id(
 
     let row = client
         .query_opt(
-            "SELECT id, name, content, creator, create_time FROM x_portal_page WHERE id = $1",
+            "SELECT id, name, content, creator, create_time::text AS create_time FROM x_portal_page WHERE id = $1",
             &[&id],
         )
         .await
@@ -1794,7 +1794,7 @@ async fn page_id_mobile_core(
 
     let row = client
         .query_opt(
-            "SELECT id, name, mobile_content, creator, create_time FROM x_portal_page WHERE id = $1",
+            "SELECT id, name, mobile_content, creator, create_time::text AS create_time FROM x_portal_page WHERE id = $1",
             &[&id],
         )
         .await

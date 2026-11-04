@@ -3090,7 +3090,7 @@ pub async fn view_id(
 
     let row = client
         .query_opt(
-            "SELECT id, name, view_flag, query_flag, content, creator, create_time FROM x_query_view WHERE id = $1",
+            "SELECT id, name, view_flag, query_flag, content, creator, create_time::text AS create_time FROM x_query_view WHERE id = $1",
             &[&id],
         )
         .await
@@ -3335,7 +3335,7 @@ pub async fn view_id_execute(
 
     let row = client
         .query_opt(
-            "SELECT id, name, view_flag, query_flag, content, creator, create_time, update_time FROM x_query_view WHERE id = $1",
+            "SELECT id, name, view_flag, query_flag, content, creator, create_time::text AS create_time, update_time::text AS update_time FROM x_query_view WHERE id = $1",
             &[&id],
         )
         .await
@@ -3440,7 +3440,7 @@ pub async fn view_id_execute_v2_page_page_size_size(
 
     let rows = client
         .query(
-            "SELECT id, content, creator, create_time FROM x_query_view WHERE id = $1 ORDER BY create_time DESC LIMIT $2::bigint OFFSET $3::bigint",
+            "SELECT id, content, creator, create_time::text AS create_time FROM x_query_view WHERE id = $1 ORDER BY create_time DESC LIMIT $2::bigint OFFSET $3::bigint",
             &[&id, &size, &offset],
         )
         .await

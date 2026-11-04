@@ -2030,7 +2030,7 @@ pub async fn attachment2_user_capacity(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_opt("SELECT COALESCE(SUM(length), 0) AS total FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL", &[&session.person_unique])
+        .query_opt("SELECT COALESCE(SUM(length), 0)::bigint AS total FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL", &[&session.person_unique])
         .await?;
     let total: i64 = row.map(|r| r.get("total")).unwrap_or(0);
     Ok(Json(ActionResult::success(Value::Object(
@@ -3987,7 +3987,7 @@ pub async fn recycle_list(
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
-            "SELECT id, name, person, reference_type, extension, length, mime_type, deleted_at \
+            "SELECT id, name, person, reference_type, extension, length, mime_type, deleted_at::text AS deleted_at \
              FROM FILE_FILE WHERE deleted_at IS NOT NULL AND person = $1 ORDER BY deleted_at DESC",
             &[&session.person_unique],
         )
@@ -4056,7 +4056,7 @@ pub async fn recycle_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_opt("SELECT id, name, person, deleted_at FROM FILE_FILE WHERE id = $1 AND deleted_at IS NOT NULL", &[&id])
+        .query_opt("SELECT id, name, person, deleted_at::text AS deleted_at FROM FILE_FILE WHERE id = $1 AND deleted_at IS NOT NULL", &[&id])
         .await?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(

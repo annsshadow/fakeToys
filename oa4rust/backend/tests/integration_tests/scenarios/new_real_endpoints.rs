@@ -924,6 +924,30 @@ pub async fn process_timestamp_columns_regression() {
     );
     println!("processing/instance 响应体: {}", inst);
 
+    // process_id_complex 的 tasks 走另一条 SQL（裸 start_time/end_time 读取），
+    // 修 get/instance 不会连带修好它，必须单独断言真实时间值。
+    let complex = get_ok(
+        &base,
+        &client,
+        &auth,
+        &format!(
+            "/api/processplatform/service/processing/process/{}/complex",
+            work_id
+        ),
+    )
+    .await;
+    assert_eq!(
+        complex["data"]["tasks"][0]["startTime"].as_str(),
+        Some("2024-01-02 03:04:05"),
+        "complex 的 tasks[0].startTime 应来自 x_task.start_time"
+    );
+    assert_eq!(
+        complex["data"]["tasks"][0]["endTime"].as_str(),
+        Some("2024-01-03 06:07:08"),
+        "complex 的 tasks[0].endTime 应来自 x_task.end_time"
+    );
+    println!("processing/process/{{id}}/complex 响应体: {}", complex);
+
     server_handle.abort();
     let _ = server_handle.await;
 }
@@ -1045,6 +1069,52 @@ pub async fn bam_config_enabled_column_regression() {
         "create 后回读 enabled 应为 true"
     );
     println!("bam/create 响应体: {}", created);
+
+    server_handle.abort();
+    let _ = server_handle.await;
+}
+
+#[tokio::test]
+#[ignore = "requires a running database server"]
+pub async fn component_order_number_text_column_regression() {
+    let pool = TEST_DB.get().expect("db not initialized").clone();
+    let (_addr, server_handle, token) =
+        crate::integration_tests::helpers::setup_test_server(pool.clone())
+            .await
+            .expect("start server");
+    let client = Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .unwrap();
+    let base = format!("http://{}", _addr);
+    let auth = format!("Bearer {}", token);
+
+    // x_component.order_number 是 TEXT（真实数据里存数字字符串）。
+    // 旧实现用 try_get(i32/i64) 静默失败 → 响应里根本没有 orderNumber。
+    // 断言必须是具体数值 7，字段缺失或为 null 都算没修。
+    let comp_id = uniq("component");
+    {
+        let c = pool.as_pg().unwrap().get().await.expect("pool");
+        c.execute(
+            "INSERT INTO x_component (id, name, order_number) VALUES ($1, $2, '7')",
+            &[&comp_id, &"Seeded Component"],
+        )
+        .await
+        .expect("seed x_component order_number text");
+    }
+
+    let got = get_ok(&base, &client, &auth, "/api/component/list/all").await;
+    let rows = got["data"].as_array().expect("component data 应为数组");
+    let row = rows
+        .iter()
+        .find(|r| r["id"].as_str() == Some(comp_id.as_str()))
+        .unwrap_or_else(|| panic!("seed 的 component {} 未出现在响应中", comp_id));
+    assert_eq!(
+        row["orderNumber"].as_i64(),
+        Some(7),
+        "order_number 为 TEXT '7'，orderNumber 必须是 7（缺失/null=静默丢字段）"
+    );
+    println!("component/list/all 响应行: {}", row);
 
     server_handle.abort();
     let _ = server_handle.await;
