@@ -22,7 +22,10 @@ JOBS = [
     {
         'name': 'gen_mcp_tools',
         'gen': ROOT / 'scripts' / 'gen_mcp_tools.py',
-        'targets': [ROOT / 'crates' / 'mcp_server' / 'src' / 'generated_routes.rs'],
+        'targets': [
+            ROOT / 'crates' / 'mcp_server' / 'src' / 'generated_routes.rs',
+            ROOT.parent / 'tests' / 'contracts' / 'backend-route-methods.fixture.ts',
+        ],
     },
     {
         'name': 'generate_parity_tests',
@@ -57,14 +60,14 @@ def main() -> int:
                 print((proc.stdout or '') + (proc.stderr or ''))
                 return 2
 
-            stale = [p.relative_to(ROOT).as_posix()
+            stale = [(p, p.relative_to(ROOT.parent).as_posix())
                      for p, before in snapshots.items()
                      if normalized(p.read_bytes()) != normalized(before)]
             if stale:
-                print(f'{job["name"]}: 生成物与生成器不一致：' + ', '.join(stale))
-                for rel in stale:
-                    committed = normalized(snapshots[ROOT / rel]).split(b'\n')
-                    generated = normalized((ROOT / rel).read_bytes()).split(b'\n')
+                print(f'{job["name"]}: 生成物与生成器不一致：' + ', '.join(rel for _, rel in stale))
+                for path, rel in stale:
+                    committed = normalized(snapshots[path]).split(b'\n')
+                    generated = normalized(path.read_bytes()).split(b'\n')
                     for lineno, (a, b) in enumerate(zip(committed, generated), 1):
                         if a != b:
                             print(f'首个差异：{rel}:{lineno}')

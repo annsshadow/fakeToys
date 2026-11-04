@@ -37854,14 +37854,6 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
         body_params: &[],
     },
     RouteDef {
-        tool_name: "legacy_shared_boom",
-        method: HttpMethod::Get,
-        path: "/boom",
-        description: "boom handler",
-        path_params: &[],
-        body_params: &[],
-    },
-    RouteDef {
         tool_name: "legacy_shared_ready",
         method: HttpMethod::Get,
         path: "/ready",
@@ -37896,4 +37888,4 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
 ];
 
 /// 生成的工具总数
-pub const GENERATED_TOOL_COUNT: usize = 4736;
+pub const GENERATED_TOOL_COUNT: usize = 4735;
