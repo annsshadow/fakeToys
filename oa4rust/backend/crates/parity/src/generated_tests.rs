@@ -10,8 +10,7 @@
 // is registered on the crate's Router.  A NOT_FOUND (404) response means the
 // route is missing from the Rust implementation — a parity gap.
 //
-// Generated: 2026-10-11 05:12:32
-// Crates: 55   Routes: 4042   Tests: 4042
+// Crates: 55   Routes: 4099   Tests: 4099
 
 use axum::http::StatusCode;
 use tower::util::ServiceExt;
@@ -7800,7 +7799,7 @@ use tower::util::ServiceExt;
 
     // ── x_calendar_assemble_control → calendar_assemble_control (35 routes) ──
     #[tokio::test]
-    async fn parity__calendar_assemble_control__get_calendar_detail() {
+    async fn parity__calendar_assemble_control__crate() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -7822,7 +7821,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate() {
+    async fn parity__calendar_assemble_control__crate_1() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -7844,7 +7843,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_1() {
+    async fn parity__calendar_assemble_control__crate_2() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -7866,7 +7865,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_2() {
+    async fn parity__calendar_assemble_control__crate_3() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -7888,7 +7887,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_3() {
+    async fn parity__calendar_assemble_control__crate_4() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -7910,7 +7909,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_4() {
+    async fn parity__calendar_assemble_control__crate_5() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -7932,7 +7931,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_5() {
+    async fn parity__calendar_assemble_control__crate_6() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -7954,7 +7953,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_6() {
+    async fn parity__calendar_assemble_control__crate_7() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -7976,7 +7975,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_7() {
+    async fn parity__calendar_assemble_control__crate_8() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -7998,7 +7997,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_8() {
+    async fn parity__calendar_assemble_control__crate_9() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -8020,7 +8019,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_9() {
+    async fn parity__calendar_assemble_control__crate_10() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -8042,7 +8041,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_10() {
+    async fn parity__calendar_assemble_control__crate_11() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -8064,7 +8063,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_11() {
+    async fn parity__calendar_assemble_control__crate_12() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -8086,7 +8085,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_12() {
+    async fn parity__calendar_assemble_control__crate_13() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -8108,7 +8107,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_13() {
+    async fn parity__calendar_assemble_control__crate_14() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -8130,7 +8129,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_14() {
+    async fn parity__calendar_assemble_control__crate_15() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -8152,7 +8151,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_15() {
+    async fn parity__calendar_assemble_control__crate_16() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -8174,7 +8173,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_16() {
+    async fn parity__calendar_assemble_control__crate_17() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -8196,7 +8195,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_17() {
+    async fn parity__calendar_assemble_control__crate_18() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -8218,7 +8217,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_18() {
+    async fn parity__calendar_assemble_control__crate_19() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -8240,7 +8239,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_19() {
+    async fn parity__calendar_assemble_control__crate_20() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -8262,7 +8261,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_20() {
+    async fn parity__calendar_assemble_control__crate_21() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -8284,7 +8283,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_21() {
+    async fn parity__calendar_assemble_control__crate_22() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -8306,7 +8305,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_22() {
+    async fn parity__calendar_assemble_control__crate_23() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -8328,7 +8327,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_23() {
+    async fn parity__calendar_assemble_control__crate_24() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -8394,7 +8393,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_24() {
+    async fn parity__calendar_assemble_control__crate_25() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -8416,7 +8415,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_25() {
+    async fn parity__calendar_assemble_control__crate_26() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -8438,7 +8437,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_26() {
+    async fn parity__calendar_assemble_control__crate_27() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -8460,7 +8459,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_27() {
+    async fn parity__calendar_assemble_control__crate_28() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -8482,7 +8481,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_28() {
+    async fn parity__calendar_assemble_control__crate_29() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -8504,7 +8503,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_29() {
+    async fn parity__calendar_assemble_control__crate_30() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -8526,7 +8525,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__calendar_assemble_control__crate_30() {
+    async fn parity__calendar_assemble_control__crate_31() {
         let router = oa4rust::calendar_assemble_control::router(shared::testing::test_pool());
         let response = router
             .oneshot(
@@ -33324,7 +33323,7 @@ use tower::util::ServiceExt;
             .oneshot(
                 axum::http::Request::builder()
                     .uri("/api/message/consume/test-id/type/test-id")
-                    .method(axum::http::Method::GET)
+                    .method(axum::http::Method::POST)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
             )
@@ -33336,7 +33335,7 @@ use tower::util::ServiceExt;
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on message: /api/message/consume/{{id}}/type/{{type}} (GET)"
+            "parity: route missing on message: /api/message/consume/{{id}}/type/{{type}} (POST)"
         );
     }
     #[tokio::test]
@@ -38806,9 +38805,1263 @@ use tower::util::ServiceExt;
         );
     }
 
-    // ── x_organization_assemble_personal → personal (62 routes) ──
+    // ── x_organization_assemble_personal → personal (119 routes) ──
+    #[tokio::test]
+    async fn parity__personal__u2() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/custom/manager/person/test-id/name/test-id")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/custom/manager/person/{{person}}/name/{{name}} (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_1() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/custom/manager/person/test-id/name/test-id")
+                    .method(axum::http::Method::PUT)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/custom/manager/person/{{person}}/name/{{name}} (PUT)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_2() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/custom/manager/person/test-id/name/test-id/mockputtopost")
+                    .method(axum::http::Method::POST)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/custom/manager/person/{{person}}/name/{{name}}/mockputtopost (POST)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_3() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/custom/test-id")
+                    .method(axum::http::Method::DELETE)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/custom/{{name}} (DELETE)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_4() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/custom/test-id")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/custom/{{name}} (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_5() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/custom/test-id")
+                    .method(axum::http::Method::PUT)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/custom/{{name}} (PUT)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_6() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/custom/test-id/mockdeletetoget")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/custom/{{name}}/mockdeletetoget (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_7() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/definition/test-id")
+                    .method(axum::http::Method::DELETE)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/definition/{{name}} (DELETE)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_8() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/definition/test-id")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/definition/{{name}} (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_9() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/definition/test-id")
+                    .method(axum::http::Method::PUT)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/definition/{{name}} (PUT)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_10() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/definition/test-id/mockdeletetoget")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/definition/{{name}}/mockdeletetoget (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_11() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/definition/test-id/mockputtopost")
+                    .method(axum::http::Method::POST)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/definition/{{name}}/mockputtopost (POST)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_12() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/empower/list/person/test-id")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/empower/list/person/{{flag}} (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_13() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/empower/list/test-id/next/test-id")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/empower/list/{{id}}/next/{{count}} (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_14() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/empower/list/test-id/prev/test-id")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/empower/list/{{id}}/prev/{{count}} (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__empower() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/empower/manager/test-id/mockdeletetoget")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/empower/manager/{{id}}/mockdeletetoget (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__empower_1() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/empower/manager/test-id/mockputtopost")
+                    .method(axum::http::Method::POST)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/empower/manager/{{id}}/mockputtopost (POST)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__empower_2() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/empower/test-id/mockdeletetoget")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/empower/{{id}}/mockdeletetoget (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__empower_3() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/empower/test-id/mockputtopost")
+                    .method(axum::http::Method::POST)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/empower/{{id}}/mockputtopost (POST)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_15() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/empowerlog/list/currentperson/paging/test-id/size/test-id")
+                    .method(axum::http::Method::POST)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/empowerlog/list/currentperson/paging/{{page}}/size/{{size}} (POST)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_16() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/empowerlog/list/to/currentperson/paging/test-id/size/test-id")
+                    .method(axum::http::Method::POST)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/empowerlog/list/to/currentperson/paging/{{page}}/size/{{size}} (POST)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_17() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/empowerlog/list/test-id/next/test-id")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/empowerlog/list/{{id}}/next/{{count}} (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_18() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/empowerlog/list/test-id/prev/test-id")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/empowerlog/list/{{id}}/prev/{{count}} (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_19() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/empowerlog/manager/list/paging/test-id/size/test-id")
+                    .method(axum::http::Method::POST)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/empowerlog/manager/list/paging/{{page}}/size/{{size}} (POST)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_20() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/empowerlog/test-id")
+                    .method(axum::http::Method::DELETE)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/empowerlog/{{id}} (DELETE)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_21() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/empowerlog/test-id/mockdeletetoget")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/empowerlog/{{id}}/mockdeletetoget (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_22() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/exmail")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/exmail (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_23() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/exmail")
+                    .method(axum::http::Method::POST)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/exmail (POST)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_24() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/exmail/list/title/passive")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/exmail/list/title/passive (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_25() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/exmail/new/count")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/exmail/new/count (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_26() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/exmail/new/count/passive")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/exmail/new/count/passive (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_27() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/exmail/sso")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/exmail/sso (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__icon() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/icon/test-id")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/icon/{{person}} (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__password() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/password")
+                    .method(axum::http::Method::PUT)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/password (PUT)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__password_1() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/password/mockputtopost")
+                    .method(axum::http::Method::POST)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/password/mockputtopost (POST)"
+        );
+    }
     #[tokio::test]
     async fn parity__personal__get_person() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/person")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/person (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__edit_person() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/person")
+                    .method(axum::http::Method::PUT)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/person (PUT)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_28() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/person/icon")
+                    .method(axum::http::Method::POST)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/person/icon (POST)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_29() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/person/icon/mockputtopost")
+                    .method(axum::http::Method::POST)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/person/icon/mockputtopost (POST)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__edit_person_1() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/person/mockputtopost")
+                    .method(axum::http::Method::POST)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/person/mockputtopost (POST)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__password_2() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/person/password")
+                    .method(axum::http::Method::PUT)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/person/password (PUT)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__password_3() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/person/password/mockputtopost")
+                    .method(axum::http::Method::POST)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/person/password/mockputtopost (POST)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__regist() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/regist")
+                    .method(axum::http::Method::POST)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/regist (POST)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__auth() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/regist/captcha/width/test-id/height/test-id")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/regist/captcha/width/{{width}}/height/{{height}} (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__regist_1() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/regist/check/mobile/test-id")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/regist/check/mobile/{{mobile}} (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__regist_2() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/regist/check/name/test-id")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/regist/check/name/{{name}} (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_30() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/regist/code/mobile/test-id")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/regist/code/mobile/{{mobile}} (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_31() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/regist/mode")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/regist/mode (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__reset() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/reset")
+                    .method(axum::http::Method::PUT)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/reset (PUT)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__reset_1() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/reset/check/credential/test-id")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/reset/check/credential/{{credential}} (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__reset_2() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/reset/code/credential/test-id")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/reset/code/credential/{{credential}} (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__reset_3() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/reset/mockputtopost")
+                    .method(axum::http::Method::POST)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/reset/mockputtopost (POST)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__reset_4() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/reset/password/anonymous")
+                    .method(axum::http::Method::POST)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/reset/password/anonymous (POST)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__signature() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/signature/delete/test-id")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/signature/delete/{{id}} (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__signature_1() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/signature/list")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/signature/list (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__u2_32() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/signature/list/person/test-id")
+                    .method(axum::http::Method::GET)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/signature/list/person/{{flag}} (GET)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__signature_2() {
+        let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
+        let response = router
+            .oneshot(
+                axum::http::Request::builder()
+                    .uri("/api/organization/assemble/personal/signature/upload")
+                    .method(axum::http::Method::POST)
+                    .body(axum::body::Body::empty())
+                    .expect("build request"),
+            )
+            .await
+            .expect("oneshot dispatch");
+        let (parts, body) = response.into_parts();
+        let bytes = axum::body::to_bytes(body, usize::MAX)
+            .await
+            .expect("read parity body");
+        assert!(
+            parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
+            "parity: route missing on personal: /api/organization/assemble/personal/signature/upload (POST)"
+        );
+    }
+    #[tokio::test]
+    async fn parity__personal__get_person_1() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -38830,7 +40083,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__edit_person() {
+    async fn parity__personal__edit_person_2() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -38852,7 +40105,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2() {
+    async fn parity__personal__u2_33() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -38874,7 +40127,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_1() {
+    async fn parity__personal__u2_34() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -38896,7 +40149,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_2() {
+    async fn parity__personal__u2_35() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -38918,7 +40171,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_3() {
+    async fn parity__personal__u2_36() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -38940,7 +40193,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_4() {
+    async fn parity__personal__u2_37() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -38962,7 +40215,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_5() {
+    async fn parity__personal__u2_38() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -38984,7 +40237,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_6() {
+    async fn parity__personal__u2_39() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39006,7 +40259,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_7() {
+    async fn parity__personal__u2_40() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39028,7 +40281,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_8() {
+    async fn parity__personal__u2_41() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39050,7 +40303,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_9() {
+    async fn parity__personal__u2_42() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39072,7 +40325,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_10() {
+    async fn parity__personal__u2_43() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39094,7 +40347,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_11() {
+    async fn parity__personal__u2_44() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39116,7 +40369,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_12() {
+    async fn parity__personal__u2_45() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39138,7 +40391,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_13() {
+    async fn parity__personal__u2_46() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39160,7 +40413,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_14() {
+    async fn parity__personal__u2_47() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39182,7 +40435,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_15() {
+    async fn parity__personal__u2_48() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39204,7 +40457,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_16() {
+    async fn parity__personal__u2_49() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39226,7 +40479,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__empower() {
+    async fn parity__personal__empower_4() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39248,7 +40501,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__empower_1() {
+    async fn parity__personal__empower_5() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39270,7 +40523,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__empower_2() {
+    async fn parity__personal__empower_6() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39292,7 +40545,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__empower_3() {
+    async fn parity__personal__empower_7() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39314,7 +40567,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_17() {
+    async fn parity__personal__u2_50() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39336,7 +40589,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_18() {
+    async fn parity__personal__u2_51() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39358,7 +40611,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_19() {
+    async fn parity__personal__u2_52() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39380,7 +40633,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_20() {
+    async fn parity__personal__u2_53() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39402,7 +40655,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_21() {
+    async fn parity__personal__u2_54() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39424,7 +40677,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_22() {
+    async fn parity__personal__u2_55() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39446,7 +40699,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_23() {
+    async fn parity__personal__u2_56() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39468,7 +40721,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_24() {
+    async fn parity__personal__u2_57() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39490,7 +40743,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_25() {
+    async fn parity__personal__u2_58() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39512,7 +40765,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_26() {
+    async fn parity__personal__u2_59() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39534,7 +40787,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_27() {
+    async fn parity__personal__u2_60() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39556,7 +40809,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_28() {
+    async fn parity__personal__u2_61() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39578,7 +40831,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_29() {
+    async fn parity__personal__u2_62() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39600,7 +40853,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_30() {
+    async fn parity__personal__u2_63() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39622,7 +40875,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__icon() {
+    async fn parity__personal__icon_1() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39644,7 +40897,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__icon_1() {
+    async fn parity__personal__icon_2() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39666,7 +40919,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__edit_person_1() {
+    async fn parity__personal__edit_person_3() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39688,7 +40941,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__password() {
+    async fn parity__personal__password_4() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39710,7 +40963,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__password_1() {
+    async fn parity__personal__password_5() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39732,7 +40985,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__regist() {
+    async fn parity__personal__regist_3() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39754,7 +41007,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__auth() {
+    async fn parity__personal__auth_1() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39776,7 +41029,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__regist_1() {
+    async fn parity__personal__regist_4() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39798,7 +41051,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__regist_2() {
+    async fn parity__personal__regist_5() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39820,7 +41073,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__regist_3() {
+    async fn parity__personal__regist_6() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39842,7 +41095,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_31() {
+    async fn parity__personal__u2_64() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39864,7 +41117,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__regist_4() {
+    async fn parity__personal__regist_7() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39886,7 +41139,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_32() {
+    async fn parity__personal__u2_65() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39908,7 +41161,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_33() {
+    async fn parity__personal__u2_66() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39930,7 +41183,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__signature() {
+    async fn parity__personal__signature_3() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39952,7 +41205,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__signature_1() {
+    async fn parity__personal__signature_4() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39974,7 +41227,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__u2_34() {
+    async fn parity__personal__u2_67() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -39996,7 +41249,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__signature_2() {
+    async fn parity__personal__signature_5() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -40018,7 +41271,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__signature_3() {
+    async fn parity__personal__signature_6() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -40040,7 +41293,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__reset() {
+    async fn parity__personal__reset_5() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -40062,7 +41315,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__reset_1() {
+    async fn parity__personal__reset_6() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -40084,7 +41337,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__reset_2() {
+    async fn parity__personal__reset_7() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -40106,7 +41359,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__reset_3() {
+    async fn parity__personal__reset_8() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -40128,7 +41381,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__reset_4() {
+    async fn parity__personal__reset_9() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -40150,7 +41403,7 @@ use tower::util::ServiceExt;
         );
     }
     #[tokio::test]
-    async fn parity__personal__reset_5() {
+    async fn parity__personal__reset_10() {
         let router = oa4rust::personal::router(shared::testing::test_pool(), shared::SessionManager::new());
         let response = router
             .oneshot(
@@ -76260,7 +77513,7 @@ use tower::util::ServiceExt;
             .oneshot(
                 axum::http::Request::builder()
                     .uri("/api/program_center/captcha/v2/create/width/test-id/height/test-id")
-                    .method(axum::http::Method::GET)
+                    .method(axum::http::Method::POST)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
             )
@@ -76272,7 +77525,7 @@ use tower::util::ServiceExt;
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/captcha/v2/create/width/{{width}}/height/{{height}} (GET)"
+            "parity: route missing on program_center: /api/program_center/captcha/v2/create/width/{{width}}/height/{{height}} (POST)"
         );
     }
     #[tokio::test]
@@ -76392,7 +77645,7 @@ use tower::util::ServiceExt;
             .oneshot(
                 axum::http::Request::builder()
                     .uri("/api/program_center/code/create/mobile/test-id")
-                    .method(axum::http::Method::GET)
+                    .method(axum::http::Method::POST)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
             )
@@ -76404,7 +77657,7 @@ use tower::util::ServiceExt;
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on program_center: /api/program_center/code/create/mobile/{{mobile}} (GET)"
+            "parity: route missing on program_center: /api/program_center/code/create/mobile/{{mobile}} (POST)"
         );
     }
     #[tokio::test]
@@ -89029,5 +90282,5 @@ use tower::util::ServiceExt;
 // ──────────────────────────────────────────────────────────────────────────────
 #[test]
 fn parity_generated_test_count() {
-    assert!(4042 > 0, "no parity tests generated — check the Python script output");
+    assert!(4099 > 0, "no parity tests generated — check the Python script output");
 }
