@@ -52,7 +52,7 @@ mod error_capture;
 mod idor_matrix {
     use axum::body::Body;
     use axum::http::{Method, Request, StatusCode};
-    use std::collections::BTreeMap;
+    use std::collections::{BTreeMap, BTreeSet};
     use std::path::Path;
     use tower::ServiceExt;
 
@@ -1096,9 +1096,42 @@ mod idor_matrix {
         (seeded, failures)
     }
 
-    /// 行为级守卫：种子化全路由扫描，断言 handler500 == 0。
+    /// 当前基线条目数上限（必须与基线文件行数相等）。
+    /// 每修复一条：删对应基线路 → 下调本常量，同 PR 可见。
+    const BASELINE_COUNT: usize = 46;
+
+    /// 棘轮基线：`<METHOD> <route>\t<reason>`，reason 见文件头。
+    const BASELINE_RAW: &str = include_str!("idor_seeded_handler500_baseline.txt");
+
+    /// 从本次请求捕获的 ERROR 串里判定类别：优先取失败列名，否则归入无日志类。
+    fn classify_error(joined: &str) -> String {
+        if let Some(idx) = joined.find("error retrieving column ") {
+            let rest = &joined[idx + "error retrieving column ".len()..];
+            let col: String = rest
+                .chars()
+                .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
+                .collect();
+            if !col.is_empty() {
+                return format!("column:{col}");
+            }
+        }
+        "category:no-error-log".to_string()
+    }
+
+    fn parse_baseline(raw: &str) -> Vec<String> {
+        raw.lines()
+            .map(|l| l.trim_end().to_string())
+            .filter(|l| !l.is_empty() && !l.starts_with('#'))
+            .collect()
+    }
+
+    /// 行为级守卫：种子化全路由扫描 + 棘轮基线。
+    ///
+    /// 规则：当前 500 集合必须与基线集合**完全相等**。
+    /// - 基线外的新 500 → 红（新写的类型错配当天被拦）；
+    /// - 基线里复现不出来的条目 → 红（已修但没删行 / 没下调上限）。
     #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
-    async fn seeded_route_scan_must_have_zero_handler500() {
+    async fn seeded_route_scan_handler500_ratchet() {
         error_capture::init();
         let Some((app, pool)) = setup_with_db(SEEDED_DB).await else {
             return;
@@ -1175,15 +1208,73 @@ mod idor_matrix {
             failures.len(),
             failures.join("\n")
         );
+
+        let current: BTreeSet<String> = handler500
+            .iter()
+            .map(|(k, v)| format!("{k}\t{}", classify_error(v)))
+            .collect();
+        let baseline_rows = parse_baseline(BASELINE_RAW);
+        let baseline: BTreeSet<String> = baseline_rows.iter().cloned().collect();
+
+        // 元校验：条目格式、去重、条目数 == BASELINE_COUNT
+        let mut bad_format = Vec::new();
+        for row in &baseline_rows {
+            let Some((key, reason)) = row.split_once('\t') else {
+                bad_format.push(format!("缺少 TAB 分隔: {row}"));
+                continue;
+            };
+            if !key.contains(' ') {
+                bad_format.push(format!("缺少 METHOD/路径: {row}"));
+            }
+            if !(reason.starts_with("column:") || reason.starts_with("category:")) {
+                bad_format.push(format!("reason 不合规: {row}"));
+            }
+        }
         assert!(
-            handler500.is_empty(),
-            "种子化路由扫描：{} 条 handler 级 500（读取种子行时反序列化失败）：\n{}",
-            handler500.len(),
-            handler500
+            bad_format.is_empty(),
+            "基线条目格式错误：\n{}",
+            bad_format.join("\n")
+        );
+        assert_eq!(
+            baseline.len(),
+            baseline_rows.len(),
+            "基线里有重复条目（会造成『相等』假象）"
+        );
+        assert_eq!(
+            baseline_rows.len(),
+            BASELINE_COUNT,
+            "基线行数 {} ≠ BASELINE_COUNT {}；修复时必须删行并下调该常量",
+            baseline_rows.len(),
+            BASELINE_COUNT
+        );
+
+        let new_500: Vec<&String> = current.difference(&baseline).collect();
+        let stale: Vec<&String> = baseline.difference(&current).collect();
+
+        assert!(
+            new_500.is_empty(),
+            "新增 / 未登记 handler500：{} 条（先修，禁止往基线里加行）：\n{}",
+            new_500.len(),
+            new_500
                 .iter()
-                .map(|(k, v)| format!("{k}\n    body={v}"))
+                .map(|e| format!("  {e}"))
                 .collect::<Vec<_>>()
                 .join("\n")
+        );
+        assert!(
+            stale.is_empty(),
+            "基线里 {} 条在本轮复现不出来（已修复但没删行 / 没下调 BASELINE_COUNT）：\n{}",
+            stale.len(),
+            stale
+                .iter()
+                .map(|e| format!("  {e}"))
+                .collect::<Vec<_>>()
+                .join("\n")
+        );
+        eprintln!(
+            "== 棘轮基线：{} 条（当前 {} 条），集合相等 ==",
+            baseline.len(),
+            current.len()
         );
     }
 }

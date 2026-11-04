@@ -603,7 +603,7 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 
 **扫描器盲区（必须记账，不许当成已清零）**：同一文件 `process_id_complex` handler 的 `:2407/:2409` 仍是裸 `row.get("start_time")/("end_time")`，对应 `x_task` TIMESTAMP，**scanner 不报**（无 turbofish 时推断不出类型）。本轮未修（不在批次 2 端点、补测试才能改），列入批次 3 之后的新增项。`x_status` 类 `to_char` 出来的 TEXT 列（如 `:2341`）是真 TEXT，不是盲区。
 
-**其他观察（未在本轮改动）**：`TimerRegistry::restore` 目前仓库内无调用方（`routes.rs` 只调 `start_background`）。即 timer 任务的错配过去不会在生产触发，但重启后不恢复 timer 本身是另一个接线缺口，单独记入后续轮次。
+**其他观察（未在本轮改动）**：`TimerRegistry::restore` 目前仓库内无调用方（`routes.rs` 只调 `start_background`）。即 timer 任务的错配过去不会在生产触发，但重启后不恢复 timer 本身是另一个接线缺口，**归入 O22（批次 3 完成后）**，不在批次 3 里混做；判定与转绿条件见 O22 节。
 
 **结果**：`run_integration_scenarios.py` → **27 passed / 0 failed**（ldap 豁免）；扫描器 `FAIL=35 → 28`，SILENT=4 / LOOSE=10 未变；fmt / clippy / 三个生成物检查全绿。
 
@@ -616,7 +616,7 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 2. 从 `pg_attribute` 枚举 `public` 全部 383 张表，每表 ≥1 行；按 `format_type` 生成值：时间列真实 TIMESTAMP、布尔列 `true`、数组真数组、uuid 固定值、enum 取首个 label；文本列按列名启发式给「能触发转换失败」的值（布尔名 → `'true'`、时间名 → `'2026-01-01 10:00:00'`）；主键统一给 `1`，使 `{id}` 型路由能命中种子行；
 3. `session_replication_role=replica` 绕过 FK/触发器，用完恢复 `DEFAULT`（该连接回池后 app 复用，不能留 replica 语义）；
 4. 复用 O9 的 `scan_routes` / `fill_params` / `fire`：全量注册路由 × 有效 Owner 身份（`GET` 先、写路由后，避免写路由销毁种子行）；`mock` 路由与 arity 家族（`KNOWN_ARTIFACT_ROUTES` 4 条）显式排除并说明；
-5. **断言 `handler500 == 0`**（零容忍，不设棘轮基线）；失败按路由列出，并附本次请求 `error_capture` 捕获的真实 ERROR 串（新增 `drain()` 做逐请求归因）。
+5. **棘轮基线**（`tests/idor_seeded_handler500_baseline.txt`，2026-11-05 起）：当前 500 集合必须与基线**完全相等**——基线外的新 500 红（新类型错配当天被拦）；基线里复现不出来的条目红（已修但没删行）。条目数必须等于 `BASELINE_COUNT`（当前 46），修复时同 PR 删行并下调，基线只许变小。失败时按路由列出，并附本次请求 `error_capture` 捕获的真实 ERROR 串（`drain()` 做逐请求归因）。
 
 **种子器特例（实库确认，均非豁免而是给合法值）**：
 - `public.pg_class` 是业务表（不是系统目录），`to_regclass('pg_class')` 会因 pg_catalog 隐式优先解析到系统表 → 全部改为 `public."<table>"` 限定；
@@ -631,9 +631,9 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 | 空库/无种子 | 仍可跑 | 必须有种子数据才有意义 |
 | 结论强度 | 线索 | 门禁 |
 
-**首次运行结果（2026-11-04，red）**：种子 **383 表成功 / 0 失败**；全量路由扫描得 **46 条 handler500**（36 条带 `error retrieving column ... / error deserializing column N`，覆盖 30 个唯一 panic 站点；10 条 handler 未输出 ERROR 日志，待逐条定性）。列名分布：`create_time`（22）、`xversion`（3）、`file_version`（2）、`asDefault`（2）、`start_time`、`total`、`deleted_at`、`max_forum_count`、`order_number` 各 1。**这直接证明「28 不是真数」**：静态扫描器没报的 `asDefault` / `max_forum_count` / `total` / `file_version` / `order_number` / `deleted_at` 都被抓到了。
+**首次运行结果（2026-11-05，46 条入基线）**：种子 **383 表成功 / 0 失败**；全量路由扫描得 **46 条 handler500**：**35 条带 `error retrieving column ... / error deserializing column N`**（23×`create_time`、3×`xversion`、2×`file_version`、2×`asDefault`、1×`start_time`、1×`total`、1×`max_forum_count`、1×`order_number`、1×`deleted_at`），**11 条 handler 未输出任何 ERROR 日志**（O21 待定性，其中「出错却无记录」本身是观测缺陷）。**这直接证明「28 不是真数」**：静态扫描器没报的 `asDefault` / `max_forum_count` / `total` / `file_version` / `order_number` / `deleted_at` 都被抓到了。
 
-**CI job 状态（未接入，原因明确）**：守卫当前是红的，红的门禁不能进 CI——否则每个 PR 都被真实存量缺陷挡住，也无法完成「先绿 → 推临时坏点确认红 → 回滚再绿」的验证。接入前置条件：46 条清零（或用户明确同意改为棘轮基线），然后按上述三步验证后加 job，与 `integration-scenarios` 并列。**在此之前不允许把它写成 CI job 或改成 `continue-on-error` 蒙混过关。**
+**CI 接入（已做，`seeded-route-scan` job，与 `integration-scenarios` 并列）**：不等清零，改棘轮基线，今天就有保护。三步验收（本地已完成）：① 基线态绿（46/46 集合相等）；② 人为把 `processing/get` 的 `x_work.start_time` 改回按 String 读 → 红，报 2 条基线外新 500（`get/{id}`、`instance/{executionId}`，`error deserializing column 7`）；③ 还原后绿。**PR 上的红/绿验证**待网络恢复推送后在 PR 上复跑一次才可报「门禁验收通过」。
 
 ## O20 消费者证据判定（O18 六条红灯收口）
 
@@ -664,6 +664,26 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 | `/api/task/{id}/agree`（disagree/return 同族） | `/api/task/{id}/claim`、`/complete`、`/reject`、`/transfer/{person}` |
 
 验证结果：`integration_runner --ignored --test-threads=1` → **24 passed / 1 failed**，唯一失败是 #2 ldap（A 类，按决定本轮不修）。O19 批次 1 新增 2 条回归用例后由 22 passed 增至 24 passed。
+
+### O21 待定性清单：11 条「handler 500 但无任何 ERROR 日志」（只列清单，未动代码）
+
+种子化守卫抓到 46 条 500，其中 11 条在 `error_capture` 里**一个 ERROR 都没有**。**这 11 条全部存在可观测性缺陷：错误被 `?` / `map_err(|_| AppError::Internal)` 吞掉，生产上只知道 500，不知道原因。**「出错却无任何记录」比「出错有记录」严重，故单列。以下为证据与初步归类，**待用户确认后再动**（本轮不改代码）。
+
+| # | 路由 | handler（证据） | 行为依据 | 初步归类 |
+|---|---|---|---|---|
+| 1 | GET `/api/ai_assemble_control/chat/list/completion/{clueId}/paging/{page}/size/{size}` | [routes.rs:85](file:///d:/WORKSPACE/fakeToys-oa4rust/oa4rust/backend/crates/ai_assemble_control/src/routes.rs) → `lib.rs` 同名 handler | 查询列表，DB 错误 `map_err(|_| AppError::Internal)` | **C 疑似实体/列类型错配被吞**（空表不触发，种子行才有） |
+| 2 | GET `/api/cms/view/list/all` | [lib.rs:83-91](file:///d:/WORKSPACE/fakeToys-oa4rust/oa4rust/backend/crates/cms_express/src/lib.rs) `cms_view::Entity::find().all()` | SeaORM 全列解码，错误被 `map_err` 吞 | **C 疑似实体/列类型错配被吞**（与 O10 同族） |
+| 3 | GET `/api/mpweixin/bind/code/{code}` | [mpweixin.rs:283](file:///d:/WORKSPACE/fakeToys-oa4rust/oa4rust/backend/crates/auth/src/mpweixin.rs) | 校验 session 后 `UPDATE auth_person ... WHERE unique_id`，错误被吞 | **C 疑似 DB 错配/缺行被吞**（非外部调用，需现场确认） |
+| 4 | GET `/api/mpweixin/login/code/{code}` | [mpweixin.rs:265-280](file:///d:/WORKSPACE/fakeToys-oa4rust/oa4rust/backend/crates/auth/src/mpweixin.rs) | `mpweixin_openid(&code)` 调外部微信接口，`code="1"` 必失败 | **A 外部连接器/配置缺失** |
+| 5 | GET `/api/qiyeweixin/code/{code}` | [qiyeweixin.rs:132-150](file:///d:/WORKSPACE/fakeToys-oa4rust/oa4rust/backend/crates/auth/src/qiyeweixin.rs) | `exchange_code_for_userid` 外部调用 + 查 `auth_person` | **A 外部连接器** |
+| 6 | GET `/api/qiyeweixin/update/person/detail/{code}` | [qiyeweixin.rs:189-241](file:///d:/WORKSPACE/fakeToys-oa4rust/oa4rust/backend/crates/auth/src/qiyeweixin.rs) | `get_user_detail` 外部调用 + 写 `auth_person` | **A 外部连接器** |
+| 7 | GET `/api/welink/code/{code}` | [welink.rs:121-140](file:///d:/WORKSPACE/fakeToys-oa4rust/oa4rust/backend/crates/auth/src/welink.rs) | 外部 WeLink 登录 + 读 `auth_person` | **A 外部连接器** |
+| 8 | GET `/api/zhengwudingding/code/{code}` | [zhengwudingding.rs:33-93](file:///d:/WORKSPACE/fakeToys-oa4rust/oa4rust/backend/crates/auth/src/zhengwudingding.rs) | 外部政务钉钉 API + 查 `auth_person` | **A 外部连接器** |
+| 9 | GET `/api/andfx/moa/sso/token/{token}/enter/{enterId}` | [andfx.rs:41-68](file:///d:/WORKSPACE/fakeToys-oa4rust/oa4rust/backend/crates/auth/src/andfx.rs) | 解析/校验 SSO token，失败直接返回 `AppError` | **A 外部连接器** |
+| 10 | GET `/api/organization/core/express/config` | [lib.rs:83-92](file:///d:/WORKSPACE/fakeToys-oa4rust/oa4rust/backend/crates/organization_core_express/src/lib.rs) `query_one(config_key='sync_enabled')` | 种子行 `config_key='seed'` → **RowNotFound** → `Internal`；若有该行还会 `get::<bool>("config_value")`（TEXT→bool 二次错配） | **B 缺行未降级（+ 潜在列错配）** |
+| 11 | GET `/api/organization/core/express/status` | 同上 crate `get_status` 同款 `query_one` | 同 #10 | **B 缺行未降级（+ 潜在列错配）** |
+
+**分轮结论**：A 类 6 条（外部连接器）需先确认“无配置时应该 200 空态还是 500”，不属批处理；B 类 2 条按「缺行返回默认/404 + 加 error 日志」修；C 类 3 条按 O19 的六步流程现场确认（很可能是被吞掉的列错配，修完记得同时删基线条目）。**上述三类都不在本轮动手。**
 
 ## 既有后续清单
 
