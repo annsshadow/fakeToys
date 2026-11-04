@@ -918,7 +918,7 @@ test result: FAILED. 0 passed; 1 failed
 | `category:E42P10`（3） | `GET/POST /api/attendance/assemble/control/statistic/do`；`GET /api/calendar_assemble_control/update/control/config` | `ON CONFLICT` 无匹配唯一索引 | 指向真实唯一索引或改 UPDATE-then-INSERT；200 后删 3 行 | O24 数据层对齐（后端） | 2026-12-10 |
 | `category:param-count`（6） | `GET/POST /api/processplatform/assemble/surface/draft*`；`POST /api/query/assemble/designer/{query,stat,table,view}/.../permission` | SQL 占位符数量与绑定参数不一致 | 对齐 `$1..$n` 与参数；200/400 后删 6 行 | O24 数据层对齐（后端） | 2026-11-19 |
 | `category:E42P18`（1） | `GET /api/ai_assemble_control/chat/list/completion/{clueId}/paging/{page}/size/{size}` | `$2` 类型无法推断 | 给 `$2` 显式 `::text`/CAST；200 后删行 | O24 数据层对齐（后端） | 2026-11-12 |
-| `column:status` / `column:published`（2） | `GET /api/program_center/market/{flag}/installed/version`；`POST /api/portal/assemble/surface/publish/{id}` | 裸 `row.get` 解码列类型错配（panic → 500） | 改 `try_get` 并统一实体/列类型；200 后删 2 行 | O24 数据层对齐（后端） | 2026-11-12 |
+| `column:status`（1，原 2） | `GET /api/program_center/market/{flag}/installed/version` | 裸 `row.get` 把非 TEXT 列按 TEXT 解码（panic → 500） | 改 `try_get` 并统一实体/列类型；200 后删行 | O24 数据层对齐（后端） | 2026-11-12 |
 | `column:equipment`（2，O24 新增） | `GET /api/meeting/core/entity/room/list`；`GET /api/meeting/core/entity/room/{id}` | SeaORM 实体 `Option<String>`/TEXT 对 JSONB 列解码不匹配 | 改 `try_get`/`Option` 类型对齐实体；200 后删 2 行 | O24 数据层对齐（后端） | 2026-11-26 |
 | `category:E23503`（1） | `DELETE /api/processplatform/service/processing/work/{id}` | `x_timer_job` 外键阻断删除 | 先清子表或改 `ON DELETE CASCADE`；200 后删行 | O24 数据层对齐（后端） | 2026-12-10 |
 | `category:E42601`（1） | `POST /api/document/filter/list/{page}/size/{size}/manager` | 动态 SQL 拼接 `ORDER` 语法错 | 改参数化/正确拼 ORDER BY；200 后删行 | O24 数据层对齐（后端） | 2026-12-10 |
@@ -998,9 +998,9 @@ GET /api/meeting/core/entity/room/{id}   column:equipment
 基线因此 **40 → 42（GET 11 / 非 GET 31）**，`BASELINE_COUNT=42`，集合相等。CI 的旧 40
 不是「更干净」，而是**扫描器当时没读到种子库**——这也是本次把口径写进台账的原因。
 
-### O24-3 待修 42 条（顺序与纪律）
+### O24-3 待修 41 条（顺序与纪律，批次 1 已清 1）
 
-**口径**：非 GET 31 条 + GET 11 条 = 42。用户说的「GET 9 条」是旧 40 口径；O24 库隔离
+**口径**：非 GET 30 条 + GET 11 条 = 41（原 42，批次 1 清掉 1 条非 GET）。用户说的「GET 9 条」是旧 40 口径；O24 库隔离
 修复新增的 2 条 `column:equipment` 也是 GET，故 GET 现为 11（旧的 9 条包含在内）。
 
 排序按真实用户后果，不按条数：
@@ -1012,6 +1012,48 @@ GET /api/meeting/core/entity/room/{id}   column:equipment
 每批固定流程：`information_schema` 现场确认真实列类型 → **先红**（复现当前 500）→ 改 →
 行为级响应体断言 → 破坏实验 → **单独提交** → **删对应基线行并下调 `BASELINE_COUNT`**。
 禁止「修好了但基线行留着」，也禁止一次性全清。
+
+### O24-3 批次 1：portal surface publish（唯一「先落库、后 500」的基线项）
+
+**族判定**：逐条读非 GET 31 条的 handler，只有 `POST /api/portal/assemble/surface/publish/{id}`
+满足「写已提交、随后才报错」。其余写路由的 UPDATE/INSERT 本身即失败（ToSql/参数/约束错误，
+事务未落库），不属于本族。判定依据：
+
+```text
+UPDATE x_portal_surface SET published = true, published_at = NOW(), update_time = NOW() WHERE id = $1
+  → 成功（published 已落库）
+SELECT id, published, published_at ...            → 把 BOOLEAN published 按 Option<String> 解码
+  → ColumnDecode panic → 500（source=-，panic_guard 兜底）
+```
+
+用户视角：响应 500「发布失败」，但数据实际已发布——重试会重复发布，前端的状态刷新与实际不一致。
+
+**SQL 现场确认**（`information_schema.columns`，测试库现场）：
+
+```text
+id | text | YES |    published | boolean | YES |    published_at | text | YES |    update_time | text | YES |
+```
+
+**先红**：新增 `tests/integration_tests/scenarios/portal_surface_publish.rs`（真实 HTTP +
+真实 PostgreSQL，`integration_runner` 独立 `#[ignore]` 用例 `portal_surface_publish_contract`）：
+
+1. 预置 `x_portal_surface.published=false` → POST publish → **200**，断言
+   `type=success`、`data.id`、`data.published == bool true`、`data.publishedAt` 非空，
+   并回库断言 `published=true`、`published_at` 非空（同时钉住「不能 500 后已落库」）；
+2. id 不存在 → 200 `type=error` / `message=surface not found`，回库断言无幽灵行。
+
+未改代码时第 1 条实测红：`500 Internal Server Error`，日志
+`panic_guard: handler panicked; ... error retrieving column published: error deserializing column 1`。
+
+**改**：`published` 按真实类型 `Option<bool>` 解码，响应值改为 `Value::Bool`
+（与 `surface_list` 的 `Option<bool>` 口径一致）。`published_at` 真实类型是 TEXT，保持原样。
+
+**破坏实验**：把 `Option<bool>` 改回 `Option<String>` → 第 1 条红（500 / panic
+`error retrieving column published`）；复原后绿。
+
+**收口**：删基线路 `POST /api/portal/assemble/surface/publish/{id}  column:published`，
+`BASELINE_COUNT 42 → 41`；门禁实测 `== 棘轮基线：41 条（当前 41 条），集合相等 ==`
+（覆盖行 `读 2393 / 写 1980；执行 读 2393 / 写 1979（共 4372）`）。
 
 ### O24-1 收口：express 成功路径（裁定执行）
 
@@ -1038,8 +1080,11 @@ GET /api/meeting/core/entity/room/{id}   column:equipment
 |---|---|---|---|---|
 | O24-1/2（自证 + 门禁 + 库隔离校准） | **2**（`column:equipment`，此前读错库未暴露） | 0 | **+2**（40→42） | 42 |
 | O24-1 收口（express 用例 + 种子行） | 0 | 0 | 0 | 42 |
-| O24-3 批次 1（待开工） | — | — | — | — |
+| O24-3 批次 1（portal surface publish） | 0 | **1** | **-1**（42→41） | 41 |
 
-**清除清单**：暂无（尚未开始修基线行）。每批完成后在此追加「批次 / 族 / 删除行 key 列表 /
-测试与破坏实验结论」。
+**清除清单**：
+
+| 批次 | 族 | 删除的基线行 key | 测试与破坏实验 |
+|---|---|---|---|
+| O24-3 批次 1 | `column:published`（写库后 500） | `POST /api/portal/assemble/surface/publish/{id}` | `portal_surface_publish_contract`：先红 500（panic 解码）→ 改后 200 且回库 `published=true`；破坏实验改回 `Option<String>` → 红；门禁 41/41 集合相等 |
 

@@ -9,6 +9,7 @@ pub mod file_portal;
 pub mod ldap_fallback;
 pub mod new_real_endpoints;
 pub mod organization_core_express;
+pub mod portal_surface_publish;
 pub mod program_center;
 pub mod query_assemble;
 

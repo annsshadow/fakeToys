@@ -72,6 +72,17 @@ async fn organization_express_config_contract() {
     .await;
 }
 
+/// O24-3 批次 1：门户表面发布「写库后 500」的行为级用例。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn portal_surface_publish_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::portal_surface_publish::portal_surface_publish_flow(
+        ctx.pool.clone(),
+    )
+    .await;
+}
+
 #[cfg(test)]
 mod contract {
     use shared::response::ActionResult;

@@ -21,6 +21,11 @@
 # 而非 scratch 种子库，基线随开发库垃圾行漂移（本地一度 41、CI 40）。
 # 改为 create_app_with_sea_orm + scratch URL 后，meeting_core_entity 两条 ORM 路由
 # 首次读到种子行，暴露 column:equipment 解码 500。CI 的旧 40 也因此漏了这两条。
+#
+# 2026-11-05 基线 42 → 41（GET 11 / 非 GET 30）：O24-3 批次 1 清掉
+# POST /api/portal/assemble/surface/publish/{id}（column:published）。
+# 该路由是唯一「先落库、后 500」的基线项：UPDATE published=true 已提交，
+# 随后 SELECT 按 TEXT 解码 BOOLEAN 列 panic。改为 Option<bool> 后 200，删行。
 GET /api/ai_assemble_control/chat/list/completion/{clueId}/paging/{page}/size/{size}	category:E42P18	owner:O24数据层对齐(后端)	due:2026-11-12	cond:给 $2 显式 ::text/CAST；200 后删行
 GET /api/attendance/assemble/control/statistic/do	category:E42P10	owner:O24数据层对齐(后端)	due:2026-12-10	cond:指向真实唯一索引或改 UPDATE-then-INSERT；200 后删行
 POST /api/attendance/assemble/control/statistic/do	category:E42P10	owner:O24数据层对齐(后端)	due:2026-12-10	cond:指向真实唯一索引或改 UPDATE-then-INSERT；200 后删行
@@ -49,7 +54,6 @@ PUT /api/organization/assemble/control/unitattribute/{flag}	category:E42703	owne
 POST /api/portal/assemble/designer/page	category:E23502	owner:O24数据层对齐(后端)	due:2026-12-10	cond:补必填 portal_id/默认值或返回 400；后删行
 POST /api/portal/assemble/designer/page/create	category:E23502	owner:O24数据层对齐(后端)	due:2026-12-10	cond:补必填 portal_id/默认值或返回 400；后删行
 DELETE /api/portal/assemble/designer/script/{id}	category:E42804	owner:O24数据层对齐(后端)	due:2026-11-26	cond:统一 timestamp 绑定或强转；200 后删行
-POST /api/portal/assemble/surface/publish/{id}	column:published	owner:O24数据层对齐(后端)	due:2026-11-12	cond:改 try_get 并统一实体/列类型；200 后删行
 DELETE /api/processplatform/assemble/designer/script/{id}	category:E42804	owner:O24数据层对齐(后端)	due:2026-11-26	cond:统一 timestamp 绑定或强转；200 后删行
 POST /api/processplatform/assemble/surface/draft/start/{id}	category:param-count	owner:O24数据层对齐(后端)	due:2026-11-19	cond:对齐 $1..$n 与绑定参数；200/400 后删行
 GET /api/processplatform/assemble/surface/draft/{id}/start	category:param-count	owner:O24数据层对齐(后端)	due:2026-11-19	cond:对齐 $1..$n 与绑定参数；200/400 后删行

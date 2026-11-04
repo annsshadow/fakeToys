@@ -290,11 +290,12 @@ pub async fn publish_surface(
                 Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
             ),
             (
+                // O24-3 批次 1：`published` 列真实类型是 BOOLEAN
+                //（information_schema 现场确认），旧代码按 Option<String> 解码会
+                // ColumnDecode panic——而此前的 UPDATE 已经落库，用户看到 500
+                // 却实际已发布。按真实类型解码，响应也用 bool（与 surface_list 一致）。
                 "published".to_string(),
-                Value::String(
-                    row.get::<_, Option<String>>("published")
-                        .unwrap_or_default(),
-                ),
+                Value::Bool(row.get::<_, Option<bool>>("published").unwrap_or(false)),
             ),
             (
                 "publishedAt".to_string(),
