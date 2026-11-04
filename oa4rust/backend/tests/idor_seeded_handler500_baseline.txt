@@ -12,10 +12,11 @@
 #      每修一条就删一行并下调 BASELINE_COUNT —— 基线只许变小，diff 强制可见。
 #   3. 禁止为了变绿而往这里加行：加了 BASELINE_COUNT 也要加，评审可见。
 #
-# 当前 11 条（2026-11-05）：35 条列错配已清零，余 11 条无日志待定性（O21）。
+# 当前 10 条（2026-11-05）：列错配已清零；余 10 条无日志待定性（O21）。
+# 2026-11-05 删除 `GET /api/cms/view/list/all`：迁移后该路不再 500（复现不出来），
+# 按规则 1 必须删行并下调 BASELINE_COUNT。
 GET /api/ai_assemble_control/chat/list/completion/{clueId}/paging/{page}/size/{size}	category:no-error-log
 GET /api/andfx/moa/sso/token/{token}/enter/{enterId}	category:no-error-log
-GET /api/cms/view/list/all	category:no-error-log
 GET /api/mpweixin/bind/code/{code}	category:no-error-log
 GET /api/mpweixin/login/code/{code}	category:no-error-log
 GET /api/organization/core/express/config	category:no-error-log

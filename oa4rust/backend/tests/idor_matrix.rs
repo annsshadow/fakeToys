@@ -1098,7 +1098,7 @@ mod idor_matrix {
 
     /// 当前基线条目数上限（必须与基线文件行数相等）。
     /// 每修复一条：删对应基线路 → 下调本常量，同 PR 可见。
-    const BASELINE_COUNT: usize = 11;
+    const BASELINE_COUNT: usize = 10;
 
     /// 棘轮基线：`<METHOD> <route>\t<reason>`，reason 见文件头。
     const BASELINE_RAW: &str = include_str!("idor_seeded_handler500_baseline.txt");

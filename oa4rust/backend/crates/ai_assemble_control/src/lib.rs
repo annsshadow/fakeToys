@@ -2013,7 +2013,8 @@ pub async fn chat_completion(
         .or_else(|| req.title.clone())
         .unwrap_or_default();
 
-    let context_window = req.context_window.unwrap_or(20).clamp(1, 100);
+    // PG 的 LIMIT 参数推断为 bigint：必须绑 i64，绑 i32 会 "error serializing parameter"
+    let context_window = i64::from(req.context_window.unwrap_or(20).clamp(1, 100));
 
     let client = shared::db::acquire(&pool).await?;
 
@@ -2151,7 +2152,8 @@ async fn process_chat_request(
         .or_else(|| req.title.clone())
         .unwrap_or_default();
 
-    let context_window = req.context_window.unwrap_or(20).clamp(1, 100);
+    // PG 的 LIMIT 参数推断为 bigint：必须绑 i64，绑 i32 会 "error serializing parameter"
+    let context_window = i64::from(req.context_window.unwrap_or(20).clamp(1, 100));
 
     let client = shared::db::acquire(pool).await?;
 
@@ -2231,10 +2233,17 @@ async fn process_chat_request(
 // SSE streaming: call_llm_stream
 // ──────────────────────────────────────────────────────────────────────────────
 
-async fn call_llm_stream(
-    messages: &[ChatMessage],
-) -> Result<impl futures_util::Stream<Item = Result<String, AppError>>, AppError> {
-    let api_key = std::env::var("AI_API_KEY").map_err(|_| AppError::Internal)?;
+type LlmTokenStream =
+    std::pin::Pin<Box<dyn futures_util::Stream<Item = Result<String, AppError>> + Send>>;
+
+async fn call_llm_stream(messages: &[ChatMessage]) -> Result<LlmTokenStream, AppError> {
+    // 与 chat_completion 同一门控：无 AI_API_KEY 时走 canned reply，
+    // 不允许「无 key 直接 500」把可选的外部连接器变成硬依赖。
+    let Ok(api_key) = std::env::var("AI_API_KEY") else {
+        return Ok(Box::pin(futures_util::stream::iter(vec![Ok(
+            "你好！我是AI助手，很高兴为你服务。".to_string(),
+        )])));
+    };
     let api_base =
         std::env::var("AI_API_BASE").unwrap_or_else(|_| "https://api.openai.com/v1".to_string());
     let model = std::env::var("AI_MODEL").unwrap_or_else(|_| "gpt-4".to_string());
@@ -2283,7 +2292,7 @@ async fn call_llm_stream(
         }
     };
 
-    Ok(stream)
+    Ok(Box::pin(stream))
 }
 
 fn parse_stream_chunk(data: &str) -> Result<String, AppError> {

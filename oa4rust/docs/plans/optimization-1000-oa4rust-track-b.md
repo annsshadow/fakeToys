@@ -616,7 +616,7 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 2. 从 `pg_attribute` 枚举 `public` 全部 383 张表，每表 ≥1 行；按 `format_type` 生成值：时间列真实 TIMESTAMP、布尔列 `true`、数组真数组、uuid 固定值、enum 取首个 label；文本列按列名启发式给「能触发转换失败」的值（布尔名 → `'true'`、时间名 → `'2026-01-01 10:00:00'`）；主键统一给 `1`，使 `{id}` 型路由能命中种子行；
 3. `session_replication_role=replica` 绕过 FK/触发器，用完恢复 `DEFAULT`（该连接回池后 app 复用，不能留 replica 语义）；
 4. 复用 O9 的 `scan_routes` / `fill_params` / `fire`：全量注册路由 × 有效 Owner 身份（`GET` 先、写路由后，避免写路由销毁种子行）；`mock` 路由与 arity 家族（`KNOWN_ARTIFACT_ROUTES` 4 条）显式排除并说明；
-5. **棘轮基线**（`tests/idor_seeded_handler500_baseline.txt`，2026-11-05 起）：当前 500 集合必须与基线**完全相等**——基线外的新 500 红（新类型错配当天被拦）；基线里复现不出来的条目红（已修但没删行）。条目数必须等于 `BASELINE_COUNT`（当前 11，批次 3 已由 46 下调），修复时同 PR 删行并下调，基线只许变小。失败时按路由列出，并附本次请求 `error_capture` 捕获的真实 ERROR 串（`drain()` 做逐请求归因）。
+5. **棘轮基线**（`tests/idor_seeded_handler500_baseline.txt`，2026-11-05 起）：当前 500 集合必须与基线**完全相等**——基线外的新 500 红（新类型错配当天被拦）；基线里复现不出来的条目红（已修但没删行）。条目数必须等于 `BASELINE_COUNT`（当前 10，批次 3 由 46 下调为 11，批次 4 再降为 10），修复时同 PR 删行并下调，基线只许变小。失败时按路由列出，并附本次请求 `error_capture` 捕获的真实 ERROR 串（`drain()` 做逐请求归因）。
 
 **种子器特例（实库确认，均非豁免而是给合法值）**：
 - `public.pg_class` 是业务表（不是系统目录），`to_regclass('pg_class')` 会因 pg_catalog 隐式优先解析到系统表 → 全部改为 `public."<table>"` 限定；
@@ -683,6 +683,25 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 **结果**：棘轮守卫 **46 → 11**（`BASELINE_COUNT` 已下调为 11，基线文件仅余 11 条 O21 无日志条目）；`integration_runner --ignored --test-threads=1 --skip ldap_fallback` → **28 passed / 0 failed**；fmt 绿。
 
 **成串暴露记录**：批次 3 第一次整套集成测试时，`process_timestamp_columns_regression` 在 `lib.rs:91` 再次红（`error deserializing column 5`）——原因是 `get_process_instance` 与 `process_id_complex` 的 SELECT 文本完全相同，批量替换误把该处也改成 `::text`，而它仍按 `NaiveDateTime` 读。已按「读法决定 SQL」逐处区分：该处保留裸时间列，complex 保留 `::text`。**这条证明批量替换必须配行为级回归，SQL 字符串相同不等于读法相同。**
+
+### O19 批次 4（CI 门禁自证暴露的 4 条写路由 500）
+
+**发现路径**：PR #162 的 `seeded-route-scan`（run `41872460818`）报 **14 条** = 基线 10 条复现 + **4 条新增**；同一守卫在本地干净迁移库上只报 10 条。这是门禁第一次靠 CI 与本地差异抓出本地看不见的缺陷。
+
+**为什么本地看不见**：扫描在本地是 `GET` 全过、写路由大面积 `401`（非 admin 身份被 handler 级权限判定拒绝），写路由实际未执行；CI 的 `read_dir` 顺序不同，这 4 条在权限状态失效前被真正执行。用「扫描前先直打这 4 条」在本地复现出同样的 500，证明它们是被 401 掩盖的真实缺陷，不是 CI 环境漂移。
+
+| 路由 | 根因（真实错误原文） | 修复 |
+|---|---|---|
+| `POST /api/ai_assemble_control/chat/completion` | `LIMIT $2` 被 PG 推断为 `bigint`，代码绑 `i32` → `error serializing parameter 1` | `context_window` 改 `i64`（`chat_completion` 与 `process_chat_request` 两处） |
+| `POST /api/ai_assemble_control/chat/completion/stream` | `call_llm_stream` 无 `AI_API_KEY` 直接 `AppError::Internal`，与 `chat_completion` 的 canned 门控不一致 → 可选外部连接器变成硬依赖 | 无 key 时返回 canned 单 token 流（返回类型改为 boxed stream，两分支同型） |
+| `PUT /api/attendance/assemble/control/dingding/attendance/list/{id}/next/{count}` | SQL 只用 `$2/$3/$4` 却绑 4 个参数 → `could not determine data type of parameter $1`（`$1` 从未被引用） | 参数编号改 `$1/$2/$3`，绑定 `[filter_user, id, count]` |
+| `PUT /api/attendance/assemble/control/qywx/attendance/list/{id}/next/{count}` | 同上（同函数 `ddqy_attendance_list_next`） | 同上 |
+
+**修复后响应体（本地种子库直打）**：completion `200` → `{"data":{"conversationId":"619686d1-...","messages":[{"content":"","role":"user"},{"content":"你好..."}]}}`；stream `200` → `event: token`；两条 list `200` → `{"data":[],"type":"success","message":"","date":"..."}`。
+
+**基线**：`GET /api/cms/view/list/all` 在迁移后的库上不再 500（复现不出来；实体库 `oa4rust` 为空），按规则删行，`BASELINE_COUNT` 11 → **10**，未加任何新行。
+
+**观察（进 O21 观察项，不在本批修）**：棘轮对写路由的覆盖受身份授权与 `read_dir` 顺序影响——本地与 CI 的 500 集合可能不同。后续需要：固定路由顺序（按 path 排序）、给扫描身份最小可执行权限，或对写路由单独用特权身份重扫；在此之前，「本地绿」不等于「写路由已覆盖」。
 
 ## O20 消费者证据判定（O18 六条红灯收口）
 

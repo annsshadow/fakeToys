@@ -6585,13 +6585,13 @@ async fn ddqy_attendance_list_next(
     let sql = format!(
         "SELECT id, user_id, time, checkin_type, location_result, source_type \
          FROM {tbl} \
-         WHERE ($2 = '' OR user_id = $2) AND ($3 = '' OR id > $3) \
+         WHERE ($1 = '' OR user_id = $1) AND ($2 = '' OR id > $2) \
          ORDER BY time ASC, id ASC LIMIT {}",
-        dialect().cast_bigint_param(4),
+        dialect().cast_bigint_param(3),
         tbl = detail_table,
     );
     let rows = client
-        .query(&sql, &[&filter_user, &filter_user, &id, &count])
+        .query(&sql, &[&filter_user, &id, &count])
         .await
         .map_err(|_| AppError::Internal)?;
 
