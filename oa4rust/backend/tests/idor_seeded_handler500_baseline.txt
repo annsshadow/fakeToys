@@ -85,8 +85,12 @@
 # 2026-11-05 基线 6 → 5（GET 5 / 非 GET 0）：O24-3 批次 12 清掉 E23503 的 work 删除 1 条。
 # `x_timer_job.work_id` 是指向 `x_work` 的 FK（NO ACTION，information_schema 现场确认），
 # 旧实现先删 x_work → foreign_key_violation。改为「先子后父」：
-# x_timer_job → x_task → x_draft → x_work。剩余 5 条全部是 GET。
-GET /api/ai_assemble_control/chat/list/completion/{clueId}/paging/{page}/size/{size}	category:E42P18	owner:O24数据层对齐(后端)	due:2026-11-12	cond:给 $2 显式 ::text/CAST；200 后删行
+# x_timer_job → x_task → x_draft → x_work。
+#
+# 2026-11-05 基线 5 → 4（GET 4 / 非 GET 0）：O24-3 批次 13 清掉 E42P18 的 ai chat 分页 1 条。
+# 绑定顺序是 $1=clue_id、$2=offset、$3=size，旧 SQL 写成 `LIMIT $4 OFFSET $3`：
+# `$2` 从未被引用 → PG 无法推断类型（E42P18），`$4` 也不存在。
+# 改为与同文件 x_ai_conversation 分页一致：`LIMIT $3 OFFSET $2`。
 GET /api/meeting/core/entity/room/list	column:equipment	owner:O24数据层对齐(后端)	due:2026-11-26	cond:改 try_get/Option 类型对齐实体；200 后删行
 GET /api/meeting/core/entity/room/{id}	column:equipment	owner:O24数据层对齐(后端)	due:2026-11-26	cond:改 try_get/Option 类型对齐实体；200 后删行
 GET /api/organization/assemble/control/identity/{flag}/order/before/{followFlag}	category:wrong-type	owner:O24数据层对齐(后端)	due:2026-11-26	cond:按列真实类型改写绑定参数；200 后删行

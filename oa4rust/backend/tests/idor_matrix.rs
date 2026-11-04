@@ -1214,7 +1214,8 @@ mod idor_matrix {
     /// O24-3 批次 10 修掉 E42804 脚本软删 text→timestamp / mergeitem COALESCE 类型：10 → 7。
     /// O24-3 批次 11 修掉 E42601 document filter 纯 tail 拼进 WHERE：7 → 6。
     /// O24-3 批次 12 修掉 E23503 work 删除的「先子后父」顺序：6 → 5。
-    const BASELINE_COUNT: usize = 5;
+    /// O24-3 批次 13 修掉 E42P18 ai chat 分页占位符编号错位：5 → 4。
+    const BASELINE_COUNT: usize = 4;
 
     /// 棘轮基线：`<METHOD> <route>\t<reason>`，reason 见文件头。
     const BASELINE_RAW: &str = include_str!("idor_seeded_handler500_baseline.txt");

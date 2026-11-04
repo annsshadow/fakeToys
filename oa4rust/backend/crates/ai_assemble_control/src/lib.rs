@@ -2482,8 +2482,10 @@ pub async fn chat_list_completion_clue_id_paging_page_size_size(
          WHERE conversation_id = $1 AND deleted_at IS NULL \
          ORDER BY create_time DESC LIMIT {} OFFSET {}",
         d.cast_text("create_time"),
-        d.cast_bigint_param(4),
+        // 绑定顺序是 $1=clue_id, $2=offset, $3=size；旧写法用了 $4/$3，
+        // $2 因此从未被引用 → PG 无法推断其类型（E42P18），且 $4 不存在。
         d.cast_bigint_param(3),
+        d.cast_bigint_param(2),
     );
     let rows = client
         .query(&sql, &[&clue_id, &offset, &size])

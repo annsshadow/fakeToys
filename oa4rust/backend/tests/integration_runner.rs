@@ -89,6 +89,14 @@ async fn attribute_paths_contract() {
     integration_tests::scenarios::attribute_paths::attribute_paths_flow(ctx.pool.clone()).await;
 }
 
+/// O24-3 批次 13：E42P18 ai chat 分页占位符编号错位。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn ai_chat_paging_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::ai_chat_paging::ai_chat_paging_flow(ctx.pool.clone()).await;
+}
+
 /// O24-3 批次 12：E23503 work 删除的「先子后父」顺序。
 #[ignore = "requires a running database server"]
 #[tokio::test]
