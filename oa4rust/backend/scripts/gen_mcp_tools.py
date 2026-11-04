@@ -22,6 +22,12 @@ OUTPUT_FILE = CRATES_DIR / "mcp_server" / "src" / "generated_routes.rs"
 # 与 generated_routes.rs 同源输出：前端方法契约 fixture。
 # O15：历史上这个文件由人手/一次性脚本维护，与真实路由漂移了 131/63/2 条。
 FIXTURE_FILE = ROOT.parent / "tests" / "contracts" / "backend-route-methods.fixture.ts"
+# 同一扫描的路由快照（desktop-endpoints 守卫用）。O16 起不再手工维护。
+REGISTERED_FIXTURE_FILE = ROOT.parent / "tests" / "contracts" / "backend-registered-routes.fixture.ts"
+
+ROUTE_METHODS = ("get", "post", "put", "delete", "patch", "head", "options")
+METHOD_RE = re.compile(r"\s*(?:axum::routing::)?(" + "|".join(ROUTE_METHODS) + r")\s*\(")
+METHOD_CHAIN_RE = re.compile(r"\s*\.\s*(?:axum::routing::)?(" + "|".join(ROUTE_METHODS) + r")\s*\(")
 
 # 框架级路由：不在任何 crate 的 .route() 扫描结果里，但属于后端接口面。
 # fixture 需要它们，MCP 工具表不需要（GET /mcp、GET /health 是探针/说明，不是工具）。
@@ -170,7 +176,13 @@ def strip_rust_comments(text: str) -> str:
             i += 1
             continue
         if c == "'":
-            in_char = True
+            # 区分字符字面量与生命周期：'a' 是字符，'a 是生命周期。
+            # 旧实现无条件进入 in_char，遇到 `'static` 会把后续整段（含注释）吞成
+            # “字符字面量”，导致注释里的 `.route(` 被当成注册点。
+            if i + 1 < n and text[i + 1] == "\\":
+                in_char = True
+            elif i + 2 < n and text[i + 2] == "'":
+                in_char = True
             out.append(c)
             i += 1
             continue
@@ -178,47 +190,362 @@ def strip_rust_comments(text: str) -> str:
         i += 1
     return "".join(out)
 
-def parse_routes_from_file(filepath: Path) -> list:
-    """从 Rust 源码中提取路由定义。"""
+def _mask_strings(s: str) -> str:
+    """把字符串/字符字面量的内容替换为同长空格，用于定位真正的 `.route(` 站点。
+
+    processplatform 的 u2_collect_routes 把 `.route(` 写进了字符串常量里（它扫描
+    自己的源码），不掩码会把那段文字当成注册点。
+    """
+    out = list(s)
+    i = 0
+    n = len(s)
+    while i < n:
+        c = s[i]
+        if c == '"':
+            out[i] = " "
+            i += 1
+            while i < n:
+                if s[i] == "\\":
+                    out[i] = " "
+                    if i + 1 < n:
+                        out[i + 1] = " "
+                    i += 2
+                    continue
+                if s[i] == '"':
+                    out[i] = " "
+                    i += 1
+                    break
+                out[i] = " "
+                i += 1
+            continue
+        if c == "'":
+            # 只掩码单字符字面量；生命周期 'a 不动
+            if i + 2 < n and (s[i + 1] == "\\" or s[i + 2] == "'"):
+                j = i + 1
+                if s[j] == "\\":
+                    j += 2
+                else:
+                    j += 1
+                if j < n and s[j] == "'":
+                    for k in range(i, j + 1):
+                        out[k] = " "
+                    i = j + 1
+                    continue
+            i += 1
+            continue
+        i += 1
+    return "".join(out)
+
+
+def _match_paren(s: str, open_idx: int) -> int:
+    """返回与 s[open_idx] 处 '(' 配平的 ')' 下标；尊重字符串/字符字面量转义。"""
+    depth = 0
+    in_str = False
+    in_char = False
+    esc = False
+    i = open_idx
+    while i < len(s):
+        c = s[i]
+        if in_str:
+            if esc:
+                esc = False
+            elif c == "\\":
+                esc = True
+            elif c == '"':
+                in_str = False
+        elif in_char:
+            if esc:
+                esc = False
+            elif c == "\\":
+                esc = True
+            elif c == "'":
+                in_char = False
+        else:
+            if c == '"':
+                in_str = True
+            elif c == "'":
+                # 'a' 是字符字面量，'a 是生命周期
+                if i + 2 < len(s) and s[i + 2] == "'":
+                    in_char = True
+            elif c == "(":
+                depth += 1
+            elif c == ")":
+                depth -= 1
+                if depth == 0:
+                    return i
+        i += 1
+    return -1
+
+
+def _normalize_legacy_path(class_path: str, method_path: str) -> str:
+    """复刻 bbs 的 u2::normalize_legacy_path：去空段 + 去相邻重复段。"""
+    raw = f"{class_path}/{method_path}"
+    segs = []
+    for seg in raw.split("/"):
+        if not seg:
+            continue
+        if segs and segs[-1] == seg:
+            continue
+        segs.append(seg)
+    return "/".join(segs)
+
+
+def _find_binding(text: str, name: str, before: int):
+    """在 `before` 之前找最后一个 `let/const name = "..."` 绑定。"""
+    pat = re.compile(
+        r"\b(?:let|const)\s+" + re.escape(name) + r"\s*(?::\s*&?(?:str|String)\s*)?=\s*\"((?:[^\"\\]|\\.)*)\""
+    )
+    val = None
+    for m in pat.finditer(text[:before]):
+        val = m.group(1)
+    return val
+
+
+def _find_const(text: str, name: str):
+    """全文件查找 `const/static name: &str = "..."`（模块级常量）。"""
+    pat = re.compile(
+        r"\b(?:pub(?:\(\w+\))?\s+)?(?:const|static)\s+"
+        + re.escape(name)
+        + r"\s*:\s*&(?:\'[^\']+\s+)?str\s*=\s*\"((?:[^\"\\]|\\.)*)\""
+    )
+    m = pat.search(text)
+    return m.group(1) if m else None
+
+
+def _split_top_level_args(s: str):
+    args = []
+    cur = []
+    depth = 0
+    in_str = False
+    esc = False
+    for c in s:
+        if in_str:
+            cur.append(c)
+            if esc:
+                esc = False
+            elif c == "\\":
+                esc = True
+            elif c == '"':
+                in_str = False
+            continue
+        if c == '"':
+            in_str = True
+            cur.append(c)
+        elif c in "([{":
+            depth += 1
+            cur.append(c)
+        elif c in ")]}":
+            depth -= 1
+            cur.append(c)
+        elif c == "," and depth == 0:
+            args.append("".join(cur).strip())
+            cur = []
+        else:
+            cur.append(c)
+    if cur:
+        args.append("".join(cur).strip())
+    return args
+
+
+def _resolve_format_template(tmpl: str, args, text: str, before: int):
+    """展开 Rust format! 模板：`{{`/`}}` 是字面花括号，`{name}` / `{}` 是插值。
+
+    区分「真字面段」与「局部变量前缀」的全部依据就在这里：只有能解析到
+    let/const 绑定的占位符才算变量，解不出来的直接返回 None（由调用方点名，
+    绝不把 `{p}` 当字面路径段写进 fixture）。
+    """
+    out = []
+    arg_idx = 0
+    i = 0
+    while i < len(tmpl):
+        c = tmpl[i]
+        if c == "{":
+            if i + 1 < len(tmpl) and tmpl[i + 1] == "{":
+                out.append("{")
+                i += 2
+                continue
+            j = tmpl.find("}", i + 1)
+            if j == -1:
+                return None
+            key = tmpl[i + 1:j].strip()
+            if key == "":
+                if arg_idx >= len(args):
+                    return None
+                val = _resolve_value(args[arg_idx], text, before)
+                arg_idx += 1
+            else:
+                val = _resolve_value(key, text, before)
+            if val is None:
+                return None
+            out.append(val)
+            i = j + 1
+        elif c == "}":
+            if i + 1 < len(tmpl) and tmpl[i + 1] == "}":
+                out.append("}")
+                i += 2
+                continue
+            return None
+        else:
+            out.append(c)
+            i += 1
+    return "".join(out)
+
+
+def _resolve_value(expr: str, text: str, before: int):
+    """把一个表达式解析成字符串常量：字符串字面量 / 常量名 / 简单 let 绑定。"""
+    expr = expr.strip()
+    m = re.fullmatch(r'"((?:[^"\\]|\\.)*)"', expr)
+    if m:
+        return m.group(1)
+    if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", expr):
+        val = _find_const(text, expr)
+        if val is not None:
+            return val
+        return _find_binding(text, expr, before)
+    return None
+
+
+def resolve_route_path(text: str, expr: str, before: int):
+    """把 .route() 首参表达式解析成真实 URI。
+
+    支持三种现网注册形态：
+      ① 字面量 `"/api/..."`；
+      ② `&fmt("rel")`（bbs，前缀由 crate 内 `API_BASE` 常量 + normalize_legacy_path 拼）；
+      ③ `format!("{p}/...")`（query，前缀由局部 `let p = "..."` 绑定）。
+    剩下解析不了的结构（运行时拼路径等）返回 None，由 main 点名失败，不猜。
+    """
+    expr = expr.strip()
+    m = re.fullmatch(r'"((?:[^"\\]|\\.)*)"', expr)
+    if m:
+        return m.group(1)
+
+    m = re.fullmatch(r'&?\s*fmt\s*\(\s*"((?:[^"\\]|\\.)*)"\s*\)', expr)
+    if m:
+        base = _find_const(text, "API_BASE")
+        if base is None:
+            return None
+        return "/" + _normalize_legacy_path(base, m.group(1))
+
+    m = re.fullmatch(
+        r'&?\s*format!\s*\(\s*"((?:[^"\\]|\\.)*)"\s*(?:,\s*(.*?))?\s*\)\s*(?:\.(?:as_str|to_string)\s*\(\s*\))?\s*',
+        expr,
+        re.S,
+    )
+    if m:
+        args = _split_top_level_args(m.group(2)) if m.group(2) else []
+        return _resolve_format_template(m.group(1), args, text, before)
+
+    return _resolve_value(expr, text, before)
+
+
+def _parse_handler_chain(expr: str):
+    """解析 handler 表达式链上的全部注册方法（get(h).put(h2)... 与闭包 handler）。"""
+    out = []
+    m = METHOD_RE.match(expr)
+    while m:
+        method = m.group(1).upper()
+        open_idx = m.end() - 1
+        close = _match_paren(expr, open_idx)
+        if close == -1:
+            break
+        inner = expr[open_idx + 1:close].strip()
+        hm = re.match(r"([A-Za-z_][\w:]*)", inner)
+        handler = hm.group(1) if hm and hm.group(1) not in ("async", "move") else "closure"
+        out.append((method, handler))
+        nm = METHOD_CHAIN_RE.match(expr, close + 1)
+        if not nm:
+            break
+        m = METHOD_RE.match(expr, nm.start(1))
+    return out
+
+
+def parse_routes_from_file(filepath: Path):
+    """从 Rust 源码中提取路由定义，返回 (routes, unresolved)。
+
+    O16 修复：旧实现只认 `.route("字面量")`，漏掉 `&fmt("rel")`（bbs 102 条）、
+    `format!("{p}/...")`（query 24 条）与闭包 handler（processplatform 3 条）。
+    O15 因此把这些真实路由当成「已删残留」，从 fixture 删掉 129 条，守卫被削弱。
+    现在首参按表达式解析；解析不了的单条点名进 unresolved，由 main 失败退出。
+    """
     try:
         text = filepath.read_text(encoding="utf-8")
     except Exception:
-        return []
+        return [], []
 
     routes = []
-    # Flatten multi-line .route() calls before matching. 先剥离注释（.route( 与路径串间
-    # 可能夹 // 说明注释），再压平空白，否则正则漏扫被注释夹断的路由。
+    unresolved = []
+    # 先剥离注释（.route( 与路径串间可能夹 // 说明注释），再压平空白。
     # 同时删除 cfg(test) item，否则测试里注册的 /boom 会被当成产品工具。
     text_flat = re.sub(r'\s+', ' ', strip_rust_comments(strip_cfg_test_blocks(text)))
-    # 统一解析：定位每个 .route("path", <handler-expr>) 的 handler 表达式，
-    # 再从表达式里抽出所有链式 HTTP 方法。此前的实现有两处漏洞：
-    #   ① single_pattern 只取链首方法 —— get(h).put(h2).delete(h3) 只记 GET；
-    #   ② multi_pattern 仅认「首方法为 put/delete/patch 的恰好两段链」。
-    # 结果三方法 CRUD（get.put.delete）在 MCP 工具表里丢掉 PUT/DELETE，
-    # 令工具面欠表达、契约漂移守卫读到假错配。改为「先切 route 参数、再枚举链上全部方法」。
-    method_call = re.compile(r'(?:axum::routing::)?\b(get|post|put|delete|patch|head|options)\s*\(\s*([\w:]+)')
-    for m in re.finditer(r'\.route\(\s*"([^"]+)"\s*,', text_flat):
-        path = m.group(1)
-        # handler 表达式：从方法参数起到本 route 的配平右括号止（.route( 已吃掉一层）
+    # 同长掩码：只用来定位真实注册点，读参数仍用 text_flat（字符串内容完整）。
+    masked = _mask_strings(text_flat)
+
+    for m in re.finditer(r"\.route\s*\(", masked):
         start = m.end()
+        # 读第一个顶层实参：深度 1 的逗号 / 配平右括号为界，尊重字符串与嵌套括号。
         depth = 1
         i = start
-        while i < len(text_flat) and depth > 0:
-            ch = text_flat[i]
-            if ch == '(':
-                depth += 1
-            elif ch == ')':
-                depth -= 1
+        end = -1
+        in_str = False
+        esc = False
+        while i < len(text_flat):
+            c = text_flat[i]
+            if in_str:
+                if esc:
+                    esc = False
+                elif c == "\\":
+                    esc = True
+                elif c == '"':
+                    in_str = False
+            else:
+                if c == '"':
+                    in_str = True
+                elif c in "([{":
+                    depth += 1
+                elif c in ")]}":
+                    depth -= 1
+                    if depth == 0:
+                        end = i
+                        break
+                elif c == "," and depth == 1:
+                    end = i
+                    break
             i += 1
-        expr = text_flat[start:i]
-        seen = set()
-        for mm in method_call.finditer(expr):
-            method_str = mm.group(1).upper()
-            if method_str in seen:
-                continue
-            seen.add(method_str)
-            routes.append((path, method_str, mm.group(2)))
-    return routes
+        if end == -1:
+            continue
+        path_expr = text_flat[start:end]
+        path = resolve_route_path(text_flat, path_expr, m.start())
+        if path is None:
+            unresolved.append((filepath, path_expr.strip()))
+            continue
+
+        # handler 表达式：从逗号后到本 route 调用的配平右括号。
+        j = end + 1
+        depth = 1
+        in_str = False
+        esc = False
+        while j < len(text_flat):
+            c = text_flat[j]
+            if in_str:
+                if esc:
+                    esc = False
+                elif c == "\\":
+                    esc = True
+                elif c == '"':
+                    in_str = False
+            else:
+                if c == '"':
+                    in_str = True
+                elif c == "(":
+                    depth += 1
+                elif c == ")":
+                    depth -= 1
+                    if depth == 0:
+                        break
+            j += 1
+        for method, handler in _parse_handler_chain(text_flat[end + 1:j]):
+            routes.append((path, method, handler))
+    return routes, unresolved
 
 
 def extract_crate_name(filepath: Path) -> str:
@@ -272,6 +599,7 @@ def infer_body_params(method: str, path: str) -> list:
 
 def main():
     all_routes = []
+    unresolved = []
 
     # 扫描所有 crate 的 src 目录
     for crate_dir in sorted(CRATES_DIR.iterdir()):
@@ -285,7 +613,7 @@ def main():
         for rs_file in sorted(src_dir.rglob("*.rs")):
             if is_test_source(rs_file):
                 continue
-            routes = parse_routes_from_file(rs_file)
+            routes, bad = parse_routes_from_file(rs_file)
             for path, method, handler in routes:
                 all_routes.append({
                     "crate": crate_name,
@@ -293,6 +621,16 @@ def main():
                     "method": method,
                     "handler": handler,
                 })
+            for filepath, expr in bad:
+                unresolved.append((filepath, expr))
+
+    if unresolved:
+        # 结构上无法静态解析的注册方式必须点名失败，绝不静默丢弃或用 extras 掩盖。
+        print("无法静态解析的 .route() 首参：", file=sys.stderr)
+        for filepath, expr in unresolved:
+            rel = filepath.relative_to(ROOT).as_posix()
+            print(f"  {rel}: {expr}", file=sys.stderr)
+        return 2
 
     # 去重
     seen = set()
@@ -339,8 +677,56 @@ def main():
         f.write("\n".join(lines))
 
     write_route_methods_fixture(unique_routes)
+    write_registered_routes_fixture(unique_routes)
     print(f"Generated {len(unique_routes)} MCP tool definitions -> {OUTPUT_FILE}")
     print(f"Generated route-methods fixture -> {FIXTURE_FILE}")
+    print(f"Generated registered-routes fixture -> {REGISTERED_FIXTURE_FILE}")
+
+
+def write_registered_routes_fixture(routes):
+    """输出 desktop-endpoints 守卫用的路由快照（原始路径，保留 {} 参数名）。"""
+    paths = sorted({r["path"] for r in routes} | set(EXTRA_FIXTURE_ROUTES))
+    lines = [
+        "// Copyright (C) 2026 annsshadow",
+        "// SPDX-License-Identifier: AGPL-3.0-or-later",
+        "// AUTO-GENERATED by oa4rust/backend/scripts/gen_mcp_tools.py — DO NOT EDIT",
+        "// 后端 .route() 注册路径快照（含 API_BASE/fmt、format! 前缀还原）。desktop 端点守卫用。",
+        "",
+        "export const REGISTERED_BACKEND_ROUTES: string[] = [",
+    ]
+    for p in paths:
+        lines.append(f"  '{p}',")
+    lines.append("]")
+    lines.append("")
+    REGISTERED_FIXTURE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(REGISTERED_FIXTURE_FILE, "w", encoding="utf-8", newline="\n") as f:
+        f.write("\n".join(lines))
+
+
+def _biome_record_entry(path: str, methods) -> list:
+    """按 Biome formatter 规则（lineWidth=120）输出一行 `Record` 成员。
+
+    前端 CI 的 Biome format 会对单行超宽的数组强制换行；之前生成器固定输出
+    `'p': ['GET'],`，每次重跑都会让 frontend-qa 再红一次，逼人手工改产物——
+    正是 O16 要消灭的坏习惯。这里直接生成 Biome 的规范形态，避免引入 Node
+    依赖（generated-artifacts 门禁在纯 Python 环境运行）。
+
+    规则实测（oa4rust/biome.json：indent 2、lineWidth 120、single quote）：
+      ① 单行 ≤120 → 单行；
+      ② 否则若 `  'key': [` ≤120 → 数组换行、元素逐行；
+      ③ 否则 key 独占一行，数组整体挪到下一行（4 空格缩进）。
+    """
+    elems = [f"'{m}'" for m in methods]
+    single = f"  '{path}': [{', '.join(elems)}],"
+    if len(single) <= 120:
+        return [single]
+    key_prefix = f"  '{path}':"
+    if len(key_prefix) + 2 <= 120:
+        return [f"{key_prefix} [", *[f"    {e}," for e in elems], "  ],"]
+    arr_single = f"    [{', '.join(elems)}],"
+    if len(arr_single) <= 120:
+        return [key_prefix, arr_single]
+    return [key_prefix, "    [", *[f"      {e}," for e in elems], "    ],"]
 
 
 def write_route_methods_fixture(routes):
@@ -362,8 +748,7 @@ def write_route_methods_fixture(routes):
         "export const BACKEND_ROUTE_METHODS: Record<string, string[]> = {",
     ]
     for p in sorted(by_path):
-        methods = "', '".join(sorted(by_path[p]))
-        lines.append(f"  '{p}': ['{methods}'],")
+        lines.extend(_biome_record_entry(p, sorted(by_path[p])))
     lines.append("}")
     lines.append("")
     FIXTURE_FILE.parent.mkdir(parents=True, exist_ok=True)

@@ -98,7 +98,7 @@ for (const [moduleName, functions] of Object.entries(modules)) {
 testFile.push('})')
 
 const outputPath = path.join(import.meta.dirname || '.', '../frontend/packages/apis/src/api-coverage-generated.test.ts')
-fs.writeFileSync(outputPath, testFile.join('\n') + '\n')
+fs.writeFileSync(outputPath, `${testFile.join('\n')}\n`)
 
 const totalFunctions = Object.values(modules).flat().length
 const skippedCount = skipModules.length

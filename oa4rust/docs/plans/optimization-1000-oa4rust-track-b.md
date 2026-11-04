@@ -141,7 +141,7 @@
 |------|----------|------|
 | `crates/parity/src/generated_tests.rs` | **保留**（已接门禁） | 三分类：① 噪声＝CRLF + 时间戳 + 98 个序号名位移；② 源码/生成器过期＝新增 57 条 personal 别名路由、3 条路径/方法纠正（`message consume` GET→POST、program_center 重复段与 GET→POST）；③ 手工＝1 条 `get_calendar_detail` 语义命名，无独有断言，已原样迁入 `parity/src/tests_manual.rs`。输入 `generated_at=2026-08-12`、文件最后修改 2026-09-17，不是「两年未更新」；4098 条机械用例仅 1 条手工痕迹，不构成「大量人手增强」→ 保留。生成器已去时间戳、固定 LF；parity 已加入 `check_generated_artifacts_up_to_date.py`；破坏实验：插入一行→`首个差异：...:3`、exit 1，还原→exit 0 |
 | `frontend/packages/apis/src/api-coverage-generated.test.ts` | **保留**（生成器已升级，接 CI 门禁） | 差异三分类：① 格式/头＝SPDX、import 顺序、prettier 缩进、末尾换行，生成器已复现；③ 手工增强＝每条用例的 `try { await fn?.() } catch`（驱动 V8 覆盖），生成器已按原样固化，未降级产物；② 源码过期＝`index.ts` 新增 28 个函数（attendanceDeepApi 8、processApi 5、documentApi 5、calendarCoreApi 5、attendanceControlApi 2、viewApi/viewCategoryApi/viewFieldConfigApi 各 1），重生成后 367 行纯新增、**0 删除**。门禁：`oa4rust-web.yml` 在 Vitest 前跑 `pnpm gen-api-tests` + `git diff --exit-code`；破坏实验：暂存一条 `// BREAK EXPERIMENT`→红在 `:8718`，还原→exit 0 |
-| `tests/contracts/backend-route-methods.fixture.ts` | **保留**（`gen_mcp_tools.py` 单一源头同步输出，已接门禁） | 131/63/2 三分类：**131 只在 fixture** ＝ 102 条 `/api/bbs/assemble/...` 已删路由残留 + 24 条旧前缀 `/api/query_service_processing/{}`（源码已改为 `/api/query/service/processing/...`）+ 3 条 processplatform 残留 + `/health`、`/openapi.json`（框架路由，非残留，保留进 fixture）；**63 只在后端** ＝ 61 条 personal 别名路由（fixture 侧漏同步，已补）+ `/ready`（产品路由，已补）+ `/boom`（`#[cfg(test)]` 测试路由，生成器新增 cfg(test) 剥离后不再产出）；**2 条方法集不符** ＝ `/api/calendar_assemble_control/event` fixture 多 PUT（`routes.rs:72-78` 注释明确 O6 删除死 PUT，属 fixture 残留，已随重生成消失）、`/mcp` fixture 有 GET+POST 而工具表仅 POST（GET 真实存在于 `mcp_server/src/main.rs:71-76` 闭包，正则漏扫；GET /mcp 不是工具，用 `EXTRA_FIXTURE_ROUTES` 显式保留在 fixture）。重生成 fixture 4108→4041（`+102/−258`），`generated_routes.rs` 4736→4735（删 `legacy_shared_boom`）；重生成后 fixture-vs-后端差异仅剩设计内 extras。门禁：fixture 加入 `check_generated_artifacts_up_to_date.py` 的 mcp job；破坏实验：插入 `// BREAK EXPERIMENT`→`首个差异：tests/contracts/backend-route-methods.fixture.ts:3`、exit 1，还原→exit 0。本地无 vitest（`node_modules/.bin/vitest` 不存在），`route-methods.test.ts` 交 CI 验证 |
+| `tests/contracts/backend-route-methods.fixture.ts` | **保留**（`gen_mcp_tools.py` 单一源头同步输出，已接门禁） | 131/63/2 三分类：**131 只在 fixture** ＝ 102 条 `/api/bbs/assemble/...`（**O16 更正：不是已删残留，而是 `&fmt("rel")` + `API_BASE` 注册的真实路由；O15 的解析只认字面量，误判为残留并从这里删掉**）+ 24 条旧前缀 `/api/query_service_processing/{}`（源码已改为 `/api/query/service/processing/...`）+ 3 条 processplatform 残留（**同为闭包 handler 漏扫的真实路由**）+ `/health`、`/openapi.json`（框架路由，非残留，保留进 fixture）；**63 只在后端** ＝ 61 条 personal 别名路由（fixture 侧漏同步，已补）+ `/ready`（产品路由，已补）+ `/boom`（`#[cfg(test)]` 测试路由，生成器新增 cfg(test) 剥离后不再产出）；**2 条方法集不符** ＝ `/api/calendar_assemble_control/event` fixture 多 PUT（`routes.rs:72-78` 注释明确 O6 删除死 PUT，属 fixture 残留，已随重生成消失）、`/mcp` fixture 有 GET+POST 而工具表仅 POST（GET 真实存在于 `mcp_server/src/main.rs:71-76` 闭包，正则漏扫；GET /mcp 不是工具，用 `EXTRA_FIXTURE_ROUTES` 显式保留在 fixture）。门禁：fixture 加入 `check_generated_artifacts_up_to_date.py` 的 mcp job；破坏实验：插入 `// BREAK EXPERIMENT`→`首个差异：tests/contracts/backend-route-methods.fixture.ts:3`、exit 1，还原→exit 0。**本行后半段（重生成 4108→4041、`route-methods.test.ts` 交 CI）已被 O16-0 推翻**：O16-0 修复解析后重生成 4735→4874（+139），并同步输出 registered fixture；见 O16 节 |
 
 ### 可恢复（剩余）
 （无。第 3 项已转为单一源头 + 门禁，见上表）
@@ -155,7 +155,7 @@
 | `backend/migrations/032/033/037` | 头注释写「Auto-generated」，仓库内无生成器（一次性产出） | 改为「One-off generated (no reproducible generator)」，如实标注来源 |
 | `frontend/packages/apis/src/index.ts:1281` | 段落注释「Auto-generated — do not edit manually」，但该文件长期由人工修改（多个 fix 提交） | 改为「Hand-maintained（早期一次性生成，仓库内无生成器）— 修改时同步后端路由」 |
 | `crates/parity/src/generated_tests.rs` 文件头 | 「Tests: 4099」与实际 4098 条不符：1 条路径含空格无法构造 URI，只产出 skipped 注释 | `generate_parity_tests.py` 改为按实际产出计数；重生成后 `Routes: 4099   Tests: 4098`。门禁 `generated-artifacts` 仍绿 |
-| `tests/contracts/backend-registered-routes.fixture.ts` | 头注释称 Auto-generated，仓库无生成器；且快照落后：131 条已删路由残留、62 条后端新路由缺失 | 头注释改为「手工维护快照」并写明落后事实；不直接重生成——按当前后端重生成会让 desktop 守卫暴露 **132 个指向已删路由的 /api 调用**（bbs/assemble 与旧 `query_service_processing` 前缀），需与前端修复一并做，登记为下方追加债务 |
+| `tests/contracts/backend-registered-routes.fixture.ts` | 头注释称 Auto-generated，仓库无生成器；且快照落后：131 条「fixture 有、生成器无」里有 102 条 bbs 与 3 条 processplatform 是**解析漏扫的真实路由**（O16 更正），24 条旧 query 前缀才是真残留；62 条后端新路由缺失 | O16 已改为由 `gen_mcp_tools.py` 同源输出并接入 `check_generated_artifacts_up_to_date.py`；重生成后 4108→4170 条（旧 `{p}` 24 条归零、61 条 personal 别名与 `/ready` 补齐） |
 
 ### O15 追加发现（第 4 项全仓扫描）
 
@@ -163,9 +163,107 @@
 
 | 产物 | 现状证据 | 下一步（可执行） |
 |------|----------|------------------|
-| `tests/contracts/backend-registered-routes.fixture.ts` | 4108 条 vs 后端生成路由：**131 条只在 fixture**（102 条 `/api/bbs/assemble/...` 已删 + 24 条旧 `query_service_processing` 前缀 + 3 条 processplatform 残留 + `/health`、`/openapi.json` 框架路由）、**62 条只在后端**（61 条 personal 别名 + `/ready`）。按后端重生成后模拟 desktop 守卫：**132 条 desktop `/api` 字面量命中失败**，全部是 bbs/assemble 与旧 query 前缀 | 修：先处理 132 条前端调用（改到新路由或逐条登记 `KNOWN_BACKEND_GAPS`），再让 `gen_mcp_tools.py` 同时输出本 fixture（与 route-methods 同一扫描、同一门禁 job）；在此之前保留手工快照，避免直接重生成导致 CI 红 |
+| `tests/contracts/backend-registered-routes.fixture.ts` | 4108 条 vs 后端生成路由：**131 条只在 fixture**（102 条 `/api/bbs/assemble/...`（**O16 更正：`&fmt` 真实路由，非已删**）+ 24 条旧 `query_service_processing` 前缀（真 C 类）+ 3 条 processplatform（闭包 handler 真实路由）+ `/health`、`/openapi.json` 框架路由）、**62 条只在后端**（61 条 personal 别名 + `/ready`）。按后端重生成后模拟 desktop 守卫：**132 条 desktop `/api` 字面量命中失败，其中 108 条是 bbs 假阳性（完整解析后为 112 条 bbs 调用全部命中），真问题是 24 条旧 query 前缀** | **O16 已闭环**：`gen_mcp_tools.py` 同源输出本 fixture + route-methods；前端 24 条 query 迁移到新前缀。重生成后 desktop 守卫 flagged 从 132 → 24 → 0，见 O16 节 |
 
 
+
+## O16 指向已删路由的 `/api` 调用核查（实质轮次）
+
+**结论**：132 条报告是审计口径污染。完整解析后实际 136 个调用点 = **112 条 bbs 假阳性（A=0、B=0）+ 24 条 query C 类待迁移**。没有真断链，也没有死代码。
+
+### 136 条三类分布
+| 类 | 条数 | 判定依据 |
+|----|------|----------|
+| A 真断链 | 0 | 无（112 条 bbs 调用全部命中 `bbs_assemble_control/src/routes.rs` 的真实路由） |
+| B 死代码 | 0 | 无（24 条 query 调用均挂在 `QueryViewApp.vue` 的实际按钮/流程上） |
+| C 待迁移 | 24 | 后端等价路由为 `query_service_processing/src/lib.rs:312` 的 `p = "/api/query/service/processing"`；旧前缀是审计产物把 `format!("{p}/…")` 的局部变量 `p` 误当字面段造成的 |
+| 假阳性（不入三类） | 112 | `BBSForum.vue` 134 个调用点按路径去重 112 个，全部命中 `&fmt("rel")` + `API_BASE` 注册的 bbs 路由；O15 口径 132 = 108（`${encodeURIComponent}` 截断少算 4 条）+ 24 |
+
+### 112 条假阳性根因
+`gen_mcp_tools.py` 的旧正则只认 `.route("字面量")`，漏扫三类真实注册：
+1. `bbs_assemble_control/src/routes.rs` 的 `.route(&fmt("rel"), …)`，前缀来自 `API_BASE = "/api/bbs/assemble/control"`（106 处 `&fmt` 注册，含链式方法共 112 个 path/method 条目）；
+2. `query_service_processing/src/lib.rs` 的 `.route(format!("{p}/…").as_str(), …)`，前缀来自函数内 `let p = "…"`（24 条）；
+3. `processplatform_assemble_surface/src/routes.rs:394-402` 的闭包 handler `get(|…| async …)`（3 条）。
+
+同一缺陷还让 `docs/audits/three-ends-2026-09-20/extract_routes.py` 把 `{p}` 当字面路径段写进 `backend_routes.json`，旧 fixture 与前端照抄成了 `/api/query_service_processing/0/…`。
+
+### 129 条守卫削弱事故与修复
+- **事故**：O15 依据旧口径把 129 个真实路由条目当成「已删残留」从 route-methods fixture 删除（102 bbs 路径 + 24 query + 3 processplatform）；同时 `route-methods.test.ts` 对未注册路径直接 `continue`，测试仍绿。守卫从「缺路由必红」退化为「fixture 缺什么就少测什么」。
+- **修复**：O16-0 让生成器按表达式解析三种注册形态并点名失败不可解析项；重生成 `generated_routes.rs` 4735→4874（**+139**：bbs 112、query 24、closure 3，按 path/method 计；与 129 的差额是 O15 按路径去重且其 bbs 清单只抓到 102 条）。
+- **验收**：模拟 desktop 守卫 flagged 从 132 → 24（只剩 query），112 条 bbs 假阳性归零；旧 `{p}` fixture 条目 24 → 0。
+
+### 审计脚本口径修正
+`extract_routes.py` 现在按 `.route()` 首参表达式解析：
+- 字面量 `"/api/..."` → 真字面段，原样使用；
+- `&fmt("rel")` → 用同文件 `API_BASE` 常量 + `normalize_legacy_path`（去空段/去相邻重复）还原；
+- `format!("{name}/…")` → 只有能在 `before` 位置解析到 `let/const name = "…"` 的占位符才算局部变量前缀；`{{`/`}}` 还原为字面 `{`/`}`；
+- 解析不出的（运行时拼路径）点名计入 `unresolved` 并跳过，**不再把 `{p}` 写进产物**。
+历史快照 `backend_routes.json` 未重写（保留审计当时事实），但 fixture 已与它脱钩，改由生成器同源产出。
+
+### 三份产物条数自洽（同一路由表派生）
+| 产物 | 计数 | 口径 |
+|------|------|------|
+| `generated_routes.rs` | **4874** | (path, method) 条目 |
+| `backend-route-methods.fixture.ts` | **4170** 路径 / **4874** 方法条目 | 同一扫描按 path 归并方法集 |
+| `backend-registered-routes.fixture.ts` | **4170** 路径 | 同一扫描 + `EXTRA_FIXTURE_ROUTES`（路径集合与上者一致） |
+差异均为口径而非源头：4874 vs 4170 = 同一路径多方法；4170 vs 4170 = 同一集合。
+
+### 24 条 C 类映射（方法不变，去掉前缀后 `0` 标志段）
+| # | 旧路径（前缀 `/api/query_service_processing/0`） | 新路径（前缀 `/api/query/service/processing`） |
+|---|------|------|
+| 1 | `/design/search` | `/design/search` |
+| 2 | `/index/directory/document/count` | `/index/directory/document/count` |
+| 3 | `/index/update/extra/document` | `/index/update/extra/document` |
+| 4 | `/neural/generate/model/0` | `/neural/generate/model/0` |
+| 5 | `/neural/learn/model/0` | `/neural/learn/model/0` |
+| 6 | `/neural/list/calculate/model/0/work/0` | `/neural/list/calculate/model/0/work/0` |
+| 7 | `/neural/stop/generating/model/0` | `/neural/stop/generating/model/0` |
+| 8 | `/neural/stop/learning/model/0` | `/neural/stop/learning/model/0` |
+| 9 | `/table/reload/dynamic` | `/table/reload/dynamic` |
+| 10 | `/table/0/insert` | `/table/0/insert` |
+| 11 | `/table/0/update/0` | `/table/0/update/0` |
+| 12 | `/touch/high/freq/document/node/0/reset` | 同右 |
+| 13 | `/touch/high/freq/document/node/0/touch` | 同右 |
+| 14 | `/touch/high/freq/work/node/0/reset` | 同右 |
+| 15 | `/touch/high/freq/work/node/0/touch` | 同右 |
+| 16 | `/touch/high/freq/workcompleted/node/0/reset` | 同右 |
+| 17 | `/touch/high/freq/workcompleted/node/0/touch` | 同右 |
+| 18 | `/touch/low/freq/document/node/0/reset` | 同右 |
+| 19 | `/touch/low/freq/document/node/0/touch` | 同右 |
+| 20 | `/touch/low/freq/work/node/0/reset` | 同右 |
+| 21 | `/touch/low/freq/work/node/0/touch` | 同右 |
+| 22 | `/touch/low/freq/workcompleted/node/0/reset` | 同右 |
+| 23 | `/touch/low/freq/workcompleted/node/0/touch` | 同右 |
+| 24 | `/touch/optimize/index/0/touch` | 同右 |
+（表中「同右」＝旧路径后缀完全保留，仅替换两段前缀；实际提交见 `QueryViewApp.vue`。）
+
+### O16-1 未注册路径不再静默跳过
+- `route-methods.test.ts` 未注册调用显式计数，基线 **864 → 860**（迁移后 4 条无动态段路由命中；另 20 条带实参 `0`，精确匹配下仍计未注册）；基线只允许下降。
+- 另设 fixture 路径数下限 **4170**：删任何真实路由独立触发红。
+- 破坏实验：删除 `/api/ai/app/list` → 红在 `route-methods.test.ts:94`（未注册 865 > 864）；重生成还原 → 绿。
+
+### O16-2 真实运行验证
+后端 `--http` + 已迁移测试库 `oa4rust_test`（避开本地 `oa4rust` 库 019 迁移失败的环境问题）：
+```
+GET /api/query_service_processing/0/table/reload/dynamic -> 404
+GET /api/query/service/processing/table/reload/dynamic   -> 401
+```
+401 说明新路由存在、请求已进入鉴权中间件（不是 404）。本地 `vitest` 的 `route-methods` 与 `desktop-endpoints` 两套契约、`pnpm typecheck` 均绿；其余前端套餐测试由 CI 覆盖（本地未跑全量 unit/component）。
+
+### O16-0b 生成器格式复发（追加硬要求）
+- **成因**：生成器固定输出单行 `'path': ['GET'],`，超过 Biome `lineWidth=120` 的行会被要求换行；每次重跑都会把手工 `format --write` 的产物打回原形，frontend-qa 必红。
+- **修法**：在生成器内实现 Biome 的实测换行规则（单行 ≤120 / `'key': [` 可容纳时数组逐行 / 否则 key 独占一行），**不调用 biome 二进制**——generated-artifacts 门禁在纯 Python 环境运行，引入 Node 会让「可离线复现」变成「取决于前端工具链」。
+- **为什么修生成器而不是产物**：产物是派生物，手改只能撑到下一次重生成；这正是本轮要消灭的坏习惯。
+- **验收**：重跑生成器两次，三份产物 `git diff --exit-code` 均为空；`pnpm lint` 零 error；两次之间 `biome check` 均绿。破坏实验：去掉格式化步骤 → 红在 `tests/contracts/backend-route-methods.fixture.ts` 的 `format` 规则；恢复 → 绿。
+- 顺带修 `scripts/generate-api-tests.ts` 的 `lint/style/useTemplate`（此前被 fixture 红掩盖的存量问题）；本机 8 个 `.cjs`/`sw.js` format 报错是 `core.autocrlf` 本地 CRLF 噪声，已就地转 LF，仓库内容无变化。
+
+### O15 更正（102 条 bbs 判定）
+O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**错误**的：它们全部是 `&fmt("rel")` + `API_BASE` 注册的真实路由。误判原因是 O15 只认字面量 `.route("…")`，把「fixture 有、字面量扫描无」直接等同于「后端已删」，没有验证第二种注册形态。同一误判导致 129 条守卫条目被删。正确判定见上方 112 条假阳性根因与 129 条事故记录。
+
+### O16 剩余
+无 A/B 类处置项；24 条 C 类已迁移。未给后端加旧前缀 alias：仓库内无外部客户端依赖旧路径的证据，不为假设性兼容加层。
+
+## 既有后续清单
 
 1. ~~迁移并发安全~~（O1 done）。
 2. ~~sea-orm/sqlx 错误分类~~（O7/O8 done）。

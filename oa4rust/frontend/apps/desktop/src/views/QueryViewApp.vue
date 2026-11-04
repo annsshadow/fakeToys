@@ -874,36 +874,36 @@ async function loadQueryTwin2() {
     toast.error(`查询孪生端点B失败: ${e?.message ?? ''}`)
   }
 }
-// rev485（桶外 off-metric 第二波）：query_service_processing 服务处理读族 27 条
-// （{p} 与 {{modelFlag}}/{{flag}}/{{bundle}}/{{node}} 占位槽填 0/f1/b1；设计检索/索引统计/表操作/热频触达全族）
+// rev485（桶外 off-metric 第二波）：query_service_processing 服务处理读族 24 条
+// （O16-2 迁移到 query/service/processing 前缀：旧前缀 query_service_processing/0 已 404）
 async function loadQueryTwin3() {
   const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
   try {
     const rs = await Promise.all([
-      s(api.post('/api/query_service_processing/0/design/search', {})),
-      s(api.post('/api/query_service_processing/0/index/directory/document/count', {})),
-      s(api.post('/api/query_service_processing/0/index/update/extra/document', {})),
-      s(api.get('/api/query_service_processing/0/neural/generate/model/0')),
-      s(api.get('/api/query_service_processing/0/neural/learn/model/0')),
-      s(api.get('/api/query_service_processing/0/neural/list/calculate/model/0/work/0')),
-      s(api.get('/api/query_service_processing/0/neural/stop/generating/model/0')),
-      s(api.get('/api/query_service_processing/0/neural/stop/learning/model/0')),
-      s(api.get('/api/query_service_processing/0/table/reload/dynamic')),
-      s(api.post('/api/query_service_processing/0/table/0/insert', {})),
-      s(api.post('/api/query_service_processing/0/table/0/update/0', {})),
-      s(api.get('/api/query_service_processing/0/touch/high/freq/document/node/0/reset')),
-      s(api.get('/api/query_service_processing/0/touch/high/freq/document/node/0/touch')),
-      s(api.get('/api/query_service_processing/0/touch/high/freq/work/node/0/reset')),
-      s(api.get('/api/query_service_processing/0/touch/high/freq/work/node/0/touch')),
-      s(api.get('/api/query_service_processing/0/touch/high/freq/workcompleted/node/0/reset')),
-      s(api.get('/api/query_service_processing/0/touch/high/freq/workcompleted/node/0/touch')),
-      s(api.get('/api/query_service_processing/0/touch/low/freq/document/node/0/reset')),
-      s(api.get('/api/query_service_processing/0/touch/low/freq/document/node/0/touch')),
-      s(api.get('/api/query_service_processing/0/touch/low/freq/work/node/0/reset')),
-      s(api.get('/api/query_service_processing/0/touch/low/freq/work/node/0/touch')),
-      s(api.get('/api/query_service_processing/0/touch/low/freq/workcompleted/node/0/reset')),
-      s(api.get('/api/query_service_processing/0/touch/low/freq/workcompleted/node/0/touch')),
-      s(api.get('/api/query_service_processing/0/touch/optimize/index/0/touch')),
+      s(api.post('/api/query/service/processing/design/search', {})),
+      s(api.post('/api/query/service/processing/index/directory/document/count', {})),
+      s(api.post('/api/query/service/processing/index/update/extra/document', {})),
+      s(api.get('/api/query/service/processing/neural/generate/model/0')),
+      s(api.get('/api/query/service/processing/neural/learn/model/0')),
+      s(api.get('/api/query/service/processing/neural/list/calculate/model/0/work/0')),
+      s(api.get('/api/query/service/processing/neural/stop/generating/model/0')),
+      s(api.get('/api/query/service/processing/neural/stop/learning/model/0')),
+      s(api.get('/api/query/service/processing/table/reload/dynamic')),
+      s(api.post('/api/query/service/processing/table/0/insert', {})),
+      s(api.post('/api/query/service/processing/table/0/update/0', {})),
+      s(api.get('/api/query/service/processing/touch/high/freq/document/node/0/reset')),
+      s(api.get('/api/query/service/processing/touch/high/freq/document/node/0/touch')),
+      s(api.get('/api/query/service/processing/touch/high/freq/work/node/0/reset')),
+      s(api.get('/api/query/service/processing/touch/high/freq/work/node/0/touch')),
+      s(api.get('/api/query/service/processing/touch/high/freq/workcompleted/node/0/reset')),
+      s(api.get('/api/query/service/processing/touch/high/freq/workcompleted/node/0/touch')),
+      s(api.get('/api/query/service/processing/touch/low/freq/document/node/0/reset')),
+      s(api.get('/api/query/service/processing/touch/low/freq/document/node/0/touch')),
+      s(api.get('/api/query/service/processing/touch/low/freq/work/node/0/reset')),
+      s(api.get('/api/query/service/processing/touch/low/freq/work/node/0/touch')),
+      s(api.get('/api/query/service/processing/touch/low/freq/workcompleted/node/0/reset')),
+      s(api.get('/api/query/service/processing/touch/low/freq/workcompleted/node/0/touch')),
+      s(api.get('/api/query/service/processing/touch/optimize/index/0/touch')),
     ])
     toast.success(`服务处理读C ${rs.length} 条已提交`)
   } catch (e: any) {
