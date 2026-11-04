@@ -648,3 +648,37 @@ DATABASE_URL=<TEST_DATABASE_URL> cargo +1.98.1 test --test perf_baseline perf_ba
 | 2026-10-28 | OA-P0-2 | 首次 perf 在第 11 次登录 429：认证/普通请求共用 `ip` 限流桶 | 修 `rate_limit_middleware` 为 `auth:<ip>` / `general:<ip>`；新增回归测试，`shared` **227 passed** |
 | 2026-10-28 | llm-lab | `test_edge_paths.py` 去掉模块级硬 `import torch`；torchgpt 用例加 `requires_torch`，minigrad 用例保留 | 装 torch **95 passed**；模拟无 torch **62 passed / 10 skipped**（8 条 edge + 2 个模块级跳过），退出码 0；README 计数同步 |
 | 2026-10-28 | 门禁 | `hasPythonModule()` 去掉 `shell: true`（丢引号导致探针恒 false，`llm-lab-tests` 一直静默 SKIP）；CI 装 `llm-lab/requirements.txt` 并钉 Python 3.12 | 本地 `--only llm-lab,llm-lab-tests` 由 **SKIP** 变 **PASS**（2 通过 / 0 失败 / 0 跳过） |
+| 2026-11-04 | B7 补测 | 复跑 `5258d7a45` 声称的「棘轮全绿」 | 实测 `agentrouter.ts 74.84%` < 地板 94.44%（产品代码 +49 行、测试未随提交）→ **声明不成立** |
+| 2026-11-04 | B7 补测 | 核对 `96a0a614b` / `f1e0dc2db` 的验证声明 | 两次 CI（41647230498 / 41649683166）均 Typecheck success、Test success、Coverage ratchet failure → 「typecheck + 153 测试全绿」字面成立，但同提交 `test` 必需检查红 |
+| 2026-11-04 | B7 补测 | `agentrouter.test.ts` 补 3 条 WAF 等待分支（等待中恢复 / 重登后恢复 / 4 分钟超时）+ 无头模式不得打开验证页 | 单文件 **95.51%**（地板 94.44） |
+| 2026-11-04 | B7 补测 | `newapi-client.test.ts` 补 7 条：refresh 404 不重试 / 非 JSON 不重试 / 重试必须带 refresh token / 重试仍被 WAF 拦走而 quota 为 null；domLogin 展开表单 + Turnstile 就绪 / Turnstile 超时仍提交 / placeholder 路径 / 兜底文本框路径 | 单文件 89.63→**93.46%**；全量 90.75→**94.58%**（地板 92.01） |
+| 2026-11-04 | B7 补测 | 本地 `npm run test:ratchet` | `agentrouter.ts 行覆盖 95.51%（地板 94.44%）`、`newapi-client.ts 行覆盖 94.58%（地板 92.01%）`，exit 0 |
+| 2026-11-04 | B7 补测 | 破坏实验 | ① `waitForQuotaAfterWaf` 改为恒返回 null → 3 条新 WAF 用例红（pass 7 / fail 3）；② 去掉 `rr.status === 200` 状态闸 → refresh 404 用例红（pass 25 / fail 1）；两条还原后棘轮复绿 |
+
+### 虚假验证登记（2026-11-04）
+
+| 提交 | 声明 | 结论 | 证据 |
+| --- | --- | --- | --- |
+| `5258d7a45` | typecheck + 153 测试 + **覆盖率棘轮全绿** | **不成立**（棘轮部分） | 退回该提交复跑：`agentrouter.ts` 行覆盖 **74.84%**，低于地板 94.44% |
+| `96a0a614b` | typecheck + 153 测试全绿 | **成立**（字面）；但验证声明不完整 | CI run `41647230498`：Typecheck success、Test success、Coverage ratchet **failure**——「全绿」不含棘轮，同提交 `test` 是红的 |
+| `f1e0dc2db` | typecheck + 153 测试全绿；「实测有头模式会渲染验证页」 | 测试声明**成立**；「实测」**无法复核** | CI run `41649683166` 同上；真实 WAF + 人工拖滑块无法在本机复现。代码路径由新增「有头模式：重登后等待中配额恢复 → success」证明：`== null` 让 undefined 进入等待分支 |
+
+### 验证证据规矩（2026-11-04 起）
+
+声称「棘轮全绿」时，验证记录里必须出现 `npm run test:ratchet` 的逐文件百分比行，且至少包含被门禁卡住的文件：
+
+```
+coverage-ratchet: agentrouter.ts 行覆盖 95.51%（地板 94.44%）
+coverage-ratchet: newapi-client.ts 行覆盖 94.58%（地板 92.01%）
+```
+
+只有「测试通过 / exit 0」而无论断性百分比行的，一律视为**未验证**——它无法区分「真跑过」与「脚本没跑 / 目标文件缺席却被静默放过」。
+
+### 复盘：这条红为什么长期没人管
+
+1. **绕过规则**：直接 push main 时服务端返回 `Bypassed rule violations … 9 of 9 required status checks are expected`；`--admin` 合并同样跳过必需检查，红不会被拦。
+2. **红灯期间合并**：PR #156 在 auto-checkin `test` 红时被合并，先例一开，后续把红当常态。
+3. **每轮当既有红**：自 2026-11-03 13:45 UTC 起 30/30 连续失败；每轮开工都把它归为「既有红」而非本轮引入，无人认领。
+4. **本地漏跑**：提交说明只写「typecheck + 测试全绿」，既没跑也没贴 `test:ratchet`；产品代码 +53 行不补测试，覆盖率悄降，直到 CI 红才暴露。
+
+**处理**：只补测试（`agentrouter.ts` / `newapi-client.ts`），不动 `coverage-baseline.json` 地板、不改 `coverage-ratchet.mjs` 口径；未触发产品代码重构——等待超时的假时钟与 `goto` 失败均为测试内 monkey-patch，`try/finally` 还原。

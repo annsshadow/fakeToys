@@ -126,6 +126,57 @@ test("fetchSelf：主接口不可用时走 refresh 换 token 重试", async () =
   assert.deepEqual(user, { quota: 300_000, username: "bob" });
   const selfCalls = page.fetchCalls.filter((c) => c.url.includes("/api/user/self"));
   assert.equal(selfCalls.length, 2, "主接口失败后应重试一次");
+  // 重试必须带 refresh 拿到的 token；不带就只是把同一个失败请求又发一遍。
+  const headers = selfCalls[1]?.init?.headers as Record<string, string>;
+  assert.equal(headers["Authorization"], "Bearer at-2");
+});
+
+test("fetchSelf：refresh 非 200 时不解析错误体、不重试", async () => {
+  const page = new FakePage({
+    fetchRoutes: {
+      "api/user/self": { status: 404, body: "not found" },
+      // 错误响应体故意伪装成合法 token 响应：只看 body 不看状态码的实现会误重试。
+      "api/user/auth/refresh": {
+        status: 404,
+        body: JSON.stringify({ data: { access_token: "leaked-404-token" } }),
+      },
+    },
+  });
+  const user = await fetchSelf(page as unknown as Page, "https://site.test");
+  assert.equal(user, null);
+  const selfCalls = page.fetchCalls.filter((c) => c.url.includes("/api/user/self"));
+  assert.equal(selfCalls.length, 1, "refresh 返回 404 时不得用错误体重试");
+  assert.ok(
+    !selfCalls.some((c) => (c.init?.headers as Record<string, string> | undefined)?.Authorization?.includes("leaked-404-token")),
+    "错误响应体里的 token 不得被采用",
+  );
+});
+
+test("fetchSelf：refresh 200 但不是 JSON 时不重试", async () => {
+  const page = new FakePage({
+    fetchRoutes: {
+      "api/user/self": { status: 500, body: "oops" },
+      "api/user/auth/refresh": { status: 200, body: "<html>maintenance</html>" },
+    },
+  });
+  assert.equal(await fetchSelf(page as unknown as Page, "https://site.test"), null);
+  const selfCalls = page.fetchCalls.filter((c) => c.url.includes("/api/user/self"));
+  assert.equal(selfCalls.length, 1, "refresh 未返回 JSON 时不得重试");
+});
+
+test("fetchSelf：refresh 重试仍被 WAF 拦 → 兜底只给用户名，quota 必须为 null", async () => {
+  resetLogs();
+  const page = new FakePage({
+    localStorage: { user: JSON.stringify({ username: "dave", quota: 123 }) },
+    fetchRoutes: {
+      "api/user/self": { status: 200, body: '<html><meta name="aliyun_waf_aa"></html>' },
+      "api/user/auth/refresh": { status: 200, body: JSON.stringify({ data: { access_token: "at-3" } }) },
+    },
+  });
+  const user = await fetchSelf(page as unknown as Page, "https://site.test", log);
+  // SPA 残留的 quota 不可信，拿来算差值会误报奖励
+  assert.deepEqual(user, { quota: null, username: "dave" });
+  assert.ok(logs.some((l) => l.includes("WAF 挑战页")), "重试被拦也必须留痕");
 });
 
 test("fetchSelf：接口全挂时从 localStorage 兜底读用户名（quota 不可信）", async () => {
@@ -250,6 +301,127 @@ test("domLogin：找不到表单输入框 → 返回 null 并留痕", async () =
   const user = await domLogin(page as unknown as Page, "https://site.test", { email: "e", password: "p" }, log);
   assert.equal(user, null);
   assert.ok(logs.some((l) => l.includes("未找到登录表单输入框")));
+});
+
+test("domLogin：先点「展开账密表单」，并等待 Turnstile token 就绪", async () => {
+  resetLogs();
+  let submitted = false;
+  const page = new FakePage({
+    locators: {
+      'css:input[type="password"]': { count: 1 },
+      'css:input[name="username"]': { count: 1 },
+      "role:button:登录": { count: 1 },
+      "role:button:使用 邮箱或用户名 登录": { count: 1 },
+    },
+    fetchRoutes: {},
+  });
+  const routes = (page as unknown as { opts: { fetchRoutes: Record<string, unknown> } }).opts.fetchRoutes;
+  routes["api/user/self"] = (): { status: number; body: string } =>
+    submitted ? newApiSelf(3, "expand-user") : { status: 500, body: "nope" };
+  // 等待点：探测 1 + 登录页 2 + 关弹窗 3 + 展开表单 4 + 提交后 5
+  let waits = 0;
+  page.waitForTimeout = async () => {
+    if (++waits >= 5) submitted = true;
+  };
+
+  const user = await domLogin(page as unknown as Page, "https://site.test", { email: "e", password: "p" }, log, {
+    expandButtonText: "使用 邮箱或用户名 登录",
+    waitTurnstile: true,
+  });
+  assert.deepEqual(user, { quota: 3, username: "expand-user" });
+  // 不点展开按钮就没有账密表单可填——这条断言钉住「必须先展开」的顺序。
+  assert.ok(
+    page.clicks.some((c) => c.includes("使用 邮箱或用户名 登录")),
+    "必须点击展开账密表单按钮",
+  );
+  assert.ok(logs.some((l) => l.includes("Turnstile token 就绪")), "token 就绪必须留痕");
+});
+
+test("domLogin：Turnstile 超时也不阻断登录（仍尝试提交）", async () => {
+  resetLogs();
+  let submitted = false;
+  const page = new FakePage({
+    // 挑战框始终没有算出 token
+    turnstileToken: "",
+    locators: {
+      'css:input[type="password"]': { count: 1 },
+      'css:input[name="username"]': { count: 1 },
+      "role:button:登录": { count: 1 },
+    },
+    fetchRoutes: {},
+  });
+  const routes = (page as unknown as { opts: { fetchRoutes: Record<string, unknown> } }).opts.fetchRoutes;
+  routes["api/user/self"] = (): { status: number; body: string } =>
+    submitted ? newApiSelf(4, "turnstile-timeout") : { status: 500, body: "nope" };
+  let waits = 0;
+  page.waitForTimeout = async () => {
+    if (++waits >= 4) submitted = true;
+  };
+  // 测试内假时钟：每次读 Date.now 快进 5 秒，15 秒轮询不会真等。
+  const realNow = Date.now;
+  let fakeNow = realNow();
+  Date.now = () => (fakeNow += 5_000);
+  try {
+    const user = await domLogin(page as unknown as Page, "https://site.test", { email: "e", password: "p" }, log, {
+      waitTurnstile: true,
+    });
+    // 超时只降级为日志，不能把整次登录判死。
+    assert.deepEqual(user, { quota: 4, username: "turnstile-timeout" });
+    assert.ok(logs.some((l) => l.includes("Turnstile token 超时（仍尝试提交）")));
+  } finally {
+    Date.now = realNow;
+  }
+});
+
+test("domLogin：用户名只靠 placeholder 能找到时走 placeholder 路径", async () => {
+  resetLogs();
+  let submitted = false;
+  const page = new FakePage({
+    locators: {
+      'css:input[type="password"]': { count: 1 },
+      "ph:you@example": { count: 1 },
+      "role:button:登录": { count: 1 },
+    },
+    fetchRoutes: {},
+  });
+  const routes = (page as unknown as { opts: { fetchRoutes: Record<string, unknown> } }).opts.fetchRoutes;
+  routes["api/user/self"] = (): { status: number; body: string } =>
+    submitted ? newApiSelf(5, "ph-user") : { status: 500, body: "nope" };
+  let waits = 0;
+  page.waitForTimeout = async () => {
+    if (++waits >= 4) submitted = true;
+  };
+
+  const user = await domLogin(page as unknown as Page, "https://site.test", { email: "ph@test", password: "p" }, log);
+  assert.deepEqual(user, { quota: 5, username: "ph-user" });
+  // 填到的定位器若换成别的（比如兜底文本框），说明 placeholder 路径没生效。
+  assert.ok(page.fills.some((f) => f.desc.startsWith("ph:") && f.value === "ph@test"));
+});
+
+test("domLogin：没有任何具名/placeholder 输入框时兜底填第一个可见文本框", async () => {
+  resetLogs();
+  let submitted = false;
+  const textInput =
+    'css:input:not([type="password"]):not([type="hidden"]):not([type="checkbox"]):not([type="submit"])';
+  const page = new FakePage({
+    locators: {
+      'css:input[type="password"]': { count: 1 },
+      [textInput]: { count: 1 },
+      "role:button:登录": { count: 1 },
+    },
+    fetchRoutes: {},
+  });
+  const routes = (page as unknown as { opts: { fetchRoutes: Record<string, unknown> } }).opts.fetchRoutes;
+  routes["api/user/self"] = (): { status: number; body: string } =>
+    submitted ? newApiSelf(6, "fallback-user") : { status: 500, body: "nope" };
+  let waits = 0;
+  page.waitForTimeout = async () => {
+    if (++waits >= 4) submitted = true;
+  };
+
+  const user = await domLogin(page as unknown as Page, "https://site.test", { email: "fb@test", password: "p" }, log);
+  assert.deepEqual(user, { quota: 6, username: "fallback-user" });
+  assert.ok(page.fills.some((f) => f.desc === textInput && f.value === "fb@test"));
 });
 
 test("oauthLogin：无登录按钮 → 返回无用户且不需手动", async () => {

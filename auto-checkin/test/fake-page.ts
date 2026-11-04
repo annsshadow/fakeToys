@@ -52,6 +52,8 @@ export interface FakePageOptions {
   popups?: FakePage[];
   /** goto 时把 URL 切到这个映射（键=访问的 URL 子串，值=落点 URL），默认原地不动 */
   gotoUrls?: Record<string, string>;
+  /** document 里 cf-turnstile-response 的值；默认是「已算出 token」（30 字符） */
+  turnstileToken?: string;
 }
 
 /** 定位器描述串：由 page.locator/getByRole/getByPlaceholder 归一化而来 */
@@ -326,7 +328,9 @@ async function withBrowserSandbox<T>(
   // waitTurnstileToken 会查 document.querySelector；默认给一个「token 已就绪」的输入框
   g.document = {
     querySelector: (sel: string) =>
-      sel.includes("cf-turnstile-response") ? { value: "tok".repeat(10) } : null,
+      sel.includes("cf-turnstile-response")
+        ? { value: opts.turnstileToken ?? "tok".repeat(10) }
+        : null,
   };
   try {
     return await fn();
