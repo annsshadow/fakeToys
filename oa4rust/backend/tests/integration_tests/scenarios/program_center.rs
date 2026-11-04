@@ -102,14 +102,12 @@ pub async fn program_center_flow() {
         .expect("list applications request failed");
     assert_eq!(list_resp.status(), reqwest::StatusCode::OK);
     let list_body: serde_json::Value = list_resp.json().await.expect("invalid list response");
-    let apps = list_body["data"]["data"]
-        .as_array()
-        .expect("data array missing");
+    let apps = list_body["data"].as_array().expect("data array missing");
     assert!(
         apps.iter().any(|a| a["id"].as_str() == Some(created_id)),
         "created application not present in list"
     );
-    info!(count = %list_body["data"]["count"], "applications listed");
+    info!(count = apps.len(), "applications listed");
 
     // ── Step 3: modules_all reflects the seeded module (DB read) ──────────────
     let mod_resp = client
@@ -120,16 +118,14 @@ pub async fn program_center_flow() {
         .expect("modules_all request failed");
     assert_eq!(mod_resp.status(), reqwest::StatusCode::OK);
     let mod_body: serde_json::Value = mod_resp.json().await.expect("invalid modules response");
-    let modules = mod_body["data"]["data"]
-        .as_array()
-        .expect("modules array missing");
+    let modules = mod_body["data"].as_array().expect("modules array missing");
     assert!(
         modules
             .iter()
             .any(|m| m["name"].as_str() == Some("PC IT Module")),
         "seeded module not present in modules_all"
     );
-    info!(module_count = %mod_body["data"]["count"], "modules listed");
+    info!(module_count = %mod_body["count"], "modules listed");
 
     // ── Step 4: Save a config (DB write) ─────────────────────────────────────
     let cfg_save_resp = client
@@ -152,21 +148,29 @@ pub async fn program_center_flow() {
     assert_eq!(cfg_save_body["data"]["key"].as_str(), Some(cfg_key));
     info!(config_key = %cfg_key, "config saved");
 
-    // ── Step 5: Get config — reflects the write (DB read) ─────────────────────
+    // ── Step 5: List configs — reflects the write (DB read) ───────────────────
+    // 新语义：产品没有 /config/{key} 单条读取路由，配置读取走 /config/list
+    // （出处：program_center/src/routes.rs:409 config_list）。
     let cfg_get_resp = client
-        .get(format!("{}/api/program_center/config/{}", base, cfg_key))
+        .get(format!("{}/api/program_center/config/list", base))
         .header("Authorization", &auth_header)
         .send()
         .await
-        .expect("config get request failed");
+        .expect("config list request failed");
     assert_eq!(cfg_get_resp.status(), reqwest::StatusCode::OK);
     let cfg_get_body: serde_json::Value = cfg_get_resp
         .json()
         .await
-        .expect("invalid config get response");
-    assert_eq!(cfg_get_body["data"]["key"].as_str(), Some(cfg_key));
-    assert_eq!(cfg_get_body["data"]["value"].as_str(), Some("enabled"));
-    info!(config_value = %cfg_get_body["data"]["value"], "config fetched");
+        .expect("invalid config list response");
+    let configs = cfg_get_body["data"]
+        .as_array()
+        .expect("config list data array missing");
+    let saved = configs
+        .iter()
+        .find(|c| c["key"].as_str() == Some(cfg_key))
+        .expect("saved config not present in config/list");
+    assert_eq!(saved["value"].as_str(), Some("enabled"));
+    info!(config_value = %saved["value"], "config fetched");
 
     server_handle.abort();
     let _ = server_handle.await;

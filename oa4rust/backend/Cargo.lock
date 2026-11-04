@@ -3862,6 +3862,7 @@ dependencies = [
  "bbs",
  "bbs_assemble_control",
  "bbs_core_entity",
+ "bcrypt",
  "calendar",
  "calendar_assemble_control",
  "calendar_core_entity",

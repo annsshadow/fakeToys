@@ -266,6 +266,7 @@ serde.workspace = true
 mysql_async = "0.37.0"
 mysql_common = "0.37"
 tower.workspace = true
+bcrypt.workspace = true
 parity = { path = "crates/parity" }
 mcp_server = { path = "crates/mcp_server" }
 shared = { path = "crates/shared" }

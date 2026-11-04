@@ -90,7 +90,7 @@ pub async fn file_portal_flow() {
         .json()
         .await
         .expect("invalid list files response");
-    let files = list_file_body["data"]["data"]
+    let files = list_file_body["data"]
         .as_array()
         .expect("data array missing");
     let found_file = files

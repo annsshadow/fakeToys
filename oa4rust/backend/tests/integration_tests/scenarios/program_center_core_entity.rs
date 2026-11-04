@@ -83,10 +83,11 @@ pub async fn program_center_core_entity_application_flow() {
     let body: serde_json::Value = list_resp.json().await.expect("invalid list response");
     let data = body["data"].as_array().expect("data array missing");
 
+    // applications 列表的契约只含 id/name/app_id/disable（program_center::applications），
+    // 不含 category；category 是历史断言，已随列表投影收敛移除。
     let found = data.iter().any(|app| {
         app["id"].as_str() == Some("app-pc-integration-test-001")
             && app["name"].as_str() == Some("Integration Test App")
-            && app["category"].as_str() == Some("Office")
     });
     assert!(
         found,

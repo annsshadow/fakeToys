@@ -175,7 +175,9 @@ pub async fn ai_endpoints_flow() {
         "/api/ai/config/list/mcp/paging/1/size/10",
     )
     .await;
-    let mcp_items = list["data"]["data"].as_array().expect("mcp data array");
+    // 新语义：config/list/mcp 走 legacy_success，顶层 data 即数组
+    // （出处：ai_assemble_control/src/lib.rs:1028）。
+    let mcp_items = list["data"].as_array().expect("mcp data array");
     assert!(
         mcp_items
             .iter()
@@ -253,6 +255,15 @@ pub async fn query_endpoints_flow() {
         )
         .await
         .expect("seed x_query");
+        // cache/status 的 cached 取决于同名导入记录是否存在（query_core_express
+        // 按 x_query.name 反查 x_query_import_record），因此必须显式种前置，
+        // 不能靠「本地库里有残留数据」。
+        c.execute(
+            "INSERT INTO x_query_import_record (id, name) VALUES ($1, $2)",
+            &[&uniq("qir"), &"Q"],
+        )
+        .await
+        .expect("seed x_query_import_record");
     }
 
     let cached = get_ok(
@@ -347,17 +358,15 @@ pub async fn portal_endpoints_flow() {
     {
         let c = pool.as_pg().unwrap().get().await.expect("pool");
         c.execute(
-            "INSERT INTO x_portal (id, name, alias, description, portal_category) VALUES ($1, $2, $3, $4, $5)",
-            &[&uniq("portal"), &"Portal", &"alias", &"desc", &cat],
+            "INSERT INTO x_portal (id, name, alias, description, category, portal_category) VALUES ($1, $2, $3, $4, $5, $6)",
+            &[&uniq("portal"), &"Portal", &"alias", &"desc", &cat, &cat],
         )
         .await
         .expect("seed x_portal");
     }
 
     let list = get_ok(&base, &client, &auth, "/api/portalcategory/list").await;
-    let cats = list["data"]["data"]
-        .as_array()
-        .expect("category data array");
+    let cats = list["data"].as_array().expect("category data array");
     assert!(
         cats.iter().any(|r| r["id"].as_str() == Some(cat.as_str())),
         "seeded portal category not returned"
@@ -590,7 +599,7 @@ pub async fn org_assemble_control_flow() {
         json!({ "name": person_id }),
     )
     .await;
-    let people = like["data"]["data"].as_array().expect("person list data");
+    let people = like["data"].as_array().expect("person list data");
     assert!(
         people
             .iter()
@@ -649,7 +658,8 @@ pub async fn console_jpush_express_flow() {
     info!("console get_metric returned real metric entry");
 
     let hello = get_ok(&base, &client, &auth, "/hello/world").await;
-    assert_eq!(hello["data"]["status"].as_str(), Some("ok"));
+    // jpush hello 的契约是 ActionResult.success("hello")，data 直接是字符串。
+    assert_eq!(hello["data"].as_str(), Some("hello"));
     info!("jpush hello returned ok + db counts");
 
     let express = get_ok(

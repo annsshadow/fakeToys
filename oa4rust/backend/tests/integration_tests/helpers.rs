@@ -40,10 +40,10 @@ pub async fn setup_test_server(
     let session_manager = SessionManager::with_pool(pg_pool.clone());
     let rate_limiter = RateLimiter::new();
 
-    // `create_app` 的 SeaORM 连接取自 DATABASE_URL（测试进程里是开发库），
-    // 而 deadpool 池指向一次性测试库；不注入同库 SeaORM 连接时，*_core_entity
-    // 的写入会落到开发库，测试按测试库断言必然读不到行。这里按池的实际库名
-    // 构造 SeaORM 连接，保证应用内两种连接同源。
+    // `create_app` 默认会按 DATABASE_URL 另建 SeaORM 连接；若不注入，
+    // *_core_entity 的写入会与 deadpool 池（一次性测试库）分裂成两个库，
+    // 测试按测试库断言必然读不到行。这里按池的实际库名构造 SeaORM 连接，
+    // 保证应用内两种连接同源。
     let db_name = {
         let client = pg_pool
             .get()
@@ -112,16 +112,23 @@ pub async fn seed_test_data(
         .await
         .context("failed to get pool client for seeding")?;
 
+    // 种子口令必须是真实 bcrypt 哈希（此前是伪造串，login 永远失败，
+    // ldap_fallback 断言因此一直红）。4 轮足够测试使用且成本极低。
+    let admin_password_hash = format!(
+        "{{bcrypt}}{}",
+        bcrypt::hash("password123", 4).expect("failed to hash integration-test admin password")
+    );
     client
         .execute(
             "INSERT INTO auth_person (id, unique_id, name, password_hash, locked, deleted_at) \
              VALUES ($1, $2, $3, $4, false, NULL) \
-             ON CONFLICT (unique_id) DO UPDATE SET name = EXCLUDED.name",
+             ON CONFLICT (unique_id) DO UPDATE SET name = EXCLUDED.name, \
+             password_hash = EXCLUDED.password_hash",
             &[
                 &"person-it-admin",
                 &"it-admin",
                 &"IT Admin",
-                &"$2b$04$eKzG7rDxhGXY/bIqz.WZHO0E4XLhK.1qZJ9IoG6q7oB7IoG6q7oBm",
+                &admin_password_hash,
             ],
         )
         .await
