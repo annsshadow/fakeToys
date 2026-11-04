@@ -81,6 +81,14 @@ async fn draft_start_status_contract() {
         .await;
 }
 
+/// O24-3 批次 9：E42703 属性表路径（personattribute / unitattribute 无 name 列）。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn attribute_paths_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::attribute_paths::attribute_paths_flow(ctx.pool.clone()).await;
+}
+
 /// O24-3 批次 8：E42P10 upsert 路径（attendance statistic/do、calendar control config）。
 #[ignore = "requires a running database server"]
 #[tokio::test]

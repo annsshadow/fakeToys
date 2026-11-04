@@ -1,6 +1,7 @@
 // Copyright (C) 2026 annsshadow
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+pub mod attribute_paths;
 pub mod bbs_correlation;
 pub mod bpmn_process;
 pub mod cms_document;

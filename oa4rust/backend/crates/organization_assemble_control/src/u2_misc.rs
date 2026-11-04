@@ -67,7 +67,7 @@ pub async fn unit_attribute_edit(
 ) -> HandlerResult {
     require_admin(&pool, &session).await?;
     let client = client_of(&pool).await?;
-    let Some(aid) = resolve_generic_id(&client, "x_org_unit_attribute", &flag).await? else {
+    let Some(aid) = resolve_id_exact(&client, "x_org_unit_attribute", &flag).await? else {
         return err("unitattribute not found");
     };
     let attr_value = opt(&body, &["attributeValue", "value"])
@@ -111,7 +111,7 @@ pub async fn unit_attribute_delete(
 ) -> HandlerResult {
     require_admin(&pool, &session).await?;
     let client = client_of(&pool).await?;
-    match soft_delete_generic(&client, "x_org_unit_attribute", &flag).await? {
+    match soft_delete_exact(&client, "x_org_unit_attribute", &flag).await? {
         Some(id) => ok(Value::Object(
             vec![("id".to_string(), Value::String(id))]
                 .into_iter()
@@ -178,7 +178,7 @@ pub async fn person_attribute_edit(
 ) -> HandlerResult {
     require_admin(&pool, &session).await?;
     let client = client_of(&pool).await?;
-    let Some(aid) = resolve_generic_id(&client, "x_org_person_attribute", &flag).await? else {
+    let Some(aid) = resolve_id_exact(&client, "x_org_person_attribute", &flag).await? else {
         return err("personattribute not found");
     };
     let attr_value = opt(&body, &["attributeValue", "value"])
@@ -222,7 +222,7 @@ pub async fn person_attribute_delete(
 ) -> HandlerResult {
     require_admin(&pool, &session).await?;
     let client = client_of(&pool).await?;
-    match soft_delete_generic(&client, "x_org_person_attribute", &flag).await? {
+    match soft_delete_exact(&client, "x_org_person_attribute", &flag).await? {
         Some(id) => ok(Value::Object(
             vec![("id".to_string(), Value::String(id))]
                 .into_iter()

@@ -998,10 +998,10 @@ GET /api/meeting/core/entity/room/{id}   column:equipment
 基线因此 **40 → 42（GET 11 / 非 GET 31）**，`BASELINE_COUNT=42`，集合相等。CI 的旧 40
 不是「更干净」，而是**扫描器当时没读到种子库**——这也是本次把口径写进台账的原因。
 
-### O24-3 待修 14 条（顺序与纪律，批次 1-8 已清 28）
+### O24-3 待修 10 条（顺序与纪律，批次 1-9 已清 32）
 
-**口径**：非 GET 8 条 + GET 6 条 = 14（原 42；批次 1 清 1、批次 2 清 4、批次 3 清 4、批次 4 清 3、
-批次 5 清 2、批次 6 清 7、批次 7 清 4、批次 8 清 3）。
+**口径**：非 GET 4 条 + GET 6 条 = 10（原 42；批次 1 清 1、批次 2 清 4、批次 3 清 4、批次 4 清 3、
+批次 5 清 2、批次 6 清 7、批次 7 清 4、批次 8 清 3、批次 9 清 4）。
 
 排序按真实用户后果，不按条数：
 
@@ -1308,6 +1308,37 @@ GET 变体 200；calendar 写两次 → 200、`config_key='global'` **仍 1 行*
 **收口**：删 3 条基线路，`BASELINE_COUNT 17 → 14`；门禁实测
 `== 棘轮基线：14 条（当前 14 条），集合相等 ==`。
 
+### O24-3 批次 9：`E42703` 属性表路径（person/unit attribute，4 条）
+
+**schema 现场证据**（`information_schema.columns`）：
+
+```text
+x_org_person_attribute | id, person_id, attribute_key, attribute_value, creator, create_time, deleted_at
+x_org_unit_attribute   | id, unit_id,  attribute_key, attribute_value, creator, create_time, deleted_at
+```
+
+两张表**没有 `name` 列**，旧实现用 `resolve_generic_id`（`id = $1 OR name = $1`）
+→ `E42703 column "name" does not exist`。这两张表的路径参数本来就是**记录 id**
+（GET 变体同表同口径也按 id 查），不是 name。修法：
+
+- 新增 `resolve_id_exact` / `soft_delete_exact`（`u2_helpers.rs`），只按 `id` 精确解析；
+- `u2_misc.rs` 四处切换：`person_attribute_edit/delete`、`unit_attribute_edit/delete`。
+- 同文件其余 `resolve_generic_id`/`soft_delete_generic` 仍用于 `x_org_unit` /
+  `x_org_permission_setting` / `x_org_personcard`（这些表有 `name`），不受影响。
+
+**先红**：`attribute_paths_contract`（`tests/.../attribute_paths.rs`）未改代码时实测
+`500` + `SqlState(E42703) column "name" does not exist`（`u2_helpers.rs:150`）。
+
+**行为断言**（每条写后必读）：person PUT → 200 + 回库 `attribute_value='new'`；
+person DELETE → 200 + `deleted_at` 非空，且已软删记录再 PUT → 200 + `type=error`
+（该 handler 的「未命中」走 o2server 旧语义，不是 5xx）；unit PUT/DELETE 同构。
+
+**破坏实验**：单独还原 person edit 的解析 → 红（E42703）；单独还原 unit delete 的软删 → 红
+（E42703）；各自复原后绿。
+
+**收口**：删 4 条基线路，`BASELINE_COUNT 14 → 10`；门禁实测
+`== 棘轮基线：10 条（当前 10 条），集合相等 ==`。
+
 ### 写路径修复规矩：「写后必读」（批次 7 起，强制执行）
 
 任何写路径修复都必须补一条**写入后立即读回并断言同一值**的用例（SQL 直读同库），
@@ -1353,6 +1384,7 @@ GET 变体 200；calendar 写两次 → 200、`config_key='global'` **仍 1 行*
 | O24-3 批次 6（E23502 实体引用族） | 0 | **7** | **-7**（28→21） | 21 |
 | O24-3 批次 7（wrong-type 配置写路径） | 0 | **4** | **-4**（21→17） | 17 |
 | O24-3 批次 8（E42P10 upsert 路径） | 0 | **3** | **-3**（17→14） | 14 |
+| O24-3 批次 9（E42703 属性表路径） | 0 | **4** | **-4**（14→10） | 10 |
 
 **清除清单**：
 
@@ -1366,4 +1398,5 @@ GET 变体 200；calendar 写两次 → 200、`config_key='global'` **仍 1 行*
 | O24-3 批次 6 | `E23502` 的实体引用子族 | `POST/GET /api/hotpic*`（create/hotpic ×2、update/control/config ×2、user/hotpic ×1）；`POST /api/portal/assemble/designer/page`；`POST /api/portal/assemble/designer/page/create` | `entity_reference_required_contract`：先红 500（E23502 `application`/`portal_id`）→ 改后缺参 400、有参 200 且回库指向父实体；破坏实验逐个还原 3 处 handler → 各自红；门禁 21/21 集合相等 |
 | O24-3 批次 7 | `wrong-type` 的配置写路径 | `POST/PUT /api/bbs/assemble/control/update/control/config`；`POST/PUT /api/general/assemble/control/status/update` | `wrong_type_config_contract`：先红 500（WrongType）→ 改后 POST/PUT 均 200 且回库正确；破坏实验逐个还原 bbs/general 写/读 → 各自红；门禁 17/17 集合相等 |
 | O24-3 批次 8 | `E42P10` 的 upsert 路径 | `GET/POST /api/attendance/assemble/control/statistic/do`；`GET /api/calendar_assemble_control/update/control/config` | `upsert_paths_contract`：先红 500（E42P10）→ 改后 200、同键仍 1 行且 update_time 更新、config 写后必读同值；破坏实验逐个还原 → 各自红；门禁 14/14 集合相等 |
+| O24-3 批次 9 | `E42703` 的属性表路径（无 `name` 列） | `PUT/DELETE /api/organization/assemble/control/personattribute/{flag}`；`PUT/DELETE /api/organization/assemble/control/unitattribute/{flag}` | `attribute_paths_contract`：先红 500（E42703 `column "name"`）→ 改后 200 且回库 `attribute_value`/`deleted_at` 命中（写后必读）、软删后再 PUT `type=error`；破坏实验分别还原 person 解析 / unit 软删 → 各自红；门禁 10/10 集合相等 |
 

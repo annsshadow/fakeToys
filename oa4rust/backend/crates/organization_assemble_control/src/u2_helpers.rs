@@ -168,6 +168,39 @@ pub async fn soft_delete_generic(
     Ok(Some(id))
 }
 
+/// 按 id 精确解析：用于**没有 `name` 列**的层级表（如 `x_org_person_attribute` /
+/// `x_org_unit_attribute`）。`resolve_generic_id` 的 `OR name = $1` 在这两张表上
+/// 会直接 E42703（列不存在）。
+pub async fn resolve_id_exact(
+    client: &Client,
+    table: &str,
+    flag: &str,
+) -> Result<Option<String>, AppError> {
+    let sql = format!("SELECT id FROM {table} WHERE id = $1 AND deleted_at IS NULL");
+    let row = client
+        .query_opt(&sql, &[&flag])
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    Ok(row.map(|r| r.get::<_, String>(0)))
+}
+
+/// `resolve_id_exact` + 软删（同表同口径）。
+pub async fn soft_delete_exact(
+    client: &Client,
+    table: &str,
+    flag: &str,
+) -> Result<Option<String>, AppError> {
+    let Some(id) = resolve_id_exact(client, table, flag).await? else {
+        return Ok(None);
+    };
+    let sql = format!("UPDATE {table} SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL");
+    client
+        .execute(&sql, &[&id])
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    Ok(Some(id))
+}
+
 #[allow(non_snake_case)]
 pub async fn normalized_name_dup(
     client: &Client,
