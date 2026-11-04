@@ -129,6 +129,166 @@ def match_paren(masked, open_idx):
     return -1
 
 
+def read_first_arg(src, masked, open_paren):
+    """读 .route( 的第一个顶层实参，返回 (原文表达式, 分隔符下标, 是否结尾)。
+
+    2026-11 O16 修正：旧实现取「整段里第一个字符串字面量」，把
+    `format!("{p}/...")` 的局部变量前缀 `p` 当成真实路径段 `/…/{p}/…`，
+    污染了 backend_routes.json 与前端 fixture。现在按表达式解析，解不出就点名跳过。
+    """
+    depth = 1
+    i = open_paren + 1
+    n = len(masked)
+    while i < n:
+        c = masked[i]
+        if c in "([{":
+            depth += 1
+        elif c in ")]}":
+            depth -= 1
+            if depth == 0:
+                return src[open_paren + 1 : i], i, True
+        elif c == "," and depth == 1:
+            return src[open_paren + 1 : i], i, False
+        i += 1
+    return "", i, False
+
+
+def split_top_level_args(s):
+    args, cur, depth, in_str, esc = [], [], 0, False, False
+    for c in s:
+        if in_str:
+            cur.append(c)
+            if esc:
+                esc = False
+            elif c == "\\":
+                esc = True
+            elif c == '"':
+                in_str = False
+            continue
+        if c == '"':
+            in_str = True
+            cur.append(c)
+        elif c in "([{":
+            depth += 1
+            cur.append(c)
+        elif c in ")]}":
+            depth -= 1
+            cur.append(c)
+        elif c == "," and depth == 0:
+            args.append("".join(cur).strip())
+            cur = []
+        else:
+            cur.append(c)
+    if cur:
+        args.append("".join(cur).strip())
+    return args
+
+
+def find_const(src, name):
+    m = re.search(
+        r'\b(?:pub(?:\(\w+\))?\s+)?(?:const|static)\s+'
+        + re.escape(name)
+        + r'\s*:\s*&(?:\'[^\']+\s+)?str\s*=\s*"((?:[^"\\]|\\.)*)"',
+        src,
+    )
+    return m.group(1) if m else None
+
+
+def find_binding(src, name, before):
+    pat = re.compile(
+        r'\b(?:let|const)\s+' + re.escape(name) + r'\s*(?::\s*&?(?:str|String)\s*)?=\s*"((?:[^"\\]|\\.)*)"'
+    )
+    val = None
+    for m in pat.finditer(src[:before]):
+        val = m.group(1)
+    return val
+
+
+def resolve_value(expr, src, before):
+    expr = expr.strip()
+    m = re.fullmatch(r'"((?:[^"\\]|\\.)*)"', expr)
+    if m:
+        return m.group(1)
+    if re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", expr):
+        v = find_const(src, expr)
+        return v if v is not None else find_binding(src, expr, before)
+    return None
+
+
+def expand_format(tmpl, args, src, before):
+    """展开 format!：`{{`/`}}` 是真字面花括号，`{name}`/`{}` 是插值。
+
+    区分口径：只有能解析到 let/const 绑定的占位符才算局部变量前缀；
+    解析不出的返回 None（调用方点名跳过），绝不再把 `{p}` 写进路径。
+    """
+    out, arg_idx, i = [], 0, 0
+    while i < len(tmpl):
+        c = tmpl[i]
+        if c == "{":
+            if i + 1 < len(tmpl) and tmpl[i + 1] == "{":
+                out.append("{")
+                i += 2
+                continue
+            j = tmpl.find("}", i + 1)
+            if j == -1:
+                return None
+            key = tmpl[i + 1 : j].strip()
+            if key == "":
+                if arg_idx >= len(args):
+                    return None
+                val = resolve_value(args[arg_idx], src, before)
+                arg_idx += 1
+            else:
+                val = resolve_value(key, src, before)
+            if val is None:
+                return None
+            out.append(val)
+            i = j + 1
+        elif c == "}":
+            if i + 1 < len(tmpl) and tmpl[i + 1] == "}":
+                out.append("}")
+                i += 2
+                continue
+            return None
+        else:
+            out.append(c)
+            i += 1
+    return "".join(out)
+
+
+def normalize_legacy_path(class_path, method_path):
+    segs = []
+    for seg in f"{class_path}/{method_path}".split("/"):
+        if not seg:
+            continue
+        if segs and segs[-1] == seg:
+            continue
+        segs.append(seg)
+    return "/".join(segs)
+
+
+def resolve_route_path(expr, src, before):
+    expr = expr.strip()
+    m = re.fullmatch(r'"((?:[^"\\]|\\.)*)"', expr)
+    if m:
+        return m.group(1)
+    m = re.fullmatch(r'&?\s*fmt\s*\(\s*"((?:[^"\\]|\\.)*)"\s*\)', expr)
+    if m:
+        base = find_const(src, "API_BASE")
+        if base is None:
+            return None
+        return "/" + normalize_legacy_path(base, m.group(1))
+    m = re.fullmatch(
+        r'&?\s*format!\s*\(\s*"((?:[^"\\]|\\.)*)"\s*(?:,\s*(.*?))?\s*\)\s*(?:\.(?:as_str|to_string)\s*\(\s*\))?\s*',
+        expr,
+        re.S,
+    )
+    if m:
+        args = split_top_level_args(m.group(2)) if m.group(2) else []
+        return expand_format(m.group(1), args, src, before)
+    return resolve_value(expr, src, before)
+
+
 def extract(path):
     src = open(path, encoding="utf-8", errors="replace").read()
     masked = strip_rust_strings(src)
@@ -137,18 +297,10 @@ def extract(path):
     def skipped(idx):
         return any(a <= idx < b for a, b in skips)
 
-    # 某些 crate 用 `&fmt("subject/xxx")` 注册路由，前缀由 API_BASE 常量在运行时拼接。
-    # 若不还原前缀，提取出的路径会缺失 /api/... 段，导致与前端对账时产生假 404。
-    consts = {}
-    for cm in re.finditer(r'pub\s+const\s+([A-Z_][A-Z0-9_]*)\s*:\s*&str\s*=\s*"([^"]*)"', src):
-        consts[cm.group(1)] = cm.group(2)
-    base_prefix = ""
-    for name, val in consts.items():
-        if "BASE" in name and val.startswith("/"):
-            base_prefix = val
-            break
-
+    # 前缀不再是「文件里第一个名字含 BASE 的常量」：只按表达式实际引用的
+    # API_BASE / 局部 let 绑定来解析（resolve_route_path），避免张冠李戴。
     found = []
+    unresolved = []
     for m in re.finditer(r"\.route\s*\(", masked):
         if skipped(m.start()):
             continue
@@ -156,15 +308,14 @@ def extract(path):
         close_idx = match_paren(masked, open_idx)
         if close_idx == -1:
             continue
+        first_arg, _sep, _closed = read_first_arg(src, masked, open_idx)
+        route_path = resolve_route_path(first_arg, src, m.start())
+        if route_path is None:
+            # 运行时拼路径等结构无法静态解析：点名计数，绝不把 `{p}` 当字面段写进产物。
+            unresolved.append(first_arg.strip()[:120])
+            continue
         seg_masked = masked[open_idx : close_idx + 1]
         seg_orig = src[open_idx : close_idx + 1]
-        pm = re.search(r'"((?:[^"\\]|\\.)*)"', seg_orig)
-        if not pm:
-            continue
-        route_path = pm.group(1)
-        # 无前导斜杠 → 说明前缀由 helper 拼接，用 API_BASE 还原
-        if not route_path.startswith("/") and base_prefix:
-            route_path = base_prefix.rstrip("/") + "/" + route_path.lstrip("/")
         methods = []
         for mm in METHOD_RE.finditer(seg_masked):
             name = mm.group(1)
@@ -199,11 +350,12 @@ def extract(path):
             found.append(
                 (name.upper(), route_path, handler_by_method.get(name, ""), handler_full_by_method.get(name, ""))
             )
-    return found
+    return found, unresolved
 
 
 def main():
     results = {}
+    unresolved_all = []
     for base in (os.path.join(ROOT, "crates"), os.path.join(ROOT, "src")):
         for dirpath, _dirs, files in os.walk(base):
             if os.sep + "target" in dirpath:
@@ -225,7 +377,9 @@ def main():
                     owner = parts[1]
                 else:
                     owner = "oa4rust(facade)"
-                rows = extract(full)
+                rows, unresolved = extract(full)
+                for expr in unresolved:
+                    unresolved_all.append((rel, expr))
                 if rows:
                     results.setdefault(owner, [])
                     for method, p, handler, handler_q in rows:
@@ -246,6 +400,10 @@ def main():
     total = sum(len(v) for v in results.values())
     uniq = {(r["method"], r["path"]) for v in results.values() for r in v}
     print(f"crates={len(results)}  route-registrations={total}  unique(method,path)={len(uniq)}")
+    if unresolved_all:
+        print(f"无法静态解析的首参 {len(unresolved_all)} 处（已点名，未写入产物）：")
+        for rel, expr in unresolved_all[:20]:
+            print(f"  {rel}: {expr}")
     print("written:", out)
 
 

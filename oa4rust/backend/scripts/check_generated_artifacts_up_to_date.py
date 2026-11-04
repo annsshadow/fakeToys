@@ -25,6 +25,7 @@ JOBS = [
         'targets': [
             ROOT / 'crates' / 'mcp_server' / 'src' / 'generated_routes.rs',
             ROOT.parent / 'tests' / 'contracts' / 'backend-route-methods.fixture.ts',
+            ROOT.parent / 'tests' / 'contracts' / 'backend-registered-routes.fixture.ts',
         ],
     },
     {
