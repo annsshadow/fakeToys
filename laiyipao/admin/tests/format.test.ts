@@ -7,7 +7,25 @@
  * 判据与生产同一算法（Date + 本地分量），与测试机时区无关。
  */
 import { describe, expect, it } from 'vitest'
-import { fmtTime, isCancel } from '@/utils/format'
+import { auditDetailFull, auditDetailPreview, fmtTime, isCancel } from '@/utils/format'
+
+/**
+ * R98：R74/R75 的审计 before/after 快照在列表里被 80 字符预览截断。
+ * 用真实 update_level 审计行（实测 detail=260 字符，Patch 在 before 之后）
+ * 钉住：预览看不到新值，全文必须看得到。
+ */
+const R98_HEAVY_DETAIL = {
+  before: {
+    name: '边境哨站 · 1',
+    star_targets: [11941, 16916, 19503],
+    terrain_config: [{ x: 881, y: 771, kind: 'oil_drum', param: 9 }],
+  },
+  patch: {
+    name: '边境哨站 · 1-改',
+    star_targets: [11942, 16917, 19504],
+    terrain_config: [{ x: 882, y: 772, kind: 'oil_drum', param: 9 }],
+  },
+}
 
 function localFmt(iso: string): string {
   const d = new Date(iso)
@@ -34,6 +52,46 @@ describe('fmtTime 本地时区渲染', () => {
 
   it('非法输入不崩，退回纯展示', () => {
     expect(fmtTime('not-a-time')).toBe('not-a-time')
+  })
+})
+
+/**
+ * 审计 detail 的预览/全文（R98）。
+ *
+ * 判据对齐真实行：update_level 的 detail 实测 260 字符，jsonb 里的顺序是
+ * `before` 在前、`patch` 在后 —— 80 字符预览恰好切在 before 的
+ * terrain_config 键上，**新值一个字符都看不到**。
+ */
+describe('auditDetailPreview / auditDetailFull', () => {
+  it('80 字符预览：新值（patch）落在截断之外', () => {
+    const preview = auditDetailPreview(R98_HEAVY_DETAIL)
+    expect(preview.endsWith('…')).toBe(true)
+    expect(preview.length).toBe(81)
+    expect(preview).toContain('"before"')
+    expect(preview).not.toContain('1-改')
+    expect(preview).not.toContain('11942')
+  })
+
+  it('全文：完整 before/after、缩进多行、含被截断的末字段', () => {
+    const full = auditDetailFull(R98_HEAVY_DETAIL)
+    expect(full.split('\n').length).toBeGreaterThan(1)
+    expect(full).toContain('"before"')
+    expect(full).toContain('"patch"')
+    expect(full).toContain('1-改')
+    expect(full).toContain('11942')
+    expect(full).toContain('"param": 9')
+    expect(full.length).toBeGreaterThan(80)
+  })
+
+  it('null/字符串/循环引用：占位、原样、不崩', () => {
+    expect(auditDetailPreview(null)).toBe('—')
+    expect(auditDetailFull(undefined)).toBe('—')
+    expect(auditDetailPreview('纯文本')).toBe('纯文本')
+    expect(auditDetailFull('纯文本')).toBe('纯文本')
+    const cyclic: Record<string, unknown> = {}
+    cyclic.self = cyclic
+    expect(auditDetailPreview(cyclic)).toBe('[object Object]')
+    expect(auditDetailFull(cyclic)).toBe('[object Object]')
   })
 })
 

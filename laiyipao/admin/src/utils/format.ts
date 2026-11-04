@@ -22,6 +22,40 @@ export function fmtTime(s: string): string {
 }
 
 /**
+ * 审计 detail 的表格预览长度。
+ *
+ * ⚠️ R98：80 字符是**表格列宽**的取舍，不是 detail 的完整内容。
+ * R74/R75 给编辑类操作写了自包含的 before/after 快照（单个 update_level
+ * 实测 260 字符），前 80 字符只够看到 `{"before":…` —— 新值（`patch`）
+ * 整个落在截断之外，运营在列表里看到的像是「改了又没变」。
+ * 完整内容必须能在详情抽屉里看到（`auditDetailFull`）。
+ */
+const AUDIT_PREVIEW_CHARS = 80
+
+/** 审计详情在表格里的单行预览（超长截断，null 显示占位）。 */
+export function auditDetailPreview(v: unknown): string {
+  if (v === null || v === undefined) return '—'
+  if (typeof v === 'string') return v
+  try {
+    const s = JSON.stringify(v) ?? String(v)
+    return s.length > AUDIT_PREVIEW_CHARS ? s.slice(0, AUDIT_PREVIEW_CHARS) + '…' : s
+  } catch {
+    return String(v)
+  }
+}
+
+/** 审计详情全文（缩进 JSON，便于人工比对 before/after）。 */
+export function auditDetailFull(v: unknown): string {
+  if (v === null || v === undefined) return '—'
+  if (typeof v === 'string') return v
+  try {
+    return JSON.stringify(v, null, 2) ?? String(v)
+  } catch {
+    return String(v)
+  }
+}
+
+/**
  * 判断一个异常是不是「用户取消了弹窗」。
  *
  * 2026-10-21（二轮审计 P2-2）：Element Plus 的 `ElMessageBox` 在取消时

@@ -775,6 +775,105 @@ describe('ContentView 审计日志复制对象（第 95 轮）', () => {
   })
 })
 
+describe('ContentView 审计详情抽屉（R98）', () => {
+  async function mountWithLogs(logs: Row[]) {
+    const wrapper = await mountContent({ logs })
+    await wrapper.findAll('.el-tabs__item').find((t) => t.text() === '审计日志')!.trigger('click')
+    await flushPromises()
+    return wrapper
+  }
+
+  // 与服务端真实 shape 一致（实测 detail=260 字符；before 在前、patch 在后）
+  const heavyDetail = {
+    before: {
+      name: '边境哨站 · 1',
+      star_targets: [11941, 16916, 19503],
+      terrain_config: [{ x: 881, y: 771, kind: 'oil_drum', param: 9 }],
+    },
+    patch: {
+      name: '边境哨站 · 1-改',
+      star_targets: [11942, 16917, 19504],
+      terrain_config: [{ x: 882, y: 772, kind: 'oil_drum', param: 9 }],
+    },
+  }
+
+  it('列表预览切掉新值，完整 before/after 只在「展开」抽屉可见', async () => {
+    const wrapper = await mountWithLogs([
+      {
+        id: 3,
+        username: 'admin',
+        action: 'update_level',
+        target: '1',
+        detail: heavyDetail,
+        created_at: '2026-01-01T00:00:00Z',
+      },
+    ])
+    // 表格里只有 80 字符预览：新名称与新星目标都看不到（这正是缺陷证据）
+    const tableText = wrapper.find('.el-table').text()
+    expect(tableText).not.toContain('1-改')
+    expect(tableText).not.toContain('11942')
+
+    const expand = wrapper.findAll('.el-table button').find((b) => b.text() === '展开')
+    expect(expand, '找不到「展开」按钮').toBeTruthy()
+    await expand!.trigger('click')
+    await flushPromises()
+
+    const drawer = wrapper.find('.el-drawer')
+    expect(drawer.exists(), '翻不开审计详情抽屉').toBe(true)
+    expect(drawer.text()).toContain('审计详情')
+    const full = drawer.find('.audit-detail-full').text()
+    expect(full).toContain('"before"')
+    expect(full).toContain('"patch"')
+    expect(full).toContain('1-改')
+    expect(full).toContain('11942')
+    expect(full).not.toContain('…')
+    wrapper.unmount()
+  })
+
+  it('detail 为 null 的行没有「展开」按钮（不打开空抽屉）', async () => {
+    const wrapper = await mountWithLogs([
+      {
+        id: 4,
+        username: 'admin',
+        action: 'update_announcement',
+        target: '5',
+        detail: null,
+        created_at: '2026-01-01T00:00:00Z',
+      },
+    ])
+    const expand = wrapper.findAll('.el-table button').filter((b) => b.text() === '展开')
+    expect(expand.length).toBe(0)
+    wrapper.unmount()
+  })
+
+  it('点击「复制完整详情」：写入完整 JSON 而不是预览', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+
+    const wrapper = await mountWithLogs([
+      {
+        id: 5,
+        username: 'admin',
+        action: 'update_level',
+        target: '1',
+        detail: heavyDetail,
+        created_at: '2026-01-01T00:00:00Z',
+      },
+    ])
+    await wrapper.findAll('.el-table button').find((b) => b.text() === '展开')!.trigger('click')
+    await flushPromises()
+
+    const copyBtn = wrapper.findAll('.el-drawer button').find((b) => b.text() === '复制完整详情')
+    expect(copyBtn, '找不到「复制完整详情」按钮').toBeTruthy()
+    await copyBtn!.trigger('click')
+    await flushPromises()
+
+    expect(writeText).toHaveBeenCalledWith(expect.stringContaining('"patch"'))
+    expect(document.body.textContent).toContain('审计详情已复制')
+    wrapper.unmount()
+  })
+})
+
 describe('ContentView 公告复制正文（第 98 轮）', () => {
   it('点击公告行「复制正文」：写入剪贴板并提示', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined)

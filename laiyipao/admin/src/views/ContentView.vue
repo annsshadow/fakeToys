@@ -24,7 +24,7 @@ import {
   type AdminRedeemCodeView,
   type AdminRedeemUsageView,
 } from '@/api'
-import { fmtTime } from '@/utils/format'
+import { auditDetailFull, auditDetailPreview, fmtTime } from '@/utils/format'
 import { cappedTotal } from '@/utils/offsetPager'
 
 const activeTab = ref('announcements')
@@ -594,17 +594,31 @@ function rewardText(v: Record<string, number> | undefined): string {
     .join(' · ')
 }
 
-/** 审计日志的 detail 是 JSON 对象（如 {currency, amount} / 技能 patch）。
- *  修前表格用 prop="reason"（服务端根本没有这列）→ 恒空白。
- *  现在读 detail 并渲染成可读文本。 */
-function detailText(v: unknown): string {
-  if (v === null || v === undefined) return '—'
-  if (typeof v === 'string') return v
+/**
+ * 审计详情文案（R98）。
+ *
+ * 列表只放 80 字符预览，完整 detail 在抽屉里看：
+ * R74/R75 的 before/after 快照（单个 update_level 实测 260 字符）在 80
+ * 字符处只剩 `{"before":…`，**新值 `patch` 完全不可见** —— 审计证据
+ * 存在却读不到。抽屉是「详情页 UI」的最小形态，不改变列表扫读速度。
+ */
+const auditDetailVisible = ref(false)
+const auditDetailRow = ref<AdminAuditLogView | null>(null)
+
+function openAuditDetail(row: AdminAuditLogView) {
+  auditDetailRow.value = row
+  auditDetailVisible.value = true
+}
+
+/** 复制完整详情：工单/归档直接粘贴，不依赖人工选中。 */
+async function copyAuditDetail() {
+  const text = auditDetailFull(auditDetailRow.value?.detail)
+  if (text === '—') return
   try {
-    const s = JSON.stringify(v)
-    return s.length > 80 ? s.slice(0, 80) + '…' : s
+    await navigator.clipboard.writeText(text)
+    ElMessage.success('审计详情已复制')
   } catch {
-    return String(v)
+    ElMessage.error('复制失败，请手动选择复制')
   }
 }
 
@@ -1134,7 +1148,19 @@ loadAll()
               </template>
             </el-table-column>
             <el-table-column label="详情" min-width="180">
-              <template #default="{ row }">{{ detailText(row.detail) }}</template>
+              <template #default="{ row }">
+                <span class="audit-detail-preview">{{ auditDetailPreview(row.detail) }}</span>
+                <!-- R98：80 字符预览会切掉 R74/R75 的 before/after 证据，完整内容进抽屉 -->
+                <el-button
+                  v-if="row.detail !== null && row.detail !== undefined"
+                  size="small"
+                  text
+                  type="primary"
+                  @click="openAuditDetail(row as AdminAuditLogView)"
+                >
+                  展开
+                </el-button>
+              </template>
             </el-table-column>
             <el-table-column label="时间" width="155">
               <template #default="{ row }">{{ fmtTime(row.created_at) }}</template>
@@ -1159,6 +1185,22 @@ loadAll()
             background
             @current-change="loadLogs"
           />
+          <!-- R98：审计详情抽屉——列表预览之外唯一能看到完整 before/after 的地方 -->
+          <el-drawer v-model="auditDetailVisible" title="审计详情" size="46%">
+            <template v-if="auditDetailRow">
+              <el-descriptions :column="1" size="small" border>
+                <el-descriptions-item label="记录 ID">{{ auditDetailRow.id ?? '—' }}</el-descriptions-item>
+                <el-descriptions-item label="管理员">{{ auditDetailRow.username || '—' }}</el-descriptions-item>
+                <el-descriptions-item label="操作">{{ actionLabel(auditDetailRow.action) }}</el-descriptions-item>
+                <el-descriptions-item label="对象">{{ auditDetailRow.target || '—' }}</el-descriptions-item>
+                <el-descriptions-item label="时间">{{ fmtTime(auditDetailRow.created_at) }}</el-descriptions-item>
+              </el-descriptions>
+              <div class="audit-detail-actions">
+                <el-button size="small" @click="copyAuditDetail">复制完整详情</el-button>
+              </div>
+              <pre class="audit-detail-full">{{ auditDetailFull(auditDetailRow.detail) }}</pre>
+            </template>
+          </el-drawer>
         </el-card>
       </el-tab-pane>
     </el-tabs>
@@ -1166,6 +1208,25 @@ loadAll()
 </template>
 
 <style scoped>
+.audit-detail-preview {
+  margin-right: 4px;
+}
+
+.audit-detail-actions {
+  margin: 12px 0 8px;
+}
+
+.audit-detail-full {
+  margin: 0;
+  padding: 12px;
+  background: var(--el-fill-color-light);
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
 .batch-code-row {
   display: flex;
   align-items: center;
