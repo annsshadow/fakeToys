@@ -6,11 +6,8 @@
 覆盖对象（与 check_openapi_up_to_date.py / check_generated_tests_up_to_date.py
 不重叠）：
   - scripts/gen_mcp_tools.py → crates/mcp_server/src/generated_routes.rs
-
-注意：`generate_parity_tests.py` 的输入 docs/audits/o2server-parity-report.json
-已在 c158a0251 的归档清理中被删除，干净克隆里无法重生成
-crates/parity/src/generated_tests.rs。本轮不做它的门禁（做不到真实判定），
-在 O14 台账里登记为已知债务；恢复输入或退役该产物后再补门禁。
+  - scripts/generate_parity_tests.py → crates/parity/src/generated_tests.rs
+    （输入 docs/audits/o2server-parity-report.json 已随本门禁一并入库）
 
 判据：快照 → 就地重生成 → 逐字节比对（仅归一化 CRLF/LF）→ 写回快照。
 退出码：0 一致；1 漂移；2 生成器执行失败。
@@ -26,6 +23,11 @@ JOBS = [
         'name': 'gen_mcp_tools',
         'gen': ROOT / 'scripts' / 'gen_mcp_tools.py',
         'targets': [ROOT / 'crates' / 'mcp_server' / 'src' / 'generated_routes.rs'],
+    },
+    {
+        'name': 'generate_parity_tests',
+        'gen': ROOT / 'scripts' / 'generate_parity_tests.py',
+        'targets': [ROOT / 'crates' / 'parity' / 'src' / 'generated_tests.rs'],
     },
 ]
 
@@ -60,6 +62,15 @@ def main() -> int:
                      if normalized(p.read_bytes()) != normalized(before)]
             if stale:
                 print(f'{job["name"]}: 生成物与生成器不一致：' + ', '.join(stale))
+                for rel in stale:
+                    committed = normalized(snapshots[ROOT / rel]).split(b'\n')
+                    generated = normalized((ROOT / rel).read_bytes()).split(b'\n')
+                    for lineno, (a, b) in enumerate(zip(committed, generated), 1):
+                        if a != b:
+                            print(f'首个差异：{rel}:{lineno}')
+                            print(f'  已提交: {a.decode("utf-8", "replace")[:120]}')
+                            print(f'  重新生成: {b.decode("utf-8", "replace")[:120]}')
+                            break
                 print(f'修复：cd oa4rust/backend && python scripts/{job["name"]}.py（并提交生成物）')
                 return 1
         finally:

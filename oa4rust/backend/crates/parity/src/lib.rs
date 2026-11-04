@@ -296,6 +296,10 @@ mod generated_tests {
 
 #[cfg(test)]
 #[allow(non_snake_case)]
+mod tests_manual;
+
+#[cfg(test)]
+#[allow(non_snake_case)]
 mod behavior_tests {
     //! Hand-written behavior contract tests for Top 100 high-frequency routes.
     //!

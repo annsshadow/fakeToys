@@ -23,7 +23,6 @@ import json
 import os
 import re
 import sys
-from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -365,7 +364,6 @@ def build_header(total_crates: int, total_routes: int, total_tests: int) -> str:
 // is registered on the crate's Router.  A NOT_FOUND (404) response means the
 // route is missing from the Rust implementation — a parity gap.
 //
-// Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 // Crates: {total_crates}   Routes: {total_routes}   Tests: {total_tests}
 
 use axum::http::StatusCode;
@@ -423,7 +421,9 @@ fn parity_generated_test_count() {{
     content = header + body + footer
 
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_PATH.write_text(content, encoding="utf-8")
+    # 固定 LF：门禁按字节比对，Windows 默认 CRLF 会造成纯噪声漂移
+    with open(OUTPUT_PATH, "w", encoding="utf-8", newline="\n") as f:
+        f.write(content)
 
     print(f"Wrote: {OUTPUT_PATH}")
     print(f"  Java modules in report : {len(module_comparison)}")
