@@ -71,6 +71,10 @@ mod idor_matrix {
     const UID_C: &str = "idor-o9-cross-c";
     const UID_D: &str = "idor-o9-disabled-d";
     const UID_E: &str = "idor-o9-expired-e";
+    /// O23：扫描专用 admin 身份。handler 级 `require_admin` 大量存在，
+    /// 非 admin 的 TOK_B 曾让写路由大面积 401，等于从没执行过。
+    const UID_ADMIN: &str = "idor-o9-admin";
+    const TOK_ADMIN: &str = "tok-o9-admin";
 
     const TOK_A: &str = "tok-o9-a";
     const TOK_B: &str = "tok-o9-b";
@@ -404,11 +408,21 @@ mod idor_matrix {
         }
     }
 
-    async fn setup() -> Option<(axum::Router, deadpool_postgres::Pool)> {
+    async fn setup() -> Option<(
+        axum::Router,
+        deadpool_postgres::Pool,
+        shared::session::SessionManager,
+    )> {
         setup_with_db(SCRATCH_DB).await
     }
 
-    async fn setup_with_db(dbname: &str) -> Option<(axum::Router, deadpool_postgres::Pool)> {
+    async fn setup_with_db(
+        dbname: &str,
+    ) -> Option<(
+        axum::Router,
+        deadpool_postgres::Pool,
+        shared::session::SessionManager,
+    )> {
         if !shared::testing::is_db_available().await {
             eprintln!("SKIP: no database available");
             return None;
@@ -431,6 +445,7 @@ mod idor_matrix {
             (UID_C, UID_C, "unit-o9-UC", false),
             (UID_D, UID_D, "unit-o9-UD", true),
             (UID_E, UID_E, "unit-o9-UE", false),
+            (UID_ADMIN, UID_ADMIN, "unit-root", false),
         ] {
             client
                 .execute(
@@ -468,7 +483,18 @@ mod idor_matrix {
             .await
             .expect("文件夹具");
 
-        // 会话：A/B/C/D 有效，E 稍后过期化
+        // O23：给扫描身份补 admin 角色最小集（auth_role.name='admin' 关联）。
+        // 只影响扫描；IDOR 矩阵的 A/B/C/D/E 语义不变。
+        client
+            .execute(
+                "INSERT INTO auth_person_role (person_id, role_id, unit_id) \
+                 VALUES ($1, 'role-admin', 'unit-root') ON CONFLICT DO NOTHING",
+                &[&UID_ADMIN],
+            )
+            .await
+            .expect("绑定 admin 角色");
+
+        // 会话：A/B/C/D/admin 有效，E 稍后过期化
         let session_manager = shared::session::SessionManager::with_pool(pool.clone());
         for (uid, tok) in [
             (UID_A, TOK_A),
@@ -476,6 +502,7 @@ mod idor_matrix {
             (UID_C, TOK_C),
             (UID_D, TOK_D),
             (UID_E, TOK_E),
+            (UID_ADMIN, TOK_ADMIN),
         ] {
             session_manager
                 .create_session(uid.to_string(), tok.to_string())
@@ -493,8 +520,40 @@ mod idor_matrix {
             .expect("过期化会话");
 
         let rate_limiter = shared::rate_limit::RateLimiter::new();
-        let app = create_app_big_stack(pool.clone(), session_manager, rate_limiter);
-        Some((app, pool))
+        let app = create_app_big_stack(pool.clone(), session_manager.clone(), rate_limiter);
+        Some((app, pool, session_manager))
+    }
+
+    /// O23：写路由里有 logout/删会话/改人，会让扫描 token 在写阶段被前一条路由销毁。
+    /// 每条写路由执行前恢复「人员 + admin 角色 + 会话」最小集合，使写路由真的被执行；
+    /// 这样 401 只可能来自 handler 权限本身（或被收紧），不会来自身份已失效。
+    async fn ensure_scan_admin(
+        pool: &deadpool_postgres::Pool,
+        sessions: &shared::session::SessionManager,
+    ) {
+        let client = pool.get().await.expect("恢复扫描 admin：取连接");
+        client
+            .execute(
+                "INSERT INTO auth_person (id, unique_id, name, password_hash, locked, unit) \
+                 VALUES ($1, $2, $3, 'idor-o9-noop', false, 'unit-root') \
+                 ON CONFLICT (id) DO NOTHING",
+                &[&UID_ADMIN, &UID_ADMIN, &UID_ADMIN],
+            )
+            .await
+            .expect("恢复扫描 admin 人员");
+        client
+            .execute(
+                "INSERT INTO auth_person_role (person_id, role_id, unit_id) \
+                 VALUES ($1, 'role-admin', 'unit-root') ON CONFLICT DO NOTHING",
+                &[&UID_ADMIN],
+            )
+            .await
+            .expect("恢复扫描 admin 角色");
+        drop(client);
+        sessions
+            .create_session(UID_ADMIN.to_string(), TOK_ADMIN.to_string())
+            .await
+            .expect("恢复扫描 admin 会话");
     }
 
     fn create_app_big_stack(
@@ -550,7 +609,7 @@ mod idor_matrix {
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
     async fn idor_exhaustive_matrix() {
-        let Some((app, pool)) = setup().await else {
+        let Some((app, pool, _sessions)) = setup().await else {
             return;
         };
 
@@ -1098,12 +1157,38 @@ mod idor_matrix {
 
     /// 当前基线条目数上限（必须与基线文件行数相等）。
     /// 每修复一条：删对应基线路 → 下调本常量，同 PR 可见。
-    const BASELINE_COUNT: usize = 1;
+    /// O23 第二步写路由首次真正执行后，存量 500 从 1 暴露到 40；每行的
+    /// 转绿条件/责任人/期限登记在台账「O23 第二步」表。
+    const BASELINE_COUNT: usize = 40;
 
     /// 棘轮基线：`<METHOD> <route>\t<reason>`，reason 见文件头。
     const BASELINE_RAW: &str = include_str!("idor_seeded_handler500_baseline.txt");
 
-    /// 从本次请求捕获的 ERROR 串里判定类别：优先取失败列名，否则归入无日志类。
+    // O23：扫描门禁的下限。枚举数量与执行数量都要卡，且读/写分别计数——
+    // 只数总数会让「写路由从未执行」静默变绿。
+    // 数值按 2026-11-05 实测（读 1603 / 写 1980）留 ~5% 余量；目录枚举顺序
+    // 变化不再影响执行顺序（执行前按 path+method 稳定排序）。
+    const MIN_SCANNED_READ_ROUTES: usize = 1500;
+    const MIN_SCANNED_WRITE_ROUTES: usize = 1850;
+    const MIN_EXECUTED_READ_ROUTES: usize = 1450;
+    const MIN_EXECUTED_WRITE_ROUTES: usize = 1800;
+    const MIN_EXECUTED_ROUTES: usize = 3300;
+    /// 扫描身份是 admin：401 比例异常高说明夹具/权限层级没打通。
+    const MAX_401_RATIO: f64 = 0.20;
+    /// 写路由里**按设计**不会用 Bearer 会话执行的两条，逐条留理由：
+    /// - refresh 只接受 Cookie 凭据（auth/src/lib.rs `refresh`，Bearer → 401）；
+    /// - meeting config/system/config/manage 刻意注册在匿名可达 router
+    ///   （模块前缀契约），session 不注入，handler 内 401 拦截。
+    ///
+    /// 新增任何允许项都必须写理由；未登记的 401 一律红（破坏实验锚点）。
+    const WRITE_401_ALLOWED: &[&str] = &[
+        "POST /api/authentication/refresh",
+        "POST /api/meeting/assemble/control/config/system/config/manage",
+    ];
+
+    /// 从本次请求捕获的 ERROR 串里判定类别：优先取失败列名 / SQLSTATE /
+    /// 类型错配家族，最后才归入无日志类。O23 起 500 一定有日志，类别用于
+    /// 把同类根因归并，便于按族修复后一次删多行。
     fn classify_error(joined: &str) -> String {
         if let Some(idx) = joined.find("error retrieving column ") {
             let rest = &joined[idx + "error retrieving column ".len()..];
@@ -1114,6 +1199,25 @@ mod idor_matrix {
             if !col.is_empty() {
                 return format!("column:{col}");
             }
+        }
+        if let Some(idx) = joined.find("code: SqlState(") {
+            let rest = &joined[idx + "code: SqlState(".len()..];
+            let code: String = rest
+                .chars()
+                .take_while(|c| c.is_ascii_alphanumeric())
+                .collect();
+            if !code.is_empty() {
+                return format!("category:{code}");
+            }
+        }
+        if joined.contains("WrongType") {
+            return "category:wrong-type".to_string();
+        }
+        if joined.contains("kind: Parameters(") {
+            return "category:param-count".to_string();
+        }
+        if joined.contains("source=-") {
+            return "category:no-source".to_string();
         }
         "category:no-error-log".to_string()
     }
@@ -1133,7 +1237,7 @@ mod idor_matrix {
     #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
     async fn seeded_route_scan_handler500_ratchet() {
         error_capture::init();
-        let Some((app, pool)) = setup_with_db(SEEDED_DB).await else {
+        let Some((app, pool, sessions)) = setup_with_db(SEEDED_DB).await else {
             return;
         };
         let (seeded, failures) = seed_all_tables(&pool).await;
@@ -1147,32 +1251,80 @@ mod idor_matrix {
         }
 
         let root = Path::new(env!("CARGO_MANIFEST_DIR"));
-        let all = scan_routes(root);
+        let mut all = scan_routes(root);
+        // O23：扫描结果不得依赖目录枚举顺序。先按 path+method 稳定排序再执行；
+        // 同 path 下按 method 排，保证每次运行的执行序列一致、失败可复现。
+        all.sort_by(|a, b| a.path.cmp(&b.path).then_with(|| a.method.cmp(b.method)));
+
+        let candidates: Vec<&Route> = all
+            .iter()
+            .filter(|r| {
+                !KNOWN_ARTIFACT_ROUTES.contains(&r.path.as_str())
+                    // mock 路由（Handler 元数错配家族，O9 is_candidate 同口径排除）
+                    && !r.path.contains("mock")
+            })
+            .collect();
+        let read_total = candidates.iter().filter(|r| r.method == "GET").count();
+        let write_total = candidates.iter().filter(|r| r.method != "GET").count();
         assert!(
-            all.len() >= 4000,
-            "路由数 {} 低于下限 4000（扫描器坏了？）",
-            all.len()
+            read_total >= MIN_SCANNED_READ_ROUTES,
+            "枚举到的读路由 {read_total} 条，低于下限 {MIN_SCANNED_READ_ROUTES}（扫描器坏了？）"
         );
-        // 先读后写：写路由（DELETE/UPDATE）会销毁种子行，必须放在读之后
-        let mut ordered: Vec<&Route> = all.iter().filter(|r| r.method == "GET").collect();
-        ordered.extend(all.iter().filter(|r| r.method != "GET"));
+        assert!(
+            write_total >= MIN_SCANNED_WRITE_ROUTES,
+            "枚举到的写路由 {write_total} 条，低于下限 {MIN_SCANNED_WRITE_ROUTES}（写路由没收全，门禁不可信）"
+        );
+
+        // 先读后写：写路由（DELETE/UPDATE）会销毁种子行，必须放在读之后。
+        // candidates 已排序，两段都保序。
+        let mut ordered: Vec<&Route> = candidates
+            .iter()
+            .copied()
+            .filter(|r| r.method == "GET")
+            .collect();
+        ordered.extend(candidates.iter().copied().filter(|r| r.method != "GET"));
 
         // setup 阶段的 ERROR（迁移/夹具）不计入任何路由
         let _ = error_capture::drain();
         let mut handler500: BTreeMap<String, String> = BTreeMap::new();
+        let mut executed = 0usize;
+        let mut executed_read = 0usize;
+        let mut executed_write = 0usize;
+        let mut read_401 = 0usize;
+        let mut read_403 = 0usize;
+        let mut write_401 = 0usize;
+        let mut write_403 = 0usize;
+        let mut write_401_routes: Vec<String> = Vec::new();
         for r in ordered {
-            if KNOWN_ARTIFACT_ROUTES.contains(&r.path.as_str()) {
-                continue;
-            }
-            // mock 路由（Handler 元数错配家族，O9 is_candidate 同口径排除）
-            if r.path.contains("mock") {
-                continue;
+            let is_write = r.method != "GET";
+            if is_write {
+                ensure_scan_admin(&pool, &sessions).await;
             }
             let url = fill_params(&r.path);
             let _ = error_capture::drain();
-            let Some((status, body)) = fire(&app, r.method, &url, Some(TOK_B)).await else {
+            // 「执行到」= 请求真的发出去并拿到响应；枚举到但 401/panic 的不算。
+            let Some((status, body)) = fire(&app, r.method, &url, Some(TOK_ADMIN)).await else {
                 continue;
             };
+            executed += 1;
+            if is_write {
+                executed_write += 1;
+                match status.as_u16() {
+                    401 => {
+                        write_401 += 1;
+                        write_401_routes.push(format!("{} {}", r.method, r.path));
+                    }
+                    403 => write_403 += 1,
+                    _ => {}
+                }
+            } else {
+                executed_read += 1;
+                match status.as_u16() {
+                    401 => read_401 += 1,
+                    403 => read_403 += 1,
+                    _ => {}
+                }
+            }
             let errs = error_capture::drain();
             if status.as_u16() == 500 {
                 handler500.insert(
@@ -1194,6 +1346,50 @@ mod idor_matrix {
         for (k, v) in &handler500 {
             eprintln!("  {k} → {v}");
         }
+
+        let unauthorized_total = read_401 + write_401;
+        let unauthorized_ratio = if executed == 0 {
+            1.0
+        } else {
+            unauthorized_total as f64 / executed as f64
+        };
+        eprintln!(
+            "== 扫描覆盖：枚举 读 {read_total} / 写 {write_total}；执行 读 {executed_read} / 写 {executed_write}（共 {executed}）；\
+             401 读 {read_401} / 写 {write_401}；403 读 {read_403} / 写 {write_403}；401 比例 {:.1}% ==",
+            unauthorized_ratio * 100.0
+        );
+        assert!(
+            executed_read >= MIN_EXECUTED_READ_ROUTES,
+            "实际执行的读路由 {executed_read} 条，低于下限 {MIN_EXECUTED_READ_ROUTES}（枚举到但没执行）"
+        );
+        assert!(
+            executed_write >= MIN_EXECUTED_WRITE_ROUTES,
+            "实际执行的写路由 {executed_write} 条，低于下限 {MIN_EXECUTED_WRITE_ROUTES}（写路由没真正被执行，门禁不可信）"
+        );
+        assert!(
+            executed >= MIN_EXECUTED_ROUTES,
+            "实际执行的路由 {executed} 条，低于下限 {MIN_EXECUTED_ROUTES}"
+        );
+        // 破坏实验锚点：任意一条写路由被收紧成 401，这里必须红（不允许静默少扫）。
+        let unexpected_write_401: Vec<&str> = write_401_routes
+            .iter()
+            .map(|r| r.as_str())
+            .filter(|r| !WRITE_401_ALLOWED.contains(r))
+            .collect();
+        assert!(
+            unexpected_write_401.is_empty(),
+            "写路由出现未登记的 401 共 {} 条（admin 扫描身份未生效，或权限被收紧）：\n{}",
+            unexpected_write_401.len(),
+            unexpected_write_401.join("\n")
+        );
+        assert!(
+            unauthorized_ratio <= MAX_401_RATIO,
+            "401 比例 {:.1}% 超过上限 {:.1}%（枚举 {} 条 / 执行 {} 条）",
+            unauthorized_ratio * 100.0,
+            MAX_401_RATIO * 100.0,
+            candidates.len(),
+            executed
+        );
 
         drop_scratch(SEEDED_DB).await;
 

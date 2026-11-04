@@ -1,23 +1,51 @@
-# 种子化路由扫描的棘轮基线（seeded_route_scan_handler500_ratchet）。
+# 种子化全路由扫描的 handler 500 基线（棘轮：当前集合必须与基线完全相等）
 #
-# 每行：<METHOD> <route pattern>\t<reason>
-#   reason = column:<列名>    → 反序列化/类型错配
-#   reason = category:no-error-log → handler 500 但没有任何 ERROR 日志（可观测性缺陷，待定性）
+# 格式：<METHOD> <route>	<category:... | column:...>
+# 规则：修复一族后删对应行并下调 idor_matrix.rs 的 BASELINE_COUNT；
+#       复现不出来的行必须立刻删；基线外的新 500 一律红。
+# 每一行的转绿条件 / 责任人 / 期限见
+# docs/plans/optimization-1000-oa4rust-track-b.md「O23 第二步」表。
 #
-# 规则（全部硬断言）：
-#   1. 当前扫描到的 500 集合必须与下面这组条目【完全相等】：
-#      - 出现基线外的新 500 → 红（新写的类型错配当天被拦）
-#      - 基线里的条目复现不出来 → 红（已修但没删行，必须同 PR 删掉）
-#   2. 条目数必须等于 tests/idor_matrix.rs 里的 BASELINE_COUNT；
-#      每修一条就删一行并下调 BASELINE_COUNT —— 基线只许变小，diff 强制可见。
-#   3. 禁止为了变绿而往这里加行：加了 BASELINE_COUNT 也要加，评审可见。
-#
-# 当前 1 条（2026-11-05，O23 第一步后）。
-# 2026-11-05 删除 `GET /api/cms/view/list/all`：迁移后该路不再 500（复现不出来），
-# 按规则 1 必须删行并下调 BASELINE_COUNT。
-# 2026-11-05 删除 9 条（O23 第一步）：6 组外部连接器与 express config/status 的
-# 缺配置/缺行已改 503（`AppError::MissingConfig`），不再落 500；扫描实测复现不出来。
-# 剩余 1 条仍为 500：ai chat list 的 `could not determine data type of parameter $2`
-# （E42P18），是真实 SQL 参数类型缺陷；O23 起该错误已能打出 ERROR（method/path/trace/source），
-# 转绿条件/责任人/期限见台账 O23 第三步。
-GET /api/ai_assemble_control/chat/list/completion/{clueId}/paging/{page}/size/{size}	category:no-error-log
+# 2026-11-05 基线 1 → 40：O23 第二步给扫描身份补 admin 最小集 + 每条写路由前恢复
+# admin 会话，写路由第一次真正被执行，暴露出 39 条存量 500（GET 9 / 非 GET 31）。
+# 旧条目 ai chat list 的类别由 no-error-log 细化为 E42P18；其 500 本身仍在。
+GET /api/ai_assemble_control/chat/list/completion/{clueId}/paging/{page}/size/{size}	category:E42P18
+GET /api/attendance/assemble/control/statistic/do	category:E42P10
+POST /api/attendance/assemble/control/statistic/do	category:E42P10
+POST /api/bbs/assemble/control/update/control/config	category:wrong-type
+PUT /api/bbs/assemble/control/update/control/config	category:wrong-type
+GET /api/calendar_assemble_control/update/control/config	category:E42P10
+POST /api/console/send/message	category:E23502
+POST /api/document/cipher/{id}/persist/view/record	category:E23502
+POST /api/document/filter/list/{page}/size/{size}/manager	category:E42601
+POST /api/general/assemble/control/status/update	category:wrong-type
+PUT /api/general/assemble/control/status/update	category:wrong-type
+POST /api/hotpic/assemble/control/update/control/config	category:E23502
+POST /api/hotpic/assemble/control/user/hotpic	category:E23502
+POST /api/hotpic/create/hotpic	category:E23502
+GET /api/hotpic_assemble_control/create/hotpic	category:E23502
+GET /api/hotpic_assemble_control/update/control/config	category:E23502
+POST /api/meeting/core/entity/room/save/{id}	category:wrong-type
+POST /api/message/custom/create	category:E23502
+GET /api/organization/assemble/control/identity/{flag}/order/before/{followFlag}	category:wrong-type
+DELETE /api/organization/assemble/control/personattribute/{flag}	category:E42703
+PUT /api/organization/assemble/control/personattribute/{flag}	category:E42703
+DELETE /api/organization/assemble/control/unitattribute/{flag}	category:E42703
+PUT /api/organization/assemble/control/unitattribute/{flag}	category:E42703
+POST /api/portal/assemble/designer/page	category:E23502
+POST /api/portal/assemble/designer/page/create	category:E23502
+DELETE /api/portal/assemble/designer/script/{id}	category:E42804
+POST /api/portal/assemble/surface/publish/{id}	column:published
+DELETE /api/processplatform/assemble/designer/script/{id}	category:E42804
+POST /api/processplatform/assemble/surface/draft/start/{id}	category:param-count
+GET /api/processplatform/assemble/surface/draft/{id}/start	category:param-count
+POST /api/processplatform/assemble/surface/save/{id}	category:wrong-type
+GET /api/processplatform/service/processing/touch/mergeitem	category:E42804
+DELETE /api/processplatform/service/processing/work/{id}	category:E23503
+GET /api/program_center/market/{flag}/installed/version	column:status
+POST /api/query/assemble/designer/query/{flag}/permission	category:param-count
+POST /api/query/assemble/designer/stat/{id}/permission	category:param-count
+POST /api/query/assemble/designer/table/{flag}/permission	category:param-count
+POST /api/query/assemble/designer/view/{id}/permission	category:param-count
+POST /api/queryview/table/row/part/update/{tableFlag}/{id}	category:wrong-type
+POST /api/queryview/table/{flag}/row/{rid}/part/update	category:wrong-type
