@@ -314,8 +314,14 @@ jobs:
         with:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('oa4rust/backend/Cargo.lock') }}
-      # 种子库由测试自身 DROP/CREATE + 迁移（shared::testing::fresh_scratch），
-      # 不需要预先对 oa4rust 库跑 --migrate-only。
+      # 种子库（sqlx 路由）由测试自身 DROP/CREATE + 迁移（shared::testing::fresh_scratch）；
+      # 但 sea-orm entity 路由用的是 DATABASE_URL 指向的 oa4rust，空库无表会全部 500，
+      # 所以这里必须与 integration-scenarios 一样先建表（环境差异不能靠本地已迁移库蒙混）。
+      - name: Apply migrations
+        run: cargo run --bin oa4rust -- --migrate-only
+        env:
+          DATABASE_URL: postgres://o2server:password@localhost:5432/oa4rust
+          DATABASE_DIALECT: postgres
       - name: Run seeded route scan (handler500 ratchet)
         run: cargo test --test idor_matrix seeded_route_scan_handler500_ratchet -- --nocapture --test-threads=1
 
