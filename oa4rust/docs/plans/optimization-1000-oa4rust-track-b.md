@@ -122,9 +122,32 @@
 
 - `cargo clippy --all-targets --workspace`：通过（零告警）。
 - `cargo test`：除 `shared` 外全部 crate 通过；`tests_manual::` 84 条通过（8 ignored）；`cargo fmt --all --check` 通过。
-- `shared` 的 `migrate::tests` 用例因本地 `DATABASE_URL` 指向的库状态失败（`column person_unique does not exist`），串行可复现、与生成物无关（本分支未改 `shared` 源码/迁移），属环境/产品前置问题，不计入 O14 产物问题。
-- O15 候选（本轮回调出的无门禁项）：parity `generated_tests.rs`、`api-coverage-generated.test.ts`、`backend-route-methods.fixture.ts`、`behavior_tests.rs` 误导头注释。
-- 已知债务（不在本轮范围）：laiyipao `Server build` 时序断言（另一条线的可注入时钟改造）、auto-checkin 两条覆盖红。
+- `shared` 的 `migrate::tests` 用例：**已用干净库界定**，不是迁移缺陷，也不是本分支引入。
+  - 干净库（`oa14_scratch_mig`，空库、跑完 DROP）：`cargo test -p shared --lib migrations_are_ordered_idempotent_and_fail_loud_on_missing_dir` → `1 passed; 0 failed`，118 条迁移从零全部应用。
+  - 本地库（默认 `postgres://o2server:<PASSWORD>@localhost:5432/oa4rust`）同命令 → `first migration run: migration 019_create_identity_tables.sql failed: column "person_unique" does not exist (SQLSTATE 42703)`。
+  - 根因证据：本地 `schema_migrations` 仅 19 行（最高 `018`），但 schema 已是 043 之后（`auth_person_identity.person_id`，`person_unique` 已不存在），且含 101 之后的 `x_cms_document.xappid` —— schema 领先于台账，019 重跑时索引指向已改名列。干净库全链绿证明迁移 SQL 与顺序无缺陷。
+  - 复现：`docker exec lyp-pg psql -U o2server -d oa4rust -c "SELECT count(*) FROM schema_migrations;"` + 上述失败命令。
+  - 清理（破坏性，会重建本地开发库）：`docker exec lyp-pg psql -U o2server -d postgres -c "DROP DATABASE IF EXISTS oa4rust WITH (FORCE);" -c "CREATE DATABASE oa4rust OWNER o2server;"`，再由迁移测试/启动全量建库后同命令转绿；或保留旧库，测试时设 `DATABASE_URL=postgres://o2server:<PASSWORD>@localhost:5432/oa4rust_test`。
+- O15 候选（本轮回调出的无门禁项）：parity `generated_tests.rs`、`api-coverage-generated.test.ts`、`backend-route-methods.fixture.ts`、`behavior_tests.rs` 误导头注释。分类与下一步见下节。
+- 已知债务（不在本轮范围，均已在 `main` 上复现）：laiyipao `Server build` 的 `TestPeriodStartHandlesEveryKnownScope` 时区断言（期望 UTC、实际 `+0800 CST`）、auto-checkin `Coverage ratchet` 红；两条与本 PR 改动无关。
+
+## O15 债务登记（生成物清单回收）
+
+> 无门禁的生成物只有两种合法状态：**可恢复**（给出「取回输入 → 重生成 → 接门禁」三步）或**已废弃**（连生成器一起删）。不许长期留一个跑不起来的脚本。
+
+### 可恢复
+
+| 产物 | 现状证据 | 下一步（可执行） |
+|------|----------|------------------|
+| `crates/parity/src/generated_tests.rs` | 生成器可运行，输入被 `c158a0251` 删除。临时恢复输入后生成器跑通，但输出与已提交产物差 **+1635 / -381 行**（产物已落后于当前路由） | ① `git show c158a0251^:docs/audits/o2server-parity-report.json > docs/audits/o2server-parity-report.json`；② `python oa4rust/backend/scripts/generate_parity_tests.py`；③ `cargo test -p parity`（依赖根包，需要可构建 openapi 的环境）；④ 把 parity 加进 `check_generated_artifacts_up_to_date.py` 的 JOBS；⑤ 若确认不愿接受这 2016 行变更，改判「已废弃」：删生成器 + 产物，并移除 `parity/src/lib.rs` 的 `mod generated_tests` |
+| `frontend/packages/apis/src/api-coverage-generated.test.ts` | `npx --prefix oa4rust tsx oa4rust/scripts/generate-api-tests.ts` 可跑（78 模块 / 666 函数），但产物与生成器差 **+4680 / -8221 行**：已提交产物含人工增强（SPDX 头、实际 `await fn?.()` 调用以驱动 V8 覆盖、单行格式） | 修：先把生成器升级到当前产物形态（SPDX + 实际调用 + 格式），重生成后把「生成 + `git diff --exit-code`」放进 `oa4rust-web.yml` 的 Vitest 步骤之前 |
+| `tests/contracts/backend-route-methods.fixture.ts` | 头注释称 AUTO-GENERATED，仓库内无生成器。临时比对：fixture 4108 条 vs `generated_routes.rs` 归一后 4040 条；**131 条只在 fixture、63 条只在后端、2 条方法集不符**（`/api/calendar_assemble_control/event`、`/mcp`） | 修：让 `gen_mcp_tools.py` 在写 `generated_routes.rs` 的同时输出该 fixture（单一源头），或新增 `gen_route_methods_fixture.py`；接进 `generated-artifacts` 门禁；重生成后跑 `vitest run tests/contracts/route-methods.test.ts` |
+
+### 非生成物、仅需更正
+
+| 产物 | 问题 | 下一步 |
+|------|------|--------|
+| `crates/parity/src/behavior_tests.rs` | 头注释误写 AUTO-GENERATED（下一行自称 Hand-written） | 改注释即可，不涉及门禁 |
 
 
 1. ~~迁移并发安全~~（O1 done）。
