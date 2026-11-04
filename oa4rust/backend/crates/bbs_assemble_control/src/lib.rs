@@ -675,7 +675,7 @@ pub async fn reply_filter_list_page_page_count_count(
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
-    let offset = (page.saturating_sub(1)) * count;
+    let (count, offset) = shared::response::page_window(page, count);
 
     let rows = client
         .query(
@@ -1024,7 +1024,7 @@ pub async fn list_reply_filter(
     let page: i64 = q.get("page").and_then(|v| v.parse().ok()).unwrap_or(1);
     let count: i64 = q.get("count").and_then(|v| v.parse().ok()).unwrap_or(200);
     let subject_id = q.get("subjectId").map(|s| s.as_str()).unwrap_or("");
-    let offset = (page.saturating_sub(1)).saturating_mul(count);
+    let (count, offset) = shared::response::page_window(page, count);
     let rows = if subject_id.is_empty() {
         client
             .query(
@@ -1075,7 +1075,7 @@ pub async fn list_topics_creamed(
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
-    let offset = (page.saturating_sub(1)).saturating_mul(count);
+    let (count, offset) = shared::response::page_window(page, count);
     let rows = client
         .query(
             "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic \
@@ -1115,7 +1115,7 @@ pub async fn list_topics_recommended(
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
-    let offset = (page.saturating_sub(1)).saturating_mul(count);
+    let (count, offset) = shared::response::page_window(page, count);
     let rows = client
         .query(
             "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic \
@@ -1155,7 +1155,7 @@ pub async fn list_subjects_filtered(
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
-    let offset = (page.saturating_sub(1)).saturating_mul(count);
+    let (count, offset) = shared::response::page_window(page, count);
     let rows = client
         .query(
             "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic \
@@ -1194,7 +1194,7 @@ pub async fn list_subjects_index(
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
-    let offset = (page.saturating_sub(1)).saturating_mul(count);
+    let (count, offset) = shared::response::page_window(page, count);
     let rows = client
         .query(
             "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic \
@@ -1234,7 +1234,7 @@ pub async fn list_subjects_recommended_index(
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
-    let offset = (page.saturating_sub(1)).saturating_mul(count);
+    let (count, offset) = shared::response::page_window(page, count);
     let rows = client
         .query(
             "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic \
@@ -1458,7 +1458,7 @@ pub async fn shutup_list(
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
-    let offset = (page.saturating_sub(1)).saturating_mul(count);
+    let (count, offset) = shared::response::page_window(page, count);
     let rows = client
         .query(
             "SELECT id, person, reason, create_time FROM x_bbs_shutup \
@@ -1532,8 +1532,9 @@ pub async fn subject_filter_listsubjectinfo(
     let client = shared::db::acquire(&pool).await?;
     let forum_id = body.get("forumId").and_then(|v| v.as_str()).unwrap_or("");
     let offset_val = body.get("page").and_then(|v| v.as_i64()).unwrap_or(1);
-    let limit_val = body.get("count").and_then(|v| v.as_i64()).unwrap_or(20);
-    let offset = (offset_val.saturating_sub(1)).saturating_mul(limit_val);
+    let limit_val =
+        shared::response::page_size(body.get("count").and_then(|v| v.as_i64()).unwrap_or(20));
+    let offset = (offset_val.max(1) - 1).saturating_mul(limit_val);
     let sql = if forum_id.is_empty() {
         "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic WHERE deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT $1 OFFSET $2"
     } else {
@@ -1598,7 +1599,7 @@ pub async fn subject_search(
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
-    let offset = (page.saturating_sub(1)).saturating_mul(count);
+    let (count, offset) = shared::response::page_window(page, count);
     let rows = client
         .query(
             "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic \
@@ -1763,7 +1764,7 @@ pub async fn topic_search(
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
-    let offset = (page.saturating_sub(1)).saturating_mul(count);
+    let (count, offset) = shared::response::page_window(page, count);
     let rows = client
         .query(
             "SELECT id, forum_id, title, content, creator, create_time::text FROM x_bbs_topic \

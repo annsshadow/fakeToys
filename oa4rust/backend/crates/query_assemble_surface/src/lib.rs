@@ -1010,12 +1010,13 @@ async fn importmodel_list_record_item_paging_page_size_size_core(
     page: i64,
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (size, offset) = shared::response::page_window(page, size);
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
-            "SELECT id, model_flag, data, creator, create_time FROM x_query_import_model_record ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1::bigint - 1) * $2::bigint",
-            &[&page, &size],
+            "SELECT id, model_flag, data, creator, create_time FROM x_query_import_model_record ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint",
+            &[&size, &offset],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -1084,12 +1085,13 @@ async fn importmodel_list_record_paging_page_size_size_core(
     page: i64,
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (size, offset) = shared::response::page_window(page, size);
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
-            "SELECT id, model_flag, data, creator, create_time FROM x_query_import_model_record ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1::bigint - 1) * $2::bigint",
-            &[&page, &size],
+            "SELECT id, model_flag, data, creator, create_time FROM x_query_import_model_record ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint",
+            &[&size, &offset],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -1683,12 +1685,13 @@ async fn table_list_paging_page_size_size_core(
     page: i64,
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (size, offset) = shared::response::page_window(page, size);
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
-            "SELECT id, name, table_flag, creator, create_time FROM x_query_table WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1::bigint - 1) * $2::bigint",
-            &[&page, &size],
+            "SELECT id, name, table_flag, creator, create_time FROM x_query_table WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint",
+            &[&size, &offset],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -1758,12 +1761,13 @@ async fn table_list_table_tableFlag_row_paging_page_size_size_core(
     page: i64,
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (size, offset) = shared::response::page_window(page, size);
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
-            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 ORDER BY id DESC LIMIT $3::bigint OFFSET ($2::bigint - 1) * $3::bigint",
-            &[&table_flag, &page, &size],
+            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 ORDER BY id DESC LIMIT $2::bigint OFFSET $3::bigint",
+            &[&table_flag, &size, &offset],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -2968,12 +2972,13 @@ pub async fn view_flag_flag_query_queryFlag_execute_v2_page_page_size_size(
     pool: Extension<Pool>,
     Path((view, app, page, size)): Path<(String, String, i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (size, offset) = shared::response::page_window(page, size);
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
-            "SELECT id, view_flag, query_flag, content, creator, create_time FROM x_query_view WHERE view_flag = $1 AND query_flag = $2 ORDER BY create_time DESC LIMIT $4::bigint OFFSET ($3::bigint - 1) * $4::bigint",
-            &[&view, &app, &page, &size],
+            "SELECT id, view_flag, query_flag, content, creator, create_time FROM x_query_view WHERE view_flag = $1 AND query_flag = $2 ORDER BY create_time DESC LIMIT $3::bigint OFFSET $4::bigint",
+            &[&view, &app, &size, &offset],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -3430,12 +3435,13 @@ pub async fn view_id_execute_v2_page_page_size_size(
     pool: Extension<Pool>,
     Path((_s0, id, page, size)): Path<(String, String, i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (size, offset) = shared::response::page_window(page, size);
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
-            "SELECT id, content, creator, create_time FROM x_query_view WHERE id = $1 ORDER BY create_time DESC LIMIT $3::bigint OFFSET ($2::bigint - 1) * $3::bigint",
-            &[&id, &page, &size],
+            "SELECT id, content, creator, create_time FROM x_query_view WHERE id = $1 ORDER BY create_time DESC LIMIT $2::bigint OFFSET $3::bigint",
+            &[&id, &size, &offset],
         )
         .await
         .map_err(|_| AppError::Internal)?;

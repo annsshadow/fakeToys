@@ -1714,9 +1714,8 @@ pub async fn invoice_list_paging_page_size_size(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
 
-    let offset = ((page.max(1) - 1) * size) as i64;
     // LIMIT/OFFSET 参数 PG 定为 int8：size 是 i32 直绑 WrongType 客户端 500（O10 实证）。
-    let size_i64 = size as i64;
+    let (size_i64, offset) = shared::response::page_window(page as i64, size as i64);
 
     let total_row = client
         .query_one(

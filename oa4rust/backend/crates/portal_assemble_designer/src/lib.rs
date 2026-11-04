@@ -2479,12 +2479,13 @@ pub async fn script_list_paging_page_size_size(
     pool: Extension<Pool>,
     Path((page, size, _s2)): Path<(i64, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (size, offset) = shared::response::page_window(page, size);
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
-            "SELECT id, name, flag, category, creator, create_time FROM x_portal_script WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1::bigint - 1) * $2::bigint",
-            &[&page, &size],
+            "SELECT id, name, flag, category, creator, create_time FROM x_portal_script WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint",
+            &[&size, &offset],
         )
         .await
         .map_err(|_| AppError::Internal)?;

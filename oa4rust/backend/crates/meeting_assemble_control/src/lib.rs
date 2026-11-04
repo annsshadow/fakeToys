@@ -927,8 +927,7 @@ pub async fn meeting_list_apply_page_size_size(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
 
-    let offset = ((page.max(1) - 1) * size).max(0);
-    let limit = size.max(1);
+    let (limit, offset) = shared::response::page_window(page, size);
 
     let rows = client
         .query(
@@ -1205,8 +1204,7 @@ async fn meeting_list_invite_page_size_size_core(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
 
-    let offset = ((page.max(1) - 1) * size).max(0);
-    let limit = size.max(1);
+    let (limit, offset) = shared::response::page_window(page, size);
 
     let rows = client
         .query(
@@ -1986,8 +1984,7 @@ pub async fn meeting_list_page_size_size(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
 
-    let offset = ((page.max(1) - 1) * size).max(0);
-    let limit = size.max(1);
+    let (limit, offset) = shared::response::page_window(page, size);
 
     let rows = client
         .query(
@@ -2040,8 +2037,7 @@ async fn meeting_list_page_size_size_manage_core(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
 
-    let offset = ((page.max(1) - 1) * size).max(0);
-    let limit = size.max(1);
+    let (limit, offset) = shared::response::page_window(page, size);
 
     let rows = client
         .query(

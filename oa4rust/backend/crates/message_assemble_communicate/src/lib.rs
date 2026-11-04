@@ -1452,8 +1452,7 @@ pub async fn im_msg_collection_list_page_size_size(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
 
-    let offset = ((page.max(1) - 1) * size).max(0);
-    let limit = size.max(1);
+    let (limit, offset) = shared::response::page_window(page, size);
     let rows = client
         .query("SELECT id, message_id, create_time FROM x_message_collection ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
         .await
@@ -1765,8 +1764,7 @@ pub async fn im_msg_list_page_size_size(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
 
-    let offset = ((page.max(1) - 1) * size).max(0);
-    let limit = size.max(1);
+    let (limit, offset) = shared::response::page_window(page, size);
     // 会话过滤：此前本 handler 完全忽略请求体，导致"某会话的消息列表"实际返回
     // 全库消息（见 docs/plans/2026-09-20-001 §6.3 A 类）。GET（无 body）保持原行为。
     let conversation_id = body
@@ -2783,8 +2781,7 @@ pub async fn message_list_paging_page_size_size(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
 
-    let offset = ((page.max(1) - 1) * size).max(0);
-    let limit = size.max(1);
+    let (limit, offset) = shared::response::page_window(page, size);
     let rows = client
         .query("SELECT id, conversation_id, content, sender, type, create_time FROM x_message ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
         .await
