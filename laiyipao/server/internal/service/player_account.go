@@ -201,9 +201,22 @@ func (s *Service) UpgradeGuestAccount(ctx context.Context, userID int64, usernam
 	}
 
 	// 保持 guest_token 不变（见函数头注释）。
+	//
+	// R101：`password_hash IS NULL` 是对「仍是纯游客」这个前提的写入时校验
+	// （条件写，不是行锁）。上面的读 + bcrypt 之间有一个约 60ms 的窗口，
+	// 同一游客账号的两笔并发转正都会通过预查，再各自无条件写回 —— 后提交者
+	// 把先提交者刚绑定的用户名/密码整体覆盖，而两条都返回成功。
+	//
+	// 为什么用条件写而不是新增唯一索引：这里要守的是**同一行的状态迁移**
+	// 「未绑定 → 绑定一次」。跨账号抢同一用户名的重复绑定已由
+	// `idx_users_username` 部分唯一索引保证（R35 的 23505 映射就是它的兜底）；
+	// 而同一行被后写覆盖在唯一索引看来完全合法（没有第二行可冲突），
+	// CHECK 约束也无法区分「首次绑定」与「覆盖绑定」——两者的新值都合法。
+	// 顺序调用两次本来就被预查挡住（第二次读到非 NULL 哈希直接拒绝）；
+	// 条件写只是把同一判据挪到写入时刻，让并发的过期结论无法落库。
 	ct, err := s.pool.Exec(ctx,
 		`UPDATE users SET username = $2, password_hash = $3, is_guest = FALSE
-		 WHERE id = $1`, userID, username, newHash)
+		 WHERE id = $1 AND password_hash IS NULL`, userID, username, newHash)
 	if err != nil {
 		// R35：上面的「先查后写」挡不住并发 —— 两个游客同时把同一个
 		// 用户名转正时，两次 SELECT 都会看到「没人占用」，随后由
@@ -218,7 +231,22 @@ func (s *Service) UpgradeGuestAccount(ctx context.Context, userID int64, usernam
 		return fmt.Errorf("upgrade guest account: %w", err)
 	}
 	if ct.RowsAffected() == 0 {
-		return fmt.Errorf("%w: 用户不存在", ErrNotFound)
+		// 条件不成立有两种可能：用户不存在，或这期间已被另一笔转正写掉。
+		// 不能一律报「用户不存在」——后到的请求要让玩家知道是「已经转正」，
+		// 否则他会以为账号丢了并反复重试。
+		var hash *string
+		err := s.pool.QueryRow(ctx,
+			`SELECT password_hash FROM users WHERE id = $1`, userID).Scan(&hash)
+		switch {
+		case errors.Is(err, pgx.ErrNoRows):
+			return fmt.Errorf("%w: 用户不存在", ErrNotFound)
+		case err != nil:
+			return fmt.Errorf("reload player account: %w", err)
+		case hash != nil && *hash != "":
+			return fmt.Errorf("%w: 该账号已完成转正，请勿重复提交", ErrBadInput)
+		default:
+			return fmt.Errorf("upgrade guest account: 账号未转正但写入未命中")
+		}
 	}
 	return nil
 }
