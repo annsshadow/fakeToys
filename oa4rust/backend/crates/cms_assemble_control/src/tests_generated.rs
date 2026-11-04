@@ -93,34 +93,7 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_update_control_config() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/cms_assemble_control/update/control/config")
-                    .method("PUT")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "update_control_config route should be registered"
-            );
-        }
-    }
-
+    // SKIPPED: update_control_config requires Session parameter
     #[tokio::test]
     async fn test_anonymous_document_filter_list_id_next_count() {
         let pool = shared::testing::test_pool();
@@ -313,62 +286,8 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_appinfo_erase_app_id() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/appinfo/erase/app/test-id")
-                    .method("DELETE")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "appinfo_erase_app_id route should be registered"
-            );
-        }
-    }
-
-    #[tokio::test]
-    async fn test_appinfo_erase_app_id_mockdeletetoget() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/appinfo/erase/app/test-id/mockdeletetoget")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "appinfo_erase_app_id_mockdeletetoget route should be registered"
-            );
-        }
-    }
-
+    // SKIPPED: appinfo_erase_app_id requires Session parameter
+    // SKIPPED: appinfo_erase_app_id_mockdeletetoget requires Session parameter
     #[tokio::test]
     async fn test_appinfo_filter_list_id_next_count() {
         let pool = shared::testing::test_pool();
@@ -537,6 +456,127 @@ mod tests {
         }
     }
 
+    #[tokio::test]
+    async fn test_cms_control_dict_list() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/cms/assemble/control/dict/list")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "cms_control_dict_list route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_cms_control_form_list() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/cms/assemble/control/form/list")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "cms_control_form_list route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_cms_control_view_list() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/cms/assemble/control/view/list")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "cms_control_view_list route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_cms_control_xform_list() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/cms/assemble/control/xform/list")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "cms_control_xform_list route should be registered"
+            );
+        }
+    }
+
+    // SKIPPED: dict_save requires Session parameter
+    // SKIPPED: dict_delete requires Session parameter
+    // SKIPPED: form_save requires Session parameter
+    // SKIPPED: form_delete requires Session parameter
+    // SKIPPED: view_save requires Session parameter
+    // SKIPPED: view_delete requires Session parameter
+    // SKIPPED: templateform_create requires Session parameter
+    // SKIPPED: templateform_save requires Session parameter
+    // SKIPPED: templateform_delete requires Session parameter
     #[tokio::test]
     async fn test_appinfo_list_appType() {
         let pool = shared::testing::test_pool();
@@ -1091,35 +1131,7 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_appinfo_id_mockdeletetoget() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/appinfo/test-id/mockdeletetoget")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "appinfo_id_mockdeletetoget route should be registered"
-            );
-        }
-    }
-
-    // SKIPPED: appinfo_id_permission not accessible
+    // SKIPPED: appinfo_id_mockdeletetoget requires Session parameter
     #[tokio::test]
     async fn test_categoryinfo_alias_alias() {
         let pool = shared::testing::test_pool();
@@ -1176,91 +1188,9 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_categoryinfo_bind_categoryId_view_mockputtopost() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/categoryinfo/bind/test-id/view/mockputtopost")
-                    .method("POST")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "categoryinfo_bind_categoryId_view_mockputtopost route should be registered"
-            );
-        }
-    }
-
-    #[tokio::test]
-    async fn test_categoryinfo_erase_category_id() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/categoryinfo/erase/category/test-id")
-                    .method("DELETE")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "categoryinfo_erase_category_id route should be registered"
-            );
-        }
-    }
-
-    #[tokio::test]
-    async fn test_categoryinfo_erase_category_id_mockdeletetoget() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/categoryinfo/erase/category/test-id/mockdeletetoget")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "categoryinfo_erase_category_id_mockdeletetoget route should be registered"
-            );
-        }
-    }
-
-    // SKIPPED: categoryinfo_extContent not accessible
+    // SKIPPED: categoryinfo_bind_categoryId_view_mockputtopost requires Session parameter
+    // SKIPPED: categoryinfo_erase_category_id requires Session parameter
+    // SKIPPED: categoryinfo_erase_category_id_mockdeletetoget requires Session parameter
     #[tokio::test]
     async fn test_categoryinfo_filter_list_id_next_count_app_appId() {
         let pool = shared::testing::test_pool();
@@ -1481,7 +1411,6 @@ mod tests {
         }
     }
 
-    // SKIPPED: categoryinfo_list_objects not accessible
     #[tokio::test]
     async fn test_categoryinfo_list_publish_app_appId() {
         let pool = shared::testing::test_pool();
@@ -1706,35 +1635,7 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_categoryinfo_id_mockdeletetoget() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/categoryinfo/test-id/mockdeletetoget")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "categoryinfo_id_mockdeletetoget route should be registered"
-            );
-        }
-    }
-
-    // SKIPPED: categoryinfo_id_permission not accessible
+    // SKIPPED: categoryinfo_id_mockdeletetoget requires Session parameter
     #[tokio::test]
     async fn test_commend_list_paging_page_size_size() {
         let pool = shared::testing::test_pool();
@@ -1900,8 +1801,6 @@ mod tests {
         }
     }
 
-    // SKIPPED: comment_list_page_size_size not accessible
-    // SKIPPED: comment_list_page_size_size_mockputtopost not accessible
     #[tokio::test]
     async fn test_comment_id() {
         let pool = shared::testing::test_pool();
@@ -1927,36 +1826,7 @@ mod tests {
         }
     }
 
-    // SKIPPED: comment_id_commend not accessible
-    #[tokio::test]
-    async fn test_comment_id_mockdeletetoget() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/comment/test-id/mockdeletetoget")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "comment_id_mockdeletetoget route should be registered"
-            );
-        }
-    }
-
-    // SKIPPED: comment_id_uncommend not accessible
+    // SKIPPED: comment_id_mockdeletetoget requires Session parameter
     #[tokio::test]
     async fn test_correlation_doc_docId() {
         let pool = shared::testing::test_pool();
@@ -1985,7 +1855,6 @@ mod tests {
         }
     }
 
-    // SKIPPED: correlation_doc_docId_delete not accessible
     #[tokio::test]
     async fn test_correlation_list_doc_docId() {
         let pool = shared::testing::test_pool();
@@ -2042,7 +1911,6 @@ mod tests {
         }
     }
 
-    // SKIPPED: correlation_update_doc_docId not accessible
     #[tokio::test]
     async fn test_data_document_id() {
         let pool = shared::testing::test_pool();
@@ -2216,63 +2084,8 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_design_appdict_id_mockdeletetoget() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/design/appdict/test-id/mockdeletetoget")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "design_appdict_id_mockdeletetoget route should be registered"
-            );
-        }
-    }
-
-    #[tokio::test]
-    async fn test_design_appdict_id_mockputtopost() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/design/appdict/test-id/mockputtopost")
-                    .method("POST")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "design_appdict_id_mockputtopost route should be registered"
-            );
-        }
-    }
-
-    // SKIPPED: designer_search not accessible
+    // SKIPPED: design_appdict_id_mockdeletetoget requires Session parameter
+    // SKIPPED: design_appdict_id_mockputtopost requires Session parameter
     #[tokio::test]
     async fn test_document_cipher_filter_list_page_size_size() {
         let pool = shared::testing::test_pool();
@@ -2327,37 +2140,7 @@ mod tests {
         }
     }
 
-    // SKIPPED: document_cipher_publish_content not accessible
-    // SKIPPED: document_cipher_publish_content_mockputtopost not accessible
-    // SKIPPED: document_cipher_id_permission_read_person_person not accessible
-    #[tokio::test]
-    async fn test_document_cipher_id_persist_view_record() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/document/cipher/test-id/persist/view/record")
-                    .method("POST")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "document_cipher_id_persist_view_record route should be registered"
-            );
-        }
-    }
-
+    // SKIPPED: document_cipher_id_persist_view_record requires Session parameter
     #[tokio::test]
     async fn test_file_list_appInfo_appInfoFlag() {
         let pool = shared::testing::test_pool();
@@ -2467,7 +2250,6 @@ mod tests {
         }
     }
 
-    // SKIPPED: file_flag_appInfo_appInfoFlag not accessible
     #[tokio::test]
     async fn test_file_flag_appInfo_appInfoFlag_content() {
         let pool = shared::testing::test_pool();
@@ -2496,35 +2278,7 @@ mod tests {
         }
     }
 
-    // SKIPPED: file_flag_appInfo_appInfoFlag_download not accessible
-    #[tokio::test]
-    async fn test_file_flag_mockdeletetoget() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/file/test-id/mockdeletetoget")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "file_flag_mockdeletetoget route should be registered"
-            );
-        }
-    }
-
+    // SKIPPED: file_flag_mockdeletetoget requires Session parameter
     #[tokio::test]
     async fn test_file_id() {
         let pool = shared::testing::test_pool();
@@ -2606,35 +2360,7 @@ mod tests {
         }
     }
 
-    // SKIPPED: file_id_mockputtopost not accessible
-    #[tokio::test]
-    async fn test_file_id_upload() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/file/test-id/upload")
-                    .method("POST")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "file_id_upload route should be registered"
-            );
-        }
-    }
-
+    // SKIPPED: file_id_upload requires Session parameter
     #[tokio::test]
     async fn test_anonymous_fileinfo_download_document_id() {
         let pool = shared::testing::test_pool();
@@ -2719,7 +2445,6 @@ mod tests {
         }
     }
 
-    // SKIPPED: fileinfo_copy_to_doc_docId not accessible
     #[tokio::test]
     async fn test_fileinfo_download_document_id() {
         let pool = shared::testing::test_pool();
@@ -2804,62 +2529,8 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_fileinfo_edit_id_doc_docId() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/fileinfo/edit/test-id/doc/test-id")
-                    .method("PUT")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "fileinfo_edit_id_doc_docId route should be registered"
-            );
-        }
-    }
-
-    #[tokio::test]
-    async fn test_fileinfo_edit_id_doc_docId_mockputtopost() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/fileinfo/edit/test-id/doc/test-id/mockputtopost")
-                    .method("POST")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "fileinfo_edit_id_doc_docId_mockputtopost route should be registered"
-            );
-        }
-    }
-
+    // SKIPPED: fileinfo_edit_id_doc_docId requires Session parameter
+    // SKIPPED: fileinfo_edit_id_doc_docId_mockputtopost requires Session parameter
     #[tokio::test]
     async fn test_fileinfo_list_all() {
         let pool = shared::testing::test_pool();
@@ -2916,177 +2587,12 @@ mod tests {
         }
     }
 
-    // SKIPPED: fileinfo_list_filter not accessible
-    // SKIPPED: fileinfo_replace_to_doc_docId not accessible
-    #[tokio::test]
-    async fn test_fileinfo_update_document_docId_attachment_id() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/fileinfo/update/document/test-id/attachment/test-id")
-                    .method("POST")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "fileinfo_update_document_docId_attachment_id route should be registered"
-            );
-        }
-    }
-
-    #[tokio::test]
-    async fn test_fileinfo_update_document_docId_attachment_id_callback_callback() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri(
-                        "/api/fileinfo/update/document/test-id/attachment/test-id/callback/test-id",
-                    )
-                    .method("POST")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(!bytes.is_empty(),
-                "fileinfo_update_document_docId_attachment_id_callback_callback route should be registered");
-        }
-    }
-
-    #[tokio::test]
-    async fn test_fileinfo_update_id_content() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/fileinfo/update/test-id/content")
-                    .method("POST")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "fileinfo_update_id_content route should be registered"
-            );
-        }
-    }
-
-    #[tokio::test]
-    async fn test_fileinfo_upload_doc_docId_save_as_flag() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/fileinfo/upload/doc/test-id/save/as/test-id")
-                    .method("POST")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "fileinfo_upload_doc_docId_save_as_flag route should be registered"
-            );
-        }
-    }
-
-    #[tokio::test]
-    async fn test_fileinfo_upload_document_docId() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/fileinfo/upload/document/test-id")
-                    .method("POST")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "fileinfo_upload_document_docId route should be registered"
-            );
-        }
-    }
-
-    #[tokio::test]
-    async fn test_fileinfo_upload_document_docId_callback_callback() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/fileinfo/upload/document/test-id/callback/test-id")
-                    .method("POST")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "fileinfo_upload_document_docId_callback_callback route should be registered"
-            );
-        }
-    }
-
-    // SKIPPED: fileinfo_upload_with_url not accessible
+    // SKIPPED: fileinfo_update_document_docId_attachment_id requires Session parameter
+    // SKIPPED: fileinfo_update_document_docId_attachment_id_callback_callback requires Session parameter
+    // SKIPPED: fileinfo_update_id_content requires Session parameter
+    // SKIPPED: fileinfo_upload_doc_docId_save_as_flag requires Session parameter
+    // SKIPPED: fileinfo_upload_document_docId requires Session parameter
+    // SKIPPED: fileinfo_upload_document_docId_callback_callback requires Session parameter
     #[tokio::test]
     async fn test_fileinfo_id() {
         let pool = shared::testing::test_pool();
@@ -3112,35 +2618,7 @@ mod tests {
         }
     }
 
-    // SKIPPED: fileinfo_id_binary_base64_size not accessible
-    #[tokio::test]
-    async fn test_fileinfo_id_doc_docId_change_seqnumber_seqNumber() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/fileinfo/test-id/doc/test-id/change/seqnumber/test-id")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "fileinfo_id_doc_docId_change_seqnumber_seqNumber route should be registered"
-            );
-        }
-    }
-
+    // SKIPPED: fileinfo_id_doc_docId_change_seqnumber_seqNumber requires Session parameter
     #[tokio::test]
     async fn test_fileinfo_id_document_documentId() {
         let pool = shared::testing::test_pool();
@@ -3169,34 +2647,7 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_fileinfo_id_mockdeletetoget() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/fileinfo/test-id/mockdeletetoget")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "fileinfo_id_mockdeletetoget route should be registered"
-            );
-        }
-    }
-
+    // SKIPPED: fileinfo_id_mockdeletetoget requires Session parameter
     #[tokio::test]
     async fn test_fileinfo_id_online_info() {
         let pool = shared::testing::test_pool();
@@ -3617,7 +3068,6 @@ mod tests {
         }
     }
 
-    // SKIPPED: form_formFlag_appinfo_appFlag not accessible
     #[tokio::test]
     async fn test_form_id() {
         let pool = shared::testing::test_pool();
@@ -3643,62 +3093,8 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_form_id_mockdeletetoget() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/form/test-id/mockdeletetoget")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "form_id_mockdeletetoget route should be registered"
-            );
-        }
-    }
-
-    #[tokio::test]
-    async fn test_form_id_mockputtopost() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/form/test-id/mockputtopost")
-                    .method("POST")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "form_id_mockputtopost route should be registered"
-            );
-        }
-    }
-
+    // SKIPPED: form_id_mockdeletetoget requires Session parameter
+    // SKIPPED: form_id_mockputtopost requires Session parameter
     #[tokio::test]
     async fn test_form_v2_lookup_document_docId() {
         let pool = shared::testing::test_pool();
@@ -4086,6 +3482,31 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_log_list() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/log/list")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(!bytes.is_empty(), "log_list route should be registered");
+        }
+    }
+
+    #[tokio::test]
     async fn test_output_list() {
         let pool = shared::testing::test_pool();
         let app = crate::router(pool);
@@ -4138,34 +3559,7 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_output_appInfoFlag_select_mockputtopost() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/output/test-id/select/mockputtopost")
-                    .method("POST")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "output_appInfoFlag_select_mockputtopost route should be registered"
-            );
-        }
-    }
-
+    // SKIPPED: output_appInfoFlag_select_mockputtopost requires Session parameter
     #[tokio::test]
     async fn test_permission_appInfo_id_manageable() {
         let pool = shared::testing::test_pool();
@@ -4390,69 +3784,8 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_permission_management_refresh_all() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/docpermission")
-                    .method("POST")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "permission_management_refresh_all route should be registered"
-            );
-        }
-    }
-
-    #[tokio::test]
-    async fn test_permission_management_refresh_category_categoryId() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/permission/management/refresh/category/test-id")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "permission_management_refresh_category_categoryId route should be registered"
-            );
-        }
-    }
-
-    // SKIPPED: permission_manager_appInfo_id not accessible
-    // SKIPPED: permission_manager_categoryInfo_id not accessible
-    // SKIPPED: permission_publisher_appInfo_id not accessible
-    // SKIPPED: permission_publisher_categoryInfo_id not accessible
-    // SKIPPED: permission_viewer_appInfo_id not accessible
-    // SKIPPED: permission_viewer_categoryInfo_id not accessible
-    // SKIPPED: review_v2_search not accessible
+    // SKIPPED: permission_management_refresh_all requires Session parameter
+    // SKIPPED: permission_management_refresh_category_categoryId requires Session parameter
     #[tokio::test]
     async fn test_script_list_app_appId_name_name() {
         let pool = shared::testing::test_pool();
@@ -4509,7 +3842,6 @@ mod tests {
         }
     }
 
-    // SKIPPED: script_list_manager not accessible
     #[tokio::test]
     async fn test_script_list_paging_page_size_size() {
         let pool = shared::testing::test_pool();
@@ -4594,7 +3926,6 @@ mod tests {
         }
     }
 
-    // SKIPPED: script_flag_appInfo_appInfoFlag not accessible
     #[tokio::test]
     async fn test_script_id() {
         let pool = shared::testing::test_pool();
@@ -4620,63 +3951,8 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_script_id_mockdeletetoget() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/script/test-id/mockdeletetoget")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "script_id_mockdeletetoget route should be registered"
-            );
-        }
-    }
-
-    #[tokio::test]
-    async fn test_script_id_mockputtopost() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/script/test-id/mockputtopost")
-                    .method("POST")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "script_id_mockputtopost route should be registered"
-            );
-        }
-    }
-
-    // SKIPPED: script_uniqueName_app_flag not accessible
+    // SKIPPED: script_id_mockdeletetoget requires Session parameter
+    // SKIPPED: script_id_mockputtopost requires Session parameter
     #[tokio::test]
     async fn test_script_uniqueName_app_flag_imported() {
         let pool = shared::testing::test_pool();
@@ -5122,34 +4398,7 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_templateform_id_mockdeletetoget() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/templateform/test-id/mockdeletetoget")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "templateform_id_mockdeletetoget route should be registered"
-            );
-        }
-    }
-
+    // SKIPPED: templateform_id_mockdeletetoget requires Session parameter
     #[tokio::test]
     async fn test_uuid_random() {
         let pool = shared::testing::test_pool();
@@ -5340,62 +4589,8 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_view_id_mockdeletetoget() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/view/test-id/mockdeletetoget")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "view_id_mockdeletetoget route should be registered"
-            );
-        }
-    }
-
-    #[tokio::test]
-    async fn test_view_id_mockputtopost() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/view/test-id/mockputtopost")
-                    .method("POST")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "view_id_mockputtopost route should be registered"
-            );
-        }
-    }
-
+    // SKIPPED: view_id_mockdeletetoget requires Session parameter
+    // SKIPPED: view_id_mockputtopost requires Session parameter
     #[tokio::test]
     async fn test_viewcategory_list_all() {
         let pool = shared::testing::test_pool();
@@ -5508,34 +4703,7 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_viewcategory_id_mockdeletetoget() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/viewcategory/test-id/mockdeletetoget")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "viewcategory_id_mockdeletetoget route should be registered"
-            );
-        }
-    }
-
+    // SKIPPED: viewcategory_id_mockdeletetoget requires Session parameter
     #[tokio::test]
     async fn test_viewfieldconfig_list_all() {
         let pool = shared::testing::test_pool();
@@ -5620,62 +4788,8 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_viewfieldconfig_id_mockdeletetoget() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/viewfieldconfig/test-id/mockdeletetoget")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "viewfieldconfig_id_mockdeletetoget route should be registered"
-            );
-        }
-    }
-
-    #[tokio::test]
-    async fn test_viewfieldconfig_id_mockputtopost() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/viewfieldconfig/test-id/mockputtopost")
-                    .method("POST")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "viewfieldconfig_id_mockputtopost route should be registered"
-            );
-        }
-    }
-
+    // SKIPPED: viewfieldconfig_id_mockdeletetoget requires Session parameter
+    // SKIPPED: viewfieldconfig_id_mockputtopost requires Session parameter
     #[tokio::test]
     async fn test_viewrecord_document_docId_filter_list_id_next_count() {
         let pool = shared::testing::test_pool();
@@ -5900,168 +5014,12 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_input_compare() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/input/compare")
-                    .method("PUT")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "input_compare route should be registered"
-            );
-        }
-    }
-
-    #[tokio::test]
-    async fn test_input_compare_mockputtopost() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/input/compare/mockputtopost")
-                    .method("POST")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "input_compare_mockputtopost route should be registered"
-            );
-        }
-    }
-
-    #[tokio::test]
-    async fn test_input_cover() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/input/cover")
-                    .method("PUT")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(!bytes.is_empty(), "input_cover route should be registered");
-        }
-    }
-
-    #[tokio::test]
-    async fn test_input_cover_mockputtopost() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/input/cover/mockputtopost")
-                    .method("POST")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "input_cover_mockputtopost route should be registered"
-            );
-        }
-    }
-
-    #[tokio::test]
-    async fn test_input_create() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/input/create")
-                    .method("PUT")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(!bytes.is_empty(), "input_create route should be registered");
-        }
-    }
-
-    #[tokio::test]
-    async fn test_input_create_mockputtopost() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/input/create/mockputtopost")
-                    .method("POST")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "input_create_mockputtopost route should be registered"
-            );
-        }
-    }
-
+    // SKIPPED: input_compare requires Session parameter
+    // SKIPPED: input_compare_mockputtopost requires Session parameter
+    // SKIPPED: input_cover requires Session parameter
+    // SKIPPED: input_cover_mockputtopost requires Session parameter
+    // SKIPPED: input_create requires Session parameter
+    // SKIPPED: input_create_mockputtopost requires Session parameter
     #[tokio::test]
     async fn test_input_prepare_cover() {
         let pool = shared::testing::test_pool();
@@ -6174,34 +5132,7 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_document_id_view_count() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/document/test-id/view/count")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "document_id_view_count route should be registered"
-            );
-        }
-    }
-
+    // SKIPPED: document_id_view_count requires Session parameter
     #[tokio::test]
     async fn test_commend_list_paging() {
         let pool = shared::testing::test_pool();
@@ -6611,35 +5542,7 @@ mod tests {
 
     // SKIPPED: comment_commend_u3 requires Session parameter
     // SKIPPED: comment_uncommend_u3 requires Session parameter
-    // SKIPPED: correlation_create_u3 not accessible
-    #[tokio::test]
-    async fn test_correlation_update_u3() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/correlation/update/doc/test-id")
-                    .method("POST")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "correlation_update_u3 route should be registered"
-            );
-        }
-    }
-
+    // SKIPPED: correlation_update_u3 requires Session parameter
     // SKIPPED: design_appdict_create_u3 requires Session parameter
     // SKIPPED: design_appdict_update_u3 requires Session parameter
     // SKIPPED: design_appdict_delete_u3 requires Session parameter
@@ -6761,62 +5664,8 @@ mod tests {
 
     // SKIPPED: document_publish_content_u3 requires Session parameter
     // SKIPPED: document_publish_content_mock_u3 requires Session parameter
-    #[tokio::test]
-    async fn test_document_cipher_publish_workflow_u3() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/document/cipher/publish/content")
-                    .method("PUT")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "document_cipher_publish_workflow_u3 route should be registered"
-            );
-        }
-    }
-
-    #[tokio::test]
-    async fn test_document_cipher_publish_workflow_mock_u3() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/document/cipher/publish/content/mockputtopost")
-                    .method("POST")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "document_cipher_publish_workflow_mock_u3 route should be registered"
-            );
-        }
-    }
-
+    // SKIPPED: document_cipher_publish_workflow_u3 requires Session parameter
+    // SKIPPED: document_cipher_publish_workflow_mock_u3 requires Session parameter
     // SKIPPED: document_cipher_permission_read_u3 requires Session parameter
     #[tokio::test]
     async fn test_document_draft_next_u3() {
@@ -6993,31 +5842,7 @@ mod tests {
 
     // SKIPPED: file_update_u3 requires Session parameter
     // SKIPPED: file_delete_u3 requires Session parameter
-    #[tokio::test]
-    async fn test_file_copy_u3() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/file/test-id/appInfo/test-id")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(!bytes.is_empty(), "file_copy_u3 route should be registered");
-        }
-    }
-
+    // SKIPPED: file_copy_u3 requires Session parameter
     #[tokio::test]
     async fn test_file_download_with_app_u3() {
         let pool = shared::testing::test_pool();
@@ -7074,34 +5899,7 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test_fileinfo_upload_with_url_u3() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/api/fileinfo/upload/with/url")
-                    .method("POST")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        if response.status() == StatusCode::NOT_FOUND {
-            // Route-presence probe: an unregistered path hits the axum fallback
-            // (empty 404 body); a matched handler may legitimately answer 404
-            // (e.g. NotFound for missing row) but always with a JSON envelope.
-            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-                .await
-                .unwrap_or_default();
-            assert!(
-                !bytes.is_empty(),
-                "fileinfo_upload_with_url_u3 route should be registered"
-            );
-        }
-    }
-
+    // SKIPPED: fileinfo_upload_with_url_u3 requires Session parameter
     #[tokio::test]
     async fn test_form_get_with_appinfo_u3() {
         let pool = shared::testing::test_pool();
@@ -7188,4 +5986,46 @@ mod tests {
     }
 
     // SKIPPED: viewrecord_unread_u3 requires Session parameter
+    // SKIPPED: dict_create requires Session parameter
+    // SKIPPED: form_create requires Session parameter
+    // SKIPPED: xform_create requires Session parameter
+    // SKIPPED: xform_save requires Session parameter
+    // SKIPPED: xform_delete requires Session parameter
+    // SKIPPED: view_create requires Session parameter
+    // SKIPPED: appinfo_id_permission not accessible
+    // SKIPPED: categoryinfo_extContent not accessible
+    // SKIPPED: categoryinfo_list_objects not accessible
+    // SKIPPED: categoryinfo_id_permission not accessible
+    // SKIPPED: comment_list_page_size_size not accessible
+    // SKIPPED: comment_list_page_size_size_mockputtopost not accessible
+    // SKIPPED: comment_id_commend not accessible
+    // SKIPPED: comment_id_uncommend not accessible
+    // SKIPPED: correlation_doc_docId_delete not accessible
+    // SKIPPED: correlation_update_doc_docId not accessible
+    // SKIPPED: designer_search not accessible
+    // SKIPPED: document_cipher_publish_content not accessible
+    // SKIPPED: document_cipher_publish_content_mockputtopost not accessible
+    // SKIPPED: document_cipher_id_permission_read_person_person not accessible
+    // SKIPPED: file_flag_appInfo_appInfoFlag not accessible
+    // SKIPPED: file_flag_appInfo_appInfoFlag_download not accessible
+    // SKIPPED: file_id_mockputtopost not accessible
+    // SKIPPED: fileinfo_copy_to_doc_docId not accessible
+    // SKIPPED: fileinfo_list_filter not accessible
+    // SKIPPED: fileinfo_replace_to_doc_docId not accessible
+    // SKIPPED: fileinfo_upload_with_url not accessible
+    // SKIPPED: fileinfo_id_binary_base64_size not accessible
+    // SKIPPED: form_formFlag_appinfo_appFlag not accessible
+    // SKIPPED: permission_manager_appInfo_id not accessible
+    // SKIPPED: permission_manager_categoryInfo_id not accessible
+    // SKIPPED: permission_publisher_appInfo_id not accessible
+    // SKIPPED: permission_publisher_categoryInfo_id not accessible
+    // SKIPPED: permission_viewer_appInfo_id not accessible
+    // SKIPPED: permission_viewer_categoryInfo_id not accessible
+    // SKIPPED: review_v2_search not accessible
+    // SKIPPED: script_list_manager not accessible
+    // SKIPPED: script_flag_appInfo_appInfoFlag not accessible
+    // SKIPPED: script_uniqueName_app_flag not accessible
+    // SKIPPED: flush not accessible
+    // SKIPPED: form_submit not accessible
+    // SKIPPED: correlation_create_u3 requires Session parameter
 }

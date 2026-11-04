@@ -115,3 +115,5 @@ pub fn router(pool: Pool) -> Router {
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;

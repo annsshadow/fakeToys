@@ -4,7 +4,7 @@
 // 手写测试（O14 从 tests_generated.rs 原样迁出；本文件由人工维护，
 // 生成器不会覆盖）。新增手写用例请直接加在这里。
 #[cfg(test)]
-mod tests_manual {
+mod tests {
     #![allow(non_snake_case)]
     use axum::body::Body;
     use axum::http::Request;

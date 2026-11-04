@@ -6,54 +6,58 @@ mod tests {
     #![allow(non_snake_case)]
 
     // SKIPPED: get_general_control_status not accessible
-    // SKIPPED: update_general_control_status not accessible
+    // SKIPPED: general_control_list not accessible
+    // SKIPPED: general_control_create requires Session parameter
+    // SKIPPED: general_control_save requires Session parameter
+    // SKIPPED: general_control_delete requires Session parameter
+    // SKIPPED: update_general_control_status requires Session parameter
     // SKIPPED: get_module_permissions not accessible
     // SKIPPED: attendscope_list not accessible
     // SKIPPED: attendscope_get not accessible
-    // SKIPPED: attendscope_create not accessible
-    // SKIPPED: attendscope_save not accessible
-    // SKIPPED: attendscope_delete not accessible
+    // SKIPPED: attendscope_create requires Session parameter
+    // SKIPPED: attendscope_save requires Session parameter
+    // SKIPPED: attendscope_delete requires Session parameter
     // SKIPPED: area_list not accessible
     // SKIPPED: area_list_province_province not accessible
     // SKIPPED: area_list_province_province_city_city not accessible
     // SKIPPED: area_list_province_province_city_city_district_district not accessible
-    // SKIPPED: area_create not accessible
+    // SKIPPED: area_create requires Session parameter
     // SKIPPED: area_get not accessible
-    // SKIPPED: area_update not accessible
-    // SKIPPED: area_delete not accessible
+    // SKIPPED: area_update requires Session parameter
+    // SKIPPED: area_delete requires Session parameter
     // SKIPPED: ecnet_check not accessible
     // SKIPPED: excel_excelName_excelName not accessible
     // SKIPPED: excel_excelName_excelName_sheetList not accessible
     // SKIPPED: excel_result_flag not accessible
-    // SKIPPED: excel_upload not accessible
-    // SKIPPED: excel_upload_with_url not accessible
+    // SKIPPED: excel_upload requires Session parameter
+    // SKIPPED: excel_upload_with_url requires Session parameter
     // SKIPPED: generalfile_download_flag_flag not accessible
     // SKIPPED: generalfile_flag_flag not accessible
     // SKIPPED: generalfile_flag_flag_binary_base64 not accessible
-    // SKIPPED: invoice_create not accessible
-    // SKIPPED: invoice_delete_id not accessible
+    // SKIPPED: invoice_create requires Session parameter
+    // SKIPPED: invoice_delete_id requires Session parameter
     // SKIPPED: invoice_download_flag_flag not accessible
     // SKIPPED: invoice_get_id not accessible
     // SKIPPED: invoice_list_paging_page_size_size not accessible
-    // SKIPPED: invoice_update_apply_status_id not accessible
-    // SKIPPED: invoice_update_id not accessible
-    // SKIPPED: invoice_upload not accessible
-    // SKIPPED: invoice_upload_for_create not accessible
-    // SKIPPED: invoice_upload_with_url not accessible
-    // SKIPPED: office_html_to_word not accessible
+    // SKIPPED: invoice_update_apply_status_id requires Session parameter
+    // SKIPPED: invoice_update_id requires Session parameter
+    // SKIPPED: invoice_upload requires Session parameter
+    // SKIPPED: invoice_upload_for_create requires Session parameter
+    // SKIPPED: invoice_upload_with_url requires Session parameter
+    // SKIPPED: office_html_to_word requires Session parameter
     // SKIPPED: office_html_to_word_result_flag not accessible
-    // SKIPPED: qrcode_width_width_height_height_text_text not accessible
+    // SKIPPED: qrcode_width_width_height_height_text_text requires Session parameter
     // SKIPPED: qrcode_list not accessible
     // SKIPPED: qrcode_get not accessible
-    // SKIPPED: qrcode_delete not accessible
-    // SKIPPED: securityclearance_enable not accessible
+    // SKIPPED: qrcode_delete requires Session parameter
+    // SKIPPED: securityclearance_enable requires Session parameter
     // SKIPPED: securityclearance_object not accessible
     // SKIPPED: securityclearance_subject not accessible
     // SKIPPED: securityclearance_system not accessible
-    // SKIPPED: securityclearance_create not accessible
+    // SKIPPED: securityclearance_create requires Session parameter
     // SKIPPED: securityclearance_get not accessible
-    // SKIPPED: securityclearance_update not accessible
-    // SKIPPED: securityclearance_delete not accessible
+    // SKIPPED: securityclearance_update requires Session parameter
+    // SKIPPED: securityclearance_delete requires Session parameter
     // SKIPPED: upgrade_2021090901 not accessible
     // SKIPPED: upgrade_2021090902 not accessible
     // SKIPPED: worktime_betweenholidaycount_start_startDate_end_endDate not accessible
@@ -66,4 +70,6 @@ mod tests {
     // SKIPPED: worktime_isworkday_date not accessible
     // SKIPPED: worktime_isworktime_date not accessible
     // SKIPPED: worktime_minutesofworkday not accessible
+    // SKIPPED: generalfile_create requires Session parameter
+    // SKIPPED: qrcode_create requires Session parameter
 }
