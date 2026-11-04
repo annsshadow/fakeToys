@@ -484,16 +484,16 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 
 ### 当前红（18 passed / 6 failed）与书面归类
 
-| 用例 | 现在红在第几步 | 归类 | 书面依据 |
-|------|----------------|------|----------|
-| `new_real_endpoints::ai_endpoints_flow` | `mcp data array` 为空 | A | 挂载的是桩 `crates/ai/src/config.rs:291-305`（返回空数组）；真实现 `ai_assemble_control/src/lib.rs:971` 未被该路由使用 |
-| `ldap_fallback_flow` | `GET /api/ldap/config` 返回非 JSON | A/D | 全 backend 无该路由；登录+cookie 部分已绿。需决定「补端点」或「删该断言」 |
-| `cms_extended_crud_flow` | `POST /api/cms_assemble_control/appinfo/create` 405 | B+A | `/api/cms_assemble_control/*` 全不存在；canonical `/api/appinfo|categoryinfo|comment|file|form|view` 存在，但 appinfo/categoryinfo/comment 无 update 路由，`sort_order/ext_content` 不在 canonical 模型 |
-| `bpmn_process_flow` | `POST /work/create` 405 | B+A | work 路径过期（B）；后续 `agree` 语义 backend 0 命中（A） |
-| `bpmn_task_actions_flow` | 同 | B+A | `disagree/return` 不存在；canonical 是 `claim/complete/reject/transfer` |
-| `bpmn_countersign_flow` | 同 | A/D | 会签语义 backend 0 命中 |
+| 用例 | 现在红在第几步 | 现在归哪类 | 为什么 | 谁还没定 | 下一轮处理 |
+|------|----------------|-----------|--------|----------|-----------|
+| `new_real_endpoints::ai_endpoints_flow` | `mcp data array` 为空 | A（接线缺陷） | 路由挂到桩 `crates/ai/src/config.rs:291-305`；真实现 `ai_assemble_control/src/lib.rs:971` 未被使用 | 已定（用户）：直接修接线 | 单独提交：改挂真实现 + 红→绿测试，并列出所有挂该桩的路由 |
+| `ldap_fallback_flow` | `GET /api/ldap/config` 非 JSON | D（待证据） | 全 backend 无该路由；登录+cookie 部分已绿；parity 是否承诺未查 | 待 O20 消费者证据 | 查 `frontend/`、`mobile/`、`docs/`、OpenAPI/MCP 路由表；有承诺→A，无→C 删断言 |
+| `cms_extended_crud_flow` | `POST /api/cms_assemble_control/appinfo/create` 405 | B+A（混合） | `/api/cms_assemble_control/*` 全不存在；canonical `/api/appinfo` 等存在，但 app/category/comment 无 update，`sort_order/ext_content` 不在模型 | 待 O20 消费者证据 | 逐端点查消费者：无消费者且 canonical 有→改测试；无消费者且无实现→删该断言并记录能力缺口 |
+| `bpmn_process_flow` | `POST /work/create` 405 | B+A（混合） | 路径过期（B）；后续 `agree` 在 backend 0 命中（A） | 待 O20 消费者证据 | 查前端流程页实际调 canonical 还是 agree 系；canonical→改测试 |
+| `bpmn_task_actions_flow` | 同 | B+A（混合） | `disagree/return` 不存在；canonical 是 `claim/complete/reject/transfer` | 待 O20 消费者证据 | 同上 |
+| `bpmn_countersign_flow` | 同 | D（待证据） | 会签语义 backend 0 命中 | 待 O20 消费者证据 | 查前端/文档/parity；无消费者→C 删测试，有→A 写 O20 |
 
-按「A>3 先停」：本轮发现的 A 已超过 3 项，**没有擅自实现产品端点、也没有删测试或放宽断言**，全部保留可失败状态并在此书面归类，待确认后单开一轮。
+**本 PR 不修这 6 条，另开轮（O20「消费者证据判定」）。** 依据：O18 已验证的独立成果（捕获式日志、双库分裂、console/org 两个 500、10 条测试修正、断依赖验证）不应被待判定的产品问题扣住。按「A>3 先停」，本轮**没有擅自实现产品端点、也没有删测试或放宽断言**。
 
 ### 验证
 
@@ -501,9 +501,9 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 - `cargo test --workspace --lib`：在全新库 `oa4rust_o18_lib_check`（先跑 migrate 用例建表）全绿，最后一次 **FAILED=0**。直接指向开发库 `oa4rust` 时 `shared::migrate` 因 019 历史 schema 漂移（`auth_person_identity` 旧 `person_id`）失败——存量环境问题，与本次改动无关，与 O17 记录一致。
 - `cargo clippy --all-targets -- -D warnings`：零告警；`cargo fmt --all --check`：绿（已执行 `cargo fmt --all`）。
 
-## O19 分批计划（待确认，先不动手）
+## O19 分批计划（已确认；O18 合并后开工）
 
-前置：O18 合并后开工；每批必须回到 SQL 现场逐条确认（扫描器有「最近 SELECT 误归属」残余风险，**不许按脚本输出直接改**）→ 先写一条能红的回归测试 → 再改类型 → 报「改前 500 / 改后 200 及响应体」。
+前置：O18 合并后开工；每批必须回到 SQL 现场逐条确认（扫描器有「最近 SELECT 误归属」残余风险，**不许按脚本输出直接改**），每批提交「SQL 现场逐条确认记录」→ 先写一条能红的回归测试 → 再改类型 → 报「改前 500 / 改后 200 及响应体」。批次顺序按前端引用热度，唯一调整：SILENT 从最后挪到第 3 批。
 
 排序依据：`frontend/src + mobile/src` 中对各 API 前缀的引用次数（authentication 21、processplatform 18、message 10、organization 8、query 7、portal 4、program_center 4、cms 3、general 2；component/correlation/bam/console 直接引用 0，按管理端低频处理）。
 
@@ -511,12 +511,12 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 |------|-------|----------|------|
 | 1 | auth + organization_assemble_control | 3 | 登录/组织是每条请求的前置路径，引用热度最高；org 2 处已在 O18 修，auth 只剩 switch_user 1 处 |
 | 2 | processplatform_service_processing + processplatform_assemble_bam | 7 | 工作流/任务页引用 18 次；x_task 起止时间 + timer job |
-| 3 | message_assemble_communicate + personal | 5 | IM 10 次、个人签名；时间戳同型，可批量验证同一改法 |
-| 4 | query_assemble_designer + query_assemble_surface | 5 | 查询设计/展示页 7 次；`update_time/create_time` |
-| 5 | portal_assemble_surface + program_center + console | 3 | 门户首页/应用中心/系统监控，热度中等但单点少 |
-| 6 | general_assemble_control | 8 | 系统配置页引用仅 2 次，但含 4 个 bool 读 TEXT + 4 个时间戳，改动面最大，放中后段 |
-| 7 | cms_assemble_control + component_core_entity + correlation | 7 | CMS/设计器/关联，前端直接引用 3/0/0，属长尾；含 TEXT[] 数组 3 处 |
-| 8 | SILENT（component `order_number`） | 4 | 不报 500 但字段恒空；按用户要求排在 FAIL=0 之后单列修 |
+| 3 | SILENT（component `order_number`） | 4 | **静默错数据比 500 更隐蔽**：`try_get` 吞错导致字段恒空，不报错就没人发现；按用户要求挪到第 2 批之后，先于其余 FAIL 批次 |
+| 4 | message_assemble_communicate + personal | 5 | IM 10 次、个人签名；时间戳同型，可批量验证同一改法 |
+| 5 | query_assemble_designer + query_assemble_surface | 5 | 查询设计/展示页 7 次；`update_time/create_time` |
+| 6 | portal_assemble_surface + program_center + console | 3 | 门户首页/应用中心/系统监控，热度中等但单点少 |
+| 7 | general_assemble_control | 8 | 系统配置页引用仅 2 次，但含 4 个 bool 读 TEXT + 4 个时间戳，改动面最大，放中后段 |
+| 8 | cms_assemble_control + component_core_entity + correlation | 7 | CMS/设计器/关联，前端直接引用 3/0/0，属长尾；含 TEXT[] 数组 3 处 |
 
 门禁策略：扫描器**先不接 CI**（接上去就是 38 条永久红）。全部 FAIL=0 后再接门禁，并做破坏实验：手工把一个正确的 `row.get` 改成错类型 → 门禁必须红。
 
