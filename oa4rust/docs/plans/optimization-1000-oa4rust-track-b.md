@@ -520,6 +520,36 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 
 门禁策略：扫描器**先不接 CI**（接上去就是 38 条永久红）。全部 FAIL=0 后再接门禁，并做破坏实验：手工把一个正确的 `row.get` 改成错类型 → 门禁必须红。
 
+## O20 消费者证据判定（O18 六条红灯收口）
+
+判定规则只有一条：**有没有真实消费者**。证据源三处：前端/移动端调用、文档/契约（OpenAPI / MCP 路由表 / parity corpus）、O2OA parity 书面要求。下表每条都有可复核的引用，不做「应该有」式推断。
+
+| # | 用例 | 原红点 | 证据 | 归类 | 处置 |
+|---|------|--------|------|------|------|
+| 1 | `new_real_endpoints::ai_endpoints_flow` | `/api/ai/config/list` 与 `/api/ai/config/get/mcp` 恒空 / `mcp not found` | 前端 `frontend/apps/desktop/src/views/AIChatApp.vue:211`（`/api/ai/config/get/mcp/${mcpFlag}`）、`:596`（`/api/ai/config/list/mcp/paging/1/size/50`）；契约 fixture / openapi / mcp generated_routes 均列旧词路径；真实现 `crates/ai_assemble_control/src/lib.rs:971`（list）、`:794`（get）早已存在 | **接线缺陷**（非缺功能） | **已修**：旧词路由从 `ai` crate 空桩改挂 `ai_assemble_control::router`；单独提交 `fix(o20)`。同一空桩只被 2 条路由使用（list paging、get mcp），随路由一并删除，全仓无其他挂载点 |
+| 2 | `new_real_endpoints::ldap_fallback_flow` | `GET /api/ldap/config` 返回 `not found`（非 JSON） | `backend/tests/parity/corpus/oa4rust-ldap_config.json`（`path=/api/ldap/config`、`method=GET`、`status=200`）+ `backend/tests/parity_runner.rs:157` 的 `("ldap_config","GET","/api/ldap/config")` | **A**（真缺） | **本 PR 不修，另开轮**。backend 全仓无此路由；红灯保留并改成可读的 A 类失败信息 |
+| 3 | `cms_extended::cms_extended_crud_flow`（旧前缀部分） | 6 实体全打 `/api/cms_assemble_control/...` | 前端 `frontend/packages/apis/src/index.ts` 只出现 `/api/appinfo`、`/api/categoryinfo`、`/api/comment`、`/api/categoryinfo/extContent`；全仓 `.vue` 无 `cms_assemble_control` 前缀调用；旧前缀仅存于测试与台账 | **B**（旧词 → canonical） | **已改测试**：`/api/cms_assemble_control/{appinfo,categoryinfo,comment,file,form,view}` → `/api/{appinfo,categoryinfo,comment,file,form,view}` |
+| 4 | 同上（update 部分） | appinfo/categoryinfo/comment 的 update 断言 | canonical 只注册 create/get/delete(+list)，无 PUT/POST update 路由；前端无三者的 update 调用 | **C**（能力缺口，已确认无人使用） | **已删断言**，台账记缺口；file/form/view 的 update 真实存在，保留并改打 canonical |
+| 5 | 同上（category 字段部分） | `sortOrder` / `extContent` 写入后读回 | canonical `categoryinfo_u2_create` 只收 `name` / `parentCategoryId` / `appId`（`cms_assemble_control/src/lib.rs:9802`），无这两个字段的写入面 | **C** | **已删断言** |
+| 6 | `bpmn_process::bpmn_process_flow` / `bpmn_task_actions_flow` | `/work/create`、`/execute/{id}`、`/task/{id}/agree`（及 disagree/return） | 前端 `frontend/apps/desktop/src/views/ProcessWork.vue` 只用 `/api/work/{id}/start`、`/processing`、`/complete` 与 `/api/task/{id}/claim`、`/complete`、`/reject`、`/transfer`；契约 fixture 同样列 canonical；`/work/create` 与 agree/disagree/return 仅出现在测试里 | **B** | **已改测试**：建单改 `POST /api/processplatform/service/processing/work`，其余改 canonical；断言全部回 SQL 现场（work_status / task_status / x_record content） |
+| 7 | `bpmn_process::bpmn_countersign_flow` | `agree/disagree/return/countersign` 全无 | 前端无任何会签调用；parity corpus 无 agree/countersign 条目；全仓无实现 | **C**（能力缺口，已确认无人使用） | **已删除该用例**（不留悬空红灯） |
+
+旧词 → 新词映射（B 类落地依据）：
+
+| 旧词（测试曾用） | canonical（前端实际调用） |
+|---|---|
+| `POST /api/ai/config/list` 与 `/get/mcp`（挂错 crate） | 同路径，但语义挂 `ai_assemble_control` 真实现 |
+| `/api/cms_assemble_control/appinfo/*` | `/api/appinfo`、`/api/appinfo/{id}`、`/api/appinfo/list/all` |
+| `/api/cms_assemble_control/categoryinfo/*` | `/api/categoryinfo`、`/api/categoryinfo/{id}` |
+| `/api/cms_assemble_control/comment/*` | `/api/comment`、`/api/comment/{id}` |
+| `/api/cms_assemble_control/file/*` | `/api/file`、`/api/file/{id}`、`/api/file/{id}/mockputtopost` |
+| `/api/cms_assemble_control/form/*` | `/api/form`、`/api/form/{id}`（PUT 更新） |
+| `/api/cms_assemble_control/view/*` | `/api/view`、`/api/view/list/all`、`/api/view/{id}`（PUT 更新） |
+| `POST /work/create`、`/execute/{id}` | `POST /api/processplatform/service/processing/work`、`PUT /api/work/{id}/processing` |
+| `/api/task/{id}/agree`（disagree/return 同族） | `/api/task/{id}/claim`、`/complete`、`/reject`、`/transfer/{person}` |
+
+验证结果：`integration_runner --ignored --test-threads=1` → **22 passed / 1 failed**，唯一失败是 #2 ldap（A 类，按决定本轮不修）。
+
 ## 既有后续清单
 
 1. ~~迁移并发安全~~（O1 done）。
