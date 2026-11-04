@@ -1216,7 +1216,8 @@ mod idor_matrix {
     /// O24-3 批次 12 修掉 E23503 work 删除的「先子后父」顺序：6 → 5。
     /// O24-3 批次 13 修掉 E42P18 ai chat 分页占位符编号错位：5 → 4。
     /// O24-3 批次 14 修掉 meeting room 的 jsonb equipment 按 String 解码：4 → 2。
-    const BASELINE_COUNT: usize = 2;
+    /// O24-3 批次 15 修掉 identity order_number bigint 按 i32 绑定：2 → 1。
+    const BASELINE_COUNT: usize = 1;
 
     /// 棘轮基线：`<METHOD> <route>\t<reason>`，reason 见文件头。
     const BASELINE_RAW: &str = include_str!("idor_seeded_handler500_baseline.txt");

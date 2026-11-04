@@ -11,6 +11,7 @@ pub mod document_filter_paths;
 pub mod draft_start_status;
 pub mod entity_reference_required;
 pub mod file_portal;
+pub mod identity_order;
 pub mod insert_required_id;
 pub mod jsonb_param_binding;
 pub mod ldap_fallback;

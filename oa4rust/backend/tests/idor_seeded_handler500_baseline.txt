@@ -96,5 +96,8 @@
 # `x_meeting_room.equipment` 实列是 jsonb（information_schema 现场确认），SeaORM 实体
 # 却声明 `Option<String>` → `Entity::find` 解码失败（error deserializing column equipment）。
 # 实体改 `Option<Json>`，create_room 直接透传 Value；创建后回读 `equipment::text` 断言同值。
-GET /api/organization/assemble/control/identity/{flag}/order/before/{followFlag}	category:wrong-type	owner:O24数据层对齐(后端)	due:2026-11-26	cond:按列真实类型改写绑定参数；200 后删行
+#
+# 2026-11-05 基线 2 → 1（GET 1 / 非 GET 0）：O24-3 批次 15 清掉 identity order 1 条 wrong-type。
+# `x_org_identity.order_number` 实列是 bigint（information_schema 现场确认），旧代码
+# `(index + 1) as i32` 绑定 → ToSql WrongType（postgres Int8 / rust i32）。改绑 i64。
 GET /api/program_center/market/{flag}/installed/version	column:status	owner:O24数据层对齐(后端)	due:2026-11-12	cond:改 try_get 并统一实体/列类型；200 后删行

@@ -89,6 +89,14 @@ async fn attribute_paths_contract() {
     integration_tests::scenarios::attribute_paths::attribute_paths_flow(ctx.pool.clone()).await;
 }
 
+/// O24-3 批次 15：E identity order_number bigint 按 i32 绑定（WrongType）。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn identity_order_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::identity_order::identity_order_flow(ctx.pool.clone()).await;
+}
+
 /// O24-3 批次 14：meeting room 的 jsonb equipment 按 String 解码。
 #[ignore = "requires a running database server"]
 #[tokio::test]

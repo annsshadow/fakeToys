@@ -4309,7 +4309,9 @@ pub async fn identity_flag_order_before_followFlag(
     // 的错乱/重号身份顺序。
     let tx = client.transaction().await?;
     for (index, id) in ids.iter().enumerate() {
-        let order_num = (index + 1) as i32;
+        // x_org_identity.order_number 实列是 bigint（information_schema 现场确认），
+        // 绑定 i32 会 ToSql WrongType → 500；改用 i64。
+        let order_num = (index + 1) as i64;
         order_result += tx
             .execute(
                 "UPDATE x_org_identity SET order_number = $1 WHERE id = $2",
