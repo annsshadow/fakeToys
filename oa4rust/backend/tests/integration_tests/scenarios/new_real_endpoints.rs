@@ -806,3 +806,246 @@ pub async fn org_unit_list_level_sort_regression() {
     server_handle.abort();
     let _ = server_handle.await;
 }
+
+// ── O19 批次 2：processplatform_service_processing + bam 列类型错配回归 ─────────
+
+#[tokio::test]
+#[ignore = "requires a running database server"]
+pub async fn process_timestamp_columns_regression() {
+    let pool = TEST_DB.get().expect("db not initialized").clone();
+    let (_addr, server_handle, token) =
+        crate::integration_tests::helpers::setup_test_server(pool.clone())
+            .await
+            .expect("start server");
+    let client = Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .unwrap();
+    let base = format!("http://{}", _addr);
+    let auth = format!("Bearer {}", token);
+
+    let work_id = uniq("work-ts");
+    let task_id = uniq("task-ts");
+    {
+        let c = pool.as_pg().unwrap().get().await.expect("pool");
+        c.execute(
+            "INSERT INTO x_work (id, title, process, create_time, start_time, end_time) \
+             VALUES ($1, $2, $3, '2024-01-01 00:00:00'::timestamp, \
+                     '2024-01-02 03:04:05'::timestamp, '2024-01-03 06:07:08'::timestamp)",
+            &[&work_id, &"Work TS", &"proc-ts"],
+        )
+        .await
+        .expect("seed x_work timestamp columns");
+        c.execute(
+            "INSERT INTO x_task (id, work, title, activity, activity_token, person, start_time, end_time) \
+             VALUES ($1, $2, $3, $4, $5, $6, \
+                     '2024-01-02 03:04:05'::timestamp, '2024-01-03 06:07:08'::timestamp)",
+            &[
+                &task_id,
+                &work_id,
+                &"Task TS",
+                &"act-ts",
+                &"token-ts",
+                &"it-person",
+            ],
+        )
+        .await
+        .expect("seed x_task timestamp columns");
+    }
+
+    let got = get_ok(
+        &base,
+        &client,
+        &auth,
+        &format!("/api/processplatform/service/processing/get/{}", work_id),
+    )
+    .await;
+    assert_eq!(
+        got["data"]["createTime"].as_str(),
+        Some("2024-01-01 00:00:00"),
+        "get 的 createTime 应来自 x_work.create_time"
+    );
+    assert_eq!(
+        got["data"]["startTime"].as_str(),
+        Some("2024-01-02 03:04:05"),
+        "get 的 startTime 应来自 x_work.start_time"
+    );
+    assert_eq!(
+        got["data"]["endTime"].as_str(),
+        Some("2024-01-03 06:07:08"),
+        "get 的 endTime 应来自 x_work.end_time"
+    );
+    assert_eq!(
+        got["data"]["tasks"][0]["startTime"].as_str(),
+        Some("2024-01-02 03:04:05"),
+        "get 的 tasks[0].startTime 应来自 x_task.start_time"
+    );
+    assert_eq!(
+        got["data"]["tasks"][0]["endTime"].as_str(),
+        Some("2024-01-03 06:07:08"),
+        "get 的 tasks[0].endTime 应来自 x_task.end_time"
+    );
+    println!("processing/get 响应体: {}", got);
+
+    let inst = get_ok(
+        &base,
+        &client,
+        &auth,
+        &format!(
+            "/api/processplatform/service/processing/instance/{}",
+            work_id
+        ),
+    )
+    .await;
+    assert_eq!(
+        inst["data"]["createTime"].as_str(),
+        Some("2024-01-01 00:00:00"),
+        "instance 的 createTime 应来自 x_work.create_time"
+    );
+    assert_eq!(
+        inst["data"]["startTime"].as_str(),
+        Some("2024-01-02 03:04:05"),
+        "instance 的 startTime 应来自 x_work.start_time"
+    );
+    assert_eq!(
+        inst["data"]["endTime"].as_str(),
+        Some("2024-01-03 06:07:08"),
+        "instance 的 endTime 应来自 x_work.end_time"
+    );
+    assert_eq!(
+        inst["data"]["tasks"][0]["startTime"].as_str(),
+        Some("2024-01-02 03:04:05"),
+        "instance 的 tasks[0].startTime 应来自 x_task.start_time"
+    );
+    assert_eq!(
+        inst["data"]["tasks"][0]["endTime"].as_str(),
+        Some("2024-01-03 06:07:08"),
+        "instance 的 tasks[0].endTime 应来自 x_task.end_time"
+    );
+    println!("processing/instance 响应体: {}", inst);
+
+    server_handle.abort();
+    let _ = server_handle.await;
+}
+
+#[tokio::test]
+#[ignore = "requires a running database server"]
+pub async fn timer_restore_timestamp_columns_regression() {
+    let pool = TEST_DB.get().expect("db not initialized").clone();
+    let job_id = uniq("timer-job");
+    let work_id = uniq("timer-work");
+    {
+        let c = pool.as_pg().unwrap().get().await.expect("pool");
+        c.execute(
+            "INSERT INTO x_work (id, title, process) VALUES ($1, 'Timer Work', 'proc-timer')",
+            &[&work_id],
+        )
+        .await
+        .expect("seed x_work for x_timer_job FK");
+        c.execute(
+            "INSERT INTO x_timer_job (id, work_id, task_id, fire_at, cron, created_at, kind) \
+             VALUES ($1, $2, NULL, '2024-01-02 03:04:05'::timestamp, NULL, \
+                     '2024-01-01 00:00:00'::timestamp, 'expire')",
+            &[&job_id, &work_id],
+        )
+        .await
+        .expect("seed x_timer_job timestamp columns");
+    }
+
+    let registry = processplatform_service_processing::timer::TimerRegistry::new();
+    registry
+        .restore(pool.as_pg().unwrap())
+        .await
+        .expect("restore 应读回 x_timer_job 真行");
+    let jobs = registry.jobs.read().await;
+    let job = jobs
+        .get(&job_id)
+        .unwrap_or_else(|| panic!("timer {} 未被 restore 读回", job_id));
+    assert_eq!(
+        job.fire_at.to_string(),
+        "2024-01-02 03:04:05",
+        "fire_at 应保持真实时间值"
+    );
+    assert_eq!(
+        job.created_at.to_string(),
+        "2024-01-01 00:00:00",
+        "created_at 应保持真实时间值"
+    );
+    println!(
+        "timer restore 读回: fire_at={} created_at={}",
+        job.fire_at, job.created_at
+    );
+}
+
+#[tokio::test]
+#[ignore = "requires a running database server"]
+pub async fn bam_config_enabled_column_regression() {
+    let pool = TEST_DB.get().expect("db not initialized").clone();
+    let (_addr, server_handle, token) =
+        crate::integration_tests::helpers::setup_test_server(pool.clone())
+            .await
+            .expect("start server");
+    let client = Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .unwrap();
+    let base = format!("http://{}", _addr);
+    let auth = format!("Bearer {}", token);
+
+    let bam_id = uniq("bam");
+    {
+        let c = pool.as_pg().unwrap().get().await.expect("pool");
+        c.execute(
+            "INSERT INTO x_bam_config (id, xid, xname, xdefinition, xenabled) \
+             VALUES ($1, $1, 'Seeded BAM', '{}', 'true')",
+            &[&bam_id],
+        )
+        .await
+        .expect("seed x_bam_config xenabled varchar");
+    }
+
+    let got = get_ok(
+        &base,
+        &client,
+        &auth,
+        &format!("/api/processplatform/assemble/bam/get/{}", bam_id),
+    )
+    .await;
+    assert_eq!(
+        got["data"]["enabled"].as_bool(),
+        Some(true),
+        "xenabled 为 VARCHAR 'true'，enabled 应为 true"
+    );
+    println!("bam/get 响应体: {}", got);
+
+    let created = post_ok(
+        &base,
+        &client,
+        &auth,
+        "/api/processplatform/assemble/bam/create",
+        json!({ "name": "Created BAM", "definition": "{}" }),
+    )
+    .await;
+    let created_id = created["data"]["id"].as_str().expect("create id");
+    assert_eq!(
+        created["data"]["created"].as_bool(),
+        Some(true),
+        "create 应写入成功（id 非空且 xenabled 为 VARCHAR）"
+    );
+    let readback = get_ok(
+        &base,
+        &client,
+        &auth,
+        &format!("/api/processplatform/assemble/bam/get/{}", created_id),
+    )
+    .await;
+    assert_eq!(
+        readback["data"]["enabled"].as_bool(),
+        Some(true),
+        "create 后回读 enabled 应为 true"
+    );
+    println!("bam/create 响应体: {}", created);
+
+    server_handle.abort();
+    let _ = server_handle.await;
+}

@@ -510,7 +510,7 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 | 批次 | crate | 预计处数 | 理由 |
 |------|-------|----------|------|
 | 1 | auth + organization_assemble_control | 3 | 登录/组织是每条请求的前置路径，引用热度最高；org 详情 handler 已在 O18 修，**列表 handler 仍有 2 处**（见下节现场确认） |
-| 2 | processplatform_service_processing + processplatform_assemble_bam | 7 | 工作流/任务页引用 18 次；x_task 起止时间 + timer job |
+| 2 | processplatform_service_processing + processplatform_assemble_bam | 7 | 工作流/任务页引用 18 次；x_task 起止时间 + timer job。**已收口**（见下节，另修连带 3 类：x_work.create_time、instance 5 处裸读、bam/create 的 INSERT） |
 | 3 | SILENT（component `order_number`） | 4 | **静默错数据比 500 更隐蔽**：`try_get` 吞错导致字段恒空，不报错就没人发现；按用户要求挪到第 2 批之后，先于其余 FAIL 批次 |
 | 4 | message_assemble_communicate + personal | 5 | IM 10 次、个人签名；时间戳同型，可批量验证同一改法 |
 | 5 | query_assemble_designer + query_assemble_surface | 5 | 查询设计/展示页 7 次；`update_time/create_time` |
@@ -562,6 +562,50 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 **ldap 为什么是唯一豁免**：A 类真缺（`GET /api/ldap/config` 无实现）+ parity 书面承诺（见 O20 表 #2）。**豁免到期条件**同该条转绿条件：① 实现端点并过 parity；② 正式撤销 parity 承诺并删除本条。到期未处理 = 守卫清单与实现状态不一致，按台账违约处理。
 
 **计数**：本项属 O19 一轮内的“门禁补齐”，不计实质轮次；集成测试通过数仍按 `24 passed / 1 failed（ldap 本地红）` 记账，CI 口径为 `24 passed / 0 failed`（ldap 豁免）。
+
+### O19 批次 2 收口（processplatform_service_processing + bam）
+
+**SQL 现场逐条确认**（实库 `information_schema.columns`；`x_work` 与 `x_task` 的时间列都是 `timestamp without time zone`）：
+
+| # | 位置 | SELECT 原文（关键列） | 列真实类型 | 代码取值类型 | 现场结论 |
+|---|------|----------------------|-----------|-------------|---------|
+| 1 | `processplatform_service_processing/src/lib.rs:91`（get） | `SELECT id, title, activity, activity_token, person, start_time, end_time FROM x_task WHERE work = $1` | `x_task.start_time` TIMESTAMP | `Option<String>` | 错配 |
+| 2 | 同上 `:95` | 同上 | `x_task.end_time` TIMESTAMP | `Option<String>` | 错配 |
+| 3 | 同上 `:136`（get 的 work 段） | `SELECT id, title, process, application, work_status, creator, create_time, start_time, end_time FROM x_work WHERE id = $1` | `x_work.start_time` TIMESTAMP | `Option<String>` | 错配 |
+| 4 | 同上 `:140` | 同上 | `x_work.end_time` TIMESTAMP | `Option<String>` | 错配 |
+| 5 | 同上 `:4188`（timer restore） | `SELECT id, work_id, task_id, fire_at, cron, created_at, kind, ... FROM x_timer_job` | `fire_at` / `created_at` TIMESTAMP NOT NULL | `String` + `parse_from_str` | 错配（`get` 阶段就失败，parse 永远到不了） |
+| 6 | 同上 `:4189` | 同上 | 同上 | 同上 | 错配 |
+| 7 | `processplatform_assemble_bam/src/lib.rs:56` | `SELECT xid, xname, xdefinition, xenabled FROM x_bam_config WHERE xid = $1` | `xenabled` = `character varying` | `Option<bool>` | 错配 |
+
+**成串暴露（本轮额外发现并已修，同一端点内）**：
+- `x_work.create_time` 在 get/instance 两个 handler 里也按 String 读（scanner 未报）→ 一并修为 `Option<NaiveDateTime>`。
+- `get_process_instance` 的 5 处时间读取全部是裸 `row.get("...")`（scanner 无法推断类型，直接漏报）→ 一并修。
+- `bam/create` 的 INSERT 写 `xenabled, true`（bool 字面量进 varchar 列，Postgres 不隐式转换）且漏了 NOT NULL 的 `id` 列 → 修成 `(id, xid, xname, xdefinition, xenabled) VALUES ($1,$1,$2,$3,'true')`。
+
+**破坏实验（逐列回退 → 同一用例必红，均已还原）**：
+
+| 回退的列 | 红原文 | 用例 |
+|---|---|---|
+| `x_task.start_time` | `error retrieving column start_time: error deserializing column 5` | `process_timestamp_columns_regression` |
+| `x_task.end_time` | `... end_time: error deserializing column 6` | 同上 |
+| `x_work.start_time` | `... start_time: error deserializing column 7` | 同上 |
+| `x_work.end_time` | `... end_time: error deserializing column 8` | 同上 |
+| `x_work.create_time` | `... create_time: error deserializing column 6` | 同上 |
+| `x_timer_job.fire_at` | `... fire_at: error deserializing column 3` | `timer_restore_timestamp_columns_regression` |
+| `x_timer_job.created_at` | `... created_at: error deserializing column 5`（实际 SELECT 列序 5，扫描器行号 4186 只是线索） | 同上 |
+| `x_bam_config.xenabled` | `... xenabled: error deserializing column 2` | `bam_config_enabled_column_regression` |
+| `bam/create` 旧 INSERT | 500 `{"type":"error","message":"internal server error","prompt":"com.x.base.core.project.exception.ExceptionInternal"}` | 同上 |
+
+**改后响应体（关键字段）**：
+- `processing/get`：`{"createTime":"2024-01-01 00:00:00","startTime":"2024-01-02 03:04:05","endTime":"2024-01-03 06:07:08","tasks":[{"startTime":"2024-01-02 03:04:05","endTime":"2024-01-03 06:07:08",...}]}`（instance 同形）
+- `bam/get`：`{"enabled":true,...}`；`bam/create`：`{"created":true,"id":"<uuid>"}`，回读 `enabled=true`
+- timer restore 直接读回：`fire_at=2024-01-02 03:04:05 created_at=2024-01-01 00:00:00`（seed 真值）
+
+**扫描器盲区（必须记账，不许当成已清零）**：同一文件 `process_id_complex` handler 的 `:2407/:2409` 仍是裸 `row.get("start_time")/("end_time")`，对应 `x_task` TIMESTAMP，**scanner 不报**（无 turbofish 时推断不出类型）。本轮未修（不在批次 2 端点、补测试才能改），列入批次 3 之后的新增项。`x_status` 类 `to_char` 出来的 TEXT 列（如 `:2341`）是真 TEXT，不是盲区。
+
+**其他观察（未在本轮改动）**：`TimerRegistry::restore` 目前仓库内无调用方（`routes.rs` 只调 `start_background`）。即 timer 任务的错配过去不会在生产触发，但重启后不恢复 timer 本身是另一个接线缺口，单独记入后续轮次。
+
+**结果**：`run_integration_scenarios.py` → **27 passed / 0 failed**（ldap 豁免）；扫描器 `FAIL=35 → 28`，SILENT=4 / LOOSE=10 未变；fmt / clippy / 三个生成物检查全绿。
 
 ## O20 消费者证据判定（O18 六条红灯收口）
 

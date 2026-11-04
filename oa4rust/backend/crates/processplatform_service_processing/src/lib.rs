@@ -60,6 +60,8 @@ pub async fn get_process(
         .await
         .unwrap_or_default();
 
+    // x_task.start_time / end_time 是 TIMESTAMP，按 String 读取会在 FromSql 失败。
+    let fmt_ts = |v: Option<chrono::NaiveDateTime>| v.map(|t| t.to_string()).unwrap_or_default();
     let task_list: Vec<Value> = tasks
         .iter()
         .map(|row| {
@@ -86,14 +88,11 @@ pub async fn get_process(
                 ),
                 (
                     "startTime".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("start_time")
-                            .unwrap_or_default(),
-                    ),
+                    Value::String(fmt_ts(row.get("start_time"))),
                 ),
                 (
                     "endTime".to_string(),
-                    Value::String(row.get::<_, Option<String>>("end_time").unwrap_or_default()),
+                    Value::String(fmt_ts(row.get("end_time"))),
                 ),
             ]))
         })
@@ -130,21 +129,15 @@ pub async fn get_process(
             ),
             (
                 "createTime".to_string(),
-                Value::String(
-                    row.get::<_, Option<String>>("create_time")
-                        .unwrap_or_default(),
-                ),
+                Value::String(fmt_ts(row.get("create_time"))),
             ),
             (
                 "startTime".to_string(),
-                Value::String(
-                    row.get::<_, Option<String>>("start_time")
-                        .unwrap_or_default(),
-                ),
+                Value::String(fmt_ts(row.get("start_time"))),
             ),
             (
                 "endTime".to_string(),
-                Value::String(row.get::<_, Option<String>>("end_time").unwrap_or_default()),
+                Value::String(fmt_ts(row.get("end_time"))),
             ),
             ("tasks".to_string(), Value::Array(task_list)),
         ]),
@@ -289,6 +282,8 @@ pub async fn get_process_instance(
         .await
         .map_err(|_| AppError::Internal)?;
 
+    // x_work/x_task 的时间列都是 TIMESTAMP，统一按 NaiveDateTime 读取再回写字符串。
+    let fmt_ts = |v: Option<chrono::NaiveDateTime>| v.map(|t| t.to_string()).unwrap_or_default();
     let task_list: Vec<Value> = tasks
         .iter()
         .map(|row| {
@@ -315,9 +310,12 @@ pub async fn get_process_instance(
                 ),
                 (
                     "startTime".to_string(),
-                    Value::String(row.get("start_time")),
+                    Value::String(fmt_ts(row.get("start_time"))),
                 ),
-                ("endTime".to_string(), Value::String(row.get("end_time"))),
+                (
+                    "endTime".to_string(),
+                    Value::String(fmt_ts(row.get("end_time"))),
+                ),
             ]))
         })
         .collect();
@@ -353,13 +351,16 @@ pub async fn get_process_instance(
             ),
             (
                 "createTime".to_string(),
-                Value::String(row.get("create_time")),
+                Value::String(fmt_ts(row.get("create_time"))),
             ),
             (
                 "startTime".to_string(),
-                Value::String(row.get("start_time")),
+                Value::String(fmt_ts(row.get("start_time"))),
             ),
-            ("endTime".to_string(), Value::String(row.get("end_time"))),
+            (
+                "endTime".to_string(),
+                Value::String(fmt_ts(row.get("end_time"))),
+            ),
             ("tasks".to_string(), Value::Array(task_list)),
         ]),
     ))))
@@ -4182,13 +4183,10 @@ pub mod timer {
 
             let mut jobs = self.jobs.write().await;
             for row in rows.iter() {
-                let fire_at_str: String = row.get("fire_at");
-                let created_at_str: String = row.get("created_at");
-                let fire_at = NaiveDateTime::parse_from_str(&fire_at_str, "%Y-%m-%d %H:%M:%S")
-                    .unwrap_or_else(|_| chrono::Utc::now().naive_utc());
-                let created_at =
-                    NaiveDateTime::parse_from_str(&created_at_str, "%Y-%m-%d %H:%M:%S")
-                        .unwrap_or_else(|_| chrono::Utc::now().naive_utc());
+                // fire_at / created_at 是 TIMESTAMP，直接按 NaiveDateTime 读取；
+                // 不再走 String + parse（FromSql 早在 get 时就失败）。
+                let fire_at: NaiveDateTime = row.get("fire_at");
+                let created_at: NaiveDateTime = row.get("created_at");
                 let job = TimerJob {
                     id: row.get("id"),
                     work_id: row.get("work_id"),

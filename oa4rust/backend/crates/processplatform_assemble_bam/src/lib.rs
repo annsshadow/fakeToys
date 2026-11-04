@@ -53,7 +53,11 @@ pub async fn get_bam_config(
             ),
             (
                 "enabled".to_string(),
-                Value::Bool(row.get::<_, Option<bool>>("xenabled").unwrap_or(false)),
+                Value::Bool(
+                    row.get::<_, Option<String>>("xenabled")
+                        .map(|v| v.eq_ignore_ascii_case("true") || v == "1")
+                        .unwrap_or(false),
+                ),
             ),
             (
                 "definition".to_string(),
@@ -83,7 +87,10 @@ pub async fn create_bam(
 
     let result = client
         .execute(
-            "INSERT INTO x_bam_config (xid, xname, xdefinition, xenabled) VALUES ($1, $2, $3, true)",
+            // x_bam_config.id 为 NOT NULL 且无默认值，xid 才是业务主键；
+            // xenabled 是 VARCHAR，不写 true 字面量（Postgres 不做 bool→varchar 隐式转换）。
+            "INSERT INTO x_bam_config (id, xid, xname, xdefinition, xenabled) \
+             VALUES ($1, $1, $2, $3, 'true')",
             &[&id, &name, &definition],
         )
         .await
