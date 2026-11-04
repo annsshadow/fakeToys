@@ -89,6 +89,14 @@ async fn attribute_paths_contract() {
     integration_tests::scenarios::attribute_paths::attribute_paths_flow(ctx.pool.clone()).await;
 }
 
+/// O24-3 批次 12：E23503 work 删除的「先子后父」顺序。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn work_delete_paths_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::work_delete_paths::work_delete_paths_flow(ctx.pool.clone()).await;
+}
+
 /// O24-3 批次 11：E42601 document filter 纯 tail 拼进 WHERE。
 #[ignore = "requires a running database server"]
 #[tokio::test]

@@ -2290,6 +2290,18 @@ pub async fn work_delete(
         return biz_err("work not found");
     };
     u4_require_actor_of(&pool.0, &session, Some(&creator)).await?;
+    // x_timer_job.work_id 是有 FK 的子表（NO ACTION，information_schema 现场确认），
+    // 必须先于 x_work 删除，否则 E23503 foreign_key_violation；x_task / x_draft 同属
+    // 该 work 的数据面，按「先子后父」一并清掉。
+    tx.execute("DELETE FROM x_timer_job WHERE work_id = $1", &[&id])
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    tx.execute("DELETE FROM x_task WHERE work = $1", &[&id])
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    tx.execute("DELETE FROM x_draft WHERE work_id = $1", &[&id])
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let n = tx
         .execute("DELETE FROM x_work WHERE id = $1", &[&id])
         .await
@@ -2297,12 +2309,6 @@ pub async fn work_delete(
     if n == 0 {
         return biz_err("work not found");
     }
-    tx.execute("DELETE FROM x_task WHERE work = $1", &[&id])
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
-    tx.execute("DELETE FROM x_draft WHERE work_id = $1", &[&id])
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     tx.commit().await?;
     ok(json!({ "id": id, "value": true }))
 }

@@ -81,9 +81,13 @@
 # `list_from_table_filtered_inner` 拆分 where_clause 时只认带前导空格的 `" ORDER BY "`，
 # manager 变体传的是**纯 tail**（`ORDER BY create_time DESC LIMIT 200`）→ 漏匹配后拼成
 # `SELECT ... WHERE ORDER BY ...`。改为无前导空格的关键字匹配，tail 单独追加。
+#
+# 2026-11-05 基线 6 → 5（GET 5 / 非 GET 0）：O24-3 批次 12 清掉 E23503 的 work 删除 1 条。
+# `x_timer_job.work_id` 是指向 `x_work` 的 FK（NO ACTION，information_schema 现场确认），
+# 旧实现先删 x_work → foreign_key_violation。改为「先子后父」：
+# x_timer_job → x_task → x_draft → x_work。剩余 5 条全部是 GET。
 GET /api/ai_assemble_control/chat/list/completion/{clueId}/paging/{page}/size/{size}	category:E42P18	owner:O24数据层对齐(后端)	due:2026-11-12	cond:给 $2 显式 ::text/CAST；200 后删行
 GET /api/meeting/core/entity/room/list	column:equipment	owner:O24数据层对齐(后端)	due:2026-11-26	cond:改 try_get/Option 类型对齐实体；200 后删行
 GET /api/meeting/core/entity/room/{id}	column:equipment	owner:O24数据层对齐(后端)	due:2026-11-26	cond:改 try_get/Option 类型对齐实体；200 后删行
 GET /api/organization/assemble/control/identity/{flag}/order/before/{followFlag}	category:wrong-type	owner:O24数据层对齐(后端)	due:2026-11-26	cond:按列真实类型改写绑定参数；200 后删行
-DELETE /api/processplatform/service/processing/work/{id}	category:E23503	owner:O24数据层对齐(后端)	due:2026-12-10	cond:先清子表或改 ON DELETE CASCADE；200 后删行
 GET /api/program_center/market/{flag}/installed/version	column:status	owner:O24数据层对齐(后端)	due:2026-11-12	cond:改 try_get 并统一实体/列类型；200 后删行

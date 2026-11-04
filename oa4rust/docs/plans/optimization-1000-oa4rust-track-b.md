@@ -998,16 +998,17 @@ GET /api/meeting/core/entity/room/{id}   column:equipment
 基线因此 **40 → 42（GET 11 / 非 GET 31）**，`BASELINE_COUNT=42`，集合相等。CI 的旧 40
 不是「更干净」，而是**扫描器当时没读到种子库**——这也是本次把口径写进台账的原因。
 
-### O24-3 待修 6 条（顺序与纪律，批次 1-11 已清 36）
+### O24-3 待修 5 条（全部 GET，批次 1-12 已清 37）
 
-**口径**：非 GET 1 条 + GET 5 条 = 6（原 42；批次 1 清 1、批次 2 清 4、批次 3 清 4、批次 4 清 3、
-批次 5 清 2、批次 6 清 7、批次 7 清 4、批次 8 清 3、批次 9 清 4、批次 10 清 3、批次 11 清 1）。
+**口径**：非 GET 0 条 + GET 5 条 = 5（原 42；批次 1 清 1、批次 2 清 4、批次 3 清 4、批次 4 清 3、
+批次 5 清 2、批次 6 清 7、批次 7 清 4、批次 8 清 3、批次 9 清 4、批次 10 清 3、批次 11 清 1、
+批次 12 清 1）。
 
 排序按真实用户后果，不按条数：
 
 1. **写路径里「会写库但报错」的族**（用户以为失败、实际可能已落库）优先；
-2. 再按条数多的可批量验证族（当前只剩 `DELETE .../processing/work/{id}` 1 条非 GET）；
-3. GET 留最后。
+2. 再按条数多的可批量验证族（非 GET 已清零）；
+3. GET 留最后（当前剩余 5 条全部属于此档）。
 
 每批固定流程：`information_schema` 现场确认真实列类型 → **先红**（复现当前 500）→ 改 →
 行为级响应体断言 → 破坏实验 → **单独提交** → **删对应基线行并下调 `BASELINE_COUNT`**。
@@ -1386,6 +1387,29 @@ where_clause 是**纯 tail**（`ORDER BY create_time DESC LIMIT 200`）。旧拆
 **收口**：删 1 条基线路，`BASELINE_COUNT 7 → 6`；门禁实测
 `== 棘轮基线：6 条（当前 6 条），集合相等 ==`。
 
+### O24-3 批次 12：`E23503` work 删除顺序（1 条）
+
+**schema 现场证据**（FK 查询）：
+
+```text
+x_timer_job.work_id → x_work.id，delete_rule = NO ACTION
+```
+
+旧实现先 `DELETE FROM x_work` 再清 `x_task` / `x_draft`，只要该 work 有定时任务就
+`E23503 foreign_key_violation`。改为**先子后父**：`x_timer_job` → `x_task` → `x_draft` → `x_work`
+（同一事务内，行锁与归属校验不变）。
+
+**先红**：`work_delete_paths_contract` 未改代码时实测 500 +
+`E23503 ... violates foreign key constraint "x_timer_job_work_id_fkey"`。
+
+**行为断言**（写后必读）：DELETE → 200 + `data.value=true`，回库四张表（work/task/draft/timer_job）
+都不再有该 work 的行；另断言不存在的 work 仍是 `200 + type=error` 旧语义（未把 not-found 改成 5xx）。
+
+**破坏实验**：临时跳过 `x_timer_job` 删除 → 红（E23503）；复原后绿。
+
+**收口**：删 1 条基线路，`BASELINE_COUNT 6 → 5`；门禁实测
+`== 棘轮基线：5 条（当前 5 条），集合相等 ==`。**剩余 5 条全部是 GET。**
+
 ### 写路径修复规矩：「写后必读」（批次 7 起，强制执行）
 
 任何写路径修复都必须补一条**写入后立即读回并断言同一值**的用例（SQL 直读同库），
@@ -1434,6 +1458,7 @@ where_clause 是**纯 tail**（`ORDER BY create_time DESC LIMIT 200`）。旧拆
 | O24-3 批次 9（E42703 属性表路径） | 0 | **4** | **-4**（14→10） | 10 |
 | O24-3 批次 10（E42804 脚本软删 + mergeitem） | 0 | **3** | **-3**（10→7） | 7 |
 | O24-3 批次 11（E42601 document filter 纯 tail） | 0 | **1** | **-1**（7→6） | 6 |
+| O24-3 批次 12（E23503 work 删除顺序） | 0 | **1** | **-1**（6→5） | 5 |
 
 **清除清单**：
 
@@ -1450,4 +1475,5 @@ where_clause 是**纯 tail**（`ORDER BY create_time DESC LIMIT 200`）。旧拆
 | O24-3 批次 9 | `E42703` 的属性表路径（无 `name` 列） | `PUT/DELETE /api/organization/assemble/control/personattribute/{flag}`；`PUT/DELETE /api/organization/assemble/control/unitattribute/{flag}` | `attribute_paths_contract`：先红 500（E42703 `column "name"`）→ 改后 200 且回库 `attribute_value`/`deleted_at` 命中（写后必读）、软删后再 PUT `type=error`；破坏实验分别还原 person 解析 / unit 软删 → 各自红；门禁 10/10 集合相等 |
 | O24-3 批次 10 | `E42804` 脚本软删 text→timestamp；mergeitem `COALESCE` 类型 | `DELETE /api/portal/assemble/designer/script/{id}`；`DELETE /api/processplatform/assemble/designer/script/{id}`；`GET /api/processplatform/service/processing/touch/mergeitem` | `script_delete_paths_contract`：先红 500（E42804）→ 改后 200 且回库 `deleted_at` 非空、mergeitem 只剩最早 1 行（写后必读）；破坏实验分别还原 psp `to_char` / `COALESCE(..., id)` → 各自红；门禁 7/7 集合相等 |
 | O24-3 批次 11 | `E42601` document filter 纯 tail 拼进 WHERE | `POST /api/document/filter/list/{page}/size/{size}/manager` | `document_filter_paths_contract`：先红 500（E42601，position 48）→ 改后 manager 与常规分页均 200 且返回种子文档；破坏实验把关键字改回带前导空格 → 红；门禁 6/6 集合相等 |
+| O24-3 批次 12 | `E23503` work 删除先删父表 | `DELETE /api/processplatform/service/processing/work/{id}` | `work_delete_paths_contract`：先红 500（E23503 `x_timer_job_work_id_fkey`）→ 改后 200 且四张表均无残留（写后必读）、not-found 仍 `type=error`；破坏实验跳过 timer_job 删除 → 红；门禁 5/5 集合相等 |
 
