@@ -26,6 +26,11 @@
 # POST /api/portal/assemble/surface/publish/{id}（column:published）。
 # 该路由是唯一「先落库、后 500」的基线项：UPDATE published=true 已提交，
 # 随后 SELECT 按 TEXT 解码 BOOLEAN 列 panic。改为 Option<bool> 后 200，删行。
+#
+# 2026-11-05 基线 41 → 37（GET 11 / 非 GET 26）：O24-3 批次 2 清掉 JSONB 参数绑定族 4 条
+# —— meeting room save、processplatform surface save、queryview part/update 两条路由
+# （后两条共用同一 handler）。根因一致：`$n::jsonb` 把参数推断为 JSONB，Rust 侧却绑 String。
+# 分别改为 `$5::text::jsonb` / `$1::text` / `$2::text::jsonb` 后 200。
 GET /api/ai_assemble_control/chat/list/completion/{clueId}/paging/{page}/size/{size}	category:E42P18	owner:O24数据层对齐(后端)	due:2026-11-12	cond:给 $2 显式 ::text/CAST；200 后删行
 GET /api/attendance/assemble/control/statistic/do	category:E42P10	owner:O24数据层对齐(后端)	due:2026-12-10	cond:指向真实唯一索引或改 UPDATE-then-INSERT；200 后删行
 POST /api/attendance/assemble/control/statistic/do	category:E42P10	owner:O24数据层对齐(后端)	due:2026-12-10	cond:指向真实唯一索引或改 UPDATE-then-INSERT；200 后删行
@@ -42,7 +47,6 @@ POST /api/hotpic/assemble/control/user/hotpic	category:E23502	owner:O24数据层
 POST /api/hotpic/create/hotpic	category:E23502	owner:O24数据层对齐(后端)	due:2026-12-10	cond:补必填 application/默认值或返回 400；后删行
 GET /api/hotpic_assemble_control/create/hotpic	category:E23502	owner:O24数据层对齐(后端)	due:2026-12-10	cond:补必填 application/默认值或返回 400；后删行
 GET /api/hotpic_assemble_control/update/control/config	category:E23502	owner:O24数据层对齐(后端)	due:2026-12-10	cond:补必填 application/默认值或返回 400；后删行
-POST /api/meeting/core/entity/room/save/{id}	category:wrong-type	owner:O24数据层对齐(后端)	due:2026-11-26	cond:按列真实类型改写绑定参数；200 后删行
 GET /api/meeting/core/entity/room/list	column:equipment	owner:O24数据层对齐(后端)	due:2026-11-26	cond:改 try_get/Option 类型对齐实体；200 后删行
 GET /api/meeting/core/entity/room/{id}	column:equipment	owner:O24数据层对齐(后端)	due:2026-11-26	cond:改 try_get/Option 类型对齐实体；200 后删行
 POST /api/message/custom/create	category:E23502	owner:O24数据层对齐(后端)	due:2026-12-10	cond:补必填 id/默认值或返回 400；后删行
@@ -57,7 +61,6 @@ DELETE /api/portal/assemble/designer/script/{id}	category:E42804	owner:O24数据
 DELETE /api/processplatform/assemble/designer/script/{id}	category:E42804	owner:O24数据层对齐(后端)	due:2026-11-26	cond:统一 timestamp 绑定或强转；200 后删行
 POST /api/processplatform/assemble/surface/draft/start/{id}	category:param-count	owner:O24数据层对齐(后端)	due:2026-11-19	cond:对齐 $1..$n 与绑定参数；200/400 后删行
 GET /api/processplatform/assemble/surface/draft/{id}/start	category:param-count	owner:O24数据层对齐(后端)	due:2026-11-19	cond:对齐 $1..$n 与绑定参数；200/400 后删行
-POST /api/processplatform/assemble/surface/save/{id}	category:wrong-type	owner:O24数据层对齐(后端)	due:2026-11-26	cond:按列真实类型改写绑定参数；200 后删行
 GET /api/processplatform/service/processing/touch/mergeitem	category:E42804	owner:O24数据层对齐(后端)	due:2026-11-26	cond:统一 timestamp 绑定或强转；200 后删行
 DELETE /api/processplatform/service/processing/work/{id}	category:E23503	owner:O24数据层对齐(后端)	due:2026-12-10	cond:先清子表或改 ON DELETE CASCADE；200 后删行
 GET /api/program_center/market/{flag}/installed/version	column:status	owner:O24数据层对齐(后端)	due:2026-11-12	cond:改 try_get 并统一实体/列类型；200 后删行
@@ -65,5 +68,3 @@ POST /api/query/assemble/designer/query/{flag}/permission	category:param-count	o
 POST /api/query/assemble/designer/stat/{id}/permission	category:param-count	owner:O24数据层对齐(后端)	due:2026-11-19	cond:对齐 $1..$n 与绑定参数；200/400 后删行
 POST /api/query/assemble/designer/table/{flag}/permission	category:param-count	owner:O24数据层对齐(后端)	due:2026-11-19	cond:对齐 $1..$n 与绑定参数；200/400 后删行
 POST /api/query/assemble/designer/view/{id}/permission	category:param-count	owner:O24数据层对齐(后端)	due:2026-11-19	cond:对齐 $1..$n 与绑定参数；200/400 后删行
-POST /api/queryview/table/row/part/update/{tableFlag}/{id}	category:wrong-type	owner:O24数据层对齐(后端)	due:2026-11-26	cond:按列真实类型改写绑定参数；200 后删行
-POST /api/queryview/table/{flag}/row/{rid}/part/update	category:wrong-type	owner:O24数据层对齐(后端)	due:2026-11-26	cond:按列真实类型改写绑定参数；200 后删行

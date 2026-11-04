@@ -2545,7 +2545,7 @@ pub async fn table_tableFlag_row_id_part_update(
     let result = client
         .execute(
             "UPDATE x_query_table_data \
-             SET data = jsonb_set(COALESCE(data,'{}')::jsonb, ARRAY[$1], $2::jsonb, true), \
+             SET data = jsonb_set(COALESCE(data,'{}')::jsonb, ARRAY[$1], $2::text::jsonb, true), \
                  update_time = to_char(NOW(),'YYYY-MM-DD HH24:MI:SS') \
              WHERE table_flag = $3 AND id = $4",
             &[&"/part", &data_str, &table_flag, &id],

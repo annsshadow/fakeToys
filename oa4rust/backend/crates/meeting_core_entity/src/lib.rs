@@ -310,7 +310,10 @@ pub async fn update_room(
     let client = shared::db::acquire(&pool).await?;
     let rows_affected = client
         .execute(
-            "UPDATE x_meeting_room SET name = $1, building_id = $2, floor = $3, capacity = $4, equipment = $5, description = $6, photo = $7, order_number = $8 WHERE id = $9",
+            // O24-3 批次 2：`equipment` 真实类型是 JSONB（information_schema 现场确认）。
+            // `$5` 直接参与赋值会被推断为 JSONB，而 Rust 侧绑定的是 Option<String>
+            // → ToSql WrongType。显式 `$5::text::jsonb` 让绑定保持文本，服务端再转 JSONB。
+            "UPDATE x_meeting_room SET name = $1, building_id = $2, floor = $3, capacity = $4, equipment = $5::text::jsonb, description = $6, photo = $7, order_number = $8 WHERE id = $9",
             &[
                 &name, &building_id, &floor, &capacity, &equipment, &description,
                 &photo, &order_number, &id,

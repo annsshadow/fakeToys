@@ -560,7 +560,10 @@ pub async fn save_surface(
 
     let result = client
         .execute(
-            "UPDATE x_process_surface SET content = $1::jsonb, update_time = NOW() WHERE id = $2",
+            // O24-3 批次 2：`content` 真实类型是 TEXT（information_schema 现场确认）。
+            // 旧 SQL 的 `$1::jsonb` 会把参数推断成 JSONB，而 Rust 侧绑定 String
+            // → ToSql WrongType；写成 `$1::text` 即可原样存 JSON 文本。
+            "UPDATE x_process_surface SET content = $1::text, update_time = NOW() WHERE id = $2",
             &[&content_str, &id],
         )
         .await

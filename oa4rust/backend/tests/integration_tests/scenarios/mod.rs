@@ -6,6 +6,7 @@ pub mod bpmn_process;
 pub mod cms_document;
 pub mod cms_extended;
 pub mod file_portal;
+pub mod jsonb_param_binding;
 pub mod ldap_fallback;
 pub mod new_real_endpoints;
 pub mod organization_core_express;

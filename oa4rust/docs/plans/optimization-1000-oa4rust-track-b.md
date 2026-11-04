@@ -911,7 +911,7 @@ test result: FAILED. 0 passed; 1 failed
 
 | 族（reason） | 路由（方法 + 路径） | 根因 | 转绿条件 | 责任人 | 期限 |
 |---|---|---|---|---|---|
-| `category:wrong-type`（9） | `POST/PUT /api/bbs/assemble/control/update/control/config`；`POST/PUT /api/general/assemble/control/status/update`；`POST /api/meeting/core/entity/room/save/{id}`；`GET /api/organization/assemble/control/identity/{flag}/order/before/{followFlag}`；`POST /api/processplatform/assemble/surface/save/{id}`；`POST /api/queryview/table/row/part/update/{tableFlag}/{id}`；`POST /api/queryview/table/{flag}/row/{rid}/part/update` | Rust 参数与列类型不一致（Int4↔i64、Text↔bool、Jsonb↔String、Int8↔i32） | 按列真实类型改写绑定参数/`serde_json::Value`；对应路由 200 后删行并下调 `BASELINE_COUNT` | O24 数据层对齐（后端） | 2026-11-26 |
+| `category:wrong-type`（5，原 9） | `POST/PUT /api/bbs/assemble/control/update/control/config`；`POST/PUT /api/general/assemble/control/status/update`；`GET /api/organization/assemble/control/identity/{flag}/order/before/{followFlag}` | Rust 参数与列类型不一致（Int4↔i64、Text↔bool、Int8↔i32）（Jsonb↔String 子族已在批次 2 清除） | 按列真实类型改写绑定参数/`serde_json::Value`；对应路由 200 后删行并下调 `BASELINE_COUNT` | O24 数据层对齐（后端） | 2026-11-26 |
 | `category:E42703`（4） | `DELETE/PUT /api/organization/assemble/control/personattribute/{flag}`；`DELETE/PUT /api/organization/assemble/control/unitattribute/{flag}` | SQL 引用不存在的列 `name` | 按 migration 实态改列名（或补列）；200 后删 4 行 | O24 数据层对齐（后端） | 2026-11-26 |
 | `category:E42804`（3） | `DELETE /api/portal/assemble/designer/script/{id}`；`DELETE /api/processplatform/assemble/designer/script/{id}`；`GET /api/processplatform/service/processing/touch/mergeitem` | `deleted_at` TEXT 对 timestamp；`COALESCE` 两侧类型不一致 | 统一 timestamp 绑定/强转；200 后删 3 行 | O24 数据层对齐（后端） | 2026-11-26 |
 | `category:E23502`（10） | `POST /api/console/send/message`；`POST /api/document/cipher/{id}/persist/view/record`；`POST /api/message/custom/create`；`POST/GET /api/hotpic*/create/hotpic`；`POST/GET /api/hotpic*/update/control/config`；`POST /api/hotpic/assemble/control/user/hotpic`；`POST /api/portal/assemble/designer/page`；`POST /api/portal/assemble/designer/page/create` | INSERT 未生成必填 `id` / `application` / `portal_id` | 补 UUID/默认值或返回 400；200/400 后删 10 行 | O24 数据层对齐（后端） | 2026-12-10 |
@@ -998,15 +998,15 @@ GET /api/meeting/core/entity/room/{id}   column:equipment
 基线因此 **40 → 42（GET 11 / 非 GET 31）**，`BASELINE_COUNT=42`，集合相等。CI 的旧 40
 不是「更干净」，而是**扫描器当时没读到种子库**——这也是本次把口径写进台账的原因。
 
-### O24-3 待修 41 条（顺序与纪律，批次 1 已清 1）
+### O24-3 待修 37 条（顺序与纪律，批次 1-2 已清 5）
 
-**口径**：非 GET 30 条 + GET 11 条 = 41（原 42，批次 1 清掉 1 条非 GET）。用户说的「GET 9 条」是旧 40 口径；O24 库隔离
+**口径**：非 GET 26 条 + GET 11 条 = 37（原 42；批次 1 清 1 条非 GET，批次 2 清 4 条非 GET）。用户说的「GET 9 条」是旧 40 口径；O24 库隔离
 修复新增的 2 条 `column:equipment` 也是 GET，故 GET 现为 11（旧的 9 条包含在内）。
 
 排序按真实用户后果，不按条数：
 
 1. **写路径里「会写库但报错」的族**（用户以为失败、实际可能已落库）优先；
-2. 再按条数多的可批量验证族（`wrong-type` 9、`param-count` 6 等）；
+2. 再按条数多的可批量验证族（`wrong-type` 剩 5、`param-count` 6 等）；
 3. GET 留最后。
 
 每批固定流程：`information_schema` 现场确认真实列类型 → **先红**（复现当前 500）→ 改 →
@@ -1055,6 +1055,45 @@ id | text | YES |    published | boolean | YES |    published_at | text | YES | 
 `BASELINE_COUNT 42 → 41`；门禁实测 `== 棘轮基线：41 条（当前 41 条），集合相等 ==`
 （覆盖行 `读 2393 / 写 1980；执行 读 2393 / 写 1979（共 4372）`）。
 
+### O24-3 批次 2：JSONB 参数绑定族（4 条，3 个 handler）
+
+**族判定**：按错误类别 `wrong-type` 的 9 条里，按「列/参数真实类型」再分族。本批是
+Jsonb↔String 子族：SQL 里 `$n::jsonb` 或 `jsonb_set(..., $2::jsonb, ...)` 把参数类型
+**推断为 JSONB**，而 Rust 侧绑定 `String`/`Option<String>` → `ToSql` 失败
+（`WrongType { postgres: Jsonb, rust: "..." }`）。共 4 条基线、3 个 handler
+（queryview 两条路由共用 `table_tableFlag_row_id_part_update`）。
+
+**SQL 现场确认**（`information_schema.columns`，测试库现场）：
+
+```text
+x_meeting_room.equipment        | jsonb
+x_process_surface.content       | text      ← 并不是 jsonb，旧 SQL 的 ::jsonb 只是加在参数上
+x_query_table_data.data         | text      ← 同上
+```
+
+**先红**：新增 `tests/integration_tests/scenarios/jsonb_param_binding.rs`
+（`integration_runner` 独立 `#[ignore]` 用例 `jsonb_param_binding_contract`），逐条真实 HTTP：
+会议室保存 `equipment` 数组 → 200 且回库 `equipment::text` 等于 JSON；过程表面保存
+payload → 200 且 `data.content` 原样回显、回库内容等于 payload；queryview 两条路由各一次
+局部更新 → 200 `saved=1` 且回库 `data::jsonb->'/part'` 等于 payload。
+未改代码时实测红（第一条即 500，日志
+`source=crates\meeting_core_entity\src\lib.rs:320: ... ToSql(4) ... WrongType { postgres: Jsonb, rust: "Option<String>" }`）。
+
+**改**：让参数侧保持文本，写入仍产生合法 JSON：
+
+| handler | 旧 | 新 |
+|---|---|---|
+| `meeting_core_entity::update_room` | `equipment = $5` | `equipment = $5::text::jsonb` |
+| `processplatform_assemble_surface::save_surface` | `content = $1::jsonb` | `content = $1::text`（列本身是 TEXT） |
+| `query_assemble_surface::table_tableFlag_row_id_part_update` | `ARRAY[$1], $2::jsonb` | `ARRAY[$1], $2::text::jsonb` |
+
+**破坏实验**（逐个复原，证明 3 个 handler 各自被钉住）：
+① 三处全复原 → 第 1 条红（meeting 500）；② 只复原后两处 → 第 2 条红（processplatform
+`ToSql(0) Jsonb vs String`）；③ 只复原 queryview → 第 3 条红（`ToSql(1)`）；④ 全部复原修复 → 全绿。
+
+**收口**：删 4 条基线路，`BASELINE_COUNT 41 → 37`；门禁实测
+`== 棘轮基线：37 条（当前 37 条），集合相等 ==`。
+
 ### O24-1 收口：express 成功路径（裁定执行）
 
 `organization/core/express` 的 500→200 不再只靠推断：
@@ -1081,10 +1120,12 @@ id | text | YES |    published | boolean | YES |    published_at | text | YES | 
 | O24-1/2（自证 + 门禁 + 库隔离校准） | **2**（`column:equipment`，此前读错库未暴露） | 0 | **+2**（40→42） | 42 |
 | O24-1 收口（express 用例 + 种子行） | 0 | 0 | 0 | 42 |
 | O24-3 批次 1（portal surface publish） | 0 | **1** | **-1**（42→41） | 41 |
+| O24-3 批次 2（JSONB 参数绑定族） | 0 | **4** | **-4**（41→37） | 37 |
 
 **清除清单**：
 
 | 批次 | 族 | 删除的基线行 key | 测试与破坏实验 |
 |---|---|---|---|
 | O24-3 批次 1 | `column:published`（写库后 500） | `POST /api/portal/assemble/surface/publish/{id}` | `portal_surface_publish_contract`：先红 500（panic 解码）→ 改后 200 且回库 `published=true`；破坏实验改回 `Option<String>` → 红；门禁 41/41 集合相等 |
+| O24-3 批次 2 | `wrong-type` 的 Jsonb↔String 子族 | `POST /api/meeting/core/entity/room/save/{id}`；`POST /api/processplatform/assemble/surface/save/{id}`；`POST /api/queryview/table/row/part/update/{tableFlag}/{id}`；`POST /api/queryview/table/{flag}/row/{rid}/part/update` | `jsonb_param_binding_contract`：先红 500（ToSql Jsonb vs String）→ 改后 200 且回库校验 JSON；破坏实验逐个复原三处 → 各自红；门禁 37/37 集合相等 |
 

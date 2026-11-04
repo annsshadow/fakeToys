@@ -72,6 +72,15 @@ async fn organization_express_config_contract() {
     .await;
 }
 
+/// O24-3 批次 2：JSONB 列按 String 绑定的同根因族（4 条基线）。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn jsonb_param_binding_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::jsonb_param_binding::jsonb_param_binding_flow(ctx.pool.clone())
+        .await;
+}
+
 /// O24-3 批次 1：门户表面发布「写库后 500」的行为级用例。
 #[ignore = "requires a running database server"]
 #[tokio::test]
