@@ -1620,9 +1620,9 @@ mod r419_gate_tests {
         assert_eq!(cases.len(), 16, "本批 16 把必须逐把点名，少一把即漏门");
     }
 
-    /// 他人会话 → 16 把全 403；本人会话 → 恰好 15 把放行、只有 `draft_id_start` 因既有
-    /// schema drift 落 `Internal`；空归属行 → 他人 403、admin 放行。三段合起来才证明
-    /// 门不是「恒 403」的摆设，也不是「谁都能 touch」的漏门。
+    /// 他人会话 → 16 把全 403；本人会话 → 16 把全放行（`draft_id_start` 的 schema drift
+    /// 已在 O24-3 批次 5 修好，不再落 `Internal`）；空归属行 → 他人 403、admin 放行。
+    /// 三段合起来才证明门不是「恒 403」的摆设，也不是「谁都能 touch」的漏门。
     #[tokio::test]
     async fn r419_get_writes_owner_gate_lands() {
         if !is_db_available().await {
@@ -1659,13 +1659,12 @@ mod r419_gate_tests {
             })
             .map(|(k, _)| *k)
             .collect();
-        assert_eq!(
-            broke,
-            vec!["draft_id_start"],
-            "除 draft/{{id}}/start（pp_c_draft 无 xstatus + 少绑一个参数，本批只加门不修）之外，\
-             本人调用不该触库失败：{broke:?}｜放行 {ok:?}"
+        assert!(
+            broke.is_empty(),
+            "本人调用 16 把都不该触库失败（`draft/{{id}}/start` 已在 O24-3 批次 5 修好）：\
+             {broke:?}｜放行 {ok:?}"
         );
-        assert_eq!(ok.len(), 15, "本人 15 把必须逐把放行，实际放行 {ok:?}");
+        assert_eq!(ok.len(), 16, "本人 16 把必须逐把放行，实际放行 {ok:?}");
 
         clear_actor().await;
         let r = crate::read_list_count_application_applicationFlag_process(
