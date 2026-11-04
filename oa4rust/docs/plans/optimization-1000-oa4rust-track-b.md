@@ -914,7 +914,7 @@ test result: FAILED. 0 passed; 1 failed
 | `category:wrong-type`（5，原 9） | `POST/PUT /api/bbs/assemble/control/update/control/config`；`POST/PUT /api/general/assemble/control/status/update`；`GET /api/organization/assemble/control/identity/{flag}/order/before/{followFlag}` | Rust 参数与列类型不一致（Int4↔i64、Text↔bool、Int8↔i32）（Jsonb↔String 子族已在批次 2 清除） | 按列真实类型改写绑定参数/`serde_json::Value`；对应路由 200 后删行并下调 `BASELINE_COUNT` | O24 数据层对齐（后端） | 2026-11-26 |
 | `category:E42703`（4） | `DELETE/PUT /api/organization/assemble/control/personattribute/{flag}`；`DELETE/PUT /api/organization/assemble/control/unitattribute/{flag}` | SQL 引用不存在的列 `name` | 按 migration 实态改列名（或补列）；200 后删 4 行 | O24 数据层对齐（后端） | 2026-11-26 |
 | `category:E42804`（3） | `DELETE /api/portal/assemble/designer/script/{id}`；`DELETE /api/processplatform/assemble/designer/script/{id}`；`GET /api/processplatform/service/processing/touch/mergeitem` | `deleted_at` TEXT 对 timestamp；`COALESCE` 两侧类型不一致 | 统一 timestamp 绑定/强转；200 后删 3 行 | O24 数据层对齐（后端） | 2026-11-26 |
-| `category:E23502`（7，原 10） | `POST/GET /api/hotpic*/create/hotpic`；`POST/GET /api/hotpic*/update/control/config`；`POST /api/hotpic/assemble/control/user/hotpic`；`POST /api/portal/assemble/designer/page`；`POST /api/portal/assemble/designer/page/create` | INSERT 未生成必填 `id` / `application` / `portal_id`（缺 id 的 3 条已在批次 4 清除） | 补 UUID/默认值或返回 400；200/400 后删行 | O24 数据层对齐（后端） | 2026-12-10 |
+| `category:E23502`（0，原 10） | 已全部清除（缺 id 3 条 → 批次 4；实体引用 7 条 → 批次 6） | INSERT 未生成必填 `id` / `application` / `portal_id` | — | O24 数据层对齐（后端） | 已收口 |
 | `category:E42P10`（3） | `GET/POST /api/attendance/assemble/control/statistic/do`；`GET /api/calendar_assemble_control/update/control/config` | `ON CONFLICT` 无匹配唯一索引 | 指向真实唯一索引或改 UPDATE-then-INSERT；200 后删 3 行 | O24 数据层对齐（后端） | 2026-12-10 |
 | `category:param-count`（0，原 6） | 已全部清除（permission 4 条 → 批次 3；draft/start 2 条 → 批次 5） | SQL 占位符数量与绑定参数不一致 | — | O24 数据层对齐（后端） | 已收口 |
 | `category:E42P18`（1） | `GET /api/ai_assemble_control/chat/list/completion/{clueId}/paging/{page}/size/{size}` | `$2` 类型无法推断 | 给 `$2` 显式 `::text`/CAST；200 后删行 | O24 数据层对齐（后端） | 2026-11-12 |
@@ -998,16 +998,16 @@ GET /api/meeting/core/entity/room/{id}   column:equipment
 基线因此 **40 → 42（GET 11 / 非 GET 31）**，`BASELINE_COUNT=42`，集合相等。CI 的旧 40
 不是「更干净」，而是**扫描器当时没读到种子库**——这也是本次把口径写进台账的原因。
 
-### O24-3 待修 28 条（顺序与纪律，批次 1-5 已清 14）
+### O24-3 待修 21 条（顺序与纪律，批次 1-6 已清 21）
 
-**口径**：非 GET 18 条 + GET 10 条 = 28（原 42；批次 1 清 1、批次 2 清 4、批次 3 清 4、批次 4 清 3、
-批次 5 清 2，均为「非 GET + GET 共用 handler」）。用户说的「GET 9 条」是旧 40 口径；O24 库隔离
-修复新增的 2 条 `column:equipment` 也是 GET，故 GET 现为 10（旧的 9 条包含在内）。
+**口径**：非 GET 15 条 + GET 6 条 = 21（原 42；批次 1 清 1、批次 2 清 4、批次 3 清 4、批次 4 清 3、
+批次 5 清 2、批次 6 清 7，均为「非 GET + GET 共用 handler」）。用户说的「GET 9 条」是旧 40 口径；O24 库隔离
+修复新增的 2 条 `column:equipment` 也是 GET。
 
 排序按真实用户后果，不按条数：
 
 1. **写路径里「会写库但报错」的族**（用户以为失败、实际可能已落库）优先；
-2. 再按条数多的可批量验证族（`E23502` 实体引用族剩 7、`wrong-type` 剩 5 等）；
+2. 再按条数多的可批量验证族（`wrong-type` 剩 5 等）；
 3. GET 留最后。
 
 每批固定流程：`information_schema` 现场确认真实列类型 → **先红**（复现当前 500）→ 改 →
@@ -1197,15 +1197,60 @@ console 发消息 → 200 `sent=true` 且回库 `id` 非空；message 自定义�
 **收口**：删 2 条基线路，`BASELINE_COUNT 30 → 28`；门禁实测
 `== 棘轮基线：28 条（当前 28 条），集合相等 ==`。
 
-### O24-3 后续 7 条 E23502 的口径（实体引用，不是状态值）
+### O24-3 批次 6：E23502 实体引用族（hotpic + portal page，7 条）
 
-`hotpic` 的 `application`、`portal page` 的 `portal_id` 是**实体引用**，按以下顺序处理，每条都要在
-台账写「信息来源」证据：
+**裁定口径**：`hotpic.application` / `info_id`、`portal page.portal_id` 是**实体引用**，不是
+状态值。先查请求上下文（路径 / body / 父资源）是否携带该实体标识；能推导就绑定并断言落库值
+指向正确父实体；推导不出来一律 **400（缺必要参数）**，不许编造合法 id。
 
-1. 先查请求上下文（路径参数 / body / 父资源）是否携带该实体标识；
-2. 能推导 → 用推导值绑定，断言落库值指向**正确父实体**；
-3. 推导不出来 → 返回 **400（缺必要参数）**，**不许编造合法 id**（会生成悬挂外键或写到别人资源下）；
-4. 没有来源的一律 400，并在台账记录理由。
+**信息来源证据（逐条）**：
+
+| 路由 | 实体引用 | 来源 | 结论 |
+|---|---|---|---|
+| `POST /api/hotpic/create/hotpic` | `application` + `info_id` | body 字段 `application` / `infoId`（`HotpicRequest`） | 前端 `HotpicApp.vue` 只发 `{title}` → 无来源，缺参 400；若 body 提供则绑定 |
+| `POST /api/hotpic/assemble/control/user/hotpic` | 同上 | 同上（共用 `create_hotpic`） | 同上 |
+| `GET /api/hotpic_assemble_control/create/hotpic` | 同上 | 同上（GET 变体共用 handler，扫描器发 `{}`） | 400 |
+| `POST /api/hotpic/assemble/control/update/control/config` | `application` + `info_id` | config body 的 `application` / `infoId` | 前端 `HotpicApp.vue` 发 `{}` → 400 |
+| `GET /api/hotpic_assemble_control/update/control/config` | 同上 | 同上（共用 `update_control_config`） | 400 |
+| `POST /api/portal/assemble/designer/page` | `portal_id` | body 字段 `portalId`（与同 crate `create_widget` 取参口径一致） | 前端 `PortalPageDesignerApp.vue` 只发 `{name,category,content}` → 400 |
+| `POST /api/portal/assemble/designer/page/create` | 同上 | 同上（共用 `create_page`） | 400 |
+
+**schema 现场证据**：`x_hotpic.application` / `info_id` 与 `x_portal_page.portal_id` 均
+**NOT NULL、无 DEFAULT、无 CHECK、无外键**（`information_schema.columns` + `pg_constraint`）；
+表内已有 `application=''` 的历史脏数据 42 行，但不能作为「父实体引用」的来源。
+`x_portal_page.status` 亦为 NOT NULL 且无 DEFAULT，沿用同表既有写方
+`portal_core_entity::page_update` 的默认值 `"active"`（非新造词表）。
+
+**实现**：
+
+- `HotpicRequest` 增 `application` / `infoId` 两个可选字段；`create_hotpic` 与
+  `update_control_config` 缺任一项 → `AppError::BadRequest("missing required parameter: application/infoId")`；
+  INSERT 补 `application` / `info_id` 列（有来源时绑定真实值）。
+- `CreatePageRequest` 增 `portalId`；`create_page` 缺失 → `BadRequest("...portalId")`；
+  INSERT 补 `portal_id` / `status` 列。
+
+**先红**：`entity_reference_required_contract`（`tests/integration_tests/scenarios/entity_reference_required.rs`）
+未改代码时实测红：`== 500 Internal Server Error ==`，日志
+`E23502 null value in column "application" of relation "x_hotpic"` /
+`E23502 null value in column "portal_id" of relation "x_portal_page"`。
+
+**行为断言**：7 条全覆盖 —— 缺参路径 400 + `type=error` + 文案点名缺失参数；有参路径 200
++ 回库 `application`/`info_id`、`portal_id` 等于 body 提供的父实体 id（`status='active'`）；
+GET 变体同样 400。
+
+**破坏实验**（逐个还原，证明三处各自被钉住）：
+
+- 只还原 `create_hotpic` → 第 1 条红（500，E23502 `application`）；
+- 只还原 `update_control_config` → 第 3 条红（500，E23502 `application`）；
+- 只还原 `create_page` → 第 6 条红（500，E23502 `portal_id`）。
+
+**收口**：删 7 条基线路，`BASELINE_COUNT 28 → 21`；门禁实测
+`== 棘轮基线：21 条（当前 21 条），集合相等 ==`；`E23502` 家族清零。
+
+### O24-3 后续批次的实体引用口径（沿用批次 6）
+
+凡 `E23502` 命中实体引用列：先找请求上下文来源（路径 / body / 父资源）；有来源就绑定并断言
+落库指向正确父实体；没有来源一律 400 + 台账写「信息来源」证据，不编造合法 id。
 
 
 ### O24-1 收口：express 成功路径（裁定执行）
@@ -1238,6 +1283,7 @@ console 发消息 → 200 `sent=true` 且回库 `id` 非空；message 自定义�
 | O24-3 批次 3（查询设计器 permission 族） | 0 | **4** | **-4**（37→33） | 33 |
 | O24-3 批次 4（INSERT 缺必填 id/规范列族） | 0 | **3** | **-3**（33→30） | 30 |
 | O24-3 批次 5（draft/start 写 started） | 0 | **2** | **-2**（30→28） | 28 |
+| O24-3 批次 6（E23502 实体引用族） | 0 | **7** | **-7**（28→21） | 21 |
 
 **清除清单**：
 
@@ -1248,4 +1294,5 @@ console 发消息 → 200 `sent=true` 且回库 `id` 非空；message 自定义�
 | O24-3 批次 3 | `param-count` 的 permission 子族 | `POST /api/query/assemble/designer/query/{flag}/permission`；`POST .../stat/{id}/permission`；`POST .../table/{flag}/permission`；`POST .../view/{id}/permission` | `query_permission_binding_contract`：先红 500（`Parameters(2, 1)`）→ 改后 200 且回库 permission/update_time；破坏实验还原谓词 → 红；门禁 33/33 集合相等 |
 | O24-3 批次 4 | `E23502` 的「INSERT 缺必填 id/规范列」子族 | `POST /api/console/send/message`；`POST /api/document/cipher/{id}/persist/view/record`；`POST /api/message/custom/create` | `insert_required_id_contract`：先红 500（E23502 `x_console_message.id`）→ 改后 200 且回库 id/title/type/consumer/is_read；破坏实验逐个复原 message/cms → 各自红；门禁 30/30 集合相等 |
 | O24-3 批次 5 | `param-count` 的 draft/start 子族（唯一写方） | `POST /api/processplatform/assemble/surface/draft/start/{id}`；`GET /api/processplatform/assemble/surface/draft/{id}/start` | `draft_start_status_contract`：先红 500（`Parameters(1, 2)`）→ 改后 POST/GET 均 200 且回库 `xstatus='started'`、`xupdateTime` 非空；破坏实验退回 `&[&id]` → 红；门禁 28/28 集合相等 |
+| O24-3 批次 6 | `E23502` 的实体引用子族 | `POST/GET /api/hotpic*`（create/hotpic ×2、update/control/config ×2、user/hotpic ×1）；`POST /api/portal/assemble/designer/page`；`POST /api/portal/assemble/designer/page/create` | `entity_reference_required_contract`：先红 500（E23502 `application`/`portal_id`）→ 改后缺参 400、有参 200 且回库指向父实体；破坏实验逐个还原 3 处 handler → 各自红；门禁 21/21 集合相等 |
 

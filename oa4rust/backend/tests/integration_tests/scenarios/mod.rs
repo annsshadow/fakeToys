@@ -6,6 +6,7 @@ pub mod bpmn_process;
 pub mod cms_document;
 pub mod cms_extended;
 pub mod draft_start_status;
+pub mod entity_reference_required;
 pub mod file_portal;
 pub mod insert_required_id;
 pub mod jsonb_param_binding;

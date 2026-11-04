@@ -28,10 +28,14 @@ pub struct CreatePortalRequest {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(non_snake_case)]
 pub struct CreatePageRequest {
     pub name: Option<String>,
     pub category: Option<String>,
     pub content: Option<Value>,
+    /// 父实体引用：`x_portal_page.portal_id`（NOT NULL、无 DEFAULT/CHECK）。
+    /// 与同 crate `create_widget` 的取参口径一致，来自 body 的 `portalId`。
+    pub portalId: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -332,12 +336,24 @@ pub async fn create_page(
         .unwrap_or_else(|| Value::Object(serde_json::Map::new()));
     let content_str = serde_json::to_string(&content)
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    // 父实体引用：`x_portal_page.portal_id` NOT NULL 且无 DEFAULT/CHECK，唯一来源是
+    // body 的 `portalId`（同 crate `create_widget` 同口径）；缺失一律 400，不编造父实体 id。
+    let portal_id = req.portalId.unwrap_or_default();
+    if portal_id.is_empty() {
+        return Err(AppError::BadRequest(
+            "missing required parameter: portalId".to_string(),
+        ));
+    }
+    // `x_portal_page.status` 亦为 NOT NULL 且无 DEFAULT；沿用同表既有写方
+    // `portal_core_entity::page_update` 的默认值 "active"（非新造词表）。
+    let status = "active";
     let creator = "system";
 
     client
         .execute(
-            "INSERT INTO x_portal_page (id, name, category, content, creator, create_time, update_time) VALUES ($1, $2, $3, $4, $5, NOW(), NOW())",
-            &[&id, &name, &category, &content_str, &creator],
+            "INSERT INTO x_portal_page (id, portal_id, name, status, category, content, creator, create_time, update_time) \
+             VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())",
+            &[&id, &portal_id, &name, &status, &category, &content_str, &creator],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;

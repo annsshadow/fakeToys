@@ -81,6 +81,17 @@ async fn draft_start_status_contract() {
         .await;
 }
 
+/// O24-3 批次 6：E23502 实体引用必填（hotpic application/info_id、portal page portal_id）。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn entity_reference_required_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::entity_reference_required::entity_reference_required_flow(
+        ctx.pool.clone(),
+    )
+    .await;
+}
+
 /// O24-3 批次 4：INSERT 未写必填主键/规范列的遗留给定族（3 条 E23502）。
 #[ignore = "requires a running database server"]
 #[tokio::test]

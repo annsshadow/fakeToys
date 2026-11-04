@@ -46,6 +46,13 @@
 # `SET xstatus = $1 ... WHERE xid = $2` 只绑了 id，Parameters(1,2) 失配。
 # 裁定：不删路由、不降级，写 xstatus='started'；字面量收进唯一写方常量
 # DRAFT_STARTED_STATUS。契约项：将来若引入状态词表，必须迁移已存在的 started 行。
+#
+# 2026-11-05 基线 28 → 21（GET 6 / 非 GET 15）：O24-3 批次 6 清掉 E23502 实体引用族 7 条。
+# hotpic（application/info_id）与 portal page（portal_id）本身是实体引用，不是状态值：
+# 唯一信息来源是 body 字段（hotpic `application`/`infoId`、portal page `portalId`，后者与
+# create_widget 同口径），能提供就绑定并断言落库指向该父实体；当前前端只发 title/name，
+# 推导不出来 → 一律 400（缺必要参数），不编造父实体 id。GET 变体
+# /api/hotpic_assemble_control/create/hotpic 与 update/control/config 同 handler、同口径。
 GET /api/ai_assemble_control/chat/list/completion/{clueId}/paging/{page}/size/{size}	category:E42P18	owner:O24数据层对齐(后端)	due:2026-11-12	cond:给 $2 显式 ::text/CAST；200 后删行
 GET /api/attendance/assemble/control/statistic/do	category:E42P10	owner:O24数据层对齐(后端)	due:2026-12-10	cond:指向真实唯一索引或改 UPDATE-then-INSERT；200 后删行
 POST /api/attendance/assemble/control/statistic/do	category:E42P10	owner:O24数据层对齐(后端)	due:2026-12-10	cond:指向真实唯一索引或改 UPDATE-then-INSERT；200 后删行
@@ -55,11 +62,6 @@ GET /api/calendar_assemble_control/update/control/config	category:E42P10	owner:O
 POST /api/document/filter/list/{page}/size/{size}/manager	category:E42601	owner:O24数据层对齐(后端)	due:2026-12-10	cond:改参数化/正确拼 ORDER BY；200 后删行
 POST /api/general/assemble/control/status/update	category:wrong-type	owner:O24数据层对齐(后端)	due:2026-11-26	cond:按列真实类型改写绑定参数；200 后删行
 PUT /api/general/assemble/control/status/update	category:wrong-type	owner:O24数据层对齐(后端)	due:2026-11-26	cond:按列真实类型改写绑定参数；200 后删行
-POST /api/hotpic/assemble/control/update/control/config	category:E23502	owner:O24数据层对齐(后端)	due:2026-12-10	cond:补必填 application/默认值或返回 400；后删行
-POST /api/hotpic/assemble/control/user/hotpic	category:E23502	owner:O24数据层对齐(后端)	due:2026-12-10	cond:补必填 application/默认值或返回 400；后删行
-POST /api/hotpic/create/hotpic	category:E23502	owner:O24数据层对齐(后端)	due:2026-12-10	cond:补必填 application/默认值或返回 400；后删行
-GET /api/hotpic_assemble_control/create/hotpic	category:E23502	owner:O24数据层对齐(后端)	due:2026-12-10	cond:补必填 application/默认值或返回 400；后删行
-GET /api/hotpic_assemble_control/update/control/config	category:E23502	owner:O24数据层对齐(后端)	due:2026-12-10	cond:补必填 application/默认值或返回 400；后删行
 GET /api/meeting/core/entity/room/list	column:equipment	owner:O24数据层对齐(后端)	due:2026-11-26	cond:改 try_get/Option 类型对齐实体；200 后删行
 GET /api/meeting/core/entity/room/{id}	column:equipment	owner:O24数据层对齐(后端)	due:2026-11-26	cond:改 try_get/Option 类型对齐实体；200 后删行
 GET /api/organization/assemble/control/identity/{flag}/order/before/{followFlag}	category:wrong-type	owner:O24数据层对齐(后端)	due:2026-11-26	cond:按列真实类型改写绑定参数；200 后删行
@@ -67,8 +69,6 @@ DELETE /api/organization/assemble/control/personattribute/{flag}	category:E42703
 PUT /api/organization/assemble/control/personattribute/{flag}	category:E42703	owner:O24数据层对齐(后端)	due:2026-11-26	cond:按 migration 实态改列名/补列；200 后删行
 DELETE /api/organization/assemble/control/unitattribute/{flag}	category:E42703	owner:O24数据层对齐(后端)	due:2026-11-26	cond:按 migration 实态改列名/补列；200 后删行
 PUT /api/organization/assemble/control/unitattribute/{flag}	category:E42703	owner:O24数据层对齐(后端)	due:2026-11-26	cond:按 migration 实态改列名/补列；200 后删行
-POST /api/portal/assemble/designer/page	category:E23502	owner:O24数据层对齐(后端)	due:2026-12-10	cond:补必填 portal_id/默认值或返回 400；后删行
-POST /api/portal/assemble/designer/page/create	category:E23502	owner:O24数据层对齐(后端)	due:2026-12-10	cond:补必填 portal_id/默认值或返回 400；后删行
 DELETE /api/portal/assemble/designer/script/{id}	category:E42804	owner:O24数据层对齐(后端)	due:2026-11-26	cond:统一 timestamp 绑定或强转；200 后删行
 DELETE /api/processplatform/assemble/designer/script/{id}	category:E42804	owner:O24数据层对齐(后端)	due:2026-11-26	cond:统一 timestamp 绑定或强转；200 后删行
 GET /api/processplatform/service/processing/touch/mergeitem	category:E42804	owner:O24数据层对齐(后端)	due:2026-11-26	cond:统一 timestamp 绑定或强转；200 后删行
