@@ -84,7 +84,7 @@ pub async fn get_general_control_status(
 
     let row = client
         .query_one(
-            "SELECT id, system_name, maintenance_mode, allow_registration, version FROM x_general_assemble_control_config WHERE deleted_at IS NULL LIMIT 1",
+            "SELECT id, system_name, maintenance_mode::bool AS maintenance_mode, allow_registration::bool AS allow_registration, version FROM x_general_assemble_control_config WHERE deleted_at IS NULL LIMIT 1",
             &[],
         )
         .await;
@@ -141,7 +141,7 @@ pub async fn general_control_list(
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
-            "SELECT id, system_name, maintenance_mode, allow_registration, version, \
+            "SELECT id, system_name, maintenance_mode::bool AS maintenance_mode, allow_registration::bool AS allow_registration, version, \
                     create_time::text AS create_time \
              FROM x_general_assemble_control_config WHERE deleted_at IS NULL ORDER BY create_time DESC",
             &[],
@@ -286,9 +286,12 @@ pub async fn update_general_control_status(
         .and_then(|v| v.as_bool())
         .unwrap_or(true);
 
+    // 实列 `maintenance_mode` / `allow_registration` 是 `text`（无 CHECK/DEFAULT/行），
+    // 绑 bool 会 `ToSql(0) WrongType { Text, bool }`；用 `::bool::text` 落 Postgres
+    // bool 字面量（true/false），读路径用 `::bool` 强转，两侧保持同一契约。
     let result = client
         .execute(
-            "UPDATE x_general_assemble_control_config SET maintenance_mode = $1, allow_registration = $2 WHERE id = 'global'",
+            "UPDATE x_general_assemble_control_config SET maintenance_mode = $1::bool::text, allow_registration = $2::bool::text WHERE id = 'global'",
             &[&maintenance_mode, &allow_registration],
         )
         .await

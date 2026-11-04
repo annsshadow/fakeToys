@@ -81,6 +81,14 @@ async fn draft_start_status_contract() {
         .await;
 }
 
+/// O24-3 批次 7：wrong-type 配置写路径（bbs max_forum_count、general 文本布尔列）。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn wrong_type_config_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::wrong_type_config::wrong_type_config_flow(ctx.pool.clone()).await;
+}
+
 /// O24-3 批次 6：E23502 实体引用必填（hotpic application/info_id、portal page portal_id）。
 #[ignore = "requires a running database server"]
 #[tokio::test]

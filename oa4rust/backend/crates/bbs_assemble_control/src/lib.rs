@@ -361,10 +361,13 @@ pub async fn update_control_config(
         .get("enabled")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
-    let max_forum_count = body
+    // 实列 `max_forum_count` 是 `integer`（information_schema 现场），绑 `i64` 会
+    // `ToSql(1) WrongType { Int4, i64 }`；按列真实类型收窄到 i32。
+    let max_forum_count_i64 = body
         .get("maxForumCount")
         .and_then(|v| v.as_i64())
         .unwrap_or(1000);
+    let max_forum_count = i32::try_from(max_forum_count_i64).unwrap_or(1000);
     let allow_anonymous = body
         .get("allowAnonymous")
         .and_then(|v| v.as_bool())

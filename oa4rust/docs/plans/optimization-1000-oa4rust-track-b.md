@@ -911,7 +911,7 @@ test result: FAILED. 0 passed; 1 failed
 
 | 族（reason） | 路由（方法 + 路径） | 根因 | 转绿条件 | 责任人 | 期限 |
 |---|---|---|---|---|---|
-| `category:wrong-type`（5，原 9） | `POST/PUT /api/bbs/assemble/control/update/control/config`；`POST/PUT /api/general/assemble/control/status/update`；`GET /api/organization/assemble/control/identity/{flag}/order/before/{followFlag}` | Rust 参数与列类型不一致（Int4↔i64、Text↔bool、Int8↔i32）（Jsonb↔String 子族已在批次 2 清除） | 按列真实类型改写绑定参数/`serde_json::Value`；对应路由 200 后删行并下调 `BASELINE_COUNT` | O24 数据层对齐（后端） | 2026-11-26 |
+| `category:wrong-type`（1，原 9） | `GET /api/organization/assemble/control/identity/{flag}/order/before/{followFlag}` | Rust 参数与列类型不一致（Int8↔i32）（bbs Int4↔i64、general Text↔bool 已在批次 7 清除；Jsonb↔String 子族已在批次 2 清除） | 按列真实类型改写绑定参数；对应路由 200 后删行并下调 `BASELINE_COUNT` | O24 数据层对齐（后端） | 2026-11-26 |
 | `category:E42703`（4） | `DELETE/PUT /api/organization/assemble/control/personattribute/{flag}`；`DELETE/PUT /api/organization/assemble/control/unitattribute/{flag}` | SQL 引用不存在的列 `name` | 按 migration 实态改列名（或补列）；200 后删 4 行 | O24 数据层对齐（后端） | 2026-11-26 |
 | `category:E42804`（3） | `DELETE /api/portal/assemble/designer/script/{id}`；`DELETE /api/processplatform/assemble/designer/script/{id}`；`GET /api/processplatform/service/processing/touch/mergeitem` | `deleted_at` TEXT 对 timestamp；`COALESCE` 两侧类型不一致 | 统一 timestamp 绑定/强转；200 后删 3 行 | O24 数据层对齐（后端） | 2026-11-26 |
 | `category:E23502`（0，原 10） | 已全部清除（缺 id 3 条 → 批次 4；实体引用 7 条 → 批次 6） | INSERT 未生成必填 `id` / `application` / `portal_id` | — | O24 数据层对齐（后端） | 已收口 |
@@ -998,11 +998,10 @@ GET /api/meeting/core/entity/room/{id}   column:equipment
 基线因此 **40 → 42（GET 11 / 非 GET 31）**，`BASELINE_COUNT=42`，集合相等。CI 的旧 40
 不是「更干净」，而是**扫描器当时没读到种子库**——这也是本次把口径写进台账的原因。
 
-### O24-3 待修 21 条（顺序与纪律，批次 1-6 已清 21）
+### O24-3 待修 17 条（顺序与纪律，批次 1-7 已清 25）
 
-**口径**：非 GET 15 条 + GET 6 条 = 21（原 42；批次 1 清 1、批次 2 清 4、批次 3 清 4、批次 4 清 3、
-批次 5 清 2、批次 6 清 7，均为「非 GET + GET 共用 handler」）。用户说的「GET 9 条」是旧 40 口径；O24 库隔离
-修复新增的 2 条 `column:equipment` 也是 GET。
+**口径**：非 GET 12 条 + GET 5 条 = 17（原 42；批次 1 清 1、批次 2 清 4、批次 3 清 4、批次 4 清 3、
+批次 5 清 2、批次 6 清 7、批次 7 清 4，均为「非 GET + GET 共用 handler」）。
 
 排序按真实用户后果，不按条数：
 
@@ -1252,6 +1251,36 @@ GET 变体同样 400。
 凡 `E23502` 命中实体引用列：先找请求上下文来源（路径 / body / 父资源）；有来源就绑定并断言
 落库指向正确父实体；没有来源一律 400 + 台账写「信息来源」证据，不编造合法 id。
 
+### O24-3 批次 7：`wrong-type` 配置写路径（bbs + general，4 条）
+
+**schema 现场证据**（`information_schema.columns`，`oa4rust_test`）：
+
+| 列 | 实际类型 | DEFAULT / CHECK | 旧绑定 | 结论 |
+|---|---|---|---|---|
+| `x_bbs_assemble_control_config.max_forum_count` | `integer` | `1000` / 无 | `i64` | 按列类型收窄 `i32` |
+| `x_general_assemble_control_config.maintenance_mode` | `text` | 无 / 无 | `bool` | 写入 `$1::bool::text`，读取 `::bool` |
+| `x_general_assemble_control_config.allow_registration` | `text` | 无 / 无 | `bool` | 同上 |
+
+`x_general_assemble_control_config` 当时 **0 行**；写入契约统一为 Postgres bool 字面量
+`true`/`false`，读路径 `::bool` 强转。**契约项**：该表若将来出现非 `true`/`false` 的历史值，
+`::bool` 会报错，必须先迁移数据，不许新旧混用。
+
+**根因**：`ToSql(1) WrongType { postgres: Int4, rust: "i64" }`（bbs）；
+`ToSql(0) WrongType { postgres: Text, rust: "bool" }`（general）。
+
+**先红**：`wrong_type_config_contract`（`tests/integration_tests/scenarios/wrong_type_config.rs`）
+未改代码时实测红：bbs POST 500（WrongType 500）；断言文案「bbs POST 应为 200…实际 500」。
+
+**行为断言**：bbs POST/PUT 各一次 → 200 + 回库 `enabled`/`max_forum_count`/`allow_anonymous`；
+general POST/PUT 各一次 → 200 + 回库 `maintenance_mode`/`allow_registration` 为 `true`/`false`
+文本；写入后 GET `/api/general/assemble/control/status` 必须 200 并解出相同布尔（读 `::bool` 契约）。
+
+**破坏实验**（逐个还原，三处各红）：还原 bbs → i64 红；还原 general UPDATE 去掉 `::bool::text` → 红；
+还原 general SELECT 去掉 `::bool` → 读路径红。
+
+**收口**：删 4 条基线路，`BASELINE_COUNT 21 → 17`；门禁实测
+`== 棘轮基线：17 条（当前 17 条），集合相等 ==`。
+
 
 ### O24-1 收口：express 成功路径（裁定执行）
 
@@ -1284,6 +1313,7 @@ GET 变体同样 400。
 | O24-3 批次 4（INSERT 缺必填 id/规范列族） | 0 | **3** | **-3**（33→30） | 30 |
 | O24-3 批次 5（draft/start 写 started） | 0 | **2** | **-2**（30→28） | 28 |
 | O24-3 批次 6（E23502 实体引用族） | 0 | **7** | **-7**（28→21） | 21 |
+| O24-3 批次 7（wrong-type 配置写路径） | 0 | **4** | **-4**（21→17） | 17 |
 
 **清除清单**：
 
@@ -1295,4 +1325,5 @@ GET 变体同样 400。
 | O24-3 批次 4 | `E23502` 的「INSERT 缺必填 id/规范列」子族 | `POST /api/console/send/message`；`POST /api/document/cipher/{id}/persist/view/record`；`POST /api/message/custom/create` | `insert_required_id_contract`：先红 500（E23502 `x_console_message.id`）→ 改后 200 且回库 id/title/type/consumer/is_read；破坏实验逐个复原 message/cms → 各自红；门禁 30/30 集合相等 |
 | O24-3 批次 5 | `param-count` 的 draft/start 子族（唯一写方） | `POST /api/processplatform/assemble/surface/draft/start/{id}`；`GET /api/processplatform/assemble/surface/draft/{id}/start` | `draft_start_status_contract`：先红 500（`Parameters(1, 2)`）→ 改后 POST/GET 均 200 且回库 `xstatus='started'`、`xupdateTime` 非空；破坏实验退回 `&[&id]` → 红；门禁 28/28 集合相等 |
 | O24-3 批次 6 | `E23502` 的实体引用子族 | `POST/GET /api/hotpic*`（create/hotpic ×2、update/control/config ×2、user/hotpic ×1）；`POST /api/portal/assemble/designer/page`；`POST /api/portal/assemble/designer/page/create` | `entity_reference_required_contract`：先红 500（E23502 `application`/`portal_id`）→ 改后缺参 400、有参 200 且回库指向父实体；破坏实验逐个还原 3 处 handler → 各自红；门禁 21/21 集合相等 |
+| O24-3 批次 7 | `wrong-type` 的配置写路径 | `POST/PUT /api/bbs/assemble/control/update/control/config`；`POST/PUT /api/general/assemble/control/status/update` | `wrong_type_config_contract`：先红 500（WrongType）→ 改后 POST/PUT 均 200 且回库正确；破坏实验逐个还原 bbs/general 写/读 → 各自红；门禁 17/17 集合相等 |
 
