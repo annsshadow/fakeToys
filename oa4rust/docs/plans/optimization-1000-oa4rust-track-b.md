@@ -545,6 +545,24 @@ O15 第 3 项把 102 条 `/api/bbs/assemble/...` 判为「已删残留」是**�
 - 扫描器复核：`FAIL=38 → 35`（本批 3 处全消），`SILENT=4` / `LOOSE=10` 未变，确认没有把别处读成新 FAIL。
 - 门禁：`cargo clippy --workspace --all-targets -- -D warnings` 零告警；`cargo fmt --all --check` 绿。仅改 handler 取值类型，未动路由，生成物（openapi/mcp/parity/handler-tests）无需重生成。
 
+### 门禁补齐：集成场景 job（2026-11-04）
+
+**问题**：`oa4rust-ci.yml` 的 `integration-tests` job 跑的是 `cargo test --test integration_runner`，**没有 `--ignored`**；而 `integration_runner` 里全部场景用例都标了 `#[ignore]`。结论：这些用例在 CI 中**一次都没执行过**，16 条长期红灯没人发现的根因是门禁没跑到它们，不是“没人看 CI”。
+
+**修法**（不整体跳过）：
+- 新增 job `integration-scenarios`：同样的临时 Postgres service + migrations，执行 `python3 scripts/run_integration_scenarios.py`；脚本内部跑 `cargo test --test integration_runner -- --ignored --test-threads=1`。
+- 唯一豁免走可读清单 `backend/tests/integration_skip_list.txt`（不是命令行散参）。
+- 元守卫在 `scripts/run_integration_scenarios.py`：
+  1. 条目数必须恰好 **1**（多塞一条必须改脚本常量，留下 diff）；
+  2. 每条必须精确存在于 `cargo test ... -- --ignored --list` 的测试集合，**点错名字＝没排除 → 退出 1**。
+- 负例实测：把条目改成 `..._typo` → 守卫报“不存在”退出 1；再加一条 `pagination_contract` → 守卫报“必须恰好 1 条”退出 1（均已还原）。
+- 正向实测：清单只豁免 ldap 时 → `24 passed; 0 failed`（`--skip` 生效）。
+- 真红验证：临时移出 ldap 豁免后，同一命令得到 `24 passed; 1 failed`（ldap）退出 101；已还原。PR 上的运行记录见本轮提交说明。
+
+**ldap 为什么是唯一豁免**：A 类真缺（`GET /api/ldap/config` 无实现）+ parity 书面承诺（见 O20 表 #2）。**豁免到期条件**同该条转绿条件：① 实现端点并过 parity；② 正式撤销 parity 承诺并删除本条。到期未处理 = 守卫清单与实现状态不一致，按台账违约处理。
+
+**计数**：本项属 O19 一轮内的“门禁补齐”，不计实质轮次；集成测试通过数仍按 `24 passed / 1 failed（ldap 本地红）` 记账，CI 口径为 `24 passed / 0 failed`（ldap 豁免）。
+
 ## O20 消费者证据判定（O18 六条红灯收口）
 
 判定规则只有一条：**有没有真实消费者**。证据源三处：前端/移动端调用、文档/契约（OpenAPI / MCP 路由表 / parity corpus）、O2OA parity 书面要求。下表每条都有可复核的引用，不做「应该有」式推断。

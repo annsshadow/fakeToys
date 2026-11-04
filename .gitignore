@@ -66,6 +66,9 @@ oa4rust/backend/scripts/**
 # 必须入库，否则干净克隆 / CI 上永远找不到文件（与 openapi-paths 同一类空转）。
 !oa4rust/backend/scripts/check_generated_tests_up_to_date.py
 !oa4rust/backend/scripts/check_generated_artifacts_up_to_date.py
+# O19 门禁补齐：CI job `integration-scenarios` 直接调用该脚本，
+# 不入库则干净克隆/CI 上找不到文件（与上面几个判定器同一类空转）。
+!oa4rust/backend/scripts/run_integration_scenarios.py
 # 端点/路由/测试生成器：其产物（openapi/src/lib.rs、tests_generated.rs、
 # generated_tests.rs、generated_routes.rs、tests/behavior_comparison/endpoints.rs）
 # 已纳入版本控制，故生成器自身也须纳入以保证可复现（plan002 U9 / R8）。
@@ -106,6 +109,9 @@ oa4rust/backend/deploy/.backups/
 # O10 棘轮基线：idor_matrix.rs 的 handler500 集合包含断言读此文件，
 # 删文件=废棘轮（测试硬编码 expect 存在），必须入库。
 !oa4rust/backend/tests/idor_handler500_baseline.txt
+# 集成场景 CI 的唯一豁免清单（守卫脚本按行读取；不入库＝CI 没有排除项，
+# ldap 会把 job 打成永久红）。
+!oa4rust/backend/tests/integration_skip_list.txt
 # 审计/对账的文本证据（可读报告、候选路由对照）需入库，否则审计不可复现。
 !docs/audits/**/*.txt
 # augmentor 子项目的依赖清单必须纳入版本控制：CI 的 cache-dependency-path、

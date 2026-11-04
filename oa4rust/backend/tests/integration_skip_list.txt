@@ -1,0 +1,16 @@
+# 集成场景测试豁免清单（只给 CI job `integration-scenarios` 用）
+#
+# 规则：
+#   1. 当前必须恰好 1 条豁免；条数由 scripts/run_integration_scenarios.py 断言，
+#      想再塞一条进来必须改脚本（留下 diff），不允许散在命令行里。
+#   2. 每条必须是 integration_runner 里真实存在的测试全名；点错名字等于没排除，
+#      守卫会直接报错退出。
+#   3. 每条必须写清原因与转绿条件。
+#
+# integration_tests::scenarios::ldap_fallback::ldap_fallback_flow
+#   原因：A 类真缺 —— GET /api/ldap/config 全 backend 无路由，但 parity corpus
+#         (tests/parity/corpus/oa4rust-ldap_config.json) 与 parity_runner.rs:157
+#         承诺 200。
+#   转绿：① 实现该端点并通过 parity 断言；或 ② 正式撤销 parity 承诺
+#         （删 corpus + parity_runner 条目），此时本行一并删除。
+integration_tests::scenarios::ldap_fallback::ldap_fallback_flow
