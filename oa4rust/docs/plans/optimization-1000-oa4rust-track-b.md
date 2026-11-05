@@ -1653,7 +1653,7 @@ hotpic 5 条（`application`/`infoId`）+ portal page 2 条（`portalId`），�
 |---|---|---|
 | 新增可用端点 | **1** | `POST /api/processplatform/service/processing/timer/start`（once）。真实 POST → 200 + 回库行存在、`fire_at/created_at` 类型与值正确。 |
 | 修复真缺陷 | **3** | ① 写入口 TIMESTAMP 按 String 绑定 → 真实 500；② ticker 每 30s 重复 fire 且覆盖 `fired_at`；③ `restore` 从未接线，重启后未到期/已到期 job 全部失联。 |
-| 仍不可用项 | **1（本模块）** | 前端 [`ProcessManagerApp.vue:682`](../../frontend/apps/desktop/src/views/ProcessManagerApp.vue#L682)「定时器」按钮发空 body `{}` → `workId/fireAt` 缺失 → 400，已登记到 `o24-3-feature-still-unavailable.md`。 |
+| 仍不可用项 | **1（本模块）** | 前端 [`ProcessManagerApp.vue:682`](../../frontend/apps/desktop/src/views/ProcessManagerApp.vue#L682)「定时器」按钮发空 body `{}` → `workId/fireAt` 缺失 → 400，已登记到 `o24-3-feature-still-unavailable.md`。**O27 已修复**（前端补两字段 + 北京时间→UTC 换算，见 O27 节）。 |
 
 ### 结论口径
 
@@ -1984,6 +1984,38 @@ HTTP 400 Bad Request
 - 唯一恢复路径 = **DBA 直接 SQL**：`UPDATE x_draft SET deleted_at = NULL WHERE id = ...`（按 `id` 或 `work_id` 定位）。
 - 另需注意：真实草稿在 `processplatform_assemble_surface` 里写 `pp_c_draft`（`u2_draft_save` 等）；`x_draft` 在本仓库内**无写入方**（仅测试插入）。
 - 结论：**暂不接线**。接线前需业务确认（a）草稿归属表是否就是 `x_draft`；（b）误删是否允许只靠 DBA SQL 恢复，还是需要补恢复端点；（c）「work 结束即删草稿」的保留期。
+
+## O27：流程引擎「定时器」按钮接通（2026-11-05）
+
+### 缺口（改前证据）
+
+- 前端 `ProcessManagerApp.vue` 的 `pdEngine('timerStart')` 发空 body `{}`；后端 `start_timer`
+  只从 body 读 `workId` / `fireAt`（`lib.rs:4259-4291`）。空 `workId` 在 `u4_require_work_owner`
+  查不到 `x_work` 行：非 admin → **403**；admin → `fireAt=""` → **400
+  `invalid fireAt format, expected YYYY-MM-DD HH:MM:SS`**。两种身份都不可能创建 job，
+  即「后端 once 能力已可用（O25）、前端入口恒不可用」。
+- 时区契约此前只有格式、没有时区：`fire_at` 是 `TIMESTAMP`，ticker 用
+  `chrono::Utc::now().naive_utc()` 比较（`lib.rs:4105`；集成场景同样按 UTC 造数据，
+  `timer_jobs.rs:65`）。用户按北京时间填写并直接提交 → 任务晚 **8 小时**触发。
+
+### 改法
+
+- 新增 `frontend/apps/desktop/src/views/timerStart.ts`：把用户输入的北京时间（UTC+8）
+  换算为后端要求的 UTC naive 串；非法日期（如 `2026-02-30`）拒绝；`workId` 必填；
+  产出请求体只含 `workId` / `fireAt`。业务时区固定 UTC+8，与 O26-1 业务日界口径一致。
+- `ProcessManagerApp.vue` 定时器分支改为二次输入（流程实例 ID + 北京时间，
+  默认值为当前北京时间 + 1 分钟），校验通过才 POST；错误直接 toast，不发半成品请求。
+
+### 验证
+
+- `timerStart.test.ts` **12 用例**：4 条有效换算（北京正午 / 跨日 / 跨年 / 闰日）、
+  4 条非法输入（不存在日期、24 时、未补零、空串）、请求体形状与去空白、错误分支、
+  `beijingNow` 固定时刻（不依赖浏览器时区）；含**规模下限断言**（有效 ≥4、非法 ≥4）。
+- **破坏实验**：把 `- BUSINESS_OFFSET_MS` 改为不减（不做时区换算）→ **5 条红**
+  （4 条换算 + 载荷形状）；恢复后 12/12 绿。
+- 后端契约由 O25 集成场景实证：同形状 body（`workId` + UTC `fireAt`）→ **200**、
+  回库行存在、`fire_at` 值与请求一致（`timer_jobs.rs::timer_start_write_flow`）。
+- `pnpm --filter @oa4rust/desktop typecheck` 通过；biome 检查 3 个文件零告警。
 
 
 

@@ -174,3 +174,13 @@ SELECT application, info_id, count(*) FROM x_hotpic GROUP BY 1,2 ORDER BY 3 DESC
   请求体是空对象 `{}`，`workId` / `fireAt` 均为空 → 必然 400。
 - 判定：**功能对用户仍不可用**，登记在此，不计入基线；修复需前端补两个输入（流程实例 id + 触发时间）并按
   `YYYY-MM-DD HH:MM:SS` 格式化 `fireAt`。
+
+#### 2026-11-05 后续（O27）：已修复
+
+- 前端 `pdEngine('timerStart')` 改为二次输入：流程实例 ID + 北京时间（UTC+8），
+  由 `timerStart.ts` 校验并换算成后端要求的 **UTC naive** 串后 POST；
+  空 ID / 非法时间（含 `2026-02-30`）在前端直接报错，不发半成品请求。
+- 守卫：`timerStart.test.ts` 12 用例（换算 4 / 非法 4 / 载荷形状 / 错误分支 / `beijingNow`），
+  含规模下限断言；破坏实验去掉 -8h 换算 → 5 条红。
+- 后端契约未变（O25 集成场景实证：同形状 body → 200 + 回库行）。
+- 该条从「仍不可用」移出，当前清单只剩 portal page 2 条（见上）。
