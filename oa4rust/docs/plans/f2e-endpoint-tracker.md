@@ -35,6 +35,13 @@
 | P0-2 | `PUT .../record/{id}` | `Path(id)` | **待修（最高）**：无归属判断；归属条件写进 SQL WHERE（本人 OR 管理员），非本人 403 | — |
 | P0-3 | `DELETE .../record/{id}` | `Path(id)` | **待修（最高）**：同上 | — |
 | P0-4 | 同 crate 其它 `Path(id)` 写端点（rule 等） | `Path(id)` | 待核查：扫完整个 crate | — |
+| P0-b | `processing` / `terminate`（`u4_require_actor`） | actor（可空） | **待修（P0 之后、E13 之前）**：空 actor 被放行；空值必须拒绝（系统/管理员分支显式放行）；全仓扫 `require_actor` 同形态 | — |
+| L1-1 | `bbs_subject_info` `create_subject` | body `author_id` / `creator` | 待修：与 T3-2 同一根，合并做 | — |
+| L1-2 | `x_mind_base_info` / `x_mind_folder_info` | body `creator` | 待修：与「硬编码 system」合并做 | — |
+| L1-3 | `/anonymous/file/{id}/download` | `Path(id)` | 待修（纯读泄露，最便宜，优先） | — |
+| L1-4 | `/api/file/upload` | form `person` | 待修：归属统一到会话人，保留 admin 代传合法路径 | — |
+| L1-5 | 流程状态机 | body `status` | 待修（最小拦截）：非法迁移 400；完整状态机另开一轮 | — |
+| L1-6 | calendar `x_cal_event` | — | **不改**：写了没人读，待确认是否死表（台账留痕） | — |
 | T3-1 | message `sender` | body `sender` | 待修：改取会话人；后果链已实证（revoke 403/200） | — |
 | T3-2 | bbs 帖子 `author_id` + `my/list` 的 `creator` | body | 待修：改取会话人；`my/list` 按会话人过滤 | — |
 | T3-3 | bbs 回复 `creator` + `author_id` | body | 待修：同上，回复与帖子一起修 | — |
