@@ -123,15 +123,25 @@ mod security_regression {
                     return None;
                 }
                 // 兼容第八轮的 7 列旧行：默认 path / 无字段 / legacy / fwd-only
-                let carrier = f.get(7).map(|s| s.trim()).filter(|s| !s.is_empty()).unwrap_or("path");
+                let carrier = f
+                    .get(7)
+                    .map(|s| s.trim())
+                    .filter(|s| !s.is_empty())
+                    .unwrap_or("path");
                 let field = f.get(8).map(|s| s.trim()).unwrap_or("");
-                let tier = f.get(9).map(|s| s.trim()).filter(|s| !s.is_empty()).unwrap_or("legacy");
-                let dir = f.get(10).map(|s| s.trim()).filter(|s| !s.is_empty()).unwrap_or_else(|| {
-                    match f[1].trim() {
+                let tier = f
+                    .get(9)
+                    .map(|s| s.trim())
+                    .filter(|s| !s.is_empty())
+                    .unwrap_or("legacy");
+                let dir = f
+                    .get(10)
+                    .map(|s| s.trim())
+                    .filter(|s| !s.is_empty())
+                    .unwrap_or_else(|| match f[1].trim() {
                         "idor-read" | "idor-write" => "both",
                         _ => "fwd-only",
-                    }
-                });
+                    });
                 let admin_policy = f
                     .get(11)
                     .map(|s| s.trim())
@@ -361,7 +371,11 @@ mod security_regression {
     fn owner_value(c: &Case, rev: bool) -> String {
         let unit = c.field.contains("unit");
         if rev {
-            if unit { "unit-gate-a".into() } else { ATTACKER.into() }
+            if unit {
+                "unit-gate-a".into()
+            } else {
+                ATTACKER.into()
+            }
         } else if unit {
             "unit-gate-v".into()
         } else {
@@ -399,10 +413,7 @@ mod security_regression {
     /// 从 2xx 响应里取新建行 id（`data.id`），用于「按返回 id 回表核对归属」
     fn response_id(resp: &str) -> Option<String> {
         let v: Value = serde_json::from_str(resp).ok()?;
-        v.get("data")?
-            .get("id")?
-            .as_str()
-            .map(|s| s.to_string())
+        v.get("data")?.get("id")?.as_str().map(|s| s.to_string())
     }
 
     /// 表内是否出现 canary（用于冒名新建/改写的副作用判定）
@@ -539,12 +550,17 @@ mod security_regression {
     const DETAIL_OWN_IDS: [&str; 6] = [
         "pg-a-01", "pg-a-02", "pg-a-03", "pg-a-04", "pg-a-05", "pg-a-06",
     ];
-    const DETAIL_PREV_EXPECT: [&str; 5] =
-        ["pg-a-01", "pg-a-02", "pg-a-03", "pg-a-04", "pg-a-06"];
+    const DETAIL_PREV_EXPECT: [&str; 5] = ["pg-a-01", "pg-a-02", "pg-a-03", "pg-a-04", "pg-a-06"];
     const DETAIL_VICTIM_IDS: [&str; 4] = ["pg-a-00", "pg-v-01", "pg-v-02", "pg-v-03"];
     const SELFHOLIDAY_IDS: [&str; 8] = [
-        "pg-s-01", "pg-s-02", "pg-s-03", "pg-s-04", "pg-s-05", "pg-s-06",
-        "hol-admin", "rev-hol-admin",
+        "pg-s-01",
+        "pg-s-02",
+        "pg-s-03",
+        "pg-s-04",
+        "pg-s-05",
+        "pg-s-06",
+        "hol-admin",
+        "rev-hol-admin",
     ];
     const SELFHOLIDAY_PAGE_SIZE: i64 = 3;
     const MONTH_IDS: [&str; 6] = [
@@ -567,8 +583,7 @@ mod security_regression {
         if !(200..300).contains(&code) {
             return Err(format!("status={code}"));
         }
-        let v: Value =
-            serde_json::from_str(&resp).map_err(|e| format!("响应非 JSON: {e}"))?;
+        let v: Value = serde_json::from_str(&resp).map_err(|e| format!("响应非 JSON: {e}"))?;
         let arr = v
             .get("data")
             .and_then(|d| d.as_array())
@@ -654,14 +669,9 @@ mod security_regression {
     }
 
     /// 本人写必须真落库：2xx + 返回 id + 回表命中 + 归属/内容一致。
-    async fn self_write_roundtrip(
-        app: &axum::Router,
-        pool: &deadpool_postgres::Pool,
-    ) -> Outcome {
+    async fn self_write_roundtrip(app: &axum::Router, pool: &deadpool_postgres::Pool) -> Outcome {
         let marker = "GATE-SELF-WRITE-11";
-        let body = format!(
-            r#"{{"holidayDate":"2026-03-01","reason":"{marker}"}}"#
-        );
+        let body = format!(r#"{{"holidayDate":"2026-03-01","reason":"{marker}"}}"#);
         let Some((status, resp)) = fire(
             app,
             "POST",
@@ -715,14 +725,11 @@ mod security_regression {
     }
 
     async fn pagination_suite(app: &axum::Router) -> Vec<(String, Outcome)> {
-        let detail_base =
-            "/api/attendance/assemble/control/attendancedetail/filter/list";
+        let detail_base = "/api/attendance/assemble/control/attendancedetail/filter/list";
         let mut out = Vec::new();
 
         // 1) detail next：3 页 2/2/2，仅本人、无受害者。
-        let next_path = |c: &str| {
-            format!("{detail_base}/{c}/next/{PAGE_SIZE}")
-        };
+        let next_path = |c: &str| format!("{detail_base}/{c}/next/{PAGE_SIZE}");
         let pages = walk_pages(app, TOK_ATTACKER, next_path, "(0)", 3).await;
         let outcome = match pages {
             Ok(p) => check_page_suite(
@@ -738,9 +745,7 @@ mod security_regression {
 
         // 2) detail prev：从哨兵行往回翻 3 页，覆盖全部 6 行；并做一次
         //    「next 到第 2 页再 prev 回第 1 页」的精确回翻断言（O33 易错点）。
-        let prev_path = |c: &str| {
-            format!("{detail_base}/{c}/prev/{PAGE_SIZE}")
-        };
+        let prev_path = |c: &str| format!("{detail_base}/{c}/prev/{PAGE_SIZE}");
         let pages = walk_pages(app, TOK_ATTACKER, prev_path, "pg-a-00", 3).await;
         let outcome = match pages {
             Ok(p) => check_page_suite(
@@ -816,11 +821,10 @@ mod security_regression {
             )
         };
         let pages = walk_pages(app, TOK_ATTACKER, month_path, "(0)", 3).await;
-        let (next_p1, next_p2_first): (Option<Vec<String>>, Option<String>) =
-            match pages.as_ref() {
-                Ok(p) => (Some(p[0].0.clone()), p[1].0.first().cloned()),
-                Err(_) => (None, None),
-            };
+        let (next_p1, next_p2_first): (Option<Vec<String>>, Option<String>) = match pages.as_ref() {
+            Ok(p) => (Some(p[0].0.clone()), p[1].0.first().cloned()),
+            Err(_) => (None, None),
+        };
         let outcome = match pages {
             Ok(p) => check_page_suite(
                 "page-statisticshow-person-month-next",
@@ -838,13 +842,7 @@ mod security_regression {
         //     完全同序。若漏掉 reverse，会得到反向序列。
         let outcome = match (next_p1, next_p2_first) {
             (Some(p1), Some(p2_first)) => {
-                match page_get(
-                    app,
-                    TOK_ATTACKER,
-                    &month_path_prev(&p2_first),
-                )
-                .await
-                {
+                match page_get(app, TOK_ATTACKER, &month_path_prev(&p2_first)).await {
                     Ok((ids, _)) => {
                         if ids == p1 {
                             Outcome::Pass
@@ -860,10 +858,7 @@ mod security_regression {
             }
             _ => Outcome::Unverified("next 前两页收集失败，无法比对 prev 顺序".into()),
         };
-        out.push((
-            "page-statisticshow-person-month-prev-order".into(),
-            outcome,
-        ));
+        out.push(("page-statisticshow-person-month-prev-order".into(), outcome));
 
         // 5) statisticshow topUnitDay next：work_date 并列 + NULL，且 unit_id 非空行不得越界。
         let top_path = |c: &str| {
@@ -1235,11 +1230,7 @@ mod security_regression {
         // 伪用例（不占 TSV）：深分页 + 本人写落库正控制。
         // 放在主循环前：此时夹具最干净，且 self-write 会自行清理。
         let mut extras: Vec<(String, Outcome)> = Vec::new();
-        match tokio::time::timeout(
-            std::time::Duration::from_secs(30),
-            pagination_suite(&app),
-        )
-        .await
+        match tokio::time::timeout(std::time::Duration::from_secs(30), pagination_suite(&app)).await
         {
             Ok(mut list) => extras.append(&mut list),
             Err(_) => extras.push(("page-suite".into(), Outcome::Unverified("TIMEOUT".into()))),
@@ -1386,9 +1377,18 @@ mod security_regression {
             .iter()
             .filter(|c| c.kind == "idor-read" || c.kind == "idor-write")
             .collect();
-        let deny = idor_cases.iter().filter(|c| c.admin_policy == "deny").count();
-        let allow = idor_cases.iter().filter(|c| c.admin_policy == "allow").count();
-        let unknown = idor_cases.iter().filter(|c| c.admin_policy == "unknown").count();
+        let deny = idor_cases
+            .iter()
+            .filter(|c| c.admin_policy == "deny")
+            .count();
+        let allow = idor_cases
+            .iter()
+            .filter(|c| c.admin_policy == "allow")
+            .count();
+        let unknown = idor_cases
+            .iter()
+            .filter(|c| c.admin_policy == "unknown")
+            .count();
         println!(
             "admin-policy: idor={} deny={} allow={} unknown={}",
             idor_cases.len(),
@@ -1513,7 +1513,11 @@ mod security_regression {
         cur.insert("case-c".to_string(), "UNVERIFIED".to_string());
         let (drift, fatal) = state_drift(&base, &cur);
         assert_eq!(drift.len(), 2, "应看到两条状态变化");
-        assert_eq!(fatal, vec!["case-a".to_string()], "只有 UNVERIFIED->LEAK 致命");
+        assert_eq!(
+            fatal,
+            vec!["case-a".to_string()],
+            "只有 UNVERIFIED->LEAK 致命"
+        );
         assert!(
             !fatal.contains(&"case-c".to_string()),
             "LEAK->UNVERIFIED 只记 STATE-DRIFT，不升级为致命"

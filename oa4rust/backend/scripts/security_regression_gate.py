@@ -157,9 +157,12 @@ def git_preflight() -> int:
     behind > 0 时直接拒绝：旧代码上的读数会让基线棘轮判错
     （修了却 STALE、没修却以为修了）。
     """
-    fetch = _git("fetch", "--quiet", "origin", "main", timeout=20)
-    if fetch.returncode != 0:
-        print("[preflight] 警告：无法 fetch origin/main，使用本地引用（可能已过期）")
+    try:
+        fetch = _git("fetch", "--quiet", "origin", "main", timeout=10)
+        if fetch.returncode != 0:
+            print("[preflight] 警告：无法 fetch origin/main，使用本地引用（可能已过期）")
+    except subprocess.TimeoutExpired:
+        print("[preflight] 警告：fetch origin/main 超时，使用本地引用（可能已过期）")
     head = _git("rev-parse", "HEAD").stdout.strip() or "unknown"
     branch = _git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip() or "unknown"
     dirty = [l for l in _git("status", "--porcelain").stdout.splitlines() if l]
