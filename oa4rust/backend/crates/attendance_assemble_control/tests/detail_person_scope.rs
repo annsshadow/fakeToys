@@ -11,7 +11,8 @@
 //! 破坏实验：把 `AND ($3::text IS NULL OR person_id = $3::text)` 去掉 → 本文件必须红。
 
 use attendance_assemble_control::{
-    attendancedetail_filter_list_id_next_count, attendancedetail_filter_list_id_prev_count,
+    attendancedetail_filter_list, attendancedetail_filter_list_id_next_count,
+    attendancedetail_filter_list_id_prev_count,
     attendancedetail_mobile_filter_list_page_page_count_count,
 };
 use axum::extract::{Extension, Path};
@@ -149,6 +150,30 @@ async fn mobile_list_scopes_to_session_person_and_admin_sees_all() {
         vec!["d-p1-new", "d-other", "d-p1-old"],
         "管理员应看得到全公司: {}",
         raw(&all.0)
+    );
+
+    // 无分页的 filter/list（E1）同口径。
+    let plain_mine =
+        attendancedetail_filter_list(Extension(pool.clone()), Some(Extension(session("p1"))))
+            .await
+            .expect("filter/list 不得 500");
+    assert_eq!(
+        plain_mine.0.data.as_ref().map(ids).unwrap_or_default(),
+        vec!["d-p1-new", "d-p1-old"],
+        "普通用户 filter/list 读到他人记录: {}",
+        raw(&plain_mine.0)
+    );
+    let plain_all = attendancedetail_filter_list(
+        Extension(pool.clone()),
+        Some(Extension(session("f2-admin"))),
+    )
+    .await
+    .expect("filter/list 不得 500");
+    assert_eq!(
+        plain_all.0.data.as_ref().map(ids).unwrap_or_default(),
+        vec!["d-p1-new", "d-other", "d-p1-old"],
+        "管理员 filter/list 应看到全公司: {}",
+        raw(&plain_all.0)
     );
 
     drop_scratch(SCRATCH_MOBILE).await;

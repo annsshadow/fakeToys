@@ -1212,13 +1212,17 @@ pub async fn attendancedetail_checkDetailWithPersonByCycle_cycleYear_cycleMonth(
 /// GET /api/attendance/assemble/control/attendancedetail/filter/list
 pub async fn attendancedetail_filter_list(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
+    let scope = detail_person_scope(&pool, &session).await;
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
-            "SELECT id, person_id, date, status, creator FROM x_attendance_detail ORDER BY date DESC",
-            &[],
+            "SELECT id, person_id, date, status, creator FROM x_attendance_detail \
+             WHERE ($1::text IS NULL OR person_id = $1::text) ORDER BY date DESC",
+            &[&scope],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
