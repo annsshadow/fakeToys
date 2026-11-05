@@ -25,6 +25,9 @@ mod security_gate_tests_b67;
 #[cfg(test)]
 mod security_gate_tests_r6;
 
+#[cfg(test)]
+mod security_gate_tests_idor_b3;
+
 #[derive(Debug, Deserialize)]
 pub struct CollectAddRequest {
     pub title: Option<String>,
@@ -325,33 +328,62 @@ pub async fn collect_create(
 #[allow(non_snake_case)]
 pub async fn collect_save(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
     body: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // 属主门禁（此前任何登录人可改任意收藏）；归属不可经 save 改写：
-    // save 走不含 person_id 的窄 spec（客户端传 personId 会被忽略，见 collect_update_spec）
+    // 归属谓词写进 UPDATE 的 WHERE（不先查后判）；save 走不含 person_id 的窄 spec，
+    // 客户端在 save 里传 personId 会被忽略（归属只能在 create 时从会话落笔）。
+    let actor = require_session(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
-    let owned = client
-        .query_opt(
-            "SELECT 1 FROM x_program_collect WHERE id = $1 AND person_id = $2 AND deleted_at IS NULL",
-            &[&id, &session.person_unique],
-        )
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
-    if owned.is_none() {
-        return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(id)),
-                ("saved".to_string(), Value::Bool(false)),
-            ]),
-        ))));
+    use deadpool_postgres::tokio_postgres::types::ToSql;
+
+    let mut set_parts: Vec<String> = Vec::new();
+    let mut values: Vec<String> = Vec::new();
+    for (json, db) in collect_update_spec().columns {
+        // 只写载荷里出现的列（缺键保持原值），与 crud_save 口径一致。
+        if let Some(value) = body.0.get(*json) {
+            set_parts.push(format!("{db}=${}", values.len() + 3));
+            values.push(value.as_str().unwrap_or("").to_string());
+        }
     }
-    let saved = shared::crud_save(&pool, &collect_update_spec(), &id, &body.0).await?;
+
+    let hit = if set_parts.is_empty() {
+        // 没有可写列：只回答归属是否存在（UPDATE 空 SET 是语法错）。
+        let sql = format!(
+            "SELECT 1 FROM x_program_collect \
+             WHERE id = $1 AND ({PERSON_OWNER_PREDICATE}) AND deleted_at IS NULL"
+        );
+        let refs: Vec<&(dyn ToSql + Sync)> = vec![&id, &actor];
+        client
+            .query_opt(&sql, &refs)
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+            .is_some()
+    } else {
+        let sql = format!(
+            "UPDATE x_program_collect SET {} \
+             WHERE id = $1 AND ({PERSON_OWNER_PREDICATE}) AND deleted_at IS NULL RETURNING id",
+            set_parts.join(", ")
+        );
+        let mut params: Vec<String> = vec![id.clone(), actor.clone()];
+        params.extend(values);
+        let refs: Vec<&(dyn ToSql + Sync)> =
+            params.iter().map(|v| v as &(dyn ToSql + Sync)).collect();
+        client
+            .query_opt(&sql, &refs)
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+            .is_some()
+    };
+
+    if !hit {
+        return Err(ownership_error(&pool, "x_program_collect", &id).await);
+    }
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Bool(saved)),
+            ("saved".to_string(), Value::Bool(true)),
         ]),
     ))))
 }
@@ -360,25 +392,31 @@ pub async fn collect_save(
 #[allow(non_snake_case)]
 pub async fn collect_delete(
     pool: Extension<Pool>,
-    session: Extension<shared::session::Session>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // 属主门禁 + 软删幂等：持他人收藏 id 删除=横向越权（修复前 crud_delete
-    // 无属主校验，任何登录人可删任意收藏）；deleted=false 不区分
-    // 「不存在/非本人/已删」，不泄漏行存在性
+    // 归属谓词写进 UPDATE 的 WHERE（不先查后判）。此前非属主也回 200/deleted=false，
+    // 既不能与「不存在」区分，也不满足「拒绝必须是 401/403」的门禁口径。
+    let actor = require_session(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
     let deleted = client
         .execute(
-            "UPDATE x_program_collect SET deleted_at = NOW() WHERE id = $1 AND person_id = $2 AND deleted_at IS NULL",
-            &[&id, &session.person_unique],
+            &format!(
+                "UPDATE x_program_collect SET deleted_at = NOW() \
+                 WHERE id = $1 AND ({PERSON_OWNER_PREDICATE}) AND deleted_at IS NULL"
+            ),
+            &[&id, &actor],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         > 0;
+    if !deleted {
+        return Err(ownership_error(&pool, "x_program_collect", &id).await);
+    }
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(deleted)),
+            ("deleted".to_string(), Value::Bool(true)),
         ]),
     ))))
 }
@@ -6607,13 +6645,19 @@ pub async fn module_output_flag_file(
 #[allow(non_snake_case)]
 pub async fn module_remove_structure_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 归属谓词写进 SELECT 的 WHERE（本端点只回读，不落笔）：非属主/无会话一律拒绝。
+    let actor = require_session(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
-            "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            &format!(
+                "SELECT id, name, entity, creator, create_time FROM x_program_module \
+                 WHERE id = $1 AND ({CREATOR_OWNER_PREDICATE}) AND deleted_at IS NULL"
+            ),
+            &[&id, &actor],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -6645,20 +6689,26 @@ pub async fn module_remove_structure_id(
                 ),
             ]),
         )))),
-        None => Ok(Json(ActionResult::error("not found"))),
+        None => Err(ownership_error(&pool, "x_program_module", &id).await),
     }
 }
 
 #[allow(non_snake_case)]
 pub async fn module_write_flag(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 归属谓词写进 SELECT 的 WHERE（本端点只回读，不落笔）：非属主/无会话一律拒绝。
+    let actor = require_session(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
-            "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            &format!(
+                "SELECT id, name, entity, creator, create_time FROM x_program_module \
+                 WHERE id = $1 AND ({CREATOR_OWNER_PREDICATE}) AND deleted_at IS NULL"
+            ),
+            &[&id, &actor],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -6690,7 +6740,7 @@ pub async fn module_write_flag(
                 ),
             ]),
         )))),
-        None => Ok(Json(ActionResult::error("not found"))),
+        None => Err(ownership_error(&pool, "x_program_module", &id).await),
     }
 }
 
@@ -9270,6 +9320,40 @@ fn require_session(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<shared::session::Session, AppError> {
     session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
+/// 归属谓词：`creator` 为本人 OR 调用者管理员。**写进 SQL WHERE**，不做先查后判；
+/// `creator` 为 NULL 时不命中（fail-closed）。
+const CREATOR_OWNER_PREDICATE: &str = "creator = $2 OR EXISTS(\
+    SELECT 1 FROM auth_person p \
+      JOIN auth_person_role pr ON pr.person_id = p.id \
+      JOIN auth_role r ON r.id = pr.role_id \
+     WHERE (p.unique_id = $2 OR p.id = $2) \
+       AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false)";
+
+/// 收藏表的归属列是 `person_id`（不是 `creator`），谓词形状同上。
+const PERSON_OWNER_PREDICATE: &str = "person_id = $2 OR EXISTS(\
+    SELECT 1 FROM auth_person p \
+      JOIN auth_person_role pr ON pr.person_id = p.id \
+      JOIN auth_role r ON r.id = pr.role_id \
+     WHERE (p.unique_id = $2 OR p.id = $2) \
+       AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false)";
+
+/// 0 行命中时区分 403/404。该读**不参与授权**：判定已由带谓词的写语句完成。
+async fn ownership_error(pool: &Pool, table: &str, id: &str) -> AppError {
+    let client = match shared::db::acquire(pool).await {
+        Ok(client) => client,
+        Err(err) => return err,
+    };
+    let sql = format!("SELECT EXISTS(SELECT 1 FROM {table} WHERE id = $1) AS row_exists");
+    match client.query_one(&sql, &[&id]).await {
+        Ok(row) => match row.try_get::<_, bool>("row_exists") {
+            Ok(true) => AppError::Forbidden,
+            Ok(false) => AppError::NotFound,
+            Err(e) => AppError::internal_with_source(concat!(file!(), ":", line!()), e),
+        },
+        Err(e) => AppError::internal_with_source(concat!(file!(), ":", line!()), e),
+    }
 }
 
 fn json_str(payload: &Value, key: &str) -> String {

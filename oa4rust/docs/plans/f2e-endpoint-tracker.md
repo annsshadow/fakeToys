@@ -103,7 +103,7 @@
 |---|---|---|---|
 | 内联副本 | `processplatform_core_express::work_terminate:34` | 与 P0-b helper 同根 | **已修**（本批 PR #188）：两处破坏实验均红 |
 | 假门 3 条 | cms：`is_admin` 只算返回布尔、不参与拦截 → 200 返回他人数据 | 门必须参与拦截（静态扫描「看起来有门」也要按行为验） | **已修**（本批）：`control` / `permission/read` 不可读改 403；`cipher` 的 `person` 改取会话（非 admin 传他人 → 403）。双向用例（A↔B 403、本人 200、published 只读）；门禁 6→8 PASS、基线 142→140；`sabotage correct` 仍红并点名 `gate-cms-readable` |
-| 写 IDOR 24 条 | 按 crate 分批，每批一次提交 | 归属写进 SQL `WHERE`（不是先查后判）+ 双向用例 + 破坏实验红 | **批次 1 已修**：`general_core_entity` 4 条（`file_update/delete`、`invoice_update/delete`）用 `CREATOR_OWNER_PREDICATE`（creator=本人 OR admin）写进 UPDATE/DELETE 的 WHERE；4 条门禁用例 LEAK→PASS（pass 8→12、基线 140→136）；`sabotage general` 红并点名 `general_core_entity|file_delete`。附带修创建冒名：`file_create`/`invoice_create` 的 `creator` 改取会话（忽略请求体）。**批次 2 已修**：`organization_core_entity` 4 条（`definition_update/delete`、`identity_update/delete`）复用同一 `CREATOR_OWNER_PREDICATE` 写进 UPDATE 的 `WHERE`（删除为软删），0 行时二次读只用于区分 403/404；4 条门禁用例 LEAK→PASS（pass 12→16、基线 136→132，leak=121 / unverified=11）；`sabotage organization` 红并点名 4 条。用例为双向 + admin 分支仍可写 + create 的 `creator` 取会话（`x_org_definition`/`x_org_identity` 的 `creator` 列此前未映射进实体，已补）。剩余 16 条按 crate 继续 |
+| 写 IDOR 24 条 | 按 crate 分批，每批一次提交 | 归属写进 SQL `WHERE`（不是先查后判）+ 双向用例 + 破坏实验红 | **批次 1 已修**：`general_core_entity` 4 条（`file_update/delete`、`invoice_update/delete`）用 `CREATOR_OWNER_PREDICATE`（creator=本人 OR admin）写进 UPDATE/DELETE 的 WHERE；4 条门禁用例 LEAK→PASS（pass 8→12、基线 140→136）；`sabotage general` 红并点名 `general_core_entity|file_delete`。附带修创建冒名：`file_create`/`invoice_create` 的 `creator` 改取会话（忽略请求体）。**批次 2 已修**：`organization_core_entity` 4 条（`definition_update/delete`、`identity_update/delete`）复用同一 `CREATOR_OWNER_PREDICATE` 写进 UPDATE 的 `WHERE`（删除为软删），0 行时二次读只用于区分 403/404；4 条门禁用例 LEAK→PASS（pass 12→16、基线 136→132，leak=121 / unverified=11）；`sabotage organization` 红并点名 4 条。用例为双向 + admin 分支仍可写 + create 的 `creator` 取会话（`x_org_definition`/`x_org_identity` 的 `creator` 列此前未映射进实体，已补）。**批次 3 已修**：`program_center` 4 条——`collect_save/collect_delete`（归属列 `person_id`）、`module_remove_structure_id/module_write_flag`（归属列 `creator`，两条本是只读桩，按只读加谓词）。两条谓词都写进 SQL `WHERE`；非属主由「200 + `deleted:false`」改为 **403/404**（原口径无法与「不存在」区分，也不满足门禁 401/403 判据）。7 个用例：双向、本人 200 且真落库、admin 分支、无会话 401、create 归属取会话人（载荷冒用 `personId` 无效）。门禁 pass 16→20、基线 132→128（leak=121 / unverified 11→7）；`sabotage program_center` 4 条 NEW-FAIL。**剩余 11 条**（此前口头口径的 16 是粗估，按用例表逐条点算实为 11：file folder 1、hotpic 2、attendance appeal 1、mind 2、cms 2+1、pp 2） |
 | 读 IDOR 117 条 | 拆 E18–E24 七批 | **先做「A 读 B / B 读 A」双向都 200 的**（谓词整体失效），再做单向 | 待做 |
 | NO-OWNER-COL A 档 12 条 | 有归属列且生产路径确实写入 | 同写 IDOR 判据 | 待做 |
 | NO-OWNER-COL B 档 5 条 | 列存在但生产路径从不写入、恒 NULL（典型 `x_cms_fileinfo.upload_person`，五处 INSERT 均不带该列） | **先补写归属值再写谓词，或改为跟随父文档 ACL**（二选一，理由入台账）。判据必须造出「有归属值」行验证谓词真会过滤，否则谓词恒不命中也会假绿 | 待做 |
@@ -150,6 +150,14 @@
   `three-ends contract` `42099512320`、`supply-chain` `42099512237`、
   `laiyipao CI` `42099512224`、`warnings-gate` `42099512217`、
   `auto-checkin` `42099512133`。符合「先绿后推」。
+- **扫描器误报：补扫描器，不补基线**。静态扫描（`fi002-column-scan` 等）把合法代码判红时，
+  先判「真缺陷」还是「扫描器盲区」；是盲区就改识别逻辑，**不往基线加条目**——基线一旦开始
+  塞误报，很快会退化成「我们知道但不管」的清单。实例：043 用 `DO $$ ... RENAME COLUMN`
+  条件改名（`type_`→`type`）骗过扫描器（原实现只认 `RENAME TO` 表改名），已补
+  `RENAME COLUMN old TO new` 解析（含 `DO` 块内语句），基线未动。
+- **`RENAME` 回扫**（2026-11-06）：全仓 grep 只命中 043 的列改名（其 `_rollback.sql` 被扫描器
+  跳过）与若干 `RENAME TO`（表改名，原已处理），未发现第二处盲区；无裸写
+  `RENAME old TO new`（省略 `COLUMN` 关键字）的列改名。
 
 ## 已知相邻（不并入本轮）
 

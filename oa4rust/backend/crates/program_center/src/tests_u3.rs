@@ -471,13 +471,15 @@ mod u3_tests {
             status_of("GET", "/api/program_center/module/output/m-1/file").await,
             StatusCode::SERVICE_UNAVAILABLE
         );
+        // 2026-11 写 IDOR 批次 3：remove/write 收归属谓词，无会话先 401（原直通 DB 503）。
         assert_eq!(
             status_of("DELETE", "/api/program_center/module/remove/structure/m-1").await,
-            StatusCode::SERVICE_UNAVAILABLE
+            StatusCode::UNAUTHORIZED
         );
-        let write_put = status_of("PUT", "/api/program_center/module/write/m-1").await;
-        assert_ne!(write_put, StatusCode::NOT_FOUND);
-        assert_ne!(write_put, StatusCode::METHOD_NOT_ALLOWED);
+        assert_eq!(
+            status_of("PUT", "/api/program_center/module/write/m-1").await,
+            StatusCode::UNAUTHORIZED
+        );
 
         assert_eq!(
             status_of("POST", "/api/program_center/mpweixin/check").await,
