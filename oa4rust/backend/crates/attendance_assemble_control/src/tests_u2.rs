@@ -300,12 +300,13 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2_verb_chains_align_with_legacy_methods() {
-        // o2server 端 PUT 承载 filter 查询：链式注册后 PUT 可达（不再 405/404）
+        // o2server 端 PUT 承载 filter 查询：链式注册后 PUT 可达（不再 405/404）。
+        // F2 起该 handler 要求会话：无令牌先 401，仍证明路由命中。
         for (method, uri, expect) in [
             (
                 "PUT",
                 "/api/attendance/assemble/control/attendancedetail/filter/list",
-                StatusCode::SERVICE_UNAVAILABLE,
+                StatusCode::UNAUTHORIZED,
             ),
             (
                 "PUT",
