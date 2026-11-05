@@ -103,7 +103,7 @@
             <button class="icon-btn" title="消费消息" @click="imMore('consume')">🍽</button>
             <button class="icon-btn" title="按类型消费" @click="imMore('consumeType')">🏷</button>
             <button class="icon-btn" title="自定义消息2" @click="imMore('customCreate')">✚</button>
-            <button class="icon-btn" title="消息分页" @click="imMore('msgPaging')">📄</button>
+            <button class="icon-btn" title="消息分页" @click="openMsgPaging">📄</button>
             <button class="icon-btn" title="群发类型" @click="imMore('massEnable')">📣</button>
             <button class="icon-btn" title="删群发" @click="imMore('massDelete')">🗑</button>
             <button class="icon-btn" title="会话置顶" @click="imMore2('topSet')">📌</button>
@@ -177,6 +177,41 @@
         <p>从左侧选择一个对话开始聊天</p>
       </div>
     </main>
+
+    <!-- R106：消息分页诊断——页码真正进请求，响应按页渲染（旧实现固定第 1 页且丢弃结果） -->
+    <div v-if="msgPagingOpen" class="paging-overlay" @click.self="closeMsgPaging">
+      <div class="paging-panel glass-card">
+        <div class="paging-header">
+          <h3>消息分页</h3>
+          <button class="paging-close" @click="closeMsgPaging">×</button>
+        </div>
+        <div class="paging-meta">第 {{ msgPagingPage }} 页 · 本页 {{ msgPagingRows.length }} 条</div>
+        <div v-if="msgPagingLoading" class="paging-status">加载中…</div>
+        <div v-else-if="msgPagingError" class="paging-status is-error">
+          <span>{{ msgPagingError }}</span>
+          <button class="load-more-retry" @click="loadMsgPaging(msgPagingPage)">重试</button>
+        </div>
+        <div v-else-if="msgPagingRows.length === 0" class="paging-status">本页没有消息</div>
+        <div v-else class="paging-list">
+          <div v-for="row in msgPagingRows" :key="row.id" class="paging-row">
+            <div class="paging-row-main">{{ row.content || '（无内容）' }}</div>
+            <div class="paging-row-meta">{{ row.sender || '未知发送人' }} · {{ row.createTime }}</div>
+          </div>
+        </div>
+        <div class="paging-actions">
+          <button class="paging-btn" :disabled="msgPagingPage <= 1 || msgPagingLoading" @click="loadMsgPaging(msgPagingPage - 1)">
+            上一页
+          </button>
+          <button
+            class="paging-btn"
+            :disabled="!msgPagingHasNext || msgPagingLoading"
+            @click="loadMsgPaging(msgPagingPage + 1)"
+          >
+            下一页
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -185,6 +220,7 @@ import { api, type O2WebSocketClient, useSession, useWebSocket } from '@oa4rust/
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+import { fetchImPagingPage, type ImPagingRow } from './imMessagePaging'
 import { fetchMessagePage, mergeMessagePages } from './imPaging'
 
 interface Conversation {
@@ -217,6 +253,13 @@ const msgHasMore = ref(true)
 const msgLoadingMore = ref(false)
 const msgLoadMoreError = ref('')
 let msgRequestSeq = 0
+// R106：消息分页诊断面板状态
+const msgPagingOpen = ref(false)
+const msgPagingPage = ref(1)
+const msgPagingRows = ref<ImPagingRow[]>([])
+const msgPagingLoading = ref(false)
+const msgPagingError = ref('')
+const msgPagingHasNext = ref(false)
 const sendLoading = ref(false)
 const wsClient = ref<O2WebSocketClient | null>(null)
 // P5：IM 实时协议状态
@@ -772,6 +815,30 @@ async function imMsgAction(kind: string): Promise<void> {
     toast.error(`操作失败: ${err?.message ?? ''}`)
   }
 }
+// R106：消息分页诊断——页码真正进请求并按页渲染（旧实现固定第 1 页且结果丢弃）
+async function loadMsgPaging(page: number): Promise<void> {
+  const target = Math.max(1, Math.floor(page))
+  msgPagingLoading.value = true
+  msgPagingError.value = ''
+  try {
+    const result = await fetchImPagingPage((path) => api.post(path, {}), target)
+    msgPagingPage.value = result.page
+    msgPagingRows.value = result.rows
+    msgPagingHasNext.value = result.hasNext
+  } catch (e: any) {
+    msgPagingError.value = `消息分页加载失败：${e?.message ?? '未知错误'}`
+  } finally {
+    msgPagingLoading.value = false
+  }
+}
+function openMsgPaging(): void {
+  msgPagingOpen.value = true
+  void loadMsgPaging(1)
+}
+function closeMsgPaging(): void {
+  msgPagingOpen.value = false
+}
+
 // rev367：IM 会话更新/按人列会话/管理配置 + 消息收藏分页/下载/缩略/列表 + 标记已读/消费/消费类型/自定义消息/分页/群发类型/删群发 真实路由（避已消费方法孪生，仅接 distinct 新端点）
 async function imMore(op: string) {
   try {
@@ -801,7 +868,6 @@ async function imMore(op: string) {
       const t = prompt('消息类型:', 'all') || 'all'
       await api.put(`/api/message/assemble/communicate/consume/type/${encodeURIComponent(t)}`, {})
     } else if (op === 'customCreate') await api.post('/api/message/assemble/communicate/message/custom/create', {})
-    else if (op === 'msgPaging') await api.post('/api/message/assemble/communicate/message/list/paging/1/size/20', {})
     else if (op === 'massEnable') await api.post('/api/message/assemble/communicate/mass/enable/type', {})
     else {
       const id = prompt('要删除的群发 ID:', '') || ''
@@ -1225,6 +1291,37 @@ async function loadImTwin() {
   border: 1px solid var(--border-color); background: var(--bg-elevated);
   color: var(--text-primary); font-size: 12px;
 }
+.paging-overlay {
+  position: fixed; inset: 0; z-index: 100; background: rgba(0, 0, 0, 0.6);
+  display: flex; align-items: center; justify-content: center;
+}
+.paging-panel {
+  width: 520px; max-width: 92vw; max-height: 76vh; padding: 20px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.paging-header { display: flex; align-items: center; justify-content: space-between; }
+.paging-header h3 { margin: 0; font-size: 16px; color: var(--color-primary); }
+.paging-close { border: none; background: transparent; color: var(--text-muted); font-size: 20px; cursor: pointer; }
+.paging-meta { font-size: 12px; color: var(--text-muted); }
+.paging-status { padding: 24px 0; text-align: center; font-size: 13px; color: var(--text-muted); }
+.paging-status.is-error {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  color: var(--color-danger, #e5484d);
+}
+.paging-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.paging-row {
+  padding: 8px 10px; border-radius: var(--radius-md);
+  background: var(--bg-elevated); border: 1px solid var(--border-subtle);
+}
+.paging-row-main { font-size: 13px; color: var(--text-primary); word-break: break-word; }
+.paging-row-meta { margin-top: 4px; font-size: 11px; color: var(--text-muted); }
+.paging-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.paging-btn {
+  padding: 6px 14px; border-radius: var(--radius-sm); cursor: pointer;
+  border: 1px solid var(--border-color); background: var(--bg-elevated);
+  color: var(--text-primary); font-size: 13px;
+}
+.paging-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .message { display: flex; gap: 8px; max-width: 80%; }
 .message.outgoing { margin-left: auto; flex-direction: row-reverse; }
