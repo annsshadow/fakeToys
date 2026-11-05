@@ -108,7 +108,7 @@
 |---|---|---|---|
 | 内联副本 | `processplatform_core_express::work_terminate:34` | 与 P0-b helper 同根 | **已修**（本批 PR #188）：两处破坏实验均红 |
 | 假门 3 条 | cms：`is_admin` 只算返回布尔、不参与拦截 → 200 返回他人数据 | 门必须参与拦截（静态扫描「看起来有门」也要按行为验） | **已修**（本批）：`control` / `permission/read` 不可读改 403；`cipher` 的 `person` 改取会话（非 admin 传他人 → 403）。双向用例（A↔B 403、本人 200、published 只读）；门禁 6→8 PASS、基线 142→140；`sabotage correct` 仍红并点名 `gate-cms-readable` |
-| 写 IDOR 24 条 | 按 crate 分批，每批一次提交 | 归属写进 SQL `WHERE`（不是先查后判）+ 双向用例 + 破坏实验红 | **批次 1 已修**：`general_core_entity` 4 条（`file_update/delete`、`invoice_update/delete`）用 `CREATOR_OWNER_PREDICATE`（creator=本人 OR admin）写进 UPDATE/DELETE 的 WHERE；4 条门禁用例 LEAK→PASS（pass 8→12、基线 140→136）；`sabotage general` 红并点名 `general_core_entity|file_delete`。附带修创建冒名：`file_create`/`invoice_create` 的 `creator` 改取会话（忽略请求体）。**批次 2 已修**：`organization_core_entity` 4 条（`definition_update/delete`、`identity_update/delete`）复用同一 `CREATOR_OWNER_PREDICATE` 写进 UPDATE 的 `WHERE`（删除为软删），0 行时二次读只用于区分 403/404；4 条门禁用例 LEAK→PASS（pass 12→16、基线 136→132，leak=121 / unverified=11）；`sabotage organization` 红并点名 4 条。用例为双向 + admin 分支仍可写 + create 的 `creator` 取会话（`x_org_definition`/`x_org_identity` 的 `creator` 列此前未映射进实体，已补）。**批次 3 已修**：`program_center` 4 条——`collect_save/collect_delete`（归属列 `person_id`）、`module_remove_structure_id/module_write_flag`（归属列 `creator`，两条本是只读桩，按只读加谓词）。两条谓词都写进 SQL `WHERE`；非属主由「200 + `deleted:false`」改为 **403/404**（原口径无法与「不存在」区分，也不满足门禁 401/403 判据）。7 个用例：双向、本人 200 且真落库、admin 分支、无会话 401、create 归属取会话人（载荷冒用 `personId` 无效）。门禁 pass 16→20、基线 132→128（leak=121 / unverified 11→7）；`sabotage program_center` 4 条 NEW-FAIL。**剩余 11 条**（此前口头口径的 16 是粗估，按用例表逐条点算实为 11：file folder 1、hotpic 2、attendance appeal 1、mind 2、cms 2+1、pp 2） |
+| 写 IDOR 24 条 | 按 crate 分批，每批一次提交 | 归属写进 SQL `WHERE`（不是先查后判）+ 双向用例 + 破坏实验红 | **批次 1 已修**：`general_core_entity` 4 条（`file_update/delete`、`invoice_update/delete`）用 `CREATOR_OWNER_PREDICATE`（creator=本人 OR admin）写进 UPDATE/DELETE 的 WHERE；4 条门禁用例 LEAK→PASS（pass 8→12、基线 140→136）；`sabotage general` 红并点名 `general_core_entity|file_delete`。附带修创建冒名：`file_create`/`invoice_create` 的 `creator` 改取会话（忽略请求体）。**批次 2 已修**：`organization_core_entity` 4 条（`definition_update/delete`、`identity_update/delete`）复用同一 `CREATOR_OWNER_PREDICATE` 写进 UPDATE 的 `WHERE`（删除为软删），0 行时二次读只用于区分 403/404；4 条门禁用例 LEAK→PASS（pass 12→16、基线 136→132，leak=121 / unverified=11）；`sabotage organization` 红并点名 4 条。用例为双向 + admin 分支仍可写 + create 的 `creator` 取会话（`x_org_definition`/`x_org_identity` 的 `creator` 列此前未映射进实体，已补）。**批次 3 已修**：`program_center` 4 条——`collect_save/collect_delete`（归属列 `person_id`）、`module_remove_structure_id/module_write_flag`（归属列 `creator`，两条本是只读桩，按只读加谓词）。两条谓词都写进 SQL `WHERE`；非属主由「200 + `deleted:false`」改为 **403/404**（原口径无法与「不存在」区分，也不满足门禁 401/403 判据）。7 个用例：双向、本人 200 且真落库、admin 分支、无会话 401、create 归属取会话人（载荷冒用 `personId` 无效）。门禁 pass 16→20、基线 132→128（leak=121 / unverified 11→7）；`sabotage program_center` 4 条 NEW-FAIL。**批次 4 已完成（代码+用例）**：`hotpic` 2 条（`delete_by_id`、`user_hotpic_delete_by_ids`）用 `HOTPIC_OWNER_PREDICATE` —— **全局行**（`application`/`info_id` 两列皆空，见 `visible_scope`）**仅管理员可写**，专属行 `creator=本人 OR 管理员`，与 `create_hotpic`/`save_hotpic` 的 admin-only 口径一致（照搬 `creator=本人` 会锁死全局热点图维护入口）；`mind` 2 条（`update_mind`、`update_folder`）用 `CREATOR_OWNER_PREDICATE`（两表无 `deleted_at`）。谓词均写进 SQL `WHERE`，0 行时二次读只用于区分 403/404。门禁读数 pass 20→24（leak=117 / unverified=7）；**基线暂未减**（当前 128，main 门禁仍是 148 条版本，待升级到 192 条后按新读数重新对齐再减 4，见纪律段）。`sabotage hotpic_mind` 4 条 NEW-FAIL（临时重写基线验证后基线文件已还原）。**剩余 7 条**（此前口头口径的 16 是粗估，按用例表逐条点算实为 11 起步、本批后剩 7：file folder 1、attendance appeal 1、cms 2+1、pp 2） |
 | 读 IDOR 117 条 | 拆 E18–E24 七批 | **先做「A 读 B / B 读 A」双向都 200 的**（谓词整体失效），再做单向 | 待做 |
 | NO-OWNER-COL A 档 12 条 | 有归属列且生产路径确实写入 | 同写 IDOR 判据 | 待做 |
 | NO-OWNER-COL B 档 5 条 | 列存在但生产路径从不写入、恒 NULL（典型 `x_cms_fileinfo.upload_person`，五处 INSERT 均不带该列） | **先补写归属值再写谓词，或改为跟随父文档 ACL**（二选一，理由入台账）。判据必须造出「有归属值」行验证谓词真会过滤，否则谓词恒不命中也会假绿 | 待做 |
@@ -163,6 +163,13 @@
 - **`RENAME` 回扫**（2026-11-06）：全仓 grep 只命中 043 的列改名（其 `_rollback.sql` 被扫描器
   跳过）与若干 `RENAME TO`（表改名，原已处理），未发现第二处盲区；无裸写
   `RENAME old TO new`（省略 `COLUMN` 关键字）的列改名。
+- **减基线前先确认工作树与 `origin/main` 同步**（`git rev-parse HEAD` 对 `origin/main`）。
+  在旧代码上跑 `baseline` 会把「尚未修好的」写进基线，等于把待修项永久合法化。
+  `STALE-BASELINE` 的含义是「已修复但基线未减」，不是可以压平的数字差异。
+- **门禁版本升级期间，基线以新门禁读数为准**：审计线正在把门禁从 148 条升到 192 条
+  （新增 drift / admin_policy / 深分页 / 写正控制），同步后非 PASS 读数会从 128 变 160。
+  先在 main 上确认新门禁已落地，再 rebase 重新取数；**不得按旧数字手改**。代码/用例与
+  基线更新可以分两次提交 —— 宁可分两次，也不要写错基线。
 
 ## 已知相邻（不并入本轮）
 

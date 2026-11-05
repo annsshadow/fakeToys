@@ -18,6 +18,7 @@
     python scripts/security_regression_gate.py sabotage correct     # Rust②：弄坏正确端点
     python scripts/security_regression_gate.py sabotage organization    # Rust②b：摘掉 org 归属谓词
     python scripts/security_regression_gate.py sabotage program_center  # Rust②c：摘掉 collect/module 归属谓词
+    python scripts/security_regression_gate.py sabotage hotpic_mind      # Rust②d：摘掉 hotpic/mind 归属谓词（4 条）
     python scripts/security_regression_gate.py sabotage go-limit0   # Go①：扣款乘 2
     python scripts/security_regression_gate.py sabotage go-idor-rev # Go②：摘掉预设删除归属
     python scripts/security_regression_gate.py sabotage go-empty-list    # Go③：伪装成已修（列表恒空）
@@ -67,6 +68,9 @@ CMS = BACKEND / "crates/cms_assemble_control/src/lib.rs"
 GENERAL = BACKEND / "crates/general_core_entity/src/lib.rs"
 ORGANIZATION = BACKEND / "crates/organization_core_entity/src/lib.rs"
 PROGRAM_CENTER = BACKEND / "crates/program_center/src/lib.rs"
+HOTPIC_CORE = BACKEND / "crates/hotpic_core_entity/src/lib.rs"
+HOTPIC_ASSEMBLE = BACKEND / "crates/hotpic_assemble_control/src/lib.rs"
+MIND = BACKEND / "crates/mind_core_entity/src/lib.rs"
 
 # 第十一轮：keyset 深分页与本人写正控制所在的 crate
 ATTENDANCE_ASSEMBLE = BACKEND / "crates/attendance_assemble_control/src/lib.rs"
@@ -77,6 +81,12 @@ CMS_EXPECT = "gate-cms-readable"
 GENERAL_EXPECT = "general_core_entity|file_delete|POST"
 ORGANIZATION_EXPECT = "organization_core_entity|definition_update|PUT"
 PROGRAM_CENTER_EXPECT = "program_center|collect_delete|DELETE"
+HOTPIC_MIND_EXPECTS = [
+    "hotpic_core_entity|delete_by_id|DELETE",
+    "hotpic_assemble_control|user_hotpic_delete_by_ids|DELETE",
+    "mind_core_entity|update_mind|POST",
+    "mind_core_entity|update_folder|POST",
+]
 
 # 分页用例里，next handler 的归属谓词（只匹配第一处，不动 prev）
 PAGE_SCOPE_RE = re.compile(r"AND \(\$3::text IS NULL OR person_id = \$3::text\)")
@@ -495,6 +505,49 @@ def sabotage_rust_swallow() -> int:
         print(f"[restore] {ATTENDANCE_ASSEMBLE.name} 已还原")
 
 
+# hotpic 的归属谓词（本轮写 IDOR 第四批）：全局行仅管理员、专属行本人或管理员。
+# 谓词字符串以单个 `)` 收尾（批次 3 曾把终结符写成两个括号导致匹配不到）。
+HOTPIC_OWNERSHIP_RE = re.compile(
+    r'const HOTPIC_OWNER_PREDICATE: &str = .*?false\)";', re.S
+)
+HOTPIC_OWNERSHIP_PATCH = 'const HOTPIC_OWNER_PREDICATE: &str = "TRUE";'
+
+# mind 的归属谓词（同批）：creator 本人或管理员。形状与批次 1/2 相同。
+MIND_OWNERSHIP_RE = re.compile(
+    r'const CREATOR_OWNER_PREDICATE: &str = .*?false\)";', re.S
+)
+MIND_OWNERSHIP_PATCH = 'const CREATOR_OWNER_PREDICATE: &str = "TRUE";'
+
+
+def sabotage_many(
+    title: str,
+    mutations: list[tuple[Path, re.Pattern[str], str, str]],
+    expects: list[str],
+) -> int:
+    """多文件破坏实验：逐个替换，跑一次门禁，最后统一还原。"""
+    print(f"== 破坏实验：{title}")
+    originals: list[tuple[Path, bytes]] = []
+    try:
+        for path, pattern, patch, label in mutations:
+            originals.append((path, mutate(path, pattern, patch, label)))
+        code, out = cargo_test()
+        caught = code != 0 and "NEW-FAIL" in out and all(e in out for e in expects)
+        for line in out.splitlines():
+            if line.startswith(("[LEAK]", "[PASS]", "[UNVERIFIED]", "NEW-FAIL", "STALE-BASELINE")) \
+                    or line.startswith("=== ") or "非 PASS" in line or "test result:" in line:
+                print(line)
+        print()
+        if caught:
+            print(f"实验成立：门禁变红（exit={code}），并点名 {len(expects)} 条用例")
+            return 0
+        print(f"实验失败：门禁未红或未点名全部用例（exit={code}）")
+        return 1
+    finally:
+        for path, original in originals:
+            path.write_bytes(original)
+            print(f"[restore] {path.name} 已还原")
+
+
 def sabotage(kind: str) -> int:
     if kind == "ownership":
         path, pattern, patch, expect = ATTENDANCE, OWNERSHIP_RE, OWNERSHIP_PATCH, ATTENDANCE_EXPECT
@@ -526,9 +579,19 @@ def sabotage(kind: str) -> int:
             PROGRAM_CENTER_EXPECT,
         )
         title = "摘掉 program_center collect/module 的归属谓词（4 条应变 NEW-FAIL）"
+    elif kind == "hotpic_mind":
+        return sabotage_many(
+            "摘掉 hotpic/mind 的归属谓词（4 条应变 NEW-FAIL）",
+            [
+                (HOTPIC_CORE, HOTPIC_OWNERSHIP_RE, HOTPIC_OWNERSHIP_PATCH, "hotpic_core"),
+                (HOTPIC_ASSEMBLE, HOTPIC_OWNERSHIP_RE, HOTPIC_OWNERSHIP_PATCH, "hotpic_assemble"),
+                (MIND, MIND_OWNERSHIP_RE, MIND_OWNERSHIP_PATCH, "mind"),
+            ],
+            HOTPIC_MIND_EXPECTS,
+        )
     else:
         raise SystemExit(
-            f"未知破坏实验: {kind}（可选 ownership / correct / general / organization / program_center）"
+            f"未知破坏实验: {kind}（可选 ownership / correct / general / organization / program_center / hotpic_mind）"
         )
 
     print(f"== 破坏实验：{title}")
@@ -573,7 +636,8 @@ def main() -> int:
     if cmd == "sabotage":
         if len(sys.argv) < 3:
             print("用法: security_regression_gate.py sabotage "
-                  "<ownership|correct|general|rust-drift-to-leak|rust-swallow-write|"
+                  "<ownership|correct|general|organization|program_center|hotpic_mind|"
+                  "rust-drift-to-leak|rust-swallow-write|"
                   "go-limit0|go-idor-rev|go-empty-list|go-swallow-write|"
                   "go-dead-write|go-page2|go-drift-to-leak>")
             return 2
