@@ -2017,5 +2017,21 @@ HTTP 400 Bad Request
   回库行存在、`fire_at` 值与请求一致（`timer_jobs.rs::timer_start_write_flow`）。
 - `pnpm --filter @oa4rust/desktop typecheck` 通过；biome 检查 3 个文件零告警。
 
+## 环境债：默认测试库 `oa4rust` 迁移记录漂移（2026-11-05，本轮不处理）
+
+- **现状**：`docker exec ... psql -d oa4rust` 中 `schema_migrations` 只有 **19 条**（最大版本 018），
+  但 `auth_person_identity` 已是 043 重命名后的结构（列名 `person_id`，无 `person_unique`）。
+  即"schema 已前进、迁移记录未前进"，库处于不一致态。
+- **影响**：`cargo test -p shared` 在默认 `DATABASE_URL=.../oa4rust` 下会红 1 条
+  （`migrate::tests::migrations_are_ordered_idempotent_and_fail_loud_on_missing_dir`，
+  `column "person_unique" does not exist`）；切换到迁移一致的 `oa4rust_test` 后 **366 passed / 0 failed**。
+  结论：失败是库状态问题，不是代码缺陷，但会误导"全量测试零失败"的判定。
+- **后续处理方向（本轮不执行）**：
+  1. 评估 `oa4rust` 库内数据是否仍需保留（当前 `auth_person` 有数据，**禁止直接 DROP/重建**，可能丢数据）；
+  2. 若数据需保留，走"备份 → 导出数据 → 重建 schema 并全量迁移 → 回灌"；
+  3. 若只是临时库，改为指向 `oa4rust_test` 或新建专用测试库；
+  4. 在此之前，所有测试命令固定显式设置 `DATABASE_URL=postgres://.../oa4rust_test`，并在报告中注明库名。
+- **口径**：本条为**环境债**，不是千轮功能点，不计轮次。
+
 
 
