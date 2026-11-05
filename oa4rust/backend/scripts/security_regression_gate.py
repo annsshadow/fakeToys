@@ -9,6 +9,7 @@
     python scripts/security_regression_gate.py baseline   # 重写基线（修复/确认后）
     python scripts/security_regression_gate.py sabotage ownership  # 破坏实验①：摘掉已修的归属条件
     python scripts/security_regression_gate.py sabotage correct    # 破坏实验②：弄坏一条本来正确的端点
+    python scripts/security_regression_gate.py sabotage organization # 破坏实验③：摘掉 org 的归属谓词
 
 环境变量：
     DATABASE_URL   Postgres 连接串（默认 postgres://o2server:password@localhost:5432/oa4rust_test）
@@ -32,10 +33,12 @@ TEST = "security_regression"
 ATTENDANCE = BACKEND / "crates/attendance_core_entity/src/lib.rs"
 CMS = BACKEND / "crates/cms_assemble_control/src/lib.rs"
 GENERAL = BACKEND / "crates/general_core_entity/src/lib.rs"
+ORGANIZATION = BACKEND / "crates/organization_core_entity/src/lib.rs"
 
 ATTENDANCE_EXPECT = "attendance_core_entity|record_update|POST"
 CMS_EXPECT = "gate-cms-readable"
 GENERAL_EXPECT = "general_core_entity|file_delete|POST"
+ORGANIZATION_EXPECT = "organization_core_entity|definition_update|PUT"
 
 OWNERSHIP_RE = re.compile(
     r'const RECORD_OWNER_PREDICATE: &str = .*?false\)\)";', re.S
@@ -47,6 +50,13 @@ GENERAL_OWNERSHIP_RE = re.compile(
     r'const CREATOR_OWNER_PREDICATE: &str = .*?false\)\)";', re.S
 )
 GENERAL_OWNERSHIP_PATCH = (
+    'const CREATOR_OWNER_PREDICATE: &str = "id = $1 AND $2 IS NOT NULL";'
+)
+
+# org definition/identity 的归属谓词（本轮写 IDOR 第二批）：摘掉 creator/admin 判定。
+# 复用上面的正则形状，但作用在 organization crate 的 lib.rs 上。
+ORGANIZATION_OWNERSHIP_RE = GENERAL_OWNERSHIP_RE
+ORGANIZATION_OWNERSHIP_PATCH = (
     'const CREATOR_OWNER_PREDICATE: &str = "id = $1 AND $2 IS NOT NULL";'
 )
 
@@ -111,8 +121,18 @@ def sabotage(kind: str) -> int:
             GENERAL_EXPECT,
         )
         title = "摘掉 file/invoice 的 creator/管理员归属谓词（应变 NEW-FAIL）"
+    elif kind == "organization":
+        path, pattern, patch, expect = (
+            ORGANIZATION,
+            ORGANIZATION_OWNERSHIP_RE,
+            ORGANIZATION_OWNERSHIP_PATCH,
+            ORGANIZATION_EXPECT,
+        )
+        title = "摘掉 org definition/identity 的 creator/管理员归属谓词"
     else:
-        raise SystemExit(f"未知破坏实验: {kind}（可选 ownership / correct / general）")
+        raise SystemExit(
+            f"未知破坏实验: {kind}（可选 ownership / correct / general / organization）"
+        )
 
     print(f"== 破坏实验：{title}")
     original = mutate(path, pattern, patch, kind)

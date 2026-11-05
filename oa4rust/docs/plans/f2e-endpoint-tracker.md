@@ -103,7 +103,7 @@
 |---|---|---|---|
 | 内联副本 | `processplatform_core_express::work_terminate:34` | 与 P0-b helper 同根 | **已修**（本批 PR #188）：两处破坏实验均红 |
 | 假门 3 条 | cms：`is_admin` 只算返回布尔、不参与拦截 → 200 返回他人数据 | 门必须参与拦截（静态扫描「看起来有门」也要按行为验） | **已修**（本批）：`control` / `permission/read` 不可读改 403；`cipher` 的 `person` 改取会话（非 admin 传他人 → 403）。双向用例（A↔B 403、本人 200、published 只读）；门禁 6→8 PASS、基线 142→140；`sabotage correct` 仍红并点名 `gate-cms-readable` |
-| 写 IDOR 24 条 | 按 crate 分批，每批一次提交 | 归属写进 SQL `WHERE`（不是先查后判）+ 双向用例 + 破坏实验红 | **批次 1 已修**：`general_core_entity` 4 条（`file_update/delete`、`invoice_update/delete`）用 `CREATOR_OWNER_PREDICATE`（creator=本人 OR admin）写进 UPDATE/DELETE 的 WHERE；4 条门禁用例 LEAK→PASS（pass 8→12、基线 140→136）；`sabotage general` 红并点名 `general_core_entity|file_delete`。附带修创建冒名：`file_create`/`invoice_create` 的 `creator` 改取会话（忽略请求体）。剩余 20 条按 crate 继续 |
+| 写 IDOR 24 条 | 按 crate 分批，每批一次提交 | 归属写进 SQL `WHERE`（不是先查后判）+ 双向用例 + 破坏实验红 | **批次 1 已修**：`general_core_entity` 4 条（`file_update/delete`、`invoice_update/delete`）用 `CREATOR_OWNER_PREDICATE`（creator=本人 OR admin）写进 UPDATE/DELETE 的 WHERE；4 条门禁用例 LEAK→PASS（pass 8→12、基线 140→136）；`sabotage general` 红并点名 `general_core_entity|file_delete`。附带修创建冒名：`file_create`/`invoice_create` 的 `creator` 改取会话（忽略请求体）。**批次 2 已修**：`organization_core_entity` 4 条（`definition_update/delete`、`identity_update/delete`）复用同一 `CREATOR_OWNER_PREDICATE` 写进 UPDATE 的 `WHERE`（删除为软删），0 行时二次读只用于区分 403/404；4 条门禁用例 LEAK→PASS（pass 12→16、基线 136→132，leak=121 / unverified=11）；`sabotage organization` 红并点名 4 条。用例为双向 + admin 分支仍可写 + create 的 `creator` 取会话（`x_org_definition`/`x_org_identity` 的 `creator` 列此前未映射进实体，已补）。剩余 16 条按 crate 继续 |
 | 读 IDOR 117 条 | 拆 E18–E24 七批 | **先做「A 读 B / B 读 A」双向都 200 的**（谓词整体失效），再做单向 | 待做 |
 | NO-OWNER-COL A 档 12 条 | 有归属列且生产路径确实写入 | 同写 IDOR 判据 | 待做 |
 | NO-OWNER-COL B 档 5 条 | 列存在但生产路径从不写入、恒 NULL（典型 `x_cms_fileinfo.upload_person`，五处 INSERT 均不带该列） | **先补写归属值再写谓词，或改为跟随父文档 ACL**（二选一，理由入台账）。判据必须造出「有归属值」行验证谓词真会过滤，否则谓词恒不命中也会假绿 | 待做 |
@@ -134,8 +134,22 @@
   `gh auth refresh -s workflow` 补齐该 scope。
   - 本地 push 必须是 **fast-forward**（`non_fast_forward` 规则会挡非 ff）。
   - required checks 规则不评估直推的新提交，所以这条路径**不靠检查放行**，等价于 admin
-    绕过；使用前提是**被推送树对应分支上的必需检查已全绿**，并按上面的纪律留痕。
-    本次 #192 使用该路径时，head `c74d8720` 的 10 项检查全部 success。
+    绕过；使用前提是**被推送树对应分支上的必需检查已全绿**，并按下面的纪律留痕。
+- **直推 `main` 只允许一种情形**：PR 触及 `.github/workflows/**`，而 `gh` 因 OAuth app 缺
+  `workflow` scope 无法用 API 合并（`gh pr merge --admin` 同样被拒）时。**其它任何情况一律
+  走 PR**。直推的提交信息必须带 `[direct-push: workflow-scope]` 前缀——否则事后无法从
+  history 分辨「合规例外」还是「顺手绕」。
+- **直推前必须「先绿后推」**：先在被推分支上跑完整 CI 并全绿，再推；**不是推完等绿**，
+  后者等于在 `main` 上做实验。每次直推把该次 run id 记一行（见下方「直推记录」）。
+  直推只能是 fast-forward；`non_fast_forward` 挡的是强推/非 ff 推送，不挡合法 ff 推进，
+  所以本地 merge + push 是当前唯一可行路径（API 路径被 workflow scope 拒绝）。
+- **待用户手动执行**：`gh auth refresh -s workflow` 需要交互式登录，agent 无法代做。
+  执行后可直接用 API 合并 workflow PR，上述直推例外即应关闭。
+- **直推记录**：`2026-11-05T20:12:52Z` #192（head `c74d8720`）—— 推前 pull_request 全套
+  检查全绿：`CI` run `42099512280`、`OA4Rust web quality` `42099512175`、
+  `three-ends contract` `42099512320`、`supply-chain` `42099512237`、
+  `laiyipao CI` `42099512224`、`warnings-gate` `42099512217`、
+  `auto-checkin` `42099512133`。符合「先绿后推」。
 
 ## 已知相邻（不并入本轮）
 
