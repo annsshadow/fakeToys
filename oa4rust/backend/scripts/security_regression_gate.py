@@ -10,6 +10,7 @@
     python scripts/security_regression_gate.py sabotage ownership  # 破坏实验①：摘掉已修的归属条件
     python scripts/security_regression_gate.py sabotage correct    # 破坏实验②：弄坏一条本来正确的端点
     python scripts/security_regression_gate.py sabotage organization # 破坏实验③：摘掉 org 的归属谓词
+    python scripts/security_regression_gate.py sabotage program_center # 破坏实验④：摘掉 collect/module 的归属谓词
 
 环境变量：
     DATABASE_URL   Postgres 连接串（默认 postgres://o2server:password@localhost:5432/oa4rust_test）
@@ -34,11 +35,13 @@ ATTENDANCE = BACKEND / "crates/attendance_core_entity/src/lib.rs"
 CMS = BACKEND / "crates/cms_assemble_control/src/lib.rs"
 GENERAL = BACKEND / "crates/general_core_entity/src/lib.rs"
 ORGANIZATION = BACKEND / "crates/organization_core_entity/src/lib.rs"
+PROGRAM_CENTER = BACKEND / "crates/program_center/src/lib.rs"
 
 ATTENDANCE_EXPECT = "attendance_core_entity|record_update|POST"
 CMS_EXPECT = "gate-cms-readable"
 GENERAL_EXPECT = "general_core_entity|file_delete|POST"
 ORGANIZATION_EXPECT = "organization_core_entity|definition_update|PUT"
+PROGRAM_CENTER_EXPECT = "program_center|collect_delete|DELETE"
 
 OWNERSHIP_RE = re.compile(
     r'const RECORD_OWNER_PREDICATE: &str = .*?false\)\)";', re.S
@@ -58,6 +61,19 @@ GENERAL_OWNERSHIP_PATCH = (
 ORGANIZATION_OWNERSHIP_RE = GENERAL_OWNERSHIP_RE
 ORGANIZATION_OWNERSHIP_PATCH = (
     'const CREATOR_OWNER_PREDICATE: &str = "id = $1 AND $2 IS NOT NULL";'
+)
+
+# program_center 的 collect/module 归属谓词（本轮写 IDOR 第三批）。两个常量相邻，
+# 一次匹配整段替换成恒真，摘掉归属判定。
+PROGRAM_CENTER_OWNERSHIP_RE = re.compile(
+    r'const CREATOR_OWNER_PREDICATE: &str = .*?false\)";\s*'
+    r'/// .*?\n'
+    r'const PERSON_OWNER_PREDICATE: &str = .*?false\)";',
+    re.S,
+)
+PROGRAM_CENTER_OWNERSHIP_PATCH = (
+    'const CREATOR_OWNER_PREDICATE: &str = "TRUE";\n'
+    'const PERSON_OWNER_PREDICATE: &str = "TRUE";'
 )
 
 # document_permission_read_u3 的 readable 计算（不可读即 403）
@@ -129,9 +145,17 @@ def sabotage(kind: str) -> int:
             ORGANIZATION_EXPECT,
         )
         title = "摘掉 org definition/identity 的 creator/管理员归属谓词"
+    elif kind == "program_center":
+        path, pattern, patch, expect = (
+            PROGRAM_CENTER,
+            PROGRAM_CENTER_OWNERSHIP_RE,
+            PROGRAM_CENTER_OWNERSHIP_PATCH,
+            PROGRAM_CENTER_EXPECT,
+        )
+        title = "摘掉 program_center collect/module 的归属谓词（4 条应变 NEW-FAIL）"
     else:
         raise SystemExit(
-            f"未知破坏实验: {kind}（可选 ownership / correct / general / organization）"
+            f"未知破坏实验: {kind}（可选 ownership / correct / general / organization / program_center）"
         )
 
     print(f"== 破坏实验：{title}")

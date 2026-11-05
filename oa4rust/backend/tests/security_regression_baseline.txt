@@ -107,14 +107,10 @@ processplatform_service_processing|task_v2_id|GET	LEAK
 processplatform_service_processing|taskcompleted_id|GET	LEAK
 program_center|application_get_by_id|GET	LEAK
 program_center|collect_code_mobile_mobile|GET	LEAK
-program_center|collect_delete|DELETE	UNVERIFIED
-program_center|collect_save|PUT	UNVERIFIED
 program_center|deploy_id|GET	LEAK
 program_center|dict_id|GET	LEAK
 program_center|module_id_compare|GET	LEAK
 program_center|module_output_flag_file|GET	LEAK
-program_center|module_remove_structure_id|DELETE	UNVERIFIED
-program_center|module_write_flag|PUT	UNVERIFIED
 program_center|prompterrorlog_id|GET	LEAK
 program_center|unexpectederrorlog_id|GET	LEAK
 query_assemble_designer|get_designer|GET	LEAK
