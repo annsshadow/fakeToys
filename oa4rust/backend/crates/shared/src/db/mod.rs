@@ -443,6 +443,22 @@ pub fn escape_like(input: &str) -> String {
         .replace('_', "\\_")
 }
 
+/// TEXT 列按「数字语义」排序的 SQL 表达式，供 `ORDER BY {expr} ASC NULLS LAST` 使用。
+///
+/// 与 O31 读面口径对齐：先裁空格，只接受「可选正负号 + 至多 10 位数字」且落在 i32
+/// 范围内的值；NULL / 空串 / 非数字 / 超出 i32 一律得到 NULL，由调用方 `NULLS LAST`
+/// 排到末尾，与 O31「不可解析 → 不输出 orderNumber」一致。直接写 `col::int` 会在脏值上
+/// 抛 22P02/22003 让整个列表 500，因此必须先做正则 + 范围判定再 cast。
+///
+/// `column` 必须是代码里写死的列名，不得来自请求参数（本函数直接拼 SQL）。
+pub fn numeric_text_i32_sort_expr(column: &str) -> String {
+    format!(
+        "CASE WHEN btrim({column}) ~ '^[+-]?[0-9]{{1,10}}$' \
+         AND btrim({column})::bigint BETWEEN -2147483648 AND 2147483647 \
+         THEN btrim({column})::bigint END"
+    )
+}
+
 pub use dialect::{dialect, MySQLDialect, PostgresDialect, SqlDialect};
 pub use rewriter::rewrite_pg_to_mysql;
 

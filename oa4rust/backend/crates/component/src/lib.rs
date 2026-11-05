@@ -20,11 +20,15 @@ pub struct ComponentInfo {
 
 pub async fn list_all(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
+    // O32：order_number 实列是 TEXT，直接 ORDER BY 走字典序（'10' < '2'），
+    // 跨过 9 之后前 50 行窗口会漏行。改为按数值排序，不可解析值统一 NULLS LAST；id 作稳定次序。
+    let sql = format!(
+        "SELECT id, name, title, type, visible, order_number, path, icon_path FROM x_component \
+         WHERE deleted_at IS NULL ORDER BY {} ASC NULLS LAST, id ASC LIMIT 50",
+        shared::db::numeric_text_i32_sort_expr("order_number")
+    );
     let rows = client
-        .query(
-            "SELECT id, name, title, type, visible, order_number, path, icon_path FROM x_component WHERE deleted_at IS NULL ORDER BY order_number ASC LIMIT 50",
-            &[],
-        )
+        .query(&sql, &[])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
