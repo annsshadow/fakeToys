@@ -1,6 +1,5 @@
 # 安全回归门禁基线：每行 `用例 id \t 非 PASS 状态`。
 # 修复一条就删一行（单调下降）；只增不减视为回归。
-ai_assemble_control|config_get_mcp_flag|GET	LEAK
 attendance_assemble_control|attendanceadmin_id|GET	LEAK
 attendance_assemble_control|attendanceappealInfo_appeal_id|POST	LEAK
 attendance_assemble_control|attendanceappealInfo_id|GET	LEAK
