@@ -7,11 +7,13 @@ import { ref } from 'vue'
 import { bbsApi } from '@/services'
 import { useSession } from '@/store/session'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import { loadBbsTopics } from './bbsFeed'
 
 const session = useSession()
 const rows = ref<Record<string, unknown>[]>([])
 const loading = ref(false)
 const loaded = ref(false)
+const bbsError = ref('')
 
 function titleOf(row: Record<string, unknown>): string {
   const v = row.title
@@ -34,13 +36,18 @@ function excerptOf(row: Record<string, unknown>): string {
 }
 
 async function load() {
-  if (!session.user?.unique) return
+  if (!session.user?.unique) {
+    // 未登录也要可见：静默 return 会让页面停在空白态。
+    bbsError.value = '未登录，无法加载主题'
+    loaded.value = true
+    return
+  }
   loading.value = true
+  bbsError.value = ''
   try {
-    const resp = await bbsApi.mobileViewAll()
-    rows.value = resp.data ?? []
-  } catch {
-    rows.value = []
+    const result = await loadBbsTopics(() => bbsApi.mobileViewAll(), rows.value)
+    rows.value = result.rows
+    if (!result.ok) bbsError.value = result.error
   } finally {
     loading.value = false
     loaded.value = true
@@ -76,8 +83,16 @@ function newTopic() {
       <view class="new-btn" @tap="newTopic">发帖</view>
     </view>
     <view v-if="loading && !loaded" class="tip">加载中…</view>
-    <view v-else-if="loaded && rows.length === 0" class="tip">论坛暂无主题</view>
+    <view v-else-if="rows.length === 0 && bbsError" class="tip tip-error">
+      <view class="error-text">{{ bbsError }}</view>
+      <view class="retry-btn" @tap="load">重试</view>
+    </view>
+    <view v-else-if="rows.length === 0" class="tip">论坛暂无主题</view>
     <view v-else class="topic-list">
+      <view v-if="bbsError" class="error-banner">
+        <text class="error-text">{{ bbsError }}</text>
+        <view class="retry-btn" @tap="load">重试</view>
+      </view>
       <view v-for="(row, i) in rows" :key="i" class="topic" @tap="openTopic(row)">
         <view class="topic-title">{{ titleOf(row) }}</view>
         <view v-if="excerptOf(row)" class="topic-excerpt">{{ excerptOf(row) }}</view>
@@ -115,6 +130,35 @@ function newTopic() {
   color: #8a94a6;
   padding: 40px 0;
   font-size: 14px;
+}
+.tip-error {
+  color: #c0392b;
+}
+.error-text {
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fdecea;
+  color: #c0392b;
+  font-size: 13px;
+}
+.error-banner .error-text {
+  margin-bottom: 0;
+}
+.retry-btn {
+  flex: none;
+  padding: 4px 12px;
+  border-radius: 12px;
+  border: 1px solid #c0392b;
+  color: #c0392b;
+  font-size: 13px;
 }
 .topic-list {
   display: flex;
