@@ -22,6 +22,16 @@ describe('ConfigDesignerApp 错误处理不再吞错', () => {
     expect(source).not.toContain('        } catch {}')
   })
 
+  it('列表从 /api/config/system 真实装载，不再引用未定义的 data', () => {
+    // 修复前：items = ref(data.value ?? []) 中 data 从未定义，setup 阶段直接 ReferenceError。
+    expect(source).not.toContain('data.value')
+    expect(source).toContain("api.get('/api/config/system')")
+    expect(source).toContain('items.length > 0 && loadError')
+    expect(source.indexOf('filteredItems.length===0 && loadError')).toBeLessThan(
+      source.indexOf('class="empty">暂无配置'),
+    )
+  })
+
   it('全文件不再残留真空 catch 块', () => {
     expect(source).not.toMatch(/catch\s*(?:\([^)]*\))?\s*\{\s*\}/)
   })

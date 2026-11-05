@@ -54,8 +54,9 @@
           <button :class="{active:sbTab==='business'}" @click="sbTab='business'">业务</button>
         </div>
         <div class="sb-list">
-          <div v-if="loading" class="loading-sm">加载中...</div>
+          <div v-if="isLoading" class="loading-sm">加载中...</div>
           <template v-else>
+            <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="reload" />
             <div v-for="item in filteredItems" :key="item.id" class="sb-item"
               :class="{active:selected?.id===item.id}"
               @click="selectItem(item)">
@@ -69,7 +70,8 @@
                 <button class="si-btn si-del" @click.stop="deleteItem(item)" title="删除">🗑</button>
               </div>
             </div>
-            <div v-if="filteredItems.length===0" class="empty">暂无配置</div>
+            <ListLoadError v-if="filteredItems.length===0 && loadError" mode="empty" :message="loadError" @retry="reload" />
+            <div v-else-if="filteredItems.length===0" class="empty">暂无配置</div>
           </template>
         </div>
         <button class="btn-sm sb-add" @click="createNew">+ 新建配置</button>
@@ -165,10 +167,13 @@
 
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
-import { useQueryClient } from '@tanstack/vue-query'
-import { computed, onMounted, ref } from 'vue'
+import { useQuery, useQueryClient } from '@tanstack/vue-query'
+import { computed, onMounted, ref, watch } from 'vue'
 import { downloadBlob } from '../utils/download'
 import { confirmMsg, toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { useListError } from './listQuery'
 
 interface ConfigItem {
   id: string
@@ -180,8 +185,7 @@ interface ConfigItem {
   createTime?: string
 }
 
-const loading = ref(false),
-  searchKey = ref(''),
+const searchKey = ref(''),
   sbTab = ref('all')
 const selected = ref<ConfigItem | null>(null),
   config = ref('')
@@ -217,7 +221,39 @@ const importData = ref(''),
   importMsg = ref<{ ok: boolean; txt: string } | null>(null)
 
 const qc = useQueryClient()
-const items = ref<ConfigItem[]>(data.value ?? [])
+const configQueryKey = ['config', 'list']
+// 系统配置读：/api/config/system（x_system_config 未删行全量，legacy_success 信封）。
+// 此前 items 直接引用未定义的查询结果 → setup 阶段 ReferenceError，页面根本渲染不出来。
+const { data, isError, error, isLoading } = useQuery({
+  queryKey: configQueryKey,
+  queryFn: async () => {
+    const r = (await api.get('/api/config/system')) as { data?: unknown }
+    const rows = Array.isArray(r?.data) ? (r.data as Array<Record<string, unknown>>) : []
+    return rows.map(
+      (row): ConfigItem => ({
+        id: String(row.id ?? ''),
+        name: typeof row.name === 'string' ? row.name : '',
+        category: typeof row.category === 'string' ? row.category : '',
+        config: typeof row.value === 'string' ? row.value : '',
+        updateTime: typeof row.updateTime === 'string' ? row.updateTime : '',
+      }),
+    )
+  },
+})
+const items = ref<ConfigItem[]>([])
+watch(
+  data,
+  (rows) => {
+    if (rows) items.value = rows
+  },
+  { immediate: true },
+)
+const { loadError, reload } = useListError({
+  isError,
+  error,
+  queryKey: configQueryKey,
+  label: '配置列表加载失败',
+})
 
 const filteredItems = computed(() => {
   let list = items.value

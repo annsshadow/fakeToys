@@ -2733,7 +2733,7 @@ pub async fn config_system_config(
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
-            "SELECT name, value, category, description, update_time::text FROM x_system_config WHERE deleted_at IS NULL ORDER BY category, name",
+            "SELECT id::text, name, value, category, description, update_time::text FROM x_system_config WHERE deleted_at IS NULL ORDER BY category, name",
             &[],
         )
         .await
@@ -2742,6 +2742,10 @@ pub async fn config_system_config(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
+                (
+                    "id".to_string(),
+                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                ),
                 (
                     "name".to_string(),
                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),

@@ -60,6 +60,7 @@ const FIXED = {
   'oa4rust/frontend/apps/desktop/src/views/CollectApp.vue': 'R115',
   'oa4rust/frontend/apps/desktop/src/views/CommonApp.vue': 'R115',
   'oa4rust/frontend/apps/desktop/src/views/Dashboard.vue': 'R115',
+  'oa4rust/frontend/apps/desktop/src/views/ConfigDesignerApp.vue': 'R116',
   'oa4rust/frontend/apps/desktop/src/views/DeploymentApp.vue': 'R115',
   'oa4rust/frontend/apps/desktop/src/views/FaceSetApp.vue': 'R115',
   'oa4rust/frontend/apps/desktop/src/views/FtSearchApp.vue': 'R115',
@@ -116,10 +117,6 @@ const A_PENDING = new Map([
   ['oa4rust/frontend/apps/desktop/src/views/BamApp.vue', '.catch(() => null) 吞错；空态 L47「暂无活动记录」'],
   ['oa4rust/frontend/apps/desktop/src/views/CalendarApp.vue', 'loadCalendars 失败清空日历；事件空态 L106/L126'],
   ['oa4rust/frontend/apps/desktop/src/views/CategoryApp.vue', 'catch 置空 items（L61）；空态 L23「暂无分类数据」'],
-  [
-    'oa4rust/frontend/apps/desktop/src/views/ConfigDesignerApp.vue',
-    'items 依赖未定义的 data（L220，疑似查询被改坏）；空态 L72',
-  ],
   ['oa4rust/frontend/apps/desktop/src/views/DocumentApp.vue', '文档列表取数失败无提示；空态 L29「暂无文档数据」'],
   ['oa4rust/frontend/apps/desktop/src/views/FileInfoApp.vue', '列表 /api/fileinfo/list/all（L93）失败无提示；空态 L17'],
   [
