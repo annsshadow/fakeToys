@@ -53,7 +53,8 @@
 import { api, useSession } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
-import { confirmMsg } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
+import { collectMutationErrorMessage } from './collectError'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { useListError } from './listQuery'
@@ -152,6 +153,7 @@ const saveM = useMutation({
     qc.invalidateQueries({ queryKey: qk })
     closeModal()
   },
+  onError: (e) => toast.error(collectMutationErrorMessage(e)),
 })
 function saveItem() {
   saveM.mutate()
@@ -161,6 +163,7 @@ const delM = useMutation({
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })
   },
+  onError: (e) => toast.error(collectMutationErrorMessage(e)),
 })
 async function deleteItem(item: Item) {
   if (await confirmMsg('确定删除该收集记录？')) delM.mutate(item.id)
