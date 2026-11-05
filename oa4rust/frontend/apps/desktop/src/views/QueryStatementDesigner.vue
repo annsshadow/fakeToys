@@ -98,8 +98,10 @@
         <div class="results-toolbar" v-if="resultData.length > 0">
           <input v-model="resultFilter" placeholder="筛选结果..." class="result-filter" />
         </div>
+        <ListLoadError v-if="resultData.length > 0 && execError" mode="banner" :message="execError" @retry="executeSQL" />
         <div class="results-grid">
           <div v-if="loadingResult" class="results-loading">执行中...</div>
+          <ListLoadError v-else-if="resultData.length===0 && execError" mode="empty" :message="execError" @retry="executeSQL" />
           <div v-else-if="resultData.length===0" class="results-empty">点击「执行」运行SQL</div>
           <table v-else class="res-table">
             <thead>
@@ -922,9 +924,14 @@ const sortCol = ref(''),
 const page = ref(1),
   pageSize = 50
 const hasResults = ref(false)
+const execError = ref('')
 
 const queryClient = useQueryClient()
-const { data: stmts, isError, error } = useQuery({
+const {
+  data: stmts,
+  isError,
+  error,
+} = useQuery({
   queryKey: ['stmt', 'list'],
   queryFn: async () => {
     loading.value = true
@@ -937,9 +944,13 @@ const { data: stmts, isError, error } = useQuery({
   },
 })
 const statements = ref<Stmt[]>([])
-watch(stmts, (rows) => {
-  if (rows) statements.value = rows
-}, { immediate: true })
+watch(
+  stmts,
+  (rows) => {
+    if (rows) statements.value = rows
+  },
+  { immediate: true },
+)
 const { loadError, reload } = useListError({
   isError,
   error,
@@ -1049,6 +1060,8 @@ async function executeSQL() {
   if (!sql.value.trim()) return
   loadingResult.value = true
   hasResults.value = true
+  execError.value = ''
+  const t0 = Date.now()
   try {
     const r: any = await api.post('/api/query/assemble/designer/execute', {
       sql: sql.value,
@@ -1058,8 +1071,8 @@ async function executeSQL() {
     resultHeaders.value = resultData.value.length > 0 ? Object.keys(resultData.value[0]) : []
     page.value = 1
   } catch (e: any) {
-    resultData.value = []
-    resultHeaders.value = []
+    // 失败保留上次结果并显式报错，不能把失败清成「0 行」。
+    execError.value = describeListError('SQL 执行失败', e)
     toast.error(`执行失败: : ${e?.message ?? '未知错误'}`)
     lastExecDuration.value = Date.now() - t0
   } finally {

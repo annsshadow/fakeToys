@@ -84,7 +84,9 @@
             <span class="chat-count">{{ messages.length }} 条消息</span>
           </div>
           <div class="messages" ref="messagesRef">
-            <div v-if="messages.length === 0" class="empty-msgs">
+            <ListLoadError v-if="messages.length > 0 && messagesError" mode="banner" :message="messagesError" @retry="retryMessages" />
+            <ListLoadError v-else-if="messages.length === 0 && messagesError" mode="empty" :message="messagesError" @retry="retryMessages" />
+            <div v-else-if="messages.length === 0" class="empty-msgs">
               <div class="ei">💭</div>
               <p>发送消息开始对话</p>
             </div>
@@ -180,6 +182,7 @@ type ChatItem = { id: string; title?: string; name?: string; updatedAt?: string 
 
 const conversations = ref<ChatItem[]>([])
 const convoError = ref('')
+const messagesError = ref('')
 const currentChat = ref<ChatItem | null>(null)
 const messages = ref<Message[]>([])
 const inputText = ref('')
@@ -426,6 +429,7 @@ async function loadConversations() {
 async function selectChat(chat: ChatItem) {
   currentChat.value = chat
   messages.value = []
+  messagesError.value = ''
   try {
     const r = await api.get(`/api/ai_assemble_control/chat/list/completion/${chat.id}/paging/1/size/50`)
     const list = r.data?.list ?? []
@@ -433,10 +437,15 @@ async function selectChat(chat: ChatItem) {
       role: m.type === 'user' ? 'user' : 'assistant',
       content: m.content ?? m.text ?? '',
     }))
-  } catch {
-    messages.value = []
+  } catch (e) {
+    // 失败必须显式报错，不能和「这个对话还没消息」混成同一种空态。
+    messagesError.value = describeListError('消息加载失败', e)
   }
   await nextTick(() => scrollToBottom())
+}
+
+function retryMessages() {
+  if (currentChat.value) selectChat(currentChat.value)
 }
 
 async function createNewChat() {

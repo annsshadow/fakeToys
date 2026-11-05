@@ -62,6 +62,7 @@
         </div>
         <div v-if="dataLoading" class="loading-row"><div class="sk" v-for="i in 3" :key="i"></div></div>
         <div v-else class="result-table-wrap">
+          <ListLoadError v-if="dataResult.length > 0 && viewError" mode="banner" :message="viewError" @retry="viewData(activeView)" />
           <table v-if="dataResult.length > 0" class="result-table">
             <thead><tr><th v-for="k in cols" :key="k">{{ k }}</th></tr></thead>
             <tbody>
@@ -70,6 +71,7 @@
               </tr>
             </tbody>
           </table>
+          <ListLoadError v-else-if="dataResult.length === 0 && viewError" mode="empty" :message="viewError" @retry="viewData(activeView)" />
           <div v-else class="empty-result">无数据</div>
         </div>
       </div>
@@ -93,6 +95,7 @@ const views = ref<ViewItem[]>([])
 const activeView = ref<ViewItem | null>(null)
 const dataLoading = ref(false)
 const dataResult = ref<Record<string, unknown>[]>([])
+const viewError = ref('')
 const cols = ref<string[]>([])
 
 // 视图详情：并发消费 view/{id} + viewcategory/list/view/{viewId} + viewfieldconfig/list/view/{viewId}
@@ -173,14 +176,16 @@ async function viewData(v: ViewItem) {
   dataLoading.value = true
   dataResult.value = []
   cols.value = []
+  viewError.value = ''
   try {
     // 真实路由为 view/viewdata/list/{id}/next/{count}。
     const r = await api.post(`/api/view/viewdata/list/${v.id}/next/50`, {})
     const list = r.data?.list ?? r.data ?? []
     dataResult.value = Array.isArray(list) ? list : []
     if (dataResult.value.length > 0) cols.value = Object.keys(dataResult.value[0])
-  } catch {
-    dataResult.value = []
+  } catch (e) {
+    // 失败必须显式报错，不能和「这个视图真的无数据」混成同一种空态。
+    viewError.value = describeListError('视图数据加载失败', e)
   } finally {
     dataLoading.value = false
   }

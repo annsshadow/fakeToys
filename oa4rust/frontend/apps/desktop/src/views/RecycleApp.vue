@@ -18,7 +18,9 @@
         <button class="btn-primary" @click="loadRecycleTwin">孪生端点</button>
       </div>
       <div class="list-panel">
+        <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="loadItems" />
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 5" :key="i"></div></div>
+        <ListLoadError v-else-if="items.length===0 && loadError" mode="empty" :message="loadError" @retry="loadItems" />
         <div v-else-if="items.length===0" class="empty"><div class="ei">🗑️</div><p>回收站为空</p></div>
         <div v-else class="item-table">
           <div class="table-header">
@@ -46,6 +48,9 @@
 import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { describeListError } from './listQuery'
 
 type RecycleItem = {
   id: string
@@ -59,16 +64,19 @@ type RecycleItem = {
 
 const loading = ref(false)
 const items = ref<RecycleItem[]>([])
+const loadError = ref('')
 
 const hasItems = computed(() => items.value.length > 0)
 
 async function loadItems() {
   loading.value = true
+  loadError.value = ''
   try {
     const r = await api.get('/api/recycle/list')
     items.value = r.data ?? []
-  } catch {
-    items.value = []
+  } catch (e) {
+    // 失败保留旧回收项并显式报错，不能和「回收站真的为空」混成同一种空态。
+    loadError.value = describeListError('回收站加载失败', e)
   } finally {
     loading.value = false
   }

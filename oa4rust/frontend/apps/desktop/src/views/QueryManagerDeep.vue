@@ -807,9 +807,8 @@ async function runQuery() {
     resultHeaders.value = resultData.value.length > 0 ? Object.keys(resultData.value[0]) : []
     sqlStatus.value = `执行成功: ${resultData.value.length} 行`
   } catch (e: any) {
+    // 失败只更新可见状态，保留上次结果；不能把失败清成「0 行」。
     sqlStatus.value = `执行失败: ${e?.message ?? '未知错误'}`
-    resultData.value = []
-    resultHeaders.value = []
   } finally {
     resultLoading.value = false
   }

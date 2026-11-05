@@ -107,6 +107,7 @@ const FIXED = {
   'oa4rust/frontend/apps/desktop/src/views/FormApp.vue': 'R124',
   'oa4rust/frontend/apps/desktop/src/views/FormDesigner.vue': 'R124',
   'oa4rust/frontend/apps/desktop/src/views/JPushApp.vue': 'R124',
+  'oa4rust/frontend/apps/desktop/src/views/RecycleApp.vue': 'R126',
   'oa4rust/mobile/src/pages/process/start.vue': 'R125',
   'oa4rust/mobile/src/pages/search/search.vue': 'R125',
 }
@@ -115,7 +116,8 @@ const LIST_STATE =
   /^(rows|list|items|data|records|result|results|msgs|messages|conversations|events|calendars|topics|detail|notices|attachRows|myDetails|calendars)/i
 const MIN_SCANNED_FILES = 120
 // 随修复推进，fold 候选数量会逐批下降；保留一个下限只用于发现「候选提取失效」。
-const MIN_FOLD_CANDIDATES = 10
+// R126 修复 maskSource（.vue 只看 <script>）后实测候选 53（handled 3 + other 50），取下限 40。
+const MIN_FOLD_CANDIDATES = 40
 
 // 首轮扫描（R113 建立）确认的待修文件；修好一个就移到 FIXED 并从这里删掉，
 // 新出现的文件必须显式登记，否则守卫失败。
@@ -148,7 +150,19 @@ function walk(dir, out = []) {
 }
 
 /** 注释与字符串内容抹成空格（保留长度与换行），用于脚本区模式匹配。 */
-function maskSource(src) {
+function maskSource(rawSrc, isVue) {
+  // .vue 只保留 <script> 块原文，模板/HTML 先抹成空格：否则模板文案里的 `/*`
+  // 会被当成未闭合块注释，吞掉整个 <script setup>（AIChatApp 实测漏抓）。
+  let src = rawSrc
+  if (isVue) {
+    const kept = rawSrc.split('').map((c) => (c === '\n' ? '\n' : ' '))
+    const re = /<script\b[^>]*>([\s\S]*?)<\/script>/gi
+    for (const m of rawSrc.matchAll(re)) {
+      const bodyStart = m.index + m[0].indexOf('>') + 1
+      for (let i = 0; i < m[1].length; i++) kept[bodyStart + i] = rawSrc[bodyStart + i]
+    }
+    src = kept.join('')
+  }
   const out = src.split('')
   let state = 'code'
   let quote = ''
@@ -240,13 +254,19 @@ function enclosingName(masked, index) {
 
 function inspect(file) {
   const src = readFileSync(file, 'utf8')
-  const masked = maskSource(src)
+  const masked = maskSource(src, file.endsWith('.vue'))
   const rel = relative(repoRoot, file).replaceAll('\\', '/')
   const hits = []
   for (const block of findCatchBlocks(masked)) {
     const assigns = [...block.body.matchAll(/([A-Za-z0-9_$]+)\s*\.\s*value\s*=\s*(?:\[\s*\]|null)/g)]
     const returnsEmpty = /\breturn\s+\[\s*\]/.test(block.body)
     const returnsOkEmpty = /\breturn\s*\{\s*ok\s*:\s*true\s*,\s*rows\s*:\s*\[\s*\]\s*\}/.test(block.body)
+    // 本地解析兜底：紧邻的 try 只做 JSON.parse，catch 返回 [] 是「坏数据默认值」，
+    // 不是取数失败，不能算静默折叠（如 FormDesigner 的字段选项解析）。
+    const beforeBlock = masked.slice(0, block.start)
+    const lastTry = [...beforeBlock.matchAll(/(?<![A-Za-z0-9_$])try\s*\{/g)].pop()
+    const localParse = Boolean(lastTry) && /JSON\.parse\s*\(/.test(beforeBlock.slice(lastTry.index))
+    if (!assigns.length && !returnsOkEmpty && localParse) continue
     if (!assigns.length && !returnsEmpty && !returnsOkEmpty) continue
     const fn = enclosingName(masked, block.start)
     const listAssign = assigns.find((a) => LIST_STATE.test(a[1]))

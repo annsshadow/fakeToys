@@ -169,7 +169,7 @@ describe('R122 手工取数页失败不再折叠成空态', () => {
   it('QueryStatementDesigner 用 watch 跟随 query，不再 setup 一次性拷贝', () => {
     const source = sourceOf('QueryStatementDesigner.vue')
     expect(source).not.toContain('ref<Stmt[]>(stmts.value ?? [])')
-    expect(source).toContain('watch(stmts,')
+    expect(source).toMatch(/watch\(\s*stmts/)
     expect(source).toContain("label: '语句列表加载失败'")
     const errorIndex = source.indexOf('filtered.length===0 && loadError')
     expect(errorIndex).toBeGreaterThan(-1)
