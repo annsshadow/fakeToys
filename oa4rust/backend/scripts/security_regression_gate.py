@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
 """O26 安全回归门禁 runner。
 
 用法（在 oa4rust/backend 下，或任意目录用绝对路径）：

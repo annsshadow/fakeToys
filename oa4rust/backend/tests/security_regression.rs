@@ -172,7 +172,13 @@ mod security_regression {
                 continue;
             }
             if let Err(e) = client.batch_execute(s).await {
-                let first = s.lines().next().unwrap_or("").chars().take(90).collect::<String>();
+                let first = s
+                    .lines()
+                    .next()
+                    .unwrap_or("")
+                    .chars()
+                    .take(90)
+                    .collect::<String>();
                 errs.push(format!("{label}: {first} => {e}"));
             }
         }
@@ -255,7 +261,10 @@ mod security_regression {
         for e in &errs {
             eprintln!("[SEED-ERR] {e}");
         }
-        println!("seed 语句失败 {} 条（对应用例将落到 UNVERIFIED）", errs.len());
+        println!(
+            "seed 语句失败 {} 条（对应用例将落到 UNVERIFIED）",
+            errs.len()
+        );
 
         let session_manager = shared::session::SessionManager::with_pool(pool.clone());
         for (uid, tok) in [(ATTACKER, TOK_ATTACKER), (VICTIM, TOK_VICTIM)] {
@@ -330,9 +339,8 @@ mod security_regression {
             return None;
         }
         let client = pool.get().await.ok()?;
-        let sql = format!(
-            "SELECT row_to_json(t)::text FROM (SELECT * FROM \"{table}\" WHERE id = $1) t"
-        );
+        let sql =
+            format!("SELECT row_to_json(t)::text FROM (SELECT * FROM \"{table}\" WHERE id = $1) t");
         client
             .query_opt(&sql, &[&id])
             .await
@@ -403,26 +411,20 @@ mod security_regression {
             .unwrap_or(-1)
     }
 
-    async fn run_case(
-        app: &axum::Router,
-        pool: &deadpool_postgres::Pool,
-        c: &Case,
-    ) -> Outcome {
+    async fn run_case(app: &axum::Router, pool: &deadpool_postgres::Pool, c: &Case) -> Outcome {
         let path = fill_path(&c.path, &c.victim);
         let (body, before_row, before_count) = match c.kind.as_str() {
             "idor-write" => {
                 let Some(b) = build_write_body(pool, &c.table, &c.victim).await else {
                     return Outcome::Unverified("受害者行不存在/无法取行".into());
                 };
-                (
-                    b,
-                    row_json(pool, &c.table, &c.victim).await,
-                    None::<i64>,
-                )
+                (b, row_json(pool, &c.table, &c.victim).await, None::<i64>)
             }
-            "soft-gate" if c.method == "POST" => {
-                ("{\"toPerson\":\"person-admin\",\"roleId\":\"role-gate\"}".to_string(), None, Some(count_rows(pool, "x_empower").await))
-            }
+            "soft-gate" if c.method == "POST" => (
+                "{\"toPerson\":\"person-admin\",\"roleId\":\"role-gate\"}".to_string(),
+                None,
+                Some(count_rows(pool, "x_empower").await),
+            ),
             "soft-gate" => (
                 "{\"roleId\":\"role-hacked\",\"enabled\":false}".to_string(),
                 row_json(pool, "x_empower", &c.victim).await,
@@ -436,11 +438,7 @@ mod security_regression {
             return Outcome::Unverified("请求无法构造".into());
         };
         let code = status.as_u16();
-        let markers: Vec<&str> = c
-            .leak
-            .split('|')
-            .filter(|m| !m.is_empty())
-            .collect();
+        let markers: Vec<&str> = c.leak.split('|').filter(|m| !m.is_empty()).collect();
 
         match c.kind.as_str() {
             "soft-gate" => {
