@@ -87,6 +87,18 @@ fn require_session(
     session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
 }
 
+/// F2：考勤明细读面的人员范围。
+///
+/// 管理员看全公司（`None`，不过滤）；其他人只看本人（`Some(person_unique)`）。
+/// 口径：本人 / 全公司两级（直属下级需要组织树遍历，本轮不做）。
+async fn detail_person_scope(pool: &Pool, session: &shared::session::Session) -> Option<String> {
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        None
+    } else {
+        Some(session.person_unique.clone())
+    }
+}
+
 pub async fn list_control_rules(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1200,13 +1212,17 @@ pub async fn attendancedetail_checkDetailWithPersonByCycle_cycleYear_cycleMonth(
 /// GET /api/attendance/assemble/control/attendancedetail/filter/list
 pub async fn attendancedetail_filter_list(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
+    let scope = detail_person_scope(&pool, &session).await;
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
-            "SELECT id, person_id, date, status, creator FROM x_attendance_detail ORDER BY date DESC",
-            &[],
+            "SELECT id, person_id, date, status, creator FROM x_attendance_detail \
+             WHERE ($1::text IS NULL OR person_id = $1::text) ORDER BY date DESC",
+            &[&scope],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -1400,16 +1416,22 @@ pub async fn attendancedetail_filter_list_user(
 /// GET /api/attendance/assemble/control/attendancedetail/filter/list/{id}/next/{count}
 pub async fn attendancedetail_filter_list_id_next_count(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
+    let scope = detail_person_scope(&pool, &session).await;
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
-            &format!("SELECT id, person_id, date, status FROM x_attendance_detail WHERE {} ORDER BY {} LIMIT $2",
-            keyset_next_where(&date_keyset("x_attendance_detail", DATE_COL)),
-            date_keyset("x_attendance_detail", DATE_COL).order_by(false)),
-            &[&id, &count],
+            &format!(
+                "SELECT id, person_id, date, status FROM x_attendance_detail WHERE {} \
+                      AND ($3::text IS NULL OR person_id = $3::text) ORDER BY {} LIMIT $2",
+                keyset_next_where(&date_keyset("x_attendance_detail", DATE_COL)),
+                date_keyset("x_attendance_detail", DATE_COL).order_by(false)
+            ),
+            &[&id, &count, &scope],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -1452,16 +1474,22 @@ pub async fn attendancedetail_filter_list_id_next_count(
 /// GET /api/attendance/assemble/control/attendancedetail/filter/list/{id}/prev/{count}
 pub async fn attendancedetail_filter_list_id_prev_count(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
+    let scope = detail_person_scope(&pool, &session).await;
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
-            &format!("SELECT id, person_id, date, status FROM x_attendance_detail WHERE {} ORDER BY {} LIMIT $2",
-            date_keyset("x_attendance_detail", DATE_COL).predicate(false),
-            date_keyset("x_attendance_detail", DATE_COL).order_by(true)),
-            &[&id, &count],
+            &format!(
+                "SELECT id, person_id, date, status FROM x_attendance_detail WHERE {} \
+                      AND ($3::text IS NULL OR person_id = $3::text) ORDER BY {} LIMIT $2",
+                date_keyset("x_attendance_detail", DATE_COL).predicate(false),
+                date_keyset("x_attendance_detail", DATE_COL).order_by(true)
+            ),
+            &[&id, &count, &scope],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -1603,15 +1631,20 @@ pub async fn attendancedetail_list_file_id(
 /// GET /api/attendance/assemble/control/attendancedetail/mobile/filter/list/page/{page}/count/{count}
 pub async fn attendancedetail_mobile_filter_list_page_page_count_count(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
+    let scope = detail_person_scope(&pool, &session).await;
     let client = shared::db::acquire(&pool).await?;
 
     let (count, offset) = shared::response::page_window(page, count)?;
     let rows = client
         .query(
-            "SELECT id, person_id, date, status FROM x_attendance_detail ORDER BY date DESC LIMIT $2 OFFSET $1",
-            &[&offset, &count],
+            "SELECT id, person_id, date, status FROM x_attendance_detail \
+             WHERE ($3::text IS NULL OR person_id = $3::text) \
+             ORDER BY date DESC LIMIT $2 OFFSET $1",
+            &[&offset, &count, &scope],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;

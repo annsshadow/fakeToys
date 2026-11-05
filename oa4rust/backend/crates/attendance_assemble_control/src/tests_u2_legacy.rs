@@ -366,6 +366,7 @@ mod u2_legacy_tests {
             .await,
             StatusCode::UNSUPPORTED_MEDIA_TYPE
         );
+        // F2 起 mobile filter list 要求会话：无令牌先 401，仍证明路由命中。
         assert_eq!(
             status_of(
                 "PUT",
@@ -375,7 +376,7 @@ mod u2_legacy_tests {
                 )
             )
             .await,
-            StatusCode::SERVICE_UNAVAILABLE
+            StatusCode::UNAUTHORIZED
         );
     }
 
