@@ -295,7 +295,10 @@ pub async fn building_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Va
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -355,7 +358,10 @@ pub async fn building_list_like_pinyin_key(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -415,7 +421,10 @@ pub async fn building_list_like_key(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -474,7 +483,10 @@ pub async fn building_list_pinyininitial_key(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -608,7 +620,10 @@ fn meeting_row_json(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
         ),
         (
             "createTime".to_string(),
-            Value::String(row.get("create_time")),
+            Value::String(
+                row.get::<_, Option<String>>("create_time")
+                    .unwrap_or_default(),
+            ),
         ),
     ]))
 }
@@ -657,7 +672,10 @@ pub async fn building_id(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -825,7 +843,10 @@ pub async fn meeting_list_applied_completed(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -874,7 +895,10 @@ pub async fn meeting_list_applied_processing(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -923,7 +947,10 @@ pub async fn meeting_list_applied_wait(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -975,7 +1002,10 @@ pub async fn meeting_list_apply_page_size_size(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1033,7 +1063,10 @@ pub async fn meeting_list_coming_day_count(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1083,7 +1116,10 @@ async fn meeting_list_coming_month_count_core(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1149,7 +1185,10 @@ pub async fn meeting_list_forward_monthcount_monthCount(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1199,7 +1238,10 @@ pub async fn meeting_list_forward_monthcount_monthCount_all(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1252,7 +1294,10 @@ async fn meeting_list_invite_page_size_size_core(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1317,7 +1362,10 @@ pub async fn meeting_list_invited_completed(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1366,7 +1414,10 @@ pub async fn meeting_list_invited_processing(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1415,7 +1466,10 @@ pub async fn meeting_list_invited_rejected(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1464,7 +1518,10 @@ pub async fn meeting_list_invited_wait(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1513,7 +1570,10 @@ pub async fn meeting_list_wait_accept(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1562,7 +1622,10 @@ pub async fn meeting_list_wait_confirm(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1614,7 +1677,10 @@ pub async fn meeting_list_year_year_month_month(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1666,7 +1732,10 @@ pub async fn meeting_list_year_year_month_month_all(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1718,7 +1787,10 @@ pub async fn meeting_list_year_year_month_month_day_day(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1770,7 +1842,10 @@ pub async fn meeting_list_year_year_month_month_day_day_all(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1825,7 +1900,10 @@ async fn meeting_list_year_year_month_month_day_day_roomId_core(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1919,7 +1997,10 @@ async fn meeting_list_id_next_count_core(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1994,7 +2075,10 @@ pub async fn meeting_list_id_prev_count(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2046,7 +2130,10 @@ pub async fn meeting_list_page_size_size(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2099,7 +2186,10 @@ async fn meeting_list_page_size_size_manage_core(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2164,7 +2254,10 @@ pub async fn meeting_id(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -2757,7 +2850,10 @@ pub async fn openmeeting_list_room(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2813,7 +2909,10 @@ pub async fn room_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2873,7 +2972,10 @@ pub async fn room_list_like_pinyin_key(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2933,7 +3035,10 @@ pub async fn room_list_like_key(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2992,7 +3097,10 @@ pub async fn room_list_pinyininitial_key(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -3050,7 +3158,10 @@ pub async fn room_id(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -3094,7 +3205,10 @@ pub async fn room_id_photo(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))

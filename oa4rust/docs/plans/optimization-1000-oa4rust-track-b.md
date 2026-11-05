@@ -2513,8 +2513,8 @@ error retrieving column order_number: error deserializing column 5
 - 组织域列表把手写的 `create_time` 解码为非空 `String`（`row.get("create_time")`）；
   该列若为 NULL，响应 500。keyset 层已能对 NULL 定序（`'-infinity'`），但**解码层会先炸**。
   **O34 已修**（86 处改 `Option<String>` + `unwrap_or_default`，NULL 行回归 200 且
-  `createTime == ""`）。meeting 等其余 crate 约 43 处同族可空 `create_time` 仍在，
-  登记为独立清扫任务（单独提交），不在本轮混入。
+  `createTime == ""`）。meeting 等其余 crate 约 43 处同族可空 `create_time`
+  **已由 O35 独立提交清扫**（43/43，见 O35 节），不在 O34 混入。
 
 ## O34：TEXT 列数字语义排序 + 组织域 NULL 解码
 
@@ -2568,7 +2568,7 @@ O34 prev 实测（游标 k4）: ["k6","k9"]
   → `row.get::<_, Option<String>>("create_time").unwrap_or_default()`；已用 Option 的 5 处不动。
 - 回归新增 `r7(create_time=NULL)`：排序落末；游标 `r6` 的下一页 `["r7"]`，
   `createTime == ""`（修复前该行 500）。
-- meeting 等约 43 处同族：独立提交，本轮不做。
+- meeting 等约 43 处同族：独立提交，本轮不做 → 见 O35。
 
 ### 写入方 → 读取方列映射（给业务裁决用）
 
@@ -2618,6 +2618,58 @@ cycleDetail 按 `year/month` 永远查不到新行。需业务确认「`year/mon
   -p organization_assemble_control -p meeting_assemble_control
   -p message_assemble_communicate --all-targets -- -D warnings`：见提交前记录。
 - CI `seeded-route-scan` 必须绿（O33 TIMESTAMP 哨兵教训）。
+
+## O35：meeting 家族可空 `create_time` 解码清扫（43 处）
+
+O34 遗留的同族债务，**单独提交**，不混入组织域那笔。
+
+### 范围与逐点可空性证据（先确认再改，不按模式一刀切）
+
+| crate | 读取点 | SQL 形态 | 表.列 | migration 证据 | 可空 | 改动 |
+|---|---|---|---|---|---|---|
+| meeting | `lib.rs` 5 处 `createTime` | `create_time::text` / `::text AS create_time` | `x_meeting_building.create_time`（1）、`x_meeting.create_time`（3）、`x_meeting_invite.create_time`（1） | 006 `TIMESTAMP DEFAULT CURRENT_TIMESTAMP`；036 `TIMESTAMPTZ` | 是 | 5 → `Option<String>` |
+| meeting_assemble_control | `lib.rs` 38 处 `createTime` | `to_char(create_time,'YYYY-MM-DD HH24:MI:SS')` | `x_meeting_building`（6）、`x_meeting`（25）、`x_meeting_room`（6）、`x_meeting_room_photo`（1） | 006 / 036：均无 NOT NULL | 是 | 38 → `Option<String>` |
+
+- **不改**：`x_meeting.start_time` / `end_time`（006 明确 `NOT NULL`，相关解码保持非 Option）。
+- **不改**：`meeting_assemble_control` 附件路径（`u2` 处已用 `Option<String>`，O30 同族已修）。
+- **不改**：仅 `ORDER BY create_time` / `WHERE create_time …` 的 SQL（不解码，NULL 语义由
+  PG 排序决定，与解码无关）。
+- `x_meeting_config.create_time` 等 TEXT 列本 crate 无解码点，不在本笔。
+
+### 回归（scratch 库，NULL 行改前必红）
+
+- `crates/meeting/tests/nullable_create_time.rs`（库 `oa_o35_meeting`）：
+  `x_meeting_building` 有值 + NULL 两行 → `building_list` 200；NULL 行
+  `createTime == ""`，有值行仍为 `2025-01-01 …`。覆盖 `::text` 路径。
+- `crates/meeting_assemble_control/tests/nullable_create_time.rs`（库 `oa_o35_meeting_ac`）：
+  `building_list`（building 表）与 `meeting_id`（x_meeting 表）两条 `to_char` 路径，
+  NULL 行 `createTime == ""`、有值行格式不变。
+
+破坏实验（把 meeting `building_list` 改回 `row.get("create_time")`）：
+
+```
+test building_list_decodes_null_create_time_as_empty_string ... FAILED
+thread 'building_list_decodes_null_create_time_as_empty_string' panicked at crates\meeting\src\lib.rs:182:35:
+error retrieving column create_time: error deserializing column 5
+test result: FAILED. 0 passed; 1 failed
+```
+
+恢复后：`2 passed`（两 crate 各 1）。
+
+### 验证（O35）
+
+- `cargo fmt --all -- --check`：绿。
+- `cargo clippy -p meeting -p meeting_assemble_control --all-targets -- -D warnings`：零告警。
+- `cargo test -p meeting -p meeting_assemble_control --test nullable_create_time`：2 passed。
+- CI：见 PR 结果（`seeded-route-scan` 必过，O33 哨兵教训）。
+
+### 同族余量（未裁决，不在本笔）
+
+全 backend `Value::String(row.get("create_time"))` 的剩余 31 处（10 文件：ai 3、
+cms 1、file 1、portal 2、portal_assemble_surface 9、portal_assemble_designer 5、
+processplatform_service_processing 3、query_assemble_designer 4、query_assemble_surface 6 …）。
+这些**未逐点核实可空性**（含 `::text` / 原生 TEXT / timestamptz 多种形态），
+不得按模式批量改；后续按 O35 同一方法逐点取证后再分组提交。
 
 
 
