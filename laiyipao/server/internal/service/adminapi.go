@@ -1231,6 +1231,28 @@ func validWalletCurrency(k string) bool {
 	return isEquipmentPayloadKey(k)
 }
 
+// redeemRewardCurrencyOK 报告某个奖励键能否被**兑换发奖路径**真正发放。
+//
+// ⚠️ 不能复用 validWalletCurrency：后者还认 `equipment_<id>` 这类道具 payload
+// 键（商城发货时合法），而兑换码走 `grantWallet`，它只认 walletColumns ∪
+// walletTokens。用宽白名单校验等于没校验 —— 建码成功、每个玩家兑换时才 400。
+func redeemRewardCurrencyOK(k string) bool {
+	if _, ok := walletColumns[k]; ok {
+		return true
+	}
+	return isWalletToken(k)
+}
+
+// validateRedeemReward 校验兑换码奖励键，未知币种直接 ErrBadInput（HTTP 400）。
+func validateRedeemReward(reward map[string]int) error {
+	for k := range reward {
+		if !redeemRewardCurrencyOK(k) {
+			return fmt.Errorf("%w: 未知货币 %q", ErrBadInput, k)
+		}
+	}
+	return nil
+}
+
 // AdminListAnnouncements 返回公告。
 //
 // published / dateFrom / dateTo 均为可选筛选（2026-10-31 新一轮第 21 轮）：
@@ -1291,7 +1313,6 @@ func (s *Service) AdminCreateAnnouncement(ctx context.Context, title, body strin
 	if title == "" || body == "" {
 		return AdminAnnouncementView{}, fmt.Errorf("%w: 标题与正文不能为空", ErrBadInput)
 	}
-	var id int
 	var at *time.Time
 	if published {
 		now := time.Now()
@@ -1302,9 +1323,10 @@ func (s *Service) AdminCreateAnnouncement(ctx context.Context, title, body strin
 	if len(audit) > 0 {
 		auditCtx = &audit[0]
 	}
+	var created AdminAnnouncementView
 	err := s.DB.Tx(ctx, func(tx txType) error {
 		var txErr error
-		id, txErr = s.createAnnouncementTx(ctx, tx, title, body, published, at, auditCtx)
+		created, txErr = s.createAnnouncementTx(ctx, tx, title, body, published, at, auditCtx)
 		return txErr
 	})
 	if err != nil {
@@ -1313,27 +1335,39 @@ func (s *Service) AdminCreateAnnouncement(ctx context.Context, title, body strin
 	// 玩家端缓存立即失效（2026-11-01 新一轮第 59 轮）：
 	// 运营发布/更新/撤回公告后，玩家端不再等 TTL 才看到新内容。
 	s.announcementsCache.flush()
-	return AdminAnnouncementView{
-		ID: id, Title: title, Body: body, Published: published, PublishedAt: at,
-	}, nil
+	return created, nil
 }
 
 // createAnnouncementTx 是 AdminCreateAnnouncement 的事务内部分（R86 抽出，
 // 幂等键版本在同一事务里复用）。
+//
+// ⚠️ R132（审计实证）：返回值必须**从 INSERT 读回**，不能拿入参拼。
+// 改前构造的 `AdminAnnouncementView` 只填了 id/title/body/published/published_at，
+// `created_at` 一个字段都没写 → 创建响应里是 `null`（列表/详情却有值），
+// 运营刚发完公告就看到「创建时间空」。另外 `published_at` 回显的是 Go 的
+// `time.Now()`（纳秒），而 PostgreSQL 只存到微秒 —— 创建响应与随后读回
+// 差一个亚微秒尾巴，与「写后必读」逐字段相等的要求不符。
 func (s *Service) createAnnouncementTx(ctx context.Context, tx pgx.Tx,
-	title, body string, published bool, at *time.Time, auditCtx *AdminAuditCtx) (int, error) {
-	var id int
+	title, body string, published bool, at *time.Time, auditCtx *AdminAuditCtx) (AdminAnnouncementView, error) {
+	var v AdminAnnouncementView
+	var createdAt time.Time
+	var publishedAt *time.Time
 	if err := tx.QueryRow(ctx,
-		`INSERT INTO announcements (title, body, published, published_at) VALUES ($1,$2,$3,$4) RETURNING id`,
-		title, body, published, at).Scan(&id); err != nil {
-		return 0, fmt.Errorf("create announcement: %w", err)
+		`INSERT INTO announcements (title, body, published, published_at)
+		 VALUES ($1,$2,$3,$4)
+		 RETURNING id, created_at, published_at`,
+		title, body, published, at).Scan(&v.ID, &createdAt, &publishedAt); err != nil {
+		return AdminAnnouncementView{}, fmt.Errorf("create announcement: %w", err)
 	}
+	v.Title, v.Body, v.Published = title, body, published
+	v.CreatedAt = &createdAt
+	v.PublishedAt = publishedAt
 	if auditCtx != nil {
 		if err := s.AuditTx(ctx, tx, *auditCtx, "create_announcement", title, nil); err != nil {
-			return 0, err
+			return AdminAnnouncementView{}, err
 		}
 	}
-	return id, nil
+	return v, nil
 }
 
 // AdminCreateAnnouncementIdem 是公告创建的幂等键版本（R86）。
@@ -1349,13 +1383,11 @@ func (s *Service) AdminCreateAnnouncementIdem(ctx context.Context,
 	}
 	out, replayed, err := s.RunIdempotent(ctx, "admin.announcements.create", key, reqHash,
 		func(tx pgx.Tx) (any, error) {
-			id, err := s.createAnnouncementTx(ctx, tx, title, body, published, at, &audit)
+			created, err := s.createAnnouncementTx(ctx, tx, title, body, published, at, &audit)
 			if err != nil {
 				return nil, err
 			}
-			return AdminAnnouncementResp{Item: AdminAnnouncementView{
-				ID: id, Title: title, Body: body, Published: published, PublishedAt: at,
-			}}, nil
+			return AdminAnnouncementResp{Item: created}, nil
 		})
 	if err != nil {
 		return nil, false, err
@@ -1566,6 +1598,12 @@ func (s *Service) AdminListRedeemCodes(ctx context.Context, limit, offset int, k
 // 兑换路径本就认 `expires_at`（economy.go 的 Redeem SQL：
 // `expires_at IS NULL OR expires_at > now()`），只差创建端不写库。
 func (s *Service) AdminCreateRedeemCode(ctx context.Context, code string, reward map[string]int, maxUses int, expiresAt *time.Time, audit ...AdminAuditCtx) (AdminRedeemCodeView, error) {
+	// ⚠️ R132（审计实证）：奖励键必须与**发奖路径**同一白名单。
+	// 改前这里完全不校验，`{"diamond": 1}` 也能建码成功；玩家兑换时
+	// grantWallet 才报「未知货币 diamond」，运营看到的是一批没人能兑的码。
+	if err := validateRedeemReward(reward); err != nil {
+		return AdminRedeemCodeView{}, err
+	}
 	raw, err := json.Marshal(reward)
 	if err != nil {
 		return AdminRedeemCodeView{}, err
@@ -1627,6 +1665,9 @@ func randomRedeemCode(n int) (string, error) {
 // 奖励/次数上限/过期时间与单个创建一致。count 上限 100。
 // 极低概率的码冲突（唯一约束 23505）自动重新生成，不中断批次。
 func (s *Service) AdminCreateRedeemCodes(ctx context.Context, count int, reward map[string]int, maxUses int, expiresAt *time.Time, audit ...AdminAuditCtx) ([]AdminRedeemCodeView, error) {
+	if err := validateRedeemReward(reward); err != nil {
+		return nil, err
+	}
 	if count <= 0 || count > 100 {
 		return nil, fmt.Errorf("%w: count 必须在 1..100", ErrBadInput)
 	}
@@ -1658,6 +1699,11 @@ func (s *Service) AdminCreateRedeemCodes(ctx context.Context, count int, reward 
 func (s *Service) createRedeemCodesTx(ctx context.Context, tx pgx.Tx,
 	count int, raw []byte, reward map[string]int, maxUses int, expiresAt *time.Time,
 	auditCtx *AdminAuditCtx) ([]AdminRedeemCodeView, error) {
+	// 幂等键版本绕过 AdminCreateRedeemCodes 的入参校验，直接进这里 ——
+	// 白名单必须在这条公共路径上再判一次。
+	if err := validateRedeemReward(reward); err != nil {
+		return nil, err
+	}
 	out := make([]AdminRedeemCodeView, 0, count)
 	seen := map[string]bool{}
 	for len(out) < count {
@@ -1890,6 +1936,11 @@ func (s *Service) AdminSetRedeemCodeEnabled(ctx context.Context, id int, enabled
 func (s *Service) AdminUpdateRedeemCode(ctx context.Context, id int, reward map[string]int, maxUses int, expiresAt *time.Time, audit ...AdminAuditCtx) (AdminRedeemCodeView, error) {
 	if len(reward) == 0 {
 		return AdminRedeemCodeView{}, fmt.Errorf("%w: 奖励不能为空", ErrBadInput)
+	}
+	// R132：编辑路径与创建路径同一白名单 —— 否则「建码时校验」可以被
+	// 「改奖励」绕过，运营仍能把码改成没人能兑的 diamond。
+	if err := validateRedeemReward(reward); err != nil {
+		return AdminRedeemCodeView{}, err
 	}
 	if maxUses <= 0 {
 		maxUses = 1
