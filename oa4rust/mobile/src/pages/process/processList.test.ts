@@ -81,6 +81,23 @@ describe('移动端流程列表分页：页码进请求、失败不折叠成空�
     expect(merged[merged.length - 1]?.id).toBe('t-090')
   })
 
+  it('无可用 id 的行原样保留：去重不能以「没有 id」为由丢行', () => {
+    // OFFSET 分页会让相邻页重叠；只有能按 id 判重的行才去重，
+    // 无 id / 非字符串 id 的行无法判重，必须保留而不是丢弃。
+    const current: Array<{ id?: unknown; title: string }> = [
+      { id: '', title: '旧行（空 id）' },
+      { id: 't-1', title: '旧行 t-1' },
+    ]
+    const incoming: Array<{ id?: unknown; title: string }> = [
+      { title: '无 id 新行' },
+      { id: 42, title: '非字符串 id' },
+      { id: 't-1', title: '重复行' },
+    ]
+    const merged = mergeProcessRows(current, incoming)
+    expect(merged.map((r) => r.title)).toEqual(['旧行（空 id）', '旧行 t-1', '无 id 新行', '非字符串 id'])
+    expect(merged.map((r) => r.id)).toEqual(['', 't-1', undefined, 42])
+  })
+
   it('页码夹取与错误文案：非法页码按 1 请求，非 Error 也有可见提示', async () => {
     const { load, calls } = fakeTaskBackend(50)
     await loadProcessPage<Task>(load, 'pending', 0)

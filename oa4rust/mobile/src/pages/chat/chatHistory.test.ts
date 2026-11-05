@@ -81,6 +81,33 @@ describe('移动端会话历史分页：页码进请求、更早消息可加载�
     expect(merged[0]?.id).toBe('m-051')
   })
 
+  it('响应体缺失或形状异常时按空页处理，不把 undefined 当消息列表', async () => {
+    const missing = await loadChatHistoryPage<Msg>(async () => undefined, 'c-1', 1)
+    expect(missing.messages).toEqual([])
+    expect(missing.hasMore).toBe(false)
+
+    const malformed = await loadChatHistoryPage<Msg>(async () => ({ data: { total: 0 } }), 'c-1', 1)
+    expect(malformed.messages).toEqual([])
+    expect(malformed.hasMore).toBe(false)
+  })
+
+  it('缺 id 的消息不参与去重判定，也不会挡住真正带 id 的更早消息', () => {
+    // 历史数据可能含 id 为空的消息：它无法判重，既不能塞进 seen，
+    // 也不能让同一条更早消息因为「已被占位」而丢失。
+    const current: Msg[] = [
+      { id: '', conversationId: 'c-1', content: '占位' },
+      { id: 'm-002', conversationId: 'c-1', content: '' },
+    ]
+    const older: Msg[] = [
+      { id: 'm-002', conversationId: 'c-1', content: '' },
+      { id: 'm-001', conversationId: 'c-1', content: '' },
+    ]
+    const merged = mergeOlderMessages(current, older)
+    expect(merged).toHaveLength(3)
+    expect(merged[0]?.id).toBe('m-001')
+    expect(merged.filter((m) => m.id === 'm-002')).toHaveLength(1)
+  })
+
   it('页码夹取与错误文案：非法页码按 1 请求，非 Error 也有可见提示', async () => {
     const { load, calls } = fakeHistoryBackend(200)
     await loadChatHistoryPage<Msg>(load, 'c-1', 0)

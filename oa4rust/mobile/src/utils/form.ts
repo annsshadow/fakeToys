@@ -240,15 +240,9 @@ export function parseMobileForm(raw: unknown): MobileForm {
     })
   }
 
-  const groups = [...seenGroups.values()]
-  // 过滤掉"字段全落在默认组以外"的噪声：默认组 id='' 恒保留（承载无容器字段）
-  const defaultHasField = fields.some((f) => f.groupId === '')
-  const finalGroups: MobileFormGroup[] = []
-  for (const g of groups) {
-    if (g.id === '' && !defaultHasField) continue
-    finalGroups.push(g)
-  }
-  return { fields, groups: finalGroups }
+  // 分组只由字段的 groupId 注册（resolveGroup 对无标题容器也返回 id=''），
+  // 因此不存在「没有任何字段的默认组」需要过滤。
+  return { fields, groups: [...seenGroups.values()] }
 }
 
 /** 向后兼容：返回扁平字段（含 group 信息）。 */

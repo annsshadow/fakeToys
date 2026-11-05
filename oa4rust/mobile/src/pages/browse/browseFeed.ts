@@ -10,18 +10,13 @@
  * `utils/loadList` 负责。
  */
 
-import { describeLoadError, type ListResponse, type LoadOutcome, loadList } from '@/utils/loadList'
+import { type ListResponse, type LoadOutcome, loadList } from '@/utils/loadList'
 
 export type BrowseRow = Record<string, unknown>
 
 export type BrowseLoadOutcome = LoadOutcome<BrowseRow>
 
 export type BrowseListResponse = ListResponse
-
-/** 页面展示用的错误文案：非 Error 也给非空提示，不许静默。 */
-export function describeBrowseError(error: unknown): string {
-  return describeLoadError('加载失败', error)
-}
 
 export async function loadBrowseRows(
   fetchList: () => Promise<BrowseListResponse | undefined>,

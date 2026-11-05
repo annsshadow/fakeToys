@@ -9,7 +9,7 @@
  * 这里把过滤/映射与失败保留旧数据都变成可测函数。
  */
 
-import { describeLoadError, type ListResponse, type LoadOutcome, loadList } from '@/utils/loadList'
+import { type ListResponse, type LoadOutcome, loadList } from '@/utils/loadList'
 
 export interface CollectRow {
   id: string
@@ -20,11 +20,6 @@ export interface CollectRow {
 export type CollectLoadOutcome = LoadOutcome<CollectRow>
 
 export type CollectListResponse = ListResponse
-
-/** 页面展示用的错误文案：非 Error 也给非空提示，不许静默。 */
-export function describeCollectError(error: unknown): string {
-  return describeLoadError('收藏加载失败', error)
-}
 
 function titleOf(row: Record<string, unknown>): string {
   const v = row.title

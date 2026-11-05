@@ -61,6 +61,19 @@ describe('移动端收藏列表：失败与空列表必须可区分（R111）', 
     expect(rows).toEqual([{ id: 'c-1', title: '（无标题）', url: '' }])
   })
 
+  it('响应体不是数组时归一为空列表，形状异常不得当成「有数据」', () => {
+    // 后端异常返回对象（列表字段缺失）时，旧实现会遍历 undefined 抛错；
+    // 归一为 [] 让页面走「空」分支，而不是崩溃或显示半截数据。
+    expect(mapCollectRows({ total: 0 }, 'p-1')).toEqual([])
+    expect(mapCollectRows(undefined, 'p-1')).toEqual([])
+  })
+
+  it('拿不到 personId 时不展示任何收藏（不能把别人的收藏列出来）', () => {
+    // collect_list 返回全员收藏，过滤条件依赖本人 id；未登录时宁可空列表，也不泄露他人数据。
+    expect(mapCollectRows([{ id: 'c-1', personId: 'p-1' }], null)).toEqual([])
+    expect(mapCollectRows([{ id: 'c-1', person_id: 'p-1' }], undefined)).toEqual([])
+  })
+
   it('页面按失败/空/列表三分支渲染，且失败有重试入口', () => {
     const source = readFileSync(resolve(import.meta.dirname, 'collect.vue'), 'utf8')
     // 规模下限：防止文件被截断后断言空转。
