@@ -82,6 +82,12 @@ const FIXED = {
   'oa4rust/frontend/apps/desktop/src/views/ServiceInvokeDesignerApp.vue': 'R115',
   'oa4rust/frontend/apps/desktop/src/views/TemplateApp.vue': 'R115',
   'oa4rust/frontend/apps/desktop/src/views/ThreeMemberApp.vue': 'R115',
+  'oa4rust/frontend/apps/desktop/src/views/AppInfoApp.vue': 'R118',
+  'oa4rust/frontend/apps/desktop/src/views/CategoryApp.vue': 'R118',
+  'oa4rust/frontend/apps/desktop/src/views/FileInfoApp.vue': 'R118',
+  'oa4rust/frontend/apps/desktop/src/views/RoleManager.vue': 'R118',
+  'oa4rust/frontend/apps/desktop/src/views/UnitApp.vue': 'R118',
+  'oa4rust/frontend/apps/desktop/src/views/ViewApp.vue': 'R118',
 }
 
 const LIST_STATE =
@@ -113,12 +119,9 @@ const A_PENDING = new Map([
     'oa4rust/frontend/apps/desktop/src/views/AIChatApp.vue',
     'loadConversations catch 置空（L413）；空态 L66「暂无对话」',
   ],
-  ['oa4rust/frontend/apps/desktop/src/views/AppInfoApp.vue', '列表 /api/appinfo/list/all（L79）失败无提示；空态 L29'],
   ['oa4rust/frontend/apps/desktop/src/views/BamApp.vue', '.catch(() => null) 吞错；空态 L47「暂无活动记录」'],
   ['oa4rust/frontend/apps/desktop/src/views/CalendarApp.vue', 'loadCalendars 失败清空日历；事件空态 L106/L126'],
-  ['oa4rust/frontend/apps/desktop/src/views/CategoryApp.vue', 'catch 置空 items（L61）；空态 L23「暂无分类数据」'],
   ['oa4rust/frontend/apps/desktop/src/views/DocumentApp.vue', '文档列表取数失败无提示；空态 L29「暂无文档数据」'],
-  ['oa4rust/frontend/apps/desktop/src/views/FileInfoApp.vue', '列表 /api/fileinfo/list/all（L93）失败无提示；空态 L17'],
   [
     'oa4rust/frontend/apps/desktop/src/views/FileManager.vue',
     'loadFiles catch 置空 files；空态 L129「当前文件夹为空」',
@@ -152,9 +155,6 @@ const A_PENDING = new Map([
     '语句列表（L927）失败无提示；空态 L51「暂无语句定义」',
   ],
   ['oa4rust/frontend/apps/desktop/src/views/QueryViewApp.vue', '视图列表（L165）失败无提示；空态 L88「暂无查询视图」'],
-  ['oa4rust/frontend/apps/desktop/src/views/RoleManager.vue', '角色列表（L77）失败无提示；空态 L17「暂无角色」'],
-  ['oa4rust/frontend/apps/desktop/src/views/UnitApp.vue', '单位列表（L103）失败无提示；空态 L24「暂无单元数据」'],
-  ['oa4rust/frontend/apps/desktop/src/views/ViewApp.vue', '视图列表（L133）失败无提示；空态 L19「暂无视图数据」'],
 ])
 
 function walk(dir, out = []) {

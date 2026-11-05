@@ -13,7 +13,9 @@
         <button class="btn-primary" @click="cleanUnusedFiles">清理无引用文件</button>
       </div>
       <div class="list-panel">
+        <ListLoadError v-if="files.length > 0 && loadError" mode="banner" :message="loadError" @retry="loadFiles" />
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 6" :key="i"></div></div>
+        <ListLoadError v-else-if="files.length === 0 && loadError" mode="empty" :message="loadError" @retry="loadFiles" />
         <div v-else-if="files.length===0" class="empty"><div class="ei">📎</div><p>暂无文件信息</p></div>
         <div v-else class="item-table">
           <div class="table-header">
@@ -44,6 +46,9 @@
 import { api } from '@oa4rust/sdk'
 import { ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { describeListError } from './listQuery'
 
 type FileInfo = {
   id: string
@@ -57,6 +62,7 @@ type FileInfo = {
 }
 
 const loading = ref(false)
+const loadError = ref('')
 const files = ref<FileInfo[]>([])
 
 function fileIcon(f: FileInfo) {
@@ -89,11 +95,13 @@ async function downloadFile(f: FileInfo) {
 
 async function loadFiles() {
   loading.value = true
+  loadError.value = ''
   try {
     const r = await api.get('/api/fileinfo/list/all')
     files.value = r.data ?? []
-  } catch {
-    files.value = []
+  } catch (e) {
+    // 失败保留旧数据并显式报错，不能和「真的没有文件」混成同一种空态。
+    loadError.value = describeListError('文件信息加载失败', e)
   } finally {
     loading.value = false
   }

@@ -13,7 +13,9 @@
         <button class="btn-create" @click="showCreate = true">+ 新建角色</button>
       </div>
       <div class="list-panel">
+        <ListLoadError v-if="roles.length > 0 && loadError" mode="banner" :message="loadError" @retry="loadRoles" />
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 5" :key="i"></div></div>
+        <ListLoadError v-else-if="roles.length === 0 && loadError" mode="empty" :message="loadError" @retry="loadRoles" />
         <div v-else-if="roles.length === 0" class="empty"><div class="ei">🔑</div><p>暂无角色</p></div>
         <div v-else class="item-table">
           <div class="table-header">
@@ -64,10 +66,14 @@
 import { api } from '@oa4rust/sdk'
 import { ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { describeListError } from './listQuery'
 
 type Role = { flag?: string; id?: string; name?: string; roleName?: string; title?: string; desc?: string }
 
 const loading = ref(false)
+const loadError = ref('')
 const roles = ref<Role[]>([])
 async function showRoleMembers(r: Role) {
   const flag = r.flag || r.id
@@ -88,12 +94,14 @@ const form = ref({ name: '', flag: '', desc: '' })
 
 async function loadRoles() {
   loading.value = true
+  loadError.value = ''
   try {
     // 后端角色列表仅注册 POST /api/role/list（GET 会被 {flag} 宽路由吞掉）。
     const r = await api.post('/api/role/list')
     roles.value = r.data ?? []
-  } catch {
-    roles.value = []
+  } catch (e) {
+    // 失败保留旧数据并显式报错，不能和「真的没有角色」混成同一种空态。
+    loadError.value = describeListError('角色列表加载失败', e)
   } finally {
     loading.value = false
   }

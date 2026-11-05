@@ -25,7 +25,9 @@
       </div>
       <div v-if="appViewText" class="meta-note">{{ appViewText }}</div>
       <div class="list-panel">
+        <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="doSearch" />
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 5" :key="i"></div></div>
+        <ListLoadError v-else-if="items.length === 0 && loadError" mode="empty" :message="loadError" @retry="doSearch" />
         <div v-else-if="items.length===0" class="empty"><div class="ei">📱</div><p>暂无应用数据</p></div>
         <div v-else class="item-grid">
           <div v-for="item in items" :key="item.id" class="item-card glass-card" @click="viewDetail(item)">
@@ -59,9 +61,13 @@
 import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { describeListError } from './listQuery'
 
 const keyword = ref('')
 const loading = ref(false)
+const loadError = ref('')
 const items = ref<any[]>([])
 const detailItem = ref<any | null>(null)
 
@@ -74,14 +80,16 @@ const stats = computed(() => [
 
 async function doSearch() {
   loading.value = true
+  loadError.value = ''
   try {
     // 后端真实列表端点为 appinfo/list/all（appinfo/filter 族只提供 prev/next 翻页）。
     const r = await api.get('/api/appinfo/list/all')
     const all = (r.data ?? []) as Item[]
     const kw = keyword.value.trim().toLowerCase()
     items.value = kw ? all.filter((a) => (a.name ?? '').toLowerCase().includes(kw)) : all
-  } catch {
-    items.value = []
+  } catch (e) {
+    // 失败保留旧列表并显式报错，不能和「真的没有应用」混成同一种空态。
+    loadError.value = describeListError('应用列表加载失败', e)
   } finally {
     loading.value = false
   }

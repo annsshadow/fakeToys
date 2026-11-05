@@ -20,7 +20,9 @@
         <span v-for="t in unitTypes" :key="t" class="ut-chip">{{ t }}</span>
       </div>
       <div class="list-panel">
+        <ListLoadError v-if="units.length > 0 && loadError" mode="banner" :message="loadError" @retry="loadUnits" />
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 6" :key="i"></div></div>
+        <ListLoadError v-else-if="units.length === 0 && loadError" mode="empty" :message="loadError" @retry="loadUnits" />
         <div v-else-if="units.length===0" class="empty"><div class="ei">🏗️</div><p>暂无单元数据</p></div>
         <div v-else class="item-grid">
           <div v-for="u in units" :key="u.id" class="item-card glass-card">
@@ -81,6 +83,9 @@
 import { api } from '@oa4rust/sdk'
 import { ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { describeListError } from './listQuery'
 
 type UnitItem = {
   id: string
@@ -94,17 +99,20 @@ type UnitItem = {
 
 const keyword = ref('')
 const loading = ref(false)
+const loadError = ref('')
 const units = ref<UnitItem[]>([])
 
 let allUnits: UnitItem[] = []
 async function loadUnits() {
   loading.value = true
+  loadError.value = ''
   try {
     const r = await api.get('/api/unit/list')
     allUnits = r.data ?? []
     units.value = allUnits
-  } catch {
-    units.value = []
+  } catch (e) {
+    // 失败保留旧单元并显式报错，不能和「真的没有单元」混成同一种空态。
+    loadError.value = describeListError('单元列表加载失败', e)
   } finally {
     loading.value = false
   }

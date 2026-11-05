@@ -19,7 +19,9 @@
         <button class="btn-refresh" @click="load">刷新</button>
       </div>
       <div class="list-panel">
+        <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="load" />
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 6" :key="i"></div></div>
+        <ListLoadError v-else-if="items.length === 0 && loadError" mode="empty" :message="loadError" @retry="load" />
         <div v-else-if="items.length===0" class="empty"><div class="ei">📂</div><p>暂无分类数据</p></div>
         <div v-else class="item-grid">
           <div v-for="item in items" :key="item.id" class="item-card glass-card">
@@ -41,8 +43,12 @@
 import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { describeListError } from './listQuery'
 
 const loading = ref(false)
+const loadError = ref('')
 const items = ref<any[]>([])
 
 const stats = computed(() => [
@@ -54,12 +60,14 @@ const stats = computed(() => [
 
 async function load() {
   loading.value = true
+  loadError.value = ''
   try {
     // 后端真实列表端点为 categoryinfo/list/all（裸 /list 会被 {id} 宽路由吞掉）。
     const r = await api.get('/api/categoryinfo/list/all')
     items.value = r.data ?? []
-  } catch {
-    items.value = []
+  } catch (e) {
+    // 失败保留旧数据并显式报错，不能和「真的没有分类」混成同一种空态。
+    loadError.value = describeListError('分类加载失败', e)
   } finally {
     loading.value = false
   }
