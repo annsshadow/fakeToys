@@ -1758,3 +1758,131 @@ backend/src/main.rs:193  shared::graceful::serve_router_with_shutdown(
 
 - 引入 commit `2b0f888db`（2026-11-02 21:21）的**意图是正确的**（部署重启不腰斩在途请求），但**实现致命**（无信号也 10s 自杀）。
 - 后续只看到「已接入优雅停机 / 已修复」的人，容易误以为该能力一直正常；台账与提交信息必须写清「意图正确、实现有致命缺陷、由哪条断言兜住」。
+
+## O26-A：删除 `shared::scheduler` 死代码（2026-11-05）
+
+### 判定口径（先写清，避免再次误读）
+
+- 「有代码」≠「在跑」。后台能力的判定必须同时给出：① 启动调用点（`start` / `spawn` / `interval` 的实际调用链）；② 运行证据（日志、表写入或测试观测）。
+- 只有类型定义、trait、测试替身而无生产实例化 → 判定为死代码，不计入「已有调度」。
+
+### 零调用方证据（删除前）
+
+- `git grep -n "scheduler" -- oa4rust/backend` = 87 行。除以下 4 处外，全部在 `scheduler.rs` 自身及其两个测试模块（`scheduler_tests` / `tokio_scheduler_tests`）内：
+  - `crates/shared/src/lib.rs:31` `pub mod scheduler;`（无 `pub use` 再导出）；
+  - `crates/shared/Cargo.toml:44` `tokio-cron-scheduler = "0.10"`；
+  - `Cargo.lock`；
+  - `scheduler.rs` 自身。
+- `TokioCronScheduler` / `MockScheduler` / `Scheduler` trait：全仓无生产实例化；`start()` 只出现在文件自带测试里（测试注释明确「任务注册但不 `start()` 就不会真的执行」）。
+- 无 feature flag、无条件编译分支；`tokio-cron-scheduler` 只有 `shared` 一个 crate 依赖，删除后 `cargo check --workspace` 通过。
+- 结论：**零生产路径**。
+
+### 保留原语评估
+
+- `schedule_once` / `schedule_cron` 全部委托给第三方 `tokio-cron-scheduler`；`systemtime_to_cron` 只是把 `SystemTime` 转成 cron 字段，不属于本仓库的调度原语。
+- 现有 `TimerRegistry` 已自带 `fire_at` 一次性能力，one-shot 语义已覆盖；周期 cron 本仓库明确不实现（见 O26-D）。
+- 结论：**无可保留原语，整删**。不把 cron 解析迁进 `TimerRegistry`——那等于引入一个同样没有调用方的周期调度能力。
+
+### 删除前后数字
+
+- 删除前：`scheduler.rs` **764 行 / 28,734 字节**；`oa4rust/backend` 内 `scheduler` 引用 **87 行**；`shared` lib 单测 **386 条**。
+- 删除后：`oa4rust/backend` 内引用 **0 行**（`git grep -n "scheduler" -- oa4rust/backend` 无匹配）；`shared` lib 单测 **366 条**（-20 条，全部为 scheduler 自带测试）。
+- 依赖清理：`Cargo.lock` 移除 3 个包（`tokio-cron-scheduler`、`cron`、`num-derive`），`shared` 依赖少 1 条。
+- 验证：`cargo check --workspace` 通过；`cargo fmt --check` 通过；`cargo test -p shared --lib` 365 passed / 1 failed。失败项 `migrate::tests::migrations_are_ordered_idempotent_and_fail_loud_on_missing_dir` 在 `origin/main`（未改代码）上同样失败：本机脏库报 `column "person_unique" does not exist`（SQLSTATE 42703），与本次删除无关。
+
+### 风险：死代码被误读为「已有调度」
+
+- `docs/archived-plans/2026-08-19-001-fix-close-all-blocking-gaps-plan.md` 与 `docs/plans/2026-10-27-comprehensive-test-coverage.md` 都把该文件描述为「调度器 / TokioCronScheduler 支持 schedule_once / schedule_cron」。
+- 若只删代码不改口径，后来者会以为「周期调度已实现、只是没启用」；事实是从未有任何生产调用点，能力本身也只是第三方包装。
+- 正确表述：**本仓库没有周期调度器；一次性定时只有 `TimerRegistry.fire_at`。**
+
+## O26：后台任务接线审计（2026-11-05）
+
+### 判定口径（三类定义，后续审计一律沿用）
+
+- **有代码 ≠ 在跑。** 判定「运行中」必须同时给出：① 启动调用点（`spawn` / `interval` / `start_background` 的实际调用链，且该调用链在进程启动路径上）；② 运行证据（测试观测、日志字段或表写入）。
+- **未接线**：实现完整、有路由或函数入口，但没有任何启动调用点/调度调用点。
+- **无此能力**：全仓检索不到实现（给出负向检索命令与范围）。
+- 只有类型定义、trait 或测试替身，且无生产实例化 → 计为死代码，不计入「已有能力」。
+
+### 审计表（三类 + 证据列）
+
+| # | 能力 | 启动调用点 | 运行证据 | 判定 |
+|---|------|------------|----------|------|
+| 1 | `x_timer_job` 一次性任务 | `processplatform_service_processing/src/routes.rs:28-37`：router 构造时 spawn `restore` 后 `start_background()`；tick 定义 `lib.rs:4084`，默认 30s（`TIMER_TICK_SECONDS` 仅测试压缩） | `tick` 只取 `kind=="once" && cron.is_none()`（`lib.rs:4103-4111`）；集成场景 `tests/integration_tests/scenarios/timer_jobs.rs:174` 直接驱动 tick | **运行中** |
+| 2 | LDAP 用户同步 | `src/main.rs:98` `ldap::sync::init_from_env` → `crates/ldap/src/sync.rs:356` `spawn_sync_worker`；默认 3600s，可由 `LDAP_SYNC_INTERVAL_SECS` 调整 | 循环内成功/失败分别 `info!`/`warn!`（`sync.rs:331-335`） | **运行中**（未配置 LDAP 时 `init_from_env` 返回 false，不启动） |
+| 3 | CMS 浏览量 flush | `cms_assemble_control/src/lib.rs:7917` handler 首调 `view_count_buffer` → `:7962-7972` 惰性 spawn，60s flush | 计数先进内存再批量 upsert；失败放回 pending 下轮重试（`:7984` 注释） | **运行中**（首个浏览量请求后启动） |
+| 4 | 会话过期清理 | `SessionManager::with_pool`（`src/lib.rs:277`、`auth/src/lib.rs:1090`）→ `shared/src/session.rs:124-134`，300s | 清内存过期条目，防内存泄漏（`:121-123` 注释） | **运行中** |
+| 5 | token 阈值扫描 | 同上，`session.rs:136-147`，60s | 扫描 `auth_token_threshold` 表（`:142-146`） | **运行中** |
+| 6 | 速率限制内存清理 | `src/main.rs:89` `RateLimiter::new()` → `shared/src/rate_limit.rs:95-101`，60s（`CLEANUP_INTERVAL_SECONDS`） | 清理滑动窗口条目（`:105-107`） | **运行中** |
+| 7 | WebSocket 心跳 | `realtime/src/lib.rs:324`，每个连接 30s tick、90s 无 pong 断开 | `:333-336` 超时 `warn!` 并 break | **运行中** |
+| 8 | 微信模板消息异步队列 | `auth/src/mpweixin.rs:451-455`：`router()` 在运行时上下文内 `spawn_template_queue_worker()`；`auth::router()` 由 `src/lib.rs:100` 合并进主路由 | worker 串行消费（`:57-67`）；队列满/未启动时调用方降级同步发送（`:397-408`） | **运行中** |
+| 9 | 任务到期推进（`x_task` 到期置态） | **无**：只有手动路由 `GET /task/{id}/pass/expired`（`routes.rs:180`，实现 `lib.rs:1291`）；`TimerRegistry::tick` 不含任何 task 逻辑 | — | **未接线** |
+| 10 | 维护/超时推进族（8 条 `touch/*`） | **无**：仅注册 HTTP 路由（`processplatform_service_processing/src/routes.rs:194-201`），全仓无调度器调用这些函数 | — | **未接线** |
+| 11 | 程序中心周期调度（`x_program_schedule`） | **无写入方、无执行器**：全仓无 `INSERT/UPDATE/DELETE ... x_program_schedule`；只有 SELECT（`program_center/src/lib.rs:8159/8166/8226/12031/12039` 等） | `fire` 仅 `INSERT x_program_schedule_log`（`:8421`、`:12053`），不执行任务；前端仅调用一次 fire（`frontend/apps/desktop/src/views/ProgramCenterApp.vue:1940`） | **未接线**（表只读、无 cron 执行器） |
+| 12 | 微信模板投递结果 | 发送链路见 #8 | 异步路径**不解析 `errcode`**（`mpweixin.rs:71-93` 只返回原始 JSON）；仅传输错误 `warn!`（`:60-64`）；无 `msgid`、无落库；同步路径校验 `errcode` 但只回调用方（`:429-442`） | **无法观测**（计入未接线） |
+| 13 | `shared::scheduler`（TokioCronScheduler） | **无**：零生产调用点 | 仅自身测试 `start()` | **死代码（O26-A 已删除）** |
+| 14 | 周期 cron 执行器 | 无 | 全仓无 cron 解析/触发；`x_program_schedule.cron_expression` 只被 SELECT 展示（`lib.rs:4929/8166/8226`） | **无此能力** |
+| 15 | 消息重试 / 死信 | 无 | `mpweixin.rs:27` 注释：「v1 简化：失败仅记日志，不做重试/持久化」 | **无此能力** |
+| 16 | 分布式锁 / 单 leader 选举 | 无 | `x_program_schedule.server_node` 仅存储与展示（`lib.rs:8226`），无认领/加锁 SQL | **无此能力** |
+| 17 | 文件 / 临时目录清理 | 无 | `tokio::spawn` + `interval` 全仓枚举无文件清理循环 | **无此能力** |
+
+**小结**：运行中 8 项、未接线 4 项（含 1 项「无法观测」）、无此能力 4 项、死代码 1 项（已删）。
+
+### O26-B 维护族取证（dry-run，**不接线**）
+
+**取证方法（可复现）**：在容器 PG 上建空库 → `cargo run --bin oa4rust -- --migrate-only` → 按每条能力的 WHERE 条件构造可判定数据集 → 用 `BEGIN; <真实语句>; ROLLBACK;` 执行，取 psql 打印的命中行数。**下表数字为构造数据集上的命中行数，不代表线上规模**；上线前须在生产只读副本按同条件 `SELECT count(*)` 复核。
+
+数据集规模：`x_record=8`、`x_draft=4`、`x_work=10`、`x_job=4`、`x_task=8`、`x_workcompleted=6`、`x_attachment=8`。
+
+| 能力 | 影响表与条件 | 需删行数(dry-run) | 保留期 | 可恢复 | 上限 | 幂等 | 建议周期 |
+|------|--------------|------------------|--------|--------|------|------|----------|
+| `touch/cleanevent` | `x_record`：`DELETE WHERE record_type='event' AND create_time < NOW()-24h` | **2** | 24h | **否**（物理删；`x_record` 无 `deleted_at`） | 否（无 LIMIT） | 是（重复执行 0 行） | 每小时；**接线前必须先有软删/归档**，否则误删不可逆 |
+| `touch/deletedraft` | `x_draft`：`UPDATE deleted_at=NOW() WHERE deleted_at IS NULL AND work_id IN (已结束 work)` | **2** | 无（所有已结束 work 的草稿） | **是**（软删，置回 NULL 可还原） | 否（无 LIMIT） | 是 | 每天一次；需业务确认「work 结束即删草稿」 |
+| `touch/handoverjob` | `x_job`：`UPDATE person = x_work.creator WHERE person='' AND creator<>''` | **2** | 无 | **否**（覆盖字段，无历史表；只能按 `work.creator` 人工反推） | 否（无 LIMIT） | 是（回填后不再命中） | 每小时 |
+| `touch/loglongdetained` | `x_record`：`INSERT ... SELECT` 未结束且 `start_time < NOW()-24h`，同日同 work `NOT EXISTS` | **2** | 24h 阈值；按 **DB 自然日** 去重 | 插入行可单独删，但属物理删 | 否（无 LIMIT） | 是（当日重复 0 行；跨日每天新增 1 条） | 每小时或每天；**注意时区**（见下） |
+| `touch/touchdelay` | `x_record`：`INSERT ... SELECT` `task_status='expired'` 的 work（DISTINCT），当日去重 | **2** | 无任务时间阈值；按 **DB 自然日** 去重 | 插入行可单独删 | 否（无 LIMIT） | 是（当日重复 0 行） | 每小时；**注意时区** |
+| `touch/urge` | `x_record`：`INSERT ... SELECT` `task_status='active' AND start_time < NOW()-24h`，按 work+类型+内容**永久**去重 | **2** | 24h 阈值；去重**永久** | 插入行可单独删 | 否（无 LIMIT） | 是（但同一 work 只催办一次，永不重复） | 每小时也无实际效果；需业务先确认「只催一次」是否符合预期 |
+| `touch/merge` | `x_workcompleted`：`DELETE` 同 work 重复，保留 `(completed_time,id)` 最早 | **3** | 无 | **否**（物理删） | 否（无 LIMIT） | 是 | 每小时/每天；`completed_time IS NULL` 的行比较不成立 → 会被静默漏删 |
+| `touch/mergeitem` | `x_attachment`：`DELETE` 同名 + 同 `work_id` + 同 `workcompleted_id` 重复，保留最早 | **4** | 无 | **否**（物理删；表虽有 `deleted_at` 但语句未使用） | 否（无 LIMIT） | 是 | 每天；**唯一要求管理员权限**（`require_admin_opt`） |
+
+**接线前必须先解决的三处共性问题**：
+
+1. **8 条全是 `GET` 且带写副作用**：浏览器预取、爬虫、健康检查都可能触发。接线时不能保留「GET 即执行」形态，至少改为内部调度直调函数 + 手工入口加管理员门禁。
+2. **7 条权限过宽**：除 `mergeitem` 外均 `require_session_opt`（任意登录用户即可触发批量删改）。其中 `cleanevent` / `merge` / `mergeitem` 是物理删除。
+3. **日界时区**：`loglongdetained` / `touchdelay` 用 `date_trunc('day', NOW())`（DB 时区，容器通常 UTC），与业务 UTC+8 日界不一致；北京时间 00:00–08:00 会被算作前一天。测试侧已有 `business_today()`（`tests/idor_matrix.rs:1343`）修正口径，生产侧尚未。
+
+### O26-C 任务到期推进
+
+**不动**。等业务规则（到期判定依据、置态目标、是否写记录、是否通知）。
+
+### O26-D 程序中心周期调度（不实现 cron）
+
+**写入方证据**：
+
+- 全仓 `git grep "INSERT INTO x_program_schedule"` / `UPDATE x_program_schedule` / `DELETE FROM x_program_schedule`：**0 条**。
+- 只有 `x_program_schedule_log` 的 INSERT：`program_center/src/lib.rs:8421`、`:10365`、`:12053`。
+- `x_program_schedule` 的全部访问都是 SELECT（`:1392/1445/1498/1551/1604/4929/8166/8226/10647/10700/12031/12039`）。
+- 路由只有 4 条：`list/schedule`、`list/schedulelocal`、`report`（GET+POST，只读日志）、`schedule/fire`（GET+POST）。**没有任何创建/修改/删除计划的路由**。
+- 前端唯一调用是 `ProgramCenterApp.vue:1940` 的 `schedule/schedule/fire`，不创建计划。
+
+**裁定**：不实现 cron；不新增「创建计划」路由，也不改现有路由（不存在可拒收的创建路径）。台账口径固定为：**`x_program_schedule` 是只读表，无写入方、无执行器；`cron_expression` 仅展示。**
+
+**遗留债务（需排期）**：`schedule/fire` 返回 `fired: true`，但只写一条 `x_program_schedule_log`，不执行任何业务动作（`:12047-12061`）。这是「接受但永不执行」的误导性成功返回；后续要么返回明确的「不支持执行」，要么接入真正的执行器。**本轮不改**。
+
+### O26-E 微信模板投递可观测性（登记债务，不实现）
+
+**现状**：
+
+- 异步队列 worker（`auth/src/mpweixin.rs:57-67`）：只捕获传输/解码错误并 `warn!`，**不解析 `errcode`**；业务失败（如 access_token 失效、用户未关注）被当作成功，无任何记录。
+- 同步降级路径（`:429-442`）：校验 `errcode`，但只把错误文本回给调用方，不落库。
+- 两条路径都没有 `msgid`，没有「成功/失败」落库，也没有重试（`:27`）。
+
+**最小方案（不实现，等排期）**：
+
+1. 统一发送函数返回结构：`(errcode: i64, errmsg: String, msgid: Option<String>)`，以 `errcode == 0` 判定成功。
+2. 结构化日志（最低成本）：`tracing::info!/warn!` 固定字段 `touser`、`template_id`、`errcode`、`errmsg`、`msgid`、`success`。
+3. 需要可查询/可对账时再落表：新增 `x_mpweixin_template_delivery(id, touser, template_id, msgid, success, errcode, errmsg, create_time)`，异步队列与同步路径复用同一写入点。
+4. 不在本轮加入重试/死信（属 O26 #15 的独立能力）。
+
+
