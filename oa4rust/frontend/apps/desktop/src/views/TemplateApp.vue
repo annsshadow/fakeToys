@@ -69,6 +69,7 @@ import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+import { liveQueryItems } from './liveQueryItems'
 
 interface Item {
   id: string
@@ -98,7 +99,7 @@ const search = ref(''),
   showEdit = ref(false),
   loading = ref(false),
   saving = ref(false)
-const items = ref<Item[]>([]),
+const items = liveQueryItems<Item>(() => data.value),
   form = ref<Partial<Item>>({}),
   editingId = ref<string | null>(null)
 const qc = useQueryClient()
@@ -115,7 +116,6 @@ const { data } = useQuery({
     }
   },
 })
-items.value = Array.isArray(data.value) ? (data.value as Item[]) : []
 
 const filtered = computed(() =>
   search.value

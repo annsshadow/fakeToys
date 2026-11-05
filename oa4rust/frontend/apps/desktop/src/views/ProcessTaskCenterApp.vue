@@ -76,6 +76,7 @@ import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+import { liveQueryItems } from './liveQueryItems'
 
 interface Item {
   id: string
@@ -636,7 +637,7 @@ const qk = ['ProcessTaskCenter', 'list']
 const search = ref(''),
   loading = ref(false),
   processingId = ref<string | null>(null)
-const items = ref<Item[]>([])
+const items = liveQueryItems<Item>(() => data.value)
 const qc = useQueryClient()
 
 const { data } = useQuery({
@@ -651,7 +652,6 @@ const { data } = useQuery({
     }
   },
 })
-items.value = Array.isArray(data.value) ? (data.value as Item[]) : []
 
 const filtered = computed(() =>
   search.value

@@ -161,6 +161,7 @@ import { api } from '@oa4rust/sdk'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+import { liveQueryItems } from './liveQueryItems'
 
 interface Item {
   id: string
@@ -228,7 +229,7 @@ async function loadManagedApps() {
 const qk = ['ProcessManager', 'list']
 
 const search = ref('')
-const items = ref<Item[]>([])
+const items = liveQueryItems<Item>(() => data.value)
 const loading = ref(false)
 const qc = useQueryClient()
 
@@ -244,7 +245,6 @@ const { data } = useQuery({
     }
   },
 })
-items.value = Array.isArray(data.value) ? (data.value as Item[]) : []
 
 const filtered = computed(() =>
   search.value

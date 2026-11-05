@@ -36,6 +36,7 @@
 import { api } from '@oa4rust/sdk'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
+import { liveQueryItems } from './liveQueryItems'
 
 interface Item {
   id: string
@@ -53,7 +54,7 @@ const listEp = '/api/log/list'
 const qk = ['LogViewer', 'list']
 
 const search = ref('')
-const items = ref<Item[]>([])
+const items = liveQueryItems<Item>(() => data.value)
 const loading = ref(false)
 const qc = useQueryClient()
 
@@ -69,7 +70,6 @@ const { data } = useQuery({
     }
   },
 })
-items.value = Array.isArray(data.value) ? (data.value as Item[]) : []
 
 const filtered = computed(() =>
   search.value

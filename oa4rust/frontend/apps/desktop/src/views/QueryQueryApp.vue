@@ -93,6 +93,7 @@ import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+import { liveQueryItems } from './liveQueryItems'
 
 interface Item {
   id: string
@@ -110,7 +111,8 @@ const search = ref(''),
   showEdit = ref(false),
   loading = ref(false),
   saving = ref(false)
-const items = ref<Item[]>([]),
+const categoryItems = ref<Item[] | null>(null)
+const items = liveQueryItems<Item>(() => categoryItems.value ?? data.value),
   form = ref<Partial<Item & { query?: string }>>({}),
   editingId = ref<string | null>(null)
 const qc = useQueryClient()
@@ -127,7 +129,6 @@ const { data } = useQuery({
     }
   },
 })
-items.value = Array.isArray(data.value) ? (data.value as Item[]) : []
 
 const filtered = computed(() =>
   search.value
@@ -195,12 +196,13 @@ const catFilter = ref('')
 async function loadByCategory() {
   const cat = catFilter.value.trim()
   if (!cat) {
+    categoryItems.value = null
     loadData()
     return
   }
   try {
     const r: any = await api.get(`/api/query/assemble/designer/list/${encodeURIComponent(cat)}`)
-    items.value = (Array.isArray(r?.data) ? r.data : (r?.data?.data ?? [])) as Item[]
+    categoryItems.value = (Array.isArray(r?.data) ? r.data : (r?.data?.data ?? [])) as Item[]
   } catch (e: any) {
     toast.error(`按分类加载失败: ${e?.message ?? ''}`)
   }
