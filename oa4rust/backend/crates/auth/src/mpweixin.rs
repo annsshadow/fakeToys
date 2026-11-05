@@ -75,7 +75,8 @@ async fn send_template_via_wechat(task: &TemplateMessageTask) -> Result<Value, S
     let client = mpweixin_client();
     let send_resp: Value = client
         .post(format!(
-            "https://api.weixin.qq.com/cgi-bin/message/wxopen/template/send?access_token={}",
+            "{}/cgi-bin/message/wxopen/template/send?access_token={}",
+            mpweixin_api_base(),
             access_token
         ))
         .json(&serde_json::json!({
@@ -113,6 +114,14 @@ fn mpweixin_client() -> &'static reqwest::Client {
     MPWEXIN_CLIENT.get_or_init(reqwest::Client::new)
 }
 
+/// 微信 API 根地址。默认官方地址；可用 `MPWEXIN_API_BASE` 指向自建代理或测试桩。
+fn mpweixin_api_base() -> String {
+    std::env::var("MPWEXIN_API_BASE")
+        .unwrap_or_else(|_| "https://api.weixin.qq.com".to_string())
+        .trim_end_matches('/')
+        .to_string()
+}
+
 fn mpweixin_config() -> Result<(String, String), AppError> {
     // O23：缺配置 → 503 并写明缺哪一项。
     let app_id =
@@ -127,7 +136,7 @@ async fn mpweixin_openid(code: &str) -> Result<String, AppError> {
     let (app_id, app_secret) = mpweixin_config()?;
     let client = mpweixin_client();
     let resp: Value = client
-        .get("https://api.weixin.qq.com/sns/oauth2/access_token")
+        .get(format!("{}/sns/oauth2/access_token", mpweixin_api_base()))
         .query(&[
             ("appid", app_id.as_str()),
             ("secret", app_secret.as_str()),
@@ -185,7 +194,7 @@ async fn mpweixin_access_token() -> Result<String, AppError> {
     let (app_id, app_secret) = mpweixin_config()?;
     let client = mpweixin_client();
     let resp: Value = client
-        .get("https://api.weixin.qq.com/cgi-bin/token")
+        .get(format!("{}/cgi-bin/token", mpweixin_api_base()))
         .query(&[
             ("grant_type", "client_credential"),
             ("appid", app_id.as_str()),
@@ -411,7 +420,8 @@ pub async fn mpweixin_test_send(
     let client = mpweixin_client();
     let send_resp: Value = client
         .post(format!(
-            "https://api.weixin.qq.com/cgi-bin/message/wxopen/template/send?access_token={}",
+            "{}/cgi-bin/message/wxopen/template/send?access_token={}",
+            mpweixin_api_base(),
             access_token
         ))
         .json(&serde_json::json!({
