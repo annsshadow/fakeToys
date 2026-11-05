@@ -38,7 +38,11 @@ pub async fn list_cms_correlations(
 
     let rows = client
         .query(
-            "SELECT id, from_bundle, target_bundle, person, site, order_number FROM CORR_C_CORRELATION WHERE from_type = 'cms' ORDER BY order_number",
+            &format!(
+                "SELECT id, from_bundle, target_bundle, person, site, order_number \
+                 FROM CORR_C_CORRELATION WHERE from_type = 'cms' ORDER BY {} ASC NULLS LAST, id ASC",
+                shared::db::numeric_text_i32_sort_expr("order_number")
+            ),
             &[],
         )
         .await
@@ -73,7 +77,11 @@ pub async fn list_cms_correlations(
             if let Some(site) = row.get::<_, Option<String>>("site") {
                 obj.insert("site".to_string(), Value::String(site));
             }
-            if let Some(n) = row.get::<_, Option<i32>>("order_number") {
+            // O32：order_number 实列是 TEXT，按 O31 口径解析为 i32；不可解析不输出该字段。
+            let order_number = row
+                .get::<_, Option<String>>("order_number")
+                .and_then(|raw| raw.trim().parse::<i32>().ok());
+            if let Some(n) = order_number {
                 obj.insert(
                     "orderNumber".to_string(),
                     Value::Number(serde_json::Number::from(n)),
@@ -109,7 +117,12 @@ pub async fn list_process_platform_correlations(
 
     let rows = client
         .query(
-            "SELECT id, from_bundle, target_bundle, person, site, order_number FROM CORR_C_CORRELATION WHERE from_type = 'processPlatform' ORDER BY order_number",
+            &format!(
+                "SELECT id, from_bundle, target_bundle, person, site, order_number \
+                 FROM CORR_C_CORRELATION WHERE from_type = 'processPlatform' \
+                 ORDER BY {} ASC NULLS LAST, id ASC",
+                shared::db::numeric_text_i32_sort_expr("order_number")
+            ),
             &[],
         )
         .await
@@ -144,7 +157,11 @@ pub async fn list_process_platform_correlations(
             if let Some(site) = row.get::<_, Option<String>>("site") {
                 obj.insert("site".to_string(), Value::String(site));
             }
-            if let Some(n) = row.get::<_, Option<i32>>("order_number") {
+            // O32：order_number 实列是 TEXT，按 O31 口径解析为 i32；不可解析不输出该字段。
+            let order_number = row
+                .get::<_, Option<String>>("order_number")
+                .and_then(|raw| raw.trim().parse::<i32>().ok());
+            if let Some(n) = order_number {
                 obj.insert(
                     "orderNumber".to_string(),
                     Value::Number(serde_json::Number::from(n)),
