@@ -26,10 +26,14 @@
     </div>
 
     <!-- 实时统计 -->
+    <div v-if="countError" class="error-banner stats-error">
+      <span class="error-text">{{ countError }}</span>
+      <button class="retry-btn" @click="reloadCounts">重试</button>
+    </div>
     <div class="stats-grid">
       <div class="stat-card glass-card" :style="{ '--glow': s.color }" v-for="s in stats" :key="s.label">
         <div class="stat-icon">{{ s.icon }}</div>
-        <div class="stat-value">{{ s.value }}</div>
+        <div class="stat-value">{{ s.value ?? '—' }}</div>
         <div class="stat-label">{{ s.label }}</div>
         <div class="stat-trend" :class="s.trendDir">{{ s.trendText }}</div>
       </div>
@@ -88,7 +92,7 @@
 
 <script setup lang="ts">
 import { api, useSession } from '@oa4rust/sdk'
-import { useQuery } from '@tanstack/vue-query'
+import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { describeListError } from './listQuery'
@@ -130,7 +134,13 @@ const quickApps = [
 ]
 
 // 实时统计数据
-const { data: procCounts } = useQuery({
+// 失败时 data 仍是 undefined，`?? 0` 会把「取数失败」渲染成真实的 0；因此单独暴露
+// countError，并把失败的计数显示为「—」而不是 0。
+const {
+  data: procCounts,
+  isError: procFailed,
+  error: procError,
+} = useQuery({
   queryKey: ['dash', 'proc'],
   queryFn: () =>
     Promise.all([
@@ -138,18 +148,36 @@ const { data: procCounts } = useQuery({
       api.get('/api/processplatform/assemble/surface/work/count/completedperson'),
     ]),
 })
-const { data: msgCount } = useQuery({
+const {
+  data: msgCount,
+  isError: msgFailed,
+  error: msgError,
+} = useQuery({
   queryKey: ['dash', 'msg'],
   queryFn: () => api.get('/api/message/unread/count/im'),
   staleTime: 15000,
   refetchInterval: 30000,
 })
+const countError = computed(() => {
+  if (!procFailed.value && !msgFailed.value) return ''
+  return describeListError('统计计数加载失败', procError.value ?? msgError.value)
+})
+const statCount = (idx: 0 | 1, failed: boolean, source: unknown): number | null => {
+  if (failed) return null
+  return ((source as any[] | undefined)?.[idx] as any)?.data?.count ?? 0
+}
+
+const qc = useQueryClient()
+function reloadCounts(): void {
+  void qc.invalidateQueries({ queryKey: ['dash', 'proc'] })
+  void qc.invalidateQueries({ queryKey: ['dash', 'msg'] })
+}
 
 const stats = computed(() => [
   {
     icon: '📋',
     label: '待审批',
-    value: ((procCounts.value?.[0] as any)?.data?.count ?? 0) as number,
+    value: statCount(0, procFailed.value, procCounts.value),
     color: 'var(--color-warning)',
     trendText: '↑ 较昨日',
     trendDir: 'up',
@@ -157,7 +185,7 @@ const stats = computed(() => [
   {
     icon: '💬',
     label: '未读消息',
-    value: ((msgCount.value as any)?.data?.count ?? 0) as number,
+    value: msgFailed.value ? null : (((msgCount.value as any)?.data?.count ?? 0) as number),
     color: 'var(--color-primary)',
     trendText: '实时',
     trendDir: 'neutral',
@@ -165,7 +193,7 @@ const stats = computed(() => [
   {
     icon: '✅',
     label: '已办结',
-    value: ((procCounts.value?.[1] as any)?.data?.count ?? 0) as number,
+    value: statCount(1, procFailed.value, procCounts.value),
     color: 'var(--color-success)',
     trendText: '本月累计',
     trendDir: 'neutral',

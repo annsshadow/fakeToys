@@ -59,7 +59,7 @@ const FIXED = {
   'oa4rust/frontend/apps/desktop/src/views/CmsXformApp.vue': 'R115',
   'oa4rust/frontend/apps/desktop/src/views/CollectApp.vue': 'R115',
   'oa4rust/frontend/apps/desktop/src/views/CommonApp.vue': 'R115',
-  'oa4rust/frontend/apps/desktop/src/views/Dashboard.vue': 'R115',
+  'oa4rust/frontend/apps/desktop/src/views/Dashboard.vue': 'R115/R117',
   'oa4rust/frontend/apps/desktop/src/views/ConfigDesignerApp.vue': 'R116',
   'oa4rust/frontend/apps/desktop/src/views/DeploymentApp.vue': 'R115',
   'oa4rust/frontend/apps/desktop/src/views/FaceSetApp.vue': 'R115',

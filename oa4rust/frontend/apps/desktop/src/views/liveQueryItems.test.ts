@@ -123,6 +123,15 @@ describe('桌面列表页失败必须可见（R115）', () => {
     }
   })
 
+  it('Dashboard 统计计数失败不再伪装成真实的 0', () => {
+    const source = readFileSync(resolve(import.meta.dirname, 'Dashboard.vue'), 'utf8')
+    expect(source).toContain('countError')
+    expect(source).toContain("s.value ?? '—'")
+    // 失败时不得再用 `?? 0` 把 undefined 渲染成 0
+    expect(source).not.toMatch(/procCounts\.value\?\.\[[01]\]/)
+    expect(source.indexOf('统计计数加载失败')).toBeGreaterThan(-1)
+  })
+
   it('Dashboard 的待办取数失败不再折叠成「暂无待办」', () => {
     const source = readFileSync(resolve(import.meta.dirname, 'Dashboard.vue'), 'utf8')
     expect(source).toContain('pendingError')
