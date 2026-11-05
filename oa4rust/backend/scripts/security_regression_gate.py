@@ -31,14 +31,24 @@ TEST = "security_regression"
 
 ATTENDANCE = BACKEND / "crates/attendance_core_entity/src/lib.rs"
 CMS = BACKEND / "crates/cms_assemble_control/src/lib.rs"
+GENERAL = BACKEND / "crates/general_core_entity/src/lib.rs"
 
 ATTENDANCE_EXPECT = "attendance_core_entity|record_update|POST"
 CMS_EXPECT = "gate-cms-readable"
+GENERAL_EXPECT = "general_core_entity|file_delete|POST"
 
 OWNERSHIP_RE = re.compile(
     r'const RECORD_OWNER_PREDICATE: &str = .*?false\)\)";', re.S
 )
 OWNERSHIP_PATCH = 'const RECORD_OWNER_PREDICATE: &str = "id = $1 AND $2 IS NOT NULL";'
+
+# file/invoice 的归属谓词（本轮写 IDOR 第一批）：摘掉 creator/admin 判定
+GENERAL_OWNERSHIP_RE = re.compile(
+    r'const CREATOR_OWNER_PREDICATE: &str = .*?false\)\)";', re.S
+)
+GENERAL_OWNERSHIP_PATCH = (
+    'const CREATOR_OWNER_PREDICATE: &str = "id = $1 AND $2 IS NOT NULL";'
+)
 
 # document_permission_read_u3 的 readable 计算（不可读即 403）
 CMS_READABLE_RE = re.compile(
@@ -93,8 +103,16 @@ def sabotage(kind: str) -> int:
     elif kind == "correct":
         path, pattern, patch, expect = CMS, CMS_READABLE_RE, CMS_READABLE_PATCH, CMS_EXPECT
         title = "把不可读即 403 的文档读权限端点改成恒 true（应变 NEW-FAIL）"
+    elif kind == "general":
+        path, pattern, patch, expect = (
+            GENERAL,
+            GENERAL_OWNERSHIP_RE,
+            GENERAL_OWNERSHIP_PATCH,
+            GENERAL_EXPECT,
+        )
+        title = "摘掉 file/invoice 的 creator/管理员归属谓词（应变 NEW-FAIL）"
     else:
-        raise SystemExit(f"未知破坏实验: {kind}（可选 ownership / correct）")
+        raise SystemExit(f"未知破坏实验: {kind}（可选 ownership / correct / general）")
 
     print(f"== 破坏实验：{title}")
     original = mutate(path, pattern, patch, kind)
