@@ -1885,6 +1885,8 @@ backend/src/main.rs:193  shared::graceful::serve_router_with_shutdown(
 3. 需要可查询/可对账时再落表：新增 `x_mpweixin_template_delivery(id, touser, template_id, msgid, success, errcode, errmsg, create_time)`，异步队列与同步路径复用同一写入点。
 4. 不在本轮加入重试/死信（属 O26 #15 的独立能力）。
 
+**2026-11-05 后续（O28）：方案 1–2 已实现（统一 `errcode` 判据 + 结构化日志），方案 3（落表）仍未做，重试/死信仍未做。**
+
 ## O26-1：8 条 `touch/*` 的授权缺陷（**与接线无关，独立修复**）
 
 > 性质定级：**授权缺陷 + HTTP 语义缺陷，不是「接线问题」**。即使永远不接线，任意登录用户也能用一条 GET 触发批量写（其中 3 条是物理删除）。
@@ -2032,6 +2034,108 @@ HTTP 400 Bad Request
   3. 若只是临时库，改为指向 `oa4rust_test` 或新建专用测试库；
   4. 在此之前，所有测试命令固定显式设置 `DATABASE_URL=postgres://.../oa4rust_test`，并在报告中注明库名。
 - **口径**：本条为**环境债**，不是千轮功能点，不计轮次。
+
+## O28：微信模板投递链路可观测性 + errcode 语义（2026-11-05）
+
+### 选题依据
+
+O26 #12 / O26-E 已登记：异步队列 worker **不解析 `errcode`**，微信业务失败被当作成功，
+日志里连一条记录都没有。本轮把这条债务做实；探针过程中又暴露出同一判据下的
+第二个真实缺陷（token/oauth 把「成功响应不带 errcode」判成失败）。
+
+### O28-1 可验证性接缝（提交 `334f0c41e`）
+
+- 此前 `https://api.weixin.qq.com` 硬编码 4 处，无法把测试打到假服务。
+- 新增 `MPWEXIN_API_BASE`（默认官方地址，`trim_end_matches('/')`），与既有
+  `AI_API_BASE` / `ZWDINGDING_API_BASE` 约定一致；默认值不变，**行为不变**。
+- 作用：让「改前静默 / 改后可见」能用同一套真实 worker + 本地假微信 API 取证。
+
+### O28-2 缺 errcode ≠ 失败（提交 `c84328e0b`）
+
+**改前实测**（假微信 API 按真实契约返回 `{"access_token":"fake-access-token","expires_in":7200}`，
+即成功响应**不带** `errcode`）：
+
+```
+WARN auth::mpweixin: template message async send failed (touser=user-reject):
+  access_token: internal server error at crates\auth\src\mpweixin.rs:213
+```
+
+根因：`resp.get("errcode").and_then(as_i64).unwrap_or(-1)` + `if errcode != 0`。
+真实微信 `cgi-bin/token` 与 `sns/oauth2/access_token` 的成功响应都不带该字段
+（只有出错时才带），因此**token 获取与小程序 OAuth 登录在真实环境下恒失败**。
+
+改法：
+
+- `wechat_errcode(&Value) -> Option<i64>`：缺字段 = 无错误（不是 -1）。
+- `ensure_wechat_ok(&Value, context)`：仅对**显式** `errcode != 0` 返回 Err，
+  错误串含 `errcode` 与 `errmsg`；token 与 oauth 两处复用。
+- 模板发送保持严格：发送响应必带 `errcode`，缺字段按 `-1` **失败**（防畸形响应被当成已投递）。
+
+验证：
+
+- 单测 `errcode_absent_means_success_and_explicit_failure_keeps_cause`：5 条判据
+  （token 无 errcode、oauth 无 errcode、显式 0、显式 40001、类型异常按缺省），
+  **规模下限 ≥4 条**；失败分支断言 `cause` 同时含 errcode 与 errmsg。
+- **破坏实验**：把 `None` 分支改回「缺 errcode 即失败」→ 该单测红 + 集成探针红
+  （`delivery_outcomes_are_observable_for_success_and_rejection` 5s 超时、捕获为空）；
+  恢复后绿。
+
+### O28-3 投递结果结构化日志（提交 `96bf4a8a9`）
+
+**改前证据**（同一探针：假 API 已收到 token + 2 条发送请求，worker 无任何投递日志）：
+
+```
+5s 内没有等到两条投递日志；当前捕获内容：
+（空）
+```
+
+即 `errcode=40001` 的业务拒绝与成功投递在日志上都不可见。
+
+改法：
+
+- 新增 `TemplateSendOutcome { errcode, errmsg, msgid }` +
+  `interpret_template_send_response(&Value)`；成功判据 `errcode == 0`。
+- worker 按结果分三条日志：`delivered`（INFO，`success=true`，带 `msgid`）、
+  `rejected`（WARN，`success=false`，带 `errcode`/`errmsg`）、
+  `transport failure`（WARN，带 `error`）。
+- 同步降级路径改为复用同一个 `send_template_message`（删除重复 HTTP 实现），
+  日志字段一致并加 `source="sync"`；对外响应契约不变
+  （成功 `{sent,accepted,msgid}`；失败仍 `ActionResult::error("WeChat template send failed: …")`）。
+
+**改后证据**（真实 worker + 本地假 API，捕获原文）：
+
+```
+WARN auth::mpweixin: wechat template message rejected touser=user-reject template_id=tpl-reject errcode=40001 errmsg=invalid credential success=false
+INFO auth::mpweixin: wechat template message delivered touser=user-ok template_id=tpl-ok errcode=0 errmsg=ok msgid="msg-ok" success=true
+```
+
+探针测试 `crates/auth/tests/mpweixin_delivery_observability.rs`
+（真实 tokio worker + 标准库实现的本地 HTTP 假微信，**未新增运行时依赖**，
+仅把 `tracing-subscriber` 加为 dev-dependency）：
+
+- 拒绝行必须 `success=false` + `errcode=40001` + `rejected`；
+- 成功行必须 `success=true` + `msgid="msg-ok"`；
+- **规模下限**：结构化投递日志 ≥2 条；
+- **原功能未坏**：假 API 收到 `GET /cgi-bin/token` ≥1 次、
+  `POST /cgi-bin/message/wxopen/template/send` ≥2 次。
+- **破坏实验**：`TemplateSendOutcome::success()` 改恒真 → 红
+  （拒绝行变成 `delivered … errcode=40001 success=true`），恢复后绿。
+
+### 验证
+
+- `cargo fmt --all -- --check` 通过。
+- `cargo clippy -p auth --all-targets --keep-going` 零告警。
+- `cargo test -p auth`（`DATABASE_URL=postgres://…/oa4rust_test`）：
+  lib **103 passed / 0 failed / 3 ignored**；集成探针 **1 passed / 0 failed**。
+
+### 本轮不做
+
+- 重试 / 死信 / 落表（O26 #15、O26-E 方案 3）：日志仍是唯一观测面。
+- 小程序登录路径的行为变化仅限「不再因缺 errcode 恒失败」；
+  `mpweixin_login_or_create`（首次登录建本地用户）未改。
+- 未增加 `MPWEXIN_API_BASE` 的生产配置校验：默认值即官方地址，
+  指错只会表现为请求失败，日志里带 `transport failure`。
+
 
 
 

@@ -379,6 +379,7 @@ dependencies = [
  "tokio",
  "tower",
  "tracing",
+ "tracing-subscriber",
  "urlencoding",
  "uuid",
 ]
