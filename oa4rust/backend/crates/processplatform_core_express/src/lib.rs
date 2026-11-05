@@ -29,10 +29,21 @@ pub async fn work_terminate(
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .and_then(|row| row.get::<_, Option<String>>("creator"));
-    // 行不存在时放行到下面的 UPDATE（0 行结果，保持既有 not-found 语义）；
-    // creator 为空的历史行同样放行，避免把数据修复问题伪装成权限问题。
-    if let Some(creator) = creator.filter(|c| !c.is_empty()) {
-        shared::middleware::require_owner(&pool.0, &session, &creator).await?;
+    // 归属门：发起人非空 → 本人或 admin（`require_owner`，admin 旁路）。
+    // 发起人为空 / 行不存在 → **仅 admin**：空归属不是「无需校验」，否则
+    // creator=NULL 的历史行会对任何登录用户开放终止（审计第六轮实证）。
+    let creator = creator
+        .map(|c| c.trim().to_string())
+        .filter(|c| !c.is_empty());
+    match creator {
+        Some(creator) => {
+            shared::middleware::require_owner(&pool.0, &session, &creator).await?;
+        }
+        None => {
+            if !shared::middleware::is_admin(&pool.0, &session.person_unique).await {
+                return Err(AppError::Forbidden);
+            }
+        }
     }
     client
         .execute(

@@ -62,6 +62,8 @@ oa4rust/backend/scripts/**
 # 门禁判定器（scripts/check-warnings.mjs 的 openapi-paths 项直接调用）必须入库，
 # 否则它只存在于某人的本地工作树，CI 上永远 exit=2（这正是本轮查清的空转根因）。
 !oa4rust/backend/scripts/check_openapi_up_to_date.py
+# O26 安全回归门禁 runner 必须入库，否则修复线「合并前跑它」在干净克隆上无入口。
+!oa4rust/backend/scripts/security_regression_gate.py
 # O14 生成物门禁判定器（check-warnings.mjs 的 generated-tests 项直接调用）：
 # 必须入库，否则干净克隆 / CI 上永远找不到文件（与 openapi-paths 同一类空转）。
 !oa4rust/backend/scripts/check_generated_tests_up_to_date.py
@@ -109,6 +111,8 @@ oa4rust/backend/deploy/.backups/
 # O10 棘轮基线：idor_matrix.rs 的 handler500 集合包含断言读此文件，
 # 删文件=废棘轮（测试硬编码 expect 存在），必须入库。
 !oa4rust/backend/tests/idor_handler500_baseline.txt
+# O26 安全回归门禁棘轮基线：security_regression.rs 逐条比对读此文件，删文件=废棘轮。
+!oa4rust/backend/tests/security_regression_baseline.txt
 # 集成场景 CI 的唯一豁免清单（守卫脚本按行读取；不入库＝CI 没有排除项，
 # ldap 会把 job 打成永久红）。
 !oa4rust/backend/tests/integration_skip_list.txt
