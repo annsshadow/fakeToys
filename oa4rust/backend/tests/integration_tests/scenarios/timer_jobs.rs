@@ -193,3 +193,98 @@ pub async fn timer_once_fires_once_flow(pool: Arc<TestPool>) {
 
     println!("timer once: job={job_id} fired_at={first}（≥3 tick 后未变）");
 }
+
+async fn seed_job(
+    pg: &deadpool_postgres::Pool,
+    job_id: &str,
+    work_id: &str,
+    fire_at: NaiveDateTime,
+    fired_at: Option<NaiveDateTime>,
+) {
+    pg.get()
+        .await
+        .expect("pool client")
+        .execute(
+            "INSERT INTO x_timer_job (id, work_id, task_id, fire_at, cron, created_at, fired_at, kind) \
+             VALUES ($1, $2, NULL, $3, NULL, $4, $5, 'once')",
+            &[&job_id, &work_id, &fire_at, &Utc::now().naive_utc(), &fired_at],
+        )
+        .await
+        .expect("seed x_timer_job");
+}
+
+/// O25 节点 3：`router()` 启动时接线 `restore`，三种情况都必须成立。
+/// - 未到期（A）：恢复后重新排期，到期时触发一次；
+/// - 已到期未执行（B）：恢复后的首个 tick 立即执行一次；
+/// - 已执行过（C）：restore 不加载，重启后绝不重放。
+pub async fn timer_restore_cases_flow(pool: Arc<TestPool>) {
+    let pg = pool.as_pg().expect("postgres pool").clone();
+    let now = Utc::now().naive_utc();
+
+    let work_id = uniq("tw");
+    seed_work(&pg, &work_id).await;
+
+    let job_a = uniq("tj"); // 未到期
+    let job_b = uniq("tj"); // 已到期未执行
+    let job_c = uniq("tj"); // 已执行过
+    seed_job(
+        &pg,
+        &job_a,
+        &work_id,
+        now + chrono::Duration::seconds(2),
+        None,
+    )
+    .await;
+    seed_job(
+        &pg,
+        &job_b,
+        &work_id,
+        now - chrono::Duration::seconds(5),
+        None,
+    )
+    .await;
+    let c_fired_at = now - chrono::Duration::seconds(10);
+    seed_job(
+        &pg,
+        &job_c,
+        &work_id,
+        now - chrono::Duration::seconds(5),
+        Some(c_fired_at),
+    )
+    .await;
+
+    // 走真实启动路径：create_app → processplatform router → restore → ticker。
+    let (_addr, server, _token) = setup_test_server(pool.clone())
+        .await
+        .expect("failed to start test server");
+
+    // ticker 默认 30s；A 在 +2s 到期，最迟在恢复后的第二个 tick 触发。
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(35);
+    loop {
+        let a = read_fired_at(&pg, &job_a).await;
+        let b = read_fired_at(&pg, &job_b).await;
+        if a.is_some() && b.is_some() {
+            println!("timer restore: A={a:?} B={b:?}（未到期/已到期未执行均已触发）");
+            break;
+        }
+        assert!(
+            tokio::time::Instant::now() < deadline,
+            "35s 内 A/B 未被触发，说明 router() 没有接线 restore（A={a:?} B={b:?}）"
+        );
+        sleep(Duration::from_millis(500)).await;
+    }
+
+    let c_after = read_fired_at(&pg, &job_c)
+        .await
+        .expect("已执行 job 的 fired_at 不应被清空");
+    // PostgreSQL TIMESTAMP 精度是微秒，内存值带纳秒；按微秒口径比较。
+    let micro = |dt: NaiveDateTime| dt.format("%Y-%m-%d %H:%M:%S%.6f").to_string();
+    assert_eq!(
+        micro(c_fired_at),
+        micro(c_after),
+        "已执行过的 job 重启后绝不能重放（fired_at 必须保持原值）"
+    );
+
+    server.abort();
+    let _ = server.await;
+}

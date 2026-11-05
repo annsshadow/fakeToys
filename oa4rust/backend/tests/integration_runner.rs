@@ -205,6 +205,14 @@ async fn timer_once_fires_exactly_once() {
     integration_tests::scenarios::timer_jobs::timer_once_fires_once_flow(ctx.pool.clone()).await;
 }
 
+/// O25 节点 3：router() 启动时 restore；未到期/已到期未执行/已执行三种情况。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn timer_restore_cases_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::timer_jobs::timer_restore_cases_flow(ctx.pool.clone()).await;
+}
+
 /// O24-3 批次 4：INSERT 未写必填主键/规范列的遗留给定族（3 条 E23502）。
 #[ignore = "requires a running database server"]
 #[tokio::test]

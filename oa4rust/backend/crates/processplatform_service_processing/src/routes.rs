@@ -19,8 +19,22 @@ use crate::{
 
 pub fn router(pool: Pool) -> Router {
     let timer = TimerRegistry::with_pool(pool.clone());
-    timer.start_background();
     let timer_for_router = timer.clone();
+
+    // 启动即恢复：进程重启后内存 registry 为空，必须先从 x_timer_job 读回
+    // “未执行且未取消”的 job，再启动 ticker。restore 是 async，这里 spawn 到
+    // 当前 runtime；ticker 在 restore 之后才启动，避免恢复与 tick 并发。
+    // 此前 router() 从不调用 restore，重启后所有未完成 job 彻底失联。
+    {
+        let boot_timer = timer.clone();
+        let boot_pool = pool.clone();
+        tokio::spawn(async move {
+            if let Err(e) = boot_timer.restore(&boot_pool).await {
+                tracing::error!(error = %e, "timer restore at startup failed");
+            }
+            boot_timer.start_background();
+        });
+    }
 
     Router::new()
         .route("/api/processplatform/service/processing/get/{id}", get(get_process))
