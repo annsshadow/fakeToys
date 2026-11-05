@@ -10,6 +10,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import { cmsApi, portalApi, queryviewApi } from '@/services'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import { loadBrowseRows } from './browseFeed'
 
 type TabKey = 'portal' | 'query' | 'cms'
 
@@ -24,6 +25,7 @@ type Row = Record<string, unknown>
 const tab = ref<TabKey>('portal')
 const rows = ref<Row[]>([])
 const loading = ref(false)
+const loadError = ref('')
 const detail = ref<Row | null>(null)
 const detailLoading = ref(false)
 
@@ -35,26 +37,21 @@ function descOf(r: Row): string {
   return v ? String(v) : ''
 }
 
-async function load(): Promise<void> {
+function fetchList(): Promise<{ data?: unknown }> {
+  if (tab.value === 'portal') return portalApi.pageList('default')
+  // queryFlag='all' 表示不限查询（后端 list/query/{queryFlag}）
+  if (tab.value === 'query') return queryviewApi.viewList('all')
+  return cmsApi.columnList()
+}
+
+async function load(previousRows: Row[] = rows.value): Promise<void> {
   loading.value = true
+  loadError.value = ''
   detail.value = null
-  try {
-    if (tab.value === 'portal') {
-      const r = await portalApi.pageList('default')
-      rows.value = (r.data ?? []) as Row[]
-    } else if (tab.value === 'query') {
-      // queryFlag='all' 表示不限查询（后端 list/query/{queryFlag}）
-      const r = await queryviewApi.viewList('all')
-      rows.value = (r.data ?? []) as Row[]
-    } else {
-      const r = await cmsApi.columnList()
-      rows.value = (r.data ?? []) as Row[]
-    }
-  } catch {
-    rows.value = []
-  } finally {
-    loading.value = false
-  }
+  const result = await loadBrowseRows(() => fetchList(), previousRows)
+  rows.value = result.rows
+  if (!result.ok) loadError.value = result.error
+  loading.value = false
 }
 
 onShow(async () => {
@@ -65,8 +62,8 @@ onShow(async () => {
 function switchTab(key: TabKey): void {
   if (tab.value === key) return
   tab.value = key
-  rows.value = []
-  void load()
+  // 页签是用户主动换数据源：不沿用旧页签的行，失败就显示该页签自己的错误。
+  void load([])
 }
 
 async function open(r: Row): Promise<void> {
@@ -114,11 +111,21 @@ function detailText(): string {
     </view>
 
     <view v-if="loading" class="tip">加载中…</view>
+    <view v-else-if="rows.length === 0 && loadError" class="tip tip-error">
+      <view class="error-text">{{ loadError }}</view>
+      <view class="retry-btn" @tap="load()">重试</view>
+    </view>
     <view v-else-if="rows.length === 0" class="tip">暂无数据</view>
 
-    <view v-for="(r, i) in rows" :key="String(r.id ?? i)" class="card" @tap="open(r)">
-      <view class="card-title">{{ nameOf(r) }}</view>
-      <view v-if="descOf(r)" class="card-desc">{{ descOf(r) }}</view>
+    <view v-else>
+      <view v-if="loadError" class="tip-error error-banner">
+        <text class="error-text">{{ loadError }}</text>
+        <view class="retry-btn" @tap="load()">重试</view>
+      </view>
+      <view v-for="(r, i) in rows" :key="String(r.id ?? i)" class="card" @tap="open(r)">
+        <view class="card-title">{{ nameOf(r) }}</view>
+        <view v-if="descOf(r)" class="card-desc">{{ descOf(r) }}</view>
+      </view>
     </view>
 
     <view v-if="detailLoading" class="tip">详情加载中…</view>
@@ -207,5 +214,26 @@ function detailText(): string {
   font-size: 26rpx;
   text-align: center;
   padding: 80rpx 0;
+}
+.tip-error {
+  color: #c0392b;
+}
+.error-text {
+  display: block;
+  margin-bottom: 12rpx;
+  line-height: 1.5;
+}
+.retry-btn {
+  display: inline-block;
+  padding: 8rpx 28rpx;
+  border-radius: 24rpx;
+  border: 1rpx solid #c0392b;
+  color: #c0392b;
+  font-size: 26rpx;
+}
+.error-banner {
+  padding: 24rpx 32rpx;
+  text-align: center;
+  border-bottom: 1px solid #f0f2f5;
 }
 </style>
