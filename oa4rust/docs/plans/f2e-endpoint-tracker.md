@@ -35,6 +35,38 @@
   管理员可代查；
 - `/my/` 语义：无条件按会话人过滤，不做管理员豁免（管理员要看全量走管理端点）。
 
+## 纪律：判据不退化
+
+守卫必须能区分「修好了」和「没修」；断言本身不能依赖运气、真实钟点或环境。
+
+范式（来自 503→401 论证，2026-11-05）：
+
+1. **正向断言**：改后行为（匿名 → 401）。
+2. **反证一（路由存在性）**：同一 helper 对未注册路径必须 404 → 证明 401 不是「路由不在也通过」。
+3. **反证二（不吞故障）**：注入会话但依赖仍不可用 → 仍 503 → 证明 401 只是优先级，不是掩盖依赖故障。
+4. **时间类判据**：注入 `now` 或构造跨边界数据，任何时刻跑都断言同一件事；
+   只在特定钟点有效（读墙钟）的守卫等于没有守卫。
+5. **破坏实验**：把修复逐条撤回，对应断言必须红；红的位置要落在行为断言上，
+   不能只落在常量断言上（否则证明不了行为被覆盖）。
+
+## 时区同族扫描（2026-11-06）
+
+背景：`processplatform_service_processing` 维护作业按业务日去重时，用
+`date_trunc('day', NOW() AT TIME ZONE 'Asia/Shanghai')` 得到「北京墙钟 naive」，
+直接与 `x_record.create_time`（UTC 裸时间）比较 → 北京 00:00–08:00 必现重复插入、
+其余时段必不现（按钟点决定红绿）。修法：边界换算到 UTC 再比较，写入时基不动。
+
+| 位置 | 形态 | 判定 | 处置 |
+|---|---|---|---|
+| `processplatform_service_processing/src/u2.rs`（`loglongdetained` / `touchdelay`） | ① 本地时区算边界 vs naive 列 | **确认为缺陷** | **已修**：`business_day_start_utc(now)`；写入仍 `$2`=UTC naive；用例注入固定 `now` |
+| `attendance_assemble_control/src/lib.rs:8329/8457/8828` | ① 反向：UTC 算「今天」vs 本地日历列 | **同族缺陷**（北京 00:00–08:00 默认考勤日错一天） | 未并入本 PR；随 P0 考勤一起修（下一项就是该 crate） |
+| `bbs_core_entity/src/lib.rs:35-37`（`now_text`，3 处写 `create_time`） | ② 写本地时间，同列另有 UTC 写入路径（`bbs_assemble_control::now_iso`） | **同族缺陷**（容器 TZ=UTC 时不显现，开发机 CST 显现；TEXT 列按字典序排序会混基） | 未并入本 PR；随 T3 bbs 批次做 |
+| `shared/src/response.rs:225-227`（`legacy_date_now`） | ② 读/格式化：响应 `date` 用本地时间，库内是 UTC | 非同族（不参与比较），但疑为 T3-4「API 比落库快 8 小时」的根 | 留待 T3-4 定「落库错 or 读出错」后再修 |
+| `file/src/lib.rs:406/410/481/485/691/743/814`；`console/src/lib.rs:221` | 写本地时间到 **响应 JSON** | 非缺陷（不落库、不比较） | 不改 |
+| `program_center_core_entity/.../application.rs:216` | 写本地时间到 TEXT `deleted_at` | 该列只做非空判定/展示，无跨基比较 | 不改 |
+| `program_center/src/lib.rs`（`DATE(create_time) = $2::date`） | 按天过滤 | 两侧同基（`create_time` 为 UTC naive，`$2` 由调用方传入 `NaiveDate`） | 不改 |
+| 全仓 `AT TIME ZONE` / `date_trunc('day'` / `CURRENT_DATE` / `LOCALTIMESTAMP` | — | 除上表外无其它命中（`date_trunc('second')` 仅截秒文本，无关） | — |
+
 ## 已知相邻（不并入本轮）
 
 - E9 附件若需「会议参与人」判定，要先确认 `x_meeting` 参与人表结构，单独评估；
