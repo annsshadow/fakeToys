@@ -121,8 +121,9 @@ const FIXED = {
 
 const MIN_SCANNED_FILES = 120
 // 随修复推进，fold 候选数量会逐批下降；保留一个下限只用于发现「候选提取失效」。
-// R127 判据改为「按模板使用判定」并按新口径修完 a 类后实测候选 18（handled 8 + other 10），取下限 15。
-const MIN_FOLD_CANDIDATES = 15
+// R129 修完四个遮蔽/判据盲区后实测候选 18（handled 7 + other 11），取下限 16（留 2 的余量，
+// 比 R127 的 15 更紧：模板属性解析与空态判据都已收紧，再掉说明提取又坏了）。
+const MIN_FOLD_CANDIDATES = 16
 
 // 首轮扫描（R113 建立）确认的待修文件；修好一个就移到 FIXED 并从这里删掉，
 // 新出现的文件必须显式登记，否则守卫失败。
@@ -152,6 +153,58 @@ function walk(dir, out = []) {
     }
   }
   return out
+}
+
+/** 这些字符之后出现的 `/` 只能是正则字面量开头，不可能是除号。 */
+const REGEX_PREFIX_CHARS = new Set('([{,;:=!&|?+-*%<>~^'.split(''))
+const REGEX_PREFIX_WORDS = new Set([
+  'return',
+  'typeof',
+  'instanceof',
+  'case',
+  'in',
+  'of',
+  'yield',
+  'await',
+  'delete',
+  'void',
+  'new',
+  'throw',
+  'else',
+  'do',
+])
+
+function regexCanStart(src, i) {
+  let j = i - 1
+  while (j >= 0 && /\s/.test(src[j])) j--
+  if (j < 0) return true
+  const ch = src[j]
+  if (REGEX_PREFIX_CHARS.has(ch)) return true
+  if (/[A-Za-z0-9_$]/.test(ch)) {
+    let k = j
+    while (k >= 0 && /[A-Za-z0-9_$]/.test(src[k])) k--
+    return REGEX_PREFIX_WORDS.has(src.slice(k + 1, j + 1))
+  }
+  return false
+}
+
+/** 从 start（指向开头 `/`）找同一行内的闭合 `/`；找不到返回 -1（那是除号，不是正则）。 */
+function regexEnd(src, start) {
+  let inClass = false
+  for (let i = start + 1; i < src.length; i++) {
+    const c = src[i]
+    if (c === '\n') return -1
+    if (c === '\\') {
+      i++
+    } else if (inClass) {
+      if (c === ']') inClass = false
+    } else if (c === '[') {
+      inClass = true
+    } else if (c === '/') {
+      return i
+    }
+  }
+  return -1
 }
 
 /** 注释与字符串内容抹成空格（保留长度与换行），用于脚本区模式匹配。 */
@@ -185,6 +238,14 @@ function maskSource(rawSrc, isVue) {
         out[i] = ' '
         out[i + 1] = ' '
         i++
+      } else if (c === '/' && regexCanStart(src, i)) {
+        // 正则字面量整体抹掉：否则里面的引号/`//` 会把遮蔽状态带到后面，把真正的 catch 吞掉
+        // （R129 实测：`const Q = /[']/g` 之后的 catch 完全不可见）。
+        const end = regexEnd(src, i)
+        if (end !== -1) {
+          for (let k = i; k <= end; k++) out[k] = ' '
+          i = end
+        }
       } else if (c === "'" || c === '"' || c === '`') {
         state = 'string'
         quote = c
@@ -215,6 +276,19 @@ function maskSource(rawSrc, isVue) {
 }
 
 /**
+ * 模板区：剔除 script/style 后剩下的部分，并把 HTML 注释抹成空格。
+ * 注释里的 `v-for` / 「暂无」不是真实用法（R129 实测注释掉的 v-for 会造出幻影候选，
+ * 注释里的「暂无」会把普通页误判成空态页）。
+ */
+function templateRegion(rawSrc) {
+  let template = rawSrc
+  for (const re of [/<script\b[^>]*>[\s\S]*?<\/script>/gi, /<style\b[^>]*>[\s\S]*?<\/style>/gi, /<!--[\s\S]*?-->/g]) {
+    template = template.replace(re, (m) => m.replace(/[^\n]/g, ' '))
+  }
+  return template
+}
+
+/**
  * 模板里驱动列表的标识符：`v-for` 的迭代源，或参与空态判定（`.length` 配 v-if/v-show、
  * 或模板里出现「暂无/无数据/没有」）。判据只看「怎么用」，不看变量叫什么名字。
  */
@@ -222,20 +296,20 @@ function templateListRefs(rawSrc) {
   const refs = new Set()
   // 不能按 `<template>…</template>` 非贪婪匹配：根模板里嵌 `<template v-if>` 时会在第一个
   // 闭合标签处截断，后半段模板全盲（AttendanceApp/AIChatApp 实测）。改为剔除 script/style 后全取。
-  let template = rawSrc
-  for (const re of [/<script\b[^>]*>[\s\S]*?<\/script>/gi, /<style\b[^>]*>[\s\S]*?<\/style>/gi]) {
-    template = template.replace(re, (m) => m.replace(/[^\n]/g, ' '))
-  }
-  for (const m of template.matchAll(/v-for\s*=\s*["']([^"']*)["']/g)) {
+  const template = templateRegion(rawSrc)
+  // 属性值必须按「与开头相同的那个引号」收尾：旧写法 `["'][^"']*["']` 会在表达式内部的
+  // 字符串/正则字面量处提前截断，`v-if="mode === 'empty' && rows.length === 0"` 里的 .length
+  // 因此整段丢失（R129 实测：该状态被折叠时不报 silentFold）。
+  for (const m of template.matchAll(/v-for\s*=\s*(["'])((?:\\.|(?!\1)[\s\S])*)\1/g)) {
     // `(row, i) in rows` / `row of rows`：只看 in/of 右侧的迭代源。
-    const rhs = m[1]
+    const rhs = m[2]
       .split(/\b(?:in|of)\b/)
       .slice(1)
       .join(' ')
     for (const id of rhs.matchAll(/\b[A-Za-z_$][A-Za-z0-9_$]*\b/g)) refs.add(id[0])
   }
-  for (const m of template.matchAll(/v-(?:if|else-if|show)\s*=\s*["']([^"']*)["']/g)) {
-    for (const id of m[1].matchAll(/([A-Za-z_$][A-Za-z0-9_$]*)\s*\.\s*length\b/g)) refs.add(id[1])
+  for (const m of template.matchAll(/v-(?:if|else-if|show)\s*=\s*(["'])((?:\\.|(?!\1)[\s\S])*)\1/g)) {
+    for (const id of m[2].matchAll(/([A-Za-z_$][A-Za-z0-9_$]*)\s*\.\s*length\b/g)) refs.add(id[1])
   }
   if (/(暂无|无数据|没有)/.test(template)) {
     for (const id of template.matchAll(/([A-Za-z_$][A-Za-z0-9_$]*)\s*\.\s*length\b/g)) refs.add(id[1])
@@ -375,8 +449,14 @@ function inspect(file) {
   // 判据必须盯住「列表失败是否可见」：只认统一口径标识（loadError/ListLoadError/pendingError）
   // 或错误态里的「重试」。旧版把「错误/失败/showToast」算作兜底，只要页面在别处有
   // toast.error（如删除/详情失败）就会被误判为已处理——这正是 R115 前清单漏抓的根因。
-  const emptyMatch = /length\s*===\s*0/.test(src) && /(暂无|无数据|没有)/.test(src)
-  const hasErrorUi = /(loadError|ListLoadError|pendingError|重试)/.test(src)
+  // 空态判定只对 .vue 成立：.ts 没有模板，`length === 0` 与「没有」多半是校验逻辑或注释文案
+  // （R129 实测 mobile/src/utils/form.ts 被这条误判成空态页）。
+  // 判据分两处取：`length === 0` 允许出现在脚本区（computed 里算空态很常见，用 masked 避免注释），
+  // 空态文案与失败提示只能来自模板区，否则注释/字符串里的「暂无」「重试」会翻转结论。
+  const template = isVue ? templateRegion(src) : ''
+  const emptyCheck = isVue && (/length\s*===\s*0/.test(template) || /length\s*===\s*0/.test(masked))
+  const emptyMatch = emptyCheck && /(暂无|无数据|没有)/.test(template)
+  const hasErrorUi = /(loadError|ListLoadError|pendingError|重试)/.test(template)
   const emptyOnly = Boolean(emptyMatch && !hasErrorUi)
 
   return { rel, hits, emptyOnly }

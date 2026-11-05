@@ -153,7 +153,8 @@
       <div v-if="topicsLoading" class="loading-state">
         <div v-for="i in 6" :key="i" class="skeleton-row"></div>
       </div>
-      <div v-else-if="!topicsLoading && topics.length === 0" class="empty-state">
+      <ListLoadError v-else-if="topicsLoadError" mode="empty" :message="topicsLoadError" @retry="reloadTopics" />
+      <div v-else-if="topics.length === 0" class="empty-state">
         <div class="empty-icon">💭</div>
         <p>暂无帖子，快来发帖吧！</p>
       </div>
@@ -261,7 +262,8 @@
         </div>
         <div class="reply-section">
           <h4>回复 ({{ replies.length }})<span v-if="replyGate" class="reply-gate">· 回复权限：{{ replyGate }}</span></h4>
-          <div v-if="replies.length === 0" class="empty-replies">暂无回复</div>
+          <ListLoadError v-if="repliesLoadError" mode="empty" :message="repliesLoadError" @retry="reloadReplies" />
+          <div v-else-if="replies.length === 0" class="empty-replies">暂无回复</div>
           <div v-for="reply in replies" :key="reply.id" class="reply-card">
             <div class="reply-avatar">{{ reply.author?.[0] }}</div>
             <div class="reply-body">
@@ -331,6 +333,9 @@ import { api, useSession } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, ref, watch } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { useListError } from './listQuery'
 
 const session = useSession()
 const qc = useQueryClient()
@@ -548,6 +553,8 @@ async function openSectionInfo(sec: Section): Promise<void> {
 const {
   data: topicsData,
   isLoading: topicsLoading,
+  isError: topicsIsError,
+  error: topicsError,
   refetch,
 } = useQuery({
   queryKey: ['bbs', 'topics', activeTab, mySub, selectedSection, page, searchQuery],
@@ -616,9 +623,20 @@ watch(topicsData, (d) => {
     hasMore.value = d.more
   }
 })
+// 帖子列表失败不能折叠成「暂无帖子」：React Query 失败时 topics 仍是上一次的值/空数组。
+const { loadError: topicsLoadError, reload: reloadTopics } = useListError({
+  isError: topicsIsError,
+  error: topicsError,
+  queryKey: ['bbs', 'topics', activeTab, mySub, selectedSection, page, searchQuery],
+  label: '帖子列表加载失败',
+})
 
 // 回复列表（按帖过滤 → PUT 参数化路由 body.subjectId；裸静态 GET 路由无参 handler 运行时 500）
-const { data: repliesData } = useQuery({
+const {
+  data: repliesData,
+  isError: repliesIsError,
+  error: repliesError,
+} = useQuery({
   queryKey: ['bbs', 'replies', () => viewingTopic.value?.id],
   queryFn: async () => {
     if (!viewingTopic.value) return []
@@ -634,6 +652,13 @@ const { data: repliesData } = useQuery({
 const replies = ref<Reply[]>([])
 watch(repliesData, (d) => {
   if (d) replies.value = d
+})
+// 回复列表同理：失败时 replies 保持空数组，不能显示成「暂无回复」。
+const { loadError: repliesLoadError, reload: reloadReplies } = useListError({
+  isError: repliesIsError,
+  error: repliesError,
+  queryKey: ['bbs', 'replies', () => viewingTopic.value?.id],
+  label: '回复加载失败',
 })
 
 // 创建帖子（后端已注册路由为 /api/bbs/subject/create，非 assemble/control 旧面）
