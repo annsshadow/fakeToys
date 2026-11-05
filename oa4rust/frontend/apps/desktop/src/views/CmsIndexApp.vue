@@ -11,6 +11,7 @@
       <button class="btn-primary" @click="openCreate">+ 新建</button>
     </div>
     <div class="content-panel glass-card">
+      <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="reload" />
       <div class="toolbar">
         <input v-model="search" placeholder="搜索索引 / 目标..." class="search-input" />
         <button class="btn-refresh" @click="loadData">🔄 刷新</button>
@@ -108,7 +109,8 @@
       <div v-if="cmsConfigText" class="cfg-note">{{ cmsConfigText }}</div>
       <div v-if="overviewText" class="cfg-note">{{ overviewText }}</div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
-      <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">🔖</div><p>暂无索引</p></div>
+      <ListLoadError v-else-if="items.length === 0 && loadError" mode="empty" :message="loadError" @retry="reload" />
+      <div v-else-if="items.length === 0" class="empty-state"><div class="empty-icon">🔖</div><p>暂无索引</p></div>
       <table v-else class="data-table">
         <thead><tr><th>名称</th><th>目标</th><th>排序</th><th>描述</th><th>更新时间</th><th>操作</th></tr></thead>
         <tbody>
@@ -145,6 +147,9 @@ import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { useListError } from './listQuery'
 import { liveQueryItems } from './liveQueryItems'
 
 interface Item {
@@ -646,7 +651,7 @@ const items = liveQueryItems<Item>(() => data.value),
   editingId = ref<string | null>(null)
 const qc = useQueryClient()
 
-const { data } = useQuery({
+const { data, isError, error } = useQuery({
   queryKey: qk,
   queryFn: async () => {
     loading.value = true
@@ -657,6 +662,12 @@ const { data } = useQuery({
       loading.value = false
     }
   },
+})
+const { loadError, reload } = useListError({
+  isError,
+  error,
+  queryKey: qk,
+  label: 'CMS索引设计加载失败',
 })
 
 const filtered = computed(() =>

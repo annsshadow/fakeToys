@@ -44,10 +44,18 @@
           <router-link to="/app/process" class="panel-more">查看全部</router-link>
         </div>
         <div v-if="pendingLoading" class="loading-state"><div class="skeleton-row" v-for="i in 3" :key="i"></div></div>
+        <div v-else-if="pendingItems.length === 0 && pendingError" class="empty-state">
+          <p class="error-text">{{ pendingError }}</p>
+          <button class="retry-btn" @click="loadPending">重试</button>
+        </div>
         <div v-else-if="pendingItems.length === 0" class="empty-state">
           <p>🎉 暂无待办事项</p>
         </div>
         <div v-else class="item-list">
+          <div v-if="pendingError" class="error-banner">
+            <span class="error-text">{{ pendingError }}</span>
+            <button class="retry-btn" @click="loadPending">重试</button>
+          </div>
           <div v-for="item in pendingItems" :key="item.id" class="pending-item" @click="navigateTo('/app/process')">
             <div class="pending-icon">📋</div>
             <div class="pending-info">
@@ -83,6 +91,7 @@ import { api, useSession } from '@oa4rust/sdk'
 import { useQuery } from '@tanstack/vue-query'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { describeListError } from './listQuery'
 
 const router = useRouter()
 const session = useSession()
@@ -166,19 +175,22 @@ const stats = computed(() => [
 
 // 待办列表
 const pendingLoading = ref(false)
+const pendingError = ref('')
 const pendingItems = ref<
   Array<{ id: string; title?: string; processName?: string; appName?: string; createTime?: string }>
 >([])
 
 async function loadPending(): Promise<void> {
   pendingLoading.value = true
+  pendingError.value = ''
   try {
     // 待办与 ProcessWork「待我处理」同源：GET task/list/my/paging（200，回带 title/processName/createTime）。
     // 旧的 work/list/filter/manage 路由为 3 占位符坏桩（handler 仅 2 参），必 500，弃用。
     const resp = await api.get('/api/processplatform/assemble/surface/task/list/my/paging/1/size/20')
     pendingItems.value = ((resp as any)?.data ?? []).slice(0, 5)
-  } catch {
-    pendingItems.value = []
+  } catch (e) {
+    // 失败保留旧待办并显式报错，不能和「真的没有待办」混成同一种空态。
+    pendingError.value = describeListError('待办加载失败', e)
   } finally {
     pendingLoading.value = false
   }
@@ -304,6 +316,10 @@ const api_data_doc_386_data = ref<any[]>([])
 .recent-time { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
 
 .empty-state { color: var(--text-muted); font-size: 13px; text-align: center; padding: 20px; }
+.error-text { color: var(--color-error, #c0392b); margin: 0 0 8px; line-height: 1.5; }
+.retry-btn { padding: 4px 14px; border-radius: var(--radius-md); border: 1px solid var(--color-error, #c0392b); background: transparent; color: var(--color-error, #c0392b); cursor: pointer; }
+.error-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px; margin-bottom: 8px; background: var(--bg-elevated); border: 1px solid var(--color-error, #c0392b); border-radius: var(--radius-md); }
+.error-banner .error-text { margin: 0; }
 .loading-state { display: flex; flex-direction: column; gap: 8px; padding: 16px; }
 .skeleton-row { height: 40px; border-radius: var(--radius-md); background: var(--bg-elevated); }
 

@@ -11,11 +11,13 @@
       <button class="btn-refresh" @click="loadData">🔄 刷新</button>
     </div>
     <div class="content-panel glass-card">
+      <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="reload" />
       <div class="toolbar">
         <input v-model="search" placeholder="搜索应用 / 操作 / 成员..." class="search-input" />
       </div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 8" :key="i"></div></div>
-      <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">📜</div><p>暂无日志</p></div>
+      <ListLoadError v-else-if="items.length === 0 && loadError" mode="empty" :message="loadError" @retry="reload" />
+      <div v-else-if="items.length === 0" class="empty-state"><div class="empty-icon">📜</div><p>暂无日志</p></div>
       <table v-else class="data-table">
         <thead><tr><th>应用</th><th>操作</th><th>级别</th><th>成员</th><th>IP</th><th>详情</th></tr></thead>
         <tbody>
@@ -36,6 +38,9 @@
 import { api } from '@oa4rust/sdk'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { useListError } from './listQuery'
 import { liveQueryItems } from './liveQueryItems'
 
 interface Item {
@@ -58,7 +63,7 @@ const items = liveQueryItems<Item>(() => data.value)
 const loading = ref(false)
 const qc = useQueryClient()
 
-const { data } = useQuery({
+const { data, isError, error } = useQuery({
   queryKey: qk,
   queryFn: async () => {
     loading.value = true
@@ -69,6 +74,12 @@ const { data } = useQuery({
       loading.value = false
     }
   },
+})
+const { loadError, reload } = useListError({
+  isError,
+  error,
+  queryKey: qk,
+  label: '日志查看器加载失败',
 })
 
 const filtered = computed(() =>

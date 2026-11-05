@@ -11,6 +11,7 @@
       <button class="btn-refresh" @click="loadData">🔄 刷新</button>
     </div>
     <div class="content-panel glass-card">
+      <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="reload" />
       <div class="toolbar">
         <input v-model="search" placeholder="搜索标题 / 流程 / 处理人..." class="search-input" />
         <button class="btn-refresh" @click="loadWorkList">📋 工作实例</button>
@@ -49,7 +50,8 @@
         <span v-for="w in workItems" :key="w.id || w.title" class="wk-chip">{{ w.title || w.id }}</span>
       </div>
       <div v-if="loading" class="loading-state"><div class="skel" v-for="i in 5" :key="i"></div></div>
-      <div v-else-if="items.length===0" class="empty-state"><div class="empty-icon">⚡</div><p>暂无任务</p></div>
+      <ListLoadError v-else-if="items.length === 0 && loadError" mode="empty" :message="loadError" @retry="reload" />
+      <div v-else-if="items.length === 0" class="empty-state"><div class="empty-icon">⚡</div><p>暂无任务</p></div>
       <table v-else class="data-table">
         <thead><tr><th>标题</th><th>流程</th><th>环节</th><th>处理人</th><th>状态</th><th>开始时间</th><th>操作</th></tr></thead>
         <tbody>
@@ -76,6 +78,9 @@ import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { useListError } from './listQuery'
 import { liveQueryItems } from './liveQueryItems'
 
 interface Item {
@@ -640,7 +645,7 @@ const search = ref(''),
 const items = liveQueryItems<Item>(() => data.value)
 const qc = useQueryClient()
 
-const { data } = useQuery({
+const { data, isError, error } = useQuery({
   queryKey: qk,
   queryFn: async () => {
     loading.value = true
@@ -651,6 +656,12 @@ const { data } = useQuery({
       loading.value = false
     }
   },
+})
+const { loadError, reload } = useListError({
+  isError,
+  error,
+  queryKey: qk,
+  label: '流程任务中心加载失败',
 })
 
 const filtered = computed(() =>
