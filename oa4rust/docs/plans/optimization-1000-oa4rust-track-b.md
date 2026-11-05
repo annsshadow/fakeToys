@@ -2043,14 +2043,14 @@ O26 #12 / O26-E 已登记：异步队列 worker **不解析 `errcode`**，微信
 日志里连一条记录都没有。本轮把这条债务做实；探针过程中又暴露出同一判据下的
 第二个真实缺陷（token/oauth 把「成功响应不带 errcode」判成失败）。
 
-### O28-1 可验证性接缝（提交 `479999a79`）
+### O28-1 可验证性接缝（提交 `334f0c41e`）
 
 - 此前 `https://api.weixin.qq.com` 硬编码 4 处，无法把测试打到假服务。
 - 新增 `MPWEXIN_API_BASE`（默认官方地址，`trim_end_matches('/')`），与既有
   `AI_API_BASE` / `ZWDINGDING_API_BASE` 约定一致；默认值不变，**行为不变**。
 - 作用：让「改前静默 / 改后可见」能用同一套真实 worker + 本地假微信 API 取证。
 
-### O28-2 缺 errcode ≠ 失败（提交 `56e4bef49`）
+### O28-2 缺 errcode ≠ 失败（提交 `c84328e0b`）
 
 **改前实测**（假微信 API 按真实契约返回 `{"access_token":"fake-access-token","expires_in":7200}`，
 即成功响应**不带** `errcode`）：
@@ -2080,7 +2080,7 @@ WARN auth::mpweixin: template message async send failed (touser=user-reject):
   （`delivery_outcomes_are_observable_for_success_and_rejection` 5s 超时、捕获为空）；
   恢复后绿。
 
-### O28-3 投递结果结构化日志（提交 `9437355a6`）
+### O28-3 投递结果结构化日志（提交 `96bf4a8a9`）
 
 **改前证据**（同一探针：假 API 已收到 token + 2 条发送请求，worker 无任何投递日志）：
 
