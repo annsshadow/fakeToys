@@ -188,18 +188,18 @@ func TestLeaderboardLimitSlicesCachedRows(t *testing.T) {
 	}
 }
 
-// TestMyRankNotCached 「我的名次」刻意**不进缓存**（只有参与人数例外）。
+// TestMyRankNotCached 「我的名次」与参与人数都**不进缓存**。
 //
 // 理由：15 秒的陈旧对榜单可以接受，对「我刚打完一局，我的名次」不可接受 ——
 // 那是玩家最容易当成 bug 的一处陈旧。
 //
-// 第 130 轮起 `total` 单独走 rankTotalCache（TTL 同榜单）：它对所有玩家
-// 都是同一个数，且**不参与名次计算**（名次仍当场精确数，不能用旧 total
-// 反推）。所以这条守卫要分开钉两件事：
+// 第 131 轮起 `total` 改成直方图小表 `leaderboard_score_counts` 的精确求和，
+// 该表由 user_progress / level_stars 上的**同事务触发器**维护（没有 TTL、
+// 没有 flush 窗口）。于是这条守卫钉的是「写后必读」：
 //  1. 名次/分数不缓存：中途冒出更强的玩家，名次立刻变化；
-//  2. total 有缓存：新玩家直接写库（未 flush）时仍是旧值；
-//  3. total 不允许小于名次：新注册玩家赶上缓存窗口时，用名次兜底；
-//  4. FlushStatsCache（结算走的同一条 flush）能刷新它。
+//  2. total 同样立即精确：新玩家写库后，**未 flush** 也必须看到 +1；
+//  3. 不存在「total 小于名次」的窗口，不需要兜底；
+//  4. FlushStatsCache（结算走的同一条 flush）不改变这两个值。
 func TestMyRankNotCached(t *testing.T) {
 	ts := openScratchService(t)
 	ctx := context.Background()
@@ -225,12 +225,12 @@ func TestMyRankNotCached(t *testing.T) {
 	if second.Rank != 1 {
 		t.Fatalf("名次不该被缓存：弱于我的玩家出现后 rank 仍应为 1，实际 %d", second.Rank)
 	}
-	if second.Total != 1 {
-		t.Fatalf("total 应按 LeaderboardCacheTTL 缓存（未 flush 应为 1），实际 %d", second.Total)
+	if second.Total != 2 {
+		t.Fatalf("total 由直方图精确求和，未 flush 也应为 2，实际 %d", second.Total)
 	}
 
-	// ① 再来一个**比我强**的人：名次实时变化，且此时实时名次（2）已超过旧 total（1），
-	// total 必须以名次兜底，不能出现「第 2 名 / 共 1 人」。
+	// ① 再来一个**比我强**的人：名次实时变化；total 也必须同一拍变成 3，
+	// 不允许出现「第 2 名 / 共 1 人」这种窗口。
 	stronger := ts.newUser(t, ctx)
 	ts.exec(t, `UPDATE user_progress SET level_exp = 20 WHERE user_id = $1`, stronger)
 
@@ -241,18 +241,18 @@ func TestMyRankNotCached(t *testing.T) {
 	if third.Rank != 2 {
 		t.Fatalf("名次不该被缓存：更强玩家出现后 rank 应为 2，实际 %d", third.Rank)
 	}
-	if third.Total != 2 {
-		t.Fatalf("total 不得小于名次：期望被名次兜底为 2，实际 %d", third.Total)
+	if third.Total != 3 {
+		t.Fatalf("total 不得滞后于名次：更强玩家写入后应立刻为 3，实际 %d", third.Total)
 	}
 
-	// ④ flush 后立刻看到真实人数（结算调用的就是同一个 flushLeaderboards）
+	// ④ flush 只是清榜单缓存，total/名次本来就不该变（结算调用的就是同一个 flushLeaderboards）
 	ts.FlushStatsCache()
 	fourth, err := ts.MyRank(ctx, me, "power")
 	if err != nil {
 		t.Fatalf("flush 后 MyRank 失败：%v", err)
 	}
-	if fourth.Total != 3 {
-		t.Fatalf("flush 后 total 应为 3，实际 %d（缓存没被失效）", fourth.Total)
+	if fourth.Total != 3 || fourth.Rank != 2 {
+		t.Fatalf("flush 不改变值：期望 rank=2/total=3，实际 %d/%d", fourth.Rank, fourth.Total)
 	}
 }
 

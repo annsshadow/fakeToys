@@ -821,11 +821,20 @@ func (s *Server) myBattleHistory(c *fiber.Ctx) error {
 		return err
 	}
 	// 结果筛选（2026-11-01 新一轮第 80 轮）：win / lose，空串不过滤。
-	items, err := s.Svc.MyBattleHistory(c.Context(), userIDFrom(c), limit, offset, c.Query("result", ""))
+	// cursor（R131 审计 G3）：可选 keyset 游标（上一页末行 id）；传了就忽略 offset。
+	cursor, err := queryInt(c, "cursor", 0)
 	if err != nil {
 		return err
 	}
-	return c.JSON(service.NormalizeNilSlices(fiber.Map{"items": items}))
+	page, err := s.Svc.MyBattleHistoryPage(c.Context(), userIDFrom(c), limit, offset, c.Query("result", ""), int64(cursor))
+	if err != nil {
+		return err
+	}
+	var next int64
+	if page.HasMore && len(page.Items) > 0 {
+		next = page.Items[len(page.Items)-1].ID
+	}
+	return c.JSON(service.NormalizeNilSlices(fiber.Map{"items": page.Items, "next_cursor": next}))
 }
 
 // myBattleDetail 返回当前玩家单局战报的完整详情
