@@ -285,8 +285,11 @@ func TestBuildElementsAndPureHelpers(t *testing.T) {
 
 	// 周起始：周日（Go weekday=0）必须折算，不允许出现"起点在终点之后"
 	now := time.Now()
-	sunday := time.Date(now.Year(), now.Month(), now.Day(), 12, 0, 0, 0, time.Local).
-		AddDate(0, 0, -int(now.Weekday())) // 本周的周日
+	// 时区必须取业务日界（R92），不能用宿主机 time.Local：CI 容器 Local=UTC，
+	// UTC 16:00–24:00 与北京日期差一天，这条断言会随宿主时区漂。
+	nowBiz := now.In(businessLocation)
+	sunday := time.Date(nowBiz.Year(), nowBiz.Month(), nowBiz.Day(), 12, 0, 0, 0, businessLocation).
+		AddDate(0, 0, -int(nowBiz.Weekday())) // 本周的周日
 	start := periodStart(sunday, "weekly")
 	if start.Weekday() != time.Monday {
 		t.Errorf("weekly 周期起点应是周一，实际 %v", start.Weekday())
