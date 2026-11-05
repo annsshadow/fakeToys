@@ -699,7 +699,7 @@ async function deleteTask(item: Item) {
   if (await confirmMsg('确定删除该任务？')) delM.mutate(item.id)
 }
 function loadData() {
-  qc.invalidateQueries({ queryKey: qk })
+  reload()
 }
 function fmtTime(t?: string) {
   if (!t) return ''

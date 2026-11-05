@@ -171,7 +171,7 @@ async function deleteItem(item: Item) {
   if (await confirmMsg('确定删除该表单？')) delM.mutate(item.id)
 }
 function loadData() {
-  qc.invalidateQueries({ queryKey: qk })
+  reload()
 }
 // 表单明细族 3 条真实 distinct 路由：首表单 → 表单详情 form/{id}（form_id lib.rs:1336 query_opt）
 // + 该表单版本 formversion/list/form/{formId}（formversion_list_form_formId:1356）+ 应用下表单 form/list/application/{applicationId}（:1222）

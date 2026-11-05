@@ -186,7 +186,7 @@ function runInvoke(item: Item) {
   runM.mutate(item)
 }
 function loadData() {
-  qc.invalidateQueries({ queryKey: qk })
+  reload()
 }
 </script>
 <style scoped>

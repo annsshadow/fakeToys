@@ -225,7 +225,7 @@ async function loadCategories() {
 }
 
 function loadData() {
-  qc.invalidateQueries({ queryKey: qk })
+  reload()
 }
 // 设计器流程应用族 3 条真实 distinct 路由：按分类列应用 application/list/applicationcategory/{cat}
 // → 首应用 → 应用详情 application/{id} + 应用权限 application/permission/{id}（均读 PP_E_APPLICATION，投影各异）
