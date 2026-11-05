@@ -69,10 +69,6 @@ mind_core_entity|update_mind|POST	LEAK
 mind|get_mind_with_id|GET	LEAK
 organization_assemble_authentication|identity_id|GET	LEAK
 organization_assemble_control|identity_id|GET	LEAK
-organization_core_entity|definition_delete|DELETE	LEAK
-organization_core_entity|definition_update|PUT	LEAK
-organization_core_entity|identity_delete|DELETE	LEAK
-organization_core_entity|identity_update|PUT	LEAK
 portal_assemble_designer|dict_id|GET	LEAK
 portal_assemble_designer|file_id_download|GET	LEAK
 portal_assemble_designer|get_design|GET	LEAK

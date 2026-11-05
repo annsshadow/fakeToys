@@ -12,6 +12,7 @@ pub struct Model {
     pub category: String,
     pub type_: String,
     pub deleted_at: Option<DateTime>,
+    pub creator: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
