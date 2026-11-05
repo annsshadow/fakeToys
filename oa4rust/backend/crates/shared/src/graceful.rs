@@ -38,23 +38,37 @@ pub async fn serve_router_with_shutdown<F>(
 where
     F: Future<Output = ()> + Send + 'static,
 {
+    // 记录“关闭信号已到达”，用于只在**排空阶段**套宽限期。
+    // 修前 `timeout(grace, server)` 套在整个服务生命周期上：无论有没有关机
+    // 信号，进程启动 10s 后都会被强制退出（实测 listening → +10s 退出）。
+    let (draining_tx, draining_rx) = tokio::sync::oneshot::channel::<()>();
+    let shutdown = async move {
+        shutdown.await;
+        let _ = draining_tx.send(());
+    };
+
     let server = axum::serve(
         listener,
         app.into_make_service_with_connect_info::<SocketAddr>(),
     )
     .with_graceful_shutdown(shutdown)
     .into_future();
+    tokio::pin!(server);
 
-    match tokio::time::timeout(grace, server).await {
-        Ok(result) => result,
-        Err(_) => {
-            // 强制退出是有意的：卡死的连接不能拖住整个部署流程。
-            // 必须留日志，否则「这次停机为什么丢请求」又无从查起。
-            tracing::warn!(
-                grace_ms = grace.as_millis() as u64,
-                "graceful shutdown timed out; forcing exit"
-            );
-            Ok(())
+    tokio::select! {
+        result = &mut server => result,
+        _ = draining_rx => {
+            // 关闭信号之后才计宽限期：排空超时则记录并强制退出。
+            match tokio::time::timeout(grace, &mut server).await {
+                Ok(result) => result,
+                Err(_) => {
+                    tracing::warn!(
+                        grace_ms = grace.as_millis() as u64,
+                        "graceful shutdown timed out; forcing exit"
+                    );
+                    Ok(())
+                }
+            }
         }
     }
 }
@@ -111,6 +125,35 @@ mod tests {
         let mut buf = Vec::new();
         stream.read_to_end(&mut buf).await.unwrap();
         String::from_utf8(buf).unwrap()
+    }
+
+    /// 没有关机信号时，宽限期不能作用于服务本身。
+    ///
+    /// 修前 `timeout(grace, server)` 包住整个服务：宽限期一到就强制退出，
+    /// 这个用例（等 3 倍宽限期后再请求）会因连接被拒而红。
+    #[tokio::test]
+    async fn server_keeps_running_before_shutdown_signal() {
+        let app = Router::new().route("/ok", get(|| async { "ok" }));
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let (tx, rx) = oneshot::channel::<()>();
+        let server = tokio::spawn(serve_router_with_shutdown(
+            listener,
+            app,
+            Duration::from_millis(100),
+            async {
+                let _ = rx.await;
+            },
+        ));
+
+        tokio::time::sleep(Duration::from_millis(300)).await;
+        let body = request(addr, "/ok").await;
+        assert!(
+            body.contains("200 OK"),
+            "关机信号到来前服务被宽限期误杀：{body}"
+        );
+        tx.send(()).unwrap();
+        server.await.unwrap().unwrap();
     }
 
     /// 关闭信号到达时，在途请求必须**跑完**再退出。
