@@ -345,6 +345,36 @@ mod u2_tests {
         }
     }
 
+    #[tokio::test]
+    async fn u2_unregistered_route_is_404_so_401_proves_route_hit() {
+        // 反证：同一个 status_of 对未注册路径必须 404。
+        // 否则上面把 503 改成 401 的那条就可能是「无论路由在不在都通过」，无法证明路由存在。
+        assert_eq!(
+            status_of("PUT", "/api/attendance/assemble/control/__not_a_route__").await,
+            StatusCode::NOT_FOUND
+        );
+    }
+
+    #[tokio::test]
+    async fn u2_session_present_keeps_db_unavailable_503() {
+        // 反证：401 只是「无会话」的优先级，不是把依赖故障吞掉。
+        // 注入会话后 handler 继续走 DB 路径，mock_pool 仍无法建连 → 必须还是 503。
+        let app = attendance_assemble_control_router(mock_pool())
+            .layer(axum::Extension(shared::testing::test_session("u1")));
+        let got = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/attendance/assemble/control/attendancedetail/filter/list")
+                    .method("PUT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap()
+            .status();
+        assert_eq!(got, StatusCode::SERVICE_UNAVAILABLE);
+    }
+
     // ── 纯单元测试 ─────────────────────────────────────────────
 
     #[test]

@@ -380,6 +380,16 @@ mod u2_legacy_tests {
         );
     }
 
+    #[tokio::test]
+    async fn u2l_unregistered_route_is_404_so_401_proves_route_hit() {
+        // 反证：同一个 status_of 对未注册路径必须 404，
+        // 证明上面 401 不是「路由不存在也照样通过」的假绿。
+        assert_eq!(
+            status_of("PUT", &format!("{}/__not_a_route__", BASE)).await,
+            StatusCode::NOT_FOUND
+        );
+    }
+
     // ── 纯单元测试 ─────────────────────────────────────────────
 
     #[test]
