@@ -2671,6 +2671,61 @@ processplatform_service_processing 3、query_assemble_designer 4、query_assembl
 这些**未逐点核实可空性**（含 `::text` / 原生 TEXT / timestamptz 多种形态），
 不得按模式批量改；后续按 O35 同一方法逐点取证后再分组提交。
 
+## O36：周期双写、sequence 分页、create_time 可空清扫与类型一致性守卫
+
+### O36-A：`x_attendance_statistical_cycle` 读写列不一致（双写 + 读侧 COALESCE）
+
+**列定义证据**：`migrations/032_create_assemble_control_tables.sql:1423-1435` 建表，
+`cycle_year/cycle_month/year/month` 全为 TEXT、均无 NOT NULL；`037_add_deleted_at.sql:139`
+仅追加 `deleted_at`；全仓库无 `ALTER COLUMN ... TYPE` 改过这四列。
+
+**写入方 → 读取方映射（改前）**
+
+| 角色 | 代码点 | 涉及列 |
+|---|---|---|
+| 写 | `attendance_assemble_control/src/lib.rs:4796-4800`（`POST .../attendancestatisticalcycle`） | 只写 `cycle_year` / `cycle_month`（取入参 `cycleYear`/`cycleMonth`） |
+| 读 | 同文件 `cycleDetail/{year}/{month}`（2697-2702） | 过滤 `year = $1 AND month = $2` |
+| 读 | 同文件 `list/all`（2742） | 输出 `year/month`，排序 `year DESC, month DESC` |
+| 读 | 同文件 `/{id}`（2792） | 输出 `year/month` |
+| 读 | `attendance/src/lib.rs:236`（`list_statistical_cycles`） | 输出 `cycle_year/cycle_month`，排序 `create_time` |
+
+**改后**：写侧同时写 `year/month`（值与 `cycleYear/cycleMonth` 相同）；三处读侧统一
+`COALESCE(year, cycle_year)` / `COALESCE(month, cycle_month)`；`list/all` 排序改为
+`numeric_text_i32_sort_expr(COALESCE(...)) DESC NULLS LAST, … , id DESC`；
+`attendance` 侧反向 COALESCE（`COALESCE(cycle_year, year)`）兼容只有 `year/month` 的历史行。
+
+**前后对照（改前原文）**
+
+```
+create 成功；cycleDetail 原始响应=
+{"type":"error","message":"statistical cycle not found","date":"2026-11-05 22:01:12",
+ "spent":0,"size":-1,"count":0,"position":0,
+ "prompt":"com.x.base.core.project.exception.ExceptionEntityNotExist"}
+```
+
+改后：同一周期 `type=success`，`id/year/month` 与 create 返回值一致（4 项回归全绿）。
+另覆盖两种存量：只有 `year/month` 的历史行可读；只有 `cycle_year/cycle_month` 的旧 handler 行可读。
+
+**排序证据**：改前 month `'2'` 与 `'10'` 返回顺序 `["o36-m2","o36-m10","o36-tieA","o36-tieB"]`
+（TEXT 字典序 + 无并列裁决）；改后 `["o36-tieB","o36-tieA","o36-m10","o36-m2"]`（数字语义 + id DESC）。
+
+**破坏实验**：去掉 INSERT 的 `year/month` 后：
+
+```
+thread 'new_cycle_is_visible_through_cycle_detail' panicked at tests\statistical_cycle_dualwrite.rs:172:
+assertion `left == right` failed: 写侧必须双写 year（去掉 year/month 写入即红）
+  left: None
+ right: Some("2026")
+```
+
+> 说明：读侧 `COALESCE` 天生会把「只写 cycle_*」兜住，所以「去掉双写」不会让读路径失败；
+> 双写的守卫改为**物理列断言**（回读 `year/month/cycle_year/cycle_month` 四列），破坏即红，
+> 不假装读路径能红。
+
+**验证**：`cargo fmt --all --check` 绿；`clippy -p attendance_assemble_control -p attendance
+--all-targets -D warnings` 零告警；`cargo test -p attendance_assemble_control --test
+statistical_cycle_dualwrite` 4 passed；两 crate `--lib` 48 passed / 15 ignored。
+
 
 
 

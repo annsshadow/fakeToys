@@ -233,7 +233,10 @@ pub async fn list_statistical_cycles(
 
     let rows = client
         .query(
-            "SELECT id, top_unit_name, unit_name, cycle_year, cycle_month, cycle_start_date_string, cycle_end_date_string, description FROM x_attendance_statistical_cycle ORDER BY create_time LIMIT 200",
+            "SELECT id, top_unit_name, unit_name, COALESCE(cycle_year, year) AS cycle_year, \
+             COALESCE(cycle_month, month) AS cycle_month, cycle_start_date_string, \
+             cycle_end_date_string, description FROM x_attendance_statistical_cycle \
+             ORDER BY create_time LIMIT 200",
             &[],
         )
         .await

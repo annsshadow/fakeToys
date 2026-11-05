@@ -2696,7 +2696,9 @@ pub async fn attendancestatisticalcycle_cycleDetail_year_month(
 
     let row = client
         .query_opt(
-            "SELECT id, year, month, cycle_status, creator, create_time FROM x_attendance_statistical_cycle WHERE year = $1 AND month = $2 LIMIT 1",
+            "SELECT id, COALESCE(year, cycle_year) AS year, COALESCE(month, cycle_month) AS month, \
+             cycle_status, creator, create_time FROM x_attendance_statistical_cycle \
+             WHERE COALESCE(year, cycle_year) = $1 AND COALESCE(month, cycle_month) = $2 LIMIT 1",
             &[&year, &month],
         )
         .await
@@ -2737,11 +2739,15 @@ pub async fn attendancestatisticalcycle_list_all(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
 
+    let list_sql = format!(
+        "SELECT id, COALESCE(year, cycle_year) AS year, COALESCE(month, cycle_month) AS month, \
+         cycle_status, creator, create_time FROM x_attendance_statistical_cycle \
+         ORDER BY {} DESC NULLS LAST, {} DESC NULLS LAST, id DESC",
+        shared::db::numeric_text_i32_sort_expr("COALESCE(year, cycle_year)"),
+        shared::db::numeric_text_i32_sort_expr("COALESCE(month, cycle_month)"),
+    );
     let rows = client
-        .query(
-            "SELECT id, year, month, cycle_status, creator, create_time FROM x_attendance_statistical_cycle ORDER BY year DESC, month DESC",
-            &[],
-        )
+        .query(&list_sql, &[])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
@@ -2789,7 +2795,8 @@ pub async fn attendancestatisticalcycle_id(
 
     let row = client
         .query_opt(
-            "SELECT id, year, month, cycle_status, creator, create_time FROM x_attendance_statistical_cycle WHERE id = $1",
+            "SELECT id, COALESCE(year, cycle_year) AS year, COALESCE(month, cycle_month) AS month, \
+             cycle_status, creator, create_time FROM x_attendance_statistical_cycle WHERE id = $1",
             &[&id],
         )
         .await
@@ -4787,8 +4794,8 @@ pub async fn attendancestatisticalcycle_create(
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
-            "INSERT INTO x_attendance_statistical_cycle (id, top_unit_name, unit_name, cycle_year, cycle_month, description, creator_person, create_time, update_time) \
-             VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())",
+            "INSERT INTO x_attendance_statistical_cycle (id, top_unit_name, unit_name, cycle_year, cycle_month, year, month, description, creator_person, create_time, update_time) \
+             VALUES ($1, $2, $3, $4, $5, $4, $5, $6, $7, NOW(), NOW())",
             &[&id, &top_unit_name, &unit_name, &cycle_year, &cycle_month, &description, &session.person_unique],
         )
         .await
