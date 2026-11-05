@@ -47,7 +47,9 @@
           <button :class="{active: filterTab==='recent'}" @click="filterTab='recent'">最近</button>
         </div>
         <div class="sb-list">
+          <ListLoadError v-if="statements.length > 0 && loadError" mode="banner" :message="loadError" @retry="reload" />
           <div v-if="loading" class="sb-loading">加载中...</div>
+          <ListLoadError v-else-if="filtered.length===0 && loadError" mode="empty" :message="loadError" @retry="reload" />
           <div v-else-if="filtered.length===0" class="sb-empty">暂无语句定义</div>
           <div v-for="s in filtered" :key="s.id" class="sb-item"
             :class="{active: currentStatement?.id===s.id}"
@@ -877,11 +879,14 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import SqlEditor from '../components/SqlEditor.vue'
 import { downloadBlob } from '../utils/download'
 import { toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { useListError } from './listQuery'
 
 interface Stmt {
   id: string
@@ -919,7 +924,7 @@ const page = ref(1),
 const hasResults = ref(false)
 
 const queryClient = useQueryClient()
-const { data: stmts } = useQuery({
+const { data: stmts, isError, error } = useQuery({
   queryKey: ['stmt', 'list'],
   queryFn: async () => {
     loading.value = true
@@ -931,7 +936,16 @@ const { data: stmts } = useQuery({
     }
   },
 })
-const statements = ref<Stmt[]>(stmts.value ?? [])
+const statements = ref<Stmt[]>([])
+watch(stmts, (rows) => {
+  if (rows) statements.value = rows
+}, { immediate: true })
+const { loadError, reload } = useListError({
+  isError,
+  error,
+  queryKey: ['stmt', 'list'],
+  label: '语句列表加载失败',
+})
 
 const filtered = computed(() => {
   let list = statements.value

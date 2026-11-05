@@ -123,10 +123,12 @@
         <button class="emp-tab" :class="{on:empScope==='mine'}" @click="loadEmpower('mine')">我发出的（{{ empMineTotal }}）</button>
         <button class="emp-tab" :class="{on:empScope==='to'}" @click="loadEmpower('to')">授权给我（{{ empToTotal }}）</button>
       </div>
+      <ListLoadError v-if="(empScope==='mine'?empMine:empTo).length > 0 && empError" mode="banner" :message="empError" @retry="loadEmpower(empScope)" />
       <div v-if="(empScope==='mine'?empMineTotal:empToTotal) > (empScope==='mine'?empMine:empTo).length" class="emp-note">
         后端只返回前 {{ (empScope==='mine'?empMine:empTo).length }} 条（总 {{ empScope==='mine'?empMineTotal:empToTotal }} 条）
       </div>
-      <div v-if="(empScope==='mine'?empMine:empTo).length===0" class="emp-empty">暂无授权记录</div>
+      <ListLoadError v-if="(empScope==='mine'?empMine:empTo).length===0 && empError" mode="empty" :message="empError" @retry="loadEmpower(empScope)" />
+      <div v-else-if="(empScope==='mine'?empMine:empTo).length===0" class="emp-empty">暂无授权记录</div>
       <div v-else class="emp-list">
         <div v-for="e in (empScope==='mine'?empMine:empTo)" :key="e.id" class="emp-item">
           <div class="emp-info"><span class="emp-name">{{ e.toName || e.fromName || e.id }}</span><span class="emp-status" :class="e.enabled!==false?'on':'off'">{{ e.enabled!==false?'启用':'禁用' }}</span></div>
@@ -183,6 +185,9 @@ import { api, useSession } from '@oa4rust/sdk'
 import { useMutation, useQuery } from '@tanstack/vue-query'
 import { computed, onMounted, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { describeListError } from './listQuery'
 
 const session = useSession()
 const user = computed(() => session.state.user ?? null)
@@ -557,6 +562,7 @@ interface Emp {
   enabled?: boolean
 }
 const empScope = ref<'mine' | 'to'>('mine')
+const empError = ref('')
 const empMine = ref<Emp[]>([])
 const empTo = ref<Emp[]>([])
 // 两个列表接口都是分页形状：data 是当前页（后端 LIMIT 100），count 是全表总数。
@@ -565,6 +571,7 @@ const empMineTotal = ref(0)
 const empToTotal = ref(0)
 async function loadEmpower(scope: 'mine' | 'to') {
   empScope.value = scope
+  empError.value = ''
   try {
     // GET person/empower/list/currentperson（我发出的）| list/to（授权给我）——字面量路径便于静态提取
     const r: any =
@@ -580,14 +587,9 @@ async function loadEmpower(scope: 'mine' | 'to') {
       empTo.value = list
       empToTotal.value = total
     }
-  } catch {
-    if (scope === 'mine') {
-      empMine.value = []
-      empMineTotal.value = 0
-    } else {
-      empTo.value = []
-      empToTotal.value = 0
-    }
+  } catch (e) {
+    // 失败保留旧授权并显式报错，不能和「真的没有授权记录」混成同一种空态。
+    empError.value = describeListError('授权记录加载失败', e)
   }
 }
 async function toggleEmpower(e: Emp, on: boolean) {

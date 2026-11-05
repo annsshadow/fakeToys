@@ -140,3 +140,39 @@ describe('桌面列表页失败必须可见（R115）', () => {
     expect(source.indexOf('暂无待办事项')).toBeGreaterThan(source.indexOf('pendingItems.length === 0 && pendingError'))
   })
 })
+
+describe('R122 手工取数页失败不再折叠成空态', () => {
+  const sourceOf = (file: string) => readFileSync(resolve(import.meta.dirname, file), 'utf8')
+
+  it('Personal 授权列表失败保留旧数据，不再清零冒充「暂无授权记录」', () => {
+    const source = sourceOf('Personal.vue')
+    expect(source).toContain("describeListError('授权记录加载失败'")
+    // 旧实现 catch 里把列表与总数清零；固定口径下这两条清零赋值不复存在。
+    expect(source).not.toContain('empMineTotal.value = 0')
+    expect(source).not.toContain('empToTotal.value = 0')
+    const errorIndex = source.indexOf('.length===0 && empError')
+    expect(errorIndex).toBeGreaterThan(-1)
+    expect(source.indexOf('暂无授权记录')).toBeGreaterThan(errorIndex)
+  })
+
+  it('QueryDesigner / QueryViewApp 两个取数入口（搜索与刷新）都保留旧列表并报错', () => {
+    const designer = sourceOf('QueryDesigner.vue')
+    expect(designer).toContain("describeListError('查询列表加载失败'")
+    expect(designer).not.toContain('queries.value = []')
+
+    const view = sourceOf('QueryViewApp.vue')
+    // doSearch 与 loadViews（刷新按钮）两个入口都必须报错，不能只修前一个。
+    expect(view.match(/describeListError\('查询视图加载失败'/g)).toHaveLength(2)
+    expect(view).not.toContain('views.value = []')
+  })
+
+  it('QueryStatementDesigner 用 watch 跟随 query，不再 setup 一次性拷贝', () => {
+    const source = sourceOf('QueryStatementDesigner.vue')
+    expect(source).not.toContain('ref<Stmt[]>(stmts.value ?? [])')
+    expect(source).toContain('watch(stmts,')
+    expect(source).toContain("label: '语句列表加载失败'")
+    const errorIndex = source.indexOf('filtered.length===0 && loadError')
+    expect(errorIndex).toBeGreaterThan(-1)
+    expect(source.indexOf('暂无语句定义')).toBeGreaterThan(errorIndex)
+  })
+})

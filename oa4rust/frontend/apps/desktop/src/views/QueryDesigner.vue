@@ -21,7 +21,9 @@
           <button class="btn-sm" @click="loadQueries">刷新</button>
         </div>
         <div class="query-list">
+          <ListLoadError v-if="queries.length > 0 && loadError" mode="banner" :message="loadError" @retry="loadQueries" />
           <div v-if="qLoading" class="ls"><div class="sk" v-for="i in 5" :key="i"></div></div>
+          <ListLoadError v-else-if="queries.length === 0 && loadError" mode="empty" :message="loadError" @retry="loadQueries" />
           <div v-else-if="queries.length === 0" class="empty-l"><div class="ei">📊</div><p>暂无查询定义</p></div>
           <div v-else class="ql">
             <div v-for="q in queries" :key="q.id" class="qi" :class="{active: selected?.id===q.id}" @click="selectQuery(q)">
@@ -275,6 +277,9 @@ import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
 import { downloadBlob } from '../utils/download'
 import { toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { describeListError } from './listQuery'
 
 type QueryDef = {
   id?: string
@@ -291,6 +296,7 @@ type QueryDef = {
 
 const keyword = ref('')
 const qLoading = ref(false)
+const loadError = ref('')
 const queries = ref<QueryDef[]>([])
 const selected = ref<QueryDef | null>(null)
 const conditions = ref<{ field: string; op: string; value: string }[]>([])
@@ -313,6 +319,7 @@ const entityFields = computed(() => {
 
 async function loadQueries() {
   qLoading.value = true
+  loadError.value = ''
   try {
     const r = await api.get('/api/query/assemble/designer/list/all')
     queries.value = r.data ?? []
@@ -321,8 +328,9 @@ async function loadQueries() {
         (q.name || q.queryName || '').toLowerCase().includes(keyword.value.toLowerCase()),
       )
     }
-  } catch {
-    queries.value = []
+  } catch (e) {
+    // 失败保留旧查询并显式报错，不能和「真的没有查询」混成同一种空态。
+    loadError.value = describeListError('查询列表加载失败', e)
   } finally {
     qLoading.value = false
   }

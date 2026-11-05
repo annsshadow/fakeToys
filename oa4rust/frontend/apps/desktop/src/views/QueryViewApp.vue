@@ -84,7 +84,9 @@
       <div v-if="queryListText" class="qv-note">{{ queryListText }}</div>
       <div v-if="tableText" class="qv-note">{{ tableText }}</div>
       <div class="list-panel">
+        <ListLoadError v-if="views.length > 0 && loadError" mode="banner" :message="loadError" @retry="doSearch" />
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 6" :key="i"></div></div>
+        <ListLoadError v-else-if="views.length===0 && loadError" mode="empty" :message="loadError" @retry="doSearch" />
         <div v-else-if="views.length===0" class="empty"><div class="ei">📊</div><p>暂无查询视图</p></div>
         <div v-else class="item-table">
           <div class="table-header">
@@ -135,11 +137,15 @@ import { api } from '@oa4rust/sdk'
 import { ref } from 'vue'
 import { downloadBlob } from '../utils/download'
 import { confirmMsg, toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { describeListError } from './listQuery'
 
 type ViewItem = { id?: string; flag?: string; name?: string; viewName?: string; title?: string }
 
 const keyword = ref('')
 const loading = ref(false)
+const loadError = ref('')
 const views = ref<ViewItem[]>([])
 const activeView = ref<ViewItem | null>(null)
 const execLoading = ref(false)
@@ -147,12 +153,14 @@ const execResult = ref<Record<string, unknown>[]>([])
 
 async function doSearch() {
   loading.value = true
+  loadError.value = ''
   try {
     // 后端 queryview/search 仅注册 POST，读取键为 key（兼容 query）。
     const r = await api.post('/api/queryview/search', { key: keyword.value })
     views.value = r.data ?? []
-  } catch {
-    views.value = []
+  } catch (e) {
+    // 失败保留旧视图并显式报错，不能和「真的没有视图」混成同一种空态。
+    loadError.value = describeListError('查询视图加载失败', e)
   } finally {
     loading.value = false
   }
@@ -751,12 +759,14 @@ async function qvDesignerRows(op: string) {
 }
 async function loadViews() {
   loading.value = true
+  loadError.value = ''
   try {
     // 后端视图列表为 GET view/list/query/{queryFlag}；all 为"不限查询"的取值。
     const r = await api.get('/api/queryview/view/list/query/all')
     views.value = r.data?.list ?? r.data ?? []
-  } catch {
-    views.value = []
+  } catch (e) {
+    // 失败保留旧视图并显式报错，不能和「真的没有视图」混成同一种空态。
+    loadError.value = describeListError('查询视图加载失败', e)
   } finally {
     loading.value = false
   }
