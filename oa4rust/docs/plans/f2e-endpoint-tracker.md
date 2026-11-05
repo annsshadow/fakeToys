@@ -31,11 +31,12 @@
 
 | # | 端点 | 归属/身份字段 | 现状 | 提交 |
 |---|---|---|---|---|
-| P0-1 | `POST .../record`（attendance_core_entity） | body `user_id` | **待修（最高）**：身份取请求体；改取会话人，管理员代建需显式放行 + 审计字段 | — |
-| P0-2 | `PUT .../record/{id}` | `Path(id)` | **待修（最高）**：无归属判断；归属条件写进 SQL WHERE（本人 OR 管理员），非本人 403 | — |
-| P0-3 | `DELETE .../record/{id}` | `Path(id)` | **待修（最高）**：同上 | — |
-| P0-4 | 同 crate 其它 `Path(id)` 写端点（rule 等） | `Path(id)` | 待核查：扫完整个 crate | — |
-| P0-b | `processing` / `terminate`（`u4_require_actor`） | actor（可空） | **待修（P0 之后、E13 之前）**：空 actor 被放行；空值必须拒绝（系统/管理员分支显式放行）；全仓扫 `require_actor` 同形态 | — |
+| P0-1 | `POST .../record`（attendance_core_entity） | body `user_id` | **已修**：`user_id` 取会话人；请求体传他人 → 非管理员 403；管理员代建显式放行并写 `created_by`（迁移 117）。用例：伪造 403 且不落库 / 无 userId 落会话人 / 管理员代建 200 + 留痕。破坏实验：改回请求体取值 → 断言红（200 vs 403） | 见本批 PR |
+| P0-2 | `POST .../record/{id}/update` | `Path(id)` | **已修**：归属谓词写进 SQL WHERE（本人 OR 管理员）。双向用例 A→B 403 / B→A 403 / 本人 200 且落库生效。破坏实验：谓词换成 `$2=$2` → 两个方向都红（200 vs 403） | 见本批 PR |
+| P0-3 | `POST .../record/{id}/delete` | `Path(id)` | **已修**：同 P0-2 的 DELETE 版本；0 行时按存在性返回 403/404。破坏实验同上，红 | 见本批 PR |
+| P0-4 | 同 crate 其它 `Path(id)` 写端点 | `Path(id)` | **已核查**：`rule/{id}/update`、`rule/{id}/delete`、`rule/create` 无「本人」列（全局配置）→ 收口为管理员（`require_admin`）；`record/list`、`rule/list` 为读端点，登记到读 IDOR 批次 | 见本批 PR |
+| P0-5 | `attendance_assemble_control` 默认「今天」 | UTC 日 vs 本地日历列 | **已修**（同族）：`business_today_from_unix(secs + 8h)`，3 处 `.unwrap_or_else(business_today)`；固定时刻用例覆盖早窗进/出与前一自然日 | 见本批 PR |
+| P0-b | `processing` / `terminate`（`u4_require_actor`） | actor（可空） | **待修（P0 之后、E13 之前）**：空 actor 被放行；空值必须拒绝（系统/管理员分支显式放行）；全仓扫 `require_actor` 同形态；**另含 `processplatform_core_express::work_terminate:34` 内联副本**（审计第六轮点名，只改 helper 会漏） | 待做 |
 | L1-1 | `bbs_subject_info` `create_subject` | body `author_id` / `creator` | 待修：与 T3-2 同一根，合并做 | — |
 | L1-2 | `x_mind_base_info` / `x_mind_folder_info` | body `creator` | 待修：与「硬编码 system」合并做 | — |
 | L1-3 | `/anonymous/file/{id}/download` | `Path(id)` | 待修（纯读泄露，最便宜，优先） | — |

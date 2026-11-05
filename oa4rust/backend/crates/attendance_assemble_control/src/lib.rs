@@ -8318,6 +8318,18 @@ fn now_unix_secs() -> u64 {
         .unwrap_or(0)
 }
 
+/// 业务「今天」= 北京自然日（UTC+8）。
+///
+/// `now_unix_secs()` 是 UTC 秒；直接取日期在北京 00:00–08:00 会落到前一天。
+/// 考勤日期列（`record_date_string`）是本地日历日，两侧必须同基。
+fn business_today_from_unix(secs: u64) -> String {
+    date_string_from_unix(secs + 8 * 3600)
+}
+
+fn business_today() -> String {
+    business_today_from_unix(now_unix_secs())
+}
+
 /// GET /api/attendance/assemble/control/v2/mobile/check/pre
 pub async fn v2_mobile_pre_check(
     pool: Extension<Pool>,
@@ -8326,7 +8338,7 @@ pub async fn v2_mobile_pre_check(
     let client = shared::db::acquire(&pool).await?;
 
     // 当前用户命中的考勤组（复用 v2_group_person_date 的参与匹配语义）
-    let today = date_string_from_unix(now_unix_secs());
+    let today = business_today();
     let group_rows = client
         .query(
             "SELECT id, group_name, check_type, work_place_id_list \
@@ -8454,7 +8466,7 @@ async fn mobile_check_impl(
         .and_then(|v| v.as_str())
         .filter(|s| !s.trim().is_empty())
         .map(|s| s.trim().to_string())
-        .unwrap_or_else(|| date_string_from_unix(now_unix_secs()));
+        .unwrap_or_else(business_today);
 
     let check_in_type = json_str(payload, "checkInType");
     if check_in_type.is_empty() {
@@ -8825,7 +8837,7 @@ async fn import_checkin_rows(
             .and_then(|v| v.as_str())
             .filter(|s| !s.trim().is_empty())
             .map(|s| s.trim().to_string())
-            .unwrap_or_else(|| date_string_from_unix(now_unix_secs()));
+            .unwrap_or_else(business_today);
         let check_in_type = item
             .get("checkInType")
             .and_then(|v| v.as_str())
@@ -9213,4 +9225,30 @@ pub async fn v2_workplace_list_ids(
         count,
         0,
     )))
+}
+
+#[cfg(test)]
+mod business_day_tests {
+    use super::{business_today_from_unix, date_string_from_unix};
+
+    /// 固定时刻，任何真实钟点跑都断言同一件事。
+    #[test]
+    fn business_day_is_beijing_natural_day_in_early_window() {
+        // UTC 2026-11-04T16:30Z = 北京 11-05 00:30（早窗）
+        let early = 1_793_809_800u64;
+        assert_eq!(
+            date_string_from_unix(early),
+            "2026-11-04",
+            "UTC 截日仍是 11-04（旧实现取这个值）"
+        );
+        assert_eq!(
+            business_today_from_unix(early),
+            "2026-11-05",
+            "业务日必须是北京自然日 11-05"
+        );
+        // 北京 11-04 23:59:59 → 仍是 11-04
+        assert_eq!(business_today_from_unix(1_793_807_999), "2026-11-04");
+        // 北京 11-05 08:00（早窗出口）→ 11-05
+        assert_eq!(business_today_from_unix(1_793_836_800), "2026-11-05");
+    }
 }

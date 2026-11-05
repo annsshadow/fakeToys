@@ -6,7 +6,10 @@ use axum::{
     routing::{get, post},
     Json as AxumJson, Router,
 };
-use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, QueryOrder, QuerySelect};
+use sea_orm::{
+    ActiveModelTrait, ConnectionTrait, DatabaseConnection, DbBackend, EntityTrait, QueryOrder,
+    QuerySelect, Statement,
+};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
@@ -24,6 +27,39 @@ fn require_session(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<shared::session::Session, AppError> {
     session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
+fn require_actor(session: Option<Extension<shared::session::Session>>) -> Result<String, AppError> {
+    require_session(session).map(|s| s.person_unique)
+}
+
+/// 管理员判定：与 `shared::middleware::is_admin` 同一条 SQL（unique_id 或 id 命中
+/// admin 角色，角色未删且未停用）。本 crate 只有 SeaORM 连接，没有 deadpool Pool，
+/// 故就地实现；查询失败按「非管理员」处理（fail-closed）。
+async fn is_admin_db(db: &DatabaseConnection, person_unique: &str) -> bool {
+    let row = db
+        .query_one(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            "SELECT EXISTS(SELECT 1 FROM auth_person p \
+               LEFT JOIN auth_person_role pr ON pr.person_id = p.id \
+               LEFT JOIN auth_role r ON r.id = pr.role_id \
+               WHERE (p.unique_id = $1 OR p.id = $1) \
+                 AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false) AS is_admin",
+            vec![person_unique.into()],
+        ))
+        .await;
+    match row {
+        Ok(Some(row)) => row.try_get::<bool>("", "is_admin").unwrap_or(false),
+        _ => false,
+    }
+}
+
+async fn require_admin(db: &DatabaseConnection, person_unique: &str) -> Result<(), AppError> {
+    if is_admin_db(db, person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
 }
 
 /// 获取考勤记录列表
@@ -114,14 +150,26 @@ pub async fn record_create(
     session: Option<Extension<shared::session::Session>>,
     AxumJson(payload): AxumJson<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let actor = require_actor(session)?;
     use attendance_record::ActiveModel;
 
-    let user_id = payload
+    // P0：user_id 默认取会话人；请求体只能「不写」或「写自己」。
+    // 代建（写他人）仅管理员放行，并用 created_by 留痕实际写入人。
+    let requested_owner = payload
         .get("userId")
         .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string);
+    let user_id = match requested_owner {
+        None => actor.clone(),
+        Some(owner) if owner == actor => actor.clone(),
+        Some(owner) => {
+            require_admin(&db.0, &actor).await?;
+            owner
+        }
+    };
+
     let check_in_time = payload
         .get("checkInTime")
         .and_then(|v| v.as_str())
@@ -141,6 +189,7 @@ pub async fn record_create(
         check_out_time: sea_orm::ActiveValue::Set(None),
         status: sea_orm::ActiveValue::Set(status.clone()),
         create_time: sea_orm::ActiveValue::Set(None),
+        created_by: sea_orm::ActiveValue::Set(Some(actor.clone())),
     };
 
     active.insert(&db.0).await?;
@@ -157,6 +206,29 @@ pub async fn record_create(
     )))
 }
 
+/// 记录归属谓词：本人 OR 管理员。**写进 SQL WHERE**，不做「先查后判」。
+///
+/// `$1` = 记录 id，`$2` = 会话人（person_unique）。
+const RECORD_OWNER_PREDICATE: &str = "id = $1 AND (user_id = $2 OR EXISTS(\
+     SELECT 1 FROM auth_person p \
+       JOIN auth_person_role pr ON pr.person_id = p.id \
+       JOIN auth_role r ON r.id = pr.role_id \
+      WHERE (p.unique_id = $2 OR p.id = $2) \
+        AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false))";
+
+/// 写语句影响 0 行时区分「不存在」(404) 与「无权」(403)。
+/// 变更本身已带 WHERE 条件，此处的读只用于选错误码，不参与授权判定。
+async fn ownership_error(db: &DatabaseConnection, id: &str) -> AppError {
+    match attendance_record::Entity::find_by_id(id.to_string())
+        .one(db)
+        .await
+    {
+        Ok(Some(_)) => AppError::Forbidden,
+        Ok(None) => AppError::NotFound,
+        Err(e) => AppError::internal_with_source(concat!(file!(), ":", line!()), e),
+    }
+}
+
 /// 更新考勤记录
 #[allow(non_snake_case)]
 pub async fn record_update(
@@ -165,8 +237,7 @@ pub async fn record_update(
     Path(id): Path<String>,
     AxumJson(payload): AxumJson<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
-    use attendance_record::ActiveModel;
+    let actor = require_actor(session)?;
 
     let check_out_time = payload
         .get("checkOutTime")
@@ -177,27 +248,36 @@ pub async fn record_update(
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
 
+    // 归属条件在 WHERE 内，非本人且非管理员时影响 0 行（无 TOCTOU 窗口）。
+    let sql = format!(
+        "UPDATE x_attendance_record SET check_out_time = $3, status = COALESCE($4, status) \
+         WHERE {RECORD_OWNER_PREDICATE} RETURNING id"
+    );
+    let updated =
+        db.0.query_one(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            &sql,
+            vec![
+                id.clone().into(),
+                actor.clone().into(),
+                check_out_time.into(),
+                status.into(),
+            ],
+        ))
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    if updated.is_none() {
+        return Err(ownership_error(&db.0, &id).await);
+    }
+
     let model = attendance_record::Entity::find_by_id(id.clone())
         .one(&db.0)
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
-        .ok_or_else(|| AppError::NotFound)?;
-
-    let mut active: ActiveModel = model.clone().into();
-    active.check_out_time = sea_orm::ActiveValue::Set(check_out_time);
-    let status_val = status.clone().unwrap_or(model.status.clone());
-    active.status = sea_orm::ActiveValue::Set(status_val);
-
-    active.update(&db.0).await?;
-
-    let updated = attendance_record::Entity::find_by_id(id.clone())
-        .one(&db.0)
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
-        .ok_or_else(|| AppError::Internal)?;
+        .ok_or(AppError::Internal)?;
 
     Ok(Json(ActionResult::success(
-        serde_json::to_value(updated)
+        serde_json::to_value(model)
             .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?,
     )))
 }
@@ -209,23 +289,26 @@ pub async fn record_delete(
     session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
-    let deleted = attendance_record::Entity::delete_by_id(id.clone())
-        .exec(&db.0)
+    let actor = require_actor(session)?;
+
+    let sql =
+        format!("DELETE FROM x_attendance_record WHERE {RECORD_OWNER_PREDICATE} RETURNING id");
+    let deleted =
+        db.0.query_one(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            &sql,
+            vec![id.clone().into(), actor.into()],
+        ))
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
-
-    if deleted.rows_affected == 0 {
-        return Ok(Json(ActionResult::error("attendance record not found")));
+    if deleted.is_none() {
+        return Err(ownership_error(&db.0, &id).await);
     }
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            (
-                "deleted".to_string(),
-                Value::Bool(deleted.rows_affected > 0),
-            ),
+            ("deleted".to_string(), Value::Bool(true)),
         ]),
     ))))
 }
@@ -237,7 +320,9 @@ pub async fn rule_create(
     session: Option<Extension<shared::session::Session>>,
     AxumJson(payload): AxumJson<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
+    // 考勤规则是全局配置（表内无「本人」列），写操作按配置管理口径收口到管理员。
+    require_admin(&db.0, &sess.person_unique).await?;
     use attendance_rule::ActiveModel;
 
     let name = payload
@@ -289,7 +374,8 @@ pub async fn rule_update(
     Path(id): Path<String>,
     AxumJson(payload): AxumJson<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
+    require_admin(&db.0, &sess.person_unique).await?;
     use attendance_rule::ActiveModel;
 
     let name = payload
@@ -349,7 +435,8 @@ pub async fn rule_delete(
     session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
+    require_admin(&db.0, &sess.person_unique).await?;
     let deleted = attendance_rule::Entity::delete_by_id(id.clone())
         .exec(&db.0)
         .await
@@ -407,6 +494,8 @@ mod security_gate_tests_b82;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod tests_p0_ownership;
 
 pub fn router(db: DatabaseConnection) -> axum::Router {
     crate::attendance_core_entity_router(db)
