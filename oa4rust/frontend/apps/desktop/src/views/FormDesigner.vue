@@ -22,7 +22,9 @@
         <div class="list-header"><span>📋 表单列表</span><button class="btn-sm" @click="loadForms">刷新</button></div>
         <div class="list-search"><input v-model="listFilter" placeholder="搜索..." class="list-input" /></div>
         <div class="list-items">
+          <ListLoadError v-if="filteredForms.length > 0 && listError" mode="banner" :message="listError" @retry="loadForms" />
           <div v-if="formsLoading" class="list-loading">加载中...</div>
+          <ListLoadError v-else-if="filteredForms.length===0 && listError" mode="empty" :message="listError" @retry="loadForms" />
           <div v-else-if="filteredForms.length===0" class="list-empty">暂无表单</div>
           <div v-for="f in filteredForms" :key="f.id" class="list-item" :class="{active:currentForm && currentForm.id===f.id}" @click="loadForm(f)">
             <div class="li-name">{{ f.name||f.title||'未命名' }}</div>
@@ -721,6 +723,9 @@ import {
 } from '../contracts/xform'
 import { downloadBlob } from '../utils/download'
 import { toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { describeListError } from './listQuery'
 
 interface FormField {
   id: string
@@ -893,6 +898,7 @@ const canRedo = computed(() => historyIdx.value < formHistory.value.length - 1)
 const previewData = ref<Record<string, any>>({})
 const previewErrors = ref<Record<string, string>>({})
 const forms = ref<FormDef[]>([])
+const listError = ref('')
 const formsLoading = ref(false)
 const currentForm = ref<FormDef | null>(null)
 const selectedField = ref<FormField | null>(null)
@@ -1014,6 +1020,7 @@ function parseOptions(s?: string) {
 }
 async function loadForms() {
   formsLoading.value = true
+  listError.value = ''
   try {
     const path = routeAppId.value ? `/api/form/list/app/${routeAppId.value}` : '/api/form/list/all'
     const r: any = await api.get(path)
@@ -1023,8 +1030,9 @@ async function loadForms() {
       desc: form.description || '',
       fields: [],
     }))
-  } catch {
-    forms.value = []
+  } catch (e) {
+    // 失败保留旧表单并显式报错，不能和「真的没有表单」混成同一种空态。
+    listError.value = describeListError('表单列表加载失败', e)
   } finally {
     formsLoading.value = false
   }

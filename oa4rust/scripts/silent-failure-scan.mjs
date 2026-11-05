@@ -104,6 +104,9 @@ const FIXED = {
   'oa4rust/frontend/apps/desktop/src/views/QueryViewApp.vue': 'R122',
   'oa4rust/frontend/apps/desktop/src/views/AIChatApp.vue': 'R123',
   'oa4rust/frontend/apps/desktop/src/views/FileManager.vue': 'R123',
+  'oa4rust/frontend/apps/desktop/src/views/FormApp.vue': 'R124',
+  'oa4rust/frontend/apps/desktop/src/views/FormDesigner.vue': 'R124',
+  'oa4rust/frontend/apps/desktop/src/views/JPushApp.vue': 'R124',
 }
 
 const LIST_STATE =
@@ -132,9 +135,6 @@ const A_PENDING = new Map([
     'loadProcesses 失败清空 processes；空态 L257「暂无可发起的流程」与失败同态',
   ],
   ['oa4rust/mobile/src/pages/search/search.vue', 'doSearch 失败无提示；L81「未找到结果」与失败同态'],
-  ['oa4rust/frontend/apps/desktop/src/views/FormApp.vue', '两个列表取数（L259/L272）失败无提示；空态 L32/L57'],
-  ['oa4rust/frontend/apps/desktop/src/views/FormDesigner.vue', '表单列表取数（L1019）失败无提示；空态 L26「暂无表单」'],
-  ['oa4rust/frontend/apps/desktop/src/views/JPushApp.vue', '设备/模板列表（L105/L117）失败无提示；空态 L48/L67'],
 ])
 
 function walk(dir, out = []) {

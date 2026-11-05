@@ -44,7 +44,9 @@
           <div v-if="pushConfig" class="stat-card glass-card"><div class="stat-num" style="color:var(--color-accent)">{{pushConfig.count}}</div><div class="stat-label">推送类型: {{pushConfig.pushType || '未设置'}}</div></div>
         </div>
         <div class="list-panel">
+          <ListLoadError v-if="devices.length > 0 && deviceError" mode="banner" :message="deviceError" @retry="loadDevices" />
           <div v-if="loadingD" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
+          <ListLoadError v-else-if="devices.length===0 && deviceError" mode="empty" :message="deviceError" @retry="loadDevices" />
           <div v-else-if="devices.length===0" class="empty"><div class="ei">📱</div><p>暂无设备</p></div>
           <div v-else class="item-grid">
             <div v-for="d in devices" :key="d.id" class="item-card glass-card">
@@ -63,7 +65,9 @@
           <div class="stat-card glass-card"><div class="stat-num" style="color:var(--color-accent)">{{templates.length}}</div><div class="stat-label">推送模板</div></div>
         </div>
         <div class="list-panel">
+          <ListLoadError v-if="templates.length > 0 && templateError" mode="banner" :message="templateError" @retry="loadTemplates" />
           <div v-if="loadingT" class="loading-row"><div class="sk" v-for="i in 4" :key="i"></div></div>
+          <ListLoadError v-else-if="templates.length===0 && templateError" mode="empty" :message="templateError" @retry="loadTemplates" />
           <div v-else-if="templates.length===0" class="empty"><div class="ei">📨</div><p>暂无模板</p></div>
           <div v-else class="item-grid">
             <div v-for="t in templates" :key="t.id" class="item-card glass-card">
@@ -85,6 +89,9 @@
 import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { describeListError } from './listQuery'
 
 type Tab = 'device' | 'template'
 const tab = ref<Tab>('device')
@@ -93,6 +100,8 @@ const loadingD = ref(false)
 const loadingT = ref(false)
 const devices = ref<any[]>([])
 const templates = ref<any[]>([])
+const deviceError = ref('')
+const templateError = ref('')
 
 const stats = computed(() => ({
   device: { total: devices.value.length, online: devices.value.filter((d) => d.isOnline).length },
@@ -101,11 +110,13 @@ const stats = computed(() => ({
 
 async function loadDevices() {
   loadingD.value = true
+  deviceError.value = ''
   try {
     const r = await api.get('/api/jpush_assemble_control/device/list/jpush')
     devices.value = r.data ?? []
-  } catch {
-    devices.value = []
+  } catch (e) {
+    // 失败保留旧设备并显式报错，不能和「真的没有设备」混成同一种空态。
+    deviceError.value = describeListError('设备列表加载失败', e)
   } finally {
     loadingD.value = false
   }
@@ -113,11 +124,13 @@ async function loadDevices() {
 
 async function loadTemplates() {
   loadingT.value = true
+  templateError.value = ''
   try {
     const r = await api.get('/api/jpush/template/list')
     templates.value = r.data ?? []
-  } catch {
-    templates.value = []
+  } catch (e) {
+    // 失败保留旧模板并显式报错，不能和「真的没有模板」混成同一种空态。
+    templateError.value = describeListError('推送模板加载失败', e)
   } finally {
     loadingT.value = false
   }

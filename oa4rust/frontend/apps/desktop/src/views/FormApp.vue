@@ -28,7 +28,9 @@
 
       <!-- List tab -->
       <div v-if="tab==='list'" class="tab-content">
+        <ListLoadError v-if="items.length > 0 && listError" mode="banner" :message="listError" @retry="loadList" />
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 6" :key="i"></div></div>
+        <ListLoadError v-else-if="items.length===0 && listError" mode="empty" :message="listError" @retry="loadList" />
         <div v-else-if="items.length===0" class="empty"><div class="ei">📝</div><p>暂无表单</p></div>
         <div v-else class="item-grid">
           <div v-for="f in items" :key="f.id" class="item-card glass-card" @click="viewDetail(f)">
@@ -53,7 +55,9 @@
 
       <!-- V2 tab -->
       <div v-if="tab==='v2'" class="tab-content">
+        <ListLoadError v-if="itemsV2.length > 0 && v2Error" mode="banner" :message="v2Error" @retry="loadV2" />
         <div v-if="loadingV2" class="loading-row"><div class="sk" v-for="i in 6" :key="i"></div></div>
+        <ListLoadError v-else-if="itemsV2.length===0 && v2Error" mode="empty" :message="v2Error" @retry="loadV2" />
         <div v-else-if="itemsV2.length===0" class="empty"><div class="ei">📋</div><p>暂无V2表单</p></div>
         <div v-else class="item-grid">
           <div v-for="f in itemsV2" :key="f.id" class="item-card glass-card" @click="viewDetailV2(f)">
@@ -166,6 +170,9 @@ import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
 import { downloadBlob } from '../utils/download'
 import { confirmMsg, toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { describeListError } from './listQuery'
 
 type Tab = 'list' | 'v2' | 'versions' | 'templates'
 type FormItem = {
@@ -188,6 +195,8 @@ const loading = ref(false),
   loadingV2 = ref(false)
 const items = ref<FormItem[]>([])
 const itemsV2 = ref<FormItem[]>([])
+const listError = ref('')
+const v2Error = ref('')
 const detailItem = ref<FormItem | null>(null)
 const showCreate = ref(false),
   editingForm = ref<FormItem | null>(null)
@@ -255,11 +264,13 @@ const searchedForms = computed(() => {
 
 async function loadList() {
   loading.value = true
+  listError.value = ''
   try {
     const r = await api.get('/api/form/list/all')
     items.value = r.data ?? []
-  } catch {
-    items.value = []
+  } catch (e) {
+    // 失败保留旧表单并显式报错，不能和「真的没有表单」混成同一种空态。
+    listError.value = describeListError('表单列表加载失败', e)
   } finally {
     loading.value = false
   }
@@ -267,12 +278,14 @@ async function loadList() {
 
 async function loadV2() {
   loadingV2.value = true
+  v2Error.value = ''
   try {
     // 后端无 form/v2 列表端点；v2 视图复用 form/list/all。
     const r = await api.get('/api/form/list/all')
     itemsV2.value = r.data ?? []
-  } catch {
-    itemsV2.value = []
+  } catch (e) {
+    // 失败保留旧 V2 表单并显式报错，不能和「真的没有 V2 表单」混成同一种空态。
+    v2Error.value = describeListError('V2 表单列表加载失败', e)
   } finally {
     loadingV2.value = false
   }
