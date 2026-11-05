@@ -2671,6 +2671,9 @@ processplatform_service_processing 3、query_assemble_designer 4、query_assembl
 这些**未逐点核实可空性**（含 `::text` / 原生 TEXT / timestamptz 多种形态），
 不得按模式批量改；后续按 O35 同一方法逐点取证后再分组提交。
 
+> **已收敛**：这 31 处已由 O36-C 逐点取证并分三组提交，见下文 O36-C 三态表
+> （实际清点 2+9+5+5+4+3+1+1+1=31，全部「已修」）。
+
 ## O36：周期双写、sequence 分页、create_time 可空清扫与类型一致性守卫
 
 ### O36-A：`x_attendance_statistical_cycle` 读写列不一致（双写 + 读侧 COALESCE）
@@ -2725,6 +2728,107 @@ assertion `left == right` failed: 写侧必须双写 year（去掉 year/month �
 **验证**：`cargo fmt --all --check` 绿；`clippy -p attendance_assemble_control -p attendance
 --all-targets -D warnings` 零告警；`cargo test -p attendance_assemble_control --test
 statistical_cycle_dualwrite` 4 passed；两 crate `--lib` 48 passed / 15 ignored。
+
+### O36-B：`pp_c_snap` / `pp_c_review` 管理分页改 `"xcreateTime"` + id 并列裁决
+
+**列定义证据**：`pp_c_review` 见 `032_create_assemble_control_tables.sql:472` 起
+（`"xcreateTime"` 494、`"sequence"` 499）；`pp_c_snap` 见 `065_process_surface_u2_tables.sql:14`
+起（`"xcreateTime"` 37、`"sequence"` 42）。两列均为 TEXT 且无 NOT NULL。
+
+**改前 → 改后**（`processplatform_assemble_surface/src/lib.rs`）
+
+| 入口 | 改前 | 改后 |
+|---|---|---|
+| `u2_snap_manage_paging`（:27580） | `ORDER BY "sequence" DESC NULLS LAST LIMIT/OFFSET` | `ORDER BY "xcreateTime" DESC NULLS LAST, "id" DESC LIMIT/OFFSET` |
+| `review_u2_v2_search`（:27949） | 同上 | 同上 |
+
+**`sequence` 三态结论**：**确认无写入方，保留不用**。全仓唯一 INSERT 不写 `sequence`，
+也无 UPDATE，值恒 NULL；再叠加无并列裁决导致 LIMIT/OFFSET 翻页边界不稳。
+用 `xcreateTime` 作排序键、`id` 作并列裁决，不补 `sequence` 写入方。
+
+**回归**：`crates/processplatform_assemble_surface/tests/pp_paging_order.rs`（2 用例）
+造 10+ 行且 `xcreateTime` 存在并列值，逐页翻到底，断言并集=全量、无重行、边界稳定。
+破坏实验：两处排序改回 `"sequence"` → 用例红（并列行在多次翻页中漏行/重行）；
+还原后 2 passed。
+
+### O36-C：同族余量 31 处 / 10 文件 `create_time` 可空性清扫
+
+**逐点取证结果（31/31）**：全部为可空列，**全部按「已修」收敛**；无「确认不可空」项、
+无「走不到解码」项。SQL 形态：裸 TIMESTAMP 读出前补 `create_time::text AS create_time`；
+已是 `::text` / `to_char` 的沿用原形态；Rust 解码统一 `Option<String>` + `unwrap_or_default()`。
+
+| crate | 处数 | 入口 | 表.列 | migration 证据（列可空） |
+|---|---|---|---|---|
+| portal | 2 | `page_list`、`get_page` | `x_portal_page.create_time` | 029:290 `TIMESTAMP`，无 NOT NULL（`update_time` 029:291 同款，一并修） |
+| portal_assemble_surface | 9 | `page_list_portal_portal`、`page_v2_flag_portal_portalFlag_core`、`page_v2_flag_portal_portalFlag_mobile_core`、`page_v2_id_core`、`page_v2_id_mobile_core`、`page_flag_portal_portalFlag_core`、`page_flag_portal_portalFlag_mobile_core`、`page_id`、`page_id_mobile_core`（4 处补 `::text`） | `x_portal_page.create_time` | 029:290 |
+| portal_assemble_designer | 5 | `list_pages_by_category`、`get_page`、`page_list_portal_portalId`、`page_id`、`page_list`（`deleted_at IS NULL`） | `x_portal_page.create_time` | 029:290 |
+| query_assemble_surface | 5 | `view_flag_flag_query_queryFlag_core`、`view_flag_flag_query_queryFlag_execute_v2_page_page_size_size`、`view_list_query_queryFlag`、`view_id`、`view_id_execute_v2_page_page_size_size`（1 处补 `::text`） | `x_query_view.create_time` | 029:362 `TIMESTAMP`，无 NOT NULL |
+| query_assemble_designer | 4 | `view_list_query_flag_core`、`view_list_id_next_count_core`、`view_list_id_prev_count`、`view_id` | `x_query_view.create_time` | 029:362 |
+| ai | 3 | `app::conversation_list`；`chat::chat_list_paging`；`chat::chat_list_completion_paging` | `x_ai_conversation.create_time` / `x_ai_clue.create_time` / `x_ai_completion.create_time` | 026:18 `TIMESTAMP`；034:9、034:30 `TIMESTAMPTZ`，均无 NOT NULL |
+| cms_assemble_control | 1 | `commend_list_paging` | `x_cms_commend.create_time` | 023:43 `TIMESTAMP DEFAULT CURRENT_TIMESTAMP`，无 NOT NULL（DEFAULT 不阻断显式 NULL） |
+| file | 1 | `file_download` | `file_file.create_time` | 008:21 `TIMESTAMP DEFAULT CURRENT_TIMESTAMP`；011:20-21 `FILE_FILE→file_file` 仅改名 |
+| processplatform_service_processing | 1 | `work_list` | `x_work.create_time` | 020:11 `TIMESTAMP DEFAULT CURRENT_TIMESTAMP`，无 NOT NULL |
+
+合计 2+9+5+5+4+3+1+1+1 = **31**。全仓已无 `Value::String(row.get("create_time"))` 残留
+（grep 0 命中）。
+
+**附带修正（非 31 处之内）**：`ai::chat::chat_list_completion_paging` 的
+`generateType`（034:10 `TIMESTAMPTZ` 可空）同点暴露，一并改 `Option<String>`。
+`"clueId"`（034:6 可空）**不改**：该端点按 `"clueId" = $1` 过滤，NULL 行走不到解码。
+这条属三态里的「走不到解码」，不混入 31 处 create_time 计数。
+
+**行为回归（scratch 库，每组一个测试文件，NULL 行改前必红）**
+
+| crate | 测试文件 / 库 | 覆盖 |
+|---|---|---|
+| portal | `tests/nullable_create_time.rs`（`oa_o36_portal`） | `page_list` + `get_page`，含 `update_time` |
+| portal_assemble_surface | `tests/nullable_create_time.rs`（`oa_o36_portal_surface`） | 9 个入口 |
+| portal_assemble_designer | `tests/nullable_create_time.rs`（`oa_o36_portal_designer`） | 5 个入口 + `update_time` |
+| query_assemble_surface | `tests/nullable_create_time.rs`（`oa_o36_query_surface`） | 5 个入口 |
+| query_assemble_designer | `tests/nullable_create_time.rs`（`oa_o36_query_designer`） | 4 个入口 |
+| ai / cms / file / pp_work | 各 `tests/nullable_create_time.rs`（`oa_o36_ai_misc` / `oa_o36_cms_misc` / `oa_o36_file_misc` / `oa_o36_pp_work_misc`） | 1 入口/库 |
+
+断言统一为「种 NULL 行 + 有值行 → 200；NULL 行 `createTime == ""`；有值行格式不变」。
+
+**破坏实验原文**（各自把解码改回非 Option）：
+
+```
+portal:   panicked at crates\portal\src\lib.rs:248:39: error retrieving column create_time: error deserializing column 5
+query:    panicked at crates\query_assemble_surface\src\lib.rs:2651:39（surface）
+          panicked at crates\query_assemble_designer\src\lib.rs:3632:39（designer）
+ai:       panicked at crates\ai\src\app.rs:130:39
+cms:      panicked at crates\cms_assemble_control\src\lib.rs:8079:31
+file:     panicked at crates\file\src\lib.rs:562:35
+pp_work:  panicked at crates\processplatform_service_processing\src\lib.rs:2342:35
+```
+
+全部恢复后：`cargo test -p <crate> --test nullable_create_time` 全绿；
+portal 三 crate 既有单测 11/22/24 passed。
+
+**验证**：`cargo fmt --all --check` 绿；各 crate `clippy --all-targets -D warnings` 零告警；
+CI 全绿（#177–#181）。
+
+### O36-D：类型一致性守卫（迁移列类型/可空性 vs Rust 解码）
+
+**结论：能做**，覆盖可静态判定的子集，已作为 CI 门禁 `column-nullability-scan` 落地；
+静态判不了的 6 类逐条写明兜底（详见 `docs/audits/column-nullability-guard.md`）。
+
+- 数据源：`backend/migrations/*.sql` 正向累积最终列类型 + 可空性（含 `CREATE`/`ADD COLUMN`/
+  `SET|DROP NOT NULL`/`TYPE`/`RENAME`；`IF NOT EXISTS` 重声明按 no-op；`*_rollback.sql` 不参与）。
+- 比对点：`row.get::<_, T>("col")`、`Value::String(row.get("col"))`，只对能关联到最近 SELECT
+  的取值点生效。SQL 形态继承：`col::text`/`to_char` 继承源列可空性，`COALESCE`/`COUNT` 非空。
+- 输出：`FAIL`（类型必失败 → 每行 500）、`NULLRISK`（可空列 + 非 Option → NULL 行必 500）、
+  `LOOSE`/`SILENT`/`OK`。
+- 基线棘轮：`docs/audits/artifacts/column_nullability_baseline.tsv`，新增条目退 1，
+  收敛只提示不阻断。C1–C3 合并后基线 **221→182 条**（FAIL 25→14、NULLRISK 196→168）。
+- 自检：`--self-test` 11 条注入用例全过；正向对照（插入读可空列的非 Option 探针）
+  输出 `+ NULLRISK` 且退 1，探针已还原。
+- 首次运行即抓到 O36-C 之外的同族缺陷：`bbs/src/subject.rs` 4 处 `Option<String>` 读裸
+  TIMESTAMP（每行必 500）、`cms_assemble_control` 3 处 `TEXT[]` 当 `String` 等。
+- 做不了的 6 类与兜底：`SELECT *` → FI-002 静态扫描 + `idor_matrix` 种子解码 + 行为测试；
+  `format!` 插值列 → FI-002 `Unknown` 桶 + 行为测试；CTE/视图 → u2/过滤器行为测试 +
+  `idor_matrix`；多表同名列歧义 → 种子两种取值断言；`try_get` 吞错 → 归 `SILENT` 登记；
+  SeaORM 实体 → 既有实体扫描 + 实体读写测试。
 
 
 
