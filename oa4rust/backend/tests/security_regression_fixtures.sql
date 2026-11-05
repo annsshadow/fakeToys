@@ -1,10 +1,16 @@
--- 安全回归门禁夹具（第八轮）
--- 依赖：security_regression_seed.sql 已先执行（82 张受害表的 r6v-<table> 行，owner=person-admin）
+-- 安全回归门禁夹具（第八轮；第九轮改受害者身份）
+-- 依赖：security_regression_seed.sql 已先执行（受害行 owner=gate-victim）
+--
+-- 受害者用 gate-victim 而不是 person-admin：迁移 007 把 person-admin 绑定了
+-- role-admin，若拿它做「B 操作 A」的反向身份，B 的 2xx 是管理员合法放行，
+-- 会把反向守卫变成假阳性。
 
--- 身份：攻击者（非所有者、非管理员）与受害者
+-- 身份：攻击者与受害者（两者都不是管理员）
 INSERT INTO auth_person (id, unique_id, name, password_hash, locked, unit) VALUES
   ('audit-user',   'audit-user',   'Gate Attacker', 'gate-noop', false, 'unit-gate-a'),
-  ('person-admin', 'person-admin', 'Gate Victim',   'gate-noop', false, 'unit-gate-v')
+  ('gate-victim',  'gate-victim',  'Gate Victim',   'gate-noop', false, 'unit-gate-v'),
+  -- 假门/软门夹具仍用 person-admin（那里验证的是「管理员本人」语义）
+  ('person-admin', 'person-admin', 'Gate Admin',    'gate-noop', false, 'unit-gate-v')
 ON CONFLICT (id) DO NOTHING;
 
 -- 假门族：cms 文档（draft，非发布状态，所以非所有者不应 readable=true）
@@ -29,3 +35,56 @@ INSERT INTO x_empower
   (id, from_person, to_person, role_id, enabled, created_at, updated_at)
 VALUES
   ('gate-emp-1', 'person-admin', 'person-admin', 'role-gate', true, NOW(), NOW());
+
+-- ── 第十一轮：深分页夹具 ────────────────────────────────────────────
+-- 全部用 pg-* 前缀；三表在 seed 里没有既有行，不会与其它用例互扰。
+--
+-- detail：攻击者 6 行（日期并列 2+2、1 行 NULL、1 行普通）；
+--         pg-a-00 是「NULL 排序键里 id 最小」的 prev 游标（受害者所有，仅借用键）；
+--         受害者 3 行带 GATE-V-PAGE，用于「无归属过滤时必须变红」。
+DELETE FROM x_attendance_detail WHERE id LIKE 'pg-a-%' OR id LIKE 'pg-v-%';
+INSERT INTO x_attendance_detail (id, person_id, date, status) VALUES
+  ('pg-a-00', 'gate-victim', NULL,        'GATE-V-PAGE'),
+  ('pg-a-01', 'audit-user', '2026-02-01', 'GATE-A-PAGE'),
+  ('pg-a-02', 'audit-user', '2026-02-01', 'GATE-A-PAGE'),
+  ('pg-a-03', 'audit-user', '2026-02-02', 'GATE-A-PAGE'),
+  ('pg-a-04', 'audit-user', '2026-02-02', 'GATE-A-PAGE'),
+  ('pg-a-05', 'audit-user', NULL,         'GATE-A-PAGE'),
+  ('pg-a-06', 'audit-user', '2026-02-03', 'GATE-A-PAGE'),
+  ('pg-v-01', 'gate-victim', '2026-02-01', 'GATE-V-PAGE'),
+  ('pg-v-02', 'gate-victim', '2026-02-02', 'GATE-V-PAGE'),
+  ('pg-v-03', 'gate-victim', '2026-02-03', 'GATE-V-PAGE');
+
+-- selfholiday：6 行，holiday_date 三行并列 + 两行 NULL。
+DELETE FROM x_attendance_selfholiday WHERE id LIKE 'pg-s-%';
+INSERT INTO x_attendance_selfholiday (id, person_id, holiday_date, reason) VALUES
+  ('pg-s-01', 'audit-user',  '2026-05-01', 'GATE-PAGE-S'),
+  ('pg-s-02', 'gate-victim', '2026-05-01', 'GATE-PAGE-S'),
+  ('pg-s-03', 'audit-user',  '2026-05-01', 'GATE-PAGE-S'),
+  ('pg-s-04', 'audit-user',  '2026-04-01', 'GATE-PAGE-S'),
+  ('pg-s-05', 'audit-user',  NULL,         'GATE-PAGE-S'),
+  ('pg-s-06', 'gate-victim', NULL,         'GATE-PAGE-S');
+
+-- statisticshow personMonth：month 用 "1"/"01"/"1" 验证数字语义并列，
+-- 另加 2026/2、2025/12、NULL 行。
+DELETE FROM x_attendance_statisticshow WHERE id LIKE 'pg-m-%';
+INSERT INTO x_attendance_statisticshow (id, person_id, year, month, status) VALUES
+  ('pg-m-01', 'audit-user',  '2026', '1',  'GATE-PAGE-M'),
+  ('pg-m-02', 'audit-user',  '2026', '01', 'GATE-PAGE-M'),
+  ('pg-m-03', 'audit-user',  '2026', '1',  'GATE-PAGE-M'),
+  ('pg-m-04', 'audit-user',  '2026', '2',  'GATE-PAGE-M'),
+  ('pg-m-05', 'gate-victim', '2025', '12', 'GATE-PAGE-M'),
+  ('pg-m-06', 'audit-user',  NULL,   NULL, 'GATE-PAGE-M');
+
+-- statisticshow topUnitDay：6 行 unit_id=NULL（work_date 三行并列 + NULL），
+-- 另造 2 行 unit_id 非空，必须被端点的 unit_id IS NULL 过滤掉。
+DELETE FROM x_attendance_statisticshow WHERE id LIKE 'pg-d-%' OR id LIKE 'pg-du-%';
+INSERT INTO x_attendance_statisticshow (id, person_id, unit_id, work_date, status) VALUES
+  ('pg-d-01',  'audit-user', NULL,     '2026-06-01', 'GATE-PAGE-D'),
+  ('pg-d-02',  'audit-user', NULL,     '2026-06-01', 'GATE-PAGE-D'),
+  ('pg-d-03',  'audit-user', NULL,     '2026-06-01', 'GATE-PAGE-D'),
+  ('pg-d-04',  'audit-user', NULL,     '2026-06-02', 'GATE-PAGE-D'),
+  ('pg-d-05',  'audit-user', NULL,     NULL,         'GATE-PAGE-D'),
+  ('pg-d-06',  'audit-user', NULL,     '2026-06-03', 'GATE-PAGE-D'),
+  ('pg-du-01', 'audit-user', 'unit-x', '2026-06-01', 'GATE-PAGE-DU'),
+  ('pg-du-02', 'audit-user', 'unit-x', '2026-06-02', 'GATE-PAGE-DU');

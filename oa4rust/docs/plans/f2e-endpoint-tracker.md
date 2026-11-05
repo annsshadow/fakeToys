@@ -74,6 +74,11 @@
    （集合相等判定，修了不减也红）。`UNVERIFIED`（404/5xx/种子漂移/2xx 但行未变）**不算已修**。
    门禁已接入 CI `security-regression` job（required check），不依赖个人本地记忆。
    工作树绿 ≠ main 绿：门禁读工作树，修完必须提交、推送、等 CI。
+7. **读数必须基于与 `origin/main` 同步且干净的工作树**（2026-11-06）：runner 跑前打印
+   `git rev-parse HEAD`、`git status --porcelain` 是否干净、与 `origin/main` 的 ahead/behind；
+   **`behind > 0` 直接拒绝运行**，必须先 `git fetch origin main && git merge --ff-only origin/main`
+   （或 rebase）再跑。旧代码上出的读数会让基线棘轮判错：修了却判 STALE、没修却以为修了。
+   工作树不干净时打印清单；该读数只代表当前工作树，不代表 main，最终以提交/推送后的 CI 读数为准。
 
 ## 时区同族扫描（2026-11-06）
 

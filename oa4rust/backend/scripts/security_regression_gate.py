@@ -1,21 +1,42 @@
 #!/usr/bin/env python3
 # Copyright (C) 2026 annsshadow
 # SPDX-License-Identifier: AGPL-3.0-or-later
-"""O26 安全回归门禁 runner。
+"""O26 安全回归门禁 runner（Rust 与 Go 各一条独立入口）。
 
 用法（在 oa4rust/backend 下，或任意目录用绝对路径）：
 
-    python scripts/security_regression_gate.py            # 跑门禁（棘轮比对）
-    python scripts/security_regression_gate.py baseline   # 重写基线（修复/确认后）
-    python scripts/security_regression_gate.py sabotage ownership  # 破坏实验①：摘掉已修的归属条件
-    python scripts/security_regression_gate.py sabotage correct    # 破坏实验②：弄坏一条本来正确的端点
-    python scripts/security_regression_gate.py sabotage organization # 破坏实验③：摘掉 org 的归属谓词
-    python scripts/security_regression_gate.py sabotage program_center # 破坏实验④：摘掉 collect/module 的归属谓词
+    # Rust 侧（184 条；独立入口，不碰 Go 的库）
+    python scripts/security_regression_gate.py            # 跑 Rust 门禁（棘轮比对）
+    python scripts/security_regression_gate.py baseline   # 重写 Rust 基线
+
+    # Go 侧（21 条；独立入口，只建 Go 的 scratch 库）
+    python scripts/security_regression_gate.py go           # 跑 Go 门禁
+    python scripts/security_regression_gate.py go-baseline  # 重写 Go 基线
+
+    # 破坏实验
+    python scripts/security_regression_gate.py sabotage ownership   # Rust①：摘掉已修归属条件
+    python scripts/security_regression_gate.py sabotage correct     # Rust②：弄坏正确端点
+    python scripts/security_regression_gate.py sabotage organization    # Rust②b：摘掉 org 归属谓词
+    python scripts/security_regression_gate.py sabotage program_center  # Rust②c：摘掉 collect/module 归属谓词
+    python scripts/security_regression_gate.py sabotage go-limit0   # Go①：扣款乘 2
+    python scripts/security_regression_gate.py sabotage go-idor-rev # Go②：摘掉预设删除归属
+    python scripts/security_regression_gate.py sabotage go-empty-list    # Go③：伪装成已修（列表恒空）
+    python scripts/security_regression_gate.py sabotage go-swallow-write # Go④：吞掉写失败（2xx 但未落库）
+    python scripts/security_regression_gate.py sabotage go-dead-write     # Go④b：写路径对所有人失效
+    python scripts/security_regression_gate.py sabotage go-page2         # Go⑤：归属过滤只作用于第一页
+    python scripts/security_regression_gate.py sabotage go-drift-to-leak # Go⑥：基线内 UNVERIFIED 恶化成 LEAK
+    python scripts/security_regression_gate.py sabotage rust-drift-to-leak  # Rust③：基线内 UNVERIFIED 恶化成 LEAK
+    python scripts/security_regression_gate.py sabotage rust-swallow-write  # Rust④：本人写 2xx 但未落库
+
+刻意**不**把 Rust 与 Go 塞进同一个 `run`：两侧各自建库、各自迁移，
+合并入口会让修复线每次多等另一侧的建库时间。
 
 环境变量：
-    DATABASE_URL   Postgres 连接串（默认 postgres://o2server:password@localhost:5432/oa4rust_test）
-                   门禁会自己建 `oa_par_gate` scratch 库、迁移、灌数，跑完 DROP；
-                   不需要预先存在任何测试库。
+    DATABASE_URL        Rust 侧 Postgres 连接串
+                        （默认 postgres://o2server:password@localhost:5432/oa4rust_test）
+    TEST_DATABASE_URL   Go 侧 Postgres 连接串；未设置时默认
+                        postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable
+                        两侧都会自建 scratch 库、迁移、灌数，跑完 DROP。
 
 退出码：0 = 绿 / 破坏实验确认抓到；1 = 门禁红 / 破坏实验未抓到。
 """
@@ -29,7 +50,17 @@ import sys
 from pathlib import Path
 
 BACKEND = Path(__file__).resolve().parent.parent
+REPO = BACKEND.parent.parent
 TEST = "security_regression"
+
+# --- Go 侧（与 Rust 完全独立） ---
+GO_SERVER = REPO / "laiyipao/server"
+GO_PKG = "./internal/httpapi"
+GO_RUN = "TestSecurityGate"
+GO_DSN_DEFAULT = "postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable"
+GO_ECONOMY = GO_SERVER / "internal/service/economy.go"
+GO_PRESETS = GO_SERVER / "internal/service/presets.go"
+GO_BASELINE = GO_SERVER / "internal/httpapi/security_gate_baseline.txt"
 
 ATTENDANCE = BACKEND / "crates/attendance_core_entity/src/lib.rs"
 CMS = BACKEND / "crates/cms_assemble_control/src/lib.rs"
@@ -37,11 +68,31 @@ GENERAL = BACKEND / "crates/general_core_entity/src/lib.rs"
 ORGANIZATION = BACKEND / "crates/organization_core_entity/src/lib.rs"
 PROGRAM_CENTER = BACKEND / "crates/program_center/src/lib.rs"
 
+# 第十一轮：keyset 深分页与本人写正控制所在的 crate
+ATTENDANCE_ASSEMBLE = BACKEND / "crates/attendance_assemble_control/src/lib.rs"
+RUST_BASELINE = BACKEND / "tests/security_regression_baseline.txt"
+
 ATTENDANCE_EXPECT = "attendance_core_entity|record_update|POST"
 CMS_EXPECT = "gate-cms-readable"
 GENERAL_EXPECT = "general_core_entity|file_delete|POST"
 ORGANIZATION_EXPECT = "organization_core_entity|definition_update|PUT"
 PROGRAM_CENTER_EXPECT = "program_center|collect_delete|DELETE"
+
+# 分页用例里，next handler 的归属谓词（只匹配第一处，不动 prev）
+PAGE_SCOPE_RE = re.compile(r"AND \(\$3::text IS NULL OR person_id = \$3::text\)")
+PAGE_SCOPE_PATCH = "AND ($3::text IS NULL OR TRUE)"
+PAGE_DRIFT_EXPECT = "page-attendance-detail-next"
+
+# 本人写正控制：把真实 INSERT 换成消费同样 5 个参数的 no-op，接口仍 2xx 但不落库。
+# 不能提前 return（-D warnings 会把后续代码判成 unreachable / unused）。
+SELF_WRITE_RE = re.compile(
+    r'"INSERT INTO x_attendance_selfholiday .*?VALUES \(\$1, \$2, \$3, \$4, \$5, NOW\(\), NOW\(\)\)"',
+    re.S,
+)
+SELF_WRITE_PATCH = (
+    '"SELECT $1::text, $2::text, $3::text, $4::text, $5::text WHERE FALSE"'
+)
+SELF_WRITE_EXPECT = "self-write-roundtrip"
 
 OWNERSHIP_RE = re.compile(
     r'const RECORD_OWNER_PREDICATE: &str = .*?false\)\)";', re.S
@@ -88,6 +139,58 @@ CMS_READABLE_PATCH = (
 )
 
 
+def _git(*args: str, timeout: int = 30) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        ["git", *args],
+        cwd=str(REPO),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=timeout,
+    )
+
+
+def git_preflight() -> int:
+    """门禁纪律：读数必须基于与 origin/main 同步的工作树。
+
+    behind > 0 时直接拒绝：旧代码上的读数会让基线棘轮判错
+    （修了却 STALE、没修却以为修了）。
+    """
+    fetch = _git("fetch", "--quiet", "origin", "main", timeout=20)
+    if fetch.returncode != 0:
+        print("[preflight] 警告：无法 fetch origin/main，使用本地引用（可能已过期）")
+    head = _git("rev-parse", "HEAD").stdout.strip() or "unknown"
+    branch = _git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip() or "unknown"
+    dirty = [l for l in _git("status", "--porcelain").stdout.splitlines() if l]
+    upstream = _git("rev-parse", "--verify", "origin/main").stdout.strip()
+    behind = ahead = 0
+    relation = "origin/main 不存在"
+    if upstream:
+        counts = _git("rev-list", "--left-right", "--count", "origin/main...HEAD").stdout.split()
+        if len(counts) == 2:
+            behind, ahead = int(counts[0]), int(counts[1])
+        relation = f"behind={behind} ahead={ahead}"
+    print(
+        f"[preflight] branch={branch} HEAD={head[:12]} "
+        f"origin/main={upstream[:12] or '?'} {relation}"
+    )
+    if dirty:
+        print(f"[preflight] 工作树不干净：{len(dirty)} 项（读数只代表当前工作树）")
+        for line in dirty[:10]:
+            print(f"[preflight]   {line}")
+        if len(dirty) > 10:
+            print(f"[preflight]   ... 其余 {len(dirty) - 10} 项省略")
+    else:
+        print("[preflight] 工作树干净")
+    if behind > 0:
+        print(f"\n门禁拒绝运行：HEAD 落后 origin/main {behind} 个提交。")
+        print("当前读数会测到旧代码，基线棘轮会把「已修」读成「未修」。")
+        print("请先同步：git fetch origin main && git merge --ff-only origin/main（或 rebase）后重跑。")
+        return 1
+    return 0
+
+
 def cargo_test(update_baseline: bool = False) -> tuple[int, str]:
     env = os.environ.copy()
     if update_baseline:
@@ -106,8 +209,41 @@ def cargo_test(update_baseline: bool = False) -> tuple[int, str]:
 
 def run(update_baseline: bool = False) -> int:
     code, out = cargo_test(update_baseline)
-    # 全量输出：148 条逐条 PASS/LEAK/UNVERIFIED，FAIL 行可直接定位端点与身份
+    # 全量输出：逐条 PASS/LEAK/UNVERIFIED，FAIL 行可直接定位端点与身份
     print(out)
+    return code
+
+
+def go_test(update_baseline: bool = False) -> tuple[int, str]:
+    env = os.environ.copy()
+    # Go 侧不读 Rust 的 DATABASE_URL：显式给 TEST_DATABASE_URL 默认值，
+    # 否则修复线环境里指向 oa4rust_test 的 DATABASE_URL 会把 Go 门禁带偏。
+    if not env.get("TEST_DATABASE_URL"):
+        env["TEST_DATABASE_URL"] = GO_DSN_DEFAULT
+    if update_baseline:
+        env["SECURITY_GATE_UPDATE_BASELINE"] = "1"
+    else:
+        env.pop("SECURITY_GATE_UPDATE_BASELINE", None)
+    p = subprocess.run(
+        ["go", "test", GO_PKG, "-run", f"^{GO_RUN}$", "-v", "-count=1", "-timeout", "10m"],
+        cwd=str(GO_SERVER),
+        env=env,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    out = (p.stdout or "") + (p.stderr or "")
+    return p.returncode, out
+
+
+def run_go(update_baseline: bool = False) -> int:
+    code, out = go_test(update_baseline)
+    print(out)
+    # 数据库不可达时 scratchdb 会 t.Skip —— 跳过不是绿，门禁必须红。
+    if "--- SKIP: TestSecurityGate" in out or "no test files" in out:
+        print("[FAIL] GO-GATE-SKIPPED：数据库不可用或测试未编译，不能当绿")
+        return 1
     return code
 
 
@@ -120,6 +256,234 @@ def mutate(path: Path, pattern: re.Pattern[str], patch: str, label: str) -> byte
         raise SystemExit(f"[{label}] 未命中改造点（模式匹配 {n} 次），业务代码可能已变动，请先更新脚本")
     path.write_bytes(new.encode("utf-8"))
     return original
+
+
+def mutate_text(path: Path, old: str, new: str, label: str) -> bytes:
+    """按字面量替换一次，保留原始字节用于还原（Go 侧用）。"""
+    original = path.read_bytes()
+    text = original.decode("utf-8")
+    n = text.count(old)
+    if n != 1:
+        raise SystemExit(f"[{label}] 未命中改造点（字面量出现 {n} 次），业务代码可能已变动，请先更新脚本")
+    path.write_bytes(text.replace(old, new, 1).encode("utf-8"))
+    return original
+
+
+def sabotage_go(kind: str) -> int:
+    """Go 侧破坏实验。
+
+    每条实验声明**期望状态**，而不是只查 "[LEAK]"：
+      伪装成已修 / 吞错误 → 期望 UNVERIFIED + NEW-FAIL（不是 PASS，也不是 LEAK）；
+      摘归属 / 只筛第一页   → 期望 LEAK；
+      基线内恶化           → 期望 DRIFT-TO-LEAK（新增的致命漂移判定）。
+    """
+    expect_state = "LEAK"
+    expect_extra = ""
+    baseline_backup: bytes | None = None
+    muts: list[tuple[str, str]] | None = None
+
+    if kind == "go-limit0":
+        path, old, new, expect = (
+            GO_ECONOMY,
+            "deduct[k] = int64(-v)",
+            "deduct[k] = int64(-2 * v)",
+            "go|shop|limit0-double-deduct",
+        )
+        title = "把商城扣款改成 2 倍（limit_per_day=0 连买两次应暴露多扣）"
+    elif kind == "go-idor-rev":
+        path, old, new, expect = (
+            GO_PRESETS,
+            "`DELETE FROM user_presets WHERE id = $1 AND user_id = $2`",
+            "`DELETE FROM user_presets WHERE id = $1 AND $2::bigint IS NOT NULL`",
+            "go|idor|presets-delete",
+        )
+        title = "摘掉删除预设的 user_id 归属条件（fwd/rev/adm 都应 LEAK）"
+    elif kind == "go-empty-list":
+        path, old, new, expect = (
+            GO_ECONOMY,
+            "FROM orders\n\t\t WHERE user_id = $1\n",
+            "FROM orders\n\t\t WHERE user_id = $1 AND FALSE\n",
+            "go|idor|orders-list",
+        )
+        expect_state = "UNVERIFIED"
+        title = "让订单列表恒返回空（伪装成已修；canary 应判看不到自己的行）"
+    elif kind == "go-swallow-write":
+        path = GO_PRESETS
+        old = (
+            '\tif tag.RowsAffected() == 0 {\n'
+            '\t\treturn fmt.Errorf("%w: 预设 %d 不存在", ErrNotFound, presetID)\n'
+            '\t}'
+        )
+        new = '\tif tag.RowsAffected() == 0 {\n\t\treturn nil\n\t}'
+        expect = "go|idor|presets-delete"
+        expect_state = "UNVERIFIED"
+        title = "把删除预设的未命中错误吞掉（2xx 但对方行仍在；本人正控制应仍 PASS）"
+    elif kind == "go-dead-write":
+        path = GO_PRESETS
+        muts = [
+            (
+                "`DELETE FROM user_presets WHERE id = $1 AND user_id = $2`",
+                "`DELETE FROM user_presets WHERE id = $1 AND user_id = $2 AND FALSE`",
+            ),
+            (
+                '\tif tag.RowsAffected() == 0 {\n'
+                '\t\treturn fmt.Errorf("%w: 预设 %d 不存在", ErrNotFound, presetID)\n'
+                '\t}',
+                '\tif tag.RowsAffected() == 0 {\n\t\treturn nil\n\t}',
+            ),
+        ]
+        expect = "go|idor|presets-delete"
+        expect_state = "UNVERIFIED"
+        expect_extra = "go|write|self-roundtrip"
+        title = "删除语句恒不命中 + 吞掉错误（攻击者与本人两条写都 2xx 未落库）"
+    elif kind == "go-page2":
+        path, old, new, expect = (
+            GO_ECONOMY,
+            "where := `user_id = $1`",
+            "where := `user_id = $1`\n\tif offset > 0 {\n\t\twhere = `$1::bigint IS NOT NULL`\n\t}",
+            "go|idor|battles-page2",
+        )
+        title = "让归属过滤只作用于第一页（offset>0 时放开）"
+    elif kind == "go-drift-to-leak":
+        path, old, new, expect = (
+            GO_PRESETS,
+            "`DELETE FROM user_presets WHERE id = $1 AND user_id = $2`",
+            "`DELETE FROM user_presets WHERE id = $1 AND $2::bigint IS NOT NULL`",
+            "go|idor|presets-delete",
+        )
+        expect_state = "DRIFT-TO-LEAK"
+        title = "把一条基线内 UNVERIFIED 的用例恶化成 LEAK（应触发致命漂移）"
+    else:
+        raise SystemExit(
+            f"未知 Go 破坏实验: {kind}"
+            "（可选 go-limit0 / go-idor-rev / go-empty-list / go-swallow-write / "
+            "go-dead-write / go-page2 / go-drift-to-leak）"
+        )
+
+    print(f"== Go 破坏实验：{title}")
+    if muts is None:
+        muts = [(old, new)]
+    original = path.read_bytes()
+    for o, n in muts:
+        mutate_text(path, o, n, kind)
+    if expect_state == "DRIFT-TO-LEAK":
+        # 先把目标用例写成基线里的 UNVERIFIED，再把代码改坏成 LEAK。
+        # 只有「漂移到 LEAK 是致命的」这条新判定才能让门禁红。
+        baseline_backup = GO_BASELINE.read_bytes()
+        GO_BASELINE.write_bytes(
+            baseline_backup + f"{expect}\tUNVERIFIED\n".encode("utf-8")
+        )
+    try:
+        code, out = go_test()
+        if expect_state == "LEAK":
+            caught = code != 0 and f"[LEAK] {expect}" in out
+        elif expect_state == "UNVERIFIED":
+            caught = (
+                code != 0
+                and f"[UNVERIFIED] {expect}" in out
+                and "NEW-FAIL" in out
+                and (not expect_extra or f"[UNVERIFIED] {expect_extra}" in out)
+            )
+        else:
+            caught = code != 0 and "DRIFT-TO-LEAK" in out and expect in out
+        for line in out.splitlines():
+            if line.startswith(
+                ("[LEAK]", "[PASS]", "[UNVERIFIED]", "[SUMMARY]", "[NEW-FAIL]",
+                 "[STALE-BASELINE]", "[STATE-DRIFT]", "[DRIFT-TO-LEAK]")
+            ) or "--- FAIL" in line or "test result:" in line:
+                print(line)
+        print()
+        if caught:
+            print(f"实验成立：Go 门禁变红（exit={code}），并点名 {expect}"
+                  f"（期望状态 {expect_state}）")
+            return 0
+        print(f"实验失败：门禁未红或未点名 {expect}（期望 {expect_state}，exit={code}）")
+        return 1
+    finally:
+        path.write_bytes(original)
+        print(f"[restore] {path.name} 已还原")
+        if baseline_backup is not None:
+            GO_BASELINE.write_bytes(baseline_backup)
+            print(f"[restore] {GO_BASELINE.name} 已还原")
+
+
+def sabotage_rust_drift() -> int:
+    """基线内 UNVERIFIED 恶化为 LEAK：必须由 [DRIFT-TO-LEAK] 判红。
+    做法与 Go 侧一致：临时把目标写成基线 UNVERIFIED，再把真实代码改坏成 LEAK。
+    """
+    print("== Rust 破坏实验：基线内 UNVERIFIED 恶化成 LEAK（应触发致命漂移）")
+    original = ATTENDANCE_ASSEMBLE.read_bytes()
+    baseline_backup = RUST_BASELINE.read_bytes()
+    try:
+        text = original.decode("utf-8")
+        new, n = PAGE_SCOPE_RE.subn(PAGE_SCOPE_PATCH, text, count=1)
+        if n != 1:
+            raise SystemExit("[rust-drift-to-leak] 未命中 next handler 归属谓词，请先更新脚本")
+        ATTENDANCE_ASSEMBLE.write_bytes(new.encode("utf-8"))
+        RUST_BASELINE.write_bytes(
+            baseline_backup
+            + f"{PAGE_DRIFT_EXPECT}\tUNVERIFIED\n".encode("utf-8")
+        )
+        code, out = cargo_test()
+        caught = (
+            code != 0
+            and "[DRIFT-TO-LEAK]" in out
+            and PAGE_DRIFT_EXPECT in out
+        )
+        for line in out.splitlines():
+            if line.startswith(
+                ("[LEAK]", "[UNVERIFIED]", "[INTEGRITY]", "[STATE-DRIFT]",
+                 "[DRIFT-TO-LEAK]", "NEW-FAIL", "[ADMIN-POLICY-UNKNOWN]")
+            ) or "非 PASS" in line or "test result:" in line:
+                print(line)
+        print()
+        if caught:
+            print(f"实验成立：Rust 门禁变红（exit={code}），"
+                  f"[DRIFT-TO-LEAK] 点名 {PAGE_DRIFT_EXPECT}（UNVERIFIED -> LEAK）")
+            return 0
+        print("\n".join(out.splitlines()[-30:]))
+        print(f"实验失败：门禁未红或未点名 {PAGE_DRIFT_EXPECT}"
+              f"（exit={code}；期望 [DRIFT-TO-LEAK]）")
+        return 1
+    finally:
+        ATTENDANCE_ASSEMBLE.write_bytes(original)
+        RUST_BASELINE.write_bytes(baseline_backup)
+        print(f"[restore] {ATTENDANCE_ASSEMBLE.name} / {RUST_BASELINE.name} 已还原")
+
+
+def sabotage_rust_swallow() -> int:
+    """本人写 2xx 但不落库：正控制必须判 INTEGRITY，而不是当 PASS 放行。"""
+    print("== Rust 破坏实验：写接口 2xx 但未落库（本人正控制应判 INTEGRITY）")
+    original = ATTENDANCE_ASSEMBLE.read_bytes()
+    try:
+        text = original.decode("utf-8")
+        new, n = SELF_WRITE_RE.subn(SELF_WRITE_PATCH, text, count=1)
+        if n != 1:
+            raise SystemExit("[rust-swallow-write] 未命中 attendanceselfholiday_create 开头，请先更新脚本")
+        ATTENDANCE_ASSEMBLE.write_bytes(new.encode("utf-8"))
+        code, out = cargo_test()
+        caught = (
+            code != 0
+            and f"[INTEGRITY] {SELF_WRITE_EXPECT}" in out
+            and "NEW-FAIL" in out
+        )
+        for line in out.splitlines():
+            if line.startswith(
+                ("[LEAK]", "[UNVERIFIED]", "[INTEGRITY]", "[STATE-DRIFT]",
+                 "[DRIFT-TO-LEAK]", "NEW-FAIL", "[ADMIN-POLICY-UNKNOWN]")
+            ) or "非 PASS" in line or "test result:" in line:
+                print(line)
+        print()
+        if caught:
+            print(f"实验成立：Rust 门禁变红（exit={code}），"
+                  f"{SELF_WRITE_EXPECT} 被判 INTEGRITY（2xx 但未落库）")
+            return 0
+        print("\n".join(out.splitlines()[-30:]))
+        print(f"实验失败：门禁未红或未点名 {SELF_WRITE_EXPECT} 为 INTEGRITY（exit={code}）")
+        return 1
+    finally:
+        ATTENDANCE_ASSEMBLE.write_bytes(original)
+        print(f"[restore] {ATTENDANCE_ASSEMBLE.name} 已还原")
 
 
 def sabotage(kind: str) -> int:
@@ -185,15 +549,33 @@ def sabotage(kind: str) -> int:
 
 def main() -> int:
     cmd = sys.argv[1] if len(sys.argv) > 1 else "run"
+    if cmd in ("run", "baseline", "go", "go-baseline", "sabotage"):
+        code = git_preflight()
+        if code:
+            return code
     if cmd == "run":
         return run()
     if cmd == "baseline":
         return run(update_baseline=True)
+    if cmd == "go":
+        return run_go()
+    if cmd == "go-baseline":
+        return run_go(update_baseline=True)
     if cmd == "sabotage":
         if len(sys.argv) < 3:
-            print("用法: security_regression_gate.py sabotage <ownership|correct>")
+            print("用法: security_regression_gate.py sabotage "
+                  "<ownership|correct|general|rust-drift-to-leak|rust-swallow-write|"
+                  "go-limit0|go-idor-rev|go-empty-list|go-swallow-write|"
+                  "go-dead-write|go-page2|go-drift-to-leak>")
             return 2
-        return sabotage(sys.argv[2])
+        kind = sys.argv[2]
+        if kind.startswith("go-"):
+            return sabotage_go(kind)
+        if kind in ("rust-drift-to-leak", "drift-to-leak"):
+            return sabotage_rust_drift()
+        if kind in ("rust-swallow-write", "swallow-write"):
+            return sabotage_rust_swallow()
+        return sabotage(kind)
     print(__doc__)
     return 2
 
