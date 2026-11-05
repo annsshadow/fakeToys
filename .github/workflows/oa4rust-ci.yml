@@ -525,6 +525,28 @@ jobs:
       - name: FI-002 static column scan (ratchet against baseline)
         run: python scripts/fi002_column_scan.py
 
+  # O36-D 类型一致性守卫：迁移累积的列类型 + 可空性 vs Rust 侧
+  # `row.get::<_, T>` / `Value::String(row.get())` 解码。
+  # FAIL = 类型必失败（500）；NULLRISK = 列可空且非 Option（NULL 行必 500）。
+  # 与 docs/audits/artifacts/column_nullability_baseline.tsv 做集合棘轮：
+  # 新增条目红；修复后的条目只提示收敛（不阻断，避免与修复 PR 互踩）。
+  column-nullability-scan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: oa4rust/backend
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.x"
+      - name: Guard self-test (injected fixtures)
+        run: python scripts/scan_row_get_column_mismatch.py --self-test
+      - name: Column nullability scan (ratchet against baseline)
+        run: python scripts/scan_row_get_column_mismatch.py --summary
+
   # L-REST 无界 SELECT 静态扫描（2026-10-27 建立；2026-10-28 修订，§6/§6.5 收口）
   #
   # 与 FI-002 同源：复用 rust_literals() / SRC_ROOTS，不另造一套 SQL 字面量
