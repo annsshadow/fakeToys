@@ -46,8 +46,6 @@ correlation_service_processing|get_correlation|GET	LEAK
 file_assemble_control|get_file|GET	LEAK
 file_assemble_control|recycle_id|GET	UNVERIFIED
 file_core_entity|folder_delete|DELETE	LEAK
-gate-cms-allowread	LEAK
-gate-cms-cipher-readable	LEAK
 general_assemble_control|area_get|GET	LEAK
 general_assemble_control|attendscope_get|GET	LEAK
 general_assemble_control|invoice_get_id|GET	LEAK

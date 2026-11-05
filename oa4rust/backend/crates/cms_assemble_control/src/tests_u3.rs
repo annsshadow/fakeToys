@@ -761,4 +761,194 @@ mod u3_tests {
             )
             .await;
     }
+
+    // ── 4. 假门双向（cms 文档控制位 / 读权限） ───────────────────
+    //
+    // 判据双向：A 读 B 的 draft → 403，B 读 A 的 draft → 403；本人读自己 → 200。
+    // 只验「A 读 B 被拒」会放过 admin 分支误放行或方向不对称的假修复。
+
+    const FAKE_A: &str = "u3-fake-a";
+    const FAKE_B: &str = "u3-fake-b";
+
+    async fn seed_fake_doc(
+        client: &deadpool_postgres::Client,
+        id: &str,
+        creator: &str,
+        status: &str,
+    ) {
+        client
+            .execute(
+                "INSERT INTO x_cms_data_document (id, title, content, creator, author_id, status) \
+                 VALUES ($1, 'u3 fake gate doc', 'c', $2, $2, $3)",
+                &[&id, &creator, &status],
+            )
+            .await
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn u3_document_control_fake_gate_both_directions_real_db() {
+        if !is_db_available().await {
+            return;
+        }
+        let pool = test_pool();
+        let client = pool.get().await.unwrap();
+        let doc_a = format!("u3-fg-a-{}", uuid::Uuid::new_v4());
+        let doc_b = format!("u3-fg-b-{}", uuid::Uuid::new_v4());
+        seed_fake_doc(&client, &doc_a, FAKE_A, "draft").await;
+        seed_fake_doc(&client, &doc_b, FAKE_B, "draft").await;
+
+        // A → B 与 B → A 两个方向都必须 403（draft 且非本人）
+        for (who, target) in [(FAKE_A, doc_b.as_str()), (FAKE_B, doc_a.as_str())] {
+            let (status, _) = call(
+                "GET",
+                &format!("/api/document/{target}/control"),
+                None,
+                Some(session(who)),
+            )
+            .await;
+            assert_eq!(
+                status,
+                StatusCode::FORBIDDEN,
+                "{who} 读 {target} 的控制位必须 403"
+            );
+        }
+
+        // 本人读自己 → 200，且管理位只对本人开放
+        let (status, body) = call(
+            "GET",
+            &format!("/api/document/{doc_a}/control"),
+            None,
+            Some(session(FAKE_A)),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert_eq!(body["data"]["allowRead"], json!(true), "{body}");
+        assert_eq!(body["data"]["allowManage"], json!(true), "{body}");
+        assert_eq!(body["data"]["controller"], json!(FAKE_A), "{body}");
+
+        // 已发布文档对他人可读，但不因此放开管理位
+        client
+            .execute(
+                "UPDATE x_cms_data_document SET status = 'published' WHERE id = $1",
+                &[&doc_b],
+            )
+            .await
+            .unwrap();
+        let (status, body) = call(
+            "GET",
+            &format!("/api/document/{doc_b}/control"),
+            None,
+            Some(session(FAKE_A)),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert_eq!(body["data"]["allowRead"], json!(true), "{body}");
+        assert_eq!(body["data"]["allowManage"], json!(false), "{body}");
+
+        for id in [&doc_a, &doc_b] {
+            client
+                .execute("DELETE FROM x_cms_data_document WHERE id = $1", &[id])
+                .await
+                .unwrap();
+        }
+    }
+
+    #[tokio::test]
+    async fn u3_document_permission_read_fake_gate_both_directions_real_db() {
+        if !is_db_available().await {
+            return;
+        }
+        let pool = test_pool();
+        let client = pool.get().await.unwrap();
+        let doc_a = format!("u3-fr-a-{}", uuid::Uuid::new_v4());
+        let doc_b = format!("u3-fr-b-{}", uuid::Uuid::new_v4());
+        seed_fake_doc(&client, &doc_a, FAKE_A, "draft").await;
+        seed_fake_doc(&client, &doc_b, FAKE_B, "draft").await;
+
+        // 不可读必须是 403，不是 200 + readable=false（后者仍泄露文档存在）
+        for (who, target) in [(FAKE_A, doc_b.as_str()), (FAKE_B, doc_a.as_str())] {
+            let (status, _) = call(
+                "GET",
+                &format!("/api/document/{target}/permission/read"),
+                None,
+                Some(session(who)),
+            )
+            .await;
+            assert_eq!(
+                status,
+                StatusCode::FORBIDDEN,
+                "{who} 读 {target} 的读权限必须 403"
+            );
+        }
+
+        let (status, body) = call(
+            "GET",
+            &format!("/api/document/{doc_a}/permission/read"),
+            None,
+            Some(session(FAKE_A)),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert_eq!(body["data"]["readable"], json!(true), "{body}");
+
+        for id in [&doc_a, &doc_b] {
+            client
+                .execute("DELETE FROM x_cms_data_document WHERE id = $1", &[id])
+                .await
+                .unwrap();
+        }
+    }
+
+    #[tokio::test]
+    async fn u3_document_cipher_permission_read_person_from_session_real_db() {
+        if !is_db_available().await {
+            return;
+        }
+        let pool = test_pool();
+        let client = pool.get().await.unwrap();
+        let doc_a = format!("u3-fc-a-{}", uuid::Uuid::new_v4());
+        seed_fake_doc(&client, &doc_a, FAKE_A, "draft").await;
+
+        // 非管理员用路径参数冒充他人身份探测 → 403（主体只能取自会话）
+        let (status, _) = call(
+            "GET",
+            &format!("/api/document/cipher/{doc_a}/permission/read/person/person-admin"),
+            None,
+            Some(session(FAKE_B)),
+        )
+        .await;
+        assert_eq!(
+            status,
+            StatusCode::FORBIDDEN,
+            "路径 person 不得成为权限主体"
+        );
+
+        // 他人查「自己」能否读别人的 draft：文档本身不可读 → 403
+        let (status, _) = call(
+            "GET",
+            &format!("/api/document/cipher/{doc_a}/permission/read/person/{FAKE_B}"),
+            None,
+            Some(session(FAKE_B)),
+        )
+        .await;
+        assert_eq!(status, StatusCode::FORBIDDEN, "他人不得探测他人草稿");
+
+        // 本人在自己的 draft 上查询 → 200，回显主体仍是会话本人
+        let (status, body) = call(
+            "GET",
+            &format!("/api/document/cipher/{doc_a}/permission/read/person/{FAKE_A}"),
+            None,
+            Some(session(FAKE_A)),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        assert_eq!(body["data"]["readable"], json!(true), "{body}");
+        assert_eq!(body["data"]["person"], json!(FAKE_A), "{body}");
+
+        client
+            .execute("DELETE FROM x_cms_data_document WHERE id = $1", &[&doc_a])
+            .await
+            .unwrap();
+    }
 }

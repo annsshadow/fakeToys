@@ -102,7 +102,7 @@
 | 批次 | 范围 | 判据 | 状态 |
 |---|---|---|---|
 | 内联副本 | `processplatform_core_express::work_terminate:34` | 与 P0-b helper 同根 | **已修**（本批 PR #188）：两处破坏实验均红 |
-| 假门 3 条 | cms：`is_admin` 只算返回布尔、不参与拦截 → 200 返回他人数据 | 门必须参与拦截（静态扫描「看起来有门」也要按行为验） | 待做 |
+| 假门 3 条 | cms：`is_admin` 只算返回布尔、不参与拦截 → 200 返回他人数据 | 门必须参与拦截（静态扫描「看起来有门」也要按行为验） | **已修**（本批）：`control` / `permission/read` 不可读改 403；`cipher` 的 `person` 改取会话（非 admin 传他人 → 403）。双向用例（A↔B 403、本人 200、published 只读）；门禁 6→8 PASS、基线 142→140；`sabotage correct` 仍红并点名 `gate-cms-readable` |
 | 写 IDOR 24 条 | 按 crate 分批，每批一次提交 | 归属写进 SQL `WHERE`（不是先查后判）+ 双向用例 + 破坏实验红 | 待做 |
 | 读 IDOR 117 条 | 拆 E18–E24 七批 | **先做「A 读 B / B 读 A」双向都 200 的**（谓词整体失效），再做单向 | 待做 |
 | NO-OWNER-COL A 档 12 条 | 有归属列且生产路径确实写入 | 同写 IDOR 判据 | 待做 |
