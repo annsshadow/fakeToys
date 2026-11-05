@@ -372,11 +372,35 @@ func equipGemTx(ctx context.Context, tx pgx.Tx, userID, gemID int64) (string, er
 //
 //   - 槽位 1..EquipSlotLimit，佩戴时**自动取最小空槽**（玩家只关心
 //     「戴几颗」，不关心槽号；equipped_slot 的价值在唯一性约束与排查）。
-//   - 上限靠**行锁串行化**：事务先对全部已佩戴行 FOR UPDATE，
-//     并发的第 7 颗佩戴会等锁，等到时计数已含先到者 → 被拒。
-//     已佩戴行数为 0 时无行可锁，但此时不可能超限（上限 6 > 并发增量）。
+//
+//   - 上限靠**玩家行上的串行化锁**（R102）：事务第一步
+//     `SELECT id FROM users WHERE id = $1 FOR UPDATE`，同一玩家的并发佩戴
+//     在这里排队。后到者在先到者提交后才开始读已佩戴槽位，计数必然包含
+//     先到者 → 超限被拒、槽位不会撞。
+//
+//     ⚠️ 为什么不能只锁「已佩戴行」：`FOR UPDATE` 锁的是**当前满足条件**
+//     的行，而并发请求要佩戴的宝石 `equipped_slot` 还是空串，不在这个集合里
+//     —— 它既不被锁，也不在对方语句的快照里（READ COMMITTED 下语句快照
+//     在等锁前就定了）。两个请求都读到「已戴 5 颗」，都挑槽 6，各写各的行，
+//     最终 7 颗词条生效。R102 注入实测：equipped=7、distinct_slots=6、
+//     两条都返回成功。
+//
+//     这不是「约束能替代」的问题：没有一行计数器可以 CAS，也表达不了
+//     「聚合 ≤ 6」；缺陷在锁的**覆盖范围**，所以要锁一个所有写方都先经过、
+//     且集合恒定（单行）的点，而不是锁那个会被并发写改变的聚合输入集合。
 func (s *Service) EquipGem(ctx context.Context, userID, gemID int64) (*GemView, error) {
 	err := s.DB.Tx(ctx, func(tx pgx.Tx) error {
+		// R102：同一玩家的佩戴操作串行化在**这一行**上。
+		// 必须在读「已佩戴槽位」之前拿：晚一步就回到旧快照，等于没修。
+		var lockedID int64
+		if err := tx.QueryRow(ctx,
+			`SELECT id FROM users WHERE id = $1 FOR UPDATE`, userID).Scan(&lockedID); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return fmt.Errorf("%w: 玩家 %d 不存在", ErrNotFound, userID)
+			}
+			return fmt.Errorf("lock user for equip: %w", err)
+		}
+
 		equipped, err := equipGemTx(ctx, tx, userID, gemID)
 		if err != nil {
 			return err
