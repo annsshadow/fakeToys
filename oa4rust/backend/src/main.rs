@@ -184,7 +184,9 @@ async fn main() -> anyhow::Result<()> {
     let app = app.fallback_service(spa);
     tracing::info!(web_dist, "static frontend files mounted with SPA fallback");
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
+    // 监听地址默认 0.0.0.0:3000；OA4RUST_BIND_ADDR 供部署与重启回归使用。
+    let bind_addr = env::var("OA4RUST_BIND_ADDR").unwrap_or_else(|_| "0.0.0.0:3000".to_string());
+    let listener = tokio::net::TcpListener::bind(&bind_addr).await?;
     tracing::info!("listening on {}", listener.local_addr()?);
     // 优雅停机：SIGINT/SIGTERM 后停止接新连接，等在途请求跑完（最多 10s）。
     // 修前直接 `axum::serve(...).await`，部署重启会打断在途事务。

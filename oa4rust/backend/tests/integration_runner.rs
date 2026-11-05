@@ -213,6 +213,14 @@ async fn timer_restore_cases_contract() {
     integration_tests::scenarios::timer_jobs::timer_restore_cases_flow(ctx.pool.clone()).await;
 }
 
+/// O25 节点 4：真实进程重启回归（创建 job → 杀进程 → 新进程触发）。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn timer_process_restart_recovers_due_job() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::timer_jobs::timer_process_restart_flow(ctx).await;
+}
+
 /// O24-3 批次 4：INSERT 未写必填主键/规范列的遗留给定族（3 条 E23502）。
 #[ignore = "requires a running database server"]
 #[tokio::test]

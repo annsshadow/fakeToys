@@ -20,9 +20,10 @@ use reqwest::{Client, StatusCode};
 use serde_json::{json, Value};
 use tokio::time::sleep;
 
-use crate::integration_tests::db::TestPool;
-use crate::integration_tests::helpers::setup_test_server;
+use crate::integration_tests::db::{TestContext, TestPool};
+use crate::integration_tests::helpers::{seed_test_data, setup_test_server};
 use processplatform_service_processing::timer::TimerRegistry;
+use shared::session::SessionManager;
 
 fn uniq(prefix: &str) -> String {
     format!(
@@ -278,7 +279,6 @@ pub async fn timer_restore_cases_flow(pool: Arc<TestPool>) {
         .await
         .expect("已执行 job 的 fired_at 不应被清空");
     // PostgreSQL TIMESTAMP 精度是微秒，内存值带纳秒；按微秒口径比较。
-    let micro = |dt: NaiveDateTime| dt.format("%Y-%m-%d %H:%M:%S%.6f").to_string();
     assert_eq!(
         micro(c_fired_at),
         micro(c_after),
@@ -287,4 +287,176 @@ pub async fn timer_restore_cases_flow(pool: Arc<TestPool>) {
 
     server.abort();
     let _ = server.await;
+}
+
+/// 真进程重启的子进程守卫：用例结束/panic 时都要杀掉，避免残留占端口。
+struct ChildServer(std::process::Child);
+
+impl Drop for ChildServer {
+    fn drop(&mut self) {
+        let _ = self.0.kill();
+        let _ = self.0.wait();
+    }
+}
+
+fn free_port() -> u16 {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind ephemeral port");
+    listener.local_addr().expect("local_addr").port()
+}
+
+fn spawn_server(
+    db_url: &str,
+    port: u16,
+    log_path: &std::path::Path,
+    tick_seconds: u64,
+) -> ChildServer {
+    let stdout = std::fs::File::create(log_path).expect("create child log");
+    let stderr = stdout.try_clone().expect("clone child log handle");
+    let mut cmd = std::process::Command::new(env!("CARGO_BIN_EXE_oa4rust"));
+    cmd.env("DATABASE_URL", db_url)
+        .env("OA4RUST_BIND_ADDR", format!("127.0.0.1:{port}"))
+        .env("TIMER_TICK_SECONDS", tick_seconds.to_string())
+        .env("RUST_LOG", "warn")
+        .stdout(std::process::Stdio::from(stdout))
+        .stderr(std::process::Stdio::from(stderr));
+    let child = cmd.spawn().expect("spawn oa4rust binary");
+    ChildServer(child)
+}
+
+async fn wait_listening(
+    port: u16,
+    child: &mut ChildServer,
+    deadline: tokio::time::Instant,
+    what: &str,
+) {
+    loop {
+        if std::net::TcpStream::connect(("127.0.0.1", port)).is_ok() {
+            return;
+        }
+        if let Some(status) = child.0.try_wait().expect("try_wait") {
+            panic!("{what} 进程提前退出（{status}），未监听 127.0.0.1:{port}");
+        }
+        assert!(
+            tokio::time::Instant::now() < deadline,
+            "{what} 未在期限内监听 127.0.0.1:{port}"
+        );
+        sleep(Duration::from_millis(200)).await;
+    }
+}
+
+fn micro(dt: NaiveDateTime) -> String {
+    dt.format("%Y-%m-%d %H:%M:%S%.6f").to_string()
+}
+
+/// O25 节点 4：真实进程重启回归。
+/// P1（**真实进程**）通过 POST 创建 job → 杀掉 P1 → 启动**新进程** P2
+/// （同一个隔离库）→ 到期任务被触发；已触发后再等 ≥3 个 tick 不重放。
+pub async fn timer_process_restart_flow(ctx: Arc<TestContext>) {
+    let pg = ctx.pool.as_pg().expect("postgres pool").clone();
+    let work_id = uniq("tw");
+    seed_work(&pg, &work_id).await;
+
+    let base = std::env::var("DATABASE_URL")
+        .unwrap_or_else(|_| "postgres://o2server:password@localhost:5432/postgres".to_string());
+    let mut url = url::Url::parse(&base).expect("invalid DATABASE_URL");
+    url.set_path(&format!("/{}", ctx.db_name));
+
+    // 子进程从库里加载会话；用同一个 SessionManager 口径种下 admin + session。
+    let session_manager = SessionManager::with_pool(pg.clone());
+    let token = seed_test_data(&ctx.pool, &session_manager)
+        .await
+        .expect("seed admin/session for child process");
+
+    // ── P1：真实进程，真实 POST 创建 job ───────────────────────────
+    let p1_port = free_port();
+    let p1_log = std::env::temp_dir().join(format!(
+        "oa4rust-timer-p1-{}-{}.log",
+        std::process::id(),
+        work_id
+    ));
+    // P1 用生产默认 30s tick：创建 job 后立即被杀，不会在用例内提前触发。
+    let mut p1 = spawn_server(url.as_str(), p1_port, &p1_log, 30);
+    wait_listening(
+        p1_port,
+        &mut p1,
+        tokio::time::Instant::now() + Duration::from_secs(20),
+        "P1",
+    )
+    .await;
+
+    let client = Client::builder()
+        .timeout(Duration::from_secs(10))
+        .build()
+        .expect("failed to build reqwest client");
+    let fire_at = Utc::now().naive_utc() - chrono::Duration::seconds(1);
+    let fire_at_str = fire_at.format("%Y-%m-%d %H:%M:%S").to_string();
+    let resp = client
+        .post(format!(
+            "http://127.0.0.1:{}/api/processplatform/service/processing/timer/start",
+            p1_port
+        ))
+        .header("Authorization", format!("Bearer {}", token))
+        .json(&json!({ "workId": work_id, "fireAt": fire_at_str }))
+        .send()
+        .await
+        .expect("POST timer/start to P1 failed");
+    assert_eq!(
+        resp.status(),
+        StatusCode::OK,
+        "P1 创建 job 应 200（写入口 TIMESTAMP 绑定）"
+    );
+    let body: Value = resp.json().await.expect("timer/start json");
+    let job_id = body["data"]["jobId"].as_str().expect("jobId").to_string();
+    assert_eq!(
+        read_fired_at(&pg, &job_id).await,
+        None,
+        "P1 的 30s ticker 不应在创建后立即触发"
+    );
+
+    // ── 重启：杀掉 P1 整个进程（内存 registry 随之消失）──────────────
+    drop(p1);
+    let p1_log_text = std::fs::read_to_string(&p1_log).unwrap_or_default();
+    assert!(
+        p1_log_text.is_empty() || !p1_log_text.contains("error"),
+        "P1 日志含错误：\n{p1_log_text}"
+    );
+    let _ = std::fs::remove_file(&p1_log);
+
+    // ── P2：真正的新进程，同一库，1s tick ────────────────────────────
+    let p2_port = free_port();
+    let p2_log = std::env::temp_dir().join(format!(
+        "oa4rust-timer-p2-{}-{}.log",
+        std::process::id(),
+        job_id
+    ));
+    let mut p2 = spawn_server(url.as_str(), p2_port, &p2_log, 1);
+
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(30);
+    let fired = loop {
+        if let Some(fired) = read_fired_at(&pg, &job_id).await {
+            break fired;
+        }
+        if let Some(status) = p2.0.try_wait().expect("try_wait") {
+            let log = std::fs::read_to_string(&p2_log).unwrap_or_default();
+            panic!("重启后的进程 P2 提前退出（{status}），到期 job 未触发；日志：\n{log}");
+        }
+        assert!(
+            tokio::time::Instant::now() < deadline,
+            "真实进程重启后 30s 内到期 job 未被触发（restore 未接线？）"
+        );
+        sleep(Duration::from_millis(300)).await;
+    };
+    println!("timer restart: job={job_id} 在新进程 P2 触发 fired_at={fired}");
+
+    // 已触发后再等 ≥3 个 tick（1s tick），不得重放/覆盖 fired_at。
+    sleep(Duration::from_secs(3)).await;
+    let after = read_fired_at(&pg, &job_id).await.expect("fired_at 仍在");
+    assert_eq!(
+        micro(fired),
+        micro(after),
+        "已执行 job 在重启后绝不能被重放（fired_at 必须保持原值）"
+    );
+
+    drop(p2);
+    let _ = std::fs::remove_file(&p2_log);
 }
