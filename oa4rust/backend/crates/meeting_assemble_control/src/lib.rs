@@ -18,10 +18,7 @@ pub mod routes;
 
 // O33：会议列表的 keyset 游标（id）必须与排序键 create_time 一致。
 // create_time 为 TIMESTAMP（见 006 migration），NULL 归一为同型最小值 -infinity。
-const CREATED_AT_COL: &[KeyColumn] = &[KeyColumn {
-    expr: "create_time",
-    null_low: "'-infinity'::timestamp",
-}];
+const CREATED_AT_COL: &[KeyColumn] = &[KeyColumn::timestamp("create_time")];
 
 fn created_at_keyset(table: &'static str) -> KeySet<'static> {
     KeySet {

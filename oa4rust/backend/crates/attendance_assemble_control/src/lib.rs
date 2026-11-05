@@ -24,32 +24,14 @@ pub mod routes;
 // 行值比较，并按同一组键排序，避免 `id > $1` 与 `ORDER BY 另一列` 组合造成
 // 漏行/重行。NULL 统一 NULLS LAST（见 shared::db::keyset）。
 // 以下列在考勤库中均为 TEXT（见 032 migration），NULL 归一为 ''。
-const CREATED_AT_COL: &[KeyColumn] = &[KeyColumn {
-    expr: "create_time",
-    null_low: "''",
-}];
-const DATE_COL: &[KeyColumn] = &[KeyColumn {
-    expr: "date",
-    null_low: "''",
-}];
-const HOLIDAY_DATE_COL: &[KeyColumn] = &[KeyColumn {
-    expr: "holiday_date",
-    null_low: "''",
-}];
-const WORK_DATE_COL: &[KeyColumn] = &[KeyColumn {
-    expr: "work_date",
-    null_low: "''",
-}];
-const YEAR_MONTH_COL: &[KeyColumn] = &[
-    KeyColumn {
-        expr: "year",
-        null_low: "''",
-    },
-    KeyColumn {
-        expr: "month",
-        null_low: "''",
-    },
-];
+const CREATED_AT_COL: &[KeyColumn] = &[KeyColumn::text("create_time")];
+const DATE_COL: &[KeyColumn] = &[KeyColumn::text("date")];
+const HOLIDAY_DATE_COL: &[KeyColumn] = &[KeyColumn::text("holiday_date")];
+const WORK_DATE_COL: &[KeyColumn] = &[KeyColumn::text("work_date")];
+// O34：year 恒 4 位定宽，字典序与数值序等价，保留文本语义；
+// month 是月份数字，TEXT 未补零时 '10' < '2'，必须按数字语义排序。
+// 两者都经同一 `KeySet` 生成排序键与游标键（O33 的单一来源约束）。
+const YEAR_MONTH_COL: &[KeyColumn] = &[KeyColumn::text("year"), KeyColumn::numeric_text("month")];
 
 /// next 页的游标条件与排序键一致（见 shared::db::keyset::next_where）。
 fn keyset_next_where(ks: &KeySet<'_>) -> String {
