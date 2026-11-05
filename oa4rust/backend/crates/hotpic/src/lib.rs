@@ -26,7 +26,10 @@ pub async fn exists_check(
     let client = shared::db::acquire(&pool).await?;
     let count: i64 = client
         .query_one(
-            "SELECT COUNT(*) FROM x_hotpic WHERE application = $1 AND info_id = $2 AND deleted_at IS NULL",
+            // 读路径：精确键 OR 全局（空键对）。全局行在任何 application 视图下可见。
+            "SELECT COUNT(*) FROM x_hotpic \
+             WHERE deleted_at IS NULL \
+               AND ((application = $1 AND info_id = $2) OR (application = '' AND info_id = ''))",
             &[&application, &info_id],
         )
         .await
@@ -102,7 +105,12 @@ pub async fn list_by_application_and_info_id(
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
-            "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE application = $1 AND info_id = $2 AND deleted_at IS NULL ORDER BY create_time DESC",
+            "SELECT id, application, info_id, title, image_url, creator, \
+                    create_time::text AS create_time \
+             FROM x_hotpic \
+             WHERE deleted_at IS NULL \
+               AND ((application = $1 AND info_id = $2) OR (application = '' AND info_id = '')) \
+             ORDER BY create_time DESC",
             &[&application, &info_id],
         )
         .await
@@ -115,9 +123,9 @@ pub async fn list_by_application_and_info_id(
                 ("id".to_string(), Value::String(row.get("id"))),
                 (
                     "application".to_string(),
-                    Value::String(application.clone()),
+                    Value::String(row.get("application")),
                 ),
-                ("infoId".to_string(), Value::String(info_id.clone())),
+                ("infoId".to_string(), Value::String(row.get("info_id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 (
                     "creator".to_string(),

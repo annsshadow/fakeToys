@@ -1519,6 +1519,33 @@ hotpic 5 条（`application`/`infoId`）+ portal page 2 条（`portalId`），�
 `x_hotpic` 无 `default`/`0` 真实键 → 登记为「未完成功能（无后端支撑的空壳）」；
 `x_portal` 零行 → 前端写死 `portal/default` 本身是错的，停止修复。
 
+**①-a 2026-11-05 后续裁定：hotpic 改判「全局热点图」 → 5 条已转可用**
+`x_hotpic` 生产库 51 行 `application=''`/`info_id=''` 说明「无所属应用 = 全局」这条路径事实上已存在，
+只是三条读路径都按精确键匹配、把全局行丢掉（**写成功、读不到**）。裁定采用全局模型并落地：
+
+- **约定显式化（此前只存在于数据里、没写在任何文档）**：`(application, info_id)` 两列皆空串 =
+  **部署级全局热点图**，在任何 application 视图下可见。代码里以 `GLOBAL_APPLICATION` / `GLOBAL_INFO_ID`
+  常量 + `HotpicScope::global()` 具名表达，注释写明语义；半截参数（只给一列）→ 400，不把半截当全局。
+- **读路径**统一为精确匹配 `(application, info_id)` **或**全局（两列皆 `''`），只用 AND/OR 精确比较，
+  不做 `LIKE` / `IS NULL` 混用 / `COALESCE` 兜底：
+  `hotpic_assemble_control::user_hotpic_application_infoId`、`hotpic::{exists_check,list_by_application_and_info_id}`、
+  `hotpic_core_entity::{list_by_app_and_info,exists_check}`（SeaORM `visible_scope` Condition）。
+- **可见性三段断言**（`hotpic_global_scope_contract`）：全局行在任意视图可见；特定 `(application, infoId)`
+  行只在该视图可见；写错键的行（如 `('default','0')`）仍然读不到——写侧错误不被读侧全局兜底掩盖。
+- **写后必读**：5 条写端点（`POST /api/hotpic/create/hotpic`、`POST /api/hotpic/assemble/control/user/hotpic`、
+  `POST /api/hotpic/assemble/control/update/control/config`、`GET /api/hotpic_assemble_control/create/hotpic`、
+  `GET /api/hotpic_assemble_control/update/control/config`）各自缺省创建后回库断言 `application=''`/`info_id=''`
+  且 title/image_url 同值。
+- **51 行存活证据（核心）**：对开发库 `oa4rust` 发真实 HTTP 请求
+  `GET /api/hotpic/user/hotpic/it-probe-view/it-probe-info`，实测 `type=success`、`count=51`、
+  `data` 长度 **51**——此前这 51 行「写成功、读不到」，现在在任意（无匹配行的）视图下全部可见。
+  隔离库内同规模用例（造 51 行空键）由 `hotpic_global_scope_contract` 覆盖。
+
+**①-b portal page 2 条（保持 400，本族唯一残留）**
+依赖关系：**先有门户创建流程与至少一条真实门户行，才谈页面创建**。`x_portal` 零行、迁移无
+`INSERT INTO x_portal` = 门户功能没有数据底座。前端 [`PortalApp.vue:437`](../../frontend/apps/desktop/src/views/PortalApp.vue#L437)
+写死的 `portal/default` 单独登记为**错误常量**（不是待办默认值），不得据此补数据或补默认门户 id。
+
 **② 语义降级：状态值以具名常量落库**
 `pp_c_draft.xstatus` 无 CHECK / 无 DEFAULT / 无读方三项证据成立，`draft/start` 写 `'started'`
 并收进唯一常量。它是一条**契约待办**：将来引入状态词表时，必须迁移已存在的 `started` 行，不许新旧混用。
@@ -1528,6 +1555,9 @@ hotpic 5 条（`application`/`infoId`）+ portal page 2 条（`portalId`），�
 - **可用**的唯一判据：真实 HTTP **200** + 业务级响应体断言；写路径再加「写后必读」同值断言。
 - 只把 500 改成 400（哪怕文案更明确）**不算修好**，只能算「错误可控、不再污染日志」，必须进降级清单。
 - 42 条里：**35 条**回到 200 且有行为断言；**7 条**只到 400（见上表 ①）。
+  - 该族（批次 6 的实体引用降级）当时结论：**未完成，35 可用 / 7 不可用**，基线清零不等于全部修好。
+  - 2026-11-05 后续：hotpic 5 条按「全局 = 空键」模型转可用（①-a），当前 **40 可用 / 2 不可用**；
+    残留的 2 条是 portal page，保持 400（①-b）。
 - 基线归零只说明「没有已知的 500 了」，不说明这个族的产品功能完整。
 
 ### O24-3 基线新起点（PR #162 合并后）

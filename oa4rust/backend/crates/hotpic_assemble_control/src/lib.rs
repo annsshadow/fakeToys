@@ -133,29 +133,24 @@ pub async fn update_control_config(
         .and_then(|v| v.as_bool())
         .unwrap_or(true);
 
-    // 实体引用：`x_hotpic.application` / `info_id` 均 NOT NULL 且无 DEFAULT/CHECK，
-    // 唯一来源是 body；缺任一项一律 400，不编造父实体 id。
-    let application = config
-        .get("application")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
-    let info_id = config
-        .get("infoId")
-        .and_then(|v| v.as_str())
-        .unwrap_or("")
-        .to_string();
-    if application.is_empty() || info_id.is_empty() {
-        return Err(AppError::BadRequest(
-            "missing required parameter: application/infoId".to_string(),
-        ));
-    }
+    // 归属键：空键对 = 部署级全局热点图；半截参数 → 400。
+    let scope = HotpicScope::from_request(
+        config.get("application").and_then(|v| v.as_str()),
+        config.get("infoId").and_then(|v| v.as_str()),
+    )?;
 
     let result = client
         .execute(
             "INSERT INTO x_hotpic (id, application, info_id, title, image_url, creator, create_time) \
              VALUES ($1, $2, $3, $4, $5, $6, NOW())",
-            &[&id, &application, &info_id, &name, &"", &"system"],
+            &[
+                &id,
+                &scope.application,
+                &scope.info_id,
+                &name,
+                &"",
+                &"system",
+            ],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -311,6 +306,44 @@ pub async fn get_hotpic(
     }
 }
 
+/// `x_hotpic` 的归属键 `(application, info_id)`。
+///
+/// **两列皆为空串 = 部署级全局热点图**。这个约定此前只存在于数据里（生产库 51 行空键、
+/// 读路径不认），2026-11 起在代码里显式化：全局行在任何 application 视图下都可见。
+pub(crate) const GLOBAL_APPLICATION: &str = "";
+pub(crate) const GLOBAL_INFO_ID: &str = "";
+
+/// 写路径的归属参数：要么全局（空键），要么具体 `(application, infoId)`。
+/// 只给其中一个属于半截参数，直接 400——不许把半截当成全局，也不许编造另一半。
+struct HotpicScope {
+    application: String,
+    info_id: String,
+}
+
+impl HotpicScope {
+    fn from_request(application: Option<&str>, info_id: Option<&str>) -> Result<Self, AppError> {
+        let application = application.unwrap_or(GLOBAL_APPLICATION).trim();
+        let info_id = info_id.unwrap_or(GLOBAL_INFO_ID).trim();
+        match (application.is_empty(), info_id.is_empty()) {
+            (true, true) => Ok(Self::global()),
+            (false, false) => Ok(Self {
+                application: application.to_string(),
+                info_id: info_id.to_string(),
+            }),
+            _ => Err(AppError::BadRequest(
+                "application 与 infoId 必须同时提供或同时留空（空键 = 全局热点图）".to_string(),
+            )),
+        }
+    }
+
+    fn global() -> Self {
+        Self {
+            application: GLOBAL_APPLICATION.to_string(),
+            info_id: GLOBAL_INFO_ID.to_string(),
+        }
+    }
+}
+
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn create_hotpic(
@@ -324,15 +357,8 @@ pub async fn create_hotpic(
     let id = uuid::Uuid::new_v4().to_string();
     let title = req.title.unwrap_or_default();
     let image_url = req.imageUrl.unwrap_or_default();
-    // 实体引用：`x_hotpic.application` / `info_id` 均 NOT NULL 且无 DEFAULT/CHECK，
-    // 唯一来源是 body；缺任一项一律 400，不编造父实体 id（避免悬挂外键/写到他人资源下）。
-    let application = req.application.unwrap_or_default();
-    let info_id = req.infoId.unwrap_or_default();
-    if application.is_empty() || info_id.is_empty() {
-        return Err(AppError::BadRequest(
-            "missing required parameter: application/infoId".to_string(),
-        ));
-    }
+    // 归属键：空键对 = 部署级全局热点图；半截参数 → 400。
+    let scope = HotpicScope::from_request(req.application.as_deref(), req.infoId.as_deref())?;
     // 属主以会话登录人为事实源（原恒写 "system"，属主列形同虚设）。
     let creator = session.person_unique.clone();
 
@@ -340,7 +366,14 @@ pub async fn create_hotpic(
         .execute(
             "INSERT INTO x_hotpic (id, application, info_id, title, image_url, creator, create_time) \
              VALUES ($1, $2, $3, $4, $5, $6, NOW())",
-            &[&id, &application, &info_id, &title, &image_url, &creator],
+            &[
+                &id,
+                &scope.application,
+                &scope.info_id,
+                &title,
+                &image_url,
+                &creator,
+            ],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -738,8 +771,15 @@ pub async fn user_hotpic_application_infoId(
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
-            "SELECT id, title, image_url, creator, create_time::text AS create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
-            &[&info_id],
+            // 读路径：精确键 OR 全局（空键对）。全局行在任何 application 视图下可见；
+            // 原实现按 `id = info_id` 查、完全忽略 application，已按归属键修正。
+            "SELECT id, application, info_id, title, image_url, creator, \
+                    create_time::text AS create_time \
+             FROM x_hotpic \
+             WHERE deleted_at IS NULL \
+               AND ((application = $1 AND info_id = $2) OR (application = '' AND info_id = '')) \
+             ORDER BY create_time DESC NULLS LAST LIMIT 1",
+            &[&application, &info_id],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -765,7 +805,11 @@ pub async fn user_hotpic_application_infoId(
                     row.get::<_, Option<String>>("create_time").into(),
                 ),
             ]);
-            result.insert("application".to_string(), Value::String(application));
+            result.insert(
+                "application".to_string(),
+                Value::String(row.get("application")),
+            );
+            result.insert("infoId".to_string(), Value::String(row.get("info_id")));
             Ok(Json(ActionResult::success(Value::Object(result))))
         }
         None => Ok(Json(ActionResult::error("hotpic not found"))),
