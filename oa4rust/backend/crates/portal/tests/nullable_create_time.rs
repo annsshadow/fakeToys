@@ -69,7 +69,7 @@ fn find<'a>(items: &'a [Value], id: &str) -> &'a Value {
 }
 
 #[tokio::test]
-async fn page_list_decodes_null_create_time_and_update_time() {
+async fn page_list_and_get_page_decode_null_create_time_and_update_time() {
     let pool = fresh_scratch().await;
 
     let c = pool.get().await.expect("scratch 连接");
@@ -122,42 +122,20 @@ async fn page_list_decodes_null_create_time_and_update_time() {
         timed_row.get("updateTime")
     );
 
-    drop_scratch().await;
-}
-
-#[tokio::test]
-async fn get_page_decodes_null_create_time_and_update_time() {
-    let pool = fresh_scratch().await;
-
-    let c = pool.get().await.expect("scratch 连接");
-    c.execute(
-        "INSERT INTO x_portal_page (id, portal_id, name, status, category, content, creator, \
-         create_time, update_time) VALUES \
-         ('o36-pp-single-null', 'o36-portal', 'A_null', 'published', 'o36-cat', NULL, 'p1', NULL, NULL)",
-        &[],
-    )
-    .await
-    .expect("seed x_portal_page");
-    drop(c);
-
-    let res = portal::get_page(
-        Extension(pool.clone()),
-        Path("o36-pp-single-null".to_string()),
-    )
-    .await
-    .expect("单条详情不得 500");
+    // 单条详情：同一 NULL 行。
+    let res = portal::get_page(Extension(pool.clone()), Path("o36-pp-null".to_string()))
+        .await
+        .expect("单条详情不得 500");
     let obj = res.0.data.expect("get_page 缺 data");
-    let null_row = &obj;
-
     assert_eq!(
-        null_row.get("createTime").and_then(|v| v.as_str()),
+        obj.get("createTime").and_then(|v| v.as_str()),
         Some(""),
-        "NULL create_time 必须归一为空串"
+        "get_page: NULL create_time 必须归一为空串"
     );
     assert_eq!(
-        null_row.get("updateTime").and_then(|v| v.as_str()),
+        obj.get("updateTime").and_then(|v| v.as_str()),
         Some(""),
-        "NULL update_time 必须归一为空串"
+        "get_page: NULL update_time 必须归一为空串"
     );
 
     drop_scratch().await;
