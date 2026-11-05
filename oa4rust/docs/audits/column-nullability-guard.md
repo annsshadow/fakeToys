@@ -85,3 +85,4 @@ python scripts/scan_row_get_column_mismatch.py --self-test  # 11 条注入用例
   `bbs/src/subject.rs` 4 处、`cms_assemble_control` 的 `TEXT[]` 3 处。
 - 新增 handler 时先跑一遍脚本；若 `NULLRISK` 是「业务上该列为空」，解码改 `Option<T>`
   并在响应里给空串默认值，与 O36-C 的修法一致。
+
