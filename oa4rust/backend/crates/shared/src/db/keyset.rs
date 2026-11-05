@@ -28,26 +28,44 @@ pub enum SortDir {
     Desc,
 }
 
+/// 排序键列。`expr` 是列引用；`null_low` 是降序时把 NULL 归一到的「同类型最小值」
+/// 字面量（文本 `''`、时间戳 `'-infinity'::timestamp` 等）。归一化后的类型必须
+/// 与列本身一致，否则 `COALESCE` 会在运行时做非法类型转换（如把 `''` 塞进 timestamp）。
+#[derive(Clone, Copy)]
+pub struct KeyColumn {
+    pub expr: &'static str,
+    pub null_low: &'static str,
+}
+
 /// 复合 keyset：`columns` 为排序键，`tiebreak` 为并列裁决键（通常为 id）。
 #[derive(Clone, Copy)]
 pub struct KeySet<'a> {
     pub table: &'a str,
-    pub columns: &'a [&'a str],
+    pub columns: &'a [KeyColumn],
     pub dir: SortDir,
     pub tiebreak: &'a str,
 }
 
-fn key_expr(column: &str, dir: SortDir) -> String {
+fn value_expr(expr: &str, null_low: &str) -> String {
+    format!("COALESCE({expr}, {null_low})")
+}
+
+fn key_expr(expr: &str, null_low: &str, dir: SortDir) -> String {
     match dir {
-        SortDir::Desc => format!("COALESCE({column}, '')"),
-        SortDir::Asc => format!("({column} IS NULL), COALESCE({column}, '')"),
+        SortDir::Desc => value_expr(expr, null_low),
+        SortDir::Asc => format!("({expr} IS NULL), {}", value_expr(expr, null_low)),
     }
 }
 
 impl KeySet<'_> {
     fn key_list(&self) -> String {
-        let mut parts: Vec<String> = self.columns.iter().map(|c| key_expr(c, self.dir)).collect();
-        parts.push(key_expr(self.tiebreak, self.dir));
+        let mut parts: Vec<String> = self
+            .columns
+            .iter()
+            .map(|c| key_expr(c.expr, c.null_low, self.dir))
+            .collect();
+        // id 是文本列，NULL 归一为 ''（与 id 的文本比较同型）。
+        parts.push(key_expr(self.tiebreak, "''", self.dir));
         parts.join(", ")
     }
 
@@ -73,21 +91,21 @@ impl KeySet<'_> {
     /// 「游标之前的最近一页」，调用方拿到结果后需 `reverse()` 还原显示顺序。
     pub fn order_by(&self, reverse: bool) -> String {
         let mut parts: Vec<String> = Vec::new();
-        let mut push = |column: &str| match self.dir {
+        let mut push = |expr: &str, null_low: &str| match self.dir {
             SortDir::Desc => {
                 let o = if reverse { "ASC" } else { "DESC" };
-                parts.push(format!("COALESCE({column}, '') {o}"));
+                parts.push(format!("{} {o}", value_expr(expr, null_low)));
             }
             SortDir::Asc => {
                 let o = if reverse { "DESC" } else { "ASC" };
-                parts.push(format!("({column} IS NULL) {o}"));
-                parts.push(format!("COALESCE({column}, '') {o}"));
+                parts.push(format!("({expr} IS NULL) {o}"));
+                parts.push(format!("{} {o}", value_expr(expr, null_low)));
             }
         };
         for c in self.columns {
-            push(c);
+            push(c.expr, c.null_low);
         }
-        push(self.tiebreak);
+        push(self.tiebreak, "''");
         parts.join(", ")
     }
 }

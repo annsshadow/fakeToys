@@ -6,7 +6,7 @@ use base64::Engine;
 use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{
-    db::keyset::{next_where, KeySet, SortDir},
+    db::keyset::{next_where, KeyColumn, KeySet, SortDir},
     error::AppError,
     response::ActionResult,
 };
@@ -17,7 +17,11 @@ pub mod routes;
 mod tests_u2;
 
 // O33：x_message / x_message_consume 的 keyset 游标（id）必须与排序键 create_time 一致。
-const CREATED_AT_COL: &[&str] = &["create_time"];
+// create_time 为 TEXT（见 006/032 migration），NULL 归一为 ''。
+const CREATED_AT_COL: &[KeyColumn] = &[KeyColumn {
+    expr: "create_time",
+    null_low: "''",
+}];
 
 fn created_at_keyset(table: &'static str) -> KeySet<'static> {
     KeySet {

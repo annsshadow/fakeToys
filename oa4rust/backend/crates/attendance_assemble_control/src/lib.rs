@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use shared::{
     db::dialect,
-    db::keyset::{next_where, KeySet, SortDir},
+    db::keyset::{next_where, KeyColumn, KeySet, SortDir},
     error::AppError,
     response::ActionResult,
 };
@@ -23,11 +23,33 @@ pub mod routes;
 // 游标仍是上一页末行的 id（旧契约不变）；分页条件改为按 (排序键..., id) 的
 // 行值比较，并按同一组键排序，避免 `id > $1` 与 `ORDER BY 另一列` 组合造成
 // 漏行/重行。NULL 统一 NULLS LAST（见 shared::db::keyset）。
-const CREATED_AT_COL: &[&str] = &["create_time"];
-const DATE_COL: &[&str] = &["date"];
-const HOLIDAY_DATE_COL: &[&str] = &["holiday_date"];
-const WORK_DATE_COL: &[&str] = &["work_date"];
-const YEAR_MONTH_COL: &[&str] = &["year", "month"];
+// 以下列在考勤库中均为 TEXT（见 032 migration），NULL 归一为 ''。
+const CREATED_AT_COL: &[KeyColumn] = &[KeyColumn {
+    expr: "create_time",
+    null_low: "''",
+}];
+const DATE_COL: &[KeyColumn] = &[KeyColumn {
+    expr: "date",
+    null_low: "''",
+}];
+const HOLIDAY_DATE_COL: &[KeyColumn] = &[KeyColumn {
+    expr: "holiday_date",
+    null_low: "''",
+}];
+const WORK_DATE_COL: &[KeyColumn] = &[KeyColumn {
+    expr: "work_date",
+    null_low: "''",
+}];
+const YEAR_MONTH_COL: &[KeyColumn] = &[
+    KeyColumn {
+        expr: "year",
+        null_low: "''",
+    },
+    KeyColumn {
+        expr: "month",
+        null_low: "''",
+    },
+];
 
 /// next 页的游标条件与排序键一致（见 shared::db::keyset::next_where）。
 fn keyset_next_where(ks: &KeySet<'_>) -> String {
@@ -43,7 +65,7 @@ fn month_keyset(table: &'static str) -> KeySet<'static> {
     }
 }
 
-fn date_keyset(table: &'static str, column: &'static [&'static str]) -> KeySet<'static> {
+fn date_keyset(table: &'static str, column: &'static [KeyColumn]) -> KeySet<'static> {
     KeySet {
         table,
         columns: column,

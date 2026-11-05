@@ -261,8 +261,10 @@ async fn cursor_page(pool: &Pool, flag: &str, count: i64, next: bool) -> Handler
     // LIMIT 参数 PG 定 int8：String 绑定 WrongType 客户端 500（O10 实证）——保留 i64。
     let limit = count.clamp(1, MAX_BATCH_IDS as i64);
     let rows = if flag == "0" || flag == "(0)" {
+        let ks = crate::created_at_keyset(PERSON_TABLE);
         let sql = format!(
-            "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1"
+            "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL ORDER BY {} LIMIT $1",
+            ks.order_by(false)
         );
         client
             .query(&sql, &[&limit])

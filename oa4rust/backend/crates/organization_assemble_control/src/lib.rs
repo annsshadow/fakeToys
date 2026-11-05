@@ -9,7 +9,7 @@ use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::Value;
 use shared::{
-    db::keyset::{next_where, KeySet, SortDir},
+    db::keyset::{next_where, KeyColumn, KeySet, SortDir},
     error::AppError,
     response::ActionResult,
 };
@@ -21,7 +21,11 @@ mod u2_person;
 mod u2_router;
 
 // O33：组织域各列表的 keyset 游标（id）必须与排序键 create_time 一致。
-pub(crate) const CREATED_AT_COL: &[&str] = &["create_time"];
+// create_time 为 TIMESTAMP（见 022 migration），NULL 归一为同型最小值 -infinity。
+pub(crate) const CREATED_AT_COL: &[KeyColumn] = &[KeyColumn {
+    expr: "create_time",
+    null_low: "'-infinity'::timestamp",
+}];
 
 pub(crate) fn created_at_keyset(table: &'static str) -> KeySet<'static> {
     KeySet {
@@ -51,7 +55,10 @@ pub async fn organization_assemble_control_role_list_flag_next_count(
     let rows = if flag == "0" {
         client
             .query(
-                "SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY create_time DESC LIMIT $1",
+                &format!(
+                    "SELECT id, name, description, creator, create_time::text FROM x_org_role ORDER BY {} LIMIT $1",
+                    created_at_keyset("x_org_role").order_by(false)
+                ),
                 &[&count],
             )
             .await
@@ -2993,7 +3000,10 @@ pub async fn unitduty_list_flag_prev_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty ORDER BY create_time DESC LIMIT $1",
+            &format!(
+                "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty ORDER BY {} LIMIT $1",
+                created_at_keyset("x_org_duty").order_by(false)
+            ),
             &[&count],
         ).await?
     } else {
@@ -3056,7 +3066,10 @@ pub async fn unitduty_list_flag_next_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty ORDER BY create_time DESC LIMIT $1",
+            &format!(
+                "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty ORDER BY {} LIMIT $1",
+                created_at_keyset("x_org_duty").order_by(false)
+            ),
             &[&count],
         ).await?
     } else {
@@ -3350,7 +3363,10 @@ pub async fn unitattribute_list_flag_prev_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute ORDER BY create_time DESC LIMIT $1",
+            &format!(
+                "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute ORDER BY {} LIMIT $1",
+                created_at_keyset("x_org_unit_attribute").order_by(false)
+            ),
             &[&count],
         ).await?
     } else {
@@ -3413,7 +3429,10 @@ pub async fn unitattribute_list_flag_next_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute ORDER BY create_time DESC LIMIT $1",
+            &format!(
+                "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute ORDER BY {} LIMIT $1",
+                created_at_keyset("x_org_unit_attribute").order_by(false)
+            ),
             &[&count],
         ).await?
     } else {
@@ -4035,7 +4054,10 @@ pub async fn personattribute_list_flag_prev_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute ORDER BY create_time DESC LIMIT $1",
+            &format!(
+                "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute ORDER BY {} LIMIT $1",
+                created_at_keyset("x_org_person_attribute").order_by(false)
+            ),
             &[&count],
         ).await?
     } else {
@@ -4098,7 +4120,10 @@ pub async fn personattribute_list_flag_next_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute ORDER BY create_time DESC LIMIT $1",
+            &format!(
+                "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute ORDER BY {} LIMIT $1",
+                created_at_keyset("x_org_person_attribute").order_by(false)
+            ),
             &[&count],
         ).await?
     } else {
@@ -4449,7 +4474,10 @@ pub async fn identity_list_flag_prev_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time DESC LIMIT $1",
+            &format!(
+                "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY {} LIMIT $1",
+                created_at_keyset("x_org_identity").order_by(false)
+            ),
             &[&count],
         ).await?
     } else {
@@ -4512,7 +4540,10 @@ pub async fn identity_list_flag_next_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY create_time DESC LIMIT $1",
+            &format!(
+                "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity ORDER BY {} LIMIT $1",
+                created_at_keyset("x_org_identity").order_by(false)
+            ),
             &[&count],
         ).await?
     } else {
@@ -4771,7 +4802,10 @@ pub async fn group_list_flag_prev_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time DESC LIMIT $1",
+            &format!(
+                "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY {} LIMIT $1",
+                created_at_keyset("x_org_group").order_by(false)
+            ),
             &[&count],
         ).await?
     } else {
@@ -4831,7 +4865,10 @@ pub async fn group_list_flag_next_count(
     let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY create_time DESC LIMIT $1",
+            &format!(
+                "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group ORDER BY {} LIMIT $1",
+                created_at_keyset("x_org_group").order_by(false)
+            ),
             &[&count],
         ).await?
     } else {
