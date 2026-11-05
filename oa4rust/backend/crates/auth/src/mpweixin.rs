@@ -131,6 +131,26 @@ fn mpweixin_config() -> Result<(String, String), AppError> {
     Ok((app_id, app_secret))
 }
 
+/// 读取微信响应里的 errcode。**缺省不是失败**：`cgi-bin/token` 与
+/// `sns/oauth2/access_token` 的成功响应都不带 `errcode`，只有出错时才带。
+fn wechat_errcode(resp: &Value) -> Option<i64> {
+    resp.get("errcode").and_then(|v| v.as_i64())
+}
+
+/// 微信业务失败（显式 errcode≠0）→ Err，带上 errcode/errmsg 便于定位。
+fn ensure_wechat_ok(resp: &Value, context: &str) -> Result<(), AppError> {
+    match wechat_errcode(resp) {
+        Some(code) if code != 0 => {
+            let errmsg = resp.get("errmsg").and_then(|v| v.as_str()).unwrap_or("");
+            Err(AppError::internal_with_source(
+                concat!(file!(), ":", line!()),
+                format!("{context} errcode={code} errmsg={errmsg}"),
+            ))
+        }
+        _ => Ok(()),
+    }
+}
+
 /// 微信 code→openid 交换
 async fn mpweixin_openid(code: &str) -> Result<String, AppError> {
     let (app_id, app_secret) = mpweixin_config()?;
@@ -150,13 +170,7 @@ async fn mpweixin_openid(code: &str) -> Result<String, AppError> {
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
-    let errcode = resp.get("errcode").and_then(|v| v.as_i64()).unwrap_or(-1);
-    if errcode != 0 {
-        return Err(AppError::internal_with_source(
-            concat!(file!(), ":", line!()),
-            format!("wechat oauth access_token errcode={errcode}"),
-        ));
-    }
+    ensure_wechat_ok(&resp, "wechat oauth access_token")?;
     resp.get("openid")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
@@ -207,13 +221,7 @@ async fn mpweixin_access_token() -> Result<String, AppError> {
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
-    let errcode = resp.get("errcode").and_then(|v| v.as_i64()).unwrap_or(-1);
-    if errcode != 0 {
-        return Err(AppError::internal_with_source(
-            concat!(file!(), ":", line!()),
-            format!("wechat cgi-bin/token errcode={errcode}"),
-        ));
-    }
+    ensure_wechat_ok(&resp, "wechat cgi-bin/token")?;
 
     let token = resp
         .get("access_token")
@@ -474,6 +482,77 @@ pub fn router() -> Router {
             "/api/mpweixin/menu/test/send/to/{person}",
             post(mpweixin_test_send),
         )
+}
+
+#[cfg(test)]
+mod wechat_errcode_tests {
+    use super::*;
+
+    #[test]
+    fn errcode_absent_means_success_and_explicit_failure_keeps_cause() {
+        let cases: Vec<(&str, Value, bool)> = vec![
+            (
+                "token 成功响应不带 errcode（真实微信契约）",
+                serde_json::json!({"access_token": "t", "expires_in": 7200}),
+                true,
+            ),
+            (
+                "oauth 成功响应不带 errcode 但带 openid",
+                serde_json::json!({"access_token": "t", "openid": "o-1"}),
+                true,
+            ),
+            (
+                "显式 errcode=0",
+                serde_json::json!({"errcode": 0, "errmsg": "ok"}),
+                true,
+            ),
+            (
+                "显式业务失败",
+                serde_json::json!({"errcode": 40001, "errmsg": "invalid credential"}),
+                false,
+            ),
+            (
+                "errcode 类型异常（非整数）按缺省处理",
+                serde_json::json!({"errcode": "40001"}),
+                true,
+            ),
+        ];
+        assert!(cases.len() >= 4, "errcode 判据用例不得少于 4 条");
+
+        for (name, resp, expect_ok) in cases {
+            let result = ensure_wechat_ok(&resp, "probe");
+            assert_eq!(result.is_ok(), expect_ok, "用例「{name}」判定不符");
+        }
+
+        let err = ensure_wechat_ok(
+            &serde_json::json!({"errcode": 40001, "errmsg": "invalid credential"}),
+            "probe",
+        )
+        .unwrap_err();
+        match err {
+            AppError::InternalWithSource { cause, .. } => {
+                assert!(cause.contains("errcode=40001"), "缺少 errcode：{cause}");
+                assert!(
+                    cause.contains("invalid credential"),
+                    "缺少 errmsg：{cause}"
+                );
+            }
+            other => panic!("期望 InternalWithSource，实际 {other:?}"),
+        }
+    }
+
+    #[test]
+    fn wechat_errcode_distinguishes_absent_from_zero() {
+        assert_eq!(
+            wechat_errcode(&serde_json::json!({"access_token": "t"})),
+            None
+        );
+        assert_eq!(wechat_errcode(&serde_json::json!({"errcode": 0})), Some(0));
+        assert_eq!(
+            wechat_errcode(&serde_json::json!({"errcode": 40001})),
+            Some(40001)
+        );
+    }
 }
 
 #[cfg(test)]
