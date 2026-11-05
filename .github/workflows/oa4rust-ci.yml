@@ -268,6 +268,55 @@ jobs:
       - name: Run integration scenarios (ignored)
         run: python3 scripts/run_integration_scenarios.py
 
+  # ── 安全回归门禁（O26）：逐条断言已实证的越权 / fail-open / 假门 / 软门 ────────
+  # 与 seeded-route-scan 同属「行为门禁 + 棘轮基线」，但判定粒度是「端点 × 身份 ×
+  # 预期」：PASS 必须是明确的 401/403 且零写入；2xx 读到 canary 或改动受害者行 = LEAK；
+  # 404 / 5xx / 种子漂移 / 2xx 但行未变 = UNVERIFIED —— **不算已修**。
+  # 基线 tests/security_regression_baseline.txt 记录仍非 PASS 的用例集合：
+  #   - 基线外新增非 PASS → 红（新引入越权当天被拦）
+  #   - 基线内某项这次 PASS 却没减行 → 红（修了不减基线等于棘轮失效）
+  # 门禁自己建 scratch 库 oa_par_gate 并跑全量迁移，不读写共享测试库。
+  security-regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: oa4rust/backend
+    env:
+      SCCACHE_GHA_ENABLED: "true"
+      RUSTC_WRAPPER: sccache
+      DATABASE_DIALECT: postgres
+      DATABASE_URL: postgres://o2server:password@localhost:5432/oa4rust
+    services:
+      postgres:
+        image: postgres@sha256:f1c3376c26f2609ab9f29f71f824103fe2fcd8ee0346485cb6122a4f93df6f94
+        env:
+          POSTGRES_USER: o2server
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: oa4rust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87
+        with:
+          toolchain: 1.98.1
+      - name: Setup sccache
+        uses: mozilla-actions/sccache-action@7d986dd989559c6ecdb630a3fd2557667be217ad # v0.0.9
+      - name: Cache cargo registry
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('oa4rust/backend/Cargo.lock') }}
+      - name: Run security regression gate
+        run: python scripts/security_regression_gate.py
+
   # ── 种子化路由扫描（行为级门禁，棘轮基线）─────────────────────────────
   # 2026-11-05：静态扫描器认不出裸 row.get，且 500 只在「表里有行」时才触发。
   # 本 job 真的往每张 public 表种 1 行、真的打全量路由，断言当前 500 集合与
