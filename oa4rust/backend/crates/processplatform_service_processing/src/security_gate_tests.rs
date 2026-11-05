@@ -2088,7 +2088,7 @@ mod security_gate_tests {
         // ① 他人会话打两把删除 → 403，且不留任何写痕迹
         let r = crate::data_work_id_delete(
             Extension(pool.clone()),
-            Some(Extension(sess(&intruder))),
+            Some(Extension(shared::testing::test_session(&intruder))),
             axum::extract::Path(("w-ignored".to_string(), work_id.clone())),
         )
         .await
@@ -2099,7 +2099,7 @@ mod security_gate_tests {
         );
         let r = crate::data_work_id_path_delete(
             Extension(pool.clone()),
-            Some(Extension(sess(&intruder))),
+            Some(Extension(shared::testing::test_session(&intruder))),
             axum::extract::Path((work_id.clone(), "tasks".to_string())),
         )
         .await
@@ -2156,7 +2156,7 @@ mod security_gate_tests {
         seed_work(&pool, &orphan, "").await;
         let r = crate::data_work_id_delete(
             Extension(pool.clone()),
-            Some(Extension(sess(&intruder))),
+            Some(Extension(shared::testing::test_session(&intruder))),
             axum::extract::Path(("w-ignored".to_string(), orphan.clone())),
         )
         .await
@@ -3651,5 +3651,196 @@ mod b53_gate_tests {
             leaked.is_empty(),
             "非管理员未回 403（出现 Internal 就是门插在读库之后）：{leaked:?}"
         );
+    }
+
+    /// P0-b（审计第六轮）：`creator=NULL` 的 work，`u4_require_actor` 曾把
+    /// 「没有归属信息」当成「无需归属校验」直接放行 —— 普通会话 terminate 返回 200
+    /// 且 `pending → terminated`。修后：空归属只允许 admin；admin 代终止必须落
+    /// `x_record` 留痕（creator = 实际操办人）。
+    #[tokio::test]
+    #[ignore = "需真实 PostgreSQL（DATABASE_URL）"]
+    async fn p0b_empty_creator_terminate_is_admin_only_and_audited() {
+        if !shared::testing::is_db_available().await {
+            eprintln!("skip: PG unavailable");
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let tag = format!("p0b-{}", uuid::Uuid::new_v4().simple());
+        let orphan = format!("{tag}-orphan");
+        let owned = format!("{tag}-owned");
+        let intruder = format!("{tag}-intruder");
+        let owner = format!("{tag}-owner");
+        let client = pool.get().await.unwrap();
+        client
+            .execute(
+                "INSERT INTO x_work (id, title, process, application, work_status, creator) \
+                 VALUES ($1, $2, $3, $4, $5, NULL)",
+                &[
+                    &orphan,
+                    &"p0b orphan".to_string(),
+                    &"p0b".to_string(),
+                    &"p0b".to_string(),
+                    &"pending".to_string(),
+                ],
+            )
+            .await
+            .unwrap();
+        client
+            .execute(
+                "INSERT INTO x_work (id, title, process, application, work_status, creator) \
+                 VALUES ($1, $2, $3, $4, $5, $6)",
+                &[
+                    &owned,
+                    &"p0b owned".to_string(),
+                    &"p0b".to_string(),
+                    &"p0b".to_string(),
+                    &"pending".to_string(),
+                    &owner,
+                ],
+            )
+            .await
+            .unwrap();
+
+        let status_of = |id: String| {
+            let pool = pool.clone();
+            async move {
+                let c = pool.get().await.unwrap();
+                c.query_opt("SELECT work_status FROM x_work WHERE id = $1", &[&id])
+                    .await
+                    .unwrap()
+                    .and_then(|r| r.get::<_, Option<String>>("work_status"))
+                    .unwrap_or_default()
+            }
+        };
+
+        // ① creator=NULL + 普通会话 → 403，且一行状态都不许动。
+        let r = crate::work_v2_id_terminate(
+            Extension(pool.clone()),
+            Some(Extension(shared::testing::test_session(&intruder))),
+            Path(orphan.clone()),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(r, Err(AppError::Forbidden)),
+            "creator=NULL 不得对普通会话开放终止（实际 {r:?}）"
+        );
+        assert_eq!(
+            status_of(orphan.clone()).await,
+            "pending",
+            "403 时状态不得落库"
+        );
+
+        // ② creator=NULL + admin → 放行，状态落地，且 x_record 记实际操办人。
+        let (admin, role_id) = seed_admin(&pool, &tag).await;
+        let r = crate::work_v2_id_terminate(
+            Extension(pool.clone()),
+            Some(Extension(shared::testing::test_session(&admin))),
+            Path(orphan.clone()),
+        )
+        .await
+        .map(|_| ());
+        assert!(r.is_ok(), "admin 代终止 creator=NULL 应放行（实际 {r:?}）");
+        assert_eq!(status_of(orphan.clone()).await, "terminated");
+        let terminate_records: i64 = client
+            .query_one(
+                "SELECT COUNT(*) AS c FROM x_record WHERE work_id = $1 AND record_type = 'terminate'",
+                &[&orphan],
+            )
+            .await
+            .unwrap()
+            .get("c");
+        assert_eq!(terminate_records, 1, "admin 放行后必须落审计留痕");
+        let record_creator: Option<String> = client
+            .query_opt(
+                "SELECT creator FROM x_record WHERE work_id = $1 AND record_type = 'terminate'",
+                &[&orphan],
+            )
+            .await
+            .unwrap()
+            .and_then(|r| r.get("creator"));
+        assert_eq!(
+            record_creator.as_deref(),
+            Some(admin.as_str()),
+            "审计留痕必须记实际操办人"
+        );
+
+        // ③ creator 非空 + 非本人 → 403（旧口径，不得退化）。
+        let r = crate::work_v2_id_terminate(
+            Extension(pool.clone()),
+            Some(Extension(shared::testing::test_session(&intruder))),
+            Path(owned.clone()),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(r, Err(AppError::Forbidden)),
+            "creator 非空且非本人 terminate 必须 403（实际 {r:?}）"
+        );
+
+        unseed_admin(&pool, &admin, &role_id).await;
+        for id in [orphan.as_str(), owned.as_str()] {
+            client
+                .execute(
+                    "DELETE FROM x_record WHERE work_id = $1",
+                    &[&id.to_string()],
+                )
+                .await
+                .unwrap();
+            client
+                .execute("DELETE FROM x_work WHERE id = $1", &[&id.to_string()])
+                .await
+                .unwrap();
+        }
+    }
+
+    /// 造一个真正带 admin 角色的人（`is_admin` 按 `auth_role.name='admin'` 判定）。
+    async fn seed_admin(pool: &Pool, tag: &str) -> (String, String) {
+        let client = pool.get().await.unwrap();
+        let person = format!("u-{tag}-admin");
+        let role_id = format!("{tag}-role");
+        client
+            .execute(
+                "INSERT INTO auth_role (id, name, disable) VALUES ($1, 'admin', false) \
+                 ON CONFLICT (id) DO NOTHING",
+                &[&role_id],
+            )
+            .await
+            .unwrap();
+        shared::testing::upsert_fixture_person(&client, &person, &person, &person).await;
+        client
+            .execute(
+                "INSERT INTO auth_person_role (person_id, role_id, unit_id) VALUES ($1, $2, $3) \
+                 ON CONFLICT DO NOTHING",
+                &[&person, &role_id, &format!("{tag}-unit")],
+            )
+            .await
+            .unwrap();
+        (person, role_id)
+    }
+
+    async fn unseed_admin(pool: &Pool, person: &str, role_id: &str) {
+        let client = pool.get().await.unwrap();
+        client
+            .execute(
+                "DELETE FROM auth_person_role WHERE person_id = $1",
+                &[&person.to_string()],
+            )
+            .await
+            .unwrap();
+        client
+            .execute(
+                "DELETE FROM auth_person WHERE id = $1",
+                &[&person.to_string()],
+            )
+            .await
+            .unwrap();
+        client
+            .execute(
+                "DELETE FROM auth_role WHERE id = $1",
+                &[&role_id.to_string()],
+            )
+            .await
+            .unwrap();
     }
 }

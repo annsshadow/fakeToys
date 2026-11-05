@@ -109,4 +109,131 @@ mod security_gate_tests {
             .await
             .unwrap();
     }
+
+    /// P0-b（审计第六轮）：`creator=NULL` 的 work，`work_terminate` 的**内联副本**
+    /// 曾用 `filter(!empty)` 把空归属过滤成「无需校验」，普通会话按 ID 就能
+    /// `pending → terminated`。修后：空归属只允许 admin。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn work_terminate_empty_creator_is_admin_only() {
+        if !shared::testing::is_db_available().await {
+            eprintln!("skip: PG unavailable");
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let tag = format!("r6-{}", uuid::Uuid::new_v4().simple());
+        let work_id = format!("{tag}-work");
+        let client = pool.get().await.unwrap();
+        client
+            .execute(
+                "INSERT INTO x_work (id, title, process, application, work_status, creator) \
+                 VALUES ($1, $2, $3, $4, $5, NULL)",
+                &[
+                    &work_id,
+                    &"r6 empty creator".to_string(),
+                    &"r6".to_string(),
+                    &"r6".to_string(),
+                    &"pending".to_string(),
+                ],
+            )
+            .await
+            .unwrap();
+
+        // ① 普通会话 → 403，且状态不变。
+        let res = crate::work_terminate(
+            Extension(pool.clone()),
+            Some(Extension(shared::testing::test_session(&format!(
+                "{tag}-intruder"
+            )))),
+            axum::extract::Path(work_id.clone()),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            matches!(res, Err(AppError::Forbidden)),
+            "creator=NULL 不得对普通会话开放终止（实际 {res:?}）"
+        );
+        let status: Option<String> = client
+            .query_opt("SELECT work_status FROM x_work WHERE id = $1", &[&work_id])
+            .await
+            .unwrap()
+            .map(|row| row.get("work_status"));
+        assert_eq!(status.as_deref(), Some("pending"), "403 时状态不得落库");
+
+        // ② admin → 200 且状态 terminated。
+        let (admin, role_id) = seed_admin(&pool, &tag).await;
+        let res = crate::work_terminate(
+            Extension(pool.clone()),
+            Some(Extension(shared::testing::test_session(&admin))),
+            axum::extract::Path(work_id.clone()),
+        )
+        .await
+        .map(|_| ());
+        assert!(
+            res.is_ok(),
+            "admin 代终止 creator=NULL 应放行（实际 {res:?}）"
+        );
+        let status: Option<String> = client
+            .query_opt("SELECT work_status FROM x_work WHERE id = $1", &[&work_id])
+            .await
+            .unwrap()
+            .map(|row| row.get("work_status"));
+        assert_eq!(status.as_deref(), Some("terminated"));
+
+        unseed_admin(&pool, &admin, &role_id).await;
+        client
+            .execute("DELETE FROM x_work WHERE id = $1", &[&work_id])
+            .await
+            .unwrap();
+    }
+
+    /// 按 `is_admin` 的真实口径（`auth_role.name='admin'` + 未删未停用）幂等造一个 admin。
+    async fn seed_admin(pool: &Pool, tag: &str) -> (String, String) {
+        let client = pool.get().await.unwrap();
+        let person = format!("u-{tag}-admin");
+        let role_id = format!("{tag}-role");
+        client
+            .execute(
+                "INSERT INTO auth_role (id, name, disable) VALUES ($1, 'admin', false) \
+                 ON CONFLICT (id) DO NOTHING",
+                &[&role_id],
+            )
+            .await
+            .unwrap();
+        shared::testing::upsert_fixture_person(&client, &person, &person, &person).await;
+        client
+            .execute(
+                "INSERT INTO auth_person_role (person_id, role_id, unit_id) VALUES ($1, $2, $3) \
+                 ON CONFLICT DO NOTHING",
+                &[&person, &role_id, &format!("{tag}-unit")],
+            )
+            .await
+            .unwrap();
+        (person, role_id)
+    }
+
+    async fn unseed_admin(pool: &Pool, person: &str, role_id: &str) {
+        let client = pool.get().await.unwrap();
+        client
+            .execute(
+                "DELETE FROM auth_person_role WHERE person_id = $1",
+                &[&person.to_string()],
+            )
+            .await
+            .unwrap();
+        client
+            .execute(
+                "DELETE FROM auth_person WHERE id = $1",
+                &[&person.to_string()],
+            )
+            .await
+            .unwrap();
+        client
+            .execute(
+                "DELETE FROM auth_role WHERE id = $1",
+                &[&role_id.to_string()],
+            )
+            .await
+            .unwrap();
+    }
 }

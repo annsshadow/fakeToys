@@ -36,7 +36,7 @@
 | P0-3 | `POST .../record/{id}/delete` | `Path(id)` | **已修**：同 P0-2 的 DELETE 版本；0 行时按存在性返回 403/404。破坏实验同上，红 | 见本批 PR |
 | P0-4 | 同 crate 其它 `Path(id)` 写端点 | `Path(id)` | **已核查**：`rule/{id}/update`、`rule/{id}/delete`、`rule/create` 无「本人」列（全局配置）→ 收口为管理员（`require_admin`）；`record/list`、`rule/list` 为读端点，登记到读 IDOR 批次 | 见本批 PR |
 | P0-5 | `attendance_assemble_control` 默认「今天」 | UTC 日 vs 本地日历列 | **已修**（同族）：`business_today_from_unix(secs + 8h)`，3 处 `.unwrap_or_else(business_today)`；固定时刻用例覆盖早窗进/出与前一自然日 | 见本批 PR |
-| P0-b | `processing` / `terminate`（`u4_require_actor`） | actor（可空） | **待修（P0 之后、E13 之前）**：空 actor 被放行；空值必须拒绝（系统/管理员分支显式放行）；全仓扫 `require_actor` 同形态；**另含 `processplatform_core_express::work_terminate:34` 内联副本**（审计第六轮点名，只改 helper 会漏） | 待做 |
+| P0-b | `processing` / `terminate`（`u4_require_actor`） | actor（可空） | **已修**：空 actor → 仅 admin（`is_admin` 为准，fail-closed），不再 Ok(()) 放行；`processplatform_core_express::work_terminate` 内联副本同改（`filter(!empty)` → `None` 分支仅 admin）；全仓扫 14 处 `require_owner` 同族，其余均为 fail-closed（空归属 → 非 admin 403） | 见本批 PR |
 | L1-1 | `bbs_subject_info` `create_subject` | body `author_id` / `creator` | 待修：与 T3-2 同一根，合并做 | — |
 | L1-2 | `x_mind_base_info` / `x_mind_folder_info` | body `creator` | 待修：与「硬编码 system」合并做 | — |
 | L1-3 | `/anonymous/file/{id}/download` | `Path(id)` | 待修（纯读泄露，最便宜，优先） | — |
@@ -69,6 +69,11 @@
    只在特定钟点有效（读墙钟）的守卫等于没有守卫。
 5. **破坏实验**：把修复逐条撤回，对应断言必须红；红的位置要落在行为断言上，
    不能只落在常量断言上（否则证明不了行为被覆盖）。
+6. **门禁即硬前置**（2026-11-06）：`python scripts/security_regression_gate.py` 未 PASS 即不许合并；
+   非 PASS 条数只能等于或少于 `tests/security_regression_baseline.txt`，修好一条必须同步减基线
+   （集合相等判定，修了不减也红）。`UNVERIFIED`（404/5xx/种子漂移/2xx 但行未变）**不算已修**。
+   门禁已接入 CI `security-regression` job（required check），不依赖个人本地记忆。
+   工作树绿 ≠ main 绿：门禁读工作树，修完必须提交、推送、等 CI。
 
 ## 时区同族扫描（2026-11-06）
 
