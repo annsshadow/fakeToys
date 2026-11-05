@@ -20,6 +20,7 @@ use axum::{
     extract::{Extension, Path},
     Json,
 };
+use chrono::{DateTime, Duration, NaiveDateTime, NaiveTime, Utc};
 use deadpool_postgres::Pool;
 use serde_json::{json, Value};
 use shared::{
@@ -1881,11 +1882,16 @@ pub async fn touch_handover_job(
     ok(json!({ "value": true, "handovered": n as i64 }))
 }
 
-/// 业务日界（UTC+8）：容器时区通常是 UTC，`date_trunc('day', NOW())` 会把
-/// 北京时间 00:00–08:00 算成前一天。所有「按业务日去重」的维护作业统一用
-/// `NOW() AT TIME ZONE 'Asia/Shanghai'` 得到北京墙钟，再截到自然日。
-/// （`x_record.create_time` 是 timestamp without time zone，比较类型一致。）
-const BUSINESS_DAY_START: &str = "date_trunc('day', (NOW() AT TIME ZONE 'Asia/Shanghai'))";
+/// 业务日界（北京自然日 00:00）在 UTC 轴上的裸时间值。
+///
+/// `x_record.create_time` 是 `timestamp without time zone`，存量与写入均是 UTC 裸时间。
+/// 旧实现用 `NOW() AT TIME ZONE 'Asia/Shanghai'` 得到「北京墙钟的 naive 值」直接与
+/// UTC 裸时间列比较：北京时间 00:00–08:00 时边界落在次日 00:00，去重条件恒不成立，
+/// 维护作业每批重复插入。这里只把边界换算到 UTC，**不改写入时基**。
+pub(crate) fn business_day_start_utc(now: DateTime<Utc>) -> NaiveDateTime {
+    let beijing_date = (now.naive_utc() + Duration::hours(8)).date();
+    beijing_date.and_time(NaiveTime::MIN) - Duration::hours(8)
+}
 
 /// 单批最多处理行数；单次运行最多批数（10 × 1000 = 单次最多 1 万行）。
 pub const MAINTENANCE_BATCH_SIZE: i64 = 1000;
@@ -1900,13 +1906,13 @@ async fn insert_batched(
     pool: &Pool,
     capability: &'static str,
     sql: &str,
-    batch_size: i64,
+    params: &[&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)],
 ) -> Result<Vec<String>, AppError> {
     let client = shared::db::acquire(pool).await?;
     let mut all: Vec<String> = Vec::new();
     for batch in 1..=MAINTENANCE_MAX_BATCHES {
         let rows = client
-            .query(sql, &[&batch_size])
+            .query(sql, params)
             .await
             .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         let inserted = rows.len();
@@ -1930,42 +1936,68 @@ async fn insert_batched(
 
 /// 周期任务入口：滞留超 24h 的活动工作补记日志（按业务日幂等去重，分批）。
 pub async fn run_log_long_detained(pool: &Pool) -> Result<Vec<String>, AppError> {
-    let sql = format!(
-        "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) \
+    run_log_long_detained_at(pool, Utc::now()).await
+}
+
+/// 同 `run_log_long_detained`，但以显式 `now` 为时间基准（测试注入，避免依赖真实钟点）。
+async fn run_log_long_detained_at(
+    pool: &Pool,
+    now: DateTime<Utc>,
+) -> Result<Vec<String>, AppError> {
+    let now_naive = now.naive_utc();
+    let day_start = business_day_start_utc(now);
+    let batch_size = MAINTENANCE_BATCH_SIZE;
+    // 写库仍用 UTC 裸时间（$2），只有去重边界（$3）是换算到 UTC 的业务日界。
+    let sql = "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) \
          SELECT gen_random_uuid()::text, w.id, 'long_detained', \
-                'work detained over 24 hours', 'system', NOW() \
+                'work detained over 24 hours', 'system', $2::timestamp \
          FROM x_work w \
          WHERE w.end_time IS NULL \
-           AND w.start_time < NOW() - INTERVAL '24 hours' \
+           AND w.start_time < $2::timestamp - INTERVAL '24 hours' \
            AND NOT EXISTS (\
                SELECT 1 FROM x_record r \
                WHERE r.work_id = w.id AND r.record_type = 'long_detained' \
-                 AND r.create_time >= {}) \
+                 AND r.create_time >= $3::timestamp) \
          ORDER BY w.start_time, w.id \
          LIMIT $1 \
-         RETURNING work_id",
-        BUSINESS_DAY_START
-    );
-    insert_batched(pool, "loglongdetained", &sql, MAINTENANCE_BATCH_SIZE).await
+         RETURNING work_id";
+    insert_batched(
+        pool,
+        "loglongdetained",
+        sql,
+        &[&batch_size, &now_naive, &day_start],
+    )
+    .await
 }
 
 /// 周期任务入口：存在过期任务的工作补接触摸记录（业务日幂等去重，分批）。
 pub async fn run_touch_delay(pool: &Pool) -> Result<Vec<String>, AppError> {
-    let sql = format!(
-        "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) \
+    run_touch_delay_at(pool, Utc::now()).await
+}
+
+/// 同 `run_touch_delay`，但以显式 `now` 为时间基准（测试注入）。
+async fn run_touch_delay_at(pool: &Pool, now: DateTime<Utc>) -> Result<Vec<String>, AppError> {
+    let now_naive = now.naive_utc();
+    let day_start = business_day_start_utc(now);
+    let batch_size = MAINTENANCE_BATCH_SIZE;
+    let sql = "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) \
          SELECT gen_random_uuid()::text, COALESCE(t.work, ''), 'touch_delay', \
-                'delay touched', 'system', NOW() \
+                'delay touched', 'system', $2::timestamp \
          FROM (SELECT DISTINCT t.work FROM x_task t \
                WHERE t.task_status = 'expired' \
                  AND NOT EXISTS (\
                      SELECT 1 FROM x_record r \
                      WHERE r.work_id = t.work AND r.record_type = 'touch_delay' \
-                       AND r.create_time >= {}) \
+                       AND r.create_time >= $3::timestamp) \
                ORDER BY t.work LIMIT $1) t \
-         RETURNING work_id",
-        BUSINESS_DAY_START
-    );
-    insert_batched(pool, "touchdelay", &sql, MAINTENANCE_BATCH_SIZE).await
+         RETURNING work_id";
+    insert_batched(
+        pool,
+        "touchdelay",
+        sql,
+        &[&batch_size, &now_naive, &day_start],
+    )
+    .await
 }
 
 /// POST touch/loglongdetained：滞留超 24h 的活动工作补记日志（按业务日幂等去重）
@@ -2845,7 +2877,8 @@ mod security_gate_tests {
                                WHERE r.work_id = w.id AND r.record_type = 'batch_probe') \
              ORDER BY w.id LIMIT $1 RETURNING work_id"
         );
-        let first = super::insert_batched(&pool, "probe", &sql, 1)
+        let batch_size = 1i64;
+        let first = super::insert_batched(&pool, "probe", &sql, &[&batch_size])
             .await
             .unwrap();
         assert_eq!(
@@ -2853,7 +2886,7 @@ mod security_gate_tests {
             super::MAINTENANCE_MAX_BATCHES,
             "单次运行最多 10 批，每批 1 行"
         );
-        let second = super::insert_batched(&pool, "probe", &sql, 1)
+        let second = super::insert_batched(&pool, "probe", &sql, &[&batch_size])
             .await
             .unwrap();
         assert_eq!(second.len(), 5, "剩余 5 行在下一轮补齐");
@@ -2882,6 +2915,10 @@ mod security_gate_tests {
     }
 
     /// 纯 INSERT 两条能力：按业务日去重，重复执行不产生重复行。
+    ///
+    /// 时间基准显式注入（北京 2026-11-06 00:30 = UTC 2026-11-05 16:30，正落在
+    /// 00:00–08:00 早窗），因此本用例在任何真实钟点跑都验证同一件事：
+    /// 业务日界落在 UTC 11-05 16:00，写库仍是 UTC 裸时间。
     #[tokio::test]
     async fn maintenance_loglongdetained_and_touchdelay_are_idempotent() {
         let pool = shared::testing::test_pool();
@@ -2889,18 +2926,27 @@ mod security_gate_tests {
         let tag = format!("idem-{}", uuid::Uuid::new_v4());
         let w1 = format!("{tag}-w1");
         let w2 = format!("{tag}-w2");
+        let now = chrono::DateTime::parse_from_rfc3339("2026-11-05T16:30:00Z")
+            .unwrap()
+            .with_timezone(&chrono::Utc);
+        let day_start = super::business_day_start_utc(now);
+        assert_eq!(
+            day_start.to_string(),
+            "2026-11-05 16:00:00",
+            "北京 11-06 00:30 的业务日界必须换算成 UTC 裸时间 11-05 16:00"
+        );
         for id in [&w1, &w2] {
             c.execute(
                 "INSERT INTO x_work (id, title, process, creator, start_time) \
-                 VALUES ($1, $2, 'P', 'u', NOW() - INTERVAL '48 hours')",
-                &[id, &format!("maintenance idem {tag}")],
+                 VALUES ($1, $2, 'P', 'u', $3::timestamp - INTERVAL '48 hours')",
+                &[id, &format!("maintenance idem {tag}"), &now.naive_utc()],
             )
             .await
             .unwrap();
             c.execute(
                 "INSERT INTO x_task (id, work, task_status, start_time, person) \
-                 VALUES ($1, $2, 'expired', NOW() - INTERVAL '48 hours', 'p')",
-                &[&format!("{id}-t"), id],
+                 VALUES ($1, $2, 'expired', $3::timestamp - INTERVAL '48 hours', 'p')",
+                &[&format!("{id}-t"), id, &now.naive_utc()],
             )
             .await
             .unwrap();
@@ -2909,13 +2955,13 @@ mod security_gate_tests {
         // 断言只看本次构造的 tag：共享测试库里可能有其他测试遗留的候选行
         let ours = |rows: &[String]| rows.iter().filter(|id| id.starts_with(&tag)).count();
 
-        let l1 = super::run_log_long_detained(&pool).await.unwrap();
-        let l2 = super::run_log_long_detained(&pool).await.unwrap();
+        let l1 = super::run_log_long_detained_at(&pool, now).await.unwrap();
+        let l2 = super::run_log_long_detained_at(&pool, now).await.unwrap();
         assert_eq!(ours(&l1), 2, "首次：2 个滞留工作各登记 1 条");
         assert_eq!(ours(&l2), 0, "重复执行：不再新增");
 
-        let d1 = super::run_touch_delay(&pool).await.unwrap();
-        let d2 = super::run_touch_delay(&pool).await.unwrap();
+        let d1 = super::run_touch_delay_at(&pool, now).await.unwrap();
+        let d2 = super::run_touch_delay_at(&pool, now).await.unwrap();
         assert_eq!(ours(&d1), 2, "首次：2 个过期任务工作各登记 1 条");
         assert_eq!(ours(&d2), 0, "重复执行：不再新增");
 
@@ -2937,6 +2983,21 @@ mod security_gate_tests {
             .get(0);
         assert_eq!(long_rows, 2, "两轮后仍只有 2 行（幂等）");
         assert_eq!(delay_rows, 2, "两轮后仍只有 2 行（幂等）");
+
+        // 写库时基不变：create_time 仍是注入 now 的 UTC 裸时间，不是北京墙钟
+        let written: chrono::NaiveDateTime = c
+            .query_one(
+                "SELECT create_time FROM x_record WHERE work_id = $1 AND record_type = 'long_detained'",
+                &[&w1],
+            )
+            .await
+            .unwrap()
+            .get(0);
+        assert_eq!(
+            written,
+            now.naive_utc(),
+            "create_time 必须写 UTC 裸时间（$2），不得改成北京墙钟"
+        );
 
         // 清理
         c.execute(
