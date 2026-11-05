@@ -2408,6 +2408,92 @@ error retrieving column order_number: error deserializing column 5
 `x_attendance_detail.date`、`x_attendance_selfholiday.holiday_date`、
 `x_attendance_workday_config.work_date`、`x_attendance_v2_group_schedule.schedule_date_string`。
 
+## O33：keyset 键与排序键不一致 → 漏行（并伴随重行）
+
+缺陷类型定名：**keyset 键与排序键不一致 → 漏行**。游标是 `id`，排序键是另一列
+（`year/month`、`create_time`、`date`、`work_date`、`holiday_date`），于是
+`WHERE id > $1` 先按 id 序砍集合、再按排序键排剩下的行：id 序上已越过后一页的行
+被排除（漏行），id 序上尚未越过但已展示过的行再次出现（重行）。
+
+### 实测后果（scratch 库，非理论推演）
+
+`tests/keyset_pagination.rs`（scratch `oa_par_att_ks_desc/_prev/_asc`）以每页 2 条
+逐页翻完，**旧实现**：
+
+- `personMonth next`（`id > $1 ORDER BY year DESC, month DESC`）：
+  `["k7","k3","k7","k5","k7","k6","k7"]`
+  → k7 被返回 4 次，k1/k2/k4 从未出现（漏 3 行、重 1 行）。
+- `topUnitDay next`（`id > $1 ORDER BY work_date ASC`）：
+  `["w1","w3","w5","w4","w5"]` → w2 从未出现、w5 返回两次。
+- `personMonth prev`（`id < $1`，游标 k2，页宽 2）：只返回 `["k1"]`，
+  同页应带的 k4 漏掉。
+
+根因不是「顺序难看」，而是**每次翻页都在错误的集合上排序**：页宽固定时，
+漏/重由 id 序与排序键序的错位量决定，数据越多越严重。现有种子数据（id 与
+时间/年月基本同序）会掩盖它，所以必须构造「id 序 ≠ 排序键序」的跨页数据。
+
+### 修法
+
+- 复合游标 `(排序键..., id)`，行值比较；游标仍只是**上一页末行的 id**（路径契约
+  不变，前端零改动）。SQL 用子查询把该 id 换算成同一行上的复合键：
+  `(year, month, id) < (SELECT year, month, id FROM t WHERE id = $1 LIMIT 1)`。
+- ORDER BY 使用同一组键：`year DESC, month DESC, id DESC`（并列值由 id 稳定裁决）。
+- NULL 统一 NULLS LAST：降序列把 NULL 归一为 `''`（文本最小值，DESC 落末）；
+  升序列前置 `(col IS NULL)` 布尔键（false 在前）。行值比较遇 NULL 会整行丢弃，
+  归一化同时消除该陷阱。**旧实现 `ORDER BY ... DESC` 默认 NULLS FIRST，本轮改为
+  NULLS LAST（有意变更，分页与排序保持一致）。**
+- `prev` 取「游标之前最近一页」：查询按反向键取窗口，降序列表再 `reverse()`
+  还原显示顺序；升序列表（appeal/detail/selfholiday/message）查询本身即 DESC，
+  与原输出方向一致。
+- 首屏哨兵 `(0)`/`0`/空串短路为无条件首页（`shared::db::keyset::next_where`）；
+  `prev` 不短路，保持原「`(0)` 返回空」的行为。真实游标行被删除时子查询为 NULL
+  → 该页为空（不重行、不越界）。
+- 公共实现：[keyset.rs](file:///D:/WORKSPACE/fakeToys-oa4rust/oa4rust/backend/crates/shared/src/db/keyset.rs)
+  的 `KeySet::{predicate,order_by}` + `next_where`。
+
+### 破坏实验
+
+把 `personMonth next` 的 WHERE 改回 `id > $1`（排序键仍为 `year DESC, month DESC`），
+回归立即变红，实测 `["k7","k3","k7","k5","k7","k6","k7"]`（k1/k2/k4 漏、k7 重）；
+恢复后绿。
+
+### 全仓同类形态清单（`WHERE id/xid > $1` 配另一列 ORDER BY）
+
+**本轮已修（38 处端点/查询）**
+
+| crate | 位置 | 排序键 | 数量 |
+|------|------|--------|------|
+| attendance | `appeal_info` / `detail` / `selfholiday` / `statisticshow` 的 next/prev | create_time / date / holiday_date / year,month / work_date | 17 |
+| organization | role / duty / unit_attribute / person_attribute / identity（含 unitduty_name）/ group 的 next/prev | create_time | 13 |
+| organization `u2_person.rs` | `cursor_page`（person next/prev） | create_time | 2 |
+| meeting | `x_meeting` next/prev | create_time | 2 |
+| message | `x_message` / `x_message_consume` next/prev | create_time | 4 |
+
+**扫描确认无此缺陷（游标键 = 排序键，无需改）**：`file`（FILE_FILE ×4，按 id）、
+`query`（x_query_table_data / x_query_stat / x_query_view 各 next/prev，按 id）、
+`processplatform`（pp_e_mapping 与另一表 ×4，按 xid）、`program_center`（两类错误日志
+×8，按 id）、`portal`（x_portal_file ×2，按 id）、`control`（person ×2，
+`unique_id > $1 ORDER BY unique_id`）。
+后两者并列裁决只有游标列本身（`unique_id` 假定唯一），不构成错位漏行。
+
+### 与 O34（TEXT 数字语义排序）的衔接
+
+统计展示的 `year`/`month` 仍是 TEXT 字典序（`'10' < '2'`），本轮**只保证「分页键与
+当前排序键一致」**，顺序本身的数字语义修复仍按 O32 清单执行（`statisticshow.month/year`、
+`statistical_cycle.year/month`、`pp_c_snap.sequence`）。⚠️ 依赖：一旦 `year/month`
+改为数值语义排序，`KeySet` 的列不能再按裸文本比较，必须改为**同一个数值表达式**
+（`shared::db::numeric_text_i32_sort_expr`），否则会重新引入「排序键与分页键不一致」。
+
+### 验证
+
+- `cargo test -p attendance_assemble_control --test keyset_pagination`：3 passed
+  （desc 全集不漏不重、prev 窗口正确、asc+NULS 落末）。
+- `cargo clippy -p shared -p attendance -p organization -p meeting -p message
+  --all-targets -- -D warnings`：零告警；`cargo fmt --all` 已跑。
+- 四 crate 单测（`--skip migrate::tests`）+ `shared --lib`（同 skip）：全绿。
+  ⚠️ 环境债同 O32：`shared::migrate::tests` 在漂移的 `oa4rust_test` 上红，scratch 上绿。
+
+
 
 
 
