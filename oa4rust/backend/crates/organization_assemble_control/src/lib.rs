@@ -22,10 +22,7 @@ mod u2_router;
 
 // O33：组织域各列表的 keyset 游标（id）必须与排序键 create_time 一致。
 // create_time 为 TIMESTAMP（见 022 migration），NULL 归一为同型最小值 -infinity。
-pub(crate) const CREATED_AT_COL: &[KeyColumn] = &[KeyColumn {
-    expr: "create_time",
-    null_low: "'-infinity'::timestamp",
-}];
+pub(crate) const CREATED_AT_COL: &[KeyColumn] = &[KeyColumn::timestamp("create_time")];
 
 pub(crate) fn created_at_keyset(table: &'static str) -> KeySet<'static> {
     KeySet {
@@ -96,7 +93,10 @@ pub async fn organization_assemble_control_role_list_flag_next_count(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -143,7 +143,10 @@ pub async fn organization_assemble_control_role_flag(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -204,7 +207,10 @@ pub async fn organization_assemble_control_unit_list_flag_next_count(
                     ),
                     (
                         "createTime".to_string(),
-                        Value::String(row.get("create_time")),
+                        Value::String(
+                            row.get::<_, Option<String>>("create_time")
+                                .unwrap_or_default(),
+                        ),
                     ),
                 ]
                 .into_iter()
@@ -262,7 +268,10 @@ pub async fn organization_assemble_control_unit_flag(
                     ),
                     (
                         "createTime".to_string(),
-                        Value::String(row.get("create_time")),
+                        Value::String(
+                            row.get::<_, Option<String>>("create_time")
+                                .unwrap_or_default(),
+                        ),
                     ),
                 ]
                 .into_iter()
@@ -469,7 +478,10 @@ pub async fn organization_assemble_control_person_list_like(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -520,7 +532,10 @@ pub async fn export_export_all(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -564,7 +579,10 @@ pub async fn export_result_flag_flag(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -610,7 +628,10 @@ pub async fn export_zhengwudingding_person(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -652,7 +673,10 @@ pub async fn group_list_like_mockputtopost(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -696,7 +720,10 @@ pub async fn group_list_like_pinyin(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -740,7 +767,10 @@ pub async fn group_list_like_pinyin_mockputtopost(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -785,7 +815,10 @@ pub async fn group_list_pinyininitial(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -829,7 +862,10 @@ pub async fn group_list_pinyininitial_mockputtopost(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -878,7 +914,10 @@ pub async fn group_list_flag_sub_direct(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -991,7 +1030,10 @@ pub async fn group_list_flag_sup_direct(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1105,7 +1147,10 @@ pub async fn group_flag(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1246,7 +1291,10 @@ pub async fn group_flag_mockdeletetoget(
             ("creator".to_string(), Value::String(row.get("creator"))),
             (
                 "createTime".to_string(),
-                Value::String(row.get("create_time")),
+                Value::String(
+                    row.get::<_, Option<String>>("create_time")
+                        .unwrap_or_default(),
+                ),
             ),
         ]));
         Ok(Json(ActionResult::success(result)))
@@ -1289,7 +1337,10 @@ pub async fn group_flag_mockputtopost(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1362,7 +1413,10 @@ pub async fn identity_list_like_mockputtopost(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1409,7 +1463,10 @@ pub async fn identity_list_like_pinyin(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1456,7 +1513,10 @@ pub async fn identity_list_like_pinyin_mockputtopost(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1504,7 +1564,10 @@ pub async fn identity_list_pinyininitial(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1551,7 +1614,10 @@ pub async fn identity_list_pinyininitial_mockputtopost(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1602,7 +1668,10 @@ pub async fn identity_flag(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1652,7 +1721,10 @@ pub async fn identity_flag_mockdeletetoget(
             ("creator".to_string(), Value::String(row.get("creator"))),
             (
                 "createTime".to_string(),
-                Value::String(row.get("create_time")),
+                Value::String(
+                    row.get::<_, Option<String>>("create_time")
+                        .unwrap_or_default(),
+                ),
             ),
         ]));
         Ok(Json(ActionResult::success(result)))
@@ -1698,7 +1770,10 @@ pub async fn identity_flag_mockputtopost(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1740,7 +1815,10 @@ pub async fn inputperson_template(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1786,7 +1864,10 @@ pub async fn inputperson_wipe(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1826,7 +1907,10 @@ pub async fn permissionsetting_list(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1872,7 +1956,10 @@ pub async fn permissionsetting_flag(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1912,7 +1999,10 @@ pub async fn permissionsetting_flag_mockdeletetoget(
             ("creator".to_string(), Value::String(row.get("creator"))),
             (
                 "createTime".to_string(),
-                Value::String(row.get("create_time")),
+                Value::String(
+                    row.get::<_, Option<String>>("create_time")
+                        .unwrap_or_default(),
+                ),
             ),
         ]));
         Ok(Json(ActionResult::success(result)))
@@ -1954,7 +2044,10 @@ pub async fn permissionsetting_flag_mockputtopost(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -2000,7 +2093,10 @@ pub async fn personattribute_flag(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -2047,7 +2143,10 @@ pub async fn personattribute_flag_mockdeletetoget(
             ("creator".to_string(), Value::String(row.get("creator"))),
             (
                 "createTime".to_string(),
-                Value::String(row.get("create_time")),
+                Value::String(
+                    row.get::<_, Option<String>>("create_time")
+                        .unwrap_or_default(),
+                ),
             ),
         ]));
         Ok(Json(ActionResult::success(result)))
@@ -2093,7 +2192,10 @@ pub async fn personattribute_flag_mockputtopost(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -2129,7 +2231,10 @@ pub async fn personcard_listgrouptypes(
                 ("creator".to_string(), creator.unwrap_or_default().into()),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2181,7 +2286,10 @@ pub async fn personcard_listpaging_page_page_size_size_mockputtopost(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2233,7 +2341,10 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size_mockputtopost(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2274,7 +2385,10 @@ pub async fn personcard_mylist(
                 ("creator".to_string(), creator.unwrap_or_default().into()),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2326,7 +2440,10 @@ pub async fn personcard_flag(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -2371,7 +2488,10 @@ pub async fn personcard_flag_mockdeletetoget(
             ("creator".to_string(), Value::String(row.get("creator"))),
             (
                 "createTime".to_string(),
-                Value::String(row.get("create_time")),
+                Value::String(
+                    row.get::<_, Option<String>>("create_time")
+                        .unwrap_or_default(),
+                ),
             ),
         ]));
         Ok(Json(ActionResult::success(result)))
@@ -2410,7 +2530,10 @@ pub async fn role_list_like_mockputtopost(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2453,7 +2576,10 @@ pub async fn role_list_like_pinyin(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2496,7 +2622,10 @@ pub async fn role_list_like_pinyin_mockputtopost(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2540,7 +2669,10 @@ pub async fn role_list_pinyininitial(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2583,7 +2715,10 @@ pub async fn role_list_pinyininitial_mockputtopost(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -2634,7 +2769,10 @@ pub async fn role_flag_mockdeletetoget(
             ("creator".to_string(), Value::String(row.get("creator"))),
             (
                 "createTime".to_string(),
-                Value::String(row.get("create_time")),
+                Value::String(
+                    row.get::<_, Option<String>>("create_time")
+                        .unwrap_or_default(),
+                ),
             ),
         ]));
         Ok(Json(ActionResult::success(result)))
@@ -2676,7 +2814,10 @@ pub async fn role_flag_mockputtopost(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -2722,7 +2863,10 @@ pub async fn unitattribute_flag(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -2769,7 +2913,10 @@ pub async fn unitattribute_flag_mockdeletetoget(
             ("creator".to_string(), Value::String(row.get("creator"))),
             (
                 "createTime".to_string(),
-                Value::String(row.get("create_time")),
+                Value::String(
+                    row.get::<_, Option<String>>("create_time")
+                        .unwrap_or_default(),
+                ),
             ),
         ]));
         Ok(Json(ActionResult::success(result)))
@@ -2815,7 +2962,10 @@ pub async fn unitattribute_flag_mockputtopost(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -2933,7 +3083,10 @@ pub async fn unitduty_flag(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -2976,7 +3129,10 @@ pub async fn unitduty_update_member(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -3042,7 +3198,10 @@ pub async fn unitduty_list_flag_prev_count(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -3106,7 +3265,10 @@ pub async fn unitduty_list_flag_next_count(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -3155,7 +3317,10 @@ pub async fn unitduty_list_unit_unitFlag(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -3205,7 +3370,10 @@ pub async fn unitduty_list_name_name(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -3256,7 +3424,10 @@ pub async fn unitduty_list_like(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -3305,7 +3476,10 @@ pub async fn unitduty_list_identity_identityFlag(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -3405,7 +3579,10 @@ pub async fn unitattribute_list_flag_prev_count(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -3469,7 +3646,10 @@ pub async fn unitattribute_list_flag_next_count(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -3518,7 +3698,10 @@ pub async fn unitattribute_list_unit_flag(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -3577,7 +3760,10 @@ pub async fn role_list_flag_prev_count(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -3622,7 +3808,10 @@ pub async fn role_list_person_personFlag(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -3669,7 +3858,10 @@ pub async fn role_list_like(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -3720,7 +3912,10 @@ pub async fn role_list_group_groupFlag(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -3772,7 +3967,10 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -3824,7 +4022,10 @@ pub async fn personcard_listpaging_page_page_size_size(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -3976,7 +4177,10 @@ pub async fn personcard_createQR_cardId(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -4035,7 +4239,10 @@ pub async fn personcard_createCode_cardId(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -4096,7 +4303,10 @@ pub async fn personattribute_list_flag_prev_count(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -4160,7 +4370,10 @@ pub async fn personattribute_list_flag_next_count(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -4209,7 +4422,10 @@ pub async fn personattribute_list_person_personFlag(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -4305,7 +4521,10 @@ pub async fn inputperson_result_flag_flag(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -4450,7 +4669,10 @@ pub async fn identity_list_flag_unitduty_name_unitDutyName(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -4516,7 +4738,10 @@ pub async fn identity_list_flag_prev_count(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -4580,7 +4805,10 @@ pub async fn identity_list_flag_next_count(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -4629,7 +4857,10 @@ pub async fn identity_list_unitduty_name_unitDutyName(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -4678,7 +4909,10 @@ pub async fn identity_list_unit_unitFlag(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -4727,7 +4961,10 @@ pub async fn identity_list_person_personFlag(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -4778,7 +5015,10 @@ pub async fn identity_list_like(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -4841,7 +5081,10 @@ pub async fn group_list_flag_prev_count(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -4902,7 +5145,10 @@ pub async fn group_list_flag_next_count(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -4954,7 +5200,10 @@ pub async fn group_list_role_roleFlag(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -5064,7 +5313,10 @@ pub async fn group_list_person_personFlag_sup_direct(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -5112,7 +5364,10 @@ pub async fn group_list_like(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })

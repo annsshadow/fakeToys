@@ -18,10 +18,13 @@ use attendance_assemble_control::{
 };
 use axum::extract::{Extension, Path};
 use deadpool_postgres::Pool;
+use std::collections::HashSet;
 
 const SCRATCH_DESC: &str = "oa_par_att_ks_desc";
 const SCRATCH_PREV: &str = "oa_par_att_ks_prev";
 const SCRATCH_ASC: &str = "oa_par_att_ks_asc";
+const SCRATCH_NUM_DESC: &str = "oa_par_att_ks_num_desc";
+const SCRATCH_NUM_PREV: &str = "oa_par_att_ks_num_prev";
 
 fn pool_to(dbname: &str) -> Pool {
     let url = std::env::var("DATABASE_URL")
@@ -36,7 +39,7 @@ fn pool_to(dbname: &str) -> Pool {
         .unwrap()
 }
 
-// 三个用例并行跑，各自用独立库，避免 DROP/CREATE 互相踩（E23505 pg_database）。
+// 各用例并行跑，各自用独立库，避免 DROP/CREATE 互相踩（E23505 pg_database）。
 async fn fresh_scratch(dbname: &str) -> Pool {
     let admin = pool_to("postgres");
     let c = admin.get().await.expect("admin 连接");
@@ -99,8 +102,12 @@ macro_rules! walk_next {
 }
 
 async fn person_month_next(pool: Pool, cursor: String) -> Vec<String> {
+    person_month_next_count(pool, cursor, 2).await
+}
+
+async fn person_month_next_count(pool: Pool, cursor: String, count: i64) -> Vec<String> {
     let res =
-        statisticshow_filter_personMonth_list_id_next_count(Extension(pool), Path((cursor, 2_i64)))
+        statisticshow_filter_personMonth_list_id_next_count(Extension(pool), Path((cursor, count)))
             .await
             .expect("personMonth next 不应失败");
     ids_of(res.0.data.as_ref().expect("list 缺 data"))
@@ -226,4 +233,112 @@ async fn asc_work_date_keyset_walks_every_row_exactly_once() {
     );
 
     drop_scratch(SCRATCH_ASC).await;
+}
+
+/// O34：month 是月份数字，TEXT 列未补零时字典序错误（'10' < '2'）。
+/// 种子刻意混入未补零月份、并列 (year, month)、NULL 与短尾页，按 page size
+/// 1 / 2 / 3 各走一遍到空页，证明「排序键与游标键」同步后不漏行、不重行。
+#[tokio::test]
+async fn desc_numeric_month_keyset_walks_every_row_exactly_once() {
+    let pool = fresh_scratch(SCRATCH_NUM_DESC).await;
+
+    let c = pool.get().await.expect("scratch 连接");
+    c.execute("DELETE FROM x_attendance_statisticshow", &[])
+        .await
+        .expect("清空 statisticshow");
+    // k3/k5 在文本序下会与 k8/k1 相对位置颠倒；k1/k8 并列同月；
+    // k2/k9 是跨位数边界的 1 vs 2；k7 全 NULL；9 行 = 4 整页 + 1 行尾页（page size 2）。
+    c.execute(
+        "INSERT INTO x_attendance_statisticshow (id, person_id, year, month, status, unit_id) \
+         VALUES \
+         ('k1', 'p', '2025', '2',  'ok', NULL), \
+         ('k2', 'p', '2024', '1',  'ok', NULL), \
+         ('k3', 'p', '2025', '11', 'ok', NULL), \
+         ('k4', 'p', '2024', '12', 'ok', NULL), \
+         ('k5', 'p', '2025', '10', 'ok', NULL), \
+         ('k6', 'p', '2024', '9',  'ok', NULL), \
+         ('k7', 'p', NULL,   NULL, 'ok', NULL), \
+         ('k8', 'p', '2025', '2',  'ok', NULL), \
+         ('k9', 'p', '2024', '2',  'ok', NULL)",
+        &[],
+    )
+    .await
+    .expect("seed statisticshow");
+    drop(c);
+
+    let expected: Vec<String> = ["k3", "k5", "k8", "k1", "k4", "k6", "k9", "k2", "k7"]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+
+    for size in [1_i64, 2, 3] {
+        let mut cursor = "(0)".to_string();
+        let mut collected: Vec<String> = Vec::new();
+        for _ in 0..32 {
+            let page = person_month_next_count(pool.clone(), cursor.clone(), size).await;
+            if page.is_empty() {
+                break;
+            }
+            cursor = page.last().cloned().expect("页非空");
+            collected.extend(page);
+        }
+        println!("O34 跨页实测（month 数值序, page_size={size}）: {collected:?}");
+        assert_eq!(
+            collected.len(),
+            9,
+            "page_size={size} 行数不符：存在漏行或多页累积"
+        );
+        let uniq: HashSet<&String> = collected.iter().collect();
+        assert_eq!(uniq.len(), 9, "page_size={size} 存在重复行");
+        assert_eq!(
+            collected, expected,
+            "page_size={size}：year DESC、month 数值 DESC、并列 id DESC、NULL 落末"
+        );
+    }
+
+    drop_scratch(SCRATCH_NUM_DESC).await;
+}
+
+/// O34：prev 窗口同样跨数值边界与并列块（游标 k4 之前的最近两条是 k8/k1）。
+#[tokio::test]
+async fn desc_numeric_month_prev_returns_window_before_cursor_in_display_order() {
+    let pool = fresh_scratch(SCRATCH_NUM_PREV).await;
+
+    let c = pool.get().await.expect("scratch 连接");
+    c.execute("DELETE FROM x_attendance_statisticshow", &[])
+        .await
+        .expect("清空 statisticshow");
+    c.execute(
+        "INSERT INTO x_attendance_statisticshow (id, person_id, year, month, status, unit_id) \
+         VALUES \
+         ('k1', 'p', '2025', '2',  'ok', NULL), \
+         ('k2', 'p', '2024', '1',  'ok', NULL), \
+         ('k3', 'p', '2025', '11', 'ok', NULL), \
+         ('k4', 'p', '2024', '12', 'ok', NULL), \
+         ('k5', 'p', '2025', '10', 'ok', NULL), \
+         ('k6', 'p', '2024', '9',  'ok', NULL), \
+         ('k7', 'p', NULL,   NULL, 'ok', NULL), \
+         ('k8', 'p', '2025', '2',  'ok', NULL), \
+         ('k9', 'p', '2024', '2',  'ok', NULL)",
+        &[],
+    )
+    .await
+    .expect("seed statisticshow");
+    drop(c);
+
+    let res = statisticshow_filter_personMonth_list_id_prev_count(
+        Extension(pool.clone()),
+        Path(("k4".to_string(), 2_i64)),
+    )
+    .await
+    .expect("personMonth prev 不应失败");
+    let actual = ids_of(res.0.data.as_ref().expect("list 缺 data"));
+    println!("O34 prev 实测（游标 k4）: {actual:?}");
+    assert_eq!(
+        actual,
+        vec!["k8".to_string(), "k1".to_string()],
+        "prev 必须取数值序下游标之前的最近两条，并按显示顺序返回"
+    );
+
+    drop_scratch(SCRATCH_NUM_PREV).await;
 }

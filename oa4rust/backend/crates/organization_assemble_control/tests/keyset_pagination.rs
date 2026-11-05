@@ -68,8 +68,8 @@ async fn timestamp_keyset_walks_every_row_exactly_once() {
 
     let c = pool.get().await.expect("scratch 连接");
     // create_time 为 TIMESTAMP；id 序（r1<r2<…）与时间序刻意错位，r1/r5 并列。
-    // 注意：role 响应的 create_time 解码仍假定非 NULL（历史行为），NULL 行会 500，
-    // 属独立缺陷，不在 keyset 回归里混测。
+    // r7 的 create_time 为 NULL：O34 修复前该行解码会 500，修复后应落末位且
+    // createTime 序列化为空串。
     c.execute(
         "INSERT INTO x_org_role (id, name, create_time) VALUES \
          ('r1', 'a', '2025-11-01 00:00:00'), \
@@ -77,7 +77,8 @@ async fn timestamp_keyset_walks_every_row_exactly_once() {
          ('r3', 'c', '2025-12-01 00:00:00'), \
          ('r4', 'd', '2024-12-01 00:00:00'), \
          ('r5', 'e', '2025-11-01 00:00:00'), \
-         ('r6', 'f', '2023-06-01 00:00:00')",
+         ('r6', 'f', '2023-06-01 00:00:00'), \
+         ('r7', 'g', NULL)",
         &[],
     )
     .await
@@ -102,13 +103,33 @@ async fn timestamp_keyset_walks_every_row_exactly_once() {
     }
 
     println!("timestamp keyset 实测（role next）: {collected:?}");
-    let expected: Vec<String> = ["r3", "r5", "r1", "r4", "r2", "r6"]
+    let expected: Vec<String> = ["r3", "r5", "r1", "r4", "r2", "r6", "r7"]
         .iter()
         .map(|s| s.to_string())
         .collect();
     assert_eq!(
         collected, expected,
         "create_time DESC 的分页必须不漏不重、并列按 id DESC、NULL 落末"
+    );
+
+    // O34：NULL create_time 行单独再取一页，断言 200 且 createTime 为空串
+    // （修复前 `row.get::<String>` 解码 NULL 会 500）。
+    let res = organization_assemble_control_role_list_flag_next_count(
+        Extension(pool.clone()),
+        Path(("r6".to_string(), "2".to_string())),
+    )
+    .await
+    .expect("role next(NULL 行) 不应失败");
+    let data = res.0.data.as_ref().expect("list 缺 data");
+    assert_eq!(
+        ids_of(data),
+        vec!["r7".to_string()],
+        "游标 r6 的下一页应只有 NULL create_time 的 r7"
+    );
+    assert_eq!(
+        data[0].get("createTime").and_then(|v| v.as_str()),
+        Some(""),
+        "NULL create_time 必须解码为空串而不是 500"
     );
 
     let res = role_list_flag_prev_count(
