@@ -8,6 +8,7 @@ import type { MessageRow } from '@/services'
 import { messageApi, messageConversationId } from '@/services'
 import { useSession } from '@/store/session'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import { describeChatError, loadChatHistoryPage, mergeOlderMessages } from './chatHistory'
 
 const session = useSession()
 const conversationId = ref('')
@@ -17,6 +18,15 @@ const loading = ref(false)
 const text = ref('')
 const sending = ref(false)
 const myUnique = computed(() => session.user?.unique ?? '')
+// R108：历史分页状态（旧实现固定第 1 页 200 条，超出的更早消息静默丢失）
+const historyPage = ref(1)
+const historyHasMore = ref(false)
+const historyError = ref('')
+const loadingOlder = ref(false)
+
+function keepConversation(rows: MessageRow[]): MessageRow[] {
+  return rows.filter((m) => messageConversationId(m as Record<string, unknown>) === conversationId.value)
+}
 
 onLoad(async (options) => {
   if (!(await ensureAuthenticated())) {
@@ -31,14 +41,20 @@ onLoad(async (options) => {
 
 async function loadHistory() {
   loading.value = true
+  historyError.value = ''
   try {
-    const resp = await messageApi.msgHistory(conversationId.value, 1, 200)
-    // 后端已按会话过滤；此处保留一次防御性过滤（逆序返回，还原时间正序展示）。
-    msgs.value = (resp.data ?? [])
-      .filter((m) => messageConversationId(m as Record<string, unknown>) === conversationId.value)
-      .reverse()
-  } catch {
+    const result = await loadChatHistoryPage<MessageRow>(
+      (convId, page, size) => messageApi.msgHistory(convId, page, size),
+      conversationId.value,
+      1,
+    )
+    // 后端已按会话过滤；此处保留一次防御性过滤，并按时间正序展示。
+    msgs.value = mergeOlderMessages<MessageRow>([], keepConversation(result.messages))
+    historyPage.value = result.page
+    historyHasMore.value = result.hasMore
+  } catch (e) {
     msgs.value = []
+    historyError.value = describeChatError('消息加载失败', e)
   } finally {
     loading.value = false
     // 进入会话即标记已读（失败不阻塞展示）。
@@ -47,6 +63,26 @@ async function loadHistory() {
     } catch {
       /* noop */
     }
+  }
+}
+
+async function loadOlder() {
+  if (loading.value || loadingOlder.value || !historyHasMore.value) return
+  loadingOlder.value = true
+  historyError.value = ''
+  try {
+    const result = await loadChatHistoryPage<MessageRow>(
+      (convId, page, size) => messageApi.msgHistory(convId, page, size),
+      conversationId.value,
+      historyPage.value + 1,
+    )
+    msgs.value = mergeOlderMessages<MessageRow>(msgs.value, keepConversation(result.messages))
+    historyPage.value = result.page
+    historyHasMore.value = result.hasMore
+  } catch (e) {
+    historyError.value = describeChatError('历史消息加载失败', e)
+  } finally {
+    loadingOlder.value = false
   }
 }
 
@@ -83,9 +119,22 @@ async function send() {
 
     <scroll-view class="body" scroll-y>
       <view v-if="loading" class="tip">加载中…</view>
+      <view v-else-if="msgs.length === 0 && historyError" class="tip tip-error">
+        <view class="error-text">{{ historyError }}</view>
+        <view class="retry-btn" @tap="loadHistory">重试</view>
+      </view>
       <view v-else-if="msgs.length === 0" class="tip">暂无消息</view>
-      <view v-for="m in msgs" :key="m.id" class="row" :class="{ me: m.sender === myUnique }">
-        <view class="bubble">{{ m.content }}</view>
+      <view v-else>
+        <view v-if="historyError" class="tip tip-error">
+          <view class="error-text">{{ historyError }}</view>
+          <view class="retry-btn" @tap="loadOlder">重试</view>
+        </view>
+        <view v-else-if="loadingOlder" class="tip">加载更早消息…</view>
+        <view v-else-if="historyHasMore" class="load-older" @tap="loadOlder">加载更早消息</view>
+        <view v-else class="tip tip-end">没有更早的消息了</view>
+        <view v-for="m in msgs" :key="m.id" class="row" :class="{ me: m.sender === myUnique }">
+          <view class="bubble">{{ m.content }}</view>
+        </view>
       </view>
     </scroll-view>
 
@@ -123,6 +172,30 @@ async function send() {
   text-align: center;
   color: #90979f;
   font-size: 28rpx;
+}
+.tip-error {
+  color: #c0392b;
+}
+.tip-end {
+  color: #b0b7bf;
+}
+.error-text {
+  margin-bottom: 12rpx;
+  line-height: 1.5;
+}
+.retry-btn {
+  display: inline-block;
+  padding: 8rpx 28rpx;
+  border-radius: 24rpx;
+  border: 1rpx solid #c0392b;
+  color: #c0392b;
+  font-size: 26rpx;
+}
+.load-older {
+  padding: 24rpx 0;
+  text-align: center;
+  color: #4a90d9;
+  font-size: 26rpx;
 }
 .row {
   display: flex;
