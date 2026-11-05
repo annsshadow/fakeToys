@@ -434,52 +434,6 @@ mod u2_contract {
         (status, v)
     }
 
-    /// 2026-10 安全审计：touch 维护作业 handler 要求登录会话（Option<Extension<Session>>）。
-    /// 注入一个会话再发请求，模拟 auth_middleware 已认证的等价路径。
-    async fn send_with_session(
-        method: Method,
-        uri: &str,
-        body: Option<Value>,
-    ) -> (StatusCode, Value) {
-        let session = shared::session::Session {
-            token: "test-token".to_string(),
-            person_unique: "test-person".to_string(),
-            created_at: chrono::Utc::now().naive_utc(),
-            expires_at: chrono::Utc::now().naive_utc() + chrono::Duration::hours(1),
-        };
-        let req = match body {
-            Some(v) => Request::builder()
-                .uri(uri)
-                .method(method)
-                .header("content-type", "application/json")
-                .body(Body::from(v.to_string()))
-                .unwrap(),
-            None => Request::builder()
-                .uri(uri)
-                .method(method)
-                .body(Body::empty())
-                .unwrap(),
-        };
-        let resp = app()
-            .layer(axum::Extension(session))
-            .oneshot(req)
-            .await
-            .unwrap();
-        let status = resp.status();
-        let raw = axum::body::to_bytes(resp.into_body(), usize::MAX)
-            .await
-            .unwrap()
-            .to_vec();
-        assert_eq!(
-            status,
-            StatusCode::OK,
-            "business errors are HTTP 200 per ActionResult contract; body={}",
-            String::from_utf8_lossy(&raw)
-        );
-        let v: Value = serde_json::from_slice(&raw).unwrap();
-        (status, v)
-    }
-
     /// 2026-10 R4-2：以指定 person 注入会话后发请求，且**不**预断言 HTTP 200
     /// ——门禁收紧后要读 401 / 403，业务错误仍是 200 信封。
     async fn send_raw_as(
@@ -1351,8 +1305,10 @@ mod u2_contract {
             c.execute("INSERT INTO x_record (id, work_id, record_type, content) VALUES ('ev-new','w','event','x')", &[]).await.unwrap();
         }
         let url = "/api/processplatform/service/processing/touch/cleanevent";
-        // 2026-10 安全审计：touch 维护作业要求登录会话，注入会话后调用
-        let (_, v) = send_with_session(Method::GET, url, None).await;
+        // 2026-11 授权缺陷修复：touch/* 统一改为 POST + admin 门禁
+        let admin = seed_u2_admin().await;
+        let (status, v) = send_raw_as(Method::POST, url, None, &admin).await;
+        assert_eq!(status, StatusCode::OK);
         assert_eq!(v["type"], "success");
         let old_gone = count(
             &pool,
@@ -1370,6 +1326,95 @@ mod u2_contract {
         c.execute("DELETE FROM x_record WHERE id IN ('ev-old','ev-new')", &[])
             .await
             .unwrap();
+    }
+
+    const TOUCH_PATHS: [&str; 8] = [
+        "cleanevent",
+        "deletedraft",
+        "handoverjob",
+        "loglongdetained",
+        "merge",
+        "mergeitem",
+        "touchdelay",
+        "urge",
+    ];
+
+    /// 2026-11 授权缺陷：touch/* 不得再由 GET 触发写；GET 必须 405。
+    #[tokio::test]
+    async fn u2_touch_routes_reject_get() {
+        for path in TOUCH_PATHS {
+            let uri = format!("/api/processplatform/service/processing/touch/{path}");
+            let req = Request::builder()
+                .uri(&uri)
+                .method(Method::GET)
+                .body(Body::empty())
+                .unwrap();
+            let resp = app().oneshot(req).await.unwrap();
+            assert_eq!(
+                resp.status(),
+                StatusCode::METHOD_NOT_ALLOWED,
+                "{uri} GET 必须 405（不再允许 GET 触发写）"
+            );
+        }
+    }
+
+    /// 路由级门禁：匿名 POST 401，非 admin POST 403。
+    #[tokio::test]
+    async fn u2_touch_routes_require_admin() {
+        for path in TOUCH_PATHS {
+            let uri = format!("/api/processplatform/service/processing/touch/{path}");
+            let req = Request::builder()
+                .uri(&uri)
+                .method(Method::POST)
+                .body(Body::empty())
+                .unwrap();
+            let resp = app().oneshot(req).await.unwrap();
+            assert_eq!(
+                resp.status(),
+                StatusCode::UNAUTHORIZED,
+                "{uri} 匿名 POST 必须 401"
+            );
+            let (status, _) = send_raw_as(Method::POST, &uri, None, "u-nonadmin").await;
+            assert_eq!(
+                status,
+                StatusCode::FORBIDDEN,
+                "{uri} 非 admin POST 必须 403"
+            );
+        }
+    }
+
+    /// 日界必须是业务时区（UTC+8）：取 UTC 2026-11-04 16:30（= 北京 11-05 00:30，
+    /// 正落在 00:00–08:00 早窗）。UTC 截日落在 11-04，业务日界必须落在 11-05。
+    #[tokio::test]
+    async fn u2_business_day_bucket_is_utc8_in_early_morning_window() {
+        if !is_db_available().await {
+            eprintln!("skipping u2_business_day_bucket_is_utc8_in_early_morning_window: DATABASE_URL not reachable");
+            return;
+        }
+        let pool = test_pool();
+        let c = pool.get().await.unwrap();
+        let utc_day: chrono::NaiveDateTime = c
+            .query_one(
+                "SELECT date_trunc('day', TIMESTAMPTZ '2026-11-04 16:30:00+00')::timestamp",
+                &[],
+            )
+            .await
+            .unwrap()
+            .get(0);
+        let biz_day: chrono::NaiveDateTime = c
+            .query_one(
+                "SELECT date_trunc('day', (TIMESTAMPTZ '2026-11-04 16:30:00+00' AT TIME ZONE 'Asia/Shanghai'))",
+                &[],
+            )
+            .await
+            .unwrap()
+            .get(0);
+        assert_eq!(utc_day.date().to_string(), "2026-11-04");
+        assert_eq!(biz_day.date().to_string(), "2026-11-05");
+        assert!(
+            biz_day > utc_day,
+            "业务日界必须晚于 UTC 日界（UTC+8 00:00–08:00 早窗）"
+        );
     }
 
     #[tokio::test]

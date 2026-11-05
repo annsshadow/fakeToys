@@ -74563,7 +74563,7 @@ use tower::util::ServiceExt;
             .oneshot(
                 axum::http::Request::builder()
                     .uri("/api/processplatform/service/processing/touch/cleanevent")
-                    .method(axum::http::Method::GET)
+                    .method(axum::http::Method::POST)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
             )
@@ -74575,7 +74575,7 @@ use tower::util::ServiceExt;
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/touch/cleanevent (GET)"
+            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/touch/cleanevent (POST)"
         );
     }
     #[tokio::test]
@@ -74585,7 +74585,7 @@ use tower::util::ServiceExt;
             .oneshot(
                 axum::http::Request::builder()
                     .uri("/api/processplatform/service/processing/touch/deletedraft")
-                    .method(axum::http::Method::GET)
+                    .method(axum::http::Method::POST)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
             )
@@ -74597,7 +74597,7 @@ use tower::util::ServiceExt;
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/touch/deletedraft (GET)"
+            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/touch/deletedraft (POST)"
         );
     }
     #[tokio::test]
@@ -74607,7 +74607,7 @@ use tower::util::ServiceExt;
             .oneshot(
                 axum::http::Request::builder()
                     .uri("/api/processplatform/service/processing/touch/handoverjob")
-                    .method(axum::http::Method::GET)
+                    .method(axum::http::Method::POST)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
             )
@@ -74619,7 +74619,7 @@ use tower::util::ServiceExt;
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/touch/handoverjob (GET)"
+            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/touch/handoverjob (POST)"
         );
     }
     #[tokio::test]
@@ -74629,7 +74629,7 @@ use tower::util::ServiceExt;
             .oneshot(
                 axum::http::Request::builder()
                     .uri("/api/processplatform/service/processing/touch/loglongdetained")
-                    .method(axum::http::Method::GET)
+                    .method(axum::http::Method::POST)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
             )
@@ -74641,7 +74641,7 @@ use tower::util::ServiceExt;
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/touch/loglongdetained (GET)"
+            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/touch/loglongdetained (POST)"
         );
     }
     #[tokio::test]
@@ -74651,7 +74651,7 @@ use tower::util::ServiceExt;
             .oneshot(
                 axum::http::Request::builder()
                     .uri("/api/processplatform/service/processing/touch/merge")
-                    .method(axum::http::Method::GET)
+                    .method(axum::http::Method::POST)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
             )
@@ -74663,7 +74663,7 @@ use tower::util::ServiceExt;
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/touch/merge (GET)"
+            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/touch/merge (POST)"
         );
     }
     #[tokio::test]
@@ -74673,7 +74673,7 @@ use tower::util::ServiceExt;
             .oneshot(
                 axum::http::Request::builder()
                     .uri("/api/processplatform/service/processing/touch/mergeitem")
-                    .method(axum::http::Method::GET)
+                    .method(axum::http::Method::POST)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
             )
@@ -74685,7 +74685,7 @@ use tower::util::ServiceExt;
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/touch/mergeitem (GET)"
+            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/touch/mergeitem (POST)"
         );
     }
     #[tokio::test]
@@ -74695,7 +74695,7 @@ use tower::util::ServiceExt;
             .oneshot(
                 axum::http::Request::builder()
                     .uri("/api/processplatform/service/processing/touch/touchdelay")
-                    .method(axum::http::Method::GET)
+                    .method(axum::http::Method::POST)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
             )
@@ -74707,7 +74707,7 @@ use tower::util::ServiceExt;
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/touch/touchdelay (GET)"
+            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/touch/touchdelay (POST)"
         );
     }
     #[tokio::test]
@@ -74717,7 +74717,7 @@ use tower::util::ServiceExt;
             .oneshot(
                 axum::http::Request::builder()
                     .uri("/api/processplatform/service/processing/touch/urge")
-                    .method(axum::http::Method::GET)
+                    .method(axum::http::Method::POST)
                     .body(axum::body::Body::empty())
                     .expect("build request"),
             )
@@ -74729,7 +74729,7 @@ use tower::util::ServiceExt;
             .expect("read parity body");
         assert!(
             parts.status != StatusCode::NOT_FOUND || !bytes.is_empty(),
-            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/touch/urge (GET)"
+            "parity: route missing on processplatform_service_processing: /api/processplatform/service/processing/touch/urge (POST)"
         );
     }
     #[tokio::test]

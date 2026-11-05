@@ -40,15 +40,9 @@ fn biz_err(msg: impl Into<String>) -> H {
     Ok(Json(ActionResult::error(msg.into())))
 }
 
-/// 运维维护作业门禁（仅会话）：touch/* 批量维护作业原本要求登录会话
-/// （o2server 对齐：Authenticated，任意登录用户可触发）；无会话时 401 而非放行执行。
-async fn require_session_opt(session: Option<&shared::session::Session>) -> Result<(), AppError> {
-    session.map(|_| ()).ok_or(AppError::Unauthorized)
-}
-
-/// 运维维护作业门禁（admin）：touch/mergeitem 曾是 Public + 认证豁免
-/// （未认证即可触发 DELETE x_attachment 去重删库），2026-10 安全审计后
-/// 收紧为 admin 触发；无会话 401，非 admin 403。
+/// 运维维护作业门禁（admin）：touch/* 批量维护作业原先只要求「任意登录会话」
+/// 且挂在 GET 上，等于任意登录用户可用 GET 触发批量物理删除（2026-11 授权缺陷）。
+/// 本轮统一收紧为 admin：无会话 401，非 admin 403；路由同时改为 POST，GET 不再写。
 async fn require_admin_opt(
     pool: &Pool,
     session: Option<&shared::session::Session>,
@@ -1827,13 +1821,13 @@ pub async fn taskcompleted_update_next_identity(
 
 // ── touch（TouchAction：参数化批量维护作业，全部真实 SQL）──────────────────
 
-/// GET touch/cleanevent：清理超过 24h 的陈旧事件记录
+/// POST touch/cleanevent：清理超过 24h 的陈旧事件记录
 #[allow(non_snake_case)]
 pub async fn touch_clean_event(
     pool: Extension<Pool>,
     session: Option<Extension<shared::session::Session>>,
 ) -> H {
-    require_session_opt(session.as_deref()).await?;
+    require_admin_opt(&pool.0, session.as_deref()).await?;
     let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
@@ -1846,13 +1840,13 @@ pub async fn touch_clean_event(
     ok(json!({ "value": true, "deleted": n as i64 }))
 }
 
-/// GET touch/deletedraft：清理已结束工作的草稿
+/// POST touch/deletedraft：清理已结束工作的草稿
 #[allow(non_snake_case)]
 pub async fn touch_delete_draft(
     pool: Extension<Pool>,
     session: Option<Extension<shared::session::Session>>,
 ) -> H {
-    require_session_opt(session.as_deref()).await?;
+    require_admin_opt(&pool.0, session.as_deref()).await?;
     let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
@@ -1866,13 +1860,13 @@ pub async fn touch_delete_draft(
     ok(json!({ "value": true, "deleted": n as i64 }))
 }
 
-/// GET touch/handoverjob：把无主 job 移交其工作创建者
+/// POST touch/handoverjob：把无主 job 移交其工作创建者
 #[allow(non_snake_case)]
 pub async fn touch_handover_job(
     pool: Extension<Pool>,
     session: Option<Extension<shared::session::Session>>,
 ) -> H {
-    require_session_opt(session.as_deref()).await?;
+    require_admin_opt(&pool.0, session.as_deref()).await?;
     let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
@@ -1887,7 +1881,13 @@ pub async fn touch_handover_job(
     ok(json!({ "value": true, "handovered": n as i64 }))
 }
 
-/// GET touch/loglongdetained：滞留超 24h 的活动工作补记日志（按内容幂等去重）
+/// 业务日界（UTC+8）：容器时区通常是 UTC，`date_trunc('day', NOW())` 会把
+/// 北京时间 00:00–08:00 算成前一天。所有「按业务日去重」的维护作业统一用
+/// `NOW() AT TIME ZONE 'Asia/Shanghai'` 得到北京墙钟，再截到自然日。
+/// （`x_record.create_time` 是 timestamp without time zone，比较类型一致。）
+const BUSINESS_DAY_START: &str = "date_trunc('day', (NOW() AT TIME ZONE 'Asia/Shanghai'))";
+
+/// POST touch/loglongdetained：滞留超 24h 的活动工作补记日志（按业务日幂等去重）
 ///
 /// 单条 `INSERT ... SELECT ... RETURNING` 取代原「SELECT 候选 + 对每行一条
 /// INSERT」的写 N+1（命中行数无上限，滞留越多越慢）。NOT EXISTS 已在语句内
@@ -1897,23 +1897,24 @@ pub async fn touch_log_long_detained(
     pool: Extension<Pool>,
     session: Option<Extension<shared::session::Session>>,
 ) -> H {
-    require_session_opt(session.as_deref()).await?;
+    require_admin_opt(&pool.0, session.as_deref()).await?;
     let client = shared::db::acquire(&pool).await?;
+    let sql = format!(
+        "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) \
+         SELECT gen_random_uuid()::text, w.id, 'long_detained', \
+                'work detained over 24 hours', 'system', NOW() \
+         FROM x_work w \
+         WHERE w.end_time IS NULL \
+           AND w.start_time < NOW() - INTERVAL '24 hours' \
+           AND NOT EXISTS (\
+               SELECT 1 FROM x_record r \
+               WHERE r.work_id = w.id AND r.record_type = 'long_detained' \
+                 AND r.create_time >= {}) \
+         RETURNING work_id",
+        BUSINESS_DAY_START
+    );
     let rows = client
-        .query(
-            "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) \
-             SELECT gen_random_uuid()::text, w.id, 'long_detained', \
-                    'work detained over 24 hours', 'system', NOW() \
-             FROM x_work w \
-             WHERE w.end_time IS NULL \
-               AND w.start_time < NOW() - INTERVAL '24 hours' \
-               AND NOT EXISTS (\
-                   SELECT 1 FROM x_record r \
-                   WHERE r.work_id = w.id AND r.record_type = 'long_detained' \
-                     AND r.create_time >= date_trunc('day', NOW())) \
-             RETURNING work_id",
-            &[],
-        )
+        .query(&sql, &[])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let logged: Vec<String> = rows
@@ -1923,7 +1924,7 @@ pub async fn touch_log_long_detained(
     ok(json!({ "value": true, "count": logged.len() as i64, "workList": logged }))
 }
 
-/// GET touch/touchdelay：为存在过期任务的工作补接触摸记录（每日去重）
+/// POST touch/touchdelay：为存在过期任务的工作补接触摸记录（业务日幂等去重）
 ///
 /// 同 loglongdetained：单条 `INSERT ... SELECT ... RETURNING` 取代写 N+1。
 /// 内层 DISTINCT + NOT EXISTS 复刻原逐行查重；`COALESCE(t.work,'')` 复刻原
@@ -1933,22 +1934,23 @@ pub async fn touch_delay(
     pool: Extension<Pool>,
     session: Option<Extension<shared::session::Session>>,
 ) -> H {
-    require_session_opt(session.as_deref()).await?;
+    require_admin_opt(&pool.0, session.as_deref()).await?;
     let client = shared::db::acquire(&pool).await?;
+    let sql = format!(
+        "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) \
+         SELECT gen_random_uuid()::text, COALESCE(t.work, ''), 'touch_delay', \
+                'delay touched', 'system', NOW() \
+         FROM (SELECT DISTINCT t.work FROM x_task t \
+               WHERE t.task_status = 'expired' \
+                 AND NOT EXISTS (\
+                     SELECT 1 FROM x_record r \
+                     WHERE r.work_id = t.work AND r.record_type = 'touch_delay' \
+                       AND r.create_time >= {}) ORDER BY t.work) t \
+         RETURNING work_id",
+        BUSINESS_DAY_START
+    );
     let rows = client
-        .query(
-            "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) \
-             SELECT gen_random_uuid()::text, COALESCE(t.work, ''), 'touch_delay', \
-                    'delay touched', 'system', NOW() \
-             FROM (SELECT DISTINCT t.work FROM x_task t \
-                   WHERE t.task_status = 'expired' \
-                     AND NOT EXISTS (\
-                         SELECT 1 FROM x_record r \
-                         WHERE r.work_id = t.work AND r.record_type = 'touch_delay' \
-                           AND r.create_time >= date_trunc('day', NOW()))) t \
-             RETURNING work_id",
-            &[],
-        )
+        .query(&sql, &[])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let touched: Vec<String> = rows
@@ -1958,7 +1960,7 @@ pub async fn touch_delay(
     ok(json!({ "value": true, "count": touched.len() as i64, "workList": touched }))
 }
 
-/// GET touch/urge：为滞留超 24h 的活动任务补催办记录（按 work+类型+内容去重）
+/// POST touch/urge：为滞留超 24h 的活动任务补催办记录（按 work+类型+内容去重）
 ///
 /// 同族写 N+1 折叠：原逐行 `record_exists`（work+type+content，无日期）去重，
 /// 这里以内层 DISTINCT + 外层 NOT EXISTS（同谓词）等价复刻为单条语句。
@@ -1967,7 +1969,7 @@ pub async fn touch_urge(
     pool: Extension<Pool>,
     session: Option<Extension<shared::session::Session>>,
 ) -> H {
-    require_session_opt(session.as_deref()).await?;
+    require_admin_opt(&pool.0, session.as_deref()).await?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
@@ -1993,13 +1995,13 @@ pub async fn touch_urge(
     ok(json!({ "value": true, "count": urged.len() as i64, "workList": urged }))
 }
 
-/// GET touch/merge：合并同 work 的重复 workcompleted（保留最早一条）
+/// POST touch/merge：合并同 work 的重复 workcompleted（保留最早一条）
 #[allow(non_snake_case)]
 pub async fn touch_merge(
     pool: Extension<Pool>,
     session: Option<Extension<shared::session::Session>>,
 ) -> H {
-    require_session_opt(session.as_deref()).await?;
+    require_admin_opt(&pool.0, session.as_deref()).await?;
     let client = shared::db::acquire(&pool).await?;
     let n = client
         .execute(
@@ -2014,7 +2016,7 @@ pub async fn touch_merge(
     ok(json!({ "value": true, "merged": n as i64 }))
 }
 
-/// GET touch/mergeitem：合并同名重复附件（同一归属下保留最早一条）
+/// POST touch/mergeitem：合并同名重复附件（同一归属下保留最早一条）
 #[allow(non_snake_case)]
 pub async fn touch_merge_item(
     pool: Extension<Pool>,
@@ -2748,8 +2750,32 @@ mod security_gate_tests {
             touch_delay(Extension(pool.clone()), None).await,
             touch_urge(Extension(pool.clone()), None).await,
             touch_merge(Extension(pool.clone()), None).await,
+            touch_merge_item(Extension(pool.clone()), None).await,
         ] {
             assert!(matches!(res, Err(AppError::Unauthorized)));
+        }
+    }
+
+    /// 2026-11 授权缺陷：任意登录会话（非 admin）不得触发 touch/*。
+    /// 原实现 7 条只要求「有会话」，非 admin 会话可直接跑批量物理删除。
+    #[tokio::test]
+    async fn all_touch_jobs_forbidden_for_non_admin() {
+        let pool = shared::testing::test_pool();
+        let s = Some(Extension(build_session("u-nonadmin")));
+        for res in [
+            touch_clean_event(Extension(pool.clone()), s.clone()).await,
+            touch_delete_draft(Extension(pool.clone()), s.clone()).await,
+            touch_handover_job(Extension(pool.clone()), s.clone()).await,
+            touch_log_long_detained(Extension(pool.clone()), s.clone()).await,
+            touch_delay(Extension(pool.clone()), s.clone()).await,
+            touch_urge(Extension(pool.clone()), s.clone()).await,
+            touch_merge(Extension(pool.clone()), s.clone()).await,
+            touch_merge_item(Extension(pool.clone()), s.clone()).await,
+        ] {
+            assert!(
+                matches!(res, Err(AppError::Forbidden)),
+                "非 admin 会话调用 touch/* 必须 403"
+            );
         }
     }
 }

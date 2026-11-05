@@ -256,6 +256,7 @@ mod tests {
     // SKIPPED: workcompleted_flag_merge requires Session parameter
     // SKIPPED: workcompleted_flag_rollback requires Session parameter
     // SKIPPED: work_v3_retract requires Session parameter
+    // SKIPPED: tick not accessible
     // SKIPPED: start not accessible
     // SKIPPED: cancel not accessible
     // SKIPPED: restore not accessible

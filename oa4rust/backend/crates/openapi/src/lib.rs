@@ -54836,98 +54836,6 @@ async fn processplatform_service_processing_b4dc0a_get() {}
 )]
 async fn processplatform_service_processing_fb4945_get() {}
 #[utoipa::path(get,
-    path = "/api/processplatform/service/processing/touch/cleanevent",
-    tag = "process",
-    responses(
-        (status = 200, description = "Success", body = serde_json::Value),
-        (status = 400, description = "Bad Request"),
-        (status = 401, description = "Unauthorized"),
-        (status = 500, description = "Internal Server Error")
-    ),
-)]
-async fn processplatform_service_processing_f2c47a_get() {}
-#[utoipa::path(get,
-    path = "/api/processplatform/service/processing/touch/deletedraft",
-    tag = "process",
-    responses(
-        (status = 200, description = "Success", body = serde_json::Value),
-        (status = 400, description = "Bad Request"),
-        (status = 401, description = "Unauthorized"),
-        (status = 500, description = "Internal Server Error")
-    ),
-)]
-async fn processplatform_service_processing_9de2d8_get() {}
-#[utoipa::path(get,
-    path = "/api/processplatform/service/processing/touch/handoverjob",
-    tag = "process",
-    responses(
-        (status = 200, description = "Success", body = serde_json::Value),
-        (status = 400, description = "Bad Request"),
-        (status = 401, description = "Unauthorized"),
-        (status = 500, description = "Internal Server Error")
-    ),
-)]
-async fn processplatform_service_processing_530ced_get() {}
-#[utoipa::path(get,
-    path = "/api/processplatform/service/processing/touch/loglongdetained",
-    tag = "process",
-    responses(
-        (status = 200, description = "Success", body = serde_json::Value),
-        (status = 400, description = "Bad Request"),
-        (status = 401, description = "Unauthorized"),
-        (status = 500, description = "Internal Server Error")
-    ),
-)]
-async fn processplatform_service_processing_a7e4c6_get() {}
-#[utoipa::path(get,
-    path = "/api/processplatform/service/processing/touch/merge",
-    tag = "process",
-    responses(
-        (status = 200, description = "Success", body = serde_json::Value),
-        (status = 400, description = "Bad Request"),
-        (status = 401, description = "Unauthorized"),
-        (status = 500, description = "Internal Server Error")
-    ),
-)]
-async fn processplatform_service_processing_processplatform_service_processing_touch_merge_touch_merge_get(
-) {
-}
-#[utoipa::path(get,
-    path = "/api/processplatform/service/processing/touch/mergeitem",
-    tag = "process",
-    responses(
-        (status = 200, description = "Success", body = serde_json::Value),
-        (status = 400, description = "Bad Request"),
-        (status = 401, description = "Unauthorized"),
-        (status = 500, description = "Internal Server Error")
-    ),
-)]
-async fn processplatform_service_processing_a81d44_get() {}
-#[utoipa::path(get,
-    path = "/api/processplatform/service/processing/touch/touchdelay",
-    tag = "process",
-    responses(
-        (status = 200, description = "Success", body = serde_json::Value),
-        (status = 400, description = "Bad Request"),
-        (status = 401, description = "Unauthorized"),
-        (status = 500, description = "Internal Server Error")
-    ),
-)]
-async fn processplatform_service_processing_dd5e3f_get() {}
-#[utoipa::path(get,
-    path = "/api/processplatform/service/processing/touch/urge",
-    tag = "process",
-    responses(
-        (status = 200, description = "Success", body = serde_json::Value),
-        (status = 400, description = "Bad Request"),
-        (status = 401, description = "Unauthorized"),
-        (status = 500, description = "Internal Server Error")
-    ),
-)]
-async fn processplatform_service_processing_processplatform_service_processing_touch_urge_touch_urge_get(
-) {
-}
-#[utoipa::path(get,
     path = "/api/processplatform/service/processing/v2/goback/{work}/{id}",
     tag = "process",
     params(
@@ -55908,6 +55816,98 @@ async fn processplatform_service_processing_processplatform_service_processing_t
     ),
 )]
 async fn processplatform_service_processing_4b4054_post() {}
+#[utoipa::path(post,
+    path = "/api/processplatform/service/processing/touch/cleanevent",
+    tag = "process",
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+)]
+async fn processplatform_service_processing_b37ce6_post() {}
+#[utoipa::path(post,
+    path = "/api/processplatform/service/processing/touch/deletedraft",
+    tag = "process",
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+)]
+async fn processplatform_service_processing_16e04e_post() {}
+#[utoipa::path(post,
+    path = "/api/processplatform/service/processing/touch/handoverjob",
+    tag = "process",
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+)]
+async fn processplatform_service_processing_42f161_post() {}
+#[utoipa::path(post,
+    path = "/api/processplatform/service/processing/touch/loglongdetained",
+    tag = "process",
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+)]
+async fn processplatform_service_processing_8bcc5c_post() {}
+#[utoipa::path(post,
+    path = "/api/processplatform/service/processing/touch/merge",
+    tag = "process",
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+)]
+async fn processplatform_service_processing_processplatform_service_processing_touch_merge_touch_merge_post(
+) {
+}
+#[utoipa::path(post,
+    path = "/api/processplatform/service/processing/touch/mergeitem",
+    tag = "process",
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+)]
+async fn processplatform_service_processing_8e1da1_post() {}
+#[utoipa::path(post,
+    path = "/api/processplatform/service/processing/touch/touchdelay",
+    tag = "process",
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+)]
+async fn processplatform_service_processing_514097_post() {}
+#[utoipa::path(post,
+    path = "/api/processplatform/service/processing/touch/urge",
+    tag = "process",
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+)]
+async fn processplatform_service_processing_processplatform_service_processing_touch_urge_touch_urge_post(
+) {
+}
 #[utoipa::path(post,
     path = "/api/processplatform/service/processing/v2/add/split/{work}/{id}",
     tag = "process",
@@ -70066,14 +70066,6 @@ async fn signature_pdf_verify_verify_pdf_handler_post() {}
         processplatform_service_processing_e64bec_get,
         processplatform_service_processing_b4dc0a_get,
         processplatform_service_processing_fb4945_get,
-        processplatform_service_processing_f2c47a_get,
-        processplatform_service_processing_9de2d8_get,
-        processplatform_service_processing_530ced_get,
-        processplatform_service_processing_a7e4c6_get,
-        processplatform_service_processing_processplatform_service_processing_touch_merge_touch_merge_get,
-        processplatform_service_processing_a81d44_get,
-        processplatform_service_processing_dd5e3f_get,
-        processplatform_service_processing_processplatform_service_processing_touch_urge_touch_urge_get,
         processplatform_service_processing_22b0fb_get,
         processplatform_service_processing_2130f8_get,
         processplatform_service_processing_edc6c5_get,
@@ -70141,6 +70133,14 @@ async fn signature_pdf_verify_verify_pdf_handler_post() {}
         processplatform_service_processing_858d08_post,
         processplatform_service_processing_processplatform_service_processing_timer_start_start_timer_post,
         processplatform_service_processing_4b4054_post,
+        processplatform_service_processing_b37ce6_post,
+        processplatform_service_processing_16e04e_post,
+        processplatform_service_processing_42f161_post,
+        processplatform_service_processing_8bcc5c_post,
+        processplatform_service_processing_processplatform_service_processing_touch_merge_touch_merge_post,
+        processplatform_service_processing_8e1da1_post,
+        processplatform_service_processing_514097_post,
+        processplatform_service_processing_processplatform_service_processing_touch_urge_touch_urge_post,
         processplatform_service_processing_0fbf4f_post,
         processplatform_service_processing_processplatform_service_processing_work_work_create_post,
         processplatform_service_processing_b0f805_post,

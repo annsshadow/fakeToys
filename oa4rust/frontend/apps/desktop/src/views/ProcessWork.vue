@@ -2725,36 +2725,36 @@ async function engineRest4(op: string): Promise<void> {
     engineBusy.value = false
   }
 }
-// rev437：service/processing 引擎 触达域批处理 GET touch/urge（催办超时活动任务，record_insert 记录）·GET touch/handoverjob（接管无主 job，person←work.creator）真实路由（u2 版仅取 pool 无 Path，字面量路由匹配；POST 同名走 crate:: Path<String> 属字面末段 trap 已避）
+// rev437/2026-11：service/processing 引擎 触达域批处理 POST touch/urge（催办超时活动任务，record_insert 记录）·POST touch/handoverjob（接管无主 job，person←work.creator）；GET 不再触发写
 async function engineTouch(op: string): Promise<void> {
   if (engineBusy.value) return
   engineBusy.value = true
   try {
     if (op === 'urge') {
-      const r: any = await api.get('/api/processplatform/service/processing/touch/urge')
+      const r: any = await api.post('/api/processplatform/service/processing/touch/urge', {})
       const n = Array.isArray(r?.data) ? r.data.length : (r?.data?.count ?? 0)
       toast.success(`已催办超时任务：${n}`)
     } else if (op === 'deletedraft') {
       // rev438：清理已完成工作的遗留草稿（touch_delete_draft 仅取 pool，UPDATE x_draft deleted_at）
-      const r: any = await api.get('/api/processplatform/service/processing/touch/deletedraft')
+      const r: any = await api.post('/api/processplatform/service/processing/touch/deletedraft', {})
       toast.success(`已清理遗留草稿：${(r as any)?.data?.deleted ?? 0}`)
     } else if (op === 'touchdelay') {
       // rev438：超时任务顺延登记（touch_delay 仅取 pool，扫描 expired 任务登记 touch_delay 记录）
-      const r: any = await api.get('/api/processplatform/service/processing/touch/touchdelay')
+      const r: any = await api.post('/api/processplatform/service/processing/touch/touchdelay', {})
       const n = Array.isArray(r?.data) ? r.data.length : (r?.data?.count ?? 0)
       toast.success(`超时顺延登记：${n}`)
     } else if (op === 'mergeitem') {
       // rev438：合并去重重复附件（touch_merge_item 仅取 pool，DELETE x_attachment 同名同工作重复项）
       if (!(await confirmMsg('确定合并去重重复附件？将删除同名同工作的冗余附件行。'))) return
-      const r: any = await api.get('/api/processplatform/service/processing/touch/mergeitem')
+      const r: any = await api.post('/api/processplatform/service/processing/touch/mergeitem', {})
       toast.success(`已去重附件：${(r as any)?.data?.deleted ?? (r as any)?.data?.merged ?? 0}`)
     } else if (op === 'cleanevent') {
       // rev444：清理过期事件记录（touch_clean_event 仅取 pool，DELETE x_record event 超 24h）
-      const r: any = await api.get('/api/processplatform/service/processing/touch/cleanevent')
+      const r: any = await api.post('/api/processplatform/service/processing/touch/cleanevent', {})
       toast.success(`已清理过期事件：${(r as any)?.data?.deleted ?? 0}`)
     } else if (op === 'loglong') {
       // rev444：登记长滞留工作（touch_log_long_detained 仅取 pool，扫 24h 未结工作登记记录）
-      const r: any = await api.get('/api/processplatform/service/processing/touch/loglongdetained')
+      const r: any = await api.post('/api/processplatform/service/processing/touch/loglongdetained', {})
       const n = Array.isArray(r?.data) ? r.data.length : (r?.data?.count ?? 0)
       toast.success(`长滞留登记：${n}`)
     } else if (op === 'reviewCreate') {
@@ -2764,7 +2764,7 @@ async function engineTouch(op: string): Promise<void> {
       await api.post('/api/processplatform/service/processing/review/create/work', { workId })
       toast.success('待阅已创建')
     } else {
-      const r: any = await api.get('/api/processplatform/service/processing/touch/handoverjob')
+      const r: any = await api.post('/api/processplatform/service/processing/touch/handoverjob', {})
       const n = r?.data?.count ?? (Array.isArray(r?.data) ? r.data.length : 0)
       toast.success(`已接管无主作业：${n}`)
     }
