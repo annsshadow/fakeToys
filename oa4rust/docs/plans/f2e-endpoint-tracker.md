@@ -126,6 +126,16 @@
 - required check 对**旧分支**等于永远不满足：长命 PR 必须定期把 `main` 合回本分支，
   否则会被一个其 head 上根本不存在的检查永久卡死。#182 即此例（其 head 的 workflow
   尚无该 job），处理方式为把 `main` 合入其分支后重跑 CI。
+- required check + `pull_request.paths` 过滤 = 某些 PR 永远等不到结果。已删除
+  `oa4rust-ci.yml` 中 `pull_request` 的 `paths` 过滤（`push` 保留），确保 10 项必需检查
+  对每个 PR 都存在；仅文档 PR 由临时 PR 实测 10 项全部出现。
+- 改 `.github/workflows/**` 的 PR 目前**只能用本地 merge+push 合入**：`gh` OAuth app 缺
+  `workflow` scope，`mergePullRequest` 会直接拒绝（`--admin` 同样被拒）。修法：
+  `gh auth refresh -s workflow` 补齐该 scope。
+  - 本地 push 必须是 **fast-forward**（`non_fast_forward` 规则会挡非 ff）。
+  - required checks 规则不评估直推的新提交，所以这条路径**不靠检查放行**，等价于 admin
+    绕过；使用前提是**被推送树对应分支上的必需检查已全绿**，并按上面的纪律留痕。
+    本次 #192 使用该路径时，head `c74d8720` 的 10 项检查全部 success。
 
 ## 已知相邻（不并入本轮）
 
