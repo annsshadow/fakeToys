@@ -460,3 +460,67 @@ pub async fn timer_process_restart_flow(ctx: Arc<TestContext>) {
     drop(p2);
     let _ = std::fs::remove_file(&p2_log);
 }
+
+/// O25 第二档（cron）：parity corpus / 文档 / 前端都没有 cron 的书面承诺，
+/// 因此 `timer/start` 入口直接 400 拒收，且不得落任何 job 行。
+pub async fn timer_cron_rejected_flow(pool: Arc<TestPool>) {
+    let (addr, server, token) = setup_test_server(pool.clone())
+        .await
+        .expect("failed to start test server");
+    let client = Client::builder()
+        .timeout(Duration::from_secs(10))
+        .build()
+        .expect("failed to build reqwest client");
+    let work_id = uniq("tw");
+    seed_work(&pool.as_pg().expect("postgres pool").clone(), &work_id).await;
+    let fire_at_str = (Utc::now().naive_utc() + chrono::Duration::hours(1))
+        .format("%Y-%m-%d %H:%M:%S")
+        .to_string();
+
+    let resp = client
+        .post(format!(
+            "http://{}/api/processplatform/service/processing/timer/start",
+            addr
+        ))
+        .header("Authorization", format!("Bearer {}", token))
+        .json(&json!({
+            "workId": work_id,
+            "cron": "0 */5 * * * *",
+            "fireAt": fire_at_str,
+        }))
+        .send()
+        .await
+        .expect("POST timer/start with cron failed");
+    let status = resp.status();
+    let raw = resp.text().await.expect("timer/start body");
+    assert_eq!(
+        status,
+        StatusCode::BAD_REQUEST,
+        "cron 应被 400 拒收，实际 {status}，body={raw}"
+    );
+    let body: Value = serde_json::from_str(&raw).expect("400 body must be JSON");
+    assert_eq!(body["type"], "error", "body={raw}");
+    assert!(
+        raw.contains("cron") && raw.contains("暂不支持"),
+        "400 文案必须明确“cron 暂不支持”，body={raw}"
+    );
+
+    // 拒收必须发生在写库之前：不能留一条永不触发的 job。
+    let count: i64 = pool
+        .as_pg()
+        .expect("postgres pool")
+        .get()
+        .await
+        .expect("pool client")
+        .query_one(
+            "SELECT COUNT(*) FROM x_timer_job WHERE work_id = $1",
+            &[&work_id],
+        )
+        .await
+        .expect("count timer jobs")
+        .get(0);
+    assert_eq!(count, 0, "cron 被拒收后不应落 x_timer_job 行");
+
+    server.abort();
+    let _ = server.await;
+}

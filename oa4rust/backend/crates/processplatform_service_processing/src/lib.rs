@@ -4105,7 +4105,7 @@ pub mod timer {
             let due: Vec<TimerJob> = {
                 let jobs = self.jobs.read().await;
                 jobs.values()
-                    .filter(|job| job.cron.is_none() && job.fire_at <= now)
+                    .filter(|job| job.kind == "once" && job.cron.is_none() && job.fire_at <= now)
                     .cloned()
                     .collect()
             };
@@ -4142,19 +4142,6 @@ pub mod timer {
             if !claimed {
                 return Ok(false);
             }
-            if job.kind.as_str() == "expire" {
-                if let Some(ref task_id) = job.task_id {
-                    client
-                        .execute(
-                            "UPDATE x_task SET task_status = $1 WHERE id = $2 AND task_status = $3",
-                            &[&"expired", task_id, &"active"],
-                        )
-                        .await
-                        .map_err(|e| {
-                            AppError::internal_with_source(concat!(file!(), ":", line!()), e)
-                        })?;
-                }
-            }
             Ok(true)
         }
 
@@ -4165,9 +4152,16 @@ pub mod timer {
             fire_at: NaiveDateTime,
             cron: Option<String>,
         ) -> Result<String, AppError> {
+            // 无任何书面承诺（parity corpus、文档、前端都没有 cron 输入）：
+            // 明确拒收，而不是落一条永不触发的 job。
+            if cron.is_some() {
+                return Err(AppError::BadRequest(
+                    "cron 定时任务暂不支持，仅支持一次性 fireAt".to_string(),
+                ));
+            }
             let id = Uuid::new_v4().to_string();
             let now = chrono::Utc::now().naive_utc();
-            let kind = if cron.is_some() { "cron" } else { "once" };
+            let kind = "once";
 
             let job = TimerJob {
                 id: id.clone(),
@@ -4278,25 +4272,24 @@ pub async fn start_timer(
         .get("taskId")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
+    // 无书面承诺的 cron 在入口直接 400 拒收（不落永不触发的 job）。
+    if req.get("cron").and_then(|v| v.as_str()).is_some() {
+        return Err(AppError::BadRequest(
+            "cron 定时任务暂不支持，仅支持一次性 fireAt".to_string(),
+        ));
+    }
     let fire_at_str: String = req
         .get("fireAt")
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
-    let cron: Option<String> = req
-        .get("cron")
-        .and_then(|v| v.as_str())
-        .map(|s| s.to_string());
 
-    let fire_at = if cron.is_some() {
-        chrono::Utc::now().naive_utc()
-    } else {
+    let fire_at =
         NaiveDateTime::parse_from_str(&fire_at_str, "%Y-%m-%d %H:%M:%S").map_err(|_| {
             AppError::BadRequest("invalid fireAt format, expected YYYY-MM-DD HH:MM:SS".to_string())
-        })?
-    };
+        })?;
 
-    let job_id = timer.start(work_id.clone(), task_id, fire_at, cron).await?;
+    let job_id = timer.start(work_id.clone(), task_id, fire_at, None).await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
