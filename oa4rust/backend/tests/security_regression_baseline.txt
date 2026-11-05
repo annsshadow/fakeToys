@@ -51,13 +51,9 @@ general_assemble_control|attendscope_get|GET	LEAK
 general_assemble_control|invoice_get_id|GET	LEAK
 general_assemble_control|qrcode_get|GET	LEAK
 general_assemble_control|securityclearance_get|GET	LEAK
-general_core_entity|file_delete|POST	LEAK
 general_core_entity|file_download|GET	LEAK
 general_core_entity|file_get|GET	LEAK
-general_core_entity|file_update|POST	LEAK
-general_core_entity|invoice_delete|POST	LEAK
 general_core_entity|invoice_get|GET	LEAK
-general_core_entity|invoice_update|POST	LEAK
 hotpic_assemble_control|user_hotpic_delete_by_ids|DELETE	LEAK
 hotpic_core_entity|delete_by_id|DELETE	LEAK
 jpush_assemble_control|get_jpush|GET	LEAK
