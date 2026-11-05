@@ -1,6 +1,7 @@
 // Copyright (C) 2026 annsshadow
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import { ApiError } from '@oa4rust/sdk'
 import { type QueryClient, type QueryKey, useQueryClient } from '@tanstack/vue-query'
 import { type ComputedRef, computed, type Ref } from 'vue'
 
@@ -40,6 +41,23 @@ export interface ListErrorState {
  */
 export function reloadListQueries(qc: QueryClient, queryKey: QueryKey): Promise<void> {
   return qc.invalidateQueries({ queryKey }, { cancelRefetch: false })
+}
+
+/**
+ * 查询失败重试策略（R133）。
+ *
+ * 只重试「可能自己恢复」的失败：网络错误、5xx、408/429。
+ * - 超时（SDK 统一映射 `status 0`）不重试：重试只会把等待从 30s 拉成 90s；
+ * - 其余 4xx（401/403/404 等）不重试：权限/认证/不存在不会因为再发一次就变好。
+ * 最多 2 次重试（共 3 次尝试），与 R131 的「N 次触发只发 1 次在途请求」互补。
+ */
+export function shouldRetryQuery(failureCount: number, error: unknown): boolean {
+  if (failureCount >= 2) return false
+  if (error instanceof ApiError) {
+    if (error.status === 0) return false
+    if (error.status >= 400 && error.status < 500 && error.status !== 408 && error.status !== 429) return false
+  }
+  return true
 }
 
 /**
