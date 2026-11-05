@@ -376,19 +376,29 @@ jobs:
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('oa4rust/backend/Cargo.lock') }}
       - name: Apply migrations
         run: cargo run --bin oa4rust -- --migrate-only
-      - name: Boot the server and assert /health
+      - name: Boot the server and assert /health + survival past grace
         # 判据：进程活着 **且** /health 返回 2xx。只断言「进程没退出」会漏掉
         # 「监听起来了但路由没挂」；只断言 curl 成功会漏掉「起来又崩」。
+        #
+        # 2026-11-05 补存活断言：修前 `timeout(grace, server)` 包住整个服务
+        # 生命周期，即使没有任何关闭信号，进程也会在 listening +10s 被强制
+        # 退出。旧版这一步首次 /health 成功就 exit 0（约 1-2s），窗口远小于
+        # DEFAULT_GRACE_PERIOD=10s，所以长期没被发现。这里在首次健康后继续
+        # 等到 15s / 30s（3 倍 grace），任一时刻进程退出或 /health 非 200 即红。
         run: |
           set -euo pipefail
           cargo build --bin oa4rust
           ./target/debug/oa4rust &
           server_pid=$!
+          start_ts=$(date +%s)
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+
+          healthy_at=""
           for i in $(seq 1 60); do
             if curl -fsS -o /dev/null http://127.0.0.1:3000/health; then
+              healthy_at=$i
               echo "::notice::/health OK after ${i}s"
-              exit 0
+              break
             fi
             if ! kill -0 "$server_pid" 2>/dev/null; then
               echo "::error::server exited before becoming healthy"
@@ -396,8 +406,29 @@ jobs:
             fi
             sleep 1
           done
-          echo "::error::server did not answer /health within 60s"
-          exit 1
+          if [ -z "$healthy_at" ]; then
+            echo "::error::server did not answer /health within 60s"
+            exit 1
+          fi
+
+          assert_alive() {
+            target=$1
+            while [ $(( $(date +%s) - start_ts )) -lt "$target" ]; do sleep 1; done
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              echo "::error::server died before ${target}s without any shutdown signal (grace period must only apply after a signal)"
+              exit 1
+            fi
+            status=$(curl -fsS -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/health || true)
+            if [ "$status" != "200" ]; then
+              echo "::error::/health not 200 at ${target}s (got ${status})"
+              exit 1
+            fi
+            echo "::notice::alive and /health 200 at ${target}s"
+          }
+
+          # 15s 已越过默认 grace；30s = 3 倍 grace。
+          assert_alive 15
+          assert_alive 30
 
   # ── plan002 U9 / R8: OpenAPI 安全方案守卫 ────────────────────────────────────
   # scripts/gen_openapi_paths.py 重新生成 OpenAPI lib.rs 时，会把 Bearer 安全方案

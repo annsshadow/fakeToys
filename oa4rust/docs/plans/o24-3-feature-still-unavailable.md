@@ -161,3 +161,16 @@ SELECT application, info_id, count(*) FROM x_hotpic GROUP BY 1,2 ORDER BY 3 DESC
   单独登记为**错误常量**（不是待办默认值）。
 - 这些条目不占基线（基线 0 行），不影响棘轮；它们是产品层面的待补项，不是回归。
 - 在来源确定前，保持 400，不写占位 id。
+
+## 2026-11-05 追加：流程引擎「定时器」按钮（O25）
+
+| # | 端点 | 前端入口（文件:行） | 缺的字段 | 字段业务来源 | 前端现有能力 |
+|---|---|---|---|---|---|
+| 8 | `POST /api/processplatform/service/processing/timer/start` | [`ProcessManagerApp.vue:682`](../../frontend/apps/desktop/src/views/ProcessManagerApp.vue#L682) · 流程实例建/执行/取消/网关分叉/定时器 ·「定时器」按钮 → `:682` | `workId`、`fireAt` | 当前流程实例 id + 用户选择的触发时刻 | **无**（`api.post(..., {})` 发空 body，两个字段都没有） |
+
+- 后端现状：once 任务已真实可用（真实 POST → 200、回库正确、到期恰好执行一次、重启恢复）。
+  缺参时返回 **400**（明确报错），不是 500。
+- 前端现状：按钮只 `prompt('目标 ID:')` 拿一个 id，但**没有**把这个 id 传给 `timer/start`；
+  请求体是空对象 `{}`，`workId` / `fireAt` 均为空 → 必然 400。
+- 判定：**功能对用户仍不可用**，登记在此，不计入基线；修复需前端补两个输入（流程实例 id + 触发时间）并按
+  `YYYY-MM-DD HH:MM:SS` 格式化 `fireAt`。

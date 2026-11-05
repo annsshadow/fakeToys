@@ -4067,49 +4067,82 @@ pub mod timer {
         }
 
         pub fn start_background(&self) {
+            self.start_background_with_interval(Self::tick_interval());
+        }
+
+        /// 默认 30s 一个 tick；`TIMER_TICK_SECONDS` 只用于集成测试压缩等待窗口，
+        /// 生产不设置即为 30。
+        fn tick_interval() -> Duration {
+            let secs = std::env::var("TIMER_TICK_SECONDS")
+                .ok()
+                .and_then(|v| v.parse::<u64>().ok())
+                .filter(|v| *v > 0)
+                .unwrap_or(30);
+            Duration::from_secs(secs)
+        }
+
+        pub fn start_background_with_interval(&self, tick: Duration) {
             if self.pool.is_none() {
                 return;
             }
             let pool = self.pool.as_ref().unwrap().clone();
             let registry = self.clone();
             tokio::spawn(async move {
-                let mut ticker = interval(Duration::from_secs(30));
+                let mut ticker = interval(tick);
                 loop {
                     ticker.tick().await;
-                    let jobs = registry.jobs.read().await.clone();
-                    let now = chrono::Utc::now().naive_utc();
-                    for job in jobs.values() {
-                        if job.fire_at <= now && job.cron.is_none() {
-                            let _ = Self::fire(&pool, job).await;
-                        }
-                    }
+                    registry.tick(&pool).await;
                 }
             });
         }
 
-        async fn fire(pool: &Pool, job: &TimerJob) -> Result<(), AppError> {
-            let client = shared::db::acquire(pool).await?;
-            if job.kind.as_str() == "expire" {
-                if let Some(ref task_id) = job.task_id {
-                    client
-                        .execute(
-                            "UPDATE x_task SET task_status = $1 WHERE id = $2 AND task_status = $3",
-                            &[&"expired", task_id, &"active"],
-                        )
-                        .await
-                        .map_err(|e| {
-                            AppError::internal_with_source(concat!(file!(), ":", line!()), e)
-                        })?;
+        /// 一次 tick：只处理到期的 once job。执行权由 DB 条件更新原子认领
+        /// （`fired_at IS NULL AND cancelled_at IS NULL`），认领成功才写 fired_at；
+        /// 无论认领成功与否都从内存待执行集合移除，保证同一 job 不会被下一个
+        /// tick 再执行一次（此前每 30s 重复 fire、fired_at 被反复覆盖）。
+        pub async fn tick(&self, pool: &Pool) {
+            let now = chrono::Utc::now().naive_utc();
+            let due: Vec<TimerJob> = {
+                let jobs = self.jobs.read().await;
+                jobs.values()
+                    .filter(|job| job.kind == "once" && job.cron.is_none() && job.fire_at <= now)
+                    .cloned()
+                    .collect()
+            };
+            for job in due {
+                match Self::fire(pool, &job).await {
+                    Ok(_) => {
+                        self.jobs.write().await.remove(&job.id);
+                    }
+                    Err(e) => {
+                        // 保留在集合里，下个 tick 重试（DB 暂时不可用等）。
+                        tracing::warn!(
+                            job = %job.id,
+                            error = %e,
+                            "timer fire failed; retry next tick"
+                        );
+                    }
                 }
             }
-            client
+        }
+
+        /// 返回 `true` 表示本次 tick 认领并执行了该 job；`false` 表示它已被
+        /// 其他 tick/实例 fire 过或已取消（读到非空的 fired_at/cancelled_at）。
+        async fn fire(pool: &Pool, job: &TimerJob) -> Result<bool, AppError> {
+            let client = shared::db::acquire(pool).await?;
+            let claimed = client
                 .execute(
-                    "UPDATE x_timer_job SET fired_at = NOW() WHERE id = $1",
+                    "UPDATE x_timer_job SET fired_at = NOW() \
+                     WHERE id = $1 AND fired_at IS NULL AND cancelled_at IS NULL",
                     &[&job.id],
                 )
                 .await
-                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
-            Ok(())
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+                == 1;
+            if !claimed {
+                return Ok(false);
+            }
+            Ok(true)
         }
 
         pub async fn start(
@@ -4119,11 +4152,16 @@ pub mod timer {
             fire_at: NaiveDateTime,
             cron: Option<String>,
         ) -> Result<String, AppError> {
+            // 无任何书面承诺（parity corpus、文档、前端都没有 cron 输入）：
+            // 明确拒收，而不是落一条永不触发的 job。
+            if cron.is_some() {
+                return Err(AppError::BadRequest(
+                    "cron 定时任务暂不支持，仅支持一次性 fireAt".to_string(),
+                ));
+            }
             let id = Uuid::new_v4().to_string();
             let now = chrono::Utc::now().naive_utc();
-            let kind = if cron.is_some() { "cron" } else { "once" };
-            let fire_at_str = fire_at.format("%Y-%m-%d %H:%M:%S").to_string();
-            let now_str = now.format("%Y-%m-%d %H:%M:%S").to_string();
+            let kind = "once";
 
             let job = TimerJob {
                 id: id.clone(),
@@ -4141,7 +4179,10 @@ pub mod timer {
                 .execute(
                     "INSERT INTO x_timer_job (id, work_id, task_id, fire_at, cron, created_at, kind) \
                      VALUES ($1, $2, $3, $4, $5, $6, $7)",
-                    &[&id, &work_id, &task_id, &fire_at_str, &cron, &now_str, &kind],
+                    // fire_at / created_at 是 TIMESTAMP：必须按 NaiveDateTime 绑定。
+                    // 此前按 String 绑定会得到 ToSql(3) WrongType（postgres: Timestamp vs
+                    // rust: String），写入口 500；与 restore 的读口径一致才是同一类型。
+                    &[&id, &work_id, &task_id, &fire_at, &cron, &now, &kind],
                 )
                 .await
                 .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -4231,25 +4272,24 @@ pub async fn start_timer(
         .get("taskId")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
+    // 无书面承诺的 cron 在入口直接 400 拒收（不落永不触发的 job）。
+    if req.get("cron").and_then(|v| v.as_str()).is_some() {
+        return Err(AppError::BadRequest(
+            "cron 定时任务暂不支持，仅支持一次性 fireAt".to_string(),
+        ));
+    }
     let fire_at_str: String = req
         .get("fireAt")
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
-    let cron: Option<String> = req
-        .get("cron")
-        .and_then(|v| v.as_str())
-        .map(|s| s.to_string());
 
-    let fire_at = if cron.is_some() {
-        chrono::Utc::now().naive_utc()
-    } else {
+    let fire_at =
         NaiveDateTime::parse_from_str(&fire_at_str, "%Y-%m-%d %H:%M:%S").map_err(|_| {
             AppError::BadRequest("invalid fireAt format, expected YYYY-MM-DD HH:MM:SS".to_string())
-        })?
-    };
+        })?;
 
-    let job_id = timer.start(work_id.clone(), task_id, fire_at, cron).await?;
+    let job_id = timer.start(work_id.clone(), task_id, fire_at, None).await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([

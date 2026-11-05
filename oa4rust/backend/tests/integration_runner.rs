@@ -189,6 +189,46 @@ async fn hotpic_global_scope_contract() {
         .await;
 }
 
+/// O25 节点 1：`timer/start` 写入口的 TIMESTAMP 绑定（真实 POST 200 + 回库断言）。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn timer_start_write_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::timer_jobs::timer_start_write_flow(ctx.pool.clone()).await;
+}
+
+/// O25 节点 2：once job 连续 ≥3 个 tick 只执行一次（fired_at 只写一次）。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn timer_once_fires_exactly_once() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::timer_jobs::timer_once_fires_once_flow(ctx.pool.clone()).await;
+}
+
+/// O25 节点 3：router() 启动时 restore；未到期/已到期未执行/已执行三种情况。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn timer_restore_cases_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::timer_jobs::timer_restore_cases_flow(ctx.pool.clone()).await;
+}
+
+/// O25 节点 4：真实进程重启回归（创建 job → 杀进程 → 新进程触发）。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn timer_process_restart_recovers_due_job() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::timer_jobs::timer_process_restart_flow(ctx).await;
+}
+
+/// O25 第二档（cron）：入口 400 拒收，且不落 job 行。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn timer_cron_is_rejected() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::timer_jobs::timer_cron_rejected_flow(ctx.pool.clone()).await;
+}
+
 /// O24-3 批次 4：INSERT 未写必填主键/规范列的遗留给定族（3 条 E23502）。
 #[ignore = "requires a running database server"]
 #[tokio::test]

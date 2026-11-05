@@ -1644,3 +1644,96 @@ hotpic 5 条（`application`/`infoId`）+ portal page 2 条（`portalId`），�
 | O24-3 批次 15 | `wrong-type` identity order_number bigint | `GET /api/organization/assemble/control/identity/{flag}/order/before/{followFlag}` | `identity_order_contract`：先红 500（`ToSql(0) WrongType { postgres: Int8, rust: "i32" }`）→ 改后 200 且回库 order_number A=1/B=2（写后必读）；破坏实验改回 i32 → 红；门禁 1/1 集合相等 |
 | O24-3 批次 16 | `column:status` program deploy nullable status | `GET /api/program_center/market/{flag}/installed/version` | `program_deploy_status_contract`：先红 500（panic `error deserializing column 3`）→ 改后 installed/version 与 deploy/{id} 均 200、NULL status 输出 `""`；破坏实验改回非 Option 读 → 红；门禁 0/0 集合相等 |
 
+
+## O25：`x_timer_job` 一次性任务（2026-11-05）
+
+### 三数
+
+| 指标 | 数量 | 说明 |
+|---|---|---|
+| 新增可用端点 | **1** | `POST /api/processplatform/service/processing/timer/start`（once）。真实 POST → 200 + 回库行存在、`fire_at/created_at` 类型与值正确。 |
+| 修复真缺陷 | **3** | ① 写入口 TIMESTAMP 按 String 绑定 → 真实 500；② ticker 每 30s 重复 fire 且覆盖 `fired_at`；③ `restore` 从未接线，重启后未到期/已到期 job 全部失联。 |
+| 仍不可用项 | **1（本模块）** | 前端 [`ProcessManagerApp.vue:682`](../../frontend/apps/desktop/src/views/ProcessManagerApp.vue#L682)「定时器」按钮发空 body `{}` → `workId/fireAt` 缺失 → 400，已登记到 `o24-3-feature-still-unavailable.md`。 |
+
+### 结论口径
+
+- **once 任务真实可用**：`POST timer/start` → 200；到期后恰好执行 **1 次**（连续 ≥3 个 tick 周期 `fired_at` 只写一次）；真实进程重启后未到期 job 重新排期、已到期未执行执行一次、已执行**绝不重放**。
+- **cron 实际状态 = 拒收（不是实现）**：parity corpus、文档、前端都没有 cron 的书面承诺；`timer/start` 入口对 `cron` 直接 **400**（`cron 定时任务暂不支持，仅支持一次性 fireAt`），且**不落** `x_timer_job` 行。回归 `timer_cron_is_rejected` 断言 400 + 文案 + 零行。
+- **expire 分支已删**：全仓没有任何路径产出 `kind='expire'` 的 job；`x_task.task_status='expired'` 仅由手动端点 `task/{id}/expire` 写入，`fire` 内该分支无消费者，删除。
+
+### 提交
+
+| commit | 内容 |
+|---|---|
+| `1a32bcb9c` | 写入口 `fire_at/created_at` 按 `NaiveDateTime` 绑定 |
+| `52107921e` | once job 原子认领 + 从待执行集合移除 |
+| `7d621f796` | `router()` 启动时接线 `TimerRegistry::restore` |
+| `4fbb057d0` | 真进程重启回归（P1 创建 → 杀进程 → P2 到期触发 + 已执行不重放） |
+| `db9ca402a` | cron 400 拒收、删除 expire 死分支 |
+| `5a4013797` | startup-smoke 进程存活断言（见下节） |
+
+## graceful：启动即倒计时（2026-11-05）
+
+### 性质
+
+**与关闭信号无关**：修前 `timeout(grace, server)` 包住整个服务生命周期。进程只要启动，`DEFAULT_GRACE_PERIOD=10s` 一到就被强制退出，日志固定打印 `graceful shutdown timed out; forcing exit grace_ms=10000`——即使从未收到 SIGINT/SIGTERM。
+
+### 引入 commit
+
+- `2b0f888db`（2026-11-02 21:20:58 +0800，`fix(oa4rust): 接入优雅停机，部署重启不再腰斩在途请求（R4）`）
+- 后续 `ea0b32bef`（2026-11-04 02:24:00 +0800）是 fmt-only，无逻辑改动。
+
+### 调用链与影响面
+
+```
+backend/src/main.rs:189  TcpListener::bind(OA4RUST_BIND_ADDR, 默认 0.0.0.0:3000)
+backend/src/main.rs:193  shared::graceful::serve_router_with_shutdown(
+                            listener, app, DEFAULT_GRACE_PERIOD, shutdown_signal())
+```
+
+- 唯一生产二进制是 `backend/src/main.rs`（`oa4rust`）；`--migrate-only` 分支在 bind 之前退出，不起服务。
+- 影响面 = **所有走 `serve_router_with_shutdown` 的二进制**：当前只有 `oa4rust` 主服务，即默认部署形态下 100% 受影响——服务起来 10s 后必死。
+
+### 真实部署路径复现（不发任何关闭信号）
+
+旧实现（`timeout(grace, server)` 整体包裹）：
+
+| 时间点 | 进程 | `/health` | 日志 |
+|---|---|---|---|
+| listening `2026-11-05T01:22:42.675273Z` | 起 | — | `listening on 127.0.0.1:39997` |
+| t+15s | 已退出 | 不可访问 | — |
+| t+30s | 已退出 | 不可访问 | — |
+| t+60s | 已退出 | 不可访问 | — |
+| `2026-11-05T01:22:52.754662Z`（t+10.08s） | 退出 | 不可访问 | `WARN shared::graceful: graceful shutdown timed out; forcing exit grace_ms=10000` |
+
+修复版（只在排空阶段计时，相同命令、同一隔离库）：
+
+| 时间点 | 进程 | `/health` |
+|---|---|---|
+| t+15s | alive | 200 |
+| t+30s | alive | 200 |
+| t+60s | alive | 200 |
+
+### 为什么长期未被发现
+
+`startup-smoke`（`.github/workflows/oa4rust-ci.yml`，修前）启动二进制后循环 `/health`，**首次成功即 `exit 0`**。实测健康检查在第 **1 秒**成功，最晚一条检查在进程启动后第 **1–2 秒**执行；**没有任何检查超过 10s**，而 grace 自退出发生在 +10s——冒烟窗口 < grace，所以永远绿。
+
+### 修复与验证
+
+- 实现：`oneshot` 记录「关闭信号已到达」，`select!` 监听服务与信号；只有信号到达后才对排空阶段套 `timeout(grace, ...)`。
+- 单测 `shared::graceful::tests::server_keeps_running_before_shutdown_signal`：宽限 100ms，等 300ms 后请求 `/ok` 必须 200。破坏实验（还原整体 timeout）红原文：
+
+  ```
+  panicked at crates\shared\src\graceful.rs:98:69:
+  called `Result::unwrap()` on an `Err` value: Os { code: 10061, kind: ConnectionRefused, ... }
+  test result: FAILED. 0 passed; 1 failed
+  ```
+
+  还原修复版后 `3 passed; 0 failed`。
+- CI：`startup-smoke` 首次健康后继续在 **15s / 30s** 断言「进程存活 + `/health` 200」（30s = 3 倍 grace）。破坏实验（旧实现跑同一步）红原文：
+
+  ```
+  ::error::server died before 15s without any shutdown signal (grace period must only apply after a signal)
+  ```
+
+  修复版同一步：`::notice::alive and /health 200 at 15s` / `at 30s`。

@@ -25,6 +25,7 @@ pub mod program_deploy_status;
 pub mod query_assemble;
 pub mod query_permission_binding;
 pub mod script_delete_paths;
+pub mod timer_jobs;
 pub mod upsert_paths;
 pub mod work_delete_paths;
 pub mod wrong_type_config;
