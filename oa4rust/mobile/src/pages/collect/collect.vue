@@ -7,42 +7,24 @@ import { ref } from 'vue'
 import { collectApi } from '@/services'
 import { useSession } from '@/store/session'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import { loadCollectRows } from './collectFeed'
 
 const session = useSession()
 const rows = ref<{ id: string; title: string; url: string }[]>([])
 const loading = ref(false)
 const loaded = ref(false)
+const loadError = ref('')
 
 // 后端 collect_list 返回全员收藏（与桌面 CollectApp 同口径），客户端按本人 personId 过滤。
-function titleOf(row: Record<string, unknown>): string {
-  const v = row.title
-  return typeof v === 'string' && v ? v : '（无标题）'
-}
-function urlOf(row: Record<string, unknown>): string {
-  const v = row.url
-  return typeof v === 'string' ? v : ''
-}
-
 async function load() {
   if (!session.user?.unique) return
   loading.value = true
-  try {
-    const resp = await collectApi.list()
-    const mine = session.user.unique
-    rows.value = (resp.data ?? [])
-      .filter((r) => r.personId === mine || r.person_id === mine)
-      .map((r) => ({
-        id: typeof r.id === 'string' ? r.id : '',
-        title: titleOf(r),
-        url: urlOf(r),
-      }))
-      .filter((r) => r.id)
-  } catch {
-    rows.value = []
-  } finally {
-    loading.value = false
-    loaded.value = true
-  }
+  loadError.value = ''
+  const result = await loadCollectRows(() => collectApi.list(), session.user.unique, rows.value)
+  rows.value = result.rows
+  if (!result.ok) loadError.value = result.error
+  loading.value = false
+  loaded.value = true
 }
 
 function openUrl(row: { url: string }) {
@@ -72,8 +54,16 @@ onShow(async () => {
 <template>
   <view class="page">
     <view v-if="loading && !loaded" class="tip">加载中…</view>
+    <view v-else-if="rows.length === 0 && loadError" class="tip tip-error">
+      <view class="error-text">{{ loadError }}</view>
+      <view class="retry-btn" @tap="load">重试</view>
+    </view>
     <view v-else-if="loaded && rows.length === 0" class="tip">暂无收藏</view>
     <view v-else class="list">
+      <view v-if="loadError" class="tip-error error-banner">
+        <text class="error-text">{{ loadError }}</text>
+        <view class="retry-btn" @tap="load">重试</view>
+      </view>
       <view v-for="r in rows" :key="r.id" class="item" @tap="openUrl(r)">
         <view class="item-main">
           <view class="item-title">{{ r.title }}</view>
@@ -95,6 +85,27 @@ onShow(async () => {
   color: #8a94a6;
   padding: 40px 0;
   font-size: 14px;
+}
+.tip-error {
+  color: #c0392b;
+}
+.error-text {
+  display: block;
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+.retry-btn {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 12px;
+  border: 1px solid #c0392b;
+  color: #c0392b;
+  font-size: 13px;
+}
+.error-banner {
+  padding: 12px 16px;
+  text-align: center;
+  border-bottom: 1px solid #f0f2f5;
 }
 .list {
   display: flex;
