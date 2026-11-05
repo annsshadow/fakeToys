@@ -315,7 +315,7 @@ jobs:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('oa4rust/backend/Cargo.lock') }}
       - name: Run security regression gate
-        run: python scripts/security_regression_gate.py
+        run: python3 scripts/security_regression_gate.py
 
   # ── 种子化路由扫描（行为级门禁，棘轮基线）─────────────────────────────
   # 2026-11-05：静态扫描器认不出裸 row.get，且 500 只在「表里有行」时才触发。
