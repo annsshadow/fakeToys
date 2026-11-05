@@ -130,6 +130,10 @@
           <div v-if="msgLoading" class="loading-state">
             <div class="skeleton-row" v-for="i in 4" :key="i"></div>
           </div>
+          <div v-else-if="msgLoadMoreError" class="empty-messages">
+            <p>{{ msgLoadMoreError }}</p>
+            <button class="load-more-retry" @click="loadFirstPage">重试</button>
+          </div>
           <div v-else-if="messages.length === 0" class="empty-messages">
             <p>开始对话吧 💬</p>
           </div>
@@ -141,7 +145,12 @@
                 <div class="msg-time">{{ msg.time }}</div>
               </div>
             </div>
-            <div ref="loadMoreRef" class="load-more-trigger"></div>
+            <div v-if="msgLoadingMore" class="load-more-status">加载更多…</div>
+            <div v-else-if="msgLoadMoreError" class="load-more-status is-error">
+              <span>{{ msgLoadMoreError }}</span>
+              <button class="load-more-retry" @click="loadMoreMessages">重试</button>
+            </div>
+            <div v-else-if="!msgHasMore" class="load-more-status">已经到底了</div>
           </template>
         </div>
 
@@ -176,6 +185,7 @@ import { api, type O2WebSocketClient, useSession, useWebSocket } from '@oa4rust/
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+import { fetchMessagePage, mergeMessagePages } from './imPaging'
 
 interface Conversation {
   id: string
@@ -200,8 +210,13 @@ const searchMsg = ref('')
 const inputText = ref('')
 const selectedChat = ref<Conversation | null>(null)
 const messageContainer = ref<HTMLElement>()
-const loadMoreRef = ref<HTMLElement>()
-const page = ref(1)
+const allMessages = ref<Message[]>([])
+const msgLoading = ref(false)
+const msgPage = ref(1)
+const msgHasMore = ref(true)
+const msgLoadingMore = ref(false)
+const msgLoadMoreError = ref('')
+let msgRequestSeq = 0
 const sendLoading = ref(false)
 const wsClient = ref<O2WebSocketClient | null>(null)
 // P5：IM 实时协议状态
@@ -332,43 +347,85 @@ const filteredConversations = computed(() => {
   )
 })
 
-// ── 消息列表（真实 API）────────────────────────────────────────
-// useQuery 返回普通对象（嵌套 Ref），模板只解包顶层 ref。故解构出 data/isLoading/refetch，
-// 模板用 msgLoading（顶层 ref 自动解包），computed 内用 msgData.value，杜绝「msgQuery.isLoading 恒真值」渲染 bug。
-const {
-  data: msgData,
-  isLoading: msgLoading,
-  refetch: refetchMsgs,
-} = useQuery<Message[]>({
-  queryKey: ['im', 'messages', () => selectedChat.value?.id],
-  queryFn: async () => {
-    if (!selectedChat.value) return []
-    const resp = await api.post<{ data: Message[] }>(`/api/message/assemble/communicate/im/msg/list/1/size/50`, {
-      conversationId: selectedChat.value.id,
-    })
-    return ((resp as any)?.data ?? []) as Message[]
-  },
-  // enabled 须为响应式 Ref（传 Ref 本身而非 .value 快照），会话选中后查询才会自动启用/随 key 变化重取
-  enabled: computed(() => !!selectedChat.value),
-  staleTime: 10 * 1000,
-})
+// ── 消息列表（真实 API，R104：页码真正参与请求）──────────────────
+// 改为显式分页状态：page 由 mergeMessagePages 累积，至少在第 1/2/3 页
+// 分别请求 /list/1/50、/2/50、/3/50；本页不足 50 条即判定「到底」。
+const messages = computed(() => allMessages.value)
 
-// 后端已支持按会话过滤（im/msg/list/{page}/size/{size} 读取 body.conversationId）；
-// 此处保留一次按普通键 conversationId 的防御性过滤。
-const messages = computed(() => {
-  const all = (msgData.value ?? []) as any[]
-  const id = selectedChat.value?.id
-  if (!id) return []
-  return all.filter((m) => m?.conversationId === id)
-})
+function postMessagePage(path: string, body?: unknown): Promise<unknown> {
+  return api.post(path, body as Record<string, unknown>)
+}
 
-// 监听会话切换，重新加载消息
+async function loadFirstPage(): Promise<void> {
+  const convId = selectedChat.value?.id
+  if (!convId) {
+    allMessages.value = []
+    msgPage.value = 1
+    msgHasMore.value = false
+    return
+  }
+  const seq = ++msgRequestSeq
+  msgLoading.value = true
+  msgLoadMoreError.value = ''
+  try {
+    const result = await fetchMessagePage<Message>(postMessagePage, convId, 1)
+    if (seq !== msgRequestSeq || selectedChat.value?.id !== convId) return
+    allMessages.value = result.items
+    msgPage.value = result.page
+    msgHasMore.value = result.hasMore
+  } catch (e: any) {
+    if (seq !== msgRequestSeq || selectedChat.value?.id !== convId) return
+    allMessages.value = []
+    msgPage.value = 1
+    msgHasMore.value = false
+    msgLoadMoreError.value = `消息加载失败：${e?.message ?? '未知错误'}`
+  } finally {
+    if (seq === msgRequestSeq) msgLoading.value = false
+  }
+}
+
+/** 发送后的轻刷新：换掉乐观消息、补上服务端真实消息，已加载的历史页保留。 */
+async function refreshFirstPage(): Promise<void> {
+  const convId = selectedChat.value?.id
+  if (!convId) return
+  try {
+    const result = await fetchMessagePage<Message>(postMessagePage, convId, 1)
+    if (selectedChat.value?.id !== convId) return
+    const withoutOptimistic = allMessages.value.filter((m) => !m.id.startsWith('opt-'))
+    allMessages.value = mergeMessagePages(withoutOptimistic, result.items)
+    if (msgPage.value === 1) msgHasMore.value = result.hasMore
+  } catch (e: any) {
+    msgLoadMoreError.value = `消息刷新失败：${e?.message ?? '未知错误'}`
+  }
+}
+
+/** 加载下一页；失败保留当前页，用户可点「重试」而不丢已加载内容。 */
+async function loadMoreMessages(): Promise<void> {
+  const convId = selectedChat.value?.id
+  if (!convId || msgLoading.value || msgLoadingMore.value || !msgHasMore.value) return
+  const seq = msgRequestSeq
+  msgLoadingMore.value = true
+  msgLoadMoreError.value = ''
+  try {
+    const result = await fetchMessagePage<Message>(postMessagePage, convId, msgPage.value + 1)
+    if (seq !== msgRequestSeq || selectedChat.value?.id !== convId) return
+    allMessages.value = mergeMessagePages(allMessages.value, result.items)
+    msgPage.value = result.page
+    msgHasMore.value = result.hasMore
+  } catch (e: any) {
+    if (seq !== msgRequestSeq || selectedChat.value?.id !== convId) return
+    msgLoadMoreError.value = `加载更多失败：${e?.message ?? '未知错误'}`
+  } finally {
+    if (seq === msgRequestSeq) msgLoadingMore.value = false
+  }
+}
+
+// 监听会话切换，重新加载首页消息
 watch(
   () => selectedChat.value?.id,
   async (newId, oldId) => {
     if (newId !== oldId && newId) {
-      page.value = 1
-      await refetchMsgs()
+      await loadFirstPage()
       nextTick(scrollToBottom)
     }
   },
@@ -396,7 +453,7 @@ function sendFileMessage(): void {
       const r = await api.upload(`/api/message/assemble/communicate/im/msg/upload/${convId}/type/${type}`, form)
       const url = String((r.data as any)?.fileUrl ?? (r.data as any)?.url ?? '')
       toast.success(url ? `文件消息已发送：${file.name}` : '文件消息已发送')
-      queryClient.invalidateQueries({ queryKey: ['im', 'messages'] })
+      void refreshFirstPage()
     } catch (e: any) {
       toast.error(`文件消息发送失败: ${e?.message ?? ''}`)
     }
@@ -411,7 +468,10 @@ async function clearConversation(): Promise<void> {
   try {
     await api.post('/api/message/assemble/communicate/im/msg/clear', { conversationId: selectedChat.value.id })
     toast.success('会话消息已清空')
-    queryClient.setQueryData(['im', 'messages', selectedChat.value.id], [])
+    allMessages.value = []
+    msgPage.value = 1
+    msgHasMore.value = false
+    msgLoadMoreError.value = ''
   } catch (e: any) {
     toast.error(`清空失败: ${e?.message ?? ''}`)
   }
@@ -439,25 +499,19 @@ const sendMutation = useMutation({
       direction: 'out',
       time,
     }
-    queryClient.setQueryData(['im', 'messages', selectedChat.value?.id], (old: Message[] | undefined) => [
-      ...(old ?? []),
-      optimisticMsg,
-    ])
+    allMessages.value = [...allMessages.value, optimisticMsg]
     return { optimisticMsg }
   },
   onSuccess: () => {
     inputText.value = ''
-    // 服务端确认后立即移除乐观消息，换真实消息
+    // 服务端确认后移除乐观消息，换真实消息（保留已加载的历史页）
     setTimeout(() => {
-      refetchMsgs()
+      void refreshFirstPage()
     }, 500)
   },
   onError: (_err, _vars, context) => {
     if (context?.optimisticMsg) {
-      queryClient.setQueryData(
-        ['im', 'messages', selectedChat.value?.id],
-        (old: Message[] | undefined) => old?.filter((m) => m.id !== context.optimisticMsg!.id) ?? [],
-      )
+      allMessages.value = allMessages.value.filter((m) => m.id !== context.optimisticMsg!.id)
     }
   },
   onSettled: () => {
@@ -521,8 +575,8 @@ function initWebSocket(): void {
     const convId = msg.to ?? msg.conversationId ?? msg.room
     // 添加新消息到对应对话
     if (convId && selectedChat.value?.id === convId) {
-      queryClient.setQueryData(['im', 'messages', convId], (old: Message[] | undefined) => [
-        ...(old ?? []),
+      allMessages.value = [
+        ...allMessages.value,
         {
           id: `ws-${Date.now()}`,
           content: msg.content,
@@ -530,7 +584,7 @@ function initWebSocket(): void {
           direction: 'in',
           time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
         },
-      ])
+      ]
       nextTick(scrollToBottom)
     }
     // 刷新会话列表
@@ -838,9 +892,11 @@ async function imMore4(op: string) {
 
 function handleScroll(): void {
   const el = messageContainer.value
-  if (!el || el.scrollTop > 100) return
-  // 加载更多历史消息
-  page.value++
+  if (!el || msgLoading.value || msgLoadingMore.value || !msgHasMore.value) return
+  // 触底加载：列表按服务端 DESC 顺序渲染（新→旧），底部就是更旧的消息。
+  const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+  if (distanceToBottom > 120) return
+  void loadMoreMessages()
 }
 
 function scrollToBottom(): void {
@@ -1157,7 +1213,16 @@ async function loadImTwin() {
 .empty-messages { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--text-muted); }
 .loading-state { display: flex; flex-direction: column; gap: 8px; padding: 16px; }
 .skeleton-row { height: 48px; border-radius: var(--radius-md); margin-bottom: 8px; }
-.load-more-trigger { height: 1px; }
+.load-more-status {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 0 16px; font-size: 12px; color: var(--text-muted);
+}
+.load-more-status.is-error { color: var(--color-danger, #e5484d); }
+.load-more-retry {
+  padding: 4px 10px; border-radius: var(--radius-sm); cursor: pointer;
+  border: 1px solid var(--border-color); background: var(--bg-elevated);
+  color: var(--text-primary); font-size: 12px;
+}
 
 .message { display: flex; gap: 8px; max-width: 80%; }
 .message.outgoing { margin-left: auto; flex-direction: row-reverse; }
