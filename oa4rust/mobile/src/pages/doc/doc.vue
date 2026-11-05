@@ -8,7 +8,8 @@ import { fileApi } from '@/services'
 import { useSession } from '@/store/session'
 import { ensureAuthenticated } from '@/utils/auth-guard'
 import { formatFileSize } from '@/utils/format'
-import { listState, loadList } from '@/utils/loadList'
+import { listState } from '@/utils/loadList'
+import { loadDocLists } from './docFeed'
 
 const session = useSession()
 const rows = ref<Record<string, unknown>[]>([])
@@ -45,23 +46,19 @@ function metaOf(row: Record<string, unknown>): string {
 }
 async function load() {
   // 未登录或会话未恢复时不请求，避免无意义 401。
-  if (!session.user?.unique) return
+  const unique = session.user?.unique
+  if (!unique) return
   loading.value = true
   filesError.value = ''
   attachError.value = ''
-  const files = await loadList<Record<string, unknown>>(() => fileApi.fileList(session.user.unique), {
-    previousRows: rows.value,
-    label: '文件加载失败',
-  })
+  const { files, attachments } = await loadDocLists(
+    { fileList: () => fileApi.fileList(unique), attachmentList: () => fileApi.attachmentList(unique) },
+    { files: rows.value, attachments: attachRows.value },
+  )
   rows.value = files.rows
   if (!files.ok) filesError.value = files.error
-  // 附件存储 FILE_FILE：上传落点，单列展示（区别于 x_file「我的文件」）。
-  const attach = await loadList<Record<string, unknown>>(() => fileApi.attachmentList(session.user.unique), {
-    previousRows: attachRows.value,
-    label: '附件加载失败',
-  })
-  attachRows.value = attach.rows
-  if (!attach.ok) attachError.value = attach.error
+  attachRows.value = attachments.rows
+  if (!attachments.ok) attachError.value = attachments.error
   loading.value = false
   loaded.value = true
 }

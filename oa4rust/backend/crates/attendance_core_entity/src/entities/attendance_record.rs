@@ -13,6 +13,8 @@ pub struct Model {
     pub check_out_time: Option<String>,
     pub status: String,
     pub create_time: Option<String>,
+    /// 实际写入人（会话人）。管理员代建时与 `user_id` 不同。
+    pub created_by: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

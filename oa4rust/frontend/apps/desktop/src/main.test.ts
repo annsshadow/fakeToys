@@ -104,11 +104,14 @@ describe('main.ts executable verification', () => {
     })
 
     test('Has query retry configuration', () => {
-      expect(mainSource).toContain('retry: 2')
+      // R133：不再对超时/4xx 盲目重试（行为判据见 queryRetry.test.ts）。
+      expect(mainSource).toContain('retry: shouldRetryQuery')
+      expect(mainSource).not.toContain('retry: 2')
     })
 
     test('Has mutation retry configuration', () => {
-      expect(mainSource).toContain('mutations: { retry: 1 }')
+      // R133：写请求不自动重试（非幂等操作防重复提交）。
+      expect(mainSource).toContain('mutations: { retry: 0 }')
     })
   })
 

@@ -417,15 +417,19 @@ fn u4_session(
 }
 
 /// 归属门：负责人 / 发起人非空 → 本人或 admin（`require_owner`，无 DB 时 fail-closed）；
-/// 为空的历史行只要求有效会话，避免把数据缺陷伪装成权限问题、也保住未指派任务的认领语义。
-/// 注意引擎 Start Event 任务的 person 写成 "system"，收紧后该类任务只有 admin 能代办。
+/// 为空（脏行 / 孤儿行）→ **仅 admin**，不用「空归属 = 人人可写」把数据缺陷洗成权限放行。
+/// 注意引擎 Start Event 任务的 person 写成 "system"，该类任务只有 admin 能代办。
 async fn u4_require_actor(
     pool: &Pool,
     session: &shared::session::Session,
     actor: &str,
 ) -> Result<(), AppError> {
     if actor.trim().is_empty() {
-        return Ok(());
+        return if shared::middleware::is_admin(pool, &session.person_unique).await {
+            Ok(())
+        } else {
+            Err(AppError::Forbidden)
+        };
     }
     shared::middleware::require_owner(pool, session, actor).await
 }

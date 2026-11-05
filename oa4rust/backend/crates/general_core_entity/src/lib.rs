@@ -7,8 +7,8 @@ use axum::{
     Json, Router,
 };
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder,
-    QuerySelect,
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, DbBackend, EntityTrait,
+    QueryFilter, QueryOrder, QuerySelect, Statement,
 };
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
@@ -21,12 +21,45 @@ use entities::{
 };
 
 /// 会话存在档：无会话返回 401。本 crate 全 sea_orm，不依赖 deadpool，门在 DB 写之前，
-/// 用于关闭 R7（已认证路由但体内无会话无门禁）。dict/file/invoice 这类配置/业务 CRUD 收紧到
-/// admin 待 §五（需补 sea_orm 版 is_admin 助手）。
+/// 用于关闭 R7（已认证路由但体内无会话无门禁）。dict 类全局配置仍为会话档；
+/// file/invoice 的个人数据按「本人或管理员」在 SQL WHERE 内收口（见下方谓词）。
 fn require_session(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<shared::session::Session, AppError> {
     session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
+/// 个人数据归属谓词：`creator` 为本人 OR 调用者管理员。**写进 SQL WHERE**，
+/// 不做「先查后判」；`creator` 为 NULL 时不命中（fail-closed）。
+///
+/// `$1` = 行 id，`$2` = 会话人（person_unique）。
+const CREATOR_OWNER_PREDICATE: &str = "id = $1 AND (creator = $2 OR EXISTS(\
+     SELECT 1 FROM auth_person p \
+       JOIN auth_person_role pr ON pr.person_id = p.id \
+       JOIN auth_role r ON r.id = pr.role_id \
+      WHERE (p.unique_id = $2 OR p.id = $2) \
+        AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false))";
+
+/// 写语句影响 0 行时区分「不存在」(404) 与「无权」(403)。
+/// 此处的读只用于选错误码，不参与授权判定（授权已在写语句的 WHERE 内）。
+async fn ownership_error(db: &DatabaseConnection, table: &str, id: &str) -> AppError {
+    let sql = format!("SELECT EXISTS(SELECT 1 FROM {table} WHERE id = $1) AS row_exists");
+    match db
+        .query_one(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            &sql,
+            vec![id.into()],
+        ))
+        .await
+    {
+        Ok(Some(row)) => match row.try_get::<bool>("", "row_exists") {
+            Ok(true) => AppError::Forbidden,
+            Ok(false) => AppError::NotFound,
+            Err(e) => AppError::internal_with_source(concat!(file!(), ":", line!()), e),
+        },
+        Ok(None) => AppError::NotFound,
+        Err(e) => AppError::internal_with_source(concat!(file!(), ":", line!()), e),
+    }
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
@@ -505,7 +538,7 @@ pub async fn file_create(
     session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let actor = require_session(session)?.person_unique;
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload
         .get("name")
@@ -518,17 +551,15 @@ pub async fn file_create(
         .unwrap_or_default()
         .to_string();
     let size = payload.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
-    let creator = payload
-        .get("creator")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system");
+    // 归属只能来自会话：忽略请求体 creator，避免「创建时冒名」把他人行写成自己可控的归属。
+    let creator = actor;
 
     let active_model = general_file::ActiveModel {
         id: sea_orm::ActiveValue::Set(id.clone()),
         name: sea_orm::ActiveValue::Set(name.clone()),
         mime_type: sea_orm::ActiveValue::Set(mime_type.clone()),
         size: sea_orm::ActiveValue::Set(size),
-        creator: sea_orm::ActiveValue::Set(Some(creator.to_string())),
+        creator: sea_orm::ActiveValue::Set(Some(creator)),
         create_time: sea_orm::ActiveValue::NotSet,
     };
 
@@ -592,7 +623,7 @@ pub async fn file_update(
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let actor = require_session(session)?.person_unique;
     let name = payload
         .get("name")
         .and_then(|v| v.as_str())
@@ -604,40 +635,53 @@ pub async fn file_update(
         .unwrap_or_default()
         .to_string();
 
-    let model = general_file::Entity::find_by_id(&id)
-        .one(&db.0)
+    // 归属条件在 WHERE 内：非本人且非管理员时影响 0 行（无 TOCTOU 窗口）。
+    let sql = format!(
+        "UPDATE x_general_file SET name = $3, mime_type = $4 \
+         WHERE {CREATOR_OWNER_PREDICATE} RETURNING id"
+    );
+    let updated =
+        db.0.query_one(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            &sql,
+            vec![
+                id.clone().into(),
+                actor.into(),
+                name.clone().into(),
+                mime_type.clone().into(),
+            ],
+        ))
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
-
-    match model {
-        Some(m) => {
-            let mut active: general_file::ActiveModel = m.clone().into();
-            active.name = sea_orm::ActiveValue::Set(name.clone());
-            active.mime_type = sea_orm::ActiveValue::Set(mime_type.clone());
-            active.update(&db.0).await?;
-
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(id)),
-                    ("name".to_string(), Value::String(name)),
-                    ("mimeType".to_string(), Value::String(mime_type)),
-                    (
-                        "size".to_string(),
-                        Value::Number(serde_json::Number::from(m.size)),
-                    ),
-                    (
-                        "creator".to_string(),
-                        Value::String(m.creator.clone().unwrap_or_default()),
-                    ),
-                    (
-                        "createTime".to_string(),
-                        Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
-                    ),
-                ]),
-            ))))
-        }
-        None => Ok(Json(ActionResult::error("file not found"))),
+    if updated.is_none() {
+        return Err(ownership_error(&db.0, "x_general_file", &id).await);
     }
+
+    let m = general_file::Entity::find_by_id(&id)
+        .one(&db.0)
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+        .ok_or(AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("mimeType".to_string(), Value::String(mime_type)),
+            (
+                "size".to_string(),
+                Value::Number(serde_json::Number::from(m.size)),
+            ),
+            (
+                "creator".to_string(),
+                Value::String(m.creator.clone().unwrap_or_default()),
+            ),
+            (
+                "createTime".to_string(),
+                Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
+            ),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -646,39 +690,44 @@ pub async fn file_delete(
     session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let actor = require_session(session)?.person_unique;
+    // 预取仅用于组装响应；授权判定在下面 DELETE 的 WHERE 内。
     let model = general_file::Entity::find_by_id(&id)
         .one(&db.0)
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
-
-    match model {
-        Some(m) => {
-            general_file::Entity::delete_by_id(&m.id)
-                .exec(&db.0)
-                .await
-                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(m.id.clone())),
-                ("name".to_string(), Value::String(m.name.clone())),
-                ("mimeType".to_string(), Value::String(m.mime_type.clone())),
-                (
-                    "size".to_string(),
-                    Value::Number(serde_json::Number::from(m.size)),
-                ),
-                (
-                    "creator".to_string(),
-                    Value::String(m.creator.clone().unwrap_or_default()),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
-                ),
-            ]));
-            Ok(Json(ActionResult::success(result)))
-        }
-        None => Ok(Json(ActionResult::error("file not found"))),
+    let sql = format!("DELETE FROM x_general_file WHERE {CREATOR_OWNER_PREDICATE} RETURNING id");
+    let deleted =
+        db.0.query_one(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            &sql,
+            vec![id.clone().into(), actor.into()],
+        ))
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    if deleted.is_none() {
+        return Err(ownership_error(&db.0, "x_general_file", &id).await);
     }
+
+    let m = model.ok_or(AppError::NotFound)?;
+    let result = Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(m.id.clone())),
+        ("name".to_string(), Value::String(m.name.clone())),
+        ("mimeType".to_string(), Value::String(m.mime_type.clone())),
+        (
+            "size".to_string(),
+            Value::Number(serde_json::Number::from(m.size)),
+        ),
+        (
+            "creator".to_string(),
+            Value::String(m.creator.clone().unwrap_or_default()),
+        ),
+        (
+            "createTime".to_string(),
+            Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
+        ),
+    ]));
+    Ok(Json(ActionResult::success(result)))
 }
 
 #[allow(non_snake_case)]
@@ -722,7 +771,7 @@ pub async fn invoice_create(
     session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let actor = require_session(session)?.person_unique;
     let id = uuid::Uuid::new_v4().to_string();
     let number = payload
         .get("number")
@@ -743,10 +792,8 @@ pub async fn invoice_create(
         .and_then(|v| v.as_str())
         .unwrap_or("draft")
         .to_string();
-    let creator = payload
-        .get("creator")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system");
+    // 归属只能来自会话：忽略请求体 creator（同 file_create）。
+    let creator = actor;
 
     let active_model = general_invoice::ActiveModel {
         id: sea_orm::ActiveValue::Set(id.clone()),
@@ -754,7 +801,7 @@ pub async fn invoice_create(
         date: sea_orm::ActiveValue::Set(date.clone()),
         amount: sea_orm::ActiveValue::Set(amount),
         status: sea_orm::ActiveValue::Set(status.clone()),
-        creator: sea_orm::ActiveValue::Set(Some(creator.to_string())),
+        creator: sea_orm::ActiveValue::Set(Some(creator)),
         create_time: sea_orm::ActiveValue::NotSet,
     };
 
@@ -826,7 +873,7 @@ pub async fn invoice_update(
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let actor = require_session(session)?.person_unique;
     let number = payload
         .get("number")
         .and_then(|v| v.as_str())
@@ -847,46 +894,59 @@ pub async fn invoice_update(
         .unwrap_or_default()
         .to_string();
 
-    let model = general_invoice::Entity::find_by_id(&id)
-        .one(&db.0)
+    // 归属条件在 WHERE 内：非本人且非管理员时影响 0 行（无 TOCTOU 窗口）。
+    let sql = format!(
+        "UPDATE x_general_invoice SET number = $3, date = $4, amount = $5, status = $6 \
+         WHERE {CREATOR_OWNER_PREDICATE} RETURNING id"
+    );
+    let updated =
+        db.0.query_one(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            &sql,
+            vec![
+                id.clone().into(),
+                actor.into(),
+                number.clone().into(),
+                date.clone().into(),
+                amount.into(),
+                status.clone().into(),
+            ],
+        ))
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
-
-    match model {
-        Some(m) => {
-            let mut active: general_invoice::ActiveModel = m.clone().into();
-            active.number = sea_orm::ActiveValue::Set(number.clone());
-            active.date = sea_orm::ActiveValue::Set(date.clone());
-            active.amount = sea_orm::ActiveValue::Set(amount);
-            active.status = sea_orm::ActiveValue::Set(status.clone());
-            active.update(&db.0).await?;
-
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(id)),
-                    ("number".to_string(), Value::String(number)),
-                    ("date".to_string(), Value::String(date)),
-                    (
-                        "amount".to_string(),
-                        Value::Number(
-                            serde_json::Number::from_f64(amount)
-                                .unwrap_or_else(|| serde_json::Number::from(0)),
-                        ),
-                    ),
-                    ("status".to_string(), Value::String(status)),
-                    (
-                        "creator".to_string(),
-                        Value::String(m.creator.clone().unwrap_or_default()),
-                    ),
-                    (
-                        "createTime".to_string(),
-                        Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
-                    ),
-                ]),
-            ))))
-        }
-        None => Ok(Json(ActionResult::error("invoice not found"))),
+    if updated.is_none() {
+        return Err(ownership_error(&db.0, "x_general_invoice", &id).await);
     }
+
+    let m = general_invoice::Entity::find_by_id(&id)
+        .one(&db.0)
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+        .ok_or(AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("number".to_string(), Value::String(number)),
+            ("date".to_string(), Value::String(date)),
+            (
+                "amount".to_string(),
+                Value::Number(
+                    serde_json::Number::from_f64(amount)
+                        .unwrap_or_else(|| serde_json::Number::from(0)),
+                ),
+            ),
+            ("status".to_string(), Value::String(status)),
+            (
+                "creator".to_string(),
+                Value::String(m.creator.clone().unwrap_or_default()),
+            ),
+            (
+                "createTime".to_string(),
+                Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
+            ),
+        ]),
+    ))))
 }
 
 #[allow(non_snake_case)]
@@ -895,43 +955,48 @@ pub async fn invoice_delete(
     session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let actor = require_session(session)?.person_unique;
+    // 预取仅用于组装响应；授权判定在下面 DELETE 的 WHERE 内。
     let model = general_invoice::Entity::find_by_id(&id)
         .one(&db.0)
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
-
-    match model {
-        Some(m) => {
-            general_invoice::Entity::delete_by_id(&m.id)
-                .exec(&db.0)
-                .await
-                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(m.id.clone())),
-                ("number".to_string(), Value::String(m.number.clone())),
-                ("date".to_string(), Value::String(m.date.clone())),
-                (
-                    "amount".to_string(),
-                    Value::Number(
-                        serde_json::Number::from_f64(m.amount)
-                            .unwrap_or_else(|| serde_json::Number::from(0)),
-                    ),
-                ),
-                ("status".to_string(), Value::String(m.status.clone())),
-                (
-                    "creator".to_string(),
-                    Value::String(m.creator.clone().unwrap_or_default()),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
-                ),
-            ]));
-            Ok(Json(ActionResult::success(result)))
-        }
-        None => Ok(Json(ActionResult::error("invoice not found"))),
+    let sql = format!("DELETE FROM x_general_invoice WHERE {CREATOR_OWNER_PREDICATE} RETURNING id");
+    let deleted =
+        db.0.query_one(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            &sql,
+            vec![id.clone().into(), actor.into()],
+        ))
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    if deleted.is_none() {
+        return Err(ownership_error(&db.0, "x_general_invoice", &id).await);
     }
+
+    let m = model.ok_or(AppError::NotFound)?;
+    let result = Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(m.id.clone())),
+        ("number".to_string(), Value::String(m.number.clone())),
+        ("date".to_string(), Value::String(m.date.clone())),
+        (
+            "amount".to_string(),
+            Value::Number(
+                serde_json::Number::from_f64(m.amount)
+                    .unwrap_or_else(|| serde_json::Number::from(0)),
+            ),
+        ),
+        ("status".to_string(), Value::String(m.status.clone())),
+        (
+            "creator".to_string(),
+            Value::String(m.creator.clone().unwrap_or_default()),
+        ),
+        (
+            "createTime".to_string(),
+            Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
+        ),
+    ]));
+    Ok(Json(ActionResult::success(result)))
 }
 
 pub fn general_core_entity_router(db: DatabaseConnection) -> Router {
@@ -962,6 +1027,8 @@ pub fn general_core_entity_router(db: DatabaseConnection) -> Router {
 
 #[cfg(test)]
 mod security_gate_tests_b65;
+#[cfg(test)]
+mod security_gate_tests_idor_r6w;
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;

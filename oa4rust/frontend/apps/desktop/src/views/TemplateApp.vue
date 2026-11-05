@@ -202,7 +202,7 @@ async function deleteItem(item: Item) {
   if (await confirmMsg('确定删除该模板？')) delM.mutate(item.id)
 }
 function loadData() {
-  qc.invalidateQueries({ queryKey: qk })
+  reload()
 }
 </script>
 <style scoped>

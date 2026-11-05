@@ -17,6 +17,13 @@ export interface PagedResponse<T> {
   size: number
 }
 
+/**
+ * 默认请求超时（R133）。与移动端 `uni.request` 的 30s 对齐：
+ * 服务端/网络一直不响应时，前端不能无限等（否则列表永远停在 loading，表现为白屏）。
+ * 上传接口仍按需显式传 `timeoutMs`：大文件上传不该被 30s 误杀。
+ */
+const DEFAULT_TIMEOUT_MS = 30_000
+
 /** 查询选项（传给 TanStack Query） */
 export interface QueryOptions {
   enabled?: boolean
@@ -134,11 +141,18 @@ export class ApiClient {
     }
 
     const controller = new AbortController()
-    if (options?.timeoutMs) {
-      setTimeout(() => controller.abort(), options.timeoutMs)
-    }
+    const timeoutId = setTimeout(() => controller.abort(), options?.timeoutMs ?? DEFAULT_TIMEOUT_MS)
 
-    const resp = await fetch(url.toString(), { ...init, signal: controller.signal })
+    let resp: Response
+    try {
+      resp = await fetch(url.toString(), { ...init, signal: controller.signal })
+    } catch (err) {
+      // 超时映射成 status 0：上层（vue-query 重试策略）据此识别「不会自己好」的失败并停止重试。
+      if ((err as { name?: string } | null)?.name === 'AbortError') throw new ApiError('请求超时', 0)
+      throw err
+    } finally {
+      clearTimeout(timeoutId)
+    }
 
     if (!resp.ok) {
       if (resp.status === 401) {

@@ -164,7 +164,7 @@ async function deleteItem(item: Item) {
   if (await confirmMsg('确定删除该检索文档？')) delM.mutate(item.id)
 }
 function loadData() {
-  qc.invalidateQueries({ queryKey: qk })
+  reload()
 }
 function fmtTime(t?: string) {
   if (!t) return ''

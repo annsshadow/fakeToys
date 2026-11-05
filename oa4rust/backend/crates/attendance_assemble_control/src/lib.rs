@@ -87,6 +87,18 @@ fn require_session(
     session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
 }
 
+/// F2：考勤明细读面的人员范围。
+///
+/// 管理员看全公司（`None`，不过滤）；其他人只看本人（`Some(person_unique)`）。
+/// 口径：本人 / 全公司两级（直属下级需要组织树遍历，本轮不做）。
+async fn detail_person_scope(pool: &Pool, session: &shared::session::Session) -> Option<String> {
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        None
+    } else {
+        Some(session.person_unique.clone())
+    }
+}
+
 pub async fn list_control_rules(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1200,13 +1212,17 @@ pub async fn attendancedetail_checkDetailWithPersonByCycle_cycleYear_cycleMonth(
 /// GET /api/attendance/assemble/control/attendancedetail/filter/list
 pub async fn attendancedetail_filter_list(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
+    let scope = detail_person_scope(&pool, &session).await;
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
-            "SELECT id, person_id, date, status, creator FROM x_attendance_detail ORDER BY date DESC",
-            &[],
+            "SELECT id, person_id, date, status, creator FROM x_attendance_detail \
+             WHERE ($1::text IS NULL OR person_id = $1::text) ORDER BY date DESC",
+            &[&scope],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -1400,16 +1416,22 @@ pub async fn attendancedetail_filter_list_user(
 /// GET /api/attendance/assemble/control/attendancedetail/filter/list/{id}/next/{count}
 pub async fn attendancedetail_filter_list_id_next_count(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
+    let scope = detail_person_scope(&pool, &session).await;
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
-            &format!("SELECT id, person_id, date, status FROM x_attendance_detail WHERE {} ORDER BY {} LIMIT $2",
-            keyset_next_where(&date_keyset("x_attendance_detail", DATE_COL)),
-            date_keyset("x_attendance_detail", DATE_COL).order_by(false)),
-            &[&id, &count],
+            &format!(
+                "SELECT id, person_id, date, status FROM x_attendance_detail WHERE {} \
+                      AND ($3::text IS NULL OR person_id = $3::text) ORDER BY {} LIMIT $2",
+                keyset_next_where(&date_keyset("x_attendance_detail", DATE_COL)),
+                date_keyset("x_attendance_detail", DATE_COL).order_by(false)
+            ),
+            &[&id, &count, &scope],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -1452,16 +1474,22 @@ pub async fn attendancedetail_filter_list_id_next_count(
 /// GET /api/attendance/assemble/control/attendancedetail/filter/list/{id}/prev/{count}
 pub async fn attendancedetail_filter_list_id_prev_count(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
+    let scope = detail_person_scope(&pool, &session).await;
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
-            &format!("SELECT id, person_id, date, status FROM x_attendance_detail WHERE {} ORDER BY {} LIMIT $2",
-            date_keyset("x_attendance_detail", DATE_COL).predicate(false),
-            date_keyset("x_attendance_detail", DATE_COL).order_by(true)),
-            &[&id, &count],
+            &format!(
+                "SELECT id, person_id, date, status FROM x_attendance_detail WHERE {} \
+                      AND ($3::text IS NULL OR person_id = $3::text) ORDER BY {} LIMIT $2",
+                date_keyset("x_attendance_detail", DATE_COL).predicate(false),
+                date_keyset("x_attendance_detail", DATE_COL).order_by(true)
+            ),
+            &[&id, &count, &scope],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -1603,15 +1631,20 @@ pub async fn attendancedetail_list_file_id(
 /// GET /api/attendance/assemble/control/attendancedetail/mobile/filter/list/page/{page}/count/{count}
 pub async fn attendancedetail_mobile_filter_list_page_page_count_count(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
+    let scope = detail_person_scope(&pool, &session).await;
     let client = shared::db::acquire(&pool).await?;
 
     let (count, offset) = shared::response::page_window(page, count)?;
     let rows = client
         .query(
-            "SELECT id, person_id, date, status FROM x_attendance_detail ORDER BY date DESC LIMIT $2 OFFSET $1",
-            &[&offset, &count],
+            "SELECT id, person_id, date, status FROM x_attendance_detail \
+             WHERE ($3::text IS NULL OR person_id = $3::text) \
+             ORDER BY date DESC LIMIT $2 OFFSET $1",
+            &[&offset, &count, &scope],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -8285,6 +8318,18 @@ fn now_unix_secs() -> u64 {
         .unwrap_or(0)
 }
 
+/// 业务「今天」= 北京自然日（UTC+8）。
+///
+/// `now_unix_secs()` 是 UTC 秒；直接取日期在北京 00:00–08:00 会落到前一天。
+/// 考勤日期列（`record_date_string`）是本地日历日，两侧必须同基。
+fn business_today_from_unix(secs: u64) -> String {
+    date_string_from_unix(secs + 8 * 3600)
+}
+
+fn business_today() -> String {
+    business_today_from_unix(now_unix_secs())
+}
+
 /// GET /api/attendance/assemble/control/v2/mobile/check/pre
 pub async fn v2_mobile_pre_check(
     pool: Extension<Pool>,
@@ -8293,7 +8338,7 @@ pub async fn v2_mobile_pre_check(
     let client = shared::db::acquire(&pool).await?;
 
     // 当前用户命中的考勤组（复用 v2_group_person_date 的参与匹配语义）
-    let today = date_string_from_unix(now_unix_secs());
+    let today = business_today();
     let group_rows = client
         .query(
             "SELECT id, group_name, check_type, work_place_id_list \
@@ -8421,7 +8466,7 @@ async fn mobile_check_impl(
         .and_then(|v| v.as_str())
         .filter(|s| !s.trim().is_empty())
         .map(|s| s.trim().to_string())
-        .unwrap_or_else(|| date_string_from_unix(now_unix_secs()));
+        .unwrap_or_else(business_today);
 
     let check_in_type = json_str(payload, "checkInType");
     if check_in_type.is_empty() {
@@ -8792,7 +8837,7 @@ async fn import_checkin_rows(
             .and_then(|v| v.as_str())
             .filter(|s| !s.trim().is_empty())
             .map(|s| s.trim().to_string())
-            .unwrap_or_else(|| date_string_from_unix(now_unix_secs()));
+            .unwrap_or_else(business_today);
         let check_in_type = item
             .get("checkInType")
             .and_then(|v| v.as_str())
@@ -9180,4 +9225,30 @@ pub async fn v2_workplace_list_ids(
         count,
         0,
     )))
+}
+
+#[cfg(test)]
+mod business_day_tests {
+    use super::{business_today_from_unix, date_string_from_unix};
+
+    /// 固定时刻，任何真实钟点跑都断言同一件事。
+    #[test]
+    fn business_day_is_beijing_natural_day_in_early_window() {
+        // UTC 2026-11-04T16:30Z = 北京 11-05 00:30（早窗）
+        let early = 1_793_809_800u64;
+        assert_eq!(
+            date_string_from_unix(early),
+            "2026-11-04",
+            "UTC 截日仍是 11-04（旧实现取这个值）"
+        );
+        assert_eq!(
+            business_today_from_unix(early),
+            "2026-11-05",
+            "业务日必须是北京自然日 11-05"
+        );
+        // 北京 11-04 23:59:59 → 仍是 11-04
+        assert_eq!(business_today_from_unix(1_793_807_999), "2026-11-04");
+        // 北京 11-05 08:00（早窗出口）→ 11-05
+        assert_eq!(business_today_from_unix(1_793_836_800), "2026-11-05");
+    }
 }
