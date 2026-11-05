@@ -27577,7 +27577,7 @@ async fn u2_snap_manage_paging(
 
     let list_sql = format!(
         "SELECT {U2_SNAP_MANAGE_COLS} FROM \"pp_c_snap\" WHERE {where_clause} \
-         ORDER BY \"sequence\" DESC NULLS LAST LIMIT ${} OFFSET ${}",
+         ORDER BY \"xcreateTime\" DESC NULLS LAST, \"id\" DESC LIMIT ${} OFFSET ${}",
         fs.params.len() + 1,
         fs.params.len() + 2,
     );
@@ -27946,7 +27946,7 @@ pub async fn review_u2_v2_search(
 
     let list_sql = format!(
         "SELECT {U2_REVIEW_SEARCH_COLS} FROM \"pp_c_review\" WHERE {} \
-         ORDER BY \"sequence\" DESC NULLS LAST LIMIT ${} OFFSET ${}",
+         ORDER BY \"xcreateTime\" DESC NULLS LAST, \"id\" DESC LIMIT ${} OFFSET ${}",
         fs.where_sql(),
         fs.params.len() + 1,
         fs.params.len() + 2,
