@@ -221,7 +221,7 @@ pub async fn list_pages_by_category(
 
     let rows = client
         .query(
-            "SELECT id, name, category, content, creator, create_time, update_time FROM x_portal_page WHERE category = $1 ORDER BY update_time DESC",
+            "SELECT id, name, category, content, creator, create_time::text AS create_time, update_time::text AS update_time FROM x_portal_page WHERE category = $1 ORDER BY update_time DESC",
             &[&category],
         )
         .await
@@ -249,11 +249,17 @@ pub async fn list_pages_by_category(
             );
             map.insert(
                 "createTime".to_string(),
-                Value::String(row.get("create_time")),
+                Value::String(
+                    row.get::<_, Option<String>>("create_time")
+                        .unwrap_or_default(),
+                ),
             );
             map.insert(
                 "updateTime".to_string(),
-                Value::String(row.get("update_time")),
+                Value::String(
+                    row.get::<_, Option<String>>("update_time")
+                        .unwrap_or_default(),
+                ),
             );
             Value::Object(map)
         })
@@ -306,11 +312,17 @@ pub async fn get_page(
             );
             map.insert(
                 "createTime".to_string(),
-                Value::String(row.get("create_time")),
+                Value::String(
+                    row.get::<_, Option<String>>("create_time")
+                        .unwrap_or_default(),
+                ),
             );
             map.insert(
                 "updateTime".to_string(),
-                Value::String(row.get("update_time")),
+                Value::String(
+                    row.get::<_, Option<String>>("update_time")
+                        .unwrap_or_default(),
+                ),
             );
             let result = Value::Object(map);
             Ok(Json(ActionResult::success(result)))
@@ -1834,11 +1846,17 @@ pub async fn page_list_portal_portalId(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("update_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1891,11 +1909,17 @@ pub async fn page_id(
             );
             map.insert(
                 "createTime".to_string(),
-                Value::String(row.get("create_time")),
+                Value::String(
+                    row.get::<_, Option<String>>("create_time")
+                        .unwrap_or_default(),
+                ),
             );
             map.insert(
                 "updateTime".to_string(),
-                Value::String(row.get("update_time")),
+                Value::String(
+                    row.get::<_, Option<String>>("update_time")
+                        .unwrap_or_default(),
+                ),
             );
             let result = Value::Object(map);
             Ok(Json(ActionResult::success(result)))
@@ -2325,7 +2349,10 @@ pub async fn portal_id(
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("update_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -3653,7 +3680,7 @@ pub async fn page_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
-            "SELECT id, name, category, content, creator, create_time, update_time \
+            "SELECT id, name, category, content, creator, create_time::text AS create_time, update_time::text AS update_time \
              FROM x_portal_page WHERE deleted_at IS NULL ORDER BY update_time DESC",
             &[],
         )
@@ -3682,11 +3709,17 @@ pub async fn page_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
             );
             map.insert(
                 "createTime".to_string(),
-                Value::String(row.get("create_time")),
+                Value::String(
+                    row.get::<_, Option<String>>("create_time")
+                        .unwrap_or_default(),
+                ),
             );
             map.insert(
                 "updateTime".to_string(),
-                Value::String(row.get("update_time")),
+                Value::String(
+                    row.get::<_, Option<String>>("update_time")
+                        .unwrap_or_default(),
+                ),
             );
             Value::Object(map)
         })

@@ -219,7 +219,7 @@ pub async fn page_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
-            "SELECT id, name, category, content, creator, create_time, update_time FROM x_portal_page ORDER BY update_time DESC LIMIT 50",
+            "SELECT id, name, category, content, creator, create_time::text AS create_time, update_time::text AS update_time FROM x_portal_page ORDER BY update_time DESC LIMIT 50",
             &[],
         )
         .await
@@ -245,11 +245,17 @@ pub async fn page_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("update_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -310,11 +316,17 @@ pub async fn get_page(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "updateTime".to_string(),
-                    Value::String(row.get("update_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("update_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))

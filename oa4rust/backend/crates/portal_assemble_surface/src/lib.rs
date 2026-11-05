@@ -1391,7 +1391,10 @@ pub async fn page_list_portal_portal(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -1415,7 +1418,7 @@ async fn page_v2_flag_portal_portalFlag_core(
 
     let row = client
         .query_opt(
-            "SELECT id, name, content, creator, create_time FROM x_portal_page WHERE flag = $1 AND portal_flag = $2 LIMIT 1",
+            "SELECT id, name, content, creator, create_time::text AS create_time FROM x_portal_page WHERE flag = $1 AND portal_flag = $2 LIMIT 1",
             &[&flag, &portal_flag],
         )
         .await
@@ -1436,7 +1439,10 @@ async fn page_v2_flag_portal_portalFlag_core(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1471,7 +1477,7 @@ async fn page_v2_flag_portal_portalFlag_mobile_core(
 
     let row = client
         .query_opt(
-            "SELECT id, name, mobile_content, creator, create_time FROM x_portal_page WHERE flag = $1 AND portal_flag = $2 LIMIT 1",
+            "SELECT id, name, mobile_content, creator, create_time::text AS create_time FROM x_portal_page WHERE flag = $1 AND portal_flag = $2 LIMIT 1",
             &[&flag, &portal_flag],
         )
         .await
@@ -1495,7 +1501,10 @@ async fn page_v2_flag_portal_portalFlag_mobile_core(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1550,7 +1559,10 @@ async fn page_v2_id_core(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1608,7 +1620,10 @@ async fn page_v2_id_mobile_core(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1643,7 +1658,7 @@ async fn page_flag_portal_portalFlag_core(
 
     let row = client
         .query_opt(
-            "SELECT id, name, content, creator, create_time FROM x_portal_page WHERE flag = $1 AND portal_id = $2 LIMIT 1",
+            "SELECT id, name, content, creator, create_time::text AS create_time FROM x_portal_page WHERE flag = $1 AND portal_id = $2 LIMIT 1",
             &[&flag, &portal_flag],
         )
         .await
@@ -1664,7 +1679,10 @@ async fn page_flag_portal_portalFlag_core(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1699,7 +1717,7 @@ async fn page_flag_portal_portalFlag_mobile_core(
 
     let row = client
         .query_opt(
-            "SELECT id, name, mobile_content, creator, create_time FROM x_portal_page WHERE flag = $1 AND portal_id = $2 LIMIT 1",
+            "SELECT id, name, mobile_content, creator, create_time::text AS create_time FROM x_portal_page WHERE flag = $1 AND portal_id = $2 LIMIT 1",
             &[&flag, &portal_flag],
         )
         .await
@@ -1723,7 +1741,10 @@ async fn page_flag_portal_portalFlag_mobile_core(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1778,7 +1799,10 @@ pub async fn page_id(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1820,7 +1844,10 @@ async fn page_id_mobile_core(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
