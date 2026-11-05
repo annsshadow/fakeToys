@@ -144,7 +144,7 @@ type Service struct {
 	// leaderboardCache 按 kind 分键。三个键在 New 里一次建好，
 	// 之后**只读这个 map**（不再增删），所以不需要外层锁。
 	leaderboardCache map[string]*ttlCache[[]LeaderboardEntry]
-	// rankTotalCache 是「各榜参与人数」的按键缓存（2026-11-05 实质优化第 129 轮）。
+	// rankTotalCache 是「各榜参与人数」的按键缓存（2026-11-05 实质优化第 130 轮）。
 	//
 	// `/me/rank` 的 total 与名次是两次独立读：名次必须**当场精确**
 	// （否则会出现「榜上第 3 不是我」的分叉，见 MyRank 注释）；

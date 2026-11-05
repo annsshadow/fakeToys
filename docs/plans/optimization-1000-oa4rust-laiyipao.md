@@ -300,7 +300,7 @@ Wechat 8s 超时 + 1MB 响应上限、Fiber 读写超时与 body limit、laiyipa
 | `/admin/users` 深页（offset=5M @1M，c=20） | 2.8 QPS、p50 7.12s、p95 7.62s（返回空页 28B） | **8660 QPS 全 400**（列表 SQL 0 次）；上界档 25,000 为 151 QPS/p95 172ms（预算内）；offset=0 无回归 2515 QPS/p50 7.7ms | 2026-11-04 | R97 |
 | 结算写路径端到端（@1M，8 并发真结算） | P95 271ms（tx_insert 段 P95 242ms，触发器热点×事务长度） | P50 40.8ms / P95 47.0ms（tx_insert 段 P95 4.3ms；Lock 等待采样占比 85.5%→3.6%） | 2026-11-03 | R80→R81 |
 | 玩家主链路 SLO 基线（8 条路径，@1M，-c 20/-c 4 双档） | 无基线 | **全部达标**：详见 `laiyipao/server/scripts/slo_baseline.json`（守卫 `scripts/check-slo.mjs`：预算线+漂移>20% 复核线） | 2026-11-03 | R82 |
-| `/me/rank`（@1M/1,000,001 用户，HTTP 15 次，同机空闲） | power 尾排 p50 148.1/p95 196.4ms；stage 头排 229.1/261.7ms；efficiency 334.0/399.0ms（头排 p95 464.0ms） | power 尾排 84.1/148.1ms（头排 16.3/118.9ms）；stage 19.2/127.8ms（该用户无成绩）；efficiency 221.3/381.6ms（头排 239.1/440.4ms）。同口径预备语句 SQL：efficiency 433.6→243.4ms、power 268.1→107.5ms | 2026-11-05 | R129 |
+| `/me/rank`（@1M/1,000,001 用户，HTTP 15 次，同机空闲） | power 尾排 p50 148.1/p95 196.4ms；stage 头排 229.1/261.7ms；efficiency 334.0/399.0ms（头排 p95 464.0ms） | power 尾排 84.1/148.1ms（头排 16.3/118.9ms）；stage 19.2/127.8ms（该用户无成绩）；efficiency 221.3/381.6ms（头排 239.1/440.4ms）。同口径预备语句 SQL：efficiency 433.6→243.4ms、power 268.1→107.5ms | 2026-11-05 | R130 |
 | `/me/wallet`（体力恢复改并发安全，@1M，c=20） | QPS 3,351.7、p50 5.97ms、p95 7.124ms | QPS 3,347.8、p50 6.00ms、p95 7.144ms（-0.12%；n=0 仍单语句无锁，n>0 才进锁事务） | 2026-11-04 | R99 |
 
 > 新增性能路径时在此登记一行；改前/改后都要是**同环境实测**，不能拿历史数字与另一台机器比。

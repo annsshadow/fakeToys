@@ -276,7 +276,7 @@ func (s *Service) MyRank(ctx context.Context, userID int64, kind string) (MyRank
 	// 直接对表的引用，`level_exp` 上的索引随即可用。
 	// 分数定义仍来自 `leaderboardScoresSQL`，没有另写一份。
 	//
-	// 2026-11-05（第 129 轮）：把一条大 SQL 拆成「分数 / 人数 / 名次」三读。
+	// 2026-11-05（第 130 轮）：把一条大 SQL 拆成「分数 / 人数 / 名次」三读。
 	//
 	// 原实现把 total 也当场算一遍：power 是一次全表 COUNT（1M 行约 40~75ms），
 	// 关卡/效率榜是**第二次** GROUP BY（与名次计数那次重复，合计 500~580ms）。

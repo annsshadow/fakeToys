@@ -193,7 +193,7 @@ func TestLeaderboardLimitSlicesCachedRows(t *testing.T) {
 // 理由：15 秒的陈旧对榜单可以接受，对「我刚打完一局，我的名次」不可接受 ——
 // 那是玩家最容易当成 bug 的一处陈旧。
 //
-// 第 129 轮起 `total` 单独走 rankTotalCache（TTL 同榜单）：它对所有玩家
+// 第 130 轮起 `total` 单独走 rankTotalCache（TTL 同榜单）：它对所有玩家
 // 都是同一个数，且**不参与名次计算**（名次仍当场精确数，不能用旧 total
 // 反推）。所以这条守卫要分开钉两件事：
 //  1. 名次/分数不缓存：中途冒出更强的玩家，名次立刻变化；
