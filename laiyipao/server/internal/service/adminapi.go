@@ -1609,14 +1609,18 @@ func (s *Service) AdminCreateRedeemCode(ctx context.Context, code string, reward
 		return AdminRedeemCodeView{}, err
 	}
 	var id int
+	// ⚠️ R133（时间字段写后必读）：`expires_at` 必须从 INSERT 读回。
+	// 入参是 Go 的 time.Time（纳秒），PostgreSQL 落库只到微秒 ——
+	// 直接回显入参，建码响应与库里/列表读回的值在亚微秒上不相等。
+	var storedExpiresAt *time.Time
 	// R34：码与「生成了这个码」的审计必须同生同死。改前业务 INSERT 先
 	// autocommit，handler 再补审计（失败只打日志）——审计缺了也没人知道。
 	// 传入 audit 时（HTTP 路径）同事务；测试/内部调用不传时行为不变。
 	err = s.DB.Tx(ctx, func(tx txType) error {
 		if err := tx.QueryRow(ctx,
 			`INSERT INTO redeem_codes (code, reward, max_uses, expires_at)
-			 VALUES ($1,$2,$3,$4) RETURNING id`,
-			code, raw, maxUses, expiresAt).Scan(&id); err != nil {
+			 VALUES ($1,$2,$3,$4) RETURNING id, expires_at`,
+			code, raw, maxUses, expiresAt).Scan(&id, &storedExpiresAt); err != nil {
 			// R27：撞 `redeem_codes_code_key` 唯一约束（23505）是运营输入问题，
 			// 不是服务故障。改前这里被包成普通 error，HTTP 层统一 500
 			// 「服务内部错误」，运营看到的是"系统坏了"而不是"这个码已存在"。
@@ -1636,7 +1640,7 @@ func (s *Service) AdminCreateRedeemCode(ctx context.Context, code string, reward
 		return AdminRedeemCodeView{}, err
 	}
 	return AdminRedeemCodeView{
-		ID: id, Code: code, Reward: reward, MaxUses: maxUses, ExpiresAt: expiresAt,
+		ID: id, Code: code, Reward: reward, MaxUses: maxUses, ExpiresAt: storedExpiresAt,
 		// ⚠️ 2026-10-31（实质优化第 24 轮）：此前漏填 Enabled，
 		// 前端「状态」列把新码显示成「停用」（表里实际是启用）。
 		Enabled: true,
@@ -1721,10 +1725,11 @@ func (s *Service) createRedeemCodesTx(ctx context.Context, tx pgx.Tx,
 			return nil, err
 		}
 		var id int
+		var storedExpiresAt *time.Time
 		if err := sp.QueryRow(ctx,
 			`INSERT INTO redeem_codes (code, reward, max_uses, expires_at)
-			 VALUES ($1,$2,$3,$4) RETURNING id`,
-			code, raw, maxUses, expiresAt).Scan(&id); err != nil {
+			 VALUES ($1,$2,$3,$4) RETURNING id, expires_at`,
+			code, raw, maxUses, expiresAt).Scan(&id, &storedExpiresAt); err != nil {
 			_ = sp.Rollback(ctx)
 			if isUniqueViolation(err) {
 				continue // 极小概率冲突：换码重试
@@ -1737,7 +1742,7 @@ func (s *Service) createRedeemCodesTx(ctx context.Context, tx pgx.Tx,
 		seen[code] = true
 		out = append(out, AdminRedeemCodeView{
 			ID: id, Code: code, Reward: reward, MaxUses: maxUses,
-			ExpiresAt: expiresAt, Enabled: true,
+			ExpiresAt: storedExpiresAt, Enabled: true,
 		})
 	}
 	// R34：整批码与「谁生成了这一批」的审计在同一事务里提交。

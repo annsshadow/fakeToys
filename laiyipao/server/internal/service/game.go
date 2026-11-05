@@ -100,14 +100,19 @@ func (s *Service) StartBattle(ctx context.Context, userID int64, levelID int) (B
 	seed := newBattleSeed()
 
 	expires := time.Now().Add(s.Cfg().BattleTokenTTL)
+	// ⚠️ R133（时间字段写后必读）：`expires_at` 必须从 INSERT 读回。
+	// 入参是 Go 的 time.Time（纳秒），PostgreSQL 的 timestamptz 只到微秒 ——
+	// 直接回显 `expires`，响应与库里/校验时用的值在亚微秒上不相等。
 	var tokenID int64
 	usedRevive := false
 	err := s.DB.Tx(ctx, func(tx pgx.Tx) error {
+		var storedExpiresAt time.Time
 		if err := tx.QueryRow(ctx,
 			`INSERT INTO battle_tokens (user_id, level_id, seed, expires_at) VALUES ($1,$2,$3,$4)
-			 RETURNING id`, userID, levelID, seed, expires).Scan(&tokenID); err != nil {
+			 RETURNING id, expires_at`, userID, levelID, seed, expires).Scan(&tokenID, &storedExpiresAt); err != nil {
 			return fmt.Errorf("insert battle token: %w", err)
 		}
+		expires = storedExpiresAt
 		if err := s.grantWallet(ctx, tx, userID,
 			map[string]int64{"energy": -int64(gl.EnergyCost)}, "battle_start", tokenID); err != nil {
 			return err
