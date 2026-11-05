@@ -2292,11 +2292,121 @@ row.get::<_, Option<String>>("order_number")
 ### 本轮不做（已确认的后续点）
 
 - `ORDER BY order_number ASC` 仍按 TEXT 字典序（`'10' < '2'`）；改数值序需业务确认
-  历史数据是否全为数字串，不在本轮。
+  历史数据是否全为数字串，不在本轮。→ 已由 O32 修复（2026-11-05）。
 - 同族真实点：`x_custom.created_at` ×2（需会话夹具）、
   `x_program_deploy_server.create_time` ×1、`x_console_status.xuptime` VARCHAR→i64 ×1、
   `corr_c_correlation.order_number` TEXT→i32 ×2、
   `x_cms_surface_appdict.path_levels` TEXT[] ×3（需会话夹具）。
+
+## O32：TEXT 列按数字语义排序——`order_number` 字典序错序 + LIMIT 窗口漏行（2026-11-05）
+
+### 选题依据
+
+O31 遗留点。实库 `oa4rust_test` 探针实测：`cpt_component.order_number` = text、
+`x_component.order_number` = text、`corr_c_correlation.order_number` = text；
+三处查询都用 `ORDER BY order_number`，PG 走字符串字典序（`'10' < '2'`）。
+
+**现有数据掩盖了缺陷**：实库 `cpt_component` 0 行；`x_component` 仅 1 行且
+`order_number='1'`——没有跨 9 的值，线上读不出错序。因此缺陷必须靠 scratch 库造数据证明。
+
+### 缺口证据（改前）
+
+scratch 库 `oa_par_cpt_ord_sort` 种 `'2'`/`'10'`/`'3'`/`'+7'`/`' 5 '`/NULL/`'abc'`/`'2147483648'`，
+直调 `component_list_all`：
+
+```
+实际顺序: ["n10", "n2", "n-over", "n3", "n-space", "n-plus", "n-bad", "n-null"]
+期望顺序: ["n2", "n3", "n-space", "n-plus", "n10", "n-bad", "n-null", "n-over"]
+```
+
+scratch 库 `oa_par_xcomp_ord_sort` 种 60 行（order_number `'1'..'60'`），直调
+`component::list_all`（`LIMIT 50`）：
+
+```
+实际首 50: 1,10,11,…,19,2,20,…,29,3,…,39,4,…,49,5,50–54
+期望首 50: 1,2,…,50
+```
+
+即字典序把 `'6','7','8','9'` 与 `'55'..'60'` 挤出窗口——**不是顺序难看，是列表页直接少数据**。
+
+scratch 库 `oa_par_corr_ord_sort` 种带值行直调 `list_cms_correlations`：
+
+```
+panicked at crates\correlation\src\routes.rs（order_number 解码处）:
+error retrieving column order_number: error deserializing column 5
+```
+
+（同型 decode panic：text 列用 `Option<i32>` 解码。）
+
+### 修法选择与代价
+
+| 方案 | 做法 | 代价 | 结论 |
+|------|------|------|------|
+| A. 查询层数值排序（采用） | `ORDER BY <expr> ASC NULLS LAST, id ASC`，`<expr>` = 正则 `^[+-]?[0-9]{1,10}$` + `::bigint` 范围判定 + `::bigint` | 每行一次正则+cast（组件表几十~几百行，可忽略）；普通 B-tree 索引不能直接服务该表达式（今天表小，不需要）；零 schema 变更、零回填 | ✅ 采用 |
+| B. 列改 INTEGER | `ALTER COLUMN ... TYPE integer USING ...` | 需停写迁移 + 历史脏值回填 + 写入口径改变（前端仍发字符串）+ 新库/旧库双份迁移 + 回滚复杂；收益是普通索引 | 暂不采用（表小，收益不抵风险） |
+| C. 增数值排序列 | 新增 `order_number_int` + 写入双写/回填 | schema 变更 + 双写一致性与后续漂移；收益同 B 的索引能力 | 暂不采用 |
+
+实现：`shared::db::numeric_text_i32_sort_expr(column)`（`column` 只允许代码内写死列名）。
+不可解析口径与 O31 一致：NULL / 空串 / 非数字 / 超 i32 一律 → 表达式为 NULL →
+`NULLS LAST` 排末尾；读面同样不输出 `orderNumber`。
+细节：SQL 用 `btrim()` 只裁空格，O31 用 Rust `trim()` 还会裁制表符/换行/Unicode 空白；
+实库探针未见此类值，若未来出现，该类行在排序里按「不可解析」排末位，不影响其他行。
+
+### 分页/keyset 影响
+
+- `component_core_entity`：无 LIMIT/OFFSET/游标 → 只错整体顺序，无分页漏洞。
+- `component`：`LIMIT 50`，无 OFFSET、无 keyset 游标 → 修正前窗口选错行（见上）；
+  修正后窗口即数值最小的 50 个；不存在「跨页漏行/重行」的游标问题。
+- `correlation`：两个列表都无分页。
+- 全仓另有用 id 作 keyset 却按别的列排序的点
+  （`x_attendance_statistical_cycle` 的 `id > $1 ORDER BY year DESC, month DESC`），
+  属「keyset 键与排序键不一致」的另一类缺陷，登记在下方清单，本轮不改。
+
+### 验证
+
+- 新增三份回归：`crates/component_core_entity/tests/order_number_sort.rs`（scratch
+  `oa_par_cpt_ord_sort`）、`crates/component/tests/order_number_sort.rs`（scratch
+  `oa_par_xcomp_ord_sort`，60 行窗口）、`crates/correlation/tests/order_number_sort.rs`
+  （scratch `oa_par_corr_ord_sort`）。规模下限：≥8 行 / 恰 50 行 / ≥5 与 ≥3 行。
+  注：scratch 库由 051 迁移种入一行 `x_component`（`order_number='1'`），测试先清空再种，
+  保证窗口基数精确。
+- **破坏实验**：三处排序改回 `ORDER BY order_number ASC` → 三条测试全红
+  （如 `cms 实际: [("cms-10", Some(10)), ("cms-2", Some(2)), ("cms-3", Some(3)), …]`）；
+  恢复后绿。correlation 改前解码 panic 亦为红证据，改为 `Option<String>` 后消失。
+- `cargo fmt --all -- --check` 通过；`cargo clippy -p shared -p component
+  -p component_core_entity -p correlation --all-targets -- -D warnings` 零告警；
+  `cargo test`（四 crate，`--skip migrate::tests`）：全绿，0 failed。
+- ⚠️ 环境债（非本轮引入，报备）：`shared::migrate::tests::migrations_are_ordered_...`
+  在**漂移的 `oa4rust_test`** 上红——019 已记录但 checksum/schema 漂移，重放时报
+  `column person_unique does not exist`（代码 L471-474 注释已记载该现象）。同一测试在
+  空 scratch 库 `oa_par_mig_probe` 上**全绿**，证明迁移脚本本身无问题。
+
+### 提交
+
+- `97d9ecf35` fix(component): order_number 按数值语义排序…（含 shared helper）
+- `483361644` fix(correlation): order_number 数值排序并修 TEXT 解码 panic
+
+### 「按数字语义排序但列类型是 TEXT」全量清单（本轮建立）
+
+| 字段 | 实库类型 | 排序点 | 状态 |
+|------|---------|--------|------|
+| `cpt_component.order_number` | text | `component_core_entity/src/lib.rs` ×1 | **已修（O32）** |
+| `x_component.order_number` | text | `component/src/lib.rs` ×1（LIMIT 50） | **已修（O32）** |
+| `corr_c_correlation.order_number` | text | `correlation/src/routes.rs` ×2 | **已修（O32，含解码 panic）** |
+| `x_attendance_statisticshow.month` | text | attendance ×N `ORDER BY month DESC` | 待修（若未补零，`'10' < '2'`） |
+| `x_attendance_statisticshow.year` | text | attendance ×N `ORDER BY year DESC` | 待确认（4 位年同宽时字典序=数值） |
+| `x_attendance_statistical_cycle.year` / `month` | text | attendance ×N `ORDER BY year DESC, month DESC` | 待修（同 month 风险；且 id keyset 与排序键不一致） |
+| `pp_c_snap.sequence` | text | processplatform ×2 `ORDER BY "sequence" DESC NULLS LAST` | 待确认语义（递增序号跨位数会错序） |
+
+同族但**不计入**（列为 TEXT 但排序键不是它）：`district.level`（按 name 排）、
+`x_general_assemble_area.level`（按 create_time 排）、`x_console_status.xuptime`
+（无排序，属解码族）。
+
+时间语义 TEXT（同格式 ISO 串字典序≈时序，非数字语义，单列备查）：
+`cal_event.start_time`、`x_attendance_record.check_in_time`（实库值为空串）、
+`x_message_consume.consume_time`（NULL）、`x_message_conversation_member.join_time`（NULL）、
+`x_attendance_detail.date`、`x_attendance_selfholiday.holiday_date`、
+`x_attendance_workday_config.work_date`、`x_attendance_v2_group_schedule.schedule_date_string`。
 
 
 
