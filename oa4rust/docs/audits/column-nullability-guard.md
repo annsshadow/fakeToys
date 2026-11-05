@@ -36,9 +36,9 @@ SQL 侧形态继承：
 
 ## 3. 当前存量（基线，2026-11-05）
 
-`docs/audits/artifacts/column_nullability_baseline.tsv`（221 条，含 C1–C3 修复前状态）：
+`docs/audits/artifacts/column_nullability_baseline.tsv`（182 条，已扣除 O36-C1–C3 的 39 条收敛）：
 
-- `FAIL=25`、`NULLRISK=196`、`SILENT=4`、`LOOSE=2`。
+- `FAIL=14`、`NULLRISK=168`、`SILENT=4`、`LOOSE=2`。
 - 守卫第一次跑就抓到 O36-C 之外的同族缺陷，例如：
   - `bbs/src/subject.rs` 4 处 `Option<String>` 解裸 TIMESTAMP（`bbs_subject_info.create_time`，007:31）——**每行必 500**，不是 NULL 才 500；
   - `cms_assemble_control` 3 处把 `TEXT[]` 当 `String` 读（`x_cms_surface_appdict.path_levels`）；
