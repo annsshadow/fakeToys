@@ -2438,10 +2438,19 @@ error retrieving column order_number: error deserializing column 5
   不变，前端零改动）。SQL 用子查询把该 id 换算成同一行上的复合键：
   `(year, month, id) < (SELECT year, month, id FROM t WHERE id = $1 LIMIT 1)`。
 - ORDER BY 使用同一组键：`year DESC, month DESC, id DESC`（并列值由 id 稳定裁决）。
-- NULL 统一 NULLS LAST：降序列把 NULL 归一为 `''`（文本最小值，DESC 落末）；
-  升序列前置 `(col IS NULL)` 布尔键（false 在前）。行值比较遇 NULL 会整行丢弃，
-  归一化同时消除该陷阱。**旧实现 `ORDER BY ... DESC` 默认 NULLS FIRST，本轮改为
-  NULLS LAST（有意变更，分页与排序保持一致）。**
+- NULL 统一 NULLS LAST：降序列把 NULL 归一为**与列同型的最小值**（`KeyColumn::null_low`：
+  文本 `''`、TIMESTAMP `'-infinity'::timestamp`）；升序列前置 `(col IS NULL)` 布尔键
+  （false 在前）。行值比较遇 NULL 会整行丢弃，归一化同时消除该陷阱。**旧实现
+  `ORDER BY ... DESC` 默认 NULLS FIRST，本轮改为 NULLS LAST（有意变更，分页与排序
+  保持一致）。**
+  - 踩坑记录：首版对 `create_time`（TIMESTAMP）也写 `COALESCE(create_time,'')`，
+    seeded-route-scan 全线 500（`invalid input syntax for type timestamp: ""`，18 个
+    org/meeting 端点）。同型哨兵 + 组织域时间戳回归
+    [keyset_pagination.rs](file:///D:/WORKSPACE/fakeToys-oa4rust/oa4rust/backend/crates/organization_assemble_control/tests/keyset_pagination.rs)
+    已补。
+- **首页分支也必须用同一组排序键**。org/meeting/u2_person 的 `flag == "0"` 分支原本
+  仍写 `ORDER BY create_time DESC`（无 id 并列裁决），首屏与后续页的并列值次序不一致，
+  翻页照样漏行（组织域回归实测：r5 在首屏被跳过）。已统一改为 `KeySet::order_by`。
 - `prev` 取「游标之前最近一页」：查询按反向键取窗口，降序列表再 `reverse()`
   还原显示顺序；升序列表（appeal/detail/selfholiday/message）查询本身即 DESC，
   与原输出方向一致。
@@ -2488,6 +2497,8 @@ error retrieving column order_number: error deserializing column 5
 
 - `cargo test -p attendance_assemble_control --test keyset_pagination`：3 passed
   （desc 全集不漏不重、prev 窗口正确、asc+NULS 落末）。
+- `cargo test -p organization_assemble_control --test keyset_pagination`：1 passed
+  （TIMESTAMP 列 + 并列 + 首屏/翻页同序）。
 - `cargo clippy -p shared -p attendance -p organization -p meeting -p message
   --all-targets -- -D warnings`：零告警；`cargo fmt --all` 已跑。
 - 四 crate 单测（`--skip migrate::tests`）+ `shared --lib`（同 skip）：全绿。
