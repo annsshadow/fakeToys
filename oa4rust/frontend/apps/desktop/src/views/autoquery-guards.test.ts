@@ -18,7 +18,7 @@ const baseline: Array<[string, number]> = [
   ['CategoryApp.vue', 0],
   ['CmsModuleApp.vue', 1],
   ['CommonApp.vue', 1],
-  ['ConfigDesignerApp.vue', 0],
+  ['ConfigDesignerApp.vue', 1],
   ['Dashboard.vue', 2],
   ['DesignCenterApp.vue', 0],
   ['DocumentApp.vue', 0],
