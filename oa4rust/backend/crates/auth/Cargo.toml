@@ -1,5 +1,6 @@
 ﻿[dev-dependencies]
 tower = "0.5"
+tracing-subscriber.workspace = true
 
 [package]
 publish.workspace = true
