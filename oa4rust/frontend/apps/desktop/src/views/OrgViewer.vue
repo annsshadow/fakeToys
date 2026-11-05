@@ -151,6 +151,7 @@
               <div v-else class="empty-m">No members</div>
             </div>
             <h3 style="margin-top:16px">直接子群组（{{ subGroups.length }}）</h3>
+            <ListLoadError v-if="subGroupsError" mode="banner" :message="subGroupsError" @retry="retrySubGroups" />
             <div class="mlist">
               <template v-if="subGroups.length">
                 <div v-for="g in subGroups" :key="g.id" class="mc">
@@ -158,7 +159,7 @@
                   <div class="mi2"><div class="mn">{{ g.name }}</div><div class="mp">{{ g.id }}</div></div>
                 </div>
               </template>
-              <div v-else class="empty-m">无子群组</div>
+              <div v-else-if="!subGroupsError" class="empty-m">无子群组</div>
             </div>
 
             <h3 style="margin-top:16px">关联角色（{{ groupRoles.length }}）</h3>
@@ -222,6 +223,9 @@ import { api } from '@oa4rust/sdk'
 import { useQuery } from '@tanstack/vue-query'
 import { ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { describeListError } from './listQuery'
 
 interface N {
   id: string
@@ -1403,6 +1407,10 @@ function toggleNode(n: N) {
   }
 }
 const subGroups = ref<N[]>([])
+const subGroupsError = ref('')
+function retrySubGroups() {
+  if (selected.value) selectNode(selected.value)
+}
 const groupRoles = ref<N[]>([])
 const supDirect = ref<N[]>([])
 const supNested = ref<N[]>([])
@@ -1414,6 +1422,7 @@ const personAttrs = ref<Array<Record<string, unknown>>>([])
 async function selectNode(n: N) {
   selected.value = n
   subGroups.value = []
+  subGroupsError.value = ''
   groupRoles.value = []
   supDirect.value = []
   supNested.value = []
@@ -1427,8 +1436,9 @@ async function selectNode(n: N) {
       await api.get(`/api/organization/assemble/control/group/${n.id}`)
       const r: any = await api.get(`/api/organization/assemble/control/group/list/${n.id}/sub/direct`)
       subGroups.value = (r.data ?? []) as N[]
-    } catch {
-      subGroups.value = []
+    } catch (e) {
+      // 失败保留旧子群组并显式报错，不能和「这个群组真的没有子群组」混成同一种空态。
+      subGroupsError.value = describeListError('子群组加载失败', e)
     }
     // 群组角色 + 上级群组（直接/嵌套）——三条 distinct 真实路由，并发拉取
     const [roles, dir, nested] = await Promise.all([

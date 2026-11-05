@@ -134,7 +134,9 @@
     <!-- MCP 配置面板（合并自 AIAssistant.vue，并补上入口按钮） -->
     <div class="config-panel glass-card" v-if="showConfig">
       <h3>MCP 配置</h3>
+      <ListLoadError v-if="mcps.length > 0 && mcpError" mode="banner" :message="mcpError" @retry="loadMcps" />
       <div v-if="mcpLoading" class="config-empty">加载中…</div>
+      <ListLoadError v-else-if="mcps.length === 0 && mcpError" mode="empty" :message="mcpError" @retry="loadMcps" />
       <div v-else-if="mcps.length === 0" class="config-empty">暂无 MCP 服务</div>
       <div v-else class="mcp-list">
         <div v-for="m in mcps" :key="m.id" class="mcp-item">
@@ -581,16 +583,19 @@ loadConversations()
 type McpItem = { id: string; name: string; url: string; enabled: boolean }
 const mcps = ref<McpItem[]>([])
 const mcpLoading = ref(false)
+const mcpError = ref('')
 const showAddMcp = ref(false)
 const mcpForm = ref({ name: '', url: '' })
 
 async function loadMcps() {
   mcpLoading.value = true
+  mcpError.value = ''
   try {
     const r = await api.get('/api/ai_assemble_control/config/list/mcp/paging/1/size/50')
     mcps.value = (r.data?.list ?? r.data ?? []) as McpItem[]
-  } catch {
-    mcps.value = []
+  } catch (e) {
+    // 失败保留旧 MCP 列表并显式报错，不能和「真的没有 MCP 服务」混成同一种空态。
+    mcpError.value = describeListError('MCP 服务加载失败', e)
   } finally {
     mcpLoading.value = false
   }

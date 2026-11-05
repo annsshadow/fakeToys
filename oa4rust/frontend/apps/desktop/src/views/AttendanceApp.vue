@@ -132,7 +132,9 @@
     </div>
     <div class="content-panel glass-card">
       <div class="pt">请假申请</div>
-      <div v-if="appeals.length===0" class="es-sm"><p>暂无请假申请</p></div>
+      <ListLoadError v-if="appeals.length > 0 && appealsError" mode="banner" :message="appealsError" @retry="loadAppeals" />
+      <ListLoadError v-else-if="appeals.length===0 && appealsError" mode="empty" :message="appealsError" @retry="loadAppeals" />
+      <div v-else-if="appeals.length===0" class="es-sm"><p>暂无请假申请</p></div>
       <div v-else class="al">
         <div v-for="a in appeals" :key="a.id" class="ai">
           <div class="ai-info"><span class="an">{{a.personName}}</span><span class="at">{{a.typeName||a.type}}</span><span class="ad">{{fmtDate(a.startDate)}}~{{fmtDate(a.endDate)}}</span></div>
@@ -155,7 +157,9 @@
         <span>打卡地点</span>
         <button class="mini-add" @click="addWorkplace">+ 新增</button>
       </div>
-      <div v-if="workplaces.length === 0" class="es-sm"><p>暂无打卡地点</p></div>
+      <ListLoadError v-if="workplaces.length > 0 && workplaceError" mode="banner" :message="workplaceError" @retry="loadWorkplaces" />
+      <ListLoadError v-else-if="workplaces.length === 0 && workplaceError" mode="empty" :message="workplaceError" @retry="loadWorkplaces" />
+      <div v-else-if="workplaces.length === 0" class="es-sm"><p>暂无打卡地点</p></div>
       <div v-else class="cfg-list">
         <div v-for="w in workplaces" :key="w.id" class="cfg-item">
           <div class="cfg-main"><span class="cfg-name">{{ w.name || '—' }}</span><span class="cfg-sub">{{ w.address || '未填写地址' }}</span></div>
@@ -168,7 +172,9 @@
         <span>考勤设置项</span>
         <button class="mini-add" @click="addSetting">+ 新增</button>
       </div>
-      <div v-if="settings.length === 0" class="es-sm"><p>暂无设置项</p></div>
+      <ListLoadError v-if="settings.length > 0 && settingError" mode="banner" :message="settingError" @retry="loadSettings" />
+      <ListLoadError v-else-if="settings.length === 0 && settingError" mode="empty" :message="settingError" @retry="loadSettings" />
+      <div v-else-if="settings.length === 0" class="es-sm"><p>暂无设置项</p></div>
       <div v-else class="cfg-list">
         <div v-for="s in settings" :key="s.id" class="cfg-item">
           <div class="cfg-main"><span class="cfg-name">{{ s.name || s.code }}</span><span class="cfg-sub">{{ s.code }} = {{ s.value || '—' }}</span></div>
@@ -199,7 +205,9 @@
         <button class="mini-add" v-if="moreTab==='v2shift'" @click="addShift">+ 新建班次</button>
         <button class="mini-add" v-if="moreTab==='v2leave'" @click="addLeave">+ 新建请假</button>
       </div>
-      <div v-if="moreItems.length === 0" class="es-sm"><p>暂无数据</p></div>
+      <ListLoadError v-if="moreItems.length > 0 && moreError" mode="banner" :message="moreError" @retry="switchMore(moreTab)" />
+      <ListLoadError v-else-if="moreItems.length === 0 && moreError" mode="empty" :message="moreError" @retry="switchMore(moreTab)" />
+      <div v-else-if="moreItems.length === 0" class="es-sm"><p>暂无数据</p></div>
       <div v-else class="cfg-list">
         <div v-for="it in moreItems" :key="it.id" class="cfg-item">
           <div class="cfg-main"><span class="cfg-name">{{ it.name || it.ruleName || it.id }}</span><span class="cfg-sub">{{ it.id }}</span></div>
@@ -234,6 +242,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, ref } from 'vue'
 import { monthEndYMD } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { describeListError } from './listQuery'
 
 const session = useSession()
 
@@ -263,6 +274,7 @@ const month = ref(new Date().toISOString().slice(0, 7)),
   appeals = ref<A[]>([]),
   loading = ref(false),
   totalPages = ref(1),
+  appealsError = ref(''),
   qc = useQueryClient()
 const stats = computed(() => [
   { label: '应出勤', value: 45, color: 'var(--color-info)' },
@@ -1260,11 +1272,13 @@ async function submitAppeal() {
   }
 }
 async function loadAppeals() {
+  appealsError.value = ''
   try {
     const r = await api.get('/api/attendance/appeal/list')
     appeals.value = (r.data ?? []) as A[]
-  } catch {
-    appeals.value = []
+  } catch (e) {
+    // 失败保留旧请假申请并显式报错，不能和「真的没有请假申请」混成同一种空态。
+    appealsError.value = describeListError('请假申请加载失败', e)
   }
 }
 loadRules()
@@ -1282,13 +1296,17 @@ interface ST {
   value?: string
 }
 const workplaces = ref<WP[]>([])
+const workplaceError = ref('')
 const settings = ref<ST[]>([])
+const settingError = ref('')
 async function loadWorkplaces() {
+  workplaceError.value = ''
   try {
     const r: any = await api.get('/api/attendance/assemble/control/workplace/list/all')
     workplaces.value = (r.data ?? []) as WP[]
-  } catch {
-    workplaces.value = []
+  } catch (e) {
+    // 失败保留旧打卡地点并显式报错，不能和「真的没有打卡地点」混成同一种空态。
+    workplaceError.value = describeListError('打卡地点加载失败', e)
   }
 }
 async function addWorkplace() {
@@ -1313,11 +1331,13 @@ async function removeWorkplace(w: WP) {
   }
 }
 async function loadSettings() {
+  settingError.value = ''
   try {
     const r: any = await api.get('/api/attendance/assemble/control/attendancesetting/list/all')
     settings.value = (r.data ?? []) as ST[]
-  } catch {
-    settings.value = []
+  } catch (e) {
+    // 失败保留旧设置项并显式报错，不能和「真的没有设置项」混成同一种空态。
+    settingError.value = describeListError('考勤设置项加载失败', e)
   }
 }
 async function addSetting() {
@@ -1358,6 +1378,7 @@ type MoreTabKey =
   | 'v2leave'
 const moreTab = ref<MoreTabKey>('schedule')
 const moreItems = ref<MoreItem[]>([])
+const moreError = ref('')
 const moreEndpoints: Record<string, string> = {
   schedule: '/api/attendance/assemble/control/attendanceschedulesetting/list/all',
   employee: '/api/attendance/assemble/control/attendanceemployeeconfig/list/all',
@@ -1370,6 +1391,7 @@ const moreEndpoints: Record<string, string> = {
 }
 async function switchMore(t: MoreTabKey) {
   moreTab.value = t
+  moreError.value = ''
   if (t === 'cycle') {
     // 统计周期无 list/all 端点，仅支持按 id 建/删；切到该标签清空列表，由新建后展示
     moreItems.value = []
@@ -1388,8 +1410,9 @@ async function switchMore(t: MoreTabKey) {
         id: String(row.id ?? ''),
         name: String(row.groupName ?? row.shiftName ?? row.name ?? row.id ?? ''),
       }))
-    } catch {
-      moreItems.value = []
+    } catch (e) {
+      // 失败保留旧数据并显式报错，不能和「真的没有数据」混成同一种空态。
+      moreError.value = describeListError('考勤组/班次列表加载失败', e)
     }
     return
   }
@@ -1402,16 +1425,18 @@ async function switchMore(t: MoreTabKey) {
         id: String(row.id ?? ''),
         name: `${String(row.leaveType ?? row.leave_type ?? '请假')} · ${String(row.person ?? '')}`,
       }))
-    } catch {
-      moreItems.value = []
+    } catch (e) {
+      // 失败保留旧数据并显式报错，不能和「真的没有数据」混成同一种空态。
+      moreError.value = describeListError('请假列表加载失败', e)
     }
     return
   }
   try {
     const r: any = await api.get(moreEndpoints[t])
     moreItems.value = (r.data ?? []) as MoreItem[]
-  } catch {
-    moreItems.value = []
+  } catch (e) {
+    // 失败保留旧数据并显式报错，不能和「真的没有数据」混成同一种空态。
+    moreError.value = describeListError('扩展列表加载失败', e)
   }
 }
 

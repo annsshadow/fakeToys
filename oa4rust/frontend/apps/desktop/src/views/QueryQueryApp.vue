@@ -57,7 +57,9 @@
         <button class="btn-refresh" @click="loadSurfaces">🔄 加载</button>
         <button class="btn-sm" @click="openSurfaceCreate">+ 新建表面</button>
       </div>
-      <div v-if="surfaces.length===0" class="empty-state"><p>该分类暂无表面查询</p></div>
+      <ListLoadError v-if="surfaces.length > 0 && surfacesError" mode="banner" :message="surfacesError" @retry="loadSurfaces" />
+      <ListLoadError v-else-if="surfaces.length === 0 && surfacesError" mode="empty" :message="surfacesError" @retry="loadSurfaces" />
+      <div v-else-if="surfaces.length===0" class="empty-state"><p>该分类暂无表面查询</p></div>
       <table v-else class="data-table">
         <thead><tr><th>名称</th><th>分类</th><th>ID</th><th>操作</th></tr></thead>
         <tbody>
@@ -97,7 +99,7 @@ import { computed, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
-import { useListError } from './listQuery'
+import { describeListError, useListError } from './listQuery'
 import { liveQueryItems } from './liveQueryItems'
 
 interface Item {
@@ -228,6 +230,7 @@ interface Surface {
 }
 const sfCategory = ref('default')
 const surfaces = ref<Surface[]>([])
+const surfacesError = ref('')
 const sfDetailText = ref('')
 const showSurfaceModal = ref(false)
 const sfSaving = ref(false)
@@ -236,12 +239,14 @@ const sfForm = ref<Partial<Surface>>({})
 
 async function loadSurfaces(): Promise<void> {
   const cat = (sfCategory.value || 'default').trim()
+  surfacesError.value = ''
   try {
     // GET surface/list/{category} —— 按分类列出表面查询
     const r: any = await api.get(`/api/query/assemble/surface/list/${encodeURIComponent(cat)}`)
     surfaces.value = (Array.isArray(r?.data) ? r.data : []) as Surface[]
-  } catch {
-    surfaces.value = []
+  } catch (e) {
+    // 失败保留旧表面并显式报错，不能和「该分类真的没有表面查询」混成同一种空态。
+    surfacesError.value = describeListError('表面查询加载失败', e)
   }
 }
 async function viewSurface(s: Surface): Promise<void> {

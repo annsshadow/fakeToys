@@ -86,7 +86,7 @@ const FIXED = {
   'oa4rust/frontend/apps/desktop/src/views/CategoryApp.vue': 'R118',
   'oa4rust/frontend/apps/desktop/src/views/FileInfoApp.vue': 'R118',
   'oa4rust/frontend/apps/desktop/src/views/RoleManager.vue': 'R118',
-  'oa4rust/frontend/apps/desktop/src/views/UnitApp.vue': 'R118',
+  'oa4rust/frontend/apps/desktop/src/views/UnitApp.vue': 'R118/R127',
   'oa4rust/frontend/apps/desktop/src/views/ViewApp.vue': 'R118',
   'oa4rust/frontend/apps/desktop/src/views/BamApp.vue': 'R119',
   'oa4rust/frontend/apps/desktop/src/views/CalendarApp.vue': 'R119',
@@ -108,16 +108,21 @@ const FIXED = {
   'oa4rust/frontend/apps/desktop/src/views/FormDesigner.vue': 'R124',
   'oa4rust/frontend/apps/desktop/src/views/JPushApp.vue': 'R124',
   'oa4rust/frontend/apps/desktop/src/views/RecycleApp.vue': 'R126',
+  // R127：判据改为「按模板使用判定」后收紧暴露的列表状态，全部按统一口径修完。
+  'oa4rust/frontend/apps/desktop/src/views/ProcessDesigner.vue': 'R127',
+  'oa4rust/frontend/apps/desktop/src/views/ServerApp.vue': 'R127',
+  'oa4rust/frontend/apps/desktop/src/views/OrgViewer.vue': 'R127',
+  'oa4rust/frontend/apps/desktop/src/views/ProgramCenterApp.vue': 'R127',
+  'oa4rust/frontend/apps/desktop/src/views/AttendanceApp.vue': 'R127',
+  'oa4rust/mobile/src/pages/bbs/topic.vue': 'R127',
   'oa4rust/mobile/src/pages/process/start.vue': 'R125',
   'oa4rust/mobile/src/pages/search/search.vue': 'R125',
 }
 
-const LIST_STATE =
-  /^(rows|list|items|data|records|result|results|msgs|messages|conversations|events|calendars|topics|detail|notices|attachRows|myDetails|calendars)/i
 const MIN_SCANNED_FILES = 120
 // 随修复推进，fold 候选数量会逐批下降；保留一个下限只用于发现「候选提取失效」。
-// R126 修复 maskSource（.vue 只看 <script>）后实测候选 53（handled 3 + other 50），取下限 40。
-const MIN_FOLD_CANDIDATES = 40
+// R127 判据改为「按模板使用判定」并按新口径修完 a 类后实测候选 18（handled 8 + other 10），取下限 15。
+const MIN_FOLD_CANDIDATES = 15
 
 // 首轮扫描（R113 建立）确认的待修文件；修好一个就移到 FIXED 并从这里删掉，
 // 新出现的文件必须显式登记，否则守卫失败。
@@ -209,6 +214,71 @@ function maskSource(rawSrc, isVue) {
   return out.join('')
 }
 
+/**
+ * 模板里驱动列表的标识符：`v-for` 的迭代源，或参与空态判定（`.length` 配 v-if/v-show、
+ * 或模板里出现「暂无/无数据/没有」）。判据只看「怎么用」，不看变量叫什么名字。
+ */
+function templateListRefs(rawSrc) {
+  const refs = new Set()
+  // 不能按 `<template>…</template>` 非贪婪匹配：根模板里嵌 `<template v-if>` 时会在第一个
+  // 闭合标签处截断，后半段模板全盲（AttendanceApp/AIChatApp 实测）。改为剔除 script/style 后全取。
+  let template = rawSrc
+  for (const re of [/<script\b[^>]*>[\s\S]*?<\/script>/gi, /<style\b[^>]*>[\s\S]*?<\/style>/gi]) {
+    template = template.replace(re, (m) => m.replace(/[^\n]/g, ' '))
+  }
+  for (const m of template.matchAll(/v-for\s*=\s*["']([^"']*)["']/g)) {
+    // `(row, i) in rows` / `row of rows`：只看 in/of 右侧的迭代源。
+    const rhs = m[1]
+      .split(/\b(?:in|of)\b/)
+      .slice(1)
+      .join(' ')
+    for (const id of rhs.matchAll(/\b[A-Za-z_$][A-Za-z0-9_$]*\b/g)) refs.add(id[0])
+  }
+  for (const m of template.matchAll(/v-(?:if|else-if|show)\s*=\s*["']([^"']*)["']/g)) {
+    for (const id of m[1].matchAll(/([A-Za-z_$][A-Za-z0-9_$]*)\s*\.\s*length\b/g)) refs.add(id[1])
+  }
+  if (/(暂无|无数据|没有)/.test(template)) {
+    for (const id of template.matchAll(/([A-Za-z_$][A-Za-z0-9_$]*)\s*\.\s*length\b/g)) refs.add(id[1])
+  }
+  return refs
+}
+
+/** 一层 computed 依赖：模板用 computed 名做列表源时，把它的 `.value` 源状态也算入。 */
+function computedSourceStates(masked, wanted) {
+  const out = new Set()
+  for (const m of masked.matchAll(/\bconst\s+([A-Za-z0-9_$]+)\s*=\s*computed\s*\(/g)) {
+    if (!wanted.has(m[1])) continue
+    const open = m.index + m[0].length - 1
+    let depth = 0
+    let close = -1
+    for (let i = open; i < masked.length; i++) {
+      if (masked[i] === '(') depth++
+      else if (masked[i] === ')') {
+        depth--
+        if (depth === 0) {
+          close = i
+          break
+        }
+      }
+    }
+    if (close === -1) continue
+    for (const dep of masked.slice(open + 1, close).matchAll(/([A-Za-z_$][A-Za-z0-9_$]*)\s*\.\s*value\b/g))
+      out.add(dep[1])
+  }
+  return out
+}
+
+/** 声明为数组的状态（`ref([])` / `ref<X[]>([])` / `reactive([])`），`.ts` 无模板时据此判列表。 */
+function arrayRefStates(masked) {
+  const out = new Set()
+  for (const m of masked.matchAll(/\b(?:const|let)\s+([A-Za-z0-9_$]+)\s*=\s*(?:ref|shallowRef|reactive)\b/g)) {
+    const paren = masked.indexOf('(', m.index + m[0].length)
+    if (paren === -1) continue
+    if (/^\(\s*\[\s*\]/.test(masked.slice(paren, paren + 40))) out.add(m[1])
+  }
+  return out
+}
+
 function lineOf(src, index) {
   let line = 1
   for (let i = 0; i < index; i++) if (src.charCodeAt(i) === 10) line++
@@ -254,8 +324,17 @@ function enclosingName(masked, index) {
 
 function inspect(file) {
   const src = readFileSync(file, 'utf8')
-  const masked = maskSource(src, file.endsWith('.vue'))
+  const isVue = file.endsWith('.vue')
+  const masked = maskSource(src, isVue)
   const rel = relative(repoRoot, file).replaceAll('\\', '/')
+  // 列表状态不再靠变量名撞运气：`.vue` 看模板怎么用它（v-for / 空态判定，含一层 computed 源），
+  // `.ts` 没有模板，退化为「声明为数组的 ref」。
+  const listStates = isVue
+    ? (() => {
+        const templateRefs = templateListRefs(src)
+        return new Set([...templateRefs, ...computedSourceStates(masked, templateRefs)])
+      })()
+    : arrayRefStates(masked)
   const hits = []
   for (const block of findCatchBlocks(masked)) {
     const assigns = [...block.body.matchAll(/([A-Za-z0-9_$]+)\s*\.\s*value\s*=\s*(?:\[\s*\]|null)/g)]
@@ -269,14 +348,15 @@ function inspect(file) {
     if (!assigns.length && !returnsOkEmpty && localParse) continue
     if (!assigns.length && !returnsEmpty && !returnsOkEmpty) continue
     const fn = enclosingName(masked, block.start)
-    const listAssign = assigns.find((a) => LIST_STATE.test(a[1]))
+    const listAssign = assigns.find((a) => listStates.has(a[1]))
     // catch 里同时写了 error ref（如 loadError/historyError）或 toast/throw，说明失败对用户可见，
-    // 清空列表属于「首屏失败」而非静默折叠。
+    // 清空列表属于「首屏失败」而非静默折叠。桌面页用 toast.error，移动端用 uni.showToast，两种都算。
     const hasErrorSignal =
       /[A-Za-z0-9_$]*error[A-Za-z0-9_$]*\s*\.\s*value\s*=/i.test(block.body) ||
-      /(uni\.)?showToast|uni\.showModal|\bthrow\b/.test(block.body)
+      /(uni\.)?showToast|uni\.showModal|toast\.(?:error|warn)|\bthrow\b/.test(block.body)
     const fold = returnsOkEmpty || returnsEmpty || Boolean(listAssign)
     const kind = !fold ? 'otherFold' : hasErrorSignal ? 'handledFold' : 'silentFold'
+    const target = (listAssign ?? assigns[0])?.[1] ?? ''
     hits.push({
       line: lineOf(src, block.start),
       fn,
@@ -285,7 +365,9 @@ function inspect(file) {
         ? 'return {ok:true,rows:[]}'
         : returnsEmpty
           ? 'return []'
-          : `${(listAssign ?? assigns[0])[1]}.value = 空/null`,
+          : kind === 'otherFold'
+            ? `${target}.value = 空/null（未参与模板 v-for/空态判定）`
+            : `${target}.value = 空/null`,
     })
   }
 
@@ -369,6 +451,7 @@ if (process.argv.includes('--json')) {
         summary,
         fixedHits,
         pendingHits: pendingHits.map(({ file, line, fn, detail }) => ({ file, line, fn, detail })),
+        handledFold,
         otherFold,
         emptyOnly,
       },
@@ -392,6 +475,10 @@ if (process.argv.includes('--json')) {
   }
   console.log('\n== 已定性为 a 类（有取数、失败会变空态）· 待修复 ==')
   for (const file of pendingClassA) console.log(`a   ${file}  — ${A_PENDING.get(file)}`)
+  console.log('\n== 失败已可见（catch 内有 error ref / toast / throw，无需修）==')
+  for (const hit of handledFold) console.log(`${hit.file}:${hit.line}  [${hit.fn || '?'}]  ${hit.detail}`)
+  console.log('\n== 未被模板用于 v-for/空态判定（不按列表口径修）==')
+  for (const hit of otherFold) console.log(`${hit.file}:${hit.line}  [${hit.fn || '?'}]  ${hit.detail}`)
   if (problems.length) {
     console.log('\n== 守卫失败 ==')
     for (const p of problems) console.log(`- ${p}`)

@@ -18,6 +18,7 @@
         <button :class="{active:tab==='config'}" @click="switchTab('config')">Config</button>
         <button :class="{active:tab==='style'}" @click="switchTab('style')">Style</button>
       </div>
+      <ListLoadError v-if="loadError" mode="banner" :message="loadError" @retry="retryLoad()" />
       <!-- Agent tab -->
       <div v-if="tab==='agent'" class="tab-content">
         <div class="toolbar">
@@ -381,8 +382,18 @@ import { api } from '@oa4rust/sdk'
 import { useMutation } from '@tanstack/vue-query'
 import { computed, ref, watch } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { describeListError } from './listQuery'
 
 type Tab = 'agent' | 'application' | 'script' | 'dict' | 'market' | 'invoke' | 'config' | 'style'
+// 本页 13 个列表取数入口共用一个失败横幅：写明是哪一条失败，重试回到同一条加载函数。
+const loadError = ref('')
+const retryLoad = ref<() => void>(() => {})
+function failLoad(label: string, e: unknown, retry: () => void): void {
+  loadError.value = describeListError(label, e)
+  retryLoad.value = retry
+}
 type Agent = { id?: string; name?: string; label?: string; agentName?: string; flag?: string; enabled?: boolean }
 type App = { id?: string; name?: string; appName?: string; desc?: string; description?: string; flag?: string }
 type Script = { id?: string; name?: string; scriptName?: string; flag?: string }
@@ -448,12 +459,14 @@ const filteredAgents = computed(() =>
 
 async function loadAgents() {
   loadingAgent.value = true
+  loadError.value = ''
   try {
     // 后端列表端点为裸 /agent（无 /agent/list）。
     const r = await api.get('/api/program_center/agent')
     agents.value = r.data ?? []
-  } catch {
-    agents.value = []
+  } catch (e) {
+    // 失败保留旧数据并显式报错，不能和「真的没有数据」混成同一种空态。
+    failLoad('智能体列表加载失败', e, loadAgents)
   } finally {
     loadingAgent.value = false
   }
@@ -805,45 +818,53 @@ async function loadCenterMeta() {
 }
 async function loadApps() {
   loadingApp.value = true
+  loadError.value = ''
   try {
     const r = await api.get('/api/program_center/application/list')
     applications.value = r.data ?? []
-  } catch {
-    applications.value = []
+  } catch (e) {
+    // 失败保留旧数据并显式报错，不能和「真的没有数据」混成同一种空态。
+    failLoad('应用列表加载失败', e, loadApps)
   } finally {
     loadingApp.value = false
   }
 }
 async function loadScripts() {
   loadingScript.value = true
+  loadError.value = ''
   try {
     const r = await api.get('/api/program_center/script/list')
     scripts.value = r.data ?? []
-  } catch {
-    scripts.value = []
+  } catch (e) {
+    // 失败保留旧数据并显式报错，不能和「真的没有数据」混成同一种空态。
+    failLoad('脚本列表加载失败', e, loadScripts)
   } finally {
     loadingScript.value = false
   }
 }
 async function loadDict() {
   loadingDict.value = true
+  loadError.value = ''
   try {
     const r = await api.get('/api/program_center/dict/list')
     // 后端 dict/list 回 keyName（= 创建时的 dictFlag/唯一标识），卡片/按钮读 flag，归一。
     dicts.value = ((r.data ?? []) as Dict[]).map((d) => ({ ...d, flag: d.flag ?? d.keyName }))
-  } catch {
-    dicts.value = []
+  } catch (e) {
+    // 失败保留旧数据并显式报错，不能和「真的没有数据」混成同一种空态。
+    failLoad('字典列表加载失败', e, loadDict)
   } finally {
     loadingDict.value = false
   }
 }
 async function loadMarket() {
   loadingMarket.value = true
+  loadError.value = ''
   try {
     const r = await api.post('/api/program_center/market/list/paging/1/size/20', {})
     markets.value = r.data?.list ?? r.data ?? []
-  } catch {
-    markets.value = []
+  } catch (e) {
+    // 失败保留旧数据并显式报错，不能和「真的没有数据」混成同一种空态。
+    failLoad('市场列表加载失败', e, loadMarket)
   } finally {
     loadingMarket.value = false
   }
@@ -1079,6 +1100,7 @@ async function saveScript(): Promise<void> {
 
 // ── 脚本版本历史（cms crate 已注册 /api/scriptversion/list/script/{scriptId}）──
 async function loadVersions(s: Script): Promise<void> {
+  loadError.value = ''
   const scriptId = String(s.id ?? s.flag ?? '')
   if (!scriptId) return
   versionsScript.value = s
@@ -1089,8 +1111,9 @@ async function loadVersions(s: Script): Promise<void> {
       data?: Array<{ id: string; createTime?: string; create_time?: string }>
     }
     versions.value = r.data ?? []
-  } catch {
-    versions.value = []
+  } catch (e) {
+    // 失败保留旧数据并显式报错，不能和「真的没有数据」混成同一种空态。
+    failLoad('脚本版本加载失败', e, loadVersions)
   }
 }
 function closeVersions(): void {
@@ -1193,13 +1216,15 @@ const marketCats = ref<string[]>([])
 const marketCat = ref('')
 const installedVer = ref<Record<string, string>>({})
 async function loadMarketCats() {
+  loadError.value = ''
   try {
     const r: any = await api.get('/api/program_center/market/list/category')
     marketCats.value = ((r.data ?? []) as any[])
       .map((c) => (typeof c === 'string' ? c : (c?.category ?? c?.name)))
       .filter((c): c is string => !!c)
-  } catch {
-    marketCats.value = []
+  } catch (e) {
+    // 失败保留旧数据并显式报错，不能和「真的没有数据」混成同一种空态。
+    failLoad('市场分类加载失败', e, loadMarketCats)
   }
 }
 
@@ -1216,11 +1241,13 @@ async function loadInvokeByCategory() {
 }
 async function loadInvokes() {
   loadingInvoke.value = true
+  loadError.value = ''
   try {
     const r: any = await api.get('/api/program_center/invoke')
     invokes.value = (r.data ?? []) as Invoke[]
-  } catch {
-    invokes.value = []
+  } catch (e) {
+    // 失败保留旧数据并显式报错，不能和「真的没有数据」混成同一种空态。
+    failLoad('接口列表加载失败', e, loadInvokes)
   } finally {
     loadingInvoke.value = false
   }
@@ -2191,33 +2218,39 @@ async function loadDsTables() {
 }
 async function loadConfigs() {
   loadingConfig.value = true
+  loadError.value = ''
   try {
     const r: any = await api.get('/api/program_center/config/list')
     configs.value = (r.data ?? []) as Config[]
-  } catch {
-    configs.value = []
+  } catch (e) {
+    // 失败保留旧数据并显式报错，不能和「真的没有数据」混成同一种空态。
+    failLoad('配置列表加载失败', e, loadConfigs)
   } finally {
     loadingConfig.value = false
   }
 }
 async function loadConfigApps() {
   loadingConfig.value = true
+  loadError.value = ''
   try {
     const r: any = await api.get('/api/program_center/config/list/application')
     configs.value = (r.data ?? []) as Config[]
-  } catch {
-    configs.value = []
+  } catch (e) {
+    // 失败保留旧数据并显式报错，不能和「真的没有数据」混成同一种空态。
+    failLoad('配置（应用）加载失败', e, loadConfigApps)
   } finally {
     loadingConfig.value = false
   }
 }
 async function loadConfigEntities() {
   loadingConfig.value = true
+  loadError.value = ''
   try {
     const r: any = await api.get('/api/program_center/config/list/entity')
     configs.value = (r.data ?? []) as Config[]
-  } catch {
-    configs.value = []
+  } catch (e) {
+    // 失败保留旧数据并显式报错，不能和「真的没有数据」混成同一种空态。
+    failLoad('配置（实体）加载失败', e, loadConfigEntities)
   } finally {
     loadingConfig.value = false
   }
@@ -2238,23 +2271,27 @@ async function saveConfig() {
 // 应用样式（appstyle）：当前样式 / 门户应用（program_center appstyle 族，GET 只读）
 async function loadCurrentStyle() {
   loadingStyle.value = true
+  loadError.value = ''
   try {
     const r: any = await api.get('/api/program_center/appstyle/current/style')
     const d = r.data
     styleApps.value = (Array.isArray(d) ? d : d ? [d] : []) as StyleApp[]
-  } catch {
-    styleApps.value = []
+  } catch (e) {
+    // 失败保留旧数据并显式报错，不能和「真的没有数据」混成同一种空态。
+    failLoad('当前样式加载失败', e, loadCurrentStyle)
   } finally {
     loadingStyle.value = false
   }
 }
 async function loadPortalApps() {
   loadingStyle.value = true
+  loadError.value = ''
   try {
     const r: any = await api.get('/api/program_center/appstyle/index/portal')
     styleApps.value = (r.data ?? []) as StyleApp[]
-  } catch {
-    styleApps.value = []
+  } catch (e) {
+    // 失败保留旧数据并显式报错，不能和「真的没有数据」混成同一种空态。
+    failLoad('门户应用加载失败', e, loadPortalApps)
   } finally {
     loadingStyle.value = false
   }

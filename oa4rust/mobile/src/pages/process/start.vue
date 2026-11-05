@@ -15,7 +15,7 @@ import {
   parseMobileForm,
   validateSimpleForm,
 } from '@/utils/form'
-import { loadList } from '@/utils/loadList'
+import { describeLoadError, loadList } from '@/utils/loadList'
 
 const session = useSession()
 
@@ -26,6 +26,7 @@ const processError = ref('')
 
 const showForm = ref(false)
 const formLoading = ref(false)
+const formError = ref('')
 const selectedProcessId = ref('')
 const selectedProcessName = ref('')
 const title = ref('')
@@ -79,6 +80,7 @@ function pickProcess(p: { id: string; name: string }): void {
 
 async function loadBoundForm(processId: string): Promise<void> {
   formLoading.value = true
+  formError.value = ''
   try {
     const detail = await processApi.getProcess(processId)
     const definition = (detail.data?.processDefinition ?? detail.data) as Record<string, unknown> | undefined
@@ -100,10 +102,9 @@ async function loadBoundForm(processId: string): Promise<void> {
     groups.value = form.groups
     values.value = initialValues(form.fields)
     showForm.value = form.fields.length > 0
-  } catch {
-    fields.value = []
-    groups.value = []
-    showForm.value = false
+  } catch (e) {
+    // 失败保留旧表单字段并显式报错，不能和「这个流程真的没有表单」混成同一种空态。
+    formError.value = describeLoadError('表单加载失败', e)
   } finally {
     formLoading.value = false
   }
@@ -286,6 +287,12 @@ function removeAttachment(field: MobileFormField, id: string): void {
       </view>
     </view>
 
+    <view v-if="!showForm && !formLoading && formError" class="card">
+      <view class="tip-error">
+        <view class="error-text">{{ formError }}</view>
+        <view class="retry-btn" @tap="loadBoundForm(selectedProcessId)">重试</view>
+      </view>
+    </view>
     <view v-if="showForm" class="card">
       <view class="card-title">填报表单</view>
       <view v-if="formLoading" class="tip">加载表单…</view>

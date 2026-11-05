@@ -160,11 +160,13 @@
               <option value="">选择表...</option>
               <option v-for="t in allTables" :key="t.name" :value="t.name">{{ t.name }}</option>
             </select>
+            <ListLoadError v-if="tableFields.length > 0 && tableFieldsError" mode="banner" :message="tableFieldsError" @retry="loadTableFields" />
             <div v-for="f in tableFields" :key="f.name" class="field-item">
               <span class="fi-name">{{ f.name }}</span><span class="fi-type">{{ f.type }}</span>
               <button class="fi-insert" @click="insertField(f.name)">插入</button>
             </div>
-            <div v-if="tableFields.length===0" class="sch-empty">请先选择表</div>
+            <ListLoadError v-if="tableFields.length === 0 && tableFieldsError" mode="empty" :message="tableFieldsError" @retry="loadTableFields" />
+            <div v-else-if="tableFields.length===0" class="sch-empty">请先选择表</div>
           </div>
         </div>
       </div>
@@ -1133,6 +1135,7 @@ const schemaSearch = ref(''),
 const execHistory = ref<Array<{ ts: number; sql: string; duration: number; rows: number; success: boolean }>>([])
 const allTables = ref<Array<{ name: string; rowCount?: number }>>([])
 const tableFields = ref<Array<{ name: string; type: string; nullable: boolean }>>([])
+const tableFieldsError = ref('')
 const paramBindings = ref<Array<{ name: string; value: string; type: string; defaultValue: string }>>([])
 const templates = ref<Array<{ id: string; name: string; category: string; code: string; icon: string }>>([
   {
@@ -1247,6 +1250,7 @@ async function loadSchema() {
   }
 }
 async function loadTableFields() {
+  tableFieldsError.value = ''
   if (!selectedTableForFields.value) {
     tableFields.value = []
     return
@@ -1260,8 +1264,9 @@ async function loadTableFields() {
       type: f.fieldType || f.type || 'varchar',
       nullable: f.nullable !== false,
     }))
-  } catch {
-    tableFields.value = []
+  } catch (e) {
+    // 失败保留旧字段并显式报错，不能和「这张表真的没有字段」混成同一种空态。
+    tableFieldsError.value = describeListError('表字段加载失败', e)
   }
 }
 function selectTable(t: any) {

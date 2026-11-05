@@ -72,6 +72,7 @@
       <select v-model="roomBuildingId" class="fs" @change="loadRoomList"><option value="">选楼栋看会议室</option><option v-for="b in buildings" :key="b.id" :value="b.id">{{b.name}}</option></select>
       <button class="sb" @click="addRoom">+ 会议室</button>
       <span v-for="rm in roomList" :key="rm.id" class="bld-chip">{{ rm.name }}<button class="bld-del" @click="removeRoom(rm)">×</button></span>
+      <ListLoadError v-if="roomError" mode="banner" :message="roomError" @retry="loadRoomList" />
     </div>
     <div class="content-panel glass-card">
       <ListLoadError v-if="meetings.length > 0 && loadError" mode="banner" :message="loadError" @retry="loadMeetings" />
@@ -540,7 +541,9 @@ async function removeBuilding(b: Bldg) {
 }
 const roomBuildingId = ref('')
 const roomList = ref<Room[]>([])
+const roomError = ref('')
 async function loadRoomList() {
+  roomError.value = ''
   if (!roomBuildingId.value) {
     roomList.value = []
     return
@@ -548,8 +551,9 @@ async function loadRoomList() {
   try {
     const r: any = await api.get(`/api/meeting/assemble/control/room/list?buildingId=${roomBuildingId.value}`)
     roomList.value = (r.data ?? []) as Room[]
-  } catch {
-    roomList.value = []
+  } catch (e) {
+    // 失败保留旧会议室并显式报错，不能和「这个楼栋真的没有会议室」混成同一种空态。
+    roomError.value = describeListError('会议室列表加载失败', e)
   }
 }
 async function addRoom() {

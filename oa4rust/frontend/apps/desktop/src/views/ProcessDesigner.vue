@@ -46,7 +46,9 @@
         <div class="sb-header"><span>📋 流程列表</span><button class="btn-sm" @click="newProcess">+ 新建</button></div>
         <div class="sb-search"><input v-model="sbFilter" placeholder="搜索..." class="sb-input" /></div>
         <div class="sb-list">
+          <ListLoadError v-if="procList.length > 0 && plError" mode="banner" :message="plError" @retry="loadProcesses" />
           <div v-if="plLoading" class="sb-loading">加载中...</div>
+          <ListLoadError v-else-if="procList.length===0 && plError" mode="empty" :message="plError" @retry="loadProcesses" />
           <div v-else-if="procList.length===0" class="sb-empty">暂无流程</div>
           <div v-for="p in filteredProc" :key="p.id" class="sb-item"
             :class="{active: currentProcess?.id===p.id}" @click="loadProcess(p)">
@@ -2781,6 +2783,9 @@ import {
 import { downloadBlob } from '../utils/download'
 import { destroySandbox, runInSandbox } from '../utils/sandbox'
 import { toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { describeListError } from './listQuery'
 
 // ── Types ────────────────────────────────────────────────────────────
 interface PDNode {
@@ -4056,6 +4061,7 @@ const forkLabels = computed(() => {
 })
 // ── Process List ──────────────────────────────────────────────────────
 const procList = ref<ProcDef[]>([])
+const plError = ref('')
 // ── History ───────────────────────────────────────────────────────────
 function pushHistory() {
   if (!processDef.value) return
@@ -5830,11 +5836,13 @@ async function saveProcess() {
 }
 async function loadProcesses() {
   plLoading.value = true
+  plError.value = ''
   try {
     const r: any = await api.get('/api/processplatform/assemble/designer/list/all?page=1&size=100')
     procList.value = r?.data?.data ?? r?.data?.list ?? r?.data ?? []
-  } catch {
-    procList.value = []
+  } catch (e) {
+    // 失败保留旧流程并显式报错，不能和「真的没有流程」混成同一种空态。
+    plError.value = describeListError('流程列表加载失败', e)
   } finally {
     plLoading.value = false
   }

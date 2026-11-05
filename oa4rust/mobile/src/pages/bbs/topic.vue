@@ -7,12 +7,14 @@ import { ref } from 'vue'
 import { bbsApi } from '@/services'
 import { useSession } from '@/store/session'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import { describeLoadError } from '@/utils/loadList'
 
 const session = useSession()
 const topicId = ref('')
 const topic = ref<Record<string, unknown> | null>(null)
 const replies = ref<Record<string, unknown>[]>([])
 const loading = ref(false)
+const loadError = ref('')
 const text = ref('')
 const sending = ref(false)
 
@@ -33,6 +35,7 @@ function timeOf(row: Record<string, unknown>): string {
 async function load() {
   if (!topicId.value) return
   loading.value = true
+  loadError.value = ''
   try {
     const [subjectResp, replyResp] = await Promise.all([
       bbsApi.subjectView(topicId.value),
@@ -41,9 +44,9 @@ async function load() {
     // subject_view_id 对不存在的主题返回 type:error + data:null（HTTP 200）。
     topic.value = (subjectResp.data as Record<string, unknown> | null) ?? null
     replies.value = replyResp.data ?? []
-  } catch {
-    topic.value = null
-    replies.value = []
+  } catch (e) {
+    // 失败保留旧主题/回帖并显式报错，不能和「主题真的没有回帖」混成同一种空态。
+    loadError.value = describeLoadError('主题加载失败', e)
   } finally {
     loading.value = false
   }
@@ -78,6 +81,10 @@ onLoad(async (options) => {
 <template>
   <view class="page">
     <view v-if="loading" class="tip">加载中…</view>
+    <view v-else-if="!topic && loadError" class="tip tip-error">
+      <view class="error-text">{{ loadError }}</view>
+      <view class="retry-btn" @tap="load">重试</view>
+    </view>
     <view v-else-if="!topic" class="tip">主题不存在或已被删除</view>
     <template v-else>
       <view class="subject">
@@ -86,7 +93,15 @@ onLoad(async (options) => {
         <view v-if="typeof topic.content === 'string' && topic.content" class="subject-content">{{ topic.content }}</view>
       </view>
       <view class="replies-head">回帖（{{ replies.length }}）</view>
-      <view v-if="replies.length === 0" class="tip">暂无回帖，来抢沙发</view>
+      <view v-if="replies.length > 0 && loadError" class="error-banner">
+        <text class="error-text">{{ loadError }}</text>
+        <view class="retry-btn" @tap="load">重试</view>
+      </view>
+      <view v-else-if="replies.length === 0 && loadError" class="tip tip-error">
+        <view class="error-text">{{ loadError }}</view>
+        <view class="retry-btn" @tap="load">重试</view>
+      </view>
+      <view v-else-if="replies.length === 0" class="tip">暂无回帖，来抢沙发</view>
       <view v-for="(r, i) in replies" :key="i" class="reply">
         <view class="reply-meta">{{ creatorOf(r) }} · {{ timeOf(r) }}</view>
         <view class="reply-content">{{ r.content }}</view>
@@ -112,6 +127,33 @@ onLoad(async (options) => {
   color: #8a94a6;
   padding: 40px 0;
   font-size: 14px;
+}
+.tip-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.error-text {
+  color: #c0392b;
+  font-size: 14px;
+}
+.retry-btn {
+  padding: 4px 16px;
+  border-radius: 14px;
+  border: 1px solid #c0392b;
+  color: #c0392b;
+  font-size: 13px;
+  line-height: 24px;
+}
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  background: #fdecea;
 }
 .subject {
   padding: 14px;

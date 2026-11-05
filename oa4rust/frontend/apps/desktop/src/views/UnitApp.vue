@@ -16,13 +16,14 @@
         <button class="btn-primary" @click="loadUnitTypes">单位类型</button>
         <button class="btn-primary" @click="loadUnitRoot">根/可控/名片</button>
       </div>
+      <ListLoadError v-if="unitTypeError" mode="banner" :message="unitTypeError" @retry="loadUnitTypes" />
       <div v-if="unitTypes.length" class="ut-chips">
         <span v-for="t in unitTypes" :key="t" class="ut-chip">{{ t }}</span>
       </div>
       <div class="list-panel">
-        <ListLoadError v-if="units.length > 0 && loadError" mode="banner" :message="loadError" @retry="loadUnits" />
+        <ListLoadError v-if="units.length > 0 && loadError" mode="banner" :message="loadError" @retry="retryList()" />
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 6" :key="i"></div></div>
-        <ListLoadError v-else-if="units.length === 0 && loadError" mode="empty" :message="loadError" @retry="loadUnits" />
+        <ListLoadError v-else-if="units.length === 0 && loadError" mode="empty" :message="loadError" @retry="retryList()" />
         <div v-else-if="units.length===0" class="empty"><div class="ei">🏗️</div><p>暂无单元数据</p></div>
         <div v-else class="item-grid">
           <div v-for="u in units" :key="u.id" class="item-card glass-card">
@@ -43,11 +44,12 @@
         <h2>{{ selectedUnit.name || selectedUnit.title || '单位' }} — 属性与职务</h2>
         <button class="btn-sm" @click="selectedUnit = null">关闭</button>
       </div>
+      <ListLoadError v-if="detailError" mode="banner" :message="detailError" @retry="reloadDetail" />
       <div class="detail-cols">
         <section class="dcol">
           <div class="dcol-head"><span>单位属性</span><button class="mini-add" @click="addAttr">+ 新增</button></div>
-          <div v-if="attrs.length === 0" class="empty-sm">暂无属性</div>
-          <div v-else class="dlist">
+          <div v-if="!detailError && attrs.length === 0" class="empty-sm">暂无属性</div>
+          <div v-else-if="attrs.length > 0" class="dlist">
             <div v-for="a in attrs" :key="a.id" class="drow">
               <div class="dmain"><span class="dname">{{ a.attributeKey }}</span><span class="dsub">{{ a.attributeValue || '—' }}</span></div>
               <button class="dcol-del" @click="removeAttr(a)">删除</button>
@@ -56,9 +58,10 @@
         </section>
         <section class="dcol">
           <div class="dcol-head"><span>单位职务</span><span><button class="mini-add" @click="loadDutyNames">常用名</button><button class="mini-add" @click="addDuty">+ 新增</button></span></div>
+          <ListLoadError v-if="dutyNameError" mode="banner" :message="dutyNameError" @retry="loadDutyNames" />
           <div v-if="dutyNames.length" class="dn-chips"><span v-for="dn in dutyNames" :key="dn" class="dn-chip">{{ dn }}</span></div>
-          <div v-if="duties.length === 0" class="empty-sm">暂无职务</div>
-          <div v-else class="dlist">
+          <div v-if="!detailError && duties.length === 0" class="empty-sm">暂无职务</div>
+          <div v-else-if="duties.length > 0" class="dlist">
             <div v-for="d in duties" :key="d.id" class="drow">
               <div class="dmain"><span class="dname">{{ d.name }}</span><span class="dsub">{{ d.identityId || '未指派' }}</span></div>
               <button class="dcol-del" @click="removeDuty(d)">删除</button>
@@ -67,8 +70,8 @@
         </section>
         <section class="dcol">
           <div class="dcol-head"><span>单位身份（{{ identities.length }}）</span></div>
-          <div v-if="identities.length === 0" class="empty-sm">暂无身份</div>
-          <div v-else class="dlist">
+          <div v-if="!detailError && identities.length === 0" class="empty-sm">暂无身份</div>
+          <div v-else-if="identities.length > 0" class="dlist">
             <div v-for="idn in identities" :key="idn.id" class="drow">
               <div class="dmain"><span class="dname">{{ idn.name || idn.personName || idn.id }}</span><span class="dsub">{{ idn.unitName || '' }}</span></div>
             </div>
@@ -101,9 +104,15 @@ const keyword = ref('')
 const loading = ref(false)
 const loadError = ref('')
 const units = ref<UnitItem[]>([])
+const unitTypeError = ref('')
+const dutyNameError = ref('')
+const detailError = ref('')
+// 列表面板可能由「全部」或「顶级单位」填充，重试要回到触发这次加载的那个函数。
+const retryList = ref<() => Promise<void>>(loadUnits)
 
 let allUnits: UnitItem[] = []
 async function loadUnits() {
+  retryList.value = loadUnits
   loading.value = true
   loadError.value = ''
   try {
@@ -132,27 +141,32 @@ async function loadUnitRoot() {
   }
 }
 async function loadTopUnits() {
+  retryList.value = loadTopUnits
   loading.value = true
+  loadError.value = ''
   try {
     // GET organization/assemble/control/unit/list/top —— 顶级单位
     const r: any = await api.get('/api/organization/assemble/control/unit/list/top')
     units.value = (r.data ?? []) as UnitItem[]
-  } catch {
-    units.value = []
+  } catch (e) {
+    // 失败保留旧单元并显式报错，不能和「真的没有单元」混成同一种空态。
+    loadError.value = describeListError('顶级单位加载失败', e)
   } finally {
     loading.value = false
   }
 }
 const unitTypes = ref<string[]>([])
 async function loadUnitTypes() {
+  unitTypeError.value = ''
   try {
     // GET organization/assemble/control/unit/list/type —— 单位类型
     const r: any = await api.get('/api/organization/assemble/control/unit/list/type')
     unitTypes.value = ((r.data ?? []) as any[])
       .map((t) => (typeof t === 'string' ? t : (t?.name ?? t?.type)))
       .filter((t): t is string => !!t)
-  } catch {
-    unitTypes.value = []
+  } catch (e) {
+    // 失败保留旧类型并显式报错，不能和「真的没有类型」混成同一种空态。
+    unitTypeError.value = describeListError('单位类型加载失败', e)
   }
 }
 function doSearch() {
@@ -188,14 +202,16 @@ const duties = ref<Duty[]>([])
 const identities = ref<Array<{ id: string; name?: string; personName?: string; unitName?: string }>>([])
 const dutyNames = ref<string[]>([])
 async function loadDutyNames() {
+  dutyNameError.value = ''
   try {
     // GET organization/assemble/control/unitduty/distinct/name —— 职务名去重列表
     const r: any = await api.get('/api/organization/assemble/control/unitduty/distinct/name')
     dutyNames.value = ((r.data ?? []) as any[])
       .map((x) => (typeof x === 'string' ? x : (x?.name ?? x)))
       .filter((x): x is string => !!x)
-  } catch {
-    dutyNames.value = []
+  } catch (e) {
+    // 失败保留旧职务名并显式报错，不能和「真的没有常用名」混成同一种空态。
+    dutyNameError.value = describeListError('职务名加载失败', e)
   }
 }
 function unitKey(u: UnitItem) {
@@ -205,25 +221,32 @@ async function openUnit(u: UnitItem) {
   selectedUnit.value = u
   await Promise.all([loadAttrs(), loadDuties(), loadIdentities()])
 }
+function reloadDetail() {
+  if (selectedUnit.value) openUnit(selectedUnit.value)
+}
 async function loadIdentities() {
   if (!selectedUnit.value) return
+  detailError.value = ''
   try {
     // GET organization/assemble/control/identity/list/unit/{unitFlag} —— 单位下身份
     const r: any = await api.get(`/api/organization/assemble/control/identity/list/unit/${unitKey(selectedUnit.value)}`)
     identities.value = (r.data ?? []) as Array<{ id: string; name?: string; personName?: string; unitName?: string }>
-  } catch {
-    identities.value = []
+  } catch (e) {
+    // 失败保留旧身份并显式报错，不能和「这个单位真的没有身份」混成同一种空态。
+    detailError.value = describeListError('单位身份加载失败', e)
   }
 }
 async function loadAttrs() {
   if (!selectedUnit.value) return
+  detailError.value = ''
   try {
     const r: any = await api.get(
       `/api/organization/assemble/control/unitattribute/list/unit/${unitKey(selectedUnit.value)}`,
     )
     attrs.value = (r.data ?? []) as Attr[]
-  } catch {
-    attrs.value = []
+  } catch (e) {
+    // 失败保留旧属性并显式报错，不能和「这个单位真的没有属性」混成同一种空态。
+    detailError.value = describeListError('单位属性加载失败', e)
   }
 }
 async function addAttr() {
@@ -254,11 +277,13 @@ async function removeAttr(a: Attr) {
 }
 async function loadDuties() {
   if (!selectedUnit.value) return
+  detailError.value = ''
   try {
     const r: any = await api.get(`/api/organization/assemble/control/unitduty/list/unit/${unitKey(selectedUnit.value)}`)
     duties.value = (r.data ?? []) as Duty[]
-  } catch {
-    duties.value = []
+  } catch (e) {
+    // 失败保留旧职务并显式报错，不能和「这个单位真的没有职务」混成同一种空态。
+    detailError.value = describeListError('单位职务加载失败', e)
   }
 }
 async function addDuty() {

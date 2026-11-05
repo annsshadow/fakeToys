@@ -178,6 +178,8 @@
               </div>
               <button class="btn-sm" @click="runStats">执行分析</button>
             </div>
+            <ListLoadError v-if="statResult && statError" mode="banner" :message="statError" @retry="runStats" />
+            <ListLoadError v-else-if="statError" mode="empty" :message="statError" @retry="runStats" />
             <div v-if="statResult" class="stat-result">
               <EChartsView
                 v-if="statConfig.chartType !== 'table' && statChartData.length"
@@ -437,7 +439,7 @@ import { downloadBlob } from '../utils/download'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
-import { useListError } from './listQuery'
+import { describeListError, useListError } from './listQuery'
 
 interface QueryDef {
   id: string
@@ -473,6 +475,7 @@ const statConfig = ref<{ dimension: string; metric: string; chartType: 'bar' | '
   chartType: 'bar',
 })
 const statResult = ref<Record<string, number> | null>(null)
+const statError = ref('')
 // 统计结果 { 标签: 数值 } 映射转 ECharts 行集，供柱/饼/折线渲染；表格模式沿用键值列表。
 const statChartColumns = ['name', 'value']
 const statChartData = computed(() =>
@@ -817,6 +820,7 @@ async function runQuery() {
 async function runStats() {
   if (!selected.value) return
   resultLoading.value = true
+  statError.value = ''
   try {
     const r: any = await api.post('/api/query/assemble/designer/stat/do', {
       id: selected.value.id,
@@ -825,8 +829,9 @@ async function runStats() {
     })
     statResult.value = r?.data ?? null
     resultData.value = []
-  } catch {
-    statResult.value = null
+  } catch (e) {
+    // 失败保留上次统计结果并显式报错，不能清成「没有统计结果」。
+    statError.value = describeListError('统计分析失败', e)
   } finally {
     resultLoading.value = false
   }

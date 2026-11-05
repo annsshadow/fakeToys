@@ -29,7 +29,9 @@
         <!-- License -->
         <div class="panel glass-card">
           <h3>授权信息</h3>
+          <ListLoadError v-if="license && licenseError" mode="banner" :message="licenseError" @retry="loadLicense" />
           <div v-if="loadingLicense" class="loading-small">加载中...</div>
+          <ListLoadError v-else-if="!license && licenseError" mode="empty" :message="licenseError" @retry="loadLicense" />
           <div v-else class="license-info">
             <template v-if="license">
               <div v-for="(v,k) in license" :key="k" class="info-row">
@@ -66,6 +68,9 @@
 import { api } from '@oa4rust/sdk'
 import { ref } from 'vue'
 import { toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { describeListError } from './listQuery'
 
 const command = ref('')
 const executing = ref(false)
@@ -73,6 +78,7 @@ const execOutput = ref('')
 const execError = ref('')
 const loadingLicense = ref(false)
 const license = ref<Record<string, unknown> | null>(null)
+const licenseError = ref('')
 
 const sysStatusText = ref('')
 async function loadBaseMeta2() {
@@ -168,11 +174,13 @@ async function loadSysStatus() {
 
 async function loadLicense() {
   loadingLicense.value = true
+  licenseError.value = ''
   try {
     const r = await api.get('/api/server/license')
     license.value = r.data ?? null
-  } catch {
-    license.value = null
+  } catch (e) {
+    // 失败保留旧授权信息并显式报错，不能和「真的没有授权信息」混成同一种空态。
+    licenseError.value = describeListError('授权信息加载失败', e)
   } finally {
     loadingLicense.value = false
   }

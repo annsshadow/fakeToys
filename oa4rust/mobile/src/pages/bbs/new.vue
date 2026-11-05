@@ -26,7 +26,9 @@ async function loadForums() {
       .map((f) => ({ id: typeof f.id === 'string' ? f.id : '', name: typeof f.name === 'string' ? f.name : '' }))
       .filter((f) => f.id)
   } catch {
+    // 论坛列表是发帖必选项（picker :range 的数据源），失败必须提示，不能只剩一个空选择器。
     forums.value = []
+    uni.showToast({ title: '论坛列表加载失败', icon: 'none' })
   }
 }
 
