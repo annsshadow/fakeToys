@@ -35,12 +35,15 @@ pub async fn component_list_all(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            let order_number = row.get::<_, Option<i32>>("order_number").map(|v| {
-                (
-                    "orderNumber".to_string(),
-                    Value::Number(serde_json::Number::from(v)),
-                )
-            });
+            let order_number = row
+                .get::<_, Option<String>>("order_number")
+                .and_then(|raw| raw.trim().parse::<i32>().ok())
+                .map(|v| {
+                    (
+                        "orderNumber".to_string(),
+                        Value::Number(serde_json::Number::from(v)),
+                    )
+                });
             Value::Object(serde_json::Map::from_iter(
                 [
                     (
@@ -104,12 +107,15 @@ pub async fn component_get(
 
     match row {
         Some(row) => {
-            let order_number = row.get::<_, Option<i32>>("order_number").map(|v| {
-                (
-                    "orderNumber".to_string(),
-                    Value::Number(serde_json::Number::from(v)),
-                )
-            });
+            let order_number = row
+                .get::<_, Option<String>>("order_number")
+                .and_then(|raw| raw.trim().parse::<i32>().ok())
+                .map(|v| {
+                    (
+                        "orderNumber".to_string(),
+                        Value::Number(serde_json::Number::from(v)),
+                    )
+                });
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter(
                     [

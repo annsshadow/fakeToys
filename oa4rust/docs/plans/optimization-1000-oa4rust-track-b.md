@@ -2249,6 +2249,55 @@ error retrieving column create_time: error deserializing column 4
   留待后续批次。
 - `scan_row_get_column_mismatch.py` 仍未接 CI 门禁（存量 FAIL 未清零，接上即永久红）。
 
+## O31：`CPT_COMPONENT.order_number` TEXT→i32 解码 panic（2026-11-05）
+
+### 选题依据
+
+O26 #10「decode panic 族」残部。实库 `oa4rust_test` 确认
+`cpt_component.order_number` 是 **text**（可空），而
+`component_list_all` / `component_get` 用 `row.get::<_, Option<i32>>` 解码；
+tokio-postgres 的 `FromSql for i32` 不接受 text，命中一行带值记录即 panic。
+
+### 缺口（改前证据，提交 `fe11977ee` / PR #172）
+
+scratch 库 `oa_par_component_ord` 种一行 `order_number='10'` 直调 handler：
+
+```
+thread 'text_order_number_does_not_panic_read_handlers' panicked at crates\component_core_entity\src\lib.rs:38:
+error retrieving column order_number: error deserializing column 5
+```
+
+### 改法
+
+两处（`component_list_all` / `component_get`）改为：
+
+```rust
+row.get::<_, Option<String>>("order_number")
+    .and_then(|raw| raw.trim().parse::<i32>().ok())
+```
+
+不可解析或 NULL 时不输出 `orderNumber`，与改前 `None` 的对外形状一致。
+
+### 验证
+
+- 探针 `crates/component_core_entity/tests/order_number_decode.rs`（scratch 库
+  `oa_par_component_ord`）：种 `'10'` 与 `NULL` 两行；`component_list_all` 必须返回
+  ≥2 行、`'10'` 解析为数字 10、NULL 行无 `orderNumber`；`component_get`
+  单行路径同样为 10。
+- **破坏实验**：两处回退 `Option<i32>` → 红在 `lib.rs:38`；恢复后绿。
+- `cargo fmt --all -- --check` 通过；`cargo clippy -p component_core_entity
+  --all-targets --keep-going` 零告警；`cargo test -p component_core_entity`
+  （`oa4rust_test`）：**7 unit + 1 integration 绿，0 failed**。
+
+### 本轮不做（已确认的后续点）
+
+- `ORDER BY order_number ASC` 仍按 TEXT 字典序（`'10' < '2'`）；改数值序需业务确认
+  历史数据是否全为数字串，不在本轮。
+- 同族真实点：`x_custom.created_at` ×2（需会话夹具）、
+  `x_program_deploy_server.create_time` ×1、`x_console_status.xuptime` VARCHAR→i64 ×1、
+  `corr_c_correlation.order_number` TEXT→i32 ×2、
+  `x_cms_surface_appdict.path_levels` TEXT[] ×3（需会话夹具）。
+
 
 
 
