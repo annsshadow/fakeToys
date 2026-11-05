@@ -392,7 +392,9 @@ async function refreshFirstPage(): Promise<void> {
     const result = await fetchMessagePage<Message>(postMessagePage, convId, 1)
     if (selectedChat.value?.id !== convId) return
     const withoutOptimistic = allMessages.value.filter((m) => !m.id.startsWith('opt-'))
-    allMessages.value = mergeMessagePages(withoutOptimistic, result.items)
+    // 服务端按 create_time DESC 返回：刷新到的第 1 页是「最新 50 条」，必须放最前，
+    // 已加载的旧页（第 2/3 页）接在后面。
+    allMessages.value = mergeMessagePages(result.items, withoutOptimistic)
     if (msgPage.value === 1) msgHasMore.value = result.hasMore
   } catch (e: any) {
     msgLoadMoreError.value = `消息刷新失败：${e?.message ?? '未知错误'}`
