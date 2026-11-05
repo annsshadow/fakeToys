@@ -28,7 +28,6 @@ pub mod panic_guard;
 pub mod rate_limit;
 pub mod response;
 pub mod router;
-pub mod scheduler;
 pub mod session;
 pub mod storage;
 pub mod testing;

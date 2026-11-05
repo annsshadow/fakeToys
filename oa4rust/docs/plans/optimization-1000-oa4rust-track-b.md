@@ -1758,3 +1758,40 @@ backend/src/main.rs:193  shared::graceful::serve_router_with_shutdown(
 
 - 引入 commit `2b0f888db`（2026-11-02 21:21）的**意图是正确的**（部署重启不腰斩在途请求），但**实现致命**（无信号也 10s 自杀）。
 - 后续只看到「已接入优雅停机 / 已修复」的人，容易误以为该能力一直正常；台账与提交信息必须写清「意图正确、实现有致命缺陷、由哪条断言兜住」。
+
+## O26-A：删除 `shared::scheduler` 死代码（2026-11-05）
+
+### 判定口径（先写清，避免再次误读）
+
+- 「有代码」≠「在跑」。后台能力的判定必须同时给出：① 启动调用点（`start` / `spawn` / `interval` 的实际调用链）；② 运行证据（日志、表写入或测试观测）。
+- 只有类型定义、trait、测试替身而无生产实例化 → 判定为死代码，不计入「已有调度」。
+
+### 零调用方证据（删除前）
+
+- `git grep -n "scheduler" -- oa4rust/backend` = 87 行。除以下 4 处外，全部在 `scheduler.rs` 自身及其两个测试模块（`scheduler_tests` / `tokio_scheduler_tests`）内：
+  - `crates/shared/src/lib.rs:31` `pub mod scheduler;`（无 `pub use` 再导出）；
+  - `crates/shared/Cargo.toml:44` `tokio-cron-scheduler = "0.10"`；
+  - `Cargo.lock`；
+  - `scheduler.rs` 自身。
+- `TokioCronScheduler` / `MockScheduler` / `Scheduler` trait：全仓无生产实例化；`start()` 只出现在文件自带测试里（测试注释明确「任务注册但不 `start()` 就不会真的执行」）。
+- 无 feature flag、无条件编译分支；`tokio-cron-scheduler` 只有 `shared` 一个 crate 依赖，删除后 `cargo check --workspace` 通过。
+- 结论：**零生产路径**。
+
+### 保留原语评估
+
+- `schedule_once` / `schedule_cron` 全部委托给第三方 `tokio-cron-scheduler`；`systemtime_to_cron` 只是把 `SystemTime` 转成 cron 字段，不属于本仓库的调度原语。
+- 现有 `TimerRegistry` 已自带 `fire_at` 一次性能力，one-shot 语义已覆盖；周期 cron 本仓库明确不实现（见 O26-D）。
+- 结论：**无可保留原语，整删**。不把 cron 解析迁进 `TimerRegistry`——那等于引入一个同样没有调用方的周期调度能力。
+
+### 删除前后数字
+
+- 删除前：`scheduler.rs` **764 行 / 28,734 字节**；`oa4rust/backend` 内 `scheduler` 引用 **87 行**；`shared` lib 单测 **386 条**。
+- 删除后：`oa4rust/backend` 内引用 **0 行**（`git grep -n "scheduler" -- oa4rust/backend` 无匹配）；`shared` lib 单测 **366 条**（-20 条，全部为 scheduler 自带测试）。
+- 依赖清理：`Cargo.lock` 移除 3 个包（`tokio-cron-scheduler`、`cron`、`num-derive`），`shared` 依赖少 1 条。
+- 验证：`cargo check --workspace` 通过；`cargo fmt --check` 通过；`cargo test -p shared --lib` 365 passed / 1 failed。失败项 `migrate::tests::migrations_are_ordered_idempotent_and_fail_loud_on_missing_dir` 在 `origin/main`（未改代码）上同样失败：本机脏库报 `column "person_unique" does not exist`（SQLSTATE 42703），与本次删除无关。
+
+### 风险：死代码被误读为「已有调度」
+
+- `docs/archived-plans/2026-08-19-001-fix-close-all-blocking-gaps-plan.md` 与 `docs/plans/2026-10-27-comprehensive-test-coverage.md` 都把该文件描述为「调度器 / TokioCronScheduler 支持 schedule_once / schedule_cron」。
+- 若只删代码不改口径，后来者会以为「周期调度已实现、只是没启用」；事实是从未有任何生产调用点，能力本身也只是第三方包装。
+- 正确表述：**本仓库没有周期调度器；一次性定时只有 `TimerRegistry.fire_at`。**
