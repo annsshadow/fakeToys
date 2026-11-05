@@ -63,7 +63,9 @@
             </div>
             <button class="btn-del-sm" @click.stop="deleteChat(c)">✕</button>
           </div>
-          <div v-if="conversations.length === 0" class="empty-chats">
+          <ListLoadError v-if="conversations.length > 0 && convoError" mode="banner" :message="convoError" @retry="loadConversations" />
+          <ListLoadError v-else-if="conversations.length === 0 && convoError" mode="empty" :message="convoError" @retry="loadConversations" />
+          <div v-else-if="conversations.length === 0" class="empty-chats">
             <div class="ei">💬</div>
             <p>暂无对话</p>
           </div>
@@ -169,11 +171,15 @@
 import { api } from '@oa4rust/sdk'
 import { nextTick, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { describeListError } from './listQuery'
 
 type Message = { role: 'user' | 'assistant'; content: string; timestamp?: string }
 type ChatItem = { id: string; title?: string; name?: string; updatedAt?: string }
 
 const conversations = ref<ChatItem[]>([])
+const convoError = ref('')
 const currentChat = ref<ChatItem | null>(null)
 const messages = ref<Message[]>([])
 const inputText = ref('')
@@ -407,11 +413,13 @@ async function loadAiMeta() {
 }
 
 async function loadConversations() {
+  convoError.value = ''
   try {
     const r = await api.get('/api/ai_assemble_control/chat/list/paging/1/size/20')
     conversations.value = r.data?.list ?? r.data ?? []
-  } catch {
-    conversations.value = []
+  } catch (e) {
+    // 失败保留旧对话并显式报错，不能和「真的没有对话」混成同一种空态。
+    convoError.value = describeListError('对话列表加载失败', e)
   }
 }
 

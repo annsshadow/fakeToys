@@ -123,9 +123,11 @@
 
     <!-- 文件列表/网格 -->
     <div class="file-panel glass-card" :class="'view-' + viewType">
+      <ListLoadError v-if="files.length > 0 && loadError" mode="banner" :message="loadError" @retry="loadFiles(currentFolder)" />
       <div v-if="loading" class="loading-state">
         <div class="skeleton-row" v-for="i in 6" :key="i"></div>
       </div>
+      <ListLoadError v-else-if="files.length === 0 && loadError" mode="empty" :message="loadError" @retry="loadFiles(currentFolder)" />
       <div v-else-if="files.length === 0" class="empty-state">
         <div class="empty-icon">📁</div>
         <p>当前文件夹为空</p>
@@ -218,6 +220,9 @@ import { api } from '@oa4rust/sdk'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { describeListError } from './listQuery'
 
 interface FileItem {
   id: string
@@ -236,6 +241,7 @@ const breadcrumbs = ref<string[]>(['根目录'])
 const viewType = ref<'grid' | 'list'>('list')
 const loading = ref(false)
 const files = ref<FileItem[]>([])
+const loadError = ref('')
 const showUpload = ref(false)
 const uploadProgress = ref(0)
 const queryClient = useQueryClient()
@@ -787,11 +793,13 @@ async function loadTopAttachments(): Promise<void> {
 }
 async function loadFiles(folderId?: string): Promise<void> {
   loading.value = true
+  loadError.value = ''
   try {
     const resp = await api.get(`/api/file/assemble/control/file/list/${folderId || ''}`)
     files.value = ((resp as any)?.data ?? []) as FileItem[]
-  } catch {
-    files.value = []
+  } catch (e) {
+    // 失败保留旧文件并显式报错，不能和「真的空文件夹」混成同一种空态。
+    loadError.value = describeListError('文件列表加载失败', e)
   } finally {
     loading.value = false
   }
