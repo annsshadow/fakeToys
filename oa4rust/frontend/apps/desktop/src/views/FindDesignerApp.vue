@@ -13,7 +13,9 @@
     <div class="editor-layout glass-card">
       <div class="editor-sidebar">
         <div class="sb-title">配置列表</div>
+        <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="reload" />
         <div v-if="loading" class="loading-sm">加载中...</div>
+        <ListLoadError v-else-if="items.length === 0 && loadError" mode="empty" :message="loadError" @retry="reload" />
         <ul v-else class="sb-list">
           <li v-for="item in items" :key="item.id" class="sb-item" :class="{active:selected?.id===item.id}" @click="selectItem(item)">{{ item.name||item.flag||item.id }}</li>
           <li v-if="items.length===0" class="empty">暂无配置</li>
@@ -33,8 +35,11 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { useQuery } from '@tanstack/vue-query'
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { useListError } from './listQuery'
 
 interface Item {
   id: string
@@ -48,7 +53,7 @@ const loading = ref(false),
   config = ref('')
 // 后端无 find 族；查询设计器真实列表端点为 designer/list/all。
 const ep = '/api/query/assemble/designer/list/all'
-const { data } = useQuery({
+const { data, isError, error } = useQuery({
   queryKey: ['FindDesigner', 'list'],
   queryFn: async () => {
     loading.value = true
@@ -60,7 +65,19 @@ const { data } = useQuery({
     }
   },
 })
-items.value = data.value ?? []
+watch(
+  data,
+  (rows) => {
+    if (rows) items.value = rows as Item[]
+  },
+  { immediate: true },
+)
+const { loadError, reload } = useListError({
+  isError,
+  error,
+  queryKey: ['FindDesigner', 'list'],
+  label: '查找设计配置加载失败',
+})
 function selectItem(item: Item) {
   selected.value = item
   config.value = item.config ? `\n${item.config}` : '{}'

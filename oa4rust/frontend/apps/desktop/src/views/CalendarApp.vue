@@ -49,6 +49,7 @@
 
     <div class="cal-list-bar glass-card">
       <span class="cll-title">日历：</span>
+      <span v-if="calListError" class="cll-error">{{ calListError }}<button class="cll-tab" @click="loadCalendars(calScope)">重试</button></span>
       <button class="cll-tab" :class="{on:calScope==='my'}" @click="loadCalendars('my')">我的（{{ myCals.length }}）</button>
       <button class="cll-tab" :class="{on:calScope==='public'}" @click="loadCalendars('public')">公共（{{ pubCals.length }}）</button>
       <button class="cll-tab" @click="loadCalSettings">⚙️ 设置/权限</button>
@@ -103,7 +104,9 @@
         <button type="submit" class="today-btn">新建事件</button>
       </form>
 
-      <div v-if="calEvents.length === 0" class="empty-events"><p>该日历暂无事件</p></div>
+      <ListLoadError v-if="calEvents.length > 0 && calEventsError" mode="banner" :message="calEventsError" @retry="loadCalEvents" />
+      <ListLoadError v-if="calEvents.length === 0 && calEventsError" mode="empty" :message="calEventsError" @retry="loadCalEvents" />
+      <div v-else-if="calEvents.length === 0" class="empty-events"><p>该日历暂无事件</p></div>
       <div v-else class="event-list">
         <div v-for="evt in calEvents" :key="evt.id" class="event-card">
           <div class="event-color" :style="{ background: 'var(--color-primary)' }"></div>
@@ -144,6 +147,9 @@ import { api } from '@oa4rust/sdk'
 import { useQuery } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { describeListError } from './listQuery'
 
 interface CalendarEvent {
   id: string
@@ -315,6 +321,7 @@ async function loadCalCoreEntities() {
 }
 async function loadCalendars(scope: 'my' | 'public') {
   calScope.value = scope
+  calListError.value = ''
   try {
     // GET calendar/calendar/list/my | list/public —— 我的/公共日历列表（字面量路径，避免提取器归一化为 list/{}）
     const r: any =
@@ -324,9 +331,9 @@ async function loadCalendars(scope: 'my' | 'public') {
     const list = (r.data?.list ?? r.data ?? []) as CalItem[]
     if (scope === 'my') myCals.value = list
     else pubCals.value = list
-  } catch {
-    if (scope === 'my') myCals.value = []
-    else pubCals.value = []
+  } catch (e) {
+    // 失败保留旧日历并显式报错，按钮上的计数不能把失败显示成 0。
+    calListError.value = describeListError('日历列表加载失败', e)
   }
 }
 loadCalendars('my')
@@ -342,10 +349,15 @@ const activeCal = ref<CalItem | null>(null)
 const activeCalDetail = ref<CalDetail | null>(null)
 const calMeta = ref('')
 const calEvents = ref<CalendarEvent[]>([])
+const calEventsError = ref('')
+const calListError = ref('')
 const evtForm = ref({ title: '', startTime: '', endTime: '', location: '' })
 
 async function selectCalendar(c: CalItem): Promise<void> {
   activeCal.value = c
+  // 切日历先清旧事件：否则新日历加载失败时会把上一个日历的事件当成当前日历的数据展示。
+  calEvents.value = []
+  calEventsError.value = ''
   try {
     // GET calendar/{id} —— 日历详情
     const d: any = await api.get(`/api/calendar/calendar/${c.id}`)
@@ -384,12 +396,14 @@ function closeCalendar(): void {
 
 async function loadCalEvents(): Promise<void> {
   if (!activeCal.value) return
+  calEventsError.value = ''
   try {
     // GET event/list/{calendarId} —— 按日历取事件
     const r: any = await api.get(`/api/calendar/event/list/${activeCal.value.id}`)
     calEvents.value = (r?.data ?? []) as CalendarEvent[]
-  } catch {
-    calEvents.value = []
+  } catch (e) {
+    // 失败保留旧事件并显式报错，不能和「该日历确实没有事件」混成同一种空态。
+    calEventsError.value = describeListError('日历事件加载失败', e)
   }
 }
 
@@ -691,6 +705,7 @@ async function loadCalTwin() {
 
 .cal-list-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 16px}
 .cll-title{font-size:13px;color:var(--text-muted)}
+.cll-error{font-size:12px;color:var(--color-danger)}
 .cll-tab{padding:4px 12px;border-radius:12px;border:1px solid var(--border-subtle);background:var(--bg-elevated);color:var(--text-secondary);cursor:pointer;font-size:12px}
 .cll-tab.on{border-color:var(--color-primary);color:var(--color-primary);background:var(--color-primary-soft)}
 .cll-note{font-size:12px;color:var(--text-muted)}

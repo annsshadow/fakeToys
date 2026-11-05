@@ -36,14 +36,16 @@
     </div>
     <div v-if="periodText" class="period-note">{{ periodText }}</div>
     <div class="stats-grid glass-card">
-      <div class="stat-card"><div class="stat-num">{{ stats.total }}</div><div class="stat-label">总活动</div></div>
-      <div class="stat-card"><div class="stat-num">{{ stats.active }}</div><div class="stat-label">活跃中</div></div>
-      <div class="stat-card"><div class="stat-num">{{ stats.completed }}</div><div class="stat-label">已完成</div></div>
-      <div class="stat-card"><div class="stat-num">{{ stats.failed }}</div><div class="stat-label">失败</div></div>
+      <div class="stat-card"><div class="stat-num">{{ loadError ? '—' : stats.total }}</div><div class="stat-label">总活动</div></div>
+      <div class="stat-card"><div class="stat-num">{{ loadError ? '—' : stats.active }}</div><div class="stat-label">活跃中</div></div>
+      <div class="stat-card"><div class="stat-num">{{ loadError ? '—' : stats.completed }}</div><div class="stat-label">已完成</div></div>
+      <div class="stat-card"><div class="stat-num">{{ loadError ? '—' : stats.failed }}</div><div class="stat-label">失败</div></div>
     </div>
     <div class="content-panel glass-card">
       <div class="panel-title">最近活动</div>
+      <ListLoadError v-if="loadError" mode="banner" :message="loadError" @retry="reload" />
       <div v-if="loading" class="loading-state">加载中...</div>
+      <ListLoadError v-else-if="events.length===0 && loadError" mode="empty" :message="loadError" @retry="reload" />
       <div v-else-if="events.length===0" class="empty-state"><p>暂无活动记录</p></div>
       <table v-else class="data-table">
         <thead><tr><th>时间</th><th>类型</th><th>描述</th><th>状态</th></tr></thead>
@@ -64,6 +66,9 @@ import { api } from '@oa4rust/sdk'
 import { useQuery } from '@tanstack/vue-query'
 import { ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { useListError } from './listQuery'
 
 const loading = ref(false)
 const stats = ref({ total: 0, active: 0, completed: 0, failed: 0 })
@@ -577,7 +582,7 @@ async function bamMore(op: string) {
   }
 }
 const events = ref<any[]>([])
-const { data } = useQuery({
+const { isError, error } = useQuery({
   queryKey: ['bam', 'list'],
   queryFn: async () => {
     loading.value = true
@@ -603,8 +608,14 @@ const { data } = useQuery({
     }
   },
 })
+const { loadError, reload } = useListError({
+  isError,
+  error,
+  queryKey: ['bam', 'list'],
+  label: 'BAM 统计加载失败',
+})
 function refresh() {
-  events.value = data.value ? ((data.value as any).events ?? []) : []
+  void reload()
 }
 function fmtTime(t?: string) {
   if (!t) return ''

@@ -17,7 +17,9 @@
     <div class="ql">
       <aside class="qs glass-card">
         <div class="sb2"><span class="si2">⌕</span><input v-model="sq" placeholder="搜索查询..." class="si3" /></div>
-        <div v-if="qs2.length===0" class="es2"><p>暂无查询定义</p></div>
+        <ListLoadError v-if="qs2.length > 0 && loadError" mode="banner" :message="loadError" @retry="reload" />
+        <ListLoadError v-if="qs2.length===0 && loadError" mode="empty" :message="loadError" @retry="reload" />
+        <div v-else-if="qs2.length===0" class="es2"><p>暂无查询定义</p></div>
         <ul class="ql2">
           <li v-for="q in qs2" :key="q.id" class="qi2" :class="{active:selected?.id===q.id}" @click="selQ(q)">
             <span class="qicon">{{q.icon||'📊'}}</span>
@@ -58,8 +60,11 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { useListError } from './listQuery'
 
 interface Q {
   id: string
@@ -123,11 +128,23 @@ const sq = ref(''),
   showCreate = ref(false),
   nform = ref({ name: '', sql: '' }),
   qc = useQueryClient()
-const { data } = useQuery({
+const { data, isError, error } = useQuery({
   queryKey: ['query', 'defs'],
   queryFn: () => api.get('/api/query/assemble/designer/list/all').then((r: any) => (r.data ?? []) as Q[]),
 })
-qs2.value = data.value ?? []
+watch(
+  data,
+  (rows) => {
+    if (rows) qs2.value = rows
+  },
+  { immediate: true },
+)
+const { loadError, reload } = useListError({
+  isError,
+  error,
+  queryKey: ['query', 'defs'],
+  label: '查询定义加载失败',
+})
 const qsFiltered = computed(() =>
   sq.value ? qs2.value.filter((q) => (q.name || '').toLowerCase().includes(sq.value.toLowerCase())) : qs2.value,
 )
