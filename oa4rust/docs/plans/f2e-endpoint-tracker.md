@@ -85,13 +85,37 @@
 | 位置 | 形态 | 判定 | 处置 |
 |---|---|---|---|
 | `processplatform_service_processing/src/u2.rs`（`loglongdetained` / `touchdelay`） | ① 本地时区算边界 vs naive 列 | **确认为缺陷** | **已修**：`business_day_start_utc(now)`；写入仍 `$2`=UTC naive；用例注入固定 `now` |
-| `attendance_assemble_control/src/lib.rs:8329/8457/8828` | ① 反向：UTC 算「今天」vs 本地日历列 | **同族缺陷**（北京 00:00–08:00 默认考勤日错一天） | 未并入本 PR；随 P0 考勤一起修（下一项就是该 crate） |
+| `attendance_assemble_control/src/lib.rs`（默认考勤日，3 处） | ① 反向：UTC 算「今天」vs 本地日历列 | **同族缺陷**（北京 00:00–08:00 默认考勤日错一天） | **已修**（P0 批 PR #187）：`business_today_from_unix(secs + 8h)`，固定 epoch 用例 |
 | `bbs_core_entity/src/lib.rs:35-37`（`now_text`，3 处写 `create_time`） | ② 写本地时间，同列另有 UTC 写入路径（`bbs_assemble_control::now_iso`） | **同族缺陷**（容器 TZ=UTC 时不显现，开发机 CST 显现；TEXT 列按字典序排序会混基） | 未并入本 PR；随 T3 bbs 批次做 |
 | `shared/src/response.rs:225-227`（`legacy_date_now`） | ② 读/格式化：响应 `date` 用本地时间，库内是 UTC | 非同族（不参与比较），但疑为 T3-4「API 比落库快 8 小时」的根 | 留待 T3-4 定「落库错 or 读出错」后再修 |
 | `file/src/lib.rs:406/410/481/485/691/743/814`；`console/src/lib.rs:221` | 写本地时间到 **响应 JSON** | 非缺陷（不落库、不比较） | 不改 |
 | `program_center_core_entity/.../application.rs:216` | 写本地时间到 TEXT `deleted_at` | 该列只做非空判定/展示，无跨基比较 | 不改 |
 | `program_center/src/lib.rs`（`DATE(create_time) = $2::date`） | 按天过滤 | 两侧同基（`create_time` 为 UTC naive，`$2` 由调用方传入 `NaiveDate`） | 不改 |
 | 全仓 `AT TIME ZONE` / `date_trunc('day'` / `CURRENT_DATE` / `LOCALTIMESTAMP` | — | 除上表外无其它命中（`date_trunc('second')` 仅截秒文本，无关） | — |
+
+## 审计第六/七轮：path-IDOR 全量（分批执行，未完成）
+
+来源：`docs/audits/behavioral-audit-2026-11-05/report-6.md`（path-IDOR 全量）、
+`report-7.md`（`NO-OWNER-COL` 分档）。逐条判定，**不批量替换**；每批一次提交，
+修完跑安全回归门禁并同步减基线。
+
+| 批次 | 范围 | 判据 | 状态 |
+|---|---|---|---|
+| 内联副本 | `processplatform_core_express::work_terminate:34` | 与 P0-b helper 同根 | **已修**（本批 PR #188）：两处破坏实验均红 |
+| 假门 3 条 | cms：`is_admin` 只算返回布尔、不参与拦截 → 200 返回他人数据 | 门必须参与拦截（静态扫描「看起来有门」也要按行为验） | 待做 |
+| 写 IDOR 24 条 | 按 crate 分批，每批一次提交 | 归属写进 SQL `WHERE`（不是先查后判）+ 双向用例 + 破坏实验红 | 待做 |
+| 读 IDOR 117 条 | 拆 E18–E24 七批 | **先做「A 读 B / B 读 A」双向都 200 的**（谓词整体失效），再做单向 | 待做 |
+| NO-OWNER-COL A 档 12 条 | 有归属列且生产路径确实写入 | 同写 IDOR 判据 | 待做 |
+| NO-OWNER-COL B 档 5 条 | 列存在但生产路径从不写入、恒 NULL（典型 `x_cms_fileinfo.upload_person`，五处 INSERT 均不带该列） | **先补写归属值再写谓词，或改为跟随父文档 ACL**（二选一，理由入台账）。判据必须造出「有归属值」行验证谓词真会过滤，否则谓词恒不命中也会假绿 | 待做 |
+| NO-OWNER-COL C 档 14 条 | 真·全局配置 / 无主体列 | **保守默认**：非管理员只读、写仅管理员（安全侧默认，业务可推翻） | 待做 |
+| 软门 2 条 | empower `manager_create` / `manager_update`：返回 `ActionResult::error` 但 HTTP 200 | 改 403 + 「客户端能区分成功与失败」用例 | 待做 |
+| 无门读 11 条 | 权限串 / ACL 元数据端点未取权限 | 最保守：管理员 + 本人 | 待做 |
+| 明确不做 | `SKIP-NO-TABLE` 9 条、`EMPTY` 13 条（file 族疑有 `xid`/`file_status` 二次过滤）、`FAIL-500` 26 条（bbs 6 条第五轮已实证） | 登记，不动 | 已登记 |
+| 不可判 4 条 | 报告 §四索引 | 不碰 | — |
+
+方法论：审计实证「A 看不到 B」单向验证不够 —— 实测 A→B 与 B→A **双向都 200**，
+匿名 401、管理员 200，是谓词整体失效。每条修复用例必须双向；只验拒绝会放过
+「反向被 admin 分支挡住」的假修复。
 
 ## 已知相邻（不并入本轮）
 
