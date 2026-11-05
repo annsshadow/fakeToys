@@ -74,6 +74,12 @@ jobs:
         with:
           go-version-file: laiyipao/server/go.mod
           cache-dependency-path: laiyipao/server/go.sum
+      # 存活守卫与静态窗口守卫都是 Node 脚本：显式装 Node，
+      # 不依赖 runner 镜像自带的版本（镜像升级会让「同一份代码」莫名红/绿）。
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
       # 建库 + 迁移 + 播种。顺序即 README 快速开始的前三步；
       # ubuntu 镜像自带 psql 客户端，无需额外安装。
       - name: Prepare laiyipao database (create + migrate + seed)
@@ -128,6 +134,15 @@ jobs:
         # 守卫的守卫：门禁判据写反或永远放行，比没有门禁更糟。
         # 用例覆盖三条反漂移守卫、85% 边界（84.5 必红 / 85.0 必绿）与异常输入。
         run: node scripts/coverage-gate.test.mjs
+      # LIFECYCLE-COVERAGE: full window_ms=120000 script=scripts/lifecycle-survival-check.mjs reason=真实进程无信号存活 120s（2× 启动 ctx 60s），随后才 SIGTERM
+      - name: Process survival check (no signal for >= 120s)
+        # 为什么在 CI 而不是只在手工演练脚本里：冒烟窗口不足是「缺陷藏 3 天」
+        # 的根因（oa4rust 样本）。这里起真实 cmd/api，**不发信号**先活过
+        # 120s（2× 启动 ctx 60s），再断言 SIGTERM 在停机宽限（35s）内退出。
+        # 脚本内部把 120s 写成硬下限，命令行改小会直接退出 2。
+        run: node scripts/lifecycle-survival-check.mjs
+        env:
+          DATABASE_URL: postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable
 
   # ── admin 管理端（Vue3 + Vite）：类型检查 + 单测 + 构建 ─────────────────
   admin:
