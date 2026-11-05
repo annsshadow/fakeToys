@@ -33,6 +33,42 @@ pub struct TemplateMessageTask {
     pub content: String,
 }
 
+/// 微信模板消息的投递结果（业务层，不是传输层）。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TemplateSendOutcome {
+    pub errcode: i64,
+    pub errmsg: String,
+    pub msgid: Option<String>,
+}
+
+impl TemplateSendOutcome {
+    /// 显式 `errcode == 0` 才算成功。模板发送的成功响应必定带 errcode，
+    /// 缺字段按失败处理（-1），避免把畸形响应当成已投递。
+    pub fn success(&self) -> bool {
+        self.errcode == 0
+    }
+}
+
+/// 把微信模板发送响应解析为投递结果。
+pub fn interpret_template_send_response(resp: &Value) -> TemplateSendOutcome {
+    let errcode = resp.get("errcode").and_then(|v| v.as_i64()).unwrap_or(-1);
+    let errmsg = resp
+        .get("errmsg")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let msgid = resp
+        .get("msgid")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string());
+    TemplateSendOutcome {
+        errcode,
+        errmsg,
+        msgid,
+    }
+}
+
 const TEMPLATE_QUEUE_CAPACITY: usize = 1024;
 
 static TEMPLATE_QUEUE: OnceLock<mpsc::Sender<TemplateMessageTask>> = OnceLock::new();
@@ -56,26 +92,49 @@ pub fn spawn_template_queue_worker() {
     }
     tokio::spawn(async move {
         while let Some(task) = rx.recv().await {
-            if let Err(e) = send_template_via_wechat(&task).await {
-                tracing::warn!(
-                    "template message async send failed (touser={}): {}",
-                    task.touser,
-                    e
-                );
+            match send_template_message(&task).await {
+                Ok(outcome) if outcome.success() => tracing::info!(
+                    touser = %task.touser,
+                    template_id = %task.template_id,
+                    errcode = outcome.errcode,
+                    errmsg = %outcome.errmsg,
+                    msgid = outcome.msgid.as_deref().unwrap_or(""),
+                    success = true,
+                    "wechat template message delivered"
+                ),
+                Ok(outcome) => tracing::warn!(
+                    touser = %task.touser,
+                    template_id = %task.template_id,
+                    errcode = outcome.errcode,
+                    errmsg = %outcome.errmsg,
+                    success = false,
+                    "wechat template message rejected"
+                ),
+                Err(e) => tracing::warn!(
+                    touser = %task.touser,
+                    template_id = %task.template_id,
+                    success = false,
+                    error = %e,
+                    "wechat template message transport failure"
+                ),
             }
         }
     });
 }
 
-/// 队列 worker 的实际执行体（同步语义的对外发送）。
-async fn send_template_via_wechat(task: &TemplateMessageTask) -> Result<Value, String> {
+/// 队列 worker 与同步降级路径共用的发送实现。
+///
+/// 返回微信侧投递结果：传输/解码失败 → Err；微信业务失败（errcode≠0）→ Ok(outcome)，
+/// 由调用方决定如何对外表达。
+async fn send_template_message(task: &TemplateMessageTask) -> Result<TemplateSendOutcome, String> {
     let access_token = mpweixin_access_token()
         .await
         .map_err(|e| format!("access_token: {e}"))?;
     let client = mpweixin_client();
     let send_resp: Value = client
         .post(format!(
-            "https://api.weixin.qq.com/cgi-bin/message/wxopen/template/send?access_token={}",
+            "{}/cgi-bin/message/wxopen/template/send?access_token={}",
+            mpweixin_api_base(),
             access_token
         ))
         .json(&serde_json::json!({
@@ -89,7 +148,7 @@ async fn send_template_via_wechat(task: &TemplateMessageTask) -> Result<Value, S
         .json()
         .await
         .map_err(|e| format!("decode: {e}"))?;
-    Ok(send_resp)
+    Ok(interpret_template_send_response(&send_resp))
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -113,6 +172,14 @@ fn mpweixin_client() -> &'static reqwest::Client {
     MPWEXIN_CLIENT.get_or_init(reqwest::Client::new)
 }
 
+/// 微信 API 根地址。默认官方地址；可用 `MPWEXIN_API_BASE` 指向自建代理或测试桩。
+fn mpweixin_api_base() -> String {
+    std::env::var("MPWEXIN_API_BASE")
+        .unwrap_or_else(|_| "https://api.weixin.qq.com".to_string())
+        .trim_end_matches('/')
+        .to_string()
+}
+
 fn mpweixin_config() -> Result<(String, String), AppError> {
     // O23：缺配置 → 503 并写明缺哪一项。
     let app_id =
@@ -122,12 +189,32 @@ fn mpweixin_config() -> Result<(String, String), AppError> {
     Ok((app_id, app_secret))
 }
 
+/// 读取微信响应里的 errcode。**缺省不是失败**：`cgi-bin/token` 与
+/// `sns/oauth2/access_token` 的成功响应都不带 `errcode`，只有出错时才带。
+fn wechat_errcode(resp: &Value) -> Option<i64> {
+    resp.get("errcode").and_then(|v| v.as_i64())
+}
+
+/// 微信业务失败（显式 errcode≠0）→ Err，带上 errcode/errmsg 便于定位。
+fn ensure_wechat_ok(resp: &Value, context: &str) -> Result<(), AppError> {
+    match wechat_errcode(resp) {
+        Some(code) if code != 0 => {
+            let errmsg = resp.get("errmsg").and_then(|v| v.as_str()).unwrap_or("");
+            Err(AppError::internal_with_source(
+                concat!(file!(), ":", line!()),
+                format!("{context} errcode={code} errmsg={errmsg}"),
+            ))
+        }
+        _ => Ok(()),
+    }
+}
+
 /// 微信 code→openid 交换
 async fn mpweixin_openid(code: &str) -> Result<String, AppError> {
     let (app_id, app_secret) = mpweixin_config()?;
     let client = mpweixin_client();
     let resp: Value = client
-        .get("https://api.weixin.qq.com/sns/oauth2/access_token")
+        .get(format!("{}/sns/oauth2/access_token", mpweixin_api_base()))
         .query(&[
             ("appid", app_id.as_str()),
             ("secret", app_secret.as_str()),
@@ -141,13 +228,7 @@ async fn mpweixin_openid(code: &str) -> Result<String, AppError> {
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
-    let errcode = resp.get("errcode").and_then(|v| v.as_i64()).unwrap_or(-1);
-    if errcode != 0 {
-        return Err(AppError::internal_with_source(
-            concat!(file!(), ":", line!()),
-            format!("wechat oauth access_token errcode={errcode}"),
-        ));
-    }
+    ensure_wechat_ok(&resp, "wechat oauth access_token")?;
     resp.get("openid")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
@@ -185,7 +266,7 @@ async fn mpweixin_access_token() -> Result<String, AppError> {
     let (app_id, app_secret) = mpweixin_config()?;
     let client = mpweixin_client();
     let resp: Value = client
-        .get("https://api.weixin.qq.com/cgi-bin/token")
+        .get(format!("{}/cgi-bin/token", mpweixin_api_base()))
         .query(&[
             ("grant_type", "client_credential"),
             ("appid", app_id.as_str()),
@@ -198,13 +279,7 @@ async fn mpweixin_access_token() -> Result<String, AppError> {
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
-    let errcode = resp.get("errcode").and_then(|v| v.as_i64()).unwrap_or(-1);
-    if errcode != 0 {
-        return Err(AppError::internal_with_source(
-            concat!(file!(), ":", line!()),
-            format!("wechat cgi-bin/token errcode={errcode}"),
-        ));
-    }
+    ensure_wechat_ok(&resp, "wechat cgi-bin/token")?;
 
     let token = resp
         .get("access_token")
@@ -400,51 +475,52 @@ pub async fn mpweixin_test_send(
         template_id: template_id.to_string(),
         content: content.to_string(),
     };
-    if QUEUE_WORKER_STARTED.get().is_some() && enqueue_template_message(task) {
+    if QUEUE_WORKER_STARTED.get().is_some() && enqueue_template_message(task.clone()) {
         return Ok(Json(ActionResult::success(serde_json::json!({
             "accepted": true,
             "queued": true,
         }))));
     }
 
-    let access_token = mpweixin_access_token().await?;
-    let client = mpweixin_client();
-    let send_resp: Value = client
-        .post(format!(
-            "https://api.weixin.qq.com/cgi-bin/message/wxopen/template/send?access_token={}",
-            access_token
-        ))
-        .json(&serde_json::json!({
-            "touser": person,
-            "template_id": template_id,
-            "content": content,
-        }))
-        .send()
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
-        .json()
+    let outcome = send_template_message(&task)
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
-    let errcode = send_resp
-        .get("errcode")
-        .and_then(|v| v.as_i64())
-        .unwrap_or(-1);
-    if errcode != 0 {
-        let errmsg = send_resp
-            .get("errmsg")
-            .and_then(|v| v.as_str())
-            .unwrap_or("unknown error");
+    if !outcome.success() {
+        let errmsg = if outcome.errmsg.is_empty() {
+            "unknown error"
+        } else {
+            outcome.errmsg.as_str()
+        };
+        tracing::warn!(
+            touser = %task.touser,
+            template_id = %task.template_id,
+            errcode = outcome.errcode,
+            errmsg = %errmsg,
+            success = false,
+            source = "sync",
+            "wechat template message rejected"
+        );
         return Ok(Json(ActionResult::error(format!(
             "WeChat template send failed: {}",
             errmsg
         ))));
     }
 
+    tracing::info!(
+        touser = %task.touser,
+        template_id = %task.template_id,
+        errcode = outcome.errcode,
+        errmsg = %outcome.errmsg,
+        msgid = outcome.msgid.as_deref().unwrap_or(""),
+        success = true,
+        source = "sync",
+        "wechat template message delivered"
+    );
     Ok(Json(ActionResult::success(serde_json::json!({
         "sent": true,
         "accepted": false,
-        "msgid": send_resp.get("msgid").and_then(|v| v.as_str()).unwrap_or(""),
+        "msgid": outcome.msgid.unwrap_or_default(),
     }))))
 }
 
@@ -464,6 +540,139 @@ pub fn router() -> Router {
             "/api/mpweixin/menu/test/send/to/{person}",
             post(mpweixin_test_send),
         )
+}
+
+#[cfg(test)]
+mod delivery_outcome_tests {
+    use super::*;
+
+    #[test]
+    fn template_send_response_maps_to_delivery_outcome() {
+        let cases: Vec<(&str, Value, bool, i64, Option<&str>)> = vec![
+            (
+                "成功且带 msgid",
+                serde_json::json!({"errcode": 0, "errmsg": "ok", "msgid": "m-1"}),
+                true,
+                0,
+                Some("m-1"),
+            ),
+            (
+                "业务拒绝",
+                serde_json::json!({"errcode": 40001, "errmsg": "invalid credential"}),
+                false,
+                40001,
+                None,
+            ),
+            (
+                "缺少 errcode 视为失败",
+                serde_json::json!({"errmsg": "ok"}),
+                false,
+                -1,
+                None,
+            ),
+            (
+                "成功但 msgid 为空串",
+                serde_json::json!({"errcode": 0, "msgid": ""}),
+                true,
+                0,
+                None,
+            ),
+            (
+                "成功且无 msgid 字段",
+                serde_json::json!({"errcode": 0}),
+                true,
+                0,
+                None,
+            ),
+        ];
+        assert!(cases.len() >= 5, "投递结果判据用例不得少于 5 条");
+
+        for (name, resp, expect_success, expect_errcode, expect_msgid) in cases {
+            let outcome = interpret_template_send_response(&resp);
+            assert_eq!(
+                outcome.success(),
+                expect_success,
+                "用例「{name}」success 判定不符"
+            );
+            assert_eq!(
+                outcome.errcode, expect_errcode,
+                "用例「{name}」errcode 不符"
+            );
+            assert_eq!(
+                outcome.msgid.as_deref(),
+                expect_msgid,
+                "用例「{name}」msgid 不符"
+            );
+        }
+    }
+}
+
+#[cfg(test)]
+mod wechat_errcode_tests {
+    use super::*;
+
+    #[test]
+    fn errcode_absent_means_success_and_explicit_failure_keeps_cause() {
+        let cases: Vec<(&str, Value, bool)> = vec![
+            (
+                "token 成功响应不带 errcode（真实微信契约）",
+                serde_json::json!({"access_token": "t", "expires_in": 7200}),
+                true,
+            ),
+            (
+                "oauth 成功响应不带 errcode 但带 openid",
+                serde_json::json!({"access_token": "t", "openid": "o-1"}),
+                true,
+            ),
+            (
+                "显式 errcode=0",
+                serde_json::json!({"errcode": 0, "errmsg": "ok"}),
+                true,
+            ),
+            (
+                "显式业务失败",
+                serde_json::json!({"errcode": 40001, "errmsg": "invalid credential"}),
+                false,
+            ),
+            (
+                "errcode 类型异常（非整数）按缺省处理",
+                serde_json::json!({"errcode": "40001"}),
+                true,
+            ),
+        ];
+        assert!(cases.len() >= 4, "errcode 判据用例不得少于 4 条");
+
+        for (name, resp, expect_ok) in cases {
+            let result = ensure_wechat_ok(&resp, "probe");
+            assert_eq!(result.is_ok(), expect_ok, "用例「{name}」判定不符");
+        }
+
+        let err = ensure_wechat_ok(
+            &serde_json::json!({"errcode": 40001, "errmsg": "invalid credential"}),
+            "probe",
+        )
+        .unwrap_err();
+        match err {
+            AppError::InternalWithSource { cause, .. } => {
+                assert!(cause.contains("errcode=40001"), "缺少 errcode：{cause}");
+                assert!(cause.contains("invalid credential"), "缺少 errmsg：{cause}");
+            }
+            other => panic!("期望 InternalWithSource，实际 {other:?}"),
+        }
+    }
+
+    #[test]
+    fn wechat_errcode_distinguishes_absent_from_zero() {
+        assert_eq!(
+            wechat_errcode(&serde_json::json!({"access_token": "t"})),
+            None
+        );
+        assert_eq!(wechat_errcode(&serde_json::json!({"errcode": 0})), Some(0));
+        assert_eq!(
+            wechat_errcode(&serde_json::json!({"errcode": 40001})),
+            Some(40001)
+        );
+    }
 }
 
 #[cfg(test)]
