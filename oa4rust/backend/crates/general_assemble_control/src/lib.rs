@@ -1252,7 +1252,7 @@ pub async fn excel_result_flag(
 
     let row = client
         .query_opt(
-            "SELECT id, flag, result, creator, create_time FROM x_general_assemble_excel_result WHERE flag = $1",
+            "SELECT id, flag, result, creator, create_time::text AS create_time FROM x_general_assemble_excel_result WHERE flag = $1",
             &[&flag],
         )
         .await
@@ -1381,7 +1381,7 @@ pub async fn generalfile_download_flag_flag(
 
     let row = client
         .query_opt(
-            "SELECT id, name, flag, content, size, creator, create_time FROM x_general_assemble_general_file WHERE flag = $1",
+            "SELECT id, name, flag, content, size, creator, create_time::text AS create_time FROM x_general_assemble_general_file WHERE flag = $1",
             &[&flag],
         )
         .await
@@ -1401,7 +1401,7 @@ pub async fn generalfile_download_flag_flag(
                 ),
                 (
                     "size".to_string(),
-                    Value::String(row.get::<_, i64>("size").to_string()),
+                    Value::String(row.get::<_, Option<i64>>("size").unwrap_or(0).to_string()),
                 ),
                 (
                     "creator".to_string(),
@@ -1430,7 +1430,7 @@ pub async fn generalfile_flag_flag(
 
     let row = client
         .query_opt(
-            "SELECT id, name, flag, content, size, creator, create_time FROM x_general_assemble_general_file WHERE flag = $1",
+            "SELECT id, name, flag, content, size, creator, create_time::text AS create_time FROM x_general_assemble_general_file WHERE flag = $1",
             &[&flag],
         )
         .await
@@ -1450,7 +1450,7 @@ pub async fn generalfile_flag_flag(
                 ),
                 (
                     "size".to_string(),
-                    Value::String(row.get::<_, i64>("size").to_string()),
+                    Value::String(row.get::<_, Option<i64>>("size").unwrap_or(0).to_string()),
                 ),
                 (
                     "creator".to_string(),
@@ -1479,7 +1479,7 @@ pub async fn generalfile_flag_flag_binary_base64(
 
     let row = client
         .query_opt(
-            "SELECT id, name, flag, content, size, creator, create_time FROM x_general_assemble_general_file WHERE flag = $1",
+            "SELECT id, name, flag, content, size, creator, create_time::text AS create_time FROM x_general_assemble_general_file WHERE flag = $1",
             &[&flag],
         )
         .await
@@ -1504,7 +1504,7 @@ pub async fn generalfile_flag_flag_binary_base64(
                 ),
                 (
                     "size".to_string(),
-                    Value::String(row.get::<_, i64>("size").to_string()),
+                    Value::String(row.get::<_, Option<i64>>("size").unwrap_or(0).to_string()),
                 ),
                 (
                     "creator".to_string(),
