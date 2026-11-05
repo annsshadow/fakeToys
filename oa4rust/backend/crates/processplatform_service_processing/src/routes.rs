@@ -36,6 +36,10 @@ pub fn router(pool: Pool) -> Router {
         });
     }
 
+    // O26-2：维护作业周期触发（与 timer 同模式；仅 loglongdetained / touchdelay）。
+    // 首轮延迟一个周期，避免启动瞬间写库。
+    crate::maintenance::start_background(pool.clone());
+
     Router::new()
         .route("/api/processplatform/service/processing/get/{id}", get(get_process))
         .route("/api/processplatform/service/processing/create", post(create_process))

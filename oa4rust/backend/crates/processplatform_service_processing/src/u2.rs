@@ -1887,18 +1887,49 @@ pub async fn touch_handover_job(
 /// （`x_record.create_time` 是 timestamp without time zone，比较类型一致。）
 const BUSINESS_DAY_START: &str = "date_trunc('day', (NOW() AT TIME ZONE 'Asia/Shanghai'))";
 
-/// POST touch/loglongdetained：滞留超 24h 的活动工作补记日志（按业务日幂等去重）
+/// 单批最多处理行数；单次运行最多批数（10 × 1000 = 单次最多 1 万行）。
+pub const MAINTENANCE_BATCH_SIZE: i64 = 1000;
+pub const MAINTENANCE_MAX_BATCHES: usize = 10;
+
+/// 分批执行 `INSERT ... SELECT ... LIMIT $1`，直到插入 0 行或达到批数上限。
 ///
-/// 单条 `INSERT ... SELECT ... RETURNING` 取代原「SELECT 候选 + 对每行一条
-/// INSERT」的写 N+1（命中行数无上限，滞留越多越慢）。NOT EXISTS 已在语句内
-/// 完成每日去重，RETURNING 回填 workList。
-#[allow(non_snake_case)]
-pub async fn touch_log_long_detained(
-    pool: Extension<Pool>,
-    session: Option<Extension<shared::session::Session>>,
-) -> H {
-    require_admin_opt(&pool.0, session.as_deref()).await?;
-    let client = shared::db::acquire(&pool).await?;
+/// 每批打印计数日志（capability / batch / inserted / total），便于生产观测。
+/// 去重条件必须写在 SQL 内（`NOT EXISTS`），因此重复执行是幂等的：上一批
+/// 插入的行会让下一批的候选集自然缩小，第二批起通常直接为 0。
+async fn insert_batched(
+    pool: &Pool,
+    capability: &'static str,
+    sql: &str,
+    batch_size: i64,
+) -> Result<Vec<String>, AppError> {
+    let client = shared::db::acquire(pool).await?;
+    let mut all: Vec<String> = Vec::new();
+    for batch in 1..=MAINTENANCE_MAX_BATCHES {
+        let rows = client
+            .query(sql, &[&batch_size])
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+        let inserted = rows.len();
+        all.extend(
+            rows.iter()
+                .map(|r| r.get::<_, Option<String>>("work_id").unwrap_or_default()),
+        );
+        tracing::info!(
+            capability,
+            batch,
+            inserted,
+            total = all.len(),
+            "maintenance batch inserted"
+        );
+        if inserted == 0 {
+            break;
+        }
+    }
+    Ok(all)
+}
+
+/// 周期任务入口：滞留超 24h 的活动工作补记日志（按业务日幂等去重，分批）。
+pub async fn run_log_long_detained(pool: &Pool) -> Result<Vec<String>, AppError> {
     let sql = format!(
         "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) \
          SELECT gen_random_uuid()::text, w.id, 'long_detained', \
@@ -1910,17 +1941,45 @@ pub async fn touch_log_long_detained(
                SELECT 1 FROM x_record r \
                WHERE r.work_id = w.id AND r.record_type = 'long_detained' \
                  AND r.create_time >= {}) \
+         ORDER BY w.start_time, w.id \
+         LIMIT $1 \
          RETURNING work_id",
         BUSINESS_DAY_START
     );
-    let rows = client
-        .query(&sql, &[])
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
-    let logged: Vec<String> = rows
-        .iter()
-        .map(|r| r.get::<_, Option<String>>("work_id").unwrap_or_default())
-        .collect();
+    insert_batched(pool, "loglongdetained", &sql, MAINTENANCE_BATCH_SIZE).await
+}
+
+/// 周期任务入口：存在过期任务的工作补接触摸记录（业务日幂等去重，分批）。
+pub async fn run_touch_delay(pool: &Pool) -> Result<Vec<String>, AppError> {
+    let sql = format!(
+        "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) \
+         SELECT gen_random_uuid()::text, COALESCE(t.work, ''), 'touch_delay', \
+                'delay touched', 'system', NOW() \
+         FROM (SELECT DISTINCT t.work FROM x_task t \
+               WHERE t.task_status = 'expired' \
+                 AND NOT EXISTS (\
+                     SELECT 1 FROM x_record r \
+                     WHERE r.work_id = t.work AND r.record_type = 'touch_delay' \
+                       AND r.create_time >= {}) \
+               ORDER BY t.work LIMIT $1) t \
+         RETURNING work_id",
+        BUSINESS_DAY_START
+    );
+    insert_batched(pool, "touchdelay", &sql, MAINTENANCE_BATCH_SIZE).await
+}
+
+/// POST touch/loglongdetained：滞留超 24h 的活动工作补记日志（按业务日幂等去重）
+///
+/// 单条 `INSERT ... SELECT ... RETURNING` 取代原「SELECT 候选 + 对每行一条
+/// INSERT」的写 N+1（命中行数无上限，滞留越多越慢）。NOT EXISTS 已在语句内
+/// 完成每日去重，RETURNING 回填 workList。
+#[allow(non_snake_case)]
+pub async fn touch_log_long_detained(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+) -> H {
+    require_admin_opt(&pool.0, session.as_deref()).await?;
+    let logged = run_log_long_detained(&pool).await?;
     ok(json!({ "value": true, "count": logged.len() as i64, "workList": logged }))
 }
 
@@ -1935,28 +1994,7 @@ pub async fn touch_delay(
     session: Option<Extension<shared::session::Session>>,
 ) -> H {
     require_admin_opt(&pool.0, session.as_deref()).await?;
-    let client = shared::db::acquire(&pool).await?;
-    let sql = format!(
-        "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) \
-         SELECT gen_random_uuid()::text, COALESCE(t.work, ''), 'touch_delay', \
-                'delay touched', 'system', NOW() \
-         FROM (SELECT DISTINCT t.work FROM x_task t \
-               WHERE t.task_status = 'expired' \
-                 AND NOT EXISTS (\
-                     SELECT 1 FROM x_record r \
-                     WHERE r.work_id = t.work AND r.record_type = 'touch_delay' \
-                       AND r.create_time >= {}) ORDER BY t.work) t \
-         RETURNING work_id",
-        BUSINESS_DAY_START
-    );
-    let rows = client
-        .query(&sql, &[])
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
-    let touched: Vec<String> = rows
-        .iter()
-        .map(|r| r.get::<_, Option<String>>("work_id").unwrap_or_default())
-        .collect();
+    let touched = run_touch_delay(&pool).await?;
     ok(json!({ "value": true, "count": touched.len() as i64, "workList": touched }))
 }
 
@@ -2777,5 +2815,147 @@ mod security_gate_tests {
                 "非 admin 会话调用 touch/* 必须 403"
             );
         }
+    }
+
+    /// 分批上限：`LIMIT $1` 每批最多 batch_size 行，循环到插入 0 行为止，
+    /// 且单次运行最多 `MAINTENANCE_MAX_BATCHES` 批（此处 1 × 10 = 最多 10 行）。
+    #[tokio::test]
+    async fn maintenance_batches_respect_limit_and_max_batches() {
+        let pool = shared::testing::test_pool();
+        let c = pool.get().await.unwrap();
+        let tag = format!("batch-{}", uuid::Uuid::new_v4());
+        for i in 0..15 {
+            c.execute(
+                "INSERT INTO x_work (id, title, process, creator, start_time) \
+                 VALUES ($1, $2, 'P', 'u', NOW() - INTERVAL '48 hours')",
+                &[
+                    &format!("{tag}-{i:02}"),
+                    &format!("maintenance batch probe {tag}"),
+                ],
+            )
+            .await
+            .unwrap();
+        }
+        let sql = format!(
+            "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) \
+             SELECT gen_random_uuid()::text, w.id, 'batch_probe', 'probe', 'system', NOW() \
+             FROM x_work w \
+             WHERE w.id LIKE '{tag}-%' \
+               AND NOT EXISTS (SELECT 1 FROM x_record r \
+                               WHERE r.work_id = w.id AND r.record_type = 'batch_probe') \
+             ORDER BY w.id LIMIT $1 RETURNING work_id"
+        );
+        let first = super::insert_batched(&pool, "probe", &sql, 1)
+            .await
+            .unwrap();
+        assert_eq!(
+            first.len(),
+            super::MAINTENANCE_MAX_BATCHES,
+            "单次运行最多 10 批，每批 1 行"
+        );
+        let second = super::insert_batched(&pool, "probe", &sql, 1)
+            .await
+            .unwrap();
+        assert_eq!(second.len(), 5, "剩余 5 行在下一轮补齐");
+        let left: i64 = c
+            .query_one(
+                "SELECT count(*) FROM x_work WHERE id LIKE $1",
+                &[&format!("{tag}-%")],
+            )
+            .await
+            .unwrap()
+            .get(0);
+        assert_eq!(left, 15, "工作行本身不得被删除");
+        // 清理
+        c.execute(
+            "DELETE FROM x_record WHERE work_id LIKE $1",
+            &[&format!("{tag}-%")],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "DELETE FROM x_work WHERE id LIKE $1",
+            &[&format!("{tag}-%")],
+        )
+        .await
+        .unwrap();
+    }
+
+    /// 纯 INSERT 两条能力：按业务日去重，重复执行不产生重复行。
+    #[tokio::test]
+    async fn maintenance_loglongdetained_and_touchdelay_are_idempotent() {
+        let pool = shared::testing::test_pool();
+        let c = pool.get().await.unwrap();
+        let tag = format!("idem-{}", uuid::Uuid::new_v4());
+        let w1 = format!("{tag}-w1");
+        let w2 = format!("{tag}-w2");
+        for id in [&w1, &w2] {
+            c.execute(
+                "INSERT INTO x_work (id, title, process, creator, start_time) \
+                 VALUES ($1, $2, 'P', 'u', NOW() - INTERVAL '48 hours')",
+                &[id, &format!("maintenance idem {tag}")],
+            )
+            .await
+            .unwrap();
+            c.execute(
+                "INSERT INTO x_task (id, work, task_status, start_time, person) \
+                 VALUES ($1, $2, 'expired', NOW() - INTERVAL '48 hours', 'p')",
+                &[&format!("{id}-t"), id],
+            )
+            .await
+            .unwrap();
+        }
+
+        // 断言只看本次构造的 tag：共享测试库里可能有其他测试遗留的候选行
+        let ours = |rows: &[String]| rows.iter().filter(|id| id.starts_with(&tag)).count();
+
+        let l1 = super::run_log_long_detained(&pool).await.unwrap();
+        let l2 = super::run_log_long_detained(&pool).await.unwrap();
+        assert_eq!(ours(&l1), 2, "首次：2 个滞留工作各登记 1 条");
+        assert_eq!(ours(&l2), 0, "重复执行：不再新增");
+
+        let d1 = super::run_touch_delay(&pool).await.unwrap();
+        let d2 = super::run_touch_delay(&pool).await.unwrap();
+        assert_eq!(ours(&d1), 2, "首次：2 个过期任务工作各登记 1 条");
+        assert_eq!(ours(&d2), 0, "重复执行：不再新增");
+
+        let long_rows: i64 = c
+            .query_one(
+                "SELECT count(*) FROM x_record WHERE work_id LIKE $1 AND record_type = 'long_detained'",
+                &[&format!("{tag}-%")],
+            )
+            .await
+            .unwrap()
+            .get(0);
+        let delay_rows: i64 = c
+            .query_one(
+                "SELECT count(*) FROM x_record WHERE work_id LIKE $1 AND record_type = 'touch_delay'",
+                &[&format!("{tag}-%")],
+            )
+            .await
+            .unwrap()
+            .get(0);
+        assert_eq!(long_rows, 2, "两轮后仍只有 2 行（幂等）");
+        assert_eq!(delay_rows, 2, "两轮后仍只有 2 行（幂等）");
+
+        // 清理
+        c.execute(
+            "DELETE FROM x_record WHERE work_id LIKE $1",
+            &[&format!("{tag}-%")],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "DELETE FROM x_task WHERE work LIKE $1",
+            &[&format!("{tag}-%")],
+        )
+        .await
+        .unwrap();
+        c.execute(
+            "DELETE FROM x_work WHERE id LIKE $1",
+            &[&format!("{tag}-%")],
+        )
+        .await
+        .unwrap();
     }
 }
