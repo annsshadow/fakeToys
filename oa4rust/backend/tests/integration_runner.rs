@@ -197,6 +197,14 @@ async fn timer_start_write_contract() {
     integration_tests::scenarios::timer_jobs::timer_start_write_flow(ctx.pool.clone()).await;
 }
 
+/// O25 节点 2：once job 连续 ≥3 个 tick 只执行一次（fired_at 只写一次）。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn timer_once_fires_exactly_once() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::timer_jobs::timer_once_fires_once_flow(ctx.pool.clone()).await;
+}
+
 /// O24-3 批次 4：INSERT 未写必填主键/规范列的遗留给定族（3 条 E23502）。
 #[ignore = "requires a running database server"]
 #[tokio::test]

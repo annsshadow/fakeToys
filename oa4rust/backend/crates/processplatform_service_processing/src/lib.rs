@@ -4067,28 +4067,81 @@ pub mod timer {
         }
 
         pub fn start_background(&self) {
+            self.start_background_with_interval(Self::tick_interval());
+        }
+
+        /// 默认 30s 一个 tick；`TIMER_TICK_SECONDS` 只用于集成测试压缩等待窗口，
+        /// 生产不设置即为 30。
+        fn tick_interval() -> Duration {
+            let secs = std::env::var("TIMER_TICK_SECONDS")
+                .ok()
+                .and_then(|v| v.parse::<u64>().ok())
+                .filter(|v| *v > 0)
+                .unwrap_or(30);
+            Duration::from_secs(secs)
+        }
+
+        pub fn start_background_with_interval(&self, tick: Duration) {
             if self.pool.is_none() {
                 return;
             }
             let pool = self.pool.as_ref().unwrap().clone();
             let registry = self.clone();
             tokio::spawn(async move {
-                let mut ticker = interval(Duration::from_secs(30));
+                let mut ticker = interval(tick);
                 loop {
                     ticker.tick().await;
-                    let jobs = registry.jobs.read().await.clone();
-                    let now = chrono::Utc::now().naive_utc();
-                    for job in jobs.values() {
-                        if job.fire_at <= now && job.cron.is_none() {
-                            let _ = Self::fire(&pool, job).await;
-                        }
-                    }
+                    registry.tick(&pool).await;
                 }
             });
         }
 
-        async fn fire(pool: &Pool, job: &TimerJob) -> Result<(), AppError> {
+        /// 一次 tick：只处理到期的 once job。执行权由 DB 条件更新原子认领
+        /// （`fired_at IS NULL AND cancelled_at IS NULL`），认领成功才写 fired_at；
+        /// 无论认领成功与否都从内存待执行集合移除，保证同一 job 不会被下一个
+        /// tick 再执行一次（此前每 30s 重复 fire、fired_at 被反复覆盖）。
+        pub async fn tick(&self, pool: &Pool) {
+            let now = chrono::Utc::now().naive_utc();
+            let due: Vec<TimerJob> = {
+                let jobs = self.jobs.read().await;
+                jobs.values()
+                    .filter(|job| job.cron.is_none() && job.fire_at <= now)
+                    .cloned()
+                    .collect()
+            };
+            for job in due {
+                match Self::fire(pool, &job).await {
+                    Ok(_) => {
+                        self.jobs.write().await.remove(&job.id);
+                    }
+                    Err(e) => {
+                        // 保留在集合里，下个 tick 重试（DB 暂时不可用等）。
+                        tracing::warn!(
+                            job = %job.id,
+                            error = %e,
+                            "timer fire failed; retry next tick"
+                        );
+                    }
+                }
+            }
+        }
+
+        /// 返回 `true` 表示本次 tick 认领并执行了该 job；`false` 表示它已被
+        /// 其他 tick/实例 fire 过或已取消（读到非空的 fired_at/cancelled_at）。
+        async fn fire(pool: &Pool, job: &TimerJob) -> Result<bool, AppError> {
             let client = shared::db::acquire(pool).await?;
+            let claimed = client
+                .execute(
+                    "UPDATE x_timer_job SET fired_at = NOW() \
+                     WHERE id = $1 AND fired_at IS NULL AND cancelled_at IS NULL",
+                    &[&job.id],
+                )
+                .await
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+                == 1;
+            if !claimed {
+                return Ok(false);
+            }
             if job.kind.as_str() == "expire" {
                 if let Some(ref task_id) = job.task_id {
                     client
@@ -4102,14 +4155,7 @@ pub mod timer {
                         })?;
                 }
             }
-            client
-                .execute(
-                    "UPDATE x_timer_job SET fired_at = NOW() WHERE id = $1",
-                    &[&job.id],
-                )
-                .await
-                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
-            Ok(())
+            Ok(true)
         }
 
         pub async fn start(
