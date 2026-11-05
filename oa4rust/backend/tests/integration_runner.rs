@@ -189,6 +189,14 @@ async fn hotpic_global_scope_contract() {
         .await;
 }
 
+/// O25 节点 1：`timer/start` 写入口的 TIMESTAMP 绑定（真实 POST 200 + 回库断言）。
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn timer_start_write_contract() {
+    let ctx = init_isolated().await;
+    integration_tests::scenarios::timer_jobs::timer_start_write_flow(ctx.pool.clone()).await;
+}
+
 /// O24-3 批次 4：INSERT 未写必填主键/规范列的遗留给定族（3 条 E23502）。
 #[ignore = "requires a running database server"]
 #[tokio::test]

@@ -4122,8 +4122,6 @@ pub mod timer {
             let id = Uuid::new_v4().to_string();
             let now = chrono::Utc::now().naive_utc();
             let kind = if cron.is_some() { "cron" } else { "once" };
-            let fire_at_str = fire_at.format("%Y-%m-%d %H:%M:%S").to_string();
-            let now_str = now.format("%Y-%m-%d %H:%M:%S").to_string();
 
             let job = TimerJob {
                 id: id.clone(),
@@ -4141,7 +4139,10 @@ pub mod timer {
                 .execute(
                     "INSERT INTO x_timer_job (id, work_id, task_id, fire_at, cron, created_at, kind) \
                      VALUES ($1, $2, $3, $4, $5, $6, $7)",
-                    &[&id, &work_id, &task_id, &fire_at_str, &cron, &now_str, &kind],
+                    // fire_at / created_at 是 TIMESTAMP：必须按 NaiveDateTime 绑定。
+                    // 此前按 String 绑定会得到 ToSql(3) WrongType（postgres: Timestamp vs
+                    // rust: String），写入口 500；与 restore 的读口径一致才是同一类型。
+                    &[&id, &work_id, &task_id, &fire_at, &cron, &now, &kind],
                 )
                 .await
                 .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
