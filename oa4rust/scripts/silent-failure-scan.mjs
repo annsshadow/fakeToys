@@ -93,6 +93,9 @@ const FIXED = {
   'oa4rust/frontend/apps/desktop/src/views/FindDesignerApp.vue': 'R119',
   'oa4rust/frontend/apps/desktop/src/views/HomepageApp.vue': 'R119',
   'oa4rust/frontend/apps/desktop/src/views/QueryManager.vue': 'R119',
+  'oa4rust/frontend/apps/desktop/src/views/DocumentApp.vue': 'R120',
+  'oa4rust/frontend/apps/desktop/src/views/HotpicApp.vue': 'R120',
+  'oa4rust/frontend/apps/desktop/src/views/PortalApp.vue': 'R120',
 }
 
 const LIST_STATE =
@@ -125,21 +128,18 @@ const A_PENDING = new Map([
     'oa4rust/frontend/apps/desktop/src/views/AIChatApp.vue',
     'loadConversations catch 置空（L413）；空态 L66「暂无对话」',
   ],
-  ['oa4rust/frontend/apps/desktop/src/views/DocumentApp.vue', '文档列表取数失败无提示；空态 L29「暂无文档数据」'],
   [
     'oa4rust/frontend/apps/desktop/src/views/FileManager.vue',
     'loadFiles catch 置空 files；空态 L129「当前文件夹为空」',
   ],
   ['oa4rust/frontend/apps/desktop/src/views/FormApp.vue', '两个列表取数（L259/L272）失败无提示；空态 L32/L57'],
   ['oa4rust/frontend/apps/desktop/src/views/FormDesigner.vue', '表单列表取数（L1019）失败无提示；空态 L26「暂无表单」'],
-  ['oa4rust/frontend/apps/desktop/src/views/HotpicApp.vue', 's(api.get(...)) 吞错；空态 L43「暂无热帖数据」'],
   ['oa4rust/frontend/apps/desktop/src/views/JPushApp.vue', '设备/模板列表（L105/L117）失败无提示；空态 L48/L67'],
   ['oa4rust/frontend/apps/desktop/src/views/MeetingApp.vue', '会议列表（L188）失败无提示；空态 L78「暂无会议」'],
   [
     'oa4rust/frontend/apps/desktop/src/views/Personal.vue',
     'loadEmpower catch 清空 empMine/empTo（L585-589）；空态 L129「暂无授权记录」',
   ],
-  ['oa4rust/frontend/apps/desktop/src/views/PortalApp.vue', '.catch(() => null) 吞错；空态 L57「暂无门户页面」'],
   ['oa4rust/frontend/apps/desktop/src/views/QueryDesigner.vue', '查询列表（L317）失败无提示；空态 L25「暂无查询定义」'],
   ['oa4rust/frontend/apps/desktop/src/views/QueryManagerDeep.vue', 's(api.get(...)) 吞错；空态 L95「暂无查询定义」'],
   [

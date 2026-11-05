@@ -54,7 +54,9 @@
     </div>
     <div v-if="portalListText" class="portal-note">{{ portalListText }}</div>
     <div class="page-grid glass-card">
-      <div v-if="pages.length === 0" class="empty-state">
+      <ListLoadError v-if="pages.length > 0 && loadError" mode="banner" :message="loadError" @retry="reload" />
+      <ListLoadError v-if="pages.length === 0 && loadError" mode="empty" :message="loadError" @retry="reload" />
+      <div v-else-if="pages.length === 0" class="empty-state">
         <div class="empty-icon">📄</div>
         <p>暂无门户页面</p>
       </div>
@@ -76,8 +78,11 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { useListError } from './listQuery'
 
 interface PortalPage {
   id: string
@@ -431,7 +436,7 @@ const pages = ref<PortalPage[]>([])
 const showEditor = ref(false)
 const queryClient = useQueryClient()
 
-const { data } = useQuery({
+const { data, isError, error } = useQuery({
   queryKey: ['portal', 'pages'],
   queryFn: async () => {
     const resp = await api.get('/api/portal/assemble/surface/page/list/portal/default')
@@ -439,7 +444,19 @@ const { data } = useQuery({
   },
   staleTime: 60_000,
 })
-pages.value = data.value ?? []
+watch(
+  data,
+  (rows) => {
+    if (rows) pages.value = rows
+  },
+  { immediate: true },
+)
+const { loadError, reload } = useListError({
+  isError,
+  error,
+  queryKey: ['portal', 'pages'],
+  label: '门户页面加载失败',
+})
 
 const deleteMutation = useMutation({
   mutationFn: (id: string) => api.delete(`/api/portal/assemble/surface/page/${id}`),

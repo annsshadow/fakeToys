@@ -25,7 +25,9 @@
         <span v-if="docMetaText" class="doc-meta-note">{{ docMetaText }}</span>
       </div>
       <div class="list-panel">
+        <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="doSearch" />
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 5" :key="i"></div></div>
+        <ListLoadError v-else-if="items.length===0 && loadError" mode="empty" :message="loadError" @retry="doSearch" />
         <div v-else-if="items.length===0" class="empty"><div class="ei">📄</div><p>暂无文档数据</p></div>
         <div v-else class="item-table">
           <div class="table-header">
@@ -105,6 +107,9 @@
 import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { describeListError } from './listQuery'
 
 type Tab = 'published' | 'draft'
 type DocItem = { id: string; title?: string; name?: string; content?: string; status?: string; createdAt?: string }
@@ -112,6 +117,7 @@ type DocItem = { id: string; title?: string; name?: string; content?: string; st
 const tab = ref<Tab>('published')
 const keyword = ref('')
 const loading = ref(false)
+const loadError = ref('')
 const docMetaText = ref('')
 async function loadDocMeta() {
   try {
@@ -175,6 +181,7 @@ function docStatusCls(s?: string) {
 
 async function doSearch() {
   loading.value = true
+  loadError.value = ''
   try {
     const params: Record<string, string> = {}
     if (keyword.value.trim()) params.keyword = keyword.value
@@ -182,8 +189,9 @@ async function doSearch() {
     // 后端文档列表为 POST document/list/document（裸 GET /list 会被 {id} 宽路由吞掉）。
     const r = await api.post('/api/document/list/document', params)
     items.value = r.data?.list ?? r.data ?? []
-  } catch {
-    items.value = []
+  } catch (e) {
+    // 失败保留旧文档并显式报错，不能和「真的没有文档」混成同一种空态。
+    loadError.value = describeListError('文档列表加载失败', e)
   } finally {
     loading.value = false
   }

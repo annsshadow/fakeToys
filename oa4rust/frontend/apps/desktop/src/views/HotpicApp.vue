@@ -39,7 +39,9 @@
       </div>
       <div v-if="hotpicMetaText" class="hp-note">{{ hotpicMetaText }}</div>
       <div class="list-panel">
+        <ListLoadError v-if="items.length > 0 && loadError" mode="banner" :message="loadError" @retry="doSearch" />
         <div v-if="loading" class="loading-row"><div class="sk" v-for="i in 5" :key="i"></div></div>
+        <ListLoadError v-else-if="items.length===0 && loadError" mode="empty" :message="loadError" @retry="doSearch" />
         <div v-else-if="items.length===0" class="empty"><div class="ei">🔥</div><p>暂无热帖数据</p></div>
         <div v-else class="item-grid">
           <div v-for="item in items" :key="item.id" class="item-card glass-card">
@@ -61,9 +63,13 @@
 import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { describeListError } from './listQuery'
 
 const keyword = ref('')
 const loading = ref(false)
+const loadError = ref('')
 const items = ref<any[]>([])
 
 const stats = computed(() => [
@@ -200,11 +206,13 @@ async function loadHotpicMeta() {
 
 async function doSearch() {
   loading.value = true
+  loadError.value = ''
   try {
     const r = await api.get('/api/hotpic/core/entity/list')
     items.value = r.data ?? []
-  } catch {
-    items.value = []
+  } catch (e) {
+    // 失败保留旧热帖并显式报错，不能和「真的没有热帖」混成同一种空态。
+    loadError.value = describeListError('热帖加载失败', e)
   } finally {
     loading.value = false
   }
