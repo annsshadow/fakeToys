@@ -156,7 +156,13 @@ def git_preflight() -> int:
 
     behind > 0 时直接拒绝：旧代码上的读数会让基线棘轮判错
     （修了却 STALE、没修却以为修了）。
+
+    CI 里 checkout 的是 PR 合并引用，与 origin/main 算 ahead/behind 没有意义，
+    直接跳过；CI 的正确性由「必须先合并 main + required check 全绿」保证。
     """
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        print("[preflight] skipped (CI)")
+        return 0
     try:
         fetch = _git("fetch", "--quiet", "origin", "main", timeout=10)
         if fetch.returncode != 0:
