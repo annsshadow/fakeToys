@@ -9,6 +9,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import { searchApi } from '@/services'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import { describeLoadError } from '@/utils/loadList'
 
 type Row = Record<string, unknown>
 
@@ -16,6 +17,7 @@ const keyword = ref('')
 const rows = ref<Row[]>([])
 const loading = ref(false)
 const searched = ref(false)
+const searchError = ref('')
 
 onShow(async () => {
   await ensureAuthenticated()
@@ -26,22 +28,26 @@ async function doSearch(): Promise<void> {
   if (!kw || loading.value) return
   loading.value = true
   searched.value = true
+  searchError.value = ''
+  const failed: string[] = []
   try {
     const out: Row[] = []
-    // 两个来源各自容错：任一失败不影响另一来源结果
+    // 两个来源各自容错：任一失败不影响另一来源结果，但失败必须可见。
     try {
       const g = await searchApi.global(kw)
       out.push(...((g.data ?? []) as Row[]).map((r) => ({ ...r, _from: '全局' })))
-    } catch {
-      /* ignore */
+    } catch (error) {
+      failed.push(describeLoadError('全局检索失败', error))
     }
     try {
       const b = await searchApi.bbsSubject(kw)
       out.push(...((b.data ?? []) as Row[]).map((r) => ({ ...r, _from: '论坛' })))
-    } catch {
-      /* ignore */
+    } catch (error) {
+      failed.push(describeLoadError('论坛检索失败', error))
     }
-    rows.value = out
+    // 两个来源都失败时保留上一次结果；只要有来源成功，就以本次结果为准。
+    if (!failed.length || out.length > 0) rows.value = out
+    searchError.value = failed.join('；')
   } finally {
     loading.value = false
   }
@@ -78,7 +84,16 @@ function openRow(r: Row) {
     </view>
 
     <view v-if="loading" class="tip">搜索中…</view>
+    <view v-else-if="rows.length === 0 && searchError" class="tip tip-error">
+      <view class="error-text">{{ searchError }}</view>
+      <view class="retry-btn" @tap="doSearch">重试</view>
+    </view>
     <view v-else-if="searched && rows.length === 0" class="tip">未找到结果</view>
+
+    <view v-if="rows.length > 0 && searchError" class="error-banner">
+      <text class="error-text">{{ searchError }}</text>
+      <view class="retry-btn" @tap="doSearch">重试</view>
+    </view>
 
     <view v-for="(r, i) in rows" :key="String(r.id ?? i)" class="card" @tap="openRow(r)">
       <view class="card-head">
@@ -161,5 +176,31 @@ function openRow(r: Row) {
   font-size: 26rpx;
   text-align: center;
   padding: 80rpx 0;
+}
+.error-text {
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fdecea;
+  color: #c0392b;
+  font-size: 13px;
+}
+.error-banner .error-text {
+  margin-bottom: 0;
+}
+.retry-btn {
+  flex: none;
+  padding: 4px 12px;
+  border-radius: 12px;
+  border: 1px solid #c0392b;
+  color: #c0392b;
+  font-size: 13px;
 }
 </style>

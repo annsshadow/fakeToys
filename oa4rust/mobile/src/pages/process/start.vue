@@ -15,12 +15,14 @@ import {
   parseMobileForm,
   validateSimpleForm,
 } from '@/utils/form'
+import { loadList } from '@/utils/loadList'
 
 const session = useSession()
 
 const processes = ref<Array<{ id: string; name: string }>>([])
 const loading = ref(false)
 const submitTip = ref('')
+const processError = ref('')
 
 const showForm = ref(false)
 const formLoading = ref(false)
@@ -48,18 +50,19 @@ onLoad(async () => {
 async function loadProcesses() {
   loading.value = true
   submitTip.value = ''
-  try {
-    const resp = await processApi.startableProcesses()
-    const payload: unknown = resp.data
-    const rows: unknown[] = Array.isArray(payload) ? payload : ((payload as { data?: unknown[] })?.data ?? [])
-    processes.value = (rows as Array<Record<string, unknown>>)
-      .map((row) => ({ id: String(row.id ?? ''), name: String(row.name ?? row.id ?? '') }))
-      .filter((p) => p.id)
-  } catch {
-    processes.value = []
-  } finally {
-    loading.value = false
-  }
+  const outcome = await loadList(() => processApi.startableProcesses(), {
+    previousRows: processes.value,
+    label: '可发起流程加载失败',
+    map: (payload) => {
+      const rows: unknown[] = Array.isArray(payload) ? payload : ((payload as { data?: unknown[] })?.data ?? [])
+      return (rows as Array<Record<string, unknown>>)
+        .map((row) => ({ id: String(row.id ?? ''), name: String(row.name ?? row.id ?? '') }))
+        .filter((p) => p.id)
+    },
+  })
+  processes.value = outcome.rows
+  processError.value = outcome.ok ? '' : outcome.error
+  loading.value = false
 }
 
 function pickProcess(p: { id: string; name: string }): void {
@@ -254,8 +257,16 @@ function removeAttachment(field: MobileFormField, id: string): void {
     <view class="card">
       <view class="card-title">选择流程</view>
       <view v-if="loading" class="tip">加载中…</view>
+      <view v-else-if="processes.length === 0 && processError" class="tip tip-error">
+        <view class="error-text">{{ processError }}</view>
+        <view class="retry-btn" @tap="loadProcesses">重试</view>
+      </view>
       <view v-else-if="processes.length === 0" class="tip">暂无可发起的流程</view>
       <view v-else class="proc-list">
+        <view v-if="processError" class="error-banner">
+          <text class="error-text">{{ processError }}</text>
+          <view class="retry-btn" @tap="loadProcesses">重试</view>
+        </view>
         <view
           v-for="p in processes"
           :key="p.id"
@@ -421,6 +432,32 @@ function removeAttachment(field: MobileFormField, id: string): void {
   color: #90979f;
   font-size: 26rpx;
   padding: 20rpx 0;
+}
+.error-text {
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+.error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fdecea;
+  color: #c0392b;
+  font-size: 13px;
+}
+.error-banner .error-text {
+  margin-bottom: 0;
+}
+.retry-btn {
+  flex: none;
+  padding: 4px 12px;
+  border-radius: 12px;
+  border: 1px solid #c0392b;
+  color: #c0392b;
+  font-size: 13px;
 }
 .field {
   margin-bottom: 24rpx;

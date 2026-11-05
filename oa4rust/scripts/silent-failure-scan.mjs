@@ -107,6 +107,8 @@ const FIXED = {
   'oa4rust/frontend/apps/desktop/src/views/FormApp.vue': 'R124',
   'oa4rust/frontend/apps/desktop/src/views/FormDesigner.vue': 'R124',
   'oa4rust/frontend/apps/desktop/src/views/JPushApp.vue': 'R124',
+  'oa4rust/mobile/src/pages/process/start.vue': 'R125',
+  'oa4rust/mobile/src/pages/search/search.vue': 'R125',
 }
 
 const LIST_STATE =
@@ -129,13 +131,7 @@ const CLASSIFIED = new Map([
 
 // 已定性为 a 类（有取数、列表失败会被展示成空态）但尚未修复：R115 扫描口径收紧后新发现。
 // 与 FIXED 分开计数，下一批逐个替换后从本表移到 FIXED；不允许无理由留在本表。
-const A_PENDING = new Map([
-  [
-    'oa4rust/mobile/src/pages/process/start.vue',
-    'loadProcesses 失败清空 processes；空态 L257「暂无可发起的流程」与失败同态',
-  ],
-  ['oa4rust/mobile/src/pages/search/search.vue', 'doSearch 失败无提示；L81「未找到结果」与失败同态'],
-])
+const A_PENDING = new Map([])
 
 function walk(dir, out = []) {
   for (const entry of readdirSync(dir)) {
