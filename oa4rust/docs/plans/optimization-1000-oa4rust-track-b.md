@@ -2188,6 +2188,67 @@ owner 校验（无会话 → 401），不泄露他人日历。
 - 未给 `cal_calendar.is_public` 补 NOT NULL 迁移：旧表全列可空，改约束需先回填
   历史数据，属数据库变更，不在本轮范围。
 
+## O30：general 时间戳列按 String 解码 → 读面 panic（2026-11-05）
+
+### 选题依据
+
+O26 #10「decode panic 族」残部（扫描器 `FAIL=18` 中的时间戳子族）。
+实库 `oa4rust_test` 逐列确认：
+
+| 列 | 真实类型 | 可空 |
+|----|---------|------|
+| `x_general_assemble_excel_result.create_time` | timestamptz | YES |
+| `x_general_assemble_general_file.create_time` | timestamptz | YES |
+| 两表 `size` | bigint | YES |
+
+代码却用 `row.get::<_, Option<String>>("create_time")` + `row.get::<_, i64>("size")`
+解码——前者 FromSql 不接受 timestamptz，后者遇 NULL 直接 panic。
+
+### 缺口（改前证据，提交 `f4c1e95b5` / PR #171）
+
+scratch 库 `oa_par_general_ts` 种一行（`create_time=NOW()`、`size=NULL`）直调 handler：
+
+```
+thread 'timestamptz_and_null_size_do_not_panic_read_handlers' panicked at crates\general_assemble_control\src\lib.rs:1280:29:
+error retrieving column create_time: error deserializing column 4
+```
+
+### 改法
+
+- 四个 handler 的 SELECT 改为 `create_time::text AS create_time`
+  （与同 crate 既有 idiom `lib.rs:145` 一致）：
+  `excel_result_flag`、`generalfile_download_flag_flag`、
+  `generalfile_flag_flag`、`generalfile_flag_flag_binary_base64`。
+- 三处 `size` 改为 `row.get::<_, Option<i64>>("size").unwrap_or(0)`，NULL 降级 `"0"`。
+
+### 验证
+
+- 探针 `crates/general_assemble_control/tests/timestamp_decode.rs`（scratch 库
+  `oa_par_general_ts`）：四个 handler 全部不 panic；`createTime` 非空；
+  `size IS NULL` 输出 `"0"`；规模下限=4 个 handler 全覆盖。
+- **破坏实验**：① 去掉时间列 `::text` → 红在 `lib.rs:1280`；
+  ② `size` 回退非 Option → 红在 `lib.rs:1404:39`；恢复后绿。
+- `cargo fmt --all -- --check` 通过；`cargo clippy -p general_assemble_control
+  --all-targets --keep-going` 零告警；`cargo test -p general_assemble_control`
+  （`oa4rust_test`）：**9 unit + 1 integration 绿，0 failed**（35 ignored 为存量
+  「需要真实服务」用例）。
+
+### 扫描器误报记录（`scan_row_get_column_mismatch.py`）
+
+`query_assemble_designer` 的 3 条 `update_time` FAIL 经实库核对为**误报**：
+`x_query_design.update_time` 实际是 TEXT；`083_query_u2_v9_closure.sql` 的
+`ADD COLUMN IF NOT EXISTS update_time TIMESTAMP` 在已存在列上不生效，但扫描器的
+类型累积把 TEXT 覆盖成了 TIMESTAMP。同类误报须按「ALTER ADD 是否真的生效」复核，
+不能按脚本输出直接改。
+
+### 本轮不做
+
+- 同族其余真实点（`x_custom.created_at` ×2、`x_program_deploy_server.create_time` ×1、
+  `x_console_status.xuptime` VARCHAR→i64 ×1、`cpt_component`/`corr_c_correlation`
+  的 `order_number` TEXT→i32 ×4、`cms_assemble_control.path_levels` TEXT[] ×3）
+  留待后续批次。
+- `scan_row_get_column_mismatch.py` 仍未接 CI 门禁（存量 FAIL 未清零，接上即永久红）。
+
 
 
 
