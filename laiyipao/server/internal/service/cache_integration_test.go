@@ -188,26 +188,71 @@ func TestLeaderboardLimitSlicesCachedRows(t *testing.T) {
 	}
 }
 
-// TestMyRankNotCached 「我的排名」刻意**不进缓存**。
+// TestMyRankNotCached 「我的名次」刻意**不进缓存**（只有参与人数例外）。
 //
 // 理由：15 秒的陈旧对榜单可以接受，对「我刚打完一局，我的名次」不可接受 ——
 // 那是玩家最容易当成 bug 的一处陈旧。
 //
-// 判据：MyRank 在表改名后必须报错（说明它每次都查库）。
+// 第 129 轮起 `total` 单独走 rankTotalCache（TTL 同榜单）：它对所有玩家
+// 都是同一个数，且**不参与名次计算**（名次仍当场精确数，不能用旧 total
+// 反推）。所以这条守卫要分开钉两件事：
+//  1. 名次/分数不缓存：中途冒出更强的玩家，名次立刻变化；
+//  2. total 有缓存：新玩家直接写库（未 flush）时仍是旧值；
+//  3. total 不允许小于名次：新注册玩家赶上缓存窗口时，用名次兜底；
+//  4. FlushStatsCache（结算走的同一条 flush）能刷新它。
 func TestMyRankNotCached(t *testing.T) {
 	ts := openScratchService(t)
 	ctx := context.Background()
-	uid := ts.newUser(t, ctx)
-	ts.exec(t, `UPDATE user_progress SET level_exp = 10 WHERE user_id = $1`, uid)
+	me := ts.newUser(t, ctx)
+	ts.exec(t, `UPDATE user_progress SET level_exp = 10 WHERE user_id = $1`, me)
 
-	if _, err := ts.MyRank(ctx, uid, "power"); err != nil {
+	first, err := ts.MyRank(ctx, me, "power")
+	if err != nil {
 		t.Fatalf("首次 MyRank 失败：%v", err)
 	}
-	ts.renameTable(t, "user_progress", "user_progress_bak")
-	defer ts.renameTable(t, "user_progress_bak", "user_progress")
+	if first.Rank != 1 || first.Total != 1 {
+		t.Fatalf("单人库期望 rank=1/total=1，实际 %d/%d", first.Rank, first.Total)
+	}
 
-	if _, err := ts.MyRank(ctx, uid, "power"); err == nil {
-		t.Fatal("MyRank 不该被缓存：表已改名却仍返回成功")
+	// ② 先来一个**比我弱**的人：名次不变，但 total 真值 +1。
+	weaker := ts.newUser(t, ctx)
+	ts.exec(t, `UPDATE user_progress SET level_exp = 5 WHERE user_id = $1`, weaker)
+
+	second, err := ts.MyRank(ctx, me, "power")
+	if err != nil {
+		t.Fatalf("第二次 MyRank 失败：%v", err)
+	}
+	if second.Rank != 1 {
+		t.Fatalf("名次不该被缓存：弱于我的玩家出现后 rank 仍应为 1，实际 %d", second.Rank)
+	}
+	if second.Total != 1 {
+		t.Fatalf("total 应按 LeaderboardCacheTTL 缓存（未 flush 应为 1），实际 %d", second.Total)
+	}
+
+	// ① 再来一个**比我强**的人：名次实时变化，且此时实时名次（2）已超过旧 total（1），
+	// total 必须以名次兜底，不能出现「第 2 名 / 共 1 人」。
+	stronger := ts.newUser(t, ctx)
+	ts.exec(t, `UPDATE user_progress SET level_exp = 20 WHERE user_id = $1`, stronger)
+
+	third, err := ts.MyRank(ctx, me, "power")
+	if err != nil {
+		t.Fatalf("第三次 MyRank 失败：%v", err)
+	}
+	if third.Rank != 2 {
+		t.Fatalf("名次不该被缓存：更强玩家出现后 rank 应为 2，实际 %d", third.Rank)
+	}
+	if third.Total != 2 {
+		t.Fatalf("total 不得小于名次：期望被名次兜底为 2，实际 %d", third.Total)
+	}
+
+	// ④ flush 后立刻看到真实人数（结算调用的就是同一个 flushLeaderboards）
+	ts.FlushStatsCache()
+	fourth, err := ts.MyRank(ctx, me, "power")
+	if err != nil {
+		t.Fatalf("flush 后 MyRank 失败：%v", err)
+	}
+	if fourth.Total != 3 {
+		t.Fatalf("flush 后 total 应为 3，实际 %d（缓存没被失效）", fourth.Total)
 	}
 }
 

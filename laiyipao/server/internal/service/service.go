@@ -144,6 +144,18 @@ type Service struct {
 	// leaderboardCache 按 kind 分键。三个键在 New 里一次建好，
 	// 之后**只读这个 map**（不再增删），所以不需要外层锁。
 	leaderboardCache map[string]*ttlCache[[]LeaderboardEntry]
+	// rankTotalCache 是「各榜参与人数」的按键缓存（2026-11-05 实质优化第 129 轮）。
+	//
+	// `/me/rank` 的 total 与名次是两次独立读：名次必须**当场精确**
+	// （否则会出现「榜上第 3 不是我」的分叉，见 MyRank 注释）；
+	// 而 total 只是「共 N 人」的展示值，且对所有人都是同一个数 ——
+	// 每次请求都全表 COUNT 纯属浪费（1M 行时 power 40~75ms、
+	// 关卡/效率榜还要一次 GROUP BY）。
+	//
+	// 因此只缓存 total，TTL 与榜单一致（LeaderboardCacheTTL）：
+	// 两者缓存的是同一批行，过期窗口相同才不会互相打架。
+	// 与 leaderboardCache 一样在 New 里一次建好、之后只读。
+	rankTotalCache map[string]*ttlCache[int64]
 	// signInCalendarCache 是签到日历预览的缓存（2026-10-30 实质优化第 17 轮）。
 	// 日历是 seeder 写入的静态配置，TTL 见 config.SignInCalendarCacheTTL。
 	signInCalendarCache ttlCache[[]SignInCalendarDay]
@@ -198,8 +210,10 @@ func New(db *store.DB, cfg config.Config) *Service {
 	}
 	s.cfg.Store(&cfg)
 	s.leaderboardCache = make(map[string]*ttlCache[[]LeaderboardEntry], len(leaderboardCacheKinds))
+	s.rankTotalCache = make(map[string]*ttlCache[int64], len(leaderboardCacheKinds))
 	for _, kind := range leaderboardCacheKinds {
 		s.leaderboardCache[kind] = &ttlCache[[]LeaderboardEntry]{}
+		s.rankTotalCache[kind] = &ttlCache[int64]{}
 	}
 	s.initRecomputeGate()
 	return s
@@ -274,8 +288,15 @@ func (s *Service) FlushStatsCache() {
 //
 // 与 `FlushStatsCache` 拆开是因为两者的**触发频率差两个数量级**：
 // 结算（几秒一次）只该动榜单；看板（30 秒窗口）不该被结算打断。
+//
+// 榜上人数（rankTotalCache）与榜单缓存同生共死：两者都是
+// 「按同一份成绩定义数出来的人/行」，只刷一半会让 total 与列表
+// 在 TTL 边界上错开一个窗口。玩家结算后首次有成绩时，人数也应立刻 +1。
 func (s *Service) flushLeaderboards() {
 	for _, c := range s.leaderboardCache {
+		c.flush()
+	}
+	for _, c := range s.rankTotalCache {
 		c.flush()
 	}
 }

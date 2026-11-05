@@ -71,6 +71,9 @@ func TestCacheSharedStateRace(t *testing.T) {
 		{"/api/v1/leaderboard?type=power", ""},
 		{"/api/v1/leaderboard?type=stage", ""},
 		{"/api/v1/leaderboard?type=efficiency", ""},
+		// 第 129 轮：/me/rank 的「参与人数」有独立的 ttlCache，
+		// 必须与 FlushStatsCache 并发跑一遍（单飞 + flush 的数据竞争）。
+		{"/api/v1/me/rank?type=power", tok},
 		{"/api/v1/announcements?limit=5", ""},
 		{"/api/v1/signin/calendar", tok},
 		{"/api/v1/signin/status", tok},

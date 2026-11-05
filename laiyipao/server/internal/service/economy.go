@@ -275,22 +275,105 @@ func (s *Service) MyRank(ctx context.Context, userID int64, kind string) (MyRank
 	// 改成 FROM 子查询后，planner 会把无聚合的 power 子查询**拉平**成
 	// 直接对表的引用，`level_exp` 上的索引随即可用。
 	// 分数定义仍来自 `leaderboardScoresSQL`，没有另写一份。
-	q := `
-		SELECT
-		    COALESCE((SELECT score FROM (` + scores + `) scores WHERE user_id = $1), 0)::bigint,
-		    (SELECT COUNT(*) FROM (` + scores + `) scores),
-		    CASE WHEN NOT EXISTS (SELECT 1 FROM (` + scores + `) scores WHERE user_id = $1) THEN 0
-		         ELSE (SELECT COUNT(*) FROM (` + scores + `) s,
-		               (SELECT score FROM (` + scores + `) scores WHERE user_id = $1) me
-		                WHERE s.score ` + cmp + ` me.score
-		                   OR (s.score = me.score AND s.user_id < $1)) + 1
-		    END`
-	var out MyRank
-	out.Kind = kind
-	if err := s.pool.QueryRow(ctx, q, userID).Scan(&out.Score, &out.Total, &out.Rank); err != nil {
-		return MyRank{}, fmt.Errorf("my rank %s: %w", kind, err)
+	//
+	// 2026-11-05（第 129 轮）：把一条大 SQL 拆成「分数 / 人数 / 名次」三读。
+	//
+	// 原实现把 total 也当场算一遍：power 是一次全表 COUNT（1M 行约 40~75ms），
+	// 关卡/效率榜是**第二次** GROUP BY（与名次计数那次重复，合计 500~580ms）。
+	// 现在人数走 rankTotalCache（所有人共享一个数，TTL 与榜单一致），
+	// 名次仍当场精确计算 —— 不能用 total 反推名次：total 允许旧 TTL，
+	// 用它会把人数的过期误差直接算进名次，重现「榜上第 N 不是我」。
+	out := MyRank{Kind: kind}
+
+	// ① 我的分数。无成绩时 rank=0（哨兵），但 total 仍返回真实人数。
+	scoreQuery := `SELECT score FROM (` + scores + `) scores WHERE user_id = $1`
+	err := s.pool.QueryRow(ctx, scoreQuery, userID).Scan(&out.Score)
+	hasScore := true
+	switch {
+	case errors.Is(err, pgx.ErrNoRows):
+		hasScore = false
+		out.Score = 0
+	case err != nil:
+		return MyRank{}, fmt.Errorf("my rank score %s: %w", kind, err)
+	}
+
+	// ② 参与人数：进程内短缓存（见 rankTotalCache 注释）。
+	total, err := s.rankTotal(ctx, kind)
+	if err != nil {
+		return MyRank{}, err
+	}
+	out.Total = total
+	if !hasScore {
+		return out, nil
+	}
+
+	// ③ 名次：双键口径不变，但 power 与派生榜用不同的形状。
+	var better, tie int64
+	if kind == "power" {
+		// power 的分数就是 user_progress.level_exp，不需要派生表。
+		// 拆成「严格优于我」+「同分且 id 小于我」两个计数：前者能走
+		// idx_user_progress_power 的 Index Only Scan；合并成一条 OR 条件
+		// 会退化成 Bitmap Heap Scan（要回表读 user_id），
+		// 1M 行底排名实测 245ms → 90ms。
+		err = s.pool.QueryRow(ctx, `
+			SELECT
+			    (SELECT COUNT(*) FROM user_progress
+			      WHERE level_exp `+cmp+` (SELECT level_exp FROM user_progress WHERE user_id = $1)),
+			    (SELECT COUNT(*) FROM user_progress
+			      WHERE level_exp = (SELECT level_exp FROM user_progress WHERE user_id = $1)
+			        AND user_id < $1)`, userID).Scan(&better, &tie)
+	} else {
+		// 关卡/效率榜的分数是派生列（MAX/MIN + GROUP BY）：合并成一次计数
+		// 只聚合一次；拆成两个计数会把整表聚合跑两遍（1M 行时 +一倍）。
+		err = s.pool.QueryRow(ctx, `
+			SELECT COUNT(*) FROM (`+scores+`) s,
+			       (SELECT score FROM (`+scores+`) scores WHERE user_id = $1) me
+				WHERE s.score `+cmp+` me.score
+				   OR (s.score = me.score AND s.user_id < $1)`, userID).Scan(&better)
+	}
+	if err != nil {
+		return MyRank{}, fmt.Errorf("my rank count %s: %w", kind, err)
+	}
+	out.Rank = int(better+tie) + 1
+	// total 允许 ≤LeaderboardCacheTTL 的陈旧，但不能小于我的名次：
+	// 新注册玩家会在缓存窗口内算出 rank = 实时人数 > 旧 total，
+	// 若原样返回就是「第 1005 名 / 共 1000 人」。用名次（当场精确数）兜底，
+	// 既不改变缓存口径，也无需在登录路径上加 flush。
+	if out.Rank > int(out.Total) {
+		out.Total = int64(out.Rank)
 	}
 	return out, nil
+}
+
+// rankTotal 返回指定榜的参与人数（进程内短缓存）。
+//
+// loader 失败不缓存（ttlCache 语义），下一个请求会重试。
+func (s *Service) rankTotal(ctx context.Context, kind string) (int64, error) {
+	ttl := s.Cfg().LeaderboardCacheTTL
+	if c := s.rankTotalCache[kind]; c != nil {
+		n, err := c.getOrLoad(ctx, time.Now(), ttl, func(ctx context.Context) (int64, error) {
+			return s.queryRankTotal(ctx, kind)
+		})
+		if err != nil {
+			return 0, fmt.Errorf("rank total %s: %w", kind, err)
+		}
+		return n, nil
+	}
+	// 零值 Service（测试里只调不碰库的方法）没有缓存表，直接查。
+	return s.queryRankTotal(ctx, kind)
+}
+
+// queryRankTotal 是 rankTotal 的 loader。
+//
+// 与 Leaderboard 共用 leaderboardScoresSQL：数的是**有成绩的人数**
+// （level_stars 一人多行，直接 COUNT(*) 会把「人数」数成「成绩行数」）。
+func (s *Service) queryRankTotal(ctx context.Context, kind string) (int64, error) {
+	var n int64
+	err := s.pool.QueryRow(ctx, `SELECT COUNT(*) FROM (`+leaderboardScoresSQL(kind)+`) scores`).Scan(&n)
+	if err != nil {
+		return 0, fmt.Errorf("rank total query %s: %w", kind, err)
+	}
+	return n, nil
 }
 
 // MyRedemptionItem 是玩家兑换记录的一行（2026-10-30 实质优化第 21 轮）。
