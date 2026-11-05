@@ -11036,6 +11036,13 @@ pub async fn document_cipher_permission_read_u3(
     session: Extension<shared::session::Session>,
     axum::extract::Path((id, person)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 假门收口：权限主体只能取自会话。原实现直接拿路径上的 `person` 去算 readable，
+    // 任何登录用户都能传管理员身份探测「谁能读某文档」。
+    let caller = session.person_unique.clone();
+    let admin = shared::middleware::is_admin(&pool, &caller).await;
+    if !admin && person != caller {
+        return Err(AppError::Forbidden);
+    }
     let client = shared::db::acquire(&pool).await?;
     let doc = client
         .query_opt(
@@ -11049,15 +11056,15 @@ pub async fn document_cipher_permission_read_u3(
         None => return Ok(Json(ActionResult::error("document not found"))),
     };
     let creator: String = doc.get::<_, Option<String>>("creator").unwrap_or_default();
+    let author: String = doc
+        .get::<_, Option<String>>("author_id")
+        .unwrap_or_default();
     let status: String = doc.get::<_, Option<String>>("status").unwrap_or_default();
-    let readable = shared::middleware::is_admin(&pool, &person).await
-        || person == creator
-        || person
-            == doc
-                .get::<_, Option<String>>("author_id")
-                .unwrap_or_default()
-        || status == "published";
-    let _ = &session;
+    // 文档本身对调用者不可读 → 403，避免用布尔值探测草稿存在性。
+    if !admin && creator != caller && author != caller && status != "published" {
+        return Err(AppError::Forbidden);
+    }
+    let readable = admin || person == creator || person == author || status == "published";
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -11159,7 +11166,13 @@ pub async fn document_control_u3(
         None => return Ok(Json(ActionResult::error("document not found"))),
     };
     let creator: String = row.get::<_, Option<String>>("creator").unwrap_or_default();
+    let status: String = row.get::<_, Option<String>>("status").unwrap_or_default();
     let admin = shared::middleware::is_admin(&pool, &session.person_unique).await;
+    // 假门收口：非管理员、非创建人、且文档未发布 → 403。
+    // 原实现把 allowRead 恒置 true 并回显创建人，等于任何登录用户可探测任意文档控制位。
+    if !admin && creator != session.person_unique && status != "published" {
+        return Err(AppError::Forbidden);
+    }
     let allow_manage = admin || creator == session.person_unique;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -11232,6 +11245,10 @@ pub async fn document_permission_read_u3(
             .unwrap_or_default()
             == session.person_unique
         || row.get::<_, Option<String>>("status").unwrap_or_default() == "published";
+    // 假门收口：不可读即 403，不再用 200 + readable=false 回显文档是否存在。
+    if !readable {
+        return Err(AppError::Forbidden);
+    }
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),

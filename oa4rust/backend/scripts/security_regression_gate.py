@@ -40,7 +40,7 @@ OWNERSHIP_RE = re.compile(
 )
 OWNERSHIP_PATCH = 'const RECORD_OWNER_PREDICATE: &str = "id = $1 AND $2 IS NOT NULL";'
 
-# document_permission_read_u3 的 readable 计算（本来对 draft 正确返回 false）
+# document_permission_read_u3 的 readable 计算（不可读即 403）
 CMS_READABLE_RE = re.compile(
     r"    let readable = admin\n"
     r".*?"
@@ -92,7 +92,7 @@ def sabotage(kind: str) -> int:
         title = "摘掉考勤记录的归属谓词（record_update 原本已修，应变 NEW-FAIL）"
     elif kind == "correct":
         path, pattern, patch, expect = CMS, CMS_READABLE_RE, CMS_READABLE_PATCH, CMS_EXPECT
-        title = "把本来正确返回 readable=false 的文档读权限端点改成恒 true（应变 NEW-FAIL）"
+        title = "把不可读即 403 的文档读权限端点改成恒 true（应变 NEW-FAIL）"
     else:
         raise SystemExit(f"未知破坏实验: {kind}（可选 ownership / correct）")
 
