@@ -9,10 +9,48 @@ use axum::{
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use shared::{db::dialect, error::AppError, response::ActionResult};
+use shared::{
+    db::dialect,
+    db::keyset::{next_where, KeySet, SortDir},
+    error::AppError,
+    response::ActionResult,
+};
 
 pub const API_BASE: &str = "/api/attendance_assemble_control";
 pub mod routes;
+
+// ── O33：keyset 分页的复合排序键 ───────────────────────────────────────────
+// 游标仍是上一页末行的 id（旧契约不变）；分页条件改为按 (排序键..., id) 的
+// 行值比较，并按同一组键排序，避免 `id > $1` 与 `ORDER BY 另一列` 组合造成
+// 漏行/重行。NULL 统一 NULLS LAST（见 shared::db::keyset）。
+const CREATED_AT_COL: &[&str] = &["create_time"];
+const DATE_COL: &[&str] = &["date"];
+const HOLIDAY_DATE_COL: &[&str] = &["holiday_date"];
+const WORK_DATE_COL: &[&str] = &["work_date"];
+const YEAR_MONTH_COL: &[&str] = &["year", "month"];
+
+/// next 页的游标条件与排序键一致（见 shared::db::keyset::next_where）。
+fn keyset_next_where(ks: &KeySet<'_>) -> String {
+    next_where(ks)
+}
+
+fn month_keyset(table: &'static str) -> KeySet<'static> {
+    KeySet {
+        table,
+        columns: YEAR_MONTH_COL,
+        dir: SortDir::Desc,
+        tiebreak: "id",
+    }
+}
+
+fn date_keyset(table: &'static str, column: &'static [&'static str]) -> KeySet<'static> {
+    KeySet {
+        table,
+        columns: column,
+        dir: SortDir::Asc,
+        tiebreak: "id",
+    }
+}
 
 #[cfg(test)]
 #[allow(clippy::module_inception)]
@@ -674,8 +712,11 @@ pub async fn attendanceappealInfo_filter_list_id_next_count(
     let client = shared::db::acquire(&pool).await?;
 
     let d = dialect();
+    let ks = date_keyset("x_attendance_appeal_info", CREATED_AT_COL);
     let sql = format!(
-        "SELECT id, person_id, appeal_status, creator, create_time FROM x_attendance_appeal_info WHERE id > $1 ORDER BY create_time ASC LIMIT {}",
+        "SELECT id, person_id, appeal_status, creator, create_time FROM x_attendance_appeal_info WHERE {} ORDER BY {} LIMIT {}",
+        keyset_next_where(&ks),
+        ks.order_by(false),
         d.cast_bigint_param(2),
     );
     let rows = client
@@ -725,8 +766,11 @@ pub async fn attendanceappealInfo_filter_list_id_prev_count(
     let client = shared::db::acquire(&pool).await?;
 
     let d = dialect();
+    let ks = date_keyset("x_attendance_appeal_info", CREATED_AT_COL);
     let sql = format!(
-        "SELECT id, person_id, appeal_status, creator, create_time FROM x_attendance_appeal_info WHERE id < $1 ORDER BY create_time DESC LIMIT {}",
+        "SELECT id, person_id, appeal_status, creator, create_time FROM x_attendance_appeal_info WHERE {} ORDER BY {} LIMIT {}",
+        ks.predicate(false),
+        ks.order_by(true),
         d.cast_bigint_param(2),
     );
     let rows = client
@@ -775,9 +819,14 @@ pub async fn attendanceappealInfo_manager_list_id_next_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
 
+    let ks = date_keyset("x_attendance_appeal_info", CREATED_AT_COL);
     let rows = client
         .query(
-            "SELECT id, person_id, appeal_status, creator, create_time FROM x_attendance_appeal_info WHERE id > $1 AND creator = $2 ORDER BY create_time ASC LIMIT $3",
+            &format!(
+                "SELECT id, person_id, appeal_status, creator, create_time FROM x_attendance_appeal_info WHERE {} AND creator = $2 ORDER BY {} LIMIT $3",
+                keyset_next_where(&ks),
+                ks.order_by(false),
+            ),
             &[&id, &"manager", &count],
         )
         .await
@@ -1353,7 +1402,9 @@ pub async fn attendancedetail_filter_list_id_next_count(
 
     let rows = client
         .query(
-            "SELECT id, person_id, date, status FROM x_attendance_detail WHERE id > $1 ORDER BY date ASC LIMIT $2",
+            &format!("SELECT id, person_id, date, status FROM x_attendance_detail WHERE {} ORDER BY {} LIMIT $2",
+            keyset_next_where(&date_keyset("x_attendance_detail", DATE_COL)),
+            date_keyset("x_attendance_detail", DATE_COL).order_by(false)),
             &[&id, &count],
         )
         .await
@@ -1403,7 +1454,9 @@ pub async fn attendancedetail_filter_list_id_prev_count(
 
     let rows = client
         .query(
-            "SELECT id, person_id, date, status FROM x_attendance_detail WHERE id < $1 ORDER BY date DESC LIMIT $2",
+            &format!("SELECT id, person_id, date, status FROM x_attendance_detail WHERE {} ORDER BY {} LIMIT $2",
+            date_keyset("x_attendance_detail", DATE_COL).predicate(false),
+            date_keyset("x_attendance_detail", DATE_COL).order_by(true)),
             &[&id, &count],
         )
         .await
@@ -2264,7 +2317,9 @@ pub async fn attendanceselfholiday_filter_list_id_next_count(
 
     let rows = client
         .query(
-            "SELECT id, person_id, holiday_date, reason FROM x_attendance_selfholiday WHERE id > $1 ORDER BY holiday_date ASC LIMIT $2",
+            &format!("SELECT id, person_id, holiday_date, reason FROM x_attendance_selfholiday WHERE {} ORDER BY {} LIMIT $2",
+            keyset_next_where(&date_keyset("x_attendance_selfholiday", HOLIDAY_DATE_COL)),
+            date_keyset("x_attendance_selfholiday", HOLIDAY_DATE_COL).order_by(false)),
             &[&id, &count],
         )
         .await
@@ -2313,7 +2368,9 @@ pub async fn attendanceselfholiday_filter_list_id_prev_count(
 
     let rows = client
         .query(
-            "SELECT id, person_id, holiday_date, reason FROM x_attendance_selfholiday WHERE id < $1 ORDER BY holiday_date DESC LIMIT $2",
+            &format!("SELECT id, person_id, holiday_date, reason FROM x_attendance_selfholiday WHERE {} ORDER BY {} LIMIT $2",
+            date_keyset("x_attendance_selfholiday", HOLIDAY_DATE_COL).predicate(false),
+            date_keyset("x_attendance_selfholiday", HOLIDAY_DATE_COL).order_by(true)),
             &[&id, &count],
         )
         .await
@@ -3096,7 +3153,9 @@ pub async fn statisticshow_filter_personMonth_list_id_next_count(
 
     let rows = client
         .query(
-            "SELECT id, person_id, year, month, status FROM x_attendance_statisticshow WHERE id > $1 ORDER BY year DESC, month DESC LIMIT $2",
+            &format!("SELECT id, person_id, year, month, status FROM x_attendance_statisticshow WHERE {} ORDER BY {} LIMIT $2",
+                keyset_next_where(&month_keyset("x_attendance_statisticshow")),
+                month_keyset("x_attendance_statisticshow").order_by(false)),
             &[&id, &count],
         )
         .await
@@ -3144,13 +3203,18 @@ pub async fn statisticshow_filter_personMonth_list_id_prev_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
 
-    let rows = client
+    let mut rows = client
         .query(
-            "SELECT id, person_id, year, month, status FROM x_attendance_statisticshow WHERE id < $1 ORDER BY year DESC, month DESC LIMIT $2",
+            &format!("SELECT id, person_id, year, month, status FROM x_attendance_statisticshow WHERE {} ORDER BY {} LIMIT $2",
+                month_keyset("x_attendance_statisticshow").predicate(false),
+                month_keyset("x_attendance_statisticshow").order_by(true)),
             &[&id, &count],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+
+    // prev 取「游标之前最近一页」，查询按反向键取窗口，这里还原显示顺序。
+    rows.reverse();
 
     let data: Vec<Value> = rows
         .iter()
@@ -3196,7 +3260,9 @@ pub async fn statisticshow_filter_topUnitDay_list_id_next_count(
 
     let rows = client
         .query(
-            "SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE id > $1 AND unit_id IS NULL ORDER BY work_date ASC LIMIT $2",
+            &format!("SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE unit_id IS NULL AND {} ORDER BY {} LIMIT $2",
+                keyset_next_where(&date_keyset("x_attendance_statisticshow", WORK_DATE_COL)),
+                date_keyset("x_attendance_statisticshow", WORK_DATE_COL).order_by(false)),
             &[&id, &count],
         )
         .await
@@ -3242,7 +3308,9 @@ pub async fn statisticshow_filter_topUnitDay_list_id_prev_count(
 
     let rows = client
         .query(
-            "SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE id < $1 AND unit_id IS NULL ORDER BY work_date DESC LIMIT $2",
+            &format!("SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE unit_id IS NULL AND {} ORDER BY {} LIMIT $2",
+                date_keyset("x_attendance_statisticshow", WORK_DATE_COL).predicate(false),
+                date_keyset("x_attendance_statisticshow", WORK_DATE_COL).order_by(true)),
             &[&id, &count],
         )
         .await
@@ -3288,7 +3356,9 @@ pub async fn statisticshow_filter_topUnitMonth_list_id_next_count(
 
     let rows = client
         .query(
-            "SELECT id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE id > $1 AND unit_id IS NULL ORDER BY year DESC, month DESC LIMIT $2",
+            &format!("SELECT id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE unit_id IS NULL AND {} ORDER BY {} LIMIT $2",
+                keyset_next_where(&month_keyset("x_attendance_statisticshow")),
+                month_keyset("x_attendance_statisticshow").order_by(false)),
             &[&id, &count],
         )
         .await
@@ -3333,13 +3403,18 @@ pub async fn statisticshow_filter_topUnitMonth_list_id_prev_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
 
-    let rows = client
+    let mut rows = client
         .query(
-            "SELECT id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE id < $1 AND unit_id IS NULL ORDER BY year DESC, month DESC LIMIT $2",
+            &format!("SELECT id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE unit_id IS NULL AND {} ORDER BY {} LIMIT $2",
+                month_keyset("x_attendance_statisticshow").predicate(false),
+                month_keyset("x_attendance_statisticshow").order_by(true)),
             &[&id, &count],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+
+    // prev 取「游标之前最近一页」，查询按反向键取窗口，这里还原显示顺序。
+    rows.reverse();
 
     let data: Vec<Value> = rows
         .iter()
@@ -3382,7 +3457,9 @@ pub async fn statisticshow_filter_unitDay_list_id_next_count(
 
     let rows = client
         .query(
-            "SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE id > $1 AND unit_id IS NOT NULL ORDER BY work_date ASC LIMIT $2",
+            &format!("SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE unit_id IS NOT NULL AND {} ORDER BY {} LIMIT $2",
+                keyset_next_where(&date_keyset("x_attendance_statisticshow", WORK_DATE_COL)),
+                date_keyset("x_attendance_statisticshow", WORK_DATE_COL).order_by(false)),
             &[&id, &count],
         )
         .await
@@ -3432,7 +3509,9 @@ pub async fn statisticshow_filter_unitDay_list_id_prev_count(
 
     let rows = client
         .query(
-            "SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE id < $1 AND unit_id IS NOT NULL ORDER BY work_date DESC LIMIT $2",
+            &format!("SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE unit_id IS NOT NULL AND {} ORDER BY {} LIMIT $2",
+                date_keyset("x_attendance_statisticshow", WORK_DATE_COL).predicate(false),
+                date_keyset("x_attendance_statisticshow", WORK_DATE_COL).order_by(true)),
             &[&id, &count],
         )
         .await
@@ -3482,7 +3561,9 @@ pub async fn statisticshow_filter_unitMonth_list_id_next_count(
 
     let rows = client
         .query(
-            "SELECT id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE id > $1 AND unit_id IS NOT NULL ORDER BY year DESC, month DESC LIMIT $2",
+            &format!("SELECT id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE unit_id IS NOT NULL AND {} ORDER BY {} LIMIT $2",
+                keyset_next_where(&month_keyset("x_attendance_statisticshow")),
+                month_keyset("x_attendance_statisticshow").order_by(false)),
             &[&id, &count],
         )
         .await
@@ -3531,13 +3612,18 @@ pub async fn statisticshow_filter_unitMonth_list_id_prev_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = shared::db::acquire(&pool).await?;
 
-    let rows = client
+    let mut rows = client
         .query(
-            "SELECT id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE id < $1 AND unit_id IS NOT NULL ORDER BY year DESC, month DESC LIMIT $2",
+            &format!("SELECT id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE unit_id IS NOT NULL AND {} ORDER BY {} LIMIT $2",
+                month_keyset("x_attendance_statisticshow").predicate(false),
+                month_keyset("x_attendance_statisticshow").order_by(true)),
             &[&id, &count],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+
+    // prev 取「游标之前最近一页」，查询按反向键取窗口，这里还原显示顺序。
+    rows.reverse();
 
     let data: Vec<Value> = rows
         .iter()

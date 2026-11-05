@@ -6,6 +6,7 @@
 // ──────────────────────────────────────────────────────────────────────────────
 
 pub mod dialect;
+pub mod keyset;
 pub mod rewriter;
 
 use deadpool_postgres::tokio_postgres::{Config, NoTls};
