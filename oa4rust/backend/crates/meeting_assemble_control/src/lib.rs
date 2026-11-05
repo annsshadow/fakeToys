@@ -7,10 +7,30 @@ use base64::Engine as _;
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use shared::{error::AppError, response::ActionResult};
+use shared::{
+    db::keyset::{next_where, KeyColumn, KeySet, SortDir},
+    error::AppError,
+    response::ActionResult,
+};
 
 pub const API_BASE: &str = "/api/meeting_assemble_control";
 pub mod routes;
+
+// O33：会议列表的 keyset 游标（id）必须与排序键 create_time 一致。
+// create_time 为 TIMESTAMP（见 006 migration），NULL 归一为同型最小值 -infinity。
+const CREATED_AT_COL: &[KeyColumn] = &[KeyColumn {
+    expr: "create_time",
+    null_low: "'-infinity'::timestamp",
+}];
+
+fn created_at_keyset(table: &'static str) -> KeySet<'static> {
+    KeySet {
+        table,
+        columns: CREATED_AT_COL,
+        dir: SortDir::Desc,
+        tiebreak: "id",
+    }
+}
 
 /// O10：`$n::timestamp` cast / timestamp 列比较会把 PG 参数类型定死为 timestamp，
 /// tokio_postgres 的 String 无法序列化到 timestamp（WrongType 客户端侧 500，PG 无日志，
@@ -1859,7 +1879,10 @@ async fn meeting_list_id_next_count_core(
     let rows = if flag.is_empty() {
         client
             .query(
-                "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting ORDER BY create_time DESC LIMIT $1",
+                &format!(
+                    "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting ORDER BY {} LIMIT $1",
+                    created_at_keyset("x_meeting").order_by(false),
+                ),
                 &[&count],
             )
             .await
@@ -1867,7 +1890,11 @@ async fn meeting_list_id_next_count_core(
     } else {
         client
             .query(
-                "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE id > $1 ORDER BY create_time DESC LIMIT $2",
+                &format!(
+                    "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE {} ORDER BY {} LIMIT $2",
+                    next_where(&created_at_keyset("x_meeting")),
+                    created_at_keyset("x_meeting").order_by(false),
+                ),
                 &[&flag, &count],
             )
             .await
@@ -1934,13 +1961,20 @@ pub async fn meeting_list_id_prev_count(
 
     let count = count.max(1);
 
-    let rows = client
+    let mut rows = client
         .query(
-            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE id < $1 ORDER BY create_time DESC LIMIT $2",
+            &format!(
+                "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE {} ORDER BY {} LIMIT $2",
+                created_at_keyset("x_meeting").predicate(false),
+                created_at_keyset("x_meeting").order_by(true),
+            ),
             &[&id, &count],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+
+    // prev 取「游标之前最近一页」，查询按反向键取窗口，这里还原显示顺序。
+    rows.reverse();
 
     let data: Vec<Value> = rows
         .iter()
