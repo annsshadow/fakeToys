@@ -8,13 +8,29 @@ use axum::{
 use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::Value;
-use shared::{error::AppError, response::ActionResult};
+use shared::{
+    db::keyset::{next_where, KeySet, SortDir},
+    error::AppError,
+    response::ActionResult,
+};
 
 mod u2_helpers;
 mod u2_misc;
 mod u2_org;
 mod u2_person;
 mod u2_router;
+
+// O33：组织域各列表的 keyset 游标（id）必须与排序键 create_time 一致。
+pub(crate) const CREATED_AT_COL: &[&str] = &["create_time"];
+
+pub(crate) fn created_at_keyset(table: &'static str) -> KeySet<'static> {
+    KeySet {
+        table,
+        columns: CREATED_AT_COL,
+        dir: SortDir::Desc,
+        tiebreak: "id",
+    }
+}
 
 #[cfg(test)]
 mod security_gate_tests;
@@ -43,7 +59,11 @@ pub async fn organization_assemble_control_role_list_flag_next_count(
     } else {
         client
             .query(
-                "SELECT id, name, description, creator, create_time::text FROM x_org_role WHERE id > $1 ORDER BY create_time DESC LIMIT $2",
+                &format!(
+                    "SELECT id, name, description, creator, create_time::text FROM x_org_role WHERE {} ORDER BY {} LIMIT $2",
+                    next_where(&created_at_keyset("x_org_role")),
+                    created_at_keyset("x_org_role").order_by(false),
+                ),
                 &[&flag, &count],
             )
             .await
@@ -2977,10 +2997,16 @@ pub async fn unitduty_list_flag_prev_count(
             &[&count],
         ).await?
     } else {
-        client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE id < $1 ORDER BY create_time DESC LIMIT $2",
+        let mut window = client.query(
+            &format!(
+                "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE {} ORDER BY {} LIMIT $2",
+                created_at_keyset("x_org_duty").predicate(false),
+                created_at_keyset("x_org_duty").order_by(true),
+            ),
             &[&flag, &count],
-        ).await?
+        ).await?;
+        window.reverse();
+        window
     };
 
     let data: Vec<Value> = rows
@@ -3035,7 +3061,11 @@ pub async fn unitduty_list_flag_next_count(
         ).await?
     } else {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE id > $1 ORDER BY create_time DESC LIMIT $2",
+            &format!(
+                "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_duty WHERE {} ORDER BY {} LIMIT $2",
+                next_where(&created_at_keyset("x_org_duty")),
+                created_at_keyset("x_org_duty").order_by(false),
+            ),
             &[&flag, &count],
         ).await?
     };
@@ -3324,10 +3354,16 @@ pub async fn unitattribute_list_flag_prev_count(
             &[&count],
         ).await?
     } else {
-        client.query(
-            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute WHERE id < $1 ORDER BY create_time DESC LIMIT $2",
+        let mut window = client.query(
+            &format!(
+                "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute WHERE {} ORDER BY {} LIMIT $2",
+                created_at_keyset("x_org_unit_attribute").predicate(false),
+                created_at_keyset("x_org_unit_attribute").order_by(true),
+            ),
             &[&flag, &count],
-        ).await?
+        ).await?;
+        window.reverse();
+        window
     };
 
     let data: Vec<Value> = rows
@@ -3382,7 +3418,11 @@ pub async fn unitattribute_list_flag_next_count(
         ).await?
     } else {
         client.query(
-            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute WHERE id > $1 ORDER BY create_time DESC LIMIT $2",
+            &format!(
+                "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_unit_attribute WHERE {} ORDER BY {} LIMIT $2",
+                next_where(&created_at_keyset("x_org_unit_attribute")),
+                created_at_keyset("x_org_unit_attribute").order_by(false),
+            ),
             &[&flag, &count],
         ).await?
     };
@@ -3487,10 +3527,16 @@ pub async fn role_list_flag_prev_count(
             &[&count],
         ).await?
     } else {
-        client.query(
-            "SELECT id, name, description, creator, create_time::text FROM x_org_role WHERE id < $1 ORDER BY create_time DESC LIMIT $2",
+        let mut window = client.query(
+            &format!(
+                "SELECT id, name, description, creator, create_time::text FROM x_org_role WHERE {} ORDER BY {} LIMIT $2",
+                created_at_keyset("x_org_role").predicate(false),
+                created_at_keyset("x_org_role").order_by(true),
+            ),
             &[&flag, &count],
-        ).await?
+        ).await?;
+        window.reverse();
+        window
     };
 
     let data: Vec<Value> = rows
@@ -3993,10 +4039,16 @@ pub async fn personattribute_list_flag_prev_count(
             &[&count],
         ).await?
     } else {
-        client.query(
-            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute WHERE id < $1 ORDER BY create_time DESC LIMIT $2",
+        let mut window = client.query(
+            &format!(
+                "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute WHERE {} ORDER BY {} LIMIT $2",
+                created_at_keyset("x_org_person_attribute").predicate(false),
+                created_at_keyset("x_org_person_attribute").order_by(true),
+            ),
             &[&flag, &count],
-        ).await?
+        ).await?;
+        window.reverse();
+        window
     };
 
     let data: Vec<Value> = rows
@@ -4051,7 +4103,11 @@ pub async fn personattribute_list_flag_next_count(
         ).await?
     } else {
         client.query(
-            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute WHERE id > $1 ORDER BY create_time DESC LIMIT $2",
+            &format!(
+                "SELECT id, person_id, attribute_key, attribute_value, creator, create_time::text FROM x_org_person_attribute WHERE {} ORDER BY {} LIMIT $2",
+                next_where(&created_at_keyset("x_org_person_attribute")),
+                created_at_keyset("x_org_person_attribute").order_by(false),
+            ),
             &[&flag, &count],
         ).await?
     };
@@ -4335,7 +4391,14 @@ pub async fn identity_list_flag_unitduty_name_unitDutyName(
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
-        .query("SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE id > $1 AND unit_id IN (SELECT id FROM x_org_duty WHERE name = $2) ORDER BY create_time DESC LIMIT 10", &[&flag, &unit_duty_name])
+        .query(
+            &format!(
+                "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE {} AND unit_id IN (SELECT id FROM x_org_duty WHERE name = $2) ORDER BY {} LIMIT 10",
+                next_where(&created_at_keyset("x_org_identity")),
+                created_at_keyset("x_org_identity").order_by(false),
+            ),
+            &[&flag, &unit_duty_name],
+        )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
@@ -4390,10 +4453,16 @@ pub async fn identity_list_flag_prev_count(
             &[&count],
         ).await?
     } else {
-        client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE id < $1 ORDER BY create_time DESC LIMIT $2",
+        let mut window = client.query(
+            &format!(
+                "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE {} ORDER BY {} LIMIT $2",
+                created_at_keyset("x_org_identity").predicate(false),
+                created_at_keyset("x_org_identity").order_by(true),
+            ),
             &[&flag, &count],
-        ).await?
+        ).await?;
+        window.reverse();
+        window
     };
 
     let data: Vec<Value> = rows
@@ -4448,7 +4517,11 @@ pub async fn identity_list_flag_next_count(
         ).await?
     } else {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE id > $1 ORDER BY create_time DESC LIMIT $2",
+            &format!(
+                "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE {} ORDER BY {} LIMIT $2",
+                next_where(&created_at_keyset("x_org_identity")),
+                created_at_keyset("x_org_identity").order_by(false),
+            ),
             &[&flag, &count],
         ).await?
     };
@@ -4702,10 +4775,16 @@ pub async fn group_list_flag_prev_count(
             &[&count],
         ).await?
     } else {
-        client.query(
-            "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE id < $1 ORDER BY create_time DESC LIMIT $2",
+        let mut window = client.query(
+            &format!(
+                "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE {} ORDER BY {} LIMIT $2",
+                created_at_keyset("x_org_group").predicate(false),
+                created_at_keyset("x_org_group").order_by(true),
+            ),
             &[&flag, &count],
-        ).await?
+        ).await?;
+        window.reverse();
+        window
     };
 
     let data: Vec<Value> = rows
@@ -4757,7 +4836,11 @@ pub async fn group_list_flag_next_count(
         ).await?
     } else {
         client.query(
-            "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE id > $1 ORDER BY create_time DESC LIMIT $2",
+            &format!(
+                "SELECT id, name, unit_id, type, creator, create_time::text FROM x_org_group WHERE {} ORDER BY {} LIMIT $2",
+                next_where(&created_at_keyset("x_org_group")),
+                created_at_keyset("x_org_group").order_by(false),
+            ),
             &[&flag, &count],
         ).await?
     };

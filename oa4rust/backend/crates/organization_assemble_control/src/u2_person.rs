@@ -269,14 +269,21 @@ async fn cursor_page(pool: &Pool, flag: &str, count: i64, next: bool) -> Handler
             .await
             .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else {
-        let op = if next { ">" } else { "<" };
+        let ks = crate::created_at_keyset(PERSON_TABLE);
         let sql = format!(
-            "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL AND id {op} $1 ORDER BY create_time DESC LIMIT $2"
+            "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL AND {} ORDER BY {} LIMIT $2",
+            ks.predicate(next),
+            ks.order_by(!next),
         );
-        client
+        let mut window = client
             .query(&sql, &[&flag.to_string(), &limit])
             .await
-            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+        if !next {
+            // prev：查询按反向键取窗口，这里还原显示顺序。
+            window.reverse();
+        }
+        window
     };
     list_ok(rows.iter().map(person_row_json).collect())
 }

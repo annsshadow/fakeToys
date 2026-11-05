@@ -5,12 +5,28 @@ use axum::{extract::Extension, Json};
 use base64::Engine;
 use deadpool_postgres::Pool;
 use serde_json::Value;
-use shared::{error::AppError, response::ActionResult};
+use shared::{
+    db::keyset::{next_where, KeySet, SortDir},
+    error::AppError,
+    response::ActionResult,
+};
 use uuid::Uuid;
 
 pub mod routes;
 #[cfg(test)]
 mod tests_u2;
+
+// O33：x_message / x_message_consume 的 keyset 游标（id）必须与排序键 create_time 一致。
+const CREATED_AT_COL: &[&str] = &["create_time"];
+
+fn created_at_keyset(table: &'static str) -> KeySet<'static> {
+    KeySet {
+        table,
+        columns: CREATED_AT_COL,
+        dir: SortDir::Asc,
+        tiebreak: "id",
+    }
+}
 
 /// 写面会话存在档：无会话先 401，在任何 `pool.get()` 之前（离线可证）。
 fn require_session(
@@ -2455,7 +2471,14 @@ pub async fn instant_list_id_next_count(
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE id > $1 ORDER BY create_time ASC LIMIT $2", &[&id, &count])
+        .query(
+            &format!(
+                "SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE {} ORDER BY {} LIMIT $2",
+                next_where(&created_at_keyset("x_message_consume")),
+                created_at_keyset("x_message_consume").order_by(false),
+            ),
+            &[&id, &count],
+        )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
@@ -2506,7 +2529,14 @@ pub async fn instant_list_id_prev_count(
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE id < $1 ORDER BY create_time DESC LIMIT $2", &[&id, &count])
+        .query(
+            &format!(
+                "SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE {} ORDER BY {} LIMIT $2",
+                created_at_keyset("x_message_consume").predicate(false),
+                created_at_keyset("x_message_consume").order_by(true),
+            ),
+            &[&id, &count],
+        )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
@@ -2588,7 +2618,14 @@ pub async fn mass_list_id_next_count(
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
-        .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE id > $1 ORDER BY create_time ASC LIMIT $2", &[&id, &count])
+        .query(
+            &format!(
+                "SELECT id, mass_id, content, sender, create_time FROM x_message WHERE {} ORDER BY {} LIMIT $2",
+                next_where(&created_at_keyset("x_message")),
+                created_at_keyset("x_message").order_by(false),
+            ),
+            &[&id, &count],
+        )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
@@ -2639,7 +2676,14 @@ pub async fn mass_list_id_prev_count(
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
-        .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE id < $1 ORDER BY create_time DESC LIMIT $2", &[&id, &count])
+        .query(
+            &format!(
+                "SELECT id, mass_id, content, sender, create_time FROM x_message WHERE {} ORDER BY {} LIMIT $2",
+                created_at_keyset("x_message").predicate(false),
+                created_at_keyset("x_message").order_by(true),
+            ),
+            &[&id, &count],
+        )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
