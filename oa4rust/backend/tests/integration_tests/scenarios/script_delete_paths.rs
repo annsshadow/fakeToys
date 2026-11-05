@@ -127,7 +127,7 @@ async fn case_merge_item(client: &Client, base: &str, auth: &str, pool: &Arc<Tes
     let raw = send(
         client,
         auth,
-        reqwest::Method::GET,
+        reqwest::Method::POST,
         &format!("{base}/api/processplatform/service/processing/touch/mergeitem"),
     )
     .await;

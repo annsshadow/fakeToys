@@ -11,6 +11,7 @@ use shared::{error::AppError, response::row_to_json, response::ActionResult};
 use std::collections::HashMap;
 use uuid::Uuid;
 
+pub mod maintenance;
 pub mod routes;
 pub mod u2;
 

@@ -35,9 +35,6 @@ mod tests {
     // SKIPPED: check_rate_limit not accessible
     // SKIPPED: record_failure not accessible
     // SKIPPED: reset not accessible
-    // SKIPPED: new not accessible
-    // SKIPPED: start not accessible
-    // SKIPPED: shutdown not accessible
     // SKIPPED: create_session not accessible
     // SKIPPED: check_token_threshold not accessible
     // SKIPPED: validate_session not accessible

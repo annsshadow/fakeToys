@@ -1885,4 +1885,105 @@ backend/src/main.rs:193  shared::graceful::serve_router_with_shutdown(
 3. 需要可查询/可对账时再落表：新增 `x_mpweixin_template_delivery(id, touser, template_id, msgid, success, errcode, errmsg, create_time)`，异步队列与同步路径复用同一写入点。
 4. 不在本轮加入重试/死信（属 O26 #15 的独立能力）。
 
+## O26-1：8 条 `touch/*` 的授权缺陷（**与接线无关，独立修复**）
+
+> 性质定级：**授权缺陷 + HTTP 语义缺陷，不是「接线问题」**。即使永远不接线，任意登录用户也能用一条 GET 触发批量写（其中 3 条是物理删除）。
+
+### 改前实测（破坏实验原文）
+
+- 将 7 处门禁临时改回「任意会话」形态（`session.as_deref().ok_or(AppError::Unauthorized)?`）后跑 `u2_touch_routes_require_admin`：
+  `assertion left == right failed: left: 200, right: 403`
+- 即**改前：任意登录会话 → 200**（写已发生）。
+
+### 改后（提交 `26f6a387c`）
+
+| 项 | 改前 | 改后 | 实测 |
+|----|------|------|------|
+| HTTP 方法 | 8 条 `GET` 带写 | 8 条 `POST`（GET → 405 Method Not Allowed） | `u2_touch_routes_reject_get` 绿 |
+| 权限 | 7 条 `require_session_opt`（任意会话） | 8 条 `require_admin_opt`（admin） | 匿名 `401`、非 admin `403`：`u2_touch_routes_require_admin` / `all_touch_jobs_forbidden_for_non_admin` 绿 |
+| 日界 | `date_trunc('day', NOW())`（容器 UTC） | `date_trunc('day', (NOW() AT TIME ZONE 'Asia/Shanghai'))` | `u2_business_day_bucket_is_utc8_in_early_morning_window`：UTC 2026-11-04 16:30（北京 11-05 00:30）→ UTC 日 **11-04**、业务日 **11-05** |
+| 前端调用 | `api.get(touch/*)` | `api.post(touch/*, {})` | `ProcessWork.vue` 7 处、`ProcessManagerApp.vue` 1 处 |
+
+- 破坏实验：权限改回任意会话 → 红（`left: 200, right: 403`），随后恢复。
+- 生成物同步：`generated_routes.rs`、`openapi/src/lib.rs`、`generated_tests.rs`、`backend-route-methods.fixture.ts` 重新生成；3 个 `check_*_up_to_date.py` 全绿。
+- 说明：`mergeitem` 原本就是 `require_admin_opt(&pool)`，本次仅改方法与日界，权限语义不变。
+
+## O26-2：首批接线（只批 `loglongdetained`、`touchdelay`，提交 `84d54e9f1`）
+
+| 项 | `loglongdetained` | `touchdelay` |
+|----|-------------------|--------------|
+| 写类型 | 纯 `INSERT`（`x_record`，`record_type='long_detained'`） | 纯 `INSERT`（`x_record`，`record_type='touch_delay'`） |
+| 去重 | 业务日：同 work 当日已有记录则 `NOT EXISTS` 跳过 | 同左（按 `t.work` DISTINCT + 当日 `NOT EXISTS`） |
+| 批大小 | `MAINTENANCE_BATCH_SIZE = 1000` 行/批 | 同左 |
+| 单次上限 | `MAINTENANCE_MAX_BATCHES = 10` 批 → **最多 10,000 行** | 同左 |
+| 周期 | `MAINTENANCE_INTERVAL_SECS`，默认 **3600s** | 同左 |
+| 启动点 | `routes.rs` router 构造时 `maintenance::start_background(pool.clone())` → `maintenance.rs` spawn interval 循环；首轮延迟一个 interval | 同左 |
+| 计数日志 | 每批 `tracing::info!(capability, batch, inserted, total, "maintenance batch inserted")` | 同左 |
+
+### 运行时观测（真实进程 + 周期触发，探针库 `oa_maint_probe`）
+
+启动参数：`MAINTENANCE_INTERVAL_SECS=2`、`RUST_LOG=info`、空库迁移后插入 1 条 48h 未结束 work + 1 条 `expired` task。
+
+日志原文（节选，4 个周期）：
+
+```
+INFO maintenance: maintenance background started interval_secs=2
+INFO processplatform_service_processing::u2: maintenance batch inserted capability="loglongdetained" batch=1 inserted=1 total=1
+INFO processplatform_service_processing::u2: maintenance batch inserted capability="touchdelay" batch=1 inserted=1 total=1
+INFO processplatform_service_processing::u2: maintenance batch inserted capability="loglongdetained" batch=1 inserted=0 total=0
+```
+
+表行数原文（跑完 4 个周期后）：
+
+```
+record_type     | work_id               | count
+long_detained   | probe-longdetained-1  | 1
+touch_delay     | probe-touchdelay-1    | 1
+x_record_total = 2
+```
+
+### 断言与破坏实验
+
+- `maintenance_batches_respect_limit_and_max_batches`：15 个候选 + `batch_size=1` → 首轮 10 行（撞上限停），次轮 5 行，源表 15 行不变。
+- `maintenance_loglongdetained_and_touchdelay_are_idempotent`：首次各 2 行、重复执行各 0 行、表行数仍为 2（断言按本次构造的 tag 过滤，避免共享测试库污染）。
+- 破坏实验：删掉 `touch_delay` 的 `NOT EXISTS` → 同一批候选被循环插入 10 批，`ours(&d1)` 由 **2 变 20** → 红；恢复后绿。
+
+### 其余 5 条：本轮不接线（不批理由 + 前置条件）
+
+| 能力 | 不批理由 | 前置条件 |
+|------|----------|----------|
+| `cleanevent` | **物理删除** `x_record`，无 `deleted_at`、无归档表，误删不可恢复 | 必须先有软删（加 `deleted_at`）或归档表 + 保留期校验；本表无唯一键，重复执行只能靠时间窗 |
+| `deletedraft` | 软删可逆，但「work 结束即删草稿」是业务前提；且目标表 `x_draft` 全仓无写入方（见 O26-4） | 业务确认草稿归属表（`x_draft` vs `pp_c_draft`）+ 误删恢复路径（当前无端点，仅 DBA SQL）；接线前先补「恢复到 `deleted_at=NULL`」的入口或明确不恢复 |
+| `handoverjob` | `UPDATE x_job.person` 覆盖字段，无历史表，误改不可恢复 | 需 `x_job` 的人员交接审计（历史表或事件表），并确认 `person=''` 的语义是「未分配」而非「离职」 |
+| `urge` | 按 work+类型+内容**永久**去重 → 同一 work 只催办一次，与「催办」语义冲突 | 业务确认催办节奏（是否按日/按次）与去重键；需通知链路可观测（见 O26-E） |
+| `merge` | **物理删除** `x_workcompleted` 重复行；`completed_time IS NULL` 的行比较不成立，会被静默漏删 | 先补 `completed_time` 非空约束或给出 NULL 排序规则；删除前导出/归档 |
+| `mergeitem` | **物理删除** `x_attachment` 重复行（表有 `deleted_at` 但语句未使用）；同名判定可能误删不同版本附件 | 改用软删 `deleted_at`、补 `(work_id, workcompleted_id, name)` 唯一约束；确认同名附件是否允许并存 |
+
+## O26-3：`schedule/fire` 误导性成功返回（已改，提交 `a3616a03c`）
+
+**更正 O26-D 遗留债务**：此前 `POST /schedule/schedule/fire` 返回 `{"id": ..., "fired": true}`，实际只 INSERT 一条 `x_program_schedule_log`（`status='fired'`），不执行任何业务动作。现改为**明确失败**。
+
+**改后响应原文**（GET 与 POST 同口径）：
+
+```
+HTTP 400 Bad Request
+{"type":"error","message":"本仓库无周期执行器，未执行任何动作（schedule fire unsupported）", ...}
+```
+
+- 状态码选择：现有错误契约中 `AppError::NotImplemented` 固定映射 501 但 message 恒为 `not implemented`，无法携带原因；`AppError::BadRequest` 是唯一可带自定义 message 的 4xx，因此选 **400** 并在 message 说明。
+- 断言：`schedule_fire_admin_gets_explicit_failure`（真实库 + admin 会话，POST/GET 各一次）断言 400、message 含「本仓库无周期执行器」「未执行」、响应体**不得出现** `fired` / `scheduleId` / `executed`。
+- 破坏实验：把 POST handler 改回 `Ok(Json(ActionResult::success(json!({"fired": true}))))` → `fire 不得返回成功` 红；恢复后绿。
+- **台账口径更正**：所谓 schedule 能力只有「手动触发且不执行」，实际现为「手动触发即明确拒绝」；`x_program_schedule` 仍为只读表，无 cron 执行器。
+
+## O26-4：`deletedraft` 单独评估（暂不接线）
+
+**误删恢复路径的事实**：
+
+- `x_draft` 的删除是软删：`UPDATE x_draft SET deleted_at = NOW() WHERE deleted_at IS NULL AND work_id IN (已结束 work)`。
+- 全仓**没有任何端点/字段**把 `x_draft.deleted_at` 置回 `NULL`：检索无匹配；`processplatform_service_processing` 只有删除语句，无草稿创建/恢复路由。
+- 唯一恢复路径 = **DBA 直接 SQL**：`UPDATE x_draft SET deleted_at = NULL WHERE id = ...`（按 `id` 或 `work_id` 定位）。
+- 另需注意：真实草稿在 `processplatform_assemble_surface` 里写 `pp_c_draft`（`u2_draft_save` 等）；`x_draft` 在本仓库内**无写入方**（仅测试插入）。
+- 结论：**暂不接线**。接线前需业务确认（a）草稿归属表是否就是 `x_draft`；（b）误删是否允许只靠 DBA SQL 恢复，还是需要补恢复端点；（c）「work 结束即删草稿」的保留期。
+
+
 

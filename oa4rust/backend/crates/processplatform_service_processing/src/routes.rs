@@ -36,6 +36,10 @@ pub fn router(pool: Pool) -> Router {
         });
     }
 
+    // O26-2：维护作业周期触发（与 timer 同模式；仅 loglongdetained / touchdelay）。
+    // 首轮延迟一个周期，避免启动瞬间写库。
+    crate::maintenance::start_background(pool.clone());
+
     Router::new()
         .route("/api/processplatform/service/processing/get/{id}", get(get_process))
         .route("/api/processplatform/service/processing/create", post(create_process))
@@ -191,14 +195,14 @@ pub fn router(pool: Pool) -> Router {
         .route("/api/processplatform/service/processing/taskcompleted/{id}", delete(u2::taskcompleted_delete))
         .route("/api/processplatform/service/processing/taskcompleted/{id}/press/work/{work}", get(u2::taskcompleted_press))
         .route("/api/processplatform/service/processing/taskcompleted/next/task/identity", put(u2::taskcompleted_update_next_identity))
-        .route("/api/processplatform/service/processing/touch/cleanevent", get(u2::touch_clean_event))
-        .route("/api/processplatform/service/processing/touch/deletedraft", get(u2::touch_delete_draft))
-        .route("/api/processplatform/service/processing/touch/handoverjob", get(u2::touch_handover_job))
-        .route("/api/processplatform/service/processing/touch/loglongdetained", get(u2::touch_log_long_detained))
-        .route("/api/processplatform/service/processing/touch/merge", get(u2::touch_merge))
-        .route("/api/processplatform/service/processing/touch/mergeitem", get(u2::touch_merge_item))
-        .route("/api/processplatform/service/processing/touch/touchdelay", get(u2::touch_delay))
-        .route("/api/processplatform/service/processing/touch/urge", get(u2::touch_urge))
+        .route("/api/processplatform/service/processing/touch/cleanevent", post(u2::touch_clean_event))
+        .route("/api/processplatform/service/processing/touch/deletedraft", post(u2::touch_delete_draft))
+        .route("/api/processplatform/service/processing/touch/handoverjob", post(u2::touch_handover_job))
+        .route("/api/processplatform/service/processing/touch/loglongdetained", post(u2::touch_log_long_detained))
+        .route("/api/processplatform/service/processing/touch/merge", post(u2::touch_merge))
+        .route("/api/processplatform/service/processing/touch/mergeitem", post(u2::touch_merge_item))
+        .route("/api/processplatform/service/processing/touch/touchdelay", post(u2::touch_delay))
+        .route("/api/processplatform/service/processing/touch/urge", post(u2::touch_urge))
         .route("/api/processplatform/service/processing/work", post(u2::work_create))
         .route("/api/processplatform/service/processing/work/{id}", get(u2::work_get).put(u2::work_edit).delete(u2::work_delete))
         .route("/api/processplatform/service/processing/work/{id}/draft", delete(u2::work_draft_delete))

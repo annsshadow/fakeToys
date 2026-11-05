@@ -8404,29 +8404,12 @@ pub async fn schedule_report(pool: Extension<Pool>) -> Result<Json<ActionResult<
 pub async fn schedule_schedule_fire(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
-    // 前端 ProgramCenterApp.vue: api.post('.../schedule/schedule/fire', { id } | {}) —— 无路径参数，
-    // 从体读 id（此前误声明 Path 致 0 槽路由恒 arity-500）。
-    axum::Json(body): axum::Json<Value>,
+    // 前端 ProgramCenterApp.vue: api.post('.../schedule/schedule/fire', { id } | {}) —— 无路径参数。
+    // O26-3：GET 版同样不再写库，统一明确拒绝（本仓库无周期执行器）。
+    axum::Json(_body): axum::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let schedule_id = body
-        .get("id")
-        .and_then(|v| v.as_str())
-        .unwrap_or_default()
-        .to_string();
-    let client = shared::db::acquire(&pool).await?;
-
-    client
-        .execute(
-            "INSERT INTO x_program_schedule_log (id, schedule_id, status, message, create_time) VALUES ($1, $2, 'fired', 'manual fire', NOW())",
-            &[&uuid::Uuid::new_v4().to_string(), &schedule_id],
-        )
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
-
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("scheduleId".to_string(), Value::String(schedule_id))]),
-    ))))
+    Err(schedule_fire_unsupported())
 }
 
 #[allow(non_snake_case)]
@@ -12016,49 +11999,29 @@ pub async fn u3_qiyeweixin_request_pull_sync_post(
     )))
 }
 
-/// POST /schedule/schedule/fire —— 触发指定（或最新）调度并记录日志
+/// `fire` 的明确拒绝：本仓库没有任何周期执行器，写入 `fired` 日志等于谎报执行。
+///
+/// O26-3：此前 GET/POST `schedule/schedule/fire` 都只 INSERT 一条
+/// `x_program_schedule_log`（status='fired'）就返回成功，实际不执行任何动作。
+/// 现在统一走 400（`AppError::BadRequest` 是现有错误契约里唯一能带自定义
+/// message 的 4xx；501 的 `NotImplemented` 文案固定为 "not implemented"，
+/// 无法说明原因）。响应体 `message` 明确「本仓库无周期执行器，未执行」，
+/// 且不再出现 `fired` / `scheduleId` 等表示已执行的字段。
+fn schedule_fire_unsupported() -> AppError {
+    AppError::BadRequest(
+        "本仓库无周期执行器，未执行任何动作（schedule fire unsupported）".to_string(),
+    )
+}
+
+/// POST /schedule/schedule/fire —— 明确拒绝：本仓库无周期执行器
 #[allow(non_snake_case)]
 pub async fn u3_schedule_fire_post(
     pool: Extension<Pool>,
     session: Extension<shared::session::Session>,
-    Json(body): Json<Value>,
+    Json(_body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     require_admin(&pool, &session).await?;
-    let client = shared::db::acquire(&pool).await?;
-    let target: Option<String> = match body.get("id").and_then(|v| v.as_str()) {
-        Some(id) => {
-            client
-                .query_opt("SELECT id FROM x_program_schedule WHERE id = $1 AND deleted_at IS NULL", &[&id])
-                .await
-                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
-                .map(|r| r.get::<_, Option<String>>("id").unwrap_or_default())
-        }
-        None => {
-            client
-                .query_opt(
-                    "SELECT id FROM x_program_schedule WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
-                    &[],
-                )
-                .await
-                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
-                .map(|r| r.get::<_, Option<String>>("id").unwrap_or_default())
-        }
-    };
-    let Some(sid) = target.filter(|s| !s.is_empty()) else {
-        return Ok(Json(ActionResult::error("schedule not found")));
-    };
-    let log_id = uuid::Uuid::new_v4().to_string();
-    client
-        .execute(
-            "INSERT INTO x_program_schedule_log (id, schedule_id, application, status, message, create_time) \
-             VALUES ($1, $2, 'schedule', 'fired', 'schedule fired via api', NOW())",
-            &[&log_id, &sid],
-        )
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
-    Ok(Json(ActionResult::success(
-        json!({ "id": sid, "fired": true }),
-    )))
+    Err(schedule_fire_unsupported())
 }
 
 /// POST /script/name/{name} —— 按名称保存脚本（复用 script_save owner 门禁）
@@ -12744,6 +12707,131 @@ mod security_gate_tests {
     /// （无 DB 时 is_admin fail-closed 返回 false）必须 Forbidden。
     fn build_session(person_unique: &str) -> shared::session::Session {
         shared::testing::test_session(person_unique)
+    }
+
+    /// O26-3：`fire` 必须明确失败（400 + 说明「本仓库无周期执行器，未执行」），
+    /// 且响应体不得出现任何表示「已执行」的字段（`fired` / `scheduleId`）。
+    #[tokio::test]
+    async fn schedule_fire_error_body_has_no_executed_markers() {
+        use axum::response::IntoResponse;
+
+        let resp = schedule_fire_unsupported().into_response();
+        assert_eq!(
+            resp.status(),
+            axum::http::StatusCode::BAD_REQUEST,
+            "fire 不再返回 2xx"
+        );
+        let raw = axum::body::to_bytes(resp.into_body(), 4096).await.unwrap();
+        let body: serde_json::Value = serde_json::from_slice(&raw).unwrap();
+        assert_eq!(body["type"], "error", "必须走统一错误信封");
+        let message = body["message"].as_str().unwrap_or_default();
+        assert!(
+            message.contains("本仓库无周期执行器") && message.contains("未执行"),
+            "message 必须说明未执行，实际 {message:?}"
+        );
+        let text = body.to_string();
+        for marker in ["fired", "scheduleId", "executed"] {
+            assert!(
+                !text.contains(marker),
+                "响应体不得出现表示已执行的字段：{marker}，实际 {text}"
+            );
+        }
+    }
+
+    /// 造一个真正带 admin 角色的人（`is_admin` 按 auth_role.name='admin' 判定）。
+    async fn seed_admin(pool: &Pool, tag: &str) -> (String, String) {
+        let role_id = format!("o26-role-{tag}");
+        let person = format!("o26-person-{tag}");
+        if let Ok(client) = pool.get().await {
+            let _ = client
+                .execute(
+                    "INSERT INTO auth_role (id, name, disable) VALUES ($1, 'admin', false) \
+                     ON CONFLICT (id) DO NOTHING",
+                    &[&role_id],
+                )
+                .await;
+            shared::testing::upsert_fixture_person(&client, &person, &person, &person).await;
+            let _ = client
+                .execute(
+                    "INSERT INTO auth_person_role (person_id, role_id, unit_id) VALUES ($1, $2, $3) \
+                     ON CONFLICT DO NOTHING",
+                    &[&person, &role_id, &format!("o26-unit-{tag}")],
+                )
+                .await;
+        }
+        (person, role_id)
+    }
+
+    async fn unseed_admin(pool: &Pool, person: &str, role_id: &str) {
+        if let Ok(client) = pool.get().await {
+            let _ = client
+                .execute(
+                    "DELETE FROM auth_person_role WHERE person_id = $1",
+                    &[&person],
+                )
+                .await;
+            let _ = client
+                .execute("DELETE FROM auth_person WHERE id = $1", &[&person])
+                .await;
+            let _ = client
+                .execute("DELETE FROM auth_role WHERE id = $1", &[&role_id])
+                .await;
+        }
+    }
+
+    /// O26-3（破坏实验锚点）：admin 走完门禁后，GET/POST `schedule/schedule/fire`
+    /// 必须返回 400 + 「本仓库无周期执行器，未执行」，且响应体不含 `fired`。
+    /// 把 handler 改回 `fired:true` 会先撞上这里的 `Err(BadRequest)` 断言而变红。
+    #[tokio::test]
+    async fn schedule_fire_admin_gets_explicit_failure() {
+        use axum::response::IntoResponse;
+
+        if !shared::testing::is_db_available().await {
+            eprintln!("skip: PG unavailable");
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let tag = format!("{}", uuid::Uuid::new_v4());
+        let (person, role_id) = seed_admin(&pool, &tag).await;
+        let sess = || Extension(shared::testing::test_session(&person));
+
+        let post = u3_schedule_fire_post(
+            Extension(pool.clone()),
+            sess(),
+            axum::Json(serde_json::json!({ "id": "sch-o26-probe" })),
+        )
+        .await;
+        let get = schedule_schedule_fire(
+            Extension(pool.clone()),
+            sess(),
+            axum::Json(serde_json::json!({ "id": "sch-o26-probe" })),
+        )
+        .await;
+
+        for (name, res) in [("POST", post), ("GET", get)] {
+            let resp = res.err().expect("fire 不得返回成功").into_response();
+            assert_eq!(
+                resp.status(),
+                axum::http::StatusCode::BAD_REQUEST,
+                "{name} fire 必须明确失败"
+            );
+            let raw = axum::body::to_bytes(resp.into_body(), 4096).await.unwrap();
+            let body: serde_json::Value = serde_json::from_slice(&raw).unwrap();
+            let message = body["message"].as_str().unwrap_or_default();
+            assert!(
+                message.contains("本仓库无周期执行器") && message.contains("未执行"),
+                "{name} fire message 必须说明未执行，实际 {message:?}"
+            );
+            let text = body.to_string();
+            for marker in ["fired", "scheduleId", "executed"] {
+                assert!(
+                    !text.contains(marker),
+                    "{name} fire 响应体不得出现表示已执行的字段：{marker}，实际 {text}"
+                );
+            }
+        }
+
+        unseed_admin(&pool, &person, &role_id).await;
     }
 
     #[tokio::test]

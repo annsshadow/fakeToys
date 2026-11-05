@@ -2450,6 +2450,8 @@ mod tests {
     // SKIPPED: client_of not accessible
     // SKIPPED: resolve_generic_id not accessible
     // SKIPPED: soft_delete_generic not accessible
+    // SKIPPED: resolve_id_exact not accessible
+    // SKIPPED: soft_delete_exact not accessible
     // SKIPPED: normalized_name_dup not accessible
     // SKIPPED: generic_list_all not accessible
     // SKIPPED: generic_like_search not accessible
