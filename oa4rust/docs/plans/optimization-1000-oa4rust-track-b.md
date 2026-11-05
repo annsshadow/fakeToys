@@ -2386,17 +2386,18 @@ error retrieving column order_number: error deserializing column 5
 - `97d9ecf35` fix(component): order_number 按数值语义排序…（含 shared helper）
 - `483361644` fix(correlation): order_number 数值排序并修 TEXT 解码 panic
 
-### 「按数字语义排序但列类型是 TEXT」全量清单（本轮建立）
+### 「按数字语义排序但列类型是 TEXT」全量清单（O34 收敛为三态）
 
-| 字段 | 实库类型 | 排序点 | 状态 |
+| 字段 | 实库类型 | 排序点 | 状态（已修 / 确认无需修 / 待确认） |
 |------|---------|--------|------|
 | `cpt_component.order_number` | text | `component_core_entity/src/lib.rs` ×1 | **已修（O32）** |
 | `x_component.order_number` | text | `component/src/lib.rs` ×1（LIMIT 50） | **已修（O32）** |
 | `corr_c_correlation.order_number` | text | `correlation/src/routes.rs` ×2 | **已修（O32，含解码 panic）** |
-| `x_attendance_statisticshow.month` | text | attendance ×N `ORDER BY month DESC` | 待修（若未补零，`'10' < '2'`） |
-| `x_attendance_statisticshow.year` | text | attendance ×N `ORDER BY year DESC` | 待确认（4 位年同宽时字典序=数值） |
-| `x_attendance_statistical_cycle.year` / `month` | text | attendance ×N `ORDER BY year DESC, month DESC` | 待修（同 month 风险；且 id keyset 与排序键不一致） |
-| `pp_c_snap.sequence` | text | processplatform ×2 `ORDER BY "sequence" DESC NULLS LAST` | 待确认语义（递增序号跨位数会错序） |
+| `x_attendance_statisticshow.month` | text | attendance 6 处 keyset（personMonth / topUnitMonth / unitMonth 的 next/prev）+ 非分页统计读面 | **已修（O34）**：按数字语义；`KeySet` 用同一个 `numeric_text_i32_sort_expr` 同时生成排序键与游标键；跨页 page size 1/2/3 实测 + 破坏实验见 O34 节 |
+| `x_attendance_statisticshow.year` | text | 同上 | **确认无需修**：年份恒 4 位定宽（`'2024'`），字典序与数值序逐位等价；保留 TEXT，前提已钉进代码注释（`YEAR_MONTH_COL`） |
+| `x_attendance_statistical_cycle.year` / `month` | text | list `lib.rs:2745`（非分页）；detail `lib.rs:2702`（`WHERE year=$1 AND month=$2`） | **待确认**：后端唯一 INSERT（`lib.rs:4793`）只写 `cycle_year` / `cycle_month`，**不写 `year` / `month`** → 排序列无写入方，detail 用 `year/month` 也永远匹配不到本系统新建行。真实缺陷是**读写列不一致**，改数值排序无效；需业务按 O34 节映射表裁决列语义 |
+| `pp_c_snap.sequence` | text | `processplatform_assemble_surface/src/lib.rs:27580` 管理分页（LIMIT/OFFSET） | **确认无需修（数字语义项）**：唯一 INSERT（`:28555`）不写 `sequence`，全仓无 UPDATE → 值恒 NULL，“递增序号跨位数错序”不成立。另立**待确认**缺陷：排序键无数据 + 无并列裁决，翻页边界不稳定（同域 cursor 端点用 `xcreateTime`，见 O34 节） |
+| `pp_c_review.sequence`（O34 补登） | text | `processplatform_assemble_surface/src/lib.rs:27949` 管理分页（LIMIT/OFFSET） | **待确认**：同 `pp_c_snap`，本仓无写入方；排序键无数据、翻页不稳定 |
 
 同族但**不计入**（列为 TEXT 但排序键不是它）：`district.level`（按 name 排）、
 `x_general_assemble_area.level`（按 create_time 排）、`x_console_status.xuptime`
@@ -2487,11 +2488,14 @@ error retrieving column order_number: error deserializing column 5
 
 ### 与 O34（TEXT 数字语义排序）的衔接
 
-统计展示的 `year`/`month` 仍是 TEXT 字典序（`'10' < '2'`），本轮**只保证「分页键与
-当前排序键一致」**，顺序本身的数字语义修复仍按 O32 清单执行（`statisticshow.month/year`、
-`statistical_cycle.year/month`、`pp_c_snap.sequence`）。⚠️ 依赖：一旦 `year/month`
-改为数值语义排序，`KeySet` 的列不能再按裸文本比较，必须改为**同一个数值表达式**
-（`shared::db::numeric_text_i32_sort_expr`），否则会重新引入「排序键与分页键不一致」。
+统计展示的 `year`/`month` 当时仍是 TEXT 字典序（`'10' < '2'`），本轮**只保证「分页键与
+当前排序键一致」**。⚠️ 依赖：一旦 `year/month` 改为数值语义排序，`KeySet` 的列不能再按
+裸文本比较，必须改为**同一个数值表达式**（`shared::db::numeric_text_i32_sort_expr`），
+否则会重新引入「排序键与分页键不一致」。
+
+**O34 已执行**：`month` 改数值语义、`year` 确认无需修（4 位定宽）；`KeyKind` 让
+`key_list()` 与 `order_by()` 只从同一个 `normalized()` 取键，结构上消灭了漂移。
+详见下方 O34 节。
 
 ### 验证
 
@@ -2507,9 +2511,113 @@ error retrieving column order_number: error deserializing column 5
 ### 本轮暴露、未修的债务（独立于 keyset，别混进来）
 
 - 组织域列表把手写的 `create_time` 解码为非空 `String`（`row.get("create_time")`）；
-  该列若为 NULL，响应 500（组织域回归最初用 NULL 行触发，已从用例里移除）。keyset
-  层已能对 NULL 定序（`'-infinity'`），但**解码层会先炸**。是否允许 NULL、是否改
-  `Option<String>` 需单独裁定，不在 O33 范围。
+  该列若为 NULL，响应 500。keyset 层已能对 NULL 定序（`'-infinity'`），但**解码层会先炸**。
+  **O34 已修**（86 处改 `Option<String>` + `unwrap_or_default`，NULL 行回归 200 且
+  `createTime == ""`）。meeting 等其余 crate 约 43 处同族可空 `create_time` 仍在，
+  登记为独立清扫任务（单独提交），不在本轮混入。
+
+## O34：TEXT 列数字语义排序 + 组织域 NULL 解码
+
+### 字段裁决（逐个，不顺手全改）
+
+- `statisticshow.month`：**已修**。month 是月份数字；TEXT 未补零时 `'10' < '2'`。
+  仓库内 `statisticshow` 无生产写入方（唯一 INSERT 在测试），真实值形态无法从仓库确证，
+  因此按「补零/未补零都正确」的数值语义处理；对已补零数据顺序零变化（O33 的补零用例仍绿）。
+- `statisticshow.year`：**确认无需修**。年份恒 4 位（`'2024'`），逐位字典序与数值序等价，
+  不存在 `'100'` vs `'2'` 的位数交叉；保留 TEXT，前提钉在 `YEAR_MONTH_COL` 注释里。
+- `statistical_cycle.year/month`：**待确认**，见下方映射表——是读写列不一致，不是数字语义排序。
+- `pp_c_snap.sequence`：**确认无需修（数字语义项）**，见下方映射表——无写入方，值恒 NULL。
+
+### KeySet 单一来源（O33 依赖警告的落地）
+
+- `KeyKind::{Text, Timestamp, NumericText}` + 私有字段 `KeyColumn`；`text/timestamp/numeric_text` 三个 `const fn`。
+- 键只从 `KeyColumn::normalized()` / `is_null()` 取；`KeySet::key_specs()` 是唯一来源，
+  `key_list()`（游标比较）与 `order_by()`（排序）都消费它，结构上无法各自漂移。
+- 数字键 = `numeric_text_i32_sort_expr(expr)`（复用 O32 helper，不复制 SQL）；
+  NULL/脏值哨兵 `'-2147483649'::bigint`（低于 i32 下限，合法值不碰撞）。
+- 升序首键用 `(数字表达式 IS NULL)`，脏值与真 NULL 同样落末。
+- 现有其它调用点（org / meeting / message / attendance 其余列）改用构造器，语义不变。
+
+### 跨页实测（不只首屏）
+
+9 行种子（未补零月份 + 并列 + NULL + 短尾页），`page_size = 1/2/3` 各走到空页：
+
+```
+O34 跨页实测（month 数值序, page_size=1）: ["k3","k5","k8","k1","k4","k6","k9","k2","k7"]
+O34 跨页实测（month 数值序, page_size=2）: ["k3","k5","k8","k1","k4","k6","k9","k2","k7"]
+O34 跨页实测（month 数值序, page_size=3）: ["k3","k5","k8","k1","k4","k6","k9","k2","k7"]
+O34 prev 实测（游标 k4）: ["k8","k1"]
+```
+
+断言同时校验：行数 9、去重 9、集合与期望顺序全等。
+
+### 破坏实验（必须红）
+
+把 `YEAR_MONTH_COL.month` 改回 `KeyColumn::text("month")`：
+
+```
+O34 跨页实测（page_size=1）: ["k8","k1","k3","k5","k6","k9","k4","k2","k7"]
+O34 prev 实测（游标 k4）: ["k6","k9"]
+```
+
+两个用例 FAILED（文本序把 `'2'` 排到 `'10'/'11'` 之前）。恢复后 5 passed。
+
+### 组织域 NULL 解码
+
+- `organization.../src/lib.rs` 86 处 `Value::String(row.get("create_time"))`
+  → `row.get::<_, Option<String>>("create_time").unwrap_or_default()`；已用 Option 的 5 处不动。
+- 回归新增 `r7(create_time=NULL)`：排序落末；游标 `r6` 的下一页 `["r7"]`，
+  `createTime == ""`（修复前该行 500）。
+- meeting 等约 43 处同族：独立提交，本轮不做。
+
+### 写入方 → 读取方列映射（给业务裁决用）
+
+`x_attendance_statistical_cycle`
+
+| 方向 | 代码点 | 端点 | 列 |
+|---|---|---|---|
+| 写 | `attendance.../src/lib.rs:4793` | `POST /api/attendance/assemble/control/attendancestatisticalcycle`（请求 `cycleYear`/`cycleMonth`） | `cycle_year`, `cycle_month` |
+| 读（排序） | `:2745` | `GET .../attendancestatisticalcycle/list/all` | `year DESC, month DESC` |
+| 读（过滤） | `:2702` | `GET .../attendancestatisticalcycle/cycleDetail/{year}/{month}` | `WHERE year=$1 AND month=$2` |
+| 读（单条） | `:2795` | `GET .../attendancestatisticalcycle/{id}` | 响应 `year`, `month` |
+| 旁证 | `:1166-1183`（`x_attendance_detail`） | 周期统计更新/计数 | INTEGER 的 `cycle_year` / `cycle_month` |
+
+→ 本系统新建行只写 `cycle_*`，`year/month` 保持 NULL：list 把它们排到 NULL 末尾，
+cycleDetail 按 `year/month` 永远查不到新行。需业务确认「`year/month` 是否历史导入列、
+`cycle_*` 是否规范列」，再决定回填或改读写列。
+
+`pp_c_snap.sequence`
+
+| 方向 | 代码点 | 端点 | 列 |
+|---|---|---|---|
+| 写 | `processplatform.../src/lib.rs:28555` | `POST .../snap/u2/upload`（`snap_u2_upload`） | INSERT **不含 `sequence`**（全仓无 UPDATE） |
+| 读（排序） | `:27580` | `POST .../snap/list/filter/{page}/size/{size}/manage` 与 `.../paging/.../application/{flag}/filter/manage` | `ORDER BY "sequence" DESC NULLS LAST LIMIT/OFFSET` |
+| 读（游标） | `:27629` | `POST .../snap/list/{id}/next|prev/{count}/filter/manage` | `"xcreateTime"` 游标 |
+| 读（普通列表） | `:25482` | snap 列表 | `ORDER BY "xcreateTime" DESC` |
+
+→ `sequence` 无写入方，值恒 NULL；管理分页按它排序等于无排序，且 `LIMIT/OFFSET` 无并列裁决
+→ 翻页边界不稳定；同域另一套游标用 `xcreateTime`，两套契约不同。数字语义不成立，故
+「确认无需修（数字语义）」；真实缺陷另立待确认。
+
+`pp_c_review.sequence`（O34 新发现）
+
+| 方向 | 代码点 | 端点 | 列 |
+|---|---|---|---|
+| 写 | 全仓无 INSERT/UPDATE | — | 无写入方 |
+| 读（排序） | `:27949` | review 管理分页 | `ORDER BY "sequence" DESC NULLS LAST LIMIT/OFFSET` |
+
+→ 同 `pp_c_snap`，待确认。
+
+### 验证（O34）
+
+- `cargo test -p attendance_assemble_control --test keyset_pagination`：5 passed
+  （含 O34 两个数值语义用例）。
+- `cargo test -p organization_assemble_control --test keyset_pagination`：1 passed
+  （含 NULL create_time 行）。
+- `cargo fmt --all -- --check`、`cargo clippy -p shared -p attendance_assemble_control
+  -p organization_assemble_control -p meeting_assemble_control
+  -p message_assemble_communicate --all-targets -- -D warnings`：见提交前记录。
+- CI `seeded-route-scan` 必须绿（O33 TIMESTAMP 哨兵教训）。
 
 
 
