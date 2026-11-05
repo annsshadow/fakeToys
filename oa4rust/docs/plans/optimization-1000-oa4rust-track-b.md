@@ -2136,6 +2136,58 @@ INFO auth::mpweixin: wechat template message delivered touser=user-ok template_i
 - 未增加 `MPWEXIN_API_BASE` 的生产配置校验：默认值即官方地址，
   指错只会表现为请求失败，日志里带 `transport failure`。
 
+## O29：`cal_calendar.is_public` 可空 → 读面 panic（2026-11-05）
+
+### 选题依据
+
+O26 #10「decode panic 族」的残部。`cal_calendar` 由
+`032_create_assemble_control_tables.sql` 建表时全列可空，后续迁移只把 `is_public`
+改成 BOOLEAN、未加 NOT NULL（`is_nullable=YES`）；读 handler 却用非 Option 的
+`row.get::<_, bool>` 解码。tokio-postgres 的 `FromSql for bool` 不接受 NULL，
+`Row::get` 直接 **panic**，请求线程崩溃而不是返回业务响应。
+
+### 缺口（改前证据）
+
+专有 scratch 库 `oa_par_cal_panic` 种 `is_public IS NULL` 行后直调 handler：
+
+```
+thread 'null_is_public_row_does_not_panic_read_handlers' panicked at crates\calendar\src\lib.rs:204:28:
+error retrieving column is_public: error deserializing column 8
+```
+
+### 改法（提交 `c390f6d05`，PR #170）
+
+四处解码统一为 `row.get::<_, Option<bool>>("is_public").unwrap_or(false)`：
+
+- `calendar_list_public`（原 L167）
+- `calendar_list_my`（原 L204）
+- `calendar_get` 归属判据（原 L245）
+- `calendar_get` 响应体（原 L261）
+
+NULL 按 false（私有）解码，因此 `calendar_get` 对 NULL 行走 fail-closed 的
+owner 校验（无会话 → 401），不泄露他人日历。
+
+### 验证
+
+- 探针 `crates/calendar/tests/is_public_null_safety.rs`（scratch 库
+  `oa_par_cal_panic`，每轮 DROP+CREATE+全量迁移）：
+  - **规模下限**：`calendar_list_my` 至少返回 2 行（PERSON 一支 + UNIT 一支），
+    NULL 行必须在结果里且 `is_public == false`、`description == None`；
+  - `calendar_list_public` 含 `probe-public`、不含 NULL 行；
+  - `calendar_get(probe-public, None)` 成功，`calendar_get(probe-null, None)` 必须 Err。
+- **破坏实验**：把 `calendar_list_my` 的 `is_public` 改回 `row.get("is_public")`
+  → 探针红，panic 原文同上（`lib.rs:204:28`）；恢复后绿。
+- `cargo fmt --all -- --check` 通过；`cargo clippy -p calendar --all-targets --keep-going`
+  零告警；`cargo test -p calendar`（`oa4rust_test`）：**8 unit + 1 integration 全绿**。
+
+### 本轮不做
+
+- `calendar_update`（原 L347-352）存在同类非 Option 解码隐患
+  （`existing.get("name"/"type"/"target"/"color"/"is_public")` 读可空列），
+  需 session + owner 夹具才能做写路径行为级验证，登记下一轮。
+- 未给 `cal_calendar.is_public` 补 NOT NULL 迁移：旧表全列可空，改约束需先回填
+  历史数据，属数据库变更，不在本轮范围。
+
 
 
 
