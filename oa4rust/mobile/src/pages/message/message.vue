@@ -6,10 +6,12 @@ import { onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import { messageApi } from '@/services'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import { loadConversations } from './messageFeed'
 
 const rows = ref<Record<string, unknown>[]>([])
 const loading = ref(false)
 const loaded = ref(false)
+const loadError = ref('')
 
 function conversationId(row: Record<string, unknown>): string {
   for (const k of ['id', 'conversationId', 'uuid', 'flag']) {
@@ -28,15 +30,12 @@ function conversationTitle(row: Record<string, unknown>): string {
 
 async function load() {
   loading.value = true
-  try {
-    const resp = await messageApi.conversationList()
-    rows.value = resp.data ?? []
-  } catch {
-    rows.value = []
-  } finally {
-    loading.value = false
-    loaded.value = true
-  }
+  loadError.value = ''
+  const result = await loadConversations(() => messageApi.conversationList(), rows.value)
+  rows.value = result.rows
+  if (!result.ok) loadError.value = result.error
+  loading.value = false
+  loaded.value = true
 }
 
 onShow(async () => {
@@ -55,8 +54,16 @@ function openConversation(row: Record<string, unknown>) {
 <template>
   <view class="page">
     <view v-if="loading && !loaded" class="tip">加载中…</view>
+    <view v-else-if="rows.length === 0 && loadError" class="tip tip-error">
+      <view class="error-text">{{ loadError }}</view>
+      <view class="retry-btn" @tap="load">重试</view>
+    </view>
     <view v-else-if="rows.length === 0" class="tip">暂无会话</view>
     <view v-else class="list">
+      <view v-if="loadError" class="tip-error error-banner">
+        <text class="error-text">{{ loadError }}</text>
+        <view class="retry-btn" @tap="load">重试</view>
+      </view>
       <view v-for="(row, i) in rows" :key="i" class="item" @tap="openConversation(row)">
         <view class="title">{{ conversationTitle(row) }}</view>
         <view class="meta">{{ (row.lastMessage as string) || ' ' }}</view>
@@ -75,6 +82,27 @@ function openConversation(row: Record<string, unknown>) {
   text-align: center;
   color: #90979f;
   font-size: 28rpx;
+}
+.tip-error {
+  color: #c0392b;
+}
+.error-text {
+  display: block;
+  margin-bottom: 12rpx;
+  line-height: 1.5;
+}
+.retry-btn {
+  display: inline-block;
+  padding: 8rpx 28rpx;
+  border-radius: 24rpx;
+  border: 1rpx solid #c0392b;
+  color: #c0392b;
+  font-size: 26rpx;
+}
+.error-banner {
+  padding: 24rpx 32rpx;
+  text-align: center;
+  border-bottom: 1px solid #f0f2f5;
 }
 .list {
   background: #fff;
