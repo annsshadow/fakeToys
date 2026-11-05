@@ -164,7 +164,7 @@ pub async fn calendar_list_public(
             description: row.get("description"),
             source: row.get("source"),
             createor: row.get::<_, Option<String>>("createor").unwrap_or_default(),
-            is_public: row.get("is_public"),
+            is_public: row.get::<_, Option<bool>>("is_public").unwrap_or(false),
             status: row.get::<_, Option<String>>("status").unwrap_or_default(),
         })
         .collect();
@@ -201,7 +201,7 @@ pub async fn calendar_list_my(
             description: row.get("description"),
             source: row.get("source"),
             createor: row.get::<_, Option<String>>("createor").unwrap_or_default(),
-            is_public: row.get("is_public"),
+            is_public: row.get::<_, Option<bool>>("is_public").unwrap_or(false),
             status: row.get::<_, Option<String>>("status").unwrap_or_default(),
         };
 
@@ -240,7 +240,9 @@ pub async fn calendar_get(
 
     // O9：非公开日历仅本人/admin 可读（原无校验，任何登录用户可读他人私有日历，
     // IDOR 矩阵 canary 实证）。公开日历（is_public）保持全登录用户可读。
-    let is_public: bool = row.get("is_public");
+    // O29：`cal_calendar.is_public` 可空（BOOLEAN，无 NOT NULL），非 Option 解码遇
+    // NULL 会 panic；NULL 按 false（私有）处理，走 fail-closed 的归属校验。
+    let is_public: bool = row.get::<_, Option<bool>>("is_public").unwrap_or(false);
     if !is_public {
         let sess = require_session(session)?;
         let createor: String = row.get::<_, Option<String>>("createor").unwrap_or_default();
@@ -256,7 +258,7 @@ pub async fn calendar_get(
         description: row.get("description"),
         source: row.get("source"),
         createor: row.get::<_, Option<String>>("createor").unwrap_or_default(),
-        is_public: row.get("is_public"),
+        is_public: row.get::<_, Option<bool>>("is_public").unwrap_or(false),
         status: row.get::<_, Option<String>>("status").unwrap_or_default(),
     };
 
