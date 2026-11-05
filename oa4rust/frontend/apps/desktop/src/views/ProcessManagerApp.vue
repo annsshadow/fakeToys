@@ -162,6 +162,7 @@ import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
 import { liveQueryItems } from './liveQueryItems'
+import { beijingNow, buildTimerStartPayload } from './timerStart'
 
 interface Item {
   id: string
@@ -679,8 +680,18 @@ async function pdEngine(op: string) {
     else if (op === 'instanceExecute') await api.post(`/api/processplatform/service/processing/execute/${e}`, {})
     else if (op === 'instanceCancel') await api.post(`/api/processplatform/service/processing/cancel/${e}`, {})
     else if (op === 'gatewayFork') await api.post(`/api/processplatform/service/processing/gateway/fork/${e}`, {})
-    else if (op === 'timerStart') await api.post('/api/processplatform/service/processing/timer/start', {})
-    else if (op === 'touchMerge') await api.post('/api/processplatform/service/processing/touch/merge', {})
+    else if (op === 'timerStart') {
+      // O27：此前发空 body `{}` → workId/fireAt 均缺失（非 admin 直接 403、admin 400），功能恒不可用。
+      // 用户输入为北京时间，后端 `fire_at` 按 UTC naive 比较 → 统一换算后再提交。
+      const fireAt =
+        prompt('触发时间（北京时间 YYYY-MM-DD HH:MM:SS）:', beijingNow(new Date(Date.now() + 60_000))) || ''
+      const built = buildTimerStartPayload(id, fireAt)
+      if (!built.ok) {
+        toast.error(built.error)
+        return
+      }
+      await api.post('/api/processplatform/service/processing/timer/start', built.payload)
+    } else if (op === 'touchMerge') await api.post('/api/processplatform/service/processing/touch/merge', {})
     else if (op === 'recordEdit') await api.put(`/api/processplatform/service/processing/record/${e}`, {})
     else if (op === 'recordDelete') {
       if (!(await confirmMsg('确定删除该记录？'))) return
