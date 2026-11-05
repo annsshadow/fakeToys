@@ -10,6 +10,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 import { type MeetingRow, meetingApi } from '@/services'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import { listState, loadList } from '@/utils/loadList'
 
 type TabKey = 'wait' | 'confirm' | 'mine'
 
@@ -22,21 +23,26 @@ const TABS: Array<{ key: TabKey; label: string }> = [
 const tab = ref<TabKey>('wait')
 const rows = ref<MeetingRow[]>([])
 const loading = ref(false)
+const loadError = ref('')
 const busyId = ref('')
+const listView = computed(() =>
+  listState({ loading: loading.value, loaded: true, count: rows.value.length, error: loadError.value }),
+)
 
-async function load(): Promise<void> {
+async function load(previousRows: MeetingRow[] = rows.value): Promise<void> {
   loading.value = true
-  try {
-    let resp: { data?: MeetingRow[] | unknown }
-    if (tab.value === 'wait') resp = await meetingApi.invitedWait()
-    else if (tab.value === 'confirm') resp = await meetingApi.waitConfirm()
-    else resp = await meetingApi.applied(1, 50)
-    rows.value = (resp.data ?? []) as MeetingRow[]
-  } catch {
-    rows.value = []
-  } finally {
-    loading.value = false
-  }
+  loadError.value = ''
+  const result = await loadList<MeetingRow>(
+    () => {
+      if (tab.value === 'wait') return meetingApi.invitedWait()
+      if (tab.value === 'confirm') return meetingApi.waitConfirm()
+      return meetingApi.applied(1, 50)
+    },
+    { previousRows, label: '会议加载失败' },
+  )
+  rows.value = result.rows
+  if (!result.ok) loadError.value = result.error
+  loading.value = false
 }
 
 onShow(async () => {
@@ -47,8 +53,8 @@ onShow(async () => {
 function switchTab(key: TabKey): void {
   if (tab.value === key) return
   tab.value = key
-  rows.value = []
-  void load()
+  // 页签是用户主动换数据源，失败时显示该页签自己的错误，不沿用旧页签的行。
+  void load([])
 }
 
 async function act(id: string, fn: () => Promise<unknown>, okText: string): Promise<void> {
@@ -117,8 +123,12 @@ const emptyText = computed(() =>
       </view>
     </view>
 
-    <view v-if="loading && rows.length === 0" class="tip">加载中…</view>
-    <view v-else-if="rows.length === 0" class="tip">{{ emptyText }}</view>
+    <view v-if="listView === 'loading'" class="tip">加载中…</view>
+    <view v-else-if="listView === 'error'" class="tip tip-error">
+      <view class="error-text">{{ loadError }}</view>
+      <view class="retry-btn" @tap="load()">重试</view>
+    </view>
+    <view v-else-if="listView === 'empty'" class="tip">{{ emptyText }}</view>
 
     <view v-for="m in rows" :key="m.id" class="card">
       <view class="card-head">
@@ -227,6 +237,29 @@ const emptyText = computed(() =>
   font-size: 26rpx;
   text-align: center;
   padding: 80rpx 0;
+}
+.tip-error {
+  color: #c0392b;
+}
+.error-text {
+  display: block;
+  margin-bottom: 12rpx;
+  line-height: 1.5;
+}
+.retry-btn {
+  display: inline-block;
+  padding: 8rpx 28rpx;
+  border-radius: 24rpx;
+  border: 1rpx solid #c0392b;
+  color: #c0392b;
+  font-size: 26rpx;
+}
+.error-banner {
+  padding: 24rpx 32rpx;
+  text-align: center;
+  background: #fdf2f0;
+  border-bottom: 1px solid #f0f2f5;
+  margin-bottom: 20rpx;
 }
 .code-mask {
   position: fixed;

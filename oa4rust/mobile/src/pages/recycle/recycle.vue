@@ -7,25 +7,30 @@
  * 端点：GET /api/recycle/list、DELETE /api/recycle/delete/{id}、DELETE /api/recycle/empty。
  */
 import { onShow } from '@dcloudio/uni-app'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { recycleApi } from '@/services'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import { listState, loadList } from '@/utils/loadList'
 
 type Row = Record<string, unknown>
 
 const rows = ref<Row[]>([])
 const loading = ref(false)
+const loadError = ref('')
+const listView = computed(() =>
+  listState({ loading: loading.value, loaded: true, count: rows.value.length, error: loadError.value }),
+)
 
-async function load(): Promise<void> {
+async function load(previousRows: Row[] = rows.value): Promise<void> {
   loading.value = true
-  try {
-    const r = await recycleApi.list()
-    rows.value = (r.data ?? []) as Row[]
-  } catch {
-    rows.value = []
-  } finally {
-    loading.value = false
-  }
+  loadError.value = ''
+  const result = await loadList<Row>(() => recycleApi.list(), {
+    previousRows,
+    label: '回收站加载失败',
+  })
+  rows.value = result.rows
+  if (!result.ok) loadError.value = result.error
+  loading.value = false
 }
 
 onShow(async () => {
@@ -107,9 +112,17 @@ async function emptyAll(): Promise<void> {
 
 <template>
   <view class="page">
-    <view v-if="loading && rows.length === 0" class="tip">加载中…</view>
-    <view v-else-if="rows.length === 0" class="tip">回收站为空</view>
+    <view v-if="listView === 'loading'" class="tip">加载中…</view>
+    <view v-else-if="listView === 'error'" class="tip tip-error">
+      <view class="error-text">{{ loadError }}</view>
+      <view class="retry-btn" @tap="load()">重试</view>
+    </view>
+    <view v-else-if="listView === 'empty'" class="tip">回收站为空</view>
 
+    <view v-if="loadError && rows.length > 0" class="tip-error error-banner">
+      <text class="error-text">{{ loadError }}</text>
+      <view class="retry-btn" @tap="load()">重试</view>
+    </view>
     <view v-for="(r, i) in rows" :key="String(r.id ?? i)" class="card">
       <view class="card-title" @tap="showDetail(r)">{{ nameOf(r) }}</view>
       <view v-if="metaOf(r)" class="card-meta">{{ metaOf(r) }}</view>
@@ -174,6 +187,29 @@ async function emptyAll(): Promise<void> {
   font-size: 26rpx;
   text-align: center;
   padding: 80rpx 0;
+}
+.tip-error {
+  color: #c0392b;
+}
+.error-text {
+  display: block;
+  margin-bottom: 12rpx;
+  line-height: 1.5;
+}
+.retry-btn {
+  display: inline-block;
+  padding: 8rpx 28rpx;
+  border-radius: 24rpx;
+  border: 1rpx solid #c0392b;
+  color: #c0392b;
+  font-size: 26rpx;
+}
+.error-banner {
+  padding: 24rpx 32rpx;
+  text-align: center;
+  background: #fdf2f0;
+  border-bottom: 1px solid #f0f2f5;
+  margin-bottom: 20rpx;
 }
 .card-head {
   display: flex;

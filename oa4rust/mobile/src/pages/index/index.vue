@@ -7,12 +7,16 @@ import { ref } from 'vue'
 import { annApi, attendanceApi, processApi } from '@/services'
 import { useSession } from '@/store/session'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import { loadList } from '@/utils/loadList'
+
+type Notice = { id?: string; title?: string; content?: string; createTime?: string }
 
 const session = useSession()
 const pendingCount = ref<number | null>(null)
 const todayRecords = ref<number | null>(null)
 const loading = ref(false)
-const notices = ref<Array<{ id?: string; title?: string; content?: string; createTime?: string }>>([])
+const notices = ref<Notice[]>([])
+const noticesError = ref('')
 const viewNotice = ref<{ title?: string; content?: string; createTime?: string } | null>(null)
 
 function displayName(): string {
@@ -34,12 +38,13 @@ async function loadPending() {
 
 /** 公告：后端 create_time 倒序，取前 5 条展示；点击看全文。 */
 async function loadNotices() {
-  try {
-    const resp = await annApi.list()
-    notices.value = (resp.data ?? []).slice(0, 5)
-  } catch {
-    notices.value = []
-  }
+  const result = await loadList<Notice>(() => annApi.list(), {
+    previousRows: notices.value,
+    label: '公告加载失败',
+    map: (data) => (Array.isArray(data) ? (data as Notice[]).slice(0, 5) : []),
+  })
+  notices.value = result.rows
+  if (!result.ok) noticesError.value = result.error
 }
 
 /** 今日出勤概览：取按日聚合统计的最新一条记录数。 */
@@ -88,7 +93,15 @@ function goPage(url: string) {
 
     <view class="section-card">
       <view class="sec-title">📢 公告</view>
-      <view v-if="notices.length === 0" class="sec-empty">暂无公告</view>
+      <view v-if="notices.length === 0 && noticesError" class="sec-error">
+        <text class="error-text">{{ noticesError }}</text>
+        <view class="retry-btn" @tap="loadNotices()">重试</view>
+      </view>
+      <view v-else-if="notices.length === 0" class="sec-empty">暂无公告</view>
+      <view v-if="noticesError && notices.length > 0" class="sec-error">
+        <text class="error-text">{{ noticesError }}</text>
+        <view class="retry-btn" @tap="loadNotices()">重试</view>
+      </view>
       <view v-for="n in notices" :key="n.id" class="notice" @tap="viewNotice = n">
         <view class="notice-title">{{ n.title || '无标题' }}</view>
         <view class="notice-meta">{{ (n.createTime || '').slice(0, 10) }}</view>
@@ -230,6 +243,24 @@ function goPage(url: string) {
   color: #90979f;
   font-size: 24rpx;
   padding: 12rpx 0;
+}
+.sec-error {
+  color: #c0392b;
+  font-size: 24rpx;
+  padding: 12rpx 0;
+}
+.error-text {
+  display: block;
+  margin-bottom: 10rpx;
+  line-height: 1.5;
+}
+.retry-btn {
+  display: inline-block;
+  padding: 6rpx 24rpx;
+  border-radius: 22rpx;
+  border: 1rpx solid #c0392b;
+  color: #c0392b;
+  font-size: 24rpx;
 }
 .notice {
   display: flex;

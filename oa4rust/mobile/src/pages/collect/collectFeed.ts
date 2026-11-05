@@ -9,23 +9,21 @@
  * 这里把过滤/映射与失败保留旧数据都变成可测函数。
  */
 
+import { describeLoadError, type ListResponse, type LoadOutcome, loadList } from '@/utils/loadList'
+
 export interface CollectRow {
   id: string
   title: string
   url: string
 }
 
-export type CollectLoadOutcome = { ok: true; rows: CollectRow[] } | { ok: false; rows: CollectRow[]; error: string }
+export type CollectLoadOutcome = LoadOutcome<CollectRow>
 
-export interface CollectListResponse {
-  data?: unknown
-}
+export type CollectListResponse = ListResponse
 
 /** 页面展示用的错误文案：非 Error 也给非空提示，不许静默。 */
 export function describeCollectError(error: unknown): string {
-  const message = (error as { message?: unknown } | null | undefined)?.message
-  const detail = typeof message === 'string' && message.trim() ? message.trim() : '未知错误'
-  return `收藏加载失败：${detail}`
+  return describeLoadError('收藏加载失败', error)
 }
 
 function titleOf(row: Record<string, unknown>): string {
@@ -59,11 +57,9 @@ export async function loadCollectRows(
   personId: unknown,
   previousRows: readonly CollectRow[] = [],
 ): Promise<CollectLoadOutcome> {
-  try {
-    const resp = await fetchAll()
-    return { ok: true, rows: mapCollectRows(resp?.data, personId) }
-  } catch (error) {
-    // 刷新失败保留旧收藏：不能让一次网络抖动把用户正在看的列表抹成「暂无收藏」。
-    return { ok: false, rows: [...previousRows], error: describeCollectError(error) }
-  }
+  return loadList<CollectRow>(fetchAll, {
+    previousRows,
+    label: '收藏加载失败',
+    map: (data) => mapCollectRows(data, personId),
+  })
 }

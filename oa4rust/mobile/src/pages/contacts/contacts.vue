@@ -3,15 +3,20 @@
 
 <script setup lang="ts">
 import { onShow } from '@dcloudio/uni-app'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { messageApi, orgApi } from '@/services'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import { describeLoadError, listState, loadList } from '@/utils/loadList'
 
 const keyword = ref('')
 const rows = ref<Record<string, unknown>[]>([])
 const loading = ref(false)
 const loaded = ref(false)
+const loadError = ref('')
 const busyId = ref('')
+const listView = computed(() =>
+  listState({ loading: loading.value, loaded: loaded.value, count: rows.value.length, error: loadError.value }),
+)
 
 function nameOf(row: Record<string, unknown>): string {
   for (const k of ['name', 'displayName']) {
@@ -31,15 +36,15 @@ function subOf(row: Record<string, unknown>): string {
 
 async function search() {
   loading.value = true
-  try {
-    const resp = await orgApi.personSearch(keyword.value.trim() || undefined)
-    rows.value = resp.data ?? []
-  } catch {
-    rows.value = []
-  } finally {
-    loading.value = false
-    loaded.value = true
-  }
+  loadError.value = ''
+  const result = await loadList<Record<string, unknown>>(() => orgApi.personSearch(keyword.value.trim() || undefined), {
+    previousRows: rows.value,
+    label: '联系人加载失败',
+  })
+  rows.value = result.rows
+  if (!result.ok) loadError.value = result.error
+  loading.value = false
+  loaded.value = true
 }
 
 onShow(async () => {
@@ -57,32 +62,39 @@ const mode = ref<Mode>('person')
 const units = ref<Record<string, unknown>[]>([])
 const groups = ref<Record<string, unknown>[]>([])
 const orgLoading = ref(false)
+const orgError = ref('')
 const detail = ref<Record<string, unknown> | null>(null)
+const detailError = ref('')
 const identities = ref<Record<string, unknown>[]>([])
 const roles = ref<Record<string, unknown>[]>([])
 const detailLoading = ref(false)
+const orgView = computed(() =>
+  listState({
+    loading: orgLoading.value,
+    loaded: true,
+    count: (mode.value === 'unit' ? units.value : groups.value).length,
+    error: orgError.value,
+  }),
+)
 
 async function loadOrg(): Promise<void> {
+  const isUnit = mode.value === 'unit'
   orgLoading.value = true
-  try {
-    if (mode.value === 'unit') {
-      const r = await orgApi.unitList()
-      units.value = (r.data ?? []) as Record<string, unknown>[]
-    } else if (mode.value === 'group') {
-      const r = await orgApi.groupList()
-      groups.value = (r.data ?? []) as Record<string, unknown>[]
-    }
-  } catch {
-    units.value = []
-    groups.value = []
-  } finally {
-    orgLoading.value = false
-  }
+  orgError.value = ''
+  const result = await loadList<Record<string, unknown>>(() => (isUnit ? orgApi.unitList() : orgApi.groupList()), {
+    previousRows: isUnit ? units.value : groups.value,
+    label: isUnit ? '单位加载失败' : '群组加载失败',
+  })
+  if (isUnit) units.value = result.rows
+  else groups.value = result.rows
+  if (!result.ok) orgError.value = result.error
+  orgLoading.value = false
 }
 
 function switchMode(next: Mode): void {
   if (mode.value === next) return
   mode.value = next
+  orgError.value = ''
   if (next !== 'person') void loadOrg()
 }
 
@@ -90,6 +102,7 @@ function switchMode(next: Mode): void {
 async function openPerson(row: Record<string, unknown>): Promise<void> {
   const flag = typeof row.flag === 'string' ? row.flag : ''
   detail.value = row
+  detailError.value = ''
   identities.value = []
   roles.value = []
   if (!flag) return
@@ -98,6 +111,8 @@ async function openPerson(row: Record<string, unknown>): Promise<void> {
     const [ids, rls] = await Promise.allSettled([orgApi.personIdentities(flag), orgApi.personRoles(flag)])
     if (ids.status === 'fulfilled') identities.value = (ids.value.data ?? []) as Record<string, unknown>[]
     if (rls.status === 'fulfilled') roles.value = (rls.value.data ?? []) as Record<string, unknown>[]
+    const failed = ids.status === 'rejected' ? ids.reason : rls.status === 'rejected' ? rls.reason : null
+    if (failed) detailError.value = describeLoadError('身份与角色加载失败', failed)
   } finally {
     detailLoading.value = false
   }
@@ -111,31 +126,35 @@ function orgNameOf(row: Record<string, unknown>): string {
 const unitPeople = ref<Record<string, unknown>[]>([])
 const unitPeopleName = ref('')
 const unitPeopleLoading = ref(false)
+const unitPeopleError = ref('')
+const unitPeopleTarget = ref<Record<string, unknown> | null>(null)
 
 async function openUnit(row: Record<string, unknown>): Promise<void> {
   const unit = String(row.id ?? row.name ?? '')
   if (!unit) return
   unitPeopleName.value = orgNameOf(row)
+  unitPeopleTarget.value = row
+  unitPeopleError.value = ''
   unitPeople.value = []
   unitPeopleLoading.value = true
-  try {
-    const direct = await orgApi.personByUnitDirect([unit])
-    if ((direct.data ?? []).length > 0) {
-      unitPeople.value = direct.data ?? []
-    } else {
-      const nested = await orgApi.personByUnitNested([unit])
-      unitPeople.value = nested.data ?? []
-    }
-  } catch {
-    unitPeople.value = []
-  } finally {
-    unitPeopleLoading.value = false
-  }
+  const result = await loadList<Record<string, unknown>>(
+    async () => {
+      const direct = await orgApi.personByUnitDirect([unit])
+      if ((direct.data ?? []).length > 0) return direct
+      return orgApi.personByUnitNested([unit])
+    },
+    { label: '单位人员加载失败' },
+  )
+  unitPeople.value = result.rows
+  if (!result.ok) unitPeopleError.value = result.error
+  unitPeopleLoading.value = false
 }
 
 function closeUnitPeople(): void {
   unitPeople.value = []
   unitPeopleName.value = ''
+  unitPeopleError.value = ''
+  unitPeopleTarget.value = null
 }
 
 /** 发起单聊：创建一条 type=single 会话（名字取对方姓名），随即进入聊天页。 */
@@ -183,8 +202,12 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
     </view>
 
     <template v-if="mode === 'person'">
-      <view v-if="loading && !loaded" class="tip">加载中…</view>
-      <view v-else-if="rows.length === 0" class="tip">{{ keyword ? '未找到相关人员' : '暂无联系人' }}</view>
+      <view v-if="listView === 'loading'" class="tip">加载中…</view>
+      <view v-else-if="listView === 'error'" class="tip tip-error">
+        <view class="error-text">{{ loadError }}</view>
+        <view class="retry-btn" @tap="search()">重试</view>
+      </view>
+      <view v-else-if="listView === 'empty'" class="tip">{{ keyword ? '未找到相关人员' : '暂无联系人' }}</view>
       <view v-else class="list">
         <view v-for="(row, i) in rows" :key="i" class="item">
           <text class="avatar">{{ nameOf(row).slice(0, 1).toUpperCase() }}</text>
@@ -200,8 +223,12 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
     </template>
 
     <template v-else>
-      <view v-if="orgLoading" class="tip">加载中…</view>
-      <view v-else-if="(mode === 'unit' ? units : groups).length === 0" class="tip">
+      <view v-if="orgView === 'loading'" class="tip">加载中…</view>
+      <view v-else-if="orgView === 'error'" class="tip tip-error">
+        <view class="error-text">{{ orgError }}</view>
+        <view class="retry-btn" @tap="loadOrg()">重试</view>
+      </view>
+      <view v-else-if="orgView === 'empty'" class="tip">
         {{ mode === 'unit' ? '暂无单位' : '暂无群组' }}
       </view>
       <view v-else class="list">
@@ -222,6 +249,10 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
         <text class="detail-close" @tap="closeUnitPeople">关闭</text>
       </view>
       <view v-if="unitPeopleLoading" class="tip">加载中…</view>
+      <view v-else-if="unitPeople.length === 0 && unitPeopleError" class="tip tip-error">
+        <view class="error-text">{{ unitPeopleError }}</view>
+        <view v-if="unitPeopleTarget" class="retry-btn" @tap="openUnit(unitPeopleTarget)">重试</view>
+      </view>
       <view v-else-if="unitPeople.length === 0" class="tip">该单位暂无人员</view>
       <view v-for="(p, i) in unitPeople" :key="i" class="item">
         <text class="avatar">{{ nameOf(p).slice(0, 1).toUpperCase() }}</text>
@@ -240,6 +271,10 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
       <view class="detail-sub">{{ subOf(detail) || '—' }}</view>
       <view v-if="detailLoading" class="tip">加载身份与角色…</view>
       <template v-else>
+        <view v-if="detailError" class="tip-error error-banner">
+          <text class="error-text">{{ detailError }}</text>
+          <view class="retry-btn" @tap="openPerson(detail)">重试</view>
+        </view>
         <view class="detail-sec">
           <text class="detail-label">身份（{{ identities.length }}）</text>
           <view v-if="identities.length === 0" class="detail-empty">—</view>
@@ -279,6 +314,28 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
   text-align: center;
   color: #90979f;
   font-size: 28rpx;
+}
+.tip-error {
+  color: #c0392b;
+}
+.error-text {
+  display: block;
+  margin-bottom: 12rpx;
+  line-height: 1.5;
+}
+.retry-btn {
+  display: inline-block;
+  padding: 8rpx 28rpx;
+  border-radius: 24rpx;
+  border: 1rpx solid #c0392b;
+  color: #c0392b;
+  font-size: 26rpx;
+}
+.error-banner {
+  padding: 24rpx 32rpx;
+  text-align: center;
+  background: #fdf2f0;
+  border-bottom: 1px solid #f0f2f5;
 }
 .list {
   background: #fff;
