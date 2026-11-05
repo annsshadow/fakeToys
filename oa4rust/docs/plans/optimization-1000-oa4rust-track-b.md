@@ -2504,6 +2504,13 @@ error retrieving column order_number: error deserializing column 5
 - 四 crate 单测（`--skip migrate::tests`）+ `shared --lib`（同 skip）：全绿。
   ⚠️ 环境债同 O32：`shared::migrate::tests` 在漂移的 `oa4rust_test` 上红，scratch 上绿。
 
+### 本轮暴露、未修的债务（独立于 keyset，别混进来）
+
+- 组织域列表把手写的 `create_time` 解码为非空 `String`（`row.get("create_time")`）；
+  该列若为 NULL，响应 500（组织域回归最初用 NULL 行触发，已从用例里移除）。keyset
+  层已能对 NULL 定序（`'-infinity'`），但**解码层会先炸**。是否允许 NULL、是否改
+  `Option<String>` 需单独裁定，不在 O33 范围。
+
 
 
 
