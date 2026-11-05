@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // chaos-drill.mjs — R89 混沌演练：边压边打，三种真实故障注入 × 四项断言。
 //
+// LIFECYCLE-COVERAGE: none reason=故障演练（锁/池/取消），不观测无信号存活
+//
 // 用法：
 //   node scripts/chaos-drill.mjs                 # 全自动（建库/起 API/负载/注入/断言/清理）
 //   node scripts/chaos-drill.mjs --keep          # 结束后保留 chaos 库与 API（排查用）

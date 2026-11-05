@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # db_restore_drill.sh — 备份恢复演练（R58 / B 类：灾备能力增量）
 #
+# LIFECYCLE-COVERAGE: none reason=灾备恢复演练，临时 API 只等 /readyz
+#
 # 为什么需要它
 # ------------
 # 「有 pg_dump」不等于「能恢复」。真正会出问题的是：

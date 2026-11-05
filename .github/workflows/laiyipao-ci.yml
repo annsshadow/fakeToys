@@ -143,6 +143,10 @@ jobs:
         run: node scripts/lifecycle-survival-check.mjs
         env:
           DATABASE_URL: postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable
+      - name: Lifecycle smoke window guard
+        # 静态门禁：所有会起 API 的脚本必须显式声明「覆盖生命周期 / 不覆盖」；
+        # full 类的窗口必须 ≥ 2× 最长内部超时，并与代码里的常量对拍。
+        run: node scripts/smoke-window-guard.mjs
 
   # ── admin 管理端（Vue3 + Vite）：类型检查 + 单测 + 构建 ─────────────────
   admin:

@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // multi-instance-check.mjs — R87 多副本部署就绪性矩阵（可复跑）。
 //
+// LIFECYCLE-COVERAGE: none reason=多副本就绪矩阵（最后一条检查实测 4.9s），只测共享状态，不覆盖进程生命周期
+//
 // # 干什么
 //
 // 起两个真实 API 实例（共用同一个库，不同端口），逐项实测六类进程内
