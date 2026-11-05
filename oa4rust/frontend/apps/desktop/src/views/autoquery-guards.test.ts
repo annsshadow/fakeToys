@@ -32,7 +32,7 @@ const baseline: Array<[string, number]> = [
   ['ProcessDesigner.vue', 0],
   ['ProcessWork.vue', 1],
   ['ProgramCenterApp.vue', 0],
-  ['QueryManagerDeep.vue', 0],
+  ['QueryManagerDeep.vue', 1],
   ['QueryViewApp.vue', 0],
   ['RoleManager.vue', 0],
   ['ServerApp.vue', 0],

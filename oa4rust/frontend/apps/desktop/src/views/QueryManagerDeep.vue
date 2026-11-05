@@ -91,7 +91,9 @@
           <button :class="{active: qsTab==='statement'}" @click="qsTab='statement'">SQL</button>
         </div>
         <div class="qs-list">
+          <ListLoadError v-if="queries.length > 0 && loadError" mode="banner" :message="loadError" @retry="reload" />
           <div v-if="qsLoading" class="qs-loading">加载中...</div>
+          <ListLoadError v-else-if="qsFiltered.length===0 && loadError" mode="empty" :message="loadError" @retry="reload" />
           <div v-else-if="qsFiltered.length===0" class="qs-empty">暂无查询定义</div>
           <div v-for="q in qsFiltered" :key="q.id" class="qs-item"
             :class="{active:selected?.id===q.id}"
@@ -426,13 +428,16 @@
 
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
-import { useMutation, useQueryClient } from '@tanstack/vue-query'
-import { computed, ref } from 'vue'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
+import { computed, ref, watch } from 'vue'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import EChartsView from '../components/EChartsView.vue'
 import { parseCsv } from '../utils/csv'
 import { downloadBlob } from '../utils/download'
 import { confirmMsg, toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { useListError } from './listQuery'
 
 interface QueryDef {
   id: string
@@ -476,7 +481,25 @@ const statChartData = computed(() =>
 const importConfig = ref({ delimiter: ',' })
 
 const qc = useQueryClient()
-const queries = ref<QueryDef[]>(data.value ?? [])
+// 此前 queries 直接引用未定义的查询结果 → setup 阶段 ReferenceError，页面渲染不出来。
+const { data, isError, error } = useQuery({
+  queryKey: ['query', 'defs'],
+  queryFn: () => api.get('/api/query/assemble/designer/list/all').then((r: any) => (r.data ?? []) as QueryDef[]),
+})
+const queries = ref<QueryDef[]>([])
+watch(
+  data,
+  (rows) => {
+    if (rows) queries.value = rows
+  },
+  { immediate: true },
+)
+const { loadError, reload } = useListError({
+  isError,
+  error,
+  queryKey: ['query', 'defs'],
+  label: '查询定义加载失败',
+})
 
 const qsFiltered = computed(() => {
   let list = queries.value

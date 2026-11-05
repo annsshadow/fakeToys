@@ -96,6 +96,8 @@ const FIXED = {
   'oa4rust/frontend/apps/desktop/src/views/DocumentApp.vue': 'R120',
   'oa4rust/frontend/apps/desktop/src/views/HotpicApp.vue': 'R120',
   'oa4rust/frontend/apps/desktop/src/views/PortalApp.vue': 'R120',
+  'oa4rust/frontend/apps/desktop/src/views/MeetingApp.vue': 'R121',
+  'oa4rust/frontend/apps/desktop/src/views/QueryManagerDeep.vue': 'R121',
 }
 
 const LIST_STATE =
@@ -135,13 +137,11 @@ const A_PENDING = new Map([
   ['oa4rust/frontend/apps/desktop/src/views/FormApp.vue', '两个列表取数（L259/L272）失败无提示；空态 L32/L57'],
   ['oa4rust/frontend/apps/desktop/src/views/FormDesigner.vue', '表单列表取数（L1019）失败无提示；空态 L26「暂无表单」'],
   ['oa4rust/frontend/apps/desktop/src/views/JPushApp.vue', '设备/模板列表（L105/L117）失败无提示；空态 L48/L67'],
-  ['oa4rust/frontend/apps/desktop/src/views/MeetingApp.vue', '会议列表（L188）失败无提示；空态 L78「暂无会议」'],
   [
     'oa4rust/frontend/apps/desktop/src/views/Personal.vue',
     'loadEmpower catch 清空 empMine/empTo（L585-589）；空态 L129「暂无授权记录」',
   ],
   ['oa4rust/frontend/apps/desktop/src/views/QueryDesigner.vue', '查询列表（L317）失败无提示；空态 L25「暂无查询定义」'],
-  ['oa4rust/frontend/apps/desktop/src/views/QueryManagerDeep.vue', 's(api.get(...)) 吞错；空态 L95「暂无查询定义」'],
   [
     'oa4rust/frontend/apps/desktop/src/views/QueryStatementDesigner.vue',
     '语句列表（L927）失败无提示；空态 L51「暂无语句定义」',

@@ -74,7 +74,9 @@
       <span v-for="rm in roomList" :key="rm.id" class="bld-chip">{{ rm.name }}<button class="bld-del" @click="removeRoom(rm)">×</button></span>
     </div>
     <div class="content-panel glass-card">
+      <ListLoadError v-if="meetings.length > 0 && loadError" mode="banner" :message="loadError" @retry="loadMeetings" />
       <div v-if="loading" class="ls"><div class="sk" v-for="i in 5" :key="i"></div></div>
+      <ListLoadError v-else-if="meetings.length===0 && loadError" mode="empty" :message="loadError" @retry="loadMeetings" />
       <div v-else-if="meetings.length===0" class="es"><div class="ei">👥</div><p>暂无会议</p></div>
       <div v-else class="ml">
         <div v-for="m in meetings" :key="m.id" class="mc" @click="viewMeeting(m)">
@@ -132,6 +134,9 @@ import { api, useSession } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { onMounted, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { describeListError } from './listQuery'
 
 interface M {
   id: string
@@ -159,6 +164,7 @@ const searchKey = ref(''),
   buildings = ref<Bldg[]>([]),
   rooms = ref<Room[]>([]),
   loading = ref(false),
+  loadError = ref(''),
   showCreate = ref(false),
   err = ref(''),
   qc = useQueryClient()
@@ -180,6 +186,7 @@ async function loadRooms() {
 }
 async function loadMeetings() {
   loading.value = true
+  loadError.value = ''
   try {
     const p: Record<string, string> = {}
     if (searchKey.value) p.key = searchKey.value
@@ -187,8 +194,9 @@ async function loadMeetings() {
     // 后端无裸 meeting/list；meeting/list/apply/{page}/size/{size} 为真实列表端点。
     const r = await api.get('/api/meeting/assemble/control/meeting/list/apply/1/size/50')
     meetings.value = (r.data ?? []) as M[]
-  } catch {
-    meetings.value = []
+  } catch (e) {
+    // 失败保留旧会议并显式报错，不能和「真的没有会议」混成同一种空态。
+    loadError.value = describeListError('会议列表加载失败', e)
   } finally {
     loading.value = false
   }
