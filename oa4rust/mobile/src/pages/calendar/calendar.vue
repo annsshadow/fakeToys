@@ -14,6 +14,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 import { type CalendarRow, calendarApi } from '@/services'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import { describeLoadError } from '@/utils/loadList'
 
 interface EventRow {
   id?: string
@@ -40,6 +41,13 @@ const range = ref<RangeKey>('today')
 const calendars = ref<CalendarRow[]>([])
 const events = ref<EventRow[]>([])
 const loading = ref(false)
+const loadError = ref('')
+const eventsView = computed(() => {
+  if (loading.value && events.value.length === 0) return 'loading'
+  if (loadError.value && events.value.length === 0) return 'error'
+  if (events.value.length === 0) return 'empty'
+  return 'list'
+})
 
 // 新建事件（core calendar event/create）——移动端三端配合
 const composing = ref(false)
@@ -114,6 +122,7 @@ function startMs(e: EventRow): number {
 
 async function load(): Promise<void> {
   loading.value = true
+  loadError.value = ''
   try {
     const cals = await calendarApi.myCalendars()
     calendars.value = (cals.data ?? []) as CalendarRow[]
@@ -128,6 +137,10 @@ async function load(): Promise<void> {
         all.push(...((r.value.data ?? []) as EventRow[]))
       }
     }
+    const failed = responses.find((r) => r.status === 'rejected')
+    if (failed && failed.status === 'rejected') {
+      loadError.value = describeLoadError('部分日历日程加载失败', failed.reason)
+    }
     const { from, to } = rangeBounds()
     events.value = all
       .filter((e) => {
@@ -135,9 +148,9 @@ async function load(): Promise<void> {
         return Number.isFinite(ms) && ms >= from && ms < to
       })
       .sort((a, b) => startMs(a) - startMs(b))
-  } catch {
-    calendars.value = []
-    events.value = []
+  } catch (e) {
+    // 刷新失败保留上一次的日历与日程，不当成空日程。
+    loadError.value = describeLoadError('日程加载失败', e)
   } finally {
     loading.value = false
   }
@@ -219,8 +232,16 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
       <view class="c-submit" @tap="submitEvent">保存事件</view>
     </view>
 
-    <view v-if="loading && events.length === 0" class="tip">加载中…</view>
-    <view v-else-if="events.length === 0" class="tip">{{ emptyText }}</view>
+    <view v-if="eventsView === 'loading'" class="tip">加载中…</view>
+    <view v-else-if="eventsView === 'error'" class="tip tip-error">
+      <view class="error-text">{{ loadError }}</view>
+      <view class="retry-btn" @tap="load()">重试</view>
+    </view>
+    <view v-else-if="eventsView === 'empty'" class="tip">{{ emptyText }}</view>
+    <view v-if="loadError && events.length > 0" class="tip tip-error error-banner">
+      <text class="error-text">{{ loadError }}</text>
+      <view class="retry-btn" @tap="load()">重试</view>
+    </view>
 
     <view v-for="e in events" :key="e.id" class="card" @tap="openEvent(e)">
       <view class="row">
@@ -314,6 +335,29 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
   font-size: 26rpx;
   text-align: center;
   padding: 80rpx 0;
+}
+.tip-error {
+  color: #c0392b;
+  padding: 40rpx 0;
+}
+.error-text {
+  display: block;
+  margin-bottom: 12rpx;
+  line-height: 1.5;
+}
+.retry-btn {
+  display: inline-block;
+  padding: 8rpx 28rpx;
+  border-radius: 24rpx;
+  border: 1rpx solid #c0392b;
+  color: #c0392b;
+  font-size: 26rpx;
+}
+.error-banner {
+  padding: 24rpx 32rpx;
+  background: #fdf2f0;
+  border-radius: 12rpx;
+  margin-bottom: 20rpx;
 }
 .detail-head {
   display: flex;

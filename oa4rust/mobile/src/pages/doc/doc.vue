@@ -3,18 +3,27 @@
 
 <script setup lang="ts">
 import { onShow } from '@dcloudio/uni-app'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { fileApi } from '@/services'
 import { useSession } from '@/store/session'
 import { ensureAuthenticated } from '@/utils/auth-guard'
 import { formatFileSize } from '@/utils/format'
+import { listState, loadList } from '@/utils/loadList'
 
 const session = useSession()
 const rows = ref<Record<string, unknown>[]>([])
 const attachRows = ref<Record<string, unknown>[]>([])
 const loading = ref(false)
 const loaded = ref(false)
+const filesError = ref('')
+const attachError = ref('')
 const uploading = ref(false)
+const filesView = computed(() =>
+  listState({ loading: loading.value, loaded: loaded.value, count: rows.value.length, error: filesError.value }),
+)
+const attachView = computed(() =>
+  listState({ loading: loading.value, loaded: loaded.value, count: attachRows.value.length, error: attachError.value }),
+)
 
 function myFolder(): string {
   return session.user?.unique ?? ''
@@ -38,22 +47,23 @@ async function load() {
   // 未登录或会话未恢复时不请求，避免无意义 401。
   if (!session.user?.unique) return
   loading.value = true
-  try {
-    const resp = await fileApi.fileList(session.user.unique)
-    rows.value = resp.data ?? []
-  } catch {
-    rows.value = []
-  }
+  filesError.value = ''
+  attachError.value = ''
+  const files = await loadList<Record<string, unknown>>(() => fileApi.fileList(session.user.unique), {
+    previousRows: rows.value,
+    label: '文件加载失败',
+  })
+  rows.value = files.rows
+  if (!files.ok) filesError.value = files.error
   // 附件存储 FILE_FILE：上传落点，单列展示（区别于 x_file「我的文件」）。
-  try {
-    const attachResp = await fileApi.attachmentList(session.user.unique)
-    attachRows.value = attachResp.data ?? []
-  } catch {
-    attachRows.value = []
-  } finally {
-    loading.value = false
-    loaded.value = true
-  }
+  const attach = await loadList<Record<string, unknown>>(() => fileApi.attachmentList(session.user.unique), {
+    previousRows: attachRows.value,
+    label: '附件加载失败',
+  })
+  attachRows.value = attach.rows
+  if (!attach.ok) attachError.value = attach.error
+  loading.value = false
+  loaded.value = true
 }
 
 onShow(async () => {
@@ -173,8 +183,17 @@ function pickFromFilePicker(): void {
     <view v-else class="page-body">
       <view class="section">
         <view class="section-title">我的附件（附件存储 FILE_FILE，上传落点）</view>
-        <view v-if="attachRows.length === 0" class="tip">暂无附件</view>
-        <view v-else class="list">
+        <view v-if="attachView === 'loading'" class="tip">加载中…</view>
+        <view v-else-if="attachView === 'error'" class="tip tip-error">
+          <view class="error-text">{{ attachError }}</view>
+          <view class="retry-btn" @tap="load()">重试</view>
+        </view>
+        <view v-else-if="attachView === 'empty'" class="tip">暂无附件</view>
+        <view v-if="attachError && attachRows.length > 0" class="tip-error error-banner">
+          <text class="error-text">{{ attachError }}</text>
+          <view class="retry-btn" @tap="load()">重试</view>
+        </view>
+        <view v-if="attachRows.length > 0" class="list">
           <view v-for="(row, i) in attachRows" :key="'att' + i" class="item" @tap="downloadAttachment(row)">
             <text class="icon">📎</text>
             <view class="body">
@@ -186,8 +205,17 @@ function pickFromFilePicker(): void {
       </view>
       <view class="section">
         <view class="section-title">我的文件（文档库 x_file）</view>
-        <view v-if="rows.length === 0" class="tip">暂无文件</view>
-        <view v-else class="list">
+        <view v-if="filesView === 'loading'" class="tip">加载中…</view>
+        <view v-else-if="filesView === 'error'" class="tip tip-error">
+          <view class="error-text">{{ filesError }}</view>
+          <view class="retry-btn" @tap="load()">重试</view>
+        </view>
+        <view v-else-if="filesView === 'empty'" class="tip">暂无文件</view>
+        <view v-if="filesError && rows.length > 0" class="tip-error error-banner">
+          <text class="error-text">{{ filesError }}</text>
+          <view class="retry-btn" @tap="load()">重试</view>
+        </view>
+        <view v-if="rows.length > 0" class="list">
           <view v-for="(row, i) in rows" :key="i" class="item" @tap="downloadAndOpen(row)">
             <text class="icon">📄</text>
             <view class="body">
@@ -221,6 +249,29 @@ function pickFromFilePicker(): void {
   text-align: center;
   color: #90979f;
   font-size: 28rpx;
+}
+.tip-error {
+  padding: 60rpx 32rpx;
+  color: #c0392b;
+  font-size: 28rpx;
+}
+.error-text {
+  display: block;
+  margin-bottom: 12rpx;
+  line-height: 1.5;
+}
+.retry-btn {
+  display: inline-block;
+  padding: 8rpx 28rpx;
+  border-radius: 24rpx;
+  border: 1rpx solid #c0392b;
+  color: #c0392b;
+  font-size: 26rpx;
+}
+.error-banner {
+  padding: 24rpx 32rpx;
+  background: #fdf2f0;
+  border-bottom: 1px solid #f0f2f5;
 }
 .page-body {
   background: #fff;

@@ -6,9 +6,11 @@ import { onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import { type AttendancePreCheck, attendanceApi } from '@/services'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import { describeLoadError } from '@/utils/loadList'
 
 const pre = ref<AttendancePreCheck | null>(null)
 const loading = ref(false)
+const preError = ref('')
 const checking = ref(false)
 
 function fmtTime(value?: string): string {
@@ -26,11 +28,13 @@ function labelOf(checkInType?: string): string {
 
 async function load() {
   loading.value = true
+  preError.value = ''
   try {
     const resp = await attendanceApi.preCheck()
     pre.value = resp.data ?? null
-  } catch {
-    pre.value = null
+  } catch (e) {
+    // 刷新失败保留旧状态；首次失败必须给出错误，不能伪装成「未加入考勤组」。
+    preError.value = describeLoadError('考勤信息加载失败', e)
   } finally {
     loading.value = false
   }
@@ -119,24 +123,26 @@ const myStat = ref<Record<string, unknown> | null>(null)
 const myDetails = ref<MyDetailRow[]>([])
 const apiVersion = ref('')
 const myLoading = ref(false)
+const mineError = ref('')
 
 async function loadMine(): Promise<void> {
   myLoading.value = true
-  try {
-    const [statResp, detailResp, verResp] = await Promise.all([
-      attendanceApi.myStatistic(),
-      attendanceApi.myDetailList(),
-      attendanceApi.myVersion(),
-    ])
-    myStat.value = (statResp.data ?? null) as Record<string, unknown> | null
-    myDetails.value = (detailResp.data ?? []) as MyDetailRow[]
-    apiVersion.value = String((verResp.data as { version?: string })?.version ?? '')
-  } catch {
-    myStat.value = null
-    myDetails.value = []
-  } finally {
-    myLoading.value = false
+  mineError.value = ''
+  const [statResp, detailResp, verResp] = await Promise.allSettled([
+    attendanceApi.myStatistic(),
+    attendanceApi.myDetailList(),
+    attendanceApi.myVersion(),
+  ])
+  if (statResp.status === 'fulfilled') myStat.value = (statResp.value.data ?? null) as Record<string, unknown> | null
+  if (detailResp.status === 'fulfilled') myDetails.value = (detailResp.value.data ?? []) as MyDetailRow[]
+  if (verResp.status === 'fulfilled')
+    apiVersion.value = String((verResp.value.data as { version?: string })?.version ?? '')
+  const failed = [statResp, detailResp, verResp].find((r) => r.status === 'rejected')
+  if (failed && failed.status === 'rejected') {
+    // 部分失败也保留已拿到的统计/明细，同时把错误显示出来。
+    mineError.value = describeLoadError('月度考勤加载失败', failed.reason)
   }
+  myLoading.value = false
 }
 
 function statText(): string {
@@ -160,9 +166,17 @@ function statText(): string {
       <view class="group">{{ pre?.group?.groupName || '未加入考勤组' }}</view>
     </view>
 
-    <view v-if="loading && !pre" class="tip">加载中…</view>
+    <view v-if="loading && !pre && !preError" class="tip">加载中…</view>
+    <view v-else-if="preError && !pre" class="tip tip-error">
+      <view class="error-text">{{ preError }}</view>
+      <view class="retry-btn" @tap="load()">重试</view>
+    </view>
 
     <template v-else>
+      <view v-if="preError" class="tip-error error-banner">
+        <text class="error-text">{{ preError }}</text>
+        <view class="retry-btn" @tap="load()">重试</view>
+      </view>
       <view class="buttons">
         <button class="btn" :disabled="checking || !pre?.canCheckIn" @tap="doCheck('checkIn')">
           上班打卡
@@ -210,7 +224,15 @@ function statText(): string {
         </view>
         <view class="stat-line">{{ statText() }}</view>
         <view v-if="myLoading" class="tip">加载中…</view>
+        <view v-else-if="myDetails.length === 0 && mineError" class="tip tip-error">
+          <view class="error-text">{{ mineError }}</view>
+          <view class="retry-btn" @tap="loadMine()">重试</view>
+        </view>
         <view v-else-if="myDetails.length === 0" class="tip">暂无考勤明细</view>
+        <view v-if="mineError && myDetails.length > 0" class="tip-error error-banner">
+          <text class="error-text">{{ mineError }}</text>
+          <view class="retry-btn" @tap="loadMine()">重试</view>
+        </view>
         <view v-for="d in myDetails" :key="d.id" class="rec">
           <view class="rec-main">
             <text class="rec-type">{{ d.date || '—' }}</text>
@@ -279,6 +301,29 @@ function statText(): string {
   font-size: 26rpx;
   text-align: center;
   padding: 40rpx 0;
+}
+.tip-error {
+  color: #c0392b;
+}
+.error-text {
+  display: block;
+  margin-bottom: 12rpx;
+  line-height: 1.5;
+}
+.retry-btn {
+  display: inline-block;
+  padding: 8rpx 28rpx;
+  border-radius: 24rpx;
+  border: 1rpx solid #c0392b;
+  color: #c0392b;
+  font-size: 26rpx;
+}
+.error-banner {
+  padding: 24rpx 32rpx;
+  text-align: center;
+  background: #fdf2f0;
+  border-radius: 12rpx;
+  margin-bottom: 20rpx;
 }
 .section {
   background: #fff;

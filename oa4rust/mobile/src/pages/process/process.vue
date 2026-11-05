@@ -6,6 +6,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import { processApi } from '@/services'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import { describeLoadError } from '@/utils/loadList'
 import { describeProcessError, loadProcessPage, mergeProcessRows } from './processList'
 
 type TabKey = 'pending' | 'done' | 'started'
@@ -30,6 +31,8 @@ const detailLoading = ref(false)
 const detailAttachments = ref<Record<string, unknown>[]>([])
 const detailRecords = ref<Record<string, unknown>[]>([])
 const detailWorklogs = ref<Record<string, unknown>[]>([])
+const detailError = ref('')
+const detailTarget = ref<{ row: Record<string, unknown>; i: number } | null>(null)
 
 function workIdOf(row: Record<string, unknown>): string {
   for (const k of ['work', 'workId', 'id']) {
@@ -44,21 +47,25 @@ async function openDetail(row: Record<string, unknown>, i: number) {
   if (!id) return
   detailOpen.value = true
   detailTitle.value = titleOf(row, i)
+  detailTarget.value = { row, i }
   detailLoading.value = true
+  detailError.value = ''
   detailAttachments.value = []
   detailRecords.value = []
   detailWorklogs.value = []
-  const settle = async <T>(p: Promise<{ data?: T[] }>): Promise<T[]> => {
+  const settle = async <T>(p: Promise<{ data?: T[] }>, label: string): Promise<T[]> => {
     try {
       return (await p).data ?? []
-    } catch {
+    } catch (e) {
+      // 单节失败置空不该静默：记下第一条错误，详情浮层顶部统一展示。
+      if (!detailError.value) detailError.value = describeLoadError(label, e)
       return []
     }
   }
   const [att, rec, log] = await Promise.all([
-    settle(processApi.attachments(id)),
-    settle(processApi.records(id)),
-    settle(processApi.worklogs(id)),
+    settle(processApi.attachments(id), '附件加载失败'),
+    settle(processApi.records(id), '流转记录加载失败'),
+    settle(processApi.worklogs(id), '工作日志加载失败'),
   ])
   detailAttachments.value = att
   detailRecords.value = rec
@@ -66,8 +73,15 @@ async function openDetail(row: Record<string, unknown>, i: number) {
   detailLoading.value = false
 }
 
+function retryDetail() {
+  const target = detailTarget.value
+  if (target) void openDetail(target.row, target.i)
+}
+
 function closeDetail() {
   detailOpen.value = false
+  detailError.value = ''
+  detailTarget.value = null
 }
 
 function textOf(row: Record<string, unknown>, keys: string[], fallback = ''): string {
@@ -235,6 +249,10 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
         </view>
         <view v-if="detailLoading" class="tip">加载中…</view>
         <scroll-view v-else scroll-y class="sheet-body">
+          <view v-if="detailError" class="tip-error error-banner">
+            <text class="error-text">{{ detailError }}</text>
+            <view class="retry-btn" @tap="retryDetail">重试</view>
+          </view>
           <view class="sec-title">附件 ({{ detailAttachments.length }})</view>
           <view v-if="detailAttachments.length === 0" class="sec-empty">无附件</view>
           <view v-for="(a, ai) in detailAttachments" :key="`a${ai}`" class="sec-row">
@@ -307,6 +325,12 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
 }
 .footer-error {
   color: #c0392b;
+}
+.error-banner {
+  padding: 20rpx 24rpx;
+  background: #fdf2f0;
+  border-radius: 12rpx;
+  margin-top: 16rpx;
 }
 .load-more {
   color: #2d8cf0;

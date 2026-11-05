@@ -42,22 +42,21 @@ const FIXED = {
   'oa4rust/mobile/src/pages/meeting/meeting.vue': 'R113',
   'oa4rust/mobile/src/pages/recycle/recycle.vue': 'R113',
   'oa4rust/mobile/src/pages/index/index.vue': 'R113',
+  'oa4rust/mobile/src/pages/attendance/attendance.vue': 'R114',
+  'oa4rust/mobile/src/pages/calendar/calendar.vue': 'R114',
+  'oa4rust/mobile/src/pages/doc/doc.vue': 'R114',
+  'oa4rust/mobile/src/pages/process/process.vue': 'R114',
+  'oa4rust/frontend/apps/desktop/src/views/EmptyApp.vue': 'R114',
 }
 
 const LIST_STATE =
   /^(rows|list|items|data|records|result|results|msgs|messages|conversations|events|calendars|topics|detail|notices|attachRows|myDetails|calendars)/i
 const MIN_SCANNED_FILES = 120
-const MIN_FOLD_CANDIDATES = 28
+const MIN_FOLD_CANDIDATES = 22
 
 // 首轮扫描（R113 建立）确认的待修文件；修好一个就移到 FIXED 并从这里删掉，
 // 新出现的文件必须显式登记，否则守卫失败。
-const BASELINE_PENDING = new Set([
-  'oa4rust/mobile/src/pages/attendance/attendance.vue',
-  'oa4rust/mobile/src/pages/calendar/calendar.vue',
-  'oa4rust/mobile/src/pages/doc/doc.vue',
-  'oa4rust/mobile/src/pages/process/process.vue',
-  'oa4rust/frontend/apps/desktop/src/views/EmptyApp.vue',
-])
+const BASELINE_PENDING = new Set([])
 
 function walk(dir, out = []) {
   for (const entry of readdirSync(dir)) {
