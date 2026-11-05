@@ -6,6 +6,7 @@ package store
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"strconv"
 	"time"
 
@@ -26,6 +27,9 @@ import (
 // 使用者（seeder / stdlib 迁移）走 Pool.Raw()。
 type DB struct {
 	Pool *Pool
+	// cfg 保留构造期配置：迁移要建**独立连接池**（R103），需要 DSN /
+	// 时区 / 迁移预算，不能从已建好的运行期池里反推。
+	cfg config.Config
 }
 
 // defaultDBTimeZone 是会话时区的兜底值。
@@ -100,8 +104,10 @@ func Open(ctx context.Context, cfg config.Config) (*DB, error) {
 	// 设上界后，超时由 PG 主动取消（57014），连接立刻归还，
 	// 错误也能进日志、被 fail-loud 上抛。
 	//
-	// ⚠️ 它同样作用于启动时的迁移（迁移复用同一个池）：大回填迁移如果
-	// 可能超过上限，应在那次启动显式设 DB_STATEMENT_TIMEOUT=0。
+	// ⚠️ 迁移**不再**复用这个池（R103）：`Migrate` 建一个独立的迁移连接池，
+	// 显式 `statement_timeout=0` / `lock_timeout=0`，迁移结束即关闭。
+	// 所以「大回填要设 DB_STATEMENT_TIMEOUT=0」这条旧建议已经失效 ——
+	// 这两个变量只作用于运行期池；迁移的上限改由 `MIGRATE_TIMEOUT` 单独给。
 	// 用 RuntimeParams 的理由与 TimeZone 相同：随握手一次性下发，
 	// 不存在「某条连接漏设」的可能，也不多一次往返。
 	if cfg.DBStatementTimeout > 0 {
@@ -128,8 +134,8 @@ func Open(ctx context.Context, cfg config.Config) (*DB, error) {
 	// 超时错误码同样是 57014，R67 的 IsTransientDependency 已映射 503，
 	// 错误路径零改动。
 	//
-	// ⚠️ 迁移（goose）可能持锁远超 2s：迁移复用同一池时，
-	// 应显式设 DB_LOCK_TIMEOUT=0。
+	// ⚠️ 迁移不经过这个预算（R103）：`Migrate` 的独立迁移池显式
+	// `lock_timeout=0`；迁移外的请求仍受这里约束。
 	if cfg.DBLockTimeout > 0 {
 		ms := cfg.DBLockTimeout.Milliseconds()
 		if ms < 1 {
@@ -149,7 +155,7 @@ func Open(ctx context.Context, cfg config.Config) (*DB, error) {
 		pool.Close()
 		return nil, fmt.Errorf("ping database: %w", err)
 	}
-	return &DB{Pool: WrapPool(pool, cfg.DBAcquireTimeout)}, nil
+	return &DB{Pool: WrapPool(pool, cfg.DBAcquireTimeout), cfg: cfg}, nil
 }
 
 // Close 释放连接池。
@@ -183,49 +189,137 @@ func (d *DB) Close() {
 // ⚠️ 会话锁会**独占一个连接**直到迁移结束，所以迁移至少需要 2 个连接
 // （锁 1 个 + goose 查询 1 个）。`DB_MAX_CONNS=1` 会在这里报错而不是
 // 卡到 context 超时 —— 后者看起来只是「迁移很慢」，很难排查。
+//
+// # R103：迁移的超时与连接预算必须独立
+//
+// 修前直接 `provider.Up(启动 ctx)`，且迁移复用运行期池 —— 两个硬上限
+// 都落在迁移头上：
+//
+//	| 上限 | 来源 | 实测原文 |
+//	|------|------|----------|
+//	| 60s  | 启动 ctx（连库/探测用的 deadline） | `goose up: ... timeout: context deadline exceeded`，60.09s 退出 |
+//	| 30s  | 运行期池的 statement_timeout | 同上形态，只是更早；单条大 UPDATE/回填会被 57014 掐断 |
+//	| 2s   | 运行期池的 lock_timeout（R94） | `ERROR: canceling statement due to lock timeout (SQLSTATE 55P03)`，2.07s 退出 |
+//
+// 前两条在日志里都贴着 "timeout"，与「SQL 写错」很难分辨 —— R103 的
+// 实测两条复现都落在 timeout 分支，运维第一反应会是「再等等/重跑」，
+// 而不是「迁移里有条语句错了」。
+//
+// 所以这里：
+//   - 迁移用**独立连接池**（不与运行期池共享会话参数），显式
+//     `statement_timeout=0` / `lock_timeout=0`，迁移结束即关闭；
+//   - 迁移用 `context.WithoutCancel(调用方 ctx)` 起底，只由
+//     `MIGRATE_TIMEOUT`（默认 0 = 不限）给预算 —— 调用方（启动 ctx /
+//     cmd-migrate 的 2min ctx）的 deadline 不再决定迁移能活多久。
+//
+// ⚠️ 代价是「迁移卡住不会自动退出」（MIGRATE_TIMEOUT=0 时）。迁移是
+// 部署动作，不是请求：把停机预算套在它身上的代价是**砍断合法回填**，
+// 那比「运维显式处理卡住的迁移」更糟。
 func (d *DB) Migrate(ctx context.Context) error {
-	if max := d.Pool.Config().MaxConns; max < 2 {
-		return fmt.Errorf("goose: 迁移需要至少 2 个连接（会话锁独占 1 个），当前 DB_MAX_CONNS=%d", max)
-	}
-	locker, err := lock.NewPostgresSessionLocker()
-	if err != nil {
-		return fmt.Errorf("goose session locker: %w", err)
-	}
-	sqlDB := stdlib.OpenDBFromPool(d.Pool.Raw())
-	defer sqlDB.Close()
-	provider, err := goose.NewProvider(goose.DialectPostgres, sqlDB, migrations.FS,
-		goose.WithSessionLocker(locker))
-	if err != nil {
-		return fmt.Errorf("goose provider: %w", err)
-	}
-	if _, err := provider.Up(ctx); err != nil {
-		return fmt.Errorf("goose up: %w", err)
-	}
-	return nil
+	return d.runMigrations(ctx, migrations.FS, func(mctx context.Context, p *goose.Provider) error {
+		if _, err := p.Up(mctx); err != nil {
+			return fmt.Errorf("goose up: %w", err)
+		}
+		return nil
+	})
 }
 
 // MigrateDown 回滚一步，仅供本地调试使用。
 //
 // 同样上会话锁：本地/CI 偶尔会并行跑通道，没有锁时回滚与升级可能交错。
 func (d *DB) MigrateDown(ctx context.Context) error {
+	return d.runMigrations(ctx, migrations.FS, func(mctx context.Context, p *goose.Provider) error {
+		if _, err := p.Down(mctx); err != nil {
+			return fmt.Errorf("goose down: %w", err)
+		}
+		return nil
+	})
+}
+
+// runMigrations 建独立迁移池、套独立超时，然后交给 run 执行 goose。
+// fsys 是测试注入临时迁移的入口（生产固定为 migrations.FS）。
+func (d *DB) runMigrations(
+	ctx context.Context,
+	fsys fs.FS,
+	run func(context.Context, *goose.Provider) error,
+) error {
 	if max := d.Pool.Config().MaxConns; max < 2 {
 		return fmt.Errorf("goose: 迁移需要至少 2 个连接（会话锁独占 1 个），当前 DB_MAX_CONNS=%d", max)
 	}
+	mctx, cancel := d.migrationContext(ctx)
+	defer cancel()
+
+	pool, err := d.migrationPool(mctx)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+
 	locker, err := lock.NewPostgresSessionLocker()
 	if err != nil {
 		return fmt.Errorf("goose session locker: %w", err)
 	}
-	sqlDB := stdlib.OpenDBFromPool(d.Pool.Raw())
+	sqlDB := stdlib.OpenDBFromPool(pool)
 	defer sqlDB.Close()
-	provider, err := goose.NewProvider(goose.DialectPostgres, sqlDB, migrations.FS,
+	provider, err := goose.NewProvider(goose.DialectPostgres, sqlDB, fsys,
 		goose.WithSessionLocker(locker))
 	if err != nil {
 		return fmt.Errorf("goose provider: %w", err)
 	}
-	if _, err := provider.Down(ctx); err != nil {
-		return fmt.Errorf("goose down: %w", err)
+	return run(mctx, provider)
+}
+
+// migrationContext 返回迁移自己的 ctx：继承调用方的值（tracing 等），
+// 但不继承它的 deadline/cancel —— 只由 MIGRATE_TIMEOUT 给上限。
+func (d *DB) migrationContext(ctx context.Context) (context.Context, context.CancelFunc) {
+	base := context.WithoutCancel(ctx)
+	if d.cfg.MigrateTimeout > 0 {
+		return context.WithTimeout(base, d.cfg.MigrateTimeout)
 	}
-	return nil
+	return base, func() {}
+}
+
+// migrationPool 建一个**只给迁移用**的连接池。
+//
+// 为什么不是「在运行期池上 SET」：`SET` 只作用于执行它的那条会话，
+// 而 goose 的会话锁会另占一条连接、迁移语句又可能落在第三条 ——
+// 逐条 SET 漏一条就静默失效。独立池用 RuntimeParams 随握手下发，
+// 不存在漏设；池在迁移结束后关闭，运行期连接池的参数完全不受影响。
+func (d *DB) migrationPool(ctx context.Context) (*pgxpool.Pool, error) {
+	if d.cfg.DatabaseURL == "" {
+		return nil, fmt.Errorf("goose: 迁移需要 DATABASE_URL（当前 DB 不是由 store.Open 创建）")
+	}
+	poolCfg, err := pgxpool.ParseConfig(d.cfg.DatabaseURL)
+	if err != nil {
+		return nil, fmt.Errorf("parse DATABASE_URL（迁移池）: %w", err)
+	}
+	// 会话锁独占 1 条 + goose 查询至少 1 条。这里不沿用运行期池的
+	// MaxConns（可能被配成 1），但仍尊重配置的上限语义：至少 2。
+	maxConns := d.cfg.DBMaxConns
+	if maxConns < 2 {
+		maxConns = 2
+	}
+	poolCfg.MaxConns = maxConns
+	poolCfg.MinConns = 0
+
+	if poolCfg.ConnConfig.RuntimeParams == nil {
+		poolCfg.ConnConfig.RuntimeParams = map[string]string{}
+	}
+	tz := d.cfg.DBTimeZone
+	if tz == "" {
+		tz = defaultDBTimeZone
+	}
+	poolCfg.ConnConfig.RuntimeParams["TimeZone"] = tz
+	// 迁移专用预算：显式关掉。0 在 PG 里表示「不限」，并在迁移池的
+	// 生命周期内生效；运行期池的 statement_timeout/lock_timeout 不受影响。
+	poolCfg.ConnConfig.RuntimeParams["statement_timeout"] = "0"
+	poolCfg.ConnConfig.RuntimeParams["lock_timeout"] = "0"
+
+	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
+	if err != nil {
+		return nil, fmt.Errorf("create migration pool: %w", err)
+	}
+	return pool, nil
 }
 
 // Tx 在事务中执行 fn，出错自动回滚。

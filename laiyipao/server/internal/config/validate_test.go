@@ -48,6 +48,22 @@ func TestValidateRejectsZeroTokenTTL(t *testing.T) {
 	}
 }
 
+// TestValidateRejectsNegativeMigrateTimeout 守住 R103 的边界：
+// 负数没有语义（0 已经表示「不限」），静默接受会让运维以为
+// 「设了 -1 等于关闭」，而迁移预算实际仍缺失。默认 0 必须放行
+// （TestValidateAcceptsDefaults 已覆盖）。
+func TestValidateRejectsNegativeMigrateTimeout(t *testing.T) {
+	clearEnv(t)
+	t.Setenv("MIGRATE_TIMEOUT", "-1s")
+	err := Load().Validate()
+	if err == nil {
+		t.Fatal("MIGRATE_TIMEOUT=-1s 必须被拒绝")
+	}
+	if !strings.Contains(err.Error(), "MIGRATE_TIMEOUT") {
+		t.Errorf("错误信息应点名 MIGRATE_TIMEOUT，实际：%v", err)
+	}
+}
+
 // TestValidateRejectsZeroAcquireTimeout 守住 R90 的防护：
 // DB_ACQUIRE_TIMEOUT=0/负值意味着「池耗尽时请求无限挂起」（R89 F2 实测
 // 挂起 15.0s、无任何一层掐断）。这不是「关闭开关」，而是缺失防护 ——

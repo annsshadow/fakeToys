@@ -105,6 +105,7 @@ cd laiyipao/admin   && pnpm install && pnpm dev          # :5175
 | `APP_ENV` | `dev` | `prod` 会启用上面那条 JWT 校验 |
 | `LOG_LEVEL` | `info` | — |
 | `MIGRATIONS_ON_BOOT` | `true` | 见 §3.2 的取舍 |
+| `MIGRATE_TIMEOUT` | `0`（不限） | **一次迁移过程的总预算**（R103）。与启动 ctx、`DB_STATEMENT_TIMEOUT`、`DB_LOCK_TIMEOUT` **完全解耦**：迁移使用独立连接池（`statement_timeout=0`、`lock_timeout=0`），结束即关闭。默认 `0` = 不限 —— 任何固定默认值都会在更大的合法回填上重演「被砍断」的缺陷。需要兜底时设 `30m` 这类值；负值启动直接失败 |
 | `ACCESS_TTL` | `2h` | 访问令牌有效期 |
 | `REFRESH_TTL` | `720h` | 刷新令牌有效期 |
 | `CORS_ALLOW_ORIGINS` | 空 | 跨域来源白名单（逗号分隔，逐项去空白）；dev 默认放行 `*`、prod 默认不发送任何 CORS 头（语义见 §2 末尾注释） |
@@ -117,9 +118,9 @@ cd laiyipao/admin   && pnpm install && pnpm dev          # :5175
 | `DB_MIN_CONNS` | `2` | — |
 | `DB_CONN_LIFETIME` | `1h` | 连接最大存活时间 |
 | `DB_CONN_IDLE_TIME` | `30m` | 空闲连接回收时间（R91 补登记）。回收的是「很久没被用过」的连接，不是活跃连接；托管 PG 有连接数上限时靠它把空闲连接还回去 |
-| `DB_STATEMENT_TIMEOUT` | `30s` | **单条 SQL 的服务端执行上限**（R91 补登记），`0` = 不限。超时由 PG 以 `57014` 断开并释放连接，正常请求收到 503；默认值足以覆盖现有导出/看板聚合，又能在查询写坏时避免拖垮整池 |
+| `DB_STATEMENT_TIMEOUT` | `30s` | **单条 SQL 的服务端执行上限**（R91 补登记），`0` = 不限。超时由 PG 以 `57014` 断开并释放连接，正常请求收到 503；默认值足以覆盖现有导出/看板聚合，又能在查询写坏时避免拖垮整池。⚠️ 迁移**不受**此值约束（R103：迁移池显式 `statement_timeout=0`） |
 | `DB_ACQUIRE_TIMEOUT` | `5s` | **池耗尽的等待上限**（R90）。排队超过该值 → 请求快速失败 `503 + Retry-After: 5`，而不是无限挂起（R89 实测曾挂起 15s 且无任何一层掐断）。⚠️ **不要设得太短**：正常负载的排队 p99 只有几十毫秒，设成 100ms 级会把合法突发打成 503 **假失败**，客户端重试还会放大流量——建议 `3s`–`10s`，且必须小于客户端超时。`0`/负值**启动直接失败** |
-| `DB_LOCK_TIMEOUT` | `2s` | **等待任何一把锁的预算**（R94）。锁阻塞语句超过该值被 PG 取消（`55P03`）→ 503，而不是挂到锁释放（R89 实测 p95=15032ms 全挂起，客户端 10s 超时时 503 无人接收）。与 `DB_STATEMENT_TIMEOUT` 解耦：后者管整条语句（含正常慢查询/大导出），锁等待单独给短预算。⚠️ 迁移（goose）持锁远超 2s，迁移启动时**必须显式设 `0`**。`0` = 关闭（恢复 R89 旧行为，不推荐） |
+| `DB_LOCK_TIMEOUT` | `2s` | **等待任何一把锁的预算**（R94）。锁阻塞语句超过该值被 PG 取消（`55P03`）→ 503，而不是挂到锁释放（R89 实测 p95=15032ms 全挂起，客户端 10s 超时时 503 无人接收）。与 `DB_STATEMENT_TIMEOUT` 解耦：后者管整条语句（含正常慢查询/大导出），锁等待单独给短预算。⚠️ 迁移**不受**此值约束（R103：迁移池显式 `lock_timeout=0`，不再要求启动时改环境变量）。`0` = 关闭（恢复 R89 旧行为，不推荐） |
 | `DB_TIMEZONE` | `Asia/Shanghai` | **连接会话时区**（R90）。业务日界（R92）由 `config.BusinessTimeZone` 固定为 Asia/Shanghai，**不随此值或容器 `TZ` 漂移** |
 
 > ⚠️ **R92 起：业务日界不再由这个变量决定。**
@@ -267,6 +268,16 @@ go run ./cmd/migrate -down    # 回滚**最后一个**
 > 多个副本同时跑 goose 会互相抢 `goose_db_version` 表的锁，
 > 轻则报错重试，重则迁移执行两次。
 > 生产应改为**部署流程里单独跑一次 `cmd/migrate`**，服务只读不写。
+
+> ⚠️ **R103 起：迁移的时长不再由启动 ctx / 运行期预算决定。**
+> `db.Migrate` 使用独立的迁移连接池（显式 `statement_timeout=0`、
+> `lock_timeout=0`），总预算只看 `MIGRATE_TIMEOUT`（默认 `0` = 不限）。
+> 旧建议「大回填时把 `DB_STATEMENT_TIMEOUT` / `DB_LOCK_TIMEOUT` 设成 0」
+> **已经失效** —— 这两个值只作用于运行期请求；迁移池在迁移结束后关闭。
+>
+> 修前实测：65s 的迁移在 **60.09s** 被启动 ctx 砍断（`context deadline
+> exceeded`），持锁 DDL 在 **2.07s** 被 `lock_timeout` 砍断（`55P03`）。
+> 两者都报成 timeout，与「SQL 写错」难以分辨。
 
 ### 3.2.1 多副本就绪矩阵（R87 双实例实测）
 

@@ -163,8 +163,8 @@ type Config struct {
 	//   - 超时错误码 57014（lock_timeout 与 statement_timeout 同码），
 	//     R67 的 IsTransientDependency 已映射为 503，错误路径零改动。
 	//
-	// ⚠️ 迁移（goose）可能持锁远超 2s：迁移复用同一池时，
-	// 应在该次启动显式设 DB_LOCK_TIMEOUT=0。
+	// ⚠️ 迁移不经过这个预算（R103）：`store.Migrate` 使用独立的迁移连接池，
+	// 显式 `lock_timeout=0`，迁移结束即关闭；这里的 2s 只约束运行期请求。
 	DBLockTimeout time.Duration
 	// DBAcquireTimeout 是从池里**等一条连接**的上限（R90，默认 5s，
 	// 必须为正）——不含语句执行时间（那是 DB_STATEMENT_TIMEOUT 的事）。
@@ -206,6 +206,25 @@ type Config struct {
 	// 详见 Config.DBTimeZone 的注释。
 	DBTimeZone       string
 	MigrationsOnBoot bool
+
+	// MigrateTimeout 是**一次启动迁移过程**的总预算（R103，默认 0 = 不限）。
+	//
+	// # 为什么必须与启动 ctx 分开
+	//
+	// 修前 `cmd/api` 把启动 ctx（60s，用于连库/探测）直接传给
+	// `db.Migrate`，于是任何超过 60s 的合法迁移都会被砍断，报成
+	// `context deadline exceeded`；而 60s 内被 `DB_LOCK_TIMEOUT`(2s) 砍断的
+	// DDL 又报成 55P03。两种「超时」与「SQL 写错」在日志里难以分辨
+	// （R103 实测两条原始错误都贴着 timeout 标签，见台账）。
+	//
+	// 迁移是**部署动作**，不是请求：它的合理耗时由数据量（大表回填）
+	// 决定，只能由运维显式给预算，不能沿用请求/启动的阈值。
+	//
+	// 默认 0 = 不限：任何固定默认值（哪怕 1h）都会在更大的回填上重演
+	// 同一类缺陷。需要兜底时设 `MIGRATE_TIMEOUT=30m` 这类值；
+	// 不限意味着「迁移卡住不会自动退出」，这是把控制权交还给运维的
+	// 明确取舍，不是遗漏。
+	MigrateTimeout time.Duration
 
 	JWTSecret  string
 	AccessTTL  time.Duration
@@ -538,6 +557,8 @@ func Load() Config {
 		ExportMaxBytes:   envInt("EXPORT_MAX_BYTES", 64<<20),
 		DBTimeZone:       env("DB_TIMEZONE", BusinessTimeZone),
 		MigrationsOnBoot: envBool("MIGRATIONS_ON_BOOT", true),
+		// 0 = 不限（见 MigrateTimeout 的注释：固定默认值会重演 R103）。
+		MigrateTimeout: envDuration("MIGRATE_TIMEOUT", 0),
 
 		JWTSecret:  env("JWT_SECRET", "dev-only-insecure-secret-change-me"),
 		AccessTTL:  envDuration("ACCESS_TTL", 2*time.Hour),

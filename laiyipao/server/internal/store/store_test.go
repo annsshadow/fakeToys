@@ -160,6 +160,15 @@ func TestMigrateUpAndDownOnScratchDB(t *testing.T) {
 		t.Fatalf("Migrate 重复执行应幂等：%v", err)
 	}
 
+	// R103：调用方的 cancel/deadline 不再中断迁移。迁移只受
+	// MIGRATE_TIMEOUT 约束；已取消的调用方 ctx 必须被忽略，
+	// 否则「启动 ctx 60s」会再次变成迁移的硬上限。
+	cancelled, cancelFn := context.WithCancel(context.Background())
+	cancelFn()
+	if err := db.Migrate(cancelled); err != nil {
+		t.Fatalf("已取消的调用方 ctx 不应中断迁移（R103）：%v", err)
+	}
+
 	// 核心业务表必须存在（这里挑两张分属不同迁移文件的关键表）
 	for _, table := range []string{"users", "user_wallets", "levels", "shop_items", "defenses"} {
 		var n int
@@ -208,26 +217,30 @@ func TestMigrateUpAndDownOnScratchDB(t *testing.T) {
 	}
 }
 
-// TestMigrateFailsOnCancelledContext 构造 goose.UpContext 的失败路径：
-// 传入已取消的 context，迁移必须把错误包成 "goose up: ..." 向上返回，
-// 而不是静默当作"迁移完成"。这是 store.go 里唯一可构造的迁移失败分支
-// （SetDialect("postgres") 是硬编码合法方言，永不可达）。
-func TestMigrateFailsOnCancelledContext(t *testing.T) {
+// TestMigrateTimeoutIsAppliedAndWrapped 构造 goose.Up 的失败路径：
+// `MIGRATE_TIMEOUT=1ms` 必须让迁移失败，且错误被包成 "goose up: ..."，
+// 而不是静默当作"迁移完成"。
+//
+// R103 起，调用方的 ctx 已不再决定迁移的死活（60s 启动 ctx 曾把 65s
+// 迁移砍断），所以这里改为从 MIGRATE_TIMEOUT 制造失败；这同时也钉住
+// 「新预算真的生效」。调用方 cancel 被忽略的语义由
+// TestMigrateUpAndDownOnScratchDB 里的断言覆盖。
+func TestMigrateTimeoutIsAppliedAndWrapped(t *testing.T) {
 	dsn := scratchDB(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	db, err := Open(ctx, openCfg(dsn))
+	cfg := openCfg(dsn)
+	cfg.MigrateTimeout = time.Millisecond
+	db, err := Open(ctx, cfg)
 	if err != nil {
 		t.Skipf("scratch 库连不上，跳过：%v", err)
 	}
 	t.Cleanup(db.Close)
 
-	cancelled, cancelFn := context.WithCancel(context.Background())
-	cancelFn() // 先取消再调用
-	err = db.Migrate(cancelled)
+	err = db.Migrate(ctx)
 	if err == nil {
-		t.Fatal("已取消的 context 必须让 Migrate 失败")
+		t.Fatal("MIGRATE_TIMEOUT=1ms 必须让 Migrate 失败")
 	}
 	if !strings.Contains(err.Error(), "goose up") {
 		t.Errorf("错误应说明是迁移执行失败：%v", err)

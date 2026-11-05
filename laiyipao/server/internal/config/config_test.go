@@ -30,7 +30,7 @@ func clearEnv(t *testing.T) {
 	for _, k := range []string{
 		"ADDR", "APP_ENV", "LOG_LEVEL",
 		"DATABASE_URL", "DB_MAX_CONNS", "DB_MIN_CONNS", "DB_CONN_LIFETIME",
-		"MIGRATIONS_ON_BOOT",
+		"MIGRATIONS_ON_BOOT", "MIGRATE_TIMEOUT",
 		"JWT_SECRET", "ACCESS_TTL", "REFRESH_TTL",
 		"WECHAT_APP_ID", "WECHAT_APP_SECRET", "WECHAT_ENDPOINT",
 		"BATTLE_TOKEN_TTL", "MIN_BATTLE_DURATION",
@@ -102,6 +102,7 @@ func TestLoadParsesEnvOverrides(t *testing.T) {
 	t.Setenv("DB_MIN_CONNS", "3")
 	t.Setenv("DB_CONN_LIFETIME", "90s")
 	t.Setenv("MIGRATIONS_ON_BOOT", "false")
+	t.Setenv("MIGRATE_TIMEOUT", "45m")
 	t.Setenv("JWT_SECRET", "s3cret")
 	t.Setenv("ACCESS_TTL", "5m")
 	t.Setenv("REFRESH_TTL", "1h")
@@ -131,6 +132,9 @@ func TestLoadParsesEnvOverrides(t *testing.T) {
 	}
 	if cfg.MigrationsOnBoot {
 		t.Error("MIGRATIONS_ON_BOOT=false 未生效")
+	}
+	if cfg.MigrateTimeout != 45*time.Minute {
+		t.Errorf("MIGRATE_TIMEOUT 覆盖未生效：%s", cfg.MigrateTimeout)
 	}
 	if cfg.AccessTTL != 5*time.Minute || cfg.RefreshTTL != time.Hour {
 		t.Errorf("TTL 覆盖未生效：%s/%s", cfg.AccessTTL, cfg.RefreshTTL)

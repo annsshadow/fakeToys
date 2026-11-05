@@ -56,6 +56,11 @@ func (c Config) Validate() error {
 	if c.DBStatementTimeout < 0 {
 		add("DB_STATEMENT_TIMEOUT 不能为负（0 = 不限），实际 %v", c.DBStatementTimeout)
 	}
+	// R103：迁移预算与运行期语句/锁预算解耦。负数没有语义
+	//（0 已经表示不限），静默接受只会让「设了 -1 以为关了」更难发现。
+	if c.MigrateTimeout < 0 {
+		add("MIGRATE_TIMEOUT 不能为负（0 = 不限），实际 %v", c.MigrateTimeout)
+	}
 	// DB_ACQUIRE_TIMEOUT 必须为正（R90）：0/负值意味着「池耗尽时请求
 	// 无限挂起」（R89 F2 实测挂起 15s 无任何一层掐断）——那不是默认值，
 	// 是缺失的防护。无法解析的值也被 envDurationStrict 折成 0 走到这里

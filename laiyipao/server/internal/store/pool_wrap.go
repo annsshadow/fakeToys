@@ -48,9 +48,11 @@ func WrapPool(inner *pgxpool.Pool, acquireTimeout time.Duration) *Pool {
 	return &Pool{inner: inner, acquireTimeout: acquireTimeout}
 }
 
-// Raw 返回底层池——给启动期一次性使用者（seeder / stdlib.OpenDBFromPool
-// 做迁移）。它们不需要 acquire 超时（且迁移可能显式
-// DB_STATEMENT_TIMEOUT=0 跑长回填）。
+// Raw 返回底层池——给启动期一次性使用者（seeder 等）。它们不需要
+// acquire 超时。
+//
+// ⚠️ 迁移不在这里（R103）：`Migrate` 建独立的迁移连接池，显式关掉
+// statement_timeout / lock_timeout，不再借用运行期池。
 func (p *Pool) Raw() *pgxpool.Pool { return p.inner }
 
 func (p *Pool) acquire(ctx context.Context) (*pgxpool.Conn, error) {
