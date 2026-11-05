@@ -6,6 +6,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import { processApi } from '@/services'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import { describeProcessError, loadProcessPage, mergeProcessRows } from './processList'
 
 type TabKey = 'pending' | 'done' | 'started'
 const tabs: { key: TabKey; label: string }[] = [
@@ -15,8 +16,11 @@ const tabs: { key: TabKey; label: string }[] = [
 ]
 const active = ref<TabKey>('pending')
 const rows = ref<Record<string, unknown>[]>([])
-const total = ref(0)
+const page = ref(1)
+const hasMore = ref(false)
+const loadError = ref('')
 const loading = ref(false)
+const loadingMore = ref(false)
 const busy = ref(false)
 
 // 详情浮层：附件 / 流转记录 / 工作日志（按 work 维度拉取真实后端能力）
@@ -90,23 +94,46 @@ function metaOf(row: Record<string, unknown>): string {
   return parts.join(' · ')
 }
 
-async function load() {
+function fetchPage(tab: TabKey, targetPage: number, size: number) {
+  return tab === 'pending'
+    ? processApi.pendingList(targetPage, size)
+    : tab === 'done'
+      ? processApi.completedList(targetPage, size)
+      : processApi.startedList(targetPage, size)
+}
+
+async function loadFirst() {
   loading.value = true
-  rows.value = []
-  total.value = 0
+  loadError.value = ''
   try {
-    const resp =
-      active.value === 'pending'
-        ? await processApi.pendingList(1, 50)
-        : active.value === 'done'
-          ? await processApi.completedList(1, 50)
-          : await processApi.startedList(1, 50)
-    rows.value = resp.data ?? []
-    total.value = resp.count ?? rows.value.length
-  } catch {
+    const result = await loadProcessPage<Record<string, unknown>>(fetchPage, active.value, 1)
+    rows.value = mergeProcessRows<Record<string, unknown>>([], result.rows)
+    page.value = result.page
+    hasMore.value = result.hasMore
+  } catch (e) {
+    // 失败与「真的没有待办」必须可区分，不能静默清空成空列表。
     rows.value = []
+    hasMore.value = false
+    loadError.value = describeProcessError('流程加载失败', e)
   } finally {
     loading.value = false
+  }
+}
+
+async function loadMore() {
+  if (loading.value || loadingMore.value || !hasMore.value) return
+  loadingMore.value = true
+  loadError.value = ''
+  try {
+    const result = await loadProcessPage<Record<string, unknown>>(fetchPage, active.value, page.value + 1)
+    rows.value = mergeProcessRows<Record<string, unknown>>(rows.value, result.rows)
+    page.value = result.page
+    hasMore.value = result.hasMore
+  } catch (e) {
+    // 加载更多失败保留已加载的行，只提示错误。
+    loadError.value = describeProcessError('更多流程加载失败', e)
+  } finally {
+    loadingMore.value = false
   }
 }
 
@@ -118,7 +145,7 @@ onShow(async () => {
     active.value = stored as TabKey
     uni.removeStorageSync('oa_process_active_tab')
   }
-  load()
+  loadFirst()
 })
 
 function goStart() {
@@ -128,7 +155,7 @@ function goStart() {
 function switchTab(key: TabKey) {
   if (active.value === key) return
   active.value = key
-  load()
+  loadFirst()
 }
 
 /** 审批动作：先收集处理意见（可留空），再走 /api/task/{id}/complete|reject。 */
@@ -153,7 +180,7 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
     if (action === 'approve') await processApi.completeTask(taskId, { opinion })
     else await processApi.rejectTask(taskId, { opinion })
     uni.showToast({ title: action === 'approve' ? '已通过' : '已驳回', icon: 'success' })
-    load()
+    loadFirst()
   } catch (e) {
     uni.showToast({ title: e instanceof Error ? e.message : '操作失败', icon: 'none' })
   } finally {
@@ -171,6 +198,10 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
     </view>
 
     <view v-if="loading && rows.length === 0" class="tip">加载中…</view>
+    <view v-else-if="rows.length === 0 && loadError" class="tip tip-error">
+      <view class="error-text">{{ loadError }}</view>
+      <view class="retry-btn" @tap="loadFirst">重试</view>
+    </view>
     <view v-else-if="rows.length === 0" class="tip">暂无{{ tabs.find((t) => t.key === active)?.label }}</view>
     <view v-else class="list">
       <view v-for="(row, i) in rows" :key="i" class="item" @tap="openDetail(row, i)">
@@ -186,7 +217,15 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
         </view>
       </view>
     </view>
-    <view v-if="total > 0" class="footer">共 {{ total }} 条</view>
+    <view v-if="rows.length > 0" class="footer">
+      <view v-if="loadError" class="tip-error footer-error">
+        <text class="error-text">{{ loadError }}</text>
+        <view class="retry-btn" @tap="loadMore">重试</view>
+      </view>
+      <view v-else-if="loadingMore">加载更多…</view>
+      <view v-else-if="hasMore" class="load-more" @tap="loadMore">加载更多</view>
+      <view v-else>已加载 {{ rows.length }} 条</view>
+    </view>
 
     <view v-if="detailOpen" class="mask" @tap="closeDetail">
       <view class="sheet" @tap.stop>
@@ -249,6 +288,28 @@ async function runAction(taskId: string, action: 'approve' | 'reject', opinion: 
   text-align: center;
   color: #90979f;
   font-size: 28rpx;
+}
+.tip-error {
+  color: #c0392b;
+}
+.error-text {
+  display: block;
+  margin-bottom: 12rpx;
+  line-height: 1.5;
+}
+.retry-btn {
+  display: inline-block;
+  padding: 8rpx 28rpx;
+  border-radius: 24rpx;
+  border: 1rpx solid #c0392b;
+  color: #c0392b;
+  font-size: 26rpx;
+}
+.footer-error {
+  color: #c0392b;
+}
+.load-more {
+  color: #2d8cf0;
 }
 .list {
   background: #fff;
