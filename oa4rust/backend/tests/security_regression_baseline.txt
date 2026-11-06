@@ -64,10 +64,7 @@ meeting_assemble_control|meeting_id|GET	LEAK
 meeting_assemble_control|u2_attachment_get|GET	LEAK
 meeting_core_entity|get_meeting|GET	LEAK
 meeting|get_meeting|GET	LEAK
-message_assemble_communicate|mass_id|GET	LEAK
 mind|get_mind_with_id|GET	LEAK
-organization_assemble_authentication|identity_id|GET	LEAK
-organization_assemble_control|identity_id|GET	LEAK
 portal_assemble_designer|dict_id|GET	LEAK
 portal_assemble_designer|file_id_download|GET	LEAK
 portal_assemble_designer|get_design|GET	LEAK
