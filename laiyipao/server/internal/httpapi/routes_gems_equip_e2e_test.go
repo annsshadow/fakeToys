@@ -29,7 +29,7 @@ func TestE2EGemEquipRequiresAuth(t *testing.T) {
 		{"POST", "/api/v1/me/gems/1/equip"},
 		{"POST", "/api/v1/me/gems/1/unequip"},
 	} {
-		req, _ := http.NewRequest(tc.method, tc.path, nil)
+		req, _ := testReq(tc.method, tc.path, nil)
 		resp, err := e.app.Test(req, 10000)
 		if err != nil {
 			t.Fatalf("%s %s 请求失败：%v", tc.method, tc.path, err)
@@ -56,7 +56,7 @@ func TestE2EGemEquipUnequipRoundtrip(t *testing.T) {
 	}
 
 	authed := func(method, path string) (*http.Response, error) {
-		req, _ := http.NewRequest(method, path, nil)
+		req, _ := testReq(method, path, nil)
 		req.Header.Set("Authorization", "Bearer "+tok)
 		return e.app.Test(req, 10000)
 	}
@@ -128,7 +128,7 @@ func TestE2EGemEquipForeignAndLimit(t *testing.T) {
 	}
 
 	// 别人的宝石 → 404。
-	req, _ := http.NewRequest("POST", fmt.Sprintf("/api/v1/me/gems/%d/equip", ownerGem), nil)
+	req, _ := testReq("POST", fmt.Sprintf("/api/v1/me/gems/%d/equip", ownerGem), nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
@@ -147,7 +147,7 @@ func TestE2EGemEquipForeignAndLimit(t *testing.T) {
 			attacker, i).Scan(&id); err != nil {
 			t.Fatal(err)
 		}
-		req2, _ := http.NewRequest("POST", fmt.Sprintf("/api/v1/me/gems/%d/equip", id), nil)
+		req2, _ := testReq("POST", fmt.Sprintf("/api/v1/me/gems/%d/equip", id), nil)
 		req2.Header.Set("Authorization", "Bearer "+tok)
 		resp2, err := e.app.Test(req2, 10000)
 		if err != nil {

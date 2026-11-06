@@ -46,9 +46,9 @@ func doAuthed(t *testing.T, e *e2e, method, path, token string, body string) (in
 	var req *http.Request
 	var err error
 	if body == "" {
-		req, err = http.NewRequest(method, path, nil)
+		req, err = testReq(method, path, nil)
 	} else {
-		req, err = http.NewRequest(method, path, strings.NewReader(body))
+		req, err = testReq(method, path, strings.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
 	}
 	if err != nil {

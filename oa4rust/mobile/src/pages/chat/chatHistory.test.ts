@@ -143,4 +143,24 @@ describe('移动端会话历史分页：页码进请求、更早消息可加载�
     expect(block).toContain('markRead failed')
     expect(block).not.toContain('/* noop */')
   })
+
+  it('进入会话后新消息自动刷新，页面隐藏/卸载即停（R140）', () => {
+    const source = readFileSync(resolve(import.meta.dirname, 'chat.vue'), 'utf8')
+    expect(source.split('\n').length).toBeGreaterThan(200)
+    expect(source).toContain('startChatPolling')
+    expect(source).toContain('mergeNewerMessages')
+    expect(source).toContain('onShow(')
+    expect(source).toContain('onHide(')
+    expect(source).toContain('onUnload(')
+    expect(source).toContain('stopPolling()')
+    // 新消息必须真的并入列表并在有变化时补一次已读，而不只是声明了轮询函数。
+    expect(source).toContain('msgs.value = mergeNewerMessages(msgs.value, rows)')
+    expect(source).toContain('if (msgs.value.length !== before) void markConversationRead()')
+    const readyAt = source.indexOf('historyReady = true')
+    expect(readyAt).toBeGreaterThan(-1)
+    expect(source.slice(readyAt, readyAt + 120)).toContain('startPolling()')
+    // 旧实现只在 onLoad 拉一次；轮询间隔由 chatPolling 统一管理，页面不得自建定时器。
+    expect(source).not.toContain('setInterval(')
+    expect(source).toContain("console.warn('[chat] poll failed'")
+  })
 })

@@ -15,7 +15,6 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
-	"net/http"
 	"testing"
 	"time"
 
@@ -26,7 +25,7 @@ func TestE2EAdminExportAuditLogsRequiresAuth(t *testing.T) {
 	e2eScratchDB(t)
 	e := newE2E(t)
 
-	req, _ := http.NewRequest("GET", "/api/v1/admin/audit-logs/export", nil)
+	req, _ := testReq("GET", "/api/v1/admin/audit-logs/export", nil)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
 		t.Fatalf("请求失败：%v", err)
@@ -43,7 +42,7 @@ func TestE2EAdminExportAuditLogsReadonlyAllowed(t *testing.T) {
 
 	_, roTok := e.newAdminRole(t, "exportauditro", "readonly")
 
-	req, _ := http.NewRequest("GET", "/api/v1/admin/audit-logs/export", nil)
+	req, _ := testReq("GET", "/api/v1/admin/audit-logs/export", nil)
 	req.Header.Set("Authorization", "Bearer "+roTok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
@@ -72,7 +71,7 @@ func TestE2EAdminExportAuditLogsContent(t *testing.T) {
 		t.Fatalf("插入审计日志失败：%v", err)
 	}
 
-	req, _ := http.NewRequest("GET", "/api/v1/admin/audit-logs/export", nil)
+	req, _ := testReq("GET", "/api/v1/admin/audit-logs/export", nil)
 	req.Header.Set("Authorization", "Bearer "+adminTok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {

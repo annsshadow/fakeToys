@@ -11,7 +11,6 @@ package httpapi
 
 import (
 	"context"
-	"net/http"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
@@ -21,7 +20,7 @@ func TestE2EDeleteMyDefenseRequiresAuth(t *testing.T) {
 	e2eScratchDB(t)
 	e := newE2E(t)
 
-	req, _ := http.NewRequest("DELETE", "/api/v1/defenses", nil)
+	req, _ := testReq("DELETE", "/api/v1/defenses", nil)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
 		t.Fatalf("请求失败：%v", err)
@@ -45,7 +44,7 @@ func TestE2EDeleteMyDefenseSucceeds(t *testing.T) {
 		t.Fatalf("插入防线失败：%v", err)
 	}
 
-	req, _ := http.NewRequest("DELETE", "/api/v1/defenses", nil)
+	req, _ := testReq("DELETE", "/api/v1/defenses", nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
@@ -71,7 +70,7 @@ func TestE2EDeleteMyDefenseNotFound(t *testing.T) {
 	e := newE2E(t)
 
 	_, tok := e.newPlayer(t, "mydel_none")
-	req, _ := http.NewRequest("DELETE", "/api/v1/defenses", nil)
+	req, _ := testReq("DELETE", "/api/v1/defenses", nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {

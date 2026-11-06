@@ -2,7 +2,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiClient, ApiError, AuthenticationError, PermissionError } from './api'
+import {
+  ApiClient,
+  ApiError,
+  AuthenticationError,
+  isRequestCancelled,
+  PermissionError,
+  RequestCancelledError,
+} from './api'
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -197,6 +204,104 @@ describe('ApiClient', () => {
       status: 0,
       message: '请求超时',
     })
+  })
+
+  it('aborts the in-flight request when the caller signal aborts (R143)', async () => {
+    let transportAborted = false
+    const fetchMock = vi.fn(
+      (_url: string | URL, init: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init.signal?.addEventListener('abort', () => {
+            transportAborted = true
+            const err = new Error('aborted')
+            err.name = 'AbortError'
+            reject(err)
+          })
+        }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const external = new AbortController()
+    const pending = new ApiClient().get('/slow', { signal: external.signal })
+    external.abort()
+
+    // 证明的是「连接被断开」：fetch 收到的内部 signal 真的触发了 abort，
+    // 而不是响应返回后被上层忽略。
+    await expect(pending).rejects.toBeInstanceOf(RequestCancelledError)
+    expect(transportAborted).toBe(true)
+    await expect(pending).rejects.toMatchObject({ status: 0, message: '请求已取消' })
+  })
+
+  it('still reports timeout when a caller signal is provided but never aborts', async () => {
+    const fetchMock = vi.fn(
+      (_url: string | URL, init: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init.signal?.addEventListener('abort', () => {
+            const err = new Error('aborted')
+            err.name = 'AbortError'
+            reject(err)
+          })
+        }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(
+      new ApiClient().get('/slow', { signal: new AbortController().signal, timeoutMs: 30 }),
+    ).rejects.toMatchObject({
+      status: 0,
+      message: '请求超时',
+    })
+  })
+
+  it('rejects an already-aborted caller signal without waiting for the timeout', async () => {
+    const fetchMock = vi.fn(
+      (_url: string | URL, init: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          if (init.signal?.aborted) {
+            const err = new Error('aborted')
+            err.name = 'AbortError'
+            reject(err)
+            return
+          }
+          init.signal?.addEventListener('abort', () => {
+            const err = new Error('aborted')
+            err.name = 'AbortError'
+            reject(err)
+          })
+        }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const external = new AbortController()
+    external.abort()
+    await expect(new ApiClient().get('/slow', { signal: external.signal })).rejects.toBeInstanceOf(
+      RequestCancelledError,
+    )
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('aborts an upload with the caller signal and keeps RequestCancelledError identifiable', async () => {
+    let transportAborted = false
+    const fetchMock = vi.fn(
+      (_url: string | URL, init: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init.signal?.addEventListener('abort', () => {
+            transportAborted = true
+            const err = new Error('aborted')
+            err.name = 'AbortError'
+            reject(err)
+          })
+        }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const external = new AbortController()
+    const pending = new ApiClient().upload('/api/u', new FormData(), { signal: external.signal })
+    external.abort()
+
+    await expect(pending).rejects.toBeInstanceOf(RequestCancelledError)
+    expect(transportAborted).toBe(true)
+    expect(isRequestCancelled(new ApiError('请求超时', 0))).toBe(false)
   })
 
   it('applies the 30s default timeout when timeoutMs is omitted', async () => {
