@@ -18,6 +18,14 @@ export interface ChatPollHandle {
   stop(): void
 }
 
+// R142：可观测计数。页面切换 20 次后必须回到基线，否则就是泄漏。
+let activePollers = 0
+let activeTimers = 0
+
+export function activeChatLifecycleCounts(): { pollers: number; timers: number } {
+  return { pollers: activePollers, timers: activeTimers }
+}
+
 export interface ChatPollOptions<T> {
   /** 拉取最新一页消息（后端顺序：新→旧）。 */
   loadLatest: () => Promise<readonly T[]>
@@ -32,9 +40,9 @@ export function startChatPolling<T>(options: ChatPollOptions<T>): ChatPollHandle
   const interval = Math.max(MIN_INTERVAL_MS, Math.floor(options.intervalMs ?? CHAT_POLL_INTERVAL_MS))
   let stopped = false
   let timer: ReturnType<typeof setTimeout> | null = null
+  activePollers += 1
 
   const tick = async () => {
-    timer = null
     try {
       const rows = await options.loadLatest()
       // 停止后丢弃在途结果：页面已经隐藏/卸载，不应再写状态。
@@ -47,18 +55,26 @@ export function startChatPolling<T>(options: ChatPollOptions<T>): ChatPollHandle
 
   function schedule() {
     if (stopped) return
-    timer = setTimeout(tick, interval)
+    activeTimers += 1
+    timer = setTimeout(() => {
+      activeTimers -= 1
+      timer = null
+      void tick()
+    }, interval)
   }
 
   schedule()
 
   return {
     stop() {
+      if (stopped) return
       stopped = true
       if (timer !== null) {
         clearTimeout(timer)
+        activeTimers -= 1
         timer = null
       }
+      activePollers -= 1
     },
   }
 }

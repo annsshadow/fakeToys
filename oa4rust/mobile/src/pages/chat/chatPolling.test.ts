@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { CHAT_POLL_INTERVAL_MS, mergeNewerMessages, startChatPolling } from './chatPolling'
+import { activeChatLifecycleCounts, CHAT_POLL_INTERVAL_MS, mergeNewerMessages, startChatPolling } from './chatPolling'
 
 interface Msg {
   id: string
@@ -215,6 +215,46 @@ describe('会话内新消息自动刷新（R140）', () => {
     pending.reject?.(new Error('late'))
     await vi.advanceTimersByTimeAsync(0)
     expect(onError).toHaveBeenCalledTimes(0)
+  })
+
+  it('20 次进入/离开会话后，活跃轮询与定时器回到基线（R142）', () => {
+    vi.useFakeTimers()
+    const base = activeChatLifecycleCounts()
+    for (let i = 0; i < 20; i++) {
+      const handle = startChatPolling<Msg>({
+        loadLatest: async () => [],
+        onLatest: () => {},
+      })
+      expect(activeChatLifecycleCounts()).toEqual({ pollers: base.pollers + 1, timers: base.timers + 1 })
+      handle.stop()
+      // 重复 stop（例如 onHide 与 onUnload 同时触发）不得把计数减成负数。
+      handle.stop()
+      expect(activeChatLifecycleCounts()).toEqual(base)
+    }
+    expect(activeChatLifecycleCounts()).toEqual({ pollers: 0, timers: 0 })
+  })
+
+  it('停止时请求仍在途：定时器已归零，活跃轮询数只减一次', async () => {
+    vi.useFakeTimers()
+    const pending: { resolve: ((rows: Msg[]) => void) | null } = { resolve: null }
+    const handle = startChatPolling<Msg>({
+      intervalMs: CHAT_POLL_INTERVAL_MS,
+      loadLatest: () =>
+        new Promise<Msg[]>((resolve) => {
+          pending.resolve = resolve
+        }),
+      onLatest: () => {},
+    })
+    await vi.advanceTimersByTimeAsync(CHAT_POLL_INTERVAL_MS)
+    expect(activeChatLifecycleCounts()).toEqual({ pollers: 1, timers: 0 })
+
+    handle.stop()
+    expect(activeChatLifecycleCounts()).toEqual({ pollers: 0, timers: 0 })
+
+    // 在途结果返回后不得重新排下一次，也不得改变计数。
+    pending.resolve?.([])
+    await vi.advanceTimersByTimeAsync(0)
+    expect(activeChatLifecycleCounts()).toEqual({ pollers: 0, timers: 0 })
   })
 
   it('间隔下限 1s：误传 0/负数不会变成请求风暴', async () => {
