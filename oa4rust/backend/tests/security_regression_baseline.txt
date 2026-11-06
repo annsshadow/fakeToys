@@ -57,8 +57,6 @@ general_assemble_control|securityclearance_get|GET	LEAK
 general_core_entity|file_download|GET	LEAK
 general_core_entity|file_get|GET	LEAK
 general_core_entity|invoice_get|GET	LEAK
-hotpic_assemble_control|user_hotpic_delete_by_ids|DELETE	LEAK
-hotpic_core_entity|delete_by_id|DELETE	LEAK
 jpush_assemble_control|get_jpush|GET	LEAK
 jpush_core_entity|device_get|GET	LEAK
 jpush|device_get|GET	LEAK
@@ -67,8 +65,6 @@ meeting_assemble_control|u2_attachment_get|GET	LEAK
 meeting_core_entity|get_meeting|GET	LEAK
 meeting|get_meeting|GET	LEAK
 message_assemble_communicate|mass_id|GET	LEAK
-mind_core_entity|update_folder|POST	LEAK
-mind_core_entity|update_mind|POST	LEAK
 mind|get_mind_with_id|GET	LEAK
 organization_assemble_authentication|identity_id|GET	LEAK
 organization_assemble_control|identity_id|GET	LEAK
