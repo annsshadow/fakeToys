@@ -324,18 +324,25 @@ describe('403 handling', () => {
 })
 
 describe('network failures', () => {
-  it('fail callback rejects with the uni error message and status 0', async () => {
+  it('超时（request:fail timeout）归一化为中文文案并保留 status 0', async () => {
     uni.respondRequest((o) => o.fail({ errMsg: 'request:fail timeout' }))
     const err = await mapi.get('/api/thing').catch((e) => e)
     expect(err).toBeInstanceOf(ApiError)
-    expect((err as ApiError).message).toBe('request:fail timeout')
+    expect((err as ApiError).message).toBe('请求超时，请检查网络后重试')
     expect((err as ApiError).status).toBe(0)
   })
 
-  it('a missing errMsg falls back to a generic message', async () => {
+  it('其它传输失败（request:fail）归一化为「网络连接失败」，不把平台英文串透给用户', async () => {
+    uni.respondRequest((o) => o.fail({ errMsg: 'request:fail' }))
+    const err = await mapi.get('/api/thing').catch((e) => e)
+    expect((err as ApiError).message).toBe('网络连接失败，请检查网络后重试')
+    expect((err as ApiError).status).toBe(0)
+  })
+
+  it('errMsg 缺失时回退到同一中文文案', async () => {
     uni.respondRequest((o) => o.fail({}))
     const err = await mapi.get('/api/thing').catch((e) => e)
-    expect((err as ApiError).message).toBe('Network error')
+    expect((err as ApiError).message).toBe('网络连接失败，请检查网络后重试')
   })
 })
 
@@ -415,12 +422,15 @@ describe('file upload (uni.uploadFile)', () => {
     expect((err as ApiError).status).toBe(502)
   })
 
-  it('network fail rejects with the uni error message, else "Upload failed"', async () => {
+  it('上传网络失败归一化为中文文案（超时与通用失败区分）', async () => {
     uni.respondUpload((o) => o.fail({ errMsg: 'upload:fail abort' }))
     const err = await mapi.upload('/api/attachment/upload/folder/f1', '/tmp/f.png').catch((e) => e)
-    expect((err as ApiError).message).toBe('upload:fail abort')
+    expect((err as ApiError).message).toBe('上传失败，请检查网络后重试')
+    uni.respondUpload((o) => o.fail({ errMsg: 'upload:fail timeout' }))
+    const errTimeout = await mapi.upload('/api/attachment/upload/folder/f1', '/tmp/f.png').catch((e) => e)
+    expect((errTimeout as ApiError).message).toBe('上传超时，请检查网络后重试')
     uni.respondUpload((o) => o.fail({}))
     const err2 = await mapi.upload('/api/attachment/upload/folder/f1', '/tmp/f.png').catch((e) => e)
-    expect((err2 as ApiError).message).toBe('Upload failed')
+    expect((err2 as ApiError).message).toBe('上传失败，请检查网络后重试')
   })
 })
