@@ -83,6 +83,28 @@ rev-GATE-V-MOBILE)`，delete paging `LEAK(2xx 响应体含 canary GATE-DEL-MOBIL
 - `x_org_personcard` 表虽有 `creator` 列，但当前读路径并未使用该表；本批不引入该表归属语义。
 
 
+## 批次 B-b1：attendance 六张配置表单资源读（creator/creator_person OR admin）
+
+判据沿用默认1 / E19：`本人 OR 管理员`，NULL 归属 fail-closed（仅管理员）。
+六张表均同时有 `creator` 与 `creator_person`，**两列都认**：
+
+| 端点（attendance_assemble_control） | 表 | 落库谓词 |
+|---|---|---|
+| `GET /attendanceadmin/{id}` | `x_attendance_admin` | `id = $1 AND (creator = $2 OR admin)` |
+| `GET /attendanceemployeeconfig/{id}` | `x_attendance_employee_config` | `id = $1 AND (creator = $2 OR creator_person = $2 OR admin)` |
+| `GET /attendanceimportfileinfo/{id}` | `x_attendance_import_file_info` | 同上 |
+| `GET /attendanceschedulesetting/{id}` | `x_attendance_schedule_setting` | 同上 |
+| `GET /attendancesetting/{id}` | `x_attendance_setting` | 同上 |
+| `GET /attendancestatisticalcycle/{id}` | `x_attendance_statistical_cycle` | 同上 |
+
+- 命中 0 行但行存在 → `403`；行不存在维持原信封（admin 为 `success(null)`，其余为 error not found）。
+- 为什么同时认两列：除 `attendanceadmin_create` 外，另 5 个 create 只写 `creator_person`、不写
+  `creator`。只按 `creator` 收紧会让「本人刚创建的行」立刻变成管理员专属，属读写不一致；
+  写侧缺陷（`creator` 不落库）已登记，按「先修写入 → 新数据有归属 → 历史行仅管理员」顺序处理。
+- 门禁：新增 6 条 `idor-read-own` 正控制；fwd/rev 复用既有 `r6-*` / `rev-r6-*` 镜像行，未新增种子。
+- 破坏实验：`owner_scope` 临时改恒真（保留 `$2` 绑定，避免 deadpool 500 假阳性），
+  `NEW-FAIL` 恰好点名本批 6 条；还原后门禁 122 非 PASS，与基线一致（原 128 → 点名减 6），无 `STALE-BASELINE`。
+
 ## 门禁用例类型语义（批次 2 新增，新增用例按此写）
 用例表新增可选两列：第 13 列 `rev_id`（rev 方向资源 id，缺省 `rev-{victim}`），
 第 14 列 `body`（请求体 JSON 字面量，缺省 `{}`）。
