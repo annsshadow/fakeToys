@@ -63,7 +63,8 @@ async fn b72_delete_passes_gate_reaches_db_without_write() {
         .expect("test sea_orm db");
     let session = Some(Extension(shared::testing::test_session("b72-valid")));
 
-    // 有效会话 + 不存在的 id：过门后 find_by_id 查无 → error 信封（Ok），不落任何写。
+    // 有效会话 + 不存在的 id：过门后写语句 0 行 → 404（第六轮写 IDOR 收紧口径），
+    // 不落任何写。证门在库前。
     let res = delete_by_id(
         Extension(db),
         session,
@@ -71,8 +72,8 @@ async fn b72_delete_passes_gate_reaches_db_without_write() {
     )
     .await;
     assert!(
-        res.is_ok(),
-        "有效会话应过门并触库（不存在的 id → error 信封），证门在库前"
+        matches!(res, Err(AppError::NotFound)),
+        "有效会话应过门并触库（不存在的 id → 404），证门在库前"
     );
 }
 /// 纯单元：`require_session` 门逻辑本身（无 DB 副作用）——无会话拒绝、有会话放行。

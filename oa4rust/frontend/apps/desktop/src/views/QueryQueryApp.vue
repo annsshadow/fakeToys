@@ -201,7 +201,7 @@ async function deleteItem(item: Item) {
   if (await confirmMsg('确定删除该查询定义？')) delM.mutate(item.id)
 }
 function loadData() {
-  qc.invalidateQueries({ queryKey: qk })
+  reload()
 }
 
 // 按分类精确加载（GET designer/list/{category}，handler list_designers，区别于 bare list）

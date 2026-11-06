@@ -1383,8 +1383,9 @@ mod u2_contract {
         }
     }
 
-    /// 日界必须是业务时区（UTC+8）：取 UTC 2026-11-04 16:30（= 北京 11-05 00:30，
-    /// 正落在 00:00–08:00 早窗）。UTC 截日落在 11-04，业务日界必须落在 11-05。
+    /// 业务日界 = 北京自然日 00:00，与存量 UTC 裸时间列比较前必须换算到 UTC。
+    /// 全部用固定时刻，与真实钟点无关；并校验 Rust 实现与 SQL 等价表达式一致
+    /// （实现只换边界、不改写入时基）。
     #[tokio::test]
     async fn u2_business_day_bucket_is_utc8_in_early_morning_window() {
         if !is_db_available().await {
@@ -1393,28 +1394,29 @@ mod u2_contract {
         }
         let pool = test_pool();
         let c = pool.get().await.unwrap();
-        let utc_day: chrono::NaiveDateTime = c
-            .query_one(
-                "SELECT date_trunc('day', TIMESTAMPTZ '2026-11-04 16:30:00+00')::timestamp",
-                &[],
-            )
-            .await
-            .unwrap()
-            .get(0);
-        let biz_day: chrono::NaiveDateTime = c
-            .query_one(
-                "SELECT date_trunc('day', (TIMESTAMPTZ '2026-11-04 16:30:00+00' AT TIME ZONE 'Asia/Shanghai'))",
-                &[],
-            )
-            .await
-            .unwrap()
-            .get(0);
-        assert_eq!(utc_day.date().to_string(), "2026-11-04");
-        assert_eq!(biz_day.date().to_string(), "2026-11-05");
-        assert!(
-            biz_day > utc_day,
-            "业务日界必须晚于 UTC 日界（UTC+8 00:00–08:00 早窗）"
-        );
+        // (输入时刻, 期望的业务日界 = UTC 裸时间)
+        let cases = [
+            ("2026-11-04T16:30:00Z", "2026-11-04 16:00:00"), // 北京 11-05 00:30（早窗）
+            ("2026-11-04T15:59:59Z", "2026-11-03 16:00:00"), // 北京 11-04 23:59:59（前一自然日）
+            ("2026-11-05T00:00:00Z", "2026-11-04 16:00:00"), // 北京 11-05 08:00（早窗出口）
+        ];
+        for (input, expect) in cases {
+            let now = chrono::DateTime::parse_from_rfc3339(input)
+                .unwrap()
+                .with_timezone(&chrono::Utc);
+            let rust = crate::u2::business_day_start_utc(now);
+            assert_eq!(rust.to_string(), expect, "Rust 业务日界 {input}");
+            let sql: chrono::NaiveDateTime = c
+                .query_one(
+                    "SELECT (date_trunc('day', ($1::timestamptz AT TIME ZONE 'Asia/Shanghai')) \
+                     AT TIME ZONE 'Asia/Shanghai') AT TIME ZONE 'UTC'",
+                    &[&now],
+                )
+                .await
+                .unwrap()
+                .get(0);
+            assert_eq!(sql.to_string(), expect, "SQL 业务日界 {input}");
+        }
     }
 
     #[tokio::test]

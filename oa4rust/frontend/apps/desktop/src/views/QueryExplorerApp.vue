@@ -86,7 +86,7 @@ const filtered = computed(() =>
 )
 
 function loadData() {
-  qc.invalidateQueries({ queryKey: qk })
+  reload()
 }
 </script>
 <style scoped>

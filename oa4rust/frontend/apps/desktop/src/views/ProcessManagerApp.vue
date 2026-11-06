@@ -270,7 +270,7 @@ const filtered = computed(() =>
 )
 
 function loadData() {
-  qc.invalidateQueries({ queryKey: qk })
+  reload()
 }
 // 设计器映射/项权限族 3 条真实 distinct 路由：首流程 → 项权限列表 item-access/process/{processId}（PP_E_ITEM_ACCESS by process）
 // → 首项权限 → 项权限详情 item-access/{id}（PP_E_ITEM_ACCESS by xid）；应用维度 → 数据映射 mapping/list/application/{applicationFlag}（PP_E_MAPPING by application）

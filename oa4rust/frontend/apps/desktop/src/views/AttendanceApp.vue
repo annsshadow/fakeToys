@@ -244,7 +244,7 @@ import { monthEndYMD } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
-import { describeListError } from './listQuery'
+import { describeListError, reloadListQueries } from './listQuery'
 
 const session = useSession()
 
@@ -282,7 +282,7 @@ const stats = computed(() => [
   { label: '迟到', value: 3, color: 'var(--color-warning)' },
   { label: '请假', value: 2, color: 'var(--color-accent)' },
 ])
-const { data } = useQuery({
+useQuery({
   queryKey: ['att', 'recs', month, page],
   queryFn: () =>
     // 裸 attendancedetail 仅注册 POST；列表真实端点为 attendancedetail/filter/list。
@@ -302,7 +302,7 @@ useQuery({
   staleTime: 120000,
 })
 function loadData() {
-  data.value?.refetch()
+  void reloadListQueries(qc, ['att', 'recs', month.value, page.value])
 }
 function fmtDate(d?: string) {
   if (!d) return '—'

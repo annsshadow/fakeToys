@@ -7,8 +7,8 @@ use axum::{
     Json, Router,
 };
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder,
-    QuerySelect, Set,
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, DbBackend, EntityTrait,
+    QueryFilter, QueryOrder, QuerySelect, Set, Statement,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -33,6 +33,37 @@ fn require_session(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<shared::session::Session, AppError> {
     session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
+/// 归属谓词：`creator` 为本人 OR 调用者管理员。**写进 SQL WHERE**，不做先查后判；
+/// `creator` 为 NULL 时不命中（fail-closed）。
+const CREATOR_OWNER_PREDICATE: &str = "id = $1 AND (creator = $2 OR EXISTS(\
+     SELECT 1 FROM auth_person p \
+       JOIN auth_person_role pr ON pr.person_id = p.id \
+       JOIN auth_role r ON r.id = pr.role_id \
+      WHERE (p.unique_id = $2 OR p.id = $2) \
+        AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false))";
+
+/// 写语句影响 0 行时区分「不存在」(404) 与「无权」(403)。
+/// 此处读只用于选错误码，授权判定已在写语句的 WHERE 内。
+async fn ownership_error(db: &DatabaseConnection, table: &str, id: &str) -> AppError {
+    let sql = format!("SELECT EXISTS(SELECT 1 FROM {table} WHERE id = $1) AS row_exists");
+    match db
+        .query_one(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            &sql,
+            vec![id.into()],
+        ))
+        .await
+    {
+        Ok(Some(row)) => match row.try_get::<bool>("", "row_exists") {
+            Ok(true) => AppError::Forbidden,
+            Ok(false) => AppError::NotFound,
+            Err(e) => AppError::internal_with_source(concat!(file!(), ":", line!()), e),
+        },
+        Ok(None) => AppError::NotFound,
+        Err(e) => AppError::internal_with_source(concat!(file!(), ":", line!()), e),
+    }
 }
 
 // ── Request structs ──────────────────────────────────────────────────────────
@@ -363,7 +394,7 @@ pub async fn definition_create(
     session: Option<Extension<shared::session::Session>>,
     Json(req): Json<DefinitionCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let actor = require_session(session)?.person_unique;
     if req.name.trim().is_empty() || req.category.trim().is_empty() || req.type_.trim().is_empty() {
         return Ok(Json(ActionResult::error(
             "name, category and type are required",
@@ -376,6 +407,7 @@ pub async fn definition_create(
         category: Set(req.category),
         type_: Set(req.type_),
         deleted_at: Set(None),
+        creator: Set(Some(actor)),
     };
     let model = active.insert(&db.0).await?;
 
@@ -399,34 +431,45 @@ pub async fn definition_update(
     Path(id): Path<String>,
     Json(req): Json<DefinitionUpdateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let actor = require_session(session)?.person_unique;
     let model = org_definition::Entity::find_by_id(&id)
         .one(&db.0)
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
 
-    let mut active: org_definition::ActiveModel = model.into();
-    if let Some(name) = req.name {
-        active.name = Set(name);
-    }
-    if let Some(category) = req.category {
-        active.category = Set(category);
-    }
-    if let Some(type_) = req.type_ {
-        active.type_ = Set(type_);
-    }
+    let name = req.name.unwrap_or(model.name);
+    let category = req.category.unwrap_or(model.category);
+    let type_ = req.type_.unwrap_or(model.type_);
 
-    let updated = active.update(&db.0).await?;
+    // 归属条件在 WHERE 内：非本人且非管理员时影响 0 行（无 TOCTOU 窗口）。
+    let sql = format!(
+        "UPDATE x_org_definition SET name = $3, category = $4, type = $5 \
+         WHERE {CREATOR_OWNER_PREDICATE} RETURNING id"
+    );
+    let updated =
+        db.0.query_one(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            &sql,
+            vec![
+                id.clone().into(),
+                actor.into(),
+                name.clone().into(),
+                category.clone().into(),
+                type_.clone().into(),
+            ],
+        ))
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    if updated.is_none() {
+        return Err(ownership_error(&db.0, "x_org_definition", &id).await);
+    }
 
     let result = Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(updated.id.clone())),
-        ("name".to_string(), Value::String(updated.name.clone())),
-        (
-            "category".to_string(),
-            Value::String(updated.category.clone()),
-        ),
-        ("type".to_string(), Value::String(updated.type_.clone())),
+        ("id".to_string(), Value::String(id)),
+        ("name".to_string(), Value::String(name)),
+        ("category".to_string(), Value::String(category)),
+        ("type".to_string(), Value::String(type_)),
     ]));
 
     Ok(Json(ActionResult::success(result)))
@@ -438,17 +481,23 @@ pub async fn definition_delete(
     session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
-    let model = org_definition::Entity::find_by_id(&id)
-        .one(&db.0)
+    let actor = require_session(session)?.person_unique;
+    // 归属条件在 WHERE 内；0 行时再区分 403/404。
+    let sql = format!(
+        "UPDATE x_org_definition SET deleted_at = NOW() \
+         WHERE {CREATOR_OWNER_PREDICATE} RETURNING id"
+    );
+    let deleted =
+        db.0.query_one(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            &sql,
+            vec![id.clone().into(), actor.into()],
+        ))
         .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
-        .ok_or(AppError::NotFound)?;
-
-    let id = model.id.clone();
-    let mut active: org_definition::ActiveModel = model.into();
-    active.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));
-    active.update(&db.0).await?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    if deleted.is_none() {
+        return Err(ownership_error(&db.0, "x_org_definition", &id).await);
+    }
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
@@ -559,7 +608,7 @@ pub async fn identity_create(
     session: Option<Extension<shared::session::Session>>,
     Json(req): Json<IdentityCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let actor = require_session(session)?.person_unique;
     if req.person_id.trim().is_empty() || req.name.trim().is_empty() || req.type_.trim().is_empty()
     {
         return Ok(Json(ActionResult::error(
@@ -573,6 +622,7 @@ pub async fn identity_create(
         name: Set(req.name),
         type_: Set(req.type_),
         deleted_at: Set(None),
+        creator: Set(Some(actor)),
     };
     let model = active.insert(&db.0).await?;
 
@@ -596,34 +646,45 @@ pub async fn identity_update(
     Path(id): Path<String>,
     Json(req): Json<IdentityUpdateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let actor = require_session(session)?.person_unique;
     let model = org_identity::Entity::find_by_id(&id)
         .one(&db.0)
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
 
-    let mut active: org_identity::ActiveModel = model.into();
-    if let Some(person_id) = req.person_id {
-        active.person_id = Set(person_id);
-    }
-    if let Some(name) = req.name {
-        active.name = Set(name);
-    }
-    if let Some(type_) = req.type_ {
-        active.type_ = Set(type_);
-    }
+    let person_id = req.person_id.unwrap_or(model.person_id);
+    let name = req.name.unwrap_or(model.name);
+    let type_ = req.type_.unwrap_or(model.type_);
 
-    let updated = active.update(&db.0).await?;
+    // 归属条件在 WHERE 内：非本人且非管理员时影响 0 行。
+    let sql = format!(
+        "UPDATE x_org_identity SET person_id = $3, name = $4, type = $5 \
+         WHERE {CREATOR_OWNER_PREDICATE} RETURNING id"
+    );
+    let updated =
+        db.0.query_one(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            &sql,
+            vec![
+                id.clone().into(),
+                actor.into(),
+                person_id.clone().into(),
+                name.clone().into(),
+                type_.clone().into(),
+            ],
+        ))
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    if updated.is_none() {
+        return Err(ownership_error(&db.0, "x_org_identity", &id).await);
+    }
 
     let result = Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(updated.id.clone())),
-        (
-            "personId".to_string(),
-            Value::String(updated.person_id.clone()),
-        ),
-        ("name".to_string(), Value::String(updated.name.clone())),
-        ("type".to_string(), Value::String(updated.type_.clone())),
+        ("id".to_string(), Value::String(id)),
+        ("personId".to_string(), Value::String(person_id)),
+        ("name".to_string(), Value::String(name)),
+        ("type".to_string(), Value::String(type_)),
     ]));
 
     Ok(Json(ActionResult::success(result)))
@@ -635,17 +696,23 @@ pub async fn identity_delete(
     session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
-    let model = org_identity::Entity::find_by_id(&id)
-        .one(&db.0)
+    let actor = require_session(session)?.person_unique;
+    // 归属条件在 WHERE 内；0 行时再区分 403/404。
+    let sql = format!(
+        "UPDATE x_org_identity SET deleted_at = NOW() \
+         WHERE {CREATOR_OWNER_PREDICATE} RETURNING id"
+    );
+    let deleted =
+        db.0.query_one(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            &sql,
+            vec![id.clone().into(), actor.into()],
+        ))
         .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
-        .ok_or(AppError::NotFound)?;
-
-    let id = model.id.clone();
-    let mut active: org_identity::ActiveModel = model.into();
-    active.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));
-    active.update(&db.0).await?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    if deleted.is_none() {
+        return Err(ownership_error(&db.0, "x_org_identity", &id).await);
+    }
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
@@ -1022,6 +1089,8 @@ pub fn organization_core_entity_router(db: DatabaseConnection) -> Router {
 
 #[cfg(test)]
 mod security_gate_tests_b80;
+#[cfg(test)]
+mod security_gate_tests_idor_r6w2;
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;

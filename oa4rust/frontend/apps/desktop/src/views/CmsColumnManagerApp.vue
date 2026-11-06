@@ -154,7 +154,7 @@ async function deleteItem(item: Item) {
   if (await confirmMsg('确定删除该管理记录？')) delM.mutate(item.id)
 }
 function loadData() {
-  qc.invalidateQueries({ queryKey: qk })
+  reload()
 }
 function fmtTime(t?: string) {
   if (!t) return ''

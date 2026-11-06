@@ -7,8 +7,8 @@ use axum::{
     Router,
 };
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder,
-    QuerySelect,
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, DbBackend, EntityTrait,
+    QueryFilter, QueryOrder, QuerySelect, Statement,
 };
 use serde_json::{Map, Value};
 use shared::{error::AppError, response::ActionResult};
@@ -28,6 +28,30 @@ fn require_session(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<shared::session::Session, AppError> {
     session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
+/// 归属谓词（`$2` = 会话身份）：`creator` 为本人，或调用者管理员。
+/// `creator` 在 mind 两表均为 NOT NULL；谓词写进 SQL WHERE，不做先查后判。
+const CREATOR_OWNER_PREDICATE: &str = "creator = $2 OR EXISTS(\
+    SELECT 1 FROM auth_person p \
+      JOIN auth_person_role pr ON pr.person_id = p.id \
+      JOIN auth_role r ON r.id = pr.role_id \
+     WHERE (p.unique_id = $2 OR p.id = $2) \
+       AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false)";
+
+/// 0 行命中时区分 403/404。该读**不参与授权**：判定已由带谓词的写语句完成。
+async fn ownership_error(db: &DatabaseConnection, table: &str, id: &str) -> AppError {
+    let sql = format!("SELECT EXISTS(SELECT 1 FROM {table} WHERE id = $1) AS row_exists");
+    let stmt = Statement::from_sql_and_values(DbBackend::Postgres, sql, [id.into()]);
+    match db.query_one(stmt).await {
+        Ok(Some(row)) => match row.try_get::<bool>("", "row_exists") {
+            Ok(true) => AppError::Forbidden,
+            Ok(false) => AppError::NotFound,
+            Err(e) => AppError::internal_with_source(concat!(file!(), ":", line!()), e),
+        },
+        Ok(None) => AppError::NotFound,
+        Err(e) => AppError::internal_with_source(concat!(file!(), ":", line!()), e),
+    }
 }
 
 fn build_json_object(pairs: &[(&str, Option<Value>)]) -> Value {
@@ -236,8 +260,8 @@ pub async fn update_mind(
     Path(id): Path<String>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
-    use mind_mind::ActiveModel;
+    let session = require_session(session)?;
+    let actor = session.person_unique;
 
     let model = mind_mind::Entity::find_by_id(id.clone())
         .one(&db.0)
@@ -262,12 +286,28 @@ pub async fn update_mind(
         .or_else(|| model.description.clone())
         .unwrap_or_default();
 
-    let mut active: ActiveModel = model.into();
-    active.name = sea_orm::ActiveValue::Set(name.clone());
-    active.folder_id = sea_orm::ActiveValue::Set(folder_id.clone());
-    active.description = sea_orm::ActiveValue::Set(Some(description.clone()));
-
-    active.update(&db.0).await?;
+    let sql = format!(
+        "UPDATE x_mind_base_info SET name = $3, folder_id = $4, description = $5 \
+         WHERE id = $1 AND ({CREATOR_OWNER_PREDICATE}) RETURNING id"
+    );
+    let stmt = Statement::from_sql_and_values(
+        DbBackend::Postgres,
+        sql,
+        [
+            id.clone().into(),
+            actor.into(),
+            name.clone().into(),
+            folder_id.clone().into(),
+            description.clone().into(),
+        ],
+    );
+    let res =
+        db.0.execute(stmt)
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    if res.rows_affected() == 0 {
+        return Err(ownership_error(&db.0, "x_mind_base_info", &id).await);
+    }
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -372,8 +412,8 @@ pub async fn update_folder(
     Path(id): Path<String>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
-    use mind_folder::ActiveModel;
+    let session = require_session(session)?;
+    let actor = session.person_unique;
 
     let model = mind_folder::Entity::find_by_id(id.clone())
         .one(&db.0)
@@ -404,13 +444,29 @@ pub async fn update_folder(
         .or_else(|| model.description.clone())
         .unwrap_or_default();
 
-    let mut active: ActiveModel = model.into();
-    active.name = sea_orm::ActiveValue::Set(name.clone());
-    active.parent_id = sea_orm::ActiveValue::Set(Some(parent_id.clone()));
-    active.order_number = sea_orm::ActiveValue::Set(order_number);
-    active.description = sea_orm::ActiveValue::Set(Some(description.clone()));
-
-    active.update(&db.0).await?;
+    let sql = format!(
+        "UPDATE x_mind_folder_info SET name = $3, parent_id = $4, order_number = $5, \
+         description = $6 WHERE id = $1 AND ({CREATOR_OWNER_PREDICATE}) RETURNING id"
+    );
+    let stmt = Statement::from_sql_and_values(
+        DbBackend::Postgres,
+        sql,
+        [
+            id.clone().into(),
+            actor.into(),
+            name.clone().into(),
+            parent_id.clone().into(),
+            order_number.into(),
+            description.clone().into(),
+        ],
+    );
+    let res =
+        db.0.execute(stmt)
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    if res.rows_affected() == 0 {
+        return Err(ownership_error(&db.0, "x_mind_folder_info", &id).await);
+    }
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -553,6 +609,8 @@ pub fn mind_core_entity_router(db: DatabaseConnection) -> Router {
 
 #[cfg(test)]
 mod security_gate_tests_b81;
+#[cfg(test)]
+mod security_gate_tests_idor_b4;
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;

@@ -180,6 +180,48 @@ describe('ApiClient', () => {
     expect(resp.success).toBe(true)
   })
 
+  it('maps an aborted request to ApiError(status 0) so callers stop retrying', async () => {
+    const fetchMock = vi.fn(
+      (_url: string | URL, init: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init.signal?.addEventListener('abort', () => {
+            const err = new Error('aborted')
+            err.name = 'AbortError'
+            reject(err)
+          })
+        }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(new ApiClient().get('/slow', { timeoutMs: 30 })).rejects.toMatchObject({
+      status: 0,
+      message: '请求超时',
+    })
+  })
+
+  it('applies the 30s default timeout when timeoutMs is omitted', async () => {
+    vi.useFakeTimers()
+    const fetchMock = vi.fn(
+      (_url: string | URL, init: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init.signal?.addEventListener('abort', () => {
+            const err = new Error('aborted')
+            err.name = 'AbortError'
+            reject(err)
+          })
+        }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+
+    const pending = new ApiClient().get('/never')
+    const assertion = expect(pending).rejects.toMatchObject({ status: 0 })
+    // 29s 时仍在等，30s 才超时（判据是「有上界」，不是精确毫秒）。
+    await vi.advanceTimersByTimeAsync(29_000)
+    await vi.advanceTimersByTimeAsync(1_100)
+    await assertion
+    vi.useRealTimers()
+  })
+
   it('retries an upload exactly once after a 401 refresh, replaying the same URL', async () => {
     const fetchMock = vi
       .fn()

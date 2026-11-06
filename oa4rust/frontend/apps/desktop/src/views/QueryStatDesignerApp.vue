@@ -179,7 +179,7 @@ async function deleteItem(item: Item) {
   if (await confirmMsg('确定删除该统计定义？')) delM.mutate(item.id)
 }
 function loadData() {
-  qc.invalidateQueries({ queryKey: qk })
+  reload()
 }
 </script>
 <style scoped>

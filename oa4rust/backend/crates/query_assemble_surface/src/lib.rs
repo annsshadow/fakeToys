@@ -2690,7 +2690,10 @@ async fn view_flag_flag_query_queryFlag_core(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -2981,7 +2984,7 @@ pub async fn view_flag_flag_query_queryFlag_execute_v2_page_page_size_size(
 
     let rows = client
         .query(
-            "SELECT id, view_flag, query_flag, content, creator, create_time FROM x_query_view WHERE view_flag = $1 AND query_flag = $2 ORDER BY create_time DESC LIMIT $3::bigint OFFSET $4::bigint",
+            "SELECT id, view_flag, query_flag, content, creator, create_time::text AS create_time FROM x_query_view WHERE view_flag = $1 AND query_flag = $2 ORDER BY create_time DESC LIMIT $3::bigint OFFSET $4::bigint",
             &[&view, &app, &size, &offset],
         )
         .await
@@ -3016,7 +3019,10 @@ pub async fn view_flag_flag_query_queryFlag_execute_v2_page_page_size_size(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -3071,7 +3077,10 @@ pub async fn view_list_query_queryFlag(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -3129,7 +3138,10 @@ pub async fn view_id(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -3467,7 +3479,10 @@ pub async fn view_id_execute_v2_page_page_size_size(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })

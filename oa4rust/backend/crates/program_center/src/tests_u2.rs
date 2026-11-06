@@ -501,15 +501,17 @@ mod u2_tests {
             )
             .await
             .unwrap();
-        assert_eq!(steal.status(), StatusCode::OK);
+        // 2026-11 写 IDOR 批次 3：拒绝口径从「200 + deleted=false」收紧为 403，
+        // 否则无法与「行不存在」区分，也不满足门禁 401/403 判据。
+        assert_eq!(steal.status(), StatusCode::FORBIDDEN, "非属主删除必须 403");
         let bytes = axum::body::to_bytes(steal.into_body(), 65536)
             .await
             .unwrap();
         let stolen: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
-        assert_eq!(
+        assert_ne!(
             stolen["data"]["deleted"].as_bool(),
-            Some(false),
-            "非属主删除必须落空（deleted=false，行原样保留）"
+            Some(true),
+            "非属主删除不得落库"
         );
 
         // 行必须原样保留：未软删、属主未变
@@ -692,7 +694,7 @@ mod u2_tests {
             );
         }
 
-        // 非属主保存：仍被属主门禁拦下（saved=false）
+        // 非属主保存：仍被属主门禁拦下（2026-11 起由 200/saved=false 收紧为 403）
         let bob_app =
             program_center_router(pool.clone()).layer(Extension(session_for("u-collect-save-bob")));
         let steal = bob_app
@@ -706,15 +708,15 @@ mod u2_tests {
             )
             .await
             .unwrap();
-        assert_eq!(steal.status(), StatusCode::OK);
+        assert_eq!(steal.status(), StatusCode::FORBIDDEN, "非属主保存必须 403");
         let bytes = axum::body::to_bytes(steal.into_body(), 65536)
             .await
             .unwrap();
         let stolen: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
-        assert_eq!(
+        assert_ne!(
             stolen["data"]["saved"].as_bool(),
-            Some(false),
-            "非属主保存必须落空"
+            Some(true),
+            "非属主保存不得落库"
         );
 
         // 清理：物理删测试数据

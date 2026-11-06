@@ -20,10 +20,42 @@ fn require_session(
     session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
 }
 
+/// 归属谓词（`$2` = 会话身份）。`application`/`info_id` 两列皆空是部署级全局
+/// 热点图，全局内容只允许管理员写（与 `create_hotpic` / `save_hotpic` 的
+/// admin-only 口径一致）；具体键行则本人或管理员可写。`creator` 为 NULL 时
+/// 不命中（fail-closed）。谓词写进 SQL WHERE，不做先查后判。
+const HOTPIC_OWNER_PREDICATE: &str = "(\
+    (application <> '' OR info_id <> '') AND creator = $2\
+  ) OR EXISTS(\
+    SELECT 1 FROM auth_person p \
+      JOIN auth_person_role pr ON pr.person_id = p.id \
+      JOIN auth_role r ON r.id = pr.role_id \
+     WHERE (p.unique_id = $2 OR p.id = $2) \
+       AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false)";
+
+/// 0 行命中时区分 403/404。该读**不参与授权**：判定已由带谓词的写语句完成。
+async fn ownership_error(pool: &Pool, table: &str, id: &str) -> AppError {
+    let client = match shared::db::acquire(pool).await {
+        Ok(c) => c,
+        Err(e) => return e,
+    };
+    let sql = format!("SELECT EXISTS(SELECT 1 FROM {table} WHERE id = $1) AS row_exists");
+    match client.query_one(&sql, &[&id]).await {
+        Ok(row) => match row.try_get::<_, bool>("row_exists") {
+            Ok(true) => AppError::Forbidden,
+            Ok(false) => AppError::NotFound,
+            Err(e) => AppError::internal_with_source(concat!(file!(), ":", line!()), e),
+        },
+        Err(e) => AppError::internal_with_source(concat!(file!(), ":", line!()), e),
+    }
+}
+
 #[cfg(test)]
 mod security_gate_tests;
 #[cfg(test)]
 mod security_gate_tests_b72;
+#[cfg(test)]
+mod security_gate_tests_idor_b4;
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
@@ -908,16 +940,21 @@ pub async fn user_hotpic_delete_by_ids(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 安全审计 round4-b72：会话存在档（沿用本 crate user_hotpic_changeTitle 惯例），
     // 门置于 pool.get() 之前，杜绝匿名软删 x_hotpic。
-    require_session(session)?;
+    let session = require_session(session)?;
+    let actor = session.person_unique;
     let client = shared::db::acquire(&pool).await?;
     let ids = vec![id.clone(), id2.clone()];
+    let sql = format!(
+        "UPDATE x_hotpic SET deleted_at = NOW() WHERE id = ANY($1) \
+         AND ({HOTPIC_OWNER_PREDICATE}) AND deleted_at IS NULL"
+    );
     let n = client
-        .execute(
-            "UPDATE x_hotpic SET deleted_at = NOW() WHERE id = ANY($1) AND deleted_at IS NULL",
-            &[&ids],
-        )
+        .execute(&sql, &[&ids, &actor])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    if n == 0 {
+        return Err(ownership_error(&pool, "x_hotpic", &id).await);
+    }
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),

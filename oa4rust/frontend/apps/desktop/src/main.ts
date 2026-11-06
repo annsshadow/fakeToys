@@ -8,6 +8,7 @@ import { createPinia } from 'pinia'
 import { createApp, h } from 'vue'
 import { createRouter, createWebHistory, RouterView } from 'vue-router'
 import { watchSessionCacheReset } from './utils/sessionCache'
+import { shouldRetryQuery } from './views/listQuery'
 import '@oa4rust/ui'
 import AppShell from '@oa4rust/ui/components/AppShell.vue'
 import LoginScreen from '@oa4rust/ui/components/LoginScreen.vue'
@@ -515,8 +516,10 @@ router.afterEach((to) => {
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { staleTime: 5 * 60 * 1000, retry: 2, refetchOnWindowFocus: false },
-    mutations: { retry: 1 },
+    queries: { staleTime: 5 * 60 * 1000, retry: shouldRetryQuery, refetchOnWindowFocus: false },
+    // R133：写请求不自动重试。网络中断时「请求已到服务端但响应没回来」再重发一次，
+    // 对非幂等的创建/审批就是重复提交；宁可让用户手动重试。
+    mutations: { retry: 0 },
   },
 })
 

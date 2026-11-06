@@ -273,6 +273,19 @@ def build_universe() -> tuple[dict[str, set[str]], list[str]]:
                 if table in universe:
                     universe[table].discard(ident_at(m, 0).lower())
 
+            # RENAME COLUMN old TO new（列重命名）。
+            # 043 把 x_org_identity / x_cal_calendar / x_org_definition 的
+            # `type_` 改名为 `type`，且写在 `DO $$ ... END $$` 条件块里。
+            # 这里按原文扫描（不解析 DO 语义），所以条件块内的 ALTER 同样命中。
+            for m in re.finditer(
+                r"\bRENAME\s+COLUMN\s+" + IDENT + r"\s+TO\s+" + IDENT, body, re.I
+            ):
+                old = ident_at(m, 0).lower()
+                new = ident_at(m, 1).lower()
+                if table in universe:
+                    universe[table].discard(old)
+                    universe[table].add(new)
+
             # RENAME TO new（表重命名）
             m = re.match(r"\s*RENAME\s+TO\s+" + IDENT, body, re.I)
             if m:

@@ -157,7 +157,7 @@ async function deleteItem(item: Item) {
   if (await confirmMsg('确定删除该组件？')) delM.mutate(item.id)
 }
 function loadData() {
-  qc.invalidateQueries({ queryKey: qk })
+  reload()
 }
 </script>
 <style scoped>

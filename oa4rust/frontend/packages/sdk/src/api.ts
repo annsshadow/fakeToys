@@ -17,6 +17,22 @@ export interface PagedResponse<T> {
   size: number
 }
 
+/**
+ * 默认请求超时（R133）。与移动端 `uni.request` 的 30s 对齐：
+ * 服务端/网络一直不响应时，前端不能无限等（否则列表永远停在 loading，表现为白屏）。
+ * 上传接口仍按需显式传 `timeoutMs`：大文件上传不该被 30s 误杀。
+ */
+const DEFAULT_TIMEOUT_MS = 30_000
+
+/**
+ * 流式响应默认空闲超时（R134）。SSE 是长连接，不能用「总时长」超时，
+ * 但「连续一段时间一个字节都没收到」说明连接已死（半开 TCP / 代理掐断 /
+ * 上游 LLM 不再吐数据），继续等只会让页面永远停在「生成中」。
+ * 每收到一个分块重新计时；首字节之前同样生效（服务端连响应头都不发也算死连接）。
+ * 后端 `chat_completion_stream` 未配置 SSE keep-alive，因此取一个宽于正常首字节延迟的值。
+ */
+const DEFAULT_STREAM_IDLE_TIMEOUT_MS = 60_000
+
 /** 查询选项（传给 TanStack Query） */
 export interface QueryOptions {
   enabled?: boolean
@@ -42,7 +58,7 @@ export interface ApiRequestOptions {
   params?: Record<string, string>
   requireAuth?: boolean
   headers?: Record<string, string>
-  /** 请求超时（毫秒）。默认无超时，由 fetch 运行时决定。 */
+  /** 请求超时（毫秒）。普通请求默认 30s；`stream()` 里表示「空闲超时」（默认 60s，收到数据即重置）。 */
   timeoutMs?: number
   /** 成功时不读取响应体，用于可能包含遗留 token 字段的认证端点。 */
   discardResponse?: boolean
@@ -134,11 +150,18 @@ export class ApiClient {
     }
 
     const controller = new AbortController()
-    if (options?.timeoutMs) {
-      setTimeout(() => controller.abort(), options.timeoutMs)
-    }
+    const timeoutId = setTimeout(() => controller.abort(), options?.timeoutMs ?? DEFAULT_TIMEOUT_MS)
 
-    const resp = await fetch(url.toString(), { ...init, signal: controller.signal })
+    let resp: Response
+    try {
+      resp = await fetch(url.toString(), { ...init, signal: controller.signal })
+    } catch (err) {
+      // 超时映射成 status 0：上层（vue-query 重试策略）据此识别「不会自己好」的失败并停止重试。
+      if ((err as { name?: string } | null)?.name === 'AbortError') throw new ApiError('请求超时', 0)
+      throw err
+    } finally {
+      clearTimeout(timeoutId)
+    }
 
     if (!resp.ok) {
       if (resp.status === 401) {
@@ -322,6 +345,10 @@ export class ApiClient {
    * SSE 流式 POST（POST + text/event-stream 响应）。
    * 每收到一个完整 SSE 事件回调 onEvent(event, data)；流结束 resolve。
    * 401 时的会话刷新语义与 request() 一致。
+   *
+   * R134：空闲超时。`options.timeoutMs` 在这里表示「多久没有任何字节就判定连接已死」
+   * （默认 60s，收到分块即重置），超时以 `ApiError('流式响应超时', 0)` 结束，
+   * 由调用方展示明确文案，而不是让 `await stream()` 永远不返回。
    */
   async stream(
     path: string,
@@ -331,47 +358,76 @@ export class ApiClient {
     retried = false,
   ): Promise<void> {
     const url = this.resolveUrl(path)
-    const resp = await fetch(url.toString(), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...options?.headers },
-      credentials: 'include',
-      body: JSON.stringify(body ?? {}),
-    })
-    if (!resp.ok) {
-      if (resp.status === 401 && options?.requireAuth !== false && !retried) {
-        try {
-          await this.refreshSession()
-        } catch (err) {
-          throw this.authenticationFailed(err)
-        }
-        return this.stream(path, body, onEvent, options, true)
+    const idleMs = options?.timeoutMs ?? DEFAULT_STREAM_IDLE_TIMEOUT_MS
+    const controller = new AbortController()
+    let idleTimer: ReturnType<typeof setTimeout> | null = null
+    let idleTimedOut = false
+    const clearIdle = () => {
+      if (idleTimer) {
+        clearTimeout(idleTimer)
+        idleTimer = null
       }
-      if (resp.status === 401) throw this.authenticationFailed()
-      if (resp.status === 403) throw new PermissionError('Permission denied')
-      throw new ApiError(`HTTP ${resp.status}: ${resp.statusText}`, resp.status)
     }
-    if (!resp.body) throw new ApiError('no response body stream', resp.status)
-    const reader = resp.body.getReader()
-    const decoder = new TextDecoder()
-    let buf = ''
-    for (;;) {
-      const { done, value } = await reader.read()
-      if (done) break
-      buf += decoder.decode(value, { stream: true })
-      // SSE 事件以空行分隔（容忍 \r\n）
-      for (;;) {
-        const m = buf.match(/(?:\r?\n){2}/)
-        if (!m || m.index === undefined) break
-        const raw = buf.slice(0, m.index)
-        buf = buf.slice(m.index + m[0].length)
-        let event = 'message'
-        const dataLines: string[] = []
-        for (const line of raw.split(/\r?\n/)) {
-          if (line.startsWith('event:')) event = line.slice(6).trim()
-          else if (line.startsWith('data:')) dataLines.push(line.slice(5).trimStart())
+    const armIdle = () => {
+      clearIdle()
+      idleTimer = setTimeout(() => {
+        idleTimedOut = true
+        controller.abort()
+      }, idleMs)
+    }
+
+    try {
+      armIdle()
+      const resp = await fetch(url.toString(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...options?.headers },
+        credentials: 'include',
+        body: JSON.stringify(body ?? {}),
+        signal: controller.signal,
+      })
+      if (!resp.ok) {
+        if (resp.status === 401 && options?.requireAuth !== false && !retried) {
+          try {
+            await this.refreshSession()
+          } catch (err) {
+            throw this.authenticationFailed(err)
+          }
+          return this.stream(path, body, onEvent, options, true)
         }
-        if (dataLines.length) onEvent(event, dataLines.join('\n'))
+        if (resp.status === 401) throw this.authenticationFailed()
+        if (resp.status === 403) throw new PermissionError('Permission denied')
+        throw new ApiError(`HTTP ${resp.status}: ${resp.statusText}`, resp.status)
       }
+      if (!resp.body) throw new ApiError('no response body stream', resp.status)
+      const reader = resp.body.getReader()
+      const decoder = new TextDecoder()
+      let buf = ''
+      for (;;) {
+        const { done, value } = await reader.read()
+        if (done) break
+        armIdle()
+        buf += decoder.decode(value, { stream: true })
+        // SSE 事件以空行分隔（容忍 \r\n）
+        for (;;) {
+          const m = buf.match(/(?:\r?\n){2}/)
+          if (!m || m.index === undefined) break
+          const raw = buf.slice(0, m.index)
+          buf = buf.slice(m.index + m[0].length)
+          let event = 'message'
+          const dataLines: string[] = []
+          for (const line of raw.split(/\r?\n/)) {
+            if (line.startsWith('event:')) event = line.slice(6).trim()
+            else if (line.startsWith('data:')) dataLines.push(line.slice(5).trimStart())
+          }
+          if (dataLines.length) onEvent(event, dataLines.join('\n'))
+        }
+      }
+    } catch (err) {
+      // 只有「我们自己的空闲看门狗」超时才改写错误；其余（401/403/网络/解析）原样抛。
+      if (idleTimedOut) throw new ApiError('流式响应超时', 0)
+      throw err
+    } finally {
+      clearIdle()
     }
   }
 }

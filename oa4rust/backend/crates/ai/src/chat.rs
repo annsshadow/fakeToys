@@ -47,7 +47,10 @@ pub async fn chat_list_paging(
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -106,11 +109,17 @@ pub async fn chat_list_completion_paging(
                 ),
                 (
                     "generateType".to_string(),
-                    Value::String(row.get("generateType")),
+                    Value::String(
+                        row.get::<_, Option<String>>("generateType")
+                            .unwrap_or_default(),
+                    ),
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get("create_time")),
+                    Value::String(
+                        row.get::<_, Option<String>>("create_time")
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
