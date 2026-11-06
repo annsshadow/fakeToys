@@ -134,4 +134,103 @@ mod tests {
             .expect("cleanup processing");
         assert_eq!(owner, person, "processing creator 必须是会话身份");
     }
+
+    /// 批4 复现：非空 `model_flag` 的 upsert 分支现状必崩（`E42P10`：ON CONFLICT
+    /// 无法命中 `WHERE model_flag IS NOT NULL` 的**部分**唯一索引）。
+    /// 本用例断言「第二次同 flag 调用必须成功且只保留一行」，修复前为红。
+    #[tokio::test]
+    async fn b4_processing_execute_nonempty_model_flag_upserts() {
+        let pool = shared::testing::test_pool();
+        let person = "b4-processing-owner";
+        let model_flag = format!("b4-model-{}", uuid::Uuid::new_v4().simple());
+        let first = format!("b4 first {}", uuid::Uuid::new_v4());
+        let second = format!("b4 second {}", uuid::Uuid::new_v4());
+
+        for query in [&first, &second] {
+            let res = crate::processing_execute(
+                axum::Extension(pool.clone()),
+                Some(axum::Extension(shared::testing::test_session(person))),
+                axum::Json(crate::ProcessingExecuteRequest {
+                    query: Some(query.clone()),
+                    model_flag: Some(model_flag.clone()),
+                    params: None,
+                }),
+            )
+            .await;
+            if let Err(e) = &res {
+                panic!("非空 model_flag 的 upsert 必须成功（现状应为 E42P10）: {e:?}");
+            }
+        }
+
+        let client = pool.get().await.expect("db");
+        let row = client
+            .query_one(
+                "SELECT count(*) AS n, min(query) AS q_min, max(query) AS q_max, min(creator) AS c \
+                 FROM x_query_processing WHERE model_flag = $1",
+                &[&model_flag],
+            )
+            .await
+            .expect("query processing");
+        let count: i64 = row.get("n");
+        let q_max: Option<String> = row.get("q_max");
+        let creator: Option<String> = row.get("c");
+        client
+            .execute(
+                "DELETE FROM x_query_processing WHERE model_flag = $1",
+                &[&model_flag],
+            )
+            .await
+            .expect("cleanup processing");
+
+        assert_eq!(count, 1, "同 model_flag 必须 upsert 成一行");
+        assert_eq!(
+            q_max.as_deref(),
+            Some(second.as_str()),
+            "第二次应覆盖 query"
+        );
+        assert_eq!(creator.as_deref(), Some(person), "creator 必须是会话身份");
+    }
+
+    /// 负控制：空 `model_flag` 走裸 INSERT 分支，不受 upsert 修复影响。
+    #[tokio::test]
+    async fn b4_processing_execute_empty_model_flag_still_inserts() {
+        let pool = shared::testing::test_pool();
+        let person = "b4-processing-empty";
+        let first = format!("b4 empty a {}", uuid::Uuid::new_v4());
+        let second = format!("b4 empty b {}", uuid::Uuid::new_v4());
+
+        for query in [&first, &second] {
+            let res = crate::processing_execute(
+                axum::Extension(pool.clone()),
+                Some(axum::Extension(shared::testing::test_session(person))),
+                axum::Json(crate::ProcessingExecuteRequest {
+                    query: Some(query.clone()),
+                    model_flag: None,
+                    params: None,
+                }),
+            )
+            .await;
+            if let Err(e) = &res {
+                panic!("空 model_flag 分支必须成功: {e:?}");
+            }
+        }
+
+        let client = pool.get().await.expect("db");
+        let n: i64 = client
+            .query_one(
+                "SELECT count(*) FROM x_query_processing WHERE query = $1 OR query = $2",
+                &[&first, &second],
+            )
+            .await
+            .expect("count processing")
+            .get(0);
+        client
+            .execute(
+                "DELETE FROM x_query_processing WHERE query = $1 OR query = $2",
+                &[&first, &second],
+            )
+            .await
+            .expect("cleanup processing");
+        assert_eq!(n, 2, "空 model_flag 每次调用都应新增一行");
+    }
 }

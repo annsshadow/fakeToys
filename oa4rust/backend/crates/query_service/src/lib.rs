@@ -143,6 +143,9 @@ pub async fn processing_execute(
     let query = req.query.unwrap_or_default();
     let model_flag = req.model_flag.unwrap_or_default();
     let params = req.params.unwrap_or_default();
+    // 无 flag 时必须在库里落 NULL：唯一索引是 `WHERE model_flag IS NOT NULL` 的部分索引，
+    // 落 '' 会被算作真实值，导致第二次无 flag 调用撞 E23505。
+    let model_flag_bind: Option<&str> = (!model_flag.is_empty()).then_some(model_flag.as_str());
 
     if query.trim().is_empty() {
         return Ok(Json(ActionResult::error("query is required")));
@@ -160,7 +163,7 @@ pub async fn processing_execute(
             .execute(
                 "INSERT INTO x_query_processing (id, query, model_flag, params, creator, create_time, update_time) \
                  VALUES ($1, $2, $3, $4, $5, NOW(), NOW())",
-                &[&id, &query, &model_flag, &params, &sess.person_unique],
+                &[&id, &query, &model_flag_bind, &params, &sess.person_unique],
             )
             .await
             .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -171,7 +174,8 @@ pub async fn processing_execute(
             .query_opt(
                 "INSERT INTO x_query_processing (id, query, model_flag, params, creator, create_time, update_time) \
                  VALUES ($1, $2, $3, $4, $5, NOW(), NOW()) \
-                 ON CONFLICT (model_flag) DO UPDATE SET query = EXCLUDED.query, params = EXCLUDED.params, update_time = NOW() \
+                 ON CONFLICT (model_flag) WHERE model_flag IS NOT NULL \
+                 DO UPDATE SET query = EXCLUDED.query, params = EXCLUDED.params, update_time = NOW() \
                  RETURNING id",
                 &[&id, &query, &model_flag, &params, &sess.person_unique],
             )
