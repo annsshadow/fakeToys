@@ -58,8 +58,11 @@ package httpapi
 //  2. Rust 侧 144 条 idor 用例没有 adm 方向；admin 在 OA 多数端点是
 //     **合法**读者，一刀切跑 adm 会把「管理员本就该看」误判成 LEAK，
 //     需要逐端点策略，代价高于本轮预算。
-//  3. 分页只测 offset=20 这一页（当前只有 `/me/battles` 支持 offset）；
-//     更深的页与 keyset/cursor 分页未测。端点没有 cursor 参数，暂不虚构用例。
+//  3. 分页覆盖（第十四轮补齐）：`/me/battles` 的 offset=20 与 offset=40
+//     深页、`/admin/users` 与 `/admin/battles` 的 keyset 游标（R77）均已进门禁。
+//     仍未覆盖的部分是**结构差异**而非漏测：Go 侧没有 prev/cursor 反向
+//     翻页端点，故不存在「next 后 prev」断言；两处 keyset 的排序键是
+//     `id`（主键、非空、无并列），因此也没有 NULL 键/并列键用例。
 //  4. 固定 limit=20 且无 offset 的列表（orders / purchases / redemptions）
 //     无法翻页，也就不存在「第二页绕过」；它们的行数上限本身就是断言前提。
 
@@ -135,6 +138,14 @@ type gateCtx struct {
 	tokP1 string
 	uidP2 int64
 	tokP2 string
+
+	// uidP3/uidP4 只给「深页 offset=40」用例：P1/P2 各 25 行，
+	// offset=40 只能是空页（只能证伪、不能证实）。这里各备 55 行，
+	// 深页恰剩 15 行自有行，才能同时断言「看得见自己」与「看不见对方」。
+	uidP3 int64
+	tokP3 string
+	uidP4 int64
+	tokP4 string
 }
 
 // TestSecurityGate 是 Go 侧唯一入口。
@@ -149,6 +160,8 @@ func TestSecurityGate(t *testing.T) {
 	g.uidG, _ = e.newPlayer(t, "gate_grant")
 	g.uidP1, g.tokP1 = e.newPlayer(t, "gate_page_a")
 	g.uidP2, g.tokP2 = e.newPlayer(t, "gate_page_b")
+	g.uidP3, g.tokP3 = e.newPlayer(t, "gate_deep_a")
+	g.uidP4, g.tokP4 = e.newPlayer(t, "gate_deep_b")
 	g.adminID, g.adminTok = e.newAdmin(t, "gate")
 
 	cases := []struct {
@@ -169,6 +182,7 @@ func TestSecurityGate(t *testing.T) {
 		{"go|idor|presets-delete", "both", g.casePresetsDelete},
 		{"go|idor|presets-current", "both", g.casePresetsCurrent},
 		{"go|idor|battles-page2", "both", g.caseBattlesPage2},
+		{"go|idor|battles-deep-page", "both", g.caseBattlesDeepPage},
 		{"go|idor|battles-list", "both", g.caseBattlesList},
 		{"go|idor|gems-list", "both", g.caseGemsList},
 		{"go|write|self-roundtrip", "fwd-only", g.caseWriteSelfRoundtrip},
@@ -186,6 +200,11 @@ func TestSecurityGate(t *testing.T) {
 		{"go|admin|idem|redeem-codes-batch", "fwd-only", g.caseIdemBatch},
 		{"go|admin|idem|redeem-codes-create", "fwd-only", g.caseIdemRedeemCreate},
 		{"go|admin|idem|battles-verify", "fwd-only", g.caseIdemBattleVerify},
+
+		// --- D. keyset 游标 / 深分页（R77） ---
+		{"go|admin|paging|users-keyset-walk", "fwd-only", g.caseAdminUsersKeyset},
+		{"go|admin|paging|users-cursor-overrides-offset", "fwd-only", g.caseAdminUsersCursorOverridesOffset},
+		{"go|admin|paging|battles-keyset-walk", "fwd-only", g.caseAdminBattlesKeyset},
 	}
 
 	start := time.Now()
@@ -1163,6 +1182,341 @@ func (g *gateCtx) caseBattlesPage2() gateOutcome {
 	})
 }
 
+// caseBattlesDeepPage：深页（offset=40）仍只含本人行。
+//
+// battles-page2 只到 offset=20，而 P1/P2 各 25 行 —— offset=40 必然是空页，
+// 空页只能证伪（没出现对方行），不能证实「深页确实还翻得到自己」。
+// 这里单独备 P3/P4 各 55 行、按时间交错，于是 offset=40 恰剩 15 行自有行：
+//
+//	归属过滤作用于全部页 → 15 行全是自己、对方 0 行 → PASS；
+//	过滤只活在前几页 / 丢了 → 交错序列的 offset=40 起会夹进对方行 → LEAK。
+func (g *gateCtx) caseBattlesDeepPage() gateOutcome {
+	const n = 55
+	base := time.Now().Add(-2 * time.Hour)
+	ownHashes := make([]string, n)
+	victimHashes := make([]string, n)
+	ownSet := make(map[string]bool, n)
+	victimSet := make(map[string]bool, n)
+	for i := 0; i < n; i++ {
+		ownHashes[i] = g.uniq("gate_deep_own")
+		victimHashes[i] = g.uniq("gate_deep_victim")
+		ownSet[ownHashes[i]] = true
+		victimSet[victimHashes[i]] = true
+		if _, _, err := g.mkBattleAt(g.uidP3, ownHashes[i], base.Add(-time.Duration(2*i)*time.Second)); err != nil {
+			return gateUnknown("SEED-ERR: " + err.Error())
+		}
+		if _, _, err := g.mkBattleAt(g.uidP4, victimHashes[i], base.Add(-time.Duration(2*i+1)*time.Second)); err != nil {
+			return gateUnknown("SEED-ERR: " + err.Error())
+		}
+	}
+
+	return g.tri("go|idor|battles-deep-page", func(side string) gateOutcome {
+		tok := g.tokP3
+		wantOwn := ownHashes[40:]
+		forbid := victimSet
+		if side == "rev" {
+			tok = g.tokP4
+			wantOwn = victimHashes[40:]
+			forbid = ownSet
+		}
+		if side == "adm" {
+			tok = g.adminTok
+		}
+		r := g.req("GET", "/api/v1/me/battles?limit=20&offset=40", tok, nil, nil)
+		if r.err != nil {
+			return gateUnknown("TIMEOUT/REQ: " + r.err.Error())
+		}
+		if o, ok := g.admRejected(side, r.status); ok {
+			return o
+		}
+		if r.status != fiber.StatusOK {
+			return gateUnknown(fmt.Sprintf("status=%d body=%s", r.status, r.body))
+		}
+		items, ok := gateArray(r.body, "items")
+		if !ok {
+			return gateUnknown("UNPARSEABLE: " + string(r.body))
+		}
+		wantSet := make(map[string]bool, len(wantOwn))
+		for _, h := range wantOwn {
+			wantSet[h] = true
+		}
+		seenOwn := 0
+		for _, it := range items {
+			h, _ := it["replay_hash"].(string)
+			if forbid[h] {
+				return gateBad("深页 offset=40 读到对方战报 hash=" + h)
+			}
+			if wantSet[h] {
+				seenOwn++
+			}
+		}
+		if seenOwn != len(wantOwn) {
+			return gateUnknown(fmt.Sprintf("深页自己的战报 %d/%d", seenOwn, len(wantOwn)))
+		}
+		return gateOK(fmt.Sprintf("深页 %d 条均为自己，无对方行", seenOwn))
+	})
+}
+
+// --- 管理端 keyset 游标（R77） ---
+
+// gateIntArray 取 items 里的 id 序列（keyset 断言要比较「整页同序」）。
+func gateIDArray(items []map[string]any) []int64 {
+	out := make([]int64, 0, len(items))
+	for _, it := range items {
+		out = append(out, gateNum(it, "id"))
+	}
+	return out
+}
+
+func gateSameIDs(a, b []int64) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// caseAdminUsersKeyset：`/admin/users` 的 keyset 游标连续翻页。
+//
+// 守三件事：
+//  1. 页与页之间不重复 —— `id < cursor` 误写成 `<=` 时末行会重复；
+//  2. 走完全部页恰好覆盖 6 行 —— 游标方向/边界写错会漏行；
+//  3. total 不随游标变化 —— 游标是位置不是筛选，COUNT 不该被它影响。
+//
+// 6 个用户的 created_at 统一改成同一时刻：若实现偷偷按时间列排序/做游标，
+// 并列键会立刻表现为漏行或重复 —— 这正是 keyset 没有 id 兜底时的典型症状。
+func (g *gateCtx) caseAdminUsersKeyset() gateOutcome {
+	nano := time.Now().UnixNano()
+	keyword := fmt.Sprintf("GATEKS%d", nano)
+	ids := make([]int64, 0, 6)
+	for i := 0; i < 6; i++ {
+		uid, _ := g.e.newPlayer(g.t, fmt.Sprintf("%s_%d", keyword, i))
+		ids = append(ids, uid)
+	}
+	at := time.Unix(0, nano)
+	for _, id := range ids {
+		if err := g.exec(`UPDATE users SET created_at = $2 WHERE id = $1`, id, at); err != nil {
+			return gateUnknown("SEED-ERR: " + err.Error())
+		}
+	}
+
+	return g.within(func() gateOutcome {
+		want := make(map[int64]bool, len(ids))
+		for _, id := range ids {
+			want[id] = true
+		}
+		seen := make(map[int64]int, len(ids))
+		cursor := int64(0)
+		const pageSize = 3
+		for page := 0; page < 4; page++ {
+			path := fmt.Sprintf("/api/v1/admin/users?keyword=%s&limit=%d", keyword, pageSize)
+			if cursor > 0 {
+				path += fmt.Sprintf("&cursor=%d", cursor)
+			}
+			r := g.req("GET", path, g.adminTok, nil, nil)
+			if r.err != nil {
+				return gateUnknown("TIMEOUT/REQ: " + r.err.Error())
+			}
+			if r.status != fiber.StatusOK {
+				return gateUnknown(fmt.Sprintf("status=%d body=%s", r.status, r.body))
+			}
+			items, ok := gateArray(r.body, "items")
+			root, rootOK := gateRoot(r.body)
+			if !ok || !rootOK {
+				return gateUnknown("UNPARSEABLE: " + string(r.body))
+			}
+			if total := gateNum(root, "total"); total != int64(len(ids)) {
+				return gateUnknown(fmt.Sprintf("total=%d 期望 %d（游标不该改变总数）", total, len(ids)))
+			}
+			for _, it := range items {
+				id := gateNum(it, "id")
+				if id <= 0 {
+					return gateUnknown("UNPARSEABLE item: " + string(r.body))
+				}
+				seen[id]++
+				if seen[id] > 1 {
+					return gateBad(fmt.Sprintf("游标翻页重复读到 user id=%d", id))
+				}
+			}
+			if len(items) == 0 {
+				break
+			}
+			next := gateNum(root, "next_cursor")
+			if len(items) == pageSize {
+				if next == 0 {
+					return gateBad("满页未给 next_cursor，无法继续翻页")
+				}
+				cursor = next
+				continue
+			}
+			if next != 0 {
+				return gateUnknown(fmt.Sprintf("末页仍给 next_cursor=%d", next))
+			}
+			break
+		}
+		for id := range want {
+			if seen[id] == 0 {
+				return gateUnknown(fmt.Sprintf("漏行 user id=%d", id))
+			}
+		}
+		for id := range seen {
+			if !want[id] {
+				return gateUnknown(fmt.Sprintf("多出 user id=%d", id))
+			}
+		}
+		return gateOK(fmt.Sprintf("覆盖 %d 行、无重复、无漏行", len(seen)))
+	})
+}
+
+// caseAdminUsersCursorOverridesOffset：cursor>0 时 offset 必须被忽略。
+//
+// handler 文档写的是「cursor>0 时忽略 offset」；若服务层没真的清零 offset，
+// 同一个游标配上不同 offset 会返回不同页 —— 客户端混用两种分页参数时
+// 会跳过整段行，且看起来完全正常（200 + 合法数据）。
+func (g *gateCtx) caseAdminUsersCursorOverridesOffset() gateOutcome {
+	nano := time.Now().UnixNano()
+	keyword := fmt.Sprintf("GATEKO%d", nano)
+	for i := 0; i < 6; i++ {
+		g.e.newPlayer(g.t, fmt.Sprintf("%s_%d", keyword, i))
+	}
+
+	return g.within(func() gateOutcome {
+		base := fmt.Sprintf("/api/v1/admin/users?keyword=%s&limit=3", keyword)
+		r1 := g.req("GET", base, g.adminTok, nil, nil)
+		if r1.err != nil {
+			return gateUnknown("TIMEOUT/REQ: " + r1.err.Error())
+		}
+		if r1.status != fiber.StatusOK {
+			return gateUnknown(fmt.Sprintf("status=%d body=%s", r1.status, r1.body))
+		}
+		items1, ok := gateArray(r1.body, "items")
+		root1, rootOK := gateRoot(r1.body)
+		if !ok || !rootOK {
+			return gateUnknown("UNPARSEABLE: " + string(r1.body))
+		}
+		if len(items1) != 3 {
+			return gateUnknown(fmt.Sprintf("第一页 %d 行，期望 3", len(items1)))
+		}
+		cursor := gateNum(root1, "next_cursor")
+		if cursor == 0 {
+			return gateBad("满页未给 next_cursor，无法测试 cursor 优先级")
+		}
+		page1 := gateIDArray(items1)
+
+		rNoOffset := g.req("GET", fmt.Sprintf("%s&cursor=%d", base, cursor), g.adminTok, nil, nil)
+		rWithOffset := g.req("GET", fmt.Sprintf("%s&cursor=%d&offset=%d", base, cursor, maxQueryOffset), g.adminTok, nil, nil)
+		if rNoOffset.err != nil || rWithOffset.err != nil {
+			return gateUnknown("TIMEOUT/REQ")
+		}
+		if rNoOffset.status != fiber.StatusOK || rWithOffset.status != fiber.StatusOK {
+			return gateUnknown(fmt.Sprintf("status=%d/%d", rNoOffset.status, rWithOffset.status))
+		}
+		itemsA, okA := gateArray(rNoOffset.body, "items")
+		itemsB, okB := gateArray(rWithOffset.body, "items")
+		if !okA || !okB {
+			return gateUnknown("UNPARSEABLE 第二页")
+		}
+		a, b := gateIDArray(itemsA), gateIDArray(itemsB)
+		if !gateSameIDs(a, b) {
+			return gateBad(fmt.Sprintf("cursor>0 时 offset 仍生效：ids=%v vs %v", a, b))
+		}
+		if gateSameIDs(b, page1) {
+			return gateBad("带 cursor 仍返回第 1 页（游标未进入 WHERE）")
+		}
+		if len(b) == 0 {
+			return gateUnknown("cursor 页为空，无法证明 offset 被忽略")
+		}
+		return gateOK(fmt.Sprintf("cursor 页 3 行；offset=%d 与 offset=0 同页", maxQueryOffset))
+	})
+}
+
+// caseAdminBattlesKeyset：`/admin/battles` 的 keyset 游标（与 users 同口径）。
+// 6 条战报统一 created_at（并列键），断言不重不漏 + total 稳定。
+func (g *gateCtx) caseAdminBattlesKeyset() gateOutcome {
+	nano := time.Now().UnixNano()
+	bkUID, _ := g.e.newPlayer(g.t, fmt.Sprintf("gate_ksb_%d", nano))
+	at := time.Unix(0, nano)
+	ids := make([]int64, 0, 6)
+	for i := 0; i < 6; i++ {
+		id, _, err := g.mkBattleAt(bkUID, fmt.Sprintf("gate_ksb_hash_%d_%d", nano, i), at)
+		if err != nil {
+			return gateUnknown("SEED-ERR: " + err.Error())
+		}
+		ids = append(ids, id)
+	}
+
+	return g.within(func() gateOutcome {
+		want := make(map[int64]bool, len(ids))
+		for _, id := range ids {
+			want[id] = true
+		}
+		seen := make(map[int64]int, len(ids))
+		cursor := int64(0)
+		const pageSize = 3
+		for page := 0; page < 4; page++ {
+			path := fmt.Sprintf("/api/v1/admin/battles?user_id=%d&limit=%d", bkUID, pageSize)
+			if cursor > 0 {
+				path += fmt.Sprintf("&cursor=%d", cursor)
+			}
+			r := g.req("GET", path, g.adminTok, nil, nil)
+			if r.err != nil {
+				return gateUnknown("TIMEOUT/REQ: " + r.err.Error())
+			}
+			if r.status != fiber.StatusOK {
+				return gateUnknown(fmt.Sprintf("status=%d body=%s", r.status, r.body))
+			}
+			items, ok := gateArray(r.body, "items")
+			root, rootOK := gateRoot(r.body)
+			if !ok || !rootOK {
+				return gateUnknown("UNPARSEABLE: " + string(r.body))
+			}
+			if total := gateNum(root, "total"); total != int64(len(ids)) {
+				return gateUnknown(fmt.Sprintf("total=%d 期望 %d（游标不该改变总数）", total, len(ids)))
+			}
+			for _, it := range items {
+				id := gateNum(it, "id")
+				if id <= 0 {
+					return gateUnknown("UNPARSEABLE item: " + string(r.body))
+				}
+				seen[id]++
+				if seen[id] > 1 {
+					return gateBad(fmt.Sprintf("游标翻页重复读到 battle id=%d", id))
+				}
+			}
+			if len(items) == 0 {
+				break
+			}
+			next := gateNum(root, "next_cursor")
+			if len(items) == pageSize {
+				if next == 0 {
+					return gateBad("满页未给 next_cursor，无法继续翻页")
+				}
+				cursor = next
+				continue
+			}
+			if next != 0 {
+				return gateUnknown(fmt.Sprintf("末页仍给 next_cursor=%d", next))
+			}
+			break
+		}
+		for id := range want {
+			if seen[id] == 0 {
+				return gateUnknown(fmt.Sprintf("漏行 battle id=%d", id))
+			}
+		}
+		for id := range seen {
+			if !want[id] {
+				return gateUnknown(fmt.Sprintf("多出 battle id=%d", id))
+			}
+		}
+		return gateOK(fmt.Sprintf("覆盖 %d 行、无重复、无漏行", len(seen)))
+	})
+}
+
 // caseGemsList：宝石列表。此前只有按 id 的写用例（wash/equip/unequip），
 // 列表这一路完全没进门禁 —— 「只改 read 不改 list」的一整类盲区。
 func (g *gateCtx) caseGemsList() gateOutcome {
@@ -1651,6 +2005,16 @@ func gateObj(raw []byte, key string) (map[string]any, bool) {
 		return nil, false
 	}
 	return obj, true
+}
+
+// gateRoot 解析整个响应对象。分页用例要看 root 上的 total / next_cursor，
+// 这两个字段不是数组元素，gateArray/gateObj 都读不到。
+func gateRoot(raw []byte) (map[string]any, bool) {
+	var root map[string]any
+	if err := json.Unmarshal(raw, &root); err != nil {
+		return nil, false
+	}
+	return root, true
 }
 
 func gateNum(m map[string]any, key string) int64 {
