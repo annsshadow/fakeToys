@@ -15,7 +15,6 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
-	"net/http"
 	"testing"
 	"time"
 
@@ -26,7 +25,7 @@ func TestE2EAdminExportRedeemCodesRequiresAuth(t *testing.T) {
 	e2eScratchDB(t)
 	e := newE2E(t)
 
-	req, _ := http.NewRequest("GET", "/api/v1/admin/redeem-codes/export", nil)
+	req, _ := testReq("GET", "/api/v1/admin/redeem-codes/export", nil)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
 		t.Fatalf("请求失败：%v", err)
@@ -42,7 +41,7 @@ func TestE2EAdminExportRedeemCodesReadonlyAllowed(t *testing.T) {
 	e := newE2E(t)
 
 	_, roTok := e.newAdminRole(t, "redeemro", "readonly")
-	req, _ := http.NewRequest("GET", "/api/v1/admin/redeem-codes/export", nil)
+	req, _ := testReq("GET", "/api/v1/admin/redeem-codes/export", nil)
 	req.Header.Set("Authorization", "Bearer "+roTok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
@@ -69,7 +68,7 @@ func TestE2EAdminExportRedeemCodesContent(t *testing.T) {
 		t.Fatalf("插入兑换码失败：%v", err)
 	}
 
-	req, _ := http.NewRequest("GET", "/api/v1/admin/redeem-codes/export", nil)
+	req, _ := testReq("GET", "/api/v1/admin/redeem-codes/export", nil)
 	req.Header.Set("Authorization", "Bearer "+adminTok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {

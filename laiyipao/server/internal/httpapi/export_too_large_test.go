@@ -5,7 +5,6 @@ package httpapi
 import (
 	"context"
 	"io"
-	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -60,7 +59,7 @@ func TestE2EExportByteBudgetReturns413(t *testing.T) {
 		t.Fatalf("插入公告失败：%v", err)
 	}
 
-	req, _ := http.NewRequest("GET", "/api/v1/admin/announcements/export", nil)
+	req, _ := testReq("GET", "/api/v1/admin/announcements/export", nil)
 	req.Header.Set("Authorization", "Bearer "+adminTok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {

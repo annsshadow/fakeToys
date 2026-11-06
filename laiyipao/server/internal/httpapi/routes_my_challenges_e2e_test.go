@@ -12,7 +12,6 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
-	"net/http"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
@@ -22,7 +21,7 @@ func TestE2EMyChallengeHistoryRequiresAuth(t *testing.T) {
 	e2eScratchDB(t)
 	e := newE2E(t)
 
-	req, _ := http.NewRequest("GET", "/api/v1/me/challenges", nil)
+	req, _ := testReq("GET", "/api/v1/me/challenges", nil)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
 		t.Fatalf("请求失败：%v", err)
@@ -56,7 +55,7 @@ func TestE2EMyChallengeHistorySucceeds(t *testing.T) {
 		t.Fatalf("插入挑战记录失败：%v", err)
 	}
 
-	req, _ := http.NewRequest("GET", "/api/v1/me/challenges", nil)
+	req, _ := testReq("GET", "/api/v1/me/challenges", nil)
 	req.Header.Set("Authorization", "Bearer "+meTok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
@@ -91,7 +90,7 @@ func TestE2EMyChallengeHistorySucceeds(t *testing.T) {
 	}
 
 	// owner 视角也有权限边界：owner 的挑战历史是空的（他没挑战过自己）
-	req2, _ := http.NewRequest("GET", "/api/v1/me/challenges", nil)
+	req2, _ := testReq("GET", "/api/v1/me/challenges", nil)
 	req2.Header.Set("Authorization", "Bearer "+ownerTok)
 	resp2, err := e.app.Test(req2, 10000)
 	if err != nil {
@@ -114,7 +113,7 @@ func TestE2EMyChallengeHistoryEmpty(t *testing.T) {
 	e := newE2E(t)
 
 	_, tok := e.newPlayer(t, "chist_empty")
-	req, _ := http.NewRequest("GET", "/api/v1/me/challenges", nil)
+	req, _ := testReq("GET", "/api/v1/me/challenges", nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {

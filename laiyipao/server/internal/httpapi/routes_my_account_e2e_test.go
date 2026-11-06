@@ -9,7 +9,6 @@ package httpapi
 
 import (
 	"encoding/json"
-	"net/http"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
@@ -20,7 +19,7 @@ func TestE2EMeReturnsAccountInfo(t *testing.T) {
 	e := newE2E(t)
 
 	_, tok := e.newPlayer(t, "acctinfo")
-	req, _ := http.NewRequest("GET", "/api/v1/me", nil)
+	req, _ := testReq("GET", "/api/v1/me", nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {

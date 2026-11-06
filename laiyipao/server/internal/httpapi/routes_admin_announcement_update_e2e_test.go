@@ -24,7 +24,7 @@ import (
 // annPut 构造带 JSON body 的 PUT 请求（公告更新）。
 func annPut(url, token string, payload map[string]any) *http.Request {
 	raw, _ := json.Marshal(payload)
-	req, _ := http.NewRequest("PUT", url, bytes.NewReader(raw))
+	req, _ := testReq("PUT", url, bytes.NewReader(raw))
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
 	return req
@@ -34,7 +34,7 @@ func TestE2EAdminUpdateAnnouncementRequiresAuth(t *testing.T) {
 	e2eScratchDB(t)
 	e := newE2E(t)
 
-	req, _ := http.NewRequest("PUT", "/api/v1/admin/announcements/1", nil)
+	req, _ := testReq("PUT", "/api/v1/admin/announcements/1", nil)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
 		t.Fatalf("请求失败：%v", err)
@@ -50,7 +50,7 @@ func TestE2EAdminUpdateAnnouncementReadonlyForbidden(t *testing.T) {
 	e := newE2E(t)
 
 	_, roTok := e.newAdminRole(t, "annro", "readonly")
-	req, _ := http.NewRequest("PUT", "/api/v1/admin/announcements/1", nil)
+	req, _ := testReq("PUT", "/api/v1/admin/announcements/1", nil)
 	req.Header.Set("Authorization", "Bearer "+roTok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
@@ -115,7 +115,7 @@ func TestE2EAdminDeleteAnnouncementSucceeds(t *testing.T) {
 		t.Fatalf("插入公告失败：%v", err)
 	}
 
-	req, _ := http.NewRequest("DELETE", "/api/v1/admin/announcements/"+strconv.FormatInt(id, 10), nil)
+	req, _ := testReq("DELETE", "/api/v1/admin/announcements/"+strconv.FormatInt(id, 10), nil)
 	req.Header.Set("Authorization", "Bearer "+adminTok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
@@ -156,7 +156,7 @@ func TestE2EAdminUpdateDeleteNotFound(t *testing.T) {
 	}
 
 	// 删除不存在 → 404
-	req2, _ := http.NewRequest("DELETE", "/api/v1/admin/announcements/999999", nil)
+	req2, _ := testReq("DELETE", "/api/v1/admin/announcements/999999", nil)
 	req2.Header.Set("Authorization", "Bearer "+adminTok)
 	resp2, err := e.app.Test(req2, 10000)
 	if err != nil {

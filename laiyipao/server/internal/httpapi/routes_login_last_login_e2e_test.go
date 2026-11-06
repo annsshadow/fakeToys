@@ -10,7 +10,6 @@ package httpapi
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"testing"
 	"time"
 
@@ -56,7 +55,7 @@ func TestE2ELoginUpdatesLastLoginAt(t *testing.T) {
 	}
 
 	// 顺带确认 /me 端点正常（account.last_login_at 来自同一字段）
-	req, _ := http.NewRequest("GET", "/api/v1/me", nil)
+	req, _ := testReq("GET", "/api/v1/me", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
