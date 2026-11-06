@@ -5,7 +5,6 @@
 # 修复一条就删一行（单调下降）；只增不减视为回归。
 ai_assemble_control|config_get_mcp_flag|GET	LEAK
 attendance_assemble_control|attendanceadmin_id|GET	LEAK
-attendance_assemble_control|attendanceappealInfo_appeal_id|POST	LEAK
 attendance_assemble_control|attendanceappealInfo_id|GET	LEAK
 attendance_assemble_control|attendancedetail_id|GET	LEAK
 attendance_assemble_control|attendancedetail_mobile_id|GET	LEAK
@@ -68,7 +67,6 @@ processplatform_core_express|task_processing|GET	LEAK
 processplatform_core_express|work_processing|GET	LEAK
 processplatform_core_express|work_retract|GET	LEAK
 processplatform_service_processing|applicationdict_id|GET	LEAK
-processplatform_service_processing|attachment_edit_id_text|POST	UNVERIFIED
 processplatform_service_processing|attachment_id|GET	LEAK
 processplatform_service_processing|data_workcompleted_id_path|GET	LEAK
 processplatform_service_processing|data_workcompleted_id|GET	LEAK
@@ -77,7 +75,6 @@ processplatform_service_processing|readcompleted_id|GET	LEAK
 processplatform_service_processing|record_id|GET	LEAK
 processplatform_service_processing|review_id|GET	LEAK
 processplatform_service_processing|snap_id|GET	LEAK
-processplatform_service_processing|task_id_will|POST	UNVERIFIED
 processplatform_service_processing|task_id|GET	LEAK
 processplatform_service_processing|task_v2_id|GET	LEAK
 processplatform_service_processing|taskcompleted_id|GET	LEAK
@@ -104,8 +101,6 @@ query_assemble_surface|view_id_bundle|GET	LEAK
 query_assemble_surface|view_id_excel|GET	LEAK
 query_assemble_surface|view_id_execute|GET	LEAK
 query_core_entity|view_get|GET	LEAK
-t1|attendanceappealInfo_appeal_id|POST	LEAK
-t1|attendanceappealInfo_appeal_id|PUT	LEAK
 t1|attendancedetail_mobile_mobilepreview	UNVERIFIED
 t1|attendancedetail_mobile_my	LEAK
 t1|attendancedetail_mobile_recive	UNVERIFIED
