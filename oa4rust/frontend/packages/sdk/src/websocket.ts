@@ -31,14 +31,21 @@ export interface WebSocketMessage {
 }
 
 export class O2WebSocketClient {
+  /** 重连退避起点（R135）：第一次意外断开后 3s 重连。 */
+  private static readonly RECONNECT_BASE_MS = 3_000
+  /** 重连退避上限：长断网时不再拉长等待，保证恢复后能及时重连。 */
+  private static readonly RECONNECT_MAX_MS = 30_000
+
   private ws: WebSocket | null = null
   private url: string
   private handlers = new Map<string, Set<MessageHandler>>()
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null
   private _connected = false
-  /** 主动关闭标记：close() 后 onclose 异步触发，不得再排重连（否则 3s 后永远重连）。 */
+  /** 主动关闭标记：close() 后 onclose 异步触发，不得再排重连（否则按退避间隔永远重连）。 */
   private intentionalClose = false
+  /** 连续重连次数：成功打开即清零（R135）。 */
+  private reconnectAttempts = 0
 
   constructor(url: string = '/ws/realtime') {
     this.url = url
@@ -64,6 +71,7 @@ export class O2WebSocketClient {
 
       this.ws.onopen = () => {
         this._connected = true
+        this.reconnectAttempts = 0
         this.startHeartbeat()
         resolve()
       }
@@ -139,6 +147,7 @@ export class O2WebSocketClient {
   /** 断开连接 */
   close(): void {
     this.intentionalClose = true
+    this.reconnectAttempts = 0
     this.stopHeartbeat()
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer)
     this.ws?.close()
@@ -170,12 +179,26 @@ export class O2WebSocketClient {
     }
   }
 
+  /**
+   * 下一次重连等待（R135）：3s 起步指数退避，30s 封顶；
+   * 再叠加 [50%, 100%] 抖动，避免服务端重启后大量客户端在同一毫秒重连。
+   * 抖动区间取半宽而非 [0, exp]：保证仍有下限进度，不会出现「几乎立刻重连」。
+   */
+  private nextReconnectDelay(): number {
+    const backoff = Math.min(
+      O2WebSocketClient.RECONNECT_BASE_MS * 2 ** this.reconnectAttempts,
+      O2WebSocketClient.RECONNECT_MAX_MS,
+    )
+    this.reconnectAttempts += 1
+    return backoff * (0.5 + Math.random() * 0.5)
+  }
+
   private scheduleReconnect(): void {
     if (this.reconnectTimer) return
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null
       this.connect().catch(() => this.scheduleReconnect())
-    }, 3000)
+    }, this.nextReconnectDelay())
   }
 }
 

@@ -51,12 +51,15 @@ beforeEach(() => {
   FakeWebSocket.instances = []
   vi.stubGlobal('WebSocket', FakeWebSocket)
   vi.stubGlobal('window', { location: { protocol: 'https:', host: 'oa.example' } })
+  // R135：把 jitter 固定在上界（random=1），退避序列变成 3s/6s/12s/24s/30s，可确定断言。
+  vi.spyOn(Math, 'random').mockReturnValue(1)
   client = new O2WebSocketClient()
 })
 
 afterEach(async () => {
   client.close()
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
 })
 
 async function openClient(): Promise<FakeWebSocket> {
@@ -276,11 +279,14 @@ describe('socket lifecycle (error / close / heartbeat / reconnect)', () => {
     ws.readyState = 3
     ws.onclose?.() // 意外断开 → 3s 后重连
 
-    await vi.advanceTimersByTimeAsync(3000) // 第一次重连开 ws2
+    await vi.advanceTimersByTimeAsync(3000) // 第一次重连开 ws2（退避第 1 档 = 3s）
     const ws2 = FakeWebSocket.instances[1]
     // ws2 的 connect() 是 Promise，onerror 触发 reject → .catch 是微任务，
     // 必须用 async 版 advance 冲掉微任务，第二次重连定时器才会被排上。
     ws2.onerror?.(new Error('still down'))
+    // R135：连续失败后第 2 档退避是 6s，不再是固定 3s。
+    await vi.advanceTimersByTimeAsync(3000)
+    expect(FakeWebSocket.instances).toHaveLength(2)
     await vi.advanceTimersByTimeAsync(3000)
 
     expect(FakeWebSocket.instances).toHaveLength(3)
@@ -300,6 +306,83 @@ describe('socket lifecycle (error / close / heartbeat / reconnect)', () => {
 
     vi.advanceTimersByTime(3000)
     expect(FakeWebSocket.instances).toHaveLength(2)
+    vi.useRealTimers()
+  })
+})
+
+describe('reconnect backoff / jitter (R135)', () => {
+  /** 逐个驱动「重连 → 失败」循环，断言每一档的等待时间精确到毫秒。 */
+  async function driveFailedReconnects(delays: number[]): Promise<void> {
+    const ws = await openClient()
+    ws.readyState = 3
+    ws.onclose?.()
+    for (let i = 0; i < delays.length; i++) {
+      const before = FakeWebSocket.instances.length
+      await vi.advanceTimersByTimeAsync(delays[i] - 1)
+      expect(FakeWebSocket.instances.length).toBe(before)
+      await vi.advanceTimersByTimeAsync(1)
+      expect(FakeWebSocket.instances.length).toBe(before + 1)
+      if (i < delays.length - 1) {
+        FakeWebSocket.instances[FakeWebSocket.instances.length - 1].onerror?.(new Error('still down'))
+        await vi.advanceTimersByTimeAsync(0)
+      }
+    }
+  }
+
+  it('指数退避并在 30s 封顶：3s → 6s → 12s → 24s → 30s → 30s', async () => {
+    vi.useFakeTimers()
+    vi.spyOn(Math, 'random').mockReturnValue(1) // 抖动取上界，序列可确定
+    await driveFailedReconnects([3_000, 6_000, 12_000, 24_000, 30_000, 30_000])
+    vi.useRealTimers()
+  })
+
+  it('抖动下限：random=0 时首次等待 1.5s，不会立刻重连', async () => {
+    vi.useFakeTimers()
+    vi.spyOn(Math, 'random').mockReturnValue(0)
+    const ws = await openClient()
+    ws.readyState = 3
+    ws.onclose?.()
+    await vi.advanceTimersByTimeAsync(1_499)
+    expect(FakeWebSocket.instances).toHaveLength(1)
+    await vi.advanceTimersByTimeAsync(1)
+    expect(FakeWebSocket.instances).toHaveLength(2)
+    vi.useRealTimers()
+  })
+
+  it('断网 30s 内重连次数有界：最多 5 个 socket（旧实现是 11 个）', async () => {
+    vi.useFakeTimers()
+    vi.spyOn(Math, 'random').mockReturnValue(0) // 最激进抖动：1.5 / 3 / 6 / 12 / 24 ...
+    const ws = await openClient()
+    ws.readyState = 3
+    ws.onclose?.()
+    // 1.5 + 3 + 6 + 12 = 22.5s 内成功排上 4 次重连；下一次在 46.5s
+    for (const delay of [1_500, 3_000, 6_000, 12_000]) {
+      await vi.advanceTimersByTimeAsync(delay)
+      FakeWebSocket.instances[FakeWebSocket.instances.length - 1].onerror?.(new Error('still down'))
+      await vi.advanceTimersByTimeAsync(0)
+    }
+    const at22500 = FakeWebSocket.instances.length
+    expect(at22500).toBe(5) // 原始 1 + 4 次重连
+    await vi.advanceTimersByTimeAsync(30_000 - 22_500)
+    expect(FakeWebSocket.instances).toHaveLength(at22500) // 30s 内不再新增
+    vi.useRealTimers()
+  })
+
+  it('成功打开后重连计数清零：下次断线仍从 3s 起步', async () => {
+    vi.useFakeTimers()
+    vi.spyOn(Math, 'random').mockReturnValue(1)
+    const ws = await openClient()
+    ws.readyState = 3
+    ws.onclose?.()
+    await vi.advanceTimersByTimeAsync(3_000)
+    const ws2 = FakeWebSocket.instances[1]
+    ws2.simulateOpen() // 重连成功 → 计数清零
+    ws2.readyState = 3
+    ws2.onclose?.()
+    await vi.advanceTimersByTimeAsync(2_999)
+    expect(FakeWebSocket.instances).toHaveLength(2)
+    await vi.advanceTimersByTimeAsync(1)
+    expect(FakeWebSocket.instances).toHaveLength(3)
     vi.useRealTimers()
   })
 })
