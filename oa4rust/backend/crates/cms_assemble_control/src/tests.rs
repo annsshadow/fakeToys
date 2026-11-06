@@ -382,7 +382,7 @@ async fn test_document_crud_end_to_end() {
                 "INSERT INTO x_cms_data_document (id, title, content, author_id, status) \
                  VALUES ($1, $2, $3, $4, $5) \
                  ON CONFLICT (id) DO UPDATE SET title = $2, content = $3, author_id = $4, status = $5",
-                &[&doc_id, &"Test Title", &"Test Content", &"test-author", &"draft"],
+                &[&doc_id, &"Test Title", &"Test Content", &"test-author", &"published"],
             )
             .await;
     }

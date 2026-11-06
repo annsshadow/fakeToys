@@ -22,6 +22,7 @@
     python scripts/security_regression_gate.py sabotage write-idor-b5     # Rust②e：摘掉 folder_delete + cms 三条的归属（4 条）
     python scripts/security_regression_gate.py sabotage write-idor-b6     # Rust②f：摘掉 appeal + processplatform 两把的归属（5 条）
     python scripts/security_regression_gate.py sabotage write-idor-b7     # Rust②g：摘掉第七批读归属谓词（5 条）
+    python scripts/security_regression_gate.py sabotage read-a-b1         # Rust②h：摘掉分片 A 第一批 cms 读门（6 条）
     python scripts/security_regression_gate.py sabotage go-limit0   # Go①：扣款乘 2
     python scripts/security_regression_gate.py sabotage go-idor-rev # Go②：摘掉预设删除归属
     python scripts/security_regression_gate.py sabotage go-empty-list    # Go③：伪装成已修（列表恒空）
@@ -629,6 +630,41 @@ B7_EXPECTS = [
 ]
 
 
+# 分片 A / A-b1：cms 六条读端点的读门（文档 ACL / 单主体列 / 评论跟随文档 ACL）。
+# 恒真式必须保留 `$2` 绑定：裸 TRUE 会让 deadpool 端点因 bind 数不匹配返回 500，
+# 500 被记成 UNVERIFIED 后又会变成假阳性。
+CMS_DOC_READ_GATE_RE = re.compile(
+    r'(const CMS_DOCUMENT_READ_ALLOWED_SQL: &str = ").*?";', re.S
+)
+CMS_DOC_READ_GATE_PATCH = (
+    r'\1SELECT 1 AS hit FROM x_cms_data_document WHERE id = $1 '
+    r'AND deleted_at IS NULL '
+    r'AND (($2::text IS NOT NULL OR $2::text IS NULL) OR $3::boolean)";'
+)
+CMS_OWNED_READ_GATE_RE = re.compile(
+    r'AND \(\{owner_col\} = \$2::text OR \$3::boolean\)'
+)
+CMS_OWNED_READ_GATE_PATCH = (
+    "AND ($2::text IS NOT NULL OR $2::text IS NULL OR $3::boolean)"
+)
+CMS_COMMENT_READ_GATE_RE = re.compile(
+    r'(const CMS_COMMENT_READ_ALLOWED_SQL: &str = ").*?";', re.S
+)
+CMS_COMMENT_READ_GATE_PATCH = (
+    r'\1SELECT 1 AS hit FROM x_cms_comment WHERE id = $1 '
+    r'AND deleted_at IS NULL '
+    r'AND (($2::text IS NOT NULL OR $2::text IS NULL) OR $3::boolean)";'
+)
+A1_EXPECTS = [
+    "cms_assemble_control|anonymous_document_id_view|GET",
+    "cms_assemble_control|document_persons_u3|GET",
+    "cms_assemble_control|file_id|GET",
+    "cms_assemble_control|file_id_content|GET",
+    "cms_assemble_control|file_id_download|GET",
+    "cms_assemble_control|comment_id|GET",
+]
+
+
 def sabotage_many(
     title: str,
     mutations: list[tuple[Path, re.Pattern[str], str, str]],
@@ -758,10 +794,22 @@ def sabotage(kind: str) -> int:
             B7_EXPECTS,
             require_leak=True,
         )
+    elif kind == "read-a-b1":
+        return sabotage_many(
+            "摘掉分片 A 第一批 cms 读归属谓词（6 条应逐条 LEAK）",
+            [
+                (CMS, CMS_DOC_READ_GATE_RE, CMS_DOC_READ_GATE_PATCH, "cms_doc_read"),
+                (CMS, CMS_OWNED_READ_GATE_RE, CMS_OWNED_READ_GATE_PATCH, "cms_owned_read"),
+                (CMS, CMS_COMMENT_READ_GATE_RE, CMS_COMMENT_READ_GATE_PATCH, "cms_comment_read"),
+            ],
+            A1_EXPECTS,
+            require_leak=True,
+        )
     else:
         raise SystemExit(
             f"未知破坏实验: {kind}（可选 ownership / correct / general / organization / "
-            "program_center / hotpic_mind / read_b / write-idor-b5 / write-idor-b6 / write-idor-b7）"
+            "program_center / hotpic_mind / read_b / read-a-b1 / "
+            "write-idor-b5 / write-idor-b6 / write-idor-b7）"
         )
 
     print(f"== 破坏实验：{title}")
@@ -807,7 +855,7 @@ def main() -> int:
         if len(sys.argv) < 3:
             print("用法: security_regression_gate.py sabotage "
                   "<ownership|correct|general|organization|program_center|hotpic_mind|read_b|"
-                  "write-idor-b5|write-idor-b6|write-idor-b7|"
+                  "read-a-b1|write-idor-b5|write-idor-b6|write-idor-b7|"
                   "rust-drift-to-leak|rust-swallow-write|"
                   "go-limit0|go-idor-rev|go-empty-list|go-swallow-write|"
                   "go-dead-write|go-page2|go-drift-to-leak>")
