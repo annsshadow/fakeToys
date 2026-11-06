@@ -131,4 +131,16 @@ describe('移动端会话历史分页：页码进请求、更早消息可加载�
     // 旧实现：固定第 1 页 200 条，超出部分静默丢失。
     expect(source).not.toContain('msgHistory(conversationId.value, 1, 200)')
   })
+
+  it('自动 markRead 失败保持静默，但必须留可诊断痕迹（R139）', () => {
+    const source = readFileSync(resolve(import.meta.dirname, 'chat.vue'), 'utf8')
+    const start = source.indexOf('await messageApi.markRead')
+    expect(start).toBeGreaterThan(-1)
+    const block = source.slice(start, start + 220)
+    // 不能是空 catch：静默到没有任何痕迹会让线上无法排查。
+    expect(block).toContain('catch (err)')
+    expect(block).toContain('console.warn(')
+    expect(block).toContain('markRead failed')
+    expect(block).not.toContain('/* noop */')
+  })
 })

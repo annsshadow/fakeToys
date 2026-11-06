@@ -66,6 +66,7 @@ import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { describeListError } from './listQuery'
+import { describeBatchOutcome, runTwinBatch } from './twinBatch'
 
 const keyword = ref('')
 const loading = ref(false)
@@ -275,17 +276,15 @@ const api_hotpic_cor_130_data = ref<any[]>([])
 const api_hotpic_cor_93_data = ref<any[]>([])
 // rev478（用户裁定放宽双计口径）：热图 alias 轨同 handler 镜像真注册路由 3 条（arity 已校验）
 async function loadHotpicTwin() {
-  const s = <T>(p: Promise<T>): Promise<T | null> => p.catch(() => null)
-  try {
-    const rs = await Promise.all([
-      s(api.get('/api/hotpic_assemble_control/create/hotpic')),
-      s(api.get('/api/hotpic_assemble_control/update/control/config')),
-      s(api.get('/api/hotpic_assemble_control/user/hotpic/changeTitle')),
-    ])
-    toast.success(`热图孪生端点 ${rs.length} 条已提交`)
-  } catch (e: any) {
-    toast.error(`热图孪生端点失败: ${e?.message ?? ''}`)
-  }
+  // R139：不再用 `p.catch(() => null)` 吞错 + `rs.length` 假计数；
+  // 全失败/部分失败分别可见，失败原因走 mutationErrorMessage（403/404 可读）。
+  const outcome = await runTwinBatch([
+    api.get('/api/hotpic_assemble_control/create/hotpic'),
+    api.get('/api/hotpic_assemble_control/update/control/config'),
+    api.get('/api/hotpic_assemble_control/user/hotpic/changeTitle'),
+  ])
+  const summary = describeBatchOutcome('热图孪生端点', outcome)
+  toast[summary.tone](summary.message)
 }
 </script>
 

@@ -60,8 +60,9 @@ async function loadHistory() {
     // 进入会话即标记已读（失败不阻塞展示）。
     try {
       await messageApi.markRead(conversationId.value)
-    } catch {
-      /* noop */
+    } catch (err) {
+      // R139：自动已读失败不打扰用户，但必须留可诊断痕迹，避免线上无从排查。
+      console.warn('[chat] markRead failed', err)
     }
   }
 }
