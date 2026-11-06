@@ -12,7 +12,6 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
-	"net/http"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
@@ -22,7 +21,7 @@ func TestE2EMyBattleHistoryRequiresAuth(t *testing.T) {
 	e2eScratchDB(t)
 	e := newE2E(t)
 
-	req, _ := http.NewRequest("GET", "/api/v1/me/battles", nil)
+	req, _ := testReq("GET", "/api/v1/me/battles", nil)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
 		t.Fatalf("请求失败：%v", err)
@@ -44,7 +43,7 @@ func TestE2EMyBattleHistorySucceeds(t *testing.T) {
 		t.Fatalf("插入战报失败：%v", err)
 	}
 
-	req, _ := http.NewRequest("GET", "/api/v1/me/battles", nil)
+	req, _ := testReq("GET", "/api/v1/me/battles", nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
@@ -83,7 +82,7 @@ func TestE2EMyBattleHistoryEmpty(t *testing.T) {
 	e := newE2E(t)
 
 	_, tok := e.newPlayer(t, "bhist_empty")
-	req, _ := http.NewRequest("GET", "/api/v1/me/battles", nil)
+	req, _ := testReq("GET", "/api/v1/me/battles", nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {

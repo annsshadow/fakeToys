@@ -245,6 +245,7 @@ import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { describeListError, reloadListQueries } from './listQuery'
+import { mutationErrorMessage } from './mutationError'
 
 const session = useSession()
 
@@ -325,6 +326,7 @@ function appealStatus(s?: string) {
   return s === 'approved' ? '已通过' : s === 'rejected' ? '已驳回' : s === 'pending' ? '待审批' : '—'
 }
 const am = useMutation({
+  onError: (e) => toast.error(mutationErrorMessage(e)),
   // 后端 audit_appeal 读取 auditStatus（非 status）
   mutationFn: ({ id, status }: { id: string; status: string }) =>
     api.post('/api/attendance/appeal/audit', { id, auditStatus: status }),

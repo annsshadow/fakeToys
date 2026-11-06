@@ -10,7 +10,6 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
-	"net/http"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
@@ -20,7 +19,7 @@ func TestE2EAdminExportUserFlowsRequiresAuth(t *testing.T) {
 	e2eScratchDB(t)
 	e := newE2E(t)
 
-	req, _ := http.NewRequest("GET", "/api/v1/admin/users/1/flows/export", nil)
+	req, _ := testReq("GET", "/api/v1/admin/users/1/flows/export", nil)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
 		t.Fatalf("请求失败：%v", err)
@@ -37,7 +36,7 @@ func TestE2EAdminExportUserFlowsReadonlyAllowed(t *testing.T) {
 
 	_, roTok := e.newAdminRole(t, "exportflowsro", "readonly")
 
-	req, _ := http.NewRequest("GET", "/api/v1/admin/users/1/flows/export", nil)
+	req, _ := testReq("GET", "/api/v1/admin/users/1/flows/export", nil)
 	req.Header.Set("Authorization", "Bearer "+roTok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
@@ -61,7 +60,7 @@ func TestE2EAdminExportUserFlowsContent(t *testing.T) {
 		t.Fatalf("插入流水失败：%v", err)
 	}
 
-	req, _ := http.NewRequest("GET", "/api/v1/admin/users/"+fmt.Sprint(uid)+"/flows/export", nil)
+	req, _ := testReq("GET", "/api/v1/admin/users/"+fmt.Sprint(uid)+"/flows/export", nil)
 	req.Header.Set("Authorization", "Bearer "+adminTok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {

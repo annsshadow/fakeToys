@@ -13,7 +13,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"net/http"
 	"strconv"
 	"testing"
 
@@ -24,7 +23,7 @@ func TestE2EAdminSetRedeemEnabledRequiresAuth(t *testing.T) {
 	e2eScratchDB(t)
 	e := newE2E(t)
 
-	req, _ := http.NewRequest("PUT", "/api/v1/admin/redeem-codes/1/enabled", nil)
+	req, _ := testReq("PUT", "/api/v1/admin/redeem-codes/1/enabled", nil)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
 		t.Fatalf("请求失败：%v", err)
@@ -40,7 +39,7 @@ func TestE2EAdminSetRedeemEnabledReadonlyForbidden(t *testing.T) {
 	e := newE2E(t)
 
 	_, roTok := e.newAdminRole(t, "redeemro", "readonly")
-	req, _ := http.NewRequest("PUT", "/api/v1/admin/redeem-codes/1/enabled", nil)
+	req, _ := testReq("PUT", "/api/v1/admin/redeem-codes/1/enabled", nil)
 	req.Header.Set("Authorization", "Bearer "+roTok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
@@ -66,7 +65,7 @@ func TestE2EAdminSetRedeemEnabledSucceeds(t *testing.T) {
 	}
 
 	raw, _ := json.Marshal(map[string]any{"enabled": false})
-	req, _ := http.NewRequest("PUT", "/api/v1/admin/redeem-codes/"+strconv.FormatInt(id, 10)+"/enabled", bytes.NewReader(raw))
+	req, _ := testReq("PUT", "/api/v1/admin/redeem-codes/"+strconv.FormatInt(id, 10)+"/enabled", bytes.NewReader(raw))
 	req.Header.Set("Authorization", "Bearer "+adminTok)
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := e.app.Test(req, 10000)
@@ -94,7 +93,7 @@ func TestE2EAdminSetRedeemEnabledNotFound(t *testing.T) {
 
 	_, adminTok := e.newAdmin(t, "redeemnf")
 	raw, _ := json.Marshal(map[string]any{"enabled": false})
-	req, _ := http.NewRequest("PUT", "/api/v1/admin/redeem-codes/999999/enabled", bytes.NewReader(raw))
+	req, _ := testReq("PUT", "/api/v1/admin/redeem-codes/999999/enabled", bytes.NewReader(raw))
 	req.Header.Set("Authorization", "Bearer "+adminTok)
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := e.app.Test(req, 10000)

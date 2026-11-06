@@ -891,6 +891,7 @@ import { toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { useListError } from './listQuery'
+import { mutationErrorMessage } from './mutationError'
 
 interface Stmt {
   id: string
@@ -1010,6 +1011,7 @@ function editStatement(s: Stmt) {
   showModal.value = true
 }
 const saveM = useMutation({
+  onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: async (data: any) => {
     if (editing.value && currentStatement.value?.id)
       return api.put(`/api/query/assemble/designer/save/${currentStatement.value!.id}`, data)
@@ -1047,6 +1049,7 @@ function modalSave() {
   saveM.mutate(payload)
 }
 const delM = useMutation({
+  onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: (id: string) => api.delete(`/api/query/assemble/designer/delete/${id}`),
   onSuccess: () => {
     queryClient.invalidateQueries({ queryKey: ['stmt', 'list'] })
