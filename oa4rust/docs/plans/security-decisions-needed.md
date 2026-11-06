@@ -250,7 +250,57 @@
 |---|---|---|---|---|
 |  |  |  |  |  |
 
-## 9. 证据来源与复跑
+## 9. 移交清单：改标后剩余 23 条（20 LEAK + 3 UNVERIFIED）
+
+> 依据 2026-11-06 实跑（rebase `origin/main` 后）：`leak=133 unverified=23`。本清单只取「本次改标涉及的」23 条，其余 LEAK 不在改标范围内。
+> 失败分类：**真漏**＝表里有归属列但查询/更新没按归属过滤；**缺归属列**＝表无归属列（本清单为 0 条）；**关联边**＝须经实体所有者间接判定（本清单为 0 条）；**证据漂移**＝种子缺行导致读不到 canary，不是代码缺陷。
+
+### 9.1 读 IDOR 分片 A（8 条，全 `真漏`）
+
+| # | 端点 | crate | 表 | 归属列 | 实测证据 |
+|---|---|---|---|---|---|
+| A1 | `GET /api/file/assemble/control/file/{id}` | `file_assemble_control` | `x_file` | `creator` / `creator_person` | 2xx 含 canary `r6-get_file`（rev `rev-r6-get_file`） |
+| A2 | `GET /api/general/file/download/{id}` | `general_core_entity` | `x_general_file` | `creator` | 2xx 含 canary `r6-filedownload`（rev 同） |
+| A3 | `GET /api/general/file/{id}` | `general_core_entity` | `x_general_file` | `creator` | 2xx 含 canary `r6-filedownload` |
+| A4 | `GET /api/jpush/device/{id}` | `jpush` | `x_jpush_device` | `user_id` | 2xx 含 canary `r6-deviceget` |
+| A5 | `GET /api/jpush/core/entity/device/{id}` | `jpush_core_entity` | `x_jpush_device` | `user_id` | 2xx 含 canary `r6-deviceget` |
+| A6 | `GET /api/program_center/collect/code/mobile/{id}` | `program_center` | `x_program_collect` | `person_id` | 2xx 含 canary `r6-collect_delete` |
+| A7 | `GET /api/general/assemble/control/invoice/get/{id}` | `general_assemble_control` | `x_general_assemble_invoice` | `creator` | 2xx 含 canary `r6-invoicegetid` |
+| A8 | `GET /api/general/assemble/control/securityclearance/{id}` | `general_assemble_control` | `x_general_assemble_security_clearance` | `creator` | 2xx 含 canary `r6-securityclearanceget` |
+
+### 9.2 读 IDOR 分片 B（8 条，全 `真漏`）
+
+| # | 端点 | crate | 表 | 归属列 | 实测证据 |
+|---|---|---|---|---|---|
+| B1 | `GET /api/general/invoice/{id}` | `general_core_entity` | `x_general_invoice` | `creator` | 2xx 含 canary `r6-invoiceget` |
+| B2 | `GET /api/processplatform/service/processing/attachment/{id}` | `processplatform_service_processing` | `x_attachment` | `creator` | 2xx 含 canary `r6-attachment_edit_id_t` |
+| B3 | `GET /api/attendance/assemble/control/attendanceappealInfo/{id}` | `attendance_assemble_control` | `x_attendance_appeal_info` | `person_id` | 2xx 含 canary `appeal-admin`（rev `rev-appeal-admin`） |
+| B4 | `GET /api/attendance/assemble/control/attendancedetail/{id}` | `attendance_assemble_control` | `x_attendance_detail` | `person_id` | 2xx 含 canary `r5-ad-admin`（rev `rev-r5-ad-admin`） |
+| B5 | `GET /api/attendance/assemble/control/attendancedetail/mobile/{id}` | `attendance_assemble_control` | `x_attendance_detail` | `person_id` | 2xx 含 canary `r5-ad-admin` |
+| B6 | `GET /api/attendance/assemble/control/attendanceselfholiday/{id}` | `attendance_assemble_control` | `x_attendance_selfholiday` | `person_id` | 2xx 含 canary `hol-admin` |
+| B7 | `GET /api/attendance/assemble/control/v2/appeal/{id}` | `attendance_assemble_control` | `x_attendance_v2_appeal_info` | `user_id` | 2xx 含 canary `r6-v2_appeal_get` |
+| B8 | `GET /api/attendance/assemble/control/v2/record/{id}` | `attendance_assemble_control` | `x_attendance_record` | `user_id` | 2xx 含 canary `r6-record_update` |
+
+### 9.3 写 IDOR（4 条，全 `真漏`）
+
+| # | 端点 | crate | 表 | 归属列 | 实测证据 |
+|---|---|---|---|---|---|
+| W1 | `DELETE /api/file/core/entity/folder/{id}` | `file_core_entity` | `file_folder` | `person` | 2xx 且受害者行被删（保留 `deny`，修成 `owner OR admin`） |
+| W2 | `POST /api/attendance/assemble/control/attendanceappealInfo/appeal/{id}` | `attendance_assemble_control` | `x_attendance_appeal_info` | `person_id` | 2xx 且受害者行被改 |
+| W3 | 同 W2（`t1` 重复用例） | 同 | 同 | 同 | 同 |
+| W4 | `PUT /api/attendance/assemble/control/attendanceappealInfo/appeal/{id}`（`t1`） | 同 | 同 | 同 | 2xx 且受害者行被改 |
+
+### 9.4 不计入派活：2 条 `证据漂移` + 1 条写谓词缺失
+
+| # | 端点 | 表 | 证据 | 处理 |
+|---|---|---|---|---|
+| D1 | `GET /api/calendar/core/entity/calendar/{id}` | `x_cal_calendar` | 2xx `{"type":"error","message":"calendar not found"}`，无 canary | 夹具缺行：补种子后重测，不改代码 |
+| D2 | `GET /api/recycle/{id}` | `file_file` | 2xx `"file not in recycle bin"` | 夹具缺「回收站标记」行，同上 |
+| D3 | `POST /api/processplatform/service/processing/attachment/edit/text/{id}` | `x_attachment` | 2xx 但行未变（body `data.creator` 仍是 victim） | **真漏**：更新谓词没按 id/归属落库，随写 IDOR 一并修 |
+
+派活口径：分片 A → 读 IDOR 会话 A；分片 B → 读 IDOR 会话 B；9.3 → 写 IDOR 会话；9.4 的 D1/D2 → 夹具会话（补种子，不是代码缺陷），D3 → 写 IDOR。
+
+## 10. 证据来源与复跑
 
 - 31 条静态扫描：`docs/audits/behavioral-audit-2026-11-05/evidence-round7.txt §B`（`NO-OWNER-COL count = 31`）。
 - 31 条的两种归属定义与后果：`docs/audits/behavioral-audit-2026-11-05/report-7.md §2`。
