@@ -7,7 +7,6 @@ package httpapi
 import (
 	"context"
 	"io"
-	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -35,7 +34,7 @@ func TestE2EAdminExportDefenseChallenges(t *testing.T) {
 		t.Fatalf("插入挑战记录失败：%v", err)
 	}
 
-	req, _ := http.NewRequest("GET", "/api/v1/admin/defense-challenges/export", nil)
+	req, _ := testReq("GET", "/api/v1/admin/defense-challenges/export", nil)
 	req.Header.Set("Authorization", "Bearer "+adminTok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {

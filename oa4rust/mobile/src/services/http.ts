@@ -46,6 +46,17 @@ export class PermissionError extends ApiError {
   }
 }
 
+/**
+ * R138：后端安全修复后 403/404 是写端点的正常业务结果（无权限 / 目标已不存在），
+ * 文案必须可读；其它状态码保留 `HTTP xxx` 形状，避免影响页面既有错误判定。
+ */
+const FORBIDDEN_MESSAGE = '没有权限执行该操作'
+const NOT_FOUND_MESSAGE = '请求的资源不存在或已被删除'
+
+function httpStatusError(status: number): ApiError {
+  return status === 404 ? new ApiError(NOT_FOUND_MESSAGE, 404) : new ApiError(`HTTP ${status}`, status)
+}
+
 let apiBase = ''
 let authFailureHandler: (() => void) | null = null
 let refreshPromise: Promise<void> | null = null
@@ -163,10 +174,10 @@ function performRequest<T>(
           return
         }
         if (status === 403) {
-          reject(new PermissionError('Permission denied'))
+          reject(new PermissionError(FORBIDDEN_MESSAGE))
           return
         }
-        reject(new ApiError(`HTTP ${status}`, status))
+        reject(httpStatusError(status))
       },
       fail: (err: UniApp.GeneralCallbackResult) => {
         reject(
@@ -220,10 +231,10 @@ function performUpload<T>(
           return
         }
         if (status === 403) {
-          reject(new PermissionError('Permission denied'))
+          reject(new PermissionError(FORBIDDEN_MESSAGE))
           return
         }
-        reject(new ApiError(`HTTP ${status}`, status))
+        reject(httpStatusError(status))
       },
       fail: (err: UniApp.GeneralCallbackResult) => {
         reject(

@@ -7,7 +7,6 @@ package httpapi
 import (
 	"context"
 	"io"
-	"net/http"
 	"strings"
 	"testing"
 
@@ -30,7 +29,7 @@ func TestE2EAdminExportRedeemUsages(t *testing.T) {
 		t.Fatalf("插入使用记录失败：%v", err)
 	}
 
-	req, _ := http.NewRequest("GET", "/api/v1/admin/redeem-usages/export", nil)
+	req, _ := testReq("GET", "/api/v1/admin/redeem-usages/export", nil)
 	req.Header.Set("Authorization", "Bearer "+adminTok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {

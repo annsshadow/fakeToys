@@ -14,7 +14,6 @@ import (
 	"context"
 	"encoding/csv"
 	"io"
-	"net/http"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
@@ -24,7 +23,7 @@ func TestE2EAdminExportAnnouncementsRequiresAuth(t *testing.T) {
 	e2eScratchDB(t)
 	e := newE2E(t)
 
-	req, _ := http.NewRequest("GET", "/api/v1/admin/announcements/export", nil)
+	req, _ := testReq("GET", "/api/v1/admin/announcements/export", nil)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
 		t.Fatalf("请求失败：%v", err)
@@ -40,7 +39,7 @@ func TestE2EAdminExportAnnouncementsReadonlyAllowed(t *testing.T) {
 	e := newE2E(t)
 
 	_, roTok := e.newAdminRole(t, "anndro", "readonly")
-	req, _ := http.NewRequest("GET", "/api/v1/admin/announcements/export", nil)
+	req, _ := testReq("GET", "/api/v1/admin/announcements/export", nil)
 	req.Header.Set("Authorization", "Bearer "+roTok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
@@ -63,7 +62,7 @@ func TestE2EAdminExportAnnouncementsContent(t *testing.T) {
 		t.Fatalf("插入公告失败：%v", err)
 	}
 
-	req, _ := http.NewRequest("GET", "/api/v1/admin/announcements/export", nil)
+	req, _ := testReq("GET", "/api/v1/admin/announcements/export", nil)
 	req.Header.Set("Authorization", "Bearer "+adminTok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {

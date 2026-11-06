@@ -12,7 +12,6 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
-	"net/http"
 	"testing"
 	"time"
 
@@ -30,7 +29,7 @@ func TestE2EOfflineRewardRequiresAuth(t *testing.T) {
 		{"GET", "/api/v1/me/offline-reward"},
 		{"POST", "/api/v1/me/offline-reward/claim"},
 	} {
-		req, _ := http.NewRequest(tc.method, tc.path, nil)
+		req, _ := testReq(tc.method, tc.path, nil)
 		resp, err := e.app.Test(req, 10000)
 		if err != nil {
 			t.Fatalf("%s %s 请求失败：%v", tc.method, tc.path, err)
@@ -56,7 +55,7 @@ func TestE2EOfflineRewardStatusAndClaim(t *testing.T) {
 	}
 
 	// GET：应返回可领 1200 金币（600/h × 2h）
-	req, _ := http.NewRequest("GET", "/api/v1/me/offline-reward", nil)
+	req, _ := testReq("GET", "/api/v1/me/offline-reward", nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
@@ -84,7 +83,7 @@ func TestE2EOfflineRewardStatusAndClaim(t *testing.T) {
 	}
 
 	// POST：领取
-	req2, _ := http.NewRequest("POST", "/api/v1/me/offline-reward/claim", nil)
+	req2, _ := testReq("POST", "/api/v1/me/offline-reward/claim", nil)
 	req2.Header.Set("Authorization", "Bearer "+tok)
 	resp2, err := e.app.Test(req2, 10000)
 	if err != nil {
@@ -113,7 +112,7 @@ func TestE2EOfflineRewardStatusAndClaim(t *testing.T) {
 	}
 
 	// 领取后 GET：清零
-	req3, _ := http.NewRequest("GET", "/api/v1/me/offline-reward", nil)
+	req3, _ := testReq("GET", "/api/v1/me/offline-reward", nil)
 	req3.Header.Set("Authorization", "Bearer "+tok)
 	resp3, err := e.app.Test(req3, 10000)
 	if err != nil {
@@ -138,7 +137,7 @@ func TestE2EOfflineRewardClaimZero(t *testing.T) {
 	_, tok := e.newPlayer(t, "offline_reward_zero")
 
 	// 新用户无累计：GET coin=0
-	req, _ := http.NewRequest("GET", "/api/v1/me/offline-reward", nil)
+	req, _ := testReq("GET", "/api/v1/me/offline-reward", nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
@@ -156,7 +155,7 @@ func TestE2EOfflineRewardClaimZero(t *testing.T) {
 	}
 
 	// POST 也返回 0
-	req2, _ := http.NewRequest("POST", "/api/v1/me/offline-reward/claim", nil)
+	req2, _ := testReq("POST", "/api/v1/me/offline-reward/claim", nil)
 	req2.Header.Set("Authorization", "Bearer "+tok)
 	resp2, err := e.app.Test(req2, 10000)
 	if err != nil {

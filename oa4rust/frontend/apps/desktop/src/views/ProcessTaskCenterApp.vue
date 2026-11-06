@@ -82,6 +82,7 @@ import { confirmMsg, toast } from '../utils/toast'
 import ListLoadError from './ListLoadError.vue'
 import { useListError } from './listQuery'
 import { liveQueryItems } from './liveQueryItems'
+import { mutationErrorMessage } from './mutationError'
 
 interface Item {
   id: string
@@ -676,6 +677,7 @@ const filtered = computed(() =>
 )
 
 const startM = useMutation({
+  onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: async (id: string) => api.post(`/api/processplatform/service/processing/task/processing/${id}`),
   onMutate: (id) => (processingId.value = id),
   onSuccess: () => qc.invalidateQueries({ queryKey: qk }),
@@ -685,6 +687,7 @@ function startProcessing(item: Item) {
   startM.mutate(item.id)
 }
 const urgeM = useMutation({
+  onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: async (id: string) => api.get(`/api/processplatform/service/processing/task/urge/${id}`),
   onSuccess: () => qc.invalidateQueries({ queryKey: qk }),
 })
@@ -692,6 +695,7 @@ function urge(item: Item) {
   urgeM.mutate(item.id)
 }
 const delM = useMutation({
+  onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: async (id: string) => api.delete(`/api/processplatform/service/processing/task/${id}`),
   onSuccess: () => qc.invalidateQueries({ queryKey: qk }),
 })

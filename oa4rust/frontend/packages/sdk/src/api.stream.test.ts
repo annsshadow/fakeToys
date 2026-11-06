@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiClient, ApiError, AuthenticationError, PermissionError } from './api'
+import { ApiClient, ApiError, AuthenticationError, PermissionError, RequestCancelledError } from './api'
 
 function sseResponse(chunks: string[], status = 200): Response {
   const encoder = new TextEncoder()
@@ -106,6 +106,84 @@ describe('ApiClient.stream', () => {
     const fetch401 = vi.fn().mockResolvedValue(new Response('no', { status: 401 }))
     vi.stubGlobal('fetch', fetch401)
     await expect(new ApiClient().stream('/api/x', {}, () => {})).rejects.toBeInstanceOf(AuthenticationError)
+  })
+})
+
+describe('ApiClient.stream 调用方取消（R143）', () => {
+  beforeEach(() => {
+    vi.stubGlobal('window', { location: { origin: 'https://web.example.test' } })
+    vi.stubGlobal('localStorage', {
+      getItem: () => {
+        throw new Error('must not read localStorage')
+      },
+    })
+    vi.stubGlobal('sessionStorage', {
+      getItem: () => {
+        throw new Error('must not read sessionStorage')
+      },
+    })
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  function abortableStream() {
+    const encoder = new TextEncoder()
+    let ctrl: ReadableStreamDefaultController<Uint8Array> | null = null
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        ctrl = controller
+      },
+    })
+    return {
+      response: new Response(stream, { status: 200, headers: { 'Content-Type': 'text/event-stream' } }),
+      push: (chunk: string) => ctrl?.enqueue(encoder.encode(chunk)),
+      error: (err: unknown) => ctrl?.error(err),
+    }
+  }
+
+  it('caller abort 真的断开连接，并以 RequestCancelledError 结束（不是空闲超时）', async () => {
+    const s = abortableStream()
+    let transportAborted = false
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((_url: string, init?: RequestInit) => {
+        init?.signal?.addEventListener('abort', () => {
+          transportAborted = true
+          s.error(new DOMException('aborted', 'AbortError'))
+        })
+        return Promise.resolve(s.response)
+      }),
+    )
+
+    const external = new AbortController()
+    const p = new ApiClient().stream('/api/ai/stream', {}, () => {}, { signal: external.signal })
+    s.push('event: token\ndata: {"token":"a"}\n\n')
+    external.abort()
+
+    await expect(p).rejects.toBeInstanceOf(RequestCancelledError)
+    await expect(p).rejects.toMatchObject({ name: 'RequestCancelledError', status: 0 })
+    expect(transportAborted).toBe(true)
+  })
+
+  it('已取消的 signal 传入时立即拒绝，不建立流', async () => {
+    // 真实 fetch 在已 abort 的 signal 下会立刻 reject（不会发网络请求）。
+    const fetchMock = vi.fn((_url: string, init?: RequestInit) =>
+      init?.signal?.aborted
+        ? Promise.reject(Object.assign(new Error('aborted'), { name: 'AbortError' }))
+        : Promise.resolve(new Response('', { status: 200 })),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    const external = new AbortController()
+    external.abort()
+
+    await expect(new ApiClient().stream('/api/x', {}, () => {}, { signal: external.signal })).rejects.toBeInstanceOf(
+      RequestCancelledError,
+    )
+    // 没有读取任何流：连响应体都没有，调用方只看到可识别的取消。
+    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 })
 
