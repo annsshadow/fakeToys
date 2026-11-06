@@ -60,9 +60,6 @@ general_core_entity|invoice_get|GET	LEAK
 jpush_assemble_control|get_jpush|GET	LEAK
 jpush_core_entity|device_get|GET	LEAK
 jpush|device_get|GET	LEAK
-message_assemble_communicate|mass_id|GET	LEAK
-organization_assemble_authentication|identity_id|GET	LEAK
-organization_assemble_control|identity_id|GET	LEAK
 portal_assemble_designer|dict_id|GET	LEAK
 portal_assemble_designer|file_id_download|GET	LEAK
 portal_assemble_designer|get_design|GET	LEAK

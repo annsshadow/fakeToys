@@ -230,14 +230,20 @@ pub async fn organization_assemble_control_unit_list_flag_next_count(
 #[allow(non_snake_case)]
 pub async fn organization_assemble_control_unit_flag(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = u2_helpers::require_session_opt(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
-            "SELECT id, name, parent_id, level, sort, creator, create_time::text FROM x_org_unit WHERE id = $1",
-            &[&flag],
+            &format!(
+                "SELECT id, name, parent_id, level, sort, creator, create_time::text \
+                 FROM x_org_unit WHERE {}",
+                u2_helpers::CREATOR_OWNER_PREDICATE
+            ),
+            &[&flag, &actor],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -279,7 +285,13 @@ pub async fn organization_assemble_control_unit_flag(
             ));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("unit not found"))),
+        None => {
+            if u2_helpers::owned_read_row_exists(&client, u2_helpers::UNIT_TABLE, &flag).await? {
+                Err(AppError::Forbidden)
+            } else {
+                Ok(Json(ActionResult::error("unit not found")))
+            }
+        }
     }
 }
 
@@ -1352,13 +1364,18 @@ pub async fn group_flag_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn identity_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = u2_helpers::require_session_opt(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
-            "SELECT id, name, unit_id FROM x_org_identity WHERE id = $1",
-            &[&id],
+            &format!(
+                "SELECT id, name, unit_id FROM x_org_identity WHERE {}",
+                u2_helpers::CREATOR_OWNER_PREDICATE
+            ),
+            &[&id, &actor],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -1375,7 +1392,13 @@ pub async fn identity_id(
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("identity not found"))),
+        None => {
+            if u2_helpers::owned_read_row_exists(&client, u2_helpers::IDENTITY_TABLE, &id).await? {
+                Err(AppError::Forbidden)
+            } else {
+                Ok(Json(ActionResult::error("identity not found")))
+            }
+        }
     }
 }
 
@@ -1634,14 +1657,20 @@ pub async fn identity_list_pinyininitial_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn identity_flag(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = u2_helpers::require_session_opt(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
-            "SELECT id, name, unit_id, identity_id, creator, create_time::text FROM x_org_identity WHERE id = $1",
-            &[&flag],
+            &format!(
+                "SELECT id, name, unit_id, identity_id, creator, create_time::text \
+                 FROM x_org_identity WHERE {}",
+                u2_helpers::CREATOR_OWNER_PREDICATE
+            ),
+            &[&flag, &actor],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -1676,7 +1705,14 @@ pub async fn identity_flag(
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("identity not found"))),
+        None => {
+            if u2_helpers::owned_read_row_exists(&client, u2_helpers::IDENTITY_TABLE, &flag).await?
+            {
+                Err(AppError::Forbidden)
+            } else {
+                Ok(Json(ActionResult::error("identity not found")))
+            }
+        }
     }
 }
 
