@@ -24,6 +24,8 @@
 | 2 | `mind` | `list_versions_with_mind_id` | 所属 `mind_base_info.creator` OR 管理员 |
 | 2 | `meeting_assemble_control` | `meeting_list_applied_wait` / `_processing` / `_completed` / `meeting_list_apply_page_size_size` | `x_meeting.creator`（= 申请人）OR 管理员 |
 | 3（写侧） | `mind_assemble_control` | `save_folder` | `x_mind.creator` 落**会话身份**（原硬编码 `"system"`） |
+| 4 | `mind_assemble_control` | `u2::mind_view` / `u2::mind_get` | `creator=会话` OR `shared=true` OR `x_mind_share` 接收人 OR 管理员（SQL WHERE） |
+| 4 | `mind_assemble_control` | `u2::mind_version_list` / `u2::mind_version_get` | 同上，按所属 `x_mind` 行判定（版本表无 shared/共享边） |
 
 ## 一、NO-OWNER-COL（缺归属列，不改代码）
 
@@ -98,18 +100,26 @@ FROM x_mind WHERE deleted_at IS NULL;
 - `mind_assemble_control::get_folder`（`src/lib.rs:203`，SQL `:211`）
 - `mind_assemble_control::u2::mind_filter_list`（`src/u2.rs:108`，`FROM x_mind`；且会把 `x_mind` 里的文件夹行一并列出，收紧前需先区分「文件夹 / 脑图」两类行）
 
-### 脑图 / 版本读（新增登记，关联边是共享）
+### 脑图 / 版本读（第四批已修；共享边保留，不放宽也不误杀）
 
-`x_mind` 同时存文件夹与脑图；脑图有可信 `creator`，但共享给他人靠关联表 `x_mind_share(mind_id, person)`（本地 `oa4rust` / `oa_audit_20261105` 均为 0 行，`mind_filter_received` 已按会话读该表）。因此下列读若只加 `creator` 谓词，会把**被共享人**挡在外面：
+`x_mind` 同时存文件夹与脑图。脑图行的共享语义已在代码中实证，无需业务裁决：
 
-| handler | 位置 | 现状 | 阻塞点 |
-|---|---|---|---|
-| `u2::mind_view` | `src/u2.rs:576` | `WHERE id=$1 AND deleted_at IS NULL` | 共享边 `x_mind_share` |
-| `u2::mind_get` | `src/u2.rs:595` | 同上 | 同上 |
-| `u2::mind_version_list` | `src/u2.rs:268` | `WHERE mind_id=$1` | 共享边 + 版本 creator 是编辑者而非所有者 |
-| `u2::mind_version_get` | `src/u2.rs:552` | `WHERE mind_id=$1 ... LIMIT 1` | 同上 |
+- 表 `x_mind_share(id, mind_id, person, create_time)` 是**按人**的共享边；`mind_filter_received` 已按 `s.person = $会话` 读该表；
+- 表 `x_mind.shared` 是业主主动置 `true` 的**公开共享**标记，并由专门的写 handler 置位；
+- 因此读谓词 = `creator = 会话 OR shared = true OR EXISTS(x_mind_share.person = 会话) OR 管理员`。共享者/接收人仍可读，非共享第三方 403。
 
-建议谓词（裁决后）：`creator = $会话 OR EXISTS(SELECT 1 FROM x_mind_share s WHERE s.mind_id = x_mind.id AND s.person = $会话) OR 管理员`。在共享边语义（是否含公开共享、过期策略）确认前仅登记。
+已修端点：
+
+| handler | 位置 | 谓词 |
+|---|---|---|
+| `u2::mind_view` | `src/u2.rs:695` | `MIND_ROW_READ_PREDICATE`（如上），空结果再查存在性区分 403 / 404 |
+| `u2::mind_get` | `src/u2.rs:705` | 与 `mind_view` 共用 `mind_read` |
+| `u2::mind_version_list` | `src/u2.rs:290` | `MIND_VERSION_READ_PREDICATE`（按所属 `x_mind` 行）；空结果区分 403 / 空列表 |
+| `u2::mind_version_get` | `src/u2.rs:608` | 同上；无权 403，不存在保持既有 `version not found` |
+
+用例 `mind_read_idor_is_blocked_both_ways` / `mind_version_read_idor_is_blocked_both_ways` 覆盖：双向 403、属主 200 且返回落库行、`shared=true` 与 `x_mind_share` 接收人 200、无会话 401。破坏实验（行谓词 / 版本谓词改 `{actor} = {actor}` 恒真）分别红于「A 越权读 B 的私有脑图必须 403」「越权读他人版本列表必须 403」。
+
+仍未修（阻塞点不同）：`list_folders` / `get_folder` / `mind_filter_list` 见上一节（历史 `creator='system'` 行占比未知）。
 
 ## 三、关联边（invitee / 参与人）——只收紧 `creator` 一侧
 

@@ -152,6 +152,217 @@ mod security_gate_tests {
         );
     }
 
+    /// 分片A第四批：脑图行读（`view` / `get`）双向 403；
+    /// 属主、`shared=true`、`x_mind_share` 接收人均 200，共享边不放宽。
+    #[tokio::test]
+    async fn mind_read_idor_is_blocked_both_ways() {
+        let pool = shared::testing::test_pool();
+        let (a, b) = ("u-sec-read-a-owner", "u-sec-read-a-other");
+        {
+            let c = pool.get().await.unwrap();
+            for (id, creator, shared) in [
+                ("sec-read-a-mind-a", a, false),
+                ("sec-read-a-mind-b", b, false),
+                ("sec-read-a-mind-b-only", b, false),
+                ("sec-read-a-mind-pub", b, true),
+            ] {
+                c.execute("DELETE FROM x_mind_share WHERE mind_id = $1", &[&id])
+                    .await
+                    .unwrap();
+                c.execute("DELETE FROM x_mind WHERE id = $1", &[&id])
+                    .await
+                    .unwrap();
+                c.execute(
+                    "INSERT INTO x_mind (id, name, content, creator, shared) VALUES ($1, $2, $3, $4, $5)",
+                    &[&id, &format!("n-{id}"), &format!("c-{id}"), &creator, &shared],
+                )
+                .await
+                .unwrap();
+            }
+            c.execute(
+                "INSERT INTO x_mind_share (id, mind_id, person) VALUES ($1, 'sec-read-a-mind-b', $2)",
+                &[&uuid::Uuid::new_v4().to_string(), &a],
+            )
+            .await
+            .unwrap();
+        }
+        let view = |who: &str, id: &str| {
+            crate::u2::mind_view(
+                Extension(pool.clone()),
+                Some(Extension(shared::testing::test_session(who))),
+                Path(id.to_string()),
+            )
+        };
+        let get = |who: &str, id: &str| {
+            crate::u2::mind_get(
+                Extension(pool.clone()),
+                Some(Extension(shared::testing::test_session(who))),
+                Path(id.to_string()),
+            )
+        };
+
+        let own = view(a, "sec-read-a-mind-a").await;
+        let body = &own.unwrap().0.data.clone().unwrap();
+        assert_eq!(
+            body["name"], "n-sec-read-a-mind-a",
+            "属主读本人脑图必须返回落库内容"
+        );
+        assert!(
+            matches!(
+                view(a, "sec-read-a-mind-b-only").await,
+                Err(AppError::Forbidden)
+            ),
+            "A 越权读 B 的私有脑图必须 403"
+        );
+        assert!(
+            matches!(view(b, "sec-read-a-mind-a").await, Err(AppError::Forbidden)),
+            "B 越权读 A 的脑图必须 403（双向）"
+        );
+        assert!(
+            matches!(
+                get(a, "sec-read-a-mind-b-only").await,
+                Err(AppError::Forbidden)
+            ),
+            "get 同样不得越权读"
+        );
+        assert!(
+            get(b, "sec-read-a-mind-b-only").await.is_ok(),
+            "属主 get 本人脑图应成功"
+        );
+        assert!(
+            view(a, "sec-read-a-mind-b").await.is_ok(),
+            "共享接收人（x_mind_share.person）应可读"
+        );
+        assert!(
+            view(a, "sec-read-a-mind-pub").await.is_ok(),
+            "shared=true 的脑图应可读（保持既有公开共享语义）"
+        );
+        assert!(
+            matches!(
+                crate::u2::mind_view(
+                    Extension(pool.clone()),
+                    None,
+                    Path("sec-read-a-mind-a".to_string())
+                )
+                .await,
+                Err(AppError::Unauthorized)
+            ),
+            "无会话读脑图必须 401"
+        );
+    }
+
+    /// 分片A第四批：版本读（列表 / 首个版本）按所属脑图归属判定，
+    /// 双向 403；属主 200，共享接收人 200。
+    #[tokio::test]
+    async fn mind_version_read_idor_is_blocked_both_ways() {
+        let pool = shared::testing::test_pool();
+        let (a, b) = ("u-sec-read-a-owner", "u-sec-read-a-other");
+        {
+            let c = pool.get().await.unwrap();
+            for (mid, creator) in [
+                ("sec-read-a-ver-a", a),
+                ("sec-read-a-ver-b", b),
+                ("sec-read-a-ver-b-only", b),
+            ] {
+                c.execute(
+                    "DELETE FROM x_mind_version_info WHERE mind_id = $1",
+                    &[&mid],
+                )
+                .await
+                .unwrap();
+                c.execute("DELETE FROM x_mind_share WHERE mind_id = $1", &[&mid])
+                    .await
+                    .unwrap();
+                c.execute("DELETE FROM x_mind WHERE id = $1", &[&mid])
+                    .await
+                    .unwrap();
+                c.execute(
+                    "INSERT INTO x_mind (id, name, content, creator, shared) VALUES ($1, $2, 'c', $3, false)",
+                    &[&mid, &format!("n-{mid}"), &creator],
+                )
+                .await
+                .unwrap();
+                c.execute(
+                    "INSERT INTO x_mind_version_info (id, mind_id, name, folder_id, creator, file_version, shared) \
+                     VALUES ($1, $2, 'v1', '', $3, 1, false)",
+                    &[&format!("ver-{mid}"), &mid, &creator],
+                )
+                .await
+                .unwrap();
+            }
+            c.execute(
+                "INSERT INTO x_mind_share (id, mind_id, person) VALUES ($1, 'sec-read-a-ver-b', $2)",
+                &[&uuid::Uuid::new_v4().to_string(), &a],
+            )
+            .await
+            .unwrap();
+        }
+        let list = |who: &str, id: &str| {
+            crate::u2::mind_version_list(
+                Extension(pool.clone()),
+                Some(Extension(shared::testing::test_session(who))),
+                Path(id.to_string()),
+            )
+        };
+        let get = |who: &str, id: &str| {
+            crate::u2::mind_version_get(
+                Extension(pool.clone()),
+                Some(Extension(shared::testing::test_session(who))),
+                Path(id.to_string()),
+            )
+        };
+
+        let own = list(a, "sec-read-a-ver-a").await;
+        let data = own.unwrap().0.data.clone().unwrap();
+        assert!(
+            data.as_array()
+                .unwrap()
+                .iter()
+                .any(|v| v["id"] == "ver-sec-read-a-ver-a"),
+            "属主版本列表必须包含落库版本，实得 {data}"
+        );
+        assert!(
+            matches!(
+                list(a, "sec-read-a-ver-b-only").await,
+                Err(AppError::Forbidden)
+            ),
+            "越权读他人版本列表必须 403"
+        );
+        assert!(
+            matches!(list(b, "sec-read-a-ver-a").await, Err(AppError::Forbidden)),
+            "反向越权读版本列表必须 403"
+        );
+        let own_ver = get(a, "sec-read-a-ver-a").await;
+        assert_eq!(
+            own_ver.unwrap().0.data.clone().unwrap()["id"],
+            "ver-sec-read-a-ver-a",
+            "属主读本人版本应返回落库行"
+        );
+        assert!(
+            matches!(
+                get(a, "sec-read-a-ver-b-only").await,
+                Err(AppError::Forbidden)
+            ),
+            "越权读他人版本必须 403"
+        );
+        assert!(
+            list(a, "sec-read-a-ver-b").await.is_ok(),
+            "共享接收人应可读版本列表（共享边不放宽、也不误杀）"
+        );
+        assert!(
+            matches!(
+                crate::u2::mind_version_list(
+                    Extension(pool.clone()),
+                    None,
+                    Path("sec-read-a-ver-a".to_string())
+                )
+                .await,
+                Err(AppError::Unauthorized)
+            ),
+            "无会话读版本列表必须 401"
+        );
+    }
+
     /// R6：u2 `mind_save` 收会话存在档（无会话 401，门在 pool.get() 之前）。
     #[tokio::test]
     async fn r6_mind_save_rejects_without_session() {
