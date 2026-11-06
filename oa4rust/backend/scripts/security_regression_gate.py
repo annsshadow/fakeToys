@@ -19,6 +19,7 @@
     python scripts/security_regression_gate.py sabotage organization    # Rust②b：摘掉 org 归属谓词
     python scripts/security_regression_gate.py sabotage program_center  # Rust②c：摘掉 collect/module 归属谓词
     python scripts/security_regression_gate.py sabotage hotpic_mind      # Rust②d：摘掉 hotpic/mind 归属谓词（4 条）
+    python scripts/security_regression_gate.py sabotage write-idor-b5     # Rust②e：摘掉 folder_delete + cms 三条的归属（4 条）
     python scripts/security_regression_gate.py sabotage write-idor-b7     # Rust②g：摘掉第七批读归属谓词（5 条）
     python scripts/security_regression_gate.py sabotage go-limit0   # Go①：扣款乘 2
     python scripts/security_regression_gate.py sabotage go-idor-rev # Go②：摘掉预设删除归属
@@ -72,6 +73,7 @@ PROGRAM_CENTER = BACKEND / "crates/program_center/src/lib.rs"
 HOTPIC_CORE = BACKEND / "crates/hotpic_core_entity/src/lib.rs"
 HOTPIC_ASSEMBLE = BACKEND / "crates/hotpic_assemble_control/src/lib.rs"
 MIND = BACKEND / "crates/mind_core_entity/src/lib.rs"
+FILE_CORE = BACKEND / "crates/file_core_entity/src/lib.rs"
 ORG_ASSEMBLE_CONTROL_HELPERS = BACKEND / "crates/organization_assemble_control/src/u2_helpers.rs"
 ORG_ASSEMBLE_AUTH = BACKEND / "crates/organization_assemble_authentication/src/lib.rs"
 MESSAGE_COMMUNICATE = BACKEND / "crates/message_assemble_communicate/src/lib.rs"
@@ -539,6 +541,44 @@ MIND_OWNERSHIP_RE = re.compile(
 )
 MIND_OWNERSHIP_PATCH = 'const CREATOR_OWNER_PREDICATE: &str = "TRUE";'
 
+# 第五批写 IDOR：file folder 的归属谓词（server 结尾是 `false))";`）
+FOLDER_OWNERSHIP_RE = re.compile(
+    r'const FOLDER_OWNER_PREDICATE: &str = .*?false\)\)";', re.S
+)
+FOLDER_OWNERSHIP_PATCH = (
+    'const FOLDER_OWNER_PREDICATE: &str = "id = $1 AND $2 IS NOT NULL";'
+)
+
+# 第五批写 IDOR：cms 三个「POST 动作别名但实际是读」端点的归属门。
+# 只摘掉本批新加的门；同文件其它批次的门保持不动（count=1 且模式锁定表名）。
+APPINFO_GATE_RE = re.compile(
+    r'match u2_check_owner\(\s*&pool,\s*"x_cms_appinfo",\s*"creator",\s*&app_id,\s*'
+    r'&session\.person_unique,\s*\)\s*\.await\?\s*\{.*?'
+    r'U2Gate::NotFound => return Ok\(Json\(ActionResult::error\("appinfo not found"\)\)\),\s*\}',
+    re.S,
+)
+APPINFO_GATE_PATCH = "let _ = &session;\n    let _gate = U2Gate::Allowed;"
+CATEGORY_GATE_RE = re.compile(
+    r'match u2_check_owner\(\s*&pool,\s*"x_cms_categoryinfo",\s*"creator",\s*&id,\s*'
+    r'&session\.person_unique,\s*\)\s*\.await\?\s*\{.*?'
+    r'U2Gate::NotFound => return Ok\(Json\(ActionResult::error\("category not found"\)\)\),\s*\}',
+    re.S,
+)
+CATEGORY_GATE_PATCH = "let _ = &session;\n    let _gate = U2Gate::Allowed;"
+DOC_GATE_RE = re.compile(
+    r'match data_document_readable\(&pool, &id, actor\.as_deref\(\)\)\.await\? \{.*?\n    \}',
+    re.S,
+)
+DOC_GATE_PATCH = (
+    "let _readable = data_document_readable(&pool, &id, actor.as_deref()).await?;"
+)
+B5_EXPECTS = [
+    "file_core_entity|folder_delete|DELETE",
+    "cms_assemble_control|appinfo_appId_icon_size_size|POST",
+    "cms_assemble_control|categoryinfo_id_execute_projection|POST",
+    "cms_assemble_control|data_document_id_array_data|POST",
+]
+
 # 第七批写 IDOR：读面归属谓词（`*_READ_OWNER_PREDICATE`）。
 # 替换必须保留 `$2` 引用，写成 `(TRUE AND $2::text IS NOT NULL)`；
 # 裸 `TRUE` 会让按参数个数绑定的 deadpool 端点 bind 数不匹配 → 500，
@@ -589,7 +629,9 @@ def sabotage_many(
         print(f"实验失败：门禁未红或未点名全部用例（exit={code}）")
         return 1
     finally:
-        for path, original in originals:
+        # 同一文件可能有多次替换（本批 cms 三条都在 lib.rs）：必须逆序还原，
+        # 否则最后一次写入的是「已被改坏」的快照，而不是最初的原文件。
+        for path, original in reversed(originals):
             path.write_bytes(original)
             print(f"[restore] {path.name} 已还原")
 
@@ -645,6 +687,17 @@ def sabotage(kind: str) -> int:
             ],
             HOTPIC_MIND_EXPECTS,
         )
+    elif kind == "write-idor-b5":
+        return sabotage_many(
+            "摘掉第五批写 IDOR 的归属（folder_delete + cms 三条，应变 NEW-FAIL）",
+            [
+                (FILE_CORE, FOLDER_OWNERSHIP_RE, FOLDER_OWNERSHIP_PATCH, "file_core"),
+                (CMS, APPINFO_GATE_RE, APPINFO_GATE_PATCH, "cms_appinfo"),
+                (CMS, CATEGORY_GATE_RE, CATEGORY_GATE_PATCH, "cms_categoryinfo"),
+                (CMS, DOC_GATE_RE, DOC_GATE_PATCH, "cms_document"),
+            ],
+            B5_EXPECTS,
+        )
     elif kind == "write-idor-b7":
         return sabotage_many(
             "摘掉第七批写 IDOR 的读归属谓词（5 条应逐条 LEAK）",
@@ -666,7 +719,7 @@ def sabotage(kind: str) -> int:
     else:
         raise SystemExit(
             f"未知破坏实验: {kind}（可选 ownership / correct / general / organization / "
-            "program_center / hotpic_mind / read_b / write-idor-b7）"
+            "program_center / hotpic_mind / read_b / write-idor-b5 / write-idor-b7）"
         )
 
     print(f"== 破坏实验：{title}")
@@ -712,7 +765,7 @@ def main() -> int:
         if len(sys.argv) < 3:
             print("用法: security_regression_gate.py sabotage "
                   "<ownership|correct|general|organization|program_center|hotpic_mind|read_b|"
-                  "write-idor-b7|"
+                  "write-idor-b5|write-idor-b7|"
                   "rust-drift-to-leak|rust-swallow-write|"
                   "go-limit0|go-idor-rev|go-empty-list|go-swallow-write|"
                   "go-dead-write|go-page2|go-drift-to-leak>")

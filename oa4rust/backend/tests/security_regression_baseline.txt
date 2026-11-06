@@ -22,16 +22,13 @@ attendance_assemble_control|v2_record_get|GET	LEAK
 attendance_assemble_control|workplace_id|GET	LEAK
 cms_assemble_control|anonymous_document_id_view|GET	LEAK
 cms_assemble_control|anonymous_form_id|GET	LEAK
-cms_assemble_control|appinfo_appId_icon_size_size|POST	UNVERIFIED
 cms_assemble_control|appinfo_id_control|GET	LEAK
 cms_assemble_control|appinfo_id|GET	LEAK
 cms_assemble_control|application_id|GET	LEAK
 cms_assemble_control|categoryinfo_id_control|GET	LEAK
-cms_assemble_control|categoryinfo_id_execute_projection|POST	UNVERIFIED
 cms_assemble_control|categoryinfo_id|GET	LEAK
 cms_assemble_control|commend_id|GET	LEAK
 cms_assemble_control|comment_id|GET	LEAK
-cms_assemble_control|data_document_id_array_data|POST	UNVERIFIED
 cms_assemble_control|document_persons_u3|GET	LEAK
 cms_assemble_control|file_id_content|GET	LEAK
 cms_assemble_control|file_id_download|GET	LEAK
@@ -47,7 +44,6 @@ component_assemble_control|get_component|GET	LEAK
 correlation_service_processing|get_correlation|GET	LEAK
 file_assemble_control|get_file|GET	LEAK
 file_assemble_control|recycle_id|GET	UNVERIFIED
-file_core_entity|folder_delete|DELETE	LEAK
 general_assemble_control|area_get|GET	LEAK
 general_assemble_control|attendscope_get|GET	LEAK
 general_assemble_control|invoice_get_id|GET	LEAK
