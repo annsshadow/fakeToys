@@ -91,10 +91,12 @@ INSERT INTO x_attendance_statisticshow (id, person_id, unit_id, work_date, statu
   ('pg-d-06',  'audit-user', NULL,     '2026-06-03', 'GATE-PAGE-D'),
   ('pg-du-01', 'audit-user', 'unit-x', '2026-06-01', 'GATE-PAGE-DU'),
   ('pg-du-02', 'audit-user', 'unit-x', '2026-06-02', 'GATE-PAGE-DU');
-DELETE FROM x_org_person WHERE id IN ('gate-person-v', 'gate-person-a');
+DELETE FROM x_org_person WHERE id IN ('gate-person-v', 'gate-person-a', 'gate-person-del');
 INSERT INTO x_org_person (id, name, mobile, email, unit_id, creator, create_time, deleted_at) VALUES
   ('gate-person-v', 'GATE-PERSON-V', 'GATE-V-MOBILE',     'v@gate', 'unit-gate-v', 'gate-victim', NOW(), NULL),
-  ('gate-person-a', 'GATE-PERSON-A', 'rev-GATE-V-MOBILE', 'a@gate', 'unit-gate-a', 'audit-user',  NOW(), NULL);
+  ('gate-person-a', 'GATE-PERSON-A', 'rev-GATE-V-MOBILE', 'a@gate', 'unit-gate-a', 'audit-user',  NOW(), NULL),
+  -- 已软删人员：仅供 person/list/delete 分页用例验证「仅管理员可读」。
+  ('gate-person-del', 'GATE-PERSON-DEL', 'GATE-DEL-MOBILE', 'del@gate', 'unit-gate-v', 'gate-victim', NOW(), NOW());
 DELETE FROM x_org_group_member WHERE group_id = 'grp-gate-b';
 DELETE FROM x_org_role WHERE id IN ('role-gate-v', 'role-gate-a');
 INSERT INTO x_org_role (id, name) VALUES

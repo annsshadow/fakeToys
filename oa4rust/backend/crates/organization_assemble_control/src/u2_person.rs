@@ -23,7 +23,7 @@ const PERSON_COLS_P: &str =
 /// 人员读归属谓词（写进 SQL WHERE，NULL fail-closed）：
 /// 行的 `creator` 为本人，或调用者具备 admin 角色。
 /// `creator_col` 允许调用方传 `p.creator` 以适配多表 JOIN；`actor_ph` 传占位符（如 `$2`）。
-fn owner_scope(creator_col: &str, actor_ph: &str) -> String {
+pub(crate) fn owner_scope(creator_col: &str, actor_ph: &str) -> String {
     format!(
         "({creator_col} = {actor_ph} OR EXISTS(\
            SELECT 1 FROM auth_person ap \
@@ -844,8 +844,12 @@ pub async fn person_list_filter_paging(
 #[allow(non_snake_case)]
 pub async fn person_list_delete_paging(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((page, size)): Path<(i64, i64)>,
 ) -> HandlerResult {
+    // 已软删人员仍是 PII 读面（姓名/手机号/邮箱），且历史行无可用归属，
+    // 按「仅管理员可读」兜底：先门禁再读库，无会话 401、非 admin 403。
+    require_admin_opt(&pool, session.as_ref().map(|Extension(s)| s)).await?;
     let client = client_of(&pool).await?;
     let page = page.max(1);
     let size = size.clamp(1, MAX_PAGE_SIZE);

@@ -7,8 +7,8 @@ use axum::{
     Json, Router,
 };
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder,
-    QuerySelect, Set,
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, DbBackend, EntityTrait,
+    QueryFilter, QueryOrder, QuerySelect, Set, Statement,
 };
 use serde::Deserialize;
 use serde_json::Value;
@@ -25,6 +25,34 @@ fn require_session(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<shared::session::Session, AppError> {
     session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
+/// 归属谓词（`$2` = 会话身份）：`file_folder.person` 为空/不等不命中（fail-closed）；
+/// 管理员可维护他人目录。谓词写进 SQL `WHERE`，不做先查后判。
+const FOLDER_OWNER_PREDICATE: &str = "id = $1 AND (person = $2 \
+  OR EXISTS(\
+    SELECT 1 FROM auth_person p \
+      JOIN auth_person_role pr ON pr.person_id = p.id \
+      JOIN auth_role r ON r.id = pr.role_id \
+     WHERE (p.unique_id = $2 OR p.id = $2) \
+       AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false))";
+
+/// 0 行命中时区分 403/404。该读**不参与授权**：判定已由带谓词的写语句完成。
+async fn ownership_error(db: &DatabaseConnection, id: &str) -> AppError {
+    let stmt = Statement::from_sql_and_values(
+        DbBackend::Postgres,
+        "SELECT EXISTS(SELECT 1 FROM file_folder WHERE id = $1) AS row_exists",
+        [id.into()],
+    );
+    match db.query_one(stmt).await {
+        Ok(Some(row)) => match row.try_get::<bool>("", "row_exists") {
+            Ok(true) => AppError::Forbidden,
+            Ok(false) => AppError::NotFound,
+            Err(e) => AppError::internal_with_source(concat!(file!(), ":", line!()), e),
+        },
+        Ok(None) => AppError::NotFound,
+        Err(e) => AppError::internal_with_source(concat!(file!(), ":", line!()), e),
+    }
 }
 
 pub mod entities;
@@ -352,16 +380,21 @@ pub async fn folder_delete(
     session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
-    let model = file_folder::Entity::find_by_id(&id)
-        .one(&db)
+    let session = require_session(session)?;
+    let actor = session.person_unique;
+    let sql = format!(
+        "UPDATE file_folder SET deleted_at = (NOW() AT TIME ZONE 'UTC') \
+         WHERE ({FOLDER_OWNER_PREDICATE}) RETURNING id"
+    );
+    let stmt =
+        Statement::from_sql_and_values(DbBackend::Postgres, sql, [id.clone().into(), actor.into()]);
+    let res = db
+        .execute(stmt)
         .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
-        .ok_or(AppError::NotFound)?;
-
-    let mut active: file_folder::ActiveModel = model.into();
-    active.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));
-    active.update(&db).await?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    if res.rows_affected() == 0 {
+        return Err(ownership_error(&db, &id).await);
+    }
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
@@ -449,6 +482,8 @@ pub fn file_core_entity_router(db: DatabaseConnection) -> Router {
 
 #[cfg(test)]
 mod security_gate_tests_b78;
+#[cfg(test)]
+mod security_gate_tests_idor_b5;
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
