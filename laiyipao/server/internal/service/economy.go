@@ -128,13 +128,18 @@ func (s *Service) leaderboardAll(ctx context.Context, kind string) ([]Leaderboar
 
 // leaderboardQuery 是真正的榜单查询。缓存与单飞逻辑只在上面一层，
 // 这样「查什么」与「缓存多久 / 是否单飞」不互相纠缠。
+//
+// R131：先取「分数前 N 的 user_id」（走物化列上的排名索引，只扫 N 行），
+// 再 JOIN users 拿昵称/头像。旧写法把 JOIN 放进排序里，派生榜要排序
+// 整个 1M 行聚合结果；现在排序对象固定是 200 行。
 func (s *Service) leaderboardQuery(ctx context.Context, kind string) ([]LeaderboardEntry, error) {
 	rows, err := s.pool.Query(ctx, `
-		WITH scores AS (`+leaderboardScoresSQL(kind)+`)
-		SELECT u.id, u.nickname, u.avatar_url, s.score
-		FROM scores s JOIN users u ON u.id = s.user_id
-		ORDER BY s.score `+leaderboardOrderSQL(kind)+`, u.id ASC
-		LIMIT $1`, leaderboardCacheRows)
+		WITH top AS (`+leaderboardScoresSQL(kind)+`
+			ORDER BY score `+leaderboardOrderSQL(kind)+`, user_id ASC
+			LIMIT $1)
+		SELECT u.id, u.nickname, u.avatar_url, t.score
+		FROM top t JOIN users u ON u.id = t.user_id
+		ORDER BY t.score `+leaderboardOrderSQL(kind)+`, t.user_id ASC`, leaderboardCacheRows)
 	if err != nil {
 		return nil, fmt.Errorf("leaderboard %s: %w", kind, err)
 	}
@@ -173,6 +178,25 @@ func sliceLeaderboard(all []LeaderboardEntry, limit int) []LeaderboardEntry {
 	return all[:limit:limit]
 }
 
+// leaderboardScoreColumn 是「该榜分数物化在 user_progress 的哪一列 + 参与条件」。
+//
+// 返回值只可能是字面量（会被拼进 SQL）：**不能**接受任何外部输入。
+// 列名与迁移 00028 一一对应：
+//
+//	power      level_exp             参与条件为空（0 分也在榜上）
+//	stage      clear_stage_max       >0 才参与（0 = 从未通关）
+//	eff        min_power_clear_ever  >0 才参与（0 = 无成绩）
+func leaderboardScoreColumn(kind string) (column, participation string) {
+	switch kind {
+	case "stage":
+		return "clear_stage_max", "clear_stage_max > 0"
+	case "efficiency":
+		return "min_power_clear_ever", "min_power_clear_ever > 0"
+	default: // "power"
+		return "level_exp", ""
+	}
+}
+
 // leaderboardScoresSQL 是「用户 → 该榜分数」的**唯一**定义。
 //
 // # 为什么抽出来（2026-10-23）
@@ -185,20 +209,19 @@ func sliceLeaderboard(all []LeaderboardEntry, limit int) []LeaderboardEntry {
 //
 // 现在两个端点共用这一个字符串，排序方向也共用 `leaderboardOrderSQL`。
 // 判据由 `TestMyRankMatchesLeaderboardOrder` 钉住（三榜各一次）。
+//
+// # R131：分数已物化（迁移 00028）
+//
+// 派生两榜原来每次请求都做 1M 行 GROUP BY（efficiency 名次 316ms、
+// total 239ms）。现在分数由迁移在同一事务内维护到 user_progress 两列，
+// 这里只做点查/索引范围扫描；口径逐字不变（回填与触发器用同一表达式）。
 func leaderboardScoresSQL(kind string) string {
-	switch kind {
-	case "stage":
-		// 关卡榜：最高通关关卡
-		return `SELECT user_id, MAX(level_id)::bigint AS score
-		        FROM level_stars WHERE clears > 0 GROUP BY user_id`
-	case "efficiency":
-		// 效率榜：通关时使用的最低战力越低越靠前（L-2）
-		return `SELECT user_id, MIN(min_power_clear) AS score
-		        FROM level_stars WHERE min_power_clear > 0 GROUP BY user_id`
-	default: // "power"
-		// 战力榜：累计成长值
-		return `SELECT user_id, level_exp AS score FROM user_progress`
+	column, participation := leaderboardScoreColumn(kind)
+	sql := `SELECT user_id, ` + column + `::bigint AS score FROM user_progress`
+	if participation != "" {
+		sql += ` WHERE ` + participation
 	}
+	return sql
 }
 
 // leaderboardOrderSQL 是排序方向。返回值只可能是两个字面量之一 ——
@@ -275,21 +298,62 @@ func (s *Service) MyRank(ctx context.Context, userID int64, kind string) (MyRank
 	// 改成 FROM 子查询后，planner 会把无聚合的 power 子查询**拉平**成
 	// 直接对表的引用，`level_exp` 上的索引随即可用。
 	// 分数定义仍来自 `leaderboardScoresSQL`，没有另写一份。
-	q := `
-		SELECT
-		    COALESCE((SELECT score FROM (` + scores + `) scores WHERE user_id = $1), 0)::bigint,
-		    (SELECT COUNT(*) FROM (` + scores + `) scores),
-		    CASE WHEN NOT EXISTS (SELECT 1 FROM (` + scores + `) scores WHERE user_id = $1) THEN 0
-		         ELSE (SELECT COUNT(*) FROM (` + scores + `) s,
-		               (SELECT score FROM (` + scores + `) scores WHERE user_id = $1) me
-		                WHERE s.score ` + cmp + ` me.score
-		                   OR (s.score = me.score AND s.user_id < $1)) + 1
-		    END`
-	var out MyRank
-	out.Kind = kind
-	if err := s.pool.QueryRow(ctx, q, userID).Scan(&out.Score, &out.Total, &out.Rank); err != nil {
-		return MyRank{}, fmt.Errorf("my rank %s: %w", kind, err)
+	//
+	// 2026-11-05（第 130 轮）：把一条大 SQL 拆成「分数 / 人数 / 名次」三读。
+	//
+	// 原实现把 total 也当场算一遍：power 是一次全表 COUNT（1M 行约 40~75ms），
+	// 关卡/效率榜是**第二次** GROUP BY（与名次计数那次重复，合计 500~580ms）。
+	// 第 130 轮让 total 走进程内缓存；第 131 轮起分数与直方图已物化
+	// （迁移 00028），total/名次都变成小表聚合或索引范围计数（各 <2ms），
+	// 于是撤销那层缓存 —— 精确且便宜的数没有理由再允许陈旧。
+	out := MyRank{Kind: kind}
+
+	// ① 我的分数。无成绩时 rank=0（哨兵），但 total 仍返回真实人数。
+	scoreQuery := `SELECT score FROM (` + scores + `) scores WHERE user_id = $1`
+	err := s.pool.QueryRow(ctx, scoreQuery, userID).Scan(&out.Score)
+	hasScore := true
+	switch {
+	case errors.Is(err, pgx.ErrNoRows):
+		hasScore = false
+		out.Score = 0
+	case err != nil:
+		return MyRank{}, fmt.Errorf("my rank score %s: %w", kind, err)
 	}
+
+	// ② 参与人数：直方图求和（≤5000 行，perf 库实测 0.6ms）。
+	// R131 起不再走 rankTotalCache：那层缓存是为了躲开 1M 行 COUNT(*)/GROUP BY，
+	// 现在这个数本身就是精确的小表聚合（同一事务内维护），再缓存只会引入陈旧。
+	var total int64
+	if err := s.pool.QueryRow(ctx,
+		`SELECT COALESCE(SUM(cnt),0) FROM leaderboard_score_counts WHERE kind = $1`, kind).Scan(&total); err != nil {
+		return MyRank{}, fmt.Errorf("my rank total %s: %w", kind, err)
+	}
+	out.Total = total
+	if !hasScore {
+		return out, nil
+	}
+
+	// ③ 名次：双键口径不变，但两半各走一条便宜路径。
+	//   better = 直方图里「分数严格优于我」的各档人数之和（不扫 1M 行）；
+	//   tie    = 同分且 user_id 小于我的人数（(score, user_id) 索引范围计数）。
+	// 分数快照与直方图在同一事务内维护，读到的两个数始终是同一时点，
+	// 因此 rank ≤ total 恒成立，不再需要「用名次兜底 total」的补丁。
+	column, participation := leaderboardScoreColumn(kind)
+	tieWhere := column + ` = $2 AND user_id < $1`
+	if participation != "" {
+		tieWhere += ` AND ` + participation
+	}
+	var better, tie int64
+	err = s.pool.QueryRow(ctx, `
+		SELECT
+		    (SELECT COALESCE(SUM(cnt),0) FROM leaderboard_score_counts
+		      WHERE kind = $3 AND score `+cmp+` $2),
+		    (SELECT COUNT(*) FROM user_progress WHERE `+tieWhere+`)`,
+		userID, out.Score, kind).Scan(&better, &tie)
+	if err != nil {
+		return MyRank{}, fmt.Errorf("my rank count %s: %w", kind, err)
+	}
+	out.Rank = int(better+tie) + 1
 	return out, nil
 }
 
@@ -919,131 +983,179 @@ func (s *Service) LoadShop(ctx context.Context, userID int64) ([]ShopItemView, e
 	return out, nil
 }
 
-// Buy 购买商城商品。
+// Buy 购买商城商品（不带幂等键的老路径）。
+//
+// 同一请求连发两次会**扣两次钱**，这是 R134-B 实证过的缺陷；
+// 需要去重的调用方走 BuyIdem（带 `Idempotency-Key`）。
 func (s *Service) Buy(ctx context.Context, userID, itemID int64) (map[string]int, error) {
+	var out map[string]int
+	err := s.DB.Tx(ctx, func(tx pgx.Tx) error {
+		var err error
+		out, err = s.buyTx(ctx, tx, userID, itemID)
+		return err
+	})
+	return out, err
+}
+
+// BuyIdem 是 Buy 的幂等版本（R134-B）：带 `Idempotency-Key` 时，
+// 24h 窗口内同 key 同端点同请求体只执行一次，第二次重放第一次的响应。
+//
+// # 为什么复用管理端那套 Idempotency-Key，而不是别的两套
+//
+// 仓库里已有三套互斥机制，但只有这一套能区分「同一请求重试」和
+// 「两次合法的重复购买」：
+//
+//   - 钱包行锁（`user_wallets ... FOR UPDATE`）：只把同一用户的并发
+//     购买串行化，**顺序**连发两次照样扣两次；
+//   - `redeem_usages UNIQUE (code_id, user_id)`：语义是「这个码只能用
+//     一次」，与「不限购商品本来就该能反复买」正好相反 —— 复用会
+//     把「防止重复」做成「禁止再次购买」；
+//   - `Idempotency-Key`：客户端给的请求级标识，是唯一能表达
+//     「这两个请求是同一笔」的信息。两笔不同购买必然带不同的 key。
+//
+// # endpoint 为什么要拼 userID
+//
+// 幂等键由客户端生成，不同用户可能生成相同的 key（UUID 概率低，
+// 但**不能靠概率做隔离**）。拼上 uid 后每个用户的键空间独立，
+// 避免 A 的 key 撞上 B 的 key 而**重放别人的响应**（那是跨用户信息泄露，
+// 比重复扣钱严重）。表名 `admin_idempotency_keys` 是 R86 的历史命名，
+// 机制本身与调用方无关，这里按同一张表、同一份口径复用。
+func (s *Service) BuyIdem(ctx context.Context, userID, itemID int64,
+	key, reqHash string) (body []byte, replayed bool, err error) {
+	endpoint := fmt.Sprintf("player.shop.buy:%d", userID)
+	return s.RunIdempotent(ctx, endpoint, key, reqHash, func(tx pgx.Tx) (any, error) {
+		granted, err := s.buyTx(ctx, tx, userID, itemID)
+		if err != nil {
+			return nil, err
+		}
+		// 键序与 handler 的 c.JSON 一致（encoding/json 对 map 按键名排序），
+		// 保证「带 key 的第一次响应」与「不带 key 的响应」逐字节相同。
+		return map[string]any{"granted": granted}, nil
+	})
+}
+
+// buyTx 是 Buy 的事务体（普通路径与幂等路径共用，避免两份实现漂移）。
+func (s *Service) buyTx(ctx context.Context, tx pgx.Tx, userID, itemID int64) (map[string]int, error) {
 	// 第 97 轮：与 LoadShop 同一个口径（Go 的日期字面量），见那里的说明。
 	today := periodStart(nowFunc(), "daily").Format("2006-01-02")
 	var out map[string]int
-	err := s.DB.Tx(ctx, func(tx pgx.Tx) error {
-		var priceRaw, payloadRaw []byte
-		var limit int
+	var priceRaw, payloadRaw []byte
+	var limit int
+	if err := tx.QueryRow(ctx,
+		`SELECT price, payload, limit_per_day FROM shop_items WHERE id = $1 AND enabled`,
+		itemID).Scan(&priceRaw, &payloadRaw, &limit); err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, fmt.Errorf("%w: 商品 %d", ErrNotFound, itemID)
+		}
+		return nil, err
+	}
+
+	if limit > 0 {
+		// 先锁住该用户的钱包行，再做 COUNT。
+		//
+		// 「SELECT COUNT(*) 再 INSERT」在并发下是**完全无效**的限购：
+		// N 个并发事务全部在对方 INSERT 之前读到 bought=0，于是全部放行。
+		// shop_firstpay 价格是 {coin: 0}（首充 0 元购），
+		// 并发打 20 个请求就能白拿 20 份 gem/coin/energy。
+		//
+		// 锁 user_wallets 是因为它必然会被本事务后续的 grantWallet 更新，
+		// 提前加锁把同一用户的购买串行化，且不引入新的锁顺序分支
+		// （所有路径都是先钱包后 purchases）。
+		var lockedUID int64
 		if err := tx.QueryRow(ctx,
-			`SELECT price, payload, limit_per_day FROM shop_items WHERE id = $1 AND enabled`,
-			itemID).Scan(&priceRaw, &payloadRaw, &limit); err != nil {
-			if err == pgx.ErrNoRows {
-				return fmt.Errorf("%w: 商品 %d", ErrNotFound, itemID)
+			`SELECT user_id FROM user_wallets WHERE user_id = $1 FOR UPDATE`,
+			userID).Scan(&lockedUID); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return nil, fmt.Errorf("%w: 钱包不存在", ErrNotFound)
 			}
-			return err
+			return nil, err
 		}
-
-		if limit > 0 {
-			// 先锁住该用户的钱包行，再做 COUNT。
-			//
-			// 「SELECT COUNT(*) 再 INSERT」在并发下是**完全无效**的限购：
-			// N 个并发事务全部在对方 INSERT 之前读到 bought=0，于是全部放行。
-			// shop_firstpay 价格是 {coin: 0}（首充 0 元购），
-			// 并发打 20 个请求就能白拿 20 份 gem/coin/energy。
-			//
-			// 锁 user_wallets 是因为它必然会被本事务后续的 grantWallet 更新，
-			// 提前加锁把同一用户的购买串行化，且不引入新的锁顺序分支
-			// （所有路径都是先钱包后 purchases）。
-			var lockedUID int64
-			if err := tx.QueryRow(ctx,
-				`SELECT user_id FROM user_wallets WHERE user_id = $1 FOR UPDATE`,
-				userID).Scan(&lockedUID); err != nil {
-				if errors.Is(err, pgx.ErrNoRows) {
-					return fmt.Errorf("%w: 钱包不存在", ErrNotFound)
-				}
-				return err
-			}
-			var bought int
-			if err := tx.QueryRow(ctx,
-				`SELECT COUNT(*) FROM user_purchases
+		var bought int
+		if err := tx.QueryRow(ctx,
+			`SELECT COUNT(*) FROM user_purchases
 				 WHERE user_id = $1 AND item_id = $2 AND purchase_date = $3`,
-				userID, itemID, today).Scan(&bought); err != nil {
-				return err
-			}
-			if bought >= limit {
-				return fmt.Errorf("%w: 今日购买次数已达上限 %d", ErrForbidden, limit)
-			}
+			userID, itemID, today).Scan(&bought); err != nil {
+			return nil, err
 		}
+		if bought >= limit {
+			return nil, fmt.Errorf("%w: 今日购买次数已达上限 %d", ErrForbidden, limit)
+		}
+	}
 
-		var price, payload map[string]int
-		if err := json.Unmarshal(priceRaw, &price); err != nil {
-			return err
-		}
-		if err := json.Unmarshal(payloadRaw, &payload); err != nil {
-			return err
-		}
+	var price, payload map[string]int
+	if err := json.Unmarshal(priceRaw, &price); err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(payloadRaw, &payload); err != nil {
+		return nil, err
+	}
 
-		// 先扣钱再发货，扣钱失败则整体回滚
-		deduct := map[string]int64{}
-		for k, v := range price {
-			if v > 0 {
-				deduct[k] = int64(-v)
-			}
+	// 先扣钱再发货，扣钱失败则整体回滚
+	deduct := map[string]int64{}
+	for k, v := range price {
+		if v > 0 {
+			deduct[k] = int64(-v)
 		}
-		if err := s.grantWallet(ctx, tx, userID, deduct, "shop_buy", itemID); err != nil {
-			return err
-		}
+	}
+	if err := s.grantWallet(ctx, tx, userID, deduct, "shop_buy", itemID); err != nil {
+		return nil, err
+	}
 
-		grant := map[string]int64{}
-		for k, v := range payload {
-			if v <= 0 {
-				continue
+	grant := map[string]int64{}
+	for k, v := range payload {
+		if v <= 0 {
+			continue
+		}
+		// ⚠️ `gem_instance` 不是货币：它要造一颗**带随机词条的宝石实体**，
+		// 走 grantWallet 会被判成「未知货币」而整笔回滚。
+		// 宝石此前拿不到，就是因为没有任何路径能发出它。
+		if k == gemInstanceKey {
+			if _, _, err := s.mintGem(ctx, tx, userID); err != nil {
+				return nil, err
 			}
-			// ⚠️ `gem_instance` 不是货币：它要造一颗**带随机词条的宝石实体**，
-			// 走 grantWallet 会被判成「未知货币」而整笔回滚。
-			// 宝石此前拿不到，就是因为没有任何路径能发出它。
-			if k == gemInstanceKey {
-				if _, _, err := s.mintGem(ctx, tx, userID); err != nil {
-					return err
-				}
-				continue
-			}
-			// 2026-10-21（P4-1）：`equipment_<id>` 也不是货币 ——
-			// 它要发一件**具体装备**到 `user_equipment`。
+			continue
+		}
+		// 2026-10-21（P4-1）：`equipment_<id>` 也不是货币 ——
+		// 它要发一件**具体装备**到 `user_equipment`。
+		//
+		// 此前 18 件装备里 16 件玩家永远拿不到：既没有获取途径，
+		// 商城里也没有对应的商品。装备的**战斗效果**一直存在
+		// （base_armor / base_bonus_pct 会被读进攻方），
+		// 但玩家碰不到它 —— 那等于没有（KNOWN_LIMITS 第 25 条）。
+		if eqID, ok := equipmentPayloadID(k); ok {
+			// ⚠️ 2026-10-21（二轮审计 P2）：多份要**显式拒绝**。
 			//
-			// 此前 18 件装备里 16 件玩家永远拿不到：既没有获取途径，
-			// 商城里也没有对应的商品。装备的**战斗效果**一直存在
-			// （base_armor / base_bonus_pct 会被读进攻方），
-			// 但玩家碰不到它 —— 那等于没有（KNOWN_LIMITS 第 25 条）。
-			if eqID, ok := equipmentPayloadID(k); ok {
-				// ⚠️ 2026-10-21（二轮审计 P2）：多份要**显式拒绝**。
-				//
-				// `user_equipment` 的主键是 `(user_id, equipment_id)` —— 一个人
-				// 不能持有同一件装备的两份。所以第 2、3 次 INSERT 全是
-				// `ON CONFLICT DO NOTHING` 的静默 no-op：玩家付了 3 份的钱，
-				// 只拿到 1 件，而且**不报任何错**。
-				//
-				// 装备**没有随机性**（不像宝石要 roll 词条），所以「多份」
-				// 是一个**产品决策**而不是数据模型问题 —— 在这里显式拒绝，
-				// 让运营改 payload 时立刻知道「这件商品不支持多份」。
-				if v > 1 {
-					return fmt.Errorf("%w: 装备不支持多份（同一部位只能装一件），请把数量设为 1",
-						ErrBadInput)
-				}
-				if err := mintEquipment(ctx, tx, userID, eqID); err != nil {
-					return err
-				}
-				continue
+			// `user_equipment` 的主键是 `(user_id, equipment_id)` —— 一个人
+			// 不能持有同一件装备的两份。所以第 2、3 次 INSERT 全是
+			// `ON CONFLICT DO NOTHING` 的静默 no-op：玩家付了 3 份的钱，
+			// 只拿到 1 件，而且**不报任何错**。
+			//
+			// 装备**没有随机性**（不像宝石要 roll 词条），所以「多份」
+			// 是一个**产品决策**而不是数据模型问题 —— 在这里显式拒绝，
+			// 让运营改 payload 时立刻知道「这件商品不支持多份」。
+			if v > 1 {
+				return nil, fmt.Errorf("%w: 装备不支持多份（同一部位只能装一件），请把数量设为 1",
+					ErrBadInput)
 			}
-			grant[k] = int64(v)
-		}
-		if len(grant) > 0 {
-			if err := s.grantWallet(ctx, tx, userID, grant, "shop_buy", itemID); err != nil {
-				return err
+			if err := mintEquipment(ctx, tx, userID, eqID); err != nil {
+				return nil, err
 			}
+			continue
 		}
-		if _, err := tx.Exec(ctx,
-			`INSERT INTO user_purchases (user_id, item_id, purchase_date, price) VALUES ($1,$2,$3,$4)`,
-			userID, itemID, today, priceRaw); err != nil {
-			return err
+		grant[k] = int64(v)
+	}
+	if len(grant) > 0 {
+		if err := s.grantWallet(ctx, tx, userID, grant, "shop_buy", itemID); err != nil {
+			return nil, err
 		}
-		out = payload
-		return nil
-	})
-	return out, err
+	}
+	if _, err := tx.Exec(ctx,
+		`INSERT INTO user_purchases (user_id, item_id, purchase_date, price) VALUES ($1,$2,$3,$4)`,
+		userID, itemID, today, priceRaw); err != nil {
+		return nil, err
+	}
+	out = payload
+	return out, nil
 }
 
 // --- 验真（I-6） ---
@@ -1147,32 +1259,67 @@ type MyBattleHistoryItem struct {
 	ReplayHash string `json:"replay_hash"`
 }
 
+// MyBattleHistoryPage 是玩家战报历史的一页。
+//
+// HasMore 由查询实际多返回的一行决定（LIMIT 取 limit+1 再裁掉末行）。
+type MyBattleHistoryPage struct {
+	Items   []MyBattleHistoryItem
+	HasMore bool
+}
+
 // MyBattleHistory 返回当前玩家最近的战斗记录。
 //
 // 玩家打完关卡后没有任何历史战报入口（后台有 `AdminListBattles`，
 // 玩家侧只有单条验真/回放端点）。这里补上玩家视角的战绩列表。
-func (s *Service) MyBattleHistory(ctx context.Context, userID int64, limit, offset int, result string) ([]MyBattleHistoryItem, error) {
+func (s *Service) MyBattleHistory(ctx context.Context, userID int64, limit, offset int, result string, cursorArg ...int64) ([]MyBattleHistoryItem, error) {
+	p, err := s.MyBattleHistoryPage(ctx, userID, limit, offset, result, cursorArg...)
+	if err != nil {
+		return nil, err
+	}
+	return p.Items, nil
+}
+
+// MyBattleHistoryPage 与 MyBattleHistory 同一查询，额外返回 HasMore。
+//
+// cursor（R131 审计 G3）：可选 keyset 游标 = 上一页末行的 id。battle_records
+// 只追加、id 由 BIGSERIAL 在插入时分配、created_at 由 DB now() 在**同一插入**
+// 填充，因此 id 与 created_at 同序（真实写路径不会回填历史时间）；单字段 id
+// 游标与 `ORDER BY created_at DESC, id DESC` 等价。传 cursor 时忽略 offset：
+// 翻页期间新插入的战报 id 更大、被游标排除，不会把旧行挤到下一页造成
+// 「同一行跨页重复」或漏行。offset 保留兼容（旧前端不改）。
+func (s *Service) MyBattleHistoryPage(ctx context.Context, userID int64, limit, offset int, result string, cursorArg ...int64) (MyBattleHistoryPage, error) {
 	limit = clampLimit(limit, 20, 50)
 	// 分页（2026-11-01 新一轮第 55 轮）：负 offset 夹到 0。
 	if offset < 0 {
 		offset = 0
 	}
+	var cursor int64
+	if len(cursorArg) > 0 {
+		cursor = cursorArg[0]
+	}
+	if cursor > 0 {
+		offset = 0 // keyset 模式下 offset 无意义（游标已是位置）
+	}
 	// 结果筛选（2026-11-01 新一轮第 80 轮）：win / lose，空串不过滤。
 	result = strings.TrimSpace(result)
-	args := []any{userID, limit, offset}
+	args := []any{userID, limit + 1, offset}
 	where := `user_id = $1`
 	if result != "" {
 		where += ` AND result = $4`
 		args = append(args, result)
 	}
+	if cursor > 0 {
+		where += fmt.Sprintf(` AND id < $%d`, len(args)+1)
+		args = append(args, cursor)
+	}
 	rows, err := s.pool.Query(ctx,
 		`SELECT id, level_id, result, stars, score, kills, leaked, replay_hash, created_at
 		 FROM battle_records
 		 WHERE `+where+`
-		 ORDER BY created_at DESC
+		 ORDER BY created_at DESC, id DESC
 		 LIMIT $2 OFFSET $3`, args...)
 	if err != nil {
-		return nil, fmt.Errorf("my battle history: %w", err)
+		return MyBattleHistoryPage{}, fmt.Errorf("my battle history: %w", err)
 	}
 	defer rows.Close()
 
@@ -1181,11 +1328,18 @@ func (s *Service) MyBattleHistory(ctx context.Context, userID int64, limit, offs
 		var it MyBattleHistoryItem
 		if err := rows.Scan(&it.ID, &it.LevelID, &it.Result, &it.Stars,
 			&it.Score, &it.Kills, &it.Leaked, &it.ReplayHash, &it.CreatedAt); err != nil {
-			return nil, fmt.Errorf("scan battle history: %w", err)
+			return MyBattleHistoryPage{}, fmt.Errorf("scan battle history: %w", err)
 		}
 		out = append(out, it)
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return MyBattleHistoryPage{}, err
+	}
+	hasMore := len(out) > limit
+	if hasMore {
+		out = out[:limit]
+	}
+	return MyBattleHistoryPage{Items: out, HasMore: hasMore}, nil
 }
 
 // BattleDetail 是单局战报的完整详情（2026-10-31 新一轮第 10 轮）。

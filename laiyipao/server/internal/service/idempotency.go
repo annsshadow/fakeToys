@@ -91,6 +91,18 @@ func (s *Service) RunIdempotent(ctx context.Context, endpoint, key, reqHash stri
 			return fmt.Errorf("idempotency lookup: %w", qerr)
 		}
 
+		// 1.5) 窗口外同 key 的残留行必须先删掉（R135 反向用例实证）。
+		// 否则 INSERT 撞 PK → errIdemRace → **已执行完的业务被整体回滚**，
+		// 再拿窗口外的旧响应重放给客户端：看起来成功，实际什么都没发生。
+		// 清理是「写入时顺带」的，过期行未必已被清掉，这里要自己兜住。
+		if _, derr := tx.Exec(ctx, `
+			DELETE FROM admin_idempotency_keys
+			 WHERE endpoint = $1 AND key = $2
+			   AND created_at <= now() - $3::interval`,
+			endpoint, key, IdemWindow); derr != nil {
+			return fmt.Errorf("idempotency expire: %w", derr)
+		}
+
 		// 2) 执行业务（失败 → 整体回滚，不留幂等记录）。
 		resp, err := fn(tx)
 		if err != nil {
@@ -133,8 +145,9 @@ func (s *Service) RunIdempotent(ctx context.Context, endpoint, key, reqHash stri
 		var stored []byte
 		qerr := s.pool.QueryRow(ctx, `
 			SELECT response FROM admin_idempotency_keys
-			 WHERE endpoint = $1 AND key = $2`,
-			endpoint, key).Scan(&stored)
+			 WHERE endpoint = $1 AND key = $2
+			   AND created_at > now() - $3::interval`,
+			endpoint, key, IdemWindow).Scan(&stored)
 		if qerr != nil {
 			return nil, false, fmt.Errorf("idempotency race retry: %w", qerr)
 		}

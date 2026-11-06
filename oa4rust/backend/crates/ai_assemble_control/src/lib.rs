@@ -1299,7 +1299,7 @@ pub async fn file_copy_file(
     session: Option<Extension<shared::session::Session>>,
     req: Option<axum::extract::Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
     let req = req.map(|r| r.0).unwrap_or_default();
     let client = shared::db::acquire(&pool).await?;
     let source_id = req
@@ -1313,13 +1313,12 @@ pub async fn file_copy_file(
         .unwrap_or("")
         .to_string();
     let new_id = uuid::Uuid::new_v4().to_string();
-    let creator = "system";
 
     let copy_result = client
         .execute(
             "INSERT INTO x_ai_file (id, name, file_name, file_size, file_type, enabled, creator, create_time) \
              SELECT $1, $2, file_name, file_size, file_type, enabled, $3, NOW() FROM x_ai_file WHERE id = $4",
-            &[&new_id, &new_name, &creator, &source_id],
+            &[&new_id, &new_name, &sess.person_unique, &source_id],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -1539,7 +1538,7 @@ pub async fn file_upload(
     session: Option<Extension<shared::session::Session>>,
     req: Option<axum::extract::Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
     let req = req.map(|r| r.0).unwrap_or_default();
     let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
@@ -1560,12 +1559,11 @@ pub async fn file_upload(
         .unwrap_or("")
         .to_string();
     let enabled = req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
-    let creator = "system";
 
     let upload_result = client
         .execute(
             "INSERT INTO x_ai_file (id, name, file_name, file_size, file_type, enabled, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
-            &[&id, &name, &file_name, &file_size, &file_type, &enabled, &creator],
+            &[&id, &name, &file_name, &file_size, &file_type, &enabled, &sess.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;

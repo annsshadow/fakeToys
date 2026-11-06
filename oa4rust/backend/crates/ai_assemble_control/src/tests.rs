@@ -854,4 +854,58 @@ mod u2_unit_tests {
             .await
             .unwrap();
     }
+
+    /// 批3：非管理员上传后必须能删掉自己的文件。
+    /// 修复前上传写 `creator='system'`，删除侧 `require_owner` 判 403 —— 本用例先红后绿。
+    #[tokio::test]
+    async fn b3_non_admin_can_delete_own_uploaded_ai_file() {
+        let pool = shared::testing::test_pool();
+        let person = "b3-ai-nonadmin";
+        let up = crate::file_upload(
+            axum::extract::Extension(pool.clone()),
+            Some(axum::extract::Extension(shared::testing::test_session(
+                person,
+            ))),
+            Some(axum::Json(serde_json::json!({
+                "name": format!("b3 ai {}", uuid::Uuid::new_v4()),
+                "fileName": "b3.txt",
+                "fileSize": 10,
+                "fileType": "text/plain"
+            }))),
+        )
+        .await
+        .expect("上传必须成功");
+        let id =
+            up.0.data
+                .as_ref()
+                .and_then(|d| d.get("id"))
+                .and_then(|v| v.as_str())
+                .expect("上传响应缺 id")
+                .to_string();
+
+        let del = crate::file_delete_flag(
+            axum::extract::Extension(pool.clone()),
+            Some(axum::extract::Extension(shared::testing::test_session(
+                person,
+            ))),
+            axum::extract::Path(id.clone()),
+        )
+        .await;
+
+        let c = pool.get().await.expect("db");
+        c.execute("DELETE FROM x_ai_file WHERE id = $1", &[&id])
+            .await
+            .expect("cleanup");
+
+        let del = del.unwrap_or_else(|e| panic!("本人删自己上传被拒: {e:?}"));
+        assert_eq!(
+            del.0
+                .data
+                .as_ref()
+                .and_then(|d| d.get("deleted"))
+                .and_then(|v| v.as_bool()),
+            Some(true),
+            "本人删自己上传必须成功"
+        );
+    }
 }

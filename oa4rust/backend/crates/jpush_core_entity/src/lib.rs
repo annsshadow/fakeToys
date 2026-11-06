@@ -4,7 +4,10 @@
 use axum::{
     extract::Extension, extract::Path, routing::delete, routing::get, routing::post, Json, Router,
 };
-use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, QueryOrder, QuerySelect};
+use sea_orm::{
+    ActiveModelTrait, ConnectionTrait, DatabaseConnection, DbBackend, EntityTrait, QueryOrder,
+    QuerySelect, Statement, Value as SeaValue,
+};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
@@ -22,6 +25,38 @@ fn require_session(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<shared::session::Session, AppError> {
     session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
+/// 读面归属谓词（批次 7）：`user_id` 命中本人，或管理员；归属为空时仅管理员。
+/// `$2` = 会话 person_unique（可重复引用）。
+const DEVICE_READ_OWNER_PREDICATE: &str = "(NULLIF(BTRIM(user_id), '') = $2 \
+      OR EXISTS(SELECT 1 FROM auth_person p \
+                  JOIN auth_person_role pr ON pr.person_id = p.id \
+                  JOIN auth_role r ON r.id = pr.role_id \
+                 WHERE (p.unique_id = $2 OR p.id = $2) \
+                   AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false))";
+
+/// 授权读：谓词进 `SELECT EXISTS(...)`，行不存在或无权都返回 false。
+async fn device_read_allowed(
+    db: &DatabaseConnection,
+    id: &str,
+    me: &str,
+) -> Result<bool, AppError> {
+    let sql = format!(
+        "SELECT EXISTS(SELECT 1 FROM x_jpush_device WHERE id = $1 AND {DEVICE_READ_OWNER_PREDICATE}) AS allowed"
+    );
+    let values: Vec<SeaValue> = vec![id.into(), me.into()];
+    let row = db
+        .query_one(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            sql,
+            values,
+        ))
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    Ok(row
+        .and_then(|r| r.try_get::<bool>("", "allowed").ok())
+        .unwrap_or(false))
 }
 
 // 推送设备实体
@@ -80,8 +115,25 @@ pub async fn device_list(
 /// 获取推送设备详情
 pub async fn device_get(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 批次 7：设备详情按 `user_id` 校归属（本人或管理员），无会话 401 先于读库。
+    let sess = require_session(session)?;
+    let allowed = device_read_allowed(&db.0, &id, &sess.person_unique).await?;
+    if !allowed {
+        // 存在性读不参与授权：行存在但无权 → 403，行不存在保留 404。
+        let exists = jpush_device::Entity::find_by_id(&id)
+            .one(&db.0)
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+            .is_some();
+        return if exists {
+            Err(AppError::Forbidden)
+        } else {
+            Err(AppError::NotFound)
+        };
+    }
     let model = jpush_device::Entity::find_by_id(&id)
         .one(&db.0)
         .await
@@ -245,6 +297,8 @@ pub async fn device_delete(
 
 #[cfg(test)]
 mod security_gate_tests_b83;
+#[cfg(test)]
+mod security_gate_tests_idor_b7;
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;

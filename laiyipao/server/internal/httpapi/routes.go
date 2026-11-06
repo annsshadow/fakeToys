@@ -821,11 +821,20 @@ func (s *Server) myBattleHistory(c *fiber.Ctx) error {
 		return err
 	}
 	// 结果筛选（2026-11-01 新一轮第 80 轮）：win / lose，空串不过滤。
-	items, err := s.Svc.MyBattleHistory(c.Context(), userIDFrom(c), limit, offset, c.Query("result", ""))
+	// cursor（R131 审计 G3）：可选 keyset 游标（上一页末行 id）；传了就忽略 offset。
+	cursor, err := queryInt(c, "cursor", 0)
 	if err != nil {
 		return err
 	}
-	return c.JSON(service.NormalizeNilSlices(fiber.Map{"items": items}))
+	page, err := s.Svc.MyBattleHistoryPage(c.Context(), userIDFrom(c), limit, offset, c.Query("result", ""), int64(cursor))
+	if err != nil {
+		return err
+	}
+	var next int64
+	if page.HasMore && len(page.Items) > 0 {
+		next = page.Items[len(page.Items)-1].ID
+	}
+	return c.JSON(service.NormalizeNilSlices(fiber.Map{"items": page.Items, "next_cursor": next}))
 }
 
 // myBattleDetail 返回当前玩家单局战报的完整详情
@@ -1313,11 +1322,27 @@ func (s *Server) buy(c *fiber.Ctx) error {
 	if err != nil {
 		return httperr.New(fiber.StatusBadRequest, httperr.CodeBadInput, "item id 非法")
 	}
-	granted, err := s.Svc.Buy(c.Context(), userIDFrom(c), id)
+	key, err := idemKey(c)
 	if err != nil {
 		return err
 	}
-	return c.JSON(fiber.Map{"granted": granted})
+	if key == "" {
+		// 无可选幂等键：现状行为（R134-B 契约：缺省不做去重，老客户端零影响）。
+		granted, err := s.Svc.Buy(c.Context(), userIDFrom(c), id)
+		if err != nil {
+			return err
+		}
+		return c.JSON(fiber.Map{"granted": granted})
+	}
+	// 幂等键的指纹要把 path 里的商品 id 也算进去：商品 id 不在 body 里，
+	// 只 hash body 会让「同 key 换商品」被当成同一请求而重放旧响应。
+	fingerprint := append([]byte(c.Params("id")+"|"), c.Body()...)
+	bodyBytes, replayed, err := s.Svc.BuyIdem(c.Context(), userIDFrom(c), id,
+		key, service.HashRequestBody(fingerprint))
+	if err != nil {
+		return err
+	}
+	return sendIdempotent(c, bodyBytes, replayed)
 }
 
 func (s *Server) redeem(c *fiber.Ctx) error {

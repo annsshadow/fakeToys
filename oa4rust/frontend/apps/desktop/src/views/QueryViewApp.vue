@@ -140,6 +140,7 @@ import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { describeListError } from './listQuery'
+import { createSearchRunner } from './searchRunner'
 
 type ViewItem = { id?: string; flag?: string; name?: string; viewName?: string; title?: string }
 
@@ -151,18 +152,27 @@ const activeView = ref<ViewItem | null>(null)
 const execLoading = ref(false)
 const execResult = ref<Record<string, unknown>[]>([])
 
+// R145：连续回车会并发触发，旧响应晚到会覆盖新关键词的结果。
+const searchRun = createSearchRunner()
 async function doSearch() {
   loading.value = true
   loadError.value = ''
   try {
-    // 后端 queryview/search 仅注册 POST，读取键为 key（兼容 query）。
-    const r = await api.post('/api/queryview/search', { key: keyword.value })
-    views.value = r.data ?? []
+    await searchRun.run(
+      async (signal) => {
+        // 后端 queryview/search 仅注册 POST，读取键为 key（兼容 query）。
+        const r = await api.post('/api/queryview/search', { key: keyword.value }, { signal })
+        views.value = r.data ?? []
+      },
+      {
+        onSettled: () => {
+          loading.value = false
+        },
+      },
+    )
   } catch (e) {
     // 失败保留旧视图并显式报错，不能和「真的没有视图」混成同一种空态。
     loadError.value = describeListError('查询视图加载失败', e)
-  } finally {
-    loading.value = false
   }
 }
 

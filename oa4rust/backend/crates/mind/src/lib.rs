@@ -55,21 +55,49 @@ pub fn mind_router() -> Router {
     Router::new().merge(routes::mind_routes())
 }
 
+/// 读面归属谓词模板（`{actor}` 替换为 SQL 占位符，如 `$1` / `$2`）：`creator` 为本人，
+/// 或调用者管理员。谓词写进 SQL WHERE，不做「先查后判」；`creator` 为 NULL 时不命中（fail-closed）。
+const MIND_CREATOR_READ_PREDICATE: &str = "creator = {actor} OR EXISTS(\
+    SELECT 1 FROM auth_person p \
+      JOIN auth_person_role pr ON pr.person_id = p.id \
+      JOIN auth_role r ON r.id = pr.role_id \
+     WHERE (p.unique_id = {actor} OR p.id = {actor}) \
+       AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false)";
+
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn get_mind_with_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
-        .query_one(
-            "SELECT id, name, folder_id, icon, description, creator, creator_unit, shared, file_version FROM mind_base_info WHERE id = $1",
-            &[&id],
+        .query_opt(
+            &format!(
+                "SELECT id, name, folder_id, icon, description, creator, creator_unit, shared, file_version \
+                 FROM mind_base_info WHERE id = $1 AND ({})",
+                MIND_CREATOR_READ_PREDICATE.replace("{actor}", "$2")
+            ),
+            &[&id, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::NotFound)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    // 谓词已拒绝：区分「行不存在」(404) 与「无权读」(403)。此读不参与授权判定。
+    let Some(row) = row else {
+        let exists = client
+            .query_opt("SELECT 1 FROM mind_base_info WHERE id = $1", &[&id])
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+            .is_some();
+        return Err(if exists {
+            AppError::Forbidden
+        } else {
+            AppError::NotFound
+        });
+    };
 
     let result = ActionResult::success(Value::Object(serde_json::Map::from_iter([
         (
@@ -126,12 +154,20 @@ pub async fn get_mind_with_id(
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
-pub async fn list_my_folders(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn list_my_folders(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
-            "SELECT id, name, parent_id, order_number, description, creator, creator_unit FROM mind_folder_info ORDER BY order_number",
-            &[],
+            &format!(
+                "SELECT id, name, parent_id, order_number, description, creator, creator_unit \
+                 FROM mind_folder_info WHERE ({}) ORDER BY order_number",
+                MIND_CREATOR_READ_PREDICATE.replace("{actor}", "$1")
+            ),
+            &[&session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -191,20 +227,60 @@ pub async fn list_my_folders(pool: Extension<Pool>) -> Result<Json<ActionResult<
     )))
 }
 
+/// 版本读归属谓词：父思维导图的 `creator` 为本人，或调用者管理员；NULL fail-closed。
+const MIND_VERSION_READ_PREDICATE: &str = "EXISTS(\
+    SELECT 1 FROM mind_base_info b WHERE b.id = mind_version_info.mind_id AND (b.creator = $2 OR EXISTS(\
+    SELECT 1 FROM auth_person p \
+      JOIN auth_person_role pr ON pr.person_id = p.id \
+      JOIN auth_role r ON r.id = pr.role_id \
+     WHERE (p.unique_id = $2 OR p.id = $2) \
+       AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false)))";
+
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn list_versions_with_mind_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
-            "SELECT id, mind_id, name, folder_id, description, creator, creator_unit, file_version, shared, create_time, update_time FROM mind_version_info WHERE mind_id = $1 ORDER BY create_time DESC",
-            &[&id],
+            &format!(
+                "SELECT id, mind_id, name, folder_id, description, creator, creator_unit, file_version, shared, create_time, update_time \
+                 FROM mind_version_info WHERE mind_id = $1 AND ({MIND_VERSION_READ_PREDICATE}) ORDER BY create_time DESC"
+            ),
+            &[&id, &session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+
+    // 空结果分三种：本人思维导图无版本（200 空列表）、他人思维导图（403）、不存在（404）。
+    if rows.is_empty() {
+        let owned = client
+            .query_opt(
+                &format!(
+                    "SELECT 1 FROM mind_base_info WHERE id = $1 AND ({})",
+                    MIND_CREATOR_READ_PREDICATE.replace("{actor}", "$2")
+                ),
+                &[&id, &session.person_unique],
+            )
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+        if owned.is_none() {
+            let exists = client
+                .query_opt("SELECT 1 FROM mind_base_info WHERE id = $1", &[&id])
+                .await
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+                .is_some();
+            return Err(if exists {
+                AppError::Forbidden
+            } else {
+                AppError::NotFound
+            });
+        }
+    }
 
     let data: Vec<Value> = rows
         .iter()

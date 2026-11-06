@@ -6,12 +6,15 @@
 -- 会把反向守卫变成假阳性。
 
 -- 身份：攻击者与受害者（两者都不是管理员）
-INSERT INTO auth_person (id, unique_id, name, password_hash, locked, unit) VALUES
-  ('audit-user',   'audit-user',   'Gate Attacker', 'gate-noop', false, 'unit-gate-a'),
-  ('gate-victim',  'gate-victim',  'Gate Victim',   'gate-noop', false, 'unit-gate-v'),
+INSERT INTO auth_person (id, unique_id, name, password_hash, locked, unit, mobile, email) VALUES
+  ('audit-user',   'audit-user',   'Gate Attacker', 'gate-noop', false, 'unit-gate-a', 'rev-GATE-V-SETTING', 'gate-a@gate'),
+  ('gate-victim',  'gate-victim',  'Gate Victim',   'gate-noop', false, 'unit-gate-v', 'GATE-V-SETTING',     'gate-v@gate'),
   -- 假门/软门夹具仍用 person-admin（那里验证的是「管理员本人」语义）
-  ('person-admin', 'person-admin', 'Gate Admin',    'gate-noop', false, 'unit-gate-v')
+  ('person-admin', 'person-admin', 'Gate Admin',    'gate-noop', false, 'unit-gate-v', NULL, NULL)
 ON CONFLICT (id) DO NOTHING;
+
+UPDATE auth_person SET mobile = 'rev-GATE-V-SETTING', email = 'gate-a@gate' WHERE id = 'audit-user';
+UPDATE auth_person SET mobile = 'GATE-V-SETTING',     email = 'gate-v@gate' WHERE id = 'gate-victim';
 
 -- 假门族：cms 文档（draft，非发布状态，所以非所有者不应 readable=true）
 DELETE FROM x_cms_data_document WHERE id = 'gate-doc-1';
@@ -88,3 +91,31 @@ INSERT INTO x_attendance_statisticshow (id, person_id, unit_id, work_date, statu
   ('pg-d-06',  'audit-user', NULL,     '2026-06-03', 'GATE-PAGE-D'),
   ('pg-du-01', 'audit-user', 'unit-x', '2026-06-01', 'GATE-PAGE-DU'),
   ('pg-du-02', 'audit-user', 'unit-x', '2026-06-02', 'GATE-PAGE-DU');
+DELETE FROM x_org_person WHERE id IN ('gate-person-v', 'gate-person-a', 'gate-person-del');
+INSERT INTO x_org_person (id, name, mobile, email, unit_id, creator, create_time, deleted_at) VALUES
+  ('gate-person-v', 'GATE-PERSON-V', 'GATE-V-MOBILE',     'v@gate', 'unit-gate-v', 'gate-victim', NOW(), NULL),
+  ('gate-person-a', 'GATE-PERSON-A', 'rev-GATE-V-MOBILE', 'a@gate', 'unit-gate-a', 'audit-user',  NOW(), NULL),
+  -- 已软删人员：仅供 person/list/delete 分页用例验证「仅管理员可读」。
+  ('gate-person-del', 'GATE-PERSON-DEL', 'GATE-DEL-MOBILE', 'del@gate', 'unit-gate-v', 'gate-victim', NOW(), NOW());
+DELETE FROM x_org_group_member WHERE group_id = 'grp-gate-b';
+DELETE FROM x_org_role WHERE id IN ('role-gate-v', 'role-gate-a');
+INSERT INTO x_org_role (id, name) VALUES
+  ('role-gate-v', 'GATE-V-ROLE'),
+  ('role-gate-a', 'rev-GATE-V-ROLE');
+INSERT INTO x_org_group_member (group_id, person_id, role_id) VALUES
+  ('grp-gate-b', 'gate-victim', 'role-gate-v'),
+  ('grp-gate-b', 'audit-user',  'role-gate-a'),
+  ('grp-gate-b', 'gate-person-v', 'role-gate-v'),
+  ('grp-gate-b', 'gate-person-a', 'role-gate-a');
+DELETE FROM x_org_group WHERE id = 'grp-gate-b';
+INSERT INTO x_org_group (id, name, unit_id, type, creator, create_time, deleted_at) VALUES
+  ('grp-gate-b', 'GATE-GROUP', 'unit-gate-b', 'group', 'audit-user', NOW(), NULL);
+DELETE FROM auth_person_role WHERE role_id IN ('role-gate-v', 'role-gate-a');
+INSERT INTO auth_person_role (person_id, role_id, unit_id) VALUES
+  ('gate-person-v', 'role-gate-v', 'unit-gate-b'),
+  ('gate-person-a', 'role-gate-a', 'unit-gate-b');
+DELETE FROM x_message WHERE id IN ('gate-msg-v', 'gate-msg-a');
+INSERT INTO x_message (id, conversation_id, content, sender, type, create_time) VALUES
+  ('gate-msg-v', 'conv-gate', 'GATE-V-MSG',     'gate-victim', 'text', '2026-11-06 10:00:00'),
+  ('gate-msg-a', 'conv-gate', 'rev-GATE-V-MSG', 'audit-user',  'text', '2026-11-06 09:00:00');
+

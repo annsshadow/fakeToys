@@ -140,10 +140,13 @@ async function request<T>(
   method: string,
   path: string,
   body?: unknown,
-  opts: { auth?: boolean; soft?: boolean } = {},
+  opts: { auth?: boolean; soft?: boolean; idempotencyKey?: string } = {},
 ): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json' }
   if (body !== undefined) headers['Content-Type'] = 'application/json'
+  // 幂等键（服务端 8~128 位白名单，见 service.IdemKeyPattern）。
+  // 由调用方按「一次用户动作」生成，重发时原样复用。
+  if (opts.idempotencyKey) headers['Idempotency-Key'] = opts.idempotencyKey
   if (opts.auth !== false) {
     const token = getToken()
     if (token) headers.Authorization = `Bearer ${token}`
@@ -204,7 +207,7 @@ async function request<T>(
 export const api = {
   get: <T>(path: string, opts?: { auth?: boolean; soft?: boolean }) =>
     request<T>('GET', path, undefined, opts),
-  post: <T>(path: string, body?: unknown, opts?: { auth?: boolean; soft?: boolean }) =>
+  post: <T>(path: string, body?: unknown, opts?: { auth?: boolean; soft?: boolean; idempotencyKey?: string }) =>
     request<T>('POST', path, body, opts),
   put: <T>(path: string, body?: unknown, opts?: { auth?: boolean; soft?: boolean }) =>
     request<T>('PUT', path, body, opts),

@@ -2078,18 +2078,17 @@ pub async fn qrcode_width_width_height_height_text_text(
     session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((width, height, text)): axum::extract::Path<(u32, u32, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let content = text.clone();
-    let creator = "system";
 
     client
         .execute(
             "INSERT INTO x_general_assemble_qrcode (id, width, height, text, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
             // width/height 列是 BIGINT：i32 绑定 WrongType 客户端 500（O10 实证）——对齐 i64。
-            &[&id, &(width as i64), &(height as i64), &text, &content, &creator],
+            &[&id, &(width as i64), &(height as i64), &text, &content, &sess.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;

@@ -428,6 +428,18 @@ type AdminUserView struct {
 	VerifyMismatched int64 `json:"verify_mismatched"`
 }
 
+// AdminUsersPage 是后台用户列表的一页。
+//
+// HasMore 由「查询是否真的多返回了一行」决定（LIMIT 取 limit+1 再裁掉末行），
+// 不是拿**请求参数里的** limit 猜：服务端会把 limit 夹到上界（缺省 50、上限 200），
+// 请求 `limit=201/500` 时旧实现拿 len(items)==201 判断，永远为假 ——
+// `next_cursor` 返回空，尾部用户永远翻不到（R131 审计 G1）。
+type AdminUsersPage struct {
+	Items   []AdminUserView
+	Total   int64
+	HasMore bool
+}
+
 // AdminListUsers 分页查询玩家。
 // cursor（R77）：keyset 分页游标 = 上一页最后一行的 id（列表按 id DESC，
 // BIGSERIAL 单调递增，与 created_at 同序，单字段即严格游标，无需双字段）。
@@ -438,10 +450,21 @@ type AdminUserView struct {
 // ⚠️ cursor 用 variadic（与 `audit ...AdminAuditCtx` 同模式）：老调用点
 // 不传即是 0（不走 keyset），44 处既有测试/调用零改动。
 func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, offset int, dateFrom, dateTo *time.Time, isGuest *bool, lastLoginFrom, lastLoginTo *time.Time, suspicious *bool, cursorArg ...int64) ([]AdminUserView, int64, error) {
+	p, err := s.AdminListUsersPage(ctx, keyword, limit, offset, dateFrom, dateTo, isGuest, lastLoginFrom, lastLoginTo, suspicious, cursorArg...)
+	if err != nil {
+		return nil, 0, err
+	}
+	return p.Items, p.Total, nil
+}
+
+// AdminListUsersPage 与 AdminListUsers 同一查询，额外返回 HasMore。
+func (s *Service) AdminListUsersPage(ctx context.Context, keyword string, limit, offset int, dateFrom, dateTo *time.Time, isGuest *bool, lastLoginFrom, lastLoginTo *time.Time, suspicious *bool, cursorArg ...int64) (AdminUsersPage, error) {
 	limit = clampLimit(limit, 50, 200)
 	if offset < 0 {
 		offset = 0
 	}
+	// 多取一行：实际行数 > limit 才是「确实还有下一页」，与请求 limit 是否被夹无关。
+	fetchLimit := limit + 1
 	var cursor int64
 	if len(cursorArg) > 0 {
 		cursor = cursorArg[0]
@@ -458,7 +481,7 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 	// 与 `AdminListLevels` 同一个 choke point（理由见那个函数的说明）。
 	kw, err := trimAdminKeyword(keyword)
 	if err != nil {
-		return nil, 0, err
+		return AdminUsersPage{}, err
 	}
 	escaped := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(kw)
 	pattern := "%" + escaped + "%"
@@ -497,7 +520,7 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 	          AND ($8::timestamptz IS NULL OR u.last_login_at >= $8)
 	          AND ($9::timestamptz IS NULL OR u.last_login_at < $9)`
 	countArgs := []any{kw, pattern, dateFrom, dateTo, isGuest, lastLoginFrom, lastLoginTo}
-	listArgs := []any{kw, pattern, limit, offset, dateFrom, dateTo, isGuest, lastLoginFrom, lastLoginTo}
+	listArgs := []any{kw, pattern, fetchLimit, offset, dateFrom, dateTo, isGuest, lastLoginFrom, lastLoginTo}
 	// 需核查筛选（2026-11-01 新一轮第 60 轮）：仅当开启时拼入条件并引用 p。
 	// 不开启时 COUNT 保持不 JOIN user_progress（历史行为，中段失败测试依赖它）。
 	if suspicious != nil {
@@ -534,7 +557,7 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 			return n, nil
 		})
 	if err != nil {
-		return nil, 0, err
+		return AdminUsersPage{}, err
 	}
 
 	// 验真统计改为**两阶段**（第 12 轮）：先取页内用户，再按页内 id 聚合
@@ -556,7 +579,7 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 		WHERE `+listWhere+`
 		ORDER BY u.id DESC LIMIT $3 OFFSET $4`, listArgs...)
 	if err != nil {
-		return nil, 0, fmt.Errorf("list users: %w", err)
+		return AdminUsersPage{}, fmt.Errorf("list users: %w", err)
 	}
 	defer rows.Close()
 
@@ -565,12 +588,18 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 		var v AdminUserView
 		if err := rows.Scan(&v.ID, &v.Nickname, &v.IsGuest, &v.Status, &v.MaxStage,
 			&v.Power, &v.Coin, &v.Gem, &v.CreatedAt, &v.LastLoginAt); err != nil {
-			return nil, 0, err
+			return AdminUsersPage{}, err
 		}
 		out = append(out, v)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, 0, err
+		return AdminUsersPage{}, err
+	}
+
+	// 多取的那一行只用来判「还有没有下一页」，不返回。
+	hasMore := len(out) > limit
+	if hasMore {
+		out = out[:limit]
 	}
 
 	// 第二阶段：页内用户的验真计数（错误 fail-loud，与原单查询同口径）。
@@ -590,7 +619,7 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 			WHERE br.user_id = ANY($1)
 			GROUP BY br.user_id`, ids)
 		if err != nil {
-			return nil, 0, fmt.Errorf("verify stats: %w", err)
+			return AdminUsersPage{}, fmt.Errorf("verify stats: %w", err)
 		}
 		defer vrows.Close()
 		type verifyStat struct{ checked, mismatched int64 }
@@ -599,19 +628,19 @@ func (s *Service) AdminListUsers(ctx context.Context, keyword string, limit, off
 			var id int64
 			var st verifyStat
 			if err := vrows.Scan(&id, &st.checked, &st.mismatched); err != nil {
-				return nil, 0, fmt.Errorf("scan verify stats: %w", err)
+				return AdminUsersPage{}, fmt.Errorf("scan verify stats: %w", err)
 			}
 			stats[id] = st
 		}
 		if err := vrows.Err(); err != nil {
-			return nil, 0, fmt.Errorf("iterate verify stats: %w", err)
+			return AdminUsersPage{}, fmt.Errorf("iterate verify stats: %w", err)
 		}
 		for i := range out {
 			out[i].VerifyChecked = stats[out[i].ID].checked
 			out[i].VerifyMismatched = stats[out[i].ID].mismatched
 		}
 	}
-	return out, total, nil
+	return AdminUsersPage{Items: out, Total: total, HasMore: hasMore}, nil
 }
 
 // AdminExportUsers 导出用户列表为 CSV（2026-10-30 实质优化第 12 轮）。

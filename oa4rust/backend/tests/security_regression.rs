@@ -88,6 +88,11 @@ mod security_regression {
         dir: String,
         /// 管理员分支策略：deny（管理员也不该看）/ allow（管理员是合法读者）/ unknown（未裁决）/ n/a（非 idor）
         admin_policy: String,
+        /// 可选：rev 方向的资源 id（默认 `rev-{victim}`）。用于反向资源不是
+        /// `rev-` 前缀镜像的场景（如 auth_person 的本人行 id 就是身份键）。
+        rev_id: String,
+        /// 可选：请求体字面量（JSON）。空则沿用各 kind 的默认体。
+        body: String,
     }
 
     #[derive(Clone, Debug)]
@@ -139,7 +144,7 @@ mod security_regression {
                     .map(|s| s.trim())
                     .filter(|s| !s.is_empty())
                     .unwrap_or_else(|| match f[1].trim() {
-                        "idor-read" | "idor-write" => "both",
+                        "idor-read" | "idor-write" | "idor-read-scoped" => "both",
                         _ => "fwd-only",
                     });
                 let admin_policy = f
@@ -160,6 +165,8 @@ mod security_regression {
                     tier: tier.to_string(),
                     dir: dir.to_string(),
                     admin_policy: admin_policy.to_string(),
+                    rev_id: f.get(12).map(|s| s.trim()).unwrap_or("").to_string(),
+                    body: f.get(13).map(|s| s.trim()).unwrap_or("").to_string(),
                 })
             })
             .collect()
@@ -345,7 +352,7 @@ mod security_regression {
             };
             let name = &rest[open + 1..open + close];
             let val = match name {
-                "id" => id,
+                "id" | "flag" => id,
                 "person" | "personId" | "person_id" => person,
                 "date" => "2026-01-01",
                 "count" | "size" | "page" => "1",
@@ -358,10 +365,15 @@ mod security_regression {
         out
     }
 
-    /// 反向守卫：rev 方向的资源 id（同表、owner=audit-user 的镜像行）
+    /// 反向守卫：rev 方向的资源 id（默认同表、owner=audit-user 的 `rev-` 镜像行；
+    /// 若用例显式给了 `rev_id`，以显式值为准）。
     fn resource_id(c: &Case, rev: bool) -> String {
         if rev {
-            format!("rev-{}", c.victim)
+            if c.rev_id.is_empty() {
+                format!("rev-{}", c.victim)
+            } else {
+                c.rev_id.clone()
+            }
         } else {
             c.victim.clone()
         }
@@ -943,7 +955,16 @@ mod security_regression {
                 row_json(pool, "x_empower", &c.victim).await,
                 None,
             ),
-            _ => ("{}".to_string(), None, None),
+            _ => {
+                // 读用例可按需给字面量请求体（如 person/list/like 的搜索词）；
+                // 未给时保持空对象，兼容历史用例。
+                let b = if c.body.is_empty() {
+                    "{}".to_string()
+                } else {
+                    c.body.clone()
+                };
+                (b, None, None)
+            }
         };
 
         let Some((status, resp)) = fire(app, &c.method, &path, Some(token), &body).await else {
@@ -1075,6 +1096,42 @@ mod security_regression {
                     None => Outcome::Pass,
                 }
             }
+            "idor-read-scoped" => {
+                // 归属列表读：按 WHERE 收窄后，非本人行不可见即视为拒绝；
+                // 允许 2xx 只返回本人行（列表对本人本来就不是空集）。
+                // “返回空糊弄”由配对的 `idor-read-own` 正控制兜住。
+                // canary 按带引号的完整 JSON 值比对：列表里本人行常带 `rev-` 前缀，
+                // 裸子串匹配会把 `rev-GATE-V-MSG` 误判成命中了 `GATE-V-MSG`。
+                if code == 401 || code == 403 {
+                    return Outcome::Pass;
+                }
+                if !(200..300).contains(&code) {
+                    return Outcome::Unverified(format!("status={code}"));
+                }
+                match markers
+                    .iter()
+                    .find(|m| resp.contains(&format!("\"{}\"", m)))
+                {
+                    Some(m) => Outcome::Leak(format!("2xx 响应体含 canary `{m}`")),
+                    None => Outcome::Pass,
+                }
+            }
+            "idor-read-own" => {
+                // 本人正控制：必须 2xx 且真的返回自己的行；被拒绝或空体都不算 PASS。
+                if code == 401 || code == 403 {
+                    return Outcome::Unverified(format!("本人被拒绝 status={code}"));
+                }
+                if !(200..300).contains(&code) {
+                    return Outcome::Unverified(format!("status={code}"));
+                }
+                match markers.iter().find(|m| resp.contains(m.as_str())) {
+                    Some(_) => Outcome::Pass,
+                    None => Outcome::Unverified(format!(
+                        "本人 2xx 但未返回自己的 canary body={}",
+                        resp.chars().take(90).collect::<String>()
+                    )),
+                }
+            }
             _ => {
                 if code == 401 || code == 403 {
                     return Outcome::Pass;
@@ -1131,6 +1188,9 @@ mod security_regression {
         }
     }
 
+    /// 单个用例的状态变化：`(id, 旧状态, 新状态)`。
+    type CaseChange = (String, String, String);
+
     fn baseline_path() -> PathBuf {
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/security_regression_baseline.txt")
     }
@@ -1169,24 +1229,29 @@ mod security_regression {
         println!("[BASELINE] 已写入 {} 条", states.len());
     }
 
-    /// 纯函数：比较基线与本次状态，返回（全部状态变化，UNVERIFIED→LEAK 的致命漂移）。
+    /// 返回 `(全部状态变化, 需要判红的变化)`。
+    ///
+    /// 判红两类：
+    /// - `UNVERIFIED -> LEAK`：已知问题从「还没验证」变成「确认泄漏」；
+    /// - `任何 -> INTEGRITY`：自写回环/归属落库被破坏，比读泄漏更难自愈，
+    ///   不能只打 STATE-DRIFT 放过（旧行为就是只打印不判红）。
     fn state_drift(
         base: &BTreeMap<String, String>,
         cur: &BTreeMap<String, String>,
-    ) -> (Vec<(String, String, String)>, Vec<String>) {
+    ) -> (Vec<CaseChange>, Vec<CaseChange>) {
         let mut drift = Vec::new();
-        let mut drift_to_leak = Vec::new();
+        let mut fatal = Vec::new();
         for (id, cs) in cur {
             let Some(bs) = base.get(id) else { continue };
             if bs == cs {
                 continue;
             }
             drift.push((id.clone(), bs.clone(), cs.clone()));
-            if bs == "UNVERIFIED" && cs == "LEAK" {
-                drift_to_leak.push(id.clone());
+            if (bs == "UNVERIFIED" && cs == "LEAK") || (cs == "INTEGRITY" && bs != "INTEGRITY") {
+                fatal.push((id.clone(), bs.clone(), cs.clone()));
             }
         }
-        (drift, drift_to_leak)
+        (drift, fatal)
     }
 
     /// 一次性对齐：只补齐/替换 UNKNOWN 的状态，不覆盖已有真实状态；
@@ -1445,7 +1510,7 @@ mod security_regression {
             unaligned.len()
         );
 
-        let (drift, drift_to_leak) = state_drift(&baseline, &nonpass);
+        let (drift, fatal) = state_drift(&baseline, &nonpass);
         let new_fail: Vec<&String> = nonpass
             .keys()
             .filter(|id| !baseline.contains_key(*id))
@@ -1469,18 +1534,23 @@ mod security_regression {
                 println!("STALE-BASELINE\t{id}\t（已修复：请从基线删掉这一行）");
             }
             for (id, bs, cs) in &drift {
-                println!("[STATE-DRIFT] {id}\t{bs} -> {cs}");
+                // 带上三段信息，翻日志时能区分「真修复了」还是「证据丢了」。
+                println!("[STATE-DRIFT] id={id} 原状态={bs} 现状态={cs}");
             }
         }
 
-        // 致命：基线内 UNVERIFIED 恶化为 LEAK。这是「已知问题悄悄变严重」的唯一信号。
-        for id in &drift_to_leak {
-            println!("[DRIFT-TO-LEAK] {id}\tUNVERIFIED -> LEAK");
+        // 致命：基线内恶化。读泄漏恶化与写回环破坏都必须红，不能只打印。
+        for (id, bs, cs) in &fatal {
+            if cs == "INTEGRITY" {
+                println!("[DRIFT-TO-INTEGRITY] id={id} 原状态={bs} 现状态=INTEGRITY");
+            } else {
+                println!("[DRIFT-TO-LEAK] id={id} 原状态={bs} 现状态=LEAK");
+            }
         }
         assert!(
-            drift_to_leak.is_empty(),
-            "门禁红：{} 条基线内 UNVERIFIED 已恶化为 LEAK（见上方 DRIFT-TO-LEAK）",
-            drift_to_leak.len()
+            fatal.is_empty(),
+            "门禁红：{} 条基线内状态恶化（UNVERIFIED->LEAK 或 ->INTEGRITY，见上方 DRIFT-* ）",
+            fatal.len()
         );
         assert!(
             new_fail.is_empty(),
@@ -1507,19 +1577,29 @@ mod security_regression {
         base.insert("case-a".to_string(), "UNVERIFIED".to_string());
         base.insert("case-b".to_string(), "UNVERIFIED".to_string());
         base.insert("case-c".to_string(), "LEAK".to_string());
+        base.insert("case-d".to_string(), "LEAK".to_string());
         let mut cur = BTreeMap::new();
         cur.insert("case-a".to_string(), "LEAK".to_string());
         cur.insert("case-b".to_string(), "UNVERIFIED".to_string());
         cur.insert("case-c".to_string(), "UNVERIFIED".to_string());
+        cur.insert("case-d".to_string(), "INTEGRITY".to_string());
         let (drift, fatal) = state_drift(&base, &cur);
-        assert_eq!(drift.len(), 2, "应看到两条状态变化");
-        assert_eq!(
-            fatal,
-            vec!["case-a".to_string()],
-            "只有 UNVERIFIED->LEAK 致命"
+        assert_eq!(drift.len(), 3, "应看到三条状态变化");
+        assert_eq!(fatal.len(), 2, "UNVERIFIED->LEAK 与 LEAK->INTEGRITY 都致命");
+        assert!(
+            fatal
+                .iter()
+                .any(|(id, bs, cs)| id == "case-a" && bs == "UNVERIFIED" && cs == "LEAK"),
+            "UNVERIFIED->LEAK 应致命"
         );
         assert!(
-            !fatal.contains(&"case-c".to_string()),
+            fatal
+                .iter()
+                .any(|(id, bs, cs)| id == "case-d" && bs == "LEAK" && cs == "INTEGRITY"),
+            "LEAK->INTEGRITY 应致命"
+        );
+        assert!(
+            !fatal.iter().any(|(id, _, _)| id == "case-c"),
             "LEAK->UNVERIFIED 只记 STATE-DRIFT，不升级为致命"
         );
     }

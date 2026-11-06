@@ -692,4 +692,42 @@ mod tests {
             .unwrap();
         assert_ne!(response.status(), StatusCode::NOT_FOUND);
     }
+
+    /// 批2：二维码写入的 creator 必须落会话身份，而不是常量 `'system'`。
+    /// 写侧固定常量会让读侧按 creator 收归属的谓词永远对不上。
+    #[tokio::test]
+    async fn b2_qrcode_create_persists_session_creator() {
+        let pool = test_pool();
+        let person = "b2-qrcode-owner";
+        let text = format!("b2-qrcode-{}", uuid::Uuid::new_v4());
+        let res = crate::qrcode_width_width_height_height_text_text(
+            axum::Extension(pool.clone()),
+            Some(axum::Extension(shared::testing::test_session(person))),
+            axum::extract::Path((120u32, 120u32, text.clone())),
+        )
+        .await;
+        assert!(res.is_ok(), "有会话建二维码必须成功");
+
+        let client = pool.get().await.expect("db");
+        let row = client
+            .query_opt(
+                "SELECT creator FROM x_general_assemble_qrcode WHERE text = $1 \
+                 ORDER BY create_time DESC LIMIT 1",
+                &[&text],
+            )
+            .await
+            .expect("query qrcode");
+        let owner = row
+            .as_ref()
+            .and_then(|r| r.get::<_, Option<String>>("creator"))
+            .unwrap_or_default();
+        client
+            .execute(
+                "DELETE FROM x_general_assemble_qrcode WHERE text = $1",
+                &[&text],
+            )
+            .await
+            .expect("cleanup qrcode");
+        assert_eq!(owner, person, "二维码 creator 必须是会话身份");
+    }
 }

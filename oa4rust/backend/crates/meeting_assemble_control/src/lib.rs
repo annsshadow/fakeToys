@@ -808,16 +808,84 @@ pub async fn config_system_config_manage(
     ))))
 }
 
+/// 「我申请的会议」列表归属谓词模板（`{actor}` 替换为 SQL 占位符，如 `$1` / `$3`）。
+/// `creator` 为申请人=会话身份，或调用者管理员；NULL fail-closed。
+const APPLIED_CREATOR_READ_PREDICATE: &str = "creator = {actor} OR EXISTS(\
+    SELECT 1 FROM auth_person p \
+      JOIN auth_person_role pr ON pr.person_id = p.id \
+      JOIN auth_role r ON r.id = pr.role_id \
+     WHERE (p.unique_id = {actor} OR p.id = {actor}) \
+       AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false)";
+
+/// 「我受邀的会议」列表归属谓词模板（`{actor}` 替换为 SQL 占位符）。
+/// 两源并集：`creator`（我发起的）、`x_meeting_invite` 邀请边（我作为受邀人）、
+/// `invited` 标记（历史全局标记），外加管理员兜底。
+/// 零重叠样本下单一来源都可能挡掉受邀人，并集只漏放不误挡；真实数据出来后再收敛。
+const INVITED_READ_PREDICATE: &str = "creator = {actor} \
+    OR EXISTS(SELECT 1 FROM x_meeting_invite i \
+       WHERE i.meeting_id = x_meeting.id AND i.invitee = {actor} \
+         AND i.deleted_at IS NULL) \
+    OR invited = true \
+    OR EXISTS(SELECT 1 FROM auth_person p \
+        JOIN auth_person_role pr ON pr.person_id = p.id \
+        JOIN auth_role r ON r.id = pr.role_id \
+       WHERE (p.unique_id = {actor} OR p.id = {actor}) \
+         AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false)";
+
+/// `invited/*` 两源命中计数（DEBUG 级；关闭 DEBUG 时不产生额外查询）。
+/// 分别统计 `creator` / `x_meeting_invite` 邀请边 / `invited` 标记各命中多少行，
+/// 用于真实数据出来后判定哪一源是权威来源。
+async fn log_invited_source_counts(
+    client: &deadpool_postgres::Client,
+    actor: &str,
+    status: Option<&str>,
+) {
+    if !tracing::enabled!(tracing::Level::DEBUG) {
+        return;
+    }
+    let status_param: Option<&str> = status;
+    let row = client
+        .query_one(
+            "SELECT count(*) FILTER (WHERE creator = $1) AS creator_hits, \
+                    count(*) FILTER (WHERE EXISTS(SELECT 1 FROM x_meeting_invite i \
+                       WHERE i.meeting_id = x_meeting.id AND i.invitee = $1 \
+                         AND i.deleted_at IS NULL)) AS invite_edge_hits, \
+                    count(*) FILTER (WHERE invited = true) AS invited_flag_hits \
+               FROM x_meeting WHERE ($2::text IS NULL OR status = $2)",
+            &[&actor, &status_param],
+        )
+        .await;
+    if let Ok(row) = row {
+        tracing::debug!(
+            actor,
+            status = status.unwrap_or("(all)"),
+            creator = row.get::<_, i64>("creator_hits"),
+            invite_edge = row.get::<_, i64>("invite_edge_hits"),
+            invited_flag = row.get::<_, i64>("invited_flag_hits"),
+            "invited 列表来源命中计数"
+        );
+    }
+}
+
 #[allow(non_snake_case)]
 pub async fn meeting_list_applied_completed(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
-            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE status = 'completed' AND applied = true ORDER BY create_time DESC",
-            &[],
+            &format!(
+                "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, \
+                 to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, \
+                 to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time \
+                 FROM x_meeting WHERE status = 'completed' AND applied = true \
+                 AND ({}) ORDER BY create_time DESC",
+                APPLIED_CREATOR_READ_PREDICATE.replace("{actor}", "$1")
+            ),
+            &[&session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -863,13 +931,22 @@ pub async fn meeting_list_applied_completed(
 #[allow(non_snake_case)]
 pub async fn meeting_list_applied_processing(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
-            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE status = 'processing' AND applied = true ORDER BY create_time DESC",
-            &[],
+            &format!(
+                "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, \
+                 to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, \
+                 to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time \
+                 FROM x_meeting WHERE status = 'processing' AND applied = true \
+                 AND ({}) ORDER BY create_time DESC",
+                APPLIED_CREATOR_READ_PREDICATE.replace("{actor}", "$1")
+            ),
+            &[&session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -915,13 +992,22 @@ pub async fn meeting_list_applied_processing(
 #[allow(non_snake_case)]
 pub async fn meeting_list_applied_wait(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
-            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE status = 'wait' AND applied = true ORDER BY create_time DESC",
-            &[],
+            &format!(
+                "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, \
+                 to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, \
+                 to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time \
+                 FROM x_meeting WHERE status = 'wait' AND applied = true \
+                 AND ({}) ORDER BY create_time DESC",
+                APPLIED_CREATOR_READ_PREDICATE.replace("{actor}", "$1")
+            ),
+            &[&session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -967,16 +1053,24 @@ pub async fn meeting_list_applied_wait(
 #[allow(non_snake_case)]
 pub async fn meeting_list_apply_page_size_size(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
     let (limit, offset) = shared::response::page_window(page, size)?;
 
     let rows = client
         .query(
-            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE applied = true ORDER BY create_time DESC LIMIT $1 OFFSET $2",
-            &[&limit, &offset],
+            &format!(
+                "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, \
+                 to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, \
+                 to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time \
+                 FROM x_meeting WHERE applied = true AND ({}) ORDER BY create_time DESC LIMIT $1 OFFSET $2",
+                APPLIED_CREATOR_READ_PREDICATE.replace("{actor}", "$3")
+            ),
+            &[&limit, &offset, &session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -1258,17 +1352,28 @@ pub async fn meeting_list_forward_monthcount_monthCount_all(
 #[allow(non_snake_case)]
 async fn meeting_list_invite_page_size_size_core(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     page: i64,
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
     let (limit, offset) = shared::response::page_window(page, size)?;
 
+    let actor = session.person_unique.clone();
+    log_invited_source_counts(&client, &actor, None).await;
+
     let rows = client
         .query(
-            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE invited = true ORDER BY create_time DESC LIMIT $1 OFFSET $2",
-            &[&limit, &offset],
+            &format!(
+                "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, \
+                 to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, \
+                 to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time \
+                 FROM x_meeting WHERE ({}) ORDER BY create_time DESC LIMIT $1 OFFSET $2",
+                INVITED_READ_PREDICATE.replace("{actor}", "$3")
+            ),
+            &[&limit, &offset, &actor],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -1314,29 +1419,41 @@ async fn meeting_list_invite_page_size_size_core(
 #[allow(non_snake_case)]
 pub async fn meeting_list_invite_page_size_size(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    meeting_list_invite_page_size_size_core(pool, page, size).await
+    meeting_list_invite_page_size_size_core(pool, session, page, size).await
 }
 
 #[allow(non_snake_case)]
 pub async fn meeting_list_invite_page_size_size_p3(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    meeting_list_invite_page_size_size_core(pool, page, size).await
+    meeting_list_invite_page_size_size_core(pool, session, page, size).await
 }
 
 #[allow(non_snake_case)]
 pub async fn meeting_list_invited_completed(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
+
+    log_invited_source_counts(&client, &session.person_unique, Some("completed")).await;
 
     let rows = client
         .query(
-            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE status = 'completed' AND invited = true ORDER BY create_time DESC",
-            &[],
+            &format!(
+                "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, \
+                 to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, \
+                 to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time \
+                 FROM x_meeting WHERE status = 'completed' AND ({}) ORDER BY create_time DESC",
+                INVITED_READ_PREDICATE.replace("{actor}", "$1")
+            ),
+            &[&session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -1382,13 +1499,23 @@ pub async fn meeting_list_invited_completed(
 #[allow(non_snake_case)]
 pub async fn meeting_list_invited_processing(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
+
+    log_invited_source_counts(&client, &session.person_unique, Some("processing")).await;
 
     let rows = client
         .query(
-            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE status = 'processing' AND invited = true ORDER BY create_time DESC",
-            &[],
+            &format!(
+                "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, \
+                 to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, \
+                 to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time \
+                 FROM x_meeting WHERE status = 'processing' AND ({}) ORDER BY create_time DESC",
+                INVITED_READ_PREDICATE.replace("{actor}", "$1")
+            ),
+            &[&session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -1434,13 +1561,23 @@ pub async fn meeting_list_invited_processing(
 #[allow(non_snake_case)]
 pub async fn meeting_list_invited_rejected(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
+
+    log_invited_source_counts(&client, &session.person_unique, Some("rejected")).await;
 
     let rows = client
         .query(
-            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE status = 'rejected' AND invited = true ORDER BY create_time DESC",
-            &[],
+            &format!(
+                "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, \
+                 to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, \
+                 to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time \
+                 FROM x_meeting WHERE status = 'rejected' AND ({}) ORDER BY create_time DESC",
+                INVITED_READ_PREDICATE.replace("{actor}", "$1")
+            ),
+            &[&session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -1486,13 +1623,23 @@ pub async fn meeting_list_invited_rejected(
 #[allow(non_snake_case)]
 pub async fn meeting_list_invited_wait(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
+
+    log_invited_source_counts(&client, &session.person_unique, Some("wait")).await;
 
     let rows = client
         .query(
-            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE status = 'wait' AND invited = true ORDER BY create_time DESC",
-            &[],
+            &format!(
+                "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, \
+                 to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, \
+                 to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time \
+                 FROM x_meeting WHERE status = 'wait' AND ({}) ORDER BY create_time DESC",
+                INVITED_READ_PREDICATE.replace("{actor}", "$1")
+            ),
+            &[&session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -2219,51 +2366,75 @@ pub async fn meeting_list_page_size_size_manage_p3(
     meeting_list_page_size_size_manage_core(pool, page, size).await
 }
 
+/// 会议读归属谓词（`$2` = 会话身份）：`creator` 为本人，或调用者管理员。
+/// 谓词写进 SQL WHERE，不做「先查后判」；`creator` 为 NULL 时不命中（fail-closed）。
+const MEETING_CREATOR_READ_PREDICATE: &str = "creator = $2 OR EXISTS(\
+    SELECT 1 FROM auth_person p \
+      JOIN auth_person_role pr ON pr.person_id = p.id \
+      JOIN auth_role r ON r.id = pr.role_id \
+     WHERE (p.unique_id = $2 OR p.id = $2) \
+       AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false)";
+
 #[allow(non_snake_case)]
 pub async fn meeting_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
-            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE id = $1",
-            &[&id],
+            &format!(
+                "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, \
+                 to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, \
+                 to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time \
+                 FROM x_meeting WHERE id = $1 AND ({MEETING_CREATOR_READ_PREDICATE})"
+            ),
+            &[&id, &session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
-    match row {
-        Some(row) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                (
-                    "content".to_string(),
-                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
-                ),
-                (
-                    "startTime".to_string(),
-                    Value::String(row.get("start_time")),
-                ),
-                ("endTime".to_string(), Value::String(row.get("end_time"))),
-                (
-                    "creator".to_string(),
-                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("create_time")
-                            .unwrap_or_default(),
-                    ),
-                ),
-            ]));
-            Ok(Json(ActionResult::success(result)))
+    let Some(row) = row else {
+        // 谓词已拒绝：区分「行不存在」与「无权读」。此读不参与授权判定。
+        let exists = client
+            .query_opt("SELECT 1 FROM x_meeting WHERE id = $1", &[&id])
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+            .is_some();
+        if exists {
+            return Err(AppError::Forbidden);
         }
-        None => Ok(Json(ActionResult::error("meeting not found"))),
-    }
+        return Ok(Json(ActionResult::error("meeting not found")));
+    };
+
+    let result = Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(row.get("id"))),
+        ("title".to_string(), Value::String(row.get("title"))),
+        (
+            "content".to_string(),
+            Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+        ),
+        (
+            "startTime".to_string(),
+            Value::String(row.get("start_time")),
+        ),
+        ("endTime".to_string(), Value::String(row.get("end_time"))),
+        (
+            "creator".to_string(),
+            Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+        ),
+        (
+            "createTime".to_string(),
+            Value::String(
+                row.get::<_, Option<String>>("create_time")
+                    .unwrap_or_default(),
+            ),
+        ),
+    ]));
+    Ok(Json(ActionResult::success(result)))
 }
 
 /// 四轮 A3-N3 归属门：会议审批 / 邀请 / 改单写此前连 session 都不取（GET 注册还同时绕开
@@ -3490,23 +3661,48 @@ pub async fn u2_attachment_list_with_meeting(
     )))
 }
 
+/// 附件读归属谓词（`$2` = 会话身份）：上传者 `person`、所属会议 `creator`，或调用者管理员。
+/// 谓词写进 SQL WHERE，不做「先查后判」；归属列为 NULL 时不命中（fail-closed）。
+const U2_ATTACHMENT_READ_PREDICATE: &str = "(person = $2 OR EXISTS(\
+    SELECT 1 FROM x_meeting m WHERE m.id = x_meeting_attachment.meeting_id AND m.creator = $2) \
+    OR EXISTS(\
+    SELECT 1 FROM auth_person p \
+      JOIN auth_person_role pr ON pr.person_id = p.id \
+      JOIN auth_role r ON r.id = pr.role_id \
+     WHERE (p.unique_id = $2 OR p.id = $2) \
+       AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false))";
+
 #[allow(non_snake_case)]
 pub async fn u2_attachment_get(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
-            &format!("SELECT {U2_ATTACHMENT_COLS} FROM x_meeting_attachment WHERE id = $1"),
-            &[&id],
+            &format!(
+                "SELECT {U2_ATTACHMENT_COLS} FROM x_meeting_attachment WHERE id = $1 AND ({U2_ATTACHMENT_READ_PREDICATE})"
+            ),
+            &[&id, &session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
-    match row {
-        Some(row) => Ok(Json(ActionResult::success(u2_attachment_json(&row)))),
-        None => Err(AppError::NotFound),
-    }
+    let Some(row) = row else {
+        // 谓词已拒绝：区分「行不存在」与「无权读」。此读不参与授权判定。
+        let exists = client
+            .query_opt("SELECT 1 FROM x_meeting_attachment WHERE id = $1", &[&id])
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+            .is_some();
+        return Err(if exists {
+            AppError::Forbidden
+        } else {
+            AppError::NotFound
+        });
+    };
+    Ok(Json(ActionResult::success(u2_attachment_json(&row))))
 }
 
 #[allow(non_snake_case)]

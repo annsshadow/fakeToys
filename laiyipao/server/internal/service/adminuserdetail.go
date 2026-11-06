@@ -182,6 +182,15 @@ func (s *Service) AdminUserDetail(ctx context.Context, userID int64) (AdminUserD
 		var err error
 		wallet, err = s.LoadWalletReadOnly(ctx, userID)
 		if err != nil {
+			// G2（R131 审计）：第 1 段已经证明用户**存在**；钱包行是建号流程
+			// 后补的，缺行 ≠ 用户不存在。旧实现把 LoadWalletReadOnly 的
+			// ErrNotFound 原样上抛，被 failErr 映射成 404 —— 运营看到的是
+			// 「这个玩家不存在」，而实际只是「他的钱包还没建」。
+			// 用户存在就给零值钱包继续返回；其他错误（连接/扫描）仍然 fail-loud。
+			if errors.Is(err, ErrNotFound) {
+				wallet = Wallet{}
+				return
+			}
 			errs[0] = fmt.Errorf("load user wallet: %w", err)
 		}
 	})

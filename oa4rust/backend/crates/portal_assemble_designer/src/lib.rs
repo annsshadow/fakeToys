@@ -21,6 +21,22 @@ use shared::{
 pub mod routes;
 pub mod u2_script;
 
+/// 读面归属谓词（E19）：门户设计器实体归属列 `creator` 命中本人，或管理员。
+/// 归属列为空/历史无归属 → 仅管理员可读（fail-closed）。`$2` = 会话 person_unique。
+const PORTAL_READ_OWNER_PREDICATE: &str = "(NULLIF(BTRIM(creator), '') = $2 \
+      OR EXISTS(SELECT 1 FROM auth_person p \
+                  JOIN auth_person_role pr ON pr.person_id = p.id \
+                  JOIN auth_role r ON r.id = pr.role_id \
+                 WHERE (p.unique_id = $2 OR p.id = $2) \
+                   AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false))";
+
+/// 读面会话存在档：无会话先 401，在任何 `pool.get()` 之前（离线可证）。
+fn require_session(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
 #[derive(Debug, Deserialize)]
 pub struct CreatePortalRequest {
     pub name: Option<String>,
@@ -75,14 +91,18 @@ pub async fn create_design(
 #[allow(non_snake_case)]
 pub async fn get_design(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // E19：门户设计详情按 `creator` 校归属（本人/管理员），空归属仅管理员。
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
+    let sql = format!(
+        "SELECT id, name, description, content FROM x_portal_design \
+          WHERE id = $1 AND deleted_at IS NULL AND {PORTAL_READ_OWNER_PREDICATE}"
+    );
     let row = client
-        .query_opt(
-            "SELECT id, name, description, content FROM x_portal_design WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
-        )
+        .query_opt(&sql, &[&id, &sess.person_unique])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
@@ -113,7 +133,23 @@ pub async fn get_design(
             let result = Value::Object(map);
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("design not found"))),
+        None => {
+            // 存在性读不参与授权：行存在但无权 → 403，行不存在保留原错误体。
+            let exists: bool = client
+                .query_one(
+                    "SELECT EXISTS(SELECT 1 FROM x_portal_design \
+                      WHERE id = $1 AND deleted_at IS NULL) AS row_exists",
+                    &[&id],
+                )
+                .await
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+                .get("row_exists");
+            if exists {
+                Err(AppError::Forbidden)
+            } else {
+                Ok(Json(ActionResult::error("design not found")))
+            }
+        }
     }
 }
 
@@ -453,9 +489,10 @@ pub async fn design_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 #[allow(non_snake_case)]
 pub async fn design_get(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    get_design(pool, Path(id)).await
+    get_design(pool, session, Path(id)).await
 }
 
 #[allow(non_snake_case)]
@@ -840,6 +877,8 @@ pub fn portal_assemble_designer_router() -> Router {
 #[cfg(test)]
 mod security_gate_tests;
 #[cfg(test)]
+mod security_gate_tests_read_e19;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
@@ -1015,15 +1054,19 @@ pub async fn dict_list_portal_portalId(
 #[allow(non_snake_case)]
 pub async fn dict_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // E19：字典详情按 `creator` 校归属（本人/管理员），空归属仅管理员。
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
+    let sql = format!(
+        "SELECT id, name, app_name, app_data, creator, create_time FROM x_portal_dict \
+          WHERE id = $1 AND deleted_at IS NULL AND {PORTAL_READ_OWNER_PREDICATE}"
+    );
     let row = client
-        .query_opt(
-            "SELECT id, name, app_name, app_data, creator, create_time FROM x_portal_dict WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
-        )
+        .query_opt(&sql, &[&id, &sess.person_unique])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
@@ -1060,7 +1103,23 @@ pub async fn dict_id(
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("dict not found"))),
+        None => {
+            // 存在性读不参与授权：行存在但无权 → 403，行不存在保留原错误体。
+            let exists: bool = client
+                .query_one(
+                    "SELECT EXISTS(SELECT 1 FROM x_portal_dict \
+                      WHERE id = $1 AND deleted_at IS NULL) AS row_exists",
+                    &[&id],
+                )
+                .await
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+                .get("row_exists");
+            if exists {
+                Err(AppError::Forbidden)
+            } else {
+                Ok(Json(ActionResult::error("dict not found")))
+            }
+        }
     }
 }
 
@@ -1369,15 +1428,19 @@ pub async fn file_id(
 #[allow(non_snake_case)]
 pub async fn file_id_download(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // E19：门户文件下载按 `creator` 校归属（本人/管理员），空归属仅管理员。
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
+    let sql = format!(
+        "SELECT id, name, flag, file_type, content FROM x_portal_file \
+          WHERE id = $1 AND {PORTAL_READ_OWNER_PREDICATE}"
+    );
     let row = client
-        .query_opt(
-            "SELECT id, name, flag, file_type, content FROM x_portal_file WHERE id = $1",
-            &[&id],
-        )
+        .query_opt(&sql, &[&id, &sess.person_unique])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
@@ -1410,7 +1473,22 @@ pub async fn file_id_download(
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("file not found"))),
+        None => {
+            // 存在性读不参与授权：行存在但无权 → 403，行不存在保留原错误体。
+            let exists: bool = client
+                .query_one(
+                    "SELECT EXISTS(SELECT 1 FROM x_portal_file WHERE id = $1) AS row_exists",
+                    &[&id],
+                )
+                .await
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+                .get("row_exists");
+            if exists {
+                Err(AppError::Forbidden)
+            } else {
+                Ok(Json(ActionResult::error("file not found")))
+            }
+        }
     }
 }
 
@@ -2765,15 +2843,19 @@ pub async fn scriptversion_list_script_scriptId(
 #[allow(non_snake_case)]
 pub async fn scriptversion_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // E19：脚本版本详情按 `creator` 校归属（本人/管理员），空归属仅管理员。
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
+    let sql = format!(
+        "SELECT id, script_id, version, content, creator, create_time FROM x_portal_script_version \
+          WHERE id = $1 AND {PORTAL_READ_OWNER_PREDICATE}"
+    );
     let row = client
-        .query_opt(
-            "SELECT id, script_id, version, content, creator, create_time FROM x_portal_script_version WHERE id = $1",
-            &[&id],
-        )
+        .query_opt(&sql, &[&id, &sess.person_unique])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
@@ -2813,7 +2895,23 @@ pub async fn scriptversion_id(
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("script version not found"))),
+        None => {
+            // 存在性读不参与授权：行存在但无权 → 403，行不存在保留原错误体。
+            let exists: bool = client
+                .query_one(
+                    "SELECT EXISTS(SELECT 1 FROM x_portal_script_version \
+                      WHERE id = $1) AS row_exists",
+                    &[&id],
+                )
+                .await
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+                .get("row_exists");
+            if exists {
+                Err(AppError::Forbidden)
+            } else {
+                Ok(Json(ActionResult::error("script version not found")))
+            }
+        }
     }
 }
 
@@ -2915,15 +3013,19 @@ pub async fn templatepage_list_category(
 #[allow(non_snake_case)]
 pub async fn templatepage_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // E19：模板页详情按 `creator` 校归属（本人/管理员），空归属仅管理员。
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
+    let sql = format!(
+        "SELECT id, name, category, content, creator, create_time FROM x_portal_template_page \
+          WHERE id = $1 AND deleted_at IS NULL AND {PORTAL_READ_OWNER_PREDICATE}"
+    );
     let row = client
-        .query_opt(
-            "SELECT id, name, category, content, creator, create_time FROM x_portal_template_page WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
-        )
+        .query_opt(&sql, &[&id, &sess.person_unique])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
@@ -2962,7 +3064,23 @@ pub async fn templatepage_id(
             let result = Value::Object(map);
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("template page not found"))),
+        None => {
+            // 存在性读不参与授权：行存在但无权 → 403，行不存在保留原错误体。
+            let exists: bool = client
+                .query_one(
+                    "SELECT EXISTS(SELECT 1 FROM x_portal_template_page \
+                      WHERE id = $1 AND deleted_at IS NULL) AS row_exists",
+                    &[&id],
+                )
+                .await
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+                .get("row_exists");
+            if exists {
+                Err(AppError::Forbidden)
+            } else {
+                Ok(Json(ActionResult::error("template page not found")))
+            }
+        }
     }
 }
 

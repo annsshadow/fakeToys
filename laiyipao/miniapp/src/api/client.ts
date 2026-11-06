@@ -329,6 +329,30 @@ interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
   body?: unknown
   auth?: boolean
+  /**
+   * 幂等键（服务端 `Idempotency-Key` 可选契约，R135）。
+   *
+   * 由**一次用户动作**生成，并在该动作的全部自动重试里原样复用：
+   * 401 刷新后重发时若重新生成，服务端会把重试当成第二笔购买。
+   * 用户真点两次 → 两次 `buyItem` 调用 → 两个不同的 key → 两笔成交。
+   */
+  idempotencyKey?: string
+}
+
+/**
+ * 生成幂等键。
+ *
+ * 服务端白名单是 8~128 位 `[A-Za-z0-9_-.:]`（service.IdemKeyPattern），
+ * 超限或含非法字符会直接 400 —— 所以这里不引入任何额外分隔符。
+ *
+ * 优先 `crypto.randomUUID()`（H5 / 新版小程序内核）；没有时退化为
+ * 时间戳 + 两段 base36 随机，字符集仍落在白名单内。
+ */
+function newIdempotencyKey(prefix: string): string {
+  const c = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto
+  if (c && typeof c.randomUUID === 'function') return `${prefix}-${c.randomUUID()}`
+  const rnd = () => Math.random().toString(36).slice(2, 10).padEnd(8, '0')
+  return `${prefix}-${Date.now().toString(36)}-${rnd()}${rnd()}`
 }
 
 /** 统一错误响应体，与服务端 httpapi.APIError 对应。 */
@@ -357,6 +381,7 @@ export function request<T>(path: string, opts: RequestOptions = {}): Promise<T> 
           const t = getToken()
           if (t) header.Authorization = `Bearer ${t}`
         }
+        if (opts.idempotencyKey) header['Idempotency-Key'] = opts.idempotencyKey
         uni.request({
           url: `${BASE_URL}${path}`,
           method,
@@ -380,6 +405,9 @@ export function request<T>(path: string, opts: RequestOptions = {}): Promise<T> 
                 const retryHeader: Record<string, string> = { 'Content-Type': 'application/json' }
                 const t = getToken()
                 if (t) retryHeader.Authorization = `Bearer ${t}`
+                // ⚠️ 重试必须复用**首请求**的幂等键：重新生成等于一次新购买，
+                // 服务端会照常扣第二次钱 —— 而这正是本轮要堵的缺陷。
+                if (opts.idempotencyKey) retryHeader['Idempotency-Key'] = opts.idempotencyKey
                 uni.request({
                   url: `${BASE_URL}${path}`,
                   method,
@@ -1088,7 +1116,11 @@ export function fetchShop() {
 }
 
 export function buyItem(itemId: number) {
-  return request<any>(`/shop/${itemId}/buy`, { method: 'POST' })
+  // 每次「发起购买」生成一个 key，401 重试由 request() 复用同一枚。
+  return request<any>(`/shop/${itemId}/buy`, {
+    method: 'POST',
+    idempotencyKey: newIdempotencyKey('buy'),
+  })
 }
 
 export function redeem(code: string) {
