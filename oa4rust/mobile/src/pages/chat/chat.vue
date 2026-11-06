@@ -2,13 +2,14 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <script setup lang="ts">
-import { onLoad } from '@dcloudio/uni-app'
+import { onHide, onLoad, onShow, onUnload } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 import type { MessageRow } from '@/services'
 import { messageApi, messageConversationId } from '@/services'
 import { useSession } from '@/store/session'
 import { ensureAuthenticated } from '@/utils/auth-guard'
 import { describeChatError, loadChatHistoryPage, mergeOlderMessages } from './chatHistory'
+import { CHAT_POLL_INTERVAL_MS, type ChatPollHandle, mergeNewerMessages, startChatPolling } from './chatPolling'
 
 const session = useSession()
 const conversationId = ref('')
@@ -27,6 +28,64 @@ const loadingOlder = ref(false)
 function keepConversation(rows: MessageRow[]): MessageRow[] {
   return rows.filter((m) => messageConversationId(m as Record<string, unknown>) === conversationId.value)
 }
+
+// R140：进入会话后自动刷新新消息（旧实现只在 onLoad 拉一次，之后对方发来的消息永远不出现）。
+const CHAT_POLL_PAGE_SIZE = 50
+let pageVisible = false
+let historyReady = false
+let poller: ChatPollHandle | null = null
+
+async function markConversationRead() {
+  try {
+    await messageApi.markRead(conversationId.value)
+  } catch (err) {
+    // R139：自动已读失败不打扰用户，但必须留可诊断痕迹，避免线上无从排查。
+    console.warn('[chat] markRead failed', err)
+  }
+}
+
+function stopPolling() {
+  if (!poller) return
+  poller.stop()
+  poller = null
+}
+
+function startPolling() {
+  if (!pageVisible || !historyReady || !conversationId.value || poller) return
+  poller = startChatPolling<MessageRow>({
+    intervalMs: CHAT_POLL_INTERVAL_MS,
+    loadLatest: async () => {
+      const page = await loadChatHistoryPage<MessageRow>(
+        (convId, pageNo, size) => messageApi.msgHistory(convId, pageNo, size),
+        conversationId.value,
+        1,
+        CHAT_POLL_PAGE_SIZE,
+      )
+      return keepConversation(page.messages)
+    },
+    onLatest: (rows) => {
+      if (rows.length === 0) return
+      const before = msgs.value.length
+      msgs.value = mergeNewerMessages(msgs.value, rows)
+      if (msgs.value.length !== before) void markConversationRead()
+    },
+    // 轮询失败不弹提示（用户无操作），但要留可诊断痕迹。
+    onError: (err) => console.warn('[chat] poll failed', err),
+  })
+}
+
+onShow(() => {
+  pageVisible = true
+  startPolling()
+})
+onHide(() => {
+  pageVisible = false
+  stopPolling()
+})
+onUnload(() => {
+  pageVisible = false
+  stopPolling()
+})
 
 onLoad(async (options) => {
   if (!(await ensureAuthenticated())) {
@@ -52,18 +111,15 @@ async function loadHistory() {
     msgs.value = mergeOlderMessages<MessageRow>([], keepConversation(result.messages))
     historyPage.value = result.page
     historyHasMore.value = result.hasMore
+    historyReady = true
+    startPolling()
   } catch (e) {
     msgs.value = []
     historyError.value = describeChatError('消息加载失败', e)
   } finally {
     loading.value = false
     // 进入会话即标记已读（失败不阻塞展示）。
-    try {
-      await messageApi.markRead(conversationId.value)
-    } catch (err) {
-      // R139：自动已读失败不打扰用户，但必须留可诊断痕迹，避免线上无从排查。
-      console.warn('[chat] markRead failed', err)
-    }
+    await markConversationRead()
   }
 }
 
