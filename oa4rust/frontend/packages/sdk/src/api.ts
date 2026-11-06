@@ -33,6 +33,19 @@ const DEFAULT_TIMEOUT_MS = 30_000
  */
 const DEFAULT_STREAM_IDLE_TIMEOUT_MS = 60_000
 
+/**
+ * R138：后端安全修复后，写端点会把「无权限 / 目标已不存在」明确成 403/404。
+ * 这两类不是异常网络状态，而是用户需要理解并据此行动的业务结果，因此给中文可读文案；
+ * 其它状态码保留 `HTTP xxx` 形状，避免影响既有调用方的错误判定。
+ */
+const FORBIDDEN_MESSAGE = '没有权限执行该操作'
+const NOT_FOUND_MESSAGE = '请求的资源不存在或已被删除'
+
+function httpStatusError(status: number, statusText?: string): ApiError {
+  if (status === 404) return new ApiError(NOT_FOUND_MESSAGE, 404)
+  return new ApiError(statusText ? `HTTP ${status}: ${statusText}` : `HTTP ${status}`, status)
+}
+
 /** 查询选项（传给 TanStack Query） */
 export interface QueryOptions {
   enabled?: boolean
@@ -176,9 +189,9 @@ export class ApiClient {
         throw this.authenticationFailed()
       }
       if (resp.status === 403) {
-        throw new PermissionError('Permission denied')
+        throw new PermissionError(FORBIDDEN_MESSAGE)
       }
-      throw new ApiError(`HTTP ${resp.status}: ${resp.statusText}`, resp.status)
+      throw httpStatusError(resp.status, resp.statusText)
     }
 
     if (options?.discardResponse || resp.status === 204) {
@@ -234,8 +247,8 @@ export class ApiClient {
         return this.upload<T>(path, formData, options, true)
       }
       if (resp.status === 401) throw this.authenticationFailed()
-      if (resp.status === 403) throw new PermissionError('Permission denied')
-      throw new ApiError(`HTTP ${resp.status}`, resp.status)
+      if (resp.status === 403) throw new PermissionError(FORBIDDEN_MESSAGE)
+      throw httpStatusError(resp.status)
     }
     return resp.json() as Promise<ApiResponse<T>>
   }
@@ -283,11 +296,11 @@ export class ApiClient {
           return
         }
         if (xhr.status === 403) {
-          reject(new PermissionError('Permission denied'))
+          reject(new PermissionError(FORBIDDEN_MESSAGE))
           return
         }
         if (xhr.status < 200 || xhr.status >= 300) {
-          reject(new ApiError(`HTTP ${xhr.status}`, xhr.status))
+          reject(httpStatusError(xhr.status))
           return
         }
         try {
@@ -335,8 +348,8 @@ export class ApiClient {
         return this.uploadBytes<T>(path, bytes, options, true)
       }
       if (resp.status === 401) throw this.authenticationFailed()
-      if (resp.status === 403) throw new PermissionError('Permission denied')
-      throw new ApiError(`HTTP ${resp.status}`, resp.status)
+      if (resp.status === 403) throw new PermissionError(FORBIDDEN_MESSAGE)
+      throw httpStatusError(resp.status)
     }
     return resp.json() as Promise<ApiResponse<T>>
   }
@@ -395,8 +408,8 @@ export class ApiClient {
           return this.stream(path, body, onEvent, options, true)
         }
         if (resp.status === 401) throw this.authenticationFailed()
-        if (resp.status === 403) throw new PermissionError('Permission denied')
-        throw new ApiError(`HTTP ${resp.status}: ${resp.statusText}`, resp.status)
+        if (resp.status === 403) throw new PermissionError(FORBIDDEN_MESSAGE)
+        throw httpStatusError(resp.status, resp.statusText)
       }
       if (!resp.body) throw new ApiError('no response body stream', resp.status)
       const reader = resp.body.getReader()
