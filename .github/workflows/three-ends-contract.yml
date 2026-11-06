@@ -23,13 +23,11 @@ on:
 
       - "docs/audits/three-ends-2026-09-20/**"
       - ".github/workflows/three-ends-contract.yml"
+  # R145 后续修复：pull_request 不再按 paths 过滤。
+  # 该检查是 main 的必需状态检查，若 docs-only PR 不触发，PR 永远无法满足合并条件
+  # （只能靠 --admin 绕过，等于把「必需检查」变成摆设）。push 仍保留 paths 过滤，避免无关推送重复跑。
   pull_request:
     branches: [main, master]
-    paths:
-      - "oa4rust/**"
-
-      - "docs/audits/three-ends-2026-09-20/**"
-      - ".github/workflows/three-ends-contract.yml"
   workflow_dispatch:
 
 permissions:
