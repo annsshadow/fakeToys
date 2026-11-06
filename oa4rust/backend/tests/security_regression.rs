@@ -1131,6 +1131,9 @@ mod security_regression {
         }
     }
 
+    /// 单个用例的状态变化：`(id, 旧状态, 新状态)`。
+    type CaseChange = (String, String, String);
+
     fn baseline_path() -> PathBuf {
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/security_regression_baseline.txt")
     }
@@ -1178,7 +1181,7 @@ mod security_regression {
     fn state_drift(
         base: &BTreeMap<String, String>,
         cur: &BTreeMap<String, String>,
-    ) -> (Vec<(String, String, String)>, Vec<(String, String, String)>) {
+    ) -> (Vec<CaseChange>, Vec<CaseChange>) {
         let mut drift = Vec::new();
         let mut fatal = Vec::new();
         for (id, cs) in cur {
