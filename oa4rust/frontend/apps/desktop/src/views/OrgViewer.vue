@@ -226,6 +226,7 @@ import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { describeListError } from './listQuery'
+import { createSearchRunner } from './searchRunner'
 
 interface N {
   id: string
@@ -1484,16 +1485,22 @@ async function selectNode(n: N) {
     personRel.value = `人员树[直接下级 ${relLen(subD, 'personList')}/嵌套下级 ${relLen(subN, 'personList')}/嵌套上级 ${relLen(supN, 'personList')}]`
   }
 }
+// R145：`@input` 每个字符都触发搜索——300ms 防抖 + 只落地最后一次响应。
+const searchRun = createSearchRunner({ debounceMs: 300 })
 async function handleSearch() {
   if (!keyword.value.trim()) {
+    searchRun.cancel()
     nodes.value = []
     return
   }
   try {
-    const r = await api.get('/api/organization/assemble/control/group/list/like', {
-      params: { keyword: keyword.value },
+    await searchRun.run(async (signal) => {
+      const r = await api.get('/api/organization/assemble/control/group/list/like', {
+        params: { keyword: keyword.value },
+        signal,
+      })
+      nodes.value = (r.data ?? []) as N[]
     })
-    nodes.value = (r.data ?? []) as N[]
   } catch {
     // 搜索失败保留现有节点（best-effort 过滤，不打断浏览）
   }

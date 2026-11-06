@@ -255,13 +255,16 @@ pub async fn save_folder(
     axum::extract::Json(req): Json<MindFolderRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 第五十九批：新建思维导图文件夹收会话存在档（无会话 401）。
-    require_session(session)?;
+    // 分片A第三批：归属改落会话身份。原为 `let creator = "system";`，任何登录用户
+    // 都能以 system 落库，归属与审计链同时失真；改后新行有可信 creator，
+    // 历史 system 行不回填（无可信来源），加读谓词时按「老数据仅管理员可见」处理。
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_default();
     let content = req.content.unwrap_or_default();
-    let creator = "system";
+    let creator = session.person_unique.clone();
 
     client
         .execute(

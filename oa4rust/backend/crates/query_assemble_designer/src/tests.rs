@@ -1742,3 +1742,23 @@ fn test_importer_and_stat_save_specs_exclude_creator() {
         );
     }
 }
+
+// ── 批1：`u2_closures::table_create` 会话门 ──
+// 该 handler 未挂路由（线上 `POST /api/query/assemble/designer/table` 走
+// `create_table_definition` 的 admin 门），但作为 pub 写入口仍不得对匿名开放：
+// 无会话必须在任何 DB 访问之前 401，而不是落库或 503。
+#[tokio::test]
+async fn u2_table_create_requires_session_before_db() {
+    use shared::error::AppError;
+    let dead = build_test_pool();
+    let r = crate::u2_closures::table_create(
+        axum::Extension(dead),
+        None,
+        axum::Json(json!({"name": "no-session-table"})),
+    )
+    .await;
+    assert!(
+        matches!(r, Err(AppError::Unauthorized)),
+        "无会话建表必须 401（不得落到取自空连池的 503）"
+    );
+}
