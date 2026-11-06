@@ -102,7 +102,16 @@ INSERT INTO x_org_role (id, name) VALUES
   ('role-gate-a', 'rev-GATE-V-ROLE');
 INSERT INTO x_org_group_member (group_id, person_id, role_id) VALUES
   ('grp-gate-b', 'gate-victim', 'role-gate-v'),
-  ('grp-gate-b', 'audit-user',  'role-gate-a');
+  ('grp-gate-b', 'audit-user',  'role-gate-a'),
+  ('grp-gate-b', 'gate-person-v', 'role-gate-v'),
+  ('grp-gate-b', 'gate-person-a', 'role-gate-a');
+DELETE FROM x_org_group WHERE id = 'grp-gate-b';
+INSERT INTO x_org_group (id, name, unit_id, type, creator, create_time, deleted_at) VALUES
+  ('grp-gate-b', 'GATE-GROUP', 'unit-gate-b', 'group', 'audit-user', NOW(), NULL);
+DELETE FROM auth_person_role WHERE role_id IN ('role-gate-v', 'role-gate-a');
+INSERT INTO auth_person_role (person_id, role_id, unit_id) VALUES
+  ('gate-person-v', 'role-gate-v', 'unit-gate-b'),
+  ('gate-person-a', 'role-gate-a', 'unit-gate-b');
 DELETE FROM x_message WHERE id IN ('gate-msg-v', 'gate-msg-a');
 INSERT INTO x_message (id, conversation_id, content, sender, type, create_time) VALUES
   ('gate-msg-v', 'conv-gate', 'GATE-V-MSG',     'gate-victim', 'text', '2026-11-06 10:00:00'),

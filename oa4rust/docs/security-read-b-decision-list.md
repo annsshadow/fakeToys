@@ -1,4 +1,4 @@
-# 读 IDOR 分片 B 裁决清单（批次 2）
+# 读 IDOR 分片 B 裁决清单（批次 2 / 批次 3）
 
 适用范围：`calendar_*`、`organization_*`（control/personal/express）、`message_*` 的读路径。
 默认口径：本人 OR 管理员；`is_public` 视为已公开发布；归属列为 NULL 时 fail-closed（仅管理员）。
@@ -22,14 +22,42 @@
 | `x_message` | `creator`、`creator_person` | 所有 `INSERT INTO x_message` 只写 `sender`/`content`/`type`/`create_time` 等，不写这两列 | 写侧缺陷（与 `mind.system` 同类），不是读侧可独立修好的问题。修复顺序：**① 先补写入**（所有 INSERT 同时写 `creator`/`creator_person`，并确认取值是 person id/unique_id）；**② 新数据产生归属**；**③ 历史行仍按 NULL → 仅管理员可读**，不猜测、不回填。完成前本批以 `sender` 作为 owner 收紧列表读 |
 | `x_org_person` | `creator` | 创建路径会写入（`u2_person.rs`、`u2_misc.rs`）；历史行可能为 NULL | 按口径 NULL → 仅管理员可读（fail-closed），未猜测归属 |
 
-## 本批未覆盖（同判据，留待下一批）
-`organization_assemble_control` 内还有多条人员读端点返回 `mobile`/`email` 等 PII，未在本批 5 条额度内：
-`person_list_filter_paging`、`person_list_next`、`person_list_prev`、`person_list_by_role`、
-`person_list_by_group`、`person_by_id`、`person_list_by_ids`、人员属性/自定义字段列表。
+## 批次 3：org person 明细/分页（PII 读面）
 
-判定标准不是“有没有 creator”，而是**谁能看到别人的姓名/手机号/邮箱**。若某端点无法用
-`creator` + 管理员口径明确回答（例如按单位/群组的公共通讯录语义、或业务上要求全员可见），
-宁可登记待裁决，不硬改；可用默认口径的（本人行或管理员）按 `x_org_person.creator` 收紧。
+判定标准不是“有没有 creator”，而是**谁能看到别人的姓名/手机号/邮箱**。本批统一落到
+`x_org_person.creator`：`creator = 会话 person OR 调用者为 admin`；`creator IS NULL`（含历史行）
+不命中，fail-closed 仅管理员可读。谓词全部写进 SQL `WHERE`，不做先查后判。
+
+| 端点（organization_assemble_control） | 表 | 落库谓词 | 说明 |
+|---|---|---|---|
+| `GET /person/{flag}`（`person_get`） | `x_org_person` | `id = $1 AND (id = $2 OR creator = $2 OR admin)` | 单资源：额外允许 `id = 本人`（用户读自己档案）；命中 0 行时若行存在返回 403，不存在维持原 not found 信封 |
+| `GET /person/list/{flag}/next/{count}`（`person_list_next`） | `x_org_person` | `deleted_at IS NULL AND (creator = $actor OR admin)` | 首屏游标 `0`/`(0)` 也带谓词；非首屏 `$actor` 为 `$3` |
+| `GET /person/list/{flag}/prev/{count}`（`person_list_prev`） | `x_org_person` | 同上 | 反向取窗口后仍 `reverse()` 还原显示顺序 |
+| `GET /person/list/role/{roleFlag}`（`person_list_with_role`） | `x_org_person` + `auth_person_role` + `x_org_role` | `p.creator = $actor OR admin` | 角色关联边（`auth_person_role`）不改契约；只收紧 person 行 owner 一侧 |
+| `POST /person/list/filter/{page}/size/{size}`（`person_list_filter_paging`） | `x_org_person` | `creator = $actor OR admin` | 同一谓词同时用于 `COUNT(*)` 与 `data`，否则总数会泄漏他人行存在性 |
+| `GET /person/list/group/{groupFlag}/sub/direct`、`.../sub/nested`（`person_list_group_sub_direct/nested`） | `x_org_person` + `x_org_group_member` | `p.creator = $actor OR admin` | 群组成员是**关联边**：本批只收紧 owner 一侧，成员边侧不改契约，见下方裁决 |
+| `PUT /person/list/like`（含 `/mockputtopost`） | `x_org_person` | `creator = $actor OR admin` | 空 key 分支也不得全表返回 |
+| `PUT /person/list/like/pinyin`（含 `/mockputtopost`） | `x_org_person` | 同上 | 同上 |
+| `PUT /person/list/pinyininitial`（含 `/mockputtopost`） | `x_org_person` | 同上 | 空 initials 分支与过滤分支均带谓词 |
+
+新增门禁用例覆盖上述每条拒绝路径（`dir=both`：攻击者读受害者、受害者读攻击者镜像）与
+`idor-read-own` 正控制。破坏实验：把 `owner_scope` 改成恒真后，10 条拒绝用例全部
+fwd/rev 双向变 LEAK（见提交说明红原文），还原后门禁回到 152 非 PASS（与基线一致）。
+
+### 关联边裁决（未改契约）
+- `x_org_group_member(group_id, person_id, role_id)` 是群组→人员关联边，`x_org_group` 本身没有
+  “通讯录公开性”列。本批只允许“本人或管理员”看 person 行；**群组成员是否对全员可见**没有
+  落库依据，未按“全员可见”放行，也未发明新列。若业务要求按群组公共通讯录展示，需先裁决
+  再补归属/公开性模型。
+- `person_list_with_role` 的 `auth_person_role` 同理：角色绑定不作为读权限来源，仅作为筛选条件。
+
+### 仍未覆盖（同判据，留待下一批）
+- `POST /person/list/delete/{page}/{size}`（`person_list_delete_paging`）：已删除人员仍含
+  `mobile`/`email`。合理方向是仅管理员（无需 `idor-read-own` 正控制），但“本人能否看自己被删行”
+  未裁决，暂不改。
+- `personcard_*` 读端点（`personcard/mylist`、`personcard/listpaging`、`personcard/{flag}` 等）：
+  同样返回姓名/手机号/邮箱，属 PII 读面，未在本批 6 条额度内。
+- 人员属性/自定义字段列表（`x_org_person_extend` 相关）：按 person 关联边读取，待同批判据。
 
 ## 门禁用例类型语义（批次 2 新增，新增用例按此写）
 用例表新增可选两列：第 13 列 `rev_id`（rev 方向资源 id，缺省 `rev-{victim}`），
