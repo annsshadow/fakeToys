@@ -270,13 +270,12 @@ pub async fn statement_create(
     }
 
     let id = uuid::Uuid::new_v4().to_string();
-    let creator = "system";
 
     client
         .execute(
             "INSERT INTO x_query_statement (id, name, alias, query_flag, entity_class, entity_category, type, data, counting_data, creator, create_time, update_time) \
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())",
-            &[&id, &name, &alias, &query_flag, &entity_class, &entity_category, &stmt_type, &data, &counting_data, &creator],
+            &[&id, &name, &alias, &query_flag, &entity_class, &entity_category, &stmt_type, &data, &counting_data, &sess.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
