@@ -46,6 +46,17 @@ export class PermissionError extends ApiError {
   }
 }
 
+/**
+ * R138：后端安全修复后 403/404 是写端点的正常业务结果（无权限 / 目标已不存在），
+ * 文案必须可读；其它状态码保留 `HTTP xxx` 形状，避免影响页面既有错误判定。
+ */
+const FORBIDDEN_MESSAGE = '没有权限执行该操作'
+const NOT_FOUND_MESSAGE = '请求的资源不存在或已被删除'
+
+function httpStatusError(status: number): ApiError {
+  return status === 404 ? new ApiError(NOT_FOUND_MESSAGE, 404) : new ApiError(`HTTP ${status}`, status)
+}
+
 let apiBase = ''
 let authFailureHandler: (() => void) | null = null
 let refreshPromise: Promise<void> | null = null
@@ -85,6 +96,15 @@ function buildUrl(path: string, params?: Record<string, string>): string {
 
 function isRefreshRequest(path: string): boolean {
   return path === '/api/authentication/refresh'
+}
+
+/**
+ * 网络失败文案归一化（R136）。uni.request / uni.uploadFile 的 `errMsg` 是平台英文串
+ *（实测形态如 `request:fail timeout`），旧实现直接塞进 `ApiError.message`，
+ * 页面再拼成「加载失败：request:fail timeout」给用户看。传输层是唯一出口，在这里归一化。
+ */
+function transportFailureMessage(raw: string | undefined, timeoutMessage: string, fallbackMessage: string): string {
+  return raw && /timeout/i.test(raw) ? timeoutMessage : fallbackMessage
 }
 
 function authenticationFailed(): AuthenticationError {
@@ -154,13 +174,18 @@ function performRequest<T>(
           return
         }
         if (status === 403) {
-          reject(new PermissionError('Permission denied'))
+          reject(new PermissionError(FORBIDDEN_MESSAGE))
           return
         }
-        reject(new ApiError(`HTTP ${status}`, status))
+        reject(httpStatusError(status))
       },
       fail: (err: UniApp.GeneralCallbackResult) => {
-        reject(new ApiError(err.errMsg || 'Network error', 0))
+        reject(
+          new ApiError(
+            transportFailureMessage(err.errMsg, '请求超时，请检查网络后重试', '网络连接失败，请检查网络后重试'),
+            0,
+          ),
+        )
       },
     })
   })
@@ -206,13 +231,18 @@ function performUpload<T>(
           return
         }
         if (status === 403) {
-          reject(new PermissionError('Permission denied'))
+          reject(new PermissionError(FORBIDDEN_MESSAGE))
           return
         }
-        reject(new ApiError(`HTTP ${status}`, status))
+        reject(httpStatusError(status))
       },
       fail: (err: UniApp.GeneralCallbackResult) => {
-        reject(new ApiError(err.errMsg || 'Upload failed', 0))
+        reject(
+          new ApiError(
+            transportFailureMessage(err.errMsg, '上传超时，请检查网络后重试', '上传失败，请检查网络后重试'),
+            0,
+          ),
+        )
       },
     })
   })

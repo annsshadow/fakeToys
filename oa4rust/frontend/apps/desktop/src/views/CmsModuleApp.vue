@@ -55,11 +55,12 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
-import { confirmMsg } from '../utils/toast'
+import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { useListError } from './listQuery'
 import { liveQueryItems } from './liveQueryItems'
+import { mutationErrorMessage } from './mutationError'
 
 interface Item {
   id: string
@@ -131,6 +132,7 @@ function closeModal() {
   form.value = {}
 }
 const saveM = useMutation({
+  onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: async (payload: Item) => {
     saving.value = true
     try {
@@ -149,6 +151,7 @@ function saveItem() {
   saveM.mutate(form.value as Item)
 }
 const delM = useMutation({
+  onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: async (id: string) => api.post(`/api/cms/core/entity/module/delete/${id}`),
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })

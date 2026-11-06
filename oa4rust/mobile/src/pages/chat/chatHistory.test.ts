@@ -131,4 +131,36 @@ describe('移动端会话历史分页：页码进请求、更早消息可加载�
     // 旧实现：固定第 1 页 200 条，超出部分静默丢失。
     expect(source).not.toContain('msgHistory(conversationId.value, 1, 200)')
   })
+
+  it('自动 markRead 失败保持静默，但必须留可诊断痕迹（R139）', () => {
+    const source = readFileSync(resolve(import.meta.dirname, 'chat.vue'), 'utf8')
+    const start = source.indexOf('await messageApi.markRead')
+    expect(start).toBeGreaterThan(-1)
+    const block = source.slice(start, start + 220)
+    // 不能是空 catch：静默到没有任何痕迹会让线上无法排查。
+    expect(block).toContain('catch (err)')
+    expect(block).toContain('console.warn(')
+    expect(block).toContain('markRead failed')
+    expect(block).not.toContain('/* noop */')
+  })
+
+  it('进入会话后新消息自动刷新，页面隐藏/卸载即停（R140）', () => {
+    const source = readFileSync(resolve(import.meta.dirname, 'chat.vue'), 'utf8')
+    expect(source.split('\n').length).toBeGreaterThan(200)
+    expect(source).toContain('startChatPolling')
+    expect(source).toContain('mergeNewerMessages')
+    expect(source).toContain('onShow(')
+    expect(source).toContain('onHide(')
+    expect(source).toContain('onUnload(')
+    expect(source).toContain('stopPolling()')
+    // 新消息必须真的并入列表并在有变化时补一次已读，而不只是声明了轮询函数。
+    expect(source).toContain('msgs.value = mergeNewerMessages(msgs.value, rows)')
+    expect(source).toContain('if (msgs.value.length !== before) void markConversationRead()')
+    const readyAt = source.indexOf('historyReady = true')
+    expect(readyAt).toBeGreaterThan(-1)
+    expect(source.slice(readyAt, readyAt + 120)).toContain('startPolling()')
+    // 旧实现只在 onLoad 拉一次；轮询间隔由 chatPolling 统一管理，页面不得自建定时器。
+    expect(source).not.toContain('setInterval(')
+    expect(source).toContain("console.warn('[chat] poll failed'")
+  })
 })

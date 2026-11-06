@@ -38,6 +38,8 @@ async function loadPending() {
 
 /** 公告：后端 create_time 倒序，取前 5 条展示；点击看全文。 */
 async function loadNotices() {
+  // R137：重试前必须清空上一次的错误，否则成功之后横幅仍挂着旧错误（列表页唯一漏点）。
+  noticesError.value = ''
   const result = await loadList<Notice>(() => annApi.list(), {
     previousRows: notices.value,
     label: '公告加载失败',

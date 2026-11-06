@@ -68,6 +68,15 @@ describe('列表加载统一口径（R113）', () => {
     expect(listState({ loading: true, loaded: true, count: 2, error: 'err' })).toBe('list')
   })
 
+  it('加载中与失败态互斥（R137）：有数据时失败不退化为错误态，无错误时不提前报错', () => {
+    // 已有数据 + 上一次失败：列表仍可见（错误由页面横幅承担），不整屏切回 error
+    expect(listState({ loading: false, loaded: true, count: 3, error: '公告加载失败：请求超时' })).toBe('list')
+    // 从未加载过且无错误：不能报错（只能空态或加载态）
+    expect(listState({ loading: false, loaded: false, count: 0, error: '' })).toBe('empty')
+    // 首屏加载中即便残留错误：仍以加载态为准，错误不提前暴露
+    expect(listState({ loading: true, loaded: false, count: 0, error: 'err' })).toBe('loading')
+  })
+
   it('describeLoadError 对空 message 也给稳定文案', () => {
     expect(describeLoadError('加载失败', new Error('  '))).toBe('加载失败：未知错误')
   })

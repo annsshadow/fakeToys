@@ -177,6 +177,7 @@ import { nextTick, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
+import { createGeneration } from './latestOnly'
 import { describeListError } from './listQuery'
 
 type Message = { role: 'user' | 'assistant'; content: string; timestamp?: string }
@@ -193,6 +194,8 @@ const streamMode = ref(true)
 const messagesRef = ref<HTMLElement | null>(null)
 const showConfig = ref(false)
 const aiMetaText = ref('')
+// R141：快速切会话时旧请求后到会覆盖新会话；只接受最后一次发起的结果。
+const chatGeneration = createGeneration()
 async function loadAiControl() {
   try {
     // 消费 ai_assemble_control 三条真实路由：基础配置 / AI 控制配置 / 用量统计
@@ -429,20 +432,26 @@ async function loadConversations() {
 }
 
 async function selectChat(chat: ChatItem) {
+  const token = chatGeneration.next()
   currentChat.value = chat
   messages.value = []
   messagesError.value = ''
+  loading.value = false
   try {
     const r = await api.get(`/api/ai_assemble_control/chat/list/completion/${chat.id}/paging/1/size/50`)
+    // 期间又切了会话：旧响应作废，不能覆盖新会话的内容与错误态。
+    if (!chatGeneration.isCurrent(token)) return
     const list = r.data?.list ?? []
     messages.value = list.map((m: any) => ({
       role: m.type === 'user' ? 'user' : 'assistant',
       content: m.content ?? m.text ?? '',
     }))
   } catch (e) {
+    if (!chatGeneration.isCurrent(token)) return
     // 失败必须显式报错，不能和「这个对话还没消息」混成同一种空态。
     messagesError.value = describeListError('消息加载失败', e)
   }
+  if (!chatGeneration.isCurrent(token)) return
   await nextTick(() => scrollToBottom())
 }
 
@@ -478,6 +487,8 @@ async function deleteChat(chat: ChatItem) {
 async function sendMessage() {
   const text = inputText.value.trim()
   if (!text || loading.value) return
+  // R141：回复属于发起时所在的会话；期间切走则丢弃，避免答案出现在别的会话里。
+  const token = chatGeneration.next()
   const attachNote = attachments.value.length
     ? `\n[附件] ${attachments.value.map((a) => `${a.name} → ${a.url}`).join('，')}`
     : ''
@@ -494,6 +505,7 @@ async function sendMessage() {
         '/api/ai_assemble_control/chat/completion/stream',
         { message: text + attachNote, clueId: currentChat.value?.id },
         (_ev, data) => {
+          if (!chatGeneration.isCurrent(token)) return
           try {
             const payload = JSON.parse(data) as { token?: string }
             if (payload.token) live.content += payload.token
@@ -503,20 +515,25 @@ async function sendMessage() {
           nextTick(() => scrollToBottom())
         },
       )
+      if (!chatGeneration.isCurrent(token)) return
       if (!live.content) live.content = '（无返回内容）'
     } else {
       const r = await api.post('/api/ai_assemble_control/chat/completion', {
         message: text + attachNote,
         clueId: currentChat.value?.id,
       })
+      if (!chatGeneration.isCurrent(token)) return
       const reply = r.data?.content ?? r.data?.reply ?? r.data?.message ?? '已收到'
       messages.value.push({ role: 'assistant', content: String(reply) })
     }
   } catch (e: any) {
-    messages.value.push({ role: 'assistant', content: `❌ 错误: ${e?.message ?? '未知错误'}` })
+    if (chatGeneration.isCurrent(token))
+      messages.value.push({ role: 'assistant', content: `❌ 错误: ${e?.message ?? '未知错误'}` })
   } finally {
-    loading.value = false
-    await nextTick(() => scrollToBottom())
+    if (chatGeneration.isCurrent(token)) {
+      loading.value = false
+      await nextTick(() => scrollToBottom())
+    }
   }
 }
 

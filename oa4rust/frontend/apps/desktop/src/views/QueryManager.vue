@@ -65,6 +65,7 @@ import { toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { useListError } from './listQuery'
+import { mutationErrorMessage } from './mutationError'
 
 interface Q {
   id: string
@@ -173,6 +174,7 @@ async function runQ() {
   }
 }
 const dm = useMutation({
+  onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: (id: string) => api.delete(`/api/query/assemble/designer/delete/${id}`),
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: ['query', 'defs'] })
@@ -185,6 +187,7 @@ async function delQ() {
   if (await confirmMsg('确定删除？')) dm.mutate(selected.value.id)
 }
 const cm = useMutation({
+  onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: () => api.post('/api/query/assemble/designer/create', nform.value),
   onSuccess: () => {
     showCreate.value = false
