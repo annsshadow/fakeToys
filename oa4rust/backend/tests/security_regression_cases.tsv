@@ -59,6 +59,8 @@ message_assemble_communicate|mass_id|GET	idor-read	GET	/api/message/assemble/com
 mind|get_mind_with_id|GET	idor-read	GET	/api/mind/mind/{id}	mind_base_info	r6-getmindwithid	r6-getmindwithid	path		legacy	both	allow
 organization_assemble_authentication|identity_id|GET	idor-read	GET	/api/organization/assemble/authentication/identity/{id}	x_org_identity	r6-identitydelete	r6-identitydelete	path		legacy	both	allow
 organization_assemble_control|identity_id|GET	idor-read	GET	/api/identity/{id}	x_org_identity	r6-identitydelete	r6-identitydelete	path		legacy	both	allow
+organization_assemble_control|identity_flag|GET	idor-read	GET	/api/organization/assemble/control/identity/{flag}	x_org_identity	r6-identitydelete	r6-identitydelete	path		legacy	both	allow
+organization_assemble_control|unit_flag|GET	idor-read	GET	/api/organization/assemble/control/unit/{flag}	x_org_unit	r6-unitread	r6-unitread	path		legacy	both	allow
 portal|portal_id|GET	idor-read	GET	/api/portal/{id}	x_portal	r6-portalid	r6-portalid	path		legacy	both	allow
 portal_assemble_designer|dict_id|GET	idor-read	GET	/api/portal/assemble/designer/dict/{id}	x_portal_dict	r6-dictid	r6-dictid	path		legacy	both	allow
 portal_assemble_designer|file_id_download|GET	idor-read	GET	/api/portal/assemble/designer/file/download/{id}	x_portal_file	r6-fileiddownload	r6-fileiddownload	path		legacy	both	allow
