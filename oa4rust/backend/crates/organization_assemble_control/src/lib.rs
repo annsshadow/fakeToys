@@ -2261,11 +2261,17 @@ pub async fn personattribute_flag_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn personcard_listgrouptypes(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = crate::u2_helpers::require_session_opt(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
 
+    let sql = format!(
+        "SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL AND {} ORDER BY create_time DESC",
+        crate::u2_person::owner_scope("creator", "$1")
+    );
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time DESC", &[])
+        .query(&sql, &[&actor])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
@@ -2305,14 +2311,20 @@ pub async fn personcard_listgrouptypes(
 #[allow(non_snake_case)]
 pub async fn personcard_listpaging_page_page_size_size_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = crate::u2_helpers::require_session_opt(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let (limit, offset) = shared::response::page_window(page, size)?;
 
+    let sql = format!(
+        "SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL AND {} ORDER BY create_time DESC LIMIT $1 OFFSET $2",
+        crate::u2_person::owner_scope("creator", "$3")
+    );
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
+        .query(&sql, &[&limit, &offset, &actor])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
@@ -2360,14 +2372,20 @@ pub async fn personcard_listpaging_page_page_size_size_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn personcard_listpagingwithgroup_page_page_size_size_mockputtopost(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = crate::u2_helpers::require_session_opt(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let (limit, offset) = shared::response::page_window(page, size)?;
 
+    let sql = format!(
+        "SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL AND {} ORDER BY create_time DESC LIMIT $1 OFFSET $2",
+        crate::u2_person::owner_scope("creator", "$3")
+    );
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
+        .query(&sql, &[&limit, &offset, &actor])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
@@ -2415,11 +2433,17 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn personcard_mylist(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = crate::u2_helpers::require_session_opt(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
 
+    let sql = format!(
+        "SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL AND {} ORDER BY create_time DESC",
+        crate::u2_person::owner_scope("creator", "$1")
+    );
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time DESC", &[])
+        .query(&sql, &[&actor])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
@@ -2459,15 +2483,19 @@ pub async fn personcard_mylist(
 #[allow(non_snake_case)]
 pub async fn personcard_flag(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = crate::u2_helpers::require_session_opt(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
 
+    // 「本人 OR 管理员」：id 命中本人（读自己档案）或 creator 命中本人，写进 WHERE。
+    let sql = format!(
+        "SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE id = $1 AND deleted_at IS NULL AND (id = $2 OR {})",
+        crate::u2_person::owner_scope("creator", "$2")
+    );
     let row = client
-        .query_opt(
-            "SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE id = $1 AND deleted_at IS NULL",
-            &[&flag],
-        )
+        .query_opt(&sql, &[&flag, &actor])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
@@ -2502,7 +2530,13 @@ pub async fn personcard_flag(
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("person not found"))),
+        None => {
+            if crate::u2_helpers::owned_read_row_exists(&client, "x_org_person", &flag).await? {
+                Err(AppError::Forbidden)
+            } else {
+                Ok(Json(ActionResult::error("person not found")))
+            }
+        }
     }
 }
 
@@ -3986,14 +4020,20 @@ pub async fn role_list_group_groupFlag(
 #[allow(non_snake_case)]
 pub async fn personcard_listpagingwithgroup_page_page_size_size(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = crate::u2_helpers::require_session_opt(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let (limit, offset) = shared::response::page_window(page, size)?;
 
+    let sql = format!(
+        "SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL AND {} ORDER BY create_time DESC LIMIT $1 OFFSET $2",
+        crate::u2_person::owner_scope("creator", "$3")
+    );
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
+        .query(&sql, &[&limit, &offset, &actor])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
@@ -4041,14 +4081,20 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size(
 #[allow(non_snake_case)]
 pub async fn personcard_listpaging_page_page_size_size(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = crate::u2_helpers::require_session_opt(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let (limit, offset) = shared::response::page_window(page, size)?;
 
+    let sql = format!(
+        "SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL AND {} ORDER BY create_time DESC LIMIT $1 OFFSET $2",
+        crate::u2_person::owner_scope("creator", "$3")
+    );
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
+        .query(&sql, &[&limit, &offset, &actor])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
@@ -4096,13 +4142,19 @@ pub async fn personcard_listpaging_page_page_size_size(
 #[allow(non_snake_case)]
 pub async fn personcard_listVCf_idList(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id_list): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = crate::u2_helpers::require_session_opt(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let ids: Vec<&str> = id_list.split(',').collect();
+    let sql = format!(
+        "SELECT id, name, mobile, email, unit_id FROM x_org_person WHERE id = ANY($1) AND deleted_at IS NULL AND (id = $2 OR {})",
+        crate::u2_person::owner_scope("creator", "$2")
+    );
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id FROM x_org_person WHERE id = ANY($1) AND deleted_at IS NULL", &[&ids])
+        .query(&sql, &[&ids, &actor])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
@@ -4139,13 +4191,19 @@ pub async fn personcard_listVCf_idList(
 #[allow(non_snake_case)]
 pub async fn personcard_listPersonalVCf_idList(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id_list): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = crate::u2_helpers::require_session_opt(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let ids: Vec<&str> = id_list.split(',').collect();
+    let sql = format!(
+        "SELECT id, name, mobile, email, unit_id FROM x_org_person WHERE id = ANY($1) AND deleted_at IS NULL AND (id = $2 OR {})",
+        crate::u2_person::owner_scope("creator", "$2")
+    );
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id FROM x_org_person WHERE id = ANY($1) AND deleted_at IS NULL", &[&ids])
+        .query(&sql, &[&ids, &actor])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
