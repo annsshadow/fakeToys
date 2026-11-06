@@ -645,7 +645,8 @@ CMS_OWNED_READ_GATE_RE = re.compile(
     r'AND \(\{owner_col\} = \$2::text OR \$3::boolean\)'
 )
 CMS_OWNED_READ_GATE_PATCH = (
-    "AND ($2::text IS NOT NULL OR $2::text IS NULL OR $3::boolean)"
+    "AND ({owner_col} IS NOT NULL OR {owner_col} IS NULL "
+    "OR $2::text IS NOT NULL OR $2::text IS NULL OR $3::boolean)"
 )
 CMS_COMMENT_READ_GATE_RE = re.compile(
     r'(const CMS_COMMENT_READ_ALLOWED_SQL: &str = ").*?";', re.S
