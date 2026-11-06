@@ -1,4 +1,4 @@
-# id	kind	method	path	table	victim	leak	carrier	field	tier	dir	admin_policy
+# id	kind	method	path	table	victim	leak	carrier	field	tier	dir	admin_policy	rev_id	body
 ai_assemble_control|config_get_mcp_flag|GET	idor-read	GET	/api/ai/assemble/control/config/get/mcp/{id}	x_ai_mcp_config	r6-config_get_mcp_flag	r6-config_get_mcp_flag	path		legacy	both	allow
 attendance_assemble_control|attendanceadmin_id|GET	idor-read	GET	/api/attendance/assemble/control/attendanceadmin/{id}	x_attendance_admin	r6-attendanceadmin_id	r6-attendanceadmin_id	path		legacy	both	allow
 attendance_assemble_control|attendanceappealInfo_id|GET	idor-read	GET	/api/attendance/assemble/control/attendanceappealInfo/{id}	x_attendance_appeal_info	appeal-admin	appeal-admin	path		legacy	both	allow
@@ -216,3 +216,22 @@ t2|organization|bind_create	spoof-write	POST	/api/organization/bind		person-admi
 t2|program_center|warnlog_create	spoof-write	POST	/api/program_center/warnlog	x_program_warn_log	person-admin		body	level	T2	both	n/a
 t2-excluded|ai|chat_completion	excluded	POST	/api/ai_assemble_control/chat/completion				body		T2	fwd-only	n/a
 t2-excluded|ai|file_upload	excluded	POST	/api/ai_assemble_control/file/upload				body		T2	fwd-only	n/a
+organization_assemble_control|personcard_listgrouptypes|GET	idor-read-scoped	GET	/api/organization/assemble/control/personcard/listgrouptypes	x_org_person	-	GATE-V-MOBILE	path		legacy	both	allow		
+organization_assemble_control|personcard_listgrouptypes|own	idor-read-own	GET	/api/organization/assemble/control/personcard/listgrouptypes	x_org_person	-	rev-GATE-V-MOBILE	path		legacy	fwd-only	n/a		
+organization_assemble_control|personcard_mylist|GET	idor-read-scoped	GET	/api/organization/assemble/control/personcard/mylist	x_org_person	-	GATE-V-MOBILE	path		legacy	both	allow		
+organization_assemble_control|personcard_mylist|own	idor-read-own	GET	/api/organization/assemble/control/personcard/mylist	x_org_person	-	rev-GATE-V-MOBILE	path		legacy	fwd-only	n/a		
+organization_assemble_control|personcard_listpaging|GET	idor-read-scoped	GET	/api/organization/assemble/control/personcard/listpaging/page/1/size/200	x_org_person	-	GATE-V-MOBILE	path		legacy	both	allow		
+organization_assemble_control|personcard_listpaging|own	idor-read-own	GET	/api/organization/assemble/control/personcard/listpaging/page/1/size/200	x_org_person	-	rev-GATE-V-MOBILE	path		legacy	fwd-only	n/a		
+organization_assemble_control|personcard_listpaging_mockput|GET	idor-read-scoped	GET	/api/organization/assemble/control/personcard/listpaging/page/1/size/200/mockputtopost	x_org_person	-	GATE-V-MOBILE	path		legacy	both	allow		
+organization_assemble_control|personcard_listpaging_mockput|own	idor-read-own	GET	/api/organization/assemble/control/personcard/listpaging/page/1/size/200/mockputtopost	x_org_person	-	rev-GATE-V-MOBILE	path		legacy	fwd-only	n/a		
+organization_assemble_control|personcard_listpagingwithgroup|GET	idor-read-scoped	GET	/api/organization/assemble/control/personcard/listpagingwithgroup/page/1/size/200	x_org_person	-	GATE-V-MOBILE	path		legacy	both	allow		
+organization_assemble_control|personcard_listpagingwithgroup|own	idor-read-own	GET	/api/organization/assemble/control/personcard/listpagingwithgroup/page/1/size/200	x_org_person	-	rev-GATE-V-MOBILE	path		legacy	fwd-only	n/a		
+organization_assemble_control|personcard_listpagingwithgroup_mockput|GET	idor-read-scoped	GET	/api/organization/assemble/control/personcard/listpagingwithgroup/page/1/size/200/mockputtopost	x_org_person	-	GATE-V-MOBILE	path		legacy	both	allow		
+organization_assemble_control|personcard_listpagingwithgroup_mockput|own	idor-read-own	GET	/api/organization/assemble/control/personcard/listpagingwithgroup/page/1/size/200/mockputtopost	x_org_person	-	rev-GATE-V-MOBILE	path		legacy	fwd-only	n/a		
+organization_assemble_control|personcard_listVCf|GET	idor-read-scoped	GET	/api/organization/assemble/control/personcard/listVCf/{id}	x_org_person	gate-person-v	GATE-V-MOBILE	path		legacy	both	allow	gate-person-a	
+organization_assemble_control|personcard_listVCf|own	idor-read-own	GET	/api/organization/assemble/control/personcard/listVCf/{id}	x_org_person	gate-person-a	rev-GATE-V-MOBILE	path		legacy	fwd-only	n/a		
+organization_assemble_control|personcard_listPersonalVCf|GET	idor-read-scoped	GET	/api/organization/assemble/control/personcard/listPersonalVCf/{id}	x_org_person	gate-person-v	GATE-V-MOBILE	path		legacy	both	allow	gate-person-a	
+organization_assemble_control|personcard_listPersonalVCf|own	idor-read-own	GET	/api/organization/assemble/control/personcard/listPersonalVCf/{id}	x_org_person	gate-person-a	rev-GATE-V-MOBILE	path		legacy	fwd-only	n/a		
+organization_assemble_control|personcard_flag|GET	idor-read	GET	/api/organization/assemble/control/personcard/{id}	x_org_person	gate-person-v	GATE-V-MOBILE	path		legacy	both	allow	gate-person-a	
+organization_assemble_control|personcard_flag|own	idor-read-own	GET	/api/organization/assemble/control/personcard/{id}	x_org_person	gate-person-a	rev-GATE-V-MOBILE	path		legacy	fwd-only	n/a		
+organization_assemble_control|person_list_delete_paging|POST	idor-read	POST	/api/organization/assemble/control/person/list/delete/1/size/10	x_org_person	gate-person-del	GATE-DEL-MOBILE	path		legacy	both	allow		

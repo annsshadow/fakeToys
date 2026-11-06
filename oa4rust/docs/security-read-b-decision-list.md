@@ -1,4 +1,4 @@
-# 读 IDOR 分片 B 裁决清单（批次 2 / 批次 3）
+# 读 IDOR 分片 B 裁决清单（批次 2 / 批次 3 / 批次 4）
 
 适用范围：`calendar_*`、`organization_*`（control/personal/express）、`message_*` 的读路径。
 默认口径：本人 OR 管理员；`is_public` 视为已公开发布；归属列为 NULL 时 fail-closed（仅管理员）。
@@ -52,12 +52,36 @@ fwd/rev 双向变 LEAK（见提交说明红原文），还原后门禁回到 152
 - `person_list_with_role` 的 `auth_person_role` 同理：角色绑定不作为读权限来源，仅作为筛选条件。
 
 ### 仍未覆盖（同判据，留待下一批）
-- `POST /person/list/delete/{page}/{size}`（`person_list_delete_paging`）：已删除人员仍含
-  `mobile`/`email`。合理方向是仅管理员（无需 `idor-read-own` 正控制），但“本人能否看自己被删行”
-  未裁决，暂不改。
-- `personcard_*` 读端点（`personcard/mylist`、`personcard/listpaging`、`personcard/{flag}` 等）：
-  同样返回姓名/手机号/邮箱，属 PII 读面，未在本批 6 条额度内。
 - 人员属性/自定义字段列表（`x_org_person_extend` 相关）：按 person 关联边读取，待同批判据。
+
+## 批次 4：personcard 读端点 + 已删人员分页（PII 读面）
+
+判据沿用批次 3：**谁能看到别人的姓名/手机号/邮箱**。`personcard_*` 这批端点名义上是“个人名片”，
+实际 SQL 全部命中 `x_org_person`（全量人员 PII），因此与本批次 3 同口径落到 `x_org_person.creator`。
+
+| 端点（organization_assemble_control） | 表 | 落库谓词 | 说明 |
+|---|---|---|---|
+| `GET /personcard/mylist`（`personcard_mylist`） | `x_org_person` | `deleted_at IS NULL AND (creator = $1 OR admin)` | 名为 mylist，原实现返回全表；本批收紧为本人 OR 管理员 |
+| `GET /personcard/listgrouptypes`（`personcard_listgrouptypes`） | `x_org_person` | 同上 | 无分页，同一谓词 |
+| `GET /personcard/listpaging/page/{page}/size/{size}`（含 `/mockputtopost`） | `x_org_person` | `deleted_at IS NULL AND (creator = $3 OR admin) ... LIMIT $1 OFFSET $2` | 分页参数不变；actor 为 `$3` |
+| `GET /personcard/listpagingwithgroup/page/{page}/size/{size}`（含 `/mockputtopost`） | `x_org_person` | 同上 | “withgroup”不额外放宽群组可见性，群组属关联边，见批次 3 裁决 |
+| `GET /personcard/listVCf/{idList}`（`personcard_listVCf_idList`） | `x_org_person` | `id = ANY($1) AND deleted_at IS NULL AND (id = $2 OR creator = $2 OR admin)` | 批量按 id 取，额外允许 `id = 本人` |
+| `GET /personcard/listPersonalVCf/{idList}`（`personcard_listPersonalVCf_idList`） | `x_org_person` | 同上 | 同上 |
+| `GET /personcard/{flag}`（`personcard_flag`） | `x_org_person` | `id = $1 AND deleted_at IS NULL AND (id = $2 OR creator = $2 OR admin)` | 单资源；命中 0 行但行存在时返回 403，不存在维持 not found 信封 |
+| `POST /person/list/delete/{page}/{size}`（`person_list_delete_paging`） | `x_org_person` | 不做行过滤，改**仅管理员**门禁（无会话 401 / 非 admin 403） | 已软删行仍是 PII；历史行归属不可靠且“本人能否看自己被删行”无业务依据，按 fail-closed 收为管理员专属 |
+
+新增门禁用例 20 条（9 个 personcard 读端点 × 双向 + 本人正控制，外加拿 1 条已删人员管理员门禁），
+全部 PASS；夹具补 `gate-person-del`（`GATE-DEL-MOBILE`，`deleted_at` 非空）供 delete paging 取证。
+破坏实验：把 `owner_scope` 临时改为恒真（保留占位符绑定）并摘掉 delete paging 的 admin 闸后，
+上述拒绝用例变红（`NEW-FAIL` 20 条，personcard 各端点 `LEAK(2xx 响应体含 canary GATE-V-MOBILE /
+rev-GATE-V-MOBILE)`，delete paging `LEAK(2xx 响应体含 canary GATE-DEL-MOBILE)`）；还原后门禁回到
+147 非 PASS（与基线一致，无 `STALE-BASELINE`）。
+
+### 批次 4 备注（不硬改的部分）
+- `personcard_*` 响应体仍按原契约输出 `creator` 字段；本批只收紧“能读到哪些行”，不删字段、不改信封。
+- 已删人员分页的“本人可见自己被删行”未采纳：无公开性依据，且软删通常意味着记录不应再由本人读取。
+- `x_org_personcard` 表虽有 `creator` 列，但当前读路径并未使用该表；本批不引入该表归属语义。
+
 
 ## 门禁用例类型语义（批次 2 新增，新增用例按此写）
 用例表新增可选两列：第 13 列 `rev_id`（rev 方向资源 id，缺省 `rev-{victim}`），

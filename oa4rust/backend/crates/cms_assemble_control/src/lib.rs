@@ -16,6 +16,8 @@ pub mod routes;
 #[cfg(test)]
 mod security_gate_tests;
 #[cfg(test)]
+mod security_gate_tests_idor_b5;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
@@ -1359,8 +1361,24 @@ pub async fn appinfo_list_user_view_data_type_appType(
 #[allow(non_snake_case)]
 pub async fn appinfo_appId_icon_size_size(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((app_id, _icon_size)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // POST 只是动作别名，实际是读；按 `creator` 收口：非属主 403，管理员可读。
+    let session = require_session(session)?;
+    match u2_check_owner(
+        &pool,
+        "x_cms_appinfo",
+        "creator",
+        &app_id,
+        &session.person_unique,
+    )
+    .await?
+    {
+        U2Gate::Allowed => {}
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("appinfo not found"))),
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -2002,8 +2020,24 @@ pub async fn categoryinfo_id_control(
 #[allow(non_snake_case)]
 pub async fn categoryinfo_id_execute_projection(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // POST 只是动作别名，实际是读；读口径按 `creator`（删路径仍按 app manager）。
+    let session = require_session(session)?;
+    match u2_check_owner(
+        &pool,
+        "x_cms_categoryinfo",
+        "creator",
+        &id,
+        &session.person_unique,
+    )
+    .await?
+    {
+        U2Gate::Allowed => {}
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("category not found"))),
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -3035,12 +3069,60 @@ data_path_write_handlers!(
     9
 );
 
+/// 文档读口径（与 `document_permission_read_u3` 一致）：已发布公开；
+/// 登录用户可读本人（`creator`/`author_id`）；管理员可读全部；匿名只可读已发布。
+/// `None` = 行不存在（交回调用方保留原有空结果）。
+async fn data_document_readable(
+    pool: &Pool,
+    id: &str,
+    actor: Option<&str>,
+) -> Result<Option<bool>, AppError> {
+    let client = shared::db::acquire(pool).await?;
+    let row = client
+        .query_opt(
+            "SELECT (status = 'published') AS published, \
+                    ($2::text IS NOT NULL AND (creator = $2::text OR author_id = $2::text)) AS owns \
+               FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL",
+            &[&id, &actor],
+        )
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    match row {
+        None => Ok(None),
+        Some(r) => {
+            let published = r.get::<_, Option<bool>>("published").unwrap_or(false);
+            let owns = r.get::<_, Option<bool>>("owns").unwrap_or(false);
+            if published || owns {
+                return Ok(Some(true));
+            }
+            Ok(Some(match actor {
+                Some(a) => shared::middleware::is_admin(pool, a).await,
+                None => false,
+            }))
+        }
+    }
+}
+
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn data_document_id_array_data(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // POST 只是动作别名，实际是读；匿名只可读已发布，登录用户按 creator/author_id 收口。
+    let actor = session.map(|Extension(s)| s.person_unique);
+    match data_document_readable(&pool, &id, actor.as_deref()).await? {
+        Some(true) => {}
+        Some(false) => return Err(AppError::Forbidden),
+        None => {
+            return Ok(Json(ActionResult::legacy_success(
+                Value::Array(vec![]),
+                0,
+                0,
+            )))
+        }
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
