@@ -1208,6 +1208,33 @@ func (s *Service) LevelStars(ctx context.Context, userID int64) (map[int]int, er
 //
 // 原实现的写入顺序来自无 ORDER BY 的查询（任意顺序）。并发结算下，
 // 不同顺序的 user_tasks 行锁获取是死锁窗口 —— 按 id 升序写把它关掉。
+//
+// # R147：11 次 upsert 往返收敛成 1 次
+//
+// 改前：命中 N 个任务 → N 次 `tx.Exec`（每个任务一次往返）。
+// 实测 c=8 的 tx_tasks 段落 11.7ms 里 SQL 只占 ~0.4ms（11 × 0.035ms），
+// 剩下的是往返次数与连接池调度 —— 单纯给 SQL 加索引/加直方图解决不了。
+//
+// 改后：**一条**多行 `INSERT ... SELECT FROM unnest(...)`，
+// 把 (task_id, task_date, progress, cap) 作为对齐数组一次发完；
+// 往返 11 → 1，SQL 语义逐行等价（见下方 CASE）。
+//
+// 为什么不是简单的一条 VALUES：成就与普通任务的冲突更新语义不同
+// （GREATEST vs LEAST(cap, …)），而 `ON CONFLICT DO UPDATE` 里
+// `EXCLUDED` 只暴露目标表的列 —— `cap` 不是 user_tasks 的列，
+// 拿不到。所以 cap 走参数数组 `$5`，用 `array_position($2, task_id)`
+// 在 SET 里按 id 对齐取回。SQL 里只多一次 O(n) 的数组查找（n≈11），
+// 相比省掉的 10 次往返可以忽略。
+//
+// `cap = NULL` 表示成就类（GREATEST，允许 progress 超过 target，
+// 因为它是「历史最高关号」这类最大值）；非 NULL 表示日/周类
+// （累加后按 target 截断）。
+//
+// ⚠️ **INSERT 路径仍写原始 value**（不做 target 截断）—— 与改前一致，
+// 由 achievement_target_test / coverage_final_test 守着。
+//
+// ⚠️ **ORDER BY ord 不是装饰**：它保证多行 upsert 的行锁获取顺序
+// 仍是 task_id 升序（数组按 id 升序构造），锁序契约不因合并而改变。
 func (s *Service) bumpTasks(ctx context.Context, tx pgx.Tx, userID int64, deltas map[string]int64, now time.Time) error {
 	if len(deltas) == 0 {
 		return nil
@@ -1230,32 +1257,53 @@ func (s *Service) bumpTasks(ctx context.Context, tx pgx.Tx, userID int64, deltas
 		}
 	}
 	sort.Slice(hits, func(i, j int) bool { return hits[i].id < hits[j].id })
+	if len(hits) == 0 {
+		return nil
+	}
 
+	// 四个数组严格按同一顺序对齐（ORDER BY ord 依赖这个顺序）。
+	// 值用 int64：与调用方传入的 int64 零转换，避免 2^31 以上静默溢出
+	// （旧实现也是 int64 直接落 int 列，超界由 PG 报 integer out of range）。
+	ids := make([]int32, 0, len(hits))
+	dates := make([]time.Time, 0, len(hits))
+	values := make([]int64, 0, len(hits))
+	caps := make([]*int64, 0, len(hits))
+	allAchievement := true
 	for _, t := range hits {
 		// 累计型指标取"当前值"，单局型取"本局增量"
-		value := deltas[t.metric]
-		day := periodStart(now, t.scope)
+		ids = append(ids, int32(t.id))
+		dates = append(dates, periodStart(now, t.scope))
+		values = append(values, deltas[t.metric])
 		if t.scope == "achievement" {
-			// 成就类记录的是"达到过的最大值"，用 GREATEST 防止倒退
-			if _, err := tx.Exec(ctx, `
-				INSERT INTO user_tasks (user_id, task_id, task_date, progress)
-				VALUES ($1,$2,$3,$4)
-				ON CONFLICT (user_id, task_id, task_date) DO UPDATE SET
-				  progress = GREATEST(user_tasks.progress, EXCLUDED.progress)`,
-				userID, t.id, day, value); err != nil {
-				return fmt.Errorf("bump achievement %d: %w", t.id, err)
-			}
-			continue
+			caps = append(caps, nil) // NULL = 成就：GREATEST
+		} else {
+			c := int64(t.target)
+			caps = append(caps, &c) // 日/周：LEAST(cap, …)
+			allAchievement = false
 		}
-		// 日/周任务累加，但同一周期内不超过目标值（超出无意义）
-		if _, err := tx.Exec(ctx, `
-			INSERT INTO user_tasks (user_id, task_id, task_date, progress)
-			VALUES ($1,$2,$3,$4)
-			ON CONFLICT (user_id, task_id, task_date) DO UPDATE SET
-			  progress = LEAST($5, GREATEST(user_tasks.progress, user_tasks.progress + $4))`,
-			userID, t.id, day, value, t.target); err != nil {
-			return fmt.Errorf("bump task %d: %w", t.id, err)
+	}
+
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO user_tasks (user_id, task_id, task_date, progress)
+		SELECT $1, u.task_id, u.task_date, u.progress
+		FROM unnest($2::int[], $3::date[], $4::bigint[]) WITH ORDINALITY
+		     AS u(task_id, task_date, progress, ord)
+		ORDER BY u.ord
+		ON CONFLICT (user_id, task_id, task_date) DO UPDATE SET
+		  progress = CASE
+		    WHEN ($5::bigint[])[array_position($2::int[], user_tasks.task_id)] IS NULL
+		      THEN GREATEST(user_tasks.progress, EXCLUDED.progress)
+		    ELSE LEAST(($5::bigint[])[array_position($2::int[], user_tasks.task_id)],
+		               GREATEST(user_tasks.progress, user_tasks.progress + EXCLUDED.progress))
+		  END`,
+		userID, ids, dates, values, caps); err != nil {
+		// 文案保持 "bump achievement" / "bump task" 两种前缀：
+		// coverage_final_test 用前者定位「只命中成就类」时的失败。
+		// 合并成一条语句后无法再逐任务归因，故用首行 id + 集合性质标注。
+		if allAchievement {
+			return fmt.Errorf("bump achievement %d: %w", ids[0], err)
 		}
+		return fmt.Errorf("bump task %d: %w", ids[0], err)
 	}
 	return nil
 }
