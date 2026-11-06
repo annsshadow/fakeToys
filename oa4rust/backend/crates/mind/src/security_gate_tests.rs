@@ -126,6 +126,118 @@ mod security_gate_tests {
             .unwrap();
     }
 
+    /// 分片 A 缺陷：`create_mind` / `create_folder` / `create_version` 的 `creator_unit`
+    /// 原取自请求体，同会话可伪造他人单位落库。修复后 unit 由会话登录人派生，
+    /// 请求体 `creatorUnit` 不生效。
+    #[tokio::test]
+    async fn mind_create_ignores_forged_creator_unit() {
+        if !shared::testing::is_db_available().await {
+            eprintln!("SKIP (no PG): mind_create_ignores_forged_creator_unit");
+            return;
+        }
+        let pool = shared::testing::test_pool();
+        let client = pool.get().await.unwrap();
+        let tag = uuid::Uuid::new_v4().to_string();
+        let actor = format!("u-unit-{tag}");
+        client
+            .execute(
+                "INSERT INTO auth_person (id, unique_id, name, password_hash, unit) \
+                 VALUES ($1, $1, 'sec-gate', 'sec-gate-noop', 'real-unit') \
+                 ON CONFLICT (unique_id) DO UPDATE SET unit = EXCLUDED.unit",
+                &[&actor],
+            )
+            .await
+            .unwrap();
+
+        let forged = serde_json::json!({ "creatorUnit": "forged-unit" });
+
+        // create_mind
+        let mind_name = format!("{tag}-mind");
+        let mut body = forged.clone();
+        body["name"] = serde_json::Value::String(mind_name.clone());
+        let _ = crate::create_mind(
+            Extension(pool.clone()),
+            Some(Extension(build_session(&actor))),
+            axum::Json(body),
+        )
+        .await
+        .unwrap();
+        let unit: String = client
+            .query_one(
+                "SELECT creator_unit FROM mind_base_info WHERE name = $1",
+                &[&mind_name],
+            )
+            .await
+            .unwrap()
+            .get("creator_unit");
+        assert_eq!(unit, "real-unit", "create_mind 落库单位必须为会话单位");
+
+        // create_folder
+        let folder_name = format!("{tag}-folder");
+        let mut body = forged.clone();
+        body["name"] = serde_json::Value::String(folder_name.clone());
+        let _ = crate::create_folder(
+            Extension(pool.clone()),
+            Some(Extension(build_session(&actor))),
+            axum::Json(body),
+        )
+        .await
+        .unwrap();
+        let unit: String = client
+            .query_one(
+                "SELECT creator_unit FROM mind_folder_info WHERE name = $1",
+                &[&folder_name],
+            )
+            .await
+            .unwrap()
+            .get("creator_unit");
+        assert_eq!(unit, "real-unit", "create_folder 落库单位必须为会话单位");
+
+        // create_version
+        let version_name = format!("{tag}-version");
+        let mut body = forged;
+        body["name"] = serde_json::Value::String(version_name.clone());
+        let _ = crate::create_version(
+            Extension(pool.clone()),
+            Extension(build_session(&actor)),
+            axum::Json(body),
+        )
+        .await
+        .unwrap();
+        let unit: String = client
+            .query_one(
+                "SELECT creator_unit FROM mind_version_info WHERE name = $1",
+                &[&version_name],
+            )
+            .await
+            .unwrap()
+            .get("creator_unit");
+        assert_eq!(unit, "real-unit", "create_version 落库单位必须为会话单位");
+
+        client
+            .execute("DELETE FROM mind_base_info WHERE name = $1", &[&mind_name])
+            .await
+            .unwrap();
+        client
+            .execute(
+                "DELETE FROM mind_folder_info WHERE name = $1",
+                &[&folder_name],
+            )
+            .await
+            .unwrap();
+        client
+            .execute(
+                "DELETE FROM mind_version_info WHERE name = $1",
+                &[&version_name],
+            )
+            .await
+            .unwrap();
+        client
+            .execute("DELETE FROM auth_person WHERE unique_id = $1", &[&actor])
+            .await
+            .unwrap();
+    }
+
     /// 死池：`pool.get()` 必败，用于离线证明"门在库前返回"。
     fn dead_pool() -> deadpool_postgres::Pool {
         let mgr = deadpool_postgres::Manager::new(
