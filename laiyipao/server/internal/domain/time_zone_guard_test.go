@@ -59,7 +59,7 @@ var hostTimeZonePattern = regexp.MustCompile(`time\.Local|\.Truncate\(|\.Locatio
 var hostTimeZoneAllowed = map[string]string{
 	"laiyipao/server/internal/service/admin_redeem_codes_batch_test.go|expiresAt := time.Now().Add(24 * time.Hour).UTC().Truncate(time.Second)": "显式 .UTC() 后只为把过期时间戳截到秒，不参与日界/日期断言",
 	"laiyipao/server/internal/service/admin_service_test.go|exp := time.Now().UTC().Truncate(time.Microsecond).Add(24 * time.Hour)":             "显式 .UTC() 后只为对齐 timestamptz 微秒精度，不参与日界/日期断言",
-	"laiyipao/server/internal/service/admin_timestamps_r133_test.go|stored := raw.Truncate(time.Microsecond)":                                    "夹具时刻显式用 +08:00 构造，只为对齐 timestamptz 微秒精度，不参与日界/日期断言",
+	"laiyipao/server/internal/service/admin_timestamps_r133_test.go|stored := raw.Truncate(time.Microsecond)":                                   "夹具时刻显式用 +08:00 构造，只为对齐 timestamptz 微秒精度，不参与日界/日期断言",
 }
 
 const (
