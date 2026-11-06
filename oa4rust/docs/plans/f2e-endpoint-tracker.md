@@ -175,3 +175,71 @@
 
 - E9 附件若需「会议参与人」判定，要先确认 `x_meeting` 参与人表结构，单独评估；
 - `query table_flag=$1`、file 列表归属过滤、org `next`（实为 offset）为**负证据**，不改。
+
+## 写侧归属列常量身份扫描（2026-11-06）
+
+背景：写侧把 `creator`/`owner` 一类归属列赋值为字符串字面量（本次命中值均为 `'system'`），
+读侧再加谓词也只是在错的归属上打补丁。全仓只读扫描后按「是否已产生功能后果」排序修复，
+每批独立分支 + PR。
+
+### 已确认缺陷（已修）
+
+| # | 位置 | 表 | 写入字面量 | 读侧后果 | 判定 / 处置 |
+|---|---|---|---|---|---|
+| W1 | `query_assemble_designer/src/u2_closures.rs::table_create` | `x_query_table` | `'system'` | 该 handler **未挂路由**；线上 `POST .../designer/table` 走 `create_table_definition`（admin 门） | **确认缺陷（写入口无身份）**；补 `require_session`（DB 前 401）+ `creator` 取会话；线上 admin 口径不放宽。批1 PR #218 |
+| W2 | `general_assemble_control/src/lib.rs::qrcode_width_width_height_height_text_text` | `x_general_assemble_qrcode` | `'system'` | `qrcode_get` / `qrcode_list` 目前无会话、无谓词 | **确认缺陷（潜在）**；写侧改会话，读侧仍公开，收口属独立批次。批2 PR #220 |
+| W3 | `query_assemble_designer/src/u2_closures.rs::statement_create` | `x_query_statement` | `'system'` | 删除侧按 `creator` + `require_owner`，端点 admin 门内无差异 | **确认缺陷（潜在）**；写侧改会话。批2 PR #220 |
+| W4 | `query_service/src/lib.rs::processing_execute` | `x_query_processing` | `'system'` | 无读端点（只写） | **确认缺陷（潜在）**；写侧改会话；顺带修 `params` 的 JSONB 错误绑定（原先把 `String` 绑进 JSONB，任何调用 500）。批2 PR #220 |
+| W5 | `ai_assemble_control/src/lib.rs::file_upload` | `x_ai_file` | `'system'` | 删除侧 `require_owner` 判 403 → 非管理员删不掉自己文件 | **确认缺陷（已出功能后果）**；先红后绿用例。批3 PR #221 |
+| W6 | `ai_assemble_control/src/lib.rs::file_copy_file` | `x_ai_file` | `'system'` | 同上，复制出的新行归属错误 | **确认缺陷（已出功能后果）**；批3 PR #221 |
+| W7 | `file_assemble_control/src/lib.rs::create_file_entity` | `x_file` | `'system'` | 删除侧按 `creator` 判 403 → 非管理员删不掉自己文件 | **确认缺陷（已出功能后果）**；先红后绿用例。批3 PR #221 |
+
+### 历史行可见性变化（不回填，走既有兜底）
+
+统一口径：历史行 `creator='system'` 保留原值，非管理员视为「无归属」，仅管理员可读/可删/可写。
+
+| 表 | 历史行对非管理员 | 新行对非管理员 | 说明 |
+|---|---|---|---|
+| `x_query_table` | 无影响 | 无影响 | handler 未挂路由，生产无该路径写入的行 |
+| `x_general_assemble_qrcode` | 无变化（读端点无谓词，仍公开可读） | 读侧加谓词后才可读；本批未改读侧 | 写侧归属已可区分 |
+| `x_query_statement` | 无变化（端点 admin 门） | 同左 | 只影响删除侧 owner 臂能否命中真实行 |
+| `x_query_processing` | 无读端点，无可见性 | 同左 | — |
+| `x_ai_file` | 仍仅管理员可删（与修复前一致） | 本人可删 | 读端点仍无会话/谓词，本批未改 |
+| `x_file` | 仍仅管理员可删（与修复前一致） | 本人可删 | 读侧按各端点现状，本批未改 |
+
+### 合理默认，不改
+
+以下字面量属于「历史兼容的合理默认」，或写端点本身已 admin-only，不纳入本轮：
+
+- ai config / admin 类、correlation（读用 `person_id`）、jpush（admin + `target='all'`）；
+- `portal_*`（写 admin）、program_center（admin / 全局表）、query designer 其余创建（admin）、
+  query_surface（admin）、general attend / securityclearance（admin）。
+
+### 通用检查项：归属谓词的判据行必须来自真实写入路径
+
+**适用范围：所有新增/修改归属谓词的批次，不只 `x_portal_*`。** 每次给读端点加
+`creator=本人 OR admin`（或 `owner`/`person` 同类谓词）时，必须同时说明并验证：
+
+1. **判据行来源**：用例里的归属行必须由真实写入路径（handler/端点）产生；
+   只靠 seed 直接插 `creator=某人` 会让「谓词恒不命中」也显示绿。
+2. **真实行上的三条判据**：本人可命中；他人访问同一行被 403 或返回空集且行仍存在；管理员放行。
+3. **写侧前置条件**：先确认该表的写入已落会话身份。写侧仍硬写常量时，owner 臂对真实数据
+   **永不命中**，门禁绿只说明「谁都没命中」，不代表 IDOR 已修。
+4. **admin-only 表的例外**：若确认该表恒 admin-only，必须明文登记「owner 臂永不命中、
+   保护来自 admin 门」，不得在台账记为「已加归属谓词防住」。
+5. **发现假绿的处理**：列为 `FALSE-GREEN`（写侧常量 + 读侧 owner 谓词），要么改写入，
+   要么拆除无效谓词并固定 admin-only 口径；在处置前该端点不得计入「已防住」数量。
+
+### ⚠️ `x_portal_*`：通用检查项的一个实例（假绿风险）
+
+`portal_assemble_designer` 的生产写入仍硬写 `creator='system'`：
+
+- `create_design` → `x_portal_design`
+- `create_page` → `x_portal_page`
+
+若给 `x_portal_*` 读端点加 `creator=本人 OR admin` 谓词，**owner 臂对真实数据永不命中**
+（真实行 creator 恒 `'system'`），非管理员只能拿到空集。门禁会显示 PASS，但保护来自
+「谁都不命中」，不是归属判定生效；用例若只用 seed 造出 `creator=某人` 的行，还会掩盖这一点。
+
+处置：要么先把上述写入改为会话身份，要么明确这些行恒 admin-only 并固定口径。
+在此之前，`x_portal_*` 的相关门禁绿**不得记为「已防住」**，按上面通用检查项的第 3–5 条处理。
