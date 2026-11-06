@@ -551,8 +551,8 @@ pub async fn create_file_entity(
     session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // 第五十六批：新建文件实体要求有效会话（无会话 401）；creator 仍硬写 "system"（残留记 §五）。
-    require_session(session)?;
+    // 批3：新建文件实体要求有效会话，creator 落会话身份（否则删除侧 require_owner 会把本人拒成 403）。
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
     let name = body
@@ -571,7 +571,6 @@ pub async fn create_file_entity(
         .unwrap_or_default()
         .to_string();
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
-    let creator = "system";
 
     let id = uuid::Uuid::new_v4().to_string();
 
@@ -579,7 +578,7 @@ pub async fn create_file_entity(
         .execute(
             "INSERT INTO x_file (id, name, path, size, creator, create_time, folder_id) \
               VALUES ($1, $2, $3, $4, $5, NOW(), $6)",
-            &[&id, &name, &path, &size, &creator, &folder_id],
+            &[&id, &name, &path, &size, &sess.person_unique, &folder_id],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
