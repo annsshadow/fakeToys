@@ -19,6 +19,7 @@
     python scripts/security_regression_gate.py sabotage organization    # Rust②b：摘掉 org 归属谓词
     python scripts/security_regression_gate.py sabotage program_center  # Rust②c：摘掉 collect/module 归属谓词
     python scripts/security_regression_gate.py sabotage hotpic_mind      # Rust②d：摘掉 hotpic/mind 归属谓词（4 条）
+    python scripts/security_regression_gate.py sabotage write-idor-b6     # Rust②f：摘掉 appeal + processplatform 两把的归属（5 条）
     python scripts/security_regression_gate.py sabotage go-limit0   # Go①：扣款乘 2
     python scripts/security_regression_gate.py sabotage go-idor-rev # Go②：摘掉预设删除归属
     python scripts/security_regression_gate.py sabotage go-empty-list    # Go③：伪装成已修（列表恒空）
@@ -71,6 +72,7 @@ PROGRAM_CENTER = BACKEND / "crates/program_center/src/lib.rs"
 HOTPIC_CORE = BACKEND / "crates/hotpic_core_entity/src/lib.rs"
 HOTPIC_ASSEMBLE = BACKEND / "crates/hotpic_assemble_control/src/lib.rs"
 MIND = BACKEND / "crates/mind_core_entity/src/lib.rs"
+PROCESS_PLATFORM = BACKEND / "crates/processplatform_service_processing/src/lib.rs"
 
 # 第十一轮：keyset 深分页与本人写正控制所在的 crate
 ATTENDANCE_ASSEMBLE = BACKEND / "crates/attendance_assemble_control/src/lib.rs"
@@ -518,6 +520,36 @@ MIND_OWNERSHIP_RE = re.compile(
 )
 MIND_OWNERSHIP_PATCH = 'const CREATOR_OWNER_PREDICATE: &str = "TRUE";'
 
+# 第六批写 IDOR：appeal 处理的归属谓词（申请人/管理员）摘成恒真。
+APPEAL_GATE_RE = re.compile(
+    r'\n\s*AND \(NULLIF\(BTRIM\(person_id\), \'\'\) = \$3\s*\\?\s*'
+    r'OR NULLIF\(BTRIM\(creator\), \'\'\) = \$3\s*\\?\s*'
+    r'OR EXISTS\(.*?r\.disable = false\)\)',
+    re.S,
+)
+APPEAL_GATE_PATCH = "\n                AND ($3 = $3)"
+
+# 第六批写 IDOR：processplatform 两把读的 `WHERE` 归属谓词。
+TASK_GATE_RE = re.compile(
+    r'\n\s*AND \(NULLIF\(BTRIM\(t\.person\), \'\'\) = \$2\s*\\?\s*'
+    r'OR NULLIF\(BTRIM\(w\.creator\), \'\'\) = \$2\s*\\?\s*'
+    r'OR \{U4_ADMIN_EXISTS\}\)',
+    re.S,
+)
+TASK_GATE_PATCH = "\n            AND ($2 = $2)"
+ATTACH_GATE_RE = re.compile(
+    r'\n\s*AND \(NULLIF\(BTRIM\(creator\), \'\'\) = \$2 OR \{U4_ADMIN_EXISTS\}\)',
+    re.S,
+)
+ATTACH_GATE_PATCH = "\n            AND ($2 = $2)"
+B6_EXPECTS = [
+    "attendance_assemble_control|attendanceappealInfo_appeal_id|POST",
+    "t1|attendanceappealInfo_appeal_id|POST",
+    "t1|attendanceappealInfo_appeal_id|PUT",
+    "processplatform_service_processing|attachment_edit_id_text|POST",
+    "processplatform_service_processing|task_id_will|POST",
+]
+
 
 def sabotage_many(
     title: str,
@@ -543,7 +575,9 @@ def sabotage_many(
         print(f"实验失败：门禁未红或未点名全部用例（exit={code}）")
         return 1
     finally:
-        for path, original in originals:
+        # 同一文件可能有多次替换（如 processplatform 两把都在 lib.rs）：必须逆序还原，
+        # 否则最后一次写入的是「已被改坏」的快照，而不是最初的原文件。
+        for path, original in reversed(originals):
             path.write_bytes(original)
             print(f"[restore] {path.name} 已还原")
 
@@ -589,9 +623,19 @@ def sabotage(kind: str) -> int:
             ],
             HOTPIC_MIND_EXPECTS,
         )
+    elif kind == "write-idor-b6":
+        return sabotage_many(
+            "摘掉第六批写 IDOR 的归属（appeal + processplatform 两把，应变 NEW-FAIL）",
+            [
+                (ATTENDANCE_ASSEMBLE, APPEAL_GATE_RE, APPEAL_GATE_PATCH, "appeal"),
+                (PROCESS_PLATFORM, TASK_GATE_RE, TASK_GATE_PATCH, "task_will"),
+                (PROCESS_PLATFORM, ATTACH_GATE_RE, ATTACH_GATE_PATCH, "attachment"),
+            ],
+            B6_EXPECTS,
+        )
     else:
         raise SystemExit(
-            f"未知破坏实验: {kind}（可选 ownership / correct / general / organization / program_center / hotpic_mind）"
+            f"未知破坏实验: {kind}（可选 ownership / correct / general / organization / program_center / hotpic_mind / write-idor-b6）"
         )
 
     print(f"== 破坏实验：{title}")
@@ -637,6 +681,7 @@ def main() -> int:
         if len(sys.argv) < 3:
             print("用法: security_regression_gate.py sabotage "
                   "<ownership|correct|general|organization|program_center|hotpic_mind|"
+                  "write-idor-b6|"
                   "rust-drift-to-leak|rust-swallow-write|"
                   "go-limit0|go-idor-rev|go-empty-list|go-swallow-write|"
                   "go-dead-write|go-page2|go-drift-to-leak>")
