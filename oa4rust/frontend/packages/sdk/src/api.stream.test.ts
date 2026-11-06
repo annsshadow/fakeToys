@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiClient, AuthenticationError, PermissionError } from './api'
+import { ApiClient, ApiError, AuthenticationError, PermissionError } from './api'
 
 function sseResponse(chunks: string[], status = 200): Response {
   const encoder = new TextEncoder()
@@ -13,6 +13,28 @@ function sseResponse(chunks: string[], status = 200): Response {
     },
   })
   return new Response(stream, { status, headers: { 'Content-Type': 'text/event-stream' } })
+}
+
+/** 可由测试控制分块节奏的 SSE 响应；`error` 模拟浏览器 abort 时响应体报错。 */
+function controllableResponse(): {
+  response: Response
+  push: (chunk: string) => void
+  close: () => void
+  error: (err: unknown) => void
+} {
+  const encoder = new TextEncoder()
+  let ctrl: ReadableStreamDefaultController<Uint8Array> | null = null
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      ctrl = controller
+    },
+  })
+  return {
+    response: new Response(stream, { status: 200, headers: { 'Content-Type': 'text/event-stream' } }),
+    push: (chunk) => ctrl?.enqueue(encoder.encode(chunk)),
+    close: () => ctrl?.close(),
+    error: (err) => ctrl?.error(err),
+  }
 }
 
 describe('ApiClient.stream', () => {
@@ -84,5 +106,137 @@ describe('ApiClient.stream', () => {
     const fetch401 = vi.fn().mockResolvedValue(new Response('no', { status: 401 }))
     vi.stubGlobal('fetch', fetch401)
     await expect(new ApiClient().stream('/api/x', {}, () => {})).rejects.toBeInstanceOf(AuthenticationError)
+  })
+})
+
+describe('ApiClient.stream 空闲超时（R134）', () => {
+  beforeEach(() => {
+    vi.stubGlobal('window', { location: { origin: 'https://web.example.test' } })
+    vi.stubGlobal('localStorage', {
+      getItem: () => {
+        throw new Error('must not read localStorage')
+      },
+    })
+    vi.stubGlobal('sessionStorage', {
+      getItem: () => {
+        throw new Error('must not read sessionStorage')
+      },
+    })
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
+
+  function fetchHonoringAbort(resp: () => Response, onAbort: () => void) {
+    return vi.fn((_url: string, init?: RequestInit) => {
+      init?.signal?.addEventListener('abort', onAbort)
+      return Promise.resolve(resp())
+    })
+  }
+
+  it('连续 60s 收不到任何字节：以 ApiError(status 0) 结束，而不是永远挂起', async () => {
+    const ctrlStream = controllableResponse()
+    // 浏览器 abort 会让未读的响应体报错，从而结束挂起的 reader.read()
+    vi.stubGlobal(
+      'fetch',
+      fetchHonoringAbort(
+        () => ctrlStream.response,
+        () => ctrlStream.error(new DOMException('aborted', 'AbortError')),
+      ),
+    )
+    const p = new ApiClient().stream('/api/ai/stream', {}, () => {})
+    let settled = false
+    void p.then(
+      () => {
+        settled = true
+      },
+      () => {
+        settled = true
+      },
+    )
+    await vi.advanceTimersByTimeAsync(59_000)
+    expect(settled).toBe(false)
+    await vi.advanceTimersByTimeAsync(2_000)
+    expect(settled).toBe(true)
+    await expect(p).rejects.toMatchObject({ name: 'ApiError', status: 0, message: '流式响应超时' })
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('服务端连响应头都不发：同样在 60s 判定死连接', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        (_url: string, init?: RequestInit) =>
+          new Promise<Response>((_resolve, reject) => {
+            init?.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')))
+          }),
+      ),
+    )
+    const p = new ApiClient().stream('/api/ai/stream', {}, () => {})
+    let settled = false
+    void p.then(
+      () => {
+        settled = true
+      },
+      () => {
+        settled = true
+      },
+    )
+    await vi.advanceTimersByTimeAsync(59_000)
+    expect(settled).toBe(false)
+    await vi.advanceTimersByTimeAsync(2_000)
+    await expect(p).rejects.toBeInstanceOf(ApiError)
+  })
+
+  it('收到分块会重置计时：总时长 >60s 但每段间隔 <60s 不误杀', async () => {
+    const ctrlStream = controllableResponse()
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(ctrlStream.response))
+    const events: string[] = []
+    const p = new ApiClient().stream('/api/ai/stream', {}, (_e, d) => events.push(d))
+    let settled = false
+    void p.then(
+      () => {
+        settled = true
+      },
+      () => {
+        settled = true
+      },
+    )
+    await vi.advanceTimersByTimeAsync(30_000)
+    ctrlStream.push('event: token\ndata: {"token":"a"}\n\n')
+    await vi.advanceTimersByTimeAsync(0)
+    expect(events).toEqual(['{"token":"a"}'])
+    // 距上一条数据已 59s（总时长 89s）：证明计时按「最后收字节」重置，不是总时长 60s
+    await vi.advanceTimersByTimeAsync(59_000)
+    expect(settled).toBe(false)
+    ctrlStream.push('event: token\ndata: {"token":"b"}\n\n')
+    await vi.advanceTimersByTimeAsync(0)
+    expect(settled).toBe(false)
+    ctrlStream.close()
+    await vi.advanceTimersByTimeAsync(0)
+    await p
+    expect(events).toEqual(['{"token":"a"}', '{"token":"b"}'])
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('timeoutMs 可覆盖空闲超时（5s）', async () => {
+    const ctrlStream = controllableResponse()
+    vi.stubGlobal(
+      'fetch',
+      fetchHonoringAbort(
+        () => ctrlStream.response,
+        () => ctrlStream.error(new DOMException('aborted', 'AbortError')),
+      ),
+    )
+    const p = new ApiClient().stream('/api/ai/stream', {}, () => {}, { timeoutMs: 5_000 })
+    void p.catch(() => undefined)
+    await vi.advanceTimersByTimeAsync(4_000)
+    expect(vi.getTimerCount()).toBe(1)
+    await vi.advanceTimersByTimeAsync(2_000)
+    await expect(p).rejects.toMatchObject({ status: 0, message: '流式响应超时' })
   })
 })
