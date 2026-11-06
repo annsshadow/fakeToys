@@ -4,10 +4,6 @@
 # 若首次切换后看到 STATE-DRIFT，先确认是不是对齐差异，不要误读成业务回归。
 # 修复一条就删一行（单调下降）；只增不减视为回归。
 ai_assemble_control|config_get_mcp_flag|GET	LEAK
-attendance_assemble_control|attendanceappealInfo_id|GET	LEAK
-attendance_assemble_control|attendancedetail_id|GET	LEAK
-attendance_assemble_control|attendancedetail_mobile_id|GET	LEAK
-attendance_assemble_control|attendanceselfholiday_id|GET	LEAK
 cms_assemble_control|appinfo_id_control|GET	LEAK
 cms_assemble_control|appinfo_id|GET	LEAK
 cms_assemble_control|application_id|GET	LEAK
