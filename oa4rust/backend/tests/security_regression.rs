@@ -345,7 +345,7 @@ mod security_regression {
             };
             let name = &rest[open + 1..open + close];
             let val = match name {
-                "id" => id,
+                "id" | "flag" => id,
                 "person" | "personId" | "person_id" => person,
                 "date" => "2026-01-01",
                 "count" | "size" | "page" => "1",

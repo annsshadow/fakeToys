@@ -1,6 +1,7 @@
 // Copyright (C) 2026 annsshadow
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+use axum::extract::Extension;
 use deadpool_postgres::{Client, Pool};
 use serde_json::Value;
 use shared::{
@@ -70,6 +71,36 @@ pub async fn require_admin_opt(
         None => Err(AppError::Unauthorized),
         Some(s) => require_admin(pool, s).await,
     }
+}
+
+pub fn require_session_opt(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<shared::session::Session, AppError> {
+    session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
+/// 读归属谓词：`creator` 为本人 OR 调用者管理员。**写进 SQL WHERE**，不做先查后判；
+/// `creator` 为 NULL 时不命中（fail-closed）。
+pub const CREATOR_OWNER_PREDICATE: &str = "id = $1 AND (creator = $2 OR EXISTS(\
+     SELECT 1 FROM auth_person p \
+       JOIN auth_person_role pr ON pr.person_id = p.id \
+       JOIN auth_role r ON r.id = pr.role_id \
+      WHERE (p.unique_id = $2 OR p.id = $2) \
+        AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false))";
+
+/// 归属读命中 0 行时返回「该 id 是否存在」，由调用方决定 403 还是维持原「not found」信封。
+/// 此查询只用于选错误码，授权判定已在主查询的 WHERE 内。
+pub async fn owned_read_row_exists(
+    client: &Client,
+    table: &str,
+    id: &str,
+) -> Result<bool, AppError> {
+    let sql = format!("SELECT EXISTS(SELECT 1 FROM {table} WHERE id = $1) AS row_exists");
+    Ok(client
+        .query_one(&sql, &[&id])
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+        .get::<_, bool>("row_exists"))
 }
 
 #[allow(non_snake_case)]
