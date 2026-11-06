@@ -12,7 +12,6 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
-	"net/http"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
@@ -22,7 +21,7 @@ func TestE2EMyPurchasesRequiresAuth(t *testing.T) {
 	e2eScratchDB(t)
 	e := newE2E(t)
 
-	req, _ := http.NewRequest("GET", "/api/v1/me/purchases", nil)
+	req, _ := testReq("GET", "/api/v1/me/purchases", nil)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
 		t.Fatalf("请求失败：%v", err)
@@ -50,7 +49,7 @@ func TestE2EMyPurchasesSucceeds(t *testing.T) {
 		t.Fatalf("插入购买记录失败：%v", err)
 	}
 
-	req, _ := http.NewRequest("GET", "/api/v1/me/purchases", nil)
+	req, _ := testReq("GET", "/api/v1/me/purchases", nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
@@ -87,7 +86,7 @@ func TestE2EMyPurchasesEmpty(t *testing.T) {
 	e := newE2E(t)
 
 	_, tok := e.newPlayer(t, "purchases_empty")
-	req, _ := http.NewRequest("GET", "/api/v1/me/purchases", nil)
+	req, _ := testReq("GET", "/api/v1/me/purchases", nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
