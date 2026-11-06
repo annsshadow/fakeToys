@@ -1188,6 +1188,9 @@ mod security_regression {
         }
     }
 
+    /// 单个用例的状态变化：`(id, 旧状态, 新状态)`。
+    type CaseChange = (String, String, String);
+
     fn baseline_path() -> PathBuf {
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/security_regression_baseline.txt")
     }
@@ -1226,24 +1229,29 @@ mod security_regression {
         println!("[BASELINE] 已写入 {} 条", states.len());
     }
 
-    /// 纯函数：比较基线与本次状态，返回（全部状态变化，UNVERIFIED→LEAK 的致命漂移）。
+    /// 返回 `(全部状态变化, 需要判红的变化)`。
+    ///
+    /// 判红两类：
+    /// - `UNVERIFIED -> LEAK`：已知问题从「还没验证」变成「确认泄漏」；
+    /// - `任何 -> INTEGRITY`：自写回环/归属落库被破坏，比读泄漏更难自愈，
+    ///   不能只打 STATE-DRIFT 放过（旧行为就是只打印不判红）。
     fn state_drift(
         base: &BTreeMap<String, String>,
         cur: &BTreeMap<String, String>,
-    ) -> (Vec<(String, String, String)>, Vec<String>) {
+    ) -> (Vec<CaseChange>, Vec<CaseChange>) {
         let mut drift = Vec::new();
-        let mut drift_to_leak = Vec::new();
+        let mut fatal = Vec::new();
         for (id, cs) in cur {
             let Some(bs) = base.get(id) else { continue };
             if bs == cs {
                 continue;
             }
             drift.push((id.clone(), bs.clone(), cs.clone()));
-            if bs == "UNVERIFIED" && cs == "LEAK" {
-                drift_to_leak.push(id.clone());
+            if (bs == "UNVERIFIED" && cs == "LEAK") || (cs == "INTEGRITY" && bs != "INTEGRITY") {
+                fatal.push((id.clone(), bs.clone(), cs.clone()));
             }
         }
-        (drift, drift_to_leak)
+        (drift, fatal)
     }
 
     /// 一次性对齐：只补齐/替换 UNKNOWN 的状态，不覆盖已有真实状态；
@@ -1502,7 +1510,7 @@ mod security_regression {
             unaligned.len()
         );
 
-        let (drift, drift_to_leak) = state_drift(&baseline, &nonpass);
+        let (drift, fatal) = state_drift(&baseline, &nonpass);
         let new_fail: Vec<&String> = nonpass
             .keys()
             .filter(|id| !baseline.contains_key(*id))
@@ -1526,18 +1534,23 @@ mod security_regression {
                 println!("STALE-BASELINE\t{id}\t（已修复：请从基线删掉这一行）");
             }
             for (id, bs, cs) in &drift {
-                println!("[STATE-DRIFT] {id}\t{bs} -> {cs}");
+                // 带上三段信息，翻日志时能区分「真修复了」还是「证据丢了」。
+                println!("[STATE-DRIFT] id={id} 原状态={bs} 现状态={cs}");
             }
         }
 
-        // 致命：基线内 UNVERIFIED 恶化为 LEAK。这是「已知问题悄悄变严重」的唯一信号。
-        for id in &drift_to_leak {
-            println!("[DRIFT-TO-LEAK] {id}\tUNVERIFIED -> LEAK");
+        // 致命：基线内恶化。读泄漏恶化与写回环破坏都必须红，不能只打印。
+        for (id, bs, cs) in &fatal {
+            if cs == "INTEGRITY" {
+                println!("[DRIFT-TO-INTEGRITY] id={id} 原状态={bs} 现状态=INTEGRITY");
+            } else {
+                println!("[DRIFT-TO-LEAK] id={id} 原状态={bs} 现状态=LEAK");
+            }
         }
         assert!(
-            drift_to_leak.is_empty(),
-            "门禁红：{} 条基线内 UNVERIFIED 已恶化为 LEAK（见上方 DRIFT-TO-LEAK）",
-            drift_to_leak.len()
+            fatal.is_empty(),
+            "门禁红：{} 条基线内状态恶化（UNVERIFIED->LEAK 或 ->INTEGRITY，见上方 DRIFT-* ）",
+            fatal.len()
         );
         assert!(
             new_fail.is_empty(),
@@ -1564,19 +1577,29 @@ mod security_regression {
         base.insert("case-a".to_string(), "UNVERIFIED".to_string());
         base.insert("case-b".to_string(), "UNVERIFIED".to_string());
         base.insert("case-c".to_string(), "LEAK".to_string());
+        base.insert("case-d".to_string(), "LEAK".to_string());
         let mut cur = BTreeMap::new();
         cur.insert("case-a".to_string(), "LEAK".to_string());
         cur.insert("case-b".to_string(), "UNVERIFIED".to_string());
         cur.insert("case-c".to_string(), "UNVERIFIED".to_string());
+        cur.insert("case-d".to_string(), "INTEGRITY".to_string());
         let (drift, fatal) = state_drift(&base, &cur);
-        assert_eq!(drift.len(), 2, "应看到两条状态变化");
-        assert_eq!(
-            fatal,
-            vec!["case-a".to_string()],
-            "只有 UNVERIFIED->LEAK 致命"
+        assert_eq!(drift.len(), 3, "应看到三条状态变化");
+        assert_eq!(fatal.len(), 2, "UNVERIFIED->LEAK 与 LEAK->INTEGRITY 都致命");
+        assert!(
+            fatal
+                .iter()
+                .any(|(id, bs, cs)| id == "case-a" && bs == "UNVERIFIED" && cs == "LEAK"),
+            "UNVERIFIED->LEAK 应致命"
         );
         assert!(
-            !fatal.contains(&"case-c".to_string()),
+            fatal
+                .iter()
+                .any(|(id, bs, cs)| id == "case-d" && bs == "LEAK" && cs == "INTEGRITY"),
+            "LEAK->INTEGRITY 应致命"
+        );
+        assert!(
+            !fatal.iter().any(|(id, _, _)| id == "case-c"),
             "LEAK->UNVERIFIED 只记 STATE-DRIFT，不升级为致命"
         );
     }

@@ -312,6 +312,15 @@ pub async fn create_meeting(
     ))))
 }
 
+/// 会议读归属谓词（`$2` = 会话身份）：`creator` 为本人，或调用者管理员。
+/// 谓词写进 SQL WHERE，不做「先查后判」；`creator` 为 NULL 时不命中（fail-closed）。
+const MEETING_CREATOR_READ_PREDICATE: &str = "creator = $2 OR EXISTS(\
+    SELECT 1 FROM auth_person p \
+      JOIN auth_person_role pr ON pr.person_id = p.id \
+      JOIN auth_role r ON r.id = pr.role_id \
+     WHERE (p.unique_id = $2 OR p.id = $2) \
+       AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false)";
+
 #[utoipa::path(
     get,
     path = "/api/meeting/{id}",
@@ -329,51 +338,64 @@ pub async fn create_meeting(
 #[allow(non_snake_case)]
 pub async fn get_meeting(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
-            "SELECT id, title, content, room_id, start_time::text AS start_time, end_time::text AS end_time, creator, create_time::text AS create_time FROM x_meeting WHERE id = $1",
-            &[&id],
+            &format!(
+                "SELECT id, title, content, room_id, start_time::text AS start_time, end_time::text AS end_time, \
+                 creator, create_time::text AS create_time FROM x_meeting WHERE id = $1 AND ({MEETING_CREATOR_READ_PREDICATE})"
+            ),
+            &[&id, &session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
-    match row {
-        Some(row) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                (
-                    "content".to_string(),
-                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
-                ),
-                (
-                    "roomId".to_string(),
-                    Value::String(row.get::<_, Option<String>>("room_id").unwrap_or_default()),
-                ),
-                (
-                    "startTime".to_string(),
-                    Value::String(row.get("start_time")),
-                ),
-                ("endTime".to_string(), Value::String(row.get("end_time"))),
-                (
-                    "creator".to_string(),
-                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("create_time")
-                            .unwrap_or_default(),
-                    ),
-                ),
-            ]));
-            Ok(Json(ActionResult::success(result)))
+    let Some(row) = row else {
+        // 谓词已拒绝：区分「行不存在」与「无权读」。此读不参与授权判定。
+        let exists = client
+            .query_opt("SELECT 1 FROM x_meeting WHERE id = $1", &[&id])
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+            .is_some();
+        if exists {
+            return Err(AppError::Forbidden);
         }
-        None => Ok(Json(ActionResult::error("meeting not found"))),
-    }
+        return Ok(Json(ActionResult::error("meeting not found")));
+    };
+
+    let result = Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(row.get("id"))),
+        ("title".to_string(), Value::String(row.get("title"))),
+        (
+            "content".to_string(),
+            Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+        ),
+        (
+            "roomId".to_string(),
+            Value::String(row.get::<_, Option<String>>("room_id").unwrap_or_default()),
+        ),
+        (
+            "startTime".to_string(),
+            Value::String(row.get("start_time")),
+        ),
+        ("endTime".to_string(), Value::String(row.get("end_time"))),
+        (
+            "creator".to_string(),
+            Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+        ),
+        (
+            "createTime".to_string(),
+            Value::String(
+                row.get::<_, Option<String>>("create_time")
+                    .unwrap_or_default(),
+            ),
+        ),
+    ]));
+    Ok(Json(ActionResult::success(result)))
 }
 
 #[utoipa::path(

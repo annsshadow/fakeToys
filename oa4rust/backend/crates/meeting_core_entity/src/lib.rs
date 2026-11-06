@@ -9,8 +9,8 @@ use axum::{
 use chrono::Utc;
 use deadpool_postgres::Pool;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder,
-    QuerySelect, Set,
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, DbBackend, EntityTrait,
+    QueryFilter, QueryOrder, QuerySelect, Set, Statement,
 };
 use serde_json::Value;
 use shared::{
@@ -530,48 +530,83 @@ pub async fn create_meeting(
     ))))
 }
 
+/// 会议读归属谓词（`$2` = 会话身份）：`creator` 为本人，或调用者管理员。
+/// 谓词写进 SQL WHERE，不做「先查后判」；`creator` 为 NULL 时不命中（fail-closed）。
+const MEETING_CREATOR_READ_PREDICATE: &str = "creator = $2 OR EXISTS(\
+    SELECT 1 FROM auth_person p \
+      JOIN auth_person_role pr ON pr.person_id = p.id \
+      JOIN auth_role r ON r.id = pr.role_id \
+     WHERE (p.unique_id = $2 OR p.id = $2) \
+       AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false)";
+
 /// 获取单个会议
 #[allow(non_snake_case)]
 pub async fn get_meeting(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let model = meeting::Entity::find_by_id(&id)
-        .one(&db.0)
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    let session = require_session(session)?;
+    let stmt = Statement::from_sql_and_values(
+        DbBackend::Postgres,
+        format!(
+            "SELECT id, title, content, room_id, \
+             to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, \
+             to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, \
+             to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time \
+             FROM x_meeting WHERE id = $1 AND ({MEETING_CREATOR_READ_PREDICATE})"
+        ),
+        [id.clone().into(), session.person_unique.clone().into()],
+    );
+    let row =
+        db.0.query_one(stmt)
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
-    match model {
-        Some(m) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(m.id.clone())),
-                ("title".to_string(), Value::String(m.title.clone())),
-                (
-                    "content".to_string(),
-                    Value::String(m.content.clone().unwrap_or_default()),
-                ),
-                (
-                    "roomId".to_string(),
-                    Value::String(m.room_id.clone().unwrap_or_default()),
-                ),
-                (
-                    "startTime".to_string(),
-                    Value::String(m.start_time.to_string()),
-                ),
-                ("endTime".to_string(), Value::String(m.end_time.to_string())),
-                (
-                    "organizerId".to_string(),
-                    Value::String(m.creator.clone().unwrap_or_default()),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(m.create_time.map(|dt| dt.to_string()).unwrap_or_default()),
-                ),
-            ]));
-            Ok(Json(ActionResult::success(result)))
+    let Some(row) = row else {
+        // 谓词已拒绝：区分「行不存在」与「无权读」。此读不参与授权判定。
+        let exists =
+            db.0.query_one(Statement::from_sql_and_values(
+                DbBackend::Postgres,
+                "SELECT 1 FROM x_meeting WHERE id = $1",
+                [id.clone().into()],
+            ))
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+            .is_some();
+        if exists {
+            return Err(AppError::Forbidden);
         }
-        None => Ok(Json(ActionResult::error("meeting not found"))),
-    }
+        return Ok(Json(ActionResult::error("meeting not found")));
+    };
+
+    let err = |e: sea_orm::DbErr| AppError::internal_with_source(concat!(file!(), ":", line!()), e);
+    let text = |col: &str| -> Result<String, AppError> {
+        Ok(row
+            .try_get::<Option<String>>("", col)
+            .map_err(err)?
+            .unwrap_or_default())
+    };
+    let result = Value::Object(serde_json::Map::from_iter([
+        (
+            "id".to_string(),
+            Value::String(row.try_get::<String>("", "id").map_err(err)?),
+        ),
+        (
+            "title".to_string(),
+            Value::String(row.try_get::<String>("", "title").map_err(err)?),
+        ),
+        ("content".to_string(), Value::String(text("content")?)),
+        ("roomId".to_string(), Value::String(text("room_id")?)),
+        ("startTime".to_string(), Value::String(text("start_time")?)),
+        ("endTime".to_string(), Value::String(text("end_time")?)),
+        ("organizerId".to_string(), Value::String(text("creator")?)),
+        (
+            "createTime".to_string(),
+            Value::String(text("create_time")?),
+        ),
+    ]));
+    Ok(Json(ActionResult::success(result)))
 }
 
 /// 更新会议
