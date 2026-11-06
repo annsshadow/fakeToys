@@ -88,6 +88,11 @@ mod security_regression {
         dir: String,
         /// 管理员分支策略：deny（管理员也不该看）/ allow（管理员是合法读者）/ unknown（未裁决）/ n/a（非 idor）
         admin_policy: String,
+        /// 可选：rev 方向的资源 id（默认 `rev-{victim}`）。用于反向资源不是
+        /// `rev-` 前缀镜像的场景（如 auth_person 的本人行 id 就是身份键）。
+        rev_id: String,
+        /// 可选：请求体字面量（JSON）。空则沿用各 kind 的默认体。
+        body: String,
     }
 
     #[derive(Clone, Debug)]
@@ -139,7 +144,7 @@ mod security_regression {
                     .map(|s| s.trim())
                     .filter(|s| !s.is_empty())
                     .unwrap_or_else(|| match f[1].trim() {
-                        "idor-read" | "idor-write" => "both",
+                        "idor-read" | "idor-write" | "idor-read-scoped" => "both",
                         _ => "fwd-only",
                     });
                 let admin_policy = f
@@ -160,6 +165,8 @@ mod security_regression {
                     tier: tier.to_string(),
                     dir: dir.to_string(),
                     admin_policy: admin_policy.to_string(),
+                    rev_id: f.get(12).map(|s| s.trim()).unwrap_or("").to_string(),
+                    body: f.get(13).map(|s| s.trim()).unwrap_or("").to_string(),
                 })
             })
             .collect()
@@ -358,10 +365,15 @@ mod security_regression {
         out
     }
 
-    /// 反向守卫：rev 方向的资源 id（同表、owner=audit-user 的镜像行）
+    /// 反向守卫：rev 方向的资源 id（默认同表、owner=audit-user 的 `rev-` 镜像行；
+    /// 若用例显式给了 `rev_id`，以显式值为准）。
     fn resource_id(c: &Case, rev: bool) -> String {
         if rev {
-            format!("rev-{}", c.victim)
+            if c.rev_id.is_empty() {
+                format!("rev-{}", c.victim)
+            } else {
+                c.rev_id.clone()
+            }
         } else {
             c.victim.clone()
         }
@@ -943,7 +955,16 @@ mod security_regression {
                 row_json(pool, "x_empower", &c.victim).await,
                 None,
             ),
-            _ => ("{}".to_string(), None, None),
+            _ => {
+                // 读用例可按需给字面量请求体（如 person/list/like 的搜索词）；
+                // 未给时保持空对象，兼容历史用例。
+                let b = if c.body.is_empty() {
+                    "{}".to_string()
+                } else {
+                    c.body.clone()
+                };
+                (b, None, None)
+            }
         };
 
         let Some((status, resp)) = fire(app, &c.method, &path, Some(token), &body).await else {
@@ -1073,6 +1094,42 @@ mod security_regression {
                 match markers.iter().find(|m| resp.contains(m.as_str())) {
                     Some(m) => Outcome::Leak(format!("2xx 响应体含 canary `{m}`")),
                     None => Outcome::Pass,
+                }
+            }
+            "idor-read-scoped" => {
+                // 归属列表读：按 WHERE 收窄后，非本人行不可见即视为拒绝；
+                // 允许 2xx 只返回本人行（列表对本人本来就不是空集）。
+                // “返回空糊弄”由配对的 `idor-read-own` 正控制兜住。
+                // canary 按带引号的完整 JSON 值比对：列表里本人行常带 `rev-` 前缀，
+                // 裸子串匹配会把 `rev-GATE-V-MSG` 误判成命中了 `GATE-V-MSG`。
+                if code == 401 || code == 403 {
+                    return Outcome::Pass;
+                }
+                if !(200..300).contains(&code) {
+                    return Outcome::Unverified(format!("status={code}"));
+                }
+                match markers
+                    .iter()
+                    .find(|m| resp.contains(&format!("\"{}\"", m)))
+                {
+                    Some(m) => Outcome::Leak(format!("2xx 响应体含 canary `{m}`")),
+                    None => Outcome::Pass,
+                }
+            }
+            "idor-read-own" => {
+                // 本人正控制：必须 2xx 且真的返回自己的行；被拒绝或空体都不算 PASS。
+                if code == 401 || code == 403 {
+                    return Outcome::Unverified(format!("本人被拒绝 status={code}"));
+                }
+                if !(200..300).contains(&code) {
+                    return Outcome::Unverified(format!("status={code}"));
+                }
+                match markers.iter().find(|m| resp.contains(m.as_str())) {
+                    Some(_) => Outcome::Pass,
+                    None => Outcome::Unverified(format!(
+                        "本人 2xx 但未返回自己的 canary body={}",
+                        resp.chars().take(90).collect::<String>()
+                    )),
                 }
             }
             _ => {

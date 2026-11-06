@@ -2849,19 +2849,40 @@ pub async fn message_custom_create(
     ))))
 }
 
+// 安全审计（读 IDOR 批次 2）：消息列表的读归属「本人 OR 管理员」。
+// `x_message` 的写路径只落 `sender`（不写 creator/creator_person），故以 sender 为 owner；
+// 归属谓词直接进 SQL 的 WHERE，先授权后取数。
+pub(crate) const MESSAGE_SENDER_OWNER_PREDICATE: &str = "(sender = $3 OR EXISTS(\
+     SELECT 1 FROM auth_person p \
+       JOIN auth_person_role pr ON pr.person_id = p.id \
+       JOIN auth_role r ON r.id = pr.role_id \
+      WHERE (p.unique_id = $3 OR p.id = $3) \
+        AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false))";
+
 #[allow(non_snake_case)]
 pub async fn message_list_paging_page_size_size(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = require_session(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let (limit, offset) = shared::response::page_window(page, size)?;
     let rows = client
-        .query("SELECT id, conversation_id, content, sender, type, create_time FROM x_message ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
+        .query(
+            &format!(
+                "SELECT id, conversation_id, content, sender, type, create_time \
+                   FROM x_message WHERE {MESSAGE_SENDER_OWNER_PREDICATE} \
+                  ORDER BY create_time DESC LIMIT $1 OFFSET $2"
+            ),
+            &[&limit, &offset, &actor],
+        )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
+    // 列表按归属收窄后允许返回空（不做存在性探测，避免通过 403 泄露“他人是否存在”）；
+    // 非空与本人可见性由门禁的本人正控制用例覆盖。
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {

@@ -16,6 +16,15 @@ attendance_assemble_control|v2_appeal_get|GET	idor-read	GET	/api/attendance/asse
 attendance_assemble_control|v2_record_get|GET	idor-read	GET	/api/attendance/assemble/control/v2/record/{id}	x_attendance_record	r6-record_update	r6-record_update	path		legacy	both	allow
 attendance_assemble_control|workplace_id|GET	idor-read	GET	/api/attendance/assemble/control/workplace/{id}	x_attendance_workplace	r6-workplace_id	r6-workplace_id	path		legacy	both	allow
 calendar_core_entity|calendar_get|GET	idor-read	GET	/api/calendar/core/entity/calendar/{id}	x_cal_calendar	2bf1a95c-04a8-41c1-918b-7d608331c702	2bf1a95c-04a8-41c1-918b-7d608331c702	path		legacy	both	allow
+calendar_core_entity|calendar_get|own	idor-read-own	GET	/api/calendar/core/entity/calendar/{id}	x_cal_calendar	rev-2bf1a95c-04a8-41c1-918b-7d608331c702	rev-r6seed	path		legacy	fwd-only	n/a		
+organization_assemble_personal|user_setting|GET	idor-read	GET	/api/organization/assemble/personal/{id}/setting	auth_person	gate-victim	GATE-V-SETTING	path		legacy	both	allow	audit-user	
+organization_assemble_personal|user_setting|own	idor-read-own	GET	/api/organization/assemble/personal/{id}/setting	auth_person	audit-user	rev-GATE-V-SETTING	path		legacy	fwd-only	n/a		
+organization_assemble_personal|user_role_list|GET	idor-read	GET	/api/organization/assemble/personal/{id}/role/list	x_org_group_member	gate-victim	GATE-V-ROLE	path		legacy	both	allow	audit-user	
+organization_assemble_personal|user_role_list|own	idor-read-own	GET	/api/organization/assemble/personal/{id}/role/list	x_org_group_member	audit-user	rev-GATE-V-ROLE	path		legacy	fwd-only	n/a		
+organization_assemble_control|person_list_like|POST	idor-read-scoped	POST	/api/organization/assemble/control/person/list/like	x_org_person	GATE-PERSON	GATE-V-MOBILE	body	name	legacy	both	allow		{"name":"GATE-PERSON"}
+organization_assemble_control|person_list_like|own	idor-read-own	POST	/api/organization/assemble/control/person/list/like	x_org_person	GATE-PERSON	rev-GATE-V-MOBILE	body	name	legacy	fwd-only	n/a		{"name":"GATE-PERSON"}
+message_assemble_communicate|message_list_paging_page_size_size|GET	idor-read-scoped	GET	/api/message/assemble/communicate/message/list/paging/1/size/10	x_message	-	GATE-V-MSG	path		legacy	both	allow		
+message_assemble_communicate|message_list_paging_page_size_size|own	idor-read-own	GET	/api/message/assemble/communicate/message/list/paging/1/size/10	x_message	-	rev-GATE-V-MSG	path		legacy	fwd-only	n/a		
 cms_assemble_control|anonymous_document_id_view|GET	idor-read	GET	/api/document/{id}/view	x_cms_data_document	doc-draft-1	doc-draft-1	path		legacy	both	allow
 cms_assemble_control|anonymous_form_id|GET	idor-read	GET	/api/anonymous/form/{id}	x_cms_form	r6-anonymous_form_id	r6-anonymous_form_id	path		legacy	both	allow
 cms_assemble_control|appinfo_id|GET	idor-read	GET	/api/appinfo/{id}	x_cms_appinfo	r6-appinfo_appId_icon_s	r6-appinfo_appId_icon_s	path		legacy	both	allow

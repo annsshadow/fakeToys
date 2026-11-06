@@ -8,8 +8,8 @@ use axum::{
 };
 use chrono::Utc;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder,
-    QuerySelect, Set,
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, DbBackend, EntityTrait,
+    QueryFilter, QueryOrder, QuerySelect, Set, Statement,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -218,36 +218,97 @@ pub async fn calendar_list_my(
     ))))
 }
 
+// 安全审计（读 IDOR 批次 2）：日历读归属「本人 OR 管理员」，is_public 视为已公开发布。
+// 归属谓词直接进 SQL 的 WHERE，先授权后取数。
+pub(crate) const CALENDAR_READ_PREDICATE: &str = "(is_public OR createor = $2 OR EXISTS(\
+     SELECT 1 FROM auth_person p \
+       JOIN auth_person_role pr ON pr.person_id = p.id \
+       JOIN auth_role r ON r.id = pr.role_id \
+      WHERE (p.unique_id = $2 OR p.id = $2) \
+        AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false))";
+
 #[allow(non_snake_case)]
 pub async fn calendar_get(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let model = cal_calendar::Entity::find_by_id(&id)
-        .filter(cal_calendar::Column::Status.eq("OPEN"))
-        .one(&db.0)
+    let actor = require_session(session)?.person_unique;
+
+    let sql = format!(
+        "SELECT id, name, type AS type_, target, color, description, createor, is_public, status \
+         FROM x_cal_calendar \
+        WHERE id = $1 AND status = 'OPEN' AND deleted_at IS NULL AND {CALENDAR_READ_PREDICATE}"
+    );
+    let row =
+        db.0.query_one(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            &sql,
+            vec![id.clone().into(), actor.into()],
+        ))
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
-    match model {
-        Some(m) => {
-            let mut map = serde_json::Map::new();
-            map.insert("id".to_string(), Value::String(m.id.clone()));
-            map.insert("name".to_string(), Value::String(m.name.clone()));
-            map.insert("type".to_string(), Value::String(m.type_.clone()));
-            map.insert("target".to_string(), Value::String(m.target.clone()));
-            map.insert("color".to_string(), Value::String(m.color.clone()));
-            if let Some(val) = option_to_json(m.description.clone().map(Value::String)) {
-                map.insert("description".to_string(), val);
-            }
-            map.insert("createor".to_string(), Value::String(m.createor.clone()));
-            map.insert("isPublic".to_string(), Value::Bool(m.is_public));
-            map.insert("status".to_string(), Value::String(m.status.clone()));
-            let data = Value::Object(map);
-            Ok(Json(ActionResult::success(data)))
+    let Some(row) = row else {
+        // 授权已在主查询 WHERE 内；这里只决定错误码：行存在但无权读 → 403。
+        let exists =
+            db.0.query_one(Statement::from_sql_and_values(
+                DbBackend::Postgres,
+                "SELECT EXISTS(SELECT 1 FROM x_cal_calendar \
+                  WHERE id = $1 AND status = 'OPEN' AND deleted_at IS NULL) AS row_exists",
+                vec![id.clone().into()],
+            ))
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+            .map(|r| r.try_get::<bool>("", "row_exists").unwrap_or(false))
+            .unwrap_or(false);
+        if exists {
+            return Err(AppError::Forbidden);
         }
-        None => Ok(Json(ActionResult::error("calendar not found"))),
+        return Ok(Json(ActionResult::error("calendar not found")));
+    };
+
+    let mut map = serde_json::Map::new();
+    map.insert(
+        "id".to_string(),
+        Value::String(row.try_get::<String>("", "id").unwrap_or_default()),
+    );
+    map.insert(
+        "name".to_string(),
+        Value::String(row.try_get::<String>("", "name").unwrap_or_default()),
+    );
+    map.insert(
+        "type".to_string(),
+        Value::String(row.try_get::<String>("", "type_").unwrap_or_default()),
+    );
+    map.insert(
+        "target".to_string(),
+        Value::String(row.try_get::<String>("", "target").unwrap_or_default()),
+    );
+    map.insert(
+        "color".to_string(),
+        Value::String(row.try_get::<String>("", "color").unwrap_or_default()),
+    );
+    if let Some(val) = option_to_json(
+        row.try_get::<Option<String>>("", "description")
+            .unwrap_or(None)
+            .map(Value::String),
+    ) {
+        map.insert("description".to_string(), val);
     }
+    map.insert(
+        "createor".to_string(),
+        Value::String(row.try_get::<String>("", "createor").unwrap_or_default()),
+    );
+    map.insert(
+        "isPublic".to_string(),
+        Value::Bool(row.try_get::<bool>("", "is_public").unwrap_or(false)),
+    );
+    map.insert(
+        "status".to_string(),
+        Value::String(row.try_get::<String>("", "status").unwrap_or_default()),
+    );
+    Ok(Json(ActionResult::success(Value::Object(map))))
 }
 
 #[allow(non_snake_case)]
