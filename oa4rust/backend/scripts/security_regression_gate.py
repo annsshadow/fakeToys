@@ -20,6 +20,7 @@
     python scripts/security_regression_gate.py sabotage program_center  # Rust②c：摘掉 collect/module 归属谓词
     python scripts/security_regression_gate.py sabotage hotpic_mind      # Rust②d：摘掉 hotpic/mind 归属谓词（4 条）
     python scripts/security_regression_gate.py sabotage write-idor-b5     # Rust②e：摘掉 folder_delete + cms 三条的归属（4 条）
+    python scripts/security_regression_gate.py sabotage write-idor-b6     # Rust②f：摘掉 appeal + processplatform 两把的归属（5 条）
     python scripts/security_regression_gate.py sabotage write-idor-b7     # Rust②g：摘掉第七批读归属谓词（5 条）
     python scripts/security_regression_gate.py sabotage go-limit0   # Go①：扣款乘 2
     python scripts/security_regression_gate.py sabotage go-idor-rev # Go②：摘掉预设删除归属
@@ -74,6 +75,7 @@ HOTPIC_CORE = BACKEND / "crates/hotpic_core_entity/src/lib.rs"
 HOTPIC_ASSEMBLE = BACKEND / "crates/hotpic_assemble_control/src/lib.rs"
 MIND = BACKEND / "crates/mind_core_entity/src/lib.rs"
 FILE_CORE = BACKEND / "crates/file_core_entity/src/lib.rs"
+PROCESS_PLATFORM = BACKEND / "crates/processplatform_service_processing/src/lib.rs"
 ORG_ASSEMBLE_CONTROL_HELPERS = BACKEND / "crates/organization_assemble_control/src/u2_helpers.rs"
 ORG_ASSEMBLE_AUTH = BACKEND / "crates/organization_assemble_authentication/src/lib.rs"
 MESSAGE_COMMUNICATE = BACKEND / "crates/message_assemble_communicate/src/lib.rs"
@@ -287,7 +289,7 @@ def run_go(update_baseline: bool = False) -> int:
 
 
 def mutate(path: Path, pattern: re.Pattern[str], patch: str, label: str) -> bytes:
-    # 用原始字节还原，避免 read_text 归一化 CRLF 后把整份业务文件“改脏”
+    # 用原始字节还原，避免 read_text 归一化 CRLF 后把整份业务文件"改脏"
     original = path.read_bytes()
     text = original.decode("utf-8")
     new, n = pattern.subn(patch, text, count=1)
@@ -579,6 +581,36 @@ B5_EXPECTS = [
     "cms_assemble_control|data_document_id_array_data|POST",
 ]
 
+# 第六批写 IDOR：appeal 处理的归属谓词（申请人/管理员）摘成恒真。
+APPEAL_GATE_RE = re.compile(
+    r'\n\s*AND \(NULLIF\(BTRIM\(person_id\), \'\'\) = \$3\s*\\?\s*'
+    r'OR NULLIF\(BTRIM\(creator\), \'\'\) = \$3\s*\\?\s*'
+    r'OR EXISTS\(.*?r\.disable = false\)\)',
+    re.S,
+)
+APPEAL_GATE_PATCH = "\n                AND ($3 = $3)"
+
+# 第六批写 IDOR：processplatform 两把读的 `WHERE` 归属谓词。
+TASK_GATE_RE = re.compile(
+    r'\n\s*AND \(NULLIF\(BTRIM\(t\.person\), \'\'\) = \$2\s*\\?\s*'
+    r'OR NULLIF\(BTRIM\(w\.creator\), \'\'\) = \$2\s*\\?\s*'
+    r'OR \{U4_ADMIN_EXISTS\}\)',
+    re.S,
+)
+TASK_GATE_PATCH = "\n            AND ($2 = $2)"
+ATTACH_GATE_RE = re.compile(
+    r'\n\s*AND \(NULLIF\(BTRIM\(creator\), \'\'\) = \$2 OR \{U4_ADMIN_EXISTS\}\)',
+    re.S,
+)
+ATTACH_GATE_PATCH = "\n            AND ($2 = $2)"
+B6_EXPECTS = [
+    "attendance_assemble_control|attendanceappealInfo_appeal_id|POST",
+    "t1|attendanceappealInfo_appeal_id|POST",
+    "t1|attendanceappealInfo_appeal_id|PUT",
+    "processplatform_service_processing|attachment_edit_id_text|POST",
+    "processplatform_service_processing|task_id_will|POST",
+]
+
 # 第七批写 IDOR：读面归属谓词（`*_READ_OWNER_PREDICATE`）。
 # 替换必须保留 `$2` 引用，写成 `(TRUE AND $2::text IS NOT NULL)`；
 # 裸 `TRUE` 会让按参数个数绑定的 deadpool 端点 bind 数不匹配 → 500，
@@ -629,7 +661,7 @@ def sabotage_many(
         print(f"实验失败：门禁未红或未点名全部用例（exit={code}）")
         return 1
     finally:
-        # 同一文件可能有多次替换（本批 cms 三条都在 lib.rs）：必须逆序还原，
+        # 同一文件可能有多次替换（如 processplatform 两把都在 lib.rs）：必须逆序还原，
         # 否则最后一次写入的是「已被改坏」的快照，而不是最初的原文件。
         for path, original in reversed(originals):
             path.write_bytes(original)
@@ -698,6 +730,16 @@ def sabotage(kind: str) -> int:
             ],
             B5_EXPECTS,
         )
+    elif kind == "write-idor-b6":
+        return sabotage_many(
+            "摘掉第六批写 IDOR 的归属（appeal + processplatform 两把，应变 NEW-FAIL）",
+            [
+                (ATTENDANCE_ASSEMBLE, APPEAL_GATE_RE, APPEAL_GATE_PATCH, "appeal"),
+                (PROCESS_PLATFORM, TASK_GATE_RE, TASK_GATE_PATCH, "task_will"),
+                (PROCESS_PLATFORM, ATTACH_GATE_RE, ATTACH_GATE_PATCH, "attachment"),
+            ],
+            B6_EXPECTS,
+        )
     elif kind == "write-idor-b7":
         return sabotage_many(
             "摘掉第七批写 IDOR 的读归属谓词（5 条应逐条 LEAK）",
@@ -719,7 +761,7 @@ def sabotage(kind: str) -> int:
     else:
         raise SystemExit(
             f"未知破坏实验: {kind}（可选 ownership / correct / general / organization / "
-            "program_center / hotpic_mind / read_b / write-idor-b5 / write-idor-b7）"
+            "program_center / hotpic_mind / read_b / write-idor-b5 / write-idor-b6 / write-idor-b7）"
         )
 
     print(f"== 破坏实验：{title}")
@@ -765,7 +807,7 @@ def main() -> int:
         if len(sys.argv) < 3:
             print("用法: security_regression_gate.py sabotage "
                   "<ownership|correct|general|organization|program_center|hotpic_mind|read_b|"
-                  "write-idor-b5|write-idor-b7|"
+                  "write-idor-b5|write-idor-b6|write-idor-b7|"
                   "rust-drift-to-leak|rust-swallow-write|"
                   "go-limit0|go-idor-rev|go-empty-list|go-swallow-write|"
                   "go-dead-write|go-page2|go-drift-to-leak>")

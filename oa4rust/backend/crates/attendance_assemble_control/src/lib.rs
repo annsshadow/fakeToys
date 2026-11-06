@@ -62,6 +62,8 @@ mod security_gate_tests;
 #[cfg(test)]
 mod security_gate_tests_b63;
 #[cfg(test)]
+mod security_gate_tests_idor_b6;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
@@ -446,9 +448,11 @@ pub async fn attendanceappealInfo_appeal_id(
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // 申诉处理，person 从 body 取（冒名族，另记待修）⇒ 会话存在档。
-    require_session(session)?;
+    // 申诉处理：归属谓词进 `WHERE`（申请人本人或管理员），不做「先查后判」。
+    // 请求体 `status` 仍按原逻辑读取（写值来源另记待修）。
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
+    let me = session.person_unique;
 
     let status = payload
         .get("status")
@@ -457,14 +461,36 @@ pub async fn attendanceappealInfo_appeal_id(
 
     let result = client
         .execute(
-            "UPDATE x_attendance_appeal_info SET appeal_status = $1, update_time = NOW() WHERE id = $2",
-            &[&status, &id],
+            "UPDATE x_attendance_appeal_info SET appeal_status = $1, update_time = NOW() \
+              WHERE id = $2 \
+                AND (NULLIF(BTRIM(person_id), '') = $3 \
+                     OR NULLIF(BTRIM(creator), '') = $3 \
+                     OR EXISTS(SELECT 1 FROM auth_person p \
+                                 JOIN auth_person_role pr ON pr.person_id = p.id \
+                                 JOIN auth_role r ON r.id = pr.role_id \
+                                WHERE (p.unique_id = $3 OR p.id = $3) \
+                                  AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false))",
+            &[&status, &id, &me],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     if result == 0 {
-        return Ok(Json(ActionResult::error("attendance appeal not found")));
+        // 区分 403/404：存在性读不参与授权，判定已由上面的 UPDATE 完成。
+        let exists = client
+            .query_one(
+                "SELECT EXISTS(SELECT 1 FROM x_attendance_appeal_info WHERE id = $1) AS row_exists",
+                &[&id],
+            )
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+            .try_get::<_, bool>("row_exists")
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+        return if exists {
+            Err(AppError::Forbidden)
+        } else {
+            Ok(Json(ActionResult::error("attendance appeal not found")))
+        };
     }
 
     Ok(Json(ActionResult::success(Value::Object(

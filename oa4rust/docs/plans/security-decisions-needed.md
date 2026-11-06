@@ -332,3 +332,395 @@
 
 实现位置：`oa4rust/backend/scripts/limit_scan.py`（端点级计数 + 谓词常量内联）；
 实测记录见 PR #206。
+
+## 12. 全量核对：每个已合并 PR 的改动是否真的进了 `origin/main`（2026-11-06）
+
+### 12.1 为什么做
+
+#208 是已发生的实例：它合并时 base 指向 `sec/read-b2` 而不是 `main`，b3 的内容只落在 b2 分支，
+`main` 首父链里根本没有 `#208` 的合并提交。最后由 #219 重新补合才进 `main`。
+因此「PR 被合并过」「`STALE-BASELINE` 消失了」都不能证明改动真的在 `main`。
+
+### 12.2 方法（三重证据，逐 PR）
+
+1. **声称改动**：对每个 PR 取分支自身 diff（合并提交用三点 `c^1...c^2`，直推提交用 `c^1..c`），
+   得到文件清单与新增行；**不以合并结果（`c^1..c`）为准**，否则合并时被丢弃的内容无法暴露。
+2. **实际存在**：文件必须存在于 `origin/main` 对应路径；新增行逐条与 `origin/main:path` 比对。
+   逐字漂移（被后续 PR 重写）再人工确认语义等价——测试辅助函数是否存在、用例 id 是否存在、
+   调度分支是否仍在、夹具字段是否只是扩列。
+3. **基线不虚减**：对每个 PR 声称从 `security_regression_baseline.txt` 删除的行，
+   在 `main` 上重跑门禁，该用例当前必须是 `[PASS]`。若仍是 `LEAK`/`UNVERIFIED`，即基线虚减。
+4. **门禁接线**：对减基线的批次跑对应 sabotage（摘归属谓词），必须变红并逐条点名。
+
+最终 `main` 实测：`cases=242 pass=114 leak=111 unverified=17 integrity=0`，
+非 PASS 128 = 基线 128。
+
+### 12.3 声称 vs 实际（窗口 #196–#222，`#208` 单列）
+
+| PR | `main` 内提交 | 声称文件 | 声称新增代码行 | 缺失文件 | 未逐字命中行 | 实际状态 |
+|---|---|---:|---:|---:|---:|---|
+| #196 | `dc5ee5fc` | 6 | 392 | 0 | 3 | 被后续批次覆盖的 sabotage 调度串与旧跟踪表文段；`program_center` 分支仍在（`gate.py:694`） |
+| #197 | `5fbc1532` | 10 | 2618 | 0 | 58 | 187/187 新增用例 id 全在 `cases.tsv`；其余为被 #202/#210 重写的测试辅助函数/调度串，等价形态存在 |
+| #200 | `bf0ab7b8` | 2 | 245 | 0 | 0 | 全部逐字在 `main` |
+| #201 | `1fa98c7b` | 9 | 138 | 0 | 1 | 调度串被后续并集覆盖（b5/b6/b7 均在） |
+| #202 | `cf8c3905` | 12 | 849 | 0 | 26 | 全部为 read-a 裁决文段；#217 已改写为「第五批按两源并集修复」，语义保留 |
+| #203 | `b2c341e4` | 5 | 423 | 0 | 2 | 调度串被 #205 的 b6 并集覆盖；b5 分支存在（`gate.py:722`） |
+| #204 | `ef2cf972` | 2 | 227 | 0 | 0 | 全部逐字在 `main` |
+| #205 | `ccbff183` | 5 | 381 | 0 | 0 | 全部逐字在 `main` |
+| #206 | `92625f81` | 2 | 172 | 0 | 0 | 全部逐字在 `main` |
+| #207 | `3f5d19eb` | 11 | 243 | 0 | 9 | 6 条文档被 #219 扩为「批次 2/3/4」重写；3 条夹具行已扩列（`gate-person-a` 等仍在） |
+| **#208** | **无** | — | — | — | — | **真实缺失**：base=`sec/read-b2`，内容只在 b2 分支；已由 #219 补合 |
+| #209 | `a02c49c6` | 13 | 627 | 0 | 0 | 全部逐字在 `main` |
+| #210 | `5eac2c4f` | 1 | 38 | 0 | 2 | 调度串并集（b5/b6/b7 均在） |
+| #211 | `2dca955d` | 39 | 132 | 0 | 0 | 全部逐字在 `main` |
+| #212 | `4323c60c` | 1 | 0 | 0 | 0 | 2 行文档（推送纪律） |
+| #213 | `ca925e0e` | 4 | 275 | 0 | 0 | 全部逐字在 `main` |
+| #214 | `619a4f28` | 8 | 238 | 0 | 0 | 全部逐字在 `main` |
+| #215 | `cc742985` | 3 | 283 | 0 | 0 | 全部逐字在 `main` |
+| #216 | `e80d75b3` | 6 | 109 | 0 | 0 | 原 base=`sec/read-b3`，改 base 前已验证；全部逐字在 `main` |
+| #217 | `cb8cc367` | 3 | 273 | 0 | 0 | 全部逐字在 `main` |
+| #218 | `4019eaea` | 2 | 13 | 0 | 0 | 全部逐字在 `main` |
+| #219 | `750418ec` | 5 | 186 | 0 | 6 | 1 条为 `fn owner_scope` 后续改成 `pub(crate) fn`；5 条文档被 #220/#221 扩写；语义保留 |
+| #220 | `c751ccc7` | 6 | 100 | 0 | 0 | 全部逐字在 `main` |
+| #221 | `2fb7a3fe` | 4 | 79 | 0 | 0 | 全部逐字在 `main` |
+| #222 | `3e0847fc` | 1 | 42 | 0 | 0 | 全部逐字在 `main` |
+
+「未逐字命中行」不等于缺失：上表每一处都已人工确认语义存在（用例 id、函数、调度分支、夹具字段、
+裁决结论），没有一处的功能内容在 `main` 中消失。
+
+### 12.4 重点六项（堆叠分支 / base 非 main / 合并后又 rebase）
+
+| PR | 核对的实质内容 | 结果 |
+|---|---|---|
+| #213 | `mind_assemble_control/src/u2.rs` 165 行归属谓词改动 + 新增 `security_gate_tests.rs` | 275 行新增全部逐字在 `main` |
+| #216 | `organization_assemble_control` 归属收紧 + 用例 + 夹具 | 改 base 后 109 行全部在 `main`；未减基线 |
+| #217 | `meeting_assemble_control` 两源并集谓词 + 用例 | 273 行全部在 `main`；未减基线 |
+| #209 | 5 个 crate 读归属谓词 + b7 用例 + 删 5 行基线 | 627 行全部在 `main`；5 条删除用例当前全 `[PASS]`；`sabotage write-idor-b7` 变红点名 5 条 |
+| #203 | `folder_delete` + cms 三个 POST 读端点 + 删 4 行基线 | 423 行全部在 `main`（2 条调度串被 b6 并集覆盖）；4 条删除用例全 `[PASS]`；`sabotage write-idor-b5` 变红点名 4 条 |
+| #205 | `appeal` + processplatform 两把 + 删 5 行基线 | 381 行全部在 `main`；5 条删除用例全 `[PASS]`；`sabotage write-idor-b6` 变红点名 5 条 |
+
+### 12.5 基线虚减核对
+
+窗口内 8 个 PR 共声称删除基线行 **32 条**（#196 4、#201 3、#202 5、#203 4、#205 5、
+#207 1、#209 5、#215 5）。在 `main`（`a02c49c6`）重跑门禁，**32/32 当前均为 `[PASS]`**，
+没有一条仍处于 `LEAK`/`UNVERIFIED`。
+
+结论：**本轮基线 128 不是虚减**，减行数与实际修复一致（156 − 28 = 128；#196 的 4 行属于窗口前）。
+唯一真实缺失是 #208，已由 #219 补合，且补合未被计入任何额外减行。
+
+### 12.6 做成常规动作（合入减基线 PR 后必做）
+
+不再以 `STALE-BASELINE` 消失作为「已修复」的证据，改为固定三步：
+
+1. **行是否真在 main**：`git diff <merge>^1...<merge>^2 --stat` 的文件清单逐一对
+   `git show origin/main:<path>` 比对新增行；被后续 PR 重写的，确认语义等价形态存在。
+2. **基线是否虚减**：该 PR 删除的每个基线 id，在 `main` 上跑门禁必须是 `[PASS]`；
+   任何一条仍为 `LEAK`/`UNVERIFIED` 即回滚该减行。
+3. **门禁是否接线**：跑该批次对应 sabotage，必须变红并逐条点名；
+   若脚本调度串被并集覆盖导致分支缺失，等同减行无效。
+
+三项全过才算这笔 PR「进了 main」。
+
+## 13. 剩余 111 条 LEAK 分批清单（按 crate 聚类，可派三条线）
+
+### 13.1 分级口径与「是否定死」的判定
+
+判定只用两条硬标准：
+
+1. **用例能构造 victim canary 行** → 目标表必须存在可写的归属列（或可从父行 join 得到归属）；
+2. **归属谓词在裁决文档里有出处**：`§9.1/§9.2/§9.3`、`§2.1`、`§3 cms`、`§4 meeting invite` 属「显式」；
+   `默认裁决 1（读 = 本人 OR 管理员；NULL fail-closed → 仅管理员）` 且分组 `E13–E24` 明确覆盖的属「默认（已采用）」。
+   「显式」与「默认」都算**已定死、可动手**；只有「表无主体列且默认值覆盖不到」才算未定。
+
+**结论：111 条全部已定死，未定 0 条。** 这不是宽松口径，而是结构性事实：门禁的 IDOR 用例必须能写入
+victim 归属值，表没有主体列就**无法成为 canary 用例**，所以裁决文档里仍待业务回答的 17 条
+（14 张真·全局表 + 1 条关联边 + 2 条写追溯）**本来就不在这 111 条里**。它们没有混进来，
+也就不需要在本清单里「只登记」。逐条出处见各批次「口径」列。
+
+### 13.2 三条线的 crate 划界（整 crate 归属，禁止跨线并发）
+
+原 A（mind/meeting）、B（organization/message/calendar）的读面已清空，故按**整 crate** 重新划界，
+保证同一 crate 不会同时出现在两条线上：
+
+| 线 | 独占 crate | 条数 |
+|---|---|---|
+| 分片 A | `cms_*`、`portal_*`、`ai_assemble_control` | 30 |
+| 分片 B | `attendance_*`、`processplatform_*` | 36 |
+| 写 IDOR | `general*`、`file*`、`bbs`、`mind_core`、`program_center`、`query*` | 45 |
+
+A/B/W 之间 crate 集合两两不相交；同一批内可以跨多个 crate，但那些 crate 都只归本线。
+
+### 13.3 分片 A（30 条，5 批）
+
+**A-b1（6）** 口径：`cms §3`（published 公开；draft 本人+管理员；owner=creator OR author_id）
+
+| 用例 | 表 |
+|---|---|
+| `cms_assemble_control|anonymous_document_id_view|GET` | `x_cms_data_document` |
+| `cms_assemble_control|document_persons_u3|GET` | `x_cms_data_document` |
+| `cms_assemble_control|file_id|GET` | `x_cms_file` |
+| `cms_assemble_control|file_id_content|GET` | `x_cms_file` |
+| `cms_assemble_control|file_id_download|GET` | `x_cms_file` |
+| `cms_assemble_control|comment_id|GET` | `x_cms_comment` |
+
+**A-b2（6）** 口径：`cms §3`
+
+| 用例 | 表 |
+|---|---|
+| `cms_assemble_control|anonymous_form_id|GET` | `x_cms_form` |
+| `cms_assemble_control|form_id|GET` | `x_cms_form` |
+| `cms_assemble_control|formversion_id|GET` | `x_cms_form_v2` |
+| `cms_assemble_control|script_id|GET` | `x_cms_script` |
+| `cms_assemble_control|scriptversion_id|GET` | `x_cms_form_v2` |
+| `cms_assemble_control|templateform_id|GET` | `x_cms_form_v2` |
+
+**A-b3（6）** 口径：`cms §3`（appinfo/categoryinfo/commend 无 published 概念 → creator OR admin）
+
+| 用例 | 表 |
+|---|---|
+| `cms_assemble_control|appinfo_id|GET` | `x_cms_appinfo` |
+| `cms_assemble_control|appinfo_id_control|GET` | `x_cms_appinfo` |
+| `cms_assemble_control|application_id|GET` | `x_cms_appinfo` |
+| `cms_assemble_control|categoryinfo_id|GET` | `x_cms_categoryinfo` |
+| `cms_assemble_control|categoryinfo_id_control|GET` | `x_cms_categoryinfo` |
+| `cms_assemble_control|commend_id|GET` | `x_cms_commend` |
+
+**A-b4（6）** 口径：前 2 条 `cms §3`；后 4 条 `默认1 / E23`
+
+| 用例 | 表 |
+|---|---|
+| `cms_core_entity|article_get|GET` | `x_cms_article` |
+| `cms_core_express|content_detail|GET` | `x_cms_content` |
+| `portal|portal_id|GET` | `x_portal` |
+| `portal_assemble_designer|portal_id_icon|GET` | `x_portal` |
+| `portal_assemble_designer|portal_id_permission|GET` | `x_portal` |
+| `portal_assemble_surface|get_surface|GET` | `x_portal_surface` |
+
+**A-b5（6）** 口径：前 5 条 `默认1 / E23`；`config_get_mcp_flag` 为 `默认1 / E24`（`x_ai_mcp_config`
+不在 14 张无主体列表内，有 `creator` 列）
+
+| 用例 | 表 |
+|---|---|
+| `portal_assemble_surface|portal_id_icon|GET` | `x_portal` |
+| `portal_assemble_surface|portal_id_icon_base64|GET` | `x_portal` |
+| `portal_assemble_surface|preview_surface|GET` | `x_portal_surface` |
+| `portal_assemble_surface|surface_preview|GET` | `x_portal_surface` |
+| `portal_core_entity|page_get|GET` | `x_portal_page` |
+| `ai_assemble_control|config_get_mcp_flag|GET` | `x_ai_mcp_config` |
+
+### 13.4 分片 B（36 条，6 批）
+
+**B-b1（6）** 口径：`默认1 / E19`（配置表 = creator OR admin）
+
+| 用例 | 表 |
+|---|---|
+| `attendance_assemble_control|attendanceadmin_id|GET` | `x_attendance_admin` |
+| `attendance_assemble_control|attendanceemployeeconfig_id|GET` | `x_attendance_employee_config` |
+| `attendance_assemble_control|attendanceimportfileinfo_id|GET` | `x_attendance_import_file_info` |
+| `attendance_assemble_control|attendanceschedulesetting_id|GET` | `x_attendance_schedule_setting` |
+| `attendance_assemble_control|attendancesetting_id|GET` | `x_attendance_setting` |
+| `attendance_assemble_control|attendancestatisticalcycle_id|GET` | `x_attendance_statistical_cycle` |
+
+**B-b2（6）** 口径：`默认1 / E19`；`v2_record_get`、`v2_appeal_get`、`attendancedetail_mobile_my`
+按 `person_id` 本人过滤
+
+| 用例 | 表 |
+|---|---|
+| `attendance_assemble_control|attendancestatisticrequirelog_id|GET` | `x_attendance_statistic_require_log` |
+| `attendance_assemble_control|attendanceworkdayconfig_id|GET` | `x_attendance_workday_config` |
+| `attendance_assemble_control|workplace_id|GET` | `x_attendance_workplace` |
+| `attendance_assemble_control|v2_appeal_get|GET` | `x_attendance_v2_appeal_info` |
+| `attendance_assemble_control|v2_record_get|GET` | `x_attendance_record` |
+| `t1|attendancedetail_mobile_my` | `x_attendance_detail` |
+
+**B-b3（4）** 口径：`§9.2 B3–B8 / E19`（本人 OR admin；历史 NULL → 仅 admin，fail-closed）
+
+| 用例 | 表 |
+|---|---|
+| `attendance_assemble_control|attendanceappealInfo_id|GET` | `x_attendance_appeal_info` |
+| `attendance_assemble_control|attendancedetail_id|GET` | `x_attendance_detail` |
+| `attendance_assemble_control|attendancedetail_mobile_id|GET` | `x_attendance_detail` |
+| `attendance_assemble_control|attendanceselfholiday_id|GET` | `x_attendance_selfholiday` |
+
+**B-b4（6）** 口径：`默认1 / E20`（assignee/发起人 OR admin）
+
+| 用例 | 表 |
+|---|---|
+| `processplatform_service_processing|task_id|GET` | `x_task` |
+| `processplatform_service_processing|task_v2_id|GET` | `x_task` |
+| `processplatform_service_processing|get_process|GET` | `x_work` |
+| `processplatform_service_processing|data_workcompleted_id|GET` | `x_workcompleted` |
+| `processplatform_service_processing|data_workcompleted_id_path|GET` | `x_workcompleted` |
+| `processplatform_service_processing|taskcompleted_id|GET` | `x_workcompleted` |
+
+**B-b5（6）** 口径：`E20`；`attachment_id` 另有 `§9.2 B2`（显式）；`snap_id` 按 `x_snap.creator/person`
+直接归属（E20 已明确列 `/snap/{id}` = ① assignee/发起人/admin）
+
+| 用例 | 表 |
+|---|---|
+| `processplatform_service_processing|readcompleted_id|GET` | `x_readcompleted` |
+| `processplatform_service_processing|record_id|GET` | `x_record` |
+| `processplatform_service_processing|review_id|GET` | `x_review` |
+| `processplatform_service_processing|snap_id|GET` | `x_snap`（间接） |
+| `processplatform_service_processing|attachment_id|GET` | `x_attachment` |
+| `processplatform_service_processing|applicationdict_id|GET` | `x_process_definition` |
+
+**B-b6（8）** 口径：`默认1 / E20`
+
+| 用例 | 表 |
+|---|---|
+| `processplatform_core_express|task_processing|GET` | `x_task` |
+| `processplatform_core_express|work_processing|GET` | `x_work` |
+| `processplatform_core_express|work_retract|GET` | `x_work` |
+| `processplatform_core_entity|work_get|GET` | `x_process_work` |
+| `processplatform_assemble_surface|get_surface|GET` | `x_process_surface` |
+| `processplatform_assemble_surface|preview_surface|GET` | `x_process_surface` |
+| `processplatform_assemble_designer|get_flow|GET` | `x_process_definition` |
+| `processplatform_assemble_designer|preview_flow|GET` | `x_process_definition` |
+
+### 13.5 写 IDOR（45 条，7 批）
+
+**W-b1（5）** 口径：前 3 条 `默认1 / E24`；`invoice_get_id` = `§9.1 A7`；`securityclearance_get` = `§9.1 A8`
+
+| 用例 | 表 |
+|---|---|
+| `general_assemble_control|area_get|GET` | `x_general_assemble_area` |
+| `general_assemble_control|attendscope_get|GET` | `x_general_attend_scope` |
+| `general_assemble_control|invoice_get_id|GET` | `x_general_assemble_invoice` |
+| `general_assemble_control|qrcode_get|GET` | `x_general_assemble_qrcode` |
+| `general_assemble_control|securityclearance_get|GET` | `x_general_assemble_security_clearance` |
+
+**W-b2（6）** 口径：前 3 条读 `默认1 / E24`；后 3 条写 `写=会话身份`（管理端可写他人，`§6.2`）
+
+| 用例 | 表 |
+|---|---|
+| `general_core_entity|file_download|GET` | `x_general_file` |
+| `general_core_entity|file_get|GET` | `x_general_file` |
+| `general_core_entity|invoice_get|GET` | `x_general_invoice` |
+| `t2|general_core|file_create` | `x_general_file` |
+| `t2|general_core|invoice_create` | `x_general_invoice` |
+| `t2|general_assemble|invoice_create` | `x_general_assemble_invoice` |
+
+**W-b3（7）** 口径：`写=会话身份`（先例 `§9.3 W1` 把硬编码 system 改为会话人）
+注意 `mind_core` 的 `creator_unit` 目前仍取自请求体（见 §14），修复时必须一并收口。
+
+| 用例 | 表 |
+|---|---|
+| `t2|general|office` | `x_general_assemble_office` |
+| `t2|general|office_html_to_word` | `x_general_assemble_office` |
+| `t1|bbs|create_reply` | `x_bbs_reply` |
+| `t1|bbs|create_subject` | `bbs_subject_info` |
+| `t1|mind_core|create_mind` | `x_mind_base_info` |
+| `t1|mind_core|create_folder` | `x_mind_folder_info` |
+| `t2|mind_core|create_version` | `x_mind_version_info` |
+
+**W-b4（8）** 口径：`默认1 / E22`（creator OR admin）
+
+| 用例 | 表 |
+|---|---|
+| `program_center|application_get_by_id|GET` | `x_applications` |
+| `program_center|collect_code_mobile_mobile|GET` | `x_program_collect` |
+| `program_center|deploy_id|GET` | `x_program_deploy` |
+| `program_center|dict_id|GET` | `x_program_dict` |
+| `program_center|module_id_compare|GET` | `x_program_module` |
+| `program_center|module_output_flag_file|GET` | `x_program_module` |
+| `program_center|prompterrorlog_id|GET` | `x_program_prompt_error_log` |
+| `program_center|unexpectederrorlog_id|GET` | `x_program_unexpected_error_log` |
+
+**W-b5（6）** 口径：`warnlog_create` 写 `写=会话身份`；其余 `默认1 / E21`
+
+| 用例 | 表 |
+|---|---|
+| `t2|program_center|warnlog_create` | `x_program_warn_log` |
+| `query_assemble_designer|get_designer|GET` | `x_query_design` |
+| `query_assemble_designer|query_id_permission|GET` | `x_query_design` |
+| `query_assemble_designer|stat_id|GET` | `x_query_stat` |
+| `query_assemble_designer|stat_id_permission|GET` | `x_query_stat` |
+| `query_assemble_designer|stat_id_simulate|GET` | `x_query_stat` |
+
+**W-b6（8）** 口径：`默认1 / E21`
+
+| 用例 | 表 |
+|---|---|
+| `query_assemble_designer|view_id_bundle|GET` | `x_query_view` |
+| `query_assemble_designer|view_id_permission|GET` | `x_query_view` |
+| `query_assemble_designer|view_id_simulate|GET` | `x_query_view` |
+| `query_assemble_surface|get_surface|GET` | `x_query_surface` |
+| `query_assemble_surface|view_id_bundle|GET` | `x_query_view` |
+| `query_assemble_surface|view_id_bundle_v2|GET` | `x_query_view` |
+| `query_assemble_surface|view_id_excel|GET` | `x_query_view` |
+| `query_assemble_surface|view_id_execute|GET` | `x_query_view` |
+
+**W-b7（5）** 口径：`table_id_permission`、`view_get` 读 `默认1 / E21`；`view_create` 写 `写=会话身份`；
+`get_file` = `§9.1 A1`（显式）；`folder_create` = `§9.3 W1`（显式）
+
+| 用例 | 表 |
+|---|---|
+| `query_assemble_designer|table_id_permission|GET` | `x_query_table` |
+| `query_core_entity|view_get|GET` | `query_view` |
+| `t2|query|view_create` | `query_view` |
+| `t2|file|folder_create` | `file_folder` |
+| `file_assemble_control|get_file|GET` | `x_file` |
+
+### 13.6 每批的准入与减行条件
+
+1. 合入前该批必须有对应 sabotage 模式；**没有 sabotage 的批次不得删基线行**（否则第 3 步无法执行）。
+2. 按 `§12.6` 三步核对：行在 `main` → 被删行全 `[PASS]` → sabotage 变红并逐条点名。
+3. 一批只减该批实际转 `[PASS]` 的行；出现 `STALE-BASELINE` 只减被点名的行，不做连带清理。
+
+## 14. 17 条 UNVERIFIED 逐条定性
+
+结论先写：**16 条可补证据得到确定判定，1 条（`t2|auth|code`）属用例语义错配、门禁无法判定，保留。**
+
+分类与证据动作：
+
+### 14.1 A 类：请求体缺必填字段（422/400/invalid request）— 7 条
+
+| 用例 | 现状 | 证据动作 |
+|---|---|---|
+| `t1|bbs|create_topic` | 422 | 补 `forumId`/`title`/`content` 到 `body` 列，按 `author_id` 判定 |
+| `t2|file|file_create` | 422 | 补 `folderId`/`name`/`type` 等必填，按 `person` 判定 |
+| `t2|meeting|create_meeting` | 400 | 补 `roomId`/`title`/`startTime`/`endTime`，按 `creator` 判定 |
+| `t2|organization|identity_create` | 422 | 补 `personId`/`type`/`value`，按 `person_id` 判定 |
+| `t2|organization|bind_create` | 422 | 补 `identityId`/`groupId`，按 `person_id` 判定 |
+| `t1|attendancedetail_mobile_mobilepreview` | 2xx `data:null` | 补查询键（`personId`+日期/移动端标识），按 `person_id` 判定 |
+| `t1|attendancedetail_mobile_recive` | 2xx `received:0` | 补明细/接收键；写侧需同时补行级比对（见 14.3） |
+
+### 14.2 B 类：夹具种子漂移（行/关联不存在）— 5 条
+
+| 用例 | 现状 | 证据动作 |
+|---|---|---|
+| `file_assemble_control|recycle_id` | 2xx「file not in recycle bin」 | 夹具把 victim 文件置回收站标记，再判 403/他人可见 |
+| `t2|attendance|v2_groupschedule_list_filter` | 2xx `data:[]` | 补 filter 的 `userId`/日期 + 种子排班行 |
+| `t2|organization|unit_check_unit_has_person` | 2xx `value:false` | 种子把 victim 放入目标单位，再补 `personId`/`unitId` |
+| `t2|organization|group_list_object` | 2xx `data:[]` | 补过滤参数 + 种子组成员关系 |
+| `t2|organization|unit_list_level_name_object` | 2xx `data:[]` | 补层级参数 + 种子单位层级 |
+
+### 14.3 C 类：门禁观测不到副作用（先修观测能力，仍保留在基线）— 4 条
+
+| 用例 | 原因（已核实到代码） | 证据动作 |
+|---|---|---|
+| `t1|mind|create_mind` | 用例 `table=x_mind_base_info`，但该 handler 写的是 `mind_base_info`（无 `x_` 前缀，`mind/src/lib.rs:408`）；且 `creator_unit` 仍取自请求体（`lib.rs:392`） | 修正用例 `table` 映射 → 预计转 `LEAK`（真实缺陷，不是「已修」） |
+| `t1|mind|create_folder` | 同上，实际写 `mind_folder_info`（`lib.rs:564`），`creator_unit` 取自请求体（`lib.rs:556`） | 修正 `table` → 预计 `LEAK` |
+| `t2|mind|create_version` | 实际写 `mind_version_info`（`lib.rs:722`）；`creator` 已取会话（`lib.rs:705`），但 `creator_unit` 仍取自请求体（`lib.rs:706`） | 修正 `table` → 本条 person 维度预计转 `PASS`；另需新增 unit 维度用例覆盖 `creator_unit`，**不能因此说该端点已安全** |
+| `t1|oauth|generate_code` | 响应 id 字段是 `data.code` 而非 `data.id`，门禁按 `id` 回查不到行；handler 把请求体 `personId` 直接写入 `x_org_oauth_code.person_id`（`organization_assemble_authentication/src/lib.rs:1297-1299`） | 门禁支持按 `code` 回查 → 预计 `LEAK`（真实缺陷） |
+
+**注意：这 4 条在门禁修好前一律不得从基线删除。** 其中 `create_mind`/`create_folder` 的
+`creator_unit`、`oauth_generate_code` 的 `person_id` 都直接取自请求体，是**真实缺陷**；
+`create_version` 仅 person 维度已收口，unit 维度仍有洞。
+
+### 14.4 语义错配、保留待裁决 — 1 条
+
+| 用例 | 理由 | 处置 |
+|---|---|---|
+| `t2|auth|code` | `POST /api/authentication/code` 是**双因素登录第二阶段**（`auth/src/lib.rs:750`），不是资源读端点；不存在「读他人资源」的归属谓词，门禁也无法构造「已签发验证码 + 有效登录态」的前置条件 | 保留在基线；建议单独立项确认是否应从 IDOR 用例集移除。**移除即减行，需另行给出证据，本次不动** |
+
+### 14.5 计数核对
+
+| 类别 | 条数 |
+|---|---|
+| 可补证据（A 7 + B 5 + C 4） | 16 |
+| 语义错配、保留 | 1 |
+| **合计** | **17** |
+
+17 条全部继续计入基线 128；只有拿到 `[PASS]` 证据的条目才按 §12.6 三步减行。

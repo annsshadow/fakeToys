@@ -27,8 +27,21 @@ fn require_session(
     session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
 }
 
+/// 读面归属谓词（批次 7）：推送配置归属列 `creator` 命中本人，或管理员；
+/// `target = 'all'` 是面向全体用户的广播，保留全员可读（共享语义）。
+/// 归属列为空且非广播时只有管理员可读（fail-closed）。`$2` = 会话 person_unique。
+const JPUSH_READ_OWNER_PREDICATE: &str = "(NULLIF(BTRIM(creator), '') = $2 \
+      OR target = 'all' \
+      OR EXISTS(SELECT 1 FROM auth_person p \
+                  JOIN auth_person_role pr ON pr.person_id = p.id \
+                  JOIN auth_role r ON r.id = pr.role_id \
+                 WHERE (p.unique_id = $2 OR p.id = $2) \
+                   AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false))";
+
 #[cfg(test)]
 mod security_gate_tests;
+#[cfg(test)]
+mod security_gate_tests_idor_b7;
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
@@ -226,14 +239,19 @@ pub async fn list_jpushs(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 #[allow(non_snake_case)]
 pub async fn get_jpush(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 批次 7：推送配置详情按 `creator` 校归属（本人/管理员/广播），
+    // 无会话 401 先于任何读库；归属为空且非广播时仅管理员（fail-closed）。
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
+    let sql = format!(
+        "SELECT id, title, content, target, creator, create_time FROM x_jpush \
+         WHERE id = $1 AND deleted_at IS NULL AND {JPUSH_READ_OWNER_PREDICATE}"
+    );
     let row = client
-        .query_opt(
-            "SELECT id, title, content, target, creator, create_time FROM x_jpush WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
-        )
+        .query_opt(&sql, &[&id, &sess.person_unique])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
@@ -270,7 +288,22 @@ pub async fn get_jpush(
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("jpush not found"))),
+        None => {
+            // 存在性读不参与授权：行存在但无权 → 403，行不存在保留原错误体。
+            let exists: bool = client
+                .query_one(
+                    "SELECT EXISTS(SELECT 1 FROM x_jpush WHERE id = $1 AND deleted_at IS NULL) AS row_exists",
+                    &[&id],
+                )
+                .await
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+                .get("row_exists");
+            if exists {
+                Err(AppError::Forbidden)
+            } else {
+                Ok(Json(ActionResult::error("jpush not found")))
+            }
+        }
     }
 }
 
