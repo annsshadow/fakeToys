@@ -23,6 +23,7 @@
 | 2 | `mind` | `list_my_folders` | 创作者 OR 管理员 |
 | 2 | `mind` | `list_versions_with_mind_id` | 所属 `mind_base_info.creator` OR 管理员 |
 | 2 | `meeting_assemble_control` | `meeting_list_applied_wait` / `_processing` / `_completed` / `meeting_list_apply_page_size_size` | `x_meeting.creator`（= 申请人）OR 管理员 |
+| 3（写侧） | `mind_assemble_control` | `save_folder` | `x_mind.creator` 落**会话身份**（原硬编码 `"system"`） |
 
 ## 一、NO-OWNER-COL（缺归属列，不改代码）
 
@@ -40,36 +41,75 @@
 
 裁决点：楼宇 / 会议室是否为**租户级全局配置**（所有登录用户都需要看到同一份资源目录）。若确认公共资源，则保持现状并记为「公开资源读面」；若需要按归属收敛，必须先给两张表补归属列并回填，才能谈谓词。
 
-## 二、写侧缺陷阻塞读侧收紧（`creator = "system"`）
+## 二、写侧已修：`save_folder` 的归属（原 `creator = "system"`）
 
-`mind_assemble_control::save_folder`（`mind_assemble_control/src/lib.rs:252`）在 `:264` 硬编码：
+### 已修
+
+`mind_assemble_control::save_folder`（`mind_assemble_control/src/lib.rs:252`）原先在 `:264` 硬编码：
 
 ```rust
 let creator = "system";
 ```
 
-随后 `:268` 以该值 `INSERT INTO x_mind (id, name, content, creator, create_time)`。
+任何登录用户都能以 `system` 落库：归属被抹平、责任链断、且同一 crate 的版本写路径（`src/u2.rs:436`）用的是会话 `person`，两条路径口径分叉。第三批已改为：
 
-影响面：
+```rust
+let creator = session.person_unique.clone();
+```
 
-1. **归属被抹平**：经该端点创建的所有文件夹在库里都记成 `system`，不是真实用户。此时给读端点加「`x_mind.creator = 会话` OR 管理员」会把**全部历史文件夹对普通用户隐藏**（fail-closed 把所有行都挡掉），属于破坏性行为变更，不能直接做。
-2. **责任链断**：任何登录用户都能以 `system` 身份落库，审计日志与「谁建的」对不上；`system` 既可能是系统任务也可能是任意用户。
-3. **读写不一致**：同一 crate 的版本写路径（`mind_assemble_control/src/u2.rs:436`）用的是会话 `person`，文件夹写路径却是 `system` —— 两条路径口径分叉。
+用例 `save_folder_stamps_session_creator`（`src/security_gate_tests.rs`）断言新行 `creator = 会话` 且不等于 `system`；破坏实验（把该行改回恒 `"system"`）红原文：
 
-受影响读端点（本次**不修**）：
+```
+assertion `left == right` failed: 写侧归属必须落地会话身份，实得 Some("system")
+  left: Some("system")
+ right: Some("u-sec-read-a-writer")
+```
 
-- `mind_assemble_control::list_folders`（`src/lib.rs:151`，SQL 在 `:156`，`FROM x_mind WHERE parent_id IS NULL`）
-- `mind_assemble_control::get_folder`（`src/lib.rs:203`，SQL 在 `:211`）
-- `mind_assemble_control::u2::mind_filter_list`（`src/u2.rs:108`，`FROM x_mind`）
-- `mind_assemble_control::u2::mind_version_list`（`src/u2.rs:268`，SQL 在 `:272`，`FROM x_mind_version_info WHERE mind_id = $1`）
+同 crate 其余 `"system"` / `"admin"` 常量身份已复核：`grep '"system"|"admin"'` 仅命中上述一处，无第二处。
 
-建议顺序（需业务裁决后再动）：
+### 加读谓词前的量化（结论：本批不加）
 
-1. 先把 `save_folder` 的 `creator` 改为会话身份（写侧修复）；
-2. 再回填历史行的归属（否则历史文件夹仍然只有管理员可见）；
-3. 最后给上述读端点加归属谓词（版本列表可参照 `mind` crate 已修版本：join `x_mind.base_info.creator`）。
+测量口径（生产库按此跑）：
 
-在 1、2 完成前给读端点加谓词 = 直接把用户现有文件夹读没了，故本次仅登记。
+```sql
+SELECT count(*) AS total,
+       count(*) FILTER (WHERE creator = 'system') AS system_rows,
+       count(*) FILTER (WHERE creator IS NULL)   AS null_rows
+FROM x_mind WHERE deleted_at IS NULL;
+```
+
+本地可取到的数据：
+
+| 库 | x_mind 行数 | `creator='system'` | 说明 |
+|---|---|---|---|
+| `oa4rust`（本地开发库） | 0 | 0 | 无数据 |
+| `oa4rust_test`（测试库） | 0 | 0 | 无数据 |
+| `oa_audit_20261105`（审计快照） | 6 | 4（67%） | 均为 `W2/w3-mind/W4mind-*` 审计夹具，非生产 |
+
+结论：**没有可用于决策的生产样本**；唯一有数据的审计库中 `system` 占 67%，方向上支持「占多数」的判断，但不能当生产比例。按用户口径取保守分支：**本批不加文件夹读谓词**，避免把用户自己历史文件夹读没。当将来加谓词时，行为约定为：
+
+1. **写入已修** → 新文件夹 creator = 会话，可被本人读；
+2. **历史行不回填**（无可信来源）→ `creator='system'` 的老行仅管理员可见（fail-closed）；
+3. 上线前必须先跑上面的量化 SQL 并在变更单里写明受影响用户数，不得为「减少非 PASS 数字」直接上谓词。
+
+受影响读端点（本批**仍不修**）：
+
+- `mind_assemble_control::list_folders`（`src/lib.rs:151`，SQL `:156`，`FROM x_mind WHERE parent_id IS NULL`）
+- `mind_assemble_control::get_folder`（`src/lib.rs:203`，SQL `:211`）
+- `mind_assemble_control::u2::mind_filter_list`（`src/u2.rs:108`，`FROM x_mind`；且会把 `x_mind` 里的文件夹行一并列出，收紧前需先区分「文件夹 / 脑图」两类行）
+
+### 脑图 / 版本读（新增登记，关联边是共享）
+
+`x_mind` 同时存文件夹与脑图；脑图有可信 `creator`，但共享给他人靠关联表 `x_mind_share(mind_id, person)`（本地 `oa4rust` / `oa_audit_20261105` 均为 0 行，`mind_filter_received` 已按会话读该表）。因此下列读若只加 `creator` 谓词，会把**被共享人**挡在外面：
+
+| handler | 位置 | 现状 | 阻塞点 |
+|---|---|---|---|
+| `u2::mind_view` | `src/u2.rs:576` | `WHERE id=$1 AND deleted_at IS NULL` | 共享边 `x_mind_share` |
+| `u2::mind_get` | `src/u2.rs:595` | 同上 | 同上 |
+| `u2::mind_version_list` | `src/u2.rs:268` | `WHERE mind_id=$1` | 共享边 + 版本 creator 是编辑者而非所有者 |
+| `u2::mind_version_get` | `src/u2.rs:552` | `WHERE mind_id=$1 ... LIMIT 1` | 同上 |
+
+建议谓词（裁决后）：`creator = $会话 OR EXISTS(SELECT 1 FROM x_mind_share s WHERE s.mind_id = x_mind.id AND s.person = $会话) OR 管理员`。在共享边语义（是否含公开共享、过期策略）确认前仅登记。
 
 ## 三、关联边（invitee / 参与人）——只收紧 `creator` 一侧
 
@@ -93,7 +133,27 @@ AND EXISTS (SELECT 1 FROM x_meeting_invite i
              WHERE i.meeting_id = x_meeting.id AND i.invitee = $会话)
 ```
 
-需裁决：`x_meeting_invite` 与 `x_meeting.invited/status` 谁是权威来源（两者可能不一致）。在裁决前仅登记。
+实测行数与覆盖（本地）：
+
+| 库 | `x_meeting_invite` 行数 | 覆盖会议数 | 覆盖被邀请人数 | `x_meeting.invited=true` 会议数 |
+|---|---|---|---|---|
+| `oa4rust`（本地开发库） | 0 | 0 | 0 | 0（`x_meeting` 仅 8 行测试数据） |
+| `oa_audit_20261105`（审计快照） | 1 | 1 | 1 | 0 |
+
+覆盖结论：**关联表与 `invited` 布尔位没有任何重叠样本**（有邀请边的库里 `invited=true` 为 0；有 `invited` 标记的库不存在——本地两库均为 0），因此无法从数据判断谁是权威来源。生产库请先跑：
+
+```sql
+-- 一致性：invited=true 但无任何 invitee 边的会议
+SELECT count(*) FROM x_meeting m
+ WHERE m.invited = true
+   AND NOT EXISTS (SELECT 1 FROM x_meeting_invite i WHERE i.meeting_id = m.id);
+-- 反向：有 invitee 边但 invited 非 true 的会议
+SELECT count(*) FROM x_meeting m
+ WHERE m.invited IS NOT TRUE
+   AND EXISTS (SELECT 1 FROM x_meeting_invite i WHERE i.meeting_id = m.id);
+```
+
+需裁决：`x_meeting_invite` 与 `x_meeting.invited/status` 谁是权威来源（两者可能不一致）。在裁决前仅登记，不加谓词。
 
 ### 主列表 / 日程列表（无归属过滤，语义未定）
 
@@ -104,14 +164,25 @@ AND EXISTS (SELECT 1 FROM x_meeting_invite i
 | `meeting::list_meetings` | `meeting/src/lib.rs:391` | 无会话、无归属过滤 |
 | `meeting::list_schedule` | `meeting/src/lib.rs:571` | 同上 |
 
-裁决点：这些是「全公司会议总览 / 日程视图」还是「我的会议」。若是后者，按统一口径可收紧 `creator`（本人 OR 管理员）；若是前者，应保留但明确记为公开读面，或改为需要管理员角色。当前无会话参数，加谓词前先定语义。
+裁决点：这些是「全公司会议总览 / 日程视图」还是「我的会议」。当前无会话参数，加谓词前先定语义。两种口径的后果：
+
+- **按「我的会议」收紧（`creator = 会话 OR 管理员`）**：符合统一口径、IDOR 面直接消失；但会议室占用总览、跨部门日程、领导看全员日程等前端场景会**当场看不到数据**（这些列表没有其他入口）。上线前必须确认前端哪些页面用这些端点。
+- **按「全公司总览」保留（公开登录读面）**：可用性不变；但需要明确写进安全基线为「有意公开」，并在门禁里登记豁免，否则每轮审计都会重新报 LEAK。若要求更强隔离，可改为「需管理员角色」（`EXISTS(admin)`），代价是非管理员看不到全员日程。
+- **折中（推荐待裁决）**：主列表收紧到 `creator OR 管理员 OR EXISTS(邀请边)`，即「我建的 + 我被邀请的」；仍会改变「全员总览」语义，需产品确认。
+
+在裁决前保持现状（只登记）。
 
 ## 四、公开内容读面（不做归属过滤）
 
 按统一口径登记为**公开内容**，不套「本人 OR 管理员」：
 
 - **bbs**（19 个候选）：`x_bbs_forum`、`x_bbs_topic`、`x_bbs_reply` 为论坛公开内容；`list_forums`、`list_topics_by_forum`、`reply_filter_list_*`、`list_topics_creamed`、`list_topics_recommended`、`list_subjects_*`、`subject_filter_listsubjectinfo`、`u2_subject_listsubjectinfo_page`、`u2_reply_filter_list`、`u2_voterecord_list` 等。
-  例外需复核：`user_forum_list`（`bbs_assemble_control/src/lib.rs:1804`）、`user_subject_list`（`:2025`）、`user_reply_list`（`:1911`）、`u2_userinfo_filter`（`src/u2.rs:2397`）命名为「user / 本人」，但实现无会话过滤；若语义确为「我的帖子 / 我的回复」，应另立条目按 `creator` 收紧，而不是当公开内容放过。
+  `user_*` 4 条已逐一复核（第三批），结论：**不是「本人」语义，属门户公开列表**，不做 `creator` 过滤——
+  - `user_forum_list`（`lib.rs:1804`）：`SELECT ... FROM x_bbs_forum WHERE deleted_at IS NULL ORDER BY sort`，返回全部板块；
+  - `user_subject_list`（`lib.rs:2025`）：`FROM x_bbs_topic WHERE deleted_at IS NULL`，返回全部主题；
+  - `user_reply_list`（`lib.rs:1911`）：`FROM x_bbs_reply WHERE deleted_at IS NULL`，返回全部回复；
+  - `u2_userinfo_filter`（`u2.rs:2397`）：按昵称模糊查 `x_bbs_user_info`，属公开用户目录检索。
+  四者均无会话参数、SQL 里没有任何按人过滤的意图（`user_` 指「门户/用户端」，不是「我的」）。若产品确认其中某条应改为「我的」，需先补会话与 `creator=会话 OR 管理员` 谓词，再另立条目。
 - **hotpic**（7 个候选）：`x_hotpic` 为展示位内容，`hotpic::list_by_application_and_info_id`、`hotpic_assemble_control::list_control_panels` / `list_control_applications` / `list_hotpics` / `cipher_hotpic_filter_list_*` / `user_hotpic_filter_list_*` 属公开展示读面；`user_hotpic_filter_list_*` 命名含 `user`，同样需确认是否应限制到本人。
 
 ## 变更纪律（本分片）
