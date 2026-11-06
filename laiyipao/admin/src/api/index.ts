@@ -326,8 +326,25 @@ export function unbanUser(id: number) {
   return api.post<AdminUserResp>(`/admin/users/${id}/unban`)
 }
 
+/**
+ * 生成幂等键（服务端白名单：8~128 位 `[A-Za-z0-9_-.:]`，超限直接 400）。
+ *
+ * 每次「发起一次发币」调用生成一枚；重发同一意图时必须原样复用，
+ * 否则服务端会把它当成第二笔发币。
+ */
+function newIdempotencyKey(prefix: string): string {
+  const c = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto
+  if (c && typeof c.randomUUID === 'function') return `${prefix}-${c.randomUUID()}`
+  const rnd = () => Math.random().toString(36).slice(2, 10).padEnd(8, '0')
+  return `${prefix}-${Date.now().toString(36)}-${rnd()}${rnd()}`
+}
+
 export function grantUser(id: number, currency: string, amount: number) {
-  return api.post<AdminGrantResp>(`/admin/users/${id}/grant`, { currency, amount })
+  return api.post<AdminGrantResp>(
+    `/admin/users/${id}/grant`,
+    { currency, amount },
+    { idempotencyKey: newIdempotencyKey('grant') },
+  )
 }
 
 /**

@@ -19,10 +19,14 @@ package httpapi
 //   带 `Idempotency-Key` → 24h 窗口内同 key + 同商品 → 重放第一次响应，业务不执行；
 //   不带 → 保持 R134 现状（老客户端零影响）。
 //
-// 选「可选」而不是「必须」的依据（不是推断）：miniapp 的
-// `src/api/client.ts` 首请求（355-358 行）与 401 重试（380-382 行）的 header
-// 只有 Content-Type / Authorization，**从不发**这个头；admin 的
-// `grantUser`（src/api/index.ts:329）也不发。选「必须」会让线上全部购买直接 400。
+// 选「可选」而不是「必须」的依据（不是推断）：R135 落地时客户端
+// `src/api/client.ts` 首请求与 401 重试的 header 只有 Content-Type / Authorization，
+// **从不发**这个头；admin 的 `grantUser` 也不发。选「必须」会让线上全部购买直接 400。
+// R142 起客户端在每次购买意图生成并复用 key，但老客户端仍在线上，
+// 所以「必带」仍不是可选项 —— 这条服务端契约不能收紧。
+
+// R142 客户端侧补齐：miniapp 的 `buyItem` 与 admin 的 `grantUser` 现在每次意图
+// 生成一枚 key，且 401 重试**复用首请求那枚**；服务端契约不变（仍然可选）。
 
 import (
 	"crypto/sha256"
@@ -74,9 +78,10 @@ func TestE2EDoubleSubmitShopBuyWithKeyChargedOnce(t *testing.T) {
 // TestE2EDoubleSubmitShopBuyKeylessKeepsLegacy 钉住**契约边界**：
 // 不带 Idempotency-Key → 不做去重，连发两次仍然扣两次。
 //
-// 这是刻意的（与 R86 管理端同一口径）：现有小程序客户端不发这个头，
-// 若把 key 改成「必须」会让线上所有购买直接 400。要做完整幂等，
-// 需要客户端在每次购买意图生成一个 key（记为候选，不在本轮）。
+// 这是刻意的（与 R86 管理端同一口径）：R135 落地时客户端不发这个头，
+// 若把 key 改成「必须」会让线上（含尚未升级的老客户端）所有购买直接 400。
+// R142 客户端已改为每次购买意图生成 key，但服务端仍必须保留无 key 的旧路径，
+// 否则升级窗口内直接断购 —— 所以这条负控制长期有效，不是临时基线。
 func TestE2EDoubleSubmitShopBuyKeylessKeepsLegacy(t *testing.T) {
 	e2eScratchDB(t)
 	e := newE2E(t)
