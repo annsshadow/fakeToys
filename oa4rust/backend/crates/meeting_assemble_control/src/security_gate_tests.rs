@@ -523,11 +523,7 @@ mod r6_gate_tests {
         {
             let c = pool.get().await.unwrap();
             for (id, title, creator) in [
-                (
-                    "sec-read-a-meeting-own",
-                    "own-title",
-                    "u-sec-read-owner",
-                ),
+                ("sec-read-a-meeting-own", "own-title", "u-sec-read-owner"),
                 (
                     "sec-read-a-meeting-other",
                     "other-title",
@@ -602,6 +598,20 @@ mod r6_gate_tests {
         let pool = shared::testing::test_pool();
         {
             let c = pool.get().await.unwrap();
+            // 本用例自带会议夹具，不依赖其他用例的执行顺序。
+            for (id, creator) in [
+                ("sec-read-a-meeting-own", "u-sec-read-owner"),
+                ("sec-read-a-meeting-other", "u-sec-read-other"),
+            ] {
+                c.execute(
+                    "INSERT INTO x_meeting (id, title, start_time, end_time, applied, invited, creator) \
+                     VALUES ($1, $2, NOW(), NOW(), false, false, $3) \
+                     ON CONFLICT (id) DO UPDATE SET creator = EXCLUDED.creator",
+                    &[&id, &format!("title-{id}"), &creator],
+                )
+                .await
+                .unwrap();
+            }
             for (id, person, meeting_id) in [
                 (
                     "sec-read-a-att-own",
@@ -643,7 +653,10 @@ mod r6_gate_tests {
         .await
         .expect("本人读自己的附件应成功");
         let data = body.0.data.expect("成功响应必须带 data");
-        assert_eq!(data.get("id").and_then(|v| v.as_str()), Some("sec-read-a-att-own"));
+        assert_eq!(
+            data.get("id").and_then(|v| v.as_str()),
+            Some("sec-read-a-att-own")
+        );
 
         // 正控制：会议 creator 读他人上传到本人会议的附件必须 200（保留原行为）。
         let body = crate::u2_attachment_get(
@@ -675,5 +688,111 @@ mod r6_gate_tests {
                 "越权读附件 {id} 必须 403"
             );
         }
+    }
+
+    /// 分片 A 列表读越权：meeting `applied/*` 族原无会话、无归属过滤，返回全员申请。
+    /// 修复后 `creator`（申请人）=会话身份 OR 管理员；NULL fail-closed。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn applied_list_idor_is_blocked_both_ways() {
+        let pool = shared::testing::test_pool();
+        {
+            let c = pool.get().await.unwrap();
+            for creator in ["u-sec-read-owner", "u-sec-read-other"] {
+                for status in ["wait", "processing", "completed"] {
+                    let id = format!("sec-read-a-applied-{creator}-{status}");
+                    c.execute(
+                        "INSERT INTO x_meeting (id, title, start_time, end_time, applied, invited, status, creator) \
+                         VALUES ($1, $2, NOW(), NOW(), true, false, $3, $4) \
+                         ON CONFLICT (id) DO UPDATE SET creator = EXCLUDED.creator, status = EXCLUDED.status, applied = true",
+                        &[&id, &format!("title-{status}"), &status, &creator],
+                    )
+                    .await
+                    .unwrap();
+                }
+            }
+        }
+        let owner = build_session("u-sec-read-owner");
+        let other = build_session("u-sec-read-other");
+
+        let ids =
+            |body: &axum::Json<shared::response::ActionResult<serde_json::Value>>| -> Vec<String> {
+                body.0
+                    .data
+                    .as_ref()
+                    .and_then(|d| d.as_array())
+                    .map(|rows| {
+                        rows.iter()
+                            .filter_map(|r| {
+                                r.get("id").and_then(|v| v.as_str()).map(str::to_string)
+                            })
+                            .collect()
+                    })
+                    .unwrap_or_default()
+            };
+
+        // 三个状态列表 + 分页列表：本人只见本人的申请，不见他人的。
+        for status in ["wait", "processing", "completed"] {
+            let (own, theirs) = (
+                format!("sec-read-a-applied-u-sec-read-owner-{status}"),
+                format!("sec-read-a-applied-u-sec-read-other-{status}"),
+            );
+            let body = match status {
+                "wait" => {
+                    crate::meeting_list_applied_wait(
+                        Extension(pool.clone()),
+                        Some(Extension(owner.clone())),
+                    )
+                    .await
+                }
+                "processing" => {
+                    crate::meeting_list_applied_processing(
+                        Extension(pool.clone()),
+                        Some(Extension(owner.clone())),
+                    )
+                    .await
+                }
+                _ => {
+                    crate::meeting_list_applied_completed(
+                        Extension(pool.clone()),
+                        Some(Extension(owner.clone())),
+                    )
+                    .await
+                }
+            }
+            .expect("列表读取应成功");
+            let got = ids(&body);
+            assert!(got.contains(&own), "必须返回本人的申请 {own}");
+            assert!(!got.contains(&theirs), "不得返回他人的申请 {theirs}");
+        }
+
+        // 分页列表：本人 3 条都在，B 的 3 条都不在。
+        for (sess, own_suffix, theirs_suffix) in [
+            (&owner, "u-sec-read-owner", "u-sec-read-other"),
+            (&other, "u-sec-read-other", "u-sec-read-owner"),
+        ] {
+            let body = crate::meeting_list_apply_page_size_size(
+                Extension(pool.clone()),
+                Some(Extension(sess.clone())),
+                axum::extract::Path((1i64, 10i64)),
+            )
+            .await
+            .expect("分页列表读取应成功");
+            let got = ids(&body);
+            for status in ["wait", "processing", "completed"] {
+                assert!(
+                    got.contains(&format!("sec-read-a-applied-{own_suffix}-{status}")),
+                    "必须返回本人的申请（{status}）"
+                );
+                assert!(
+                    !got.contains(&format!("sec-read-a-applied-{theirs_suffix}-{status}")),
+                    "不得返回他人的申请（{status}）"
+                );
+            }
+        }
+
+        // 无会话：401。
+        let res = crate::meeting_list_applied_wait(Extension(pool.clone()), None).await;
+        assert!(matches!(res, Err(AppError::Unauthorized)));
     }
 }

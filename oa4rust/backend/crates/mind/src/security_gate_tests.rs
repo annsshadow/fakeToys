@@ -13,7 +13,10 @@
 mod security_gate_tests {
     use axum::extract::Extension;
     use axum::extract::Path;
+    use axum::Json;
+    use serde_json::Value;
     use shared::error::AppError;
+    use shared::response::ActionResult;
 
     use crate::{delete_folder, delete_mind, update_folder, update_mind};
 
@@ -171,11 +174,7 @@ mod security_gate_tests {
             let c = pool.get().await.unwrap();
             for (id, name, creator) in [
                 ("sec-read-a-mind-own", "own-name", "u-sec-read-owner"),
-                (
-                    "sec-read-a-mind-other",
-                    "other-name",
-                    "u-sec-read-other",
-                ),
+                ("sec-read-a-mind-other", "other-name", "u-sec-read-other"),
             ] {
                 // mind_base_info 的历史表没有主键/唯一约束，不能用 ON CONFLICT。
                 c.execute("DELETE FROM mind_base_info WHERE id = $1", &[&id])
@@ -226,12 +225,162 @@ mod security_gate_tests {
         }
 
         // 无会话：401。
-        let res = crate::get_mind_with_id(
+        let res =
+            crate::get_mind_with_id(Extension(pool.clone()), None, path("sec-read-a-mind-own"))
+                .await;
+        assert!(matches!(res, Err(AppError::Unauthorized)));
+    }
+
+    /// 分片 A 列表读越权：`list_my_folders` 原无会话、无归属过滤，返回全员文件夹。
+    /// 修复后 `creator = 会话 OR admin`（NULL fail-closed）。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn folder_list_idor_is_blocked_both_ways() {
+        let pool = shared::testing::test_pool();
+        {
+            let c = pool.get().await.unwrap();
+            for (id, name, creator) in [
+                ("sec-read-a-folder-own", "own-folder", "u-sec-read-owner"),
+                (
+                    "sec-read-a-folder-other",
+                    "other-folder",
+                    "u-sec-read-other",
+                ),
+            ] {
+                c.execute("DELETE FROM mind_folder_info WHERE id = $1", &[&id])
+                    .await
+                    .unwrap();
+                c.execute(
+                    "INSERT INTO mind_folder_info (id, name, creator) VALUES ($1, $2, $3)",
+                    &[&id, &name, &creator],
+                )
+                .await
+                .unwrap();
+            }
+        }
+        let owner = build_session("u-sec-read-owner");
+        let other = build_session("u-sec-read-other");
+
+        let ids = |body: &Json<ActionResult<Value>>| -> Vec<String> {
+            body.0
+                .data
+                .as_ref()
+                .and_then(|d| d.as_array())
+                .map(|rows| {
+                    rows.iter()
+                        .filter_map(|r| r.get("id").and_then(|v| v.as_str()).map(str::to_string))
+                        .collect()
+                })
+                .unwrap_or_default()
+        };
+
+        // 正控制 + 双向：A 只看得到自己的，看不到 B 的；B 反之亦然。
+        for (sess, own, theirs) in [
+            (&owner, "sec-read-a-folder-own", "sec-read-a-folder-other"),
+            (&other, "sec-read-a-folder-other", "sec-read-a-folder-own"),
+        ] {
+            let body =
+                crate::list_my_folders(Extension(pool.clone()), Some(Extension(sess.clone())))
+                    .await
+                    .expect("列表读取应成功");
+            let got = ids(&body);
+            assert!(got.contains(&own.to_string()), "必须返回本人文件夹 {own}");
+            assert!(
+                !got.contains(&theirs.to_string()),
+                "不得返回他人文件夹 {theirs}"
+            );
+        }
+
+        // 无会话：401。
+        let res = crate::list_my_folders(Extension(pool.clone()), None).await;
+        assert!(matches!(res, Err(AppError::Unauthorized)));
+    }
+
+    /// 分片 A 列表读越权：`list_versions_with_mind_id` 原无会话、无归属过滤，
+    /// 任一登录用户凭 mind id 读他人版本历史。修复后归属取父思维导图 creator。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn version_list_idor_is_blocked_both_ways() {
+        let pool = shared::testing::test_pool();
+        {
+            let c = pool.get().await.unwrap();
+            for (mind_id, creator, version_id, vname) in [
+                (
+                    "sec-read-a-mind-own",
+                    "u-sec-read-owner",
+                    "sec-read-a-version-own",
+                    "own-v1",
+                ),
+                (
+                    "sec-read-a-mind-other",
+                    "u-sec-read-other",
+                    "sec-read-a-version-other",
+                    "other-v1",
+                ),
+            ] {
+                c.execute(
+                    "DELETE FROM mind_version_info WHERE id = $1",
+                    &[&version_id],
+                )
+                .await
+                .unwrap();
+                c.execute("DELETE FROM mind_base_info WHERE id = $1", &[&mind_id])
+                    .await
+                    .unwrap();
+                c.execute(
+                    "INSERT INTO mind_base_info (id, name, creator) VALUES ($1, 'n', $2)",
+                    &[&mind_id, &creator],
+                )
+                .await
+                .unwrap();
+                c.execute(
+                    "INSERT INTO mind_version_info (id, mind_id, name, creator) VALUES ($1, $2, $3, $4)",
+                    &[&version_id, &mind_id, &vname, &creator],
+                )
+                .await
+                .unwrap();
+            }
+        }
+        let owner = build_session("u-sec-read-owner");
+        let other = build_session("u-sec-read-other");
+        let path = |id: &str| Path(id.to_string());
+
+        // 正控制：本人读自己思维导图的版本，200 且真返回落库版本行。
+        let body = crate::list_versions_with_mind_id(
             Extension(pool.clone()),
-            None,
+            Some(Extension(owner.clone())),
             path("sec-read-a-mind-own"),
         )
-        .await;
-        assert!(matches!(res, Err(AppError::Unauthorized)));
+        .await
+        .expect("本人读自己的版本应成功");
+        let rows = body
+            .0
+            .data
+            .as_ref()
+            .and_then(|d| d.as_array())
+            .cloned()
+            .unwrap_or_default();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(
+            rows[0].get("id").and_then(|v| v.as_str()),
+            Some("sec-read-a-version-own")
+        );
+
+        // 双向：A 读 B 的思维导图版本 403；B 读 A 的 403。
+        for (sess, id) in [
+            (&owner, "sec-read-a-mind-other"),
+            (&other, "sec-read-a-mind-own"),
+        ] {
+            let res = crate::list_versions_with_mind_id(
+                Extension(pool.clone()),
+                Some(Extension(sess.clone())),
+                path(id),
+            )
+            .await;
+            assert!(
+                matches!(res, Err(AppError::Forbidden)),
+                "越权读 {id} 的版本必须 403"
+            );
+        }
     }
 }

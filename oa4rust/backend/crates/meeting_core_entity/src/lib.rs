@@ -549,7 +549,7 @@ pub async fn get_meeting(
     let session = require_session(session)?;
     let stmt = Statement::from_sql_and_values(
         DbBackend::Postgres,
-        &format!(
+        format!(
             "SELECT id, title, content, room_id, \
              to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, \
              to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, \
@@ -558,17 +558,15 @@ pub async fn get_meeting(
         ),
         [id.clone().into(), session.person_unique.clone().into()],
     );
-    let row = db
-        .0
-        .query_one(stmt)
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    let row =
+        db.0.query_one(stmt)
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let Some(row) = row else {
         // 谓词已拒绝：区分「行不存在」与「无权读」。此读不参与授权判定。
-        let exists = db
-            .0
-            .query_one(Statement::from_sql_and_values(
+        let exists =
+            db.0.query_one(Statement::from_sql_and_values(
                 DbBackend::Postgres,
                 "SELECT 1 FROM x_meeting WHERE id = $1",
                 [id.clone().into()],
@@ -603,7 +601,10 @@ pub async fn get_meeting(
         ("startTime".to_string(), Value::String(text("start_time")?)),
         ("endTime".to_string(), Value::String(text("end_time")?)),
         ("organizerId".to_string(), Value::String(text("creator")?)),
-        ("createTime".to_string(), Value::String(text("create_time")?)),
+        (
+            "createTime".to_string(),
+            Value::String(text("create_time")?),
+        ),
     ]));
     Ok(Json(ActionResult::success(result)))
 }

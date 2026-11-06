@@ -133,8 +133,14 @@ mod sec_read_a_tests {
         .await
         .expect("本人读自己的会议应成功");
         let data = body.0.data.expect("成功响应必须带 data");
-        assert_eq!(data.get("id").and_then(|v| v.as_str()), Some("sec-read-a-meeting-own"));
-        assert_eq!(data.get("title").and_then(|v| v.as_str()), Some("own-title"));
+        assert_eq!(
+            data.get("id").and_then(|v| v.as_str()),
+            Some("sec-read-a-meeting-own")
+        );
+        assert_eq!(
+            data.get("title").and_then(|v| v.as_str()),
+            Some("own-title")
+        );
 
         // 双向：A→B 与 B→A 都必须 403。
         for (sess, id) in [

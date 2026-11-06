@@ -191,7 +191,10 @@ mod security_gate_tests {
             data.get("id").and_then(|v| v.as_str()),
             Some("sec-read-a-meeting-own")
         );
-        assert_eq!(data.get("title").and_then(|v| v.as_str()), Some("own-title"));
+        assert_eq!(
+            data.get("title").and_then(|v| v.as_str()),
+            Some("own-title")
+        );
 
         // 双向：A→B 与 B→A 都必须 403。
         for (sess, id) in [
@@ -211,12 +214,8 @@ mod security_gate_tests {
         }
 
         // 无会话：401。
-        let res = crate::get_meeting(
-            Extension(db.clone()),
-            None,
-            path("sec-read-a-meeting-own"),
-        )
-        .await;
+        let res =
+            crate::get_meeting(Extension(db.clone()), None, path("sec-read-a-meeting-own")).await;
         assert!(matches!(res, Err(AppError::Unauthorized)));
     }
 }
