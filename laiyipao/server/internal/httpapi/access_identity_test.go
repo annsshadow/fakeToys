@@ -42,7 +42,7 @@ func TestAccessIdentityClassification(t *testing.T) {
 	read := captureAccessLog(t)
 
 	do := func(path, auth string) {
-		req, _ := http.NewRequest(http.MethodGet, path, nil)
+		req, _ := testReq(http.MethodGet, path, nil)
 		if auth != "" {
 			req.Header.Set("Authorization", auth)
 		}
@@ -99,7 +99,7 @@ func TestAccessLogPrivacyBoundary(t *testing.T) {
 	}
 	// 坏 token 请求：id=bad_token，且令牌内容不落日志。
 	badTok := "r85-badtoken-secret"
-	req, _ := http.NewRequest(http.MethodGet, "/api/v1/me", nil)
+	req, _ := testReq(http.MethodGet, "/api/v1/me", nil)
 	req.Header.Set("Authorization", "Bearer "+badTok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {

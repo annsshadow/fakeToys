@@ -11,8 +11,21 @@
 
 export const CHAT_POLL_INTERVAL_MS = 5000
 
+/** R144：连续失败后的间隔封顶。断网时不能让 5s 轮询一直打必败请求。 */
+export const CHAT_POLL_MAX_INTERVAL_MS = 60_000
+
 /** 轮询间隔下限：误传 0 或负数会变成请求风暴。 */
 const MIN_INTERVAL_MS = 1000
+
+/**
+ * 连续失败后的下一次轮询间隔：5s → 10s → 20s → 40s → 60s（封顶）。
+ * 第 n 次失败对应 `base * 2^(n-1)`；成功一次即由调用方复位为 0。
+ */
+export function nextPollDelayMs(consecutiveFailures: number, baseIntervalMs = CHAT_POLL_INTERVAL_MS): number {
+  const base = Math.max(MIN_INTERVAL_MS, Math.floor(baseIntervalMs))
+  if (consecutiveFailures <= 0) return Math.min(CHAT_POLL_MAX_INTERVAL_MS, base)
+  return Math.min(CHAT_POLL_MAX_INTERVAL_MS, base * 2 ** (consecutiveFailures - 1))
+}
 
 export interface ChatPollHandle {
   stop(): void
@@ -31,8 +44,8 @@ export interface ChatPollOptions<T> {
   loadLatest: () => Promise<readonly T[]>
   /** 每次成功拉取后回调；页面负责合并与已读。 */
   onLatest: (rows: readonly T[]) => void
-  /** 失败时的可诊断记录入口（页面用 console.warn）。 */
-  onError?: (error: unknown) => void
+  /** 失败时的可诊断记录入口（页面用 console.warn）。第二个参数为连续失败次数。 */
+  onError?: (error: unknown, consecutiveFailures: number) => void
   intervalMs?: number
 }
 
@@ -40,15 +53,21 @@ export function startChatPolling<T>(options: ChatPollOptions<T>): ChatPollHandle
   const interval = Math.max(MIN_INTERVAL_MS, Math.floor(options.intervalMs ?? CHAT_POLL_INTERVAL_MS))
   let stopped = false
   let timer: ReturnType<typeof setTimeout> | null = null
+  // R144：连续失败计数。任何一次成功都复位，恢复后立刻回到正常节奏。
+  let consecutiveFailures = 0
   activePollers += 1
 
   const tick = async () => {
     try {
       const rows = await options.loadLatest()
       // 停止后丢弃在途结果：页面已经隐藏/卸载，不应再写状态。
-      if (!stopped) options.onLatest(rows)
+      if (!stopped) {
+        consecutiveFailures = 0
+        options.onLatest(rows)
+      }
     } catch (error) {
-      if (!stopped) options.onError?.(error)
+      consecutiveFailures += 1
+      if (!stopped) options.onError?.(error, consecutiveFailures)
     }
     schedule()
   }
@@ -56,11 +75,14 @@ export function startChatPolling<T>(options: ChatPollOptions<T>): ChatPollHandle
   function schedule() {
     if (stopped) return
     activeTimers += 1
-    timer = setTimeout(() => {
-      activeTimers -= 1
-      timer = null
-      void tick()
-    }, interval)
+    timer = setTimeout(
+      () => {
+        activeTimers -= 1
+        timer = null
+        void tick()
+      },
+      nextPollDelayMs(consecutiveFailures, interval),
+    )
   }
 
   schedule()

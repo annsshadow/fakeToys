@@ -11,7 +11,6 @@ package httpapi
 
 import (
 	"context"
-	"net/http"
 	"testing"
 	"time"
 
@@ -106,7 +105,7 @@ func TestE2EExportBusyReturns503(t *testing.T) {
 		t.Fatalf("占位失败：%v", err)
 	}
 
-	req, _ := http.NewRequest("GET", "/api/v1/admin/orders/export", nil)
+	req, _ := testReq("GET", "/api/v1/admin/orders/export", nil)
 	req.Header.Set("Authorization", "Bearer "+adminTok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
@@ -119,7 +118,7 @@ func TestE2EExportBusyReturns503(t *testing.T) {
 	// 释放后同一端点必须恢复（闸门不能永久卡死）。
 	release()
 
-	req2, _ := http.NewRequest("GET", "/api/v1/admin/orders/export", nil)
+	req2, _ := testReq("GET", "/api/v1/admin/orders/export", nil)
 	req2.Header.Set("Authorization", "Bearer "+adminTok)
 	resp2, err := e.app.Test(req2, 10000)
 	if err != nil {

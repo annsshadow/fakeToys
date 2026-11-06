@@ -13,7 +13,6 @@ import (
 	"bytes"
 	"encoding/csv"
 	"io"
-	"net/http"
 	"strconv"
 	"testing"
 
@@ -24,7 +23,7 @@ func TestE2EAdminExportUsersRequiresAuth(t *testing.T) {
 	e2eScratchDB(t)
 	e := newE2E(t)
 
-	req, _ := http.NewRequest("GET", "/api/v1/admin/users/export", nil)
+	req, _ := testReq("GET", "/api/v1/admin/users/export", nil)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
 		t.Fatalf("请求失败：%v", err)
@@ -42,7 +41,7 @@ func TestE2EAdminExportUsersReadonlyAllowed(t *testing.T) {
 	e.newPlayer(t, "exportro")
 	_, roTok := e.newAdminRole(t, "exportro", "readonly")
 
-	req, _ := http.NewRequest("GET", "/api/v1/admin/users/export", nil)
+	req, _ := testReq("GET", "/api/v1/admin/users/export", nil)
 	req.Header.Set("Authorization", "Bearer "+roTok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
@@ -64,7 +63,7 @@ func TestE2EAdminExportUsersContent(t *testing.T) {
 	uid, _ := e.newPlayer(t, "exportcsv")
 	_, adminTok := e.newAdmin(t, "exportcsv")
 
-	req, _ := http.NewRequest("GET", "/api/v1/admin/users/export", nil)
+	req, _ := testReq("GET", "/api/v1/admin/users/export", nil)
 	req.Header.Set("Authorization", "Bearer "+adminTok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {

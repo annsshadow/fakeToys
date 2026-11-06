@@ -2,7 +2,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { activeChatLifecycleCounts, CHAT_POLL_INTERVAL_MS, mergeNewerMessages, startChatPolling } from './chatPolling'
+import {
+  activeChatLifecycleCounts,
+  CHAT_POLL_INTERVAL_MS,
+  CHAT_POLL_MAX_INTERVAL_MS,
+  mergeNewerMessages,
+  nextPollDelayMs,
+  startChatPolling,
+} from './chatPolling'
 
 interface Msg {
   id: string
@@ -272,6 +279,116 @@ describe('会话内新消息自动刷新（R140）', () => {
     expect(calls).toHaveLength(0)
     await vi.advanceTimersByTimeAsync(1)
     expect(calls).toHaveLength(1)
+    handle.stop()
+  })
+})
+
+describe('弱网/断网降级：连续失败退避，成功即复位（R144）', () => {
+  it('退避表 5→10→20→40→60 封顶，非法基数走 1s 下限', () => {
+    expect([0, 1, 2, 3, 4, 5, 6].map((n) => nextPollDelayMs(n))).toEqual([
+      5000,
+      5000,
+      10000,
+      20000,
+      40000,
+      CHAT_POLL_MAX_INTERVAL_MS,
+      CHAT_POLL_MAX_INTERVAL_MS,
+    ])
+    expect(nextPollDelayMs(2, 0)).toBe(2000)
+    expect(nextPollDelayMs(9, 0)).toBe(CHAT_POLL_MAX_INTERVAL_MS)
+  })
+
+  it('连续失败按指数退避，封顶后不再增长；成功一次立即回到 5s', async () => {
+    vi.useFakeTimers()
+    const calls: number[] = []
+    let failing = true
+    const handle = startChatPolling<Msg>({
+      intervalMs: CHAT_POLL_INTERVAL_MS,
+      loadLatest: async () => {
+        calls.push(Date.now())
+        if (failing) throw new Error('Network error')
+        return []
+      },
+      onLatest: () => {},
+      onError: () => {},
+    })
+
+    // t=5s 首轮失败 → 5s；t=10s 二轮失败 → 10s；再到 20s → 40s → 60s（封顶）
+    await vi.advanceTimersByTimeAsync(5000)
+    await vi.advanceTimersByTimeAsync(5000)
+    await vi.advanceTimersByTimeAsync(10000)
+    await vi.advanceTimersByTimeAsync(20000)
+    await vi.advanceTimersByTimeAsync(40000)
+    await vi.advanceTimersByTimeAsync(60000)
+    expect(calls.map((t) => (t - calls[0]) / 1000)).toEqual([0, 5, 15, 35, 75, 135])
+
+    // 第 7 轮成功：复位后下一次只等 5s，而不是继续 60s。
+    failing = false
+    await vi.advanceTimersByTimeAsync(60000)
+    expect(calls).toHaveLength(7)
+    await vi.advanceTimersByTimeAsync(5000 - 1)
+    expect(calls).toHaveLength(7)
+    await vi.advanceTimersByTimeAsync(1)
+    expect(calls).toHaveLength(8)
+    handle.stop()
+  })
+
+  it('失败时请求仍在途也不叠加：任何时刻最多 1 个在途请求', async () => {
+    vi.useFakeTimers()
+    let attempts = 0
+    let inFlight = 0
+    let maxInFlight = 0
+    const pending: { reject?: (error: unknown) => void } = {}
+    const handle = startChatPolling<Msg>({
+      intervalMs: CHAT_POLL_INTERVAL_MS,
+      loadLatest: () => {
+        attempts += 1
+        inFlight += 1
+        maxInFlight = Math.max(maxInFlight, inFlight)
+        return new Promise<Msg[]>((_resolve, reject) => {
+          pending.reject = (error) => {
+            inFlight -= 1
+            reject(error)
+          }
+        })
+      },
+      onLatest: () => {},
+    })
+
+    await vi.advanceTimersByTimeAsync(CHAT_POLL_INTERVAL_MS)
+    expect(attempts).toBe(1)
+    // 断网下请求一直挂着：等 30s 也不得再发一个。
+    await vi.advanceTimersByTimeAsync(30000)
+    expect(attempts).toBe(1)
+
+    pending.reject?.(new Error('offline'))
+    await vi.advanceTimersByTimeAsync(0)
+    await vi.advanceTimersByTimeAsync(CHAT_POLL_INTERVAL_MS)
+    expect(attempts).toBe(2)
+    await vi.advanceTimersByTimeAsync(30000)
+    expect(attempts).toBe(2)
+    expect(maxInFlight).toBe(1)
+
+    pending.reject?.(new Error('offline'))
+    await vi.advanceTimersByTimeAsync(0)
+    handle.stop()
+  })
+
+  it('onError 携带连续失败次数，供页面判定是否点亮断网提示', async () => {
+    vi.useFakeTimers()
+    const failures: number[] = []
+    const handle = startChatPolling<Msg>({
+      intervalMs: CHAT_POLL_INTERVAL_MS,
+      loadLatest: async () => {
+        throw new Error('offline')
+      },
+      onLatest: () => {},
+      onError: (_error, consecutive) => failures.push(consecutive),
+    })
+    await vi.advanceTimersByTimeAsync(5000)
+    await vi.advanceTimersByTimeAsync(5000)
+    await vi.advanceTimersByTimeAsync(10000)
+    expect(failures).toEqual([1, 2, 3])
     handle.stop()
   })
 })

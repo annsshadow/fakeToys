@@ -11,7 +11,6 @@ package httpapi
 
 import (
 	"context"
-	"net/http"
 	"strconv"
 	"testing"
 
@@ -22,7 +21,7 @@ func TestE2EAdminDeleteDefenseRequiresAuth(t *testing.T) {
 	e2eScratchDB(t)
 	e := newE2E(t)
 
-	req, _ := http.NewRequest("DELETE", "/api/v1/admin/defenses/1", nil)
+	req, _ := testReq("DELETE", "/api/v1/admin/defenses/1", nil)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
 		t.Fatalf("请求失败：%v", err)
@@ -38,7 +37,7 @@ func TestE2EAdminDeleteDefenseReadonlyForbidden(t *testing.T) {
 	e := newE2E(t)
 
 	_, roTok := e.newAdminRole(t, "defdelro", "readonly")
-	req, _ := http.NewRequest("DELETE", "/api/v1/admin/defenses/1", nil)
+	req, _ := testReq("DELETE", "/api/v1/admin/defenses/1", nil)
 	req.Header.Set("Authorization", "Bearer "+roTok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
@@ -64,7 +63,7 @@ func TestE2EAdminDeleteDefenseSucceeds(t *testing.T) {
 		t.Fatalf("插入防线失败：%v", err)
 	}
 
-	req, _ := http.NewRequest("DELETE", "/api/v1/admin/defenses/"+strconv.FormatInt(defID, 10), nil)
+	req, _ := testReq("DELETE", "/api/v1/admin/defenses/"+strconv.FormatInt(defID, 10), nil)
 	req.Header.Set("Authorization", "Bearer "+adminTok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
@@ -90,7 +89,7 @@ func TestE2EAdminDeleteDefenseNotFound(t *testing.T) {
 	e := newE2E(t)
 
 	_, adminTok := e.newAdmin(t, "defdelnf")
-	req, _ := http.NewRequest("DELETE", "/api/v1/admin/defenses/999999", nil)
+	req, _ := testReq("DELETE", "/api/v1/admin/defenses/999999", nil)
 	req.Header.Set("Authorization", "Bearer "+adminTok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
