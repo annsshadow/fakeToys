@@ -13,7 +13,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"net/http"
 	"strconv"
 	"testing"
 
@@ -24,7 +23,7 @@ func TestE2EAdminUpdateRedeemCodeRequiresAuth(t *testing.T) {
 	e2eScratchDB(t)
 	e := newE2E(t)
 
-	req, _ := http.NewRequest("PUT", "/api/v1/admin/redeem-codes/1", nil)
+	req, _ := testReq("PUT", "/api/v1/admin/redeem-codes/1", nil)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
 		t.Fatalf("请求失败：%v", err)
@@ -40,7 +39,7 @@ func TestE2EAdminUpdateRedeemCodeReadonlyForbidden(t *testing.T) {
 	e := newE2E(t)
 
 	_, roTok := e.newAdminRole(t, "redeemro", "readonly")
-	req, _ := http.NewRequest("PUT", "/api/v1/admin/redeem-codes/1", nil)
+	req, _ := testReq("PUT", "/api/v1/admin/redeem-codes/1", nil)
 	req.Header.Set("Authorization", "Bearer "+roTok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
@@ -68,7 +67,7 @@ func TestE2EAdminUpdateRedeemCodeSucceeds(t *testing.T) {
 	raw, _ := json.Marshal(map[string]any{
 		"reward": map[string]int{"gem": 50}, "max_uses": 5,
 	})
-	req, _ := http.NewRequest("PUT", "/api/v1/admin/redeem-codes/"+strconv.FormatInt(id, 10), bytes.NewReader(raw))
+	req, _ := testReq("PUT", "/api/v1/admin/redeem-codes/"+strconv.FormatInt(id, 10), bytes.NewReader(raw))
 	req.Header.Set("Authorization", "Bearer "+adminTok)
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := e.app.Test(req, 10000)
@@ -105,7 +104,7 @@ func TestE2EAdminUpdateRedeemCodeNotFound(t *testing.T) {
 
 	_, adminTok := e.newAdmin(t, "redeemednf")
 	raw, _ := json.Marshal(map[string]any{"reward": map[string]int{"coin": 1}, "max_uses": 1})
-	req, _ := http.NewRequest("PUT", "/api/v1/admin/redeem-codes/999999", bytes.NewReader(raw))
+	req, _ := testReq("PUT", "/api/v1/admin/redeem-codes/999999", bytes.NewReader(raw))
 	req.Header.Set("Authorization", "Bearer "+adminTok)
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := e.app.Test(req, 10000)

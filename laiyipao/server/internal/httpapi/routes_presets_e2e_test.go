@@ -28,7 +28,7 @@ func TestE2EPresetsRequireAuth(t *testing.T) {
 		{"POST", "/api/v1/me/presets/1/current"},
 		{"DELETE", "/api/v1/me/presets/1"},
 	} {
-		req, _ := http.NewRequest(tc.method, tc.path, nil)
+		req, _ := testReq(tc.method, tc.path, nil)
 		resp, err := e.app.Test(req, 10000)
 		if err != nil {
 			t.Fatalf("%s %s 请求失败：%v", tc.method, tc.path, err)
@@ -49,10 +49,10 @@ func TestE2EPresetLifecycle(t *testing.T) {
 		var r *http.Request
 		var err error
 		if body == nil {
-			r, err = http.NewRequest(method, path, nil)
+			r, err = testReq(method, path, nil)
 		} else {
 			b, _ := json.Marshal(body)
-			r, err = http.NewRequest(method, path, bytes.NewReader(b))
+			r, err = testReq(method, path, bytes.NewReader(b))
 		}
 		if err != nil {
 			return nil, err
@@ -168,7 +168,7 @@ func TestE2EPresetForeignIsolation(t *testing.T) {
 	owner, ownerTok := e.newPlayer(t, "preset-owner")
 	_, attackerTok := e.newPlayer(t, "preset-attacker")
 
-	req, _ := http.NewRequest("POST", "/api/v1/me/presets", nil)
+	req, _ := testReq("POST", "/api/v1/me/presets", nil)
 	req.Header.Set("Authorization", "Bearer "+ownerTok)
 	req.Header.Set("Content-Type", "application/json")
 	// 空 body 直接 400（bad_json）——先建一个合法的
@@ -184,7 +184,7 @@ func TestE2EPresetForeignIsolation(t *testing.T) {
 	_ = attackerTok
 
 	// 别人读不到：列表为空。
-	req2, _ := http.NewRequest("GET", "/api/v1/me/presets", nil)
+	req2, _ := testReq("GET", "/api/v1/me/presets", nil)
 	req2.Header.Set("Authorization", "Bearer "+attackerTok)
 	resp2, err := e.app.Test(req2, 10000)
 	if err != nil {
@@ -206,7 +206,7 @@ func TestE2EPresetForeignIsolation(t *testing.T) {
 		{"POST", "/current"},
 		{"DELETE", ""},
 	} {
-		req3, _ := http.NewRequest(tc.method, fmt.Sprintf("/api/v1/me/presets/%d%s", presetID, tc.path), nil)
+		req3, _ := testReq(tc.method, fmt.Sprintf("/api/v1/me/presets/%d%s", presetID, tc.path), nil)
 		req3.Header.Set("Authorization", "Bearer "+attackerTok)
 		resp3, err := e.app.Test(req3, 10000)
 		if err != nil {

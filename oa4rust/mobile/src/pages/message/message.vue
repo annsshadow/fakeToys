@@ -2,16 +2,20 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <script setup lang="ts">
-import { onShow } from '@dcloudio/uni-app'
+import { onHide, onShow, onUnload } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import { messageApi } from '@/services'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+// biome-ignore lint/correctness/noUnusedImports: Vue template consumes the offline copy.
+import { NETWORK_OFFLINE_TEXT, type NetworkStatusApi, networkOffline, watchNetworkStatus } from '@/utils/networkStatus'
 import { loadConversations } from './messageFeed'
 
 const rows = ref<Record<string, unknown>[]>([])
 const loading = ref(false)
 const loaded = ref(false)
 const loadError = ref('')
+// R144：系统网络状态监听；onShow/onHide 可能多次触发，必须只注册一份。
+let unwatchNetwork: (() => void) | null = null
 
 function conversationId(row: Record<string, unknown>): string {
   for (const k of ['id', 'conversationId', 'uuid', 'flag']) {
@@ -34,13 +38,24 @@ async function load() {
   const result = await loadConversations(() => messageApi.conversationList(), rows.value)
   rows.value = result.rows
   if (!result.ok) loadError.value = result.error
+  // 列表能拉到就说明网络可用，撤掉断网提示。
+  else networkOffline.value = false
   loading.value = false
   loaded.value = true
 }
 
 onShow(async () => {
   if (!(await ensureAuthenticated())) return
+  if (!unwatchNetwork) unwatchNetwork = watchNetworkStatus(uni as unknown as NetworkStatusApi)
   load()
+})
+onHide(() => {
+  unwatchNetwork?.()
+  unwatchNetwork = null
+})
+onUnload(() => {
+  unwatchNetwork?.()
+  unwatchNetwork = null
 })
 
 function openConversation(row: Record<string, unknown>) {
@@ -53,6 +68,7 @@ function openConversation(row: Record<string, unknown>) {
 
 <template>
   <view class="page">
+    <view v-if="networkOffline" class="offline-banner">{{ NETWORK_OFFLINE_TEXT }}</view>
     <view v-if="loading && !loaded" class="tip">加载中…</view>
     <view v-else-if="rows.length === 0 && loadError" class="tip tip-error">
       <view class="error-text">{{ loadError }}</view>
@@ -76,6 +92,13 @@ function openConversation(row: Record<string, unknown>) {
 .page {
   min-height: 100vh;
   background: #f5f7fa;
+}
+.offline-banner {
+  padding: 16rpx 24rpx;
+  background: #fff4e5;
+  color: #b26a00;
+  font-size: 26rpx;
+  text-align: center;
 }
 .tip {
   padding: 120rpx 0;
