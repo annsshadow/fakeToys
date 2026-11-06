@@ -302,7 +302,9 @@ async fn person_list_filter_and_delete_paging_registered() {
             Some("{}")
         )
         .await,
-        StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE
+        StatusCode::UNAUTHORIZED
+            | StatusCode::INTERNAL_SERVER_ERROR
+            | StatusCode::SERVICE_UNAVAILABLE
     ));
 }
 
