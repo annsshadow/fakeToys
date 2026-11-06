@@ -111,6 +111,22 @@ describe('api/client request', () => {
     expect(init.body).toBe(JSON.stringify({ reason: '刷分' }))
   })
 
+  it('POST 带 idempotencyKey 时注入 Idempotency-Key 头', async () => {
+    fetchMock.mockResolvedValueOnce(mockResp({ ok: true, status: 200, text: 'null' }))
+    await client.api.post(
+      '/admin/users/1/grant',
+      { currency: 'coin', amount: 10 },
+      { idempotencyKey: 'grant-abc-1' },
+    )
+    expect(fetchMock.mock.calls[0][1].headers['Idempotency-Key']).toBe('grant-abc-1')
+  })
+
+  it('未传 idempotencyKey 的写请求不带该头（其它端点保持现状）', async () => {
+    fetchMock.mockResolvedValueOnce(mockResp({ ok: true, status: 200, text: 'null' }))
+    await client.api.post('/admin/users/1/ban', { reason: '刷分' })
+    expect(fetchMock.mock.calls[0][1].headers['Idempotency-Key']).toBeUndefined()
+  })
+
   it('opts.auth = false 时不注入令牌（登录接口本身的语义）', async () => {
     client.setToken('stale-token')
     fetchMock.mockResolvedValueOnce(mockResp({ ok: true, status: 200, text: '{}' }))

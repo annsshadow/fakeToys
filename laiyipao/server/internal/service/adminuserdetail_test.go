@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/csv"
+	"errors"
 	"strconv"
 	"testing"
 )
@@ -86,6 +87,36 @@ func TestAdminUserDetail(t *testing.T) {
 	// 5) 不存在的用户 → 报错（而不是返回零值）
 	if _, err := ts.AdminUserDetail(ctx, 999_999_999); err == nil {
 		t.Error("不存在的用户应报错，而不是返回一个空详情")
+	}
+}
+
+// TestAdminUserDetailWalletMissingIsNot404 守住 G2（R131 审计）：
+// 「用户存在」与「钱包行没建」是两件事。旧实现把 LoadWalletReadOnly 的
+// ErrNotFound 原样上抛 → failErr 映射成 404，运营看到「玩家不存在」。
+func TestAdminUserDetailWalletMissingIsNot404(t *testing.T) {
+	ts := openScratchService(t)
+	ctx := context.Background()
+
+	uid := ts.newUser(t, ctx)
+	if _, err := ts.db.Pool.Exec(ctx, `DELETE FROM user_wallets WHERE user_id=$1`, uid); err != nil {
+		t.Fatalf("删除钱包行失败：%v", err)
+	}
+
+	d, err := ts.AdminUserDetail(ctx, uid)
+	if err != nil {
+		t.Fatalf("用户存在但钱包行缺失，详情必须返回而不是 404：%v", err)
+	}
+	if d.User.ID != uid {
+		t.Errorf("详情用户 id=%d，期望 %d", d.User.ID, uid)
+	}
+	// 缺钱包 → 零值钱包（字段仍在，值全 0）
+	if d.Wallet["coin"] != 0 || d.Wallet["gem"] != 0 {
+		t.Errorf("缺钱包时应返回零值余额，实际 %v", d.Wallet)
+	}
+
+	// 真正不存在的用户仍然是 ErrNotFound（404），不能把两种情形合并。
+	if _, err := ts.AdminUserDetail(ctx, 999_999_999); !errors.Is(err, ErrNotFound) {
+		t.Errorf("不存在的用户应返回 ErrNotFound，实际 %v", err)
 	}
 }
 

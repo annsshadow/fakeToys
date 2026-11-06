@@ -732,9 +732,10 @@ func (s *Service) SaveDefense(ctx context.Context, userID int64, in SaveDefenseI
 	}
 	hash := domain.SnapshotHash(snapshotRaw)
 
-	var shielded any
+	var shielded *time.Time
 	if in.ShieldHours > 0 {
-		shielded = time.Now().Add(time.Duration(in.ShieldHours) * time.Hour)
+		t := time.Now().Add(time.Duration(in.ShieldHours) * time.Hour)
+		shielded = &t
 	}
 
 	// ⚠️ upsert / DELETE / INSERT 三条语句必须在**同一事务**内。
@@ -744,6 +745,11 @@ func (s *Service) SaveDefense(ctx context.Context, userID int64, in SaveDefenseI
 	// 且 defense_works 停留在部分写入状态（工事数少于快照里的）。
 	// 中途崩溃同样会让 works 被清空而 snapshot 已更新，两者永久不一致。
 	var id int64
+	// ⚠️ R133（时间字段写后必读）：`shielded_until` 是这条写路径唯一的时刻字段，
+	// 入参是 Go 的 time.Time（纳秒），落库只到微秒。改前响应里的 DefenseView
+	// 根本不填这个字段（请求 shield_hours=24，响应却没有 shielded_until），
+	// 前端无法确认护盾是否生效。这里读回库值再回填。
+	var storedShieldedUntil *time.Time
 	err = s.DB.Tx(ctx, func(tx txType) error {
 		// 一个玩家一条防线，defenses.owner_id 建了唯一索引，用 upsert
 		if err := tx.QueryRow(ctx, `
@@ -755,9 +761,9 @@ func (s *Service) SaveDefense(ctx context.Context, userID int64, in SaveDefenseI
 			  element_coverage = EXCLUDED.element_coverage, mastery_done = EXCLUDED.mastery_done,
 			  snapshot = EXCLUDED.snapshot, snapshot_hash = EXCLUDED.snapshot_hash,
 			  shielded_until = EXCLUDED.shielded_until, updated_at = now()
-			RETURNING id`,
+			RETURNING id, shielded_until`,
 			userID, in.Name, power, rating.ElementCoverage, rating.MasteryDone,
-			snapshotRaw, hash, shielded).Scan(&id); err != nil {
+			snapshotRaw, hash, shielded).Scan(&id, &storedShieldedUntil); err != nil {
 			return fmt.Errorf("save defense: %w", err)
 		}
 
@@ -783,7 +789,8 @@ func (s *Service) SaveDefense(ctx context.Context, userID int64, in SaveDefenseI
 	return DefenseView{
 		ID: id, OwnerID: userID, Name: in.Name, Power: power,
 		ElementCoverage: rating.ElementCoverage, MasteryDone: rating.MasteryDone,
-		Snapshot: snapshot, SnapshotHash: hash,
+		ShieldedUntil: storedShieldedUntil,
+		Snapshot:      snapshot, SnapshotHash: hash,
 	}, nil
 }
 

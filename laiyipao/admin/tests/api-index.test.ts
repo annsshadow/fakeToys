@@ -171,15 +171,26 @@ describe('api/index 用户', () => {
     expect(apiMock.get).toHaveBeenCalledWith('/admin/users?limit=10&offset=30')
   })
 
-  it('banUser / unbanUser / grantUser', async () => {
+  it('banUser / unbanUser 的路径与方法', async () => {
     echoArgs()
     await expect(banUser(3, '刷分')).resolves.toEqual({
       __args: ['/admin/users/3/ban', { reason: '刷分' }],
     })
     await expect(unbanUser(3)).resolves.toEqual({ __args: ['/admin/users/3/unban'] })
-    await expect(grantUser(3, 'coin', 10000)).resolves.toEqual({
-      __args: ['/admin/users/3/grant', { currency: 'coin', amount: 10000 }],
-    })
+  })
+
+  it('grantUser：每次调用生成幂等键（两次独立发币不能被当成一次重放）', async () => {
+    echoArgs()
+    const r1 = (await grantUser(3, 'coin', 10000)).__args as unknown[]
+    const r2 = (await grantUser(3, 'coin', 10000)).__args as unknown[]
+
+    expect(r1[0]).toBe('/admin/users/3/grant')
+    expect(r1[1]).toEqual({ currency: 'coin', amount: 10000 })
+    const k1 = (r1[2] as { idempotencyKey: string }).idempotencyKey
+    const k2 = (r2[2] as { idempotencyKey: string }).idempotencyKey
+    expect(k1).toMatch(/^[A-Za-z0-9_\-.:]{8,128}$/)
+    expect(k1).toMatch(/^grant-/)
+    expect(k2).not.toBe(k1)
   })
 })
 

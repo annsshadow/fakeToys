@@ -401,6 +401,57 @@ describe('request：401 刷新与重试', () => {
   })
 })
 
+/**
+ * 购买幂等键（R135 客户端侧）。
+ *
+ * 服务端已支持可选的 `Idempotency-Key`：同 key + 同商品 24h 内只执行一次。
+ * 客户端不发的后果是「同一请求重发 → 双扣」；客户端发的姿势错了（重试重新生成）
+ * 后果一样。所以这里钉住的不是「有没有这个头」，而是**重试复用同一枚**。
+ */
+describe('购买幂等键', () => {
+  const KEY_PATTERN = /^[A-Za-z0-9_\-.:]{8,128}$/
+
+  it('buyItem 首请求带 Idempotency-Key，且符合服务端白名单', async () => {
+    queueResponses([{ statusCode: 200, data: { granted: {} } }])
+    await buyItem(5)
+
+    const key = callOf(0).header['Idempotency-Key']
+    expect(typeof key).toBe('string')
+    expect(key).toMatch(KEY_PATTERN)
+  })
+
+  it('401 刷新后的重试复用首请求的 key（重新生成 = 第二笔扣款）', async () => {
+    setTokenInternal('expired', 'refresh-1')
+    queueResponses([
+      { statusCode: 401, data: {} }, // 首请求
+      { statusCode: 200, data: { access_token: 'new-acc', refresh_token: 'new-ref' } }, // 刷新
+      { statusCode: 200, data: { granted: {} } }, // 重试
+    ])
+    await buyItem(5)
+
+    const first = callOf(0).header['Idempotency-Key']
+    const retry = callOf(2).header['Idempotency-Key']
+    expect(first).toMatch(KEY_PATTERN)
+    expect(retry).toBe(first)
+  })
+
+  it('两次独立的 buyItem 生成不同的 key（真点两次就是两笔成交）', async () => {
+    queueResponses([{ statusCode: 200, data: {} }, { statusCode: 200, data: {} }])
+    await buyItem(5)
+    await buyItem(5)
+
+    expect(callOf(0).header['Idempotency-Key']).toMatch(KEY_PATTERN)
+    expect(callOf(1).header['Idempotency-Key']).toMatch(KEY_PATTERN)
+    expect(callOf(1).header['Idempotency-Key']).not.toBe(callOf(0).header['Idempotency-Key'])
+  })
+
+  it('未声明 idempotencyKey 的请求不带该头（其它写端点保持现状）', async () => {
+    queueResponses([{ statusCode: 200, data: {} }])
+    await request('/signin', { method: 'POST' })
+    expect(callOf(0).header['Idempotency-Key']).toBeUndefined()
+  })
+})
+
 describe('接口封装：URL / method / body 拼装', () => {
   /** 逐个导出函数断言请求参数 —— 路由与服务端逐字对应，拼错路径 404 很难从 UI 察觉 */
   const cases: Array<{

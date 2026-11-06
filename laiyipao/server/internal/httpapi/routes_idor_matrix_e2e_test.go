@@ -36,6 +36,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -259,6 +260,168 @@ func TestE2EIDORMatrixIDBearingWrites(t *testing.T) {
 	}
 }
 
+// TestE2EIDORMatrixPathIDDoubleSided 第 134 轮：路径带 id 的改/删**双向**判据。
+//
+// R68 只证了「A 改 B → 404」这一半。只测拒绝有一类缺口：如果某个端点的
+// 归属条件写成「owner 缺失就放行」，A 打 B 仍然可能 404（因为 B 存在且
+// 不是 A），但真正的漏洞形态是「传一个空/不存在的归属也放行」以及
+// 「A 改自己也被拒」。所以本用例对每个 owned-row 端点同时断言：
+//
+//   - A 改 B → 非 2xx，且 B 的行**逐字段不变**；
+//   - A 改自己 → 200，且变更真实落库；
+//   - 带 `?user_id=B` 注入时，仍然只作用于 A 自己。
+//
+// 覆盖 R68 没覆盖的 `/me/skills/:id/upgrade`，以及 `/defenses/:id/challenge`
+// 的「挑战者身份必须取自 token」（跨玩家挑战是设计功能，不是越权）。
+func TestE2EIDORMatrixPathIDDoubleSided(t *testing.T) {
+	e2eScratchDB(t)
+	e := newE2E(t)
+	ctx := context.Background()
+
+	uidA, tokA := e.newPlayer(t, "idor_own_a")
+	uidB, tokB := e.newPlayer(t, "idor_own_b")
+
+	// 玩家建号自带技能 1；只给 B 补一个 A 没有的技能 2 —— 这才是可越权的资源。
+	e.exec(t, `INSERT INTO user_skills (user_id, skill_id, level) VALUES ($1, 2, 1)
+	          ON CONFLICT (user_id, skill_id) DO NOTHING`, uidB)
+	e.exec(t, `UPDATE user_wallets SET coin = 5000 WHERE user_id = $1 OR user_id = $2`, uidA, uidB)
+	e.exec(t, `INSERT INTO user_tokens (user_id, token, balance) VALUES ($1, 'gem_wash_token', 3)
+	          ON CONFLICT (user_id, token) DO UPDATE SET balance = 3`, uidA)
+
+	// --- 技能升级：A 升 B 独有的技能 2 → 必须拒绝，B 等级不动 ---
+	levelBBefore := e.scalarInt(t, `SELECT level FROM user_skills WHERE user_id = $1 AND skill_id = 2`, uidB)
+	status, raw := doAuthed(t, e, "POST", "/api/v1/me/skills/2/upgrade", tokA, "")
+	if status/100 == 2 {
+		t.Fatalf("A 升 B 独有的技能 2 不应成功，实际 %d：%s", status, raw)
+	}
+	if status != fiber.StatusBadRequest && status != fiber.StatusNotFound && status != fiber.StatusForbidden {
+		t.Fatalf("拒绝码应为 400/403/404，实际 %d：%s", status, raw)
+	}
+	levelBAfter := e.scalarInt(t, `SELECT level FROM user_skills WHERE user_id = $1 AND skill_id = 2`, uidB)
+	if levelBAfter != levelBBefore {
+		t.Fatalf("A 越权改了 B 的技能等级：%d → %d", levelBBefore, levelBAfter)
+	}
+	// 正向：A 升自己的技能 1 → 200 且等级 +1。
+	levelABefore := e.scalarInt(t, `SELECT level FROM user_skills WHERE user_id = $1 AND skill_id = 1`, uidA)
+	status, raw = doAuthed(t, e, "POST", "/api/v1/me/skills/1/upgrade", tokA, "")
+	if status != fiber.StatusOK {
+		t.Fatalf("A 升自己的技能应 200，实际 %d：%s", status, raw)
+	}
+	if got := e.scalarInt(t, `SELECT level FROM user_skills WHERE user_id = $1 AND skill_id = 1`, uidA); got != levelABefore+1 {
+		t.Fatalf("A 自己的技能等级应 %d，实际 %d", levelABefore+1, got)
+	}
+	// 注入：带 ?user_id=B 仍然只升 A 自己。
+	levelB1Before := e.scalarInt(t, `SELECT level FROM user_skills WHERE user_id = $1 AND skill_id = 1`, uidB)
+	status, raw = doAuthed(t, e, "POST",
+		fmt.Sprintf("/api/v1/me/skills/1/upgrade?user_id=%d", uidB), tokA, "")
+	if status != fiber.StatusOK {
+		t.Fatalf("带 user_id 注入的自我升级应 200，实际 %d：%s", status, raw)
+	}
+	if b := e.scalarInt(t, `SELECT level FROM user_skills WHERE user_id = $1 AND skill_id = 1`, uidB); b != levelB1Before {
+		t.Fatalf("query 里的 user_id 被采信：B 的技能 1 等级被改成 %d", b)
+	}
+
+	// --- 预设：正向（A 改自己 200），反向已在 R68 覆盖 ---
+	var presetA int64
+	if err := e.pool.QueryRow(ctx,
+		`INSERT INTO user_presets (user_id, name, slots) VALUES ($1, 'A 的预设', '{}'::jsonb)
+		 RETURNING id`, uidA).Scan(&presetA); err != nil {
+		t.Fatalf("插入 A 的预设失败：%v", err)
+	}
+	if status, raw := doAuthed(t, e, "POST",
+		"/api/v1/me/presets/"+fmtInt(presetA)+"/current", tokA, ""); status != fiber.StatusOK {
+		t.Fatalf("A 把自己的预设设为当前应 200，实际 %d：%s", status, raw)
+	}
+	if got := e.scalarInt(t, `SELECT count(*) FROM user_presets WHERE user_id = $1 AND is_current`, uidA); got != 1 {
+		t.Fatalf("A 的当前预设应恰好 1 条，实际 %d", got)
+	}
+	if status, raw := doAuthed(t, e, "DELETE",
+		"/api/v1/me/presets/"+fmtInt(presetA), tokA, ""); status != fiber.StatusOK {
+		t.Fatalf("A 删自己的预设应 200，实际 %d：%s", status, raw)
+	}
+	if got := e.scalarInt(t, `SELECT count(*) FROM user_presets WHERE id = $1`, presetA); got != 0 {
+		t.Fatalf("A 自己的预设应被删除，实际仍在（%d）", got)
+	}
+
+	// --- 宝石：正向（A 洗自己的宝石 200，且只扣 A 的券） ---
+	// 必须用 seeder 里带候选词条池的宝石（gem_id=1 有 3 条），否则合法洗练也会因
+	// 「候选池 0 条」而 500 —— 那是内容表问题，不是归属问题，会让本用例假红。
+	var gemA int64
+	if err := e.pool.QueryRow(ctx,
+		`INSERT INTO user_gems (user_id, gem_id, quality, affixes)
+		 VALUES ($1, 1, 'common', '[]'::jsonb) RETURNING id`, uidA).Scan(&gemA); err != nil {
+		t.Fatalf("插入 A 的宝石失败：%v", err)
+	}
+	otherTokenBefore := e.scalarInt(t, `SELECT coalesce((SELECT balance FROM user_tokens WHERE user_id = $1 AND token = 'gem_wash_token'), 0)`, uidB)
+	if status, raw := doAuthed(t, e, "POST",
+		"/api/v1/me/gems/"+fmtInt(gemA)+"/wash", tokA, ""); status != fiber.StatusOK {
+		t.Fatalf("A 洗自己的宝石应 200，实际 %d：%s", status, raw)
+	}
+	if got := e.scalarInt(t, `SELECT balance FROM user_tokens WHERE user_id = $1 AND token = 'gem_wash_token'`, uidA); got != 2 {
+		t.Fatalf("洗练应只扣 A 的券（3→2），实际 %d", got)
+	}
+	if got := e.scalarInt(t, `SELECT coalesce((SELECT balance FROM user_tokens WHERE user_id = $1 AND token = 'gem_wash_token'), 0)`, uidB); got != otherTokenBefore {
+		t.Fatalf("B 的洗练券被误扣：%d → %d", otherTokenBefore, got)
+	}
+	if status, raw := doAuthed(t, e, "POST",
+		"/api/v1/me/gems/"+fmtInt(gemA)+"/equip", tokA, ""); status != fiber.StatusOK {
+		t.Fatalf("A 佩戴自己的宝石应 200，实际 %d：%s", status, raw)
+	}
+	if got := e.scalarInt(t, `SELECT count(*) FROM user_gems WHERE id = $1 AND user_id = $2 AND equipped_slot <> ''`, gemA, uidA); got != 1 {
+		t.Fatalf("A 的宝石应已佩戴，实际未佩戴")
+	}
+	if status, raw := doAuthed(t, e, "POST",
+		"/api/v1/me/gems/"+fmtInt(gemA)+"/unequip", tokA, ""); status != fiber.StatusOK {
+		t.Fatalf("A 卸下自己的宝石应 200，实际 %d：%s", status, raw)
+	}
+
+	// --- 战报：正向（A 读自己的回放/详情/验真 200） ---
+	var battleA int64
+	if err := e.pool.QueryRow(ctx,
+		`INSERT INTO battle_records (user_id, level_id, result, stars, replay_hash)
+		 VALUES ($1, 1, 'win', 3, 'own_hash') RETURNING id`, uidA).Scan(&battleA); err != nil {
+		t.Fatalf("插入 A 的战报失败：%v", err)
+	}
+	if status, raw := doAuthed(t, e, "GET",
+		"/api/v1/battle/"+fmtInt(battleA)+"/replay", tokA, ""); status != fiber.StatusOK {
+		t.Fatalf("A 读自己的回放应 200，实际 %d：%s", status, raw)
+	}
+	if status, raw := doAuthed(t, e, "GET",
+		"/api/v1/me/battles/"+fmtInt(battleA), tokA, ""); status != fiber.StatusOK {
+		t.Fatalf("A 读自己的战报详情应 200，实际 %d：%s", status, raw)
+	}
+	if status, raw := doAuthed(t, e, "POST", "/api/v1/battle/verify", tokA,
+		fmt.Sprintf(`{"battle_id":%d,"replay_hash":"own_hash"}`, battleA)); status != fiber.StatusOK {
+		t.Fatalf("A 验自己的战报应 200，实际 %d：%s", status, raw)
+	}
+
+	// --- 防线挑战：挑战者身份必须取自 token ---
+	if status, raw := doAuthed(t, e, "POST", "/api/v1/defenses/save", tokB,
+		`{"name":"B 的防线","skills":[1],"shield_hours":0}`); status != fiber.StatusOK {
+		t.Fatalf("B 保存防线失败 %d：%s", status, raw)
+	}
+	var defenseB int64
+	if err := e.pool.QueryRow(ctx,
+		`SELECT id FROM defenses WHERE owner_id = $1`, uidB).Scan(&defenseB); err != nil {
+		t.Fatalf("读 B 的防线失败：%v", err)
+	}
+	// 挑战端点要结算体（seed/won/duration/hash），空体是 400 bad_json，与归属无关。
+	challengeBody := `{"seed":"1","won":true,"duration_ms":60000,"hp_left_pct":100,"replay_hash":"0000000000000000"}`
+	// B 挑战自己的防线 → 403（不能自打）。
+	if status, raw := doAuthed(t, e, "POST",
+		"/api/v1/defenses/"+fmtInt(defenseB)+"/challenge", tokB, challengeBody); status != fiber.StatusForbidden {
+		t.Errorf("B 挑战自己的防线应 403，实际 %d：%s", status, raw)
+	}
+	// A 挑战 B 的防线 → 200（设计功能），落库的 challenger 必须是 A，不是 B。
+	if status, raw := doAuthed(t, e, "POST",
+		"/api/v1/defenses/"+fmtInt(defenseB)+"/challenge", tokA, challengeBody); status != fiber.StatusOK {
+		t.Fatalf("A 挑战 B 的防线应 200，实际 %d：%s", status, raw)
+	}
+	if got := e.scalarInt(t, `SELECT challenger_id FROM defense_challenges WHERE defense_id = $1 ORDER BY id DESC LIMIT 1`, defenseB); int64(got) != uidA {
+		t.Fatalf("挑战者身份应取自 token（A=%d），实际落到 %d", uidA, got)
+	}
+}
+
 // TestE2EIDORMatrixTokenOnlyWrites 覆盖「没有资源 id 入参」的端点。
 //
 // 任务领奖与签到只接受全局任务 id / 「今天」，归属只能来自令牌。
@@ -268,7 +431,7 @@ func TestE2EIDORMatrixTokenOnlyWrites(t *testing.T) {
 	e := newE2E(t)
 
 	uidA, tokA := e.newPlayer(t, "idor_token_a")
-	uidB, _ := e.newPlayer(t, "idor_token_b")
+	uidB, tokB := e.newPlayer(t, "idor_token_b")
 
 	// B 先签到，形成一个 B 自己的行。
 	if status, raw := doAuthed(t, e, "POST", "/api/v1/signin/", tokA, ""); status != fiber.StatusOK {
@@ -290,5 +453,51 @@ func TestE2EIDORMatrixTokenOnlyWrites(t *testing.T) {
 	}
 	if rows := e.scalarInt(t, `SELECT COUNT(*) FROM user_sign_ins WHERE user_id = $1`, uidA); rows == 0 {
 		t.Error("A 的签到没有落到自己名下")
+	}
+
+	// --- 任务领奖：全局 task_id，归属只能来自令牌 ---
+	// 给 A 造一条「已完成」的行，然后带 ?user_id=B 领取：
+	// 若 handler 采信 query，这一行会落到 B 名下、奖励发给 B。
+	taskID := e.scalarInt(t, `SELECT id FROM tasks WHERE enabled ORDER BY id LIMIT 1`)
+	day := taskFixtureDay(time.Now())
+	e.exec(t, `INSERT INTO user_tasks (user_id, task_id, task_date, progress)
+	           VALUES ($1,$2,$3,(SELECT target FROM tasks WHERE id=$2))
+	           ON CONFLICT (user_id, task_id, task_date) DO UPDATE SET progress = EXCLUDED.progress`,
+		uidA, taskID, day)
+	if coinA := e.scalarInt(t, `SELECT coin FROM user_wallets WHERE user_id = $1`, uidA); coinA < 0 {
+		t.Fatalf("A 的钱包不应为负：%d", coinA)
+	}
+	coinBBefore := e.scalarInt(t, `SELECT coin FROM user_wallets WHERE user_id = $1`, uidB)
+	status, raw := doAuthed(t, e, "POST",
+		fmt.Sprintf("/api/v1/tasks/%d/claim?user_id=%d", taskID, uidB), tokA, "")
+	if status != fiber.StatusOK {
+		t.Fatalf("A 领取自己的任务应 200，实际 %d：%s", status, raw)
+	}
+	if b := e.scalarInt(t, `SELECT coin FROM user_wallets WHERE user_id = $1`, uidB); b != coinBBefore {
+		t.Fatalf("query 里的 user_id 被采信：任务奖励发给了 B（coin %d → %d）", coinBBefore, b)
+	}
+	if claimedByB := e.scalarInt(t, `SELECT COUNT(*) FROM user_tasks WHERE user_id = $1 AND claimed_at IS NOT NULL`, uidB); claimedByB != 0 {
+		t.Fatalf("query 里的 user_id 被采信：B 名下出现 %d 条已领取任务", claimedByB)
+	}
+	if claimedByA := e.scalarInt(t, `SELECT COUNT(*) FROM user_tasks WHERE user_id = $1 AND claimed_at IS NOT NULL`, uidA); claimedByA != 1 {
+		t.Fatalf("A 的领取没有落到自己名下（已领取行 %d 条）", claimedByA)
+	}
+
+	// --- 商店购买：全局 item_id，归属只能来自令牌 ---
+	// 商品 7 是首充礼包（price {coin:0}，每日限购 1）：带 ?user_id=B 购买后，
+	// 限购计数必须记在 A 名下；B 仍是「0 次已购」，B 的购买接口仍可正常下单。
+	e.exec(t, `DELETE FROM user_purchases WHERE item_id = 7 AND user_id IN ($1,$2)`, uidA, uidB)
+	if status, raw := doAuthed(t, e, "POST", "/api/v1/shop/7/buy?user_id="+fmtInt(int64(uidB)), tokA, ""); status != fiber.StatusOK {
+		t.Fatalf("A 购买首充礼包应 200，实际 %d：%s", status, raw)
+	}
+	if boughtByB := e.scalarInt(t, `SELECT COUNT(*) FROM user_purchases WHERE user_id = $1 AND item_id = 7`, uidB); boughtByB != 0 {
+		t.Fatalf("query 里的 user_id 被采信：购买记录记到了 B 名下（%d 条）", boughtByB)
+	}
+	if boughtByA := e.scalarInt(t, `SELECT COUNT(*) FROM user_purchases WHERE user_id = $1 AND item_id = 7`, uidA); boughtByA != 1 {
+		t.Fatalf("A 的购买没有落到自己名下（%d 条）", boughtByA)
+	}
+	// B 自己的限购额度没有被 A 的注入消耗：B 自己买仍应 200。
+	if status, raw := doAuthed(t, e, "POST", "/api/v1/shop/7/buy", tokB, ""); status != fiber.StatusOK {
+		t.Fatalf("B 自己的首充礼包应仍可购买（限购额度被 A 的注入误吞），实际 %d：%s", status, raw)
 	}
 }
