@@ -60,6 +60,7 @@ import { confirmMsg, toast } from '../utils/toast'
 import ListLoadError from './ListLoadError.vue'
 import { useListError } from './listQuery'
 import { liveQueryItems } from './liveQueryItems'
+import { mutationErrorMessage } from './mutationError'
 
 interface Item {
   id: string
@@ -137,6 +138,7 @@ function closeModal() {
   form.value = {}
 }
 const saveM = useMutation({
+  onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: async () => {
     saving.value = true
     try {
@@ -160,6 +162,7 @@ function saveItem() {
   saveM.mutate()
 }
 const delM = useMutation({
+  onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: async (id: string) => api.post(`/api/program_center/invoke/delete/${id}`),
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: qk })

@@ -17,7 +17,6 @@ import (
 	"bytes"
 	"errors"
 	"log"
-	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -95,7 +94,7 @@ func TestAccessLogLevels(t *testing.T) {
 	t.Run("500原因在error档", func(t *testing.T) {
 		SetLogLevel("error")
 		read := captureAccessLog(t)
-		req, _ := http.NewRequest("GET", "/boom", nil)
+		req, _ := testReq("GET", "/boom", nil)
 		app.Test(req)
 		if !strings.Contains(read(), "db down") {
 			t.Errorf("error 档必须记 500 真实原因，实际: %q", read())
@@ -105,14 +104,14 @@ func TestAccessLogLevels(t *testing.T) {
 	t.Run("4xx在warn档且error档不可见", func(t *testing.T) {
 		SetLogLevel("warn")
 		read := captureAccessLog(t)
-		req, _ := http.NewRequest("GET", "/nf", nil)
+		req, _ := testReq("GET", "/nf", nil)
 		app.Test(req)
 		if !strings.Contains(read(), "-> 404") {
 			t.Errorf("warn 档必须记 4xx，实际: %q", read())
 		}
 		SetLogLevel("error")
 		read = captureAccessLog(t)
-		req, _ = http.NewRequest("GET", "/nf", nil)
+		req, _ = testReq("GET", "/nf", nil)
 		app.Test(req)
 		if strings.Contains(read(), "/nf") {
 			t.Errorf("error 档不应记 4xx 访问，实际: %q", read())
@@ -125,7 +124,7 @@ func TestAccessLogLevels(t *testing.T) {
 		t.Cleanup(func() { slowRequestThreshold = old })
 		SetLogLevel("info")
 		read := captureAccessLog(t)
-		req, _ := http.NewRequest("GET", "/slow", nil)
+		req, _ := testReq("GET", "/slow", nil)
 		app.Test(req)
 		if !strings.Contains(read(), "慢请求") {
 			t.Errorf("info 档必须记慢请求，实际: %q", read())
@@ -135,14 +134,14 @@ func TestAccessLogLevels(t *testing.T) {
 	t.Run("成功访问仅debug档", func(t *testing.T) {
 		SetLogLevel("debug")
 		read := captureAccessLog(t)
-		req, _ := http.NewRequest("GET", "/ok", nil)
+		req, _ := testReq("GET", "/ok", nil)
 		app.Test(req)
 		if !strings.Contains(read(), "-> 200") {
 			t.Errorf("debug 档必须记成功访问，实际: %q", read())
 		}
 		SetLogLevel("info")
 		read = captureAccessLog(t)
-		req, _ = http.NewRequest("GET", "/ok", nil)
+		req, _ = testReq("GET", "/ok", nil)
 		app.Test(req)
 		if strings.Contains(read(), "/ok") {
 			t.Errorf("info 档不应记成功访问，实际: %q", read())
@@ -157,7 +156,7 @@ func TestRequestDurationHeaderStillSet(t *testing.T) {
 	app := fiber.New(fiber.Config{ErrorHandler: httperr.Render})
 	app.Use(requestLogger())
 	app.Get("/ok", func(c *fiber.Ctx) error { return c.SendString("ok") })
-	req, _ := http.NewRequest("GET", "/ok", nil)
+	req, _ := testReq("GET", "/ok", nil)
 	resp, _ := app.Test(req)
 	if resp.Header.Get("X-Request-Duration") == "" {
 		t.Error("X-Request-Duration 头必须保留")
@@ -199,7 +198,7 @@ func TestEveryErrorCodeLogsAtContractLevel(t *testing.T) {
 			app := fiber.New(fiber.Config{ErrorHandler: httperr.Render})
 			app.Use(requestLogger())
 			app.Get("/x", func(ctx *fiber.Ctx) error { return err })
-			req, _ := http.NewRequest("GET", "/x", nil)
+			req, _ := testReq("GET", "/x", nil)
 
 			SetLogLevel("error")
 			readErr := captureAccessLog(t)
@@ -238,7 +237,7 @@ func TestEveryErrorCodeLogsAtContractLevel(t *testing.T) {
 			app := fiber.New(fiber.Config{ErrorHandler: httperr.Render})
 			app.Use(requestLogger())
 			app.Get("/x", func(ctx *fiber.Ctx) error { return fe })
-			req, _ := http.NewRequest("GET", "/x", nil)
+			req, _ := testReq("GET", "/x", nil)
 			SetLogLevel("warn")
 			read := captureAccessLog(t)
 			if _, err := app.Test(req); err != nil {

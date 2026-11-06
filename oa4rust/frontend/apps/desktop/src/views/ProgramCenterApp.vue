@@ -385,6 +385,7 @@ import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { describeListError } from './listQuery'
+import { mutationErrorMessage } from './mutationError'
 
 type Tab = 'agent' | 'application' | 'script' | 'dict' | 'market' | 'invoke' | 'config' | 'style'
 // 本页 13 个列表取数入口共用一个失败横幅：写明是哪一条失败，重试回到同一条加载函数。
@@ -921,6 +922,7 @@ async function onCreateAgent() {
 watch(tab, (t) => switchTab(t), { immediate: true })
 
 const deleteAgentM = useMutation({
+  onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: (id: string) => api.delete(`/api/program_center/agent/${id}`),
   onSuccess: () => {
     loadAgents()
@@ -928,6 +930,7 @@ const deleteAgentM = useMutation({
   },
 })
 const deleteAppM = useMutation({
+  onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: (id: string) => api.delete(`/api/program_center/application/${id}`),
   onSuccess: () => {
     loadApps()
@@ -935,6 +938,7 @@ const deleteAppM = useMutation({
   },
 })
 const deleteScriptM = useMutation({
+  onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: (id: string) => api.delete(`/api/program_center/script/${id}`),
   onSuccess: () => {
     loadScripts()
@@ -942,6 +946,7 @@ const deleteScriptM = useMutation({
   },
 })
 const deleteDictM = useMutation({
+  onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: (id: string) => api.delete(`/api/program_center/dict/${id}`),
   onSuccess: () => {
     loadDict()

@@ -440,6 +440,7 @@ import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { describeListError, useListError } from './listQuery'
+import { mutationErrorMessage } from './mutationError'
 
 interface QueryDef {
   id: string
@@ -838,6 +839,7 @@ async function runStats() {
 }
 
 const delM = useMutation({
+  onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: (id: string) => api.delete(`/api/query/assemble/designer/delete/${id}`),
   onSuccess: () => {
     qc.invalidateQueries({ queryKey: ['qm', 'list'] })
@@ -850,6 +852,7 @@ async function deleteQuery() {
 }
 
 const cm = useMutation({
+  onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: () =>
     api.post('/api/query/assemble/designer/create', {
       name: nform.value.name,

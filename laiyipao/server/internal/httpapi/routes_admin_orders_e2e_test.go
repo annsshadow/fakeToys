@@ -12,7 +12,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"testing"
 	"time"
 
@@ -23,7 +22,7 @@ func TestE2EAdminOrdersRequiresAuth(t *testing.T) {
 	e2eScratchDB(t)
 	e := newE2E(t)
 
-	req, _ := http.NewRequest("GET", "/api/v1/admin/orders", nil)
+	req, _ := testReq("GET", "/api/v1/admin/orders", nil)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
 		t.Fatalf("请求失败：%v", err)
@@ -47,7 +46,7 @@ func TestE2EAdminOrdersSucceeds(t *testing.T) {
 		t.Fatalf("插入订单失败：%v", err)
 	}
 
-	req, _ := http.NewRequest("GET", "/api/v1/admin/orders", nil)
+	req, _ := testReq("GET", "/api/v1/admin/orders", nil)
 	req.Header.Set("Authorization", "Bearer "+adminTok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {

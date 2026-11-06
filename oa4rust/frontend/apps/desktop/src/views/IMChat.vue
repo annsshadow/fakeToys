@@ -222,6 +222,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
 import { fetchImPagingPage, type ImPagingRow } from './imMessagePaging'
 import { fetchMessagePage, mergeMessagePages } from './imPaging'
+import { mutationErrorMessage } from './mutationError'
 
 interface Conversation {
   id: string
@@ -554,10 +555,12 @@ const sendMutation = useMutation({
       void refreshFirstPage()
     }, 500)
   },
-  onError: (_err, _vars, context) => {
+  onError: (err, _vars, context) => {
     if (context?.optimisticMsg) {
       allMessages.value = allMessages.value.filter((m) => m.id !== context.optimisticMsg!.id)
     }
+    // R138：乐观气泡撤掉后必须告诉用户「没发出去」；否则表现为消息静默消失的假成功。
+    toast.error(`发送失败：${mutationErrorMessage(err)}`)
   },
   onSettled: () => {
     queryClient.invalidateQueries({ queryKey: ['im', 'conversations'] })
@@ -593,7 +596,13 @@ async function markAllRead(): Promise<void> {
   // 各会话标记已读互不依赖，并行发出（原逐会话 await，N 个未读即 N 次串行 RTT）；
   // allSettled 保证单个失败不阻断其余会话的已读标记。
   const unread = conversations.value.filter((c) => c.unread > 0)
-  await Promise.allSettled(unread.map((c) => markConversationRead(c.id)))
+  const results = await Promise.allSettled(unread.map((c) => markConversationRead(c.id)))
+  // R138：后端改为 403/404 后全静默会让「全部已读」点了没反应；聚合提示一次即可。
+  const firstFailure = results.find((r): r is PromiseRejectedResult => r.status === 'rejected')
+  if (firstFailure) {
+    const failedCount = results.filter((r) => r.status === 'rejected').length
+    toast.error(`有 ${failedCount} 个会话没能标记已读：${mutationErrorMessage(firstFailure.reason)}`)
+  }
 }
 
 // ── WebSocket（P5：IM 完整协议——presence/receipt/会话房间）──────────────

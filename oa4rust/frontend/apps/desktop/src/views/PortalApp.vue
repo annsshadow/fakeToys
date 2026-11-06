@@ -83,6 +83,7 @@ import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { useListError } from './listQuery'
+import { mutationErrorMessage } from './mutationError'
 
 interface PortalPage {
   id: string
@@ -459,6 +460,7 @@ const { loadError, reload } = useListError({
 })
 
 const deleteMutation = useMutation({
+  onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: (id: string) => api.delete(`/api/portal/assemble/surface/page/${id}`),
   onSuccess: () => {
     pages.value = pages.value.filter((p) => p.id !== id)

@@ -33,6 +33,19 @@ const DEFAULT_TIMEOUT_MS = 30_000
  */
 const DEFAULT_STREAM_IDLE_TIMEOUT_MS = 60_000
 
+/**
+ * R138：后端安全修复后，写端点会把「无权限 / 目标已不存在」明确成 403/404。
+ * 这两类不是异常网络状态，而是用户需要理解并据此行动的业务结果，因此给中文可读文案；
+ * 其它状态码保留 `HTTP xxx` 形状，避免影响既有调用方的错误判定。
+ */
+const FORBIDDEN_MESSAGE = '没有权限执行该操作'
+const NOT_FOUND_MESSAGE = '请求的资源不存在或已被删除'
+
+function httpStatusError(status: number, statusText?: string): ApiError {
+  if (status === 404) return new ApiError(NOT_FOUND_MESSAGE, 404)
+  return new ApiError(statusText ? `HTTP ${status}: ${statusText}` : `HTTP ${status}`, status)
+}
+
 /** 查询选项（传给 TanStack Query） */
 export interface QueryOptions {
   enabled?: boolean
@@ -62,6 +75,40 @@ export interface ApiRequestOptions {
   timeoutMs?: number
   /** 成功时不读取响应体，用于可能包含遗留 token 字段的认证端点。 */
   discardResponse?: boolean
+  /**
+   * 调用方取消句柄（R143）。`abort()` 后请求/流会立刻断开，并以
+   * `RequestCancelledError` 结束——这是「用户不再需要这个结果」，不是失败，
+   * UI 不应提示错误。与内部超时（`ApiError('请求超时', 0)`）语义分开。
+   */
+  signal?: AbortSignal
+}
+
+interface AbortBridge {
+  cancelled(): boolean
+  dispose(): void
+}
+
+/**
+ * 把调用方的 signal 桥接到内部 controller：
+ * 内部超时只 abort 内部 controller；外部取消会置 `cancelled` 标志，
+ * 让 catch 能区分「用户取消」与「超时」。
+ */
+function bridgeAbort(signal: AbortSignal | undefined, controller: AbortController): AbortBridge {
+  if (!signal) return { cancelled: () => false, dispose: () => {} }
+  let cancelled = false
+  const onAbort = () => {
+    cancelled = true
+    controller.abort()
+  }
+  if (signal.aborted) {
+    onAbort()
+    return { cancelled: () => true, dispose: () => {} }
+  }
+  signal.addEventListener('abort', onAbort, { once: true })
+  return {
+    cancelled: () => cancelled,
+    dispose: () => signal.removeEventListener('abort', onAbort),
+  }
 }
 
 export class ApiClient {
@@ -150,17 +197,21 @@ export class ApiClient {
     }
 
     const controller = new AbortController()
+    const bridge = bridgeAbort(options?.signal, controller)
     const timeoutId = setTimeout(() => controller.abort(), options?.timeoutMs ?? DEFAULT_TIMEOUT_MS)
 
     let resp: Response
     try {
       resp = await fetch(url.toString(), { ...init, signal: controller.signal })
     } catch (err) {
+      // 用户取消优先判定：此时内部 controller 也被桥接 abort，不能再报「超时」。
+      if (bridge.cancelled()) throw new RequestCancelledError()
       // 超时映射成 status 0：上层（vue-query 重试策略）据此识别「不会自己好」的失败并停止重试。
       if ((err as { name?: string } | null)?.name === 'AbortError') throw new ApiError('请求超时', 0)
       throw err
     } finally {
       clearTimeout(timeoutId)
+      bridge.dispose()
     }
 
     if (!resp.ok) {
@@ -176,9 +227,9 @@ export class ApiClient {
         throw this.authenticationFailed()
       }
       if (resp.status === 403) {
-        throw new PermissionError('Permission denied')
+        throw new PermissionError(FORBIDDEN_MESSAGE)
       }
-      throw new ApiError(`HTTP ${resp.status}: ${resp.statusText}`, resp.status)
+      throw httpStatusError(resp.status, resp.statusText)
     }
 
     if (options?.discardResponse || resp.status === 204) {
@@ -212,18 +263,29 @@ export class ApiClient {
   ): Promise<ApiResponse<T>> {
     const url = this.resolveUrl(path)
     const controller = new AbortController()
+    const bridge = bridgeAbort(options?.signal, controller)
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
     if (options?.timeoutMs) {
-      setTimeout(() => controller.abort(), options.timeoutMs)
+      timeoutId = setTimeout(() => controller.abort(), options.timeoutMs)
     }
-    const resp = await fetch(url.toString(), {
-      method: options?.method ?? 'POST',
-      headers: {
-        ...options?.headers,
-      },
-      body: formData,
-      credentials: 'include',
-      signal: controller.signal,
-    })
+    let resp: Response
+    try {
+      resp = await fetch(url.toString(), {
+        method: options?.method ?? 'POST',
+        headers: {
+          ...options?.headers,
+        },
+        body: formData,
+        credentials: 'include',
+        signal: controller.signal,
+      })
+    } catch (err) {
+      if (bridge.cancelled()) throw new RequestCancelledError()
+      throw err
+    } finally {
+      if (timeoutId !== null) clearTimeout(timeoutId)
+      bridge.dispose()
+    }
     if (!resp.ok) {
       if (resp.status === 401 && options?.requireAuth !== false && !retried) {
         try {
@@ -234,8 +296,8 @@ export class ApiClient {
         return this.upload<T>(path, formData, options, true)
       }
       if (resp.status === 401) throw this.authenticationFailed()
-      if (resp.status === 403) throw new PermissionError('Permission denied')
-      throw new ApiError(`HTTP ${resp.status}`, resp.status)
+      if (resp.status === 403) throw new PermissionError(FORBIDDEN_MESSAGE)
+      throw httpStatusError(resp.status)
     }
     return resp.json() as Promise<ApiResponse<T>>
   }
@@ -260,6 +322,26 @@ export class ApiClient {
     return new Promise((resolve, reject) => {
       const url = this.resolveUrl(path)
       const xhr = new XMLHttpRequest()
+      let cancelled = false
+      const onAbort = () => {
+        cancelled = true
+        xhr.abort()
+      }
+      const settleResolve = (value: ApiResponse<T>) => {
+        options?.signal?.removeEventListener('abort', onAbort)
+        resolve(value)
+      }
+      const settleReject = (error: unknown) => {
+        options?.signal?.removeEventListener('abort', onAbort)
+        reject(error)
+      }
+      if (options?.signal) {
+        if (options.signal.aborted) {
+          settleReject(new RequestCancelledError())
+          return
+        }
+        options.signal.addEventListener('abort', onAbort, { once: true })
+      }
       xhr.open('POST', url.toString())
       xhr.withCredentials = true
       for (const [k, v] of Object.entries(options?.headers ?? {})) {
@@ -274,30 +356,36 @@ export class ApiClient {
       xhr.onload = () => {
         if (xhr.status === 401 && options?.requireAuth !== false && !retried) {
           this.refreshSession()
-            .then(() => this.uploadWithProgressOnce<T>(path, formData, onProgress, options, true).then(resolve, reject))
-            .catch((err) => reject(this.authenticationFailed(err)))
+            .then(() =>
+              this.uploadWithProgressOnce<T>(path, formData, onProgress, options, true).then(
+                settleResolve,
+                settleReject,
+              ),
+            )
+            .catch((err) => settleReject(this.authenticationFailed(err)))
           return
         }
         if (xhr.status === 401) {
-          reject(this.authenticationFailed())
+          settleReject(this.authenticationFailed())
           return
         }
         if (xhr.status === 403) {
-          reject(new PermissionError('Permission denied'))
+          settleReject(new PermissionError(FORBIDDEN_MESSAGE))
           return
         }
         if (xhr.status < 200 || xhr.status >= 300) {
-          reject(new ApiError(`HTTP ${xhr.status}`, xhr.status))
+          settleReject(httpStatusError(xhr.status))
           return
         }
         try {
-          resolve(JSON.parse(xhr.responseText) as ApiResponse<T>)
+          settleResolve(JSON.parse(xhr.responseText) as ApiResponse<T>)
         } catch {
-          reject(new ApiError('malformed JSON response', xhr.status))
+          settleReject(new ApiError('malformed JSON response', xhr.status))
         }
       }
-      xhr.onerror = () => reject(new ApiError('Network error', 0))
-      xhr.ontimeout = () => reject(new ApiError('Timeout', 0))
+      xhr.onerror = () => settleReject(new ApiError('Network error', 0))
+      xhr.onabort = () => settleReject(cancelled ? new RequestCancelledError() : new ApiError('Request aborted', 0))
+      xhr.ontimeout = () => settleReject(new ApiError('Timeout', 0))
       xhr.send(formData)
     })
   }
@@ -315,16 +403,27 @@ export class ApiClient {
     const url = this.resolveUrl(path)
     if (options?.fileName) url.searchParams.set('fileName', options.fileName)
     const controller = new AbortController()
+    const bridge = bridgeAbort(options?.signal, controller)
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
     if (options?.timeoutMs) {
-      setTimeout(() => controller.abort(), options.timeoutMs)
+      timeoutId = setTimeout(() => controller.abort(), options.timeoutMs)
     }
-    const resp = await fetch(url.toString(), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/octet-stream', ...options?.headers },
-      body: bytes as Blob,
-      credentials: 'include',
-      signal: controller.signal,
-    })
+    let resp: Response
+    try {
+      resp = await fetch(url.toString(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/octet-stream', ...options?.headers },
+        body: bytes as Blob,
+        credentials: 'include',
+        signal: controller.signal,
+      })
+    } catch (err) {
+      if (bridge.cancelled()) throw new RequestCancelledError()
+      throw err
+    } finally {
+      if (timeoutId !== null) clearTimeout(timeoutId)
+      bridge.dispose()
+    }
     if (!resp.ok) {
       if (resp.status === 401 && options?.requireAuth !== false && !retried) {
         try {
@@ -335,8 +434,8 @@ export class ApiClient {
         return this.uploadBytes<T>(path, bytes, options, true)
       }
       if (resp.status === 401) throw this.authenticationFailed()
-      if (resp.status === 403) throw new PermissionError('Permission denied')
-      throw new ApiError(`HTTP ${resp.status}`, resp.status)
+      if (resp.status === 403) throw new PermissionError(FORBIDDEN_MESSAGE)
+      throw httpStatusError(resp.status)
     }
     return resp.json() as Promise<ApiResponse<T>>
   }
@@ -360,6 +459,7 @@ export class ApiClient {
     const url = this.resolveUrl(path)
     const idleMs = options?.timeoutMs ?? DEFAULT_STREAM_IDLE_TIMEOUT_MS
     const controller = new AbortController()
+    const bridge = bridgeAbort(options?.signal, controller)
     let idleTimer: ReturnType<typeof setTimeout> | null = null
     let idleTimedOut = false
     const clearIdle = () => {
@@ -395,8 +495,8 @@ export class ApiClient {
           return this.stream(path, body, onEvent, options, true)
         }
         if (resp.status === 401) throw this.authenticationFailed()
-        if (resp.status === 403) throw new PermissionError('Permission denied')
-        throw new ApiError(`HTTP ${resp.status}: ${resp.statusText}`, resp.status)
+        if (resp.status === 403) throw new PermissionError(FORBIDDEN_MESSAGE)
+        throw httpStatusError(resp.status, resp.statusText)
       }
       if (!resp.body) throw new ApiError('no response body stream', resp.status)
       const reader = resp.body.getReader()
@@ -423,11 +523,14 @@ export class ApiClient {
         }
       }
     } catch (err) {
+      // 用户取消优先：切换会话/离开页面时应静默结束，不报「流式响应超时」。
+      if (bridge.cancelled()) throw new RequestCancelledError()
       // 只有「我们自己的空闲看门狗」超时才改写错误；其余（401/403/网络/解析）原样抛。
       if (idleTimedOut) throw new ApiError('流式响应超时', 0)
       throw err
     } finally {
       clearIdle()
+      bridge.dispose()
     }
   }
 }
@@ -454,6 +557,23 @@ export class PermissionError extends ApiError {
     super(message, 403)
     this.name = 'PermissionError'
   }
+}
+
+/**
+ * 调用方主动取消（R143）：切换会话、离开页面等。不是失败，UI 应静默返回，
+ * 不要弹「请求失败」。`status` 沿用 0 与 `ApiError` 契约一致。
+ */
+export class RequestCancelledError extends ApiError {
+  constructor(message = '请求已取消') {
+    super(message, 0)
+    this.name = 'RequestCancelledError'
+  }
+}
+
+/** 判断是否为调用方取消；UI 用它决定「静默返回」而不是「展示错误」。 */
+export function isRequestCancelled(error: unknown): boolean {
+  if (error instanceof RequestCancelledError) return true
+  return (error as { name?: string } | null | undefined)?.name === 'RequestCancelledError'
 }
 
 export const api = new ApiClient()
