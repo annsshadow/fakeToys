@@ -15,8 +15,7 @@ package httpapi
 //   - 商店购买：`user_purchases` 只有普通索引 `(user_id, item_id, purchase_date)`，
 //     **没有唯一键**。限购 > 0 时靠 `SELECT user_id FROM user_wallets FOR UPDATE`
 //     把同一用户的购买串行化，第二次被「今日次数已达上限」拒绝；
-//     `limit_per_day = 0`（不限购）的商品没有这个保护 —— 本文件的
-//     TestE2EDoubleSubmitShopBuyUnlimitedChargesTwice 钉住这个缺陷，
+//     `limit_per_day = 0`（不限购）的商品没有这个保护 —— R134 实证会双扣，
 //     修复与回归用例见 routes_shop_idempotency_r135_e2e_test.go。
 
 import (
@@ -70,39 +69,6 @@ func TestE2EDoubleSubmitRedeemOnlyOnce(t *testing.T) {
 	}
 	if used := e.scalarInt(t, `SELECT used_count FROM redeem_codes WHERE code = $1`, code); used != 1 {
 		t.Fatalf("used_count 应恰好 1，实际 %d", used)
-	}
-}
-
-// TestE2EDoubleSubmitShopBuyUnlimitedChargesTwice 钉住 R134 实证出的缺陷：
-// `limit_per_day = 0` 的商品，同一请求连发两次会**扣两次钱、发两份货**。
-//
-// 这是本轮要修的目标行为，故意断言「现状是坏的」：修复落地后本用例会被
-// routes_shop_idempotency_r135_e2e_test.go 里的带 key 用例取代（同 key 第二次是重放）。
-func TestE2EDoubleSubmitShopBuyUnlimitedChargesTwice(t *testing.T) {
-	e2eScratchDB(t)
-	e := newE2E(t)
-
-	uid, tok := e.newPlayer(t, "double_buy_unlimited")
-	itemID := newTestShopItem(t, e, "r134_unlimited", `{"gem":10}`, `{"coin":100}`, 0)
-
-	gemBefore := e.scalarInt(t, `SELECT gem FROM user_wallets WHERE user_id = $1`, uid)
-	coinBefore := e.scalarInt(t, `SELECT coin FROM user_wallets WHERE user_id = $1`, uid)
-
-	path := "/api/v1/shop/" + fmtInt(itemID) + "/buy"
-	for i := 0; i < 2; i++ {
-		if status, raw := doAuthed(t, e, "POST", path, tok, ""); status != fiber.StatusOK {
-			t.Fatalf("第 %d 次购买应 200，实际 %d：%s", i+1, status, raw)
-		}
-	}
-
-	if d := gemBefore - e.scalarInt(t, `SELECT gem FROM user_wallets WHERE user_id = $1`, uid); d != 20 {
-		t.Fatalf("缺陷现状应双扣（-20 gem），实际 -%d", d)
-	}
-	if d := e.scalarInt(t, `SELECT coin FROM user_wallets WHERE user_id = $1`, uid) - coinBefore; d != 200 {
-		t.Fatalf("缺陷现状应发两份货（+200 coin），实际 +%d", d)
-	}
-	if n := e.scalarInt(t, `SELECT COUNT(*) FROM user_purchases WHERE user_id = $1 AND item_id = $2`, uid, itemID); n != 2 {
-		t.Fatalf("缺陷现状应有 2 条购买记录，实际 %d", n)
 	}
 }
 

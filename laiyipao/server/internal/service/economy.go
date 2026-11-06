@@ -983,131 +983,179 @@ func (s *Service) LoadShop(ctx context.Context, userID int64) ([]ShopItemView, e
 	return out, nil
 }
 
-// Buy 购买商城商品。
+// Buy 购买商城商品（不带幂等键的老路径）。
+//
+// 同一请求连发两次会**扣两次钱**，这是 R134-B 实证过的缺陷；
+// 需要去重的调用方走 BuyIdem（带 `Idempotency-Key`）。
 func (s *Service) Buy(ctx context.Context, userID, itemID int64) (map[string]int, error) {
+	var out map[string]int
+	err := s.DB.Tx(ctx, func(tx pgx.Tx) error {
+		var err error
+		out, err = s.buyTx(ctx, tx, userID, itemID)
+		return err
+	})
+	return out, err
+}
+
+// BuyIdem 是 Buy 的幂等版本（R134-B）：带 `Idempotency-Key` 时，
+// 24h 窗口内同 key 同端点同请求体只执行一次，第二次重放第一次的响应。
+//
+// # 为什么复用管理端那套 Idempotency-Key，而不是别的两套
+//
+// 仓库里已有三套互斥机制，但只有这一套能区分「同一请求重试」和
+// 「两次合法的重复购买」：
+//
+//   - 钱包行锁（`user_wallets ... FOR UPDATE`）：只把同一用户的并发
+//     购买串行化，**顺序**连发两次照样扣两次；
+//   - `redeem_usages UNIQUE (code_id, user_id)`：语义是「这个码只能用
+//     一次」，与「不限购商品本来就该能反复买」正好相反 —— 复用会
+//     把「防止重复」做成「禁止再次购买」；
+//   - `Idempotency-Key`：客户端给的请求级标识，是唯一能表达
+//     「这两个请求是同一笔」的信息。两笔不同购买必然带不同的 key。
+//
+// # endpoint 为什么要拼 userID
+//
+// 幂等键由客户端生成，不同用户可能生成相同的 key（UUID 概率低，
+// 但**不能靠概率做隔离**）。拼上 uid 后每个用户的键空间独立，
+// 避免 A 的 key 撞上 B 的 key 而**重放别人的响应**（那是跨用户信息泄露，
+// 比重复扣钱严重）。表名 `admin_idempotency_keys` 是 R86 的历史命名，
+// 机制本身与调用方无关，这里按同一张表、同一份口径复用。
+func (s *Service) BuyIdem(ctx context.Context, userID, itemID int64,
+	key, reqHash string) (body []byte, replayed bool, err error) {
+	endpoint := fmt.Sprintf("player.shop.buy:%d", userID)
+	return s.RunIdempotent(ctx, endpoint, key, reqHash, func(tx pgx.Tx) (any, error) {
+		granted, err := s.buyTx(ctx, tx, userID, itemID)
+		if err != nil {
+			return nil, err
+		}
+		// 键序与 handler 的 c.JSON 一致（encoding/json 对 map 按键名排序），
+		// 保证「带 key 的第一次响应」与「不带 key 的响应」逐字节相同。
+		return map[string]any{"granted": granted}, nil
+	})
+}
+
+// buyTx 是 Buy 的事务体（普通路径与幂等路径共用，避免两份实现漂移）。
+func (s *Service) buyTx(ctx context.Context, tx pgx.Tx, userID, itemID int64) (map[string]int, error) {
 	// 第 97 轮：与 LoadShop 同一个口径（Go 的日期字面量），见那里的说明。
 	today := periodStart(nowFunc(), "daily").Format("2006-01-02")
 	var out map[string]int
-	err := s.DB.Tx(ctx, func(tx pgx.Tx) error {
-		var priceRaw, payloadRaw []byte
-		var limit int
+	var priceRaw, payloadRaw []byte
+	var limit int
+	if err := tx.QueryRow(ctx,
+		`SELECT price, payload, limit_per_day FROM shop_items WHERE id = $1 AND enabled`,
+		itemID).Scan(&priceRaw, &payloadRaw, &limit); err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, fmt.Errorf("%w: 商品 %d", ErrNotFound, itemID)
+		}
+		return nil, err
+	}
+
+	if limit > 0 {
+		// 先锁住该用户的钱包行，再做 COUNT。
+		//
+		// 「SELECT COUNT(*) 再 INSERT」在并发下是**完全无效**的限购：
+		// N 个并发事务全部在对方 INSERT 之前读到 bought=0，于是全部放行。
+		// shop_firstpay 价格是 {coin: 0}（首充 0 元购），
+		// 并发打 20 个请求就能白拿 20 份 gem/coin/energy。
+		//
+		// 锁 user_wallets 是因为它必然会被本事务后续的 grantWallet 更新，
+		// 提前加锁把同一用户的购买串行化，且不引入新的锁顺序分支
+		// （所有路径都是先钱包后 purchases）。
+		var lockedUID int64
 		if err := tx.QueryRow(ctx,
-			`SELECT price, payload, limit_per_day FROM shop_items WHERE id = $1 AND enabled`,
-			itemID).Scan(&priceRaw, &payloadRaw, &limit); err != nil {
-			if err == pgx.ErrNoRows {
-				return fmt.Errorf("%w: 商品 %d", ErrNotFound, itemID)
+			`SELECT user_id FROM user_wallets WHERE user_id = $1 FOR UPDATE`,
+			userID).Scan(&lockedUID); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return nil, fmt.Errorf("%w: 钱包不存在", ErrNotFound)
 			}
-			return err
+			return nil, err
 		}
-
-		if limit > 0 {
-			// 先锁住该用户的钱包行，再做 COUNT。
-			//
-			// 「SELECT COUNT(*) 再 INSERT」在并发下是**完全无效**的限购：
-			// N 个并发事务全部在对方 INSERT 之前读到 bought=0，于是全部放行。
-			// shop_firstpay 价格是 {coin: 0}（首充 0 元购），
-			// 并发打 20 个请求就能白拿 20 份 gem/coin/energy。
-			//
-			// 锁 user_wallets 是因为它必然会被本事务后续的 grantWallet 更新，
-			// 提前加锁把同一用户的购买串行化，且不引入新的锁顺序分支
-			// （所有路径都是先钱包后 purchases）。
-			var lockedUID int64
-			if err := tx.QueryRow(ctx,
-				`SELECT user_id FROM user_wallets WHERE user_id = $1 FOR UPDATE`,
-				userID).Scan(&lockedUID); err != nil {
-				if errors.Is(err, pgx.ErrNoRows) {
-					return fmt.Errorf("%w: 钱包不存在", ErrNotFound)
-				}
-				return err
-			}
-			var bought int
-			if err := tx.QueryRow(ctx,
-				`SELECT COUNT(*) FROM user_purchases
+		var bought int
+		if err := tx.QueryRow(ctx,
+			`SELECT COUNT(*) FROM user_purchases
 				 WHERE user_id = $1 AND item_id = $2 AND purchase_date = $3`,
-				userID, itemID, today).Scan(&bought); err != nil {
-				return err
-			}
-			if bought >= limit {
-				return fmt.Errorf("%w: 今日购买次数已达上限 %d", ErrForbidden, limit)
-			}
+			userID, itemID, today).Scan(&bought); err != nil {
+			return nil, err
 		}
+		if bought >= limit {
+			return nil, fmt.Errorf("%w: 今日购买次数已达上限 %d", ErrForbidden, limit)
+		}
+	}
 
-		var price, payload map[string]int
-		if err := json.Unmarshal(priceRaw, &price); err != nil {
-			return err
-		}
-		if err := json.Unmarshal(payloadRaw, &payload); err != nil {
-			return err
-		}
+	var price, payload map[string]int
+	if err := json.Unmarshal(priceRaw, &price); err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(payloadRaw, &payload); err != nil {
+		return nil, err
+	}
 
-		// 先扣钱再发货，扣钱失败则整体回滚
-		deduct := map[string]int64{}
-		for k, v := range price {
-			if v > 0 {
-				deduct[k] = int64(-v)
-			}
+	// 先扣钱再发货，扣钱失败则整体回滚
+	deduct := map[string]int64{}
+	for k, v := range price {
+		if v > 0 {
+			deduct[k] = int64(-v)
 		}
-		if err := s.grantWallet(ctx, tx, userID, deduct, "shop_buy", itemID); err != nil {
-			return err
-		}
+	}
+	if err := s.grantWallet(ctx, tx, userID, deduct, "shop_buy", itemID); err != nil {
+		return nil, err
+	}
 
-		grant := map[string]int64{}
-		for k, v := range payload {
-			if v <= 0 {
-				continue
+	grant := map[string]int64{}
+	for k, v := range payload {
+		if v <= 0 {
+			continue
+		}
+		// ⚠️ `gem_instance` 不是货币：它要造一颗**带随机词条的宝石实体**，
+		// 走 grantWallet 会被判成「未知货币」而整笔回滚。
+		// 宝石此前拿不到，就是因为没有任何路径能发出它。
+		if k == gemInstanceKey {
+			if _, _, err := s.mintGem(ctx, tx, userID); err != nil {
+				return nil, err
 			}
-			// ⚠️ `gem_instance` 不是货币：它要造一颗**带随机词条的宝石实体**，
-			// 走 grantWallet 会被判成「未知货币」而整笔回滚。
-			// 宝石此前拿不到，就是因为没有任何路径能发出它。
-			if k == gemInstanceKey {
-				if _, _, err := s.mintGem(ctx, tx, userID); err != nil {
-					return err
-				}
-				continue
-			}
-			// 2026-10-21（P4-1）：`equipment_<id>` 也不是货币 ——
-			// 它要发一件**具体装备**到 `user_equipment`。
+			continue
+		}
+		// 2026-10-21（P4-1）：`equipment_<id>` 也不是货币 ——
+		// 它要发一件**具体装备**到 `user_equipment`。
+		//
+		// 此前 18 件装备里 16 件玩家永远拿不到：既没有获取途径，
+		// 商城里也没有对应的商品。装备的**战斗效果**一直存在
+		// （base_armor / base_bonus_pct 会被读进攻方），
+		// 但玩家碰不到它 —— 那等于没有（KNOWN_LIMITS 第 25 条）。
+		if eqID, ok := equipmentPayloadID(k); ok {
+			// ⚠️ 2026-10-21（二轮审计 P2）：多份要**显式拒绝**。
 			//
-			// 此前 18 件装备里 16 件玩家永远拿不到：既没有获取途径，
-			// 商城里也没有对应的商品。装备的**战斗效果**一直存在
-			// （base_armor / base_bonus_pct 会被读进攻方），
-			// 但玩家碰不到它 —— 那等于没有（KNOWN_LIMITS 第 25 条）。
-			if eqID, ok := equipmentPayloadID(k); ok {
-				// ⚠️ 2026-10-21（二轮审计 P2）：多份要**显式拒绝**。
-				//
-				// `user_equipment` 的主键是 `(user_id, equipment_id)` —— 一个人
-				// 不能持有同一件装备的两份。所以第 2、3 次 INSERT 全是
-				// `ON CONFLICT DO NOTHING` 的静默 no-op：玩家付了 3 份的钱，
-				// 只拿到 1 件，而且**不报任何错**。
-				//
-				// 装备**没有随机性**（不像宝石要 roll 词条），所以「多份」
-				// 是一个**产品决策**而不是数据模型问题 —— 在这里显式拒绝，
-				// 让运营改 payload 时立刻知道「这件商品不支持多份」。
-				if v > 1 {
-					return fmt.Errorf("%w: 装备不支持多份（同一部位只能装一件），请把数量设为 1",
-						ErrBadInput)
-				}
-				if err := mintEquipment(ctx, tx, userID, eqID); err != nil {
-					return err
-				}
-				continue
+			// `user_equipment` 的主键是 `(user_id, equipment_id)` —— 一个人
+			// 不能持有同一件装备的两份。所以第 2、3 次 INSERT 全是
+			// `ON CONFLICT DO NOTHING` 的静默 no-op：玩家付了 3 份的钱，
+			// 只拿到 1 件，而且**不报任何错**。
+			//
+			// 装备**没有随机性**（不像宝石要 roll 词条），所以「多份」
+			// 是一个**产品决策**而不是数据模型问题 —— 在这里显式拒绝，
+			// 让运营改 payload 时立刻知道「这件商品不支持多份」。
+			if v > 1 {
+				return nil, fmt.Errorf("%w: 装备不支持多份（同一部位只能装一件），请把数量设为 1",
+					ErrBadInput)
 			}
-			grant[k] = int64(v)
-		}
-		if len(grant) > 0 {
-			if err := s.grantWallet(ctx, tx, userID, grant, "shop_buy", itemID); err != nil {
-				return err
+			if err := mintEquipment(ctx, tx, userID, eqID); err != nil {
+				return nil, err
 			}
+			continue
 		}
-		if _, err := tx.Exec(ctx,
-			`INSERT INTO user_purchases (user_id, item_id, purchase_date, price) VALUES ($1,$2,$3,$4)`,
-			userID, itemID, today, priceRaw); err != nil {
-			return err
+		grant[k] = int64(v)
+	}
+	if len(grant) > 0 {
+		if err := s.grantWallet(ctx, tx, userID, grant, "shop_buy", itemID); err != nil {
+			return nil, err
 		}
-		out = payload
-		return nil
-	})
-	return out, err
+	}
+	if _, err := tx.Exec(ctx,
+		`INSERT INTO user_purchases (user_id, item_id, purchase_date, price) VALUES ($1,$2,$3,$4)`,
+		userID, itemID, today, priceRaw); err != nil {
+		return nil, err
+	}
+	out = payload
+	return out, nil
 }
 
 // --- 验真（I-6） ---

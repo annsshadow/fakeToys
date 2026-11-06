@@ -1322,11 +1322,27 @@ func (s *Server) buy(c *fiber.Ctx) error {
 	if err != nil {
 		return httperr.New(fiber.StatusBadRequest, httperr.CodeBadInput, "item id 非法")
 	}
-	granted, err := s.Svc.Buy(c.Context(), userIDFrom(c), id)
+	key, err := idemKey(c)
 	if err != nil {
 		return err
 	}
-	return c.JSON(fiber.Map{"granted": granted})
+	if key == "" {
+		// 无可选幂等键：现状行为（R134-B 契约：缺省不做去重，老客户端零影响）。
+		granted, err := s.Svc.Buy(c.Context(), userIDFrom(c), id)
+		if err != nil {
+			return err
+		}
+		return c.JSON(fiber.Map{"granted": granted})
+	}
+	// 幂等键的指纹要把 path 里的商品 id 也算进去：商品 id 不在 body 里，
+	// 只 hash body 会让「同 key 换商品」被当成同一请求而重放旧响应。
+	fingerprint := append([]byte(c.Params("id")+"|"), c.Body()...)
+	bodyBytes, replayed, err := s.Svc.BuyIdem(c.Context(), userIDFrom(c), id,
+		key, service.HashRequestBody(fingerprint))
+	if err != nil {
+		return err
+	}
+	return sendIdempotent(c, bodyBytes, replayed)
 }
 
 func (s *Server) redeem(c *fiber.Ctx) error {
