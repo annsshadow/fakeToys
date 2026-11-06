@@ -12,7 +12,6 @@ package httpapi
 import (
 	"bytes"
 	"encoding/json"
-	"net/http"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
@@ -22,7 +21,7 @@ func TestE2EAdminCreateRedeemCodesBatchRequiresAuth(t *testing.T) {
 	e2eScratchDB(t)
 	e := newE2E(t)
 
-	req, _ := http.NewRequest("POST", "/api/v1/admin/redeem-codes/batch", nil)
+	req, _ := testReq("POST", "/api/v1/admin/redeem-codes/batch", nil)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
 		t.Fatalf("请求失败：%v", err)
@@ -39,7 +38,7 @@ func TestE2EAdminCreateRedeemCodesBatchReadonlyForbidden(t *testing.T) {
 
 	_, roTok := e.newAdminRole(t, "redeembatchro", "readonly")
 	body := bytes.NewBufferString(`{"count":3,"reward":{"coin":100},"max_uses":1}`)
-	req, _ := http.NewRequest("POST", "/api/v1/admin/redeem-codes/batch", body)
+	req, _ := testReq("POST", "/api/v1/admin/redeem-codes/batch", body)
 	req.Header.Set("Authorization", "Bearer "+roTok)
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := e.app.Test(req, 10000)
@@ -58,7 +57,7 @@ func TestE2EAdminCreateRedeemCodesBatchSucceeds(t *testing.T) {
 
 	_, adminTok := e.newAdmin(t, "redeembatch")
 	body := bytes.NewBufferString(`{"count":5,"reward":{"coin":100,"gem":5},"max_uses":3}`)
-	req, _ := http.NewRequest("POST", "/api/v1/admin/redeem-codes/batch", body)
+	req, _ := testReq("POST", "/api/v1/admin/redeem-codes/batch", body)
 	req.Header.Set("Authorization", "Bearer "+adminTok)
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := e.app.Test(req, 10000)
@@ -108,7 +107,7 @@ func TestE2EAdminCreateRedeemCodesBatchInvalidCount(t *testing.T) {
 		`{"count":0,"reward":{"coin":1},"max_uses":1}`,
 		`{"count":101,"reward":{"coin":1},"max_uses":1}`,
 	} {
-		req, _ := http.NewRequest("POST", "/api/v1/admin/redeem-codes/batch", bytes.NewBufferString(payload))
+		req, _ := testReq("POST", "/api/v1/admin/redeem-codes/batch", bytes.NewBufferString(payload))
 		req.Header.Set("Authorization", "Bearer "+adminTok)
 		req.Header.Set("Content-Type", "application/json")
 		resp, err := e.app.Test(req, 10000)
