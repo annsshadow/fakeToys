@@ -8,6 +8,15 @@ import type { MessageRow } from '@/services'
 import { messageApi, messageConversationId } from '@/services'
 import { useSession } from '@/store/session'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import {
+  isNetworkError,
+  // biome-ignore lint/correctness/noUnusedImports: Vue template consumes the offline copy.
+  NETWORK_OFFLINE_TEXT,
+  type NetworkStatusApi,
+  networkOffline,
+  shouldMarkOffline,
+  watchNetworkStatus,
+} from '@/utils/networkStatus'
 import { describeChatError, loadChatHistoryPage, mergeOlderMessages } from './chatHistory'
 import { CHAT_POLL_INTERVAL_MS, type ChatPollHandle, mergeNewerMessages, startChatPolling } from './chatPolling'
 
@@ -34,6 +43,8 @@ const CHAT_POLL_PAGE_SIZE = 50
 let pageVisible = false
 let historyReady = false
 let poller: ChatPollHandle | null = null
+// R144：系统网络状态监听；onShow/onHide 可能多次触发，必须只注册一份。
+let unwatchNetwork: (() => void) | null = null
 
 async function markConversationRead() {
   try {
@@ -64,27 +75,37 @@ function startPolling() {
       return keepConversation(page.messages)
     },
     onLatest: (rows) => {
+      // 收到一次成功响应即说明网络恢复，立即撤掉断网提示。
+      networkOffline.value = false
       if (rows.length === 0) return
       const before = msgs.value.length
       msgs.value = mergeNewerMessages(msgs.value, rows)
       if (msgs.value.length !== before) void markConversationRead()
     },
-    // 轮询失败不弹提示（用户无操作），但要留可诊断痕迹。
-    onError: (err) => console.warn('[chat] poll failed', err),
+    // 轮询失败不弹提示（用户无操作），但要留可诊断痕迹；连续网络失败才点亮断网态。
+    onError: (err, failures) => {
+      console.warn('[chat] poll failed', err)
+      if (shouldMarkOffline(failures, err)) networkOffline.value = true
+    },
   })
 }
 
 onShow(() => {
   pageVisible = true
+  if (!unwatchNetwork) unwatchNetwork = watchNetworkStatus(uni as unknown as NetworkStatusApi)
   startPolling()
 })
 onHide(() => {
   pageVisible = false
   stopPolling()
+  unwatchNetwork?.()
+  unwatchNetwork = null
 })
 onUnload(() => {
   pageVisible = false
   stopPolling()
+  unwatchNetwork?.()
+  unwatchNetwork = null
 })
 
 onLoad(async (options) => {
@@ -112,10 +133,13 @@ async function loadHistory() {
     historyPage.value = result.page
     historyHasMore.value = result.hasMore
     historyReady = true
+    networkOffline.value = false
     startPolling()
   } catch (e) {
     msgs.value = []
     historyError.value = describeChatError('消息加载失败', e)
+    // 首次加载就撞上断网：不等轮询累计次数，直接给出可感知的断网态。
+    if (isNetworkError(e)) networkOffline.value = true
   } finally {
     loading.value = false
     // 进入会话即标记已读（失败不阻塞展示）。
@@ -174,6 +198,8 @@ async function send() {
       {{ title }}
     </view>
 
+    <view v-if="networkOffline" class="offline-banner">{{ NETWORK_OFFLINE_TEXT }}</view>
+
     <scroll-view class="body" scroll-y>
       <view v-if="loading" class="tip">加载中…</view>
       <view v-else-if="msgs.length === 0 && historyError" class="tip tip-error">
@@ -217,6 +243,13 @@ async function send() {
   font-size: 32rpx;
   font-weight: 700;
   color: #263238;
+  text-align: center;
+}
+.offline-banner {
+  padding: 16rpx 24rpx;
+  background: #fff4e5;
+  color: #b26a00;
+  font-size: 26rpx;
   text-align: center;
 }
 .body {

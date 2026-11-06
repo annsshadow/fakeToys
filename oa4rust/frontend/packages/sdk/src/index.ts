@@ -8,9 +8,11 @@ export {
   type ApiResponse,
   AuthenticationError,
   api,
+  isRequestCancelled,
   type PagedResponse,
   PermissionError,
   type QueryOptions,
+  RequestCancelledError,
 } from './api'
 export { createO2App } from './app'
 export { getLocale, registerMessages, type SupportedLocale, setLocale, useI18n, useI18nInstance } from './i18n'
