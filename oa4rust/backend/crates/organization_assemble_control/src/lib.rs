@@ -448,11 +448,22 @@ pub async fn organization_assemble_control_unit_list_flag_sup_nested_type_type(
     organization_assemble_control_unit_list_flag_sup_nested(pool, axum::extract::Path(flag)).await
 }
 
+// 安全审计（读 IDOR 批次 2）：人员搜索列表的读归属「本人 OR 管理员」。
+// 归属谓词直接进 SQL 的 WHERE；creator 为 NULL 时 fail-closed（仅管理员可见）。
+pub(crate) const PERSON_LIST_OWNER_PREDICATE: &str = "(creator = $2 OR EXISTS(\
+     SELECT 1 FROM auth_person p \
+       JOIN auth_person_role pr ON pr.person_id = p.id \
+       JOIN auth_role r ON r.id = pr.role_id \
+      WHERE (p.unique_id = $2 OR p.id = $2) \
+        AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false))";
+
 #[allow(non_snake_case)]
 pub async fn organization_assemble_control_person_list_like(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): axum::extract::Json<PersonLikeRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = u2_helpers::require_session_opt(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let name_pattern = req.name.unwrap_or_default();
@@ -460,12 +471,19 @@ pub async fn organization_assemble_control_person_list_like(
 
     let rows = client
         .query(
-            "SELECT id, name, mobile, email, unit_id, creator, create_time::text FROM x_org_person WHERE name ILIKE $1 AND deleted_at IS NULL ORDER BY create_time DESC LIMIT 100",
-            &[&like_pattern],
+            &format!(
+                "SELECT id, name, mobile, email, unit_id, creator, create_time::text \
+                   FROM x_org_person \
+                  WHERE name ILIKE $1 AND deleted_at IS NULL AND {PERSON_LIST_OWNER_PREDICATE} \
+                  ORDER BY create_time DESC LIMIT 100"
+            ),
+            &[&like_pattern, &actor],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
+    // 列表按归属收窄后允许返回空（不做存在性探测，避免通过 403 泄露“他人是否存在”）；
+    // 非空与本人可见性由门禁的本人正控制用例覆盖。
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {

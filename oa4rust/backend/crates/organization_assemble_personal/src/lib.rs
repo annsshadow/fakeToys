@@ -33,21 +33,59 @@ mod tests_generated;
 
 #[cfg(test)]
 mod tests_manual;
+// 安全审计（读 IDOR 批次 2）：个人设置/角色的读归属「本人 OR 管理员」。
+// 归属谓词直接进 SQL 的 WHERE，先授权后取数。
+pub(crate) const PERSON_SETTING_OWNER_PREDICATE: &str =
+    "id = $1 AND (id = $2 OR unique_id = $2 OR EXISTS(\
+     SELECT 1 FROM auth_person p \
+       JOIN auth_person_role pr ON pr.person_id = p.id \
+       JOIN auth_role r ON r.id = pr.role_id \
+      WHERE (p.unique_id = $2 OR p.id = $2) \
+        AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false))";
+
+pub(crate) const PERSON_ROLE_OWNER_PREDICATE: &str = "m.person_id = $1 AND ($1 = $2 OR EXISTS(\
+     SELECT 1 FROM auth_person p \
+       JOIN auth_person_role pr ON pr.person_id = p.id \
+       JOIN auth_role r ON r.id = pr.role_id \
+      WHERE (p.unique_id = $2 OR p.id = $2) \
+        AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false))";
+
 #[axum::debug_handler]
 pub async fn user_setting(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = require_session(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
-            "SELECT mobile, email, icon, theme, lang FROM auth_person WHERE id = $1 LIMIT 1",
-            &[&id],
+            &format!(
+                "SELECT mobile, email, icon, theme, lang FROM auth_person \
+                  WHERE {PERSON_SETTING_OWNER_PREDICATE} LIMIT 1"
+            ),
+            &[&id, &actor],
         )
         .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
-        .ok_or(AppError::NotFound)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+
+    let Some(row) = row else {
+        // 授权已在主查询 WHERE 内；这里只决定错误码：行存在但无权读 → 403。
+        let exists = client
+            .query_one(
+                "SELECT EXISTS(SELECT 1 FROM auth_person WHERE id = $1) AS row_exists",
+                &[&id],
+            )
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+            .get::<_, bool>("row_exists");
+        return Err(if exists {
+            AppError::Forbidden
+        } else {
+            AppError::NotFound
+        });
+    };
 
     let mut map = serde_json::Map::new();
     if let Some(v) = row.get::<_, Option<String>>("mobile") {
@@ -73,17 +111,38 @@ pub async fn user_setting(
 #[axum::debug_handler]
 pub async fn user_role_list(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = require_session(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let rows = client
         .query(
-            "SELECT r.id, r.name FROM x_org_group_member m JOIN x_org_role r ON m.role_id = r.id WHERE m.person_id = $1",
-            &[&id],
+            &format!(
+                "SELECT r.id, r.name FROM x_org_group_member m \
+                  JOIN x_org_role r ON m.role_id = r.id \
+                 WHERE {PERSON_ROLE_OWNER_PREDICATE}"
+            ),
+            &[&id, &actor],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+
+    if rows.is_empty() {
+        // 授权已在主查询 WHERE 内；成员关系存在但无权读 → 403。
+        let exists = client
+            .query_one(
+                "SELECT EXISTS(SELECT 1 FROM x_org_group_member WHERE person_id = $1) AS row_exists",
+                &[&id],
+            )
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+            .get::<_, bool>("row_exists");
+        if exists {
+            return Err(AppError::Forbidden);
+        }
+    }
 
     let roles: Vec<Value> = rows
         .iter()
