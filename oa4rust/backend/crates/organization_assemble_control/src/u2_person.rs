@@ -20,6 +20,20 @@ const PERSON_COLS: &str =
 const PERSON_COLS_P: &str =
     "p.id, p.name, p.mobile, p.email, p.unit_id, p.icon, p.status, p.status_des, p.creator, p.create_time::text";
 
+/// 人员读归属谓词（写进 SQL WHERE，NULL fail-closed）：
+/// 行的 `creator` 为本人，或调用者具备 admin 角色。
+/// `creator_col` 允许调用方传 `p.creator` 以适配多表 JOIN；`actor_ph` 传占位符（如 `$2`）。
+fn owner_scope(creator_col: &str, actor_ph: &str) -> String {
+    format!(
+        "({creator_col} = {actor_ph} OR EXISTS(\
+           SELECT 1 FROM auth_person ap \
+             JOIN auth_person_role apr ON apr.person_id = ap.id \
+             JOIN auth_role ar ON ar.id = apr.role_id \
+            WHERE (ap.unique_id = {actor_ph} OR ap.id = {actor_ph}) \
+              AND ar.name = 'admin' AND ar.deleted_at IS NULL AND ar.disable = false))"
+    )
+}
+
 #[allow(non_snake_case)]
 pub async fn resolve_person_id(
     client: &deadpool_postgres::Client,
@@ -51,19 +65,34 @@ fn person_row_json(row: &PgRow) -> Value {
 }
 
 #[allow(non_snake_case)]
-pub async fn person_get(pool: Extension<Pool>, Path(flag): Path<String>) -> HandlerResult {
+pub async fn person_get(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(flag): Path<String>,
+) -> HandlerResult {
+    let actor = require_session_opt(session)?.person_unique;
     let client = client_of(&pool).await?;
     let Some(pid) = resolve_person_id(&client, &flag).await? else {
         return err("person not found");
     };
-    let sql = format!("SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE id = $1");
+    // 「本人 OR 管理员」：id 命中本人（读自己档案）或 creator 命中本人，写进 WHERE。
+    let sql = format!(
+        "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE id = $1 AND (id = $2 OR {})",
+        owner_scope("creator", "$2")
+    );
     match client
-        .query_opt(&sql, &[&pid])
+        .query_opt(&sql, &[&pid, &actor])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     {
         Some(row) => ok(person_row_json(&row)),
-        None => err("person not found"),
+        None => {
+            if owned_read_row_exists(&client, PERSON_TABLE, &pid).await? {
+                Err(AppError::Forbidden)
+            } else {
+                err("person not found")
+            }
+        }
     }
 }
 
@@ -256,29 +285,37 @@ pub async fn person_reserve_mock_delete_to_get(
     person_reserve_delete(pool, session, Path(flag)).await
 }
 
-async fn cursor_page(pool: &Pool, flag: &str, count: i64, next: bool) -> HandlerResult {
+async fn cursor_page(
+    pool: &Pool,
+    actor: &str,
+    flag: &str,
+    count: i64,
+    next: bool,
+) -> HandlerResult {
     let client = client_of(pool).await?;
     // LIMIT 参数 PG 定 int8：String 绑定 WrongType 客户端 500（O10 实证）——保留 i64。
     let limit = count.clamp(1, MAX_BATCH_IDS as i64);
     let rows = if flag == "0" || flag == "(0)" {
         let ks = crate::created_at_keyset(PERSON_TABLE);
         let sql = format!(
-            "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL ORDER BY {} LIMIT $1",
+            "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL AND {} ORDER BY {} LIMIT $1",
+            owner_scope("creator", "$2"),
             ks.order_by(false)
         );
         client
-            .query(&sql, &[&limit])
+            .query(&sql, &[&limit, &actor])
             .await
             .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
     } else {
         let ks = crate::created_at_keyset(PERSON_TABLE);
         let sql = format!(
-            "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL AND {} ORDER BY {} LIMIT $2",
+            "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL AND {} AND {} ORDER BY {} LIMIT $2",
+            owner_scope("creator", "$3"),
             ks.predicate(next),
             ks.order_by(!next),
         );
         let mut window = client
-            .query(&sql, &[&flag.to_string(), &limit])
+            .query(&sql, &[&flag.to_string(), &limit, &actor])
             .await
             .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         if !next {
@@ -293,20 +330,29 @@ async fn cursor_page(pool: &Pool, flag: &str, count: i64, next: bool) -> Handler
 #[allow(non_snake_case)]
 pub async fn person_list_next(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((flag, count)): Path<(String, i64)>,
 ) -> HandlerResult {
-    cursor_page(&pool, &flag, count, true).await
+    let actor = require_session_opt(session)?.person_unique;
+    cursor_page(&pool, &actor, &flag, count, true).await
 }
 
 #[allow(non_snake_case)]
 pub async fn person_list_prev(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((flag, count)): Path<(String, i64)>,
 ) -> HandlerResult {
-    cursor_page(&pool, &flag, count, false).await
+    let actor = require_session_opt(session)?.person_unique;
+    cursor_page(&pool, &actor, &flag, count, false).await
 }
 
-async fn persons_in_group(pool: &Pool, group_flag: &str, nested: bool) -> HandlerResult {
+async fn persons_in_group(
+    pool: &Pool,
+    actor: &str,
+    group_flag: &str,
+    nested: bool,
+) -> HandlerResult {
     let client = client_of(pool).await?;
     let edge = if nested {
         "UNION SELECT m.person_id FROM x_org_group_member m JOIN sub_groups sg ON m.group_id = sg.id WHERE m.type = 'group'"
@@ -321,10 +367,11 @@ async fn persons_in_group(pool: &Pool, group_flag: &str, nested: bool) -> Handle
         SELECT DISTINCT {PERSON_COLS_P} FROM x_org_person p
           JOIN x_org_group_member gm ON gm.person_id = p.id
           JOIN sub_groups sg ON gm.group_id = sg.id
-         WHERE p.deleted_at IS NULL"
+         WHERE p.deleted_at IS NULL AND {}",
+        owner_scope("p.creator", "$2")
     );
     let rows = client
-        .query(&sql, &[&group_flag.to_string()])
+        .query(&sql, &[&group_flag.to_string(), &actor])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     list_ok(rows.iter().map(person_row_json).collect())
@@ -333,33 +380,40 @@ async fn persons_in_group(pool: &Pool, group_flag: &str, nested: bool) -> Handle
 #[allow(non_snake_case)]
 pub async fn person_list_group_sub_direct(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(group_flag): Path<String>,
 ) -> HandlerResult {
-    persons_in_group(&pool, &group_flag, false).await
+    let actor = require_session_opt(session)?.person_unique;
+    persons_in_group(&pool, &actor, &group_flag, false).await
 }
 
 #[allow(non_snake_case)]
 pub async fn person_list_group_sub_nested(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(group_flag): Path<String>,
 ) -> HandlerResult {
-    persons_in_group(&pool, &group_flag, true).await
+    let actor = require_session_opt(session)?.person_unique;
+    persons_in_group(&pool, &actor, &group_flag, true).await
 }
 
 #[allow(non_snake_case)]
 pub async fn person_list_with_role(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(role_flag): Path<String>,
 ) -> HandlerResult {
+    let actor = require_session_opt(session)?.person_unique;
     let client = client_of(&pool).await?;
     let sql = format!(
         "SELECT DISTINCT {PERSON_COLS_P} FROM x_org_person p
           JOIN auth_person_role pr ON pr.person_id = p.id
           JOIN x_org_role r ON r.id = pr.role_id
-         WHERE (r.id = $1 OR r.name = $1) AND p.deleted_at IS NULL"
+         WHERE (r.id = $1 OR r.name = $1) AND p.deleted_at IS NULL AND {}",
+        owner_scope("p.creator", "$2")
     );
     let rows = client
-        .query(&sql, &[&role_flag])
+        .query(&sql, &[&role_flag, &actor])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     list_ok(rows.iter().map(person_row_json).collect())
@@ -368,49 +422,63 @@ pub async fn person_list_with_role(
 #[allow(non_snake_case)]
 pub async fn person_list_pinyininitial(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> HandlerResult {
     check_batch_len(initials_from_body(&body).len())?;
     let initials = initials_from_body(&body);
+    let actor = require_session_opt(session)?.person_unique;
     let client = client_of(&pool).await?;
     if initials.is_empty() {
-        let sql = format!("SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL");
+        let sql = format!(
+            "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL AND {}",
+            owner_scope("creator", "$1")
+        );
         let rows = client
-            .query(&sql, &[])
+            .query(&sql, &[&actor])
             .await
             .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         return list_ok_legacy(rows.iter().map(person_row_json).collect());
     }
     let sql = format!(
         "SELECT {PERSON_COLS} FROM {PERSON_TABLE}
-          WHERE deleted_at IS NULL AND (LEFT(LOWER(pinyin_initial), 1) = ANY($1) OR LEFT(LOWER(name), 1) = ANY($1))"
+          WHERE deleted_at IS NULL AND (LEFT(LOWER(pinyin_initial), 1) = ANY($1) OR LEFT(LOWER(name), 1) = ANY($1)) AND {}",
+        owner_scope("creator", "$2")
     );
     let rows = client
-        .query(&sql, &[&initials])
+        .query(&sql, &[&initials, &actor])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     list_ok_legacy(rows.iter().map(person_row_json).collect())
 }
 
 #[allow(non_snake_case)]
-pub async fn person_list_like(pool: Extension<Pool>, Json(body): Json<Value>) -> HandlerResult {
+pub async fn person_list_like(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Json(body): Json<Value>,
+) -> HandlerResult {
+    let actor = require_session_opt(session)?.person_unique;
     let client = client_of(&pool).await?;
     let key = normalize_key(opt(&body, &["key", "name"]).unwrap_or_default());
     if key.is_empty() {
-        let sql =
-            format!("SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL LIMIT 100");
+        let sql = format!(
+            "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL AND {} LIMIT 100",
+            owner_scope("creator", "$1")
+        );
         let rows = client
-            .query(&sql, &[])
+            .query(&sql, &[&actor])
             .await
             .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         return list_ok_legacy(rows.iter().map(person_row_json).collect());
     }
     let pattern = format!("%{}%", shared::db::escape_like(&key));
     let sql = format!(
-        "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL AND name ILIKE $1 LIMIT 100"
+        "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL AND name ILIKE $1 AND {} LIMIT 100",
+        owner_scope("creator", "$2")
     );
     let rows = client
-        .query(&sql, &[&pattern])
+        .query(&sql, &[&pattern, &actor])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     list_ok_legacy(rows.iter().map(person_row_json).collect())
@@ -419,14 +487,19 @@ pub async fn person_list_like(pool: Extension<Pool>, Json(body): Json<Value>) ->
 #[allow(non_snake_case)]
 pub async fn person_list_like_pinyin(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> HandlerResult {
+    let actor = require_session_opt(session)?.person_unique;
     let client = client_of(&pool).await?;
     let key = normalize_key(opt(&body, &["key"]).unwrap_or_default());
     if key.is_empty() {
-        let sql = format!("SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL");
+        let sql = format!(
+            "SELECT {PERSON_COLS} FROM {PERSON_TABLE} WHERE deleted_at IS NULL AND {}",
+            owner_scope("creator", "$1")
+        );
         let rows = client
-            .query(&sql, &[])
+            .query(&sql, &[&actor])
             .await
             .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         return list_ok_legacy(rows.iter().map(person_row_json).collect());
@@ -434,10 +507,11 @@ pub async fn person_list_like_pinyin(
     let pattern = format!("{}%", shared::db::escape_like(&key.to_lowercase()));
     let sql = format!(
         "SELECT {PERSON_COLS} FROM {PERSON_TABLE}
-          WHERE deleted_at IS NULL AND (LOWER(pinyin_initial) LIKE $1 OR LOWER(name) LIKE $1)"
+          WHERE deleted_at IS NULL AND (LOWER(pinyin_initial) LIKE $1 OR LOWER(name) LIKE $1) AND {}",
+        owner_scope("creator", "$2")
     );
     let rows = client
-        .query(&sql, &[&pattern])
+        .query(&sql, &[&pattern, &actor])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     list_ok_legacy(rows.iter().map(person_row_json).collect())
@@ -703,9 +777,11 @@ pub async fn person_set_password_expired_time(
 #[allow(non_snake_case)]
 pub async fn person_list_filter_paging(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((page, size)): Path<(i64, i64)>,
     Json(body): Json<Value>,
 ) -> HandlerResult {
+    let actor = require_session_opt(session)?.person_unique;
     let client = client_of(&pool).await?;
     let page = page.max(1);
     let size = size.clamp(1, MAX_PAGE_SIZE);
@@ -719,26 +795,35 @@ pub async fn person_list_filter_paging(
     let status = normalize_key(opt(&body, &["status"]).unwrap_or_default());
     let unit_flag = normalize_key(opt(&body, &["unitFlag", "unitId"]).unwrap_or_default());
 
-    let cond = "deleted_at IS NULL
+    // 归属收窄同样进 WHERE；`count` 也按同一谓词统计，否则总数会泄漏他人行存在性。
+    let cond_head = "deleted_at IS NULL
                 AND ($1 = '' OR name ILIKE '%'||$1||'%')
                 AND ($2 = '' OR mobile ILIKE '%'||$2||'%')
                 AND ($3 = '' OR email ILIKE '%'||$3||'%')
                 AND ($4 = '' OR status = $4)
                 AND ($5 = '' OR unit_id = $5)";
-    let total_sql = format!("SELECT COUNT(*)::bigint AS cnt FROM x_org_person WHERE {cond}");
+    // count 的 actor 占位是 $6；data 还有 LIMIT/OFFSET 占 $6/$7，actor 顺延到 $8。
+    let total_cond = format!("{cond_head} AND {}", owner_scope("creator", "$6"));
+    let data_cond = format!("{cond_head} AND {}", owner_scope("creator", "$8"));
+    let total_sql = format!("SELECT COUNT(*)::bigint AS cnt FROM x_org_person WHERE {total_cond}");
     let total_row = client
-        .query_one(&total_sql, &[&name, &mobile, &email, &status, &unit_flag])
+        .query_one(
+            &total_sql,
+            &[&name, &mobile, &email, &status, &unit_flag, &actor],
+        )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let total: i64 = total_row.get("cnt");
 
     let data_sql = format!(
-        "SELECT {PERSON_COLS} FROM x_org_person WHERE {cond} ORDER BY create_time DESC LIMIT $6 OFFSET $7"
+        "SELECT {PERSON_COLS} FROM x_org_person WHERE {data_cond} ORDER BY create_time DESC LIMIT $6 OFFSET $7"
     );
     let rows = client
         .query(
             &data_sql,
-            &[&name, &mobile, &email, &status, &unit_flag, &size, &offset],
+            &[
+                &name, &mobile, &email, &status, &unit_flag, &size, &offset, &actor,
+            ],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
