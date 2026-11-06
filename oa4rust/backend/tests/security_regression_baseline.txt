@@ -92,11 +92,7 @@ query_core_entity|view_get|GET	LEAK
 t1|attendancedetail_mobile_mobilepreview	UNVERIFIED
 t1|attendancedetail_mobile_my	LEAK
 t1|attendancedetail_mobile_recive	UNVERIFIED
-t1|bbs|create_reply	LEAK
-t1|bbs|create_subject	LEAK
 t1|bbs|create_topic	UNVERIFIED
-t1|mind_core|create_folder	LEAK
-t1|mind_core|create_mind	LEAK
 t1|mind|create_folder	UNVERIFIED
 t1|mind|create_mind	UNVERIFIED
 t1|oauth|generate_code	UNVERIFIED
@@ -107,10 +103,7 @@ t2|file|folder_create	LEAK
 t2|general_assemble|invoice_create	LEAK
 t2|general_core|file_create	LEAK
 t2|general_core|invoice_create	LEAK
-t2|general|office	LEAK
-t2|general|office_html_to_word	LEAK
 t2|meeting|create_meeting	UNVERIFIED
-t2|mind_core|create_version	LEAK
 t2|mind|create_version	UNVERIFIED
 t2|organization|bind_create	UNVERIFIED
 t2|organization|group_list_object	UNVERIFIED
