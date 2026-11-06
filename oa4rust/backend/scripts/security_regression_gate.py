@@ -583,7 +583,9 @@ def sabotage_many(
         print(f"实验失败：门禁未红或未点名全部用例（exit={code}）")
         return 1
     finally:
-        for path, original in originals:
+        # 同一文件可能有多次替换（本批 cms 三条都在 lib.rs）：必须逆序还原，
+        # 否则最后一次写入的是「已被改坏」的快照，而不是最初的原文件。
+        for path, original in reversed(originals):
             path.write_bytes(original)
             print(f"[restore] {path.name} 已还原")
 
