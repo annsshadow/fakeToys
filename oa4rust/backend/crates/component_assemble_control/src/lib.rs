@@ -13,6 +13,8 @@ pub mod routes;
 #[cfg(test)]
 mod security_gate_tests;
 #[cfg(test)]
+mod security_gate_tests_idor_b7;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
@@ -28,6 +30,18 @@ async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Resul
         Err(AppError::Forbidden)
     }
 }
+
+/// 读面归属谓词（批次 7）：自定义组件按 `creator` 校归属（本人或管理员）；
+/// `type = 'system'` 与 `visible = true` 是共享给全员的内置组件，保留可读。
+/// 归属为空且非共享时仅管理员（fail-closed）。`$2` = 会话 person_unique。
+const COMPONENT_READ_OWNER_PREDICATE: &str = "(NULLIF(BTRIM(creator), '') = $2 \
+      OR type = 'system' \
+      OR visible = true \
+      OR EXISTS(SELECT 1 FROM auth_person p \
+                  JOIN auth_person_role pr ON pr.person_id = p.id \
+                  JOIN auth_role r ON r.id = pr.role_id \
+                 WHERE (p.unique_id = $2 OR p.id = $2) \
+                   AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false))";
 
 #[axum::debug_handler]
 #[allow(non_snake_case)]
@@ -245,15 +259,20 @@ pub async fn list_components(pool: Extension<Pool>) -> Result<Json<ActionResult<
 #[allow(non_snake_case)]
 pub async fn get_component(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 批次 7：组件详情按 creator / system / visible 校读权限，无会话 401 先于读库。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = shared::db::acquire(&pool).await?;
-
+    let sql = format!(
+        "SELECT id, name, type, creator, create_time::text FROM x_component \
+         WHERE id = $1 AND deleted_at IS NULL AND {COMPONENT_READ_OWNER_PREDICATE}"
+    );
     let row = client
-        .query_opt(
-            "SELECT id, name, type, creator, create_time::text FROM x_component WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
-        )
+        .query_opt(&sql, &[&id, &sess.person_unique])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
@@ -283,7 +302,22 @@ pub async fn get_component(
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("component not found"))),
+        None => {
+            // 存在性读不参与授权：行存在但无权 → 403，行不存在保留原错误体。
+            let exists: bool = client
+                .query_one(
+                    "SELECT EXISTS(SELECT 1 FROM x_component WHERE id = $1 AND deleted_at IS NULL) AS row_exists",
+                    &[&id],
+                )
+                .await
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+                .get("row_exists");
+            if exists {
+                Err(AppError::Forbidden)
+            } else {
+                Ok(Json(ActionResult::error("component not found")))
+            }
+        }
     }
 }
 

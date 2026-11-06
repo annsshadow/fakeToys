@@ -8,8 +8,8 @@ use axum::{
 };
 use chrono::Utc;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder,
-    QuerySelect, Set,
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, DbBackend, EntityTrait,
+    QueryFilter, QueryOrder, QuerySelect, Set, Statement, Value as SeaValue,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -32,6 +32,42 @@ fn require_session(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<shared::session::Session, AppError> {
     session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
+/// 读面归属谓词（批次 7）：公开日历（`is_public`）全员可读；其余仅
+/// 创建人（`createor`）、共享目标（`target`，与 assemble_control 的“我的日历”
+/// 同口径）或管理员可读。归属为空且非公开 → 仅管理员（fail-closed）。
+/// `$2` = 会话 person_unique（可重复引用）。
+const CALENDAR_READ_OWNER_PREDICATE: &str = "(is_public = TRUE \
+      OR NULLIF(BTRIM(createor), '') = $2 \
+      OR NULLIF(BTRIM(target), '') = $2 \
+      OR EXISTS(SELECT 1 FROM auth_person p \
+                  JOIN auth_person_role pr ON pr.person_id = p.id \
+                  JOIN auth_role r ON r.id = pr.role_id \
+                 WHERE (p.unique_id = $2 OR p.id = $2) \
+                   AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false))";
+
+/// 授权读：谓词进 `SELECT EXISTS(...)`，行不存在或无权都返回 false。
+async fn calendar_read_allowed(
+    db: &DatabaseConnection,
+    id: &str,
+    me: &str,
+) -> Result<bool, AppError> {
+    let sql = format!(
+        "SELECT EXISTS(SELECT 1 FROM x_cal_calendar WHERE id = $1 AND {CALENDAR_READ_OWNER_PREDICATE}) AS allowed"
+    );
+    let values: Vec<SeaValue> = vec![id.into(), me.into()];
+    let row = db
+        .query_one(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            sql,
+            values,
+        ))
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    Ok(row
+        .and_then(|r| r.try_get::<bool>("", "allowed").ok())
+        .unwrap_or(false))
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
@@ -221,8 +257,27 @@ pub async fn calendar_list_my(
 #[allow(non_snake_case)]
 pub async fn calendar_get(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 批次 7：日历详情按 createor/target/公开旗标校读权限（本人、共享目标、
+    // 全员公开或管理员），无会话 401 先于任何读库。
+    let sess = require_session(session)?;
+    let allowed = calendar_read_allowed(&db.0, &id, &sess.person_unique).await?;
+    if !allowed {
+        // 存在性读不参与授权：行存在但无权 → 403，行不存在保留原错误体。
+        let exists = cal_calendar::Entity::find_by_id(&id)
+            .filter(cal_calendar::Column::Status.eq("OPEN"))
+            .one(&db.0)
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+            .is_some();
+        return if exists {
+            Err(AppError::Forbidden)
+        } else {
+            Ok(Json(ActionResult::error("calendar not found")))
+        };
+    }
     let model = cal_calendar::Entity::find_by_id(&id)
         .filter(cal_calendar::Column::Status.eq("OPEN"))
         .one(&db.0)
@@ -749,6 +804,8 @@ pub fn calendar_core_entity_router(db: DatabaseConnection) -> Router {
 
 #[cfg(test)]
 mod security_gate_tests_b70;
+#[cfg(test)]
+mod security_gate_tests_idor_b7;
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
