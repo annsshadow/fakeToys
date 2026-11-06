@@ -117,7 +117,8 @@ async fn test_jpush_get_by_id_legacy_path() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+    // 批次 7 起该读端点先校会话：无会话 401，不再落到读库的 503。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]

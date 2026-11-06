@@ -39,8 +39,6 @@ cms_assemble_control|scriptversion_id|GET	LEAK
 cms_assemble_control|templateform_id|GET	LEAK
 cms_core_entity|article_get|GET	LEAK
 cms_core_express|content_detail|GET	LEAK
-component_assemble_control|get_component|GET	LEAK
-correlation_service_processing|get_correlation|GET	LEAK
 file_assemble_control|get_file|GET	LEAK
 file_assemble_control|recycle_id|GET	UNVERIFIED
 general_assemble_control|area_get|GET	LEAK
@@ -51,9 +49,6 @@ general_assemble_control|securityclearance_get|GET	LEAK
 general_core_entity|file_download|GET	LEAK
 general_core_entity|file_get|GET	LEAK
 general_core_entity|invoice_get|GET	LEAK
-jpush_assemble_control|get_jpush|GET	LEAK
-jpush_core_entity|device_get|GET	LEAK
-jpush|device_get|GET	LEAK
 portal_assemble_designer|portal_id_icon|GET	LEAK
 portal_assemble_designer|portal_id_permission|GET	LEAK
 portal_assemble_surface|get_surface|GET	LEAK
