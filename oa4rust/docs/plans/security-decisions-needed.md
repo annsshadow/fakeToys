@@ -310,3 +310,25 @@
 - 考勤双向实测：`docs/audits/behavioral-audit-2026-11-05/report-6.md:253-262`。
 - 当前代码行号以 `origin/main`（合并 commit `5fbc15326`）为准。
 - 复跑门禁：`cd oa4rust/backend && python scripts/security_regression_gate.py run`（本地 preflight 严格；CI 跳过 preflight）。
+
+## 11. 扫描规则教训（写规则前先读）
+
+本轮 limit-scan 误报 #201，根因不只是行号漂移，而是**判定单位与风险单位不一致**：
+
+- 风险单位是「端点 × 限额键」，扫描却按「SQL 字面量 + 行号」计数，插一行代码整体漂移；
+- 更本质的一层：归属谓词被抽成 `const CREATOR_OWNER_PREDICATE` 后，SQL 里只剩
+  `WHERE {CREATOR_OWNER_PREDICATE}`（或 `WHERE {}` + `u2_helpers::CREATOR_OWNER_PREDICATE`），
+  扫描器看不到 `id = $1`，5 条单行查询被误判为 `unbounded`：
+  `message|mass_id`、`organization_authentication|identity_id`、
+  `organization_control|identity_id / identity_flag / unit_flag`。
+
+写静态扫描规则的硬要求：
+
+1. 判定键必须稳定：`端点标识（fn/route）+ 风险键（限额名/bucket）`；行号只作定位提示。
+2. 允许代码把 SQL 抽成常量或 `format!` 占位符：规则必须解析 `{NAME}` / `{}` 的实参，
+   把谓词内联后再分类；解析不了时应报 `UNVERIFIED`，**不能默认成最坏桶**。
+3. 「新增/未登记」必须基于键集合差，不能把整个文件的行号列出来当证据。
+4. 规则要配 sabotage：新增一个真·无 LIMIT 端点必须判红，否则改键之后灵敏度可能已归零。
+
+实现位置：`oa4rust/backend/scripts/limit_scan.py`（端点级计数 + 谓词常量内联）；
+实测记录见 PR #206。
