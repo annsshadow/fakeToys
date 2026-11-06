@@ -70,4 +70,26 @@ describe('切页竞态：只接受最后一次请求的结果（R141）', () => 
     expect(sendBody).toContain('chatGeneration.next()')
     expect(sendBody).toContain('chatGeneration.isCurrent(token)')
   })
+
+  it('AI 会话页：切换会话真 abort 旧请求（不是只丢结果），取消不报错误（R143）', () => {
+    const source = readFileSync(resolve(import.meta.dirname, 'AIChatApp.vue'), 'utf8')
+    expect(source).toContain("from './requestGuard'")
+    expect(source).toContain('createRequestGuard()')
+
+    const selectStart = source.indexOf('async function selectChat')
+    expect(selectStart).toBeGreaterThan(-1)
+    const selectBody = source.slice(selectStart, source.indexOf('function retryMessages', selectStart))
+    // 删掉这行 `begin()` 就等于退回「只丢结果」——判据必须因此变红。
+    expect(selectBody).toContain('chatRequest.begin()')
+    expect(selectBody).toContain('{ signal }')
+    expect(selectBody).toContain('isRequestCancelled(e)')
+
+    const sendStart = source.indexOf('async function sendMessage')
+    expect(sendStart).toBeGreaterThan(-1)
+    const sendBody = source.slice(sendStart, source.indexOf('// ── 附件上传', sendStart))
+    expect(sendBody).toContain('chatRequest.begin()')
+    expect(sendBody).toContain('{ signal }')
+    // 取消错误不得进入「❌ 错误」气泡。
+    expect(sendBody).toContain('isRequestCancelled(e)')
+  })
 })

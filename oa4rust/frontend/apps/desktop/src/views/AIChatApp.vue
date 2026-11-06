@@ -172,13 +172,14 @@
 </template>
 
 <script setup lang="ts">
-import { api } from '@oa4rust/sdk'
+import { api, isRequestCancelled } from '@oa4rust/sdk'
 import { nextTick, ref } from 'vue'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { createGeneration } from './latestOnly'
 import { describeListError } from './listQuery'
+import { createRequestGuard } from './requestGuard'
 
 type Message = { role: 'user' | 'assistant'; content: string; timestamp?: string }
 type ChatItem = { id: string; title?: string; name?: string; updatedAt?: string }
@@ -196,6 +197,8 @@ const showConfig = ref(false)
 const aiMetaText = ref('')
 // R141：快速切会话时旧请求后到会覆盖新会话；只接受最后一次发起的结果。
 const chatGeneration = createGeneration()
+// R143：代际校验只丢结果；这里让切换会话真正断开旧请求/流的连接。
+const chatRequest = createRequestGuard()
 async function loadAiControl() {
   try {
     // 消费 ai_assemble_control 三条真实路由：基础配置 / AI 控制配置 / 用量统计
@@ -433,12 +436,14 @@ async function loadConversations() {
 
 async function selectChat(chat: ChatItem) {
   const token = chatGeneration.next()
+  // 切换即断开上一次列表请求/发送流；代际校验继续作第二道防线。
+  const signal = chatRequest.begin()
   currentChat.value = chat
   messages.value = []
   messagesError.value = ''
   loading.value = false
   try {
-    const r = await api.get(`/api/ai_assemble_control/chat/list/completion/${chat.id}/paging/1/size/50`)
+    const r = await api.get(`/api/ai_assemble_control/chat/list/completion/${chat.id}/paging/1/size/50`, { signal })
     // 期间又切了会话：旧响应作废，不能覆盖新会话的内容与错误态。
     if (!chatGeneration.isCurrent(token)) return
     const list = r.data?.list ?? []
@@ -447,6 +452,8 @@ async function selectChat(chat: ChatItem) {
       content: m.content ?? m.text ?? '',
     }))
   } catch (e) {
+    // 取消是预期行为（用户切走了），静默返回，不当作「消息加载失败」。
+    if (isRequestCancelled(e)) return
     if (!chatGeneration.isCurrent(token)) return
     // 失败必须显式报错，不能和「这个对话还没消息」混成同一种空态。
     messagesError.value = describeListError('消息加载失败', e)
@@ -475,6 +482,7 @@ async function deleteChat(chat: ChatItem) {
   try {
     await api.delete(`/api/ai_assemble_control/chat/delete/${chat.id}`)
     if (currentChat.value?.id === chat.id) {
+      chatRequest.abort()
       currentChat.value = null
       messages.value = []
     }
@@ -488,7 +496,9 @@ async function sendMessage() {
   const text = inputText.value.trim()
   if (!text || loading.value) return
   // R141：回复属于发起时所在的会话；期间切走则丢弃，避免答案出现在别的会话里。
+  // R143：切走时真 abort，不再让旧流占着连接等空闲超时。
   const token = chatGeneration.next()
+  const signal = chatRequest.begin()
   const attachNote = attachments.value.length
     ? `\n[附件] ${attachments.value.map((a) => `${a.name} → ${a.url}`).join('，')}`
     : ''
@@ -514,19 +524,26 @@ async function sendMessage() {
           }
           nextTick(() => scrollToBottom())
         },
+        { signal },
       )
       if (!chatGeneration.isCurrent(token)) return
       if (!live.content) live.content = '（无返回内容）'
     } else {
-      const r = await api.post('/api/ai_assemble_control/chat/completion', {
-        message: text + attachNote,
-        clueId: currentChat.value?.id,
-      })
+      const r = await api.post(
+        '/api/ai_assemble_control/chat/completion',
+        {
+          message: text + attachNote,
+          clueId: currentChat.value?.id,
+        },
+        { signal },
+      )
       if (!chatGeneration.isCurrent(token)) return
       const reply = r.data?.content ?? r.data?.reply ?? r.data?.message ?? '已收到'
       messages.value.push({ role: 'assistant', content: String(reply) })
     }
   } catch (e: any) {
+    // 用户切走导致的取消不是错误，不能往消息流里塞「❌ 错误」。
+    if (isRequestCancelled(e)) return
     if (chatGeneration.isCurrent(token))
       messages.value.push({ role: 'assistant', content: `❌ 错误: ${e?.message ?? '未知错误'}` })
   } finally {
