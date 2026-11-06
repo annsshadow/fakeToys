@@ -55,21 +55,48 @@ pub fn mind_router() -> Router {
     Router::new().merge(routes::mind_routes())
 }
 
+/// 读面归属谓词（`$2` = 会话身份）：`creator` 为本人，或调用者管理员。
+/// 谓词写进 SQL WHERE，不做「先查后判」；`creator` 为 NULL 时不命中（fail-closed）。
+const MIND_CREATOR_READ_PREDICATE: &str = "creator = $2 OR EXISTS(\
+    SELECT 1 FROM auth_person p \
+      JOIN auth_person_role pr ON pr.person_id = p.id \
+      JOIN auth_role r ON r.id = pr.role_id \
+     WHERE (p.unique_id = $2 OR p.id = $2) \
+       AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false)";
+
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn get_mind_with_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
-        .query_one(
-            "SELECT id, name, folder_id, icon, description, creator, creator_unit, shared, file_version FROM mind_base_info WHERE id = $1",
-            &[&id],
+        .query_opt(
+            &format!(
+                "SELECT id, name, folder_id, icon, description, creator, creator_unit, shared, file_version \
+                 FROM mind_base_info WHERE id = $1 AND ({MIND_CREATOR_READ_PREDICATE})"
+            ),
+            &[&id, &session.person_unique],
         )
         .await
-        .map_err(|_| AppError::NotFound)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    // 谓词已拒绝：区分「行不存在」(404) 与「无权读」(403)。此读不参与授权判定。
+    let Some(row) = row else {
+        let exists = client
+            .query_opt("SELECT 1 FROM mind_base_info WHERE id = $1", &[&id])
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+            .is_some();
+        return Err(if exists {
+            AppError::Forbidden
+        } else {
+            AppError::NotFound
+        });
+    };
 
     let result = ActionResult::success(Value::Object(serde_json::Map::from_iter([
         (

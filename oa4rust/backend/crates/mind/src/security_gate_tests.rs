@@ -159,4 +159,79 @@ mod security_gate_tests {
             "无会话调用 create_folder 必须 401（门在 pool.get() 之前）"
         );
     }
+
+    /// 分片 A 读越权（IDOR）回归：`get_mind_with_id`（GET `/api/mind/mind/{id}`）
+    /// 原无会话、无归属过滤，任一登录用户凭 id 可读他人思维导图。修复后归属谓词
+    /// 写在 SQL WHERE 内。双向：A 读 B 的 403；B 读 A 的 403；本人 200 且真返回该行。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn mind_read_idor_is_blocked_both_ways() {
+        let pool = shared::testing::test_pool();
+        {
+            let c = pool.get().await.unwrap();
+            for (id, name, creator) in [
+                ("sec-read-a-mind-own", "own-name", "u-sec-read-owner"),
+                (
+                    "sec-read-a-mind-other",
+                    "other-name",
+                    "u-sec-read-other",
+                ),
+            ] {
+                // mind_base_info 的历史表没有主键/唯一约束，不能用 ON CONFLICT。
+                c.execute("DELETE FROM mind_base_info WHERE id = $1", &[&id])
+                    .await
+                    .unwrap();
+                c.execute(
+                    "INSERT INTO mind_base_info (id, name, creator) VALUES ($1, $2, $3)",
+                    &[&id, &name, &creator],
+                )
+                .await
+                .unwrap();
+            }
+        }
+        let owner = build_session("u-sec-read-owner");
+        let other = build_session("u-sec-read-other");
+        let path = |id: &str| Path(id.to_string());
+
+        // 正控制：本人读自己的思维导图 200 且真返回落库内容。
+        let body = crate::get_mind_with_id(
+            Extension(pool.clone()),
+            Some(Extension(owner.clone())),
+            path("sec-read-a-mind-own"),
+        )
+        .await
+        .expect("本人读自己的思维导图应成功");
+        let data = body.0.data.expect("成功响应必须带 data");
+        assert_eq!(
+            data.get("id").and_then(|v| v.as_str()),
+            Some("sec-read-a-mind-own")
+        );
+        assert_eq!(data.get("name").and_then(|v| v.as_str()), Some("own-name"));
+
+        // 双向：A→B 与 B→A 都必须 403。
+        for (sess, id) in [
+            (&owner, "sec-read-a-mind-other"),
+            (&other, "sec-read-a-mind-own"),
+        ] {
+            let res = crate::get_mind_with_id(
+                Extension(pool.clone()),
+                Some(Extension(sess.clone())),
+                path(id),
+            )
+            .await;
+            assert!(
+                matches!(res, Err(AppError::Forbidden)),
+                "越权读 {id} 必须 403"
+            );
+        }
+
+        // 无会话：401。
+        let res = crate::get_mind_with_id(
+            Extension(pool.clone()),
+            None,
+            path("sec-read-a-mind-own"),
+        )
+        .await;
+        assert!(matches!(res, Err(AppError::Unauthorized)));
+    }
 }

@@ -2219,51 +2219,75 @@ pub async fn meeting_list_page_size_size_manage_p3(
     meeting_list_page_size_size_manage_core(pool, page, size).await
 }
 
+/// 会议读归属谓词（`$2` = 会话身份）：`creator` 为本人，或调用者管理员。
+/// 谓词写进 SQL WHERE，不做「先查后判」；`creator` 为 NULL 时不命中（fail-closed）。
+const MEETING_CREATOR_READ_PREDICATE: &str = "creator = $2 OR EXISTS(\
+    SELECT 1 FROM auth_person p \
+      JOIN auth_person_role pr ON pr.person_id = p.id \
+      JOIN auth_role r ON r.id = pr.role_id \
+     WHERE (p.unique_id = $2 OR p.id = $2) \
+       AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false)";
+
 #[allow(non_snake_case)]
 pub async fn meeting_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
-            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE id = $1",
-            &[&id],
+            &format!(
+                "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, \
+                 to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, \
+                 to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time \
+                 FROM x_meeting WHERE id = $1 AND ({MEETING_CREATOR_READ_PREDICATE})"
+            ),
+            &[&id, &session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
-    match row {
-        Some(row) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                (
-                    "content".to_string(),
-                    Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
-                ),
-                (
-                    "startTime".to_string(),
-                    Value::String(row.get("start_time")),
-                ),
-                ("endTime".to_string(), Value::String(row.get("end_time"))),
-                (
-                    "creator".to_string(),
-                    Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("create_time")
-                            .unwrap_or_default(),
-                    ),
-                ),
-            ]));
-            Ok(Json(ActionResult::success(result)))
+    let Some(row) = row else {
+        // 谓词已拒绝：区分「行不存在」与「无权读」。此读不参与授权判定。
+        let exists = client
+            .query_opt("SELECT 1 FROM x_meeting WHERE id = $1", &[&id])
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+            .is_some();
+        if exists {
+            return Err(AppError::Forbidden);
         }
-        None => Ok(Json(ActionResult::error("meeting not found"))),
-    }
+        return Ok(Json(ActionResult::error("meeting not found")));
+    };
+
+    let result = Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(row.get("id"))),
+        ("title".to_string(), Value::String(row.get("title"))),
+        (
+            "content".to_string(),
+            Value::String(row.get::<_, Option<String>>("content").unwrap_or_default()),
+        ),
+        (
+            "startTime".to_string(),
+            Value::String(row.get("start_time")),
+        ),
+        ("endTime".to_string(), Value::String(row.get("end_time"))),
+        (
+            "creator".to_string(),
+            Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default()),
+        ),
+        (
+            "createTime".to_string(),
+            Value::String(
+                row.get::<_, Option<String>>("create_time")
+                    .unwrap_or_default(),
+            ),
+        ),
+    ]));
+    Ok(Json(ActionResult::success(result)))
 }
 
 /// 四轮 A3-N3 归属门：会议审批 / 邀请 / 改单写此前连 session 都不取（GET 注册还同时绕开
@@ -3490,23 +3514,48 @@ pub async fn u2_attachment_list_with_meeting(
     )))
 }
 
+/// 附件读归属谓词（`$2` = 会话身份）：上传者 `person`、所属会议 `creator`，或调用者管理员。
+/// 谓词写进 SQL WHERE，不做「先查后判」；归属列为 NULL 时不命中（fail-closed）。
+const U2_ATTACHMENT_READ_PREDICATE: &str = "(person = $2 OR EXISTS(\
+    SELECT 1 FROM x_meeting m WHERE m.id = x_meeting_attachment.meeting_id AND m.creator = $2) \
+    OR EXISTS(\
+    SELECT 1 FROM auth_person p \
+      JOIN auth_person_role pr ON pr.person_id = p.id \
+      JOIN auth_role r ON r.id = pr.role_id \
+     WHERE (p.unique_id = $2 OR p.id = $2) \
+       AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false))";
+
 #[allow(non_snake_case)]
 pub async fn u2_attachment_get(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
-            &format!("SELECT {U2_ATTACHMENT_COLS} FROM x_meeting_attachment WHERE id = $1"),
-            &[&id],
+            &format!(
+                "SELECT {U2_ATTACHMENT_COLS} FROM x_meeting_attachment WHERE id = $1 AND ({U2_ATTACHMENT_READ_PREDICATE})"
+            ),
+            &[&id, &session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
-    match row {
-        Some(row) => Ok(Json(ActionResult::success(u2_attachment_json(&row)))),
-        None => Err(AppError::NotFound),
-    }
+    let Some(row) = row else {
+        // 谓词已拒绝：区分「行不存在」与「无权读」。此读不参与授权判定。
+        let exists = client
+            .query_opt("SELECT 1 FROM x_meeting_attachment WHERE id = $1", &[&id])
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+            .is_some();
+        return Err(if exists {
+            AppError::Forbidden
+        } else {
+            AppError::NotFound
+        });
+    };
+    Ok(Json(ActionResult::success(u2_attachment_json(&row))))
 }
 
 #[allow(non_snake_case)]

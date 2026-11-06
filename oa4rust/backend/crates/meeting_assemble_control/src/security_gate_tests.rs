@@ -508,4 +508,172 @@ mod r6_gate_tests {
             "匿名写路由未回 401（出现 500 就是门插在读库之后，出现 400/415 是 body 未过提取器）：{leaked:?}"
         );
     }
+
+    fn build_session(person_unique: &str) -> shared::session::Session {
+        shared::testing::test_session(person_unique)
+    }
+
+    /// 分片 A 读越权（IDOR）回归：`meeting_id` 原无会话、无归属过滤，任一登录用户
+    /// 凭 id 可读他人会议。修复后归属谓词写在 SQL WHERE 内。
+    /// 双向：A 读 B 的会议 403；B 读 A 的会议 403；本人 200 且真返回该行内容。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn meeting_read_idor_is_blocked_both_ways() {
+        let pool = shared::testing::test_pool();
+        {
+            let c = pool.get().await.unwrap();
+            for (id, title, creator) in [
+                (
+                    "sec-read-a-meeting-own",
+                    "own-title",
+                    "u-sec-read-owner",
+                ),
+                (
+                    "sec-read-a-meeting-other",
+                    "other-title",
+                    "u-sec-read-other",
+                ),
+            ] {
+                c.execute(
+                    "INSERT INTO x_meeting (id, title, start_time, end_time, applied, invited, creator) \
+                     VALUES ($1, $2, NOW(), NOW(), false, false, $3) \
+                     ON CONFLICT (id) DO UPDATE SET creator = EXCLUDED.creator, title = EXCLUDED.title",
+                    &[&id, &title, &creator],
+                )
+                .await
+                .unwrap();
+            }
+        }
+        let owner = build_session("u-sec-read-owner");
+        let other = build_session("u-sec-read-other");
+        let path = |id: &str| axum::extract::Path(id.to_string());
+
+        // 正控制：本人读自己的会议必须 200 且真返回落库内容。
+        let body = crate::meeting_id(
+            Extension(pool.clone()),
+            Some(Extension(owner.clone())),
+            path("sec-read-a-meeting-own"),
+        )
+        .await
+        .expect("本人读自己的会议应成功");
+        let data = body.0.data.expect("成功响应必须带 data");
+        assert_eq!(
+            data.get("id").and_then(|v| v.as_str()),
+            Some("sec-read-a-meeting-own")
+        );
+        assert_eq!(
+            data.get("title").and_then(|v| v.as_str()),
+            Some("own-title"),
+            "返回的必须是本人落库的那一行"
+        );
+
+        // 双向：A→B 与 B→A 都必须 403。
+        for (sess, id) in [
+            (&owner, "sec-read-a-meeting-other"),
+            (&other, "sec-read-a-meeting-own"),
+        ] {
+            let res = crate::meeting_id(
+                Extension(pool.clone()),
+                Some(Extension(sess.clone())),
+                path(id),
+            )
+            .await;
+            assert!(
+                matches!(res, Err(AppError::Forbidden)),
+                "越权读 {id} 必须 403"
+            );
+        }
+
+        // 无会话：401。
+        let res = crate::meeting_id(
+            Extension(pool.clone()),
+            None,
+            path("sec-read-a-meeting-own"),
+        )
+        .await;
+        assert!(matches!(res, Err(AppError::Unauthorized)));
+    }
+
+    /// 分片 A 读越权（IDOR）回归：`u2_attachment_get` 原无会话、无归属过滤。
+    /// 归属口径与下载门保持一致：上传者 `person`、所属会议 `creator`、管理员。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn attachment_read_idor_is_blocked_both_ways() {
+        let pool = shared::testing::test_pool();
+        {
+            let c = pool.get().await.unwrap();
+            for (id, person, meeting_id) in [
+                (
+                    "sec-read-a-att-own",
+                    "u-sec-read-owner",
+                    "sec-read-a-meeting-own",
+                ),
+                (
+                    "sec-read-a-att-other",
+                    "u-sec-read-other",
+                    "sec-read-a-meeting-other",
+                ),
+                // 他人上传、但挂在本人会议上：会议 creator 仍应可读（保留原下载门口径）。
+                (
+                    "sec-read-a-att-by-other-on-own-meeting",
+                    "u-sec-read-other",
+                    "sec-read-a-meeting-own",
+                ),
+            ] {
+                c.execute(
+                    "INSERT INTO x_meeting_attachment (id, meeting_id, person, file_name, mime_type) \
+                     VALUES ($1, $2, $3, 'f.txt', 'text/plain') \
+                     ON CONFLICT (id) DO UPDATE SET person = EXCLUDED.person, meeting_id = EXCLUDED.meeting_id",
+                    &[&id, &meeting_id, &person],
+                )
+                .await
+                .unwrap();
+            }
+        }
+        let owner = build_session("u-sec-read-owner");
+        let other = build_session("u-sec-read-other");
+        let path = |id: &str| axum::extract::Path(id.to_string());
+
+        // 正控制：上传者本人读自己的附件必须 200 且真返回该行。
+        let body = crate::u2_attachment_get(
+            Extension(pool.clone()),
+            Some(Extension(owner.clone())),
+            path("sec-read-a-att-own"),
+        )
+        .await
+        .expect("本人读自己的附件应成功");
+        let data = body.0.data.expect("成功响应必须带 data");
+        assert_eq!(data.get("id").and_then(|v| v.as_str()), Some("sec-read-a-att-own"));
+
+        // 正控制：会议 creator 读他人上传到本人会议的附件必须 200（保留原行为）。
+        let body = crate::u2_attachment_get(
+            Extension(pool.clone()),
+            Some(Extension(owner.clone())),
+            path("sec-read-a-att-by-other-on-own-meeting"),
+        )
+        .await
+        .expect("会议 creator 读本人会议附件应成功");
+        let data = body.0.data.expect("成功响应必须带 data");
+        assert_eq!(
+            data.get("id").and_then(|v| v.as_str()),
+            Some("sec-read-a-att-by-other-on-own-meeting")
+        );
+
+        // 双向：A→B 与 B→A 都必须 403。
+        for (sess, id) in [
+            (&owner, "sec-read-a-att-other"),
+            (&other, "sec-read-a-att-own"),
+        ] {
+            let res = crate::u2_attachment_get(
+                Extension(pool.clone()),
+                Some(Extension(sess.clone())),
+                path(id),
+            )
+            .await;
+            assert!(
+                matches!(res, Err(AppError::Forbidden)),
+                "越权读附件 {id} 必须 403"
+            );
+        }
+    }
 }
