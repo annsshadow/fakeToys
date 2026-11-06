@@ -795,4 +795,212 @@ mod r6_gate_tests {
         let res = crate::meeting_list_applied_wait(Extension(pool.clone()), None).await;
         assert!(matches!(res, Err(AppError::Unauthorized)));
     }
+
+    /// 分片 A 列表读越权：meeting `invited/*` 族原无会话、无归属过滤，任何登录用户读到全员邀请。
+    /// 裁决：两源并集 `creator OR x_meeting_invite 邀请边 OR invited 标记 OR 管理员`，
+    /// 并集只漏放不误挡，先保可用性；两源命中计数走 DEBUG 日志，待真实数据收敛到唯一权威源。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn invited_list_is_scoped_and_session_required() {
+        let pool = shared::testing::test_pool();
+        let statuses = ["wait", "processing", "completed", "rejected"];
+        {
+            let c = pool.get().await.unwrap();
+            for status in statuses {
+                // 两个会议：一个由 creator-a 发起（无邀请边），一个由 creator-b 发起（creator-a 未被邀请）。
+                for (creator, suffix) in [
+                    ("u-sec-read-inv-creator-a", "creator-a"),
+                    ("u-sec-read-inv-creator-b", "creator-b"),
+                ] {
+                    let id = format!("sec-read-a-invited-{suffix}-{status}");
+                    c.execute(
+                        "INSERT INTO x_meeting (id, title, start_time, end_time, applied, invited, status, creator) \
+                         VALUES ($1, $2, NOW(), NOW(), false, false, $3, $4) \
+                         ON CONFLICT (id) DO UPDATE SET creator = EXCLUDED.creator, \
+                             status = EXCLUDED.status, invited = false, applied = false",
+                        &[&id, &format!("title-{suffix}-{status}"), &status, &creator],
+                    )
+                    .await
+                    .unwrap();
+                }
+                // creator-b 的会议有一条指向 invitee 的邀请边。
+                let edge_meeting = format!("sec-read-a-invited-creator-b-{status}");
+                c.execute(
+                    "DELETE FROM x_meeting_invite WHERE meeting_id = $1",
+                    &[&edge_meeting],
+                )
+                .await
+                .unwrap();
+                c.execute(
+                    "INSERT INTO x_meeting_invite (id, meeting_id, invitee, status, create_time) \
+                     VALUES ($1, $2, $3, 'wait', NOW())",
+                    &[
+                        &format!("sec-read-a-invite-edge-{status}"),
+                        &edge_meeting,
+                        &"u-sec-read-inv-invitee",
+                    ],
+                )
+                .await
+                .unwrap();
+            }
+            // 只有 invited 标记、无 creator/邀请边归属的会议（并集里的第三源）。
+            c.execute(
+                "INSERT INTO x_meeting (id, title, start_time, end_time, applied, invited, status, creator) \
+                 VALUES ('sec-read-a-invited-flag-only', 'title-flag-only', NOW(), NOW(), false, true, 'wait', 'u-sec-read-inv-someone-else') \
+                 ON CONFLICT (id) DO UPDATE SET creator = EXCLUDED.creator, status = 'wait', \
+                     invited = true, applied = false",
+                &[],
+            )
+            .await
+            .unwrap();
+        }
+        let creator_a = build_session("u-sec-read-inv-creator-a");
+        let invitee = build_session("u-sec-read-inv-invitee");
+        let stranger = build_session("u-sec-read-inv-stranger");
+
+        let ids =
+            |body: &axum::Json<shared::response::ActionResult<serde_json::Value>>| -> Vec<String> {
+                body.0
+                    .data
+                    .as_ref()
+                    .and_then(|d| d.as_array())
+                    .map(|rows| {
+                        rows.iter()
+                            .filter_map(|r| {
+                                r.get("id").and_then(|v| v.as_str()).map(str::to_string)
+                            })
+                            .collect()
+                    })
+                    .unwrap_or_default()
+            };
+
+        let list_by_status = |status: &'static str,
+                              sess: shared::session::Session,
+                              pool: deadpool_postgres::Pool| async move {
+            match status {
+                "wait" => {
+                    crate::meeting_list_invited_wait(Extension(pool), Some(Extension(sess))).await
+                }
+                "processing" => {
+                    crate::meeting_list_invited_processing(Extension(pool), Some(Extension(sess)))
+                        .await
+                }
+                "completed" => {
+                    crate::meeting_list_invited_completed(Extension(pool), Some(Extension(sess)))
+                        .await
+                }
+                _ => {
+                    crate::meeting_list_invited_rejected(Extension(pool), Some(Extension(sess)))
+                        .await
+                }
+            }
+        };
+
+        for status in statuses {
+            // 正控制 + 双向拒绝：发起人看自己的，看不到他人的邀请边会议。
+            let body = list_by_status(status, creator_a.clone(), pool.clone())
+                .await
+                .expect("发起人读取应成功");
+            let got = ids(&body);
+            assert!(
+                got.contains(&format!("sec-read-a-invited-creator-a-{status}")),
+                "必须返回本人发起的会议（{status}）"
+            );
+            assert!(
+                !got.contains(&format!("sec-read-a-invited-creator-b-{status}")),
+                "不得返回他人发起且未邀请本人的会议（{status}）"
+            );
+
+            // 受邀人只见邀请边命中的那条，不见另一发起人的会议（反向）。
+            let body = list_by_status(status, invitee.clone(), pool.clone())
+                .await
+                .expect("受邀人读取应成功");
+            let got = ids(&body);
+            assert!(
+                got.contains(&format!("sec-read-a-invited-creator-b-{status}")),
+                "受邀人必须看到邀请边命中的会议（{status}）"
+            );
+            assert!(
+                !got.contains(&format!("sec-read-a-invited-creator-a-{status}")),
+                "受邀人不得看到未邀请本人的会议（{status}）"
+            );
+
+            // 无关者：两条归属会议都不可见。
+            let body = list_by_status(status, stranger.clone(), pool.clone())
+                .await
+                .expect("无关者读取应成功");
+            let got = ids(&body);
+            assert!(
+                !got.contains(&format!("sec-read-a-invited-creator-a-{status}"))
+                    && !got.contains(&format!("sec-read-a-invited-creator-b-{status}")),
+                "无关者不得看到任何归属会议（{status}）"
+            );
+        }
+
+        // 分页列表同样按并集收口；invited 标记那条对任意会话可见（记录的公开读面）。
+        for (sess, own, theirs) in [
+            (
+                &creator_a,
+                "sec-read-a-invited-creator-a-wait",
+                "sec-read-a-invited-creator-b-wait",
+            ),
+            (
+                &invitee,
+                "sec-read-a-invited-creator-b-wait",
+                "sec-read-a-invited-creator-a-wait",
+            ),
+        ] {
+            let body = crate::meeting_list_invite_page_size_size_p3(
+                Extension(pool.clone()),
+                Some(Extension(sess.clone())),
+                axum::extract::Path((1i64, 10i64, "-".to_string())),
+            )
+            .await
+            .expect("分页列表读取应成功");
+            let got = ids(&body);
+            assert!(got.contains(&own.to_string()), "分页列表必须返回 {own}");
+            assert!(
+                !got.contains(&theirs.to_string()),
+                "分页列表不得返回 {theirs}"
+            );
+        }
+        let body = crate::meeting_list_invite_page_size_size(
+            Extension(pool.clone()),
+            Some(Extension(stranger.clone())),
+            axum::extract::Path((1i64, 10i64)),
+        )
+        .await
+        .expect("分页列表读取应成功");
+        assert!(
+            ids(&body).contains(&"sec-read-a-invited-flag-only".to_string()),
+            "invited 标记来源命中的会议对任意会话可见（并集口径）"
+        );
+
+        // 无会话：五个入口一律 401。
+        assert!(matches!(
+            crate::meeting_list_invited_wait(Extension(pool.clone()), None).await,
+            Err(AppError::Unauthorized)
+        ));
+        assert!(matches!(
+            crate::meeting_list_invited_completed(Extension(pool.clone()), None).await,
+            Err(AppError::Unauthorized)
+        ));
+        assert!(matches!(
+            crate::meeting_list_invited_processing(Extension(pool.clone()), None).await,
+            Err(AppError::Unauthorized)
+        ));
+        assert!(matches!(
+            crate::meeting_list_invited_rejected(Extension(pool.clone()), None).await,
+            Err(AppError::Unauthorized)
+        ));
+        assert!(matches!(
+            crate::meeting_list_invite_page_size_size(
+                Extension(pool.clone()),
+                None,
+                axum::extract::Path((1i64, 10i64)),
+            )
+            .await,
+            Err(AppError::Unauthorized)
+        ));
+    }
 }

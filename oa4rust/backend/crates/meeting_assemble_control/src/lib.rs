@@ -817,6 +817,56 @@ const APPLIED_CREATOR_READ_PREDICATE: &str = "creator = {actor} OR EXISTS(\
      WHERE (p.unique_id = {actor} OR p.id = {actor}) \
        AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false)";
 
+/// 「我受邀的会议」列表归属谓词模板（`{actor}` 替换为 SQL 占位符）。
+/// 两源并集：`creator`（我发起的）、`x_meeting_invite` 邀请边（我作为受邀人）、
+/// `invited` 标记（历史全局标记），外加管理员兜底。
+/// 零重叠样本下单一来源都可能挡掉受邀人，并集只漏放不误挡；真实数据出来后再收敛。
+const INVITED_READ_PREDICATE: &str = "creator = {actor} \
+    OR EXISTS(SELECT 1 FROM x_meeting_invite i \
+       WHERE i.meeting_id = x_meeting.id AND i.invitee = {actor} \
+         AND i.deleted_at IS NULL) \
+    OR invited = true \
+    OR EXISTS(SELECT 1 FROM auth_person p \
+        JOIN auth_person_role pr ON pr.person_id = p.id \
+        JOIN auth_role r ON r.id = pr.role_id \
+       WHERE (p.unique_id = {actor} OR p.id = {actor}) \
+         AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false)";
+
+/// `invited/*` 两源命中计数（DEBUG 级；关闭 DEBUG 时不产生额外查询）。
+/// 分别统计 `creator` / `x_meeting_invite` 邀请边 / `invited` 标记各命中多少行，
+/// 用于真实数据出来后判定哪一源是权威来源。
+async fn log_invited_source_counts(
+    client: &deadpool_postgres::Client,
+    actor: &str,
+    status: Option<&str>,
+) {
+    if !tracing::enabled!(tracing::Level::DEBUG) {
+        return;
+    }
+    let status_param: Option<&str> = status;
+    let row = client
+        .query_one(
+            "SELECT count(*) FILTER (WHERE creator = $1) AS creator_hits, \
+                    count(*) FILTER (WHERE EXISTS(SELECT 1 FROM x_meeting_invite i \
+                       WHERE i.meeting_id = x_meeting.id AND i.invitee = $1 \
+                         AND i.deleted_at IS NULL)) AS invite_edge_hits, \
+                    count(*) FILTER (WHERE invited = true) AS invited_flag_hits \
+               FROM x_meeting WHERE ($2::text IS NULL OR status = $2)",
+            &[&actor, &status_param],
+        )
+        .await;
+    if let Ok(row) = row {
+        tracing::debug!(
+            actor,
+            status = status.unwrap_or("(all)"),
+            creator = row.get::<_, i64>("creator_hits"),
+            invite_edge = row.get::<_, i64>("invite_edge_hits"),
+            invited_flag = row.get::<_, i64>("invited_flag_hits"),
+            "invited 列表来源命中计数"
+        );
+    }
+}
+
 #[allow(non_snake_case)]
 pub async fn meeting_list_applied_completed(
     pool: Extension<Pool>,
@@ -1302,17 +1352,28 @@ pub async fn meeting_list_forward_monthcount_monthCount_all(
 #[allow(non_snake_case)]
 async fn meeting_list_invite_page_size_size_core(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     page: i64,
     size: i64,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
     let (limit, offset) = shared::response::page_window(page, size)?;
 
+    let actor = session.person_unique.clone();
+    log_invited_source_counts(&client, &actor, None).await;
+
     let rows = client
         .query(
-            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE invited = true ORDER BY create_time DESC LIMIT $1 OFFSET $2",
-            &[&limit, &offset],
+            &format!(
+                "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, \
+                 to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, \
+                 to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time \
+                 FROM x_meeting WHERE ({}) ORDER BY create_time DESC LIMIT $1 OFFSET $2",
+                INVITED_READ_PREDICATE.replace("{actor}", "$3")
+            ),
+            &[&limit, &offset, &actor],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -1358,29 +1419,41 @@ async fn meeting_list_invite_page_size_size_core(
 #[allow(non_snake_case)]
 pub async fn meeting_list_invite_page_size_size(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    meeting_list_invite_page_size_size_core(pool, page, size).await
+    meeting_list_invite_page_size_size_core(pool, session, page, size).await
 }
 
 #[allow(non_snake_case)]
 pub async fn meeting_list_invite_page_size_size_p3(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((page, size, _s2)): axum::extract::Path<(i64, i64, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    meeting_list_invite_page_size_size_core(pool, page, size).await
+    meeting_list_invite_page_size_size_core(pool, session, page, size).await
 }
 
 #[allow(non_snake_case)]
 pub async fn meeting_list_invited_completed(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
+
+    log_invited_source_counts(&client, &session.person_unique, Some("completed")).await;
 
     let rows = client
         .query(
-            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE status = 'completed' AND invited = true ORDER BY create_time DESC",
-            &[],
+            &format!(
+                "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, \
+                 to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, \
+                 to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time \
+                 FROM x_meeting WHERE status = 'completed' AND ({}) ORDER BY create_time DESC",
+                INVITED_READ_PREDICATE.replace("{actor}", "$1")
+            ),
+            &[&session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -1426,13 +1499,23 @@ pub async fn meeting_list_invited_completed(
 #[allow(non_snake_case)]
 pub async fn meeting_list_invited_processing(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
+
+    log_invited_source_counts(&client, &session.person_unique, Some("processing")).await;
 
     let rows = client
         .query(
-            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE status = 'processing' AND invited = true ORDER BY create_time DESC",
-            &[],
+            &format!(
+                "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, \
+                 to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, \
+                 to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time \
+                 FROM x_meeting WHERE status = 'processing' AND ({}) ORDER BY create_time DESC",
+                INVITED_READ_PREDICATE.replace("{actor}", "$1")
+            ),
+            &[&session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -1478,13 +1561,23 @@ pub async fn meeting_list_invited_processing(
 #[allow(non_snake_case)]
 pub async fn meeting_list_invited_rejected(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
+
+    log_invited_source_counts(&client, &session.person_unique, Some("rejected")).await;
 
     let rows = client
         .query(
-            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE status = 'rejected' AND invited = true ORDER BY create_time DESC",
-            &[],
+            &format!(
+                "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, \
+                 to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, \
+                 to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time \
+                 FROM x_meeting WHERE status = 'rejected' AND ({}) ORDER BY create_time DESC",
+                INVITED_READ_PREDICATE.replace("{actor}", "$1")
+            ),
+            &[&session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -1530,13 +1623,23 @@ pub async fn meeting_list_invited_rejected(
 #[allow(non_snake_case)]
 pub async fn meeting_list_invited_wait(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
+
+    log_invited_source_counts(&client, &session.person_unique, Some("wait")).await;
 
     let rows = client
         .query(
-            "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting WHERE status = 'wait' AND invited = true ORDER BY create_time DESC",
-            &[],
+            &format!(
+                "SELECT id, title, content, to_char(start_time, 'YYYY-MM-DD HH24:MI:SS') AS start_time, \
+                 to_char(end_time, 'YYYY-MM-DD HH24:MI:SS') AS end_time, creator, \
+                 to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time \
+                 FROM x_meeting WHERE status = 'wait' AND ({}) ORDER BY create_time DESC",
+                INVITED_READ_PREDICATE.replace("{actor}", "$1")
+            ),
+            &[&session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;

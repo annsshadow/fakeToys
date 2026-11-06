@@ -26,6 +26,7 @@
 | 3（写侧） | `mind_assemble_control` | `save_folder` | `x_mind.creator` 落**会话身份**（原硬编码 `"system"`） |
 | 4 | `mind_assemble_control` | `u2::mind_view` / `u2::mind_get` | `creator=会话` OR `shared=true` OR `x_mind_share` 接收人 OR 管理员（SQL WHERE） |
 | 4 | `mind_assemble_control` | `u2::mind_version_list` / `u2::mind_version_get` | 同上，按所属 `x_mind` 行判定（版本表无 shared/共享边） |
+| 5 | `meeting_assemble_control` | `meeting_list_invited_wait` / `_processing` / `_completed` / `_rejected` / `meeting_list_invite_page_size_size(_p3)` | 两源并集：`creator=会话` OR `EXISTS(x_meeting_invite.invitee=会话)` OR `invited=true` OR 管理员（SQL WHERE） |
 
 ## 一、NO-OWNER-COL（缺归属列，不改代码）
 
@@ -121,27 +122,20 @@ FROM x_mind WHERE deleted_at IS NULL;
 
 仍未修（阻塞点不同）：`list_folders` / `get_folder` / `mind_filter_list` 见上一节（历史 `creator='system'` 行占比未知）。
 
-## 三、关联边（invitee / 参与人）——只收紧 `creator` 一侧
+## 三、关联边（invitee / 参与人）——第五批已按「两源并集」修复
 
 实证（`oa4rust_test` 的 `information_schema.columns`）：
 
 - 关联表 `x_meeting_invite` 存在，列为 `id, meeting_id, invitee, status, create_time, deleted_at`，PK `id`，索引 `meeting_id`。
-- 但下列 handler 只查 `x_meeting`，**没有 join `x_meeting_invite`**，用的是会议自身的 `invited` 布尔位：
+- 修复前下列 handler 只查 `x_meeting`，**没有 join `x_meeting_invite`**，用的是会议自身的 `invited` 布尔位：
 
-| handler | 位置 | 现状 SQL |
+| handler | 位置（第五批后） | 修复前 SQL |
 |---|---|---|
-| `meeting_list_invite_page_size_size_core` | `meeting_assemble_control/src/lib.rs:1259` | `FROM x_meeting ... invited = true` |
-| `meeting_list_invited_completed` | `:1331` | `FROM x_meeting WHERE status='completed' AND invited=true` |
-| `meeting_list_invited_processing` | `:1383` | 同上（`processing`） |
-| `meeting_list_invited_rejected` | `:1435` | 同上（`rejected`） |
-| `meeting_list_invited_wait` | `:1487` | 同上（`wait`） |
-
-结论：这批不是 `creator` 语义，而是「我是被邀请人」的**关联边**。按统一口径第 3 条不做 `creator` 收紧；正确的收敛谓词应是：
-
-```sql
-AND EXISTS (SELECT 1 FROM x_meeting_invite i
-             WHERE i.meeting_id = x_meeting.id AND i.invitee = $会话)
-```
+| `meeting_list_invite_page_size_size_core` | `meeting_assemble_control/src/lib.rs:1353` | `FROM x_meeting ... invited = true` |
+| `meeting_list_invited_completed` | `:1437` | `FROM x_meeting WHERE status='completed' AND invited=true` |
+| `meeting_list_invited_processing` | `:1499` | 同上（`processing`） |
+| `meeting_list_invited_rejected` | `:1561` | 同上（`rejected`） |
+| `meeting_list_invited_wait` | `:1623` | 同上（`wait`） |
 
 实测行数与覆盖（本地）：
 
@@ -150,22 +144,69 @@ AND EXISTS (SELECT 1 FROM x_meeting_invite i
 | `oa4rust`（本地开发库） | 0 | 0 | 0 | 0（`x_meeting` 仅 8 行测试数据） |
 | `oa_audit_20261105`（审计快照） | 1 | 1 | 1 | 0 |
 
-覆盖结论：**关联表与 `invited` 布尔位没有任何重叠样本**（有邀请边的库里 `invited=true` 为 0；有 `invited` 标记的库不存在——本地两库均为 0），因此无法从数据判断谁是权威来源。生产库请先跑：
+覆盖结论：**关联表与 `invited` 布尔位没有任何重叠样本**，单看数据无法判定谁是权威来源。
+
+### 裁决（用户 2026-11-06）：取两源并集，先保可用性
 
 ```sql
--- 一致性：invited=true 但无任何 invitee 边的会议
+AND (creator = $会话
+     OR EXISTS (SELECT 1 FROM x_meeting_invite i
+                 WHERE i.meeting_id = x_meeting.id AND i.invitee = $会话
+                   AND i.deleted_at IS NULL)
+     OR invited = true
+     OR EXISTS(...管理员...))
+```
+
+理由：零重叠样本下任一单源都可能挡掉受邀人；并集只漏放、不误挡。等真实数据出来再收敛到唯一权威源。
+
+实现：常量 `INVITED_READ_PREDICATE`（`src/lib.rs:824`，模板 `{actor}`→`$1`/`$3`），5 个入口全部加 `require_session`（无会话 401）并把谓词写进 SQL `WHERE`。
+
+用例 `invited_list_is_scoped_and_session_required`（`src/security_gate_tests.rs:804`）覆盖：
+- 正控制：发起人 200 且返回本人发起行；受邀人 200 且返回邀请边命中行；
+- 双向拒绝：发起人看不到他人发起且未邀请本人的会议；受邀人看不到未邀请本人的会议；
+- 无关者两条归属会议均不可见；`invited=true` 行对任意会话可见（并集口径，记录在案）；
+- 五个入口无会话一律 401。
+
+破坏实验红原文（两次均已还原）：
+
+```
+# 谓词恒真（{actor} = {actor}）
+不得返回他人发起且未邀请本人的会议（wait）
+
+# 摘掉邀请边分支（只留 creator / invited / admin）
+受邀人必须看到邀请边命中的会议（wait）
+```
+
+### 两源命中计数
+
+运行时：`log_invited_source_counts`（`src/lib.rs:838`）在 DEBUG 级日志输出 `creator` / `invite_edge` / `invited_flag` 三个命中数（关闭 DEBUG 时不产生额外查询）。
+
+一次性统计（生产库直接跑）：
+
+```sql
+SELECT count(*) FILTER (WHERE creator = $会话)                    AS creator_hits,
+       count(*) FILTER (WHERE EXISTS(SELECT 1 FROM x_meeting_invite i
+                                      WHERE i.meeting_id = x_meeting.id AND i.invitee = $会话
+                                        AND i.deleted_at IS NULL)) AS invite_edge_hits,
+       count(*) FILTER (WHERE invited = true)                        AS invited_flag_hits
+FROM x_meeting
+WHERE ($状态::text IS NULL OR status = $状态);
+```
+
+一致性 SQL（判定收敛方向）：
+
+```sql
+-- invited=true 但无任何 invitee 边的会议
 SELECT count(*) FROM x_meeting m
  WHERE m.invited = true
    AND NOT EXISTS (SELECT 1 FROM x_meeting_invite i WHERE i.meeting_id = m.id);
--- 反向：有 invitee 边但 invited 非 true 的会议
+-- 有 invitee 边但 invited 非 true 的会议
 SELECT count(*) FROM x_meeting m
  WHERE m.invited IS NOT TRUE
    AND EXISTS (SELECT 1 FROM x_meeting_invite i WHERE i.meeting_id = m.id);
 ```
 
-需裁决：`x_meeting_invite` 与 `x_meeting.invited/status` 谁是权威来源（两者可能不一致）。在裁决前仅登记，不加谓词。
-
-### 主列表 / 日程列表（无归属过滤，语义未定）
+### 主列表 / 日程列表（已裁决：全局排期总览，有意公开）
 
 | handler | 位置 | 现状 |
 |---|---|---|
@@ -174,13 +215,10 @@ SELECT count(*) FROM x_meeting m
 | `meeting::list_meetings` | `meeting/src/lib.rs:391` | 无会话、无归属过滤 |
 | `meeting::list_schedule` | `meeting/src/lib.rs:571` | 同上 |
 
-裁决点：这些是「全公司会议总览 / 日程视图」还是「我的会议」。当前无会话参数，加谓词前先定语义。两种口径的后果：
+裁决：`list_meetings` / `list_schedule` = **全局会议室排期总览**，语义是「这间房什么时段被占了」，**保持现状、不加 creator 过滤**。
+定性为「有意公开（需登录）」的读面，不当作泄漏：收紧成「我的」会让普通员工看不到自己房间的排期，等于废掉功能。
+管理视图（`*_manage*`）如需更强隔离，可另立条目改为「需管理员角色」，本分片不动。
 
-- **按「我的会议」收紧（`creator = 会话 OR 管理员`）**：符合统一口径、IDOR 面直接消失；但会议室占用总览、跨部门日程、领导看全员日程等前端场景会**当场看不到数据**（这些列表没有其他入口）。上线前必须确认前端哪些页面用这些端点。
-- **按「全公司总览」保留（公开登录读面）**：可用性不变；但需要明确写进安全基线为「有意公开」，并在门禁里登记豁免，否则每轮审计都会重新报 LEAK。若要求更强隔离，可改为「需管理员角色」（`EXISTS(admin)`），代价是非管理员看不到全员日程。
-- **折中（推荐待裁决）**：主列表收紧到 `creator OR 管理员 OR EXISTS(邀请边)`，即「我建的 + 我被邀请的」；仍会改变「全员总览」语义，需产品确认。
-
-在裁决前保持现状（只登记）。
 
 ## 四、公开内容读面（不做归属过滤）
 
