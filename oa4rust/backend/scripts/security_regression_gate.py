@@ -629,6 +629,36 @@ B7_EXPECTS = [
     "jpush_core_entity|device_get|GET",
 ]
 
+# 写 IDOR 第 W-b1 批：general_assemble_control 五个读端点的 owner_gate。
+# 直接摘掉 `owner_gate(...).await?;` 调用点（而非改谓词 SQL）：
+# 每处调用点带表名，可逐条精确替换；摘掉后端点会回显受害者行 → 逐条 LEAK。
+GENERAL_ASSEMBLE = BACKEND / "crates/general_assemble_control/src/lib.rs"
+W1_GATE_RE = [
+    (
+        table,
+        re.compile(
+            r'\n\s*owner_gate\(\s*&pool,\s*&client,\s*&sess,\s*"' + table
+            + r'",\s*"creator",\s*&id,\s*\)\s*\.await\?;',
+            re.S,
+        ),
+    )
+    for table in (
+        "x_general_assemble_area",
+        "x_general_attend_scope",
+        "x_general_assemble_invoice",
+        "x_general_assemble_qrcode",
+        "x_general_assemble_security_clearance",
+    )
+]
+W1_GATE_PATCH = "\n    let _ = (&sess, &id);"
+W1_EXPECTS = [
+    "general_assemble_control|area_get|GET",
+    "general_assemble_control|attendscope_get|GET",
+    "general_assemble_control|invoice_get_id|GET",
+    "general_assemble_control|qrcode_get|GET",
+    "general_assemble_control|securityclearance_get|GET",
+]
+
 
 # 分片 A / A-b1：cms 六条读端点的读门（文档 ACL / 单主体列 / 评论跟随文档 ACL）。
 # 恒真式必须保留 `$2` 绑定：裸 TRUE 会让 deadpool 端点因 bind 数不匹配返回 500，
@@ -806,11 +836,21 @@ def sabotage(kind: str) -> int:
             A1_EXPECTS,
             require_leak=True,
         )
+    elif kind == "write-idor-w1":
+        return sabotage_many(
+            "摘掉 W-b1 五个读端点的 owner_gate（5 条应逐条 LEAK）",
+            [
+                (GENERAL_ASSEMBLE, pattern, W1_GATE_PATCH, table)
+                for table, pattern in W1_GATE_RE
+            ],
+            W1_EXPECTS,
+            require_leak=True,
+        )
     else:
         raise SystemExit(
             f"未知破坏实验: {kind}（可选 ownership / correct / general / organization / "
             "program_center / hotpic_mind / read_b / read-a-b1 / "
-            "write-idor-b5 / write-idor-b6 / write-idor-b7）"
+            "write-idor-b5 / write-idor-b6 / write-idor-b7 / write-idor-w1）"
         )
 
     print(f"== 破坏实验：{title}")
@@ -856,7 +896,7 @@ def main() -> int:
         if len(sys.argv) < 3:
             print("用法: security_regression_gate.py sabotage "
                   "<ownership|correct|general|organization|program_center|hotpic_mind|read_b|"
-                  "read-a-b1|write-idor-b5|write-idor-b6|write-idor-b7|"
+                  "read-a-b1|write-idor-b5|write-idor-b6|write-idor-b7|write-idor-w1|"
                   "rust-drift-to-leak|rust-swallow-write|"
                   "go-limit0|go-idor-rev|go-empty-list|go-swallow-write|"
                   "go-dead-write|go-page2|go-drift-to-leak>")
