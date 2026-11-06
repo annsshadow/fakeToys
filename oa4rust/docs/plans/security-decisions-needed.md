@@ -173,22 +173,70 @@
 
 ---
 
-## 6. 建议的会议议程（约 45 分钟）
+## 6. admin_policy 点名（deny 15 / unknown 19）
 
-1. **先答「三问」模板**（5 分钟）：读/写/空归属，一次定全局默认。
-2. **E13 + E14–E17**（10 分钟）：`published` 是否公开、`/my/` 是否允许 admin 代查、无会话读是否允许匿名。
-3. **NO-OWNER-COL 第三档 14 条**（15 分钟）：按「应用命名空间 / 全局配置 / 组织范围」三选一，逐条勾。
-4. **NO-OWNER-COL 第二档 5 条**（5 分钟）：附件归属是「上传人」还是「父文档」。
-5. **cms 3 + 软门 2**（5 分钟）：`published` 口径；客户端是否只认 HTTP 状态码。
-6. **E18–E24 七批**（5 分钟）：每批只回答「admin 是否是合法读者」；其余按统一 `owner OR admin`。
+> 来源：`oa4rust/backend/tests/security_regression_cases.tsv` 的 `admin_policy` 列（idor 共 145 条：allow 111 / deny 15 / unknown 19）。「当前状态」对 `security_regression_baseline.txt`（156 条）取差集：不在基线即 PASS。
+>
+> 本节是文首「默认裁决」的配套：默认说「读 = 本人 OR 管理员」，与 `deny` 的原始定义（admin 也不该看）**直接冲突**。冲突不取平均，二选一，见 6.1。
 
-## 7. 裁决记录（会议当场填）
+### 6.1 读侧 deny：8 条（默认裁决要求改标 `allow`，除非业务点名例外）
+
+| 用例 | 端点 | 当前状态 |
+|---|---|---|
+| `calendar_core_entity\|calendar_get\|GET` | `/api/calendar/core/entity/calendar/{id}` | UNVERIFIED |
+| `file_assemble_control\|get_file\|GET` | `/api/file/assemble/control/file/{id}` | LEAK |
+| `file_assemble_control\|recycle_id\|GET` | `/api/recycle/{id}` | UNVERIFIED |
+| `general_core_entity\|file_download\|GET` | `/api/general/file/download/{id}` | LEAK |
+| `general_core_entity\|file_get\|GET` | `/api/general/file/{id}` | LEAK |
+| `jpush\|device_get\|GET` | `/api/jpush/device/{id}` | LEAK |
+| `jpush_core_entity\|device_get\|GET` | `/api/jpush/core/entity/device/{id}` | LEAK |
+| `program_center\|collect_code_mobile_mobile\|GET` | `/api/program_center/collect/code/mobile/{id}` | LEAK |
+
+裁决二选一：① 按默认，admin 是合法读者 → 这 8 条 `deny` 改 `allow`；② 保留 `deny` → 必须在例外清单里写明「即使 admin 也不得读」，并据此实现。
+
+### 6.2 写侧 deny：7 条（6 条已修但实现为「本人或 admin」，与 deny 矛盾）
+
+| 用例 | 当前状态 | 实现口径 |
+|---|---|---|
+| `file_core_entity\|folder_delete\|DELETE` | LEAK | 未修，仍可越权删他人文件夹；若 deny 成立，修时 admin 也要拒 |
+| `general_core_entity\|file_delete\|POST` | PASS | 已修，`owner OR admin` |
+| `general_core_entity\|file_update\|POST` | PASS | 已修，`owner OR admin` |
+| `mind_core_entity\|update_folder\|POST` | PASS | 已修，`creator OR admin`（`mind_core_entity/src/lib.rs:35`） |
+| `mind_core_entity\|update_mind\|POST` | PASS | 已修，同上 |
+| `program_center\|collect_delete\|DELETE` | PASS | 已修，`person_id OR admin`（`program_center/src/lib.rs:9335`） |
+| `program_center\|collect_save\|PUT` | PASS | 已修，同上 |
+
+默认裁决**没有覆盖写侧**。要回答的只有一句：**admin 能否代写他人数据？** 答「不能」则上表 6 条已修用例的 admin 分支要改成 403，`admin_policy` 才有意义；答「能」则这 6 条改标 `allow`。
+
+### 6.3 unknown：19 条（10 读 + 9 写，去重后 15 个端点）
+
+| 域 | 读（10 条，全部 LEAK） | 写（9 条） |
+|---|---|---|
+| attendance | `attendanceappealInfo`、`attendancedetail`、`attendancedetail/mobile`、`attendanceselfholiday`、`v2/appeal`、`v2/record` | `appeal` POST＝LEAK；`record/update`＝PASS |
+| general | `invoice/get`、`securityclearance`、`general_core invoice` | `invoice/delete`＝PASS、`invoice/update`＝PASS |
+| processplatform | `attachment` | `attachment/edit/text`＝UNVERIFIED |
+| `t1` 重复行（4） | — | `appeal` POST/PUT＝LEAK×2；`record/update`＝PASS；`invoice/update`＝PASS |
+
+读数：**13 LEAK + 1 UNVERIFIED + 5 PASS**。这 19 条是「还没想清楚的有多少」的显式台账；不裁决就继续留在基线，`unknown` 不阻断门禁。
+
+## 7. 建议的会议议程（约 45 分钟）
+
+> 文首「默认裁决」已采用，议程只需处理：默认裁决末表 17 条 + `6.1`（读侧 deny 是否改 allow）+ `6.2`（admin 能否代写）。
+
+1. **确认默认裁决**（5 分钟）：读=本人 OR 管理员、空归属仅管理员、cms `published` 全员、软门 403、5 条只补新增。
+2. **真·全局表归谁**（15 分钟）：`2.3` 的 14 条，按「应用命名空间 / 全局配置 / 组织范围」三选一，逐条勾。
+3. **关联边 + 写侧留痕**（5 分钟）：`2.1` #17 归端点实体还是平台 admin；#13、#31 代改是否留痕。
+4. **admin_policy 冲突**（10 分钟）：`6.1` 读侧 deny 8 条改不改 `allow`；`6.2` admin 能否代写他人数据。
+5. **`deny` 例外清单**（5 分钟）：非默认的「admin 也不得看/写」逐条点名，未点名的一律按 `allow`。
+6. **填裁决记录表**（5 分钟）。
+
+## 8. 裁决记录（会议当场填）
 
 | 编号 | 裁决 | 拍板人 | 日期 | 落地动作 |
 |---|---|---|---|---|
 |  |  |  |  |  |
 
-## 8. 证据来源与复跑
+## 9. 证据来源与复跑
 
 - 31 条静态扫描：`docs/audits/behavioral-audit-2026-11-05/evidence-round7.txt §B`（`NO-OWNER-COL count = 31`）。
 - 31 条的两种归属定义与后果：`docs/audits/behavioral-audit-2026-11-05/report-7.md §2`。
