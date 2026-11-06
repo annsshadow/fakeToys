@@ -1742,3 +1742,67 @@ fn test_importer_and_stat_save_specs_exclude_creator() {
         );
     }
 }
+
+// ── 批1：`u2_closures::table_create` 会话门 ──
+// 该 handler 未挂路由（线上 `POST /api/query/assemble/designer/table` 走
+// `create_table_definition` 的 admin 门），但作为 pub 写入口仍不得对匿名开放：
+// 无会话必须在任何 DB 访问之前 401，而不是落库或 503。
+#[tokio::test]
+async fn u2_table_create_requires_session_before_db() {
+    use shared::error::AppError;
+    let dead = build_test_pool();
+    let r = crate::u2_closures::table_create(
+        axum::Extension(dead),
+        None,
+        axum::Json(json!({"name": "no-session-table"})),
+    )
+    .await;
+    assert!(
+        matches!(r, Err(AppError::Unauthorized)),
+        "无会话建表必须 401（不得落到取自空连池的 503）"
+    );
+}
+
+/// 批2：`statement_create` 的 creator 必须落会话身份，而不是常量 `'system'`。
+/// 该端点收 admin 门；写侧固定常量会让读侧按 creator 收归属的谓词永远对不上。
+#[tokio::test]
+async fn b2_statement_create_persists_session_creator() {
+    let pool = shared::testing::test_pool();
+    let client = pool.get().await.expect("db");
+    seed_admin_role(&client).await;
+
+    let name = format!("b2-stmt-{}", uuid::Uuid::new_v4().simple());
+    let alias = format!("b2-alias-{}", uuid::Uuid::new_v4().simple());
+    let res = crate::u2_closures::statement_create(
+        axum::Extension(pool.clone()),
+        Some(axum::Extension(shared::testing::test_session(ADMIN_PERSON))),
+        axum::Json(json!({
+            "name": name,
+            "alias": alias,
+            "queryFlag": "b2-qf",
+            "entityClassName": "b2-entity",
+            "entityCategory": "b2-category",
+            "type": "select",
+            "data": "select 1"
+        })),
+    )
+    .await;
+    assert!(res.is_ok(), "admin 建语句必须成功");
+
+    let row = client
+        .query_opt(
+            "SELECT creator FROM x_query_statement WHERE name = $1",
+            &[&name],
+        )
+        .await
+        .expect("query statement");
+    let owner = row
+        .as_ref()
+        .and_then(|r| r.get::<_, Option<String>>("creator"))
+        .unwrap_or_default();
+    client
+        .execute("DELETE FROM x_query_statement WHERE name = $1", &[&name])
+        .await
+        .expect("cleanup statement");
+    assert_eq!(owner, ADMIN_PERSON, "statement creator 必须是会话身份");
+}

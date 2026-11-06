@@ -109,7 +109,7 @@
 | 内联副本 | `processplatform_core_express::work_terminate:34` | 与 P0-b helper 同根 | **已修**（本批 PR #188）：两处破坏实验均红 |
 | 假门 3 条 | cms：`is_admin` 只算返回布尔、不参与拦截 → 200 返回他人数据 | 门必须参与拦截（静态扫描「看起来有门」也要按行为验） | **已修**（本批）：`control` / `permission/read` 不可读改 403；`cipher` 的 `person` 改取会话（非 admin 传他人 → 403）。双向用例（A↔B 403、本人 200、published 只读）；门禁 6→8 PASS、基线 142→140；`sabotage correct` 仍红并点名 `gate-cms-readable` |
 | 写 IDOR 24 条 | 按 crate 分批，每批一次提交 | 归属写进 SQL `WHERE`（不是先查后判）+ 双向用例 + 破坏实验红 | **批次 1 已修**：`general_core_entity` 4 条（`file_update/delete`、`invoice_update/delete`）用 `CREATOR_OWNER_PREDICATE`（creator=本人 OR admin）写进 UPDATE/DELETE 的 WHERE；4 条门禁用例 LEAK→PASS（pass 8→12、基线 140→136）；`sabotage general` 红并点名 `general_core_entity|file_delete`。附带修创建冒名：`file_create`/`invoice_create` 的 `creator` 改取会话（忽略请求体）。**批次 2 已修**：`organization_core_entity` 4 条（`definition_update/delete`、`identity_update/delete`）复用同一 `CREATOR_OWNER_PREDICATE` 写进 UPDATE 的 `WHERE`（删除为软删），0 行时二次读只用于区分 403/404；4 条门禁用例 LEAK→PASS（pass 12→16、基线 136→132，leak=121 / unverified=11）；`sabotage organization` 红并点名 4 条。用例为双向 + admin 分支仍可写 + create 的 `creator` 取会话（`x_org_definition`/`x_org_identity` 的 `creator` 列此前未映射进实体，已补）。**批次 3 已修**：`program_center` 4 条——`collect_save/collect_delete`（归属列 `person_id`）、`module_remove_structure_id/module_write_flag`（归属列 `creator`，两条本是只读桩，按只读加谓词）。两条谓词都写进 SQL `WHERE`；非属主由「200 + `deleted:false`」改为 **403/404**（原口径无法与「不存在」区分，也不满足门禁 401/403 判据）。7 个用例：双向、本人 200 且真落库、admin 分支、无会话 401、create 归属取会话人（载荷冒用 `personId` 无效）。门禁 pass 16→20、基线 132→128（leak=121 / unverified 11→7）；`sabotage program_center` 4 条 NEW-FAIL。**批次 4 已完成（代码+用例）**：`hotpic` 2 条（`delete_by_id`、`user_hotpic_delete_by_ids`）用 `HOTPIC_OWNER_PREDICATE` —— **全局行**（`application`/`info_id` 两列皆空，见 `visible_scope`）**仅管理员可写**，专属行 `creator=本人 OR 管理员`，与 `create_hotpic`/`save_hotpic` 的 admin-only 口径一致（照搬 `creator=本人` 会锁死全局热点图维护入口）；`mind` 2 条（`update_mind`、`update_folder`）用 `CREATOR_OWNER_PREDICATE`（两表无 `deleted_at`）。谓词均写进 SQL `WHERE`，0 行时二次读只用于区分 403/404。门禁读数 pass 20→24（leak=117 / unverified=7）；**基线已在 192 条门禁落地后按实跑读数减**：rebase 到 `5fbc15326` 后跑门禁为「基线 160 / 非 PASS 156」，`STALE-BASELINE` 正好点名这 4 条，逐条删除后门禁通过（非 PASS 156 = leak 133 / unverified 23 / integrity 0）。`sabotage hotpic_mind` 在新门禁下复验成立（基线 156 → 非 PASS 160，4 条 NEW-FAIL，3 个文件已还原）。**剩余 7 条**（此前口头口径的 16 是粗估，按用例表逐条点算实为 11 起步、本批后剩 7：file folder 1、attendance appeal 1、cms 2+1、pp 2） |
-| 读 IDOR 117 条 | 拆 E18–E24 七批 | **先做「A 读 B / B 读 A」双向都 200 的**（谓词整体失效），再做单向 | 待做 |
+| 读 IDOR 117 条 | 拆 E18–E24 七批 | **先做「A 读 B / B 读 A」双向都 200 的**（谓词整体失效），再做单向 | **E18 批次 1–7 已修**（jpush 3、component、correlation、calendar 归分片 B）；**E19（批次 8）**：`portal_assemble_designer` 5 条详情读按 `creator` 收归属（`dict_id`/`file_id_download`/`get_design`/`scriptversion_id`/`templatepage_id`），基线 156→151。**登记不改 2 条**：同 crate `portal_id_icon`/`portal_id_permission` 读共享容器 `x_portal`（创建时 `creator` 恒写 `'system'`，无 `is_public`/`target='all'` 类共享列可判，且同表数据由 `portal_assemble_surface` 面向终端用户读取）——只加 `creator` 会挡掉被共享的非属主使用者，待定共享臂后再修 |
 | NO-OWNER-COL A 档 12 条 | 有归属列且生产路径确实写入 | 同写 IDOR 判据 | 待做 |
 | NO-OWNER-COL B 档 5 条 | 列存在但生产路径从不写入、恒 NULL（典型 `x_cms_fileinfo.upload_person`，五处 INSERT 均不带该列） | **先补写归属值再写谓词，或改为跟随父文档 ACL**（二选一，理由入台账）。判据必须造出「有归属值」行验证谓词真会过滤，否则谓词恒不命中也会假绿 | 待做 |
 | NO-OWNER-COL C 档 14 条 | 真·全局配置 / 无主体列 | **保守默认**：非管理员只读、写仅管理员（安全侧默认，业务可推翻） | 待做 |
@@ -175,3 +175,71 @@
 
 - E9 附件若需「会议参与人」判定，要先确认 `x_meeting` 参与人表结构，单独评估；
 - `query table_flag=$1`、file 列表归属过滤、org `next`（实为 offset）为**负证据**，不改。
+
+## 写侧归属列常量身份扫描（2026-11-06）
+
+背景：写侧把 `creator`/`owner` 一类归属列赋值为字符串字面量（本次命中值均为 `'system'`），
+读侧再加谓词也只是在错的归属上打补丁。全仓只读扫描后按「是否已产生功能后果」排序修复，
+每批独立分支 + PR。
+
+### 已确认缺陷（已修）
+
+| # | 位置 | 表 | 写入字面量 | 读侧后果 | 判定 / 处置 |
+|---|---|---|---|---|---|
+| W1 | `query_assemble_designer/src/u2_closures.rs::table_create` | `x_query_table` | `'system'` | 该 handler **未挂路由**；线上 `POST .../designer/table` 走 `create_table_definition`（admin 门） | **确认缺陷（写入口无身份）**；补 `require_session`（DB 前 401）+ `creator` 取会话；线上 admin 口径不放宽。批1 PR #218 |
+| W2 | `general_assemble_control/src/lib.rs::qrcode_width_width_height_height_text_text` | `x_general_assemble_qrcode` | `'system'` | `qrcode_get` / `qrcode_list` 目前无会话、无谓词 | **确认缺陷（潜在）**；写侧改会话，读侧仍公开，收口属独立批次。批2 PR #220 |
+| W3 | `query_assemble_designer/src/u2_closures.rs::statement_create` | `x_query_statement` | `'system'` | 删除侧按 `creator` + `require_owner`，端点 admin 门内无差异 | **确认缺陷（潜在）**；写侧改会话。批2 PR #220 |
+| W4 | `query_service/src/lib.rs::processing_execute` | `x_query_processing` | `'system'` | 无读端点（只写） | **确认缺陷（潜在）**；写侧改会话；顺带修 `params` 的 JSONB 错误绑定（原先把 `String` 绑进 JSONB，任何调用 500）。批2 PR #220 |
+| W5 | `ai_assemble_control/src/lib.rs::file_upload` | `x_ai_file` | `'system'` | 删除侧 `require_owner` 判 403 → 非管理员删不掉自己文件 | **确认缺陷（已出功能后果）**；先红后绿用例。批3 PR #221 |
+| W6 | `ai_assemble_control/src/lib.rs::file_copy_file` | `x_ai_file` | `'system'` | 同上，复制出的新行归属错误 | **确认缺陷（已出功能后果）**；批3 PR #221 |
+| W7 | `file_assemble_control/src/lib.rs::create_file_entity` | `x_file` | `'system'` | 删除侧按 `creator` 判 403 → 非管理员删不掉自己文件 | **确认缺陷（已出功能后果）**；先红后绿用例。批3 PR #221 |
+
+### 历史行可见性变化（不回填，走既有兜底）
+
+统一口径：历史行 `creator='system'` 保留原值，非管理员视为「无归属」，仅管理员可读/可删/可写。
+
+| 表 | 历史行对非管理员 | 新行对非管理员 | 说明 |
+|---|---|---|---|
+| `x_query_table` | 无影响 | 无影响 | handler 未挂路由，生产无该路径写入的行 |
+| `x_general_assemble_qrcode` | 无变化（读端点无谓词，仍公开可读） | 读侧加谓词后才可读；本批未改读侧 | 写侧归属已可区分 |
+| `x_query_statement` | 无变化（端点 admin 门） | 同左 | 只影响删除侧 owner 臂能否命中真实行 |
+| `x_query_processing` | 无读端点，无可见性 | 同左 | — |
+| `x_ai_file` | 仍仅管理员可删（与修复前一致） | 本人可删 | 读端点仍无会话/谓词，本批未改 |
+| `x_file` | 仍仅管理员可删（与修复前一致） | 本人可删 | 读侧按各端点现状，本批未改 |
+
+### 合理默认，不改
+
+以下字面量属于「历史兼容的合理默认」，或写端点本身已 admin-only，不纳入本轮：
+
+- ai config / admin 类、correlation（读用 `person_id`）、jpush（admin + `target='all'`）；
+- `portal_*`（写 admin）、program_center（admin / 全局表）、query designer 其余创建（admin）、
+  query_surface（admin）、general attend / securityclearance（admin）。
+
+### 通用检查项：归属谓词的判据行必须来自真实写入路径
+
+**适用范围：所有新增/修改归属谓词的批次，不只 `x_portal_*`。** 每次给读端点加
+`creator=本人 OR admin`（或 `owner`/`person` 同类谓词）时，必须同时说明并验证：
+
+1. **判据行来源**：用例里的归属行必须由真实写入路径（handler/端点）产生；
+   只靠 seed 直接插 `creator=某人` 会让「谓词恒不命中」也显示绿。
+2. **真实行上的三条判据**：本人可命中；他人访问同一行被 403 或返回空集且行仍存在；管理员放行。
+3. **写侧前置条件**：先确认该表的写入已落会话身份。写侧仍硬写常量时，owner 臂对真实数据
+   **永不命中**，门禁绿只说明「谁都没命中」，不代表 IDOR 已修。
+4. **admin-only 表的例外**：若确认该表恒 admin-only，必须明文登记「owner 臂永不命中、
+   保护来自 admin 门」，不得在台账记为「已加归属谓词防住」。
+5. **发现假绿的处理**：列为 `FALSE-GREEN`（写侧常量 + 读侧 owner 谓词），要么改写入，
+   要么拆除无效谓词并固定 admin-only 口径；在处置前该端点不得计入「已防住」数量。
+
+### ⚠️ `x_portal_*`：通用检查项的一个实例（假绿风险）
+
+`portal_assemble_designer` 的生产写入仍硬写 `creator='system'`：
+
+- `create_design` → `x_portal_design`
+- `create_page` → `x_portal_page`
+
+若给 `x_portal_*` 读端点加 `creator=本人 OR admin` 谓词，**owner 臂对真实数据永不命中**
+（真实行 creator 恒 `'system'`），非管理员只能拿到空集。门禁会显示 PASS，但保护来自
+「谁都不命中」，不是归属判定生效；用例若只用 seed 造出 `creator=某人` 的行，还会掩盖这一点。
+
+处置：要么先把上述写入改为会话身份，要么明确这些行恒 admin-only 并固定口径。
+在此之前，`x_portal_*` 的相关门禁绿**不得记为「已防住」**，按上面通用检查项的第 3–5 条处理。

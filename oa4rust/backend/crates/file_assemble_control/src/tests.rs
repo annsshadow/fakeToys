@@ -933,6 +933,57 @@ mod tests {
         .await
         .unwrap();
     }
+
+    /// 批3：非管理员新建文件实体后必须能删掉自己的文件。
+    /// 修复前 `create_file_entity` 写 `creator='system'`，删除侧 `require_owner` 判 403 —— 本用例先红后绿。
+    #[tokio::test]
+    async fn b3_non_admin_can_delete_own_file_entity() {
+        let pool = test_pool();
+        let person = "b3-file-nonadmin";
+        let created = crate::create_file_entity(
+            Extension(pool.clone()),
+            Some(Extension(shared::testing::test_session(person))),
+            axum::Json(serde_json::json!({
+                "name": format!("b3-file-{}", uuid::Uuid::new_v4()),
+                "path": "/b3/file",
+                "folderId": "",
+                "size": 7
+            })),
+        )
+        .await
+        .expect("新建文件实体必须成功");
+        let id = created
+            .0
+            .data
+            .as_ref()
+            .and_then(|d| d.get("id"))
+            .and_then(|v| v.as_str())
+            .expect("新建响应缺 id")
+            .to_string();
+
+        let del = crate::delete_file(
+            Extension(pool.clone()),
+            Some(Extension(shared::testing::test_session(person))),
+            axum::extract::Path(id.clone()),
+        )
+        .await;
+
+        let c = pool.get().await.expect("db");
+        c.execute("DELETE FROM x_file WHERE id = $1", &[&id])
+            .await
+            .expect("cleanup");
+
+        let del = del.unwrap_or_else(|e| panic!("本人删自己文件被拒: {e:?}"));
+        assert_eq!(
+            del.0
+                .data
+                .as_ref()
+                .and_then(|d| d.get("deleted"))
+                .and_then(|v| v.as_bool()),
+            Some(true),
+            "本人删自己文件必须成功"
+        );
+    }
 }
 
 #[cfg(test)]

@@ -13,7 +13,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"testing"
 	"time"
 
@@ -24,7 +23,7 @@ func TestE2EMyOrdersRequiresAuth(t *testing.T) {
 	e2eScratchDB(t)
 	e := newE2E(t)
 
-	req, _ := http.NewRequest("GET", "/api/v1/me/orders", nil)
+	req, _ := testReq("GET", "/api/v1/me/orders", nil)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
 		t.Fatalf("请求失败：%v", err)
@@ -47,7 +46,7 @@ func TestE2EMyOrdersSucceeds(t *testing.T) {
 		t.Fatalf("插入订单失败：%v", err)
 	}
 
-	req, _ := http.NewRequest("GET", "/api/v1/me/orders", nil)
+	req, _ := testReq("GET", "/api/v1/me/orders", nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
@@ -83,7 +82,7 @@ func TestE2EMyOrdersEmpty(t *testing.T) {
 	e := newE2E(t)
 
 	_, tok := e.newPlayer(t, "orders_empty")
-	req, _ := http.NewRequest("GET", "/api/v1/me/orders", nil)
+	req, _ := testReq("GET", "/api/v1/me/orders", nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {

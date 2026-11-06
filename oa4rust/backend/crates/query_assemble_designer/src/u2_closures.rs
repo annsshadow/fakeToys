@@ -270,13 +270,12 @@ pub async fn statement_create(
     }
 
     let id = uuid::Uuid::new_v4().to_string();
-    let creator = "system";
 
     client
         .execute(
             "INSERT INTO x_query_statement (id, name, alias, query_flag, entity_class, entity_category, type, data, counting_data, creator, create_time, update_time) \
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())",
-            &[&id, &name, &alias, &query_flag, &entity_class, &entity_category, &stmt_type, &data, &counting_data, &creator],
+            &[&id, &name, &alias, &query_flag, &entity_class, &entity_category, &stmt_type, &data, &counting_data, &sess.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -972,8 +971,11 @@ pub async fn stat_delete(
 #[allow(non_snake_case)]
 pub async fn table_create(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 写入口自证身份：无会话先 401（在任何 DB 访问之前）。
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
     let name = body
@@ -1000,13 +1002,12 @@ pub async fn table_create(
     let id = uuid::Uuid::new_v4().to_string();
     let table_flag = uuid::Uuid::new_v4().to_string();
     let query_flag = body.get("queryFlag").and_then(|v| v.as_str()).unwrap_or("");
-    let creator = "system";
 
     client
         .execute(
             "INSERT INTO x_query_table (id, name, table_flag, query_flag, status, creator, create_time, update_time) \
              VALUES ($1, $2, $3, $4, 'draft', $5, to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'), to_char(NOW(),'YYYY-MM-DD HH24:MI:SS'))",
-            &[&id, &name, &table_flag, &query_flag, &creator],
+            &[&id, &name, &table_flag, &query_flag, &sess.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;

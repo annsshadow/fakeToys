@@ -118,7 +118,9 @@ fn merged_router_builds_without_conflicts() {
 async fn person_get_flag_route_registered() {
     assert!(matches!(
         request(Method::GET, &format!("{BASE}/person/zhangsan"), None).await,
-        StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE
+        StatusCode::UNAUTHORIZED
+            | StatusCode::INTERNAL_SERVER_ERROR
+            | StatusCode::SERVICE_UNAVAILABLE
     ));
 }
 
@@ -289,7 +291,9 @@ async fn person_list_filter_and_delete_paging_registered() {
             Some(r#"{"name":"san"}"#)
         )
         .await,
-        StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE
+        StatusCode::UNAUTHORIZED
+            | StatusCode::INTERNAL_SERVER_ERROR
+            | StatusCode::SERVICE_UNAVAILABLE
     ));
     assert!(matches!(
         request(
@@ -298,7 +302,9 @@ async fn person_list_filter_and_delete_paging_registered() {
             Some("{}")
         )
         .await,
-        StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE
+        StatusCode::UNAUTHORIZED
+            | StatusCode::INTERNAL_SERVER_ERROR
+            | StatusCode::SERVICE_UNAVAILABLE
     ));
 }
 
@@ -311,7 +317,9 @@ async fn person_group_role_listing_routes_registered() {
             None
         )
         .await,
-        StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE
+        StatusCode::UNAUTHORIZED
+            | StatusCode::INTERNAL_SERVER_ERROR
+            | StatusCode::SERVICE_UNAVAILABLE
     ));
     assert!(matches!(
         request(
@@ -320,19 +328,27 @@ async fn person_group_role_listing_routes_registered() {
             None
         )
         .await,
-        StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE
+        StatusCode::UNAUTHORIZED
+            | StatusCode::INTERNAL_SERVER_ERROR
+            | StatusCode::SERVICE_UNAVAILABLE
     ));
     assert!(matches!(
         request(Method::GET, &format!("{BASE}/person/list/role/r1"), None).await,
-        StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE
+        StatusCode::UNAUTHORIZED
+            | StatusCode::INTERNAL_SERVER_ERROR
+            | StatusCode::SERVICE_UNAVAILABLE
     ));
     assert!(matches!(
         request(Method::GET, &format!("{BASE}/person/list/0/next/20"), None).await,
-        StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE
+        StatusCode::UNAUTHORIZED
+            | StatusCode::INTERNAL_SERVER_ERROR
+            | StatusCode::SERVICE_UNAVAILABLE
     ));
     assert!(matches!(
         request(Method::GET, &format!("{BASE}/person/list/0/prev/20"), None).await,
-        StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE
+        StatusCode::UNAUTHORIZED
+            | StatusCode::INTERNAL_SERVER_ERROR
+            | StatusCode::SERVICE_UNAVAILABLE
     ));
 }
 
@@ -351,7 +367,9 @@ async fn person_search_put_semantics_registered() {
                     Some(r#"{"key":"z"}"#)
                 )
                 .await,
-                StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE
+                StatusCode::UNAUTHORIZED
+                    | StatusCode::INTERNAL_SERVER_ERROR
+                    | StatusCode::SERVICE_UNAVAILABLE
             ),
             "path={path}"
         );

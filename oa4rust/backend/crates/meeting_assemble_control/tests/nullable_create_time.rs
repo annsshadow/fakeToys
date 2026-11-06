@@ -72,9 +72,11 @@ async fn null_create_time_does_not_500_on_meeting_read_paths() {
     .await
     .expect("seed x_meeting_building");
     // start_time/end_time 是 NOT NULL（006），只置 create_time 为 NULL。
+    // 读路径已加归属谓词（本人 OR 管理员）：本用例聚焦 create_time 解码，
+    // 种上 creator 让会话本人可读，避免被 NULL 归属 fail-closed 拦截。
     c.execute(
-        "INSERT INTO x_meeting (id, title, start_time, end_time, create_time) VALUES \
-         ('o35-meeting-null', 'T', '2025-01-01 08:00:00', '2025-01-01 09:00:00', NULL)",
+        "INSERT INTO x_meeting (id, title, start_time, end_time, create_time, creator) VALUES \
+         ('o35-meeting-null', 'T', '2025-01-01 08:00:00', '2025-01-01 09:00:00', NULL, 'u-o35-owner')",
         &[],
     )
     .await
@@ -112,6 +114,7 @@ async fn null_create_time_does_not_500_on_meeting_read_paths() {
     // 路径二：meeting_id（to_char on x_meeting.create_time）
     let res = meeting_assemble_control::meeting_id(
         Extension(pool.clone()),
+        Some(Extension(shared::testing::test_session("u-o35-owner"))),
         Path("o35-meeting-null".to_string()),
     )
     .await

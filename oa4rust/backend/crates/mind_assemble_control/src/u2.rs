@@ -37,6 +37,28 @@ fn mind_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
     })
 }
 
+/// 分片A第四批：脑图行读权限谓词（写进 SQL `WHERE`）。
+/// 允许：属主 / `shared = true`（业主主动公开）/ `x_mind_share` 指定接收人 / 管理员。
+/// `creator` 为 NULL 或历史 `system` 的行仅管理员可读（fail-closed）。
+const MIND_ROW_READ_PREDICATE: &str = "(creator = {actor} OR shared = true \
+     OR EXISTS(SELECT 1 FROM x_mind_share s WHERE s.mind_id = x_mind.id AND s.person = {actor}) \
+     OR EXISTS(SELECT 1 FROM auth_person p \
+         JOIN auth_person_role pr ON pr.person_id = p.id \
+         JOIN auth_role r ON r.id = pr.role_id \
+        WHERE (p.unique_id = {actor} OR p.id = {actor}) \
+          AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false))";
+
+/// 版本行读权限：版本表无 `shared` / 共享边，按所属脑图行判定。
+const MIND_VERSION_READ_PREDICATE: &str = "EXISTS(SELECT 1 FROM x_mind m \
+      WHERE m.id = x_mind_version_info.mind_id AND m.deleted_at IS NULL AND (m.creator = {actor} \
+         OR m.shared = true \
+         OR EXISTS(SELECT 1 FROM x_mind_share s WHERE s.mind_id = m.id AND s.person = {actor}) \
+         OR EXISTS(SELECT 1 FROM auth_person p \
+             JOIN auth_person_role pr ON pr.person_id = p.id \
+             JOIN auth_role r ON r.id = pr.role_id \
+            WHERE (p.unique_id = {actor} OR p.id = {actor}) \
+              AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false)))";
+
 async fn require_person_is_manager(pool: &Pool, person_unique: &str) -> Result<bool, AppError> {
     Ok(shared::middleware::is_admin(pool, person_unique).await)
 }
@@ -265,16 +287,50 @@ pub async fn mind_share_records(pool: Extension<Pool>, Path(id): Path<String>) -
 
 /// GET /api/mind/assemble/control/mind/list/{id}/version —— 版本列表
 #[allow(non_snake_case)]
-pub async fn mind_version_list(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
+pub async fn mind_version_list(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> ApiResult {
+    let sess = crate::require_session(session)?;
+    let actor = sess.person_unique;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
-            "SELECT id, mind_id, name, file_version, creator, creator_unit, description, create_time \
-             FROM x_mind_version_info WHERE mind_id = $1 ORDER BY file_version DESC",
-            &[&id],
+            &format!(
+                "SELECT id, mind_id, name, file_version, creator, creator_unit, description, create_time \
+                 FROM x_mind_version_info WHERE mind_id = $1 AND ({}) ORDER BY file_version DESC",
+                MIND_VERSION_READ_PREDICATE.replace("{actor}", "$2")
+            ),
+            &[&id, &actor],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    if rows.is_empty() {
+        // 空结果只区分「无权」与「不存在」：无权 403，不存在保持既有空列表。
+        let visible = client
+            .query_opt(
+                &format!(
+                    "SELECT 1 FROM x_mind WHERE id = $1 AND deleted_at IS NULL AND ({})",
+                    MIND_ROW_READ_PREDICATE.replace("{actor}", "$2")
+                ),
+                &[&id, &actor],
+            )
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+        if visible.is_none() {
+            let exists = client
+                .query_opt(
+                    "SELECT 1 FROM x_mind WHERE id = $1 AND deleted_at IS NULL",
+                    &[&id],
+                )
+                .await
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+            if exists.is_some() {
+                return Err(AppError::Forbidden);
+            }
+        }
+    }
     let items: Vec<Value> = rows
         .iter()
         .map(|r| {
@@ -549,13 +605,22 @@ pub async fn mind_share_cancel(
 
 /// GET /api/mind/assemble/control/mind/version/{id} —— 最新版本
 #[allow(non_snake_case)]
-pub async fn mind_version_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
+pub async fn mind_version_get(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> ApiResult {
+    let sess = crate::require_session(session)?;
+    let actor = sess.person_unique;
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
-            "SELECT id, mind_id, name, file_version, creator, creator_unit, description, create_time \
-             FROM x_mind_version_info WHERE mind_id = $1 ORDER BY file_version DESC LIMIT 1",
-            &[&id],
+            &format!(
+                "SELECT id, mind_id, name, file_version, creator, creator_unit, description, create_time \
+                 FROM x_mind_version_info WHERE mind_id = $1 AND ({}) ORDER BY file_version DESC LIMIT 1",
+                MIND_VERSION_READ_PREDICATE.replace("{actor}", "$2")
+            ),
+            &[&id, &actor],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -567,46 +632,82 @@ pub async fn mind_version_get(pool: Extension<Pool>, Path(id): Path<String>) -> 
             "fileVersion": r.get::<_, i32>("file_version"),
             "creator": r.get::<_, Option<String>>("creator").unwrap_or_default(),
         })))),
-        None => Ok(Json(ActionResult::error("version not found"))),
+        None => {
+            let exists = client
+                .query_opt(
+                    "SELECT 1 FROM x_mind WHERE id = $1 AND deleted_at IS NULL",
+                    &[&id],
+                )
+                .await
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+            if exists.is_some() {
+                // 脑图存在但请求人既非属主/共享接收人、也非管理员。
+                return Err(AppError::Forbidden);
+            }
+            Ok(Json(ActionResult::error("version not found")))
+        }
+    }
+}
+
+/// 脑图行读取（`view` 与 `get` 共用）：归属谓词在 SQL `WHERE` 内，
+/// 行存在但无权 → 403；行不存在 → 保持既有 `mind not found` 错误体。
+async fn mind_read(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    id: String,
+) -> ApiResult {
+    let sess = crate::require_session(session)?;
+    let actor = sess.person_unique;
+    let client = shared::db::acquire(&pool).await?;
+    let row = client
+        .query_opt(
+            &format!(
+                "SELECT id, name, content, parent_id, folder_id, icon, description, shared, \
+                 file_version, creator, creator_unit \
+                 FROM x_mind WHERE id = $1 AND deleted_at IS NULL AND ({})",
+                MIND_ROW_READ_PREDICATE.replace("{actor}", "$2")
+            ),
+            &[&id, &actor],
+        )
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    match row {
+        Some(r) => Ok(Json(ActionResult::success(mind_row_to_value(&r)))),
+        None => {
+            let exists = client
+                .query_opt(
+                    "SELECT 1 FROM x_mind WHERE id = $1 AND deleted_at IS NULL",
+                    &[&id],
+                )
+                .await
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+            if exists.is_some() {
+                // 行存在但请求人既非属主/共享接收人、也非管理员。
+                return Err(AppError::Forbidden);
+            }
+            Ok(Json(ActionResult::error("mind not found")))
+        }
     }
 }
 
 /// GET /api/mind/assemble/control/mind/view/{id} —— 查看脑图（返回详情）
 #[allow(non_snake_case)]
-pub async fn mind_view(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
-    let client = shared::db::acquire(&pool).await?;
-    let row = client
-        .query_opt(
-            "SELECT id, name, content, parent_id, folder_id, icon, description, shared, \
-             file_version, creator, creator_unit \
-             FROM x_mind WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
-        )
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
-    match row {
-        Some(r) => Ok(Json(ActionResult::success(mind_row_to_value(&r)))),
-        None => Ok(Json(ActionResult::error("mind not found"))),
-    }
+pub async fn mind_view(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> ApiResult {
+    mind_read(pool, session, id).await
 }
 
 /// GET /api/mind/assemble/control/mind/{id} —— 获取脑图
 #[allow(non_snake_case)]
-pub async fn mind_get(pool: Extension<Pool>, Path(id): Path<String>) -> ApiResult {
-    let client = shared::db::acquire(&pool).await?;
-    let row = client
-        .query_opt(
-            "SELECT id, name, content, parent_id, folder_id, icon, description, shared, \
-             file_version, creator, creator_unit \
-             FROM x_mind WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
-        )
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
-    match row {
-        Some(r) => Ok(Json(ActionResult::success(mind_row_to_value(&r)))),
-        None => Ok(Json(ActionResult::error("mind not found"))),
-    }
+pub async fn mind_get(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> ApiResult {
+    mind_read(pool, session, id).await
 }
 
 /// DELETE /api/mind/assemble/control/mind/{id}/destorymind —— 彻底删除（销毁）
