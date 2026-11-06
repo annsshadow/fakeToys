@@ -223,6 +223,16 @@
 
 裁决落地：19 条全部改标 `allow`。依据：这 15 个端点都要求登录，管理员是合法读者/写者；无一满足 `deny` 的 (a) 匿名触达或 (b) 业务禁止。改标签不改变实测——**13 LEAK + 1 UNVERIFIED + 5 PASS 原样保留在基线**，`unknown` 计数从 19 归零。
 
+### 6.4 改标涉及的 20 条 LEAK（标签不掩盖缺口）
+
+门禁实跑（2026-11-06，rebase 到 `origin/main` 后）：`cases=192 pass=36 leak=133 unverified=23 integrity=0`，**非 PASS 156，与基线一致，无可减行**。改标的 33 条里仍有 20 条 LEAK：
+
+- 读（16）：`file_assemble_control|get_file`、`general_core_entity|file_download`、`general_core_entity|file_get`、`jpush|device_get`、`jpush_core_entity|device_get`、`program_center|collect_code_mobile`；attendance 6 条（`attendanceappealInfo`、`attendancedetail`、`attendancedetail/mobile`、`attendanceselfholiday`、`v2/appeal`、`v2/record`）；general 3 条（`invoice_get_id`、`securityclearance_get`、`invoice_get`）；`processplatform|attachment_id`。
+- 写（4）：`file_core_entity|folder_delete`；attendance `appeal` POST、`t1|appeal` POST/PUT。
+- 另有 3 条 UNVERIFIED 同批保留：`calendar_get`、`recycle_id`、`attachment/edit/text`。
+
+这些全部留在基线，等对应修复批次按 `STALE-BASELINE` 点名后才减。
+
 ## 7. 建议的会议议程（约 45 分钟）
 
 > 默认裁决与 `admin_policy` 均已定；议程只需处理默认裁决末表 17 条。
