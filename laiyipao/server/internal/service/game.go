@@ -433,6 +433,10 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 	resp := SettleResp{}
 	var newMax, newMasteryPoints int
 	var leveledUp bool
+	// R137：commit 段只管计时。起点打在事务回调返回前，
+	// 终点在 DB.Tx 返回后 → 覆盖 COMMIT 墙钟（synchronous_commit 的成本全在这里）。
+	// 回调提前报错时 commitSeg 保持零值，下面不记这一段（不伪造耗时）。
+	var commitSeg time.Time
 	err = s.DB.Tx(ctx, func(tx pgx.Tx) error {
 		// 1) 抢占 token：条件更新保证并发下只有一个请求能成功
 		//
@@ -557,10 +561,14 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 		resp.ClampNote = res.ClampReason
 		resp.Loot = res.Loot
 		resp.NewMaxStage = newMax
+		commitSeg = settleNow()
 		return nil
 	})
 	if err != nil {
 		return SettleResp{}, err
+	}
+	if !commitSeg.IsZero() {
+		tm.TxCommit = settleSince(commitSeg)
 	}
 
 	// 第 5 轮：收尾三连里 LoadWallet 与构筑快照互不依赖，**并行**执行；
@@ -611,6 +619,8 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 	}
 	resp.Wallet = w
 
+	// R137：纯内存收尾 —— computeRating/computePower/flushLeaderboards。
+	tailSeg := settleNow()
 	resp.Rating = computeRating(build, parts.masteryPoints)
 	resp.Power = computePower(build)
 
@@ -630,6 +640,7 @@ func (s *Service) SettleBattle(ctx context.Context, userID, tokenID int64, in do
 	// ⚠️ 只 flush 榜单，**不 flush 看板**：看板 30 秒的缓存正是它存在的理由，
 	// 而结算在活跃期几秒一次，flush 它等于把缓存取消掉。
 	s.flushLeaderboards()
+	tm.TailCompute = settleSince(tailSeg)
 
 	// R80：成功结算入账分段耗时（聚合 + 超阈值慢日志 + 探针采样钩子）。
 	tm.Total = settleSince(tmStart)
