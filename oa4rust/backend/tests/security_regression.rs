@@ -1474,16 +1474,17 @@ mod security_regression {
                 println!("STALE-BASELINE\t{id}\t（已修复：请从基线删掉这一行）");
             }
             for (id, bs, cs) in &drift {
-                println!("[STATE-DRIFT] {id}\t{bs} -> {cs}");
+                // 带上三段信息，翻日志时能区分「真修复了」还是「证据丢了」。
+                println!("[STATE-DRIFT] id={id} 原状态={bs} 现状态={cs}");
             }
         }
 
         // 致命：基线内恶化。读泄漏恶化与写回环破坏都必须红，不能只打印。
         for (id, bs, cs) in &fatal {
             if cs == "INTEGRITY" {
-                println!("[DRIFT-TO-INTEGRITY] {id}\t{bs} -> INTEGRITY");
+                println!("[DRIFT-TO-INTEGRITY] id={id} 原状态={bs} 现状态=INTEGRITY");
             } else {
-                println!("[DRIFT-TO-LEAK] {id}\t{bs} -> LEAK");
+                println!("[DRIFT-TO-LEAK] id={id} 原状态={bs} 现状态=LEAK");
             }
         }
         assert!(
