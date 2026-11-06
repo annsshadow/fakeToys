@@ -59,13 +59,8 @@ general_core_entity|invoice_get|GET	LEAK
 jpush_assemble_control|get_jpush|GET	LEAK
 jpush_core_entity|device_get|GET	LEAK
 jpush|device_get|GET	LEAK
-portal_assemble_designer|dict_id|GET	LEAK
-portal_assemble_designer|file_id_download|GET	LEAK
-portal_assemble_designer|get_design|GET	LEAK
 portal_assemble_designer|portal_id_icon|GET	LEAK
 portal_assemble_designer|portal_id_permission|GET	LEAK
-portal_assemble_designer|scriptversion_id|GET	LEAK
-portal_assemble_designer|templatepage_id|GET	LEAK
 portal_assemble_surface|get_surface|GET	LEAK
 portal_assemble_surface|portal_id_icon_base64|GET	LEAK
 portal_assemble_surface|portal_id_icon|GET	LEAK
