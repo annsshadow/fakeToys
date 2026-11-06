@@ -113,6 +113,9 @@ oa4rust/backend/deploy/.backups/
 !oa4rust/backend/tests/idor_handler500_baseline.txt
 # O26 安全回归门禁棘轮基线：security_regression.rs 逐条比对读此文件，删文件=废棘轮。
 !oa4rust/backend/tests/security_regression_baseline.txt
+# O26 Go 侧安全回归门禁棘轮基线：security_gate_test.go 逐条比对读此文件，
+# 与 Rust 基线**分文件**（修复线按 crate 各自 diff）。
+!laiyipao/server/internal/httpapi/security_gate_baseline.txt
 # 集成场景 CI 的唯一豁免清单（守卫脚本按行读取；不入库＝CI 没有排除项，
 # ldap 会把 job 打成永久红）。
 !oa4rust/backend/tests/integration_skip_list.txt

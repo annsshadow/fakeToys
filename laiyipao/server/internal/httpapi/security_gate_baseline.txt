@@ -1,0 +1,10 @@
+# 安全回归门禁基线（Go 侧）
+# 每行：<用例 id>\t<非 PASS 状态>；PASS 不写行。
+# 修复一条就删一行（单调下降）；只增不减视为回归。
+#
+# --- Go 基线初始值（本次生成）---
+#   A 商城扣款：PASS=2 LEAK=0 UNVERIFIED=0
+#   B 玩家 path/query/list IDOR（三向）：PASS=17 LEAK=0 UNVERIFIED=0
+#   C 管理端幂等：PASS=5 LEAK=0 UNVERIFIED=0
+#   D 写路径正控制：PASS=1 LEAK=0 UNVERIFIED=0
+#
