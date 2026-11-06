@@ -274,6 +274,8 @@ func (s *Service) FlushStatsCache() {
 //
 // 与 `FlushStatsCache` 拆开是因为两者的**触发频率差两个数量级**：
 // 结算（几秒一次）只该动榜单；看板（30 秒窗口）不该被结算打断。
+//
+// 榜上人数不再是缓存值（R131 起由直方图小表精确求和），这里只失效榜单本身。
 func (s *Service) flushLeaderboards() {
 	for _, c := range s.leaderboardCache {
 		c.flush()

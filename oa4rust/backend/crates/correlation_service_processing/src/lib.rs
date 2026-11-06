@@ -169,18 +169,35 @@ pub async fn list_correlations(
     )))
 }
 
+/// 读面归属谓词（批次 7）：关联记录以 `person_id`（主体人）为准，兼容
+/// 早期 `creator` 落库；命中本人或管理员。归属列为空 → 仅管理员（fail-closed）。
+/// `$2` = 会话 person_unique。
+const CORRELATION_READ_OWNER_PREDICATE: &str = "(NULLIF(BTRIM(person_id), '') = $2 \
+      OR NULLIF(BTRIM(creator), '') = $2 \
+      OR EXISTS(SELECT 1 FROM auth_person p \
+                  JOIN auth_person_role pr ON pr.person_id = p.id \
+                  JOIN auth_role r ON r.id = pr.role_id \
+                 WHERE (p.unique_id = $2 OR p.id = $2) \
+                   AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false))";
+
 #[allow(non_snake_case)]
 pub async fn get_correlation(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 批次 7：关联详情按 person_id/creator 校归属（本人或管理员），
+    // 无会话 401 先于读库；归属为空时仅管理员（fail-closed）。
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = shared::db::acquire(&pool).await?;
+    let sql = format!(
+        r#"SELECT id, person_id, target_id, "type", creator, create_time FROM x_correlation
+             WHERE id = $1 AND {CORRELATION_READ_OWNER_PREDICATE}"#
+    );
     let row = client
-        .query_opt(
-            r#"SELECT id, person_id, target_id, "type", creator, create_time FROM x_correlation
-             WHERE id = $1"#,
-            &[&id],
-        )
+        .query_opt(&sql, &[&id, &sess.person_unique])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
@@ -220,7 +237,22 @@ pub async fn get_correlation(
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("correlation not found"))),
+        None => {
+            // 存在性读不参与授权：行存在但无权 → 403，行不存在保留原错误体。
+            let exists: bool = client
+                .query_one(
+                    "SELECT EXISTS(SELECT 1 FROM x_correlation WHERE id = $1) AS row_exists",
+                    &[&id],
+                )
+                .await
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+                .get("row_exists");
+            if exists {
+                Err(AppError::Forbidden)
+            } else {
+                Ok(Json(ActionResult::error("correlation not found")))
+            }
+        }
     }
 }
 
@@ -434,6 +466,8 @@ pub fn correlation_service_processing_router() -> Router {
 
 #[cfg(test)]
 mod security_gate_tests;
+#[cfg(test)]
+mod security_gate_tests_idor_b7;
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;

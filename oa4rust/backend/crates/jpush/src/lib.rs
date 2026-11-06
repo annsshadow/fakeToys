@@ -15,6 +15,15 @@ fn require_session(
     session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
 }
 
+/// 读面归属谓词（批次 7）：设备归属列 `user_id` 命中本人，或调用方是管理员；
+/// 归属列为空时只有管理员可读（fail-closed）。`$2` = 会话 person_unique。
+const DEVICE_READ_OWNER_PREDICATE: &str = "(NULLIF(BTRIM(user_id), '') = $2 \
+      OR EXISTS(SELECT 1 FROM auth_person p \
+                  JOIN auth_person_role pr ON pr.person_id = p.id \
+                  JOIN auth_role r ON r.id = pr.role_id \
+                 WHERE (p.unique_id = $2 OR p.id = $2) \
+                   AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false))";
+
 pub fn jpush_router(pool: Pool) -> Router {
     routes::jpush_router(pool)
 }
@@ -62,14 +71,19 @@ pub async fn device_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 #[allow(non_snake_case)]
 pub async fn device_get(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 批次 7：设备详情按 x_jpush_device.user_id 校归属（本人或管理员），
+    // 无会话 401 先于任何读库；归属为空时仅管理员（fail-closed）。
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
+    let sql = format!(
+        "SELECT id, user_id, platform, token FROM x_jpush_device \
+         WHERE id = $1 AND {DEVICE_READ_OWNER_PREDICATE}"
+    );
     let row = client
-        .query_opt(
-            "SELECT id, user_id, platform, token FROM x_jpush_device WHERE id = $1",
-            &[&id],
-        )
+        .query_opt(&sql, &[&id, &sess.person_unique])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
@@ -82,7 +96,22 @@ pub async fn device_get(
                 ("token".to_string(), Value::String(row.get("token"))),
             ]),
         )))),
-        None => Err(AppError::NotFound),
+        None => {
+            // 存在性读不参与授权：行存在但无权 → 403，行不存在保留 404。
+            let exists: bool = client
+                .query_one(
+                    "SELECT EXISTS(SELECT 1 FROM x_jpush_device WHERE id = $1) AS row_exists",
+                    &[&id],
+                )
+                .await
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+                .get("row_exists");
+            if exists {
+                Err(AppError::Forbidden)
+            } else {
+                Err(AppError::NotFound)
+            }
+        }
     }
 }
 
@@ -196,6 +225,8 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 
 #[cfg(test)]
 mod security_gate_tests;
+#[cfg(test)]
+mod security_gate_tests_idor_b7;
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;

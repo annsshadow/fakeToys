@@ -20,6 +20,15 @@ mod tests_u2;
 // create_time 为 TEXT（见 006/032 migration），NULL 归一为 ''。
 const CREATED_AT_COL: &[KeyColumn] = &[KeyColumn::text("create_time")];
 
+/// 读归属谓词：`creator` 为本人 OR 调用者管理员。**写进 SQL WHERE**，不做先查后判；
+/// `creator` 为 NULL 时不命中（fail-closed）。
+const CREATOR_OWNER_PREDICATE: &str = "id = $1 AND (creator = $2 OR EXISTS(\
+     SELECT 1 FROM auth_person p \
+       JOIN auth_person_role pr ON pr.person_id = p.id \
+       JOIN auth_role r ON r.id = pr.role_id \
+      WHERE (p.unique_id = $2 OR p.id = $2) \
+        AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false))";
+
 fn created_at_keyset(table: &'static str) -> KeySet<'static> {
     KeySet {
         table,
@@ -2730,14 +2739,21 @@ pub async fn mass_list_id_prev_count(
 #[allow(non_snake_case)]
 pub async fn mass_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = session
+        .map(|Extension(s)| s)
+        .ok_or(AppError::Unauthorized)?
+        .person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
-            "SELECT id, title, content, sender, create_time FROM x_message_mass WHERE id = $1",
-            &[&id],
+            &format!(
+                "SELECT id, title, content, sender, create_time FROM x_message_mass WHERE {CREATOR_OWNER_PREDICATE}"
+            ),
+            &[&id, &actor],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -2768,7 +2784,21 @@ pub async fn mass_id(
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("mass message not found"))),
+        None => {
+            let exists: bool = client
+                .query_one(
+                    "SELECT EXISTS(SELECT 1 FROM x_message_mass WHERE id = $1) AS row_exists",
+                    &[&id],
+                )
+                .await
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+                .get("row_exists");
+            if exists {
+                Err(AppError::Forbidden)
+            } else {
+                Ok(Json(ActionResult::error("mass message not found")))
+            }
+        }
     }
 }
 
@@ -2819,19 +2849,40 @@ pub async fn message_custom_create(
     ))))
 }
 
+// 安全审计（读 IDOR 批次 2）：消息列表的读归属「本人 OR 管理员」。
+// `x_message` 的写路径只落 `sender`（不写 creator/creator_person），故以 sender 为 owner；
+// 归属谓词直接进 SQL 的 WHERE，先授权后取数。
+pub(crate) const MESSAGE_SENDER_OWNER_PREDICATE: &str = "(sender = $3 OR EXISTS(\
+     SELECT 1 FROM auth_person p \
+       JOIN auth_person_role pr ON pr.person_id = p.id \
+       JOIN auth_role r ON r.id = pr.role_id \
+      WHERE (p.unique_id = $3 OR p.id = $3) \
+        AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false))";
+
 #[allow(non_snake_case)]
 pub async fn message_list_paging_page_size_size(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = require_session(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let (limit, offset) = shared::response::page_window(page, size)?;
     let rows = client
-        .query("SELECT id, conversation_id, content, sender, type, create_time FROM x_message ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
+        .query(
+            &format!(
+                "SELECT id, conversation_id, content, sender, type, create_time \
+                   FROM x_message WHERE {MESSAGE_SENDER_OWNER_PREDICATE} \
+                  ORDER BY create_time DESC LIMIT $1 OFFSET $2"
+            ),
+            &[&limit, &offset, &actor],
+        )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
+    // 列表按归属收窄后允许返回空（不做存在性探测，避免通过 403 泄露“他人是否存在”）；
+    // 非空与本人可见性由门禁的本人正控制用例覆盖。
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {

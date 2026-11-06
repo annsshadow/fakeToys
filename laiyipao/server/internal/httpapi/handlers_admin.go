@@ -323,12 +323,16 @@ func (s *Server) adminUsers(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	items, total, err := s.Svc.AdminListUsers(c.Context(), c.Query("keyword", ""), limit, offset, dateFrom, dateTo, isGuest, lastLoginFrom, lastLoginTo, suspicious, int64(cursor))
+	page, err := s.Svc.AdminListUsersPage(c.Context(), c.Query("keyword", ""), limit, offset, dateFrom, dateTo, isGuest, lastLoginFrom, lastLoginTo, suspicious, int64(cursor))
 	if err != nil {
 		return err
 	}
+	items, total := page.Items, page.Total
+	// R131 审计 G1：是否还有下一页由**查询实际多返回的那一行**决定，
+	// 不能用 `len(items) == limit` 猜 —— 服务端会把 limit 夹到 200，
+	// 请求 limit=201/500/0/-1 时那个比较永远为假，next_cursor 恒空，尾部用户翻不到。
 	var next int64
-	if len(items) == limit && len(items) > 0 {
+	if page.HasMore && len(items) > 0 {
 		next = items[len(items)-1].ID
 	}
 	return c.JSON(service.NormalizeNilSlices(service.AdminUsersResp{Items: items, Total: total, NextCursor: next}))

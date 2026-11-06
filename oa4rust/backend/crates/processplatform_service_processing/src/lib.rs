@@ -465,6 +465,68 @@ async fn u4_require_work_owner(
     }
 }
 
+/// 管理员判定（`$2` = 会话身份）。与写面 `u4_require_actor` 同一张表/同一口径。
+const U4_ADMIN_EXISTS: &str = "EXISTS(SELECT 1 FROM auth_person p \
+      JOIN auth_person_role pr ON pr.person_id = p.id \
+      JOIN auth_role r ON r.id = pr.role_id \
+     WHERE (p.unique_id = $2 OR p.id = $2) \
+       AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false)";
+
+/// 读归属门（`x_task`）：负责人或发起人等于本人、或管理员。归属列空 → 不命中（fail-closed）。
+/// 谓词写进 `WHERE`，行不存在与无权访问由 `u4_row_exists_error` 事后区分。
+async fn u4_task_read_row(
+    client: &deadpool_postgres::Client,
+    id: &str,
+    me: &str,
+) -> Result<Option<deadpool_postgres::tokio_postgres::Row>, AppError> {
+    let sql = format!(
+        "SELECT t.id, t.title, t.work, t.activity, t.activity_token, t.person, t.task_status \
+           FROM x_task t LEFT JOIN x_work w ON w.id = t.work \
+          WHERE t.id = $1 \
+            AND (NULLIF(BTRIM(t.person), '') = $2 \
+                 OR NULLIF(BTRIM(w.creator), '') = $2 \
+                 OR {U4_ADMIN_EXISTS})"
+    );
+    client
+        .query_opt(&sql, &[&id, &me])
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))
+}
+
+/// 读归属门（`x_attachment`）：`creator` 本人或管理员；空归属仅管理员。
+async fn u4_attachment_read_row(
+    client: &deadpool_postgres::Client,
+    id: &str,
+    me: &str,
+) -> Result<Option<deadpool_postgres::tokio_postgres::Row>, AppError> {
+    let sql = format!(
+        "SELECT id, work_id, name, content, creator, create_time FROM x_attachment \
+          WHERE id = $1 \
+            AND (NULLIF(BTRIM(creator), '') = $2 OR {U4_ADMIN_EXISTS})"
+    );
+    client
+        .query_opt(&sql, &[&id, &me])
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))
+}
+
+/// 0 行命中时区分 403/404。该读**不参与授权**：判定已由带谓词的 SELECT 完成。
+async fn u4_row_exists_error(
+    client: &deadpool_postgres::Client,
+    table: &str,
+    id: &str,
+) -> AppError {
+    let sql = format!("SELECT EXISTS(SELECT 1 FROM {table} WHERE id = $1) AS row_exists");
+    match client.query_one(&sql, &[&id]).await {
+        Ok(row) => match row.try_get::<_, bool>("row_exists") {
+            Ok(true) => AppError::Forbidden,
+            Ok(false) => AppError::NotFound,
+            Err(e) => AppError::internal_with_source(concat!(file!(), ":", line!()), e),
+        },
+        Err(e) => AppError::internal_with_source(concat!(file!(), ":", line!()), e),
+    }
+}
+
 /// 第十六批：本 crate GET 面 27 条注册 / 22 把 handler 的归属门。
 /// 键 → (整句字面量 SQL, 归属列名)；SQL 常量集中在此，调用点只给键与 ID，不做拼接。
 /// WorkCompleted / Snap 两把键 hop 到 `x_work.creator`：快照行自身没有可用属主——
@@ -1322,17 +1384,15 @@ pub async fn task_id_pass_expired(
 #[allow(non_snake_case)]
 pub async fn task_id_will(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
     let client = shared::db::acquire(&pool).await?;
-    let row = client
-        .query_opt(
-            "SELECT id, title, work, activity, activity_token, person, task_status FROM x_task WHERE id = $1",
-            &[&id],
-        )
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
-        .ok_or(AppError::NotFound)?;
+    let row = match u4_task_read_row(&client, &id, &session.person_unique).await? {
+        Some(row) => row,
+        None => return Err(u4_row_exists_error(&client, "x_task", &id).await),
+    };
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -2971,17 +3031,15 @@ pub async fn attachment_copy_workcompleted_workCompletedId(
 #[allow(non_snake_case)]
 pub async fn attachment_edit_id_text(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
     let client = shared::db::acquire(&pool).await?;
-    let row = client
-        .query_opt(
-            "SELECT id, work_id, name, content, creator, create_time FROM x_attachment WHERE id = $1",
-            &[&id],
-        )
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
-        .ok_or(AppError::NotFound)?;
+    let row = match u4_attachment_read_row(&client, &id, &session.person_unique).await? {
+        Some(row) => row,
+        None => return Err(u4_row_exists_error(&client, "x_attachment", &id).await),
+    };
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -4343,6 +4401,8 @@ pub async fn cancel_timer(
 
 #[cfg(test)]
 mod security_gate_tests;
+#[cfg(test)]
+mod security_gate_tests_idor_b6;
 #[cfg(test)]
 #[cfg(test)]
 #[allow(clippy::module_inception)]

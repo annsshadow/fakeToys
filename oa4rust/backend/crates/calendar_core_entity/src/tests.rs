@@ -66,7 +66,8 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR); // axum 0.8: {param} 路由可匹配(0.7 下 :param/{param} 混用会 404), handler 缺 pool 返回 500
+        // 读门禁：无会话在首个 DB 访问前就返回 401（不再依赖 mock 连接失败）。
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
     #[test]

@@ -105,7 +105,80 @@ func TestMyBattleHistoryBrokenPool(t *testing.T) {
 	}
 }
 
-// TestMyBattleHistoryPagination 守住分页（2026-11-01 新一轮第 55 轮）。
+// TestMyBattleHistoryCursorNoDupUnderInserts 守住 G3（R131 审计）：
+// created_at DESC 没有 id tiebreak + OFFSET 翻页，在「翻页途中插入新战报」
+// 时会把旧行挤到下一页造成重复/漏行。这里用 keyset 游标走一遍。
+func TestMyBattleHistoryCursorNoDupUnderInserts(t *testing.T) {
+	ts := openScratchService(t)
+	ctx := context.Background()
+
+	id, _ := newGuestUser(t, ts, "bhist_cursor")
+	const n = 14
+	// 插入顺序即 created_at 递增顺序（真实写入就是这样：created_at 由 DB now() 填），
+	// 末尾 3 条共用同一 created_at —— 跨页边界必须靠 id DESC 才稳定。
+	base := time.Now().Add(-30 * time.Second)
+	sameTS := base.Add(11 * time.Second)
+	baseSet := make(map[int64]bool, n)
+	order := make([]int64, 0, n)
+	for i := 0; i < n; i++ {
+		moment := base.Add(time.Duration(i) * time.Second)
+		if i >= 11 {
+			moment = sameTS
+		}
+		bid := seedBattleFor(t, ts, id, i+1, "win", 3, moment)
+		baseSet[bid] = true
+		order = append(order, bid)
+	}
+
+	const limit = 4
+	var got []int64
+	var cursor int64
+	for page := 1; ; page++ {
+		p, err := ts.MyBattleHistoryPage(ctx, id, limit, 0, "", cursor)
+		if err != nil {
+			t.Fatalf("第 %d 页失败：%v", page, err)
+		}
+		for _, it := range p.Items {
+			got = append(got, it.ID)
+		}
+		if page == 2 {
+			// 翻页途中插入一条更新的战报：旧行不该被挤到后续页。
+			seedBattleFor(t, ts, id, 99, "win", 3, time.Now())
+		}
+		if !p.HasMore {
+			break
+		}
+		cursor = p.Items[len(p.Items)-1].ID
+	}
+
+	if len(got) != n {
+		t.Fatalf("游标翻完收到 %d 行，期望恰好 %d（重复或漏行）", len(got), n)
+	}
+	seen := map[int64]bool{}
+	for _, bid := range got {
+		if seen[bid] {
+			t.Fatalf("游标翻页出现重复 id=%d", bid)
+		}
+		seen[bid] = true
+		if !baseSet[bid] {
+			t.Fatalf("游标翻页混入翻页后插入的 id=%d", bid)
+		}
+	}
+
+	// 同时间戳的 3 条必须按 id DESC 稳定排序（无 tiebreak 时跨页顺序会漂）。
+	var sameOrder []int64
+	for _, bid := range got {
+		for i := 11; i < n; i++ {
+			if order[i] == bid {
+				sameOrder = append(sameOrder, bid)
+			}
+		}
+	}
+	if len(sameOrder) != 3 || sameOrder[0] < sameOrder[1] || sameOrder[1] < sameOrder[2] {
+		t.Fatalf("同时间戳战报未按 id DESC 排序：%v", sameOrder)
+	}
+}
+
 func TestMyBattleHistoryPagination(t *testing.T) {
 	ts := openScratchService(t) // 一次性库，避免共享库数据干扰
 	ctx := context.Background()

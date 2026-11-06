@@ -246,6 +246,61 @@ func TestKeysetBattlesMatchesOffset(t *testing.T) {
 	}
 }
 
+// TestAdminUsersHasMoreAcrossAwkwardLimits 守住 G1（R131 审计）：
+// 请求 limit=0/-1/201/500/超大 时必须仍能逐页翻到底。
+//
+// 旧实现：服务端把 limit 夹到 200，handler 却拿**原始** limit 比
+// `len(items)==limit` —— limit=201/500 时永远为假，next_cursor 恒空，
+// 超过 200 的尾部用户永远翻不到（本用例会只剩 200 行，直接红）。
+func TestAdminUsersHasMoreAcrossAwkwardLimits(t *testing.T) {
+	ts := openScratchService(t)
+	ctx := context.Background()
+
+	const total = 260 // > 夹取上界 200，这样才能暴露尾部翻不到
+	seeded := r77SeedUsers(t, ts, ctx, "r131g1", total)
+
+	for _, limit := range []int{0, -1, 201, 500, 1 << 20} {
+		var got []int64
+		var cursor int64
+		for page := 1; ; page++ {
+			p, err := ts.AdminListUsersPage(ctx, "KS_", limit, 0, nil, nil, nil, nil, nil, nil, cursor)
+			if err != nil {
+				t.Fatalf("limit=%d 第 %d 页失败：%v", limit, page, err)
+			}
+			if p.Total != total {
+				t.Fatalf("limit=%d total=%d，期望 %d（total 不该被 limit 影响）", limit, p.Total, total)
+			}
+			if len(p.Items) > 200 {
+				t.Fatalf("limit=%d 一页返回 %d 行，超过服务端上界 200", limit, len(p.Items))
+			}
+			for _, it := range p.Items {
+				got = append(got, it.ID)
+			}
+			if !p.HasMore {
+				break
+			}
+			if len(p.Items) == 0 {
+				t.Fatalf("limit=%d HasMore=true 却没有行（会死循环）", limit)
+			}
+			cursor = p.Items[len(p.Items)-1].ID
+			if page > total {
+				t.Fatalf("limit=%d 页数异常（%d）", limit, page)
+			}
+		}
+		if len(got) != total {
+			t.Fatalf("limit=%d 翻完只收到 %d 行，期望恰好 %d（尾部用户被漏掉）", limit, len(got), total)
+		}
+		if d := r77DupCount(got); d != 0 {
+			t.Fatalf("limit=%d 翻页出现 %d 个重复 id", limit, d)
+		}
+		for _, id := range got {
+			if !seeded[id] {
+				t.Fatalf("limit=%d 收到了范围外的 id=%d", limit, id)
+			}
+		}
+	}
+}
+
 // TestKeysetUsersTotalUnchangedByCursor：users 侧同口径钉 total。
 func TestKeysetUsersTotalUnchangedByCursor(t *testing.T) {
 	ts := openScratchService(t)
