@@ -137,13 +137,12 @@ pub async fn processing_execute(
     session: Option<Extension<shared::session::Session>>,
     Json(req): Json<ProcessingExecuteRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
     let query = req.query.unwrap_or_default();
     let model_flag = req.model_flag.unwrap_or_default();
     let params = req.params.unwrap_or_default();
-    let params_str = serde_json::to_string(&params).unwrap_or_default();
 
     if query.trim().is_empty() {
         return Ok(Json(ActionResult::error("query is required")));
@@ -155,15 +154,13 @@ pub async fn processing_execute(
         )));
     }
 
-    let creator = "system";
-
     let (id, executed) = if model_flag.is_empty() {
         let id = uuid::Uuid::new_v4().to_string();
         let result = client
             .execute(
                 "INSERT INTO x_query_processing (id, query, model_flag, params, creator, create_time, update_time) \
                  VALUES ($1, $2, $3, $4, $5, NOW(), NOW())",
-                &[&id, &query, &model_flag, &params_str, &creator],
+                &[&id, &query, &model_flag, &params, &sess.person_unique],
             )
             .await
             .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -176,7 +173,7 @@ pub async fn processing_execute(
                  VALUES ($1, $2, $3, $4, $5, NOW(), NOW()) \
                  ON CONFLICT (model_flag) DO UPDATE SET query = EXCLUDED.query, params = EXCLUDED.params, update_time = NOW() \
                  RETURNING id",
-                &[&id, &query, &model_flag, &params_str, &creator],
+                &[&id, &query, &model_flag, &params, &sess.person_unique],
             )
             .await
             .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;

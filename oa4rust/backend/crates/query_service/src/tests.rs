@@ -94,4 +94,44 @@ mod tests {
         assert!(crate::validate_query("统计上个月订单数量"));
         assert!(crate::validate_query("  ")); // 空白串本身合法，trim 校验由调用方负责
     }
+
+    /// 批2：processing_execute 写入的 creator 必须落会话身份，而不是常量 `'system'`。
+    #[tokio::test]
+    async fn b2_processing_execute_persists_session_creator() {
+        let pool = shared::testing::test_pool();
+        let person = "b2-processing-owner";
+        let query = format!("b2 processing {}", uuid::Uuid::new_v4());
+        let res = crate::processing_execute(
+            axum::Extension(pool.clone()),
+            Some(axum::Extension(shared::testing::test_session(person))),
+            axum::Json(crate::ProcessingExecuteRequest {
+                query: Some(query.clone()),
+                model_flag: None,
+                params: None,
+            }),
+        )
+        .await;
+        if let Err(e) = &res {
+            panic!("有会话执行必须成功: {e:?}");
+        }
+
+        let client = pool.get().await.expect("db");
+        let row = client
+            .query_opt(
+                "SELECT creator FROM x_query_processing WHERE query = $1 \
+                 ORDER BY create_time DESC LIMIT 1",
+                &[&query],
+            )
+            .await
+            .expect("query processing");
+        let owner = row
+            .as_ref()
+            .and_then(|r| r.get::<_, Option<String>>("creator"))
+            .unwrap_or_default();
+        client
+            .execute("DELETE FROM x_query_processing WHERE query = $1", &[&query])
+            .await
+            .expect("cleanup processing");
+        assert_eq!(owner, person, "processing creator 必须是会话身份");
+    }
 }
