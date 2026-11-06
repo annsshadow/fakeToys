@@ -110,6 +110,7 @@ import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
 import { describeListError } from './listQuery'
+import { createSearchRunner } from './searchRunner'
 
 type Tab = 'published' | 'draft'
 type DocItem = { id: string; title?: string; name?: string; content?: string; status?: string; createdAt?: string }
@@ -179,21 +180,30 @@ function docStatusCls(s?: string) {
   return ''
 }
 
+// R145：连续回车/切页签会并发触发，旧响应晚到会覆盖新关键词的结果。
+const searchRun = createSearchRunner()
 async function doSearch() {
   loading.value = true
   loadError.value = ''
   try {
-    const params: Record<string, string> = {}
-    if (keyword.value.trim()) params.keyword = keyword.value
-    if (tab.value === 'draft') params.type = 'draft'
-    // 后端文档列表为 POST document/list/document（裸 GET /list 会被 {id} 宽路由吞掉）。
-    const r = await api.post('/api/document/list/document', params)
-    items.value = r.data?.list ?? r.data ?? []
+    await searchRun.run(
+      async (signal) => {
+        const params: Record<string, string> = {}
+        if (keyword.value.trim()) params.keyword = keyword.value
+        if (tab.value === 'draft') params.type = 'draft'
+        // 后端文档列表为 POST document/list/document（裸 GET /list 会被 {id} 宽路由吞掉）。
+        const r = await api.post('/api/document/list/document', params, { signal })
+        items.value = r.data?.list ?? r.data ?? []
+      },
+      {
+        onSettled: () => {
+          loading.value = false
+        },
+      },
+    )
   } catch (e) {
     // 失败保留旧文档并显式报错，不能和「真的没有文档」混成同一种空态。
     loadError.value = describeListError('文档列表加载失败', e)
-  } finally {
-    loading.value = false
   }
 }
 
