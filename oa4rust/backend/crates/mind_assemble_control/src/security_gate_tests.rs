@@ -5,8 +5,9 @@
 //!
 //! - `update_control_config`（UPDATE `x_mind_assemble_control_config`）→ admin 档；
 //! - `save_folder` / `update_folder` / `folder_move_folderId` / `folder_id_force`
-//!   （INSERT/UPDATE/软删 `x_mind`）→ 会话存在档（`x_mind.creator` 硬写 "system"，
-//!   归属门无意义，至少要求有效会话）。
+//!   （INSERT/UPDATE/软删 `x_mind`）→ 会话存在档；
+//! - 分片A第三批：`save_folder` 归属改落会话身份（原硬写 "system"），
+//!   用例 `save_folder_stamps_session_creator` 守住「新行 creator = 会话」。
 //!
 //! 无会话一律 401（先于任何 SQL，离线可证）。
 //!
@@ -110,6 +111,44 @@ mod security_gate_tests {
         assert!(
             matches!(res, Err(AppError::Forbidden)),
             "非 admin 全局配置写必须 403，实得 {res:?}"
+        );
+    }
+
+    /// 分片A第三批：`save_folder` 的新行 creator 必须是会话身份，不能再落 `system`。
+    /// 破坏实验：把 `creator` 改回 `let creator = "system";`，本用例必红。
+    #[tokio::test]
+    async fn save_folder_stamps_session_creator() {
+        let pool = shared::testing::test_pool();
+        let me = "u-sec-read-a-writer";
+        let name = "sec-read-a-write-owner";
+        {
+            let c = pool.get().await.unwrap();
+            c.execute("DELETE FROM x_mind WHERE name = $1", &[&name])
+                .await
+                .unwrap();
+        }
+        let res = crate::save_folder(
+            Extension(pool.clone()),
+            Some(Extension(shared::testing::test_session(me))),
+            Json(serde_json::from_value(json!({ "name": name, "content": "c" })).unwrap()),
+        )
+        .await;
+        assert!(res.is_ok(), "会话本人建文件夹应成功，实得错误");
+        let c = pool.get().await.unwrap();
+        let row = c
+            .query_one("SELECT creator FROM x_mind WHERE name = $1", &[&name])
+            .await
+            .unwrap();
+        let creator: Option<String> = row.get("creator");
+        assert_eq!(
+            creator.as_deref(),
+            Some(me),
+            "写侧归属必须落地会话身份，实得 {creator:?}"
+        );
+        assert_ne!(
+            creator.as_deref(),
+            Some("system"),
+            "不得再以 system 落库（任何登录用户都可冒名）"
         );
     }
 

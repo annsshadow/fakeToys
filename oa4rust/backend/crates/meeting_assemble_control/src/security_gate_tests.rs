@@ -508,4 +508,291 @@ mod r6_gate_tests {
             "匿名写路由未回 401（出现 500 就是门插在读库之后，出现 400/415 是 body 未过提取器）：{leaked:?}"
         );
     }
+
+    fn build_session(person_unique: &str) -> shared::session::Session {
+        shared::testing::test_session(person_unique)
+    }
+
+    /// 分片 A 读越权（IDOR）回归：`meeting_id` 原无会话、无归属过滤，任一登录用户
+    /// 凭 id 可读他人会议。修复后归属谓词写在 SQL WHERE 内。
+    /// 双向：A 读 B 的会议 403；B 读 A 的会议 403；本人 200 且真返回该行内容。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn meeting_read_idor_is_blocked_both_ways() {
+        let pool = shared::testing::test_pool();
+        {
+            let c = pool.get().await.unwrap();
+            for (id, title, creator) in [
+                ("sec-read-a-meeting-own", "own-title", "u-sec-read-owner"),
+                (
+                    "sec-read-a-meeting-other",
+                    "other-title",
+                    "u-sec-read-other",
+                ),
+            ] {
+                c.execute(
+                    "INSERT INTO x_meeting (id, title, start_time, end_time, applied, invited, creator) \
+                     VALUES ($1, $2, NOW(), NOW(), false, false, $3) \
+                     ON CONFLICT (id) DO UPDATE SET creator = EXCLUDED.creator, title = EXCLUDED.title",
+                    &[&id, &title, &creator],
+                )
+                .await
+                .unwrap();
+            }
+        }
+        let owner = build_session("u-sec-read-owner");
+        let other = build_session("u-sec-read-other");
+        let path = |id: &str| axum::extract::Path(id.to_string());
+
+        // 正控制：本人读自己的会议必须 200 且真返回落库内容。
+        let body = crate::meeting_id(
+            Extension(pool.clone()),
+            Some(Extension(owner.clone())),
+            path("sec-read-a-meeting-own"),
+        )
+        .await
+        .expect("本人读自己的会议应成功");
+        let data = body.0.data.expect("成功响应必须带 data");
+        assert_eq!(
+            data.get("id").and_then(|v| v.as_str()),
+            Some("sec-read-a-meeting-own")
+        );
+        assert_eq!(
+            data.get("title").and_then(|v| v.as_str()),
+            Some("own-title"),
+            "返回的必须是本人落库的那一行"
+        );
+
+        // 双向：A→B 与 B→A 都必须 403。
+        for (sess, id) in [
+            (&owner, "sec-read-a-meeting-other"),
+            (&other, "sec-read-a-meeting-own"),
+        ] {
+            let res = crate::meeting_id(
+                Extension(pool.clone()),
+                Some(Extension(sess.clone())),
+                path(id),
+            )
+            .await;
+            assert!(
+                matches!(res, Err(AppError::Forbidden)),
+                "越权读 {id} 必须 403"
+            );
+        }
+
+        // 无会话：401。
+        let res = crate::meeting_id(
+            Extension(pool.clone()),
+            None,
+            path("sec-read-a-meeting-own"),
+        )
+        .await;
+        assert!(matches!(res, Err(AppError::Unauthorized)));
+    }
+
+    /// 分片 A 读越权（IDOR）回归：`u2_attachment_get` 原无会话、无归属过滤。
+    /// 归属口径与下载门保持一致：上传者 `person`、所属会议 `creator`、管理员。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn attachment_read_idor_is_blocked_both_ways() {
+        let pool = shared::testing::test_pool();
+        {
+            let c = pool.get().await.unwrap();
+            // 本用例自带会议夹具，不依赖其他用例的执行顺序。
+            for (id, creator) in [
+                ("sec-read-a-meeting-own", "u-sec-read-owner"),
+                ("sec-read-a-meeting-other", "u-sec-read-other"),
+            ] {
+                c.execute(
+                    "INSERT INTO x_meeting (id, title, start_time, end_time, applied, invited, creator) \
+                     VALUES ($1, $2, NOW(), NOW(), false, false, $3) \
+                     ON CONFLICT (id) DO UPDATE SET creator = EXCLUDED.creator",
+                    &[&id, &format!("title-{id}"), &creator],
+                )
+                .await
+                .unwrap();
+            }
+            for (id, person, meeting_id) in [
+                (
+                    "sec-read-a-att-own",
+                    "u-sec-read-owner",
+                    "sec-read-a-meeting-own",
+                ),
+                (
+                    "sec-read-a-att-other",
+                    "u-sec-read-other",
+                    "sec-read-a-meeting-other",
+                ),
+                // 他人上传、但挂在本人会议上：会议 creator 仍应可读（保留原下载门口径）。
+                (
+                    "sec-read-a-att-by-other-on-own-meeting",
+                    "u-sec-read-other",
+                    "sec-read-a-meeting-own",
+                ),
+            ] {
+                c.execute(
+                    "INSERT INTO x_meeting_attachment (id, meeting_id, person, file_name, mime_type) \
+                     VALUES ($1, $2, $3, 'f.txt', 'text/plain') \
+                     ON CONFLICT (id) DO UPDATE SET person = EXCLUDED.person, meeting_id = EXCLUDED.meeting_id",
+                    &[&id, &meeting_id, &person],
+                )
+                .await
+                .unwrap();
+            }
+        }
+        let owner = build_session("u-sec-read-owner");
+        let other = build_session("u-sec-read-other");
+        let path = |id: &str| axum::extract::Path(id.to_string());
+
+        // 正控制：上传者本人读自己的附件必须 200 且真返回该行。
+        let body = crate::u2_attachment_get(
+            Extension(pool.clone()),
+            Some(Extension(owner.clone())),
+            path("sec-read-a-att-own"),
+        )
+        .await
+        .expect("本人读自己的附件应成功");
+        let data = body.0.data.expect("成功响应必须带 data");
+        assert_eq!(
+            data.get("id").and_then(|v| v.as_str()),
+            Some("sec-read-a-att-own")
+        );
+
+        // 正控制：会议 creator 读他人上传到本人会议的附件必须 200（保留原行为）。
+        let body = crate::u2_attachment_get(
+            Extension(pool.clone()),
+            Some(Extension(owner.clone())),
+            path("sec-read-a-att-by-other-on-own-meeting"),
+        )
+        .await
+        .expect("会议 creator 读本人会议附件应成功");
+        let data = body.0.data.expect("成功响应必须带 data");
+        assert_eq!(
+            data.get("id").and_then(|v| v.as_str()),
+            Some("sec-read-a-att-by-other-on-own-meeting")
+        );
+
+        // 双向：A→B 与 B→A 都必须 403。
+        for (sess, id) in [
+            (&owner, "sec-read-a-att-other"),
+            (&other, "sec-read-a-att-own"),
+        ] {
+            let res = crate::u2_attachment_get(
+                Extension(pool.clone()),
+                Some(Extension(sess.clone())),
+                path(id),
+            )
+            .await;
+            assert!(
+                matches!(res, Err(AppError::Forbidden)),
+                "越权读附件 {id} 必须 403"
+            );
+        }
+    }
+
+    /// 分片 A 列表读越权：meeting `applied/*` 族原无会话、无归属过滤，返回全员申请。
+    /// 修复后 `creator`（申请人）=会话身份 OR 管理员；NULL fail-closed。
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn applied_list_idor_is_blocked_both_ways() {
+        let pool = shared::testing::test_pool();
+        {
+            let c = pool.get().await.unwrap();
+            for creator in ["u-sec-read-owner", "u-sec-read-other"] {
+                for status in ["wait", "processing", "completed"] {
+                    let id = format!("sec-read-a-applied-{creator}-{status}");
+                    c.execute(
+                        "INSERT INTO x_meeting (id, title, start_time, end_time, applied, invited, status, creator) \
+                         VALUES ($1, $2, NOW(), NOW(), true, false, $3, $4) \
+                         ON CONFLICT (id) DO UPDATE SET creator = EXCLUDED.creator, status = EXCLUDED.status, applied = true",
+                        &[&id, &format!("title-{status}"), &status, &creator],
+                    )
+                    .await
+                    .unwrap();
+                }
+            }
+        }
+        let owner = build_session("u-sec-read-owner");
+        let other = build_session("u-sec-read-other");
+
+        let ids =
+            |body: &axum::Json<shared::response::ActionResult<serde_json::Value>>| -> Vec<String> {
+                body.0
+                    .data
+                    .as_ref()
+                    .and_then(|d| d.as_array())
+                    .map(|rows| {
+                        rows.iter()
+                            .filter_map(|r| {
+                                r.get("id").and_then(|v| v.as_str()).map(str::to_string)
+                            })
+                            .collect()
+                    })
+                    .unwrap_or_default()
+            };
+
+        // 三个状态列表 + 分页列表：本人只见本人的申请，不见他人的。
+        for status in ["wait", "processing", "completed"] {
+            let (own, theirs) = (
+                format!("sec-read-a-applied-u-sec-read-owner-{status}"),
+                format!("sec-read-a-applied-u-sec-read-other-{status}"),
+            );
+            let body = match status {
+                "wait" => {
+                    crate::meeting_list_applied_wait(
+                        Extension(pool.clone()),
+                        Some(Extension(owner.clone())),
+                    )
+                    .await
+                }
+                "processing" => {
+                    crate::meeting_list_applied_processing(
+                        Extension(pool.clone()),
+                        Some(Extension(owner.clone())),
+                    )
+                    .await
+                }
+                _ => {
+                    crate::meeting_list_applied_completed(
+                        Extension(pool.clone()),
+                        Some(Extension(owner.clone())),
+                    )
+                    .await
+                }
+            }
+            .expect("列表读取应成功");
+            let got = ids(&body);
+            assert!(got.contains(&own), "必须返回本人的申请 {own}");
+            assert!(!got.contains(&theirs), "不得返回他人的申请 {theirs}");
+        }
+
+        // 分页列表：本人 3 条都在，B 的 3 条都不在。
+        for (sess, own_suffix, theirs_suffix) in [
+            (&owner, "u-sec-read-owner", "u-sec-read-other"),
+            (&other, "u-sec-read-other", "u-sec-read-owner"),
+        ] {
+            let body = crate::meeting_list_apply_page_size_size(
+                Extension(pool.clone()),
+                Some(Extension(sess.clone())),
+                axum::extract::Path((1i64, 10i64)),
+            )
+            .await
+            .expect("分页列表读取应成功");
+            let got = ids(&body);
+            for status in ["wait", "processing", "completed"] {
+                assert!(
+                    got.contains(&format!("sec-read-a-applied-{own_suffix}-{status}")),
+                    "必须返回本人的申请（{status}）"
+                );
+                assert!(
+                    !got.contains(&format!("sec-read-a-applied-{theirs_suffix}-{status}")),
+                    "不得返回他人的申请（{status}）"
+                );
+            }
+        }
+
+        // 无会话：401。
+        let res = crate::meeting_list_applied_wait(Extension(pool.clone()), None).await;
+        assert!(matches!(res, Err(AppError::Unauthorized)));
+    }
 }
