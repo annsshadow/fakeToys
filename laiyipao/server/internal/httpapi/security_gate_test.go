@@ -1345,18 +1345,17 @@ func (g *gateCtx) caseAdminUsersKeyset() gateOutcome {
 			if len(items) == 0 {
 				break
 			}
+			// R131 起 hasMore 由「多取一行」的实际结果决定：末页恰好满页时
+			// next_cursor 为空是合法的（再翻只会拿到空页），不能据此判 LEAK。
+			// 真正还有行却没给游标会由下面 want/seen 覆盖断言兜住。
 			next := gateNum(root, "next_cursor")
-			if len(items) == pageSize {
-				if next == 0 {
-					return gateBad("满页未给 next_cursor，无法继续翻页")
-				}
-				cursor = next
-				continue
+			if next == 0 {
+				break
 			}
-			if next != 0 {
-				return gateUnknown(fmt.Sprintf("末页仍给 next_cursor=%d", next))
+			if len(items) < pageSize {
+				return gateUnknown(fmt.Sprintf("未满页仍给 next_cursor=%d", next))
 			}
-			break
+			cursor = next
 		}
 		for id := range want {
 			if seen[id] == 0 {
