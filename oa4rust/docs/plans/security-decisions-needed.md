@@ -10,7 +10,7 @@
 
 1. **读权限统一「本人 OR 管理员」**；历史行无归属值的，按「仅管理员可读」兜底（fail-closed）。
    - 对应：`2.1` 的 12 条、`2.2` 的 5 条（补列后生效）、`2.3` 中能落到主体列的条目、`5` 的全部 E13–E24。
-   - 「管理员」按 `admin_policy` 两分：`allow` 的端点 admin 是合法读者；`deny` 的端点（个人 PII、考勤明细等）admin 也不放行。E18–E24 分组就是用来把 `unknown` 收敛进这两档。
+   - 「管理员」口径（2026-11-06 已裁决）：**管理端读/写一律 `allow`**；`deny` 只保留两类——(a) 匿名/未登录也能触达的端点；(b) 确实不应由管理员操作、且写明业务理由的少数端点。复核后 145 条 idor 的分布为 `allow 144 / deny 1 / unknown 0`（见 §6）。
 2. **cms 口径**：`published` = 全员可读（匿名端点同样）；`draft` 只本人与管理员可见。owner 同时认 `creator` 与 `author_id`。
    - 对应：`3` 的 C1–C3，以及 `5` 的 E13、E18。
 3. **软门统一改 403**：不再返回 `200 + ActionResult{success:false}`。前端已能处理 `PermissionError`，不保留兼容层。
@@ -28,9 +28,9 @@
 | 真·全局表「归谁」 | 14（`2.3` #1–#14） | 这些表**没有主体列**，`本人 OR 管理员` 无从落值，必须先在「应用命名空间 / 全局配置 / 组织范围」里选一档 |
 | 关联边归属 | 1（`2.1` #17） | `source_id`/`target_id` 指向**实体**而非人，要决定「按端点实体所有者」还是「仅平台 admin」 |
 | 写侧留痕/审批 | 2（#13 会议室照片、#31 admin 代改） | 读侧已定，但「谁能写」和「代改是否留痕」是流程问题，不是权限谓词问题 |
-| `deny` 端点清单 | 待收敛 | 第 1 条的「admin 也放行」只对 `allow` 成立；`deny` 需逐条点名，未点名的默认按 `unknown` 继续进基线 |
+| `deny` 例外清单 | 已收敛为 1 条（§6.2 的 `folder_delete`） | 其余一律 `allow`；例外必须带业务理由 |
 
-**合计仍待业务回答 17 条 + `deny` 清单**（14 + 1 + 2）。
+**合计仍待业务回答 17 条**（14 + 1 + 2）；`deny` 清单已收敛，不再挂账。
 
 ## 0. 怎么用这份清单
 
@@ -173,13 +173,15 @@
 
 ---
 
-## 6. admin_policy 点名（deny 15 / unknown 19）
+## 6. admin_policy 裁决（allow 144 / deny 1 / unknown 0）
 
-> 来源：`oa4rust/backend/tests/security_regression_cases.tsv` 的 `admin_policy` 列（idor 共 145 条：allow 111 / deny 15 / unknown 19）。「当前状态」对 `security_regression_baseline.txt`（156 条）取差集：不在基线即 PASS。
+> 来源：`oa4rust/backend/tests/security_regression_cases.tsv` 的 `admin_policy` 列（idor 145 条）。2026-11-06 裁决后的最终分布：**`allow 144 / deny 1 / unknown 0`**。
 >
-> 本节是文首「默认裁决」的配套：默认说「读 = 本人 OR 管理员」，与 `deny` 的原始定义（admin 也不该看）**直接冲突**。冲突不取平均，二选一，见 6.1。
+> 裁决口径：管理端读/写一律 `allow`；`deny` 只保留 (a) 匿名/未登录可触达、(b) 业务明确禁止 admin 操作的端点，且逐条带理由。本次只改标签，**不改代码**，所以 `security_regression_baseline.txt` 仍为 156 条，LEAK 状态一条未少。
 
-### 6.1 读侧 deny：8 条（默认裁决要求改标 `allow`，除非业务点名例外）
+### 6.1 读侧 deny 8 条：全部改标 `allow`
+
+理由：8 条都是**登录后才可达**的 idor 读端点，管理员是合法读者；无匿名触达项，不满足保留 `deny` 的 (a)。改标签不改变实测状态——其中 2 条仍 UNVERIFIED、6 条仍 LEAK，继续留基线，修复线照常按基线棘轮推进。
 
 | 用例 | 端点 | 当前状态 |
 |---|---|---|
@@ -192,13 +194,13 @@
 | `jpush_core_entity\|device_get\|GET` | `/api/jpush/core/entity/device/{id}` | LEAK |
 | `program_center\|collect_code_mobile_mobile\|GET` | `/api/program_center/collect/code/mobile/{id}` | LEAK |
 
-裁决二选一：① 按默认，admin 是合法读者 → 这 8 条 `deny` 改 `allow`；② 保留 `deny` → 必须在例外清单里写明「即使 admin 也不得读」，并据此实现。
+裁决落地：8 条全部改标 `allow`（`calendar_get`、`get_file`、`recycle_id`、`file_download`、`file_get`、`jpush`/`jpush_core` `device_get`、`collect_code_mobile`）。
 
-### 6.2 写侧 deny：7 条（6 条已修但实现为「本人或 admin」，与 deny 矛盾）
+### 6.2 写侧 deny 7 条：6 条改标 `allow`，1 条保留 `deny`（批次 5 真修）
 
 | 用例 | 当前状态 | 实现口径 |
 |---|---|---|
-| `file_core_entity\|folder_delete\|DELETE` | LEAK | 未修，仍可越权删他人文件夹；若 deny 成立，修时 admin 也要拒 |
+| `file_core_entity\|folder_delete\|DELETE` | LEAK | 未修；保留 `deny`，批次 5 真修为 `owner OR admin` 后再评估 |
 | `general_core_entity\|file_delete\|POST` | PASS | 已修，`owner OR admin` |
 | `general_core_entity\|file_update\|POST` | PASS | 已修，`owner OR admin` |
 | `mind_core_entity\|update_folder\|POST` | PASS | 已修，`creator OR admin`（`mind_core_entity/src/lib.rs:35`） |
@@ -206,9 +208,11 @@
 | `program_center\|collect_delete\|DELETE` | PASS | 已修，`person_id OR admin`（`program_center/src/lib.rs:9335`） |
 | `program_center\|collect_save\|PUT` | PASS | 已修，同上 |
 
-默认裁决**没有覆盖写侧**。要回答的只有一句：**admin 能否代写他人数据？** 答「不能」则上表 6 条已修用例的 admin 分支要改成 403，`admin_policy` 才有意义；答「能」则这 6 条改标 `allow`。
+裁决落地：**admin 可代写他人数据**，与读侧同一口径。上表 6 条 PASS 用例的代码已经是 `owner OR admin`（依据列已注明文件/行），标签改 `allow`。
 
-### 6.3 unknown：19 条（10 读 + 9 写，去重后 15 个端点）
+`file_core_entity|folder_delete` **保留 `deny`**，理由：这是破坏性删除，管理员不应直连该路由代删他人文件夹，应走管理端点或二次确认；**该条仍是 LEAK**，标签保留不掩盖缺口，走写 IDOR 批次 5 真修（改成 `owner OR admin` 后再评估是否改标 `allow`）。
+
+### 6.3 unknown 19 条：全部落到 `allow`（unknown=0）
 
 | 域 | 读（10 条，全部 LEAK） | 写（9 条） |
 |---|---|---|
@@ -217,17 +221,17 @@
 | processplatform | `attachment` | `attachment/edit/text`＝UNVERIFIED |
 | `t1` 重复行（4） | — | `appeal` POST/PUT＝LEAK×2；`record/update`＝PASS；`invoice/update`＝PASS |
 
-读数：**13 LEAK + 1 UNVERIFIED + 5 PASS**。这 19 条是「还没想清楚的有多少」的显式台账；不裁决就继续留在基线，`unknown` 不阻断门禁。
+裁决落地：19 条全部改标 `allow`。依据：这 15 个端点都要求登录，管理员是合法读者/写者；无一满足 `deny` 的 (a) 匿名触达或 (b) 业务禁止。改标签不改变实测——**13 LEAK + 1 UNVERIFIED + 5 PASS 原样保留在基线**，`unknown` 计数从 19 归零。
 
 ## 7. 建议的会议议程（约 45 分钟）
 
-> 文首「默认裁决」已采用，议程只需处理：默认裁决末表 17 条 + `6.1`（读侧 deny 是否改 allow）+ `6.2`（admin 能否代写）。
+> 默认裁决与 `admin_policy` 均已定；议程只需处理默认裁决末表 17 条。
 
 1. **确认默认裁决**（5 分钟）：读=本人 OR 管理员、空归属仅管理员、cms `published` 全员、软门 403、5 条只补新增。
 2. **真·全局表归谁**（15 分钟）：`2.3` 的 14 条，按「应用命名空间 / 全局配置 / 组织范围」三选一，逐条勾。
 3. **关联边 + 写侧留痕**（5 分钟）：`2.1` #17 归端点实体还是平台 admin；#13、#31 代改是否留痕。
-4. **admin_policy 冲突**（10 分钟）：`6.1` 读侧 deny 8 条改不改 `allow`；`6.2` admin 能否代写他人数据。
-5. **`deny` 例外清单**（5 分钟）：非默认的「admin 也不得看/写」逐条点名，未点名的一律按 `allow`。
+4. **`admin_policy` 已定**（5 分钟）：确认分布 `allow 144 / deny 1 / unknown 0`，只核对 §6.2 的 `folder_delete` 例外理由。
+5. **`deny` 例外**（5 分钟）：仅 `folder_delete` 1 条，处理路径是批次 5 真修，不是改标签。
 6. **填裁决记录表**（5 分钟）。
 
 ## 8. 裁决记录（会议当场填）
