@@ -44,7 +44,7 @@ INSERT INTO "x_attendance_workday_config" ("id","creator") VALUES ('rev-r6-atten
 DELETE FROM "x_attendance_workplace" WHERE "id" = 'rev-r6-workplace_id';
 INSERT INTO "x_attendance_workplace" ("id","creator") VALUES ('rev-r6-workplace_id','audit-user');
 DELETE FROM "x_cal_calendar" WHERE "id" = 'rev-2bf1a95c-04a8-41c1-918b-7d608331c702';
-INSERT INTO "x_cal_calendar" ("id","name","type","target","color","createor","status") VALUES ('rev-2bf1a95c-04a8-41c1-918b-7d608331c702','r6seed','r6seed','r6seed','r6seed','audit-user','OPEN');
+INSERT INTO "x_cal_calendar" ("id","name","type","target","color","createor","status") VALUES ('rev-2bf1a95c-04a8-41c1-918b-7d608331c702','r6seed','r6seed','r6seed','r6seed','audit-user','r6seed');
 DELETE FROM "x_cms_appinfo" WHERE "id" = 'rev-r6-appinfo_appId_icon_s';
 INSERT INTO "x_cms_appinfo" ("id","app_type","creator") VALUES ('rev-r6-appinfo_appId_icon_s','r6seed','audit-user');
 DELETE FROM "x_cms_article" WHERE "id" = 'rev-r6-article_get';
