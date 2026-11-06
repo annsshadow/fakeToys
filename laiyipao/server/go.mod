@@ -4,8 +4,8 @@ go 1.26.10
 
 require (
 	github.com/gofiber/fiber/v2 v2.52.16
-	github.com/jackc/pgx/v5 v5.11.0
-	github.com/jackc/puddle/v2 v2.2.2
+	github.com/jackc/pgx/v5 v5.12.0
+	github.com/jackc/puddle/v2 v2.2.3
 	github.com/pressly/goose/v3 v3.28.0
 	golang.org/x/crypto v0.58.1-0.20261009181718-2f1f834330b2
 )
