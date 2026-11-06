@@ -13,8 +13,10 @@
         <button class="btn-search" title="孪生端点" @click="loadSearchTwin">🔁</button>
       </div>
       <div v-if="loading" class="loading-state">搜索中...</div>
+      <ListLoadError v-else-if="results.length === 0 && searchError" mode="empty" :message="searchError" @retry="doSearch" />
       <div v-else-if="results.length===0&&queried" class="empty-state"><p>未找到结果</p></div>
       <div v-else-if="results.length>0" class="results">
+        <ListLoadError v-if="searchError" mode="banner" :message="searchError" @retry="doSearch" />
         <div v-for="r in results" :key="r.id" class="result-item">
           <div class="ri-icon">{{ r.type==='doc'?'📄':r.type==='process'?'⚡':r.type==='org'?'🏢':'📋' }}</div>
           <div class="ri-body"><div class="ri-title">{{ r.title }}</div><div class="ri-desc">{{ r.desc }}</div></div>
@@ -27,21 +29,39 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { ref } from 'vue'
+// biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
+import ListLoadError from './ListLoadError.vue'
+import { describeListError } from './listQuery'
+import { createSearchRunner } from './searchRunner'
 
 const query = ref('')
 const results = ref<any[]>([])
 const loading = ref(false)
 const queried = ref(false)
+const searchError = ref('')
+// R145：连续按回车/连点搜索时旧请求会晚到，这里只让最后一次结果落地。
+const searchRun = createSearchRunner()
 async function doSearch() {
   if (!query.value.trim()) return
   loading.value = true
   queried.value = true
+  searchError.value = ''
   try {
-    // 后端 queryview/search 仅注册 POST，读取键为 key（兼容 query）。
-    const r: any = await api.post('/api/queryview/search', { key: query.value })
-    results.value = (r?.data ?? []) as any[]
-  } finally {
-    loading.value = false
+    await searchRun.run(
+      async (signal) => {
+        // 后端 queryview/search 仅注册 POST，读取键为 key（兼容 query）。
+        const r: any = await api.post('/api/queryview/search', { key: query.value }, { signal })
+        results.value = (r?.data ?? []) as any[]
+      },
+      {
+        onSettled: () => {
+          loading.value = false
+        },
+      },
+    )
+  } catch (e) {
+    // 旧实现无 catch：失败时列表原样不动且无任何提示，用户以为「搜到 0 条」。
+    searchError.value = describeListError('搜索失败', e)
   }
 }
 // rev478（用户裁定放宽双计口径）：搜索域镜像/方法孪生真注册路由 2 条（ftsearch save/delete 方法孪生；arity 已校验）

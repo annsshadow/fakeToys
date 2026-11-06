@@ -44,7 +44,7 @@ INSERT INTO "x_attendance_workday_config" ("id","creator") VALUES ('rev-r6-atten
 DELETE FROM "x_attendance_workplace" WHERE "id" = 'rev-r6-workplace_id';
 INSERT INTO "x_attendance_workplace" ("id","creator") VALUES ('rev-r6-workplace_id','audit-user');
 DELETE FROM "x_cal_calendar" WHERE "id" = 'rev-2bf1a95c-04a8-41c1-918b-7d608331c702';
-INSERT INTO "x_cal_calendar" ("id","name","type","target","color","createor","status") VALUES ('rev-2bf1a95c-04a8-41c1-918b-7d608331c702','r6seed','r6seed','r6seed','r6seed','audit-user','r6seed');
+INSERT INTO "x_cal_calendar" ("id","name","type","target","color","createor","status","is_public") VALUES ('rev-2bf1a95c-04a8-41c1-918b-7d608331c702','rev-r6seed','r6seed','r6seed','r6seed','audit-user','OPEN',false);
 DELETE FROM "x_cms_appinfo" WHERE "id" = 'rev-r6-appinfo_appId_icon_s';
 INSERT INTO "x_cms_appinfo" ("id","app_type","creator") VALUES ('rev-r6-appinfo_appId_icon_s','r6seed','audit-user');
 DELETE FROM "x_cms_article" WHERE "id" = 'rev-r6-article_get';
@@ -113,6 +113,8 @@ DELETE FROM "x_org_identity" WHERE "id" = 'rev-r6-identitydelete';
 INSERT INTO "x_org_identity" ("id","name","creator","person_id") VALUES ('rev-r6-identitydelete','r6seed','audit-user','audit-user');
 DELETE FROM "x_org_identity" WHERE "id" = 'rev-r6-identityupdate';
 INSERT INTO "x_org_identity" ("id","name","creator","person_id") VALUES ('rev-r6-identityupdate','r6seed','audit-user','audit-user');
+DELETE FROM "x_org_unit" WHERE "id" = 'rev-r6-unitread';
+INSERT INTO "x_org_unit" ("id","name","creator") VALUES ('rev-r6-unitread','rev-r6seed','audit-user');
 DELETE FROM "x_portal" WHERE "id" = 'rev-r6-portalid';
 INSERT INTO "x_portal" ("id","name","alias","description","portal_category","creator") VALUES ('rev-r6-portalid','r6seed','r6seed','r6seed','r6seed','audit-user');
 DELETE FROM "x_portal_design" WHERE "id" = 'rev-r6-getdesign';

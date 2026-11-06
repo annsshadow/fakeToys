@@ -421,16 +421,15 @@ mod tests {
             .unwrap();
 
         let app = mind_assemble_control_router(pool);
-        let resp = app
-            .clone()
-            .oneshot(
-                Request::builder()
-                    .uri(format!("/api/mind/assemble/control/mind/{}", id))
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
+        // 分片A第四批：读脑图已收归属谓词，本用例种的行 creator='u2tester'，
+        // 需把同一身份的会话放进请求扩展，否则会被 401 拦掉。
+        let mut req = Request::builder()
+            .uri(format!("/api/mind/assemble/control/mind/{}", id))
+            .body(Body::empty())
             .unwrap();
+        req.extensions_mut()
+            .insert(shared::testing::test_session("u2tester"));
+        let resp = app.clone().oneshot(req).await.unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
         let bytes = axum::body::to_bytes(resp.into_body(), 4096).await.unwrap();
         let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();

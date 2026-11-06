@@ -20,6 +20,16 @@ use std::sync::{Mutex, OnceLock};
 use uuid::Uuid;
 
 pub const API_BASE: &str = "/api/organization_assemble_authentication";
+
+/// 读归属谓词：`creator` 为本人 OR 调用者管理员。**写进 SQL WHERE**，不做先查后判；
+/// `creator` 为 NULL 时不命中（fail-closed）。
+const CREATOR_OWNER_PREDICATE: &str = "id = $1 AND (creator = $2 OR EXISTS(\
+     SELECT 1 FROM auth_person p \
+       JOIN auth_person_role pr ON pr.person_id = p.id \
+       JOIN auth_role r ON r.id = pr.role_id \
+      WHERE (p.unique_id = $2 OR p.id = $2) \
+        AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false))";
+
 pub mod routes;
 pub mod u2;
 
@@ -1182,16 +1192,38 @@ pub async fn person_id_icon(
 #[allow(non_snake_case)]
 pub async fn identity_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = session
+        .map(|Extension(s)| s)
+        .ok_or(AppError::Unauthorized)?
+        .person_unique;
     let client = shared::db::acquire(&pool).await?;
     let row = client
-        .query_one(
-            "SELECT id, name, unit_id FROM x_org_identity WHERE id = $1",
-            &[&id],
+        .query_opt(
+            &format!(
+                "SELECT id, name, unit_id FROM x_org_identity WHERE {CREATOR_OWNER_PREDICATE}"
+            ),
+            &[&id, &actor],
         )
         .await
-        .map_err(|_| AppError::NotFound)?;
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    let Some(row) = row else {
+        let exists: bool = client
+            .query_one(
+                "SELECT EXISTS(SELECT 1 FROM x_org_identity WHERE id = $1) AS row_exists",
+                &[&id],
+            )
+            .await
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+            .get("row_exists");
+        return Err(if exists {
+            AppError::Forbidden
+        } else {
+            AppError::NotFound
+        });
+    };
     let data = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
         ("name".to_string(), Value::String(row.get("name"))),
