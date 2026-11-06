@@ -628,6 +628,28 @@ B7_EXPECTS = [
     "jpush_core_entity|device_get|GET",
 ]
 
+# 写 IDOR 第 W-b2 批：general_core 的 file/invoice 读面归属谓词 + 创建面冒名拒绝。
+# 读面把 `creator = $2` 改成 `TRUE OR creator = $2`（保留 $2 绑定，避免 500 假阳性）；
+# 写面摘掉非管理员 403 分支，让冒名创建落库 → 逐条 LEAK。
+GENERAL_CORE = BACKEND / "crates/general_core_entity/src/lib.rs"
+GENERAL_ASSEMBLE = BACKEND / "crates/general_assemble_control/src/lib.rs"
+W2_READ_RE = re.compile(r"creator = \$2 OR EXISTS")
+W2_READ_PATCH = "TRUE OR creator = $2 OR EXISTS"
+W2_CORE_WRITE_RE = re.compile(
+    r"if is_admin_db\(db, actor\)\.await \{\s*Ok\(owner\)\s*\} else \{\s*Err\(AppError::Forbidden\)\s*\}"
+)
+W2_CORE_WRITE_PATCH = "Ok({ let _ = is_admin_db(db, actor).await; owner })"
+W2_ASSEMBLE_WRITE_RE = re.compile(r"require_admin\(pool, session\)\.await\?;")
+W2_ASSEMBLE_WRITE_PATCH = "let _ = (&pool, &session);"
+W2_EXPECTS = [
+    "general_core_entity|file_download|GET",
+    "general_core_entity|file_get|GET",
+    "general_core_entity|invoice_get|GET",
+    "t2|general_assemble|invoice_create",
+    "t2|general_core|file_create",
+    "t2|general_core|invoice_create",
+]
+
 
 def sabotage_many(
     title: str,
@@ -758,10 +780,27 @@ def sabotage(kind: str) -> int:
             B7_EXPECTS,
             require_leak=True,
         )
+    elif kind == "write-idor-w2":
+        return sabotage_many(
+            "放开 W-b2 读归属谓词 + 摘掉冒名创建 403（6 条应逐条 LEAK）",
+            [
+                (GENERAL_CORE, W2_READ_RE, W2_READ_PATCH, "general_core_read"),
+                (GENERAL_CORE, W2_CORE_WRITE_RE, W2_CORE_WRITE_PATCH, "general_core_write"),
+                (
+                    GENERAL_ASSEMBLE,
+                    W2_ASSEMBLE_WRITE_RE,
+                    W2_ASSEMBLE_WRITE_PATCH,
+                    "general_assemble_write",
+                ),
+            ],
+            W2_EXPECTS,
+            require_leak=True,
+        )
     else:
         raise SystemExit(
             f"未知破坏实验: {kind}（可选 ownership / correct / general / organization / "
-            "program_center / hotpic_mind / read_b / write-idor-b5 / write-idor-b6 / write-idor-b7）"
+            "program_center / hotpic_mind / read_b / write-idor-b5 / write-idor-b6 / write-idor-b7 / "
+            "write-idor-w2）"
         )
 
     print(f"== 破坏实验：{title}")
@@ -807,7 +846,7 @@ def main() -> int:
         if len(sys.argv) < 3:
             print("用法: security_regression_gate.py sabotage "
                   "<ownership|correct|general|organization|program_center|hotpic_mind|read_b|"
-                  "write-idor-b5|write-idor-b6|write-idor-b7|"
+                  "write-idor-b5|write-idor-b6|write-idor-b7|write-idor-w2|"
                   "rust-drift-to-leak|rust-swallow-write|"
                   "go-limit0|go-idor-rev|go-empty-list|go-swallow-write|"
                   "go-dead-write|go-page2|go-drift-to-leak>")

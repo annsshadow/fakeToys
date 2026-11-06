@@ -48,6 +48,30 @@ fn require_session(
     session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
 }
 
+/// 写侧归属解析：请求体 `creator` 缺省=会话人；写自己=会话人；写他人仅管理员放行，
+/// 否则 403。禁止把请求体 creator 直接落库（冒名创建）。
+#[allow(non_snake_case)]
+async fn resolve_creator(
+    pool: &Pool,
+    session: &shared::session::Session,
+    payload: &Value,
+) -> Result<String, AppError> {
+    let requested = payload
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string);
+    match requested {
+        None => Ok(session.person_unique.clone()),
+        Some(owner) if owner == session.person_unique => Ok(session.person_unique.clone()),
+        Some(owner) => {
+            require_admin(pool, session).await?;
+            Ok(owner)
+        }
+    }
+}
+
 /// 属主资源门禁：先取记录属主列（creator），命中行时 require_owner；
 /// 行不存在则放行（后续 UPDATE/DELETE 命中 0 行，统一回 not found，语义不变）。
 /// table/column 均为调用侧静态字面量（FI-002 约定），无请求输入拼接。
@@ -1545,8 +1569,8 @@ pub async fn invoice_create(
         .and_then(|v| v.as_str())
         .unwrap_or("draft")
         .to_string();
-    // 归属以会话登录人为事实源：客户端 creator 可伪造（冒名归属，IDOR 面）。
-    let creator = sess.person_unique.clone();
+    // 归属以会话为事实源；请求体写他人仅管理员放行，否则 403（冒名创建）。
+    let creator = resolve_creator(&pool, &sess, &payload).await?;
 
     client
         .execute(

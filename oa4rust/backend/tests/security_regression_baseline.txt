@@ -46,9 +46,6 @@ general_assemble_control|attendscope_get|GET	LEAK
 general_assemble_control|invoice_get_id|GET	LEAK
 general_assemble_control|qrcode_get|GET	LEAK
 general_assemble_control|securityclearance_get|GET	LEAK
-general_core_entity|file_download|GET	LEAK
-general_core_entity|file_get|GET	LEAK
-general_core_entity|invoice_get|GET	LEAK
 portal_assemble_designer|portal_id_icon|GET	LEAK
 portal_assemble_designer|portal_id_permission|GET	LEAK
 portal_assemble_surface|get_surface|GET	LEAK
@@ -116,9 +113,6 @@ t2|attendance|v2_groupschedule_list_filter	UNVERIFIED
 t2|auth|code	UNVERIFIED
 t2|file|file_create	UNVERIFIED
 t2|file|folder_create	LEAK
-t2|general_assemble|invoice_create	LEAK
-t2|general_core|file_create	LEAK
-t2|general_core|invoice_create	LEAK
 t2|general|office	LEAK
 t2|general|office_html_to_word	LEAK
 t2|meeting|create_meeting	UNVERIFIED
