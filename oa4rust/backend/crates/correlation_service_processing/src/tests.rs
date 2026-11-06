@@ -272,7 +272,8 @@ async fn test_get_correlation_route_exists() {
         )
         .await
         .unwrap();
-    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+    // 批次 7 起该读端点先校会话：无会话 401，不再落到读库的 503。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
