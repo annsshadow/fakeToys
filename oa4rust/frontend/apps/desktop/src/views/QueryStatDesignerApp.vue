@@ -59,6 +59,7 @@ import { confirmMsg, toast } from '../utils/toast'
 import ListLoadError from './ListLoadError.vue'
 import { useListError } from './listQuery'
 import { liveQueryItems } from './liveQueryItems'
+import { mutationErrorMessage } from './mutationError'
 
 interface Item {
   id: string
@@ -151,6 +152,7 @@ function closeModal() {
   form.value = {}
 }
 const saveM = useMutation({
+  onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: async (payload: Item) => {
     saving.value = true
     try {
@@ -169,6 +171,7 @@ function saveItem() {
   saveM.mutate(form.value as Item)
 }
 const delM = useMutation({
+  onError: (e) => toast.error(mutationErrorMessage(e)),
   // stat delete/{id} 仅注册 POST（DELETE 方法被 U2 同名 handler 承担）
   mutationFn: async (id: string) => api.post(`/api/query/assemble/designer/stat/delete/${id}`),
   onSuccess: () => {

@@ -128,12 +128,23 @@ describe('ApiClient error mapping', () => {
 
     it('maps 403 to PermissionError and other statuses to ApiError', async () => {
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(emptyResponse(403)))
-      await expect(new ApiClient().uploadBytes('/api/x', new Uint8Array([1]))).rejects.toBeInstanceOf(PermissionError)
+      const forbidden = await new ApiClient().uploadBytes('/api/x', new Uint8Array([1])).catch((e) => e)
+      expect(forbidden).toBeInstanceOf(PermissionError)
+      // R138：403 是业务结果，文案必须可读，不能把英文 Permission denied 透给用户
+      expect(forbidden.message).toBe('没有权限执行该操作')
 
       vi.stubGlobal('fetch', vi.fn().mockResolvedValue(emptyResponse(500)))
       const err = await new ApiClient().uploadBytes('/api/x', new Uint8Array([1])).catch((e) => e)
       expect(err).toBeInstanceOf(ApiError)
       expect(err.status).toBe(500)
+    })
+
+    it('404 映射为可读的「资源不存在」文案并保留 status', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(emptyResponse(404)))
+      const err = await new ApiClient().uploadBytes('/api/x', new Uint8Array([1])).catch((e) => e)
+      expect(err).toBeInstanceOf(ApiError)
+      expect(err.status).toBe(404)
+      expect(err.message).toBe('请求的资源不存在或已被删除')
     })
 
     it('honours an explicit PUT method for uploads', async () => {
@@ -170,6 +181,17 @@ describe('ApiClient error mapping', () => {
 
       await expect(new ApiClient().stream('/api/ai/stream', {}, () => {})).rejects.toBeInstanceOf(PermissionError)
       expect(fetchMock).toHaveBeenCalledTimes(1)
+    })
+
+    it('403/404 的文案可读（R138：流式写端点同样吃后端 403/404 契约）', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(emptyResponse(403)))
+      const forbidden = await new ApiClient().stream('/api/ai/stream', {}, () => {}).catch((e) => e)
+      expect(forbidden.message).toBe('没有权限执行该操作')
+
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(emptyResponse(404)))
+      const notFound = await new ApiClient().stream('/api/ai/stream', {}, () => {}).catch((e) => e)
+      expect(notFound.status).toBe(404)
+      expect(notFound.message).toBe('请求的资源不存在或已被删除')
     })
 
     it('reports HTTP status and status text for other failures', async () => {

@@ -41,7 +41,7 @@ var hex32 = regexp.MustCompile(`^[0-9a-f]{32}$`)
 // doReq 打一次请求并返回状态码与响应头里的 X-Request-Id。
 func doReq(t *testing.T, app *fiber.App, path, reqID string) (int, string) {
 	t.Helper()
-	req, _ := http.NewRequest(http.MethodGet, path, nil)
+	req, _ := testReq(http.MethodGet, path, nil)
 	if reqID != "" {
 		req.Header.Set("X-Request-Id", reqID)
 	}

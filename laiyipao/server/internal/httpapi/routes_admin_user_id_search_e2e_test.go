@@ -10,7 +10,6 @@ package httpapi
 
 import (
 	"encoding/json"
-	"net/http"
 	"strconv"
 	"testing"
 
@@ -24,7 +23,7 @@ func TestE2EAdminUsersSearchByID(t *testing.T) {
 	uid, _ := e.newPlayer(t, "idsearch")
 	_, adminTok := e.newAdmin(t, "idsearch")
 
-	req, _ := http.NewRequest("GET", "/api/v1/admin/users?keyword="+strconv.FormatInt(uid, 10), nil)
+	req, _ := testReq("GET", "/api/v1/admin/users?keyword="+strconv.FormatInt(uid, 10), nil)
 	req.Header.Set("Authorization", "Bearer "+adminTok)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
@@ -54,7 +53,7 @@ func TestE2EAdminUsersSearchByIDRequiresAuth(t *testing.T) {
 	e2eScratchDB(t)
 	e := newE2E(t)
 
-	req, _ := http.NewRequest("GET", "/api/v1/admin/users?keyword=1", nil)
+	req, _ := testReq("GET", "/api/v1/admin/users?keyword=1", nil)
 	resp, err := e.app.Test(req, 10000)
 	if err != nil {
 		t.Fatalf("请求失败：%v", err)

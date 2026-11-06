@@ -319,7 +319,17 @@ describe('403 handling', () => {
     const err = await mapi.get('/api/forbidden').catch((e) => e)
     expect(err).toBeInstanceOf(PermissionError)
     expect((err as PermissionError).status).toBe(403)
+    // R138：403 是业务结果，文案必须可读，不能把英文 Permission denied 透给用户
+    expect((err as PermissionError).message).toBe('没有权限执行该操作')
     expect(uni.requests).toHaveLength(1)
+  })
+
+  it('404 映射为可读的「资源不存在」文案并保留 status', async () => {
+    uni.respondRequest((o) => uni.ok(o, { success: false }, 404))
+    const err = await mapi.get('/api/gone').catch((e) => e)
+    expect(err).toBeInstanceOf(ApiError)
+    expect((err as ApiError).status).toBe(404)
+    expect((err as ApiError).message).toBe('请求的资源不存在或已被删除')
   })
 })
 
@@ -389,7 +399,16 @@ describe('file upload (uni.uploadFile)', () => {
     uni.respondUpload((o) => uni.ok(o, undefined, 403))
     const err = await mapi.upload('/api/attachment/upload/folder/f1', '/tmp/f.png').catch((e) => e)
     expect(err).toBeInstanceOf(PermissionError)
+    expect((err as PermissionError).message).toBe('没有权限执行该操作')
     expect(uni.requests).toHaveLength(0)
+  })
+
+  it('upload 404 同样映射为可读文案', async () => {
+    uni.respondUpload((o) => uni.ok(o, undefined, 404))
+    const err = await mapi.upload('/api/attachment/upload/folder/f1', '/tmp/f.png').catch((e) => e)
+    expect(err).toBeInstanceOf(ApiError)
+    expect((err as ApiError).status).toBe(404)
+    expect((err as ApiError).message).toBe('请求的资源不存在或已被删除')
   })
 
   it('rejects with AuthenticationError and does NOT retry when the 401-triggered refresh itself fails', async () => {

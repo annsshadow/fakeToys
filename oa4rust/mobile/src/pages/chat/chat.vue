@@ -2,13 +2,23 @@
 <!-- SPDX-License-Identifier: AGPL-3.0-or-later -->
 
 <script setup lang="ts">
-import { onLoad } from '@dcloudio/uni-app'
+import { onHide, onLoad, onShow, onUnload } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 import type { MessageRow } from '@/services'
 import { messageApi, messageConversationId } from '@/services'
 import { useSession } from '@/store/session'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import {
+  isNetworkError,
+  // biome-ignore lint/correctness/noUnusedImports: Vue template consumes the offline copy.
+  NETWORK_OFFLINE_TEXT,
+  type NetworkStatusApi,
+  networkOffline,
+  shouldMarkOffline,
+  watchNetworkStatus,
+} from '@/utils/networkStatus'
 import { describeChatError, loadChatHistoryPage, mergeOlderMessages } from './chatHistory'
+import { CHAT_POLL_INTERVAL_MS, type ChatPollHandle, mergeNewerMessages, startChatPolling } from './chatPolling'
 
 const session = useSession()
 const conversationId = ref('')
@@ -27,6 +37,76 @@ const loadingOlder = ref(false)
 function keepConversation(rows: MessageRow[]): MessageRow[] {
   return rows.filter((m) => messageConversationId(m as Record<string, unknown>) === conversationId.value)
 }
+
+// R140：进入会话后自动刷新新消息（旧实现只在 onLoad 拉一次，之后对方发来的消息永远不出现）。
+const CHAT_POLL_PAGE_SIZE = 50
+let pageVisible = false
+let historyReady = false
+let poller: ChatPollHandle | null = null
+// R144：系统网络状态监听；onShow/onHide 可能多次触发，必须只注册一份。
+let unwatchNetwork: (() => void) | null = null
+
+async function markConversationRead() {
+  try {
+    await messageApi.markRead(conversationId.value)
+  } catch (err) {
+    // R139：自动已读失败不打扰用户，但必须留可诊断痕迹，避免线上无从排查。
+    console.warn('[chat] markRead failed', err)
+  }
+}
+
+function stopPolling() {
+  if (!poller) return
+  poller.stop()
+  poller = null
+}
+
+function startPolling() {
+  if (!pageVisible || !historyReady || !conversationId.value || poller) return
+  poller = startChatPolling<MessageRow>({
+    intervalMs: CHAT_POLL_INTERVAL_MS,
+    loadLatest: async () => {
+      const page = await loadChatHistoryPage<MessageRow>(
+        (convId, pageNo, size) => messageApi.msgHistory(convId, pageNo, size),
+        conversationId.value,
+        1,
+        CHAT_POLL_PAGE_SIZE,
+      )
+      return keepConversation(page.messages)
+    },
+    onLatest: (rows) => {
+      // 收到一次成功响应即说明网络恢复，立即撤掉断网提示。
+      networkOffline.value = false
+      if (rows.length === 0) return
+      const before = msgs.value.length
+      msgs.value = mergeNewerMessages(msgs.value, rows)
+      if (msgs.value.length !== before) void markConversationRead()
+    },
+    // 轮询失败不弹提示（用户无操作），但要留可诊断痕迹；连续网络失败才点亮断网态。
+    onError: (err, failures) => {
+      console.warn('[chat] poll failed', err)
+      if (shouldMarkOffline(failures, err)) networkOffline.value = true
+    },
+  })
+}
+
+onShow(() => {
+  pageVisible = true
+  if (!unwatchNetwork) unwatchNetwork = watchNetworkStatus(uni as unknown as NetworkStatusApi)
+  startPolling()
+})
+onHide(() => {
+  pageVisible = false
+  stopPolling()
+  unwatchNetwork?.()
+  unwatchNetwork = null
+})
+onUnload(() => {
+  pageVisible = false
+  stopPolling()
+  unwatchNetwork?.()
+  unwatchNetwork = null
+})
 
 onLoad(async (options) => {
   if (!(await ensureAuthenticated())) {
@@ -52,17 +132,18 @@ async function loadHistory() {
     msgs.value = mergeOlderMessages<MessageRow>([], keepConversation(result.messages))
     historyPage.value = result.page
     historyHasMore.value = result.hasMore
+    historyReady = true
+    networkOffline.value = false
+    startPolling()
   } catch (e) {
     msgs.value = []
     historyError.value = describeChatError('消息加载失败', e)
+    // 首次加载就撞上断网：不等轮询累计次数，直接给出可感知的断网态。
+    if (isNetworkError(e)) networkOffline.value = true
   } finally {
     loading.value = false
     // 进入会话即标记已读（失败不阻塞展示）。
-    try {
-      await messageApi.markRead(conversationId.value)
-    } catch {
-      /* noop */
-    }
+    await markConversationRead()
   }
 }
 
@@ -117,6 +198,8 @@ async function send() {
       {{ title }}
     </view>
 
+    <view v-if="networkOffline" class="offline-banner">{{ NETWORK_OFFLINE_TEXT }}</view>
+
     <scroll-view class="body" scroll-y>
       <view v-if="loading" class="tip">加载中…</view>
       <view v-else-if="msgs.length === 0 && historyError" class="tip tip-error">
@@ -160,6 +243,13 @@ async function send() {
   font-size: 32rpx;
   font-weight: 700;
   color: #263238;
+  text-align: center;
+}
+.offline-banner {
+  padding: 16rpx 24rpx;
+  background: #fff4e5;
+  color: #b26a00;
+  font-size: 26rpx;
   text-align: center;
 }
 .body {
