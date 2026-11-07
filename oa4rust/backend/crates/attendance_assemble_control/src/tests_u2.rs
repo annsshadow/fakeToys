@@ -213,10 +213,13 @@ mod u2_tests {
 
     #[tokio::test]
     async fn u2_v2_record_routes_reachable() {
-        assert_eq!(
+        // 读端点已要求会话：死池 503 / 缺会话 401 / 取连失败 500 均证明路由可达
+        assert!(matches!(
             status_of("GET", "/api/attendance/assemble/control/v2/record/r-1").await,
             StatusCode::SERVICE_UNAVAILABLE
-        );
+                | StatusCode::UNAUTHORIZED
+                | StatusCode::INTERNAL_SERVER_ERROR
+        ));
         assert_eq!(
             status_of(
                 "POST",

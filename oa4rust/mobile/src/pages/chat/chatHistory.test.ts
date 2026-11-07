@@ -155,10 +155,14 @@ describe('移动端会话历史分页：页码进请求、更早消息可加载�
     expect(source).toContain('stopPolling()')
     // 新消息必须真的并入列表并在有变化时补一次已读，而不只是声明了轮询函数。
     expect(source).toContain('msgs.value = mergeNewerMessages(msgs.value, rows)')
-    expect(source).toContain('if (msgs.value.length !== before) void markConversationRead()')
+    expect(source).toContain('const added = msgs.value.length - before')
+    // R148：有新增时既要补一次已读，也要触发滚动跟随判定。
+    const addedAt = source.indexOf('const added = msgs.value.length - before')
+    expect(source.slice(addedAt, addedAt + 220)).toContain('afterMessagesChanged(added)')
+    expect(source.slice(addedAt, addedAt + 220)).toContain('void markConversationRead()')
     const readyAt = source.indexOf('historyReady = true')
     expect(readyAt).toBeGreaterThan(-1)
-    expect(source.slice(readyAt, readyAt + 120)).toContain('startPolling()')
+    expect(source.slice(readyAt, readyAt + 260)).toContain('startPolling()')
     // 旧实现只在 onLoad 拉一次；轮询间隔由 chatPolling 统一管理，页面不得自建定时器。
     expect(source).not.toContain('setInterval(')
     expect(source).toContain("console.warn('[chat] poll failed'")

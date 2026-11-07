@@ -105,6 +105,41 @@ rev-GATE-V-MOBILE)`，delete paging `LEAK(2xx 响应体含 canary GATE-DEL-MOBIL
 - 破坏实验：`owner_scope` 临时改恒真（保留 `$2` 绑定，避免 deadpool 500 假阳性），
   `NEW-FAIL` 恰好点名本批 6 条；还原后门禁 122 非 PASS，与基线一致（原 128 → 点名减 6），无 `STALE-BASELINE`。
 
+## 批次 B-b2：attendance 统计/工作日/场所/打卡/申诉读（本人 OR 管理员）
+
+| 端点（attendance_assemble_control） | 表 | 落库谓词 |
+|---|---|---|
+| `GET /attendancestatisticrequirelog/{id}` | `x_attendance_statistic_require_log` | `id = $1 AND (creator = $2 OR creator_person = $2 OR admin)` |
+| `GET /attendanceworkdayconfig/{id}` | `x_attendance_workday_config` | 同上 |
+| `GET /workplace/{id}` | `x_attendance_workplace` | 同上 |
+| `GET /v2/record/{id}` | `x_attendance_record` | `id = $1 AND (user_id = $2 OR admin)` |
+| `GET /v2/appeal/{id}` | `x_attendance_v2_appeal_info` | `id = $1 AND (user_id = $2 OR admin)` |
+| `GET /attendancedetail/mobile/my` | `x_attendance_detail` | 会话派生 `person_id = session.person_unique` |
+
+- `mobile/my`：请求体 `personId` 只用于识别本人，指向他人一律 `403`（不再冒名读）；缺省则按会话人查。
+  这一条同时消掉了 `spoof-read` 的读面（原 `LEAK` → `PASS`）。
+- 命中 0 行但行存在 → `403`；行不存在维持原 not-found 信封。
+- 门禁：5 条新增 `idor-read-own` 正控制；复用既有 `r6-*` / `rev-r6-*` 镜像行，未新增种子。
+- 破坏实验：逐条把 5 个谓词改恒真（保留 `$2` 绑定）并关闭 `personId` 校验 →
+  `NEW-FAIL` 恰好点名本批 6 条；还原后门禁 116 非 PASS（基线 122 → 点名减 6），无 `STALE-BASELINE`。
+
+## 批次 B-b4：processplatform_service_processing 任务/流程/办结读（E20 指派人 OR 管理员）
+
+复用 crate 内既有 E20 授权原语，不新增归属语义：
+
+| 端点（processplatform_service_processing） | 表 | 落库判据 |
+|---|---|---|
+| `GET /task/{id}`、`GET /task/v2/{id}` | `x_task` | `u4_require_actors(U4ActorKey::Task)`：`person` 指派人或 admin |
+| `GET /get/{id}`（get_process） | `x_work` | `u4_require_work_owner`：`creator` 或 admin |
+| `GET /taskcompleted/{id}` | `x_workcompleted` | `U4ActorKey::WorkCompleted`：`creator` 或所属 `x_task.person` 或 admin |
+| `GET /data/workcompleted/{id}`、`.../path/{id}` | `x_workcompleted` | 同上 |
+
+- 这些原语本是写路径的 fail-closed 归属门，读端点直接复用；NULL 归属不命中 → 仅管理员。
+- 无会话 → 401；非归属人 → 403。
+- 门禁：6 条新增 `idor-read-own` 正控制；复用 `rev-task-admin-1` / `rev-work-admin-1` / `rev-r6-dataworkcompletedid`。
+- 破坏实验：逐条把 6 个授权调用临时短路（`if false`）→ `NEW-FAIL` 恰好点名本批 6 条；
+  还原后门禁 105 非 PASS（基线 111 → 点名减 6），无 `STALE-BASELINE`。
+
 ## 门禁用例类型语义（批次 2 新增，新增用例按此写）
 用例表新增可选两列：第 13 列 `rev_id`（rev 方向资源 id，缺省 `rev-{victim}`），
 第 14 列 `body`（请求体 JSON 字面量，缺省 `{}`）。
@@ -124,3 +159,67 @@ rev-GATE-V-MOBILE)`，delete paging `LEAK(2xx 响应体含 canary GATE-DEL-MOBIL
 - 不修改任何表结构、不新增归属列、不回填历史数据。
 - 不改变分页/排序参数语义；列表在归属收窄后允许返回空，不额外做存在性探测（避免 403 泄露他人是否存在）。
 - 本人正控制（`idor-read-own`）与双向拒绝用例成对存在；列表用例使用按完整 JSON 值匹配 canary，避免 `rev-` 前缀子串误报。
+
+## 批次 B-b6：surface / designer / work / task 八个按 id 读
+
+判据同默认 1（本人 OR 管理员；空归属 fail-closed）。按 crate 既有原语落地，不新增第二套归属语义：
+
+| 端点 | 表 / 归属列 | 落地方式 |
+|---|---|---|
+| `core_express task_processing` | `x_task.person` 或 `x_work.creator` | 新增 `require_read_owner(&[Option<String>])`，与 B-b4 `U4ActorKey::Task` 同口径 |
+| `core_express work_processing` / `work_retract` | `x_work.creator` | 同上 |
+| `core_entity work_get` | `pp_work.creator_id` | 先取行再判：本人或 admin；NULL→仅 admin |
+| `surface get_surface` / `preview_surface` | `x_process_surface.creator` | 复用既有 `require_actor_opt` |
+| `designer get_flow` / `preview_flow` | `x_process_definition.creator` | 新增 `guard_read_creator`（`require_owner` / 空归属走 `require_admin_gate`） |
+
+- 无会话一律先 401（早于取库/取行）；`work_retract` 行不存在仍返回原 `ActionResult::error` 信封。
+- `core_entity` 的路由只注入 `DatabaseConnection`（无 deadpool 池），管理员判定用 SeaORM
+  连接跑同一套 `auth_person`/`auth_role` EXISTS，未给路由新增 `Extension<Pool>` 依赖。
+- 门禁新增 8 条 `idor-read-own` 正控制；按棘轮点名减基线 8 行（111→103）。
+- 破坏实验：`require_read_owner` 恒放行、`db_is_admin` 恒 true、surface 两处调用点短路、
+  `guard_read_creator` 恒放行 → `NEW-FAIL` **恰好点名本批 8 条**；还原后非 PASS 103，与基线一致。
+
+## 批次 B-b5：工作流运行面六个按 id 读（归属谓词写进 SQL）
+
+判据沿用默认 1：`本人 OR 管理员`，NULL/空归属 fail-closed（仅管理员）。本批复用 crate 内既有
+授权原语，不新增第二套语义：
+
+| 端点（processplatform_service_processing） | 表 | 归属列 | 落地方式 |
+|---|---|---|---|
+| `GET /review/{id}` | `x_review` | `reviewer` | 新增 `u4_owner_read_row(select_sql, 列名)` 单列读谓词 |
+| `GET /readcompleted/{id}` | `x_readcompleted` | `person` | 同上 |
+| `GET /record/{id}` | `x_record` | `creator` | 同上 |
+| `GET /applicationdict/{id}` | `x_process_definition` | `creator` | 同上 |
+| `GET /attachment/{id}` | `x_attachment` | `creator` | 复用既有 `u4_attachment_read_row` |
+| `GET /snap/{id}` | `x_snap` | `x_work.creator`（关联边） | 复用既有 `u4_require_actors(U4ActorKey::Snap)` |
+
+- 谓词：`WHERE id = $1 AND (NULLIF(BTRIM(<owner_col>), '') = $2 OR EXISTS(admin))`；
+  0 行命中时再用 `u4_row_exists_error` 区分 403（行在、非本人）/404（行不存在）。
+- `snap` 不认 `x_snap.creator`/`person`：该表写入路径只写 `work_id`/`snap_type`/`snap_data`，
+  归属只能 hop 到 `x_work.creator`（与写侧 `snap_id_restore` 同一把尺）；NULL work 归属→仅管理员。
+- `x_attachment` 同时有 `work_id`/`workcompleted_id` 关联边，本批只按 `creator` 收紧 owner 一侧，
+  关联边侧不改契约（与组织域「只收紧 owner」口径一致）。
+- 写侧登记（不在本批改）：`x_review.reviewer` 由 `review_create_work` 的**请求体**指定，
+  属写侧可指派字段；读侧按它收紧后，攻击者只能创建「指向他人」的评审，不能借此读到他人数据。
+  `x_snap`/`x_readcompleted` 的 `creator`/`person` 列同样不由写入路径填充，因此读侧不以它们为准。
+- 门禁：新增 6 条 `idor-read-own` 正控制；为 `snap` 正控制补一行 `rev-r6seed-work`
+  （`x_work.creator = audit-user`）并把 `rev-r6-snapid.work_id` 指向它；`rev-r6-reviewid`
+  补 `reviewer = audit-user`。其余四条复用既有 rev 行。
+- 破坏实验：`u4_owner_read_row` 谓词改恒真（保留 `$2` 绑定）、`attachment_id` 调用点直查、
+  `snap_id` 授权短路，`NEW-FAIL` **恰好点名本批 6 条**；还原后门禁 105 非 PASS，与基线一致
+  （点名减 6：111→105），无 `STALE-BASELINE`。
+
+## 附：`oauth_generate_code` 冒名落库（真实缺陷，独立 PR，不动基线）
+
+- **复现（修复前）**：会话 `audit-user`，请求体 `{"clientId":"repro-oauth-client","personId":"gate-victim"}`
+  → `x_org_oauth_code.person_id = gate-victim`（`tests/oauth_session_derived.rs` 断言失败：
+  `left: Some("gate-victim") / right: Some("audit-user")`）。
+- 根因：handler 直接 `req.get("personId")` → `oauth_code_store`，任何登录用户都能用别人的
+  `personId` 生成授权码并落库。
+- 修复：`person_id` 一律由会话派生，请求体 `personId` 不采信；响应补 `data.id`（表主键），
+  门禁回查字段由只能读到 `data.code` 转为按 `data.id` 定位落库行。
+- 回归测试：`crates/organization_assemble_authentication/tests/oauth_session_derived.rs`
+  （scratch 库 + 真实 handler，断言落库 `person_id = audit-user`）。
+- 门禁：该行仍为 UNVERIFIED —— `spoof-write` 只在 401/403 判 PASS，正确实现下是 2xx 且
+  canary 无变化；按指示**不改基线**，但回查已能证明落库 owner 是会话本人（修复前回查不到行）。
+- 未决：`clientId` 仍未与已注册应用比对（§五"第三方回调零验签族"），登记待裁决。

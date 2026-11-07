@@ -20,6 +20,8 @@ mod security_gate_tests_idor_b5;
 #[cfg(test)]
 mod security_gate_tests_read_a_b1;
 #[cfg(test)]
+mod security_gate_tests_read_a_b2;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
@@ -5626,8 +5628,14 @@ pub async fn anonymous_form_v2_id_mobile(
 #[allow(non_snake_case)]
 pub async fn anonymous_form_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    match cms_gate_published_read(&pool, "x_cms_form", &id, opt_session(&session)).await? {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("form not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -5672,8 +5680,14 @@ pub async fn form_formFlag_appinfo_appFlag(
 #[allow(non_snake_case)]
 pub async fn form_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    match cms_gate_published_read(&pool, "x_cms_form", &id, opt_session(&session)).await? {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("form not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -5790,8 +5804,14 @@ pub async fn formversion_list_form_formId(
 #[allow(non_snake_case)]
 pub async fn formversion_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    match cms_gate_published_read(&pool, "x_cms_form_v2", &id, opt_session(&session)).await? {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("form version not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -6338,9 +6358,16 @@ pub async fn script_flag_appInfo_appInfoFlag(
 #[allow(non_snake_case)]
 pub async fn script_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // W7：按 id 返回单个脚本（原实现忽略 id 返回全表，设计器无法加载单脚本）
+    // A-b2：脚本表无 published 概念，按 creator 本人或管理员。
+    match cms_gate_owned_read(&pool, "x_cms_script", "creator", &id, opt_session(&session)).await? {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("script not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -6587,8 +6614,14 @@ pub async fn scriptversion_list_script_scriptId(
 #[allow(non_snake_case)]
 pub async fn scriptversion_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    match cms_gate_published_read(&pool, "x_cms_form_v2", &id, opt_session(&session)).await? {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("script version not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -7215,8 +7248,14 @@ pub async fn templateform_list_category_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn templateform_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    match cms_gate_published_read(&pool, "x_cms_form_v2", &id, opt_session(&session)).await? {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("template form not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -8466,6 +8505,25 @@ async fn cms_gate_owned_read(
         "SELECT 1 AS hit FROM {table} WHERE id = $1 AND deleted_at IS NULL \
          AND ({owner_col} = $2::text OR $3::boolean)"
     );
+    let exists = format!("SELECT 1 AS hit FROM {table} WHERE id = $1 AND deleted_at IS NULL");
+    cms_read_gate(pool, &allowed, &exists, id, session).await
+}
+
+/// 带 `status` 列的表读门（form / form_v2）：`published` 全员可读，`draft` 仅 `creator`
+/// 本人与管理员。归属谓词直接写进 `WHERE`，参数固定为 ($1 id, $2 会话人, $3 是否管理员)。
+const CMS_PUBLISHED_READ_ALLOWED_SQL: &str = "SELECT 1 AS hit FROM {table} \
+     WHERE id = $1 AND deleted_at IS NULL \
+     AND (status = 'published' \
+     OR ($2::text IS NOT NULL AND creator = $2::text) \
+     OR $3::boolean)";
+
+async fn cms_gate_published_read(
+    pool: &Pool,
+    table: &str,
+    id: &str,
+    session: Option<&shared::session::Session>,
+) -> Result<U2Gate, AppError> {
+    let allowed = CMS_PUBLISHED_READ_ALLOWED_SQL.replace("{table}", table);
     let exists = format!("SELECT 1 AS hit FROM {table} WHERE id = $1 AND deleted_at IS NULL");
     cms_read_gate(pool, &allowed, &exists, id, session).await
 }
