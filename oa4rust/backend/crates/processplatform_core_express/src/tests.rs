@@ -58,9 +58,8 @@ mod tests {
             .await
             .unwrap();
 
-        // 该用例用空 Config 的池（永远连不上库）跑：handler 已进到 SQL 层，
-        // 故应是 500 而不是 404；200 需要可用的真实库。
-        assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+        // B-b6：先收会话门，无会话 401，早于取库失败。
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
     #[tokio::test]
@@ -80,9 +79,8 @@ mod tests {
             .await
             .unwrap();
 
-        // 该用例用空 Config 的池（永远连不上库）跑：handler 已进到 SQL 层，
-        // 故应是 500 而不是 404；200 需要可用的真实库。
-        assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+        // B-b6：先收会话门，无会话 401，早于取库失败。
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
     #[tokio::test]
@@ -102,9 +100,8 @@ mod tests {
             .await
             .unwrap();
 
-        // 该用例用空 Config 的池（永远连不上库）跑：handler 已进到 SQL 层，
-        // 故应是 500 而不是 404；200 需要可用的真实库。
-        assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+        // B-b6：先收会话门，无会话 401，早于取库失败。
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     }
 
     #[tokio::test]

@@ -79,8 +79,10 @@ pub async fn create_flow(
 #[allow(non_snake_case)]
 pub async fn get_flow(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(
@@ -91,6 +93,12 @@ pub async fn get_flow(
         )
         .await
         .map_err(|_| AppError::NotFound)?;
+    guard_read_creator(
+        &pool.0,
+        &sess,
+        row.get::<_, Option<String>>("creator").as_deref(),
+    )
+    .await?;
 
     let mut map = serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
@@ -374,17 +382,28 @@ pub async fn delete_flow(
 #[allow(non_snake_case)]
 pub async fn preview_flow(
     pool: Extension<Pool>,
+    session: Option<Extension<Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
-            "SELECT id, name, category, process_definition FROM x_process_definition WHERE id = $1",
+            "SELECT id, name, category, process_definition, creator FROM x_process_definition WHERE id = $1",
             &[&id],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+
+    if let Some(row) = row.as_ref() {
+        guard_read_creator(
+            &pool.0,
+            &sess,
+            row.get::<_, Option<String>>("creator").as_deref(),
+        )
+        .await?;
+    }
 
     match row {
         Some(row) => {
@@ -3643,6 +3662,19 @@ async fn require_admin_gate(pool: &Pool, session: &Session) -> Result<(), AppErr
         Ok(())
     } else {
         Err(AppError::Forbidden)
+    }
+}
+
+/// 读归属档：创建人非空 → 本人或 admin（`require_owner`，admin 旁路）；
+/// 为空 / NULL / 行不存在 → 仅 admin（fail-closed）。
+async fn guard_read_creator(
+    pool: &Pool,
+    session: &Session,
+    creator: Option<&str>,
+) -> Result<(), AppError> {
+    match creator.map(str::trim).filter(|c| !c.is_empty()) {
+        Some(creator) => shared::middleware::require_owner(pool, session, creator).await,
+        None => require_admin_gate(pool, session).await,
     }
 }
 
