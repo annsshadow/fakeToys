@@ -9,12 +9,14 @@
 | 表 | 端点 | 缺失情况 | 处理 |
 |---|---|---|---|
 | `x_message_conversation` | `im_conversation_id`、`im_conversation_id_single`、`im_conversation_id_group`（message_assemble_communicate） | 无 `creator`/`owner`/`person_id` 等归属列；成员关系只在 `x_message_conversation_member`（关联边） | 未加谓词，未发明归属语义。需裁决“会话归属 = 创建者 / 成员集合 / 其他”后再落 SQL |
-| `x_cal_event` | 日历事件读路径（按 `calendar_id` 读取） | 事件表无单一 owner 列；归属来自 `calendar_id` 关联边 | 未改契约；只做了实证。需裁决是否继承日历 owner 或按参与者判定 |
+| `x_cal_event` | 日历事件读路径（按 `calendar_id` 读取） | 事件表无单一 owner 列；归属来自 `calendar_id` 关联边 | **已落地（B-cal-event）**：运行期表 `cal_event` 的 `createor` 由写路径按会话写入，作为事件属主；其余继承 `cal_calendar.createor` / `is_public`，关联边谓词直接进主查询 WHERE |
 
 ## 关联边（只收紧 owner 一侧，关联边侧仅实证）
 - IM：`x_message_conversation_member(person_id, conversation_id, role)` 是唯一访问依据，本批未改。
-- 日历：`cal_event.calendar_id -> x_cal_calendar.id`；本批只修日历本体读，事件侧待裁决。
-- 日历公开性：`x_cal_calendar.is_public=true` 视为已公开发布，全员可读；`false` 仅 `createor` 本人或管理员。`status` 仍只允许 `OPEN`。
+- 日历：`cal_event.calendar_id -> cal_calendar.id`；事件读（`event_get` / `event_rfc`）已把
+  `c.is_public = TRUE OR e.createor = $2 OR c.createor = $2 OR <admin>` 直接写进主查询 WHERE，
+  取不到行统一 403（不区分不存在与无权）。
+- 日历公开性：`cal_calendar.is_public=true` 视为已公开发布，全员可读；`false` 仅 `createor` 本人或管理员。`status` 仍只允许 `OPEN`。
 
 ## 列存在但生产写路径不写入
 | 表 | 列 | 实测 | 影响 |
