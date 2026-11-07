@@ -490,8 +490,9 @@ mod tests {
             Method::POST,
             "/api/organization/identity",
             // 字段名照结构体：`IdentityCreateRequest { person_id, name, type_ }`。
+            // 归属收口后只能为本人创建身份，person_id 必须是会话主体 A。
             Some(json!({
-                "person_id": format!("r6w2-person-{uniq}"),
+                "person_id": A,
                 "name": format!("r6w2-identity-{uniq}"),
                 "type_": format!("r6w2-create-{uniq}")
             })),

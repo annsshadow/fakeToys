@@ -272,3 +272,18 @@ rev-GATE-V-MOBILE)`，delete paging `LEAK(2xx 响应体含 canary GATE-DEL-MOBIL
 - 门禁：该行仍为 UNVERIFIED —— `spoof-write` 只在 401/403 判 PASS，正确实现下是 2xx 且
   canary 无变化；按指示**不改基线**，但回查已能证明落库 owner 是会话本人（修复前回查不到行）。
 - 未决：`clientId` 仍未与已注册应用比对（§五"第三方回调零验签族"），登记待裁决。
+
+## 附：organization 剩余 UNVERIFIED 补证据（U-org，一批一 PR）
+
+口径：会话派生主体，本人 OR 管理员；越权 403；无会话 401；空/NULL fail-closed。
+
+| 用例 | 落库改动 | 用例/种子 | 结果 |
+|---|---|---|---|
+| `t2|organization|identity_create` | `person_id` 必须等于会话主体或调用者为管理员，鉴权先于必填校验；`type_` 加 `serde(default)` 让 spoof body 进 handler | —— | 转 PASS，基线点名删行 |
+| `t2|organization|bind_create` | 父资源 `x_org_identity.creator` 按 `CREATOR_OWNER_PREDICATE` 判定，再区分 403/404；`group_id` 加 `serde(default)` | `field` 由 `role` 改 `identity_id`；seed 补 `x_org_identity(id=gate-victim,creator=gate-victim)`、rev_seed 补 `id=audit-user` | 转 PASS，基线点名删行 |
+| `t2|organization|unit_check_unit_has_person` | 不改 | —— | 保留：路径在 `AUTH_EXEMPT_PATHS` + RBAC `Public`（匿名前置查询），加会话门会使公开端点对所有人 401；属「公开 vs 私有」口径，需裁决 |
+| `t2|organization|group_list_object` | 不改 | —— | 保留：runner 只注入单字段，handler 读 body `groupList` 数组；群组可见性无归属裁决 |
+| `t2|organization|unit_list_level_name_object` | 不改 | —— | 保留：同上，handler 读 body `unitList`；层级可见性无归属裁决 |
+
+- 破坏实验：短路 `identity_create` 归属判定、`bind_create` 的 EXISTS 校验 → 门禁 `NEW-FAIL` 恰好点名这 2 条；还原后基线 31 → 29，无 `STALE-BASELINE`。
+- 写侧登记：`bind_create` 自身无 `creator` 列，父资源归属已收口；`bind_update` 仍只查会话，属另一缺口，留待后续。

@@ -119,6 +119,8 @@ DELETE FROM "x_org_identity" WHERE "id" = 'rev-r6-identitydelete';
 INSERT INTO "x_org_identity" ("id","name","creator","person_id") VALUES ('rev-r6-identitydelete','r6seed','audit-user','audit-user');
 DELETE FROM "x_org_identity" WHERE "id" = 'rev-r6-identityupdate';
 INSERT INTO "x_org_identity" ("id","name","creator","person_id") VALUES ('rev-r6-identityupdate','r6seed','audit-user','audit-user');
+DELETE FROM "x_org_identity" WHERE "id" = 'audit-user';
+INSERT INTO "x_org_identity" ("id","name","creator","person_id") VALUES ('audit-user','r6seed','audit-user','audit-user');
 DELETE FROM "x_org_unit" WHERE "id" = 'rev-r6-unitread';
 INSERT INTO "x_org_unit" ("id","name","creator") VALUES ('rev-r6-unitread','rev-r6seed','audit-user');
 DELETE FROM "x_portal" WHERE "id" = 'rev-r6-portalid';

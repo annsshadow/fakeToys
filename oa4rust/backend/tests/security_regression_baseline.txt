@@ -7,9 +7,7 @@ t1|oauth|generate_code	UNVERIFIED
 t2|auth|code	UNVERIFIED
 t2|meeting|create_meeting	UNVERIFIED
 t2|mind|create_version	UNVERIFIED
-t2|organization|bind_create	UNVERIFIED
 t2|organization|group_list_object	UNVERIFIED
-t2|organization|identity_create	UNVERIFIED
 t2|organization|unit_check_unit_has_person	UNVERIFIED
 t2|organization|unit_list_level_name_object	UNVERIFIED
 t2|program_center|warnlog_create	LEAK
