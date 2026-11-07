@@ -224,8 +224,8 @@ func skillsRowsToMaps(rows pgx.Rows) (map[string]any, []string, map[int]bool, er
 	for e := range elements {
 		list = append(list, e)
 	}
-	// Go map 迭代顺序随机：不排序的话同一份数据每次读出的 elements 顺序不同，
-	// 既让往返守卫随机假红，也会让下发给客户端的 build 快照/回放上下文抖动。
+	// 元素来自 map 遍历，顺序随机；Loader 与 Batch 两条路径各自遍历一次，
+	// 顺序不同会让快照比对/回放哈希漂移。固定成字典序，两条路径才可逐字节比对。
 	sort.Strings(list)
 	return skills, list, occupied, nil
 }
