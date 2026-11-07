@@ -519,6 +519,18 @@ async function setup() {
 //（`v-if="!settled"`），普通 let 不是响应式的，模板不会跟着更新。
 const settled = ref(false)
 
+/**
+ * 结算返回 404 `not_found` 表示这一局的 token 行不存在。
+ *
+ * token 签发语句是本仓唯一关闭 `synchronous_commit` 的写（R151）：
+ * PG 自身崩溃安全，但 OS 崩溃/断电时，已返回给客户端的 token 可能没落盘。
+ * 这时不能把玩家这一局判掉 —— 中转重取一次同关凭证，用新 token 重报。
+ */
+function isInvalidBattleToken(e: unknown): boolean {
+  const err = e as { status?: number; code?: string }
+  return err?.status === 404 && err?.code === 'not_found'
+}
+
 async function settle(eng: BattleEngine) {
   if (settled.value) return
   settled.value = true
@@ -531,8 +543,19 @@ async function settle(eng: BattleEngine) {
     timerId = null
   }
   try {
-    const payload = eng.settleInput(tokenId.value)
-    const res = await api.settleBattle(payload)
+    let payload = eng.settleInput(tokenId.value)
+    let res: any
+    try {
+      res = await api.settleBattle(payload)
+    } catch (e) {
+      if (!isInvalidBattleToken(e)) throw e
+      // 只重试一次：网络故障也可能表现为 404 之外的错误，
+      // 但 404 若持续存在，再开局只会多扣一次体力，不会多拿奖励。
+      const bt = await api.startBattle(levelId.value)
+      tokenId.value = bt.token_id
+      payload = { ...payload, token_id: bt.token_id }
+      res = await api.settleBattle(payload)
+    }
     settleResult.value = {
       win: res.win,
       stars: res.stars,
