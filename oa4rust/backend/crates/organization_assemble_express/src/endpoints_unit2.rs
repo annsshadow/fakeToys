@@ -321,30 +321,42 @@ pub async fn unit_list_level_name_object(
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     let mut data: Vec<Value> = Vec::new();
     for row in &rows {
-        let mut obj = row_to_map(row);
+        // 这里不能复用 row_to_map：它把非 bool 列一律按 Option<String> 取，BIGINT 计数列会
+        // 直接 panic（该列表端点对任何非空 unitList 都会 500）。按列显式构造，保持原输出形状。
+        let mut m = serde_json::Map::new();
+        if let Some(v) = row.get::<_, Option<String>>("id") {
+            m.insert("id".to_string(), Value::String(v));
+        }
+        if let Some(v) = row.get::<_, Option<String>>("name") {
+            m.insert("name".to_string(), Value::String(v));
+        }
+        if let Some(v) = row.get::<_, Option<String>>("parent_id") {
+            m.insert("parent_id".to_string(), Value::String(v));
+        }
+        if let Some(v) = row.get::<_, Option<i32>>("level") {
+            m.insert("level".to_string(), Value::Number((v as i64).into()));
+        }
         let level_name: Option<String> = row.get("level_name");
         let sub_units: i64 = row.get("sub_direct_unit_count");
         let sub_ids: i64 = row.get("sub_direct_identity_count");
         let sub_duties: i64 = row.get("sub_direct_duty_count");
-        if let Value::Object(ref mut m) = obj {
-            if let Some(p) = level_name {
-                m.insert("matchKey".to_string(), Value::String(p.clone()));
-                m.insert("levelName".to_string(), Value::String(p));
-            }
-            m.insert(
-                "subDirectUnitCount".to_string(),
-                Value::Number(sub_units.into()),
-            );
-            m.insert(
-                "subDirectIdentityCount".to_string(),
-                Value::Number(sub_ids.into()),
-            );
-            m.insert(
-                "subDirectDutyCount".to_string(),
-                Value::Number(sub_duties.into()),
-            );
+        if let Some(p) = level_name {
+            m.insert("matchKey".to_string(), Value::String(p.clone()));
+            m.insert("levelName".to_string(), Value::String(p));
         }
-        data.push(obj);
+        m.insert(
+            "subDirectUnitCount".to_string(),
+            Value::Number(sub_units.into()),
+        );
+        m.insert(
+            "subDirectIdentityCount".to_string(),
+            Value::Number(sub_ids.into()),
+        );
+        m.insert(
+            "subDirectDutyCount".to_string(),
+            Value::Number(sub_duties.into()),
+        );
+        data.push(Value::Object(m));
     }
     ok_legacy_list(data.len(), data)
 }

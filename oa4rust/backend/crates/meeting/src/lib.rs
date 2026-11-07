@@ -259,7 +259,7 @@ pub async fn create_meeting(
     session: Option<Extension<Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
     let title = payload
         .get("title")
@@ -284,15 +284,13 @@ pub async fn create_meeting(
         .get("endTime")
         .and_then(|v| v.as_str())
         .ok_or(AppError::BadRequest("\"endTime\" is required".to_string()))?;
-    let creator = payload
-        .get("creator")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system");
+    // 归属只认会话身份：请求体 creator 可被任意伪造，不能作为落库归属。
+    let creator = sess.person_unique.clone();
 
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
-            "INSERT INTO x_meeting (id, title, content, room_id, start_time, end_time, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
+            "INSERT INTO x_meeting (id, title, content, room_id, start_time, end_time, creator, create_time) VALUES ($1, $2, $3, $4, $5::text::timestamp, $6::text::timestamp, $7, NOW())",
             &[&id, &title, &content, &room_id, &start_time, &end_time, &creator],
         )
         .await

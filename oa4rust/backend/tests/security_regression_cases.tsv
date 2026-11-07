@@ -242,12 +242,12 @@ t2|general_assemble|invoice_create	spoof-write	POST	/api/general/assemble/contro
 t2|general_core|invoice_create	spoof-write	POST	/api/general/invoice/create	x_general_invoice	person-admin		body	creator	T2	both	n/a
 t2|general|office_html_to_word	spoof-write	POST	/api/general/assemble/control/office/html/to/word	x_general_assemble_office	person-admin		body	creator	T2	both	n/a
 t2|general|office	spoof-write	POST	/api/general/assemble/control/office	x_general_assemble_office	person-admin		body	creator	T2	both	n/a
-t2|meeting|create_meeting	spoof-write	POST	/api/meeting/create	x_meeting	person-admin		body	creator	T2	both	n/a
+t2|meeting|create_meeting	spoof-write	POST	/api/meeting/create	x_meeting	person-admin		body	creator	T2	both	n/a		{"roomId":"gate-room","title":"gate-meeting","startTime":"2026-01-01 10:00:00","endTime":"2026-01-01 11:00:00"}
 t2|mind|create_version	spoof-write	POST	/api/mind/version	mind_version_info	unit-gate-v		body	creator_unit	T2	both	n/a
 t2|mind_core|create_version	spoof-write	POST	/api/mind/core/entity/version	x_mind_version_info	person-admin		body	creator	T2	both	n/a
 t2|organization|unit_check_unit_has_person	public-read	POST	/api/unit/check/unit/has/person		"value":true	GATE-PERSON-V|GATE-V-MOBILE	body		T2	fwd-only	n/a		{"person":"gate-person-v","unit":"unit-gate-v"}
-t2|organization|group_list_object	spoof-read	POST	/api/group/list/object		person-admin	person-admin	query	person_id	T2	both	n/a
-t2|organization|unit_list_level_name_object	spoof-read	POST	/api/unit/list/level/name/object		person-admin	person-admin	query	level_name	T2	both	n/a
+t2|organization|group_list_object	public-read	POST	/api/group/list/object		grp-gate-b	GATE-V-MOBILE	body		T2	fwd-only	n/a		{"groupList":["grp-gate-b"]}
+t2|organization|unit_list_level_name_object	public-read	POST	/api/unit/list/level/name/object		unit-gate-v	GATE-V-MOBILE	body		T2	fwd-only	n/a		{"unitList":["unit-gate-v"]}
 t2|organization|group_create	spoof-write	POST	/api/organization/group		person-admin		body	level	T2	both	n/a
 t2|organization|identity_create	spoof-write	POST	/api/organization/identity		person-admin		body	person_id	T2	both	n/a
 t2|organization|bind_create	spoof-write	POST	/api/organization/bind		person-admin		body	identity_id	T2	both	n/a
