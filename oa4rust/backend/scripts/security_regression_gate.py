@@ -28,6 +28,7 @@
     python scripts/security_regression_gate.py sabotage write-idor-w7     # Rust②m：摘掉 query table/view 与 file get_file 归属校验
     python scripts/security_regression_gate.py sabotage read-a-b1         # Rust②h：摘掉分片 A 第一批 cms 读门（6 条）
     python scripts/security_regression_gate.py sabotage read-a-b2         # Rust②i：摘掉分片 A 第二批 cms 读门（6 条）
+    python scripts/security_regression_gate.py sabotage read-a-b3         # Rust②i2：摘掉分片 A 第三批 cms appinfo/categoryinfo/commend 读门（6 条）
     python scripts/security_regression_gate.py sabotage write-idor-w3     # Rust②i：摘掉 office/bbs/mind 写侧冒名 403（7 条）
     python scripts/security_regression_gate.py sabotage go-limit0   # Go①：扣款乘 2
     python scripts/security_regression_gate.py sabotage go-idor-rev # Go②：摘掉预设删除归属
@@ -826,6 +827,18 @@ A2_EXPECTS = [
     "cms_assemble_control|templateform_id|GET",
 ]
 
+# 分片 A / A-b3：appinfo（三端点）/ categoryinfo（两端点）/ commend（一端点）。
+# 六条全部复用 `cms_gate_owned_read`，摘掉该 helper 的单主体谓词即可逐条 LEAK；
+# `commend` 的归属列是 `person_id`（表无 `creator`，台账已登记映射）。
+A3_EXPECTS = [
+    "cms_assemble_control|appinfo_id|GET",
+    "cms_assemble_control|appinfo_id_control|GET",
+    "cms_assemble_control|application_id|GET",
+    "cms_assemble_control|categoryinfo_id|GET",
+    "cms_assemble_control|categoryinfo_id_control|GET",
+    "cms_assemble_control|commend_id|GET",
+]
+
 
 # 写 IDOR 第 W-b3 批：office/bbs/mind 写侧冒名 403 臂。
 # 把三个 crate resolve_* 的管理员臂改成恒放行（保留 is_admin_db 调用引用，避免未使用告警），
@@ -1113,6 +1126,15 @@ def sabotage(kind: str) -> int:
             A2_EXPECTS,
             require_leak=True,
         )
+    elif kind == "read-a-b3":
+        return sabotage_many(
+            "摘掉分片 A 第三批 cms appinfo/categoryinfo/commend 读归属谓词（6 条应逐条 LEAK）",
+            [
+                (CMS, CMS_OWNED_READ_GATE_RE, CMS_OWNED_READ_GATE_PATCH, "cms_owned_read"),
+            ],
+            A3_EXPECTS,
+            require_leak=True,
+        )
     elif kind == "write-idor-w1":
         return sabotage_many(
             "摘掉 W-b1 五个读端点的 owner_gate（5 条应逐条 LEAK）",
@@ -1142,7 +1164,7 @@ def sabotage(kind: str) -> int:
     else:
         raise SystemExit(
             f"未知破坏实验: {kind}（可选 ownership / correct / general / organization / "
-            "program_center / hotpic_mind / read_b / read-a-b1 / read-a-b2 / "
+            "program_center / hotpic_mind / read_b / read-a-b1 / read-a-b2 / read-a-b3 / "
             "write-idor-b5 / write-idor-b6 / write-idor-b7 / write-idor-w1）"
             "program_center / hotpic_mind / read_b / read-a-b1 / "
             "write-idor-b5 / write-idor-b6 / write-idor-b7 / "

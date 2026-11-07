@@ -22,6 +22,8 @@ mod security_gate_tests_read_a_b1;
 #[cfg(test)]
 mod security_gate_tests_read_a_b2;
 #[cfg(test)]
+mod security_gate_tests_read_a_b3;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
@@ -39,8 +41,22 @@ mod tests_view_count;
 #[allow(non_snake_case)]
 pub async fn application_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    match cms_gate_owned_read(
+        &pool,
+        "x_cms_appinfo",
+        "creator",
+        &id,
+        opt_session(&session),
+    )
+    .await?
+    {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("application not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -1435,8 +1451,22 @@ pub async fn appinfo_flag(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
 #[allow(non_snake_case)]
 pub async fn appinfo_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    match cms_gate_owned_read(
+        &pool,
+        "x_cms_appinfo",
+        "creator",
+        &id,
+        opt_session(&session),
+    )
+    .await?
+    {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("appinfo not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -1477,8 +1507,22 @@ pub async fn appinfo_id(
 #[allow(non_snake_case)]
 pub async fn appinfo_id_control(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    match cms_gate_owned_read(
+        &pool,
+        "x_cms_appinfo",
+        "creator",
+        &id,
+        opt_session(&session),
+    )
+    .await?
+    {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("appinfo not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -1929,8 +1973,22 @@ pub async fn categoryinfo_flag(
 #[allow(non_snake_case)]
 pub async fn categoryinfo_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    match cms_gate_owned_read(
+        &pool,
+        "x_cms_categoryinfo",
+        "creator",
+        &id,
+        opt_session(&session),
+    )
+    .await?
+    {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("category not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -1983,8 +2041,22 @@ pub async fn categoryinfo_id(
 #[allow(non_snake_case)]
 pub async fn categoryinfo_id_control(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    match cms_gate_owned_read(
+        &pool,
+        "x_cms_categoryinfo",
+        "creator",
+        &id,
+        opt_session(&session),
+    )
+    .await?
+    {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("category not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -2166,8 +2238,23 @@ pub async fn commend_list_paging_page_size_size(
 #[allow(non_snake_case)]
 pub async fn commend_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // `x_cms_commend` 无 creator 列，唯一人员列 `person_id` 即归属列。
+    match cms_gate_owned_read(
+        &pool,
+        "x_cms_commend",
+        "person_id",
+        &id,
+        opt_session(&session),
+    )
+    .await?
+    {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("commend not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(

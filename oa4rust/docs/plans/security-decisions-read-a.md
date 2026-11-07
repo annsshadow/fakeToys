@@ -30,6 +30,12 @@
 | A-b1（#226） | `cms_assemble_control` | `anonymous_document_id_view` / `document_persons_u3` | `x_cms_data_document`：`status='published'` OR `creator`/`author_id`=会话 OR 管理员（SQL WHERE） |
 | A-b1（#226） | `cms_assemble_control` | `file_id` / `file_id_content` / `file_id_download` | `x_cms_file.creator`=会话 OR 管理员（SQL WHERE） |
 | A-b1（#226） | `cms_assemble_control` | `comment_id` | 评论作者=会话 OR 可读所属文档（published / creator / author_id）OR 管理员（SQL WHERE） |
+| A-b2（#234） | `cms_assemble_control` | `anonymous_form_id` / `form_id` | `x_cms_form`：`status='published'` OR `creator`=会话 OR 管理员（SQL WHERE） |
+| A-b2（#234） | `cms_assemble_control` | `formversion_id` / `scriptversion_id` / `templateform_id` | `x_cms_form_v2`：`status='published'` OR `creator`=会话 OR 管理员（SQL WHERE） |
+| A-b2（#234） | `cms_assemble_control` | `script_id` | `x_cms_script.creator`=会话 OR 管理员（SQL WHERE，表无 status） |
+| A-b3（本批） | `cms_assemble_control` | `application_id` / `appinfo_id` / `appinfo_id_control` | `x_cms_appinfo.creator`=会话 OR 管理员（SQL WHERE） |
+| A-b3（本批） | `cms_assemble_control` | `categoryinfo_id` / `categoryinfo_id_control` | `x_cms_categoryinfo.creator`=会话 OR 管理员（SQL WHERE） |
+| A-b3（本批） | `cms_assemble_control` | `commend_id` | `x_cms_commend.person_id`=会话 OR 管理员（SQL WHERE）。**映射说明**：该表无 `creator` 列，`person_id` 是唯一人员列，即归属列 |
 
 ## 一、NO-OWNER-COL（缺归属列，不改代码）
 
@@ -289,6 +295,25 @@ PR #226（`sec/read-a-cms-b1`）合入 `main`：merge sha `9029bcc6e2c2604d8c7c9
    （首次运行曾疑似 cargo 缓存 / mtime 竞态未红；原命令复跑即通过，已确认。）
 
 三步全过，减行有效。A-b1 用例与 sabotage 均在 `cms_assemble_control`，不涉及其它 crate。
+
+## 七、分片 A / A-b2 合入后 §12.6 三步核对（#234）
+
+PR #234（`sec/read-a-cms-b2`）合入 `main`：merge sha `4571c846a6e6899d857ff3502d1cefbe8ffa45ef`
+（squash 单父提交，父 `1a936b6de`）。减行前的 6 条基线 id：`anonymous_form_id`、`form_id`、
+`formversion_id`、`script_id`、`scriptversion_id`、`templateform_id`。
+
+1. **行是否真在 main**：`git show --stat 4571c846a` 的文件清单为 `cms_assemble_control/src/lib.rs`
+   （+58）、`security_gate_tests_read_a_b2.rs`（新增 416 行）、`security_regression_gate.py`（+33）、
+   `security_regression_baseline.txt`（−6）、本台账（+23）。合入后 `main` 顶部即该提交，
+   5 个文件内容逐字在 `main`。
+2. **基线是否虚减**：合入期间 #244（`9ab774032`，attendance 线）又减了 3 行，`main` 已前进到
+   `9ab774032`；在该 main 上重跑门禁，A-b2 的 6 条 id 全部 `[PASS]`，
+   剩余非 PASS 37 条与基线一致（leak=23, unverified=14, integrity=0）。
+3. **门禁是否接线**：`python scripts/security_regression_gate.py sabotage read-a-b2` 在
+   `main`（`9ab774032`）上变红（exit=101），输出逐条点名 6 条 `[LEAK]`，
+   `实验成立：门禁变红（exit=101），并点名 6 条用例`。
+
+三步全过，减行有效。
 
 ## 变更纪律（本分片）
 
