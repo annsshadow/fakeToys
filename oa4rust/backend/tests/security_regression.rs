@@ -395,6 +395,22 @@ mod security_regression {
         }
     }
 
+    /// 会话本人身份（fwd=攻击者，rev=受害者）。用于证明「写入已落库但归属不是伪造身份」。
+    fn actor_value(c: &Case, rev: bool) -> String {
+        let unit = c.field.contains("unit");
+        if rev {
+            if unit {
+                "unit-gate-v".into()
+            } else {
+                VICTIM.into()
+            }
+        } else if unit {
+            "unit-gate-a".into()
+        } else {
+            ATTACKER.into()
+        }
+    }
+
     /// 冒名新建/冒名查询的请求体：owner 字段填目标身份，其余敏感字段打 canary
     fn build_spoof_body(c: &Case, rev: bool) -> String {
         let owner = owner_value(c, rev);
@@ -424,7 +440,11 @@ mod security_regression {
         if !c.body.is_empty() {
             if let Ok(Value::Object(extra)) = serde_json::from_str::<Value>(&c.body) {
                 for (k, v) in extra {
-                    m.insert(k, v);
+                    // 字面量只补端点必填字段，不覆盖 owner——否则用例不再“冒名”。
+                    let owner_key = k == c.field || camel(&c.field) == k;
+                    if !owner_key {
+                        m.insert(k, v);
+                    }
                 }
             }
         }
@@ -989,7 +1009,8 @@ mod security_regression {
                 if !(200..300).contains(&code) {
                     return Outcome::Unverified(format!("status={code}"));
                 }
-                // 优先按响应返回的新行 id 回表核对归属：owner 字段等于被冒充身份即越权
+                // 优先按响应返回的新行 id 回表核对归属：owner 字段等于被冒充身份即越权；
+                // 若行已落库但 owner 是会话本人（伪造字段被服务端丢弃），这是正确归属的正证据。
                 if let Some(newid) = response_id(&resp) {
                     if let Some(row) = row_json(pool, &c.table, &newid).await {
                         let owner = owner_value(c, rev);
@@ -997,6 +1018,10 @@ mod security_regression {
                             return Outcome::Leak(format!(
                                 "2xx 且新行 {newid} 的 owner={owner}（冒名落库）"
                             ));
+                        }
+                        let actor = actor_value(c, rev);
+                        if row.contains(&actor) {
+                            return Outcome::Pass;
                         }
                     }
                 }

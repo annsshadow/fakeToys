@@ -779,3 +779,54 @@ sabotage `w8-unverified`，本批减 5 行（分支创建时基线 37→32）。
 | `t2|organization|unit_list_level_name_object` | 保留基线，登记 | 同上，handler 读 body `unitList` 数组；组织层级可见性无归属裁决 |
 
 本批基线 31 → 29；破坏实验短路两处新门后 `NEW-FAIL` 恰好点名 2 条（identity_create / bind_create）。
+
+## 15. 基线剩余 8 条裁决（B8，2026-11-08）
+
+基线从 8 条（7 `UNVERIFIED` + 1 `LEAK`）按四类口径逐条裁决。目标不是把数字刷成 0，而是消除
+`UNVERIFIED` 挡箭牌：能公开的升级断言、能私有的收会话归属、不属于 IDOR 的单独立项、证据缺口先补
+观测再按实测转 `PASS/LEAK`。每条移出基线都必须留下「判据 / 影响面 / 如何回滚」三件事。
+
+| # | 用例 | 类别 | 实际动作 | 基线变化 |
+|---|---|---|---|---|
+| 1 | `t1\|oauth\|generate_code` | ② 该私有（写归属） | 生产代码已 `person_id=sess`、响应回传 `data.id`；门禁按 id 回查，伪造 owner 与会话 actor 分开判 | 移除 |
+| 2 | `t2\|auth\|code` | ③ 非 IDOR | 移出用例集，单独立项 `AUTH-2FA-01`（authentication） | 移除 |
+| 3 | `t2\|meeting\|create_meeting` | ④→② | 补必填 body 后可观测；实测 `creator` 采信 body，改为会话派生 | 移除 |
+| 4 | `t2\|mind\|create_version` | ④ 表名错配 | `table` 修为 `mind_version_info`；`creator/creator_unit` 已会话派生 | 移除 |
+| 5 | `t2\|organization\|unit_check_unit_has_person` | ① PUBLIC-BY-DESIGN | 响应已仅 `value:boolean`；用例升级为匿名 `public-read` + 无 PII 断言 | 移除 |
+| 6 | `t2\|organization\|group_list_object` | ④→① | 用例承载字段修为 `groupList` 并补种子；匿名正控制 + 无姓名/手机 canary | 移除 |
+| 7 | `t2\|organization\|unit_list_level_name_object` | ④→① | 用例承载字段修为 `unitList` 并补种子；匿名正控制 + 无 PII canary | 移除 |
+| 8 | `t2\|program_center\|warnlog_create` | FALSE-GREEN | 不动写语义；保留基线并标 FALSE-GREEN（不计减行） | **不变** |
+
+### 15.1 批 1（PR-A）：oauth 授权码、2FA 登录、mind 版本
+
+**判据**
+
+- `t1|oauth|generate_code`：handler 在 `organization_assemble_authentication/src/lib.rs:1290-1306`
+  已把 `person_id` 固定为 `sess.person_unique`，响应同时回传表主键 `id` 与授权码 `code`。门禁改为
+  「按 `data.id` 回查行：含伪造 owner → LEAK；不含伪造 owner 但含会话 actor → PASS；
+  两者都无 → UNVERIFIED」。这是正证据，不是「2xx 且 canary 增加即 LEAK」的粗判。
+- `t2|mind|create_version`：原 `table` 写成 `x_mind_version_info`（实际写入 `mind_version_info`），
+  表名错配导致永远观测不到。修正后 `creator`/`creator_unit` 均为会话派生，`creator_unit` 维度按
+  `unit-gate-*` 断言。
+- `t2|auth|code`：`/api/authentication/code` 是双因素登录第二阶段（`auth/src/lib.rs:750-817`），
+  输入是登录凭据、输出是新会话，不存在「某一行属于谁」的 IDOR 归属语义；IDOR 用例集的
+  victim/owner 模型不适用。移出用例集，登记为 `AUTH-2FA-01`。
+
+**影响面**
+
+- 仅改门禁判据、用例表与种子，不改生产鉴权逻辑；oauth/mind 的会话派生行为不变。
+- 门禁判据变更会让「正确按会话归属落库」的写用例首次具备 PASS 证据；对既有用例只影响
+  spoof-write 分支，未回查到行时仍 UNVERIFIED。
+
+**如何回滚**
+
+- 回滚本 PR 即可恢复原判据与 3 条基线行；`AUTH-2FA-01` 条目随 §15 一并回退。
+- 若后续发现 oauth `clientId` 验签缺失（已登记在 handler 注释），属独立问题，不回滚本条归属修复。
+
+破坏实验 `sabotage b8-session-owner-write`：把 oauth `person_id`、mind `creator_unit` 改回请求体，
+门禁变红并逐条点名 `t1|oauth|generate_code`、`t2|mind|create_version`（两者均 `[LEAK] ... 冒名落库`）。
+
+### 15.2 批 2 / 15.3 批 3
+
+（由后续 PR 追加：unit_check PUBLIC-BY-DESIGN；meeting、group/unit list、warnlog FALSE-GREEN。）
+
