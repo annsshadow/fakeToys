@@ -1594,8 +1594,8 @@ pub async fn invoice_create(
         .and_then(|v| v.as_str())
         .unwrap_or("draft")
         .to_string();
-    // 归属以会话登录人为事实源：客户端 creator 可伪造（冒名归属，IDOR 面）。
-    let creator = sess.person_unique.clone();
+    // 归属以会话为事实源；请求体写他人仅管理员放行，否则 403（冒名创建）。
+    let creator = resolve_creator(&pool, &sess, &payload).await?;
 
     client
         .execute(
