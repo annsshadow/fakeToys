@@ -667,6 +667,11 @@ A/B/W 之间 crate 集合两两不相交；同一批内可以跨多个 crate，�
 1. 合入前该批必须有对应 sabotage 模式；**没有 sabotage 的批次不得删基线行**（否则第 3 步无法执行）。
 2. 按 `§12.6` 三步核对：行在 `main` → 被删行全 `[PASS]` → sabotage 变红并逐条点名。
 3. 一批只减该批实际转 `[PASS]` 的行；出现 `STALE-BASELINE` 只减被点名的行，不做连带清理。
+4. **并行用例共用同一夹具行会互相删行**：`cargo test` 默认多线程，同文件两条用例若按宽口径
+   （如按 `creator`）清理同一张表的夹具，A 的清理会删掉 B 正在用的行，表现为**偶发 403/404/UNVERIFIED**。
+   排查顺序是先做用例隔离（单线程跑、或让用例独占行 id），**不要先怀疑归属谓词**；复现可用临时
+   `tokio::time::sleep(2s)` 放大竞态，拿到证据后把睡眠移除。#253 的 W2 假红即用此法定位
+   （根因是两用例按 creator 宽口径互删，改为精确 id 清理后 25 用例 ×30 轮无失败）。
 
 ### 13.7 写 IDOR 批次执行记录（§12.6 三步核对）
 
@@ -688,6 +693,23 @@ A/B/W 之间 crate 集合两两不相交；同一批内可以跨多个 crate，�
 **FALSE-GREEN（不计减行）**：`t2|program_center|warnlog_create` 的门禁用例 `field=level`
 不是归属列；写侧实际落 `creator_person = sess.person_unique`，判据来源已真实。
 非属主写自身日志属正常语义，故保留基线行、不按读 IDOR 口径改写入语义。
+
+### 13.8 W-b8：5 条未认领 UNVERIFIED 收口（file / bbs / mind）
+
+从 `origin/main` 单开 `fix/w8-unverified-owner-gates`，`base=main`，单批单 PR；
+sabotage `w8-unverified`，本批减 5 行（分支创建时基线 37→32）。门禁实测（`ec5d915a4`）与根因：
+
+| 用例 | 实测 | 根因 | 修法 |
+|---|---|---|---|
+| `file_assemble_control\|recycle_id\|GET` | 200 `file not in recycle bin` | 种子 `file_file.deleted_at` 为 NULL，`deleted_at IS NOT NULL` 不命中；handler 无会话/无归属门 | 种子补 `deleted_at=NOW()`；handler `require_session` + `require_owner(recycle_owner)` |
+| `t1\|bbs\|create_topic` | **422** | body 同时给 `author_id` 与 `authorId`，`CreateTopicRequest` 用 `alias` 指向同一字段 → serde 重复字段 | 用例 `field` 改 `authorId`；handler 对非管理员 `author_id != creator` → 403 |
+| `t1\|mind\|create_mind` | 200，表内无 canary | 用例查 `x_mind_base_info`，handler 写并存的 `mind_base_info` | cases 表名改 `mind_base_info`；`creatorUnit` 与会话派生不一致且非管理员 → 403 |
+| `t1\|mind\|create_folder` | 200，同上 | 用例查 `x_mind_folder_info`，handler 写 `mind_folder_info` | 同上，表名改 `mind_folder_info` |
+| `t2\|file\|file_create` | **422** | `FileCreateRequest` 要求 `reference_type` 非空，冒名 body 未给 → 参数提取失败 | cases body 列补 `{"reference_type":"GATE-HACK"}`（runner 合并进冒名 body）；handler 校验 `person == 会话人`，否则 403 |
+
+表中的 `422` 与 `200 无 canary` 都不是「谓词漏了」，而是**判据行没走到真实路径**：
+要么请求先被反序列化拦下，要么回表查了另一张同名表，要么夹具行不在谓词范围内。
+先修路径、再收归属门，避免用「改断言」迁就实现。
 
 ## 14. 17 条 UNVERIFIED 逐条定性
 

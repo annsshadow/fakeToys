@@ -128,11 +128,12 @@ mod security_gate_tests {
 
     /// 分片 A 缺陷：`create_mind` / `create_folder` / `create_version` 的 `creator_unit`
     /// 原取自请求体，同会话可伪造他人单位落库。修复后 unit 由会话登录人派生，
-    /// 请求体 `creatorUnit` 不生效。
+    /// 请求体 `creatorUnit` 冒名：create_mind / create_folder 拒绝（403 且不落库）；
+    /// create_version 仍以会话单位覆盖（其门禁不在本批范围）。
     #[tokio::test]
-    async fn mind_create_ignores_forged_creator_unit() {
+    async fn mind_create_rejects_forged_creator_unit() {
         if !shared::testing::is_db_available().await {
-            eprintln!("SKIP (no PG): mind_create_ignores_forged_creator_unit");
+            eprintln!("SKIP (no PG): mind_create_rejects_forged_creator_unit");
             return;
         }
         let pool = shared::testing::test_pool();
@@ -151,47 +152,51 @@ mod security_gate_tests {
 
         let forged = serde_json::json!({ "creatorUnit": "forged-unit" });
 
-        // create_mind
+        // create_mind：冒名单位 403，且不落库
         let mind_name = format!("{tag}-mind");
         let mut body = forged.clone();
         body["name"] = serde_json::Value::String(mind_name.clone());
-        let _ = crate::create_mind(
+        let err = crate::create_mind(
             Extension(pool.clone()),
             Some(Extension(build_session(&actor))),
             axum::Json(body),
         )
         .await
-        .unwrap();
-        let unit: String = client
+        .err()
+        .expect("create_mind 冒名 creatorUnit 应拒绝");
+        assert!(matches!(err, AppError::Forbidden), "create_mind 应 403");
+        let count: i64 = client
             .query_one(
-                "SELECT creator_unit FROM mind_base_info WHERE name = $1",
+                "SELECT COUNT(*) FROM mind_base_info WHERE name = $1",
                 &[&mind_name],
             )
             .await
             .unwrap()
-            .get("creator_unit");
-        assert_eq!(unit, "real-unit", "create_mind 落库单位必须为会话单位");
+            .get(0);
+        assert_eq!(count, 0, "create_mind 冒名请求不得落库");
 
-        // create_folder
+        // create_folder：同上
         let folder_name = format!("{tag}-folder");
         let mut body = forged.clone();
         body["name"] = serde_json::Value::String(folder_name.clone());
-        let _ = crate::create_folder(
+        let err = crate::create_folder(
             Extension(pool.clone()),
             Some(Extension(build_session(&actor))),
             axum::Json(body),
         )
         .await
-        .unwrap();
-        let unit: String = client
+        .err()
+        .expect("create_folder 冒名 creatorUnit 应拒绝");
+        assert!(matches!(err, AppError::Forbidden), "create_folder 应 403");
+        let count: i64 = client
             .query_one(
-                "SELECT creator_unit FROM mind_folder_info WHERE name = $1",
+                "SELECT COUNT(*) FROM mind_folder_info WHERE name = $1",
                 &[&folder_name],
             )
             .await
             .unwrap()
-            .get("creator_unit");
-        assert_eq!(unit, "real-unit", "create_folder 落库单位必须为会话单位");
+            .get(0);
+        assert_eq!(count, 0, "create_folder 冒名请求不得落库");
 
         // create_version
         let version_name = format!("{tag}-version");
