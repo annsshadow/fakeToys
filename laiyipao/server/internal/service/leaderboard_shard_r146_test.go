@@ -235,13 +235,17 @@ func TestLeaderboardShardMigrationRoundTrip(t *testing.T) {
 	assertShardPlacement(ids, scores, "正向迁移后")
 	assertCountsEqualRealtime("正向迁移后")
 
-	// 回滚一步：shard 列消失、旧 PK/旧函数恢复（旧函数 ON CONFLICT (kind,score) 依赖它），
+	// 回滚两步：先 00030（R149 看板分片），再 00029（排行榜分片）。
+	// shard 列消失、旧 PK/旧函数恢复（旧函数 ON CONFLICT (kind,score) 依赖它），
 	// 且合并后的 SUM 仍必须等于实时值（回滚不能丢计数）。
+	if err := ts.db.MigrateDown(ctx); err != nil {
+		t.Fatalf("goose down 00030 失败：%v", err)
+	}
 	if err := ts.db.MigrateDown(ctx); err != nil {
 		t.Fatalf("goose down 00029 失败：%v", err)
 	}
-	if got := gooseVersion(); got != upVersion-1 {
-		t.Fatalf("回滚后版本应为 %d，实际 %d", upVersion-1, got)
+	if got := gooseVersion(); got != upVersion-2 {
+		t.Fatalf("回滚后版本应为 %d，实际 %d", upVersion-2, got)
 	}
 	if hasShardColumn() {
 		t.Fatalf("回滚后 shard 列仍然存在")

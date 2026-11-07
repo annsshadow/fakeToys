@@ -87,8 +87,11 @@ func TestDashboardWaveSumMigrationRollbackOnData(t *testing.T) {
 	readStats := func(level int) stats {
 		t.Helper()
 		var s stats
+		// R149：计数器按 shard 分片后同一关有多行，读侧统一 SUM 合并
+		// （只在 00029 及更早版本时单行，SUM 结果不变）。
 		if err := db.Pool.QueryRow(ctx, `
-			SELECT attempts, wins, duration_sum, wave_sum
+			SELECT COALESCE(SUM(attempts), 0), COALESCE(SUM(wins), 0),
+			       COALESCE(SUM(duration_sum), 0), COALESCE(SUM(wave_sum), 0)
 			  FROM dashboard_battle_stats WHERE level_id = $1`, level).
 			Scan(&s.attempts, &s.wins, &s.duration, &s.wave); err != nil {
 			t.Fatalf("读增量表失败：%v", err)
@@ -138,7 +141,9 @@ func TestDashboardWaveSumMigrationRollbackOnData(t *testing.T) {
 	insertBattle(1, "win", 1234, 5)
 	var attempts, wins, duration int64
 	if err := db.Pool.QueryRow(ctx, `
-		SELECT attempts, wins, duration_sum FROM dashboard_battle_stats WHERE level_id = 1`).
+		SELECT COALESCE(SUM(attempts), 0), COALESCE(SUM(wins), 0),
+		       COALESCE(SUM(duration_sum), 0)
+		  FROM dashboard_battle_stats WHERE level_id = 1`).
 		Scan(&attempts, &wins, &duration); err != nil {
 		t.Fatalf("读降级后增量表失败：%v", err)
 	}
