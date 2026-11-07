@@ -247,7 +247,7 @@ t2|organization|group_list_object	spoof-read	POST	/api/group/list/object		person
 t2|organization|unit_list_level_name_object	spoof-read	POST	/api/unit/list/level/name/object		person-admin	person-admin	query	level_name	T2	both	n/a
 t2|organization|group_create	spoof-write	POST	/api/organization/group		person-admin		body	level	T2	both	n/a
 t2|organization|identity_create	spoof-write	POST	/api/organization/identity		person-admin		body	person_id	T2	both	n/a
-t2|organization|bind_create	spoof-write	POST	/api/organization/bind		person-admin		body	role	T2	both	n/a
+t2|organization|bind_create	spoof-write	POST	/api/organization/bind		person-admin		body	identity_id	T2	both	n/a
 t2|program_center|warnlog_create	spoof-write	POST	/api/program_center/warnlog	x_program_warn_log	person-admin		body	level	T2	both	n/a
 t2-excluded|ai|chat_completion	excluded	POST	/api/ai_assemble_control/chat/completion				body		T2	fwd-only	n/a
 t2-excluded|ai|file_upload	excluded	POST	/api/ai_assemble_control/file/upload				body		T2	fwd-only	n/a
