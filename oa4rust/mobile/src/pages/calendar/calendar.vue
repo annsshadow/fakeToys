@@ -14,6 +14,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 import { type CalendarRow, calendarApi } from '@/services'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import { parseServerDate } from '@/utils/datetime'
 import { describeLoadError } from '@/utils/loadList'
 
 interface EventRow {
@@ -210,8 +211,9 @@ function fmtTime(e: EventRow): string {
   const t = e.end_time ?? e.endTime
   const f = (v: unknown): string => {
     if (!v) return ''
-    const d = new Date(String(v))
-    if (Number.isNaN(d.valueOf())) return String(v)
+    // iOS WebView 不认「YYYY-MM-DD HH:mm:ss」，必须经 parseServerDate 显式构造。
+    const d = parseServerDate(v)
+    if (!d) return String(v)
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
   }
   const a = f(s)
