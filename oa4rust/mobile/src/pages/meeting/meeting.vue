@@ -10,6 +10,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { computed, ref } from 'vue'
 import { type MeetingRow, meetingApi } from '@/services'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import { createLatestGate } from '@/utils/latest'
 import { listState, loadList } from '@/utils/loadList'
 import { MEETING_PAGE_SIZE, meetingHasMore, mergeMeetingRows } from './meetingList'
 
@@ -28,32 +29,40 @@ const loadingMore = ref(false)
 const loadError = ref('')
 const page = ref(1)
 const hasMore = ref(false)
+// 页签/加载更多的在途请求只认最新一次，见 utils/latest。
+const listGate = createLatestGate()
 const busyId = ref('')
 const listView = computed(() =>
   listState({ loading: loading.value, loaded: true, count: rows.value.length, error: loadError.value }),
 )
 
 async function load(previousRows: MeetingRow[] = rows.value): Promise<void> {
+  // 页签切得快时旧请求会晚到：只认最新一次，过期响应不写 rows/hasMore。
+  const token = listGate.begin()
+  const targetTab = tab.value
   loading.value = true
   loadError.value = ''
   const result = await loadList<MeetingRow>(
     () => {
-      if (tab.value === 'wait') return meetingApi.invitedWait()
-      if (tab.value === 'confirm') return meetingApi.waitConfirm()
+      if (targetTab === 'wait') return meetingApi.invitedWait()
+      if (targetTab === 'confirm') return meetingApi.waitConfirm()
       return meetingApi.applied(1, MEETING_PAGE_SIZE)
     },
     { previousRows, label: '会议加载失败' },
   )
+  if (!listGate.isLatest(token)) return
   rows.value = result.rows
   page.value = 1
   // 只有「我的会议」端点支持分页；待接受/待确认返回全量，不提供加载更多。
-  hasMore.value = tab.value === 'mine' && result.ok && meetingHasMore(result.rows.length)
+  hasMore.value = targetTab === 'mine' && result.ok && meetingHasMore(result.rows.length)
   if (!result.ok) loadError.value = result.error
   loading.value = false
 }
 
 async function loadMore(): Promise<void> {
   if (loading.value || loadingMore.value || !hasMore.value || tab.value !== 'mine') return
+  const token = listGate.begin()
+  const targetTab = tab.value
   loadingMore.value = true
   loadError.value = ''
   const next = page.value + 1
@@ -61,6 +70,11 @@ async function loadMore(): Promise<void> {
     previousRows: rows.value,
     label: '更多会议加载失败',
   })
+  // 加载期间切了页签：这一页属于旧页签，丢弃，避免把旧数据并进新列表。
+  if (!listGate.isLatest(token) || tab.value !== targetTab) {
+    loadingMore.value = false
+    return
+  }
   if (result.ok) {
     rows.value = mergeMeetingRows(rows.value, result.rows)
     page.value = next

@@ -134,5 +134,12 @@ describe('移动端流程列表分页：页码进请求、失败不折叠成空�
     expect(source).not.toContain('completedList(1, 50)')
     expect(source).not.toContain('startedList(1, 50)')
     expect(source).not.toContain('total.value = resp.count')
+    // R151：页签/加载更多的旧响应晚到时不得覆盖新页签。
+    expect(source).toContain("import { createLatestGate } from '@/utils/latest'")
+    expect(source).toContain('const pageGate = createLatestGate()')
+    expect(source).toContain('const targetTab = active.value')
+    // 成功/失败各一处、finally 一处、loadMore 两处：任一处丢失都会减少计数。
+    expect(source.split('pageGate.isLatest(token)').length - 1).toBe(5)
+    expect(source).toContain('active.value !== targetTab')
   })
 })
