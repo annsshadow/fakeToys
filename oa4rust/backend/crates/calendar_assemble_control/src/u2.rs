@@ -131,41 +131,18 @@ async fn person_can_manage_event(
     })
 }
 
-/// O9：事件读面门禁——公开日历（is_public）内的事件全员可读；其余仅
-/// 事件属主 / 所属日历属主 / 管理员可读。此前 event_get / event_rfc 无校验，
-/// 任何登录用户可读他人私密日程（IDOR 矩阵 canary 实证）。
-/// 返回 Ok(false) 兼含「事件不存在」——handler 统一以 403 回应，
-/// 不区分「不存在」与「无权」，不暴露存在性。
-async fn person_can_read_event(
-    pool: &Pool,
-    person: &str,
-    event_id: &str,
-) -> Result<bool, AppError> {
-    if require_person_is_manager(pool, person).await? {
-        return Ok(true);
-    }
-    let client = shared::db::acquire(pool).await?;
-    let row = client
-        .query_opt(
-            "SELECT e.createor AS event_owner, c.is_public AS cal_public, c.createor AS cal_owner \
-             FROM cal_event e LEFT JOIN cal_calendar c ON c.id = e.calendar_id \
-             WHERE e.id = $1 AND e.status = 'OPEN'",
-            &[&event_id.to_string()],
-        )
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
-    Ok(match row {
-        Some(r) => {
-            if r.get::<_, Option<bool>>("cal_public").unwrap_or(false) {
-                return Ok(true);
-            }
-            let owner: Option<String> = r.get("event_owner");
-            let cal_owner: Option<String> = r.get("cal_owner");
-            owner.as_deref() == Some(person) || cal_owner.as_deref() == Some(person)
-        }
-        None => false,
-    })
-}
+/// 事件读归属谓词：本人 OR 管理员；`cal_calendar.is_public=true` 视为已公开。
+/// 归属链 `cal_event.calendar_id -> cal_calendar.id` 直接进主查询 WHERE，
+/// 先授权后取数；取不到行统一 403，不区分「不存在」与「无权」。
+const EVENT_READ_PREDICATE: &str = "(c.is_public = TRUE \
+     OR NULLIF(BTRIM(e.createor), '') = $2 \
+     OR NULLIF(BTRIM(c.createor), '') = $2 \
+     OR EXISTS(\
+         SELECT 1 FROM auth_person p \
+           JOIN auth_person_role pr ON pr.person_id = p.id \
+           JOIN auth_role r ON r.id = pr.role_id \
+          WHERE (p.unique_id = $2 OR p.id = $2) \
+            AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false))";
 
 /// O9：日历读面门禁——公开日历全员可读；私有仅属主/管理员。
 async fn person_can_read_calendar(
@@ -289,23 +266,20 @@ pub async fn event_get(
     session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> ApiResult {
-    // O9：读面门禁（公开日历内事件全员可读；其余仅属主/管理员）——403 不暴露存在性
-    if !person_can_read_event(&pool, &session.person_unique, &id).await? {
-        return Err(AppError::Forbidden);
-    }
     let client = shared::db::acquire(&pool).await?;
+    let sql = format!(
+        "SELECT e.id, e.calendar_id, e.title, e.content, e.location, e.start_time, e.end_time, \
+         e.all_day, e.visibility, e.status, e.createor \
+         FROM cal_event e LEFT JOIN cal_calendar c ON c.id = e.calendar_id \
+         WHERE e.id = $1 AND e.status = 'OPEN' AND {EVENT_READ_PREDICATE}"
+    );
     let row = client
-        .query_opt(
-            "SELECT id, calendar_id, title, content, location, start_time, end_time, \
-             all_day, visibility, status, createor \
-             FROM cal_event WHERE id = $1 AND status = 'OPEN'",
-            &[&id],
-        )
+        .query_opt(&sql, &[&id, &session.person_unique])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(r) => Ok(Json(ActionResult::success(event_row_to_value(&r)))),
-        None => Ok(Json(ActionResult::error("event not found"))),
+        None => Err(AppError::Forbidden),
     }
 }
 
@@ -927,17 +901,14 @@ pub async fn event_rfc(
     session: Extension<shared::session::Session>,
     Path(id): Path<String>,
 ) -> ApiResult {
-    // O9：读面门禁（与 event_get 同口径）——RFC 导出含标题/时间/地点
-    if !person_can_read_event(&pool, &session.person_unique, &id).await? {
-        return Err(AppError::Forbidden);
-    }
     let client = shared::db::acquire(&pool).await?;
+    let sql = format!(
+        "SELECT e.id, e.title, e.start_time, e.end_time, e.location, e.rfc_text \
+         FROM cal_event e LEFT JOIN cal_calendar c ON c.id = e.calendar_id \
+         WHERE e.id = $1 AND e.status = 'OPEN' AND {EVENT_READ_PREDICATE}"
+    );
     let row = client
-        .query_opt(
-            "SELECT id, title, start_time, end_time, location, rfc_text \
-             FROM cal_event WHERE id = $1 AND status = 'OPEN'",
-            &[&id],
-        )
+        .query_opt(&sql, &[&id, &session.person_unique])
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
@@ -958,7 +929,7 @@ pub async fn event_rfc(
             });
             Ok(Json(ActionResult::success(json!({ "id": id, "rfc": rfc }))))
         }
-        None => Ok(Json(ActionResult::error("event not found"))),
+        None => Err(AppError::Forbidden),
     }
 }
 

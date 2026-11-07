@@ -27,7 +27,11 @@ attendance_assemble_control|v2_record_get|own	idor-read-own	GET	/api/attendance/
 attendance_assemble_control|workplace_id|GET	idor-read	GET	/api/attendance/assemble/control/workplace/{id}	x_attendance_workplace	r6-workplace_id	r6-workplace_id	path		legacy	both	allow
 attendance_assemble_control|workplace_id|own	idor-read-own	GET	/api/attendance/assemble/control/workplace/{id}	x_attendance_workplace	rev-r6-workplace_id	rev-r6-workplace_id	path		legacy		allow
 calendar_core_entity|calendar_get|GET	idor-read	GET	/api/calendar/core/entity/calendar/{id}	x_cal_calendar	2bf1a95c-04a8-41c1-918b-7d608331c702	2bf1a95c-04a8-41c1-918b-7d608331c702	path		legacy	both	allow
-calendar_core_entity|calendar_get|own	idor-read-own	GET	/api/calendar/core/entity/calendar/{id}	x_cal_calendar	rev-2bf1a95c-04a8-41c1-918b-7d608331c702	rev-r6seed	path		legacy	fwd-only	n/a		
+calendar_core_entity|calendar_get|own	idor-read-own	GET	/api/calendar/core/entity/calendar/{id}	x_cal_calendar	rev-2bf1a95c-04a8-41c1-918b-7d608331c702	rev-r6seed	path		legacy	fwd-only	n/a
+calendar_assemble_control|event_get|GET	idor-read	GET	/api/calendar_assemble_control/event/{id}	cal_event	CAL-VICTIM-EVENT	CAL-VICTIM-EVENT	path		legacy	both	allow
+calendar_assemble_control|event_get|own	idor-read-own	GET	/api/calendar_assemble_control/event/{id}	cal_event	rev-CAL-VICTIM-EVENT	rev-r6seed	path		legacy		allow
+calendar_assemble_control|event_rfc|GET	idor-read	GET	/api/calendar_assemble_control/event/rfc/{id}	cal_event	CAL-VICTIM-EVENT	CAL-VICTIM-EVENT	path		legacy	both	allow
+calendar_assemble_control|event_rfc|own	idor-read-own	GET	/api/calendar_assemble_control/event/rfc/{id}	cal_event	rev-CAL-VICTIM-EVENT	rev-r6seed	path		legacy		allow
 organization_assemble_personal|user_setting|GET	idor-read	GET	/api/organization/assemble/personal/{id}/setting	auth_person	gate-victim	GATE-V-SETTING	path		legacy	both	allow	audit-user	
 organization_assemble_personal|user_setting|own	idor-read-own	GET	/api/organization/assemble/personal/{id}/setting	auth_person	audit-user	rev-GATE-V-SETTING	path		legacy	fwd-only	n/a		
 organization_assemble_personal|user_role_list|GET	idor-read	GET	/api/organization/assemble/personal/{id}/role/list	x_org_group_member	gate-victim	GATE-V-ROLE	path		legacy	both	allow	audit-user	
