@@ -1259,7 +1259,7 @@ pub async fn view_create(
             .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?,
         None => String::new(),
     };
-    let creator = "system";
+    let creator = sess.person_unique.clone();
 
     client
         .execute(

@@ -59,14 +59,6 @@ processplatform_service_processing|task_id|GET	LEAK
 processplatform_service_processing|task_v2_id|GET	LEAK
 processplatform_service_processing|taskcompleted_id|GET	LEAK
 query_assemble_designer|table_id_permission|GET	LEAK
-query_assemble_designer|view_id_bundle|GET	LEAK
-query_assemble_designer|view_id_permission|GET	LEAK
-query_assemble_designer|view_id_simulate|GET	LEAK
-query_assemble_surface|get_surface|GET	LEAK
-query_assemble_surface|view_id_bundle_v2|GET	LEAK
-query_assemble_surface|view_id_bundle|GET	LEAK
-query_assemble_surface|view_id_excel|GET	LEAK
-query_assemble_surface|view_id_execute|GET	LEAK
 query_core_entity|view_get|GET	LEAK
 t1|attendancedetail_mobile_mobilepreview	UNVERIFIED
 t1|attendancedetail_mobile_my	LEAK
