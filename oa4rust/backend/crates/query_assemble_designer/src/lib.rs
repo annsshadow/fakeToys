@@ -3972,84 +3972,18 @@ pub async fn view_id(
 #[allow(non_snake_case)]
 pub async fn view_id_bundle(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((_s0, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = session
+        .map(|ext| ext.0)
+        .ok_or(AppError::Unauthorized)?
+        .person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
-            "SELECT id, view_flag, bundle_data FROM x_query_view WHERE id = $1",
-            &[&id],
-        )
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
-
-    match row {
-        Some(row) => Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                (
-                    "viewFlag".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("view_flag")
-                            .unwrap_or_default(),
-                    ),
-                ),
-                (
-                    "bundle".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("bundle_data")
-                            .unwrap_or_default(),
-                    ),
-                ),
-            ]),
-        )))),
-        None => Ok(Json(ActionResult::error("view not found"))),
-    }
-}
-
-#[allow(non_snake_case)]
-pub async fn view_id_permission(
-    pool: Extension<Pool>,
-    Path(id): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = shared::db::acquire(&pool).await?;
-
-    let row = client
-        .query_opt(
-            "SELECT id, permission FROM x_query_view WHERE id = $1",
-            &[&id],
-        )
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
-
-    match row {
-        Some(row) => Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                (
-                    "permission".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("permission")
-                            .unwrap_or_default(),
-                    ),
-                ),
-            ]),
-        )))),
-        None => Ok(Json(ActionResult::error("view not found"))),
-    }
-}
-
-#[allow(non_snake_case)]
-pub async fn view_id_simulate(
-    pool: Extension<Pool>,
-    Path((_s0, id)): Path<(String, String)>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = shared::db::acquire(&pool).await?;
-
-    let row = client
-        .query_opt(
-            "SELECT id, name, content FROM x_query_view WHERE id = $1",
+            "SELECT id, view_flag, bundle_data, creator FROM x_query_view WHERE id = $1",
             &[&id],
         )
         .await
@@ -4057,6 +3991,109 @@ pub async fn view_id_simulate(
 
     match row {
         Some(row) => {
+            require_owner_or_admin(
+                &pool,
+                row.get::<_, Option<String>>("creator").as_deref(),
+                &actor,
+            )
+            .await?;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    (
+                        "viewFlag".to_string(),
+                        Value::String(
+                            row.get::<_, Option<String>>("view_flag")
+                                .unwrap_or_default(),
+                        ),
+                    ),
+                    (
+                        "bundle".to_string(),
+                        Value::String(
+                            row.get::<_, Option<String>>("bundle_data")
+                                .unwrap_or_default(),
+                        ),
+                    ),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("view not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn view_id_permission(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = session
+        .map(|ext| ext.0)
+        .ok_or(AppError::Unauthorized)?
+        .person_unique;
+    let client = shared::db::acquire(&pool).await?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, permission, creator FROM x_query_view WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+
+    match row {
+        Some(row) => {
+            require_owner_or_admin(
+                &pool,
+                row.get::<_, Option<String>>("creator").as_deref(),
+                &actor,
+            )
+            .await?;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    (
+                        "permission".to_string(),
+                        Value::String(
+                            row.get::<_, Option<String>>("permission")
+                                .unwrap_or_default(),
+                        ),
+                    ),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("view not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn view_id_simulate(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path((_s0, id)): Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = session
+        .map(|ext| ext.0)
+        .ok_or(AppError::Unauthorized)?
+        .person_unique;
+    let client = shared::db::acquire(&pool).await?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, content, creator FROM x_query_view WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+
+    match row {
+        Some(row) => {
+            require_owner_or_admin(
+                &pool,
+                row.get::<_, Option<String>>("creator").as_deref(),
+                &actor,
+            )
+            .await?;
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
