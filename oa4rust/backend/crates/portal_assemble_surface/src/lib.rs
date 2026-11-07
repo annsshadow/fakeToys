@@ -42,7 +42,7 @@ fn opt_session(
     session.as_ref().map(|e| &e.0)
 }
 
-/// 单主体列读门（E23）：`x_portal_surface` 按 `creator` 本人或管理员。
+/// 单主体列读门（E23）：`x_portal` / `x_portal_surface` 读 = `creator` 本人或管理员。
 async fn surface_owned_read_gate(
     pool: &Pool,
     table: &str,
@@ -83,6 +83,8 @@ async fn surface_owned_read_gate(
 mod security_gate_tests;
 #[cfg(test)]
 mod security_gate_tests_read_a_b4;
+#[cfg(test)]
+mod security_gate_tests_read_a_b5;
 
 #[derive(Debug, Deserialize)]
 pub struct CreateSurfaceRequest {
@@ -286,8 +288,22 @@ pub async fn list_surfaces(
 #[allow(non_snake_case)]
 pub async fn preview_surface(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    match surface_owned_read_gate(
+        &pool,
+        "x_portal_surface",
+        "creator",
+        &id,
+        opt_session(&session),
+    )
+    .await?
+    {
+        ReadGate::NotFound => return Ok(Json(ActionResult::error("surface not found"))),
+        ReadGate::Forbidden => return Err(AppError::Forbidden),
+        ReadGate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
@@ -437,8 +453,22 @@ pub async fn surface_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Val
 #[allow(non_snake_case)]
 pub async fn surface_preview(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    match surface_owned_read_gate(
+        &pool,
+        "x_portal_surface",
+        "creator",
+        &id,
+        opt_session(&session),
+    )
+    .await?
+    {
+        ReadGate::NotFound => return Ok(Json(ActionResult::error("surface not found"))),
+        ReadGate::Forbidden => return Err(AppError::Forbidden),
+        ReadGate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -2123,8 +2153,14 @@ pub async fn portal_flag_corner_mark(
 #[allow(non_snake_case)]
 pub async fn portal_id_icon(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    match surface_owned_read_gate(&pool, "x_portal", "creator", &id, opt_session(&session)).await? {
+        ReadGate::NotFound => return Ok(Json(ActionResult::error("portal not found"))),
+        ReadGate::Forbidden => return Err(AppError::Forbidden),
+        ReadGate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
@@ -2152,8 +2188,14 @@ pub async fn portal_id_icon(
 #[allow(non_snake_case)]
 pub async fn portal_id_icon_base64(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    match surface_owned_read_gate(&pool, "x_portal", "creator", &id, opt_session(&session)).await? {
+        ReadGate::NotFound => return Ok(Json(ActionResult::error("portal not found"))),
+        ReadGate::Forbidden => return Err(AppError::Forbidden),
+        ReadGate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
