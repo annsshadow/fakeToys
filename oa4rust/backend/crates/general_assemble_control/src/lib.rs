@@ -22,6 +22,7 @@ mod security_gate_tests_b64;
 mod security_gate_tests_r6;
 #[cfg(test)]
 mod security_gate_tests_w1;
+mod security_gate_tests_w3;
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
@@ -48,6 +49,30 @@ fn require_session(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<shared::session::Session, AppError> {
     session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
+/// 写侧归属解析：请求体 `creator` 缺省=会话人；写自己=会话人；写他人仅管理员放行，
+/// 否则 403。禁止把请求体 creator 直接落库（冒名创建）。
+#[allow(non_snake_case)]
+async fn resolve_creator(
+    pool: &Pool,
+    session: &shared::session::Session,
+    payload: &Value,
+) -> Result<String, AppError> {
+    let requested = payload
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string);
+    match requested {
+        None => Ok(session.person_unique.clone()),
+        Some(owner) if owner == session.person_unique => Ok(session.person_unique.clone()),
+        Some(owner) => {
+            require_admin(pool, session).await?;
+            Ok(owner)
+        }
+    }
 }
 
 /// 属主资源门禁：先取记录属主列（creator），命中行时 require_owner；
@@ -2034,7 +2059,7 @@ pub async fn office_html_to_word(
     session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -2043,11 +2068,8 @@ pub async fn office_html_to_word(
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
-    let creator = payload
-        .get("creator")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system")
-        .to_string();
+    // 归属以会话为事实源；请求体写他人仅管理员放行，否则 403（冒名创建）。
+    let creator = resolve_creator(&pool, &sess, &payload).await?;
     let word_flag = uuid::Uuid::new_v4().to_string();
 
     client
