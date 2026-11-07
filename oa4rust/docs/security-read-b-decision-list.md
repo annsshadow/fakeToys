@@ -105,6 +105,23 @@ rev-GATE-V-MOBILE)`，delete paging `LEAK(2xx 响应体含 canary GATE-DEL-MOBIL
 - 破坏实验：`owner_scope` 临时改恒真（保留 `$2` 绑定，避免 deadpool 500 假阳性），
   `NEW-FAIL` 恰好点名本批 6 条；还原后门禁 122 非 PASS，与基线一致（原 128 → 点名减 6），无 `STALE-BASELINE`。
 
+## 批次 B-b4：processplatform_service_processing 任务/流程/办结读（E20 指派人 OR 管理员）
+
+复用 crate 内既有 E20 授权原语，不新增归属语义：
+
+| 端点（processplatform_service_processing） | 表 | 落库判据 |
+|---|---|---|
+| `GET /task/{id}`、`GET /task/v2/{id}` | `x_task` | `u4_require_actors(U4ActorKey::Task)`：`person` 指派人或 admin |
+| `GET /get/{id}`（get_process） | `x_work` | `u4_require_work_owner`：`creator` 或 admin |
+| `GET /taskcompleted/{id}` | `x_workcompleted` | `U4ActorKey::WorkCompleted`：`creator` 或所属 `x_task.person` 或 admin |
+| `GET /data/workcompleted/{id}`、`.../path/{id}` | `x_workcompleted` | 同上 |
+
+- 这些原语本是写路径的 fail-closed 归属门，读端点直接复用；NULL 归属不命中 → 仅管理员。
+- 无会话 → 401；非归属人 → 403。
+- 门禁：6 条新增 `idor-read-own` 正控制；复用 `rev-task-admin-1` / `rev-work-admin-1` / `rev-r6-dataworkcompletedid`。
+- 破坏实验：逐条把 6 个授权调用临时短路（`if false`）→ `NEW-FAIL` 恰好点名本批 6 条；
+  还原后门禁 105 非 PASS（基线 111 → 点名减 6），无 `STALE-BASELINE`。
+
 ## 门禁用例类型语义（批次 2 新增，新增用例按此写）
 用例表新增可选两列：第 13 列 `rev_id`（rev 方向资源 id，缺省 `rev-{victim}`），
 第 14 列 `body`（请求体 JSON 字面量，缺省 `{}`）。
