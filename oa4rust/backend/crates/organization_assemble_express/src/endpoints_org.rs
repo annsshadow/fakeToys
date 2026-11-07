@@ -245,39 +245,13 @@ pub async fn unit_list_unit_sup_nested_object(
 /// 是否处于任一身份组织的祖先链（sup-nested）。空载荷或查无对象 → false。
 pub async fn unit_check_unit_has_person(
     pool: Extension<Pool>,
-    session: Option<Extension<shared::session::Session>>,
     Json(body): Json<Value>,
 ) -> Result<AxumJson<ActionResult<Value>>, AppError> {
-    let actor = crate::require_session(session)?.person_unique;
-    let requested = body
+    let person = body
         .get("person")
         .and_then(Value::as_str)
         .unwrap_or("")
         .trim();
-    // 归属收口：person 为空按会话本人；查他人必须是管理员，否则 403。
-    // 先按 x_org_person(id/name) 解析，解析到行时比较行 id 与会话主体，
-    // 避免本人按姓名自查被误判。
-    if !requested.is_empty() && requested != actor {
-        let is_self = {
-            let client = shared::db::acquire(&pool).await?;
-            client
-                .query_opt(
-                    "SELECT id FROM x_org_person WHERE deleted_at IS NULL AND (id = $1 OR name = $1)",
-                    &[&requested, &requested],
-                )
-                .await
-                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
-                .is_some_and(|row| row.get::<_, String>("id") == actor)
-        };
-        if !is_self && !shared::middleware::is_admin(&pool, &actor).await {
-            return Err(AppError::Forbidden);
-        }
-    }
-    let person = if requested.is_empty() {
-        actor.as_str()
-    } else {
-        requested
-    };
     let unit = body
         .get("unit")
         .and_then(Value::as_str)
