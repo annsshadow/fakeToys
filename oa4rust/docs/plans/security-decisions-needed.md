@@ -902,5 +902,28 @@ sabotage `w8-unverified`，本批减 5 行（分支创建时基线 37→32）。
 破坏实验 `sabotage b8-b3`：把 meeting `creator` 改回 body、在两条匿名目录响应里注入
 `mobile=GATE-V-MOBILE`，门禁变红并逐条点名上述 3 条。
 
+### 15.4 合入后 §12.6 三步核对（#267 / #268 / #269）
+
+对 `main@ee5c9551e`（三笔 PR 依次合入后的 HEAD）逐项核对：
+
+1. **行是否真在 main**：`HEAD` 与 `origin/main` 均为 `ee5c9551e032497e9e68026442889725033046da`，
+   `git diff HEAD origin/main` 为空；三笔合入提交的文件清单与各自 PR 一致（#267 门禁/用例/基线/文档；
+   #268 门禁/用例/夹具/`endpoints_org.rs`/脚本/文档；#269 `meeting/lib.rs`/`endpoints_unit2.rs`/脚本/
+   用例/基线/文档）。
+2. **基线是否虚减**：在 `main` 跑 `cargo test --test security_regression -- --nocapture`
+   → `cases=280 pass=279 leak=1 unverified=0 integrity=0`，唯一非 PASS 是
+   `t2|program_center|warnlog_create`（FALSE-GREEN，基线保留行）。本次移出的 7 条
+   （oauth / auth|code / mind / unit_check / meeting / group_list_object / unit_list_level_name_object）
+   在 `main` 上全部 `[PASS]`，`unverified=0`，不存在靠 UNVERIFIED 占位挡枪。
+3. **门禁是否接线**：在 `main` 派生的临时分支（behind=0）复跑三组 sabotage，均变红并逐条点名：
+   - `b8-session-owner-write` → `[LEAK] t1|oauth|generate_code`、`[LEAK] t2|mind|create_version`；
+   - `b8-public-pii-check` → `[LEAK] t2|organization|unit_check_unit_has_person`；
+   - `b8-b3` → `[LEAK] t2|meeting|create_meeting`、`[LEAK] t2|organization|group_list_object`、
+     `[LEAK] t2|organization|unit_list_level_name_object`。
+   脚本执行后文件均已 `[restore]`，临时分支已删除，工作树干净。
+
+三项全过。基线由 8 条降为 1 条（仅 FALSE-GREEN `warnlog`）；若后续任一步复核失败，按 §15.1–§15.3
+的回滚口径逐批回退对应基线行。
+
 
 
