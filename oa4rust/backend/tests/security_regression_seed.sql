@@ -2,7 +2,7 @@
 -- 受害者统一置 person-admin；攻击者为 audit-user。先删后插，可复跑。
 
 DELETE FROM "file_file" WHERE "id" = '42f38d8c-5ef8-432c-a0c8-c8596c442e7f';
-INSERT INTO "file_file" ("id","name","person") VALUES ('42f38d8c-5ef8-432c-a0c8-c8596c442e7f','r6seed','gate-victim');
+INSERT INTO "file_file" ("id","name","person","deleted_at") VALUES ('42f38d8c-5ef8-432c-a0c8-c8596c442e7f','r6seed','gate-victim',NOW());
 DELETE FROM "file_folder" WHERE "id" = 'r6-folder_delete';
 INSERT INTO "file_folder" ("id","name","person") VALUES ('r6-folder_delete','r6seed','gate-victim');
 DELETE FROM "mind_base_info" WHERE "id" = 'r6-getmindwithid';

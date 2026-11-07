@@ -4060,30 +4060,37 @@ pub async fn recycle_list(
 #[allow(non_snake_case)]
 pub async fn recycle_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // W-b8：回收站单条读与 delete/resume 同口径——无会话 401，非属主/admin 403。
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt("SELECT id, name, person, deleted_at::text AS deleted_at FROM FILE_FILE WHERE id = $1 AND deleted_at IS NOT NULL", &[&id])
         .await?;
     match row {
-        Some(row) => Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                (
-                    "name".to_string(),
-                    Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
-                ),
-                (
-                    "person".to_string(),
-                    Value::String(row.get::<_, Option<String>>("person").unwrap_or_default()),
-                ),
-                (
-                    "deletedAt".to_string(),
-                    Value::String(row.get("deleted_at")),
-                ),
-            ]),
-        )))),
+        Some(row) => {
+            let recycle_owner: String = row.get::<_, Option<String>>("person").unwrap_or_default();
+            shared::middleware::require_owner(&pool, &sess, &recycle_owner).await?;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    (
+                        "name".to_string(),
+                        Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+                    ),
+                    (
+                        "person".to_string(),
+                        Value::String(row.get::<_, Option<String>>("person").unwrap_or_default()),
+                    ),
+                    (
+                        "deletedAt".to_string(),
+                        Value::String(row.get("deleted_at")),
+                    ),
+                ]),
+            ))))
+        }
         None => Ok(Json(ActionResult::error("file not in recycle bin"))),
     }
 }
