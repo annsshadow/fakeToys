@@ -364,17 +364,39 @@ mod tests {
     // ── 归属来源：create 不得听请求体 ─────────────────────────────
 
     #[tokio::test]
-    async fn r6w_create_ignores_payload_creator() {
+    async fn r6w_create_rejects_payload_creator() {
         let Some(db) = connect().await else {
             return;
         };
 
+        // 请求体 creator≠会话人：非管理员一律 403，不得冒名落库。
         let (status, body) = send(
             &db,
             Some(A),
             Method::POST,
             "/api/general/file/create",
             Some(json!({ "name": "r6w-c", "mimeType": "text/plain", "size": 1, "creator": B })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::FORBIDDEN, "{body}");
+
+        let (status, body) = send(
+            &db,
+            Some(A),
+            Method::POST,
+            "/api/general/invoice/create",
+            Some(json!({ "number": "r6w-c", "creator": B })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::FORBIDDEN, "{body}");
+
+        // 缺省 owner = 会话人：本人创建成功且 creator 落会话人。
+        let (status, body) = send(
+            &db,
+            Some(A),
+            Method::POST,
+            "/api/general/file/create",
+            Some(json!({ "name": "r6w-c-own", "mimeType": "text/plain", "size": 1 })),
         )
         .await;
         assert_eq!(status, StatusCode::OK, "{body}");
@@ -385,7 +407,7 @@ mod tests {
         assert_eq!(
             file_creator(&db, &file_id).await.as_deref(),
             Some(A),
-            "file_create 必须用会话人覆盖请求体 creator"
+            "file_create 缺省 creator 必须落会话人"
         );
 
         let (status, body) = send(
@@ -393,7 +415,7 @@ mod tests {
             Some(A),
             Method::POST,
             "/api/general/invoice/create",
-            Some(json!({ "number": "r6w-c", "creator": B })),
+            Some(json!({ "number": "r6w-c-own" })),
         )
         .await;
         assert_eq!(status, StatusCode::OK, "{body}");
@@ -404,7 +426,7 @@ mod tests {
         assert_eq!(
             invoice_creator(&db, &invoice_id).await.as_deref(),
             Some(A),
-            "invoice_create 必须用会话人覆盖请求体 creator"
+            "invoice_create 缺省 creator 必须落会话人"
         );
 
         exec(

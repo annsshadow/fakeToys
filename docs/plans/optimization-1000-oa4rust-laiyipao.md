@@ -302,6 +302,8 @@ Wechat 8s 超时 + 1MB 响应上限、Fiber 读写超时与 body limit、laiyipa
 
 **交付流程纪律（R145 起，2026-11-06）**：**禁止直推 `main`**。一律新建 `feat/f2e-<轮次>`（或 `fix/f2e-<轮次>`）分支 → 提交 → `git push origin <分支>` → `gh pr create` → 等必需检查（含 192 条安全门禁、limit-scan、security-regression）通过后再合并。原因（实测后果，非形式主义）：①直推 main 绕过全部 required checks，等于留下一条「谁都不用看就能进主干」的通道；②main 每动一次，分片 A / 分片 B / 写 IDOR / 裁判四条线都要 rebase，共享同一张用例表时基线「点名减少」会跟着抖，已出现过按旧基线算错、需靠实际点名纠正的情况；③依赖升级 PR 因落后 main 6 个提交而越来越难 rebase。**唯一例外**：改动**只碰 workflow 文件**且 `gh` 缺 `workflow` scope —— 此时必须在提交信息里写明「直推理由：…」；其余任何理由都不接受。**R144 `c9592dd46` 是最后一次未标理由的直推**（推送回显 `Bypassed rule violations for refs/heads/main`、`9 of 9 required status checks are expected`、`Required status check "security-regression" is expected`），不回滚，仅在此登记；本条纪律自 R145 起生效。
 
+**contract-gate 文档 PR 死锁修复（2026-11-07）**：`three-ends-contract.yml` 的 `pull_request` 去掉 `paths` 过滤（`push` 保留），使 docs-only PR 也会生成必需检查 `contract-gate`。该改动按例外通道直推 main（提交 `1af11b427`，提交信息含 `direct-push: workflow-scope，理由是去掉 pull_request paths 过滤以消除 docs-only PR 的必需检查死锁`）。验证口径：本段所在的纯文档 PR 必须**实际出现并跑通** `contract-gate`（state=pass，不是 skipped）；结果回填于本条。
+
 ### 4.1 基线数字表（性能路径，发现变慢先查这里）
 
 > 口径：laiyipao/server，1M 仿真数据（`scripts/perf_seed.sql`），同机同库同工具（`cmd/loadtest`，`-c 20 -d 15s -w 3s`），错误率均为 0%。「路径」指 API 路由；`cache off` 表示 `DASHBOARD_CACHE_TTL=0` / `ADMIN_USERS_COUNT_CACHE_TTL=0` 的直查路径。

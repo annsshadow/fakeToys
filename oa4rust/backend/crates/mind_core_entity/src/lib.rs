@@ -30,6 +30,70 @@ fn require_session(
     session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
 }
 
+/// 管理员判定（与 `shared::middleware::is_admin` 同一条 SQL）。
+async fn is_admin_db(db: &DatabaseConnection, person_unique: &str) -> bool {
+    let row = db
+        .query_one(sea_orm::Statement::from_sql_and_values(
+            sea_orm::DbBackend::Postgres,
+            "SELECT EXISTS(SELECT 1 FROM auth_person p \
+               LEFT JOIN auth_person_role pr ON pr.person_id = p.id \
+               LEFT JOIN auth_role r ON r.id = pr.role_id \
+               WHERE (p.unique_id = $1 OR p.id = $1) \
+                 AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false) AS is_admin",
+            vec![person_unique.into()],
+        ))
+        .await;
+    match row {
+        Ok(Some(row)) => row.try_get::<bool>("", "is_admin").unwrap_or(false),
+        _ => false,
+    }
+}
+
+/// 写侧归属解析：`creator` 缺省=会话人；写他人仅管理员放行，否则 403。
+async fn resolve_creator(
+    db: &DatabaseConnection,
+    sess: &shared::session::Session,
+    payload: &Value,
+) -> Result<String, AppError> {
+    let requested = payload
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string);
+    match requested {
+        None => Ok(sess.person_unique.clone()),
+        Some(owner) if owner == sess.person_unique => Ok(owner),
+        Some(owner) => {
+            if is_admin_db(db, &sess.person_unique).await {
+                Ok(owner)
+            } else {
+                Err(AppError::Forbidden)
+            }
+        }
+    }
+}
+
+/// 会话单位名（`creator_unit` 的事实源）：取会话人的角色单位，取不到则 None。
+/// 不再读请求体 `creatorUnit`，避免冒名归属。
+async fn session_unit(db: &DatabaseConnection, person_unique: &str) -> Option<String> {
+    let row = db
+        .query_one(sea_orm::Statement::from_sql_and_values(
+            sea_orm::DbBackend::Postgres,
+            "SELECT u.name FROM auth_person p \
+               JOIN auth_person_role pr ON pr.person_id = p.id \
+               JOIN auth_unit u ON u.id = pr.unit_id \
+               WHERE (p.unique_id = $1 OR p.id = $1) AND u.deleted_at IS NULL \
+               ORDER BY u.level LIMIT 1",
+            vec![person_unique.into()],
+        ))
+        .await;
+    match row {
+        Ok(Some(row)) => row.try_get::<Option<String>>("", "name").unwrap_or(None),
+        _ => None,
+    }
+}
+
 /// 归属谓词（`$2` = 会话身份）：`creator` 为本人，或调用者管理员。
 /// `creator` 在 mind 两表均为 NOT NULL；谓词写进 SQL WHERE，不做先查后判。
 const CREATOR_OWNER_PREDICATE: &str = "creator = $2 OR EXISTS(\
@@ -208,7 +272,7 @@ pub async fn create_mind(
     session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
     use mind_mind::ActiveModel;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -226,11 +290,7 @@ pub async fn create_mind(
         .get("description")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
-    let creator = payload
-        .get("creator")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system")
-        .to_string();
+    let creator = resolve_creator(&db.0, &sess, &payload).await?;
 
     let active = ActiveModel {
         id: sea_orm::ActiveValue::Set(id.clone()),
@@ -354,7 +414,7 @@ pub async fn create_folder(
     session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
     use mind_folder::ActiveModel;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -375,11 +435,7 @@ pub async fn create_folder(
         .get("description")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
-    let creator = payload
-        .get("creator")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system")
-        .to_string();
+    let creator = resolve_creator(&db.0, &sess, &payload).await?;
 
     let active = ActiveModel {
         id: sea_orm::ActiveValue::Set(id.clone()),
@@ -517,7 +573,7 @@ pub async fn create_version(
     session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
     use mind_version::ActiveModel;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -540,16 +596,9 @@ pub async fn create_version(
         .get("description")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
-    let creator = payload
-        .get("creator")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system")
-        .to_string();
-    let creator_unit = payload
-        .get("creatorUnit")
-        .and_then(|v| v.as_str())
-        .unwrap_or_default()
-        .to_string();
+    let creator = resolve_creator(&db.0, &sess, &payload).await?;
+    // creator_unit 同样以会话为事实源（§13.5），不读请求体 creatorUnit。
+    let creator_unit = session_unit(&db.0, &sess.person_unique).await;
     let file_version = payload
         .get("fileVersion")
         .and_then(|v| v.as_i64())
@@ -566,7 +615,7 @@ pub async fn create_version(
         folder_id: sea_orm::ActiveValue::Set(folder_id.clone()),
         description: sea_orm::ActiveValue::Set(description.clone()),
         creator: sea_orm::ActiveValue::Set(creator.clone()),
-        creator_unit: sea_orm::ActiveValue::Set(Some(creator_unit.clone())),
+        creator_unit: sea_orm::ActiveValue::Set(creator_unit.clone()),
         file_version: sea_orm::ActiveValue::Set(file_version),
         shared: sea_orm::ActiveValue::Set(shared),
         create_time: sea_orm::ActiveValue::Set(None),
@@ -611,6 +660,8 @@ pub fn mind_core_entity_router(db: DatabaseConnection) -> Router {
 mod security_gate_tests_b81;
 #[cfg(test)]
 mod security_gate_tests_idor_b4;
+#[cfg(test)]
+mod security_gate_tests_w3;
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;

@@ -171,7 +171,8 @@ async fn test_get_designer_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+    // 写 IDOR 批次 5：get_designer 收归属校验，无会话在读库前 401。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
