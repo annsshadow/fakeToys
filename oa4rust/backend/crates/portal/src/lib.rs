@@ -21,8 +21,61 @@ async fn require_admin(pool: &Pool, session: &shared::session::Session) -> Resul
     }
 }
 
+/// 读门结果：区分「不存在」（保留原 not found 文案）与「存在但无权」（403）。
+enum ReadGate {
+    NotFound,
+    Forbidden,
+    Allowed,
+}
+
+fn opt_session(
+    session: &Option<Extension<shared::session::Session>>,
+) -> Option<&shared::session::Session> {
+    session.as_ref().map(|e| &e.0)
+}
+
+/// 单主体列读门（E23）：归属列直接写进 `WHERE`，参数固定为
+/// ($1 id, $2 会话人, $3 是否管理员)。
+async fn portal_owned_read_gate(
+    pool: &Pool,
+    table: &str,
+    owner_col: &str,
+    id: &str,
+    session: Option<&shared::session::Session>,
+) -> Result<ReadGate, AppError> {
+    let allowed = format!(
+        "SELECT 1 AS hit FROM {table} WHERE id = $1 AND deleted_at IS NULL \
+         AND ({owner_col} = $2::text OR $3::boolean)"
+    );
+    let exists = format!("SELECT 1 AS hit FROM {table} WHERE id = $1 AND deleted_at IS NULL");
+    let client = shared::db::acquire(pool).await?;
+    let person = session.map(|s| s.person_unique.clone());
+    let admin = match session {
+        Some(s) => shared::middleware::is_admin(pool, &s.person_unique).await,
+        None => false,
+    };
+    let hit = client
+        .query_opt(&allowed, &[&id, &person, &admin])
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    if hit.is_some() {
+        return Ok(ReadGate::Allowed);
+    }
+    let exists = client
+        .query_opt(&exists, &[&id])
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    Ok(if exists.is_some() {
+        ReadGate::Forbidden
+    } else {
+        ReadGate::NotFound
+    })
+}
+
 #[cfg(test)]
 mod security_gate_tests;
+#[cfg(test)]
+mod security_gate_tests_read_a_b4;
 
 #[cfg(test)]
 #[allow(clippy::module_inception)]
@@ -47,8 +100,14 @@ mod tests_generated;
 #[allow(non_snake_case)]
 pub async fn portal_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    match portal_owned_read_gate(&pool, "x_portal", "creator", &id, opt_session(&session)).await? {
+        ReadGate::NotFound => return Ok(Json(ActionResult::error("portal not found"))),
+        ReadGate::Forbidden => return Err(AppError::Forbidden),
+        ReadGate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(

@@ -4,18 +4,12 @@
 # 若首次切换后看到 STATE-DRIFT，先确认是不是对齐差异，不要误读成业务回归。
 # 修复一条就删一行（单调下降）；只增不减视为回归。
 ai_assemble_control|config_get_mcp_flag|GET	LEAK
-cms_core_entity|article_get|GET	LEAK
-cms_core_express|content_detail|GET	LEAK
 file_assemble_control|recycle_id|GET	UNVERIFIED
-portal_assemble_designer|portal_id_icon|GET	LEAK
-portal_assemble_designer|portal_id_permission|GET	LEAK
-portal_assemble_surface|get_surface|GET	LEAK
 portal_assemble_surface|portal_id_icon_base64|GET	LEAK
 portal_assemble_surface|portal_id_icon|GET	LEAK
 portal_assemble_surface|preview_surface|GET	LEAK
 portal_assemble_surface|surface_preview|GET	LEAK
 portal_core_entity|page_get|GET	LEAK
-portal|portal_id|GET	LEAK
 t1|bbs|create_topic	UNVERIFIED
 t1|mind|create_folder	UNVERIFIED
 t1|mind|create_mind	UNVERIFIED

@@ -29,7 +29,7 @@ fn test_portal_get_returns_error_without_db() {
     rt.block_on(async {
         let pool = build_test_pool();
         let result: Result<Json<ActionResult<Value>>, AppError> =
-            portal_id(Extension(pool), Path("test-id".to_string())).await;
+            portal_id(Extension(pool), None, Path("test-id".to_string())).await;
         match result {
             Ok(_) => panic!("expected error without DB"),
             Err(AppError::Internal) | Err(AppError::Unavailable(_)) => {}
