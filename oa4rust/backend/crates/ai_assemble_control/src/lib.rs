@@ -21,6 +21,8 @@ pub mod routes;
 #[cfg(test)]
 mod security_gate_tests;
 #[cfg(test)]
+mod security_gate_tests_read_a_b5;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
@@ -789,12 +791,76 @@ pub async fn config_get_mcp_ext_flag(
     }
 }
 
+/// 读门结果：区分「不存在」（保留原 not found 文案）与「存在但无权」（403）。
+enum ReadGate {
+    NotFound,
+    Forbidden,
+    Allowed,
+}
+
+fn opt_session(
+    session: &Option<Extension<shared::session::Session>>,
+) -> Option<&shared::session::Session> {
+    session.as_ref().map(|e| &e.0)
+}
+
+/// 单主体列读门：`x_ai_mcp_config` 读 = `creator` 本人或管理员。
+async fn ai_owned_read_gate(
+    pool: &Pool,
+    table: &str,
+    owner_col: &str,
+    id: &str,
+    session: Option<&shared::session::Session>,
+) -> Result<ReadGate, AppError> {
+    let allowed = format!(
+        "SELECT 1 AS hit FROM {table} WHERE id = $1 \
+         AND ({owner_col} = $2::text OR $3::boolean)"
+    );
+    let exists = format!("SELECT 1 AS hit FROM {table} WHERE id = $1");
+    let client = shared::db::acquire(pool).await?;
+    let person = session.map(|s| s.person_unique.clone());
+    let admin = match session {
+        Some(s) => shared::middleware::is_admin(pool, &s.person_unique).await,
+        None => false,
+    };
+    let hit = client
+        .query_opt(&allowed, &[&id, &person, &admin])
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    if hit.is_some() {
+        return Ok(ReadGate::Allowed);
+    }
+    let exists = client
+        .query_opt(&exists, &[&id])
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    Ok(if exists.is_some() {
+        ReadGate::Forbidden
+    } else {
+        ReadGate::NotFound
+    })
+}
+
 #[axum::debug_handler]
 #[allow(non_snake_case)]
 pub async fn config_get_mcp_flag(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    match ai_owned_read_gate(
+        &pool,
+        "x_ai_mcp_config",
+        "creator",
+        &id,
+        opt_session(&session),
+    )
+    .await?
+    {
+        ReadGate::NotFound => return Ok(Json(ActionResult::error("mcp config not found"))),
+        ReadGate::Forbidden => return Err(AppError::Forbidden),
+        ReadGate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
