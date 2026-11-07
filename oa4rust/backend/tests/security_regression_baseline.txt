@@ -27,7 +27,6 @@ cms_assemble_control|scriptversion_id|GET	LEAK
 cms_assemble_control|templateform_id|GET	LEAK
 cms_core_entity|article_get|GET	LEAK
 cms_core_express|content_detail|GET	LEAK
-file_assemble_control|get_file|GET	LEAK
 file_assemble_control|recycle_id|GET	UNVERIFIED
 portal_assemble_designer|portal_id_icon|GET	LEAK
 portal_assemble_designer|portal_id_permission|GET	LEAK
@@ -58,8 +57,6 @@ processplatform_service_processing|snap_id|GET	LEAK
 processplatform_service_processing|task_id|GET	LEAK
 processplatform_service_processing|task_v2_id|GET	LEAK
 processplatform_service_processing|taskcompleted_id|GET	LEAK
-query_assemble_designer|table_id_permission|GET	LEAK
-query_core_entity|view_get|GET	LEAK
 t1|attendancedetail_mobile_mobilepreview	UNVERIFIED
 t1|attendancedetail_mobile_my	LEAK
 t1|attendancedetail_mobile_recive	UNVERIFIED
@@ -70,7 +67,6 @@ t1|oauth|generate_code	UNVERIFIED
 t2|attendance|v2_groupschedule_list_filter	UNVERIFIED
 t2|auth|code	UNVERIFIED
 t2|file|file_create	UNVERIFIED
-t2|file|folder_create	LEAK
 t2|meeting|create_meeting	UNVERIFIED
 t2|mind|create_version	UNVERIFIED
 t2|organization|bind_create	UNVERIFIED
@@ -79,4 +75,3 @@ t2|organization|identity_create	UNVERIFIED
 t2|organization|unit_check_unit_has_person	UNVERIFIED
 t2|organization|unit_list_level_name_object	UNVERIFIED
 t2|program_center|warnlog_create	LEAK
-t2|query|view_create	LEAK

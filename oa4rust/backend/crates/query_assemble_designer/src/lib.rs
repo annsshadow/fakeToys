@@ -3478,34 +3478,47 @@ pub async fn table_flag_status_draft_p2(
 #[allow(non_snake_case)]
 pub async fn table_id_permission(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = session
+        .map(|ext| ext.0)
+        .ok_or(AppError::Unauthorized)?
+        .person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
-            "SELECT id, permission FROM x_query_table WHERE id = $1",
+            "SELECT id, permission, creator FROM x_query_table WHERE id = $1",
             &[&id],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
-        Some(row) => Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([
-                (
-                    "id".to_string(),
-                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
-                ),
-                (
-                    "permission".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("permission")
-                            .unwrap_or_default(),
+        Some(row) => {
+            require_owner_or_admin(
+                &pool,
+                row.get::<_, Option<String>>("creator").as_deref(),
+                &actor,
+            )
+            .await?;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
                     ),
-                ),
-            ]),
-        )))),
+                    (
+                        "permission".to_string(),
+                        Value::String(
+                            row.get::<_, Option<String>>("permission")
+                                .unwrap_or_default(),
+                        ),
+                    ),
+                ]),
+            ))))
+        }
         None => Ok(Json(ActionResult::error("table not found"))),
     }
 }

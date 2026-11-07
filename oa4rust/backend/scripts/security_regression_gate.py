@@ -25,6 +25,7 @@
     python scripts/security_regression_gate.py sabotage write-idor-w4     # Rust②j：摘掉 program_center 8 个读端点归属谓词
     python scripts/security_regression_gate.py sabotage write-idor-w5     # Rust②k：摘掉 query designer 5 个读端点归属校验
     python scripts/security_regression_gate.py sabotage write-idor-w6     # Rust②l：摘掉 query view/surface 8 个读端点归属校验
+    python scripts/security_regression_gate.py sabotage write-idor-w7     # Rust②m：摘掉 query table/view 与 file get_file 归属校验
     python scripts/security_regression_gate.py sabotage read-a-b1         # Rust②h：摘掉分片 A 第一批 cms 读门（6 条）
     python scripts/security_regression_gate.py sabotage write-idor-w3     # Rust②i：摘掉 office/bbs/mind 写侧冒名 403（7 条）
     python scripts/security_regression_gate.py sabotage go-limit0   # Go①：扣款乘 2
@@ -685,6 +686,39 @@ W6_EXPECTS = [
     "query_assemble_surface|view_id_execute|GET",
 ]
 
+# 写 IDOR 第 W-b7 批：query designer table permission 读、query_core view 读、
+# file get_file 读。query/file 两处走 shared::middleware::require_owner，
+# 局部变量统一命名 owner，确保正则只命中该端点。
+QUERY_CORE_ENTITY = BACKEND / "crates/query_core_entity/src/lib.rs"
+FILE_CONTROL = BACKEND / "crates/file_assemble_control/src/lib.rs"
+FILE_CORE_ENTITY = BACKEND / "crates/file_core_entity/src/lib.rs"
+W7_EXPECTS = [
+    "query_assemble_designer|table_id_permission|GET",
+    "query_core_entity|view_get|GET",
+    "t2|query|view_create",
+    "t2|file|folder_create",
+    "file_assemble_control|get_file|GET",
+]
+CORE_VIEW_GET_GATE_RE = re.compile(
+    r"shared::middleware::require_owner\(&pool, &session, &owner\)\.await\?;"
+)
+CORE_VIEW_GET_GATE_PATCH = "let _ = (&pool, &session, &owner);"
+FILE_GET_GATE_RE = re.compile(
+    r"shared::middleware::require_owner\(&pool, &sess, &owner\)\.await\?;"
+)
+FILE_GET_GATE_PATCH = "let _ = (&pool, &sess, &owner);"
+CORE_VIEW_CREATE_RE = re.compile(
+    r"let creator_id = if requested_creator\.is_empty\(\)[\s\S]*?return Err\(AppError::Forbidden\);\n    \};"
+)
+CORE_VIEW_CREATE_PATCH = (
+    "let _ = (&pool, &session);\n"
+    "    let creator_id = requested_creator.to_string();"
+)
+FOLDER_CREATE_GATE_RE = re.compile(r"if req\.person\.trim\(\) != session\.person_unique \{")
+FOLDER_CREATE_GATE_PATCH = "if { let _ = (&req.person, &session); false } {"
+FOLDER_CREATE_RE = re.compile(r"let person = session\.person_unique\.clone\(\);")
+FOLDER_CREATE_PATCH = "let person = req.person.clone();"
+
 # 写 IDOR 第 W-b2 批：general_core 的 file/invoice 读面归属谓词 + 创建面冒名拒绝。
 # 读面把 `creator = $2` 改成 `TRUE OR creator = $2`（保留 $2 绑定，避免 500 假阳性）；
 # 写面摘掉非管理员 403 分支，让冒名创建落库 → 逐条 LEAK。
@@ -977,6 +1011,50 @@ def sabotage(kind: str) -> int:
             W6_EXPECTS,
             require_leak=True,
         )
+    elif kind == "write-idor-w7":
+        return sabotage_many(
+            "摘掉 W-b7 query table/view 归属校验、恢复写侧冒名落库（5 条应逐条 LEAK）",
+            [
+                (
+                    QUERY_DESIGNER,
+                    W5_OWNER_GATE_RE,
+                    W5_OWNER_GATE_PATCH,
+                    "query_designer_table",
+                ),
+                (
+                    QUERY_CORE_ENTITY,
+                    CORE_VIEW_GET_GATE_RE,
+                    CORE_VIEW_GET_GATE_PATCH,
+                    "query_core_view_get",
+                ),
+                (
+                    FILE_CONTROL,
+                    FILE_GET_GATE_RE,
+                    FILE_GET_GATE_PATCH,
+                    "file_get",
+                ),
+                (
+                    QUERY_CORE_ENTITY,
+                    CORE_VIEW_CREATE_RE,
+                    CORE_VIEW_CREATE_PATCH,
+                    "query_core_view_create",
+                ),
+                (
+                    FILE_CORE_ENTITY,
+                    FOLDER_CREATE_GATE_RE,
+                    FOLDER_CREATE_GATE_PATCH,
+                    "file_folder_create_gate",
+                ),
+                (
+                    FILE_CORE_ENTITY,
+                    FOLDER_CREATE_RE,
+                    FOLDER_CREATE_PATCH,
+                    "file_folder_create_owner",
+                ),
+            ],
+            W7_EXPECTS,
+            require_leak=True,
+        )
     elif kind == "write-idor-w2":
         return sabotage_many(
             "放开 W-b2 读归属谓词 + 摘掉冒名创建 403（6 条应逐条 LEAK）",
@@ -1036,7 +1114,7 @@ def sabotage(kind: str) -> int:
             "program_center / hotpic_mind / read_b / read-a-b1 / "
             "write-idor-b5 / write-idor-b6 / write-idor-b7 / "
             "write-idor-w1 / write-idor-w2 / write-idor-w3 / write-idor-w4 / write-idor-w5 / "
-            "write-idor-w6）"
+            "write-idor-w6 / write-idor-w7）"
         )
 
     print(f"== 破坏实验：{title}")
