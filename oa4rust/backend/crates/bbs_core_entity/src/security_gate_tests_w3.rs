@@ -37,6 +37,38 @@ mod tests {
         .expect("w3 fixture sql");
     }
 
+    /// 无 arbiter 的 `ON CONFLICT DO NOTHING` 会把任何唯一冲突静默吞掉。
+    /// 插入后反查「id 与 unique_id 必须互相指认」，真实冲突就必须报错，
+    /// 只有并行 seed 恰好已建好同一行时才允许通过。
+    async fn seed_person(db: &DatabaseConnection, id: &str, unique_id: &str) -> Result<(), String> {
+        db.execute(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            "INSERT INTO auth_person (id, unique_id, name, password_hash) \
+             VALUES ($1, $2, 'W3 Admin', 'w3-fixture-noop') ON CONFLICT DO NOTHING",
+            vec![Value::from(id), Value::from(unique_id)],
+        ))
+        .await
+        .map_err(|e| format!("w3 seed 插入失败: {e}"))?;
+        let row = db
+            .query_one(Statement::from_sql_and_values(
+                DbBackend::Postgres,
+                "SELECT COUNT(*) AS n FROM auth_person WHERE id = $1 AND unique_id = $2",
+                vec![Value::from(id), Value::from(unique_id)],
+            ))
+            .await
+            .map_err(|e| format!("w3 seed 身份反查失败: {e}"))?
+            .ok_or_else(|| "w3 seed 身份反查无结果".to_string())?;
+        let n: i64 = row
+            .try_get("", "n")
+            .map_err(|e| format!("w3 seed 身份反查取值失败: {e}"))?;
+        if n != 1 {
+            return Err(format!(
+                "w3 seed 真实冲突被吞：id={id} unique_id={unique_id} 反查行数={n}"
+            ));
+        }
+        Ok(())
+    }
+
     async fn send(
         db: &DatabaseConnection,
         actor: Option<&str>,
@@ -71,14 +103,11 @@ mod tests {
             vec![],
         )
         .await;
-        exec(
-            db,
-            "INSERT INTO auth_person (id, unique_id, name, password_hash) \
-             VALUES ($1, $1, 'W3 Admin', 'w3-fixture-noop') \
-             ON CONFLICT (id) DO NOTHING",
-            vec![Value::from(ADMIN)],
-        )
-        .await;
+        // 无 arbiter：id 与 unique_id 各有唯一索引，并行 seed 的冲突可能落在
+        // auth_person_unique_id_key 上，`ON CONFLICT (id)` 接不住。
+        seed_person(db, ADMIN, ADMIN)
+            .await
+            .expect("w3 admin seed 必须建立 id/unique_id 一致的本人行");
         exec(
             db,
             "INSERT INTO auth_person_role (person_id, role_id, unit_id) \
@@ -248,5 +277,42 @@ mod tests {
             vec![Value::from(id)],
         )
         .await;
+    }
+
+    /// 反例：真实业务冲突（id 或 unique_id 已被不同身份占用）必须报错，
+    /// 不能被无 arbiter 的 `ON CONFLICT DO NOTHING` 吞成「seed 成功」。
+    /// 探针 id 专用前缀，避免干扰并行用例的 w3-admin。
+    #[tokio::test]
+    async fn w3_seed_reports_real_conflict_instead_of_swallowing_it() {
+        let Some(db) = connect().await else {
+            return;
+        };
+        const CLEAN: &str = "DELETE FROM auth_person \
+             WHERE id LIKE 'w3-probe-bbs%' OR unique_id LIKE 'w3-probe-bbs%'";
+        exec(&db, CLEAN, vec![]).await;
+
+        // 方向一：unique_id 已被别的 id 占用。
+        exec(
+            &db,
+            "INSERT INTO auth_person (id, unique_id, name, password_hash) \
+             VALUES ('w3-probe-bbs-a-other','w3-probe-bbs-a','probe','w3-fixture-noop')",
+            vec![],
+        )
+        .await;
+        let err = seed_person(&db, "w3-probe-bbs-a", "w3-probe-bbs-a").await;
+        assert!(err.is_err(), "unique_id 被他人占用时必须报错，实际 {err:?}");
+
+        // 方向二：id 已被占用且 unique_id 不同。
+        exec(
+            &db,
+            "INSERT INTO auth_person (id, unique_id, name, password_hash) \
+             VALUES ('w3-probe-bbs-b','w3-probe-bbs-b-other','probe','w3-fixture-noop')",
+            vec![],
+        )
+        .await;
+        let err = seed_person(&db, "w3-probe-bbs-b", "w3-probe-bbs-b").await;
+        assert!(err.is_err(), "id 被他人占用时必须报错，实际 {err:?}");
+
+        exec(&db, CLEAN, vec![]).await;
     }
 }

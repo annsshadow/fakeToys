@@ -125,6 +125,21 @@ rev-GATE-V-MOBILE)`，delete paging `LEAK(2xx 响应体含 canary GATE-DEL-MOBIL
 - 破坏实验：逐条把 5 个谓词改恒真（保留 `$2` 绑定）并关闭 `personId` 校验 →
   `NEW-FAIL` 恰好点名本批 6 条；还原后门禁 116 非 PASS（基线 122 → 点名减 6），无 `STALE-BASELINE`。
 
+## 批次 B-b3：attendance 申诉/明细/自休假读（person_id 本人 OR 管理员）
+
+| 端点（attendance_assemble_control） | 表 | 落库谓词 |
+|---|---|---|
+| `GET /attendanceappealInfo/{id}` | `x_attendance_appeal_info` | `id = $1 AND (person_id = $2 OR admin)` |
+| `GET /attendancedetail/{id}` | `x_attendance_detail` | 同上 |
+| `GET /attendancedetail/mobile/{id}` | `x_attendance_detail` | 同上 |
+| `GET /attendanceselfholiday/{id}` | `x_attendance_selfholiday` | 同上 |
+
+- 口径 §9.2 B3–B8：归属人是 `person_id`，历史 NULL 行 fail-closed（仅管理员可读）。
+- 命中 0 行但行存在 → `403`；行不存在维持原信封（appeal / detail 为 `success(null)`，自休假为 not found）。
+- 门禁：4 条新增 `idor-read-own` 正控制；复用既有 `rev-*` 镜像行，未新增种子。
+- 破坏实验：逐条把 4 个谓词改恒真（保留 `$2` 绑定）→ `NEW-FAIL` 恰好点名本批 4 条；
+  还原后门禁 33 非 PASS（rebase 后基线 37 → 点名减 4），无 `STALE-BASELINE`。
+
 ## 批次 B-b4：processplatform_service_processing 任务/流程/办结读（E20 指派人 OR 管理员）
 
 复用 crate 内既有 E20 授权原语，不新增归属语义：
@@ -133,8 +148,8 @@ rev-GATE-V-MOBILE)`，delete paging `LEAK(2xx 响应体含 canary GATE-DEL-MOBIL
 |---|---|---|
 | `GET /task/{id}`、`GET /task/v2/{id}` | `x_task` | `u4_require_actors(U4ActorKey::Task)`：`person` 指派人或 admin |
 | `GET /get/{id}`（get_process） | `x_work` | `u4_require_work_owner`：`creator` 或 admin |
-| `GET /taskcompleted/{id}` | `x_workcompleted` | `U4ActorKey::WorkCompleted`：`creator` 或所属 `x_task.person` 或 admin |
-| `GET /data/workcompleted/{id}`、`.../path/{id}` | `x_workcompleted` | 同上 |
+| `GET /taskcompleted/{id}` | `x_work_completed` | `U4ActorKey::WorkCompleted`：`creator` 或所属 `x_task.person` 或 admin |
+| `GET /data/workcompleted/{id}`、`.../path/{id}` | `x_work_completed` | 同上 |
 
 - 这些原语本是写路径的 fail-closed 归属门，读端点直接复用；NULL 归属不命中 → 仅管理员。
 - 无会话 → 401；非归属人 → 403。

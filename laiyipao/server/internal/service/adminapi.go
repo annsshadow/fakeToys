@@ -85,7 +85,15 @@ func (s *Service) AdminListLevels(ctx context.Context, chapter int, keyword stri
 		       COALESCE(s.wins, 0) AS clears,
 		       COALESCE(s.wave_sum::numeric / NULLIF(s.attempts, 0), 0) AS avg_wave
 		FROM levels l
-		LEFT JOIN dashboard_battle_stats s ON s.level_id = l.id`
+		-- R149：计数器按 shard 分片，先按 level_id 合并再 JOIN。
+		LEFT JOIN (
+			SELECT level_id,
+			       SUM(attempts)     AS attempts,
+			       SUM(wins)         AS wins,
+			       SUM(wave_sum)     AS wave_sum
+			  FROM dashboard_battle_stats
+			 GROUP BY level_id
+		) s ON s.level_id = l.id`
 	var args []any
 	conds := []string{}
 	if chapter > 0 {
@@ -235,7 +243,15 @@ func (s *Service) AdminLevelRow(ctx context.Context, levelID int) (AdminLevelVie
 		       COALESCE(s.wins, 0) AS clears,
 		       COALESCE(s.wave_sum::numeric / NULLIF(s.attempts, 0), 0) AS avg_wave
 		FROM levels l
-		LEFT JOIN dashboard_battle_stats s ON s.level_id = l.id
+		-- R149：与列表同口径，先按 level_id 合并分片行。
+		LEFT JOIN (
+			SELECT level_id,
+			       SUM(attempts) AS attempts,
+			       SUM(wins)     AS wins,
+			       SUM(wave_sum) AS wave_sum
+			  FROM dashboard_battle_stats
+			 GROUP BY level_id
+		) s ON s.level_id = l.id
 		WHERE l.id = $1`, levelID).
 		Scan(&id, &chapter, &name, &seed, &baseHP, &waveCount, &difficulty,
 			&energyCost, &starRaw, &terrainRaw, &isBoss, &enabled,
