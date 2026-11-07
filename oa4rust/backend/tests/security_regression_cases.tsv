@@ -225,7 +225,7 @@ t1|mind_core|create_mind	spoof-write	POST	/api/mind/core/entity/mind	x_mind_base
 t1|mind|create_folder	spoof-write	POST	/api/mind/folder	x_mind_folder_info	unit-gate-v		body	creator_unit	T1	both	n/a
 t1|mind_core|create_folder	spoof-write	POST	/api/mind/core/entity/folder	x_mind_folder_info	person-admin		body	creator	T1	both	n/a
 t1|oauth|generate_code	spoof-write	POST	/api/organization/assemble/authentication/oauth/generate/code	x_org_oauth_code	person-admin		body	person_id	T1	both	n/a
-t2|attendance|v2_groupschedule_list_filter	spoof-read	POST	/api/attendance/assemble/control/v2/groupschedule/list/filter		r5-ad-admin	r5-ad-admin	query	user_id	T2	both	n/a
+t2|attendance|v2_groupschedule_list_filter	spoof-read	POST	/api/attendance/assemble/control/v2/groupschedule/list/filter		r5-ad-admin	SCHED-VICTIM	query	user_id	T2	both	n/a
 t2|auth|code	spoof-read	POST	/api/authentication/code		person-admin	person-admin	body	person_id	T2	both	n/a
 t2|query|view_create	spoof-write	POST	/api/query/view/create	query_view	person-admin		body	creator_id	T2	both	n/a
 t2|file|folder_create	spoof-write	POST	/api/file/core/entity/folder	file_folder	person-admin		body	person	T2	both	n/a

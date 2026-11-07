@@ -160,6 +160,38 @@ rev-GATE-V-MOBILE)`，delete paging `LEAK(2xx 响应体含 canary GATE-DEL-MOBIL
 - 不改变分页/排序参数语义；列表在归属收窄后允许返回空，不额外做存在性探测（避免 403 泄露他人是否存在）。
 - 本人正控制（`idor-read-own`）与双向拒绝用例成对存在；列表用例使用按完整 JSON 值匹配 canary，避免 `rev-` 前缀子串误报。
 
+## §14 观测缺口补证据：attendance 三条 UNVERIFIED（B-b14）
+
+三条均在 `attendance_assemble_control`，原判定因“请求键命中 0 行”而恒为 `UNVERIFIED`；
+补种子后暴露出同一根因：**handler 直接把请求体/查询里的 `personId`/`userId` 当权限主体**。
+因此本轮按“先补证据、再收归属”处理，三条转 `PASS` 后点名删基线。
+
+| 端点 | 原问题 | 收口 |
+|---|---|---|
+| `POST /attendancedetail/mobile/mobilepreview` | body `personId` 直查他人明细；种子行缺 `date` → `data:null` | 先 `require_session`；`personId` 空→会话本人；非本人走 `require_owner`（admin 旁路） |
+| `POST /attendancedetail/mobile/recive` | 已有会话门，但写目标取 body `personId`，可替他人标记已接收 | 写主体=会话本人；空→会话本人；非本人 `require_owner` 拒绝 |
+| `POST /v2/groupschedule/list/filter` | 按 body/query `userId` 读他人排班；无种子行 → `data:[]` | 先 `require_session`；`userId` 空→会话本人；非本人 `require_owner` |
+
+口径沿用默认 1 / E19：本人 OR 管理员；空值回落会话本人，拿不到会话一律 401。
+
+种子与产物：
+- `security_regression_seed.sql`：`r5-ad-admin` 补 `date='2026-01-01'`（命中默认 spoof body 的日期）；
+  新增排班受害者行 `SCHED-VICTIM`（`user_id=gate-victim`、`schedule_month_string=2026-01`）。
+- `security_regression_rev_seed.sql`：新增排班攻击者镜像行 `rev-sched-admin`（`user_id=audit-user`）。
+  `rev-r5-ad-admin` 仍保持 `date` 为空：给它补日期会让攻击者明细分页多出一行，
+  破坏 `page-attendance-detail-*` 的“仅本人 6 行”正控制；fwd 证据已足够定位泄漏。
+- `security_regression_cases.tsv`：`v2_groupschedule_list_filter` 的 leak 标记改为
+  `SCHED-VICTIM`（避免 `rev-` 前缀裸子串误报）。
+
+验证：
+- 收口后三条实测 `[PASS]`，基线点名删 3 行（72 → 69）。
+- 破坏实验：三处 `require_owner` 临时短路为恒假条件（保留参数绑定），
+  `NEW-FAIL` 恰好点名这三条（mobilepreview `LEAK`、recive `UNVERIFIED`、filter `LEAK`），
+  其余用例无变化；还原后门禁 69 与基线一致，无 `STALE-BASELINE` / `STATE-DRIFT`。
+- `cargo clippy -p attendance_assemble_control --all-targets -D warnings` 干净；
+  crate 测试 54 passed（`u2l_v2_groupschedule_static_paths_win_over_params` 的可达性断言
+  增加 `401` 分支，因 `list/filter` 先收会话门）。
+
 ## 批次 B-b6：surface / designer / work / task 八个按 id 读
 
 判据同默认 1（本人 OR 管理员；空归属 fail-closed）。按 crate 既有原语落地，不新增第二套归属语义：

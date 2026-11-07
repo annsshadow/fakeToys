@@ -232,10 +232,13 @@ mod u2_legacy_tests {
             ("GET", "/v2/groupschedule/list/group/g-1/month/2026-08"),
         ] {
             // O2：死池下 503（取连失败）与 500（缺会话扩展）均证明路由可达
+            // B-b14：`list/filter` 先收会话门，无会话 401 同样证明可达
             assert!(
                 matches!(
                     status_of(method, &format!("{}{}", BASE, uri)).await,
-                    StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE
+                    StatusCode::INTERNAL_SERVER_ERROR
+                        | StatusCode::SERVICE_UNAVAILABLE
+                        | StatusCode::UNAUTHORIZED
                 ),
                 "{} {} not routed",
                 method,
