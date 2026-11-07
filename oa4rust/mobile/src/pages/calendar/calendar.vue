@@ -51,6 +51,8 @@ const eventsView = computed(() => {
 
 // 新建事件（core calendar event/create）——移动端三端配合
 const composing = ref(false)
+const creating = ref(false)
+const removing = ref(false)
 const form = ref({ calendarId: '', title: '', startTime: '', endTime: '', location: '' })
 function toggleCompose(): void {
   composing.value = !composing.value
@@ -59,11 +61,13 @@ function toggleCompose(): void {
   }
 }
 async function submitEvent(): Promise<void> {
+  if (creating.value) return
   const f = form.value
   if (!f.calendarId || !f.title || !f.startTime || !f.endTime) {
     uni.showToast({ title: '日历/标题/起止时间必填', icon: 'none' })
     return
   }
+  creating.value = true
   try {
     await calendarApi.coreEventCreate({
       calendarId: f.calendarId,
@@ -78,18 +82,33 @@ async function submitEvent(): Promise<void> {
     void load()
   } catch {
     uni.showToast({ title: '创建失败', icon: 'none' })
+  } finally {
+    creating.value = false
   }
 }
 async function removeEvent(e: EventRow): Promise<void> {
   const id = String(e.id ?? '')
-  if (!id) return
+  if (!id || removing.value) return
+  // 删除不可恢复：先确认，再调接口；整个确认+请求期间加守卫，避免连点开多个确认框。
+  removing.value = true
   try {
+    const confirmed = await new Promise<boolean>((resolve) => {
+      uni.showModal({
+        title: '删除事件',
+        content: '删除后不可恢复，确定继续？',
+        success: (m) => resolve(Boolean(m.confirm)),
+        fail: () => resolve(false),
+      })
+    })
+    if (!confirmed) return
     await calendarApi.coreEventRemove(id)
     uni.showToast({ title: '已删除', icon: 'success' })
     detail.value = null
     void load()
   } catch {
     uni.showToast({ title: '删除失败', icon: 'none' })
+  } finally {
+    removing.value = false
   }
 }
 
@@ -229,7 +248,7 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
       <input v-model="form.startTime" class="c-input" placeholder="开始 2026-09-22 09:00" />
       <input v-model="form.endTime" class="c-input" placeholder="结束 2026-09-22 10:00" />
       <input v-model="form.location" class="c-input" placeholder="地点（可选）" />
-      <view class="c-submit" @tap="submitEvent">保存事件</view>
+      <view class="c-submit" :class="{ disabled: creating }" @tap="submitEvent">保存事件</view>
     </view>
 
     <view v-if="eventsView === 'loading'" class="tip">加载中…</view>
@@ -261,7 +280,7 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
       <view class="meta">{{ fmtTime(detail) }}</view>
       <view v-if="detail.location" class="meta">📍 {{ detail.location }}</view>
       <view v-if="detail.content" class="content">{{ detail.content }}</view>
-      <view class="c-remove" @tap="removeEvent(detail)">删除事件</view>
+      <view class="c-remove" :class="{ disabled: removing }" @tap="removeEvent(detail)">删除事件</view>
     </view>
   </view>
 </template>
@@ -406,6 +425,11 @@ const emptyText = computed(() => (range.value === 'today' ? '今日暂无日程'
   font-size: 28rpx;
   font-weight: 600;
   border-radius: 12rpx;
+}
+.c-submit.disabled,
+.c-remove.disabled {
+  opacity: 0.6;
+  pointer-events: none;
 }
 .c-remove {
   margin-top: 16rpx;
