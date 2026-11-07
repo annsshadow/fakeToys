@@ -52,51 +52,122 @@ type buildParts struct {
 	loadout       loadoutContribution
 }
 
-// loadBuildParts 一趟查齐构筑所需的全部数据（6 条查询）。
+// 构筑读路径的五条 SQL。提取成常量是为了让 loadBuildParts 的批量版本与
+// 旧单条方法共用**同一份**语句文本 —— 两处各写一份必然漂移。
+const (
+	buildSkillsSQL = `
+			SELECT s.id, s.name, s.family, s.element, s.kind, COALESCE(us.level, 1),
+			       COALESCE(sl.slot, -1)
+			FROM user_skills us
+			JOIN skills s ON s.id = us.skill_id
+			LEFT JOIN user_skill_slots sl ON sl.user_id = us.user_id AND sl.skill_id = us.skill_id
+			WHERE us.user_id = $1 ORDER BY s.id`
+	buildEquipmentSQL = `
+			SELECT equipment_id FROM user_equipment WHERE user_id = $1 AND equipped ORDER BY slot`
+	buildMasteryNodesSQL = `
+			SELECT node_id FROM user_mastery_nodes WHERE user_id = $1`
+	buildProgressSQL = `
+			SELECT COALESCE(MAX(max_stage), 0), COALESCE(MAX(mastery_points), 0)
+			FROM user_progress WHERE user_id = $1`
+	buildGemsSQL = `
+			SELECT affixes FROM user_gems WHERE user_id = $1 AND equipped_slot <> ''`
+)
+
+// batchSender 是 loadBuildParts 批量版本需要的最小接口（*pgxpool.Conn 满足）。
+// 单独抽成接口是为了让往返守卫能在测试里包一层计数器。
+type batchSender interface {
+	SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults
+}
+
+// loadBuildParts 一趟查齐构筑所需的全部数据。
 //
-// 查询顺序刻意与旧 LoadBuildSnapshot 的失败顺序一致：
-// 技能 → 装备 → 专精节点 → max_stage → 点数 → 宝石，
-// 旧路径里第 i 个方法先失败的场景，新路径仍在第 i 张表上失败。
+// R148：五条**互不依赖**的读查询压进一次 pgx.Batch —— 一个连接、一次往返。
+//
+// # 为什么改（R147 后的实测）
+//
+// 改前每次 LoadBuildSnapshot 是 5 条串行往返（技能/装备/专精/进度/宝石）。
+// 1M 库 c=8 实测 `build_load_pre` 段 **6.76ms**，而五条 SQL 的
+// pg_stat 执行时间合计仅 **0.199ms** —— 差额是 5 次 Acquire + 往返，
+// 不是查询本身。`/battle/token` 与 `/battle/settle` 共用这条读路径，
+// 玩家开战与结算各吃一次；跨级时 `tail_load` 还会再读一次。
+//
+// 批量版本把往返固定为 **1**，且只 Acquire 一次。执行顺序与失败顺序
+// 仍是 技能 → 装备 → 专精节点 → 进度 → 宝石（与改前逐查询语义一致）：
+// pgx 的 Batch 结果按入队顺序返回，执行期错误在对应结果上原样上抛，
+// 不会把后面表的结果混进来；prepare 期错误（如表被改名）统一在第一条
+// 结果上抛出，PG 原始错误里仍带表名。
 func (s *Service) loadBuildParts(ctx context.Context, userID int64) (buildParts, error) {
 	var p buildParts
-
-	skills, elements, occupied, err := s.loadSkillsRows(ctx, userID)
+	conn, err := s.pool.Acquire(ctx)
 	if err != nil {
+		return p, err
+	}
+	defer conn.Release()
+	return loadBuildPartsOn(ctx, conn, userID)
+}
+
+// loadBuildPartsOn 在给定 sender 上执行批量读（生产传池连接，测试传计数器）。
+func loadBuildPartsOn(ctx context.Context, sender batchSender, userID int64) (buildParts, error) {
+	var p buildParts
+	var b pgx.Batch
+	b.Queue(buildSkillsSQL, userID)
+	b.Queue(buildEquipmentSQL, userID)
+	b.Queue(buildMasteryNodesSQL, userID)
+	b.Queue(buildProgressSQL, userID)
+	b.Queue(buildGemsSQL, userID)
+	br := sender.SendBatch(ctx, &b)
+	defer br.Close()
+
+	rows, err := br.Query()
+	if err != nil {
+		// Batch 在 CacheStatement 模式下会先把五条语句一起 prepare；任一语句
+		// 解析失败都会在**第一条结果**上以 "error preprocessing batch" 抛出，
+		// 因此这里只能给通用前缀。失败的表名仍在原始 PG 错误里
+		// （relation "user_xxx" does not exist），可观测性没丢。
+		return p, fmt.Errorf("load build parts: %w", err)
+	}
+	skills, elements, occupied, err := skillsRowsToMaps(rows)
+	rows.Close()
+	if err != nil {
+		return p, err
+	}
+	if err := rows.Err(); err != nil {
 		return p, err
 	}
 	p.skills, p.elements, p.occupied = skills, elements, occupied
 
-	equipment, err := s.loadEquipmentRows(ctx, userID)
+	rows, err = br.Query()
+	if err != nil {
+		return p, fmt.Errorf("load equipment: %w", err)
+	}
+	equipment, err := rowsToInts(rows)
 	if err != nil {
 		return p, err
 	}
 	p.equipment = equipment
 
-	nodes, err := s.loadMasteryNodeRows(ctx, userID)
+	rows, err = br.Query()
+	if err != nil {
+		return p, fmt.Errorf("load mastery nodes: %w", err)
+	}
+	nodes, err := rowsToInts(rows)
 	if err != nil {
 		return p, err
 	}
 	p.masteryNodes = nodes
 
-	// max_stage + 点数：同一张 user_progress 表的两列，合并成**一条**往返
-	// （第 6 轮）。此前这里两条查询，computeRating 随后还要第三次读
-	// mastery_points —— 现在点数随 parts 带给 computeRating，不再单独查。
-	//
-	// 行不存在（新号没有 user_progress 行）时聚合恒有一行 (0, 0)，
-	// 不会 ErrNoRows —— 与旧两条查询「行不存在 = 0」的语义一致。
-	//
-	// ⚠️ 点数列的查询失败语义从「静默 0」收紧为「报错」：旧路径下静默分支
-	// 只有「max_stage 成功而点数失败」这一窄窗口可达（连接中断恰落在两条
-	// 查询之间），而 computeRating 对同一列的口径是 fail-loud（吞掉点数错误
-	// 会下发少了专精加成的评分，P3-1）。合并后两列同生共死，口径统一。
-	if err := s.pool.QueryRow(ctx,
-		`SELECT COALESCE(MAX(max_stage), 0), COALESCE(MAX(mastery_points), 0)
-		   FROM user_progress WHERE user_id = $1`,
-		userID).Scan(&p.maxStage, &p.masteryPoints); err != nil {
+	// max_stage + 点数：同一张 user_progress 表的两列，合并成一条查询
+	// （第 6 轮）。行不存在（新号）时聚合恒有一行 (0, 0)，不会 ErrNoRows。
+	// 点数失败必须 fail-loud：吞掉会下发少了专精加成的评分（P3-1）。
+	if err := br.QueryRow().Scan(&p.maxStage, &p.masteryPoints); err != nil {
 		return p, fmt.Errorf("load progress (max_stage + mastery_points): %w", err)
 	}
 
-	gemRaw, err := s.loadGemsAffixRows(ctx, userID)
+	rows, err = br.Query()
+	if err != nil {
+		return p, fmt.Errorf("load gems: %w", err)
+	}
+	gemRaw, err := rowsToGemAffixes(rows)
 	if err != nil {
 		return p, err
 	}
@@ -109,13 +180,7 @@ func (s *Service) loadBuildParts(ctx context.Context, userID int64) (buildParts,
 // loadSkillsRows 读取玩家已解锁技能的槽位/元素/等级，返回装配三件套。
 // 槽位预算校验由调用方做（旧 loadSkillsAndSlots 保留原样）。
 func (s *Service) loadSkillsRows(ctx context.Context, userID int64) (map[string]any, []string, map[int]bool, error) {
-	rows, err := s.pool.Query(ctx,
-		`SELECT s.id, s.name, s.family, s.element, s.kind, COALESCE(us.level, 1),
-		        COALESCE(sl.slot, -1)
-		 FROM user_skills us
-		 JOIN skills s ON s.id = us.skill_id
-		 LEFT JOIN user_skill_slots sl ON sl.user_id = us.user_id AND sl.skill_id = us.skill_id
-		 WHERE us.user_id = $1 ORDER BY s.id`, userID)
+	rows, err := s.pool.Query(ctx, buildSkillsSQL, userID)
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("load skills: %w", err)
 	}
@@ -163,11 +228,15 @@ func skillsRowsToMaps(rows pgx.Rows) (map[string]any, []string, map[int]bool, er
 
 // loadEquipmentRows 读玩家已装备装备的 id 列表（按 slot 排序）。
 func (s *Service) loadEquipmentRows(ctx context.Context, userID int64) ([]int, error) {
-	rows, err := s.pool.Query(ctx,
-		`SELECT equipment_id FROM user_equipment WHERE user_id = $1 AND equipped ORDER BY slot`, userID)
+	rows, err := s.pool.Query(ctx, buildEquipmentSQL, userID)
 	if err != nil {
 		return nil, fmt.Errorf("load equipment: %w", err)
 	}
+	return rowsToInts(rows)
+}
+
+// rowsToInts 消费单列 int 结果集（装备 id / 专精节点），并在结束时关闭。
+func rowsToInts(rows pgx.Rows) ([]int, error) {
 	defer rows.Close()
 	var out []int
 	for rows.Next() {
@@ -182,30 +251,24 @@ func (s *Service) loadEquipmentRows(ctx context.Context, userID int64) ([]int, e
 
 // loadMasteryNodeRows 读玩家已点亮的专精节点。
 func (s *Service) loadMasteryNodeRows(ctx context.Context, userID int64) ([]int, error) {
-	rows, err := s.pool.Query(ctx,
-		`SELECT node_id FROM user_mastery_nodes WHERE user_id = $1`, userID)
+	rows, err := s.pool.Query(ctx, buildMasteryNodesSQL, userID)
 	if err != nil {
 		return nil, fmt.Errorf("load mastery nodes: %w", err)
 	}
-	defer rows.Close()
-	var out []int
-	for rows.Next() {
-		var id int
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		out = append(out, id)
-	}
-	return out, rows.Err()
+	return rowsToInts(rows)
 }
 
 // loadGemsAffixRows 读玩家已佩戴宝石的词条 JSON（每颗一份原始 JSONB）。
 func (s *Service) loadGemsAffixRows(ctx context.Context, userID int64) ([][]byte, error) {
-	rows, err := s.pool.Query(ctx,
-		`SELECT affixes FROM user_gems WHERE user_id = $1 AND equipped_slot <> ''`, userID)
+	rows, err := s.pool.Query(ctx, buildGemsSQL, userID)
 	if err != nil {
 		return nil, fmt.Errorf("load gems: %w", err)
 	}
+	return rowsToGemAffixes(rows)
+}
+
+// rowsToGemAffixes 消费宝石词条结果集，并在结束时关闭。
+func rowsToGemAffixes(rows pgx.Rows) ([][]byte, error) {
 	defer rows.Close()
 	var out [][]byte
 	for rows.Next() {

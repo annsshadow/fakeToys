@@ -53,6 +53,9 @@
 6. 带 `GROUP BY` 的投影（如 `SELECT status, COUNT(*) ... GROUP BY status`）目前不算
    `aggregate`，因为投影不只有聚合函数；它若同时带父键等值会被归 `parent_key`，
    否则归 `unbounded`。这是保守方向：宁可多登记，不静默放行。
+7. 单行读收口到助手（如 `u4_owner_read_row(&client, "<SELECT 主体>", ...)`）时，
+   助手在运行期补 `WHERE id = $1 AND (...)`；扫描器按**显式登记的助手名**把该
+   字面量归 `single_row`。只认白名单，不做「函数参数里的 SELECT 都算单行」推断。
 
 ## 基线
 
@@ -128,6 +131,10 @@ CONST_STR_DEF_RE = re.compile(
 FORMAT_NAMED_RE = re.compile(r"\{([A-Za-z_][A-Za-z0-9_]*)\}")
 #: 位置参数 `{}` 的实参：附近出现的全大写常量名（如 `u2_helpers::CREATOR_OWNER_PREDICATE`）。
 CONST_REF_RE = re.compile(r"\b[A-Z][A-Z0-9_]{3,}\b")
+#: 单行读助手契约：实参里的 SQL 主体不带 WHERE，由助手运行期补 `WHERE id = $1 ...`。
+#: 只认显式白名单；新增同类助手要在这里登记，并补一条 docstring 边界说明。
+SINGLE_ROW_HELPER_RE = re.compile(r"\bu4_owner_read_row\s*\(")
+SINGLE_ROW_HELPER_LOOKBACK = 8
 
 #: 文件级声明表与 const 引用点解析的缓存，避免每个字面量重读整文件。
 _DECL_CACHE: dict[Path, tuple[list[tuple[int, str]], dict[str, int]]] = {}
@@ -240,6 +247,22 @@ def _resolve_placeholders(sql: str, path: Path, line: int) -> str:
     return sql
 
 
+def _single_row_helper_literal(path: Path, line: int) -> bool:
+    """字面量是否是单行读助手的 SQL 主体实参（助手补 `id = $1` 谓词）。"""
+    lines = _file_lines(path)
+    for offset in range(SINGLE_ROW_HELPER_LOOKBACK):
+        idx = line - 1 - offset
+        if idx < 0:
+            break
+        text = lines[idx]
+        if SINGLE_ROW_HELPER_RE.search(text):
+            return True
+        # 语句已结束：不跨语句找调用点。
+        if offset > 0 and ";" in text:
+            break
+    return False
+
+
 def _declarations(path: Path) -> tuple[list[tuple[int, str]], dict[str, int]]:
     """`([(行号, fn 名)], {const 名: 行号})`；按文件缓存。"""
     cached = _DECL_CACHE.get(path)
@@ -325,11 +348,14 @@ def collect() -> list[tuple[str, int, str, str, str]]:
             for line, body in fi002.rust_literals(path):
                 if not SELECT_RE.search(body) and not DML_SELECT_RE.search(body):
                     continue
+                bucket = classify(_resolve_placeholders(body, path, line))
+                if bucket == "unbounded" and _single_row_helper_literal(path, line):
+                    bucket = "single_row"
                 rows.append(
                     (
                         rel,
                         line,
-                        classify(_resolve_placeholders(body, path, line)),
+                        bucket,
                         " ".join(body.split()),
                         endpoint_of(path, line),
                     )

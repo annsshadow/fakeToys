@@ -1,3 +1,6 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 //! OAuth 授权码必须按会话签发：请求体 `personId` 不得决定落库归属。
 //!
 //! 缺陷复现：`oauth_generate_code` 曾把 body 的 `personId` 直接写进
