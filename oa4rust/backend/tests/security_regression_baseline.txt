@@ -8,11 +8,6 @@ attendance_assemble_control|attendanceappealInfo_id|GET	LEAK
 attendance_assemble_control|attendancedetail_id|GET	LEAK
 attendance_assemble_control|attendancedetail_mobile_id|GET	LEAK
 attendance_assemble_control|attendanceselfholiday_id|GET	LEAK
-attendance_assemble_control|attendancestatisticrequirelog_id|GET	LEAK
-attendance_assemble_control|attendanceworkdayconfig_id|GET	LEAK
-attendance_assemble_control|v2_appeal_get|GET	LEAK
-attendance_assemble_control|v2_record_get|GET	LEAK
-attendance_assemble_control|workplace_id|GET	LEAK
 cms_assemble_control|anonymous_form_id|GET	LEAK
 cms_assemble_control|appinfo_id_control|GET	LEAK
 cms_assemble_control|appinfo_id|GET	LEAK
@@ -58,7 +53,6 @@ processplatform_service_processing|task_id|GET	LEAK
 processplatform_service_processing|task_v2_id|GET	LEAK
 processplatform_service_processing|taskcompleted_id|GET	LEAK
 t1|attendancedetail_mobile_mobilepreview	UNVERIFIED
-t1|attendancedetail_mobile_my	LEAK
 t1|attendancedetail_mobile_recive	UNVERIFIED
 t1|bbs|create_topic	UNVERIFIED
 t1|mind|create_folder	UNVERIFIED

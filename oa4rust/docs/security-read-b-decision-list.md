@@ -105,6 +105,24 @@ rev-GATE-V-MOBILE)`，delete paging `LEAK(2xx 响应体含 canary GATE-DEL-MOBIL
 - 破坏实验：`owner_scope` 临时改恒真（保留 `$2` 绑定，避免 deadpool 500 假阳性），
   `NEW-FAIL` 恰好点名本批 6 条；还原后门禁 122 非 PASS，与基线一致（原 128 → 点名减 6），无 `STALE-BASELINE`。
 
+## 批次 B-b2：attendance 统计/工作日/场所/打卡/申诉读（本人 OR 管理员）
+
+| 端点（attendance_assemble_control） | 表 | 落库谓词 |
+|---|---|---|
+| `GET /attendancestatisticrequirelog/{id}` | `x_attendance_statistic_require_log` | `id = $1 AND (creator = $2 OR creator_person = $2 OR admin)` |
+| `GET /attendanceworkdayconfig/{id}` | `x_attendance_workday_config` | 同上 |
+| `GET /workplace/{id}` | `x_attendance_workplace` | 同上 |
+| `GET /v2/record/{id}` | `x_attendance_record` | `id = $1 AND (user_id = $2 OR admin)` |
+| `GET /v2/appeal/{id}` | `x_attendance_v2_appeal_info` | `id = $1 AND (user_id = $2 OR admin)` |
+| `GET /attendancedetail/mobile/my` | `x_attendance_detail` | 会话派生 `person_id = session.person_unique` |
+
+- `mobile/my`：请求体 `personId` 只用于识别本人，指向他人一律 `403`（不再冒名读）；缺省则按会话人查。
+  这一条同时消掉了 `spoof-read` 的读面（原 `LEAK` → `PASS`）。
+- 命中 0 行但行存在 → `403`；行不存在维持原 not-found 信封。
+- 门禁：5 条新增 `idor-read-own` 正控制；复用既有 `r6-*` / `rev-r6-*` 镜像行，未新增种子。
+- 破坏实验：逐条把 5 个谓词改恒真（保留 `$2` 绑定）并关闭 `personId` 校验 →
+  `NEW-FAIL` 恰好点名本批 6 条；还原后门禁 116 非 PASS（基线 122 → 点名减 6），无 `STALE-BASELINE`。
+
 ## 门禁用例类型语义（批次 2 新增，新增用例按此写）
 用例表新增可选两列：第 13 列 `rev_id`（rev 方向资源 id，缺省 `rev-{victim}`），
 第 14 列 `body`（请求体 JSON 字面量，缺省 `{}`）。
