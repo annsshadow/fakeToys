@@ -142,27 +142,30 @@ FROM generate_series(1, 1000000) AS n
 JOIN users u ON u.guest_token = 'perf_' || n;
 
 -- 回填增量表：与 00025/00026 的回填口径逐字一致（覆盖写，可重复执行）。
-INSERT INTO dashboard_battle_stats (level_id, attempts, wins, duration_sum, wave_sum)
+-- R149：计数器按 battle_records.id % 16 分片，回填也必须按分片写。
+INSERT INTO dashboard_battle_stats
+    (level_id, shard, attempts, wins, duration_sum, wave_sum)
 SELECT level_id,
+       (id % 16)::smallint,
        COUNT(*)::bigint,
        COUNT(*) FILTER (WHERE result = 'win')::bigint,
        COALESCE(SUM(duration_ms), 0)::bigint,
        COALESCE(SUM(wave_reached), 0)::bigint
   FROM battle_records
- GROUP BY level_id
-ON CONFLICT (level_id) DO UPDATE
+ GROUP BY level_id, (id % 16)::smallint
+ON CONFLICT (level_id, shard) DO UPDATE
    SET attempts     = EXCLUDED.attempts,
        wins         = EXCLUDED.wins,
        duration_sum = EXCLUDED.duration_sum,
        wave_sum     = EXCLUDED.wave_sum;
 
-INSERT INTO dashboard_reaction_counts (level_id, reaction, count)
-SELECT b.level_id, e.key, SUM(e.value::bigint)::bigint
+INSERT INTO dashboard_reaction_counts (level_id, reaction, shard, count)
+SELECT b.level_id, e.key, (b.id % 16)::smallint, SUM(e.value::bigint)::bigint
   FROM battle_records b,
        LATERAL jsonb_each_text(b.reactions_used) AS e(key, value)
  WHERE jsonb_typeof(b.reactions_used) = 'object'
- GROUP BY b.level_id, e.key
-ON CONFLICT (level_id, reaction) DO UPDATE
+ GROUP BY b.level_id, e.key, (b.id % 16)::smallint
+ON CONFLICT (level_id, reaction, shard) DO UPDATE
    SET count = EXCLUDED.count;
 
 -- 让优化器拿到真实统计信息，否则 EXPLAIN/实际计划会低估 100 万行。
@@ -180,8 +183,10 @@ DECLARE
 BEGIN
     -- ① 每关战报统计（attempts / wins / duration_sum / wave_sum）
     SELECT COUNT(*) INTO diff FROM (
-        SELECT level_id, attempts, wins, duration_sum, wave_sum
+        SELECT level_id, SUM(attempts), SUM(wins),
+               SUM(duration_sum), SUM(wave_sum)
           FROM dashboard_battle_stats
+         GROUP BY level_id
         EXCEPT
         SELECT level_id,
                COUNT(*)::bigint,
@@ -201,8 +206,10 @@ BEGIN
               FROM battle_records
              GROUP BY level_id
             EXCEPT
-            SELECT level_id, attempts, wins, duration_sum, wave_sum
+            SELECT level_id, SUM(attempts), SUM(wins),
+                   SUM(duration_sum), SUM(wave_sum)
               FROM dashboard_battle_stats
+             GROUP BY level_id
         ) d
     );
     IF diff <> 0 THEN
@@ -213,8 +220,9 @@ BEGIN
 
     -- ② 反应计数（按 level_id + reaction）
     SELECT COUNT(*) INTO diff FROM (
-        SELECT level_id, reaction, count
+        SELECT level_id, reaction, SUM(count)
           FROM dashboard_reaction_counts
+         GROUP BY level_id, reaction
         EXCEPT
         SELECT b.level_id, e.key, SUM(e.value::bigint)::bigint
           FROM battle_records b,
@@ -230,8 +238,9 @@ BEGIN
              WHERE jsonb_typeof(b.reactions_used) = 'object'
              GROUP BY b.level_id, e.key
             EXCEPT
-            SELECT level_id, reaction, count
+            SELECT level_id, reaction, SUM(count)
               FROM dashboard_reaction_counts
+             GROUP BY level_id, reaction
         ) d
     );
     IF diff <> 0 THEN

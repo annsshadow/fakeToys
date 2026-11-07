@@ -30,6 +30,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"sync"
 
 	"github.com/jackc/pgx/v5"
@@ -223,6 +224,9 @@ func skillsRowsToMaps(rows pgx.Rows) (map[string]any, []string, map[int]bool, er
 	for e := range elements {
 		list = append(list, e)
 	}
+	// 元素来自 map 遍历，顺序随机；Loader 与 Batch 两条路径各自遍历一次，
+	// 顺序不同会让快照比对/回放哈希漂移。固定成字典序，两条路径才可逐字节比对。
+	sort.Strings(list)
 	return skills, list, occupied, nil
 }
 

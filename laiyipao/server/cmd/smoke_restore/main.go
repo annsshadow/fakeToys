@@ -47,7 +47,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/laiyipao/server/internal/config"
@@ -794,20 +793,20 @@ func (s *smoke) replayHash(tokenID int64, picks []int) (string, error) {
 
 // statsBefore 在结算前拍下计数表基线（含「无行」的零值）。
 func (s *smoke) statsBefore() error {
+	// R149：计数器按 battle_records.id % 16 分片，读侧必须 SUM 合并。
 	err := s.pool.QueryRow(s.ctx, `
-		SELECT attempts, wins, wave_sum FROM dashboard_battle_stats WHERE level_id = 1`).
+		SELECT COALESCE(SUM(attempts), 0), COALESCE(SUM(wins), 0),
+		       COALESCE(SUM(wave_sum), 0)
+		  FROM dashboard_battle_stats WHERE level_id = 1`).
 		Scan(&s.preAttempts, &s.preWins, &s.preWaveSum)
-	if errors.Is(err, pgx.ErrNoRows) {
-		s.preAttempts, s.preWins, s.preWaveSum = 0, 0, 0
-	} else if err != nil {
+	if err != nil {
 		return fmt.Errorf("读 dashboard_battle_stats：%w", err)
 	}
 	err = s.pool.QueryRow(s.ctx, `
-		SELECT count FROM dashboard_reaction_counts WHERE level_id = 1 AND reaction = 'overheat'`).
+		SELECT COALESCE(SUM(count), 0)
+		  FROM dashboard_reaction_counts WHERE level_id = 1 AND reaction = 'overheat'`).
 		Scan(&s.preOverheat)
-	if errors.Is(err, pgx.ErrNoRows) {
-		s.preOverheat = 0
-	} else if err != nil {
+	if err != nil {
 		return fmt.Errorf("读 dashboard_reaction_counts：%w", err)
 	}
 	fmt.Printf("       计数表基线：attempts=%d wins=%d wave_sum=%d overheat=%d\n",
@@ -822,7 +821,9 @@ func (s *smoke) statsBefore() error {
 func (s *smoke) triggerEffect() error {
 	var attempts, wins, wave int64
 	if err := s.pool.QueryRow(s.ctx, `
-		SELECT attempts, wins, wave_sum FROM dashboard_battle_stats WHERE level_id = 1`).
+		SELECT COALESCE(SUM(attempts), 0), COALESCE(SUM(wins), 0),
+		       COALESCE(SUM(wave_sum), 0)
+		  FROM dashboard_battle_stats WHERE level_id = 1`).
 		Scan(&attempts, &wins, &wave); err != nil {
 		return fmt.Errorf("读 dashboard_battle_stats：%w", err)
 	}
@@ -841,7 +842,7 @@ func (s *smoke) triggerEffect() error {
 
 	var got int64
 	if err := s.pool.QueryRow(s.ctx,
-		`SELECT count FROM dashboard_reaction_counts WHERE level_id = 1 AND reaction = 'overheat'`).
+		`SELECT COALESCE(SUM(count), 0) FROM dashboard_reaction_counts WHERE level_id = 1 AND reaction = 'overheat'`).
 		Scan(&got); err != nil {
 		return fmt.Errorf("读 overheat 计数：%w", err)
 	}
