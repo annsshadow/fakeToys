@@ -522,9 +522,11 @@ const settled = ref(false)
 /**
  * 结算返回 404 `not_found` 表示这一局的 token 行不存在。
  *
- * token 签发语句是本仓唯一关闭 `synchronous_commit` 的写（R151）：
- * PG 自身崩溃安全，但 OS 崩溃/断电时，已返回给客户端的 token 可能没落盘。
- * 这时不能把玩家这一局判掉 —— 中转重取一次同关凭证，用新 token 重报。
+ * 候选⑭曾计划在 token 签发语句上关掉 `synchronous_commit`。R151 复核后未启用：
+ * 该 INSERT 与体力/复活币扣减在同一个事务，关掉会连带钱包一起失去崩溃持久性。
+ * 这条路先按「万一令牌行丢了」的场景补齐：PG 自身是崩溃安全的，只有 OS 崩溃/
+ * 断电才可能丢掉已下发的 token；这时不能把玩家这一局判掉 ——
+ * 重取一次同关凭证，用新 token 重报。
  */
 function isInvalidBattleToken(e: unknown): boolean {
   const err = e as { status?: number; code?: string }
