@@ -73,9 +73,11 @@ mod tests {
         .await;
         exec(
             db,
+            // 无 arbiter：id 与 unique_id 各有唯一索引，并行 seed 的冲突可能落在
+            // auth_person_unique_id_key 上，`ON CONFLICT (id)` 接不住。
             "INSERT INTO auth_person (id, unique_id, name, password_hash) \
              VALUES ($1, $1, 'W3 Admin', 'w3-fixture-noop') \
-             ON CONFLICT (id) DO NOTHING",
+             ON CONFLICT DO NOTHING",
             vec![Value::from(ADMIN)],
         )
         .await;
