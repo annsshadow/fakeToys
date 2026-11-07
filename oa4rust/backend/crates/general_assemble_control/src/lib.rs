@@ -22,6 +22,7 @@ mod security_gate_tests_b64;
 mod security_gate_tests_r6;
 #[cfg(test)]
 mod security_gate_tests_w1;
+mod security_gate_tests_w3;
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
@@ -2058,7 +2059,7 @@ pub async fn office_html_to_word(
     session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -2067,11 +2068,8 @@ pub async fn office_html_to_word(
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
-    let creator = payload
-        .get("creator")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system")
-        .to_string();
+    // 归属以会话为事实源；请求体写他人仅管理员放行，否则 403（冒名创建）。
+    let creator = resolve_creator(&pool, &sess, &payload).await?;
     let word_flag = uuid::Uuid::new_v4().to_string();
 
     client
