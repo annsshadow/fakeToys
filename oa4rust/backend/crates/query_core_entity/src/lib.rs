@@ -117,8 +117,10 @@ pub async fn view_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>
 
 pub async fn view_get(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = session.ok_or(AppError::Unauthorized)?;
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
@@ -131,6 +133,10 @@ pub async fn view_get(
 
     match row {
         Some(row) => {
+            let owner: String = row
+                .get::<_, Option<String>>("creator_id")
+                .unwrap_or_default();
+            shared::middleware::require_owner(&pool, &session, &owner).await?;
             let result = Value::Object(serde_json::Map::from_iter(
                 [
                     Some((
@@ -188,7 +194,7 @@ pub async fn view_create(
     session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload
@@ -204,11 +210,18 @@ pub async fn view_create(
         .get("querySql")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
-    let creator_id = payload
+    let requested_creator = payload
         .get("creatorId")
         .and_then(|v| v.as_str())
-        .unwrap_or_default()
-        .to_string();
+        .unwrap_or_default();
+    // 归属以会话登录人为事实源：缺省落会话人；显式指定他人仅管理员可写。
+    let creator_id = if requested_creator.is_empty() || requested_creator == session.person_unique {
+        session.person_unique.clone()
+    } else if shared::middleware::is_admin(&pool, &session.person_unique).await {
+        requested_creator.to_string()
+    } else {
+        return Err(AppError::Forbidden);
+    };
     let status = payload
         .get("status")
         .and_then(|v| v.as_str())

@@ -345,8 +345,10 @@ pub async fn list_files(
 #[allow(non_snake_case)]
 pub async fn get_file(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
@@ -360,6 +362,8 @@ pub async fn get_file(
 
     match row {
         Some(row) => {
+            let owner: String = row.get::<_, Option<String>>("creator").unwrap_or_default();
+            shared::middleware::require_owner(&pool, &sess, &owner).await?;
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 (

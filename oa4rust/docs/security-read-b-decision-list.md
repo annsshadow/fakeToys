@@ -105,6 +105,41 @@ rev-GATE-V-MOBILE)`，delete paging `LEAK(2xx 响应体含 canary GATE-DEL-MOBIL
 - 破坏实验：`owner_scope` 临时改恒真（保留 `$2` 绑定，避免 deadpool 500 假阳性），
   `NEW-FAIL` 恰好点名本批 6 条；还原后门禁 122 非 PASS，与基线一致（原 128 → 点名减 6），无 `STALE-BASELINE`。
 
+## 批次 B-b2：attendance 统计/工作日/场所/打卡/申诉读（本人 OR 管理员）
+
+| 端点（attendance_assemble_control） | 表 | 落库谓词 |
+|---|---|---|
+| `GET /attendancestatisticrequirelog/{id}` | `x_attendance_statistic_require_log` | `id = $1 AND (creator = $2 OR creator_person = $2 OR admin)` |
+| `GET /attendanceworkdayconfig/{id}` | `x_attendance_workday_config` | 同上 |
+| `GET /workplace/{id}` | `x_attendance_workplace` | 同上 |
+| `GET /v2/record/{id}` | `x_attendance_record` | `id = $1 AND (user_id = $2 OR admin)` |
+| `GET /v2/appeal/{id}` | `x_attendance_v2_appeal_info` | `id = $1 AND (user_id = $2 OR admin)` |
+| `GET /attendancedetail/mobile/my` | `x_attendance_detail` | 会话派生 `person_id = session.person_unique` |
+
+- `mobile/my`：请求体 `personId` 只用于识别本人，指向他人一律 `403`（不再冒名读）；缺省则按会话人查。
+  这一条同时消掉了 `spoof-read` 的读面（原 `LEAK` → `PASS`）。
+- 命中 0 行但行存在 → `403`；行不存在维持原 not-found 信封。
+- 门禁：5 条新增 `idor-read-own` 正控制；复用既有 `r6-*` / `rev-r6-*` 镜像行，未新增种子。
+- 破坏实验：逐条把 5 个谓词改恒真（保留 `$2` 绑定）并关闭 `personId` 校验 →
+  `NEW-FAIL` 恰好点名本批 6 条；还原后门禁 116 非 PASS（基线 122 → 点名减 6），无 `STALE-BASELINE`。
+
+## 批次 B-b4：processplatform_service_processing 任务/流程/办结读（E20 指派人 OR 管理员）
+
+复用 crate 内既有 E20 授权原语，不新增归属语义：
+
+| 端点（processplatform_service_processing） | 表 | 落库判据 |
+|---|---|---|
+| `GET /task/{id}`、`GET /task/v2/{id}` | `x_task` | `u4_require_actors(U4ActorKey::Task)`：`person` 指派人或 admin |
+| `GET /get/{id}`（get_process） | `x_work` | `u4_require_work_owner`：`creator` 或 admin |
+| `GET /taskcompleted/{id}` | `x_workcompleted` | `U4ActorKey::WorkCompleted`：`creator` 或所属 `x_task.person` 或 admin |
+| `GET /data/workcompleted/{id}`、`.../path/{id}` | `x_workcompleted` | 同上 |
+
+- 这些原语本是写路径的 fail-closed 归属门，读端点直接复用；NULL 归属不命中 → 仅管理员。
+- 无会话 → 401；非归属人 → 403。
+- 门禁：6 条新增 `idor-read-own` 正控制；复用 `rev-task-admin-1` / `rev-work-admin-1` / `rev-r6-dataworkcompletedid`。
+- 破坏实验：逐条把 6 个授权调用临时短路（`if false`）→ `NEW-FAIL` 恰好点名本批 6 条；
+  还原后门禁 105 非 PASS（基线 111 → 点名减 6），无 `STALE-BASELINE`。
+
 ## 门禁用例类型语义（批次 2 新增，新增用例按此写）
 用例表新增可选两列：第 13 列 `rev_id`（rev 方向资源 id，缺省 `rev-{victim}`），
 第 14 列 `body`（请求体 JSON 字面量，缺省 `{}`）。
@@ -154,3 +189,18 @@ rev-GATE-V-MOBILE)`，delete paging `LEAK(2xx 响应体含 canary GATE-DEL-MOBIL
 - 破坏实验：`u4_owner_read_row` 谓词改恒真（保留 `$2` 绑定）、`attachment_id` 调用点直查、
   `snap_id` 授权短路，`NEW-FAIL` **恰好点名本批 6 条**；还原后门禁 105 非 PASS，与基线一致
   （点名减 6：111→105），无 `STALE-BASELINE`。
+
+## 附：`oauth_generate_code` 冒名落库（真实缺陷，独立 PR，不动基线）
+
+- **复现（修复前）**：会话 `audit-user`，请求体 `{"clientId":"repro-oauth-client","personId":"gate-victim"}`
+  → `x_org_oauth_code.person_id = gate-victim`（`tests/oauth_session_derived.rs` 断言失败：
+  `left: Some("gate-victim") / right: Some("audit-user")`）。
+- 根因：handler 直接 `req.get("personId")` → `oauth_code_store`，任何登录用户都能用别人的
+  `personId` 生成授权码并落库。
+- 修复：`person_id` 一律由会话派生，请求体 `personId` 不采信；响应补 `data.id`（表主键），
+  门禁回查字段由只能读到 `data.code` 转为按 `data.id` 定位落库行。
+- 回归测试：`crates/organization_assemble_authentication/tests/oauth_session_derived.rs`
+  （scratch 库 + 真实 handler，断言落库 `person_id = audit-user`）。
+- 门禁：该行仍为 UNVERIFIED —— `spoof-write` 只在 401/403 判 PASS，正确实现下是 2xx 且
+  canary 无变化；按指示**不改基线**，但回查已能证明落库 owner 是会话本人（修复前回查不到行）。
+- 未决：`clientId` 仍未与已注册应用比对（§五"第三方回调零验签族"），登记待裁决。

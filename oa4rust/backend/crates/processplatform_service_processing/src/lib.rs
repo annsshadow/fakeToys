@@ -25,8 +25,10 @@ pub struct CreateProcessRequest {
 #[allow(non_snake_case)]
 pub async fn get_process(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u4_require_work_owner(&pool.0, session, &id).await?;
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
@@ -1419,8 +1421,11 @@ pub async fn task_id_will(
 #[allow(non_snake_case)]
 pub async fn task_v2_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
+    u4_require_actors(&pool.0, &session, U4ActorKey::Task, &id).await?;
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -1552,8 +1557,11 @@ pub async fn task_v3_id_add(
 #[allow(non_snake_case)]
 pub async fn task_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
+    u4_require_actors(&pool.0, &session, U4ActorKey::Task, &id).await?;
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -1600,8 +1608,11 @@ pub async fn taskcompleted_next_task_identity(
 #[allow(non_snake_case)]
 pub async fn taskcompleted_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
+    u4_require_actors(&pool.0, &session, U4ActorKey::WorkCompleted, &id).await?;
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -2579,8 +2590,11 @@ pub async fn data_work_id_path_delete(
 #[allow(non_snake_case)]
 pub async fn data_workcompleted_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
+    u4_require_actors(&pool.0, &session, U4ActorKey::WorkCompleted, &id).await?;
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -2596,8 +2610,11 @@ pub async fn data_workcompleted_id(
 #[allow(non_snake_case)]
 pub async fn data_workcompleted_id_path(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
+    u4_require_actors(&pool.0, &session, U4ActorKey::WorkCompleted, &id).await?;
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
