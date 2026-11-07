@@ -23,6 +23,7 @@
     python scripts/security_regression_gate.py sabotage write-idor-b6     # Rust②f：摘掉 appeal + processplatform 两把的归属（5 条）
     python scripts/security_regression_gate.py sabotage write-idor-b7     # Rust②g：摘掉第七批读归属谓词（5 条）
     python scripts/security_regression_gate.py sabotage read-a-b1         # Rust②h：摘掉分片 A 第一批 cms 读门（6 条）
+    python scripts/security_regression_gate.py sabotage read-a-b2         # Rust②i：摘掉分片 A 第二批 cms 读门（6 条）
     python scripts/security_regression_gate.py sabotage go-limit0   # Go①：扣款乘 2
     python scripts/security_regression_gate.py sabotage go-idor-rev # Go②：摘掉预设删除归属
     python scripts/security_regression_gate.py sabotage go-empty-list    # Go③：伪装成已修（列表恒空）
@@ -695,6 +696,25 @@ A1_EXPECTS = [
     "cms_assemble_control|comment_id|GET",
 ]
 
+# 分片 A / A-b2：form / form_v2 的 published+creator 门、script 的 creator 门。
+# 同 A-b1：恒真式保留 `$2` 绑定，避免 deadpool 端点 bind 数不匹配返回 500。
+CMS_PUBLISHED_READ_GATE_RE = re.compile(
+    r'(const CMS_PUBLISHED_READ_ALLOWED_SQL: &str = ").*?";', re.S
+)
+CMS_PUBLISHED_READ_GATE_PATCH = (
+    r'\1SELECT 1 AS hit FROM {table} WHERE id = $1 '
+    r'AND deleted_at IS NULL '
+    r'AND (($2::text IS NOT NULL OR $2::text IS NULL) OR $3::boolean)";'
+)
+A2_EXPECTS = [
+    "cms_assemble_control|anonymous_form_id|GET",
+    "cms_assemble_control|form_id|GET",
+    "cms_assemble_control|formversion_id|GET",
+    "cms_assemble_control|script_id|GET",
+    "cms_assemble_control|scriptversion_id|GET",
+    "cms_assemble_control|templateform_id|GET",
+]
+
 
 def sabotage_many(
     title: str,
@@ -836,6 +856,16 @@ def sabotage(kind: str) -> int:
             A1_EXPECTS,
             require_leak=True,
         )
+    elif kind == "read-a-b2":
+        return sabotage_many(
+            "摘掉分片 A 第二批 cms 读归属谓词（6 条应逐条 LEAK）",
+            [
+                (CMS, CMS_PUBLISHED_READ_GATE_RE, CMS_PUBLISHED_READ_GATE_PATCH, "cms_published_read"),
+                (CMS, CMS_OWNED_READ_GATE_RE, CMS_OWNED_READ_GATE_PATCH, "cms_owned_read"),
+            ],
+            A2_EXPECTS,
+            require_leak=True,
+        )
     elif kind == "write-idor-w1":
         return sabotage_many(
             "摘掉 W-b1 五个读端点的 owner_gate（5 条应逐条 LEAK）",
@@ -849,7 +879,7 @@ def sabotage(kind: str) -> int:
     else:
         raise SystemExit(
             f"未知破坏实验: {kind}（可选 ownership / correct / general / organization / "
-            "program_center / hotpic_mind / read_b / read-a-b1 / "
+            "program_center / hotpic_mind / read_b / read-a-b1 / read-a-b2 / "
             "write-idor-b5 / write-idor-b6 / write-idor-b7 / write-idor-w1）"
         )
 

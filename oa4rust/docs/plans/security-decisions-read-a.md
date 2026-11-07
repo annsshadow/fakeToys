@@ -27,6 +27,9 @@
 | 4 | `mind_assemble_control` | `u2::mind_view` / `u2::mind_get` | `creator=会话` OR `shared=true` OR `x_mind_share` 接收人 OR 管理员（SQL WHERE） |
 | 4 | `mind_assemble_control` | `u2::mind_version_list` / `u2::mind_version_get` | 同上，按所属 `x_mind` 行判定（版本表无 shared/共享边） |
 | 5 | `meeting_assemble_control` | `meeting_list_invited_wait` / `_processing` / `_completed` / `_rejected` / `meeting_list_invite_page_size_size(_p3)` | 两源并集：`creator=会话` OR `EXISTS(x_meeting_invite.invitee=会话)` OR `invited=true` OR 管理员（SQL WHERE） |
+| A-b1（#226） | `cms_assemble_control` | `anonymous_document_id_view` / `document_persons_u3` | `x_cms_data_document`：`status='published'` OR `creator`/`author_id`=会话 OR 管理员（SQL WHERE） |
+| A-b1（#226） | `cms_assemble_control` | `file_id` / `file_id_content` / `file_id_download` | `x_cms_file.creator`=会话 OR 管理员（SQL WHERE） |
+| A-b1（#226） | `cms_assemble_control` | `comment_id` | 评论作者=会话 OR 可读所属文档（published / creator / author_id）OR 管理员（SQL WHERE） |
 
 ## 一、NO-OWNER-COL（缺归属列，不改代码）
 
@@ -266,6 +269,26 @@ assertion `left == right` failed: create_mind 落库单位必须为会话单位
 
 `mind` 三条 `#[ignore]` 读用例（`mind_read_idor_is_blocked_both_ways`、`version_list_idor_is_blocked_both_ways`、`folder_list_idor_is_blocked_both_ways`）在 `main` 基线（`832880cfd`）上实测即失败，与本次改动无关，未触碰、未改基线。
 本缺陷不改 `security_regression_baseline.txt`。
+
+## 六、分片 A / A-b1 合入后 §12.6 三步核对（#226）
+
+PR #226（`sec/read-a-cms-b1`）合入 `main`：merge sha `9029bcc6e2c2604d8c7c9153bc874cac0e4e9d95`。
+减行前的 6 条基线 id：`anonymous_document_id_view`、`document_persons_u3`、`file_id`、
+`file_id_content`、`file_id_download`、`comment_id`。
+
+1. **行是否真在 main**：PR 分支曾 rebase 在旧 `main`，#227 已先合入，`git diff c^1 c^2` 的
+   文件清单与当前 `main` 有差异（其它线的 gate 脚本 / baseline 后续改动）。改用逐文件
+   `git diff origin/main:<path> <merge>:<path>` 核对：`cms_assemble_control/src/lib.rs`、
+   `security_gate_tests_read_a_b1.rs`、`mind` 修复、本台账均为 `SAME`；只有
+   `security_regression_gate.py` / `security_regression_baseline.txt` 因后续并行 PR 有差异，
+   grep 确认 A-b1 的 sabotage 常量、分支调度与 6 行删除仍在 `main` 上（语义等价形态存在）。
+2. **基线是否虚减**：在 `main`（`12179d371`）上跑门禁，6 条被删 id 全部 `[PASS]`，
+   剩余非 PASS 105 条与基线一致。
+3. **门禁是否接线**：`python scripts/security_regression_gate.py sabotage read-a-b1` 在
+   `main` 上变红（exit=101），输出逐条点名 6 条 `[LEAK]`，`实验成立`。
+   （首次运行曾疑似 cargo 缓存 / mtime 竞态未红；原命令复跑即通过，已确认。）
+
+三步全过，减行有效。A-b1 用例与 sabotage 均在 `cms_assemble_control`，不涉及其它 crate。
 
 ## 变更纪律（本分片）
 
