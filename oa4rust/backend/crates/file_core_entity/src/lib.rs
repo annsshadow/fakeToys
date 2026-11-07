@@ -343,15 +343,20 @@ pub async fn folder_create(
     session: Option<Extension<shared::session::Session>>,
     Json(req): Json<FolderCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let session = require_session(session)?;
     if req.name.trim().is_empty() || req.person.trim().is_empty() {
         return Ok(Json(ActionResult::error("name and person are required")));
     }
+    // 冒名目录写入直接拒绝：person 必须等于会话人（§9.3 W1 `person` 口径）。
+    if req.person.trim() != session.person_unique {
+        return Err(AppError::Forbidden);
+    }
 
+    let person = session.person_unique.clone();
     let active = file_folder::ActiveModel {
         id: Set(uuid::Uuid::new_v4().to_string()),
         name: Set(req.name),
-        person: Set(req.person),
+        person: Set(person),
         superior: Set(req.superior),
         create_time: Set(None),
         update_time: Set(None),
