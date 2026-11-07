@@ -40,6 +40,53 @@ const CREATOR_OWNER_PREDICATE: &str = "id = $1 AND (creator = $2 OR EXISTS(\
       WHERE (p.unique_id = $2 OR p.id = $2) \
         AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false))";
 
+/// 管理员判定：与 `shared::middleware::is_admin` 同一条 SQL（unique_id 或 id 命中
+/// admin 角色，角色未删且未停用）。本 crate 只有 SeaORM 连接，没有 deadpool Pool，
+/// 故就地实现；查询失败按「非管理员」处理（fail-closed）。
+async fn is_admin_db(db: &DatabaseConnection, person_unique: &str) -> bool {
+    let row = db
+        .query_one(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            "SELECT EXISTS(SELECT 1 FROM auth_person p \
+               LEFT JOIN auth_person_role pr ON pr.person_id = p.id \
+               LEFT JOIN auth_role r ON r.id = pr.role_id \
+               WHERE (p.unique_id = $1 OR p.id = $1) \
+                 AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false) AS is_admin",
+            vec![person_unique.into()],
+        ))
+        .await;
+    match row {
+        Ok(Some(row)) => row.try_get::<bool>("", "is_admin").unwrap_or(false),
+        _ => false,
+    }
+}
+
+/// 请求体归属（`creator`）：缺省=会话人；写自己=会话人；写他人仅管理员放行，
+/// 否则 403。绝不把请求体 creator 直接落库。
+async fn resolve_creator(
+    db: &DatabaseConnection,
+    actor: &str,
+    payload: &Value,
+) -> Result<String, AppError> {
+    let requested = payload
+        .get("creator")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string);
+    match requested {
+        None => Ok(actor.to_string()),
+        Some(owner) if owner == actor => Ok(actor.to_string()),
+        Some(owner) => {
+            if is_admin_db(db, actor).await {
+                Ok(owner)
+            } else {
+                Err(AppError::Forbidden)
+            }
+        }
+    }
+}
+
 /// 写语句影响 0 行时区分「不存在」(404) 与「无权」(403)。
 /// 此处的读只用于选错误码，不参与授权判定（授权已在写语句的 WHERE 内）。
 async fn ownership_error(db: &DatabaseConnection, table: &str, id: &str) -> AppError {
@@ -551,8 +598,8 @@ pub async fn file_create(
         .unwrap_or_default()
         .to_string();
     let size = payload.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
-    // 归属只能来自会话：忽略请求体 creator，避免「创建时冒名」把他人行写成自己可控的归属。
-    let creator = actor;
+    // 归属以会话为事实源；请求体写他人仅管理员放行，否则 403（冒名创建）。
+    let creator = resolve_creator(&db.0, &actor, &payload).await?;
 
     let active_model = general_file::ActiveModel {
         id: sea_orm::ActiveValue::Set(id.clone()),
@@ -584,9 +631,16 @@ pub async fn file_create(
 #[allow(non_snake_case)]
 pub async fn file_get(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let model = general_file::Entity::find_by_id(&id)
+    let actor = require_session(session)?.person_unique;
+    // 读 IDOR：creator OR admin，写进 SQL WHERE；creator 为 NULL 不命中（fail-closed）。
+    let model = general_file::Entity::find()
+        .filter(sea_orm::sea_query::Expr::cust_with_values(
+            CREATOR_OWNER_PREDICATE,
+            [id.clone(), actor],
+        ))
         .one(&db.0)
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -612,7 +666,7 @@ pub async fn file_get(
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("file not found"))),
+        None => Err(ownership_error(&db.0, "x_general_file", &id).await),
     }
 }
 
@@ -733,9 +787,16 @@ pub async fn file_delete(
 #[allow(non_snake_case)]
 pub async fn file_download(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let model = general_file::Entity::find_by_id(&id)
+    let actor = require_session(session)?.person_unique;
+    // 读 IDOR：creator OR admin，写进 SQL WHERE；creator 为 NULL 不命中（fail-closed）。
+    let model = general_file::Entity::find()
+        .filter(sea_orm::sea_query::Expr::cust_with_values(
+            CREATOR_OWNER_PREDICATE,
+            [id.clone(), actor],
+        ))
         .one(&db.0)
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -761,7 +822,7 @@ pub async fn file_download(
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("file not found"))),
+        None => Err(ownership_error(&db.0, "x_general_file", &id).await),
     }
 }
 
@@ -792,8 +853,8 @@ pub async fn invoice_create(
         .and_then(|v| v.as_str())
         .unwrap_or("draft")
         .to_string();
-    // 归属只能来自会话：忽略请求体 creator（同 file_create）。
-    let creator = actor;
+    // 归属以会话为事实源；请求体写他人仅管理员放行，否则 403（冒名创建）。
+    let creator = resolve_creator(&db.0, &actor, &payload).await?;
 
     let active_model = general_invoice::ActiveModel {
         id: sea_orm::ActiveValue::Set(id.clone()),
@@ -830,9 +891,16 @@ pub async fn invoice_create(
 #[allow(non_snake_case)]
 pub async fn invoice_get(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let model = general_invoice::Entity::find_by_id(&id)
+    let actor = require_session(session)?.person_unique;
+    // 读 IDOR：creator OR admin，写进 SQL WHERE；creator 为 NULL 不命中（fail-closed）。
+    let model = general_invoice::Entity::find()
+        .filter(sea_orm::sea_query::Expr::cust_with_values(
+            CREATOR_OWNER_PREDICATE,
+            [id.clone(), actor],
+        ))
         .one(&db.0)
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -862,7 +930,7 @@ pub async fn invoice_get(
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("invoice not found"))),
+        None => Err(ownership_error(&db.0, "x_general_invoice", &id).await),
     }
 }
 
@@ -1029,6 +1097,8 @@ pub fn general_core_entity_router(db: DatabaseConnection) -> Router {
 mod security_gate_tests_b65;
 #[cfg(test)]
 mod security_gate_tests_idor_r6w;
+#[cfg(test)]
+mod security_gate_tests_w2;
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;

@@ -142,13 +142,13 @@ INSERT INTO "x_program_collect" ("id","person_id","creator") VALUES ('rev-r6-col
 DELETE FROM "x_program_deploy" WHERE "id" = 'rev-r6-deployid';
 INSERT INTO "x_program_deploy" ("id","creator") VALUES ('rev-r6-deployid','audit-user');
 DELETE FROM "x_program_dict" WHERE "id" = 'rev-r6-dictid';
-INSERT INTO "x_program_dict" ("id","creator") VALUES ('rev-r6-dictid','audit-user');
+INSERT INTO "x_program_dict" ("id","creator","creator_person") VALUES ('rev-r6-dictid','audit-user','audit-user');
 DELETE FROM "x_program_module" WHERE "id" = 'rev-r6-module_remove_struct';
 INSERT INTO "x_program_module" ("id","creator") VALUES ('rev-r6-module_remove_struct','audit-user');
 DELETE FROM "x_program_prompt_error_log" WHERE "id" = 'rev-r6-prompterrorlogid';
-INSERT INTO "x_program_prompt_error_log" ("id","creator") VALUES ('rev-r6-prompterrorlogid','audit-user');
+INSERT INTO "x_program_prompt_error_log" ("id","creator","creator_person") VALUES ('rev-r6-prompterrorlogid','audit-user','audit-user');
 DELETE FROM "x_program_unexpected_error_log" WHERE "id" = 'rev-r6-unexpectederrorlogid';
-INSERT INTO "x_program_unexpected_error_log" ("id","creator") VALUES ('rev-r6-unexpectederrorlogid','audit-user');
+INSERT INTO "x_program_unexpected_error_log" ("id","creator","creator_person") VALUES ('rev-r6-unexpectederrorlogid','audit-user','audit-user');
 DELETE FROM "x_query_design" WHERE "id" = 'rev-r6-getdesigner';
 INSERT INTO "x_query_design" ("id","creator") VALUES ('rev-r6-getdesigner','audit-user');
 DELETE FROM "x_query_stat" WHERE "id" = 'rev-r6-statid';

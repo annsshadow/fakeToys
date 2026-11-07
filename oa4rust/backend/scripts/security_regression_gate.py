@@ -22,8 +22,10 @@
     python scripts/security_regression_gate.py sabotage write-idor-b5     # Rust②e：摘掉 folder_delete + cms 三条的归属（4 条）
     python scripts/security_regression_gate.py sabotage write-idor-b6     # Rust②f：摘掉 appeal + processplatform 两把的归属（5 条）
     python scripts/security_regression_gate.py sabotage write-idor-b7     # Rust②g：摘掉第七批读归属谓词（5 条）
+    python scripts/security_regression_gate.py sabotage write-idor-w4     # Rust②j：摘掉 program_center 8 个读端点归属谓词
     python scripts/security_regression_gate.py sabotage write-idor-w5     # Rust②k：摘掉 query designer 5 个读端点归属校验
     python scripts/security_regression_gate.py sabotage read-a-b1         # Rust②h：摘掉分片 A 第一批 cms 读门（6 条）
+    python scripts/security_regression_gate.py sabotage write-idor-w3     # Rust②i：摘掉 office/bbs/mind 写侧冒名 403（7 条）
     python scripts/security_regression_gate.py sabotage go-limit0   # Go①：扣款乘 2
     python scripts/security_regression_gate.py sabotage go-idor-rev # Go②：摘掉预设删除归属
     python scripts/security_regression_gate.py sabotage go-empty-list    # Go③：伪装成已修（列表恒空）
@@ -150,18 +152,34 @@ ORGANIZATION_OWNERSHIP_PATCH = (
     'const CREATOR_OWNER_PREDICATE: &str = "id = $1 AND $2 IS NOT NULL";'
 )
 
-# program_center 的 collect/module 归属谓词（本轮写 IDOR 第三批）。两个常量相邻，
-# 一次匹配整段替换成恒真，摘掉归属判定。
+# program_center 的 collect/module/dict/log 归属谓词（本轮写 IDOR 第三批）。
+# 三个常量相邻，一次匹配整段替换成恒真（保留 $2 绑定），摘掉归属判定。
 PROGRAM_CENTER_OWNERSHIP_RE = re.compile(
     r'const CREATOR_OWNER_PREDICATE: &str = .*?false\)";\s*'
+    r'/// .*?\n'
+    r'const CREATOR_PERSON_OWNER_PREDICATE: &str = .*?false\)";\s*'
     r'/// .*?\n'
     r'const PERSON_OWNER_PREDICATE: &str = .*?false\)";',
     re.S,
 )
 PROGRAM_CENTER_OWNERSHIP_PATCH = (
-    'const CREATOR_OWNER_PREDICATE: &str = "TRUE";\n'
-    'const PERSON_OWNER_PREDICATE: &str = "TRUE";'
+    'const CREATOR_OWNER_PREDICATE: &str = "($2::text IS NOT NULL)";\n'
+    'const CREATOR_PERSON_OWNER_PREDICATE: &str = "($2::text IS NOT NULL)";\n'
+    'const PERSON_OWNER_PREDICATE: &str = "($2::text IS NOT NULL)";'
 )
+
+# 写 IDOR 第 W-b4 批：program_center 8 个读端点的归属谓词。
+# 同一次整段替换，恒真式保留 $2 绑定，避免 deadpool 端点 500 造成假阳性。
+W4_EXPECTS = [
+    "program_center|application_get_by_id|GET",
+    "program_center|collect_code_mobile_mobile|GET",
+    "program_center|deploy_id|GET",
+    "program_center|dict_id|GET",
+    "program_center|module_id_compare|GET",
+    "program_center|module_output_flag_file|GET",
+    "program_center|prompterrorlog_id|GET",
+    "program_center|unexpectederrorlog_id|GET",
+]
 
 # document_permission_read_u3 的 readable 计算（不可读即 403）
 CMS_READABLE_RE = re.compile(
@@ -651,10 +669,31 @@ W5_EXPECTS = [
     "query_assemble_designer|stat_id_simulate|GET",
 ]
 
+# 写 IDOR 第 W-b2 批：general_core 的 file/invoice 读面归属谓词 + 创建面冒名拒绝。
+# 读面把 `creator = $2` 改成 `TRUE OR creator = $2`（保留 $2 绑定，避免 500 假阳性）；
+# 写面摘掉非管理员 403 分支，让冒名创建落库 → 逐条 LEAK。
+GENERAL_CORE = BACKEND / "crates/general_core_entity/src/lib.rs"
+GENERAL_ASSEMBLE = BACKEND / "crates/general_assemble_control/src/lib.rs"
+W2_READ_RE = re.compile(r"creator = \$2 OR EXISTS")
+W2_READ_PATCH = "TRUE OR creator = $2 OR EXISTS"
+W2_CORE_WRITE_RE = re.compile(
+    r"if is_admin_db\(db, actor\)\.await \{\s*Ok\(owner\)\s*\} else \{\s*Err\(AppError::Forbidden\)\s*\}"
+)
+W2_CORE_WRITE_PATCH = "Ok({ let _ = is_admin_db(db, actor).await; owner })"
+W2_ASSEMBLE_WRITE_RE = re.compile(r"require_admin\(pool, session\)\.await\?;")
+W2_ASSEMBLE_WRITE_PATCH = "let _ = (&pool, &session);"
+W2_EXPECTS = [
+    "general_core_entity|file_download|GET",
+    "general_core_entity|file_get|GET",
+    "general_core_entity|invoice_get|GET",
+    "t2|general_assemble|invoice_create",
+    "t2|general_core|file_create",
+    "t2|general_core|invoice_create",
+]
+
 # 写 IDOR 第 W-b1 批：general_assemble_control 五个读端点的 owner_gate。
 # 直接摘掉 `owner_gate(...).await?;` 调用点（而非改谓词 SQL）：
 # 每处调用点带表名，可逐条精确替换；摘掉后端点会回显受害者行 → 逐条 LEAK。
-GENERAL_ASSEMBLE = BACKEND / "crates/general_assemble_control/src/lib.rs"
 W1_GATE_RE = [
     (
         table,
@@ -715,6 +754,33 @@ A1_EXPECTS = [
     "cms_assemble_control|file_id_content|GET",
     "cms_assemble_control|file_id_download|GET",
     "cms_assemble_control|comment_id|GET",
+]
+
+# 写 IDOR 第 W-b3 批：office/bbs/mind 写侧冒名 403 臂。
+# 把三个 crate resolve_* 的管理员臂改成恒放行（保留 is_admin_db 调用引用，避免未使用告警），
+# 非管理员冒名落库 → 逐条 LEAK。
+GENERAL_ASSEMBLE = BACKEND / "crates/general_assemble_control/src/lib.rs"
+BBS_CORE = BACKEND / "crates/bbs_core_entity/src/lib.rs"
+MIND_CORE = BACKEND / "crates/mind_core_entity/src/lib.rs"
+W3_GENERAL_WRITE_RE = re.compile(
+    r"Some\(owner\) => \{\s*require_admin\(pool, session\)\.await\?;\s*Ok\(owner\)\s*\}"
+)
+W3_GENERAL_WRITE_PATCH = "Some(owner) => { let _ = (&pool, &session); Ok(owner) }"
+W3_SEA_WRITE_RE = re.compile(
+    r"Some\(owner\) => \{\s*if is_admin_db\(db, &sess\.person_unique\)\.await \{\s*"
+    r"Ok\(owner\)\s*\} else \{\s*Err\(AppError::Forbidden\)\s*\}\s*\}"
+)
+W3_SEA_WRITE_PATCH = (
+    "Some(owner) => { Ok({ let _ = is_admin_db(db, &sess.person_unique).await; owner }) }"
+)
+W3_EXPECTS = [
+    "t2|general|office",
+    "t2|general|office_html_to_word",
+    "t1|bbs|create_reply",
+    "t1|bbs|create_subject",
+    "t1|mind_core|create_mind",
+    "t1|mind_core|create_folder",
+    "t2|mind_core|create_version",
 ]
 
 
@@ -788,6 +854,20 @@ def sabotage(kind: str) -> int:
             PROGRAM_CENTER_EXPECT,
         )
         title = "摘掉 program_center collect/module 的归属谓词（4 条应变 NEW-FAIL）"
+    elif kind == "write-idor-w4":
+        return sabotage_many(
+            "摘掉 W-b4 program_center 8 个读端点的归属谓词（8 条应逐条 LEAK）",
+            [
+                (
+                    PROGRAM_CENTER,
+                    PROGRAM_CENTER_OWNERSHIP_RE,
+                    PROGRAM_CENTER_OWNERSHIP_PATCH,
+                    "program_center_owner",
+                ),
+            ],
+            W4_EXPECTS,
+            require_leak=True,
+        )
     elif kind == "read_b":
         return sabotage_many(
             "摘掉读越权分片B的 creator/管理员归属谓词（5 条应变 NEW-FAIL）",
@@ -861,6 +941,22 @@ def sabotage(kind: str) -> int:
             W5_EXPECTS,
             require_leak=True,
         )
+    elif kind == "write-idor-w2":
+        return sabotage_many(
+            "放开 W-b2 读归属谓词 + 摘掉冒名创建 403（6 条应逐条 LEAK）",
+            [
+                (GENERAL_CORE, W2_READ_RE, W2_READ_PATCH, "general_core_read"),
+                (GENERAL_CORE, W2_CORE_WRITE_RE, W2_CORE_WRITE_PATCH, "general_core_write"),
+                (
+                    GENERAL_ASSEMBLE,
+                    W2_ASSEMBLE_WRITE_RE,
+                    W2_ASSEMBLE_WRITE_PATCH,
+                    "general_assemble_write",
+                ),
+            ],
+            W2_EXPECTS,
+            require_leak=True,
+        )
     elif kind == "read-a-b1":
         return sabotage_many(
             "摘掉分片 A 第一批 cms 读归属谓词（6 条应逐条 LEAK）",
@@ -882,11 +978,28 @@ def sabotage(kind: str) -> int:
             W1_EXPECTS,
             require_leak=True,
         )
+    elif kind == "write-idor-w3":
+        return sabotage_many(
+            "摘掉 W-b3 office/bbs/mind 写侧冒名 403（7 条应逐条 LEAK）",
+            [
+                (
+                    GENERAL_ASSEMBLE,
+                    W3_GENERAL_WRITE_RE,
+                    W3_GENERAL_WRITE_PATCH,
+                    "general_office_write",
+                ),
+                (BBS_CORE, W3_SEA_WRITE_RE, W3_SEA_WRITE_PATCH, "bbs_core_write"),
+                (MIND_CORE, W3_SEA_WRITE_RE, W3_SEA_WRITE_PATCH, "mind_core_write"),
+            ],
+            W3_EXPECTS,
+            require_leak=True,
+        )
     else:
         raise SystemExit(
             f"未知破坏实验: {kind}（可选 ownership / correct / general / organization / "
             "program_center / hotpic_mind / read_b / read-a-b1 / "
-            "write-idor-b5 / write-idor-b6 / write-idor-b7 / write-idor-w1 / write-idor-w5）"
+            "write-idor-b5 / write-idor-b6 / write-idor-b7 / "
+            "write-idor-w1 / write-idor-w2 / write-idor-w3 / write-idor-w4 / write-idor-w5）"
         )
 
     print(f"== 破坏实验：{title}")
@@ -932,7 +1045,8 @@ def main() -> int:
         if len(sys.argv) < 3:
             print("用法: security_regression_gate.py sabotage "
                   "<ownership|correct|general|organization|program_center|hotpic_mind|read_b|"
-                  "read-a-b1|write-idor-b5|write-idor-b6|write-idor-b7|write-idor-w1|write-idor-w5|"
+                  "read-a-b1|write-idor-b5|write-idor-b6|write-idor-b7|"
+                  "write-idor-w1|write-idor-w2|write-idor-w3|write-idor-w4|write-idor-w5|"
                   "rust-drift-to-leak|rust-swallow-write|"
                   "go-limit0|go-idor-rev|go-empty-list|go-swallow-write|"
                   "go-dead-write|go-page2|go-drift-to-leak>")

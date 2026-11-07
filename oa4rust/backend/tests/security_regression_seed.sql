@@ -142,13 +142,13 @@ INSERT INTO "x_program_collect" ("id","person_id","creator") VALUES ('r6-collect
 DELETE FROM "x_program_deploy" WHERE "id" = 'r6-deployid';
 INSERT INTO "x_program_deploy" ("id","creator") VALUES ('r6-deployid','gate-victim');
 DELETE FROM "x_program_dict" WHERE "id" = 'r6-dictid';
-INSERT INTO "x_program_dict" ("id","creator") VALUES ('r6-dictid','gate-victim');
+INSERT INTO "x_program_dict" ("id","creator","creator_person") VALUES ('r6-dictid','gate-victim','gate-victim');
 DELETE FROM "x_program_module" WHERE "id" = 'r6-module_remove_struct';
 INSERT INTO "x_program_module" ("id","creator") VALUES ('r6-module_remove_struct','gate-victim');
 DELETE FROM "x_program_prompt_error_log" WHERE "id" = 'r6-prompterrorlogid';
-INSERT INTO "x_program_prompt_error_log" ("id","creator") VALUES ('r6-prompterrorlogid','gate-victim');
+INSERT INTO "x_program_prompt_error_log" ("id","creator","creator_person") VALUES ('r6-prompterrorlogid','gate-victim','gate-victim');
 DELETE FROM "x_program_unexpected_error_log" WHERE "id" = 'r6-unexpectederrorlogid';
-INSERT INTO "x_program_unexpected_error_log" ("id","creator") VALUES ('r6-unexpectederrorlogid','gate-victim');
+INSERT INTO "x_program_unexpected_error_log" ("id","creator","creator_person") VALUES ('r6-unexpectederrorlogid','gate-victim','gate-victim');
 DELETE FROM "x_query_design" WHERE "id" = 'r6-getdesigner';
 INSERT INTO "x_query_design" ("id","creator") VALUES ('r6-getdesigner','gate-victim');
 DELETE FROM "x_query_stat" WHERE "id" = 'r6-statid';
