@@ -30,7 +30,7 @@ describe('会议列表分页（R149）', () => {
     expect(source).toContain("from './meetingList'")
     expect(source).toContain('mergeMeetingRows')
     expect(source).toContain('meetingHasMore')
-    expect(source).toContain("hasMore.value = tab.value === 'mine' && result.ok && meetingHasMore(result.rows.length)")
+    expect(source).toContain("hasMore.value = targetTab === 'mine' && result.ok && meetingHasMore(result.rows.length)")
     expect(source).toContain('rows.value = mergeMeetingRows(rows.value, result.rows)')
     expect(source).toContain('hasMore.value = meetingHasMore(result.rows.length)')
     expect(source).toContain('function loadMore')
@@ -41,5 +41,15 @@ describe('会议列表分页（R149）', () => {
     expect(source).not.toContain('meetingApi.applied(1, 50)')
     expect(source).toContain('meetingApi.applied(1, MEETING_PAGE_SIZE)')
     expect(source).toContain('meetingApi.applied(next, MEETING_PAGE_SIZE)')
+  })
+
+  it('页签快速切换只认最新一次请求，旧响应不覆盖新页签（R151）', () => {
+    const source = readFileSync(resolve(import.meta.dirname, 'meeting.vue'), 'utf8')
+    expect(source).toContain("import { createLatestGate } from '@/utils/latest'")
+    expect(source).toContain('const listGate = createLatestGate()')
+    // 请求发起时就把页签定死，而不是在响应回来时才读 tab.value。
+    expect(source).toContain('const targetTab = tab.value')
+    expect(source.split('if (!listGate.isLatest(token)) return').length - 1).toBe(1)
+    expect(source.split('listGate.isLatest(token)').length - 1).toBe(2)
   })
 })
