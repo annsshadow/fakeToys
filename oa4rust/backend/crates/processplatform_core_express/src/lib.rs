@@ -12,6 +12,28 @@ use shared::{error::AppError, response::ActionResult};
 
 pub mod routes;
 
+/// 读归属档（与 `work_terminate` 同一把尺）：任一非空归属列等于本人 → 放行；
+/// 归属列全空 / 行不存在 → 只允许 admin（fail-closed）。
+async fn require_read_owner(
+    pool: &Pool,
+    session: &shared::session::Session,
+    owners: &[Option<String>],
+) -> Result<(), AppError> {
+    let me = session.person_unique.trim();
+    let matched = owners.iter().flatten().any(|owner| {
+        let owner = owner.trim();
+        !owner.is_empty() && owner.eq_ignore_ascii_case(me)
+    });
+    if matched {
+        return Ok(());
+    }
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
 #[allow(non_snake_case)]
 pub async fn work_terminate(
     pool: Extension<Pool>,
@@ -68,12 +90,16 @@ pub async fn work_terminate(
 #[allow(non_snake_case)]
 pub async fn work_retract(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(work_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = shared::db::acquire(&pool).await?;
     let rows = client
         .query(
-            "SELECT id, work_status, activity FROM x_work WHERE id = $1",
+            "SELECT id, work_status, activity, creator FROM x_work WHERE id = $1",
             &[&work_id],
         )
         .await
@@ -82,6 +108,7 @@ pub async fn work_retract(
     if rows.is_empty() {
         return Ok(Json(ActionResult::error("work not found")));
     }
+    require_read_owner(&pool.0, &session, &[rows[0].get("creator")]).await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -101,17 +128,22 @@ pub async fn work_retract(
 #[allow(non_snake_case)]
 pub async fn work_processing(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(work_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
-            "SELECT id, title, work_status, activity FROM x_work WHERE id = $1",
+            "SELECT id, title, work_status, activity, creator FROM x_work WHERE id = $1",
             &[&work_id],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
+    require_read_owner(&pool.0, &session, &[row.get("creator")]).await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -135,17 +167,30 @@ pub async fn work_processing(
 #[allow(non_snake_case)]
 pub async fn task_processing(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(task_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let Some(Extension(session)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
-            "SELECT id, title, person, activity FROM x_task WHERE id = $1",
+            "SELECT t.id, t.title, t.person, t.activity, w.creator AS work_creator \
+             FROM x_task t LEFT JOIN x_work w ON w.id = t.work WHERE t.id = $1",
             &[&task_id],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or(AppError::NotFound)?;
+    // 与 B-b4 的 task 口径一致：办件人（person）或发起人（work.creator）任一命中即放行，
+    // 双方之外的陌生会话按 ID 不再能读他人待办。
+    require_read_owner(
+        &pool.0,
+        &session,
+        &[row.get("person"), row.get("work_creator")],
+    )
+    .await?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([

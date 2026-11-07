@@ -41,14 +41,6 @@ portal_assemble_surface|preview_surface|GET	LEAK
 portal_assemble_surface|surface_preview|GET	LEAK
 portal_core_entity|page_get|GET	LEAK
 portal|portal_id|GET	LEAK
-processplatform_assemble_designer|get_flow|GET	LEAK
-processplatform_assemble_designer|preview_flow|GET	LEAK
-processplatform_assemble_surface|get_surface|GET	LEAK
-processplatform_assemble_surface|preview_surface|GET	LEAK
-processplatform_core_entity|work_get|GET	LEAK
-processplatform_core_express|task_processing|GET	LEAK
-processplatform_core_express|work_processing|GET	LEAK
-processplatform_core_express|work_retract|GET	LEAK
 processplatform_service_processing|applicationdict_id|GET	LEAK
 processplatform_service_processing|attachment_id|GET	LEAK
 processplatform_service_processing|data_workcompleted_id_path|GET	LEAK

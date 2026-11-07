@@ -127,8 +127,10 @@ pub struct CreateSurfaceRequest {
 #[allow(non_snake_case)]
 pub async fn get_surface(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = u4_require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(
@@ -138,6 +140,12 @@ pub async fn get_surface(
         )
         .await
         .map_err(|_| AppError::NotFound)?;
+    require_actor_opt(
+        &pool.0,
+        &sess,
+        row.get::<_, Option<String>>("creator").as_deref(),
+    )
+    .await?;
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
@@ -363,17 +371,28 @@ pub async fn process_manager_list(
 #[allow(non_snake_case)]
 pub async fn preview_surface(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = u4_require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
-            "SELECT id, name, category, content FROM x_process_surface WHERE id = $1",
+            "SELECT id, name, category, content, creator FROM x_process_surface WHERE id = $1",
             &[&id],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+
+    if let Some(row) = row.as_ref() {
+        require_actor_opt(
+            &pool.0,
+            &sess,
+            row.get::<_, Option<String>>("creator").as_deref(),
+        )
+        .await?;
+    }
 
     match row {
         Some(row) => {

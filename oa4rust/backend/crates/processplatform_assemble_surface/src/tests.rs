@@ -128,7 +128,8 @@ async fn test_get_surface_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+    // B-b6：get_surface 先收会话门，无会话 401，早于取库失败。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]
@@ -212,7 +213,8 @@ async fn test_preview_surface_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+    // B-b6：preview_surface 先收会话门，无会话 401，早于取库失败。
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[tokio::test]

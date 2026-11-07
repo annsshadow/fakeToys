@@ -124,3 +124,22 @@ rev-GATE-V-MOBILE)`，delete paging `LEAK(2xx 响应体含 canary GATE-DEL-MOBIL
 - 不修改任何表结构、不新增归属列、不回填历史数据。
 - 不改变分页/排序参数语义；列表在归属收窄后允许返回空，不额外做存在性探测（避免 403 泄露他人是否存在）。
 - 本人正控制（`idor-read-own`）与双向拒绝用例成对存在；列表用例使用按完整 JSON 值匹配 canary，避免 `rev-` 前缀子串误报。
+
+## 批次 B-b6：surface / designer / work / task 八个按 id 读
+
+判据同默认 1（本人 OR 管理员；空归属 fail-closed）。按 crate 既有原语落地，不新增第二套归属语义：
+
+| 端点 | 表 / 归属列 | 落地方式 |
+|---|---|---|
+| `core_express task_processing` | `x_task.person` 或 `x_work.creator` | 新增 `require_read_owner(&[Option<String>])`，与 B-b4 `U4ActorKey::Task` 同口径 |
+| `core_express work_processing` / `work_retract` | `x_work.creator` | 同上 |
+| `core_entity work_get` | `pp_work.creator_id` | 先取行再判：本人或 admin；NULL→仅 admin |
+| `surface get_surface` / `preview_surface` | `x_process_surface.creator` | 复用既有 `require_actor_opt` |
+| `designer get_flow` / `preview_flow` | `x_process_definition.creator` | 新增 `guard_read_creator`（`require_owner` / 空归属走 `require_admin_gate`） |
+
+- 无会话一律先 401（早于取库/取行）；`work_retract` 行不存在仍返回原 `ActionResult::error` 信封。
+- `core_entity` 的路由只注入 `DatabaseConnection`（无 deadpool 池），管理员判定用 SeaORM
+  连接跑同一套 `auth_person`/`auth_role` EXISTS，未给路由新增 `Extension<Pool>` 依赖。
+- 门禁新增 8 条 `idor-read-own` 正控制；按棘轮点名减基线 8 行（111→103）。
+- 破坏实验：`require_read_owner` 恒放行、`db_is_admin` 恒 true、surface 两处调用点短路、
+  `guard_read_creator` 恒放行 → `NEW-FAIL` **恰好点名本批 8 条**；还原后非 PASS 103，与基线一致。

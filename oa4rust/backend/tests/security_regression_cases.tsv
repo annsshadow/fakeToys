@@ -118,6 +118,14 @@ processplatform_core_entity|work_get|GET	idor-read	GET	/api/process/work/{id}	x_
 processplatform_core_express|task_processing|GET	idor-read	GET	/api/processplatform/task/processing/{id}	x_task	task-admin-1	task-admin-1	path		legacy	both	allow
 processplatform_core_express|work_processing|GET	idor-read	GET	/api/processplatform/work/processing/{id}	x_work	work-admin-1	work-admin-1	path		legacy	both	allow
 processplatform_core_express|work_retract|GET	idor-read	GET	/api/processplatform/work/retract/{id}	x_work	work-admin-1	work-admin-1	path		legacy	both	allow
+processplatform_core_express|task_processing|own	idor-read-own	GET	/api/processplatform/task/processing/{id}	x_task	rev-task-admin-1	rev-task-admin-1	path		legacy		allow
+processplatform_core_express|work_processing|own	idor-read-own	GET	/api/processplatform/work/processing/{id}	x_work	rev-work-admin-1	rev-work-admin-1	path		legacy		allow
+processplatform_core_express|work_retract|own	idor-read-own	GET	/api/processplatform/work/retract/{id}	x_work	rev-work-admin-1	rev-work-admin-1	path		legacy		allow
+processplatform_core_entity|work_get|own	idor-read-own	GET	/api/process/work/{id}	x_process_work	rev-r6-workget	rev-r6-workget	path		legacy		allow
+processplatform_assemble_surface|get_surface|own	idor-read-own	GET	/api/processplatform/assemble/surface/get/{id}	x_process_surface	rev-r6-getsurface	rev-r6-getsurface	path		legacy		allow
+processplatform_assemble_surface|preview_surface|own	idor-read-own	GET	/api/processplatform/assemble/surface/preview/{id}	x_process_surface	rev-r6-getsurface	rev-r6-getsurface	path		legacy		allow
+processplatform_assemble_designer|get_flow|own	idor-read-own	GET	/api/processplatform/assemble/designer/get/{id}	x_process_definition	rev-r6-getflow	rev-r6-getflow	path		legacy		allow
+processplatform_assemble_designer|preview_flow|own	idor-read-own	GET	/api/processplatform/assemble/designer/preview/{id}	x_process_definition	rev-r6-getflow	rev-r6-getflow	path		legacy		allow
 processplatform_service_processing|applicationdict_id|GET	idor-read	GET	/api/processplatform/service/processing/applicationdict/{id}	x_process_definition	r6-getflow	r6-getflow	path		legacy	both	allow
 processplatform_service_processing|attachment_id|GET	idor-read	GET	/api/processplatform/service/processing/attachment/{id}	x_attachment	r6-attachment_edit_id_t	r6-attachment_edit_id_t	path		legacy	both	allow
 processplatform_service_processing|data_workcompleted_id|GET	idor-read	GET	/api/processplatform/service/processing/data/workcompleted/{id}	x_workcompleted	r6-dataworkcompletedid	r6-dataworkcompletedid	path		legacy	both	allow
