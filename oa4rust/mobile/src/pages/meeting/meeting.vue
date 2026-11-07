@@ -11,6 +11,7 @@ import { computed, ref } from 'vue'
 import { type MeetingRow, meetingApi } from '@/services'
 import { ensureAuthenticated } from '@/utils/auth-guard'
 import { listState, loadList } from '@/utils/loadList'
+import { MEETING_PAGE_SIZE, meetingHasMore, mergeMeetingRows } from './meetingList'
 
 type TabKey = 'wait' | 'confirm' | 'mine'
 
@@ -23,7 +24,10 @@ const TABS: Array<{ key: TabKey; label: string }> = [
 const tab = ref<TabKey>('wait')
 const rows = ref<MeetingRow[]>([])
 const loading = ref(false)
+const loadingMore = ref(false)
 const loadError = ref('')
+const page = ref(1)
+const hasMore = ref(false)
 const busyId = ref('')
 const listView = computed(() =>
   listState({ loading: loading.value, loaded: true, count: rows.value.length, error: loadError.value }),
@@ -36,13 +40,36 @@ async function load(previousRows: MeetingRow[] = rows.value): Promise<void> {
     () => {
       if (tab.value === 'wait') return meetingApi.invitedWait()
       if (tab.value === 'confirm') return meetingApi.waitConfirm()
-      return meetingApi.applied(1, 50)
+      return meetingApi.applied(1, MEETING_PAGE_SIZE)
     },
     { previousRows, label: '会议加载失败' },
   )
   rows.value = result.rows
+  page.value = 1
+  // 只有「我的会议」端点支持分页；待接受/待确认返回全量，不提供加载更多。
+  hasMore.value = tab.value === 'mine' && result.ok && meetingHasMore(result.rows.length)
   if (!result.ok) loadError.value = result.error
   loading.value = false
+}
+
+async function loadMore(): Promise<void> {
+  if (loading.value || loadingMore.value || !hasMore.value || tab.value !== 'mine') return
+  loadingMore.value = true
+  loadError.value = ''
+  const next = page.value + 1
+  const result = await loadList<MeetingRow>(() => meetingApi.applied(next, MEETING_PAGE_SIZE), {
+    previousRows: rows.value,
+    label: '更多会议加载失败',
+  })
+  if (result.ok) {
+    rows.value = mergeMeetingRows(rows.value, result.rows)
+    page.value = next
+    hasMore.value = meetingHasMore(result.rows.length)
+  } else {
+    // 加载更多失败保留已加载的行，只提示错误。
+    loadError.value = result.error
+  }
+  loadingMore.value = false
 }
 
 onShow(async () => {
@@ -151,6 +178,16 @@ const emptyText = computed(() =>
       </view>
     </view>
 
+    <view v-if="tab === 'mine' && rows.length > 0" class="footer">
+      <view v-if="loadError" class="tip-error footer-error">
+        <text class="error-text">{{ loadError }}</text>
+        <view class="retry-btn" @tap="loadMore">重试</view>
+      </view>
+      <view v-else-if="loadingMore">加载更多…</view>
+      <view v-else-if="hasMore" class="load-more" @tap="loadMore">加载更多</view>
+      <view v-else>已加载 {{ rows.length }} 条</view>
+    </view>
+
     <view v-if="codeText" class="code-mask" @tap="codeText = ''">
       <view class="code-dialog" @tap.stop>
         <view class="code-title">签到码</view>
@@ -252,6 +289,21 @@ const emptyText = computed(() =>
   border-radius: 24rpx;
   border: 1rpx solid #c0392b;
   color: #c0392b;
+  font-size: 26rpx;
+}
+.footer {
+  padding: 8rpx 0 40rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: #90979f;
+}
+.footer-error {
+  color: #c0392b;
+}
+.load-more {
+  display: inline-block;
+  padding: 10rpx 36rpx;
+  color: #2d8cf0;
   font-size: 26rpx;
 }
 .error-banner {
