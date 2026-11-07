@@ -124,3 +124,18 @@ rev-GATE-V-MOBILE)`，delete paging `LEAK(2xx 响应体含 canary GATE-DEL-MOBIL
 - 不修改任何表结构、不新增归属列、不回填历史数据。
 - 不改变分页/排序参数语义；列表在归属收窄后允许返回空，不额外做存在性探测（避免 403 泄露他人是否存在）。
 - 本人正控制（`idor-read-own`）与双向拒绝用例成对存在；列表用例使用按完整 JSON 值匹配 canary，避免 `rev-` 前缀子串误报。
+
+## 附：`oauth_generate_code` 冒名落库（真实缺陷，独立 PR，不动基线）
+
+- **复现（修复前）**：会话 `audit-user`，请求体 `{"clientId":"repro-oauth-client","personId":"gate-victim"}`
+  → `x_org_oauth_code.person_id = gate-victim`（`tests/oauth_session_derived.rs` 断言失败：
+  `left: Some("gate-victim") / right: Some("audit-user")`）。
+- 根因：handler 直接 `req.get("personId")` → `oauth_code_store`，任何登录用户都能用别人的
+  `personId` 生成授权码并落库。
+- 修复：`person_id` 一律由会话派生，请求体 `personId` 不采信；响应补 `data.id`（表主键），
+  门禁回查字段由只能读到 `data.code` 转为按 `data.id` 定位落库行。
+- 回归测试：`crates/organization_assemble_authentication/tests/oauth_session_derived.rs`
+  （scratch 库 + 真实 handler，断言落库 `person_id = audit-user`）。
+- 门禁：该行仍为 UNVERIFIED —— `spoof-write` 只在 401/403 判 PASS，正确实现下是 2xx 且
+  canary 无变化；按指示**不改基线**，但回查已能证明落库 owner 是会话本人（修复前回查不到行）。
+- 未决：`clientId` 仍未与已注册应用比对（§五"第三方回调零验签族"），登记待裁决。
