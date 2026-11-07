@@ -83,9 +83,9 @@ async fn actor_is_admin(db: &DatabaseConnection, actor: &str) -> Result<bool, Ap
         ))
         .await
     {
-        Ok(Some(row)) => row.try_get::<bool>("", "is_admin").map_err(|e| {
-            AppError::internal_with_source(concat!(file!(), ":", line!()), e)
-        }),
+        Ok(Some(row)) => row
+            .try_get::<bool>("", "is_admin")
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e)),
         Ok(None) => Ok(false),
         Err(e) => Err(AppError::internal_with_source(
             concat!(file!(), ":", line!()),
@@ -985,9 +985,8 @@ pub async fn bind_create(
         "SELECT EXISTS(SELECT 1 FROM x_org_identity WHERE {CREATOR_OWNER_PREDICATE} \
          AND deleted_at IS NULL) AS allowed"
     );
-    let allowed = db
-        .0
-        .query_one(Statement::from_sql_and_values(
+    let allowed =
+        db.0.query_one(Statement::from_sql_and_values(
             DbBackend::Postgres,
             &ownership_sql,
             vec![req.identity_id.clone().into(), actor.into()],
