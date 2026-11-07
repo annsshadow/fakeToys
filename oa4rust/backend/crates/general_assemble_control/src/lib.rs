@@ -21,6 +21,7 @@ mod security_gate_tests_b64;
 #[cfg(test)]
 mod security_gate_tests_r6;
 #[cfg(test)]
+mod security_gate_tests_w1;
 mod security_gate_tests_w3;
 #[cfg(test)]
 #[allow(clippy::module_inception)]
@@ -465,9 +466,21 @@ pub async fn attendscope_list(
 #[allow(non_snake_case)]
 pub async fn attendscope_get(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
+    // 读 IDOR：creator OR admin；历史行 creator='system' 按 fail-closed 仅管理员可读。
+    owner_gate(
+        &pool,
+        &client,
+        &sess,
+        "x_general_attend_scope",
+        "creator",
+        &id,
+    )
+    .await?;
 
     let row = client
         .query_opt(
@@ -522,7 +535,8 @@ pub async fn attendscope_create(
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_default();
     let unit_id = req.unit_id.unwrap_or_default();
-    let creator = "system";
+    // 归属以会话登录人为事实源：否则该表 creator 恒为 'system'，读侧 creator 谓词无区分度。
+    let creator = session.person_unique.clone();
 
     client
         .execute(
@@ -934,11 +948,8 @@ pub async fn area_create(
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
-    let creator = payload
-        .get("creator")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system")
-        .to_string();
+    // 归属以会话登录人为事实源：客户端 creator 可伪造（冒名归属，IDOR 面）。
+    let creator = session.person_unique.clone();
 
     client
         .execute(
@@ -964,9 +975,21 @@ pub async fn area_create(
 #[allow(non_snake_case)]
 pub async fn area_get(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
+    // 读 IDOR：creator OR admin；历史行 creator='system' 按 fail-closed 仅管理员可读。
+    owner_gate(
+        &pool,
+        &client,
+        &sess,
+        "x_general_assemble_area",
+        "creator",
+        &id,
+    )
+    .await?;
 
     let row = client
         .query_opt(
@@ -1687,9 +1710,21 @@ pub async fn invoice_download_flag_flag(
 #[allow(non_snake_case)]
 pub async fn invoice_get_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
+    // 读 IDOR：creator OR admin；历史行 creator 为空按 fail-closed 仅管理员可读。
+    owner_gate(
+        &pool,
+        &client,
+        &sess,
+        "x_general_assemble_invoice",
+        "creator",
+        &id,
+    )
+    .await?;
 
     let row = client
         .query_opt(
@@ -2196,9 +2231,21 @@ pub async fn qrcode_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Valu
 #[allow(non_snake_case)]
 pub async fn qrcode_get(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
+    // 读 IDOR：creator OR admin；历史行 creator 为空按 fail-closed 仅管理员可读。
+    owner_gate(
+        &pool,
+        &client,
+        &sess,
+        "x_general_assemble_qrcode",
+        "creator",
+        &id,
+    )
+    .await?;
 
     let row = client
         .query_opt(
@@ -2459,11 +2506,8 @@ pub async fn securityclearance_create(
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
-    let creator = payload
-        .get("creator")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system")
-        .to_string();
+    // 归属以会话登录人为事实源：客户端 creator 可伪造（冒名归属，IDOR 面）。
+    let creator = session.person_unique.clone();
 
     client
         .execute(
@@ -2486,9 +2530,21 @@ pub async fn securityclearance_create(
 #[allow(non_snake_case)]
 pub async fn securityclearance_get(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
+    // 读 IDOR：creator OR admin；历史行 creator='system' 按 fail-closed 仅管理员可读。
+    owner_gate(
+        &pool,
+        &client,
+        &sess,
+        "x_general_assemble_security_clearance",
+        "creator",
+        &id,
+    )
+    .await?;
 
     let row = client
         .query_opt(
