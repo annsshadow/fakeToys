@@ -668,6 +668,27 @@ A/B/W 之间 crate 集合两两不相交；同一批内可以跨多个 crate，�
 2. 按 `§12.6` 三步核对：行在 `main` → 被删行全 `[PASS]` → sabotage 变红并逐条点名。
 3. 一批只减该批实际转 `[PASS]` 的行；出现 `STALE-BASELINE` 只减被点名的行，不做连带清理。
 
+### 13.7 写 IDOR 批次执行记录（§12.6 三步核对）
+
+七批均从 `origin/main` 单独开分支、`base=main`、单批单 PR，无堆叠。
+
+| 批次 | PR | merge commit | 减行 | sabotage | 三步核对 |
+|---|---|---|---|---|---|
+| W-b1 | #228 | `12179d371` | 5 | `write-idor-w1` | 通过 |
+| W-b2 | #229 | `fe4a74aac` | 6 | `write-idor-w2` | 通过 |
+| W-b3 | #231 | `621d0e02a` | 7 | `write-idor-w3` | 通过 |
+| W-b4 | #235 | `40cd8eab7` | 8 | `write-idor-w4` | 通过 |
+| W-b5 | #239 | `577305025` | 5 | `write-idor-w5` | 通过 |
+| W-b6 | #240 | `255f5064b` | 8 | `write-idor-w6` | 通过 |
+| W-b7 | #241 | `adc14abc0` | 5 | `write-idor-w7` | 通过 |
+
+每批三步均为：`git diff <merge>^1 <merge>^2 --stat` 与 `<merge>^1 <merge>` 一致；
+被删行在 `main` 上实测 `[PASS]`；对应 sabotage 变红并逐条点名。七批合计减 44 行。
+
+**FALSE-GREEN（不计减行）**：`t2|program_center|warnlog_create` 的门禁用例 `field=level`
+不是归属列；写侧实际落 `creator_person = sess.person_unique`，判据来源已真实。
+非属主写自身日志属正常语义，故保留基线行、不按读 IDOR 口径改写入语义。
+
 ## 14. 17 条 UNVERIFIED 逐条定性
 
 结论先写：**16 条可补证据得到确定判定，1 条（`t2|auth|code`）属用例语义错配、门禁无法判定，保留。**
