@@ -268,14 +268,14 @@ pub async fn unit_check_unit_has_person(
         let person_row = client
             .query_opt(
                 "SELECT id FROM x_org_person WHERE deleted_at IS NULL AND (id = $1 OR name = $1)",
-                &[&person, &person],
+                &[&person],
             )
             .await
             .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
         let target_row = client
             .query_opt(
                 "SELECT id FROM x_org_unit WHERE deleted_at IS NULL AND (id = $1 OR name = $1)",
-                &[&unit, &unit],
+                &[&unit],
             )
             .await
             .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;

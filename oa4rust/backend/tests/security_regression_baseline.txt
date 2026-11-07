@@ -5,10 +5,12 @@
 # 修复一条就删一行（单调下降）；只增不减视为回归。
 t2|meeting|create_meeting	UNVERIFIED
 t2|organization|group_list_object	UNVERIFIED
-t2|organization|unit_check_unit_has_person	UNVERIFIED
 t2|organization|unit_list_level_name_object	UNVERIFIED
 t2|program_center|warnlog_create	LEAK
 # B8 批1 移出（判据/影响面/回滚见 security-decisions-needed.md §15）：
 #   t1|oauth|generate_code  —— person_id 由会话派生、响应回传 id，门禁按 id 回查证明归属未被伪造
 #   t2|auth|code            —— 非 IDOR（2FA 登录第二阶段），移出用例集并单独立项为 authentication
 #   t2|mind|create_version  —— 表名错配修正为 mind_version_info；creator/creator_unit 由会话派生
+# B8 批2 移出（判据/影响面/回滚见 §15.2）：
+#   t2|organization|unit_check_unit_has_person —— PUBLIC-BY-DESIGN：匿名前置查询仅返回 value 布尔，
+#   门禁用例升级为 public-read：匿名 2xx + 正控制 "value":true + 响应不得含姓名/手机 PII canary

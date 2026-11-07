@@ -110,6 +110,13 @@ INSERT INTO x_org_group_member (group_id, person_id, role_id) VALUES
 DELETE FROM x_org_group WHERE id = 'grp-gate-b';
 INSERT INTO x_org_group (id, name, unit_id, type, creator, create_time, deleted_at) VALUES
   ('grp-gate-b', 'GATE-GROUP', 'unit-gate-b', 'group', 'audit-user', NOW(), NULL);
+-- B8 公开目录查询：unit_check 需要「人员-组织」身份行与目标组织都存在才可观测。
+DELETE FROM x_org_identity WHERE person_id = 'gate-person-v';
+DELETE FROM x_org_unit WHERE id = 'unit-gate-v';
+INSERT INTO x_org_unit (id, name, parent_id, level, sort, creator, create_time, deleted_at) VALUES
+  ('unit-gate-v', 'GATE-UNIT-V', NULL, 0, 0, 'gate-victim', NOW(), NULL);
+INSERT INTO x_org_identity (id, name, unit_id, person_id, creator, create_time, deleted_at) VALUES
+  ('ident-gate-v', 'GATE-IDENT-V', 'unit-gate-v', 'gate-person-v', 'gate-victim', NOW(), NULL);
 DELETE FROM auth_person_role WHERE role_id IN ('role-gate-v', 'role-gate-a');
 INSERT INTO auth_person_role (person_id, role_id, unit_id) VALUES
   ('gate-person-v', 'role-gate-v', 'unit-gate-b'),
