@@ -22,6 +22,7 @@
     python scripts/security_regression_gate.py sabotage write-idor-b5     # Rust②e：摘掉 folder_delete + cms 三条的归属（4 条）
     python scripts/security_regression_gate.py sabotage write-idor-b6     # Rust②f：摘掉 appeal + processplatform 两把的归属（5 条）
     python scripts/security_regression_gate.py sabotage write-idor-b7     # Rust②g：摘掉第七批读归属谓词（5 条）
+    python scripts/security_regression_gate.py sabotage write-idor-w4     # Rust②j：摘掉 program_center 8 个读端点归属谓词
     python scripts/security_regression_gate.py sabotage read-a-b1         # Rust②h：摘掉分片 A 第一批 cms 读门（6 条）
     python scripts/security_regression_gate.py sabotage write-idor-w3     # Rust②i：摘掉 office/bbs/mind 写侧冒名 403（7 条）
     python scripts/security_regression_gate.py sabotage go-limit0   # Go①：扣款乘 2
@@ -148,18 +149,34 @@ ORGANIZATION_OWNERSHIP_PATCH = (
     'const CREATOR_OWNER_PREDICATE: &str = "id = $1 AND $2 IS NOT NULL";'
 )
 
-# program_center 的 collect/module 归属谓词（本轮写 IDOR 第三批）。两个常量相邻，
-# 一次匹配整段替换成恒真，摘掉归属判定。
+# program_center 的 collect/module/dict/log 归属谓词（本轮写 IDOR 第三批）。
+# 三个常量相邻，一次匹配整段替换成恒真（保留 $2 绑定），摘掉归属判定。
 PROGRAM_CENTER_OWNERSHIP_RE = re.compile(
     r'const CREATOR_OWNER_PREDICATE: &str = .*?false\)";\s*'
+    r'/// .*?\n'
+    r'const CREATOR_PERSON_OWNER_PREDICATE: &str = .*?false\)";\s*'
     r'/// .*?\n'
     r'const PERSON_OWNER_PREDICATE: &str = .*?false\)";',
     re.S,
 )
 PROGRAM_CENTER_OWNERSHIP_PATCH = (
-    'const CREATOR_OWNER_PREDICATE: &str = "TRUE";\n'
-    'const PERSON_OWNER_PREDICATE: &str = "TRUE";'
+    'const CREATOR_OWNER_PREDICATE: &str = "($2::text IS NOT NULL)";\n'
+    'const CREATOR_PERSON_OWNER_PREDICATE: &str = "($2::text IS NOT NULL)";\n'
+    'const PERSON_OWNER_PREDICATE: &str = "($2::text IS NOT NULL)";'
 )
+
+# 写 IDOR 第 W-b4 批：program_center 8 个读端点的归属谓词。
+# 同一次整段替换，恒真式保留 $2 绑定，避免 deadpool 端点 500 造成假阳性。
+W4_EXPECTS = [
+    "program_center|application_get_by_id|GET",
+    "program_center|collect_code_mobile_mobile|GET",
+    "program_center|deploy_id|GET",
+    "program_center|dict_id|GET",
+    "program_center|module_id_compare|GET",
+    "program_center|module_output_flag_file|GET",
+    "program_center|prompterrorlog_id|GET",
+    "program_center|unexpectederrorlog_id|GET",
+]
 
 # document_permission_read_u3 的 readable 计算（不可读即 403）
 CMS_READABLE_RE = re.compile(
@@ -815,6 +832,20 @@ def sabotage(kind: str) -> int:
             PROGRAM_CENTER_EXPECT,
         )
         title = "摘掉 program_center collect/module 的归属谓词（4 条应变 NEW-FAIL）"
+    elif kind == "write-idor-w4":
+        return sabotage_many(
+            "摘掉 W-b4 program_center 8 个读端点的归属谓词（8 条应逐条 LEAK）",
+            [
+                (
+                    PROGRAM_CENTER,
+                    PROGRAM_CENTER_OWNERSHIP_RE,
+                    PROGRAM_CENTER_OWNERSHIP_PATCH,
+                    "program_center_owner",
+                ),
+            ],
+            W4_EXPECTS,
+            require_leak=True,
+        )
     elif kind == "read_b":
         return sabotage_many(
             "摘掉读越权分片B的 creator/管理员归属谓词（5 条应变 NEW-FAIL）",
@@ -931,7 +962,8 @@ def sabotage(kind: str) -> int:
         raise SystemExit(
             f"未知破坏实验: {kind}（可选 ownership / correct / general / organization / "
             "program_center / hotpic_mind / read_b / read-a-b1 / write-idor-b5 / "
-            "write-idor-b6 / write-idor-b7 / write-idor-w1 / write-idor-w2 / write-idor-w3）"
+            "write-idor-b6 / write-idor-b7 / write-idor-w1 / write-idor-w2 / "
+            "write-idor-w3 / write-idor-w4）"
         )
 
     print(f"== 破坏实验：{title}")
@@ -978,7 +1010,7 @@ def main() -> int:
             print("用法: security_regression_gate.py sabotage "
                   "<ownership|correct|general|organization|program_center|hotpic_mind|read_b|"
                   "read-a-b1|write-idor-b5|write-idor-b6|write-idor-b7|"
-                  "write-idor-w1|write-idor-w2|write-idor-w3|"
+                  "write-idor-w1|write-idor-w2|write-idor-w3|write-idor-w4|"
                   "rust-drift-to-leak|rust-swallow-write|"
                   "go-limit0|go-idor-rev|go-empty-list|go-swallow-write|"
                   "go-dead-write|go-page2|go-drift-to-leak>")

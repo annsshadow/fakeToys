@@ -305,9 +305,10 @@ mod u3_tests {
         );
 
         // 参数化字典路由：段值避开静态 dictFlag/list 以命中参数节点
+        // 写 IDOR 批次 4：dict_id 收归属校验，无会话先 401（原直通 DB 503）。
         assert_eq!(
             status_of("GET", "/api/program_center/dict/d-id").await,
-            StatusCode::SERVICE_UNAVAILABLE
+            StatusCode::UNAUTHORIZED
         );
         let put_status = status_of("PUT", "/api/program_center/dict/d-id").await;
         assert_ne!(put_status, StatusCode::NOT_FOUND);
@@ -342,9 +343,10 @@ mod u3_tests {
             .await,
             StatusCode::UNAUTHORIZED
         );
+        // 写 IDOR 批次 4：deploy_id 收归属校验，无会话先 401。
         assert_eq!(
             status_of("GET", "/api/program_center/deploy/d-1").await,
-            StatusCode::SERVICE_UNAVAILABLE
+            StatusCode::UNAUTHORIZED
         );
         assert_eq!(
             status_of("GET", "/api/program_center/dict/my-flag/data").await,
@@ -354,9 +356,10 @@ mod u3_tests {
             status_of("GET", "/api/program_center/dict/my-flag/my-path/data").await,
             StatusCode::SERVICE_UNAVAILABLE
         );
+        // 写 IDOR 批次 4：module_id_compare 收归属校验，无会话先 401。
         assert_eq!(
             status_of("GET", "/api/program_center/module/m-1/compare").await,
-            StatusCode::SERVICE_UNAVAILABLE
+            StatusCode::UNAUTHORIZED
         );
         assert_eq!(
             status_of("GET", "/api/program_center/distribute/assemble/source/o2").await,
@@ -467,9 +470,10 @@ mod u3_tests {
             StatusCode::SERVICE_UNAVAILABLE
         );
 
+        // 写 IDOR 批次 4：module/output/{id}/file 收归属校验，无会话先 401。
         assert_eq!(
             status_of("GET", "/api/program_center/module/output/m-1/file").await,
-            StatusCode::SERVICE_UNAVAILABLE
+            StatusCode::UNAUTHORIZED
         );
         // 2026-11 写 IDOR 批次 3：remove/write 收归属谓词，无会话先 401（原直通 DB 503）。
         assert_eq!(
@@ -516,9 +520,10 @@ mod u3_tests {
             status_of("POST", "/api/program_center/prompterrorlog").await,
             StatusCode::NOT_FOUND
         );
+        // 写 IDOR 批次 4：prompterrorlog_id 收归属校验，无会话先 401。
         assert_eq!(
             status_of("GET", "/api/program_center/prompterrorlog/p-1").await,
-            StatusCode::SERVICE_UNAVAILABLE
+            StatusCode::UNAUTHORIZED
         );
         assert_eq!(
             status_of("GET", "/api/program_center/prompterrorlog/list/p-1/next/10").await,
@@ -536,9 +541,10 @@ mod u3_tests {
             status_of("POST", "/api/program_center/unexpectederrorlog").await,
             StatusCode::NOT_FOUND
         );
+        // 写 IDOR 批次 4：unexpectederrorlog_id 收归属校验，无会话先 401。
         assert_eq!(
             status_of("GET", "/api/program_center/unexpectederrorlog/u-1").await,
-            StatusCode::SERVICE_UNAVAILABLE
+            StatusCode::UNAUTHORIZED
         );
         assert_eq!(
             status_of(
