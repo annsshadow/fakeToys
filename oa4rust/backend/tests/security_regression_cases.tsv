@@ -126,15 +126,21 @@ processplatform_core_express|work_retract|GET	idor-read	GET	/api/processplatform
 processplatform_service_processing|applicationdict_id|GET	idor-read	GET	/api/processplatform/service/processing/applicationdict/{id}	x_process_definition	r6-getflow	r6-getflow	path		legacy	both	allow
 processplatform_service_processing|attachment_id|GET	idor-read	GET	/api/processplatform/service/processing/attachment/{id}	x_attachment	r6-attachment_edit_id_t	r6-attachment_edit_id_t	path		legacy	both	allow
 processplatform_service_processing|data_workcompleted_id|GET	idor-read	GET	/api/processplatform/service/processing/data/workcompleted/{id}	x_workcompleted	r6-dataworkcompletedid	r6-dataworkcompletedid	path		legacy	both	allow
+processplatform_service_processing|data_workcompleted_id|GET|own	idor-read-own	GET	/api/processplatform/service/processing/data/workcompleted/{id}	x_workcompleted	rev-r6-dataworkcompletedid	rev-r6-dataworkcompletedid	path		legacy		allow
 processplatform_service_processing|data_workcompleted_id_path|GET	idor-read	GET	/api/processplatform/service/processing/data/workcompleted/path/{id}	x_workcompleted	r6-dataworkcompletedid	r6-dataworkcompletedid	path		legacy	both	allow
+processplatform_service_processing|data_workcompleted_id_path|GET|own	idor-read-own	GET	/api/processplatform/service/processing/data/workcompleted/path/{id}	x_workcompleted	rev-r6-dataworkcompletedid	rev-r6-dataworkcompletedid	path		legacy		allow
 processplatform_service_processing|get_process|GET	idor-read	GET	/api/processplatform/service/processing/get/{id}	x_work	work-admin-1	work-admin-1	path		legacy	both	allow
+processplatform_service_processing|get_process|GET|own	idor-read-own	GET	/api/processplatform/service/processing/get/{id}	x_work	rev-work-admin-1	rev-work-admin-1	path		legacy		allow
 processplatform_service_processing|readcompleted_id|GET	idor-read	GET	/api/processplatform/service/processing/readcompleted/{id}	x_readcompleted	r6-readcompletedid	r6-readcompletedid	path		legacy	both	allow
 processplatform_service_processing|record_id|GET	idor-read	GET	/api/processplatform/service/processing/record/{id}	x_record	4ffe3dec-3687-4b60-9d67-dbff5536d417	4ffe3dec-3687-4b60-9d67-dbff5536d417	path		legacy	both	allow
 processplatform_service_processing|review_id|GET	idor-read	GET	/api/processplatform/service/processing/review/{id}	x_review	r6-reviewid	r6-reviewid	path		legacy	both	allow
 processplatform_service_processing|snap_id|GET	idor-read	GET	/api/processplatform/service/processing/snap/{id}	x_snap	r6-snapid	r6-snapid	path		legacy	both	allow
 processplatform_service_processing|task_id|GET	idor-read	GET	/api/processplatform/service/processing/task/{id}	x_task	task-admin-1	task-admin-1	path		legacy	both	allow
+processplatform_service_processing|task_id|GET|own	idor-read-own	GET	/api/processplatform/service/processing/task/{id}	x_task	rev-task-admin-1	rev-task-admin-1	path		legacy		allow
 processplatform_service_processing|task_v2_id|GET	idor-read	GET	/api/processplatform/service/processing/task/v2/{id}	x_task	task-admin-1	task-admin-1	path		legacy	both	allow
+processplatform_service_processing|task_v2_id|GET|own	idor-read-own	GET	/api/processplatform/service/processing/task/v2/{id}	x_task	rev-task-admin-1	rev-task-admin-1	path		legacy		allow
 processplatform_service_processing|taskcompleted_id|GET	idor-read	GET	/api/processplatform/service/processing/taskcompleted/{id}	x_workcompleted	r6-dataworkcompletedid	r6-dataworkcompletedid	path		legacy	both	allow
+processplatform_service_processing|taskcompleted_id|GET|own	idor-read-own	GET	/api/processplatform/service/processing/taskcompleted/{id}	x_workcompleted	rev-r6-dataworkcompletedid	rev-r6-dataworkcompletedid	path		legacy		allow
 program_center|application_get_by_id|GET	idor-read	GET	/api/program_center/application/{id}	x_applications	r6-applicationgetbyid	r6-applicationgetbyid	path		legacy	both	allow
 program_center|collect_code_mobile_mobile|GET	idor-read	GET	/api/program_center/collect/code/mobile/{id}	x_program_collect	r6-collect_delete	r6-collect_delete	path		legacy	both	allow
 program_center|deploy_id|GET	idor-read	GET	/api/program_center/deploy/{id}	x_program_deploy	r6-deployid	r6-deployid	path		legacy	both	allow
