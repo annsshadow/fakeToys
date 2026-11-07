@@ -8,11 +8,13 @@ import { annApi, attendanceApi, processApi } from '@/services'
 import { useSession } from '@/store/session'
 import { ensureAuthenticated } from '@/utils/auth-guard'
 import { loadList } from '@/utils/loadList'
+import { PENDING_PROBE_SIZE, pendingBadge } from './pendingCount'
 
 type Notice = { id?: string; title?: string; content?: string; createTime?: string }
 
 const session = useSession()
-const pendingCount = ref<number | null>(null)
+const pendingBadgeText = ref('–')
+const pendingOverflow = ref(false)
 const todayRecords = ref<number | null>(null)
 const loading = ref(false)
 const notices = ref<Notice[]>([])
@@ -26,11 +28,15 @@ function displayName(): string {
 async function loadPending() {
   loading.value = true
   try {
-    const resp = await processApi.pendingList(1, 50)
-    // 信封顶层 count 为本页条数（后端 legacy_success 语义）；取不到时退回长度。
-    pendingCount.value = resp.count ?? resp.data?.length ?? 0
+    // 多取一条做哨兵：后端 count 是本页条数，拿满 51 条才说明还有更多。
+    const resp = await processApi.pendingList(1, PENDING_PROBE_SIZE)
+    const total = resp.count ?? resp.data?.length ?? 0
+    const badge = pendingBadge(total)
+    pendingBadgeText.value = badge.text
+    pendingOverflow.value = badge.overflow
   } catch {
-    pendingCount.value = null
+    pendingBadgeText.value = '–'
+    pendingOverflow.value = false
   } finally {
     loading.value = false
   }
@@ -83,9 +89,9 @@ function goPage(url: string) {
 
     <view class="stat-card" @tap="goTab('/pages/process/process')">
       <view class="stat-num">
-        {{ pendingCount === null ? (loading ? '…' : '–') : pendingCount }}
+        {{ loading ? '…' : pendingBadgeText }}
       </view>
-      <view class="stat-label">待办审批</view>
+      <view class="stat-label">待办审批{{ pendingOverflow ? ' · 超过 50' : '' }}</view>
     </view>
 
     <view class="stat-card" @tap="goTab('/pages/attendance/attendance')">
