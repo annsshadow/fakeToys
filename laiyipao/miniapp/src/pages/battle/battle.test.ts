@@ -432,6 +432,73 @@ describe('battle.vue 战斗页', () => {
     expect(wrapper.text()).toContain('fallbackhash')
   })
 
+  it('R151 令牌行丢失：结算 404 → 重取一次凭证并重报，奖励只发一次', async () => {
+    mockApi.settleBattle
+      .mockRejectedValueOnce(
+        Object.assign(new Error('not found'), { status: 404, code: 'not_found' }),
+      )
+      .mockResolvedValueOnce({
+        win: true,
+        stars: 3,
+        score: 777,
+        loot: { coin: 12 },
+        clamped: false,
+      } as any)
+    mockApi.startBattle
+      .mockResolvedValueOnce(startBattleResp as any)
+      .mockResolvedValueOnce({ ...startBattleResp, token_id: 88 } as any)
+
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    const eng = FakeEngine.instances[0]!
+    eng.winAtStep = 1
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await flushPromises()
+
+    // 开局 + 重取 = 2 次；结算 404 + 重报 = 2 次
+    expect(mockApi.startBattle).toHaveBeenCalledTimes(2)
+    expect(mockApi.settleBattle).toHaveBeenCalledTimes(2)
+    // 重报必须带新 token，而不是沿用丢失的那个
+    expect(mockApi.settleBattle.mock.calls[1]![0]).toMatchObject({ token_id: 88 })
+    // 结果卡正常展示（这一局没有被判掉），奖励按服务端返回展示一次
+    expect(wrapper.text()).toContain('通关')
+    expect(wrapper.text()).toContain('金币 +12')
+    expect(wrapper.text()).not.toContain('not found')
+  })
+
+  it('R151 重试仍 404 → 不再重取（最多一次），落兜底战报', async () => {
+    mockApi.settleBattle.mockRejectedValue(
+      Object.assign(new Error('not found'), { status: 404, code: 'not_found' }),
+    )
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    FakeEngine.instances[0]!.winAtStep = 1
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await flushPromises()
+
+    expect(mockApi.startBattle).toHaveBeenCalledTimes(2)
+    expect(mockApi.settleBattle).toHaveBeenCalledTimes(2)
+    expect(wrapper.text()).toContain('not found')
+  })
+
+  it('R151 非 404 的结算失败不触发重取凭证（不能把真错误当成令牌丢失）', async () => {
+    mockApi.settleBattle.mockRejectedValue(
+      Object.assign(new Error('校验失败'), { status: 422, code: 'unprocessable' }),
+    )
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    FakeEngine.instances[0]!.winAtStep = 1
+    FakeRenderer.instances[0]!.loop!(TICK)
+    await flushPromises()
+
+    expect(mockApi.startBattle).toHaveBeenCalledTimes(1) // 只有开局
+    expect(mockApi.settleBattle).toHaveBeenCalledTimes(1)
+    expect(wrapper.text()).toContain('校验失败')
+  })
+
   it('选牌界面：phase=card_select 时渲染手牌，取卡 / 弃卡 / 跳过', async () => {
     const Battle = await loadPage()
     const { wrapper } = mountPage(Battle)
