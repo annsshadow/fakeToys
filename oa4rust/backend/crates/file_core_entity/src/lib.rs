@@ -414,7 +414,7 @@ pub async fn file_create(
     session: Option<Extension<shared::session::Session>>,
     Json(req): Json<FileCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let session = require_session(session)?;
     if req.name.trim().is_empty()
         || req.person.trim().is_empty()
         || req.reference_type.trim().is_empty()
@@ -422,6 +422,11 @@ pub async fn file_create(
         return Ok(Json(ActionResult::error(
             "name, person and reference_type are required",
         )));
+    }
+    // W-b8：与 folder_create 同口径——person 只能是会话本人，冒名落库 403。
+    let requested_person = req.person.trim();
+    if requested_person != session.person_unique {
+        return Err(AppError::Forbidden);
     }
 
     let active = file_file::ActiveModel {

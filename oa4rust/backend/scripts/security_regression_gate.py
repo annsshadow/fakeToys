@@ -30,6 +30,7 @@
     python scripts/security_regression_gate.py sabotage read-a-b2         # Rust②i：摘掉分片 A 第二批 cms 读门（6 条）
     python scripts/security_regression_gate.py sabotage read-a-b3         # Rust②i2：摘掉分片 A 第三批 cms appinfo/categoryinfo/commend 读门（6 条）
     python scripts/security_regression_gate.py sabotage write-idor-w3     # Rust②i：摘掉 office/bbs/mind 写侧冒名 403（7 条）
+    python scripts/security_regression_gate.py sabotage w8-unverified      # Rust②n：摘掉 W-b8 回收站读归属与 bbs/mind/file 冒名 403（5 条）
     python scripts/security_regression_gate.py sabotage go-limit0   # Go①：扣款乘 2
     python scripts/security_regression_gate.py sabotage go-idor-rev # Go②：摘掉预设删除归属
     python scripts/security_regression_gate.py sabotage go-empty-list    # Go③：伪装成已修（列表恒空）
@@ -721,6 +722,38 @@ FOLDER_CREATE_GATE_PATCH = "if { let _ = (&req.person, &session); false } {"
 FOLDER_CREATE_RE = re.compile(r"let person = session\.person_unique\.clone\(\);")
 FOLDER_CREATE_PATCH = "let person = req.person.clone();"
 
+# 写 IDOR 第 W-b8 批：未认领的 5 条 UNVERIFIED——回收站单条读归属，以及
+# bbs create_topic / mind create_mind+create_folder / file file_create 的冒名 403。
+BBS_CONTROL = BACKEND / "crates/bbs_assemble_control/src/lib.rs"
+MIND_ASSEMBLE = BACKEND / "crates/mind/src/lib.rs"
+W8_EXPECTS = [
+    "file_assemble_control|recycle_id|GET",
+    "t1|bbs|create_topic",
+    "t1|mind|create_mind",
+    "t1|mind|create_folder",
+    "t2|file|file_create",
+]
+W8_RECYCLE_GATE_RE = re.compile(
+    r"shared::middleware::require_owner\(&pool, &sess, &recycle_owner\)\.await\?;"
+)
+W8_RECYCLE_GATE_PATCH = "let _ = (&pool, &sess, &recycle_owner);"
+W8_BBS_AUTHOR_GATE_RE = re.compile(
+    r"if author_id != creator[\s\S]*?return Err\(AppError::Forbidden\);\s*\}"
+)
+W8_BBS_AUTHOR_GATE_PATCH = (
+    "if { let _ = (&author_id, &creator, &pool, &sess); false } "
+    "{ return Err(AppError::Forbidden); }"
+)
+W8_MIND_UNIT_GATE_RE = re.compile(
+    r"if !requested_unit\.is_empty\(\)[\s\S]*?return Err\(AppError::Forbidden\);\s*\}"
+)
+W8_MIND_UNIT_GATE_PATCH = (
+    "if { let _ = (&requested_unit, &creator_unit, &pool, &sess); false } "
+    "{ return Err(AppError::Forbidden); }"
+)
+W8_FILE_PERSON_GATE_RE = re.compile(r"if requested_person != session\.person_unique \{")
+W8_FILE_PERSON_GATE_PATCH = "if { let _ = (&requested_person, &session); false } {"
+
 # 写 IDOR 第 W-b2 批：general_core 的 file/invoice 读面归属谓词 + 创建面冒名拒绝。
 # 读面把 `creator = $2` 改成 `TRUE OR creator = $2`（保留 $2 绑定，避免 500 假阳性）；
 # 写面摘掉非管理员 403 分支，让冒名创建落库 → 逐条 LEAK。
@@ -1161,6 +1194,29 @@ def sabotage(kind: str) -> int:
             W3_EXPECTS,
             require_leak=True,
         )
+    elif kind == "w8-unverified":
+        return sabotage_many(
+            "摘掉 W-b8 回收站读归属与 bbs/mind/file 冒名 403（5 条应逐条 LEAK）",
+            [
+                (FILE_CONTROL, W8_RECYCLE_GATE_RE, W8_RECYCLE_GATE_PATCH, "recycle_owner"),
+                (BBS_CONTROL, W8_BBS_AUTHOR_GATE_RE, W8_BBS_AUTHOR_GATE_PATCH, "bbs_author"),
+                (MIND_ASSEMBLE, W8_MIND_UNIT_GATE_RE, W8_MIND_UNIT_GATE_PATCH, "mind_unit"),
+                (
+                    MIND_ASSEMBLE,
+                    W8_MIND_UNIT_GATE_RE,
+                    W8_MIND_UNIT_GATE_PATCH,
+                    "mind_unit_2",
+                ),
+                (
+                    FILE_CORE_ENTITY,
+                    W8_FILE_PERSON_GATE_RE,
+                    W8_FILE_PERSON_GATE_PATCH,
+                    "file_person",
+                ),
+            ],
+            W8_EXPECTS,
+            require_leak=True,
+        )
     else:
         raise SystemExit(
             f"未知破坏实验: {kind}（可选 ownership / correct / general / organization / "
@@ -1169,7 +1225,7 @@ def sabotage(kind: str) -> int:
             "program_center / hotpic_mind / read_b / read-a-b1 / "
             "write-idor-b5 / write-idor-b6 / write-idor-b7 / "
             "write-idor-w1 / write-idor-w2 / write-idor-w3 / write-idor-w4 / write-idor-w5 / "
-            "write-idor-w6 / write-idor-w7）"
+            "write-idor-w6 / write-idor-w7 / w8-unverified）"
         )
 
     print(f"== 破坏实验：{title}")
@@ -1217,7 +1273,7 @@ def main() -> int:
                   "<ownership|correct|general|organization|program_center|hotpic_mind|read_b|"
                   "read-a-b1|write-idor-b5|write-idor-b6|write-idor-b7|"
                   "write-idor-w1|write-idor-w2|write-idor-w3|write-idor-w4|write-idor-w5|"
-                  "rust-drift-to-leak|rust-swallow-write|"
+                  "w8-unverified|rust-drift-to-leak|rust-swallow-write|"
                   "go-limit0|go-idor-rev|go-empty-list|go-swallow-write|"
                   "go-dead-write|go-page2|go-drift-to-leak>")
             return 2

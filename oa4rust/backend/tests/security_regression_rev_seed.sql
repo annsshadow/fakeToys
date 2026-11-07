@@ -2,7 +2,7 @@
 -- 无 gate-victim 归属的行不生成（对应用例降级为 fwd-only）。
 
 DELETE FROM "file_file" WHERE "id" = 'rev-42f38d8c-5ef8-432c-a0c8-c8596c442e7f';
-INSERT INTO "file_file" ("id","name","person") VALUES ('rev-42f38d8c-5ef8-432c-a0c8-c8596c442e7f','r6seed','audit-user');
+INSERT INTO "file_file" ("id","name","person","deleted_at") VALUES ('rev-42f38d8c-5ef8-432c-a0c8-c8596c442e7f','r6seed','audit-user',NOW());
 DELETE FROM "file_folder" WHERE "id" = 'rev-r6-folder_delete';
 INSERT INTO "file_folder" ("id","name","person") VALUES ('rev-r6-folder_delete','r6seed','audit-user');
 DELETE FROM "mind_base_info" WHERE "id" = 'rev-r6-getmindwithid';
