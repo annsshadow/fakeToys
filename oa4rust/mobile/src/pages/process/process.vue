@@ -6,6 +6,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import { processApi } from '@/services'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import { createLatestGate } from '@/utils/latest'
 import { describeLoadError } from '@/utils/loadList'
 import { describeProcessError, loadProcessPage, mergeProcessRows } from './processList'
 
@@ -23,6 +24,8 @@ const loadError = ref('')
 const loading = ref(false)
 const loadingMore = ref(false)
 const busy = ref(false)
+// 页签/加载更多的在途请求只认最新一次，见 utils/latest。
+const pageGate = createLatestGate()
 
 // 详情浮层：附件 / 流转记录 / 工作日志（按 work 维度拉取真实后端能力）
 const detailOpen = ref(false)
@@ -117,33 +120,43 @@ function fetchPage(tab: TabKey, targetPage: number, size: number) {
 }
 
 async function loadFirst() {
+  // 页签切得快时旧请求会晚到：只认最新一次，过期响应不写 rows/hasMore。
+  const token = pageGate.begin()
+  const targetTab = active.value
   loading.value = true
   loadError.value = ''
   try {
-    const result = await loadProcessPage<Record<string, unknown>>(fetchPage, active.value, 1)
+    const result = await loadProcessPage<Record<string, unknown>>(fetchPage, targetTab, 1)
+    if (!pageGate.isLatest(token)) return
     rows.value = mergeProcessRows<Record<string, unknown>>([], result.rows)
     page.value = result.page
     hasMore.value = result.hasMore
   } catch (e) {
+    if (!pageGate.isLatest(token)) return
     // 失败与「真的没有待办」必须可区分，不能静默清空成空列表。
     rows.value = []
     hasMore.value = false
     loadError.value = describeProcessError('流程加载失败', e)
   } finally {
-    loading.value = false
+    if (pageGate.isLatest(token)) loading.value = false
   }
 }
 
 async function loadMore() {
   if (loading.value || loadingMore.value || !hasMore.value) return
+  const token = pageGate.begin()
+  const targetTab = active.value
   loadingMore.value = true
   loadError.value = ''
   try {
-    const result = await loadProcessPage<Record<string, unknown>>(fetchPage, active.value, page.value + 1)
+    const result = await loadProcessPage<Record<string, unknown>>(fetchPage, targetTab, page.value + 1)
+    // 加载期间切了页签：这一页属于旧页签，丢弃，避免把旧数据并进新列表。
+    if (!pageGate.isLatest(token) || active.value !== targetTab) return
     rows.value = mergeProcessRows<Record<string, unknown>>(rows.value, result.rows)
     page.value = result.page
     hasMore.value = result.hasMore
   } catch (e) {
+    if (!pageGate.isLatest(token) || active.value !== targetTab) return
     // 加载更多失败保留已加载的行，只提示错误。
     loadError.value = describeProcessError('更多流程加载失败', e)
   } finally {

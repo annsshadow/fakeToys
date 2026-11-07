@@ -2,7 +2,7 @@
 -- 受害者统一置 person-admin；攻击者为 audit-user。先删后插，可复跑。
 
 DELETE FROM "file_file" WHERE "id" = '42f38d8c-5ef8-432c-a0c8-c8596c442e7f';
-INSERT INTO "file_file" ("id","name","person") VALUES ('42f38d8c-5ef8-432c-a0c8-c8596c442e7f','r6seed','gate-victim');
+INSERT INTO "file_file" ("id","name","person","deleted_at") VALUES ('42f38d8c-5ef8-432c-a0c8-c8596c442e7f','r6seed','gate-victim',NOW());
 DELETE FROM "file_folder" WHERE "id" = 'r6-folder_delete';
 INSERT INTO "file_folder" ("id","name","person") VALUES ('r6-folder_delete','r6seed','gate-victim');
 DELETE FROM "mind_base_info" WHERE "id" = 'r6-getmindwithid';
@@ -54,7 +54,7 @@ INSERT INTO "cal_event" ("id","calendar_id","title","start_time","end_time","all
 DELETE FROM "x_cms_appinfo" WHERE "id" = 'r6-appinfo_appId_icon_s';
 INSERT INTO "x_cms_appinfo" ("id","app_type","creator") VALUES ('r6-appinfo_appId_icon_s','r6seed','gate-victim');
 DELETE FROM "x_cms_article" WHERE "id" = 'r6-article_get';
-INSERT INTO "x_cms_article" ("id","category_id","title","author_id") VALUES ('r6-article_get','r6seed','r6seed','gate-victim');
+INSERT INTO "x_cms_article" ("id","category_id","title","author_id","status") VALUES ('r6-article_get','r6seed','r6seed','gate-victim','draft');
 DELETE FROM "x_cms_categoryinfo" WHERE "id" = 'r6-categoryinfo_id_exec';
 INSERT INTO "x_cms_categoryinfo" ("id","name","creator") VALUES ('r6-categoryinfo_id_exec','r6seed','gate-victim');
 DELETE FROM "x_cms_commend" WHERE "id" = 'r6-commend_id';

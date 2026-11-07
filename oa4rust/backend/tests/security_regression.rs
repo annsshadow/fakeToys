@@ -419,6 +419,15 @@ mod security_regression {
             m.insert(k.to_string(), Value::String("GATE-HACK".into()));
         }
         m.insert("date".to_string(), Value::String("2026-01-01".into()));
+        // W-b8：用例显式给了 body 时，把其中的键合并进生成的冒名 body
+        // （如 file_create 必须补 reference_type 才能走到落库分支）。
+        if !c.body.is_empty() {
+            if let Ok(Value::Object(extra)) = serde_json::from_str::<Value>(&c.body) {
+                for (k, v) in extra {
+                    m.insert(k, v);
+                }
+            }
+        }
         Value::Object(m).to_string()
     }
 

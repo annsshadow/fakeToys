@@ -224,20 +224,20 @@ t1|attendancedetail_mobile_my	spoof-read	POST	/api/attendance/assemble/control/a
 t1|attendancedetail_mobile_recive	spoof-write	POST	/api/attendance/assemble/control/attendancedetail/mobile/recive	x_attendance_detail	person-admin		body	person_id	T1	both	n/a
 t1|attendance_core_entity|record_create	spoof-write	POST	/api/attendance/core/entity/record/create	x_attendance_record	person-admin		body	user_id	T1	both	n/a
 t1|attendance_core_entity|record_update	idor-write	POST	/api/attendance/core/entity/record/{id}/update	x_attendance_record	t1-record	t1-record	path		T1	both	allow
-t1|bbs|create_topic	spoof-write	POST	/api/bbs/assemble/control/topic/create	x_bbs_topic	person-admin		body	author_id	T1	both	n/a
+t1|bbs|create_topic	spoof-write	POST	/api/bbs/assemble/control/topic/create	x_bbs_topic	person-admin		body	authorId	T1	both	n/a
 t1|bbs|create_reply	spoof-write	POST	/api/bbs/core/entity/reply	x_bbs_reply	person-admin		body	creator	T1	both	n/a
 t1|bbs|create_subject	spoof-write	POST	/api/bbs/core/entity/subject	bbs_subject_info	person-admin		body	author_id	T1	both	n/a
 t1|general|invoice_update	idor-write	POST	/api/general/invoice/update/{id}	x_general_invoice	t1-invoice	t1-invoice	path		T1	both	allow
-t1|mind|create_mind	spoof-write	POST	/api/mind/mind	x_mind_base_info	unit-gate-v		body	creator_unit	T1	both	n/a
+t1|mind|create_mind	spoof-write	POST	/api/mind/mind	mind_base_info	unit-gate-v		body	creator_unit	T1	both	n/a
 t1|mind_core|create_mind	spoof-write	POST	/api/mind/core/entity/mind	x_mind_base_info	person-admin		body	creator	T1	both	n/a
-t1|mind|create_folder	spoof-write	POST	/api/mind/folder	x_mind_folder_info	unit-gate-v		body	creator_unit	T1	both	n/a
+t1|mind|create_folder	spoof-write	POST	/api/mind/folder	mind_folder_info	unit-gate-v		body	creator_unit	T1	both	n/a
 t1|mind_core|create_folder	spoof-write	POST	/api/mind/core/entity/folder	x_mind_folder_info	person-admin		body	creator	T1	both	n/a
 t1|oauth|generate_code	spoof-write	POST	/api/organization/assemble/authentication/oauth/generate/code	x_org_oauth_code	person-admin		body	person_id	T1	both	n/a
 t2|attendance|v2_groupschedule_list_filter	spoof-read	POST	/api/attendance/assemble/control/v2/groupschedule/list/filter		r5-ad-admin	SCHED-VICTIM	query	user_id	T2	both	n/a
 t2|auth|code	spoof-read	POST	/api/authentication/code		person-admin	person-admin	body	person_id	T2	both	n/a
 t2|query|view_create	spoof-write	POST	/api/query/view/create	query_view	person-admin		body	creator_id	T2	both	n/a
 t2|file|folder_create	spoof-write	POST	/api/file/core/entity/folder	file_folder	person-admin		body	person	T2	both	n/a
-t2|file|file_create	spoof-write	POST	/api/file/core/entity/file	file_file	person-admin		body	person	T2	both	n/a
+t2|file|file_create	spoof-write	POST	/api/file/core/entity/file	file_file	person-admin		body	person	T2	both	n/a		{"reference_type":"GATE-HACK"}
 t2|general_core|file_create	spoof-write	POST	/api/general/file/create	x_general_file	person-admin		body	creator	T2	both	n/a
 t2|general_assemble|invoice_create	spoof-write	POST	/api/general/assemble/control/invoice/create	x_general_assemble_invoice	person-admin		body	creator	T2	both	n/a
 t2|general_core|invoice_create	spoof-write	POST	/api/general/invoice/create	x_general_invoice	person-admin		body	creator	T2	both	n/a

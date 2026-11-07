@@ -2,7 +2,7 @@
 -- 无 gate-victim 归属的行不生成（对应用例降级为 fwd-only）。
 
 DELETE FROM "file_file" WHERE "id" = 'rev-42f38d8c-5ef8-432c-a0c8-c8596c442e7f';
-INSERT INTO "file_file" ("id","name","person") VALUES ('rev-42f38d8c-5ef8-432c-a0c8-c8596c442e7f','r6seed','audit-user');
+INSERT INTO "file_file" ("id","name","person","deleted_at") VALUES ('rev-42f38d8c-5ef8-432c-a0c8-c8596c442e7f','r6seed','audit-user',NOW());
 DELETE FROM "file_folder" WHERE "id" = 'rev-r6-folder_delete';
 INSERT INTO "file_folder" ("id","name","person") VALUES ('rev-r6-folder_delete','r6seed','audit-user');
 DELETE FROM "mind_base_info" WHERE "id" = 'rev-r6-getmindwithid';
@@ -54,7 +54,7 @@ INSERT INTO "cal_event" ("id","calendar_id","title","start_time","end_time","all
 DELETE FROM "x_cms_appinfo" WHERE "id" = 'rev-r6-appinfo_appId_icon_s';
 INSERT INTO "x_cms_appinfo" ("id","app_type","creator") VALUES ('rev-r6-appinfo_appId_icon_s','r6seed','audit-user');
 DELETE FROM "x_cms_article" WHERE "id" = 'rev-r6-article_get';
-INSERT INTO "x_cms_article" ("id","category_id","title","author_id") VALUES ('rev-r6-article_get','r6seed','r6seed','audit-user');
+INSERT INTO "x_cms_article" ("id","category_id","title","author_id","status") VALUES ('rev-r6-article_get','r6seed','r6seed','audit-user','draft');
 DELETE FROM "x_cms_categoryinfo" WHERE "id" = 'rev-r6-categoryinfo_id_exec';
 INSERT INTO "x_cms_categoryinfo" ("id","name","creator") VALUES ('rev-r6-categoryinfo_id_exec','r6seed','audit-user');
 DELETE FROM "x_cms_commend" WHERE "id" = 'rev-r6-commend_id';

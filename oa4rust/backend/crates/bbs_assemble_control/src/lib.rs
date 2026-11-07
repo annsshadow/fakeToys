@@ -456,6 +456,10 @@ pub async fn create_topic(
     // x_bbs_topic.author_id/section_id 为 NOT NULL（无默认）：author 缺省回退 creator，
     // section 缺省回退 forum_id（版块维度），杜绝 500。
     let author_id = req.author_id.clone().unwrap_or_else(|| creator.clone());
+    // W-b8：非管理员冒名发帖（author_id 与会话人不一致）→ 403，不再静默改写归属。
+    if author_id != creator && !is_admin(&pool, &sess.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let section_id = req
         .section_id
         .clone()

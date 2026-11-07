@@ -408,6 +408,19 @@ pub async fn create_mind(
     let creator = sess.person_unique.clone();
     // 单位同样取会话派生，客户端 creatorUnit 可伪造。
     let creator_unit = session_unit(&client, &sess.person_unique).await?;
+    // W-b8：请求体声明的 creatorUnit/creator_unit 与会话派生值不一致且非管理员 → 403，
+    // 不再静默改写成会话单位（否则冒名归属会被当成正常写入）。
+    let requested_unit = payload
+        .get("creatorUnit")
+        .or_else(|| payload.get("creator_unit"))
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    if !requested_unit.is_empty()
+        && requested_unit != creator_unit
+        && !shared::middleware::is_admin(&pool, &sess.person_unique).await
+    {
+        return Err(AppError::Forbidden);
+    }
     let shared = payload
         .get("shared")
         .and_then(|v| v.as_bool())
@@ -569,6 +582,19 @@ pub async fn create_folder(
     let creator = sess.person_unique.clone();
     // 单位同样取会话派生，客户端 creatorUnit 可伪造。
     let creator_unit = session_unit(&client, &sess.person_unique).await?;
+    // W-b8：请求体声明的 creatorUnit/creator_unit 与会话派生值不一致且非管理员 → 403，
+    // 不再静默改写成会话单位（否则冒名归属会被当成正常写入）。
+    let requested_unit = payload
+        .get("creatorUnit")
+        .or_else(|| payload.get("creator_unit"))
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    if !requested_unit.is_empty()
+        && requested_unit != creator_unit
+        && !shared::middleware::is_admin(&pool, &sess.person_unique).await
+    {
+        return Err(AppError::Forbidden);
+    }
 
     client
         .execute(

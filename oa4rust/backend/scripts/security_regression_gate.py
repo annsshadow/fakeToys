@@ -29,7 +29,10 @@
     python scripts/security_regression_gate.py sabotage read-a-b1         # Rust②h：摘掉分片 A 第一批 cms 读门（6 条）
     python scripts/security_regression_gate.py sabotage read-a-b2         # Rust②i：摘掉分片 A 第二批 cms 读门（6 条）
     python scripts/security_regression_gate.py sabotage read-a-b3         # Rust②i2：摘掉分片 A 第三批 cms appinfo/categoryinfo/commend 读门（6 条）
+    python scripts/security_regression_gate.py sabotage read-a-b4         # Rust②n：摘掉分片 A 第四批 article/content/portal 读门（6 条）
+    python scripts/security_regression_gate.py sabotage read-a-b5         # Rust②n2：摘掉分片 A 第五批 portal/surface/page/ai 读门（6 条）
     python scripts/security_regression_gate.py sabotage write-idor-w3     # Rust②i：摘掉 office/bbs/mind 写侧冒名 403（7 条）
+    python scripts/security_regression_gate.py sabotage w8-unverified      # Rust②n：摘掉 W-b8 回收站读归属与 bbs/mind/file 冒名 403（5 条）
     python scripts/security_regression_gate.py sabotage go-limit0   # Go①：扣款乘 2
     python scripts/security_regression_gate.py sabotage go-idor-rev # Go②：摘掉预设删除归属
     python scripts/security_regression_gate.py sabotage go-empty-list    # Go③：伪装成已修（列表恒空）
@@ -721,6 +724,38 @@ FOLDER_CREATE_GATE_PATCH = "if { let _ = (&req.person, &session); false } {"
 FOLDER_CREATE_RE = re.compile(r"let person = session\.person_unique\.clone\(\);")
 FOLDER_CREATE_PATCH = "let person = req.person.clone();"
 
+# 写 IDOR 第 W-b8 批：未认领的 5 条 UNVERIFIED——回收站单条读归属，以及
+# bbs create_topic / mind create_mind+create_folder / file file_create 的冒名 403。
+BBS_CONTROL = BACKEND / "crates/bbs_assemble_control/src/lib.rs"
+MIND_ASSEMBLE = BACKEND / "crates/mind/src/lib.rs"
+W8_EXPECTS = [
+    "file_assemble_control|recycle_id|GET",
+    "t1|bbs|create_topic",
+    "t1|mind|create_mind",
+    "t1|mind|create_folder",
+    "t2|file|file_create",
+]
+W8_RECYCLE_GATE_RE = re.compile(
+    r"shared::middleware::require_owner\(&pool, &sess, &recycle_owner\)\.await\?;"
+)
+W8_RECYCLE_GATE_PATCH = "let _ = (&pool, &sess, &recycle_owner);"
+W8_BBS_AUTHOR_GATE_RE = re.compile(
+    r"if author_id != creator[\s\S]*?return Err\(AppError::Forbidden\);\s*\}"
+)
+W8_BBS_AUTHOR_GATE_PATCH = (
+    "if { let _ = (&author_id, &creator, &pool, &sess); false } "
+    "{ return Err(AppError::Forbidden); }"
+)
+W8_MIND_UNIT_GATE_RE = re.compile(
+    r"if !requested_unit\.is_empty\(\)[\s\S]*?return Err\(AppError::Forbidden\);\s*\}"
+)
+W8_MIND_UNIT_GATE_PATCH = (
+    "if { let _ = (&requested_unit, &creator_unit, &pool, &sess); false } "
+    "{ return Err(AppError::Forbidden); }"
+)
+W8_FILE_PERSON_GATE_RE = re.compile(r"if requested_person != session\.person_unique \{")
+W8_FILE_PERSON_GATE_PATCH = "if { let _ = (&requested_person, &session); false } {"
+
 # 写 IDOR 第 W-b2 批：general_core 的 file/invoice 读面归属谓词 + 创建面冒名拒绝。
 # 读面把 `creator = $2` 改成 `TRUE OR creator = $2`（保留 $2 绑定，避免 500 假阳性）；
 # 写面摘掉非管理员 403 分支，让冒名创建落库 → 逐条 LEAK。
@@ -837,6 +872,71 @@ A3_EXPECTS = [
     "cms_assemble_control|categoryinfo_id|GET",
     "cms_assemble_control|categoryinfo_id_control|GET",
     "cms_assemble_control|commend_id|GET",
+]
+
+# 分片 A / A-b4：article/content 的 published+owner 门（常量整段替换）、
+# portal 家族四端点的 creator 门（与 A-b3 同款 `{owner_col}` 谓词）。
+# 恒真式同样保留 `$2`/`$3` 绑定，避免 deadpool 端点 bind 数不匹配 → 500 → 假阳性。
+CMS_CORE_ENTITY = BACKEND / "crates/cms_core_entity/src/lib.rs"
+CMS_CORE_EXPRESS = BACKEND / "crates/cms_core_express/src/lib.rs"
+PORTAL = BACKEND / "crates/portal/src/lib.rs"
+PORTAL_DESIGNER = BACKEND / "crates/portal_assemble_designer/src/lib.rs"
+PORTAL_SURFACE = BACKEND / "crates/portal_assemble_surface/src/lib.rs"
+CMS_ARTICLE_READ_GATE_RE = re.compile(
+    r'(const ARTICLE_READ_ALLOWED_SQL: &str = ").*?";', re.S
+)
+CMS_ARTICLE_READ_GATE_PATCH = (
+    r'\1SELECT 1 AS hit FROM x_cms_article WHERE id = $1 '
+    r'AND deleted_at IS NULL '
+    r'AND (($2::text IS NOT NULL OR $2::text IS NULL) OR $3::boolean)";'
+)
+CMS_CONTENT_READ_GATE_RE = re.compile(
+    r'(const CONTENT_READ_ALLOWED_SQL: &str = ").*?";', re.S
+)
+CMS_CONTENT_READ_GATE_PATCH = (
+    r'\1SELECT 1 AS hit FROM x_cms_content WHERE id = $1 '
+    r'AND deleted_at IS NULL '
+    r'AND (($2::text IS NOT NULL OR $2::text IS NULL) OR $3::boolean)";'
+)
+PORTAL_OWNED_READ_GATE_RE = re.compile(
+    r'AND \(\{owner_col\} = \$2::text OR \$3::boolean\)'
+)
+PORTAL_OWNED_READ_GATE_PATCH = (
+    "AND ({owner_col} IS NOT NULL OR {owner_col} IS NULL "
+    "OR $2::text IS NOT NULL OR $2::text IS NULL OR $3::boolean)"
+)
+A4_EXPECTS = [
+    "cms_core_entity|article_get|GET",
+    "cms_core_express|content_detail|GET",
+    "portal|portal_id|GET",
+    "portal_assemble_designer|portal_id_icon|GET",
+    "portal_assemble_designer|portal_id_permission|GET",
+    "portal_assemble_surface|get_surface|GET",
+]
+
+# 分片 A / A-b5：surface 余下四端点（x_portal 两 + x_portal_surface 两）、
+# portal_core_entity `page_get`（x_portal_page）、ai_assemble_control mcp 配置。
+# 恒真补丁保留 `$2`/`$3` 绑定，避免 bind 数不匹配 → 500 → 假阳性。
+PORTAL_CORE_ENTITY = BACKEND / "crates/portal_core_entity/src/lib.rs"
+AI_ASSEMBLE_CONTROL = BACKEND / "crates/ai_assemble_control/src/lib.rs"
+A5_OWNED_READ_GATE_RE = re.compile(
+    r'AND \(\{owner_col\} = \$2::text OR \$3::boolean\)'
+)
+A5_OWNED_READ_GATE_PATCH = (
+    "AND ({owner_col} IS NOT NULL OR {owner_col} IS NULL "
+    "OR $2::text IS NOT NULL OR $2::text IS NULL OR $3::boolean)"
+)
+PORTAL_PAGE_READ_GATE_RE = re.compile(r'AND \(creator = \$2 OR \$3::boolean\)')
+PORTAL_PAGE_READ_GATE_PATCH = (
+    "AND (($2 IS NOT NULL OR $2 IS NULL) OR $3::boolean)"
+)
+A5_EXPECTS = [
+    "ai_assemble_control|config_get_mcp_flag|GET",
+    "portal_assemble_surface|portal_id_icon|GET",
+    "portal_assemble_surface|portal_id_icon_base64|GET",
+    "portal_assemble_surface|preview_surface|GET",
+    "portal_assemble_surface|surface_preview|GET",
+    "portal_core_entity|page_get|GET",
 ]
 
 
@@ -1135,6 +1235,30 @@ def sabotage(kind: str) -> int:
             A3_EXPECTS,
             require_leak=True,
         )
+    elif kind == "read-a-b4":
+        return sabotage_many(
+            "摘掉分片 A 第四批 article/content/portal 读归属谓词（6 条应逐条 LEAK）",
+            [
+                (CMS_CORE_ENTITY, CMS_ARTICLE_READ_GATE_RE, CMS_ARTICLE_READ_GATE_PATCH, "article_read"),
+                (CMS_CORE_EXPRESS, CMS_CONTENT_READ_GATE_RE, CMS_CONTENT_READ_GATE_PATCH, "content_read"),
+                (PORTAL, PORTAL_OWNED_READ_GATE_RE, PORTAL_OWNED_READ_GATE_PATCH, "portal_read"),
+                (PORTAL_DESIGNER, PORTAL_OWNED_READ_GATE_RE, PORTAL_OWNED_READ_GATE_PATCH, "designer_read"),
+                (PORTAL_SURFACE, PORTAL_OWNED_READ_GATE_RE, PORTAL_OWNED_READ_GATE_PATCH, "surface_read"),
+            ],
+            A4_EXPECTS,
+            require_leak=True,
+        )
+    elif kind == "read-a-b5":
+        return sabotage_many(
+            "摘掉分片 A 第五批 portal/page/ai 读归属谓词（6 条应逐条 LEAK）",
+            [
+                (AI_ASSEMBLE_CONTROL, A5_OWNED_READ_GATE_RE, A5_OWNED_READ_GATE_PATCH, "ai_owned_read"),
+                (PORTAL_CORE_ENTITY, PORTAL_PAGE_READ_GATE_RE, PORTAL_PAGE_READ_GATE_PATCH, "portal_page_read"),
+                (PORTAL_SURFACE, A5_OWNED_READ_GATE_RE, A5_OWNED_READ_GATE_PATCH, "surface_owned_read"),
+            ],
+            A5_EXPECTS,
+            require_leak=True,
+        )
     elif kind == "write-idor-w1":
         return sabotage_many(
             "摘掉 W-b1 五个读端点的 owner_gate（5 条应逐条 LEAK）",
@@ -1161,15 +1285,36 @@ def sabotage(kind: str) -> int:
             W3_EXPECTS,
             require_leak=True,
         )
+    elif kind == "w8-unverified":
+        return sabotage_many(
+            "摘掉 W-b8 回收站读归属与 bbs/mind/file 冒名 403（5 条应逐条 LEAK）",
+            [
+                (FILE_CONTROL, W8_RECYCLE_GATE_RE, W8_RECYCLE_GATE_PATCH, "recycle_owner"),
+                (BBS_CONTROL, W8_BBS_AUTHOR_GATE_RE, W8_BBS_AUTHOR_GATE_PATCH, "bbs_author"),
+                (MIND_ASSEMBLE, W8_MIND_UNIT_GATE_RE, W8_MIND_UNIT_GATE_PATCH, "mind_unit"),
+                (
+                    MIND_ASSEMBLE,
+                    W8_MIND_UNIT_GATE_RE,
+                    W8_MIND_UNIT_GATE_PATCH,
+                    "mind_unit_2",
+                ),
+                (
+                    FILE_CORE_ENTITY,
+                    W8_FILE_PERSON_GATE_RE,
+                    W8_FILE_PERSON_GATE_PATCH,
+                    "file_person",
+                ),
+            ],
+            W8_EXPECTS,
+            require_leak=True,
+        )
     else:
         raise SystemExit(
             f"未知破坏实验: {kind}（可选 ownership / correct / general / organization / "
             "program_center / hotpic_mind / read_b / read-a-b1 / read-a-b2 / read-a-b3 / "
-            "write-idor-b5 / write-idor-b6 / write-idor-b7 / write-idor-w1）"
-            "program_center / hotpic_mind / read_b / read-a-b1 / "
-            "write-idor-b5 / write-idor-b6 / write-idor-b7 / "
+            "read-a-b4 / read-a-b5 / write-idor-b5 / write-idor-b6 / write-idor-b7 / "
             "write-idor-w1 / write-idor-w2 / write-idor-w3 / write-idor-w4 / write-idor-w5 / "
-            "write-idor-w6 / write-idor-w7）"
+            "write-idor-w6 / write-idor-w7 / w8-unverified）"
         )
 
     print(f"== 破坏实验：{title}")
@@ -1215,9 +1360,10 @@ def main() -> int:
         if len(sys.argv) < 3:
             print("用法: security_regression_gate.py sabotage "
                   "<ownership|correct|general|organization|program_center|hotpic_mind|read_b|"
-                  "read-a-b1|write-idor-b5|write-idor-b6|write-idor-b7|"
+                  "read-a-b1|read-a-b2|read-a-b3|read-a-b4|read-a-b5|"
+                  "write-idor-b5|write-idor-b6|write-idor-b7|"
                   "write-idor-w1|write-idor-w2|write-idor-w3|write-idor-w4|write-idor-w5|"
-                  "rust-drift-to-leak|rust-swallow-write|"
+                  "w8-unverified|rust-drift-to-leak|rust-swallow-write|"
                   "go-limit0|go-idor-rev|go-empty-list|go-swallow-write|"
                   "go-dead-write|go-page2|go-drift-to-leak>")
             return 2

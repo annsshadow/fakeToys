@@ -169,11 +169,78 @@ pub async fn page_list(
     ))))
 }
 
+/// 读门结果：区分「不存在」（保留原 not found 文案）与「存在但无权」（403）。
+enum ReadGate {
+    NotFound,
+    Forbidden,
+    Allowed,
+}
+
+fn opt_session(
+    session: &Option<Extension<shared::session::Session>>,
+) -> Option<&shared::session::Session> {
+    session.as_ref().map(|e| &e.0)
+}
+
+/// 门户页面读门：`x_portal_page.creator` 本人或管理员（E23）。
+/// 本 crate 无 deadpool `Pool` 注入，沿用 sea-orm 连接判 admin。
+const PORTAL_PAGE_READ_ALLOWED_SQL: &str = "SELECT 1 AS hit FROM x_portal_page \
+     WHERE id = $1 AND deleted_at IS NULL \
+     AND (creator = $2 OR $3::boolean)";
+const PORTAL_PAGE_READ_EXISTS_SQL: &str =
+    "SELECT 1 AS hit FROM x_portal_page WHERE id = $1 AND deleted_at IS NULL";
+
+async fn portal_page_read_gate(
+    db: &DatabaseConnection,
+    id: &str,
+    session: Option<&shared::session::Session>,
+) -> Result<ReadGate, AppError> {
+    let person = session.map(|s| s.person_unique.clone());
+    let admin = match session {
+        Some(s) => require_admin(db, &s.person_unique).await.is_ok(),
+        None => false,
+    };
+    let hit = db
+        .query_one(Statement::from_sql_and_values(
+            sea_orm::DbBackend::Postgres,
+            PORTAL_PAGE_READ_ALLOWED_SQL,
+            vec![
+                sea_orm::Value::String(Some(Box::new(id.to_string()))),
+                sea_orm::Value::String(person.map(Box::new)),
+                sea_orm::Value::Bool(Some(admin)),
+            ],
+        ))
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    if hit.is_some() {
+        return Ok(ReadGate::Allowed);
+    }
+    let exists = db
+        .query_one(Statement::from_sql_and_values(
+            sea_orm::DbBackend::Postgres,
+            PORTAL_PAGE_READ_EXISTS_SQL,
+            vec![sea_orm::Value::String(Some(Box::new(id.to_string())))],
+        ))
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    Ok(if exists.is_some() {
+        ReadGate::Forbidden
+    } else {
+        ReadGate::NotFound
+    })
+}
+
 #[allow(non_snake_case)]
 pub async fn page_get(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    match portal_page_read_gate(&db.0, &id, opt_session(&session)).await? {
+        ReadGate::NotFound => return Ok(Json(ActionResult::error("page not found"))),
+        ReadGate::Forbidden => return Err(AppError::Forbidden),
+        ReadGate::Allowed => {}
+    }
     let model = portal_page::Entity::find()
         .filter(portal_page::Column::Id.eq(&id))
         .filter(portal_page::Column::DeletedAt.is_null())
@@ -390,6 +457,8 @@ pub fn portal_core_entity_router(db: DatabaseConnection) -> Router {
         .layer(Extension(db))
 }
 
+#[cfg(test)]
+mod security_gate_tests_read_a_b5;
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
