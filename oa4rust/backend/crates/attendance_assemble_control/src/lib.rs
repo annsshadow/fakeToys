@@ -1024,14 +1024,19 @@ pub async fn attendanceappealInfo_workflow_sync(
 /// GET /api/attendance/assemble/control/attendanceappealInfo/{id}
 pub async fn attendanceappealInfo_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = require_session(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
-            "SELECT id, person_id, appeal_status, creator, create_time FROM x_attendance_appeal_info WHERE id = $1",
-            &[&id],
+            &format!(
+                "SELECT id, person_id, appeal_status, creator, create_time FROM x_attendance_appeal_info WHERE id = $1 AND {}",
+                owner_scope(&["person_id"], "$2")
+            ),
+            &[&id, &actor],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -1064,7 +1069,12 @@ pub async fn attendanceappealInfo_id(
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::success(Value::Null))),
+        None => {
+            if owned_read_row_exists(&client, "x_attendance_appeal_info", &id).await? {
+                return Err(AppError::Forbidden);
+            }
+            Ok(Json(ActionResult::success(Value::Null)))
+        }
     }
 }
 
@@ -1924,14 +1934,19 @@ pub async fn attendancedetail_mobile_recive(
 /// GET /api/attendance/assemble/control/attendancedetail/mobile/{id}
 pub async fn attendancedetail_mobile_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = require_session(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
-            "SELECT id, person_id, date, status FROM x_attendance_detail WHERE id = $1",
-            &[&id],
+            &format!(
+                "SELECT id, person_id, date, status FROM x_attendance_detail WHERE id = $1 AND {}",
+                owner_scope(&["person_id"], "$2")
+            ),
+            &[&id, &actor],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -1961,7 +1976,12 @@ pub async fn attendancedetail_mobile_id(
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("attendance detail not found"))),
+        None => {
+            if owned_read_row_exists(&client, "x_attendance_detail", &id).await? {
+                return Err(AppError::Forbidden);
+            }
+            Ok(Json(ActionResult::error("attendance detail not found")))
+        }
     }
 }
 
@@ -2032,14 +2052,19 @@ pub async fn attendancedetail_reciveSingle(
 /// GET /api/attendance/assemble/control/attendancedetail/{id}
 pub async fn attendancedetail_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = require_session(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
-            "SELECT id, person_id, date, status FROM x_attendance_detail WHERE id = $1",
-            &[&id],
+            &format!(
+                "SELECT id, person_id, date, status FROM x_attendance_detail WHERE id = $1 AND {}",
+                owner_scope(&["person_id"], "$2")
+            ),
+            &[&id, &actor],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -2069,7 +2094,12 @@ pub async fn attendancedetail_id(
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("attendance detail not found"))),
+        None => {
+            if owned_read_row_exists(&client, "x_attendance_detail", &id).await? {
+                return Err(AppError::Forbidden);
+            }
+            Ok(Json(ActionResult::error("attendance detail not found")))
+        }
     }
 }
 
@@ -2621,14 +2651,19 @@ pub async fn attendanceselfholiday_list_all(
 /// GET /api/attendance/assemble/control/attendanceselfholiday/{id}
 pub async fn attendanceselfholiday_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = require_session(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
-            "SELECT id, person_id, holiday_date, reason, creator, create_time FROM x_attendance_selfholiday WHERE id = $1",
-            &[&id],
+            &format!(
+                "SELECT id, person_id, holiday_date, reason, creator, create_time FROM x_attendance_selfholiday WHERE id = $1 AND {}",
+                owner_scope(&["person_id"], "$2")
+            ),
+            &[&id, &actor],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -2661,7 +2696,12 @@ pub async fn attendanceselfholiday_id(
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("self holiday not found"))),
+        None => {
+            if owned_read_row_exists(&client, "x_attendance_selfholiday", &id).await? {
+                return Err(AppError::Forbidden);
+            }
+            Ok(Json(ActionResult::error("self holiday not found")))
+        }
     }
 }
 
