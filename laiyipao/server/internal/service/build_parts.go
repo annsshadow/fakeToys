@@ -30,6 +30,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"sync"
 
 	"github.com/jackc/pgx/v5"
@@ -223,6 +224,10 @@ func skillsRowsToMaps(rows pgx.Rows) (map[string]any, []string, map[int]bool, er
 	for e := range elements {
 		list = append(list, e)
 	}
+	// 稳定顺序：elements 在语义上是集合，但这条列表会直接进 /me 与
+	// /battle/token 的 JSON。map 迭代顺序随机会让同一玩家的响应逐次抖动，
+	// 也会让 R148 的「串行 vs 批量」等价性守卫（逐字段比较）随机变红。
+	sort.Strings(list)
 	return skills, list, occupied, nil
 }
 
