@@ -36,6 +36,59 @@ async fn require_admin_opt(
     }
 }
 
+/// 读门结果：区分「不存在」（调用方保留原 not found 文案）与「存在但无权」（403）。
+enum ReadGate {
+    NotFound,
+    Forbidden,
+    Allowed,
+}
+
+/// 可选会话 → `Option<&Session>`，供「published 公开、草稿本人」的读门使用。
+fn opt_session(
+    session: &Option<Extension<shared::session::Session>>,
+) -> Option<&shared::session::Session> {
+    session.as_ref().map(|e| &e.0)
+}
+
+/// 文章读门（cms §3）：`published` 全员（含匿名）可读；其余状态仅 `author_id`
+/// 本人与管理员。归属谓词写进 `WHERE`，参数固定为 ($1 id, $2 会话人, $3 是否管理员)。
+const ARTICLE_READ_ALLOWED_SQL: &str = "SELECT 1 AS hit FROM x_cms_article \
+     WHERE id = $1 AND deleted_at IS NULL \
+     AND (status = 'published' \
+     OR ($2::text IS NOT NULL AND author_id = $2::text) \
+     OR $3::boolean)";
+const ARTICLE_READ_EXISTS_SQL: &str =
+    "SELECT 1 AS hit FROM x_cms_article WHERE id = $1 AND deleted_at IS NULL";
+
+async fn article_read_gate(
+    pool: &deadpool_postgres::Pool,
+    id: &str,
+    session: Option<&shared::session::Session>,
+) -> Result<ReadGate, AppError> {
+    let client = shared::db::acquire(pool).await?;
+    let person = session.map(|s| s.person_unique.clone());
+    let admin = match session {
+        Some(s) => shared::middleware::is_admin(pool, &s.person_unique).await,
+        None => false,
+    };
+    let hit = client
+        .query_opt(ARTICLE_READ_ALLOWED_SQL, &[&id, &person, &admin])
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    if hit.is_some() {
+        return Ok(ReadGate::Allowed);
+    }
+    let exists = client
+        .query_opt(ARTICLE_READ_EXISTS_SQL, &[&id])
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    Ok(if exists.is_some() {
+        ReadGate::Forbidden
+    } else {
+        ReadGate::NotFound
+    })
+}
+
 #[allow(non_snake_case)]
 pub async fn category_list(
     db: Extension<DatabaseConnection>,
@@ -221,8 +274,15 @@ pub async fn article_list(
 #[allow(non_snake_case)]
 pub async fn article_get(
     db: Extension<DatabaseConnection>,
+    pool: Extension<deadpool_postgres::Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    match article_read_gate(&pool.0, &id, opt_session(&session)).await? {
+        ReadGate::NotFound => return Ok(Json(ActionResult::error("article not found"))),
+        ReadGate::Forbidden => return Err(AppError::Forbidden),
+        ReadGate::Allowed => {}
+    }
     let model = cms_article::Entity::find_by_id(&id)
         .filter(cms_article::Column::DeletedAt.is_null())
         .one(&db.0)
@@ -921,6 +981,8 @@ pub fn cms_core_entity_router(db: DatabaseConnection, pool: deadpool_postgres::P
         .layer(Extension(pool))
 }
 
+#[cfg(test)]
+mod security_gate_tests_read_a_b4;
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;

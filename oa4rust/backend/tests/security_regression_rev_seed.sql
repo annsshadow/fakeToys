@@ -54,7 +54,7 @@ INSERT INTO "cal_event" ("id","calendar_id","title","start_time","end_time","all
 DELETE FROM "x_cms_appinfo" WHERE "id" = 'rev-r6-appinfo_appId_icon_s';
 INSERT INTO "x_cms_appinfo" ("id","app_type","creator") VALUES ('rev-r6-appinfo_appId_icon_s','r6seed','audit-user');
 DELETE FROM "x_cms_article" WHERE "id" = 'rev-r6-article_get';
-INSERT INTO "x_cms_article" ("id","category_id","title","author_id") VALUES ('rev-r6-article_get','r6seed','r6seed','audit-user');
+INSERT INTO "x_cms_article" ("id","category_id","title","author_id","status") VALUES ('rev-r6-article_get','r6seed','r6seed','audit-user','draft');
 DELETE FROM "x_cms_categoryinfo" WHERE "id" = 'rev-r6-categoryinfo_id_exec';
 INSERT INTO "x_cms_categoryinfo" ("id","name","creator") VALUES ('rev-r6-categoryinfo_id_exec','r6seed','audit-user');
 DELETE FROM "x_cms_commend" WHERE "id" = 'rev-r6-commend_id';
