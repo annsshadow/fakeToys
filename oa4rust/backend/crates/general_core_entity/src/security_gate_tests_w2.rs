@@ -154,11 +154,15 @@ mod tests {
             );
         }
 
-        for table in ["x_general_file", "x_general_invoice"] {
+        // 按 id 精确清理：按 creator 清会删掉同模块并行用例（w2_creates_*）的数据。
+        for (table, id) in [
+            ("x_general_file", "w2-file"),
+            ("x_general_invoice", "w2-inv"),
+        ] {
             exec(
                 &db,
-                &format!("DELETE FROM {table} WHERE creator = $1"),
-                vec![Value::from(VICTIM)],
+                &format!("DELETE FROM {table} WHERE id = $1"),
+                vec![Value::from(id)],
             )
             .await;
         }
@@ -205,8 +209,8 @@ mod tests {
         )
         .await;
         assert_eq!(status, StatusCode::OK, "本人建文件");
-        let id = body["data"]["id"].as_str().expect("file id").to_string();
-        assert_eq!(creator_of(&db, "x_general_file", &id).await, ATTACKER);
+        let file_id = body["data"]["id"].as_str().expect("file id").to_string();
+        assert_eq!(creator_of(&db, "x_general_file", &file_id).await, ATTACKER);
 
         // 管理员代建 → 允许，按请求者落库（§6.2）。
         let (status, body) = send(
@@ -218,19 +222,23 @@ mod tests {
         )
         .await;
         assert_eq!(status, StatusCode::OK, "管理员代建发票");
-        let id = body["data"]["id"].as_str().expect("invoice id").to_string();
-        assert_eq!(creator_of(&db, "x_general_invoice", &id).await, VICTIM);
+        let invoice_id = body["data"]["id"].as_str().expect("invoice id").to_string();
+        assert_eq!(
+            creator_of(&db, "x_general_invoice", &invoice_id).await,
+            VICTIM
+        );
 
+        // 只删本用例创建的两行：按 creator 清会删掉并行读用例（w2_reads_*）的夹具。
         exec(
             &db,
-            "DELETE FROM x_general_file WHERE creator IN ($1, $2)",
-            vec![Value::from(ATTACKER), Value::from(VICTIM)],
+            "DELETE FROM x_general_file WHERE id = $1",
+            vec![Value::from(file_id)],
         )
         .await;
         exec(
             &db,
-            "DELETE FROM x_general_invoice WHERE number = 'w2-admin'",
-            vec![],
+            "DELETE FROM x_general_invoice WHERE id = $1",
+            vec![Value::from(invoice_id)],
         )
         .await;
     }
