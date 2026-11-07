@@ -40,12 +40,6 @@ processplatform_core_entity|work_get|GET	LEAK
 processplatform_core_express|task_processing|GET	LEAK
 processplatform_core_express|work_processing|GET	LEAK
 processplatform_core_express|work_retract|GET	LEAK
-processplatform_service_processing|applicationdict_id|GET	LEAK
-processplatform_service_processing|attachment_id|GET	LEAK
-processplatform_service_processing|readcompleted_id|GET	LEAK
-processplatform_service_processing|record_id|GET	LEAK
-processplatform_service_processing|review_id|GET	LEAK
-processplatform_service_processing|snap_id|GET	LEAK
 t1|attendancedetail_mobile_mobilepreview	UNVERIFIED
 t1|attendancedetail_mobile_recive	UNVERIFIED
 t1|bbs|create_topic	UNVERIFIED
