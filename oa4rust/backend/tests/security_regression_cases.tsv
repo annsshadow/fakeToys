@@ -232,9 +232,8 @@ t1|mind|create_mind	spoof-write	POST	/api/mind/mind	mind_base_info	unit-gate-v		
 t1|mind_core|create_mind	spoof-write	POST	/api/mind/core/entity/mind	x_mind_base_info	person-admin		body	creator	T1	both	n/a
 t1|mind|create_folder	spoof-write	POST	/api/mind/folder	mind_folder_info	unit-gate-v		body	creator_unit	T1	both	n/a
 t1|mind_core|create_folder	spoof-write	POST	/api/mind/core/entity/folder	x_mind_folder_info	person-admin		body	creator	T1	both	n/a
-t1|oauth|generate_code	spoof-write	POST	/api/organization/assemble/authentication/oauth/generate/code	x_org_oauth_code	person-admin		body	person_id	T1	both	n/a
+t1|oauth|generate_code	spoof-write	POST	/api/organization/assemble/authentication/oauth/generate/code	x_org_oauth_code	person-admin		body	person_id	T1	both	n/a		{"clientId":"gate-client"}
 t2|attendance|v2_groupschedule_list_filter	spoof-read	POST	/api/attendance/assemble/control/v2/groupschedule/list/filter		r5-ad-admin	SCHED-VICTIM	query	user_id	T2	both	n/a
-t2|auth|code	spoof-read	POST	/api/authentication/code		person-admin	person-admin	body	person_id	T2	both	n/a
 t2|query|view_create	spoof-write	POST	/api/query/view/create	query_view	person-admin		body	creator_id	T2	both	n/a
 t2|file|folder_create	spoof-write	POST	/api/file/core/entity/folder	file_folder	person-admin		body	person	T2	both	n/a
 t2|file|file_create	spoof-write	POST	/api/file/core/entity/file	file_file	person-admin		body	person	T2	both	n/a		{"reference_type":"GATE-HACK"}
@@ -244,7 +243,7 @@ t2|general_core|invoice_create	spoof-write	POST	/api/general/invoice/create	x_ge
 t2|general|office_html_to_word	spoof-write	POST	/api/general/assemble/control/office/html/to/word	x_general_assemble_office	person-admin		body	creator	T2	both	n/a
 t2|general|office	spoof-write	POST	/api/general/assemble/control/office	x_general_assemble_office	person-admin		body	creator	T2	both	n/a
 t2|meeting|create_meeting	spoof-write	POST	/api/meeting/create	x_meeting	person-admin		body	creator	T2	both	n/a
-t2|mind|create_version	spoof-write	POST	/api/mind/version	x_mind_version_info	unit-gate-v		body	creator_unit	T2	both	n/a
+t2|mind|create_version	spoof-write	POST	/api/mind/version	mind_version_info	unit-gate-v		body	creator_unit	T2	both	n/a
 t2|mind_core|create_version	spoof-write	POST	/api/mind/core/entity/version	x_mind_version_info	person-admin		body	creator	T2	both	n/a
 t2|organization|unit_check_unit_has_person	spoof-read	POST	/api/unit/check/unit/has/person		person-admin	person-admin	query	person_id	T2	both	n/a
 t2|organization|group_list_object	spoof-read	POST	/api/group/list/object		person-admin	person-admin	query	person_id	T2	both	n/a

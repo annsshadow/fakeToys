@@ -756,6 +756,23 @@ W8_MIND_UNIT_GATE_PATCH = (
 W8_FILE_PERSON_GATE_RE = re.compile(r"if requested_person != session\.person_unique \{")
 W8_FILE_PERSON_GATE_PATCH = "if { let _ = (&requested_person, &session); false } {"
 
+# B8 批1：会话派生写归属（oauth 授权码 person_id / mind 版本 creator_unit）。
+# 把两处「取会话本人」改回「采信请求体」，冒名归属应重新落库 → 逐条 LEAK。
+B8_OAUTH_PERSON_RE = re.compile(r'let person_id = Some\(sess\.person_unique\.as_str\(\)\);')
+B8_OAUTH_PERSON_PATCH = (
+    'let person_id = Some(req.get("personId")'
+    '.and_then(|v| v.as_str()).unwrap_or(sess.person_unique.as_str()));'
+)
+B8_MIND_UNIT_RE = re.compile(
+    r"let creator_unit = session_unit\(&client, &session\.person_unique\)\.await\?;"
+)
+B8_MIND_UNIT_PATCH = (
+    'let creator_unit = payload.get("creatorUnit")'
+    '.or_else(|| payload.get("creator_unit"))'
+    '.and_then(|v| v.as_str()).unwrap_or("").to_string();'
+)
+B8_EXPECTS = ["t1|oauth|generate_code", "t2|mind|create_version"]
+
 # 写 IDOR 第 W-b2 批：general_core 的 file/invoice 读面归属谓词 + 创建面冒名拒绝。
 # 读面把 `creator = $2` 改成 `TRUE OR creator = $2`（保留 $2 绑定，避免 500 假阳性）；
 # 写面摘掉非管理员 403 分支，让冒名创建落库 → 逐条 LEAK。
@@ -1306,6 +1323,16 @@ def sabotage(kind: str) -> int:
                 ),
             ],
             W8_EXPECTS,
+            require_leak=True,
+        )
+    elif kind == "b8-session-owner-write":
+        return sabotage_many(
+            "把 oauth person_id 与 mind creator_unit 改回请求体（2 条应逐条 LEAK）",
+            [
+                (ORG_ASSEMBLE_AUTH, B8_OAUTH_PERSON_RE, B8_OAUTH_PERSON_PATCH, "oauth_person"),
+                (MIND_ASSEMBLE, B8_MIND_UNIT_RE, B8_MIND_UNIT_PATCH, "mind_unit"),
+            ],
+            B8_EXPECTS,
             require_leak=True,
         )
     else:
