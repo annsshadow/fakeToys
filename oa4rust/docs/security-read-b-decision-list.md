@@ -124,3 +124,33 @@ rev-GATE-V-MOBILE)`，delete paging `LEAK(2xx 响应体含 canary GATE-DEL-MOBIL
 - 不修改任何表结构、不新增归属列、不回填历史数据。
 - 不改变分页/排序参数语义；列表在归属收窄后允许返回空，不额外做存在性探测（避免 403 泄露他人是否存在）。
 - 本人正控制（`idor-read-own`）与双向拒绝用例成对存在；列表用例使用按完整 JSON 值匹配 canary，避免 `rev-` 前缀子串误报。
+
+## 批次 B-b5：工作流运行面六个按 id 读（归属谓词写进 SQL）
+
+判据沿用默认 1：`本人 OR 管理员`，NULL/空归属 fail-closed（仅管理员）。本批复用 crate 内既有
+授权原语，不新增第二套语义：
+
+| 端点（processplatform_service_processing） | 表 | 归属列 | 落地方式 |
+|---|---|---|---|
+| `GET /review/{id}` | `x_review` | `reviewer` | 新增 `u4_owner_read_row(select_sql, 列名)` 单列读谓词 |
+| `GET /readcompleted/{id}` | `x_readcompleted` | `person` | 同上 |
+| `GET /record/{id}` | `x_record` | `creator` | 同上 |
+| `GET /applicationdict/{id}` | `x_process_definition` | `creator` | 同上 |
+| `GET /attachment/{id}` | `x_attachment` | `creator` | 复用既有 `u4_attachment_read_row` |
+| `GET /snap/{id}` | `x_snap` | `x_work.creator`（关联边） | 复用既有 `u4_require_actors(U4ActorKey::Snap)` |
+
+- 谓词：`WHERE id = $1 AND (NULLIF(BTRIM(<owner_col>), '') = $2 OR EXISTS(admin))`；
+  0 行命中时再用 `u4_row_exists_error` 区分 403（行在、非本人）/404（行不存在）。
+- `snap` 不认 `x_snap.creator`/`person`：该表写入路径只写 `work_id`/`snap_type`/`snap_data`，
+  归属只能 hop 到 `x_work.creator`（与写侧 `snap_id_restore` 同一把尺）；NULL work 归属→仅管理员。
+- `x_attachment` 同时有 `work_id`/`workcompleted_id` 关联边，本批只按 `creator` 收紧 owner 一侧，
+  关联边侧不改契约（与组织域「只收紧 owner」口径一致）。
+- 写侧登记（不在本批改）：`x_review.reviewer` 由 `review_create_work` 的**请求体**指定，
+  属写侧可指派字段；读侧按它收紧后，攻击者只能创建「指向他人」的评审，不能借此读到他人数据。
+  `x_snap`/`x_readcompleted` 的 `creator`/`person` 列同样不由写入路径填充，因此读侧不以它们为准。
+- 门禁：新增 6 条 `idor-read-own` 正控制；为 `snap` 正控制补一行 `rev-r6seed-work`
+  （`x_work.creator = audit-user`）并把 `rev-r6-snapid.work_id` 指向它；`rev-r6-reviewid`
+  补 `reviewer = audit-user`。其余四条复用既有 rev 行。
+- 破坏实验：`u4_owner_read_row` 谓词改恒真（保留 `$2` 绑定）、`attachment_id` 调用点直查、
+  `snap_id` 授权短路，`NEW-FAIL` **恰好点名本批 6 条**；还原后门禁 105 非 PASS，与基线一致
+  （点名减 6：111→105），无 `STALE-BASELINE`。

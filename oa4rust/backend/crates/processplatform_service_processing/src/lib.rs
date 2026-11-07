@@ -510,6 +510,26 @@ async fn u4_attachment_read_row(
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))
 }
 
+/// 读归属门（单列版）：归属列非空且等于本人，或管理员；空归属/行不存在 →
+/// 由 `u4_row_exists_error` 事后区分 403/404。调用点把整句 SELECT 字面量传进来，
+/// 列名只做谓词拼接，不接收请求数据。
+async fn u4_owner_read_row(
+    client: &deadpool_postgres::Client,
+    select_sql: &str,
+    owner_col: &str,
+    id: &str,
+    me: &str,
+) -> Result<Option<deadpool_postgres::tokio_postgres::Row>, AppError> {
+    let sql = format!(
+        "{select_sql} WHERE id = $1 \
+           AND (NULLIF(BTRIM({owner_col}), '') = $2 OR {U4_ADMIN_EXISTS})"
+    );
+    client
+        .query_opt(&sql, &[&id, &me])
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))
+}
+
 /// 0 行命中时区分 403/404。该读**不参与授权**：判定已由带谓词的 SELECT 完成。
 async fn u4_row_exists_error(
     client: &deadpool_postgres::Client,
@@ -1797,8 +1817,11 @@ pub async fn snap_workcompleted_workCompletedId_type_snapworkcompleted(
 #[allow(non_snake_case)]
 pub async fn snap_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
+    u4_require_actors(&pool.0, &session, U4ActorKey::Snap, &id).await?;
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -2169,17 +2192,23 @@ pub async fn review_init_review(
 #[allow(non_snake_case)]
 pub async fn review_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
     let client = shared::db::acquire(&pool).await?;
-    let row = client
-        .query_opt(
-            "SELECT id, work_id, reviewer, comment, status, create_time FROM x_review WHERE id = $1",
-            &[&id],
-        )
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
-        .ok_or(AppError::NotFound)?;
+    let row = match u4_owner_read_row(
+        &client,
+        "SELECT id, work_id, reviewer, comment, status, create_time FROM x_review",
+        "reviewer",
+        &id,
+        &session.person_unique,
+    )
+    .await?
+    {
+        Some(row) => row,
+        None => return Err(u4_row_exists_error(&client, "x_review", &id).await),
+    };
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -2761,17 +2790,23 @@ pub async fn job_job(
 #[allow(non_snake_case)]
 pub async fn readcompleted_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
     let client = shared::db::acquire(&pool).await?;
-    let row = client
-        .query_opt(
-            "SELECT id, work_id, person, completed_time FROM x_readcompleted WHERE id = $1",
-            &[&id],
-        )
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
-        .ok_or(AppError::NotFound)?;
+    let row = match u4_owner_read_row(
+        &client,
+        "SELECT id, work_id, person, completed_time FROM x_readcompleted",
+        "person",
+        &id,
+        &session.person_unique,
+    )
+    .await?
+    {
+        Some(row) => row,
+        None => return Err(u4_row_exists_error(&client, "x_readcompleted", &id).await),
+    };
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -2872,17 +2907,23 @@ pub async fn record_work_terminate(
 #[allow(non_snake_case)]
 pub async fn record_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
     let client = shared::db::acquire(&pool).await?;
-    let row = client
-        .query_opt(
-            "SELECT id, work_id, task_id, record_type, content, creator, create_time FROM x_record WHERE id = $1",
-            &[&id],
-        )
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
-        .ok_or(AppError::NotFound)?;
+    let row = match u4_owner_read_row(
+        &client,
+        "SELECT id, work_id, task_id, record_type, content, creator, create_time FROM x_record",
+        "creator",
+        &id,
+        &session.person_unique,
+    )
+    .await?
+    {
+        Some(row) => row,
+        None => return Err(u4_row_exists_error(&client, "x_record", &id).await),
+    };
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -3046,17 +3087,15 @@ pub async fn attachment_edit_id_text(
 #[allow(non_snake_case)]
 pub async fn attachment_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
     let client = shared::db::acquire(&pool).await?;
-    let row = client
-        .query_opt(
-            "SELECT id, work_id, workcompleted_id, name, content, creator, create_time FROM x_attachment WHERE id = $1",
-            &[&id],
-        )
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
-        .ok_or(AppError::NotFound)?;
+    let row = match u4_attachment_read_row(&client, &id, &session.person_unique).await? {
+        Some(row) => row,
+        None => return Err(u4_row_exists_error(&client, "x_attachment", &id).await),
+    };
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -3107,17 +3146,23 @@ pub async fn attachment_id_workcompleted_workCompletedId(
 #[allow(non_snake_case)]
 pub async fn applicationdict_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = u4_session(session)?;
     let client = shared::db::acquire(&pool).await?;
-    let row = client
-        .query_opt(
-            "SELECT id, name, category, version, status, creator, create_time FROM x_process_definition WHERE id = $1",
-            &[&id],
-        )
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
-        .ok_or(AppError::NotFound)?;
+    let row = match u4_owner_read_row(
+        &client,
+        "SELECT id, name, category, version, status, creator, create_time FROM x_process_definition",
+        "creator",
+        &id,
+        &session.person_unique,
+    )
+    .await?
+    {
+        Some(row) => row,
+        None => return Err(u4_row_exists_error(&client, "x_process_definition", &id).await),
+    };
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
