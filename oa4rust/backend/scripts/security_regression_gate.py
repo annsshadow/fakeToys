@@ -29,6 +29,7 @@
     python scripts/security_regression_gate.py sabotage read-a-b1         # Rust②h：摘掉分片 A 第一批 cms 读门（6 条）
     python scripts/security_regression_gate.py sabotage read-a-b2         # Rust②i：摘掉分片 A 第二批 cms 读门（6 条）
     python scripts/security_regression_gate.py sabotage read-a-b3         # Rust②i2：摘掉分片 A 第三批 cms appinfo/categoryinfo/commend 读门（6 条）
+    python scripts/security_regression_gate.py sabotage read-a-b5         # Rust②n2：摘掉分片 A 第五批 portal/surface/page/ai 读门（6 条）
     python scripts/security_regression_gate.py sabotage write-idor-w3     # Rust②i：摘掉 office/bbs/mind 写侧冒名 403（7 条）
     python scripts/security_regression_gate.py sabotage go-limit0   # Go①：扣款乘 2
     python scripts/security_regression_gate.py sabotage go-idor-rev # Go②：摘掉预设删除归属
@@ -839,6 +840,32 @@ A3_EXPECTS = [
     "cms_assemble_control|commend_id|GET",
 ]
 
+# 分片 A / A-b5：surface 余下四端点（x_portal 两 + x_portal_surface 两）、
+# portal_core_entity `page_get`（x_portal_page）、ai_assemble_control mcp 配置。
+# 恒真补丁保留 `$2`/`$3` 绑定，避免 bind 数不匹配 → 500 → 假阳性。
+PORTAL_SURFACE = BACKEND / "crates/portal_assemble_surface/src/lib.rs"
+PORTAL_CORE_ENTITY = BACKEND / "crates/portal_core_entity/src/lib.rs"
+AI_ASSEMBLE_CONTROL = BACKEND / "crates/ai_assemble_control/src/lib.rs"
+A5_OWNED_READ_GATE_RE = re.compile(
+    r'AND \(\{owner_col\} = \$2::text OR \$3::boolean\)'
+)
+A5_OWNED_READ_GATE_PATCH = (
+    "AND ({owner_col} IS NOT NULL OR {owner_col} IS NULL "
+    "OR $2::text IS NOT NULL OR $2::text IS NULL OR $3::boolean)"
+)
+PORTAL_PAGE_READ_GATE_RE = re.compile(r'AND \(creator = \$2 OR \$3::boolean\)')
+PORTAL_PAGE_READ_GATE_PATCH = (
+    "AND (($2 IS NOT NULL OR $2 IS NULL) OR $3::boolean)"
+)
+A5_EXPECTS = [
+    "ai_assemble_control|config_get_mcp_flag|GET",
+    "portal_assemble_surface|portal_id_icon|GET",
+    "portal_assemble_surface|portal_id_icon_base64|GET",
+    "portal_assemble_surface|preview_surface|GET",
+    "portal_assemble_surface|surface_preview|GET",
+    "portal_core_entity|page_get|GET",
+]
+
 
 # 写 IDOR 第 W-b3 批：office/bbs/mind 写侧冒名 403 臂。
 # 把三个 crate resolve_* 的管理员臂改成恒放行（保留 is_admin_db 调用引用，避免未使用告警），
@@ -1135,6 +1162,17 @@ def sabotage(kind: str) -> int:
             A3_EXPECTS,
             require_leak=True,
         )
+    elif kind == "read-a-b5":
+        return sabotage_many(
+            "摘掉分片 A 第五批 portal/page/ai 读归属谓词（6 条应逐条 LEAK）",
+            [
+                (AI_ASSEMBLE_CONTROL, A5_OWNED_READ_GATE_RE, A5_OWNED_READ_GATE_PATCH, "ai_owned_read"),
+                (PORTAL_CORE_ENTITY, PORTAL_PAGE_READ_GATE_RE, PORTAL_PAGE_READ_GATE_PATCH, "portal_page_read"),
+                (PORTAL_SURFACE, A5_OWNED_READ_GATE_RE, A5_OWNED_READ_GATE_PATCH, "surface_owned_read"),
+            ],
+            A5_EXPECTS,
+            require_leak=True,
+        )
     elif kind == "write-idor-w1":
         return sabotage_many(
             "摘掉 W-b1 五个读端点的 owner_gate（5 条应逐条 LEAK）",
@@ -1165,9 +1203,7 @@ def sabotage(kind: str) -> int:
         raise SystemExit(
             f"未知破坏实验: {kind}（可选 ownership / correct / general / organization / "
             "program_center / hotpic_mind / read_b / read-a-b1 / read-a-b2 / read-a-b3 / "
-            "write-idor-b5 / write-idor-b6 / write-idor-b7 / write-idor-w1）"
-            "program_center / hotpic_mind / read_b / read-a-b1 / "
-            "write-idor-b5 / write-idor-b6 / write-idor-b7 / "
+            "read-a-b5 / write-idor-b5 / write-idor-b6 / write-idor-b7 / "
             "write-idor-w1 / write-idor-w2 / write-idor-w3 / write-idor-w4 / write-idor-w5 / "
             "write-idor-w6 / write-idor-w7）"
         )
@@ -1215,7 +1251,8 @@ def main() -> int:
         if len(sys.argv) < 3:
             print("用法: security_regression_gate.py sabotage "
                   "<ownership|correct|general|organization|program_center|hotpic_mind|read_b|"
-                  "read-a-b1|write-idor-b5|write-idor-b6|write-idor-b7|"
+                  "read-a-b1|read-a-b2|read-a-b3|read-a-b5|"
+                  "write-idor-b5|write-idor-b6|write-idor-b7|"
                   "write-idor-w1|write-idor-w2|write-idor-w3|write-idor-w4|write-idor-w5|"
                   "rust-drift-to-leak|rust-swallow-write|"
                   "go-limit0|go-idor-rev|go-empty-list|go-swallow-write|"

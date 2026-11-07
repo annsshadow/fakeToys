@@ -36,6 +36,10 @@
 | A-b3（本批） | `cms_assemble_control` | `application_id` / `appinfo_id` / `appinfo_id_control` | `x_cms_appinfo.creator`=会话 OR 管理员（SQL WHERE） |
 | A-b3（本批） | `cms_assemble_control` | `categoryinfo_id` / `categoryinfo_id_control` | `x_cms_categoryinfo.creator`=会话 OR 管理员（SQL WHERE） |
 | A-b3（本批） | `cms_assemble_control` | `commend_id` | `x_cms_commend.person_id`=会话 OR 管理员（SQL WHERE）。**映射说明**：该表无 `creator` 列，`person_id` 是唯一人员列，即归属列 |
+| A-b5（本批） | `portal_assemble_surface` | `portal_id_icon` / `portal_id_icon_base64` | `x_portal.creator`=会话 OR 管理员（E23，SQL WHERE）；未命中保留 `surface not found` |
+| A-b5（本批） | `portal_assemble_surface` | `preview_surface` / `surface_preview` | `x_portal_surface.creator`=会话 OR 管理员（E23，SQL WHERE） |
+| A-b5（本批） | `portal_core_entity` | `page_get` | `x_portal_page.creator`=会话 OR 管理员（E23，SQL WHERE）；本 crate 无 deadpool `Pool` 注入，沿用 sea-orm `require_admin`，查询失败 fail-closed |
+| A-b5（本批） | `ai_assemble_control` | `config_get_mcp_flag` | `x_ai_mcp_config.creator`=会话 OR 管理员（E24，SQL WHERE）；该表无 `deleted_at`，不追加软删条件 |
 
 ## 一、NO-OWNER-COL（缺归属列，不改代码）
 
@@ -314,6 +318,26 @@ PR #234（`sec/read-a-cms-b2`）合入 `main`：merge sha `4571c846a6e6899d857ff
    `实验成立：门禁变红（exit=101），并点名 6 条用例`。
 
 三步全过，减行有效。
+
+## 十、分片 A / A-b5 交付与 §12.6 核对记录
+
+分支 `sec/read-a-cms-b5`，base `origin/main=8c7c2f4b5`。本批 6 条：
+`ai_assemble_control|config_get_mcp_flag`、`portal_assemble_surface|portal_id_icon`、
+`portal_id_icon_base64`、`preview_surface`、`surface_preview`、`portal_core_entity|page_get`。
+口径：`x_portal` / `x_portal_surface` / `x_portal_page` / `x_ai_mcp_config` 的 `creator` 本人
+或管理员（E23 / E24）。`portal_core_entity` 无 deadpool `Pool` 注入，沿用 sea-orm
+`require_admin`，查询失败 fail-closed。
+
+1. **行是否真在 main**：待裁判会话合并 `sec/read-a-cms-b5` 后在 `main` 上核对
+   （本分支提交前无法断言）。
+2. **基线是否虚减**：在 `8c7c2f4b5` 上重跑门禁，本批 6 条全部 `[PASS]`；剩余非 PASS
+   25 条与基线一致（leak=11, unverified=14, integrity=0）。
+3. **门禁是否接线**：`sabotage read-a-b5` 变红（exit=101），`NEW-FAIL` 逐条点名 6 条，
+   `实验成立：门禁变红（exit=101），并点名 6 条用例`；三个 `lib.rs` 各自动还原一次。
+
+若 #262（A-b4）先合入，本批与它共用 `portal_assemble_surface` 的同一 helper 文本，
+恒真化会同时波及 `get_surface`（额外 1 条 `[LEAK]`），属预期「同 helper 波及」，不影响
+本批 6 条结论。
 
 ## 变更纪律（本分片）
 
