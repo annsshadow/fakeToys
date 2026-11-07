@@ -942,7 +942,14 @@ mod security_regression {
             return Outcome::Excluded;
         }
         let rid = resource_id(c, rev);
-        let token = if rev { TOK_VICTIM } else { TOK_ATTACKER };
+        // public-read 明确以匿名身份请求：用于 PUBLIC-BY-DESIGN 的「允许公开 + 无 PII」断言。
+        let token = if c.kind == "public-read" {
+            None
+        } else if rev {
+            Some(TOK_VICTIM)
+        } else {
+            Some(TOK_ATTACKER)
+        };
         let person = if rev { ATTACKER } else { ADMIN_PROBE };
         let path = with_carrier(c, fill_path(&c.path, &rid, person), rev);
         let markers: Vec<String> = c
@@ -974,6 +981,16 @@ mod security_regression {
                 (build_spoof_body(c, rev), None, Some(before))
             }
             "spoof-read" => (build_spoof_body(c, rev), None, None),
+            // 公开目录查询：用用例字面量 body（如 groupList/unitList/person+unit）。
+            "public-read" => (
+                if c.body.is_empty() {
+                    "{}".to_string()
+                } else {
+                    c.body.clone()
+                },
+                None,
+                None,
+            ),
             "soft-gate" if c.method == "POST" => (
                 "{\"toPerson\":\"person-admin\",\"roleId\":\"role-gate\"}".to_string(),
                 None,
@@ -996,7 +1013,7 @@ mod security_regression {
             }
         };
 
-        let Some((status, resp)) = fire(app, &c.method, &path, Some(token), &body).await else {
+        let Some((status, resp)) = fire(app, &c.method, &path, token, &body).await else {
             return Outcome::Unverified("请求无法构造".into());
         };
         let code = status.as_u16();
@@ -1049,6 +1066,27 @@ mod security_regression {
                         "2xx 但响应体无 canary（疑似种子漂移）body={}",
                         resp.chars().take(90).collect::<String>()
                     )),
+                }
+            }
+            "public-read" => {
+                if !(200..300).contains(&code) {
+                    return Outcome::Unverified(format!(
+                        "匿名请求 status={code} body={}",
+                        resp.chars().take(200).collect::<String>()
+                    ));
+                }
+                // `victim` 在 public-read 里是正控制：必须出现，证明查询真的命中了对象，
+                // 否则「空列表 → 无 PII」会是假绿。
+                if c.victim.is_empty() || !resp.contains(&c.victim) {
+                    return Outcome::Unverified(format!(
+                        "2xx 但未返回预期对象 `{}`（正控制缺失）body={}",
+                        c.victim,
+                        resp.chars().take(90).collect::<String>()
+                    ));
+                }
+                match markers.iter().find(|m| resp.contains(m.as_str())) {
+                    Some(m) => Outcome::Leak(format!("匿名响应含 PII canary `{m}`")),
+                    None => Outcome::Pass,
                 }
             }
             "soft-gate" => {

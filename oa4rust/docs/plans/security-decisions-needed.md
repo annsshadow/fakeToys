@@ -826,7 +826,43 @@ sabotage `w8-unverified`，本批减 5 行（分支创建时基线 37→32）。
 破坏实验 `sabotage b8-session-owner-write`：把 oauth `person_id`、mind `creator_unit` 改回请求体，
 门禁变红并逐条点名 `t1|oauth|generate_code`、`t2|mind|create_version`（两者均 `[LEAK] ... 冒名落库`）。
 
-### 15.2 批 2 / 15.3 批 3
+### 15.2 批 2（PR-B）：unit_check 登记为 PUBLIC-BY-DESIGN
 
-（由后续 PR 追加：unit_check PUBLIC-BY-DESIGN；meeting、group/unit list、warnlog FALSE-GREEN。）
+**判据**
+
+- `/api/unit/check/unit/has/person` 同时命中 `AUTH_EXEMPT_PATHS`（`shared/src/middleware/constants.rs`）
+  与 RBAC `PermissionLevel::Public`（`rbac.rs`）；这是 o2server 契约的匿名前置查询，客户端在登录前
+  用它判定「某人是否属于某组织」。改成必须登录会把公开端点变成对所有人 401 的死端点。
+- 响应只有 `{"value": boolean}`，不含姓名/手机/邮箱/组织名等 PII；最小必要字段已经满足。
+- 用例从 `spoof-read` 升级为 `public-read`：匿名请求必须 2xx；`victim` 作为正控制必须出现
+  （`"value":true`，证明查询真的命中种子关系）；`leak` 里的姓名/手机 canary 任一出现即 LEAK。
+  靠断言升级移出基线，而不是删断言。
+- 种子补齐：`x_org_unit('unit-gate-v')` + `x_org_identity(person_id='gate-person-v', unit_id='unit-gate-v')`，
+  否则匿名请求只能得到 `value:false`（空结果假绿）。
+- 修观测时暴露真实缺陷：handler 的 `x_org_person` / `x_org_unit` 查询只用 `$1` 一个占位符，却绑定了
+  `&[&person, &person]` / `&[&unit, &unit]` 两个参数，PostgreSQL 直接报 `Parameters(2,1)` → 任何
+  合法 `person+unit` 请求都是 500（旧用例只传 `person_id`，person 为空，恰好绕过 SQL 才显得「2xx
+  value:false」）。本次修为单参数绑定，让公开前置查询真正可用。
+
+**影响面**
+
+- 生产代码只改参数绑定数量（等价于原 SQL 语义），不改变查询条件、返回字段与匿名策略；
+  500 死端点恢复为可用。
+- 其余仅新增夹具关系与门禁用例类型；匿名契约不变，新增断言只约束「不得返回 PII」。
+
+**如何回滚**
+
+- 回滚本 PR 即恢复原 `spoof-read` 用例与基线行；夹具里的 `unit-gate-v`/`ident-gate-v` 可一并删除。
+- 参数绑定修复不要单独回滚：回滚会让该公开端点重新变成对合法输入 500 的死端点；
+  若确需回退，必须同时恢复旧用例的 `person_id`（不触达 SQL）行为并登记新的证据缺口。
+- 若产品口径后来要求该端点必须登录，另行产品裁决并同时改 `AUTH_EXEMPT_PATHS` 与 RBAC 注册
+  （双锁一致性测试会拦单边修改），不在本条回滚范围内。
+
+破坏实验 `sabotage b8-public-pii-check`：把 `unit_check` 响应改成夹带 `personName=GATE-PERSON-V`，
+匿名用例变红并点名 `t2|organization|unit_check_unit_has_person`。
+
+### 15.3 批 3
+
+（由后续 PR 追加：meeting、group/unit list、warnlog FALSE-GREEN。）
+
 

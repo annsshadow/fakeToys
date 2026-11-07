@@ -773,6 +773,18 @@ B8_MIND_UNIT_PATCH = (
 )
 B8_EXPECTS = ["t1|oauth|generate_code", "t2|mind|create_version"]
 
+# B8 批2：公开前置查询的 PII 断言。把 unit_check 响应从「仅 value」改成夹带姓名，
+# 匿名 public-read 用例必须变红，证明「无 PII」断言不是空转。
+B8_ORG_EXPRESS = BACKEND / "crates/organization_assemble_express/src/endpoints_org.rs"
+B8_UNIT_CHECK_PII_RE = re.compile(
+    r'map\.insert\("value"\.to_string\(\), Value::Bool\(value\)\);'
+)
+B8_UNIT_CHECK_PII_PATCH = (
+    'map.insert("value".to_string(), Value::Bool(value)); '
+    'map.insert("personName".to_string(), Value::String("GATE-PERSON-V".into()));'
+)
+B8_PUBLIC_CHECK_EXPECTS = ["t2|organization|unit_check_unit_has_person"]
+
 # 写 IDOR 第 W-b2 批：general_core 的 file/invoice 读面归属谓词 + 创建面冒名拒绝。
 # 读面把 `creator = $2` 改成 `TRUE OR creator = $2`（保留 $2 绑定，避免 500 假阳性）；
 # 写面摘掉非管理员 403 分支，让冒名创建落库 → 逐条 LEAK。
@@ -1333,6 +1345,13 @@ def sabotage(kind: str) -> int:
                 (MIND_ASSEMBLE, B8_MIND_UNIT_RE, B8_MIND_UNIT_PATCH, "mind_unit"),
             ],
             B8_EXPECTS,
+            require_leak=True,
+        )
+    elif kind == "b8-public-pii-check":
+        return sabotage_many(
+            "让公开前置查询夹带人员姓名（unit_check 应逐条 LEAK）",
+            [(B8_ORG_EXPRESS, B8_UNIT_CHECK_PII_RE, B8_UNIT_CHECK_PII_PATCH, "unit_check_pii")],
+            B8_PUBLIC_CHECK_EXPECTS,
             require_leak=True,
         )
     else:
