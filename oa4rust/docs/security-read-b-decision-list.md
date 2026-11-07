@@ -9,12 +9,14 @@
 | 表 | 端点 | 缺失情况 | 处理 |
 |---|---|---|---|
 | `x_message_conversation` | `im_conversation_id`、`im_conversation_id_single`、`im_conversation_id_group`（message_assemble_communicate） | 无 `creator`/`owner`/`person_id` 等归属列；成员关系只在 `x_message_conversation_member`（关联边） | 未加谓词，未发明归属语义。需裁决“会话归属 = 创建者 / 成员集合 / 其他”后再落 SQL |
-| `x_cal_event` | 日历事件读路径（按 `calendar_id` 读取） | 事件表无单一 owner 列；归属来自 `calendar_id` 关联边 | 未改契约；只做了实证。需裁决是否继承日历 owner 或按参与者判定 |
+| `x_cal_event` | 日历事件读路径（按 `calendar_id` 读取） | 事件表无单一 owner 列；归属来自 `calendar_id` 关联边 | **已落地（B-cal-event）**：运行期表 `cal_event` 的 `createor` 由写路径按会话写入，作为事件属主；其余继承 `cal_calendar.createor` / `is_public`，关联边谓词直接进主查询 WHERE |
 
 ## 关联边（只收紧 owner 一侧，关联边侧仅实证）
 - IM：`x_message_conversation_member(person_id, conversation_id, role)` 是唯一访问依据，本批未改。
-- 日历：`cal_event.calendar_id -> x_cal_calendar.id`；本批只修日历本体读，事件侧待裁决。
-- 日历公开性：`x_cal_calendar.is_public=true` 视为已公开发布，全员可读；`false` 仅 `createor` 本人或管理员。`status` 仍只允许 `OPEN`。
+- 日历：`cal_event.calendar_id -> cal_calendar.id`；事件读（`event_get` / `event_rfc`）已把
+  `c.is_public = TRUE OR e.createor = $2 OR c.createor = $2 OR <admin>` 直接写进主查询 WHERE，
+  取不到行统一 403（不区分不存在与无权）。
+- 日历公开性：`cal_calendar.is_public=true` 视为已公开发布，全员可读；`false` 仅 `createor` 本人或管理员。`status` 仍只允许 `OPEN`。
 
 ## 列存在但生产写路径不写入
 | 表 | 列 | 实测 | 影响 |
@@ -123,6 +125,21 @@ rev-GATE-V-MOBILE)`，delete paging `LEAK(2xx 响应体含 canary GATE-DEL-MOBIL
 - 破坏实验：逐条把 5 个谓词改恒真（保留 `$2` 绑定）并关闭 `personId` 校验 →
   `NEW-FAIL` 恰好点名本批 6 条；还原后门禁 116 非 PASS（基线 122 → 点名减 6），无 `STALE-BASELINE`。
 
+## 批次 B-b3：attendance 申诉/明细/自休假读（person_id 本人 OR 管理员）
+
+| 端点（attendance_assemble_control） | 表 | 落库谓词 |
+|---|---|---|
+| `GET /attendanceappealInfo/{id}` | `x_attendance_appeal_info` | `id = $1 AND (person_id = $2 OR admin)` |
+| `GET /attendancedetail/{id}` | `x_attendance_detail` | 同上 |
+| `GET /attendancedetail/mobile/{id}` | `x_attendance_detail` | 同上 |
+| `GET /attendanceselfholiday/{id}` | `x_attendance_selfholiday` | 同上 |
+
+- 口径 §9.2 B3–B8：归属人是 `person_id`，历史 NULL 行 fail-closed（仅管理员可读）。
+- 命中 0 行但行存在 → `403`；行不存在维持原信封（appeal / detail 为 `success(null)`，自休假为 not found）。
+- 门禁：4 条新增 `idor-read-own` 正控制；复用既有 `rev-*` 镜像行，未新增种子。
+- 破坏实验：逐条把 4 个谓词改恒真（保留 `$2` 绑定）→ `NEW-FAIL` 恰好点名本批 4 条；
+  还原后门禁 33 非 PASS（rebase 后基线 37 → 点名减 4），无 `STALE-BASELINE`。
+
 ## 批次 B-b4：processplatform_service_processing 任务/流程/办结读（E20 指派人 OR 管理员）
 
 复用 crate 内既有 E20 授权原语，不新增归属语义：
@@ -131,8 +148,8 @@ rev-GATE-V-MOBILE)`，delete paging `LEAK(2xx 响应体含 canary GATE-DEL-MOBIL
 |---|---|---|
 | `GET /task/{id}`、`GET /task/v2/{id}` | `x_task` | `u4_require_actors(U4ActorKey::Task)`：`person` 指派人或 admin |
 | `GET /get/{id}`（get_process） | `x_work` | `u4_require_work_owner`：`creator` 或 admin |
-| `GET /taskcompleted/{id}` | `x_workcompleted` | `U4ActorKey::WorkCompleted`：`creator` 或所属 `x_task.person` 或 admin |
-| `GET /data/workcompleted/{id}`、`.../path/{id}` | `x_workcompleted` | 同上 |
+| `GET /taskcompleted/{id}` | `x_work_completed` | `U4ActorKey::WorkCompleted`：`creator` 或所属 `x_task.person` 或 admin |
+| `GET /data/workcompleted/{id}`、`.../path/{id}` | `x_work_completed` | 同上 |
 
 - 这些原语本是写路径的 fail-closed 归属门，读端点直接复用；NULL 归属不命中 → 仅管理员。
 - 无会话 → 401；非归属人 → 403。

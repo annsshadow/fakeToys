@@ -211,7 +211,14 @@ func (s *Service) reconcileBattleStats(ctx context.Context, rep *ReconcileReport
 		                 'duration_sum=' || a.duration_sum, 'wave_sum=' || a.wave_sum),
 		       CONCAT_WS(',', 'attempts=' || d.attempts, 'wins=' || d.wins,
 		                 'duration_sum=' || d.duration_sum, 'wave_sum=' || d.wave_sum)
-		  FROM dashboard_battle_stats d
+		  FROM (
+		      -- R149：计数器按 shard 分片，先合并回每关一行再对账。
+		      SELECT level_id, SUM(attempts)::bigint attempts,
+		             SUM(wins)::bigint wins,
+		             SUM(duration_sum)::bigint duration_sum,
+		             SUM(wave_sum)::bigint wave_sum
+		        FROM dashboard_battle_stats GROUP BY level_id
+		  ) d
 		  FULL JOIN (
 		      SELECT level_id, COUNT(*)::bigint attempts,
 		             (COUNT(*) FILTER (WHERE result='win'))::bigint wins,
@@ -234,7 +241,11 @@ func (s *Service) reconcileReactionCounts(ctx context.Context, rep *ReconcileRep
 		SELECT 'level#' || COALESCE(d.level_id, a.level_id) || ':' || COALESCE(d.reaction, a.reaction),
 		       COALESCE(a.cnt, 0)::text,
 		       COALESCE(d.count, 0)::text
-		  FROM dashboard_reaction_counts d
+		  FROM (
+		      -- R149：同一 (level, reaction) 可能有多片，先 SUM 再对账。
+		      SELECT level_id, reaction, SUM(count)::bigint AS count
+		        FROM dashboard_reaction_counts GROUP BY level_id, reaction
+		  ) d
 		  FULL JOIN (
 		      SELECT b.level_id, e.key AS reaction, SUM(e.value::bigint)::bigint AS cnt
 		        FROM battle_records b,
