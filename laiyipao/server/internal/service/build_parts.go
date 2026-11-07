@@ -30,6 +30,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"sync"
 
 	"github.com/jackc/pgx/v5"
@@ -223,6 +224,9 @@ func skillsRowsToMaps(rows pgx.Rows) (map[string]any, []string, map[int]bool, er
 	for e := range elements {
 		list = append(list, e)
 	}
+	// Go map 迭代顺序随机：不排序的话同一份数据每次读出的 elements 顺序不同，
+	// 既让往返守卫随机假红，也会让下发给客户端的 build 快照/回放上下文抖动。
+	sort.Strings(list)
 	return skills, list, occupied, nil
 }
 
