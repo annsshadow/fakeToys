@@ -62,7 +62,7 @@ func TestDashboardCounterShardMigration(t *testing.T) {
 
 	type agg struct {
 		rows, attempts, wins, duration, wave int64
-		shards                                []int32
+		shards                               []int32
 	}
 	readAgg := func(level int) agg {
 		t.Helper()
