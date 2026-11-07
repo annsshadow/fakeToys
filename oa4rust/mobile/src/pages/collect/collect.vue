@@ -14,6 +14,7 @@ const rows = ref<{ id: string; title: string; url: string }[]>([])
 const loading = ref(false)
 const loaded = ref(false)
 const loadError = ref('')
+const removingId = ref('')
 
 // 后端 collect_list 返回全员收藏（与桌面 CollectApp 同口径），客户端按本人 personId 过滤。
 async function load() {
@@ -36,12 +37,16 @@ function openUrl(row: { url: string }) {
 }
 
 async function removeRow(row: { id: string; title: string }) {
+  if (removingId.value) return
+  removingId.value = row.id
   try {
     await collectApi.remove(row.id)
     rows.value = rows.value.filter((r) => r.id !== row.id)
     uni.showToast({ title: '已删除', icon: 'none' })
   } catch {
     uni.showToast({ title: '删除失败，请重试', icon: 'none' })
+  } finally {
+    removingId.value = ''
   }
 }
 
@@ -69,7 +74,7 @@ onShow(async () => {
           <view class="item-title">{{ r.title }}</view>
           <view v-if="r.url" class="item-url">{{ r.url }}</view>
         </view>
-        <view class="item-del" @tap.stop="removeRow(r)">删除</view>
+        <view class="item-del" :class="{ disabled: removingId !== '' }" @tap.stop="removeRow(r)">删除</view>
       </view>
     </view>
   </view>
@@ -144,5 +149,9 @@ onShow(async () => {
   background: #fdecec;
   color: #d65050;
   font-size: 12px;
+}
+.item-del.disabled {
+  opacity: 0.6;
+  pointer-events: none;
 }
 </style>

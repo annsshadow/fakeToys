@@ -144,7 +144,10 @@ func TestLoadoutQueryFailures(t *testing.T) {
 		ts.renameTable(t, "user_mastery_nodes", "user_mastery_nodes_bak")
 		_, err := ts.computeAttacker(ctx, uid)
 		ts.renameTable(t, "user_mastery_nodes_bak", "user_mastery_nodes")
-		mustErr(t, err, "load mastery")
+		// R148 起构筑读走 pgx.Batch：任意一条语句 prepare 失败都会在第一条
+		// 结果上以通用前缀抛出，但 PG 原始错误仍带表名 —— 断言表名而非
+		// 逐查询前缀，避免把"哪张表坏了"的可观测性丢掉。
+		mustErr(t, err, "user_mastery_nodes")
 	})
 
 	t.Run("LoadBuildSnapshot装备查询失败", func(t *testing.T) {
@@ -164,7 +167,7 @@ func TestLoadoutQueryFailures(t *testing.T) {
 		ts.renameTable(t, "user_mastery_nodes", "user_mastery_nodes_bak")
 		_, err := ts.LoadBuildSnapshot(ctx, uid)
 		ts.renameTable(t, "user_mastery_nodes_bak", "user_mastery_nodes")
-		mustErr(t, err, "load mastery")
+		mustErr(t, err, "user_mastery_nodes")
 	})
 }
 

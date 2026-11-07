@@ -199,8 +199,10 @@ func TestTxMidwayFailures(t *testing.T) {
 		ts.renameTable(t, "user_mastery_nodes", "user_mastery_nodes_bak")
 		_, err := ts.LoadBuildSnapshot(ctx, uid)
 		ts.renameTable(t, "user_mastery_nodes_bak", "user_mastery_nodes")
-		// loadSkillsAndSlots 本体成功，checkSlotBudget → ExtraSlots 失败
-		mustErr(t, err, "load mastery")
+		// loadSkillsAndSlots 本体成功，checkSlotBudget → ExtraSlots 失败。
+		// R148 起构筑读走 pgx.Batch：prepare 期失败统一在第一条结果上抛出，
+		// 前缀变为 "load build parts"，但 PG 原始错误仍带表名 —— 断言表名。
+		mustErr(t, err, "user_mastery_nodes")
 	})
 
 	t.Run("SaveLoadout清槽失败", func(t *testing.T) {

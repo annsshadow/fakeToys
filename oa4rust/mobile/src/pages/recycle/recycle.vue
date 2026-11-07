@@ -17,6 +17,7 @@ type Row = Record<string, unknown>
 const rows = ref<Row[]>([])
 const loading = ref(false)
 const loadError = ref('')
+const busy = ref(false)
 const listView = computed(() =>
   listState({ loading: loading.value, loaded: true, count: rows.value.length, error: loadError.value }),
 )
@@ -48,22 +49,25 @@ function metaOf(r: Row): string {
 
 async function remove(r: Row): Promise<void> {
   const id = String(r.id ?? '')
-  if (!id) return
-  const res = await new Promise<boolean>((resolve) => {
-    uni.showModal({
-      title: '彻底删除',
-      content: `删除「${nameOf(r)}」？此操作不可恢复。`,
-      success: (m) => resolve(Boolean(m.confirm)),
-      fail: () => resolve(false),
-    })
-  })
-  if (!res) return
+  if (!id || busy.value) return
+  busy.value = true
   try {
+    const res = await new Promise<boolean>((resolve) => {
+      uni.showModal({
+        title: '彻底删除',
+        content: `删除「${nameOf(r)}」？此操作不可恢复。`,
+        success: (m) => resolve(Boolean(m.confirm)),
+        fail: () => resolve(false),
+      })
+    })
+    if (!res) return
     await recycleApi.remove(id)
     uni.showToast({ title: '已删除', icon: 'success' })
     await load()
   } catch (e) {
     uni.showToast({ title: e instanceof Error ? e.message : '删除失败', icon: 'none' })
+  } finally {
+    busy.value = false
   }
 }
 
@@ -91,21 +95,25 @@ function detailText(): string {
 }
 
 async function emptyAll(): Promise<void> {
-  const res = await new Promise<boolean>((resolve) => {
-    uni.showModal({
-      title: '清空回收站',
-      content: '所有项目将被永久删除，确定继续？',
-      success: (m) => resolve(Boolean(m.confirm)),
-      fail: () => resolve(false),
-    })
-  })
-  if (!res) return
+  if (busy.value) return
+  busy.value = true
   try {
+    const res = await new Promise<boolean>((resolve) => {
+      uni.showModal({
+        title: '清空回收站',
+        content: '所有项目将被永久删除，确定继续？',
+        success: (m) => resolve(Boolean(m.confirm)),
+        fail: () => resolve(false),
+      })
+    })
+    if (!res) return
     await recycleApi.empty()
     uni.showToast({ title: '已清空', icon: 'success' })
     await load()
   } catch (e) {
     uni.showToast({ title: e instanceof Error ? e.message : '清空失败', icon: 'none' })
+  } finally {
+    busy.value = false
   }
 }
 </script>
@@ -126,7 +134,7 @@ async function emptyAll(): Promise<void> {
     <view v-for="(r, i) in rows" :key="String(r.id ?? i)" class="card">
       <view class="card-title" @tap="showDetail(r)">{{ nameOf(r) }}</view>
       <view v-if="metaOf(r)" class="card-meta">{{ metaOf(r) }}</view>
-      <button class="btn danger" @tap="remove(r)">彻底删除</button>
+      <button class="btn danger" :disabled="busy" @tap="remove(r)">彻底删除</button>
     </view>
 
     <view v-if="detail" class="card detail">
@@ -137,7 +145,7 @@ async function emptyAll(): Promise<void> {
       <text class="detail-body">{{ detailText() }}</text>
     </view>
 
-    <button v-if="rows.length > 0" class="btn empty" @tap="emptyAll">清空回收站</button>
+    <button v-if="rows.length > 0" class="btn empty" :disabled="busy" @tap="emptyAll">清空回收站</button>
   </view>
 </template>
 
@@ -181,6 +189,9 @@ async function emptyAll(): Promise<void> {
   color: #fff;
   border: none;
   margin-top: 8rpx;
+}
+.btn[disabled] {
+  opacity: 0.6;
 }
 .tip {
   color: #90979f;
