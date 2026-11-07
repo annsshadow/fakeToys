@@ -6,7 +6,10 @@ use axum::{
     routing::get,
     Json, Router,
 };
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect};
+use sea_orm::{
+    ColumnTrait, ConnectionTrait, DatabaseConnection, DbBackend, EntityTrait, QueryFilter,
+    QueryOrder, QuerySelect, Statement,
+};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
@@ -14,6 +17,27 @@ pub mod entities;
 pub mod routes;
 
 use entities::{pp_task, pp_ticket, pp_work, pp_work_completed};
+
+/// 本 crate 的路由只注入 `DatabaseConnection`（没有 deadpool 池），管理员判定
+/// 直接用 SeaORM 连接查同一套 `auth_person`/`auth_role` 口径。
+async fn db_is_admin(db: &DatabaseConnection, person: &str) -> Result<bool, AppError> {
+    let stmt = Statement::from_sql_and_values(
+        DbBackend::Postgres,
+        "SELECT EXISTS(SELECT 1 FROM auth_person p \
+           LEFT JOIN auth_person_role pr ON pr.person_id = p.id \
+           LEFT JOIN auth_role r ON r.id = pr.role_id \
+          WHERE (p.unique_id = $1 OR p.id = $1) \
+            AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false) AS is_admin",
+        [person.into()],
+    );
+    let row = db
+        .query_one(stmt)
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    Ok(row
+        .map(|row| row.try_get::<bool>("", "is_admin").unwrap_or(false))
+        .unwrap_or(false))
+}
 
 #[allow(non_snake_case)]
 pub async fn work_list(
@@ -66,8 +90,12 @@ pub async fn work_list(
 #[allow(non_snake_case)]
 pub async fn work_get(
     db: Extension<DatabaseConnection>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let Some(Extension(sess)) = session else {
+        return Err(AppError::Unauthorized);
+    };
     let model = pp_work::Entity::find()
         .filter(pp_work::Column::Id.eq(&id))
         .filter(pp_work::Column::DeletedAt.is_null())
@@ -75,6 +103,13 @@ pub async fn work_get(
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
         .ok_or_else(|| AppError::NotFound)?;
+
+    // 读归属档：发起人非空 → 本人或 admin；为空 → 仅 admin（fail-closed）。
+    let creator = model.creator_id.trim();
+    let is_owner = !creator.is_empty() && creator.eq_ignore_ascii_case(sess.person_unique.trim());
+    if !is_owner && !db_is_admin(&db.0, &sess.person_unique).await? {
+        return Err(AppError::Forbidden);
+    }
 
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(model.id.clone())),

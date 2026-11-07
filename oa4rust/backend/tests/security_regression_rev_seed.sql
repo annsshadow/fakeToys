@@ -164,13 +164,17 @@ INSERT INTO "x_readcompleted" ("id","work_id","person") VALUES ('rev-r6-readcomp
 DELETE FROM "x_record" WHERE "id" = 'rev-4ffe3dec-3687-4b60-9d67-dbff5536d417';
 INSERT INTO "x_record" ("id","creator","person") VALUES ('rev-4ffe3dec-3687-4b60-9d67-dbff5536d417','audit-user','audit-user');
 DELETE FROM "x_review" WHERE "id" = 'rev-r6-reviewid';
-INSERT INTO "x_review" ("id","work_id","creator","person") VALUES ('rev-r6-reviewid','r6seed','audit-user','audit-user');
+INSERT INTO "x_review" ("id","work_id","reviewer","creator","person") VALUES ('rev-r6-reviewid','r6seed','audit-user','audit-user','audit-user');
 DELETE FROM "x_snap" WHERE "id" = 'rev-r6-snapid';
-INSERT INTO "x_snap" ("id","work_id","snap_type","creator","person") VALUES ('rev-r6-snapid','r6seed','r6seed','audit-user','audit-user');
+INSERT INTO "x_snap" ("id","work_id","snap_type","creator","person") VALUES ('rev-r6-snapid','rev-r6seed-work','r6seed','audit-user','audit-user');
 DELETE FROM "x_task" WHERE "id" = 'rev-task-admin-1';
 INSERT INTO "x_task" ("id","work","person","creator") VALUES ('rev-task-admin-1','r6seed','audit-user','audit-user');
 DELETE FROM "x_work" WHERE "id" = 'rev-work-admin-1';
 INSERT INTO "x_work" ("id","title","process","creator","person") VALUES ('rev-work-admin-1','r6seed','r6seed','audit-user','audit-user');
+-- snap 的归属 hop 到 x_work.creator（x_snap 写入路径不填 creator/person），
+-- 本人正控制需要一个 audit-user 持有的 work 行。
+DELETE FROM "x_work" WHERE "id" = 'rev-r6seed-work';
+INSERT INTO "x_work" ("id","title","process","creator","person") VALUES ('rev-r6seed-work','r6seed','r6seed','audit-user','audit-user');
 DELETE FROM "x_workcompleted" WHERE "id" = 'rev-r6-dataworkcompletedid';
 INSERT INTO "x_workcompleted" ("id","work_id","creator") VALUES ('rev-r6-dataworkcompletedid','r6seed','audit-user');
 DELETE FROM "x_attendance_record" WHERE "id" = 'rev-t1-record';

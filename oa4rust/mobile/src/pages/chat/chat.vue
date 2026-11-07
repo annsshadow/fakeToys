@@ -3,7 +3,7 @@
 
 <script setup lang="ts">
 import { onHide, onLoad, onShow, onUnload } from '@dcloudio/uni-app'
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import type { MessageRow } from '@/services'
 import { messageApi, messageConversationId } from '@/services'
 import { useSession } from '@/store/session'
@@ -19,6 +19,7 @@ import {
 } from '@/utils/networkStatus'
 import { describeChatError, loadChatHistoryPage, mergeOlderMessages } from './chatHistory'
 import { CHAT_POLL_INTERVAL_MS, type ChatPollHandle, mergeNewerMessages, startChatPolling } from './chatPolling'
+import { isNearBottom, pendingAfterAppend, type ScrollMetrics, shouldFollowToLatest } from './chatScroll'
 
 const session = useSession()
 const conversationId = ref('')
@@ -33,6 +34,30 @@ const historyPage = ref(1)
 const historyHasMore = ref(false)
 const historyError = ref('')
 const loadingOlder = ref(false)
+// R148：滚动跟随。旧实现没有任何滚动定位，进入会话停在最旧消息处，发消息也不跟到底。
+const scrollIntoView = ref('')
+const scrollMetrics = ref<ScrollMetrics | null>(null)
+const pendingCount = ref(0)
+
+function scrollToLatest() {
+  pendingCount.value = 0
+  // scroll-into-view 对同一个值不会重复触发，先清空再在下一帧设回。
+  scrollIntoView.value = ''
+  void nextTick(() => {
+    scrollIntoView.value = 'chat-bottom'
+  })
+}
+
+function onScroll(e: { detail: ScrollMetrics }) {
+  scrollMetrics.value = e.detail
+  if (isNearBottom(e.detail)) pendingCount.value = 0
+}
+
+function afterMessagesChanged(added: number) {
+  const follow = shouldFollowToLatest(scrollMetrics.value)
+  pendingCount.value = pendingAfterAppend(pendingCount.value, added, follow)
+  if (follow) scrollToLatest()
+}
 
 function keepConversation(rows: MessageRow[]): MessageRow[] {
   return rows.filter((m) => messageConversationId(m as Record<string, unknown>) === conversationId.value)
@@ -80,7 +105,11 @@ function startPolling() {
       if (rows.length === 0) return
       const before = msgs.value.length
       msgs.value = mergeNewerMessages(msgs.value, rows)
-      if (msgs.value.length !== before) void markConversationRead()
+      const added = msgs.value.length - before
+      if (added > 0) {
+        afterMessagesChanged(added)
+        void markConversationRead()
+      }
     },
     // 轮询失败不弹提示（用户无操作），但要留可诊断痕迹；连续网络失败才点亮断网态。
     onError: (err, failures) => {
@@ -134,6 +163,8 @@ async function loadHistory() {
     historyHasMore.value = result.hasMore
     historyReady = true
     networkOffline.value = false
+    // 首屏直接定位到最新：消息按旧→新渲染，默认停在顶部会先看到最早的消息。
+    afterMessagesChanged(msgs.value.length)
     startPolling()
   } catch (e) {
     msgs.value = []
@@ -183,6 +214,7 @@ async function send() {
         type: 'text',
       },
     ]
+    afterMessagesChanged(1)
     text.value = ''
   } catch (e) {
     uni.showToast({ title: e instanceof Error ? e.message : '发送失败', icon: 'none' })
@@ -200,7 +232,7 @@ async function send() {
 
     <view v-if="networkOffline" class="offline-banner">{{ NETWORK_OFFLINE_TEXT }}</view>
 
-    <scroll-view class="body" scroll-y>
+    <scroll-view class="body" scroll-y :scroll-into-view="scrollIntoView" @scroll="onScroll">
       <view v-if="loading" class="tip">加载中…</view>
       <view v-else-if="msgs.length === 0 && historyError" class="tip tip-error">
         <view class="error-text">{{ historyError }}</view>
@@ -219,7 +251,10 @@ async function send() {
           <view class="bubble">{{ m.content }}</view>
         </view>
       </view>
+      <view id="chat-bottom" class="bottom-anchor"></view>
     </scroll-view>
+
+    <view v-if="pendingCount > 0" class="new-msg" @tap="scrollToLatest">{{ pendingCount }} 条新消息</view>
 
     <view class="composer">
       <input v-model="text" class="input" type="text" placeholder="发消息…" confirm-type="send" @confirm="send" />
@@ -232,10 +267,27 @@ async function send() {
 
 <style scoped>
 .chat {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100vh;
   background: #f5f7fa;
+}
+.bottom-anchor {
+  height: 1rpx;
+}
+.new-msg {
+  position: absolute;
+  left: 50%;
+  bottom: 160rpx;
+  transform: translateX(-50%);
+  padding: 12rpx 28rpx;
+  border-radius: 32rpx;
+  background: #2d8cf0;
+  color: #fff;
+  font-size: 26rpx;
+  box-shadow: 0 4rpx 16rpx rgba(45, 140, 240, 0.35);
+  z-index: 2;
 }
 .head {
   padding: 24rpx 32rpx;
