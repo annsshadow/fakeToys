@@ -39,6 +39,8 @@ DELETE FROM "x_attendance_statistical_cycle" WHERE "id" = 'rev-r6-attendancestat
 INSERT INTO "x_attendance_statistical_cycle" ("id","creator") VALUES ('rev-r6-attendancestatistica','audit-user');
 DELETE FROM "x_attendance_v2_appeal_info" WHERE "id" = 'rev-r6-v2_appeal_get';
 INSERT INTO "x_attendance_v2_appeal_info" ("id","user_id") VALUES ('rev-r6-v2_appeal_get','audit-user');
+DELETE FROM "x_attendance_v2_group_schedule" WHERE "id" = 'rev-sched-admin';
+INSERT INTO "x_attendance_v2_group_schedule" ("id","group_id","user_id","schedule_month_string","schedule_date_string","shift_id") VALUES ('rev-sched-admin','r6seed','audit-user','2026-01','2026-01-01','r6seed');
 DELETE FROM "x_attendance_workday_config" WHERE "id" = 'rev-r6-attendanceworkdaycon';
 INSERT INTO "x_attendance_workday_config" ("id","creator") VALUES ('rev-r6-attendanceworkdaycon','audit-user');
 DELETE FROM "x_attendance_workplace" WHERE "id" = 'rev-r6-workplace_id';

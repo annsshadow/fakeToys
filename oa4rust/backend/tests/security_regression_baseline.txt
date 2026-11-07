@@ -57,14 +57,11 @@ processplatform_service_processing|snap_id|GET	LEAK
 processplatform_service_processing|task_id|GET	LEAK
 processplatform_service_processing|task_v2_id|GET	LEAK
 processplatform_service_processing|taskcompleted_id|GET	LEAK
-t1|attendancedetail_mobile_mobilepreview	UNVERIFIED
 t1|attendancedetail_mobile_my	LEAK
-t1|attendancedetail_mobile_recive	UNVERIFIED
 t1|bbs|create_topic	UNVERIFIED
 t1|mind|create_folder	UNVERIFIED
 t1|mind|create_mind	UNVERIFIED
 t1|oauth|generate_code	UNVERIFIED
-t2|attendance|v2_groupschedule_list_filter	UNVERIFIED
 t2|auth|code	UNVERIFIED
 t2|file|file_create	UNVERIFIED
 t2|meeting|create_meeting	UNVERIFIED

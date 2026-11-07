@@ -1757,15 +1757,23 @@ pub async fn attendancedetail_mobile_filter_list_page_page_count_count(
 /// GET /api/attendance/assemble/control/attendancedetail/mobile/mobilepreview
 pub async fn attendancedetail_mobile_mobilepreview(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 读权限 = 本人 OR 管理员；body `personId` 只是查询键，不能作为权限主体。
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
-    let person_id = payload
+    let mut person_id = payload
         .get("personId")
         .and_then(|v| v.as_str())
         .unwrap_or("")
+        .trim()
         .to_string();
+    if person_id.is_empty() {
+        person_id = sess.person_unique.clone();
+    }
+    shared::middleware::require_owner(&pool, &sess, &person_id).await?;
     let date = payload
         .get("date")
         .and_then(|v| v.as_str())
@@ -1871,15 +1879,20 @@ pub async fn attendancedetail_mobile_recive(
     session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // 考勤明细接收，person 从 body 取（冒名族，另记待修）⇒ 会话存在档。
-    require_session(session)?;
+    // 写操作归属 = 会话身份（管理员可代操作）；body `personId` 不能冒充他人。
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
-    let person_id = payload
+    let mut person_id = payload
         .get("personId")
         .and_then(|v| v.as_str())
         .unwrap_or("")
+        .trim()
         .to_string();
+    if person_id.is_empty() {
+        person_id = sess.person_unique.clone();
+    }
+    shared::middleware::require_owner(&pool, &sess, &person_id).await?;
     let date = payload
         .get("date")
         .and_then(|v| v.as_str())
@@ -8334,8 +8347,11 @@ pub async fn v2_groupschedule_list_group_month(
 /// POST /api/attendance/assemble/control/v2/groupschedule/list/filter
 pub async fn v2_groupschedule_list_filter(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     body: Option<Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 排班按人读：本人 OR 管理员；`userId` 为空时回落会话本人。
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
 
     let get = |key: &str| -> String {
@@ -8347,7 +8363,11 @@ pub async fn v2_groupschedule_list_filter(
             .to_string()
     };
     let group_id = get("groupId");
-    let user_id = get("userId");
+    let mut user_id = get("userId");
+    if user_id.is_empty() {
+        user_id = sess.person_unique.clone();
+    }
+    shared::middleware::require_owner(&pool, &sess, &user_id).await?;
     let month = get("scheduleMonthString");
 
     let rows = client

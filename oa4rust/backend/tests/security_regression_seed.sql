@@ -20,7 +20,7 @@ INSERT INTO "x_attendance_admin" ("id","person_id","creator") VALUES ('r6-attend
 DELETE FROM "x_attendance_appeal_info" WHERE "id" = 'appeal-admin';
 INSERT INTO "x_attendance_appeal_info" ("id","person_id","creator") VALUES ('appeal-admin','gate-victim','gate-victim');
 DELETE FROM "x_attendance_detail" WHERE "id" = 'r5-ad-admin';
-INSERT INTO "x_attendance_detail" ("id","person_id","creator") VALUES ('r5-ad-admin','gate-victim','gate-victim');
+INSERT INTO "x_attendance_detail" ("id","person_id","date","creator") VALUES ('r5-ad-admin','gate-victim','2026-01-01','gate-victim');
 DELETE FROM "x_attendance_employee_config" WHERE "id" = 'r6-attendanceemployeeco';
 INSERT INTO "x_attendance_employee_config" ("id","person_id","creator") VALUES ('r6-attendanceemployeeco','gate-victim','gate-victim');
 DELETE FROM "x_attendance_import_file_info" WHERE "id" = 'r6-attendanceimportfile';
@@ -39,6 +39,8 @@ DELETE FROM "x_attendance_statistical_cycle" WHERE "id" = 'r6-attendancestatisti
 INSERT INTO "x_attendance_statistical_cycle" ("id","creator") VALUES ('r6-attendancestatistica','gate-victim');
 DELETE FROM "x_attendance_v2_appeal_info" WHERE "id" = 'r6-v2_appeal_get';
 INSERT INTO "x_attendance_v2_appeal_info" ("id","user_id") VALUES ('r6-v2_appeal_get','gate-victim');
+DELETE FROM "x_attendance_v2_group_schedule" WHERE "id" = 'SCHED-VICTIM';
+INSERT INTO "x_attendance_v2_group_schedule" ("id","group_id","user_id","schedule_month_string","schedule_date_string","shift_id") VALUES ('SCHED-VICTIM','r6seed','gate-victim','2026-01','2026-01-01','r6seed');
 DELETE FROM "x_attendance_workday_config" WHERE "id" = 'r6-attendanceworkdaycon';
 INSERT INTO "x_attendance_workday_config" ("id","creator") VALUES ('r6-attendanceworkdaycon','gate-victim');
 DELETE FROM "x_attendance_workplace" WHERE "id" = 'r6-workplace_id';
