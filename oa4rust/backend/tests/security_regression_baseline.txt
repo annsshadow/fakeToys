@@ -58,11 +58,6 @@ processplatform_service_processing|snap_id|GET	LEAK
 processplatform_service_processing|task_id|GET	LEAK
 processplatform_service_processing|task_v2_id|GET	LEAK
 processplatform_service_processing|taskcompleted_id|GET	LEAK
-query_assemble_designer|get_designer|GET	LEAK
-query_assemble_designer|query_id_permission|GET	LEAK
-query_assemble_designer|stat_id_permission|GET	LEAK
-query_assemble_designer|stat_id_simulate|GET	LEAK
-query_assemble_designer|stat_id|GET	LEAK
 query_assemble_designer|table_id_permission|GET	LEAK
 query_assemble_designer|view_id_bundle|GET	LEAK
 query_assemble_designer|view_id_permission|GET	LEAK
