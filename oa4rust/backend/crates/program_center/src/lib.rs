@@ -2070,13 +2070,19 @@ pub async fn code_validate_mobile_mobile_answer_answer_cascade(
 #[allow(non_snake_case)]
 pub async fn collect_code_mobile_mobile(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 归属谓词写进 SELECT：收藏行 person_id 来自会话（见 save 写路径）。
+    let actor = require_session(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
-            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            &format!(
+                "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect \
+                 WHERE id = $1 AND ({PERSON_OWNER_PREDICATE}) AND deleted_at IS NULL"
+            ),
+            &[&id, &actor],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -2115,7 +2121,7 @@ pub async fn collect_code_mobile_mobile(
                 ),
             ]),
         )))),
-        None => Ok(Json(ActionResult::error("not found"))),
+        None => Err(ownership_error(&pool, "x_program_collect", &id).await),
     }
 }
 
@@ -4244,14 +4250,20 @@ pub async fn deploy_web_resource_as_new_asNew(
 #[allow(non_snake_case)]
 pub async fn deploy_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 归属谓词写进 SELECT：写侧已改为会话人（不再硬写 'system'）。
+    let actor = require_session(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
-            "SELECT id, name, version, status, creator, create_time FROM x_program_deploy WHERE id = $1",
-            &[&id],
+            &format!(
+                "SELECT id, name, version, status, creator, create_time FROM x_program_deploy \
+                 WHERE id = $1 AND ({CREATOR_OWNER_PREDICATE})"
+            ),
+            &[&id, &actor],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -4291,7 +4303,7 @@ pub async fn deploy_id(
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("deploy not found"))),
+        None => Err(ownership_error(&pool, "x_program_deploy", &id).await),
     }
 }
 
@@ -4652,14 +4664,20 @@ pub async fn dict_dictFlag_path_data_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn dict_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 归属列取真实写入列 creator_person（dict_create 落的是会话人）。
+    let actor = require_session(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
-            "SELECT id, name, key_name, app_name, app_data, creator, create_time FROM x_program_dict WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            &format!(
+                "SELECT id, name, key_name, app_name, app_data, creator, create_time FROM x_program_dict \
+                 WHERE id = $1 AND ({CREATOR_PERSON_OWNER_PREDICATE}) AND deleted_at IS NULL"
+            ),
+            &[&id, &actor],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -4701,7 +4719,7 @@ pub async fn dict_id(
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("dict not found"))),
+        None => Err(ownership_error(&pool, "x_program_dict", &id).await),
     }
 }
 
@@ -5774,13 +5792,15 @@ pub async fn market_install_offline(
     pool: Extension<Pool>,
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_admin_opt(&pool, session.as_deref()).await?;
+    // 归属落会话人（原硬写 'system' 使 creator 无区分度，读侧 owner 谓词失效）。
+    let sess = require_session(session)?;
+    require_admin(&pool, &sess).await?;
     let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
-            "INSERT INTO x_program_deploy (id, name, creator, create_time) VALUES ($1, $2, 'system', NOW())",
-            &[&id, &"offline_install".to_string()],
+            "INSERT INTO x_program_deploy (id, name, creator, create_time) VALUES ($1, $2, $3, NOW())",
+            &[&id, &"offline_install".to_string(), &sess.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -6600,13 +6620,19 @@ pub async fn module_output_structure(
 #[allow(non_snake_case)]
 pub async fn module_output_flag_file(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 归属谓词写进 SELECT：模块行 creator 由写入方落访客身份。
+    let actor = require_session(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
-            "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            &format!(
+                "SELECT id, name, entity, creator, create_time FROM x_program_module \
+                 WHERE id = $1 AND ({CREATOR_OWNER_PREDICATE}) AND deleted_at IS NULL"
+            ),
+            &[&id, &actor],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -6638,7 +6664,7 @@ pub async fn module_output_flag_file(
                 ),
             ]),
         )))),
-        None => Ok(Json(ActionResult::error("not found"))),
+        None => Err(ownership_error(&pool, "x_program_module", &id).await),
     }
 }
 
@@ -6747,13 +6773,19 @@ pub async fn module_write_flag(
 #[allow(non_snake_case)]
 pub async fn module_id_compare(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 归属谓词写进 SELECT：模块行 creator 由写入方落访客身份。
+    let actor = require_session(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
-            "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
+            &format!(
+                "SELECT id, name, entity, creator, create_time FROM x_program_module \
+                 WHERE id = $1 AND ({CREATOR_OWNER_PREDICATE}) AND deleted_at IS NULL"
+            ),
+            &[&id, &actor],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -6785,7 +6817,7 @@ pub async fn module_id_compare(
                 ),
             ]),
         )))),
-        None => Ok(Json(ActionResult::error("not found"))),
+        None => Err(ownership_error(&pool, "x_program_module", &id).await),
     }
 }
 
@@ -7748,14 +7780,21 @@ pub async fn prompterrorlog_list_id_prev_count_loggername_loggerName(
 #[allow(non_snake_case)]
 pub async fn prompterrorlog_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 归属列取真实写入列 creator_person（u3_prompterrorlog_create 落会话人）。
+    let actor = require_session(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
-            "SELECT id, exception_class, logger_name, message, create_time FROM x_program_prompt_error_log WHERE id = $1",
-            &[&id],
+            &format!(
+                "SELECT id, exception_class, logger_name, message, create_time \
+                 FROM x_program_prompt_error_log \
+                 WHERE id = $1 AND ({CREATOR_PERSON_OWNER_PREDICATE})"
+            ),
+            &[&id, &actor],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -7795,7 +7834,7 @@ pub async fn prompterrorlog_id(
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("prompt error log not found"))),
+        None => Err(ownership_error(&pool, "x_program_prompt_error_log", &id).await),
     }
 }
 
@@ -7940,7 +7979,9 @@ pub async fn application_create(
     let name = req.name.unwrap_or_default();
     let app_id = req.app_id.unwrap_or_default();
     let description = req.description.unwrap_or_default();
-    let creator = req.creator.unwrap_or_else(|| "system".to_string());
+    // 归属以会话登录人为事实源：请求体 creator 不再参与，避免落 'system' 造成
+    // 归属无区分度（读侧 owner 谓词因此可实测）。
+    let creator = session.person_unique.clone();
 
     if name.trim().is_empty() {
         return Ok(Json(ActionResult::error("name is required")));
@@ -7969,13 +8010,19 @@ pub async fn application_create(
 #[allow(non_snake_case)]
 pub async fn application_get_by_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 归属谓词写进 SELECT：写侧 application_create 已改为缺省落会话人。
+    let actor = require_session(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
-            "SELECT id, name, app_id, description FROM x_applications WHERE id = $1",
-            &[&id],
+            &format!(
+                "SELECT id, name, app_id, description FROM x_applications \
+                 WHERE id = $1 AND ({CREATOR_OWNER_PREDICATE})"
+            ),
+            &[&id, &actor],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -7997,7 +8044,7 @@ pub async fn application_get_by_id(
                 ("description".to_string(), Value::Null),
             ]),
         )))),
-        None => Err(AppError::NotFound),
+        None => Err(ownership_error(&pool, "x_applications", &id).await),
     }
 }
 
@@ -9080,14 +9127,21 @@ pub async fn unexpectederrorlog_list_id_prev_count_date_date(
 #[allow(non_snake_case)]
 pub async fn unexpectederrorlog_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 归属列取真实写入列 creator_person（u3_unexpectederrorlog_create 落会话人）。
+    let actor = require_session(session)?.person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
-            "SELECT id, error_type, message, stack_trace, create_time FROM x_program_unexpected_error_log WHERE id = $1",
-            &[&id],
+            &format!(
+                "SELECT id, error_type, message, stack_trace, create_time \
+                 FROM x_program_unexpected_error_log \
+                 WHERE id = $1 AND ({CREATOR_PERSON_OWNER_PREDICATE})"
+            ),
+            &[&id, &actor],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -9127,7 +9181,7 @@ pub async fn unexpectederrorlog_id(
             ]));
             Ok(Json(ActionResult::success(result)))
         }
-        None => Ok(Json(ActionResult::error("unexpected error log not found"))),
+        None => Err(ownership_error(&pool, "x_program_unexpected_error_log", &id).await),
     }
 }
 
@@ -9325,6 +9379,15 @@ fn require_session(
 /// 归属谓词：`creator` 为本人 OR 调用者管理员。**写进 SQL WHERE**，不做先查后判；
 /// `creator` 为 NULL 时不命中（fail-closed）。
 const CREATOR_OWNER_PREDICATE: &str = "creator = $2 OR EXISTS(\
+    SELECT 1 FROM auth_person p \
+      JOIN auth_person_role pr ON pr.person_id = p.id \
+      JOIN auth_role r ON r.id = pr.role_id \
+     WHERE (p.unique_id = $2 OR p.id = $2) \
+       AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false)";
+
+/// 字典/异常日志等表的真实写入路径落的是 `creator_person`（`creator` 列历史为
+/// NULL），归属谓词必须对齐写入列，否则属主本人也会被 fail-closed 拒绝。
+const CREATOR_PERSON_OWNER_PREDICATE: &str = "creator_person = $2 OR EXISTS(\
     SELECT 1 FROM auth_person p \
       JOIN auth_person_role pr ON pr.person_id = p.id \
       JOIN auth_role r ON r.id = pr.role_id \
