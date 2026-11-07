@@ -186,15 +186,26 @@ func (s *Service) adminDashboardUncached(ctx context.Context) (Dashboard, error)
 			attempts []int64
 			wins     []int64
 		)
+		// R149：计数器按 battle_records.id % 16 分片后，同一关有多行。
+		// 先在 CTE 里按 level_id 合并，再对合并结果做全局 SUM / array_agg；
+		// `HAVING SUM(attempts) > 0` 保持旧语义（战报删光后该关不出现在漏斗里）。
 		if err := scan(`
+		WITH per_level AS (
+			SELECT level_id,
+			       SUM(attempts)     AS attempts,
+			       SUM(wins)         AS wins,
+			       SUM(duration_sum) AS duration_sum
+			  FROM dashboard_battle_stats
+			 GROUP BY level_id
+			HAVING SUM(attempts) > 0
+		)
 		SELECT COALESCE(SUM(attempts), 0),
 		       COALESCE(SUM(wins), 0),
 		       COALESCE(SUM(duration_sum)::numeric / NULLIF(SUM(attempts), 0), 0),
 		       COALESCE(array_agg(level_id ORDER BY level_id), '{}'::int[]),
 		       COALESCE(array_agg(attempts ORDER BY level_id), '{}'::bigint[]),
 		       COALESCE(array_agg(wins ORDER BY level_id), '{}'::bigint[])
-		FROM dashboard_battle_stats
-		WHERE attempts > 0`,
+		FROM per_level`,
 			&d.Battles.Total, &d.Battles.Wins, &d.Battles.AvgDurationMs,
 			&levels, &attempts, &wins); err != nil {
 			return err
