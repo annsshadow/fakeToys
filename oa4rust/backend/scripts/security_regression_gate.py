@@ -28,6 +28,8 @@
     python scripts/security_regression_gate.py sabotage write-idor-w7     # Rust②m：摘掉 query table/view 与 file get_file 归属校验
     python scripts/security_regression_gate.py sabotage read-a-b1         # Rust②h：摘掉分片 A 第一批 cms 读门（6 条）
     python scripts/security_regression_gate.py sabotage read-a-b2         # Rust②i：摘掉分片 A 第二批 cms 读门（6 条）
+    python scripts/security_regression_gate.py sabotage read-a-b3         # Rust②i2：摘掉分片 A 第三批 cms appinfo/categoryinfo/commend 读门（6 条）
+    python scripts/security_regression_gate.py sabotage read-a-b4         # Rust②n：摘掉分片 A 第四批 article/content/portal 读门（6 条）
     python scripts/security_regression_gate.py sabotage write-idor-w3     # Rust②i：摘掉 office/bbs/mind 写侧冒名 403（7 条）
     python scripts/security_regression_gate.py sabotage go-limit0   # Go①：扣款乘 2
     python scripts/security_regression_gate.py sabotage go-idor-rev # Go②：摘掉预设删除归属
@@ -826,6 +828,58 @@ A2_EXPECTS = [
     "cms_assemble_control|templateform_id|GET",
 ]
 
+# 分片 A / A-b3：appinfo（三端点）/ categoryinfo（两端点）/ commend（一端点）。
+# 六条全部复用 `cms_gate_owned_read`，摘掉该 helper 的单主体谓词即可逐条 LEAK；
+# `commend` 的归属列是 `person_id`（表无 `creator`，台账已登记映射）。
+A3_EXPECTS = [
+    "cms_assemble_control|appinfo_id|GET",
+    "cms_assemble_control|appinfo_id_control|GET",
+    "cms_assemble_control|application_id|GET",
+    "cms_assemble_control|categoryinfo_id|GET",
+    "cms_assemble_control|categoryinfo_id_control|GET",
+    "cms_assemble_control|commend_id|GET",
+]
+
+# 分片 A / A-b4：article/content 的 published+owner 门（常量整段替换）、
+# portal 家族四端点的 creator 门（与 A-b3 同款 `{owner_col}` 谓词）。
+# 恒真式同样保留 `$2`/`$3` 绑定，避免 deadpool 端点 bind 数不匹配 → 500 → 假阳性。
+CMS_CORE_ENTITY = BACKEND / "crates/cms_core_entity/src/lib.rs"
+CMS_CORE_EXPRESS = BACKEND / "crates/cms_core_express/src/lib.rs"
+PORTAL = BACKEND / "crates/portal/src/lib.rs"
+PORTAL_DESIGNER = BACKEND / "crates/portal_assemble_designer/src/lib.rs"
+PORTAL_SURFACE = BACKEND / "crates/portal_assemble_surface/src/lib.rs"
+CMS_ARTICLE_READ_GATE_RE = re.compile(
+    r'(const ARTICLE_READ_ALLOWED_SQL: &str = ").*?";', re.S
+)
+CMS_ARTICLE_READ_GATE_PATCH = (
+    r'\1SELECT 1 AS hit FROM x_cms_article WHERE id = $1 '
+    r'AND deleted_at IS NULL '
+    r'AND (($2::text IS NOT NULL OR $2::text IS NULL) OR $3::boolean)";'
+)
+CMS_CONTENT_READ_GATE_RE = re.compile(
+    r'(const CONTENT_READ_ALLOWED_SQL: &str = ").*?";', re.S
+)
+CMS_CONTENT_READ_GATE_PATCH = (
+    r'\1SELECT 1 AS hit FROM x_cms_content WHERE id = $1 '
+    r'AND deleted_at IS NULL '
+    r'AND (($2::text IS NOT NULL OR $2::text IS NULL) OR $3::boolean)";'
+)
+PORTAL_OWNED_READ_GATE_RE = re.compile(
+    r'AND \(\{owner_col\} = \$2::text OR \$3::boolean\)'
+)
+PORTAL_OWNED_READ_GATE_PATCH = (
+    "AND ({owner_col} IS NOT NULL OR {owner_col} IS NULL "
+    "OR $2::text IS NOT NULL OR $2::text IS NULL OR $3::boolean)"
+)
+A4_EXPECTS = [
+    "cms_core_entity|article_get|GET",
+    "cms_core_express|content_detail|GET",
+    "portal|portal_id|GET",
+    "portal_assemble_designer|portal_id_icon|GET",
+    "portal_assemble_designer|portal_id_permission|GET",
+    "portal_assemble_surface|get_surface|GET",
+]
+
 
 # 写 IDOR 第 W-b3 批：office/bbs/mind 写侧冒名 403 臂。
 # 把三个 crate resolve_* 的管理员臂改成恒放行（保留 is_admin_db 调用引用，避免未使用告警），
@@ -1113,6 +1167,28 @@ def sabotage(kind: str) -> int:
             A2_EXPECTS,
             require_leak=True,
         )
+    elif kind == "read-a-b3":
+        return sabotage_many(
+            "摘掉分片 A 第三批 cms appinfo/categoryinfo/commend 读归属谓词（6 条应逐条 LEAK）",
+            [
+                (CMS, CMS_OWNED_READ_GATE_RE, CMS_OWNED_READ_GATE_PATCH, "cms_owned_read"),
+            ],
+            A3_EXPECTS,
+            require_leak=True,
+        )
+    elif kind == "read-a-b4":
+        return sabotage_many(
+            "摘掉分片 A 第四批 article/content/portal 读归属谓词（6 条应逐条 LEAK）",
+            [
+                (CMS_CORE_ENTITY, CMS_ARTICLE_READ_GATE_RE, CMS_ARTICLE_READ_GATE_PATCH, "article_read"),
+                (CMS_CORE_EXPRESS, CMS_CONTENT_READ_GATE_RE, CMS_CONTENT_READ_GATE_PATCH, "content_read"),
+                (PORTAL, PORTAL_OWNED_READ_GATE_RE, PORTAL_OWNED_READ_GATE_PATCH, "portal_read"),
+                (PORTAL_DESIGNER, PORTAL_OWNED_READ_GATE_RE, PORTAL_OWNED_READ_GATE_PATCH, "designer_read"),
+                (PORTAL_SURFACE, PORTAL_OWNED_READ_GATE_RE, PORTAL_OWNED_READ_GATE_PATCH, "surface_read"),
+            ],
+            A4_EXPECTS,
+            require_leak=True,
+        )
     elif kind == "write-idor-w1":
         return sabotage_many(
             "摘掉 W-b1 五个读端点的 owner_gate（5 条应逐条 LEAK）",
@@ -1142,10 +1218,8 @@ def sabotage(kind: str) -> int:
     else:
         raise SystemExit(
             f"未知破坏实验: {kind}（可选 ownership / correct / general / organization / "
-            "program_center / hotpic_mind / read_b / read-a-b1 / read-a-b2 / "
-            "write-idor-b5 / write-idor-b6 / write-idor-b7 / write-idor-w1）"
-            "program_center / hotpic_mind / read_b / read-a-b1 / "
-            "write-idor-b5 / write-idor-b6 / write-idor-b7 / "
+            "program_center / hotpic_mind / read_b / read-a-b1 / read-a-b2 / read-a-b3 / "
+            "read-a-b4 / write-idor-b5 / write-idor-b6 / write-idor-b7 / "
             "write-idor-w1 / write-idor-w2 / write-idor-w3 / write-idor-w4 / write-idor-w5 / "
             "write-idor-w6 / write-idor-w7）"
         )
@@ -1193,7 +1267,7 @@ def main() -> int:
         if len(sys.argv) < 3:
             print("用法: security_regression_gate.py sabotage "
                   "<ownership|correct|general|organization|program_center|hotpic_mind|read_b|"
-                  "read-a-b1|write-idor-b5|write-idor-b6|write-idor-b7|"
+                  "read-a-b1|read-a-b2|read-a-b4|write-idor-b5|write-idor-b6|write-idor-b7|"
                   "write-idor-w1|write-idor-w2|write-idor-w3|write-idor-w4|write-idor-w5|"
                   "rust-drift-to-leak|rust-swallow-write|"
                   "go-limit0|go-idor-rev|go-empty-list|go-swallow-write|"

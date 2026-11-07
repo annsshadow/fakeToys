@@ -3,8 +3,11 @@ ai_assemble_control|config_get_mcp_flag|GET	idor-read	GET	/api/ai/assemble/contr
 attendance_assemble_control|attendanceadmin_id|GET	idor-read	GET	/api/attendance/assemble/control/attendanceadmin/{id}	x_attendance_admin	r6-attendanceadmin_id	r6-attendanceadmin_id	path		legacy	both	allow
 attendance_assemble_control|attendanceadmin_id|own	idor-read-own	GET	/api/attendance/assemble/control/attendanceadmin/{id}	x_attendance_admin	rev-r6-attendanceadmin_id	rev-r6-attendanceadmin_id	path		legacy		allow
 attendance_assemble_control|attendanceappealInfo_id|GET	idor-read	GET	/api/attendance/assemble/control/attendanceappealInfo/{id}	x_attendance_appeal_info	appeal-admin	appeal-admin	path		legacy	both	allow
+attendance_assemble_control|attendanceappealInfo_id|own	idor-read-own	GET	/api/attendance/assemble/control/attendanceappealInfo/{id}	x_attendance_appeal_info	rev-appeal-admin	rev-appeal-admin	path		legacy		allow
 attendance_assemble_control|attendancedetail_id|GET	idor-read	GET	/api/attendance/assemble/control/attendancedetail/{id}	x_attendance_detail	r5-ad-admin	r5-ad-admin	path		legacy	both	allow
+attendance_assemble_control|attendancedetail_id|own	idor-read-own	GET	/api/attendance/assemble/control/attendancedetail/{id}	x_attendance_detail	rev-r5-ad-admin	rev-r5-ad-admin	path		legacy		allow
 attendance_assemble_control|attendancedetail_mobile_id|GET	idor-read	GET	/api/attendance/assemble/control/attendancedetail/mobile/{id}	x_attendance_detail	r5-ad-admin	r5-ad-admin	path		legacy	both	allow
+attendance_assemble_control|attendancedetail_mobile_id|own	idor-read-own	GET	/api/attendance/assemble/control/attendancedetail/mobile/{id}	x_attendance_detail	rev-r5-ad-admin	rev-r5-ad-admin	path		legacy		allow
 attendance_assemble_control|attendanceemployeeconfig_id|GET	idor-read	GET	/api/attendance/assemble/control/attendanceemployeeconfig/{id}	x_attendance_employee_config	r6-attendanceemployeeco	r6-attendanceemployeeco	path		legacy	both	allow
 attendance_assemble_control|attendanceemployeeconfig_id|own	idor-read-own	GET	/api/attendance/assemble/control/attendanceemployeeconfig/{id}	x_attendance_employee_config	rev-r6-attendanceemployeeco	rev-r6-attendanceemployeeco	path		legacy		allow
 attendance_assemble_control|attendanceimportfileinfo_id|GET	idor-read	GET	/api/attendance/assemble/control/attendanceimportfileinfo/{id}	x_attendance_import_file_info	r6-attendanceimportfile	r6-attendanceimportfile	path		legacy	both	allow
@@ -12,6 +15,7 @@ attendance_assemble_control|attendanceimportfileinfo_id|own	idor-read-own	GET	/a
 attendance_assemble_control|attendanceschedulesetting_id|GET	idor-read	GET	/api/attendance/assemble/control/attendanceschedulesetting/{id}	x_attendance_schedule_setting	r6-attendanceschedulese	r6-attendanceschedulese	path		legacy	both	allow
 attendance_assemble_control|attendanceschedulesetting_id|own	idor-read-own	GET	/api/attendance/assemble/control/attendanceschedulesetting/{id}	x_attendance_schedule_setting	rev-r6-attendanceschedulese	rev-r6-attendanceschedulese	path		legacy		allow
 attendance_assemble_control|attendanceselfholiday_id|GET	idor-read	GET	/api/attendance/assemble/control/attendanceselfholiday/{id}	x_attendance_selfholiday	hol-admin	hol-admin	path		legacy	both	allow
+attendance_assemble_control|attendanceselfholiday_id|own	idor-read-own	GET	/api/attendance/assemble/control/attendanceselfholiday/{id}	x_attendance_selfholiday	rev-hol-admin	rev-hol-admin	path		legacy		allow
 attendance_assemble_control|attendancesetting_id|GET	idor-read	GET	/api/attendance/assemble/control/attendancesetting/{id}	x_attendance_setting	r6-attendancesetting_id	r6-attendancesetting_id	path		legacy	both	allow
 attendance_assemble_control|attendancesetting_id|own	idor-read-own	GET	/api/attendance/assemble/control/attendancesetting/{id}	x_attendance_setting	rev-r6-attendancesetting_id	rev-r6-attendancesetting_id	path		legacy		allow
 attendance_assemble_control|attendancestatisticalcycle_id|GET	idor-read	GET	/api/attendance/assemble/control/attendancestatisticalcycle/{id}	x_attendance_statistical_cycle	r6-attendancestatistica	r6-attendancestatistica	path		legacy	both	allow
@@ -27,7 +31,11 @@ attendance_assemble_control|v2_record_get|own	idor-read-own	GET	/api/attendance/
 attendance_assemble_control|workplace_id|GET	idor-read	GET	/api/attendance/assemble/control/workplace/{id}	x_attendance_workplace	r6-workplace_id	r6-workplace_id	path		legacy	both	allow
 attendance_assemble_control|workplace_id|own	idor-read-own	GET	/api/attendance/assemble/control/workplace/{id}	x_attendance_workplace	rev-r6-workplace_id	rev-r6-workplace_id	path		legacy		allow
 calendar_core_entity|calendar_get|GET	idor-read	GET	/api/calendar/core/entity/calendar/{id}	x_cal_calendar	2bf1a95c-04a8-41c1-918b-7d608331c702	2bf1a95c-04a8-41c1-918b-7d608331c702	path		legacy	both	allow
-calendar_core_entity|calendar_get|own	idor-read-own	GET	/api/calendar/core/entity/calendar/{id}	x_cal_calendar	rev-2bf1a95c-04a8-41c1-918b-7d608331c702	rev-r6seed	path		legacy	fwd-only	n/a		
+calendar_core_entity|calendar_get|own	idor-read-own	GET	/api/calendar/core/entity/calendar/{id}	x_cal_calendar	rev-2bf1a95c-04a8-41c1-918b-7d608331c702	rev-r6seed	path		legacy	fwd-only	n/a
+calendar_assemble_control|event_get|GET	idor-read	GET	/api/calendar_assemble_control/event/{id}	cal_event	CAL-VICTIM-EVENT	CAL-VICTIM-EVENT	path		legacy	both	allow
+calendar_assemble_control|event_get|own	idor-read-own	GET	/api/calendar_assemble_control/event/{id}	cal_event	rev-CAL-VICTIM-EVENT	rev-r6seed	path		legacy		allow
+calendar_assemble_control|event_rfc|GET	idor-read	GET	/api/calendar_assemble_control/event/rfc/{id}	cal_event	CAL-VICTIM-EVENT	CAL-VICTIM-EVENT	path		legacy	both	allow
+calendar_assemble_control|event_rfc|own	idor-read-own	GET	/api/calendar_assemble_control/event/rfc/{id}	cal_event	rev-CAL-VICTIM-EVENT	rev-r6seed	path		legacy		allow
 organization_assemble_personal|user_setting|GET	idor-read	GET	/api/organization/assemble/personal/{id}/setting	auth_person	gate-victim	GATE-V-SETTING	path		legacy	both	allow	audit-user	
 organization_assemble_personal|user_setting|own	idor-read-own	GET	/api/organization/assemble/personal/{id}/setting	auth_person	audit-user	rev-GATE-V-SETTING	path		legacy	fwd-only	n/a		
 organization_assemble_personal|user_role_list|GET	idor-read	GET	/api/organization/assemble/personal/{id}/role/list	x_org_group_member	gate-victim	GATE-V-ROLE	path		legacy	both	allow	audit-user	
