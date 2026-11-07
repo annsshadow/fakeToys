@@ -29,9 +29,6 @@ cms_core_entity|article_get|GET	LEAK
 cms_core_express|content_detail|GET	LEAK
 file_assemble_control|get_file|GET	LEAK
 file_assemble_control|recycle_id|GET	UNVERIFIED
-general_core_entity|file_download|GET	LEAK
-general_core_entity|file_get|GET	LEAK
-general_core_entity|invoice_get|GET	LEAK
 portal_assemble_designer|portal_id_icon|GET	LEAK
 portal_assemble_designer|portal_id_permission|GET	LEAK
 portal_assemble_surface|get_surface|GET	LEAK
@@ -87,9 +84,6 @@ t2|attendance|v2_groupschedule_list_filter	UNVERIFIED
 t2|auth|code	UNVERIFIED
 t2|file|file_create	UNVERIFIED
 t2|file|folder_create	LEAK
-t2|general_assemble|invoice_create	LEAK
-t2|general_core|file_create	LEAK
-t2|general_core|invoice_create	LEAK
 t2|meeting|create_meeting	UNVERIFIED
 t2|mind|create_version	UNVERIFIED
 t2|organization|bind_create	UNVERIFIED
