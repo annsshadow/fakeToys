@@ -136,7 +136,7 @@ rev-GATE-V-MOBILE)`，delete paging `LEAK(2xx 响应体含 canary GATE-DEL-MOBIL
 - 命中 0 行但行存在 → `403`；行不存在维持原信封（appeal / detail 为 `success(null)`，自休假为 not found）。
 - 门禁：4 条新增 `idor-read-own` 正控制；复用既有 `rev-*` 镜像行，未新增种子。
 - 破坏实验：逐条把 4 个谓词改恒真（保留 `$2` 绑定）→ `NEW-FAIL` 恰好点名本批 4 条；
-  还原后门禁 112 非 PASS（基线 116 → 点名减 4），无 `STALE-BASELINE`。
+  还原后门禁 33 非 PASS（rebase 后基线 37 → 点名减 4），无 `STALE-BASELINE`。
 
 ## 批次 B-b4：processplatform_service_processing 任务/流程/办结读（E20 指派人 OR 管理员）
 
