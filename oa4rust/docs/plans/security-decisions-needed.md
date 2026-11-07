@@ -745,3 +745,15 @@ A/B/W 之间 crate 集合两两不相交；同一批内可以跨多个 crate，�
 | **合计** | **17** |
 
 17 条全部继续计入基线 128；只有拿到 `[PASS]` 证据的条目才按 §12.6 三步减行。
+
+### 14.6 已落地：organization 剩余可补证据项（U-org）
+
+| 用例 | 处置 | 证据 |
+|---|---|---|
+| `t2|organization|identity_create` | **已收归属转 PASS，基线点名删行** | `person_id` 必须等于会话主体或调用者为管理员，鉴权先于必填校验；`type_` 加 `serde(default)` 让 spoof body 能进 handler |
+| `t2|organization|bind_create` | **已收归属转 PASS，基线点名删行** | 用例承载字段改 `identity_id`；父资源 `x_org_identity.creator` 按 `CREATOR_OWNER_PREDICATE` 判定，再区分 403/404；`group_id` 加 `serde(default)` |
+| `t2|organization|unit_check_unit_has_person` | **已收归属转 PASS，基线点名删行** | 加 `require_session`；`person` 为空按本人，查他人需管理员；先按 `x_org_person(id/name)` 解析再比较主体。用例改 body `person` |
+| `t2|organization|group_list_object` | 保留基线，登记 | runner 的 `build_spoof_body` 只能注入单字段，handler 实际读 body `groupList` 数组；群组可见性无归属裁决 |
+| `t2|organization|unit_list_level_name_object` | 保留基线，登记 | 同上，handler 读 body `unitList` 数组；组织层级可见性无归属裁决 |
+
+本批基线 37 → 34；破坏实验短路三处新门后 `NEW-FAIL` 恰好点名 3 条（两条 group/unit 不受影响）。

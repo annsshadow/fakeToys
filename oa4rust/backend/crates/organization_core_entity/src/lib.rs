@@ -66,6 +66,34 @@ async fn ownership_error(db: &DatabaseConnection, table: &str, id: &str) -> AppE
     }
 }
 
+/// 调用者是否管理员：与 `CREATOR_OWNER_PREDICATE` 同源的 role = admin EXISTS。
+/// 仅用于「先鉴权后校验」的写入口，不替代 SQL WHERE 内的归属判定。
+async fn actor_is_admin(db: &DatabaseConnection, actor: &str) -> Result<bool, AppError> {
+    let sql = "SELECT EXISTS(\
+         SELECT 1 FROM auth_person p \
+           JOIN auth_person_role pr ON pr.person_id = p.id \
+           JOIN auth_role r ON r.id = pr.role_id \
+          WHERE (p.unique_id = $1 OR p.id = $1) \
+            AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false) AS is_admin";
+    match db
+        .query_one(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            sql,
+            vec![actor.into()],
+        ))
+        .await
+    {
+        Ok(Some(row)) => row.try_get::<bool>("", "is_admin").map_err(|e| {
+            AppError::internal_with_source(concat!(file!(), ":", line!()), e)
+        }),
+        Ok(None) => Ok(false),
+        Err(e) => Err(AppError::internal_with_source(
+            concat!(file!(), ":", line!()),
+            e,
+        )),
+    }
+}
+
 // ── Request structs ──────────────────────────────────────────────────────────
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -99,6 +127,7 @@ pub struct GroupUpdateRequest {
 pub struct IdentityCreateRequest {
     pub person_id: String,
     pub name: String,
+    #[serde(default)]
     pub type_: String,
 }
 
@@ -138,7 +167,9 @@ pub struct CustomUpdateRequest {
 
 #[derive(Debug, Deserialize)]
 pub struct BindCreateRequest {
+    #[serde(default)]
     pub identity_id: String,
+    #[serde(default)]
     pub group_id: String,
     pub role: Option<String>,
 }
@@ -609,6 +640,14 @@ pub async fn identity_create(
     Json(req): Json<IdentityCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let actor = require_session(session)?.person_unique;
+    // 归属收口：只能为本人创建身份，管理员可代建；鉴权先于必填校验，
+    // 避免越权者依据错误信封探测字段。person_id 为空时仍走原必填错误。
+    if !req.person_id.trim().is_empty()
+        && req.person_id.trim() != actor.as_str()
+        && !actor_is_admin(&db.0, &actor).await?
+    {
+        return Err(AppError::Forbidden);
+    }
     if req.person_id.trim().is_empty() || req.name.trim().is_empty() || req.type_.trim().is_empty()
     {
         return Ok(Json(ActionResult::error(
@@ -933,8 +972,34 @@ pub async fn bind_create(
     session: Option<Extension<shared::session::Session>>,
     Json(req): Json<BindCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
-    if req.identity_id.trim().is_empty() || req.group_id.trim().is_empty() {
+    let actor = require_session(session)?.person_unique;
+    if req.identity_id.trim().is_empty() {
+        return Ok(Json(ActionResult::error(
+            "identity_id and group_id are required",
+        )));
+    }
+
+    // 父资源归属在 WHERE 内：identity 非本人且调用者非管理员时影响 0 行，
+    // 再区分 403（行在）/404（行不存在），防止把他人身份绑进组。
+    let ownership_sql = format!(
+        "SELECT EXISTS(SELECT 1 FROM x_org_identity WHERE {CREATOR_OWNER_PREDICATE} \
+         AND deleted_at IS NULL) AS allowed"
+    );
+    let allowed = db
+        .0
+        .query_one(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            &ownership_sql,
+            vec![req.identity_id.clone().into(), actor.into()],
+        ))
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+        .map(|row| row.try_get::<bool>("", "allowed").unwrap_or(false))
+        .unwrap_or(false);
+    if !allowed {
+        return Err(ownership_error(&db.0, "x_org_identity", &req.identity_id).await);
+    }
+    if req.group_id.trim().is_empty() {
         return Ok(Json(ActionResult::error(
             "identity_id and group_id are required",
         )));
