@@ -15,3 +15,12 @@ describe('日历页事件并行拉取', () => {
     expect(source).not.toContain('await calendarApi.eventsFilter')
   })
 })
+
+describe('日历时间显示（R152，iOS 兼容）', () => {
+  it('经 parseServerDate 解析，不再用 new Date 直接吞服务端字符串', () => {
+    // iOS WebView 里 new Date('2026-11-07 10:30:00') 是 Invalid Date，时间会退化成原始字符串。
+    expect(source).toContain("import { parseServerDate } from '@/utils/datetime'")
+    expect(source).toContain('const d = parseServerDate(v)')
+    expect(source).not.toContain('const d = new Date(String(v))')
+  })
+})

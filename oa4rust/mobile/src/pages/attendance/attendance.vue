@@ -6,6 +6,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import { type AttendancePreCheck, attendanceApi } from '@/services'
 import { ensureAuthenticated } from '@/utils/auth-guard'
+import { parseServerDate } from '@/utils/datetime'
 import { describeLoadError } from '@/utils/loadList'
 
 const pre = ref<AttendancePreCheck | null>(null)
@@ -15,8 +16,9 @@ const checking = ref(false)
 
 function fmtTime(value?: string): string {
   if (!value) return ''
-  const d = new Date(value)
-  return Number.isNaN(d.valueOf()) ? value : d.toLocaleString('zh-CN')
+  // iOS WebView 不认「YYYY-MM-DD HH:mm:ss」，必须经 parseServerDate 显式构造。
+  const d = parseServerDate(value)
+  return d ? d.toLocaleString('zh-CN') : value
 }
 function labelOf(checkInType?: string): string {
   if (!checkInType) return '打卡'
