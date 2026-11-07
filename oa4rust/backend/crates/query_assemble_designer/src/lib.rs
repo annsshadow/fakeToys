@@ -70,6 +70,20 @@ async fn require_admin_opt(
 
 const DESIGN_TABLE_PREFIX: &str = "x_query_data_";
 
+/// 读端点归属校验：`creator` 为会话人本人或当前人是管理员才放行。
+/// 历史行 `creator` 为 NULL/'system' 时按 fail-closed 只允许管理员，不回填。
+async fn require_owner_or_admin(
+    pool: &Pool,
+    creator: Option<&str>,
+    actor: &str,
+) -> Result<(), AppError> {
+    if creator.is_some_and(|c| c == actor) || shared::middleware::is_admin(pool, actor).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct TableColumnDefinition {
@@ -421,8 +435,13 @@ pub struct CreateDesignerRequest {
 #[allow(non_snake_case)]
 pub async fn get_designer(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = session
+        .map(|ext| ext.0)
+        .ok_or(AppError::Unauthorized)?
+        .person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
@@ -436,6 +455,12 @@ pub async fn get_designer(
 
     match row {
         Some(row) => {
+            require_owner_or_admin(
+                &pool,
+                row.get::<_, Option<String>>("creator").as_deref(),
+                &actor,
+            )
+            .await?;
             let result = Value::Object(serde_json::Map::from_iter([
                 (
                     "id".to_string(),
@@ -488,14 +513,18 @@ pub async fn create_designer(
     axum::extract::Json(req): Json<CreateDesignerRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // A2-F1：查询设计对象为设计器元数据 ⇒ 收 admin 门（无会话 401 / 非 admin 403）。
-    require_admin_opt(&pool, session).await?;
+    // 归属落会话人：creator 不再硬写 'system'，否则读侧 owner 谓词无区分度。
+    let sess = session.map(|ext| ext.0).ok_or(AppError::Unauthorized)?;
+    if !shared::middleware::is_admin(&pool, &sess.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let client = shared::db::acquire(&pool).await?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_default();
     let category = req.category.unwrap_or_default();
     let query_definition = req.query.unwrap_or_default();
-    let creator = "system";
+    let creator = sess.person_unique.clone();
 
     client
         .execute(
@@ -699,7 +728,11 @@ pub async fn save_designer_bare(
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // A2-F1：查询设计对象（裸路径别名，id 取请求体）覆写 ⇒ 收 admin 门。
-    require_admin_opt(&pool, session).await?;
+    // 归属落会话人：creator 不再留空/硬写，否则读侧 owner 谓词无区分度。
+    let sess = session.map(|ext| ext.0).ok_or(AppError::Unauthorized)?;
+    if !shared::middleware::is_admin(&pool, &sess.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
     let client = shared::db::acquire(&pool).await?;
     let id = req
         .get("id")
@@ -742,9 +775,9 @@ pub async fn save_designer_bare(
         };
         let r = client
             .execute(
-                "INSERT INTO x_query_design (id, name, category, query_definition, create_time, update_time) \
-                 VALUES ($1, $2, $3, $4, NOW(), NOW())",
-                &[&new_id, &name, &category, &query],
+                "INSERT INTO x_query_design (id, name, category, query_definition, creator, create_time, update_time) \
+                 VALUES ($1, $2, $3, $4, $5, NOW(), NOW())",
+                &[&new_id, &name, &category, &query, &sess.person_unique],
             )
             .await
             .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -2383,34 +2416,47 @@ pub async fn query_flag_icon(
 #[allow(non_snake_case)]
 pub async fn query_id_permission(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((_s0, id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = session
+        .map(|ext| ext.0)
+        .ok_or(AppError::Unauthorized)?
+        .person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
-            "SELECT id, permission FROM x_query_design WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, permission, creator FROM x_query_design WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
-        Some(row) => Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([
-                (
-                    "id".to_string(),
-                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
-                ),
-                (
-                    "permission".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("permission")
-                            .unwrap_or_default(),
+        Some(row) => {
+            require_owner_or_admin(
+                &pool,
+                row.get::<_, Option<String>>("creator").as_deref(),
+                &actor,
+            )
+            .await?;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
                     ),
-                ),
-            ]),
-        )))),
+                    (
+                        "permission".to_string(),
+                        Value::String(
+                            row.get::<_, Option<String>>("permission")
+                                .unwrap_or_default(),
+                        ),
+                    ),
+                ]),
+            ))))
+        }
         None => Ok(Json(ActionResult::error("query not found"))),
     }
 }
@@ -2621,8 +2667,13 @@ pub async fn stat_list_id_prev_count(
 #[allow(non_snake_case)]
 pub async fn stat_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = session
+        .map(|ext| ext.0)
+        .ok_or(AppError::Unauthorized)?
+        .person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
@@ -2635,6 +2686,12 @@ pub async fn stat_id(
 
     match row {
         Some(row) => {
+            require_owner_or_admin(
+                &pool,
+                row.get::<_, Option<String>>("creator").as_deref(),
+                &actor,
+            )
+            .await?;
             let result = Value::Object(serde_json::Map::from_iter([
                 (
                     "id".to_string(),
@@ -2683,48 +2740,18 @@ pub async fn stat_id(
 #[allow(non_snake_case)]
 pub async fn stat_id_permission(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = session
+        .map(|ext| ext.0)
+        .ok_or(AppError::Unauthorized)?
+        .person_unique;
     let client = shared::db::acquire(&pool).await?;
 
     let row = client
         .query_opt(
-            "SELECT id, permission FROM x_query_stat WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
-        )
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
-
-    match row {
-        Some(row) => Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([
-                (
-                    "id".to_string(),
-                    Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
-                ),
-                (
-                    "permission".to_string(),
-                    Value::String(
-                        row.get::<_, Option<String>>("permission")
-                            .unwrap_or_default(),
-                    ),
-                ),
-            ]),
-        )))),
-        None => Ok(Json(ActionResult::error("stat not found"))),
-    }
-}
-
-#[allow(non_snake_case)]
-pub async fn stat_id_simulate(
-    pool: Extension<Pool>,
-    Path(id): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = shared::db::acquire(&pool).await?;
-
-    let row = client
-        .query_opt(
-            "SELECT id, name, config FROM x_query_stat WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, permission, creator FROM x_query_stat WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
@@ -2732,6 +2759,60 @@ pub async fn stat_id_simulate(
 
     match row {
         Some(row) => {
+            require_owner_or_admin(
+                &pool,
+                row.get::<_, Option<String>>("creator").as_deref(),
+                &actor,
+            )
+            .await?;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    (
+                        "id".to_string(),
+                        Value::String(row.get::<_, Option<String>>("id").unwrap_or_default()),
+                    ),
+                    (
+                        "permission".to_string(),
+                        Value::String(
+                            row.get::<_, Option<String>>("permission")
+                                .unwrap_or_default(),
+                        ),
+                    ),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("stat not found"))),
+    }
+}
+
+#[allow(non_snake_case)]
+pub async fn stat_id_simulate(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let actor = session
+        .map(|ext| ext.0)
+        .ok_or(AppError::Unauthorized)?
+        .person_unique;
+    let client = shared::db::acquire(&pool).await?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, config, creator FROM x_query_stat WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+
+    match row {
+        Some(row) => {
+            require_owner_or_admin(
+                &pool,
+                row.get::<_, Option<String>>("creator").as_deref(),
+                &actor,
+            )
+            .await?;
             let result = Value::Object(serde_json::Map::from_iter([
                 (
                     "id".to_string(),

@@ -867,7 +867,8 @@ pub async fn stat_create(
             .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?,
         None => String::new(),
     };
-    let creator = "system";
+    // 归属落会话人：creator 不再硬写 'system'，否则读侧 owner 谓词无区分度。
+    let creator = sess.person_unique.clone();
 
     client
         .execute(

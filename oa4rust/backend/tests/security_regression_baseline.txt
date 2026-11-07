@@ -69,11 +69,6 @@ program_center|module_id_compare|GET	LEAK
 program_center|module_output_flag_file|GET	LEAK
 program_center|prompterrorlog_id|GET	LEAK
 program_center|unexpectederrorlog_id|GET	LEAK
-query_assemble_designer|get_designer|GET	LEAK
-query_assemble_designer|query_id_permission|GET	LEAK
-query_assemble_designer|stat_id_permission|GET	LEAK
-query_assemble_designer|stat_id_simulate|GET	LEAK
-query_assemble_designer|stat_id|GET	LEAK
 query_assemble_designer|table_id_permission|GET	LEAK
 query_assemble_designer|view_id_bundle|GET	LEAK
 query_assemble_designer|view_id_permission|GET	LEAK

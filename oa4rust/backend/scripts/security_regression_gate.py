@@ -22,6 +22,7 @@
     python scripts/security_regression_gate.py sabotage write-idor-b5     # Rust②e：摘掉 folder_delete + cms 三条的归属（4 条）
     python scripts/security_regression_gate.py sabotage write-idor-b6     # Rust②f：摘掉 appeal + processplatform 两把的归属（5 条）
     python scripts/security_regression_gate.py sabotage write-idor-b7     # Rust②g：摘掉第七批读归属谓词（5 条）
+    python scripts/security_regression_gate.py sabotage write-idor-w5     # Rust②k：摘掉 query designer 5 个读端点归属校验
     python scripts/security_regression_gate.py sabotage read-a-b1         # Rust②h：摘掉分片 A 第一批 cms 读门（6 条）
     python scripts/security_regression_gate.py sabotage go-limit0   # Go①：扣款乘 2
     python scripts/security_regression_gate.py sabotage go-idor-rev # Go②：摘掉预设删除归属
@@ -80,6 +81,8 @@ PROCESS_PLATFORM = BACKEND / "crates/processplatform_service_processing/src/lib.
 ORG_ASSEMBLE_CONTROL_HELPERS = BACKEND / "crates/organization_assemble_control/src/u2_helpers.rs"
 ORG_ASSEMBLE_AUTH = BACKEND / "crates/organization_assemble_authentication/src/lib.rs"
 MESSAGE_COMMUNICATE = BACKEND / "crates/message_assemble_communicate/src/lib.rs"
+# 写 IDOR 第 W-b5 批：query designer 读端点归属校验（creator OR admin）
+QUERY_DESIGNER = BACKEND / "crates/query_assemble_designer/src/lib.rs"
 
 # 第七批写 IDOR：读面归属谓词所在的 crate
 COMPONENT = BACKEND / "crates/component_assemble_control/src/lib.rs"
@@ -629,6 +632,25 @@ B7_EXPECTS = [
     "jpush_core_entity|device_get|GET",
 ]
 
+# 写 IDOR 第 W-b5 批：query designer 五个读端点的归属校验入口。
+# 把 `require_owner_or_admin` 的判定条件改恒真（保留三元绑定，避免未使用告警），
+# 非属主读受害者行 → 逐条 LEAK。
+W5_OWNER_GATE_RE = re.compile(
+    r"if creator\.is_some_and\(\|c\| c == actor\)\s*"
+    r"\|\| shared::middleware::is_admin\(pool, actor\)\.await",
+    re.S,
+)
+W5_OWNER_GATE_PATCH = (
+    "if {\n        let _ = (creator, pool, actor);\n        true\n    }"
+)
+W5_EXPECTS = [
+    "query_assemble_designer|get_designer|GET",
+    "query_assemble_designer|query_id_permission|GET",
+    "query_assemble_designer|stat_id|GET",
+    "query_assemble_designer|stat_id_permission|GET",
+    "query_assemble_designer|stat_id_simulate|GET",
+]
+
 # 写 IDOR 第 W-b1 批：general_assemble_control 五个读端点的 owner_gate。
 # 直接摘掉 `owner_gate(...).await?;` 调用点（而非改谓词 SQL）：
 # 每处调用点带表名，可逐条精确替换；摘掉后端点会回显受害者行 → 逐条 LEAK。
@@ -825,6 +847,20 @@ def sabotage(kind: str) -> int:
             B7_EXPECTS,
             require_leak=True,
         )
+    elif kind == "write-idor-w5":
+        return sabotage_many(
+            "摘掉 W-b5 query designer 读端点的归属校验（5 条应逐条 LEAK）",
+            [
+                (
+                    QUERY_DESIGNER,
+                    W5_OWNER_GATE_RE,
+                    W5_OWNER_GATE_PATCH,
+                    "query_designer_owner",
+                ),
+            ],
+            W5_EXPECTS,
+            require_leak=True,
+        )
     elif kind == "read-a-b1":
         return sabotage_many(
             "摘掉分片 A 第一批 cms 读归属谓词（6 条应逐条 LEAK）",
@@ -850,7 +886,7 @@ def sabotage(kind: str) -> int:
         raise SystemExit(
             f"未知破坏实验: {kind}（可选 ownership / correct / general / organization / "
             "program_center / hotpic_mind / read_b / read-a-b1 / "
-            "write-idor-b5 / write-idor-b6 / write-idor-b7 / write-idor-w1）"
+            "write-idor-b5 / write-idor-b6 / write-idor-b7 / write-idor-w1 / write-idor-w5）"
         )
 
     print(f"== 破坏实验：{title}")
@@ -896,7 +932,7 @@ def main() -> int:
         if len(sys.argv) < 3:
             print("用法: security_regression_gate.py sabotage "
                   "<ownership|correct|general|organization|program_center|hotpic_mind|read_b|"
-                  "read-a-b1|write-idor-b5|write-idor-b6|write-idor-b7|write-idor-w1|"
+                  "read-a-b1|write-idor-b5|write-idor-b6|write-idor-b7|write-idor-w1|write-idor-w5|"
                   "rust-drift-to-leak|rust-swallow-write|"
                   "go-limit0|go-idor-rev|go-empty-list|go-swallow-write|"
                   "go-dead-write|go-page2|go-drift-to-leak>")
