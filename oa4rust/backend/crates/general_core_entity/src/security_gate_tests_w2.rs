@@ -154,11 +154,17 @@ mod tests {
             );
         }
 
-        for table in ["x_general_file", "x_general_invoice"] {
+        // 精确按本用例的 id 清理：并行跑 w2_creates_reject_impersonation 时，
+        // 宽口径 `WHERE creator = ...` 会把对方刚建的行删掉，读侧于是拿到 404
+        // 而不是「存在但无权」应得的 403。
+        for (table, id) in [
+            ("x_general_file", "w2-file"),
+            ("x_general_invoice", "w2-inv"),
+        ] {
             exec(
                 &db,
-                &format!("DELETE FROM {table} WHERE creator = $1"),
-                vec![Value::from(VICTIM)],
+                &format!("DELETE FROM {table} WHERE id = $1"),
+                vec![Value::from(id)],
             )
             .await;
         }
@@ -205,8 +211,8 @@ mod tests {
         )
         .await;
         assert_eq!(status, StatusCode::OK, "本人建文件");
-        let id = body["data"]["id"].as_str().expect("file id").to_string();
-        assert_eq!(creator_of(&db, "x_general_file", &id).await, ATTACKER);
+        let file_id = body["data"]["id"].as_str().expect("file id").to_string();
+        assert_eq!(creator_of(&db, "x_general_file", &file_id).await, ATTACKER);
 
         // 管理员代建 → 允许，按请求者落库（§6.2）。
         let (status, body) = send(
@@ -221,10 +227,11 @@ mod tests {
         let id = body["data"]["id"].as_str().expect("invoice id").to_string();
         assert_eq!(creator_of(&db, "x_general_invoice", &id).await, VICTIM);
 
+        // 只删本用例创建的那一行，避免影响并行运行的 w2_reads_scope_to_owner_or_admin。
         exec(
             &db,
-            "DELETE FROM x_general_file WHERE creator IN ($1, $2)",
-            vec![Value::from(ATTACKER), Value::from(VICTIM)],
+            "DELETE FROM x_general_file WHERE id = $1",
+            vec![Value::from(file_id)],
         )
         .await;
         exec(
