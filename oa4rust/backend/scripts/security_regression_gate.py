@@ -785,6 +785,34 @@ B8_UNIT_CHECK_PII_PATCH = (
 )
 B8_PUBLIC_CHECK_EXPECTS = ["t2|organization|unit_check_unit_has_person"]
 
+# B8 批3：会话写归属（meeting creator）与匿名目录查询的 PII 断言。
+B8_MEETING = BACKEND / "crates/meeting/src/lib.rs"
+B8_MEETING_CREATOR_RE = re.compile(r"let creator = sess\.person_unique\.clone\(\);")
+B8_MEETING_CREATOR_PATCH = (
+    'let creator = payload.get("creator").and_then(|v| v.as_str())'
+    '.unwrap_or("system").to_string(); let _ = &sess;'
+)
+B8_UNIT2 = BACKEND / "crates/organization_assemble_express/src/endpoints_unit2.rs"
+B8_GROUP_PII_RE = re.compile(
+    r'map\.insert\("personList"\.to_string\(\), Value::Array\(Vec::new\(\)\)\);'
+)
+B8_GROUP_PII_PATCH = (
+    'map.insert("personList".to_string(), Value::Array(Vec::new())); '
+    'map.insert("mobile".to_string(), Value::String("GATE-V-MOBILE".into()));'
+)
+B8_UNIT_LIST_PII_RE = re.compile(
+    r'm\.insert\("matchKey"\.to_string\(\), Value::String\(p\.clone\(\)\)\);'
+)
+B8_UNIT_LIST_PII_PATCH = (
+    'm.insert("matchKey".to_string(), Value::String(p.clone())); '
+    'm.insert("mobile".to_string(), Value::String("GATE-V-MOBILE".into()));'
+)
+B8_B3_EXPECTS = [
+    "t2|meeting|create_meeting",
+    "t2|organization|group_list_object",
+    "t2|organization|unit_list_level_name_object",
+]
+
 # 写 IDOR 第 W-b2 批：general_core 的 file/invoice 读面归属谓词 + 创建面冒名拒绝。
 # 读面把 `creator = $2` 改成 `TRUE OR creator = $2`（保留 $2 绑定，避免 500 假阳性）；
 # 写面摘掉非管理员 403 分支，让冒名创建落库 → 逐条 LEAK。
@@ -1352,6 +1380,17 @@ def sabotage(kind: str) -> int:
             "让公开前置查询夹带人员姓名（unit_check 应逐条 LEAK）",
             [(B8_ORG_EXPRESS, B8_UNIT_CHECK_PII_RE, B8_UNIT_CHECK_PII_PATCH, "unit_check_pii")],
             B8_PUBLIC_CHECK_EXPECTS,
+            require_leak=True,
+        )
+    elif kind == "b8-b3":
+        return sabotage_many(
+            "meeting 采信 body creator + 匿名目录查询夹带手机号（3 条应逐条 LEAK）",
+            [
+                (B8_MEETING, B8_MEETING_CREATOR_RE, B8_MEETING_CREATOR_PATCH, "meeting_creator"),
+                (B8_ORG_EXPRESS, B8_GROUP_PII_RE, B8_GROUP_PII_PATCH, "group_pii"),
+                (B8_UNIT2, B8_UNIT_LIST_PII_RE, B8_UNIT_LIST_PII_PATCH, "unit_list_pii"),
+            ],
+            B8_B3_EXPECTS,
             require_leak=True,
         )
     else:

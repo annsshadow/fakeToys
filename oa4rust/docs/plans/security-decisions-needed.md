@@ -861,8 +861,46 @@ sabotage `w8-unverified`，本批减 5 行（分支创建时基线 37→32）。
 破坏实验 `sabotage b8-public-pii-check`：把 `unit_check` 响应改成夹带 `personName=GATE-PERSON-V`，
 匿名用例变红并点名 `t2|organization|unit_check_unit_has_person`。
 
-### 15.3 批 3
+### 15.3 批 3（PR-C）：meeting、group/unit list、warnlog
 
-（由后续 PR 追加：meeting、group/unit list、warnlog FALSE-GREEN。）
+**判据**
+
+- `t2|meeting|create_meeting`：补 `roomId/title/startTime/endTime` 后才能观测，实测发现两个真实缺陷：
+  ① `creator` 直接采信请求体（默认 `"system"`），任意登录用户可冒名落库；② `start_time/end_time`
+  以 `&str` 绑定到 TIMESTAMP 参数，`tokio_postgres` 报 `WrongType`，任何缺失/合法请求都是 500（旧用例
+  因必填缺失停在 400/UNVERIFIED，从未触达 INSERT）。修复：`creator` 只取 `sess.person_unique`；
+  时间参数显式 `$5::text::timestamp` 转换后绑定。
+- `t2|organization|group_list_object`：原用例把承载字段写成 `person_id`，而 handler 读 `groupList`，
+  永远空查询。修正为 `groupList` 并指向夹具群 `grp-gate-b`；该端点为 o2server 契约的匿名群目录查询
+  （`AUTH_EXEMPT_PATHS` + RBAC Public），返回仅群 id/name/type/unitId/personList，`personList` 是成员
+  关系的最小不透明标识，不含姓名/手机/邮箱。用例升级为 `public-read`：正控制 `grp-gate-b` 必须出现，
+  姓名/手机 PII canary 不得出现。
+- `t2|organization|unit_list_level_name_object`：同理，原字段 `level_name` 错误，修正为 `unitList` 并
+  指向 `unit-gate-v`。修观测时暴露真实缺陷：handler 复用 `row_to_map`，后者把非 bool 列一律按
+  `Option<String>` 取，`BIGINT` 计数列直接 panic → 任何非空 `unitList` 都是 500。改为按列显式构造
+  对象，保持原 JSON 形状。
+- `t2|program_center|warnlog_create`：FALSE-GREEN。`x_program_warn_log` 的 owner 归属条件在真实数据上
+  永不命中（冒名落库判定恒真），不能作为有效越权证据；按既有 FALSE-GREEN 口径保留基线 LEAK 行，
+  不计减行、不再重复裁决。真正修复需先有可命中的 owner 列/种子，属独立立项。
+
+**影响面**
+
+- `meeting`：写归属改为会话本人（与其它写面一致）；时间戳绑定修正把 500 死端点恢复为可用。
+  正常前端本来就传字符串时间，修复对合法请求是纯可用性提升，不改变响应字段。
+- `group/unit list`：只改用例承载字段与断言、修一个 BIGINT panic；匿名契约与返回字段不变。
+  新增断言只约束「不得返回姓名/手机 PII」。
+- `warnlog`：不动生产代码。
+
+**如何回滚**
+
+- 回滚本 PR 恢复 meeting 旧插入 SQL / body creator、恢复两条 list 用例与三条基线行。
+  `meeting` 的时间戳转换与 `unit_list` 的 BIGINT panic 修复不建议单独回滚——回滚会让端点重新 500。
+- 若产品口径要求群/单位目录必须登录，另行裁决并同时改 `AUTH_EXEMPT_PATHS` 与 RBAC（双锁一致性
+  测试会拦单边修改），不在本条回滚范围。
+- `warnlog` FALSE-GREEN 的处置（补 owner 种子或改表结构）是独立事项，回滚本 PR 不受影响。
+
+破坏实验 `sabotage b8-b3`：把 meeting `creator` 改回 body、在两条匿名目录响应里注入
+`mobile=GATE-V-MOBILE`，门禁变红并逐条点名上述 3 条。
+
 
 
