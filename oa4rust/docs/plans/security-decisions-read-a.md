@@ -33,9 +33,14 @@
 | A-b2（#234） | `cms_assemble_control` | `anonymous_form_id` / `form_id` | `x_cms_form`：`status='published'` OR `creator`=会话 OR 管理员（SQL WHERE） |
 | A-b2（#234） | `cms_assemble_control` | `formversion_id` / `scriptversion_id` / `templateform_id` | `x_cms_form_v2`：`status='published'` OR `creator`=会话 OR 管理员（SQL WHERE） |
 | A-b2（#234） | `cms_assemble_control` | `script_id` | `x_cms_script.creator`=会话 OR 管理员（SQL WHERE，表无 status） |
-| A-b3（本批） | `cms_assemble_control` | `application_id` / `appinfo_id` / `appinfo_id_control` | `x_cms_appinfo.creator`=会话 OR 管理员（SQL WHERE） |
-| A-b3（本批） | `cms_assemble_control` | `categoryinfo_id` / `categoryinfo_id_control` | `x_cms_categoryinfo.creator`=会话 OR 管理员（SQL WHERE） |
-| A-b3（本批） | `cms_assemble_control` | `commend_id` | `x_cms_commend.person_id`=会话 OR 管理员（SQL WHERE）。**映射说明**：该表无 `creator` 列，`person_id` 是唯一人员列，即归属列 |
+| A-b3（#250） | `cms_assemble_control` | `application_id` / `appinfo_id` / `appinfo_id_control` | `x_cms_appinfo.creator`=会话 OR 管理员（SQL WHERE） |
+| A-b3（#250） | `cms_assemble_control` | `categoryinfo_id` / `categoryinfo_id_control` | `x_cms_categoryinfo.creator`=会话 OR 管理员（SQL WHERE） |
+| A-b3（#250） | `cms_assemble_control` | `commend_id` | `x_cms_commend.person_id`=会话 OR 管理员（SQL WHERE）。**映射说明**：该表无 `creator` 列，`person_id` 是唯一人员列，即归属列 |
+| A-b4（本批） | `cms_core_entity` | `article_get` | `x_cms_article`：`status='published'` OR `author_id`=会话 OR 管理员（cms §3，SQL WHERE） |
+| A-b4（本批） | `cms_core_express` | `content_detail` | `x_cms_content`：`status='published'` OR `creator`=会话 OR 管理员（cms §3，SQL WHERE） |
+| A-b4（本批） | `portal` | `portal_id` | `x_portal.creator`=会话 OR 管理员（E23，SQL WHERE） |
+| A-b4（本批） | `portal_assemble_designer` | `portal_id` / `portal_id_icon` / `portal_id_permission` | `x_portal.creator`=会话 OR 管理员（E23，SQL WHERE） |
+| A-b4（本批） | `portal_assemble_surface` | `get_surface` | `x_portal_surface.creator`=会话 OR 管理员（E23，SQL WHERE） |
 
 ## 一、NO-OWNER-COL（缺归属列，不改代码）
 
