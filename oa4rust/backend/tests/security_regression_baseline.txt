@@ -4,22 +4,15 @@
 # 若首次切换后看到 STATE-DRIFT，先确认是不是对齐差异，不要误读成业务回归。
 # 修复一条就删一行（单调下降）；只增不减视为回归。
 ai_assemble_control|config_get_mcp_flag|GET	LEAK
-attendance_assemble_control|attendanceadmin_id|GET	LEAK
 attendance_assemble_control|attendanceappealInfo_id|GET	LEAK
 attendance_assemble_control|attendancedetail_id|GET	LEAK
 attendance_assemble_control|attendancedetail_mobile_id|GET	LEAK
-attendance_assemble_control|attendanceemployeeconfig_id|GET	LEAK
-attendance_assemble_control|attendanceimportfileinfo_id|GET	LEAK
-attendance_assemble_control|attendanceschedulesetting_id|GET	LEAK
 attendance_assemble_control|attendanceselfholiday_id|GET	LEAK
-attendance_assemble_control|attendancesetting_id|GET	LEAK
-attendance_assemble_control|attendancestatisticalcycle_id|GET	LEAK
 attendance_assemble_control|attendancestatisticrequirelog_id|GET	LEAK
 attendance_assemble_control|attendanceworkdayconfig_id|GET	LEAK
 attendance_assemble_control|v2_appeal_get|GET	LEAK
 attendance_assemble_control|v2_record_get|GET	LEAK
 attendance_assemble_control|workplace_id|GET	LEAK
-cms_assemble_control|anonymous_document_id_view|GET	LEAK
 cms_assemble_control|anonymous_form_id|GET	LEAK
 cms_assemble_control|appinfo_id_control|GET	LEAK
 cms_assemble_control|appinfo_id|GET	LEAK
@@ -27,11 +20,6 @@ cms_assemble_control|application_id|GET	LEAK
 cms_assemble_control|categoryinfo_id_control|GET	LEAK
 cms_assemble_control|categoryinfo_id|GET	LEAK
 cms_assemble_control|commend_id|GET	LEAK
-cms_assemble_control|comment_id|GET	LEAK
-cms_assemble_control|document_persons_u3|GET	LEAK
-cms_assemble_control|file_id_content|GET	LEAK
-cms_assemble_control|file_id_download|GET	LEAK
-cms_assemble_control|file_id|GET	LEAK
 cms_assemble_control|form_id|GET	LEAK
 cms_assemble_control|formversion_id|GET	LEAK
 cms_assemble_control|script_id|GET	LEAK
@@ -41,11 +29,6 @@ cms_core_entity|article_get|GET	LEAK
 cms_core_express|content_detail|GET	LEAK
 file_assemble_control|get_file|GET	LEAK
 file_assemble_control|recycle_id|GET	UNVERIFIED
-general_assemble_control|area_get|GET	LEAK
-general_assemble_control|attendscope_get|GET	LEAK
-general_assemble_control|invoice_get_id|GET	LEAK
-general_assemble_control|qrcode_get|GET	LEAK
-general_assemble_control|securityclearance_get|GET	LEAK
 portal_assemble_designer|portal_id_icon|GET	LEAK
 portal_assemble_designer|portal_id_permission|GET	LEAK
 portal_assemble_surface|get_surface|GET	LEAK

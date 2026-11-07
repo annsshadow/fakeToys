@@ -233,6 +233,40 @@ SELECT count(*) FROM x_meeting m
   四者均无会话参数、SQL 里没有任何按人过滤的意图（`user_` 指「门户/用户端」，不是「我的」）。若产品确认其中某条应改为「我的」，需先补会话与 `creator=会话 OR 管理员` 谓词，再另立条目。
 - **hotpic**（7 个候选）：`x_hotpic` 为展示位内容，`hotpic::list_by_application_and_info_id`、`hotpic_assemble_control::list_control_panels` / `list_control_applications` / `list_hotpics` / `cipher_hotpic_filter_list_*` / `user_hotpic_filter_list_*` 属公开展示读面；`user_hotpic_filter_list_*` 命名含 `user`，同样需确认是否应限制到本人。
 
+## 五、mind `creator_unit` 请求体伪造（分片 A 缺陷，不改基线）
+
+三处创建路径原把 `creator_unit` 直接取自请求体 `creatorUnit`：
+
+| handler | 落库表 |
+|---|---|
+| `mind::create_mind` | `mind_base_info.creator_unit` |
+| `mind::create_folder` | `mind_folder_info.creator_unit` |
+| `mind::create_version` | `mind_version_info.creator_unit` |
+
+`creator` 已取会话，但单位维度仍可由客户端任意指定：同会话伪造他人 `creatorUnit` 即可把归属落到他人单位。
+
+### 复现（修复前，同一用例）
+
+用例 `security_gate_tests::mind_create_ignores_forged_creator_unit`：会话人 `auth_person.unit = real-unit`，请求体传 `creatorUnit = forged-unit`。
+
+```
+assertion `left == right` failed: create_mind 落库单位必须为会话单位
+  left: "forged-unit"
+ right: "real-unit"
+```
+
+（此时 `mind_folder_info` / `mind_version_info` 同样落 `forged-unit`，用例在第一个断言处先红。）
+
+### 修复
+
+新增 `session_unit()`（`mind/src/lib.rs`）：按会话登录人查 `auth_person.unit` 派生，三处创建不再读取请求体 `creatorUnit`。
+用例在修复后全绿（`cargo test -p mind --lib`：6 passed）。
+
+### 注
+
+`mind` 三条 `#[ignore]` 读用例（`mind_read_idor_is_blocked_both_ways`、`version_list_idor_is_blocked_both_ways`、`folder_list_idor_is_blocked_both_ways`）在 `main` 基线（`832880cfd`）上实测即失败，与本次改动无关，未触碰、未改基线。
+本缺陷不改 `security_regression_baseline.txt`。
+
 ## 变更纪律（本分片）
 
 - 归属谓词一律写进 SQL `WHERE`，禁止「先查后判」。

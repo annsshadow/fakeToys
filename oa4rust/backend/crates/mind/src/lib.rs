@@ -51,6 +51,23 @@ async fn mind_owner_gate(
     Ok(())
 }
 
+/// 会话派生的单位：客户端 `creatorUnit` 可伪造，事实源取会话登录人的 `auth_person.unit`。
+async fn session_unit(
+    client: &deadpool_postgres::Object,
+    person_unique: &str,
+) -> Result<String, AppError> {
+    let row = client
+        .query_opt(
+            "SELECT unit FROM auth_person WHERE unique_id = $1 AND deleted_at IS NULL",
+            &[&person_unique],
+        )
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    Ok(row
+        .and_then(|r| r.get::<_, Option<String>>("unit"))
+        .unwrap_or_default())
+}
+
 pub fn mind_router() -> Router {
     Router::new().merge(routes::mind_routes())
 }
@@ -389,11 +406,8 @@ pub async fn create_mind(
         .map(|s| s.to_string());
     // 属主以会话登录人为事实源（客户端 creator 可伪造，安全审计 2026-10 二轮）。
     let creator = sess.person_unique.clone();
-    let creator_unit = payload
-        .get("creatorUnit")
-        .and_then(|v| v.as_str())
-        .unwrap_or_default()
-        .to_string();
+    // 单位同样取会话派生，客户端 creatorUnit 可伪造。
+    let creator_unit = session_unit(&client, &sess.person_unique).await?;
     let shared = payload
         .get("shared")
         .and_then(|v| v.as_bool())
@@ -553,11 +567,8 @@ pub async fn create_folder(
         .map(|s| s.to_string());
     // 属主以会话登录人为事实源（客户端 creator 可伪造，安全审计 2026-10 二轮）。
     let creator = sess.person_unique.clone();
-    let creator_unit = payload
-        .get("creatorUnit")
-        .and_then(|v| v.as_str())
-        .unwrap_or_default()
-        .to_string();
+    // 单位同样取会话派生，客户端 creatorUnit 可伪造。
+    let creator_unit = session_unit(&client, &sess.person_unique).await?;
 
     client
         .execute(
@@ -703,11 +714,8 @@ pub async fn create_version(
         .map(|s| s.to_string());
     // 属主以会话登录人为事实源（客户端 creator 可伪造，安全审计 2026-10 二轮）。
     let creator = session.person_unique.clone();
-    let creator_unit = payload
-        .get("creatorUnit")
-        .and_then(|v| v.as_str())
-        .unwrap_or_default()
-        .to_string();
+    // 单位同样取会话派生，客户端 creatorUnit 可伪造。
+    let creator_unit = session_unit(&client, &session.person_unique).await?;
     let file_version = payload
         .get("fileVersion")
         .and_then(|v| v.as_i64())

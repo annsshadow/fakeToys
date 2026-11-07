@@ -18,6 +18,8 @@ mod security_gate_tests;
 #[cfg(test)]
 mod security_gate_tests_idor_b5;
 #[cfg(test)]
+mod security_gate_tests_read_a_b1;
+#[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
@@ -658,8 +660,14 @@ pub async fn anonymous_document_filter_list_page_size_size_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn anonymous_document_id_view(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    match cms_gate_document_read(&pool, opt_session(&session), &id).await? {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("document not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -2244,8 +2252,14 @@ pub async fn comment_list_page_size_size_mockputtopost(
 #[allow(non_snake_case)]
 pub async fn comment_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    match cms_gate_comment_read(&pool, opt_session(&session), &id).await? {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("comment not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -3934,8 +3948,14 @@ pub async fn file_flag_mockdeletetoget(
 #[allow(non_snake_case)]
 pub async fn file_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    match cms_gate_owned_read(&pool, "x_cms_file", "creator", &id, opt_session(&session)).await? {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("file not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -3991,8 +4011,14 @@ pub async fn file_id(
 #[allow(non_snake_case)]
 pub async fn file_id_content(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    match cms_gate_owned_read(&pool, "x_cms_file", "creator", &id, opt_session(&session)).await? {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("file not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -4030,8 +4056,14 @@ pub async fn file_id_content(
 #[allow(non_snake_case)]
 pub async fn file_id_download(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    match cms_gate_owned_read(&pool, "x_cms_file", "creator", &id, opt_session(&session)).await? {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("file not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -8345,6 +8377,114 @@ fn require_session(
     session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
 }
 
+/// 可选会话 → `Option<&Session>`，供「登录可读、匿名只读公开」的读门使用。
+fn opt_session(
+    session: &Option<Extension<shared::session::Session>>,
+) -> Option<&shared::session::Session> {
+    session.as_ref().map(|e| &e.0)
+}
+
+/// 文档读门（cms §3）：`published` 全员（含匿名）可读；`draft` 仅 `creator`/`author_id` 本人；
+/// 管理员全部可读。归属谓词写在 `allowed_sql` 的 `WHERE` 内，参数固定为
+/// ($1 id, $2 会话人, $3 是否管理员)。
+const CMS_DOCUMENT_READ_ALLOWED_SQL: &str = "SELECT 1 AS hit FROM x_cms_data_document \
+     WHERE id = $1 AND deleted_at IS NULL \
+     AND (status = 'published' \
+     OR ($2::text IS NOT NULL AND (creator = $2::text OR author_id = $2::text)) \
+     OR $3::boolean)";
+const CMS_DOCUMENT_READ_EXISTS_SQL: &str =
+    "SELECT 1 AS hit FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL";
+
+/// 评论读门：评论作者、可读该文档（published / creator / author）、管理员三者之一。
+const CMS_COMMENT_READ_ALLOWED_SQL: &str = "SELECT 1 AS hit FROM x_cms_comment c \
+     LEFT JOIN x_cms_data_document d ON d.id = c.doc_id AND d.deleted_at IS NULL \
+     WHERE c.id = $1 AND c.deleted_at IS NULL \
+     AND (($2::text IS NOT NULL AND c.person_id = $2::text) \
+     OR $3::boolean \
+     OR (d.id IS NOT NULL AND (d.status = 'published' \
+     OR ($2::text IS NOT NULL AND (d.creator = $2::text OR d.author_id = $2::text)))))";
+const CMS_COMMENT_READ_EXISTS_SQL: &str =
+    "SELECT 1 AS hit FROM x_cms_comment WHERE id = $1 AND deleted_at IS NULL";
+
+/// 读门公共骨架：先按含归属谓词的 `allowed_sql` 查；未命中时再用 `exists_sql` 只判存在，
+/// 区分「不存在」（调用方保留 not found 语义）与「存在但无权」（403）。
+async fn cms_read_gate(
+    pool: &Pool,
+    allowed_sql: &str,
+    exists_sql: &str,
+    id: &str,
+    session: Option<&shared::session::Session>,
+) -> Result<U2Gate, AppError> {
+    let client = shared::db::acquire(pool).await?;
+    let person = session.map(|s| s.person_unique.clone());
+    let admin = match session {
+        Some(s) => shared::middleware::is_admin(pool, &s.person_unique).await,
+        None => false,
+    };
+    let hit = client
+        .query_opt(allowed_sql, &[&id, &person, &admin])
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    if hit.is_some() {
+        return Ok(U2Gate::Allowed);
+    }
+    let exists = client
+        .query_opt(exists_sql, &[&id])
+        .await
+        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    Ok(if exists.is_some() {
+        U2Gate::Forbidden
+    } else {
+        U2Gate::NotFound
+    })
+}
+
+async fn cms_gate_document_read(
+    pool: &Pool,
+    session: Option<&shared::session::Session>,
+    id: &str,
+) -> Result<U2Gate, AppError> {
+    cms_read_gate(
+        pool,
+        CMS_DOCUMENT_READ_ALLOWED_SQL,
+        CMS_DOCUMENT_READ_EXISTS_SQL,
+        id,
+        session,
+    )
+    .await
+}
+
+/// 单主体列读门（file 等）：归属列直接写进 `WHERE`。
+async fn cms_gate_owned_read(
+    pool: &Pool,
+    table: &str,
+    owner_col: &str,
+    id: &str,
+    session: Option<&shared::session::Session>,
+) -> Result<U2Gate, AppError> {
+    let allowed = format!(
+        "SELECT 1 AS hit FROM {table} WHERE id = $1 AND deleted_at IS NULL \
+         AND ({owner_col} = $2::text OR $3::boolean)"
+    );
+    let exists = format!("SELECT 1 AS hit FROM {table} WHERE id = $1 AND deleted_at IS NULL");
+    cms_read_gate(pool, &allowed, &exists, id, session).await
+}
+
+async fn cms_gate_comment_read(
+    pool: &Pool,
+    session: Option<&shared::session::Session>,
+    id: &str,
+) -> Result<U2Gate, AppError> {
+    cms_read_gate(
+        pool,
+        CMS_COMMENT_READ_ALLOWED_SQL,
+        CMS_COMMENT_READ_EXISTS_SQL,
+        id,
+        session,
+    )
+    .await
+}
+
 fn u2_body_str(body: &Value, key: &str) -> Option<String> {
     body.get(key).and_then(|v| v.as_str()).map(String::from)
 }
@@ -11343,8 +11483,14 @@ pub async fn document_permission_read_u3(
 #[allow(non_snake_case)]
 pub async fn document_persons_u3(
     pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    match cms_gate_document_read(&pool, Some(&session), &id).await? {
+        U2Gate::NotFound => return Ok(Json(ActionResult::error("document not found"))),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
     let doc = client
         .query_opt(

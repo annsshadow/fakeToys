@@ -185,6 +185,7 @@ async fn new_cycle_is_visible_through_cycle_detail() {
 #[tokio::test]
 async fn legacy_year_month_only_row_is_readable() {
     let pool = fresh_scratch(SCRATCH_LEGACY).await;
+    seed_admin(&pool).await;
     let c = pool.get().await.expect("scratch 连接");
     c.batch_execute(
         "INSERT INTO x_attendance_statistical_cycle \
@@ -211,10 +212,13 @@ async fn legacy_year_month_only_row_is_readable() {
     let data = detail.0.data.expect("data");
     assert_eq!(field(&data, "id"), "o36-legacy");
 
-    let by_id =
-        attendancestatisticalcycle_id(Extension(pool.clone()), Path("o36-legacy".to_string()))
-            .await
-            .expect("id handler 不得 500");
+    let by_id = attendancestatisticalcycle_id(
+        Extension(pool.clone()),
+        Some(Extension(admin_session())),
+        Path("o36-legacy".to_string()),
+    )
+    .await
+    .expect("id handler 不得 500");
     assert_eq!(
         by_id.0.r#type.as_deref(),
         Some("success"),
