@@ -149,7 +149,7 @@ mod tests {
             let (status, body) = send(&db, Some(VICTIM), Method::GET, uri, None).await;
             assert_eq!(status, StatusCode::OK, "{VICTIM} 读自己行 {uri}");
             assert!(
-                body.to_string().contains("\"creator\""),
+                body.get("creator").is_some() || body.pointer("/data/creator").is_some(),
                 "{uri} 本人读应返回归属列，实际 body={body}"
             );
         }
