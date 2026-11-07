@@ -82,6 +82,8 @@ async fn surface_owned_read_gate(
 #[cfg(test)]
 mod security_gate_tests;
 #[cfg(test)]
+mod security_gate_tests_read_a_b4;
+#[cfg(test)]
 mod security_gate_tests_read_a_b5;
 
 #[derive(Debug, Deserialize)]
@@ -101,8 +103,22 @@ pub struct CreateLayoutRequest {
 #[allow(non_snake_case)]
 pub async fn get_surface(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    match surface_owned_read_gate(
+        &pool,
+        "x_portal_surface",
+        "creator",
+        &id,
+        opt_session(&session),
+    )
+    .await?
+    {
+        ReadGate::NotFound => return Ok(Json(ActionResult::error("surface not found"))),
+        ReadGate::Forbidden => return Err(AppError::Forbidden),
+        ReadGate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
 
     let row = client

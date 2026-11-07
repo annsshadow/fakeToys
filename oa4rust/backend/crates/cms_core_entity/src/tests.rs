@@ -184,7 +184,8 @@ mod tests {
                 .await
                 .unwrap();
 
-            assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+            // A-b4 起 `article_get` 先过归属读门；无库时池获取失败 → 503。
+            assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
         });
     }
 

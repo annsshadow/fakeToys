@@ -33,9 +33,14 @@
 | A-b2（#234） | `cms_assemble_control` | `anonymous_form_id` / `form_id` | `x_cms_form`：`status='published'` OR `creator`=会话 OR 管理员（SQL WHERE） |
 | A-b2（#234） | `cms_assemble_control` | `formversion_id` / `scriptversion_id` / `templateform_id` | `x_cms_form_v2`：`status='published'` OR `creator`=会话 OR 管理员（SQL WHERE） |
 | A-b2（#234） | `cms_assemble_control` | `script_id` | `x_cms_script.creator`=会话 OR 管理员（SQL WHERE，表无 status） |
-| A-b3（本批） | `cms_assemble_control` | `application_id` / `appinfo_id` / `appinfo_id_control` | `x_cms_appinfo.creator`=会话 OR 管理员（SQL WHERE） |
-| A-b3（本批） | `cms_assemble_control` | `categoryinfo_id` / `categoryinfo_id_control` | `x_cms_categoryinfo.creator`=会话 OR 管理员（SQL WHERE） |
-| A-b3（本批） | `cms_assemble_control` | `commend_id` | `x_cms_commend.person_id`=会话 OR 管理员（SQL WHERE）。**映射说明**：该表无 `creator` 列，`person_id` 是唯一人员列，即归属列 |
+| A-b3（#250） | `cms_assemble_control` | `application_id` / `appinfo_id` / `appinfo_id_control` | `x_cms_appinfo.creator`=会话 OR 管理员（SQL WHERE） |
+| A-b3（#250） | `cms_assemble_control` | `categoryinfo_id` / `categoryinfo_id_control` | `x_cms_categoryinfo.creator`=会话 OR 管理员（SQL WHERE） |
+| A-b3（#250） | `cms_assemble_control` | `commend_id` | `x_cms_commend.person_id`=会话 OR 管理员（SQL WHERE）。**映射说明**：该表无 `creator` 列，`person_id` 是唯一人员列，即归属列 |
+| A-b4（#262） | `cms_core_entity` | `article_get` | `x_cms_article`：`status='published'` OR `author_id`=会话 OR 管理员（cms §3，SQL WHERE） |
+| A-b4（#262） | `cms_core_express` | `content_detail` | `x_cms_content`：`status='published'` OR `creator`=会话 OR 管理员（cms §3，SQL WHERE） |
+| A-b4（#262） | `portal` | `portal_id` | `x_portal.creator`=会话 OR 管理员（E23，SQL WHERE） |
+| A-b4（#262） | `portal_assemble_designer` | `portal_id` / `portal_id_icon` / `portal_id_permission` | `x_portal.creator`=会话 OR 管理员（E23，SQL WHERE） |
+| A-b4（#262） | `portal_assemble_surface` | `get_surface` | `x_portal_surface.creator`=会话 OR 管理员（E23，SQL WHERE） |
 | A-b5（本批） | `portal_assemble_surface` | `portal_id_icon` / `portal_id_icon_base64` | `x_portal.creator`=会话 OR 管理员（E23，SQL WHERE）；未命中保留 `surface not found` |
 | A-b5（本批） | `portal_assemble_surface` | `preview_surface` / `surface_preview` | `x_portal_surface.creator`=会话 OR 管理员（E23，SQL WHERE） |
 | A-b5（本批） | `portal_core_entity` | `page_get` | `x_portal_page.creator`=会话 OR 管理员（E23，SQL WHERE）；本 crate 无 deadpool `Pool` 注入，沿用 sea-orm `require_admin`，查询失败 fail-closed |
@@ -318,6 +323,41 @@ PR #234（`sec/read-a-cms-b2`）合入 `main`：merge sha `4571c846a6e6899d857ff
    `实验成立：门禁变红（exit=101），并点名 6 条用例`。
 
 三步全过，减行有效。
+
+## 八、分片 A / A-b3 合入后 §12.6 三步核对（#250）
+
+PR #250（`sec/read-a-cms-b3`）squash 合入 `main`：`994519dc2`（父 `f041bdf0b`）。
+减行前的 6 条基线 id：`appinfo_id_control`、`appinfo_id`、`application_id`、
+`categoryinfo_id_control`、`categoryinfo_id`、`commend_id`。
+
+1. **行是否真在 main**：`git log origin/main` 含 `994519dc2`；
+   `origin/main:cms_assemble_control/src/lib.rs` 中 `cms_gate_owned_read` 命中 11 处（定义 + 调用）；
+   合入后 `origin/main` 基线 `security_regression_baseline.txt` 为 31 条（A-b2 后 37 − 6）。
+2. **基线是否虚减**：在 `8c7c2f4b5`（含 #250）派生的本分支上重跑门禁，A-b3 的 6 条 id 全部
+   `[PASS]`；本分支同时已减 A-b4 的 6 行，剩余非 PASS 25 条与基线一致（leak=11, unverified=14,
+   integrity=0）。
+3. **门禁是否接线**：`sabotage read-a-b3` 变红（exit=101），逐条点名 A-b3 的 6 条 `[LEAK]`，
+   `实验成立`。同文件共享谓词正则还会波及 `file_id`/`script_id` 等 4 条既有门（同文件其它
+   归属门被一并恒真化），不影响 A-b3 的 6 条结论。
+
+三步全过，减行有效。
+
+## 九、分片 A / A-b4 交付与 §12.6 核对记录
+
+分支 `sec/read-a-cms-b4`，base `origin/main=8c7c2f4b5`。本批 6 条：
+`cms_core_entity|article_get`、`cms_core_express|content_detail`、`portal|portal_id`、
+`portal_assemble_designer|portal_id_icon`、`portal_assemble_designer|portal_id_permission`、
+`portal_assemble_surface|get_surface`。同批把 `portal_assemble_designer|portal_id` 也对齐
+（不在基线内，避免同表旁路）。
+
+夹具调整：`x_cms_article.status` 列默认值是 `published`，原 seed / rev-seed 未写 status，
+会让文章读用例落进「公开可读」分支；两处均已显式写 `status='draft'`，用例才是真正的草稿 IDOR。
+
+1. **行是否真在 main**：待裁判会话合并后在 `main` 上核对（本分支提交前无法断言）。
+2. **基线是否虚减**：rebase 到 `8c7c2f4b5` 后重跑门禁，本批 6 条全部 `[PASS]`，
+   剩余非 PASS 25 条与基线一致（leak=11, unverified=14, integrity=0）。
+3. **门禁是否接线**：`sabotage read-a-b4` 变红（exit=101），输出逐条点名 6 条 `[LEAK]`，
+   `实验成立：门禁变红（exit=101），并点名 6 条用例`。
 
 ## 十、分片 A / A-b5 交付与 §12.6 核对记录
 
