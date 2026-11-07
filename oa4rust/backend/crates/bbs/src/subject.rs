@@ -278,7 +278,9 @@ pub async fn create(
         .unwrap_or_default()
         .to_string();
     // 安全审计 2026-10 四轮 F9：author_id 此前完全取请求体且无会话 → 任一登录用户
-    // 可以任意 person 身份发帖（冒名）。改以会话身份为权威，请求体 authorId 不再被读。
+    // 可以任意 person 身份发帖（冒名）。改以会话身份为权威，请求体 authorId 不再被读；
+    // 请求体显式写他人时仅管理员放行（门禁 spoof-write 需要 403 而非静默改写）。
+    crate::reject_impersonation(&pool, &sess, &payload, &["author_id", "authorId"]).await?;
     let author_id = sess.person_unique.clone();
     let content = payload
         .get("content")

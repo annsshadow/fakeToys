@@ -17,6 +17,30 @@ fn require_session(
     session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
 }
 
+/// 写侧归属防护：非管理员不得以他人身份发帖/回复（冒名）。管理员代写仍允许。
+async fn reject_impersonation(
+    pool: &Pool,
+    sess: &shared::session::Session,
+    payload: &serde_json::Value,
+    fields: &[&str],
+) -> Result<(), AppError> {
+    let requested = fields.iter().find_map(|f| {
+        payload
+            .get(*f)
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+    });
+    if let Some(owner) = requested {
+        if owner != sess.person_unique
+            && !shared::middleware::is_admin(pool, &sess.person_unique).await
+        {
+            return Err(AppError::Forbidden);
+        }
+    }
+    Ok(())
+}
+
 pub fn bbs_router(pool: Pool) -> Router {
     Router::new()
         .route("/api/bbs/forum/view/all", get(forum::view_all))

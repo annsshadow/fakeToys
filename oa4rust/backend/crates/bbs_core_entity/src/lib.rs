@@ -7,8 +7,8 @@ use axum::{
     Router,
 };
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder,
-    QuerySelect, Set,
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, QueryFilter,
+    QueryOrder, QuerySelect, Set,
 };
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
@@ -28,6 +28,52 @@ fn require_session(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<shared::session::Session, AppError> {
     session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
+}
+
+/// 管理员判定（与 `shared::middleware::is_admin` 同一条 SQL）。
+async fn is_admin_db(db: &DatabaseConnection, person_unique: &str) -> bool {
+    let row = db
+        .query_one(sea_orm::Statement::from_sql_and_values(
+            sea_orm::DbBackend::Postgres,
+            "SELECT EXISTS(SELECT 1 FROM auth_person p \
+               LEFT JOIN auth_person_role pr ON pr.person_id = p.id \
+               LEFT JOIN auth_role r ON r.id = pr.role_id \
+               WHERE (p.unique_id = $1 OR p.id = $1) \
+                 AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false) AS is_admin",
+            vec![person_unique.into()],
+        ))
+        .await;
+    match row {
+        Ok(Some(row)) => row.try_get::<bool>("", "is_admin").unwrap_or(false),
+        _ => false,
+    }
+}
+
+/// 写侧归属防护（reply/subject 共用）：请求体显式写他人（creator/authorId）
+/// → 非管理员 403；未指定或写自己 → 会话人。管理员代写仍允许。
+async fn resolve_author(
+    db: &DatabaseConnection,
+    sess: &shared::session::Session,
+    payload: &Value,
+) -> Result<String, AppError> {
+    let requested = payload
+        .get("creator")
+        .or_else(|| payload.get("authorId"))
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string);
+    match requested {
+        None => Ok(sess.person_unique.clone()),
+        Some(owner) if owner == sess.person_unique => Ok(owner),
+        Some(owner) => {
+            if is_admin_db(db, &sess.person_unique).await {
+                Ok(owner)
+            } else {
+                Err(AppError::Forbidden)
+            }
+        }
+    }
 }
 
 /// O10：create_time 列实为 TEXT（migration 032）——实体改 Option<String> 后，
@@ -510,7 +556,7 @@ pub async fn create_subject(
     session: Option<Extension<shared::session::Session>>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
     let id = uuid::Uuid::new_v4().to_string();
     let title = payload
         .get("title")
@@ -522,11 +568,8 @@ pub async fn create_subject(
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
-    let author_id = payload
-        .get("authorId")
-        .and_then(|v| v.as_str())
-        .unwrap_or_default()
-        .to_string();
+    // 归属以会话为事实源；请求体显式写他人仅管理员放行，否则 403（冒名发帖）。
+    let author_id = resolve_author(&db.0, &sess, &payload).await?;
 
     let active_model = bbs_subject_info::ActiveModel {
         id: Set(id.clone()),
@@ -693,13 +736,7 @@ pub async fn create_reply(
         .and_then(|v| v.as_str())
         .unwrap_or_default()
         .to_string();
-    let creator = payload
-        .get("creator")
-        .or_else(|| payload.get("authorId"))
-        .and_then(|v| v.as_str())
-        .filter(|c| !c.trim().is_empty())
-        .unwrap_or(&sess.person_unique)
-        .to_string();
+    let creator = resolve_author(&db.0, &sess, &payload).await?;
 
     // x_bbs_reply.subject_id/author_id 为 NOT NULL（无默认）；subjectId/topicId 同义，
     // 归一到 subject 并双写 topic_id（回复列表按 topic_id 过滤，与 assemble_control 一致）。
@@ -820,6 +857,8 @@ pub fn bbs_core_entity_router(db: DatabaseConnection) -> Router {
 
 #[cfg(test)]
 mod security_gate_tests_b79;
+#[cfg(test)]
+mod security_gate_tests_w3;
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;

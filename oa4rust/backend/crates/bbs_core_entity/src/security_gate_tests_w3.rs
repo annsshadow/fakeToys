@@ -1,0 +1,252 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+//! 写 IDOR 第 W-b3 批：`bbs_core_entity` 的 create_subject / create_reply。
+//!
+//! 判据：
+//! 1. 非管理员请求体写他人归属（`authorId`/`creator`）→ 403，且不落库。
+//! 2. 不带归属字段 → 落会话人（reply 的 author_id/creator 双列同为会话人）。
+//! 3. 管理员代写 → 允许，按请求体落库（§6.2）。
+
+#[cfg(test)]
+mod tests {
+    use axum::body::Body;
+    use axum::extract::Extension;
+    use axum::http::{Method, Request, StatusCode};
+    use sea_orm::{ConnectionTrait, DatabaseConnection, DbBackend, Statement, Value};
+    use tower::ServiceExt;
+
+    const VICTIM: &str = "w3-victim";
+    const ATTACKER: &str = "w3-attacker";
+    const ADMIN: &str = "w3-admin";
+
+    async fn connect() -> Option<DatabaseConnection> {
+        if !shared::testing::is_db_available().await {
+            return None;
+        }
+        shared::testing::test_sea_orm_pool().await.ok()
+    }
+
+    async fn exec(db: &DatabaseConnection, sql: &str, params: Vec<Value>) {
+        db.execute(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            sql,
+            params,
+        ))
+        .await
+        .expect("w3 fixture sql");
+    }
+
+    async fn send(
+        db: &DatabaseConnection,
+        actor: Option<&str>,
+        method: Method,
+        uri: &str,
+        body: Option<serde_json::Value>,
+    ) -> (StatusCode, serde_json::Value) {
+        let mut app = crate::bbs_core_entity_router(db.clone());
+        if let Some(person) = actor {
+            app = app.layer(Extension(shared::testing::test_session(person)));
+        }
+        let request = Request::builder()
+            .uri(uri)
+            .method(method)
+            .header("content-type", "application/json")
+            .body(body.map_or_else(Body::empty, |b| Body::from(b.to_string())))
+            .unwrap();
+        let response = app.oneshot(request).await.unwrap();
+        let status = response.status();
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap_or_default();
+        let json = serde_json::from_slice(&bytes).unwrap_or(serde_json::Value::Null);
+        (status, json)
+    }
+
+    async fn seed_admin(db: &DatabaseConnection) {
+        exec(
+            db,
+            "INSERT INTO auth_role (id, name) VALUES ('w3-admin-role','admin') \
+             ON CONFLICT (id) DO NOTHING",
+            vec![],
+        )
+        .await;
+        exec(
+            db,
+            "INSERT INTO auth_person (id, unique_id, name, password_hash) \
+             VALUES ($1, $1, 'W3 Admin', 'w3-fixture-noop') \
+             ON CONFLICT (id) DO NOTHING",
+            vec![Value::from(ADMIN)],
+        )
+        .await;
+        exec(
+            db,
+            "INSERT INTO auth_person_role (person_id, role_id, unit_id) \
+             VALUES ($1, 'w3-admin-role', 'w3-unit') ON CONFLICT DO NOTHING",
+            vec![Value::from(ADMIN)],
+        )
+        .await;
+    }
+
+    async fn col_of(db: &DatabaseConnection, table: &str, id: &str, col: &str) -> String {
+        let row = db
+            .query_one(Statement::from_sql_and_values(
+                DbBackend::Postgres,
+                format!("SELECT {col} FROM {table} WHERE id = $1"),
+                vec![Value::from(id)],
+            ))
+            .await
+            .expect("w3 read col")
+            .expect("w3 row exists");
+        row.try_get::<Option<String>>("", col)
+            .unwrap_or_default()
+            .unwrap_or_default()
+    }
+
+    #[tokio::test]
+    async fn w3_subject_create_uses_session_author() {
+        let Some(db) = connect().await else {
+            return;
+        };
+        seed_admin(&db).await;
+        let uri = "/api/bbs/core/entity/subject";
+
+        // 非管理员冒名 → 403，且不落库。
+        let (status, _) = send(
+            &db,
+            Some(ATTACKER),
+            Method::POST,
+            uri,
+            Some(serde_json::json!({
+                "title": "w3-subject",
+                "sectionId": "w3-section",
+                "authorId": VICTIM,
+            })),
+        )
+        .await;
+        assert_eq!(
+            status,
+            StatusCode::FORBIDDEN,
+            "非管理员写他人 authorId 必须 403"
+        );
+
+        // 不带 authorId → 落会话人。
+        let (status, body) = send(
+            &db,
+            Some(ATTACKER),
+            Method::POST,
+            uri,
+            Some(serde_json::json!({ "title": "w3-subject", "sectionId": "w3-section" })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "本人发帖");
+        let id = body["data"]["id"].as_str().expect("subject id").to_string();
+        assert_eq!(
+            col_of(&db, "bbs_subject_info", &id, "author_id").await,
+            ATTACKER
+        );
+        exec(
+            &db,
+            "DELETE FROM bbs_subject_info WHERE id = $1",
+            vec![Value::from(id)],
+        )
+        .await;
+
+        // 管理员代写 → 允许，按请求体落库（§6.2）。
+        let (status, body) = send(
+            &db,
+            Some(ADMIN),
+            Method::POST,
+            uri,
+            Some(serde_json::json!({
+                "title": "w3-subject",
+                "sectionId": "w3-section",
+                "authorId": VICTIM,
+            })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "管理员代发帖");
+        let id = body["data"]["id"].as_str().expect("subject id").to_string();
+        assert_eq!(
+            col_of(&db, "bbs_subject_info", &id, "author_id").await,
+            VICTIM
+        );
+        exec(
+            &db,
+            "DELETE FROM bbs_subject_info WHERE id = $1",
+            vec![Value::from(id)],
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    async fn w3_reply_create_uses_session_creator() {
+        let Some(db) = connect().await else {
+            return;
+        };
+        seed_admin(&db).await;
+        let uri = "/api/bbs/core/entity/reply";
+
+        // 非管理员冒名 → 403，且不落库。
+        let (status, _) = send(
+            &db,
+            Some(ATTACKER),
+            Method::POST,
+            uri,
+            Some(serde_json::json!({
+                "subjectId": "w3-subject",
+                "content": "w3-reply",
+                "creator": VICTIM,
+            })),
+        )
+        .await;
+        assert_eq!(
+            status,
+            StatusCode::FORBIDDEN,
+            "非管理员写他人 creator 必须 403"
+        );
+
+        // 不带 creator → 落会话人，author_id/creator 双列一致。
+        let (status, body) = send(
+            &db,
+            Some(ATTACKER),
+            Method::POST,
+            uri,
+            Some(serde_json::json!({ "subjectId": "w3-subject", "content": "w3-reply" })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "本人回帖");
+        let id = body["data"]["id"].as_str().expect("reply id").to_string();
+        assert_eq!(col_of(&db, "x_bbs_reply", &id, "creator").await, ATTACKER);
+        assert_eq!(col_of(&db, "x_bbs_reply", &id, "author_id").await, ATTACKER);
+        exec(
+            &db,
+            "DELETE FROM x_bbs_reply WHERE id = $1",
+            vec![Value::from(id)],
+        )
+        .await;
+
+        // 管理员代写 → 允许，按请求体落库（§6.2）。
+        let (status, body) = send(
+            &db,
+            Some(ADMIN),
+            Method::POST,
+            uri,
+            Some(serde_json::json!({
+                "subjectId": "w3-subject",
+                "content": "w3-reply",
+                "creator": VICTIM,
+            })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "管理员代回帖");
+        let id = body["data"]["id"].as_str().expect("reply id").to_string();
+        assert_eq!(col_of(&db, "x_bbs_reply", &id, "creator").await, VICTIM);
+        exec(
+            &db,
+            "DELETE FROM x_bbs_reply WHERE id = $1",
+            vec![Value::from(id)],
+        )
+        .await;
+    }
+}

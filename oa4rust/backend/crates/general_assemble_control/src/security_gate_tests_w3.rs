@@ -1,0 +1,165 @@
+// Copyright (C) 2026 annsshadow
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+//! 写 IDOR 第 W-b3 批：`general_assemble_control` 的 office 创建面
+//! （`/office` 与 `/office/html/to/word` 为同一 handler，门禁两条用例）。
+//!
+//! 判据：
+//! 1. 非管理员请求体写他人 `creator` → 403，且不落库。
+//! 2. 不带 `creator` → 落会话人。
+//! 3. 管理员代建 → 允许，按请求体落库（§6.2）。
+
+#[cfg(test)]
+mod tests {
+    use axum::body::Body;
+    use axum::extract::Extension;
+    use axum::http::{Method, Request, StatusCode};
+    use tower::ServiceExt;
+
+    const VICTIM: &str = "w3-victim";
+    const ATTACKER: &str = "w3-attacker";
+    const ADMIN: &str = "w3-admin";
+
+    async fn pool() -> Option<deadpool_postgres::Pool> {
+        if !shared::testing::is_db_available().await {
+            return None;
+        }
+        Some(shared::testing::test_pool())
+    }
+
+    async fn exec(client: &deadpool_postgres::Object, sql: &str) {
+        client.execute(sql, &[]).await.expect("w3 fixture sql");
+    }
+
+    async fn send(
+        pool: &deadpool_postgres::Pool,
+        actor: Option<&str>,
+        method: Method,
+        uri: &str,
+        body: Option<serde_json::Value>,
+    ) -> (StatusCode, serde_json::Value) {
+        let mut app = crate::general_assemble_control_router(pool.clone());
+        if let Some(person) = actor {
+            app = app.layer(Extension(shared::testing::test_session(person)));
+        }
+        let request = Request::builder()
+            .uri(uri)
+            .method(method)
+            .header("content-type", "application/json")
+            .body(body.map_or_else(Body::empty, |b| Body::from(b.to_string())))
+            .unwrap();
+        let response = app.oneshot(request).await.unwrap();
+        let status = response.status();
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap_or_default();
+        let json = serde_json::from_slice(&bytes).unwrap_or(serde_json::Value::Null);
+        (status, json)
+    }
+
+    async fn seed_admin(client: &deadpool_postgres::Object) {
+        exec(
+            client,
+            "INSERT INTO auth_role (id, name) VALUES ('w3-admin-role','admin') \
+             ON CONFLICT (id) DO NOTHING",
+        )
+        .await;
+        exec(
+            client,
+            "INSERT INTO auth_person (id, unique_id, name, password_hash) \
+             VALUES ('w3-admin','w3-admin','W3 Admin','w3-fixture-noop') \
+             ON CONFLICT (id) DO NOTHING",
+        )
+        .await;
+        exec(
+            client,
+            "INSERT INTO auth_person_role (person_id, role_id, unit_id) \
+             VALUES ('w3-admin','w3-admin-role','w3-unit') ON CONFLICT DO NOTHING",
+        )
+        .await;
+    }
+
+    async fn creator_of(client: &deadpool_postgres::Object, id: &str) -> String {
+        let row = client
+            .query_one(
+                "SELECT creator FROM x_general_assemble_office WHERE id = $1",
+                &[&id],
+            )
+            .await
+            .expect("w3 read creator");
+        row.get::<_, Option<String>>("creator").unwrap_or_default()
+    }
+
+    #[tokio::test]
+    async fn w3_office_create_uses_session_creator() {
+        let Some(pool) = pool().await else {
+            return;
+        };
+        let client = shared::db::acquire(&pool).await.expect("w3 acquire");
+        seed_admin(&client).await;
+
+        let uris = [
+            "/api/general/assemble/control/office",
+            "/api/general/assemble/control/office/html/to/word",
+        ];
+
+        // 非管理员冒名 → 403，且不落库。
+        for uri in uris {
+            let (status, _) = send(
+                &pool,
+                Some(ATTACKER),
+                Method::POST,
+                uri,
+                Some(serde_json::json!({ "creator": VICTIM, "htmlContent": "<p>w3</p>" })),
+            )
+            .await;
+            assert_eq!(
+                status,
+                StatusCode::FORBIDDEN,
+                "非管理员在 {uri} 写他人 creator 必须 403"
+            );
+        }
+
+        // 不带 creator → 落会话人。
+        for uri in uris {
+            let (status, body) = send(
+                &pool,
+                Some(ATTACKER),
+                Method::POST,
+                uri,
+                Some(serde_json::json!({ "htmlContent": "<p>w3</p>" })),
+            )
+            .await;
+            assert_eq!(status, StatusCode::OK, "本人经 {uri} 建 office 行");
+            let id = body["data"]["id"].as_str().expect("office id").to_string();
+            assert_eq!(
+                creator_of(&client, &id).await,
+                ATTACKER,
+                "{uri} 必须落会话人"
+            );
+            exec(
+                &client,
+                &format!("DELETE FROM x_general_assemble_office WHERE id = '{id}'"),
+            )
+            .await;
+        }
+
+        // 管理员代建 → 允许，按请求体落库（§6.2）。
+        let (status, body) = send(
+            &pool,
+            Some(ADMIN),
+            Method::POST,
+            uris[0],
+            Some(serde_json::json!({ "creator": VICTIM, "htmlContent": "<p>w3</p>" })),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "管理员代建 office 行");
+        let id = body["data"]["id"].as_str().expect("office id").to_string();
+        assert_eq!(creator_of(&client, &id).await, VICTIM);
+        exec(
+            &client,
+            &format!("DELETE FROM x_general_assemble_office WHERE id = '{id}'"),
+        )
+        .await;
+    }
+}
