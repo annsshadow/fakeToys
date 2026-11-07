@@ -185,11 +185,13 @@ mod u2_legacy_tests {
             ("GET", "/v2/appeal/ap-1/start/check"),
             ("GET", "/v2/appeal/ap-1/reset/status"),
         ] {
-            // O2：死池下 503（取连失败）与 500（缺会话扩展）均证明路由可达
+            // O2：死池下 503（取连失败）、500（缺会话扩展）与 401（读端点要求会话）均证明路由可达
             assert!(
                 matches!(
                     status_of(method, &format!("{}{}", BASE, uri)).await,
-                    StatusCode::INTERNAL_SERVER_ERROR | StatusCode::SERVICE_UNAVAILABLE
+                    StatusCode::INTERNAL_SERVER_ERROR
+                        | StatusCode::SERVICE_UNAVAILABLE
+                        | StatusCode::UNAUTHORIZED
                 ),
                 "{} {} not routed",
                 method,

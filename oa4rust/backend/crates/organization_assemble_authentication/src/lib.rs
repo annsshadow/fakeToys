@@ -1278,8 +1278,9 @@ pub async fn oauth_auth(
 /// 安全审计（round4-b74）：OAuth 授权码签发真写收"会话存在档"门禁。
 /// 无会话（Option<Extension<Session>> = None）→ 401，门置于首个 DB 访问
 /// （`pool.get()`）之前，杜绝匿名签发 `x_org_oauth_code` 授权码。
-/// 注意：clientId 未与已注册应用比对、personId 取自 body（可伪造）——
-/// 属 §五"第三方回调零验签族"，本批按"加门与验签分开记"只收会话档。
+/// 归属口径（B 分片补充）：`person_id` 一律由会话派生，请求体 `personId` 不采信
+/// （用别人的 personId 生成授权码曾可冒名落库，见 `tests/oauth_session_derived.rs`）。
+/// `clientId` 仍未与已注册应用比对——属 §五"第三方回调零验签族"，按"加门与验签分开记"登记。
 fn require_session(
     session: Option<Extension<shared::session::Session>>,
 ) -> Result<shared::session::Session, AppError> {
@@ -1292,14 +1293,16 @@ pub async fn oauth_generate_code(
     session: Option<Extension<shared::session::Session>>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let sess = require_session(session)?;
     let client = req.get("clientId").and_then(|v| v.as_str()).unwrap_or("");
-    let person_id = req.get("personId").and_then(|v| v.as_str());
     let code = uuid::Uuid::new_v4().to_string();
-    oauth_code_store(&pool, client, &code, person_id, "code").await?;
-    Ok(Json(ActionResult::success(
-        serde_json::json!({ "code": code, "client": client }),
-    )))
+    // 归属只认会话本人；body `personId` 即使填了别人也不会落进 person_id。
+    let person_id = Some(sess.person_unique.as_str());
+    let id = oauth_code_store(&pool, client, &code, person_id, "code").await?;
+    // `id` 是表主键，`code` 是授权码：门禁回查按 `data.id` 定位落库行。
+    Ok(Json(ActionResult::success(serde_json::json!({
+        "id": id, "code": code, "client": client
+    }))))
 }
 
 #[allow(non_snake_case)]
