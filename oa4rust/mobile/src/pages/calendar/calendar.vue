@@ -137,7 +137,9 @@ function rangeBounds(): { from: number; to: number } {
 function startMs(e: EventRow): number {
   const raw = e.start_time ?? e.startTime
   if (!raw) return Number.NaN
-  return new Date(String(raw)).valueOf()
+  // 时间窗筛选与排序同样不能用 new Date 直接吞服务端字符串：
+  // iOS 上会得到 NaN，所有日程都被过滤掉、页面显示「暂无日程」。
+  return parseServerDate(raw)?.valueOf() ?? Number.NaN
 }
 
 async function load(): Promise<void> {
