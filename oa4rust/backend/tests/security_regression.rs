@@ -59,6 +59,8 @@ mod security_regression {
     const ADMIN_PROBE: &str = "gate-admin";
     const TOK_ATTACKER: &str = "tok-gate-attacker";
     const TOK_VICTIM: &str = "tok-gate-victim";
+    /// 写侧归属正控制用的管理员会话（ADMIN_PROBE 已绑 role-admin）
+    const TOK_ADMIN: &str = "tok-gate-admin";
     /// 单条用例超时（秒）。越权验证都是短请求；长连接端点走 EXCLUDED-LONGCONN 不参与计时。
     const CASE_TIMEOUT_SECS: u64 = 5;
     /// 整轮预算（秒）。超预算 = 整轮 FAIL（RUN-BUDGET-EXCEEDED），防止大量超时把门禁拖绿。
@@ -329,7 +331,11 @@ mod security_regression {
         );
 
         let session_manager = shared::session::SessionManager::with_pool(pool.clone());
-        for (uid, tok) in [(ATTACKER, TOK_ATTACKER), (VICTIM, TOK_VICTIM)] {
+        for (uid, tok) in [
+            (ATTACKER, TOK_ATTACKER),
+            (VICTIM, TOK_VICTIM),
+            (ADMIN_PROBE, TOK_ADMIN),
+        ] {
             session_manager
                 .create_session(uid.to_string(), tok.to_string())
                 .await
@@ -763,6 +769,114 @@ mod security_regression {
             .execute("DELETE FROM x_attendance_selfholiday WHERE id = $1", &[&id])
             .await;
         outcome
+    }
+
+    /// 假绿正控制：portal 写侧 owner 必须来自会话，而不是常量。
+    /// 用 admin 会话调用 9 个真实写端点，按响应 data.id 回表断言 creator == gate-admin。
+    async fn portal_owner_write_roundtrip(
+        app: &axum::Router,
+        pool: &deadpool_postgres::Pool,
+    ) -> Outcome {
+        let checks: [(&str, &str, &str, &str, &str); 9] = [
+            (
+                "create_portal",
+                "POST",
+                "/api/portal/assemble/designer/portal",
+                r#"{"name":"gate-owner-portal"}"#,
+                "x_portal",
+            ),
+            (
+                "create_design",
+                "POST",
+                "/api/portal/assemble/designer/create",
+                r#"{"name":"gate-owner-design"}"#,
+                "x_portal_design",
+            ),
+            (
+                "create_page",
+                "POST",
+                "/api/portal/assemble/designer/page",
+                r#"{"name":"gate-owner-page","portalId":"gate-owner-portal"}"#,
+                "x_portal_page",
+            ),
+            (
+                "input_create",
+                "PUT",
+                "/api/portal/assemble/designer/input/create",
+                r#"{"name":"gate-owner-input"}"#,
+                "x_portal_input",
+            ),
+            (
+                "input_prepare_create",
+                "PUT",
+                "/api/portal/assemble/designer/input/prepare/create",
+                r#"{"name":"gate-owner-prepare"}"#,
+                "x_portal_input",
+            ),
+            (
+                "create_templatepage",
+                "POST",
+                "/api/portal/assemble/designer/templatepage",
+                r#"{"name":"gate-owner-template"}"#,
+                "x_portal_template_page",
+            ),
+            (
+                "create_widget",
+                "POST",
+                "/api/portal/assemble/designer/widget",
+                r#"{"name":"gate-owner-widget","portalId":"gate-owner-portal"}"#,
+                "x_portal_widget",
+            ),
+            (
+                "surface_dict_put",
+                "PUT",
+                "/api/portal/assemble/surface/dict/gate-owner-dict/portal/gate-owner-portal/gate/data",
+                r#"{"v":1}"#,
+                "x_portal_dict",
+            ),
+            (
+                "surface_script_post",
+                "POST",
+                "/api/portal/assemble/surface/script/portal/gate-owner-portal/name/gate-owner-script",
+                r#"{}"#,
+                "x_portal_script",
+            ),
+        ];
+        let mut failures = Vec::new();
+        for (label, method, path, body, table) in checks {
+            let Some((status, resp)) = fire(app, method, path, Some(TOK_ADMIN), body).await else {
+                failures.push(format!("{label}: 请求无法构造"));
+                continue;
+            };
+            if !(200..300).contains(&status.as_u16()) {
+                failures.push(format!("{label}: status={}", status.as_u16()));
+                continue;
+            }
+            let Some(id) = response_id(&resp) else {
+                failures.push(format!("{label}: 2xx 但未返回 data.id"));
+                continue;
+            };
+            let Some(row) = row_json(pool, table, &id).await else {
+                failures.push(format!("{label}: 2xx 但行未落库 id={id}"));
+                continue;
+            };
+            let creator = serde_json::from_str::<Value>(&row)
+                .ok()
+                .and_then(|v| {
+                    v.get("creator")
+                        .and_then(|x| x.as_str())
+                        .map(str::to_string)
+                })
+                .unwrap_or_default();
+            if creator != ADMIN_PROBE {
+                failures.push(format!("{label}: creator={creator} 期望={ADMIN_PROBE}"));
+            }
+        }
+        if failures.is_empty() {
+            Outcome::Pass
+        } else {
+            Outcome::Integrity(failures.join("; "))
+        }
     }
 
     async fn pagination_suite(app: &axum::Router) -> Vec<(String, Outcome)> {
@@ -1379,6 +1493,13 @@ mod security_regression {
         .await
         .unwrap_or_else(|_| Outcome::Unverified("TIMEOUT".into()));
         extras.push(("self-write-roundtrip".into(), sw));
+        let ow = tokio::time::timeout(
+            std::time::Duration::from_secs(case_timeout),
+            portal_owner_write_roundtrip(&app, &pool),
+        )
+        .await
+        .unwrap_or_else(|_| Outcome::Unverified("TIMEOUT".into()));
+        extras.push(("portal-owner-write-roundtrip".into(), ow));
         for (id, o) in &extras {
             println!(
                 "[{}] {id} | self-write/pagination | {}",

@@ -212,8 +212,8 @@
 以下字面量属于「历史兼容的合理默认」，或写端点本身已 admin-only，不纳入本轮：
 
 - ai config / admin 类、correlation（读用 `person_id`）、jpush（admin + `target='all'`）；
-- `portal_*`（写 admin）、program_center（admin / 全局表）、query designer 其余创建（admin）、
-  query_surface（admin）、general attend / securityclearance（admin）。
+- `portal_*` 已于「假绿根修批（2026-11-08）」移出本表：写侧改会话身份，见下节；
+- query designer 其余创建（admin）、query_surface（admin）、general attend / securityclearance（admin）。
 
 ### 通用检查项：归属谓词的判据行必须来自真实写入路径
 
@@ -243,3 +243,41 @@
 
 处置：要么先把上述写入改为会话身份，要么明确这些行恒 admin-only 并固定口径。
 在此之前，`x_portal_*` 的相关门禁绿**不得记为「已防住」**，按上面通用检查项的第 3–5 条处理。
+
+## 假绿根修批（2026-11-08，`fix/false-green-owner-gates`）
+
+### 改前为什么门禁是绿的
+
+- portal（14 条读用例全 PASS）：判据行来自 seed（`creator=gate-victim`），
+  `security_regression_gate.py run` 读数 `cases=280 pass=279 leak=1`；但生产写侧 9 处
+  硬写 `creator='system'`（designer 7：`create_design` / `create_page` / `input_create` /
+  `input_prepare_create` / `create_portal` / `create_templatepage` / `create_widget`；
+  surface 2：`dict_*_data_put` 的 INSERT 分支 / `script_portal_*_post`）。
+  读谓词 `creator=本人 OR admin` 的 owner 臂对任何真实写入行永不命中，
+  「绿」实际来自 seed 行 + admin/空集，不是归属判定生效。
+- `t2|program_center|warnlog_create`（基线 1 条 LEAK，ratchet 绿）：写侧
+  `creator_person = sess.person_unique` 已正确，但用例 `field=level` 不是归属列；
+  runner 把 `level=gate-victim` 当作「行含 owner」判成冒名落库，判据来源
+  与真实归属无关，永远无法验证 owner 是否可被伪造。
+
+### 改后靠什么证明真防住
+
+- 写侧 9 处 `creator` 改为 `session.person_unique.clone()`。
+- 新增伪用例 `portal-owner-write-roundtrip`：gate-admin 会话调用上述 9 个真实写端点，
+  按响应 `data.id` 回表断言 `creator=gate-admin`；`gate run` 为 PASS。
+- warnlog 用例 `field` 改为真实归属列 `creator_person`：真实 `POST /api/program_center/warnlog`
+  产出的新行 `creator_person=audit-user`，body 里的受害者值不再落库 → PASS；
+  基线按 `STALE-BASELINE` 减 1 行，最终 `cases=281 pass=281`。
+- `sabotage false-green-owner-write`：9 处还原为 `'system'` →
+  `[INTEGRITY] portal-owner-write-roundtrip` 逐条点名 9 个端点；
+  `sabotage false-green-warnlog-owner`：写受害者常量 →
+  `[LEAK] t2|program_center|warnlog_create`（`owner=gate-victim`）。
+
+### 仍未解决的假绿项
+
+- NO-OWNER-COL B 档 5 条（列存在但生产 INSERT 从不写入、恒 NULL，典型
+  `x_cms_fileinfo.upload_person`）：判据仍无法命中真实行，按「先补写归属或改父 ACL」待做。
+- `x_portal` 共享读 2 条（`portal_id_icon` / `portal_id_permission`）：写入已可归属，
+  但共享臂/公开口径未裁决，谓词未加，仍不得记为「已防住」。
+- 其他写侧常量扫描判为 admin-only 的表（qrcode、query_statement、query_processing、
+  ai_file、x_file 等）：写侧已改会话，但读侧若仍无谓词，属未闭环暴露，不算假绿已修。
