@@ -377,6 +377,7 @@ async fn test_u2_statement_get_flag_route_exists() {
             Request::builder()
                 .uri("/api/query/assemble/designer/statement/st-1")
                 .method(Method::GET)
+                .extension(shared::testing::test_session("route-probe"))
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -395,6 +396,7 @@ async fn test_u2_statement_execute_v2_route_exists() {
                 .uri("/api/query/assemble/designer/statement/execute/st-1/page/1/size/20")
                 .method(Method::POST)
                 .header("content-type", "application/json")
+                .extension(shared::testing::test_session("route-probe"))
                 .body(Body::from("{}"))
                 .unwrap(),
         )
@@ -415,6 +417,7 @@ async fn test_u2_statement_execute_mode_v2_route_exists() {
                 )
                 .method(Method::POST)
                 .header("content-type", "application/json")
+                .extension(shared::testing::test_session("route-probe"))
                 .body(Body::from("{}"))
                 .unwrap(),
         )
@@ -726,6 +729,7 @@ async fn test_v9_statement_execute_legacy_path_route_exists() {
                 .uri("/api/query/assemble/designer/statement/st-1/execute/page/1/size/20")
                 .method(Method::POST)
                 .header("content-type", "application/json")
+                .extension(shared::testing::test_session("route-probe"))
                 .body(Body::from("{}"))
                 .unwrap(),
         )
@@ -741,6 +745,7 @@ async fn test_v9_statement_execute_legacy_path_route_exists() {
                 )
                 .method(Method::POST)
                 .header("content-type", "application/json")
+                .extension(shared::testing::test_session("route-probe"))
                 .body(Body::from("{}"))
                 .unwrap(),
         )
