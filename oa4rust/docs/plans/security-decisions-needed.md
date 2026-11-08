@@ -925,5 +925,43 @@ sabotage `w8-unverified`，本批减 5 行（分支创建时基线 37→32）。
 三项全过。基线由 8 条降为 1 条（仅 FALSE-GREEN `warnlog`）；若后续任一步复核失败，按 §15.1–§15.3
 的回滚口径逐批回退对应基线行。
 
+### 15.5 归属列写侧批 2：`message_assemble_communicate` sender
+
+**问题（读/写面依赖 sender，写侧请求可控）**
+
+- `send_message`（`/api/message/assemble/communicate/send`）与 `im_msg`
+  （`/api/message/assemble/communicate/im/msg`）都把 `x_message.sender` 直接采信请求体，
+  缺省 `"system"`；而 `mark_consume`、消息撤回等写面归属判定取 `sender`（见
+  `security_gate_tests.rs` 的「不写 creator_person，归属事实取 sender」）。
+  任意会话成员可冒名落库：消息在会话里显示为他人发送、并落入他人的归属面。
+
+**改前为什么门禁是绿的**
+
+- 门禁没有这两个写端点的用例；既有 `message_list_paging|GET` 只验证读列表，
+  `sender` 的真伪无人断言。
+
+**修法**
+
+- 两处写侧改为 `sender = sess.person_unique.clone()`，忽略请求体同名键。
+- 种子：`gate-conv-msg` 会话 + `audit-user`/`gate-victim` 两个成员（正反两向都需成员资格）。
+- 用例：2 条 `spoof-write`（`field=sender`，`carrier=body`，`dir=both`）：
+  2xx 后按响应 `data.id` 回表 `x_message`，含 victim → LEAK、含 actor → PASS。
+
+**改后靠什么证明真防住了**
+
+- 2 条实测 `[PASS]`：回表 `sender` 命中会话 actor 的正证据（冒名键被忽略）。
+- 破坏实验：把两处写侧还原为请求体 `sender` → `[LEAK]` 2 条且 `NEW-FAIL` **恰好点名**
+  `send_message` / `im_msg`（`owner=gate-victim（冒名落库）`）；
+  还原后 `非 PASS 1`（仅 FALSE-GREEN `warnlog`），与基线一致。
+- 基线不变（新增 2 条均为 PASS，不涉及减行）。
+
+**登记（本批不做）**
+
+- `x_message_mass.creator` 从不写入：`mass_create` 只写 `creator_person` 且为管理员档；
+  读 `mass/{id}` 的归属谓词用 `creator`，靠 admin 旁路才 PASS，非管理员属主读不到自己的行。
+  修复需补写 `creator`，但门禁无管理员攻击者档，无法取得 sabotage 正证据，登记独立立项。
+- 会话成员 `role` 从不写入（`security_gate_tests.rs` 已注明），无读侧依赖。
+
+
 
 

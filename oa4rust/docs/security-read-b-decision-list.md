@@ -287,3 +287,24 @@ rev-GATE-V-MOBILE)`，delete paging `LEAK(2xx 响应体含 canary GATE-DEL-MOBIL
 
 - 破坏实验：短路 `identity_create` 归属判定、`bind_create` 的 EXISTS 校验 → 门禁 `NEW-FAIL` 恰好点名这 2 条；还原后基线 31 → 29，无 `STALE-BASELINE`。
 - 写侧登记：`bind_create` 自身无 `creator` 列，父资源归属已收口；`bind_update` 仍只查会话，属另一缺口，留待后续。
+
+## 附：归属列写侧不可用批 2 —— `message_assemble_communicate` sender
+
+方向同上：读/写面依赖归属列、写侧却请求可控。
+
+| 端点 | 归属列 | 改前 | 改后 |
+|---|---|---|---|
+| `POST /api/message/assemble/communicate/send` | `x_message.sender` | 请求体 `sender`，缺省 `"system"` | `sess.person_unique` |
+| `POST /api/message/assemble/communicate/im/msg` | 同上 | 同上 | 同上 |
+
+- **依赖证据**：`mark_consume`、消息撤回等写面归属判定取 `sender`
+  （`security_gate_tests.rs`「这两张表不写 creator_person，归属事实取 sender」）。
+- **改前为什么门禁是绿的**：两个写端点无用例；既有读列表用例不校验 `sender` 真伪。
+- **用例**：2 条 `spoof-write`（`field=sender`，`carrier=body`，`dir=both`），
+  2xx 后回表 `x_message`，含 victim → LEAK、含 actor → PASS。
+- **种子**：`gate-conv-msg` 会话 + `audit-user`/`gate-victim` 成员（两向都需成员资格）。
+- **改后靠什么证明真防住了**：2 条实测 `[PASS]`（回表 sender=actor 正证据）；
+  破坏实验还原请求体 `sender` → 2 条 `[LEAK]` 且 `NEW-FAIL` 恰好点名
+  `send_message` / `im_msg`；还原后 `非 PASS 1`（仅 FALSE-GREEN `warnlog`），与基线一致。
+- **登记**：`x_message_mass.creator` 从不写入（`mass_create` 只写 `creator_person` 且管理员档，
+  读归属谓词用 `creator`，非管理员属主读不到自己的行；门禁无管理员攻击者档，无法取 sabotage 正证据）。
