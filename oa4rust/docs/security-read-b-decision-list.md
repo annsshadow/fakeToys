@@ -349,3 +349,55 @@ rev-GATE-V-MOBILE)`，delete paging `LEAK(2xx 响应体含 canary GATE-DEL-MOBIL
   这 6 条；还原后 `非 PASS 1`（仅 FALSE-GREEN `warnlog`），与基线一致，无 `STALE-BASELINE`。
 - **登记（本批不做）**：`event_list_by_calendar` 无归属谓词、`event_create` 不校验
   `calendarId` 所属日历归属、`calendar_list_my` 返回全部 OPEN 日历。
+## 附：归属列写侧不可用批 3 —— `calendar_assemble_control` event 容器归属
+
+方向：写侧不校验容器归属键，读侧却依赖它判归属。
+
+| 端点 | 归属事实 | 改前 | 改后 |
+|---|---|---|---|
+| `POST /api/calendar_assemble_control/event` | `cal_event.calendar_id -> cal_calendar.createor` | `calendarId` 直接采信请求体，任意登录用户可向任意日历注入事件 | 非空 `calendarId` 先过 `person_can_manage_calendar`（本人或管理员），否则 403；`createor` 仍是 `sess.person_unique` |
+
+- **依赖证据**：`EVENT_READ_PREDICATE`（u2.rs L137）与 `event_list_filter`（L728）都以
+  `c.createor = $2` 放行日历属主；注入行会出现在属主的事件列表里。
+- **改前为什么门禁是绿的**：该写端点此前无用例；既有 calendar 用例只测 `event_get` /
+  `event_rfc` 读面，从不发写请求。
+- **用例**：1 条 `spoof-write`（`field=calendarId`，`carrier=body`，`dir=both`），
+  2xx 后按 `data.id` 回表 `cal_event`：`calendar_id` 含 victim → LEAK、含 actor → PASS。
+- **种子**：fwd 补 `cal_calendar(id='gate-victim', createor='gate-victim')`；
+  rev 补 `cal_calendar(id='audit-user', createor='audit-user')`，两向都是真实他人日历。
+- **改后靠什么证明真防住了**：两向实测 `[PASS]`（403）；破坏实验短路归属门后
+  `[LEAK] calendar_assemble_control|event_create` + `NEW-FAIL` 恰好点名该条；还原后
+  非 PASS 仍为 1（仅 FALSE-GREEN `warnlog`），无 `STALE-BASELINE`。
+- **同 crate 登记（不改）**：
+  - `message_create`：`person` 已是会话身份（正确）；`calendar_id` 同样未校验，但
+    `cal_message` 全仓无读端点 → 读侧不依赖，属写侧冗余缺口，登记。
+  - `setting_create`：`cal_setting.person` 采信请求体；`setting_get_by_code` /
+    `setting_get` / `setting_list_all` 都不按 `person` 过滤 → 读侧不依赖，登记。
+- **跨 crate 登记**：`calendar_core_entity::event_create` 有同类容器缺口；#274 已合入，但其
+  只改 `createor` 与 update/remove 归属门，未校验 `calendarId`，另行补一批。
+
+## 附：交接（22:45 前收尾）—— 未开新批的剩余项与续做路径
+
+- `x_message_mass.creator` 从不写入：
+  - 写侧：`message_assemble_communicate::mass_create`（lib.rs ~2940）只写 `creator_person`，
+    且为管理员档；`creator` 列永不落值。
+  - 读侧：`mass_id`（`GET /api/message/assemble/communicate/mass/{id}`）按 `creator` 判归属，
+    门禁用种子直接插行覆盖，绕过了真实写入，因此现有 PASS 不代表写侧可用。
+  - 续做（最小可行）：`mass_create` 同时写 `creator = sess.person_unique`，并补一条
+    「真实写入 → 读回环」用例；若按表语义应归 `creator_person`，则写侧改它、读谓词同步改。
+  - 缺口：当前门禁无管理员攻击者档，取不到「管理员冒名」正证据；需先补攻击者档或改测法。
+- attendance 五张配置表（`x_attendance_employee_config` / `import_file_info` /
+  `schedule_setting` / `setting` / `statistical_cycle`）：
+  - 现状：create 只写 `creator_person`，读侧 `owner_scope(&["creator","creator_person"])`
+    已覆盖真实行 → 非当前缺陷。
+  - 续做（上线前量化 + 只堵写侧、不回填）：用真实写入路径造 victim/actor 两行，断言
+    非管理员读不到他人配置；量化历史行 `creator IS NULL AND creator_person IS NOT NULL`
+    占比；写侧统一落 `creator`，不回填历史。
+  - 缺口：读谓词同时认 `creator_person`，无法用 sabotage 点名；需改用行为级用例。
+- 「请求体带归属键」普查剩余项（已登记，未开批）：
+  - `calendar_core_entity::event_create` 的 `calendarId` 未校验（#274 只改
+    createor/update/remove）。
+  - `calendar_assemble_control::message_create` 的 `calendarId` 未校验（`cal_message` 无读端点）。
+  - `calendar_assemble_control::setting_create` 的 `person` 采信请求体（读端不按 person 过滤）。
+  - `organization_core_entity::unit_check` 的 Public 双锁（#263 之外的登记项）。
+
