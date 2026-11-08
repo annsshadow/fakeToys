@@ -29,7 +29,7 @@
             <td>{{ fmtTime(item.createTime) }}</td>
             <td>
               <button class="btn-sm" @click="editItem(item)">编辑</button>
-              <button class="btn-sm btn-del" @click="deleteItem(item)">删除</button>
+              <button class="btn-sm btn-del" :disabled="deletingId === item.id" @click="deleteItem(item)">删除</button>
             </td>
           </tr>
         </tbody>
@@ -158,6 +158,7 @@ const saveM = useMutation({
 function saveItem() {
   saveM.mutate()
 }
+const deletingId = ref('')
 const delM = useMutation({
   mutationFn: async (id: string) => api.post(`/api/program_center/collect/delete/${id}`),
   onSuccess: () => {
@@ -166,7 +167,10 @@ const delM = useMutation({
   onError: (e) => toast.error(collectMutationErrorMessage(e)),
 })
 async function deleteItem(item: Item) {
-  if (await confirmMsg('确定删除该收集记录？')) delM.mutate(item.id)
+  if (deletingId.value) return
+  if (!(await confirmMsg('确定删除该收集记录？'))) return
+  deletingId.value = item.id
+  delM.mutate(item.id, { onSettled: () => (deletingId.value = '') })
 }
 function loadData() {
   reload()

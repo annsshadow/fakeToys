@@ -114,8 +114,8 @@
             <div class="event-title">{{ evt.title }}</div>
             <div class="event-time">{{ evt.startTime }} - {{ evt.endTime }}<span v-if="evt.location"> · 📍{{ evt.location }}</span></div>
           </div>
-          <button class="evt-del" title="结束事件" @click="finishEvent(evt)">✓ 结束</button>
-          <button class="evt-del" title="删除事件" @click="removeEvent(evt)">✕</button>
+          <button class="evt-del" title="结束事件" :disabled="finishingEvent" @click="finishEvent(evt)">✓ 结束</button>
+          <button class="evt-del" title="删除事件" :disabled="removingEvent" @click="removeEvent(evt)">✕</button>
         </div>
       </div>
     </div>
@@ -431,26 +431,38 @@ async function createEvent(): Promise<void> {
   }
 }
 
+const finishingEvent = ref(false)
+const removingEvent = ref(false)
+
 async function finishEvent(evt: CalendarEvent): Promise<void> {
+  if (finishingEvent.value) return
+  finishingEvent.value = true
   try {
+    if (!(await confirmMsg('确定结束该事件？结束后不可恢复。'))) return
     // POST event/update —— 更新事件（置为结束状态）
     await api.post('/api/calendar/event/update', { id: evt.id, status: 'CLOSED' })
     toast.success('事件已结束')
     await loadCalEvents()
   } catch (e: any) {
     toast.error(`更新事件失败: ${e?.message ?? ''}`)
+  } finally {
+    finishingEvent.value = false
   }
 }
 
 async function removeEvent(evt: CalendarEvent): Promise<void> {
-  if (!(await confirmMsg('确定删除该事件？'))) return
+  if (removingEvent.value) return
+  removingEvent.value = true
   try {
+    if (!(await confirmMsg('确定删除该事件？'))) return
     // POST event/remove —— 删除事件
     await api.post('/api/calendar/event/remove', { id: evt.id })
     toast.success('事件已删除')
     await loadCalEvents()
   } catch (e: any) {
     toast.error(`删除事件失败: ${e?.message ?? ''}`)
+  } finally {
+    removingEvent.value = false
   }
 }
 

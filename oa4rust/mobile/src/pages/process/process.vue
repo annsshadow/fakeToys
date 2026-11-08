@@ -189,20 +189,27 @@ function switchTab(key: TabKey) {
 function act(row: Record<string, unknown>, action: 'approve' | 'reject') {
   const taskId = typeof row.id === 'string' ? row.id : ''
   if (!taskId || busy.value) return
+  // 从弹窗阶段就占住守卫：否则确认框打开期间再点一次会叠出第二个弹窗。
+  busy.value = true
   uni.showModal({
     title: action === 'approve' ? '审批通过' : '驳回',
     content: '填写处理意见（可选）',
     placeholder: '处理意见',
     showInput: true,
     success: (r) => {
-      if (!r.confirm) return
+      if (!r.confirm) {
+        busy.value = false
+        return
+      }
       void runAction(taskId, action, r.content?.trim() || '')
+    },
+    fail: () => {
+      busy.value = false
     },
   })
 }
 
 async function runAction(taskId: string, action: 'approve' | 'reject', opinion: string) {
-  busy.value = true
   try {
     if (action === 'approve') await processApi.completeTask(taskId, { opinion })
     else await processApi.rejectTask(taskId, { opinion })
