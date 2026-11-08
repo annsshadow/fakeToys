@@ -33,6 +33,8 @@
     python scripts/security_regression_gate.py sabotage read-a-b5         # Rust②n2：摘掉分片 A 第五批 portal/surface/page/ai 读门（6 条）
     python scripts/security_regression_gate.py sabotage write-idor-w3     # Rust②i：摘掉 office/bbs/mind 写侧冒名 403（7 条）
     python scripts/security_regression_gate.py sabotage w8-unverified      # Rust②n：摘掉 W-b8 回收站读归属与 bbs/mind/file 冒名 403（5 条）
+    python scripts/security_regression_gate.py sabotage false-green-owner-write   # Rust②o：portal 写侧 9 处 owner 还原成 'system'
+    python scripts/security_regression_gate.py sabotage false-green-warnlog-owner # Rust②p：warnlog_create 落受害者 owner（应 LEAK）
     python scripts/security_regression_gate.py sabotage go-limit0   # Go①：扣款乘 2
     python scripts/security_regression_gate.py sabotage go-idor-rev # Go②：摘掉预设删除归属
     python scripts/security_regression_gate.py sabotage go-empty-list    # Go③：伪装成已修（列表恒空）
@@ -996,6 +998,40 @@ A5_EXPECTS = [
     "portal_core_entity|page_get|GET",
 ]
 
+# 假绿根修：portal 写侧 owner 必须来自会话。破坏实验逐条还原成常量 'system'，
+# 由 portal-owner-write-roundtrip 正控制点名（surface 两处带上下文，避免误伤既有修复）。
+PORTAL_OWNER_WRITE_RE = re.compile(r"let creator = session\.person_unique\.clone\(\);")
+PORTAL_OWNER_WRITE_PATCH = 'let creator = "system";'
+PORTAL_DICT_OWNER_WRITE_RE = re.compile(
+    r"(let name = dict_flag\.clone\(\);\n\s*)let creator = session\.person_unique\.clone\(\);"
+)
+PORTAL_DICT_OWNER_WRITE_PATCH = r'\1let creator = "system";'
+PORTAL_SCRIPT_OWNER_WRITE_RE = re.compile(
+    r"(\.unwrap_or\(&name\)\n\s*\.to_string\(\);\n\s*)"
+    r"let creator = session\.person_unique\.clone\(\);"
+)
+PORTAL_SCRIPT_OWNER_WRITE_PATCH = r'\1let creator = "system";'
+PORTAL_OWNER_WRITE_EXPECTS = [
+    "create_portal",
+    "create_design",
+    "create_page",
+    "input_create",
+    "input_prepare_create",
+    "create_templatepage",
+    "create_widget",
+    "surface_dict_put",
+    "surface_script_post",
+]
+# warnlog_create：写侧归属落受害者常量，模拟「采信外部 owner」，行内含 victim → LEAK。
+WARNLOG_OWNER_RE = re.compile(
+    r"&\[&id, &level, &tag, &logger_name, &message, &detail, &host, &port, &sess\.person_unique\]"
+)
+WARNLOG_OWNER_PATCH = (
+    '&[&id, &level, &tag, &logger_name, &message, &detail, &host, &port, '
+    '&{ let _ = &sess; "gate-victim".to_string() }]'
+)
+WARNLOG_OWNER_EXPECT = "t2|program_center|warnlog_create"
+
 
 # 写 IDOR 第 W-b3 批：office/bbs/mind 写侧冒名 403 臂。
 # 把三个 crate resolve_* 的管理员臂改成恒放行（保留 is_admin_db 调用引用，避免未使用告警），
@@ -1047,7 +1083,7 @@ def sabotage_many(
         else:
             caught = code != 0 and "NEW-FAIL" in out and all(e in out for e in expects)
         for line in out.splitlines():
-            if line.startswith(("[LEAK]", "[PASS]", "[UNVERIFIED]", "NEW-FAIL", "STALE-BASELINE")) \
+            if line.startswith(("[LEAK]", "[PASS]", "[UNVERIFIED]", "[INTEGRITY]", "NEW-FAIL", "STALE-BASELINE")) \
                     or line.startswith("=== ") or "非 PASS" in line or "test result:" in line:
                 print(line)
         print()
@@ -1393,13 +1429,44 @@ def sabotage(kind: str) -> int:
             B8_B3_EXPECTS,
             require_leak=True,
         )
+    elif kind == "false-green-owner-write":
+        return sabotage_many(
+            "把 portal 写侧 9 处会话 creator 还原成常量 'system'（正控制应点名 9 个端点）",
+            [
+                (PORTAL_DESIGNER, PORTAL_OWNER_WRITE_RE, PORTAL_OWNER_WRITE_PATCH, f"designer_{i}")
+                for i in range(1, 8)
+            ]
+            + [
+                (
+                    PORTAL_SURFACE,
+                    PORTAL_DICT_OWNER_WRITE_RE,
+                    PORTAL_DICT_OWNER_WRITE_PATCH,
+                    "surface_dict",
+                ),
+                (
+                    PORTAL_SURFACE,
+                    PORTAL_SCRIPT_OWNER_WRITE_RE,
+                    PORTAL_SCRIPT_OWNER_WRITE_PATCH,
+                    "surface_script",
+                ),
+            ],
+            PORTAL_OWNER_WRITE_EXPECTS,
+        )
+    elif kind == "false-green-warnlog-owner":
+        return sabotage_many(
+            "把 warnlog_create 的 creator_person 落成受害者常量（应 LEAK）",
+            [(PROGRAM_CENTER, WARNLOG_OWNER_RE, WARNLOG_OWNER_PATCH, "warnlog_owner")],
+            [WARNLOG_OWNER_EXPECT],
+            require_leak=True,
+        )
     else:
         raise SystemExit(
             f"未知破坏实验: {kind}（可选 ownership / correct / general / organization / "
             "program_center / hotpic_mind / read_b / read-a-b1 / read-a-b2 / read-a-b3 / "
             "read-a-b4 / read-a-b5 / write-idor-b5 / write-idor-b6 / write-idor-b7 / "
             "write-idor-w1 / write-idor-w2 / write-idor-w3 / write-idor-w4 / write-idor-w5 / "
-            "write-idor-w6 / write-idor-w7 / w8-unverified）"
+            "write-idor-w6 / write-idor-w7 / w8-unverified / false-green-owner-write / "
+            "false-green-warnlog-owner）"
         )
 
     print(f"== 破坏实验：{title}")
@@ -1413,7 +1480,7 @@ def sabotage(kind: str) -> int:
         )
         # 只摘出关键证据行，避免把 148 条明细全部倒进终端
         for line in out.splitlines():
-            if line.startswith(("[LEAK]", "[PASS]", "[UNVERIFIED]", "NEW-FAIL", "STALE-BASELINE")) \
+            if line.startswith(("[LEAK]", "[PASS]", "[UNVERIFIED]", "[INTEGRITY]", "NEW-FAIL", "STALE-BASELINE")) \
                     or line.startswith("=== ") or "非 PASS" in line or "test result:" in line:
                 print(line)
         print()

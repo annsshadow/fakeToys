@@ -70,7 +70,7 @@ pub async fn create_design(
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_default();
     let description = req.description.unwrap_or_default();
-    let creator = "system";
+    let creator = session.person_unique.clone();
 
     client
         .execute(
@@ -395,7 +395,7 @@ pub async fn create_page(
     // `x_portal_page.status` 亦为 NOT NULL 且无 DEFAULT；沿用同表既有写方
     // `portal_core_entity::page_update` 的默认值 "active"（非新造词表）。
     let status = "active";
-    let creator = "system";
+    let creator = session.person_unique.clone();
 
     client
         .execute(
@@ -1652,7 +1652,7 @@ pub async fn input_create(
         .get("content")
         .and_then(|v| v.as_str())
         .unwrap_or_default();
-    let creator = "system";
+    let creator = session.person_unique.clone();
 
     let result = client
         .execute(
@@ -1712,7 +1712,7 @@ pub async fn input_prepare_create(
         .get("content")
         .and_then(|v| v.as_str())
         .unwrap_or_default();
-    let creator = "system";
+    let creator = session.person_unique.clone();
 
     let client = shared::db::acquire(&pool).await?;
 
@@ -3309,7 +3309,7 @@ pub async fn create_portal(
     let alias = name.clone();
     let portal_category = "default".to_string();
     let category = "default".to_string();
-    let creator = "system";
+    let creator = session.person_unique.clone();
 
     // 归一化查重：同名 portal 视为重复
     let existing = client
@@ -3497,7 +3497,7 @@ pub async fn create_templatepage(
         .get("content")
         .and_then(|v| serde_json::to_string(v).ok())
         .unwrap_or_else(|| "null".to_string());
-    let creator = "system";
+    let creator = session.person_unique.clone();
 
     let existing = client
         .query_opt(
@@ -3629,7 +3629,7 @@ pub async fn create_widget(
         .get("config")
         .and_then(|v| serde_json::to_string(v).ok())
         .unwrap_or_else(|| "null".to_string());
-    let creator = "system";
+    let creator = session.person_unique.clone();
 
     let existing = client
         .query_opt(
