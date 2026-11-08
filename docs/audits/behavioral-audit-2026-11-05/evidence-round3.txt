@@ -1,0 +1,206 @@
+# 第三轮实测原文（自动采集，身份 audit-user / audit_u1）
+
+## T1 归属分类抽测
+
+### processing/work/list
+GET /api/processplatform/service/processing/work/list -> 200
+{"data":[{"application":"","createTime":"2026-11-03 10:00:00","creator":"person-admin","id":"work-admin-1","process":"p1","title":"Admin work 1","workStatus":"pending"}],"type":"success","message":"","date":"2026-11-05 23:47:23","spent":0,"size":0,"count":1,"position":0}
+
+### processing/task/list
+GET /api/processplatform/service/processing/task/list -> 200
+{"data":[{"activity":"","endTime":"","id":"task-admin-1","person":"person-admin","startTime":"","taskStatus":"pending","title":"Admin task 1","work":"w-admin-1"},{"activity":"","endTime":"","id":"task-admin-2","person":"person-admin","startTime":"","taskStatus":"pending","title":"Admin task 2","work":"w-admin-2"}],"type":"success","message":"","date":"2026-11-05 23:47:23","spent":0,"size":0,"count":2,"position":0}
+
+### mind/folder/tree/my
+GET /api/mind/assemble/control/folder/tree/my -> 200
+{"data":[{"content":"","createTime":"2026-11-05 15:32:08.947453+00","creator":"system","id":"af274f9f-3bec-4d85-9ef0-96f4cafa2af9","name":"w3-mind"},{"content":"body","createTime":"2026-11-05 15:06:20.054526+00","creator":"system","id":"86535315-6a1d-412d-948f-97b8e4d5e4c7","name":"W2"},{"content":"own","createTime":"2026-11-05 14:05:55.250603+00","creator":"audit-u1","id":"mind-audit-own","name":"audit user mind"},{"content":"secret","createTime":"2026-11-05 14:05:55.2482+00","creator":"person-admin","id":"mind-admin-secret","name":"admin private mind"}],"type":"success","message":"","date":"2026-11-05 23:47:23","spent":0,"size":0,"count":4,"position":0}
+
+### message/list/paging
+GET /api/message/assemble/communicate/message/list/paging/1/size/10 -> 200
+{"data":[{"content":"W3 spoof","conversationId":"w8-conv","createTime":"2026-11-05 15:32:58.162684+00","id":"95dcbdf6-11bf-4dc9-b87d-c65a824eca47","sender":"person-admin","type":"custom"},{"content":"W8 spoof","conversationId":"w8-conv","createTime":"2026-11-05 15:09:53.255404+00","id":"764aa140-a9c2-42de-93a3-b3f5526f90e1","sender":"person-admin","type":"custom"}],"type":"success","message":"","date":"2026-11-05 23:47:24","spent":0,"size":10,"count":2,"position":0}
+
+### message/consume/list(person-admin)
+GET /api/message/assemble/communicate/consume/list/person-admin/count/5 -> 200
+{"data":[{"consume":"person-admin","content":"admin secret","createTime":"2026-11-04 10:00:00","id":"msg-admin-1","sender":"audit-u1"}],"type":"success","message":"","date":"2026-11-05 23:47:24","spent":0,"size":0,"count":1,"position":0}
+
+### ai/conversation/list
+GET /api/ai/core/entity/conversation/list -> 200
+{"data":{"count":2,"data":[{"createTime":"2026-11-05 15:02:39.115504","id":"audit-conv-null","title":"NULL-row","userId":"audit-user"},{"createTime":"2026-11-05 15:02:39.115504","id":"conv-admin-1","title":"admin conv","userId":"person-admin"}]},"type":"success","message":"","date":"2026-11-05 23:47:24","spent":0,"size":0,"count":0,"position":0}
+
+### ai/conversation/list(2)
+GET /api/ai/conversation/list -> 200
+{"data":[{"createTime":"2026-11-05 15:02:39.115504","id":"audit-conv-null","title":"NULL-row","userId":"audit-user"},{"createTime":"2026-11-05 15:02:39.115504","id":"conv-admin-1","title":"admin conv","userId":"person-admin"}],"type":"success","message":"","date":"2026-11-05 23:47:25","spent":0,"size":0,"count":2,"position":0}
+
+### attendance/detail/filter/list
+GET /api/attendance/assemble/control/attendancedetail/filter/list -> 200
+{"data":[{"date":"2026-11-07","id":"audit-other-1","personId":"someone-else","status":"NORMAL"},{"date":"2026-11-05","id":"audit-ad-02","personId":"p1","status":"NORMAL"},{"date":"2026-11-05","id":"audit-ad-03","personId":"p1","status":"NORMAL"},{"date":"2026-11-05","id":"audit-ad-04","personId":"p1","status":"NORMAL"},{"date":"2026-11-05","id":"audit-ad-05","personId":"p1","status":"NORMAL"},{"date":"2026-11-05","id":"audit-ad-06","personId":"p1","status":"NORMAL"},{"date":"2026-11-05","id":"audit-ad-07","personId":"p1","status":"NORMAL"},{"date":"2026-11-05","id":"audit-ad-08","personId":"p1","status":"NORMAL"},{"date":"2026-11-05","id":"audit-ad-09","personId":"p1","status":"NORMAL"},{"date":"2026-11-05","id":"audit-ad-10","personId":"p1","status":"NORMAL"},{"date":"2026-11-05","id":"audit-ad-01","personId":"p1","status":"NORMAL"},{"date":"2026-11-05","id":"audit-ad-12","personId":"p1
+
+### attendance/selfholiday/list/all
+GET /api/attendance/assemble/control/attendanceselfholiday/list/all -> 200
+{"data":[{"holidayDate":"2026-11-02","id":"hol-admin","personId":"person-admin","reason":"admin leave"}],"type":"success","message":"","date":"2026-11-05 23:47:25","spent":0,"size":0,"count":1,"position":0}
+
+### jpush/device/list
+GET /api/jpush/device/list -> 200
+{"data":[{"id":"test-id","platform":"test","token":"test-token","userId":"test-id"}],"type":"success","message":"","date":"2026-11-05 23:47:26","spent":0,"size":0,"count":1,"position":0}
+
+### meeting/list(POST)
+POST /api/meeting/assemble/control/meeting/list/1/size/5 -> 200
+{"data":[{"content":"secret agenda","createTime":"2026-11-05 14:41:44","creator":"person-admin","endTime":"2026-11-05 16:41:44","id":"meeting-admin-1","startTime":"2026-11-05 15:41:44","title":"Admin secret meeting"}],"type":"success","message":"","date":"2026-11-05 23:47:26","spent":0,"size":5,"count":1,"position":0}
+
+### cms/document/filter/list(PUT,已登录)
+PUT /api/document/filter/list/1/size/10 -> 200
+{"data":[{"content":"secret body","create_time":"2026-11-04 10:00:00","creator":"person-admin","id":"doc-draft-1","is_top":false,"status":"draft","title":"Confidential draft"}],"type":"success","message":"","date":"2026-11-05 23:47:27","spent":0,"size":0,"count":1,"position":0}
+
+### cms/document/filter/list(PUT,未登录)
+ANON_PUT /api/document/filter/list/1/size/10 -> 401
+{"count":0,"date":"2026-11-05 23:47:27","message":"unauthorized","position":0,"prompt":"com.x.base.core.project.exception.ExceptionUnauthorized","size":-1,"spent":0,"type":"error"}
+
+## T2 F1-A 代表实测
+
+### draft next (cursor=admin audit-d2)
+GET /api/processplatform/assemble/surface/draft/list/next/audit-d2/20 -> 200
+{"data":[{"createTime":"2026-11-02 10:00:00","id":"audit-d2","updateTime":""}],"type":"success","message":"","date":"2026-11-05 23:47:27","spent":0,"size":0,"count":1,"position":0}
+
+### task next (cursor=admin pp-task-a1)
+GET /api/processplatform/assemble/surface/task/list/next/pp-task-a1/5 -> 200
+{"data":[{"createTime":"2026-11-05 15:24:02.880657+00","id":"pp-task-a1","updateTime":""}],"type":"success","message":"","date":"2026-11-05 23:47:28","spent":0,"size":0,"count":1,"position":0}
+
+### read next (cursor=admin f1a-read-a)
+GET /api/processplatform/assemble/surface/read/list/next/f1a-read-a/5 -> 200
+{"data":[{"createTime":"2026-11-05 15:01:41.526376+00","id":"f1a-read-a","updateTime":""}],"type":"success","message":"","date":"2026-11-05 23:47:28","spent":0,"size":0,"count":1,"position":0}
+
+### read next/application (flag=app1)
+GET /api/processplatform/assemble/surface/read/list/next/application/f1a-read-a/5/app1 -> 200
+{"data":[{"createTime":"2026-11-05 15:01:41.526376+00","id":"f1a-read-a","updateTime":""}],"type":"success","message":"","date":"2026-11-05 23:47:28","spent":0,"size":0,"count":1,"position":0}
+
+### task next/application (flag=app1)
+GET /api/processplatform/assemble/surface/task/list/next/application/pp-task-a1/5/app1 -> 200
+{"data":[{"createTime":"2026-11-05 15:24:02.880657+00","id":"pp-task-a1","updateTime":""}],"type":"success","message":"","date":"2026-11-05 23:47:29","spent":0,"size":0,"count":1,"position":0}
+
+### work next/creator/current (cursor=admin pp-work-a1)
+GET /api/processplatform/assemble/surface/work/list/next/creator/current/pp-work-a1/5 -> 200
+{"data":[{"createTime":"2026-11-05 15:40:00","id":"pp-work-a1","updateTime":""}],"type":"success","message":"","date":"2026-11-05 23:47:29","spent":0,"size":0,"count":1,"position":0}
+
+## T3 Rust 写后读
+
+### mind folder save
+POST /api/mind/assemble/control/folder/save -> 200
+{"data":{"content":"","id":"bd8a1481-ce70-40ef-9054-5947c2c07b45","name":"w3-mind"},"type":"success","message":"","date":"2026-11-05 23:47:29","spent":0,"size":0,"count":0,"position":0}
+READ tree/my -> 200
+{"data":[{"content":"","createTime":"2026-11-05 15:47:29.947265+00","creator":"system","id":"bd8a1481-ce70-40ef-9054-5947c2c07b45","name":"w3-mind"},{"content":"","createTime":"2026-11-05 15:32:08.947453+00","creator":"system","id":"af274f9f-3bec-4d85-9ef0-96f4cafa2af9","name":"w3-mind"},{"content":"body","createTime":"2026-11-05 15:06:20.054526+00","creator":"system","id":"86535315-6a1d-412d-948f-97b8e4d5e4c7","name":"W2"},{"content":"own","createTime":"2026-11-05 14:05:55.250603+00","creator":"audit-u1","id":"mind-audit-own","name":"audit user mind"},{"content":"secret","createTime":"2026-11-05 14:05:55.2482+00","creator":"person-admin","id":"mind-admin-secret","name":"admin private mind"}],"type":"success","message":"","date":"2026-11-05 23:47:30","spent":0,"size":0,"count":5,"position":0}
+
+### bbs topic create (body author_id=person-admin)
+POST -> 200
+{"data":{"forumId":"f1","id":"e9ac6773-96af-475f-a232-52b65f7caac8","title":"W3 topic"},"type":"success","message":"","date":"2026-11-05 23:47:30","spent":0,"size":0,"count":0,"position":0}
+
+### file create
+POST -> 200
+{"data":{"id":"74ecd6c1-15cf-4ef4-b209-0f04b3e0fe77"},"type":"success","message":"","date":"2026-11-05 23:47:31","spent":0,"size":0,"count":0,"position":0}
+### file entity create
+POST -> 200
+{"data":{"created":true,"folderId":"","id":"e028a99e-5878-49d5-b717-04470a0f13a0","name":"w3-entity.txt","path":""},"type":"success","message":"","date":"2026-11-05 23:47:31","spent":0,"size":0,"count":0,"position":0}
+
+### message custom create (body sender=person-admin)
+POST -> 200
+{"data":{"content":"W3 spoof","conversationId":"w8-conv","created":true,"id":"e6b1063c-058c-4bd7-b357-46a690ec8717","type":"custom"},"type":"success","message":"","date":"2026-11-05 23:47:31","spent":0,"size":0,"count":0,"position":0}
+
+### calendar core event create (body createor=person-admin)
+POST -> 200
+{"data":{"allDay":false,"calendarId":"w3-cal","createor":"person-admin","endTime":"2026-11-06 10:00:00","id":"d4324509-2543-4023-a0c9-aaf570f80e09","startTime":"2026-11-06 09:00:00","status":"OPEN","title":"W3 event","visibility":"PUBLIC"},"type":"success","message":"","date":"2026-11-05 23:47:32","spent":0,"size":0,"count":0,"position":0}
+
+### meeting create
+POST -> 500
+{"count":0,"date":"2026-11-05 23:47:32","message":"internal server error","position":0,"prompt":"com.x.base.core.project.exception.ExceptionInternal","size":-1,"spent":0,"type":"error"}
+
+## T3 Go 写后读
+
+### Go announcement create
+POST -> 200
+{"item":{"id":6,"title":"W3 公告","body":"W3 正文","published":true,"published_at":"2026-11-05T23:47:33.6604949+08:00","created_at":null}}
+READ admin list -> 200
+{"items":[{"id":6,"title":"W3 公告","body":"W3 正文","published":true,"published_at":"2026-11-05T23:47:33.660494+08:00","created_at":"2026-11-05T23:47:33.660554+08:00"},{"id":5,"title":"W6 公告","body":"W6 正文","published":true,"published_at":"2026-11-05T23:44:37.541939+08:00","created_at":"2026-11-05T23:44:37.542555+08:00"},{"id":4,"title":"W6 公告","body":"W6 正文","published":true,"published_at":"2026-11-05T23:31:40.932011+08:00","created_at":"2026-11-05T23:31:40.932537+08:00"}],"total":6}
+
+### Go redeem-code create (reward currency=diamond)
+POST -> 200
+{"item":{"id":8,"code":"W3CODE","reward":{"diamond":7},"max_uses":3,"used_count":0,"expires_at":"2026-12-31T23:59:59Z","enabled":true}}
+READ codes -> 200
+{"items":[{"id":1,"code":"LAIYIPAO","reward":{"coin":30000,"gem":50},"max_uses":1,"used_count":0,"expires_at":null,"enabled":true},{"id":2,"code":"ELEMENT5","reward":{"energy":30,"gem":100},"max_uses":1,"used_count":0,"expires_at":null,"enabled":true},{"id":3,"code":"REACTION","reward":{"gem":200,"keys":3},"max_uses":1,"used_count":0,"expires_at":null,"enabled":true}],"total":5}
+REDEEM W7CODE -> 400
+{"error":{"code":"bad_input","message":"输入非法: 未知货币 \"diamond\""}}
+
+### Go nickname PUT -> 200 {"ok":true}
+READ me -> 200
+{"account":{"id":1,"nickname":"审计昵称😀","avatar_url":"","is_guest":true,"status":1,"created_at":"2026-11-05T22:07:14.320716+08:00","last_login_at":"2026-11-05T23:47:33.30018+08:00"},"build":{"active_slots":5,"attacker":{"attack":190,"crit_permille":50,"crit_multiplier_permille":1500,"reaction_mult_per
+
+### Go loadout PUT(未知技能) -> 400 {"error":{"code":"bad_input","message":"输入非法: 技能 3 未解锁"}}
+READ loadout -> 200 {"skill_ids":[1,4,7,0]}
+
+### wallet before {"coin":62150,"gem":20,"energy":46,"keys":1,"energy_updated_at":"2026-11-05T23:43:14.320716+08:00","tokens":{"gem_wash_token":0,"mastery_reset":0,"revive_token":0}}
+GRANT -> 200 {"wallet":{"coin":62200,"energy":46,"gem":20,"keys":1}}
+wallet after -> 200 {"coin":62200,"gem":20,"energy":46,"keys":1,"energy_updated_at":"2026-11-05T23:43:14.320716+08:00","tokens":{"gem_wash_token":0,"mastery_reset":0,"revive_token":0}}
+
+## T4 Go 归属抽测
+
+GET /api/v1/me/battles?limit=5 -> 200
+{"items":[{"id":10,"level_id":1,"result":"win","stars":3,"score":0,"kills":0,"leaked":0,"created_at":"2026-11-05T22:45:41.286208+08:00","replay_hash":""},{"id":9,"level_id":1,"result":"win","stars":3,"score":0,"kills":0,"leaked":0,"created_at":"2026-11-05T22:24:34.605266+08:00","replay_hash":""},{"id":8,"level_id":1,"result":"win","stars":3,"score":0,"kills":0,"leaked":0,"created_at":"2026-11-05T22:20:54.54076+08:00","replay_hash":""},{"id":6,"level_id":1,"result":"win","stars":3,"score":0,"kills":0,"leaked":0,"created_at":"2026-11-05T22:09:47.632808+08:00","replay_hash":""},{"id":1,"level_id":1,"result":"win","stars":3,"score":0,"kills":0,"leaked":0,"created_at":"2026-11-05T10:00:00+08:00",
+
+GET /api/v1/me/purchases?limit=5 -> 200
+{"items":[{"id":3,"item_id":1,"item_name":"金币袋","category":"currency","price":{"gem":10},"purchase_date":"2026-11-05","created_at":"2026-11-05T23:45:00.348246+08:00"},{"id":2,"item_id":1,"item_name":"金币袋","category":"currency","price":{"gem":10},"purchase_date":"2026-11-05","created_at":"2026-11-05T23:31:41.685408+08:00"},{"id":1,"item_id":1,"item_name":"金币袋","category":"currency","price":{"gem":10},"purchase_date":"2026-11-05","created_at":"2026-11-05T23:12:58.446459+08:00"}]}
+
+GET /api/v1/me/redemptions?limit=5 -> 200
+{"items":[]}
+
+GET /api/v1/me/orders?limit=5 -> 200
+{"items":[]}
+
+GET /api/v1/me/challenges?limit=5 -> 200
+{"items":[]}
+
+GET /api/v1/me/defense/challenges?limit=5 -> 200
+{"items":[]}
+
+GET /api/v1/defenses/ -> 200
+{"attempt_limit":3,"candidates":null,"mine":null,"stolen_limit":2}
+
+GET /api/v1/tasks/ -> 200
+{"items":[{"id":1,"code":"daily_kills_30","name":"今日击杀 30 个敌人","scope":"daily","target":30,"metric":"kills","progress":0,"reward":{"coin":800},"claimed":false,"done":false},{"id":2,"code":"daily_clears_3","name":"今日通关 3 关","scope":"daily","target":3,"metric":"clears","progress":0,"reward":{"coin":1000,"energy":10},"claimed":false,"done":false},{"id":3,"code":"daily_reactions_20","name":"今日触发 20 次元素反应","scope":"daily","target":20,"metric":"reactions","progress":0,"reward":{"coin":1200,"gem":5},"claimed":false,"done":false},{"id":4,"code":"daily_signin","name":"今日完成签到","scope":"daily","target":1,"metric":"signin","progress":0,"reward":{"coin":500},"claimed":false,"done":false}],"scope":"daily"
+
+## T4 Go 越权反向验证（玩家 token 打管理端）
+GET /api/v1/admin/users (player token) -> 401 {"error":{"code":"unauthorized","message":"未认证或令牌已失效: 令牌类型不匹配"}}
+GET /api/v1/admin/defenses (player token) -> 401 {"error":{"code":"unauthorized","message":"未认证或令牌已失效: 令牌类型不匹配"}}
+
+## T3 写后读：直接查库核对（oa_audit_20261105，容器 lyp-pg）
+```
+ t   | id                                   | creator    | author_id
+ bbs | cde2379c-0fd9-4c2c-943d-9cc1d7852a78 | audit-user | person-admin
+ bbs | e9ac6773-96af-475f-a232-52b65f7caac8 | audit-user | person-admin
+
+ t    | id                                   | name          | creator
+ file | b29c4a04-3feb-4218-864b-9be34515b1ab | w3-file.txt   | audit-user
+ file | f24fcb6b-0b2a-403c-bd4d-4a18c28df574 | w3-entity.txt | system
+ file | 74ecd6c1-15cf-4ef4-b209-0f04b3e0fe77 | w3-file.txt   | audit-user
+ file | e028a99e-5878-49d5-b717-04470a0f13a0 | w3-entity.txt | system
+
+ t   | id                                   | sender
+ msg | 95dcbdf6-11bf-4dc9-b87d-c65a824eca47 | person-admin
+ msg | e6b1063c-058c-4bd7-b357-46a690ec8717 | person-admin
+
+ t   | id                                   | createor     | start_time          | end_time            | create_time
+ cal | d4324509-2543-4023-a0c9-aaf570f80e09 | person-admin | 2026-11-06 09:00:00 | 2026-11-06 10:00:00 | 2026-11-05 15:47:32.09797
+
+ t    | id                                   | name    | creator
+ mind | af274f9f-3bec-4d85-9ef0-96f4cafa2af9 | w3-mind | system
+ mind | bd8a1481-ce70-40ef-9054-5947c2c07b45 | w3-mind | system
+```
+（cal.create_time 落 UTC 15:47:32，同一响应的 date 字段为 23:47:32，差 8 小时）
+
+## T2 签名分组（85 条 = EQ_FILTER_ 家族）
+- PathTuple(2): id,count = 48；PathTuple(3): id,count,other = 34；内部 helper = 3
+- 前端源码反查：调用 82 / 未调用 0 / 无路由 3（3 个即内部 helper）
+- 示例命中：frontend 源码 `.../task/list/next/application/${id}/20/${id}`（count 固定 20）
+
+## T1 389 三态分类计数（脚本口径）
+OWNER/PERSON 263 = 已实证越权 6 + 已实证正确 1 + 静态确认越权 74 + 静态确认正确/不适用 114 + 不可判 23 + 不可达 43 + 写端点 2
+TENANT/UNIT 101 = 已实证越权 2 + 静态确认越权 12 + 静态确认正确/不适用 70 + 不可判 10 + 不可达 7
+NO_OWN_FIELD 3 = 不可判 1 + 不可达 2
+UNKNOWN_TABLE 22 = 不可判 21 + 不可达 1
+合计 389：已实证越权 8 / 已实证正确 1 / 静态确认越权 86 / 静态确认正确或无需归属 184 / 不可判 55 / 不可达 53 / 写端点 2

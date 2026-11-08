@@ -1,0 +1,65 @@
+########## meeting 附件游标 ##########
+=== MEETING att next count=1 (普通用户,游标=他人附件)
+GET /api/meeting/assemble/control/attachment/list/att-admin-1/next/1 -> 200
+{"data":[],"type":"success","message":"","date":"2026-11-05 22:40:42","spent":0,"size":0,"count":0,"position":0}
+
+=== MEETING att prev count=1
+GET /api/meeting/assemble/control/attachment/list/att-admin-1/prev/1 -> 200
+{"data":[],"type":"success","message":"","date":"2026-11-05 22:40:42","spent":0,"size":0,"count":0,"position":0}
+
+=== MEETING att next count=200 (普通用户)
+GET /api/meeting/assemble/control/attachment/list/att-admin-1/next/200 -> 200
+{"data":[],"type":"success","message":"","date":"2026-11-05 22:40:42","spent":0,"size":0,"count":0,"position":0}
+
+########## message consume 等值游标 ##########
+=== MSG consume=person-admin count=5 (普通用户)
+GET /api/message/assemble/communicate/consume/list/person-admin/count/5 -> 200
+{"data":[{"consume":"person-admin","content":"admin secret","createTime":"2026-11-04 10:00:00","id":"msg-admin-1","sender":"audit-u1"}],"type":"success","message":"","date":"2026-11-05 22:40:42","spent":0,"size":0,"count":1,"position":0}
+
+=== MSG consume=person-admin currentperson
+GET /api/message/assemble/communicate/consume/list/person-admin/currentperson/count/5 -> 200
+{"data":[],"type":"success","message":"","date":"2026-11-05 22:40:42","spent":0,"size":0,"count":0,"position":0}
+
+=== MSG consume=person-admin person=person-admin
+GET /api/message/assemble/communicate/consume/list/person-admin/person/person-admin/count/5 -> 200
+{"data":[],"type":"success","message":"","date":"2026-11-05 22:40:42","spent":0,"size":0,"count":0,"position":0}
+
+########## query 表数据 id 游标 ##########
+=== QUERY table next id>cursor
+GET /api/query/assemble/surface/table/list/flag1/row/0/next/2 -> HTTP 404
+响应状态代码未指示成功: 404 (Not Found)。
+
+########## organization 单位列表 ##########
+=== ORG unit list flag=0 count=3
+GET /api/organization/assemble/control/unit/list/0/next/3 -> 200
+{"data":[],"type":"success","message":"","date":"2026-11-05 22:40:42","spent":0,"size":0,"count":0,"position":0}
+
+########## cms document 分页 ##########
+=== CMS document next count=1
+PUT /api/document/filter/list/zzzz/next/1 -> 200
+{"data":[{"content":"secret body","create_time":"2026-11-04 10:00:00","creator":"person-admin","id":"doc-draft-1","is_top":false,"status":"draft","title":"Confidential draft"}],"type":"success","message":"","date":"2026-11-05 22:40:42","spent":0,"size":0,"count":1,"position":0}
+
+=== CMS document prev count=1
+PUT /api/document/filter/list/zzzz/prev/1 -> 200
+{"data":[{"content":"secret body","create_time":"2026-11-04 10:00:00","creator":"person-admin","id":"doc-draft-1","is_top":false,"status":"draft","title":"Confidential draft"}],"type":"success","message":"","date":"2026-11-05 22:40:42","spent":0,"size":0,"count":1,"position":0}
+
+=== CMS document page/size 1/10
+PUT /api/document/filter/list/1/size/10 -> 200
+{"data":[{"content":"secret body","create_time":"2026-11-04 10:00:00","creator":"person-admin","id":"doc-draft-1","is_top":false,"status":"draft","title":"Confidential draft"}],"type":"success","message":"","date":"2026-11-05 22:40:42","spent":0,"size":0,"count":1,"position":0}
+
+=== CMS comment list next
+PUT /api/comment/list/zzzz/next/1 -> 200
+{"data":[],"type":"success","message":"","date":"2026-11-05 22:40:42","spent":0,"size":0,"count":0,"position":0}
+
+=== CMS log filter next
+POST /api/log/filter/list/zzzz/next/1 -> 200
+{"data":[],"type":"success","message":"","date":"2026-11-05 22:40:42","spent":0,"size":0,"count":0,"position":0}
+
+=== CMS categoryinfo next app
+PUT /api/categoryinfo/filter/list/zzzz/next/1/app/zzzz -> 200
+{"data":[],"type":"success","message":"","date":"2026-11-05 22:40:42","spent":0,"size":0,"count":0,"position":0}
+
+=== CMS script list next
+GET /api/script/list/zzzz/next/1 -> 200
+{"data":[],"type":"success","message":"","date":"2026-11-05 22:40:42","spent":0,"size":0,"count":0,"position":0}
+

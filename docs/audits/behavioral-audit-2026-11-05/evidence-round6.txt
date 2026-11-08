@@ -1,0 +1,888 @@
+====================================================================================================
+ROUND 6 证据原文 —— path-IDOR 全量 / 空归属放行 helper / 双向交叉读
+====================================================================================================
+
+基线：读码与实测时 HEAD = 4b4e17010；实测窗口 2026-11-06 00:56–01:35 (Asia/Shanghai)。
+      本轮落盘时仓库 HEAD 已漂移到 c0622c5da（维护作业 UTC、PR#186、考勤测试、台账文档），
+      git diff 检索 require_actor|require_owner|is_admin 零命中，本轮端点与 helper 均未被触及。
+      工作树：仅 ?? docs/audits/behavioral-audit-2026-11-05/（本审计目录）。
+环境：本机 127.0.0.1:3999（Rust），scratch 库 oa_audit_20261105（docker lyp-pg，UTC）。
+身份：攻击者 audit-user / audit-u1；第二普通用户 audit-user2 / audit-u2；
+      受害者/管理员 person-admin（auth unique_id=admin）；匿名 = 无 cookie。
+
+====================================================================================================
+§A 静态分母：路径带 {id} 且直接操作该行的端点
+====================================================================================================
+
+路由表：routes2.json（3106 条 fn → (method,path,crate)）。
+含 {id} 占位符的路由条目：1559；唯一 (crate,fn) 去重：1115。
+经 handler 源码判定「直接按 id 操作该行」：421（其余为 {id} 仅作过滤/拼 URL/不触行）。
+
+四档（静态 → 动态）：
+  ① 总条数                        421
+  ② 有归属判断（静态命中门禁）     176  （require_owner/is_admin/owner_gate/require_actor…）
+  ③ 无归属判断（静态未命中）       245  （写 65 / 读 180）
+     ③a 表内存在 owner 列           206
+     ③b 表内无 owner 列（全局配置）   39  （含 9 条表未定位）
+  ④ 实测越权成立                  141  （写 24 / 读 117）
+
+注意：② 中「静态命中 require_owner」不等于生效——processplatform_core_express::work_terminate
+      的 require_owner 位于 `if let Some(creator) = creator.filter(|c| !c.is_empty())` 内，
+      空 creator 时整段跳过，门形同虚设（见 §D）。
+
+--- ②「有归属判断」176 条的动态复核（非本人 audit-user，受害者行 owner=person-admin/admin）---
+  GATED              145
+  REACHED-ERROR      7
+  EMPTY              7
+  SKIP-NO-TABLE      6
+  FAIL-404           6
+  GATE-BYPASSED      3
+  FAIL-500           1
+  FAIL-400           1
+
+  结论：145 条 403（门禁真实生效）；3 条 200 但仅为「权限探测」端点，返回 readable/allowEdit 布尔，
+        不返回文档内容（详见 report-6 §3.2）；其余 28 条为行/文件不存在或无表映射，无越权后果。
+  → ② 桶内「实际可改/读他人数据」= 0。
+
+  3 条 200 的权限探测：
+    GET    document_cipher_permission_read_u3             /api/document/cipher/{id}/permission/read/person/{person}
+    GET    document_control_u3                            /api/document/{id}/control
+    GET    document_permission_read_u3                    /api/document/{id}/permission/read
+
+====================================================================================================
+§B 动态实测：245 条无归属判断端点逐条结果
+====================================================================================================
+
+判定口径：
+  EXPLOIT（读）      = 200 且响应体包含受害者行主键/内容，且该行 owner≠攻击者
+  EXPLOIT-CHANGED    = 200 且复核库内关键列已变（只用于写）
+  EXPLOIT-REACHABLE  = 200 且请求已穿过门禁到达写 SQL（部分软删/副作用需复核）
+  GATED              = 403（静态漏判，运行时另有门禁）
+  NO-OWNER-COL       = 目标表无 owner 列，无法构造「他人行」
+  EMPTY / FAIL-404 / FAIL-500 / REACHED-ERROR / SKIP-NO-TABLE = 不可判，见 §C
+
+--- 写（65 条）---
+方法     路径                                                             结论                 owner
+POST   /api/attendance/assemble/control/attendanceappealInfo/appeal/{id} EXPLOIT-CHANGED    person-admin
+DELETE /api/file/core/entity/folder/{id}                              EXPLOIT-CHANGED    person-admin
+POST   /api/general/file/delete/{id}                                  EXPLOIT-CHANGED    person-admin
+POST   /api/general/file/update/{id}                                  EXPLOIT-CHANGED    person-admin
+POST   /api/general/invoice/delete/{id}                               EXPLOIT-CHANGED    person-admin
+POST   /api/general/invoice/update/{id}                               EXPLOIT-CHANGED    person-admin
+DELETE /api/hotpic/core/entity/delete/{id}                            EXPLOIT-CHANGED    person-admin
+POST   /api/mind/core/entity/folder/{id}                              EXPLOIT-CHANGED    admin
+DELETE /api/organization/definition/{id}                              EXPLOIT-CHANGED    person-admin
+DELETE /api/organization/identity/{id}                                EXPLOIT-CHANGED    person-admin
+POST   /api/appinfo/{id}/icon/size/{size}                             EXPLOIT-REACHABLE  person-admin
+POST   /api/attendance/core/entity/record/{id}/update                 EXPLOIT-REACHABLE  person-admin
+POST   /api/categoryinfo/{id}/execute/projection                      EXPLOIT-REACHABLE  person-admin
+POST   /api/data/document/{id}/array/data                             EXPLOIT-REACHABLE  
+DELETE /api/hotpic/assemble/control/user/hotpic/{id}/{id2}            EXPLOIT-REACHABLE  person-admin
+POST   /api/mind/core/entity/mind/{id}                                EXPLOIT-REACHABLE  admin
+PUT    /api/organization/definition/{id}                              EXPLOIT-REACHABLE  person-admin
+PUT    /api/organization/identity/{id}                                EXPLOIT-REACHABLE  person-admin
+POST   /api/processplatform/service/processing/attachment/edit/text/{id} EXPLOIT-REACHABLE  person-admin
+POST   /api/processplatform/service/processing/task/will/{id}         EXPLOIT-REACHABLE  person-admin
+DELETE /api/program_center/collect/delete/{id}                        EXPLOIT-REACHABLE  person-admin
+PUT    /api/program_center/collect/save/{id}                          EXPLOIT-REACHABLE  person-admin
+DELETE /api/program_center/module/remove/structure/{id}               EXPLOIT-REACHABLE  person-admin
+PUT    /api/program_center/module/write/{id}                          EXPLOIT-REACHABLE  person-admin
+DELETE /api/bbs/core/entity/forum/{id}                                FAIL-500           admin
+POST   /api/bbs/core/entity/forum/{id}                                FAIL-500           admin
+DELETE /api/bbs/core/entity/section/{id}                              FAIL-500           admin
+POST   /api/bbs/core/entity/section/{id}                              FAIL-500           admin
+DELETE /api/bbs/core/entity/subject/{id}                              FAIL-500           person-admin
+POST   /api/bbs/core/entity/subject/{id}                              FAIL-500           person-admin
+POST   /api/query/assemble/designer/importmodel/permission/{id}       FAIL-500           person-admin
+POST   /api/query/assemble/designer/importmodel/{id}                  FAIL-500           person-admin
+POST   /api/queryview/importmodel/{id}                                FAIL-500           person-admin
+POST   /api/cms/view/publish/{id}                                     GATED              person-admin
+POST   /api/cms/view/unpublish/{id}                                   GATED              person-admin
+POST   /api/document/{id}/publish/html                                GATED              
+DELETE /api/meeting/assemble/control/attachment/{id}                  GATED              person-admin
+DELETE /api/organization/group/{id}                                   GATED              person-admin
+PUT    /api/organization/group/{id}                                   GATED              person-admin
+DELETE /api/organization/person/{id}                                  GATED              person-admin
+PUT    /api/organization/person/{id}                                  GATED              person-admin
+POST   /api/attendance/core/entity/rule/{id}/update                   NO-OWNER-COL       None
+DELETE /api/correlation/core/entity/delete/{id}                       NO-OWNER-COL       None
+POST   /api/fileinfo/update/{id}/content                              NO-OWNER-COL       None
+POST   /api/general/dict/delete/{id}                                  NO-OWNER-COL       None
+POST   /api/general/dict/item/delete/{id}                             NO-OWNER-COL       None
+POST   /api/general/dict/item/update/{id}                             NO-OWNER-COL       None
+POST   /api/general/dict/update/{id}                                  NO-OWNER-COL       None
+POST   /api/meeting/assemble/control/room/{id}/photo                  NO-OWNER-COL       None
+POST   /api/organization/assemble/personal/custom/{id}/mockputtopost  NO-OWNER-COL       None
+DELETE /api/organization/bind/{id}                                    NO-OWNER-COL       None
+PUT    /api/organization/bind/{id}                                    NO-OWNER-COL       None
+DELETE /api/organization/custom/{id}                                  NO-OWNER-COL       None
+PUT    /api/organization/custom/{id}                                  NO-OWNER-COL       None
+PUT    /api/message/assemble/communicate/im/conversation/{id}         REACHED-ERROR      person-admin
+POST   /api/message/assemble/communicate/im/conversation/{id}/read    REACHED-ERROR      person-admin
+POST   /api/message/assemble/communicate/im/conversation/{id}/read/mockputtopost REACHED-ERROR      person-admin
+DELETE /api/message/assemble/communicate/im/conversation/{id}/single  REACHED-ERROR      person-admin
+POST   /api/message/assemble/communicate/im/conversation/{id}/top/cancel REACHED-ERROR      person-admin
+POST   /api/message/assemble/communicate/im/conversation/{id}/top/cancel/mockputtopost REACHED-ERROR      person-admin
+POST   /api/message/assemble/communicate/im/conversation/{id}/top/set REACHED-ERROR      person-admin
+POST   /api/message/assemble/communicate/im/conversation/{id}/top/set/mockputtopost REACHED-ERROR      person-admin
+DELETE /api/mind/assemble/control/folder/{id}/force                   REACHED-ERROR      person-admin
+POST   /api/mind/assemble/control/folder/{id}/update                  REACHED-ERROR      person-admin
+PUT    /api/viewfieldconfig/{id}                                      REACHED-ERROR      person-admin
+
+--- 读（180 条）---
+方法     路径                                                             结论                 owner
+GET    /api/comment/{id}/commend                                      EMPTY              person-admin
+GET    /api/comment/{id}/uncommend                                    EMPTY              person-admin
+GET    /api/complex/folder/{id}                                       EMPTY              person-admin
+GET    /api/file/core/entity/folder/list/{id}                         EMPTY              person-admin
+GET    /api/folder/{id}                                               EMPTY              person-admin
+GET    /api/form/{id}/appinfo/{appFlag}                               EMPTY              person-admin
+GET    /api/hotpic/assemble/control/cipher/hotpic/bbs/{id}            EMPTY              person-admin
+GET    /api/hotpic/assemble/control/cipher/hotpic/cms/{id}            EMPTY              person-admin
+GET    /api/hotpic/get/hotpic/{id}                                    EMPTY              person-admin
+GET    /api/hotpic_assemble_control/cipher/hotpic/{id}                EMPTY              person-admin
+GET    /api/message/assemble/communicate/im/conversation/{id}/single  EMPTY              person-admin
+GET    /api/mind/assemble/control/folder/{id}                         EMPTY              person-admin
+GET    /api/program_center/captcha/{id}/validate/answer/{answer}      EMPTY              person-admin
+GET    /api/ai/assemble/control/config/get/mcp/{id}                   EXPLOIT            person-admin
+GET    /api/anonymous/form/{id}                                       EXPLOIT            person-admin
+GET    /api/appinfo/{id}                                              EXPLOIT            person-admin
+GET    /api/appinfo/{id}/control                                      EXPLOIT            person-admin
+GET    /api/application/{id}                                          EXPLOIT            person-admin
+GET    /api/attendance/assemble/control/attendanceadmin/{id}          EXPLOIT            person-admin
+GET    /api/attendance/assemble/control/attendanceappealInfo/{id}     EXPLOIT            person-admin
+GET    /api/attendance/assemble/control/attendancedetail/mobile/{id}  EXPLOIT            person-admin
+GET    /api/attendance/assemble/control/attendancedetail/{id}         EXPLOIT            person-admin
+GET    /api/attendance/assemble/control/attendanceemployeeconfig/{id} EXPLOIT            person-admin
+GET    /api/attendance/assemble/control/attendanceimportfileinfo/{id} EXPLOIT            person-admin
+GET    /api/attendance/assemble/control/attendanceschedulesetting/{id} EXPLOIT            person-admin
+GET    /api/attendance/assemble/control/attendanceselfholiday/{id}    EXPLOIT            person-admin
+GET    /api/attendance/assemble/control/attendancesetting/{id}        EXPLOIT            person-admin
+GET    /api/attendance/assemble/control/attendancestatisticalcycle/{id} EXPLOIT            person-admin
+GET    /api/attendance/assemble/control/attendancestatisticrequirelog/{id} EXPLOIT            person-admin
+GET    /api/attendance/assemble/control/attendanceworkdayconfig/{id}  EXPLOIT            person-admin
+GET    /api/attendance/assemble/control/v2/appeal/{id}                EXPLOIT            person-admin
+GET    /api/attendance/assemble/control/v2/record/{id}                EXPLOIT            person-admin
+GET    /api/attendance/assemble/control/workplace/{id}                EXPLOIT            person-admin
+GET    /api/calendar/core/entity/calendar/{id}                        EXPLOIT            admin
+GET    /api/categoryinfo/{id}                                         EXPLOIT            person-admin
+GET    /api/categoryinfo/{id}/control                                 EXPLOIT            person-admin
+GET    /api/cms/article/{id}                                          EXPLOIT            person-admin
+GET    /api/cms/core/express/content/detail/{id}                      EXPLOIT            person-admin
+GET    /api/commend/{id}                                              EXPLOIT            person-admin
+GET    /api/comment/{id}                                              EXPLOIT            person-admin
+GET    /api/component_assemble_control/get/component/{id}             EXPLOIT            person-admin
+GET    /api/correlation/service/processing/{id}                       EXPLOIT            person-admin
+GET    /api/document/{id}/persons                                     EXPLOIT            
+GET    /api/document/{id}/view                                        EXPLOIT            
+GET    /api/file/assemble/control/file/{id}                           EXPLOIT            person-admin
+GET    /api/file/{id}                                                 EXPLOIT            person-admin
+GET    /api/file/{id}/content                                         EXPLOIT            person-admin
+GET    /api/file/{id}/download                                        EXPLOIT            person-admin
+GET    /api/form/{id}                                                 EXPLOIT            person-admin
+GET    /api/formversion/{id}                                          EXPLOIT            person-admin
+GET    /api/general/assemble/control/area/{id}                        EXPLOIT            person-admin
+GET    /api/general/assemble/control/attendscope/{id}                 EXPLOIT            person-admin
+GET    /api/general/assemble/control/invoice/get/{id}                 EXPLOIT            person-admin
+GET    /api/general/assemble/control/qrcode/{id}                      EXPLOIT            person-admin
+GET    /api/general/assemble/control/securityclearance/{id}           EXPLOIT            person-admin
+GET    /api/general/file/download/{id}                                EXPLOIT            person-admin
+GET    /api/general/file/{id}                                         EXPLOIT            person-admin
+GET    /api/general/invoice/{id}                                      EXPLOIT            person-admin
+GET    /api/identity/{id}                                             EXPLOIT            person-admin
+GET    /api/jpush/core/entity/device/{id}                             EXPLOIT            person-admin
+GET    /api/jpush/device/{id}                                         EXPLOIT            person-admin
+GET    /api/jpush/get/{id}                                            EXPLOIT            person-admin
+GET    /api/meeting/assemble/control/attachment/{id}                  EXPLOIT            person-admin
+GET    /api/meeting/assemble/control/meeting/{id}                     EXPLOIT            person-admin
+GET    /api/meeting/core/entity/meeting/{id}                          EXPLOIT            person-admin
+GET    /api/meeting/{id}                                              EXPLOIT            person-admin
+GET    /api/message/assemble/communicate/mass/{id}                    EXPLOIT            person-admin
+GET    /api/mind/mind/{id}                                            EXPLOIT            person-admin
+GET    /api/organization/assemble/authentication/identity/{id}        EXPLOIT            person-admin
+GET    /api/portal/assemble/designer/dict/{id}                        EXPLOIT            person-admin
+GET    /api/portal/assemble/designer/file/download/{id}               EXPLOIT            person-admin
+GET    /api/portal/assemble/designer/get/{id}                         EXPLOIT            person-admin
+GET    /api/portal/assemble/designer/portal/icon/{id}                 EXPLOIT            person-admin
+GET    /api/portal/assemble/designer/portal/permission/{id}           EXPLOIT            person-admin
+GET    /api/portal/assemble/designer/scriptversion/{id}               EXPLOIT            person-admin
+GET    /api/portal/assemble/designer/templatepage/{id}                EXPLOIT            person-admin
+GET    /api/portal/assemble/surface/get/{id}                          EXPLOIT            person-admin
+GET    /api/portal/assemble/surface/portal/icon/base64/{id}           EXPLOIT            person-admin
+GET    /api/portal/assemble/surface/portal/icon/{id}                  EXPLOIT            person-admin
+GET    /api/portal/assemble/surface/preview/{id}                      EXPLOIT            person-admin
+GET    /api/portal/page/get/{id}                                      EXPLOIT            person-admin
+GET    /api/portal/surface/{id}/preview                               EXPLOIT            person-admin
+GET    /api/portal/{id}                                               EXPLOIT            person-admin
+GET    /api/process/work/{id}                                         EXPLOIT            person-admin
+GET    /api/processplatform/assemble/designer/get/{id}                EXPLOIT            person-admin
+GET    /api/processplatform/assemble/designer/preview/{id}            EXPLOIT            person-admin
+GET    /api/processplatform/assemble/surface/get/{id}                 EXPLOIT            person-admin
+GET    /api/processplatform/assemble/surface/preview/{id}             EXPLOIT            person-admin
+GET    /api/processplatform/service/processing/applicationdict/{id}   EXPLOIT            person-admin
+GET    /api/processplatform/service/processing/attachment/{id}        EXPLOIT            person-admin
+GET    /api/processplatform/service/processing/data/workcompleted/path/{id} EXPLOIT            person-admin
+GET    /api/processplatform/service/processing/data/workcompleted/{id} EXPLOIT            person-admin
+GET    /api/processplatform/service/processing/get/{id}               EXPLOIT            person-admin
+GET    /api/processplatform/service/processing/readcompleted/{id}     EXPLOIT            person-admin
+GET    /api/processplatform/service/processing/record/{id}            EXPLOIT            admin
+GET    /api/processplatform/service/processing/review/{id}            EXPLOIT            person-admin
+GET    /api/processplatform/service/processing/snap/{id}              EXPLOIT            person-admin
+GET    /api/processplatform/service/processing/task/v2/{id}           EXPLOIT            person-admin
+GET    /api/processplatform/service/processing/task/{id}              EXPLOIT            person-admin
+GET    /api/processplatform/service/processing/taskcompleted/{id}     EXPLOIT            person-admin
+GET    /api/processplatform/task/processing/{id}                      EXPLOIT            person-admin
+GET    /api/processplatform/work/processing/{id}                      EXPLOIT            person-admin
+GET    /api/processplatform/work/retract/{id}                         EXPLOIT            person-admin
+GET    /api/program_center/application/{id}                           EXPLOIT            person-admin
+GET    /api/program_center/collect/code/mobile/{id}                   EXPLOIT            person-admin
+GET    /api/program_center/deploy/{id}                                EXPLOIT            person-admin
+GET    /api/program_center/dict/{id}                                  EXPLOIT            person-admin
+GET    /api/program_center/module/output/{id}/file                    EXPLOIT            person-admin
+GET    /api/program_center/module/{id}/compare                        EXPLOIT            person-admin
+GET    /api/program_center/prompterrorlog/{id}                        EXPLOIT            person-admin
+GET    /api/program_center/unexpectederrorlog/{id}                    EXPLOIT            person-admin
+GET    /api/query/assemble/designer/bundle/{view}/{id}                EXPLOIT            person-admin
+GET    /api/query/assemble/designer/get/{id}                          EXPLOIT            person-admin
+GET    /api/query/assemble/designer/permission/{query}/{id}           EXPLOIT            person-admin
+GET    /api/query/assemble/designer/simulate/{view}/{id}              EXPLOIT            person-admin
+GET    /api/query/assemble/designer/stat/permission/{id}              EXPLOIT            person-admin
+GET    /api/query/assemble/designer/stat/simulate/{id}                EXPLOIT            person-admin
+GET    /api/query/assemble/designer/stat/{id}                         EXPLOIT            person-admin
+GET    /api/query/assemble/designer/table/permission/{id}             EXPLOIT            person-admin
+GET    /api/query/assemble/designer/view/permission/{id}              EXPLOIT            person-admin
+GET    /api/query/assemble/surface/get/{id}                           EXPLOIT            person-admin
+GET    /api/query/view/{id}                                           EXPLOIT            person-admin
+GET    /api/queryview/bundle/v2/{view}/{id}                           EXPLOIT            person-admin
+GET    /api/queryview/bundle/{view}/{id}                              EXPLOIT            person-admin
+GET    /api/queryview/excel/{view}/{id}                               EXPLOIT            person-admin
+GET    /api/queryview/execute/{view}/{id}                             EXPLOIT            person-admin
+GET    /api/recycle/{id}                                              EXPLOIT            admin
+GET    /api/script/{id}                                               EXPLOIT            person-admin
+GET    /api/scriptversion/{id}                                        EXPLOIT            person-admin
+GET    /api/templateform/{id}                                         EXPLOIT            person-admin
+GET    /api/anonymous/file/{id}/download                              FAIL-404           admin
+GET    /api/folder2/{id}/download                                     FAIL-404           person-admin
+GET    /api/hotpic/user/hotpic/{id}                                   FAIL-404           person-admin
+GET    /api/design/appdict/{id}                                       FAIL-500           person-admin
+GET    /api/document/{id}/commend                                     FAIL-500           
+GET    /api/message/assemble/communicate/im/conversation/{id}         FAIL-500           person-admin
+GET    /api/portal/assemble/designer/page/{id}                        FAIL-500           person-admin
+GET    /api/portal/assemble/designer/pageversion/{id}                 FAIL-500           person-admin
+GET    /api/portal/assemble/designer/portal/{id}                      FAIL-500           person-admin
+GET    /api/portal/assemble/designer/script/{id}                      FAIL-500           person-admin
+GET    /api/portal/assemble/designer/widget/{id}                      FAIL-500           person-admin
+GET    /api/portal/assemble/surface/script/{id}                       FAIL-500           person-admin
+GET    /api/portal/assemble/surface/widget/mobile/{id}                FAIL-500           person-admin
+GET    /api/portal/assemble/surface/widget/{id}                       FAIL-500           person-admin
+GET    /api/portal/assemble/surface/{page}/{id}                       FAIL-500           person-admin
+GET    /api/portal/page/{id}                                          FAIL-500           person-admin
+GET    /api/processplatform/service/processing/process/{id}/complex   FAIL-500           person-admin
+GET    /api/query/assemble/designer/view/{id}                         FAIL-500           person-admin
+GET    /api/queryview/execute/v2/{view}/{id}/{page}/{size}            FAIL-500           person-admin
+GET    /api/queryview/view/{id}                                       FAIL-500           person-admin
+GET    /api/attendance/assemble/control/v2/appeal/{id}/start/check    GATED              person-admin
+GET    /api/document/achive/{id}                                      GATED              
+GET    /api/meeting/assemble/control/attachment/{id}/download/{stream} GATED              person-admin
+GET    /api/attendance/assemble/control/v2/group/{id}                 NO-OWNER-COL       None
+GET    /api/attendance/assemble/control/v2/shift/{id}                 NO-OWNER-COL       None
+GET    /api/cms/category/{id}                                         NO-OWNER-COL       None
+GET    /api/document/{id}/view/count                                  NO-OWNER-COL       None
+GET    /api/fileinfo/{id}                                             NO-OWNER-COL       None
+GET    /api/fileinfo/{id}/online/info                                 NO-OWNER-COL       None
+GET    /api/fileinfo/{id}/preview/pdf                                 NO-OWNER-COL       None
+GET    /api/general/dict/item/{id}                                    NO-OWNER-COL       None
+GET    /api/general/dict/{id}                                         NO-OWNER-COL       None
+GET    /api/jpush/core/entity/template/{id}                           NO-OWNER-COL       None
+GET    /api/jpush/template/{id}                                       NO-OWNER-COL       None
+GET    /api/meeting/assemble/control/building/{id}                    NO-OWNER-COL       None
+GET    /api/meeting/assemble/control/room/{id}                        NO-OWNER-COL       None
+GET    /api/meeting/core/entity/room/{id}                             NO-OWNER-COL       None
+GET    /api/organization/assemble/authentication/person/{id}/icon     NO-OWNER-COL       None
+GET    /api/organization/assemble/personal/{id}/setting               NO-OWNER-COL       None
+GET    /api/process/task/{id}                                         NO-OWNER-COL       None
+GET    /api/program_center/warnlog/{id}                               NO-OWNER-COL       None
+GET    /api/processplatform/assemble/surface/attachment/{id}/available SKIP-NO-TABLE      None
+GET    /api/processplatform/assemble/surface/attachment/{id}/mockdeletetoget SKIP-NO-TABLE      None
+GET    /api/processplatform/assemble/surface/attachment/{id}/online/info SKIP-NO-TABLE      None
+GET    /api/processplatform/assemble/surface/attachment/{id}/work/{workId}/change/ordernumber/{orderNumber} SKIP-NO-TABLE      None
+GET    /api/processplatform/assemble/surface/attachment/{id}/work/{workId}/change/site/{site} SKIP-NO-TABLE      None
+GET    /api/processplatform/assemble/surface/attachment/{id}/work/{workId}/text SKIP-NO-TABLE      None
+GET    /api/processplatform/assemble/surface/snap/{id}                SKIP-NO-TABLE      None
+GET    /api/program_center/apppack/pack/info/file/download/{id}       SKIP-NO-TABLE      None
+GET    /api/share/{id}                                                SKIP-NO-TABLE      None
+
+====================================================================================================
+§C 不可判桶明细（逐条）
+====================================================================================================
+
+-- GATED（11）--
+  GET    /api/attendance/assemble/control/v2/appeal/{id}/start/check    x_attendance_v2_appeal_info
+  GET    /api/document/achive/{id}                                      x_cms_data_document
+  GET    /api/meeting/assemble/control/attachment/{id}/download/{stream} x_meeting_attachment
+  DELETE /api/meeting/assemble/control/attachment/{id}                  x_meeting_attachment
+  DELETE /api/organization/group/{id}                                   x_org_group
+  DELETE /api/organization/person/{id}                                  x_org_person
+  POST   /api/document/{id}/publish/html                                x_cms_data_document
+  POST   /api/cms/view/publish/{id}                                     x_cms_view
+  POST   /api/cms/view/unpublish/{id}                                   x_cms_view
+  PUT    /api/organization/group/{id}                                   x_org_group
+  PUT    /api/organization/person/{id}                                  x_org_person
+
+-- EMPTY（13）--
+  GET    /api/comment/{id}/commend                                      x_cms_comment
+  GET    /api/comment/{id}/uncommend                                    x_cms_comment
+  GET    /api/form/{id}/appinfo/{appFlag}                               x_cms_form
+  GET    /api/complex/folder/{id}                                       file_folder
+  GET    /api/folder/{id}                                               file_folder
+  GET    /api/file/core/entity/folder/list/{id}                         file_folder
+  GET    /api/hotpic/assemble/control/cipher/hotpic/bbs/{id}            x_hotpic
+  GET    /api/hotpic/assemble/control/cipher/hotpic/cms/{id}            x_hotpic
+  GET    /api/hotpic_assemble_control/cipher/hotpic/{id}                x_hotpic
+  GET    /api/hotpic/get/hotpic/{id}                                    x_hotpic
+  GET    /api/message/assemble/communicate/im/conversation/{id}/single  x_message_conversation
+  GET    /api/mind/assemble/control/folder/{id}                         x_mind
+  GET    /api/program_center/captcha/{id}/validate/answer/{answer}      x_program_script
+
+-- FAIL-500（26）--
+  GET    /api/design/appdict/{id}                                       x_cms_surface_appdict
+  GET    /api/document/{id}/commend                                     x_cms_data_document
+  GET    /api/message/assemble/communicate/im/conversation/{id}         x_message_conversation
+  GET    /api/portal/page/{id}                                          x_portal_page
+  GET    /api/portal/assemble/designer/page/{id}                        x_portal_page
+  GET    /api/portal/assemble/designer/pageversion/{id}                 x_portal_page_version
+  GET    /api/portal/assemble/designer/portal/{id}                      x_portal
+  GET    /api/portal/assemble/designer/script/{id}                      x_portal_script
+  GET    /api/portal/assemble/designer/widget/{id}                      x_portal_widget
+  GET    /api/portal/assemble/surface/{page}/{id}                       x_portal_page
+  GET    /api/portal/assemble/surface/script/{id}                       x_portal_script
+  GET    /api/portal/assemble/surface/widget/{id}                       x_portal_widget
+  GET    /api/portal/assemble/surface/widget/mobile/{id}                x_portal_widget
+  GET    /api/processplatform/service/processing/process/{id}/complex   x_work
+  GET    /api/query/assemble/designer/view/{id}                         x_query_view
+  GET    /api/queryview/view/{id}                                       x_query_view
+  GET    /api/queryview/execute/v2/{view}/{id}/{page}/{size}            x_query_view
+  DELETE /api/bbs/core/entity/forum/{id}                                bbs_forum_info
+  DELETE /api/bbs/core/entity/section/{id}                              bbs_section_info
+  DELETE /api/bbs/core/entity/subject/{id}                              bbs_subject_info
+  POST   /api/bbs/core/entity/forum/{id}                                bbs_forum_info
+  POST   /api/bbs/core/entity/section/{id}                              bbs_section_info
+  POST   /api/bbs/core/entity/subject/{id}                              bbs_subject_info
+  POST   /api/query/assemble/designer/importmodel/{id}                  x_query_import_model
+  POST   /api/query/assemble/designer/importmodel/permission/{id}       x_query_import_model
+  POST   /api/queryview/importmodel/{id}                                x_query_import_model
+
+-- REACHED-ERROR（11）--
+  DELETE /api/message/assemble/communicate/im/conversation/{id}/single  x_message_conversation_ext
+  DELETE /api/mind/assemble/control/folder/{id}/force                   x_mind
+  POST   /api/message/assemble/communicate/im/conversation/{id}/read    x_message_conversation
+  POST   /api/message/assemble/communicate/im/conversation/{id}/read/mockputtopost x_message_conversation
+  POST   /api/message/assemble/communicate/im/conversation/{id}/top/cancel x_message_conversation
+  POST   /api/message/assemble/communicate/im/conversation/{id}/top/cancel/mockputtopost x_message_conversation
+  POST   /api/message/assemble/communicate/im/conversation/{id}/top/set x_message_conversation
+  POST   /api/message/assemble/communicate/im/conversation/{id}/top/set/mockputtopost x_message_conversation
+  POST   /api/mind/assemble/control/folder/{id}/update                  x_mind
+  PUT    /api/viewfieldconfig/{id}                                      x_cms_viewfieldconfig
+  PUT    /api/message/assemble/communicate/im/conversation/{id}         x_message_conversation
+
+-- NO-OWNER-COL（31）--
+  GET    /api/attendance/assemble/control/v2/group/{id}                 x_attendance_v2_group
+  GET    /api/attendance/assemble/control/v2/shift/{id}                 x_attendance_v2_shift
+  GET    /api/document/{id}/view/count                                  x_cms_document
+  GET    /api/fileinfo/{id}                                             x_cms_fileinfo
+  GET    /api/fileinfo/{id}/online/info                                 x_cms_fileinfo
+  GET    /api/fileinfo/{id}/preview/pdf                                 x_cms_fileinfo
+  GET    /api/cms/category/{id}                                         x_cms_category
+  GET    /api/general/dict/{id}                                         x_general_application_dict
+  GET    /api/general/dict/item/{id}                                    x_general_application_dict_item
+  GET    /api/jpush/template/{id}                                       x_jpush_template
+  GET    /api/jpush/core/entity/template/{id}                           x_jpush_template
+  GET    /api/meeting/assemble/control/building/{id}                    x_meeting_building
+  GET    /api/meeting/assemble/control/room/{id}                        x_meeting_room
+  GET    /api/meeting/core/entity/room/{id}                             x_meeting_room
+  GET    /api/organization/assemble/authentication/person/{id}/icon     auth_person
+  GET    /api/organization/assemble/personal/{id}/setting               auth_person
+  GET    /api/process/task/{id}                                         x_process_task
+  GET    /api/program_center/warnlog/{id}                               x_program_warn_log
+  DELETE /api/correlation/core/entity/delete/{id}                       x_corr_c_correlation
+  DELETE /api/organization/bind/{id}                                    x_org_bind
+  DELETE /api/organization/custom/{id}                                  x_org_custom
+  POST   /api/attendance/core/entity/rule/{id}/update                   x_attendance_rule
+  POST   /api/fileinfo/update/{id}/content                              x_cms_fileinfo
+  POST   /api/general/dict/delete/{id}                                  x_general_application_dict
+  POST   /api/general/dict/item/delete/{id}                             x_general_application_dict_item
+  POST   /api/general/dict/item/update/{id}                             x_general_application_dict_item
+  POST   /api/general/dict/update/{id}                                  x_general_application_dict
+  POST   /api/meeting/assemble/control/room/{id}/photo                  x_meeting_room
+  POST   /api/organization/assemble/personal/custom/{id}/mockputtopost  x_org_custom
+  PUT    /api/organization/bind/{id}                                    x_org_bind
+  PUT    /api/organization/custom/{id}                                  x_org_custom
+
+-- SKIP-NO-TABLE（9）--
+  GET    /api/share/{id}                                                None
+  GET    /api/processplatform/assemble/surface/attachment/{id}/mockdeletetoget None
+  GET    /api/processplatform/assemble/surface/attachment/{id}/available None
+  GET    /api/processplatform/assemble/surface/attachment/{id}/work/{workId}/text None
+  GET    /api/processplatform/assemble/surface/attachment/{id}/work/{workId}/change/ordernumber/{orderNumber} None
+  GET    /api/processplatform/assemble/surface/attachment/{id}/work/{workId}/change/site/{site} None
+  GET    /api/processplatform/assemble/surface/attachment/{id}/online/info None
+  GET    /api/processplatform/assemble/surface/snap/{id}                None
+  GET    /api/program_center/apppack/pack/info/file/download/{id}       None
+
+-- FAIL-404（3）--
+  GET    /api/anonymous/file/{id}/download                              file_file
+  GET    /api/folder2/{id}/download                                     file_folder
+  GET    /api/hotpic/user/hotpic/{id}                                   x_hotpic
+
+说明：
+  * bbs 写（forum/section/subject POST/DELETE）全 500：造数行缺少 forum 必填字段；
+    第五轮已用合法 bbs 行实证同类越权（report-5 §2.1），不算「不可判」。
+  * portal / query / message 写与读 500：handler 依赖的结构化列（widget_json 等）为空。
+  * NO-OWNER-COL 31 条：目标表本身没有 creator/owner/person 列（全局配置/字典/模板类），
+    「非本人」无定义；其中 dict/category/room/building 属「全体登录用户共享配置」，
+    是否应区分写权限需业务裁决，本轮不计入越权。
+  * SKIP-NO-TABLE 9 条：handler 走 PP_C_* / share 等另一套表名，静态映射未覆盖，需人工归属复核，
+    本轮不判（见 §E 未闭环）。
+
+-- ② 有归属判断桶逐条动态复核（176）--
+方法     crate                              fn                                             结论                 状态
+DELETE attendance_assemble_control        delete_control_rule                            GATED              403
+DELETE component_assemble_control         delete_component                               GATED              403
+DELETE console                            config_delete                                  GATED              403
+DELETE file_assemble_control              u2_attachment2_delete                          REACHED-ERROR      200
+DELETE file_assemble_control              u2_attachment_delete                           REACHED-ERROR      200
+DELETE file_assemble_control              u2_file_delete_by_id                           REACHED-ERROR      200
+DELETE file_assemble_control              u2_folder_delete                               REACHED-ERROR      200
+DELETE file_assemble_control              u2_share_delete                                GATED              403
+DELETE meeting_assemble_control           delete_meeting_control                         GATED              403
+DELETE message_assemble_communicate       mass_id_mockdeletetoget                        GATED              403
+DELETE mind                               delete_folder                                  GATED              403
+DELETE mind                               delete_mind                                    GATED              403
+DELETE portal_assemble_designer           delete_page                                    GATED              403
+DELETE portal_assemble_designer           delete_portal                                  GATED              403
+DELETE portal_assemble_designer           delete_templatepage                            GATED              403
+DELETE portal_assemble_designer           delete_widget                                  GATED              403
+DELETE portal_assemble_surface            page_id_delete                                 GATED              403
+DELETE processplatform_assemble_surface   attachment_id                                  SKIP-NO-TABLE      None
+DELETE processplatform_assemble_surface   attachment_u2_delete_by_work                   SKIP-NO-TABLE      None
+DELETE processplatform_assemble_surface   attachment_u2b_delete_by_workcompleted         SKIP-NO-TABLE      None
+DELETE processplatform_assemble_surface   snap_u2_delete                                 SKIP-NO-TABLE      None
+DELETE program_center                     application_delete                             GATED              403
+DELETE program_center                     dict_delete_id                                 GATED              403
+DELETE program_center                     mpweixin_menu_delete_id                        GATED              403
+GET    attendance_assemble_control        v2_appeal_manager_status                       GATED              403
+GET    attendance_assemble_control        v2_appeal_reset_status                         GATED              403
+GET    calendar                           calendar_get                                   FAIL-404           404
+GET    calendar_assemble_control          get_calendar_detail                            FAIL-404           404
+GET    cms_assemble_control               document_cipher_permission_read_u3             GATE-BYPASSED      200
+GET    cms_assemble_control               document_control_u3                            GATE-BYPASSED      200
+GET    cms_assemble_control               document_permission_read_u3                    GATE-BYPASSED      200
+GET    file                               file_download                                  EMPTY              200
+GET    file_assemble_control              attachment2_id                                 EMPTY              200
+GET    file_assemble_control              attachment2_id_binary_base64                   EMPTY              200
+GET    file_assemble_control              attachment2_id_download                        FAIL-404           404
+GET    file_assemble_control              attachment2_id_office_preview_type_type        EMPTY              200
+GET    file_assemble_control              attachment_id                                  EMPTY              200
+GET    file_assemble_control              attachment_id_binary_base64                    EMPTY              200
+GET    file_assemble_control              attachment_id_download                         FAIL-404           404
+GET    file_assemble_control              file_id_download                               FAIL-404           404
+GET    file_assemble_control              u2_share_shield                                GATED              403
+GET    hotpic_assemble_control            user_hotpic_id                                 EMPTY              200
+GET    processplatform_assemble_surface   snap_u2_download                               SKIP-NO-TABLE      None
+GET    processplatform_assemble_surface   snap_u2_restore                                SKIP-NO-TABLE      None
+GET    processplatform_core_express       work_terminate                                 GATED              403
+GET    processplatform_service_processing snap_id_restore                                GATED              403
+GET    processplatform_service_processing task_id_expire                                 GATED              403
+GET    processplatform_service_processing task_id_pass_expired                           GATED              403
+GET    processplatform_service_processing task_id_replace                                GATED              403
+GET    processplatform_service_processing task_id_urge                                   GATED              403
+GET    processplatform_service_processing task_v2_id_pause                               GATED              403
+POST   ai_assemble_control                config_delete_mcp_flag                         GATED              403
+POST   ai_assemble_control                config_update_mcp_flag                         GATED              403
+POST   attendance                         archive_appeal                                 GATED              403
+POST   attendance_assemble_control        attendanceappealInfo_archive_id                GATED              403
+POST   attendance_assemble_control        attendanceappealInfo_workflow_appeal_id        GATED              403
+POST   attendance_assemble_control        attendancedetail_analyse_id_id                 GATED              403
+POST   attendance_assemble_control        attendancedetail_archive_id                    GATED              403
+POST   attendance_assemble_control        toggle_control_rule                            GATED              403
+POST   attendance_assemble_control        v2_appeal_end_process                          GATED              403
+POST   attendance_assemble_control        v2_appeal_start_process                        GATED              403
+POST   cms_assemble_control               design_appdict_id_mockputtopost                GATED              403
+POST   cms_assemble_control               document_u2_update                             GATED              403
+POST   cms_assemble_control               file_u2_update                                 GATED              403
+POST   cms_assemble_control               form_id_mockputtopost                          GATED              403
+POST   cms_assemble_control               permission_u2_app_info                         GATED              403
+POST   cms_assemble_control               permission_u2_category_info                    GATED              403
+POST   cms_assemble_control               script_id_mockputtopost                        GATED              403
+POST   cms_assemble_control               view_id_mockputtopost                          GATED              403
+POST   cms_assemble_control               viewfieldconfig_id_mockputtopost               GATED              403
+POST   correlation_service_processing     delete_correlation                             GATED              403
+POST   correlation_service_processing     save_correlation                               GATED              403
+POST   file_assemble_control              delete_file                                    GATED              403
+POST   file_assemble_control              delete_file_entity                             GATED              403
+POST   file_assemble_control              recycle_id_delete                              GATED              403
+POST   file_assemble_control              recycle_id_resume                              GATED              403
+POST   file_assemble_control              update_file_entity                             GATED              403
+POST   general_assemble_control           area_delete                                    GATED              403
+POST   general_assemble_control           area_update                                    GATED              403
+POST   general_assemble_control           attendscope_delete                             GATED              403
+POST   general_assemble_control           attendscope_save                               GATED              403
+POST   general_assemble_control           invoice_delete_id                              GATED              403
+POST   general_assemble_control           invoice_update_apply_status_id                 GATED              403
+POST   general_assemble_control           invoice_update_id                              GATED              403
+POST   general_assemble_control           qrcode_delete                                  GATED              403
+POST   general_assemble_control           securityclearance_delete                       GATED              403
+POST   general_assemble_control           securityclearance_update                       GATED              403
+POST   jpush_assemble_control             delete_jpush                                   GATED              403
+POST   jpush_assemble_control             save_jpush                                     GATED              403
+POST   meeting_assemble_control           delete_meeting                                 GATED              403
+POST   meeting_assemble_control           meeting_id_accept                              GATED              403
+POST   meeting_assemble_control           meeting_id_confirm_allow                       GATED              403
+POST   meeting_assemble_control           meeting_id_confirm_deny                        GATED              403
+POST   meeting_assemble_control           meeting_id_manual_completed                    GATED              403
+POST   meeting_assemble_control           meeting_id_modify_completedtime                GATED              403
+POST   meeting_assemble_control           meeting_id_modify_starttime                    GATED              403
+POST   meeting_assemble_control           meeting_id_reject                              GATED              403
+POST   meeting_assemble_control           save_meeting                                   GATED              403
+POST   meeting_assemble_control           u2_meeting_modify                              GATED              403
+POST   meeting_core_entity                delete_meeting                                 GATED              403
+POST   meeting_core_entity                update_meeting                                 GATED              403
+POST   message_assemble_communicate       consume_id_type_type                           GATED              403
+POST   message_assemble_communicate       im_msg_revoke_id                               GATED              403
+POST   message_assemble_communicate       mark_read                                      GATED              403
+POST   mind                               update_folder                                  GATED              403
+POST   mind                               update_mind                                    GATED              403
+POST   portal                             delete_page                                    GATED              403
+POST   portal                             save_page                                      GATED              403
+POST   portal_assemble_designer           file_id_upload                                 GATED              403
+POST   portal_assemble_designer           portal_id_permission_post                      GATED              403
+POST   portal_assemble_designer           save_design                                    GATED              403
+POST   portal_assemble_surface            publish_surface                                GATED              403
+POST   processplatform_assemble_designer  delete_flow                                    GATED              403
+POST   processplatform_assemble_designer  save_flow                                      GATED              403
+POST   processplatform_assemble_surface   delete_surface                                 GATED              403
+POST   processplatform_assemble_surface   publish_surface                                GATED              403
+POST   processplatform_assemble_surface   save_surface                                   GATED              403
+POST   processplatform_service_processing data_work_id_delete                            GATED              403
+POST   processplatform_service_processing data_work_id_path_delete                       GATED              403
+POST   processplatform_service_processing execute_process                                GATED              403
+POST   processplatform_service_processing task_claim                                     GATED              403
+POST   processplatform_service_processing task_complete                                  GATED              403
+POST   processplatform_service_processing task_id_press                                  GATED              403
+POST   processplatform_service_processing task_id_processing                             GATED              403
+POST   processplatform_service_processing task_reject                                    GATED              403
+POST   processplatform_service_processing task_transfer                                  GATED              403
+POST   processplatform_service_processing task_v2_id_reset                               GATED              403
+POST   processplatform_service_processing task_v2_id_resume                              GATED              403
+POST   processplatform_service_processing task_v3_id_add                                 GATED              403
+POST   processplatform_service_processing taskcompleted_id_press_work_work               GATED              403
+POST   processplatform_service_processing work_complete                                  GATED              403
+POST   processplatform_service_processing work_start                                     GATED              403
+POST   processplatform_service_processing work_v2_id_retract                             GATED              403
+POST   processplatform_service_processing work_v2_id_terminate                           GATED              403
+POST   program_center                     agent_save                                     GATED              403
+POST   program_center                     application_save                               GATED              403
+POST   program_center                     mpweixin_menu_update_id                        GATED              403
+POST   query_assemble_designer            delete_designer                                GATED              403
+POST   query_assemble_designer            save_designer                                  GATED              403
+POST   query_assemble_surface             delete_surface                                 GATED              403
+POST   query_assemble_surface             importmodel_id_execute                         GATED              403
+POST   query_assemble_surface             save_surface                                   GATED              403
+POST   query_assemble_surface             view_id_bundle_mockputtopost                   FAIL-500           500
+POST   query_assemble_surface             view_id_excel_mockputtopost                    GATED              403
+POST   query_assemble_surface             view_id_execute_mockputtopost                  GATED              403
+PUT    cms_assemble_control               design_appdict_update_u3                       GATED              403
+PUT    cms_assemble_control               file_update_u3                                 GATED              403
+PUT    cms_assemble_control               form_u2_update                                 GATED              403
+PUT    cms_assemble_control               script_u2_update                               GATED              403
+PUT    cms_assemble_control               view_u2_update                                 GATED              403
+PUT    component_assemble_control         save_component                                 GATED              403
+PUT    console                            config_update                                  GATED              403
+PUT    file_assemble_control              attachment_id_update                           REACHED-ERROR      200
+PUT    file_assemble_control              u2_attachment2_update                          REACHED-ERROR      200
+PUT    file_assemble_control              u2_attachment_update_content                   FAIL-400           400
+PUT    file_assemble_control              u2_folder_rename                               REACHED-ERROR      200
+PUT    meeting_assemble_control           u2_meeting_put_save                            GATED              403
+PUT    portal_assemble_designer           save_page                                      GATED              403
+PUT    portal_assemble_designer           update_portal                                  GATED              403
+PUT    portal_assemble_designer           update_portal_icon                             GATED              403
+PUT    portal_assemble_designer           update_widget                                  GATED              403
+PUT    processplatform_service_processing work_id_processing                             GATED              403
+PUT    program_center                     u3_dict_update_id                              GATED              403
+DELETE empower                            manager_delete                                 GATED              403
+DELETE meeting_assemble_control           u2_building_delete                             GATED              403
+DELETE meeting_assemble_control           u2_meeting_delete_owned                        FAIL-404           404
+DELETE meeting_assemble_control           u2_room_delete                                 GATED              403
+GET    attendance_assemble_control        v2_group_refresh_participate                   GATED              403
+POST   empower                            disable                                        GATED              403
+POST   empower                            enable                                         GATED              403
+POST   meeting_core_entity                delete_room                                    GATED              403
+POST   meeting_core_entity                update_room                                    GATED              403
+PUT    empower                            manager_update                                 GATED              403
+PUT    empower                            update                                         GATED              403
+PUT    meeting_assemble_control           u2_building_edit                               GATED              403
+PUT    meeting_assemble_control           u2_room_edit                                   GATED              403
+
+====================================================================================================
+§D 空归属放行（fail-open）helper 全仓扫描与逐调用点实测
+====================================================================================================
+
+扫描方法：解析全部 crate 的 `fn` 定义体，匹配三类「缺失归属 → 继续执行」形态：
+  ① `if <x>.is_empty() { return Ok(...) }`（x 为 actor/owner/person/creator 等）
+  ② `match ... { None => Ok(...) }` 且 Ok 不是 error/401/403
+  ③ `if let Some(x) = x.filter(|v| !v.is_empty())` —— 空值直接跳过门禁
+
+候选（与归属语义相关、且命中上述形态）87 个函数；逐个读体后，真·放行仅 2 处：
+
+  [1] processplatform_service_processing/src/lib.rs:422  u4_require_actor
+      if actor.trim().is_empty() { return Ok(()); }
+      → 16 个调用点 / 16 个 handler（见下表）。
+
+  [2] processplatform_core_express/src/lib.rs:34  work_terminate（内联，非 helper）
+      if let Some(creator) = creator.filter(|c| !c.is_empty()) { require_owner(...)?; }
+      → 空 creator 跳过门禁后直接 UPDATE x_work。
+
+判为「严格（fail-closed）」的同族 helper（空归属 → 仅 admin / 403）：
+  file:line                                                  分类
+  processplatform_assemble_surface/src/lib.rs:42             require_actor_opt        空 → 仅 admin
+  processplatform_service_processing/src/u2.rs:104            u4_require_actor_of      空 → 仅 admin
+  processplatform_service_processing/src/lib.rs:438          u4_require_work_owner    行空/空 creator → 仅 admin
+  processplatform_service_processing/src/lib.rs:501          u4_require_actors        空 → 仅 admin
+  processplatform_assemble_surface/src/lib.rs:65             u4_require_ppc_actor     空 → 仅 admin（经 require_actor_opt）
+  query_assemble_designer/src/lib.rs:30                      require_row_owner        空 → require_admin_opt
+  query_assemble_designer/src/u2_closures.rs:1422            guard_write              空 → require_admin_gate
+  query_assemble_surface/src/u2_closures.rs:1015             guard_write              空 → require_admin_gate
+  processplatform_assemble_designer/src/lib.rs:3653          guard_write              空 → require_admin_gate
+  bbs_assemble_control/src/u2.rs:70                          u2_gate_by_sql           空 owner → Forbidden
+  cms_assemble_control/src/lib.rs:8210                       u2_gate_by_sql           空 owner → Forbidden
+  processplatform_assemble_surface/src/lib.rs:24773          u2_gate_by_sql           空 owner → Forbidden
+  cms_assemble_control/src/lib.rs:6642                      gate_appdict_writer      行不存在 → Allowed（新建语义）
+  shared/src/crud.rs:170                                     crud_owner_ok            空 owner → require_owner("") → 403
+  attendance_assemble_control/src/lib.rs:7481                appeal_owner_gate        空 → require_owner("") → 403
+  jpush_assemble_control/src/lib.rs:319                      jpush_owner_gate         空 → 仅 admin
+  mind/src/lib.rs:33                                         mind_owner_gate          空 → require_owner("") → 403
+  general_assemble_control/src/lib.rs:55                     owner_gate               空 → require_owner("") → 403
+  meeting_core_entity/src/lib.rs:58                          meeting_require_owner    空 → require_owner("") → 403
+  meeting_assemble_control/src/lib.rs:2272                   u2_meeting_owner_gate    空 → require_owner("") → 403
+  file_assemble_control/src/lib.rs:1227                      require_file_read_owner  空 → require_owner("") → 403
+  empower/src/lib.rs:64                                      check_owner              空 → require_owner("") → 403
+  shared/src/middleware/rbac.rs:582                          require_owner            owner="" 与 person≠"" 不等 → 403
+
+「行不存在 → 放行」但不构成越权的实现（后续 SQL 0 行，无副作用）：
+  general_assemble_control::owner_gate(:55)、mind_owner_gate(:33)、
+  meeting_require_owner(:58)、u2_meeting_owner_gate(:2272)、
+  guard_write(designer/surface)、u2_gate_by_sql(NotFound)、jpush_owner_gate(:335)。
+  注：这些只覆盖「行存在」的归属；行不存在时放行是既有 not-found 语义，需在修复时保持。
+
+--- u4_require_actor 逐调用点（16 个）---
+processplatform_service_processing/src/lib.rs:
+  233 execute_process / 383 work_complete / 549 work_start / 583 work_v3_retract
+  628 cancel_process_instance / 2094 review_* / 2843 work_id_processing
+  3434 3459(?) 3479 3538 3600 3688 3796 3878 3936 4325 —— task_claim/complete/reject/
+  transfer、cancel_timer、gateway_join 等（以源码 grep 的 17 行 - 1 定义为准 = 16 调用点）
+
+====================================================================================================
+§D1 逐调用点实测：空 creator / 空 person（攻击者 audit-user）
+====================================================================================================
+##############################################################################
+# A. u4_require_actor 空 actor 放行：逐调用点实测（攻击者 audit-user / 匿名）
+##############################################################################
+
+[A1] 空 creator — work 状态流转
+  before: pending|
+  work_start(creator=NULL, pending)                          -> 200 | {"data":{"id":"work-null-pending","status":"processing","taskId":"961ca103-b899-41fe-aa6d-0310c8f15e8b"},"type":"success","message":"","date":"2026-11-06 01:08:43","spent":0,"size":0,"count"
+  after : processing|
+  execute_process(creator=NULL)                              -> 200 | {"data":{"id":"work-null-pending","status":"processing","taskId":"449b24c4-8866-41bc-9077-aad6a6dcc8a0"},"type":"success","message":"","date":"2026-11-06 01:08:44","spent":0,"size":0,"count"
+  after : processing|
+  cancel_process_instance(creator=NULL)                      -> 200 | {"data":{"application":"a1","create_time":"2026-11-06 00:00:00","end_time":"2026-11-05 17:08:46.093856","id":"work-null-processing","process":"p1","title":"Null creator processing","work_sta
+  after : cancelled|2026-11-05 17:08:46.093856
+  work_complete(creator=NULL)                                -> 500 | {"count":0,"date":"2026-11-06 01:08:47","message":"internal server error","position":0,"prompt":"com.x.base.core.project.exception.ExceptionInternal","size":-1,"spent":0,"type":"error"}
+  after : work=processing| task=active||
+  work_v3_retract(creator=NULL)                              -> 200 | {"data":{"application":"a1","id":"work-null-processing","process":"p1","title":"Null creator processing","work_status":"processing"},"type":"success","message":"","date":"2026-11-06 01:08:48
+  after : retracted|
+  cancel_timer(work.creator=NULL)                            -> 200 | {"data":{"cancelled":"cancelled","jobId":"timer-null-1"},"type":"success","message":"","date":"2026-11-06 01:08:49","spent":0,"size":0,"count":0,"position":0}
+  after : timer cancelled_at=2026-11-05 17:08:49.639475
+  work_id_processing(creator=NULL)                           -> 200 | {"data":{"application":"a1","create_time":"2026-11-06 00:00:00","id":"work-null-pending","process":"p1","title":"Null creator pending","work_status":"pending"},"type":"success","message":"",
+  after : processing|
+
+[A2] 空 person — task 流转
+  before: pending||
+  task_claim(person=NULL)                                    -> 200 | {"data":{"activity":"act-1","activity_token":"tok-1","id":"task-null-pending","start_time":"2026-11-05 17:08:52.091577","task_status":"active","title":"Null person pending","work":"work-null
+  after : active||
+  task_complete(person=NULL)                                 -> 200 | {"data":{"activity":"act-1","activity_token":"tok-1","end_time":"2026-11-05 17:08:53.346300","id":"task-null-active","start_time":"2026-11-06 00:00:00","task_status":"completed","title":"Nul
+  after : completed||
+  task_reject(person=NULL)                                   -> 200 | {"data":{"activity":"act-1","activity_token":"tok-1","end_time":"2026-11-05 17:08:53.346300","id":"task-null-active","start_time":"2026-11-06 00:00:00","task_status":"rejected","title":"Null
+  after : rejected||
+  task_transfer(person=NULL -> admin)                        -> 200 | {"data":{"id":"task-null-active","newPerson":"person-admin"},"type":"success","message":"","date":"2026-11-06 01:08:55","spent":0,"size":0,"count":0,"position":0}
+  after : active|person-admin|
+  task_id_processing(person=NULL)                            -> 403 | {"count":0,"date":"2026-11-06 01:08:56","message":"forbidden","position":0,"prompt":"com.x.base.core.project.exception.ExceptionAccessDenied","size":-1,"spent":0,"type":"error"}
+  after : pending||
+
+[A3] 对照组：非空 creator/person 应 403
+  work_start(creator=person-admin) 对照                        -> 403 | {"count":0,"date":"2026-11-06 01:08:57","message":"forbidden","position":0,"prompt":"com.x.base.core.project.exception.ExceptionAccessDenied","size":-1,"spent":0,"type":"error"}
+  task_claim(person=person-admin) 对照                         -> 403 | {"count":0,"date":"2026-11-06 01:08:57","message":"forbidden","position":0,"prompt":"com.x.base.core.project.exception.ExceptionAccessDenied","size":-1,"spent":0,"type":"error"}
+
+[A4] 匿名对照（无会话）
+  anon work_start(creator=NULL)                              -> 401 | {"count":0,"date":"2026-11-06 01:08:58","message":"unauthorized","position":0,"prompt":"com.x.base.core.project.exception.ExceptionUnauthorized","size":-1,"spent":0,"type":"error"}
+  anon task_claim(person=NULL)                               -> 401 | {"count":0,"date":"2026-11-06 01:08:58","message":"unauthorized","position":0,"prompt":"com.x.base.core.project.exception.ExceptionUnauthorized","size":-1,"spent":0,"type":"error"}
+
+
+--- 补充实测：:583 terminate / :628 retract / :3936 gateway_join（空 creator）---
+identity audit-user = <class 'urllib.request.OpenerDirector'>
+
+== :583 work_v2_id_terminate (PNG work-null-pending, creator=NULL) ==
+status=200 body={"data":{"application":"a1","create_time":"2026-11-06 00:00:00","end_time":"2026-11-05 17:30:56.760922","id":"work-null-pending","process":"p1","title":"Null cr
+work_status -> (1 row)
+
+== :628 work_v2_id_retract (creator=NULL) ==
+status=200 body={"data":{"application":"a1","create_time":"2026-11-06 00:00:00","end_time":"2026-11-05 17:30:56.760922","id":"work-null-pending","process":"p1","title":"Null cr
+work_status -> (1 row) ; task_status -> (1 row)
+
+== :3936 gateway_join (creator=NULL, token=tok-1, task 先置 completed) ==
+status=200 body={"data":{"activityToken":"tok-1","joined":"joined","workId":"work-null-pending"},"type":"success","message":"","date":"2026-11-06 01:30:58","spent":0,"size":0,"
+record rows -> (1 row)
+
+== 对照组：creator=person-admin（新建 work-own-1） ==
+terminate  status=403 body={"count":0,"date":"2026-11-06 01:30:59","message":"forbidden","position":0,"prompt":"com.x.base.core.project.exception.E
+retract    status=403 body={"count":0,"date":"2026-11-06 01:30:59","message":"forbidden","position":0,"prompt":"com.x.base.core.project.exception.E
+work-own-1 -> (1 row)
+
+== 匿名对照 ==
+terminate  status=-1
+retract    status=-1
+join       status=-1
+
+
+库内复核：work-null-pending -> retracted；gateway_join 插入 x_record；
+           对照 work-own-1(creator=person-admin) 两次均 403 且保持 pending。
+
+====================================================================================================
+§D2 内联实例 work_terminate 实测
+====================================================================================================
+[A5] processplatform_core_express::work_terminate 内联 fail-open（creator 空则跳过门）
+  before null : work-null-pending|pending
+  audit-user -> terminate(creator=NULL) : 200 | {"data":{"id":"work-null-pending","result":"ok","workStatus":"terminated"},"type":"success","message":"","date":"2026-11-06 01:12:47","spent":0,"size":0,"count":0,"positi
+  after  null : work-null-pending|terminated
+  before admin: work-admin-1|pending
+  audit-user -> terminate(creator=person-admin) 对照 : 403 | {"count":0,"date":"2026-11-06 01:12:48","message":"forbidden","position":0,"prompt":"com.x.base.core.project.exception.ExceptionAccessDenied","size":-1,"spent":0,"type":"
+  after  admin: work-admin-1|pending
+
+====================================================================================================
+§E 写越权落库复核（受害者行 owner=person-admin，攻击者 audit-user）
+====================================================================================================
+##############################################################################
+# C. 写越权落库复核（受害者行统一 person-admin，攻击者 audit-user）
+##############################################################################
+invoice_update         POST   /api/general/invoice/update/r6v-x_general_invoice          -> 200
+    before=r6seed|0|r6seed
+    after =R6-HACKED|99999|approved
+    resp  ={"data":{"amount":99999.0,"createTime":"","creator":"person-admin","date":"","id":"r6v-x_general_invoice","number":"R6-HACKED","status":"approved"},"t
+
+invoice_delete         POST   /api/general/invoice/delete/r6v-x_general_invoice          -> 200
+    before=r6v-x_general_invoice
+    after =<gone>
+    resp  ={"data":{"amount":99999.0,"createTime":"","creator":"person-admin","date":"","id":"r6v-x_general_invoice","number":"R6-HACKED","status":"approved"},"t
+
+file_update            POST   /api/general/file/update/r6v-x_general_file                -> 200
+    before=r6seed
+    after =R6-HACKED
+    resp  ={"data":{"createTime":"","creator":"person-admin","id":"r6v-x_general_file","mimeType":"","name":"R6-HACKED","size":0},"type":"success","message":"","
+
+file_delete            POST   /api/general/file/delete/r6v-x_general_file                -> 200
+    before=r6v-x_general_file
+    after =<gone>
+    resp  ={"data":{"createTime":"","creator":"person-admin","id":"r6v-x_general_file","mimeType":"","name":"R6-HACKED","size":0},"type":"success","message":"","
+
+definition_update      PUT    /api/organization/definition/r6v-x_org_definition          -> 200
+    before=r6seed
+    after =R6-HACKED
+    resp  ={"data":{"category":"r6seed","id":"r6v-x_org_definition","name":"R6-HACKED","type":"r6seed"},"type":"success","message":"","date":"2026-11-06 01:13:55
+
+definition_delete      DELETE /api/organization/definition/r6v-x_org_definition          -> 200
+    before=r6v-x_org_definition
+    after =r6v-x_org_definition
+    resp  ={"data":{"id":"r6v-x_org_definition"},"type":"success","message":"","date":"2026-11-06 01:13:55","spent":0,"size":0,"count":0,"position":0}
+
+update_folder          POST   /api/mind/core/entity/folder/r6v-x_mind_folder_info        -> 200
+    before=r6seed
+    after =R6-HACKED
+    resp  ={"data":{"description":"","id":"r6v-x_mind_folder_info","name":"R6-HACKED","orderNumber":0,"parentId":""},"type":"success","message":"","date":"2026-1
+
+appeal                 POST   l/attendanceappealInfo/appeal/r6v-x_attendance_appeal_info -> 200
+    before=<gone>
+    after =appealed
+    resp  ={"data":{"id":"r6v-x_attendance_appeal_info","status":"appealed","updated":1},"type":"success","message":"","date":"2026-11-06 01:13:56","spent":0,"si
+
+record_update          POST   nce/assemble/control/record/r6v-x_attendance_record/update -> 404
+    before=r6seed
+    after =r6seed
+    resp  =
+
+
+[C2] 补验 record_update / identity_update / folder_delete
+  record before: 
+  status=200 resp={"data":{"check_in_time":"r6seed","check_out_time":null,"create_time":null,"id":"r6v-x_attendance_record","status":"R6HA
+  record after : 
+  identity before: r6v-x_org_identity|r6seed|person-admin
+  status=200 resp={"data":{"id":"r6v-x_org_identity","name":"R6HACK","personId":"person-admin","type":""},"type":"success","message":"","d
+  identity after : r6v-x_org_identity|R6HACK|person-admin
+  folder before: r6v-file_folder|r6seed|person-admin|
+  status=200 resp={"data":{"deleted":true},"type":"success","message":"","date":"2026-11-06 01:14:28","spent":0,"size":0,"count":0,"positi
+  folder after : r6v-file_folder|r6seed|person-admin|2026-11-05 17:14:28.286868
+
+====================================================================================================
+§F 双向交叉读：两个普通用户 A=audit-u1 / B=audit-u2
+====================================================================================================
+##############################################################################
+# B. 两个普通用户双向交叉读（A=audit-user/audit-u1  B=audit-user2/audit-u2）
+##############################################################################
+db before: r6-ad-a|audit-u1|NORMAL|false
+r6-ad-b|audit-u2|LATE|false
+
+[B1] mobilepreview：A 看 B / B 看 A（请求体指定 personId）
+  A -> personId=audit-u1（自己）                               -> 200 | {"data":{"date":"2026-11-06","id":"r6-ad-a","personId":"audit-u1","status":"NORMAL"},"type":"success","message":"","date":"2026-11-06 01:09:25","spent":0,"size":0,"count"
+  A -> personId=audit-u2（B 的）                              -> 200 | {"data":{"date":"2026-11-06","id":"r6-ad-b","personId":"audit-u2","status":"LATE"},"type":"success","message":"","date":"2026-11-06 01:09:25","spent":0,"size":0,"count":0
+  B -> personId=audit-u1（A 的）                              -> 200 | {"data":{"date":"2026-11-06","id":"r6-ad-a","personId":"audit-u1","status":"NORMAL"},"type":"success","message":"","date":"2026-11-06 01:09:25","spent":0,"size":0,"count"
+  B -> personId=audit-u2（自己）                               -> 200 | {"data":{"date":"2026-11-06","id":"r6-ad-b","personId":"audit-u2","status":"LATE"},"type":"success","message":"","date":"2026-11-06 01:09:25","spent":0,"size":0,"count":0
+
+[B2] mobile/my：A 看 B / B 看 A
+  A -> personId=audit-u2（B 的）                              -> 200 | {"data":[{"date":"2026-11-06","id":"r6-ad-b","personId":"audit-u2","status":"LATE"}],"type":"success","message":"","date":"2026-11-06 01:09:25","spent":0,"size":0,"count"
+  B -> personId=audit-u1（A 的）                              -> 200 | {"data":[{"date":"2026-11-06","id":"r6-ad-a","personId":"audit-u1","status":"NORMAL"}],"type":"success","message":"","date":"2026-11-06 01:09:25","spent":0,"size":0,"coun
+  A GET ?personId=audit-u2（B 的）                            -> 400 | Failed to parse the request body as JSON: EOF while parsing a value at line 1 column 0
+  B GET ?personId=audit-u1（A 的）                            -> 400 | Failed to parse the request body as JSON: EOF while parsing a value at line 1 column 0
+
+[B3] by-id 读：A 读 B 的行 / B 读 A 的行
+  A -> GET /mobile/r6-ad-b（B 的行）                           -> 200 | {"data":{"date":"2026-11-06","id":"r6-ad-b","personId":"audit-u2","status":"LATE"},"type":"success","message":"","date":"2026-11-06 01:09:25","spent":0,"size":0,"count":0
+  B -> GET /mobile/r6-ad-a（A 的行）                           -> 200 | {"data":{"date":"2026-11-06","id":"r6-ad-a","personId":"audit-u1","status":"NORMAL"},"type":"success","message":"","date":"2026-11-06 01:09:25","spent":0,"size":0,"count"
+
+[B4] recive 写：A 改 B 的 / B 改 A 的（读回验证）
+  A -> recive personId=audit-u2（B 的）                       -> 200 | {"data":{"received":1},"type":"success","message":"","date":"2026-11-06 01:09:25","spent":0,"size":0,"count":0,"position":0}
+  db: r6-ad-b|true
+  B -> recive personId=audit-u1（A 的）                       -> 200 | {"data":{"received":1},"type":"success","message":"","date":"2026-11-06 01:09:25","spent":0,"size":0,"count":0,"position":0}
+  db: r6-ad-a|true
+
+[B5] 匿名对照
+  anon -> mobilepreview(audit-u1)                          -> 401 | {"count":0,"date":"2026-11-06 01:09:25","message":"unauthorized","position":0,"prompt":"com.x.base.core.project.exception.ExceptionUnauthorized","size":-1,"spent":0,"type
+  anon -> mobile/my(audit-u1)                              -> 401 | {"count":0,"date":"2026-11-06 01:09:25","message":"unauthorized","position":0,"prompt":"com.x.base.core.project.exception.ExceptionUnauthorized","size":-1,"spent":0,"type
+  anon -> GET /mobile/r6-ad-a                              -> 401 | {"count":0,"date":"2026-11-06 01:09:25","message":"unauthorized","position":0,"prompt":"com.x.base.core.project.exception.ExceptionUnauthorized","size":-1,"spent":0,"type
+
+[B6] 管理员对照（用于区分「按归属拒绝」与「整体不可读」）
+  admin -> mobilepreview(audit-u1)                         -> 200 | {"data":{"date":"2026-11-06","id":"r6-ad-a","personId":"audit-u1","status":"NORMAL"},"type":"success","message":"","date":"2026-11-06 01:09:26","spent":0,"size":0,"count"
+
+[B7] 同一路由 GET + body（125 集中另一条 GET 形态）
+  A GET mobilepreview  personId=audit-u2  -> 200 | {"data":{"date":"2026-11-06","id":"r6-ad-b","personId":"audit-u2","status":"LATE"},"type":"success","message":"","date":"2026-11-06 01:10:12","spent":
+  A GET mobile/my      personId=audit-u2  -> 200 | {"data":[{"date":"2026-11-06","id":"r6-ad-b","personId":"audit-u2","status":"LATE"}],"type":"success","message":"","date":"2026-11-06 01:10:12","spent
+  B GET mobilepreview  personId=audit-u1  -> 200 | {"data":{"date":"2026-11-06","id":"r6-ad-a","personId":"audit-u1","status":"NORMAL"},"type":"success","message":"","date":"2026-11-06 01:10:12","spent
+  B GET mobile/my      personId=audit-u1  -> 200 | {"data":[{"date":"2026-11-06","id":"r6-ad-a","personId":"audit-u1","status":"NORMAL"}],"type":"success","message":"","date":"2026-11-06 01:10:12","spe
+
+====================================================================================================
+§G 复跑与造数
+====================================================================================================
+
+seed-round6-pp.sql    x_work/x_task 空 creator/person + x_timer_job + 考勤两条明细 + audit-u2 账号
+seed-round6-idor.sql  82 张表的受害者行（固定 id r6v-<表名>；uuid 表用 md5 派生稳定值）
+                      owner 列统一 person-admin；先 DELETE 后 INSERT，可重复执行。
+临时脚本（不入库）：%TEMP%\audit4\r6_idor.py r6_direct.py r6_inv.py r6_run2.py
+                      r6_seedgen.py r6_failopen_scan.py r6_helperinv2.py
+                      t_r6_gate.py t_r6_corex.py t_r6_cross.py t_r6_cross_get.py
+                      t_r6_wv.py t_r6_wv2.py
