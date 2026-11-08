@@ -142,6 +142,13 @@ pub async fn processing_execute(
 
     let query = req.query.unwrap_or_default();
     let model_flag = req.model_flag.unwrap_or_default();
+    // 空 flag 必须落 NULL：uq_query_processing_model_flag 是部分唯一索引
+    // （WHERE model_flag IS NOT NULL），空串会被索引收录，第二次空 flag 直接 23505。
+    let model_flag_value: Option<&str> = if model_flag.is_empty() {
+        None
+    } else {
+        Some(model_flag.as_str())
+    };
     let params = req.params.unwrap_or_default();
 
     if query.trim().is_empty() {
@@ -160,7 +167,7 @@ pub async fn processing_execute(
             .execute(
                 "INSERT INTO x_query_processing (id, query, model_flag, params, creator, create_time, update_time) \
                  VALUES ($1, $2, $3, $4, $5, NOW(), NOW())",
-                &[&id, &query, &model_flag, &params, &sess.person_unique],
+                &[&id, &query, &model_flag_value, &params, &sess.person_unique],
             )
             .await
             .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -171,9 +178,9 @@ pub async fn processing_execute(
             .query_opt(
                 "INSERT INTO x_query_processing (id, query, model_flag, params, creator, create_time, update_time) \
                  VALUES ($1, $2, $3, $4, $5, NOW(), NOW()) \
-                 ON CONFLICT (model_flag) DO UPDATE SET query = EXCLUDED.query, params = EXCLUDED.params, update_time = NOW() \
+                 ON CONFLICT (model_flag) WHERE model_flag IS NOT NULL DO UPDATE SET query = EXCLUDED.query, params = EXCLUDED.params, update_time = NOW() \
                  RETURNING id",
-                &[&id, &query, &model_flag, &params, &sess.person_unique],
+                &[&id, &query, &model_flag_value, &params, &sess.person_unique],
             )
             .await
             .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
