@@ -470,3 +470,15 @@ Wechat 8s 超时 + 1MB 响应上限、Fiber 读写超时与 body limit、laiyipa
 4. `cmd/loadtest` / `cmd/playertest`：不做覆盖率补测（假目标服务只能测 flag），但可给「压测计划生成」这类纯函数加测试（请求序列、并发档位、时长预算），把「参数算错」的后果从覆盖率里分离出来。
 
 **判定**：这是**已知债务**，不是已解决项；等上述 1/2 落地后才谈得上「这四个工具有测试信号」。
+
+---
+
+**前端/移动线收尾（2026-11-08 21:19，R154 后；R155 因收工未开工）**
+
+- **进度**：R61–R154 已落地；前端/桌面线编号 **154**、实质轮次 **134**；Go/服务端线 151/134。R154 分支 `feat/f2e-r154`、提交 `18f4a770d`、PR **#284**，已交合并端处理。
+- **本轮已完成**：R150 破坏性操作盘点（#272）、R151 旧响应覆盖（#271）、R152/R152b iOS 日期（#271）、R153 二次确认/重入守卫（#277）、R154 服务端日期隐式解析全仓收口（桌面危险 27 处 + 双端源码契约）。
+- **R155 候选（已做基础设施摸底但未写代码，留给下一窗口）**：
+  1. **弱网/错误态覆盖面**：复用桌面 `views/listQuery.ts` 的 `describeListError` / `useListError` / `reloadListQueries` / `shouldRetryQuery` 与 `views/ListLoadError.vue`（banner/empty + 重试），以及移动 `services/http.ts` 的传输层文案归一化（timeout/网络失败 → 人话）。按 R116–R130 纪律，必须先以统一口径标识（`loadError` / `ListLoadError` / `pendingError` / `重试`）或行为用例取证「失败被折叠成空态」，禁止只 grep「错误/失败」。
+  2. **破坏性操作重入守卫全仓普查**：R150/R153 已覆盖移动日历/收藏/回收站、移动流程审批弹窗、桌面回收站/日历/收集/笔记/文档/文件；剩余按同族（删除/清空/批量/退款/扣款/解绑/停用）扫描后合批，不做单点。
+- **未完成/阻塞**：R154 CI 首轮因 GitHub 下载 sccache 连续 504 失败（基础设施，非代码），已重跑；必需检查 8/10 通过（Server、Miniapp、Admin、fi002、openapi-guard、contract-gate、test、Dependency gate），`quality` / `security-regression` 重跑中；非必需 `Analyze (go)` 同因 504 失败且该工作流不可重跑。R155 未开工，故无新增 PR。
+- **排除理由**：R144 候选①（requestGuard 铺开到其余切页）继续暂缓，触发条件见 R144 行；`ProcessDesigner` 宏示例代码中的 `new Date(inputData.date)` 属宏作者自定义格式，不入 R154 契约。
