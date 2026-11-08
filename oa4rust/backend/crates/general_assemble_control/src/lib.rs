@@ -2396,8 +2396,8 @@ pub async fn securityclearance_enable(
             let id = uuid::Uuid::new_v4().to_string();
             client
                 .execute(
-                    "INSERT INTO x_general_assemble_security_clearance (id, name, enabled, creator, create_time) VALUES ($1, $2, $3, 'system', NOW())",
-                    &[&id, &name, &enabled],
+                    "INSERT INTO x_general_assemble_security_clearance (id, name, enabled, creator, create_time) VALUES ($1, $2, $3, $4, NOW())",
+                    &[&id, &name, &enabled, &session.person_unique],
                 )
                 .await
                 .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;

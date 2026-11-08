@@ -618,7 +618,8 @@ pub async fn config_create_mcp(
         .unwrap_or("")
         .to_string();
     let enabled = req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
-    let creator = "system";
+    // 归属以会话登录人为事实源：硬写 "system" 会让 owner 列失去审计意义。
+    let creator = session.person_unique.clone();
 
     if name.trim().is_empty() {
         return Err(AppError::BadRequest("name required".to_string()));
@@ -671,7 +672,8 @@ pub async fn config_create_model(
         .unwrap_or("")
         .to_string();
     let enabled = req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
-    let creator = "system";
+    // 归属以会话登录人为事实源：硬写 "system" 会让 owner 列失去审计意义。
+    let creator = session.person_unique.clone();
 
     if name.trim().is_empty() {
         return Err(AppError::BadRequest("name required".to_string()));
@@ -1221,10 +1223,8 @@ pub async fn config_save(
         .and_then(|v| v.as_i64())
         .unwrap_or(4096);
     let enabled = req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
-    let creator = req
-        .get("creator")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system");
+    // 归属以会话登录人为事实源：不再采信请求体 creator（可冒名 / 缺省落 "system"）。
+    let creator = session.person_unique.clone();
 
     let existing = client
         .query_opt("SELECT id FROM x_ai_mcp_config WHERE id = $1", &[&id])

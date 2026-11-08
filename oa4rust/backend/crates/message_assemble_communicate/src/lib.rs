@@ -3254,9 +3254,19 @@ pub async fn mass_create(
 
     client
         .execute(
-            "INSERT INTO x_message_mass (id, title, content, body, type, send_person_list, creator_person, enabled, create_time) \
-             VALUES ($1, $2, $3, $3, $4, $5, $6, true, NOW())",
-            &[&id, &title, &body, &msg_type, &send_person_list, &session.person_unique],
+            // creator 与 creator_person 同时落会话身份：历史上 creator 从不写入，
+            // 读侧 owner 谓词对该表永远取不到归属（NULL fail-closed 只剩管理员视角）。
+            "INSERT INTO x_message_mass (id, title, content, body, type, send_person_list, creator_person, creator, enabled, create_time) \
+             VALUES ($1, $2, $3, $3, $4, $5, $6, $7, true, NOW())",
+            &[
+                &id,
+                &title,
+                &body,
+                &msg_type,
+                &send_person_list,
+                &session.person_unique,
+                &session.person_unique,
+            ],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;

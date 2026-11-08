@@ -366,3 +366,35 @@
 `|xfile_list|GET`、`|processing_status|GET`。
 
 门禁结果：`cases=317 pass=317`，基线 0 条。
+
+## 写侧硬编码归属收口批（2026-11-08，`fix/admin-write-owner-gates`）
+
+同一条线的写面：真实 INSERT 路径产出 `creator='system'`，或 owner 直接采信请求体。
+这些行在库里与任何登录人都对不上，读侧「本人 OR 管理员」谓词对它们永远只剩管理员。
+
+| 写点 | 改前 | 改后 | 用例（建→改→删） |
+|---|---|---|---|
+| `ai_assemble_control::config_save`（`x_ai_mcp_config`） | `req["creator"]`，缺省 `"system"` | 会话人 | `r7_config_save_owner_is_session_not_body`（建→改） |
+| `ai_assemble_control::config_create_mcp/model` | 硬写 `"system"` | 会话人 | 同上（同函数族） |
+| `query_assemble_designer::importmodel_create` | 硬写 `"system"` | 会话人 | `r7_importmodel_owner_loop_is_session`（建→改→软删） |
+| `general_assemble_control::securityclearance_enable` | INSERT `'system'` | `$4` = 会话人 | `r7_securityclearance_enable_persists_session_creator`（建→改） |
+| `message_assemble_communicate::mass_create`（`x_message_mass.creator`） | 该列**从不写入**（只写 `creator_person`） | 会话人（两列同值） | `r7_mass_create_writes_session_creator`（建→删） |
+
+破坏实验（逐点把归属改回 `'system'` / 摘掉 `creator` 列，跑对应用例）：
+
+- `ai_assemble_control` → `r7_config_save_owner_is_session_not_body` **RED**
+  （`建后 owner 必须是会话人，请求体 creator 无效`）
+- `query_assemble_designer` → `r7_importmodel_owner_loop_is_session` **RED**
+  （`建后 owner 必须是会话人，不得是 'system'`）
+- `general_assemble_control` → `r7_securityclearance_enable_persists_session_creator` **RED**
+- `message_assemble_communicate` → `r7_mass_create_writes_session_creator` **RED**
+- 还原后 4 条全部 PASS。
+
+`x_query_processing`：本 crate 无 INSERT 路径（只有读/状态），无需改动；
+`qrcode` / `x_file` 的创建路径已在上一批落会话身份（`create_file_entity` 等）。
+
+**`x_portal` 共享读 2 条的判据（登记不改）**：`x_portal` 建表（migration 029）没有
+`creator` 列，也没有 `is_public` / `status` 这类共享列；唯一共享形态是
+`permission` TEXT（admin 由 `portal_id_permission_post` 写入，格式无契约），
+`status` 全仓无写入方。没有可判定的「共享给谁」语义，硬加读取臂等于猜口径；
+保持 `creator` 归属门（本人 OR 管理员），待 `permission` schema 有契约后再开共享臂。
