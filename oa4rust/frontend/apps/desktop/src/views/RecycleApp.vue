@@ -14,7 +14,7 @@
       </div>
       <div class="toolbar">
         <button class="btn-primary" @click="loadItems">刷新</button>
-        <button class="btn-danger" :disabled="!hasItems" @click="emptyRecycle">清空回收站</button>
+        <button class="btn-danger" :disabled="!hasItems || busy" @click="emptyRecycle">清空回收站</button>
         <button class="btn-primary" @click="loadRecycleTwin">孪生端点</button>
       </div>
       <div class="list-panel">
@@ -35,7 +35,7 @@
             <span class="col-date">{{ formatDate(item.deletedAt || item.deleteTime) }}</span>
             <span class="col-actions">
               <button class="btn-sm" @click="resume(item)">恢复</button>
-              <button class="btn-del" @click="permanentDelete(item)">永久删除</button>
+              <button class="btn-del" :disabled="busy" @click="permanentDelete(item)">永久删除</button>
             </span>
           </div>
         </div>
@@ -65,6 +65,7 @@ type RecycleItem = {
 const loading = ref(false)
 const items = ref<RecycleItem[]>([])
 const loadError = ref('')
+const busy = ref(false)
 
 const hasItems = computed(() => items.value.length > 0)
 
@@ -92,23 +93,31 @@ async function resume(item: RecycleItem) {
 }
 
 async function permanentDelete(item: RecycleItem) {
-  if (!(await confirmMsg(`确定永久删除「${item.name || item.id}」？此操作不可恢复。`))) return
+  if (busy.value) return
+  busy.value = true
   try {
+    if (!(await confirmMsg(`确定永久删除「${item.name || item.id}」？此操作不可恢复。`))) return
     await api.delete(`/api/recycle/${item.id}/delete`)
     items.value = items.value.filter((i) => i.id !== item.id)
   } catch (e: any) {
     toast.error(`删除失败: ${e?.message ?? ''}`)
+  } finally {
+    busy.value = false
   }
 }
 
 async function emptyRecycle() {
-  if (!(await confirmMsg('确定清空回收站？所有项目将被永久删除。'))) return
+  if (busy.value) return
+  busy.value = true
   try {
+    if (!(await confirmMsg('确定清空回收站？所有项目将被永久删除。'))) return
     // 后端 recycle/empty 仅注册 DELETE。
     await api.delete('/api/recycle/empty')
     items.value = []
   } catch (e: any) {
     toast.error(`清空失败: : ${e?.message ?? ''}`)
+  } finally {
+    busy.value = false
   }
 }
 // rev474（用户裁定放宽双计口径）：回收站镜像/方法孪生真注册路由 2 条（/api/recycle/{id}/delete·/api/recycle/{id}/resume 与已消费反向路由同 handler 镜像）

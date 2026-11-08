@@ -64,6 +64,8 @@ organization_assemble_control|person_list_pinyininitial|PUT	idor-read-scoped	PUT
 organization_assemble_control|person_list_pinyininitial|PUT|own	idor-read-own	PUT	/api/organization/assemble/control/person/list/pinyininitial	x_org_person	-	rev-GATE-V-MOBILE	path		legacy	fwd-only	n/a		{"pinyinInitial":["g"]}
 message_assemble_communicate|message_list_paging_page_size_size|GET	idor-read-scoped	GET	/api/message/assemble/communicate/message/list/paging/1/size/10	x_message	-	GATE-V-MSG	path		legacy	both	allow		
 message_assemble_communicate|message_list_paging_page_size_size|own	idor-read-own	GET	/api/message/assemble/communicate/message/list/paging/1/size/10	x_message	-	rev-GATE-V-MSG	path		legacy	fwd-only	n/a		
+message_assemble_communicate|send_message	spoof-write	POST	/api/message/assemble/communicate/send	x_message	gate-victim		body	sender	legacy	both	n/a		{"conversationId":"gate-conv-msg"}
+message_assemble_communicate|im_msg	spoof-write	POST	/api/message/assemble/communicate/im/msg	x_message	gate-victim		body	sender	legacy	both	n/a		{"conversationId":"gate-conv-msg"}
 cms_assemble_control|anonymous_document_id_view|GET	idor-read	GET	/api/document/{id}/view	x_cms_data_document	doc-draft-1	doc-draft-1	path		legacy	both	allow
 cms_assemble_control|anonymous_form_id|GET	idor-read	GET	/api/anonymous/form/{id}	x_cms_form	r6-anonymous_form_id	r6-anonymous_form_id	path		legacy	both	allow
 cms_assemble_control|appinfo_id|GET	idor-read	GET	/api/appinfo/{id}	x_cms_appinfo	r6-appinfo_appId_icon_s	r6-appinfo_appId_icon_s	path		legacy	both	allow
@@ -273,3 +275,9 @@ organization_assemble_control|personcard_listPersonalVCf|own	idor-read-own	GET	/
 organization_assemble_control|personcard_flag|GET	idor-read	GET	/api/organization/assemble/control/personcard/{id}	x_org_person	gate-person-v	GATE-V-MOBILE	path		legacy	both	allow	gate-person-a	
 organization_assemble_control|personcard_flag|own	idor-read-own	GET	/api/organization/assemble/control/personcard/{id}	x_org_person	gate-person-a	rev-GATE-V-MOBILE	path		legacy	fwd-only	n/a		
 organization_assemble_control|person_list_delete_paging|POST	idor-read	POST	/api/organization/assemble/control/person/list/delete/1/size/10	x_org_person	gate-person-del	GATE-DEL-MOBILE	path		legacy	both	allow		
+calendar_core_entity|calendar_create	spoof-write	POST	/api/calendar/core/entity/calendar/create	x_cal_calendar	gate-victim		body	createor	legacy	both	n/a		{"type":"person"}
+calendar_core_entity|event_create	spoof-write	POST	/api/calendar/core/entity/event/create	x_cal_event	gate-victim		body	createor	legacy	both	n/a		{"calendar_id":"2bf1a95c-04a8-41c1-918b-7d608331c702","calendarId":"2bf1a95c-04a8-41c1-918b-7d608331c702","start_time":"2026-01-01T00:00:00","startTime":"2026-01-01T00:00:00","end_time":"2026-01-01T01:00:00","endTime":"2026-01-01T01:00:00"}
+calendar_core_entity|calendar_update	spoof-write	POST	/api/calendar/core/entity/calendar/update	x_cal_calendar	gate-victim		body	createor	legacy	fwd-only	n/a		{"id":"2bf1a95c-04a8-41c1-918b-7d608331c702"}
+calendar_core_entity|calendar_remove	spoof-write	POST	/api/calendar/core/entity/calendar/remove	x_cal_calendar	gate-victim		body	createor	legacy	fwd-only	n/a		{"id":"2bf1a95c-04a8-41c1-918b-7d608331c702"}
+calendar_core_entity|event_update	spoof-write	POST	/api/calendar/core/entity/event/update	x_cal_event	gate-victim		body	createor	legacy	fwd-only	n/a		{"id":"xcal-victim-event"}
+calendar_core_entity|event_remove	spoof-write	POST	/api/calendar/core/entity/event/remove	x_cal_event	gate-victim		body	createor	legacy	fwd-only	n/a		{"id":"xcal-victim-event"}

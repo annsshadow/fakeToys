@@ -55,7 +55,7 @@
               <button class="btn-act" @click="onDocLog(item)">日志</button>
               <button class="btn-act" @click="onCommendList(item)">点赞</button>
               <button class="btn-act" @click="onDetail(item)">详情</button>
-              <button class="btn-del" @click="onDelete(item)">删除</button>
+              <button class="btn-del" :disabled="deletingId === item.id" @click="onDelete(item)">删除</button>
             </span>
           </div>
         </div>
@@ -237,13 +237,18 @@ async function onCreate() {
   }
 }
 
+const deletingId = ref('')
 async function onDelete(item: DocItem) {
+  if (deletingId.value) return
   if (!(await confirmMsg(`确定删除文档「${item.title || item.id}」？`))) return
+  deletingId.value = item.id
   try {
     await api.delete(`/api/document/${item.id}`)
     items.value = items.value.filter((i) => i.id !== item.id)
   } catch (e: any) {
     toast.error(`删除失败: : ${e?.message ?? ''}`)
+  } finally {
+    deletingId.value = ''
   }
 }
 
