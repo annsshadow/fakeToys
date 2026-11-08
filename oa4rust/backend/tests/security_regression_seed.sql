@@ -51,6 +51,8 @@ DELETE FROM "cal_calendar" WHERE "id" = '2bf1a95c-04a8-41c1-918b-7d608331c702';
 INSERT INTO "cal_calendar" ("id","name","createor","is_public","status") VALUES ('2bf1a95c-04a8-41c1-918b-7d608331c702','r6seed','gate-victim',false,'OPEN');
 DELETE FROM "cal_event" WHERE "id" = 'CAL-VICTIM-EVENT';
 INSERT INTO "cal_event" ("id","calendar_id","title","start_time","end_time","all_day","visibility","status","createor") VALUES ('CAL-VICTIM-EVENT','2bf1a95c-04a8-41c1-918b-7d608331c702','CAL-VICTIM','2026-01-01 00:00:00','2026-01-01 01:00:00',false,'DEFAULT','OPEN','gate-victim');
+DELETE FROM "x_cal_event" WHERE "id" = 'xcal-victim-event';
+INSERT INTO "x_cal_event" ("id","calendar_id","title","start_time","end_time","all_day","visibility","status","createor") VALUES ('xcal-victim-event','2bf1a95c-04a8-41c1-918b-7d608331c702','CAL-EVT-VICTIM','2026-01-01 00:00:00','2026-01-01 01:00:00',false,'DEFAULT','OPEN','gate-victim');
 DELETE FROM "x_cms_appinfo" WHERE "id" = 'r6-appinfo_appId_icon_s';
 INSERT INTO "x_cms_appinfo" ("id","app_type","creator") VALUES ('r6-appinfo_appId_icon_s','r6seed','gate-victim');
 DELETE FROM "x_cms_article" WHERE "id" = 'r6-article_get';

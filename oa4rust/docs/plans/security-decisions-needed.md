@@ -973,7 +973,7 @@ sabotage `w8-unverified`，本批减 5 行（分支创建时基线 37→32）。
 | personal / personal_extend | 无缺口：请求体归属键零命中；人脸/签名 `person_id`/`creator` 均会话派生 | `face_create` 强制本人、`save` 窄白名单 |
 | organization_assemble_personal / organization_assemble_authentication / auth | 无缺口：请求体 `personId`/`creator` 零命中；oauth 落库已会话派生 | `oauth_session_derived.rs` |
 | message_assemble_communicate | 已修本批 `sender`；`x_message_mass.creator` 从不写入 → 登记 | §15.5 |
-| calendar_core_entity | 已修（批 1）：create 写侧会话身份 + update/remove 归属门 | §15.5（PR #274） |
+| calendar_core_entity | 已修（批 1）：create 写侧会话身份 + update/remove 归属门 | §15.7（PR #274） |
 | attendance_assemble_control | 五张配置表 create 只写 `creator_person` 不写 `creator`；读侧 `creator OR creator_person` 已覆盖真实行 → 非当前缺陷，登记写侧收口 | 下节 |
 
 #### 15.6.1 attendance 五张配置表：只堵写侧方案（不回填历史）
@@ -992,6 +992,57 @@ sabotage `w8-unverified`，本批减 5 行（分支创建时基线 37→32）。
   `require_owner`/`normalize_key` 收口（`attendancedetail_create`、`selfholidaysimple_create`、
   `v2_groupschedule_post`、`mobile_check_impl`）。
 
+### 15.7 归属列写侧不可用批 1：`calendar_core_entity`（B 线）
+
+**问题（读侧已依赖、写侧不可用）**
+
+- `calendar_create` / `event_create` 的 `createor` 直接采信请求体，缺省回落
+  `"anonymous"`（`calendar_core_entity/src/lib.rs`）；而 `calendar_get` 的
+  `CALENDAR_READ_PREDICATE` 用 `createor = $2` 判归属 → 任意登录用户可把新建行
+  归属写成受害者，读侧谓词对真实写入行失效。
+- `calendar_update` / `calendar_remove` / `event_update` / `event_remove` 只校验
+  行存在 + `OPEN`，不校验归属 → 归属列即使写对也不生效。
+
+**改前为什么门禁是绿的**
+
+- 门禁只挂了 `calendar_get`（读，PASS），六个写端点没有任何用例；
+  `/api/calendar/core/entity/*` 不在 `ADMIN_WRITE_PREFIXES`，RBAC 兜底为
+  `Authenticated`，非管理员可达，因此缺陷真实可触发但无人断言。
+
+**修法**
+
+- 写侧：`calendar_create` / `event_create` 的 `createor = require_session()?.person_unique`，
+  忽略请求体同名键。
+- 写面：新增 `require_owner(db, owner, actor)`（`owner == actor` 或
+  `actor_is_admin`，同源读谓词 admin EXISTS）；四处 update/remove 在取行后、写库前调用，
+  NULL/空归属 fail-closed。
+- 种子：`x_cal_event` 补 `xcal-victim-event`（`gate-victim`）与
+  `rev-xcal-victim-event`（`audit-user`）。
+- 用例：6 条 `spoof-write`（`field=createor`，`carrier=body`）。create 两条 `dir=both`
+  走「2xx 后回表：含 victim → LEAK，含 actor → PASS」；update/remove 四条 `fwd-only`
+  用 body 字面量带 `id`（runner 的 `build_write_body` 会剔除 `id`，不适用 `idor-write`）。
+
+**改后靠什么证明真防住了**
+
+- 6 条实测 `[PASS]`：create 是正证据（回表 `createor` 命中会话 actor），
+  update/remove 是 403 拒绝；读侧正控制沿用既有 `calendar_get|own`。
+- 破坏实验：create 写侧还原为 `req.createor.unwrap_or("anonymous")`、`require_owner`
+  短路为恒放行（保留 `actor_is_admin` 调用避免 dead_code）后，`NEW-FAIL` **恰好点名**
+  这 6 条；还原后复跑 `非 PASS 1`（仅 FALSE-GREEN `warnlog`），与基线一致，无
+  `STALE-BASELINE` / `STATE-DRIFT`。
+- 基线不变（本批 6 条均为新增 PASS，不涉及减行）。
+
+**影响面与回滚**
+
+- 只改写归属来源与写面归属门，不改表结构、不回填历史、不改响应字段；
+  管理员行为不变。
+- 回滚本 PR 即恢复请求体 `createor` 与四个无归属校验的写端点，同时移除 6 条用例与种子。
+
+**登记（本批不做）**
+
+- `event_list_by_calendar` 无归属谓词（读面，另批）。
+- `event_create` 不校验 `calendarId` 所属日历归属（写入他人容器的完整性面，另批）。
+- `calendar_list_my` 返回全部 OPEN 日历（读面，另批）。
 
 
 
