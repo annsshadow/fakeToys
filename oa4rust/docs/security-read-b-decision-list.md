@@ -308,3 +308,14 @@ rev-GATE-V-MOBILE)`，delete paging `LEAK(2xx 响应体含 canary GATE-DEL-MOBIL
   `send_message` / `im_msg`；还原后 `非 PASS 1`（仅 FALSE-GREEN `warnlog`），与基线一致。
 - **登记**：`x_message_mass.creator` 从不写入（`mass_create` 只写 `creator_person` 且管理员档，
   读归属谓词用 `creator`，非管理员属主读不到自己的行；门禁无管理员攻击者档，无法取 sabotage 正证据）。
+
+## 附：归属列写侧盘点结论（本轮六 crate）
+
+| crate | 结论 |
+|---|---|
+| organization_core_entity | 已修（#263）；`unit_check` Public 双锁登记 |
+| personal / personal_extend | 无缺口（请求体归属键零命中，人脸/签名会话派生） |
+| organization_assemble_personal / organization_assemble_authentication / auth | 无缺口（oauth 落库已会话派生，有 `oauth_session_derived.rs`） |
+| message_assemble_communicate | 本批修 `sender`；`mass.creator` 从不写 → 登记 |
+| calendar_core_entity | 批 1 已修（PR #274） |
+| attendance_assemble_control | 五张配置表只写 `creator_person`；读侧双列已覆盖真实行，登记「只堵写侧」方案（不回填历史，量化 SQL 见 decisions §15.6.1） |

@@ -962,6 +962,36 @@ sabotage `w8-unverified`，本批减 5 行（分支创建时基线 37→32）。
   修复需补写 `creator`，但门禁无管理员攻击者档，无法取得 sabotage 正证据，登记独立立项。
 - 会话成员 `role` 从不写入（`security_gate_tests.rs` 已注明），无读侧依赖。
 
+### 15.6 归属列写侧盘点总表（本轮六 crate）
+
+方向：写入侧把归属列写成常量/空/从不写，逐个对照读侧是否依赖。只列结论，不重复已收口读用例。
+
+| crate | 结论 | 依据 |
+|---|---|---|
+| organization_core_entity | 已修（#263）：`identity_create`/`bind_create` 归属门 + 会话身份；`unit_check` 因 Public 双锁登记 | §14.6 |
+| personal / personal_extend | 无缺口：请求体归属键零命中；人脸/签名 `person_id`/`creator` 均会话派生 | `face_create` 强制本人、`save` 窄白名单 |
+| organization_assemble_personal / organization_assemble_authentication / auth | 无缺口：请求体 `personId`/`creator` 零命中；oauth 落库已会话派生 | `oauth_session_derived.rs` |
+| message_assemble_communicate | 已修本批 `sender`；`x_message_mass.creator` 从不写入 → 登记 | §15.5 |
+| calendar_core_entity | 已修（批 1）：create 写侧会话身份 + update/remove 归属门 | §15.5（PR #274） |
+| attendance_assemble_control | 五张配置表 create 只写 `creator_person` 不写 `creator`；读侧 `creator OR creator_person` 已覆盖真实行 → 非当前缺陷，登记写侧收口 | 下节 |
+
+#### 15.6.1 attendance 五张配置表：只堵写侧方案（不回填历史）
+
+- 表：`x_attendance_employee_config` / `x_attendance_import_file_info` /
+  `x_attendance_schedule_setting` / `x_attendance_setting` / `x_attendance_statistical_cycle`。
+- 现状：create 只写 `creator_person`（会话派生），`creator` 为 NULL；读谓词同时认两列，
+  真实新行通过 `creator_person` 命中本人，因此**当前无读写不一致**，不构成本轮可修缺陷。
+- 上线前量化（只读 SQL，逐表执行，结果留档）：
+  `SELECT count(*) FROM <table> WHERE creator IS NULL AND creator_person IS NOT NULL;`
+- 修法（下一批）：五处 create 的 INSERT 增加 `creator = session.person_unique`，忽略请求体；
+  **不回填历史行**；读谓词保持 `creator OR creator_person`。
+- 证据缺口：该改动不会翻转任何门禁（改前改后读都命中 `creator_person`），无法做 sabotage 点名；
+  按「无证据不改」纪律登记，待能构造新断言（如写后读一致性用例）再实施。
+- attendance 其余写侧：`person_id`/`user_id` 请求可控处均已 `require_admin` 或
+  `require_owner`/`normalize_key` 收口（`attendancedetail_create`、`selfholidaysimple_create`、
+  `v2_groupschedule_post`、`mobile_check_impl`）。
+
+
 
 
 
