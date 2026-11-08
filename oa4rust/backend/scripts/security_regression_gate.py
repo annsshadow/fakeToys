@@ -31,6 +31,7 @@
     python scripts/security_regression_gate.py sabotage read-a-b3         # Rust②i2：摘掉分片 A 第三批 cms appinfo/categoryinfo/commend 读门（6 条）
     python scripts/security_regression_gate.py sabotage read-a-b4         # Rust②n：摘掉分片 A 第四批 article/content/portal 读门（6 条）
     python scripts/security_regression_gate.py sabotage read-a-b5         # Rust②n2：摘掉分片 A 第五批 portal/surface/page/ai 读门（6 条）
+    python scripts/security_regression_gate.py sabotage public-read-b6     # Rust②o：统一成功信封注入 PII canary（28 条匿名读用例）
     python scripts/security_regression_gate.py sabotage write-idor-w3     # Rust②i：摘掉 office/bbs/mind 写侧冒名 403（7 条）
     python scripts/security_regression_gate.py sabotage w8-unverified      # Rust②n：摘掉 W-b8 回收站读归属与 bbs/mind/file 冒名 403（5 条）
     python scripts/security_regression_gate.py sabotage false-green-owner-write   # Rust②o：portal 写侧 9 处 owner 还原成 'system'
@@ -105,6 +106,67 @@ JPUSH_CORE = BACKEND / "crates/jpush_core_entity/src/lib.rs"
 # 第十一轮：keyset 深分页与本人写正控制所在的 crate
 ATTENDANCE_ASSEMBLE = BACKEND / "crates/attendance_assemble_control/src/lib.rs"
 RUST_BASELINE = BACKEND / "tests/security_regression_baseline.txt"
+
+# 公开读面 B6：在统一成功信封里注入 PII canary，验证 28 条匿名读用例逐个变红。
+SHARED_RESPONSE = BACKEND / "crates/shared/src/response.rs"
+PUBLIC_READ_EXPECTS = [
+    "b6|bbs|forum_list",
+    "b6|bbs|forum_view_all",
+    "b6|bbs|topic_list_by_forum",
+    "b6|bbs|subject_view",
+    "b6|bbs|subject_top",
+    "b6|bbs|reply_list_sub",
+    "b6|bbs|reply_get",
+    "b6|bbs|reply_filter_list",
+    "b6|bbs|list_reply_filter",
+    "b6|bbs|subject_creamed_list",
+    "b6|bbs|subject_recommended_list",
+    "b6|bbs|subject_recommended_index",
+    "b6|bbs|subject_index_list",
+    "b6|bbs|subject_filter_list",
+    "b6|bbs|subject_filter_listsubjectinfo",
+    "b6|bbs|topic_filter_listsubjectinfo",
+    "b6|bbs|subject_search_list",
+    "b6|bbs|section_viewforum",
+    "b6|bbs|user_subject_voterecord",
+    "b6|bbs|user_forum_list",
+    "b6|bbs|userinfo_filter",
+    "b6|hotpic|list_by_application_info",
+    "b6|hotpic|list_hotpics",
+    "b6|hotpic|get_hotpic",
+    "b6|hotpic|list_control_panels",
+    "b6|hotpic|list_control_applications",
+    "b6|hotpic|cipher_filter_list",
+    "b6|hotpic|user_filter_list",
+]
+PUBLIC_READ_SUCCESS_RE = re.compile(
+    r'pub fn success\(data: T\) -> Self \{\n'
+    r'        Self \{\n'
+    r'            data: Some\(data\),\n'
+    r'            r#type: Some\("success"\.to_string\(\)\),\n'
+    r'            message: Some\(String::new\(\)\),'
+)
+PUBLIC_READ_SUCCESS_PATCH = (
+    'pub fn success(data: T) -> Self {\n'
+    '        Self {\n'
+    '            data: Some(data),\n'
+    '            r#type: Some("success".to_string()),\n'
+    '            message: Some("GATE-V-SETTING GATE-V-EMAIL GATE-V-NAME".to_string()),'
+)
+PUBLIC_READ_LEGACY_RE = re.compile(
+    r'pub fn legacy_success\(data: T, count: i64, size: i64\) -> Self \{\n'
+    r'        Self \{\n'
+    r'            data: Some\(data\),\n'
+    r'            r#type: Some\("success"\.to_string\(\)\),\n'
+    r'            message: Some\(String::new\(\)\),'
+)
+PUBLIC_READ_LEGACY_PATCH = (
+    'pub fn legacy_success(data: T, count: i64, size: i64) -> Self {\n'
+    '        Self {\n'
+    '            data: Some(data),\n'
+    '            r#type: Some("success".to_string()),\n'
+    '            message: Some("GATE-V-SETTING GATE-V-EMAIL GATE-V-NAME".to_string()),'
+)
 
 ATTENDANCE_EXPECT = "attendance_core_entity|record_update|POST"
 CMS_EXPECT = "gate-cms-readable"
@@ -1459,11 +1521,21 @@ def sabotage(kind: str) -> int:
             [WARNLOG_OWNER_EXPECT],
             require_leak=True,
         )
+    elif kind == "public-read-b6":
+        return sabotage_many(
+            "公开读面 B6：统一成功信封注入 PII canary（28 条匿名读用例应逐条 LEAK）",
+            [
+                (SHARED_RESPONSE, PUBLIC_READ_SUCCESS_RE, PUBLIC_READ_SUCCESS_PATCH, "resp_success"),
+                (SHARED_RESPONSE, PUBLIC_READ_LEGACY_RE, PUBLIC_READ_LEGACY_PATCH, "resp_legacy"),
+            ],
+            PUBLIC_READ_EXPECTS,
+            require_leak=True,
+        )
     else:
         raise SystemExit(
             f"未知破坏实验: {kind}（可选 ownership / correct / general / organization / "
             "program_center / hotpic_mind / read_b / read-a-b1 / read-a-b2 / read-a-b3 / "
-            "read-a-b4 / read-a-b5 / write-idor-b5 / write-idor-b6 / write-idor-b7 / "
+            "read-a-b4 / read-a-b5 / public-read-b6 / write-idor-b5 / write-idor-b6 / write-idor-b7 / "
             "write-idor-w1 / write-idor-w2 / write-idor-w3 / write-idor-w4 / write-idor-w5 / "
             "write-idor-w6 / write-idor-w7 / w8-unverified / false-green-owner-write / "
             "false-green-warnlog-owner）"

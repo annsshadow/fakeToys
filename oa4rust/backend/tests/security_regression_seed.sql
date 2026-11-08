@@ -187,3 +187,19 @@ DELETE FROM "x_attendance_record" WHERE "id" = 't1-record';
 INSERT INTO "x_attendance_record" ("id","user_id","check_in_time","status") VALUES ('t1-record','gate-victim','2026-01-01 09:00:00','NORMAL');
 DELETE FROM "x_general_invoice" WHERE "id" = 't1-invoice';
 INSERT INTO "x_general_invoice" ("id","number","date","amount","status","creator") VALUES ('t1-invoice','T1-001','2026-01-01',100,'draft','gate-victim');
+
+-- ── 公开读面 B6：bbs / hotpic 正控制种子（匿名读用例必须命中这些行）──
+DELETE FROM "x_bbs_reply" WHERE "id" = 'GATE-BBS-REPLY';
+INSERT INTO "x_bbs_reply" ("id","subject_id","topic_id","author_id","content","creator","accepted","create_time") VALUES ('GATE-BBS-REPLY','GATE-BBS-TOPIC','GATE-BBS-TOPIC','gate-victim','GATE-BBS-REPLY-CONTENT','gate-victim',false,NOW());
+DELETE FROM "x_bbs_topic" WHERE "id" = 'GATE-BBS-TOPIC';
+INSERT INTO "x_bbs_topic" ("id","title","author_id","section_id","content","creator","forum_id","is_top","is_cream","is_recommend","create_time") VALUES ('GATE-BBS-TOPIC','GATE-BBS-TOPIC-TITLE','gate-victim','GATE-BBS-SECTION','GATE-BBS-TOPIC-CONTENT','gate-victim','GATE-BBS-FORUM',true,true,true,NOW());
+DELETE FROM "x_bbs_section" WHERE "id" = 'GATE-BBS-SECTION';
+INSERT INTO "x_bbs_section" ("id","forum_id","name","description","sort","creator","create_time") VALUES ('GATE-BBS-SECTION','GATE-BBS-FORUM','GATE-BBS-SECTION','gate seed',0,'gate-victim',NOW());
+DELETE FROM "x_bbs_forum" WHERE "id" = 'GATE-BBS-FORUM';
+INSERT INTO "x_bbs_forum" ("id","name","description","sort","creator","create_time") VALUES ('GATE-BBS-FORUM','GATE-BBS-FORUM','gate seed',0,'gate-victim',NOW());
+DELETE FROM "x_bbs_user_info" WHERE "id" = 'GATE-BBS-NICK-ID';
+INSERT INTO "x_bbs_user_info" ("id","person","nick_name","icon","signature") VALUES ('GATE-BBS-NICK-ID','gate-victim','GATE-BBS-NICK','','GATE-BBS-SIGN');
+DELETE FROM "x_bbs_vote_record" WHERE "id" = 'GATE-BBS-VOTE';
+INSERT INTO "x_bbs_vote_record" ("id","topic_id","person","option_id","option_name") VALUES ('GATE-BBS-VOTE','GATE-BBS-TOPIC','gate-bbs-voter','GATE-BBS-OPTION','GATE-BBS-OPTION-NAME');
+DELETE FROM "x_hotpic" WHERE "id" = 'GATE-HOTPIC-B6';
+INSERT INTO "x_hotpic" ("id","application","info_id","title","image_url","creator") VALUES ('GATE-HOTPIC-B6','gate-app','gate-info','GATE-HOTPIC-B6','','gate-victim');
