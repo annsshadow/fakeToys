@@ -9,13 +9,16 @@
 > 2026-11-06 由业务方先行确定，作为实施默认值。**可推翻**：推翻时只改本节，下文章节保留原始证据与备选方案，不改判据。本节生效后，第 2–5 节降级为证据附录，真正待开会项见本节末表。
 
 1. **读权限统一「本人 OR 管理员」**；历史行无归属值的，按「仅管理员可读」兜底（fail-closed）。
-   - 对应：`2.1` 的 12 条、`2.2` 的 5 条（补列后生效）、`2.3` 中能落到主体列的条目、`5` 的全部 E13–E24。
+   - 对应：`2.1` 的 12 条、`2.2` 的 5 条（2026-11-08 已补列并生效）、`2.3` 中能落到主体列的条目、`5` 的全部 E13–E24。
    - 「管理员」口径（2026-11-06 已裁决）：**管理端读/写一律 `allow`**；`deny` 只保留两类——(a) 匿名/未登录也能触达的端点；(b) 确实不应由管理员操作、且写明业务理由的少数端点。复核后 145 条 idor 的分布为 `allow 144 / deny 1 / unknown 0`（见 §6）。
 2. **cms 口径**：`published` = 全员可读（匿名端点同样）；`draft` 只本人与管理员可见。owner 同时认 `creator` 与 `author_id`。
    - 对应：`3` 的 C1–C3，以及 `5` 的 E13、E18。
 3. **软门统一改 403**：不再返回 `200 + ActionResult{success:false}`。前端已能处理 `PermissionError`，不保留兼容层。
    - 对应：`4` 的 S1、S2。
 4. **5 条「列从不写入」**：新增行在写入时补归属列（附件 = 上传人）；**历史行不回填**，按第 1 条兜底「仅管理员可读」。
+   - 2026-11-08 `fix/no-owner-col-b` 已落地：`x_cms_fileinfo` 7 处 INSERT 写 `upload_person=会话人`；
+     读侧 3 条附件读 + 1 条内容更新用 `upload_person=本人 OR admin`，NULL 仅 admin；
+     #21 复核后改用 `x_cms_data_document` 的文档 ACL（其 creator/author 由真实写路径写入）。
    - 不回填的理由：`x_cms_fileinfo.upload_person` 历史上全部为 NULL，没有任何可信来源能反推上传人；改用「父文档 ACL」反推，等于把授权绑到可能已迁移/删除的 `doc_id` 上，是用猜测建立授权。先拒绝、后按真实需求逐行人工回填，风险更低。
    - 对应：`2.2` 的 #21–#25。
 5. **E13–E24**：`admin` 视为合法读者（可读），但非 admin 必须按归属过滤（`owner OR 业务关系`），不允许只按「登录」放行。
@@ -83,15 +86,21 @@
 
 ### 2.2 第二档：5 条「列存在但生产路径从不写」
 
-共同前提：`x_cms_fileinfo.upload_person` 除「从已有行复制」外，所有 INSERT 都不带该列（`cms_assemble_control/src/lib.rs:4277/4754/4791/4828/4855/11604`；`:4700` 有注释说明）。当前实际为 NULL。**先有列值，才谈得上按列收口。**
+共同前提（改前取证，2026-11-06）：`x_cms_fileinfo.upload_person` 除「从已有行复制」外，
+所有 INSERT 都不带该列（`cms_assemble_control/src/lib.rs:4277/4754/4791/4828/4855/11604`；
+`:4700` 有注释说明），当前实际为 NULL。**先有列值，才谈得上按列收口。**
+2026-11-08 `fix/no-owner-col-b` 已修：7 处 INSERT 写会话人，复制路径写当前复制人；
+读谓词不命中 NULL → 仅管理员；历史行**不回填、不用父文档 ACL 反推**。
+#21 现场复核不属于「列从不写入」：`x_cms_data_document.creator/author_id` 由真实写路径写入，
+缺的是读谓词（原 handler 还查错遗留表 `x_cms_document`）。下表保留改前证据。
 
-| # | 端点 | 当前行为（证据） | 风险 | 方案①（推荐）/ 方案② | 需业务回答 |
+| # | 端点 | 改前行为（证据） | 风险 | 方案①（推荐）/ 方案② | 需业务回答 |
 |---|---|---|---|---|---|
-| 21 | `GET /api/document/{id}/view/count` | `STATIC`：只 `SELECT 1` 判存在；登录即可读 | 可枚举文档存在性 | ① 跟随文档 ACL（`x_cms_permission` + `creator` + `published`）；② 仅 `published` 可读 | 未发布文档的作者本人能否看计数？ |
-| 22 | `GET /api/fileinfo/{id}` | `STATIC`：`upload_person` 恒 NULL；任何人按 id 读他人附件元数据 | 原文件名/大小/类型泄露 | ① 跟随父文档 `doc_id` 的 ACL（现在就能修）；② 先补写 `upload_person`，再按上传人私有 | 附件归属是「上传人」还是「父文档」？ |
-| 23 | `GET /api/fileinfo/{id}/online/info` | 同 22 | 在线预览元信息泄露 | 同 22 | 同 22 |
-| 24 | `GET /api/fileinfo/{id}/preview/pdf` | 同 22；SELECT 不取 `upload_person` | **任何人可渲染他人附件 → 内容泄露（最高危读）** | ① 父文档 ACL + `downloadable`；② 登录即可（现状，不推荐） | 预览是否必须继承下载权限？ |
-| 25 | `POST /api/fileinfo/update/{id}/content` | 同 22；登录即可改他人附件元数据 | 污染/伪造附件元数据 | ① 父文档编辑者 + admin；② 补列后按上传人 | 元数据编辑权归父文档编辑者还是上传人？ |
+| 21 | `GET /api/document/{id}/view/count` | **已修**。改前 `STATIC`：只 `SELECT 1 FROM x_cms_document` 判存在；登录即可读。现改用 `x_cms_data_document` 的 ACL（published / creator / author / admin），无权 403、不存在 404 | 可枚举文档存在性 | ① 跟随文档 ACL（`creator` + `author_id` + `published`）；② 仅 `published` 可读 | 未发布文档的作者本人能否看计数？ |
+| 22 | `GET /api/fileinfo/{id}` | **已修**。改前 `upload_person` 恒 NULL；任何人按 id 读他人附件元数据。现写侧补列，读侧 `upload_person=本人 OR admin`，历史 NULL 仅 admin | 原文件名/大小/类型泄露 | ① 跟随父文档 `doc_id` 的 ACL；② 先补写 `upload_person`，再按上传人私有（**已按②落地**） | 附件归属是「上传人」还是「父文档」？ |
+| 23 | `GET /api/fileinfo/{id}/online/info` | **已修**（同 22） | 在线预览元信息泄露 | 同 22 | 同 22 |
+| 24 | `GET /api/fileinfo/{id}/preview/pdf` | **已修**（同 22；预览与元数据同权） | **任何人可渲染他人附件 → 内容泄露（最高危读）** | ① 父文档 ACL + `downloadable`；② 补列后按上传人（**已按②落地**） | 预览是否必须继承下载权限？ |
+| 25 | `POST /api/fileinfo/update/{id}/content` | **已修**。写侧补列后，`UPDATE ... WHERE upload_person=本人 OR admin`；他人 403 且零落库 | 污染/伪造附件元数据 | ① 父文档编辑者 + admin；② 补列后按上传人（**已按②落地**） | 元数据编辑权归父文档编辑者还是上传人？ |
 
 ### 2.3 第三档：14 条真·全局（无主体列，必须业务定「归谁」）
 

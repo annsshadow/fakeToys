@@ -44,6 +44,7 @@
     python scripts/security_regression_gate.py sabotage go-drift-to-leak # Go⑥：基线内 UNVERIFIED 恶化成 LEAK
     python scripts/security_regression_gate.py sabotage rust-drift-to-leak  # Rust③：基线内 UNVERIFIED 恶化成 LEAK
     python scripts/security_regression_gate.py sabotage rust-swallow-write  # Rust④：本人写 2xx 但未落库
+    python scripts/security_regression_gate.py sabotage cms-b-owner-gates   # Rust②o：摘掉 cms B 档归属门（5 条）
 
 刻意**不**把 Rust 与 Go 塞进同一个 `run`：两侧各自建库、各自迁移，
 合并入口会让修复线每次多等另一侧的建库时间。
@@ -1039,6 +1040,22 @@ WARNLOG_OWNER_EXPECT = "t2|program_center|warnlog_create"
 GENERAL_ASSEMBLE = BACKEND / "crates/general_assemble_control/src/lib.rs"
 BBS_CORE = BACKEND / "crates/bbs_core_entity/src/lib.rs"
 MIND_CORE = BACKEND / "crates/mind_core_entity/src/lib.rs"
+# NO-OWNER-COL B 档：文档浏览量读门 / 附件三读的 upload_person 谓词 / 附件内容更新谓词。
+# 三个改动点复用 A 批同一批模式：恒真式保留 $2/$3/$5/$6 绑定，避免 bind 数不匹配 → 500 假阳性。
+CMS_B_UPDATE_OWNER_RE = re.compile(
+    r"AND \(upload_person = \$5::text OR \$6::boolean\)"
+)
+CMS_B_UPDATE_OWNER_PATCH = (
+    "AND ($5::text IS NOT NULL OR $5::text IS NULL OR $6::boolean)"
+)
+CMS_B_EXPECTS = [
+    "cms-doc-viewcount-owner",
+    "cms-fileinfo-owner",
+    "cms-fileinfo-online-owner",
+    "cms-fileinfo-preview-owner",
+    "cms-fileinfo-content-owner",
+]
+
 W3_GENERAL_WRITE_RE = re.compile(
     r"Some\(owner\) => \{\s*require_admin\(pool, session\)\.await\?;\s*Ok\(owner\)\s*\}"
 )
@@ -1418,6 +1435,17 @@ def sabotage(kind: str) -> int:
             B8_PUBLIC_CHECK_EXPECTS,
             require_leak=True,
         )
+    elif kind == "cms-b-owner-gates":
+        return sabotage_many(
+            "摘掉 NO-OWNER-COL B 档的文档读门/附件归属谓词（5 条应逐条 LEAK）",
+            [
+                (CMS, CMS_DOC_READ_GATE_RE, CMS_DOC_READ_GATE_PATCH, "cms_doc_viewcount"),
+                (CMS, CMS_OWNED_READ_GATE_RE, CMS_OWNED_READ_GATE_PATCH, "cms_fileinfo_read"),
+                (CMS, CMS_B_UPDATE_OWNER_RE, CMS_B_UPDATE_OWNER_PATCH, "cms_fileinfo_update"),
+            ],
+            CMS_B_EXPECTS,
+            require_leak=True,
+        )
     elif kind == "b8-b3":
         return sabotage_many(
             "meeting 采信 body creator + 匿名目录查询夹带手机号（3 条应逐条 LEAK）",
@@ -1466,7 +1494,7 @@ def sabotage(kind: str) -> int:
             "read-a-b4 / read-a-b5 / write-idor-b5 / write-idor-b6 / write-idor-b7 / "
             "write-idor-w1 / write-idor-w2 / write-idor-w3 / write-idor-w4 / write-idor-w5 / "
             "write-idor-w6 / write-idor-w7 / w8-unverified / false-green-owner-write / "
-            "false-green-warnlog-owner）"
+            "false-green-warnlog-owner / cms-b-owner-gates）"
         )
 
     print(f"== 破坏实验：{title}")
