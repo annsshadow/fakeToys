@@ -1097,8 +1097,7 @@ mod security_regression {
                     "匿名请求未拒绝 status={ac}（与「登录后公开」契约不符）"
                 ));
             }
-            let Some((status, resp)) =
-                fire(app, &c.method, &path, Some(TOK_ATTACKER), &body).await
+            let Some((status, resp)) = fire(app, &c.method, &path, Some(TOK_ATTACKER), &body).await
             else {
                 return Outcome::Unverified("登录用户请求无法构造".into());
             };
