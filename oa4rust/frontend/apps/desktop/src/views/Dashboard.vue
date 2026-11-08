@@ -95,6 +95,7 @@ import { api, useSession } from '@oa4rust/sdk'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { formatServerDateTime } from '../utils/date'
 import { describeListError } from './listQuery'
 
 const router = useRouter()
@@ -241,17 +242,7 @@ function navigateTo(path: string): void {
   router.push(path)
 }
 function fmtTime(ts?: string): string {
-  if (!ts) return ''
-  try {
-    return new Date(ts).toLocaleString('zh-CN', {
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  } catch {
-    return String(ts)
-  }
+  return ts ? formatServerDateTime(ts) : ''
 }
 
 onMounted(loadPending)

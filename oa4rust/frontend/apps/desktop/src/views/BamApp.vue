@@ -65,6 +65,7 @@
 import { api } from '@oa4rust/sdk'
 import { useQuery } from '@tanstack/vue-query'
 import { ref } from 'vue'
+import { formatServerDateTime } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
@@ -618,12 +619,7 @@ function refresh() {
   void reload()
 }
 function fmtTime(t?: string) {
-  if (!t) return ''
-  try {
-    return new Date(t).toLocaleString('zh-CN')
-  } catch {
-    return String(t)
-  }
+  return t ? formatServerDateTime(t, {}) : ''
 }
 function statusCls(s?: string) {
   return s === 'running' || s === 'active'

@@ -551,6 +551,7 @@ import {
   validateFormValues,
   type XformDefinition,
 } from '../contracts/xform'
+import { parseServerDate } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 
 interface TaskItem {
@@ -3473,8 +3474,8 @@ async function submit(action: 'approve' | 'reject'): Promise<void> {
 
 function fmtTime(value: unknown): string {
   if (!value) return ''
-  const date = new Date(String(value))
-  return Number.isNaN(date.valueOf()) ? String(value) : date.toLocaleString('zh-CN')
+  const date = parseServerDate(value)
+  return date ? date.toLocaleString('zh-CN') : String(value)
 }
 
 function fmtSize(bytes: unknown): string {

@@ -240,7 +240,7 @@
 import { api, useSession } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, ref } from 'vue'
-import { monthEndYMD } from '../utils/date'
+import { monthEndYMD, parseServerDate } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
@@ -307,11 +307,8 @@ function loadData() {
 }
 function fmtDate(d?: string) {
   if (!d) return '—'
-  try {
-    return new Date(d).toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })
-  } catch {
-    return String(d)
-  }
+  const date = parseServerDate(d)
+  return date ? date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' }) : String(d)
 }
 function statusTxt(s?: string) {
   return s === '1' ? '正常' : s === '2' ? '迟到' : '—'

@@ -435,6 +435,7 @@ import { computed, ref, watch } from 'vue'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import EChartsView from '../components/EChartsView.vue'
 import { parseCsv } from '../utils/csv'
+import { formatServerDateTime } from '../utils/date'
 import { downloadBlob } from '../utils/download'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
@@ -1043,12 +1044,7 @@ function exportResults() {
   downloadBlob(blob, 'query_result.csv')
 }
 function fmtTime(t?: string) {
-  if (!t) return ''
-  try {
-    return new Date(t).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
-  } catch {
-    return String(t)
-  }
+  return t ? formatServerDateTime(t) : ''
 }
 
 // --- Batch Execute ---
