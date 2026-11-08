@@ -34,6 +34,48 @@ fn require_session(
     session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
 }
 
+/// 归属判定（写面）：`createor = 会话身份` 放行，管理员放行，其余 403。
+/// 与读侧 `CALENDAR_READ_PREDICATE` 的 admin EXISTS 同源。
+async fn actor_is_admin(db: &DatabaseConnection, actor: &str) -> Result<bool, AppError> {
+    let sql = "SELECT EXISTS(\
+         SELECT 1 FROM auth_person p \
+           JOIN auth_person_role pr ON pr.person_id = p.id \
+           JOIN auth_role r ON r.id = pr.role_id \
+          WHERE (p.unique_id = $1 OR p.id = $1) \
+            AND r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false) AS is_admin";
+    match db
+        .query_one(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            sql,
+            vec![actor.into()],
+        ))
+        .await
+    {
+        Ok(Some(row)) => row
+            .try_get::<bool>("", "is_admin")
+            .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e)),
+        Ok(None) => Ok(false),
+        Err(e) => Err(AppError::internal_with_source(
+            concat!(file!(), ":", line!()),
+            e,
+        )),
+    }
+}
+
+async fn require_owner(
+    db: &DatabaseConnection,
+    owner: &str,
+    actor: &str,
+) -> Result<(), AppError> {
+    if owner == actor {
+        return Ok(());
+    }
+    if actor_is_admin(db, actor).await? {
+        return Ok(());
+    }
+    Err(AppError::Forbidden)
+}
+
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct CalendarItem {
     pub id: String,
@@ -317,7 +359,7 @@ pub async fn calendar_create(
     session: Option<Extension<shared::session::Session>>,
     AxumJson(req): AxumJson<CreateCalendarRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let actor = require_session(session)?.person_unique;
     let name = req
         .name
         .ok_or_else(|| AppError::BadRequest("name is required".to_string()))?;
@@ -328,7 +370,6 @@ pub async fn calendar_create(
     let color = req.color.unwrap_or_else(|| "#1462be".to_string());
     let description = req.description;
     let source = req.source;
-    let createor = req.createor.unwrap_or_else(|| "anonymous".to_string());
     let is_public = req.is_public.unwrap_or(false);
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -342,7 +383,7 @@ pub async fn calendar_create(
         color: Set(color.clone()),
         description: Set(description.clone()),
         source: Set(source.clone()),
-        createor: Set(createor.clone()),
+        createor: Set(actor),
         is_public: Set(is_public),
         status: Set("OPEN".to_string()),
         create_time: Set(Some(now)),
@@ -379,7 +420,7 @@ pub async fn calendar_update(
     session: Option<Extension<shared::session::Session>>,
     AxumJson(req): AxumJson<UpdateCalendarRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let actor = require_session(session)?.person_unique;
     let id = req
         .id
         .ok_or_else(|| AppError::BadRequest("id is required".to_string()))?;
@@ -391,6 +432,7 @@ pub async fn calendar_update(
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let m = existing.ok_or_else(|| AppError::NotFound)?;
+    require_owner(&db.0, &m.createor, &actor).await?;
 
     let name = req.name.unwrap_or(m.name);
     let calendar_type = req.calendar_type.unwrap_or(m.type_);
@@ -447,7 +489,7 @@ pub async fn calendar_remove(
     session: Option<Extension<shared::session::Session>>,
     AxumJson(req): AxumJson<DeleteCalendarRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let actor = require_session(session)?.person_unique;
     let id = req
         .id
         .ok_or_else(|| AppError::BadRequest("id is required".to_string()))?;
@@ -459,6 +501,7 @@ pub async fn calendar_remove(
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let m = existing.ok_or_else(|| AppError::NotFound)?;
+    require_owner(&db.0, &m.createor, &actor).await?;
 
     let active_model = cal_calendar::ActiveModel {
         id: Set(m.id.clone()),
@@ -497,7 +540,7 @@ pub async fn event_create(
     session: Option<Extension<shared::session::Session>>,
     AxumJson(req): AxumJson<CreateEventRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let actor = require_session(session)?.person_unique;
     let calendar_id = req
         .calendar_id
         .ok_or_else(|| AppError::BadRequest("calendarId is required".to_string()))?;
@@ -514,7 +557,6 @@ pub async fn event_create(
         .ok_or_else(|| AppError::BadRequest("\"endTime\" is required".to_string()))?;
     let all_day = req.all_day.unwrap_or(false);
     let visibility = req.visibility.unwrap_or_else(|| "PUBLIC".to_string());
-    let createor = req.createor.unwrap_or_else(|| "anonymous".to_string());
 
     let id = uuid::Uuid::new_v4().to_string();
 
@@ -536,7 +578,7 @@ pub async fn event_create(
         all_day: Set(all_day),
         visibility: Set(visibility.clone()),
         status: Set("OPEN".to_string()),
-        createor: Set(createor.clone()),
+        createor: Set(actor),
         create_time: Set(Some(Utc::now().naive_utc())),
     };
 
@@ -581,7 +623,7 @@ pub async fn event_update(
     session: Option<Extension<shared::session::Session>>,
     AxumJson(req): AxumJson<UpdateEventRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let actor = require_session(session)?.person_unique;
     let id = req
         .id
         .ok_or_else(|| AppError::BadRequest("id is required".to_string()))?;
@@ -593,6 +635,7 @@ pub async fn event_update(
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let m = existing.ok_or_else(|| AppError::NotFound)?;
+    require_owner(&db.0, &m.createor, &actor).await?;
 
     let title = req.title.unwrap_or(m.title);
     let content = req.content.or(m.content);
@@ -672,7 +715,7 @@ pub async fn event_remove(
     session: Option<Extension<shared::session::Session>>,
     AxumJson(req): AxumJson<DeleteEventRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    require_session(session)?;
+    let actor = require_session(session)?.person_unique;
     let id = req
         .id
         .ok_or_else(|| AppError::BadRequest("id is required".to_string()))?;
@@ -684,6 +727,7 @@ pub async fn event_remove(
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     let m = existing.ok_or_else(|| AppError::NotFound)?;
+    require_owner(&db.0, &m.createor, &actor).await?;
 
     let active_model = cal_event::ActiveModel {
         id: Set(m.id.clone()),
