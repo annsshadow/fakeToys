@@ -2170,13 +2170,20 @@ pub async fn qrcode_width_width_height_height_text_text(
 // ---- qrcode CRUD ----
 
 #[allow(non_snake_case)]
-pub async fn qrcode_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn qrcode_list(
+    pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
+    // 读侧归属：本人 OR 管理员；creator 为空的历史行仅管理员可见（fail-closed）。
+    let admin = shared::middleware::is_admin(&pool, &sess.person_unique).await;
 
     let rows = client
         .query(
-            "SELECT id, width, height, text, content, creator, create_time FROM x_general_assemble_qrcode ORDER BY create_time DESC",
-            &[],
+            "SELECT id, width, height, text, content, creator, create_time FROM x_general_assemble_qrcode \
+             WHERE ($1::bool OR LOWER(TRIM(creator)) = LOWER(TRIM($2))) ORDER BY create_time DESC",
+            &[&admin, &sess.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;

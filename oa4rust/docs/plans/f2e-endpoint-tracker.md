@@ -279,6 +279,7 @@
   但共享臂/公开口径未裁决，谓词未加，仍不得记为「已防住」。
 - 其他写侧常量扫描判为 admin-only 的表（qrcode、query_statement、query_processing、
   ai_file、x_file 等）：写侧已改会话，但读侧若仍无谓词，属未闭环暴露，不算假绿已修。
+  已由下节「读侧无谓词收口批」处理。
 
 ## NO-OWNER-COL B 档（2026-11-08，`fix/no-owner-col-b`）
 
@@ -316,3 +317,52 @@
   实跑：`cases=286 pass=286 leak=0 unverified=0 integrity=0`，基线保持 0。
 - `sabotage cms-b-owner-gates`：同时摘掉文档读门、附件三读谓词、内容更新谓词 →
   `[LEAK]` 逐条点名上述 5 个用例（其余因共用 cms 读门产生的 NEW-FAIL 也一并可见）。
+
+## 读侧无谓词 / 无 admin 门收口批（2026-11-08，`fix/admin-write-read-gates`）
+
+### 改前为什么能用（真实请求证据）
+
+这些端点只需登录（无 admin 门），handler 里也**没有**按会话人过滤的谓词：
+
+| 端点 | 改前行为 |
+|---|---|
+| `GET /api/general/assemble/control/qrcode/list` | 返回全表（id/width/height/text/content/creator） |
+| `GET /api/query/assemble/designer/statement/{flag}` | 按 flag 取任意语句全文 |
+| `GET /api/query/assemble/designer/statement/list/manage` | 返回全部语句（含 data） |
+| `POST /api/query/assemble/designer/statement/list/query/{queryFlag}` | 返回该 queryFlag 下全部语句 |
+| `POST /api/query/assemble/designer/statement/execute/{flag}/page/{p}/size/{s}` | 按他人 flag 执行并返回数据 |
+| `GET /api/ai_assemble_control/file/{flag}` / `.../download` / `.../download/scale` | 任意登录用户按 id 读他人文件元数据/下载 |
+| `POST /api/ai_assemble_control/file/list` / `.../list/paging/{p}/{s}` | 按 ids 或分页返回全表 |
+| `GET /api/file/assemble/control/file/list/{folderId}` | 返回文件夹内全部文件 |
+| `GET /api/query/service/processing/status` | 任何登录用户可读处理队列状态 |
+
+证据来自破坏实验 `sabotage admin-write-read-gates`（把本批新增门逐一摘掉，等价改前）：
+
+- 12 条用例逐条 `[LEAK]`，响应体含受害者 canary：`r6-qrcode-list`、`r6-statement-list`、
+  `r6-statement-get`、`r6-statement-exec-data`、`r6-ai-file`、`r6-xfile-list`、`running`。
+
+### 改后谁还能用
+
+| 端点 | 归属口径 |
+|---|---|
+| qrcode list | 本人 OR 管理员；`creator` 为空的历史行仅管理员 |
+| statement get/list/execute | 本人 OR 管理员；`creator` 为空的历史行仅管理员 |
+| ai file 单条/下载/列表 | 本人 OR 管理员；`creator` 为空的历史行仅管理员 |
+| x_file list | 本人 OR 管理员；`creator` 为空的历史行仅管理员 |
+| processing status | **仅管理员**：`x_query_processing` 是服务处理队列，状态是运维数据，不是用户数据 |
+
+- 不回溯历史行、不回填、不用父文档 ACL 反推；NULL 一律 fail-closed（仅管理员）。
+- 正控制：每个列表端点都有 `...|own` 用例（攻击者本人 2xx 且能看到自己的行），
+  防止「过滤后返回空」把门禁糊成绿。
+
+### 破坏实验点名
+
+`sabotage admin-write-read-gates` 必须逐条命中（`require_leak=True`）：
+
+`admin_write_read|qrcode_list|GET`、`|statement_manage_list|GET`、
+`|statement_list_with_query|POST`、`|statement_get_flag|GET`、
+`|statement_execute|POST`、`|ai_file_flag|GET`、`|ai_file_download|GET`、
+`|ai_file_download_scale|GET`、`|ai_file_list|POST`、`|ai_file_paging|POST`、
+`|xfile_list|GET`、`|processing_status|GET`。
+
+门禁结果：`cases=317 pass=317`，基线 0 条。
