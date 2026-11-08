@@ -47,6 +47,7 @@
 <script setup lang="ts">
 import { api } from '@oa4rust/sdk'
 import { computed, ref } from 'vue'
+import { parseServerDate } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
@@ -132,7 +133,9 @@ async function loadRecycleTwin() {
 }
 
 function formatDate(d?: string) {
-  return d ? new Date(d).toLocaleString('zh-CN') : '-'
+  if (!d) return '-'
+  const date = parseServerDate(d)
+  return date ? date.toLocaleString('zh-CN') : String(d)
 }
 
 loadItems()

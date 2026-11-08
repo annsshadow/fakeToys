@@ -219,6 +219,7 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { ref } from 'vue'
+import { formatServerDateTime } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
@@ -869,17 +870,7 @@ function formatSize(bytes?: number): string {
 }
 
 function fmtTime(ts?: string): string {
-  if (!ts) return '—'
-  try {
-    return new Date(ts).toLocaleString('zh-CN', {
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  } catch {
-    return String(ts)
-  }
+  return ts ? formatServerDateTime(ts) : '—'
 }
 
 const deletingId = ref('')

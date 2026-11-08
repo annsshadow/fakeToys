@@ -53,6 +53,7 @@
 import { api, useSession } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
+import { formatServerDateTime } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 import { collectMutationErrorMessage } from './collectError'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
@@ -176,12 +177,7 @@ function loadData() {
   reload()
 }
 function fmtTime(t?: string) {
-  if (!t) return ''
-  try {
-    return new Date(t).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
-  } catch {
-    return String(t)
-  }
+  return t ? formatServerDateTime(t) : ''
 }
 </script>
 <style scoped>

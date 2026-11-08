@@ -169,6 +169,7 @@
 import { api } from '@oa4rust/sdk'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, ref, watch } from 'vue'
+import { formatServerDateTime } from '../utils/date'
 import { downloadBlob } from '../utils/download'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
@@ -401,12 +402,7 @@ function restoreHistory(idx: number) {
   }
 }
 function fmtTime(t?: string) {
-  if (!t) return ''
-  try {
-    return new Date(t).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
-  } catch {
-    return String(t)
-  }
+  return t ? formatServerDateTime(t) : ''
 }
 onMounted(() => {
   qc.invalidateQueries({ queryKey: ['config', 'list'] })
