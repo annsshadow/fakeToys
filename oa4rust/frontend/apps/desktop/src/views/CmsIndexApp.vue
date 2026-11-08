@@ -146,6 +146,7 @@
 import { api } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, ref } from 'vue'
+import { formatServerDateTime } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
@@ -729,12 +730,7 @@ function loadData() {
   reload()
 }
 function fmtTime(t?: string) {
-  if (!t) return ''
-  try {
-    return new Date(t).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
-  } catch {
-    return String(t)
-  }
+  return t ? formatServerDateTime(t) : ''
 }
 // rev477（用户裁定放宽双计口径）：内容域镜像/方法孪生真注册路由 6 条（comment·design off-metric 全局面；arity 已校验）
 async function loadCmsTwin() {

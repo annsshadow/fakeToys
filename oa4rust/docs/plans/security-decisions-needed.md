@@ -1069,6 +1069,20 @@ sabotage `w8-unverified`，本批减 5 行（分支创建时基线 37→32）。
 - `event_create` 不校验 `calendarId` 所属日历归属（写入他人容器的完整性面，另批）。
 - `calendar_list_my` 返回全部 OPEN 日历（读面，另批）。
 
+### 15.8 `calendar_assemble_control::event_create` 容器归属（批 3）
+
+- 问题：`createor` 已会话派生，但 `calendarId` 直接采信请求体；读侧
+  `EVENT_READ_PREDICATE` / `event_list_filter` 依赖 `cal_calendar.createor` 判归属，
+  任意登录用户可把事件注入他人日历并被属主读到。
+- 修复：非空 `calendarId` 先过 `person_can_manage_calendar`（本人或管理员），否则 403；
+  缺失 `calendarId` 保持原 NULL 行为。
+- 门禁：1 条 `spoof-write`（`field=calendarId`，`dir=both`），正反种子各补一张
+  `cal_calendar`（id 分别为 `gate-victim` / `audit-user`，owner 同 id）。
+- 登记：`message_create`（`calendar_id` 未校验但 `cal_message` 无读端点）、
+  `setting_create`（`person` 采信请求体但读端不按 person 过滤）、
+  `calendar_core_entity::event_create`（同缺口；#274 已合入但只改 `createor` 与
+  update/remove 归属门，未校验 `calendarId`，另行补一批）。
+
 
 
 

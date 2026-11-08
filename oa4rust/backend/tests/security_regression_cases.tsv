@@ -36,6 +36,7 @@ calendar_assemble_control|event_get|GET	idor-read	GET	/api/calendar_assemble_con
 calendar_assemble_control|event_get|own	idor-read-own	GET	/api/calendar_assemble_control/event/{id}	cal_event	rev-CAL-VICTIM-EVENT	rev-r6seed	path		legacy		allow
 calendar_assemble_control|event_rfc|GET	idor-read	GET	/api/calendar_assemble_control/event/rfc/{id}	cal_event	CAL-VICTIM-EVENT	CAL-VICTIM-EVENT	path		legacy	both	allow
 calendar_assemble_control|event_rfc|own	idor-read-own	GET	/api/calendar_assemble_control/event/rfc/{id}	cal_event	rev-CAL-VICTIM-EVENT	rev-r6seed	path		legacy		allow
+calendar_assemble_control|event_create	spoof-write	POST	/api/calendar_assemble_control/event	cal_event	gate-victim		body	calendarId	legacy	both	n/a		{"startTime":"2026-01-01T00:00:00","endTime":"2026-01-01T01:00:00"}
 organization_assemble_personal|user_setting|GET	idor-read	GET	/api/organization/assemble/personal/{id}/setting	auth_person	gate-victim	GATE-V-SETTING	path		legacy	both	allow	audit-user	
 organization_assemble_personal|user_setting|own	idor-read-own	GET	/api/organization/assemble/personal/{id}/setting	auth_person	audit-user	rev-GATE-V-SETTING	path		legacy	fwd-only	n/a		
 organization_assemble_personal|user_role_list|GET	idor-read	GET	/api/organization/assemble/personal/{id}/role/list	x_org_group_member	gate-victim	GATE-V-ROLE	path		legacy	both	allow	audit-user	

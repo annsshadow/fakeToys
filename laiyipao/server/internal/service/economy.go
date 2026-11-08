@@ -1137,15 +1137,8 @@ func (s *Service) buyTx(ctx context.Context, tx pgx.Tx, userID, itemID int64) (m
 				return nil, fmt.Errorf("%w: 装备不支持多份（同一部位只能装一件），请把数量设为 1",
 					ErrBadInput)
 			}
-			inserted, err := mintEquipment(ctx, tx, userID, eqID)
-			if err != nil {
+			if err := mintEquipment(ctx, tx, userID, eqID); err != nil {
 				return nil, err
-			}
-			if !inserted {
-				// 限购 3 件不等于「可以买 3 次」：装备是永久的，第 2 次插入是
-				// 唯一键 no-op，若继续扣款就是「付 N 份钱只得 1 件」。整单回滚。
-				return nil, fmt.Errorf("%w: 已拥有装备 %d，不能重复购买（本次未扣款）",
-					ErrBadInput, eqID)
 			}
 			continue
 		}

@@ -49,6 +49,8 @@ DELETE FROM "x_cal_calendar" WHERE "id" = '2bf1a95c-04a8-41c1-918b-7d608331c702'
 INSERT INTO "x_cal_calendar" ("id","name","type","target","color","createor","status","is_public") VALUES ('2bf1a95c-04a8-41c1-918b-7d608331c702','r6seed','r6seed','r6seed','r6seed','gate-victim','OPEN',false);
 DELETE FROM "cal_calendar" WHERE "id" = '2bf1a95c-04a8-41c1-918b-7d608331c702';
 INSERT INTO "cal_calendar" ("id","name","createor","is_public","status") VALUES ('2bf1a95c-04a8-41c1-918b-7d608331c702','r6seed','gate-victim',false,'OPEN');
+DELETE FROM "cal_calendar" WHERE "id" = 'gate-victim';
+INSERT INTO "cal_calendar" ("id","name","createor","is_public","status") VALUES ('gate-victim','gate-cal-event-owner','gate-victim',false,'OPEN');
 DELETE FROM "cal_event" WHERE "id" = 'CAL-VICTIM-EVENT';
 INSERT INTO "cal_event" ("id","calendar_id","title","start_time","end_time","all_day","visibility","status","createor") VALUES ('CAL-VICTIM-EVENT','2bf1a95c-04a8-41c1-918b-7d608331c702','CAL-VICTIM','2026-01-01 00:00:00','2026-01-01 01:00:00',false,'DEFAULT','OPEN','gate-victim');
 DELETE FROM "x_cal_event" WHERE "id" = 'xcal-victim-event';

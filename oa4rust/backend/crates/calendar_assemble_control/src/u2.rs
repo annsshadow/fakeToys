@@ -564,12 +564,20 @@ pub async fn event_create(
     Json(body): Json<Value>,
 ) -> ApiResult {
     let sess = require_session(session)?;
-    let client = shared::db::acquire(&pool).await?;
     let id = uuid::Uuid::new_v4().to_string();
     let calendar_id = body
         .get("calendarId")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
+    // 归属门：事件只能落在本人可管理的日历内（本人或管理员）。读侧
+    // `EVENT_READ_PREDICATE` / `event_list_filter` 以 `cal_calendar.createor`
+    // 判归属，未校验 calendarId 时可向他人日历注入事件并被属主读到。
+    if let Some(cal) = calendar_id.as_deref().filter(|s| !s.is_empty()) {
+        if !person_can_manage_calendar(&pool, &sess.person_unique, cal).await? {
+            return Err(AppError::Forbidden);
+        }
+    }
+    let client = shared::db::acquire(&pool).await?;
     let title = body
         .get("title")
         .and_then(|v| v.as_str())

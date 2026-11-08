@@ -299,19 +299,17 @@ func grantEquipmentByLevel(ctx context.Context, tx pgx.Tx, userID int64) error {
 }
 
 // mintEquipment 发出**一件指定**装备（商城购买走这条）。
-// 返回 inserted=false 表示玩家已拥有该装备（唯一键 no-op），调用方据此拒绝重复购买。
-func mintEquipment(ctx context.Context, tx pgx.Tx, userID int64, equipmentID int) (bool, error) {
+func mintEquipment(ctx context.Context, tx pgx.Tx, userID int64, equipmentID int) error {
 	def, ok := equipmentCatalog[equipmentID]
 	if !ok {
-		return false, fmt.Errorf("%w: 装备 %d 不在目录里", ErrBadInput, equipmentID)
+		return fmt.Errorf("%w: 装备 %d 不在目录里", ErrBadInput, equipmentID)
 	}
-	tag, err := tx.Exec(ctx,
+	if _, err := tx.Exec(ctx,
 		`INSERT INTO user_equipment (user_id, equipment_id, slot, equipped)
 		 VALUES ($1, $2, $3, FALSE)
 		 ON CONFLICT (user_id, equipment_id) DO NOTHING`,
-		userID, def.ID, def.Slot)
-	if err != nil {
-		return false, fmt.Errorf("grant equipment %d: %w", equipmentID, err)
+		userID, def.ID, def.Slot); err != nil {
+		return fmt.Errorf("grant equipment %d: %w", equipmentID, err)
 	}
-	return tag.RowsAffected() > 0, nil
+	return nil
 }

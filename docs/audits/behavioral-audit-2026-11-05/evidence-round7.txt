@@ -1,0 +1,1010 @@
+# evidence-round7.txt — 第七轮证据原文
+
+## §0 基线
+```
+HEAD: c0622c5da
+working tree:
+ M oa4rust/backend/crates/attendance_assemble_control/src/lib.rs
+ M oa4rust/backend/crates/attendance_core_entity/src/entities/attendance_record.rs
+ M oa4rust/backend/crates/attendance_core_entity/src/lib.rs
+ M oa4rust/docs/plans/f2e-endpoint-tracker.md
+?? docs/audits/behavioral-audit-2026-11-05/
+?? oa4rust/backend/crates/attendance_core_entity/src/tests_p0_ownership.rs
+?? oa4rust/backend/migrations/117_add_x_attendance_record_created_by.sql
+?? oa4rust/backend/migrations/117_add_x_attendance_record_created_by_rollback.sql
+```
+
+## §A 17 张表结构 + 样本行数
+```
+
+x_attendance_v2_group  rows=1
+    cols: id text, group_name text, check_type text, top_unit text, unit_list text, shift_id text, status integer, assist_admin_list text, participate_list text, work_place_id_list text, work_date_list text, start_date text, end_date text, operator text, creator_person text, create_time text, update_time text
+
+x_attendance_v2_shift  rows=0
+    cols: id text, shift_name text, on_duty_time text, off_duty_time text, work_time integer, serial_no bigint, properties_json text, operator text, creator_person text, create_time text, update_time text
+
+x_attendance_rule  rows=0
+    cols: id character varying, name text, start_time text, end_time text, create_time text, update_time text, deleted_at timestamp without time zone
+
+x_cms_document  rows=0
+    cols: id character varying, xid character varying, create_time timestamp with time zone, update_time timestamp with time zone, creator_person character varying, creator_unit character varying, last_update_person character varying, sequence character varying, xcreateTime timestamp with time zone, xupdateTime timestamp with time zone, xowner character varying, deleted_at timestamp without time zone, title text, content text, view_count bigint, xappid text, xdocstatus text
+
+x_cms_fileinfo  rows=0
+    cols: id character varying, doc_id character varying, file_id character varying, original_name character varying, size bigint, content_type character varying, upload_person character varying, create_time timestamp without time zone, deleted_at timestamp without time zone
+
+x_cms_category  rows=0
+    cols: id character varying, name character varying, parent_id character varying, sort_order integer, status character varying, create_time timestamp without time zone, deleted_at timestamp without time zone
+
+x_general_application_dict  rows=0
+    cols: id character varying, name text, application text, deleted_at timestamp without time zone
+
+x_general_application_dict_item  rows=0
+    cols: id character varying, dict_id text, name text, value text, deleted_at timestamp without time zone
+
+x_jpush_template  rows=1
+    cols: id character varying, name text, title text, content text, deleted_at timestamp without time zone
+
+x_meeting_building  rows=1
+    cols: id character varying, name character varying, address text, description text, order_number integer, create_time timestamp without time zone, pinyin text, pinyin_initial text, deleted_at timestamp without time zone
+
+x_meeting_room  rows=5
+    cols: id character varying, name character varying, building_id character varying, floor character varying, capacity integer, equipment jsonb, description text, photo text, open_meeting boolean, order_number integer, create_time timestamp without time zone, address text, pinyin text, pinyin_initial text, url text, deleted_at timestamp without time zone
+
+auth_person  rows=4
+    cols: id character varying, unique_id character varying, name character varying, mobile character varying, email character varying, password_hash character varying, salt character varying, locked boolean, locked_at timestamp without time zone, failed_attempts integer, last_login_at timestamp without time zone, created_at timestamp without time zone, updated_at timestamp without time zone, deleted_at timestamp without time zone, avatar text, icon text, mpwxopenid character varying, change_password_time timestamp without time zone, password_expired_time timestamp without time zone, job character varying, department character varying, unit character varying, position character varying, count text, exists text, has_group boolean, has_role boolean, icon_url text, is_admin boolean, lang text, theme text, settings text
+
+x_process_task  rows=0
+    cols: id character varying, work_id text, title text, assignee_id text, status text, create_time timestamp without time zone, deleted_at timestamp without time zone
+
+x_program_warn_log  rows=0
+    cols: id text, level text, tag text, logger_name text, message text, detail text, host text, port text, creator_person text, create_time text
+
+x_corr_c_correlation  rows=0
+    cols: id character varying, source_type text, source_id text, target_type text, target_id text, weight integer, create_time timestamp without time zone, deleted_at timestamp without time zone
+
+x_org_bind  rows=0
+    cols: id character varying, identity_id text, group_id text, role text, create_time timestamp without time zone, deleted_at timestamp without time zone
+
+x_org_custom  rows=0
+    cols: id character varying, identity_id text, field_name text, field_value text, deleted_at timestamp without time zone
+
+```
+
+## §B 31 条 NO-OWNER-COL：按当前工作树复核是否已有门禁
+```
+DELETE /api/correlation/core/entity/delete/{id}
+   correlation_core_entity/delete_by_id  marks=[]
+DELETE /api/organization/bind/{id}
+   organization_core_entity/bind_delete  marks=[]
+DELETE /api/organization/custom/{id}
+   organization_core_entity/custom_delete  marks=[]
+GET    /api/attendance/assemble/control/v2/group/{id}
+   attendance_assemble_control/v2_group_get  marks=[]
+GET    /api/attendance/assemble/control/v2/shift/{id}
+   attendance_assemble_control/v2_shift_get  marks=[]
+GET    /api/cms/category/{id}
+   cms_core_entity/category_get  marks=[]
+GET    /api/document/{id}/view/count
+   cms_assemble_control/document_id_view_count  marks=[]
+GET    /api/fileinfo/{id}
+   cms_assemble_control/fileinfo_id  marks=[]
+GET    /api/fileinfo/{id}/online/info
+   cms_assemble_control/fileinfo_id_online_info  marks=[]
+GET    /api/fileinfo/{id}/preview/pdf
+   cms_assemble_control/fileinfo_id_preview_pdf  marks=[]
+GET    /api/general/dict/item/{id}
+   general_core_entity/dict_item_get  marks=[]
+GET    /api/general/dict/{id}
+   general_core_entity/dict_get  marks=[]
+GET    /api/jpush/core/entity/template/{id}
+   jpush_core_entity/template_get  marks=[]
+GET    /api/jpush/template/{id}
+   jpush/template_get  marks=[]
+GET    /api/meeting/assemble/control/building/{id}
+   meeting_assemble_control/building_id  marks=[]
+GET    /api/meeting/assemble/control/room/{id}
+   meeting_assemble_control/room_id  marks=[]
+GET    /api/meeting/core/entity/room/{id}
+   meeting_core_entity/get_room  marks=[]
+GET    /api/organization/assemble/authentication/person/{id}/icon
+   organization_assemble_authentication/person_id_icon  marks=[]
+GET    /api/organization/assemble/personal/{id}/setting
+   organization_assemble_personal/user_setting  marks=[]
+GET    /api/process/task/{id}
+   processplatform_core_entity/task_get  marks=[]
+GET    /api/program_center/warnlog/{id}
+   program_center/warnlog_id  marks=[]
+POST   /api/attendance/core/entity/rule/{id}/update
+   attendance_core_entity/rule_update  marks=['person_unique', 'require_admin']
+     > require_admin(&db.0, &sess.person_unique).await?;
+POST   /api/fileinfo/update/{id}/content
+   cms_assemble_control/fileinfo_update_id_content  marks=[]
+POST   /api/general/dict/delete/{id}
+   general_core_entity/dict_delete  marks=[]
+POST   /api/general/dict/item/delete/{id}
+   general_core_entity/dict_item_delete  marks=[]
+POST   /api/general/dict/item/update/{id}
+   general_core_entity/dict_item_update  marks=[]
+POST   /api/general/dict/update/{id}
+   general_core_entity/dict_update  marks=[]
+POST   /api/meeting/assemble/control/room/{id}/photo
+   meeting_assemble_control/u2_room_set_photo  marks=[]
+POST   /api/organization/assemble/personal/custom/{id}/mockputtopost
+   organization_assemble_personal/custom_mockputtopost  marks=[]
+PUT    /api/organization/bind/{id}
+   organization_core_entity/bind_update  marks=[]
+PUT    /api/organization/custom/{id}
+   organization_core_entity/custom_update  marks=[]
+```
+
+## §C 31 条：当前 SQL 筛选字段 / 权限变量使用
+```
+NO-OWNER-COL count = 31
+====================================================================================================
+DELETE /api/correlation/core/entity/delete/{id}
+  crate=correlation_core_entity fn=delete_by_id table=x_corr_c_correlation status=None verdict=NO-OWNER-COL
+  PERM> require_session(session)?;
+  COLS> id character varying, source_type text, source_id text, target_type text, target_id text, weight integer, create_time timestamp without time zone, deleted_at timestamp without time zone
+  ROWS> 0
+====================================================================================================
+DELETE /api/organization/bind/{id}
+  crate=organization_core_entity fn=bind_delete table=x_org_bind status=None verdict=NO-OWNER-COL
+  PERM> require_session(session)?;
+  COLS> id character varying, identity_id text, group_id text, role text, create_time timestamp without time zone, deleted_at timestamp without time zone
+  ROWS> 0
+====================================================================================================
+DELETE /api/organization/custom/{id}
+  crate=organization_core_entity fn=custom_delete table=x_org_custom status=None verdict=NO-OWNER-COL
+  PERM> require_session(session)?;
+  COLS> id character varying, identity_id text, field_name text, field_value text, deleted_at timestamp without time zone
+  ROWS> 0
+====================================================================================================
+GET    /api/attendance/assemble/control/v2/group/{id}
+  crate=attendance_assemble_control fn=v2_group_get table=x_attendance_v2_group status=None verdict=NO-OWNER-COL
+  SQL> SELECT id, group_name, check_type, top_unit, unit_list, shift_id, status, assist_admin_list, participate_list, work_place_id_list, work_date_list, start_date, end_date, operator, creator_person, create_time, update_time \ FROM x_attendance_v2_group WHERE id = $1
+  COLS> id text, group_name text, check_type text, top_unit text, unit_list text, shift_id text, status integer, assist_admin_list text, participate_list text, work_place_id_list text, work_date_list text, start_date text, end_date text, operator text, creator_person text, create_time text, update_time text
+  ROWS> 1
+====================================================================================================
+GET    /api/attendance/assemble/control/v2/shift/{id}
+  crate=attendance_assemble_control fn=v2_shift_get table=x_attendance_v2_shift status=None verdict=NO-OWNER-COL
+  SQL> SELECT id, shift_name, on_duty_time, off_duty_time, work_time, serial_no, properties_json, operator, create_time, update_time \ FROM x_attendance_v2_shift WHERE id = $1
+  COLS> id text, shift_name text, on_duty_time text, off_duty_time text, work_time integer, serial_no bigint, properties_json text, operator text, creator_person text, create_time text, update_time text
+  ROWS> 0
+====================================================================================================
+GET    /api/cms/category/{id}
+  crate=cms_core_entity fn=category_get table=x_cms_category status=None verdict=NO-OWNER-COL
+  COLS> id character varying, name character varying, parent_id character varying, sort_order integer, status character varying, create_time timestamp without time zone, deleted_at timestamp without time zone
+  ROWS> 0
+====================================================================================================
+GET    /api/document/{id}/view/count
+  crate=cms_assemble_control fn=document_id_view_count table=x_cms_document status=None verdict=NO-OWNER-COL
+  SQL> SELECT 1 FROM x_cms_document WHERE id = $1
+  SQL> SELECT COALESCE(view_count, 0) FROM x_cms_document_view_count WHERE doc_id = $1
+  PERM> require_session(session)?;
+  COLS> id character varying, xid character varying, create_time timestamp with time zone, update_time timestamp with time zone, creator_person character varying, creator_unit character varying, last_update_person character varying, sequence character varying, xcreateTime timestamp with time zone, xupdateTime timestamp with time zone, xowner character varying, deleted_at timestamp without time zone, title text, content text, view_count bigint, xappid text, xdocstatus text
+  ROWS> 0
+====================================================================================================
+GET    /api/fileinfo/{id}
+  crate=cms_assemble_control fn=fileinfo_id table=x_cms_fileinfo status=None verdict=NO-OWNER-COL
+  SQL> SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time::text FROM x_cms_fileinfo WHERE id = $1 AND deleted_at IS NULL
+  COLS> id character varying, doc_id character varying, file_id character varying, original_name character varying, size bigint, content_type character varying, upload_person character varying, create_time timestamp without time zone, deleted_at timestamp without time zone
+  ROWS> 0
+====================================================================================================
+GET    /api/fileinfo/{id}/online/info
+  crate=cms_assemble_control fn=fileinfo_id_online_info table=x_cms_fileinfo status=None verdict=NO-OWNER-COL
+  SQL> SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time::text FROM x_cms_fileinfo WHERE id = $1 AND deleted_at IS NULL
+  COLS> id character varying, doc_id character varying, file_id character varying, original_name character varying, size bigint, content_type character varying, upload_person character varying, create_time timestamp without time zone, deleted_at timestamp without time zone
+  ROWS> 0
+====================================================================================================
+GET    /api/fileinfo/{id}/preview/pdf
+  crate=cms_assemble_control fn=fileinfo_id_preview_pdf table=x_cms_fileinfo status=None verdict=NO-OWNER-COL
+  SQL> SELECT id, doc_id, file_id, original_name, size, content_type FROM x_cms_fileinfo WHERE id = $1 AND deleted_at IS NULL
+  COLS> id character varying, doc_id character varying, file_id character varying, original_name character varying, size bigint, content_type character varying, upload_person character varying, create_time timestamp without time zone, deleted_at timestamp without time zone
+  ROWS> 0
+====================================================================================================
+GET    /api/general/dict/item/{id}
+  crate=general_core_entity fn=dict_item_get table=x_general_application_dict_item status=None verdict=NO-OWNER-COL
+  COLS> id character varying, dict_id text, name text, value text, deleted_at timestamp without time zone
+  ROWS> 0
+====================================================================================================
+GET    /api/general/dict/{id}
+  crate=general_core_entity fn=dict_get table=x_general_application_dict status=None verdict=NO-OWNER-COL
+  COLS> id character varying, name text, application text, deleted_at timestamp without time zone
+  ROWS> 0
+====================================================================================================
+GET    /api/jpush/core/entity/template/{id}
+  crate=jpush_core_entity fn=template_get table=x_jpush_template status=None verdict=NO-OWNER-COL
+  COLS> id character varying, name text, title text, content text, deleted_at timestamp without time zone
+  ROWS> 1
+====================================================================================================
+GET    /api/jpush/template/{id}
+  crate=jpush fn=template_get table=x_jpush_template status=None verdict=NO-OWNER-COL
+  SQL> SELECT id, name, title, content FROM x_jpush_template WHERE id = $1
+  COLS> id character varying, name text, title text, content text, deleted_at timestamp without time zone
+  ROWS> 1
+====================================================================================================
+GET    /api/meeting/assemble/control/building/{id}
+  crate=meeting_assemble_control fn=building_id table=x_meeting_building status=None verdict=NO-OWNER-COL
+  SQL> SELECT id, name, pinyin, pinyin_initial, address, description, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting_building WHERE id = $1
+  COLS> id character varying, name character varying, address text, description text, order_number integer, create_time timestamp without time zone, pinyin text, pinyin_initial text, deleted_at timestamp without time zone
+  ROWS> 1
+====================================================================================================
+GET    /api/meeting/assemble/control/room/{id}
+  crate=meeting_assemble_control fn=room_id table=x_meeting_room status=None verdict=NO-OWNER-COL
+  SQL> SELECT id, name, pinyin, pinyin_initial, address, description, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') AS create_time FROM x_meeting_room WHERE id = $1
+  COLS> id character varying, name character varying, building_id character varying, floor character varying, capacity integer, equipment jsonb, description text, photo text, open_meeting boolean, order_number integer, create_time timestamp without time zone, address text, pinyin text, pinyin_initial text, url text, deleted_at timestamp without time zone
+  ROWS> 5
+====================================================================================================
+GET    /api/meeting/core/entity/room/{id}
+  crate=meeting_core_entity fn=get_room table=x_meeting_room status=None verdict=NO-OWNER-COL
+  COLS> id character varying, name character varying, building_id character varying, floor character varying, capacity integer, equipment jsonb, description text, photo text, open_meeting boolean, order_number integer, create_time timestamp without time zone, address text, pinyin text, pinyin_initial text, url text, deleted_at timestamp without time zone
+  ROWS> 5
+====================================================================================================
+GET    /api/organization/assemble/authentication/person/{id}/icon
+  crate=organization_assemble_authentication fn=person_id_icon table=auth_person status=None verdict=NO-OWNER-COL
+  SQL> SELECT icon_url FROM auth_person WHERE id = $1
+  COLS> id character varying, unique_id character varying, name character varying, mobile character varying, email character varying, password_hash character varying, salt character varying, locked boolean, locked_at timestamp without time zone, failed_attempts integer, last_login_at timestamp without time zone, created_at timestamp without time zone, updated_at timestamp without time zone, deleted_at timestamp without time zone, avatar text, icon text, mpwxopenid character varying, change_password_time timestamp without time zone, password_expired_time timestamp without time zone, job character varying, department character varying, unit character varying, position character varying, count text, exists text, has_group boolean, has_role boolean, icon_url text, is_admin boolean, lang text, theme text, settings text
+  ROWS> 4
+====================================================================================================
+GET    /api/organization/assemble/personal/{id}/setting
+  crate=organization_assemble_personal fn=user_setting table=auth_person status=None verdict=NO-OWNER-COL
+  SQL> SELECT mobile, email, icon, theme, lang FROM auth_person WHERE id = $1 LIMIT 1
+  COLS> id character varying, unique_id character varying, name character varying, mobile character varying, email character varying, password_hash character varying, salt character varying, locked boolean, locked_at timestamp without time zone, failed_attempts integer, last_login_at timestamp without time zone, created_at timestamp without time zone, updated_at timestamp without time zone, deleted_at timestamp without time zone, avatar text, icon text, mpwxopenid character varying, change_password_time timestamp without time zone, password_expired_time timestamp without time zone, job character varying, department character varying, unit character varying, position character varying, count text, exists text, has_group boolean, has_role boolean, icon_url text, is_admin boolean, lang text, theme text, settings text
+  ROWS> 4
+====================================================================================================
+GET    /api/process/task/{id}
+  crate=processplatform_core_entity fn=task_get table=x_process_task status=None verdict=NO-OWNER-COL
+  COLS> id character varying, work_id text, title text, assignee_id text, status text, create_time timestamp without time zone, deleted_at timestamp without time zone
+  ROWS> 0
+====================================================================================================
+GET    /api/program_center/warnlog/{id}
+  crate=program_center fn=warnlog_id table=x_program_warn_log status=None verdict=NO-OWNER-COL
+  SQL> SELECT id, level, tag, logger_name, message, detail, host, port, create_time FROM x_program_warn_log WHERE id = $1
+  COLS> id text, level text, tag text, logger_name text, message text, detail text, host text, port text, creator_person text, create_time text
+  ROWS> 0
+====================================================================================================
+POST   /api/attendance/core/entity/rule/{id}/update
+  crate=attendance_core_entity fn=rule_update table=x_attendance_rule status=None verdict=NO-OWNER-COL
+  PERM> require_session(session)?;
+  COLS> id character varying, name text, start_time text, end_time text, create_time text, update_time text, deleted_at timestamp without time zone
+  ROWS> 0
+====================================================================================================
+POST   /api/fileinfo/update/{id}/content
+  crate=cms_assemble_control fn=fileinfo_update_id_content table=x_cms_fileinfo status=None verdict=NO-OWNER-COL
+  SQL> UPDATE x_cms_fileinfo SET original_name = $1, size = $2, content_type = $3 WHERE id = $4 RETURNING *
+  PERM> require_session(session)?;
+  COLS> id character varying, doc_id character varying, file_id character varying, original_name character varying, size bigint, content_type character varying, upload_person character varying, create_time timestamp without time zone, deleted_at timestamp without time zone
+  ROWS> 0
+====================================================================================================
+POST   /api/general/dict/delete/{id}
+  crate=general_core_entity fn=dict_delete table=x_general_application_dict status=None verdict=NO-OWNER-COL
+  PERM> require_session(session)?;
+  COLS> id character varying, name text, application text, deleted_at timestamp without time zone
+  ROWS> 0
+====================================================================================================
+POST   /api/general/dict/item/delete/{id}
+  crate=general_core_entity fn=dict_item_delete table=x_general_application_dict_item status=None verdict=NO-OWNER-COL
+  PERM> require_session(session)?;
+  COLS> id character varying, dict_id text, name text, value text, deleted_at timestamp without time zone
+  ROWS> 0
+====================================================================================================
+POST   /api/general/dict/item/update/{id}
+  crate=general_core_entity fn=dict_item_update table=x_general_application_dict_item status=None verdict=NO-OWNER-COL
+  PERM> require_session(session)?;
+  COLS> id character varying, dict_id text, name text, value text, deleted_at timestamp without time zone
+  ROWS> 0
+====================================================================================================
+POST   /api/general/dict/update/{id}
+  crate=general_core_entity fn=dict_update table=x_general_application_dict status=None verdict=NO-OWNER-COL
+  PERM> require_session(session)?;
+  COLS> id character varying, name text, application text, deleted_at timestamp without time zone
+  ROWS> 0
+====================================================================================================
+POST   /api/meeting/assemble/control/room/{id}/photo
+  crate=meeting_assemble_control fn=u2_room_set_photo table=x_meeting_room status=None verdict=NO-OWNER-COL
+  SQL> SELECT id FROM x_meeting_room WHERE id = $1
+  SQL> INSERT INTO x_meeting_room_photo (id, room_id, photo_name, photo_url, create_time) \ VALUES ($1, $2, $3, $4, NOW())
+  SQL> room photo insert failed
+  PERM> require_session(session)?;
+  COLS> id character varying, name character varying, building_id character varying, floor character varying, capacity integer, equipment jsonb, description text, photo text, open_meeting boolean, order_number integer, create_time timestamp without time zone, address text, pinyin text, pinyin_initial text, url text, deleted_at timestamp without time zone
+  ROWS> 5
+====================================================================================================
+POST   /api/organization/assemble/personal/custom/{id}/mockputtopost
+  crate=organization_assemble_personal fn=custom_mockputtopost table=x_org_custom status=None verdict=NO-OWNER-COL
+  SQL> UPDATE x_org_custom SET field_value = $2 WHERE id = $1 AND deleted_at IS NULL
+  PERM> require_session(session)?;
+  COLS> id character varying, identity_id text, field_name text, field_value text, deleted_at timestamp without time zone
+  ROWS> 0
+====================================================================================================
+PUT    /api/organization/bind/{id}
+  crate=organization_core_entity fn=bind_update table=x_org_bind status=None verdict=NO-OWNER-COL
+  PERM> require_session(session)?;
+  COLS> id character varying, identity_id text, group_id text, role text, create_time timestamp without time zone, deleted_at timestamp without time zone
+  ROWS> 0
+====================================================================================================
+PUT    /api/organization/custom/{id}
+  crate=organization_core_entity fn=custom_update table=x_org_custom status=None verdict=NO-OWNER-COL
+  PERM> require_session(session)?;
+  COLS> id character varying, identity_id text, field_name text, field_value text, deleted_at timestamp without time zone
+  ROWS> 0
+```
+
+## §D 54 条路由候选判据表（权限信号 + 拒绝 + 条件 + 响应）
+```
+ 1. attendance_assemble_control/v2_leave_list_page_size  :5865  vars=['admin']
+    [COND] let filter_person = if admin {
+ 2. attendance_assemble_control/v2_leave_import  :5964  vars=['admin']
+    [COND] if !admin && person != session.person_unique {
+    [HARD] return Err(AppError::Forbidden);
+ 3. attendance_assemble_control/v2_appeal_list_page_size  :7288  vars=['admin']
+    [COND] let filter_user = if admin {
+ 4. attendance_assemble_control/v2_my_controls  :8556  vars=['admin']
+    [COND] WHERE (',' || COALESCE(assist_admin_list, '') || ',') LIKE ('%,' || $1 || ',%') LIMIT 1",
+ 5. auth/login  :200  vars=[]
+    [HARD] .map_err(|_| AppError::Unauthorized)?;
+ 6. bbs_assemble_control/get_control_config  :171  vars=['row']
+    [RESP] row.get::<_, Option<bool>>("allow_anonymous")
+ 7. bbs_assemble_control/update_control_config  :345  vars=['allow_anonymous', 'rows_affected']
+    [HARD] return Err(AppError::Unauthorized);
+    [HARD] return Err(AppError::Forbidden);
+    [RESP] let allow_anonymous = body
+    [COND] "UPDATE x_bbs_assemble_control_config SET enabled = $1, max_forum_count = $2, allow_anonymous = $3 WHERE id = (SELECT id FROM x_bbs_assemble_control_c
+    [RESP] &[&enabled, &max_forum_count, &allow_anonymous],
+ 8. bbs_assemble_control/login  :1275  vars=[]
+ 9. bbs_assemble_control/user_info  :1856  vars=[]
+10. calendar_assemble_control/update_control_config  :106  vars=['allow_sharing', 'config_value']
+    [HARD] None => return Err(AppError::Unauthorized),
+    [HARD] return Err(AppError::Forbidden)
+    [RESP] let allow_sharing = config
+    [RESP] let config_value = serde_json::json!({
+    [RESP] "allowSharing": allow_sharing,
+    [COND] "UPDATE cal_control_config SET config_value = $1, update_time = NOW()::text WHERE config_key = $2",
+11. cms_assemble_control/get_control_config  :77  vars=['rows']
+    [COND] let data = if let Some(row) = rows.first() {
+12. cms_assemble_control/update_control_config  :169  vars=['allow_anonymous']
+    [HARD] u2_require_admin(&pool, &session).await?;
+    [RESP] let allow_anonymous = body
+    [COND] "UPDATE x_cms_assemble_control_config SET enabled = $1, max_category_count = $2, allow_anonymous = $3 WHERE id = (SELECT id FROM x_cms_assemble_contro
+    [RESP] &[&enabled, &max_category_count, &allow_anonymous],
+13. cms_assemble_control/permission_management_refresh_all  :5991  vars=['affected']
+    [HARD] u2_require_admin(&pool, &session).await?;
+    [RESP] Value::Number(serde_json::Number::from(affected as i64)),
+    [HARD] u2_require_admin(&pool, &session).await?;
+    [RESP] Value::Number(serde_json::Number::from(affected as i64)),
+14. cms_assemble_control/permission_management_refresh_category_categoryId  :6014  vars=['affected']
+    [HARD] u2_require_admin(&pool, &session).await?;
+    [RESP] Value::Number(serde_json::Number::from(affected as i64)),
+15. cms_assemble_control/document_cipher_permission_read_u3  :11034  vars=['readable']
+    [RESP] let readable = shared::middleware::is_admin(&pool, &person).await
+    [RESP] ("readable".to_string(), Value::Bool(readable)),
+16. cms_assemble_control/document_control_u3  :11144  vars=['admin']
+    [RESP] let allow_manage = admin || creator == session.person_unique;
+    [COND] Value::String(if admin { "admin".to_string() } else { creator }),
+    [HARD] U2Gate::Forbidden => Err(AppError::Forbidden),
+17. cms_assemble_control/document_permission_read_u3  :11210  vars=['admin']
+    [RESP] let readable = admin
+18. cms_assemble_control/document_persons_u3  :11245  vars=['rows']
+    [HARD] U2Gate::Forbidden => Err(AppError::Forbidden),
+19. cms_control/get_control_config  :18  vars=['row']
+    [RESP] row.get::<_, Option<bool>>("allow_anonymous")
+20. component_assemble_control/get_control_config  :34  vars=['row']
+    [COND] let (enabled, max_component_count, allow_custom_components) = match row {
+21. component_assemble_control/update_control_config  :126  vars=['allow_custom_components', 'config_value', 'result']
+    [HARD] require_admin(&pool, &session).await?;
+    [RESP] let allow_custom_components = config
+    [RESP] let config_value = serde_json::json!({
+    [RESP] "allowCustomComponents": allow_custom_components,
+    [RESP] "INSERT INTO x_component_assemble_control_config (id, enabled, max_component_count, allow_custom_components) \
+    [RESP] ON CONFLICT (id) DO UPDATE SET enabled = $2, max_component_count = $3, allow_custom_components = $4",
+    [RESP] &[&"default", &enabled, &max_component_count, &allow_custom_components],
+22. empower/create  :83  vars=[]
+23. empower/update  :174  vars=[]
+    [HARD] check_owner(&pool, &session_manager, &headers, &from_person).await?;
+24. empower/manager_create  :342  vars=[]
+    [SOFT] return Ok(Json(ActionResult::error("forbidden: admin required")));
+25. empower/manager_update  :397  vars=[]
+    [SOFT] return Ok(Json(ActionResult::error("forbidden: admin required")));
+    [SOFT] return Ok(Json(ActionResult::error("forbidden: admin required")));
+26. file/permission_set  :763  vars=['permissions', 'permissions_str']
+    [HARD] require_admin(&pool.0, session).await?;
+    [RESP] let permissions: Option<Value> = body.get("permissions").cloned();
+    [RESP] let permissions_str = permissions
+    [RESP] "INSERT INTO FILE_PERMISSION (id, target_type, target_id, permissions, create_time) \
+    [RESP] ON CONFLICT (target_type, target_id) DO UPDATE SET permissions = $4, update_time = NOW()",
+    [RESP] &[&id, &target_type, &target_id, &permissions_str],
+    [RESP] "permissions".to_string(),
+    [RESP] permissions.unwrap_or(Value::Object(serde_json::Map::new())),
+27. file_assemble_control/file_list_referencetype_referenceType_reference_reference  :2977  vars=['admin']
+    [COND] if !admin {
+28. file_assemble_control/file_list_id_next_count  :3108  vars=['admin']
+    [COND] if !admin {
+29. file_assemble_control/file_list_id_next_count_referencetype_referenceType  :3180  vars=['admin']
+    [COND] if !admin {
+30. file_assemble_control/file_list_id_prev_count  :3247  vars=['admin']
+    [COND] if !admin {
+31. file_assemble_control/file_list_id_prev_count_referencetype_referenceType  :3319  vars=['admin']
+    [COND] if !admin {
+32. general_assemble_control/get_general_control_status  :80  vars=['row']
+    [COND] let data = match row {
+33. general_assemble_control/general_control_list  :138  vars=['rows']
+34. general_assemble_control/update_general_control_status  :271  vars=['allow_registration', 'result']
+    [HARD] require_admin(&pool, &session).await?;
+    [RESP] let allow_registration: bool = payload
+    [COND] "UPDATE x_general_assemble_control_config SET maintenance_mode = $1::bool::text, allow_registration = $2::bool::text WHERE id = 'global'",
+    [RESP] &[&maintenance_mode, &allow_registration],
+    [RESP] Value::Bool(allow_registration),
+35. general_assemble_control/get_module_permissions  :313  vars=['rows']
+36. organization_assemble_control/permissionsetting_list  :1885  vars=['rows']
+37. organization_assemble_control/permissionsetting_flag  :1927  vars=['row']
+    [COND] match row {
+    [HARD] crate::u2_helpers::require_admin(&pool, &session).await?;
+    [COND] if let Some(row) = row {
+38. organization_assemble_control/permissionsetting_flag_mockdeletetoget  :1972  vars=['row']
+    [HARD] crate::u2_helpers::require_admin(&pool, &session).await?;
+    [COND] if let Some(row) = row {
+    [COND] match row {
+39. organization_assemble_control/permissionsetting_flag_mockputtopost  :2015  vars=['row']
+    [COND] match row {
+    [COND] match row {
+40. organization_assemble_express/person_has_role  :419  vars=[]
+41. organization_assemble_express/role_list_person_object  :43  vars=[]
+42. organization_assemble_express/group_has_role  :47  vars=[]
+43. organization_assemble_express/role_list_person  :508  vars=[]
+44. organization_assemble_express/person_list_role_object  :460  vars=[]
+45. portal_assemble_designer/portal_id_permission  :2395  vars=['result', 'row']
+    [COND] match row {
+    [RESP] let result = Value::Object(serde_json::Map::from_iter([
+    [RESP] row.get::<_, Option<String>>("permission")
+    [RESP] Ok(Json(ActionResult::success(result)))
+46. portal_assemble_designer/portal_id_permission_post  :3259  vars=['result']
+    [HARD] crate::require_admin(&pool, &session).await?;
+    [COND] if result == 0 {
+    [HARD] crate::require_admin(&pool, &session).await?;
+47. processplatform_assemble_designer/process_upgrade_all  :2468  vars=['is_manager']
+    [COND] if is_manager {
+    [RESP] serde_json::Map::from_iter([("value".to_string(), Value::Bool(is_manager))]),
+48. processplatform_assemble_surface/review_u2_v2_search  :27905  vars=['admin']
+    [COND] let person = if admin {
+49. query_assemble_designer/importmodel_id_permission  :1220  vars=['row']
+    [COND] match row {
+    [RESP] Some(row) => Ok(Json(ActionResult::success(Value::Object(
+    [RESP] row.get::<_, Option<String>>("permission")
+    [COND] match row {
+50. query_assemble_designer/query_id_permission  :2384  vars=['row']
+    [COND] match row {
+    [RESP] Some(row) => Ok(Json(ActionResult::success(Value::Object(
+    [RESP] row.get::<_, Option<String>>("permission")
+51. query_assemble_designer/stat_id_permission  :2684  vars=['row']
+    [COND] match row {
+    [RESP] Some(row) => Ok(Json(ActionResult::success(Value::Object(
+    [RESP] row.get::<_, Option<String>>("permission")
+    [COND] match row {
+52. query_assemble_designer/table_id_permission  :3398  vars=['row']
+    [COND] match row {
+    [RESP] Some(row) => Ok(Json(ActionResult::success(Value::Object(
+    [RESP] row.get::<_, Option<String>>("permission")
+53. query_assemble_designer/view_id_permission  :3931  vars=['row']
+    [COND] match row {
+    [RESP] Some(row) => Ok(Json(ActionResult::success(Value::Object(
+    [RESP] row.get::<_, Option<String>>("permission")
+    [COND] match row {
+54. shared/person_has_role  :103  vars=[]
+```
+
+## §E 探测器 B：接收 Session 但从不引用
+```
+total fn with Session sig = 1624
+never-use-session = 14  (routed=1)
+ROUTE    mcp_server\src\tool_bridge.rs:new  body=517
+        sig: (pool: Pool, session_manager: SessionManager)
+internal auth\src\mpweixin.rs:mpweixin_login_or_create  body=1321
+        sig: (     pool: &Pool,     session_manager: &SessionManager,     openid: &str, )
+internal auth\src\oauth.rs:login_or_create_user  body=1348
+        sig: (     pool: &Pool,     session_manager: &SessionManager,     unique_id: String, )
+internal auth\src\qiyeweixin.rs:create_session  body=119
+        sig: (     token: &str,     person_unique: &str,     session_manager: &SessionManager, )
+internal auth\src\sso.rs:create_sso_session  body=825
+        sig: (     pool: &Pool,     session_manager: &SessionManager,     credential: &str, )
+internal empower\src\lib.rs:check_owner  body=307
+        sig: (     pool: &Pool,     session_manager: &SessionManager,     headers: &HeaderMap,     owner_id: &str, )
+internal empower\src\lib.rs:resolve_current_person_unique  body=267
+        sig: (     session_manager: &SessionManager,     headers: &HeaderMap, )
+internal mcp_server\src\tool_bridge.rs:build_core_router  body=5402
+        sig: (pool: Pool, session_manager: SessionManager)
+internal personal\src\lib.rs:resolve_current_person_unique  body=267
+        sig: (     session_manager: &SessionManager,     headers: &HeaderMap, )
+internal personal\src\u2.rs:require_admin  body=184
+        sig: (     pool: &Pool,     session_manager: &SessionManager,     headers: &HeaderMap, )
+internal program_center_core_entity\src\handlers\agent.rs:agent_create  body=1311
+        sig: (     db: Extension<DatabaseConnection>,     Extension(_session): Extension<Session>,     Json(req): Json<AgentCreateRequest>, )
+internal program_center_core_entity\src\handlers\structure.rs:structure_create  body=1616
+        sig: (     db: Extension<DatabaseConnection>,     Extension(_session): Extension<Session>,     Json(req): Json<StructureCreateRequest>, )
+internal shared\src\session.rs:count  body=49
+        sig: (manager: &SessionManager)
+internal shared\src\tests.rs:make_token  body=211
+        sig: (sm: &SessionManager, person: &str)
+```
+
+## §F 探测器 C：有权限调用 + 有写操作 + 无拒绝/无条件
+```
+fn with perm call = 647
+suspect = 41
+  attendance_assemble_control\src\lib.rs:detail_person_scope [COND-NO-DENY]  body_lines=6
+  attendance_assemble_control\src\lib.rs:attendanceadmin_create [COND-NO-DENY]  body_lines=37
+  attendance_assemble_control\src\lib.rs:v2_leave_list_page_size [COND-NO-DENY]  body_lines=88
+  attendance_assemble_control\src\lib.rs:v2_appeal_list_page_size [COND-NO-DENY]  body_lines=51
+  attendance_assemble_control\src\lib.rs:v2_group_rebuild_detail_group_date  body_lines=96
+  auth\src\check_token.rs:check_token [COND-NO-DENY]  body_lines=25
+  auth\src\mpweixin.rs:mpweixin_test_send [COND-NO-DENY]  body_lines=77
+  auth\src\switch_user.rs:switch_user [COND-NO-DENY]  body_lines=79
+  bbs_assemble_control\src\u2.rs:u2_gate_by_sql [COND-NO-DENY]  body_lines=19
+  cms_assemble_control\src\lib.rs:gate_appdict_writer [COND-NO-DENY]  body_lines=22
+  cms_assemble_control\src\lib.rs:u2_gate_by_sql [COND-NO-DENY]  body_lines=19
+  cms_assemble_control\src\lib.rs:document_control_u3 [COND-NO-DENY]  body_lines=28
+  cms_core_entity\src\lib.rs:category_create  body_lines=48
+  cms_core_entity\src\lib.rs:article_create  body_lines=52
+  correlation_service_processing\src\lib.rs:require_admin [COND-NO-DENY]  body_lines=6
+  empower\src\lib.rs:manager_create [COND-NO-DENY]  body_lines=45
+  empower\src\lib.rs:manager_update [COND-NO-DENY]  body_lines=40
+  empower\src\lib.rs:manager_delete [COND-NO-DENY]  body_lines=24
+  empower\src\lib.rs:manager_list_paging [COND-NO-DENY]  body_lines=43
+  file_assemble_control\src\lib.rs:attachment2_list_type_page_size_size [COND-NO-DENY]  body_lines=70
+  file_assemble_control\src\lib.rs:file_list_referencetype_referenceType_reference_reference [COND-NO-DENY]  body_lines=69
+  file_assemble_control\src\lib.rs:file_list_id_next_count [COND-NO-DENY]  body_lines=54
+  file_assemble_control\src\lib.rs:file_list_id_next_count_referencetype_referenceType [COND-NO-DENY]  body_lines=55
+  file_assemble_control\src\lib.rs:file_list_id_prev_count [COND-NO-DENY]  body_lines=54
+  file_assemble_control\src\lib.rs:file_list_id_prev_count_referencetype_referenceType [COND-NO-DENY]  body_lines=55
+  meeting_core_entity\src\lib.rs:create_room  body_lines=79
+  organization_assemble_control\src\u2_misc.rs:input_person_import  body_lines=81
+  personal\src\u2.rs:log_paging [COND-NO-DENY]  body_lines=84
+  portal_assemble_designer\src\lib.rs:require_admin [COND-NO-DENY]  body_lines=6
+  portal_core_entity\src\lib.rs:page_create  body_lines=45
+  processplatform_assemble_designer\src\lib.rs:process_upgrade_all [COND-NO-DENY]  body_lines=16
+  processplatform_assemble_surface\src\lib.rs:u2_gate_by_sql [COND-NO-DENY]  body_lines=20
+  processplatform_assemble_surface\src\lib.rs:review_u2_v2_search [COND-NO-DENY]  body_lines=67
+  process_designer\src\lib.rs:application_update  body_lines=56
+  program_center\src\lib.rs:u2_invoke_create  body_lines=89
+  program_center_core_entity\src\handlers\agent.rs:agent_update [COND-NO-DENY]  body_lines=64
+  program_center_core_entity\src\handlers\agent.rs:agent_delete [COND-NO-DENY]  body_lines=19
+  program_center_core_entity\src\handlers\structure.rs:structure_update [COND-NO-DENY]  body_lines=71
+  program_center_core_entity\src\handlers\structure.rs:structure_delete [COND-NO-DENY]  body_lines=19
+  query_assemble_designer\src\lib.rs:require_row_owner [COND-NO-DENY]  body_lines=18
+  shared\src\middleware\rbac.rs:check_permission [COND-NO-DENY]  body_lines=54
+```
+
+## §G 关键源码摘录
+```
+
+--- cms_assemble_control/src/lib.rs:11034-11095 cipher permission read（丢弃 session） ---
+  11034| pub async fn document_cipher_permission_read_u3(
+  11035|     pool: Extension<Pool>,
+  11036|     session: Extension<shared::session::Session>,
+  11037|     axum::extract::Path((id, person)): axum::extract::Path<(String, String)>,
+  11038| ) -> Result<Json<ActionResult<Value>>, AppError> {
+  11039|     let client = shared::db::acquire(&pool).await?;
+  11040|     let doc = client
+  11041|         .query_opt(
+  11042|             "SELECT creator, author_id, status FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL",
+  11043|             &[&id],
+  11044|         )
+  11045|         .await
+  11046|         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+  11047|     let doc = match doc {
+  11048|         Some(d) => d,
+  11049|         None => return Ok(Json(ActionResult::error("document not found"))),
+  11050|     };
+  11051|     let creator: String = doc.get::<_, Option<String>>("creator").unwrap_or_default();
+  11052|     let status: String = doc.get::<_, Option<String>>("status").unwrap_or_default();
+  11053|     let readable = shared::middleware::is_admin(&pool, &person).await
+  11054|         || person == creator
+  11055|         || person
+  11056|             == doc
+  11057|                 .get::<_, Option<String>>("author_id")
+  11058|                 .unwrap_or_default()
+  11059|         || status == "published";
+  11060|     let _ = &session;
+  11061|     Ok(Json(ActionResult::success(Value::Object(
+  11062|         serde_json::Map::from_iter([
+  11063|             ("id".to_string(), Value::String(id)),
+  11064|             ("person".to_string(), Value::String(person)),
+  11065|             ("readable".to_string(), Value::Bool(readable)),
+  11066|         ]),
+  11067|     ))))
+  11068| }
+  11069| 
+  11070| #[axum::debug_handler]
+  11071| #[allow(non_snake_case)]
+  11072| pub async fn document_draft_next_u3(
+  11073|     pool: Extension<Pool>,
+  11074| ) -> Result<Json<ActionResult<Value>>, AppError> {
+  11075|     list_from_table_filtered_legacy(
+  11076|         &pool,
+  11077|         "x_cms_data_document",
+  11078|         "deleted_at IS NULL AND status = 'draft'",
+  11079|         &[],
+  11080|     )
+  11081|     .await
+  11082| }
+  11083| 
+  11084| #[axum::debug_handler]
+  11085| #[allow(non_snake_case)]
+  11086| pub async fn document_filter_next_u3(
+  11087|     pool: Extension<Pool>,
+  11088| ) -> Result<Json<ActionResult<Value>>, AppError> {
+  11089|     list_from_table_filtered_legacy(
+  11090|         &pool,
+  11091|         "x_cms_data_document",
+  11092|         "deleted_at IS NULL ORDER BY id DESC LIMIT 200",
+  11093|         &[],
+  11094|     )
+  11095|     .await
+--- cms_assemble_control/src/lib.rs:11144-11205 document_control_u3（allowRead 恒 true） ---
+  11144| pub async fn document_control_u3(
+  11145|     pool: Extension<Pool>,
+  11146|     session: Extension<shared::session::Session>,
+  11147|     axum::extract::Path(id): axum::extract::Path<String>,
+  11148| ) -> Result<Json<ActionResult<Value>>, AppError> {
+  11149|     let client = shared::db::acquire(&pool).await?;
+  11150|     let row = client
+  11151|         .query_opt(
+  11152|             "SELECT creator, status FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL",
+  11153|             &[&id],
+  11154|         )
+  11155|         .await
+  11156|         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+  11157|     let row = match row {
+  11158|         Some(r) => r,
+  11159|         None => return Ok(Json(ActionResult::error("document not found"))),
+  11160|     };
+  11161|     let creator: String = row.get::<_, Option<String>>("creator").unwrap_or_default();
+  11162|     let admin = shared::middleware::is_admin(&pool, &session.person_unique).await;
+  11163|     let allow_manage = admin || creator == session.person_unique;
+  11164|     Ok(Json(ActionResult::success(Value::Object(
+  11165|         serde_json::Map::from_iter([
+  11166|             ("id".to_string(), Value::String(id)),
+  11167|             ("allowRead".to_string(), Value::Bool(true)),
+  11168|             ("allowEdit".to_string(), Value::Bool(allow_manage)),
+  11169|             ("allowManage".to_string(), Value::Bool(allow_manage)),
+  11170|             (
+  11171|                 "controller".to_string(),
+  11172|                 Value::String(if admin { "admin".to_string() } else { creator }),
+  11173|             ),
+  11174|         ]),
+  11175|     ))))
+  11176| }
+  11177| 
+  11178| #[axum::debug_handler]
+  11179| #[allow(non_snake_case)]
+  11180| pub async fn document_notify_u3(
+  11181|     pool: Extension<Pool>,
+  11182|     session: Extension<shared::session::Session>,
+  11183|     axum::extract::Path(id): axum::extract::Path<String>,
+  11184| ) -> Result<Json<ActionResult<Value>>, AppError> {
+  11185|     match u3_gate_document(&pool, &session, &id).await? {
+  11186|         U2Gate::NotFound => Ok(Json(ActionResult::error("document not found"))),
+  11187|         U2Gate::Forbidden => Err(AppError::Forbidden),
+  11188|         U2Gate::Allowed => {
+  11189|             let client = shared::db::acquire(&pool).await?;
+  11190|             client
+  11191|                 .execute(
+  11192|                     "INSERT INTO x_cms_log (id, doc_id, person_id, operation_level, operation_type, operation_detail) \
+  11193|                      VALUES (gen_random_uuid()::text, $1, $2, 'info', 'notify', 'publish notify')",
+  11194|                     &[&id, &session.person_unique],
+  11195|                 )
+  11196|                 .await
+  11197|                 .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+  11198|             Ok(Json(ActionResult::success(Value::Object(
+  11199|                 serde_json::Map::from_iter([
+  11200|                     ("id".to_string(), Value::String(id)),
+  11201|                     ("notified".to_string(), Value::Bool(true)),
+  11202|                 ]),
+  11203|             ))))
+  11204|         }
+  11205|     }
+--- cms_assemble_control/src/lib.rs:11210-11244 document_permission_read_u3 ---
+  11210| pub async fn document_permission_read_u3(
+  11211|     pool: Extension<Pool>,
+  11212|     session: Extension<shared::session::Session>,
+  11213|     axum::extract::Path(id): axum::extract::Path<String>,
+  11214| ) -> Result<Json<ActionResult<Value>>, AppError> {
+  11215|     let client = shared::db::acquire(&pool).await?;
+  11216|     let row = client
+  11217|         .query_opt(
+  11218|             "SELECT creator, author_id, status FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL",
+  11219|             &[&id],
+  11220|         )
+  11221|         .await
+  11222|         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+  11223|     let row = match row {
+  11224|         Some(r) => r,
+  11225|         None => return Ok(Json(ActionResult::error("document not found"))),
+  11226|     };
+  11227|     let admin = shared::middleware::is_admin(&pool, &session.person_unique).await;
+  11228|     let readable = admin
+  11229|         || row.get::<_, Option<String>>("creator").unwrap_or_default() == session.person_unique
+  11230|         || row
+  11231|             .get::<_, Option<String>>("author_id")
+  11232|             .unwrap_or_default()
+  11233|             == session.person_unique
+  11234|         || row.get::<_, Option<String>>("status").unwrap_or_default() == "published";
+  11235|     Ok(Json(ActionResult::success(Value::Object(
+  11236|         serde_json::Map::from_iter([
+  11237|             ("id".to_string(), Value::String(id)),
+  11238|             ("readable".to_string(), Value::Bool(readable)),
+  11239|         ]),
+  11240|     ))))
+  11241| }
+  11242| 
+  11243| #[axum::debug_handler]
+  11244| #[allow(non_snake_case)]
+--- cms_assemble_control/src/lib.rs:11245-11300 document_persons_u3（无门读 ACL） ---
+  11245| pub async fn document_persons_u3(
+  11246|     pool: Extension<Pool>,
+  11247|     axum::extract::Path(id): axum::extract::Path<String>,
+  11248| ) -> Result<Json<ActionResult<Value>>, AppError> {
+  11249|     let client = shared::db::acquire(&pool).await?;
+  11250|     let doc = client
+  11251|         .query_opt(
+  11252|             "SELECT app_id, category_id, creator FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL",
+  11253|             &[&id],
+  11254|         )
+  11255|         .await
+  11256|         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+  11257|     let doc = match doc {
+  11258|         Some(d) => d,
+  11259|         None => return Ok(Json(ActionResult::error("document not found"))),
+  11260|     };
+  11261|     let app_id: String = doc.get::<_, Option<String>>("app_id").unwrap_or_default();
+  11262|     let category_id: String = doc
+  11263|         .get::<_, Option<String>>("category_id")
+  11264|         .unwrap_or_default();
+  11265|     let rows = client
+  11266|         .query(
+  11267|             "SELECT DISTINCT person_id FROM x_cms_permission \
+  11268|              WHERE deleted_at IS NULL AND person_id IS NOT NULL \
+  11269|                AND ((app_id <> '' AND app_id = $1) OR (category_id <> '' AND category_id = $2)) \
+  11270|              UNION \
+  11271|              SELECT creator FROM x_cms_data_document WHERE id = $3 AND creator IS NOT NULL",
+  11272|             &[&app_id, &category_id, &id],
+  11273|         )
+  11274|         .await
+  11275|         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+  11276|     let persons: Vec<Value> = rows
+  11277|         .iter()
+  11278|         .filter_map(|r| r.try_get::<_, Option<String>>(0).ok().flatten())
+  11279|         .map(Value::String)
+  11280|         .collect();
+  11281|     Ok(Json(ActionResult::success(Value::Object(
+  11282|         serde_json::Map::from_iter([
+  11283|             ("id".to_string(), Value::String(id)),
+  11284|             (
+  11285|                 "count".to_string(),
+  11286|                 Value::Number(serde_json::Number::from(persons.len() as i64)),
+  11287|             ),
+  11288|             ("persons".to_string(), Value::Array(persons)),
+  11289|         ]),
+  11290|     ))))
+  11291| }
+  11292| 
+  11293| #[axum::debug_handler]
+  11294| #[allow(non_snake_case)]
+  11295| pub async fn document_publish_html_u3(
+  11296|     pool: Extension<Pool>,
+  11297|     session: Extension<shared::session::Session>,
+  11298|     axum::extract::Path(id): axum::extract::Path<String>,
+  11299| ) -> Result<Json<ActionResult<Value>>, AppError> {
+  11300|     match u3_gate_document(&pool, &session, &id).await? {
+--- empower/src/lib.rs:342-372 manager_create（200 软门） ---
+    342| pub async fn manager_create(
+    343|     pool: Extension<Pool>,
+    344|     session_manager: Extension<SessionManager>,
+    345|     headers: HeaderMap,
+    346|     Json(req): Json<EmpowerCreateRequest>,
+    347| ) -> Result<Json<ActionResult<EmpowerInfo>>, AppError> {
+    348|     let current_person = resolve_current_person_unique(&session_manager, &headers).await?;
+    349| 
+    350|     if !shared::middleware::is_admin(&pool, &current_person).await {
+    351|         return Ok(Json(ActionResult::error("forbidden: admin required")));
+    352|     }
+    353| 
+    354|     if req.to_person.is_empty() {
+    355|         return Ok(Json(ActionResult::error("to_person is required")));
+    356|     }
+    357| 
+    358|     let client = shared::db::acquire(&pool).await?;
+    359| 
+    360|     let to_exists = client
+    361|         .query_opt(
+    362|             "SELECT id FROM auth_person WHERE id = $1 AND locked = false AND deleted_at IS NULL",
+    363|             &[&req.to_person],
+    364|         )
+    365|         .await
+    366|         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+    367|     if to_exists.is_none() {
+    368|         return Ok(Json(ActionResult::error("to_person not found")));
+    369|     }
+    370| 
+    371|     let id = uuid::Uuid::new_v4().to_string();
+    372|     let role_id = req.role_id.clone();
+--- empower/src/lib.rs:397-425 manager_update（200 软门） ---
+    397| pub async fn manager_update(
+    398|     pool: Extension<Pool>,
+    399|     session_manager: Extension<SessionManager>,
+    400|     headers: HeaderMap,
+    401|     Path(id): Path<String>,
+    402|     Json(req): Json<EmpowerUpdateRequest>,
+    403| ) -> Result<Json<ActionResult<EmpowerInfo>>, AppError> {
+    404|     let current_person = resolve_current_person_unique(&session_manager, &headers).await?;
+    405| 
+    406|     if !shared::middleware::is_admin(&pool, &current_person).await {
+    407|         return Ok(Json(ActionResult::error("forbidden: admin required")));
+    408|     }
+    409| 
+    410|     let client = shared::db::acquire(&pool).await?;
+    411| 
+    412|     let row = client
+    413|         .query_opt(
+    414|             "SELECT id, from_person, to_person, role_id, enabled FROM x_empower \
+    415|              WHERE id = $1 AND deleted_at IS NULL",
+    416|             &[&id],
+    417|         )
+    418|         .await
+    419|         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+    420|         .ok_or(AppError::NotFound)?;
+    421| 
+    422|     let from_person: String = row.get("from_person");
+    423|     let new_role_id = req.role_id.or_else(|| row.get("role_id"));
+    424|     let new_enabled = req.enabled.unwrap_or(row.get("enabled"));
+    425| 
+--- processplatform_assemble_designer/src/lib.rs:2468-2505 process_upgrade_all（is_manager 条件写） ---
+   2468| pub async fn process_upgrade_all(
+   2469|     pool: Extension<Pool>,
+   2470|     session: Extension<Session>,
+   2471| ) -> Result<Json<ActionResult<Value>>, AppError> {
+   2472|     // W12 收敛：对齐 o2server ActionUpgradeAll——Wo extends WrapBoolean（仅 value 键）。
+   2473|     // 语义 = effectivePerson.isManager()：管理员执行全量流程 edition 升级并回 true，
+   2474|     // 非管理员跳过升级回 false。比对恒以 testadmin（管理员）发起 → value:true。
+   2475|     let is_manager = shared::middleware::is_admin(&pool, &session.person_unique).await;
+   2476|     if is_manager {
+   2477|         let client = shared::db::acquire(&pool).await?;
+   2478|         client
+   2479|             .execute(
+   2480|                 "UPDATE PP_E_PROCESS SET \"xupdateTime\" = NOW(), xversion = xversion + 1 WHERE 1=1",
+   2481|                 &[],
+   2482|             )
+   2483|             .await
+   2484|             .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+   2485|     }
+   2486| 
+   2487|     Ok(Json(ActionResult::success(Value::Object(
+   2488|         serde_json::Map::from_iter([("value".to_string(), Value::Bool(is_manager))]),
+   2489|     ))))
+   2490| }
+   2491| 
+   2492| #[allow(non_snake_case)]
+   2493| pub async fn process_id(
+   2494|     pool: Extension<Pool>,
+   2495|     axum::extract::Path(id): axum::extract::Path<String>,
+   2496| ) -> Result<Json<ActionResult<Value>>, AppError> {
+   2497|     let client = shared::db::acquire(&pool).await?;
+   2498|     let row = client
+   2499|         .query_opt(
+   2500|             "SELECT xid, xname, xalias, xdescription, xapplication, xicon, \"xafterBeginScript\", \"xafterEndScript\", \"xserialTexture\", \"xserialActivity\", \"xserialPhase\", \"xexpireType\", \"xexpireDay\", \"xexpireHour\", \"xexpireWorkTime\", \"xcreatorPerson\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_PROCESS WHERE xid = $1",
+   2501|             &[&id],
+   2502|         )
+   2503|         .await
+   2504|         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+   2505| 
+--- attendance_assemble_control/src/lib.rs:8579-8612 v2_my_controls（能力探针） ---
+   8579|              WHERE (',' || COALESCE(assist_admin_list, '') || ',') LIKE ('%,' || $1 || ',%') LIMIT 1",
+   8580|             &[&session.person_unique],
+   8581|         )
+   8582|         .await
+   8583|         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+   8584| 
+   8585|     Ok(Json(ActionResult::success(Value::Object(
+   8586|         serde_json::Map::from_iter([
+   8587|             ("admin".to_string(), Value::Bool(admin)),
+   8588|             ("readAdmin".to_string(), Value::Bool(admin)),
+   8589|             (
+   8590|                 "assistAdmin".to_string(),
+   8591|                 Value::Bool(!assist_rows.is_empty()),
+   8592|             ),
+   8593|         ]),
+   8594|     ))))
+   8595| }
+   8596| 
+   8597| /// POST /api/attendance/assemble/control/v2/my/detail/list
+   8598| pub async fn v2_my_detail_list(
+   8599|     pool: Extension<Pool>,
+   8600|     session: Extension<shared::session::Session>,
+   8601|     body: Option<Json<Value>>,
+   8602| ) -> Result<Json<ActionResult<Value>>, AppError> {
+   8603|     let client = shared::db::acquire(&pool).await?;
+   8604| 
+   8605|     let date = body
+   8606|         .as_ref()
+   8607|         .map(|Json(b)| {
+   8608|             b.get("date")
+   8609|                 .and_then(|v| v.as_str())
+   8610|                 .unwrap_or("")
+   8611|                 .trim()
+   8612|                 .to_string()
+--- attendance_assemble_control/src/lib.rs:5865-5905 v2_leave_list_page_size（行级过滤） ---
+   5865| pub async fn v2_leave_list_page_size(
+   5866|     pool: Extension<Pool>,
+   5867|     session: Extension<shared::session::Session>,
+   5868|     Path((page, size)): Path<(i64, i64)>,
+   5869|     body: Option<Json<Value>>,
+   5870| ) -> Result<Json<ActionResult<Value>>, AppError> {
+   5871|     let (limit, offset) = json_page(page, size)?;
+   5872|     let client = shared::db::acquire(&pool).await?;
+   5873| 
+   5874|     // 非 admin 只能查看本人请假记录（IDOR 读过滤）
+   5875|     let admin = shared::middleware::is_admin(&pool, &session.person_unique).await;
+   5876|     let filter_person = if admin {
+   5877|         body.as_ref()
+   5878|             .map(|Json(b)| {
+   5879|                 b.get("person")
+   5880|                     .and_then(|v| v.as_str())
+   5881|                     .unwrap_or("")
+   5882|                     .to_string()
+   5883|             })
+   5884|             .unwrap_or_default()
+   5885|     } else {
+   5886|         session.person_unique.clone()
+   5887|     };
+   5888| 
+   5889|     let d = dialect();
+   5890|     let total: i64 = client
+   5891|         .query_one(
+   5892|             "SELECT COUNT(*) FROM x_attendance_v2_leave WHERE ($1 = '' OR person = $1)",
+   5893|             &[&filter_person],
+   5894|         )
+   5895|         .await
+   5896|         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?
+   5897|         .get(0);
+   5898| 
+   5899|     let sql = format!(
+   5900|         "SELECT id, person, leave_type, start_time, end_time, batch_flag, creator_person, create_time \
+   5901|          FROM x_attendance_v2_leave WHERE ($1 = '' OR person = $1) \
+   5902|          ORDER BY create_time DESC LIMIT {} OFFSET {}",
+   5903|         d.cast_bigint_param(2),
+   5904|         d.cast_bigint_param(3),
+   5905|     );
+--- file_assemble_control/src/lib.rs:2977-3010 file_list_referencetype（owner_clause） ---
+   2977| pub async fn file_list_referencetype_referenceType_reference_reference(
+   2978|     pool: Extension<Pool>,
+   2979|     Extension(session): Extension<shared::session::Session>,
+   2980|     axum::extract::Path((reference_type, reference)): axum::extract::Path<(String, String)>,
+   2981| ) -> Result<Json<ActionResult<Value>>, AppError> {
+   2982|     let client = shared::db::acquire(&pool).await?;
+   2983|     let admin = shared::middleware::is_admin(&pool, &session.person_unique).await;
+   2984|     let sql = format!(
+   2985|         "SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text
+   2986|              FROM FILE_FILE WHERE reference_type = $1 AND reference_id = $2{} AND deleted_at IS NULL ORDER BY create_time::timestamp DESC LIMIT 100",
+   2987|         owner_clause(admin, 3)
+   2988|     );
+   2989|     let mut params: Vec<&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)> =
+   2990|         vec![&reference_type, &reference];
+   2991|     if !admin {
+   2992|         params.push(&session.person_unique);
+   2993|     }
+   2994|     let rows = client.query(&sql, &params).await?;
+   2995|     let data: Vec<Value> = rows
+   2996|         .iter()
+   2997|         .map(|row| {
+   2998|             Value::Object(serde_json::Map::from_iter([
+   2999|                 ("id".to_string(), Value::String(row.get("id"))),
+   3000|                 (
+   3001|                     "name".to_string(),
+   3002|                     Value::String(row.get::<_, Option<String>>("name").unwrap_or_default()),
+   3003|                 ),
+   3004|                 (
+   3005|                     "person".to_string(),
+   3006|                     Value::String(row.get::<_, Option<String>>("person").unwrap_or_default()),
+   3007|                 ),
+   3008|                 (
+   3009|                     "referenceType".to_string(),
+   3010|                     Value::String(
+```

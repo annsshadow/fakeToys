@@ -1,0 +1,78 @@
+=== admin login -> 200
+{"access_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImtuZCI6ImFkbWluIiwic2lkIjoiYV80ci1JM29XdExRRDZ3bGVIVnM4Wi0wWUFid1ViMndRVGI3bTJnZkh1b2RJIiwiaWF0IjoxNzkzODg5NzUyLCJleHAiOjE3OTM4OTY5NTJ9.pBMFwf8umf5Pv2ZPJhUrcB1f2yTVfDgqQF3PzvJDR1U","expires_at":"2026-11-05T16:42:32Z","admin":{"id":1,"username":"audit-admin","role":"admin"}}
+
+ADMIN_TOKEN_LEN=0
+GUEST_LOGIN_FAIL 响应状态代码未指示成功: 403 (Forbidden)。
+########## G1 分页 count/next ##########
+=== ADMIN users limit=50
+GET /api/v1/admin/users?limit=50 -> HTTP 401
+响应状态代码未指示成功: 401 (Unauthorized)。
+
+=== ADMIN users limit=200
+GET /api/v1/admin/users?limit=200 -> HTTP 401
+响应状态代码未指示成功: 401 (Unauthorized)。
+
+=== ADMIN users limit=201
+GET /api/v1/admin/users?limit=201 -> HTTP 401
+响应状态代码未指示成功: 401 (Unauthorized)。
+
+=== ADMIN users limit=500
+GET /api/v1/admin/users?limit=500 -> HTTP 401
+响应状态代码未指示成功: 401 (Unauthorized)。
+
+=== ADMIN users limit=0
+GET /api/v1/admin/users?limit=0 -> HTTP 401
+响应状态代码未指示成功: 401 (Unauthorized)。
+
+=== ADMIN users limit=-1
+GET /api/v1/admin/users?limit=-1 -> HTTP 401
+响应状态代码未指示成功: 401 (Unauthorized)。
+
+########## G2 缺失行 ##########
+=== ADMIN user detail id=1
+GET /api/v1/admin/users/1 -> HTTP 401
+响应状态代码未指示成功: 401 (Unauthorized)。
+
+=== ADMIN user detail id=2
+GET /api/v1/admin/users/2 -> HTTP 401
+响应状态代码未指示成功: 401 (Unauthorized)。
+
+=== ADMIN user detail id=999999
+GET /api/v1/admin/users/999999 -> HTTP 401
+响应状态代码未指示成功: 401 (Unauthorized)。
+
+########## G3 offset 漂移 ##########
+=== USER me/battles limit=2 offset=0 (前)
+GET /api/v1/me/battles?limit=2&offset=0 -> HTTP 401
+响应状态代码未指示成功: 401 (Unauthorized)。
+
+########## G5 归属 ##########
+=== USER me/battles limit=10
+GET /api/v1/me/battles?limit=10 -> HTTP 401
+响应状态代码未指示成功: 401 (Unauthorized)。
+
+=== USER me/orders limit=10
+GET /api/v1/me/orders?limit=10 -> HTTP 401
+响应状态代码未指示成功: 401 (Unauthorized)。
+
+=== USER battle/7/replay
+GET /api/v1/battle/7/replay -> HTTP 401
+响应状态代码未指示成功: 401 (Unauthorized)。
+
+=== USER battle/1/replay
+GET /api/v1/battle/1/replay -> HTTP 401
+响应状态代码未指示成功: 401 (Unauthorized)。
+
+########## G4 NULL 行 ##########
+=== PUB announcements
+GET /api/v1/announcements -> 200
+{"items":[{"id":1,"title":"AUDIT NULL published_at","body":"b","published_at":null}]}
+
+=== ADMIN orders
+GET /api/v1/admin/orders?limit=10 -> HTTP 401
+响应状态代码未指示成功: 401 (Unauthorized)。
+
+=== ADMIN redeem codes
+GET /api/v1/admin/redeem-codes?limit=10 -> HTTP 401
+响应状态代码未指示成功: 401 (Unauthorized)。
+

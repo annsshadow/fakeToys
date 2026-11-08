@@ -332,6 +332,7 @@
 import { api, useSession } from '@oa4rust/sdk'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { computed, onMounted, ref, watch } from 'vue'
+import { parseServerDate } from '../utils/date'
 import { confirmMsg, toast } from '../utils/toast'
 // biome-ignore lint/correctness/noUnusedImports: Vue templates consume component imports.
 import ListLoadError from './ListLoadError.vue'
@@ -885,7 +886,8 @@ async function toggleMod(kind: 'cream' | 'lock' | 'complete' | 'topSection', on:
 function fmtTime(ts?: string): string {
   if (!ts) return ''
   try {
-    const d = new Date(ts)
+    const d = parseServerDate(ts)
+    if (!d) return String(ts)
     const now = new Date()
     const diff = now.getTime() - d.getTime()
     if (diff < 60_000) return '刚刚'
