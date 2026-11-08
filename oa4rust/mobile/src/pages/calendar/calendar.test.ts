@@ -23,4 +23,10 @@ describe('日历时间显示（R152，iOS 兼容）', () => {
     expect(source).toContain('const d = parseServerDate(v)')
     expect(source).not.toContain('const d = new Date(String(v))')
   })
+
+  it('时间窗筛选与排序也经 parseServerDate，iOS 上不会把所有日程过滤成空', () => {
+    // startMs 若用 new Date(String(raw))，iOS 上为 NaN，filter 会把整页日程丢掉。
+    expect(source).toContain('return parseServerDate(raw)?.valueOf() ?? Number.NaN')
+    expect(source).not.toContain('return new Date(String(raw)).valueOf()')
+  })
 })
