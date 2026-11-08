@@ -41,10 +41,10 @@
 | A-b4（#262） | `portal` | `portal_id` | `x_portal.creator`=会话 OR 管理员（E23，SQL WHERE） |
 | A-b4（#262） | `portal_assemble_designer` | `portal_id` / `portal_id_icon` / `portal_id_permission` | `x_portal.creator`=会话 OR 管理员（E23，SQL WHERE） |
 | A-b4（#262） | `portal_assemble_surface` | `get_surface` | `x_portal_surface.creator`=会话 OR 管理员（E23，SQL WHERE） |
-| A-b5（本批） | `portal_assemble_surface` | `portal_id_icon` / `portal_id_icon_base64` | `x_portal.creator`=会话 OR 管理员（E23，SQL WHERE）；未命中保留 `surface not found` |
-| A-b5（本批） | `portal_assemble_surface` | `preview_surface` / `surface_preview` | `x_portal_surface.creator`=会话 OR 管理员（E23，SQL WHERE） |
-| A-b5（本批） | `portal_core_entity` | `page_get` | `x_portal_page.creator`=会话 OR 管理员（E23，SQL WHERE）；本 crate 无 deadpool `Pool` 注入，沿用 sea-orm `require_admin`，查询失败 fail-closed |
-| A-b5（本批） | `ai_assemble_control` | `config_get_mcp_flag` | `x_ai_mcp_config.creator`=会话 OR 管理员（E24，SQL WHERE）；该表无 `deleted_at`，不追加软删条件 |
+| A-b5（#265） | `portal_assemble_surface` | `portal_id_icon` / `portal_id_icon_base64` | `x_portal.creator`=会话 OR 管理员（E23，SQL WHERE）；未命中保留 `surface not found` |
+| A-b5（#265） | `portal_assemble_surface` | `preview_surface` / `surface_preview` | `x_portal_surface.creator`=会话 OR 管理员（E23，SQL WHERE） |
+| A-b5（#265） | `portal_core_entity` | `page_get` | `x_portal_page.creator`=会话 OR 管理员（E23，SQL WHERE）；本 crate 无 deadpool `Pool` 注入，沿用 sea-orm `require_admin`，查询失败 fail-closed |
+| A-b5（#265） | `ai_assemble_control` | `config_get_mcp_flag` | `x_ai_mcp_config.creator`=会话 OR 管理员（E24，SQL WHERE）；该表无 `deleted_at`，不追加软删条件 |
 
 ## 一、NO-OWNER-COL（缺归属列，不改代码）
 
@@ -238,18 +238,79 @@ SELECT count(*) FROM x_meeting m
 管理视图（`*_manage*`）如需更强隔离，可另立条目改为「需管理员角色」，本分片不动。
 
 
-## 四、公开内容读面（不做归属过滤）
+## 四、公开内容读面（行为级结论，B6）
 
-按统一口径登记为**公开内容**，不套「本人 OR 管理员」：
+实测口径：匿名请求一律先打一次（`Authorization` 缺省），再用非管理员 `audit-user` 的会话打一次。
+门禁用例 kind=`public-read-login`：**匿名必须 401/403**，**登录用户必须 2xx**、响应命中正控制对象、
+且响应体不得出现 `GATE-V-SETTING`（手机）/`GATE-V-EMAIL`（邮箱）/`GATE-V-NAME`（姓名）任一 canary。
+结论仅三种：`PUBLIC-BY-DESIGN` / `SHOULD-BE-PRIVATE` / `UNCLEAR`；无路由的 handler 单列「不可达」。
 
-- **bbs**（19 个候选）：`x_bbs_forum`、`x_bbs_topic`、`x_bbs_reply` 为论坛公开内容；`list_forums`、`list_topics_by_forum`、`reply_filter_list_*`、`list_topics_creamed`、`list_topics_recommended`、`list_subjects_*`、`subject_filter_listsubjectinfo`、`u2_subject_listsubjectinfo_page`、`u2_reply_filter_list`、`u2_voterecord_list` 等。
-  `user_*` 4 条已逐一复核（第三批），结论：**不是「本人」语义，属门户公开列表**，不做 `creator` 过滤——
-  - `user_forum_list`（`lib.rs:1804`）：`SELECT ... FROM x_bbs_forum WHERE deleted_at IS NULL ORDER BY sort`，返回全部板块；
-  - `user_subject_list`（`lib.rs:2025`）：`FROM x_bbs_topic WHERE deleted_at IS NULL`，返回全部主题；
-  - `user_reply_list`（`lib.rs:1911`）：`FROM x_bbs_reply WHERE deleted_at IS NULL`，返回全部回复；
-  - `u2_userinfo_filter`（`u2.rs:2397`）：按昵称模糊查 `x_bbs_user_info`，属公开用户目录检索。
-  四者均无会话参数、SQL 里没有任何按人过滤的意图（`user_` 指「门户/用户端」，不是「我的」）。若产品确认其中某条应改为「我的」，需先补会话与 `creator=会话 OR 管理员` 谓词，再另立条目。
-- **hotpic**（7 个候选）：`x_hotpic` 为展示位内容，`hotpic::list_by_application_and_info_id`、`hotpic_assemble_control::list_control_panels` / `list_control_applications` / `list_hotpics` / `cipher_hotpic_filter_list_*` / `user_hotpic_filter_list_*` 属公开展示读面；`user_hotpic_filter_list_*` 命名含 `user`，同样需确认是否应限制到本人。
+实测结果：**匿名一律 401，登录后一律可读且无 PII**。因此下表 `PUBLIC-BY-DESIGN` 的语义是
+「**登录后公开**（全站任意登录用户可读，不限归属）」，不是「匿名公开」；匿名被全局认证层拒之门外，
+PII canary 断言落在登录用户响应上，匿名 401 由同一用例的第一段断言固定。共 28 条可达读面全 PASS，
+`sabotage public-read-b6` 逐条点名 28 条 `[LEAK]`。
+
+### bbs 19 条
+
+| # | handler | 路由 | 匿名实测 | 登录后返回字段 | 结论 | canary 用例 |
+|---|---|---|---|---|---|---|
+| 1 | `list_forums` | GET `/api/bbs/assemble/control/forum/list` | 401 | id,name,description,sort,creator,createTime | PUBLIC-BY-DESIGN | `b6\|bbs\|forum_list` |
+| 2 | `forum_view_all` | GET `/api/bbs/assemble/control/forum/view/all` | 401 | 同上 | PUBLIC-BY-DESIGN | `b6\|bbs\|forum_view_all` |
+| 3 | `list_topics_by_forum` | GET `/api/bbs/assemble/control/topic/list/forum/{forumId}` | 401 | id,forumId,title,content,creator,createTime | PUBLIC-BY-DESIGN | `b6\|bbs\|topic_list_by_forum` |
+| 4 | `subject_view_id` | GET `/api/bbs/assemble/control/subject/view/{id}` | 401 | id,forumId,title,content,creator,createTime | PUBLIC-BY-DESIGN | `b6\|bbs\|subject_view` |
+| 5 | `subject_top_sectionId` | GET `/api/bbs/assemble/control/subject/top/{sectionId}` | 401 | 同上 | PUBLIC-BY-DESIGN | `b6\|bbs\|subject_top` |
+| 6 | `reply_list_sub_id` | GET `/api/bbs/assemble/control/reply/list/sub/{id}` | 401 | id,topicId,content,creator | PUBLIC-BY-DESIGN | `b6\|bbs\|reply_list_sub` |
+| 7 | `u2_reply_get` | GET `/api/bbs/assemble/control/reply/{id}` | 401 | id,topicId,content,creator,accepted | PUBLIC-BY-DESIGN | `b6\|bbs\|reply_get` |
+| 8 | `u2_reply_filter_list` | PUT `.../reply/filter/list/page/{page}/count/{count}` | 401 | total,data{id,topicId,content,creator} | PUBLIC-BY-DESIGN | `b6\|bbs\|reply_filter_list` |
+| 9 | `list_reply_filter` | GET `/api/bbs/assemble/control/list/reply/filter` | 401 | 同上 | PUBLIC-BY-DESIGN | `b6\|bbs\|list_reply_filter` |
+| 10 | `subject_creamed_list` | PUT `.../subject/creamed/list/page/{page}/count/{count}` | 401 | id,forumId,title,content,creator,createTime | PUBLIC-BY-DESIGN | `b6\|bbs\|subject_creamed_list` |
+| 11 | `topic_recommended_list` | PUT `.../subject/recommended/list/page/{page}/count/{count}` | 401 | 同上 | PUBLIC-BY-DESIGN | `b6\|bbs\|subject_recommended_list` |
+| 12 | `topic_recommended_index` | GET `.../subject/recommended/index/{count}` | 401 | 同上 | PUBLIC-BY-DESIGN | `b6\|bbs\|subject_recommended_index` |
+| 13 | `subject_index_list` | PUT `.../subject/index/list/page/{page}/count/{count}` | 401 | 同上 | PUBLIC-BY-DESIGN | `b6\|bbs\|subject_index_list` |
+| 14 | `subject_filter_list` | PUT `.../subject/filter/list/page/{page}/count/{count}` | 401 | 同上 | PUBLIC-BY-DESIGN | `b6\|bbs\|subject_filter_list` |
+| 15 | `u2_subject_listsubjectinfo_page` | POST `.../subject/filter/listsubjectinfo/page/{page}/count/{count}` | 401 | 同上 | PUBLIC-BY-DESIGN | `b6\|bbs\|subject_filter_listsubjectinfo` |
+| 16 | `topic_filter_listsubjectinfo` | POST `/api/bbs/assemble/control/topic/filter/listsubjectinfo` | 401 | 同上 | PUBLIC-BY-DESIGN | `b6\|bbs\|topic_filter_listsubjectinfo` |
+| 17 | `u2_subject_search_page` | PUT `.../subject/search/list/page/{page}/count/{count}` | 401 | 同上 | PUBLIC-BY-DESIGN | `b6\|bbs\|subject_search_list` |
+| 18 | `section_viewforum_forumId` | GET `/api/bbs/assemble/control/section/viewforum/{forumId}` | 401 | id,name,forumId,parentId,sort,description | PUBLIC-BY-DESIGN | `b6\|bbs\|section_viewforum` |
+| 19 | `u2_voterecord_list` | PUT `.../user/subject/voterecord/list/page/{page}/count/{count}` | 401 | id,person,optionId,optionName | PUBLIC-BY-DESIGN | `b6\|bbs\|user_subject_voterecord` |
+
+注：`u2_voterecord_list` 的 `person` 是内部身份键（非姓名/手机/邮箱），当前响应不含 PII；
+若产品后续认为「谁投了哪项」属敏感，再另立条目收紧，本批按代码现状判公开。
+
+### `user_*` 4 条
+
+| handler | 路由 | 匿名实测 | 登录后返回字段 | 结论 | canary 用例 |
+|---|---|---|---|---|---|
+| `user_forum_list` | GET `/api/bbs/assemble/control/user/forum/all` | 401 | id,name,description,sort,creator,createTime | PUBLIC-BY-DESIGN | `b6\|bbs\|user_forum_list` |
+| `u2_userinfo_filter` | PUT `/api/bbs/assemble/control/userinfo` | 401 | id,person,nickname,icon,signature | PUBLIC-BY-DESIGN | `b6\|bbs\|userinfo_filter` |
+| `user_subject_list` | **无路由**（`routes.rs` 未挂载，`tests_generated.rs` 标 SKIPPED） | 不可达 | — | 不可达 | — |
+| `user_reply_list` | **无路由**（同上） | 不可达 | — | 不可达 | — |
+
+`user_` 指「门户/用户端」，不是「我的」；可读两条均无会话参数、SQL 无按人过滤意图。
+两条无路由 handler 不属于任何读面：本批不新增路由、不删代码，仅登记，后续清理死代码时再处理。
+
+### hotpic 7 条
+
+| # | handler | 路由 | 匿名实测 | 登录后返回字段 | 结论 | canary 用例 |
+|---|---|---|---|---|---|---|
+| 1 | `list_by_application_and_info_id` | GET `/api/hotpic/user/hotpic/{application}/{infoId}` | 401 | id,application,infoId,title,creator,createTime | PUBLIC-BY-DESIGN | `b6\|hotpic\|list_by_application_info` |
+| 2 | `list_hotpics` | GET `/api/hotpic_assemble_control/list/hotpics` | 401 | id,title,imageUrl,creator,createTime | PUBLIC-BY-DESIGN | `b6\|hotpic\|list_hotpics` |
+| 3 | `get_hotpic` | GET `/api/hotpic_assemble_control/get/hotpic/{id}` | 401 | 同上 | PUBLIC-BY-DESIGN | `b6\|hotpic\|get_hotpic` |
+| 4 | `list_control_panels` | GET `/api/hotpic_assemble_control/list/control/panels` | 401 | creator(name),count | PUBLIC-BY-DESIGN | `b6\|hotpic\|list_control_panels` |
+| 5 | `list_control_applications` | GET `/api/hotpic_assemble_control/list/control/applications` | 401 | creator(application),count | PUBLIC-BY-DESIGN | `b6\|hotpic\|list_control_applications` |
+| 6 | `cipher_hotpic_filter_list_*` | GET `/api/hotpic/assemble/control/cipher/hotpic/filter/list/page/{page}/count/{count}` | 401 | 同 2 | PUBLIC-BY-DESIGN | `b6\|hotpic\|cipher_filter_list` |
+| 7 | `user_hotpic_filter_list_*` | GET `/api/hotpic/assemble/control/user/hotpic/filter/list/page/{page}/count/{count}` | 401 | 同 2 | PUBLIC-BY-DESIGN | `b6\|hotpic\|user_filter_list` |
+
+`user_hotpic_filter_list_*` 名称含 `user`，但实测 SQL 为全局列表（无会话、无 creator 过滤），
+故判登录后公开，不做归属过滤。
+
+### 结论汇总
+
+- `PUBLIC-BY-DESIGN`：28 条（19 bbs + 2 可达 `user_*` + 7 hotpic）。
+- `SHOULD-BE-PRIVATE`：0 条（没有一条在登录后可读到 PII；匿名已全部 401）。
+- `UNCLEAR`：0 条（本批没有缺业务信息而无法落判的条目）。
+- 不可达：2 条（`user_subject_list`、`user_reply_list`）。
+- PII canary：28 条用例全部靠断言固定，注入式 sabotage 逐条点名。
 
 ## 五、mind `creator_unit` 请求体伪造（分片 A 缺陷，不改基线）
 
@@ -353,9 +414,12 @@ PR #250（`sec/read-a-cms-b3`）squash 合入 `main`：`994519dc2`（父 `f041bd
 夹具调整：`x_cms_article.status` 列默认值是 `published`，原 seed / rev-seed 未写 status，
 会让文章读用例落进「公开可读」分支；两处均已显式写 `status='draft'`，用例才是真正的草稿 IDOR。
 
-1. **行是否真在 main**：待裁判会话合并后在 `main` 上核对（本分支提交前无法断言）。
-2. **基线是否虚减**：rebase 到 `8c7c2f4b5` 后重跑门禁，本批 6 条全部 `[PASS]`，
-   剩余非 PASS 25 条与基线一致（leak=11, unverified=14, integrity=0）。
+1. **行是否真在 main**：已在 `origin/main` 上核对。merge sha `7f83c1051` 被 `origin/main` 包含
+   （`git branch -r --contains 7f83c1051` 命中 `origin/main`）；在该提交的
+   `security_regression_baseline.txt` 里 grep 本批 6 条 id，全部无命中；同一提交的
+   `cms_core_entity/src/lib.rs` 仍含 `published` 读门（3 处命中）。即 6 条是真实修复、不是基线糊过。
+2. **基线是否虚减**：rebase 到 `8c7c2f4b5` 后重跑门禁，本批 6 条全部 `[PASS]`；
+   合并提交（`7f83c1051`）的基线全文 grep 本批 id 无命中，未靠基线糊过。
 3. **门禁是否接线**：`sabotage read-a-b4` 变红（exit=101），输出逐条点名 6 条 `[LEAK]`，
    `实验成立：门禁变红（exit=101），并点名 6 条用例`。
 
@@ -368,16 +432,34 @@ PR #250（`sec/read-a-cms-b3`）squash 合入 `main`：`994519dc2`（父 `f041bd
 或管理员（E23 / E24）。`portal_core_entity` 无 deadpool `Pool` 注入，沿用 sea-orm
 `require_admin`，查询失败 fail-closed。
 
-1. **行是否真在 main**：待裁判会话合并 `sec/read-a-cms-b5` 后在 `main` 上核对
-   （本分支提交前无法断言）。
-2. **基线是否虚减**：在 `8c7c2f4b5` 上重跑门禁，本批 6 条全部 `[PASS]`；剩余非 PASS
-   25 条与基线一致（leak=11, unverified=14, integrity=0）。
+1. **行是否真在 main**：已在 `origin/main` 上核对。merge sha `1df0963a1` 被 `origin/main` 包含
+   （`git branch -r --contains 1df0963a1` 命中 `origin/main`）；在该提交的
+   `security_regression_baseline.txt` 里 grep 本批 6 条 id，全部无命中；`x_ai_mcp_config.creator`
+   读门代码仍在。即 6 条是真实修复、不是基线糊过。
+2. **基线是否虚减**：在 `8c7c2f4b5` 上重跑门禁，本批 6 条全部 `[PASS]`；合并提交
+   （`1df0963a1`）的基线全文 grep 本批 id 无命中，未靠基线糊过。
 3. **门禁是否接线**：`sabotage read-a-b5` 变红（exit=101），`NEW-FAIL` 逐条点名 6 条，
    `实验成立：门禁变红（exit=101），并点名 6 条用例`；三个 `lib.rs` 各自动还原一次。
 
 若 #262（A-b4）先合入，本批与它共用 `portal_assemble_surface` 的同一 helper 文本，
 恒真化会同时波及 `get_surface`（额外 1 条 `[LEAK]`），属预期「同 helper 波及」，不影响
 本批 6 条结论。
+
+## 十一、公开读面 B6 交付与 §12.6 核对记录
+
+分支 `sec/read-public-b6`（base `origin/main`）。范围：§四 登记的 bbs 19 + `user_*` 4 + hotpic 7。
+新增 `public-read-login` kind：同一用例先匿名请求（要求 401/403），再以非管理员会话请求
+（要求 2xx + 正控制命中 + 无 PII canary）；28 条可达读面全部 `[PASS]`，2 条无路由 handler 登记为不可达。
+
+1. **行是否真在 main**：本分支尚未合并，待裁判合并后按 merge sha 核对；本分支已 rebase 到
+   `origin/main`（`11c551911454`）并在其上跑通。
+2. **基线是否虚减**：rebase 后 `python scripts/security_regression_gate.py run` 全绿，非 PASS 与基线一致；
+   本批 28 条全部 PASS，未新增基线条目（新增项不得进基线）。
+3. **门禁是否接线**：`sabotage public-read-b6` 在统一成功信封注入 PII canary 后变红（exit=101），
+   输出逐条点名 28 条 `[LEAK]`，`实验成立：门禁变红（exit=101），并点名 28 条用例`；两个 patch 各自动还原一次。
+
+未决项：无 `UNCLEAR`。唯一需要产品侧后续确认的是 `u2_voterecord_list` 的
+「谁投了哪项」是否应视为敏感（当前只返回内部身份键 `person`，不含姓名/手机/邮箱，按代码现状判公开）。
 
 ## 变更纪律（本分片）
 
