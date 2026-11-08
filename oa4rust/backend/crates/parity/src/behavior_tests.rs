@@ -253,6 +253,7 @@ parity_test!(
     test_name: parity_behavior__ai_assemble_control__file_list,
     behavior: "list_returns_array",
     content_type: "application/json",
+    session: shared::testing::test_session("parity-probe"),
     router_args: (shared::testing::test_pool()),
     body: serde_json::json!({"ids":[]}).to_string(),
 );
@@ -265,6 +266,7 @@ parity_test!(
     handler: file_list_paging_page_size_size,
     test_name: parity_behavior__ai_assemble_control__file_list_paging_page_size_size,
     behavior: "list_returns_array",
+    session: shared::testing::test_session("parity-probe"),
     router_args: (shared::testing::test_pool()),
     body: String::new(),
 );
@@ -685,6 +687,7 @@ parity_test!(
     handler: list_files,
     test_name: parity_behavior__file_assemble_control__list_files,
     behavior: "list_returns_array",
+    session: shared::testing::test_session("parity-probe"),
     router_args: (shared::testing::test_pool()),
     body: String::new(),
 );

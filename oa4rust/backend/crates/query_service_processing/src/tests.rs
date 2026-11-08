@@ -138,13 +138,16 @@ async fn test_get_service_status_route_exists() {
             Request::builder()
                 .uri("/api/query/service/processing/status")
                 .method(Method::GET)
+                .extension(shared::testing::test_session("route-probe"))
                 .body(Body::empty())
                 .unwrap(),
         )
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+    // #281 后该运维面收 admin 门：无会话 401（见 security_gate_tests），
+    // 非管理员会话在 `is_admin` fail-closed 下 403 —— 403 即证明路由已接上。
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
 }
 
 #[tokio::test]

@@ -102,6 +102,22 @@
 | 24 | `GET /api/fileinfo/{id}/preview/pdf` | **已修**（同 22；预览与元数据同权） | **任何人可渲染他人附件 → 内容泄露（最高危读）** | ① 父文档 ACL + `downloadable`；② 补列后按上传人（**已按②落地**） | 预览是否必须继承下载权限？ |
 | 25 | `POST /api/fileinfo/update/{id}/content` | **已修**。写侧补列后，`UPDATE ... WHERE upload_person=本人 OR admin`；他人 403 且零落库 | 污染/伪造附件元数据 | ① 父文档编辑者 + admin；② 补列后按上传人（**已按②落地**） | 元数据编辑权归父文档编辑者还是上传人？ |
 
+### 2.2b 读侧无谓词收口批（2026-11-08，`fix/admin-write-read-gates`）
+
+本批不是 B 档（这些表的写入路径已写会话身份），问题在读侧没有归属谓词/ admin 门。
+
+| 表 | 读侧裁决 | 理由 |
+|---|---|---|
+| `x_general_assemble_qrcode` | 本人 OR 管理员；`creator` 空 → 仅管理员 | 二维码是用户生成内容，按创建人私有；旧行无归属不回填 |
+| `x_query_statement` | 本人 OR 管理员（含 execute）；`creator` 空 → 仅管理员 | 语句含 SQL/数据，执行等价于读数据；无 creator 的历史行只给管理员 |
+| `x_ai_file` | 本人 OR 管理员；`creator` 空 → 仅管理员 | 文件元数据/下载按上传人私有；共享需求未在代码中体现，若后续需要共享另开批次 |
+| `x_file` | 列表按本人 OR 管理员；`creator` 空 → 仅管理员 | 与 `get_file` 已有的 owner 门同口径，避免「单条防住、列表泄全」 |
+| `x_query_processing` | **仅管理员** | `x_query_processing` 是服务处理队列；状态接口暴露队列长度/活跃连接等运维数据，不是任何用户的业务数据 |
+
+- 历史行处理：不回填、不用父文档 ACL 反推；NULL fail-closed（仅管理员）。
+- 证据：`sabotage admin-write-read-gates` 摘门后 12 条用例逐条 `[LEAK]`；
+  门禁 `cases=317 pass=317`，基线 0。
+
 ### 2.3 第三档：14 条真·全局（无主体列，必须业务定「归谁」）
 
 | # | 端点 | 数据 | 当前行为（证据） | 风险 | 方案①（推荐）/ 方案② | 需业务回答 |

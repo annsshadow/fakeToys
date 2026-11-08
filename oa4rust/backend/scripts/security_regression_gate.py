@@ -36,6 +36,7 @@
     python scripts/security_regression_gate.py sabotage w8-unverified      # Rust②n：摘掉 W-b8 回收站读归属与 bbs/mind/file 冒名 403（5 条）
     python scripts/security_regression_gate.py sabotage false-green-owner-write   # Rust②o：portal 写侧 9 处 owner 还原成 'system'
     python scripts/security_regression_gate.py sabotage false-green-warnlog-owner # Rust②p：warnlog_create 落受害者 owner（应 LEAK）
+    python scripts/security_regression_gate.py sabotage admin-write-read-gates # Rust②q：摘掉本批读侧归属/admin 门（12 条应 LEAK）
     python scripts/security_regression_gate.py sabotage go-limit0   # Go①：扣款乘 2
     python scripts/security_regression_gate.py sabotage go-idor-rev # Go②：摘掉预设删除归属
     python scripts/security_regression_gate.py sabotage go-empty-list    # Go③：伪装成已修（列表恒空）
@@ -108,6 +109,83 @@ JPUSH_CORE = BACKEND / "crates/jpush_core_entity/src/lib.rs"
 ATTENDANCE_ASSEMBLE = BACKEND / "crates/attendance_assemble_control/src/lib.rs"
 RUST_BASELINE = BACKEND / "tests/security_regression_baseline.txt"
 
+# 本批：admin-only 写表的读侧归属 / admin 门所在 crate
+GENERAL_ASSEMBLE = BACKEND / "crates/general_assemble_control/src/lib.rs"
+QUERY_DESIGNER_U2 = BACKEND / "crates/query_assemble_designer/src/u2_closures.rs"
+QUERY_PROCESSING = BACKEND / "crates/query_service_processing/src/lib.rs"
+AI_ASSEMBLE = BACKEND / "crates/ai_assemble_control/src/lib.rs"
+FILE_ASSEMBLE = BACKEND / "crates/file_assemble_control/src/lib.rs"
+
+# 列表类读端点：admin 谓词一摘掉，victim 行就会出现在响应里（应 LEAK）。
+QRCODE_LIST_PRED_RE = re.compile(
+    r"WHERE \(\$1::bool OR LOWER\(TRIM\(creator\)\) = LOWER\(TRIM\(\$2\)\)\)"
+)
+QRCODE_LIST_PRED_PATCH = "WHERE ($1::bool OR ($2::text IS NOT NULL))"
+STATEMENT_MANAGE_PRED_RE = QRCODE_LIST_PRED_RE
+STATEMENT_MANAGE_PRED_PATCH = QRCODE_LIST_PRED_PATCH
+STATEMENT_QUERY_PRED_RE = re.compile(
+    r"query_flag = \$1 AND \(\$2::bool OR LOWER\(TRIM\(creator\)\) = LOWER\(TRIM\(\$3\)\)\)"
+)
+STATEMENT_QUERY_PRED_PATCH = "query_flag = $1 AND ($2::bool OR ($3::text IS NOT NULL))"
+AI_IDS_PRED_RE = re.compile(
+    r"AND \(\$2::bool OR LOWER\(TRIM\(creator\)\) = LOWER\(TRIM\(\$3\)\)\)"
+)
+AI_IDS_PRED_PATCH = "AND ($2::bool OR ($3::text IS NOT NULL))"
+FILE_LIST_PRED_RE = AI_IDS_PRED_RE
+FILE_LIST_PRED_PATCH = AI_IDS_PRED_PATCH
+AI_PAGING_PRED_RE = re.compile(
+    r"\s\(\$3::bool OR LOWER\(TRIM\(creator\)\) = LOWER\(TRIM\(\$4\)\)\)"
+)
+AI_PAGING_PRED_PATCH = " ($3::bool OR ($4::text IS NOT NULL))"
+
+# 单行读端点：把读侧门换成恒放行（只动读，不动写侧 guard_write）。
+QUERY_GUARD_READ_RE = re.compile(
+    r"guard_write\(pool, session, client, select_owner_sql, key\)\.await"
+)
+QUERY_GUARD_READ_PATCH = (
+    "{ let _ = (pool, session, client, select_owner_sql, key); Ok(true) }"
+)
+AI_READ_GATE_RE = re.compile(
+    r"    match owner \{\n"
+    r"        Some\(o\) if !o\.trim\(\)\.is_empty\(\) => \{\n"
+    r"            shared::middleware::require_owner\(pool, session, &o\)\.await\n"
+    r"        \}\n"
+    r"        _ => require_admin\(pool, session\)\.await,\n"
+    r"    \}\n"
+    r"\}"
+)
+AI_READ_GATE_PATCH = "    let _ = (pool, session, owner);\n    Ok(())\n}"
+PROCESSING_ADMIN_RE = re.compile(
+    r"pub async fn get_service_status\(\n"
+    r"    pool: Extension<Pool>,\n"
+    r"    session: Option<Extension<shared::session::Session>>,\n"
+    r"\) -> Result<Json<ActionResult<Value>>, AppError> \{\n"
+    r"    u2::require_admin\(&pool, session\.as_deref\(\)\)\.await\?;",
+    re.S,
+)
+PROCESSING_ADMIN_PATCH = (
+    "pub async fn get_service_status(\n"
+    "    pool: Extension<Pool>,\n"
+    "    session: Option<Extension<shared::session::Session>>,\n"
+    ") -> Result<Json<ActionResult<Value>>, AppError> {\n"
+    "    let _ = (&pool, &session);"
+)
+
+ADMIN_WR_EXPECTS = [
+    "admin_write_read|qrcode_list|GET",
+    "admin_write_read|statement_manage_list|GET",
+    "admin_write_read|statement_list_with_query|POST",
+    "admin_write_read|statement_get_flag|GET",
+    "admin_write_read|statement_execute|POST",
+    "admin_write_read|ai_file_flag|GET",
+    "admin_write_read|ai_file_download|GET",
+    "admin_write_read|ai_file_download_scale|GET",
+    "admin_write_read|ai_file_list|POST",
+    "admin_write_read|ai_file_paging|POST",
+    "admin_write_read|xfile_list|GET",
+    "admin_write_read|processing_status|GET",
+]
+
 # 公开读面 B6：在统一成功信封里注入 PII canary，验证 28 条匿名读用例逐个变红。
 SHARED_RESPONSE = BACKEND / "crates/shared/src/response.rs"
 PUBLIC_READ_EXPECTS = [
@@ -168,6 +246,7 @@ PUBLIC_READ_LEGACY_PATCH = (
     '            r#type: Some("success".to_string()),\n'
     '            message: Some("GATE-V-SETTING GATE-V-EMAIL GATE-V-NAME".to_string()),'
 )
+
 
 ATTENDANCE_EXPECT = "attendance_core_entity|record_update|POST"
 CMS_EXPECT = "gate-cms-readable"
@@ -1549,6 +1628,43 @@ def sabotage(kind: str) -> int:
             [WARNLOG_OWNER_EXPECT],
             require_leak=True,
         )
+    elif kind == "admin-write-read-gates":
+        return sabotage_many(
+            "摘掉本批读侧归属谓词与 processing status 的 admin 门（12 条应逐条 LEAK）",
+            [
+                (GENERAL_ASSEMBLE, QRCODE_LIST_PRED_RE, QRCODE_LIST_PRED_PATCH, "qrcode_list"),
+                (
+                    QUERY_DESIGNER_U2,
+                    STATEMENT_MANAGE_PRED_RE,
+                    STATEMENT_MANAGE_PRED_PATCH,
+                    "statement_manage",
+                ),
+                (
+                    QUERY_DESIGNER_U2,
+                    STATEMENT_QUERY_PRED_RE,
+                    STATEMENT_QUERY_PRED_PATCH,
+                    "statement_query",
+                ),
+                (
+                    QUERY_DESIGNER_U2,
+                    QUERY_GUARD_READ_RE,
+                    QUERY_GUARD_READ_PATCH,
+                    "statement_guard_read",
+                ),
+                (AI_ASSEMBLE, AI_IDS_PRED_RE, AI_IDS_PRED_PATCH, "ai_ids"),
+                (AI_ASSEMBLE, AI_PAGING_PRED_RE, AI_PAGING_PRED_PATCH, "ai_paging"),
+                (AI_ASSEMBLE, AI_READ_GATE_RE, AI_READ_GATE_PATCH, "ai_read_gate"),
+                (FILE_ASSEMBLE, FILE_LIST_PRED_RE, FILE_LIST_PRED_PATCH, "xfile_list"),
+                (
+                    QUERY_PROCESSING,
+                    PROCESSING_ADMIN_RE,
+                    PROCESSING_ADMIN_PATCH,
+                    "processing_status",
+                ),
+            ],
+            ADMIN_WR_EXPECTS,
+            require_leak=True,
+        )
     elif kind == "public-read-b6":
         return sabotage_many(
             "公开读面 B6：统一成功信封注入 PII canary（28 条匿名读用例应逐条 LEAK）",
@@ -1566,7 +1682,7 @@ def sabotage(kind: str) -> int:
             "read-a-b4 / read-a-b5 / public-read-b6 / write-idor-b5 / write-idor-b6 / write-idor-b7 / "
             "write-idor-w1 / write-idor-w2 / write-idor-w3 / write-idor-w4 / write-idor-w5 / "
             "write-idor-w6 / write-idor-w7 / w8-unverified / false-green-owner-write / "
-            "false-green-warnlog-owner / cms-b-owner-gates）"
+            "false-green-warnlog-owner / cms-b-owner-gates / admin-write-read-gates）"
         )
 
     print(f"== 破坏实验：{title}")

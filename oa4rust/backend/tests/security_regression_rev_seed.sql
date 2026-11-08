@@ -195,3 +195,8 @@ DELETE FROM "x_attendance_record" WHERE "id" = 'rev-t1-record';
 INSERT INTO "x_attendance_record" ("id","user_id","check_in_time","status") VALUES ('rev-t1-record','audit-user','2026-01-01 09:00:00','NORMAL');
 DELETE FROM "x_general_invoice" WHERE "id" = 'rev-t1-invoice';
 INSERT INTO "x_general_invoice" ("id","number","date","amount","status","creator") VALUES ('rev-t1-invoice','T1-001','2026-01-01',100,'draft','audit-user');
+DELETE FROM "x_ai_file" WHERE "id" = 'rev-r6-ai-file';
+INSERT INTO "x_ai_file" ("id","name","file_name","file_size","file_type","enabled","creator","create_time") VALUES ('rev-r6-ai-file','rev-r6-ai-file','rev-r6-ai-file',1,'r6seed',true,'audit-user','2026-01-01 00:00:00');
+DELETE FROM "x_query_statement" WHERE "id" IN ('rev-r6-statement-get','rev-r6-statement-exec');
+INSERT INTO "x_query_statement" ("id","name","query_flag","data","creator") VALUES ('rev-r6-statement-get','r6seed','r6-qflag','SELECT 1','audit-user');
+INSERT INTO "x_query_statement" ("id","name","query_flag","data","creator") VALUES ('rev-r6-statement-exec','r6seed','r6-execflag','SELECT ''rev-r6-statement-exec-data'' AS canary','audit-user');

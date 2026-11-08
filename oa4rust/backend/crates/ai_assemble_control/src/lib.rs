@@ -320,6 +320,21 @@ fn require_session(
     session.map(|Extension(s)| s).ok_or(AppError::Unauthorized)
 }
 
+/// 单行读侧归属门：本人 OR 管理员；归属列为空 → 仅管理员（fail-closed）。
+#[allow(non_snake_case)]
+async fn read_owner_gate(
+    pool: &Pool,
+    session: &shared::session::Session,
+    owner: Option<String>,
+) -> Result<(), AppError> {
+    match owner {
+        Some(o) if !o.trim().is_empty() => {
+            shared::middleware::require_owner(pool, session, &o).await
+        }
+        _ => require_admin(pool, session).await,
+    }
+}
+
 #[allow(non_snake_case)]
 pub async fn ann_create(
     pool: Extension<Pool>,
@@ -1442,10 +1457,14 @@ pub async fn file_delete_flag(
 #[allow(non_snake_case)]
 pub async fn file_list_with_ids(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     req: Option<axum::extract::Json<Value>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let req = req.map(|r| r.0).unwrap_or_default();
     let client = shared::db::acquire(&pool).await?;
+    // 读侧归属：本人 OR 管理员；creator 为空的历史行仅管理员可见。
+    let admin = shared::middleware::is_admin(&pool, &sess.person_unique).await;
     let raw_ids: Vec<String> = req
         .get("ids")
         .and_then(|v| v.as_array())
@@ -1475,8 +1494,9 @@ pub async fn file_list_with_ids(
     let rows = client
         .query(
             "SELECT id, name, file_name, file_size, file_type, enabled, creator, create_time \
-             FROM x_ai_file WHERE id = ANY($1) ORDER BY create_time DESC",
-            &[&ids],
+             FROM x_ai_file WHERE id = ANY($1) \
+             AND ($2::bool OR LOWER(TRIM(creator)) = LOWER(TRIM($3))) ORDER BY create_time DESC",
+            &[&ids, &admin, &sess.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -1537,14 +1557,20 @@ pub async fn file_list_with_ids(
 #[allow(non_snake_case)]
 pub async fn file_list_paging_page_size_size(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
+    // 读侧归属：本人 OR 管理员；creator 为空的历史行仅管理员可见。
+    let admin = shared::middleware::is_admin(&pool, &sess.person_unique).await;
     let (size, offset) = shared::response::page_window(page, size)?;
     let rows = client
         .query(
-            "SELECT id, name, file_name, file_size, file_type, enabled, creator, create_time FROM x_ai_file ORDER BY create_time DESC LIMIT $2 OFFSET $1",
-            &[&offset, &size],
+            "SELECT id, name, file_name, file_size, file_type, enabled, creator, create_time FROM x_ai_file \
+             WHERE ($3::bool OR LOWER(TRIM(creator)) = LOWER(TRIM($4))) \
+             ORDER BY create_time DESC LIMIT $2 OFFSET $1",
+            &[&offset, &size, &admin, &sess.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -1674,8 +1700,10 @@ pub async fn file_upload(
 #[allow(non_snake_case)]
 pub async fn file_flag(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -1687,6 +1715,7 @@ pub async fn file_flag(
 
     match row {
         Some(row) => {
+            read_owner_gate(&pool, &sess, row.get::<_, Option<String>>("creator")).await?;
             let result = Value::Object(serde_json::Map::from_iter([
                 (
                     "id".to_string(),
@@ -1735,12 +1764,14 @@ pub async fn file_flag(
 #[allow(non_snake_case)]
 pub async fn file_id_download(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
-            "SELECT id, name, file_name, file_size, file_type FROM x_ai_file WHERE id = $1",
+            "SELECT id, name, file_name, file_size, file_type, creator FROM x_ai_file WHERE id = $1",
             &[&id],
         )
         .await
@@ -1748,6 +1779,7 @@ pub async fn file_id_download(
 
     match row {
         Some(row) => {
+            read_owner_gate(&pool, &sess, row.get::<_, Option<String>>("creator")).await?;
             let result = Value::Object(serde_json::Map::from_iter([
                 (
                     "id".to_string(),
@@ -1781,19 +1813,22 @@ pub async fn file_id_download(
 #[allow(non_snake_case)]
 pub async fn file_id_download_scale(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
-            "SELECT id, name, file_name FROM x_ai_file WHERE id = $1",
+            "SELECT id, name, file_name, creator FROM x_ai_file WHERE id = $1",
             &[&id],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     match row {
-        Some(_) => {
+        Some(row) => {
+            read_owner_gate(&pool, &sess, row.get::<_, Option<String>>("creator")).await?;
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(id.clone())),
                 (
