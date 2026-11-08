@@ -376,3 +376,28 @@ rev-GATE-V-MOBILE)`，delete paging `LEAK(2xx 响应体含 canary GATE-DEL-MOBIL
 - **跨 crate 登记**：`calendar_core_entity::event_create` 有同类容器缺口；#274 已合入，但其
   只改 `createor` 与 update/remove 归属门，未校验 `calendarId`，另行补一批。
 
+## 附：交接（22:45 前收尾）—— 未开新批的剩余项与续做路径
+
+- `x_message_mass.creator` 从不写入：
+  - 写侧：`message_assemble_communicate::mass_create`（lib.rs ~2940）只写 `creator_person`，
+    且为管理员档；`creator` 列永不落值。
+  - 读侧：`mass_id`（`GET /api/message/assemble/communicate/mass/{id}`）按 `creator` 判归属，
+    门禁用种子直接插行覆盖，绕过了真实写入，因此现有 PASS 不代表写侧可用。
+  - 续做（最小可行）：`mass_create` 同时写 `creator = sess.person_unique`，并补一条
+    「真实写入 → 读回环」用例；若按表语义应归 `creator_person`，则写侧改它、读谓词同步改。
+  - 缺口：当前门禁无管理员攻击者档，取不到「管理员冒名」正证据；需先补攻击者档或改测法。
+- attendance 五张配置表（`x_attendance_employee_config` / `import_file_info` /
+  `schedule_setting` / `setting` / `statistical_cycle`）：
+  - 现状：create 只写 `creator_person`，读侧 `owner_scope(&["creator","creator_person"])`
+    已覆盖真实行 → 非当前缺陷。
+  - 续做（上线前量化 + 只堵写侧、不回填）：用真实写入路径造 victim/actor 两行，断言
+    非管理员读不到他人配置；量化历史行 `creator IS NULL AND creator_person IS NOT NULL`
+    占比；写侧统一落 `creator`，不回填历史。
+  - 缺口：读谓词同时认 `creator_person`，无法用 sabotage 点名；需改用行为级用例。
+- 「请求体带归属键」普查剩余项（已登记，未开批）：
+  - `calendar_core_entity::event_create` 的 `calendarId` 未校验（#274 只改
+    createor/update/remove）。
+  - `calendar_assemble_control::message_create` 的 `calendarId` 未校验（`cal_message` 无读端点）。
+  - `calendar_assemble_control::setting_create` 的 `person` 采信请求体（读端不按 person 过滤）。
+  - `organization_core_entity::unit_check` 的 Public 双锁（#263 之外的登记项）。
+
