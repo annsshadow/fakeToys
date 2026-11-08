@@ -1,3 +1,0 @@
-crate	method	path	handler	bucket
-auth	GET	/api/qiyeweixin/update/person/detail/{code}	qiyeweixin_update_person_detail	K1-匿名可达无门禁
-program_init	GET	/api/secret/set/cancel	set_cancel	K1-匿名可达无门禁

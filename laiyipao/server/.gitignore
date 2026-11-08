@@ -1,7 +1,0 @@
-lyp-migrate
-lyp-seed
-lyp-server-amd64
-# 覆盖率产物不入库（只作为 CI artifact）
-coverage.out
-coverage-go
-coverage-go.out

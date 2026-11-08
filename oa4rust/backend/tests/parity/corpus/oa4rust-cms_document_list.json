@@ -1,7 +1,0 @@
-{
-  "body": null,
-  "method": "GET",
-  "name": "cms_document_list",
-  "path": "/api/cms_assemble_control/data/document",
-  "status": 200
-}

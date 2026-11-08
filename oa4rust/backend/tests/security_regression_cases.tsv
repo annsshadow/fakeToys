@@ -281,3 +281,26 @@ calendar_core_entity|calendar_update	spoof-write	POST	/api/calendar/core/entity/
 calendar_core_entity|calendar_remove	spoof-write	POST	/api/calendar/core/entity/calendar/remove	x_cal_calendar	gate-victim		body	createor	legacy	fwd-only	n/a		{"id":"2bf1a95c-04a8-41c1-918b-7d608331c702"}
 calendar_core_entity|event_update	spoof-write	POST	/api/calendar/core/entity/event/update	x_cal_event	gate-victim		body	createor	legacy	fwd-only	n/a		{"id":"xcal-victim-event"}
 calendar_core_entity|event_remove	spoof-write	POST	/api/calendar/core/entity/event/remove	x_cal_event	gate-victim		body	createor	legacy	fwd-only	n/a		{"id":"xcal-victim-event"}
+admin_write_read|qrcode_list|GET	idor-read-scoped	GET	/api/general/assemble/control/qrcode/list	x_general_assemble_qrcode	-	r6-qrcode-list	path		legacy	fwd-only	allow		
+admin_write_read|qrcode_list|own	idor-read-own	GET	/api/general/assemble/control/qrcode/list	x_general_assemble_qrcode	-	r6-qrcode-own	path		legacy	fwd-only	n/a		
+admin_write_read|statement_manage_list|GET	idor-read-scoped	GET	/api/query/assemble/designer/statement/list/manage	x_query_statement	-	r6-statement-list	path		legacy	fwd-only	allow		
+admin_write_read|statement_manage_list|own	idor-read-own	GET	/api/query/assemble/designer/statement/list/manage	x_query_statement	-	r6-statement-own	path		legacy	fwd-only	n/a		
+admin_write_read|statement_list_with_query|POST	idor-read-scoped	POST	/api/query/assemble/designer/statement/list/query/r6-queryflag	x_query_statement	-	r6-statement-list	path		legacy	fwd-only	allow		
+admin_write_read|statement_list_with_query|own	idor-read-own	POST	/api/query/assemble/designer/statement/list/query/r6-queryflag	x_query_statement	-	r6-statement-own	path		legacy	fwd-only	n/a		
+admin_write_read|statement_get_flag|GET	idor-read	GET	/api/query/assemble/designer/statement/{flag}	x_query_statement	r6-statement-get	r6-statement-get	path		legacy	both	allow		
+admin_write_read|statement_get_flag|own	idor-read-own	GET	/api/query/assemble/designer/statement/{flag}	x_query_statement	r6-statement-own	r6-statement-own	path		legacy	fwd-only	n/a		
+admin_write_read|statement_execute|POST	idor-read	POST	/api/query/assemble/designer/statement/execute/{flag}/page/1/size/10	x_query_statement	r6-statement-exec	r6-statement-exec-data	path		legacy	both	allow		
+admin_write_read|statement_execute|own	idor-read-own	POST	/api/query/assemble/designer/statement/execute/{flag}/page/1/size/10	x_query_statement	r6-statement-exec-own	r6-statement-exec-own-data	path		legacy	fwd-only	n/a		
+admin_write_read|ai_file_flag|GET	idor-read	GET	/api/ai_assemble_control/file/{flag}	x_ai_file	r6-ai-file	r6-ai-file	path		legacy	both	allow		
+admin_write_read|ai_file_flag|own	idor-read-own	GET	/api/ai_assemble_control/file/{flag}	x_ai_file	r6-ai-file-own	r6-ai-file-own	path		legacy	fwd-only	n/a		
+admin_write_read|ai_file_download|GET	idor-read	GET	/api/ai_assemble_control/file/{flag}/download	x_ai_file	r6-ai-file	r6-ai-file	path		legacy	both	allow		
+admin_write_read|ai_file_download|own	idor-read-own	GET	/api/ai_assemble_control/file/{flag}/download	x_ai_file	r6-ai-file-own	r6-ai-file-own	path		legacy	fwd-only	n/a		
+admin_write_read|ai_file_download_scale|GET	idor-read	GET	/api/ai_assemble_control/file/{flag}/download/scale	x_ai_file	r6-ai-file	r6-ai-file	path		legacy	both	allow		
+admin_write_read|ai_file_download_scale|own	idor-read-own	GET	/api/ai_assemble_control/file/{flag}/download/scale	x_ai_file	r6-ai-file-own	r6-ai-file-own	path		legacy	fwd-only	n/a		
+admin_write_read|ai_file_list|POST	idor-read-scoped	POST	/api/ai_assemble_control/file/list	x_ai_file	r6-ai-file	r6-ai-file	body		legacy	fwd-only	allow		{"ids":["r6-ai-file"]}
+admin_write_read|ai_file_list|own	idor-read-own	POST	/api/ai_assemble_control/file/list	x_ai_file	r6-ai-file-own	r6-ai-file-own	body		legacy	fwd-only	n/a		{"ids":["r6-ai-file-own"]}
+admin_write_read|ai_file_paging|POST	idor-read-scoped	POST	/api/ai_assemble_control/file/list/paging/1/size/10	x_ai_file	-	r6-ai-file	path		legacy	fwd-only	allow		
+admin_write_read|ai_file_paging|own	idor-read-own	POST	/api/ai_assemble_control/file/list/paging/1/size/10	x_ai_file	-	r6-ai-file-own	path		legacy	fwd-only	n/a		
+admin_write_read|xfile_list|GET	idor-read-scoped	GET	/api/file/assemble/control/file/list/{id}	x_file	r6-folder-list	r6-xfile-list	path		legacy	fwd-only	allow		
+admin_write_read|xfile_list|own	idor-read-own	GET	/api/file/assemble/control/file/list/{id}	x_file	r6-folder-own	r6-xfile-own	path		legacy	fwd-only	n/a		
+admin_write_read|processing_status|GET	idor-read	GET	/api/query/service/processing/status	x_query_processing	-	running	path		legacy	fwd-only	n/a		

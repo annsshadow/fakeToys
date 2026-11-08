@@ -1,3 +1,0 @@
-ALTER TABLE "x_file" DROP COLUMN IF EXISTS "path";
-ALTER TABLE "x_file" DROP COLUMN IF EXISTS "size";
-ALTER TABLE "x_file" DROP COLUMN IF EXISTS "folder_id";
