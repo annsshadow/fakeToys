@@ -200,9 +200,14 @@ pub async fn batch_process(
 
 /// 获取查询服务状态
 /// 返回查询服务的当前状态信息
+///
+/// `x_query_processing` 是服务处理队列，状态接口暴露的是运维数据（队列长度 /
+/// 活跃连接），不是任何用户的业务数据；它不是按人归属的用户数据，故读侧收管理员门。
 pub async fn get_service_status(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2::require_admin(&pool, session.as_deref()).await?;
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one("SELECT COUNT(*) as count FROM x_query", &[])

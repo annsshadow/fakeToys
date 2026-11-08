@@ -31,8 +31,12 @@
     python scripts/security_regression_gate.py sabotage read-a-b3         # Rust②i2：摘掉分片 A 第三批 cms appinfo/categoryinfo/commend 读门（6 条）
     python scripts/security_regression_gate.py sabotage read-a-b4         # Rust②n：摘掉分片 A 第四批 article/content/portal 读门（6 条）
     python scripts/security_regression_gate.py sabotage read-a-b5         # Rust②n2：摘掉分片 A 第五批 portal/surface/page/ai 读门（6 条）
+    python scripts/security_regression_gate.py sabotage public-read-b6     # Rust②o：统一成功信封注入 PII canary（28 条匿名读用例）
     python scripts/security_regression_gate.py sabotage write-idor-w3     # Rust②i：摘掉 office/bbs/mind 写侧冒名 403（7 条）
     python scripts/security_regression_gate.py sabotage w8-unverified      # Rust②n：摘掉 W-b8 回收站读归属与 bbs/mind/file 冒名 403（5 条）
+    python scripts/security_regression_gate.py sabotage false-green-owner-write   # Rust②o：portal 写侧 9 处 owner 还原成 'system'
+    python scripts/security_regression_gate.py sabotage false-green-warnlog-owner # Rust②p：warnlog_create 落受害者 owner（应 LEAK）
+    python scripts/security_regression_gate.py sabotage admin-write-read-gates # Rust②q：摘掉本批读侧归属/admin 门（12 条应 LEAK）
     python scripts/security_regression_gate.py sabotage go-limit0   # Go①：扣款乘 2
     python scripts/security_regression_gate.py sabotage go-idor-rev # Go②：摘掉预设删除归属
     python scripts/security_regression_gate.py sabotage go-empty-list    # Go③：伪装成已修（列表恒空）
@@ -42,6 +46,7 @@
     python scripts/security_regression_gate.py sabotage go-drift-to-leak # Go⑥：基线内 UNVERIFIED 恶化成 LEAK
     python scripts/security_regression_gate.py sabotage rust-drift-to-leak  # Rust③：基线内 UNVERIFIED 恶化成 LEAK
     python scripts/security_regression_gate.py sabotage rust-swallow-write  # Rust④：本人写 2xx 但未落库
+    python scripts/security_regression_gate.py sabotage cms-b-owner-gates   # Rust②o：摘掉 cms B 档归属门（5 条）
 
 刻意**不**把 Rust 与 Go 塞进同一个 `run`：两侧各自建库、各自迁移，
 合并入口会让修复线每次多等另一侧的建库时间。
@@ -103,6 +108,145 @@ JPUSH_CORE = BACKEND / "crates/jpush_core_entity/src/lib.rs"
 # 第十一轮：keyset 深分页与本人写正控制所在的 crate
 ATTENDANCE_ASSEMBLE = BACKEND / "crates/attendance_assemble_control/src/lib.rs"
 RUST_BASELINE = BACKEND / "tests/security_regression_baseline.txt"
+
+# 本批：admin-only 写表的读侧归属 / admin 门所在 crate
+GENERAL_ASSEMBLE = BACKEND / "crates/general_assemble_control/src/lib.rs"
+QUERY_DESIGNER_U2 = BACKEND / "crates/query_assemble_designer/src/u2_closures.rs"
+QUERY_PROCESSING = BACKEND / "crates/query_service_processing/src/lib.rs"
+AI_ASSEMBLE = BACKEND / "crates/ai_assemble_control/src/lib.rs"
+FILE_ASSEMBLE = BACKEND / "crates/file_assemble_control/src/lib.rs"
+
+# 列表类读端点：admin 谓词一摘掉，victim 行就会出现在响应里（应 LEAK）。
+QRCODE_LIST_PRED_RE = re.compile(
+    r"WHERE \(\$1::bool OR LOWER\(TRIM\(creator\)\) = LOWER\(TRIM\(\$2\)\)\)"
+)
+QRCODE_LIST_PRED_PATCH = "WHERE ($1::bool OR ($2::text IS NOT NULL))"
+STATEMENT_MANAGE_PRED_RE = QRCODE_LIST_PRED_RE
+STATEMENT_MANAGE_PRED_PATCH = QRCODE_LIST_PRED_PATCH
+STATEMENT_QUERY_PRED_RE = re.compile(
+    r"query_flag = \$1 AND \(\$2::bool OR LOWER\(TRIM\(creator\)\) = LOWER\(TRIM\(\$3\)\)\)"
+)
+STATEMENT_QUERY_PRED_PATCH = "query_flag = $1 AND ($2::bool OR ($3::text IS NOT NULL))"
+AI_IDS_PRED_RE = re.compile(
+    r"AND \(\$2::bool OR LOWER\(TRIM\(creator\)\) = LOWER\(TRIM\(\$3\)\)\)"
+)
+AI_IDS_PRED_PATCH = "AND ($2::bool OR ($3::text IS NOT NULL))"
+FILE_LIST_PRED_RE = AI_IDS_PRED_RE
+FILE_LIST_PRED_PATCH = AI_IDS_PRED_PATCH
+AI_PAGING_PRED_RE = re.compile(
+    r"\s\(\$3::bool OR LOWER\(TRIM\(creator\)\) = LOWER\(TRIM\(\$4\)\)\)"
+)
+AI_PAGING_PRED_PATCH = " ($3::bool OR ($4::text IS NOT NULL))"
+
+# 单行读端点：把读侧门换成恒放行（只动读，不动写侧 guard_write）。
+QUERY_GUARD_READ_RE = re.compile(
+    r"guard_write\(pool, session, client, select_owner_sql, key\)\.await"
+)
+QUERY_GUARD_READ_PATCH = (
+    "{ let _ = (pool, session, client, select_owner_sql, key); Ok(true) }"
+)
+AI_READ_GATE_RE = re.compile(
+    r"    match owner \{\n"
+    r"        Some\(o\) if !o\.trim\(\)\.is_empty\(\) => \{\n"
+    r"            shared::middleware::require_owner\(pool, session, &o\)\.await\n"
+    r"        \}\n"
+    r"        _ => require_admin\(pool, session\)\.await,\n"
+    r"    \}\n"
+    r"\}"
+)
+AI_READ_GATE_PATCH = "    let _ = (pool, session, owner);\n    Ok(())\n}"
+PROCESSING_ADMIN_RE = re.compile(
+    r"pub async fn get_service_status\(\n"
+    r"    pool: Extension<Pool>,\n"
+    r"    session: Option<Extension<shared::session::Session>>,\n"
+    r"\) -> Result<Json<ActionResult<Value>>, AppError> \{\n"
+    r"    u2::require_admin\(&pool, session\.as_deref\(\)\)\.await\?;",
+    re.S,
+)
+PROCESSING_ADMIN_PATCH = (
+    "pub async fn get_service_status(\n"
+    "    pool: Extension<Pool>,\n"
+    "    session: Option<Extension<shared::session::Session>>,\n"
+    ") -> Result<Json<ActionResult<Value>>, AppError> {\n"
+    "    let _ = (&pool, &session);"
+)
+
+ADMIN_WR_EXPECTS = [
+    "admin_write_read|qrcode_list|GET",
+    "admin_write_read|statement_manage_list|GET",
+    "admin_write_read|statement_list_with_query|POST",
+    "admin_write_read|statement_get_flag|GET",
+    "admin_write_read|statement_execute|POST",
+    "admin_write_read|ai_file_flag|GET",
+    "admin_write_read|ai_file_download|GET",
+    "admin_write_read|ai_file_download_scale|GET",
+    "admin_write_read|ai_file_list|POST",
+    "admin_write_read|ai_file_paging|POST",
+    "admin_write_read|xfile_list|GET",
+    "admin_write_read|processing_status|GET",
+]
+
+# 公开读面 B6：在统一成功信封里注入 PII canary，验证 28 条匿名读用例逐个变红。
+SHARED_RESPONSE = BACKEND / "crates/shared/src/response.rs"
+PUBLIC_READ_EXPECTS = [
+    "b6|bbs|forum_list",
+    "b6|bbs|forum_view_all",
+    "b6|bbs|topic_list_by_forum",
+    "b6|bbs|subject_view",
+    "b6|bbs|subject_top",
+    "b6|bbs|reply_list_sub",
+    "b6|bbs|reply_get",
+    "b6|bbs|reply_filter_list",
+    "b6|bbs|list_reply_filter",
+    "b6|bbs|subject_creamed_list",
+    "b6|bbs|subject_recommended_list",
+    "b6|bbs|subject_recommended_index",
+    "b6|bbs|subject_index_list",
+    "b6|bbs|subject_filter_list",
+    "b6|bbs|subject_filter_listsubjectinfo",
+    "b6|bbs|topic_filter_listsubjectinfo",
+    "b6|bbs|subject_search_list",
+    "b6|bbs|section_viewforum",
+    "b6|bbs|user_subject_voterecord",
+    "b6|bbs|user_forum_list",
+    "b6|bbs|userinfo_filter",
+    "b6|hotpic|list_by_application_info",
+    "b6|hotpic|list_hotpics",
+    "b6|hotpic|get_hotpic",
+    "b6|hotpic|list_control_panels",
+    "b6|hotpic|list_control_applications",
+    "b6|hotpic|cipher_filter_list",
+    "b6|hotpic|user_filter_list",
+]
+PUBLIC_READ_SUCCESS_RE = re.compile(
+    r'pub fn success\(data: T\) -> Self \{\n'
+    r'        Self \{\n'
+    r'            data: Some\(data\),\n'
+    r'            r#type: Some\("success"\.to_string\(\)\),\n'
+    r'            message: Some\(String::new\(\)\),'
+)
+PUBLIC_READ_SUCCESS_PATCH = (
+    'pub fn success(data: T) -> Self {\n'
+    '        Self {\n'
+    '            data: Some(data),\n'
+    '            r#type: Some("success".to_string()),\n'
+    '            message: Some("GATE-V-SETTING GATE-V-EMAIL GATE-V-NAME".to_string()),'
+)
+PUBLIC_READ_LEGACY_RE = re.compile(
+    r'pub fn legacy_success\(data: T, count: i64, size: i64\) -> Self \{\n'
+    r'        Self \{\n'
+    r'            data: Some\(data\),\n'
+    r'            r#type: Some\("success"\.to_string\(\)\),\n'
+    r'            message: Some\(String::new\(\)\),'
+)
+PUBLIC_READ_LEGACY_PATCH = (
+    'pub fn legacy_success(data: T, count: i64, size: i64) -> Self {\n'
+    '        Self {\n'
+    '            data: Some(data),\n'
+    '            r#type: Some("success".to_string()),\n'
+    '            message: Some("GATE-V-SETTING GATE-V-EMAIL GATE-V-NAME".to_string()),'
+)
+
 
 ATTENDANCE_EXPECT = "attendance_core_entity|record_update|POST"
 CMS_EXPECT = "gate-cms-readable"
@@ -996,6 +1140,40 @@ A5_EXPECTS = [
     "portal_core_entity|page_get|GET",
 ]
 
+# 假绿根修：portal 写侧 owner 必须来自会话。破坏实验逐条还原成常量 'system'，
+# 由 portal-owner-write-roundtrip 正控制点名（surface 两处带上下文，避免误伤既有修复）。
+PORTAL_OWNER_WRITE_RE = re.compile(r"let creator = session\.person_unique\.clone\(\);")
+PORTAL_OWNER_WRITE_PATCH = 'let creator = "system";'
+PORTAL_DICT_OWNER_WRITE_RE = re.compile(
+    r"(let name = dict_flag\.clone\(\);\n\s*)let creator = session\.person_unique\.clone\(\);"
+)
+PORTAL_DICT_OWNER_WRITE_PATCH = r'\1let creator = "system";'
+PORTAL_SCRIPT_OWNER_WRITE_RE = re.compile(
+    r"(\.unwrap_or\(&name\)\n\s*\.to_string\(\);\n\s*)"
+    r"let creator = session\.person_unique\.clone\(\);"
+)
+PORTAL_SCRIPT_OWNER_WRITE_PATCH = r'\1let creator = "system";'
+PORTAL_OWNER_WRITE_EXPECTS = [
+    "create_portal",
+    "create_design",
+    "create_page",
+    "input_create",
+    "input_prepare_create",
+    "create_templatepage",
+    "create_widget",
+    "surface_dict_put",
+    "surface_script_post",
+]
+# warnlog_create：写侧归属落受害者常量，模拟「采信外部 owner」，行内含 victim → LEAK。
+WARNLOG_OWNER_RE = re.compile(
+    r"&\[&id, &level, &tag, &logger_name, &message, &detail, &host, &port, &sess\.person_unique\]"
+)
+WARNLOG_OWNER_PATCH = (
+    '&[&id, &level, &tag, &logger_name, &message, &detail, &host, &port, '
+    '&{ let _ = &sess; "gate-victim".to_string() }]'
+)
+WARNLOG_OWNER_EXPECT = "t2|program_center|warnlog_create"
+
 
 # 写 IDOR 第 W-b3 批：office/bbs/mind 写侧冒名 403 臂。
 # 把三个 crate resolve_* 的管理员臂改成恒放行（保留 is_admin_db 调用引用，避免未使用告警），
@@ -1003,6 +1181,22 @@ A5_EXPECTS = [
 GENERAL_ASSEMBLE = BACKEND / "crates/general_assemble_control/src/lib.rs"
 BBS_CORE = BACKEND / "crates/bbs_core_entity/src/lib.rs"
 MIND_CORE = BACKEND / "crates/mind_core_entity/src/lib.rs"
+# NO-OWNER-COL B 档：文档浏览量读门 / 附件三读的 upload_person 谓词 / 附件内容更新谓词。
+# 三个改动点复用 A 批同一批模式：恒真式保留 $2/$3/$5/$6 绑定，避免 bind 数不匹配 → 500 假阳性。
+CMS_B_UPDATE_OWNER_RE = re.compile(
+    r"AND \(upload_person = \$5::text OR \$6::boolean\)"
+)
+CMS_B_UPDATE_OWNER_PATCH = (
+    "AND ($5::text IS NOT NULL OR $5::text IS NULL OR $6::boolean)"
+)
+CMS_B_EXPECTS = [
+    "cms-doc-viewcount-owner",
+    "cms-fileinfo-owner",
+    "cms-fileinfo-online-owner",
+    "cms-fileinfo-preview-owner",
+    "cms-fileinfo-content-owner",
+]
+
 W3_GENERAL_WRITE_RE = re.compile(
     r"Some\(owner\) => \{\s*require_admin\(pool, session\)\.await\?;\s*Ok\(owner\)\s*\}"
 )
@@ -1047,7 +1241,7 @@ def sabotage_many(
         else:
             caught = code != 0 and "NEW-FAIL" in out and all(e in out for e in expects)
         for line in out.splitlines():
-            if line.startswith(("[LEAK]", "[PASS]", "[UNVERIFIED]", "NEW-FAIL", "STALE-BASELINE")) \
+            if line.startswith(("[LEAK]", "[PASS]", "[UNVERIFIED]", "[INTEGRITY]", "NEW-FAIL", "STALE-BASELINE")) \
                     or line.startswith("=== ") or "非 PASS" in line or "test result:" in line:
                 print(line)
         print()
@@ -1382,6 +1576,17 @@ def sabotage(kind: str) -> int:
             B8_PUBLIC_CHECK_EXPECTS,
             require_leak=True,
         )
+    elif kind == "cms-b-owner-gates":
+        return sabotage_many(
+            "摘掉 NO-OWNER-COL B 档的文档读门/附件归属谓词（5 条应逐条 LEAK）",
+            [
+                (CMS, CMS_DOC_READ_GATE_RE, CMS_DOC_READ_GATE_PATCH, "cms_doc_viewcount"),
+                (CMS, CMS_OWNED_READ_GATE_RE, CMS_OWNED_READ_GATE_PATCH, "cms_fileinfo_read"),
+                (CMS, CMS_B_UPDATE_OWNER_RE, CMS_B_UPDATE_OWNER_PATCH, "cms_fileinfo_update"),
+            ],
+            CMS_B_EXPECTS,
+            require_leak=True,
+        )
     elif kind == "b8-b3":
         return sabotage_many(
             "meeting 采信 body creator + 匿名目录查询夹带手机号（3 条应逐条 LEAK）",
@@ -1393,13 +1598,91 @@ def sabotage(kind: str) -> int:
             B8_B3_EXPECTS,
             require_leak=True,
         )
+    elif kind == "false-green-owner-write":
+        return sabotage_many(
+            "把 portal 写侧 9 处会话 creator 还原成常量 'system'（正控制应点名 9 个端点）",
+            [
+                (PORTAL_DESIGNER, PORTAL_OWNER_WRITE_RE, PORTAL_OWNER_WRITE_PATCH, f"designer_{i}")
+                for i in range(1, 8)
+            ]
+            + [
+                (
+                    PORTAL_SURFACE,
+                    PORTAL_DICT_OWNER_WRITE_RE,
+                    PORTAL_DICT_OWNER_WRITE_PATCH,
+                    "surface_dict",
+                ),
+                (
+                    PORTAL_SURFACE,
+                    PORTAL_SCRIPT_OWNER_WRITE_RE,
+                    PORTAL_SCRIPT_OWNER_WRITE_PATCH,
+                    "surface_script",
+                ),
+            ],
+            PORTAL_OWNER_WRITE_EXPECTS,
+        )
+    elif kind == "false-green-warnlog-owner":
+        return sabotage_many(
+            "把 warnlog_create 的 creator_person 落成受害者常量（应 LEAK）",
+            [(PROGRAM_CENTER, WARNLOG_OWNER_RE, WARNLOG_OWNER_PATCH, "warnlog_owner")],
+            [WARNLOG_OWNER_EXPECT],
+            require_leak=True,
+        )
+    elif kind == "admin-write-read-gates":
+        return sabotage_many(
+            "摘掉本批读侧归属谓词与 processing status 的 admin 门（12 条应逐条 LEAK）",
+            [
+                (GENERAL_ASSEMBLE, QRCODE_LIST_PRED_RE, QRCODE_LIST_PRED_PATCH, "qrcode_list"),
+                (
+                    QUERY_DESIGNER_U2,
+                    STATEMENT_MANAGE_PRED_RE,
+                    STATEMENT_MANAGE_PRED_PATCH,
+                    "statement_manage",
+                ),
+                (
+                    QUERY_DESIGNER_U2,
+                    STATEMENT_QUERY_PRED_RE,
+                    STATEMENT_QUERY_PRED_PATCH,
+                    "statement_query",
+                ),
+                (
+                    QUERY_DESIGNER_U2,
+                    QUERY_GUARD_READ_RE,
+                    QUERY_GUARD_READ_PATCH,
+                    "statement_guard_read",
+                ),
+                (AI_ASSEMBLE, AI_IDS_PRED_RE, AI_IDS_PRED_PATCH, "ai_ids"),
+                (AI_ASSEMBLE, AI_PAGING_PRED_RE, AI_PAGING_PRED_PATCH, "ai_paging"),
+                (AI_ASSEMBLE, AI_READ_GATE_RE, AI_READ_GATE_PATCH, "ai_read_gate"),
+                (FILE_ASSEMBLE, FILE_LIST_PRED_RE, FILE_LIST_PRED_PATCH, "xfile_list"),
+                (
+                    QUERY_PROCESSING,
+                    PROCESSING_ADMIN_RE,
+                    PROCESSING_ADMIN_PATCH,
+                    "processing_status",
+                ),
+            ],
+            ADMIN_WR_EXPECTS,
+            require_leak=True,
+        )
+    elif kind == "public-read-b6":
+        return sabotage_many(
+            "公开读面 B6：统一成功信封注入 PII canary（28 条匿名读用例应逐条 LEAK）",
+            [
+                (SHARED_RESPONSE, PUBLIC_READ_SUCCESS_RE, PUBLIC_READ_SUCCESS_PATCH, "resp_success"),
+                (SHARED_RESPONSE, PUBLIC_READ_LEGACY_RE, PUBLIC_READ_LEGACY_PATCH, "resp_legacy"),
+            ],
+            PUBLIC_READ_EXPECTS,
+            require_leak=True,
+        )
     else:
         raise SystemExit(
             f"未知破坏实验: {kind}（可选 ownership / correct / general / organization / "
             "program_center / hotpic_mind / read_b / read-a-b1 / read-a-b2 / read-a-b3 / "
-            "read-a-b4 / read-a-b5 / write-idor-b5 / write-idor-b6 / write-idor-b7 / "
+            "read-a-b4 / read-a-b5 / public-read-b6 / write-idor-b5 / write-idor-b6 / write-idor-b7 / "
             "write-idor-w1 / write-idor-w2 / write-idor-w3 / write-idor-w4 / write-idor-w5 / "
-            "write-idor-w6 / write-idor-w7 / w8-unverified）"
+            "write-idor-w6 / write-idor-w7 / w8-unverified / false-green-owner-write / "
+            "false-green-warnlog-owner / cms-b-owner-gates / admin-write-read-gates）"
         )
 
     print(f"== 破坏实验：{title}")
@@ -1413,7 +1696,7 @@ def sabotage(kind: str) -> int:
         )
         # 只摘出关键证据行，避免把 148 条明细全部倒进终端
         for line in out.splitlines():
-            if line.startswith(("[LEAK]", "[PASS]", "[UNVERIFIED]", "NEW-FAIL", "STALE-BASELINE")) \
+            if line.startswith(("[LEAK]", "[PASS]", "[UNVERIFIED]", "[INTEGRITY]", "NEW-FAIL", "STALE-BASELINE")) \
                     or line.startswith("=== ") or "非 PASS" in line or "test result:" in line:
                 print(line)
         print()

@@ -279,15 +279,20 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 #[allow(non_snake_case)]
 pub async fn list_files(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(folder_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
+    // 读侧归属：本人 OR 管理员；creator 为空的历史行仅管理员可见（fail-closed）。
+    let admin = shared::middleware::is_admin(&pool, &sess.person_unique).await;
 
     let rows = client
         .query(
             "SELECT id, name, path, size, creator, create_time, folder_id \
-              FROM x_file WHERE folder_id = $1 AND deleted_at IS NULL ORDER BY create_time::timestamp DESC",
-            &[&folder_id],
+              FROM x_file WHERE folder_id = $1 AND deleted_at IS NULL \
+              AND ($2::bool OR LOWER(TRIM(creator)) = LOWER(TRIM($3))) ORDER BY create_time::timestamp DESC",
+            &[&folder_id, &admin, &sess.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;

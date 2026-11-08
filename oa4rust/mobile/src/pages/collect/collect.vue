@@ -38,8 +38,18 @@ function openUrl(row: { url: string }) {
 
 async function removeRow(row: { id: string; title: string }) {
   if (removingId.value) return
+  // 删除不可恢复：先确认，再调接口；整个确认+请求期间加守卫，避免连点开多个确认框。
   removingId.value = row.id
   try {
+    const confirmed = await new Promise<boolean>((resolve) => {
+      uni.showModal({
+        title: '删除收藏',
+        content: `删除「${row.title}」后不可恢复，确定继续？`,
+        success: (m) => resolve(Boolean(m.confirm)),
+        fail: () => resolve(false),
+      })
+    })
+    if (!confirmed) return
     await collectApi.remove(row.id)
     rows.value = rows.value.filter((r) => r.id !== row.id)
     uni.showToast({ title: '已删除', icon: 'none' })

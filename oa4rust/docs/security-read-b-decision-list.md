@@ -287,3 +287,65 @@ rev-GATE-V-MOBILE)`，delete paging `LEAK(2xx 响应体含 canary GATE-DEL-MOBIL
 
 - 破坏实验：短路 `identity_create` 归属判定、`bind_create` 的 EXISTS 校验 → 门禁 `NEW-FAIL` 恰好点名这 2 条；还原后基线 31 → 29，无 `STALE-BASELINE`。
 - 写侧登记：`bind_create` 自身无 `creator` 列，父资源归属已收口；`bind_update` 仍只查会话，属另一缺口，留待后续。
+
+## 附：归属列写侧不可用批 2 —— `message_assemble_communicate` sender
+
+方向同上：读/写面依赖归属列、写侧却请求可控。
+
+| 端点 | 归属列 | 改前 | 改后 |
+|---|---|---|---|
+| `POST /api/message/assemble/communicate/send` | `x_message.sender` | 请求体 `sender`，缺省 `"system"` | `sess.person_unique` |
+| `POST /api/message/assemble/communicate/im/msg` | 同上 | 同上 | 同上 |
+
+- **依赖证据**：`mark_consume`、消息撤回等写面归属判定取 `sender`
+  （`security_gate_tests.rs`「这两张表不写 creator_person，归属事实取 sender」）。
+- **改前为什么门禁是绿的**：两个写端点无用例；既有读列表用例不校验 `sender` 真伪。
+- **用例**：2 条 `spoof-write`（`field=sender`，`carrier=body`，`dir=both`），
+  2xx 后回表 `x_message`，含 victim → LEAK、含 actor → PASS。
+- **种子**：`gate-conv-msg` 会话 + `audit-user`/`gate-victim` 成员（两向都需成员资格）。
+- **改后靠什么证明真防住了**：2 条实测 `[PASS]`（回表 sender=actor 正证据）；
+  破坏实验还原请求体 `sender` → 2 条 `[LEAK]` 且 `NEW-FAIL` 恰好点名
+  `send_message` / `im_msg`；还原后 `非 PASS 1`（仅 FALSE-GREEN `warnlog`），与基线一致。
+- **登记**：`x_message_mass.creator` 从不写入（`mass_create` 只写 `creator_person` 且管理员档，
+  读归属谓词用 `creator`，非管理员属主读不到自己的行；门禁无管理员攻击者档，无法取 sabotage 正证据）。
+
+## 附：归属列写侧盘点结论（本轮六 crate）
+
+| crate | 结论 |
+|---|---|
+| organization_core_entity | 已修（#263）；`unit_check` Public 双锁登记 |
+| personal / personal_extend | 无缺口（请求体归属键零命中，人脸/签名会话派生） |
+| organization_assemble_personal / organization_assemble_authentication / auth | 无缺口（oauth 落库已会话派生，有 `oauth_session_derived.rs`） |
+| message_assemble_communicate | 本批修 `sender`；`mass.creator` 从不写 → 登记 |
+| calendar_core_entity | 批 1 已修（PR #274） |
+| attendance_assemble_control | 五张配置表只写 `creator_person`；读侧双列已覆盖真实行，登记「只堵写侧」方案（不回填历史，量化 SQL 见 decisions §15.6.1） |
+
+## 附：归属列写侧不可用批 1 —— `calendar_core_entity`
+
+方向：读侧已用归属列判归属、写侧却把该列写成请求可控值或不校验。口径沿用默认 1：
+本人 OR 管理员；NULL/空归属 fail-closed（仅管理员）；无会话 401；越权 403；不存在 404。
+
+| 端点（`calendar_core_entity`） | 归属列 | 改前 | 改后 |
+|---|---|---|---|
+| `POST /calendar/create` | `x_cal_calendar.createor` | 请求体 `createor` 直写，缺省 `"anonymous"` | `require_session()?.person_unique` |
+| `POST /event/create` | `x_cal_event.createor` | 同上 | 同上 |
+| `POST /calendar/update` | `x_cal_calendar.createor` | 只校验行存在 + `OPEN`，无归属门 | 取行后 `require_owner`，非本人且非管理员 403 |
+| `POST /calendar/remove` | 同上 | 同上 | 同上 |
+| `POST /event/update` | `x_cal_event.createor` | 同上 | 同上 |
+| `POST /event/remove` | 同上 | 同上 | 同上 |
+
+- **改前为什么门禁是绿的**：门禁只挂了 `calendar_get`（读，PASS），六个写端点无用例；
+  `/api/calendar/core/entity/*` 不在 `ADMIN_WRITE_PREFIXES`（RBAC 兜底 `Authenticated`），
+  非管理员可达，缺陷真实可触发但无人断言。
+- **用例**：6 条 `spoof-write`（`field=createor`，`carrier=body`）。
+  create 两条 `dir=both`：2xx 后按响应 `data.id` 回表，含 victim → LEAK、含 actor → PASS；
+  update/remove 四条 `fwd-only`，body 字面量带 `id`（`build_write_body` 剔除 `id`，
+  `idor-write` 不适用）。
+- **种子**：`x_cal_event` 增 `xcal-victim-event`（`createor=gate-victim`）与
+  `rev-xcal-victim-event`（`createor=audit-user`）。
+- **改后靠什么证明真防住了**：6 条实测 `[PASS]`（create 的 PASS 是回表 owner=actor 的正证据，
+  update/remove 是 403）；读侧正控制沿用 `calendar_get|own`。
+  破坏实验把 create 写侧还原为请求体、`require_owner` 短路为恒放行 → `NEW-FAIL` **恰好点名**
+  这 6 条；还原后 `非 PASS 1`（仅 FALSE-GREEN `warnlog`），与基线一致，无 `STALE-BASELINE`。
+- **登记（本批不做）**：`event_list_by_calendar` 无归属谓词、`event_create` 不校验
+  `calendarId` 所属日历归属、`calendar_list_my` 返回全部 OPEN 日历。

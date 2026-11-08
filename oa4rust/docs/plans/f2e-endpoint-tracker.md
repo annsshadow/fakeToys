@@ -111,7 +111,7 @@
 | 写 IDOR 24 条 | 按 crate 分批，每批一次提交 | 归属写进 SQL `WHERE`（不是先查后判）+ 双向用例 + 破坏实验红 | **批次 1 已修**：`general_core_entity` 4 条（`file_update/delete`、`invoice_update/delete`）用 `CREATOR_OWNER_PREDICATE`（creator=本人 OR admin）写进 UPDATE/DELETE 的 WHERE；4 条门禁用例 LEAK→PASS（pass 8→12、基线 140→136）；`sabotage general` 红并点名 `general_core_entity|file_delete`。附带修创建冒名：`file_create`/`invoice_create` 的 `creator` 改取会话（忽略请求体）。**批次 2 已修**：`organization_core_entity` 4 条（`definition_update/delete`、`identity_update/delete`）复用同一 `CREATOR_OWNER_PREDICATE` 写进 UPDATE 的 `WHERE`（删除为软删），0 行时二次读只用于区分 403/404；4 条门禁用例 LEAK→PASS（pass 12→16、基线 136→132，leak=121 / unverified=11）；`sabotage organization` 红并点名 4 条。用例为双向 + admin 分支仍可写 + create 的 `creator` 取会话（`x_org_definition`/`x_org_identity` 的 `creator` 列此前未映射进实体，已补）。**批次 3 已修**：`program_center` 4 条——`collect_save/collect_delete`（归属列 `person_id`）、`module_remove_structure_id/module_write_flag`（归属列 `creator`，两条本是只读桩，按只读加谓词）。两条谓词都写进 SQL `WHERE`；非属主由「200 + `deleted:false`」改为 **403/404**（原口径无法与「不存在」区分，也不满足门禁 401/403 判据）。7 个用例：双向、本人 200 且真落库、admin 分支、无会话 401、create 归属取会话人（载荷冒用 `personId` 无效）。门禁 pass 16→20、基线 132→128（leak=121 / unverified 11→7）；`sabotage program_center` 4 条 NEW-FAIL。**批次 4 已完成（代码+用例）**：`hotpic` 2 条（`delete_by_id`、`user_hotpic_delete_by_ids`）用 `HOTPIC_OWNER_PREDICATE` —— **全局行**（`application`/`info_id` 两列皆空，见 `visible_scope`）**仅管理员可写**，专属行 `creator=本人 OR 管理员`，与 `create_hotpic`/`save_hotpic` 的 admin-only 口径一致（照搬 `creator=本人` 会锁死全局热点图维护入口）；`mind` 2 条（`update_mind`、`update_folder`）用 `CREATOR_OWNER_PREDICATE`（两表无 `deleted_at`）。谓词均写进 SQL `WHERE`，0 行时二次读只用于区分 403/404。门禁读数 pass 20→24（leak=117 / unverified=7）；**基线已在 192 条门禁落地后按实跑读数减**：rebase 到 `5fbc15326` 后跑门禁为「基线 160 / 非 PASS 156」，`STALE-BASELINE` 正好点名这 4 条，逐条删除后门禁通过（非 PASS 156 = leak 133 / unverified 23 / integrity 0）。`sabotage hotpic_mind` 在新门禁下复验成立（基线 156 → 非 PASS 160，4 条 NEW-FAIL，3 个文件已还原）。**剩余 7 条**（此前口头口径的 16 是粗估，按用例表逐条点算实为 11 起步、本批后剩 7：file folder 1、attendance appeal 1、cms 2+1、pp 2） |
 | 读 IDOR 117 条 | 拆 E18–E24 七批 | **先做「A 读 B / B 读 A」双向都 200 的**（谓词整体失效），再做单向 | **E18 批次 1–7 已修**（jpush 3、component、correlation、calendar 归分片 B）；**E19（批次 8）**：`portal_assemble_designer` 5 条详情读按 `creator` 收归属（`dict_id`/`file_id_download`/`get_design`/`scriptversion_id`/`templatepage_id`），基线 156→151。**登记不改 2 条**：同 crate `portal_id_icon`/`portal_id_permission` 读共享容器 `x_portal`（创建时 `creator` 恒写 `'system'`，无 `is_public`/`target='all'` 类共享列可判，且同表数据由 `portal_assemble_surface` 面向终端用户读取）——只加 `creator` 会挡掉被共享的非属主使用者，待定共享臂后再修 |
 | NO-OWNER-COL A 档 12 条 | 有归属列且生产路径确实写入 | 同写 IDOR 判据 | 待做 |
-| NO-OWNER-COL B 档 5 条 | 列存在但生产路径从不写入、恒 NULL（典型 `x_cms_fileinfo.upload_person`，五处 INSERT 均不带该列） | **先补写归属值再写谓词，或改为跟随父文档 ACL**（二选一，理由入台账）。判据必须造出「有归属值」行验证谓词真会过滤，否则谓词恒不命中也会假绿 | 待做 |
+| NO-OWNER-COL B 档 5 条 | 列存在但生产路径从不写入、恒 NULL（典型 `x_cms_fileinfo.upload_person`，五处 INSERT 均不带该列） | **已修（`fix/no-owner-col-b`）**：写侧 7 处 INSERT 补 `upload_person=会话人`；读侧本人 OR admin，历史 NULL 仅 admin（不回填）；#21 复核后改用 `x_cms_data_document` ACL。详见下节 | **已修** |
 | NO-OWNER-COL C 档 14 条 | 真·全局配置 / 无主体列 | **保守默认**：非管理员只读、写仅管理员（安全侧默认，业务可推翻） | 待做 |
 | 软门 2 条 | empower `manager_create` / `manager_update`：返回 `ActionResult::error` 但 HTTP 200 | 改 403 + 「客户端能区分成功与失败」用例 | 待做 |
 | 无门读 11 条 | 权限串 / ACL 元数据端点未取权限 | 最保守：管理员 + 本人 | 待做 |
@@ -212,8 +212,8 @@
 以下字面量属于「历史兼容的合理默认」，或写端点本身已 admin-only，不纳入本轮：
 
 - ai config / admin 类、correlation（读用 `person_id`）、jpush（admin + `target='all'`）；
-- `portal_*`（写 admin）、program_center（admin / 全局表）、query designer 其余创建（admin）、
-  query_surface（admin）、general attend / securityclearance（admin）。
+- `portal_*` 已于「假绿根修批（2026-11-08）」移出本表：写侧改会话身份，见下节；
+- query designer 其余创建（admin）、query_surface（admin）、general attend / securityclearance（admin）。
 
 ### 通用检查项：归属谓词的判据行必须来自真实写入路径
 
@@ -243,3 +243,126 @@
 
 处置：要么先把上述写入改为会话身份，要么明确这些行恒 admin-only 并固定口径。
 在此之前，`x_portal_*` 的相关门禁绿**不得记为「已防住」**，按上面通用检查项的第 3–5 条处理。
+
+## 假绿根修批（2026-11-08，`fix/false-green-owner-gates`）
+
+### 改前为什么门禁是绿的
+
+- portal（14 条读用例全 PASS）：判据行来自 seed（`creator=gate-victim`），
+  `security_regression_gate.py run` 读数 `cases=280 pass=279 leak=1`；但生产写侧 9 处
+  硬写 `creator='system'`（designer 7：`create_design` / `create_page` / `input_create` /
+  `input_prepare_create` / `create_portal` / `create_templatepage` / `create_widget`；
+  surface 2：`dict_*_data_put` 的 INSERT 分支 / `script_portal_*_post`）。
+  读谓词 `creator=本人 OR admin` 的 owner 臂对任何真实写入行永不命中，
+  「绿」实际来自 seed 行 + admin/空集，不是归属判定生效。
+- `t2|program_center|warnlog_create`（基线 1 条 LEAK，ratchet 绿）：写侧
+  `creator_person = sess.person_unique` 已正确，但用例 `field=level` 不是归属列；
+  runner 把 `level=gate-victim` 当作「行含 owner」判成冒名落库，判据来源
+  与真实归属无关，永远无法验证 owner 是否可被伪造。
+
+### 改后靠什么证明真防住
+
+- 写侧 9 处 `creator` 改为 `session.person_unique.clone()`。
+- 新增伪用例 `portal-owner-write-roundtrip`：gate-admin 会话调用上述 9 个真实写端点，
+  按响应 `data.id` 回表断言 `creator=gate-admin`；`gate run` 为 PASS。
+- warnlog 用例 `field` 改为真实归属列 `creator_person`：真实 `POST /api/program_center/warnlog`
+  产出的新行 `creator_person=audit-user`，body 里的受害者值不再落库 → PASS；
+  基线按 `STALE-BASELINE` 减 1 行，最终 `cases=281 pass=281`。
+- `sabotage false-green-owner-write`：9 处还原为 `'system'` →
+  `[INTEGRITY] portal-owner-write-roundtrip` 逐条点名 9 个端点；
+  `sabotage false-green-warnlog-owner`：写受害者常量 →
+  `[LEAK] t2|program_center|warnlog_create`（`owner=gate-victim`）。
+
+### 仍未解决的假绿项
+
+- `x_portal` 共享读 2 条（`portal_id_icon` / `portal_id_permission`）：写入已可归属，
+  但共享臂/公开口径未裁决，谓词未加，仍不得记为「已防住」。
+- 其他写侧常量扫描判为 admin-only 的表（qrcode、query_statement、query_processing、
+  ai_file、x_file 等）：写侧已改会话，但读侧若仍无谓词，属未闭环暴露，不算假绿已修。
+  已由下节「读侧无谓词收口批」处理。
+
+## NO-OWNER-COL B 档（2026-11-08，`fix/no-owner-col-b`）
+
+### 改前证据：真实写入行该列为 NULL
+
+- `x_cms_fileinfo` 的真实 INSERT 均不带 `upload_person`：
+  `fileinfo_copy_to_doc_docId`、`fileinfo_upload_doc_docId_save_as_flag`、
+  `fileinfo_upload_document_docId`、`fileinfo_upload_document_docId_callback_callback`、
+  `fileinfo_upload_with_url`、`fileinfo_upload_with_url_u3`；另 `fileinfo_u2_copy_to_doc`
+  从旧行复制，旧行为 NULL 时新行仍为 NULL。
+- 因此上传接口产出的新行 `upload_person IS NULL`——不是 seed 造的行。
+  **此时直接加读谓词会发生什么**：全部真实上传的附件都不满足
+  `upload_person = 会话人 OR admin`，普通用户连自己刚上传的附件都读不到；
+  只有管理员可见。这正是「先补写、后收口」的原因。
+- #21 现场复核不属于本档：`POST /api/document` 真实写入
+  `x_cms_data_document.creator/author_id`（本批回环断言 `creator=调用者`）。
+  #21 缺的是读谓词；且原 handler 查遗留 parity 表 `x_cms_document`，真实文档
+  不在其中，已改用 `x_cms_data_document` 的 ACL。
+
+### 改后靠什么证明真防住
+
+- 写侧 7 处 INSERT 补 `upload_person = session.person_unique`；复制路径改为
+  当前复制人。元数据 UPDATE 不覆盖 `upload_person`（避免编辑者借编辑抢归属）。
+- 读侧：`fileinfo_id` / `online/info` / `preview/pdf` 用
+  `cms_gate_owned_read("x_cms_fileinfo", "upload_person")`；
+  `update/{id}/content` 把 `upload_person = 会话人 OR admin` 写进 UPDATE 的 `WHERE`；
+  文档浏览量用 `cms_gate_document_read`（published / creator / author / admin）。
+- 历史 NULL 行：**不回填、不用父文档 ACL 反推**；谓词不命中 → 仅管理员可读/可改。
+- 新增 5 个伪用例（全部来自真实写入，不靠 seed）：
+  `cms-doc-viewcount-owner`、`cms-fileinfo-owner`、`cms-fileinfo-online-owner`、
+  `cms-fileinfo-preview-owner`、`cms-fileinfo-content-owner`。
+  每个先 `POST /api/document` + `POST /api/fileinfo/upload/document/{docId}`，
+  回表断言 `creator/upload_person=调用者`，再断言本人 2xx、他人 403；
+  内容更新额外断言他人零落库、本人真落库。
+  实跑：`cases=286 pass=286 leak=0 unverified=0 integrity=0`，基线保持 0。
+- `sabotage cms-b-owner-gates`：同时摘掉文档读门、附件三读谓词、内容更新谓词 →
+  `[LEAK]` 逐条点名上述 5 个用例（其余因共用 cms 读门产生的 NEW-FAIL 也一并可见）。
+
+## 读侧无谓词 / 无 admin 门收口批（2026-11-08，`fix/admin-write-read-gates`）
+
+### 改前为什么能用（真实请求证据）
+
+这些端点只需登录（无 admin 门），handler 里也**没有**按会话人过滤的谓词：
+
+| 端点 | 改前行为 |
+|---|---|
+| `GET /api/general/assemble/control/qrcode/list` | 返回全表（id/width/height/text/content/creator） |
+| `GET /api/query/assemble/designer/statement/{flag}` | 按 flag 取任意语句全文 |
+| `GET /api/query/assemble/designer/statement/list/manage` | 返回全部语句（含 data） |
+| `POST /api/query/assemble/designer/statement/list/query/{queryFlag}` | 返回该 queryFlag 下全部语句 |
+| `POST /api/query/assemble/designer/statement/execute/{flag}/page/{p}/size/{s}` | 按他人 flag 执行并返回数据 |
+| `GET /api/ai_assemble_control/file/{flag}` / `.../download` / `.../download/scale` | 任意登录用户按 id 读他人文件元数据/下载 |
+| `POST /api/ai_assemble_control/file/list` / `.../list/paging/{p}/{s}` | 按 ids 或分页返回全表 |
+| `GET /api/file/assemble/control/file/list/{folderId}` | 返回文件夹内全部文件 |
+| `GET /api/query/service/processing/status` | 任何登录用户可读处理队列状态 |
+
+证据来自破坏实验 `sabotage admin-write-read-gates`（把本批新增门逐一摘掉，等价改前）：
+
+- 12 条用例逐条 `[LEAK]`，响应体含受害者 canary：`r6-qrcode-list`、`r6-statement-list`、
+  `r6-statement-get`、`r6-statement-exec-data`、`r6-ai-file`、`r6-xfile-list`、`running`。
+
+### 改后谁还能用
+
+| 端点 | 归属口径 |
+|---|---|
+| qrcode list | 本人 OR 管理员；`creator` 为空的历史行仅管理员 |
+| statement get/list/execute | 本人 OR 管理员；`creator` 为空的历史行仅管理员 |
+| ai file 单条/下载/列表 | 本人 OR 管理员；`creator` 为空的历史行仅管理员 |
+| x_file list | 本人 OR 管理员；`creator` 为空的历史行仅管理员 |
+| processing status | **仅管理员**：`x_query_processing` 是服务处理队列，状态是运维数据，不是用户数据 |
+
+- 不回溯历史行、不回填、不用父文档 ACL 反推；NULL 一律 fail-closed（仅管理员）。
+- 正控制：每个列表端点都有 `...|own` 用例（攻击者本人 2xx 且能看到自己的行），
+  防止「过滤后返回空」把门禁糊成绿。
+
+### 破坏实验点名
+
+`sabotage admin-write-read-gates` 必须逐条命中（`require_leak=True`）：
+
+`admin_write_read|qrcode_list|GET`、`|statement_manage_list|GET`、
+`|statement_list_with_query|POST`、`|statement_get_flag|GET`、
+`|statement_execute|POST`、`|ai_file_flag|GET`、`|ai_file_download|GET`、
+`|ai_file_download_scale|GET`、`|ai_file_list|POST`、`|ai_file_paging|POST`、
+`|xfile_list|GET`、`|processing_status|GET`。
+
+门禁结果：`cases=317 pass=317`，基线 0 条。

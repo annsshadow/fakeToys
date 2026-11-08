@@ -64,6 +64,8 @@ organization_assemble_control|person_list_pinyininitial|PUT	idor-read-scoped	PUT
 organization_assemble_control|person_list_pinyininitial|PUT|own	idor-read-own	PUT	/api/organization/assemble/control/person/list/pinyininitial	x_org_person	-	rev-GATE-V-MOBILE	path		legacy	fwd-only	n/a		{"pinyinInitial":["g"]}
 message_assemble_communicate|message_list_paging_page_size_size|GET	idor-read-scoped	GET	/api/message/assemble/communicate/message/list/paging/1/size/10	x_message	-	GATE-V-MSG	path		legacy	both	allow		
 message_assemble_communicate|message_list_paging_page_size_size|own	idor-read-own	GET	/api/message/assemble/communicate/message/list/paging/1/size/10	x_message	-	rev-GATE-V-MSG	path		legacy	fwd-only	n/a		
+message_assemble_communicate|send_message	spoof-write	POST	/api/message/assemble/communicate/send	x_message	gate-victim		body	sender	legacy	both	n/a		{"conversationId":"gate-conv-msg"}
+message_assemble_communicate|im_msg	spoof-write	POST	/api/message/assemble/communicate/im/msg	x_message	gate-victim		body	sender	legacy	both	n/a		{"conversationId":"gate-conv-msg"}
 cms_assemble_control|anonymous_document_id_view|GET	idor-read	GET	/api/document/{id}/view	x_cms_data_document	doc-draft-1	doc-draft-1	path		legacy	both	allow
 cms_assemble_control|anonymous_form_id|GET	idor-read	GET	/api/anonymous/form/{id}	x_cms_form	r6-anonymous_form_id	r6-anonymous_form_id	path		legacy	both	allow
 cms_assemble_control|appinfo_id|GET	idor-read	GET	/api/appinfo/{id}	x_cms_appinfo	r6-appinfo_appId_icon_s	r6-appinfo_appId_icon_s	path		legacy	both	allow
@@ -251,9 +253,38 @@ t2|organization|unit_list_level_name_object	public-read	POST	/api/unit/list/leve
 t2|organization|group_create	spoof-write	POST	/api/organization/group		person-admin		body	level	T2	both	n/a
 t2|organization|identity_create	spoof-write	POST	/api/organization/identity		person-admin		body	person_id	T2	both	n/a
 t2|organization|bind_create	spoof-write	POST	/api/organization/bind		person-admin		body	identity_id	T2	both	n/a
-t2|program_center|warnlog_create	spoof-write	POST	/api/program_center/warnlog	x_program_warn_log	person-admin		body	level	T2	both	n/a
+t2|program_center|warnlog_create	spoof-write	POST	/api/program_center/warnlog	x_program_warn_log	person-admin		body	creator_person	T2	both	n/a
 t2-excluded|ai|chat_completion	excluded	POST	/api/ai_assemble_control/chat/completion				body		T2	fwd-only	n/a
 t2-excluded|ai|file_upload	excluded	POST	/api/ai_assemble_control/file/upload				body		T2	fwd-only	n/a
+# ── 公开读面 B6：bbs 19 + user_* 2（可达）+ hotpic 7，匿名读 + 无 PII canary ──
+b6|bbs|forum_list	public-read-login	GET	/api/bbs/assemble/control/forum/list		GATE-BBS-FORUM	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|forum_view_all	public-read-login	GET	/api/bbs/assemble/control/forum/view/all		GATE-BBS-FORUM	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|topic_list_by_forum	public-read-login	GET	/api/bbs/assemble/control/topic/list/forum/GATE-BBS-FORUM		GATE-BBS-TOPIC	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|subject_view	public-read-login	GET	/api/bbs/assemble/control/subject/view/GATE-BBS-TOPIC		GATE-BBS-TOPIC	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|subject_top	public-read-login	GET	/api/bbs/assemble/control/subject/top/GATE-BBS-FORUM		GATE-BBS-TOPIC	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|reply_list_sub	public-read-login	GET	/api/bbs/assemble/control/reply/list/sub/GATE-BBS-TOPIC		GATE-BBS-REPLY	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|reply_get	public-read-login	GET	/api/bbs/assemble/control/reply/GATE-BBS-REPLY		GATE-BBS-REPLY	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|reply_filter_list	public-read-login	PUT	/api/bbs/assemble/control/reply/filter/list/page/1/count/1		GATE-BBS-REPLY	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|list_reply_filter	public-read-login	GET	/api/bbs/assemble/control/list/reply/filter		GATE-BBS-REPLY	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|subject_creamed_list	public-read-login	PUT	/api/bbs/assemble/control/subject/creamed/list/page/1/count/1		GATE-BBS-TOPIC	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|subject_recommended_list	public-read-login	PUT	/api/bbs/assemble/control/subject/recommended/list/page/1/count/1		GATE-BBS-TOPIC	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|subject_recommended_index	public-read-login	GET	/api/bbs/assemble/control/subject/recommended/index/10		GATE-BBS-TOPIC	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|subject_index_list	public-read-login	PUT	/api/bbs/assemble/control/subject/index/list/page/1/count/1		GATE-BBS-TOPIC	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|subject_filter_list	public-read-login	PUT	/api/bbs/assemble/control/subject/filter/list/page/1/count/1		GATE-BBS-TOPIC	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|subject_filter_listsubjectinfo	public-read-login	POST	/api/bbs/assemble/control/subject/filter/listsubjectinfo/page/1/count/1		GATE-BBS-TOPIC	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|topic_filter_listsubjectinfo	public-read-login	POST	/api/bbs/assemble/control/topic/filter/listsubjectinfo		GATE-BBS-TOPIC	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|subject_search_list	public-read-login	PUT	/api/bbs/assemble/control/subject/search/list/page/1/count/1		GATE-BBS-TOPIC	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|section_viewforum	public-read-login	GET	/api/bbs/assemble/control/section/viewforum/GATE-BBS-FORUM		GATE-BBS-SECTION	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|user_subject_voterecord	public-read-login	PUT	/api/bbs/assemble/control/user/subject/voterecord/list/page/1/count/1		gate-bbs-voter	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	body		b6	fwd-only	n/a		{"subjectId":"GATE-BBS-TOPIC"}
+b6|bbs|user_forum_list	public-read-login	GET	/api/bbs/assemble/control/user/forum/all		GATE-BBS-FORUM	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|userinfo_filter	public-read-login	PUT	/api/bbs/assemble/control/userinfo		GATE-BBS-NICK	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	body		b6	fwd-only	n/a		{"name":"GATE-BBS-NICK"}
+b6|hotpic|list_by_application_info	public-read-login	GET	/api/hotpic/user/hotpic/gate-app/gate-info		GATE-HOTPIC-B6	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|hotpic|list_hotpics	public-read-login	GET	/api/hotpic_assemble_control/list/hotpics		GATE-HOTPIC-B6	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|hotpic|get_hotpic	public-read-login	GET	/api/hotpic_assemble_control/get/hotpic/GATE-HOTPIC-B6		GATE-HOTPIC-B6	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|hotpic|list_control_panels	public-read-login	GET	/api/hotpic_assemble_control/list/control/panels		gate-victim	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|hotpic|list_control_applications	public-read-login	GET	/api/hotpic_assemble_control/list/control/applications		gate-victim	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|hotpic|cipher_filter_list	public-read-login	GET	/api/hotpic/assemble/control/cipher/hotpic/filter/list/page/1/count/10		GATE-HOTPIC-B6	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|hotpic|user_filter_list	public-read-login	GET	/api/hotpic/assemble/control/user/hotpic/filter/list/page/1/count/10		GATE-HOTPIC-B6	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
 organization_assemble_control|personcard_listgrouptypes|GET	idor-read-scoped	GET	/api/organization/assemble/control/personcard/listgrouptypes	x_org_person	-	GATE-V-MOBILE	path		legacy	both	allow		
 organization_assemble_control|personcard_listgrouptypes|own	idor-read-own	GET	/api/organization/assemble/control/personcard/listgrouptypes	x_org_person	-	rev-GATE-V-MOBILE	path		legacy	fwd-only	n/a		
 organization_assemble_control|personcard_mylist|GET	idor-read-scoped	GET	/api/organization/assemble/control/personcard/mylist	x_org_person	-	GATE-V-MOBILE	path		legacy	both	allow		
@@ -273,3 +304,32 @@ organization_assemble_control|personcard_listPersonalVCf|own	idor-read-own	GET	/
 organization_assemble_control|personcard_flag|GET	idor-read	GET	/api/organization/assemble/control/personcard/{id}	x_org_person	gate-person-v	GATE-V-MOBILE	path		legacy	both	allow	gate-person-a	
 organization_assemble_control|personcard_flag|own	idor-read-own	GET	/api/organization/assemble/control/personcard/{id}	x_org_person	gate-person-a	rev-GATE-V-MOBILE	path		legacy	fwd-only	n/a		
 organization_assemble_control|person_list_delete_paging|POST	idor-read	POST	/api/organization/assemble/control/person/list/delete/1/size/10	x_org_person	gate-person-del	GATE-DEL-MOBILE	path		legacy	both	allow		
+calendar_core_entity|calendar_create	spoof-write	POST	/api/calendar/core/entity/calendar/create	x_cal_calendar	gate-victim		body	createor	legacy	both	n/a		{"type":"person"}
+calendar_core_entity|event_create	spoof-write	POST	/api/calendar/core/entity/event/create	x_cal_event	gate-victim		body	createor	legacy	both	n/a		{"calendar_id":"2bf1a95c-04a8-41c1-918b-7d608331c702","calendarId":"2bf1a95c-04a8-41c1-918b-7d608331c702","start_time":"2026-01-01T00:00:00","startTime":"2026-01-01T00:00:00","end_time":"2026-01-01T01:00:00","endTime":"2026-01-01T01:00:00"}
+calendar_core_entity|calendar_update	spoof-write	POST	/api/calendar/core/entity/calendar/update	x_cal_calendar	gate-victim		body	createor	legacy	fwd-only	n/a		{"id":"2bf1a95c-04a8-41c1-918b-7d608331c702"}
+calendar_core_entity|calendar_remove	spoof-write	POST	/api/calendar/core/entity/calendar/remove	x_cal_calendar	gate-victim		body	createor	legacy	fwd-only	n/a		{"id":"2bf1a95c-04a8-41c1-918b-7d608331c702"}
+calendar_core_entity|event_update	spoof-write	POST	/api/calendar/core/entity/event/update	x_cal_event	gate-victim		body	createor	legacy	fwd-only	n/a		{"id":"xcal-victim-event"}
+calendar_core_entity|event_remove	spoof-write	POST	/api/calendar/core/entity/event/remove	x_cal_event	gate-victim		body	createor	legacy	fwd-only	n/a		{"id":"xcal-victim-event"}
+admin_write_read|qrcode_list|GET	idor-read-scoped	GET	/api/general/assemble/control/qrcode/list	x_general_assemble_qrcode	-	r6-qrcode-list	path		legacy	fwd-only	allow		
+admin_write_read|qrcode_list|own	idor-read-own	GET	/api/general/assemble/control/qrcode/list	x_general_assemble_qrcode	-	r6-qrcode-own	path		legacy	fwd-only	n/a		
+admin_write_read|statement_manage_list|GET	idor-read-scoped	GET	/api/query/assemble/designer/statement/list/manage	x_query_statement	-	r6-statement-list	path		legacy	fwd-only	allow		
+admin_write_read|statement_manage_list|own	idor-read-own	GET	/api/query/assemble/designer/statement/list/manage	x_query_statement	-	r6-statement-own	path		legacy	fwd-only	n/a		
+admin_write_read|statement_list_with_query|POST	idor-read-scoped	POST	/api/query/assemble/designer/statement/list/query/r6-queryflag	x_query_statement	-	r6-statement-list	path		legacy	fwd-only	allow		
+admin_write_read|statement_list_with_query|own	idor-read-own	POST	/api/query/assemble/designer/statement/list/query/r6-queryflag	x_query_statement	-	r6-statement-own	path		legacy	fwd-only	n/a		
+admin_write_read|statement_get_flag|GET	idor-read	GET	/api/query/assemble/designer/statement/{flag}	x_query_statement	r6-statement-get	r6-statement-get	path		legacy	both	allow		
+admin_write_read|statement_get_flag|own	idor-read-own	GET	/api/query/assemble/designer/statement/{flag}	x_query_statement	r6-statement-own	r6-statement-own	path		legacy	fwd-only	n/a		
+admin_write_read|statement_execute|POST	idor-read	POST	/api/query/assemble/designer/statement/execute/{flag}/page/1/size/10	x_query_statement	r6-statement-exec	r6-statement-exec-data	path		legacy	both	allow		
+admin_write_read|statement_execute|own	idor-read-own	POST	/api/query/assemble/designer/statement/execute/{flag}/page/1/size/10	x_query_statement	r6-statement-exec-own	r6-statement-exec-own-data	path		legacy	fwd-only	n/a		
+admin_write_read|ai_file_flag|GET	idor-read	GET	/api/ai_assemble_control/file/{flag}	x_ai_file	r6-ai-file	r6-ai-file	path		legacy	both	allow		
+admin_write_read|ai_file_flag|own	idor-read-own	GET	/api/ai_assemble_control/file/{flag}	x_ai_file	r6-ai-file-own	r6-ai-file-own	path		legacy	fwd-only	n/a		
+admin_write_read|ai_file_download|GET	idor-read	GET	/api/ai_assemble_control/file/{flag}/download	x_ai_file	r6-ai-file	r6-ai-file	path		legacy	both	allow		
+admin_write_read|ai_file_download|own	idor-read-own	GET	/api/ai_assemble_control/file/{flag}/download	x_ai_file	r6-ai-file-own	r6-ai-file-own	path		legacy	fwd-only	n/a		
+admin_write_read|ai_file_download_scale|GET	idor-read	GET	/api/ai_assemble_control/file/{flag}/download/scale	x_ai_file	r6-ai-file	r6-ai-file	path		legacy	both	allow		
+admin_write_read|ai_file_download_scale|own	idor-read-own	GET	/api/ai_assemble_control/file/{flag}/download/scale	x_ai_file	r6-ai-file-own	r6-ai-file-own	path		legacy	fwd-only	n/a		
+admin_write_read|ai_file_list|POST	idor-read-scoped	POST	/api/ai_assemble_control/file/list	x_ai_file	r6-ai-file	r6-ai-file	body		legacy	fwd-only	allow		{"ids":["r6-ai-file"]}
+admin_write_read|ai_file_list|own	idor-read-own	POST	/api/ai_assemble_control/file/list	x_ai_file	r6-ai-file-own	r6-ai-file-own	body		legacy	fwd-only	n/a		{"ids":["r6-ai-file-own"]}
+admin_write_read|ai_file_paging|POST	idor-read-scoped	POST	/api/ai_assemble_control/file/list/paging/1/size/10	x_ai_file	-	r6-ai-file	path		legacy	fwd-only	allow		
+admin_write_read|ai_file_paging|own	idor-read-own	POST	/api/ai_assemble_control/file/list/paging/1/size/10	x_ai_file	-	r6-ai-file-own	path		legacy	fwd-only	n/a		
+admin_write_read|xfile_list|GET	idor-read-scoped	GET	/api/file/assemble/control/file/list/{id}	x_file	r6-folder-list	r6-xfile-list	path		legacy	fwd-only	allow		
+admin_write_read|xfile_list|own	idor-read-own	GET	/api/file/assemble/control/file/list/{id}	x_file	r6-folder-own	r6-xfile-own	path		legacy	fwd-only	n/a		
+admin_write_read|processing_status|GET	idor-read	GET	/api/query/service/processing/status	x_query_processing	-	running	path		legacy	fwd-only	n/a		

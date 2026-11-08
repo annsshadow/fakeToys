@@ -385,9 +385,25 @@ pub async fn statement_delete(
 #[allow(non_snake_case)]
 pub async fn statement_get_flag(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
+
+    // 读侧归属：本人 OR 管理员；creator 为空的历史行仅管理员可读。
+    let found = guard_read(
+        &pool,
+        &sess,
+        &client,
+        "SELECT COALESCE(creator, '') AS owner FROM x_query_statement \
+         WHERE id = $1 OR (COALESCE(alias,'') <> '' AND alias = $1) LIMIT 1",
+        &flag,
+    )
+    .await?;
+    if !found {
+        return Ok(Json(ActionResult::error("statement not found")));
+    }
 
     let row = client
         .query_opt(
@@ -406,13 +422,18 @@ pub async fn statement_get_flag(
 #[allow(non_snake_case)]
 pub async fn statement_manage_list(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
+    // 读侧归属：本人 OR 管理员；creator 为空的历史行仅管理员可见。
+    let admin = shared::middleware::is_admin(&pool, &sess.person_unique).await;
 
     let rows = client
         .query(
-            "SELECT id, name, alias, query_flag, entity_class, type, data, counting_data, creator FROM x_query_statement ORDER BY create_time DESC",
-            &[],
+            "SELECT id, name, alias, query_flag, entity_class, type, data, counting_data, creator FROM x_query_statement \
+             WHERE ($1::bool OR LOWER(TRIM(creator)) = LOWER(TRIM($2))) ORDER BY create_time DESC",
+            &[&admin, &sess.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -430,14 +451,19 @@ pub async fn statement_manage_list(
 #[allow(non_snake_case)]
 pub async fn statement_list_with_query(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path(query_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
+    // 读侧归属：本人 OR 管理员；creator 为空的历史行仅管理员可见。
+    let admin = shared::middleware::is_admin(&pool, &sess.person_unique).await;
 
     let rows = client
         .query(
-            "SELECT id, name, alias, query_flag, entity_class, type, data, counting_data, creator FROM x_query_statement WHERE query_flag = $1 ORDER BY create_time DESC",
-            &[&query_flag],
+            "SELECT id, name, alias, query_flag, entity_class, type, data, counting_data, creator FROM x_query_statement \
+             WHERE query_flag = $1 AND ($2::bool OR LOWER(TRIM(creator)) = LOWER(TRIM($3))) ORDER BY create_time DESC",
+            &[&query_flag, &admin, &sess.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -581,10 +607,25 @@ async fn execute_statement_by_flag(
 #[allow(non_snake_case)]
 pub async fn statement_execute_v2(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((flag, page, size)): Path<(String, i64, i64)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
+    // 执行等价于读该语句背后的数据：先按 creator 归属校验（空归属仅管理员）。
+    let found = guard_read(
+        &pool,
+        &sess,
+        &client,
+        "SELECT COALESCE(creator, '') AS owner FROM x_query_statement \
+         WHERE id = $1 OR (COALESCE(alias,'') <> '' AND alias = $1) LIMIT 1",
+        &flag,
+    )
+    .await?;
+    if !found {
+        return Ok(Json(ActionResult::error("statement not found")));
+    }
     let parameters = body.get("parameter").cloned().unwrap_or(Value::Null);
     let result = execute_statement_by_flag(&client, &flag, "", page, size, &parameters).await?;
     Ok(Json(ActionResult::success(result)))
@@ -593,10 +634,24 @@ pub async fn statement_execute_v2(
 #[allow(non_snake_case)]
 pub async fn statement_execute_mode_v2(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     Path((flag, mode, page, size)): Path<(String, String, i64, i64)>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sess = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
+    let found = guard_read(
+        &pool,
+        &sess,
+        &client,
+        "SELECT COALESCE(creator, '') AS owner FROM x_query_statement \
+         WHERE id = $1 OR (COALESCE(alias,'') <> '' AND alias = $1) LIMIT 1",
+        &flag,
+    )
+    .await?;
+    if !found {
+        return Ok(Json(ActionResult::error("statement not found")));
+    }
     let parameters = body.get("parameter").cloned().unwrap_or(Value::Null);
     let result = execute_statement_by_flag(&client, &flag, &mode, page, size, &parameters).await?;
     Ok(Json(ActionResult::success(result)))
@@ -1444,6 +1499,18 @@ async fn guard_write(
             Ok(true)
         }
     }
+}
+
+/// 读端口径：与 guard_write 同一判据（本人 OR 管理员；归属列为空 → 仅管理员），
+/// 单独命名以便破坏实验能只摘读侧门、不影响写侧。
+async fn guard_read(
+    pool: &Pool,
+    session: &Session,
+    client: &deadpool_postgres::Client,
+    select_owner_sql: &str,
+    key: &str,
+) -> Result<bool, AppError> {
+    guard_write(pool, session, client, select_owner_sql, key).await
 }
 
 fn body_str<'a>(body: &'a Value, keys: &[&str]) -> Option<&'a str> {

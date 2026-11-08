@@ -73,6 +73,7 @@ macro_rules! parity_test {
         test_name: $test_name:ident,
         behavior: $behavior:expr,
         $(content_type: $content_type:expr,)?
+        $(session: $session:expr,)?
         router_args: $router_args:tt,
         body: $body:expr,
     ) => {
@@ -86,6 +87,7 @@ macro_rules! parity_test {
                         .uri($route)
                         .method(axum::http::Method::$method)
                         $(.header(axum::http::header::CONTENT_TYPE, $content_type))?
+                        $(.extension($session))?
                         .body(axum::body::Body::from($body))
                         .expect("build parity request"),
                 )
