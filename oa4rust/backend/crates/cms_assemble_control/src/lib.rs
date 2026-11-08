@@ -4462,9 +4462,11 @@ pub async fn fileinfo_batch_download_doc_docId_site_site(
 #[allow(non_snake_case)]
 pub async fn fileinfo_copy_to_doc_docId(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path((file_id, doc_id)): axum::extract::Path<(String, String)>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
     let original_name = body
         .get("originalName")
@@ -4477,8 +4479,15 @@ pub async fn fileinfo_copy_to_doc_docId(
         .unwrap_or("");
     let row = client
         .query_one(
-            "INSERT INTO x_cms_fileinfo (id, doc_id, file_id, original_name, size, content_type) VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5) RETURNING *",
-            &[&doc_id, &file_id, &original_name, &size, &content_type],
+            "INSERT INTO x_cms_fileinfo (id, doc_id, file_id, original_name, size, content_type, upload_person) VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5, $6) RETURNING *",
+            &[
+                &doc_id,
+                &file_id,
+                &original_name,
+                &size,
+                &content_type,
+                &session.person_unique,
+            ],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -4899,9 +4908,9 @@ pub async fn fileinfo_update_id_content(
     axum::extract::Path(id): axum::extract::Path<String>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    // 写面：收有效会话门（无会话 401）。
-    // x_cms_fileinfo 的 upload_person 列各插入路径均不写，行属主不可判，暂按仅会话存在档收口。
-    require_session(session)?;
+    // 写面：归属列 `upload_person` 已由各插入路径写入会话人；编辑权 = 上传人 OR 管理员。
+    // 历史行 `upload_person` 为 NULL：谓词不命中，即仅管理员可改（fail-closed，不回填）。
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
     let original_name = body
         .get("originalName")
@@ -4912,16 +4921,39 @@ pub async fn fileinfo_update_id_content(
         .get("contentType")
         .and_then(|v| v.as_str())
         .unwrap_or("");
+    let admin = shared::middleware::is_admin(&pool, &session.person_unique).await;
     let row = client
         .query_opt(
-            "UPDATE x_cms_fileinfo SET original_name = $1, size = $2, content_type = $3 WHERE id = $4 RETURNING *",
-            &[&original_name, &size, &content_type, &id],
+            "UPDATE x_cms_fileinfo SET original_name = $1, size = $2, content_type = $3 \
+             WHERE id = $4 AND deleted_at IS NULL \
+             AND (upload_person = $5::text OR $6::boolean) RETURNING *",
+            &[
+                &original_name,
+                &size,
+                &content_type,
+                &id,
+                &session.person_unique,
+                &admin,
+            ],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(row_to_json(&row)))),
-        None => Ok(Json(ActionResult::error("fileinfo not found"))),
+        None => {
+            let exists = client
+                .query_opt(
+                    "SELECT 1 FROM x_cms_fileinfo WHERE id = $1 AND deleted_at IS NULL",
+                    &[&id],
+                )
+                .await
+                .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
+            if exists.is_some() {
+                Err(AppError::Forbidden)
+            } else {
+                Err(AppError::NotFound)
+            }
+        }
     }
 }
 
@@ -4954,8 +4986,14 @@ pub async fn fileinfo_upload_doc_docId_save_as_flag(
         .unwrap_or("");
     let row = client
         .query_one(
-            "INSERT INTO x_cms_fileinfo (id, doc_id, original_name, size, content_type) VALUES (gen_random_uuid()::text, $1, $2, $3, $4) RETURNING *",
-            &[&doc_id, &original_name, &size, &content_type],
+            "INSERT INTO x_cms_fileinfo (id, doc_id, original_name, size, content_type, upload_person) VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5) RETURNING *",
+            &[
+                &doc_id,
+                &original_name,
+                &size,
+                &content_type,
+                &session.person_unique,
+            ],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -4991,8 +5029,14 @@ pub async fn fileinfo_upload_document_docId(
         .unwrap_or("");
     let row = client
         .query_one(
-            "INSERT INTO x_cms_fileinfo (id, doc_id, original_name, size, content_type) VALUES (gen_random_uuid()::text, $1, $2, $3, $4) RETURNING *",
-            &[&doc_id, &original_name, &size, &content_type],
+            "INSERT INTO x_cms_fileinfo (id, doc_id, original_name, size, content_type, upload_person) VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5) RETURNING *",
+            &[
+                &doc_id,
+                &original_name,
+                &size,
+                &content_type,
+                &session.person_unique,
+            ],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -5028,8 +5072,14 @@ pub async fn fileinfo_upload_document_docId_callback_callback(
         .unwrap_or("");
     let row = client
         .query_one(
-            "INSERT INTO x_cms_fileinfo (id, doc_id, original_name, size, content_type) VALUES (gen_random_uuid()::text, $1, $2, $3, $4) RETURNING *",
-            &[&doc_id, &original_name, &size, &content_type],
+            "INSERT INTO x_cms_fileinfo (id, doc_id, original_name, size, content_type, upload_person) VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5) RETURNING *",
+            &[
+                &doc_id,
+                &original_name,
+                &size,
+                &content_type,
+                &session.person_unique,
+            ],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -5040,9 +5090,11 @@ pub async fn fileinfo_upload_document_docId_callback_callback(
 #[allow(non_snake_case)]
 pub async fn fileinfo_upload_with_url(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(doc_id): axum::extract::Path<String>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let session = require_session(session)?;
     let client = shared::db::acquire(&pool).await?;
     let original_name = body
         .get("originalName")
@@ -5055,8 +5107,14 @@ pub async fn fileinfo_upload_with_url(
         .unwrap_or("");
     let row = client
         .query_one(
-            "INSERT INTO x_cms_fileinfo (id, doc_id, original_name, size, content_type) VALUES (gen_random_uuid()::text, $1, $2, $3, $4) RETURNING *",
-            &[&doc_id, &original_name, &size, &content_type],
+            "INSERT INTO x_cms_fileinfo (id, doc_id, original_name, size, content_type, upload_person) VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5) RETURNING *",
+            &[
+                &doc_id,
+                &original_name,
+                &size,
+                &content_type,
+                &session.person_unique,
+            ],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -5067,8 +5125,24 @@ pub async fn fileinfo_upload_with_url(
 #[allow(non_snake_case)]
 pub async fn fileinfo_id(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 附件读门：upload_person = 会话人 OR 管理员；历史行 upload_person 为 NULL，
+    // 谓词不命中即仅管理员可读（fail-closed，不回填、不从父文档 ACL 反推）。
+    match cms_gate_owned_read(
+        &pool,
+        "x_cms_fileinfo",
+        "upload_person",
+        &id,
+        opt_session(&session),
+    )
+    .await?
+    {
+        U2Gate::NotFound => return Err(AppError::NotFound),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -5286,8 +5360,23 @@ pub async fn fileinfo_id_mockdeletetoget(
 #[allow(non_snake_case)]
 pub async fn fileinfo_id_online_info(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 附件读门：upload_person = 会话人 OR 管理员；历史 NULL 行仅管理员可读。
+    match cms_gate_owned_read(
+        &pool,
+        "x_cms_fileinfo",
+        "upload_person",
+        &id,
+        opt_session(&session),
+    )
+    .await?
+    {
+        U2Gate::NotFound => return Err(AppError::NotFound),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -5353,8 +5442,23 @@ pub async fn fileinfo_id_online_info(
 #[allow(non_snake_case)]
 pub async fn fileinfo_id_preview_pdf(
     pool: Extension<Pool>,
+    session: Option<Extension<shared::session::Session>>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 预览与元数据同权：upload_person = 会话人 OR 管理员；历史 NULL 行仅管理员可读。
+    match cms_gate_owned_read(
+        &pool,
+        "x_cms_fileinfo",
+        "upload_person",
+        &id,
+        opt_session(&session),
+    )
+    .await?
+    {
+        U2Gate::NotFound => return Err(AppError::NotFound),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_opt(
@@ -8129,19 +8233,19 @@ pub async fn document_id_view_count(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 浏览量自增属写面：收有效会话门（无会话 401），防匿名刷量。
-    require_session(session)?;
+    // 读门跟随真实文档表 `x_cms_data_document` 的 ACL：published 公开，
+    // draft 仅 creator/author 本人，管理员全可读；历史行无归属按 fail-closed。
+    let session = require_session(session)?;
+    match cms_gate_document_read(&pool, Some(&session), &id).await? {
+        U2Gate::NotFound => return Err(AppError::NotFound),
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => {}
+    }
     let client = shared::db::acquire(&pool).await?;
 
     // 第 66 轮：热行「每请求一次同步 UPDATE」改为「内存聚合 + 定期 flush」。
-    // 请求路径只剩两条轻量 SELECT（存在性校验 + 计数表读基准值），
+    // 请求路径只剩两条轻量 SELECT（计数表读基准值 + 归属门），
     // 写压力从「每次浏览 1 条 UPDATE」降到「每分钟 1 条批量 upsert」。
-    let exists = client
-        .query_opt("SELECT 1 FROM x_cms_document WHERE id = $1", &[&id])
-        .await
-        .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
-    if exists.is_none() {
-        return Err(AppError::NotFound);
-    }
     // 基准值 = 计数表已落库的量（行不存在按 0）。
     let base: i64 = client
         .query_opt(
@@ -9435,9 +9539,9 @@ pub async fn fileinfo_u2_copy_to_doc(
             let copied = client
                 .execute(
                     "INSERT INTO x_cms_fileinfo (id, doc_id, file_id, original_name, size, content_type, upload_person) \
-                     SELECT gen_random_uuid()::text, $1, file_id, original_name, size, content_type, upload_person \
+                     SELECT gen_random_uuid()::text, $1, file_id, original_name, size, content_type, $3::text \
                      FROM x_cms_fileinfo WHERE id = ANY($2) AND deleted_at IS NULL",
-                    &[&doc_id, &attachment_ids],
+                    &[&doc_id, &attachment_ids, &session.person_unique],
                 )
                 .await
                 .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -11991,9 +12095,15 @@ pub async fn fileinfo_upload_with_url_u3(
     let client = shared::db::acquire(&pool).await?;
     let row = client
         .query_one(
-            "INSERT INTO x_cms_fileinfo (id, doc_id, original_name, size, content_type) \
-             VALUES (gen_random_uuid()::text, $1, $2, $3, $4) RETURNING *",
-            &[&doc_id, &original_name, &size, &content_type],
+            "INSERT INTO x_cms_fileinfo (id, doc_id, original_name, size, content_type, upload_person) \
+             VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5) RETURNING *",
+            &[
+                &doc_id,
+                &original_name,
+                &size,
+                &content_type,
+                &session.person_unique,
+            ],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
