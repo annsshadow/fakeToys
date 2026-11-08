@@ -1628,7 +1628,6 @@ def sabotage(kind: str) -> int:
             [WARNLOG_OWNER_EXPECT],
             require_leak=True,
         )
-<<<<<<< HEAD
     elif kind == "admin-write-read-gates":
         return sabotage_many(
             "摘掉本批读侧归属谓词与 processing status 的 admin 门（12 条应逐条 LEAK）",
