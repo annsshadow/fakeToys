@@ -1500,6 +1500,212 @@ mod security_regression {
         changed
     }
 
+    // ── NO-OWNER-COL B：真实写入 → 回表归属 → 本人可见 / 他人 403 ─────
+
+    const CMS_B_IDS: [&str; 5] = [
+        "cms-doc-viewcount-owner",
+        "cms-fileinfo-owner",
+        "cms-fileinfo-online-owner",
+        "cms-fileinfo-preview-owner",
+        "cms-fileinfo-content-owner",
+    ];
+
+    /// 用真实端点造行：POST /api/document 建 draft 文档，再上传附件；
+    /// 回表断言 creator / upload_person 都是调用者（不靠 seed 造带 owner 的假行）。
+    async fn cms_owned_fixture(
+        app: &axum::Router,
+        pool: &deadpool_postgres::Pool,
+    ) -> Result<(String, String), String> {
+        let doc_body = r#"{"title":"GATE-CMS-B","content":"gate-cms-b"}"#;
+        let (status, resp) = fire(app, "POST", "/api/document", Some(TOK_ATTACKER), doc_body)
+            .await
+            .ok_or_else(|| "建文档请求无法构造".to_string())?;
+        if !(200..300).contains(&status.as_u16()) {
+            return Err(format!("真实建文档失败 status={}", status.as_u16()));
+        }
+        let doc_id = response_id(&resp).ok_or_else(|| "建文档未返回 data.id".to_string())?;
+        let client = pool.get().await.map_err(|_| "回表连接失败".to_string())?;
+        let doc_owner: Option<String> = client
+            .query_opt(
+                "SELECT creator FROM x_cms_data_document WHERE id = $1",
+                &[&doc_id],
+            )
+            .await
+            .map_err(|e| format!("回表文档失败: {e}"))?
+            .and_then(|r| r.get::<_, Option<String>>(0));
+        if doc_owner.as_deref() != Some(ATTACKER) {
+            return Err(format!("真实写入的文档 creator={doc_owner:?} 不是调用者"));
+        }
+
+        let upload_body = r#"{"originalName":"gate-b.txt","size":1,"contentType":"text/plain"}"#;
+        let url = format!("/api/fileinfo/upload/document/{doc_id}");
+        let (status, resp) = fire(app, "POST", &url, Some(TOK_ATTACKER), upload_body)
+            .await
+            .ok_or_else(|| "上传请求无法构造".to_string())?;
+        if !(200..300).contains(&status.as_u16()) {
+            return Err(format!("真实上传失败 status={}", status.as_u16()));
+        }
+        let file_id = response_id(&resp).ok_or_else(|| "上传未返回 data.id".to_string())?;
+        let owner: Option<String> = client
+            .query_opt(
+                "SELECT upload_person FROM x_cms_fileinfo WHERE id = $1",
+                &[&file_id],
+            )
+            .await
+            .map_err(|e| format!("回表附件失败: {e}"))?
+            .and_then(|r| r.get::<_, Option<String>>(0));
+        if owner.as_deref() != Some(ATTACKER) {
+            return Err(format!("真实写入的 upload_person={owner:?} 不是调用者"));
+        }
+        Ok((doc_id, file_id))
+    }
+
+    async fn cms_cleanup(pool: &deadpool_postgres::Pool, doc_id: &str, file_id: &str) {
+        if let Ok(client) = pool.get().await {
+            let _ = client
+                .execute("DELETE FROM x_cms_fileinfo WHERE id = $1", &[&file_id])
+                .await;
+            let _ = client
+                .execute("DELETE FROM x_cms_data_document WHERE id = $1", &[&doc_id])
+                .await;
+            let _ = client
+                .execute(
+                    "DELETE FROM x_cms_document_view_count WHERE doc_id = $1",
+                    &[&doc_id],
+                )
+                .await;
+        }
+    }
+
+    /// 读回环：本人 2xx、他人 403；他人 2xx 判 LEAK。
+    async fn cms_read_roundtrip(app: &axum::Router, url: &str, label: &str) -> Outcome {
+        let Some((status, _)) = fire(app, "GET", url, Some(TOK_ATTACKER), "").await else {
+            return Outcome::Integrity(format!("{label}: 请求无法构造"));
+        };
+        if !(200..300).contains(&status.as_u16()) {
+            return Outcome::Integrity(format!("{label}: 本人不可见 status={}", status.as_u16()));
+        }
+        let Some((status, _)) = fire(app, "GET", url, Some(TOK_VICTIM), "").await else {
+            return Outcome::Integrity(format!("{label}: 反向请求无法构造"));
+        };
+        match status.as_u16() {
+            403 => Outcome::Pass,
+            c if (200..300).contains(&c) => Outcome::Leak(format!("{label}: 他人可读 status={c}")),
+            c => Outcome::Unverified(format!("{label}: 他人返回 status={c}")),
+        }
+    }
+
+    /// 写回环：他人 403 且零落库；本人 2xx 且真落库。
+    async fn cms_content_roundtrip(
+        app: &axum::Router,
+        pool: &deadpool_postgres::Pool,
+        id: &str,
+    ) -> Outcome {
+        let body = r#"{"originalName":"GATE-B-EDIT","size":2,"contentType":"text/plain"}"#;
+        let url = format!("/api/fileinfo/update/{id}/content");
+        let Some((status, _)) = fire(app, "POST", &url, Some(TOK_VICTIM), body).await else {
+            return Outcome::Integrity("内容更新: 反向请求无法构造".into());
+        };
+        if (200..300).contains(&status.as_u16()) {
+            return Outcome::Leak(format!("内容更新: 他人可写 status={}", status.as_u16()));
+        }
+        if status.as_u16() != 403 {
+            return Outcome::Unverified(format!("内容更新: 他人返回 status={}", status.as_u16()));
+        }
+        let client = match pool.get().await {
+            Ok(c) => c,
+            Err(_) => return Outcome::Integrity("内容更新: 回表连接失败".into()),
+        };
+        let after_victim: Option<String> = client
+            .query_opt(
+                "SELECT original_name FROM x_cms_fileinfo WHERE id = $1",
+                &[&id],
+            )
+            .await
+            .ok()
+            .flatten()
+            .and_then(|r| r.get::<_, Option<String>>(0));
+        if after_victim.as_deref() == Some("GATE-B-EDIT") {
+            return Outcome::Integrity("内容更新: 他人 403 但行仍被改动".into());
+        }
+
+        let Some((status, _)) = fire(app, "POST", &url, Some(TOK_ATTACKER), body).await else {
+            return Outcome::Integrity("内容更新: 本人请求无法构造".into());
+        };
+        if !(200..300).contains(&status.as_u16()) {
+            return Outcome::Integrity(format!("内容更新: 本人被拒 status={}", status.as_u16()));
+        }
+        let after_owner: Option<String> = client
+            .query_opt(
+                "SELECT original_name FROM x_cms_fileinfo WHERE id = $1",
+                &[&id],
+            )
+            .await
+            .ok()
+            .flatten()
+            .and_then(|r| r.get::<_, Option<String>>(0));
+        if after_owner.as_deref() == Some("GATE-B-EDIT") {
+            Outcome::Pass
+        } else {
+            Outcome::Integrity(format!(
+                "内容更新: 2xx 但未落库 original_name={after_owner:?}"
+            ))
+        }
+    }
+
+    async fn cms_b_roundtrip(
+        app: &axum::Router,
+        pool: &deadpool_postgres::Pool,
+    ) -> Vec<(String, Outcome)> {
+        let (doc_id, file_id) = match cms_owned_fixture(app, pool).await {
+            Ok(v) => v,
+            Err(e) => {
+                return CMS_B_IDS
+                    .iter()
+                    .map(|id| (id.to_string(), Outcome::Integrity(e.clone())))
+                    .collect()
+            }
+        };
+        let mut out = Vec::new();
+        out.push((
+            "cms-doc-viewcount-owner".into(),
+            cms_read_roundtrip(
+                app,
+                &format!("/api/document/{doc_id}/view/count"),
+                "文档浏览量",
+            )
+            .await,
+        ));
+        out.push((
+            "cms-fileinfo-owner".into(),
+            cms_read_roundtrip(app, &format!("/api/fileinfo/{file_id}"), "附件元数据").await,
+        ));
+        out.push((
+            "cms-fileinfo-online-owner".into(),
+            cms_read_roundtrip(
+                app,
+                &format!("/api/fileinfo/{file_id}/online/info"),
+                "附件在线信息",
+            )
+            .await,
+        ));
+        out.push((
+            "cms-fileinfo-preview-owner".into(),
+            cms_read_roundtrip(
+                app,
+                &format!("/api/fileinfo/{file_id}/preview/pdf"),
+                "附件 PDF 预览",
+            )
+            .await,
+        ));
+        out.push((
+            "cms-fileinfo-content-owner".into(),
+            cms_content_roundtrip(app, pool, &file_id).await,
+        ));
+        cms_cleanup(pool, &doc_id, &file_id).await;
+        out
+    }
+
     #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
     async fn security_regression_gate() {
         let Some((app, pool)) = setup().await else {
@@ -1542,6 +1748,19 @@ mod security_regression {
         .await
         .unwrap_or_else(|_| Outcome::Unverified("TIMEOUT".into()));
         extras.push(("portal-owner-write-roundtrip".into(), ow));
+        let cb = tokio::time::timeout(
+            std::time::Duration::from_secs(30),
+            cms_b_roundtrip(&app, &pool),
+        )
+        .await;
+        match cb {
+            Ok(mut list) => extras.append(&mut list),
+            Err(_) => {
+                for id in CMS_B_IDS {
+                    extras.push((id.into(), Outcome::Unverified("TIMEOUT".into())));
+                }
+            }
+        }
         for (id, o) in &extras {
             println!(
                 "[{}] {id} | self-write/pagination | {}",

@@ -9,13 +9,16 @@
 > 2026-11-06 由业务方先行确定，作为实施默认值。**可推翻**：推翻时只改本节，下文章节保留原始证据与备选方案，不改判据。本节生效后，第 2–5 节降级为证据附录，真正待开会项见本节末表。
 
 1. **读权限统一「本人 OR 管理员」**；历史行无归属值的，按「仅管理员可读」兜底（fail-closed）。
-   - 对应：`2.1` 的 12 条、`2.2` 的 5 条（补列后生效）、`2.3` 中能落到主体列的条目、`5` 的全部 E13–E24。
+   - 对应：`2.1` 的 12 条、`2.2` 的 5 条（2026-11-08 已补列并生效）、`2.3` 中能落到主体列的条目、`5` 的全部 E13–E24。
    - 「管理员」口径（2026-11-06 已裁决）：**管理端读/写一律 `allow`**；`deny` 只保留两类——(a) 匿名/未登录也能触达的端点；(b) 确实不应由管理员操作、且写明业务理由的少数端点。复核后 145 条 idor 的分布为 `allow 144 / deny 1 / unknown 0`（见 §6）。
 2. **cms 口径**：`published` = 全员可读（匿名端点同样）；`draft` 只本人与管理员可见。owner 同时认 `creator` 与 `author_id`。
    - 对应：`3` 的 C1–C3，以及 `5` 的 E13、E18。
 3. **软门统一改 403**：不再返回 `200 + ActionResult{success:false}`。前端已能处理 `PermissionError`，不保留兼容层。
    - 对应：`4` 的 S1、S2。
 4. **5 条「列从不写入」**：新增行在写入时补归属列（附件 = 上传人）；**历史行不回填**，按第 1 条兜底「仅管理员可读」。
+   - 2026-11-08 `fix/no-owner-col-b` 已落地：`x_cms_fileinfo` 7 处 INSERT 写 `upload_person=会话人`；
+     读侧 3 条附件读 + 1 条内容更新用 `upload_person=本人 OR admin`，NULL 仅 admin；
+     #21 复核后改用 `x_cms_data_document` 的文档 ACL（其 creator/author 由真实写路径写入）。
    - 不回填的理由：`x_cms_fileinfo.upload_person` 历史上全部为 NULL，没有任何可信来源能反推上传人；改用「父文档 ACL」反推，等于把授权绑到可能已迁移/删除的 `doc_id` 上，是用猜测建立授权。先拒绝、后按真实需求逐行人工回填，风险更低。
    - 对应：`2.2` 的 #21–#25。
 5. **E13–E24**：`admin` 视为合法读者（可读），但非 admin 必须按归属过滤（`owner OR 业务关系`），不允许只按「登录」放行。
@@ -83,15 +86,21 @@
 
 ### 2.2 第二档：5 条「列存在但生产路径从不写」
 
-共同前提：`x_cms_fileinfo.upload_person` 除「从已有行复制」外，所有 INSERT 都不带该列（`cms_assemble_control/src/lib.rs:4277/4754/4791/4828/4855/11604`；`:4700` 有注释说明）。当前实际为 NULL。**先有列值，才谈得上按列收口。**
+共同前提（改前取证，2026-11-06）：`x_cms_fileinfo.upload_person` 除「从已有行复制」外，
+所有 INSERT 都不带该列（`cms_assemble_control/src/lib.rs:4277/4754/4791/4828/4855/11604`；
+`:4700` 有注释说明），当前实际为 NULL。**先有列值，才谈得上按列收口。**
+2026-11-08 `fix/no-owner-col-b` 已修：7 处 INSERT 写会话人，复制路径写当前复制人；
+读谓词不命中 NULL → 仅管理员；历史行**不回填、不用父文档 ACL 反推**。
+#21 现场复核不属于「列从不写入」：`x_cms_data_document.creator/author_id` 由真实写路径写入，
+缺的是读谓词（原 handler 还查错遗留表 `x_cms_document`）。下表保留改前证据。
 
-| # | 端点 | 当前行为（证据） | 风险 | 方案①（推荐）/ 方案② | 需业务回答 |
+| # | 端点 | 改前行为（证据） | 风险 | 方案①（推荐）/ 方案② | 需业务回答 |
 |---|---|---|---|---|---|
-| 21 | `GET /api/document/{id}/view/count` | `STATIC`：只 `SELECT 1` 判存在；登录即可读 | 可枚举文档存在性 | ① 跟随文档 ACL（`x_cms_permission` + `creator` + `published`）；② 仅 `published` 可读 | 未发布文档的作者本人能否看计数？ |
-| 22 | `GET /api/fileinfo/{id}` | `STATIC`：`upload_person` 恒 NULL；任何人按 id 读他人附件元数据 | 原文件名/大小/类型泄露 | ① 跟随父文档 `doc_id` 的 ACL（现在就能修）；② 先补写 `upload_person`，再按上传人私有 | 附件归属是「上传人」还是「父文档」？ |
-| 23 | `GET /api/fileinfo/{id}/online/info` | 同 22 | 在线预览元信息泄露 | 同 22 | 同 22 |
-| 24 | `GET /api/fileinfo/{id}/preview/pdf` | 同 22；SELECT 不取 `upload_person` | **任何人可渲染他人附件 → 内容泄露（最高危读）** | ① 父文档 ACL + `downloadable`；② 登录即可（现状，不推荐） | 预览是否必须继承下载权限？ |
-| 25 | `POST /api/fileinfo/update/{id}/content` | 同 22；登录即可改他人附件元数据 | 污染/伪造附件元数据 | ① 父文档编辑者 + admin；② 补列后按上传人 | 元数据编辑权归父文档编辑者还是上传人？ |
+| 21 | `GET /api/document/{id}/view/count` | **已修**。改前 `STATIC`：只 `SELECT 1 FROM x_cms_document` 判存在；登录即可读。现改用 `x_cms_data_document` 的 ACL（published / creator / author / admin），无权 403、不存在 404 | 可枚举文档存在性 | ① 跟随文档 ACL（`creator` + `author_id` + `published`）；② 仅 `published` 可读 | 未发布文档的作者本人能否看计数？ |
+| 22 | `GET /api/fileinfo/{id}` | **已修**。改前 `upload_person` 恒 NULL；任何人按 id 读他人附件元数据。现写侧补列，读侧 `upload_person=本人 OR admin`，历史 NULL 仅 admin | 原文件名/大小/类型泄露 | ① 跟随父文档 `doc_id` 的 ACL；② 先补写 `upload_person`，再按上传人私有（**已按②落地**） | 附件归属是「上传人」还是「父文档」？ |
+| 23 | `GET /api/fileinfo/{id}/online/info` | **已修**（同 22） | 在线预览元信息泄露 | 同 22 | 同 22 |
+| 24 | `GET /api/fileinfo/{id}/preview/pdf` | **已修**（同 22；预览与元数据同权） | **任何人可渲染他人附件 → 内容泄露（最高危读）** | ① 父文档 ACL + `downloadable`；② 补列后按上传人（**已按②落地**） | 预览是否必须继承下载权限？ |
+| 25 | `POST /api/fileinfo/update/{id}/content` | **已修**。写侧补列后，`UPDATE ... WHERE upload_person=本人 OR admin`；他人 403 且零落库 | 污染/伪造附件元数据 | ① 父文档编辑者 + admin；② 补列后按上传人（**已按②落地**） | 元数据编辑权归父文档编辑者还是上传人？ |
 
 ### 2.3 第三档：14 条真·全局（无主体列，必须业务定「归谁」）
 
@@ -926,7 +935,73 @@ sabotage `w8-unverified`，本批减 5 行（分支创建时基线 37→32）。
 三项全过。基线由 8 条降为 1 条（仅 FALSE-GREEN `warnlog`）；若后续任一步复核失败，按 §15.1–§15.3
 的回滚口径逐批回退对应基线行。
 
-### 15.5 归属列写侧不可用批 1：`calendar_core_entity`（B 线）
+### 15.5 归属列写侧批 2：`message_assemble_communicate` sender
+
+**问题（读/写面依赖 sender，写侧请求可控）**
+
+- `send_message`（`/api/message/assemble/communicate/send`）与 `im_msg`
+  （`/api/message/assemble/communicate/im/msg`）都把 `x_message.sender` 直接采信请求体，
+  缺省 `"system"`；而 `mark_consume`、消息撤回等写面归属判定取 `sender`（见
+  `security_gate_tests.rs` 的「不写 creator_person，归属事实取 sender」）。
+  任意会话成员可冒名落库：消息在会话里显示为他人发送、并落入他人的归属面。
+
+**改前为什么门禁是绿的**
+
+- 门禁没有这两个写端点的用例；既有 `message_list_paging|GET` 只验证读列表，
+  `sender` 的真伪无人断言。
+
+**修法**
+
+- 两处写侧改为 `sender = sess.person_unique.clone()`，忽略请求体同名键。
+- 种子：`gate-conv-msg` 会话 + `audit-user`/`gate-victim` 两个成员（正反两向都需成员资格）。
+- 用例：2 条 `spoof-write`（`field=sender`，`carrier=body`，`dir=both`）：
+  2xx 后按响应 `data.id` 回表 `x_message`，含 victim → LEAK、含 actor → PASS。
+
+**改后靠什么证明真防住了**
+
+- 2 条实测 `[PASS]`：回表 `sender` 命中会话 actor 的正证据（冒名键被忽略）。
+- 破坏实验：把两处写侧还原为请求体 `sender` → `[LEAK]` 2 条且 `NEW-FAIL` **恰好点名**
+  `send_message` / `im_msg`（`owner=gate-victim（冒名落库）`）；
+  还原后 `非 PASS 1`（仅 FALSE-GREEN `warnlog`），与基线一致。
+- 基线不变（新增 2 条均为 PASS，不涉及减行）。
+
+**登记（本批不做）**
+
+- `x_message_mass.creator` 从不写入：`mass_create` 只写 `creator_person` 且为管理员档；
+  读 `mass/{id}` 的归属谓词用 `creator`，靠 admin 旁路才 PASS，非管理员属主读不到自己的行。
+  修复需补写 `creator`，但门禁无管理员攻击者档，无法取得 sabotage 正证据，登记独立立项。
+- 会话成员 `role` 从不写入（`security_gate_tests.rs` 已注明），无读侧依赖。
+
+### 15.6 归属列写侧盘点总表（本轮六 crate）
+
+方向：写入侧把归属列写成常量/空/从不写，逐个对照读侧是否依赖。只列结论，不重复已收口读用例。
+
+| crate | 结论 | 依据 |
+|---|---|---|
+| organization_core_entity | 已修（#263）：`identity_create`/`bind_create` 归属门 + 会话身份；`unit_check` 因 Public 双锁登记 | §14.6 |
+| personal / personal_extend | 无缺口：请求体归属键零命中；人脸/签名 `person_id`/`creator` 均会话派生 | `face_create` 强制本人、`save` 窄白名单 |
+| organization_assemble_personal / organization_assemble_authentication / auth | 无缺口：请求体 `personId`/`creator` 零命中；oauth 落库已会话派生 | `oauth_session_derived.rs` |
+| message_assemble_communicate | 已修本批 `sender`；`x_message_mass.creator` 从不写入 → 登记 | §15.5 |
+| calendar_core_entity | 已修（批 1）：create 写侧会话身份 + update/remove 归属门 | §15.7（PR #274） |
+| attendance_assemble_control | 五张配置表 create 只写 `creator_person` 不写 `creator`；读侧 `creator OR creator_person` 已覆盖真实行 → 非当前缺陷，登记写侧收口 | 下节 |
+
+#### 15.6.1 attendance 五张配置表：只堵写侧方案（不回填历史）
+
+- 表：`x_attendance_employee_config` / `x_attendance_import_file_info` /
+  `x_attendance_schedule_setting` / `x_attendance_setting` / `x_attendance_statistical_cycle`。
+- 现状：create 只写 `creator_person`（会话派生），`creator` 为 NULL；读谓词同时认两列，
+  真实新行通过 `creator_person` 命中本人，因此**当前无读写不一致**，不构成本轮可修缺陷。
+- 上线前量化（只读 SQL，逐表执行，结果留档）：
+  `SELECT count(*) FROM <table> WHERE creator IS NULL AND creator_person IS NOT NULL;`
+- 修法（下一批）：五处 create 的 INSERT 增加 `creator = session.person_unique`，忽略请求体；
+  **不回填历史行**；读谓词保持 `creator OR creator_person`。
+- 证据缺口：该改动不会翻转任何门禁（改前改后读都命中 `creator_person`），无法做 sabotage 点名；
+  按「无证据不改」纪律登记，待能构造新断言（如写后读一致性用例）再实施。
+- attendance 其余写侧：`person_id`/`user_id` 请求可控处均已 `require_admin` 或
+  `require_owner`/`normalize_key` 收口（`attendancedetail_create`、`selfholidaysimple_create`、
+  `v2_groupschedule_post`、`mobile_check_impl`）。
+
+### 15.7 归属列写侧不可用批 1：`calendar_core_entity`（B 线）
 
 **问题（读侧已依赖、写侧不可用）**
 

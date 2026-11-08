@@ -94,10 +94,7 @@ pub async fn send_message(
         .get("content")
         .and_then(|v| v.as_str())
         .unwrap_or_default();
-    let sender = req
-        .get("sender")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system");
+    let sender = sess.person_unique.clone();
     let msg_type = req.get("type").and_then(|v| v.as_str()).unwrap_or("text");
     let id = Uuid::new_v4().to_string();
 
@@ -1381,10 +1378,7 @@ pub async fn im_msg(
         .get("content")
         .and_then(|v| v.as_str())
         .unwrap_or_default();
-    let sender = req
-        .get("sender")
-        .and_then(|v| v.as_str())
-        .unwrap_or("system");
+    let sender = sess.person_unique.clone();
     let msg_type = req.get("type").and_then(|v| v.as_str()).unwrap_or("text");
     let id = Uuid::new_v4().to_string();
 
