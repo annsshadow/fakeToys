@@ -256,6 +256,35 @@ t2|organization|bind_create	spoof-write	POST	/api/organization/bind		person-admi
 t2|program_center|warnlog_create	spoof-write	POST	/api/program_center/warnlog	x_program_warn_log	person-admin		body	creator_person	T2	both	n/a
 t2-excluded|ai|chat_completion	excluded	POST	/api/ai_assemble_control/chat/completion				body		T2	fwd-only	n/a
 t2-excluded|ai|file_upload	excluded	POST	/api/ai_assemble_control/file/upload				body		T2	fwd-only	n/a
+# ── 公开读面 B6：bbs 19 + user_* 2（可达）+ hotpic 7，匿名读 + 无 PII canary ──
+b6|bbs|forum_list	public-read-login	GET	/api/bbs/assemble/control/forum/list		GATE-BBS-FORUM	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|forum_view_all	public-read-login	GET	/api/bbs/assemble/control/forum/view/all		GATE-BBS-FORUM	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|topic_list_by_forum	public-read-login	GET	/api/bbs/assemble/control/topic/list/forum/GATE-BBS-FORUM		GATE-BBS-TOPIC	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|subject_view	public-read-login	GET	/api/bbs/assemble/control/subject/view/GATE-BBS-TOPIC		GATE-BBS-TOPIC	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|subject_top	public-read-login	GET	/api/bbs/assemble/control/subject/top/GATE-BBS-FORUM		GATE-BBS-TOPIC	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|reply_list_sub	public-read-login	GET	/api/bbs/assemble/control/reply/list/sub/GATE-BBS-TOPIC		GATE-BBS-REPLY	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|reply_get	public-read-login	GET	/api/bbs/assemble/control/reply/GATE-BBS-REPLY		GATE-BBS-REPLY	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|reply_filter_list	public-read-login	PUT	/api/bbs/assemble/control/reply/filter/list/page/1/count/1		GATE-BBS-REPLY	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|list_reply_filter	public-read-login	GET	/api/bbs/assemble/control/list/reply/filter		GATE-BBS-REPLY	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|subject_creamed_list	public-read-login	PUT	/api/bbs/assemble/control/subject/creamed/list/page/1/count/1		GATE-BBS-TOPIC	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|subject_recommended_list	public-read-login	PUT	/api/bbs/assemble/control/subject/recommended/list/page/1/count/1		GATE-BBS-TOPIC	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|subject_recommended_index	public-read-login	GET	/api/bbs/assemble/control/subject/recommended/index/10		GATE-BBS-TOPIC	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|subject_index_list	public-read-login	PUT	/api/bbs/assemble/control/subject/index/list/page/1/count/1		GATE-BBS-TOPIC	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|subject_filter_list	public-read-login	PUT	/api/bbs/assemble/control/subject/filter/list/page/1/count/1		GATE-BBS-TOPIC	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|subject_filter_listsubjectinfo	public-read-login	POST	/api/bbs/assemble/control/subject/filter/listsubjectinfo/page/1/count/1		GATE-BBS-TOPIC	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|topic_filter_listsubjectinfo	public-read-login	POST	/api/bbs/assemble/control/topic/filter/listsubjectinfo		GATE-BBS-TOPIC	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|subject_search_list	public-read-login	PUT	/api/bbs/assemble/control/subject/search/list/page/1/count/1		GATE-BBS-TOPIC	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|section_viewforum	public-read-login	GET	/api/bbs/assemble/control/section/viewforum/GATE-BBS-FORUM		GATE-BBS-SECTION	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|user_subject_voterecord	public-read-login	PUT	/api/bbs/assemble/control/user/subject/voterecord/list/page/1/count/1		gate-bbs-voter	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	body		b6	fwd-only	n/a		{"subjectId":"GATE-BBS-TOPIC"}
+b6|bbs|user_forum_list	public-read-login	GET	/api/bbs/assemble/control/user/forum/all		GATE-BBS-FORUM	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|bbs|userinfo_filter	public-read-login	PUT	/api/bbs/assemble/control/userinfo		GATE-BBS-NICK	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	body		b6	fwd-only	n/a		{"name":"GATE-BBS-NICK"}
+b6|hotpic|list_by_application_info	public-read-login	GET	/api/hotpic/user/hotpic/gate-app/gate-info		GATE-HOTPIC-B6	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|hotpic|list_hotpics	public-read-login	GET	/api/hotpic_assemble_control/list/hotpics		GATE-HOTPIC-B6	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|hotpic|get_hotpic	public-read-login	GET	/api/hotpic_assemble_control/get/hotpic/GATE-HOTPIC-B6		GATE-HOTPIC-B6	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|hotpic|list_control_panels	public-read-login	GET	/api/hotpic_assemble_control/list/control/panels		gate-victim	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|hotpic|list_control_applications	public-read-login	GET	/api/hotpic_assemble_control/list/control/applications		gate-victim	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|hotpic|cipher_filter_list	public-read-login	GET	/api/hotpic/assemble/control/cipher/hotpic/filter/list/page/1/count/10		GATE-HOTPIC-B6	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
+b6|hotpic|user_filter_list	public-read-login	GET	/api/hotpic/assemble/control/user/hotpic/filter/list/page/1/count/10		GATE-HOTPIC-B6	GATE-V-SETTING|GATE-V-EMAIL|GATE-V-NAME	path		b6	fwd-only	n/a
 organization_assemble_control|personcard_listgrouptypes|GET	idor-read-scoped	GET	/api/organization/assemble/control/personcard/listgrouptypes	x_org_person	-	GATE-V-MOBILE	path		legacy	both	allow		
 organization_assemble_control|personcard_listgrouptypes|own	idor-read-own	GET	/api/organization/assemble/control/personcard/listgrouptypes	x_org_person	-	rev-GATE-V-MOBILE	path		legacy	fwd-only	n/a		
 organization_assemble_control|personcard_mylist|GET	idor-read-scoped	GET	/api/organization/assemble/control/personcard/mylist	x_org_person	-	GATE-V-MOBILE	path		legacy	both	allow		

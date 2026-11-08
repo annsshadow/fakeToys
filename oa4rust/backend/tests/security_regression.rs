@@ -1079,6 +1079,48 @@ mod security_regression {
             })
             .collect();
 
+        // 「登录后公开」读面：匿名必须被拒（401/403），任意非管理员登录用户必须能读到
+        // 正控制对象，且响应体不得出现 PII canary。两条断言各司其职，避免把
+        // 「登录才可读」误记成「匿名公开」，也避免只测匿名而漏掉受众面。
+        if c.kind == "public-read-login" {
+            let body = if c.body.is_empty() {
+                "{}".to_string()
+            } else {
+                c.body.clone()
+            };
+            let Some((anon, _)) = fire(app, &c.method, &path, None, &body).await else {
+                return Outcome::Unverified("匿名探测请求无法构造".into());
+            };
+            let ac = anon.as_u16();
+            if ac != 401 && ac != 403 {
+                return Outcome::Unverified(format!(
+                    "匿名请求未拒绝 status={ac}（与「登录后公开」契约不符）"
+                ));
+            }
+            let Some((status, resp)) = fire(app, &c.method, &path, Some(TOK_ATTACKER), &body).await
+            else {
+                return Outcome::Unverified("登录用户请求无法构造".into());
+            };
+            let code = status.as_u16();
+            if !(200..300).contains(&code) {
+                return Outcome::Unverified(format!(
+                    "登录用户 status={code} body={}",
+                    resp.chars().take(120).collect::<String>()
+                ));
+            }
+            if c.victim.is_empty() || !resp.contains(&c.victim) {
+                return Outcome::Unverified(format!(
+                    "2xx 但未返回预期对象 `{}`（正控制缺失）body={}",
+                    c.victim,
+                    resp.chars().take(90).collect::<String>()
+                ));
+            }
+            return match markers.iter().find(|m| resp.contains(m.as_str())) {
+                Some(m) => Outcome::Leak(format!("登录用户响应含 PII canary `{m}`")),
+                None => Outcome::Pass,
+            };
+        }
+
         let (body, before_row, before_count) = match c.kind.as_str() {
             "idor-write" => {
                 let Some(b) = build_write_body(pool, &c.table, &rid).await else {

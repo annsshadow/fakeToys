@@ -8,13 +8,13 @@
 -- 身份：攻击者与受害者（两者都不是管理员）
 INSERT INTO auth_person (id, unique_id, name, password_hash, locked, unit, mobile, email) VALUES
   ('audit-user',   'audit-user',   'Gate Attacker', 'gate-noop', false, 'unit-gate-a', 'rev-GATE-V-SETTING', 'gate-a@gate'),
-  ('gate-victim',  'gate-victim',  'Gate Victim',   'gate-noop', false, 'unit-gate-v', 'GATE-V-SETTING',     'gate-v@gate'),
+  ('gate-victim',  'gate-victim',  'GATE-V-NAME',   'gate-noop', false, 'unit-gate-v', 'GATE-V-SETTING',     'GATE-V-EMAIL'),
   -- 假门/软门夹具仍用 person-admin（那里验证的是「管理员本人」语义）
   ('person-admin', 'person-admin', 'Gate Admin',    'gate-noop', false, 'unit-gate-v', NULL, NULL)
 ON CONFLICT (id) DO NOTHING;
 
 UPDATE auth_person SET mobile = 'rev-GATE-V-SETTING', email = 'gate-a@gate' WHERE id = 'audit-user';
-UPDATE auth_person SET mobile = 'GATE-V-SETTING',     email = 'gate-v@gate' WHERE id = 'gate-victim';
+UPDATE auth_person SET name = 'GATE-V-NAME', mobile = 'GATE-V-SETTING', email = 'GATE-V-EMAIL' WHERE id = 'gate-victim';
 
 -- 假门族：cms 文档（draft，非发布状态，所以非所有者不应 readable=true）
 DELETE FROM x_cms_data_document WHERE id = 'gate-doc-1';
