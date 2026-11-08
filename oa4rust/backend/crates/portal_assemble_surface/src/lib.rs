@@ -2883,7 +2883,7 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_put(
     if updated == 0 {
         let id = uuid::Uuid::new_v4().to_string();
         let name = dict_flag.clone();
-        let creator = "system";
+        let creator = session.person_unique.clone();
         client
             .execute(
                 "INSERT INTO x_portal_dict (id, name, flag, portal_flag, app_data, creator, create_time, update_time) \
@@ -2982,7 +2982,7 @@ pub async fn script_portal_portal_name_post(
         .and_then(|v| v.as_str())
         .unwrap_or(&name)
         .to_string();
-    let creator = "system";
+    let creator = session.person_unique.clone();
 
     client
         .execute(

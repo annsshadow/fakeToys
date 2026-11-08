@@ -690,9 +690,10 @@ A/B/W 之间 crate 集合两两不相交；同一批内可以跨多个 crate，�
 每批三步均为：`git diff <merge>^1 <merge>^2 --stat` 与 `<merge>^1 <merge>` 一致；
 被删行在 `main` 上实测 `[PASS]`；对应 sabotage 变红并逐条点名。七批合计减 44 行。
 
-**FALSE-GREEN（不计减行）**：`t2|program_center|warnlog_create` 的门禁用例 `field=level`
-不是归属列；写侧实际落 `creator_person = sess.person_unique`，判据来源已真实。
-非属主写自身日志属正常语义，故保留基线行、不按读 IDOR 口径改写入语义。
+**FALSE-GREEN（已收口）**：`t2|program_center|warnlog_create` 的门禁用例 `field=level`
+不是归属列；写侧实际落 `creator_person = sess.person_unique`。2026-11-08「假绿根修批」已把
+`field` 改为 `creator_person`，行由真实 `POST /api/program_center/warnlog` 产出并回表核对，
+基线按 `STALE-BASELINE` 减行；证据与剩余假绿项见 `f2e-endpoint-tracker.md`「假绿根修批」。
 
 ### 13.8 W-b8：5 条未认领 UNVERIFIED 收口（file / bbs / mind）
 
@@ -795,7 +796,7 @@ sabotage `w8-unverified`，本批减 5 行（分支创建时基线 37→32）。
 | 5 | `t2\|organization\|unit_check_unit_has_person` | ① PUBLIC-BY-DESIGN | 响应已仅 `value:boolean`；用例升级为匿名 `public-read` + 无 PII 断言 | 移除 |
 | 6 | `t2\|organization\|group_list_object` | ④→① | 用例承载字段修为 `groupList` 并补种子；匿名正控制 + 无姓名/手机 canary | 移除 |
 | 7 | `t2\|organization\|unit_list_level_name_object` | ④→① | 用例承载字段修为 `unitList` 并补种子；匿名正控制 + 无 PII canary | 移除 |
-| 8 | `t2\|program_center\|warnlog_create` | FALSE-GREEN | 不动写语义；保留基线并标 FALSE-GREEN（不计减行） | **不变** |
+| 8 | `t2\|program_center\|warnlog_create` | FALSE-GREEN | 2026-11-08 假绿根修批：`field` 改真实归属列 `creator_person`，行由真实 POST 产出 | 移除 |
 
 ### 15.1 批 1（PR-A）：oauth 授权码、2FA 登录、mind 版本
 
@@ -879,9 +880,9 @@ sabotage `w8-unverified`，本批减 5 行（分支创建时基线 37→32）。
   指向 `unit-gate-v`。修观测时暴露真实缺陷：handler 复用 `row_to_map`，后者把非 bool 列一律按
   `Option<String>` 取，`BIGINT` 计数列直接 panic → 任何非空 `unitList` 都是 500。改为按列显式构造
   对象，保持原 JSON 形状。
-- `t2|program_center|warnlog_create`：FALSE-GREEN。`x_program_warn_log` 的 owner 归属条件在真实数据上
-  永不命中（冒名落库判定恒真），不能作为有效越权证据；按既有 FALSE-GREEN 口径保留基线 LEAK 行，
-  不计减行、不再重复裁决。真正修复需先有可命中的 owner 列/种子，属独立立项。
+- `t2|program_center|warnlog_create`：2026-11-08「假绿根修批」已收口。原用例 `field=level`
+  不是归属列，冒名判定来源与真实归属无关；现改为 `creator_person`，新行由真实写入路径产出，
+  写受害者值后门禁实测 `[LEAK]`，基线减 1 行。证据见 `f2e-endpoint-tracker.md`「假绿根修批」。
 
 **影响面**
 
@@ -897,7 +898,7 @@ sabotage `w8-unverified`，本批减 5 行（分支创建时基线 37→32）。
   `meeting` 的时间戳转换与 `unit_list` 的 BIGINT panic 修复不建议单独回滚——回滚会让端点重新 500。
 - 若产品口径要求群/单位目录必须登录，另行裁决并同时改 `AUTH_EXEMPT_PATHS` 与 RBAC（双锁一致性
   测试会拦单边修改），不在本条回滚范围。
-- `warnlog` FALSE-GREEN 的处置（补 owner 种子或改表结构）是独立事项，回滚本 PR 不受影响。
+- `warnlog` FALSE-GREEN 已于 2026-11-08「假绿根修批」收口（用例改真实归属列，不动写语义）。
 
 破坏实验 `sabotage b8-b3`：把 meeting `creator` 改回 body、在两条匿名目录响应里注入
 `mobile=GATE-V-MOBILE`，门禁变红并逐条点名上述 3 条。
