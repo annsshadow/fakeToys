@@ -62,11 +62,7 @@ async fn actor_is_admin(db: &DatabaseConnection, actor: &str) -> Result<bool, Ap
     }
 }
 
-async fn require_owner(
-    db: &DatabaseConnection,
-    owner: &str,
-    actor: &str,
-) -> Result<(), AppError> {
+async fn require_owner(db: &DatabaseConnection, owner: &str, actor: &str) -> Result<(), AppError> {
     if owner == actor {
         return Ok(());
     }
