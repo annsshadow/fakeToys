@@ -29,7 +29,7 @@
             <td>{{ fmtTime(item.updateTime) }}</td>
             <td>
               <button class="btn-sm" @click="editItem(item)">编辑</button>
-              <button class="btn-sm btn-del" @click="deleteItem(item)">删除</button>
+              <button class="btn-sm btn-del" :disabled="deletingId === item.id" @click="deleteItem(item)">删除</button>
             </td>
           </tr>
         </tbody>
@@ -147,6 +147,7 @@ const saveM = useMutation({
 function saveItem() {
   saveM.mutate(form.value as Item)
 }
+const deletingId = ref('')
 const delM = useMutation({
   onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: async (id: string) => api.post(`/api/cms/core/entity/note/delete/${id}`),
@@ -155,7 +156,10 @@ const delM = useMutation({
   },
 })
 async function deleteItem(item: Item) {
-  if (await confirmMsg('确定删除该笔记？')) delM.mutate(item.id)
+  if (deletingId.value) return
+  if (!(await confirmMsg('确定删除该笔记？'))) return
+  deletingId.value = item.id
+  delM.mutate(item.id, { onSettled: () => (deletingId.value = '') })
 }
 function loadData() {
   reload()

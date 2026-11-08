@@ -151,7 +151,7 @@
               <button class="icon-action" @click.stop="openDetail(f)" title="详情/预览">ℹ</button>
               <button class="icon-action" @click.stop="downloadFile(f)" title="下载">⬇</button>
               <button class="icon-action" @click.stop="shareFile(f)" title="分享">↗</button>
-              <button class="icon-action danger" @click.stop="deleteFile(f)" title="删除">🗑</button>
+              <button class="icon-action danger" :disabled="deletingId === f.id" @click.stop="deleteFile(f)" title="删除">🗑</button>
             </span>
           </div>
         </div>
@@ -882,6 +882,7 @@ function fmtTime(ts?: string): string {
   }
 }
 
+const deletingId = ref('')
 // 删除文件
 const deleteMutation = useMutation({
   mutationFn: (id: string) => api.delete(`/api/file/assemble/control/file/${id}`),
@@ -892,12 +893,14 @@ const deleteMutation = useMutation({
 })
 
 async function deleteFile(f: FileItem): void {
-  if (await confirmMsg(`确定删除「${f.name}」？`)) {
-    deleteMutation.mutate(f.id, {
-      onSuccess: () => toast.success('文件已删除'),
-      onError: () => toast.error('删除失败'),
-    })
-  }
+  if (deletingId.value) return
+  if (!(await confirmMsg(`确定删除「${f.name}」？`))) return
+  deletingId.value = f.id
+  deleteMutation.mutate(f.id, {
+    onSuccess: () => toast.success('文件已删除'),
+    onError: () => toast.error('删除失败'),
+    onSettled: () => (deletingId.value = ''),
+  })
 }
 
 function downloadFile(f: FileItem): void {
