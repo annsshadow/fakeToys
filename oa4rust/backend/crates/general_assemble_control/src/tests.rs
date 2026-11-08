@@ -731,3 +731,79 @@ mod tests {
         assert_eq!(owner, person, "二维码 creator 必须是会话身份");
     }
 }
+
+// ── r7：securityclearance_enable 的 creator 不再硬写 'system'（建→改） ──
+#[tokio::test]
+async fn r7_securityclearance_enable_persists_session_creator() {
+    let pool = shared::testing::test_pool();
+    let client = pool.get().await.expect("db");
+    const ADMIN: &str = "r7-general-admin";
+    const ROLE: &str = "r7-general-role-admin";
+    client
+        .execute(
+            "INSERT INTO auth_role (id, name, disable) VALUES ($1,'admin',false) \
+             ON CONFLICT (id) DO UPDATE SET name='admin', disable=false",
+            &[&ROLE.to_string()],
+        )
+        .await
+        .expect("seed admin role");
+    shared::testing::upsert_fixture_person(&client, ADMIN, ADMIN, "r7 general admin").await;
+    client
+        .execute(
+            "INSERT INTO auth_person_role (person_id, role_id, unit_id) VALUES ($1,$2,'r7-unit') \
+             ON CONFLICT DO NOTHING",
+            &[&ADMIN.to_string(), &ROLE.to_string()],
+        )
+        .await
+        .expect("seed admin role map");
+
+    let name = format!("r7-sc-{}", uuid::Uuid::new_v4().simple());
+    let created = crate::securityclearance_enable(
+        axum::extract::Extension(pool.clone()),
+        axum::extract::Extension(shared::testing::test_session(ADMIN)),
+        axum::extract::Json(serde_json::json!({"name": name, "enabled": true})),
+    )
+    .await;
+    assert!(created.is_ok(), "admin 开关安全等级必须成功");
+    let owner: Option<String> = client
+        .query_one(
+            "SELECT creator FROM x_general_assemble_security_clearance WHERE name = $1",
+            &[&name],
+        )
+        .await
+        .expect("created clearance row")
+        .get("creator");
+    assert_eq!(
+        owner.as_deref(),
+        Some(ADMIN),
+        "建后 owner 必须是会话人，不得是 'system'"
+    );
+
+    let updated = crate::securityclearance_enable(
+        axum::extract::Extension(pool.clone()),
+        axum::extract::Extension(shared::testing::test_session(ADMIN)),
+        axum::extract::Json(serde_json::json!({"name": name, "enabled": false})),
+    )
+    .await;
+    assert!(updated.is_ok(), "admin 改写安全等级必须成功");
+    let owner_after_update: Option<String> = client
+        .query_one(
+            "SELECT creator FROM x_general_assemble_security_clearance WHERE name = $1",
+            &[&name],
+        )
+        .await
+        .expect("updated clearance row")
+        .get("creator");
+    assert_eq!(
+        owner_after_update.as_deref(),
+        Some(ADMIN),
+        "改写后 owner 不得变化"
+    );
+    client
+        .execute(
+            "DELETE FROM x_general_assemble_security_clearance WHERE name = $1",
+            &[&name],
+        )
+        .await
+        .expect("cleanup clearance");
+}

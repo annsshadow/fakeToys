@@ -699,7 +699,8 @@ pub async fn importmodel_create(
     let model_flag = uuid::Uuid::new_v4().to_string();
     let query_flag = body.get("queryFlag").and_then(|v| v.as_str()).unwrap_or("");
     let content = body.get("data").and_then(|v| v.as_str()).unwrap_or("");
-    let creator = "system";
+    // 归属落会话人：creator 不再硬写 'system'，否则读侧 owner 谓词无区分度。
+    let creator = sess.person_unique.clone();
 
     client
         .execute(

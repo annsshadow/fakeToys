@@ -1812,3 +1812,88 @@ async fn b2_statement_create_persists_session_creator() {
         .expect("cleanup statement");
     assert_eq!(owner, ADMIN_PERSON, "statement creator 必须是会话身份");
 }
+
+// ── r7：importmodel 写侧归属收口 —— 建→改→删每步 owner 都是会话人 ──
+// 改前 creator 硬写 'system'：自称属主的行在库里与任何登录人都对不上，
+// 读侧按 creator 收归属的谓词对这类行永远只剩管理员可见。
+#[tokio::test]
+async fn r7_importmodel_owner_loop_is_session() {
+    let pool = shared::testing::test_pool();
+    let client = pool.get().await.expect("db");
+    seed_admin_role(&client).await;
+
+    let name = format!("r7-import-{}", uuid::Uuid::new_v4().simple());
+    let created = crate::u2_closures::importmodel_create(
+        axum::extract::Extension(pool.clone()),
+        Some(axum::extract::Extension(shared::testing::test_session(
+            ADMIN_PERSON,
+        ))),
+        axum::extract::Json(serde_json::json!({
+            "name": name,
+            "queryFlag": "r7-qf",
+            "data": "select 1"
+        })),
+    )
+    .await;
+    assert!(created.is_ok(), "admin 建导入模型必须成功");
+
+    let row = client
+        .query_one(
+            "SELECT id, creator FROM x_query_import_model WHERE name = $1",
+            &[&name],
+        )
+        .await
+        .expect("created import model row");
+    let id: String = row.get("id");
+    assert_eq!(
+        row.get::<_, Option<String>>("creator").as_deref(),
+        Some(ADMIN_PERSON),
+        "建后 owner 必须是会话人，不得是 'system'"
+    );
+
+    let edit_name = format!("{}-edit", name);
+    let edited = crate::u2_closures::importmodel_edit(
+        axum::extract::Extension(pool.clone()),
+        Some(axum::extract::Extension(shared::testing::test_session(
+            ADMIN_PERSON,
+        ))),
+        axum::extract::Path(id.clone()),
+        axum::extract::Json(serde_json::json!({"name": edit_name, "data": "select 2"})),
+    )
+    .await;
+    assert!(edited.is_ok(), "admin 改导入模型必须成功");
+    let owner_after_edit: Option<String> = client
+        .query_one(
+            "SELECT creator FROM x_query_import_model WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .expect("edited import model row")
+        .get("creator");
+    assert_eq!(
+        owner_after_edit.as_deref(),
+        Some(ADMIN_PERSON),
+        "改写后 owner 不得变化"
+    );
+
+    let deleted = crate::u2_closures::importmodel_delete(
+        axum::extract::Extension(pool.clone()),
+        axum::extract::Extension(shared::testing::test_session(ADMIN_PERSON)),
+        axum::extract::Path(id.clone()),
+    )
+    .await;
+    assert!(deleted.is_ok(), "admin 删导入模型必须成功");
+    let soft_deleted: i64 = client
+        .query_one(
+            "SELECT COUNT(*) FROM x_query_import_model WHERE id = $1 AND deleted_at IS NOT NULL",
+            &[&id],
+        )
+        .await
+        .expect("soft deleted import model")
+        .get(0);
+    assert_eq!(soft_deleted, 1, "删除必须软删（deleted_at 非空）");
+    client
+        .execute("DELETE FROM x_query_import_model WHERE id = $1", &[&id])
+        .await
+        .expect("cleanup import model");
+}

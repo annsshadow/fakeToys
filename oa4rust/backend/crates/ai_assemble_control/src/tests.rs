@@ -909,3 +909,80 @@ mod u2_unit_tests {
         );
     }
 }
+
+// ── r7：config_save 不再采信请求体 creator（建→改，owner 始终是会话人） ──
+#[tokio::test]
+async fn r7_config_save_owner_is_session_not_body() {
+    let pool = shared::testing::test_pool();
+    let client = pool.get().await.expect("db");
+    const ADMIN: &str = "r7-ai-admin";
+    const ROLE: &str = "r7-ai-role-admin";
+    client
+        .execute(
+            "INSERT INTO auth_role (id, name, disable) VALUES ($1,'admin',false) \
+             ON CONFLICT (id) DO UPDATE SET name='admin', disable=false",
+            &[&ROLE.to_string()],
+        )
+        .await
+        .expect("seed admin role");
+    shared::testing::upsert_fixture_person(&client, ADMIN, ADMIN, "r7 ai admin").await;
+    client
+        .execute(
+            "INSERT INTO auth_person_role (person_id, role_id, unit_id) VALUES ($1,$2,'r7-unit') \
+             ON CONFLICT DO NOTHING",
+            &[&ADMIN.to_string(), &ROLE.to_string()],
+        )
+        .await
+        .expect("seed admin role map");
+
+    let id = format!("r7-ai-cfg-{}", uuid::Uuid::new_v4().simple());
+    let created = crate::config_save(
+        axum::extract::Extension(pool.clone()),
+        axum::extract::Extension(shared::testing::test_session(ADMIN)),
+        Some(axum::extract::Json(serde_json::json!({
+            "id": id,
+            "name": "r7-mcp",
+            "url": "http://127.0.0.1:1",
+            "creator": "r7-ai-victim"
+        }))),
+    )
+    .await;
+    assert!(created.is_ok(), "admin 保存配置必须成功");
+    let owner: Option<String> = client
+        .query_one("SELECT creator FROM x_ai_mcp_config WHERE id = $1", &[&id])
+        .await
+        .expect("created config row")
+        .get("creator");
+    assert_eq!(
+        owner.as_deref(),
+        Some(ADMIN),
+        "建后 owner 必须是会话人，请求体 creator 无效"
+    );
+
+    let updated = crate::config_save(
+        axum::extract::Extension(pool.clone()),
+        axum::extract::Extension(shared::testing::test_session(ADMIN)),
+        Some(axum::extract::Json(serde_json::json!({
+            "id": id,
+            "name": "r7-mcp-2",
+            "url": "http://127.0.0.1:1",
+            "creator": "r7-ai-victim"
+        }))),
+    )
+    .await;
+    assert!(updated.is_ok(), "admin 改写配置必须成功");
+    let owner_after_update: Option<String> = client
+        .query_one("SELECT creator FROM x_ai_mcp_config WHERE id = $1", &[&id])
+        .await
+        .expect("updated config row")
+        .get("creator");
+    assert_eq!(
+        owner_after_update.as_deref(),
+        Some(ADMIN),
+        "改写后 owner 不得被请求体覆盖"
+    );
+    client
+        .execute("DELETE FROM x_ai_mcp_config WHERE id = $1", &[&id])
+        .await
+        .expect("cleanup config");
+}

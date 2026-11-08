@@ -685,3 +685,82 @@ async fn test_mass_list_next_returns_messages_after_anchor() {
     .await
     .unwrap();
 }
+
+// ── r7：x_message_mass.creator 历史上从不写入；建→删回环断言 owner=会话人 ──
+#[tokio::test]
+async fn r7_mass_create_writes_session_creator() {
+    let pool = shared::testing::test_pool();
+    let client = pool.get().await.expect("db");
+    const ADMIN: &str = "r7-mass-admin";
+    const ROLE: &str = "r7-mass-role-admin";
+    client
+        .execute(
+            "INSERT INTO auth_role (id, name, disable) VALUES ($1,'admin',false) \
+             ON CONFLICT (id) DO UPDATE SET name='admin', disable=false",
+            &[&ROLE.to_string()],
+        )
+        .await
+        .expect("seed admin role");
+    shared::testing::upsert_fixture_person(&client, ADMIN, ADMIN, "r7 mass admin").await;
+    client
+        .execute(
+            "INSERT INTO auth_person_role (person_id, role_id, unit_id) VALUES ($1,$2,'r7-unit') \
+             ON CONFLICT DO NOTHING",
+            &[&ADMIN.to_string(), &ROLE.to_string()],
+        )
+        .await
+        .expect("seed admin role map");
+
+    let created = crate::mass_create(
+        axum::extract::Extension(pool.clone()),
+        axum::extract::Extension(shared::testing::test_session(ADMIN)),
+        axum::extract::Json(serde_json::json!({
+            "title": "r7 mass",
+            "body": "r7 mass body",
+            "type": "dingding",
+            "personList": ["r7-target"]
+        })),
+    )
+    .await
+    .expect("admin 群发必须成功");
+    let id = created
+        .0
+        .data
+        .as_ref()
+        .and_then(|d| d.get("id"))
+        .and_then(|v| v.as_str())
+        .expect("mass id")
+        .to_string();
+
+    let row = client
+        .query_one(
+            "SELECT creator, creator_person FROM x_message_mass WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .expect("mass row");
+    assert_eq!(
+        row.get::<_, Option<String>>("creator").as_deref(),
+        Some(ADMIN),
+        "creator 必须落会话人（改前该列从不写入）"
+    );
+    assert_eq!(
+        row.get::<_, Option<String>>("creator_person").as_deref(),
+        Some(ADMIN),
+        "creator_person 必须与会话人一致"
+    );
+
+    let deleted = crate::mass_id_mockdeletetoget(
+        axum::extract::Extension(pool.clone()),
+        axum::extract::Extension(shared::testing::test_session(ADMIN)),
+        axum::extract::Path(id.clone()),
+    )
+    .await;
+    assert!(deleted.is_ok(), "admin 删群发必须成功");
+    let remaining: i64 = client
+        .query_one("SELECT COUNT(*) FROM x_message_mass WHERE id = $1", &[&id])
+        .await
+        .expect("mass count")
+        .get(0);
+    assert_eq!(remaining, 0, "删除后行必须不可达");
+}
