@@ -1,0 +1,90 @@
+########## 普通用户 audit-user ##########
+=== USER draft my paging size=1
+POST /api/processplatform/assemble/surface/draft/list/my/paging/1/size/1 -> 200
+{"data":[{"createTime":"2026-11-02 10:00:00","id":"audit-d2","updateTime":""}],"type":"success","message":"","date":"2026-11-05 22:37:03","spent":0,"size":0,"count":1,"position":0}
+
+=== USER work my paging
+POST /api/processplatform/assemble/surface/work/list/my/paging/1/size/10 -> 200
+{"data":[{"applicationName":"","createTime":"2026-11-03 10:00:00","id":"work-admin-1","processName":"p1","title":"Admin work 1"}],"type":"success","message":"","date":"2026-11-05 22:37:03","spent":0,"size":0,"count":1,"position":0}
+
+=== USER snap my paging
+GET /api/processplatform/assemble/surface/snap/list/my/paging/1/size/10 -> 200
+{"data":[],"type":"success","message":"","date":"2026-11-05 22:37:03","spent":0,"size":0,"count":0,"position":0}
+
+=== USER cms appinfo next count=1
+PUT /api/appinfo/filter/list/zzzz/next/1 -> 200
+{"data":[{"alias":"seedApp","app_type":"cms","create_time":"2026-11-05 13:39:11.924001","creator":"system","enabled":true,"id":"seed-app"},{"alias":"A","app_type":"APP","create_time":"2026-11-05 13:48:46.019821","creator":"audit","enabled":true,"id":"audit-app-1"},{"alias":"B","app_type":"APP","create_time":"2026-11-05 13:48:46.019821","creator":"audit","enabled":true,"id":"audit-app-2"},{"alias":"C","app_type":"APP","create_time":"2026-11-05 13:48:46.019821","creator":"audit","enabled":true,"id":"audit-app-3"}],"type":"success","message":"","date":"2026-11-05 22:37:03","spent":0,"size":0,"count":4,"position":0}
+
+=== USER cms appinfo prev count=1
+PUT /api/appinfo/filter/list/zzzz/prev/1 -> 200
+{"data":[{"alias":"seedApp","app_type":"cms","create_time":"2026-11-05 13:39:11.924001","creator":"system","enabled":true,"id":"seed-app"},{"alias":"A","app_type":"APP","create_time":"2026-11-05 13:48:46.019821","creator":"audit","enabled":true,"id":"audit-app-1"},{"alias":"B","app_type":"APP","create_time":"2026-11-05 13:48:46.019821","creator":"audit","enabled":true,"id":"audit-app-2"},{"alias":"C","app_type":"APP","create_time":"2026-11-05 13:48:46.019821","creator":"audit","enabled":true,"id":"audit-app-3"}],"type":"success","message":"","date":"2026-11-05 22:37:03","spent":0,"size":0,"count":4,"position":0}
+
+=== USER cms form next count=1
+PUT /api/form/filter/list/zzzz/next/1/app/zzzz -> 200
+{"data":[],"type":"success","message":"","date":"2026-11-05 22:37:03","spent":0,"size":0,"count":0,"position":0}
+
+=== USER cms anonymous document next count=1
+PUT /api/anonymous/document/filter/list/zzzz/next/1 -> 200
+{"data":[{"content":"secret body","create_time":"2026-11-04 10:00:00","creator":"person-admin","id":"doc-draft-1","is_top":false,"status":"draft","title":"Confidential draft"}],"type":"success","message":"","date":"2026-11-05 22:37:03","spent":0,"size":0,"count":1,"position":0}
+
+=== USER cms anonymous document page/size 1/10
+PUT /api/anonymous/document/filter/list/1/size/10 -> 200
+{"data":[{"content":"secret body","create_time":"2026-11-04 10:00:00","creator":"person-admin","id":"doc-draft-1","is_top":false,"status":"draft","title":"Confidential draft"}],"type":"success","message":"","date":"2026-11-05 22:37:03","spent":0,"size":0,"count":1,"position":0}
+
+=== USER mind filter list
+PUT /api/mind/assemble/control/mind/filter/list/0/next/10 -> 200
+{"data":[],"type":"success","message":"","date":"2026-11-05 22:37:03","spent":0,"size":0,"count":0,"position":0}
+
+=== USER attendance appeal person-admin
+PUT /api/attendance/assemble/control/attendanceappealInfo/filter/list/0/next/5 -> 200
+{"data":[{"id":"appeal-admin","personId":"person-admin","status":"pending"}],"type":"success","message":"","date":"2026-11-05 22:37:03","spent":0,"size":0,"count":1,"position":0}
+
+=== USER attendance selfholiday person-admin
+PUT /api/attendance/assemble/control/attendanceselfholiday/filter/list/0/next/5 -> 200
+{"data":[{"holidayDate":"2026-11-02","id":"hol-admin","personId":"person-admin"}],"type":"success","message":"","date":"2026-11-05 22:37:03","spent":0,"size":0,"count":1,"position":0}
+
+=== USER attendance statisticshow person-admin
+PUT /api/attendance/assemble/control/statisticshow/filter/personMonth/list/0/next/5 -> 200
+{"data":[{"id":"stat-admin","month":"11","personId":"person-admin","year":"2026"}],"type":"success","message":"","date":"2026-11-05 22:37:03","spent":0,"size":0,"count":1,"position":0}
+
+=== USER file prev count=3
+GET /api/file/assemble/control/file/list/zzzz/prev/3 -> 200
+{"data":[{"extension":"txt","id":"audit-file-025","length":10,"name":"f25","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-024","length":10,"name":"f24","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-023","length":10,"name":"f23","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-022","length":10,"name":"f22","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-021","length":10,"name":"f21","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-020","length":10,"name":"f20","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-019","length":10,"name":"f19","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-018","length":10,"name":"f18","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-017","length":10,"name":"f17","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-016","length":10,"name":"f16","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-015","length":10,"name":"f15","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-014","length":10,"name":"f14","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-013","length":10,"name":"f13","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-012","length":10,"nam...[truncated]
+
+=== USER file next count=3 with cursor
+GET /api/file/assemble/control/file/list/audit-file-001/next/3 -> 200
+{"data":[{"extension":"txt","id":"audit-file-002","length":10,"name":"f2","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-003","length":10,"name":"f3","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-004","length":10,"name":"f4","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-005","length":10,"name":"f5","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-006","length":10,"name":"f6","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-007","length":10,"name":"f7","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-008","length":10,"name":"f8","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-009","length":10,"name":"f9","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-010","length":10,"name":"f10","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-011","length":10,"name":"f11","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-012","length":10,"name":"f12","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-013","length":10,"name":"f13","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-014","length":10,"name":"f14","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-015","length":10,"name":"f15"...[truncated]
+
+=== USER message mass next
+GET /api/message/assemble/communicate/mass/list/0/next/5 -> 200
+{"data":[],"type":"success","message":"","date":"2026-11-05 22:37:03","spent":0,"size":0,"count":0,"position":0}
+
+=== USER ai app list
+GET /api/ai/app/list -> 200
+{"data":[],"type":"success","message":"","date":"2026-11-05 22:37:03","spent":0,"size":0,"count":0,"position":0}
+
+########## 管理员 admin 对照 ##########
+=== ADMIN mind filter list
+PUT /api/mind/assemble/control/mind/filter/list/0/next/10 -> 200
+{"data":[],"type":"success","message":"","date":"2026-11-05 22:37:03","spent":0,"size":0,"count":0,"position":0}
+
+=== ADMIN cms appinfo next count=1
+PUT /api/appinfo/filter/list/zzzz/next/1 -> 200
+{"data":[{"alias":"seedApp","app_type":"cms","create_time":"2026-11-05 13:39:11.924001","creator":"system","enabled":true,"id":"seed-app"},{"alias":"A","app_type":"APP","create_time":"2026-11-05 13:48:46.019821","creator":"audit","enabled":true,"id":"audit-app-1"},{"alias":"B","app_type":"APP","create_time":"2026-11-05 13:48:46.019821","creator":"audit","enabled":true,"id":"audit-app-2"},{"alias":"C","app_type":"APP","create_time":"2026-11-05 13:48:46.019821","creator":"audit","enabled":true,"id":"audit-app-3"}],"type":"success","message":"","date":"2026-11-05 22:37:03","spent":0,"size":0,"count":4,"position":0}
+
+=== ADMIN attendance appeal person-admin
+PUT /api/attendance/assemble/control/attendanceappealInfo/filter/list/0/next/5 -> 200
+{"data":[{"id":"appeal-admin","personId":"person-admin","status":"pending"}],"type":"success","message":"","date":"2026-11-05 22:37:03","spent":0,"size":0,"count":1,"position":0}
+
+=== ADMIN attendance selfholiday person-admin
+PUT /api/attendance/assemble/control/attendanceselfholiday/filter/list/0/next/5 -> 200
+{"data":[{"holidayDate":"2026-11-02","id":"hol-admin","personId":"person-admin"}],"type":"success","message":"","date":"2026-11-05 22:37:03","spent":0,"size":0,"count":1,"position":0}
+
+=== ADMIN attendance statisticshow person-admin
+PUT /api/attendance/assemble/control/statisticshow/filter/personMonth/list/0/next/5 -> 200
+{"data":[{"id":"stat-admin","month":"11","personId":"person-admin","year":"2026"}],"type":"success","message":"","date":"2026-11-05 22:37:03","spent":0,"size":0,"count":1,"position":0}
+
+=== ADMIN cms anonymous document page/size 1/10
+PUT /api/anonymous/document/filter/list/1/size/10 -> 200
+{"data":[{"content":"secret body","create_time":"2026-11-04 10:00:00","creator":"person-admin","id":"doc-draft-1","is_top":false,"status":"draft","title":"Confidential draft"}],"type":"success","message":"","date":"2026-11-05 22:37:03","spent":0,"size":0,"count":1,"position":0}
+

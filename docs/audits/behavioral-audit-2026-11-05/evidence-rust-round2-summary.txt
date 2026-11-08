@@ -1,0 +1,29 @@
+===== 假翻页条数 vs 期望 =====
+draft next count=10 (期望10) | GET /api/processplatform/assemble/surface/draft/list/audit-d1/next/10 | HTTP 200 | dataLen=1 countField=1 ids=[audit-d1]
+draft prev count=10 (期望10) | GET /api/processplatform/assemble/surface/draft/list/audit-d1/prev/10 | HTTP 200 | dataLen=1 countField=1 ids=[audit-d1]
+draft next count=1 (期望1) | GET /api/processplatform/assemble/surface/draft/list/audit-d1/next/1 | HTTP 200 | dataLen=1 countField=1 ids=[audit-d1]
+file next count=3 (期望3) | GET /api/file/assemble/control/file/list/audit-file-001/next/3 | HTTP 200 | dataLen=20 countField=20 ids=[audit-file-002,audit-file-003,audit-file-004,audit-file-005,audit-file-006,audit-file-007]
+file prev count=3 (期望3) | GET /api/file/assemble/control/file/list/zzzz/prev/3 | HTTP 200 | dataLen=20 countField=20 ids=[audit-file-025,audit-file-024,audit-file-023,audit-file-022,audit-file-021,audit-file-020]
+file next count=100 (期望20上限) | GET /api/file/assemble/control/file/list/audit-file-001/next/100 | HTTP 200 | dataLen=20 countField=20 ids=[audit-file-002,audit-file-003,audit-file-004,audit-file-005,audit-file-006,audit-file-007]
+cms appinfo next count=1 (期望1) | PUT /api/appinfo/filter/list/zzzz/next/1 | HTTP 200 | dataLen=4 countField=4 ids=[seed-app,audit-app-1,audit-app-2,audit-app-3]
+cms appinfo prev count=1 (期望1) | PUT /api/appinfo/filter/list/zzzz/prev/1 | HTTP 200 | dataLen=4 countField=4 ids=[seed-app,audit-app-1,audit-app-2,audit-app-3]
+cms document next count=1 (期望1) | PUT /api/document/filter/list/zzzz/next/1 | HTTP 200 | dataLen=1 countField=1 ids=[doc-draft-1]
+cms document page/size 1/10 (期望<=10) | PUT /api/document/filter/list/1/size/10 | HTTP 200 | dataLen=1 countField=1 ids=[doc-draft-1]
+cms anonymous doc next count=1 (期望1) | PUT /api/anonymous/document/filter/list/zzzz/next/1 | HTTP 200 | dataLen=1 countField=1 ids=[doc-draft-1]
+===== 归属过滤实测 =====
+attendance detail keyset count=5 (普通用户) | GET /api/attendance/assemble/control/attendancedetail/filter/list/0/next/5 | HTTP 200 | dataLen=5 countField=5 ids=[audit-ad-02,audit-ad-03,audit-ad-04,audit-ad-05,audit-ad-01]
+attendance detail mobile (普通用户) | GET /api/attendance/assemble/control/attendancedetail/mobile/filter/list/page/1/count/5 | HTTP 200 | dataLen=5 countField=5 ids=[audit-other-1,audit-ad-03,audit-ad-04,audit-ad-05,audit-ad-02]
+attendance appeal personId=person-admin | PUT /api/attendance/assemble/control/attendanceappealInfo/filter/list/0/next/5 | HTTP 200 | dataLen=1 countField=1 ids=[appeal-admin]
+attendance selfholiday personId=person-admin | PUT /api/attendance/assemble/control/attendanceselfholiday/filter/list/0/next/5 | HTTP 200 | dataLen=1 countField=1 ids=[hol-admin]
+attendance statisticshow personId=person-admin | PUT /api/attendance/assemble/control/statisticshow/filter/personMonth/list/0/next/5 | HTTP 200 | dataLen=1 countField=1 ids=[stat-admin]
+mind folder-1 page=1 (普通用户) | PUT /api/mind/assemble/control/mind/filter/list/folder-1/next/1 | HTTP 200 | dataLen=2 countField=2 ids=[mind-audit-own,mind-admin-secret]
+message instant list count=5 (普通用户) | GET /api/message/assemble/communicate/instant/list/0/next/5 | HTTP 200 | dataLen=2 countField=2 ids=[msg-admin-1,test-id]
+message consume=person-admin count=5 (普通用户) | GET /api/message/assemble/communicate/consume/list/person-admin/count/5 | HTTP 200 | dataLen=1 countField=1 ids=[msg-admin-1]
+meeting attachment next from att-admin-1 count=5 | GET /api/meeting/assemble/control/attachment/list/att-admin-1/next/5 | HTTP 200 | dataLen=1 countField=1 ids=[att-admin-2]
+meeting list (普通用户) | GET /api/meeting/list | HTTP 200 | dataLen=1 countField=1 ids=[meeting-admin-1]
+ai chat list (NULL 行) | GET /api/ai/chat/list/paging/1/size/10 | HTTP 500 | ERR 响应状态代码未指示成功: 500 (Internal Server Error)。
+ai conversation list (NULL 行) | GET /api/ai/conversation/list | HTTP 500 | ERR 响应状态代码未指示成功: 500 (Internal Server Error)。
+pp task my (普通用户) | GET /api/processplatform/assemble/surface/task/list/my/paging/1/size/10 | HTTP 200 | dataLen=2 countField=2 ids=[task-admin-2,task-admin-1]
+pp taskcompleted my (普通用户) | GET /api/processplatform/assemble/surface/taskcompleted/list/my/paging/1/size/10 | HTTP 200 | dataLen=0 countField=0 ids=[]
+pp read my (普通用户) | GET /api/processplatform/assemble/surface/read/list/my/paging/1/size/10 | HTTP 200 | dataLen=0 countField=0 ids=[]
+pp review my (普通用户) | GET /api/processplatform/assemble/surface/review/list/my/paging/1/size/10 | HTTP 404 | ERR 响应状态代码未指示成功: 404 (Not Found)。

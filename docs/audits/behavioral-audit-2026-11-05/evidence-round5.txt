@@ -1,0 +1,246 @@
+第五轮行为审计 — 原始证据（自动汇总，时间 2026-11-06 00:34:41）
+基线 HEAD: 4b4e17010（Rust 与 Go 同仓库 D:/WORKSPACE/fakeToys-oa4rust）
+工作树: 仅 ?? docs/audits/behavioral-audit-2026-11-05/（本轮审计目录，未跟踪）
+说明: 所有动态测试只打本机 127.0.0.1:3999 + 自有 scratch 库 oa_audit_20261105；未触碰共享库/业务代码。
+
+==============================================================================
+§A 空表造数实测（bbs_subject_info / x_mind_base_info / x_mind_folder_info）
+==============================================================================
+S1 bbs_subject_info（造数后实测）
+==============================================================================
+  db seed: 998d51c9-a74c-421e-83a2-8b48b872c8a3|R5 forged subject|admin|r5-sec|
+r5-subj-admin|R5 admin subject|admin|r5-sec|admin
+r5-subj-attacker|R5 attacker subject|audit-user|r5-sec|audit-user
+  anon_subject_list                                        -> 401 | {"count":0,"date":"2026-11-06 00:30:58","message":"unauthorized","position":0,"prompt":"com.x.base.core.project.exception.ExceptionUnauthorized","size":-1,"spent":0,"type":"error"}
+  audituser_subject_list(含 admin 帖)                        -> 200 | {"data":{"count":3,"data":[{"authorId":"admin","createTime":"2026-11-06 00:18:29","id":"998d51c9-a74c-421e-83a2-8b48b872c8a3","isTop":false,"replyCount":0,"sectionId":"r5-sec","title":"R5 forged subject","viewCount":0},{
+  anon_update_subject                                      -> 401 | {"count":0,"date":"2026-11-06 00:30:58","message":"unauthorized","position":0,"prompt":"com.x.base.core.project.exception.ExceptionUnauthorized","size":-1,"spent":0,"type":"error"}
+  audituser_update_admin_subject                           -> 200 | {"data":{"authorId":"admin","createTime":"2026-11-06 00:00:00","id":"r5-subj-admin","isTop":false,"replyCount":0,"sectionId":"r5-sec","title":"R5 admin subject","viewCount":0},"type":"success","message":"","date":"2026-1
+  db after update: r5-subj-admin|HACKED-BY-AUDIT-USER|t|f
+  audituser_create_subject_author_admin                    -> 200 | {"data":{"id":"09df39f8-633e-4fac-bf91-871f68ecd3c2","sectionId":"r5-sec","title":"FORGED-OWNER"},"type":"success","message":"","date":"2026-11-06 00:30:58","spent":0,"size":0,"count":0,"position":0}
+  db new: 09df39f8-633e-4fac-bf91-871f68ecd3c2|FORGED-OWNER|admin|
+  audituser_delete_admin_subject                           -> 200 | {"data":{"id":"r5-subj-admin"},"type":"success","message":"","date":"2026-11-06 00:30:58","spent":0,"size":0,"count":0,"position":0}
+  db after delete cnt: 0
+
+
+S2 x_mind_base_info / x_mind_folder_info（造数后实测）
+==============================================================================
+  db seed: r5-mind-admin|R5 admin mind|admin
+r5-mind-attacker|R5 attacker mind|audit-user
+  anon_mind_list                                           -> 401 | {"count":0,"date":"2026-11-06 00:30:59","message":"unauthorized","position":0,"prompt":"com.x.base.core.project.exception.ExceptionUnauthorized","size":-1,"spent":0,"type":"error"}
+  audituser_mind_list(含 admin 脑图)                          -> 200 | {"data":{"count":2,"data":[{"creator":"admin","description":"admin private mind","folderId":"r5-mfolder","id":"r5-mind-admin","name":"R5 admin mind"},{"creator":"audit-user","description":"attacker mind","folderId":"r5-m
+  anon_update_mind                                         -> 401 | {"count":0,"date":"2026-11-06 00:30:59","message":"unauthorized","position":0,"prompt":"com.x.base.core.project.exception.ExceptionUnauthorized","size":-1,"spent":0,"type":"error"}
+  audituser_update_admin_mind                              -> 200 | {"data":{"description":"admin private mind","folderId":"r5-mfolder","id":"r5-mind-admin","name":"HACKED-MIND"},"type":"success","message":"","date":"2026-11-06 00:30:59","spent":0,"size":0,"count":0,"position":0}
+  db after update: r5-mind-admin|HACKED-MIND
+  audituser_create_mind_creator_admin                      -> 200 | {"data":{"folderId":"","id":"90861044-e043-4b7e-871b-e5bc158a2866","name":"FORGED-MIND"},"type":"success","message":"","date":"2026-11-06 00:30:59","spent":0,"size":0,"count":0,"position":0}
+  db new: 90861044-e043-4b7e-871b-e5bc158a2866|FORGED-MIND|admin
+  audituser_update_admin_folder                            -> 200 | {"data":{"description":"seed","id":"r5-mfolder","name":"HACKED-FOLDER","orderNumber":0,"parentId":""},"type":"success","message":"","date":"2026-11-06 00:30:59","spent":0,"size":0,"count":0,"position":0}
+  db folder: r5-mfolder|HACKED-FOLDER|admin
+  audituser_delete_admin_mind                              -> 200 | {"data":{"id":"r5-mind-admin","rowsAffected":1},"type":"success","message":"","date":"2026-11-06 00:30:59","spent":0,"size":0,"count":0,"position":0}
+  db after delete cnt: 0
+
+
+==============================================================================
+§B 审批链（S3）
+==============================================================================
+ 审批链
+==============================================================================
+  db seed: work-admin-1|pending|person-admin
+work-audit-1|pending|audit-user
+  anon_work_processing                                     -> 401 | {"count":0,"date":"2026-11-06 00:31:00","message":"unauthorized","position":0,"prompt":"com.x.base.core.project.exception.ExceptionUnauthorized","size":-1,"spent":0,"type":"error"}
+  audituser_work_processing(admin row)                     -> 403 | {"count":0,"date":"2026-11-06 00:31:00","message":"forbidden","position":0,"prompt":"com.x.base.core.project.exception.ExceptionAccessDenied","size":-1,"spent":0,"type":"error"}
+  db: work-admin-1|pending
+  admin_work_processing(admin row)                         -> 200 | {"data":{"application":"a1","create_time":"2026-11-06 00:00:00","creator":"person-admin","id":"work-admin-1","process":"p1","title":"Admin work 1","work_status":"pending"},"type":"success","message":"","date":"2026-11-06
+  audituser_work_processing(own row)                       -> 200 | {"data":{"application":"a1","create_time":"2026-11-06 00:00:00","creator":"audit-user","id":"work-audit-1","process":"p1","title":"Audit work 1","work_status":"pending"},"type":"success","message":"","date":"2026-11-06 0
+  db: work-admin-1|processing
+work-audit-1|processing
+  anon_task_processing                                     -> 401 | {"count":0,"date":"2026-11-06 00:31:00","message":"unauthorized","position":0,"prompt":"com.x.base.core.project.exception.ExceptionUnauthorized","size":-1,"spent":0,"type":"error"}
+  audituser_task_processing(admin row)                     -> 403 | {"count":0,"date":"2026-11-06 00:31:00","message":"forbidden","position":0,"prompt":"com.x.base.core.project.exception.ExceptionAccessDenied","size":-1,"spent":0,"type":"error"}
+  admin_task_processing(admin row)                         -> 200 | {"data":{"activity":"act-1","activity_token":"tok-1","id":"task-admin-1","person":"person-admin","start_time":"2026-11-06 00:00:00","task_status":"pending","title":"Admin task 1","work":"work-admin-1"},"type":"success","
+  db: task-admin-1|processing|person-admin
+task-admin-2|pending|person-admin
+  -- terminate 归属门 --
+  audituser_terminate(admin row)                           -> 403 | {"count":0,"date":"2026-11-06 00:31:00","message":"forbidden","position":0,"prompt":"com.x.base.core.project.exception.ExceptionAccessDenied","size":-1,"spent":0,"type":"error"}
+  audituser_terminate_get(admin row)                       -> 403 | {"count":0,"date":"2026-11-06 00:31:00","message":"forbidden","position":0,"prompt":"com.x.base.core.project.exception.ExceptionAccessDenied","size":-1,"spent":0,"type":"error"}
+  admin_terminate(admin row)                               -> 200 | {"data":{"application":"a1","create_time":"2026-11-06 00:00:00","creator":"person-admin","end_time":"2026-11-05 16:31:00.756025","id":"work-admin-1","process":"p1","title":"Admin work 1","work_status":"terminated"},"type
+  db: work-admin-1|terminated|2026-11-05 16:31:00.756025
+  x_record: terminate|admin
+terminate|audit-user
+terminate|admin
+urge|system
+terminate|admin
+terminate|admin
+  -- 空归属：creator=NULL 是否人人可动 --
+  audituser_work_processing(NULL creator)                  -> 200 | {"data":{"application":"a1","create_time":"2026-11-06 00:00:00","id":"work-admin-1","process":"p1","title":"Admin work 1","work_status":"pending"},"type":"success","message":"","date":"2026-11-06 00:31:01","spent":0,"siz
+  audituser_terminate(NULL creator)                        -> 200 | {"data":{"application":"a1","create_time":"2026-11-06 00:00:00","end_time":"2026-11-05 16:31:01.355622","id":"work-admin-1","process":"p1","title":"Admin work 1","work_status":"terminated"},"type":"success","message":"",
+  db: work-admin-1|terminated|
+  -- task 空归属 --
+  audituser_task_processing(NULL owner)                    -> 403 | {"count":0,"date":"2026-11-06 00:31:01","message":"forbidden","position":0,"prompt":"com.x.base.core.project.exception.ExceptionAccessDenied","size":-1,"spent":0,"type":"error"}
+  admin_task_processing(NULL owner)                        -> 200 | {"data":{"activity":"act-1","activity_token":"tok-1","id":"task-admin-1","start_time":"2026-11-06 00:00:00","task_status":"pending","title":"Admin task 1","work":"work-admin-1"},"type":"success","message":"","date":"2026
+  db: task-admin-1|processing|
+  -- 状态机：completed/terminated -> processing --
+  admin_processing_from_completed                          -> 200 | {"data":{"application":"a1","create_time":"2026-11-06 00:00:00","creator":"person-admin","id":"work-admin-1","process":"p1","title":"Admin work 1","work_status":"completed"},"type":"success","message":"","date":"2026-11-
+  db: processing
+  admin_processing_from_terminated                         -> 200 | {"data":{"application":"a1","create_time":"2026-11-06 00:00:00","creator":"person-admin","id":"work-admin-1","process":"p1","title":"Admin work 1","work_status":"terminated"},"type":"success","message":"","date":"2026-11
+  db: processing
+  admin_task_processing_from_completed                     -> 200 | {"data":{"activity":"act-1","activity_token":"tok-1","id":"task-admin-1","person":"person-admin","start_time":"2026-11-06 00:00:00","task_status":"completed","title":"Admin task 1","work":"work-admin-1"},"type":"success"
+  db: processing
+  -- 跳前置：pending 直接 terminate --
+  admin_terminate_from_pending                             -> 200 | {"data":{"application":"a1","create_time":"2026-11-06 00:00:00","creator":"person-admin","end_time":"2026-11-05 16:31:02.890673","id":"work-admin-1","process":"p1","title":"Admin work 1","work_status":"terminated"},"type
+  db: terminated|2026-11-05 16:31:02.890673
+  -- body 直改 status --
+  admin_processing_body_status                             -> 200 | {"data":{"application":"a1","create_time":"2026-11-06 00:00:00","creator":"person-admin","id":"work-admin-1","process":"p1","title":"Admin work 1","work_status":"pending"},"type":"success","message":"","date":"2026-11-06
+  db: processing|
+
+
+==============================================================================
+§C 游标翻页（S4）
+==============================================================================
+「我的创建/任务」端点
+==============================================================================
+  anon_work_creator_current                                -> 401 | {"count":0,"date":"2026-11-06 00:31:03","message":"unauthorized","position":0,"prompt":"com.x.base.core.project.exception.ExceptionUnauthorized","size":-1,"spent":0,"type":"error"}
+  audituser_work_creator_current(pp-work-a1)               -> 200 | {"data":[{"createTime":"2026-11-05 15:40:00","id":"pp-work-a1","updateTime":""}],"type":"success","message":"","date":"2026-11-06 00:31:03","spent":0,"size":0,"count":1,"position":0}
+  admin_work_creator_current(pp-work-a1)                   -> 200 | {"data":[{"createTime":"2026-11-05 15:40:00","id":"pp-work-a1","updateTime":""}],"type":"success","message":"","date":"2026-11-06 00:31:03","spent":0,"size":0,"count":1,"position":0}
+  audituser_work_creator_current(absent id)                -> 200 | {"data":[],"type":"success","message":"","date":"2026-11-06 00:31:03","spent":0,"size":0,"count":0,"position":0}
+  audituser_work_creator_current(count=1)                  -> 200 | {"data":[{"createTime":"2026-11-05 15:40:00","id":"pp-work-a1","updateTime":""}],"type":"success","message":"","date":"2026-11-06 00:31:03","spent":0,"size":0,"count":1,"position":0}
+  audituser_work_creator_current(count=100)                -> 200 | {"data":[{"createTime":"2026-11-05 15:40:00","id":"pp-work-a1","updateTime":""}],"type":"success","message":"","date":"2026-11-06 00:31:03","spent":0,"size":0,"count":1,"position":0}
+  anon_task_list_next(pp-task-a1)                          -> 401 | {"count":0,"date":"2026-11-06 00:31:03","message":"unauthorized","position":0,"prompt":"com.x.base.core.project.exception.ExceptionUnauthorized","size":-1,"spent":0,"type":"error"}
+  audituser_task_list_next(pp-task-a1/admin)               -> 200 | {"data":[{"createTime":"2026-11-05 15:24:02.880657+00","id":"pp-task-a1","updateTime":""}],"type":"success","message":"","date":"2026-11-06 00:31:03","spent":0,"size":0,"count":1,"position":0}
+  audituser_task_list_next(pp-task-u1/own)                 -> 200 | {"data":[{"createTime":"2026-11-05 15:23:02.880657+00","id":"pp-task-u1","updateTime":""}],"type":"success","message":"","date":"2026-11-06 00:31:03","spent":0,"size":0,"count":1,"position":0}
+  admin_task_list_next(pp-task-a1)                         -> 200 | {"data":[{"createTime":"2026-11-05 15:24:02.880657+00","id":"pp-task-a1","updateTime":""}],"type":"success","message":"","date":"2026-11-06 00:31:03","spent":0,"size":0,"count":1,"position":0}
+  audituser_task_list_next(count=1)                        -> 200 | {"data":[{"createTime":"2026-11-05 15:24:02.880657+00","id":"pp-task-a1","updateTime":""}],"type":"success","message":"","date":"2026-11-06 00:31:03","spent":0,"size":0,"count":1,"position":0}
+  audituser_task_list_next(count=100)                      -> 200 | {"data":[{"createTime":"2026-11-05 15:24:02.880657+00","id":"pp-task-a1","updateTime":""}],"type":"success","message":"","date":"2026-11-06 00:31:03","spent":0,"size":0,"count":1,"position":0}
+  db pp_c_work: pp-work-a1|person-admin|
+  db pp_c_task: pp-task-a1|person-admin|
+pp-task-u1|audit-user|
+
+
+==============================================================================
+§D multipart 上传（S5 + D2/D3）
+==============================================================================
+ 上传：归属来源 + 跨用户读/删
+==============================================================================
+  -- 5a /api/file/upload（person 取表单）--
+  audituser_upload person=admin                            -> 200 | {"data":{"createTime":"2026-11-06T00:31:03.722239900+08:00","extension":"txt","id":"c54fd877-abd7-4239-848d-8c3c189c7fee","length":1,"mimeType":"text/plain","name":"r5-imp","person":"admin","referenceId":"","referenceTyp
+  db: c54fd877-abd7-4239-848d-8c3c189c7fee|r5-imp|admin
+  audituser_upload person=audit-user                       -> 200 | {"data":{"createTime":"2026-11-06T00:31:03.858029800+08:00","extension":"txt","id":"7d0e23a3-163f-4a55-b54d-3489ccdb6cc4","length":1,"mimeType":"text/plain","name":"r5-self","person":"audit-user","referenceId":"","refere
+  -- 5b PUT multipart（person/creator 取会话）--
+  admin_u2_multipart + form 伪造 person/creator              -> 200 | {"data":{"extension":"bin","id":"798e6b46-8b34-4f12-bd08-e0f78908236c","length":10,"name":"upload.bin","storageKey":"attachment/798e6b46-8b34-4f12-bd08-e0f78908236c/upload.bin","uploaded":true},"type":"success","message"
+  fid_secret: 798e6b46-8b34-4f12-bd08-e0f78908236c
+  db: 798e6b46-8b34-4f12-bd08-e0f78908236c|admin|upload.bin|10
+  -- 5c 读面 --
+  audituser READ admin file via anonymous                  -> 200 | audit-user
+  admin READ own file via anonymous                        -> 200 | audit-user
+  audituser READ admin file via owned gate                 -> 403 | {"count":0,"date":"2026-11-06 00:31:04","message":"forbidden","position":0,"prompt":"com.x.base.core.project.exception.ExceptionAccessDenied","size":-1,"spent":0,"type":"error"}
+  audituser READ admin file via fac gate                   -> 403 | {"count":0,"date":"2026-11-06 00:31:04","message":"forbidden","position":0,"prompt":"com.x.base.core.project.exception.ExceptionAccessDenied","size":-1,"spent":0,"type":"error"}
+  audituser READ admin file via file download              -> 403 | {"count":0,"date":"2026-11-06 00:31:04","message":"forbidden","position":0,"prompt":"com.x.base.core.project.exception.ExceptionAccessDenied","size":-1,"spent":0,"type":"error"}
+  -- 5d 删面 --
+  audituser DELETE admin file (u2)                         -> 403 | {"count":0,"date":"2026-11-06 00:31:04","message":"forbidden","position":0,"prompt":"com.x.base.core.project.exception.ExceptionAccessDenied","size":-1,"spent":0,"type":"error"}
+  db: 798e6b46-8b34-4f12-bd08-e0f78908236c|admin|
+  admin DELETE own file (u2)                               -> 200 | {"data":{"deleted":true,"id":"798e6b46-8b34-4f12-bd08-e0f78908236c"},"type":"success","message":"","date":"2026-11-06 00:31:04","spent":0,"size":0,"count":0,"position":0}
+  db: 798e6b46-8b34-4f12-bd08-e0f78908236c|admin|2026-11-05 16:31:04.268045
+  audituser DELETE impersonated(person=admin)              -> 403 | {"count":0,"date":"2026-11-06 00:31:04","message":"forbidden","position":0,"prompt":"com.x.base.core.project.exception.ExceptionAccessDenied","size":-1,"spent":0,"type":"error"}
+  admin DELETE impersonated(person=admin)                  -> 200 | {"data":{"deleted":true,"id":"c54fd877-abd7-4239-848d-8c3c189c7fee"},"type":"success","message":"","date":"2026-11-06 00:31:04","spent":0,"size":0,"count":0,"position":0}
+
+
+
+--- D2 u2 multipart 归属取会话 ---------------------------------------------
+audituser u2 upload(form person/creator/owner 全伪造 admin) -> 200
+  {"data":{"extension":"bin","id":"d684c70c-7771-4fec-befd-1695ec928975","length":5,
+   "name":"upload.bin","storageKey":"attachment/...","uploaded":true},"type":"success"}
+db: d684c70c-7771-4fec-befd-1695ec928975|audit-user|upload.bin|5
+   => form 的 person/creator/owner 均未被采纳，person 取会话 audit-user。
+audituser 经 /api/file/anonymous/file/<id>/download -> (200, 'admin')
+admin     经 /api/file/anonymous/file/<id>/download -> (200, 'admin')
+   => 两个不同身份都拿到同一内容；该端点无归属门（仅被全局 auth 中间件要求登录）。
+
+--- D3 /api/file/upload（file crate，person 取表单）----------------------
+audituser upload 表单 person=admin,name=r5-imp -> 200
+db: c54fd877-abd7-4239-848d-8c3c189c7fee|r5-imp|admin
+   => person 直接取表单，可冒名。
+audituser 随后 DELETE /api/file/assemble/control/file/<id> -> 403（归属=admin）
+admin      DELETE 同 id -> 200（deleted:true）
+
+==============================================================================
+§E invoice / appeal 后果链（S6）
+==============================================================================
+ 中的后果链完整样本：invoice / appeal
+==============================================================================
+  db: r5-inv-admin|INV-ADMIN|1000|pending|admin
+r5-inv-u|INV-U|10|pending|audit-user
+  audituser invoice_list (all)                             -> 200 | {"data":{"count":2,"data":[{"amount":1000.0,"date":"2026-11-06","id":"r5-inv-admin","number":"INV-ADMIN","status":"pending"},{"amount":10.0,"date":"2026-11-06","id":"r5-inv-u","number":"INV-U","status":"pending"}]},"type
+  audituser invoice_get(admin)                             -> 200 | {"data":{"amount":1000.0,"createTime":"2026-11-05 16:31:04.692931","creator":"admin","date":"2026-11-06","id":"r5-inv-admin","number":"INV-ADMIN","status":"pending"},"type":"success","message":"","date":"2026-11-06 00:31
+  audituser invoice_update(admin)                          -> 200 | {"data":{"amount":9999.5,"createTime":"2026-11-05 16:31:04.692931","creator":"admin","date":"2026-11-06","id":"r5-inv-admin","number":"HACKED-NUM","status":"approved"},"type":"success","message":"","date":"2026-11-06 00:
+  db: r5-inv-admin|HACKED-NUM|9999.5|approved
+  audituser assemble invoice_update(admin)                 -> 200 | {"type":"error","message":"invoice not found","date":"2026-11-06 00:31:04","spent":0,"size":-1,"count":0,"position":0,"prompt":"com.x.base.core.project.exception.ExceptionEntityNotExist"}
+  db(assemble read table):  ERR:ERROR:  column "number" does not exist
+LINE 1: select id,number,amount,status from x_general_assemble_invoi...
+                  ^
+HINT:  Perhaps you meant to reference the column "x_general_assemble_
+  audituser invoice_delete(admin)                          -> 200 | {"data":{"amount":9999.5,"createTime":"2026-11-05 16:31:04.692931","creator":"admin","date":"2026-11-06","id":"r5-inv-admin","number":"HACKED-NUM","status":"approved"},"type":"success","message":"","date":"2026-11-06 00:
+  db cnt: 0
+  audituser appeal_update(admin)                           -> 200 | {"data":{"id":"appeal-admin","status":"approved","updated":1},"type":"success","message":"","date":"2026-11-06 00:31:05","spent":0,"size":0,"count":0,"position":0}
+  db: appeal-admin|person-admin|approved|person-admin
+
+
+==============================================================================
+§F 断链（S7）
+==============================================================================
+样本（写表 != 读表）
+==============================================================================
+  cal tables: x_cal_event
+cal_event
+  x_cal_event cnt=4  cal_event cnt=3
+  calendar_core_entity entity table_name -> x_cal_event (sea-orm)
+  calendar crate 用户面 SQL -> CAL_EVENT (= cal_event)
+  x_general_invoice cnt=1  x_general_assemble_invoice exists=1
+
+
+==============================================================================
+§G 考勤明细跨用户读/改（登录用户）
+==============================================================================
+db: r5-ad-admin|person-admin|2026-11-06|LATE|f
+== 匿名读他人考勤明细（handler 无 session）==
+  anon_mobilepreview -> 401 | {"count":0,"date":"2026-11-06 00:32:20","message":"unauthorized","position":0,"prompt":"com.x.base.core.project.exception.ExceptionUnauthorized","size":-1,"spent":0,"type":"error"}
+  anon_my(GET+body) -> 401 | {"count":0,"date":"2026-11-06 00:32:20","message":"unauthorized","position":0,"prompt":"com.x.base.core.project.exception.ExceptionUnauthorized","size":-1,"spent":0,"type":"error"}
+  anon_my(POST) -> 401 | {"count":0,"date":"2026-11-06 00:32:20","message":"unauthorized","position":0,"prompt":"com.x.base.core.project.exception.ExceptionUnauthorized","size":-1,"spent":0,"type":"error"}
+  anon_detail_by_id -> 401 | {"count":0,"date":"2026-11-06 00:32:20","message":"unauthorized","position":0,"prompt":"com.x.base.core.project.exception.ExceptionUnauthorized","size":-1,"spent":0,"type":"error"}
+  anon_delete_by_id -> 401 | {"count":0,"date":"2026-11-06 00:32:20","message":"unauthorized","position":0,"prompt":"com.x.base.core.project.exception.ExceptionUnauthorized","size":-1,"spent":0,"type":"error"}
+== 登录用户改他人考勤 received ==
+  audituser_recive(admin) -> 200 | {"data":{"received":1},"type":"success","message":"","date":"2026-11-06 00:32:20","spent":0,"size":0,"count":0,"position":0}
+  db: r5-ad-admin|person-admin|t
+  anon_recive(admin) -> 401 | {"count":0,"date":"2026-11-06 00:32:21","message":"unauthorized","position":0,"prompt":"com.x.base.core.project.exception.ExceptionUnauthorized","size":-1,"spent":0,"type":"error"}
+
+--- G2 考勤明细的登录用户跨用户读/改 --------------------------------------
+db seed: r5-ad-admin|person-admin|2026-11-06|LATE|f
+
+匿名（无 cookie）:
+  anon mobilepreview -> 401 unauthorized
+  anon mobile/my     -> 401 unauthorized
+  anon detail by id  -> 401 unauthorized
+  anon delete by id  -> 401 unauthorized
+  anon recive        -> 401 unauthorized
+  => 路由被全局 auth 中间件挡住，但 handler 本身无 session/归属判断。
+
+登录用户 audit-user（不是数据的 owner）:
+  POST .../attendancedetail/mobile/mobilepreview {personId: person-admin, date: 2026-11-06}
+    -> 200 {"data":{"date":"2026-11-06","id":"r5-ad-admin","personId":"person-admin","status":"LATE"}}
+  POST .../attendancedetail/mobile/my {personId: person-admin}
+    -> 200 {"data":[{"date":"2026-11-06","id":"r5-ad-admin","personId":"person-admin","status":"LATE"}]}
+  GET  .../attendancedetail/mobile/r5-ad-admin
+    -> 200 {"data":{"date":"2026-11-06","id":"r5-ad-admin","personId":"person-admin","status":"LATE"}}
+  POST .../attendancedetail/mobile/recive {personId: person-admin, date: 2026-11-06}
+    -> 200 {"data":{"received":1}}
+    db: r5-ad-admin|person-admin|t
+  => 他人考勤明细可读、received 标记可被改写。
+
+==============================================================================
+§H 125 条分级统计
+==============================================================================
+
+--- H1 125 条敏感字段路由的静态分级（write_fields.json 口径）-------------
+routes=125 unique_fn=95 no_gate_routes=43
+OWN routes=80 unique_fn=62
+一级(T1, 已实证可改/删/读他人)  11 routes / 10 fn
+二级(T2, 冒名新建/待受害者读面) 23 routes / 22 fn
+三级(T3, 断链/误报/已加固)      5 routes / 4 fn
+其余 86 routes / 65 fn 为 gate=True（修复线已加门禁）或只读过滤，归入"已加固/未判"

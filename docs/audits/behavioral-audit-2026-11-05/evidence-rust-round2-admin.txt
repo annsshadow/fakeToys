@@ -1,0 +1,67 @@
+########## 管理员身份复测（403 项） ##########
+=== ADMIN draft my paging size=1
+POST /api/processplatform/assemble/surface/draft/list/my/paging/1/size/1 -> HTTP 403
+响应状态代码未指示成功: 403 (Forbidden)。
+
+=== ADMIN work my paging
+POST /api/processplatform/assemble/surface/work/list/my/paging/1/size/10 -> HTTP 403
+响应状态代码未指示成功: 403 (Forbidden)。
+
+=== ADMIN cms appinfo next count=1
+PUT /api/appinfo/filter/list/zzzz/next/1 -> HTTP 403
+响应状态代码未指示成功: 403 (Forbidden)。
+
+=== ADMIN cms appinfo prev count=1
+PUT /api/appinfo/filter/list/zzzz/prev/1 -> HTTP 403
+响应状态代码未指示成功: 403 (Forbidden)。
+
+=== ADMIN cms anonymous document next count=1
+PUT /api/anonymous/document/filter/list/zzzz/next/1 -> HTTP 403
+响应状态代码未指示成功: 403 (Forbidden)。
+
+=== ADMIN cms anonymous document page/size 1/10
+PUT /api/anonymous/document/filter/list/1/size/10 -> HTTP 403
+响应状态代码未指示成功: 403 (Forbidden)。
+
+=== ADMIN mind filter list
+PUT /api/mind/assemble/control/mind/filter/list/0/next/10 -> HTTP 403
+响应状态代码未指示成功: 403 (Forbidden)。
+
+=== ADMIN attendance appeal filter person-admin
+PUT /api/attendance/assemble/control/attendanceappealInfo/filter/list/0/next/5 -> HTTP 403
+响应状态代码未指示成功: 403 (Forbidden)。
+
+=== ADMIN attendance selfholiday filter person-admin
+PUT /api/attendance/assemble/control/attendanceselfholiday/filter/list/0/next/5 -> HTTP 403
+响应状态代码未指示成功: 403 (Forbidden)。
+
+=== ADMIN attendance statisticshow personMonth
+PUT /api/attendance/assemble/control/statisticshow/filter/personMonth/list/0/next/5 -> HTTP 403
+响应状态代码未指示成功: 403 (Forbidden)。
+
+########## 普通用户复测 my 系列 ##########
+=== USER taskcompleted my paging
+GET /api/processplatform/assemble/surface/taskcompleted/list/my/paging/1/size/10 -> 200
+{"data":[],"type":"success","message":"","date":"2026-11-05 22:33:24","spent":0,"size":0,"count":0,"position":0}
+
+=== USER read my paging
+GET /api/processplatform/assemble/surface/read/list/my/paging/1/size/10 -> 200
+{"data":[],"type":"success","message":"","date":"2026-11-05 22:33:24","spent":0,"size":0,"count":0,"position":0}
+
+=== USER review my paging
+GET /api/processplatform/assemble/surface/review/list/my/paging/1/size/10 -> HTTP 404
+响应状态代码未指示成功: 404 (Not Found)。
+
+=== USER handover my paging
+GET /api/processplatform/assemble/surface/handover/list/my/paging/1/size/10 -> HTTP 404
+响应状态代码未指示成功: 404 (Not Found)。
+
+########## 未登录（匿名）探测 ##########
+=== ANON anonymous document list page/size
+PUT /api/anonymous/document/filter/list/1/size/10 -> HTTP 401
+响应状态代码未指示成功: 401 (Unauthorized)。
+
+=== ANON anonymous document next
+PUT /api/anonymous/document/filter/list/zzzz/next/1 -> HTTP 401
+响应状态代码未指示成功: 401 (Unauthorized)。
+

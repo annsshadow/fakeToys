@@ -1,0 +1,98 @@
+########## F1 / 假翻页 ##########
+=== draft next count=10
+GET /api/processplatform/assemble/surface/draft/list/audit-d1/next/10 -> 200
+{"data":[{"createTime":"2026-11-01 10:00:00","id":"audit-d1","updateTime":""}],"type":"success","message":"","date":"2026-11-05 22:32:52","spent":0,"size":0,"count":1,"position":0}
+
+=== draft prev count=10
+GET /api/processplatform/assemble/surface/draft/list/audit-d1/prev/10 -> 200
+{"data":[{"createTime":"2026-11-01 10:00:00","id":"audit-d1","updateTime":""}],"type":"success","message":"","date":"2026-11-05 22:32:52","spent":0,"size":0,"count":1,"position":0}
+
+=== draft my paging size=1 (普通用户)
+POST /api/processplatform/assemble/surface/draft/list/my/paging/1/size/1 -> HTTP 403
+响应状态代码未指示成功: 403 (Forbidden)。
+
+=== work my paging (普通用户)
+POST /api/processplatform/assemble/surface/work/list/my/paging/1/size/10 -> HTTP 403
+响应状态代码未指示成功: 403 (Forbidden)。
+
+=== task my paging (普通用户)
+GET /api/processplatform/assemble/surface/task/list/my/paging/1/size/10 -> 200
+{"data":[{"createTime":"2026-11-04 10:00:00","id":"task-admin-2","processName":"","taskStatus":"pending","title":"Admin task 2","work":"w-admin-2"},{"createTime":"2026-11-03 10:00:00","id":"task-admin-1","processName":"","taskStatus":"pending","title":"Admin task 1","work":"w-admin-1"}],"type":"success","message":"","date":"2026-11-05 22:32:52","spent":0,"size":0,"count":2,"position":0}
+
+=== taskcompleted my paging (普通用户)
+GET /api/processplatform/assemble/surface/taskcompleted/list/my/paging/1/size/10 -> 200
+{"data":[],"type":"success","message":"","date":"2026-11-05 22:32:52","spent":0,"size":0,"count":0,"position":0}
+
+=== file next count=3
+GET /api/file/assemble/control/file/list/0/next/3 -> 200
+{"data":[{"extension":"txt","id":"audit-file-001","length":10,"name":"f1","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-002","length":10,"name":"f2","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-003","length":10,"name":"f3","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-004","length":10,"name":"f4","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-005","length":10,"name":"f5","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-006","length":10,"name":"f6","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-007","length":10,"name":"f7","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-008","length":10,"name":"f8","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-009","length":10,"name":"f9","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","id":"audit-file-010","length":10,"name":"f10","person":"audit-user","referenceType":"ATTACHMENT"},{"extension":"txt","...[truncated]
+
+=== file prev count=3
+GET /api/file/assemble/control/file/list/0/prev/3 -> 200
+{"data":[],"type":"success","message":"","date":"2026-11-05 22:32:52","spent":0,"size":0,"count":0,"position":0}
+
+=== cms appinfo next count=1
+PUT /api/appinfo/filter/list/zzzz/next/1 -> HTTP 403
+响应状态代码未指示成功: 403 (Forbidden)。
+
+=== cms appinfo prev count=1
+PUT /api/appinfo/filter/list/zzzz/prev/1 -> HTTP 403
+响应状态代码未指示成功: 403 (Forbidden)。
+
+=== cms form next count=1
+PUT /api/form/filter/list/zzzz/next/1/app/zzzz -> HTTP 403
+响应状态代码未指示成功: 403 (Forbidden)。
+
+=== cms anonymous document next count=1
+PUT /api/anonymous/document/filter/list/zzzz/next/1 -> HTTP 403
+响应状态代码未指示成功: 403 (Forbidden)。
+
+=== cms anonymous document page/size
+PUT /api/anonymous/document/filter/list/1/size/10 -> HTTP 403
+响应状态代码未指示成功: 403 (Forbidden)。
+
+########## 归属过滤 ##########
+=== attendance detail keyset(普通用户)
+GET /api/attendance/assemble/control/attendancedetail/filter/list/0/next/5 -> 200
+{"data":[{"date":"2026-11-05","id":"audit-ad-02","personId":"p1","status":"NORMAL"},{"date":"2026-11-05","id":"audit-ad-03","personId":"p1","status":"NORMAL"},{"date":"2026-11-05","id":"audit-ad-04","personId":"p1","status":"NORMAL"},{"date":"2026-11-05","id":"audit-ad-05","personId":"p1","status":"NORMAL"},{"date":"2026-11-05","id":"audit-ad-01","personId":"p1","status":"NORMAL"}],"type":"success","message":"","date":"2026-11-05 22:32:52","spent":0,"size":0,"count":5,"position":0}
+
+=== attendance detail mobile(普通用户)
+GET /api/attendance/assemble/control/attendancedetail/mobile/filter/list/page/1/count/5 -> 200
+{"data":[{"date":"2026-11-07","id":"audit-other-1","personId":"someone-else","status":"NORMAL"},{"date":"2026-11-05","id":"audit-ad-03","personId":"p1","status":"NORMAL"},{"date":"2026-11-05","id":"audit-ad-04","personId":"p1","status":"NORMAL"},{"date":"2026-11-05","id":"audit-ad-05","personId":"p1","status":"NORMAL"},{"date":"2026-11-05","id":"audit-ad-02","personId":"p1","status":"NORMAL"}],"type":"success","message":"","date":"2026-11-05 22:32:52","spent":0,"size":0,"count":5,"position":0}
+
+=== attendance appeal filter personId=person-admin
+PUT /api/attendance/assemble/control/attendanceappealInfo/filter/list/0/next/5 -> HTTP 403
+响应状态代码未指示成功: 403 (Forbidden)。
+
+=== attendance selfholiday filter personId=person-admin
+PUT /api/attendance/assemble/control/attendanceselfholiday/filter/list/0/next/5 -> HTTP 403
+响应状态代码未指示成功: 403 (Forbidden)。
+
+=== attendance statisticshow personMonth personId=person-admin
+PUT /api/attendance/assemble/control/statisticshow/filter/personMonth/list/0/next/5 -> HTTP 403
+响应状态代码未指示成功: 403 (Forbidden)。
+
+=== mind filter list page size (普通用户)
+PUT /api/mind/assemble/control/mind/filter/list/0/next/10 -> HTTP 403
+响应状态代码未指示成功: 403 (Forbidden)。
+
+=== message instant list next (普通用户)
+GET /api/message/assemble/communicate/instant/list/0/next/5 -> 200
+{"data":[{"consume":"person-admin","content":"admin secret","createTime":"2026-11-04 10:00:00","id":"msg-admin-1","sender":"audit-u1"},{"consume":"test-id","content":"test","createTime":"2026-11-05 13:39:11.496183+00","id":"test-id","sender":"test"}],"type":"success","message":"","date":"2026-11-05 22:32:52","spent":0,"size":0,"count":2,"position":0}
+
+=== message mass list next (普通用户)
+GET /api/message/assemble/communicate/mass/list/0/next/5 -> 200
+{"data":[],"type":"success","message":"","date":"2026-11-05 22:32:52","spent":0,"size":0,"count":0,"position":0}
+
+=== ai chat list (普通用户)
+GET /api/ai/chat/list/paging/1/size/10 -> HTTP 500
+响应状态代码未指示成功: 500 (Internal Server Error)。
+
+=== ai conversation list (普通用户)
+GET /api/ai/conversation/list -> HTTP 500
+响应状态代码未指示成功: 500 (Internal Server Error)。
+
+=== ai app list (普通用户)
+GET /api/ai/app/list -> 200
+{"data":[],"type":"success","message":"","date":"2026-11-05 22:32:52","spent":0,"size":0,"count":0,"position":0}
+

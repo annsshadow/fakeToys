@@ -1,0 +1,1108 @@
+第四轮行为级审计 —— 证据原文（只读）
+=====================================
+基线（读代码/跑测试时）：
+  Rust  D:\WORKSPACE\fakeToys-oa4rust    HEAD 40b215ef4  工作树干净
+  Go    D:\WORKSPACE\fakeToys-laiyipao   HEAD 961bda135  （00:07:19 提交 fix(server): 修复两处写后必读缺陷（审计 R132））
+        注：Go 写后必读实测在 00:05~00:06 执行，落在该 commit 之前的工作树；
+            00:11 复核 HEAD 已包含这两条修复（公告 created_at、兑换码未知币种）。
+  scratch 库：Rust oa_audit_20261105 / Go laiyipao_audit_2；容器时区 UTC，本机时区 Asia/Shanghai(+8)
+
+口径计数（去重后的 handler）：
+  写路由 1587 · 可定位 handler 体 1506 · 唯一 handler 1295 · 涉及敏感字段 367
+  任一敏感字段取自请求体 125（归属 80 / 状态 66 / 金额 2，重叠）
+  归属硬编码 37 · 时间取自请求体 34 · 金额取自请求体 2
+分区：
+  §A Rust 写端点静态全量（POST/PUT/PATCH）
+  §B 归属/金额/状态取自请求体（冒名）全量 125
+  §C 归属硬编码常量全量 37
+  §D 时间取自请求体全量 34
+  §E 状态取自请求体全量 66 / 金额 2
+  §F 无归属门禁的可变更路径-id 端点全量 214（节选与计数）
+  §G 动态写后必读 / 冒名后果 / 时区三方对照 原文
+
+
+================ §A Rust 写端点静态全量 ================
+
+handlers with interesting fields: 367 / 1506
+  ('AMT', 'REQUEST') 3
+  ('OWN', 'CONST') 37
+  ('OWN', 'REQUEST') 172
+  ('STAT', 'REQUEST') 86
+  ('TIME', 'REQUEST') 58
+
+########## A. OWN/AMT/STAT taken from request body ##########
+
+[1] POST /api/ai_assemble_control/chat/completion   (ai_assemble_control chat_completion ai_assemble_control/src/lib.rs:1999)  sess=True
+     STAT  role                   <- r.get("role")  ['REQUEST']
+
+[2] POST /api/ai/assemble/control/config/create/mcp   (ai_assemble_control config_create_mcp ai_assemble_control/src/lib.rs:584)  sess=False
+     STAT  enabled                <- req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true)  ['REQUEST', 'DEFAULT']
+
+[3] POST /api/ai_assemble_control/config/create/model   (ai_assemble_control config_create_model ai_assemble_control/src/lib.rs:637)  sess=False
+     STAT  enabled                <- req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true)  ['REQUEST', 'DEFAULT']
+
+[4] POST /api/ai_assemble_control/config/save   (ai_assemble_control config_save ai_assemble_control/src/lib.rs:1106)  sess=True
+     STAT  enabled                <- req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true)  ['REQUEST', 'DEFAULT']
+
+[5] POST /api/ai/assemble/control/config/update/mcp/{id}   (ai_assemble_control config_update_mcp_flag ai_assemble_control/src/lib.rs:1204)  sess=False
+     STAT  enabled                <- req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true)  ['REQUEST', 'DEFAULT']
+
+[6] POST /api/ai_assemble_control/config/update/model/{flag}   (ai_assemble_control config_update_model_flag ai_assemble_control/src/lib.rs:1251)  sess=False
+     STAT  enabled                <- req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true)  ['REQUEST', 'DEFAULT']
+
+[7] POST /api/ai_assemble_control/file/upload   (ai_assemble_control file_upload ai_assemble_control/src/lib.rs:1537)  sess=False
+     STAT  enabled                <- req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true)  
+
+（完整 102 条见 §B/§C/§D/§E；statistics below）
+
+
+================ §B+C+D+E 分类全量（fields_report.txt + cats.txt） ================
+
+########## B. OWNERSHIP CONSTANT (硬编码归属) ##########
+[1] POST /api/ai/assemble/control/config/create/mcp | ai_assemble_control config_create_mcp ai_assemble_control/src/lib.rs:584 sess=False
+     creator                  <- "system"  ['CONST']
+[2] POST /api/ai_assemble_control/config/create/model | ai_assemble_control config_create_model ai_assemble_control/src/lib.rs:637 sess=False
+     creator                  <- "system"  ['CONST']
+[3] POST /api/ai_assemble_control/file/copy/file | ai_assemble_control file_copy_file ai_assemble_control/src/lib.rs:1297 sess=False
+     creator                  <- "system"  ['CONST']
+[4] POST /api/ai_assemble_control/file/upload | ai_assemble_control file_upload ai_assemble_control/src/lib.rs:1537 sess=False
+     creator                  <- "system"  ['CONST']
+[5] POST /api/calendar/core/entity/calendar/create | calendar_core_entity calendar_create calendar_core_entity/src/lib.rs:254 sess=False
+     createor                 <- req.createor.unwrap_or_else(|| "anonymous".to_string())  ['REQUEST', 'CONST', 'DEFAULT']
+[6] POST /api/calendar/core/entity/event/create | calendar_core_entity event_create calendar_core_entity/src/lib.rs:434 sess=False
+     createor                 <- req.createor.unwrap_or_else(|| "anonymous".to_string())  ['REQUEST', 'CONST', 'DEFAULT']
+[7] POST /api/correlation/service/processing/create | correlation_service_processing create_correlation correlation_service_processing/src/lib.rs:228 sess=False
+     creator                  <- "system"  ['CONST']
+[8] POST /api/file/upload | file file_upload file/src/lib.rs:302 sess=False
+     person                   <- person.unwrap_or_else(|| "system".to_string())  ['CONST', 'DEFAULT']
+[9] POST /api/file/core/entity/file/create | file_assemble_control create_file_entity file_assemble_control/src/lib.rs:549 sess=False
+     creator                  <- "system"  ['CONST']
+[10] POST /api/general/assemble/control/attendscope/create | general_assemble_control attendscope_create general_assemble_control/src/lib.rs:488 sess=False
+     creator                  <- "system"  ['CONST']
+[11] POST /api/general/assemble/control/qrcode/width/{width}/height/{height}/text/{text} | general_assemble_control qrcode_width_width_height_height_text_text general_assemble_control/src/lib.rs:2076 sess=False
+     creator                  <- "system"  ['CONST']
+[12] POST /api/jpush/create | jpush_assemble_control create_jpush jpush_assemble_control/src/lib.rs:279 sess=True
+     creator                  <- "system"  ['CONST']
+[13] POST /api/mind/assemble/control/folder/save | mind_assemble_control save_folder mind_assemble_control/src/lib.rs:252 sess=False
+     creator                  <- "system"  ['CONST']
+[14] POST /api/portal/assemble/designer/create | portal_assemble_designer create_design portal_assemble_designer/src/lib.rs:47 sess=False
+     creator                  <- "system"  ['CONST']
+[15] POST /api/portal/assemble/designer/page/create | portal_assemble_designer create_page portal_assemble_designer/src/lib.rs:335 sess=False
+     creator                  <- "system"  ['CONST']
+[16] POST /api/portal/assemble/designer/portal | portal_assemble_designer create_portal portal_assemble_designer/src/lib.rs:3109 sess=False
+     creator                  <- "system"  ['CONST']
+[17] POST /api/portal/assemble/designer/templatepage | portal_assemble_designer create_templatepage portal_assemble_designer/src/lib.rs:3288 sess=False
+     creator                  <- "system"  ['CONST']
+[18] POST /api/portal/assemble/designer/widget | portal_assemble_designer create_widget portal_assemble_designer/src/lib.rs:3415 sess=False
+     creator                  <- "system"  ['CONST']
+[19] PUT /api/portal/assemble/designer/input/cover | portal_assemble_designer input_cover portal_assemble_designer/src/lib.rs:1526 sess=False
+     _creator                 <- "system"  ['CONST']
+[20] PUT /api/portal/assemble/designer/input/create | portal_assemble_designer input_create portal_assemble_designer/src/lib.rs:1562 sess=False
+     creator                  <- "system"  ['CONST']
+[21] PUT /api/portal/assemble/designer/input/prepare/create | portal_assemble_designer input_prepare_create portal_assemble_designer/src/lib.rs:1624 sess=False
+     creator                  <- "system"  ['CONST']
+[22] PUT /api/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/{path}/data | portal_assemble_surface dict_dictFlag_portal_portalFlag_path_data_put portal_assemble_surface/src/lib.rs:2752 sess=False
+     creator                  <- "system"  ['CONST']
+[23] POST /api/portal/assemble/surface/script/portal/{portal}/name/{name} | portal_assemble_surface script_portal_portal_name_post portal_assemble_surface/src/lib.rs:2845 sess=False
+     creator                  <- "system"  ['CONST']
+[24] POST /api/program_center/agent/create | program_center agent_create program_center/src/lib.rs:8086 sess=False
+     creator                  <- req.creator.unwrap_or_else(|| "system".to_string())  ['REQUEST', 'CONST', 'DEFAULT']
+[25] POST /api/program_center/application/create | program_center application_create program_center/src/lib.rs:7881 sess=False
+     creator                  <- req.creator.unwrap_or_else(|| "system".to_string())  ['REQUEST', 'CONST', 'DEFAULT']
+[26] POST /api/program_center/config/save | program_center config_save program_center/src/lib.rs:3708 sess=False
+     creator                  <- req.creator.unwrap_or_else(|| "system".to_string())  ['REQUEST', 'CONST', 'DEFAULT']
+[27] POST /api/program_center/deploy/web/resource/as/new/{asNew} | program_center deploy_web_resource_as_new_asNew program_center/src/lib.rs:4179 sess=False
+     creator                  <- "system"  ['CONST']
+[28] POST /api/query/assemble/designer/create | query_assemble_designer create_designer query_assemble_designer/src/lib.rs:485 sess=False
+     creator                  <- "system"  ['CONST']
+[29] PUT /api/query/assemble/designer/input/create | query_assemble_designer input_create query_assemble_designer/src/lib.rs:1336 sess=False
+     creator                  <- "system"  ['CONST']
+[30] PUT /api/query/assemble/designer/input/prepare/create | query_assemble_designer input_prepare_create query_assemble_designer/src/lib.rs:1407 sess=False
+     creator                  <- "system"  ['CONST']
+[31] POST /api/query/assemble/designer/neural/model | query_assemble_designer neural_model query_assemble_designer/src/lib.rs:1578 sess=False
+     creator                  <- "system"  ['CONST']
+[32] POST /api/query/assemble/surface/create | query_assemble_surface create_surface query_assemble_surface/src/lib.rs:102 sess=False
+     creator                  <- "system"  ['CONST']
+[33] POST /api/query/service/processing/execute | query_service processing_execute query_service/src/lib.rs:135 sess=False
+     creator                  <- "system"  ['CONST']
+TOTAL 33
+
+########## C. TIME from REQUEST (时间/时区风险) ##########
+[1] POST /api/attendance/appeal/submit | attendance submit_appeal attendance/src/lib.rs:467 sess=True
+     appeal_date              <- payload  ['REQUEST']
+[2] POST /api/attendance/assemble/control/attendancedetail/analyse | attendance_assemble_control attendancedetail_analyse attendance_assemble_control/src/lib.rs:1002 sess=True
+     start_date               <- payload  ['REQUEST']
+     end_date                 <- payload  ['REQUEST']
+[3] POST /api/attendance/assemble/control/attendancedetail | attendance_assemble_control attendancedetail_create attendance_assemble_control/src/lib.rs:4679 sess=True
+     date                     <- json_str(&payload, "date")  ['REQUEST']
+[4] POST /api/attendance/assemble/control/attendancedetail/mobile/mobilepreview | attendance_assemble_control attendancedetail_mobile_mobilepreview attendance_assemble_control/src/lib.rs:1688 sess=False
+     date                     <- payload  ['REQUEST']
+[5] POST /api/attendance/assemble/control/attendancedetail/mobile/recive | attendance_assemble_control attendancedetail_mobile_recive attendance_assemble_control/src/lib.rs:1799 sess=False
+     date                     <- payload  ['REQUEST']
+[6] POST /api/attendance/assemble/control/attendanceselfholiday | attendance_assemble_control attendanceselfholiday_create attendance_assemble_control/src/lib.rs:4635 sess=True
+     holiday_date             <- json_str(&payload, "holidayDate")  ['REQUEST']
+[7] POST /api/attendance/assemble/control/attendanceworkdayconfig | attendance_assemble_control attendanceworkdayconfig_create attendance_assemble_control/src/lib.rs:4885 sess=True
+     work_date                <- json_str(&payload, "workDate")  ['REQUEST']
+[8] POST /api/attendance/assemble/control/attendanceworkdayconfig/filter | attendance_assemble_control attendanceworkdayconfig_filter attendance_assemble_control/src/lib.rs:2953 sess=False
+     start_date               <- payload  ['REQUEST']
+     end_date                 <- payload  ['REQUEST']
+[9] POST /api/attendance/assemble/control/selfholidaysimple | attendance_assemble_control selfholidaysimple_create attendance_assemble_control/src/lib.rs:4727 sess=True
+     holiday_date             <- json_str(&payload, "holidayDate")  ['REQUEST']
+[10] POST /api/attendance/assemble/control/v2/group | attendance_assemble_control v2_group_create attendance_assemble_control/src/lib.rs:5345 sess=True
+     work_date_list           <- json_str(&payload, "workDateList")  ['REQUEST']
+     start_date               <- json_opt_str(&payload, "startDate")  ['REQUEST']
+     end_date                 <- json_opt_str(&payload, "endDate")  ['REQUEST']
+[11] POST /api/attendance/assemble/control/v2/groupschedule | attendance_assemble_control v2_groupschedule_post attendance_assemble_control/src/lib.rs:8038 sess=True
+     date_str                 <- json_str(&payload, "scheduleDateString")  ['REQUEST']
+[12] POST /api/attendance/assemble/control/v2/leave | attendance_assemble_control v2_leave_create attendance_assemble_control/src/lib.rs:5818 sess=True
+     start_time               <- json_str(&payload, "startTime")  ['REQUEST']
+     end_time                 <- json_str(&payload, "endTime")  ['REQUEST']
+[13] POST /api/attendance/assemble/control/v2/record/import/daily | attendance_assemble_control v2_record_import_daily attendance_assemble_control/src/lib.rs:8977 sess=False
+     date_str                 <- payload  ['REQUEST']
+[14] POST /api/attendance/core/entity/rule/create | attendance_core_entity rule_create attendance_core_entity/src/lib.rs:235 sess=False
+     start_time               <- payload  ['REQUEST']
+     end_time                 <- payload  ['REQUEST']
+[15] POST /api/attendance/core/entity/rule/{id}/update | attendance_core_entity rule_update attendance_core_entity/src/lib.rs:286 sess=False
+     start_time               <- payload  ['REQUEST']
+     end_time                 <- payload  ['REQUEST']
+[16] POST /api/authentication | auth login auth/src/lib.rs:200 sess=True
+     _password_expired_time   <- row.get("password_expired_time")  ['REQUEST']
+     _password_expired_time   <- Option<String> = row.get("password_expired_time")  ['REQUEST']
+[17] POST /api/calendar/event/remove | calendar event_remove calendar/src/lib.rs:564 sess=False
+     start_time               <- existing.get("start_time")  ['REQUEST']
+     end_time                 <- existing.get("end_time")  ['REQUEST']
+[18] POST /api/calendar/core/entity/event/update | calendar_core_entity event_update calendar_core_entity/src/lib.rs:518 sess=False
+     start_time_str           <- req.start_time.unwrap_or_else(|| m.start_time.to_string())  ['REQUEST', 'DEFAULT']
+     end_time_str             <- req.end_time.unwrap_or_else(|| m.end_time.to_string())  ['REQUEST', 'DEFAULT']
+[19] POST /api/person/empower/manager/list/paging/{page}/size/{size} | empower manager_list_paging empower/src/lib.rs:481 sess=True
+     created_at               <- row.get("created_at")  ['REQUEST']
+     updated_at               <- row.get("updated_at")  ['REQUEST']
+[20] POST /api/general/invoice/create | general_core_entity invoice_create general_core_entity/src/lib.rs:720 sess=False
+     date                     <- payload  ['REQUEST']
+[21] POST /api/general/invoice/update/{id} | general_core_entity invoice_update general_core_entity/src/lib.rs:823 sess=False
+     date                     <- payload  ['REQUEST']
+[22] POST /api/meeting/create | meeting create_meeting meeting/src/lib.rs:257 sess=False
+     start_time               <- payload  ['REQUEST']
+     end_time                 <- payload  ['REQUEST']
+[23] POST /api/meeting/assemble/control/meeting/create | meeting_assemble_control create_meeting meeting_assemble_control/src/lib.rs:2296 sess=True
+     start_time               <- payload  ['REQUEST']
+     end_time                 <- payload  ['REQUEST']
+[24] POST /api/meeting/assemble/control/meeting/{id}/modify/starttime | meeting_assemble_control meeting_id_modify_starttime meeting_assemble_control/src/lib.rs:2731 sess=False
+     start_time               <- payload  ['REQUEST']
+     end_time                 <- payload.get("endTime").and_then(|v| v.as_str())  ['REQUEST']
+[25] POST /api/meeting/assemble/control/meeting/save/{id} | meeting_assemble_control save_meeting meeting_assemble_control/src/lib.rs:2353 sess=False
+     start_time               <- payload  ['REQUEST']
+     end_time                 <- payload  ['REQUEST']
+[26] PUT /api/meeting/assemble/control/meeting/{id} | meeting_assemble_control u2_meeting_put_save meeting_assemble_control/src/lib.rs:4181 sess=False
+     start_time               <- payload  ['REQUEST']
+     end_time                 <- payload  ['REQUEST']
+[27] POST /api/meeting/core/entity/meeting/create | meeting_core_entity create_meeting meeting_core_entity/src/lib.rs:458 sess=True
+     start_time_str           <- payload  ['REQUEST']
+     end_time_str             <- payload  ['REQUEST']
+[28] POST /api/meeting/core/entity/meeting/save/{id} | meeting_core_entity update_meeting meeting_core_entity/src/lib.rs:579 sess=False
+     start_time_str           <- payload  ['REQUEST']
+     end_time_str             <- payload  ['REQUEST']
+TOTAL 28
+
+########## D. STATUS from REQUEST (状态可改) ##########
+[1] POST /api/ai_assemble_control/chat/completion | ai_assemble_control chat_completion ai_assemble_control/src/lib.rs:1999 sess=True
+     role                     <- r.get("role")  ['REQUEST']
+[2] POST /api/ai/assemble/control/config/create/mcp | ai_assemble_control config_create_mcp ai_assemble_control/src/lib.rs:584 sess=False
+     enabled                  <- req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true)  ['REQUEST', 'DEFAULT']
+[3] POST /api/ai_assemble_control/config/create/model | ai_assemble_control config_create_model ai_assemble_control/src/lib.rs:637 sess=False
+     enabled                  <- req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true)  ['REQUEST', 'DEFAULT']
+[4] POST /api/ai_assemble_control/config/save | ai_assemble_control config_save ai_assemble_control/src/lib.rs:1106 sess=True
+     enabled                  <- req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true)  ['REQUEST', 'DEFAULT']
+[5] POST /api/ai/assemble/control/config/update/mcp/{id} | ai_assemble_control config_update_mcp_flag ai_assemble_control/src/lib.rs:1204 sess=False
+     enabled                  <- req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true)  ['REQUEST', 'DEFAULT']
+[6] POST /api/ai_assemble_control/config/update/model/{flag} | ai_assemble_control config_update_model_flag ai_assemble_control/src/lib.rs:1251 sess=False
+     enabled                  <- req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true)  ['REQUEST', 'DEFAULT']
+[7] POST /api/ai_assemble_control/file/upload | ai_assemble_control file_upload ai_assemble_control/src/lib.rs:1537 sess=False
+     enabled                  <- req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true)  ['REQUEST', 'DEFAULT']
+[8] POST /api/attendance/appeal/audit | attendance audit_appeal attendance/src/lib.rs:514 sess=True
+     audit_status             <- payload  ['REQUEST']
+[9] POST /api/attendance/assemble/control/attendanceadmin | attendance_assemble_control attendanceadmin_create attendance_assemble_control/src/lib.rs:4512 sess=True
+     admin_level              <- payload  ['REQUEST']
+[10] POST /api/attendance/assemble/control/attendanceappealInfo/appeal/{id} | attendance_assemble_control attendanceappealInfo_appeal_id attendance_assemble_control/src/lib.rs:443 sess=False
+     status                   <- payload  ['REQUEST']
+[11] POST /api/attendance/assemble/control/attendanceappealInfo/audit | attendance_assemble_control attendanceappealInfo_audit attendance_assemble_control/src/lib.rs:643 sess=False
+     audit_status             <- payload  ['REQUEST']
+[12] POST /api/attendance/assemble/control/attendancedetail | attendance_assemble_control attendancedetail_create attendance_assemble_control/src/lib.rs:4679 sess=True
+     status                   <- payload  ['REQUEST']
+[13] POST /api/attendance/assemble/control/attendancesetting/enable/type | attendance_assemble_control attendancesetting_enable_type attendance_assemble_control/src/lib.rs:2591 sess=True
+     enabled                  <- payload  ['REQUEST']
+[14] POST /api/attendance/assemble/control/attendancestatisticrequirelog | attendance_assemble_control attendancestatisticrequirelog_create attendance_assemble_control/src/lib.rs:4846 sess=True
+     status                   <- payload  ['REQUEST']
+[15] POST /api/attendance/assemble/control/rule/create | attendance_assemble_control create_control_rule attendance_assemble_control/src/lib.rs:163 sess=True
+     enabled                  <- payload  ['REQUEST']
+[16] POST /api/attendance/assemble/control/rule/{id}/toggle | attendance_assemble_control toggle_control_rule attendance_assemble_control/src/lib.rs:284 sess=True
+     enabled                  <- payload  ['REQUEST']
+     enabled                  <- bool = payload  ['REQUEST']
+[17] POST /api/attendance/assemble/control/v2/appeal/{id}/end/process | attendance_assemble_control v2_appeal_end_process attendance_assemble_control/src/lib.rs:7659 sess=False
+     end_status               <- payload.get("status").and_then(|v| v.as_i64()).unwrap_or(-1) as i32  ['REQUEST', 'DEFAULT']
+[18] POST /api/attendance/assemble/control/v2/group | attendance_assemble_control v2_group_create attendance_assemble_control/src/lib.rs:5345 sess=True
+     status                   <- payload.get("status").and_then(|v| v.as_i64()).unwrap_or(1) as i32  ['REQUEST', 'DEFAULT']
+[19] POST /api/attendance/core/entity/record/create | attendance_core_entity record_create attendance_core_entity/src/lib.rs:112 sess=False
+     status                   <- payload  ['REQUEST']
+[20] POST /api/attendance/core/entity/record/{id}/update | attendance_core_entity record_update attendance_core_entity/src/lib.rs:162 sess=False
+     status                   <- payload  ['REQUEST']
+[21] POST /api/authentication/sms/verify | auth sms_verify_handler auth/src/sms.rs:142 sess=False
+     valid                    <- sms_code_store().verify(&req.phone, &req.code)  ['REQUEST']
+[22] POST /api/calendar/event/update | calendar event_update calendar/src/lib.rs:493 sess=False
+     status                   <- req.status.unwrap_or_else(|| existing.get("status"))  ['REQUEST', 'DEFAULT']
+[23] POST /api/calendar/core/entity/event/update | calendar_core_entity event_update calendar_core_entity/src/lib.rs:518 sess=False
+     status                   <- req.status.unwrap_or(m.status)  ['REQUEST', 'DEFAULT']
+[24] POST /api/cms/article/create | cms_core_entity article_create cms_core_entity/src/lib.rs:264 sess=False
+     status                   <- payload  ['REQUEST']
+     status                   <- status)  ['REQUEST']
+[25] POST /api/cms/category/create | cms_core_entity category_create cms_core_entity/src/lib.rs:118 sess=False
+     status                   <- payload  ['REQUEST']
+[26] POST /api/person/empower | empower create empower/src/lib.rs:83 sess=True
+     role_id                  <- req.role_id.clone()  ['REQUEST']
+[27] POST /api/person/empower/{id}/disable | empower disable empower/src/lib.rs:299 sess=False
+     role_id                  <- row.get("role_id")  ['REQUEST']
+[28] POST /api/person/empower/{id}/enable | empower enable empower/src/lib.rs:256 sess=False
+     role_id                  <- row.get("role_id")  ['REQUEST']
+[29] POST /api/person/empower/manager | empower manager_create empower/src/lib.rs:342 sess=True
+     role_id                  <- req.role_id.clone()  ['REQUEST']
+[30] POST /api/person/empower/manager/list/paging/{page}/size/{size} | empower manager_list_paging empower/src/lib.rs:481 sess=True
+     role_id                  <- row.get("role_id")  ['REQUEST']
+     enabled                  <- row.get("enabled")  ['REQUEST']
+[31] PUT /api/person/empower/manager/{id} | empower manager_update empower/src/lib.rs:397 sess=True
+     new_role_id              <- req.role_id.or_else(|| row.get("role_id"))  ['REQUEST']
+     new_enabled              <- req.enabled.unwrap_or(row.get("enabled"))  ['REQUEST', 'DEFAULT']
+     role_id                  <- new_role_id  ['REQUEST']
+     enabled                  <- new_enabled  ['DEFAULT', 'REQUEST']
+[32] PUT /api/person/empower/{id} | empower update empower/src/lib.rs:174 sess=False
+     new_role_id              <- req.role_id.or_else(|| row.get("role_id"))  ['REQUEST']
+     new_enabled              <- req.enabled.unwrap_or(row.get("enabled"))  ['REQUEST', 'DEFAULT']
+     role_id                  <- new_role_id  ['REQUEST']
+     enabled                  <- new_enabled  ['DEFAULT', 'REQUEST']
+[33] POST /api/file/permission/set | file permission_set file/src/lib.rs:763 sess=False
+     permissions              <- body.get("permissions").cloned()  ['REQUEST']
+     permissions              <- Option<Value> = body.get("permissions").cloned()  ['REQUEST']
+[34] POST /api/general/assemble/control/area/create | general_assemble_control area_create general_assemble_control/src/lib.rs:872 sess=False
+     level                    <- payload  ['REQUEST']
+[35] POST /api/general/assemble/control/area/update/{id} | general_assemble_control area_update general_assemble_control/src/lib.rs:1006 sess=False
+     level                    <- payload  ['REQUEST']
+[36] POST /api/general/assemble/control/invoice/create | general_assemble_control invoice_create general_assemble_control/src/lib.rs:1528 sess=True
+     status                   <- payload  ['REQUEST']
+[37] POST /api/general/assemble/control/invoice/update/apply/status/{id} | general_assemble_control invoice_update_apply_status_id general_assemble_control/src/lib.rs:1783 sess=False
+     status                   <- payload  ['REQUEST']
+[38] POST /api/general/assemble/control/invoice/update/{id} | general_assemble_control invoice_update_id general_assemble_control/src/lib.rs:1830 sess=False
+     status                   <- payload  ['REQUEST']
+[39] POST /api/general/assemble/control/securityclearance/create | general_assemble_control securityclearance_create general_assemble_control/src/lib.rs:2407 sess=False
+     enabled                  <- payload  ['REQUEST']
+[40] POST /api/general/assemble/control/securityclearance/enable | general_assemble_control securityclearance_enable general_assemble_control/src/lib.rs:2274 sess=False
+     enabled                  <- payload  ['REQUEST']
+[41] POST /api/general/assemble/control/securityclearance/update/{id} | general_assemble_control securityclearance_update general_assemble_control/src/lib.rs:2525 sess=False
+     enabled                  <- payload  ['REQUEST']
+[42] POST /api/general/invoice/create | general_core_entity invoice_create general_core_entity/src/lib.rs:720 sess=False
+     status                   <- payload  ['REQUEST']
+[43] POST /api/general/invoice/update/{id} | general_core_entity invoice_update general_core_entity/src/lib.rs:823 sess=False
+     status                   <- payload  ['REQUEST']
+[44] POST /api/meeting/assemble/control/create | meeting_assemble_control create_meeting_control meeting_assemble_control/src/lib.rs:163 sess=True
+     enabled                  <- payload  ['REQUEST']
+     enabled                  <- bool = payload  ['REQUEST']
+[45] POST /api/message/assemble/communicate/mass/enable/type | message_assemble_communicate mass_enable_type message_assemble_communicate/src/lib.rs:2584 sess=True
+     enabled                  <- req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true)  ['REQUEST', 'DEFAULT']
+[46] POST /api/unit/list/level/name/object | organization_assemble_express unit_list_level_name_object organization_assemble_express/src/endpoints_unit2.rs:293 sess=True
+     level_name               <- row.get("level_name")  ['REQUEST']
+     level_name               <- Option<String> = row.get("level_name")  ['REQUEST']
+[47] POST /api/organization/bind | organization_core_entity bind_create organization_core_entity/src/lib.rs:864 sess=True
+     role                     <- req.role)  ['REQUEST']
+[48] POST /api/organization/group | organization_core_entity group_create organization_core_entity/src/lib.rs:461 sess=False
+     level                    <- req.level)  ['REQUEST']
+[49] POST /api/portal/page/create | portal_core_entity page_create portal_core_entity/src/lib.rs:206 sess=True
+     status                   <- payload  ['REQUEST']
+[50] POST /api/portal/page/update | portal_core_entity page_update portal_core_entity/src/lib.rs:258 sess=True
+     status                   <- payload  ['REQUEST']
+[51] POST /api/program_center/warnlog | program_center warnlog_create program_center/src/lib.rs:9296 sess=True
+     level                    <- req.level.unwrap_or_else(|| "WARN".to_string())  ['REQUEST', 'DEFAULT']
+[52] POST /api/query/view/create | query_core_entity view_create query_core_entity/src/lib.rs:186 sess=False
+     status                   <- payload  ['REQUEST']
+TOTAL 52
+
+########## E. AMOUNT from REQUEST ##########
+[1] POST /api/general/invoice/create | general_core_entity invoice_create general_core_entity/src/lib.rs:720 sess=False
+     amount                   <- payload  ['REQUEST']
+     amount                   <- amount)  ['REQUEST']
+[2] POST /api/general/invoice/update/{id} | general_core_entity invoice_update general_core_entity/src/lib.rs:823 sess=False
+     amount                   <- payload  ['REQUEST']
+TOTAL 2
+
+
+
+================ §B-full 归属/金额/状态取自请求体 —— 全量 125 条 ================
+[1] POST /api/ai_assemble_control/chat/completion   (ai_assemble_control chat_completion ai_assemble_control/src/lib.rs:1999) sess=True
+      STAT  role                   <- r.get("role")  ['REQUEST']
+[2] POST /api/ai/assemble/control/config/create/mcp   (ai_assemble_control config_create_mcp ai_assemble_control/src/lib.rs:584) sess=False
+      STAT  enabled                <- req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true)  ['REQUEST', 'DEFAULT']
+[3] POST /api/ai_assemble_control/config/create/mcp   (ai_assemble_control config_create_mcp ai_assemble_control/src/lib.rs:584) sess=False
+      STAT  enabled                <- req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true)  ['REQUEST', 'DEFAULT']
+[4] POST /api/ai_assemble_control/config/create/model   (ai_assemble_control config_create_model ai_assemble_control/src/lib.rs:637) sess=False
+      STAT  enabled                <- req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true)  ['REQUEST', 'DEFAULT']
+[5] POST /api/ai_assemble_control/config/save   (ai_assemble_control config_save ai_assemble_control/src/lib.rs:1106) sess=True
+      STAT  enabled                <- req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true)  ['REQUEST', 'DEFAULT']
+[6] POST /api/ai/assemble/control/config/update/mcp/{id}   (ai_assemble_control config_update_mcp_flag ai_assemble_control/src/lib.rs:1204) sess=False
+      STAT  enabled                <- req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true)  ['REQUEST', 'DEFAULT']
+[7] POST /api/ai_assemble_control/config/update/mcp/{flag}   (ai_assemble_control config_update_mcp_flag ai_assemble_control/src/lib.rs:1204) sess=False
+      STAT  enabled                <- req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true)  ['REQUEST', 'DEFAULT']
+[8] POST /api/ai_assemble_control/config/update/model/{flag}   (ai_assemble_control config_update_model_flag ai_assemble_control/src/lib.rs:1251) sess=False
+      STAT  enabled                <- req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true)  ['REQUEST', 'DEFAULT']
+[9] POST /api/ai_assemble_control/file/upload   (ai_assemble_control file_upload ai_assemble_control/src/lib.rs:1537) sess=False
+      STAT  enabled                <- req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true)  ['REQUEST', 'DEFAULT']
+[10] POST /api/attendance/appeal/audit   (attendance audit_appeal attendance/src/lib.rs:514) sess=True
+      STAT  audit_status           <- payload  ['REQUEST']
+[11] POST /api/attendance/assemble/control/attendanceadmin   (attendance_assemble_control attendanceadmin_create attendance_assemble_control/src/lib.rs:4512) sess=True
+      OWN   person_id              <- json_str(&payload, "personId")  ['REQUEST']
+      OWN   unit_id                <- json_str(&payload, "unitId")  ['REQUEST']
+      OWN   unit_name              <- json_str(&payload, "unitName")  ['REQUEST']
+      STAT  admin_level            <- payload  ['REQUEST']
+[12] POST /api/attendance/assemble/control/attendanceappealInfo/appeal/{id}   (attendance_assemble_control attendanceappealInfo_appeal_id attendance_assemble_control/src/lib.rs:443) sess=False
+      STAT  status                 <- payload  ['REQUEST']
+[13] PUT /api/attendance/assemble/control/attendanceappealInfo/appeal/{id}   (attendance_assemble_control attendanceappealInfo_appeal_id attendance_assemble_control/src/lib.rs:443) sess=False
+      STAT  status                 <- payload  ['REQUEST']
+[14] POST /api/attendance/assemble/control/attendanceappealInfo/audit   (attendance_assemble_control attendanceappealInfo_audit attendance_assemble_control/src/lib.rs:643) sess=False
+      STAT  audit_status           <- payload  ['REQUEST']
+[15] PUT /api/attendance/assemble/control/attendanceappealInfo/audit   (attendance_assemble_control attendanceappealInfo_audit attendance_assemble_control/src/lib.rs:643) sess=False
+      STAT  audit_status           <- payload  ['REQUEST']
+[16] POST /api/attendance/assemble/control/attendancedetail/analyse   (attendance_assemble_control attendancedetail_analyse attendance_assemble_control/src/lib.rs:1002) sess=True
+      OWN   person_id              <- payload  ['REQUEST']
+[17] POST /api/attendance/assemble/control/attendancedetail/analyse/redo   (attendance_assemble_control attendancedetail_analyse_redo attendance_assemble_control/src/lib.rs:1075) sess=False
+      OWN   person_id              <- payload  ['REQUEST']
+[18] PUT /api/attendance/assemble/control/attendancedetail/analyse/redo   (attendance_assemble_control attendancedetail_analyse_redo attendance_assemble_control/src/lib.rs:1075) sess=False
+      OWN   person_id              <- payload  ['REQUEST']
+[19] POST /api/attendance/assemble/control/attendancedetail   (attendance_assemble_control attendancedetail_create attendance_assemble_control/src/lib.rs:4679) sess=True
+      OWN   person_id              <- json_str(&payload, "personId")  ['REQUEST']
+      STAT  status                 <- payload  ['REQUEST']
+      OWN   unit_id                <- json_opt_str(&payload, "unitId")  ['REQUEST']
+[20] POST /api/attendance/assemble/control/attendancedetail/mobile/mobilepreview   (attendance_assemble_control attendancedetail_mobile_mobilepreview attendance_assemble_control/src/lib.rs:1688) sess=False
+      OWN   person_id              <- payload  ['REQUEST']
+[21] POST /api/attendance/assemble/control/attendancedetail/mobile/my   (attendance_assemble_control attendancedetail_mobile_my attendance_assemble_control/src/lib.rs:1743) sess=False
+      OWN   person_id              <- payload  ['REQUEST']
+[22] POST /api/attendance/assemble/control/attendancedetail/mobile/recive   (attendance_assemble_control attendancedetail_mobile_recive attendance_assemble_control/src/lib.rs:1799) sess=False
+      OWN   person_id              <- payload  ['REQUEST']
+[23] POST /api/attendance/assemble/control/attendanceemployeeconfig   (attendance_assemble_control attendanceemployeeconfig_create attendance_assemble_control/src/lib.rs:4557) sess=True
+      OWN   top_unit_name          <- json_opt_str(&payload, "topUnitName")  ['REQUEST']
+      OWN   unit_name              <- json_opt_str(&payload, "unitName")  ['REQUEST']
+      OWN   person_id              <- json_opt_str(&payload, "personId")  ['REQUEST']
+[24] POST /api/attendance/assemble/control/attendanceschedulesetting   (attendance_assemble_control attendanceschedulesetting_create attendance_assemble_control/src/lib.rs:4596) sess=True
+      OWN   unit_id                <- json_opt_str(&payload, "unitId")  ['REQUEST']
+[25] POST /api/attendance/assemble/control/attendanceselfholiday   (attendance_assemble_control attendanceselfholiday_create attendance_assemble_control/src/lib.rs:4635) sess=True
+      OWN   person_id              <- json_str(&payload, "personId")  ['REQUEST']
+[26] POST /api/attendance/assemble/control/attendancesetting/enable/type   (attendance_assemble_control attendancesetting_enable_type attendance_assemble_control/src/lib.rs:2591) sess=True
+      STAT  enabled                <- payload  ['REQUEST']
+[27] POST /api/attendance/assemble/control/attendancestatisticalcycle   (attendance_assemble_control attendancestatisticalcycle_create attendance_assemble_control/src/lib.rs:4807) sess=True
+      OWN   top_unit_name          <- json_opt_str(&payload, "topUnitName")  ['REQUEST']
+      OWN   unit_name              <- json_opt_str(&payload, "unitName")  ['REQUEST']
+[28] POST /api/attendance/assemble/control/attendancestatisticrequirelog   (attendance_assemble_control attendancestatisticrequirelog_create attendance_assemble_control/src/lib.rs:4846) sess=True
+      STAT  status                 <- payload  ['REQUEST']
+[29] POST /api/attendance/assemble/control/rule/create   (attendance_assemble_control create_control_rule attendance_assemble_control/src/lib.rs:163) sess=True
+      STAT  enabled                <- payload  ['REQUEST']
+[30] POST /api/attendance/assemble/control/selfholidaysimple   (attendance_assemble_control selfholidaysimple_create attendance_assemble_control/src/lib.rs:4727) sess=True
+      OWN   person_id              <- json_str(&payload, "personId")  ['REQUEST']
+[31] POST /api/attendance/assemble/control/statistic/do   (attendance_assemble_control statistic_do attendance_assemble_control/src/lib.rs:3142) sess=False
+      OWN   person_id              <- payload  ['REQUEST']
+[32] POST /api/attendance/assemble/control/rule/{id}/toggle   (attendance_assemble_control toggle_control_rule attendance_assemble_control/src/lib.rs:284) sess=True
+      STAT  enabled                <- payload  ['REQUEST']
+      STAT  enabled                <- bool = payload  ['REQUEST']
+[33] PUT /api/attendance/assemble/control/rule/{id}/toggle   (attendance_assemble_control toggle_control_rule attendance_assemble_control/src/lib.rs:284) sess=True
+      STAT  enabled                <- payload  ['REQUEST']
+      STAT  enabled                <- bool = payload  ['REQUEST']
+[34] POST /api/attendance/assemble/control/v2/appeal/{id}/end/process   (attendance_assemble_control v2_appeal_end_process attendance_assemble_control/src/lib.rs:7659) sess=False
+      STAT  end_status             <- payload.get("status").and_then(|v| v.as_i64()).unwrap_or(-1) as i32  ['REQUEST', 'DEFAULT']
+[35] POST /api/attendance/assemble/control/v2/group   (attendance_assemble_control v2_group_create attendance_assemble_control/src/lib.rs:5345) sess=True
+      OWN   top_unit               <- json_opt_str(&payload, "topUnit")  ['REQUEST']
+      OWN   unit_list              <- json_join(&payload, "unitList")  ['REQUEST']
+      STAT  status                 <- payload.get("status").and_then(|v| v.as_i64()).unwrap_or(1) as i32  ['REQUEST', 'DEFAULT']
+[36] POST /api/attendance/assemble/control/v2/groupschedule/list/filter   (attendance_assemble_control v2_groupschedule_list_filter attendance_assemble_control/src/lib.rs:8215) sess=False
+      OWN   user_id                <- get("userId")  ['REQUEST']
+[37] POST /api/attendance/assemble/control/v2/groupschedule   (attendance_assemble_control v2_groupschedule_post attendance_assemble_control/src/lib.rs:8038) sess=True
+      OWN   user_id                <- normalize_key(&json_str(&payload, "userId"))  ['REQUEST']
+[38] POST /api/attendance/assemble/control/v2/leave   (attendance_assemble_control v2_leave_create attendance_assemble_control/src/lib.rs:5818) sess=True
+      OWN   person                 <- json_str(&payload, "person")  ['REQUEST']
+[39] POST /api/attendance/core/entity/record/create   (attendance_core_entity record_create attendance_core_entity/src/lib.rs:112) sess=False
+      OWN   user_id                <- payload  ['REQUEST']
+      STAT  status                 <- payload  ['REQUEST']
+[40] POST /api/attendance/core/entity/record/{id}/update   (attendance_core_entity record_update attendance_core_entity/src/lib.rs:162) sess=False
+      STAT  status                 <- payload  ['REQUEST']
+[41] POST /api/authentication/code   (auth code auth/src/lib.rs:754) sess=True
+      OWN   person_id              <- row.get("id")  ['REQUEST']
+      OWN   person_unique          <- row.get("unique_id")  ['REQUEST']
+      OWN   person_name            <- row.get("name")  ['REQUEST']
+      OWN   person_mobile          <- row.get("mobile")  ['REQUEST']
+      OWN   person_email           <- row.get("email")  ['REQUEST']
+      OWN   person_icon            <- row.get("icon")  ['REQUEST']
+      OWN   person_job             <- row.get("job")  ['REQUEST']
+      OWN   person_department      <- row.get("department")  ['REQUEST']
+      OWN   person_unit            <- row.get("unit")  ['REQUEST']
+      OWN   person_position        <- row.get("position")  ['REQUEST']
+      OWN   person_id              <- String = row.get("id")  ['REQUEST']
+      OWN   person_unique          <- String = row.get("unique_id")  ['REQUEST']
+      OWN   person_name            <- String = row.get("name")  ['REQUEST']
+      OWN   person_mobile          <- Option<String> = row.get("mobile")  ['REQUEST']
+      OWN   person_email           <- Option<String> = row.get("email")  ['REQUEST']
+      OWN   person_icon            <- Option<String> = row.get("icon")  ['REQUEST']
+      OWN   person_job             <- Option<String> = row.get("job")  ['REQUEST']
+      OWN   person_department      <- Option<String> = row.get("department")  ['REQUEST']
+      OWN   person_unit            <- Option<String> = row.get("unit")  ['REQUEST']
+      OWN   person_position        <- Option<String> = row.get("position")  ['REQUEST']
+[42] POST /api/authentication   (auth login auth/src/lib.rs:200) sess=True
+      OWN   person_id              <- row.get("id")  ['REQUEST']
+      OWN   person_unique          <- row.get("unique_id")  ['REQUEST']
+      OWN   person_name            <- row.get("name")  ['REQUEST']
+      OWN   person_mobile          <- row.get("mobile")  ['REQUEST']
+      OWN   person_email           <- row.get("email")  ['REQUEST']
+      OWN   person_icon            <- row.get("icon")  ['REQUEST']
+      OWN   person_job             <- row.get("job")  ['REQUEST']
+      OWN   person_department      <- row.get("department")  ['REQUEST']
+      OWN   person_unit            <- row.get("unit")  ['REQUEST']
+      OWN   person_position        <- row.get("position")  ['REQUEST']
+      OWN   person_id              <- String = row.get("id")  ['REQUEST']
+      OWN   person_unique          <- String = row.get("unique_id")  ['REQUEST']
+      OWN   person_name            <- String = row.get("name")  ['REQUEST']
+      OWN   person_mobile          <- Option<String> = row.get("mobile")  ['REQUEST']
+      OWN   person_email           <- Option<String> = row.get("email")  ['REQUEST']
+      OWN   person_icon            <- Option<String> = row.get("icon")  ['REQUEST']
+      OWN   person_job             <- Option<String> = row.get("job")  ['REQUEST']
+      OWN   person_department      <- Option<String> = row.get("department")  ['REQUEST']
+      OWN   person_unit            <- Option<String> = row.get("unit")  ['REQUEST']
+      OWN   person_position        <- Option<String> = row.get("position")  ['REQUEST']
+[43] POST /api/authentication/login   (auth login auth/src/lib.rs:200) sess=True
+      OWN   person_id              <- row.get("id")  ['REQUEST']
+      OWN   person_unique          <- row.get("unique_id")  ['REQUEST']
+      OWN   person_name            <- row.get("name")  ['REQUEST']
+      OWN   person_mobile          <- row.get("mobile")  ['REQUEST']
+      OWN   person_email           <- row.get("email")  ['REQUEST']
+      OWN   person_icon            <- row.get("icon")  ['REQUEST']
+      OWN   person_job             <- row.get("job")  ['REQUEST']
+      OWN   person_department      <- row.get("department")  ['REQUEST']
+      OWN   person_unit            <- row.get("unit")  ['REQUEST']
+      OWN   person_position        <- row.get("position")  ['REQUEST']
+      OWN   person_id              <- String = row.get("id")  ['REQUEST']
+      OWN   person_unique          <- String = row.get("unique_id")  ['REQUEST']
+      OWN   person_name            <- String = row.get("name")  ['REQUEST']
+      OWN   person_mobile          <- Option<String> = row.get("mobile")  ['REQUEST']
+      OWN   person_email           <- Option<String> = row.get("email")  ['REQUEST']
+      OWN   person_icon            <- Option<String> = row.get("icon")  ['REQUEST']
+      OWN   person_job             <- Option<String> = row.get("job")  ['REQUEST']
+      OWN   person_department      <- Option<String> = row.get("department")  ['REQUEST']
+      OWN   person_unit            <- Option<String> = row.get("unit")  ['REQUEST']
+      OWN   person_position        <- Option<String> = row.get("position")  ['REQUEST']
+[44] POST /api/authentication/sms/verify   (auth sms_verify_handler auth/src/sms.rs:142) sess=False
+      STAT  valid                  <- sms_code_store().verify(&req.phone, &req.code)  ['REQUEST']
+[45] POST /api/bbs/assemble/control/topic/create   (bbs_assemble_control create_topic bbs_assemble_control/src/lib.rs:443) sess=True
+      OWN   author_id              <- req.author_id.clone().unwrap_or_else(|| creator.clone())  ['REQUEST', 'DEFAULT']
+[46] POST /api/bbs/assemble/control/shutup/create   (bbs_assemble_control shutup_create bbs_assemble_control/src/lib.rs:1401) sess=True
+      OWN   person                 <- body.get("person").and_then(|v| v.as_str()).unwrap_or("")  ['REQUEST', 'DEFAULT']
+[47] POST /api/bbs/core/entity/reply   (bbs_core_entity create_reply bbs_core_entity/src/lib.rs:673) sess=True
+      OWN   creator                <- payload  ['REQUEST']
+[48] POST /api/bbs/core/entity/subject   (bbs_core_entity create_subject bbs_core_entity/src/lib.rs:508) sess=False
+      OWN   author_id              <- payload  ['REQUEST']
+      OWN   author_id              <- author_id)  ['REQUEST']
+[49] POST /api/calendar/calendar/remove   (calendar calendar_remove calendar/src/lib.rs:384) sess=False
+      OWN   createor               <- existing.get("createor")  ['REQUEST']
+[50] POST /api/calendar/event/remove   (calendar event_remove calendar/src/lib.rs:564) sess=False
+      OWN   createor               <- existing.get("createor")  ['REQUEST']
+[51] POST /api/calendar/event/update   (calendar event_update calendar/src/lib.rs:493) sess=False
+      STAT  status                 <- req.status.unwrap_or_else(|| existing.get("status"))  ['REQUEST', 'DEFAULT']
+[52] POST /api/calendar/core/entity/calendar/create   (calendar_core_entity calendar_create calendar_core_entity/src/lib.rs:254) sess=False
+      OWN   createor               <- req.createor.unwrap_or_else(|| "anonymous".to_string())  ['REQUEST', 'CONST', 'DEFAULT']
+[53] POST /api/calendar/core/entity/event/create   (calendar_core_entity event_create calendar_core_entity/src/lib.rs:434) sess=False
+      OWN   createor               <- req.createor.unwrap_or_else(|| "anonymous".to_string())  ['REQUEST', 'CONST', 'DEFAULT']
+[54] POST /api/calendar/core/entity/event/update   (calendar_core_entity event_update calendar_core_entity/src/lib.rs:518) sess=False
+      STAT  status                 <- req.status.unwrap_or(m.status)  ['REQUEST', 'DEFAULT']
+[55] POST /api/document/cipher/{id}/persist/view/record   (cms_assemble_control document_cipher_id_persist_view_record cms_assemble_control/src/lib.rs:3616) sess=False
+      OWN   person_id              <- body.get("personId").and_then(|v| v.as_str()).unwrap_or("")  ['REQUEST', 'DEFAULT']
+[56] POST /api/cms/article/create   (cms_core_entity article_create cms_core_entity/src/lib.rs:264) sess=False
+      OWN   author_id              <- payload  ['REQUEST']
+      STAT  status                 <- payload  ['REQUEST']
+      OWN   author_id              <- author_id)  ['REQUEST']
+      STAT  status                 <- status)  ['REQUEST']
+[57] POST /api/cms/category/create   (cms_core_entity category_create cms_core_entity/src/lib.rs:118) sess=False
+      STAT  status                 <- payload  ['REQUEST']
+[58] POST /api/correlation/service/processing/create   (correlation_service_processing create_correlation correlation_service_processing/src/lib.rs:228) sess=False
+      OWN   person_id              <- req.person_id.unwrap_or_default()  ['REQUEST', 'DEFAULT']
+[59] POST /api/person/empower   (empower create empower/src/lib.rs:83) sess=True
+      STAT  role_id                <- req.role_id.clone()  ['REQUEST']
+      OWN   to_person              <- req.to_person.clone()  ['REQUEST']
+[60] POST /api/organization/assemble/personal/empower   (empower create empower/src/lib.rs:83) sess=True
+      STAT  role_id                <- req.role_id.clone()  ['REQUEST']
+      OWN   to_person              <- req.to_person.clone()  ['REQUEST']
+[61] POST /api/person/empower/{id}/disable   (empower disable empower/src/lib.rs:299) sess=False
+      OWN   from_person            <- row.get("from_person")  ['REQUEST']
+      OWN   from_person            <- String = row.get("from_person")  ['REQUEST']
+      OWN   from_person            <- row.get("from_person")  ['REQUEST']
+      OWN   to_person              <- row.get("to_person")  ['REQUEST']
+      STAT  role_id                <- row.get("role_id")  ['REQUEST']
+[62] POST /api/person/empower/{id}/enable   (empower enable empower/src/lib.rs:256) sess=False
+      OWN   from_person            <- row.get("from_person")  ['REQUEST']
+      OWN   from_person            <- String = row.get("from_person")  ['REQUEST']
+      OWN   from_person            <- row.get("from_person")  ['REQUEST']
+      OWN   to_person              <- row.get("to_person")  ['REQUEST']
+      STAT  role_id                <- row.get("role_id")  ['REQUEST']
+[63] POST /api/person/empower/manager   (empower manager_create empower/src/lib.rs:342) sess=True
+      STAT  role_id                <- req.role_id.clone()  ['REQUEST']
+      OWN   to_person              <- req.to_person.clone()  ['REQUEST']
+[64] POST /api/organization/assemble/personal/empower/manager   (empower manager_create empower/src/lib.rs:342) sess=True
+      STAT  role_id                <- req.role_id.clone()  ['REQUEST']
+      OWN   to_person              <- req.to_person.clone()  ['REQUEST']
+[65] POST /api/person/empower/manager/list/paging/{page}/size/{size}   (empower manager_list_paging empower/src/lib.rs:481) sess=True
+      OWN   from_person            <- row.get("from_person")  ['REQUEST']
+      OWN   to_person              <- row.get("to_person")  ['REQUEST']
+      STAT  role_id                <- row.get("role_id")  ['REQUEST']
+      STAT  enabled                <- row.get("enabled")  ['REQUEST']
+[66] POST /api/organization/assemble/personal/empower/manager/list/paging/{page}/size/{size}   (empower manager_list_paging empower/src/lib.rs:481) sess=True
+      OWN   from_person            <- row.get("from_person")  ['REQUEST']
+      OWN   to_person              <- row.get("to_person")  ['REQUEST']
+      STAT  role_id                <- row.get("role_id")  ['REQUEST']
+      STAT  enabled                <- row.get("enabled")  ['REQUEST']
+[67] PUT /api/person/empower/manager/{id}   (empower manager_update empower/src/lib.rs:397) sess=True
+      OWN   from_person            <- row.get("from_person")  ['REQUEST']
+      STAT  new_role_id            <- req.role_id.or_else(|| row.get("role_id"))  ['REQUEST']
+      STAT  new_enabled            <- req.enabled.unwrap_or(row.get("enabled"))  ['REQUEST', 'DEFAULT']
+      OWN   from_person            <- String = row.get("from_person")  ['REQUEST']
+      OWN   to_person              <- row.get("to_person")  ['REQUEST']
+      STAT  role_id                <- new_role_id  ['REQUEST']
+      STAT  enabled                <- new_enabled  ['DEFAULT', 'REQUEST']
+[68] PUT /api/organization/assemble/personal/empower/manager/{id}   (empower manager_update empower/src/lib.rs:397) sess=True
+      OWN   from_person            <- row.get("from_person")  ['REQUEST']
+      STAT  new_role_id            <- req.role_id.or_else(|| row.get("role_id"))  ['REQUEST']
+      STAT  new_enabled            <- req.enabled.unwrap_or(row.get("enabled"))  ['REQUEST', 'DEFAULT']
+      OWN   from_person            <- String = row.get("from_person")  ['REQUEST']
+      OWN   to_person              <- row.get("to_person")  ['REQUEST']
+      STAT  role_id                <- new_role_id  ['REQUEST']
+      STAT  enabled                <- new_enabled  ['DEFAULT', 'REQUEST']
+[69] PUT /api/person/empower/{id}   (empower update empower/src/lib.rs:174) sess=False
+      OWN   from_person            <- row.get("from_person")  ['REQUEST']
+      STAT  new_role_id            <- req.role_id.or_else(|| row.get("role_id"))  ['REQUEST']
+      STAT  new_enabled            <- req.enabled.unwrap_or(row.get("enabled"))  ['REQUEST', 'DEFAULT']
+      OWN   from_person            <- String = row.get("from_person")  ['REQUEST']
+      OWN   to_person              <- row.get("to_person")  ['REQUEST']
+      STAT  role_id                <- new_role_id  ['REQUEST']
+      STAT  enabled                <- new_enabled  ['DEFAULT', 'REQUEST']
+[70] PUT /api/organization/assemble/personal/empower/{id}   (empower update empower/src/lib.rs:174) sess=False
+      OWN   from_person            <- row.get("from_person")  ['REQUEST']
+      STAT  new_role_id            <- req.role_id.or_else(|| row.get("role_id"))  ['REQUEST']
+      STAT  new_enabled            <- req.enabled.unwrap_or(row.get("enabled"))  ['REQUEST', 'DEFAULT']
+      OWN   from_person            <- String = row.get("from_person")  ['REQUEST']
+      OWN   to_person              <- row.get("to_person")  ['REQUEST']
+      STAT  role_id                <- new_role_id  ['REQUEST']
+      STAT  enabled                <- new_enabled  ['DEFAULT', 'REQUEST']
+[71] POST /api/file/permission/set   (file permission_set file/src/lib.rs:763) sess=False
+      STAT  permissions            <- body.get("permissions").cloned()  ['REQUEST']
+      STAT  permissions            <- Option<Value> = body.get("permissions").cloned()  ['REQUEST']
+[72] POST /api/file/core/entity/file   (file_core_entity file_create file_core_entity/src/lib.rs:374) sess=False
+      OWN   person                 <- req.person)  ['REQUEST']
+[73] POST /api/file/core/entity/folder   (file_core_entity folder_create file_core_entity/src/lib.rs:313) sess=False
+      OWN   person                 <- req.person)  ['REQUEST']
+[74] POST /api/general/assemble/control/area/create   (general_assemble_control area_create general_assemble_control/src/lib.rs:872) sess=False
+      STAT  level                  <- payload  ['REQUEST']
+      OWN   creator                <- payload  ['REQUEST']
+[75] POST /api/general/assemble/control/area/update/{id}   (general_assemble_control area_update general_assemble_control/src/lib.rs:1006) sess=False
+      STAT  level                  <- payload  ['REQUEST']
+[76] PUT /api/general/assemble/control/area/update/{id}   (general_assemble_control area_update general_assemble_control/src/lib.rs:1006) sess=False
+      STAT  level                  <- payload  ['REQUEST']
+[77] POST /api/general/assemble/control/attendscope/create   (general_assemble_control attendscope_create general_assemble_control/src/lib.rs:488) sess=False
+      OWN   unit_id                <- req.unit_id.unwrap_or_default()  ['REQUEST', 'DEFAULT']
+[78] POST /api/general/assemble/control/attendscope/save/{id}   (general_assemble_control attendscope_save general_assemble_control/src/lib.rs:520) sess=False
+      OWN   unit_id                <- req.unit_id.unwrap_or_default()  ['REQUEST', 'DEFAULT']
+[79] PUT /api/general/assemble/control/attendscope/save/{id}   (general_assemble_control attendscope_save general_assemble_control/src/lib.rs:520) sess=False
+      OWN   unit_id                <- req.unit_id.unwrap_or_default()  ['REQUEST', 'DEFAULT']
+[80] POST /api/general/assemble/control/invoice/create   (general_assemble_control invoice_create general_assemble_control/src/lib.rs:1528) sess=True
+      STAT  status                 <- payload  ['REQUEST']
+[81] POST /api/general/assemble/control/invoice/update/apply/status/{id}   (general_assemble_control invoice_update_apply_status_id general_assemble_control/src/lib.rs:1783) sess=False
+      STAT  status                 <- payload  ['REQUEST']
+[82] PUT /api/general/assemble/control/invoice/update/apply/status/{id}   (general_assemble_control invoice_update_apply_status_id general_assemble_control/src/lib.rs:1783) sess=False
+      STAT  status                 <- payload  ['REQUEST']
+[83] POST /api/general/assemble/control/invoice/update/{id}   (general_assemble_control invoice_update_id general_assemble_control/src/lib.rs:1830) sess=False
+      STAT  status                 <- payload  ['REQUEST']
+[84] PUT /api/general/assemble/control/invoice/update/{id}   (general_assemble_control invoice_update_id general_assemble_control/src/lib.rs:1830) sess=False
+      STAT  status                 <- payload  ['REQUEST']
+[85] POST /api/general/assemble/control/office/html/to/word   (general_assemble_control office_html_to_word general_assemble_control/src/lib.rs:1996) sess=False
+      OWN   creator                <- payload  ['REQUEST']
+[86] POST /api/general/assemble/control/office   (general_assemble_control office_html_to_word general_assemble_control/src/lib.rs:1996) sess=False
+      OWN   creator                <- payload  ['REQUEST']
+[87] POST /api/general/assemble/control/securityclearance/create   (general_assemble_control securityclearance_create general_assemble_control/src/lib.rs:2407) sess=False
+      STAT  enabled                <- payload  ['REQUEST']
+      OWN   creator                <- payload  ['REQUEST']
+[88] POST /api/general/assemble/control/securityclearance/enable   (general_assemble_control securityclearance_enable general_assemble_control/src/lib.rs:2274) sess=False
+      STAT  enabled                <- payload  ['REQUEST']
+[89] POST /api/general/assemble/control/securityclearance/update/{id}   (general_assemble_control securityclearance_update general_assemble_control/src/lib.rs:2525) sess=False
+      STAT  enabled                <- payload  ['REQUEST']
+[90] PUT /api/general/assemble/control/securityclearance/update/{id}   (general_assemble_control securityclearance_update general_assemble_control/src/lib.rs:2525) sess=False
+      STAT  enabled                <- payload  ['REQUEST']
+[91] POST /api/general/file/create   (general_core_entity file_create general_core_entity/src/lib.rs:503) sess=False
+      OWN   creator                <- payload  ['REQUEST']
+[92] POST /api/general/invoice/create   (general_core_entity invoice_create general_core_entity/src/lib.rs:720) sess=False
+      AMT   amount                 <- payload  ['REQUEST']
+      STAT  status                 <- payload  ['REQUEST']
+      OWN   creator                <- payload  ['REQUEST']
+      AMT   amount                 <- amount)  ['REQUEST']
+[93] POST /api/general/invoice/update/{id}   (general_core_entity invoice_update general_core_entity/src/lib.rs:823) sess=False
+      AMT   amount                 <- payload  ['REQUEST']
+      STAT  status                 <- payload  ['REQUEST']
+[94] POST /api/meeting/create   (meeting create_meeting meeting/src/lib.rs:257) sess=False
+      OWN   creator                <- payload  ['REQUEST']
+[95] POST /api/meeting/assemble/control/create   (meeting_assemble_control create_meeting_control meeting_assemble_control/src/lib.rs:163) sess=True
+      STAT  enabled                <- payload  ['REQUEST']
+      STAT  enabled                <- bool = payload  ['REQUEST']
+[96] POST /api/message/assemble/communicate/consume/{id}/type/{type}   (message_assemble_communicate consume_id_type_type message_assemble_communicate/src/lib.rs:499) sess=True
+      OWN   owner                  <- row.get("owner")  ['REQUEST']
+      OWN   owner                  <- String = row.get("owner")  ['REQUEST']
+[97] POST /api/message/assemble/communicate/im/msg/revoke/{id}   (message_assemble_communicate im_msg_revoke_id message_assemble_communicate/src/lib.rs:1853) sess=True
+      OWN   owner                  <- row.get("owner")  ['REQUEST']
+      OWN   owner                  <- String = row.get("owner")  ['REQUEST']
+[98] POST /api/message/assemble/communicate/mark_read/{id}   (message_assemble_communicate mark_read message_assemble_communicate/src/lib.rs:185) sess=True
+      OWN   owner                  <- row.get("owner")  ['REQUEST']
+      OWN   owner                  <- String = row.get("owner")  ['REQUEST']
+[99] POST /api/message/assemble/communicate/mass/enable/type   (message_assemble_communicate mass_enable_type message_assemble_communicate/src/lib.rs:2584) sess=True
+      STAT  enabled                <- req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true)  ['REQUEST', 'DEFAULT']
+[100] POST /api/mind/folder   (mind create_folder mind/src/lib.rs:453) sess=True
+      OWN   creator_unit           <- payload  ['REQUEST']
+[101] POST /api/mind/mind   (mind create_mind mind/src/lib.rs:288) sess=True
+      OWN   creator_unit           <- payload  ['REQUEST']
+[102] POST /api/mind/version   (mind create_version mind/src/lib.rs:598) sess=True
+      OWN   creator_unit           <- payload  ['REQUEST']
+[103] POST /api/mind/core/entity/folder   (mind_core_entity create_folder mind_core_entity/src/lib.rs:312) sess=False
+      OWN   creator                <- payload  ['REQUEST']
+[104] POST /api/mind/core/entity/mind   (mind_core_entity create_mind mind_core_entity/src/lib.rs:182) sess=False
+      OWN   creator                <- payload  ['REQUEST']
+[105] POST /api/mind/core/entity/version   (mind_core_entity create_version mind_core_entity/src/lib.rs:459) sess=False
+      OWN   creator                <- payload  ['REQUEST']
+      OWN   creator_unit           <- payload  ['REQUEST']
+[106] POST /api/organization/assemble/authentication/oauth/generate/code   (organization_assemble_authentication oauth_generate_code organization_assemble_authentication/src/lib.rs:1258) sess=False
+      OWN   person_id              <- req.get("personId").and_then(|v| v.as_str())  ['REQUEST']
+[107] POST /api/group/list/object   (organization_assemble_express group_list_object organization_assemble_express/src/endpoints_org.rs:424) sess=False
+      OWN   unit_id                <- row.get("unit_id")  ['REQUEST']
+      OWN   person_id              <- row.get("person_id")  ['REQUEST']
+[108] POST /api/unit/check/unit/has/person   (organization_assemble_express unit_check_unit_has_person organization_assemble_express/src/endpoints_org.rs:246) sess=True
+      OWN   person_id              <- prow.get("id")  ['REQUEST']
+      OWN   person_id              <- String = prow.get("id")  ['REQUEST']
+[109] POST /api/unit/list/level/name/object   (organization_assemble_express unit_list_level_name_object organization_assemble_express/src/endpoints_unit2.rs:293) sess=True
+      STAT  level_name             <- row.get("level_name")  ['REQUEST']
+      STAT  level_name             <- Option<String> = row.get("level_name")  ['REQUEST']
+[110] POST /api/organization/bind   (organization_core_entity bind_create organization_core_entity/src/lib.rs:864) sess=True
+      STAT  role                   <- req.role)  ['REQUEST']
+[111] POST /api/organization/group   (organization_core_entity group_create organization_core_entity/src/lib.rs:461) sess=False
+      STAT  level                  <- req.level)  ['REQUEST']
+[112] POST /api/organization/identity   (organization_core_entity identity_create organization_core_entity/src/lib.rs:557) sess=True
+      OWN   person_id              <- req.person_id)  ['REQUEST']
+[113] PUT /api/person   (personal edit_person personal/src/lib.rs:102) sess=True
+      OWN   person_id              <- row.get("id")  ['REQUEST']
+      OWN   person_id              <- String = row.get("id")  ['REQUEST']
+[114] POST /api/person/mockputtopost   (personal edit_person personal/src/lib.rs:102) sess=True
+      OWN   person_id              <- row.get("id")  ['REQUEST']
+      OWN   person_id              <- String = row.get("id")  ['REQUEST']
+[115] PUT /api/organization/assemble/personal/person   (personal edit_person personal/src/lib.rs:102) sess=True
+      OWN   person_id              <- row.get("id")  ['REQUEST']
+      OWN   person_id              <- String = row.get("id")  ['REQUEST']
+[116] POST /api/organization/assemble/personal/person/mockputtopost   (personal edit_person personal/src/lib.rs:102) sess=True
+      OWN   person_id              <- row.get("id")  ['REQUEST']
+      OWN   person_id              <- String = row.get("id")  ['REQUEST']
+[117] POST /api/portal/page/create   (portal_core_entity page_create portal_core_entity/src/lib.rs:206) sess=True
+      STAT  status                 <- payload  ['REQUEST']
+[118] POST /api/portal/page/update   (portal_core_entity page_update portal_core_entity/src/lib.rs:258) sess=True
+      STAT  status                 <- payload  ['REQUEST']
+[119] POST /api/program_center/agent/create   (program_center agent_create program_center/src/lib.rs:8086) sess=False
+      OWN   creator                <- req.creator.unwrap_or_else(|| "system".to_string())  ['REQUEST', 'CONST', 'DEFAULT']
+[120] POST /api/program_center/agent   (program_center agent_create program_center/src/lib.rs:8086) sess=False
+      OWN   creator                <- req.creator.unwrap_or_else(|| "system".to_string())  ['REQUEST', 'CONST', 'DEFAULT']
+[121] POST /api/program_center/application/create   (program_center application_create program_center/src/lib.rs:7881) sess=False
+      OWN   creator                <- req.creator.unwrap_or_else(|| "system".to_string())  ['REQUEST', 'CONST', 'DEFAULT']
+[122] POST /api/program_center/config/save   (program_center config_save program_center/src/lib.rs:3708) sess=False
+      OWN   creator                <- req.creator.unwrap_or_else(|| "system".to_string())  ['REQUEST', 'CONST', 'DEFAULT']
+[123] PUT /api/program_center/config/save   (program_center config_save program_center/src/lib.rs:3708) sess=False
+      OWN   creator                <- req.creator.unwrap_or_else(|| "system".to_string())  ['REQUEST', 'CONST', 'DEFAULT']
+[124] POST /api/program_center/warnlog   (program_center warnlog_create program_center/src/lib.rs:9296) sess=True
+      STAT  level                  <- req.level.unwrap_or_else(|| "WARN".to_string())  ['REQUEST', 'DEFAULT']
+[125] POST /api/query/view/create   (query_core_entity view_create query_core_entity/src/lib.rs:186) sess=False
+      OWN   creator_id             <- payload  ['REQUEST']
+      STAT  status                 <- payload  ['REQUEST']
+================ §F 无归属门禁的可变更路径-id 端点 ================
+mutating path-id write, NO gate: 214
+    69 processplatform_assemble_surface
+    24 cms_assemble_control
+    21 processplatform_service_processing
+    15 processplatform_assemble_designer
+    13 meeting_assemble_control
+    11 file_assemble_control
+     8 general_core_entity
+     8 program_center
+     6 organization_core_entity
+     5 message_assemble_communicate
+     4 attendance_core_entity
+     4 general_assemble_control
+     4 organization_assemble_authentication
+     3 bbs_core_entity
+     3 empower
+     2 attendance_assemble_control
+     2 cms_express
+     2 jpush_assemble_control
+     2 mind
+     2 mind_core_entity
+     2 mind_assemble_control
+     1 auth
+     1 meeting
+     1 message
+     1 query_assemble_designer
+
+POST  attendance_assemble_control v2_appeal_end_process                        /api/attendance/assemble/control/v2/appeal/{id}/end/process  attendance_assemble_control/src/lib.rs:7659
+POST  attendance_assemble_control v2_appeal_start_process                      /api/attendance/assemble/control/v2/appeal/{id}/start/proces attendance_assemble_control/src/lib.rs:7582
+POST  attendance_core_entity     record_delete                                /api/attendance/core/entity/record/{id}/delete               attendance_core_entity/src/lib.rs:207
+POST  attendance_core_entity     record_update                                /api/attendance/core/entity/record/{id}/update               attendance_core_entity/src/lib.rs:162
+POST  attendance_core_entity     rule_delete                                  /api/attendance/core/entity/rule/{id}/delete                 attendance_core_entity/src/lib.rs:347
+POST  attendance_core_entity     rule_update                                  /api/attendance/core/entity/rule/{id}/update                 attendance_core_entity/src/lib.rs:286
+POST  auth                       bind_confirm                                 /api/authentication/bind/meta/{meta}                         auth/src/bind.rs:134
+POST  bbs_core_entity            update_forum                                 /api/bbs/core/entity/forum/{id}                              bbs_core_entity/src/lib.rs:264
+POST  bbs_core_entity            update_section                               /api/bbs/core/entity/section/{id}                            bbs_core_entity/src/lib.rs:402
+POST  bbs_core_entity            update_subject                               /api/bbs/core/entity/subject/{id}                            bbs_core_entity/src/lib.rs:560
+POST  cms_assemble_control       appconfig_u2_update                          /api/appconfig/{appId}                                       cms_assemble_control/src/lib.rs:9982
+PUT   cms_assemble_control       categoryinfo_bind_categoryId_view            /api/categoryinfo/bind/{categoryId}/view                     cms_assemble_control/src/lib.rs:1624
+POST  cms_assemble_control       correlation_u2_doc_delete                    /api/correlation/doc/{docId}/delete                          cms_assemble_control/src/lib.rs:8868
+POST  cms_assemble_control       data_document_id_create                      /api/data/document/{id}                                      cms_assemble_control/src/lib.rs:2938
+PUT   cms_assemble_control       data_document_id_update                      /api/data/document/{id}                                      cms_assemble_control/src/lib.rs:2951
+POST  cms_assemble_control       document_publish_html_u3                     /api/document/{id}/publish/html                              cms_assemble_control/src/lib.rs:11295
+PUT   cms_assemble_control       document_u2_publish                          /api/document/publish/{id}                                   cms_assemble_control/src/lib.rs:8440
+PUT   cms_assemble_control       document_u2_publish_cancel                   /api/document/publish/{id}/cancel                            cms_assemble_control/src/lib.rs:8465
+POST  cms_assemble_control       document_u2_update                           /api/document/{id}/update                                    cms_assemble_control/src/lib.rs:8360
+POST  cms_assemble_control       file_id_upload                               /api/file/{id}/upload                                        cms_assemble_control/src/lib.rs:4026
+POST  cms_assemble_control       file_u2_update                               /api/file/{id}/mockputtopost                                 cms_assemble_control/src/lib.rs:8937
+PUT   cms_assemble_control       file_update_u3                               /api/file/{id}                                               cms_assemble_control/src/lib.rs:11404
+POST  cms_assemble_control       fileinfo_u2_copy_to_doc                      /api/fileinfo/copy/to/doc/{docId}                            cms_assemble_control/src/lib.rs:9053
+POST  cms_assemble_control       fileinfo_update_document_docId_attachment_id /api/fileinfo/update/document/{docId}/attachment/{id}        cms_assemble_control/src/lib.rs:4609
+POST  cms_assemble_control       fileinfo_update_document_docId_attachment_id_callback_callback /api/fileinfo/update/document/{docId}/attachment/{id}/callba cms_assemble_control/src/lib.rs:4649
+POST  cms_assemble_control       fileinfo_update_id_content                   /api/fileinfo/update/{id}/content                            cms_assemble_control/src/lib.rs:4693
+POST  cms_assemble_control       fileinfo_upload_doc_docId_save_as_flag       /api/fileinfo/upload/doc/{docId}/save/as/{flag}              cms_assemble_control/src/lib.rs:4727
+POST  cms_assemble_control       fileinfo_upload_document_docId               /api/fileinfo/upload/document/{id}                           cms_assemble_control/src/lib.rs:4764
+POST  cms_assemble_control       fileinfo_upload_document_docId_callback_callback /api/fileinfo/upload/document/{docId}/callback/{callback}    cms_assemble_control/src/lib.rs:4801
+PUT   cms_assemble_control       form_u2_update                               /api/form/{id}                                               cms_assemble_control/src/lib.rs:9266
+PUT   cms_assemble_control       script_u2_update                             /api/script/{id}                                             cms_assemble_control/src/lib.rs:9369
+PUT   cms_assemble_control       surface_appdict_appDictFlag_appInfo_appInfoFlag_update /api/surface/appdict/{appDictFlag}/appInfo/{appInfoFlag}     cms_assemble_control/src/lib.rs:6960
+PUT   cms_assemble_control       view_u2_update                               /api/view/{id}                                               cms_assemble_control/src/lib.rs:9547
+PUT   cms_assemble_control       viewfieldconfig_u2_update                    /api/viewfieldconfig/{id}                                    cms_assemble_control/src/lib.rs:9704
+POST  cms_express                view_publish                                 /api/cms/view/publish/{id}                                   cms_express/src/routes.rs:25
+POST  cms_express                view_unpublish                               /api/cms/view/unpublish/{id}                                 cms_express/src/routes.rs:60
+POST  empower                    disable                                      /api/person/empower/{id}/disable                             empower/src/lib.rs:299
+POST  empower                    enable                                       /api/person/empower/{id}/enable                              empower/src/lib.rs:256
+PUT   empower                    update                                       /api/person/empower/{id}                                     empower/src/lib.rs:174
+POST  file_assemble_control      attachment2_upload_folder_folderId           /api/attachment2/upload/folder/{folderId}                    file_assemble_control/src/lib.rs:1950
+POST  file_assemble_control      attachment_id_update_callback_callback       /api/attachment/update/callback/callback/{id}                file_assemble_control/src/lib.rs:1453
+POST  file_assemble_control      attachment_upload_folder_folderId            /api/attachment/upload/folder/{folderId}                     file_assemble_control/src/lib.rs:1117
+POST  file_assemble_control      attachment_upload_folder_folderId_callback_callback /api/attachment/upload/folder/{folderId}/callback/{callback} file_assemble_control/src/lib.rs:1194
+POST  file_assemble_control      file_upload_referencetype_referenceType_reference_reference_scale_scale /api/file/upload/referencetype/reference/reference/scale/sca file_assemble_control/src/lib.rs:3386
+POST  file_assemble_control      file_upload_referencetype_referenceType_reference_reference_scale_scale_callback_callback /api/file/upload/referencetype/reference/reference/scale/sca file_assemble_control/src/lib.rs:3465
+POST  file_assemble_control      u2_attachment_update_content_callback        /api/attachment/{id}/update/callback/{callback}              file_assemble_control/src/lib.rs:4886
+POST  file_assemble_control      u2_file_upload_callback                      /api/file/assemble/control/file/upload/referencetype/{refere file_assemble_control/src/lib.rs:4810
+PUT   file_assemble_control      u2_file_upload_multipart                     /api/file/assemble/control/file/upload/referencetype/{refere file_assemble_control/src/lib.rs:4782
+POST  file_assemble_control      u2_file_upload_octet_stream                  /api/file/assemble/control/file/upload/referencetype/{refere file_assemble_control/src/lib.rs:4746
+POST  file_assemble_control      u2_share_save_to_folder                      /api/share/share/{shareId}/file/{fileId}/folder/{folderId}   file_assemble_control/src/lib.rs:5501
+POST  general_assemble_control   invoice_delete_id                            /api/general/assemble/control/invoice/delete/{id}            general_assemble_control/src/lib.rs:1571
+POST  general_assemble_control   invoice_update_apply_status_id               /api/general/assemble/control/invoice/update/apply/status/{i general_assemble_control/src/lib.rs:1783
+POST  general_assemble_control   invoice_update_id                            /api/general/assemble/control/invoice/update/{id}            general_assemble_control/src/lib.rs:1830
+POST  general_assemble_control   qrcode_delete                                /api/general/assemble/control/qrcode/delete/{id}             general_assemble_control/src/lib.rs:2235
+POST  general_core_entity        dict_delete                                  /api/general/dict/delete/{id}                                general_core_entity/src/lib.rs:243
+POST  general_core_entity        dict_item_delete                             /api/general/dict/item/delete/{id}                           general_core_entity/src/lib.rs:395
+POST  general_core_entity        dict_item_update                             /api/general/dict/item/update/{id}                           general_core_entity/src/lib.rs:345
+POST  general_core_entity        dict_update                                  /api/general/dict/update/{id}                                general_core_entity/src/lib.rs:200
+POST  general_core_entity        file_delete                                  /api/general/file/delete/{id}                                general_core_entity/src/lib.rs:644
+POST  general_core_entity        file_update                                  /api/general/file/update/{id}                                general_core_entity/src/lib.rs:589
+POST  general_core_entity        invoice_delete                               /api/general/invoice/delete/{id}                             general_core_entity/src/lib.rs:893
+POST  general_core_entity        invoice_update                               /api/general/invoice/update/{id}                             general_core_entity/src/lib.rs:823
+POST  jpush_assemble_control     delete_jpush                                 /api/jpush/delete/{id}                                       jpush_assemble_control/src/lib.rs:391
+POST  jpush_assemble_control     save_jpush                                   /api/jpush/save/{id}                                         jpush_assemble_control/src/lib.rs:351
+POST  meeting                    add_participant                              /api/meeting/{meetingId}/participant/add                     meeting/src/lib.rs:463
+POST  meeting_assemble_control   meeting_id_add_invite                        /api/meeting/assemble/control/meeting/{id}/add/invite        meeting_assemble_control/src/lib.rs:2472
+POST  meeting_assemble_control   meeting_id_confirm_allow                     /api/meeting/assemble/control/meeting/{id}/confirm/allow     meeting_assemble_control/src/lib.rs:2575
+POST  meeting_assemble_control   meeting_id_confirm_deny                      /api/meeting/assemble/control/meeting/{id}/confirm/deny      meeting_assemble_control/src/lib.rs:2600
+POST  meeting_assemble_control   meeting_id_delete_invite                     /api/meeting/assemble/control/meeting/{id}/delete/invite     meeting_assemble_control/src/lib.rs:2625
+POST  meeting_assemble_control   meeting_id_manual_completed                  /api/meeting/assemble/control/meeting/{id}/manual/completed  meeting_assemble_control/src/lib.rs:2661
+POST  meeting_assemble_control   meeting_id_modify_completedtime              /api/meeting/assemble/control/meeting/{id}/modify/completedt meeting_assemble_control/src/lib.rs:2690
+POST  meeting_assemble_control   meeting_id_reject                            /api/meeting/assemble/control/meeting/{id}/reject            meeting_assemble_control/src/lib.rs:2781
+POST  meeting_assemble_control   save_meeting                                 /api/meeting/assemble/control/meeting/save/{id}              meeting_assemble_control/src/lib.rs:2353
+PUT   meeting_assemble_control   u2_attachment_update                         /api/meeting/assemble/control/attachment/{id}/update         meeting_assemble_control/src/lib.rs:3561
+POST  meeting_assemble_control   u2_attachment_update_callback                /api/meeting/assemble/control/attachment/{id}/update/callbac meeting_assemble_control/src/lib.rs:3571
+POST  meeting_assemble_control   u2_attachment_upload                         /api/meeting/assemble/control/attachment/meeting/{meetingId} meeting_assemble_control/src/lib.rs:3760
+POST  meeting_assemble_control   u2_attachment_upload_callback                /api/meeting/assemble/control/attachment/meeting/{meetingId} meeting_assemble_control/src/lib.rs:3783
+POST  meeting_assemble_control   u2_room_set_photo                            /api/meeting/assemble/control/room/{id}/photo                meeting_assemble_control/src/lib.rs:4452
+POST  message                    update_single                                /api/message/consume/{id}/type/{type}                        message/src/lib.rs:111
+POST  message_assemble_communicate im_conversation_id_top_cancel                /api/message/assemble/communicate/im/conversation/{id}/top/c message_assemble_communicate/src/lib.rs:1203
+POST  message_assemble_communicate im_conversation_id_top_cancel_mockputtopost  /api/message/assemble/communicate/im/conversation/{id}/top/c message_assemble_communicate/src/lib.rs:1230
+POST  message_assemble_communicate im_conversation_id_top_set_mockputtopost     /api/message/assemble/communicate/im/conversation/{id}/top/s message_assemble_communicate/src/lib.rs:1284
+PUT   message_assemble_communicate im_conversation_update                       /api/message/assemble/communicate/im/conversation/{id}       message_assemble_communicate/src/lib.rs:926
+POST  message_assemble_communicate im_msg_upload_conversationId_type_type       /api/message/assemble/communicate/im/msg/upload/{conversatio message_assemble_communicate/src/lib.rs:1893
+POST  mind                       update_folder                                /api/mind/folder/{id}                                        mind/src/lib.rs:508
+POST  mind                       update_mind                                  /api/mind/mind/{id}                                          mind/src/lib.rs:354
+PUT   mind_assemble_control      folder_move_folderId                         /api/mind/assemble/control/folder/move/{folderId}            mind_assemble_control/src/lib.rs:340
+POST  mind_assemble_control      update_folder                                /api/mind/assemble/control/folder/{id}/update                mind_assemble_control/src/lib.rs:285
+POST  mind_core_entity           update_folder                                /api/mind/core/entity/folder/{id}                            mind_core_entity/src/lib.rs:369
+POST  mind_core_entity           update_mind                                  /api/mind/core/entity/mind/{id}                              mind_core_entity/src/lib.rs:233
+POST  organization_assemble_authentication authentication_bind_meta_post                /api/organization/assemble/authentication/authentication/bin organization_assemble_authentication/src/lib.rs:977
+POST  organization_assemble_authentication dingding_bind_confirm                        /api/organization/assemble/authentication/dingding/bind/{met organization_assemble_authentication/src/lib.rs:478
+POST  organization_assemble_authentication qiyeweixin_bind_confirm                      /api/organization/assemble/authentication/qiyeweixin/bind/{m organization_assemble_authentication/src/lib.rs:275
+POST  organization_assemble_authentication zhengwudingding_bind_confirm                 /api/organization/assemble/authentication/zhengwudingding/bi organization_assemble_authentication/src/lib.rs:665
+PUT   organization_core_entity   bind_update                                  /api/organization/bind/{id}                                  organization_core_entity/src/lib.rs:902
+PUT   organization_core_entity   custom_update                                /api/organization/custom/{id}                                organization_core_entity/src/lib.rs:796
+PUT   organization_core_entity   definition_update                            /api/organization/definition/{id}                            organization_core_entity/src/lib.rs:396
+PUT   organization_core_entity   group_update                                 /api/organization/group/{id}                                 organization_core_entity/src/lib.rs:494
+PUT   organization_core_entity   identity_update                              /api/organization/identity/{id}                              organization_core_entity/src/lib.rs:593
+PUT   organization_core_entity   person_update                                /api/organization/person/{id}                                organization_core_entity/src/lib.rs:690
+PUT   processplatform_assemble_designer application_id_icon_update                   /api/processplatform/assemble/designer/application/{id}/icon processplatform_assemble_designer/src/lib.rs:3776
+POST  processplatform_assemble_designer application_id_onlyRemoveNotCompleted        /api/processplatform/assemble/designer/application/{id}/{onl processplatform_assemble_designer/src/lib.rs:690
+POST  processplatform_assemble_designer application_id_permission_save               /api/processplatform/assemble/designer/application/{id}/perm processplatform_assemble_designer/src/lib.rs:3810
+PUT   processplatform_assemble_designer application_id_update                        /api/processplatform/assemble/designer/application/{id}      processplatform_assemble_designer/src/lib.rs:3725
+PUT   processplatform_assemble_designer mapping_id_update                            /api/processplatform/assemble/designer/mapping/{flag}        processplatform_assemble_designer/src/lib.rs:4373
+PUT   processplatform_assemble_designer mergeitemplan_id_update                      /api/processplatform/assemble/designer/mergeitemplan/{id}    processplatform_assemble_designer/src/lib.rs:4587
+POST  processplatform_assemble_designer process_application_applicationId_disable_edition /api/processplatform/assemble/designer/process/application/d processplatform_assemble_designer/src/lib.rs:2347
+POST  processplatform_assemble_designer process_application_applicationId_edition_edition /api/processplatform/assemble/designer/process/application/e processplatform_assemble_designer/src/lib.rs:2397
+POST  processplatform_assemble_designer process_id_execute_projection                /api/processplatform/assemble/designer/process/{id}/execute/ processplatform_assemble_designer/src/lib.rs:2617
+POST  processplatform_assemble_designer process_id_onlyRemoveNotCompleted            /api/processplatform/assemble/designer/process/{id}/{onlyRem processplatform_assemble_designer/src/lib.rs:2849
+POST  processplatform_assemble_designer process_id_onlyRemoveNotCompleted_edition    /api/processplatform/assemble/designer/process/edition/{id}/ processplatform_assemble_designer/src/lib.rs:2869
+POST  processplatform_assemble_designer process_id_permission_save                   /api/processplatform/assemble/designer/process/{id}/permissi processplatform_assemble_designer/src/lib.rs:4782
+PUT   processplatform_assemble_designer process_id_update                            /api/processplatform/assemble/designer/process/{id}          processplatform_assemble_designer/src/lib.rs:4734
+POST  processplatform_assemble_designer process_id_upgrade                           /api/processplatform/assemble/designer/process/{id}/upgrade  processplatform_assemble_designer/src/lib.rs:2819
+POST  processplatform_assemble_designer workcompleted_application_applicationFlag_merge_data /api/processplatform/assemble/designer/workcompleted/applica processplatform_assemble_designer/src/lib.rs:3511
+POST  processplatform_assemble_surface attachment_u2b_copy_to_work                  /api/processplatform/assemble/surface/attachment/copy/work/{ processplatform_assemble_surface/src/lib.rs:27111
+POST  processplatform_assemble_surface attachment_u2b_copy_to_work_soft             /api/processplatform/assemble/surface/attachment/copy/work/{ processplatform_assemble_surface/src/lib.rs:27121
+POST  processplatform_assemble_surface attachment_u2b_copy_to_workcompleted         /api/processplatform/assemble/surface/attachment/copy/workco processplatform_assemble_surface/src/lib.rs:27131
+POST  processplatform_assemble_surface attachment_u2b_copy_to_workcompleted_soft    /api/processplatform/assemble/surface/attachment/copy/workco processplatform_assemble_surface/src/lib.rs:27149
+PUT   processplatform_assemble_surface attachment_u2b_update_by_work                /api/processplatform/assemble/surface/attachment/update/{id} processplatform_assemble_surface/src/lib.rs:26934
+POST  processplatform_assemble_surface attachment_u2b_update_callback               /api/processplatform/assemble/surface/attachment/update/{id} processplatform_assemble_surface/src/lib.rs:26955
+PUT   processplatform_assemble_surface attachment_u2b_update_content                /api/processplatform/assemble/surface/attachment/update/cont processplatform_assemble_surface/src/lib.rs:26976
+POST  processplatform_assemble_surface attachment_u2b_update_content_mockputtopost  /api/processplatform/assemble/surface/attachment/update/cont processplatform_assemble_surface/src/lib.rs:26987
+POST  processplatform_assemble_surface attachment_u2b_update_mockputtopost          /api/processplatform/assemble/surface/attachment/update/{id} processplatform_assemble_surface/src/lib.rs:26966
+POST  processplatform_assemble_surface attachment_u2b_update_post                   /api/processplatform/assemble/surface/attachment/update/{id} processplatform_assemble_surface/src/lib.rs:26945
+PUT   processplatform_assemble_surface attachment_u2b_upload_save_as                /api/processplatform/assemble/surface/attachment/upload/work processplatform_assemble_surface/src/lib.rs:26067
+POST  processplatform_assemble_surface attachment_u2b_upload_save_as_mockputtopost  /api/processplatform/assemble/surface/attachment/upload/work processplatform_assemble_surface/src/lib.rs:26089
+POST  processplatform_assemble_surface attachment_u2b_upload_work                   /api/processplatform/assemble/surface/attachment/upload/work processplatform_assemble_surface/src/lib.rs:26001
+POST  processplatform_assemble_surface attachment_u2b_upload_work_callback          /api/processplatform/assemble/surface/attachment/upload/work processplatform_assemble_surface/src/lib.rs:26023
+POST  processplatform_assemble_surface attachment_u2b_upload_workcompleted          /api/processplatform/assemble/surface/attachment/upload/work processplatform_assemble_surface/src/lib.rs:26045
+POST  processplatform_assemble_surface attachment_u2b_v2_upload_base64              /api/processplatform/assemble/surface/attachment/v2/upload/w processplatform_assemble_surface/src/lib.rs:26125
+POST  processplatform_assemble_surface attachment_u2b_v2_upload_wowc                /api/processplatform/assemble/surface/attachment/v2/upload/w processplatform_assemble_surface/src/lib.rs:26101
+POST  processplatform_assemble_surface correlation_job_job_delete                   /api/processplatform/assemble/surface/correlation/job/{job}/ processplatform_assemble_surface/src/lib.rs:2989
+POST  processplatform_assemble_surface correlation_update_job_job                   /api/processplatform/assemble/surface/correlation/update/job processplatform_assemble_surface/src/lib.rs:3152
+PUT   processplatform_assemble_surface data_workcompleted_id                        /api/processplatform/assemble/surface/data/workcompleted/{id processplatform_assemble_surface/src/lib.rs:5842
+POST  processplatform_assemble_surface data_workcompleted_id_mockputtopost          /api/processplatform/assemble/surface/data/workcompleted/{id processplatform_assemble_surface/src/lib.rs:5992
+POST  processplatform_assemble_surface data_workcompleted_id_path0_mockputtopost    /api/processplatform/assemble/surface/data/workcompleted/{id processplatform_assemble_surface/src/lib.rs:6098
+POST  processplatform_assemble_surface data_workcompleted_id_path0_path1_mockputtopost /api/processplatform/assemble/surface/data/workcompleted/{id processplatform_assemble_surface/src/lib.rs:6204
+POST  processplatform_assemble_surface data_workcompleted_id_path0_path1_path2_mockputtopost /api/processplatform/assemble/surface/data/workcompleted/{id processplatform_assemble_surface/src/lib.rs:6315
+POST  processplatform_assemble_surface data_workcompleted_id_path0_path1_path2_path3_mockputtopost /api/processplatform/assemble/surface/data/workcompleted/{id processplatform_assemble_surface/src/lib.rs:6432
+POST  processplatform_assemble_surface data_workcompleted_id_path0_path1_path2_path3_path4_mockputtopost /api/processplatform/assemble/surface/data/workcompleted/{id processplatform_assemble_surface/src/lib.rs:6551
+POST  processplatform_assemble_surface data_workcompleted_id_path0_path1_path2_path3_path4_path5_mockputtopost /api/processplatform/assemble/surface/data/workcompleted/{id processplatform_assemble_surface/src/lib.rs:6666
+POST  processplatform_assemble_surface data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost /api/processplatform/assemble/surface/data/workcompleted/{id processplatform_assemble_surface/src/lib.rs:6774
+POST  processplatform_assemble_surface data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost /api/processplatform/assemble/surface/data/workcompleted/{id processplatform_assemble_surface/src/lib.rs:6880
+POST  processplatform_assemble_surface draft_process_processFlag                    /api/processplatform/assemble/surface/draft/process/{process processplatform_assemble_surface/src/lib.rs:7564
+POST  processplatform_assemble_surface handover_id_cancel                           /api/processplatform/assemble/surface/handover/{id}/cancel   processplatform_assemble_surface/src/lib.rs:8498
+POST  processplatform_assemble_surface handover_id_process                          /api/processplatform/assemble/surface/handover/{id}/process  processplatform_assemble_surface/src/lib.rs:8554
+POST  processplatform_assemble_surface mode_id_delete                               /api/processplatform/assemble/surface/mode/delete/{id}       processplatform_assemble_surface/src/lib.rs:9008
+POST  processplatform_assemble_surface read_id_processing                           /api/processplatform/assemble/surface/read/processing/{id}   processplatform_assemble_surface/src/lib.rs:11437
+POST  processplatform_assemble_surface read_id_processing_manage                    /api/processplatform/assemble/surface/read/processing/manage processplatform_assemble_surface/src/lib.rs:11479
+POST  processplatform_assemble_surface read_id_processing_manage_mockputtopost      /api/processplatform/assemble/surface/read/processing/manage processplatform_assemble_surface/src/lib.rs:11521
+POST  processplatform_assemble_surface read_id_reset_manage                         /api/processplatform/assemble/surface/read/reset/manage/{id} processplatform_assemble_surface/src/lib.rs:11620
+POST  processplatform_assemble_surface read_id_reset_manage_mockputtopost           /api/processplatform/assemble/surface/read/reset/manage/mock processplatform_assemble_surface/src/lib.rs:11662
+POST  processplatform_assemble_surface read_workcompleted_workCompletedId           /api/processplatform/assemble/surface/read/workcompleted/{wo processplatform_assemble_surface/src/lib.rs:11094
+POST  processplatform_assemble_surface readcompleted_id_opinion_manage              /api/processplatform/assemble/surface/readcompleted/opinion/ processplatform_assemble_surface/src/lib.rs:13263
+POST  processplatform_assemble_surface readcompleted_id_reference                   /api/processplatform/assemble/surface/readcompleted/referenc processplatform_assemble_surface/src/lib.rs:13305
+POST  processplatform_assemble_surface sign_save_task_taskId                        /api/processplatform/assemble/surface/sign/save/task/{taskId processplatform_assemble_surface/src/lib.rs:15688
+POST  processplatform_assemble_surface task_id_processing                           /api/processplatform/assemble/surface/task/processing/{id}   processplatform_assemble_surface/src/lib.rs:18190
+POST  processplatform_assemble_surface task_id_processing_manage                    /api/processplatform/assemble/surface/task/processing/manage processplatform_assemble_surface/src/lib.rs:18232
+POST  processplatform_assemble_surface task_id_processing_manage_mockputtopost      /api/processplatform/assemble/surface/task/processing/manage processplatform_assemble_surface/src/lib.rs:18274
+POST  processplatform_assemble_surface task_id_processing_neural                    /api/processplatform/assemble/surface/task/processing/neural processplatform_assemble_surface/src/lib.rs:18331
+POST  processplatform_assemble_surface task_id_reset_manage                         /api/processplatform/assemble/surface/task/reset/manage/{id} processplatform_assemble_surface/src/lib.rs:18415
+POST  processplatform_assemble_surface task_id_reset_manage_mockputtopost           /api/processplatform/assemble/surface/task/reset/manage/mock processplatform_assemble_surface/src/lib.rs:18457
+POST  processplatform_assemble_surface task_v2_id_reset                             /api/processplatform/assemble/surface/task/v2/reset/{id}     processplatform_assemble_surface/src/lib.rs:17565
+POST  processplatform_assemble_surface task_v2_id_reset_mockputtopost               /api/processplatform/assemble/surface/task/v2/reset/mockputt processplatform_assemble_surface/src/lib.rs:17622
+POST  processplatform_assemble_surface task_v2_id_trigger_processing                /api/processplatform/assemble/surface/task/v2/trigger/proces processplatform_assemble_surface/src/lib.rs:17721
+POST  processplatform_assemble_surface task_v3_id_add                               /api/processplatform/assemble/surface/task/v3/add/{id}       processplatform_assemble_surface/src/lib.rs:17763
+POST  processplatform_assemble_surface taskcompleted_id_opinion_manage              /api/processplatform/assemble/surface/taskcompleted/opinion/ processplatform_assemble_surface/src/lib.rs:20202
+POST  processplatform_assemble_surface taskcompleted_id_opinion_manage_mockputtopost /api/processplatform/assemble/surface/taskcompleted/opinion/ processplatform_assemble_surface/src/lib.rs:20244
+POST  processplatform_assemble_surface taskcompleted_id_reference                   /api/processplatform/assemble/surface/taskcompleted/referenc processplatform_assemble_surface/src/lib.rs:20301
+POST  processplatform_assemble_surface taskcompleted_id_reference_control           /api/processplatform/assemble/surface/taskcompleted/referenc processplatform_assemble_surface/src/lib.rs:20343
+POST  processplatform_assemble_surface work_application_applicationFlag_process_processFlag /api/processplatform/assemble/surface/work/application/{appl processplatform_assemble_surface/src/lib.rs:20445
+POST  processplatform_assemble_surface work_id_close_check                          /api/processplatform/assemble/surface/work/{id}/close/check  processplatform_assemble_surface/src/lib.rs:22857
+POST  processplatform_assemble_surface work_id_processing                           /api/processplatform/assemble/surface/work/processing/{id}   processplatform_assemble_surface/src/lib.rs:23003
+POST  processplatform_assemble_surface work_id_processing_mockputtopost             /api/processplatform/assemble/surface/work/processing/mockpu processplatform_assemble_surface/src/lib.rs:23045
+POST  processplatform_assemble_surface work_process_processFlag                     /api/processplatform/assemble/surface/work/process/{processF processplatform_assemble_surface/src/lib.rs:21696
+POST  processplatform_assemble_surface work_process_processFlag_force               /api/processplatform/assemble/surface/work/process/{processF processplatform_assemble_surface/src/lib.rs:21738
+POST  processplatform_assemble_surface work_v2_id_add_split                         /api/processplatform/assemble/surface/work/v2/add/split/{id} processplatform_assemble_surface/src/lib.rs:22086
+POST  processplatform_assemble_surface work_v2_id_add_split_mockputtopost           /api/processplatform/assemble/surface/work/v2/add/split/mock processplatform_assemble_surface/src/lib.rs:22128
+POST  processplatform_assemble_surface work_v2_id_trigger_processing                /api/processplatform/assemble/surface/work/v2/trigger/proces processplatform_assemble_surface/src/lib.rs:22563
+PUT   processplatform_assemble_surface workcompleted_flag_rollback                  /api/processplatform/assemble/surface/workcompleted/{flag}/r processplatform_assemble_surface/src/lib.rs:24234
+POST  processplatform_assemble_surface workcompleted_flag_rollback_mockputtopost    /api/processplatform/assemble/surface/workcompleted/{flag}/r processplatform_assemble_surface/src/lib.rs:24276
+POST  processplatform_assemble_surface workcompleted_id_delete_manage               /api/processplatform/assemble/surface/workcompleted/delete/m processplatform_assemble_surface/src/lib.rs:24416
+POST  processplatform_assemble_surface workcompleted_process_processFlag            /api/processplatform/assemble/surface/workcompleted/process/ processplatform_assemble_surface/src/lib.rs:24150
+POST  processplatform_service_processing attachment_copy_work_workId                  /api/processplatform/service/processing/attachment/copy/{wor processplatform_service_processing/src/lib.rs:2876
+POST  processplatform_service_processing attachment_copy_workcompleted_workCompletedId /api/processplatform/service/processing/attachment/copy/work processplatform_service_processing/src/lib.rs:2912
+POST  processplatform_service_processing cancel_process_instance                      /api/processplatform/service/processing/cancel/{executionId} processplatform_service_processing/src/lib.rs:371
+POST  processplatform_service_processing cancel_timer                                 /api/processplatform/service/processing/timer/{job_id}/cance processplatform_service_processing/src/lib.rs:4307
+POST  processplatform_service_processing data_work_id_delete                          /api/processplatform/service/processing/data/delete/{work}/{ processplatform_service_processing/src/lib.rs:2190
+POST  processplatform_service_processing data_work_id_path_delete                     /api/processplatform/service/processing/data/path/delete/{wo processplatform_service_processing/src/lib.rs:2447
+POST  processplatform_service_processing execute_process                              /api/processplatform/service/processing/execute/{id}         processplatform_service_processing/src/lib.rs:217
+POST  processplatform_service_processing record_work_processing                       /api/processplatform/service/processing/record/processing/{w processplatform_service_processing/src/lib.rs:2765
+POST  processplatform_service_processing task_complete                                /api/task/{id}/complete                                      processplatform_service_processing/src/lib.rs:3671
+POST  processplatform_service_processing task_id_processing                           /api/processplatform/service/processing/task/processing/{id} processplatform_service_processing/src/lib.rs:1133
+POST  processplatform_service_processing task_reject                                  /api/task/{id}/reject                                        processplatform_service_processing/src/lib.rs:3779
+POST  processplatform_service_processing task_v2_id_reset                             /api/processplatform/service/processing/task/v2/reset/{id}   processplatform_service_processing/src/lib.rs:1380
+POST  processplatform_service_processing task_v3_id_add                               /api/processplatform/service/processing/task/v3/add/{id}     processplatform_service_processing/src/lib.rs:1435
+POST  processplatform_service_processing taskcompleted_id_press_work_work             /api/processplatform/service/processing/taskcompleted/press/ processplatform_service_processing/src/lib.rs:1534
+POST  processplatform_service_processing work_complete                                /api/work/{id}/complete                                      processplatform_service_processing/src/lib.rs:3522
+PUT   processplatform_service_processing work_id_processing                           /api/work/{id}/processing                                    processplatform_service_processing/src/lib.rs:534
+POST  processplatform_service_processing work_id_series_series_activitytoken_activityToken_processing_signal /api/processplatform/service/processing/series/series/activi processplatform_service_processing/src/lib.rs:967
+POST  processplatform_service_processing work_manual_after_processing                 /api/processplatform/service/processing/manual/after/process processplatform_service_processing/src/lib.rs:1039
+PUT   processplatform_service_processing work_v2_id_add_split                         /api/processplatform/service/processing/work/{id}/add/split  processplatform_service_processing/src/lib.rs:806
+POST  processplatform_service_processing work_v2_id_add_split_p2                      /api/processplatform/service/processing/v2/add/split/{work}/ processplatform_service_processing/src/lib.rs:817
+POST  processplatform_service_processing workcompleted_flag_merge                     /api/processplatform/service/processing/workcompleted/merge/ processplatform_service_processing/src/lib.rs:3317
+POST  program_center             captcha_v2_create_width_width_height_height  /api/program_center/captcha/v2/create/width/{width}/height/{ program_center/src/lib.rs:1701
+POST  program_center             code_create_mobile_mobile                    /api/program_center/code/create/mobile/{mobile}              program_center/src/lib.rs:1852
+POST  program_center             collect_delete                               /api/program_center/collect/delete/{id}                      program_center/src/lib.rs:361
+PUT   program_center             collect_save                                 /api/program_center/collect/save/{id}                        program_center/src/lib.rs:326
+POST  program_center             dict_data_save_put                           /api/program_center/dict/{dictFlag}/{path}/data              program_center/src/lib.rs:12444
+POST  program_center             script_save_flag                             /api/program_center/script/{flag}                            program_center/src/lib.rs:12638
+PUT   program_center             script_update_id                             /api/program_center/script/{flag}                            program_center/src/lib.rs:12648
+POST  program_center             u3_script_save_name                          /api/program_center/script/name/{name}                       program_center/src/lib.rs:12029
+POST  query_assemble_designer    neural_model_modelFlag_reset_status_p2       /api/query/assemble/designer/neural/model/reset/{modelFlag}/ query_assemble_designer/src/lib.rs:1719
+
+
+================ §G 动态实测原文 ================
+G1. 冒名后果（Rust，攻击者 audit-user，受害者 admin）
+
+A. bbs topic create  {"forumId":"audit-forum-001","title":"W4-bbs-<ts>","content":"impersonated","authorId":"admin"}
+   HTTP 200
+   库：x_bbs_topic  creator=audit-user  author_id=admin        <- 归属字段被请求体改写
+   受害者 "我的帖子" 列表（session=admin）：FOUND（伪造帖出现在受害者名下）
+   攻击者 "我的帖子" 列表：FOUND（因 creator=攻击者，查询以 creator OR author_id 命中）
+   body 覆盖：PUT /user/subject/my/list  body {"creator":"admin"} 由 audit-user 调用 -> FOUND
+             （另证：my/list 的 creator 可由请求体指定，任意登录用户可读他人「我发布的」）
+   受害者删除 DELETE /delete/subject：200；攻击者删除：403（该删除仅 admin）
+
+B. bbs reply create {"subjectId":"<topic>","content":"W4-reply-<ts>","authorId":"admin"}
+   HTTP 200
+   库：x_bbs_reply  creator=admin  author_id=admin              <- 代码 create_reply 取 req.creator/req.author_id
+   受害者 "我的回复" 列表：FOUND
+
+C. message custom create {"conversationId":"w8-conv","content":"W4-msg-<ts>","sender":"admin"}
+   HTTP 200
+   库：x_message  sender=admin                                 <- sender 取自请求体，缺省 "system"
+   攻击者 revoke 自己伪造的消息：403
+   受害者 revoke 伪造消息：200                                <- 权限分支按 sender 判定
+   对照：攻击者自己的正常消息 revoke：200
+   受害者读取 GET /message/list/paging/1/size/50：200 且 FORGED-VISIBLE
+        （该列表本身不按会话/会话成员过滤，所有登录用户可读全表，见第三轮 F2-E）
+
+D. calendar core_entity event create
+   POST /api/calendar/core/entity/event/create
+   {"calendar_id":"cal-audit","title":"W4-cal-<ts>","start_time":"2026-11-06T09:00:00",
+    "end_time":"2026-11-06T10:00:00","createor":"admin"}
+   HTTP 200，响应 data.createor="admin"
+   库：x_cal_event  createor=admin                              <- createor 取自请求体，缺省 "anonymous"
+   注意：该端点写的是 x_cal_event；用户面事件列表 /api/calendar/event/list/{calendarId} 读 CAL_EVENT，
+        因此伪造事件不会出现在受害者事件列表（后果链断开；仅字段级缺陷）
+   对照（已修的兄弟端点） POST /api/calendar/event/create  同 body 带 createor=admin
+        -> 库 CAL_EVENT createor=audit-user（会话为准），修复有效
+
+E. calendar core_entity calendar create
+   {"name":"W4calp2-<ts>","type":"person","createor":"admin"} -> 200, 库 x_cal_calendar createor=admin
+   {"name":"W4cala2-<ts>","type":"unit"}                    -> 200, 库 createor=anonymous
+   同类读取端点 /api/calendar/core/entity/calendar/list 无列表语义（返回 calendar not found）
+
+G2. 写后必读：硬编码归属 / 字段静默丢弃
+
+F. mind folder save {"name":"W4mind-<ts>","content":"x"} -> 200
+   库 x_mind: creator=system, create_time=2026-11-05 16:06:41.843919+00
+   （creator 硬编码 "system"；任何用户创建都归 system）
+
+G. file core entity create {"name":"W4file-<ts>","path":"/tmp/x","folderId":"","size":10} -> 200
+   库 x_file: creator=system, size=10, create_time=2026-11-05 16:06:42.012483+00
+
+H. jpush create {"title":"W4push-<ts>","content":"x","target":"all"}
+   audit-user -> 403 forbidden；admin -> 200，库 x_jpush creator=system
+
+I. program_center agent create（admin）{"name":"W4agent-<ts>","flag":"w4flag","creator":"someone-else"}
+   -> 200，库 x_program_agent creator=someone-else          <- 管理员可把 creator 写成任意字符串
+   player 调用 -> 403
+   application create（admin）{"name":"W4app-<ts>","appId":"w4app<ts>","creator":"someone"}
+   -> 200，响应 appId=""；库 x_applications app_id=""      <- appId 字段被静默丢弃（驼峰 body 与 snake_case 结构不匹配）
+   creator=someone 写入成功
+
+J. attendance detail create {"date":"2026-11-05","status":"holiday"} -> 200
+   库 x_attendance_detail person_id=audit-user, date=2026-11-05, status=holiday, create_time=2026-11-05 16:07:15.870619+00
+   status 原样取自请求体（无枚举校验）
+   伪造他人 {"personId":"admin"} -> 403（非 admin 越权创建被拦）
+
+K. meeting create {"title":"W4meet-<ts>","roomId":"room-audit","startTime":"2026-11-06 09:00:00","endTime":"2026-11-06 10:00:00"}
+   -> 500 internal server error；库 x_meeting 无该行          <- 字符串时间绑定失败，写端点不可用
+
+L. attendance appeal submit {"appealDate":"2026-11-05","reason":"W4appeal"} -> 200
+   响应 personId=audit-user（申诉人取自会话，正确）
+
+M. attendance_core_entity record —— 写路径跨用户越权（已实证）
+   POST /api/attendance/core/entity/record/create
+   audit-user 提交 {"userId":"admin","checkInTime":"2026-11-05 09:00:00","status":"normal"} -> 200
+   响应 data.user_id="admin"；库 x_attendance_record: user_id=admin, status=normal, create_time=NULL
+       （create_time 恒为 None，字段静默丢弃）
+   POST /{id}/update  audit-user 改 admin 的记录 {"status":"late","checkOutTime":"2026-11-05 18:00:00"} -> 200
+   库 x_attendance_record: user_id=admin, status=late, check_out_time=2026-11-05 18:00:00
+   POST /{id}/delete  audit-user 删 admin 的记录 -> 200 {"deleted":true}
+   库 count(*)=0                                            <- 任意登录用户可增/改/删他人考勤记录
+   （handler 只 require_session，无 require_owner/require_admin，也无 WHERE user_id 过滤）
+
+N. organization person_update 审计-user 改 admin -> 403
+   （路由层资源级鉴权存在；静态扫描的 "无 gate" 结论对其不适用，已实证正确）
+
+O. bbs core entity update_subject（静态：require_session 后无归属校验；动态不可测：bbs_subject_info 空表）
+   库 bbs_subject_info 0 行；x_bbs_topic 与 bbs_subject_info 不是同一张表
+
+G3. 时区/精度三方对照（cal_event 家族）
+
+  写前时刻： local 2026-11-06 00:03:58 / UTC 2026-11-05 16:03:58
+  ① core_entity event create -> x_cal_event
+     请求 start_time = "2026-11-06T09:00:00"（原样入库）
+     库 create_time = 2026-11-05 16:03:58（列类型 timestamp without time zone）
+     结论：落库用 Utc::now().naive_utc()，写的是 UTC，但列不带时区标记
+     读：/api/calendar/core/entity/event/list/{calendarId} 不返回 create_time
+  ② calendar crate event create -> CAL_EVENT
+     库 create_time = NULL（INSERT 列清单无 create_time；列类型 text）
+     结论：写后必读缺口 —— 字段从未写入，而不是时区问题
+  ③ 口径族：
+     信息架构查 28 张相关表的 create_time/update_time/start_time/end_time：
+       text 列：cal_event, x_applications, x_attendance_detail, x_file, x_jpush,
+                x_message, x_mind, x_program_agent
+       timestamp without time zone：x_bbs_reply, x_bbs_topic, x_cal_calendar, x_cal_event, x_meeting
+  全库 create_time/created_at/update_time/updated_at 列类型分布：
+     text 394 · timestamp without time zone 188 · timestamp with time zone 44
+  样本值：
+     x_message.create_time(text)      = 2026-11-05 16:02:55.933403+00   （带 +00）
+     x_bbs_topic.create_time(naive)   = 2026-11-05 16:02:55.24423       （无时区标记，实为 UTC）
+     x_attendance_detail.create_time  = ''                              （空串，见 M）
+     x_cal_calendar.create_time       = 2026-11-05 16:06:53.2225        （无时区标记，实为 UTC）
+  判定：不存在“读出时把 UTC 当本地”的代码路径（相关 API 均不回显 create_time）；
+        “8 小时差”来自 **写入用 UTC 且落在无时区列/文本列**，任何按本地时间展示该值的消费者都会差 8 小时。
+
+G4. Go 写端点（基线 961bda135 之前的运行工作树；00:11 复核修复已入库）
+
+  1) 玩家 token 打管理写端点——
+     POST /api/v1/admin/announcements -> 401 令牌类型不匹配
+     POST /api/v1/admin/users/2/ban -> 401
+     POST /api/v1/admin/users/2/grant -> 401
+     POST /api/v1/admin/redeem-codes -> 401
+  2) 玩家 body 伪造身份——
+     PUT /api/v1/me/nickname {"nickname":"W4nick","user_id":2,"player_id":2,"id":2} -> 200 {"ok":true}
+       读回：u1 nickname=W4nick，u2 仍为 W4n2（未被改写）
+     PUT /api/v1/me/loadout {"skill_ids":[1,2],"user_id":2} -> 400 技能未解锁（身份字段被忽略）
+  3) 管理写后必读（缺陷，已被 961bda135 修复）——
+     创建公告响应 item.created_at = null；列表读回 created_at = 2026-11-06T00:05:39.529208+08:00
+        （published_at 创建响应为 .5286078 纳秒，库为 .528607 微秒 -> 亚微秒精度不一致）
+     创建兑换码 reward {"diamond":7} -> 200（未知币种被接受）；DB expires_at=2026-12-31 23:59:59+00，
+        列表输出 2027-01-01T07:59:59+08:00（UTC->+8 转换正确，非缺陷）
+  4) 玩家写后必读——
+     POST /api/v1/signin -> 200 钱包 coin 增量已读回；PUT /me/nickname -> 200 且 /me 读回一致
+  5) 静态：48 个 Go 写路由处理器，全部身份来自 userIDFrom(c)/adminIDFrom(c)；
+     玩家请求体结构（SaveLoadoutInput/SaveDefenseInput/ChallengeInput/VerifyInput）均无 user_id/owner 字段
+
+
+G5. 静态扫描口径与边界
+  - Rust 路由来源：crates 内宏生成路由表（routes2.json，1587 条写路由，1309 个唯一 handler 体）
+  - 归属/时间/金额/状态识别：handler 体内 let 绑定 + ActiveModel/INSERT 列，按名称正则归类
+  - “无 gate”只代表 handler 体未见 require_owner/require_admin；路由层可能另有资源级鉴权，
+    已用 organization person_update (403) 证伪该口径的一例
