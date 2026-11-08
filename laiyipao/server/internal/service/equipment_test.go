@@ -133,3 +133,74 @@ func TestEquipmentIsObtainableAndEquippable(t *testing.T) {
 		t.Errorf("装了 +35‰ 护甲的胸甲后攻方护甲应 ≥35，实际 %d", attacker.ArmorPermille)
 	}
 }
+
+// TestEquipmentDuplicatePurchaseIsRejectedWithoutCharge 钉住 R152：
+// 装备商品种子的 limit_per_day 曾是 3，玩家可以分 3 次购买同一件装备：
+// 每次扣款，但 user_equipment 唯一键让第 2/3 次静默 no-op，等于付 3 份钱得 1 件。
+// 现在重复购买必须 ErrBadInput 且整单回滚（余额 / 购买记录 / 装备行都不变）。
+func TestEquipmentDuplicatePurchaseIsRejectedWithoutCharge(t *testing.T) {
+	ts := openScratchService(t)
+	ctx := context.Background()
+	uid := ts.newUser(t, ctx)
+
+	var shopID int64
+	if err := ts.pool.QueryRow(ctx,
+		`SELECT id FROM shop_items WHERE code = 'shop_eq_armor'`).Scan(&shopID); err != nil {
+		t.Fatalf("找不到装备商品 shop_eq_armor：%v", err)
+	}
+	// 故意保留缺陷触发条件：即使运营把限购调成 3，也不能重复扣款。
+	ts.exec(t, `UPDATE shop_items SET limit_per_day = 3 WHERE id = $1`, shopID)
+	ts.grant(t, ctx, uid, map[string]int64{"coin": 100000})
+
+	if _, err := ts.Buy(ctx, uid, shopID); err != nil {
+		t.Fatalf("首次购买装备应成功：%v", err)
+	}
+	var coinAfterFirst int64
+	if err := ts.pool.QueryRow(ctx,
+		`SELECT coin FROM user_wallets WHERE user_id = $1`, uid).Scan(&coinAfterFirst); err != nil {
+		t.Fatalf("查余额失败：%v", err)
+	}
+
+	if _, err := ts.Buy(ctx, uid, shopID); !errors.Is(err, ErrBadInput) {
+		t.Fatalf("重复购买应 ErrBadInput，实际 %v", err)
+	}
+	var coinAfterSecond int64
+	if err := ts.pool.QueryRow(ctx,
+		`SELECT coin FROM user_wallets WHERE user_id = $1`, uid).Scan(&coinAfterSecond); err != nil {
+		t.Fatalf("查余额失败：%v", err)
+	}
+	if coinAfterSecond != coinAfterFirst {
+		t.Errorf("重复购买被拒后余额不应变化：first=%d second=%d", coinAfterFirst, coinAfterSecond)
+	}
+	var purchases, owned int
+	if err := ts.pool.QueryRow(ctx,
+		`SELECT count(*) FROM user_purchases WHERE user_id = $1 AND item_id = $2`,
+		uid, shopID).Scan(&purchases); err != nil {
+		t.Fatalf("查购买记录失败：%v", err)
+	}
+	if purchases != 1 {
+		t.Errorf("重复购买被拒后购买记录应仍为 1 条，实际 %d", purchases)
+	}
+	if err := ts.pool.QueryRow(ctx,
+		`SELECT count(*) FROM user_equipment WHERE user_id = $1 AND equipment_id = 7`,
+		uid).Scan(&owned); err != nil {
+		t.Fatalf("查装备失败：%v", err)
+	}
+	if owned != 1 {
+		t.Errorf("装备应仍为 1 件，实际 %d", owned)
+	}
+
+	// 反向对照：非装备商品（宝石，limit=3）连续买 3 次仍应全部成功，
+	// 证明 guard 只作用于 equipment payload，没有误伤正常的多份购买。
+	var gemShopID int64
+	if err := ts.pool.QueryRow(ctx,
+		`SELECT id FROM shop_items WHERE code = 'shop_gem'`).Scan(&gemShopID); err != nil {
+		t.Fatalf("找不到宝石商品 shop_gem：%v", err)
+	}
+	ts.grant(t, ctx, uid, map[string]int64{"gem": 1000})
+	for i := 0; i < 3; i++ {
+		if _, err := ts.Buy(ctx, uid, gemShopID); err != nil {
+			t.Fatalf("第 %d 次买宝石应成功：%v", i+1, err)
+		}
+	}
+}
