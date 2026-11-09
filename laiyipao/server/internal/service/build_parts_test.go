@@ -192,3 +192,50 @@ func TestSkillsRowsToMapsScanErrorPropagates(t *testing.T) {
 			len(skills), elements, occupied)
 	}
 }
+
+// ---- elements 列表必须稳定有序（R148 串行/批量等价性守卫的抖动源）----
+// elements 语义上是集合，但会进 /me 与 /battle/token 的 JSON。
+// map 迭代顺序随机，若不排序，同一玩家两次请求的元素顺序可能不同，
+// `TestBuildPartsOneBatchRoundTrip` 会随机变红。
+
+type threeElementRows struct{ i int }
+
+func (r *threeElementRows) Close()                                       {}
+func (r *threeElementRows) Err() error                                   { return nil }
+func (r *threeElementRows) CommandTag() pgconn.CommandTag                { return pgconn.CommandTag{} }
+func (r *threeElementRows) FieldDescriptions() []pgconn.FieldDescription { return nil }
+func (r *threeElementRows) Values() ([]any, error)                       { return nil, errors.New("not used") }
+func (r *threeElementRows) RawValues() [][]byte                          { return nil }
+func (r *threeElementRows) Conn() *pgx.Conn                              { return nil }
+func (r *threeElementRows) TypeMap() *pgtype.Map                         { return nil }
+func (r *threeElementRows) Next() bool                                   { return r.i < 3 }
+
+func (r *threeElementRows) Scan(dest ...any) error {
+	// 故意乱序输入：排序后必须是 fire < ice < lightning。
+	element := []string{"lightning", "fire", "ice"}[r.i]
+	*(dest[0].(*int)) = r.i + 1
+	*(dest[1].(*string)) = "技能"
+	*(dest[2].(*string)) = "元素"
+	*(dest[3].(*string)) = element
+	*(dest[4].(*string)) = "active"
+	*(dest[5].(*int)) = 1
+	*(dest[6].(*int)) = -1
+	r.i++
+	return nil
+}
+
+func TestSkillsRowsToMapsElementsSorted(t *testing.T) {
+	_, elements, _, err := skillsRowsToMaps(&threeElementRows{})
+	if err != nil {
+		t.Fatalf("装配不应失败：%v", err)
+	}
+	want := []string{"fire", "ice", "lightning"}
+	if len(elements) != len(want) {
+		t.Fatalf("元素数量不对：got %v", elements)
+	}
+	for i := range want {
+		if elements[i] != want[i] {
+			t.Fatalf("elements 必须稳定有序（否则串行/批量守卫随机红）：got %v want %v", elements, want)
+		}
+	}
+}
