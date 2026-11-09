@@ -15,7 +15,7 @@ import json
 import logging
 import math
 import re
-from typing import List, Dict, Optional, Any, Set
+from typing import List, Dict, Optional, Any, Set, Iterable
 from dataclasses import dataclass, field
 from pathlib import Path
 from enum import Enum
@@ -1746,3 +1746,41 @@ def sheet_expansion_verdict(compressed: int, expanded: int, name: str, face: str
         f"请拆小工作簿或改交 CSV（三条阈值住 `augmentor/validation.py`，"
         f"本轮现量定标见循环账本 L288）"
     )
+
+
+# ---------------------------------------------------------------------------
+# CSV / TSV 表头的公式前导判据（A391 · CWE-1236 的列名面）
+# ---------------------------------------------------------------------------
+
+
+def require_sheet_safe_fieldnames(fieldnames: Iterable[Any], container: str) -> List[str]:
+    """CSV / TSV 写出前的表头判据：危险的列名**拒收**，不做任何改写（A391 拍板②）
+
+    列名与单元格值共用同一族前导判据（`is_sheet_formula_text`），但处置相反：
+    值面可以加前导单引号（`sheet_text_cell`），列名面不行 —— 列名是读回侧
+    `csv.DictReader` 用来配行的键，静默加前缀会让同一份数据集在写出前后的键名
+    不一致（读回拿到 `"'=cmd"` 而不是 `"=cmd"`），schema 漂移比拒收更难查。
+    所以这里只判、不改：命中 `SHEET_FORMULA_LEADERS` 的列名点名报错，建议改列名
+    或改用有类型位的 xlsx / 无公式解释器的 jsonl。
+
+    Args:
+        fieldnames: 即将写进表头的列名（任意可迭代，含 `dict_keys` / `pandas.Index`）
+        container: 容器名（`csv` / `tsv`），只进报错文案
+
+    Returns:
+        列名列表，原序原值返回（调用方直接交给 `csv.DictWriter`）
+
+    Raises:
+        DataValidationError: 至少一个列名会被电子表格当公式执行
+    """
+    names = list(fieldnames)
+    forged = [name for name in names if is_sheet_formula_text(name)]
+    if forged:
+        listed = "、".join(repr(name) for name in forged)
+        leaders = " ".join(repr(ch) for ch in SHEET_FORMULA_LEADERS)
+        raise DataValidationError(
+            f"{container} 表头有会被电子表格当公式执行的列名：{listed}；"
+            f"列名同时是读回侧配行的键，静默改写会让 schema 漂移。"
+            f"请去掉列名开头的 {leaders} 之一，或改用 xlsx / jsonl 导出"
+        )
+    return names

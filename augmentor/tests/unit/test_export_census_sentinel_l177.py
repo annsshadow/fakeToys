@@ -138,8 +138,8 @@ def test_scanned_corpus_scale():
     """
     n_products = len([p for p in _PRODUCTS if p != _EXPORT_SITE])
     n_tests = len(_TESTS)
-    assert (n_products, n_tests) == (133, 421), \
-        f"语料规模现量 (133, 421)，实得 {(n_products, n_tests)}"
+    assert (n_products, n_tests) == (133, 437), \
+        f"语料规模现量 (133, 437)，实得 {(n_products, n_tests)}"
 
 
 def test_every_all_symbol_has_a_consumer():

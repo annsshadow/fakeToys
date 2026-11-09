@@ -200,20 +200,20 @@ class EnhancedExporter:
         """导出CSV格式"""
         # 空集不再 `return`：那一句让 `export()` 照样回 `output_path` 与成功，磁盘上却没有文件，
         # 与 `export.py` 原生 CSV 分支按 A343 立起的「静默零写入 + 成功即缺陷」判据同族。
-        from .validation import sheet_text_row  # 判据住 validation，见 A389 拍板①
+        from .validation import require_sheet_safe_fieldnames, sheet_text_row  # 表头判据见 A391 拍板②
         with open(output, 'w', encoding='utf-8', newline='') as f:
             if items:
-                writer = csv.DictWriter(f, fieldnames=csv_fieldnames(items))
+                writer = csv.DictWriter(f, fieldnames=require_sheet_safe_fieldnames(csv_fieldnames(items), "csv"))
                 writer.writeheader()
                 writer.writerows([sheet_text_row(row) for row in items])
     
     def _export_tsv(self, items: List[Dict], output: Path, options: ExportOptions):
         """导出TSV格式"""
         # 与 CSV 分支同一格：`tsv` 是 `POST /api/data/export` 打得到的格式，静默不写就是假成功。
-        from .validation import sheet_text_row  # 同一条公式判据，见 A389 拍板①
+        from .validation import require_sheet_safe_fieldnames, sheet_text_row  # 表头与值共用同一族判据，见 A391 拍板②
         with open(output, 'w', encoding='utf-8', newline='') as f:
             if items:
-                writer = csv.DictWriter(f, fieldnames=csv_fieldnames(items), delimiter='\t')
+                writer = csv.DictWriter(f, fieldnames=require_sheet_safe_fieldnames(csv_fieldnames(items), "tsv"), delimiter='\t')
                 writer.writeheader()
                 writer.writerows([sheet_text_row(row) for row in items])
     

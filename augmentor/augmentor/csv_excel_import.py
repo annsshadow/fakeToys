@@ -17,6 +17,7 @@ import logging
 from typing import List, Dict, Optional, Union
 from pathlib import Path
 from .exceptions import DataValidationError, UnsupportedFormatError
+from .validation import require_sheet_safe_fieldnames
 
 logger = logging.getLogger(__name__)
 
@@ -142,6 +143,7 @@ def export_to_csv(items: List[Dict],
         if missing:
             raise DataValidationError(f"以下列不存在: {missing}")
         df = df[columns]
+    require_sheet_safe_fieldnames(df.columns, "csv")  # 表头判据见 A391 拍板②
     out = Path(file_path)
     out.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(out, index=False, encoding="utf-8-sig")

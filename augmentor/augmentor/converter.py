@@ -987,21 +987,21 @@ class DatasetConverter:
             container = self._infer_format(path)
             format = container if container in CONTAINER_FORMATS else "json"
 
-        from .validation import sheet_text_row  # 公式判据住 validation，见 A389 拍板①
+        from .validation import require_sheet_safe_fieldnames, sheet_text_row  # 表头判据见 A391 拍板②
         with open(path, 'w', encoding='utf-8', newline='') as f:
             if format == "jsonl":
                 for item in data:
                     f.write(json.dumps(item, ensure_ascii=False) + '\n')
             elif format == "csv":
                 if data:
-                    writer = csv.DictWriter(f, fieldnames=csv_fieldnames(data))
+                    writer = csv.DictWriter(f, fieldnames=require_sheet_safe_fieldnames(csv_fieldnames(data), "csv"))
                     writer.writeheader()
                     # 第 29 轮：生成器逐行转换，不再物化第二份全量列表 ——
                     # 10 万行导出的瞬时内存减半（DictWriter 支持迭代器）。
                     writer.writerows(sheet_text_row(row) for row in data)
             elif format == "tsv":
                 if data:
-                    writer = csv.DictWriter(f, fieldnames=csv_fieldnames(data),
+                    writer = csv.DictWriter(f, fieldnames=require_sheet_safe_fieldnames(csv_fieldnames(data), "tsv"),
                                             delimiter="\t")
                     writer.writeheader()
                     # 第 29 轮：生成器逐行转换，不再物化第二份全量列表 ——

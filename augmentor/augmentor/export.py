@@ -14,7 +14,7 @@ import json
 import csv
 
 from .atomic_write import atomic_write_json, atomic_write_text
-from .validation import require_within_dir, sheet_text_row
+from .validation import require_sheet_safe_fieldnames, require_within_dir, sheet_text_row
 import logging
 from typing import List, Dict, Optional
 from pathlib import Path
@@ -275,7 +275,7 @@ class Exporter:
             # 档同形：产物存在、读回 0 条；没有表头可抄是空集的既有事实，不谎造表头。
             with open(output_path, 'w', encoding='utf-8', newline='') as f:
                 if data:
-                    writer = csv.DictWriter(f, fieldnames=data[0].keys())
+                    writer = csv.DictWriter(f, fieldnames=require_sheet_safe_fieldnames(data[0].keys(), "csv"))
                     writer.writeheader()
                     writer.writerows([sheet_text_row(row) for row in data])
         else:
