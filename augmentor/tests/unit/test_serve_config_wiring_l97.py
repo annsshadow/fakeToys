@@ -25,6 +25,7 @@ import types
 from pathlib import Path
 
 import pytest
+from starlette.routing import Mount
 
 from augmentor.config import WebConfig
 from augmentor.exceptions import DataValidationError
@@ -64,7 +65,7 @@ def _run_main(tmp_path, monkeypatch, yaml_text):
 
     globs = runpy.run_path(str(MAIN), run_name="__main__")
     mounts = [(r.path, getattr(getattr(r, "app", None), "directory", None))
-              for r in globs["app"].routes if type(r).__name__ == "Mount"]
+              for r in globs["app"].routes if isinstance(r, Mount)]
     return captured, globs, mounts
 
 

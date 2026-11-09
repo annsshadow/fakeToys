@@ -9,8 +9,8 @@ r"""A366 / L277 守卫：备份名**只能占一个路径段**——「建得出
 
 - `POST /api/system/backups` (`name=sub/deep`) ⇒ **200**，回执 `backup_id="sub/deep"`；
 - `GET /api/system/backups` ⇒ 清单里**有这一行**，磁盘上 `sub\deep.json` 也在；
-- `DELETE /api/system/backups/sub/deep` ⇒ **404**，`POST …/sub/deep/restore` ⇒ **404**（这一档
-  回执码随部署形状分叉：`/` 上挂着静态兜底时两形都是 **405**，判据按 `app.routes` 现算，见 A361 与 `_phantom_code`）；
+- `DELETE /api/system/backups/sub/deep` ⇒ **404**，`POST …/sub/deep/restore` ⇒ **404**（A361①
+  之后 `/` 上的静态兜底只接非 API 路径，这两档都是路由表的 404，不再随部署形状分叉）；
 - 换成 percent 编码 `sub%2Fdeep` 两只入口**照样 404**（路由按原始路径切段，`{backup_id}` 只吃
   `[^/]+`，编码救不回来）。
 
@@ -88,17 +88,9 @@ def http(tmp_path, monkeypatch):
     return TestClient(app), root
 
 
-def _phantom_code(client) -> int:
-    """「按回执名寻不到址」那一档的回执码随部署形状分叉 ⇒ 按 `app.routes` 现算（A361 口径）
-
-    `/` 上挂着静态兜底（这一树构建过前端、`web/dist` 在场）时，未匹配的 API 路径会被那只
-    Mount 吃掉、非 GET 给出 **405**；没挂时才是路由表自己的 **404**。把任何一侧抄成常数，
-    等于把「作者机构建过 UI」写进判据——干净克隆与构建过的机器各红一边（L293 撞到的就是
-    这一形：合并进主工作树后同一份代码、同一个用例，只因那边有 `web/dist` 就从 404 变 405）。
-    现算不等于放宽：两档都只认一个码，判决由装配事实决定。
-    """
-    mounted = any(type(route).__name__ == "Mount" for route in client.app.routes)
-    return 405 if mounted else 404
+#: A361① 之后 `/` 上的静态兜底只接非 API 路径：未匹配的 `/api/...` 一律由路由表回 404，
+#: 不再随 `web/dist` 是否在场分叉。L277 写这一格时还按 `app.routes` 现算 405/404，现改回常数。
+PHANTOM_CODE = 404
 
 
 class TestThePhantomState:
@@ -118,7 +110,7 @@ class TestThePhantomState:
         assert (bdir / "sub" / "deep.json").is_file(), "摘了闸还不落盘 ⇒ 这一臂没在测落点"
         listed = client.get(CREATED, params={"backup_dir": str(bdir)})
         assert [b["backup_id"] for b in listed.json()["backups"]] == ["sub/deep"]
-        expected = _phantom_code(client)
+        expected = PHANTOM_CODE
         for wire in ("sub/deep", urllib.parse.quote("sub/deep", safe="")):
             assert client.delete(f"{CREATED}/{wire}",
                                  params={"backup_dir": str(bdir)}).status_code == expected
@@ -144,7 +136,9 @@ class TestTheHashIsStrandedOnTheWire:
 
     实测（Temp `probe_addressing.py`，raw 臂 / quoted 臂各用全新目录、互不遮蔽）：含 `#` 的名字
     创建 **200**、清单里躺着它，照回执原样拼 URL ⇒ restore **405**、delete **404**
-    （`#` 之后整段被客户端当 fragment 丢掉，服务端只收到前半截），而 `frag%23ment` 两只入口都
+    （`#` 之后整段被客户端当 fragment 丢掉，服务端只收到前半截：`POST …/frag` 撞上已知的
+    `DELETE …/{backup_id}` ⇒ 路由表部分匹配 405；`DELETE …/frag` 走到同一条 DELETE 但备份
+    不存在 ⇒ 404。A361① 之后 405 由路由表给出，不再由静态挂载代劳），而 `frag%23ment` 两只入口都
     **200**。⇒ 这份备份只对「记得编码」的客户端存在，对 `web/src` 这种直接插值的客户端是失踪的。
     前端那一半由 `encodeURIComponent` 补（存量 id 仍要能寻址），出生这一半由本闸拒。
     """
@@ -159,6 +153,10 @@ class TestTheHashIsStrandedOnTheWire:
         assert r.status_code == 200, r.text
         assert client.delete(f"{CREATED}/frag#ment",
                              params={"backup_dir": str(bdir)}).status_code == 404
+        assert client.post(f"{CREATED}/frag#ment/restore",
+                           json={"output_file": "out.json"},
+                           params={"backup_dir": str(bdir)}).status_code == 405
+        assert not (root / "out.json").exists(), "截断后的 restore 不该真的恢复出文件"
         listed = client.get(CREATED, params={"backup_dir": str(bdir)})
         assert [b["backup_id"] for b in listed.json()["backups"]] == ["frag#ment"], "裸路径删不掉却也不在清单里 ⇒ 测的不是失踪"
         assert client.delete(f"{CREATED}/frag%23ment",

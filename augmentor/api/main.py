@@ -231,8 +231,39 @@ _project_root = Path(__file__).parent.parent
 _static_dir = Path(_config.web.static_dir)
 if not _static_dir.is_absolute():
     _static_dir = _project_root / _static_dir
+
+# 与下方 422 兜底节同一处置：导入落在使用点，避免在文件头插行把账本引用的
+# `api/main.py:42-45` / `:197` / `:216` 整体平移。
+from starlette.routing import Match, Mount, get_route_path
+
+
+class _NonApiStaticMount(Mount):
+    """`/` 上的静态兜底只接非 API 路径（A361①）。
+
+    `Mount("/")` 会吃掉所有没被前面路由命中的路径，包括 `/api/...`；而 `StaticFiles`
+    对非 GET 一律回 405「Method Not Allowed」。于是端点名拼错的客户端拿到的是
+    「方法不允许」而不是「不存在」，且这个读数随 `web/dist` 是否在场漂移。
+    这里在**匹配阶段**就让 API 命名空间落空：未知 `/api` 路径回到路由表的 404，
+    已知路径的错误方法回到路由表的 405；非 API 路径仍由 `StaticFiles` 处理。
+    """
+
+    def matches(self, scope):
+        if scope["type"] in ("http", "websocket"):
+            path = get_route_path(scope)
+            if path == "/api" or path.startswith("/api/"):
+                return Match.NONE, {}
+        return super().matches(scope)
+
+
 if _static_dir.is_dir():
-    app.mount("/", StaticFiles(directory=str(_static_dir), html=True), name="static")
+    # `app.mount()` 内部固定构造 `Mount`，收不了子类 ⇒ 按它的实现直接往路由表尾部追加。
+    app.router.routes.append(
+        _NonApiStaticMount(
+            "/",
+            app=StaticFiles(directory=str(_static_dir), html=True),
+            name="static",
+        )
+    )
 else:
     # 不挂载本身是既有行为（没构建就不该 500），但「配了目录却不存在」以前
     # 与「压根没配」在日志里一模一样都是白屏，这里补一条点名路径的告警。

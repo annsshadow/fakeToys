@@ -41,8 +41,8 @@
 146 格里这一族仍 500 的只剩一枚：`POST /api/versions/diff` 的不存在 id。它与本轮那一形不同
 （异常是 `VersionError`，`raise_boundary_error` 的放行名单按 `DataValidationError` 判），
 `TestResidualMembersOfTheSameFunnel` 把它按观测行为钉成现量而不顺手改——拍「哪一类域错误进 400」
-是 **A280** 的事。同一类里另一格是 `dataset_filter` 那一臂：那条路径上没有端点，非 GET 的码
-由静态挂载决定（见 `PHANTOM_CODE` 的注释），所以它按 `app.routes` 现算而不是抄 405。
+是 **A280** 的事。同一类里另一格是 `dataset_filter` 那一臂：那条路径上没有端点，A361① 之后 `/` 上的
+静态兜底不再接 `/api` 前缀，未知 API 路径的非 GET 也回到路由表的 404（见 `PHANTOM_CODE`）。
 
 **为什么零 parametrize**：`test_parametrize_ids_l97` 与 `test_parametrize_blind_face_l98`
 把全仓 parametrize 三面冻成现量数，本守卫走名册字典循环，那两把尺子一格未动。
@@ -108,11 +108,10 @@ BLIND_ROSTER = {
 }
 
 #: `POST /api/dataset/filter` 不是这一族的端点，而是「本轮一格未动」那一档的锚：`/api/dataset/*`
-#: 上压根没有 `filter` 这一条，非 GET 请求拿到的码由 `api/main.py:216` 那条静态挂载决定——挂载在
-#: （`web/dist` 存在）⇒ `StaticFiles` 部分匹配给出 405，挂载不在 ⇒ 404。把 405 写成常数等于把
-#: 「作者机构建过前端」写进判据，干净克隆里会自己变红，所以这一格按 `app.routes` 现算而不是抄读数。
-STATIC_MOUNTED = any(type(route).__name__ == "Mount" for route in app.routes)
-PHANTOM_CODE = "405" if STATIC_MOUNTED else "404"
+#: 上压根没有 `filter` 这一条。A361① 之后 `/` 上的静态兜底改由 `api/main.py:240`（`_NonApiStaticMount`）
+#: 只接非 API 路径，未知 `/api` 路径一律由路由表回 404——不再随 `web/dist` 是否在场漂移，
+#: 所以这一格可以抄成常数。
+PHANTOM_CODE = "404"
 
 #: 现量表：`(探针臂名) -> (方法, 路径模板, 退化那一形的期望码, 合法那一形的期望码, 点名字段)`。
 #: 路径模板里的 `{fn}` 换成语料文件名。退化那一形 = 在场且非字符串（四份语料），
@@ -597,8 +596,8 @@ class TestResidualMembersOfTheSameFunnel:
         _write_corpora(tmp_path)
         self.client = TestClient(app, raise_server_exceptions=False)
 
-    def test_the_phantom_arm_reads_its_code_from_the_app(self, tmp_path):
-        """`/api/dataset/filter` 与「任何不存在的 POST 路径」同码 ⇒ 那一格量的不是判决而是挂载形状"""
+    def test_the_phantom_arm_matches_any_unknown_api_path(self, tmp_path):
+        """`/api/dataset/filter` 与「任何不存在的 POST 路径」同码 ⇒ 未知 API 路径一律 404，不再随挂载漂移"""
         phantom = self.client.post("/api/dataset/filter", json={"input_file": "numeric.json"})
         unknown = self.client.post("/api/definitely-not-a-path-xyz", json={})
         assert phantom.status_code == unknown.status_code == int(PHANTOM_CODE)

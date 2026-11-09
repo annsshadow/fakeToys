@@ -140,7 +140,8 @@ class TestTheFourFetchersMatchTheContract:
             body = fetcher_body(name)
             # 服务层的路径不带 `/api` 前缀（那一份住在 `baseURL` 里，l224 从源码读它）
             # L277（A366）：路径段改走 `encodeURIComponent`（存量名字里可能有 `#`，裸插值会被当
-            # fragment 丢掉 ⇒ restore 405 / delete 404），所以这里找的是编码后的那一种插值
+            # fragment 丢掉 ⇒ restore 405 / delete 404；A361① 之后 405 由路由表部分匹配给出），
+            # 所以这里找的是编码后的那一种插值
             literal = path.replace("{}", "${encodeURIComponent(backupId)}").removeprefix("/api")
             assert f"api.{verb.lower()}(" in body, f"{name} 不是 {verb} 调用"
             assert literal in body, f"{name} 里没有 {path}（找的是 {literal}）"
