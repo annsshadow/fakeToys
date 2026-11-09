@@ -611,12 +611,16 @@ class CheckpointManager:
         return total / count if count else 0.0
     
     def get_remaining_indices(self,
-                             checkpoint: Optional[CheckpointData] = None) -> List[int]:
+                             checkpoint: Optional[CheckpointData] = None,
+                             actual_length: Optional[int] = None) -> List[int]:
         """获取未处理的索引
 
         Args:
             checkpoint: 要问的那一份断点；`None` 沿用当前断点（并发运行里传自己那份，
                 否则问到的可能是别人的总条目数）
+            actual_length: 本轮实际输入长度。与断点上的 `total_items` 校平：
+                - 输入变短时防止越界 IndexErrors（A406①）
+                - 输入变长时不遗漏新增尾巴（A406②）
 
         Returns:
             未处理的索引列表
@@ -626,7 +630,12 @@ class CheckpointManager:
             return []
 
         checkpoint = ck
-        all_indices = set(range(checkpoint.total_items))
+        # A406：以实际输入为全集权威。断点的 total_items 只是上一轮的记录，
+        # 可能与本轮不同（用户重跑时改了数据量）。用 min() 确保不越界、
+        # 同时让"变长就补尾巴"的逻辑成立——若只用 total_items，输入变长时
+        # 新增的尾巴永远不会被处理。
+        effective_total = min(checkpoint.total_items, actual_length) if actual_length is not None else checkpoint.total_items
+        all_indices = set(range(effective_total))
         processed = set(checkpoint.completed_indices + checkpoint.failed_indices)
 
         return sorted(list(all_indices - processed))

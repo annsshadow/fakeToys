@@ -515,7 +515,8 @@ class AugmentorPipeline:
             ckpt = self.checkpoint_manager.load_checkpoint(task_id)
             if ckpt is None:
                 ckpt = self.checkpoint_manager.create_checkpoint(task_id, len(items))
-            remaining_indices = self.checkpoint_manager.get_remaining_indices(ckpt)
+            # A406：传入实际长度用于断点校平
+            remaining_indices = self.checkpoint_manager.get_remaining_indices(ckpt, actual_length=len(items))
             skipped = len(items) - len(remaining_indices)
             if skipped > 0:
                 logger.info(f"检测到断点，跳过 {skipped} 条已完成数据")
@@ -976,7 +977,8 @@ class AugmentorPipeline:
             ckpt = self.checkpoint_manager.load_checkpoint(task_id)
             if ckpt is None:
                 ckpt = self.checkpoint_manager.create_checkpoint(task_id, len(items))
-            remaining_indices = self.checkpoint_manager.get_remaining_indices(ckpt)
+            # A406：传入实际长度用于断点校平
+            remaining_indices = self.checkpoint_manager.get_remaining_indices(ckpt, actual_length=len(items))
             skipped = len(items) - len(remaining_indices)
             if skipped > 0:
                 logger.info(f"检测到断点，跳过 {skipped} 条已完成数据")
