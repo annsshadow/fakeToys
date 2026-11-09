@@ -13,7 +13,7 @@ A406: `CheckpointManager.get_remaining_indices`把盘上断点的 `total_items`�
    `get_remaining_indices()` 返回`[2,3,4,5]`，新增尾部 **6..9 四条永不进入处理集合**
 
 ### 改后形状（期望行为）
-以 `min(total_items, actual_length)` 为全集权威：
+以本轮 `actual_length` 为全集权威（断点 `total_items` 只是上一轮记录）：
 1. 变短时：返回剩余有效下标，不越界
 2. 变长时：补齐新增尾巴的下标
 
@@ -169,7 +169,8 @@ class TestInputLongerThanCheckpointL295:
             quality_scores={},
             processed_items=2,
             start_time=0.0,
-            last_update_time=0.0
+            last_update_time=0.0,
+            failed_items=0
         )
         
         # 今轮新增到 10 条
@@ -194,7 +195,8 @@ class TestInputLongerThanCheckpointL295:
             quality_scores={},
             processed_items=4,
             start_time=0.0,
-            last_update_time=0.0
+            last_update_time=0.0,
+            failed_items=0
         )
         
         actual_length = 10
@@ -283,7 +285,8 @@ class TestEdgeCasesL295:
             quality_scores={},
             processed_items=2,
             start_time=0.0,
-            last_update_time=0.0
+            last_update_time=0.0,
+            failed_items=0
         )
         
         remaining = mgr.get_remaining_indices(ckpt, actual_length=5)
@@ -301,14 +304,15 @@ class TestEdgeCasesL295:
             quality_scores={},
             processed_items=0,
             start_time=0.0,
-            last_update_time=0.0
+            last_update_time=0.0,
+            failed_items=0
         )
         
         remaining = mgr.get_remaining_indices(ckpt, actual_length=0)
         assert remaining == []
     
     def test_actual_length_extremely_long(self, tmp_path):
-        """实际长度远大于断点 → 以断点为准（不创造新任务）"""
+        """实际长度远大于断点 → 以本轮实际输入为准，新增尾巴全部纳入"""
         mgr = make_manager(tmp_path)
         
         ckpt = CheckpointData(
@@ -319,13 +323,14 @@ class TestEdgeCasesL295:
             quality_scores={},
             processed_items=0,
             start_time=0.0,
-            last_update_time=0.0
+            last_update_time=0.0,
+            failed_items=0
         )
         
-        # 即使说 100 条，断点只有 5 条 → 最多返回 5 条
+        # 断点只有 5 条，本轮实际 100 条 → 全集按 100 条算
         remaining = mgr.get_remaining_indices(ckpt, actual_length=100)
-        assert remaining == [0, 1, 2, 3, 4]
-        assert max(remaining) < ckpt.total_items
+        assert remaining == list(range(100))
+        assert max(remaining) == 99
     
     def test_all_items_completed(self, tmp_path):
         """全部完成 → 空列表"""
@@ -339,7 +344,8 @@ class TestEdgeCasesL295:
             quality_scores={},
             processed_items=5,
             start_time=0.0,
-            last_update_time=0.0
+            last_update_time=0.0,
+            failed_items=0
         )
         
         remaining = mgr.get_remaining_indices(ckpt, actual_length=5)
@@ -357,7 +363,8 @@ class TestEdgeCasesL295:
             quality_scores={},
             processed_items=6,
             start_time=0.0,
-            last_update_time=0.0
+            last_update_time=0.0,
+            failed_items=0
         )
         
         remaining = mgr.get_remaining_indices(ckpt, actual_length=10)
@@ -384,7 +391,8 @@ class TestBackwardsCompatibilityL295:
             quality_scores={},
             processed_items=4,
             start_time=0.0,
-            last_update_time=0.0
+            last_update_time=0.0,
+            failed_items=0
         )
         
         # 旧风格调用
@@ -403,7 +411,8 @@ class TestBackwardsCompatibilityL295:
             quality_scores={},
             processed_items=2,
             start_time=0.0,
-            last_update_time=0.0
+            last_update_time=0.0,
+            failed_items=0
         )
         
         with_none = mgr.get_remaining_indices(ckpt, actual_length=None)
@@ -411,6 +420,41 @@ class TestBackwardsCompatibilityL295:
         
         assert with_none == without_arg, \
             "actual_length=None should behave like not passing the argument"
+
+
+class TestPipelineWiringL295:
+    """接线面：同步与异步两个入口都必须把本轮 len(items) 交给校平函数
+
+    只测 `get_remaining_indices` 本身，抓不到「调用点忘了传 actual_length」
+    这一类回归；A406 的病灶正是两个入口同形，因此把接线也钉住。
+    """
+
+    def test_both_entries_pass_actual_length(self):
+        import ast
+
+        src = Path(__file__).parent.parent.parent / "augmentor" / "pipeline.py"
+        tree = ast.parse(src.read_text(encoding="utf-8"))
+
+        calls = [
+            node for node in ast.walk(tree)
+            if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "get_remaining_indices"
+        ]
+        assert len(calls) == 2, f"expected 2 call sites, got {len(calls)}"
+
+        for call in calls:
+            kwargs = {kw.arg: kw.value for kw in call.keywords}
+            assert "actual_length" in kwargs, ast.dump(call)
+            value = kwargs["actual_length"]
+            assert (
+                isinstance(value, ast.Call)
+                and isinstance(value.func, ast.Name)
+                and value.func.id == "len"
+            ), ast.dump(value)
+            assert len(value.args) == 1, ast.dump(value)
+            arg = value.args[0]
+            assert isinstance(arg, ast.Name) and arg.id == "items", ast.dump(arg)
 
 
 if __name__ == "__main__":

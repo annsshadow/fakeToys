@@ -156,7 +156,7 @@ class TestResumeKeepsPriorProducts:
             encoding="utf-8")
 
         monkeypatch.setattr(CheckpointManager, "get_remaining_indices",
-                            lambda self, checkpoint=None: [0, 1, 2])
+                            lambda self, checkpoint=None, actual_length=None: [0, 1, 2])
 
         calls = []
         _install_spy(monkeypatch, calls)

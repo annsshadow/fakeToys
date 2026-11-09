@@ -630,11 +630,12 @@ class CheckpointManager:
             return []
 
         checkpoint = ck
-        # A406：以实际输入为全集权威。断点的 total_items 只是上一轮的记录，
-        # 可能与本轮不同（用户重跑时改了数据量）。用 min() 确保不越界、
-        # 同时让"变长就补尾巴"的逻辑成立——若只用 total_items，输入变长时
-        # 新增的尾巴永远不会被处理。
-        effective_total = min(checkpoint.total_items, actual_length) if actual_length is not None else checkpoint.total_items
+        # A406：本轮实际输入才是全集权威。断点的 total_items 只是上一轮的记录，
+        # 用户重跑时可能改了数据量，两半都要按本轮校平：
+        # - 输入变短：只取 0..actual_length-1，避免 items[idx] 越界（A406①）
+        # - 输入变长：把新增尾巴一并纳入处理集合（A406②）
+        # 不传 actual_length 时保持旧行为，兼容直接调用方。
+        effective_total = actual_length if actual_length is not None else checkpoint.total_items
         all_indices = set(range(effective_total))
         processed = set(checkpoint.completed_indices + checkpoint.failed_indices)
 
