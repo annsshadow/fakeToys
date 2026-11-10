@@ -425,18 +425,25 @@ class VersioningConfig:
     enabled: bool = True
     storage_dir: str = "data/versions"
     auto_snapshot: bool = True
+    #: A409：**保留份数**（不是删除份数）——自动快照这一路每跑一次增强就落一份
+    #: **全量副本**，而这一族此前没有任何一侧封顶 ⇒ N 次增强在盘上留 N 份全量
+    #: （实测 5 次 × 200 条 ⇒ 5 份完整副本）。封顶语义与备份族的 `max_backups`
+    #: 同款：超出时删最旧的（删旧不拒新——拒新会让自动打点静默失败）。
+    max_versions: int = 10
 
     def __post_init__(self):
         """取值判据（A140 余 11 节 / L154）：目录名非空、两个开关是布尔。
 
         改前 `storage_dir: ''` 构造放行，`VersionManager` 拿 `Path('')` 去 mkdir 落在当前目录；
         `auto_snapshot: 'no'`（加引号档）在 `pipeline.py` 的 `if` 上恒真（`require_bool`
-        docstring 同档）。
+        docstring 同档）。`max_versions` 是份数，0 与负数都不放行（`require_count`
+        下界 1）：「保留 0 份」与「留 10 份」无从分辨，而后果是不可逆删档。
         """
         _reject_null_fields('versioning', self)
         require_bool('versioning.enabled', self.enabled)
         require_string('versioning.storage_dir', self.storage_dir)
         require_bool('versioning.auto_snapshot', self.auto_snapshot)
+        require_count('versioning.max_versions', self.max_versions, minimum=1)
 
 
 @dataclass

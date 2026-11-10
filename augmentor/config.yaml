@@ -178,6 +178,9 @@ versioning:
   # 自动快照（增强完成后）
   auto_snapshot: true
 
+  # 自动快照保留份数（不是删除份数）：超出时删最旧的，保留最新的这 N 份
+  max_versions: 10
+
 # 主动学习配置
 sampler:
   # 启用主动学习选样

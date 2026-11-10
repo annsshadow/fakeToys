@@ -141,8 +141,12 @@ class AugmentorPipeline:
         )
         
         # 版本管理器
+        # A409：`max_versions` 是**保留份数**——自动快照这一路每跑一次增强就落
+        # 一份全量副本，而这一族此前没有任何一侧封顶 ⇒ N 次增强在盘上留 N 份
+        # 全量。封顶由 `VersionManager` 自己负责（谁建版本谁收旧）。
         self.version_manager = VersionManager(
-            storage_dir=self.config.versioning.storage_dir
+            storage_dir=self.config.versioning.storage_dir,
+            max_versions=self.config.versioning.max_versions
         )
         
         # 主动学习选样器

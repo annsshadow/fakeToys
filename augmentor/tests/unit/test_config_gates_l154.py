@@ -104,18 +104,22 @@ class TestTheA140CensusIsInverted:
     def test_the_key_census_is_29_plus_the_l220_key(self):
         """逐节键数现量：A140 那批 29 只 + L220 补的 `evaluation.generated_field` = 30
 
+        **L305 起 31**：新增 A409 的 `versioning.max_versions`（自动快照保留份数）⇒
+        `versioning` 节 3 → 4 只。
+
         改前 `ungated_keys` 现量 29（A140 行钉在 Temp/l82q/ungated_census.json）；这里按
         `dataclasses.fields` 推导而不是手抄，删掉任何一节的字段本条就红。差值单独归因：
         那只 4 不是 A140 名单被改宽，而是 L220 往 `evaluation` 节新增了一只**有产品读者**
         的键——凑数用的死键不许进这一档（普查守卫 `test_config_reader_census_l217` 会把它
-        抓到零读者名单里）。
+        抓到零读者名单里）。L305 那只同理：它**有产品读者**（`versioning.VersionManager`
+        的 `max_versions` 实参），不是凑数键。
         """
         counts = {s: len(dataclasses.fields(cls)) for s, cls in SECTIONS.items()}
-        assert counts == {"context": 2, "versioning": 3, "sampler": 2,
+        assert counts == {"context": 2, "versioning": 4, "sampler": 2,
                           "expander": 2, "tracker": 2, "visualization": 2,
                           "multilingual": 4, "evaluation": 4, "benchmark": 3,
                           "active_learning": 4, "frameworks": 2}, counts
-        assert sum(counts.values()) == 30
+        assert sum(counts.values()) == 31
 
     def test_every_spec_row_shapes_the_runtime_type(self):
         """规格表与运行时判据**同档**：int 行只声明类型（L157 / B227 起判决维

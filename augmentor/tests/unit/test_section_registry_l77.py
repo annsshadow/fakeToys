@@ -387,7 +387,10 @@ class TestEveryWrittenFieldLands:
         # 69 → 70：L220 的 `evaluation.generated_field`（与同节 `reference_field` 对称的
         # 那只新键）。同一口径：落地档自动长出并判绿（`evaluation.generated_field` 那一条
         # 真写了 YAML、真落进 `EvaluationConfig`、值与出厂 `"output"` 不同），红的只是计数。
-        assert total == 70, total
+        # 70 → 71：L305 的 `versioning.max_versions`（自动快照保留份数）。同一口径：落地档
+        # 自动长出并判绿（`_auto_value` 对 int 给 `当前 + 1` ⇒ 11，与出厂 10 不同且过
+        # `require_count(minimum=1)` 下界），红的只是这一格计数。
+        assert total == 71, total
         unknown = [(s, f) for s, f, _ in WRITTEN if (s, f) not in {
             (sec, fld.name) for sec, cls in SECTION_CLASSES.items()
             for fld in dataclasses.fields(cls) if fld.init}]

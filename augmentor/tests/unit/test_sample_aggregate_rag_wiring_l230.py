@@ -64,7 +64,7 @@
   读起来像跨源比对，实测同源自比同样触发，且这些条目**不进产物**。
 * **RAG 那一档站着第四份默认（A295）**：`fmt = request.format or rag_config.default_format or
   "langchain"`（`api/routes/dataset_tools.py:927`）。请求默认 `None`、config 默认 `"llamaindex"`
-  （`augmentor/config.py:533`）、SDK 签名默认也是 `"llamaindex"`（`augmentor/rag.py:187`），
+  （`augmentor/config.py:540`）、SDK 签名默认也是 `"llamaindex"`（`augmentor/rag.py:187`），
   只有路由那第三个字面量是 `"langchain"`，且只在 config 被设成空串时才轮得到它。
   另外实测：请求里**多送** `chunk_size` 一格 ⇒ 200 且产物逐字相同（请求模型没这一格，
   两个切块旋钮只从服务端配置读，`api/routes/dataset_tools.py:929`）；`format` 送空串与省略
@@ -912,7 +912,7 @@ class TestTheDocRowsSayWhatTheEndpointDoes:
 
         row = doc_row(API_MD, "`/api/dataset/rag` | 转换为 RAG 格式 | **写盘变换类**")
         assert "（出厂默认 `langchain`）" not in row, "被实测推翻的那个默认值还留在文档里"
-        assert "`llamaindex`" in row and "augmentor/config.py:533" in row and "A295" in row
+        assert "`llamaindex`" in row and "augmentor/config.py:540" in row and "A295" in row
         assert AppConfig().rag.default_format == "llamaindex"
 
         http, _root, _outside, _disk = http_with_dataset_tools

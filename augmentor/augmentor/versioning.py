@@ -49,16 +49,24 @@ class DiffResult:
 
 class VersionManager:
     """数据版本管理器"""
-    
-    def __init__(self, storage_dir: str = "data/versions"):
+
+    def __init__(self, storage_dir: str = "data/versions", max_versions: int = 10):
         """初始化版本管理器
-        
+
         Args:
             storage_dir: 版本存储目录
+            max_versions: **保留份数**（不是删除份数）—— A409：自动快照这一路每
+                跑一次增强就落一份**全量副本**，而这一族此前没有任何一侧封顶，
+                于是 N 次增强在盘上留 N 份全量（实测 5 次 × 200 条 ⇒ 5 份完整
+                副本）。这一格是**保留份数**语义，与备份族的 `max_backups` 同款
+                口径：超出时删最旧的（删旧不拒新，见 `prune_versions`）。
         """
+        # 判参排在 mkdir **之前**：坏参数不许在磁盘上留下任何东西（L44 立的口径）
+        require_count("max_versions", max_versions, minimum=1)
         self.storage_dir = Path(storage_dir)
         self.storage_dir.mkdir(parents=True, exist_ok=True)
-        
+        self.max_versions = max_versions
+
         self._current_symlink = self.storage_dir / "current"
         self._history_path = self.storage_dir / "history.jsonl"
     
@@ -166,6 +174,8 @@ class VersionManager:
         # `_clear_current_link` 把它 unlink 掉，Windows 当场拒绝访问（24 支并发实测 1 支
         # PermissionError 而整支请求变 500，它已建好的版本目录却留在盘上，谁都不认它）。
         with path_lock(self.storage_dir):
+            # A409：建版**之前**的 current 是要保护的那一版（见 `prune_versions`）
+            previous_current = self.get_current_version()
             version_id = self._generate_version_id()
             version_dir = self._get_version_dir(version_id)
             version_dir.mkdir(parents=True, exist_ok=True)
@@ -210,7 +220,67 @@ class VersionManager:
                 "label": version_info.label,
                 "item_count": version_info.item_count
             })
+            # A409：自动快照这一路每跑一次就落一份**全量副本**，而这一族此前
+            # 没有任何一侧封顶 ⇒ N 次增强在盘上留 N 份全量。封顶在这里做
+            # （建完新版本之后），而不是在 pipeline 侧另开一条路：谁建版本谁
+            # 负责收旧，免得「自动快照封了、手工建的版本无限堆」这一族只治一半。
+            # **要保护的是「建这一版之前的 current」**：建版过程已经把 current
+            # 改指到新版本了，此刻再读 current 读到的是新版本 ⇒ 用户回滚到
+            # 旧版本后跑一次增强，那份被回滚指着的版本会被当成「最旧」删掉，
+            # current 就成了孤儿指针（读侧仍报得出那个 id，目录却没了）。
+            self.prune_versions(protect=previous_current)
         return version_info
+
+    def prune_versions(self, protect: Optional[str] = None) -> int:
+        """按保留份数删掉最旧的版本，返回删除份数
+
+        **保留份数语义**（`max_versions` 是「留几份」而不是「删几份」），
+        与备份族的 `max_backups` 同款口径：超出时**删旧不拒新**——刚建的那一
+        份永远在保留集里，被删的永远是最旧的。理由：这一族的用户动作是「增强
+        结束自动打点」，拒新会让打点静默失败（而调用方拿不到任何信号），
+        删旧则是可逆的（用户仍可从 history 知道发生过什么）。
+
+        `protect` 是**要额外保护、不许删的那一版**（`create_version` 传的是建版
+        之前的 current）。它自己占掉一个保留名额 ⇒ 保留集恒为 N 份。
+
+        锁与 `create_version` 同一把（`path_lock(self.storage_dir)`）：判当前
+        版本与动手删必须在同一趟里，否则并发下会把刚被设成 current 的那一版
+        当成「最旧」删掉（L273 / A397 那一族的同款口径）。
+
+        Returns:
+            删除的版本份数（0 表示没超上限）
+        """
+        with path_lock(self.storage_dir):
+            versions = self.list_versions()
+            if len(versions) <= self.max_versions:
+                return 0
+
+            # 要保护的那一版：`protect`（建版之前的 current）优先；`protect` 为
+            # None 时退回「此刻的 current」。两者都是**不许删**的那一版。
+            protected = protect if protect is not None else self.get_current_version()
+            # `list_versions` 已按 created_at 倒序 ⇒ 末尾那些是最旧的。
+            # **受保护的那一版先从待删集里摘出去**：删掉它会让 `current` 指向不存在的
+            # 目录，而读侧 `get_current_version` 仍报得出那个 id（孤儿指针）。
+            # 保留集 = 受保护的那一版 + 最新的 (N-1) 份 ⇒ 待删 = 其余。受保护的
+            # 那一版自己**占掉一个保留名额**，否则保留集是 N+1 份，封顶就没封住。
+            candidates = [v for v in versions if v.version_id != protected]
+            keep_others = max(0, self.max_versions - 1)
+            to_delete = candidates[keep_others:]
+            deleted = 0
+            for info in to_delete:
+                version_dir = self._get_version_dir(info.version_id)
+                if not version_dir.exists():
+                    continue
+                shutil.rmtree(version_dir)
+                self._log_history("prune", info.version_id, {
+                    "kept": self.max_versions
+                })
+                deleted += 1
+
+            if deleted:
+                logger.info("版本封顶清理: 删除 %d 份，保留最新 %d 份",
+                            deleted, self.max_versions)
+            return deleted
     
     def load_version(self, version_id: str) -> List[Dict]:
         """加载版本数据

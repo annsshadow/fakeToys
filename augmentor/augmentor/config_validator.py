@@ -275,6 +275,10 @@ class ConfigValidator:
         "versioning.enabled": {"type": bool},
         "versioning.storage_dir": {"type": str, "non_empty": True},
         "versioning.auto_snapshot": {"type": bool},
+        # A409：保留份数（int）。这一族**不判下界**——判决维在运行时
+        # `require_count(..., minimum=1)` 那侧，静态面只声明类型（L157 / B227
+        # 起判决维撤出规格表，下界由回放 + 运行时调用点字面量承担）。
+        "versioning.max_versions": {"type": int},
         "sampler": {"type": dict},
         "sampler.enabled": {"type": bool},
         "sampler.dimensions": {"type": list, "items": str},

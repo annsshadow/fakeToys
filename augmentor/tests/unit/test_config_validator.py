@@ -733,10 +733,13 @@ class TestWaitBudgetKnobSurface:
         `multilingual.translate_batch_size` / `active_learning.batch_size` /
         `active_learning.max_iterations`（`min: 1` 与运行时 `require_count(minimum=1)`
         同档，同「承诺兑现」口径）。
+        L305 起 22：新增的是 A409 的 `versioning.max_versions`（自动快照保留份数，
+        int 规格；下界由运行时 `require_count(minimum=1)` 那一侧承担，静态面只声明
+        类型——与 L157 / B227「判决维撤出规格表」同档）。
         """
         numeric = [p for p, s in ConfigValidator.KNOWN_FIELDS.items()
                    if s.get("type") in (int, float)]
-        assert len(numeric) == 21, "新增数值规格键会自动进入本断言"
+        assert len(numeric) == 22, "新增数值规格键会自动进入本断言"
         for path in numeric:
             hits = [m for p_, m in self._errors_at(path) if p_ == path]
             assert hits and "类型错误" in hits[0], (path, hits)

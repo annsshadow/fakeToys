@@ -348,11 +348,18 @@ def test_concurrent_versioning_create_keeps_every_version(tmp_path):
 
     改前重复版本号让后者覆盖前者的快照，且 `current.txt` 的「判存在再清」撞上另一支的
     写 ⇒ `PermissionError` 落 500 并留下孤儿目录。
+
+    **L305 起这一支显式把封顶开到 24**：这一支量的是「并发下版本**一个都不许丢**」
+    （版本号不重 / 目录不丢 / 标签不蒸发），而 A409 的封顶（出厂保留 10 份、按「删旧不拒
+    新」删掉最旧的）**按设计**会让 24 份只剩 10 份 ⇒ 两条口径在这一支上直接对撞。
+    处置是**把封顶开到够用的值**（`max_versions=24`），让这一支继续量它要量的那一维
+    （并发正确性），封顶那一维由 `tests/unit/test_snapshot_cap_l305.py` 单独量。
+    两个口径合起来看才是完整的：封顶开着 ⇒ 并发不丢；封顶关着 ⇒ 只留 N 份。
     """
     from augmentor.versioning import VersionManager
 
     vdir = tmp_path / "versions"
-    vm = VersionManager(str(vdir))
+    vm = VersionManager(str(vdir), max_versions=24)
     with ThreadPoolExecutor(max_workers=24) as pool:
         infos = list(pool.map(lambda i: vm.create_version(ITEMS, label=f"L{i}"), range(24)))
     ids = [x.version_id for x in infos]

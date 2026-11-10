@@ -10,7 +10,7 @@
 - ``api/routes/vector.py:150`` —— ``except HTTPException: raise`` 那一支的 ``raise``
 - ``api/routes/multimodal.py:102`` 与 ``:113`` —— 「两级都空 ⇒ 交给处理器内置默认」
 - ``augmentor/semantic.py:94`` —— 空文本清单的早退
-- ``augmentor/versioning.py:283-284`` —— 当前版本指针**是软链接**那一形
+- ``augmentor/versioning.py:353-354`` —— 当前版本指针**是软链接**那一形
 - ``augmentor/data/image.py:135-136`` —— Pillow 在场时的解析路径
 
 **为什么这不是凑覆盖率**：``except HTTPException: raise`` 是本轮守卫
