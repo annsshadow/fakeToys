@@ -447,6 +447,10 @@ export interface MultimodalScanResponse {
   modality_counts: CountDistribution
   error_count: number
   errors: string[]
+  /** A401：被吃掉的东西的条数（同名同模态互相覆盖 + 子目录整只跳过） */
+  warning_count: number
+  /** A401：逐条点名（哪一只被哪一只覆盖、哪个子目录没扫） */
+  warnings: string[]
   records: MultimodalRecord[]
 }
 
@@ -1090,7 +1094,7 @@ export interface ConvertResponse {
  *
  * `removed_duplicates` 只在 `deduplicate` 为真时才可能非零（实测同一份文件合并两次：
  * 开去重 `total_output 5 / removed 5`，关去重 `10 / 0`）。SDK 还另外产出一个
- * `truncated_by_max_items`（`augmentor/dataset_ops.py:220`），但响应模型没有声明它，
+ * `truncated_by_max_items`（`augmentor/dataset_ops.py:229`），但响应模型没有声明它，
  * FastAPI 按模型字段过滤 ⇒ 线上永远看不到这一格（账本 **A290**）。
  */
 export interface MergeResponse {

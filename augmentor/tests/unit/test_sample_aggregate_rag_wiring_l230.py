@@ -16,7 +16,7 @@
 「写到哪、写了多少」。仓外探针（三支，跑完即删）在真实中间件链上量到的形状，逐条是下面这些判据的依据：
 
 * **三份清单各有各的权威，且都不是「后端有一份常量」那种好办形状**：采样方法三项住在
-  `DatasetOperations.sample()` 的 if/elif 分发里（`augmentor/dataset_ops.py:316`、`:318`、`:321`），
+  `DatasetOperations.sample()` 的 if/elif 分发里（`augmentor/dataset_ops.py:325`、`:327`、`:330`），
   聚合策略四项住在 `DataAggregator.aggregate()` 的同形分发里（`augmentor/aggregator.py:262` 起），
   RAG 格式三项才是真常量（`augmentor/rag.py:17`，并被 `augmentor/config.py:120` 的 `RAG_FORMATS`
   引走）。前两处没有常量可引 ⇒ 本文件用 AST 把分发里逐个 `== "字面量"` 抓回来与页面逐项相等，
@@ -25,7 +25,7 @@
   本文件对这些引用只作散文说明，判据一律走 AST / 字符串，不数行号（l217 那把尺子把同一缺陷类
   量过三次），所以订正到当前读数而不是删掉。
 * **`ratio` 的两维现在都判死，三种 method 一种结局（A292 的这一半在 L277 收口）**：
-  `size` 那一格一直有 `require_count`（`augmentor/dataset_ops.py:291`），三支一致 400
+  `size` 那一格一直有 `require_count`（`augmentor/dataset_ops.py:300`），三支一致 400
   「size 必须是不小于 0 的整数，当前是 -1」；`ratio` 那一格（`:300`）此前只算
   `int(len(items) * ratio)`，**非有限那一维**由 L272 补上、**范围那一维**由 L277 补上
   （改用 `require_ratio("ratio", config.ratio)` 的默认 0-1 界）。
@@ -39,12 +39,12 @@
   是因为「同一越界比例三种结局」这个洞的形状从来不是契约。
   `ratio=0.0001` 仍是合法档：三支一致 200 交 0 条（`int()` 归零，被 `:308` 的短路接住，
   不是三种异常）。
-* **分层键取字段值的前 10 个字符（A296）**：`augmentor/dataset_ops.py:357` 是 `value[:10]`。
+* **分层键取字段值的前 10 个字符（A296）**：`augmentor/dataset_ops.py:366` 是 `value[:10]`。
   决定性的一格（探针第一版**量歪过**，见下面「被推翻的想象」）：三条 `AAAAAAAAAA甲` /
   `AAAAAAAAAA乙` / `BBBBBBBBBB丙` 取 2 条、`seed=7` ⇒ 落盘 `['AAAAAAAAAA乙', 'BBBBBBBBBB丙']`。
   若不折叠，三组各一条、配额该是 `[1,1,0]` ⇒ 落盘甲乙、**丙不在内**。幽灵分层键（字段名不存在）
   实测 **200**，全部塌成一个 `"empty"` 组，取 8 条照给 8 条；空字符串键才是 400
-  「分层采样需要非空的 stratify_key」（`augmentor/dataset_ops.py:350`）。
+  「分层采样需要非空的 stratify_key」（`augmentor/dataset_ops.py:379`）。
 * **聚合端点比 SDK 面窄三个旋钮，且不可复现（A293）**：路由是 `DataAggregator()` 无参构造
   （`api/routes/dataset_tools.py:887`），SDK 的 `key_fields` / `value_fields` / `random_state`
   三个都不可设（`augmentor/aggregator.py:58`）。实测后果：同问不同答的两条 union ⇒ 并成 1 条、
@@ -460,7 +460,7 @@ class TestEveryArmTheUiCanSendForSample:
             assert not (root / name).exists(), (method, ratio, "400 之前写了盘")
 
     def test_a_tiny_ratio_rounds_to_zero_on_all_three_methods(self, http_with_dataset_tools):
-        """`int()` 归零那一档三支一致交 0 条（被 `dataset_ops.py:308` 的短路接住，不是三种异常）"""
+        """`int()` 归零那一档三支一致交 0 条（被 `dataset_ops.py:317` 的短路接住，不是三种异常）"""
         http, _root, _outside, _disk = http_with_dataset_tools
         for method in ("random", "systematic", "stratified"):
             resp = sample(http, method=method, ratio=0.0001, output_file=f"t_{method}.json")

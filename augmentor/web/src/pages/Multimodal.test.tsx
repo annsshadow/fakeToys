@@ -115,6 +115,8 @@ describe('Multimodal 目录扫描', () => {
       modality_counts: {},
       error_count: 1,
       errors: ['坏文件'],
+      warning_count: 1,
+      warnings: ['nested/ 未扫描（只扫顶层文件）'],
       records: [
         { text: 'a', image: null, audio: null, modalities: ['text'], valid: true, errors: [] },
       ],
@@ -134,5 +136,39 @@ describe('Multimodal 目录扫描', () => {
       (el) => el.textContent,
     )
     expect(statTitles).toEqual(['记录数', '有效', '错误'])
+  })
+
+  it('把「被吃掉的东西」逐条点出来（A401）', async () => {
+    spies.scanMultimodal.mockResolvedValue({
+      total_records: 3,
+      valid_records: 2,
+      invalid_records: 1,
+      modality_counts: {},
+      error_count: 1,
+      errors: ['坏文件'],
+      warning_count: 2,
+      warnings: [
+        'sample.jpg 被同名的 sample.png 覆盖（同模态 image，只保留后者）',
+        '子目录 nested/ 未扫描（只扫顶层文件）',
+      ],
+      records: [
+        { text: 'a', image: null, audio: null, modalities: ['text'], valid: true, errors: [] },
+      ],
+    })
+
+    const { container } = render(<Multimodal />)
+
+    await waitFor(() => expect(spies.getMultimodalFormats).toHaveBeenCalled())
+    const dirInput = container.querySelector('input[id="directory"]') as HTMLInputElement
+    fireEvent.change(dirInput, { target: { value: 'data/mm' } })
+    fireEvent.click(screen.getByRole('button', { name: /扫描目录/ }))
+
+    await waitFor(() => expect(screen.getByText('扫描有 2 条告警')).toBeInTheDocument())
+    expect(
+      screen.getByText('sample.jpg 被同名的 sample.png 覆盖（同模态 image，只保留后者）'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('子目录 nested/ 未扫描（只扫顶层文件）'),
+    ).toBeInTheDocument()
   })
 })

@@ -212,11 +212,20 @@ class DatasetOperations:
         # 报表；旧实现在这里把整份数据又去重了一遍只为拿一个计数。
         merged, dedup_removed = self._merge_and_count(datasets, config)
         total_input = sum(len(d) for d in datasets)
-        # config=None 时报表口径刻意仍是 0（「没传配置就不统计去重数」），承 L148/B218
-        # 起的旧行为；产物侧照旧去重（默认 MergeConfig.deduplicate=True）。要不要把
-        # 这个「产物去了重、报表说没去」的口径对齐属行为变更轮，本轮不动。
-        removed_duplicates = dedup_removed if config is not None else 0
-        # 去重删除与 max_items 截断分开报（旧实现混成一个数，L148，B218）。截断那一格只报「真截过」的：上面那格在 `config=None` 时刻意记 0，于是残差全是去重的账，而 `MergeConfig()` 的 `max_items` 是 None，截断根本没发生过（L291，A400 ①）。
+        # A403：`config=None` 时报表**报真数**，不再报 0。
+        # 改前这一格刻意记 0（「没传配置就不统计去重数」，L148/B218 起的旧行为），而
+        # 产物侧照旧按 `MergeConfig()` 默认去重 ⇒ 同一件事在报表与产物上是两种读法
+        # （实测 5 条进、产物 1 条出，报表说「没去重」）。**改的是回执口径，不是产物**：
+        # 产物侧去重是既有行为（`_merge_and_count` 里 `config or MergeConfig()`），
+        # 改它属更重的行为变更；回执报真数则与产物、与 HTTP / CLI 两个产品面
+        # （两者都显式传 `MergeConfig`）都同口径 ⇒ 只有 SDK 直调 `merge_files(..., None)`
+        # 这一条路读数变了，而那条路读到的本来就是「产物真去了多少」。
+        removed_duplicates = dedup_removed
+        # 去重删除与 max_items 截断分开报（旧实现混成一个数，L148，B218）。截断那一格只报
+        # 「真截过」的：`MergeConfig()` 的 `max_items` 默认是 None ⇒ 截断根本没发生过
+        # （L291，A400 ①）；真截过时残差是「去重 + 截断」的差，去重那一格已是真数 ⇒
+        # 减掉它，剩下的才是截断的账。**这一行保持单行**（L291 那支守卫按「赋值号右边
+        # 含 `max_items is None`」判牙齿，拆成多行会让那一支读不到判决）。
         truncated_by_max_items = (0 if (config or MergeConfig()).max_items is None else total_input - removed_duplicates - len(merged))
         
         # 保存结果

@@ -342,7 +342,7 @@ export const modelsResponseSchema = z.object({
   default: z.string(),
 })
 
-/** `api/routes/multimodal.py:51` → MultimodalFormatsResponse */
+/** `api/routes/multimodal.py:58` → MultimodalFormatsResponse */
 export const multimodalFormatsResponseSchema = z.object({
   image_extensions: z.array(z.string()),
   audio_extensions: z.array(z.string()),
@@ -366,6 +366,8 @@ export const multimodalScanResponseSchema = z.object({
   modality_counts: z.record(z.string(), z.number()),
   error_count: z.number(),
   errors: z.array(z.string()),
+  warning_count: z.number(),
+  warnings: z.array(z.string()),
   records: z.array(multimodalRecordResponseSchema),
 })
 

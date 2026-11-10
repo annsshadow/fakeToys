@@ -190,14 +190,22 @@ class TestMergeFilesDeduplicatesOnce:
                 total - report["removed_duplicates"] - len(produced)
             ), name
 
-    def test_config_none_still_reports_zero_removed(self, tmp_path):
-        """`config=None` 的口径刻意不动：产物照旧去重，报表的 removed 仍是 0"""
+    def test_config_none_reports_the_real_removed_count(self, tmp_path):
+        """`config=None` 的口径（A403 起对齐）：产物照旧去重，**报表也报真数**
+
+        改前这一格把「报表说没去重」钉成了契约（`removed_duplicates == 0`），而产物侧
+        一直在去重 ⇒ 同一件事两种读法（实测 5 条进、产物 1 条出、报表说 0）。
+        A403 收口：改的是**回执口径**（报真数），产物侧去重不动；HTTP / CLI 两个产品面
+        都显式传 `MergeConfig` ⇒ 它们的读数一格未动。
+        """
         paths = self._write_inputs(tmp_path, [ITEMS, ITEMS])
         report = DatasetOperations().merge_files(
             paths, str(tmp_path / "out.json"), None
         )
-        assert report["removed_duplicates"] == 0
         assert report["total_output"] < report["total_input"], "产物侧仍要去重"
+        assert report["removed_duplicates"] == (
+            report["total_input"] - report["total_output"]
+        ), "报表要与产物同口径：报表说没去重而产物去了，就是同一件事两种读法"
 
     def test_merged_helper_reports_removed_count(self):
         """新私有助手的返回值本身要对：removed == 去重前的条数差"""

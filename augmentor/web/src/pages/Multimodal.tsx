@@ -213,6 +213,23 @@ export default function Multimodal() {
                     <Statistic title="错误" value={scanResult.error_count} />
                   </Col>
                 </Row>
+                {/* A401：同名同模态互相覆盖、子目录整只跳过这两件事改前在回执里
+                    各占 0 条 ⇒ 「扫了 4 只、只处理 3 只」不可见。现在逐条点名。 */}
+                {(scanResult.warning_count || 0) > 0 && (
+                  <Alert
+                    style={{ marginTop: 16 }}
+                    type="warning"
+                    showIcon
+                    message={`扫描有 ${scanResult.warning_count} 条告警`}
+                    description={
+                      <ul style={{ margin: 0, paddingInlineStart: 16 }}>
+                        {(scanResult.warnings || []).map((w, i) => (
+                          <li key={i}>{w}</li>
+                        ))}
+                      </ul>
+                    }
+                  />
+                )}
                 <Table
                   size="small"
                   style={{ marginTop: 16 }}

@@ -38,6 +38,11 @@ class MultimodalScanResponse(BaseModel):
     """目录扫描结果：汇总报告 + 逐条记录
 
     前 6 个键来自 `MultimodalProcessor.generate_report()`，`records` 由路由补上。
+
+    **A401：`warning_count` / `warnings` 两格是「被吃掉的东西」的面**——
+    同模态同名互相覆盖（`sample.jpg` 被 `sample.png` 覆盖）与子目录整只跳过
+    （`nested/` 里的媒体一只都不处理）这两件事改前在回执里各占 0 条，
+    于是「扫了 4 只、只处理了 3 只」不可见。
     """
     total_records: int
     valid_records: int
@@ -45,6 +50,8 @@ class MultimodalScanResponse(BaseModel):
     modality_counts: Dict[str, int]
     error_count: int
     errors: List[str]
+    warning_count: int
+    warnings: List[str]
     records: List[MultimodalRecordResponse]
 
 
@@ -165,7 +172,9 @@ async def scan_directory(request: ScanRequest):
             )
             processor = MultimodalProcessor(image_exts, audio_exts)
             records = processor.process_directory(str(directory))
-            report = processor.generate_report(records)
+            # A401：告警面（被覆盖 / 被忽略）显式传进去 —— 不靠 `generate_report`
+            # 的「本次扫描回落」，那条回落是给 SDK 直调那条路的
+            report = processor.generate_report(records, processor.scan_notes)
             report["records"] = [r.to_dict() for r in records]
             return report
 

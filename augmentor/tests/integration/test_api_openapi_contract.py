@@ -431,10 +431,12 @@ CALLS = {
     ),
     ("POST", "/api/multimodal/scan"): _Case(
         request=lambda c: c.post("/api/multimodal/scan", json={"directory": "."}),
-        # 前 6 个键来自 `MultimodalProcessor.generate_report()`，records 由路由补上
+        # 前 6 个键来自 `MultimodalProcessor.generate_report()`，records 由路由补上；
+        # A401 起另有两格告警面（`warning_count` / `warnings`，报「被覆盖 / 被忽略」）
         keys=_keys(
             "total_records", "valid_records", "invalid_records",
-            "modality_counts", "error_count", "errors", "records",
+            "modality_counts", "error_count", "errors",
+            "warning_count", "warnings", "records",
         ),
     ),
     ("GET", "/api/multimodal/formats"): _Case(

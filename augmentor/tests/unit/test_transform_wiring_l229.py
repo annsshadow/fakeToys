@@ -496,7 +496,7 @@ class TestReceiptCoversEveryResponseKey:
 
         这两句是卡上「这一档只控开 / 关」那条口径的证据。少了它们，页面上那个 checkbox 会被读成
         整套去重策略的控制面；把 SDK 的截断计数留在本地，用户看到的 `removed_duplicates` 就可能
-        被当成「少掉的条数的全部」（`augmentor/dataset_ops.py:220` 起特意把两件事分开报）。
+        被当成「少掉的条数的全部」（`augmentor/dataset_ops.py:229` 起特意把两件事分开报）。
         """
         assert set(MergeConfig.__dataclass_fields__) == {
             "deduplicate", "dedup_threshold", "preserve_order", "max_items"}

@@ -1242,10 +1242,20 @@ CLI 侧等价命令：`augmentor health-gate --input data/train_data.json --pass
 ```json
 {
   "total_records": 12,
-  "modality_distribution": {"text+image": 7, "text+audio": 3, "text+image+audio": 2},
+  "valid_records": 10,
+  "invalid_records": 2,
+  "modality_counts": {"text": 12},
+  "error_count": 2,
+  "errors": ["解析图像失败 ..."],
+  "warning_count": 1,
+  "warnings": ["sample.jpg 被同名的 sample.png 覆盖（同模态 image，只保留后者）"],
   "records": []
 }
 ```
+
+**`warning_count` / `warnings` 是「被吃掉的东西」的面**（A401）：只扫顶层，
+子目录整只跳过；同名**同模态**的后一只覆盖前一只（同名**跨模态**融合成一条记录是特性，
+不算告警）。这两件事改前在回执里各占 0 条，于是「扫了 4 只、只处理 3 只」不可见。
 
 `400` 目录不存在或不支持的文件扩展名。
 

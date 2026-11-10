@@ -13,7 +13,7 @@
 * 行为面按六档 config 现量钉死（含 `max_items=0` 与 `max_items=99` 两个边角），
   并单独钉「只有 `config=None` 这一档的读数被本轮推动，其余五档逐字不变」⇒ 零漂移可证。
 * 形状面钉两格：那一行的表达式必须引 `max_items` 的判决（把修复撤成裸残差 ⇒ 当场红），
-  以及 `dataset_ops.py:220` 这个在册活引用必须仍然落在这条赋值上（A357 点名的
+  以及 `dataset_ops.py:229` 这个在册活引用必须仍然落在这条赋值上（A357 点名的
   「尺子只判落点不判内容」用手工逐格核对替代）。
 * 产物面钉「报表口径不动产物」：`config=None` 与显式 `MergeConfig(deduplicate=True)`
   两条写出的文件逐字节相同 ⇒ 本轮改的是读数归因，不是交付字节。
@@ -35,7 +35,7 @@ if REPO not in sys.path:
 from augmentor.dataset_ops import DatasetOperations, MergeConfig  # noqa: E402
 
 DATASET_OPS = os.path.join(REPO, "augmentor", "dataset_ops.py")
-TRUNCATION_LINE = 220
+TRUNCATION_LINE = 229
 
 
 def _write(path, payload):
@@ -62,14 +62,24 @@ class TestAttributionIsTruthful:
     """截断那一格的正负必须只由 `max_items` 决定"""
 
     def test_config_none_reports_no_truncation(self, corpus):
-        """改前红读数：`{truncated_by_max_items: 2}` 而 `max_items` 从未设置"""
+        """改前红读数：`{truncated_by_max_items: 2}` 而 `max_items` 从未设置
+
+        **L307（A403）之后这一支的形状变了**：去重数改成真数（5 条进、去重后 3 条 ⇒
+        删了 2 条）⇒ 残差 `5 - 2 - 3` 本身恒为 0 ⇒ 「残差撞截断」这一族缺陷在
+        `config=None` 档**不再能复现**。这一支守的是「`config=None` 档截断恒 0」；
+        「不许退回裸残差」那一维的牙齿迁到两支：
+        `test_the_formula_still_cites_the_ceiling`（源码形状：赋值号右边必须引
+        `max_items is None`）与 `test_truncation_equals_the_independently_computed_truth`
+        （带 `max_items` 的各档逐档独立复算）。**这一处形状变化如实记在此处**，
+        不假装这一支还兼着那一维。
+        """
         a, b, out = corpus
         r = DatasetOperations().merge_files([a, b], out, None)
-        assert r["removed_duplicates"] == 0, "L196/B218 刻意口径：没传配置就不统计去重数"
+        assert r["removed_duplicates"] == 2, (
+            "A403 起回执的去重数是真数（与产物同口径），不是 0")
         assert r["total_output"] == 3, "产物侧照默认去重 ⇒ 五条进、三条出"
         assert r["truncated_by_max_items"] == 0, (
-            "5 - 0 - 3 的残差是去重删除数，不许记成 max_items 截断"
-            "（MergeConfig().max_items 是 None，截断不可能发生）")
+            "MergeConfig().max_items 是 None ⇒ 截断不可能发生，这一格必须恒 0")
 
     def test_truncation_equals_the_independently_computed_truth(self, corpus):
         """逐档独立复算「真被截了几条」再与读数比：`None` / `max_items=0` / 上限高于条数三形都判"""
@@ -141,7 +151,7 @@ class TestTheRulerHasTeeth:
             "`config=None` 档就把去重数报成截断数（本文件的案面）")
 
     def test_the_cited_line_number_still_lands_on_the_assignment(self):
-        """在册活引用 `augmentor/dataset_ops.py:220` 的落点内容核对（A357 的手工替代）"""
+        """在册活引用 `augmentor/dataset_ops.py:229` 的落点内容核对（A357 的手工替代）"""
         lines = io.open(DATASET_OPS, encoding="utf-8").read().split("\n")
         assert lines[TRUNCATION_LINE - 1].lstrip().startswith(
             "truncated_by_max_items = "), repr(lines[TRUNCATION_LINE - 1][:60])
