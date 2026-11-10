@@ -21,6 +21,7 @@
 import json
 import hashlib
 import logging
+import os
 from typing import List, Dict, Optional, Any
 from pathlib import Path
 from dataclasses import dataclass, field
@@ -64,27 +65,36 @@ class DatasetVersionManager:
     提供数据集的版本控制功能。
     """
     
-    def __init__(self, versions_dir: str = ".versions"):
+    def __init__(self, versions_dir: str = ".versions", history_limit: int = 1000):
         """初始化版本管理器
         
         Args:
             versions_dir: 版本目录
+            history_limit: **保留条数**——`history.jsonl` 只追加不封顶 ⇒ 行数线性放大
+                磁盘、内存与耗时（`get_history` 全量读进内存），而 `limit` 只省返回
+                体积、不省读取（A399）。这一格是**保留条数**语义，与备份族的
+                `max_backups`、版本族的 `max_versions` 同款口径：超出时删最旧的。
         """
+        # 判参排在 mkdir **之前**：坏参数不许在磁盘上留下任何东西（L44 立的口径）
+        require_count("history_limit", history_limit, minimum=1)
         self._versions_dir = Path(versions_dir)
         self._versions_dir.mkdir(parents=True, exist_ok=True)
+        self._history_limit = history_limit
         self._index_file = self._versions_dir / "index.json"
         self._history_file = self._versions_dir / "history.jsonl"
-        # L273：读索引进锁（与 `create_version` 同一把）—— 别的线程正在整份替换它时，
-        # Windows 会给读者一个瞬时拒绝访问；`_load_index` 无 except，那一撞就是一次 500。
         with path_lock(self._index_file):
             self._index = self._load_index()
     
     def _record(self, action: str, **details):
         """追加一条操作日志
-
+        
         只追加、不重写（JSONL）。日志写失败不能影响版本操作本身——
         版本已经建好了，因为记不上日志而报错是本末倒置。
-
+        
+        **A399：追加之后按保留条数封顶**（删最旧的）——这一份账此前只追加不封顶，
+        行数线性放大磁盘与读取耗时。封顶在**同一把锁**里做（与 `create_version` 同一把），
+        否则并发下两支都以为「自己那条是最旧的」而把彼此的账删掉。
+        
         Args:
             action: 操作名（create / rollback / delete …）
             **details: 附加字段
@@ -92,17 +102,48 @@ class DatasetVersionManager:
         entry = {"timestamp": datetime.now().isoformat(), "action": action}
         entry.update(details)
         try:
-            with open(self._history_file, 'a', encoding='utf-8') as f:
-                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+            with path_lock(self._history_file):
+                with open(self._history_file, 'a', encoding='utf-8') as f:
+                    f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+                self._prune_history()
         except OSError:
             logger.warning("操作日志写入失败: %s", self._history_file, exc_info=True)
+    
+    def _prune_history(self) -> int:
+        """按保留条数删掉最旧的历史行，返回删除行数
+        
+        **整份重写**（不是就地截断）：JSONL 的「最旧」在文件**开头**，
+        要删开头几行就得把后面的搬过去。行数封顶下文件本身不大（每行一条
+        记录），整份重写的代价与它的规模同阶，可接受。
+        
+        Returns:
+            删除的行数（0 表示没超上限）
+        """
+        if not self._history_file.exists():
+            return 0
+        with open(self._history_file, 'r', encoding='utf-8') as f:
+            lines = [line for line in f if line.strip()]
+        if len(lines) <= self._history_limit:
+            return 0
+        kept = lines[-self._history_limit:]
+        tmp_path = self._history_file.with_suffix('.jsonl.tmp')
+        with open(tmp_path, 'w', encoding='utf-8') as f:
+            f.writelines(kept)
+        os.replace(tmp_path, self._history_file)
+        deleted = len(lines) - len(kept)
+        logger.info("版本历史封顶: 删除 %d 条，保留最新 %d 条", deleted, self._history_limit)
+        return deleted
 
     def get_history(self, limit: Optional[int] = None) -> List[Dict]:
         """获取版本操作历史（按时间倒序）
-
+        
+        **A399**：`limit` 为 None 时返回的是「保留集里的全部」——封顶之后这份
+        账的规模有界（≤ `history_limit` 行），所以「`limit` 只省返回体积、
+        不省读取」那一族的代价也被写侧的封顶钉住。
+        
         Args:
             limit: 最多返回的条数（从最新开始）。`None` 是「全部」、`0` 是「一条都不要」，负数与非整数由 `require_count` 判掉（L283：与孪生方法 `versioning.DatasetVersionManager.get_history` 同口径，改前这一格走 `if limit else` 把两者都读反）
-
+        
         Returns:
             历史记录列表
         """
@@ -110,6 +151,9 @@ class DatasetVersionManager:
         if not self._history_file.exists():
             return []
 
+        # 读全份再切片：**封顶之后这份账的规模是有界的**（≤ `history_limit` 行），
+        # 所以「`limit` 只省返回体积、不省读取」那一族的代价也被封顶钉住了
+        # （A399：写侧封顶是主项，读侧这一格随之有界）。
         entries = []
         with open(self._history_file, 'r', encoding='utf-8') as f:
             for line in f:
@@ -120,7 +164,7 @@ class DatasetVersionManager:
                     entries.append(json.loads(line))
                 except json.JSONDecodeError:
                     logger.warning("跳过无法解析的历史记录行")
-
+        
         entries.reverse()
         return entries[:limit] if limit is not None else entries
     

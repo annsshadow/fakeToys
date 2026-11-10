@@ -106,6 +106,8 @@ class TestTheA140CensusIsInverted:
 
         **L305 起 31**：新增 A409 的 `versioning.max_versions`（自动快照保留份数）⇒
         `versioning` 节 3 → 4 只。
+        **L306 起 32**：新增 A399 的 `versioning.history_limit`（版本操作历史保留条数）⇒
+        `versioning` 节 4 → 5 只。
 
         改前 `ungated_keys` 现量 29（A140 行钉在 Temp/l82q/ungated_census.json）；这里按
         `dataclasses.fields` 推导而不是手抄，删掉任何一节的字段本条就红。差值单独归因：
@@ -115,11 +117,11 @@ class TestTheA140CensusIsInverted:
         的 `max_versions` 实参），不是凑数键。
         """
         counts = {s: len(dataclasses.fields(cls)) for s, cls in SECTIONS.items()}
-        assert counts == {"context": 2, "versioning": 4, "sampler": 2,
+        assert counts == {"context": 2, "versioning": 5, "sampler": 2,
                           "expander": 2, "tracker": 2, "visualization": 2,
                           "multilingual": 4, "evaluation": 4, "benchmark": 3,
                           "active_learning": 4, "frameworks": 2}, counts
-        assert sum(counts.values()) == 31
+        assert sum(counts.values()) == 32
 
     def test_every_spec_row_shapes_the_runtime_type(self):
         """规格表与运行时判据**同档**：int 行只声明类型（L157 / B227 起判决维

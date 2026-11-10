@@ -10,6 +10,7 @@
 """
 
 import json
+import os
 import shutil
 import logging
 from typing import List, Dict, Optional
@@ -50,7 +51,8 @@ class DiffResult:
 class VersionManager:
     """数据版本管理器"""
 
-    def __init__(self, storage_dir: str = "data/versions", max_versions: int = 10):
+    def __init__(self, storage_dir: str = "data/versions", max_versions: int = 10,
+                 history_limit: int = 1000):
         """初始化版本管理器
 
         Args:
@@ -60,12 +62,18 @@ class VersionManager:
                 于是 N 次增强在盘上留 N 份全量（实测 5 次 × 200 条 ⇒ 5 份完整
                 副本）。这一格是**保留份数**语义，与备份族的 `max_backups` 同款
                 口径：超出时删最旧的（删旧不拒新，见 `prune_versions`）。
+            history_limit: **保留条数**—— A399：`history.jsonl` 只追加不封顶 ⇒
+                行数线性放大磁盘与读取耗时（`get_history` 全量读进内存），而
+                `limit` 只省返回体积、不省读取。与孪生方法
+                `version_control.DatasetVersionManager` 同款口径：超出时删最旧的。
         """
         # 判参排在 mkdir **之前**：坏参数不许在磁盘上留下任何东西（L44 立的口径）
         require_count("max_versions", max_versions, minimum=1)
+        require_count("history_limit", history_limit, minimum=1)
         self.storage_dir = Path(storage_dir)
         self.storage_dir.mkdir(parents=True, exist_ok=True)
         self.max_versions = max_versions
+        self.history_limit = history_limit
 
         self._current_symlink = self.storage_dir / "current"
         self._history_path = self.storage_dir / "history.jsonl"
@@ -86,10 +94,38 @@ class VersionManager:
         }
         
         try:
-            with open(self._history_path, 'a', encoding='utf-8') as f:
-                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+            with path_lock(self._history_path):
+                with open(self._history_path, 'a', encoding='utf-8') as f:
+                    f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+                self._prune_history()
         except OSError as e:
             logger.warning(f"写入版本历史失败: {e}")
+    
+    def _prune_history(self) -> int:
+        """按保留条数删掉最旧的历史行，返回删除行数（A399）
+        
+        **整份重写**（不是就地截断）：JSONL 的「最旧」在文件**开头**，要删开头
+        几行就得把后面的搬过去。行数封顶下文件本身不大（每行一条记录），
+        整份重写的代价与它的规模同阶，可接受。封顶在写侧的同一把锁里做，
+        否则并发下两支都以为「自己那条是最旧的」而把彼此的账删掉。
+        
+        Returns:
+            删除的行数（0 表示没超上限）
+        """
+        if not self._history_path.exists():
+            return 0
+        with open(self._history_path, 'r', encoding='utf-8') as f:
+            lines = [line for line in f if line.strip()]
+        if len(lines) <= self.history_limit:
+            return 0
+        kept = lines[-self.history_limit:]
+        tmp_path = self._history_path.with_suffix('.jsonl.tmp')
+        with open(tmp_path, 'w', encoding='utf-8') as f:
+            f.writelines(kept)
+        os.replace(tmp_path, self._history_path)
+        deleted = len(lines) - len(kept)
+        logger.info("版本历史封顶: 删除 %d 条，保留最新 %d 条", deleted, self.history_limit)
+        return deleted
     
     def get_history(self, limit: Optional[int] = None) -> List[Dict]:
         """获取版本操作历史
@@ -107,6 +143,9 @@ class VersionManager:
         if not self._history_path.exists():
             return []
         
+        # 读全份再切片：**封顶之后这份账的规模是有界的**（≤ `history_limit` 行），
+        # 所以「`limit` 只省返回体积、不省读取」那一族的代价也被封顶钉住了
+        # （A399：写侧封顶是主项，读侧这一格随之有界）。
         entries = []
         with open(self._history_path, 'r', encoding='utf-8') as f:
             for line in f:

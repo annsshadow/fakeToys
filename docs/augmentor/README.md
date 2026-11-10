@@ -294,7 +294,7 @@ npm run dev            # Vite 开发服务器，热更新
 | `dedup` | `enabled` `threshold` | 相似度高于 `threshold`（默认 `0.9`）判定为重复 |
 | `export` | `default_format` `formats` | 导出格式清单与默认档 |
 | `context` | `enabled` `num_turns` | 多轮上下文增强，`num_turns` 是拼装的历史轮数 |
-| `versioning` | `enabled` `storage_dir` `auto_snapshot` `max_versions` | 版本存储目录、增强后自动快照与自动快照保留份数（超出删最旧） |
+| `versioning` | `enabled` `storage_dir` `auto_snapshot` `max_versions` `history_limit` | 版本存储目录、增强后自动快照、自动快照保留份数（超出删最旧）与版本操作历史保留条数（超出删最旧） |
 | `sampler` | `enabled` `dimensions` | 覆盖度采样的开关与分布维度清单 |
 | `expander` | `enabled` `strategies` | 领域扩展的开关与策略清单 |
 | `tracker` | `enabled` `metrics` | 实验追踪的开关与指标名清单 |

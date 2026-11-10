@@ -164,7 +164,7 @@ class TestRulerSeesTheRealSurface:
 
     def test_schema_side_is_not_empty(self):
         assert len(SCHEMA) >= 20
-        assert sum(len(keys) for keys in SCHEMA.values()) == 71
+        assert sum(len(keys) for keys in SCHEMA.values()) == 72
 
     def test_readme_and_yaml_sides_are_parsed_at_all(self):
         """前提档只判「解析器不是瞎的」这一维；行数的**对错**由下面两类逐节判据负责"""
@@ -235,7 +235,7 @@ class TestWrittenConfigMatchesSchema:
 
 
 class TestThreeSidesAgree:
-    """把前两类的结论合成一条可行动的读数：同一份 71 键，三侧一个不少"""
+    """把前两类的结论合成一条可行动的读数：同一份 72 键，三侧一个不少"""
 
     def test_all_three_sides_count_the_same_keys(self):
         written, commented = YAML, yaml_side()
@@ -244,8 +244,8 @@ class TestThreeSidesAgree:
             "README": sum(len(README.get(s, set())) for s in SCHEMA),
             "config.yaml(写出+注释两态)": sum(len(commented[s]) for s in SCHEMA),
         }
-        assert per_side == {"schema": 71, "README": 71,
-                           "config.yaml(写出+注释两态)": 71}, per_side
+        assert per_side == {"schema": 72, "README": 72,
+                           "config.yaml(写出+注释两态)": 72}, per_side
         assert written, "yaml 侧解析为空，上一条读数就是恒真的"
 
     def test_no_section_differs_between_any_two_sides(self):

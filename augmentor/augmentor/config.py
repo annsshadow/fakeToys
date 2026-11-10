@@ -430,6 +430,10 @@ class VersioningConfig:
     #: （实测 5 次 × 200 条 ⇒ 5 份完整副本）。封顶语义与备份族的 `max_backups`
     #: 同款：超出时删最旧的（删旧不拒新——拒新会让自动打点静默失败）。
     max_versions: int = 10
+    #: A399：**保留条数**——`history.jsonl` 只追加不封顶 ⇒ 行数线性放大磁盘与
+    #: 读取耗时（`get_history` 全量读进内存），而 `limit` 只省返回体积、不省读取。
+    #: 与 `max_versions` 同款口径：超出时删最旧的。
+    history_limit: int = 1000
 
     def __post_init__(self):
         """取值判据（A140 余 11 节 / L154）：目录名非空、两个开关是布尔。
@@ -444,6 +448,7 @@ class VersioningConfig:
         require_string('versioning.storage_dir', self.storage_dir)
         require_bool('versioning.auto_snapshot', self.auto_snapshot)
         require_count('versioning.max_versions', self.max_versions, minimum=1)
+        require_count('versioning.history_limit', self.history_limit, minimum=1)
 
 
 @dataclass

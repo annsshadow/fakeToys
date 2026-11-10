@@ -279,6 +279,8 @@ class ConfigValidator:
         # `require_count(..., minimum=1)` 那侧，静态面只声明类型（L157 / B227
         # 起判决维撤出规格表，下界由回放 + 运行时调用点字面量承担）。
         "versioning.max_versions": {"type": int},
+        # A399：保留条数（int），同上口径（类型由静态面声明、下界由运行时承担）。
+        "versioning.history_limit": {"type": int},
         "sampler": {"type": dict},
         "sampler.enabled": {"type": bool},
         "sampler.dimensions": {"type": list, "items": str},

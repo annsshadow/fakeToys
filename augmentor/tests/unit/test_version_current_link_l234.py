@@ -6,7 +6,7 @@
 **这条守卫是本轮全量门禁那一支红倒推出来的**，不是设计出来的。原文：
 
     OSError: [WinError 1920] 系统无法访问此文件。: 'data\\versions\\current'
-    augmentor/versioning.py:195: in create_version → if self._current_symlink.exists():
+    augmentor/versioning.py:234: in create_version → if self._current_symlink.exists():
 
 现场取证（本机 `data/versions/`，gitignored 的运行期产物）量到三件事，每件都推翻了
 「删掉那个断链就完事」的处置：
