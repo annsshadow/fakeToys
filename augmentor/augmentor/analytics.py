@@ -19,7 +19,7 @@ import logging
 from typing import List, Dict, Optional, Any, Set, Tuple
 from dataclasses import dataclass, field
 from collections import Counter, defaultdict
-from .validation import require_count
+from .validation import require_count, require_item_text
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -219,11 +219,18 @@ class DatasetAnalyzer:
             分析报告
         """
         fields = fields if fields is not None else ["instruction", "output", "input"]
+        # A359 / L310：接线 `require_item_text`（l274 那把尺子点名的三只声明盲区之一）。
+        # 改前同一形退化语料在这里抛 `TypeError: object of type 'int' has no len()`
+        # ——CLI 侧折成 `错误: object of type 'int' has no len()`，不点名第几条、哪个
+        # 字段。现在走与 HTTP 面同一权威（`augmentor.validation.require_item_text`），
+        # 判决点名条目下标、字段名与当前类型。校验的字段 = 本次要分析的 `fields`
+        # 加评分函数真正读的那两列（"instruction" / "output"）。
+        items = require_item_text(self._items, *fields, "instruction", "output")
         
         # 计算每个字段的统计信息
         field_statistics = {}
         for field in fields:
-            texts = [item.get(field, "") for item in self._items if item.get(field)]
+            texts = [item.get(field, "") for item in items if item.get(field)]
             field_statistics[field] = self._calculate_text_statistics(texts)
         
         # 生成洞察
@@ -235,7 +242,7 @@ class DatasetAnalyzer:
         completeness_score = self._calculate_completeness_score(fields)
         
         return AnalysisReport(
-            dataset_size=len(self._items),
+            dataset_size=len(items),
             field_statistics=field_statistics,
             insights=insights,
             quality_score=quality_score,

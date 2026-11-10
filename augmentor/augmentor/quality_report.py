@@ -8,7 +8,7 @@
 
 import json
 
-from augmentor.validation import require_choice
+from augmentor.validation import require_choice, require_item_text
 from augmentor.exceptions import DataValidationError
 import logging
 from typing import List, Dict, Optional, Any
@@ -123,6 +123,13 @@ class QualityReporter:
         Returns:
             质量报告
         """
+        # A359 / L310：接线 `require_item_text`（l274 那把尺子点名的三只声明盲区之一）。
+        # 改前同一形退化语料在这里抛 `TypeError: unhashable type: 'list'`
+        # （`_calculate_diversity` / `_calculate_duplication_rate` 把值塞进
+        # `set(...)`）⇒ CLI 侧折成一句裸异常消息。现在走与 HTTP 面同一权威，
+        # 判决点名条目下标、字段名与当前类型。校验的字段 = 本报告真正读的那两列。
+        items = require_item_text(items, "instruction", "output")
+
         report = QualityReport(
             dataset_name=dataset_name,
             timestamp=datetime.now().isoformat(),

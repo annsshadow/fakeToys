@@ -292,16 +292,23 @@ class TestWiredDefaultsMatchTheContract:
         assert "source_format: opts.sourceFormat || undefined" in body
 
     def test_empty_string_source_format_is_not_auto(self, http_with_transforms):
-        """实测：`source_format: ""` ⇒ 400，判决里那句「无法从  转换到 …」带一个空格式名
+        """实测：`source_format: ""` ⇒ 400，判决**点名主语**（A291 / L310 落地）
 
         这一支钉的是「省略」与「显式声明」在 API 面上必须是两种形状：把空串当「自动」发出去，
-        用户看到的是一句缺主语的判决（那句文案本身归 **A291**）。
+        用户看到的是一句缺主语的判决。**L310 把那句文案改成了能读的**（状态码仍是 400）：
+        「源格式不能是空串：省略该字段即按扩展名自动推断，或显式给出具体格式名（输入：…）」，
+        并点名输入文件。改前那句是「无法从  转换到 JSON」——主语位置插进去的就是那个空串，
+        句子里留着两个连续空格，说不出是什么格式转不了。
         """
         http, _root, _outside = http_with_transforms
         resp = http.post("/api/dataset/convert", json={
             "input_file": "p.json", "output_file": "e.jsonl", "source_format": ""})
         assert resp.status_code == 400
-        assert "无法从  转换到" in resp.json()["detail"]
+        detail = resp.json()["detail"]
+        assert "源格式不能是空串" in detail, detail
+        # 判决要点名输入文件，且**不再**是那句留两个连续空格的「无法从  转换到」
+        assert "p.json" in detail, detail
+        assert "无法从  转换到" not in detail, detail
         assert http.post("/api/dataset/convert", json={
             "input_file": "p.json", "output_file": "e2.jsonl"}).status_code == 200
 

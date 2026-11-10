@@ -16,6 +16,8 @@ from pathlib import Path
 from collections import Counter
 import re
 
+from augmentor.validation import require_item_text
+
 logger = logging.getLogger(__name__)
 
 # 中文词串切分。编译一次放在模块级：`re.findall(字面模式, text)`
@@ -363,6 +365,11 @@ def generate_statistics(items: List[Dict], text_key: str = "instruction") -> Dic
     Returns:
         统计信息字典
     """
+    # A359 / L310：接线 `require_item_text`（l274 那把尺子点名的三只声明盲区之一）。
+    # 改前同一形退化语料在这里抛 `TypeError: object of type 'int' has no len()`
+    # （下一行的 `len(t)`）⇒ CLI 侧折成一句裸异常消息。现在走与 HTTP 面同一权威，
+    # 判决点名条目下标、字段名与当前类型。
+    items = require_item_text(items, text_key)
     texts = [item.get(text_key, "") for item in items]
     lengths = [len(t) for t in texts]
 

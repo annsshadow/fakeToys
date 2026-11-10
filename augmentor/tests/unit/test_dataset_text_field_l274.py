@@ -83,28 +83,37 @@ WIRING_ROSTER = {
     ("augmentor/dedup.py", "deduplicate"): 1,
     ("augmentor/dataset_ops.py", "_deduplicate"): 1,
     ("api/routes/data.py", "load_data"): 1,
+    # **L310 / A359 补录**：三只声明盲区在 L310 里接线了（它们是 CLI 面唯一直达
+    # 的三员：`analyze` / `quality-report` 两个子命令都只 import SDK、不经 HTTP
+    # 路由）。接线前 CLI 侧收到的是一句裸异常消息（`错误: object of type 'int'
+    # has no len()` / `错误: unhashable type: 'list'`），不点名第几条、哪个字段。
+    ("augmentor/analytics.py", "analyze"): 1,
+    ("augmentor/quality_report.py", "generate_report"): 1,
+    ("augmentor/visualizer.py", "generate_statistics"): 1,
 }
 
 #: 声明盲区（写明，不装）：本轮量到「同一形仍会炸」或「口径与本轮相反」的点。
 #: 每一格都要求 `require_item_text` **没有**出现在那个函数里——谁去接线，这一格当场红，
 #: 必须把该条从盲区挪进 `WIRING_ROSTER` 并同步账本，而不是悄悄留着。
+#:
+#: **L310 / A359**：原先三只 CLI-only 盲区（`analytics.analyze` /
+#: `quality_report.generate_report` / `visualizer.generate_statistics`）已接线并
+#: 挪进 `WIRING_ROSTER` ⇒ 下面只剩两格：一格口径相反（`_as_column` 走 `str()`
+#: 归一，A358 待拍），一格是读入侧的同类归一（`read_conversation_turns`）。
 BLIND_ROSTER = {
-    ("augmentor/analytics.py", "analyze"):
-        "CLI-only 入口（`cli/commands/analysis.py` 独家 import），不在本轮 HTTP 面上；"
-        "实测同一形退化语料抛 `TypeError: object of type 'int' has no len()`",
-    ("augmentor/quality_report.py", "generate_report"):
-        "CLI-only 入口（`cli/commands/quality.py`）；实测抛 "
-        "`TypeError: unhashable type: 'list'`",
-    ("augmentor/visualizer.py", "generate_statistics"):
-        "CLI-only 入口（`cli/commands/analysis.py`）；HTTP 的 `GET /api/visualize/{filename}` 走的是 "
-        "`pipeline.visualize_dataset`，本机量不到这里 ⇒ 同一形实测仍抛 "
-        "`TypeError: object of type 'int' has no len()`",
     ("api/routes/dataset_tools.py", "_as_column"):
         "口径相反的一侧：在场非字符串走 `str()` 归一而不是拒绝（评估两侧按索引配对，"
         "补空串会凭空造 0 分样本）⇒ 与本轮判据并存，记在 **A358** 待拍",
     ("augmentor/converter.py", "read_conversation_turns"):
         "读入侧的 `str()` 归一（把 JSON 里的数字转成文本再落库），同样是 A358 那一格"
         "的另一半，本轮不改口径",
+    ("augmentor/statistics.py", "_calculate_field_statistics"):
+        "**L310 新记的第三个实例**（A358 那一族的「口径相反的一侧」）：`statistics.py` 的"
+        "字段统计那一段写着 `text = value if isinstance(value, str) else str(value)` ⇒ "
+        "在场非字符串被**静默折成文本再量长度**。CLI `stats` 子命令面上可达：退化语料"
+        "`[{\"instruction\": 1, \"output\": 2}]` ⇒ rc=0 且读数是「instruction: 填充率 "
+        "100.0%, 平均长度 1.0」——**一个 int 被读成「长度 1 的文本」**，没有任何提示。"
+        "本轮只把它记进名册（谁接线那一格当场红），口径仍归 A358 待拍",
 }
 
 #: `POST /api/dataset/filter` 不是这一族的端点，而是「本轮一格未动」那一档的锚：`/api/dataset/*`
@@ -552,20 +561,25 @@ class TestBlindSpotsAreRealOnTheCliFace:
     def _roots(self, monkeypatch, tmp_path):
         monkeypatch.setenv("AUGMENTOR_DATA_ROOTS", str(tmp_path))
 
-    def test_analytics_still_raises_type_error_on_the_same_shape(self):
+    def test_the_cli_only_blind_spots_are_wired_now(self):
+        """**L310 / A359 的兑现**：原先三只 CLI-only 盲区已接线 —— 同一形退化语料
+        现在抛的是**域判决**（点名第几条、哪个字段、当前类型），不再是裸 `TypeError`。
+        """
         from augmentor.analytics import analyze_dataset
-        with pytest.raises(TypeError):
-            analyze_dataset(BAD_CORPORA["numeric"])
-
-    def test_quality_report_still_raises_type_error_on_the_same_shape(self):
         from augmentor.quality_report import generate_quality_report
-        with pytest.raises(TypeError):
-            generate_quality_report(BAD_CORPORA["list_field"])
-
-    def test_visualizer_statistics_still_raises_type_error_on_the_same_shape(self):
         from augmentor.visualizer import generate_statistics
-        with pytest.raises(TypeError):
-            generate_statistics(BAD_CORPORA["numeric"])
+
+        for call, corpus in (
+            (lambda: analyze_dataset(BAD_CORPORA["numeric"]), BAD_CORPORA["numeric"]),
+            (lambda: generate_quality_report(BAD_CORPORA["list_field"]), BAD_CORPORA["list_field"]),
+            (lambda: generate_statistics(BAD_CORPORA["numeric"]), BAD_CORPORA["numeric"]),
+        ):
+            with pytest.raises(ValueError) as exc:
+                call()
+            text = str(exc.value)
+            assert "不是字符串" in text, text
+            assert "int" in text or "list" in text, text
+            assert "条" in text, text
 
     def test_the_as_column_side_still_coerces_instead_of_rejecting(self, tmp_path):
         """A358 的另一半今天仍成立：评估一侧把非字符串 `str()` 归一后照常算分（200）"""

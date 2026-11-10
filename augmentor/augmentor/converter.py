@@ -705,6 +705,16 @@ class DatasetConverter:
             source_format = self._resolve_input_format(input_path)
         elif source_format.lower() in EXCEL_SOURCE_NAMES:
             source_format = EXCEL_FORMAT
+        # A291 / L310：空串**不是**「未声明」的同义词 —— `None` 走扩展名推断（上面
+        # 那一支），而 `""` 会一路走到 `_to_json` 才炸出一句缺主语的判决
+        # （「无法从  转换到 JSON」，主语位置插进去的就是那个空串，句子里留着两个
+        # 连续空格，说不出是什么格式转不了）。这里提前判掉：**状态码不变（仍 400）**，
+        # 只把文案换成能读的，并说清「省略」与「显式声明」两种形状的差别。
+        if not source_format.strip():
+            raise DataFormatError(
+                f"源格式不能是空串：省略该字段即按扩展名自动推断，"
+                f"或显式给出具体格式名（输入：{input_path}）"
+            )
         if target_format is None:
             target_format = self._infer_format(output_path)
         elif target_format.lower() in EXCEL_TARGET_NAMES:
