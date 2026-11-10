@@ -237,6 +237,10 @@ class MultimodalProcessor:
             "modality_counts": modality_counts,
             "error_count": len(errors),
             "errors": errors[:20],
+            # A402：`errors` 那一格硬截 20 而**没有截断旗** ⇒ 「全给了」与「被截了」
+            # 两种读法在回执里不可分。加这一格让两者可分（旗为假时 `error_count`
+            # 就等于 `len(errors)`）。
+            "errors_truncated": len(errors) > 20,
             # A401：告警面。**不截断**（`errors` 那格硬截 20 且无截断旗是另一族
             # 待拍，A402）——这一批的规模由「目录里有多少只文件」决定，而同一条
             # 响应的 `records` 本来就是全量回传，两边口径一致。

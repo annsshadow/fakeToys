@@ -230,6 +230,16 @@ export default function Multimodal() {
                     }
                   />
                 )}
+                {/* A402：逐条记录那一维有上限（回执只给前 N 条）⇒ 被截过时要点名，
+                    否则「表里只有 20 行」会被读成「目录里只有 20 只文件」。 */}
+                {scanResult.records_truncated && (
+                  <Alert
+                    style={{ marginTop: 16 }}
+                    type="info"
+                    showIcon
+                    message={`逐条记录被截断：共 ${scanResult.total_records} 条，表里只列了前 ${(scanResult.records || []).length} 条`}
+                  />
+                )}
                 <Table
                   size="small"
                   style={{ marginTop: 16 }}

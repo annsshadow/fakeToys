@@ -8,6 +8,11 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+#: 扫描端点回执里「逐条记录」那一维的上限（A402）。数字是**出厂默认**：
+#: 目录里有多少只文件就回多少条会让响应体随目录线性膨胀，而这一族端点的用途
+#: 是「扫一遍看看概况」。截断由 `records_truncated` 点名，不静默。
+MAX_SCAN_RECORDS = 500
+
 from ..deps import (
     get_pipeline,
     raise_internal_error,
@@ -37,7 +42,9 @@ class MultimodalRecordResponse(BaseModel):
 class MultimodalScanResponse(BaseModel):
     """目录扫描结果：汇总报告 + 逐条记录
 
-    前 6 个键来自 `MultimodalProcessor.generate_report()`，`records` 由路由补上。
+    前 9 个键来自 `MultimodalProcessor.generate_report()`（含 A401 的
+    `warning_count` / `warnings` 与 A402 的 `errors_truncated`），
+    `records_truncated` / `records` 两格由路由补上。
 
     **A401：`warning_count` / `warnings` 两格是「被吃掉的东西」的面**——
     同模态同名互相覆盖（`sample.jpg` 被 `sample.png` 覆盖）与子目录整只跳过
@@ -52,6 +59,13 @@ class MultimodalScanResponse(BaseModel):
     errors: List[str]
     warning_count: int
     warnings: List[str]
+    #: A402：`errors` 那一格硬截 20 ⇒ 这一旗说「被截了没有」（旗为假时
+    #: `error_count` 就等于 `len(errors)`）。
+    errors_truncated: bool
+    #: A402：响应体的「记录」那一维此前**无上限** ⇒ 目录里有多少只文件就回多少条。
+    #: 这一旗说「记录被截了没有」；`total_records` 仍是真数，客户端能自己看出
+    #: 「回执只给了前 N 条」。
+    records_truncated: bool
     records: List[MultimodalRecordResponse]
 
 
@@ -175,7 +189,12 @@ async def scan_directory(request: ScanRequest):
             # A401：告警面（被覆盖 / 被忽略）显式传进去 —— 不靠 `generate_report`
             # 的「本次扫描回落」，那条回落是给 SDK 直调那条路的
             report = processor.generate_report(records, processor.scan_notes)
-            report["records"] = [r.to_dict() for r in records]
+            # A402：响应体的「记录」那一维此前**无上限** ⇒ 目录里有多少只文件就
+            # 回多少条（每条还带着 image / audio 字典）。截断并**点名**：
+            # `total_records` 仍是真数，客户端能自己看出「回执只给了前 N 条」。
+            record_dicts = [r.to_dict() for r in records]
+            report["records_truncated"] = len(record_dicts) > MAX_SCAN_RECORDS
+            report["records"] = record_dicts[:MAX_SCAN_RECORDS]
             return report
 
         return await run_in_thread(run)

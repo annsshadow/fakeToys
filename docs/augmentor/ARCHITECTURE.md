@@ -2470,7 +2470,7 @@ A103 = `logging.file` 打不开时**整条配置被拒**（`rc=1`，集成用例
 实测账本原先记成 114 条「草稿名」的里面**有 3 条根本不是草稿名，而是写错了的产品源码路径**：
 A121 行把 ERNIE 后端写成 augmentor/models/baidu.py（仓里从来没有这个文件，`augmentor/models/ernie.py` 才是），
 两条「订正 A86 文件引用」的记录各自把错的 api/routes/config_ops.py 留在反引号里；第 4 条更隐蔽 ——
-A56 行写 augmentor/api/routes/dataset_tools.py:117-127，产品树里没有 augmentor/api/，可 Temp
+A56 行写 augmentor/api/routes/dataset_tools.py:127-137，产品树里没有 augmentor/api/，可 Temp
 下的 HEAD 快照副本恰好同尾，于是「先查工件」的旧顺序把它判成「指向不入仓工件」，**永远不可能红**。
 修法是按顺序分两档：引用第一段落在真实源码顶层目录（现量 5 个：api / archive / augmentor / scripts /
 tests）而该文件不存在 ⇒ `unresolved_source`，**硬门禁 0**；否则才是欠账档 `scratch_missing`（棘轮）。

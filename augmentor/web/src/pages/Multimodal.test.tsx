@@ -117,6 +117,8 @@ describe('Multimodal 目录扫描', () => {
       errors: ['坏文件'],
       warning_count: 1,
       warnings: ['nested/ 未扫描（只扫顶层文件）'],
+      errors_truncated: false,
+      records_truncated: false,
       records: [
         { text: 'a', image: null, audio: null, modalities: ['text'], valid: true, errors: [] },
       ],
@@ -151,6 +153,8 @@ describe('Multimodal 目录扫描', () => {
         'sample.jpg 被同名的 sample.png 覆盖（同模态 image，只保留后者）',
         '子目录 nested/ 未扫描（只扫顶层文件）',
       ],
+      errors_truncated: false,
+      records_truncated: false,
       records: [
         { text: 'a', image: null, audio: null, modalities: ['text'], valid: true, errors: [] },
       ],

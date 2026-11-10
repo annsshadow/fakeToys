@@ -956,8 +956,8 @@ class TestTheAuditIsNotSpinning:
         live, scratch = resolve("augmentor/api/routes/dataset_tools.py", build_index())
         assert live == [], live                       # 产品树里没有
         assert len(scratch) >= 1, scratch             # Temp 快照里有：先查就会被它骗过
-        _, rows = audit("见 `augmentor/api/routes/dataset_tools.py:117-127`\n", build_index())
-        assert rows["unresolved_source"] == ["`augmentor/api/routes/dataset_tools.py:117-127`"]
+        _, rows = audit("见 `augmentor/api/routes/dataset_tools.py:127-137`\n", build_index())
+        assert rows["unresolved_source"] == ["`augmentor/api/routes/dataset_tools.py:127-137`"]
         assert rows.get("scratch_line_ref", []) == []
 
     def test_the_hash_placeholder_regex_counts_debt_not_prose(self):

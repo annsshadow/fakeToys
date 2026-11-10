@@ -56,6 +56,16 @@ router = APIRouter(tags=["dataset"])
 # tests/integration/test_api.py（`/api/quality/outliers` 的未知 method 也是 400）。
 # L175/L189: 清单权威住 SDK 层，本路由的 400 判据共引同一份（A77）
 from augmentor.search_enhanced import SEARCH_METHODS
+
+#: 请求侧「列表长度」那一维的上限（A402）：`inputs` / `datasets` 的长度此前
+#: **一处约束都没有** —— 一次请求可以点名任意多个输入文件，而每一只都要读进
+#: 内存（合并/聚合的产物与输入同阶）⇒ 请求体很小、内存占用很大。
+#:
+#: **超出即 400 拒**（不是截断）：截断会静默改变语义 ——「我送了 200 个，你只
+#: 处理了 100 个」而客户端毫不知情。数字是**出厂默认**，请求面**不接受覆盖**
+#: （客户端自己抬高上限就等于绕过这一道闸）。
+MAX_MERGE_INPUTS = 100
+MAX_AGGREGATE_DATASETS = 100
 from augmentor.validation import DatasetValidator, require_item_field
 VALIDATION_PRESETS = tuple(DatasetValidator.PRESET_RULES)
 
@@ -775,6 +785,11 @@ async def dataset_merge(request: MergeRequest):
 
         if not request.inputs:
             raise HTTPException(status_code=400, detail="inputs 不能为空")
+        if len(request.inputs) > MAX_MERGE_INPUTS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"inputs 最多 {MAX_MERGE_INPUTS} 个，当前 {len(request.inputs)} 个",
+            )
 
         input_paths = [str(resolve_data_path(name)) for name in request.inputs]
         output_path = resolve_data_path(request.output_file, for_write=True)
@@ -875,6 +890,12 @@ async def dataset_aggregate(request: AggregateRequest):
 
         if not request.datasets:
             raise HTTPException(status_code=400, detail="datasets 不能为空")
+        if len(request.datasets) > MAX_AGGREGATE_DATASETS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"datasets 最多 {MAX_AGGREGATE_DATASETS} 个，"
+                       f"当前 {len(request.datasets)} 个",
+            )
 
         # 逐个 await 而不是循环里同步 read：保持原有的「按 datasets 顺序解析、
         # 第一个坏文件先报错」语义，同时不再占着事件循环。

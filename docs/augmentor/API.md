@@ -603,10 +603,10 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | `POST` | `/api/dataset/impact` | 增强前后影响评估 | 只读。`duplicate_rate` 是**增强后**的重复率；语义分数在 `semantic_evaluated=false` 时不参与（API 面拿不到原始问题）。`text_field` 空串 / 纯空白 / 那两份数据里根本没有这一列都回 400，detail 带首条实际字段（L238 / A321，与健康门禁、批量翻译共引 `validation.require_item_field`）；空串这一档的措辞从「没有任何一条含字段 ''」改成「`text_field` 不能是空字符串」——同一个 400，但后者说的是真凶。 |
 | `POST` | `/api/dataset/evaluate` | 生成文本指标评估 | 只读。响应键就是 `metrics` / `sample_count` / `details`。请求省略 `metrics` ⇒ 取 `config.evaluation.metrics`（L219 接线，权威序 请求参数 > 配置键 > SDK 内置默认）；生效清单统一过 `METRIC_FUNCTIONS` 白名单，越界名 400，空清单也 400（SDK 的 `metrics or [内置三只]` 会把空值静默补成三项，所以在本层出声）。两侧字段名 `generated_field` / `reference_field` 同规（L220 接线，配置那两键出厂值与被替换的硬编码默认同为 `output` ⇒ 零漂移）：请求侧默认是 `null` 哨兵，**省略与显式传 `"output"` 从此是两种不同的事**；取不到的列名（含空串）由逐条门口报 400 并带下标，不静默补空。 |
 | `POST` | `/api/dataset/convert` | 格式转换 | **写盘变换类**：必须给 `output_file`，响应只回「写到哪、写了多少」。`csv` / `tsv` 的表头列名若以公式前导（`=` / `+` / `-` / `@` / 制表 / 回车）开头，写出前返回 **400** 并点名列名（A391：列名是读回侧配行的键，不静默改写；xlsx / json / jsonl 不受此限）。 |
-| `POST` | `/api/dataset/merge` | 合并数据集 | **写盘变换类**：同上。 |
+| `POST` | `/api/dataset/merge` | 合并数据集 | **写盘变换类**：同上。`inputs` 的长度有**出厂上限 100**（A402）：此前那一维一处约束都没有，而每一只输入都要读进内存 ⇒ 请求体小、内存占用大。超限回 **400**「inputs 最多 100 个，当前 N 个」（**不是截断** —— 截断会静默改变语义：「我送了 200 个，你只处理了 100 个」而客户端毫不知情）；请求面**不接受覆盖**这个上限。 |
 | `POST` | `/api/dataset/sample` | 数据集采样 | **写盘变换类**：同上。 |
 | `POST` | `/api/dataset/split` | 分割数据集 | **写盘变换类**：输出字段是 `output_dir`（本组其余几条叫 `output_file`）。`stratify_distribution` 在按 `instruction` 分层时可能有**数千个键**（紧凑 JSON 数百 KB），所以写盘类只回计数不回明细。 |
-| `POST` | `/api/dataset/aggregate` | 多源聚合 | **写盘变换类**，但**偏了本组「只回写到哪、写了多少」那条口径**：响应里 `conflicts` 是**明细整份**（每项 `{key, values, sources}`，实测 133 字节），而且端点手拼回执、没调 `AggregationResult.to_dict()` ⇒ 两份键集各自漂（`total_count` 改名 `aggregated_count`、`conflict_count` 只在线上缺席、`output_file` 只在线上有）。`target_size` **只对 `weighted` 生效**，配其余三支完全空转（实测填 1 配 union 仍交全量，A294）；**省略不是 400**——实测 200，走 `DEFAULT_TARGET_SIZE = 100`，够不着就交全量（旧文案那句「省略会 400」与端点行为不符，L230 按实测订正）。`consistent` 连同源自比也算冲突，且冲突条目整份不落盘（A297）。 |
+| `POST` | `/api/dataset/aggregate` | 多源聚合 | **写盘变换类**，但**偏了本组「只回写到哪、写了多少」那条口径**：响应里 `conflicts` 是**明细整份**（每项 `{key, values, sources}`，实测 133 字节），而且端点手拼回执、没调 `AggregationResult.to_dict()` ⇒ 两份键集各自漂（`total_count` 改名 `aggregated_count`、`conflict_count` 只在线上缺席、`output_file` 只在线上有）。`target_size` **只对 `weighted` 生效**，配其余三支完全空转（实测填 1 配 union 仍交全量，A294）；**省略不是 400**——实测 200，走 `DEFAULT_TARGET_SIZE = 100`，够不着就交全量（旧文案那句「省略会 400」与端点行为不符，L230 按实测订正）。`consistent` 连同源自比也算冲突，且冲突条目整份不落盘（A297）。 | `datasets` 的长度同样有**出厂上限 100**（A402，与合并同款：超限 400 拒、不截断、请求面不接受覆盖）。
 | `POST` | `/api/dataset/rag` | 转换为 RAG 格式 | **写盘变换类**：同上。`format` 省略时落 `config.rag.default_format`（出厂默认 **`llamaindex`**，`augmentor/config.py:545`；路由那第三个兜底字面量才是 `langchain`，只在配置被设成空串时才轮得到它，A295），响应里的 `format` 是**生效值**（L214）。旧文案把出厂默认写成 `langchain`，L230 按实测订正。请求里**多送** `chunk_size` / `chunk_overlap` 一律静默忽略——两个切块旋钮只从服务端配置读。 |
 | `POST` | `/api/dataset/semantic-search` | 语义相似检索 | 只读分析（L216）。按 `config.vector.*` 的生效值在**内存**建索引再检索，不落盘；`top_k` 非正整数 400（判据住在 `VectorDB.search`，不在路由里重复一遍）。`text_key` 换的是参与嵌入的字段，默认 `instruction`。 |
 | `GET` | `/api/dataset/vector-status` | 向量库状态 | 只读（L216）。`exists` / `count` 读的是 `config.vector.storage_dir` 里那份持久化索引；`enabled` 是「增强结束时自动建库」那只闸的生效值，两者分开设（`enabled=false` + `exists=true` = 上轮开着建过、这轮关了闸）。`backend` 是配置选择，`faiss-cpu` 没装时的引擎退化看 `/api/system/dependencies`。配 `chromadb` 时回 **400**：那侧没有 `persist`/`load` 面，闸在构造之前，所以既不会 500 也不会凭空建目录。 |
@@ -1249,9 +1249,15 @@ CLI 侧等价命令：`augmentor health-gate --input data/train_data.json --pass
   "errors": ["解析图像失败 ..."],
   "warning_count": 1,
   "warnings": ["sample.jpg 被同名的 sample.png 覆盖（同模态 image，只保留后者）"],
+  "errors_truncated": false,
+  "records_truncated": false,
   "records": []
 }
 ```
+
+**两格截断旗**（A402）：`errors` 那一格硬截 20 ⇒ `errors_truncated` 说「被截了没有」（旗为假时
+`error_count` 就等于 `len(errors)`）；逐条记录那一维**封顶 500** ⇒ `records_truncated` 说
+「记录被截了没有」（`total_records` 仍是真数 ⇒ 客户端能自己看出「回执只给了前 N 条」）。
 
 **`warning_count` / `warnings` 是「被吃掉的东西」的面**（A401）：只扫顶层，
 子目录整只跳过；同名**同模态**的后一只覆盖前一只（同名**跨模态**融合成一条记录是特性，

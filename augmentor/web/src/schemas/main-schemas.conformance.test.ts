@@ -407,7 +407,7 @@ describe('zod schema ↔ 后端 response_model 契约', () => {
       expect(fields!.length, `${model.className} 解析出 0 个字段`).toBeGreaterThan(0)
       pythonFields += fields!.length
     }
-    expect(pythonFields).toBe(409)
+    expect(pythonFields).toBe(411)
   })
 
   it('full-schemas 的「文件:行号」映射与类定义现量一致', () => {

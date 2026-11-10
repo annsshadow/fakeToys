@@ -458,6 +458,10 @@ export interface MultimodalScanResponse {
   warning_count: number
   /** A401：逐条点名（哪一只被哪一只覆盖、哪个子目录没扫） */
   warnings: string[]
+  /** A402：`errors` 那一格硬截 20 ⇒ 这一旗说「被截了没有」 */
+  errors_truncated: boolean
+  /** A402：逐条记录那一维被截了没有（`total_records` 仍是真数） */
+  records_truncated: boolean
   records: MultimodalRecord[]
 }
 

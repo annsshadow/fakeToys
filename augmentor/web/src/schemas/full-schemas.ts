@@ -12,7 +12,7 @@
  */
 import { z } from 'zod'
 
-/** `api/routes/dataset_tools.py:351` → AggregateResponse */
+/** `api/routes/dataset_tools.py:361` → AggregateResponse */
 export const aggregateResponseSchema = z.object({
   output_file: z.string(),
   aggregated_count: z.number(),
@@ -44,7 +44,7 @@ export const auditReportSchema = z.object({
   ready: z.boolean(),
 })
 
-/** `api/routes/dataset_tools.py:360` → AutoConfigResponse */
+/** `api/routes/dataset_tools.py:370` → AutoConfigResponse */
 export const autoConfigResponseSchema = z.object({
   quality_threshold: z.number(),
   dedup_threshold: z.number(),
@@ -114,7 +114,7 @@ export const cleanResponseSchema = z.object({
   issues: z.record(z.string(), z.number()),
 })
 
-/** `api/routes/dataset_tools.py:322` → CompareResponse */
+/** `api/routes/dataset_tools.py:332` → CompareResponse */
 export const compareResponseSchema = z.object({
   quality_comparison: z.record(z.string(), z.unknown()),
   overlap_comparison: z.record(z.string(), z.unknown()),
@@ -158,7 +158,7 @@ export const configValidationResponseSchema = z.object({
   info: z.array(configValidationIssueSchema),
 })
 
-/** `api/routes/dataset_tools.py:260` → ConvertResponse */
+/** `api/routes/dataset_tools.py:270` → ConvertResponse */
 export const convertResponseSchema = z.object({
   input_file: z.string(),
   output_file: z.string(),
@@ -209,7 +209,7 @@ export const dependencyGraphResponseSchema = z.object({
   issues: z.array(z.record(z.string(), z.unknown())),
 })
 
-/** `api/routes/dataset_tools.py:389` → EvaluateResponse */
+/** `api/routes/dataset_tools.py:399` → EvaluateResponse */
 export const evaluateResponseSchema = z.object({
   metrics: z.record(z.string(), z.number()),
   sample_count: z.number(),
@@ -227,7 +227,7 @@ export const exportResponseSchema = z.object({
   files: z.record(z.string(), z.string()),
 })
 
-/** `api/routes/dataset_tools.py:334` → FieldFeature */
+/** `api/routes/dataset_tools.py:344` → FieldFeature */
 export const fieldFeatureSchema = z.object({
   name: z.string(),
   feature_type: z.string(),
@@ -236,7 +236,7 @@ export const fieldFeatureSchema = z.object({
   description: z.string(),
 })
 
-/** `api/routes/dataset_tools.py:343` → FeaturesResponse */
+/** `api/routes/dataset_tools.py:353` → FeaturesResponse */
 export const featuresResponseSchema = z.object({
   total_items: z.number(),
   field_features: z.array(fieldFeatureSchema),
@@ -284,7 +284,7 @@ export const healthResponseSchema = z.object({
   version: z.string(),
 })
 
-/** `api/routes/dataset_tools.py:377` → ImpactResponse */
+/** `api/routes/dataset_tools.py:387` → ImpactResponse */
 export const impactResponseSchema = z.object({
   before: z.record(z.string(), z.unknown()),
   after: z.record(z.string(), z.unknown()),
@@ -314,7 +314,7 @@ export const leakageResponseSchema = z.object({
   leaked_examples: z.array(z.record(z.string(), z.unknown())),
 })
 
-/** `api/routes/dataset_tools.py:270` → MergeResponse */
+/** `api/routes/dataset_tools.py:280` → MergeResponse */
 export const mergeResponseSchema = z.object({
   input_files: z.number(),
   output_file: z.string(),
@@ -342,13 +342,13 @@ export const modelsResponseSchema = z.object({
   default: z.string(),
 })
 
-/** `api/routes/multimodal.py:58` → MultimodalFormatsResponse */
+/** `api/routes/multimodal.py:72` → MultimodalFormatsResponse */
 export const multimodalFormatsResponseSchema = z.object({
   image_extensions: z.array(z.string()),
   audio_extensions: z.array(z.string()),
 })
 
-/** `api/routes/multimodal.py:22` → MultimodalRecordResponse */
+/** `api/routes/multimodal.py:27` → MultimodalRecordResponse */
 export const multimodalRecordResponseSchema = z.object({
   text: z.string(),
   image: z.record(z.string(), z.unknown()).nullable(),
@@ -358,7 +358,7 @@ export const multimodalRecordResponseSchema = z.object({
   errors: z.array(z.string()),
 })
 
-/** `api/routes/multimodal.py:37` → MultimodalScanResponse */
+/** `api/routes/multimodal.py:42` → MultimodalScanResponse */
 export const multimodalScanResponseSchema = z.object({
   total_records: z.number(),
   valid_records: z.number(),
@@ -368,6 +368,8 @@ export const multimodalScanResponseSchema = z.object({
   errors: z.array(z.string()),
   warning_count: z.number(),
   warnings: z.array(z.string()),
+  errors_truncated: z.boolean(),
+  records_truncated: z.boolean(),
   records: z.array(multimodalRecordResponseSchema),
 })
 
@@ -441,7 +443,7 @@ export const qualitySnapshotResponseSchema = z.object({
   alerts: z.array(qualityAlertResponseSchema),
 })
 
-/** `api/routes/dataset_tools.py:369` → RagResponse */
+/** `api/routes/dataset_tools.py:379` → RagResponse */
 export const ragResponseSchema = z.object({
   output_file: z.string(),
   format: z.string(),
@@ -456,7 +458,7 @@ export const restoreBackupResponseSchema = z.object({
   item_count: z.number(),
 })
 
-/** `api/routes/dataset_tools.py:279` → SampleResponse */
+/** `api/routes/dataset_tools.py:289` → SampleResponse */
 export const sampleResponseSchema = z.object({
   input_file: z.string(),
   output_file: z.string(),
@@ -478,7 +480,7 @@ export const sanitizeResponseSchema = z.object({
   report: sanitizeReportResponseSchema,
 })
 
-/** `api/routes/dataset_tools.py:300` → SearchResponse */
+/** `api/routes/dataset_tools.py:310` → SearchResponse */
 export const searchResponseSchema = z.object({
   query: z.string(),
   method: z.string(),
@@ -502,20 +504,20 @@ export const semanticSearchResponseSchema = z.object({
   results: z.array(z.record(z.string(), z.unknown())),
 })
 
-/** `api/routes/dataset_tools.py:287` → SplitPart */
+/** `api/routes/dataset_tools.py:297` → SplitPart */
 export const splitPartSchema = z.object({
   file: z.string(),
   count: z.number(),
 })
 
-/** `api/routes/dataset_tools.py:293` → SplitResponse */
+/** `api/routes/dataset_tools.py:303` → SplitResponse */
 export const splitResponseSchema = z.object({
   input_file: z.string(),
   output_dir: z.string(),
   splits: z.record(z.string(), splitPartSchema),
 })
 
-/** `api/routes/dataset_tools.py:236` → StatisticsResponse */
+/** `api/routes/dataset_tools.py:246` → StatisticsResponse */
 export const statisticsResponseSchema = z.object({
   dataset_name: z.string(),
   total_items: z.number(),
@@ -585,7 +587,7 @@ export const translateResponseSchema = z.object({
   errors_truncated: z.boolean(),
 })
 
-/** `api/routes/dataset_tools.py:250` → ValidationResponse */
+/** `api/routes/dataset_tools.py:260` → ValidationResponse */
 export const validationResponseSchema = z.object({
   is_valid: z.boolean(),
   total_items: z.number(),

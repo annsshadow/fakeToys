@@ -46,12 +46,12 @@
   实测 **200**，全部塌成一个 `"empty"` 组，取 8 条照给 8 条；空字符串键才是 400
   「分层采样需要非空的 stratify_key」（`augmentor/dataset_ops.py:379`）。
 * **聚合端点比 SDK 面窄三个旋钮，且不可复现（A293）**：路由是 `DataAggregator()` 无参构造
-  （`api/routes/dataset_tools.py:887`），SDK 的 `key_fields` / `value_fields` / `random_state`
+  （`api/routes/dataset_tools.py:908`），SDK 的 `key_fields` / `value_fields` / `random_state`
   三个都不可设（`augmentor/aggregator.py:58`）。实测后果：同问不同答的两条 union ⇒ 并成 1 条、
   `removed_duplicates 1`、活下来的是**第一条**（「答案甲」）；weighted 同参两次 ⇒ 落盘内容
   **不相等**。回执那一半是**两份各自手写的键集**：`to_dict()`（`augmentor/aggregator.py:37`）交回
   `total_count / source_counts / removed_duplicates / conflict_count / conflicts` 五键，端点在
-  `api/routes/dataset_tools.py:891` 另拼一份（`total_count` 改名 `aggregated_count`、丢掉
+  `api/routes/dataset_tools.py:912` 另拼一份（`total_count` 改名 `aggregated_count`、丢掉
   `conflict_count`、多出 `output_file`），conflicts 明细两侧都整份上线——与本组「写盘变换类只回
   写到哪、写了多少」的成文约定相反（实测那份 conflicts 明细 133 字节，四计数响应的十几倍）。
 * **`target_size` 只对 weighted 生效（A294）**：实测 `target_size=1` 配 union ⇒ **20 条**、
@@ -63,11 +63,11 @@
   `aggregated_count 0`、`conflicts` 一项且 `sources` 两个都是「甲」。名字叫「一致性聚合」，
   读起来像跨源比对，实测同源自比同样触发，且这些条目**不进产物**。
 * **RAG 那一档站着第四份默认（A295）**：`fmt = request.format or rag_config.default_format or
-  "langchain"`（`api/routes/dataset_tools.py:927`）。请求默认 `None`、config 默认 `"llamaindex"`
+  "langchain"`（`api/routes/dataset_tools.py:948`）。请求默认 `None`、config 默认 `"llamaindex"`
   （`augmentor/config.py:545`）、SDK 签名默认也是 `"llamaindex"`（`augmentor/rag.py:187`），
   只有路由那第三个字面量是 `"langchain"`，且只在 config 被设成空串时才轮得到它。
   另外实测：请求里**多送** `chunk_size` 一格 ⇒ 200 且产物逐字相同（请求模型没这一格，
-  两个切块旋钮只从服务端配置读，`api/routes/dataset_tools.py:929`）；`format` 送空串与省略
+  两个切块旋钮只从服务端配置读，`api/routes/dataset_tools.py:950`）；`format` 送空串与省略
   **等价**（两者都回 `llamaindex`）。三档 `record_count` 都等于 `input_count`（短文本不触发切块），
   但落盘键集各不相同：langchain 2 键、llamaindex 6 键、custom 5 键。
 * **`size` 与 `ratio` 同给时 size 赢**：实测 `size=3` 与 `ratio=0.9` 同给，三支方法都交 **3 条**；
@@ -620,7 +620,7 @@ class TestEveryArmTheUiCanSendForAggregate:
 
         改前想象被实测推翻过一轮：本支初稿钉的是「SDK 的 `to_dict()` 只报 `conflict_count`、
         线上才有明细」——真跑一遍 `to_dict()`（`augmentor/aggregator.py:37`）交回五个键，
-        `conflict_count` 与 `conflicts` **都在**。真形状是：端点在 `api/routes/dataset_tools.py:891`
+        `conflict_count` 与 `conflicts` **都在**。真形状是：端点在 `api/routes/dataset_tools.py:912`
         手拼了一份回执而没调 `to_dict()`，两份键集从此各走各路（`total_count` 改名
         `aggregated_count`、`conflict_count` 在线上被丢掉、`output_file` 只在线上有）。
         判据因此写成「逐键列出两份、点名差在哪」，而不是「一边有明细一边没有」。
