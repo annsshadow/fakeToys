@@ -15,7 +15,7 @@
 不存在「Claude 失败了自动切 OpenAI」这种跨厂商降级链。
 
 - **五家是「类型」，不是模型名**：`baidu` / `openai` / `ollama` / `claude` / `gemini`
-  （`augmentor/config.py:92`）。出厂默认模型叫 `ernie`（`augmentor/config.py:841`），
+  （`augmentor/config.py:92`）。出厂默认模型叫 `ernie`（`augmentor/config.py:848`），
   但 `ernie` **不是**一个后端类型 —— 它是默认条目的名字，那条条目的 `type` 写的是 `baidu`；
   把 `type` 写成 `ernie` 会被工厂拒绝（`augmentor/models/factory.py:110`）。
 - **选型只有两条路**：改配置里的 `models.default`，或调用方显式传 `model_type`。
@@ -88,7 +88,7 @@
 
 因为读、写两侧**故意不对称**：读会在白名单各根目录里找，写不猜目录。
 
-- **出厂白名单只有 `data`**：`web.data_roots = ["data"]`（`augmentor/config.py:723`），
+- **出厂白名单只有 `data`**：`web.data_roots = ["data"]`（`augmentor/config.py:730`），
   原默认是 `["."]`（放行整个工作目录），后按 F-07 收紧；代价与迁移处方写在
   OPTIMIZATION_PLAN.md §3.2。
 - **读**：裸文件名会在白名单各根目录内查找，命中不了才按工作目录解释

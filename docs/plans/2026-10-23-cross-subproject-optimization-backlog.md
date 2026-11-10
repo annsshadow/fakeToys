@@ -57,7 +57,7 @@
 
 | ID | 类别 | 位置（证据） | 症状 | 影响 / 收益 | 工作量 |
 |---|---|---|---|---|---|
-| AU-Q1 | 质量 / TD-1 半截 | `augmentor/augmentor/config.py:1283`（`save_config`） | 占位符已修（1254–1272），但 `yaml.safe_dump` **不保留注释**，任何保存路径静默抹掉用户注释 | TD-1 明确列的一半未落地 | **S** |
+| AU-Q1 | 质量 / TD-1 半截 | `augmentor/augmentor/config.py:1290`（`save_config`） | 占位符已修（1254–1272），但 `yaml.safe_dump` **不保留注释**，任何保存路径静默抹掉用户注释 | TD-1 明确列的一半未落地 | **S** |
 | AU-P1 | 性能 | `augmentor/models/base.py:229`、`openai_model.py:79` 等（`requests.Session.post`） | 模型后端**同步阻塞**；FastAPI 靠 `pipeline.py:787` `run_in_executor` 线程池兜底，高并发线程耗尽、吞吐封顶 | 并发吞吐受限 | **L** |
 | AU-P2 | 性能 / 启动 | `augmentor/__init__.py`（~46 子模块）；`api/main.py:40`（15 个 route 包） | 顶层全量 import；CLI `--version`、单条缓存命令、单测导入都付出全量加载 | 冷启动慢、内存浪费 | **M** |
 | AU-P3 | 质量 | `augmentor/models/base.py:321-334` `_cache_get/_cache_put` | 构造器已建 `_generation_cache`（183 行），此处 `getattr(...,None)` 惰性兜底**永不触发**，死代码 | 噪声 | **S** |
