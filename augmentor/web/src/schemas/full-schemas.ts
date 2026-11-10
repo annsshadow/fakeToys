@@ -53,13 +53,13 @@ export const autoConfigResponseSchema = z.object({
   source_stats: z.record(z.string(), z.unknown()),
 })
 
-/** `api/routes/system_ops.py:766` → BackupCleanupResponse */
+/** `api/routes/system_ops.py:796` → BackupCleanupResponse */
 export const backupCleanupResponseSchema = z.object({
   deleted_count: z.number(),
   max_backups: z.number(),
 })
 
-/** `api/routes/system_ops.py:253` → BackupInfoResponse */
+/** `api/routes/system_ops.py:254` → BackupInfoResponse */
 export const backupInfoResponseSchema = z.object({
   backup_id: z.string(),
   timestamp: z.string(),
@@ -70,12 +70,12 @@ export const backupInfoResponseSchema = z.object({
   checksum: z.string(),
 })
 
-/** `api/routes/system_ops.py:264` → BackupListResponse */
+/** `api/routes/system_ops.py:265` → BackupListResponse */
 export const backupListResponseSchema = z.object({
   backups: z.array(backupInfoResponseSchema),
 })
 
-/** `api/routes/system_ops.py:742` → BackupVerifyEntryResponse */
+/** `api/routes/system_ops.py:772` → BackupVerifyEntryResponse */
 export const backupVerifyEntryResponseSchema = z.object({
   backup_id: z.string(),
   exists: z.boolean(),
@@ -84,7 +84,7 @@ export const backupVerifyEntryResponseSchema = z.object({
   timestamp: z.string(),
 })
 
-/** `api/routes/system_ops.py:756` → BackupVerifyResponse */
+/** `api/routes/system_ops.py:786` → BackupVerifyResponse */
 export const backupVerifyResponseSchema = z.object({
   results: z.array(backupVerifyEntryResponseSchema),
 })
@@ -141,7 +141,7 @@ export const configUpdateResponseSchema = z.object({
   ignored_keys: z.array(z.string()),
 })
 
-/** `api/routes/system_ops.py:135` → ConfigValidationIssue */
+/** `api/routes/system_ops.py:136` → ConfigValidationIssue */
 export const configValidationIssueSchema = z.object({
   path: z.string(),
   message: z.string(),
@@ -149,7 +149,7 @@ export const configValidationIssueSchema = z.object({
   line: z.number().nullable(),
 })
 
-/** `api/routes/system_ops.py:143` → ConfigValidationResponse */
+/** `api/routes/system_ops.py:144` → ConfigValidationResponse */
 export const configValidationResponseSchema = z.object({
   is_valid: z.boolean(),
   summary: z.record(z.string(), z.number()),
@@ -168,7 +168,7 @@ export const convertResponseSchema = z.object({
   output_count: z.number(),
 })
 
-/** `api/routes/system_ops.py:223` → DatasetInfoResponse */
+/** `api/routes/system_ops.py:224` → DatasetInfoResponse */
 export const datasetInfoResponseSchema = z.object({
   dataset_id: z.string(),
   name: z.string(),
@@ -181,14 +181,14 @@ export const datasetInfoResponseSchema = z.object({
   metadata: z.record(z.string(), z.unknown()),
 })
 
-/** `api/routes/data.py:93` → DemoItem */
+/** `api/routes/data.py:94` → DemoItem */
 export const demoItemSchema = z.object({
   instruction: z.string(),
   input: z.string(),
   output: z.string(),
 })
 
-/** `api/routes/system_ops.py:126` → DependenciesResponse */
+/** `api/routes/system_ops.py:127` → DependenciesResponse */
 export const dependenciesResponseSchema = z.object({
   installed: z.record(z.string(), z.boolean()),
   missing: z.array(z.string()),
@@ -197,12 +197,12 @@ export const dependenciesResponseSchema = z.object({
   available_count: z.number(),
 })
 
-/** `api/routes/system_ops.py:236` → DependencyDatasetListResponse */
+/** `api/routes/system_ops.py:237` → DependencyDatasetListResponse */
 export const dependencyDatasetListResponseSchema = z.object({
   datasets: z.array(datasetInfoResponseSchema),
 })
 
-/** `api/routes/system_ops.py:241` → DependencyGraphResponse */
+/** `api/routes/system_ops.py:242` → DependencyGraphResponse */
 export const dependencyGraphResponseSchema = z.object({
   nodes: z.array(z.unknown()),
   edges: z.array(z.unknown()),
@@ -323,7 +323,7 @@ export const mergeResponseSchema = z.object({
   removed_duplicates: z.number(),
 })
 
-/** `api/routes/system_ops.py:203` → MigrationResponse */
+/** `api/routes/system_ops.py:204` → MigrationResponse */
 export const migrationResponseSchema = z.object({
   migration_id: z.string(),
   source_path: z.string(),
@@ -405,7 +405,7 @@ export const profilingResponseSchema = z.object({
   top_keywords: z.array(z.unknown()),
 })
 
-/** `api/routes/system_ops.py:157` → QualityAlertResponse */
+/** `api/routes/system_ops.py:158` → QualityAlertResponse */
 export const qualityAlertResponseSchema = z.object({
   alert_id: z.string(),
   metric_name: z.string(),
@@ -431,7 +431,7 @@ export const qualityReportResponseSchema = z.object({
   charts: z.record(z.string(), z.unknown()),
 })
 
-/** `api/routes/system_ops.py:169` → QualitySnapshotResponse */
+/** `api/routes/system_ops.py:170` → QualitySnapshotResponse */
 export const qualitySnapshotResponseSchema = z.object({
   snapshot_id: z.string(),
   timestamp: z.string(),
@@ -447,7 +447,7 @@ export const ragResponseSchema = z.object({
   record_count: z.number(),
 })
 
-/** `api/routes/system_ops.py:269` → RestoreBackupResponse */
+/** `api/routes/system_ops.py:270` → RestoreBackupResponse */
 export const restoreBackupResponseSchema = z.object({
   backup_id: z.string(),
   output_path: z.string(),
@@ -535,7 +535,7 @@ export const statusResponseSchema = z.object({
   dependencies: z.record(z.string(), z.unknown()),
 })
 
-/** `api/routes/system_ops.py:216` → StreamReportResponse */
+/** `api/routes/system_ops.py:217` → StreamReportResponse */
 export const streamReportResponseSchema = z.object({
   total_input: z.number(),
   total_output: z.number(),
@@ -547,7 +547,7 @@ export const successResponseSchema = z.object({
   success: z.boolean(),
 })
 
-/** `api/routes/system_ops.py:177` → TestResultResponse */
+/** `api/routes/system_ops.py:178` → TestResultResponse */
 export const testResultResponseSchema = z.object({
   test_id: z.string(),
   test_name: z.string(),
@@ -557,7 +557,7 @@ export const testResultResponseSchema = z.object({
   timestamp: z.string(),
 })
 
-/** `api/routes/system_ops.py:187` → TestSuiteResponse */
+/** `api/routes/system_ops.py:188` → TestSuiteResponse */
 export const testSuiteResponseSchema = z.object({
   name: z.string(),
   description: z.string(),

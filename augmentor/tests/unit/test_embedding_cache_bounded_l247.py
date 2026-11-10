@@ -6,7 +6,7 @@ r"""L247 守卫：A334 —— `_embedding_cache` 只留最近一批，逐 chunk 
 **为什么立这一条**：`batch_score` 里的整批向量缓存 `_embedding_cache`（键
 `(batch_key, tuple(文本))`）原本是实例级、跨调用只增不减。生产侧两个真读者是「逐
 chunk 调用、每个批次只评一次」的流式形状（`augmentor/cli/commands/pipeline.py:43`、
-`augmentor/pipeline.py:557` 的 filter_by_quality）——它们**一次都命中不了**，却把历史批次的向量
+`augmentor/pipeline.py:558` 的 filter_by_quality）——它们**一次都命中不了**，却把历史批次的向量
 一直挂在 scorer 实例上；驻留是纯泄漏，不是收益。API 侧（`api/routes/quality.py:150`
 等）每请求新建 scorer，本来就无害。
 

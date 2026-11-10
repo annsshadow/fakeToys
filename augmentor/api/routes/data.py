@@ -24,6 +24,7 @@ from ..deps import (
     mutate_json_file,
     allowed_data_roots,
     assert_dataset_shape,
+    default_visualization_dir,
     get_pipeline,
     max_upload_bytes,
     read_json_file,
@@ -582,19 +583,53 @@ async def analyze_data(filename: str):
     summary="生成可视化图表",
 )
 async def visualize_data(filename: str):
-    """生成数据集可视化图表"""
+    """生成数据集可视化图表
+
+    产物落在 `deps.default_visualization_dir()`（白名单首个根目录下的
+    `visualizations/`），不再落到进程当前工作目录（A407）。回执把绝对落点
+    折回 `visualizations/<名>` 的相对形——客户端拿到的是稳定形状，服务器
+    目录不出现在响应里（与 A398 同一口径）。
+    """
     file_path = _safe_data_path(filename)
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="文件不存在")
 
     try:
         p = get_pipeline()
-        results = await run_in_thread(p.visualize_dataset, str(file_path))
-        return {"charts": results}
+        chart_dir = default_visualization_dir()
+        results = await run_in_thread(
+            p.visualize_dataset, str(file_path), str(chart_dir)
+        )
+        return {"charts": _public_chart_paths(results, chart_dir)}
     except HTTPException:
         raise
     except Exception as e:
         raise_internal_error(e)
+
+
+def _public_chart_paths(charts: Dict[str, str], chart_dir: Path) -> Dict[str, str]:
+    """把图表的绝对落点折回 `visualizations/<名>`（A407）
+
+    闸内路径按「目录名 / 相对名」返回，保持改动前的相对形状；万一有产物
+    落到目录外，只回文件名——任何一支都不把服务器绝对路径写进响应。
+
+    Args:
+        charts: 图表名到落盘路径的映射
+        chart_dir: 服务端产物目录（`default_visualization_dir()` 的返回值）
+
+    Returns:
+        图表名到相对路径的映射
+    """
+    base = Path(chart_dir).resolve()
+    public: Dict[str, str] = {}
+    for name, raw in charts.items():
+        try:
+            relative = Path(raw).resolve().relative_to(base)
+        except (OSError, ValueError):
+            public[name] = Path(raw).name
+        else:
+            public[name] = str(Path(base.name) / relative)
+    return public
 
 
 # ============ 演示数据 ============

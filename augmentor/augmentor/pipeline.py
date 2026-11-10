@@ -9,6 +9,7 @@ import os
 import time
 import hashlib
 import threading
+import copy
 from typing import List, Dict, Optional
 from pathlib import Path
 
@@ -927,8 +928,13 @@ class AugmentorPipeline:
         with open(input_file, 'r', encoding='utf-8') as f:
             items = json.load(f)
         
-        self.visualizer.output_dir = Path(output_dir)
-        return self.visualizer.generate_all_visualizations(items)
+        # A363 / A407：只改这一份**局部视图**的 output_dir。直改共享单例会让
+        # 并发请求把落点互相搬走（最后写的那一支赢），也会把调用方的默认值
+        # 永久改掉。浅拷贝保留单例上已加载的 wordcloud / matplotlib 引用与
+        # 调用方注入的替身方法，代价只有一次对象复制。
+        visualizer = copy.copy(self.visualizer)
+        visualizer.output_dir = Path(output_dir)
+        return visualizer.generate_all_visualizations(items)
     
     async def augment_async(self,
                             input_file: str,

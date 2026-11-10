@@ -12,6 +12,7 @@
 """
 
 import json
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -287,6 +288,34 @@ async def system_dependencies():
     return check_dependencies().to_dict()
 
 
+def _redact_path(payload: Dict[str, Any], path: Path, label: str) -> Dict[str, Any]:
+    """把校验回执里的服务端绝对落点折回调用方给的原字符串（A398）
+
+    PyYAML 的 `str(exc)` 会把打开文件时用的路径原样写进 message
+    （`in "C:\\...\\config.yaml", line 1, column 9`），于是 200 的校验回执
+    成了「服务器目录长什么样」的读数。这里只改 message 文本：行列号、
+    `path` 逻辑键（`yaml` / `file`）与其余诊断一字不动。
+
+    Args:
+        payload: `ValidationResult.to_dict()` 的结果
+        path: 服务端实际打开的文件路径
+        label: 回执里替代绝对落点的字符串（调用方原样给的路径，缺省时是文件名）
+
+    Returns:
+        同一个 payload（就地改写 message）
+    """
+    tokens = {str(path), path.as_posix(), str(path.resolve())}
+    for bucket in ("errors", "warnings", "info"):
+        for issue in payload.get(bucket, []):
+            message = issue.get("message")
+            if not isinstance(message, str):
+                continue
+            for token in tokens:
+                message = message.replace(token, label)
+            issue["message"] = message
+    return payload
+
+
 @router.post(
     "/api/system/validate-config",
     response_model=ConfigValidationResponse,
@@ -301,7 +330,8 @@ async def system_validate_config(request: ValidateConfigRequest):
             config_file_path() if request.path is None else resolve_data_path(request.path)
         )
         result = await run_in_thread(validate_config_file, str(path))
-        return result.to_dict()
+        label = path.name if request.path is None else request.path
+        return _redact_path(result.to_dict(), path, label)
     except HTTPException:
         raise
     except Exception as e:

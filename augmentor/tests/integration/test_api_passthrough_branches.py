@@ -148,7 +148,7 @@ class TestDataRoutePassthrough:
 
         import api.routes.data as data_module
 
-        def _visualize(file_path):
+        def _visualize(file_path, output_dir=None):
             raise HTTPException(status_code=503, detail="viz busy")
 
         fake_pipeline = SimpleNamespace(analyze_dataset=None, visualize_dataset=_visualize)

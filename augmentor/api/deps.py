@@ -393,6 +393,18 @@ def default_backup_dir() -> Path:
     return _default_root_subdir(".backups")
 
 
+def default_visualization_dir() -> Path:
+    """可视化产物的默认目录：白名单**首个根目录**下的 `visualizations`
+
+    与 `default_registry_dir` / `default_backup_dir` 同构。历史上
+    `GET /api/visualize/{filename}` 走 `AugmentorPipeline.visualize_dataset`
+    的默认参数 `"visualizations"`，于是每次 GET 都在**进程当前工作目录**建目录
+    并写 PNG（A407）——只读端点留下了写盘痕迹，而且落点随启动目录漂移。
+    改成跟白名单首根走之后，产物落在自己的闸内，与数据路径共用同一份边界。
+    """
+    return _default_root_subdir("visualizations")
+
+
 def resolve_within_roots(name: str, label: str) -> Path:
     """把客户端传入的路径规范化为白名单内的绝对路径
 
