@@ -1042,8 +1042,9 @@ export default function System() {
           remove_dataset，只能手改注册表里的 datasets.json。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
-          「校验问题」只报**悬空端点**（missing_source / missing_target），**不查环**：实测 A→B 与
-          B→A 成环时这一格仍是 0，所以 0 不能读成「依赖关系没问题」（A310）。
+          「校验问题」报三类：悬空端点（missing_source / missing_target）与**依赖成环**
+          （cycle，A310 / L311 加的）——改前成环时这一格是 0，于是 0 不能读成「依赖关系
+          没问题」；现在环也报出来了，0 才真的读得成「没问题」。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           登记 id 是 md5(名称) 的前 8 位 ⇒ **同名再登记一次是覆盖同一条**（不留重复），但 created_at

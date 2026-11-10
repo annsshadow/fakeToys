@@ -477,14 +477,15 @@ class TestVersionRoutes:
         assert response.status_code == 404
 
     def test_get_version_nonexistent(self, client):
-        """获取不存在的版本详情应返回 500"""
+        """获取不存在的版本详情应返回 404（A360 / L311：那一类收窄成了 404）"""
         response = client.get("/api/versions/v_ghost")
-        assert response.status_code == 500
+        assert response.status_code == 404
+        assert response.json()["detail"] == "版本不存在"
 
     def test_get_version_data_nonexistent(self, client):
-        """获取不存在的版本数据应返回 500"""
+        """获取不存在的版本数据应返回 404（A360 / L311）"""
         response = client.get("/api/versions/v_ghost/data")
-        assert response.status_code == 500
+        assert response.status_code == 404
 
     def test_rollback_nonexistent_returns_false(self, client):
         """回滚不存在的版本应 success=False 而不是 500"""
@@ -499,11 +500,11 @@ class TestVersionRoutes:
         assert response.json()["success"] is True
 
     def test_diff_nonexistent_version(self, client):
-        """对比不存在的版本应返回 500"""
+        """对比不存在的版本应返回 404（A360 / L311）"""
         response = client.post("/api/versions/diff", json={
             "version1": "v_a", "version2": "v_b"
         })
-        assert response.status_code == 500
+        assert response.status_code == 404
 
     def test_history_with_limit(self, client, data_file):
         """历史接口支持 limit 参数"""

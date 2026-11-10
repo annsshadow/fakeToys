@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 from augmentor.validation import require_count
 from ..deps import raise_boundary_error, get_pipeline, read_json_file, require_file, run_in_thread, verify_api_key
+from augmentor.exceptions import VersionError
 from ..schemas import SuccessResponse
 
 router = APIRouter(tags=["version"])
@@ -158,7 +159,9 @@ async def diff_versions(request: DiffRequest):
             "modified_count": diff.modified_count
         }
     except Exception as e:
-        raise_boundary_error(e)
+        raise_boundary_error(
+            e, not_found="版本不存在", not_found_types=(VersionError,)
+        )
 
 
 @router.get(
@@ -194,7 +197,9 @@ async def get_version(version_id: str):
             "metadata": version.metadata
         }
     except Exception as e:
-        raise_boundary_error(e)
+        raise_boundary_error(
+            e, not_found="版本不存在", not_found_types=(VersionError,)
+        )
 
 
 @router.get(
@@ -220,7 +225,9 @@ async def get_version_data(version_id: str, page: int = 1, page_size: int = 0):
             items = items[start : start + page_size]
         return {"items": items, "total": total, "page": page, "page_size": page_size}
     except Exception as e:
-        raise_boundary_error(e)
+        raise_boundary_error(
+            e, not_found="版本不存在", not_found_types=(VersionError,)
+        )
 
 
 @router.post(

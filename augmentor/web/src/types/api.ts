@@ -1320,9 +1320,10 @@ export interface DependencyGraphEdge {
 /**
  * `validate_dependencies()` 报出的一条问题
  *
- * 实测只有 `missing_source` 与 `missing_target` 两种 `type`（源码里也只有这两支），
- * **没有环检测**：A→B 与 B→A 成环时 `issues` 仍为空，所以「issues 为空」不能读成
- * 「依赖关系没问题」（账本 A310）。
+ * `type` 有三档：`missing_source`（源数据集不存在）、`missing_target`（目标数据集不存在）
+ * 与 **`cycle`（依赖成环）**。第三档是 **A310 / L311** 加的：改前只有前两档，成环时
+ * `issues` 为空 ⇒「issues 为空」会被读成「依赖关系没问题」，而一个环会让下游任何按依赖
+ * 顺序重建的流程死循环。环那一档的 `message` 点名环上的**登记 id**（不是登记名）。
  */
 export interface DependencyGraphIssue {
   type: string

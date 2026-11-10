@@ -625,7 +625,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | `POST` | `/api/system/stream` | 流式处理数据集 | 只读判定（产物另给 `output_file`）。JSONL 单行语法错**跳过并告警**；JSON 数组截断**报 400**——两者行为相反，是格式决定的。挂 `verify_api_key`（401 与 key 的存放位置同 `migrate`）。前端同一张卡上接线：`operation` 四档与 `output_format` 两档都取自服务端权威清单（后者是 `augmentor/streaming.py` 的 `WRITER_FORMATS`），页面不给 parquet 那一档（400），`chunk_size` 留空即不送（0 与负数是 400）。同一份 5 条夹具上四档的实测写出条数是 none 5 / quality 2 / dedup 3 / clean 5 —— clean **一条不丢**，改写只落在内容里（只动 `instruction`：全角标点换半角、剥首尾空白，`output` 里的 HTML 标签与空白原样留着）；回执里的 `processed` 各档都等于读入条数，它数的是「逐条看过」而不是「改动过」，页面上的「被丢掉」因此是本页自己算的读入 − 写出。CLI 侧 `stream --operation` 自 L234 起与端点共用同一份清单 `quality / dedup / clean / none`（改前 CLI 写的是 `export`——那个名字承诺的导出从来没发生过，而 HTTP 侧合法的 `none` 被 argparse 直接拒，A313）。 |
 | `GET` | `/api/system/dependency/datasets` | 已登记数据集列表 | 只读**且不写盘**（**A307 已于 L249 收口**）：注册表目录不存在时构造函数不再 `mkdir(parents=True)`，实测请求前后目录都不在场，此时回 **200** `{"datasets": []}` 而不是 404。`registry_path` 省略时用白名单首个根目录下的 `.dependency_registry`（**与 CLI `--registry-path`、SDK 形参那两份同名默认不是同一个目录**，A308）；四档：空串 400「目录路径 不能为空」、`..` 400「路径包含非法组件」、白名单外绝对路径 403、白名单内绝对路径 200 且那一份注册表与默认那份**互不可见**。元素九键 = `POST` 回执 = `DatasetInfo.to_dict()`。 |
 | `POST` | `/api/system/dependency/datasets` | 登记数据集 | **写**（落 `datasets.json`），改前那行「只读」是错的。挂 `verify_api_key`：服务端设了 `AUGMENTOR_API_KEY` 而无 `X-API-Key` 头就是 401「缺少或无效的 X-API-Key」；前端那份 key 在「配置管理 → 写操作鉴权」卡上存，由请求拦截器随每个请求送出（A312 已收，与备份族缺口 A302 同源）。回执九键（`dataset_id` / `name` / `description` / `path` / `item_count` / `created_at` / `updated_at` / `tags` / `metadata`），`dataset_id = md5(name)[:8]` 只由名字算 ⇒ **同名再登记是覆盖**，无 409 也无任何提示，`created_at` 被刷新，第二次送空 `description`/`tags` 会把旧值**抹成空**（A306；与备份族「覆盖磁盘、索引多一行」的形状不同，这里索引也只留 1 条）。`description`/`tags` 改前**回显即丢**：端点在 `register_dataset()`（内部已落盘）**之后**才改返回对象，改的是内存 —— 响应带着这两格而随后的 GET 与磁盘上都是空；L232 把两格随登记一起传下去，三处一致（A305）。`input_file` 五档：不存在 404「文件不存在」、白名单外 403、带 `..` 400「路径包含非法组件」、空串 400「文件路径 不能为空」、顶层不是 JSON 数组 400「数据文件的顶层必须是 JSON 数组，当前是对象」；缺 `name`/`input_file` 则是 FastAPI 英文 **422** `Field required` ⇒ 两种错误体都要认（A311）。登记过的数据集在产品面上**删不掉**：无 DELETE、无注销，SDK 也没有注销数据集的方法（A309）。`registry_path` 同 GET 那四档。 |
-| `GET` | `/api/system/dependency/graph` | 数据集依赖图与校验问题 | 只读**同样不建注册表目录**（A307 已于 L249 收口，与上面那只 GET 同源）。回 `{nodes: [{id, name, item_count}], edges: [{source, target, type}], issues: […]}`，空注册表 ⇒ **200** 三个空数组。`issues` 只报悬空两端（`missing_source` / `missing_target`，元素 `{type, dependency{五键}, message}`），**不查环**：实测用 SDK 直写 A→B（merged）与 B→A（filtered）成环后读图，`issues` 仍只有悬空那 1 条 ⇒「issues 为空」不能读成「依赖关系没问题」（A310）。边没有 HTTP 也没有 CLI 创建入口（`dependency` 的 4 个 action 里没有建边，`add_dependency`/`remove_dependency`/`get_dependencies`/`validate_dependencies` 四个 SDK 方法一个都没上线），只能由 SDK 的 `add_dependency` 建立 ⇒ 纯前端用户的 `edges` 恒为空（A309）。`registry_path` 同 GET 列表四档。 |
+| `GET` | `/api/system/dependency/graph` | 数据集依赖图与校验问题 | 只读**同样不建注册表目录**（A307 已于 L249 收口，与上面那只 GET 同源）。回 `{nodes: [{id, name, item_count}], edges: [{source, target, type}], issues: […]}`，空注册表 ⇒ **200** 三个空数组。`issues` 报三类：悬空两端（`missing_source` / `missing_target`）与**依赖成环**（`cycle`，元素 `{type, dependency{五键}, message}`）——**A310 已于 L311 收口**：改前只有前两档，成环时读图 `issues` 里一个字都没有 ⇒「issues 为空」不能读成「依赖关系没问题」；现在环也报出来了（判决点名环上的**登记 id**，不是登记名），0 才真的读得成「没问题」。边没有 HTTP 也没有 CLI 创建入口（`dependency` 的 4 个 action 里没有建边，`add_dependency`/`remove_dependency`/`get_dependencies`/`validate_dependencies` 四个 SDK 方法一个都没上线），只能由 SDK 的 `add_dependency` 建立 ⇒ 纯前端用户的 `edges` 恒为空（A309）。`registry_path` 同 GET 列表四档。 |
 | `GET` | `/api/system/backups` | 列出备份 | GET 列出 / POST 创建。`backup_dir` 省略时用白名单首个根目录下的 `.backups`（**与 CLI `--backup-dir` 的默认 `.backups`、SDK 形参默认 `.backups` 不是同一个目录**，A301）；四档：空串 400「目录路径 不能为空」、`..` 400「路径包含非法组件」、白名单外绝对路径 403、白名单内绝对路径 200。空目录回 **200** `{"backups": []}`，不是 404 也不是 null；目录**不在场**时同样回空列表而**不把它建出来**（A332 / L249：六只只读面同源，构造零磁盘副作用）。索引里可以躺着**两条同 id** 的记录曾是实测形状（`timestamp` 不同而 `backup_path` 逐字相同）；**A298 已于 L250 收口**——同名再创建时那一行跟着更新，列表条数与磁盘份数一致，而 L250 之前写出的 `index.json` 里的同名多行读边照原样交回，前端行键因此继续拼时间戳。 错误档 **400 / 403** 自 **L252** 起逐档写进 OpenAPI 的 `responses`（A330 已收），本员不挂鉴权所以没有 401。 |
 | `POST` | `/api/system/backups` | 创建备份 | 回执七键（`backup_id` / `timestamp` / `source_path` / `backup_path` / `item_count` / `file_size` / `checksum`），两条路径都是**服务端绝对路径**。`name` 省略**或给空串**都生成 `backup_<YYYYmmdd_HHMMSS>`（秒级；它和回执 `timestamp` 自 **L250** 起来自**同一次** `datetime.now()`，改前是两次调用、跨秒时对不上，A303 已收）。同名再创建**覆盖磁盘那一份**，索引里那一行也跟着更新成新读数 ⇒ 行数与磁盘份数一致（**A298 已于 L250 收成 ①**）；未做的是 ②「让 `backup_id` 真的唯一」，所以同一秒内的两只**匿名**备份仍共享 id、只留一份，那一格由 `tests/unit/test_backup_index_collapse_l250.py` 当场钉住。`name` 必须是**一个可用的 URL 路径段**：带 `/` 或反斜杠、`.`/`..`、`#`/`?`、控制字符、尾随点或空白、超 255 字符一律 **400**（**A366 / L277** 收的那一格：改前 `sub/deep` 实测 **200**，文件落 `.backups/sub/deep.json`、索引与清单里都有这一行，而 `DELETE /api/system/backups/{backup_id}` 与 `…/restore` 的 `{backup_id}` 只匹配 `[^/]+`，percent 编码也救不回来 ⇒ 四档全 **404**，那份备份谁都动不了——建得出来却寻不了址；含 `#` 的名字坏在**另一维**：段形状合法，但裸插值的客户端把 `#` 之后当 fragment 丢掉，实测 restore **405** / delete **404**，只有 `frag%23ment` 寻得着，所以出生时一并拒，前端两只入口自 L277 起改走 `encodeURIComponent` 好让**存量**含 `#` 的备份仍可寻址）。落在根内且形状合法的名字照旧放行，判决只问名字不问落点；`path_lands_within` 那道旧闸保留当第二线，`../../escaped` 现在由新闸先点名（同是 400，文案换成「不能含路径分隔符」）。 —— L231 补的门只判「写出根外」，本轮把它收成「单段可寻址」。源文件不存在 404「文件不存在」。本族三只写操作都挂 `verify_api_key`，`web/src` 自 L233 起由请求拦截器送 `X-API-Key`，key 在「配置管理 → 写操作鉴权」卡上存 ⇒ 设了 key 而浏览器里没存（或存的不一致）就一律 401（A302 已收）。SDK 侧的 `clean_old_backups` / `verify_backup_integrity` 自 **L243** 起有 HTTP 入口（A300 已收），见下面 `…/cleanup` 与 `…/verify` 两行。 错误档 **400 / 401 / 403 / 404** 自 **L252** 起写进 `responses`，每一档都由一个真请求实测过。 |
 | `POST` | `/api/system/backups/{backup_id}/restore` | 恢复备份 | 写。备份不存在回 **404**（与 DELETE 同组同码、同文案「备份不存在」）。回执三键 `{backup_id, output_path, item_count}`，落点键叫 **`output_path`**（本组其余五条写盘端点叫 `output_file`，`split` 叫 `output_dir`）。目标已存在时**整份覆盖，不问**。把备份文件改坏再恢复 ⇒ **409**「备份文件校验和不匹配，文件可能已损坏，未执行恢复: <backup_id>」，且**一个字节都不写**：库里在覆盖输出路径之前抛 `BackupIntegrityError`（**A299 已于 L243 收口**；改前这一档是 200 加一句警告日志，交回来的就是改坏的内容）。想不等恢复就知道哪份坏了，用下面那只只读的 `…/verify`。 错误档 **400 / 401 / 403 / 404 / 409** 自 **L252** 起写进 `responses`，409 那句说明带上「目标文件与索引都未被改写」。 |
@@ -1066,6 +1066,12 @@ CLI 侧等价命令：`augmentor health-gate --input data/train_data.json --pass
 
 ### `POST /api/export/batch`
 
+> **A340 已于 L311 收口**：数据集名被当成路径片段用时（写边的 `require_within_dir` 拦住）
+> 不再**失败冒充成功** —— 改前并行支路把判决咽成 `logger.error`，回执是一片空 dict 而 HTTP
+> 面照样回 `success: true`；改后整批 raise，路由随之回 **400**（写边抛的是
+> `DataValidationError` ⇒ 请求方的错，与 `/api/dataset/split` 同一族口径一致），不再是一刀切的
+> 500。**代价照实记**：整批 raise 之前已落盘的那几只产物留在盘上。
+
 一次导出多个数据集 × 多个格式。
 
 ```json
@@ -1144,6 +1150,9 @@ CLI 侧等价命令：`augmentor health-gate --input data/train_data.json --pass
 
 对比两个版本。
 
+> **A360 已于 L311 收口**：版本 id 不存在 ⇒ **404**「版本不存在」（固定文案，**不回显调用方
+> 给的那个 id**）；改前是 500 固定文案。
+
 ```json
 {"version1": "20260916_170000_123456", "version2": "20260916_180000_654321"}
 ```
@@ -1166,6 +1175,9 @@ CLI 侧等价命令：`augmentor health-gate --input data/train_data.json --pass
 
 ### `GET /api/versions/{version_id}`
 
+> **A360 已于 L311 收口**：版本 id 不存在 ⇒ **404**「版本不存在」（固定文案）；改前是 500
+> 固定文案。
+
 ```json
 {
   "version_id": "...", "label": "...", "description": "...",
@@ -1174,6 +1186,9 @@ CLI 侧等价命令：`augmentor health-gate --input data/train_data.json --pass
 ```
 
 ### `GET /api/versions/{version_id}/data`
+
+> **A360 已于 L311 收口**：版本 id 不存在 ⇒ **404**「版本不存在」（固定文案）；改前是 500
+> 固定文案。
 
 ```json
 {"items": [{"instruction": "...", "output": "..."}]}

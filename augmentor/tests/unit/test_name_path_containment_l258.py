@@ -340,20 +340,18 @@ class TestExportAndSplitFace:
         produced = Path(result["train"]["jsonl"])
         assert produced.exists() and out.resolve() in produced.parents
 
-    def test_the_parallel_arm_swallows_the_verdict_and_reports_success(self, tmp_path):
-        """已知限制（本轮只钉不动，另立账）：默认并行支路把判决咽成一片空 dict
+    def test_the_parallel_arm_now_raises_the_verdict_too(self, tmp_path):
+        """**A340 / L311 已改**：默认并行支路不再把判决咽成一片空 dict
 
-        实测 `use_parallel=True`（出厂默认，`POST /api/export/batch` 走的就是这一档）：
-        写边**确实拦住了**、目录外零产物，但 `except Exception: logger.error` 让
-        `DataValidationError` 出不去，调用方拿到 `{"../../evilsite/x": {}}` 而 HTTP 面
-        照样回 `success: true`。串行支路对同一条输入会 raise ⇒ 两档判决不同。
-        本轮处置的是包含判据本身；这一档「失败冒充成功」按实测钉住，收口要改
-        `export_batch` / `export_all_formats` 的错误语义（契约变更），不在本轮范围内。
+        改前：写边**确实拦住了**、目录外零产物，但 `except Exception: logger.error`
+        让 `DataValidationError` 出不去，调用方拿到 `{"../../evilsite/x": {}}` 而
+        HTTP 面照样回 `success: true` —— **失败冒充成功**。改后并行支路整批 raise，
+        两档（并行 / 串行）判决相同。
         """
         out = tmp_path / "parout"
         out.mkdir()
-        results = Exporter().export_batch({"../../silent/x": self.ITEMS}, str(out), ["jsonl"])
-        assert results == {"../../silent/x": {}}
+        with pytest.raises(DataValidationError):
+            Exporter().export_batch({"../../silent/x": self.ITEMS}, str(out), ["jsonl"])
         assert not (tmp_path.parent / "silent").exists()
 
 
@@ -414,9 +412,16 @@ class TestTheHttpBoundary:
         assert str(REPO) not in detail, detail
         assert re.search(r"[A-Za-z]:[\\/]", detail) is None, detail
 
-    def test_a_ghost_id_still_lands_on_five_hundred(self, client):
-        """A280（一刀切收敛成 500）不在本轮处置面：这一支钉住本轮没有顺手改状态码契约"""
-        assert client.get("/api/versions/v_ghost").status_code == 500
+    def test_a_ghost_id_now_lands_on_four_hundred(self, client):
+        """**A360 / L311 已改**：不存在的版本 id ⇒ 404「版本不存在」
+
+        改前这一格是 500（一刀切收敛），本轮按 A280 记的修法①**逐文件收窄**：版本这一族
+        的 `VersionError` 唯一抛出点就是「版本不存在」⇒ 语义明确 ⇒ 落 404（固定文案，
+        不回显调用方给的 id）。**其余域错误仍落 500** —— 放行名单仍按类型判。
+        """
+        resp = client.get("/api/versions/v_ghost")
+        assert resp.status_code == 404, resp.text
+        assert resp.json()["detail"] == "版本不存在"
 
     def test_the_legitimate_version_faces_are_untouched(self, client):
         assert client.get("/api/versions").status_code == 200

@@ -52,37 +52,42 @@ class TestConfigSaveSecret:
 
 
 class TestExportFailureSwallowed:
-    def test_export_all_formats_swallows_errors(self, tmp_path, monkeypatch):
+    """**A340 / L311 已改**：并行支路不再把单格式失败咽掉
+
+    改前：并行路径在 `as_completed` 里吞掉单个格式的异常 ⇒ 回执少一格而调用方**看不出**
+    （HTTP 面照样回 `success: true` —— 失败冒充成功）。改后整批 raise：失败的那一条由门口
+    那把判据说话（写边抛 `DataValidationError` ⇒ 400；这里是通用 `RuntimeError` ⇒ 500）。
+    """
+
+    def test_export_all_formats_raises_the_failure(self, tmp_path, monkeypatch):
         exporter = Exporter()
 
         def _boom(self, items):
             raise RuntimeError("convert fail")
 
         monkeypatch.setattr(Exporter, "_convert_to_jsonl", _boom, raising=False)
-        # 仅并行路径会在 as_completed 中吞并单格式失败
-        results = exporter.export_all_formats(
-            [{"instruction": "q", "output": "a"}],
-            str(tmp_path),
-            use_parallel=True,
-        )
-        assert "jsonl" not in results
-        assert "alpaca" in results
+        # 仅并行路径走 as_completed；改后它不再吞掉失败
+        with pytest.raises(RuntimeError):
+            exporter.export_all_formats(
+                [{"instruction": "q", "output": "a"}],
+                str(tmp_path),
+                use_parallel=True,
+            )
 
-    def test_export_batch_swallows_errors(self, tmp_path, monkeypatch):
+    def test_export_batch_raises_the_failure(self, tmp_path, monkeypatch):
         exporter = Exporter()
 
         def _boom(self, items):
             raise RuntimeError("convert fail")
 
         monkeypatch.setattr(Exporter, "_convert_to_jsonl", _boom, raising=False)
-        results = exporter.export_batch(
-            {"ds": [{"instruction": "q", "output": "a"}]},
-            str(tmp_path),
-            formats=["jsonl", "alpaca"],
-            use_parallel=True,
-        )
-        assert "jsonl" not in results["ds"]
-        assert "alpaca" in results["ds"]
+        with pytest.raises(RuntimeError):
+            exporter.export_batch(
+                {"ds": [{"instruction": "q", "output": "a"}]},
+                str(tmp_path),
+                formats=["jsonl", "alpaca"],
+                use_parallel=True,
+            )
 
 
 class TestProfilingBranches:

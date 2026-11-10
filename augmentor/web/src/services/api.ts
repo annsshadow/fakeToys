@@ -1485,8 +1485,8 @@ export const registerDependencyDataset = async (
  * `GET /api/system/dependency/graph`
  *
  * 三键恒在：`nodes` / `edges` / `issues`。`registry_path` 的档位判决与列表那一支逐字相同。
- * `issues` 只报**悬空端点**（`missing_source` / `missing_target`），**不查环**：实测 A→B 与
- * B→A 成环时 `issues` 仍为空，所以这一格不能渲染成「校验通过」（A310）。`edges` 对纯前端
+ * `issues` 报三类：`missing_source` / `missing_target`（悬空端点）与 **`cycle`（依赖成环，
+ * A310 / L311 加的）** ⇒ 这一格**可以**渲染成「校验通过」了（改前成环时它是空的）。`edges` 对纯前端
  * 用户恒为空——三条端点里没有建边入口，CLI 的 `dependency --action` 也只有
  * register/list/graph/validate，边只能由 SDK 的 `add_dependency` 建立（A309）。
  */

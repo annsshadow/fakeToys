@@ -11,6 +11,7 @@ from pydantic import BaseModel
 
 from ..deps import (
     raise_internal_error,
+    raise_boundary_error,
 
     get_pipeline,
     load_items,
@@ -131,7 +132,9 @@ async def batch_export(request: BatchExportRequest, _auth: None = Depends(verify
     except HTTPException:
         raise
     except Exception as e:
-        raise_internal_error(e)
+        # A280 / L311 的逐文件收窄（导出这一族）：写边抛的 `DataValidationError`
+        # 是**请求方的错**（名字被当成路径片段用），落 400 而不是一刀切的 500。
+        raise_boundary_error(e)
 
 
 @router.post(

@@ -379,6 +379,54 @@ class DependencyManager:
                     "message": f"目标数据集不存在: {dep.target_dataset}"
                 })
         
+        # A310 / L311：加环检测（DFS 染色）。改前这一族只发两种 type
+        # （missing_source / missing_target），成环时 `issues` 里零报告 ⇒
+        # 页面上「校验问题 0 就绿」那一格读成「依赖关系没问题」——而一个环会让
+        # 下游任何按依赖顺序重建的流程死循环。
+        issues.extend(self._detect_cycles())
+        
+        return issues
+    
+    def _detect_cycles(self) -> List[Dict]:
+        """找出依赖图里的有向环，每个环报一条 `type: "cycle"` 的 issue
+        
+        DFS 染色（白 / 灰 / 黑）：撞到**灰**节点即是一条回边，那一段栈就是环。
+        同一个环只报一次（按环内节点集合去重）。
+        """
+        graph: Dict[str, List[Dependency]] = {}
+        for dep in self._dependencies:
+            graph.setdefault(dep.source_dataset, []).append(dep)
+        
+        WHITE, GRAY, BLACK = 0, 1, 2
+        color: Dict[str, int] = {}
+        issues: List[Dict] = []
+        reported = set()
+        
+        def visit(node: str, stack: List[str]) -> None:
+            color[node] = GRAY
+            stack.append(node)
+            for dep in graph.get(node, []):
+                nxt = dep.target_dataset
+                state = color.get(nxt, WHITE)
+                if state == WHITE:
+                    visit(nxt, stack)
+                elif state == GRAY:
+                    cycle = stack[stack.index(nxt):] + [nxt]
+                    key = tuple(sorted(cycle))
+                    if key in reported:
+                        continue
+                    reported.add(key)
+                    issues.append({
+                        "type": "cycle",
+                        "dependency": dep.to_dict(),
+                        "message": "依赖成环: " + " → ".join(cycle)
+                    })
+            stack.pop()
+            color[node] = BLACK
+        
+        for node in list(graph):
+            if color.get(node, WHITE) == WHITE:
+                visit(node, [])
         return issues
 
 

@@ -330,6 +330,7 @@ class Exporter:
             with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
                 futures = [executor.submit(export_single, fmt) for fmt in NATIVE_FORMATS]
                 
+                failures = []
                 for future in as_completed(futures):
                     try:
                         fmt_name, path = future.result()
@@ -337,6 +338,13 @@ class Exporter:
                         logger.info(f"导出格式 {fmt_name} 完成")
                     except Exception as e:
                         logger.error(f"导出失败: {e}")
+                        failures.append(e)
+                # A340 / L311：并行支路不再把判决咽成一片空 dict。改前是
+                # 「写边拦住了、回执却看不见」——调用方拿到 `{}` 而 HTTP 面照样回
+                # `success: true`（**失败冒充成功**）。改后整批 raise，失败的那一条
+                # 由门口那把判据说话（写边抛的是 `DataValidationError` ⇒ 400）。
+                if failures:
+                    raise failures[0]
         
         return results
     
@@ -388,12 +396,18 @@ class Exporter:
                 for fmt in format_names
             ]
 
+            failures = []
             for future in as_completed(futures):
                 try:
                     name_, fmt_, path = future.result()
                     results[name_][fmt_] = path
                 except Exception as e:
                     logger.error(f"批量导出失败: {e}")
+                    failures.append(e)
+            # A340 / L311：同上 —— 并行支路不再把判决咽掉（改前那一档回执是
+            # 「一片空 dict + success: true」）。整批 raise，失败的那一条说话。
+            if failures:
+                raise failures[0]
 
         return results
 

@@ -242,8 +242,9 @@ class TestThePageCarriesTheThreeOperations:
             "add_dependency 建立",       # A309：边只能由 SDK 建
             "在产品面上删不掉",           # A309：没有注销入口
             "remove_dataset",            # A309：连 SDK 都没有
-            "不查环",                    # A310
-            "依赖关系没问题",             # A310：0 不能读成校验通过
+            "依赖成环",                   # A310 / L311：成环现在也报出来了
+            "cycle",                     # A310 / L311：那一档的 type 名
+            "0 才真的读得成「没问题」",    # A310 / L311：0 才读得成校验通过
             "md5(名称) 的前 8 位",        # A306：id 只由名字算
             "created_at 会被刷新",        # A306
             "回显即丢",                  # A305：本轮收掉的那条
@@ -437,12 +438,18 @@ class TestMeasuredEndpointBehavior:
 
         payload = http.get("/api/system/dependency/graph").json()
         assert len(payload["nodes"]) == 2 and len(payload["edges"]) == 3
-        assert [i["type"] for i in payload["issues"]] == ["missing_target"]
+        # A310 / L311：成环现在**报出来**了（改前 issues 里一个字都没有 ⇒
+        # 「为空」被读成「没问题」）。悬空端点那一档一字未动，环那档多一格。
+        assert [i["type"] for i in payload["issues"]] == ["missing_target", "cycle"]
         assert payload["issues"][0]["message"] == "目标数据集不存在: ghost12345"
         assert set(payload["issues"][0]["dependency"]) == {
             "source_dataset", "target_dataset", "dependency_type", "description", "created_at"}
-        # A→B 与 B→A 明明成环，issues 里一个字都没有 ⇒ 「为空」不能读成「没问题」
-        assert not [i for i in payload["issues"] if "cycle" in i["type"] or "环" in i["message"]]
+        # A→B 与 B→A 成环 ⇒ issues 里有一档 `cycle`，且判决点名环上的数据集
+        cycles = [i for i in payload["issues"] if i["type"] == "cycle"]
+        assert len(cycles) == 1, payload["issues"]
+        # 环上那两只是**登记 id**（md5 前 8 位），不是登记名 —— 判决点名的就是它
+        assert ids["dsA"] in cycles[0]["message"], cycles[0]
+        assert ids["dsB"] in cycles[0]["message"], cycles[0]
 
     def test_only_the_post_is_key_gated(self, http_with_registry, monkeypatch):
         """A312：静态读 `dependant.dependencies` + 行为双证（设上 key 后无头 POST 是 401）"""

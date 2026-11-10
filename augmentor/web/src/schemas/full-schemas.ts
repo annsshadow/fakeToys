@@ -89,7 +89,7 @@ export const backupVerifyResponseSchema = z.object({
   results: z.array(backupVerifyEntryResponseSchema),
 })
 
-/** `api/routes/export.py:32` → BatchExportResponse */
+/** `api/routes/export.py:33` → BatchExportResponse */
 export const batchExportResponseSchema = z.object({
   success: z.boolean(),
   results: z.record(z.string(), z.record(z.string(), z.string())),
@@ -216,12 +216,12 @@ export const evaluateResponseSchema = z.object({
   details: z.array(z.record(z.string(), z.unknown())),
 })
 
-/** `api/routes/export.py:47` → ExportFormatsResponse */
+/** `api/routes/export.py:48` → ExportFormatsResponse */
 export const exportFormatsResponseSchema = z.object({
   formats: z.array(z.string()),
 })
 
-/** `api/routes/export.py:26` → ExportResponse */
+/** `api/routes/export.py:27` → ExportResponse */
 export const exportResponseSchema = z.object({
   success: z.boolean(),
   files: z.record(z.string(), z.string()),
@@ -390,7 +390,7 @@ export const piiPatternsResponseSchema = z.object({
   extra: z.array(z.string()),
 })
 
-/** `api/routes/export.py:38` → PreviewResponse */
+/** `api/routes/export.py:39` → PreviewResponse */
 export const previewResponseSchema = z.object({
   format: z.string(),
   original_data: z.array(z.record(z.string(), z.unknown())),
@@ -608,7 +608,7 @@ export const vectorStatusResponseSchema = z.object({
   storage_dir: z.string(),
 })
 
-/** `api/routes/version.py:31` → VersionDetailResponse */
+/** `api/routes/version.py:32` → VersionDetailResponse */
 export const versionDetailResponseSchema = z.object({
   version_id: z.string(),
   label: z.string().nullable(),
@@ -618,7 +618,7 @@ export const versionDetailResponseSchema = z.object({
   metadata: z.record(z.string(), z.unknown()),
 })
 
-/** `api/routes/version.py:47` → VersionDiffResponse */
+/** `api/routes/version.py:48` → VersionDiffResponse */
 export const versionDiffResponseSchema = z.object({
   version1: z.string(),
   version2: z.string(),
@@ -627,7 +627,7 @@ export const versionDiffResponseSchema = z.object({
   modified_count: z.number(),
 })
 
-/** `api/routes/version.py:59` → VersionHistoryResponse */
+/** `api/routes/version.py:60` → VersionHistoryResponse */
 export const versionHistoryResponseSchema = z.object({
   history: z.array(z.record(z.string(), z.unknown())),
 })

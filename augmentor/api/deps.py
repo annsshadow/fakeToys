@@ -818,8 +818,19 @@ def save_items(filename: str, items: List[dict]):
     _sync_write_json(resolve_data_path(filename, for_write=True), items)
 
 
-def raise_boundary_error(exc: Exception) -> None:
+def raise_boundary_error(
+    exc: Exception,
+    *,
+    not_found: str = "资源不存在",
+    not_found_types: Tuple[type, ...] = (),
+) -> None:
     """SDK 那把门口判据（``DataValidationError``）落 **400**，其余照旧收敛 500
+
+    **A280 / L311**：另接一只**「资源不存在」**的窄口（``not_found_types``）——
+    形状与 ``to_http_error`` 的同名参数逐格一致（A77：判据住一处，两把门口同形）。
+    语义明确的「不存在」类异常（如 ``VersionError`` 的唯一抛出点是「版本不存在」）
+    在这里落 **404**，而不是被一刀切折成 500；文案取**固定**的 ``not_found``，
+    不回显调用方给的名字。
 
     与 `raise_internal_error` 的差别只有一格，而这一格是**语义**的：
     `augmentor/validation.require_within_dir` 拦的是「调用方把一个名字当路径片段用、
@@ -832,6 +843,8 @@ def raise_boundary_error(exc: Exception) -> None:
     文案取 `str(exc)` 与 400 档同口径（`to_http_error` 的 ValueError 支同样回原文）；
     `require_within_dir` 的文案刻意只含名字与目录标签，不含解析后的绝对落点。
     """
+    if not_found_types and isinstance(exc, not_found_types):
+        raise HTTPException(status_code=404, detail=not_found)
     if isinstance(exc, DataValidationError):
         raise HTTPException(status_code=400, detail=str(exc))
     raise_internal_error(exc)

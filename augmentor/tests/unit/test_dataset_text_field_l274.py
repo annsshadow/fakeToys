@@ -617,16 +617,25 @@ class TestResidualMembersOfTheSameFunnel:
         assert phantom.status_code == unknown.status_code == int(PHANTOM_CODE)
         assert _send(self.client, tmp_path, "dataset_filter", "numeric")[0] == PHANTOM_CODE
 
-    def test_versions_diff_with_unknown_ids_is_still_500(self):
-        """A280 的新成员（本轮不动）：不存在的版本 id ⇒ 500 固定文案，且不回显调用方给的那两个名字"""
+    def test_versions_diff_with_unknown_ids_answers_404(self):
+        """A280 的新成员（**L311 / A360 已改**：不存在的版本 id ⇒ 404 固定文案，
+        且不回显调用方给的那两个名字）——改前这一格是 500 固定文案。
+
+        收窄只落在「语义明确的『不存在』」那一类（`VersionError` 在版本这一族的唯一
+        抛出点就是「版本不存在」），放行名单仍按**类型**判、不改成判 `ValueError`
+        ⇒ 其余域错误仍落 500（见下一支）。
+        """
         resp = self.client.post("/api/versions/diff",
                                 json={"version1": "nope-1", "version2": "nope-2"})
-        assert resp.status_code == 500
-        assert resp.json()["detail"] == INTERNAL_ERROR_DETAIL
+        assert resp.status_code == 404
+        assert resp.json()["detail"] == "版本不存在"
         assert "nope-1" not in resp.text
+        assert "nope-2" not in resp.text
 
     def test_version_error_is_a_value_error_yet_answered_500(self):
-        """判据维钉死：门口按 `DataValidationError` 放行而不是按 `ValueError` ⇒ A280 要拍的正是这一维"""
+        """判据维钉死：**不带窄口**时门口按 `DataValidationError` 放行而不是按
+        `ValueError` ⇒ `VersionError` 仍落 500（A280 要拍的正是这一维；收窄是
+        **按文件显式开窄口**，不是把放行名单整体放宽）"""
         from augmentor.exceptions import VersionError
         assert issubclass(VersionError, ValueError)
         assert not issubclass(VersionError, DataValidationError)
