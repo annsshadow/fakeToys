@@ -7,7 +7,7 @@ import json
 import logging
 import time
 import threading
-from typing import List, Dict, Optional, Set
+from typing import List, Dict, Optional, Set, Tuple
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from datetime import datetime
@@ -212,20 +212,25 @@ class CheckpointManager:
         logger.info(f"创建断点: {task_id}, 总条目: {total_items}")
         return checkpoint
     
-    def load_checkpoint(self, task_id: str) -> Optional[CheckpointData]:
-        """加载断点
-        
+    def _read_checkpoint_with_deltas(self, task_id: str) -> Tuple[Optional[CheckpointData], bool]:
+        """读一份断点并**在内存里**合并增量（不落盘、不清增量、不动环境态）
+
+        A408：读侧要的形状是「点名某个任务，看**那一份**的进度」，而
+        `load_checkpoint` 是**消费型**读（合并完落盘并清增量，还会把
+        `_current_checkpoint` 改指到这一份）⇒ 拿它当只读面用会做两件不该做的事：
+        把正在跑的增量吃掉、把环境态指针搬走。这一层是两者共用的纯读部分。
+
         Args:
             task_id: 任务 ID
-        
+
         Returns:
-            CheckpointData 实例，如果不存在则返回 None
+            `(断点, 是否合并过增量)`；断点不存在或读不出来时第一项是 `None`
         """
         checkpoint_path = self._get_checkpoint_path(task_id)
         
         if not checkpoint_path.exists():
             logger.info(f"断点不存在: {task_id}")
-            return None
+            return None, False
         
         try:
             with open(checkpoint_path, 'r', encoding='utf-8') as f:
@@ -257,8 +262,9 @@ class CheckpointManager:
                     idx for idx in dict.fromkeys(delta['completed']) if idx not in already_completed
                 ]
                 already_failed = set(data['failed_indices'])
-                fresh_failed = [idx for idx in dict.fromkeys(delta['failed'])
-                                if idx not in already_failed]
+                fresh_failed = [
+                    idx for idx in dict.fromkeys(delta['failed']) if idx not in already_failed
+                ]
 
                 data['completed_indices'].extend(fresh_completed)
                 data['failed_indices'].extend(fresh_failed)
@@ -270,19 +276,7 @@ class CheckpointManager:
                     int(k): v for k, v in delta['quality_scores'].items()
                 })
             
-            checkpoint = CheckpointData(**data)
-            self._current_checkpoint = checkpoint
-            self._pending_completed = set()
-            self._pending_failed = set()
-            
-            if delta_files:
-                # 合并结果立即落盘并清除增量，避免下次恢复重复累加。
-                # 顺序不能反、也不能不看判决：主文件没写成功时删增量＝把新进度删没了。
-                if self._save_checkpoint(checkpoint):
-                    self._remove_delta(task_id)
-            
-            logger.info(f"加载断点: {task_id}, 已处理: {checkpoint.processed_items}/{checkpoint.total_items}")
-            return checkpoint
+            return CheckpointData(**data), bool(delta_files)
         except (OSError, UnicodeError, ValueError, TypeError, KeyError) as e:
             # 这一族是「盘上这份断点确实用不了」的真实来路：读盘（OSError /
             # UnicodeDecodeError）、JSON 坏（JSONDecodeError 是 ValueError）、
@@ -292,8 +286,60 @@ class CheckpointManager:
             # 编程错误把已完成的整段工作变没了。编程错误（AttributeError 等）现在
             # 会上抛，不再有「没有断点」这个假答案。
             logger.error(f"加载断点失败: {e}")
+            return None, False
+
+    def load_checkpoint(self, task_id: str) -> Optional[CheckpointData]:
+        """加载断点（**消费型**：合并增量后落盘并清掉增量，还会改指环境态）
+        
+        Args:
+            task_id: 任务 ID
+        
+        Returns:
+            CheckpointData 实例，如果不存在则返回 None
+        """
+        checkpoint, had_delta = self._read_checkpoint_with_deltas(task_id)
+        if checkpoint is None:
+            return None
+        
+        try:
+            self._current_checkpoint = checkpoint
+            self._pending_completed = set()
+            self._pending_failed = set()
+            
+            if had_delta:
+                # 合并结果立即落盘并清除增量，避免下次恢复重复累加。
+                # 顺序不能反、也不能不看判决：主文件没写成功时删增量＝把新进度删没了。
+                if self._save_checkpoint(checkpoint):
+                    self._remove_delta(task_id)
+            
+            logger.info(f"加载断点: {task_id}, 已处理: {checkpoint.processed_items}/{checkpoint.total_items}")
+            return checkpoint
+        except (OSError, UnicodeError, ValueError, TypeError, KeyError) as e:
+            # 与改前同一族：写/清增量那一段出错时也不把异常泄给调用方
+            # （`load_checkpoint` 的调用方把它当「这个任务没有断点」处理）。
+            logger.error(f"加载断点失败: {e}")
             return None
     
+    def peek_checkpoint(self, task_id: str) -> Optional[CheckpointData]:
+        """只读地看一眼某一份断点（**不消费**增量、不动环境态）
+        
+        A408：读侧要点名「哪一次运行」时用它。它与 `load_checkpoint` 的差别正是
+        **副作用**：后者会把合并结果落盘并清掉增量（消费），还会把
+        `_current_checkpoint` 改指到这一份（改环境态）—— 拿它当只读面用，
+        等于「看一眼进度」把正在跑的增量吃掉、把别的调用方的环境态指针搬走。
+        
+        增量在内存里合并（与 `load_checkpoint` 同一份口径），但**不落盘、不清**：
+        读到的进度与「真去加载一次」读到的一致，而盘面一格未动。
+        
+        Args:
+            task_id: 任务 ID
+        
+        Returns:
+            CheckpointData 实例；不存在或读不出来时返回 None
+        """
+        checkpoint, _had_delta = self._read_checkpoint_with_deltas(task_id)
+        return checkpoint
+
     def _save_checkpoint(self, checkpoint: CheckpointData) -> bool:
         """保存断点（紧凑格式，原子替换）
 

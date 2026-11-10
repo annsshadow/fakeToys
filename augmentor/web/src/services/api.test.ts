@@ -264,7 +264,8 @@ describe('数据管理', () => {
 
 describe('数据增强', () => {
   it('startAugmentation 把 camelCase 参数映射为 snake_case 请求体', async () => {
-    respondWith({ success: true, message: '任务已启动' })
+    // A408：回执多带一格 `task_id`（这次运行的任务身份，客户端自己算不出来）
+    respondWith({ success: true, message: '任务已启动', task_id: 'abc123' })
 
     await api.startAugmentation('in.json', 'out.json', true, false, true)
 
@@ -274,6 +275,16 @@ describe('数据增强', () => {
       use_quality: true,
       use_dedup: false,
       use_checkpoint: true,
+    })
+  })
+
+  it('getProgress 点名任务时把 task_id 送进查询串（A408）', async () => {
+    respondWith({ status: 'no_checkpoint' })
+
+    await api.getProgress('task-abc123')
+
+    expect(instance.get).toHaveBeenCalledWith('/augment/progress', {
+      params: { task_id: 'task-abc123' },
     })
   })
 

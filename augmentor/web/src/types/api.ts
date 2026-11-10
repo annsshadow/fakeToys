@@ -88,10 +88,17 @@ export interface DatasetExportResponse {
 
 // ============ 数据增强 ============
 
-/** `POST /api/augment/start` */
+/**
+ * `POST /api/augment/start`
+ *
+ * `task_id` 是**这次运行**的任务身份（A408）：它按服务端**解析后**的输入路径
+ * 取 md5 前 12 位 ⇒ 客户端自己算不出来（它只知道送的文件名），要问「我这次
+ * 任务的进度」就得由服务端递回来。
+ */
 export interface StartAugmentResponse {
   success: boolean
   message: string
+  task_id: string
 }
 
 /** 没有进行中的任务时的进度响应 */

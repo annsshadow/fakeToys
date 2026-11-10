@@ -47,7 +47,12 @@ const spies = vi.hoisted(() => ({
 
 vi.mock('../services/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../services/api')>()
-  spies.startAugmentation = vi.fn().mockResolvedValue({ success: true, message: 'ok' })
+  // A408：启动回执多带一格 `task_id`（这次运行的任务身份，客户端自己算不出来）
+  spies.startAugmentation = vi.fn().mockResolvedValue({
+    success: true,
+    message: 'ok',
+    task_id: 'task-default',
+  })
   spies.getProgress = vi.fn().mockResolvedValue({ status: 'no_checkpoint' })
   spies.getCheckpoints = vi.fn().mockResolvedValue({ checkpoints: [] })
   spies.deleteCheckpoint = vi.fn().mockResolvedValue({ success: true, message: 'ok' })
@@ -177,6 +182,34 @@ describe('Augmentation 进度轮询', () => {
 
     await waitFor(() => expect(screen.getByText('t-42')).toBeInTheDocument())
     expect(screen.getByText('平均质量评分: 0.812')).toBeInTheDocument()
+  })
+
+  // A408：轮询必须点名**这次**的任务 —— 服务端递回的任务身份（客户端算不出来，
+  // 因为它只知道送的文件名、不知道服务端解析后的路径）。不点名时后端走的是
+  // 「当下谁的断点在跑」那种环境态读法，回执里的 task_id 可能是**别人那次**运行。
+  it('启动后轮询点名服务端递回的任务身份（A408）', async () => {
+    spies.getDataFiles.mockResolvedValue({ files: [{ name: 'seed.json' }] })
+    spies.startAugmentation.mockResolvedValue({
+      success: true,
+      message: 'ok',
+      task_id: 'task-abc123',
+    })
+    spies.getProgress.mockResolvedValue({ status: 'no_checkpoint' })
+
+    const { container } = render(<Augmentation />)
+
+    await waitFor(() => expect(spies.getDataFiles).toHaveBeenCalled())
+    fireEvent.mouseDown(container.querySelector('.ant-select')!)
+    await waitFor(() =>
+      expect(document.querySelector('.ant-select-item-option')).toBeInTheDocument(),
+    )
+    fireEvent.click(document.querySelector('.ant-select-item-option')!)
+    fireEvent.click(screen.getByRole('button', { name: /开始增强/ }))
+
+    await waitFor(
+      () => expect(spies.getProgress).toHaveBeenCalledWith('task-abc123'),
+      { timeout: 8000 },
+    )
   })
 })
 

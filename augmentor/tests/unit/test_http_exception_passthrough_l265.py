@@ -302,7 +302,7 @@ def identity(rows):
 #: 且 `_reject_escaping_dir_value` 在 try 体里是**被调用**的，所以调用维也看得见它 ⇒
 #: 装载维独有的名册 `MEASURED_LOAD_ONLY_TRIES` 仍是那 13 只，调用盲文件仍是那 3 只。
 MEASURED_FILES = 25
-MEASURED_RAISERS = 102
+MEASURED_RAISERS = 105  # **L308 记账批重量**：102 → **105**（既有欠账：HEAD 态实测闭包已是 105 只，常量停在 102 ⇒ `test_the_raiser_closure_is_the_measured_one` 与 `test_the_closure_seeds_every_direct_producer` 两支从那以后一直红着。实测：**闭包一只没动**（HEAD 态跑同一把尺子也是 105）⇒ 这笔是补记不是本轮引入。**L307 记账批重量**：102 → **105**
 #: 名册里必须出现的锚点：闸与上传面各挑几枚，防止闭包算成一堆同音名字却漏掉正主
 ANCHOR_RAISERS = ("resolve_within_roots", "resolve_data_path", "verify_api_key",
                   "assert_dataset_shape", "_read_upload_body", "_assert_within_roots",
@@ -313,13 +313,13 @@ ANCHOR_RAISERS = ("resolve_within_roots", "resolve_data_path", "verify_api_key",
 #: raiser。播种规则是「任何直接出声的函数名都是种子」，所以面内**没有**一只直接出声函数
 #: 落在闭包之外 —— 新增一只闸天然入面，不必等谁把它登记进名册（这一格的尺子见
 #: ``test_the_closure_seeds_every_direct_producer``，注入臂见闭包播种臂）。
-MEASURED_PRODUCERS = 68
-MEASURED_INDIRECT_RAISERS = 34
-MEASURED_CLAUSES = 59
+MEASURED_PRODUCERS = 70  # **L308 记账批重量**：68 → **70**（既有欠账，同上：HEAD 态实测「体里直接出声」已是 70 只。**L307 记账批重量**：68 → **70**
+MEASURED_INDIRECT_RAISERS = 35  # **L308 记账批重量**：34 → **35**（闭包 105 − 直接出声 70 = 35，与上两格同批；HEAD 态同样是 105 / 70 ⇒ 同样是既有欠账）
+MEASURED_CLAUSES = 60  # **L308 记账批重量**：59 → **60**（本轮：`get_augment_progress` 加了「点名任务没有断点 ⇒ 404」那一支 `except HTTPException: raise` ⇒ 支面 +1。**L307 记账批重量**：59 → **60**
 #: 支数 59 而所在函数 58 —— 唯一一只「同一函数两只支」是 ``upload_data``（读侧与写侧各一支）
-MEASURED_CLAUSE_OWNERS = 58
+MEASURED_CLAUSE_OWNERS = 59  # **L308 记账批重量**：58 → **59**（支面 +1 且落在「此前没有保码支」的那只函数上 ⇒ 所在函数数同步 +1）
 MEASURED_MULTI_CLAUSE_OWNERS = {("api/routes/data.py", "upload_data"): 2}
-MEASURED_SHAPE_TALLY = {BARE: 58, CONDITIONAL: 1, SWALLOW: 0}
+MEASURED_SHAPE_TALLY = {BARE: 59, CONDITIONAL: 1, SWALLOW: 0}  # **L308 记账批重量**：bare 58 → **59**（新增的那一支是 `except HTTPException: raise` ⇒ bare 形状 +1；conditional / swallow 两档一格未动）
 #: 配对面按 **try** 计数（一只 try 一处），53 处落在 53 个不同函数里
 MEASURED_PAIRED = 53
 MEASURED_PAIRED_OWNERS = 53
@@ -374,6 +374,10 @@ MEASURED_DEFENSIVE = {
     ("api/routes/data.py", "visualize_data"),
     ("api/routes/vector.py", "vector_status"),
     ("api/routes/version.py", "create_version"),
+    # L308：本轮 `get_augment_progress` 新增的 `except HTTPException: raise` 落在这一档 ——
+    # 配对面按**名字**判「try 体里可达的 raiser」，而体里是 `raise HTTPException(...)`
+    # （fastapi 的类，不是本仓的函数名）⇒ 该 try 不进配对面 ⇒ 这一支是「纯防御性」的。
+    ("api/routes/augment.py", "get_augment_progress"),
 }
 
 

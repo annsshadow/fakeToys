@@ -58,7 +58,12 @@ EXPECTED_PRODUCT_CALLS = {
     ("augmentor/pipeline.py", "get_remaining_indices"): (2, 2),
     ("augmentor/pipeline.py", "get_progress"): (1, 1),
     ("augmentor/checkpoint.py", "_save_delta"): (2, 2),
-    ("api/routes/augment.py", "get_progress"): (1, 0),
+    # A408（L308）：路由那一格从 (1, 0) 走到 (2, 1) —— 不带 `task_id` 的那一发仍是
+    # **环境态读法**（当下 `_current_checkpoint` 指谁就读谁，既有语义），而带
+    # `task_id` 的那一发**把断点对象递了进去** ⇒ 回执里的 `task_id` 才是
+    # 「问的那一次运行」而不是「最后加载断点的那一次」。两发都在，所以总数 1 → 2；
+    # 给了身份的那一发 0 → 1。
+    ("api/routes/augment.py", "get_progress"): (2, 1),
 }
 
 

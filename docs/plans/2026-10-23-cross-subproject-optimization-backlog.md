@@ -61,7 +61,7 @@
 | AU-P1 | 性能 | `augmentor/models/base.py:229`、`openai_model.py:79` 等（`requests.Session.post`） | 模型后端**同步阻塞**；FastAPI 靠 `pipeline.py:787` `run_in_executor` 线程池兜底，高并发线程耗尽、吞吐封顶 | 并发吞吐受限 | **L** |
 | AU-P2 | 性能 / 启动 | `augmentor/__init__.py`（~46 子模块）；`api/main.py:40`（15 个 route 包） | 顶层全量 import；CLI `--version`、单条缓存命令、单测导入都付出全量加载 | 冷启动慢、内存浪费 | **M** |
 | AU-P3 | 质量 | `augmentor/models/base.py:321-334` `_cache_get/_cache_put` | 构造器已建 `_generation_cache`（183 行），此处 `getattr(...,None)` 惰性兜底**永不触发**，死代码 | 噪声 | **S** |
-| AU-Q2 | 质量 / 可观测 | 49 处 `except Exception`（如 `config_validator.py:572`、`context.py:80/183`、`converter.py:849`、`checkpoint.py:286...`） | 部分把领域错误转泛化 500 或静默 `None`，掩盖根因；`config.py:388` 记录 `Exporter` 的 `ValueError` 被 API 兜底成 500 而非 400 | 排障难、行为不可期 | **M** |
+| AU-Q2 | 质量 / 可观测 | 49 处 `except Exception`（如 `config_validator.py:572`、`context.py:80/183`、`converter.py:849`、`checkpoint.py:280...`） | 部分把领域错误转泛化 500 或静默 `None`，掩盖根因；`config.py:388` 记录 `Exporter` 的 `ValueError` 被 API 兜底成 500 而非 400 | 排障难、行为不可期 | **M** |
 | AU-Q3 | 质量 | `Temp/l71q/tree/tests/`、`Temp/l57/...` 与 `tests/` 同名测试大量重叠 | 活跃 `tests/` 与 `Temp/` 归档重名，维护成本高、易漂移 | 冗余 | **S** |
 
 **W1 建议**：AU-Q1（注释保留，可引入 `ruamel.yaml` 或 dump 后按行合并原注释）、AU-P3、AU-Q3。
@@ -640,5 +640,5 @@ LY-5 配置热加载（结构改动）、LY-7 小程序虚拟化（需视觉验�
 - 断点逐条推进（`processed_items == 条数`）。
 
 顺带按现量重钉：`OPTIMIZATION_LOOP_2.md` 的 `pipeline.py:718 → 914`（3 处）、
-`pipeline.py:352 → 518`、`api/routes/augment.py:118 → 125`；
+`pipeline.py:352 → 518`、`api/routes/augment.py:133 → 125`；
 `test_export_census_sentinel_l177` 语料规模 416 → 417（第十九次）。

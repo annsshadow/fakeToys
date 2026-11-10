@@ -53,6 +53,7 @@ import {
   dataPageResponseSchema,
   dedupResponseSchema,
   qualityEvaluationResponseSchema,
+  messageResponseSchema,
   startAugmentResponseSchema,
   uploadResponseSchema,
   versionDataResponseSchema,
@@ -258,7 +259,10 @@ const MODELS: ModelCase[] = [
     file: 'api/routes/data.py',
   },
   { schema: visualizeResponseSchema, className: 'VisualizeResponse', file: 'api/routes/data.py' },
-  { schema: startAugmentResponseSchema, className: 'MessageResponse', file: 'api/schemas.py' },
+  // A408：启动端点的响应模型换成 `AugmentStartResponse`（`MessageResponse` + `task_id`）
+  { schema: startAugmentResponseSchema, className: 'AugmentStartResponse', file: 'api/routes/augment.py' },
+  // A408：`MessageResponse` 仍被 `DELETE /api/augment/checkpoints/{task_id}` 用着 ⇒ 另有一格
+  { schema: messageResponseSchema, className: 'MessageResponse', file: 'api/schemas.py' },
   {
     schema: checkpointListResponseSchema,
     className: 'CheckpointListResponse',
@@ -391,10 +395,10 @@ describe('schema 解析器自证（防恒真）', () => {
 const ALL_MODELS = [...MODELS, ...FULL_MODELS]
 
 describe('zod schema ↔ 后端 response_model 契约', () => {
-  it('覆盖面非空：85 个模型、全部字段都可解析', () => {
-    expect(MODELS).toHaveLength(16)
+  it('覆盖面非空：86 个模型、全部字段都可解析', () => {
+    expect(MODELS).toHaveLength(17)
     expect(FULL_MODELS).toHaveLength(70)
-    expect(ALL_MODELS).toHaveLength(86)
+    expect(ALL_MODELS).toHaveLength(87)
 
     let pythonFields = 0
     for (const model of ALL_MODELS) {
@@ -403,7 +407,7 @@ describe('zod schema ↔ 后端 response_model 契约', () => {
       expect(fields!.length, `${model.className} 解析出 0 个字段`).toBeGreaterThan(0)
       pythonFields += fields!.length
     }
-    expect(pythonFields).toBe(404)
+    expect(pythonFields).toBe(409)
   })
 
   it('full-schemas 的「文件:行号」映射与类定义现量一致', () => {

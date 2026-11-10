@@ -61,10 +61,16 @@ export const uploadResponseSchema = z.object({
 
 // ============ 数据增强 ============
 
-/** `POST /api/augment/start` → `MessageResponse`（`api/schemas.py`） */
+/**
+ * `POST /api/augment/start` → `AugmentStartResponse`（`api/routes/augment.py`）
+ *
+ * `task_id` 是**这次运行**的任务身份（A408）：服务端按解析后的输入路径算出来的，
+ * 客户端自己算不出来 ⇒ 要问「我这次任务的进度」就得靠它。
+ */
 export const startAugmentResponseSchema = z.object({
   success: z.boolean(),
   message: z.string(),
+  task_id: z.string(),
 })
 
 /**
@@ -104,6 +110,18 @@ export const augmentProgressSchema = z.union([
 /** `GET /api/augment/checkpoints` → `CheckpointListResponse` */
 export const checkpointListResponseSchema = z.object({
   checkpoints: z.array(z.string()),
+})
+
+/**
+ * `api/schemas.py` → `MessageResponse`（带人类可读说明的操作结果）
+ *
+ * A408 之后启动端点换成了 `AugmentStartResponse`（本模型 + `task_id`），
+ * 而 `DELETE /api/augment/checkpoints/{task_id}` 仍用着本模型 ⇒ 两者的 zod
+ * 面必须分开（键集与必填性都被一致性守卫逐格对着 Python 模型查）。
+ */
+export const messageResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
 })
 
 /** 第 56 轮：`DELETE /api/augment/checkpoints/{taskId}` → 删除结果 */

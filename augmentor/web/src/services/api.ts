@@ -510,9 +510,20 @@ export const startAugmentation = async (
   )
 }
 
-export const getProgress = async (): Promise<AugmentProgress> => {
+/**
+ * 读增强进度。
+ *
+ * `taskId` 给了 ⇒ 读**那一份**任务的进度（A408）：不带参数时后端走的是
+ * 「当下谁的断点在跑」那种环境态读法，回执里的 `task_id` 可能是**最后一次**
+ * 运行的那一次，而不是调用方问的这一回。
+ */
+export const getProgress = async (taskId?: string): Promise<AugmentProgress> => {
   return checkedResponse<AugmentProgress>('getProgress', augmentProgressSchema, () =>
-    api.get('/augment/progress'),
+    // 不点名时**逐字**调 `api.get('/augment/progress')`（不传第二格）——
+    // 多传一个 `undefined` 也会让「按调用形状断言」的既有用例变红，而那是噪声。
+    taskId
+      ? api.get('/augment/progress', { params: { task_id: taskId } })
+      : api.get('/augment/progress'),
   )
 }
 

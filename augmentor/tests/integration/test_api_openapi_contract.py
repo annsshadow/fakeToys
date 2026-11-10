@@ -493,7 +493,8 @@ CALLS = {
             "/api/augment/start",
             json={"input_file": "data.json", "output_file": "augmented.json"},
         ),
-        keys=_keys("success", "message"),
+        # A408：回执多带一格 `task_id`（这次运行的任务身份，客户端算不出来）
+        keys=_keys("success", "message", "task_id"),
     ),
     ("GET", "/api/augment/progress"): _Case(
         request=lambda c: c.get("/api/augment/progress"),

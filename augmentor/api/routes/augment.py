@@ -87,6 +87,21 @@ class AugmentReportResponse(BaseModel):
     memory_monitor: Dict[str, Any]
 
 
+class AugmentStartResponse(MessageResponse):
+    """启动增强任务的回执：在 `success` / `message` 之外**带上任务身份**
+
+    A408：任务身份的权威是 `AugmentorPipeline.build_task_id`（按输入文件的
+    **解析后**路径取 md5 前 12 位），而客户端**算不出**那个 id（它只知道自己
+    送的文件名，不知道服务端解析后的路径）⇒ 客户端要问「**我这次**任务的进度」
+    就必须由服务端把那个 id 递回来。回执里没有它，客户端只能去读「当下谁的
+    断点在跑」那种环境态读法。
+
+    `task_id` 声明成可选：它是**新增**的一格，老客户端不读它 ⇒ 形状变化是
+    加法而不是改法。
+    """
+    task_id: Optional[str] = None
+
+
 class AugmentProgressResponse(BaseModel):
     """增强进度
 
@@ -144,7 +159,7 @@ class AugmentRequest(BaseModel):
 
 @router.post(
     "/api/augment/start",
-    response_model=MessageResponse,
+    response_model=AugmentStartResponse,
     summary="启动增强任务",
 )
 async def start_augmentation(
@@ -184,7 +199,14 @@ async def start_augmentation(
 
         background_tasks.add_task(run_augment)
 
-        return {"success": True, "message": "增强任务已启动"}
+        # A408：把**这次运行**的任务身份递回客户端。id 的算法与
+        # `augment_dataset` 内部用的是同一个（`build_task_id` 按解析后的输入
+        # 路径取 md5 前 12 位）⇒ 客户端拿它去问「我这次任务的进度」能问到同一份。
+        # 走**类**上的静态方法而不是 `p.build_task_id(...)`：那个 id 是路径的纯
+        # 函数，与实例无关 ⇒ 注入的替身管道（测试里常见）也能给出同一个 id。
+        from augmentor.pipeline import AugmentorPipeline
+        task_id = AugmentorPipeline.build_task_id(str(input_path))
+        return {"success": True, "message": "增强任务已启动", "task_id": task_id}
     except HTTPException:
         raise
     except Exception as e:
@@ -234,11 +256,32 @@ async def delete_checkpoint(task_id: str, _auth: None = Depends(verify_api_key))
     response_model_exclude_none=True,
     summary="获取增强进度",
 )
-async def get_augment_progress():
-    """获取增强进度"""
+async def get_augment_progress(task_id: Optional[str] = None):
+    """获取增强进度
+
+    **A408：可以点名任务。**
+
+    不带 `task_id` 时是**环境态读法**（当下 `_current_checkpoint` 指谁就读谁）
+    —— 那份回执里的 `task_id` 可能属于**最后加载断点的那一次运行**，而不是
+    调用方问的那一次（`get_progress` 的 docstring 早就把这个口径写明了，
+    但 HTTP 面没给「点名」这条路）。
+
+    带上 `task_id` 时读的是**那一份**断点的进度，且是**只读**的：不消费增量
+    （不把正在跑的增量吃掉）、不动环境态（不把别的调用方的指针搬走）。
+    那个任务没有断点时回 **404**（「问的那个任务不存在」与「当下没有任务在跑」
+    是两件事，不该用同一句话回答）。
+    """
     try:
         p = get_pipeline()
-        return p.checkpoint_manager.get_progress()
+        if task_id is None:
+            # 环境态读法（既有行为，一格未动）
+            return p.checkpoint_manager.get_progress()
+        ck = p.checkpoint_manager.peek_checkpoint(task_id)
+        if ck is None:
+            raise HTTPException(status_code=404, detail=f"任务 {task_id} 没有断点")
+        return p.checkpoint_manager.get_progress(ck)
+    except HTTPException:
+        raise
     except Exception as e:
         raise_internal_error(e)
 

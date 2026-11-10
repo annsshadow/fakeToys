@@ -32,6 +32,10 @@ export default function Augmentation() {
   const runningRef = useRef(running)
   runningRef.current = running
   const [progress, setProgress] = useState<AugmentProgressDetail | null>(null)
+  // A408：**这次运行**的任务身份（服务端按解析后的输入路径算出来，客户端自己
+  // 算不出来）。用 ref 同步最新值（与 runningRef 同款）：`checkProgress` 是空依赖
+  // 的稳定回调，读 state 会拿到闭包里的陈旧值。
+  const taskIdRef = useRef<string | undefined>(undefined)
   const [checkpoints, setCheckpoints] = useState<string[]>([])
   // L277：轮询开关是一个**状态**，定时器由 effect 拥有——终态（`progress >= 1`）把开关关掉，
   // 表随之被 cleanup 清掉；再点一次「开始增强」把开关打开，表重新起。
@@ -74,7 +78,9 @@ export default function Augmentation() {
   // 清表再起表，轮询节奏变成随渲染抖动。
   const checkProgress = useCallback(async () => {
     try {
-      const result = await getProgress()
+      // A408：点名任务 ⇒ 读的是**我这次**的进度；没点名时仍是后端的环境态读法
+      // （「当下谁的断点在跑」）。回执里的 `task_id` 因此不再可能是别人的那次。
+      const result = await getProgress(taskIdRef.current)
       // 后端有两种响应：`{ status: 'no_checkpoint' }`，或完整进度（**不带** `status`）。
       // 所以判别只能用 `task_id` 在不在——读 `status` 既收窄不了类型，
       // 也不比这个判断更贴合后端实现。
@@ -103,7 +109,9 @@ export default function Augmentation() {
         setPolling(false)
       }
     } catch {
-      // 忽略错误
+      // A408：点名读法在「那个任务还没建断点」时回 404 —— 运行中就继续等
+      // （断点是增强开始后很快建起来的）；不在运行就收表，别让表一直挂着。
+      if (!runningRef.current) setPolling(false)
     }
   }, [])
 
@@ -129,7 +137,16 @@ export default function Augmentation() {
 
     setRunning(true)
     try {
-      await startAugmentation(inputFile, outputFile, useQuality, useDedup, useCheckpoint, useAsync)
+      const started = await startAugmentation(
+        inputFile,
+        outputFile,
+        useQuality,
+        useDedup,
+        useCheckpoint,
+        useAsync,
+      )
+      // A408：任务身份由服务端递回（客户端算不出来）⇒ 之后轮询点名读**这次**的进度
+      taskIdRef.current = started.task_id
       message.success('增强任务已启动')
       // 上一轮到终态时把表关了；这里重新打开，否则第二次点「开始增强」页面不会再刷进度。
       setPolling(true)

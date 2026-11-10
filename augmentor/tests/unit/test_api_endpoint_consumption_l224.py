@@ -527,7 +527,7 @@ class TestNoGhostCalls:
         assert not bad, f"这些调用带了契约里没声明的 query 键：{bad}"
 
     def test_at_least_one_call_carries_a_query_key(self):
-        """query 那一支判据不能空转：两处来源合起来现量 **15** 条
+        """query 那一支判据不能空转：两处来源合起来现量 **16** 条
 
         **1 条写在路径串里**（L251 的 `/data/list?all_files=true`；L277 把原先另一条
         `/versions/create?filename=…` 改走了 `params`，含 `&` / `=` / `#` 的文件名拼串会拆坏
@@ -538,9 +538,11 @@ class TestNoGhostCalls:
         `verify` 一只 `{backup_id, backup_dir}`）；去重后 **10** 个键名（L251 添 `all_files`）。
         """
         with_query = [s for s in call_shapes() if s[2]]
-        assert len(with_query) == 15, f"带 query 的调用现量 15 条，实得 {len(with_query)} 条"
-        assert len({k for _, _, keys in with_query for k in keys}) == 10
-        assert len(params_bindings()) == 14, "params 对象那一支现量 14 条"
+        # L308：进度读法可点名任务 ⇒ 前端多一员带 query 的调用（`task_id`），
+        # 键名多一只、params 对象多一条（现量 15 → 16 / 10 → 11 / 14 → 15）。
+        assert len(with_query) == 16, f"带 query 的调用现量 16 条，实得 {len(with_query)} 条"
+        assert len({k for _, _, keys in with_query for k in keys}) == 11
+        assert len(params_bindings()) == 15, "params 对象那一支现量 15 条"
         assert sum(1 for _, _, keys, _ in params_bindings() if keys == {"backup_dir"}) == 5
         # L232 那三条：两条 GET 的间隔是 8，POST 那条因为请求体先提成 `const body` 是 14
         assert sum(1 for _, _, keys, _ in params_bindings() if keys == {"registry_path"}) == 3
@@ -588,13 +590,13 @@ class TestTheParamsWindowIsScoped:
         写在路径串里的那一档从 2 条收到 1 条。本轮只按实测回填数字，判据一格没松。
         """
         gaps = [gap for _, _, _, gap in params_bindings()]
-        assert len(gaps) == 14 and max(gaps) <= 41, f"归属间隔现量 ≤41，实得 {gaps}"
+        assert len(gaps) == 15 and max(gaps) <= 41, f"归属间隔现量 ≤41，实得 {gaps}"
         original = PARAMS_MAX_GAP
         try:
             globals()["PARAMS_MAX_GAP"] = 3
-            assert params_bindings() == [], "收到 3 应把 14 条真归属全判没"
+            assert params_bindings() == [], "收到 3 应把 15 条真归属全判没"
             globals()["PARAMS_MAX_GAP"] = 10 ** 6
-            assert len(params_bindings()) == 14, "放宽上限今天不多收：语料里每块前面都有调用"
+            assert len(params_bindings()) == 15, "放宽上限今天不多收：语料里每块前面都有调用"
         finally:
             globals()["PARAMS_MAX_GAP"] = original
 
