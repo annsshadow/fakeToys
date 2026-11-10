@@ -23,7 +23,7 @@ related_components:
   - augmentor/api/routes/multimodal.py
   - augmentor/augmentor/data/multimodal.py
   - augmentor/tests/unit/test_request_and_receipt_bounds_l309.py
-  - augmentor/backup.py
+  - augmentor/augmentor/backup.py
 ---
 
 # 长度要有上限、截断要点名：请求侧与回执侧的两类资源闸
@@ -107,6 +107,6 @@ A402（L291 立）量到三件同族但形状不同的事：
 
 - 账本：`augmentor/OPTIMIZATION_LOOP_2.md` L309 清单行与日志块、A402 行
 - 守卫：`augmentor/tests/unit/test_request_and_receipt_bounds_l309.py`（7 支 / 零 parametrize）
-- 复用：`augmentor/backup.py` 的 `max_backups`（保留份数那一族的既有形状）、
+- 复用：`augmentor/augmentor/backup.py` 的 `max_backups`（保留份数那一族的既有形状）、
   `augmentor/api/routes/dataset_tools.py` 里「请求面用 400 而不是 422」的既有约定
 - 同族：A409 / A399（产物与账的封顶）、A401 / A403（回执与产物对齐）
