@@ -823,6 +823,7 @@ def raise_boundary_error(
     *,
     not_found: str = "资源不存在",
     not_found_types: Tuple[type, ...] = (),
+    boundary_types: Tuple[type, ...] = (),
 ) -> None:
     """SDK 那把门口判据（``DataValidationError``）落 **400**，其余照旧收敛 500
 
@@ -831,6 +832,16 @@ def raise_boundary_error(
     语义明确的「不存在」类异常（如 ``VersionError`` 的唯一抛出点是「版本不存在」）
     在这里落 **404**，而不是被一刀切折成 500；文案取**固定**的 ``not_found``，
     不回显调用方给的名字。
+
+    **A280 / L313**：再接**第二只窄口**（``boundary_types``）—— **400 档的域判决白名单**，
+    与 ``not_found_types`` 逐格同形（同名同形、同样是**按类型放行**而不是按父类放行）。
+    它存在的理由：有的模块把域判决**折成了自己的异常**（``augmentor/dedup.py`` 把
+    ``require_ratio`` 那句判决折成 ``DedupError``），那一族不在 ``DataValidationError``
+    家族里 ⇒ 按家族放行接不住它 ⇒ 只能按**具名类型**点名放行。
+    **为什么不用 ``ValueError`` 泛档**：泛档会把**内部**异常也回成 400 + 原文
+    （A386 那一族「内部异常原文当 400 判决外发」），而一刀切 500 又会把调用方的参数缺陷
+    说成服务端故障 ⇒ 两头都错时取中间：**具名放行、其余照旧 500**。
+    文档取 ``str(exc)``，与 400 档同口径（``to_http_error`` 的 ``ValueError`` 支同样回原文）。
 
     与 `raise_internal_error` 的差别只有一格，而这一格是**语义**的：
     `augmentor/validation.require_within_dir` 拦的是「调用方把一个名字当路径片段用、
@@ -845,7 +856,9 @@ def raise_boundary_error(
     """
     if not_found_types and isinstance(exc, not_found_types):
         raise HTTPException(status_code=404, detail=not_found)
-    if isinstance(exc, DataValidationError):
+    if isinstance(exc, DataValidationError) or (
+        boundary_types and isinstance(exc, boundary_types)
+    ):
         raise HTTPException(status_code=400, detail=str(exc))
     raise_internal_error(exc)
 

@@ -101,8 +101,15 @@ class TestGenericExceptionBranches:
         # L180/A155②：500 档回固定文案，异常原文「boom」不外泄、只进服务端日志
         assert response.json()["detail"] == INTERNAL_ERROR_DETAIL
 
-    def test_outliers_value_error_maps_to_400(self, quality_client, monkeypatch):
-        """outliers 专属 except ValueError → 400（与通用 500 区分）"""
+    def test_outliers_plain_value_error_maps_to_500(self, quality_client, monkeypatch):
+        """outliers 的**泛档** `except ValueError` 已摘（A280 / L313）⇒ 内部 `ValueError` 是 500
+
+        改前这一支有 `except ValueError → 400`，于是**内部**异常（这里是注入的裸
+        `ValueError`）被回成一条 400 判决，**原文照发**给客户端 ⇒ 那是 A386 那一族
+        「内部异常原文当 400 判决外发」。L313 起这一族按**类型**放行：域判决
+        （`DataValidationError` 家族：方法名、阈值）落 400，其余一律 500 + 固定文案，
+        **原文只进服务端日志**（A155① / A155②）。
+        """
         import api.routes.quality as quality
         import augmentor.outlier as outlier_module
 
@@ -119,5 +126,6 @@ class TestGenericExceptionBranches:
             "/api/quality/outliers",
             json={"input_file": "q.json", "method": "zscore"},
         )
-        assert response.status_code == 400
-        assert "method 非法" in response.json()["detail"]
+        assert response.status_code == 500
+        assert response.json()["detail"] == INTERNAL_ERROR_DETAIL
+        assert "method 非法" not in response.text

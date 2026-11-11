@@ -8,8 +8,8 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from ..deps import raise_internal_error, load_items, resolve_data_path, run_in_thread, verify_api_key
-from augmentor.exceptions import DataValidationError
+from ..deps import raise_boundary_error, load_items, resolve_data_path, run_in_thread, verify_api_key
+from augmentor.exceptions import DataValidationError, DedupError
 from augmentor.validation import require_ratio_list
 
 router = APIRouter(tags=["quality"])
@@ -173,7 +173,7 @@ async def evaluate_quality(request: QualityRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise_internal_error(e)
+        raise_boundary_error(e)
 
 
 @router.post(
@@ -205,7 +205,9 @@ async def deduplicate(request: DedupRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise_internal_error(e)
+        # A280 / L313：`DedupError` 是这一支自己的域异常（`augmentor/dedup.py` 把
+        # `require_ratio` 那句判决折成了它）⇒ 按**具名类型**放行成 400，其余照旧 500。
+        raise_boundary_error(e, boundary_types=(DedupError,))
 
 
 @router.post(
@@ -241,7 +243,7 @@ async def generate_report(request: QualityRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise_internal_error(e)
+        raise_boundary_error(e)
 
 
 @router.post(
@@ -273,7 +275,7 @@ async def clean_data(request: QualityRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise_internal_error(e)
+        raise_boundary_error(e)
 
 
 @router.post(
@@ -297,7 +299,7 @@ async def annotate_data(request: QualityRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise_internal_error(e)
+        raise_boundary_error(e)
 
 
 @router.post(
@@ -322,7 +324,7 @@ async def run_benchmark(request: QualityRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise_internal_error(e)
+        raise_boundary_error(e)
 
 
 class OutlierRequest(BaseModel):
@@ -388,12 +390,12 @@ async def detect_outliers_endpoint(request: OutlierRequest):
         return await run_in_thread(detect)
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="文件不存在")
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
     except HTTPException:
         raise
     except Exception as e:
-        raise_internal_error(e)
+        # A280 / L313：域判决（`DataValidationError` 家族：方法名、阈值）⇒ 400；
+        # 其余异常照旧 500 + 固定文案（**不再**把裸 `ValueError` 的原文回成 400 判决）。
+        raise_boundary_error(e)
 
 
 @router.post("/api/quality/profiling", response_model=ProfilingResponse, summary="数据集画像")
@@ -426,7 +428,7 @@ async def profile_dataset(
     except HTTPException:
         raise
     except Exception as e:
-        raise_internal_error(e)
+        raise_boundary_error(e)
 
 
 class HealthGateRequest(BaseModel):
@@ -514,8 +516,8 @@ def _validate_health_gate(request: HealthGateRequest) -> None:
        拒绝、或反之」这一族不再有实现空间：同一函数、同一判据、同一份报错文案。
 
     `text_field` 的存在性**不在这里判**——它要读数据集才知道，门口没有那份数据；
-    判在 `gate_dataset_health`（CLI 与 API 共用那一层），由路由的 `except ValueError`
-    落 400，消息原样可行动。
+    判在 `gate_dataset_health`（CLI 与 API 共用那一层），由路由的 `raise_boundary_error`
+    按 `DataValidationError` 家族落 400，消息原样可行动。
     """
     try:
         require_ratio_list("weights", request.weights, length=4)
@@ -558,10 +560,9 @@ async def health_gate(request: HealthGateRequest):
         return await run_in_thread(judge)
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="文件不存在")
-    except ValueError as e:
-        # 数据本身不合法（如空数据集）：`DataValidationError` 是 ValueError 的子类
-        raise HTTPException(status_code=400, detail=str(e))
     except HTTPException:
         raise
     except Exception as e:
-        raise_internal_error(e)
+        # A280 / L313：域判决（`DataValidationError` 家族：空数据集、字段不存在、
+        # 三只阈值）⇒ 400；其余异常照旧 500 + 固定文案。
+        raise_boundary_error(e)

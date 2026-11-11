@@ -293,11 +293,16 @@ class TestRaiseInternalErrorL180:
         assert offenders == [], "裸 500 回异常原文（逐格点名）：\n" + "\n".join(offenders)
 
     def test_the_scanner_is_not_blind_on_the_allowed_statuses(self):
-        """正控制：同一条判据摘掉状态码那一格，现量 10 处、逐文件点名
+        """正控制：同一条判据摘掉状态码那一格，现量 8 处、逐文件点名
 
         这一支证明 ③ 的 0 是**量出来的 0**——判据确实读到了这批调用点，只是它们都是
         400/409 档（L179 拍定「可行动文案照回」）。哪天有人把其中一支的 400 改成 500，
         上一支当场点名它。
+
+        **L313 起质量那一族从 3 处降到 1 处**：那两处 `except ValueError` 泛档删掉之后，
+        域判决改由 `raise_boundary_error` 一处出（那把门口的 `detail=str(exc)` 在
+        `api/deps.py` 那一格，不在路由面）⇒ 路由面上只剩 `_validate_health_gate` 那一处
+        （它回的是 SDK 那句「权重必须是 4 个元素」，属**可行动文案照回**这一档）。
         """
         per_file = {}
         statuses = set()
@@ -315,9 +320,11 @@ class TestRaiseInternalErrorL180:
             "api/routes/data.py": 1,
             "api/routes/dataset_tools.py": 1,
             "api/routes/multimodal.py": 1,
-            "api/routes/quality.py": 3,
+            # L313：两处 `except ValueError` 泛档删掉（内部异常原文不再回成 400 判决）
+            # ⇒ 路由面上只剩 `_validate_health_gate` 那一处。
+            "api/routes/quality.py": 1,
             "api/routes/system_ops.py": 1,
-        }, f"原文回 detail 的调用点现量 10 处（3/1/1/1/3/1），实得 {per_file}"
+        }, f"原文回 detail 的调用点现量 8 处（3/1/1/1/1/1），实得 {per_file}"
         assert statuses == {400, 409}, f"现量只该有 400/409 两档，实得 {statuses} ⇒ 500 档混进来了"
 
     def test_injected_leak_forms_each_shout(self):

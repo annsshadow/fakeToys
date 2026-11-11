@@ -244,7 +244,7 @@ export const featuresResponseSchema = z.object({
   intent_distribution: z.record(z.string(), z.number()),
 })
 
-/** `api/routes/quality.py:476` → GateReportResponse */
+/** `api/routes/quality.py:478` → GateReportResponse */
 export const gateReportResponseSchema = z.object({
   verdict: z.string(),
   passed: z.boolean(),
@@ -254,7 +254,7 @@ export const gateReportResponseSchema = z.object({
   metrics: z.record(z.string(), z.unknown()),
 })
 
-/** `api/routes/quality.py:459` → HealthMetricsResponse */
+/** `api/routes/quality.py:461` → HealthMetricsResponse */
 export const healthMetricsResponseSchema = z.object({
   completeness: z.number(),
   diversity: z.number(),
@@ -262,7 +262,7 @@ export const healthMetricsResponseSchema = z.object({
   coverage: z.number(),
 })
 
-/** `api/routes/quality.py:467` → HealthReportResponse */
+/** `api/routes/quality.py:469` → HealthReportResponse */
 export const healthReportResponseSchema = z.object({
   health_score: z.number(),
   level: z.string(),
@@ -271,7 +271,7 @@ export const healthReportResponseSchema = z.object({
   total_samples: z.number(),
 })
 
-/** `api/routes/quality.py:494` → HealthGateResponse */
+/** `api/routes/quality.py:496` → HealthGateResponse */
 export const healthGateResponseSchema = z.object({
   health: healthReportResponseSchema,
   gate: gateReportResponseSchema,
@@ -373,7 +373,7 @@ export const multimodalScanResponseSchema = z.object({
   records: z.array(multimodalRecordResponseSchema),
 })
 
-/** `api/routes/quality.py:343` → OutlierResponse */
+/** `api/routes/quality.py:345` → OutlierResponse */
 export const outlierResponseSchema = z.object({
   total_items: z.number(),
   outlier_count: z.number(),
@@ -399,7 +399,7 @@ export const previewResponseSchema = z.object({
   warnings: z.array(z.string()),
 })
 
-/** `api/routes/quality.py:358` → ProfilingResponse */
+/** `api/routes/quality.py:360` → ProfilingResponse */
 export const profilingResponseSchema = z.object({
   total_items: z.number(),
   field_completeness: z.record(z.string(), z.unknown()),

@@ -16,8 +16,12 @@
    ``gate_dataset_health`` 的三只阈值、``ImpactEvaluator.is_beneficial`` 的
    ``min_scale_gain``、``OutlierDetector`` 的 ``threshold``。判在 SDK 而不是判在端点，
    是因为 CLI 与 API 共用这几层（``quality_gate`` 自己的 docstring 就把这句话写成原则）。
-3. **现量维**：14 只 float 旋钮 × 四形（NaN / 无穷 / 5.0 / -1.0）的 HTTP 归宿**整表**钉死。
-   其中 ``raise_internal_error`` 那一族（**A280**，待拍）按**观测行为**钉住，不是假装它合法——
+3. **现量维**：16 只 float 旋钮 × 四形（NaN / 无穷 / 5.0 / -1.0）的 HTTP 归宿**整表**钉死。
+   **L313 起 A280 在质量那一族已收口**（逐文件收窄、按**类型**放行）⇒ 那六行
+   （`evaluate` / `report` / `dedup` / `benchmark` 各四形）由 **500** 翻成 **400**，
+   判决点名那个旋钮；改前它们是「SDK 有判决、门口一刀切折成 500」那一族，
+   **当时按观测行为钉住**（不是假装它合法）⇒ 谁把这一族改回去，这张表当场红。
+   其余各族仍按**观测行为**钉住，不是假装它们合法——
    谁改这一族，这张表当场红。**422 渲染崩溃那一族（原为 A311 的新现量）已由 L284 收口**：
    `api/main.py` 文末先走 FastAPI 默认的校验失败处理器，渲染抛 ValueError 才把非有限浮点换成
    同名**字符串** token 重渲染 ⇒ 表里那一格从 `CRASH` 翻成 `422`，判据也同步从「洞的快照」
@@ -121,8 +125,10 @@ CENSUS = {
     ("/api/quality/health-gate", "duplicate_rate_max"): ("400", "400", "200", "200"),
     ("/api/quality/health-gate", "completeness_min"): ("400", "400", "200", "200"),
     ("/api/quality/outliers", "threshold"): ("400", "200", "200", "400"),
-    ("/api/quality/dedup", "threshold"): ("500", "500", "500", "500"),
-    ("/api/quality/benchmark", "threshold"): ("500", "500", "500", "500"),
+    ("/api/quality/evaluate", "threshold"): ("400", "400", "400", "400"),
+    ("/api/quality/report", "threshold"): ("400", "400", "400", "400"),
+    ("/api/quality/dedup", "threshold"): ("400", "400", "400", "400"),
+    ("/api/quality/benchmark", "threshold"): ("400", "400", "400", "400"),
     ("/api/leakage/check", "fuzzy_threshold"): ("422", "422", "422", "422"),
 }
 
@@ -516,7 +522,7 @@ class TestOutlierThresholdSink:
 
 
 class TestHttpFace:
-    """现量表：14 只旋钮 × 四形的 HTTP 归宿整表相等"""
+    """现量表：16 只旋钮 × 四形的 HTTP 归宿整表相等"""
 
     def setup_method(self):
         self.client = TestClient(app)
@@ -597,17 +603,36 @@ class TestHttpFace:
                 assert CPYTHON_ENGLISH not in text, (method, shape, text[:160])
         assert json.loads(Path(files["out"]).read_text(encoding="utf-8")) == []
 
-    def test_a280_cells_stay_pinned_as_internal_error(self, tmp_path):
-        """`raise_internal_error` 那一族：SDK 有判决但门口把它降成 500（**待拍，本轮不动**）"""
+    def test_a280_cells_are_now_domain_verdicts(self, tmp_path):
+        """A280 那一族（**L313 收口**）：SDK 有判决 ⇒ 门口落 400，且判决点名那个旋钮
+
+        改前这一族是「SDK 有判决、门口一刀切折成 500 + 固定文案」⇒ 调用方写错了参数，
+        服务端回一句「服务器内部错误」。本轮按 A280 记的修法①**逐文件收窄**（质量那一族，
+        `api/routes/quality.py` 九处）⇒ 域判决（`DataValidationError` 家族 + 去重那一支的
+        `DedupError` 具名窄口）落 **400**，判决**点名那个旋钮**；其余异常照旧 500。
+
+        两句判决的形状不同、各自钉住：评分/基准那三只点 `quality.threshold`（域判决的
+        原文），去重那一只带的是 SDK 既成契约那句「阈值必须在 0-1 之间」（不点名字段名、
+        也不回显实际值 ⇒ 本轮不改 SDK 的公开契约）。
+        """
         files = self._files(tmp_path)
-        for path in ("/api/quality/dedup", "/api/quality/benchmark"):
+        for path in ("/api/quality/evaluate", "/api/quality/report",
+                     "/api/quality/benchmark"):
             for shape in SHAPE_KEYS:
                 body = _base_body(path, files)
                 body["threshold"] = SHAPE_VALUES[shape]
                 code, text = _post(self.client, path, body)
-                assert code == "500", (path, shape, text[:120])
-                assert INTERNAL_ERROR_DETAIL in text
-                assert "DataValidationError" not in text
+                assert code == "400", (path, shape, text[:120])
+                assert "quality.threshold" in text, (path, shape, text[:120])
+                assert INTERNAL_ERROR_DETAIL not in text, (path, shape, text[:120])
+
+        for shape in SHAPE_KEYS:
+            body = _base_body("/api/quality/dedup", files)
+            body["threshold"] = SHAPE_VALUES[shape]
+            code, text = _post(self.client, "/api/quality/dedup", body)
+            assert code == "400", (shape, text[:120])
+            assert json.loads(text)["detail"] == "阈值必须在 0-1 之间", (shape, text[:120])
+            assert INTERNAL_ERROR_DETAIL not in text, (shape, text[:120])
 
     def test_a311_new_cell_render_crash_stays_pinned(self, tmp_path):
         """422 渲染崩溃那一格 L284 已收口：现量钉「422 + 同名 token」，反向臂钉「摘掉就回 CRASH」
