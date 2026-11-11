@@ -527,8 +527,14 @@ class TestRulerBites:
         code, _text = _send(self.client, tmp_path, "quality_dedup", "numeric")
         assert code == "400"
 
-    def test_narrowing_the_funnel_branch_returns_the_500(self, monkeypatch, tmp_path):
-        """削掉 `raise_internal_error` 那一支放行 ⇒ 六只端点回到 500"""
+    def test_narrowing_the_funnel_branch_still_folds_the_parent_into_500(self, monkeypatch):
+        """削掉 `raise_internal_error` 那一支放行 ⇒ **那把门口**仍把父类折成 500
+
+        **L314 起这一支不再走端点**：质量与数据两族都改走 `raise_boundary_error`
+        （A280 已拍：按**类型**放行 ⇒ 域判决落 400）⇒ 「端点回 500」不再是这把
+        门口的形状。**门口本身**仍只放行具名的 `DatasetTextError`（父类成员仍 500）
+        ⇒ 这一支改成直接量那把门口 ⇒ **不是恒真**：削掉那一支，父类仍 500。
+        """
         import api.deps as deps
 
         class NeverMatch(DatasetTextError):
@@ -538,8 +544,10 @@ class TestRulerBites:
         monkeypatch.setattr(deps, "DatasetTextError", NeverMatch)
         # 抛出点仍是真类型，`isinstance(真, NeverMatch)` 为假 ⇒ 那一支等于不存在
         assert real is not NeverMatch
-        code, _text = _send(self.client, tmp_path, "analyze", "numeric")
-        assert code == "500"
+        with pytest.raises(HTTPException) as caught:
+            deps.raise_internal_error(DataValidationError("threshold 非有限"))
+        assert caught.value.status_code == 500
+        assert caught.value.detail == deps.INTERNAL_ERROR_DETAIL
 
     def test_dropping_the_verdict_wording_breaks_the_naming_test(self, monkeypatch, tmp_path):
         """文案臂：判决不点名字段 ⇒ `test_the_400_names_record_field_and_type` 会红"""

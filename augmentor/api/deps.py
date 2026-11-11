@@ -570,7 +570,7 @@ def to_http_error(
         # 只回传行列号：足够定位，又不泄漏实现细节。
         return HTTPException(
             status_code=400,
-            detail=f"数据文件不是合法 JSON（第 {exc.lineno} 行第 {exc.colno} 列）",
+            detail=_json_decode_detail(exc),
         )
     if isinstance(exc, ValueError):
         return HTTPException(status_code=400, detail=str(exc))
@@ -818,6 +818,20 @@ def save_items(filename: str, items: List[dict]):
     _sync_write_json(resolve_data_path(filename, for_write=True), items)
 
 
+def _json_decode_detail(exc: json.JSONDecodeError) -> str:
+    """JSON 解析失败的那句中文判决（**两把门口共用一份** ⇒ 判据住一处）
+
+    `to_http_error` 与 `raise_boundary_error` 都用它 ⇒ 同一份坏文件在两条路上拿到
+    **逐字相同**的那句判决（`数据文件不是合法 JSON（第 N 行第 M 列）`）。
+    只回传行列号：足够定位，又不泄漏实现细节。
+
+    放在这里而不是 `to_http_error` 上面，是因为**行号纪律**：卷二账本 L304 块有一处
+    在册引用钉在 `def to_http_error(` 的现量行（`api/deps.py:525`）⇒ 这只 helper
+    落在它**之下**才不会把那一格顶走（`api/deps.py` 全仓无在册引用指向 821 之后）。
+    """
+    return f"数据文件不是合法 JSON（第 {exc.lineno} 行第 {exc.colno} 列）"
+
+
 def raise_boundary_error(
     exc: Exception,
     *,
@@ -856,6 +870,10 @@ def raise_boundary_error(
     """
     if not_found_types and isinstance(exc, not_found_types):
         raise HTTPException(status_code=404, detail=not_found)
+    if isinstance(exc, json.JSONDecodeError):
+        # A280 / L314：坏 JSON 文件是**客户端那份文件**的错 ⇒ 400 + 同一句中文判决
+        # （与 `to_http_error` 那一档逐字同源 ⇒ 判据住一处；只回行列号，不回原文）。
+        raise HTTPException(status_code=400, detail=_json_decode_detail(exc))
     if isinstance(exc, DataValidationError) or (
         boundary_types and isinstance(exc, boundary_types)
     ):

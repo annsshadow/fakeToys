@@ -15,11 +15,13 @@ MAX_SCAN_RECORDS = 500
 
 from ..deps import (
     get_pipeline,
+    raise_boundary_error,
     raise_internal_error,
     resolve_data_dir,
     resolve_within_roots,
     run_in_thread,
 )
+from augmentor.exceptions import DataFormatError, DataLoadError
 
 router = APIRouter(tags=["multimodal"])
 
@@ -198,12 +200,15 @@ async def scan_directory(request: ScanRequest):
             return report
 
         return await run_in_thread(run)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
     except HTTPException:
         raise
     except Exception as e:
-        raise_internal_error(e)
+        # A280 / L314：**按类型放行**（不按 `ValueError` 泛档放行）——
+        # 目录不可读（`DataLoadError`）与坏图片（`DataFormatError`）是**客户端那份
+        # 文件**的错 ⇒ 400 + 那句原判决；其余异常照旧 500 + 固定文案
+        # （改前那条 `except ValueError` 泛档会把**内部**异常也回成 400 判决、
+        # 且把内部原文发出去 ⇒ A386 那一族）。
+        raise_boundary_error(e, boundary_types=(DataLoadError, DataFormatError))
 
 
 @router.get(

@@ -203,7 +203,7 @@ class TestWhatTheListHandsBackIsReachable:
 
     这一句是 `test_api_security.py::TestDataListScansWhitelist` 立的那条承诺在宽档下的续量。
     内容形态那一格**按现量钉**而不是按应有的形状钉：非数组那份拿到的是 500 + 固定文案，而不是
-    `assert_dataset_shape` 里那句 400 原话——`load_data` 的收尾分支（`api/routes/data.py:212`）
+    `assert_dataset_shape` 里那句 400 原话——`load_data` 的收尾分支（`api/routes/data.py:213`）
     用 `except Exception` 兜住了 `raise_internal_error`，而 `HTTPException` 也在它的吞掉范围内。
     那一格属于 **A280** 那一族（一刀切收敛），A280 待拍（状态码是对外契约），所以本轮只把它的
     现量钉下来；谁去收 A280，这一支要同批改。
@@ -222,19 +222,25 @@ class TestWhatTheListHandsBackIsReachable:
         assert ok.status_code == 200, ok.json()
         assert ok.json()["items"] == DATASET
 
-    def test_the_wrong_shape_currently_collapses_to_a_flat_500(self, roots):
-        """A280 的现量：`configish.json` 拿到 500 + 固定文案，形态那句 400 原话不出现在响应里
+    def test_the_wrong_shape_now_answers_the_shape_verdict(self, roots):
+        """**A280 / L314 收口**：形态不合法的文件 ⇒ **400 + 那句形态判决**
 
-        两支分别钉「状态码是 500」与「文案不泄漏」（后者是 A155① 那一格），因为把它们并成
-        「非 200」一条既抓不到状态码漂移，也抓不到有人把 `str(exc)` 原样回传。
+        改前（**A280 那一族的现量**）：`configish.json` 拿到 500 + 固定文案，形态那句
+        400 原话不出现在响应里 —— `load_data` 的收尾分支（`api/routes/data.py`）用
+        `except Exception` 兜住了 `raise_internal_error`，而 `HTTPException` 也在它的
+        吞掉范围内 ⇒ **客户端的错被说成服务端的故障**。**L314 起那一格按类型放行**
+        ⇒ `HTTPException` 原样直通（400 + 形态判决），其余异常仍 500 + 固定文案。
+
+        两支分别钉「状态码是 400」与「文案不泄漏内部细节」（后者是 A155① 那一格）：
+        形态判决是**可行动的**（点名顶层形状），内部细节（部署路径一类）一个字都不许出。
         """
         from api.deps import INTERNAL_ERROR_DETAIL
 
         http, *_ = roots
         bad = http.get("/api/data/load/configish.json")
-        assert bad.status_code == 500, bad.json()
-        assert bad.json()["detail"] == INTERNAL_ERROR_DETAIL, bad.json()
-        assert "顶层必须是 JSON 数组" not in bad.json()["detail"]
+        assert bad.status_code == 400, bad.json()
+        assert "顶层必须是 JSON 数组" in bad.json()["detail"], bad.json()
+        assert INTERNAL_ERROR_DETAIL not in bad.json()["detail"], bad.json()
 
 
 @needs_web_src

@@ -542,12 +542,14 @@ class TestTheHttpBoundary:
         ], body
         assert body["exists"] is False
 
-    def test_the_export_route_still_answers_500_for_a_boundary_verdict(self, tmp_path, monkeypatch):
-        """A280（把这类门口一刀切收敛成 400）不在本轮处置面：这一支钉本轮没改状态码契约
+    def test_the_export_route_answers_400_for_a_boundary_verdict(self, tmp_path, monkeypatch):
+        """**A280 / L314 已处置这一格**：越界的 `formats` ⇒ 400 + 那句域判决
 
         合法输入先过白名单那道闸（`AUGMENTOR_DATA_ROOTS` 指向 tmp，零写入仓库 `data/`），
-        越界的 `formats` 由 `api/routes/export.py` 那句 `raise_internal_error` 收敛成 500，
-        正文不带部署路径；磁盘上输出目录之外零产物。
+        越界的 `formats` 由 `api/routes/export.py` 那句 `raise_boundary_error` 落 **400**
+        （改前是 `raise_internal_error` 一刀切收敛成 **500** —— A280 那一族的现量）；
+        正文**不含部署路径**（那句判决只点「导出格式名」与目录标签）；磁盘上输出目录之外
+        零产物（那一格仍要验：400 之后也不能已经写过东西）。
         """
         items = tmp_path / "in.json"
         items.write_text(json.dumps(ITEMS), encoding="utf-8")
@@ -560,7 +562,8 @@ class TestTheHttpBoundary:
                 "formats": ["../../evilfmt"],
             },
         )
-        assert response.status_code == 500, response.text
+        assert response.status_code == 400, response.text
+        assert "导出格式名" in response.json()["detail"], response.text
         assert str(tmp_path.resolve()) not in response.text
         assert list(tmp_path.glob("train_data_..*")) == []
 

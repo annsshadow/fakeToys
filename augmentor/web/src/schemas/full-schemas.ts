@@ -181,7 +181,7 @@ export const datasetInfoResponseSchema = z.object({
   metadata: z.record(z.string(), z.unknown()),
 })
 
-/** `api/routes/data.py:94` → DemoItem */
+/** `api/routes/data.py:95` → DemoItem */
 export const demoItemSchema = z.object({
   instruction: z.string(),
   input: z.string(),
@@ -342,13 +342,13 @@ export const modelsResponseSchema = z.object({
   default: z.string(),
 })
 
-/** `api/routes/multimodal.py:72` → MultimodalFormatsResponse */
+/** `api/routes/multimodal.py:74` → MultimodalFormatsResponse */
 export const multimodalFormatsResponseSchema = z.object({
   image_extensions: z.array(z.string()),
   audio_extensions: z.array(z.string()),
 })
 
-/** `api/routes/multimodal.py:27` → MultimodalRecordResponse */
+/** `api/routes/multimodal.py:29` → MultimodalRecordResponse */
 export const multimodalRecordResponseSchema = z.object({
   text: z.string(),
   image: z.record(z.string(), z.unknown()).nullable(),
@@ -358,7 +358,7 @@ export const multimodalRecordResponseSchema = z.object({
   errors: z.array(z.string()),
 })
 
-/** `api/routes/multimodal.py:42` → MultimodalScanResponse */
+/** `api/routes/multimodal.py:44` → MultimodalScanResponse */
 export const multimodalScanResponseSchema = z.object({
   total_records: z.number(),
   valid_records: z.number(),

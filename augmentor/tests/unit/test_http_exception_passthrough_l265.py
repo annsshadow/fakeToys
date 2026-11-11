@@ -313,13 +313,13 @@ ANCHOR_RAISERS = ("resolve_within_roots", "resolve_data_path", "verify_api_key",
 #: raiser。播种规则是「任何直接出声的函数名都是种子」，所以面内**没有**一只直接出声函数
 #: 落在闭包之外 —— 新增一只闸天然入面，不必等谁把它登记进名册（这一格的尺子见
 #: ``test_the_closure_seeds_every_direct_producer``，注入臂见闭包播种臂）。
-MEASURED_PRODUCERS = 70  # **L308 记账批重量**：68 → **70**（既有欠账，同上：HEAD 态实测「体里直接出声」已是 70 只。**L307 记账批重量**：68 → **70**
-MEASURED_INDIRECT_RAISERS = 35  # **L308 记账批重量**：34 → **35**（闭包 105 − 直接出声 70 = 35，与上两格同批；HEAD 态同样是 105 / 70 ⇒ 同样是既有欠账）
-MEASURED_CLAUSES = 60  # **L308 记账批重量**：59 → **60**（本轮：`get_augment_progress` 加了「点名任务没有断点 ⇒ 404」那一支 `except HTTPException: raise` ⇒ 支面 +1。**L307 记账批重量**：59 → **60**
+MEASURED_PRODUCERS = 69  # **L314 记账批重量**：70 → **69**（本轮：`api/routes/multimodal.py` 那一支 `except ValueError` 泛档被摩掉 ⇒ `scan_directory` 体里的「直接出声」的 `raise HTTPException(...)` 一只不再在 ⇒ 直接出声的那一面 **-1**；它的判定改走**具名窄口** → 目录不存在与坏图片那两格仍是 400）。**L308 记账批重量**：68 → **70**（既有欠账，同上：HEAD 态实测「体里直接出声」已是 70 只。**L307 记账批重量**：68 → **70**
+MEASURED_INDIRECT_RAISERS = 36  # **L314 记账批重量**：35 → **36**（本轮 `MEASURED_PRODUCERS` 70 → **69** ⇒ 闭包 105 − 直接出声 69 = 36，与那两格同批；`multimodal.py` 那一支泛档删掉 ⇒ `scan_directory` 不再是「直接出声」的那一只）（闭包 105 − 直接出声 70 = 35，与上两格同批；HEAD 态同样是 105 / 70 ⇒ 同样是既有欠账）
+MEASURED_CLAUSES = 61  # **L314 记账批重量**：60 → **61**（本轮：`api/routes/data.py` 的 `load_data` 加了一支 `except HTTPException: raise`（那一支的体里有可达 raiser，配对面按**名字**判，但 `load_data` 体里是 `read_json_file` 与 `require_item_text` 两个调用 ⇒ 不是本仓的 raiser 名字 ⇒ 那一支是「纯防御性」的）⇒ 支面 +1）。**L308 记账批重量**：59 → **60**（本轮：`get_augment_progress` 加了「点名任务没有断点 ⇒ 404」那一支 `except HTTPException: raise` ⇒ 支面 +1。**L307 记账批重量**：59 → **60**
 #: 支数 59 而所在函数 58 —— 唯一一只「同一函数两只支」是 ``upload_data``（读侧与写侧各一支）
-MEASURED_CLAUSE_OWNERS = 59  # **L308 记账批重量**：58 → **59**（支面 +1 且落在「此前没有保码支」的那只函数上 ⇒ 所在函数数同步 +1）
+MEASURED_CLAUSE_OWNERS = 60  # **L314 记账批重量**：59 → **60**（支面 +1 且落在「此前没有保码支」的那只函数上 ⇒ 所在函数数同步 +1）。**L308 记账批重量**：58 → **59**（支面 +1 且落在「此前没有保码支」的那只函数上 ⇒ 所在函数数同步 +1）
 MEASURED_MULTI_CLAUSE_OWNERS = {("api/routes/data.py", "upload_data"): 2}
-MEASURED_SHAPE_TALLY = {BARE: 59, CONDITIONAL: 1, SWALLOW: 0}  # **L308 记账批重量**：bare 58 → **59**（新增的那一支是 `except HTTPException: raise` ⇒ bare 形状 +1；conditional / swallow 两档一格未动）
+MEASURED_SHAPE_TALLY = {BARE: 60, CONDITIONAL: 1, SWALLOW: 0}  # **L314 记账批重量**：bare 59 → **60**（新增的那一支是 `except HTTPException: raise` ⇒ bare 形状 +1；conditional / swallow 两档一格未动）。**L308 记账批重量**：bare 58 → **59**（新增的那一支是 `except HTTPException: raise` ⇒ bare 形状 +1；conditional / swallow 两档一格未动）
 #: 配对面按 **try** 计数（一只 try 一处），53 处落在 53 个不同函数里
 MEASURED_PAIRED = 53
 MEASURED_PAIRED_OWNERS = 53
@@ -378,6 +378,8 @@ MEASURED_DEFENSIVE = {
     # 配对面按**名字**判「try 体里可达的 raiser」，而体里是 `raise HTTPException(...)`
     # （fastapi 的类，不是本仓的函数名）⇒ 该 try 不进配对面 ⇒ 这一支是「纯防御性」的。
     ("api/routes/augment.py", "get_augment_progress"),
+    # **L314**：`api/routes/data.py` 的 `load_data` 新增的那一支落在这一档 —— 它的体里只有 `read_json_file` 与 `require_item_text` 两个调用 ⇒ 不是本仓的 raiser 名字 ⇒ 不进配对面。
+    ("api/routes/data.py", "load_data"),
 }
 
 

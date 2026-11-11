@@ -98,7 +98,9 @@ async def export_data(request: ExportRequest, _auth: None = Depends(verify_api_k
     except HTTPException:
         raise
     except Exception as e:
-        raise_internal_error(e)
+        # A280 / L314：域判决（导出落点名越界 / 冒号盘符）⇒ 400 + 那句判决；
+        # 其余照旧 500 + 固定文案。
+        raise_boundary_error(e)
 
 
 @router.post(
@@ -162,7 +164,9 @@ async def preview_export(request: PreviewRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise_internal_error(e)
+        # A280 / L314：不支持的格式 / 非法预览条数（`preview.py` 的域判决）⇒ 400；
+        # 其余照旧 500 + 固定文案。
+        raise_boundary_error(e)
 
 
 @router.get(

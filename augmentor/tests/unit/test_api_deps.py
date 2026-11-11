@@ -319,12 +319,14 @@ class TestRaiseInternalErrorL180:
             # 用的是本仓既有的 `raise HTTPException(400, str(exc))` 形状（不是 500 档）。
             "api/routes/data.py": 1,
             "api/routes/dataset_tools.py": 1,
-            "api/routes/multimodal.py": 1,
             # L313：两处 `except ValueError` 泛档删掉（内部异常原文不再回成 400 判决）
             # ⇒ 路由面上只剩 `_validate_health_gate` 那一处。
             "api/routes/quality.py": 1,
             "api/routes/system_ops.py": 1,
-        }, f"原文回 detail 的调用点现量 8 处（3/1/1/1/1/1），实得 {per_file}"
+            # **L314**：`api/routes/multimodal.py` 那一处 `except ValueError` 泛档也删掉了
+            # （目录不可读 / 坏图片改走**具名窄口** ⇒ 400 + 那句原判决；其余异常 500）
+            # ⇒ 这一族路由面上**零处**原文回 detail 的调用点。
+        }, f"原文回 detail 的调用点现量 7 处（3/1/1/1/1），实得 {per_file}"
         assert statuses == {400, 409}, f"现量只该有 400/409 两档，实得 {statuses} ⇒ 500 档混进来了"
 
     def test_injected_leak_forms_each_shout(self):

@@ -357,12 +357,17 @@ class TestExportRoutes:
         assert payload["converted_data"]
         assert "warnings" in payload
 
-    def test_preview_invalid_format_500(self, client, data_file):
-        """非法格式应返回错误而不是静默成功"""
+    def test_preview_invalid_format_400(self, client, data_file):
+        """非法格式应返回**可行动的 400 判决**而不是静默成功（**A280 / L314**：改前是 500）
+
+        改前这一支钉着 500（`raise_internal_error` 一刀切）⇒ 客户端把一个自己写错的格式
+        看成「服务器内部错误」；本轮按类型放行 ⇒ 域判决落 **400** + 那句点名格式的判决。
+        """
         response = client.post(
             "/api/export/preview", json={"input_file": data_file, "format": "nope"}
         )
-        assert response.status_code == 500
+        assert response.status_code == 400, response.text
+        assert "不支持的导出格式" in response.json()["detail"], response.text
 
     def test_export_to_dir(self, client, data_file, tmp_path):
         """导出接口需实际产出文件"""

@@ -21,6 +21,7 @@ from augmentor.exceptions import DataValidationError
 from augmentor.validation import require_count
 from ..deps import (
     raise_internal_error,
+    raise_boundary_error,
     mutate_json_file,
     allowed_data_roots,
     assert_dataset_shape,
@@ -218,8 +219,13 @@ async def load_data(filename: str, page: int = 1, page_size: int = 20, search: s
             "items": items[start:end],
             "indices": indices[start:end],
         }
+    except HTTPException:
+        # A280 / L314：`read_json_file` 那一档（文件不是合法 JSON / 顶层不是数组）
+        # **已经是一句 400 判决** ⇒ 原样直通。改前它落进下面的 `except Exception`
+        # ⇒ 一份坏文件被折成 500 + 固定文案（客户端的错被说成服务端的故障）。
+        raise
     except Exception as e:
-        raise_internal_error(e)
+        raise_boundary_error(e)
 
 
 @router.put(
@@ -574,7 +580,9 @@ async def analyze_data(filename: str):
     except HTTPException:
         raise
     except Exception as e:
-        raise_internal_error(e)
+        # A280 / L314：坏 JSON 文件（客户端那份文件坏了）⇒ 400 + 那句中文判决；
+        # 其余异常照旧 500 + 固定文案。
+        raise_boundary_error(e)
 
 
 @router.get(
@@ -604,7 +612,8 @@ async def visualize_data(filename: str):
     except HTTPException:
         raise
     except Exception as e:
-        raise_internal_error(e)
+        # A280 / L314：坏 JSON 文件 ⇒ 400 + 那句中文判决；其余照旧 500 + 固定文案。
+        raise_boundary_error(e)
 
 
 def _public_chart_paths(charts: Dict[str, str], chart_dir: Path) -> Dict[str, str]:

@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
 
-from ..deps import raise_internal_error, get_pipeline, resolve_data_path, verify_api_key
+from ..deps import raise_internal_error, raise_boundary_error, get_pipeline, resolve_data_path, verify_api_key
 from ..schemas import MessageResponse
 
 logger = logging.getLogger(__name__)
@@ -247,7 +247,9 @@ async def delete_checkpoint(task_id: str, _auth: None = Depends(verify_api_key))
         p.checkpoint_manager.delete_checkpoint(task_id)
         return {"success": True, "message": "断点已删除"}
     except Exception as e:
-        raise_internal_error(e)
+        # A280 / L314：坏任务 id（`require_within_dir` 那一档：越界 / 冒号盘符）
+        # ⇒ 400 + 那句域判决；其余照旧 500 + 固定文案。
+        raise_boundary_error(e)
 
 
 @router.get(
@@ -283,7 +285,9 @@ async def get_augment_progress(task_id: Optional[str] = None):
     except HTTPException:
         raise
     except Exception as e:
-        raise_internal_error(e)
+        # A280 / L314：坏任务 id（`require_within_dir` 那一档）⇒ 400 + 那句域判决；
+        # 其余照旧 500 + 固定文案。
+        raise_boundary_error(e)
 
 
 @router.get(

@@ -8,7 +8,7 @@
 闭合：1 + 2 + 1 + 2 + 2）：
 
 - ``api/routes/vector.py:150`` —— ``except HTTPException: raise`` 那一支的 ``raise``
-- ``api/routes/multimodal.py:109`` 与 ``:120`` —— 「两级都空 ⇒ 交给处理器内置默认」
+- ``api/routes/multimodal.py:111`` 与 ``:120`` —— 「两级都空 ⇒ 交给处理器内置默认」
 - ``augmentor/semantic.py:94`` —— 空文本清单的早退
 - ``augmentor/versioning.py:392-393`` —— 当前版本指针**是软链接**那一形
 - ``augmentor/data/image.py:135-136`` —— Pillow 在场时的解析路径
