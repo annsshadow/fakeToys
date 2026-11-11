@@ -10,11 +10,12 @@ laiyipao/
 └─ scripts/    端到端验收脚本
 ```
 
-> 注：设计文档已于 2026-10-14 迁出本目录（`docs/laiyipao/`）；
+> 注：设计文档已于 2026-10-14 迁出本目录（`docs/laiyipao/`），
+> **全套文档可在线浏览：<https://annsshadow.github.io/fakeToys/laiyipao/>**；
 > 工程约束 / 已实现内容 / 已知边界三章已于 2026-10-20 迁至
-> [`docs/laiyipao/ENGINEERING.md`](../docs/laiyipao/ENGINEERING.md) /
-> [`IMPLEMENTATION.md`](../docs/laiyipao/IMPLEMENTATION.md) /
-> [`KNOWN_LIMITS.md`](../docs/laiyipao/KNOWN_LIMITS.md)，
+> [`docs/laiyipao/ENGINEERING.md`](https://annsshadow.github.io/fakeToys/laiyipao/ENGINEERING/) /
+> [`IMPLEMENTATION.md`](https://annsshadow.github.io/fakeToys/laiyipao/IMPLEMENTATION/) /
+> [`KNOWN_LIMITS.md`](https://annsshadow.github.io/fakeToys/laiyipao/KNOWN_LIMITS/)，
 > 下方同名小节是转发锚，条目编号与拆分前一致。
 
 ---
@@ -95,7 +96,7 @@ go tool cover -func=coverage-go.out
 2026-10-28 单跑 179s，2026-10-27 夜跑 849s），默认 600s 在慢机上会假性超时，固定加
 `-timeout 1200s`。
 
-> 部署与值班请看 **[`docs/laiyipao/OPERATIONS.md`](../docs/laiyipao/OPERATIONS.md)** ——
+> 部署与值班请看 **[`docs/laiyipao/OPERATIONS.md`](https://annsshadow.github.io/fakeToys/laiyipao/OPERATIONS/)** ——
 > 环境变量全表、迁移回滚、备份恢复、故障处置，
 > 以及「改关卡/公式会让存量战报永久失去可重放性」这件事的处理流程。
 
@@ -103,7 +104,7 @@ go tool cover -func=coverage-go.out
 
 ## 核心创新点
 
-完整设计见 [`docs/laiyipao/GAME_DESIGN.md`](../docs/laiyipao/GAME_DESIGN.md)。
+完整设计见 [`docs/laiyipao/GAME_DESIGN.md`](https://annsshadow.github.io/fakeToys/laiyipao/GAME_DESIGN/)。
 
 | 编号 | 创新点 | 一句话 |
 |---|---|---|
@@ -123,7 +124,7 @@ go tool cover -func=coverage-go.out
 
 ## 关键工程约束
 
-**完整 19 条见 [`docs/laiyipao/ENGINEERING.md`](../docs/laiyipao/ENGINEERING.md)** ——
+**完整 19 条见 [`docs/laiyipao/ENGINEERING.md`](https://annsshadow.github.io/fakeToys/laiyipao/ENGINEERING/)** ——
 每一条都对应一个真实发生过的故障，改动时必须同时满足；新增一条的判据是
 「它是否对应一个真实发生过、且没被已有约束覆盖的故障」。
 
@@ -144,7 +145,7 @@ go tool cover -func=coverage-go.out
 ## 已实现内容
 
 **实现规模、平衡实测、验证状态与测试方法论复盘见
-[`docs/laiyipao/IMPLEMENTATION.md`](../docs/laiyipao/IMPLEMENTATION.md)**。
+[`docs/laiyipao/IMPLEMENTATION.md`](https://annsshadow.github.io/fakeToys/laiyipao/IMPLEMENTATION/)**。
 
 > 概要：内容规模（42 技能 / 100 关 / 21 敌人 / 96 专精节点 / 5 类地形）·
 > 平衡基准与技能数梯度 · 攻方加成实测（堆攻击买不到分数却压制反应 25%）·
@@ -156,7 +157,7 @@ go tool cover -func=coverage-go.out
 
 ## 已知边界（诚实声明）
 
-**完整 29+ 条见 [`docs/laiyipao/KNOWN_LIMITS.md`](../docs/laiyipao/KNOWN_LIMITS.md)** ——
+**完整 29+ 条见 [`docs/laiyipao/KNOWN_LIMITS.md`](https://annsshadow.github.io/fakeToys/laiyipao/KNOWN_LIMITS/)** ——
 以下没有做，且不会假装做了。
 
 > 引用约定：本仓注释里的「README 已知边界第 N 条」即该文档第 N 条。

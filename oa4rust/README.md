@@ -25,3 +25,10 @@ oa4rust/
 
 后端服务默认从 `frontend/dist/web` 读取前端构建产物（可用 `OA4RUST_WEB_DIST` 覆盖）。
 三端契约门禁脚本位于 `../docs/audits/three-ends-2026-09-20/`。
+
+## 项目文档
+
+架构、模块、数据与接口、业务流程、环境、安装运行、示例、FAQ 与维护约定共九册：
+
+- 在线浏览：<https://annsshadow.github.io/fakeToys/oa4rust/>
+- 源码位置：[`../docs/oa4rust/README.md`](../docs/oa4rust/README.md)
