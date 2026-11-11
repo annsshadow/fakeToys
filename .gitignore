@@ -129,6 +129,8 @@ oa4rust/backend/deploy/.backups/
 # llm-lab 子项目的语料与依赖清单必须入库：tiny_corpus.txt 是 python -m
 # minigrad.train 的默认语料，requirements*.txt 是 README 的安装入口。
 !llm-lab/requirements.txt
+# 文档站构建依赖：.github/workflows/docs.yml 按此文件装 mkdocs，缺失会直接构建失败。
+!requirements-docs.txt
 !llm-lab/requirements-torch.txt
 !llm-lab/data/tiny_corpus.txt
 scripts/cleanup_*.js
@@ -233,3 +235,7 @@ Temp
 
 # arity 探针运行时生成的当前缺陷全集（_current_ 前缀），不入库
 /docs/audits/three-ends-2026-09-20/_current_*
+
+# MkDocs 构建产物与本地虚拟环境
+.venv-docs/
+site/
