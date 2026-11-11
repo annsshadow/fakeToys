@@ -112,20 +112,32 @@ overrides:
   "@tootallnate/once": 2.0.1
   # esbuild 0.25.12：<=0.24.2 有开发服务器任意请求漏洞；pnpm 11 需显式允许 build。
   "esbuild": 0.25.12
-  # vue 家族 3.4.21 → 3.5.42：@vue/server-renderer <3.5.42 的 SSR 属性名黑名单
-  # 缺 CR 转义（GHSA-g2v6-rqmx-r4w6，high）。server-renderer 只被
-  # @dcloudio/uni-cli-shared 在构建期用来渲染模板，不进小程序产物。
-  # 整族一起顶（只顶 server-renderer 会造成 @vue/shared 双版本）。
-  "vue": 3.5.42
-  "@vue/compiler-core": 3.5.42
-  "@vue/compiler-dom": 3.5.42
-  "@vue/compiler-sfc": 3.5.42
-  "@vue/compiler-ssr": 3.5.42
-  "@vue/reactivity": 3.5.42
-  "@vue/runtime-core": 3.5.42
-  "@vue/runtime-dom": 3.5.42
+  # vue 家族版本策略（2026-11-11 修正）：
+  #
+  # 背景：2026-10-22 为修 @vue/server-renderer 的 SSR 属性名黑名单缺 CR 转义
+  # （GHSA-g2v6-rqmx-r4w6，high）把整族顶到 3.5.42。但 uni-h5-vue（H5/mp-weixin
+  # 的**运行时**，进产物）是 Vue 3.4.21 的 fork，它与 @vue/shared ≥3.5 的
+  # def() 语义不兼容 —— 3.5 的 def 显式 writable:false，把编译期 slot 标记
+  # children._ 定义成只读；fork 的 updateSlots 再回写 _ 必抛
+  # "Cannot assign to read only property '_'"（上游 issue dcloudio/uni-app#6088）。
+  # 症状：渲染 effect 每帧报 TypeError（桌面 Chrome 容忍、vivo 等移动端放大为
+  # 页面切换视图不更新/战斗画面冻结），reLaunch 时组件树 patch 竞态连环崩
+  # （emitsOptions of null / bum of null）。
+  #
+  # 修正：运行时家族回到 3.4.21（与 package.json 声明一致、与 uni fork 基线一致）；
+  # **server-renderer 单独保持 3.5.42** —— 它只被 uni-cli-shared 在构建期消费，
+  # 不进产物，GHSA-g2v6 的修复必须保留。当时顾虑的"@vue/shared 双版本"恰恰是
+  # 刻意为之：构建链用 3.5.x、运行时用 3.4.21，各自自洽互不消费。
+  "vue": 3.4.21
+  "@vue/compiler-core": 3.4.21
+  "@vue/compiler-dom": 3.4.21
+  "@vue/compiler-sfc": 3.4.21
+  "@vue/compiler-ssr": 3.4.21
+  "@vue/reactivity": 3.4.21
+  "@vue/runtime-core": 3.4.21
+  "@vue/runtime-dom": 3.4.21
   "@vue/server-renderer": 3.5.42
-  "@vue/shared": 3.5.42
+  "@vue/shared": 3.4.21
   # ── 2026-10-31：新一批 advisory ─────────────────────────────────────────
   # minimatch <11.0.1 的 globparts 放大 DoS（GHSA-g3hv-75wg-m249）与
   # glob 9.0.0~14.0.1 的 AbortSignal 取消绕过（GHSA-3g3m-2fjr-6pw4），
