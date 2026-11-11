@@ -323,6 +323,25 @@ fakeToys/
 | **auto-checkin** | Node 20+ + Playwright |
 | **llm-lab** | Python 3.10+（torch 可选） |
 
+## 📖 文档站
+
+`docs/` 下的 **laiyipao / llm-lab / oa4rust** 三个目录会发布成可浏览的书页式站点（MkDocs + Material，带全文检索）：
+
+**在线地址**：<https://annsshadow.github.io/fakeToys/>
+
+其余 `docs/` 内容（plans、audits、solutions 等）不入站，由 `mkdocs.yml` 的 `exclude_docs` 排除。
+
+```bash
+# 本地预览（改完 Markdown 自动热更新）
+python -m venv .venv-docs && .venv-docs/Scripts/pip install -r requirements-docs.txt
+.venv-docs/Scripts/python -m mkdocs serve
+
+# 发布：构建（--strict 会拦住断链）并推到 gh-pages 分支，Pages 随后自动更新
+.venv-docs/Scripts/python -m mkdocs gh-deploy --force
+```
+
+新增页面时在 `mkdocs.yml` 的 `nav` 里补一行即可。
+
 ## 📄 开源协议
 
 本仓库以 **[GNU AGPL-3.0](LICENSE)** 授权。
