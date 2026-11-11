@@ -329,14 +329,15 @@ fakeToys/
 
 **在线地址**：<https://annsshadow.github.io/fakeToys/>
 
-其余 `docs/` 内容（plans、audits、solutions 等）不入站，由 `mkdocs.yml` 的 `exclude_docs` 排除。
+其余 `docs/` 内容（plans、audits、solutions 等）不入站，由 `mkdocs.yml` 的 `exclude_docs` 排除；CI 构建后还会做产物白名单校验，新增顶层目录漏配会直接让构建失败。
 
 ```bash
 # 本地预览（改完 Markdown 自动热更新）
 python -m venv .venv-docs && .venv-docs/Scripts/pip install -r requirements-docs.txt
 .venv-docs/Scripts/python -m mkdocs serve
 
-# 发布：构建（--strict 会拦住断链）并推到 gh-pages 分支，Pages 随后自动更新
+# 发布：push main 即自动构建部署（.github/workflows/docs.yml）；
+# 只想覆盖发布、不提交源码时，用下面这条直推 gh-pages
 .venv-docs/Scripts/python -m mkdocs gh-deploy --force
 ```
 
