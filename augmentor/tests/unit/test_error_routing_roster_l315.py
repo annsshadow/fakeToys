@@ -18,13 +18,13 @@
 * **分档那 35 处**（`to_http_error`）：`api/routes/dataset_tools.py` 14 / `api/routes/system_ops.py` 14 /
   `api/routes/language.py` 2 / `api/routes/vector.py` 2 / `api/routes/config.py` 1 /
   `api/routes/data.py` 2。那扇门已经分档：`FileNotFoundError` → 404、`JSONDecodeError` → 400
-  （中文判决）、`ValueError` → 400 + 原文、其余 → 500 + 固定文案 ⇒ **「资源不存在拿不到 404」
+  （中文判决）、**具名域判决** → 400 + 原文、其余 → 500 + 固定文案 ⇒ **「资源不存在拿不到 404」
   这一格在全仓都不再成立**。
 
-**泛档那一格不在本行**：那扇门把 `ValueError` 泛档放行成 400 + **原文回传** ⇒ 内部异常也会被
-回成 400 判决并把原文发出去 ⇒ 那是 **A386** 那一族（`api/routes/vector.py::semantic_search`
-是它点名的那一处）与 **A155①** 那一族（泄漏面）的账，**A280 这一行记的是「一刀切收敛」**
-⇒ 本轮把「一刀切」这一族处置完毕，那一格照旧归 A386 / A155①。
+**泛档那一格已在 L316 收掉**（A386）：L315 当时那扇门按父类 `ValueError` 放行 ⇒ 内部异常
+也会被回成 400 判决、并把**内部原文**发给客户端；**L316 起那扇门只放行具名域判决**
+（`CLIENT_FAULT_TYPES`），裸 `ValueError` 一律 500 + 固定文案 ⇒ 本文件里那一支按现量钉住的
+用例已随 L316 改成**正判决**（裸 `ValueError` ⇒ 500 + 固定文案；具名域判决 ⇒ 400 + 原文）。
 
 **四道面各自要能单独喊红**：
 
@@ -265,8 +265,21 @@ class TestTheSplitDoorVerdicts:
         assert error.detail == "数据文件不是合法 JSON（第 1 行第 2 列）"
 
     def test_a_value_error_is_four_hundred_with_the_raw_text(self):
-        """**泛档那一格按现量钉住**（内部原文会随 400 判决发出去 ⇒ 归 A386 / A155①）"""
+        """**A386 / L316 收口**：泛档那一格已经关掉了 ⇒ 裸 `ValueError` 落 500 + 固定文案
+
+        L315 当时是**按现量钉住**这一格（并点名它归 A386 / A155①）⇒ L316 把那一格收掉：
+        分档门不再按父类 `ValueError` 放行，只放行**具名**域判决（见下一支）。
+        """
         error = self._http_error(ValueError("判决原文"))
+        assert error.status_code == 500
+        assert error.detail == INTERNAL_ERROR_DETAIL
+        assert "判决原文" not in error.detail
+
+    def test_a_named_domain_verdict_is_four_hundred_with_the_raw_text(self):
+        """具名域判决仍是 400 + 那句可行动的判决（这一族一格未动）"""
+        from augmentor.exceptions import DataValidationError
+
+        error = self._http_error(DataValidationError("判决原文"))
         assert error.status_code == 400
         assert error.detail == "判决原文"
 

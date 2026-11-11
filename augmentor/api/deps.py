@@ -527,6 +527,7 @@ def to_http_error(
     *,
     not_found: str = "文件不存在",
     not_found_types: Tuple[type, ...] = (),
+    boundary_types: Optional[Tuple[type, ...]] = None,
 ) -> HTTPException:
     """把下游抛出的异常映射成 HTTP 错误
 
@@ -534,13 +535,21 @@ def to_http_error(
 
     1. ``FileNotFoundError`` → 404（``not_found`` 可定制文案，如「备份不存在」）；
     2. ``JSONDecodeError`` → 400，且**不转发 json 模块的英文原文**；
-    3. 其余 ``ValueError`` → 400（参数或数据不合法，原文可行动、照回），其它 → 500
-       且**只回固定文案** ``INTERNAL_ERROR_DETAIL``、原文落 ``logger.exception``（不转发
-       部署路径 / 文件系统状态，A155①）；
-    4. ``is_rejected_path_name``（L271）→ 400 且用固定文案 ``INVALID_PATH_NAME_DETAIL``：
+    3. **具名域判决** → 400（参数或数据不合法，原文可行动、照回）：放行的是
+       ``CLIENT_FAULT_TYPES`` 那几只**具名**类型（**按类型放行，不按父类
+       ``ValueError`` 放行**，A386 / L316），或本调用点自己点名的 ``boundary_types``；
+    4. 其余一切 → 500 且**只回固定文案** ``INTERNAL_ERROR_DETAIL``、原文落
+       ``logger.exception``（不转发部署路径 / 文件系统状态，A155①）；
+    5. ``is_rejected_path_name``（L271）→ 400 且用固定文案 ``INVALID_PATH_NAME_DETAIL``：
        errno 22 / 36 是操作系统对**名字形状**的判词（控制符、超长），与 NUL 那一形
-       （操作系统抛 ``ValueError``，走第 3 支拿 400）同属「参数非法」，不收进这一档
-       就会出现「同一类输入两种码」。
+       （操作系统抛 ``ValueError``）同属「参数非法」，不收进这一档就会出现
+       「同一类输入两种码」。
+
+    **第 3 档为什么按具名类型放行**（A386）：原先这一档是 ``isinstance(exc, ValueError)``
+    的**泛档** ⇒ 框架 / 编码层 / 第三方库的**内部异常**（不是客户端的错）也会被回成
+    400 判决，并把**内部原文**发给客户端（实测：孤立代理打到语义检索 ⇒ 400 +
+    ``'utf-8' codec can't encode character '\\ud800' ...``）。泛档同时罩住两类东西，
+    门口无从分辨 ⇒ 改成「只放行 SDK 判出来的具名域判决」。
 
     顺序有讲究：``JSONDecodeError`` 是 ``ValueError`` 的子类，必须先判。
     ``HTTPException`` **不**在这里处理 —— 它应当由调用方原样抛出，否则会被
@@ -556,8 +565,11 @@ def to_http_error(
         not_found: 判定为「资源不存在」时使用的文案
         not_found_types: 额外视为「资源不存在」的异常类型。用于语义明确、
             但不是 ``FileNotFoundError`` 的情况（如 ``BackupError`` 唯一
-            的抛出点就是「备份不存在」）。这些类型同样是 ``ValueError``
-            子类，因此必须排在 ``ValueError`` 分支之前判定。
+            的抛出点就是「备份不存在」）。这些类型同样可能是 ``ValueError``
+            子类，因此必须排在 400 档之前判定。
+        boundary_types: 这一处**额外**放行的具名类型。``None`` 表示吃全仓默认
+            那份 ``CLIENT_FAULT_TYPES``；给成空元组表示**这一处不放行任何
+            ``ValueError``**（具名判决也落 500）。逐处证明的结果写在调用点旁。
 
     Returns:
         对应的 HTTPException
@@ -572,7 +584,8 @@ def to_http_error(
             status_code=400,
             detail=_json_decode_detail(exc),
         )
-    if isinstance(exc, ValueError):
+    client_faults = CLIENT_FAULT_TYPES if boundary_types is None else boundary_types
+    if client_faults and isinstance(exc, client_faults):
         return HTTPException(status_code=400, detail=str(exc))
     if is_rejected_path_name(exc):
         # L271：操作系统对「这个名字不可能成立」的判词（errno 22 / 36）不是服务端故障。
@@ -582,6 +595,61 @@ def to_http_error(
     # 500 档（A155①）：原文只落服务端日志、不进响应体，防部署路径与文件系统状态外泄。
     logger.exception("未分类异常收敛为 500，原文仅留服务端日志、不转发客户端")
     return HTTPException(status_code=500, detail=INTERNAL_ERROR_DETAIL)
+
+
+# ---------------------------------------------------------------------------
+# 400 档放行的**具名**域判决名单（A386 / L316）
+#
+# **这一段刻意放在 `to_http_error` 之下**：`api/deps.py` 有一批**在册定位引用**
+# （卷一 / 卷二账本、`docs/augmentor/FAQ.md`、既有守卫）钉在 `def to_http_error(`
+# 的现量行与它之前的若干行上 ⇒ 落在它之下，这一格与其余各格都**零位移**
+# （L314 那只 `_json_decode_detail` helper 是同一个理由，见它上面的注释）。
+#
+# **名单是量出来的，不是推出来的**：① 对 `augmentor/` 全包做 AST 普查 ⇒ 生产代码里
+# **没有一处**裸 `raise ValueError`（`augmentor/` 那一侧由 `test_exceptions.py` 的护栏
+# 常年钉着；`api/routes/` 下唯一一处裸 `raise ValueError` 在 `system_ops.py`，本轮
+# 改成具名域判决）⇒ SDK 抛的域判决共 21 个具名类型。
+# ③ **名单的每一只都有既有契约背书**（这一格是本轮最贵的一处学费：先按「谁的错」
+# 推的名单把三支既有守卫顶红了 —— 缺依赖与缺后端那两族在**本仓既有契约**里就是
+# 400 + 可行动的判决，`tests/integration/test_excel_convert_cli_api_l80.py` /
+# `test_excel_write_cli_api_l84.py` / `test_multilingual_consumption_l217.py`
+# 三支逐字钉着 ⇒ 以**实测出来的既有契约**为准，不是以「谁的问题」为准）。
+# ② 对全包 `int()` / `float()` 等可能抛 `ValueError` 的转换点普查 **97 处** ⇒
+# 逐处看过：要么作用于**自己算出来的**数值，要么已被 `except (TypeError, ValueError)`
+# 兜住（`outlier.py`）⇒ **没有一处**把客户端语料里的字段裸转成数字 ⇒ 泛档那一格
+# 在产品面上只可能罩住「内部异常」这一类。
+# ---------------------------------------------------------------------------
+from augmentor.exceptions import (  # noqa: E402  （刻意放在函数之下，见上面的理由）
+    DataFormatError,
+    DataLoadError,
+    DedupError,
+    ModelNotConfiguredError,
+    PipelineError,
+    QualityError,
+    UnsupportedFormatError,
+    VectorError,
+)
+
+#: 400 档放行的**具名**域判决类型（**按类型放行，不按父类 `ValueError` 放行**）。
+#:
+#: 收窄的理由与逐处证明见 `to_http_error` 的 docstring 与账本 L316 块；
+#: 「`ValueError` 泛档」那一格在 A386 那一行有案（内部异常被回成 400 判决、
+#: 内部原文发给客户端）⇒ 本名单是它的收口。
+#:
+#: **每一只都在本仓有既有契约背书**：`DataLoadError`（缺 pandas / openpyxl 时那句
+#: 「pip install pandas openpyxl」的可行动判决，CLI 侧同形状）与
+#: `ModelNotConfiguredError`（「翻译需要配置模型后端」）两族都是 400，不是 500。
+CLIENT_FAULT_TYPES = (
+    DataValidationError,
+    DataFormatError,
+    UnsupportedFormatError,
+    QualityError,
+    DedupError,
+    PipelineError,
+    VectorError,
+    DataLoadError,
+    ModelNotConfiguredError,
+)
 
 
 def raise_internal_error(exc: Exception) -> None:

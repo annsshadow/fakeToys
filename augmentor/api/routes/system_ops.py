@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
-from augmentor.exceptions import BackupError, BackupIntegrityError
+from augmentor.exceptions import BackupError, BackupIntegrityError, DataValidationError
 from augmentor.migration import BUILTIN_MIGRATION_RULE_IDS
 from augmentor.auto_test import DEFAULT_SUITE_NAME
 
@@ -472,7 +472,7 @@ async def system_stream(request: StreamRequest):
             elif request.operation == "none":
                 processor = lambda items: items  # noqa: E731
             else:
-                raise ValueError(
+                raise DataValidationError(  # A386 / L316：原先是裸 ValueError（泛档收掉 ⇒ 500）；operation 写错是调用方的错 ⇒ 仍是 400
                     f"不支持的 operation: {request.operation}"
                     "（可选 quality / dedup / clean / none）"
                 )

@@ -10,7 +10,7 @@
 import logging
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
-from .exceptions import ConfigError
+from .exceptions import ConfigError, DataValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +78,13 @@ class AutoConfig:
             推荐配置
         """
         if total_items <= 0:
-            raise ConfigError("total_items 必须为正数")
+            # A386 / L316：这一格原先抛的是 `ConfigError`，而「数据集是空的」是**调用方
+            # 那份数据**的错，不是配置面自己的问题 ⇒ 改抛具名的域判决
+            # `DataValidationError`（取值越界那一族）。改完之后：分档门按**具名类型**
+            # 放行它 ⇒ 仍是 400 + 那句可行动的判决；而 `ConfigError` 剩下的两个抛出点
+            # （构造参数 `dedup_range` / `quality_range` 非法、模型没配好）都是服务端
+            # 自己的问题 ⇒ 500 + 固定文案。两面都不再需要「泛档 `ValueError` 兜底」。
+            raise DataValidationError("total_items 必须为正数")
 
         reasoning: List[str] = []
 

@@ -166,19 +166,20 @@ class TestTheGateSeparatesThreeVerdicts:
         assert not (root / "r4.json").exists()
         assert not (root / "r5.json").exists()
 
-    def test_the_fallthrough_would_have_been_400_not_404(self):
-        """删掉端点里那句 `except BackupIntegrityError` 之后落哪一档：**400 原文**
+    def test_the_fallthrough_would_have_been_500_not_404(self):
+        """删掉端点里那句 `except BackupIntegrityError` 之后落哪一档：**500 + 固定文案**
 
-        `BackupIntegrityError` 同时是 `ValueError` 的子类，而 `to_http_error` 的 ValueError
-        分支把原文照回 ⇒ 400「boom」。所以那一句 409 是**路由里显式写的**，不是通用映射给的；
-        这一支把「显式」量成数字。为什么不留在 400：400 的说法是「你的请求不合法」，用户会去改
-        参数重试，而这里请求没毛病、坏的是服务端存着的**那份数据**——当前状态冲突是 409。
+        `BackupIntegrityError` 是 `ValueError` 的子类，而分档门（A386 / L316 起）**不再按父类
+        `ValueError` 放行** ⇒ 它落 500 + 固定文案 ⇒ 那一句 409 是**路由里显式写的**，不是通用
+        映射给的；这一支把「显式」量成数字。为什么不留在 400：400 的说法是「你的请求不合法」，
+        用户会去改参数重试，而这里请求没毛病、坏的是服务端存着的**那份数据**——当前状态冲突是
+        409，落到通用档也只是 500（服务端自己的问题），仍不是 400。
         另一维同场验证：它**不是** `BackupError` 的子类（`test_exceptions.py` 钉层级），
         所以 `not_found_types=(BackupError,)` 不会把它映射成 404。
         """
         from fastapi import HTTPException
 
-        from api.deps import to_http_error
+        from api.deps import INTERNAL_ERROR_DETAIL, to_http_error
         from augmentor.exceptions import BackupError, BackupIntegrityError
 
         mapped = to_http_error(
@@ -187,7 +188,8 @@ class TestTheGateSeparatesThreeVerdicts:
             not_found_types=(BackupError,),
         )
         assert isinstance(mapped, HTTPException)
-        assert (mapped.status_code, mapped.detail) == (400, "boom")
+        assert (mapped.status_code, mapped.detail) == (500, INTERNAL_ERROR_DETAIL)
+        assert "boom" not in mapped.detail, "500 档不得回异常原文"
         assert not isinstance(BackupIntegrityError("x"), BackupError)
 
 

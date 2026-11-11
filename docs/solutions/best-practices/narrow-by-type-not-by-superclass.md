@@ -102,9 +102,34 @@ def raise_boundary_error(exc, *, not_found=..., not_found_types=(),
   （不点名字段名、也不回显实际值）⇒ 改它要动 SDK 的公开契约 ⇒ 本轮不改，只照实记。
 - **同族若有别处照着旧形状写的文档/用例，一并翻**（本轮翻了 l272 那张现量表与一支注入用例）。
 
+## 六、把「泛档」换成「具名名单」之前，先量一遍父类罩住了谁（L316 补记）
+
+L313 / L314 的「按类型放行」是**新增**一只窄口；L316 是**摘掉**一只泛档（`isinstance(exc,
+ValueError)` ⇒ 400 + 原文照回）。摘之前必须先回答一个问题：**这个父类罩住了谁？**
+
+- **量法（三步，都可复现）**：
+  ① **AST 普查生产码里的裸 `raise ValueError`** ⇒ 本仓 `augmentor/` 一侧为 **0**（有护栏常年钉着），
+     `api/routes/` 下唯一一处裸 raise 本轮改掉 ⇒ **SDK 抛的域判决全是具名类型**（现量 **21** 个）。
+  ② **普查可能抛 `ValueError` 的转换点**（`int()` / `float()` / `.encode()` 等，现量 **97** 处）⇒
+     逐处看过：要么作用于**自己算出来的**数值，要么已被 `except (TypeError, ValueError)` 兜住
+     ⇒ **没有一处**把客户端语料里的字段裸转成数字 ⇒ 泛档在产品面上只可能罩住「内部异常」。
+  ③ **逐端点实测**（坏语料那一档，**40** 条请求）⇒ 客户端的错**另有具名通道**
+     （`DatasetTextError` / `assert_dataset_shape` / `DataFormatError` …）⇒ 不必靠泛档兜底。
+- **为什么这一步不能跳**：泛档把「内部异常」回成 400 判决不只是码错了 —— 它还把**内部原文**
+  发给客户端（实测：孤立代理打到语义检索 ⇒ 400 + `'utf-8' codec can't encode character
+  '\\ud800' ...`）⇒ 泄露实现细节，且判决文案随 Python 版本与 locale 变、钉不死。
+- **名单里为什么有「混合型」类型**：本仓 `ConfigError` 一族同时装着「配置参数非法」（客户端的错）
+  与「模型没配好 / 配置形状错」（服务端自己的问题）⇒ 泛档时代它们一起被当成 400 ⇒ 收窄时
+  **不能**把它塞进共享名单，只能**在那一处**点名额外放行，或把「确实由调用方数据造成的」那一格
+  改成具名的数据域判决（`DataValidationError`）。
+- **判据要钉住「窄口承重」**：摘掉窄口（`boundary_types=()`）⇒ 具名判决当场掉进 500 ⇒ 这一格
+  才证明名单不是装饰。
+
 ## 参考
 
-- 账本：`augmentor/OPTIMIZATION_LOOP_2.md` L313 清单行与日志块；A280 行的 `S 半修（L313）`
-- 守卫：`augmentor/tests/unit/test_quality_boundary_l313.py`（零 parametrize，17 支）
+- 账本：`augmentor/OPTIMIZATION_LOOP_2.md` L313 清单行与日志块；A280 行的 `S 半修（L313）`；
+  **L316** 清单行与日志块、A386 行的 `~~S~~ 已收口（L316）`
+- 守卫：`augmentor/tests/unit/test_quality_boundary_l313.py`（零 parametrize，17 支）；
+  `augmentor/tests/unit/test_client_fault_tier_l316.py`（零 parametrize，15 支）
 - 同族：`docs/solutions/best-practices/verdict-narrowing-and-failure-honesty.md`、
   `docs/solutions/best-practices/input-validation-pattern.md`

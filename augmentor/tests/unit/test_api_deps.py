@@ -224,7 +224,9 @@ class TestToHttpError500LeakClosed:
 
     判据钉三格：① 未分类异常（非 ValueError）⇒ 500 + 固定 ``INTERNAL_ERROR_DETAIL``，
     且部署绝对路径与 errno 文案**不得**再出现在响应体；② 原文改走服务端日志（ERROR 级）；
-    ③ 400 档（ValueError 可行动文案）保持原样，防修过头把客户端可行动信息也抹掉。
+    ③ 400 档（**具名**域判决的可行动文案）保持原样，防修过头把客户端可行动信息也抹掉。
+    **A386 / L316 起**：400 档放行的是**具名**域判决类型，不再是父类 ``ValueError``
+    的泛档（泛档会把内部异常原文也回成 400 判决）⇒ 裸 ``ValueError`` 落 500 + 固定文案。
     """
 
     def test_unclassified_error_returns_fixed_detail_not_str(self):
@@ -246,11 +248,28 @@ class TestToHttpError500LeakClosed:
             "500 档必须 logger.exception 落服务端日志"
 
     def test_value_error_still_400_with_actionable_detail(self):
+        """**A386 / L316**：400 档按**具名**域判决放行，不按父类 `ValueError` 放行
+
+        改前这一档是 ``isinstance(exc, ValueError)`` 的泛档 ⇒ 内部异常（编码层 / 第三方库）
+        也会被回成 400 判决、并把**内部原文**发给客户端。改后：SDK 判出来的具名域判决
+        仍是 400 + 那句可行动的判决（这一族一格未动），裸 ``ValueError`` 一律 500 + 固定文案。
+        """
         import api.deps as deps
 
-        err = deps.to_http_error(ValueError("比例须在 [0,1] 区间"))
+        from augmentor.exceptions import DataValidationError
+
+        err = deps.to_http_error(DataValidationError("比例须在 [0,1] 区间"))
         assert err.status_code == 400
         assert err.detail == "比例须在 [0,1] 区间"
+
+    def test_a_bare_value_error_is_now_a_server_fault(self):
+        """**A386 / L316**：泛档那一格收掉了 ⇒ 裸 `ValueError` 落 500 + 固定文案，原文不外泄"""
+        import api.deps as deps
+
+        err = deps.to_http_error(ValueError("内部细节不该外泄"))
+        assert err.status_code == 500
+        assert err.detail == deps.INTERNAL_ERROR_DETAIL
+        assert "内部细节不该外泄" not in err.detail
 
 
 class TestRaiseInternalErrorL180:

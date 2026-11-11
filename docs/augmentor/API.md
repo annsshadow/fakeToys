@@ -372,7 +372,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 
 * **分档门**（`to_http_error`，**35 处**：`dataset_tools` 14 / `system_ops` 14 / `language` 2 /
   `vector` 2 / `config` 1 / `data` 2）：`FileNotFoundError` → 404、`JSONDecodeError` → 400
-  （`数据文件不是合法 JSON（第 N 行第 M 列）`）、`ValueError` → 400 + 原文、其余 → 500 + 固定文案。
+  （`数据文件不是合法 JSON（第 N 行第 M 列）`）、**具名域判决** → 400 + 原文、其余 → 500 + 固定文案。
 * **边界门**（`raise_boundary_error`，**28 处**：`quality` 9 / `version` 8 / `system_ops` 0 /
   `audit` 1 / `leakage` 1 / `export` 3 / `data` 3 / `augment` 2 / `multimodal` 1）：域判决 →
   400 + 原判决，具名的「不存在」类异常 → 404，其余 → 500 + 固定文案。
@@ -381,10 +381,10 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
   （域判决早已被 `HTTPException` 那一支接住；写边的 `OSError` 是服务端状态；那几支没有客户端
   入参；配置坏了是服务端自己的问题）。「资源不存在」那一面早已是 404（读操作查存在性）。
 
-> **已知的一格**：分档门把 `ValueError` **泛档**放行成 400 并把**原文**照回 ⇒ 内部异常也会被回成
-> 400 判决、且内部原文会发出去 ⇒ 那一格归 **A386**（`api/routes/vector.py` 那一支是它点名
-> 的那一处）与 **A155①**（泄漏面），**不在 A280 那一行**（A280 记的是「一刀切收敛」这一族，
-> 已逐处处置完毕）。
+> **已收口的一格（A386 / L316）**：分档门原先把 `ValueError` **泛档**放行成 400 并把**原文**照回
+> ⇒ 内部异常也会被回成 400 判决、且内部原文会发出去（`api/routes/vector.py` 那一支是它点名的
+> 那一处）⇒ **L316 起那扇门只放行具名域判决**，其余 `ValueError` 一律 500 + 固定文案；
+> **A155①**（泄漏面）那一档**不在 A280 那一行**（A280 记的是「一刀切收敛」这一族，已逐处处置完毕）。
 
 ### 响应契约
 

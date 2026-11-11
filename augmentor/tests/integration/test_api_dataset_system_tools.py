@@ -2836,19 +2836,32 @@ class TestDatasetImpact:
         assert "计算层内部炸了" not in response.json()["detail"]
 
     def test_value_error_becomes_400_via_to_http_error(self, tools_env, monkeypatch):
-        """计算层抛 ValueError → 400（`to_http_error` 的「参数/数据不合法」那一支）
+        """计算层抛**具名**域判决 → 400（`to_http_error` 的「参数/数据不合法」那一支）
 
-        与上一条同族但落在**不同**分支：ValueError 在 `to_http_error` 里被映射成 400
-        并原样回传字符串。这条把「500 与 400 的分岔由异常类型决定」补全——只测 RuntimeError
-        会漏掉 ValueError 这一支照样未覆盖。
+        与上一条同族但落在**不同**分支：**A386 / L316 起**分档门放行的是**具名**的域判决
+        类型（泛档那一格已收掉）⇒ 这一支盯「具名域判决 ⇒ 400 + 原文」，
+        裸 `ValueError` ⇒ 500 + 固定文案由下一支盯。
         """
         def bad(self, before, after):
-            raise ValueError("输入数据不合法")
+            from augmentor.exceptions import DataValidationError
+
+            raise DataValidationError("输入数据不合法")
 
         monkeypatch.setattr("augmentor.impact.ImpactEvaluator.evaluate", bad)
         response = self._post(tools_env, self.BEFORE, self.AFTER)
         assert response.status_code == 400, response.text
         assert response.json()["detail"] == "输入数据不合法"
+
+    def test_a_bare_value_error_becomes_500_via_to_http_error(self, tools_env, monkeypatch):
+        """**A386 / L316**：裸 `ValueError` ⇒ 500 + 固定文案，内部原文不外泄"""
+        def bad(self, before, after):
+            raise ValueError("输入数据不合法")
+
+        monkeypatch.setattr("augmentor.impact.ImpactEvaluator.evaluate", bad)
+        response = self._post(tools_env, self.BEFORE, self.AFTER)
+        assert response.status_code == 500, response.text
+        assert response.json()["detail"] == INTERNAL_ERROR_DETAIL
+        assert "输入数据不合法" not in response.json()["detail"]
 
 
 class TestDatasetEvaluate:
@@ -3028,15 +3041,29 @@ class TestDatasetEvaluate:
         assert "指标计算炸了" not in response.json()["detail"]
 
     def test_value_error_becomes_400_via_to_http_error(self, tools_env, monkeypatch):
-        """指标计算层抛 ValueError → 400 且原样回传
+        """指标计算层抛**具名**域判决 → 400 且原样回传
 
-        补全分岔的另一侧：`to_http_error` 对 ValueError 判 400，对其它判 500，两条
-        用例各盯一支，缺任一条则那一支照样裸奔。
+        **A386 / L316 起**：分档门不再按父类 `ValueError` 放行（泛档那一格会把内部异常
+        也回成 400 判决、并把内部原文发给客户端）⇒ 放行的是**具名**的域判决类型。
+        这一支盯住「具名域判决 ⇒ 400 + 原文」那一支；裸 `ValueError` ⇒ 500 由下一支盯。
         """
         def bad(self, generated, references):
-            raise ValueError("评分输入不合法")
+            from augmentor.exceptions import DataValidationError
+
+            raise DataValidationError("评分输入不合法")
 
         monkeypatch.setattr("augmentor.evaluation.ModelEvaluator.evaluate_batch", bad)
         response = self._post(tools_env, self.GENERATED, self.REFERENCE)
         assert response.status_code == 400, response.text
         assert response.json()["detail"] == "评分输入不合法"
+
+    def test_a_bare_value_error_becomes_500_via_to_http_error(self, tools_env, monkeypatch):
+        """**A386 / L316**：裸 `ValueError`（不是具名域判决）⇒ 500 + 固定文案，原文不外泄"""
+        def bad(self, generated, references):
+            raise ValueError("评分输入不合法")
+
+        monkeypatch.setattr("augmentor.evaluation.ModelEvaluator.evaluate_batch", bad)
+        response = self._post(tools_env, self.GENERATED, self.REFERENCE)
+        assert response.status_code == 500, response.text
+        assert response.json()["detail"] == INTERNAL_ERROR_DETAIL
+        assert "评分输入不合法" not in response.json()["detail"]

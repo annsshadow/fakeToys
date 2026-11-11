@@ -318,8 +318,9 @@ class TestEndpointProfile:
     def test_downstream_failure_is_mapped_not_leaked_as_a_stack(self, tmp_path, monkeypatch):
         """读盘之后的意外失败走 `to_http_error`，不是裸栈
 
-        这条钉的是画像路由那句 `except Exception: raise to_http_error(e)`：`ValueError`
-        族（含领域异常）映射 400 且原文照回，非 `ValueError` 映射 500 且只回固定文案。
+        这条钉的是画像路由那句 `except Exception: raise to_http_error(e)`：**具名**域判决
+        （`DataValidationError` 那一族）映射 400 且原文照回，其余异常映射 500 且只回固定文案
+        （**A386 / L316 起**分档门不再按父类 `ValueError` 的泛档放行）。
         少了这一支，端点会把下游异常直接抛给 TestClient 变成客户端异常——调用方读到的是
         连接断开而不是一条能行动的错误。
         """

@@ -74,8 +74,14 @@ class TestDispatchTable:
     def test_the_existing_branches_are_untouched(self):
         import json
 
-        assert deps.to_http_error(ValueError("参数不合法")).status_code == 400
-        assert deps.to_http_error(ValueError("参数不合法")).detail == "参数不合法"
+        # **A386 / L316**：400 档按**具名**域判决放行（不再是父类 `ValueError` 的泛档）
+        # ⇒ 裸 `ValueError` 那一格已落 500（泛档那一格归 A386 收口）。
+        from augmentor.exceptions import DataValidationError
+
+        assert deps.to_http_error(DataValidationError("参数不合法")).status_code == 400
+        assert deps.to_http_error(DataValidationError("参数不合法")).detail == "参数不合法"
+        assert deps.to_http_error(ValueError("参数不合法")).status_code == 500
+        assert deps.to_http_error(ValueError("参数不合法")).detail == deps.INTERNAL_ERROR_DETAIL
         assert deps.to_http_error(
             json.JSONDecodeError("Expecting value", "{", 1)
         ).status_code == 400
