@@ -1,0 +1,35 @@
+/* 字体栈：Material 在 font: false 时把 --md-text-font 填成占位符 "_"，
+   这里换成系统栈，中文优先走苹方/微软雅黑。 */
+:root {
+  --md-text-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  --md-code-font: ui-monospace, SFMono-Regular, Menlo, Consolas,
+    "Liberation Mono", monospace;
+}
+
+/* 首页项目卡片：主题默认 16rem 最小宽度，常规视口只能排两列，
+   三张卡片会折成 2+1。注意两点：
+   1. Material 9.8 里 .grid.cards > ul 是 display:contents，真正的网格容器是外层 div；
+   2. 大屏把 html 字号提到 125%，1rem≈20px，内容区宽约 688px，
+      三列需每列 ≤221px，故取 11rem。 */
+.md-typeset .grid.cards {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+}
+
+/* 卡片内的图标与标题同排时垂直居中，避免大图标把行高撑开 */
+.md-typeset .grid.cards > ul > li > p:first-child {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+
+.md-typeset .grid.cards .twemoji.lg svg {
+  height: 1.5rem;
+  width: 1.5rem;
+}
+
+/* 中文正文行高略放宽，段落更透气 */
+.md-typeset {
+  line-height: 1.75;
+}

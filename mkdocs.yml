@@ -13,6 +13,9 @@ copyright: Copyright (C) 2026 annsshadow · AGPL-3.0-or-later
 theme:
   name: material
   language: zh
+  # 不用 Google Fonts：Roboto 没有中文字形，加载还依赖外网。
+  # 关掉后走系统字体栈，中文渲染更稳。
+  font: false
   features:
     - navigation.tabs
     - navigation.sections
@@ -40,9 +43,10 @@ theme:
 # 只发布下面三个目录。其余 docs/ 内容（计划、审计、brainstorm、solutions 等）
 # 一律排除 —— 这是"白名单"之外的显式黑名单，新增顶层目录必须同步加进来，
 # CI 里还有一道产物校验（见 .github/workflows/docs.yml）。
+# 注意：不要在此排除 /assets/ —— 主题自身的 CSS/JS/字体也挂在 assets/ 下，
+# 排掉会让整站失去样式。
 exclude_docs: |
   /archived-plans/
-  /assets/
   /audits/
   /augmentor/
   /brainstorms/
@@ -55,6 +59,10 @@ exclude_docs: |
   /**/CLAUDE.md
   /**/AGENTS.md
 
+# 站点级样式微调（首页卡片列宽、中文行高等）
+extra_css:
+  - stylesheets/extra.css
+
 markdown_extensions:
   - admonition
   - attr_list
@@ -65,6 +73,11 @@ markdown_extensions:
   - toc:
       permalink: true
   - pymdownx.details
+  # 图标短码（:material-xxx: / :octicons-xxx-24:）必须靠 emoji 扩展渲染，
+  # 否则会被当成纯文本原样输出。
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
@@ -109,6 +122,7 @@ nav:
           - 安全性 2026-10-13: laiyipao/audits/security-2026-10-13.md
           - 引擎移植计划: laiyipao/audits/r1-engine-port-plan.md
   - LLM 实验(llm-lab):
+      - 总览: llm-lab/README.md
       - 学习路线: llm-lab/00-学习路线.md
       - 01 分词与词表: llm-lab/01-分词与词表.md
       - 02 嵌入与位置编码: llm-lab/02-嵌入与位置编码.md
