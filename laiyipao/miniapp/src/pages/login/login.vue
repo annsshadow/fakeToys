@@ -44,7 +44,7 @@
         </view>
         <view
           class="btn btn-primary"
-          :class="{ 'btn-disabled': submitting || !username || !password }"
+          :class="{ 'btn-dim': submitting || !username || !password }"
           @click="submit"
         >
           {{ submitting ? '登录中…' : '登录' }}
@@ -163,5 +163,18 @@ async function submit(): Promise<void> {
 
 .ph {
   color: var(--dim);
+}
+
+/*
+ * 登录按钮保持可点击（仅视觉变灰）。
+ *
+ * 全局 `.btn-disabled` 带 `pointer-events: none` —— 口令未填时按钮挂上它，
+ * 点击被 CSS 直接吞掉，`submit()` 里的空值校验（"请填写用户名与口令"）
+ * 永远弹不出来，看起来像按钮坏了。这里改用纯视觉的 `btn-dim`：
+ * 半透明提示"还没法提交"，但点击可达 submit()，由它给出具体提示。
+ * 提交中防重入由 submit() 开头的 `if (submitting.value) return` 兜底。
+ */
+.btn-dim {
+  opacity: 0.4;
 }
 </style>
