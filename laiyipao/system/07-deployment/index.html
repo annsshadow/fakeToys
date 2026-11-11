@@ -1,0 +1,3635 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="laiyipao / llm-lab / oa4rust 项目文档">
+      
+      
+        <meta name="author" content="annsshadow">
+      
+      
+      
+        <link rel="prev" href="../06-data-model/">
+      
+      
+        <link rel="next" href="../08-contracts/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>07 部署 - fakeToys 文档</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#07" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../../.." title="fakeToys 文档" class="md-header__button md-logo" aria-label="fakeToys 文档" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            fakeToys 文档
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              07 部署
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换到深色模式"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切换到深色模式" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换到浅色模式"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切换到浅色模式" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="分享" aria-label="分享" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/<OWNER>/<REPO>" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    annsshadow/fakeToys
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  首页
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../" class="md-tabs__link">
+          
+  
+  
+    
+  
+  来一炮(laiyipao)
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../llm-lab/00-%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  LLM 实验(llm-lab)
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../oa4rust/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  OA4Rust
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="fakeToys 文档" class="md-nav__button md-logo" aria-label="fakeToys 文档" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    fakeToys 文档
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/<OWNER>/<REPO>" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    annsshadow/fakeToys
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    首页
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    来一炮(laiyipao)
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    来一炮(laiyipao)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../GAME_DESIGN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    游戏设计
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../IMPLEMENTATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    实现内容与验证
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ENGINEERING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    工程约束
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../DECISIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    决策记录
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../KNOWN_LIMITS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    已知限制
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../OPERATIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    运维手册
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_8" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    系统设计
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_8" id="__nav_2_8_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_8_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    系统设计
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 架构
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 服务端
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03-miniapp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 小程序
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04-admin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    04 管理后台
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05-api-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    05 API 参考
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    06 数据模型
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    07 部署
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    07 部署
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 依赖与版本
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 环境变量全表
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. 环境变量全表">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 后端（23 个）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 前端
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 密钥管理
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#24-vs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.4 玩家登录模式（游客 vs 账号）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 首次部署
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. 首次部署">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 数据库
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 迁移与种子
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 启动
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4 验证
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 构建
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. 构建">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-linux-amd64cgo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 后端（Linux amd64，CGO 关闭）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 运营后台
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-h5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 小程序 H5
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#44" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.4 微信小程序包
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-nginx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. nginx
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-systemd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. systemd
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 迁移策略
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. 迁移策略">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#71" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.1 生产推荐
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#72" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.2 加一条迁移的检查清单
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#73-down" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.3 不要盲目 -down
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. 发布检查清单
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. 发布检查清单">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#81" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.1 后端
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#82" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.2 前端
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#83" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.3 端到端
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. 回滚
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. 回滚">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#91" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.1 后端
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#92" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.2 前端
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#93" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.3 数据库
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 备份与恢复
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="10. 备份与恢复">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#101" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10.1 备份
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#102" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10.2 恢复
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. 故障速查
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. 安全清单
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../08-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    08 契约
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_9" id="__nav_2_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    审计与复盘
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    审计与复盘
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../audits/coverage-2026-09-28/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    覆盖率 2026-09-28
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../audits/coverage-2026-10-28/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    覆盖率 2026-10-28
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../audits/security-2026-10-13/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    安全性 2026-10-13
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../audits/r1-engine-port-plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    引擎移植计划
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LLM 实验(llm-lab)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    LLM 实验(llm-lab)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../llm-lab/00-%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    学习路线
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../llm-lab/01-%E5%88%86%E8%AF%8D%E4%B8%8E%E8%AF%8D%E8%A1%A8/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 分词与词表
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../llm-lab/02-%E5%B5%8C%E5%85%A5%E4%B8%8E%E4%BD%8D%E7%BD%AE%E7%BC%96%E7%A0%81/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 嵌入与位置编码
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../llm-lab/03-%E8%87%AA%E6%B3%A8%E6%84%8F%E5%8A%9B%E6%9C%BA%E5%88%B6/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 自注意力机制
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../llm-lab/04-Transformer%E7%BB%93%E6%9E%84/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    04 Transformer 结构
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../llm-lab/05-%E9%A2%84%E8%AE%AD%E7%BB%83%E4%B8%8E%E8%AE%AD%E7%BB%83%E5%BE%AA%E7%8E%AF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    05 预训练与训练循环
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../llm-lab/06-%E8%A7%84%E6%A8%A1%E5%8C%96%E8%AE%AD%E7%BB%83/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    06 规模化训练
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../llm-lab/07-%E5%BE%AE%E8%B0%83-SFT-LoRA-QLoRA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    07 微调 SFT/LoRA/QLoRA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../llm-lab/08-%E5%AF%B9%E9%BD%90-RLHF-PPO-DPO/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    08 对齐 RLHF/PPO/DPO
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../llm-lab/09-%E8%AF%84%E4%BC%B0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    09 评估
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../llm-lab/10-%E6%8E%A8%E7%90%86%E4%BC%98%E5%8C%96/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10 推理优化
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../oa4rust/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OA4Rust
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    OA4Rust
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../oa4rust/01-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 架构
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../oa4rust/02-modules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 模块
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../oa4rust/03-data-and-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 数据与接口
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../oa4rust/04-flows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    04 流程
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../oa4rust/05-environment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    05 环境
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../oa4rust/06-install-and-run/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    06 安装与运行
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../oa4rust/07-examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    07 示例
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../oa4rust/08-faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    08 FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../oa4rust/09-maintenance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    09 维护
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 依赖与版本
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 环境变量全表
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. 环境变量全表">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 后端（23 个）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 前端
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 密钥管理
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#24-vs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.4 玩家登录模式（游客 vs 账号）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 首次部署
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. 首次部署">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 数据库
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 迁移与种子
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 启动
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4 验证
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 构建
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. 构建">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-linux-amd64cgo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 后端（Linux amd64，CGO 关闭）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 运营后台
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-h5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 小程序 H5
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#44" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.4 微信小程序包
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-nginx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. nginx
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-systemd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. systemd
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 迁移策略
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. 迁移策略">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#71" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.1 生产推荐
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#72" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.2 加一条迁移的检查清单
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#73-down" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.3 不要盲目 -down
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. 发布检查清单
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. 发布检查清单">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#81" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.1 后端
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#82" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.2 前端
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#83" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.3 端到端
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. 回滚
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. 回滚">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#91" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.1 后端
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#92" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.2 前端
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#93" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.3 数据库
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 备份与恢复
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="10. 备份与恢复">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#101" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10.1 备份
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#102" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10.2 恢复
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. 故障速查
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. 安全清单
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="07">07 · 配置与部署<a class="headerlink" href="#07" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>本文覆盖：依赖版本、<strong>全部环境变量</strong>、首次部署、构建、nginx / systemd、
+迁移策略、发布检查清单、回滚、备份恢复、故障速查。</p>
+<p>值班用的「一分钟速查」在 <code>OPERATIONS.md</code> §0；本文是它的<strong>实现依据</strong>。</p>
+</blockquote>
+<hr />
+<h2 id="1">1. 依赖与版本<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>组件</th>
+<th>版本</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Go</td>
+<td><strong>1.26.10</strong></td>
+<td>后端编译（下限不是随手写的，见下）</td>
+</tr>
+<tr>
+<td>PostgreSQL</td>
+<td><strong>15+</strong></td>
+<td>数据库（需要 <code>num_nonnulls</code>、<code>GENERATED … AS IDENTITY</code>）</td>
+</tr>
+<tr>
+<td>Node</td>
+<td><strong>20+</strong></td>
+<td>前端构建</td>
+</tr>
+<tr>
+<td>pnpm</td>
+<td>11</td>
+<td>依赖管理</td>
+</tr>
+<tr>
+<td>nginx</td>
+<td>任意稳定版</td>
+<td>反代 + 静态托管</td>
+</tr>
+<tr>
+<td>systemd</td>
+<td>任意</td>
+<td>服务托管</td>
+</tr>
+</tbody>
+</table>
+<p>后端 Go 的下限是 <strong>1.26.10</strong>，不是「大致 1.26」：1.26.9 及以下含
+<code>GO-2026-6809</code>（<code>crypto/x509</code> 不拒绝被攻破的中间证书），而本服务的调用链
+<strong>代码可达</strong>（<code>service.RecordRecompute → fmt.Fprintf → x509.Certificate.Verify</code>），
+CI 的 govulncheck 闸门会直接红。升级方式只是 <code>go.mod</code> 一行 ——
+<code>setup-go</code> 走 <code>go-version-file</code>，会自动装新工具链，<code>go.sum</code> 不用动。</p>
+<p>前端工具链版本有<strong>硬锁</strong>，不要随手升级：</p>
+<table>
+<thead>
+<tr>
+<th>包</th>
+<th>版本</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>vite</code>（miniapp）</td>
+<td><strong>5.2.8</strong></td>
+<td><code>@dcloudio/vite-plugin-uni</code> 的 peer 硬锁</td>
+</tr>
+<tr>
+<td><code>vitest</code>（miniapp）</td>
+<td>2.1.9</td>
+<td>与 vite 5 配套</td>
+</tr>
+<tr>
+<td><code>vite</code>（admin）</td>
+<td>8.x</td>
+<td>Rolldown 构建；<code>manualChunks</code> 只接受函数形式</td>
+</tr>
+</tbody>
+</table>
+<p><code>miniapp/src/test/toolchain_pin.test.ts</code> 会在依赖被改动后先红。</p>
+<hr />
+<h2 id="2">2. 环境变量全表<a class="headerlink" href="#2" title="Permanent link">&para;</a></h2>
+<h3 id="21-23">2.1 后端（23 个）<a class="headerlink" href="#21-23" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>变量</th>
+<th>默认值</th>
+<th>必填（prod）</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ADDR</code></td>
+<td><code>:8080</code></td>
+<td>否</td>
+<td>监听地址</td>
+</tr>
+<tr>
+<td><code>APP_ENV</code></td>
+<td><code>dev</code></td>
+<td><strong>是</strong>（设 <code>prod</code>）</td>
+<td>决定 CORS 默认值与 prod 守卫</td>
+</tr>
+<tr>
+<td><code>LOG_LEVEL</code></td>
+<td><code>info</code></td>
+<td>否</td>
+<td>⚠️ 已解析但当前未被消费（无日志分级实现）</td>
+</tr>
+<tr>
+<td><code>DATABASE_URL</code></td>
+<td><code>postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable</code></td>
+<td><strong>是</strong></td>
+<td>连接串；prod 必须显式含 <code>sslmode=</code></td>
+</tr>
+<tr>
+<td><code>DB_MAX_CONNS</code></td>
+<td><code>10</code></td>
+<td>否</td>
+<td>连接池上限（越界回退默认）</td>
+</tr>
+<tr>
+<td><code>DB_MIN_CONNS</code></td>
+<td><code>2</code></td>
+<td>否</td>
+<td>连接池下限</td>
+</tr>
+<tr>
+<td><code>DB_CONN_LIFETIME</code></td>
+<td><code>1h</code></td>
+<td>否</td>
+<td>连接最大存活</td>
+</tr>
+<tr>
+<td><code>DB_TIMEZONE</code></td>
+<td><code>Asia/Shanghai</code></td>
+<td>否</td>
+<td>连接会话时区（R90）；业务日界由 <code>config.BusinessTimeZone</code> 固定，见 OPERATIONS</td>
+</tr>
+<tr>
+<td><code>MIGRATIONS_ON_BOOT</code></td>
+<td><code>true</code></td>
+<td>否</td>
+<td>启动时自动迁移；生产建议 <code>false</code> + 独立执行</td>
+</tr>
+<tr>
+<td><code>JWT_SECRET</code></td>
+<td><code>dev-only-insecure-secret-change-me</code></td>
+<td><strong>是</strong></td>
+<td>prod 下以 <code>dev-only</code> 开头会 panic</td>
+</tr>
+<tr>
+<td><code>ACCESS_TTL</code></td>
+<td><code>2h</code></td>
+<td>否</td>
+<td>玩家/管理员 access token 有效期</td>
+</tr>
+<tr>
+<td><code>REFRESH_TTL</code></td>
+<td><code>720h</code>（30d）</td>
+<td>否</td>
+<td>玩家 refresh token 有效期</td>
+</tr>
+<tr>
+<td><code>WECHAT_APP_ID</code></td>
+<td>空</td>
+<td>否</td>
+<td>与 Secret 同时存在才启用微信登录</td>
+</tr>
+<tr>
+<td><code>WECHAT_APP_SECRET</code></td>
+<td>空</td>
+<td>否</td>
+<td></td>
+</tr>
+<tr>
+<td><code>WECHAT_ENDPOINT</code></td>
+<td><code>https://api.weixin.qq.com/sns/jscode2session</code></td>
+<td>否</td>
+<td>可指向 mock</td>
+</tr>
+<tr>
+<td><code>CORS_ALLOW_ORIGINS</code></td>
+<td>空</td>
+<td>否</td>
+<td>逗号分隔白名单；<strong>prod 为空 = 不发任何 CORS 头</strong></td>
+</tr>
+<tr>
+<td><code>BATTLE_TOKEN_TTL</code></td>
+<td><code>30m</code></td>
+<td>否</td>
+<td>开局凭证有效期</td>
+</tr>
+<tr>
+<td><code>MIN_BATTLE_DURATION</code></td>
+<td><code>15s</code></td>
+<td>否</td>
+<td>最短可信战斗时长</td>
+</tr>
+<tr>
+<td><code>SETTLE_RECOMPUTE_MODE</code></td>
+<td><code>enforce</code></td>
+<td>否</td>
+<td><code>off</code> / <code>shadow</code> / <code>enforce</code></td>
+</tr>
+<tr>
+<td><code>OFFLINE_CAP_HOURS</code></td>
+<td><code>12</code></td>
+<td>否</td>
+<td>离线收益累计上限（2026-10-31 新一轮第 7 轮起由 <code>GET/POST /me/offline-reward</code> 消费）</td>
+</tr>
+<tr>
+<td><code>OFFLINE_COIN_PER_HOUR</code></td>
+<td><code>600</code></td>
+<td>否</td>
+<td>离线收益每小时金币速率（2026-10-31 新一轮第 7 轮）</td>
+</tr>
+<tr>
+<td><code>PLAYER_LOGIN_REQUIRED</code></td>
+<td><code>false</code></td>
+<td>否</td>
+<td>开启后玩家必须用账号口令登录，<code>/auth/guest</code> 一律 403；启动时引导一个<strong>与超管同名同口令</strong>的共享测试账号</td>
+</tr>
+<tr>
+<td><code>BOOTSTRAP_ADMIN_USER</code></td>
+<td><code>admin</code></td>
+<td>否</td>
+<td>首次引导管理员用户名</td>
+</tr>
+<tr>
+<td><code>BOOTSTRAP_ADMIN_PASS</code></td>
+<td><code>admin12345</code></td>
+<td><strong>是</strong></td>
+<td>prod 下未显式设置会 panic；长度 &lt; 10 时拒绝创建</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>没有速率上限配置项，这是刻意的。</strong> 曾经的 <code>MAX_SCORE_PER_SECOND</code>
+（硬编码 50000）已在 2026-10-20 删除：它远高于第 1 关满分（19539），
+<code>min()</code> 永远取满分那侧，限制从未真正生效。现在由 <code>domain.scoreCapFor</code>
+按关卡推导。<strong>不要再把它加回来</strong> —— 锚点必须与 <code>scoreCapFor</code>
+用同一个值，做成可配置项就多了一个「两处可能不同步」的面。</p>
+</blockquote>
+<p>三条 prod 守卫（<code>config.Load</code>）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>JWT_SECRET 以 "dev-only" 开头          → panic
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>DATABASE_URL 不含 "sslmode="           → panic
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>BOOTSTRAP_ADMIN_PASS 环境变量为空      → panic
+</code></pre></div>
+<p>第三条的理由：默认口令 <code>admin12345</code> 恰好 10 位，<strong>能通过</strong>
+<code>EnsureBootstrapAdmin</code> 的长度门槛。而它写在 README 与源码里，等于公开。
+拿到 admin token 后可给任意用户发币、封禁任意玩家、改商城价格 ——
+即完整经济与封禁体系的接管。</p>
+<p>非 prod 环境不会 panic，但启动日志会打印 <code>DevDefaultWarnings()</code> 的醒目告警，
+让「正在用公开默认凭证」这件事不再隐形。</p>
+<h3 id="22">2.2 前端<a class="headerlink" href="#22" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>变量</th>
+<th>作用域</th>
+<th>默认</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>VITE_API_BASE</code></td>
+<td>miniapp + admin</td>
+<td>miniapp: <code>http://127.0.0.1:8080/api/v1</code>；admin: <code>/api/v1</code></td>
+<td>构建时烘焙进产物</td>
+</tr>
+<tr>
+<td><code>VITE_API_TARGET</code></td>
+<td>admin dev server</td>
+<td><code>http://127.0.0.1:8080</code></td>
+<td>仅开发代理目标，不进产物</td>
+</tr>
+</tbody>
+</table>
+<p>⚠️ miniapp 的 <code>VITE_API_BASE</code> 若是<strong>公网域名 + <code>http://</code></strong>，应用启动即抛错
+（令牌 30 天有效，明文过网等于长期裸奔）。局域网 IP 只告警，回环地址放行。</p>
+<h3 id="23">2.3 密钥管理<a class="headerlink" href="#23" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>内容</th>
+<th>是否入库</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>laiyipao/deploy/.local.keys</code></td>
+<td><code>JWT_SECRET</code> / <code>ADMIN_PASS</code> / <code>DB_DSN</code> / <code>DOMAIN</code></td>
+<td><strong>否</strong>（<code>.gitignore</code>）</td>
+</tr>
+<tr>
+<td><code>laiyipao/deploy/remote-config.env</code></td>
+<td>上传到服务器的 <code>config.env</code> 副本</td>
+<td><strong>否</strong></td>
+</tr>
+<tr>
+<td><code>/usr/local/laiyipao/etc/config.env</code></td>
+<td>远端实际配置（<code>chmod 600</code>）</td>
+<td>只在服务器</td>
+</tr>
+</tbody>
+</table>
+<p>仓库里<strong>不含</strong>任何真实域名 / IP / 口令。<code>deploy/README.md</code> 里的
+<code>&lt;YOUR_TEST_DOMAIN&gt;</code> 是占位符。</p>
+<h3 id="24-vs">2.4 玩家登录模式（游客 vs 账号）<a class="headerlink" href="#24-vs" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>开关</th>
+<th>行为</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>游客（缺省）</td>
+<td><code>PLAYER_LOGIN_REQUIRED</code> 未设 / <code>false</code></td>
+<td>每个浏览器/设备一个游客号，凭证在 localStorage 的 <code>lyp_guest</code></td>
+</tr>
+<tr>
+<td>账号</td>
+<td><code>PLAYER_LOGIN_REQUIRED=true</code></td>
+<td>只能用 <code>POST /auth/login</code>（用户名 + 口令）；<code>/auth/guest</code> 一律 403 <code>login_required</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>为什么测试环境要开账号模式</strong>：游客通道给每个设备一个独立账号，于是</p>
+<ul>
+<li>测试数据（金币、关卡进度、专精、战报）散落在无数个 <code>users</code> 行里；</li>
+<li>换一个浏览器（或者清一次缓存）就是一个新号 ——「我刚打的关卡呢」；</li>
+<li>多人同时测时互相看不见对方的进度，运营无法复现「玩家卡在第 27 关」。</li>
+</ul>
+<p><strong>共享账号的口令与运营超管相同</strong>（复用 <code>BOOTSTRAP_ADMIN_USER</code> /
+<code>BOOTSTRAP_ADMIN_PASS</code>），于是测试环境只需记一套凭据。
+代价是这个登录端点同时是<strong>超管口令的爆破面</strong> —— 所以它的限流是
+10/min/IP（不是游客建号的 60/min），而口令<strong>绝不写进前端产物</strong>
+（H5 登录页只回填用户名）。</p>
+<p><strong>开关是服务端权威</strong>：客户端也拿得到 <code>/config</code> 的 <code>require_login</code>，
+但那个字段不在内容哈希里、缓存副本可能过期 —— 真正的判据是
+服务端对 <code>/auth/guest</code> 的那道 403。改了开关<strong>立即生效</strong>，不必等
+客户端重新拉包。</p>
+<p><strong>数据不会被重建</strong>：共享账号已存在时，启动只<strong>同步口令</strong>，
+不碰钱包/进度/专精/战报 —— 「重建账号」等于把测试数据清空，
+那正是这个功能要解决的事。</p>
+<hr />
+<h2 id="3">3. 首次部署<a class="headerlink" href="#3" title="Permanent link">&para;</a></h2>
+<h3 id="31">3.1 数据库<a class="headerlink" href="#31" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="c1"># 建库与账号（示例）</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>sudo<span class="w"> </span>-u<span class="w"> </span>postgres<span class="w"> </span>psql<span class="w"> </span>-c<span class="w"> </span><span class="s2">"CREATE USER laiyipao_app WITH PASSWORD '&lt;PASSWORD&gt;';"</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>sudo<span class="w"> </span>-u<span class="w"> </span>postgres<span class="w"> </span>psql<span class="w"> </span>-c<span class="w"> </span><span class="s2">"CREATE DATABASE laiyipao OWNER laiyipao_app;"</span>
+</code></pre></div>
+<p>要求：PostgreSQL 15+；时区由应用钉死（<code>DB_TIMEZONE</code>），不依赖服务器配置。</p>
+<h3 id="32">3.2 迁移与种子<a class="headerlink" href="#32" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">cd</span><span class="w"> </span>laiyipao/server
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">DATABASE_URL</span><span class="o">=</span><span class="s2">"postgres://laiyipao_app:&lt;PASSWORD&gt;@127.0.0.1:5432/laiyipao?sslmode=disable"</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>go<span class="w"> </span>run<span class="w"> </span>./cmd/migrate<span class="w">      </span><span class="c1"># 19 个迁移，50 张表</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>go<span class="w"> </span>run<span class="w"> </span>./cmd/seed<span class="w">         </span><span class="c1"># 首次必须执行：敌人/技能/装备/关卡/签到/任务/商城/兑换码</span>
+</code></pre></div>
+<p><code>cmd/seed</code> 是<strong>幂等 upsert</strong>：</p>
+<ul>
+<li>内容表会被覆盖为当前代码里的值；</li>
+<li><code>shop_items.enabled</code> <strong>不在 upsert 分支里</strong>，后台手动上下架能扛住重灌；</li>
+<li>玩家数据一律不碰。</li>
+</ul>
+<blockquote>
+<p>只跑迁移不跑种子，<code>/config</code> 仍能工作（内容是 <code>domain</code> 静态生成的），
+但后台看板、商城、任务、签到会读到空表。</p>
+</blockquote>
+<h3 id="33">3.3 启动<a class="headerlink" href="#33" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">APP_ENV</span><span class="o">=</span>prod
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">JWT_SECRET</span><span class="o">=</span><span class="s2">"</span><span class="k">$(</span>openssl<span class="w"> </span>rand<span class="w"> </span>-hex<span class="w"> </span><span class="m">32</span><span class="k">)</span><span class="s2">"</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="nb">export</span><span class="w"> </span><span class="nv">BOOTSTRAP_ADMIN_PASS</span><span class="o">=</span><span class="s1">'&lt;强口令&gt;'</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>./lyp-server-amd64
+</code></pre></div>
+<p>启动日志会打印：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>[来一炮 server] 启动配置: addr=:8080 env=prod db=postgres://laiyipao_app:***@…/laiyipao wechat_enabled=false access_ttl=2h0m0s refresh_ttl=720h0m0s
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>[来一炮 server] 已创建初始管理员：admin（密码来自 BOOTSTRAP_ADMIN_PASS，请尽快修改）
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>[来一炮 server] 监听 :8080（微信登录通道：未启用（游客登录））
+</code></pre></div>
+<h3 id="34">3.4 验证<a class="headerlink" href="#34" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>localhost:8080/healthz<span class="w">           </span><span class="c1"># {"ok":true,"time":"…"}</span>
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>localhost:8080/readyz<span class="w">            </span><span class="c1"># {"ok":true,"db":"up"}</span>
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>curl<span class="w"> </span>-s<span class="w"> </span>localhost:8080/api/v1/config<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-c<span class="w"> </span><span class="m">200</span>
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>curl<span class="w"> </span>-s<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span>localhost:8080/api/v1/auth/guest<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">     </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span>-d<span class="w"> </span><span class="s1">'{"guest_token":"","nickname":""}'</span>
+</code></pre></div>
+<p>四项全通 = 账号、配置、数据库三条主链路就绪。</p>
+<hr />
+<h2 id="4">4. 构建<a class="headerlink" href="#4" title="Permanent link">&para;</a></h2>
+<h3 id="41-linux-amd64cgo">4.1 后端（Linux amd64，CGO 关闭）<a class="headerlink" href="#41-linux-amd64cgo" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nb">cd</span><span class="w"> </span>laiyipao/server
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="nv">CGO_ENABLED</span><span class="o">=</span><span class="m">0</span><span class="w"> </span><span class="nv">GOOS</span><span class="o">=</span>linux<span class="w"> </span><span class="nv">GOARCH</span><span class="o">=</span>amd64<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">  </span>go<span class="w"> </span>build<span class="w"> </span>-ldflags<span class="w"> </span><span class="s2">"-s -w"</span><span class="w"> </span>-o<span class="w"> </span>../deploy/bin/lyp-server-amd64<span class="w"> </span>./cmd/api
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="nv">CGO_ENABLED</span><span class="o">=</span><span class="m">0</span><span class="w"> </span><span class="nv">GOOS</span><span class="o">=</span>linux<span class="w"> </span><span class="nv">GOARCH</span><span class="o">=</span>amd64<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span>go<span class="w"> </span>build<span class="w"> </span>-ldflags<span class="w"> </span><span class="s2">"-s -w"</span><span class="w"> </span>-o<span class="w"> </span>../deploy/bin/lyp-migrate<span class="w"> </span>./cmd/migrate
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="nv">CGO_ENABLED</span><span class="o">=</span><span class="m">0</span><span class="w"> </span><span class="nv">GOOS</span><span class="o">=</span>linux<span class="w"> </span><span class="nv">GOARCH</span><span class="o">=</span>amd64<span class="w"> </span><span class="se">\</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="w">  </span>go<span class="w"> </span>build<span class="w"> </span>-ldflags<span class="w"> </span><span class="s2">"-s -w"</span><span class="w"> </span>-o<span class="w"> </span>../deploy/bin/lyp-seed<span class="w"> </span>./cmd/seed
+</code></pre></div>
+<h3 id="42">4.2 运营后台<a class="headerlink" href="#42" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nb">cd</span><span class="w"> </span>laiyipao/admin
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>pnpm<span class="w"> </span>install
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="nv">VITE_API_BASE</span><span class="o">=</span><span class="s2">"https://&lt;DOMAIN&gt;/laiyipao-api/api/v1"</span><span class="w"> </span>pnpm<span class="w"> </span>build
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="c1"># 产物：admin/dist（base 已是 /laiyipao-admin/）</span>
+</code></pre></div>
+<p><code>pnpm build</code> 会先跑 <code>vue-tsc --noEmit</code>，类型错误会阻断构建。
+只想快速出包用 <code>pnpm build:only</code>。</p>
+<p>体积检查（可选但推荐）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>pnpm<span class="w"> </span>size<span class="w">          </span><span class="c1"># 报告首屏 raw / gzip 与逐路由代价</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>pnpm<span class="w"> </span>size:check<span class="w">    </span><span class="c1"># 超预算退出码 1（raw 220 KB / gzip 80 KB）</span>
+</code></pre></div>
+<h3 id="43-h5">4.3 小程序 H5<a class="headerlink" href="#43-h5" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nb">cd</span><span class="w"> </span>laiyipao/miniapp
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>pnpm<span class="w"> </span>install
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="nv">VITE_API_BASE</span><span class="o">=</span><span class="s2">"https://&lt;DOMAIN&gt;/laiyipao-api/api/v1"</span><span class="w"> </span>pnpm<span class="w"> </span>build:h5
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="c1"># 产物：miniapp/dist/build/h5</span>
+</code></pre></div>
+<h3 id="44">4.4 微信小程序包<a class="headerlink" href="#44" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>pnpm<span class="w"> </span>build:mp-weixin
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="c1"># 产物：miniapp/dist/build/mp-weixin → 用微信开发者工具上传</span>
+</code></pre></div>
+<p>注意：</p>
+<ul>
+<li><code>manifest.json</code> 的 <code>mp-weixin.appid</code> 为空，需填入真实 AppID；</li>
+<li>真机调试要把 <code>VITE_API_BASE</code> 改成局域网地址（会打印明文告警），
+  或配置微信「合法域名」；</li>
+<li><code>manifest.json</code> 的 <code>urlCheck: false</code> 仅用于开发。</li>
+</ul>
+<hr />
+<h2 id="5-nginx">5. nginx<a class="headerlink" href="#5-nginx" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="c1"># API → 127.0.0.1:9020（注意 proxy_pass 末尾的斜杠：剥离 /laiyipao-api/ 前缀）</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="k">location</span><span class="w"> </span><span class="s">/laiyipao-api/</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="w">    </span><span class="kn">proxy_pass</span><span class="w"> </span><span class="s">http://127.0.0.1:9020/</span><span class="p">;</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="w">    </span><span class="kn">proxy_http_version</span><span class="w"> </span><span class="mi">1</span><span class="s">.1</span><span class="p">;</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">Host</span><span class="w"> </span><span class="nv">$host</span><span class="p">;</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Real-IP</span><span class="w"> </span><span class="nv">$remote_addr</span><span class="p">;</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-For</span><span class="w"> </span><span class="nv">$proxy_add_x_forwarded_for</span><span class="p">;</span>
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="w">    </span><span class="kn">proxy_set_header</span><span class="w"> </span><span class="s">X-Forwarded-Proto</span><span class="w"> </span><span class="nv">$scheme</span><span class="p">;</span>
+<a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a><span class="w">    </span><span class="kn">proxy_read_timeout</span><span class="w"> </span><span class="s">120s</span><span class="p">;</span>
+<a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="w">    </span><span class="kn">client_max_body_size</span><span class="w"> </span><span class="mi">64m</span><span class="p">;</span>
+<a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a><span class="p">}</span>
+<a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a>
+<a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a><span class="c1"># 后台（SPA）</span>
+<a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a><span class="k">location</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">/laiyipao-admin</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kn">return</span><span class="w"> </span><span class="mi">301</span><span class="w"> </span><span class="s">/laiyipao-admin/</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a><span class="k">location</span><span class="w"> </span><span class="s">^~</span><span class="w"> </span><span class="s">/laiyipao-admin/assets/</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a><span class="w">    </span><span class="kn">alias</span><span class="w"> </span><span class="s">/usr/local/laiyipao/admin/assets/</span><span class="p">;</span>
+<a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a><span class="w">    </span><span class="kn">expires</span><span class="w"> </span><span class="s">1y</span><span class="p">;</span><span class="w"> </span><span class="kn">add_header</span><span class="w"> </span><span class="s">Cache-Control</span><span class="w"> </span><span class="s">"public,</span><span class="w"> </span><span class="s">immutable"</span><span class="p">;</span><span class="w"> </span><span class="kn">access_log</span><span class="w"> </span><span class="no">off</span><span class="p">;</span>
+<a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a><span class="p">}</span>
+<a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a><span class="k">location</span><span class="w"> </span><span class="s">/laiyipao-admin/</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a><span class="w">    </span><span class="kn">alias</span><span class="w"> </span><span class="s">/usr/local/laiyipao/admin/</span><span class="p">;</span>
+<a id="__codelineno-11-21" name="__codelineno-11-21" href="#__codelineno-11-21"></a><span class="w">    </span><span class="kn">index</span><span class="w"> </span><span class="s">index.html</span><span class="p">;</span>
+<a id="__codelineno-11-22" name="__codelineno-11-22" href="#__codelineno-11-22"></a><span class="w">    </span><span class="kn">try_files</span><span class="w"> </span><span class="nv">$uri</span><span class="w"> </span><span class="nv">$uri/</span><span class="w"> </span><span class="s">/laiyipao-admin/index.html</span><span class="p">;</span>
+<a id="__codelineno-11-23" name="__codelineno-11-23" href="#__codelineno-11-23"></a><span class="w">    </span><span class="kn">add_header</span><span class="w"> </span><span class="s">Cache-Control</span><span class="w"> </span><span class="s">"no-cache,</span><span class="w"> </span><span class="s">must-revalidate"</span><span class="w"> </span><span class="s">always</span><span class="p">;</span>
+<a id="__codelineno-11-24" name="__codelineno-11-24" href="#__codelineno-11-24"></a><span class="p">}</span>
+<a id="__codelineno-11-25" name="__codelineno-11-25" href="#__codelineno-11-25"></a>
+<a id="__codelineno-11-26" name="__codelineno-11-26" href="#__codelineno-11-26"></a><span class="c1"># H5（uni-app build:h5 产物）</span>
+<a id="__codelineno-11-27" name="__codelineno-11-27" href="#__codelineno-11-27"></a><span class="k">location</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">/laiyipao-h5</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="kn">return</span><span class="w"> </span><span class="mi">301</span><span class="w"> </span><span class="s">/laiyipao-h5/</span><span class="p">;</span><span class="w"> </span><span class="p">}</span>
+<a id="__codelineno-11-28" name="__codelineno-11-28" href="#__codelineno-11-28"></a><span class="k">location</span><span class="w"> </span><span class="s">^~</span><span class="w"> </span><span class="s">/laiyipao-h5/assets/</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-11-29" name="__codelineno-11-29" href="#__codelineno-11-29"></a><span class="w">    </span><span class="kn">alias</span><span class="w"> </span><span class="s">/usr/local/laiyipao/h5/assets/</span><span class="p">;</span>
+<a id="__codelineno-11-30" name="__codelineno-11-30" href="#__codelineno-11-30"></a><span class="w">    </span><span class="kn">expires</span><span class="w"> </span><span class="s">1y</span><span class="p">;</span><span class="w"> </span><span class="kn">add_header</span><span class="w"> </span><span class="s">Cache-Control</span><span class="w"> </span><span class="s">"public,</span><span class="w"> </span><span class="s">immutable"</span><span class="p">;</span><span class="w"> </span><span class="kn">access_log</span><span class="w"> </span><span class="no">off</span><span class="p">;</span>
+<a id="__codelineno-11-31" name="__codelineno-11-31" href="#__codelineno-11-31"></a><span class="p">}</span>
+<a id="__codelineno-11-32" name="__codelineno-11-32" href="#__codelineno-11-32"></a><span class="k">location</span><span class="w"> </span><span class="s">^~</span><span class="w"> </span><span class="s">/laiyipao-h5/static/</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-11-33" name="__codelineno-11-33" href="#__codelineno-11-33"></a><span class="w">    </span><span class="kn">alias</span><span class="w"> </span><span class="s">/usr/local/laiyipao/h5/static/</span><span class="p">;</span>
+<a id="__codelineno-11-34" name="__codelineno-11-34" href="#__codelineno-11-34"></a><span class="w">    </span><span class="kn">try_files</span><span class="w"> </span><span class="nv">$uri</span><span class="w"> </span><span class="p">=</span><span class="mi">404</span><span class="p">;</span>
+<a id="__codelineno-11-35" name="__codelineno-11-35" href="#__codelineno-11-35"></a><span class="w">    </span><span class="kn">expires</span><span class="w"> </span><span class="s">1y</span><span class="p">;</span><span class="w"> </span><span class="kn">add_header</span><span class="w"> </span><span class="s">Cache-Control</span><span class="w"> </span><span class="s">"public,</span><span class="w"> </span><span class="s">immutable"</span><span class="p">;</span>
+<a id="__codelineno-11-36" name="__codelineno-11-36" href="#__codelineno-11-36"></a><span class="p">}</span>
+<a id="__codelineno-11-37" name="__codelineno-11-37" href="#__codelineno-11-37"></a><span class="k">location</span><span class="w"> </span><span class="s">/laiyipao-h5/</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-11-38" name="__codelineno-11-38" href="#__codelineno-11-38"></a><span class="w">    </span><span class="kn">alias</span><span class="w"> </span><span class="s">/usr/local/laiyipao/h5/</span><span class="p">;</span>
+<a id="__codelineno-11-39" name="__codelineno-11-39" href="#__codelineno-11-39"></a><span class="w">    </span><span class="kn">index</span><span class="w"> </span><span class="s">index.html</span><span class="p">;</span>
+<a id="__codelineno-11-40" name="__codelineno-11-40" href="#__codelineno-11-40"></a><span class="w">    </span><span class="kn">try_files</span><span class="w"> </span><span class="nv">$uri</span><span class="w"> </span><span class="nv">$uri/</span><span class="w"> </span><span class="s">/laiyipao-h5/index.html</span><span class="p">;</span>
+<a id="__codelineno-11-41" name="__codelineno-11-41" href="#__codelineno-11-41"></a><span class="w">    </span><span class="kn">add_header</span><span class="w"> </span><span class="s">Cache-Control</span><span class="w"> </span><span class="s">"no-cache,</span><span class="w"> </span><span class="s">must-revalidate"</span><span class="w"> </span><span class="s">always</span><span class="p">;</span>
+<a id="__codelineno-11-42" name="__codelineno-11-42" href="#__codelineno-11-42"></a><span class="p">}</span>
+</code></pre></div>
+<p>要点：</p>
+<ul>
+<li><code>proxy_pass</code> <strong>必须</strong>以 <code>/</code> 结尾，否则 <code>/laiyipao-api/api/v1/...</code> 会原样转发，
+  服务端收到 <code>/laiyipao-api/api/v1/...</code> → 404。</li>
+<li><code>assets/</code> 用 immutable 长缓存（文件名带哈希）；<code>index.html</code> 必须 no-cache，
+  否则发版后用户仍加载旧入口。</li>
+<li>若把前端与 API 部署到<strong>不同域名</strong>，必须配 <code>CORS_ALLOW_ORIGINS</code>，
+  否则 <code>prod</code> 默认不发 CORS 头，浏览器会拒绝读取响应。</li>
+</ul>
+<hr />
+<h2 id="6-systemd">6. systemd<a class="headerlink" href="#6-systemd" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="k">[Unit]</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="na">Description</span><span class="o">=</span><span class="s">LaiYiPao Game Platform API</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="na">After</span><span class="o">=</span><span class="s">network.target postgresql.service</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="na">Wants</span><span class="o">=</span><span class="s">postgresql.service</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>
+<a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="k">[Service]</span>
+<a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="na">Type</span><span class="o">=</span><span class="s">simple</span>
+<a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="na">User</span><span class="o">=</span><span class="s">root</span>
+<a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="na">WorkingDirectory</span><span class="o">=</span><span class="s">/usr/local/laiyipao</span>
+<a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="na">EnvironmentFile</span><span class="o">=</span><span class="s">/usr/local/laiyipao/etc/config.env</span>
+<a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="na">ExecStart</span><span class="o">=</span><span class="s">/usr/local/laiyipao/bin/lyp-server-amd64</span>
+<a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a><span class="na">Restart</span><span class="o">=</span><span class="s">on-failure</span>
+<a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a><span class="na">RestartSec</span><span class="o">=</span><span class="s">5</span>
+<a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a><span class="na">LimitNOFILE</span><span class="o">=</span><span class="s">65535</span>
+<a id="__codelineno-12-15" name="__codelineno-12-15" href="#__codelineno-12-15"></a><span class="na">StandardOutput</span><span class="o">=</span><span class="s">append:/usr/local/laiyipao/logs/stdout.log</span>
+<a id="__codelineno-12-16" name="__codelineno-12-16" href="#__codelineno-12-16"></a><span class="na">StandardError</span><span class="o">=</span><span class="s">append:/usr/local/laiyipao/logs/stderr.log</span>
+<a id="__codelineno-12-17" name="__codelineno-12-17" href="#__codelineno-12-17"></a>
+<a id="__codelineno-12-18" name="__codelineno-12-18" href="#__codelineno-12-18"></a><span class="k">[Install]</span>
+<a id="__codelineno-12-19" name="__codelineno-12-19" href="#__codelineno-12-19"></a><span class="na">WantedBy</span><span class="o">=</span><span class="s">multi-user.target</span>
+</code></pre></div>
+<p><code>config.env</code>（<code>chmod 600</code>）示例：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nv">APP_ENV</span><span class="o">=</span>prod
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="nv">ADDR</span><span class="o">=</span><span class="m">127</span>.0.0.1:9020
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="nv">DATABASE_URL</span><span class="o">=</span>postgres://laiyipao_app:&lt;PASSWORD&gt;@127.0.0.1:5432/laiyipao?sslmode<span class="o">=</span>disable
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="nv">JWT_SECRET</span><span class="o">=</span>&lt;<span class="m">64</span><span class="w"> </span>字节随机&gt;
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="nv">BOOTSTRAP_ADMIN_PASS</span><span class="o">=</span>&lt;强口令&gt;
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="nv">SETTLE_RECOMPUTE_MODE</span><span class="o">=</span>enforce
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="nv">MIGRATIONS_ON_BOOT</span><span class="o">=</span><span class="nb">false</span>
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="c1"># 测试环境专用：玩家必须用账号登录（详见 §2.4）</span>
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="nv">PLAYER_LOGIN_REQUIRED</span><span class="o">=</span><span class="nb">true</span>
+</code></pre></div>
+<p>目录布局：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>/usr/local/laiyipao/
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>├─ bin/    lyp-server-amd64 / lyp-migrate / lyp-seed
+<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>├─ admin/  后台静态产物
+<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>├─ h5/     H5 静态产物
+<a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>├─ etc/    config.env（600）
+<a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>└─ logs/   stdout.log / stderr.log
+</code></pre></div>
+<hr />
+<h2 id="7">7. 迁移策略<a class="headerlink" href="#7" title="Permanent link">&para;</a></h2>
+<h3 id="71">7.1 生产推荐<a class="headerlink" href="#71" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="c1"># 发版前单独执行（不在启动时自动迁移）</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="nv">DATABASE_URL</span><span class="o">=</span>…<span class="w"> </span>./bin/lyp-migrate
+</code></pre></div>
+<p><code>MIGRATIONS_ON_BOOT=false</code> 的理由：启动时迁移失败会让服务起不来，
+而回滚代码后数据库已经前进了 —— 两件事应该分开、可控。</p>
+<h3 id="72">7.2 加一条迁移的检查清单<a class="headerlink" href="#72" title="Permanent link">&para;</a></h3>
+<ol>
+<li>文件名 <code>000NN_desc.sql</code>，含 <code>+goose Up</code> / <code>+goose Down</code>；</li>
+<li>Down <strong>必须能跑通</strong>，并写明是否<strong>有损</strong>（有损要写原因）；</li>
+<li>大表加列优先 <code>ADD COLUMN … DEFAULT</code>（PG 11+ 不重写表）；</li>
+<li>加唯一约束前先确认存量数据无重复；</li>
+<li>改 <code>redeem_codes</code> / <code>user_tasks</code> 这类有哨兵语义的表时，
+   同步检查相关查询；</li>
+<li>更新 <a href="../06-data-model/">06-data-model.md</a> §12。</li>
+</ol>
+<h3 id="73-down">7.3 不要盲目 <code>-down</code><a class="headerlink" href="#73-down" title="Permanent link">&para;</a></h3>
+<p><code>00011</code> / <code>00013</code> / <code>00014</code> / <code>00015</code> / <code>00016</code> 的 Down 都是<strong>有损</strong>的
+（删运营验真记录 / 丢历史周期 / 丢已洗练词条 / 丢重算证据 / 共享账号失去口令登录能力）。
+回滚前先看迁移文件头部的说明，并做备份。</p>
+<hr />
+<h2 id="8">8. 发布检查清单<a class="headerlink" href="#8" title="Permanent link">&para;</a></h2>
+<h3 id="81">8.1 后端<a class="headerlink" href="#81" title="Permanent link">&para;</a></h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>go test ./...</code> 全绿（含真实库测试）</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>go vet ./...</code> 无告警</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 若改了内容表/公式：<code>go run ./cmd/vectors</code> 重生成夹具，再跑一次测试</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>cmd/vectors -check</code> 无差异</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 迁移已在预发库验证（含 Down）</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>SETTLE_RECOMPUTE_MODE</code> 取值确认（默认 <code>enforce</code>）</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 启动日志无 <code>⚠️ 正在使用开发默认凭证</code></li>
+</ul>
+<h3 id="82">8.2 前端<a class="headerlink" href="#82" title="Permanent link">&para;</a></h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>pnpm type-check</code> 通过</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>pnpm test</code> 全绿</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>VITE_API_BASE</code> 是 <strong>https</strong> 且指向正确环境</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> admin <code>pnpm build</code> 成功；<code>pnpm size:check</code> 未超预算</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 产物路径与 nginx <code>alias</code> 一致</li>
+</ul>
+<h3 id="83">8.3 端到端<a class="headerlink" href="#83" title="Permanent link">&para;</a></h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>pwsh -File scripts/e2e.ps1</code>（会<strong>清空重建</strong> <code>laiyipao</code> 库，只能在测试环境跑）</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 手工验证：游客登录 → 配置加载 → 开一局 → 结算 → 验真 → 防线保存/挑战</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 后台：登录 → 看板 → 改关卡 → 发币 → 审计日志有记录</li>
+</ul>
+<blockquote>
+<p>⚠️ 改关卡/技能/公式会让<strong>存量战报永久失去可重放性</strong>。
+处理流程见 <code>OPERATIONS.md</code> §4：先重生成契约夹具 → 跑全量测试 → 跑 e2e →
+在公告里说明。行为测试全绿<strong>不</strong>代表可重放性没被破坏。</p>
+</blockquote>
+<hr />
+<h2 id="9">9. 回滚<a class="headerlink" href="#9" title="Permanent link">&para;</a></h2>
+<h3 id="91">9.1 后端<a class="headerlink" href="#91" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>systemctl<span class="w"> </span>stop<span class="w"> </span>laiyipao
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>mv<span class="w"> </span>/usr/local/laiyipao/bin/lyp-server-amd64<span class="o">{</span>,.old<span class="o">}</span>
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a><span class="c1"># 放入上一版二进制</span>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>systemctl<span class="w"> </span>start<span class="w"> </span>laiyipao
+</code></pre></div>
+<h3 id="92">9.2 前端<a class="headerlink" href="#92" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>mv<span class="w"> </span>/usr/local/laiyipao/admin<span class="o">{</span>,.old<span class="o">}</span><span class="w">     </span><span class="c1"># 或 h5</span>
+<a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a><span class="c1"># 放入上一版产物</span>
+</code></pre></div>
+<p>静态资源文件名带哈希，回滚后浏览器会自然拉到旧文件；
+<code>index.html</code> 是 no-cache，不会卡住。</p>
+<h3 id="93">9.3 数据库<a class="headerlink" href="#93" title="Permanent link">&para;</a></h3>
+<p><strong>先判断迁移是否可逆</strong>：</p>
+<ul>
+<li>纯加列/加表 → 可保留（旧代码不认识新列，不影响）；</li>
+<li>改了语义（如 00013 成就合并）→ 回滚代码<strong>不会</strong>恢复旧行为，
+  需要按迁移文件的 Down 处理，且会丢数据。</li>
+</ul>
+<p>宁可「代码回滚、数据库保留」，也不要盲目 <code>-down</code>。</p>
+<hr />
+<h2 id="10">10. 备份与恢复<a class="headerlink" href="#10" title="Permanent link">&para;</a></h2>
+<h3 id="101">10.1 备份<a class="headerlink" href="#101" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>pg_dump<span class="w"> </span>-Fc<span class="w"> </span>-d<span class="w"> </span>laiyipao<span class="w"> </span>-f<span class="w"> </span>/backup/laiyipao_<span class="k">$(</span>date<span class="w"> </span>+%F<span class="k">)</span>.dump
+</code></pre></div>
+<p>建议：每日全量 + 发布前手动一次；保留 ≥ 7 天。</p>
+<h3 id="102">10.2 恢复<a class="headerlink" href="#102" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>systemctl<span class="w"> </span>stop<span class="w"> </span>laiyipao
+<a id="__codelineno-19-2" name="__codelineno-19-2" href="#__codelineno-19-2"></a>dropdb<span class="w"> </span>laiyipao<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>createdb<span class="w"> </span>-O<span class="w"> </span>laiyipao_app<span class="w"> </span>laiyipao
+<a id="__codelineno-19-3" name="__codelineno-19-3" href="#__codelineno-19-3"></a>pg_restore<span class="w"> </span>-d<span class="w"> </span>laiyipao<span class="w"> </span>/backup/laiyipao_2026-10-20.dump
+<a id="__codelineno-19-4" name="__codelineno-19-4" href="#__codelineno-19-4"></a><span class="nv">DATABASE_URL</span><span class="o">=</span>…<span class="w"> </span>./bin/lyp-migrate<span class="w">      </span><span class="c1"># 确认 schema 版本</span>
+<a id="__codelineno-19-5" name="__codelineno-19-5" href="#__codelineno-19-5"></a>systemctl<span class="w"> </span>start<span class="w"> </span>laiyipao
+</code></pre></div>
+<p>恢复后必须验证：<code>/readyz</code>、<code>/config</code> 的 <code>version</code>、随机抽一条战报能读回。</p>
+<hr />
+<h2 id="11">11. 故障速查<a class="headerlink" href="#11" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>最可能原因</th>
+<th>处置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>启动即 <code>FATAL: 连接数据库</code></td>
+<td>DSN 错 / 库未起 / 端口不通</td>
+<td>用 <code>psql</code> 直连验证</td>
+</tr>
+<tr>
+<td><code>config: APP_ENV=prod 时必须显式设置 JWT_SECRET</code></td>
+<td>漏设环境变量</td>
+<td>补 <code>JWT_SECRET</code></td>
+</tr>
+<tr>
+<td><code>config: … 必须显式设置 BOOTSTRAP_ADMIN_PASS</code></td>
+<td>同上</td>
+<td>补口令（≥10 位）</td>
+</tr>
+<tr>
+<td><code>/readyz</code> 503</td>
+<td>数据库不可用</td>
+<td>查 PG 与连接数</td>
+</tr>
+<tr>
+<td>后台白屏</td>
+<td><code>base</code> 不是 <code>/laiyipao-admin/</code>，或 nginx alias 不匹配</td>
+<td>查产物路径与 network 面板</td>
+</tr>
+<tr>
+<td>后台所有请求 404</td>
+<td><code>proxy_pass</code> 末尾漏了 <code>/</code></td>
+<td>补斜杠</td>
+</tr>
+<tr>
+<td>浏览器报 CORS</td>
+<td>prod 未配 <code>CORS_ALLOW_ORIGINS</code> 且前后端不同源</td>
+<td>配白名单或改同源</td>
+</tr>
+<tr>
+<td>登录后立刻 401</td>
+<td><code>JWT_SECRET</code> 在多次发布间变了</td>
+<td>固定密钥</td>
+</tr>
+<tr>
+<td>玩家「体力够但开不了局」</td>
+<td>客户端并发登录建了两个号</td>
+<td>检查 <code>login()</code> 单飞</td>
+</tr>
+<tr>
+<td>玩家「进度凭空消失」</td>
+<td>登出后没保存新 <code>guest_token</code></td>
+<td>检查客户端 <code>logout()</code> 顺序</td>
+</tr>
+<tr>
+<td>结算大量 422</td>
+<td>S 段校验误伤 / 引擎漂移</td>
+<td>查 <code>/admin/recomputes/stats</code>；必要时 <code>SETTLE_RECOMPUTE_MODE=shadow</code></td>
+</tr>
+<tr>
+<td><code>demoted=true</code></td>
+<td>熔断已降级，奖励在放行</td>
+<td>查不符率与关卡分布，定位漂移</td>
+</tr>
+<tr>
+<td>兑换码创建 500</td>
+<td><code>redeem_codes</code> 序列未对齐</td>
+<td>跑 <code>cmd/seed</code>（含 setval）</td>
+</tr>
+<tr>
+<td>每日任务/签到在早上 8 点翻页</td>
+<td>运行的是 R92 之前的二进制（Go 日界曾随容器 <code>TZ</code>=UTC）</td>
+<td>升级到 R92+；业务日界已固定为 Asia/Shanghai，无需设置 <code>TZ</code></td>
+</tr>
+<tr>
+<td>后台图标全空</td>
+<td>图标写成字符串名</td>
+<td>传组件引用</td>
+</tr>
+<tr>
+<td>构建报 <code>Big integer literals are not available</code></td>
+<td>构建 target &lt; es2020</td>
+<td>保持 <code>es2020</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="12">12. 安全清单<a class="headerlink" href="#12" title="Permanent link">&para;</a></h2>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>APP_ENV=prod</code>，三条守卫都通过</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>JWT_SECRET</code> 64 字节随机，且<strong>不随发布变化</strong></li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>BOOTSTRAP_ADMIN_PASS</code> 强口令，首登后修改</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>config.env</code> 权限 600，不在仓库里</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>DATABASE_URL</code> 含 <code>sslmode=require</code>（跨网时）</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 前端 <code>VITE_API_BASE</code> 是 https</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> nginx 下发 <code>X-Frame-Options: DENY</code>（服务端也会发，双保险）</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 前后端不同源时配 <code>CORS_ALLOW_ORIGINS</code>，不要用 <code>*</code></li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 后台账号按最小权限分配（只读用 <code>readonly</code>）</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 定期检查 <code>admin_audit_logs</code> 的 <code>grant_currency</code> / <code>revoke_currency</code></li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 单实例部署（限流是进程内计数）；若上多副本，先换共享计数器</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright (C) 2026 annsshadow · AGPL-3.0-or-later
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.sections", "navigation.indexes", "navigation.top", "navigation.tracking", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.tabs.link"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

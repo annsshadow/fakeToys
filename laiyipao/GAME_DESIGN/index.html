@@ -1,0 +1,3419 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="laiyipao / llm-lab / oa4rust 项目文档">
+      
+      
+        <meta name="author" content="annsshadow">
+      
+      
+      
+        <link rel="prev" href="../">
+      
+      
+        <link rel="next" href="../IMPLEMENTATION/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>游戏设计 - fakeToys 文档</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#_1" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="fakeToys 文档" class="md-header__button md-logo" aria-label="fakeToys 文档" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            fakeToys 文档
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              游戏设计
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换到深色模式"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切换到深色模式" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换到浅色模式"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切换到浅色模式" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="分享" aria-label="分享" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/<OWNER>/<REPO>" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    annsshadow/fakeToys
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  首页
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
+          
+  
+  
+    
+  
+  来一炮(laiyipao)
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../llm-lab/00-%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  LLM 实验(llm-lab)
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../oa4rust/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  OA4Rust
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="fakeToys 文档" class="md-nav__button md-logo" aria-label="fakeToys 文档" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    fakeToys 文档
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/<OWNER>/<REPO>" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    annsshadow/fakeToys
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    首页
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    来一炮(laiyipao)
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    来一炮(laiyipao)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    游戏设计
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    游戏设计
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 设计红线
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 核心循环
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 创新点（核心）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. 创新点（核心）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#i-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        I-1 元素反应矩阵 —— 破数值通胀
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#i-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        I-2 插槽与热量 —— 让三选一变成风险管理
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#i-3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        I-3 专精树 + 装备契合度 —— 让养成线互相咬合
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#i-4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        I-4 地形机制关 —— 让关卡是谜题而非波数
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#i-5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        I-5 防线值守 —— 让"放置"有社交意义
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#i-6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        I-6 回放哈希验真 —— 公开可验证的公平
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#i-7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        I-7 构筑评分替代战力评分
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        轻量创新（附带）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-100" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 100 关章节结构
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 敌人（原创命名，21 种）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 技能与合成
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 装备 / 宝石 / 皮肤
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 经济与后期系统
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. 工程落点
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. 工程落点">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#miniappsrcgame-13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        引擎（miniapp/src/game/，共 13 个非测试文件）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        双端一致性契约
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        主要 API
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. 数据库表
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 原创性声明
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-vs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. 已知边界（设计意图 vs 实现现状）
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IMPLEMENTATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    实现内容与验证
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ENGINEERING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    工程约束
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DECISIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    决策记录
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../KNOWN_LIMITS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    已知限制
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OPERATIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    运维手册
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../system/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    系统设计
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_8" id="__nav_2_8_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    系统设计
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../system/01-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 架构
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../system/02-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 服务端
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../system/03-miniapp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 小程序
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../system/04-admin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    04 管理后台
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../system/05-api-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    05 API 参考
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../system/06-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    06 数据模型
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../system/07-deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    07 部署
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../system/08-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    08 契约
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_9" id="__nav_2_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    审计与复盘
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    审计与复盘
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../audits/coverage-2026-09-28/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    覆盖率 2026-09-28
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../audits/coverage-2026-10-28/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    覆盖率 2026-10-28
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../audits/security-2026-10-13/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    安全性 2026-10-13
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../audits/r1-engine-port-plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    引擎移植计划
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LLM 实验(llm-lab)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    LLM 实验(llm-lab)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/00-%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    学习路线
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/01-%E5%88%86%E8%AF%8D%E4%B8%8E%E8%AF%8D%E8%A1%A8/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 分词与词表
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/02-%E5%B5%8C%E5%85%A5%E4%B8%8E%E4%BD%8D%E7%BD%AE%E7%BC%96%E7%A0%81/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 嵌入与位置编码
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/03-%E8%87%AA%E6%B3%A8%E6%84%8F%E5%8A%9B%E6%9C%BA%E5%88%B6/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 自注意力机制
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/04-Transformer%E7%BB%93%E6%9E%84/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    04 Transformer 结构
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/05-%E9%A2%84%E8%AE%AD%E7%BB%83%E4%B8%8E%E8%AE%AD%E7%BB%83%E5%BE%AA%E7%8E%AF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    05 预训练与训练循环
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/06-%E8%A7%84%E6%A8%A1%E5%8C%96%E8%AE%AD%E7%BB%83/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    06 规模化训练
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/07-%E5%BE%AE%E8%B0%83-SFT-LoRA-QLoRA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    07 微调 SFT/LoRA/QLoRA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/08-%E5%AF%B9%E9%BD%90-RLHF-PPO-DPO/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    08 对齐 RLHF/PPO/DPO
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/09-%E8%AF%84%E4%BC%B0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    09 评估
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/10-%E6%8E%A8%E7%90%86%E4%BC%98%E5%8C%96/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10 推理优化
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../oa4rust/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OA4Rust
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    OA4Rust
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oa4rust/01-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 架构
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oa4rust/02-modules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 模块
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oa4rust/03-data-and-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 数据与接口
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oa4rust/04-flows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    04 流程
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oa4rust/05-environment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    05 环境
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oa4rust/06-install-and-run/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    06 安装与运行
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oa4rust/07-examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    07 示例
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oa4rust/08-faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    08 FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oa4rust/09-maintenance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    09 维护
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 设计红线
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 核心循环
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 创新点（核心）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. 创新点（核心）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#i-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        I-1 元素反应矩阵 —— 破数值通胀
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#i-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        I-2 插槽与热量 —— 让三选一变成风险管理
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#i-3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        I-3 专精树 + 装备契合度 —— 让养成线互相咬合
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#i-4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        I-4 地形机制关 —— 让关卡是谜题而非波数
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#i-5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        I-5 防线值守 —— 让"放置"有社交意义
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#i-6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        I-6 回放哈希验真 —— 公开可验证的公平
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#i-7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        I-7 构筑评分替代战力评分
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        轻量创新（附带）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-100" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 100 关章节结构
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-21" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 敌人（原创命名，21 种）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 技能与合成
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 装备 / 宝石 / 皮肤
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 经济与后期系统
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. 工程落点
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. 工程落点">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#miniappsrcgame-13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        引擎（miniapp/src/game/，共 13 个非测试文件）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        双端一致性契约
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        主要 API
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. 数据库表
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 原创性声明
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-vs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. 已知边界（设计意图 vs 实现现状）
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="_1">来一炮 · 玩法设计<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p><strong>版本 v1.1 · 2026-09-28</strong></p>
+<p>⚠️ <strong>本文档的地位</strong>：玩法<strong>设计意图</strong> + 与实现的<strong>差异清单</strong>。
+它<strong>不是</strong>实现的单一事实源 —— 实现的单一事实源是代码与
+<a href="../../laiyipao/server/testdata/"><code>server/testdata/</code></a> 里的契约夹具。</p>
+<p>本文档与代码不一致的地方，本文档<strong>已经标注</strong>（每处注明实测值与核实方式）。
+数字改动后请跑 <code>go -C server test ./internal/domain -run "GameDesign|OpsDoc|DesignDoc" -v</code> ——
+<code>docs_drift_test.go</code> 会把本文档里的关键数字与代码逐项比对，漂了就红。
+⚠️ 跑这条命令时应看到<strong>恰好 7 条</strong> <code>--- PASS</code>（GameDesign×2 / OpsDoc×3 / DesignDoc×2）；
+一条都没有 = 模式没命中任何测试（本守卫家族 2026-10-14 文档迁移后曾因此静默空转过）。</p>
+<p>定位：玩法机制与《向僵尸开炮》同构（关卡闯关 / 守防线 / 局内选卡 / 场外养成），
+<strong>表达与系统全原创</strong>，并在其之上做 <strong>7 项</strong>机制级创新以形成自有辨识度。</p>
+<p>逐关数值平衡与实测数据见 <a href="../IMPLEMENTATION/"><code>IMPLEMENTATION.md</code></a>，已知边界见 <a href="../KNOWN_LIMITS/"><code>KNOWN_LIMITS.md</code></a>。</p>
+</blockquote>
+<hr />
+<h2 id="0">0. 设计红线<a class="headerlink" href="#0" title="Permanent link">&para;</a></h2>
+<p>原作被玩家和媒体反复诟病的 4 个问题，直接决定我们的创新方向：</p>
+<table>
+<thead>
+<tr>
+<th>原作问题</th>
+<th>后果</th>
+<th>我们的对策</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>后期全靠堆数值（技能等级/宝石词条/装备等级都在加伤害）</td>
+<td>挑战性崩塌，"氪佬与平民差距"退化成纯资源量</td>
+<td>创新 I-1 元素反应矩阵 + I-3 专精树，<strong>反应伤害与攻击力解耦</strong></td>
+</tr>
+<tr>
+<td>局内选完技能就不用操作，关卡退化为波数推进</td>
+<td>操作无意义，通关=时间问题</td>
+<td>创新 I-2 插槽热量（构筑有代价）+ I-4 地形机制关（关卡是谜题）</td>
+</tr>
+<tr>
+<td>技能"三选一"是无脑增益，配方只是解锁更纯的数值</td>
+<td>没有构筑决策</td>
+<td>I-2 热量/弃牌 + I-3 专精点有限，<strong>必须做取舍</strong></td>
+</tr>
+<tr>
+<td>离线收益是纯挂机产出，社交只有排行榜</td>
+<td>挂机无意义，社交浅</td>
+<td>创新 I-5 防线值守（异步对抗）+ I-6 回放哈希验真（公开可验证）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>三条不可退让的红线</strong></p>
+<ol>
+<li><strong>不许出现"唯一最优解"</strong> —— 每个机制都必须至少留 2 条可行路线。</li>
+<li><strong>养成线之间必须互相咬合</strong>，不允许 4 条线各自独立加伤害（金币/钻石也必须各有用处）。</li>
+<li><strong>战斗必须确定性可复现</strong>（见 I-6），这是反作弊与公平性的技术地基。</li>
+</ol>
+<blockquote>
+<p><strong>红线的当前达成度</strong>：第 1 条<strong>未完全达成</strong>（见 §11 边界 3），
+第 2 条<strong>部分达成</strong>（装备契合度未做，见 §11 边界 1），
+第 3 条<strong>已达成</strong>（I-6 全链路可复现，见 I-6）。</p>
+</blockquote>
+<hr />
+<h2 id="1">1. 核心循环<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>选关 → 布阵（4 主动槽 + 1 被动槽 + 3 工事）
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>     → 战斗：自动索敌开火，玩家可拖拽微调弹道与提前量
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>     → 波次间：抽 3 张手牌（技能/属性/机制）→ 有代价地选
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>     → 胜利：结算星级 + 资源 + 掉落 → 养成（专精/装备/宝石/皮肤）
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>     → 循环；或失败 → 诊断提示 → 复盘 → 重试 / 一次复活
+</code></pre></div>
+<p>单局目标：<strong>在防线血量归零前清完所有波次（含 BOSS）</strong>。防线血量不随关卡回复。</p>
+<hr />
+<h2 id="2">2. 创新点（核心）<a class="headerlink" href="#2" title="Permanent link">&para;</a></h2>
+<h3 id="i-1">I-1 元素反应矩阵 —— 破数值通胀<a class="headerlink" href="#i-1" title="Permanent link">&para;</a></h3>
+<p><strong>问题</strong>：原作所有养成都加攻击力，于是后期"堆数值"就是唯一解。
+<strong>做法</strong>：把伤害拆成三段，其中<strong>反应伤害段与攻击力解耦</strong>。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>单次命中伤害 = 直接伤害(吃养成攻击力，受护甲减免)
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>             + 元素层数伤害(吃元素层数/元素系数，不吃攻击力)
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>             + 反应伤害(吃搭配与时序)
+</code></pre></div>
+<p><strong>反通胀的真正保证不是权重，而是"反应伤害里攻击力的占比"</strong>：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>反应伤害内部拆分：
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    元素侧 ← 元素层数 × 反应倍率 × 反应等级   （与养成无关，弱玩家可拉满）
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    攻击侧 ← 玩家攻击力                       （与养成相关，强玩家更快）
+</code></pre></div>
+<blockquote>
+<p><strong>硬性红线</strong>：<code>反应伤害中的攻击力权重 ≤ 30%</code>。</p>
+<p>实现上由反应表的 <code>attack_weight_pct</code> 逐条声明，实测取值 <strong>200 / 250 / 300</strong>，
+即 <strong>20% / 25% / 30%</strong>，全部 ≤ 30%。核实：<code>server/testdata/reaction_specs.json</code>。</p>
+<p>攻击侧还额外受 <code>reactionAttackCap</code> 约束（<code>wE/((1-w)·M)</code>），
+推导见 <code>miniapp/src/game/damage.ts</code> 的注释。</p>
+</blockquote>
+<p><strong>5 种元素</strong>：焰 Fire / 冰 Ice / 电 Lightning / 毒 Corrosion / 动能 Kinetic
+（核实：<code>elements.ts</code> 的 <code>AllElements()</code>，恰好 5 种）</p>
+<p><strong>7 条反应链</strong>（施加 A 后命中带 B 的目标即触发；核实：<code>reaction_specs.json</code> 恰好 7 条）：</p>
+<table>
+<thead>
+<tr>
+<th>反应</th>
+<th>触发</th>
+<th>元素倍率</th>
+<th>攻击权重</th>
+<th>效果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>蒸汽爆发</td>
+<td>焰 + 冰</td>
+<td>55</td>
+<td>30%</td>
+<td>范围伤害，<strong>驱散护盾</strong></td>
+</tr>
+<tr>
+<td>过热</td>
+<td>焰 + 电</td>
+<td>55</td>
+<td>30%</td>
+<td>爆炸 + <strong>眩晕 1.5s</strong></td>
+</tr>
+<tr>
+<td>燃烧云</td>
+<td>焰 + 毒</td>
+<td>40</td>
+<td>25%</td>
+<td>生成火区，元素值可续燃</td>
+</tr>
+<tr>
+<td>超导</td>
+<td>冰 + 电</td>
+<td>50</td>
+<td>25%</td>
+<td>目标受击伤害 <strong>+60%</strong>，持续 4s</td>
+</tr>
+<tr>
+<td>急速冻结</td>
+<td>冰 + 毒</td>
+<td>45</td>
+<td>25%</td>
+<td><strong>冻结 2s</strong>，受击伤害 +30%</td>
+</tr>
+<tr>
+<td>腐蚀扩散</td>
+<td>电 + 毒</td>
+<td>35</td>
+<td>20%</td>
+<td>把目标的元素层数传播给半径内目标</td>
+</tr>
+<tr>
+<td>破甲击退</td>
+<td>动能 + 任意</td>
+<td>30</td>
+<td>30%</td>
+<td>削穿护甲（4s 内 −150‰），击退目标，为其他伤害开窗口</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ <strong>与设计意图的差异</strong>：「燃烧云 6s 火区」「超导持续 4s」里的<strong>持续伤害周期</strong>
+未单独实现 —— 反应表只有 <code>status_duration_ms</code>（控制时长），
+没有 DoT 的 tick 定义。燃烧云的火区是地形机制（见 I-4），不是反应自带的 DoT。
+见 §11 边界 4。</p>
+<p>✅ <strong>范围伤害与破甲击退已实现</strong>（区别于下面 2 条未实现项）：
+<code>steam_burst</code>（2026-10-10，半径 120）与 <code>overheat</code>（第 160 轮，半径 90）
+的爆炸/溅射走同一条管线（<code>engine.ts triggerReactionAoe</code>，Go 侧镜像）——
+命中敌人为圆心、半径内邻居受 25% 反应伤害；眩晕 / 驱散护盾等状态
+<strong>只作用主目标，不随溅射扩散</strong>。<code>破甲击退</code>触发后 4000ms 内目标
+有效护甲被削 150‰，并一次性击退 4px（定点 4000）。两类数值都落在
+反应表的 <code>aoe_radius</code> / <code>armor_shred_permille</code> / <code>knockback</code> /
+<code>status_duration_ms</code> 字段，跨端由 <code>reaction_specs.json</code> 与
+<code>reaction_contract.test.ts</code> 双向锁定，行为由 <code>armor_break.test.ts</code> /
+<code>overheat_aoe.test.ts</code>（TS）与 Go 侧对应行为测试钉住。
+其余 2 条（burn_cloud 火区 /
+corrosion_spread 层数传播）仍是<strong>纯反应伤害</strong>，未实现，见 §11 边界 4。</p>
+</blockquote>
+<p><strong>敌人 5 维抗性</strong>：每种敌人有 <code>fire/ice/lightning/corrosion/kinetic</code> 五个抗性值，
+范围 −50%（吃双倍）~ +50%（几乎免疫）。BOSS 必有高抗 + 负抗组合 → 强制换搭配。</p>
+<p><strong>平衡红线（写进自动化测试）</strong></p>
+<ol>
+<li>✅ <strong>反通胀</strong>：反应攻击力权重 ≤ 30% —— 反应表声明 + <code>damage.test.ts</code> 断言</li>
+<li>✅ <strong>以弱胜强可行</strong>：低养成 + 正确搭配能打过高养成 + 无搭配（同关卡）——
+   由 <code>tier_impact.test.ts</code> 的 3 档位 × 100 关守住</li>
+<li>⚠️ <strong>无唯一最优解</strong>：任一关卡穷举「元素组合 × 专精方向」，
+   通过率最高与次高差距 ≤ 15% —— <strong>未实现该穷举测试</strong>，见 §11 边界 3</li>
+<li>⚠️ <strong>BOSS 可解</strong>：每个 BOSS 高抗元素的负抗反应链须足以破防 —— <strong>未实现该测试</strong></li>
+</ol>
+<hr />
+<h3 id="i-2">I-2 插槽与热量 —— 让三选一变成风险管理<a class="headerlink" href="#i-2" title="Permanent link">&para;</a></h3>
+<p><strong>问题</strong>：原作局内三选一是纯增益，无脑拿。
+<strong>做法</strong>：给选择装上代价。</p>
+<ul>
+<li>玩家有 <strong>4 个主动插槽 + 1 个被动槽</strong>。主动槽只能放主动技能，被动槽只能放被动。
+  （核实：<code>heatmap.ts</code> 的 <code>ACTIVE_SLOTS = 4</code>；
+  ⚠️ 该常量是<strong>重放哈希的锚点</strong>，改了会让所有历史战报失去可重放性）</li>
+<li>每个波次间隙抽 <strong>3 张手牌</strong>：1 张技能 / 1 张属性卡 / 1 张机制卡。
+  （核实：<code>rollWaveCards</code> 恰好产出 3 张）</li>
+<li><strong>弃牌</strong>：每波可免费弃 <strong>1</strong> 张（<code>DISCARD_PER_WAVE = 1</code>），
+  弃牌回 <strong>+1</strong> 热量（<code>DISCARD_HEAT_REFUND = 1n</code>，热量是资源不是惩罚）。</li>
+<li><strong>热量</strong>：释放技能消耗热量，基础上限 <strong>100</strong>（<code>HEAT_MAX = 100n</code>），
+  超限进入 <strong>过热 2000ms（2s）</strong>（<code>OVERHEAT_DURATION_MS = 2000</code>）内无法释放。</li>
+<li>上限可被专精与宝石提升，且提升量是<strong>千分比</strong>（<code>cap = HEAT_MAX × (1000+bonus)/1000</code>）</li>
+<li>过热期间元素层数不清除 → 高热量爆发流可行，而非纯惩罚</li>
+<li>抽到重复技能可<strong>就地强化</strong>（伤害 +20%、元素层数 +1、穿透 +1）</li>
+</ul>
+<blockquote>
+<p>⚠️ <strong>与设计意图的差异</strong>：原设计写的是「同一技能 3 选 1 变成 1/2/3 <strong>阶</strong>，
+高阶 = 更高热量但更强反应倍率」。实现里<strong>没有「阶」这个概念</strong> ——
+抽到重复技能就是固定幅度的强化（波次之间选，不在抽牌瞬间就地升格），
+也没有「高阶提高热量消耗」。见 §11 边界 5。</p>
+</blockquote>
+<p><strong>设计后果</strong>：玩家每波都在回答"我要 build 什么、留多少热量、要不要弃牌保空间"。</p>
+<blockquote>
+<p>📌 <strong>玩家实际看到的引导</strong>（<code>miniapp/src/pages/battle/battle.vue</code> 选牌界面）：
+标题"这一波给你 3 张卡，点一张就装备上"，提示行把"弃牌返还 1 热量"翻译成
+"点卡上的「弃」丢掉，还能回 1 点热量（热量攒满就会过热卡 2 秒）"，跳过按钮写成
+"一张都不要了，直接下一波"。改这些文案时，数值（<code>discardsLeft</code>、回 1 热量、
+过热 2s）要跟上面的 <code>DISCARD_PER_WAVE</code>/<code>DISCARD_HEAT_REFUND</code>/<code>OVERHEAT_DURATION_MS</code> 对得上，
+别让引导文字和引擎行为漂移。</p>
+</blockquote>
+<hr />
+<h3 id="i-3">I-3 专精树 + 装备契合度 —— 让养成线互相咬合<a class="headerlink" href="#i-3" title="Permanent link">&para;</a></h3>
+<p><strong>问题</strong>：原作技能/装备/宝石/皮肤 4 条线各自加伤害，资源可以随便堆。
+<strong>做法</strong>：</p>
+<p><strong>8 系专精树</strong>，每系 12 节点（3 层 × 4 节点），共 <strong>96</strong> 节点：</p>
+<table>
+<thead>
+<tr>
+<th>family</th>
+<th>中文</th>
+<th>family</th>
+<th>中文</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>flame</code></td>
+<td>焰</td>
+<td><code>light</code></td>
+<td>光</td>
+</tr>
+<tr>
+<td><code>frost</code></td>
+<td>冰</td>
+<td><code>blight</code></td>
+<td>疫</td>
+</tr>
+<tr>
+<td><code>volt</code></td>
+<td>电</td>
+<td><code>drone</code></td>
+<td>无人机</td>
+</tr>
+<tr>
+<td><code>kinetic</code></td>
+<td>动能</td>
+<td><code>engineering</code></td>
+<td>工程</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>节点类型：元素层数上限 / 反应倍率 / 热量上限 / 额外插槽 / 机制改造
+  （含 <code>ExtraSlots</code>：8 个节点各 +1 槽，客户端按 <code>active_slots</code> 生效）</li>
+<li><strong>专精点有限</strong>：初始 <strong>3</strong> 点；每层<strong>只能选 2 个</strong>（4 选 2，<code>PerLayerPickLimit = 2</code>）</li>
+<li>结果：不可能点满，必须选方向</li>
+</ul>
+<blockquote>
+<p>⚠️ <strong>与设计意图的差异 1</strong>：原设计写「每 10 级 +1」。
+实际公式是 <code>mastery_points = 3 + FLOOR((level_exp + 50 + 本局击杀) / 1000)</code>
+—— 基于<strong>累计经验与击杀</strong>，不是关卡等级。见 <code>service/game.go</code> 的 <code>applyProgress</code>。</p>
+<p>⚠️ <strong>与设计意图的差异 2</strong>：<strong>装备契合度未实现，且已决定不做</strong>。
+原设计写「装备标签与已装备技能同系 → 反应伤害 +X%；不同系 → 直伤 +Y%（Y &lt; X/3）」。
+实际情况：18 件装备的 <code>element</code> 字段<strong>全项目从未被读取</strong>，
+战斗数值只来自 <code>base_armor</code>（合计 430）与 <code>base_bonus_pct</code>（合计 1875）。
+不做的两条理由见 §11 边界 1。</p>
+</blockquote>
+<p><strong>货币分流</strong>（解决"金币钻石都能升一切"）：</p>
+<table>
+<thead>
+<tr>
+<th>货币</th>
+<th>唯一用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>金币</td>
+<td>技能/装备的基础升级（便宜、量大、线性）</td>
+</tr>
+<tr>
+<td>钻石</td>
+<td>专精点重置、洗练、皮肤（稀缺、不可逆决策）</td>
+</tr>
+<tr>
+<td>体力</td>
+<td>进入关卡（软墙，只卡"刷"不卡"玩"）</td>
+</tr>
+<tr>
+<td>钥匙</td>
+<td>资源副本 / 每周 BOSS 门票</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="i-4">I-4 地形机制关 —— 让关卡是谜题而非波数<a class="headerlink" href="#i-4" title="Permanent link">&para;</a></h3>
+<p>5 类可交互地形。<strong>实测 25/100 关使用地形，75 关没有地形</strong>。</p>
+<table>
+<thead>
+<tr>
+<th>地形</th>
+<th>机制</th>
+<th>生效率（实测）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>油桶</td>
+<td>受到<strong>焰</strong>命中即引燃 → 爆炸 + 生成火区</td>
+<td>33%（需集火）</td>
+</tr>
+<tr>
+<td>崩塌掩体</td>
+<td>受到<strong>动能</strong>伤害累计到阈值即崩塌 → 弹道永久改变</td>
+<td>100%</td>
+</tr>
+<tr>
+<td>潮汐闸</td>
+<td>周期升降：改变敌人路径与弹道受阻</td>
+<td>100%</td>
+</tr>
+<tr>
+<td>旋转风障</td>
+<td>持续改变区域内弹丸飞行方向</td>
+<td>100%</td>
+</tr>
+<tr>
+<td>蓄能塔</td>
+<td>累积被击杀敌人的元素值，满则给全场敌人上同种元素</td>
+<td>100%</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>逐章地形关数（实测）</strong>：
+ch1 = 4、ch2 = 5、ch3 = 6、ch4 = 4、ch5 = 3、ch6 = 3，合计 <strong>25</strong>。
+油桶的 33% 是<strong>有意的战术意图</strong>（"集火才点燃"），不是死代码 ——
+探针只拦"零生效"，不设 33% 的硬阈值。</p>
+<p>⚠️ <strong>与设计意图的差异</strong>：原设计称"每章至少 3 关"，实测 ch4 只有 4 关但
+<strong>没有任何一关同时使用 2 种以上地形</strong>（每关的 <code>terrain</code> 全部同 <code>kind</code>）。
+这意味着 <code>terrain_used</code> 上报字段的合法长度<strong>最多是 1</strong>，
+按关的「地形触发率」统计分辨率只有 0/1。见 §11 边界 6。</p>
+</blockquote>
+<p><strong>设计后果</strong>：地形既是解法（用火区烧整队、用崩塌打开射界）也是约束（掩体会挡你的弹）。</p>
+<hr />
+<h3 id="i-5">I-5 防线值守 —— 让"放置"有社交意义<a class="headerlink" href="#i-5" title="Permanent link">&para;</a></h3>
+<p><strong>问题</strong>：原作离线收益是纯挂机，社交只有一张排行榜。
+<strong>做法</strong>：把玩家的构筑变成可被挑战的资产。</p>
+<ul>
+<li>玩家在<strong>自家防线</strong>布 3 个防御工事（减速带 / 阻击墙 / 电栅），使用同一套养成数据</li>
+<li>生成<strong>防线快照</strong>（技能槽 + 工事 + 元素覆盖 + 战力 + 种子 + 快照哈希）</li>
+<li>其他玩家挑战该快照：<strong>客户端下载快照 → 用同款引擎本地模拟 → 回传结果与回放哈希 → 服务端做上限校验</strong></li>
+<li>⚠️ <strong>服务端不跑战斗引擎</strong>，因此不需要 Go/TS 双引擎同步（这正是 I-6 的价值）</li>
+<li><strong>代价</strong>：服务端<strong>无法独立验证胜负</strong> —— 后台对接近 100% 或 0% 的异常胜率做告警</li>
+<li>胜者窃取败者 <strong>10%</strong> 资源（可被偷上限保护）</li>
+<li>每日 <strong>3</strong> 次挑战机会（<code>DefenseAttemptLimit = 3</code>，核实一致）</li>
+</ul>
+<hr />
+<h3 id="i-6">I-6 回放哈希验真 —— 公开可验证的公平<a class="headerlink" href="#i-6" title="Permanent link">&para;</a></h3>
+<p><strong>问题</strong>：客户端结算的分数天然不可信，只能靠上限校验被动防守。
+<strong>做法</strong>：让分数<strong>任何人可复现</strong>，作弊即自证。</p>
+<ol>
+<li>战斗<strong>完全确定性</strong>：<code>seed</code> + 固定 <strong>20Hz</strong> 步进（<code>TICK_HZ = 20</code> / <code>TICK_MS = 50</code>）</li>
+<li>定点整数数学</li>
+<li>每局记录关键事件序列（发射/命中/反应/击杀/漏怪/地形/选牌）</li>
+<li><code>replayHash = hex16(FNV1a64(前缀 ‖ 事件序列))</code> 存入 <code>battle_records</code></li>
+<li><strong>验真入口</strong>：小程序「战绩验真」页 + 后台「验真」按钮 → 输入 <code>battle_id</code>，
+   用同种子本地重放，比对哈希</li>
+<li>排行榜分数因此<strong>公开可复现</strong>；被质疑的分数可当场验证</li>
+</ol>
+<blockquote>
+<p>⚠️ <strong>与设计意图的差异</strong>：原设计写「固定 <strong>60Hz</strong> 步进」「<code>replayHash = FNV64(事件序列)</code>」。
+实际是 <strong>20Hz</strong>，且哈希<strong>不只是事件序列</strong> ——
+前面还有一段<strong>前缀</strong>（关卡 id + 攻方 7 个系数 + 技能槽配置）。</p>
+<p><strong>前缀不是冗余</strong>：若只哈希事件流，一局全漏怪（kills=0）时事件里没有任何伤害数值，
+此时改攻击力、改元素系数都不改变哈希 —— 作弊者能"换一套属性"而不被验真发现。
+前缀把这类改动纳入证伪范围。</p>
+<p><strong>哈希锚点的通用规则</strong>（README 工程约束）：
+<strong>凡是能改变战斗结果的输入，都必须落在哈希锚点里。</strong>
+已有两个实例：槽位数（<code>activeSlots</code> 缺省必须是 4）与技能等级（烘进 <code>baseDamage</code>）。</p>
+</blockquote>
+<p><strong>⚠️ 关键技术约束（影响整个引擎）</strong></p>
+<blockquote>
+<p>浮点运算在不同 JS 引擎/设备上结果可能不一致 → 哈希必然不稳定。
+因此<strong>所有伤害、速度、坐标、生命值一律使用定点整数</strong>（统一 <code>×1000</code> 取整，
+禁止 <code>Math.random</code>，随机只走 PRNG）。渲染层在绘制前才转回浮点。
+这条是硬约束，改动物理/伤害代码时必须遵守。</p>
+</blockquote>
+<p><strong>防作弊的升级路径</strong></p>
+<ul>
+<li>旧做法：上限校验（被动，信任服务端给上限）</li>
+<li>新做法：哈希可复现（主动，<strong>分数的正确性由任何人可独立证明</strong>）</li>
+<li>上限校验保留为第一道过滤，防止有人构造极端回放骗哈希</li>
+</ul>
+<hr />
+<h3 id="i-7">I-7 构筑评分替代战力评分<a class="headerlink" href="#i-7" title="Permanent link">&para;</a></h3>
+<p><strong>问题</strong>：原作把所有投入折算成一个"战力 9999"数字，引导玩家堆数值。
+<strong>做法</strong>：主指标改为<strong>构筑评分</strong>（战力榜仍保留）。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>构筑评分 = 元素覆盖数(5)      × 12
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>         + 反应链完备度(7)    × 15
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>         + 专精树完成度(8系)  × 10
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>         + 装备契合度          × 12
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>         + 机制解锁深度        × 8
+</code></pre></div>
+<p>（核实：<code>domain.DefaultRatingWeights()</code> 逐项一致）</p>
+<blockquote>
+<p>⚠️ 公式里的「装备契合度」项目前<strong>恒为常量</strong> ——
+因为装备 <code>element</code> 字段从未被读取（见 §11 边界 1）。
+它仍然占 12 分权重，所以构筑评分里有一项是「不随选择变化」的。
+后台「玩家短板」页能看出这一项对所有玩家相同。</p>
+</blockquote>
+<ul>
+<li>首页用<strong>雷达图</strong>展示，短板高亮："你缺 冰 系 → 无法触发 超导 / 急速冻结"</li>
+<li>明确告诉玩家<strong>缺什么、为什么缺、怎么补</strong>，而不是告诉他"再升 5 级"</li>
+</ul>
+<h3 id="_2">轻量创新（附带）<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>内容</th>
+<th>解决</th>
+<th>状态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>L-1</td>
+<td><strong>针对性诊断</strong>：连续失败 → 分析卡点，给具体换装建议</td>
+<td>原作玩家卡关时只能自己猜</td>
+<td>✅ 已实现</td>
+</tr>
+<tr>
+<td>L-2</td>
+<td><strong>效率榜</strong>：按"通关时最低战力"排名</td>
+<td>让技巧有位置</td>
+<td>✅ 已实现</td>
+</tr>
+<tr>
+<td>L-3</td>
+<td><strong>阵型预设</strong>：保存多套配置一键切换</td>
+<td>100 关换装成本过高</td>
+<td>⚠️ 未实现（仅单套出战位）</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-100">3. 100 关章节结构<a class="headerlink" href="#3-100" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>章</th>
+<th>关卡</th>
+<th>主题</th>
+<th>地形关（实测）</th>
+<th>BOSS 关</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>1–20</td>
+<td>边境哨站</td>
+<td>4</td>
+<td>—</td>
+</tr>
+<tr>
+<td>2</td>
+<td>21–40</td>
+<td>工业废墟</td>
+<td>5</td>
+<td>—</td>
+</tr>
+<tr>
+<td>3</td>
+<td>41–60</td>
+<td>冻原</td>
+<td>6</td>
+<td>56、60</td>
+</tr>
+<tr>
+<td>4</td>
+<td>61–80</td>
+<td>感染矿井</td>
+<td>4</td>
+<td>—</td>
+</tr>
+<tr>
+<td>5</td>
+<td>81–95</td>
+<td>母巢外围</td>
+<td>3</td>
+<td>91、95</td>
+</tr>
+<tr>
+<td>6</td>
+<td>96–100</td>
+<td>母巢核心</td>
+<td>3</td>
+<td>96、100</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>BOSS 关实测共 6 个</strong>（56/60/91/95/96/100），
+分布在 ch3/ch5/ch6 三章 —— 与"每章一只"的直觉不同，ch3 有 2 只。
+3 个 BOSS 敌人：铁颚精英 / 母巢守卫 / 白垩母皇。</p>
+</blockquote>
+<p>关卡由<strong>种子化生成器</strong>产出（章节参数 + 难度曲线 + <code>level_seed</code>
+→ 波次/敌种/精英/BOSS 排布），生成后落库为后台可逐关手改的配置行。</p>
+<hr />
+<h2 id="4-21">4. 敌人（原创命名，<strong>21 种</strong>）<a class="headerlink" href="#4-21" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>普通 8</strong>：游荡者 / 疾行者 / 壮硕体 / 腐化犬 / 石肤兽 / 电鳍兽 / 霜蚀者 / 蚀骨者</li>
+<li><strong>远程 4</strong>：投手（抛掷减速弹）/ 铁罐炮（直线重炮）/ 蜂巢母（持续召唤）/ 索敌眼（标记增伤）</li>
+<li><strong>飞行 3</strong>：浮空囊 / 翼化体 / 侦察机</li>
+<li><strong>特殊 2</strong>：潜地者（钻地，免疫直线弹）/ 护盾卫（护盾需反应驱散）</li>
+<li><strong>精英/BOSS 4</strong>：铁颚精英 / 母巢守卫 / 蚀核 / 白垩母皇</li>
+</ul>
+<blockquote>
+<p>⚠️ <strong>与设计意图的差异</strong>：原设计写"20 种"且精英/BOSS 列了 5 个名字但只给 4 个 ID。
+夹具 <code>smoke_levels.json</code> 的 <code>enemies</code> 数组<strong>实际 21 条</strong>，其中 <code>is_boss</code> 的 3 条。
+上面的清单是<strong>按 <code>category</code> 字段分组</strong>的，不是逐条 ID 抄写 ——
+以夹具为准。</p>
+</blockquote>
+<p>每个敌人配置 5 维抗性；BOSS 必有高抗 + 负抗组合。</p>
+<hr />
+<h2 id="5">5. 技能与合成<a class="headerlink" href="#5" title="Permanent link">&para;</a></h2>
+<p><strong>8 系 24 技能</strong>（焰/冰/电/动能/光/疫/无人机/工程，每系恰好 3 个），
+含 <strong>18 个合成技能</strong>（<code>composite_skills</code> 数组实际 18 条）。</p>
+<blockquote>
+<p>⚠️ <strong>与设计意图的差异</strong>：原设计写"24 条合成配方"并给了 5 个示例，
+其中 <strong>3 个示例的名字在实现里不存在</strong>（<code>液氮贯穿</code> / <code>液化毒雾</code> / <code>动能破障</code>）。
+实际存在的对应物是 <code>超导穿刺</code>/<code>霜暴弹幕</code>/<code>绝对零度</code>、<code>毒雾弥漫</code>/<code>瘟疫降世</code>、
+<code>动能碾碎</code>/<code>破片重弹</code>。<strong>以夹具为准，不要照抄本文档的示例。</strong></p>
+</blockquote>
+<hr />
+<h2 id="6">6. 装备 / 宝石 / 皮肤<a class="headerlink" href="#6" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>装备</strong>：6 部位（weapon/helmet/armor/gloves/boots/charm）× 3 阶 = <strong>18 件</strong>，
+  支持锻造（金币）/ 升星（钥匙）/ 分解（金币回收）</li>
+<li>⚠️ 装备的 <code>level</code> / <code>star</code> 两列<strong>无任何效果</strong>（见 §11 边界 2）</li>
+<li><strong>宝石</strong>：<strong>8 属性</strong>（attack / element_coef / crit / reaction_mult /
+  element_cap / heat_cap / armor / skill_damage）
+  × <strong>5 品质</strong>（gray 1 词条 ×1.0 / blue 1 ×1.2 / purple 2 ×1.45 /
+  red 2 ×1.7 / gold 3 ×2.0）</li>
+<li><strong>皮肤</strong>：<strong>6 款</strong>，每款附带一个<strong>技能词条</strong>（改变机制而非只加数值）</li>
+</ul>
+<hr />
+<h2 id="7">7. 经济与后期系统<a class="headerlink" href="#7" title="Permanent link">&para;</a></h2>
+<p>技能合成树 · 装备锻造升星分解 · 宝石镶嵌洗练 · 皮肤 · 每日资源副本 ·
+七日签到 · 日/周任务 + 成就 · 四货币 + 商店 + 首充接口 · 复活与双倍奖励 ·
+排行榜 · 兑换码 · 防线值守 · 战绩验真 · <strong>技能升级</strong>（消耗金币，等级进伤害公式）</p>
+<blockquote>
+<p><strong>诚实边界</strong>：微信支付内购、流量主广告的真实接入需 AppID / 商户号 / 广告位 ID，
+当前做不了。客户端接口、订单表、支付回调、广告位封装、配置开关
+<strong>全部按标准协议写好</strong>，凭证到位即生效 —— 但不会谎称已接通真实支付。</p>
+</blockquote>
+<hr />
+<h2 id="8">8. 工程落点<a class="headerlink" href="#8" title="Permanent link">&para;</a></h2>
+<h3 id="miniappsrcgame-13">引擎（<code>miniapp/src/game/</code>，共 13 个非测试文件）<a class="headerlink" href="#miniappsrcgame-13" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>职责</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fixed.ts</code></td>
+<td>定点整数数学（I-6 硬约束基础）</td>
+</tr>
+<tr>
+<td><code>lcg.ts</code></td>
+<td>确定性 PRNG + FNV-1a 64 位哈希</td>
+</tr>
+<tr>
+<td><code>replay.ts</code></td>
+<td>战斗凭证快照 → 引擎输入 + 事件重放（I-6）</td>
+</tr>
+<tr>
+<td><code>engine.ts</code></td>
+<td>主循环 / 敌人 / 弹丸 / 地形 / 哈希 / 结算入参</td>
+</tr>
+<tr>
+<td><code>damage.ts</code></td>
+<td>伤害三段结算、反应解析、抗性、反通胀上限（I-1）</td>
+</tr>
+<tr>
+<td><code>elements.ts</code></td>
+<td>5 元素 + 7 反应链（I-1）</td>
+</tr>
+<tr>
+<td><code>heatmap.ts</code></td>
+<td>插槽 / 冷却 / 热量 / 过热 / 弃牌 / 卡面（I-2）</td>
+</tr>
+<tr>
+<td><code>terrain.ts</code></td>
+<td>5 类地形交互（I-4）</td>
+</tr>
+<tr>
+<td><code>score.ts</code></td>
+<td>分数规则（客户端唯一定义）+ <strong>计分口径版本</strong>（I-6）</td>
+</tr>
+<tr>
+<td><code>skill.ts</code></td>
+<td>技能升级规则（等级上限 / 每级系数 / 费用）</td>
+</tr>
+<tr>
+<td><code>defense.ts</code></td>
+<td>防线值守的本地模拟（I-5）</td>
+</tr>
+<tr>
+<td><code>types.ts</code></td>
+<td>共享类型</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ <strong>与设计意图的差异</strong>：原设计列了 <code>rng.ts</code> / <code>mastery.ts</code> / <code>synergy.ts</code> /
+<code>rating.ts</code> / <code>diagnose.ts</code> —— 这 5 个文件<strong>在 TS 侧都不存在</strong>。
+专精（mastery）、构筑评分（rating）、诊断（diagnose）<strong>全部在 Go 侧</strong>
+（<code>domain/power.go</code> 与 <code>domain/battle.go</code>），因为它们是<strong>服务端权威</strong>的养成与结算逻辑，
+客户端只需要读结果。<code>rng.ts</code> 的实际文件名是 <code>lcg.ts</code>。
+这不是遗漏而是<strong>架构选择</strong>：把权威逻辑放服务端，客户端不重复实现。</p>
+</blockquote>
+<h3 id="_3">双端一致性契约<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<p>以下公式在 <strong>Go（服务端校验）</strong> 与 <strong>TS（客户端战斗）</strong> 各实现一次，<strong>必须同输入同输出</strong>：</p>
+<ol>
+<li>元素反应伤害与抗性结算</li>
+<li>构筑评分与战力计算</li>
+<li>掉落表与掉落上限</li>
+<li>分数规则（<code>star_targets</code> 服务端算、得分客户端算）</li>
+<li>技能等级系数与费用</li>
+<li>专精求值</li>
+</ol>
+<p><strong>实现方式</strong>：<code>server/cmd/vectors</code> 从 <strong>Go 源码</strong>生成契约夹具到 <code>server/testdata/</code>：</p>
+<table>
+<thead>
+<tr>
+<th>夹具</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>smoke_levels.json</code></td>
+<td>全 100 关 + 敌人/技能/装备 + <code>score_rules</code> + <code>skill_rules</code></td>
+</tr>
+<tr>
+<td><code>reaction_specs.json</code></td>
+<td>7 条反应的完整规格</td>
+</tr>
+<tr>
+<td><code>level_seeds.json</code></td>
+<td>100 关种子表</td>
+</tr>
+<tr>
+<td><code>formula_vectors.json</code></td>
+<td>跨端公式向量</td>
+</tr>
+</tbody>
+</table>
+<p>客户端测试用 <code>@vectors/*</code> 别名直接读这些夹具，
+断言 <code>DEFAULT_SCORE_RULES</code> / <code>DEFAULT_SKILL_RULES</code> 与 Go 侧<strong>逐字段一致</strong>。</p>
+<blockquote>
+<p><strong>任一公式改动必须同时改两处并重跑 <code>go -C server run ./cmd/vectors</code></strong>
+—— 改了关卡生成却没重生成夹具，存量战报的哈希会失配，
+而行为测试在分布变化后往往仍成立（假绿）。
+<code>-check</code> 子命令可在 CI 里验证夹具与源码是否同步。</p>
+</blockquote>
+<h3 id="api">主要 API<a class="headerlink" href="#api" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>域</th>
+<th>端点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>认证</td>
+<td><code>POST /auth/guest</code> · <code>POST /auth/wechat</code>（需 AppID）· <code>POST /auth/refresh</code></td>
+</tr>
+<tr>
+<td>配置</td>
+<td><code>GET /config</code>（全量契约：100 关 + 敌人 + 技能 + 反应 + 规则）</td>
+</tr>
+<tr>
+<td>玩家</td>
+<td><code>GET /me</code> · <code>GET /wallet</code> · <code>GET /leaderboard</code></td>
+</tr>
+<tr>
+<td>出战位</td>
+<td><code>GET /me/loadout</code> · <code>PUT /me/loadout</code></td>
+</tr>
+<tr>
+<td>技能升级</td>
+<td><code>POST /me/skills/:id/upgrade</code></td>
+</tr>
+<tr>
+<td>战斗</td>
+<td><code>POST /battle/token</code> · <code>POST /battle/settle</code> · <code>POST /battle/verify</code> · <code>GET /battle/:id/replay</code></td>
+</tr>
+<tr>
+<td>关卡</td>
+<td><code>GET /levels/:id</code></td>
+</tr>
+<tr>
+<td>专精</td>
+<td><code>GET /mastery/</code> · <code>POST /mastery/allocate</code> · <code>POST /mastery/reset</code>（消耗 1 件 <code>mastery_reset</code> 重铸，2026-10 接通）</td>
+</tr>
+<tr>
+<td>日常</td>
+<td><code>GET /tasks/</code> · <code>POST /tasks/:id/claim</code> · <code>POST /signin/</code> · <code>POST /redeem/</code></td>
+</tr>
+<tr>
+<td>商店</td>
+<td><code>GET /shop/</code> · <code>POST /shop/:id/buy</code></td>
+</tr>
+<tr>
+<td>诊断</td>
+<td><code>GET /diagnose</code></td>
+</tr>
+<tr>
+<td>防线</td>
+<td><code>GET /defenses/</code> · <code>POST /defenses/save</code> · <code>POST /defenses/:id/challenge</code></td>
+</tr>
+<tr>
+<td>后台</td>
+<td><code>/admin/*</code>：登录、看板、关卡、技能、装备、用户、战报、审计日志</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ <strong>与设计意图的差异</strong>：原设计列的
+<code>POST /mastery/nodes</code>、<code>POST /verify</code>、
+<code>POST /terrain/config</code> <strong>均不存在</strong>（<code>/mastery/reset</code> 已于 2026-10 接通，见上行）。
+同时原清单<strong>漏掉</strong>了 tasks / shop / signin / redeem / wallet / loadout /
+skills-upgrade / 全部 <code>/admin/*</code>。<strong>以 <code>server/internal/httpapi/routes.go</code> 为准。</strong></p>
+</blockquote>
+<hr />
+<h2 id="9">9. 数据库表<a class="headerlink" href="#9" title="Permanent link">&para;</a></h2>
+<p><code>user_mastery_points</code> · <code>user_mastery_nodes</code> · <code>defenses</code> ·
+<code>enemy_element_resist</code> · <code>level_terrains</code> · <code>replay_verifications</code> ·
+<code>battle_records</code>（含 <code>build_snapshot</code> / <code>replay_hash</code> / <code>card_picks</code>）·
+<code>shop_offers</code></p>
+<blockquote>
+<p>⚠️ <code>defense_snapshots</code> 与 <code>terrain_config</code> <strong>不存在</strong> ——
+防线快照存在 <code>defenses</code> 表内，地形配置存在 <code>level_terrains</code> 内。
+迁移文件以 <code>server/migrations/</code> 为准（当前 00001~00019，本段写于早期，编号随开发推进增长）。</p>
+</blockquote>
+<hr />
+<h2 id="10">10. 原创性声明<a class="headerlink" href="#10" title="Permanent link">&para;</a></h2>
+<ul>
+<li>美术：100% Canvas 程序化几何图形 + 自建调色板，无外部素材</li>
+<li>名称：技能 / 敌人 / 装备 / 皮肤 / 章节全部自命名</li>
+<li>代码：全部手写，未参考或复制原作任何资源</li>
+<li>仅借鉴<strong>通用玩法范式</strong>（关卡闯关、守防线、局内选卡、场外养成），
+  此类抽象玩法思路不受具体作品表达保护</li>
+</ul>
+<hr />
+<h2 id="11-vs">11. 已知边界（设计意图 vs 实现现状）<a class="headerlink" href="#11-vs" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p>完整的已知边界见 <a href="../KNOWN_LIMITS/"><code>KNOWN_LIMITS.md</code></a>，实测数据见 <a href="../IMPLEMENTATION/"><code>IMPLEMENTATION.md</code></a>。
+这里只列<strong>与本文档设计意图直接冲突</strong>的项。</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>设计意图</th>
+<th>实现现状</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>装备契合度：同系装备 → 反应伤害 +X%，不同系 → 直伤 +Y%</td>
+<td><strong>未做，且已决定不做</strong></td>
+<td>① 元素系数是<strong>单一标量</strong>，改成每元素一个属核心伤害公式改动，会动重放哈希与反通胀不变式；② 反应表<strong>完全连接</strong>，凑 2 元素就点满，等于没有奖励。18 条装备描述已全部改成陈述真实数值（原先 10 条在骗玩家）</td>
+</tr>
+<tr>
+<td>2</td>
+<td>装备支持升星/等级</td>
+<td><code>level</code> / <code>star</code> 两列<strong>无任何效果</strong></td>
+<td>补它需要一条<strong>实测出来的</strong>缩放曲线；凭空造一条比留着它更糟</td>
+</tr>
+<tr>
+<td>3</td>
+<td>红线 1「不许有唯一最优解」，穷举验证</td>
+<td><strong>无该穷举测试</strong></td>
+<td>穷举「元素组合 × 专精方向」的测试成本高；现有的是 3 档位 × 100 关的 <code>tier_impact.test.ts</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>燃烧云「持续 6s 火区」、超导「持续 4s」</td>
+<td>反应表只有 <code>status_duration_ms</code>（控制时长），<strong>无 DoT tick 定义</strong></td>
+<td>火区是地形机制（I-4），不是反应自带的持续伤害</td>
+</tr>
+<tr>
+<td>5</td>
+<td>抽到重复技能「就地升格 1/2/3 阶」，高阶提高热量</td>
+<td><strong>无「阶」概念</strong>；抽到重复是固定幅度强化（+20% 伤害 / +1 层数 / +1 穿透）</td>
+<td>「阶」会引入第二套成长曲线，与专精树 + 技能等级三重叠加，实测难度会失控</td>
+</tr>
+<tr>
+<td>6</td>
+<td>「每章至少 3 关地形」</td>
+<td>满足，但<strong>没有任何一关用 ≥2 种地形</strong></td>
+<td><code>generateTerrain</code> 按章节的单一 <code>terrain_kind</code> 生成 1~3 个同种地形</td>
+</tr>
+<tr>
+<td>7</td>
+<td>L-3 阵型预设（多套配置一键切换）</td>
+<td><strong>未实现</strong></td>
+<td>—</td>
+</tr>
+<tr>
+<td>8</td>
+<td>「每 10 级 +1 专精点」</td>
+<td><code>3 + FLOOR((level_exp + 50 + 本局击杀) / 1000)</code></td>
+<td>基于经验与击杀，不是关卡等级</td>
+</tr>
+<tr>
+<td>9</td>
+<td>破甲击退「削穿护甲 + 击退」</td>
+<td><strong>已实现</strong>（2026-10-09）：触发后 4s 内目标有效护甲 −150‰，并一次性击退 4px（定点 4000）</td>
+<td>数值落在反应表 <code>armor_shred_permille</code> / <code>knockback</code> / <code>status_duration_ms</code> 三字段，客户端引擎消费；跨端契约 + <code>armor_break.test.ts</code>（9 例，含 2 处变异验证）钉住。注意：<strong>仅动能参与的构筑会进入这条新路径</strong>，默认构筑（fire/fire/fire/ice）的历史 100 关基线不受影响</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright (C) 2026 annsshadow · AGPL-3.0-or-later
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.indexes", "navigation.top", "navigation.tracking", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.tabs.link"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

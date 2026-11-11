@@ -1,0 +1,2672 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="laiyipao / llm-lab / oa4rust 项目文档">
+      
+      
+        <meta name="author" content="annsshadow">
+      
+      
+      
+        <link rel="prev" href="../01-architecture/">
+      
+      
+        <link rel="next" href="../03-data-and-api/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>02 模块 - fakeToys 文档</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#02" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="fakeToys 文档" class="md-header__button md-logo" aria-label="fakeToys 文档" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            fakeToys 文档
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              02 模块
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换到深色模式"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切换到深色模式" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换到浅色模式"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切换到浅色模式" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="分享" aria-label="分享" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/<OWNER>/<REPO>" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    annsshadow/fakeToys
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  首页
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../laiyipao/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  来一炮(laiyipao)
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../llm-lab/00-%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  LLM 实验(llm-lab)
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
+          
+  
+  
+    
+  
+  OA4Rust
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="fakeToys 文档" class="md-nav__button md-logo" aria-label="fakeToys 文档" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    fakeToys 文档
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/<OWNER>/<REPO>" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    annsshadow/fakeToys
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    首页
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../laiyipao/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    来一炮(laiyipao)
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    来一炮(laiyipao)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../laiyipao/GAME_DESIGN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    游戏设计
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../laiyipao/IMPLEMENTATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    实现内容与验证
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../laiyipao/ENGINEERING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    工程约束
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../laiyipao/DECISIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    决策记录
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../laiyipao/KNOWN_LIMITS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    已知限制
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../laiyipao/OPERATIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    运维手册
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../laiyipao/system/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    系统设计
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_8" id="__nav_2_8_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    系统设计
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../laiyipao/system/01-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 架构
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../laiyipao/system/02-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 服务端
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../laiyipao/system/03-miniapp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 小程序
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../laiyipao/system/04-admin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    04 管理后台
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../laiyipao/system/05-api-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    05 API 参考
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../laiyipao/system/06-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    06 数据模型
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../laiyipao/system/07-deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    07 部署
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../laiyipao/system/08-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    08 契约
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_9" id="__nav_2_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    审计与复盘
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    审计与复盘
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../laiyipao/audits/coverage-2026-09-28/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    覆盖率 2026-09-28
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../laiyipao/audits/coverage-2026-10-28/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    覆盖率 2026-10-28
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../laiyipao/audits/security-2026-10-13/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    安全性 2026-10-13
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../laiyipao/audits/r1-engine-port-plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    引擎移植计划
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LLM 实验(llm-lab)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    LLM 实验(llm-lab)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/00-%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    学习路线
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/01-%E5%88%86%E8%AF%8D%E4%B8%8E%E8%AF%8D%E8%A1%A8/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 分词与词表
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/02-%E5%B5%8C%E5%85%A5%E4%B8%8E%E4%BD%8D%E7%BD%AE%E7%BC%96%E7%A0%81/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 嵌入与位置编码
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/03-%E8%87%AA%E6%B3%A8%E6%84%8F%E5%8A%9B%E6%9C%BA%E5%88%B6/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 自注意力机制
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/04-Transformer%E7%BB%93%E6%9E%84/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    04 Transformer 结构
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/05-%E9%A2%84%E8%AE%AD%E7%BB%83%E4%B8%8E%E8%AE%AD%E7%BB%83%E5%BE%AA%E7%8E%AF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    05 预训练与训练循环
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/06-%E8%A7%84%E6%A8%A1%E5%8C%96%E8%AE%AD%E7%BB%83/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    06 规模化训练
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/07-%E5%BE%AE%E8%B0%83-SFT-LoRA-QLoRA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    07 微调 SFT/LoRA/QLoRA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/08-%E5%AF%B9%E9%BD%90-RLHF-PPO-DPO/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    08 对齐 RLHF/PPO/DPO
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/09-%E8%AF%84%E4%BC%B0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    09 评估
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/10-%E6%8E%A8%E7%90%86%E4%BC%98%E5%8C%96/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10 推理优化
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OA4Rust
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    OA4Rust
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 架构
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 模块
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 模块
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-u1u7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 业务域分组（U1–U7 波次）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. 业务域分组（U1–U7 波次）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#u1u4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        认证与组织（U1–U4 首批试点）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#u5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        协作办公（U5）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#u6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        内容与流程（U6）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#u7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        社区与增值（U7）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#crate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        基础设施 crate（不计入迁移统计）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-shared-crate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. shared crate —— 横切能力总览
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-web-frontendappsdesktopsrc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 桌面 Web 端模块（frontend/apps/desktop/src/）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-mobilesrc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 移动端模块（mobile/src/）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 质量与门禁设施
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03-data-and-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 数据与接口
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04-flows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    04 流程
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05-environment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    05 环境
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06-install-and-run/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    06 安装与运行
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07-examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    07 示例
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../08-faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    08 FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09-maintenance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    09 维护
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-u1u7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 业务域分组（U1–U7 波次）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. 业务域分组（U1–U7 波次）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#u1u4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        认证与组织（U1–U4 首批试点）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#u5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        协作办公（U5）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#u6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        内容与流程（U6）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#u7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        社区与增值（U7）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#crate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        基础设施 crate（不计入迁移统计）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-shared-crate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. shared crate —— 横切能力总览
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-web-frontendappsdesktopsrc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 桌面 Web 端模块（frontend/apps/desktop/src/）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-mobilesrc" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 移动端模块（mobile/src/）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 质量与门禁设施
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="02">02 · 模块划分与核心功能<a class="headerlink" href="#02" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>crate 全量清单与迁移状态以 <code>oa4rust/backend/docs/brainstorms/oa4rust-endpoint-inventory.md</code>（脚本自动生成）为准，本册给业务视角的分组导读。</p>
+</blockquote>
+<h2 id="1-u1u7">1. 业务域分组（U1–U7 波次）<a class="headerlink" href="#1-u1u7" title="Permanent link">&para;</a></h2>
+<h3 id="u1u4">认证与组织（U1–U4 首批试点）<a class="headerlink" href="#u1u4" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>模块</th>
+<th>crate</th>
+<th>功能要点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>认证</td>
+<td><code>auth</code></td>
+<td>46 条路由 / 51 handler：密码登录、登出、whoami、token 刷新、验证码、SSO（加密票据）、OAuth、OIDC、LDAP、企业微信（<code>qiyeweixin</code>）、微信小程序（<code>mpweixin</code>）、welink、政务钉钉（<code>zhengwudingding</code>）、短信登录、双因素（<code>two_factor</code>）、切换用户（<code>switch_user</code>）、安全登出（<code>safe_logout</code>）、AndFx</td>
+</tr>
+<tr>
+<td>个人设置</td>
+<td><code>personal</code> / <code>personal_extend</code></td>
+<td>个人资料、偏好；扩展属性</td>
+</tr>
+<tr>
+<td>权限授予</td>
+<td><code>empower</code></td>
+<td>资源授权</td>
+</tr>
+<tr>
+<td>控制/初始化</td>
+<td><code>control</code> / <code>program_init</code></td>
+<td>系统控制面、程序初始化</td>
+</tr>
+</tbody>
+</table>
+<h3 id="u5">协作办公（U5）<a class="headerlink" href="#u5" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>模块</th>
+<th>crate</th>
+<th>功能要点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>考勤</td>
+<td><code>attendance</code> + <code>attendance_assemble_control</code></td>
+<td>考勤打卡、统计、配置（<code>attendance_assemble_control</code> 89 handler）</td>
+</tr>
+<tr>
+<td>日历</td>
+<td><code>calendar</code> + <code>calendar_assemble_control</code></td>
+<td>日程、日历共享</td>
+</tr>
+<tr>
+<td>文件</td>
+<td><code>file</code> + <code>file_assemble_control</code> + <code>file_core_entity</code></td>
+<td>网盘、分享、回收站（94 handler）</td>
+</tr>
+<tr>
+<td>通用组件</td>
+<td><code>general</code> + <code>general_assemble_control</code></td>
+<td>通用数据/字典（61 handler）</td>
+</tr>
+</tbody>
+</table>
+<h3 id="u6">内容与流程（U6）<a class="headerlink" href="#u6" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>模块</th>
+<th>crate</th>
+<th>功能要点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CMS 内容</td>
+<td><code>cms_control</code> / <code>cms_express</code> / <code>cms_assemble_control</code>（312 handler）/ <code>cms_core_*</code></td>
+<td>栏目、文档、表单/视图/脚本设计器数据</td>
+</tr>
+<tr>
+<td>会议</td>
+<td><code>meeting</code> + <code>meeting_assemble_control</code></td>
+<td>会议室、预约、签到</td>
+</tr>
+<tr>
+<td>消息</td>
+<td><code>message</code> + <code>message_assemble_communicate</code></td>
+<td>站内消息、IM 会话收发族</td>
+</tr>
+<tr>
+<td>门户</td>
+<td><code>portal</code> + <code>portal_assemble_designer/surface</code></td>
+<td>门户设计器与渲染</td>
+</tr>
+<tr>
+<td>流程平台</td>
+<td><code>processplatform_*</code>（assemble_surface 487 handler、designer 96、service_processing 113、bam 50、core_*）</td>
+<td>流程引擎核心：待办/已办/草稿、task complete/reject、表单/路由设计、BAM 监控</td>
+</tr>
+<tr>
+<td>数据平台</td>
+<td><code>query_assemble_designer/surface</code>、<code>query_service(_processing)</code>、<code>query_core_*</code></td>
+<td>查询设计器、统计视图、自定义查询执行</td>
+</tr>
+</tbody>
+</table>
+<h3 id="u7">社区与增值（U7）<a class="headerlink" href="#u7" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>模块</th>
+<th>crate</th>
+<th>功能要点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AI</td>
+<td><code>ai</code> + <code>ai_assemble_control</code> + <code>ai_core_entity</code></td>
+<td>AI 助手、ANN 全文检索（迁移 096 建 ANN/FTS 表）</td>
+</tr>
+<tr>
+<td>论坛</td>
+<td><code>bbs</code> + <code>bbs_assemble_control</code> + <code>bbs_core_entity</code></td>
+<td>版块、发帖、回复</td>
+</tr>
+<tr>
+<td>组件</td>
+<td><code>component</code> + <code>component_assemble_control</code></td>
+<td>可插拔组件</td>
+</tr>
+<tr>
+<td>云控制台</td>
+<td><code>console</code></td>
+<td>运维控制台</td>
+</tr>
+<tr>
+<td>关联</td>
+<td><code>correlation</code> 族</td>
+<td>数据关联</td>
+</tr>
+<tr>
+<td>热图/热搜</td>
+<td><code>hotpic</code> 族</td>
+<td>热点图片</td>
+</tr>
+<tr>
+<td>推送</td>
+<td><code>jpush</code> 族</td>
+<td>极光推送对接</td>
+</tr>
+<tr>
+<td>脑图</td>
+<td><code>mind</code> 族</td>
+<td>思维导图</td>
+</tr>
+<tr>
+<td>组织</td>
+<td><code>organization_assemble_control</code>（105 handler）等</td>
+<td>人员/部门/身份/群组管理</td>
+</tr>
+<tr>
+<td>程序中心</td>
+<td><code>program_center</code>（205 handler）+ <code>program_center_core_entity</code></td>
+<td>服务注册、invoke 别名（唯一索引见迁移 105）</td>
+</tr>
+</tbody>
+</table>
+<h3 id="crate">基础设施 crate（不计入迁移统计）<a class="headerlink" href="#crate" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>crate</th>
+<th>职责</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>shared</code></td>
+<td>全部横切能力（见下节）</td>
+</tr>
+<tr>
+<td><code>orm</code></td>
+<td>早期 ORM 抽象（大部分业务 crate 已直用 tokio-postgres）</td>
+</tr>
+<tr>
+<td><code>mcp_server</code></td>
+<td>MCP 工具服务：<code>tool_bridge</code>（JSON-RPC 2.0：initialize / tools/list / tools/call，协议版本 2024-11-05）+ 生成路由清单</td>
+</tr>
+<tr>
+<td><code>openapi</code></td>
+<td>utoipa <code>ApiDoc</code>，输出 <code>/openapi.json</code></td>
+</tr>
+<tr>
+<td><code>realtime</code></td>
+<td>WebSocket 实时协议：<code>/ws/realtime</code>、<code>/ws/realtime/room/{room_id}</code>、<code>/ws/realtime/room/{room_id}/stats</code>；<code>RealtimeManager</code> 房间管理</td>
+</tr>
+<tr>
+<td><code>search</code></td>
+<td>全文/ANN 检索服务</td>
+</tr>
+<tr>
+<td><code>preview</code></td>
+<td>文档预览</td>
+</tr>
+<tr>
+<td><code>signature</code></td>
+<td>PDF/文档签名（lopdf 0.45 解析签名）</td>
+</tr>
+<tr>
+<td><code>parity</code></td>
+<td>与 Java 基准的行为对齐测试集（4143 用例）</td>
+</tr>
+<tr>
+<td><code>ldap</code></td>
+<td>LDAP 认证 + 定时同步 worker（<code>LDAP_SYNC_ENABLE</code> 门控，幂等）</td>
+</tr>
+<tr>
+<td><code>sms</code> / <code>captcha_store</code></td>
+<td>短信与验证码存储适配（待迁移项）</td>
+</tr>
+</tbody>
+</table>
+<h2 id="2-shared-crate">2. <code>shared</code> crate —— 横切能力总览<a class="headerlink" href="#2-shared-crate" title="Permanent link">&para;</a></h2>
+<p>路径：<code>oa4rust/backend/crates/shared/src/</code></p>
+<table>
+<thead>
+<tr>
+<th>模块</th>
+<th>文件</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>错误</td>
+<td><code>error.rs</code></td>
+<td><code>AppError</code>：Database / Redis / Internal / InternalServerError / BadRequest / Unauthorized / NotFound / Forbidden / NotImplemented</td>
+</tr>
+<tr>
+<td>响应</td>
+<td><code>response.rs</code></td>
+<td><code>ActionResult&lt;T&gt;</code> 信封（对齐 o2server v9 Gson）、<code>row_to_json</code> 通用行转 JSON</td>
+</tr>
+<tr>
+<td>数据库</td>
+<td><code>db/</code>（<code>mod.rs</code>、<code>dialect.rs</code>、<code>rewriter.rs</code>）</td>
+<td><code>create_pool()</code>；<code>SqlDialect</code> trait（PG/MySQL）；PG→MySQL SQL 重写</td>
+</tr>
+<tr>
+<td>迁移</td>
+<td><code>migrate.rs</code></td>
+<td><code>run_migrations(&amp;Pool)</code> 幂等执行；<code>MigrationReport { applied, skipped }</code>；<code>applied_versions()</code></td>
+</tr>
+<tr>
+<td>会话</td>
+<td><code>session.rs</code></td>
+<td><code>SessionManager</code>：Redis 优先，降级内存+DB；HttpOnly Cookie；<code>SESSION_TTL_SECONDS</code></td>
+</tr>
+<tr>
+<td>中间件</td>
+<td><code>middleware/</code></td>
+<td><code>constants.rs</code>（认证豁免路径、限流目标、管理写族前缀）、<code>security.rs</code>（CORS/安全头/trace）、<code>token.rs</code>（会话识别）、<code>rbac.rs</code>（<code>PermissionLevel</code> / <code>PermissionRegistry</code> / authorize）、<code>rate_limit_distributed.rs</code>（Redis 分布式限流）</td>
+</tr>
+<tr>
+<td>限流</td>
+<td><code>rate_limit.rs</code></td>
+<td><code>RateLimiter</code>（内存/Redis 双模）</td>
+</tr>
+<tr>
+<td>CRUD</td>
+<td><code>crud.rs</code></td>
+<td><code>CrudSpec</code> + <code>crud_create/save/delete</code> 通用真实化 handler</td>
+</tr>
+<tr>
+<td>校验</td>
+<td><code>input_validation.rs</code></td>
+<td>输入校验工具</td>
+</tr>
+<tr>
+<td>存储</td>
+<td><code>storage.rs</code></td>
+<td><code>BlobStorage</code> trait：<code>FsBlobStorage</code> / <code>PgBlobStorage</code> / <code>DbBlobStorage</code>；<code>storage_from_env()</code></td>
+</tr>
+<tr>
+<td>消息</td>
+<td><code>messaging.rs</code></td>
+<td><code>MessageBus</code>：<code>InMemoryBus</code> / <code>RedisPubSubBus</code>；<code>TokenThresholdEvent</code></td>
+</tr>
+<tr>
+<td>调度</td>
+<td><code>scheduler.rs</code></td>
+<td>定时任务基座</td>
+</tr>
+<tr>
+<td>网络防护</td>
+<td><code>netguard.rs</code></td>
+<td>SSRF 等网络防护</td>
+</tr>
+<tr>
+<td>配置</td>
+<td><code>config.rs</code></td>
+<td><code>AuthConfig::from_env()</code>（production 校验、public_origin、cookie_secure、session_ttl）</td>
+</tr>
+<tr>
+<td>测试</td>
+<td><code>testing.rs</code> / <code>tests.rs</code> / <code>tests_generated.rs</code></td>
+<td><code>test_pool()</code>、MockRow、生成测试</td>
+</tr>
+<tr>
+<td>模拟</td>
+<td><code>mock_client.rs</code></td>
+<td>外部客户端 mock</td>
+</tr>
+<tr>
+<td>流程定义</td>
+<td><code>process_definition.rs</code></td>
+<td>流程定义共享模型</td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-web-frontendappsdesktopsrc">3. 桌面 Web 端模块（<code>frontend/apps/desktop/src/</code>）<a class="headerlink" href="#3-web-frontendappsdesktopsrc" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>views/</code>：98 个文件，覆盖 OA 全功能——流程（FormApp / FormDesigner / ProcessCenter 类）、CMS（CmsColumn/CmsForm/CmsView/CmsScript Designer）、数据平台（QueryManagerDeep / QueryView / QueryStatement Designer）、IM（IMChat）、AI（AIChatApp）、考勤（AttendanceApp）、日历、BBS（BBSForum）、会议、脑图、通讯录（UnitApp / PersonApp / RoleManager）、控制台（ControlPanelApp / ServerApp / DeploymentApp）、搜索（SearchApp / FtSearchApp）、SSO、人脸设置（FaceSetApp）等。</li>
+<li><code>contracts/</code>：前端侧契约模块（<code>process-definition</code>、<code>xform</code>、<code>designer</code>），与 <code>tests/contracts/</code> 守卫联动。</li>
+<li>组件与工具：<code>components/</code>、<code>utils/</code>；PWA：<code>registerSW.ts</code> + <code>manifest.json</code>。</li>
+<li>依赖底座：<code>@oa4rust/sdk</code>（传输/状态）、<code>@oa4rust/ui</code>、naive-ui、pinia、vue-query。</li>
+</ul>
+<h2 id="4-mobilesrc">4. 移动端模块（<code>mobile/src/</code>）<a class="headerlink" href="#4-mobilesrc" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>页面（16）</strong>：<code>login</code>、<code>index</code>（工作台：待办计数 + 宫格入口）、<code>message</code>（会话列表）、<code>chat</code>（会话详情）、<code>process</code>（审批：待办/已办/我发起 + 通过/驳回）、<code>doc</code>（我的文件）、<code>contacts</code>（通讯录搜索）、<code>mine</code>、以及 <code>attendance</code>、<code>bbs</code>、<code>browse</code>、<code>calendar</code>、<code>collect</code>、<code>meeting</code>、<code>recycle</code>、<code>search</code>。</li>
+<li><strong>导航</strong>：底部 tabBar 4 项（工作台 / 消息 / 审批 / 我的），路由配置在 <code>pages.json</code>。</li>
+<li><strong>传输层</strong>：<code>services/http.ts</code>（<code>uni.request</code> / <code>uni.uploadFile</code>，语义对齐桌面 <code>ApiClient</code>：401 自动 refresh 重试、403 权限错误、统一 <code>ApiError</code>/<code>ApiResponse</code>）。</li>
+<li><strong>端点策略</strong>：<code>services/index.ts</code> 只暴露移动端高频模块（auth / process / message / file / org / general），<strong>端点全部对齐后端已注册 axum 路由</strong>，不把全量路由打进移动包。</li>
+<li><strong>鉴权差异</strong>：H5 同源/代理 → Cookie 直用；原生/小程序需 <code>setApiBase</code>（<code>VITE_OA_API_BASE</code>）指向后端绝对地址，且待后端 token 通道补齐后注入 <code>Authorization</code>（现状 Cookie 在原生容器不自动跨域携带，详见 mobile README）。</li>
+</ul>
+<h2 id="5">5. 质量与门禁设施<a class="headerlink" href="#5" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>设施</th>
+<th>位置</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>迁移状态跟踪</td>
+<td><code>backend/docs/brainstorms/oa4rust-migration-status.md</code>、<code>oa4rust-endpoint-inventory.md</code></td>
+<td>单一信息源：静态扫描生成（待确认：清单文档自述由 <code>scripts/gen_inventory.py</code> 生成，但该脚本当前不在 <code>backend/scripts/</code>；现存 <code>regen_endpoints.py</code> 实际产出 <code>tests/behavior_comparison/endpoints.rs</code>，<code>extract_endpoints.py</code> 产出 <code>endpoints.csv/json</code>）</td>
+</tr>
+<tr>
+<td>行为对齐测试</td>
+<td><code>backend/tests/parity/</code>、<code>parity_suite.rs</code>、<code>behavior_comparison/</code></td>
+<td>与 o2server v9 基准比对</td>
+</tr>
+<tr>
+<td>生成的 handler 测试</td>
+<td>各 crate <code>tests_generated.rs</code>；<code>backend/scripts/generate_handler_tests.py</code></td>
+<td>覆盖全部 handler 的冒烟/分支</td>
+</tr>
+<tr>
+<td>三端契约守卫</td>
+<td><code>oa4rust/tests/contracts/</code></td>
+<td>desktop/mobile 端点 × 后端注册路由 fixture 对账、空 catch 守卫、生产序列化检查、schema 校验</td>
+</tr>
+<tr>
+<td>E2E</td>
+<td><code>oa4rust/e2e/</code>（Playwright）</td>
+<td>app 覆盖、设计器往返、workflow 运行时、live 全流程</td>
+</tr>
+<tr>
+<td>安全审计</td>
+<td><code>backend/docs/audits/2026-10-*.md</code></td>
+<td>依赖（RustSec advisory-db 全量比对）+ 代码级复验</td>
+</tr>
+<tr>
+<td>RustSec 例外</td>
+<td><code>backend/security/rustsec-exceptions.toml</code> + <code>rustsec-db.rev</code></td>
+<td>例外清单与 advisory-db 固定版本（审计可复现）</td>
+</tr>
+<tr>
+<td>性能基线</td>
+<td><code>backend/docs/performance-baseline.md</code>、<code>tests/perf_baseline.rs</code>、压测脚本</td>
+<td>端点延迟/发布 profile 基准</td>
+</tr>
+<tr>
+<td>部署与演练资产</td>
+<td><code>backend/deploy/</code>、<code>backend/docs/ops/auth-rollback-drill-2026-09-10.md</code></td>
+<td>nginx 反代模板；auth Cookie 功能矩阵演练记录（早期灰度切流脚本已归档，现口径无旧系统可切）</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright (C) 2026 annsshadow · AGPL-3.0-or-later
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.indexes", "navigation.top", "navigation.tracking", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.tabs.link"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,4388 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="laiyipao / llm-lab / oa4rust 项目文档">
+      
+      
+        <meta name="author" content="annsshadow">
+      
+      
+      
+        <link rel="prev" href="../KNOWN_LIMITS/">
+      
+      
+        <link rel="next" href="../system/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>运维手册 - fakeToys 文档</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#_1" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../.." title="fakeToys 文档" class="md-header__button md-logo" aria-label="fakeToys 文档" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            fakeToys 文档
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              运维手册
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换到深色模式"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切换到深色模式" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换到浅色模式"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切换到浅色模式" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="分享" aria-label="分享" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/<OWNER>/<REPO>" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    annsshadow/fakeToys
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  首页
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../" class="md-tabs__link">
+          
+  
+  
+    
+  
+  来一炮(laiyipao)
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../llm-lab/00-%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  LLM 实验(llm-lab)
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../oa4rust/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  OA4Rust
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="fakeToys 文档" class="md-nav__button md-logo" aria-label="fakeToys 文档" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    fakeToys 文档
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/<OWNER>/<REPO>" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    annsshadow/fakeToys
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    首页
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    来一炮(laiyipao)
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    来一炮(laiyipao)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../GAME_DESIGN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    游戏设计
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../IMPLEMENTATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    实现内容与验证
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ENGINEERING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    工程约束
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../DECISIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    决策记录
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../KNOWN_LIMITS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    已知限制
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    运维手册
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    运维手册
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 一分钟速查
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 首次部署
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. 首次部署">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        前置
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        步骤
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        验证
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        前端与后台
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-39" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 环境变量（全部 39 个）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. 环境变量（全部 39 个）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        必填（生产）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        服务
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        数据库连接池
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        导出
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        玩法
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="玩法">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#player_login_required" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PLAYER_LOGIN_REQUIRED 怎么用（测试环境）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#settle_recompute_mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SETTLE_RECOMPUTE_MODE 怎么用
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        怎么用这个页面
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        微信（未接通）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 数据库迁移
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. 数据库迁移">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 日常操作
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-migrations_on_boot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 MIGRATIONS_ON_BOOT 的取舍
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#321-r87" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2.1 多副本就绪矩阵（R87 双实例实测）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 加一条迁移的检查清单
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34-r88" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4 滚动发布兼容性（R88 四组合实测）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.4 滚动发布兼容性（R88 四组合实测）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        实测矩阵
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ⚠️ 滚动窗口的两个灰度语义（不是故障，但要知道）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#expand-contract-00013_achievement_epoch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        expand-contract 违规登记：00013_achievement_epoch（已发布，不再改）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r88-27" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        迁移兼容性检查清单（R88 核对 27 个迁移后固化）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r88" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        滚动发布演练纪律（R88 布线事故教训）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 改关卡 / 技能 / 公式 —— 会让存量战报失配
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. 改关卡 / 技能 / 公式 —— 会让存量战报失配">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 为什么危险
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 正确流程
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 行为测试「全绿」不代表没破坏可重放性
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 发布
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. 发布">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 检查清单
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 测试超时的一个坑
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 回滚
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 备份与恢复
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. 备份与恢复">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 备份
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 恢复
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.3 生产数据库认证
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#64" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.4 数据保留与清理
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6.4 数据保留与清理">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dry-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        先看会删多少（默认 dry-run）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        真的删
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        四张表的处置
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        两条硬约束（写死在命令里，不可绕过）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        建议的节奏
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 故障处置
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. 故障处置">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#71" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.1 服务起不来
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#72" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.2 数据库连不上 / 连接池耗尽
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#73-400" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.3 结算接口报 400
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#74" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.4 历史战报验真失败 ⚠️
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. 值班备忘
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../system/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    系统设计
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_8" id="__nav_2_8_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    系统设计
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../system/01-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 架构
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../system/02-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 服务端
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../system/03-miniapp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 小程序
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../system/04-admin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    04 管理后台
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../system/05-api-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    05 API 参考
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../system/06-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    06 数据模型
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../system/07-deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    07 部署
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../system/08-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    08 契约
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_9" id="__nav_2_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    审计与复盘
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    审计与复盘
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../audits/coverage-2026-09-28/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    覆盖率 2026-09-28
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../audits/coverage-2026-10-28/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    覆盖率 2026-10-28
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../audits/security-2026-10-13/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    安全性 2026-10-13
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../audits/r1-engine-port-plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    引擎移植计划
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LLM 实验(llm-lab)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    LLM 实验(llm-lab)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/00-%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    学习路线
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/01-%E5%88%86%E8%AF%8D%E4%B8%8E%E8%AF%8D%E8%A1%A8/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 分词与词表
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/02-%E5%B5%8C%E5%85%A5%E4%B8%8E%E4%BD%8D%E7%BD%AE%E7%BC%96%E7%A0%81/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 嵌入与位置编码
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/03-%E8%87%AA%E6%B3%A8%E6%84%8F%E5%8A%9B%E6%9C%BA%E5%88%B6/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 自注意力机制
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/04-Transformer%E7%BB%93%E6%9E%84/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    04 Transformer 结构
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/05-%E9%A2%84%E8%AE%AD%E7%BB%83%E4%B8%8E%E8%AE%AD%E7%BB%83%E5%BE%AA%E7%8E%AF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    05 预训练与训练循环
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/06-%E8%A7%84%E6%A8%A1%E5%8C%96%E8%AE%AD%E7%BB%83/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    06 规模化训练
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/07-%E5%BE%AE%E8%B0%83-SFT-LoRA-QLoRA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    07 微调 SFT/LoRA/QLoRA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/08-%E5%AF%B9%E9%BD%90-RLHF-PPO-DPO/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    08 对齐 RLHF/PPO/DPO
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/09-%E8%AF%84%E4%BC%B0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    09 评估
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../llm-lab/10-%E6%8E%A8%E7%90%86%E4%BC%98%E5%8C%96/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10 推理优化
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../oa4rust/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OA4Rust
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    OA4Rust
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oa4rust/01-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 架构
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oa4rust/02-modules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 模块
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oa4rust/03-data-and-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 数据与接口
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oa4rust/04-flows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    04 流程
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oa4rust/05-environment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    05 环境
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oa4rust/06-install-and-run/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    06 安装与运行
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oa4rust/07-examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    07 示例
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oa4rust/08-faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    08 FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../oa4rust/09-maintenance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    09 维护
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 一分钟速查
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 首次部署
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. 首次部署">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        前置
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        步骤
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        验证
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        前端与后台
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-39" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 环境变量（全部 39 个）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. 环境变量（全部 39 个）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        必填（生产）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        服务
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        数据库连接池
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        导出
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        玩法
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="玩法">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#player_login_required" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        PLAYER_LOGIN_REQUIRED 怎么用（测试环境）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#settle_recompute_mode" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SETTLE_RECOMPUTE_MODE 怎么用
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        怎么用这个页面
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        微信（未接通）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 数据库迁移
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. 数据库迁移">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#31" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.1 日常操作
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#32-migrations_on_boot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2 MIGRATIONS_ON_BOOT 的取舍
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#321-r87" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.2.1 多副本就绪矩阵（R87 双实例实测）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#33" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.3 加一条迁移的检查清单
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#34-r88" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3.4 滚动发布兼容性（R88 四组合实测）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3.4 滚动发布兼容性（R88 四组合实测）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        实测矩阵
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ⚠️ 滚动窗口的两个灰度语义（不是故障，但要知道）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#expand-contract-00013_achievement_epoch" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        expand-contract 违规登记：00013_achievement_epoch（已发布，不再改）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r88-27" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        迁移兼容性检查清单（R88 核对 27 个迁移后固化）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r88" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        滚动发布演练纪律（R88 布线事故教训）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 改关卡 / 技能 / 公式 —— 会让存量战报失配
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. 改关卡 / 技能 / 公式 —— 会让存量战报失配">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 为什么危险
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 正确流程
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.3 行为测试「全绿」不代表没破坏可重放性
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 发布
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. 发布">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 检查清单
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 测试超时的一个坑
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 回滚
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 备份与恢复
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. 备份与恢复">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 备份
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 恢复
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.3 生产数据库认证
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#64" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.4 数据保留与清理
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6.4 数据保留与清理">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dry-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        先看会删多少（默认 dry-run）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        真的删
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        四张表的处置
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        两条硬约束（写死在命令里，不可绕过）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        建议的节奏
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 故障处置
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. 故障处置">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#71" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.1 服务起不来
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#72" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.2 数据库连不上 / 连接池耗尽
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#73-400" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.3 结算接口报 400
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#74" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7.4 历史战报验真失败 ⚠️
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. 值班备忘
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="_1">运维手册<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>面向<strong>部署与值班</strong>。玩法设计见 <a href="../GAME_DESIGN/"><code>GAME_DESIGN.md</code></a>，
+工程约束见 <a href="../ENGINEERING/"><code>ENGINEERING.md</code></a>，已知边界见 <a href="../KNOWN_LIMITS/"><code>KNOWN_LIMITS.md</code></a>。</p>
+<p>本手册里的每条命令都实际执行过；未验证的操作不写进来。</p>
+</blockquote>
+<hr />
+<h2 id="0">0. 一分钟速查<a class="headerlink" href="#0" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>我要…</th>
+<th>做什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>首次部署</td>
+<td>§1 全流程</td>
+</tr>
+<tr>
+<td>日常发布</td>
+<td>§5 发布检查清单</td>
+</tr>
+<tr>
+<td>服务起不来</td>
+<td>§7.1</td>
+</tr>
+<tr>
+<td>数据库连不上</td>
+<td>§7.2</td>
+</tr>
+<tr>
+<td>结算接口报 400</td>
+<td>§7.3</td>
+</tr>
+<tr>
+<td>历史战报验真失败</td>
+<td>§7.4 <strong>（最常见且最容易被误判的故障）</strong></td>
+</tr>
+<tr>
+<td>加一条数据库迁移</td>
+<td>§3</td>
+</tr>
+<tr>
+<td>改关卡/技能数值</td>
+<td>§4 <strong>（会让存量战报失配）</strong></td>
+</tr>
+<tr>
+<td>备份 / 恢复</td>
+<td>§6</td>
+</tr>
+<tr>
+<td>回滚一次发布</td>
+<td>§5.3</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="1">1. 首次部署<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
+<h3 id="_2">前置<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>依赖</th>
+<th>版本</th>
+<th>检查</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Go</td>
+<td>1.26.10</td>
+<td><code>go version</code></td>
+</tr>
+<tr>
+<td>PostgreSQL</td>
+<td>15+</td>
+<td><code>psql --version</code></td>
+</tr>
+<tr>
+<td>Node</td>
+<td>20+</td>
+<td><code>node -v</code></td>
+</tr>
+<tr>
+<td>pnpm</td>
+<td>11</td>
+<td><code>pnpm -v</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ Go 的下限是 <strong>1.26.10</strong>，不是「大致 1.26」。1.26.9 及以下含
+<code>GO-2026-6809</code>（<code>crypto/x509</code> 不拒绝被攻破的中间证书），而本服务的调用链
+<strong>代码可达</strong>（<code>service.RecordRecompute → fmt.Fprintf → x509.Certificate.Verify</code>）——
+CI 的 govulncheck 闸门会直接红。想降版本之前先看
+<code>.github/workflows/laiyipao-ci.yml</code> 的 <code>dependency-audit</code> 一节：
+那条闸门的判据是「<strong>代码可达</strong>的漏洞必须为 0」，不是「漏洞库里有几条」。</p>
+</blockquote>
+<p>数据库默认用 <code>trust</code> 认证（仅本机开发）。<strong>生产必须改</strong>：
+见 §6.1 的连接串与 <code>pg_hba.conf</code> 说明。</p>
+<h3 id="_3">步骤<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># 1) 建库</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>createdb<span class="w"> </span>laiyipao
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># 2) 迁移（23 个 goose 迁移，50 张业务表）</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nb">cd</span><span class="w"> </span>laiyipao/server
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="nb">export</span><span class="w"> </span><span class="nv">DATABASE_URL</span><span class="o">=</span><span class="s2">"postgres://postgres@127.0.0.1:5432/laiyipao?sslmode=disable"</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="nb">export</span><span class="w"> </span><span class="nv">BOOTSTRAP_ADMIN_PASS</span><span class="o">=</span><span class="s2">"&lt;至少 10 位，缺省会拒绝启动&gt;"</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>go<span class="w"> </span>run<span class="w"> </span>./cmd/migrate
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="c1"># 3) 写入游戏内容（敌人/技能/装备/关卡/初始状态）</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>go<span class="w"> </span>run<span class="w"> </span>./cmd/seed
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="c1"># 4) 启动</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>go<span class="w"> </span>run<span class="w"> </span>./cmd/api<span class="w">          </span><span class="c1"># 监听 :8080</span>
+</code></pre></div>
+<h3 id="_4">验证<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://127.0.0.1:8080/readyz<span class="w">     </span><span class="c1"># 期望 {"ok":true,"db":"up"}</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://127.0.0.1:8080/api/v1/config<span class="w"> </span><span class="p">|</span><span class="w"> </span>head<span class="w"> </span>-c<span class="w"> </span><span class="m">200</span><span class="w">   </span><span class="c1"># 期望能看到 levels 数组</span>
+</code></pre></div>
+<ul>
+<li><code>/healthz</code> —— 返回 <code>{"ok":true,"time":"..."}</code>，<strong>不查 DB</strong>，用于 liveness 探针</li>
+<li><code>/readyz</code> —— <strong>会查 DB</strong>，用于 readiness 探针</li>
+</ul>
+<blockquote>
+<p>两个端点故意分开：DB 抖动时 liveness 仍应通过，
+否则 K8s 会把一个只是暂时连不上库的 Pod 反复重启。</p>
+</blockquote>
+<h3 id="_5">前端与后台<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">cd</span><span class="w"> </span>laiyipao/miniapp<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>pnpm<span class="w"> </span>install<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>pnpm<span class="w"> </span>dev:h5<span class="w">      </span><span class="c1"># :5174</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">cd</span><span class="w"> </span>laiyipao/admin<span class="w">   </span><span class="o">&amp;&amp;</span><span class="w"> </span>pnpm<span class="w"> </span>install<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>pnpm<span class="w"> </span>dev<span class="w">          </span><span class="c1"># :5175</span>
+</code></pre></div>
+<hr />
+<h2 id="2-39">2. 环境变量（全部 39 个）<a class="headerlink" href="#2-39" title="Permanent link">&para;</a></h2>
+<h3 id="_6">必填（生产）<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>变量</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DATABASE_URL</code></td>
+<td>PostgreSQL 连接串</td>
+</tr>
+<tr>
+<td><code>JWT_SECRET</code></td>
+<td><strong>生产必须覆盖</strong>。<code>APP_ENV=prod</code> 时若仍以 <code>dev-only</code> 开头，<strong>进程直接 panic 拒绝启动</strong></td>
+</tr>
+<tr>
+<td><code>BOOTSTRAP_ADMIN_USER</code></td>
+<td><code>admin</code></td>
+</tr>
+<tr>
+<td><code>BOOTSTRAP_ADMIN_PASS</code></td>
+<td><code>admin12345</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="_7">服务<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>变量</th>
+<th>缺省</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ADDR</code></td>
+<td><code>:8080</code></td>
+<td>监听地址</td>
+</tr>
+<tr>
+<td><code>APP_ENV</code></td>
+<td><code>dev</code></td>
+<td><code>prod</code> 会启用上面那条 JWT 校验</td>
+</tr>
+<tr>
+<td><code>LOG_LEVEL</code></td>
+<td><code>info</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>MIGRATIONS_ON_BOOT</code></td>
+<td><code>true</code></td>
+<td>见 §3.2 的取舍</td>
+</tr>
+<tr>
+<td><code>MIGRATE_TIMEOUT</code></td>
+<td><code>0</code>（不限）</td>
+<td><strong>一次迁移过程的总预算</strong>（R103）。与启动 ctx、<code>DB_STATEMENT_TIMEOUT</code>、<code>DB_LOCK_TIMEOUT</code> <strong>完全解耦</strong>：迁移使用独立连接池（<code>statement_timeout=0</code>、<code>lock_timeout=0</code>），结束即关闭。默认 <code>0</code> = 不限 —— 任何固定默认值都会在更大的合法回填上重演「被砍断」的缺陷。需要兜底时设 <code>30m</code> 这类值；负值启动直接失败</td>
+</tr>
+<tr>
+<td><code>ACCESS_TTL</code></td>
+<td><code>2h</code></td>
+<td>访问令牌有效期</td>
+</tr>
+<tr>
+<td><code>REFRESH_TTL</code></td>
+<td><code>720h</code></td>
+<td>刷新令牌有效期</td>
+</tr>
+<tr>
+<td><code>CORS_ALLOW_ORIGINS</code></td>
+<td>空</td>
+<td>跨域来源白名单（逗号分隔，逐项去空白）；dev 默认放行 <code>*</code>、prod 默认不发送任何 CORS 头（语义见 §2 末尾注释）</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_8">数据库连接池<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>变量</th>
+<th>缺省</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DB_MAX_CONNS</code></td>
+<td><code>10</code></td>
+<td>⚠️ 见 §7.2 的连接数计算</td>
+</tr>
+<tr>
+<td><code>DB_MIN_CONNS</code></td>
+<td><code>2</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>DB_CONN_LIFETIME</code></td>
+<td><code>1h</code></td>
+<td>连接最大存活时间</td>
+</tr>
+<tr>
+<td><code>DB_CONN_IDLE_TIME</code></td>
+<td><code>30m</code></td>
+<td>空闲连接回收时间（R91 补登记）。回收的是「很久没被用过」的连接，不是活跃连接；托管 PG 有连接数上限时靠它把空闲连接还回去</td>
+</tr>
+<tr>
+<td><code>DB_STATEMENT_TIMEOUT</code></td>
+<td><code>30s</code></td>
+<td><strong>单条 SQL 的服务端执行上限</strong>（R91 补登记），<code>0</code> = 不限。超时由 PG 以 <code>57014</code> 断开并释放连接，正常请求收到 503；默认值足以覆盖现有导出/看板聚合，又能在查询写坏时避免拖垮整池。⚠️ 迁移<strong>不受</strong>此值约束（R103：迁移池显式 <code>statement_timeout=0</code>）</td>
+</tr>
+<tr>
+<td><code>DB_ACQUIRE_TIMEOUT</code></td>
+<td><code>5s</code></td>
+<td><strong>池耗尽的等待上限</strong>（R90）。排队超过该值 → 请求快速失败 <code>503 + Retry-After: 5</code>，而不是无限挂起（R89 实测曾挂起 15s 且无任何一层掐断）。⚠️ <strong>不要设得太短</strong>：正常负载的排队 p99 只有几十毫秒，设成 100ms 级会把合法突发打成 503 <strong>假失败</strong>，客户端重试还会放大流量——建议 <code>3s</code>–<code>10s</code>，且必须小于客户端超时。<code>0</code>/负值<strong>启动直接失败</strong></td>
+</tr>
+<tr>
+<td><code>DB_LOCK_TIMEOUT</code></td>
+<td><code>2s</code></td>
+<td><strong>等待任何一把锁的预算</strong>（R94）。锁阻塞语句超过该值被 PG 取消（<code>55P03</code>）→ 503，而不是挂到锁释放（R89 实测 p95=15032ms 全挂起，客户端 10s 超时时 503 无人接收）。与 <code>DB_STATEMENT_TIMEOUT</code> 解耦：后者管整条语句（含正常慢查询/大导出），锁等待单独给短预算。⚠️ 迁移<strong>不受</strong>此值约束（R103：迁移池显式 <code>lock_timeout=0</code>，不再要求启动时改环境变量）。<code>0</code> = 关闭（恢复 R89 旧行为，不推荐）</td>
+</tr>
+<tr>
+<td><code>DB_TIMEZONE</code></td>
+<td><code>Asia/Shanghai</code></td>
+<td><strong>连接会话时区</strong>（R90）。业务日界（R92）由 <code>config.BusinessTimeZone</code> 固定为 Asia/Shanghai，<strong>不随此值或容器 <code>TZ</code> 漂移</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ <strong>R92 起：业务日界不再由这个变量决定。</strong></p>
+<p>业务日界只有一个来源：<code>server/internal/config</code> 的 <code>BusinessTimeZone</code>
+（固定 <code>Asia/Shanghai</code>）。每日任务 / 签到 / 每日限购 / 防御挑战次数
+都由 Go 侧 <code>periodStart</code> 按该时区截断自然日；运营看板的 SQL 则显式写
+<code>AT TIME ZONE 'Asia/Shanghai'</code> —— <strong>都不依赖</strong>本环境变量的会话时区，
+也不依赖容器 <code>TZ</code>。以前「容器 TZ 未设（UTC）→ 早上 8 点才翻页」
+的故障形态已从代码层面消除。</p>
+<p>本变量现在只影响「SQL 没显式写时区」时的隐式折算（生产代码已无此类 SQL，
+由 <code>TestServiceHasNoCurrentDateInBusinessDaySQL</code> 守卫）。保留它作为
+连接默认值，是为了让人工排查的即席查询与业务口径一致。
+改它是改部署细节，<strong>不再</strong>改业务日界；要改业务日界请改 <code>config.BusinessTimeZone</code>。</p>
+<p>守卫：<code>server/internal/store/timezone_test.go</code> 3 条 + R92 的两条源码守卫
+（禁裸 <code>CURRENT_DATE</code> / <code>date_trunc('day', now())</code>，且 SQL 时区字面量必须等于
+<code>config.BusinessTimeZone</code>）。</p>
+</blockquote>
+<h3 id="_9">导出<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>变量</th>
+<th>缺省</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>EXPORT_MAX_CONCURRENCY</code></td>
+<td><code>2</code></td>
+<td>同一时刻允许执行的 CSV 导出数（R91 补登记），必须 ≥ 1。单次导出独占一条池连接；默认 2 是给 10 条连接里的普通请求留余量</td>
+</tr>
+<tr>
+<td><code>EXPORT_WAIT</code></td>
+<td><code>3s</code></td>
+<td>导出排队等槽位的上限（R91 补登记），<code>0</code> = 满槽立即 503。排队超时同样走快速失败，不占住请求</td>
+</tr>
+<tr>
+<td><code>EXPORT_MAX_BYTES</code></td>
+<td><code>64 MiB</code></td>
+<td>单次导出允许物化的<strong>字节</strong>上限（R91 补登记，<code>67108864</code>；<code>0</code> = 不限）。超出直接 413 —— 筛得太宽或行内容异常时，413 比 OOM 好</td>
+</tr>
+</tbody>
+</table>
+<h3 id="_10">玩法<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>变量</th>
+<th>缺省</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>BATTLE_TOKEN_TTL</code></td>
+<td><code>30m</code></td>
+<td>战斗凭证有效期</td>
+</tr>
+<tr>
+<td><code>MIN_BATTLE_DURATION</code></td>
+<td><code>15s</code></td>
+<td>「清完全场」的最短合理时长，短于此的<strong>胜利</strong>上报会被拒</td>
+</tr>
+<tr>
+<td><code>SETTLE_RECOMPUTE_MODE</code></td>
+<td><code>enforce</code></td>
+<td>服务端重算的处置档位，<code>off</code> / <code>shadow</code> / <code>enforce</code>。<strong>不发版即可切换</strong>，改环境变量重启生效</td>
+</tr>
+<tr>
+<td><code>SETTLE_SLOW_MS</code></td>
+<td><code>500</code></td>
+<td>慢结算日志阈值（毫秒，R91 补登记）。达到该值打一条分段耗时日志；<code>0</code> = 关闭日志（聚合统计仍记）。低于它不打，避免噪声</td>
+</tr>
+<tr>
+<td><code>OFFLINE_CAP_HOURS</code></td>
+<td><code>12</code></td>
+<td>离线收益累计上限（2026-10-31 新一轮第 7 轮起由 <code>GET/POST /me/offline-reward</code> 消费）</td>
+</tr>
+<tr>
+<td><code>OFFLINE_COIN_PER_HOUR</code></td>
+<td><code>600</code></td>
+<td>离线收益每小时金币速率（2026-10-31 新一轮第 7 轮）。收益按「距上次领取的时长 × 速率」结算，领取时清零；<code>0</code> = 无收益</td>
+</tr>
+<tr>
+<td><code>DASHBOARD_CACHE_TTL</code></td>
+<td><code>30s</code></td>
+<td>运营看板的进程内缓存有效期。<strong>设成 <code>0</code> 即关闭缓存</strong>（每次都查库）—— 排查「数字为什么不动」时先关它，不需要发版</td>
+</tr>
+<tr>
+<td><code>LEADERBOARD_CACHE_TTL</code></td>
+<td><code>15s</code></td>
+<td>三个榜单的进程内缓存有效期。<code>0</code> = 关闭。⚠️ <code>/me/rank</code>（我的排名）<strong>不受它影响</strong>，永远实时</td>
+</tr>
+<tr>
+<td><code>SIGNIN_CALENDAR_CACHE_TTL</code></td>
+<td><code>60s</code></td>
+<td>签到日历预览的进程内缓存有效期。<code>0</code> = 关闭（日历是 seeder 静态配置，后台无修改入口，通常不用关）</td>
+</tr>
+<tr>
+<td><code>ANNOUNCEMENTS_CACHE_TTL</code></td>
+<td><code>30s</code></td>
+<td>公告列表的进程内缓存有效期。<code>0</code> = 关闭（公告是公开端点，首页首屏每次拉取；运营人工发布、变化极低频）</td>
+</tr>
+<tr>
+<td><code>SHOP_CACHE_TTL</code></td>
+<td><code>30s</code></td>
+<td>商城商品列表<strong>静态部分</strong>的进程内缓存有效期。<code>0</code> = 关闭（商品是 seeder 配置、仅低频运营修改；玩家今日已购次数是 per-user 数据，不缓存）</td>
+</tr>
+<tr>
+<td><code>TASKS_CACHE_TTL</code></td>
+<td><code>60s</code></td>
+<td>任务配置<strong>静态部分</strong>的进程内缓存有效期。<code>0</code> = 关闭（任务是 seeder 纯静态配置、无后台修改入口；玩家当日进度是 per-user 数据，不缓存）</td>
+</tr>
+<tr>
+<td><code>ECONOMY_CACHE_TTL</code></td>
+<td><code>30s</code></td>
+<td>后台经济流水页的进程内缓存有效期。<code>0</code> = 关闭（<code>wallet_flows</code> 是增长最快的表，每次打开经济页都全表聚合；运营看经济页是低频操作）</td>
+</tr>
+<tr>
+<td><code>ADMIN_USERS_COUNT_CACHE_TTL</code></td>
+<td><code>5s</code></td>
+<td>后台玩家列表 <code>total</code> 的进程内缓存有效期（R91 补登记），<code>0</code> = 关闭。列表分页的 total 是最贵的 COUNT，短 TTL 换吞吐；运营要「立刻看到人数变化」时设 0</td>
+</tr>
+<tr>
+<td><code>METRICS_ENABLED</code></td>
+<td><code>false</code></td>
+<td>是否挂 <code>/metrics</code>（Prometheus 文本格式：TTL 缓存命中/未命中计数等）。<strong>默认不挂</strong>——未设口令的指标端点会泄露内部计数，确认采集端可达再开</td>
+</tr>
+<tr>
+<td><code>PPROF_ADDR</code></td>
+<td>空</td>
+<td>pprof 性能剖析监听地址（如 <code>127.0.0.1:6060</code>）。<strong>默认不启动</strong>；仅绑回环，排障时临时开</td>
+</tr>
+<tr>
+<td><code>PLAYER_LOGIN_REQUIRED</code></td>
+<td><code>false</code></td>
+<td>玩家是否必须用账号口令登录。开启后 <code>/auth/guest</code> 一律 403，并引导一个<strong>与超管同名同口令</strong>的共享测试账号（测试环境用，详见 §2.4）</td>
+</tr>
+</tbody>
+</table>
+<h4 id="player_login_required"><code>PLAYER_LOGIN_REQUIRED</code> 怎么用（测试环境）<a class="headerlink" href="#player_login_required" title="Permanent link">&para;</a></h4>
+<p><strong>背景</strong>：游客通道给<strong>每个浏览器/设备</strong>一个独立账号。测试环境里这意味着
+测试数据散落在无数个游客号里、换浏览器就丢进度、多人测时互相看不见。</p>
+<p><strong>开启</strong>：在 <code>config.env</code> 里加 <code>PLAYER_LOGIN_REQUIRED=true</code>，重启服务。</p>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>行为</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>账号</td>
+<td>启动时引导创建，用户名与口令<strong>与运营超管相同</strong>（复用 <code>BOOTSTRAP_ADMIN_USER</code> / <code>BOOTSTRAP_ADMIN_PASS</code>）</td>
+</tr>
+<tr>
+<td>H5</td>
+<td>出登录页（只回填用户名，<strong>口令不预填</strong> —— 前端产物是公开的）</td>
+</tr>
+<tr>
+<td><code>/auth/guest</code></td>
+<td>一律 <strong>403 <code>login_required</code></strong>（且<strong>不建号</strong>）—— 服务端这一道才是权威判据，缓存的旧客户端也一样被挡住</td>
+</tr>
+<tr>
+<td>限流</td>
+<td><code>POST /auth/login</code> <strong>10/min/IP</strong>（bcrypt cost 10，且这个口令同时是超管口令的爆破面）</td>
+</tr>
+<tr>
+<td>已存在的账号</td>
+<td>启动只<strong>同步口令</strong>，<strong>不碰</strong>钱包/进度/专精/战报</td>
+</tr>
+</tbody>
+</table>
+<p><strong>关掉</strong>：把 <code>PLAYER_LOGIN_REQUIRED</code> 去掉或设为 <code>false</code> 重启 —— 游客通道恢复，
+<strong>已有的账号行不受影响</strong>（账号只是多了一行玩家数据）。</p>
+<p><strong>改口令</strong>：改 <code>BOOTSTRAP_ADMIN_PASS</code> 后重启，共享测试账号的口令会跟着变
+（两侧刻意保持一致，否则会出现「后台能登、H5 登不进」）。</p>
+<h4 id="settle_recompute_mode"><code>SETTLE_RECOMPUTE_MODE</code> 怎么用<a class="headerlink" href="#settle_recompute_mode" title="Permanent link">&para;</a></h4>
+<p>当前<strong>只有一条重算在跑</strong>：<code>replay_skills</code>（<code>replay_hash</code> 的 S 段）。整局引擎尚未移植。</p>
+<table>
+<thead>
+<tr>
+<th>档位</th>
+<th>行为</th>
+<th>什么时候用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>enforce</code>（缺省）</td>
+<td>重算并记录；不符即拒发奖励</td>
+<td>常态。<strong>不要</strong>随意改</td>
+</tr>
+<tr>
+<td><code>shadow</code></td>
+<td>重算并记录；<strong>不拒发</strong></td>
+<td>只在排查「校验误伤」时用 —— 它确实关掉了 S 段反作弊</td>
+</tr>
+<tr>
+<td><code>off</code></td>
+<td>完全不重算</td>
+<td>已被证明误伤且来不及排查时的最后手段</td>
+</tr>
+</tbody>
+</table>
+<p><strong>⚠️ 切到 <code>shadow</code> 或 <code>off</code> 就等于关掉 <code>replay_skills</code> 反作弊校验。</strong> 这两档虽然仍写审计台账，但不再拦下任何伪造上报。</p>
+<p><strong>⚠️ 缺省值是 <code>enforce</code> 而不是 <code>off</code>，这是刻意的。</strong> S 段的重算没有歧义：服务端与客户端读同一份 DB 数据，中间没有第二个实现，所以「不符」只可能是有人手改了上报值。整局引擎才有歧义（也可能是引擎算错了），那才需要先 <code>shadow</code> 观察。把两类混成一个默认值，会让新装部署出厂即关闭已在运行的防护。</p>
+<p><strong>熔断只作用于整局引擎，永不作用于 S 段。</strong> 引擎侧不符率超过 2%（且样本 ≥200）时自动降级回 <code>shadow</code> 并打印原因；<strong>不会自动升回</strong> <code>enforce</code>，必须人工改配置重启。S 段不参与熔断 —— 否则作弊脚本一开刷、不符率冲高就会把防护降级，等于在攻击发生时关掉刹车。</p>
+<p>不符记录在 <code>settle_recomputes</code> 表（列：<code>reported_*</code> / <code>recomputed_*</code> / <code>mismatched_fields</code> / <code>mode</code> / <code>rejected</code> / <code>engine_version</code> / <code>created_at</code>）。后台页面：<strong>结算重算审计</strong>（<code>/admin/recomputes</code>）。</p>
+<p>⚠️ <code>battle_id = 0</code> 表示「结算在写战报之前就被拒，没有战报 id」—— 目前只有 <code>replay_skills</code> 不符会这样，页面上显示为「—」。</p>
+<h4 id="_11">怎么用这个页面<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h4>
+<p><strong>先看顶部的横幅。</strong> 熔断触发时页面顶部会出现黄色横幅，此时<strong>本该拒发的奖励正在放行</strong>。台账数字此时可能完全正常（甚至因为不拒发而上升），所以不单独指出来的话容易误以为防护还开着。横幅消失的唯一方式是<strong>人工</strong>把 <code>SETTLE_RECOMPUTE_MODE</code> 改回 <code>enforce</code> 并重启。</p>
+<p><strong>然后看「按关卡分布」那一栏</strong>，判读方式：</p>
+<table>
+<thead>
+<tr>
+<th>观察到的形状</th>
+<th>大概率是</th>
+<th>该做什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>某几关不符率很高，且「单号最高不符」很小</td>
+<td>引擎漂移（某段公式算错）</td>
+<td>查 <code>engine_version</code> 定位发布，回滚</td>
+</tr>
+<tr>
+<td>某关不符率很高，且「单号最高不符」≈ 不符数</td>
+<td>单个号在作弊</td>
+<td>查该 <code>user_id</code>，封号</td>
+</tr>
+<tr>
+<td>不符均匀散布在很多号上</td>
+<td>引擎漂移</td>
+<td>同第一行</td>
+</tr>
+</tbody>
+</table>
+<p>页面上的「形态提示」只是<strong>提示</strong>，不是判定 —— 措辞刻意不给结论，因为给错的结论比不给更糟（可能照着「这是引擎 bug」去回滚，实际是有人在作弊）。</p>
+<p><code>mode</code> 与「处置」是两列，必须分别看：熔断可以在 enforce 档把单次处置降级，所以会看到 <code>enforce（本次降级）</code> —— 那一行的 <code>rejected</code> 是 <code>false</code>，<strong>本该拒发的确实放行了</strong>。</p>
+<h3 id="_12">微信（未接通）<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>变量</th>
+<th>缺省</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>WECHAT_APP_ID</code></td>
+<td>空</td>
+<td>未配置时 <code>/auth/wechat</code> 返回 <strong>501</strong>，不静默降级成游客登录</td>
+</tr>
+<tr>
+<td><code>WECHAT_APP_SECRET</code></td>
+<td>空</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>WECHAT_ENDPOINT</code></td>
+<td>微信官方地址</td>
+<td>仅测试用</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3">3. 数据库迁移<a class="headerlink" href="#3" title="Permanent link">&para;</a></h2>
+<h3 id="31">3.1 日常操作<a class="headerlink" href="#31" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nb">cd</span><span class="w"> </span>laiyipao/server
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>go<span class="w"> </span>run<span class="w"> </span>./cmd/migrate<span class="w">          </span><span class="c1"># 应用</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>go<span class="w"> </span>run<span class="w"> </span>./cmd/migrate<span class="w"> </span>-down<span class="w">    </span><span class="c1"># 回滚**最后一个**</span>
+</code></pre></div>
+<blockquote>
+<p>⚠️ <strong>工具自己说 <code>-down</code> 是「仅本地调试用」</strong>
+（<code>go run ./cmd/migrate -h</code> 的原文）。
+这个警告要认真对待：回滚一个已经<strong>写入生产数据</strong>的迁移，
+会连带删掉那张表里的数据。</p>
+<p><code>-down</code> <strong>只回滚一版</strong>。连续回滚要重复执行。
+且每一步都可能因为「该版有数据变换」而失败 —— 失败时<strong>读它的 Down 段</strong>再决定，
+不要盲目重复。</p>
+<p>生产环境回滚的正确姿势见 §5.3：<strong>优先只回滚代码，不回滚迁移</strong>。</p>
+</blockquote>
+<h3 id="32-migrations_on_boot">3.2 <code>MIGRATIONS_ON_BOOT</code> 的取舍<a class="headerlink" href="#32-migrations_on_boot" title="Permanent link">&para;</a></h3>
+<p>缺省 <code>true</code>（服务启动时自动迁移）。<strong>多副本部署时必须设为 <code>false</code></strong>：</p>
+<blockquote>
+<p>多个副本同时跑 goose 会互相抢 <code>goose_db_version</code> 表的锁，
+轻则报错重试，重则迁移执行两次。
+生产应改为<strong>部署流程里单独跑一次 <code>cmd/migrate</code></strong>，服务只读不写。</p>
+<p>⚠️ <strong>R103 起：迁移的时长不再由启动 ctx / 运行期预算决定。</strong>
+<code>db.Migrate</code> 使用独立的迁移连接池（显式 <code>statement_timeout=0</code>、
+<code>lock_timeout=0</code>），总预算只看 <code>MIGRATE_TIMEOUT</code>（默认 <code>0</code> = 不限）。
+旧建议「大回填时把 <code>DB_STATEMENT_TIMEOUT</code> / <code>DB_LOCK_TIMEOUT</code> 设成 0」
+<strong>已经失效</strong> —— 这两个值只作用于运行期请求；迁移池在迁移结束后关闭。</p>
+<p>修前实测：65s 的迁移在 <strong>60.09s</strong> 被启动 ctx 砍断（<code>context deadline
+exceeded</code>），持锁 DDL 在 <strong>2.07s</strong> 被 <code>lock_timeout</code> 砍断（<code>55P03</code>）。
+两者都报成 timeout，与「SQL 写错」难以分辨。</p>
+</blockquote>
+<h3 id="321-r87">3.2.1 多副本就绪矩阵（R87 双实例实测）<a class="headerlink" href="#321-r87" title="Permanent link">&para;</a></h3>
+<p><strong>默认部署形态是单实例</strong>（<code>cmd/api</code> 单进程）。上多副本前必须过这张表
+——它是实测出来的（<code>node scripts/multi-instance-check.mjs</code>，
+起两个真实实例逐项验证，可复跑），不是推断：</p>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>双实例实测</th>
+<th>判定</th>
+<th>部署动作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>限流（per-IP / per-user / 全局，进程内计数）</td>
+<td>合计放行 <strong>2×</strong> 单实例额度（60→120）</td>
+<td>⚠️ 防护变弱（不产生资金错误，业务幂等兜底）</td>
+<td><strong>必须</strong> <code>RATE_LIMIT_SCALE=1/N</code>（心跳验证：0.5×2=60 ✓）</td>
+</tr>
+<tr>
+<td>幂等键（R86，PG 表）</td>
+<td>跨实例重放<strong>逐字节相同</strong>、余额只动一次</td>
+<td>✅ 多副本就绪</td>
+<td>无</td>
+</tr>
+<tr>
+<td>看板/榜单增量表（R63/R64，PG 表）</td>
+<td>两实例读数一致</td>
+<td>✅ 多副本就绪（各自缓存期内瞬时差异，到期收敛）</td>
+<td>无</td>
+</tr>
+<tr>
+<td>缓存新鲜度（公告/任务/商城/看板/榜单，TTL 进程内）</td>
+<td>A 写入后 B <strong>最长 30s 不可见</strong></td>
+<td>⚠️ 可容忍（运营配置类）</td>
+<td>接受 TTL 窗口内陈旧；写侧实例自身立即生效</td>
+</tr>
+<tr>
+<td>singleflight（进程内）</td>
+<td>冷启动底层查询 ×N（每实例各一次）</td>
+<td>✅ 可忽略（TTL 边界多 N-1 次查询）</td>
+<td>无</td>
+</tr>
+<tr>
+<td>access/结算聚合（R80/R85，进程内）</td>
+<td>各实例各记一份</td>
+<td>⚠️ 面板口径</td>
+<td>Prometheus <code>sum()</code> 聚合；单实例面板只见 1/N 流量</td>
+</tr>
+</tbody>
+</table>
+<p><strong>当前没有「必须单实例」的资金级项</strong>：唯一状态共享硬约束（幂等键、
+增量计数表）都在 PostgreSQL 里，天然多副本就绪。其余进程内状态
+的后果都已列明且可控。这张表由脚本守——改动其中任何一类机制时，
+重跑 <code>multi-instance-check.mjs</code>，FAIL 即先修再上副本。</p>
+<h3 id="33">3.3 加一条迁移的检查清单<a class="headerlink" href="#33" title="Permanent link">&para;</a></h3>
+<ol>
+<li>文件名递增：<code>migrations/000NN_描述.sql</code></li>
+<li><strong>Up 段必须可重复执行</strong>（用 <code>IF NOT EXISTS</code>）——
+   迁移失败后重跑是常见操作，不可重复执行的迁移会把人卡住</li>
+<li><strong>Down 段必须真的能删</strong>（<code>DROP ... IF EXISTS</code>）</li>
+<li>加列时给 <code>DEFAULT</code> 且 <code>NOT NULL</code> —— 存量行也要有合法值</li>
+<li>跑 <code>go run ./cmd/migrate</code> + <code>go run ./cmd/migrate -down</code> + 再 <code>-</code> 一次，确认可升可降</li>
+</ol>
+<h3 id="34-r88">3.4 滚动发布兼容性（R88 四组合实测）<a class="headerlink" href="#34-r88" title="Permanent link">&para;</a></h3>
+<p>滚动发布时新旧二进制共存、schema 只有一份。R88 用 git 旧提交构建真实旧二进制
+（不手工改代码），对两个方向做了实测。结论先行：</p>
+<blockquote>
+<p><strong>00025–00027 的迁移是 expand-only，「先迁移后换二进制」滚动发布安全；
+反向（先换二进制后跑迁移）是降级运行——玩家链路无损，新特性读侧明确 500。</strong></p>
+</blockquote>
+<h4 id="_13">实测矩阵<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h4>
+<p>旧二进制起点：旧A = R63 父提交（00024 时代，触发器引入前）；
+旧B = R80（00026 时代，结算重排前）。关键路径 = 建号/签到/领奖/兑换/结算/看板。</p>
+<table>
+<thead>
+<tr>
+<th>组合</th>
+<th>结果</th>
+<th>判定</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>旧A + 00027</td>
+<td>全 200；结算 60×200 无 5xx；看板走旧全表聚合口径、与触发器累加一致</td>
+<td>✅ <strong>安全</strong></td>
+</tr>
+<tr>
+<td>旧B + 00027</td>
+<td>全 200；结算 240×200 无 5xx</td>
+<td>✅ <strong>安全</strong></td>
+</tr>
+<tr>
+<td>新 HEAD + 00024</td>
+<td>玩家链路全 200；结算 240 行正常落库；<strong>看板/幂等 500 明确报错</strong></td>
+<td>✅ <strong>安全（降级）</strong></td>
+</tr>
+<tr>
+<td>新 HEAD + 00026</td>
+<td>玩家链路+看板 200、触发器累加一致；<strong>幂等带 key 500</strong>、无 key 200</td>
+<td>✅ <strong>安全（降级）</strong></td>
+</tr>
+</tbody>
+</table>
+<p>依据（为什么安全）：</p>
+<ul>
+<li><strong>新表对旧二进制透明</strong>：00025（dashboard_*）、00027（admin_idempotency_keys）
+  只新建表，旧代码不读它们；旧代码 INSERT 的列集一列未变。</li>
+<li><strong>触发器在 DB 侧，对调用方透明</strong>：00025 引入触发器、00026 把 4 参函数换成
+  5 参——二进制从不直接调这些函数，新旧二进制写 <code>battle_records</code> 都经同一个
+  DB 触发器。goose 单事务内 DROP+CREATE 原子完成，无「函数不存在」窗口。</li>
+<li><strong>新二进制缺表时是明确 500，不是静默错算</strong>：新 HEAD 对 00024 跑看板/幂等，
+  SQL 报「表不存在」→ 500 内部错误，运维能立刻看到「该先跑迁移」。</li>
+<li><strong>写路径不依赖新 schema 对象</strong>：新 HEAD 对 00024 结算，240 行全部正常落库
+  （<code>battle_records</code> 从 00004 起列集稳定）。00025 的 Up 段含<strong>全量回填</strong>
+  （<code>INSERT INTO dashboard_battle_stats SELECT ... FROM battle_records</code>），
+  迁移补跑后窗口期的战报会被回填治愈，无永久漂移。</li>
+</ul>
+<h4 id="_14">⚠️ 滚动窗口的两个灰度语义（不是故障，但要知道）<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h4>
+<ol>
+<li><strong>旧二进制静默忽略 <code>Idempotency-Key</code></strong>（R86 引入该头，旧代码不认识 →
+   直接执行）。窗口期内运营重试发币/公告/批量码，<strong>旧实例上会重复执行</strong>。
+   发布顺序上：迁移先行（00027 是纯新表，随时可跑），换二进制期间管理端
+   写操作<strong>只打新实例</strong>（或在窗口期不携带幂等键的重试视为可能重复）。</li>
+<li><strong>迁移执行瞬间的锁</strong>：00010/00013/00014 含存量行 UPDATE/DELETE，
+   大表执行期有行锁与 WAL 膨胀——迁移应在低峰跑，且先 <code>SELECT count(*)</code>
+   估量级（<code>battle_records</code> 百万行的 UPDATE 是分钟级）。</li>
+</ol>
+<h4 id="expand-contract-00013_achievement_epoch">expand-contract 违规登记：00013_achievement_epoch（已发布，不再改）<a class="headerlink" href="#expand-contract-00013_achievement_epoch" title="Permanent link">&para;</a></h4>
+<p>00013 把成就从「按天分行」改为「哨兵行终身累计」：迁移合并历史行进
+<code>1970-01-01</code> 哨兵行并 DELETE，<strong>同时</strong>新二进制把 <code>periodStart(achievement)</code>
+改为返回哨兵日期。<strong>若先跑迁移后换二进制</strong>，窗口期内旧实例仍读「今天零点」
+那行——历史行已被删，旧实例会新建当天行、进度归零重算、<strong>已领过的成就
+可再领一次（资金级）</strong>。</p>
+<p>该迁移已随第 93 轮发布（当时单实例停机发布，风险未兑现），<strong>不改历史</strong>。
+但它定义了一类必须遵守的顺序约束：</p>
+<blockquote>
+<p><strong>改「周期/口径语义」的迁移（periodStart、统计口径、状态机枚举）属于
+expand-contract：必须先全部换完新二进制、验证新口径写入正常，再跑迁移。</strong>
+发布顺序步骤：
+1. 发布新二进制到全部实例（<code>MIGRATIONS_ON_BOOT=false</code>，手动控迁移）；
+2. 验证新口径已生效（抽查写入落在新哨兵/新列上）；
+3. 跑迁移（合并/回填历史数据）；
+4. 观察一个业务周期确认无双重领取/双重计数。</p>
+</blockquote>
+<h4 id="r88-27">迁移兼容性检查清单（R88 核对 27 个迁移后固化）<a class="headerlink" href="#r88-27" title="Permanent link">&para;</a></h4>
+<p>新迁移评审时逐条过：</p>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>新增 NOT NULL 列必须带 DEFAULT</strong>（存量行立即合法；无 DEFAULT 的
+      <code>ADD COLUMN ... NOT NULL</code> 在 PG 上会重写全表且旧代码 INSERT 必炸）</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>新增列优先可空</strong>，用代码填默认值，比 DB DEFAULT 更灵活</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>DROP 列/表必须晚一个版本</strong>：版本 N 先让所有代码不再引用，
+      版本 N+1 才 DROP（本仓库 27 个迁移的 DROP 全部只在 Down 段，合规）</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>触发器/函数变更必须在同一事务内 DROP+CREATE</strong>（goose 默认行为，
+      不要在迁移里加 <code>NO TRANSACTION</code> 破坏它）</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>索引只增不减</strong>；换索引写法 = 新建一个再 DROP 旧的（旧索引在窗口期
+      仍服务旧二进制）</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>存量数据 UPDATE/DELETE（回填型）</strong>：评估锁量级，进 §3.4 的
+      灰度语义第 2 条；纯配置行（百行级）随意，用户数据行（万行级）要低峰</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>周期/口径语义变更 = expand-contract</strong>：按上面 00013 的四步顺序发布，
+      并在迁移头部注释里写明「必须先换二进制」</li>
+</ul>
+<p>27 个存量迁移核对结果：26 个合规；00013 违规（已发布，登记如上，不再改）；
+00010/00014 回填型合规但需注意执行期锁。</p>
+<h4 id="r88">滚动发布演练纪律（R88 布线事故教训）<a class="headerlink" href="#r88" title="Permanent link">&para;</a></h4>
+<p>本地多实例演练时：进程绑定 <code>127.0.0.1</code> 明确地址（Windows 上 <code>0.0.0.0:P</code>
+与 <code>127.0.0.1:P</code> 可共存，请求优先命中更具体绑定——R88 曾被一个 R58 残留的
+影子进程截胡全部请求，对着错误的库跑出整套假阴性）；起进程后先建一个号
+核对 id 落在目标库的序列区间，再开始测。</p>
+<hr />
+<h2 id="4">4. 改关卡 / 技能 / 公式 —— 会让存量战报失配<a class="headerlink" href="#4" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p>⚠️ <strong>本节是整个运维手册里唯一会造成不可逆数据损失的地方。</strong></p>
+</blockquote>
+<h3 id="41">4.1 为什么危险<a class="headerlink" href="#41" title="Permanent link">&para;</a></h3>
+<p>I-6 的重放哈希覆盖<strong>关卡 id + 攻方系数 + 技能槽 + 整条事件流</strong>。
+改动下列任一项，历史战报的 <code>replay_hash</code> 就<strong>永远算不出来</strong>：</p>
+<ul>
+<li>关卡生成器（波次/敌种/血量/地形 → 事件序列变了）</li>
+<li>伤害公式（权重、系数、反通胀上限）</li>
+<li>分数规则（记进 <code>hit</code> 事件的分数值变了）</li>
+<li>技能基础数值</li>
+<li>元素系数 / 反应倍率</li>
+<li><strong>槽位数</strong>（<code>activeSlots</code> 缺省必须是 4）</li>
+</ul>
+<p>症状是<strong>验真失败</strong> —— 而验真失败看起来像作弊。
+运维会误判成「有人刷分」，实际上是发版造成的。</p>
+<h3 id="42">4.2 正确流程<a class="headerlink" href="#42" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># 1) 改完代码/数据，先重生成契约夹具</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nb">cd</span><span class="w"> </span>laiyipao/server
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>go<span class="w"> </span>run<span class="w"> </span>./cmd/vectors<span class="w">            </span><span class="c1"># ← 忘了这步，后面全错</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>go<span class="w"> </span>run<span class="w"> </span>./cmd/vectors<span class="w"> </span>-check<span class="w">     </span><span class="c1"># CI 里用这个验证「夹具与源码是否同步」</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="c1"># 2) 跑全部测试</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>go<span class="w"> </span><span class="nb">test</span><span class="w"> </span>./...<span class="w"> </span>-count<span class="o">=</span><span class="m">1</span><span class="w"> </span>-timeout<span class="w"> </span>1200s
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="c1"># 3) 跑端到端验收</span>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="nb">cd</span><span class="w"> </span>..<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>pwsh<span class="w"> </span>-NoProfile<span class="w"> </span>-File<span class="w"> </span>scripts/e2e.ps1
+</code></pre></div>
+<h3 id="43">4.3 行为测试「全绿」不代表没破坏可重放性<a class="headerlink" href="#43" title="Permanent link">&para;</a></h3>
+<p><code>no_deadlock.test.ts</code> / <code>difficulty.test.ts</code> 这类行为测试
+只断言「能通关 / 难度递增」，<strong>不校验哈希</strong>。</p>
+<blockquote>
+<p>实测教训：改动关卡生成后，行为测试仍然全绿，
+而<strong>每一个存量战报都已经静默失配</strong>。
+判断是否破坏可重放性，唯一可靠的办法是重跑 <code>cmd/vectors</code>
+并检查 diff 里是否包含 <code>star_targets</code> / 波次 / 地形的变化。</p>
+</blockquote>
+<hr />
+<h2 id="5">5. 发布<a class="headerlink" href="#5" title="Permanent link">&para;</a></h2>
+<h3 id="51">5.1 检查清单<a class="headerlink" href="#51" title="Permanent link">&para;</a></h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>go test ./... -count=1 -timeout 1200s</code> 全绿，<strong>且输出里没有 SKIP</strong>
+      （SKIP 被计入 PASS，「全绿」里可能藏着没执行的测试。
+      <strong>有 PostgreSQL 在途中</strong>：DB 依赖的测试会自检跳过；CI 无 PG 服务时
+      259 个 DB 测试自然跳过，这属于已知行为，不是回归。
+      本地需 <code>go test ./... -count=1 -timeout 1200s</code> 在<strong>有 PG</strong> 的前提下跑，
+      方能进入「零 SKIP」的真门槛。）</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>pnpm vitest run --config vitest.config.ts</code> 通过
+      （miniapp）；<code>cd ../admin &amp;&amp; pnpm vitest run</code> 亦需全绿</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 双端 <code>npx tsc --noEmit</code> 无错误</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>gofmt -l server</code> 输出为空、<code>go vet ./...</code> 无输出</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>go run ./cmd/vectors -check</code> 全 OK</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>pwsh -NoProfile -File scripts/e2e.ps1</code> 全部通过</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <strong>若改过关卡/公式</strong>：<code>go run ./cmd/vectors</code> 已重跑，且 diff 已人工确认</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>JWT_SECRET</code> / <code>BOOTSTRAP_ADMIN_PASS</code> 已在生产环境覆盖</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>MIGRATIONS_ON_BOOT=false</code>，迁移已在部署流程里单独执行</li>
+</ul>
+<h3 id="52">5.2 测试超时的一个坑<a class="headerlink" href="#52" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>go<span class="w"> </span><span class="nb">test</span><span class="w"> </span>./...<span class="w"> </span>-count<span class="o">=</span><span class="m">1</span><span class="w"> </span>-timeout<span class="w"> </span>300s<span class="w">     </span><span class="c1"># ← internal/service 会超时失败</span>
+</code></pre></div>
+<p><code>internal/service</code> 单独跑只要 <strong>77s</strong>，但 11 个包<strong>并行抢同一个 PostgreSQL</strong> 时
+会涨到 <strong>340s</strong>，撞上 300s 超时。</p>
+<ul>
+<li>症状：<code>FAIL internal/service</code>，但单独重跑该包<strong>通过</strong> —— 这是<strong>假性超时</strong>，不是真的失败</li>
+<li><strong>不要</strong>因此去改被测代码</li>
+<li>正确做法：用 <code>-timeout 1200s</code>，或把依赖 DB 的包串行化
+  （<code>go test -p 1 ./...</code>）</li>
+</ul>
+<h3 id="53">5.3 回滚<a class="headerlink" href="#53" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># 1) 回滚代码到上一个 tag</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="c1"># 2) 数据库迁移：不要盲目 -down</span>
+</code></pre></div>
+<blockquote>
+<p>⚠️ <strong>如果新版本的迁移是加列/加表</strong>，旧代码不认识新列但能正常工作
+（多出的列有默认值）→ <strong>无需回滚迁移</strong>，只回滚代码。</p>
+<p>⚠️ <strong>如果新版本改动了关卡生成或伤害公式</strong>（§4），
+回滚代码<strong>不能</strong>恢复历史战报的可重放性 ——
+只有把数据库也回滚到对应时点才行，而那会丢掉那之后的所有玩家数据。
+<strong>这种改动本质上不可回滚</strong>，发布前必须慎重。</p>
+</blockquote>
+<hr />
+<h2 id="6">6. 备份与恢复<a class="headerlink" href="#6" title="Permanent link">&para;</a></h2>
+<h3 id="61">6.1 备份<a class="headerlink" href="#61" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>pg_dump<span class="w"> </span>-Fc<span class="w"> </span>-d<span class="w"> </span>laiyipao<span class="w"> </span>-f<span class="w"> </span>laiyipao-<span class="k">$(</span>date<span class="w"> </span>+%F-%H%M<span class="k">)</span>.dump
+</code></pre></div>
+<p><strong>必须包含的表</strong>（丢了就无法运营）：</p>
+<table>
+<thead>
+<tr>
+<th>表</th>
+<th>丢了会怎样</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>battle_records</code></td>
+<td>全部战报与验真凭证消失；排行榜与星级历史归零</td>
+</tr>
+<tr>
+<td><code>replay_verifications</code></td>
+<td>验真留痕消失</td>
+</tr>
+<tr>
+<td><code>user_*</code>（钱包/进度/专精/装备/技能/关卡进度）</td>
+<td>玩家资产归零</td>
+</tr>
+<tr>
+<td><code>defenses</code></td>
+<td>玩家防线配置消失</td>
+</tr>
+<tr>
+<td><code>shop_offers</code> / 内容表</td>
+<td>后台改过的数值归零</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>内容表（敌人/技能/装备/关卡）<strong>可以用 <code>cmd/seed</code> 重建</strong>，
+但<strong>后台的手工修改会丢</strong> —— 所以还是得备份。</p>
+</blockquote>
+<h3 id="62">6.2 恢复<a class="headerlink" href="#62" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># 1) 停服</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="c1"># 2) 恢复</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>pg_restore<span class="w"> </span>-d<span class="w"> </span>laiyipao<span class="w"> </span>-c<span class="w"> </span>laiyipao-YYYY-MM-DD-HHMM.dump
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="c1"># 3) 校验版本</span>
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="nb">cd</span><span class="w"> </span>laiyipao/server<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>go<span class="w"> </span>run<span class="w"> </span>./cmd/migrate<span class="w">   </span><span class="c1"># 幂等，补齐备份之后的迁移</span>
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="c1"># 4) 起服并验证</span>
+<a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>curl<span class="w"> </span>-s<span class="w"> </span>http://127.0.0.1:8080/readyz
+</code></pre></div>
+<h3 id="63">6.3 生产数据库认证<a class="headerlink" href="#63" title="Permanent link">&para;</a></h3>
+<p>开发用 <code>trust</code>（本机免密）。生产必须：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a># pg_hba.conf
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>host    laiyipao   laiyipao_app   10.0.0.0/8    scram-sha-256
+</code></pre></div>
+<p>并用 <code>scram-sha-256</code> 而非 <code>md5</code>。</p>
+<hr />
+<h2 id="64">6.4 数据保留与清理<a class="headerlink" href="#64" title="Permanent link">&para;</a></h2>
+<blockquote>
+<p>2026-10-23 新增。此前仓库里<strong>没有任何</strong>清理/归档/分区机制，
+而下面三张表都是「每局一条」量级的只增表。</p>
+</blockquote>
+<h3 id="dry-run">先看会删多少（默认 dry-run）<a class="headerlink" href="#dry-run" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nb">cd</span><span class="w"> </span>server
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>go<span class="w"> </span>run<span class="w"> </span>./cmd/prune<span class="w"> </span>--days<span class="o">=</span><span class="m">30</span>
+</code></pre></div>
+<p>输出每张表的待删行数与「为什么这张表可以删」。<strong>这一步不会删任何东西。</strong></p>
+<h3 id="_15">真的删<a class="headerlink" href="#_15" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>go<span class="w"> </span>run<span class="w"> </span>./cmd/prune<span class="w"> </span>--days<span class="o">=</span><span class="m">30</span><span class="w"> </span>--apply
+</code></pre></div>
+<h3 id="_16">四张表的处置<a class="headerlink" href="#_16" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>表</th>
+<th>默认保留</th>
+<th>删了会怎样</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>battle_records</code></td>
+<td>建议 ≥ 30 天</td>
+<td><strong>旧战报的回放（<code>/battle/:id/replay</code>）与验真永久失效</strong>；<code>replay_verifications</code> 会因外键 CASCADE 一起被删</td>
+</tr>
+<tr>
+<td><code>replay_verifications</code></td>
+<td>建议 ≥ 30 天</td>
+<td>只影响「谁在什么时候验过哪一场」的排查记录，不参与结算</td>
+</tr>
+<tr>
+<td><code>admin_audit_logs</code></td>
+<td>建议 ≥ 90 天</td>
+<td>后台操作审计消失。<strong>保留期应不短于内部合规要求</strong>，默认 30 天对多数场景偏短</td>
+</tr>
+<tr>
+<td><code>wallet_flows</code></td>
+<td><strong>永不删</strong></td>
+<td>它是经济系统的原始凭证。删了之后「这个玩家的金币怎么来的」永远无法追</td>
+</tr>
+</tbody>
+</table>
+<p><code>wallet_flows</code> 要压缩只能<strong>归档到冷表</strong>（2026-10-30 起已命令化，见
+<code>cmd/prune</code> 的 <code>--archive-wallet-flows</code>）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="c1"># 先看会归档多少行（不搬任何数据）</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>go<span class="w"> </span>run<span class="w"> </span>./cmd/prune<span class="w"> </span>--days<span class="o">=</span><span class="m">180</span><span class="w"> </span>--archive-wallet-flows
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="c1"># 确认后真的搬：老流水进入 wallet_flows_archive，主表对应行被删除</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>go<span class="w"> </span>run<span class="w"> </span>./cmd/prune<span class="w"> </span>--days<span class="o">=</span><span class="m">180</span><span class="w"> </span>--archive-wallet-flows<span class="w"> </span>--apply
+</code></pre></div>
+<p>冷表 <code>wallet_flows_archive</code> 由命令自动创建（<code>LIKE wallet_flows INCLUDING ALL</code>，
+不含外键）。归档与删除共用同一个 <code>--days</code> 截止时间，同样默认 dry-run、
+<code>--apply</code> 才真搬，且<strong>永不进入 <code>--table</code> 删除白名单</strong>。</p>
+<p>⚠️ 归档表<strong>不进任何查询</strong>，所以它只解决体积，不解决「查得到」。
+需要长期可查的话，导出到对象存储而不是留在同一个库里。</p>
+<h3 id="_17">两条硬约束（写死在命令里，不可绕过）<a class="headerlink" href="#_17" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong><code>--days</code> 没有默认值</strong>，且不得小于 <strong>7</strong>。战报要支撑验真 / 回放 / 客服申诉
+   三条业务，短于 7 天会删掉仍在用的数据。</li>
+<li><strong><code>--apply</code> 才真删</strong>。默认只统计 —— 这个命令最可能的用法是
+   <code>ssh prod</code> 之后顺手跑一下，所以默认必须是无害的那一侧。</li>
+</ol>
+<h3 id="_18">建议的节奏<a class="headerlink" href="#_18" title="Permanent link">&para;</a></h3>
+<ul>
+<li>先连续两周只跑 dry-run，观察「30 天前的战报有多少」的实际曲线。</li>
+<li>曲线平稳后再开 <code>--apply</code>，并把它放进 systemd timer（每周一次）。</li>
+<li><code>admin_audit_logs</code> 单独用更大的 <code>--days</code> 跑，不要和战报同一个值。</li>
+</ul>
+<hr />
+<h2 id="7">7. 故障处置<a class="headerlink" href="#7" title="Permanent link">&para;</a></h2>
+<h3 id="71">7.1 服务起不来<a class="headerlink" href="#71" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>原因</th>
+<th>处理</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>panic: config: APP_ENV=prod 时必须显式设置 JWT_SECRET</code></td>
+<td>生产没覆盖 <code>JWT_SECRET</code></td>
+<td>设置一个非 <code>dev-only</code> 开头的值</td>
+</tr>
+<tr>
+<td><code>BOOTSTRAP_ADMIN_PASS</code> 缺失即拒绝</td>
+<td>缺省密码太弱</td>
+<td>设一个 ≥10 位的值</td>
+</tr>
+<tr>
+<td>启动卡在迁移</td>
+<td>见 §3.2</td>
+<td>多副本设 <code>MIGRATIONS_ON_BOOT=false</code>，部署流程里单独跑</td>
+</tr>
+<tr>
+<td><code>database "laiyipao" does not exist</code></td>
+<td>没建库</td>
+<td><code>createdb laiyipao</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="72">7.2 数据库连不上 / 连接池耗尽<a class="headerlink" href="#72" title="Permanent link">&para;</a></h3>
+<p>先算连接数：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>实例数 × DB_MAX_CONNS 必须 &lt; PostgreSQL 的 max_connections
+</code></pre></div>
+<p>缺省 <code>DB_MAX_CONNS=10</code>。4 副本就是 40 条连接。
+若 <code>max_connections=100</code> 且还想跑测试与备份工具，<strong>必须调低 <code>DB_MAX_CONNS</code></strong>。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="k">SHOW</span><span class="w"> </span><span class="n">max_connections</span><span class="p">;</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a><span class="k">SELECT</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">),</span><span class="w"> </span><span class="k">state</span><span class="w"> </span><span class="k">FROM</span><span class="w"> </span><span class="n">pg_stat_activity</span><span class="w"> </span><span class="k">GROUP</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="k">state</span><span class="p">;</span>
+</code></pre></div>
+<h3 id="73-400">7.3 结算接口报 400<a class="headerlink" href="#73-400" title="Permanent link">&para;</a></h3>
+<p>400 意味着上报被服务端拒了。按错误码定位：</p>
+<table>
+<thead>
+<tr>
+<th>错误</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>剩余血量超过该关初始血量</code></td>
+<td>上报了不可能的血量</td>
+</tr>
+<tr>
+<td><code>发射数超过该时长的物理上限</code></td>
+<td>时长与发射数不自洽</td>
+</tr>
+<tr>
+<td><code>命中率越界</code></td>
+<td><code>hits &gt; shots</code></td>
+</tr>
+<tr>
+<td><code>发射数超过该关总怪数</code></td>
+<td>击杀/漏怪数超过该关总怪数</td>
+</tr>
+<tr>
+<td><code>元素使用合计超过…</code></td>
+<td><code>elements_used</code> 越界</td>
+</tr>
+<tr>
+<td><code>未知反应 "xxx"</code></td>
+<td><code>reactions_used</code> 里有不存在的键</td>
+</tr>
+<tr>
+<td><code>得分速率超过上限</code></td>
+<td>时长远短于清场所需</td>
+</tr>
+<tr>
+<td><code>波次超过该关总波数</code></td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>若大量玩家同时报 400，且代码刚发过版</strong> → 优先怀疑 §4 的公式改动，
+而不是玩家作弊。</p>
+</blockquote>
+<h3 id="74">7.4 历史战报验真失败 ⚠️<a class="headerlink" href="#74" title="Permanent link">&para;</a></h3>
+<p><strong>这是最容易被误判的故障。</strong></p>
+<p><strong>先分清是「玩家刷分」还是「发版造成」</strong>：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="k">SELECT</span><span class="w"> </span><span class="n">date_trunc</span><span class="p">(</span><span class="s1">'day'</span><span class="p">,</span><span class="w"> </span><span class="n">created_at</span><span class="p">)</span><span class="w"> </span><span class="k">AS</span><span class="w"> </span><span class="n">d</span><span class="p">,</span><span class="w"> </span><span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="k">FROM</span><span class="w"> </span><span class="n">battle_records</span><span class="w"> </span><span class="k">GROUP</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">ORDER</span><span class="w"> </span><span class="k">BY</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
+</code></pre></div>
+<table>
+<thead>
+<tr>
+<th>特征</th>
+<th>判断</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>失败集中在<strong>发版之后</strong>，且<strong>跨所有关卡</strong></td>
+<td><strong>发版造成</strong>（改了哈希锚点，见 §4）</td>
+</tr>
+<tr>
+<td>失败集中在<strong>少数关卡 / 少数玩家</strong></td>
+<td>可能是真的篡改</td>
+</tr>
+<tr>
+<td>失败集中在一段历史时间段</td>
+<td>那一版代码有问题</td>
+</tr>
+</tbody>
+</table>
+<p><strong>发版造成时的处理</strong>：</p>
+<ol>
+<li><strong>不要</strong>给玩家发「作弊」通知 —— 这是我方问题</li>
+<li>若能定位到具体改动，<strong>回滚代码</strong>（注意 §5.3 的不可回滚警告）</li>
+<li>记入事故：写明「哪些 commit 改了哈希锚点」</li>
+</ol>
+<blockquote>
+<p>预防：把 <code>cmd/vectors -check</code> 放进 CI —— 它能在发版前发现
+「关卡/公式改动没有同步重生成夹具」。</p>
+</blockquote>
+<hr />
+<h2 id="8">8. 值班备忘<a class="headerlink" href="#8" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="c1"># 活着吗</span>
+<a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>curl<span class="w"> </span>-s<span class="w"> </span>localhost:8080/healthz<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>curl<span class="w"> </span>-s<span class="w"> </span>localhost:8080/readyz
+<a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>
+<a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a><span class="c1"># 最近的错误率 / 战报量</span>
+<a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>psql<span class="w"> </span>-d<span class="w"> </span>laiyipao<span class="w"> </span>-c<span class="w"> </span><span class="s2">"</span>
+<a id="__codelineno-16-6" name="__codelineno-16-6" href="#__codelineno-16-6"></a><span class="s2">SELECT date_trunc('hour', created_at) h, result, count(*)</span>
+<a id="__codelineno-16-7" name="__codelineno-16-7" href="#__codelineno-16-7"></a><span class="s2">FROM battle_records WHERE created_at &gt; now() - interval '24 hours'</span>
+<a id="__codelineno-16-8" name="__codelineno-16-8" href="#__codelineno-16-8"></a><span class="s2">GROUP BY 1,2 ORDER BY 1 DESC LIMIT 48;"</span>
+<a id="__codelineno-16-9" name="__codelineno-16-9" href="#__codelineno-16-9"></a>
+<a id="__codelineno-16-10" name="__codelineno-16-10" href="#__codelineno-16-10"></a><span class="c1"># 异常胜率（防线值守的作弊信号）</span>
+<a id="__codelineno-16-11" name="__codelineno-16-11" href="#__codelineno-16-11"></a>psql<span class="w"> </span>-d<span class="w"> </span>laiyipao<span class="w"> </span>-c<span class="w"> </span><span class="s2">"</span>
+<a id="__codelineno-16-12" name="__codelineno-16-12" href="#__codelineno-16-12"></a><span class="s2">SELECT round(avg(CASE WHEN won THEN 1.0 ELSE 0 END)::numeric,3) AS win_rate, count(*)</span>
+<a id="__codelineno-16-13" name="__codelineno-16-13" href="#__codelineno-16-13"></a><span class="s2">FROM battle_records WHERE level_id IN (SELECT DISTINCT level_id FROM battle_records</span>
+<a id="__codelineno-16-14" name="__codelineno-16-14" href="#__codelineno-16-14"></a><span class="s2">  WHERE result='lose' LIMIT 5) AND created_at &gt; now() - interval '7 days';"</span>
+</code></pre></div>
+<blockquote>
+<p>防线值守的胜负由<strong>客户端裁决</strong>（服务端不跑引擎），
+所以胜率是最重要的作弊信号。接近 100% 或 0% 都需要人工看。</p>
+</blockquote>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright (C) 2026 annsshadow · AGPL-3.0-or-later
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.indexes", "navigation.top", "navigation.tracking", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.tabs.link"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

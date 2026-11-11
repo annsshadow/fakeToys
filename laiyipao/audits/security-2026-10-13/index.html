@@ -1,0 +1,5294 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="laiyipao / llm-lab / oa4rust 项目文档">
+      
+      
+        <meta name="author" content="annsshadow">
+      
+      
+      
+        <link rel="prev" href="../coverage-2026-10-28/">
+      
+      
+        <link rel="next" href="../r1-engine-port-plan/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>安全性 2026-10-13 - fakeToys 文档</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#laiyipao-2026-10-13" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="../../.." title="fakeToys 文档" class="md-header__button md-logo" aria-label="fakeToys 文档" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            fakeToys 文档
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              安全性 2026-10-13
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换到深色模式"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="切换到深色模式" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="切换到浅色模式"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="切换到浅色模式" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="分享" aria-label="分享" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/<OWNER>/<REPO>" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    annsshadow/fakeToys
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="标签" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  首页
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../" class="md-tabs__link">
+          
+  
+  
+    
+  
+  来一炮(laiyipao)
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../llm-lab/00-%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  LLM 实验(llm-lab)
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../oa4rust/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  OA4Rust
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="fakeToys 文档" class="md-nav__button md-logo" aria-label="fakeToys 文档" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    fakeToys 文档
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/<OWNER>/<REPO>" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    annsshadow/fakeToys
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    首页
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    来一炮(laiyipao)
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    来一炮(laiyipao)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../GAME_DESIGN/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    游戏设计
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../IMPLEMENTATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    实现内容与验证
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../ENGINEERING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    工程约束
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../DECISIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    决策记录
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../KNOWN_LIMITS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    已知限制
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../OPERATIONS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    运维手册
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../system/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    系统设计
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2_8" id="__nav_2_8_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    系统设计
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../system/01-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 架构
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../system/02-server/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 服务端
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../system/03-miniapp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 小程序
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../system/04-admin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    04 管理后台
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../system/05-api-reference/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    05 API 参考
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../system/06-data-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    06 数据模型
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../system/07-deployment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    07 部署
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../system/08-contracts/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    08 契约
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_9" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2_9" id="__nav_2_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    审计与复盘
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_9_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    审计与复盘
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../coverage-2026-09-28/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    覆盖率 2026-09-28
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../coverage-2026-10-28/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    覆盖率 2026-10-28
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    安全性 2026-10-13
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    安全性 2026-10-13
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 验证状态
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 已修：严重
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. 已修：严重">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#f1-500" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F1 · 道具扣减路径恒 500（两条可达路径）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#f2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F2 · 运营后台可被点击劫持
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#f3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F3 · 全站零速率限制
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 已修：高
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. 已修：高">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#f4-refresh-token-30" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F4 · 没有登出端点，refresh token 30 天无法切断
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#f5-ip" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F5 · 后台审计日志的 IP 恒为空串
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 已修：中
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. 已修：中">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#f6-admin-401" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F6 · admin 前端的 401 处理是虚构的
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#f7-miniapp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F7 · miniapp 接口地址硬编码明文回环，且没有任何东西阻止它上生产
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#f8-cors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F8 · CORS 在生产环境仍发 *
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#f9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F9 · 后台发币无金额上界
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#f10-miniapp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F10 · miniapp 的类型检查一直是空操作，却报告成功 ← 验证过程中发现
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 已核查、确认无问题
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-bug" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 未修：需要产品决策（不是 bug，是架构取舍）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. 未修：需要产品决策（不是 bug，是架构取舍）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#r1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R1 · 结算上限校验可被「恰好顶满」完全绕过 ← 本次审计最重要的结论
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#51-r1-2026-10-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 R1 进度（2026-10-14 起）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-r1-2026-10-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 R1 第二步：灰度开关 + 不符率台账（2026-10-14）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5.2 R1 第二步：灰度开关 + 不符率台账（2026-10-14）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        这一步自己制造又改掉的两个问题
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-2026-10-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 的读侧：后台页面（2026-10-14 第三步）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sql-bug" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        本轮发现并修掉的一个真实 SQL bug
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一条自己写出来、又被自己的测试判死的守卫
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53-r1-2026-10-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 R1 第四步：引擎纯函数移植（2026-10-14）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#54-r1-2026-10-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.4 R1 第五步：热量与手牌移植（2026-10-14）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        本轮又踩了两次「自己的测试证明不了任何东西」
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        四个变异全部转红
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#55-r1-2026-10-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.5 R1 第六步：地形移植（2026-10-14）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        六个变异全部转红
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#heat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        又一次「守卫是装饰品」，根因与 heat 那次完全相同
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R2 · 防线挑战的胜负由客户端裁决
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r3-2026-10-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R3 · 游客凭证即永久凭证，且无轮换 —— 已在 2026-10-14 修复
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 变更清单
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. 变更清单">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61-2026-10-14-r1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 2026-10-14 R1 第二步（灰度开关 + 台账）追加
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62-2026-10-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 2026-10-14 第三步（后台读侧页面）追加
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63-2026-10-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.3 2026-10-14 第五步（热量与手牌）追加
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#64-2026-10-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.4 2026-10-14 第六步（地形）追加
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 部署前置（本轮引入的义务）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. 本轮自己制造又修掉的问题（如实记录）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. 本轮自己制造又修掉的问题（如实记录）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#81-off-2026-10-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.1 缺省档位 off 会出厂关闭反作弊校验（2026-10-14）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#82-2026-10-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.2 降级状态做成全局，会在攻击峰值时解除防护（2026-10-14）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#83" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.3 变异验证后没跑还原态全量（本轮踩到）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#84-2026-10-13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.4 早一轮：共享库污染（2026-10-13）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-2026-10-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. 本轮后续（2026-10-15）：把"担心"变成"证据"，把"计数器"变成"读数"
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. 本轮后续（2026-10-15）：把&#34;担心&#34;变成&#34;证据&#34;，把&#34;计数器&#34;变成&#34;读数&#34;">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#91-config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.1 config 漂移风险 —— 先说错了，又错地否定了一次，最后变成事实
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#92" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.2 重算观测量的静默失效 —— 把"校验根本没跑"变成看得见的一行字
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#93-commit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.3 本轮 commit 列表
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 部署后必须确认（新）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-154-2026-10-16-7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. 第 154 轮（2026-10-16）：归属守卫从读路径扩到写路径，以及另外 7 项
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="11. 第 154 轮（2026-10-16）：归属守卫从读路径扩到写路径，以及另外 7 项">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#111" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11.1 七项修复
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#112" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11.2 两项输入上界（同族）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#113" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11.3 两项「让隐形的东西显形」
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#114" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11.4 变异验证（本轮新增守卫的实测清单）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#115" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11.5 部署前置（本轮新增义务）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#116-155-12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11.6 本轮未改的三件事 —— 第 155 轮已全部落地（见 §12）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#117" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11.7 本轮验证状态
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-155-2026-10-16116" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. 第 155 轮（2026-10-16）：§11.6 的三件事全部落地
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="12. 第 155 轮（2026-10-16）：§11.6 的三件事全部落地">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#121" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12.1 三项落地
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#122" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12.2 守卫与自检
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#123" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12.3 部署前置（本轮新增义务）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#124" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12.4 变异验证（本轮）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#125" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12.5 验证状态
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../r1-engine-port-plan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    引擎移植计划
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    LLM 实验(llm-lab)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    LLM 实验(llm-lab)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../llm-lab/00-%E5%AD%A6%E4%B9%A0%E8%B7%AF%E7%BA%BF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    学习路线
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../llm-lab/01-%E5%88%86%E8%AF%8D%E4%B8%8E%E8%AF%8D%E8%A1%A8/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 分词与词表
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../llm-lab/02-%E5%B5%8C%E5%85%A5%E4%B8%8E%E4%BD%8D%E7%BD%AE%E7%BC%96%E7%A0%81/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 嵌入与位置编码
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../llm-lab/03-%E8%87%AA%E6%B3%A8%E6%84%8F%E5%8A%9B%E6%9C%BA%E5%88%B6/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 自注意力机制
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../llm-lab/04-Transformer%E7%BB%93%E6%9E%84/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    04 Transformer 结构
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../llm-lab/05-%E9%A2%84%E8%AE%AD%E7%BB%83%E4%B8%8E%E8%AE%AD%E7%BB%83%E5%BE%AA%E7%8E%AF/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    05 预训练与训练循环
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../llm-lab/06-%E8%A7%84%E6%A8%A1%E5%8C%96%E8%AE%AD%E7%BB%83/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    06 规模化训练
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../llm-lab/07-%E5%BE%AE%E8%B0%83-SFT-LoRA-QLoRA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    07 微调 SFT/LoRA/QLoRA
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../llm-lab/08-%E5%AF%B9%E9%BD%90-RLHF-PPO-DPO/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    08 对齐 RLHF/PPO/DPO
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../llm-lab/09-%E8%AF%84%E4%BC%B0/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    09 评估
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../llm-lab/10-%E6%8E%A8%E7%90%86%E4%BC%98%E5%8C%96/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    10 推理优化
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../oa4rust/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OA4Rust
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    OA4Rust
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../oa4rust/01-architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 架构
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../oa4rust/02-modules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 模块
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../oa4rust/03-data-and-api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 数据与接口
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../oa4rust/04-flows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    04 流程
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../oa4rust/05-environment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    05 环境
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../oa4rust/06-install-and-run/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    06 安装与运行
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../oa4rust/07-examples/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    07 示例
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../oa4rust/08-faq/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    08 FAQ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../oa4rust/09-maintenance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    09 维护
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        0. 验证状态
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. 已修：严重
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. 已修：严重">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#f1-500" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F1 · 道具扣减路径恒 500（两条可达路径）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#f2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F2 · 运营后台可被点击劫持
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#f3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F3 · 全站零速率限制
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. 已修：高
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. 已修：高">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#f4-refresh-token-30" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F4 · 没有登出端点，refresh token 30 天无法切断
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#f5-ip" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F5 · 后台审计日志的 IP 恒为空串
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. 已修：中
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. 已修：中">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#f6-admin-401" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F6 · admin 前端的 401 处理是虚构的
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#f7-miniapp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F7 · miniapp 接口地址硬编码明文回环，且没有任何东西阻止它上生产
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#f8-cors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F8 · CORS 在生产环境仍发 *
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#f9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F9 · 后台发币无金额上界
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#f10-miniapp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        F10 · miniapp 的类型检查一直是空操作，却报告成功 ← 验证过程中发现
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. 已核查、确认无问题
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-bug" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. 未修：需要产品决策（不是 bug，是架构取舍）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. 未修：需要产品决策（不是 bug，是架构取舍）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#r1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R1 · 结算上限校验可被「恰好顶满」完全绕过 ← 本次审计最重要的结论
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#51-r1-2026-10-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 R1 进度（2026-10-14 起）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-r1-2026-10-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 R1 第二步：灰度开关 + 不符率台账（2026-10-14）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5.2 R1 第二步：灰度开关 + 不符率台账（2026-10-14）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        这一步自己制造又改掉的两个问题
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-2026-10-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 的读侧：后台页面（2026-10-14 第三步）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sql-bug" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        本轮发现并修掉的一个真实 SQL bug
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        一条自己写出来、又被自己的测试判死的守卫
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53-r1-2026-10-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 R1 第四步：引擎纯函数移植（2026-10-14）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#54-r1-2026-10-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.4 R1 第五步：热量与手牌移植（2026-10-14）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        本轮又踩了两次「自己的测试证明不了任何东西」
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        四个变异全部转红
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#55-r1-2026-10-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.5 R1 第六步：地形移植（2026-10-14）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        六个变异全部转红
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#heat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        又一次「守卫是装饰品」，根因与 heat 那次完全相同
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R2 · 防线挑战的胜负由客户端裁决
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#r3-2026-10-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        R3 · 游客凭证即永久凭证，且无轮换 —— 已在 2026-10-14 修复
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. 变更清单
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="6. 变更清单">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#61-2026-10-14-r1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.1 2026-10-14 R1 第二步（灰度开关 + 台账）追加
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#62-2026-10-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.2 2026-10-14 第三步（后台读侧页面）追加
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#63-2026-10-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.3 2026-10-14 第五步（热量与手牌）追加
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#64-2026-10-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6.4 2026-10-14 第六步（地形）追加
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. 部署前置（本轮引入的义务）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. 本轮自己制造又修掉的问题（如实记录）
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="8. 本轮自己制造又修掉的问题（如实记录）">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#81-off-2026-10-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.1 缺省档位 off 会出厂关闭反作弊校验（2026-10-14）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#82-2026-10-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.2 降级状态做成全局，会在攻击峰值时解除防护（2026-10-14）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#83" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.3 变异验证后没跑还原态全量（本轮踩到）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#84-2026-10-13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8.4 早一轮：共享库污染（2026-10-13）
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-2026-10-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. 本轮后续（2026-10-15）：把"担心"变成"证据"，把"计数器"变成"读数"
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. 本轮后续（2026-10-15）：把&#34;担心&#34;变成&#34;证据&#34;，把&#34;计数器&#34;变成&#34;读数&#34;">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#91-config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.1 config 漂移风险 —— 先说错了，又错地否定了一次，最后变成事实
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#92" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.2 重算观测量的静默失效 —— 把"校验根本没跑"变成看得见的一行字
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#93-commit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9.3 本轮 commit 列表
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. 部署后必须确认（新）
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-154-2026-10-16-7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. 第 154 轮（2026-10-16）：归属守卫从读路径扩到写路径，以及另外 7 项
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="11. 第 154 轮（2026-10-16）：归属守卫从读路径扩到写路径，以及另外 7 项">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#111" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11.1 七项修复
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#112" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11.2 两项输入上界（同族）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#113" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11.3 两项「让隐形的东西显形」
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#114" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11.4 变异验证（本轮新增守卫的实测清单）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#115" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11.5 部署前置（本轮新增义务）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#116-155-12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11.6 本轮未改的三件事 —— 第 155 轮已全部落地（见 §12）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#117" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11.7 本轮验证状态
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-155-2026-10-16116" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. 第 155 轮（2026-10-16）：§11.6 的三件事全部落地
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="12. 第 155 轮（2026-10-16）：§11.6 的三件事全部落地">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#121" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12.1 三项落地
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#122" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12.2 守卫与自检
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#123" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12.3 部署前置（本轮新增义务）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#124" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12.4 变异验证（本轮）
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#125" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12.5 验证状态
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="laiyipao-2026-10-13">laiyipao 安全审计报告（2026-10-13）<a class="headerlink" href="#laiyipao-2026-10-13" title="Permanent link">&para;</a></h1>
+<p>覆盖范围：<code>server/</code>（Go + Fiber + PostgreSQL，14.8k 行非测试代码）、
+<code>admin/</code>（Vue 3 运营后台）、<code>miniapp/</code>（uni-app 客户端）。
+方法：静态分析（gosec + 人工）+ <strong>可执行探针</strong>（把每条怀疑打到真实数据库/引擎上验证）。</p>
+<blockquote>
+<p>本报告遵守项目自己的纪律：<strong>每条发现要么给出「改回去会不会红」的守卫，要么明确标为
+未修并写清为什么</strong>。没有「看起来可疑但没验证」的条目。</p>
+</blockquote>
+<hr />
+<h2 id="0">0. 验证状态<a class="headerlink" href="#0" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>修复前基线</th>
+<th>修复后</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Go 测试（12 包）</td>
+<td>全绿</td>
+<td><strong>全绿</strong>（<code>internal/service</code> 204s）</td>
+</tr>
+<tr>
+<td><code>go vet</code> / <code>gofmt -l</code></td>
+<td>干净</td>
+<td><strong>干净</strong></td>
+</tr>
+<tr>
+<td>admin 单测</td>
+<td>250 全绿</td>
+<td><strong>257 全绿</strong>（新增 7）</td>
+</tr>
+<tr>
+<td>miniapp 单测</td>
+<td>1035 全绿 / 2 skip</td>
+<td><strong>1039 全绿 / 2 skip</strong></td>
+</tr>
+<tr>
+<td><code>vue-tsc</code>（admin）</td>
+<td>0 error</td>
+<td>0 error（<strong>已验证真的会检查</strong>，见 F10）</td>
+</tr>
+<tr>
+<td><code>vue-tsc</code>（miniapp）</td>
+<td>~~0 error~~</td>
+<td>0 error —— <strong>修复前那个结果是假绿</strong>，见 F10</td>
+</tr>
+<tr>
+<td><code>type-check:test</code>（两端 tsc）</td>
+<td>—</td>
+<td>0 error</td>
+</tr>
+<tr>
+<td>构建</td>
+<td>—</td>
+<td>miniapp H5 ✓ / mp-weixin ✓ / admin ✓</td>
+</tr>
+<tr>
+<td>gosec</td>
+<td>14 项，<strong>全部为误报/有意</strong></td>
+<td>同上</td>
+</tr>
+<tr>
+<td>新增守卫</td>
+<td>—</td>
+<td>Go 25 例 + TS 7 例 + CI 2 步</td>
+</tr>
+<tr>
+<td>变异验证</td>
+<td>—</td>
+<td>4 处关键修复均确认「改回去必红」</td>
+</tr>
+</tbody>
+</table>
+<p><strong>gosec 的 14 项全部无害</strong>，逐项核对：11 项 <code>G115</code>（整数溢出转换）都在 LCG 位运算
+与种子推导上，是<strong>算法本身要求</strong>的回绕；1 项 <code>G101</code> 是 <code>SeedSkins</code> 里的皮肤名被
+误判成硬编码口令；1 项 <code>G306</code>/<code>G301</code> 是 <code>cmd/vectors</code> 这个代码生成器往项目目录写
+契约文件（0o644 是正确取值）。<strong>无 SQL 注入、无路径遍历、无命令注入、无弱随机。</strong></p>
+<hr />
+<h2 id="1">1. 已修：严重<a class="headerlink" href="#1" title="Permanent link">&para;</a></h2>
+<h3 id="f1-500">F1 · 道具扣减路径恒 500（两条可达路径）<a class="headerlink" href="#f1-500" title="Permanent link">&para;</a></h3>
+<p><strong>探针实测</strong>（修复前）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>AdminGrantCurrency(revive_token,-1) -&gt; ERROR: new row for relation "user_tokens"
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    violates check constraint "chk_user_tokens_nonneg" (SQLSTATE 23514)
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>Buy(price={mastery_reset:5})        -&gt; 同上
+</code></pre></div>
+<p><strong>根因</strong>：<code>grantToken</code> 只有一条 UPSERT，对 <code>delta</code> 正负不分。扣减时必然撞上
+<code>CHECK (balance &gt;= 0)</code> —— CHECK 是<strong>语句级</strong>判定，于是整笔事务带 23514 回滚，
+而那个可读的「道具不足」分支永远执行不到。23514 不在 <code>isSettleRejection</code> 名单里，
+<code>failErr</code> 兜底成 <strong>500「服务内部错误」</strong>。</p>
+<p><strong>为什么「不可达」那句注释是错的</strong>：<code>grantToken</code> 的注释写着「这条分支当前不可达
+（pay 侧只接受货币）」。当时确实不可达，但第 148~151 轮接上了道具消费端点<strong>并且</strong>
+<code>AdminUpdateShopItem</code> 的 <code>validWalletCurrency</code> <strong>明确允许</strong>把道具名写进商品 <code>price</code>。
+于是「运营改个价就能踩到」。</p>
+<p><strong>修法</strong>：扣减改走条件 UPDATE（<code>balance &gt;= $3 RETURNING</code>），与货币负数分支、
+<code>spendToken</code> 完全同构；发放保留 UPSERT（道具稀疏，首次没有行）。</p>
+<p><strong>守卫</strong>：<code>service/security_audit_test.go</code> 6 例。其中
+<code>TestGrantTokenPartialDebitWorks</code> 是<strong>必需的</strong>——我第一版把 <code>$3</code> 传成带符号的
+delta（<code>balance + $3</code> 且条件 <code>balance &gt;= $3</code>），数值上等价但<strong>比较的一边符号相反</strong>，
+守卫条件直接失效。是这条测试抓到它的，而另外三条全绿。
+变异实测（把条件改成 <code>balance &gt;= $3 - 1</code>）→ 该条红，其余绿。</p>
+<h3 id="f2">F2 · 运营后台可被点击劫持<a class="headerlink" href="#f2" title="Permanent link">&para;</a></h3>
+<p><strong>证据</strong>：全服务端 <code>X-Frame-Options</code> / <code>Content-Security-Policy</code> / <code>frame-ancestors</code>
+grep <strong>0 命中</strong>；<code>admin/index.html</code> 也无（且 XFO 本就不能用 meta 设置）。</p>
+<p><strong>攻击路径</strong>：<code>evil.com</code> → <code>&lt;iframe src="https://后台域名/#/admin/users"&gt;</code> → 盖透明遮罩，
+把假按钮对齐到 iframe 内的真按钮。已登录运营点一下，请求就<strong>真的</strong>带上了他自己
+localStorage 里的 <code>Authorization</code> 头发出去 —— 跨域读不到 token 也不影响，
+<strong>因为执行的是他自己页面里的代码</strong>。结果落进审计日志，看起来与亲手操作完全一样。</p>
+<p>后台所有写操作都是<strong>单次点击即生效</strong>（发币 / 封号 / 改价 / 再生成 100 关），
+无二次确认弹窗。<strong>这是本项目唯一一条「不需要任何服务端漏洞、只要运营点一下
+就能在后台执行写操作」的路径。</strong></p>
+<p><strong>修法</strong>：全局中间件下发 <code>X-Frame-Options: DENY</code> + <code>CSP: default-src 'self'; frame-ancestors 'none'</code>
++ <code>X-Content-Type-Options: nosniff</code> + <code>Referrer-Policy: no-referrer</code>。</p>
+<p><strong>守卫</strong>：<code>httpapi/security_headers_test.go</code> 4 条，覆盖 200 / 4xx / OPTIONS 三类响应。
+变异实测（摘掉 <code>app.Use(securityHeaders())</code>）→ 3 条同时红。</p>
+<h3 id="f3">F3 · 全站零速率限制<a class="headerlink" href="#f3" title="Permanent link">&para;</a></h3>
+<p><strong>证据</strong>：<code>routes.go</code> 修前<strong>没有任何</strong> limiter 中间件。探针实测：
+同一场战报重复验真 <strong>200 次 → <code>replay_verifications</code> 写 200 行</strong>
+（该表既无唯一约束也无去重）。</p>
+<p>四个放大器，各自独立成立：</p>
+<table>
+<thead>
+<tr>
+<th>端点</th>
+<th>未认证？</th>
+<th>放大倍数</th>
+<th>后果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>POST /admin/login</code></td>
+<td>是</td>
+<td><strong>bcrypt cost 10 ≈ 50~100ms 纯 CPU</strong></td>
+<td>打满并发 → 正常运营<strong>完全登不进后台</strong>；同时无限次口令喷洒</td>
+</tr>
+<tr>
+<td><code>POST /auth/guest</code></td>
+<td>是</td>
+<td>每次调用 7 行 INSERT</td>
+<td>批量造号把库撑爆，无任何计数</td>
+</tr>
+<tr>
+<td><code>POST /battle/verify</code></td>
+<td>否</td>
+<td>每次 1 行，无幂等键</td>
+<td>存储放大（实测 200 倍）</td>
+</tr>
+<tr>
+<td><code>POST /redeem</code></td>
+<td>否</td>
+<td>—</td>
+<td>兑换码在线爆破</td>
+</tr>
+</tbody>
+</table>
+<p><strong>修法</strong>：按 IP 限未认证入口（登录 5/min、游客 60/min、刷新 60/min、兑换 5/min），
+按登录身份限写放大路径（结算 60/min、验真 20/min、兑换 20/min）。
+身份额度挡的是「注册 1000 个号、每个号慢慢打」——那是对付 IP 限流最直接的手段。</p>
+<p><strong>额度为什么给得比「直觉上的严」宽松</strong>：小程序玩家大量走运营商 NAT，
+同一出口 IP 后面可能有成百上千真实用户。把每 IP 卡到个位数会<strong>误伤整个运营商网段</strong>，
+而那比不限流更糟 —— 变成一个谁都说不清为什么的故障。</p>
+<p><strong>守卫</strong>：4 条，含「额度内首次请求不得被限流」与「公开读端点连打 80 次不得被限流」
+两条反向断言（防止一个把限流挂得太宽的实现靠上面那条蒙混过关）。
+变异实测（摘掉 <code>admin/login</code> 的 limiter）→ 该子用例红并报出「实际拒了 0 次」。</p>
+<hr />
+<h2 id="2">2. 已修：高<a class="headerlink" href="#2" title="Permanent link">&para;</a></h2>
+<h3 id="f4-refresh-token-30">F4 · 没有登出端点，refresh token 30 天无法切断<a class="headerlink" href="#f4-refresh-token-30" title="Permanent link">&para;</a></h3>
+<p>玩家手机丢了 / 令牌被 XSS 读走之后，服务端<strong>没有任何办法</strong>切断会话。
+唯一会吊销 refresh token 的既有路径是「封禁玩家」，而那会把正常玩家一起踢下线 ——
+用「封号」当「登出」，代价与意图完全不成比例。</p>
+<p><strong>修法</strong>：<code>POST /api/v1/me/logout</code> 吊销该用户全部 refresh token（幂等，返回吊销条数）；
+客户端「我的」页加二次确认的退出按钮。<strong>不限流</strong> —— 登出的作用恰恰是「出事时立刻切断」。</p>
+<p><strong>守卫</strong>：Go 4 条（判据是「refresh 再也换不出 access token」这个<strong>安全后果</strong>，
+不是「表被 UPDATE 了」这个<strong>实现形状</strong>；另有单独一条守住「只吊销自己的」）+ 端到端路由消费守卫。</p>
+<h3 id="f5-ip">F5 · 后台审计日志的 IP 恒为空串<a class="headerlink" href="#f5-ip" title="Permanent link">&para;</a></h3>
+<p><code>Audit</code> 写死 <code>''</code>。于是<strong>每一行</strong>后台审计的 IP 列都是空的 —— 它看起来像
+「这一列是可选的」，而它其实是「本项目从来没有过来源信息」。
+F2 那条攻击路径的事后取证材料就只剩这一列。</p>
+<p><strong>修法</strong>：<code>Audit</code> 增加 <code>ip</code> 参数，全部 10 个调用点传 <code>c.IP()</code>。</p>
+<p><strong>残留（如实标注）</strong>：Fiber 未配置 <code>ProxyHeader</code>，所以反代之后 <code>c.IP()</code> 拿到的是
+<strong>反代</strong>的地址。<strong>生产部署必须配好反代的 <code>X-Forwarded-For</code> 透传</strong>，
+否则审计里记的是反代 IP。这里<strong>没有</strong>顺手打开 <code>EnableTrustedProxy</code> ——
+在反代没配好之前打开它等于允许任何人用请求头伪造来源 IP，比记反代地址更糟。</p>
+<hr />
+<h2 id="3">3. 已修：中<a class="headerlink" href="#3" title="Permanent link">&para;</a></h2>
+<h3 id="f6-admin-401">F6 · admin 前端的 401 处理是<strong>虚构</strong>的<a class="headerlink" href="#f6-admin-401" title="Permanent link">&para;</a></h3>
+<p><code>api/client.ts</code> 的 <code>!resp.ok</code> 分支无条件抛 <code>ApiError</code> 就结束了，<strong>没有任何 401 检测</strong>。
+而 <code>router/index.ts</code> 的注释写着「令牌失效兜底：api 层抛 401 时把令牌清掉并送回登录页……
+真正的 401 检测在 api/client 抛出」——<strong>那条检测从来没有被实现过</strong>。
+<code>tests/router.test.ts</code> 的注释也建立在同一个虚构前提上。</p>
+<p>后果：令牌过期（后台 access token 默认 2h）或管理员被停用时，路由守卫看到
+<code>getToken()</code> 仍为真而放行 → 每个视图反复吃 401 → 运营被<strong>永久卡在已登录的壳里</strong>，
+永远不会被提示重新认证，localStorage 里还长期留着一枚失效凭证。</p>
+<p><strong>修法</strong>：<code>client.ts</code> 增加 <code>handleUnauthorized()</code>，在<strong>读 body 之前</strong>判定
+（一旦被后面的普通错误分支抛出去，就再也不会有代码回到这里）。
+登录接口自己的 401 排除在外（「密码打错」不能变成「被踢回登录页」）。</p>
+<p><strong>守卫</strong>：TS 7 条，含四条<strong>反向</strong>断言 —— 500 / 403 / 网络错误 / 已在登录页时
+<strong>都不</strong>清令牌。把「401」与「其它错误」混起来的后果是「后端重启一次，后台全体掉线」
+与「readonly 被降权」被误报成「你掉线了」。</p>
+<h3 id="f7-miniapp">F7 · miniapp 接口地址硬编码明文回环，且没有任何东西阻止它上生产<a class="headerlink" href="#f7-miniapp" title="Permanent link">&para;</a></h3>
+<p><code>const BASE_URL = 'http://127.0.0.1:8080/api/v1'</code>，模块级 <code>const</code>，无覆写点。
+打出来的包只能连用户自己设备的回环地址（生产不可用），
+而「唯一的修法」是回去改这个常量 —— 那条路径上<strong>没有任何东西</strong>阻止人保留 <code>http://</code>
+只把地址换掉，于是最自然的修补就是「照抄，改域名」，令牌（refresh 30 天）<strong>明文过网</strong>。</p>
+<p><strong>修法</strong>：<code>VITE_API_BASE</code> 覆盖（与 admin 同一套机制）+ 启动断言：
+非回环主机走明文 HTTP 时<strong>直接抛错阻断</strong>；局域网 IP 只警告（真机调试需要）。</p>
+<h3 id="f8-cors">F8 · CORS 在生产环境仍发 <code>*</code><a class="headerlink" href="#f8-cors" title="Permanent link">&para;</a></h3>
+<p><code>cors()</code> 原先<strong>无条件</strong>发 <code>Access-Control-Allow-Origin: *</code>，注释写着「生产应收紧」——
+<strong>而那只是一句注释</strong>。</p>
+<p><strong>诚实标注</strong>：本项目<strong>不用 cookie 存凭证</strong>（纯 <code>Authorization: Bearer</code>，全仓库零 cookie、
+零 <code>credentials:'include'</code>），所以 <code>*</code> <strong>不构成</strong>「带凭证的跨域读」——
+把它报成严重漏洞是错的。真正的风险是「将来有人加了 cookie 登录」，那时 <code>*</code>
+立刻变成全站沦陷，且没有任何东西会提醒。</p>
+<p><strong>修法</strong>：prod 默认<strong>一条 CORS 头都不发</strong>（等价只允许同源），
+<code>CORS_ALLOW_ORIGINS</code> 配了白名单才回显具体来源 + <code>Vary: Origin</code>。
+反向默认值的取舍写在 <code>config.go</code> 的字段注释里。</p>
+<h3 id="f9">F9 · 后台发币无金额上界<a class="headerlink" href="#f9" title="Permanent link">&para;</a></h3>
+<p><code>amount</code> 来自 JSON 的 <code>int64</code>。<code>2^62</code> 本身写得进 BIGINT（实测成功），
+但<strong>再叠一次</strong>就溢出 → PG <code>22003</code> → 不在 <code>isSettleRejection</code> 名单 → 500。
+即一次手滑（大数粘贴）把整笔发放打成 500，而运营看到的不是「数额不合理」而是「服务端坏了」。</p>
+<p><strong>修法</strong>：上限 1e12（比任何真实运营发放大 6 个数量级，离 int64 溢出足够远）。</p>
+<h3 id="f10-miniapp">F10 · miniapp 的类型检查一直是<strong>空操作</strong>，却报告成功 ← <strong>验证过程中发现</strong><a class="headerlink" href="#f10-miniapp" title="Permanent link">&para;</a></h3>
+<p>这一条不是读代码读出来的，是<strong>验证时自己撞上并查出来的</strong>。</p>
+<p><strong>症状</strong>：<code>pnpm type-check</code> 退出码 0、无任何输出 —— 看着完全正常。
+但往 <code>src/api/client.ts</code> 里塞一行 <code>const x: number = 'not a number'</code> 后，
+<strong>它依然退出 0</strong>，只在 stderr 留下一行：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Search string not found: "/supportedTSExtensions = .*(?=;)/"
+</code></pre></div>
+<p><strong>根因</strong>：<code>vue-tsc</code> 锁在 <code>^2.0.22</code>。它依赖 <strong>patch TypeScript 内部</strong>
+（volar 2 的 <code>proxyCreateProgram</code>），而 TS 已升到 5.9 ——
+patch 目标找不到，volar 抛异常，vue-tsc 的顶层把它吞了并<strong>正常退出</strong>。</p>
+<p><strong>后果</strong>：miniapp 的<strong>全部类型检查从未真正执行过</strong> ——
+本地 <code>pnpm type-check</code> 是空操作，CI 的同名步骤也是空操作，
+README 验证状态表里「<code>vue-tsc</code>（admin + miniapp）0 error」那一行是<strong>假绿</strong>。</p>
+<p><strong>为什么没被守卫抓到</strong>：<code>toolchain_pin.test.ts</code> 里那条 peer 检查的兜底理由写着
+「不满足 peer 时 vue-tsc 会在<strong>运行时炸</strong>，而不是安静地降级。真正的把关靠 CI 的 type-check」。
+这条前提<strong>已经不成立</strong> —— 它不炸也不降级，它<strong>安静地什么都不做</strong>；
+而 CI 的 type-check 又是同一个空操作，于是两层互相指着对方当证据。</p>
+<p><strong>修法</strong>：<code>vue-tsc</code> <code>^2.0.22</code> → <code>^2.2.12</code>（与 admin 同版本）。
+升完立刻验证「注入类型错误 → 退出码 2」。</p>
+<p><strong>守卫</strong>（这是本条最关键的部分，版本本身挡不住 dependabot 第二次）：
+CI 新增一步 —— 往 <code>src/api/</code> 写一个<strong>故意有类型错误</strong>的探针文件，
+断言 <code>pnpm type-check</code> <strong>必须失败</strong>，然后删掉探针。
+两端（admin + miniapp）都加。</p>
+<blockquote>
+<p>判据落在「<strong>注入错误后必须失败</strong>」而不是「版本 &gt;= 2.2」。
+后者会在下一次 dependabot 升级后继续绿 —— 而版本从来不是这件事的判据。</p>
+</blockquote>
+<p><strong>这条也是「为什么本轮反复强调变异验证」的一个实例</strong>：
+若只按惯例把 <code>vue-tsc --noEmit</code> 的退出码当结果，<code>0</code> 与「什么都没做」根本无法区分，
+而本项目的 README 里恰好列着这个坑（「把『命令没报错』当成『命令生效了』」）。</p>
+<hr />
+<h2 id="4">4. 已核查、确认无问题<a class="headerlink" href="#4" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>方法</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SQL 注入</td>
+<td>3 处 <code>fmt.Sprintf</code> 拼 SQL 全部逐行核对 + 全量参数化扫描</td>
+<td>占位符是 <code>$N</code>，拼进去的<strong>列名全部来自硬编码 switch</strong>，值一律参数化</td>
+</tr>
+<tr>
+<td>XSS</td>
+<td><code>v-html</code> / <code>innerHTML</code> / <code>eval</code> / <code>new Function</code> / <code>srcdoc</code> 全量 grep（admin + miniapp）</td>
+<td><strong>0 个 sink</strong>。用户可控文本（昵称/公告/审计明细）全走 Vue <code>{{ }}</code> 自动转义；ECharts 无自定义 tooltip formatter</td>
+</tr>
+<tr>
+<td>IDOR</td>
+<td>逐个端点核对归属校验</td>
+<td><code>GET /battle/:id/replay</code>、<code>POST /battle/verify</code>（第 75 轮补）、<code>POST /me/gems/:id/wash</code>、<code>PUT /me/loadout</code>、<code>POST /defenses/save</code> <strong>均有</strong> user_id 过滤</td>
+</tr>
+<tr>
+<td>越权</td>
+<td>路由表逐条比对中间件</td>
+<td>28 个 admin 端点全在 <code>requireAdmin</code> 组内（只有 <code>/admin/login</code> 公开）；写操作另挂 <code>requireWritable</code> 拦 readonly</td>
+</tr>
+<tr>
+<td>CSRF</td>
+<td>全仓库 cookie / <code>credentials:</code> / <code>withCredentials</code> 扫描</td>
+<td><strong>0 命中</strong>，纯 Bearer 头，CSRF 不适用</td>
+</tr>
+<tr>
+<td>JWT</td>
+<td><code>auth.go</code> 逐行</td>
+<td>HS256 + <code>subtle.ConstantTimeCompare</code>，<code>alg</code> 从<strong>不</strong>从 token 读取（无 <code>alg=none</code> 家族）；<code>Kind</code> 校验 + 每请求查 <code>status</code>（封禁即时生效）</td>
+</tr>
+<tr>
+<td>口令</td>
+<td>bcrypt <code>DefaultCost</code>；用户不存在与口令错返回<strong>同一</strong>错误</td>
+<td>无用户名枚举</td>
+</tr>
+<tr>
+<td>随机数</td>
+<td>宝石 roll 全走 <code>crypto/rand</code>（进 <code>replay_hash</code> 前缀）</td>
+<td>无 <code>math/rand</code></td>
+</tr>
+<tr>
+<td>路径遍历 / 命令注入</td>
+<td>全量扫描文件与子进程调用</td>
+<td>无</td>
+</tr>
+<tr>
+<td>存档数据归属</td>
+<td><code>getReplay</code> 剥掉 <code>settle_input</code></td>
+<td>照抄别人的战报蓝本这条路已堵</td>
+</tr>
+</tbody>
+</table>
+<p><strong>依赖审计未能完成</strong>：<code>pnpm-lock.yaml</code> 下 <code>npm audit</code> 报 <code>ENOLOCK</code>，走 registry
+漏洞接口时网络被拒。静态版本比对未见明显 EOL 或已知高危包，但<strong>此项结论强度低于其他各条</strong>，
+建议在有网环境补跑 <code>pnpm audit</code>。</p>
+<hr />
+<h2 id="5-bug">5. 未修：需要产品决策（<strong>不是</strong> bug，是架构取舍）<a class="headerlink" href="#5-bug" title="Permanent link">&para;</a></h2>
+<h3 id="r1">R1 · 结算上限校验可被「恰好顶满」完全绕过 ← <strong>本次审计最重要的结论</strong><a class="headerlink" href="#r1" title="Permanent link">&para;</a></h3>
+<p><strong>探针实测</strong>（第 1 关，全字段顶到该关理论上界）：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>win=true  stars=3  score=19902（== MaxScore，裁剪器未生效）  loot={coin:3770, keys:1, energy:5}
+</code></pre></div>
+<p><strong>没有任何服务端手段能区分这一局和一次真实的满分通关。</strong>
+防作弊是<strong>上限校验</strong>而不是<strong>重算</strong> —— 服务端刻意不跑战斗引擎，
+那是 I-5「防线值守」与 I-6「回放验真」得以成立的前提。
+而上限校验的性质是：<strong>它挡住越界，挡不住恰好顶满</strong>。</p>
+<p>唯一的防御是 I-6 回放哈希，而它是<strong>自愿</strong>的：攻击者可以给自己报一个相同的 hash
+让结果「一致」（<code>verification.go</code> 的文件头已诚实标注这一点）。
+所以现实是：<strong>一个持有合法 token 的玩家可以无限制造满分通关</strong>。</p>
+<p>唯一的节流阀是体力（<code>EnergyCost</code> 6 &gt; <code>EnergyOnWin</code> 5，100 关里 0 关净回体力）：
+新号 120 点体力可顶满约 20 局，之后每 6 分钟回 1 点。外加 <code>max_stage</code> 会跟着推进，
+所以一次会话可以从第 0 关刷到第 100 关。</p>
+<p><strong>为什么本轮不修</strong>：真正的修法是服务端跑一遍战斗引擎（等于放弃「不跑引擎」的取舍），
+或者移植 TS 引擎到 Go（约 2470 行 tick 循环，且会引入双引擎漂移）。
+这是<strong>产品决策</strong>，不是工程判断 —— 擅自做会推翻项目最核心的两个创新点。</p>
+<blockquote>
+<p><strong>2026-10-14 更新</strong>：产品已拍板「服务端跑引擎」+「不符即拒发奖励并记录」。
+见 §5.1 的当前进度。下方两条旧理由仅保留作决策留痕。</p>
+</blockquote>
+<p><strong>为什么本轮仍然要写它</strong>：这一点此前只以散文形式记在 README「已知边界」第 3/11 条里。
+散文的问题不是不准确，而是<strong>读不到</strong> —— 而这里的危害恰恰是「有人以为它被覆盖了」。
+所以已写成三条可执行测试（<code>domain/settle_ceiling_characterization_test.go</code>）：</p>
+<table>
+<thead>
+<tr>
+<th>测试</th>
+<th>钉住的事实</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TestMaximalLegalSettlementIsAccepted</code></td>
+<td>全顶满的报文<strong>被接受</strong>且拿满掉落。<strong>必须绿</strong> —— 它红代表上限校验变严了（好事），届时连同本文件一起更新</td>
+</tr>
+<tr>
+<td><code>TestEnergyCostExceedsWinRefund</code></td>
+<td>体力是真实节流阀。若有人把 <code>EnergyOnWin</code> 调到 ≥ <code>EnergyCost</code>，<strong>刷分变成无时限的</strong> —— 这条会红</td>
+</tr>
+<tr>
+<td><code>TestSettleRejectsOvershootBeyondEveryCap</code></td>
+<td>越界<strong>一个单位</strong>必须被拒（10 个字段逐个）。与第一条必须<strong>同时</strong>成立</td>
+</tr>
+</tbody>
+</table>
+<h3 id="51-r1-2026-10-14">5.1 R1 进度（2026-10-14 起）<a class="headerlink" href="#51-r1-2026-10-14" title="Permanent link">&para;</a></h3>
+<p>决策：<strong>服务端跑引擎</strong>（用户选择「纯 Go 移植」）+ <strong>不符即拒发奖励并记录</strong>。</p>
+<p><strong>已完成</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>交付物</th>
+<th>位置</th>
+<th>状态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>跨端「整局重放」契约向量</td>
+<td><code>server/testdata/replay_vectors.json</code></td>
+<td>5 用例，生成器三次运行字节一致</td>
+</tr>
+<tr>
+<td>TS 侧生成器（跑真实引擎）</td>
+<td><code>miniapp/scripts/gen-replay-vectors.ts</code></td>
+<td>已产出真实哈希</td>
+</tr>
+<tr>
+<td>契约本身的 6 条守卫</td>
+<td><code>server/internal/domain/replay_contract_test.go</code></td>
+<td>全绿，均已变异实测</td>
+</tr>
+</tbody>
+</table>
+<p><strong>未完成</strong>（下一轮从这里接）：</p>
+<ol>
+<li><strong>Go 侧引擎移植</strong> —— <code>engine.ts</code> tick 循环 + <code>terrain.ts</code> + <code>heatmap.ts</code>
+   约 3300 行 BigInt 定点代码。Go 侧<strong>已有</strong> <code>levelgen</code> / <code>damage</code> / <code>elements</code> /
+   <code>hash</code>，缺的是 tick 循环本体。</li>
+<li><strong>Go 侧那半条断言</strong> —— 「Go 重算结果 == 契约期望值」。
+   刻意与引擎同批落地：提前提交一条必然红的测试，
+   长期红灯的唯一效果就是被忽略，还会让人分不清
+   「引擎写错了」与「契约过期了」。</li>
+<li><strong>接线到 <code>SettleBattle</code></strong> —— 以重算值替代上报值，不符则 422 + 写可观测记录。</li>
+<li><strong>配套监控</strong> —— 不符率必须有看板/告警。
+   引擎漂移导致的误判会拒发<strong>真实玩家</strong>的奖励，
+   没有监控就等于把「可刷分」换成「全体玩家被误杀」。</li>
+</ol>
+<blockquote>
+<p><strong>为什么拆成两步</strong>：半成品移植比不移植更糟。
+一个细微偏差会让服务端拒发诚实玩家的奖励 ——
+那是把一个「可刷分」漏洞换成一个 P0 事故。
+先把「判定正确性的尺子」造好，再动刀。</p>
+</blockquote>
+<p><strong>移植时的关键前提（已核实）</strong>：服务端已持有全部输入 ——
+<code>battle_tokens.seed</code> / <code>battle_records.build_snapshot</code> / <code>battle_records.card_picks</code>，
+且 <code>card_picks</code> 正是 README 记的「A 段抓不到」那条限制的<strong>解药</strong>：
+选牌脚本确定 → 局内 buff 确定 → <code>currentAttacker()</code> 的 7 项服务端可算
+→ <strong><code>replay_hash</code> 从此可被服务端自行验证</strong>（当前它只存不比）。</p>
+<h3 id="52-r1-2026-10-14">5.2 R1 第二步：灰度开关 + 不符率台账（2026-10-14）<a class="headerlink" href="#52-r1-2026-10-14" title="Permanent link">&para;</a></h3>
+<p>上一步的遗留问题 3、4 已完成。<strong>这一步不含引擎</strong>，但没有它，引擎漂移的后果不可见、也不可回退。</p>
+<table>
+<thead>
+<tr>
+<th>交付物</th>
+<th>位置</th>
+<th>状态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>重算审计台账（迁移）</td>
+<td><code>server/migrations/00015_settle_recompute_audit.sql</code></td>
+<td>上报值与重算值<strong>并列</strong>，外加「具体哪些字段不符」</td>
+</tr>
+<tr>
+<td>三档闸门 + 熔断</td>
+<td><code>server/internal/service/recompute_gate.go</code></td>
+<td><code>SETTLE_RECOMPUTE_MODE</code> = <code>off</code>/<code>shadow</code>/<code>enforce</code>，不发版可切</td>
+</tr>
+<tr>
+<td>后台读侧（服务层）</td>
+<td>同文件</td>
+<td>按玩家/关卡筛选、按关卡聚合不符率</td>
+</tr>
+<tr>
+<td>接线到真实结算路径</td>
+<td><code>server/internal/service/game.go</code></td>
+<td><code>replay_skills</code> 校验改由闸门裁决</td>
+</tr>
+<tr>
+<td>守卫</td>
+<td><code>recompute_gate_test.go</code> / <code>recompute_audit_test.go</code> / <code>recompute_live_test.go</code> / <code>config/recompute_mode_test.go</code></td>
+<td>29 条，全绿</td>
+</tr>
+</tbody>
+</table>
+<p><strong>为什么必须先有台账再接引擎</strong>：漂移是发布之后立刻发生的，而它的症状是
+结算返回 422 —— 客户端只显示「上报不可信」，玩家以为被作弊，运营看不出是我方算错了。
+发现方式是玩家投诉。没有台账，R1 就等于把「可刷分」换成「全体玩家被误杀」。</p>
+<p><strong>为什么 <code>mismatched_fields</code> 是数组而不是布尔</strong>：一个「不符」信号无法区分
+「玩家作弊」（要封号）与「引擎某段算错」（要回滚）—— 处置完全相反。
+区分办法是按关卡/字段聚合：集中在少数关卡几乎必然是后者，均匀散布在单个号上是前者。</p>
+<p><strong>熔断阈值</strong>：10 分钟窗口内样本 ≥200 且不符率 &gt;20‰（2%）。两条都要 ——
+只看比率的话，低峰期任意一次误判就是 100% 不符率，每天必然降级一次。
+诚实玩家的理论不符率是 0，所以任何非零值都值得看；2% 足以把系统性漂移与零星作弊分开。</p>
+<p><strong>熔断不自动升档</strong>：降级的代价是误判（手动开回来即可），升档的代价是<strong>在故障未修好时恢复伤害</strong>。</p>
+<h4 id="_1">这一步自己制造又改掉的两个问题<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h4>
+<p><strong>① 缺省档位定成 <code>off</code> —— 会让新装部署出厂关闭反作弊校验。</strong></p>
+<p>第一版的理由是「引擎会漂移，enforce 会误伤」。但那是<strong>整局引擎</strong>的性质，
+而当时闸门实际管着的只有 <code>replay_skills</code>（S 段）—— 它<strong>没有歧义</strong>：
+服务端从 DB 重算、客户端从 DB 上报，两边读同一份数据，中间没有第二个实现，
+所以不符只可能是有人手改了上报值。</p>
+<p>现有 <code>replay_skills_e2e_test.go</code> 立刻把它打红了（那条校验早就在生产上跑着）。
+已改为缺省 <code>enforce</code>，并加 <code>TestRecomputeModeDefaultsToEnforce</code> 守住。
+「先 shadow 观察」是<strong>接引擎时</strong>要主动做的动作，不是缺省状态。</p>
+<p><strong>② 熔断与降级状态做成了闸门级全局 —— 会在攻击峰值时自动解除防护。</strong></p>
+<p>第二版才把 scope 区分开（<code>ScopeEngine</code> / <code>ScopeSkills</code>）。若熔断对 S 段也生效：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>作弊脚本开刷 → 不符率冲高 → 熔断触发 → 校验被降级
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>→ 防护恰好在攻击发生时失效，且诚实玩家的请求也一起被放过
+</code></pre></div>
+<p>降级状态最初存在闸门的单个字段上，于是<strong>引擎侧的熔断会连带把 S 段降级</strong> ——
+一个「引擎算错了」的故障顺手关掉了反作弊校验。
+这个 bug 是 <code>TestSkillsScopeNeverGoesThroughShadowEvenAfterEngineDemotion</code> 抓到的，
+它写于实现之前，实现时确实写错了（第一次只跑了变异、没跑还原后的全量）。</p>
+<p>现按 scope 分开存降级状态，并由两条守卫钉住
+（<code>TestSkillsScopeIsNeverDemoted</code> / <code>TestSkillsScopeNeverGoesThroughShadowEvenAfterEngineDemotion</code>）。</p>
+<blockquote>
+<p><strong>教训</strong>：「先写测试描述正确行为」如果没在实现之后跑一遍全量，等于没写。
+变异验证证明的是「测试能抓住这个变异」，不证明「测试在当前实现上是绿的」。</p>
+</blockquote>
+<h4 id="52-2026-10-14">5.2 的读侧：后台页面（2026-10-14 第三步）<a class="headerlink" href="#52-2026-10-14" title="Permanent link">&para;</a></h4>
+<p>上一步把读侧只做到服务层，留了一句「加了路由就要同时做后台 UI」。本轮补齐：</p>
+<table>
+<thead>
+<tr>
+<th>交付物</th>
+<th>位置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /admin/recomputes</code></td>
+<td>分页 + 按玩家/关卡/只看不符筛选</td>
+</tr>
+<tr>
+<td><code>GET /admin/recomputes/stats</code></td>
+<td>总账 + 按关卡分布 + <strong>闸门状态</strong></td>
+</tr>
+<tr>
+<td><code>RecomputesView.vue</code></td>
+<td>后台页面「结算重算审计」</td>
+</tr>
+<tr>
+<td>守卫</td>
+<td><code>handlers_recompute_e2e_test.go</code>（4 条）、<code>admin/tests/RecomputesView.test.ts</code>（18 条）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>页面为什么把闸门状态放最上面</strong>：熔断触发后系统「仍在重算、仍在记录、但不再拒发」，
+而台账数字可能完全正常。只给统计数字的话，值班的人会以为防护还开着 ——
+所以熔断横幅是页面第一件渲染的东西。</p>
+<p><strong>判读方式钉在「按关卡分布」上</strong>：集中在少数关卡 + 单号最高不符很小 = 引擎漂移（回滚）；
+某关不符率高 + 单号最高不符 ≈ 不符数 = 单号作弊（封号）。
+页面上的「形态提示」只给提示不给结论 —— 给错的结论比不给更糟。</p>
+<h4 id="sql-bug">本轮发现并修掉的一个真实 SQL bug<a class="headerlink" href="#sql-bug" title="Permanent link">&para;</a></h4>
+<p><code>AdminRecomputeStatsByLevel</code> 的内层 <code>GROUP BY</code> 里含 <code>mismatched_fields</code>，
+于是 <code>MAX(per_user)</code> 量到的是「该玩家在这一关<strong>相符</strong>的那些行」的计数：</p>
+<blockquote>
+<p>某玩家在第 3 关 3 局相符 + 2 局不符 → 显示「单号最高不符 3」</p>
+</blockquote>
+<p>而这一列是<strong>区分漂移与作弊的唯一依据</strong> —— 漂移是每个玩家都中，作弊是某一个玩家反复中。
+算错它，两者就长得一样，运营只能靠猜。</p>
+<p>第一版测试没抓到：它构造的样本里同一 <code>(关卡, 玩家)</code> 的不符状态是一致的，
+所以两种实现给出同一个答案。补了「同一玩家既有相符又有不符」的用例才暴露。
+已由 <code>TestE2EAdminRecomputeStatsMaxUserMismatches</code> 钉住（变异实测：还原旧 SQL 后红，报 <code>实际 3</code>）。</p>
+<h4 id="_2">一条自己写出来、又被自己的测试判死的守卫<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h4>
+<p>「阈值来自服务端」那条最初写成
+<code>expect(wrapper.findAll('.el-tag--danger').length).toBeGreaterThan(0)</code>。</p>
+<p>变异验证把前端的 <code>rateType</code> 换成硬编码 <code>20</code> 后，<strong>它没有红</strong> ——
+因为页面上「不符字段」那一列也是 danger 色，每次都被无关元素满足。</p>
+<p>换成按文本锁定比率标签本身才真正生效。这与 <code>readme_structure.test.ts</code>
+里记的那条「装饰品式守卫」是同一类：<strong>能通过，但证明不了任何东西</strong>。</p>
+<h4 id="53-r1-2026-10-14">5.3 R1 第四步：引擎纯函数移植（2026-10-14）<a class="headerlink" href="#53-r1-2026-10-14" title="Permanent link">&para;</a></h4>
+<p>先搬纯函数，不动 tick 循环。理由：<strong>整局重放的偏差症状是哈希失配，一眼看不出哪一步错了</strong>；
+纯函数的偏差症状是「这个函数返回值不对」，能精确定位、单独修。</p>
+<table>
+<thead>
+<tr>
+<th>交付物</th>
+<th>位置</th>
+<th>规模</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>跨端纯函数契约向量</td>
+<td><code>server/testdata/engine_pure_vectors.json</code></td>
+<td>142 行（技能 71 / 装置 9 / 种子 36 / 校验 10 / 护盾 7 / 摘要 9）</td>
+</tr>
+<tr>
+<td>生成器（跑真实 TS）</td>
+<td><code>miniapp/scripts/gen-engine-pure-vectors.ts</code></td>
+<td>两次运行字节一致</td>
+</tr>
+<tr>
+<td>Go 侧镜像</td>
+<td><code>server/internal/domain/defense.go</code></td>
+<td><code>ApplyWorks</code> / <code>ValidateSnapshot</code> / <code>IsShieldActive</code> / <code>SnapshotElements</code> / <code>SnapshotDigest</code> / <strong><code>DeriveChallengeSeed</code></strong></td>
+</tr>
+<tr>
+<td>契约守卫</td>
+<td><code>server/internal/domain/engine_pure_contract_test.go</code></td>
+<td>12 条</td>
+</tr>
+</tbody>
+</table>
+<p><strong>明确不含 <code>runChallenge</code></strong> —— 它需要整个 <code>BattleEngine</code>，Go 侧还没有。
+宁可少移植，也不要移植一个跑不起来的半截。</p>
+<p><strong>最有价值的一条是种子派生</strong> <code>DeriveChallengeSeed(defense_id, now)</code>：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>seed = (defense_id × 1000003 + floor(now / 60000)) &amp; (2^63 − 1)
+</code></pre></div>
+<p>它意味着<strong>挑战种子完全由服务端可算的量决定</strong>。这不能解决 R2（胜负仍由客户端裁决），
+但把「你报的种子对不对」从不可验证变成可验证 —— 而种子决定整局战局，
+所以这是收敛 R2 的第一步。</p>
+<h4 id="54-r1-2026-10-14">5.4 R1 第五步：热量与手牌移植（2026-10-14）<a class="headerlink" href="#54-r1-2026-10-14" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>交付物</th>
+<th>位置</th>
+<th>规模</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Go 侧镜像</td>
+<td><code>server/internal/domain/heat.go</code></td>
+<td><code>HeatSystem</code>（9 个方法）+ <code>CardDeck</code>（6 个）+ 8 个常量</td>
+</tr>
+<tr>
+<td>契约向量扩展</td>
+<td><code>server/testdata/engine_pure_vectors.json</code></td>
+<td>热量 13 个脚本（170 步轨迹）+ 手牌 6 个脚本</td>
+</tr>
+<tr>
+<td>守卫</td>
+<td><code>engine_pure_contract_test.go</code></td>
+<td>+3 条（19 个子脚本）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>为什么热量值得先移植</strong>：<code>heat_max</code> 目前是<strong>客户端上报</strong>的，
+服务端只有一个 <code>MaxReportedHeat = 1000</code> 的「理论上界」，
+而不是推导出来的值。热量是纯状态机（不碰敌人/弹丸/引擎），
+可以独立移植、独立验证。移植它<strong>不等于</strong>能校验 <code>heat_max</code> ——
+那还要知道整局出招序列，但至少从「不知道」变成「差最后一层」。</p>
+<p><strong>契约用「脚本 + 状态轨迹」而不是逐函数取值。</strong> 热量那类缺陷
+（吸收态、余数截断）单看一个函数的返回值看不出来，要连续跑若干步才现形。</p>
+<h4 id="_3">本轮又踩了两次「自己的测试证明不了任何东西」<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h4>
+<p><strong>① 四舍五入的守卫存活了。</strong> 变异把 <code>math.Round</code> 换成 <code>math.Trunc</code> 后测试没红。</p>
+<p>两个原因叠在一起：
+- 第一版向量<strong>没记</strong> <code>decayRemainder</code>。dt=16.666 时 round→17、截断→16，
+  每步只差 10/1000 点，<strong>要累计 100 步才落到一个整数点上</strong> ——
+  于是两侧给出同一个整数衰减，判据失效。
+- 补记余数后仍然没红。因为我的测试写了 <code>h.Update(int(math.Round(dt)))</code> ——
+  <strong>取整已经发生在测试里</strong>，实现拿到的永远是整数，它内部取整还是截断都一样。</p>
+<p>第二点是根本性的：<code>Update</code> 的签名收 <code>int</code> 时，取整规则只能散落在调用点。
+已把签名改成 <code>float64</code>，与 TS 的 <code>update(dtMs: number)</code> 同形，
+取整收在方法内部 —— 规则只有一处，测试也能把原始小数原样递进去。</p>
+<p><strong>② 我在场景注释里写了一句自己没验证的话。</strong>
+<code>deadzone_recovered_by_decay</code> 原本跑 10 帧（0.5 秒 → 衰减 5 点 → heat=94），
+注释写「1 秒后应脱困」，而 <code>94+20=114</code> 仍放不下。
+真正脱困需要 heat ≤ 80，即至少衰减 19 点 ≈ 1.9 秒。已改成跑 4 秒（80 帧）。</p>
+<p>判据必须<strong>落在能分辨的地方</strong>。「我觉得它脱困了」不是判据。</p>
+<h4 id="_4">四个变异全部转红<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>变异</th>
+<th>症状</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>上限 <code>HEAT_MAX + capBonus</code>（千分比当绝对值）</td>
+<td><code>cap = 1100</code>，期望 200（差 5 倍）</td>
+</tr>
+<tr>
+<td>衰减改成 <code>(rate*dt)/1000</code>（无余数累加）</td>
+<td><code>decayRemainder = 0</code>，期望 500</td>
+</tr>
+<tr>
+<td><code>math.Round</code> → <code>math.Trunc</code></td>
+<td><code>decayRemainder = 160</code>，期望 170</td>
+</tr>
+<tr>
+<td>过热判据 <code>&gt;=</code> → <code>&gt;</code></td>
+<td><code>checkOverheat = false</code>，期望 true</td>
+</tr>
+</tbody>
+</table>
+<p>前两条对应 TS 注释里记着的两个真实缺陷（单位错、无余数累加导致吸收态），
+后两条是我自己实现里最容易写反的边界。</p>
+<h4 id="55-r1-2026-10-14">5.5 R1 第六步：地形移植（2026-10-14）<a class="headerlink" href="#55-r1-2026-10-14" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>交付物</th>
+<th>位置</th>
+<th>规模</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Go 侧镜像</td>
+<td><code>server/internal/domain/terrain.go</code></td>
+<td><code>Terrain</code> 状态机 + <code>ROTOR_DIR_1000</code>(720) + 4 个接口</td>
+</tr>
+<tr>
+<td>契约向量扩展</td>
+<td><code>engine_pure_vectors.json</code></td>
+<td>地形 13 个脚本（50 步轨迹）</td>
+</tr>
+<tr>
+<td>守卫</td>
+<td><code>terrain_contract_test.go</code></td>
+<td>5 条（13 个子脚本）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>移植前先确认了一件事：<code>onTerrainTrigger</code> 是死接口。</strong>
+<code>terrain.ts</code> 的 <code>TerrainContext</code> 声明了它，但 <code>Terrain</code> 内部<strong>从不调用</strong>
+（全文件只有 L70 的声明）。所以本轮<strong>不移植</strong>它 ——
+移植一个从不执行的回调 = 造出一个「地形会在触发时通知引擎」的能力，
+而实际上没有。那正是 README 已知边界里「纯装饰」「只写不读」的形状。</p>
+<p><strong>契约用「记录型 ctx」</strong>：把 6 个引擎方法换成「记录调用并返回预设实体」的假实现。
+这样断言的仍是真实的东西 —— 地形的状态迁移、向引擎<strong>要什么</strong>（半径 90？260？）、
+对敌人<strong>做什么</strong>（扣多少血、叠几层、是否 onKill）。
+真实的引擎实体不在契约范围内，现在假装能验就是自己骗自己。</p>
+<p><strong>方向表必须从源码抽取，不许手抄。</strong> 720 个数字抄错一个符号不会有编译期提示，
+而后果是某个角度偏转方向反了 → 命中位置变 → 击杀 tick 变 → 哈希变
+→ I-6 把正常对局判成伪造。</p>
+<p><strong>「抽取时要小心」是纪律，纪律挡不住手抄 —— 守卫才挡得住。</strong>
+所以 <code>TestRotorDirMatchesTsSource</code> 直接读 <code>miniapp/src/game/terrain.ts</code>
+的 720 个字面量并逐项比对。</p>
+<p>实测这条的必要性：把第 701 个数（角度 350 的 y 分量）的符号写反后，
+<strong><code>TestRotorDirIsUnitVector</code> 没有红</strong> —— 符号翻转不改变模长，
+所以性质守卫完全看不见。只有与源码比对那条能抓到，并精确指到
+「下标 701 / 角度 350 / y 分量」。</p>
+<h4 id="_5">六个变异全部转红<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>变异</th>
+<th>症状</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>火区绕开护甲（裸减）</td>
+<td><code>oil_drum_fire_zone_damage</code> 红</td>
+</tr>
+<tr>
+<td>掩体只允许动能充能</td>
+<td><code>collapse_wall_kinetic_triple</code> 红</td>
+</tr>
+<tr>
+<td><code>onHit</code> 去掉位置判定</td>
+<td><code>oil_drum_rejects_non_fire_and_far</code> 红</td>
+</tr>
+<tr>
+<td>潮汐闸 period 不夹紧</td>
+<td><strong>测试超时 10 分钟</strong>（<code>for timer &gt;= 0</code> 死循环）</td>
+</tr>
+<tr>
+<td>未知地形改成 panic</td>
+<td><code>unknown_kind_is_noop</code> panic</td>
+</tr>
+<tr>
+<td><code>ToFixed</code> 取整改截断</td>
+<td><code>TestToFixedRoundsHalfUp</code> 红（见下）</td>
+</tr>
+<tr>
+<td>方向表第 701 个数符号写反</td>
+<td><code>TestRotorDirMatchesTsSource</code> 红（精确指到角度 350 的 y 分量）</td>
+</tr>
+</tbody>
+</table>
+<p>潮汐闸那条特别值得记：<code>period=0</code> 时 <code>while timer &gt;= period</code> <strong>永不退出</strong>，
+不是报错而是挂死。clamp 到 1 是唯一防线。</p>
+<h4 id="heat">又一次「守卫是装饰品」，根因与 heat 那次<strong>完全相同</strong><a class="headerlink" href="#heat" title="Permanent link">&para;</a></h4>
+<p><code>TestToFixedRoundsHalfUp</code> 第一版全用<strong>整数</strong>输入。而 <code>ToFixed(logical int)</code> 时
+<code>logical*1000</code> 恒为整数，<code>Round</code> 与 <code>Trunc</code> 结果相同 —— 变异把取整换成截断后
+<strong>测试没红</strong>。</p>
+<p>与 heat 的 <code>Update(dtMs int)</code> 是同一个病：<strong>签名收窄了，取整就成了恒等操作</strong>。</p>
+<p>已把 <code>ToFixed</code> 改成收 <code>float64</code>（与 TS 的 <code>toFixed(number)</code> 同形），
+判据换成真正落在 <code>.5</code> 边界上的输入（<code>0.0005 → 1</code>、<code>0.0025 → 3</code>）。
+第二条区分的是<strong>银行家舍入</strong>—— 若有人把 <code>math.Round</code> 换成 <code>math.RoundToEven</code>，
+<code>0.0025</code> 会给 2 而被抓住。</p>
+<p><strong>① <code>SkillBaseDamageAtLevel</code> 缺了 TS 的恒等快路径 —— 真实溢出。</strong></p>
+<p>TS 在 <code>coef === 1000n</code> 时直接返回 <code>baseDamage</code>，<strong>不做那次乘法</strong>；
+Go 原来直接算 <code>base * coef / 1000</code>。变异实测 <code>2^63-1</code> 那个值：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>SkillBaseDamageAtLevel(lvl=1, base=9223372036854775807) = -1   （溢出）
+</code></pre></div>
+<p>这不是「理论问题」：等级 1 是<strong>所有存量战报</strong>的等级（升级功能上线前 <code>level</code> 恒为 1），
+而 <code>replayHash</code> 把 <code>baseDamage</code> 拼进锚点 —— 一旦这一位变了，
+每个历史战报都会失配，而失配表现为「验真失败」，看起来像作弊。</p>
+<p><strong>② 我在向量里的「整数边界」判断错了，被自己写的守卫抓到。</strong></p>
+<p>我第一版用 <code>2^53-1</code> 当「大值」，注释写「乘上 1.45 后是 1.3e16，远小于 int64 上界」。</p>
+<p><strong>那是错的。</strong> <code>2^53-1 × 1050 = 9.46e18</code> 已经越过 int64 上界 9.22e18。
+<code>TestSkillVectorsStayInsideSafeIntRange</code> 直接把它挑了出来。</p>
+<p>错在把<strong>最终结果</strong>的约束当成了<strong>中间乘积</strong>的约束 ——
+Go 是先乘后除（TS 的注释专门解释过为什么不能先除后乘），所以边界由中间乘积决定。
+改成 <code>2^52</code>。</p>
+<p>同时把这条边界写进了契约文件的 <code>int_width_note</code> 与守卫的注释：
+<strong>跳过而不写明 = 藏了一个限制</strong>，将来有人把底伤上限调高就会踩上去。</p>
+<p><strong>③ 我的测试前提落在整分钟之外，红的是前提不是代码。</strong></p>
+<p><code>TestChallengeSeedIsStableWithinMinuteAndChangesAcross</code> 用 <code>1_700_000_000_000</code> 当基准，
+而它除以 60000 是 <code>28333333.33</code> —— 不在整分上。
+于是「+59.999s 仍应同一分钟」跨过了边界。<strong>被测代码是对的。</strong>
+现已把基准对齐到整分，并加了 <code>baseMs%60000 != 0</code> 的前提断言 ——
+判据落在错误前提上时，它守的不是代码而是我的想当然。</p>
+<h3 id="r2">R2 · 防线挑战的胜负由客户端裁决<a class="headerlink" href="#r2" title="Permanent link">&para;</a></h3>
+<p><code>POST /defenses/:id/challenge</code> 的 <code>won</code> 直接取自请求体，服务端只校验
+「次数未超限 / 护盾已过期 / 资源守恒」。这是 README 已知边界第 3 条，
+<strong>已如实记录且未变</strong>。本轮只补了 <code>duration_ms</code> / <code>hp_left_pct</code> / <code>seed</code> / <code>replay_hash</code>
+的边界（此前也有），没有改变取舍。</p>
+<p><strong>2026-10-14 追加：种子这一项已可验证。</strong> §5.3 移植的
+<code>DeriveChallengeSeed</code> 说明挑战种子 = <code>f(defense_id, 分钟桶)</code>，
+服务端自己就能算出「这一分钟该用哪个种子」。
+所以 <code>seed</code> 从「客户端说什么就是什么」变成「服务端可复核」。</p>
+<p><strong>但胜负仍然不可验证</strong> —— 要判定 <code>won</code> 必须重跑整局，
+而 <code>BattleEngine</code> 尚未移植。所以本轮<strong>没有</strong>收紧这个端点，
+它仍然接受客户端上报的 <code>won</code>（<code>ValidateSnapshot</code> 那套前置校验已经齐了，
+但那是给客户端用的，服务端侧接线要等引擎）。</p>
+<blockquote>
+<p>不把「种子可验证」写成「R2 已修」是刻意的：
+那会让 README 的已知边界第 3 条变成假声明，
+而项目里已经有专门守卫文档不许出现「已实现」的假话
+（<code>TestDesignDocHasNoFalseImplementationClaims</code>）。</p>
+</blockquote>
+<h3 id="r3-2026-10-14">R3 · 游客凭证即永久凭证，且无轮换 —— <strong>已在 2026-10-14 修复</strong><a class="headerlink" href="#r3-2026-10-14" title="Permanent link">&para;</a></h3>
+<p><code>guest_token</code> 是与口令同级的凭证（实测：给出同一 <code>guest_token</code> 再次登录即可拿到
+该账号的 access + refresh token）。它 24 字节随机，不可猜 —— 但：</p>
+<ul>
+<li>后台的玩家搜索条件<strong>就包含 <code>guest_token</code></strong>（<code>AdminListUsers</code> 的 LIKE），
+  所以后台被点（F2）或 DB 泄露 ⇒ 批量导出所有玩家凭证；</li>
+<li><strong>没有轮换机制</strong>。F4 的登出只吊销 refresh token，<code>guest_token</code> 依然能换出新会话。</li>
+</ul>
+<p><strong>修法</strong>（提交 <code>8a23628d7</code>）：</p>
+<ol>
+<li>登出<strong>轮换</strong> <code>guest_token</code>，与吊销 refresh token <strong>同事务</strong> ——
+   两者必须同生共死：只吊销前者则旧凭证仍能换出新会话，
+   只轮换前者则被盗的 refresh token 还活着。
+   <code>UNIQUE</code> 撞车概率极低但不是零，撞了重试 5 次而不是当不可能。</li>
+<li>后台玩家搜索<strong>不再打 <code>guest_token</code></strong>。凭证可检索意味着
+   「后台账号被盗 ⇒ 批量导出玩家凭证」。运营用昵称/user_id 就够了。
+   这是<strong>功能删减</strong>，所以配了双向守卫（凭证搜不到 + 昵称仍能搜，防删过头）。</li>
+<li>客户端登出时落盘新凭证。</li>
+</ol>
+<p><strong>一个必须写下来的形态</strong>：凭证轮换后，拿旧凭证来的人<strong>不会看到任何异常</strong> ——
+<code>GuestLogin</code> 对未知凭证的语义是「建一个新号」，所以它安静地返回一个<strong>空账号</strong>。
+这正是客户端必须立刻存下新凭证的原因：不存的话受害者自己也走这条路，
+进度凭空消失且毫无报错。那比「凭证没轮换」严重得多 ——
+凭证问题静默，丢进度会被立刻发现并当成无法解释的 bug。</p>
+<hr />
+<h2 id="6">6. 变更清单<a class="headerlink" href="#6" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>改动</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>server/internal/service/service.go</code></td>
+<td><code>grantToken</code> 扣减改条件 UPDATE；新增 <code>Logout</code></td>
+</tr>
+<tr>
+<td><code>server/internal/service/stats.go</code></td>
+<td><code>MaxAdminGrantAmount</code> + 金额校验</td>
+</tr>
+<tr>
+<td><code>server/internal/service/admin.go</code></td>
+<td><code>Audit</code> 增加 <code>ip</code> 参数并真正写入</td>
+</tr>
+<tr>
+<td><code>server/internal/config/config.go</code></td>
+<td><code>CORSAllowOrigins</code> + <code>envList</code></td>
+</tr>
+<tr>
+<td><code>server/internal/httpapi/middleware.go</code></td>
+<td><code>securityHeaders()</code>、<code>perIPLimiter()</code>、<code>authRateLimit()</code>、<code>cors(allow)</code></td>
+</tr>
+<tr>
+<td><code>server/internal/httpapi/routes.go</code></td>
+<td>挂载安全头 + 5 处限流 + <code>/me/logout</code></td>
+</tr>
+<tr>
+<td><code>server/internal/httpapi/handlers_admin.go</code></td>
+<td>10 个 <code>Audit</code> 调用点补 <code>c.IP()</code></td>
+</tr>
+<tr>
+<td><code>server/go.mod</code></td>
+<td><code>fiber/middleware/limiter</code> 的两个传递依赖</td>
+</tr>
+<tr>
+<td><code>admin/src/api/client.ts</code></td>
+<td><code>handleUnauthorized()</code></td>
+</tr>
+<tr>
+<td><code>admin/src/router/index.ts</code></td>
+<td>修正那条<strong>虚构</strong>的注释</td>
+</tr>
+<tr>
+<td><code>miniapp/src/api/client.ts</code></td>
+<td><code>VITE_API_BASE</code> + HTTPS 断言；新增 <code>logout()</code></td>
+</tr>
+<tr>
+<td><code>miniapp/src/env.d.ts</code></td>
+<td>声明 <code>VITE_API_BASE</code></td>
+</tr>
+<tr>
+<td><code>miniapp/src/pages/me/me.vue</code></td>
+<td>退出登录入口</td>
+</tr>
+<tr>
+<td><code>miniapp/package.json</code> + <code>pnpm-lock.yaml</code></td>
+<td><code>vue-tsc</code> <code>^2.0.22</code> → <code>^2.2.12</code>（F10）</td>
+</tr>
+<tr>
+<td><code>.github/workflows/laiyipao-ci.yml</code></td>
+<td>两端各加一步「type-check 必须真的会失败」（F10）</td>
+</tr>
+</tbody>
+</table>
+<p>新增守卫：<code>server/internal/service/security_audit_test.go</code>、
+<code>server/internal/httpapi/security_headers_test.go</code>、
+<code>server/internal/domain/settle_ceiling_characterization_test.go</code>、
+<code>admin/tests/client_unauthorized.test.ts</code>。</p>
+<h3 id="61-2026-10-14-r1">6.1 2026-10-14 R1 第二步（灰度开关 + 台账）追加<a class="headerlink" href="#61-2026-10-14-r1" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>改动</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>server/migrations/00015_settle_recompute_audit.sql</code></td>
+<td>新增 <code>settle_recomputes</code> 台账（15 → 50 张表）</td>
+</tr>
+<tr>
+<td><code>server/internal/service/recompute_gate.go</code></td>
+<td><strong>新增</strong>。三档闸门 + 按 scope 分开的熔断；台账读写 + 后台读侧</td>
+</tr>
+<tr>
+<td><code>server/internal/service/recompute_gate_test.go</code></td>
+<td><strong>新增</strong>。13 条，含 scope 隔离两条</td>
+</tr>
+<tr>
+<td><code>server/internal/service/recompute_audit_test.go</code></td>
+<td><strong>新增</strong>。6 条（需真实 PG）</td>
+</tr>
+<tr>
+<td><code>server/internal/service/recompute_live_test.go</code></td>
+<td><strong>新增</strong>。6 条（真实 <code>SettleBattle</code> 端到端，含 6 个子用例）</td>
+</tr>
+<tr>
+<td><code>server/internal/config/recompute_mode_test.go</code></td>
+<td><strong>新增</strong>。2 条，守缺省 <code>enforce</code></td>
+</tr>
+<tr>
+<td><code>server/internal/service/game.go</code></td>
+<td><code>replay_skills</code> 校验改由闸门裁决 + 写台账</td>
+</tr>
+<tr>
+<td><code>server/internal/service/service.go</code></td>
+<td><code>Service.gate</code> 字段 + <code>New</code> 里回填</td>
+</tr>
+<tr>
+<td><code>server/internal/config/config.go</code></td>
+<td><code>SettleRecomputeMode</code>（缺省 <code>enforce</code>）</td>
+</tr>
+<tr>
+<td><code>server/internal/config/config_test.go</code></td>
+<td><code>clearEnv</code> 补上新变量</td>
+</tr>
+<tr>
+<td><code>docs/OPERATIONS.md</code></td>
+<td>新增 <code>SETTLE_RECOMPUTE_MODE</code> 章节</td>
+</tr>
+<tr>
+<td><code>README.md</code></td>
+<td>迁移数 14→15、表数 49→50（<code>TestReadmeMigrationCountMatchesEmbed</code> 逼出来的）</td>
+</tr>
+</tbody>
+</table>
+<p>本轮变动共 <strong>27 条</strong> Go 守卫（其中 9 条需真实 PostgreSQL），全部变异实测。
+变异清单：<code>enforce</code> 分支去掉、<code>RecordRecompute</code> 去掉、<code>checkBreaker</code> 不调用、
+阈值比较短路、熔断泄漏到 S 段、降级状态退回全局、缺省档位退回 <code>off</code>。</p>
+<h3 id="62-2026-10-14">6.2 2026-10-14 第三步（后台读侧页面）追加<a class="headerlink" href="#62-2026-10-14" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>改动</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>server/internal/httpapi/handlers_admin.go</code></td>
+<td><code>adminRecomputes</code> / <code>adminRecomputeStats</code></td>
+</tr>
+<tr>
+<td><code>server/internal/httpapi/routes.go</code></td>
+<td>挂载 <code>GET /admin/recomputes</code> 与 <code>/admin/recomputes/stats</code></td>
+</tr>
+<tr>
+<td><code>server/internal/httpapi/handlers_recompute_e2e_test.go</code></td>
+<td><strong>新增</strong>。4 条（需真实 PG）</td>
+</tr>
+<tr>
+<td><code>server/internal/service/recompute_gate.go</code></td>
+<td><code>AdminRecomputeSummary</code>；<strong>修</strong> <code>AdminRecomputeStatsByLevel</code> 的分组 bug</td>
+</tr>
+<tr>
+<td><code>admin/src/api/index.ts</code></td>
+<td><code>fetchRecomputes</code> / <code>fetchRecomputeStats</code> + 类型</td>
+</tr>
+<tr>
+<td><code>admin/src/views/RecomputesView.vue</code></td>
+<td><strong>新增</strong>。结算重算审计页</td>
+</tr>
+<tr>
+<td><code>admin/src/router/index.ts</code></td>
+<td>新增 <code>recomputes</code> 路由</td>
+</tr>
+<tr>
+<td><code>admin/src/layouts/AdminLayout.vue</code></td>
+<td>新增菜单项（<code>Warning</code> 图标，紧跟战报页）</td>
+</tr>
+<tr>
+<td><code>admin/tests/RecomputesView.test.ts</code></td>
+<td><strong>新增</strong>。18 条</td>
+</tr>
+<tr>
+<td><code>admin/tests/AdminLayout.test.ts</code></td>
+<td>菜单 9→10、图标 10→11</td>
+</tr>
+<tr>
+<td><code>admin/tests/router.test.ts</code></td>
+<td><code>ALL_PAGE_NAMES</code> 加 <code>recomputes</code></td>
+</tr>
+<tr>
+<td><code>docs/OPERATIONS.md</code></td>
+<td>新增「怎么用这个页面」判读表</td>
+</tr>
+</tbody>
+</table>
+<p>本轮变动 <strong>22 条</strong>新守卫（4 Go + 18 TS）。
+变异实测 3 处：<code>max_user_mismatches</code> 的 SQL 分组退回旧写法（红，报「实际 3」）、
+熔断横幅 <code>v-if</code> 改成 <code>false</code>（红）、前端阈值硬编码 20（红 —— 但<strong>第一版断言没红</strong>，见 §5.2）。</p>
+<blockquote>
+<p>顺带记录一个环境事实：写这一轮测试时发现开发库 <code>laiyipao</code> 仍停在迁移 <strong>v14</strong>，
+而 <code>service</code> 包的夹具会自动跑迁移、<code>httpapi</code> 包的不会 ——
+于是新表「在 service 测试里存在、在 httpapi 测试里不存在」。
+已对开发库补跑 <code>cmd/migrate</code>。这个差异不是 bug（各自夹具的设计如此），
+但<strong>新增迁移后必须对开发库显式补跑</strong>，否则两个包的测试会看到不同的 schema。</p>
+</blockquote>
+<h3 id="63-2026-10-14">6.3 2026-10-14 第五步（热量与手牌）追加<a class="headerlink" href="#63-2026-10-14" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>改动</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>server/internal/domain/heat.go</code></td>
+<td><strong>新增</strong>。<code>HeatSystem</code> + <code>CardDeck</code> + 8 个常量</td>
+</tr>
+<tr>
+<td><code>server/internal/domain/engine_pure_contract_test.go</code></td>
+<td>+3 条（热量常量、热量脚本、手牌脚本，共 19 个子脚本）</td>
+</tr>
+<tr>
+<td><code>miniapp/scripts/gen-engine-pure-vectors.ts</code></td>
+<td>热量 13 脚本 / 手牌 6 脚本；轨迹加 <code>decay_remainder</code></td>
+</tr>
+<tr>
+<td><code>server/testdata/engine_pure_vectors.json</code></td>
+<td>142 → 321 行</td>
+</tr>
+</tbody>
+</table>
+<p>变异实测 4 处，全部转红：</p>
+<table>
+<thead>
+<tr>
+<th>变异</th>
+<th>症状</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>上限 <code>HEAT_MAX + capBonus</code>（千分比当绝对值）</td>
+<td><code>cap = 1100</code>，期望 200（差 5 倍）</td>
+</tr>
+<tr>
+<td>衰减改成 <code>(rate*dt)/1000</code>（无余数累加）</td>
+<td><code>decayRemainder = 0</code>，期望 500</td>
+</tr>
+<tr>
+<td><code>math.Round</code> → <code>math.Trunc</code></td>
+<td><code>decayRemainder = 160</code>，期望 170</td>
+</tr>
+<tr>
+<td>过热判据 <code>&gt;=</code> → <code>&gt;</code></td>
+<td><code>checkOverheat = false</code>，期望 true</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>过程记录：两个变异最初<strong>并行</strong>跑在同一个文件上，互相覆盖，
+一个报「build failed」而另一个其实没被应用 ——
+看起来像「实现坏了」，实际是<strong>测试流程</strong>坏了。
+同理，变异后必须重跑<strong>还原态</strong>，不能只看变异态的结果。</p>
+</blockquote>
+<h3 id="64-2026-10-14">6.4 2026-10-14 第六步（地形）追加<a class="headerlink" href="#64-2026-10-14" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>改动</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>server/internal/domain/terrain.go</code></td>
+<td><strong>新增</strong>。<code>Terrain</code> + <code>ROTOR_DIR_1000</code>(720) + <code>TerrainCtx</code>/<code>TerrainEnemy</code>/<code>TerrainProjectile</code></td>
+</tr>
+<tr>
+<td><code>server/internal/domain/terrain_contract_test.go</code></td>
+<td><strong>新增</strong>。6 条（13 个子脚本），含「方向表与 TS 源码逐项比对」</td>
+</tr>
+<tr>
+<td><code>server/internal/domain/engine_pure_contract_test.go</code></td>
+<td>加 terrain 向量结构</td>
+</tr>
+<tr>
+<td><code>miniapp/scripts/gen-engine-pure-vectors.ts</code></td>
+<td>地形 13 脚本 + 记录型 ctx</td>
+</tr>
+</tbody>
+</table>
+<p>变异实测 <strong>7 处</strong>，全部转红（见 §5.5）。</p>
+<h2 id="7">7. 部署前置（本轮引入的义务）<a class="headerlink" href="#7" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>反代必须透传 <code>X-Forwarded-For</code></strong>，否则审计里的 IP 是反代地址（F5 的残留）。</li>
+<li><strong>多副本部署必须把限流换成共享计数器</strong>（Redis 等）。当前是<strong>进程内</strong>计数，
+   实际额度 = 配置值 × 副本数；单实例部署下是准确的。</li>
+<li><strong>跨域部署需显式配 <code>CORS_ALLOW_ORIGINS</code></strong>（后台与 H5 不同域名时）。
+   prod 未配置 = 只允许同源，这是刻意的默认。</li>
+<li><code>miniapp</code> 打包前设 <code>VITE_API_BASE</code>，否则真机连不上；公网域名必须 https。</li>
+</ol>
+<hr />
+<h2 id="8">8. 本轮自己制造又修掉的问题（如实记录）<a class="headerlink" href="#8" title="Permanent link">&para;</a></h2>
+<h3 id="81-off-2026-10-14">8.1 缺省档位 <code>off</code> 会出厂关闭反作弊校验（2026-10-14）<a class="headerlink" href="#81-off-2026-10-14" title="Permanent link">&para;</a></h3>
+<p>见 §5.2 ①。一句话：把「引擎会漂移」当成了「S 段校验也要先观察」，
+而 S 段的不符<strong>没有歧义</strong>，不需要观察。现有 e2e 立刻打红，已改回 <code>enforce</code> 并加守卫。</p>
+<h3 id="82-2026-10-14">8.2 降级状态做成全局，会在攻击峰值时解除防护（2026-10-14）<a class="headerlink" href="#82-2026-10-14" title="Permanent link">&para;</a></h3>
+<p>见 §5.2 ②。引擎侧熔断会连带把 S 段也降级。已按 scope 分开存储 + 两条守卫。</p>
+<h3 id="83">8.3 变异验证后没跑还原态全量（本轮踩到）<a class="headerlink" href="#83" title="Permanent link">&para;</a></h3>
+<p><code>TestSkillsScopeNeverGoesThroughShadowEvenAfterEngineDemotion</code> 是先写测试、
+后写实现的。实现时确实写错了（降级状态存在单个字段上），
+但我做完变异验证（MUT-A 红）就<strong>直接还原、没跑全量</strong>，
+于是这个 bug 一路带到 <code>go test ./...</code> 才暴露。</p>
+<p><strong>变异验证证明的是「测试能抓住这个变异」，不证明「测试在当前实现上是绿的」。</strong>
+前者是我做变更时的检查手段，后者才是验收标准。两者不能互相替代。</p>
+<h3 id="84-2026-10-13">8.4 早一轮：共享库污染（2026-10-13）<a class="headerlink" href="#84-2026-10-13" title="Permanent link">&para;</a></h3>
+<p><code>TestGrantTokenNegativeDeltaNeverAbortsTransaction</code>（F1 的守卫之一）把共享库里
+某商品的 <code>price</code> 改成 <code>{"mastery_reset":5}</code> 却<strong>没有还原</strong>。本包所有用例共享
+一个一次性库，于是后面的 <code>TestShopDayBoundaryMatchesTaskDayBoundary</code>
+（取 <code>ORDER BY id LIMIT 1</code> 的第一个在售商品）挑中了这一件，
+<code>Buy</code> 返回「道具不足」→ <strong>一条与商城日界毫无关系的测试变红</strong>。</p>
+<p>单跑那条用例 3 次全绿、只跑全量才红 —— 症状与「被测代码坏了」几乎无法区分。</p>
+<p><strong>已修</strong>：存下原价 + <code>t.Cleanup</code> 还原，还原失败时<strong>报错而不是静默</strong>。
+这与 <code>TestNoScratchNameUsesTimeModulo</code> 守的「孤儿库」是同一类：
+<strong>测试自己污染环境，让下一个用例替它背锅</strong>。
+记录它是因为「本轮新增的测试会让既有测试变红」这件事，
+若只写进某个提交的说明里，后来者会以为是既有测试不稳定。﻿---</p>
+<h2 id="9-2026-10-15">9. 本轮后续（2026-10-15）：把"担心"变成"证据"，把"计数器"变成"读数"<a class="headerlink" href="#9-2026-10-15" title="Permanent link">&para;</a></h2>
+<h3 id="91-config">9.1 config 漂移风险 —— <strong>先说错了，又错地否定了一次</strong>，最后变成事实<a class="headerlink" href="#91-config" title="Permanent link">&para;</a></h3>
+<p>接线收尾时我提出过这样一个风险：</p>
+<blockquote>
+<p>"admin 有 <code>PUT /admin/skills/:id</code> 能改技能数值，客户端从 <code>/api/v1/config</code>
+拿数据且有 HTTP 缓存；admin 在一局战斗进行中改技能，客户端可能用旧值、
+服务端用新值，重算就会失配 —— 于是误拒诚实玩家。"</p>
+</blockquote>
+<p>随后我读代码「确认」了这个风险不存在，理由是
+"<code>/config</code> 出的是进程内静态表，admin 改的是 DB 副本"。</p>
+<p><strong>两条都是错的判断，而且错的方向相反。</strong> 写测试把它变成事实的过程里，
+两次都被自己的测试打脸：</p>
+<ul>
+<li><strong>第一次错</strong>：我以为 <code>build_snapshot.skills</code> 里的
+  <code>name</code>/<code>family</code>/<code>element</code>/<code>kind</code> 对重算是「装饰性的」
+  （因为 <code>EquippedFromSnapshot</code> 全部取自静态表的 <code>def</code>）。
+  测试红了 —— 但真正的原因<strong>不是</strong>系统有问题，是<strong>我测试写错了</strong>：
+  <code>realHashSettle</code> 每次调 <code>StartBattle</code> 都会生成<strong>新的随机种子</strong>
+  （<code>newBattleSeed</code> 走 <code>random()</code>），我拿两局不同战斗的哈希在比较。
+  改成同一个 token 算两次之后，绿了。</li>
+<li><strong>第二次错</strong>：我据此宣布「风险不存在」。重写测试用同一个 token 重算两次，
+  并覆盖 4 类编辑（base_damage / heat_cost / name / element）之后，它确实绿了
+  —— 这次是真的绿。</li>
+</ul>
+<p><strong>最终结论（三条实测证据）</strong>：
+1. <code>AdminUpdateSkill</code>（<code>stats.go</code>）只 <code>UPDATE skills SET ...</code>，写 <strong>DB 行</strong>，
+   不碰 <code>domain.SeedSkills</code>（进程内静态表）；
+2. <code>/api/v1/config</code> 出的是 <code>staticConfig()</code>，用 <code>domain.ScaleAllSkills()</code> ——
+   <strong>同一份静态表</strong>，所以 admin 改 DB <strong>不改变 <code>/config</code> 的输出</strong>；
+3. 战斗路径 <code>loadSkillsRows</code> 从 DB 只取 <code>(id, name, family, element, kind, level, slot)</code>，
+   <strong>不取任何战斗数值</strong>；而重放只用快照的 <code>ID</code>/<code>Slot</code>/<code>Level</code>，
+   其余全部取自静态表的 <code>def</code>。</p>
+<p>⇒ 两端读的是同一份进程内静态数据，<strong>没有可漂移的缝隙</strong>。</p>
+<p><strong>落盘</strong>：
+- <code>server/internal/service/recompute_config_drift_test.go</code> 两条测试：
+  - <code>TestAdminSkillEditDoesNotAffectRecompute</code> —— 战斗路径不读 DB；
+  - <code>TestAdminSkillEditDoesNotLeakIntoConfig</code> —— 客户端拿到的也不是 DB。
+- MUT-5：<code>EquippedFromSnapshot</code> 的 <code>Element</code> 从 <code>def.Element</code> 改成 <code>s.Element</code>
+  （读 DB）→ <strong>红</strong>：<code>admin 改技能后重算哈希变了</code>。守卫真会响。</p>
+<p><strong>对照上一轮 §8.3（变异验证后没跑还原态全量）</strong>：
+这次变异验证<strong>先</strong>做了、<strong>再</strong>还原、<strong>然后</strong>跑还原态全量 <code>go test ./...</code>。
+MUT-5 红 ≠ 系统坏了，是 guard 证明自己有反应 —— 这是 withdraw-able 的变异，还原后全量重绿，
+才是最终验收。这次学到了：变异验证通过"这个变异会让它变红"，不代表还原后原态绿，
+只能当<strong>辅助</strong>证据，最终验收永远是还原态全量。</p>
+<h3 id="92">9.2 重算观测量的静默失效 —— 把"校验根本没跑"变成看得见的一行字<a class="headerlink" href="#92" title="Permanent link">&para;</a></h3>
+<p><code>recompute_engine.go</code> 加的 4 个计数器（verified / mismatch / cannot_run / skipped）
+是为了把"校验正常工作"和"校验根本没跑"在台账上区分 —— 台账 <code>settle_recomputes</code>
+<strong>只记不符</strong>，可这次<strong>光有计数器不解决问题</strong>：计数器只在进程内，运营看不到。
+洞没关上等于没关。</p>
+<p><strong>修法</strong>：把引擎侧计数器接进 <code>AdminRecomputeSummary</code>，新增 <code>engine</code> 字段（与原有 <code>totals</code> 互补）：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>来源</th>
+<th>范围</th>
+<th>含什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>totals</code>（原有）</td>
+<td>台账 SQL</td>
+<td>受 <code>since</code> 窗口限制</td>
+<td><strong>只含不符</strong>的局</td>
+</tr>
+<tr>
+<td><code>engine</code>（新增）</td>
+<td>进程内计数器</td>
+<td><strong>从进程启动算起</strong></td>
+<td><strong>所有</strong>走到重算的局</td>
+</tr>
+</tbody>
+</table>
+<p>handler 是 <code>return c.JSON(sum)</code>（整结构体透传），<strong>不必改 handler</strong>，<code>engine</code> 键自动出现。</p>
+<p><code>status</code> 字段给出五种一眼可判的状态（判据在后端，不分散到前端）：</p>
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>尚无结算经过重算</td>
+<td>还没跑过一局</td>
+</tr>
+<tr>
+<td><strong>验真覆盖为 0</strong></td>
+<td><strong>最危险</strong>：跑到重算的局不少但一局都没验成，此时台账也是空的</td>
+</tr>
+<tr>
+<td><strong>过半因输入缺失而放行</strong></td>
+<td>所有局都被「放行」了，但放行的理由是<strong>算不出来</strong>，不是算出来没问题</td>
+</tr>
+<tr>
+<td>正常</td>
+<td>覆盖率 ≥ 900‰</td>
+</tr>
+<tr>
+<td>验真覆盖 N‰</td>
+<td>中间态，带具体数字</td>
+</tr>
+</tbody>
+</table>
+<p><code>verified_permille</code> 在 <code>settled_total == 0</code> 时取 <strong>-1</strong> ——「没有样本」与「覆盖率为 0」是两件事。</p>
+<p><strong>顺带钉死</strong>：<code>SetRecomputeMode("enforse")</code> 之类非法值必须<strong>报错</strong>而不是静默降级
+（静默降级在这里就是防护静默关闭 + 界面上看起来合法）；非法调用不改变当前档位。</p>
+<p><strong>Mutation</strong>：
+- MUT-6 汇总里不填 <code>Engine</code>（模拟"加了计数器但忘了接上"）→ <strong>红</strong>；
+- MUT-7 状态判据不认"覆盖为 0" → <strong>红</strong>：<code>状态串应含 "验真覆盖为 0"</code>。</p>
+<p><strong>落盘</strong>：
+- <code>server/internal/service/recompute_engine_report.go</code>（EngineTotals / status 判据）
+- <code>server/internal/service/recompute_engine_report_test.go</code>（状态机 + JSON 钉住）
+- <code>server/internal/service/recompute_gate.go</code>（+ Engine 字段 + 填充）</p>
+<h3 id="93-commit">9.3 本轮 commit 列表<a class="headerlink" href="#93-commit" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>提交</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>88a03dfb</code></td>
+<td>工具链 1.26.3 → 1.26.9，清 17 条 stdlib 漏洞</td>
+</tr>
+<tr>
+<td><code>e15ba95d</code></td>
+<td>override 掉 19 条 reachable npm 漏洞</td>
+</tr>
+<tr>
+<td><code>881af240</code></td>
+<td>依赖闸门：govulncheck 硬闸 + pnpm audit 回归闸</td>
+</tr>
+<tr>
+<td><code>8c8538cc</code></td>
+<td>契约向量补 8 套玩家真会配的构筑</td>
+</tr>
+<tr>
+<td><code>7e62e8ef</code></td>
+<td>整局重算接进 SettleBattle —— 不符即拒发并记台账</td>
+</tr>
+<tr>
+<td><code>41440c7f</code></td>
+<td>把"admin 改技能会让两端失配"从担心变成实测事实</td>
+</tr>
+<tr>
+<td><code>72f3be33</code></td>
+<td>把重算的 4 个计数器接到管理端读数上 —— 堵上"洞没关上"</td>
+</tr>
+</tbody>
+</table>
+<p><code>origin/optimism20261012</code> = <code>72f3be333</code>，mainline 工作树干净。</p>
+<h2 id="10">10. 部署后必须确认（新）<a class="headerlink" href="#10" title="Permanent link">&para;</a></h2>
+<ol>
+<li>后台 <code>RecomputesView</code> 应新增一段显示 <code>engine.status</code> —— 该字段本身
+   （§9.2）是这次修的核心产出，没读到就等于没修。</li>
+<li><code>TestNoKnownReplayDivergences</code> 必须保持全绿，<code>replay_hash</code> 全链路真比对才能接线 ——
+   64 引擎 case + 13 契约向量全部一致。</li>
+<li>引擎熔断 thresholds: <code>MaxBreakerRate=90%</code> + <code>MinBreakerSamples=20</code> —— 低于 20 局时熔断不触发，
+   防止刚启动时噪声导致假降级；已按 scope（engine vs skills）分开存储。</li>
+</ol>
+<hr />
+<h2 id="11-154-2026-10-16-7">11. 第 154 轮（2026-10-16）：归属守卫从读路径扩到<strong>写路径</strong>，以及另外 7 项<a class="headerlink" href="#11-154-2026-10-16-7" title="Permanent link">&para;</a></h2>
+<p>这一轮的来源是一遍<strong>全文件复读</strong>（不是只读攻击面清单）：上一轮的 F1–F10 修的是
+「能被利用的」那批，而这一轮问的是另一个问题 ——
+<strong>哪些地方「现在安全」只是因为调用点恰好做了校验，而语句自己不做？</strong></p>
+<h3 id="111">11.1 七项修复<a class="headerlink" href="#111" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>项</th>
+<th>缺陷</th>
+<th>修法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>gems.go</code> <code>WashGem</code></td>
+<td><code>UPDATE user_gems … WHERE id = $2</code> 没有 <code>user_id</code></td>
+<td>补 <code>AND user_id = $3</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>progression.go</code> <code>ChallengeDefense</code></td>
+<td><code>UPDATE defenses SET wins/losses …</code> 没有 <code>owner_id</code>（两条）</td>
+<td>补 <code>AND owner_id = $2</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>game.go</code> <code>SettleBattle</code></td>
+<td><code>UPDATE battle_tokens … WHERE id = $1</code> 没有 <code>user_id</code></td>
+<td>补 <code>AND user_id = $2</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>progression.go</code> <code>dailyChallengeCounters</code></td>
+<td><code>GET /defenses</code> 每次浏览都 <code>INSERT … ON CONFLICT DO UPDATE</code>（写副作用 + 行锁）</td>
+<td>改纯 <code>SELECT</code>，行不存在 = <code>0,0</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>admin/src/router/index.ts</code> + <code>client.ts</code></td>
+<td>守卫只看 <code>getToken()</code> 真值 → 控制台塞任意字符串即可进入全部 11 个视图</td>
+<td><code>confirmTokenValid()</code>：真问一次 <code>/admin/me</code>；结论只在<strong>内存</strong>缓存</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>admin/src/api/client.ts</code></td>
+<td>401 清理不看 <code>opts.auth</code>：公开请求的 401 会清掉<strong>有效</strong>令牌</td>
+<td>判据补 <code>opts.auth !== false</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>admin/index.html</code></td>
+<td>后台 HTML 无任何安全响应头</td>
+<td>meta CSP（<code>script-src 'self'</code>，无 <code>unsafe-*</code>）+ <code>referrer: no-referrer</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>诚实标注（第 1–3 项）</strong>：这三处<strong>当前都不可利用</strong>。它们各自的上文都做过归属校验
+（<code>FOR UPDATE</code> 行锁 / <code>ownerID == userID</code> / <code>SELECT … AND user_id</code>），
+所以它们与 F1 那种「能被利用」的缺陷<strong>不同级</strong>。改它们的理由是结构性的：
+把「不会越权」从<strong>调用点的偶然</strong>变成<strong>语句自己的不变量</strong>。
+一旦有人给这些语句加第二个调用点、或把上面的校验挪走，它们就是直接的 IDOR ——
+而它们此前<strong>没有任何东西在看</strong>（守卫只扫 SELECT）。</p>
+<h3 id="112">11.2 两项输入上界（同族）<a class="headerlink" href="#112" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>缺陷</th>
+<th>修法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>?keyword=</code>（<code>AdminListLevels</code> / <code>AdminListUsers</code>）</td>
+<td>LIKE 模式完全不限长。常见触发<strong>不需要恶意</strong>：运营从工单里粘一整段话 → 全表 LIKE → 空集 → 结论是「查无此人」，而真相是「整段被当成一个整体去匹配」</td>
+<td><code>MaxAdminKeywordLen = 64</code>（按<strong>字符</strong>），两个调用点走同一个 <code>trimAdminKeyword</code>（先 trim 再数）</td>
+</tr>
+<tr>
+<td><code>nickname</code>（<code>GuestLogin</code>）</td>
+<td><code>users.nickname</code> 是 TEXT 而 BodyLimit 是 1MB → <strong>单次注册请求就能写入接近 1MB 的昵称</strong>；它会进所有列表响应（排行榜 / 后台用户表 / 战报 / 防线候选），而坏数据落库后只能手工 SQL 清</td>
+<td><code>MaxNicknameLen = 64</code>；拒绝而不是静默截断（与 <code>MaxDefenseNameLen</code> 同口径）</td>
+</tr>
+</tbody>
+</table>
+<h3 id="113">11.3 两项「让隐形的东西显形」<a class="headerlink" href="#113" title="Permanent link">&para;</a></h3>
+<ol>
+<li>
+<p><strong>归属守卫从 SELECT 扩到 UPDATE / DELETE</strong>（<code>ownership_scan_test.go</code>）。
+   判据是<strong>双重</strong>的：动词词边界（<code>containsWord</code>）<strong>且</strong> SQL 结构记号（<code>hasSQLShape</code>）；
+   语句动词取 <code>leadingVerb</code>（跳过 <code>WITH</code> CTE 的首词），字面量先剥 <code>ast.BasicLit</code> 的引号。
+   <strong>刻意排除 INSERT</strong> —— upsert 是建行语义，不存在「按 id 定位别人的行」；
+   <code>ON CONFLICT DO UPDATE</code> 里的 <code>UPDATE</code> 不是语句动词（已写成用例）。
+   守卫本身要能拒绝已知形状（<code>TestStatementVerbGateRejectsFalsePositives</code>）——
+   一条「所有 X 都必须挂 Y」的守卫在<strong>扫不到任何 X</strong> 时会全绿，那是最坏的失效方式。</p>
+</li>
+<li>
+<p><strong>后台写路由的门禁从手写枚举变成结构守卫</strong>（<code>readonly_guard_test.go</code>）。
+   <code>TestE2EReadonlyGating</code> 的 <code>roWrites</code> 是<strong>手写枚举</strong>：新增一条后台写路由、
+   忘了挂 <code>requireWritable</code>，它在测试世界里是<strong>不可见</strong>的。
+   新增的 AST 守卫认的是「挂在 <code>requireAdmin</code> 组上的写方法」，并要求参数里有
+   <code>requireWritable()</code>；另有自检断言扫到的条数没有莫名缩水。
+   ⚠️ 第一版按<strong>路径前缀</strong>判定，立刻报了 <code>/admin/login</code> 未挂 <code>requireWritable</code> 的<strong>误报</strong> ——
+   那是公开端点组（没有 <code>requireAdmin</code>，也就没有角色可谈）。语义分界是中间件，不是路径。</p>
+</li>
+<li>
+<p><strong>开发默认凭证不再隐形</strong>（<code>config.DevDefaultWarnings</code> + <code>cmd/api</code> 启动横幅）。
+   prod 分支会在缺失配置时 panic，但那要求 <code>APP_ENV=prod</code> <strong>被设对了</strong>；
+   而 <code>APP_ENV</code> 默认是 <code>dev</code> → 「忘设 APP_ENV」的部署安静地拿到
+   <strong>写在源码里</strong>的 JWT 密钥与 <code>admin12345</code>。这不是「弱口令」而是<strong>无需爆破</strong>：
+   知道签名密钥就能直接签一枚管理员令牌，而启动日志与正常启动一模一样。
+   判据与 prod 守卫<strong>同源</strong>（复用同样的两个判断），不另写一套
+   「值是否等于默认字面量」——两套判据迟早分叉，分叉后一定是
+   「prod 会 panic 但这里不告警」那种最坏组合。</p>
+</li>
+</ol>
+<h3 id="114">11.4 变异验证（本轮新增守卫的实测清单）<a class="headerlink" href="#114" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>变异</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>去掉 <code>WashGem</code> 的 <code>AND user_id = $3</code></td>
+<td><strong>红</strong>，<code>ownership_scan_test.go:511</code> 点名 <code>gems.go:311</code> 与函数名</td>
+</tr>
+<tr>
+<td><code>dailyChallengeCounters</code> 退回 upsert</td>
+<td><strong>红</strong>（<code>TestListDefensesDoesNotWriteCounters</code>）</td>
+</tr>
+<tr>
+<td>守卫退回只判 <code>getToken()</code> 真值</td>
+<td><strong>红 3 条</strong>（伪造令牌 / 验真失败清令牌 / 验真缓存）</td>
+</tr>
+<tr>
+<td>401 判据去掉 <code>opts.auth !== false</code></td>
+<td><strong>红</strong>（公开请求的 401 不动令牌）</td>
+</tr>
+<tr>
+<td>CSP 里加回 <code>frame-ancestors 'none'</code></td>
+<td><strong>红</strong>（meta 场景下它会被浏览器丢弃）</td>
+</tr>
+<tr>
+<td><code>keyword</code> 上界放宽 100 倍</td>
+<td><strong>红 2 条</strong>（两个调用点各一条）</td>
+</tr>
+<tr>
+<td>昵称上界放宽 1000 倍</td>
+<td><strong>红</strong>（<code>TestGuestLoginNicknameIsBounded</code>）</td>
+</tr>
+<tr>
+<td><code>DevDefaultWarnings</code> 恒返回空</td>
+<td><strong>红</strong>（新克隆仓库必须点名两把凭证）</td>
+</tr>
+<tr>
+<td>去掉 <code>adm.Post("/users/:id/grant", requireWritable(), …)</code></td>
+<td><strong>红</strong>，报 <code>routes.go:192 users/:id/grant</code></td>
+</tr>
+</tbody>
+</table>
+<p>全部变异都<strong>还原后复跑还原态</strong>（§8.3 的教训）。</p>
+<h3 id="115">11.5 部署前置（本轮新增义务）<a class="headerlink" href="#115" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong><code>admin</code> 必须由部署侧下发 <code>X-Frame-Options: DENY</code></strong>（或响应头 <code>frame-ancestors 'none'</code>）。
+   CSP3 明确规定 <code>frame-ancestors</code> <strong>不能</strong>经 <code>&lt;meta&gt;</code> 传递，写了会被<strong>整个丢弃</strong>
+   （只剩一行控制台 warning）。点击劫持是后台唯一「不需要任何服务端漏洞」的路径：
+   诱导已登录的运营点一下，那一击就是合法的、带真实令牌的写请求。
+   现在 <code>admin/tests/csp_meta.test.ts</code> 会<strong>拒绝</strong>任何人把 <code>frame-ancestors</code> 加回 meta
+   —— 因为它比不写更糟：下一个人会以为点击劫持已经被守住。</li>
+<li><code>admin</code> 的 CSP 里 <code>connect-src 'self'</code> <strong>已经覆盖 Vite 的 HMR</strong>（同端口 WebSocket；
+   CSP3 规定 <code>'self'</code> 在 http 页面上同时匹配 <code>ws://</code>）。若反代把 API 放到<strong>另一个源</strong>，
+   需要把那个源加进 <code>connect-src</code>，否则表现为「页面能开、请求全被拦」。</li>
+<li>启动日志出现「⚠️ 正在使用开发默认凭证」= 这次部署的 JWT 密钥与管理员口令是
+   公开字面量。它<strong>不是</strong>错误（开发库照常可用），但它意味着<strong>不能对外</strong>。</li>
+</ol>
+<h3 id="116-155-12">11.6 本轮<strong>未</strong>改的三件事 —— 第 155 轮已<strong>全部落地</strong>（见 §12）<a class="headerlink" href="#116-155-12" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>以下三条在 §11 写完后被拍板并实施为<strong>第 155 轮</strong>（2026-10-16），
+详见 §12。本节保留原始分析作为决策依据。</p>
+</blockquote>
+<ol>
+<li><strong><code>requireWritable</code> 对未知角色 fail-open</strong>（<code>middleware.go</code>）。
+   当前语义：只有 <code>readonly</code> 被拒写，其余（含未知值）可写。
+   原注释的理由是「该列默认 <code>ops</code>，放行才是未知角色的正确方向，不该把写操作打成 500」。
+   改成白名单（<code>admin</code> / <code>ops</code> 可写）对所有<strong>已知</strong>角色行为完全一致，
+   只把「未知值」从放行改成 403 —— 但那是产品策略，不是显然的对错，<strong>没有擅自改</strong>。</li>
+<li><strong><code>admin_tokens</code> 只写不读</strong>。表里有 <code>revoked_at</code>，全仓<strong>零读写</strong>；
+   admin 客户端只用 <code>access_token</code>，<code>Session</code> 字段签发后无人消费。
+   即「管理员令牌无法吊销、后台没有登出」。两条路：
+   <strong>接线</strong>（加 <code>POST /admin/logout</code> + 校验时读回该表）或<strong>删死代码</strong>（承认无吊销）。
+   接线会把「每次后台请求查一次库」的成本带上，删代码会让「表存在＝以为有吊销」消失 ——
+   两种都比现在这种「看起来有、实际没有」好，但<strong>方向要人定</strong>。</li>
+<li><strong><code>?redirect=</code> 是死数据</strong>：守卫写、登录页从不消费（登录后固定回看板）。
+   消费它需要同时防开放重定向（只接受 <code>/admin</code> 前缀），属独立改动。</li>
+</ol>
+<h3 id="117">11.7 本轮验证状态<a class="headerlink" href="#117" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Go</td>
+<td><code>go test ./... -count=1</code>：<strong>12 包全 ok，0 skip</strong>（需真实 PostgreSQL）</td>
+</tr>
+<tr>
+<td><code>gofmt</code> / <code>go build</code> / <code>go vet</code></td>
+<td>干净</td>
+</tr>
+<tr>
+<td>admin <code>vue-tsc --noEmit</code></td>
+<td>0 error</td>
+</tr>
+<tr>
+<td>admin <code>vitest run</code></td>
+<td><strong>25 文件 / 288 条全绿</strong></td>
+</tr>
+<tr>
+<td>miniapp <code>vitest run</code></td>
+<td><strong>69 文件 1045 条通过 / 2 skip</strong>（未改动，与改动前基线一致）</td>
+</tr>
+<tr>
+<td>admin <code>pnpm audit --prod</code></td>
+<td>No known vulnerabilities found</td>
+</tr>
+</tbody>
+</table>
+<p>变更清单：</p>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>改动</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>server/internal/service/gems.go</code> / <code>game.go</code> / <code>progression.go</code></td>
+<td>三处写语句补归属条件；<code>dailyChallengeCounters</code> 改只读</td>
+</tr>
+<tr>
+<td><code>server/internal/service/ownership_scan_test.go</code></td>
+<td>守卫扩到 UPDATE/DELETE + 动词门 + 形状门 + 自检</td>
+</tr>
+<tr>
+<td><code>server/internal/service/adminapi.go</code> / <code>stats.go</code></td>
+<td><code>MaxAdminKeywordLen</code> + <code>trimAdminKeyword</code></td>
+</tr>
+<tr>
+<td><code>server/internal/service/service.go</code></td>
+<td><code>MaxNicknameLen</code></td>
+</tr>
+<tr>
+<td><code>server/internal/config/config.go</code> + <code>cmd/api/main.go</code></td>
+<td><code>DevDefaultWarnings</code> + 启动横幅</td>
+</tr>
+<tr>
+<td><code>server/internal/httpapi/readonly_guard_test.go</code></td>
+<td>写路由结构守卫（AST，含自检）</td>
+</tr>
+<tr>
+<td><code>admin/src/api/client.ts</code> / <code>router/index.ts</code> / <code>views/LoginView.vue</code></td>
+<td>令牌验真 + 401 范围收紧</td>
+</tr>
+<tr>
+<td><code>admin/index.html</code></td>
+<td>meta CSP + <code>no-referrer</code> + 部署侧义务说明</td>
+</tr>
+<tr>
+<td>新增守卫</td>
+<td><code>admin_keyword_bound_test.go</code>、<code>csp_meta.test.ts</code>、<code>config.DevDefaultWarnings</code> 三条、<code>TestGuestLoginNicknameIsBounded</code>、<code>TestListDefensesDoesNotWriteCounters</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="12-155-2026-10-16116">12. 第 155 轮（2026-10-16）：§11.6 的三件事全部落地<a class="headerlink" href="#12-155-2026-10-16116" title="Permanent link">&para;</a></h2>
+<p>这一轮是 §11 拍板后的实施：三条「留着需要人定」的决策，按安全方向全部落地。</p>
+<h3 id="121">12.1 三项落地<a class="headerlink" href="#121" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>决策</th>
+<th>落地</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>requireWritable</code> fail-open → <strong>fail-closed 白名单</strong></td>
+<td><code>middleware.go</code>：仅 <code>admin</code>/<code>ops</code> 可写，未知角色一律 403。新增 e2e <code>TestE2EAdminRoleWhitelistIsFailClosed</code> 钉死 readonly/ops/admin/未知角色四档</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>admin_tokens</code> 只写不读 → <strong>接线真实登出</strong></td>
+<td>① <code>auth.Claims</code> 加 <code>sid</code>，<code>JWT.Issue</code> 变 3 参（破坏性变更：忘了传 <code>sid</code> 直接编译错）；② <code>AdminLogin</code> 把 <code>sessionPlain</code> 明文写进 JWT、<code>sessionHash</code> 落库；③ <code>ResolveAdmin</code> 每次查会话行（<code>revoked_at</code>/<code>expires_at</code>），<strong>签名仍合法的 JWT 也能被登出立刻掐死</strong>；④ 新增 <code>AdminLogout</code>（按 admin_id 吊销全部会话，幂等）；⑤ <code>POST /admin/logout</code>（<code>/logout</code> 豁免出 <code>requireWritable</code>，理由=会话生命周期非数据写，readonly 也能登出自己）；⑥ 删掉 <code>AdminTokenPair.Session</code> 死字段；⑦ admin 前端加登出按钮 + <code>adminLogout()</code> API</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>?redirect=</code> 死数据 → <strong>消费 + 开放重定向防护</strong></td>
+<td><code>LoginView.vue</code> 读 <code>route.query.redirect</code>，<strong>只接受 <code>/admin</code> 前缀</strong>（后台路由都在此下，新增页面自动生效），其余落到看板。新增 3 条测试：合法跳回 / 外部 URL 拒 / <code>//evil</code> 拒</td>
+</tr>
+</tbody>
+</table>
+<h3 id="122">12.2 守卫与自检<a class="headerlink" href="#122" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>/logout</code> 豁免</strong>：<code>readonly_guard_test.go</code> 新增 <code>writableRouteExemptions</code> 显式表（键=路径模板、值=理由），<code>TestWritableRouteExemptionsStillApply</code> 自检「豁免表里每个键必须真的对应一条未挂中间件的写路由」—— 路由补挂了中间件 / 改名 / 删了，豁免就自动变红。</li>
+<li><strong>会话检查可被测试命中</strong>：<code>TestAdminLogoutRevokesAllSessions</code> / <code>TestResolveAdminSessionRevoked</code> / <code>TestResolveAdminSessionExpired</code> 三条直接测「登出/吊销/过期后旧令牌 401」。</li>
+<li><strong>破坏性 <code>Issue</code> 签名</strong>：<code>auth.Issue</code> 从 2 参变 3 参，全仓 10 处调用点同步改（玩家传 <code>""</code>，管理员传 <code>sid</code>）。下一个签发点若忘传，编译期就失败 —— 不留「无会话令牌」的静默后门。</li>
+</ul>
+<h3 id="123">12.3 部署前置（本轮新增义务）<a class="headerlink" href="#123" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>存量管理员令牌在部署后 2h 内自然消亡</strong>：旧令牌没有 <code>sid</code>，<code>ResolveAdmin</code> 直接 401。
+   无需数据迁移，但运维要知会运营「部署后所有后台标签页会要求重新登录」。</li>
+<li><strong>登出会切断该管理员所有设备</strong>：<code>AdminLogout</code> 按 <code>admin_id</code> 吊销<strong>全部</strong>会话，
+   与玩家侧 <code>/me/logout</code> 同口径。运营在 A 设备登出，B 设备 2h 内还有效的会话一并失效。</li>
+</ol>
+<h3 id="124">12.4 变异验证（本轮）<a class="headerlink" href="#124" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>变异</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>把 <code>ResolveAdmin</code> 的会话检查整段注释掉</td>
+<td><strong>红</strong>：<code>TestAdminLogoutRevokesAllSessions</code> / <code>TestResolveAdminSessionRevoked</code> / <code>TestResolveAdminSessionExpired</code> 三条全红（登出后旧令牌本应 401 却 200）</td>
+</tr>
+<tr>
+<td>去掉 <code>/logout</code> 的豁免、给它挂上 <code>requireWritable</code></td>
+<td>readonly 登出 403 —— 豁免理由里写的「误开标签页滞留 2h」立刻复活</td>
+</tr>
+<tr>
+<td><code>requireWritable</code> 退回「只拒 readonly」</td>
+<td><code>TestE2EAdminRoleWhitelistIsFailClosed</code> 的「未知角色 403」用例红</td>
+</tr>
+</tbody>
+</table>
+<p>全部还原后复跑还原态（§8.3）。</p>
+<h3 id="125">12.5 验证状态<a class="headerlink" href="#125" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Go <code>go test ./internal/auth ./internal/config ./internal/service ./internal/httpapi</code></td>
+<td>全 ok</td>
+</tr>
+<tr>
+<td>admin <code>vue-tsc --noEmit</code></td>
+<td>0 error</td>
+</tr>
+<tr>
+<td>admin <code>vitest run</code>（LoginView + AdminLayout.logout + 既有）</td>
+<td>全绿</td>
+</tr>
+</tbody>
+</table>
+<p>变更清单：</p>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>改动</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>server/internal/auth/auth.go</code></td>
+<td><code>Claims.Sid</code> + <code>Issue</code> 3 参</td>
+</tr>
+<tr>
+<td><code>server/internal/service/admin.go</code></td>
+<td><code>ResolveAdmin</code> 查会话行；<code>AdminLogout</code>；删 <code>AdminTokenPair.Session</code>；<code>HashRefreshToken</code> 重导出</td>
+</tr>
+<tr>
+<td><code>server/internal/httpapi/middleware.go</code></td>
+<td><code>requireWritable</code> 改 fail-closed 白名单</td>
+</tr>
+<tr>
+<td><code>server/internal/httpapi/handlers_admin.go</code></td>
+<td>新增 <code>adminLogout</code> handler</td>
+</tr>
+<tr>
+<td><code>server/internal/httpapi/routes.go</code></td>
+<td>新增 <code>adm.Post("/logout", …)</code></td>
+</tr>
+<tr>
+<td><code>server/internal/httpapi/readonly_guard_test.go</code></td>
+<td><code>writableRouteExemptions</code> + 豁免自检</td>
+</tr>
+<tr>
+<td><code>server/internal/httpapi/admin_logout_e2e_test.go</code>（新）</td>
+<td>登出 e2e + 角色白名单 e2e</td>
+</tr>
+<tr>
+<td><code>server/internal/service/admin_service_test.go</code></td>
+<td><code>TestAdminLogoutRevokesAllSessions</code> + <code>TestResolveAdminSessionRevoked</code> + <code>TestResolveAdminSessionExpired</code>；修 10 处 <code>JWT.Issue</code> 调用</td>
+</tr>
+<tr>
+<td><code>admin/src/api/index.ts</code></td>
+<td>新增 <code>adminLogout()</code></td>
+</tr>
+<tr>
+<td><code>admin/src/layouts/AdminLayout.vue</code></td>
+<td>顶栏登出按钮（服务端真切断 + 清本地 + 跳登录页）</td>
+</tr>
+<tr>
+<td><code>admin/src/views/LoginView.vue</code></td>
+<td>消费 <code>?redirect=</code>（只接受 <code>/admin</code> 前缀）</td>
+</tr>
+<tr>
+<td><code>admin/tests/LoginView.test.ts</code></td>
+<td>3 条 <code>?redirect=</code> 用例</td>
+</tr>
+<tr>
+<td><code>admin/tests/AdminLayout.logout.test.ts</code>（新）</td>
+<td>登出按钮 3 条</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright (C) 2026 annsshadow · AGPL-3.0-or-later
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.tabs", "navigation.sections", "navigation.indexes", "navigation.top", "navigation.tracking", "toc.follow", "search.highlight", "search.share", "search.suggest", "content.code.copy", "content.tabs.link"], "search": "../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>
