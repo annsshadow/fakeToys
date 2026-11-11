@@ -1,0 +1,72 @@
+name: Docs site
+
+# 只发布 docs/ 下的 laiyipao / llm-lab / oa4rust 三个目录。
+# 触发：main 分支上文档或站点配置变更；也支持手动运行。
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/laiyipao/**"
+      - "docs/llm-lab/**"
+      - "docs/oa4rust/**"
+      - "docs/index.md"
+      - "mkdocs.yml"
+      - "requirements-docs.txt"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: docs-site
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-docs.txt
+
+      - run: pip install -r requirements-docs.txt
+
+      # --strict：任何断链或 nav 缺页都让构建失败，避免把半成品发出去。
+      - run: mkdocs build --strict
+
+      # 产物白名单校验：除首页外，只允许三个项目目录的页面。
+      # docs/ 下新增顶层目录时若忘了加进 exclude_docs，这一步会拦住。
+      - name: Verify published pages stay inside the whitelist
+        run: |
+          set -euo pipefail
+          allowed='^site/(index\.html|404\.html|laiyipao/|llm-lab/|oa4rust/)'
+          bad=$(find site -type f -name '*.html' | grep -Ev "$allowed" || true)
+          if [ -n "$bad" ]; then
+            echo "::error::以下页面不在发布白名单内，请检查 mkdocs.yml 的 exclude_docs："
+            echo "$bad"
+            exit 1
+          fi
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
