@@ -72,8 +72,16 @@ class DataVisualizer:
         时必须有它，而「只是 new 一个可视化器」不该在盘上留下东西 —— 管道构造时会带上这
         一族对象，用户没跑过任何一图，工作目录就已经多了三个空目录。
 
+        **返回值是「拼接」而不是「解析后的落点」**（A342 / L312 写实）：这一面**只借**
+        `require_within_dir` 那句判决（坏名字不许落到 `output_dir` 之外），交回的仍是
+        `output_dir / 名字` 的原形状；而同族的另两面（`pipeline.export_dataset` 与
+        `version_control`）交回的是**解析之后**的落点 ⇒ **两个形状并存**，读代码的人
+        拿返回值再拼一层时，看到的会是相对片段而不是绝对路径。这是**有意保留**的：
+        响应面上那一句文案（`visualizations/xxx.png`）是既成契约。
+
         Raises:
-            DataValidationError: 输出文件名落到 `output_dir` 之外
+            DataValidationError: 输出文件名落到 `output_dir` 之外，或名字里带冒号
+                （`C:` 会被当成盘符 ⇒ 落点名会变形，A374 / L312）
         """
         # 延迟导入：本文件第 27 行被账本 A137 按行号点名，顶层加一行会把它平移出跨度。
         from .validation import require_within_dir

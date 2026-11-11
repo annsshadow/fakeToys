@@ -45,10 +45,13 @@ from augmentor.versioning import VersionManager  # noqa: E402
 
 IS_WIN = sys.platform.startswith("win")
 
-#: 落点就是基座本身的那些形状（`str.strip()` 之后的 `.` 与盘符相对前缀都属这一档）。
+#: 落点就是基座本身的那些形状（`str.strip()` 之后的 `.` 都属这一档）。
 SELF_LANDING_SHAPES = [".", "./", "  .  ", ".//"]
-if IS_WIN:
-    SELF_LANDING_SHAPES.append("C:")
+
+#: **A374 / L312**：冒号形状（盘符相对）—— `C:foo` 的落点名会变形、`C:` 落在基座
+#: 本身、`a:b` 把基座整个丢掉 ⇒ 这一族现在先被**冒号臂**拦下（那一档更精确：名字里
+#: 真的带冒号），不再走自着陆那一臂 ⇒ `C:` 从上面那个清单里移出来。
+COLON_SHAPES = ["C:foo", "C:", "a:b"]
 
 #: 照旧放行的形状 —— 判据量的是「落点是不是基座」，不是「名字里有没有点」。
 STILL_ACCEPTED = ["v_20261013_120000", "sub/dir_ok", "plain.json", "a/.", ".._checkpoint.json"]
@@ -79,6 +82,19 @@ class TestSelfLandingIsRejected:
             with pytest.raises(DataValidationError) as exc:
                 require_within_dir("版本 ID", shape, base)
             assert "它本身" in str(exc.value), (shape, str(exc.value))
+            assert "版本 ID" in str(exc.value), shape
+
+    def test_every_colon_shape_is_rejected_by_the_colon_verdict(self, tmp_path):
+        """A374 / L312：冒号形状走**冒号臂**（名字里真的带冒号 ⇒ 落点名会变形）
+
+        `C:` 这一格同时是自着陆形状，但冒号臂更精确（它点出「名字里的冒号会被当成
+        盘符」），所以它在冒号臂上被拦下；其余三个自着陆形状仍在自着陆那一臂。
+        """
+        base = _mk_root(tmp_path)
+        for shape in COLON_SHAPES:
+            with pytest.raises(DataValidationError) as exc:
+                require_within_dir("版本 ID", shape, base)
+            assert "不能含冒号" in str(exc.value), (shape, str(exc.value))
             assert "版本 ID" in str(exc.value), shape
 
     def test_the_escaped_shapes_keep_their_original_verdict(self, tmp_path):

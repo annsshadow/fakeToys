@@ -53,7 +53,7 @@ export const autoConfigResponseSchema = z.object({
   source_stats: z.record(z.string(), z.unknown()),
 })
 
-/** `api/routes/system_ops.py:796` → BackupCleanupResponse */
+/** `api/routes/system_ops.py:807` → BackupCleanupResponse */
 export const backupCleanupResponseSchema = z.object({
   deleted_count: z.number(),
   max_backups: z.number(),
@@ -75,7 +75,7 @@ export const backupListResponseSchema = z.object({
   backups: z.array(backupInfoResponseSchema),
 })
 
-/** `api/routes/system_ops.py:772` → BackupVerifyEntryResponse */
+/** `api/routes/system_ops.py:783` → BackupVerifyEntryResponse */
 export const backupVerifyEntryResponseSchema = z.object({
   backup_id: z.string(),
   exists: z.boolean(),
@@ -84,7 +84,7 @@ export const backupVerifyEntryResponseSchema = z.object({
   timestamp: z.string(),
 })
 
-/** `api/routes/system_ops.py:786` → BackupVerifyResponse */
+/** `api/routes/system_ops.py:797` → BackupVerifyResponse */
 export const backupVerifyResponseSchema = z.object({
   results: z.array(backupVerifyEntryResponseSchema),
 })

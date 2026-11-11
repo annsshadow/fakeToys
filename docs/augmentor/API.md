@@ -600,7 +600,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | `POST` | `/api/dataset/compare` | 数据集对比 | 只读。返回质量向 A/B 结论 + 重叠度 + 建议，`diff_datasets` 的成员语义见 §11 排查。 |
 | `POST` | `/api/dataset/features` | 字段特征检测 | 只读。`field_features` 是**列表**（不是 dict），每项一个字段的画像。 |
 | `POST` | `/api/dataset/auto-config` | 自动配置推荐 | 只读。返回推荐配置 + 理由；推荐值不落盘，要 `POST /api/config` 才生效。 |
-| `POST` | `/api/dataset/impact` | 增强前后影响评估 | 只读。`duplicate_rate` 是**增强后**的重复率；语义分数在 `semantic_evaluated=false` 时不参与（API 面拿不到原始问题）。`text_field` 空串 / 纯空白 / 那两份数据里根本没有这一列都回 400，detail 带首条实际字段（L238 / A321，与健康门禁、批量翻译共引 `validation.require_item_field`）；空串这一档的措辞从「没有任何一条含字段 ''」改成「`text_field` 不能是空字符串」——同一个 400，但后者说的是真凶。 |
+| `POST` | `/api/dataset/impact` | 增强前后影响评估 | 只读。**`unique_instructions` 这个键名是既成契约，但它数的是「所选字段（`text_field`，默认 `instruction`）的唯一值数」而不是「指令数」** —— 换 `text_field` 就是换被数的那一样东西，而键名没跟着改（A284 / L227 只做了前端侧的诚实化：页面标签改成「唯一值数（按所选字段）」，键名本身未动 ⇒ 改它是破坏性变更，本轮按「只改文档口径」处置）。`duplicate_rate` 是**增强后**的重复率；语义分数在 `semantic_evaluated=false` 时不参与（API 面拿不到原始问题）。`text_field` 空串 / 纯空白 / 那两份数据里根本没有这一列都回 400，detail 带首条实际字段（L238 / A321，与健康门禁、批量翻译共引 `validation.require_item_field`）；空串这一档的措辞从「没有任何一条含字段 ''」改成「`text_field` 不能是空字符串」——同一个 400，但后者说的是真凶。 |
 | `POST` | `/api/dataset/evaluate` | 生成文本指标评估 | 只读。响应键就是 `metrics` / `sample_count` / `details`。请求省略 `metrics` ⇒ 取 `config.evaluation.metrics`（L219 接线，权威序 请求参数 > 配置键 > SDK 内置默认）；生效清单统一过 `METRIC_FUNCTIONS` 白名单，越界名 400，空清单也 400（SDK 的 `metrics or [内置三只]` 会把空值静默补成三项，所以在本层出声）。两侧字段名 `generated_field` / `reference_field` 同规（L220 接线，配置那两键出厂值与被替换的硬编码默认同为 `output` ⇒ 零漂移）：请求侧默认是 `null` 哨兵，**省略与显式传 `"output"` 从此是两种不同的事**；取不到的列名（含空串）由逐条门口报 400 并带下标，不静默补空。 |
 | `POST` | `/api/dataset/convert` | 格式转换 | **写盘变换类**：必须给 `output_file`，响应只回「写到哪、写了多少」。`csv` / `tsv` 的表头列名若以公式前导（`=` / `+` / `-` / `@` / 制表 / 回车）开头，写出前返回 **400** 并点名列名（A391：列名是读回侧配行的键，不静默改写；xlsx / json / jsonl 不受此限）。`source_format` **送空串不等同于省略**：省略那一格 ⇒ 按扩展名推断并照常转换（200），送 `""` ⇒ **400**「源格式不能是空串：省略该字段即按扩展名自动推断，或显式给出具体格式名（输入：<文件>）」（A291：判决点名输入文件，不再是那句缺主语的「无法从  转换到 JSON」——主语位置插进去的就是那个空串，句子里留着两个连续空格，说不出是什么格式转不了）。 |
 | `POST` | `/api/dataset/merge` | 合并数据集 | **写盘变换类**：同上。`inputs` 的长度有**出厂上限 100**（A402）：此前那一维一处约束都没有，而每一只输入都要读进内存 ⇒ 请求体小、内存占用大。超限回 **400**「inputs 最多 100 个，当前 N 个」（**不是截断** —— 截断会静默改变语义：「我送了 200 个，你只处理了 100 个」而客户端毫不知情）；请求面**不接受覆盖**这个上限。 |
@@ -618,7 +618,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | 方法 | 路径 | 说明 | 人读字段提示 |
 | --- | --- | --- | --- |
 | `GET` | `/api/system/dependencies` | 可选依赖诊断 | 只读。返回已装/缺失两栏 + **降级功能清单**（缺哪个包会导致哪个功能退化）。 |
-| `POST` | `/api/system/validate-config` | 校验配置文件 | 只读。**不传 `path` 时校验服务自己的 `config.yaml`**；显式传 `path` 仍按数据白名单校验（越界 403）。**不挂 `verify_api_key`**：服务端设了 `AUGMENTOR_API_KEY` 时它照样 200（实测，它是 POST 但只读，门禁只看写操作）。前端自 L234 起在「配置管理 → 配置文件校验」卡上接线，路径留空即校验服务自己那份（空串由服务层丢成整键不送）；卡上写明本支**校验不通过也回 200**、红绿只看 body 里的 `is_valid`，而「合法」不等于没有问题清单——出厂那份实测 `is_valid` 为 true 却带着 5 条「环境变量未设置: …_API_KEY」警告，最小合法配置（只有 `models.default`）为 true 带 1 条 `models.default` 警告；`line` 三档实测恒为 null，所以页面不按行号排序、也不提供「跳到出错行」。 |
+| `POST` | `/api/system/validate-config` | 校验配置文件 | 只读。**判决只由 `errors` 那一档决定**：`errors` 非空 ⇒ `is_valid: false`，`errors` 为空 ⇒ `is_valid: true`；**`warnings` 与 `info` 两档不参与判决** —— 出厂那份配置实测 `is_valid: true` 却带着 5 条「环境变量未设置: …_API_KEY」的警告（A318 / L234）⇒ `is_valid` 不等于「没有问题清单」。**不传 `path` 时校验服务自己的 `config.yaml`**；显式传 `path` 仍按数据白名单校验（越界 403）。**不挂 `verify_api_key`**：服务端设了 `AUGMENTOR_API_KEY` 时它照样 200（实测，它是 POST 但只读，门禁只看写操作）。前端自 L234 起在「配置管理 → 配置文件校验」卡上接线，路径留空即校验服务自己那份（空串由服务层丢成整键不送）；卡上写明本支**校验不通过也回 200**、红绿只看 body 里的 `is_valid`，而「合法」不等于没有问题清单——出厂那份实测 `is_valid` 为 true 却带着 5 条「环境变量未设置: …_API_KEY」警告，最小合法配置（只有 `models.default`）为 true 带 1 条 `models.default` 警告；`line` 三档实测恒为 null，所以页面不按行号排序、也不提供「跳到出错行」。 |
 | `POST` | `/api/system/monitor` | 质量监控快照 | 只读。返回质量监控快照。不挂 `verify_api_key`（实测门禁升起时仍 200）。前端自 L234 起在「系统状态 → 质量监控与自测」卡上接线：三指标与告警逐条照回显渲染，阈值是 completeness 0.7 / diversity 0.4 / consistency 0.7；空数据集那一档 `metrics` 是**空对象**而不是三个 0，页面按「键在不在」渲成「-」；告警正文是**服务端英文原文**（形如 `consistency below threshold: 0.00 < 0.70`），没有中文那一份；「触发告警」为 0 只说明这一份没触那三个阈值，**不是「质量合格」**。 |
 | `POST` | `/api/system/auto-test` | 运行数据集自动化测试 | 只读判定。`suite` 走**封闭清单**：未知套件名 400 而不是静默回落 default。不挂 `verify_api_key`（实测门禁升起时仍 200）。前端同一张卡上接线，`suite` 这一格页面**不送**（送空串是 400，只有 `null` 与省略才走 default）；五条判定按服务端顺序渲出，通过率是 `pass_rate * 100`（0.6 ⇒ 60%），说明列照抄服务端**已截断**的 `message`；空数据集那一档实测 2/3、通过率 40%，后三条 `message` 是「数据为空」。 |
 | `POST` | `/api/system/migrate` | 迁移数据集结构 | 只读判定（产物另给 `output_file`）。`rules` 里未知 id **400 并列出全部合法 id**，不静默丢弃。挂 `verify_api_key`：设了 `AUGMENTOR_API_KEY` 而请求没带对的 `X-API-Key` 就是 401「缺少或无效的 X-API-Key」，前端那份 key 在「配置管理 → 写操作鉴权」卡上存。前端自 L234 起在「系统状态 → 迁移与流式」卡上接线：规则多选一条不选就是递 `rules: []`（实测与省略等价 = 三条全用，**不是「不迁移」**），破坏性改名与整份覆盖走 Popconfirm 二次确认；产物已存在时**整份覆盖**，没有 409、也没有「已存在」提示；回执里的 `source_path` / `target_path` 都是**服务端绝对路径**。 |
@@ -1303,6 +1303,12 @@ CLI 侧等价命令：`augmentor health-gate --input data/train_data.json --pass
 ```json
 {"charts": {"wordcloud": "visualizations/wordcloud.png", "length_distribution": "visualizations/length_distribution.png"}}
 ```
+
+**`charts` 里那一格是「拼接」而不是「解析后的绝对落点」**（A342 / L312 写实）：这一面
+**只借** `require_within_dir` 那句判决（坏名字不许落到 `output_dir` 之外），交回的仍是
+`output_dir / 名字` 的原形状；而同族的另两面（`pipeline.export_dataset` 与
+`version_control`）交回的是**解析之后**的落点 ⇒ **两个形状并存**。这是**有意保留**的：
+上面那句文案（`visualizations/xxx.png`）是既成契约，而**改形状要连页面一起改**。
 
 `config.visualization.enabled` 为 `false` 时（L215 起这一键真的有读者）返回
 `{"charts": {}}` 而**不是** 4xx：这一族键是阶段开关，关掉的意思是「这一步别做」，

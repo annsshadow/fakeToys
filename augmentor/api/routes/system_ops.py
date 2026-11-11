@@ -625,6 +625,15 @@ def _error_responses(*cases: tuple) -> dict:
 NO_KEY_DESC = "缺少或无效的 `X-API-Key` 请求头"
 DIR_EMPTY_DESC = "`backup_dir` 显式传了空串"
 DIR_OUT_DESC = "`backup_dir` 落在数据目录白名单之外"
+#: A336 / L312：三只**无请求体**的备份端点（list / DELETE / verify）身上，框架仍会
+#: 自动挂一档 422 —— 而它们只有字符串路径段与查询参数，**任何值都合法** ⇒ 这一档
+#: 永远不来（A330 那一族「契约写了一档而它永远不来」的同一族）。这里**显式覆盖**那一档
+#: 的说明（只改说明、不改可达性、不改公开响应的键集），让只吃契约的客户端不再为它
+#: 生成一条死分支。
+NO_BODY_422_DESC = (
+    "本端点没有请求体（只有字符串路径段与查询参数，恒合法）⇒ 框架自动挂的这一档"
+    "在本端点上不可达；这一条只是把它写实，不是说它会发生"
+)
 
 
 @router.get(
@@ -634,6 +643,7 @@ DIR_OUT_DESC = "`backup_dir` 落在数据目录白名单之外"
     responses=_error_responses(
         (400, DIR_EMPTY_DESC),
         (403, DIR_OUT_DESC),
+        (422, NO_BODY_422_DESC),
     ),
 )
 async def list_backups_endpoint(
@@ -745,6 +755,7 @@ async def restore_backup_endpoint(
         (401, NO_KEY_DESC),
         (403, DIR_OUT_DESC),
         (404, "`backup_id` 不在备份索引里；索引有条目而备份文件已丢不算这一档，仍回 200"),
+        (422, NO_BODY_422_DESC),
     ),
 )
 async def delete_backup_endpoint(
@@ -808,6 +819,7 @@ class BackupCleanupResponse(BaseModel):
     responses=_error_responses(
         (400, DIR_EMPTY_DESC),
         (403, DIR_OUT_DESC),
+        (422, NO_BODY_422_DESC),
     ),
 )
 async def verify_backups_endpoint(

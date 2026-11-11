@@ -132,8 +132,8 @@ MEASURED_CALL_SITES = {
 MEASURED_RESIDUAL_JOINS = {
     "augmentor/backup.py:117": "L231 给备份名落下的手判（`.parents` 那一档），与权威同口径",
     "augmentor/cache.py:268": "键是 md5 十六进制摘要，形状上不含分隔符与 `..` ⇒ 惰性",
-    "augmentor/validation.py:1026": "权威自己那一行 `root / candidate`（判完才拼）",
-    "augmentor/visualizer.py:85": "返回的那句拼接：上一行刚刚用权威判过同一个 `output_file`",
+    "augmentor/validation.py:1037": "权威自己那一行 `root / candidate`（判完才拼）",
+    "augmentor/visualizer.py:93": "返回的那句拼接：上一行刚刚用权威判过同一个 `output_file`",
 }
 
 #: 现量（L259）：`ExportFormat` 全部 13 个成员的值——**无一含 `/`、`\\` 或 `..`**。

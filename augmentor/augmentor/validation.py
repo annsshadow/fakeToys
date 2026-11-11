@@ -1021,6 +1021,17 @@ def require_within_dir(label: str, value: Any, base: Path) -> Path:
     candidate = Path(value.strip())
     if candidate.is_absolute() or ".." in candidate.parts:
         raise DataValidationError(f"{label} 不能指向 {base.name} 目录之外")
+    # A374 / L312：第八档（冒号）。`pathlib` 把 `C:foo` / `a:b` 解析成**盘符相对**的
+    # 形状 ⇒ `root / candidate` 会把基座悄悄丢掉（`C:foo` 落到 `C:\base\foo`，
+    # `a:b` 落到 `a:\base\b`），于是**落点名与调用方给的 id 不是同一个东西**，
+    # 调用方拿回执里的 id 再去找就找不到了；而 `C:` 那一档（落点就是基座本身）
+    # 已被 L286 那一档堵住，剩下的是「落点名变形」这一格。
+    # 名字里带冒号在 Windows 上本来就落不了盘（NTFS 用 `:` 当流分隔符）⇒
+    # 这一档与 `..` 同一口径：**400，不静默变形**。
+    if candidate.drive:
+        raise DataValidationError(
+            f"{label} 不能含冒号（`C:` 会被当成盘符，落点名与回执里的 id 会不是一个东西）"
+        )
 
     root = Path(base).resolve()
     resolved = (root / candidate).resolve()
