@@ -171,8 +171,6 @@ describe('Multimodal 目录扫描', () => {
     expect(
       screen.getByText('sample.jpg 被同名的 sample.png 覆盖（同模态 image，只保留后者）'),
     ).toBeInTheDocument()
-    expect(
-      screen.getByText('子目录 nested/ 未扫描（只扫顶层文件）'),
-    ).toBeInTheDocument()
+    expect(screen.getByText('子目录 nested/ 未扫描（只扫顶层文件）')).toBeInTheDocument()
   })
 })

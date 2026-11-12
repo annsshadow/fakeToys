@@ -260,7 +260,11 @@ const MODELS: ModelCase[] = [
   },
   { schema: visualizeResponseSchema, className: 'VisualizeResponse', file: 'api/routes/data.py' },
   // A408：启动端点的响应模型换成 `AugmentStartResponse`（`MessageResponse` + `task_id`）
-  { schema: startAugmentResponseSchema, className: 'AugmentStartResponse', file: 'api/routes/augment.py' },
+  {
+    schema: startAugmentResponseSchema,
+    className: 'AugmentStartResponse',
+    file: 'api/routes/augment.py',
+  },
   // A408：`MessageResponse` 仍被 `DELETE /api/augment/checkpoints/{task_id}` 用着 ⇒ 另有一格
   { schema: messageResponseSchema, className: 'MessageResponse', file: 'api/schemas.py' },
   {

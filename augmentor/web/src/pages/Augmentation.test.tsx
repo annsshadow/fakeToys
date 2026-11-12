@@ -206,10 +206,9 @@ describe('Augmentation 进度轮询', () => {
     fireEvent.click(document.querySelector('.ant-select-item-option')!)
     fireEvent.click(screen.getByRole('button', { name: /开始增强/ }))
 
-    await waitFor(
-      () => expect(spies.getProgress).toHaveBeenCalledWith('task-abc123'),
-      { timeout: 8000 },
-    )
+    await waitFor(() => expect(spies.getProgress).toHaveBeenCalledWith('task-abc123'), {
+      timeout: 8000,
+    })
   })
 })
 
@@ -366,7 +365,9 @@ describe('Augmentation 轮询收敛（第 33 轮）', () => {
         avg_quality_score: 0.7,
       },
     ]
-    spies.getProgress.mockImplementation(async () => sequence.shift() ?? { status: 'no_checkpoint' })
+    spies.getProgress.mockImplementation(
+      async () => sequence.shift() ?? { status: 'no_checkpoint' },
+    )
 
     const { container } = render(<Augmentation />)
     // 选文件并点「开始增强」

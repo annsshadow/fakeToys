@@ -479,12 +479,14 @@ describe('System 迁移与流式', () => {
     expect(warn).toHaveBeenCalledWith('先填流式产物的文件名')
     expect(spies.streamProcess).not.toHaveBeenCalled()
 
-    // 迁移那一支的必填闸在 `handleMigrate` 里，而它挂在 Popconfirm 的 onConfirm 上 ⇒
-    // 要点到「照改」才够得着。这也是量出来的一格脾气：没填产物名时用户会先看见二次确认，
-    // 确认之后才得到那句 warning（不是先拦下来）。
+    // A317：迁移那一支的必填闸在**二次确认之前** —— 改前判空挂在 Popconfirm 的
+    // onConfirm 上，用户会先读一段「迁移会改字段名」的破坏性警告、点一次「照改」，
+    // 才得到那句 warning：授权语义被空表单消耗掉了一次。现在点按钮就出声，
+    // 而二次确认框压根不出现。
     fireEvent.click(screen.getByLabelText('迁移数据集结构'))
-    fireEvent.click(await screen.findByText(/照\s*改/))
     await waitFor(() => expect(warn).toHaveBeenCalledWith('先填迁移产物的文件名'))
+    expect(screen.queryByText('迁移会改字段名，产物已存在则整份覆盖')).not.toBeInTheDocument()
+    expect(screen.queryByText(/照\s*改/)).not.toBeInTheDocument()
     expect(spies.migrateDataset).not.toHaveBeenCalled()
     warn.mockRestore()
   })

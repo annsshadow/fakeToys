@@ -161,6 +161,8 @@ export default function System() {
   const [wsIn, setWsIn] = useState('')
   const [migOut, setMigOut] = useState('')
   const [migRules, setMigRules] = useState<string[]>([])
+  // A317：迁移的二次确认框受控打开 —— 判空在确认之前，只有真要写盘时才弹。
+  const [migrateConfirmOpen, setMigrateConfirmOpen] = useState(false)
   const [migration, setMigration] = useState<MigrationResponse | null>(null)
   const [stOut, setStOut] = useState('')
   const [stOp, setStOp] = useState('')
@@ -427,15 +429,29 @@ export default function System() {
   }
 
   // 迁移是**破坏性**的：字段被改名，输入输出同一个文件时就地改写（服务端放行）⇒ 二次确认
-  const handleMigrate = async () => {
+  //
+  // A317：二次确认框是**为一次破坏性写盘授权**用的，所以它只该在真要写盘时出现。
+  // 改前两格判空都挂在 `onConfirm` 指向的那个函数里 ⇒ 交互顺序是「点『迁移结构』→
+  // 先读一段『迁移会改字段名』的警告 → 点『照改』→ 才发现自己没填东西」：
+  // 授权语义被空表单消耗掉了一次，而真正要拦的那次点击与这次白确认长得一模一样。
+  // 修法取「判空提到确认之前」：两格判空抽成 `checkMigrateInput`，确认框受控打开
+  // （`open` + `onOpenChange`），打开动作先过判空；`handleMigrate` 里那两道保留作
+  // 第二道防线（确认框是异步渲染的，字段可能在打开与确认之间被清空）。
+  const checkMigrateInput = (): boolean => {
     if (!wsIn) {
       message.warning('先填要迁移的那份服务端数据文件')
-      return
+      return false
     }
     if (!migOut) {
       message.warning('先填迁移产物的文件名')
-      return
+      return false
     }
+    return true
+  }
+
+  const handleMigrate = async () => {
+    setMigrateConfirmOpen(false)
+    if (!checkMigrateInput()) return
     setOpsBusy('migrate')
     try {
       const result = await migrateDataset(wsIn, migOut, { rules: migRules })
@@ -1246,6 +1262,16 @@ export default function System() {
             description="instruction → question、output → answer；源与产物填同一个名字就是就地改写。"
             okText="照改"
             cancelText="取消"
+            open={migrateConfirmOpen}
+            onOpenChange={(next) => {
+              // A317：打开确认框这一下先过判空 —— 信息不全时不该让用户读一段破坏性
+              // 警告再点一次「照改」。
+              if (next && !checkMigrateInput()) {
+                setMigrateConfirmOpen(false)
+                return
+              }
+              setMigrateConfirmOpen(next)
+            }}
             onConfirm={handleMigrate}
           >
             <Button

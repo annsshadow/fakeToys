@@ -716,7 +716,7 @@ L91 那格收在「端点收得到、控件选得到」，A162 记下的是还�
 - 节名拼错 → 复用 `ConfigValidator._suggest` 给「是否想写 `augmentation`」；
 - 节内子键未知 → `section.key` 形式，同 A86 那一半。
 
-判定与状态码不变，只加一键，所以这不是破坏性变更。消费侧自 L237 起才真看得见它：`UpdateConfigResponse` 补上 `ignored_keys` 之后，配置管理页新增「上次保存的回执」卡，把后端真回的 `message` 与逐条 `ignored_keys` 渲染出来（两种形状 `section` / `section.key` 卡上写明「按有没有那个点就能分开看」），并写明 `success` 两边都是 true、它只表示「请求被正常处理」。页面底部那句硬编码 toast「配置已保存到 config.yaml」在本页一个键都没写成时仍然照说 —— 这是 A323，待拍。
+判定与状态码不变，只加一键，所以这不是破坏性变更。消费侧自 L237 起才真看得见它：`UpdateConfigResponse` 补上 `ignored_keys` 之后，配置管理页新增「上次保存的回执」卡，把后端真回的 `message` 与逐条 `ignored_keys` 渲染出来（两种形状 `section` / `section.key` 卡上写明「按有没有那个点就能分开看」），并写明 `success` 两边都是 true、它只表示「请求被正常处理」。页面底部那句 toast 自 L317 起**直接显示后端那句 `message`**（原先是页面自己拼的第三处措辞，于是后端拼进 `message` 的「已忽略未写入的配置项：…」判决在 toast 里必然丢失）—— A323 已收口。
 
 #### 3.12.6 只有「真的写进了配置对象」才落盘（L89 / A152①）
 

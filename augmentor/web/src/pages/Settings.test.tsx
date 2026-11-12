@@ -149,19 +149,28 @@ describe('Settings 保存时递给服务层的负载', () => {
     expect(payload.multimodal).toEqual(CONFIG.multimodal)
   })
 
-  it('保存成功后弹出「已保存」提示', async () => {
+  it('保存成功后的提示直接读后端那句话（A323：被忽略的键不再丢在 toast 里）', async () => {
     spies.getConfig.mockResolvedValue(CONFIG)
     spies.getModels.mockResolvedValue({ models: ['ernie'], default: 'ernie' })
-    spies.updateConfig.mockResolvedValue({ success: true, message: 'ok' })
+    // 后端「部分键被忽略」那一档的原话：句尾带着「已忽略未写入的配置项」那串判决
+    spies.updateConfig.mockResolvedValue({
+      success: true,
+      message:
+        '配置已保存，部分配置需要重启服务生效（已忽略未写入的配置项：qualty；是否想写 quality？）',
+      ignored_keys: ['qualty'],
+    })
 
     render(<Settings />)
 
     await waitFor(() => expect(spies.getModels).toHaveBeenCalled())
     fireEvent.click(screen.getByRole('button', { name: /保存配置/ }))
 
-    await waitFor(() => expect(document.body.textContent).toContain('配置已保存到 config.yaml'), {
-      timeout: 10000,
-    })
+    await waitFor(
+      () => expect(document.body.textContent).toContain('已忽略未写入的配置项：qualty'),
+      { timeout: 10000 },
+    )
+    // 页面不许再自造第三处措辞（旧那句写死了「配置已保存到 config.yaml」）
+    expect(document.body.textContent).not.toContain('配置已保存到 config.yaml')
   })
 })
 

@@ -7,7 +7,8 @@ import {
   apiErrorDetail,
   startAugmentation,
   getProgress,
-  getCheckpoints, deleteCheckpoint,
+  getCheckpoints,
+  deleteCheckpoint,
   getDataFiles,
 } from '../services/api'
 import type { AugmentProgressDetail } from '../types/api'

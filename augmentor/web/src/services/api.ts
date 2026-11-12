@@ -538,7 +538,11 @@ export const getCheckpoints = async (): Promise<CheckpointListResponse> => {
 /** 删除一个断点（第 56 轮）：同一输入文件的下一次运行从头开始。 */
 export const deleteCheckpoint = async (taskId: string): Promise<{ success: boolean }> => {
   const response = await api.delete(`/augment/checkpoints/${taskId}`)
-  return checkedData<{ success: boolean }>('deleteCheckpoint', deleteCheckpointSchema, response.data)
+  return checkedData<{ success: boolean }>(
+    'deleteCheckpoint',
+    deleteCheckpointSchema,
+    response.data,
+  )
 }
 
 // 数据分析

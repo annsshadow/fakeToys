@@ -132,6 +132,11 @@ jobs:
         # --max-warnings 0 已写进 package.json 的 lint 脚本：任何新 warning 都会让 CI 失败
         run: npm run lint
 
+      - name: Format check
+        # A282：格式门此前**不在 CI 里** ⇒ `prettier --check src` 恒红也长期没人看见。
+        # 本轮起仓内基线已重排到绿（5 只文件），这道门从「恒红」变成可用的守门人。
+        run: npm run format:check
+
       - name: Test with coverage gate
         # 覆盖率门槛（70%）配置在 vitest.config.ts 的 coverage.thresholds，
         # 所以必须跑 test:coverage 才会真正校验；npm run test 只跑用例

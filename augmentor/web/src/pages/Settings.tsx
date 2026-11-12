@@ -206,7 +206,15 @@ export default function Settings() {
         multimodal: config?.multimodal,
       })
       setSaveResult(result)
-      message.success('配置已保存到 config.yaml，部分配置需要重启服务生效')
+      // A323：toast 直接读后端那句 `message` —— 页面原先自己拼了第三处措辞，
+      // 于是后端把 `ignored_keys` 拼进 message 的那一档（部分配置被忽略）在 toast 里
+      // 必然丢失。后端三档措辞：①「配置已保存，部分配置需要重启服务生效」
+      // ②同上但尾部带「（已忽略未写入的配置项：…；是否想写…？）」
+      // ③「本次请求未写入任何配置项，config.yaml 保持不变」（本页不可达：恒送
+      // `default_model`，那一档要空请求体才出得来）。
+      // `success` 两边都是 true（它只表示「请求被正常处理」），所以 toast 用
+      // `message.success` 装后端原话，不在这里自造第四处措辞。
+      message.success(result.message)
     } catch (err) {
       message.error(apiErrorDetail(err, '保存配置失败'))
     } finally {
