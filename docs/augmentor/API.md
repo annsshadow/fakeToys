@@ -388,7 +388,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 
 ### 响应契约
 
-**每个端点都声明了 `response_model`**（共 77 个），因此 `/openapi.json` 里不存在
+**每个端点都声明了 `response_model`**（共 79 个），因此 `/openapi.json` 里不存在
 「无 schema 的 200 响应」。这条由 `tests/integration/test_api_openapi_contract.py`
 双向守门：既要每个端点都声明契约，也要**每个已声明契约的端点都真实存在**
 （防止文档里留着一个早就删掉的端点）。
@@ -419,7 +419,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 
 ## 端点总览
 
-按 OpenAPI tag 分组，共 **77** 个端点。
+按 OpenAPI tag 分组，共 **79** 个端点。
 
 ### audit（1）
 
@@ -427,12 +427,14 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 |------|------|------|
 | `POST` | `/api/audit` | 数据集就绪审计 |
 
-### augment（3）
+### augment（5）
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | `GET` | `/api/augment/checkpoints` | 列出断点 |
+| `DELETE` | `/api/augment/checkpoints/{task_id}` | 删除断点（删完从头重跑） |
 | `GET` | `/api/augment/progress` | 获取增强进度 |
+| `GET` | `/api/augment/report/{task_id}` | 获取增强任务报告（含失败明细） |
 | `POST` | `/api/augment/start` | 启动增强任务 |
 
 ### config（3）
@@ -905,6 +907,39 @@ JSONL 进料交给转换器的读边解析成规范记录（`instruction` / `inp
 
 ```json
 {"checkpoints": ["augment_9f2c1ab34d5e"]}
+```
+
+### `DELETE /api/augment/checkpoints/{task_id}`
+
+删除一个断点（进度文件与增量文件一起清）⇒ 删除后**同一输入文件的下一次运行从头开始**。
+任务 ID 非法（越界 / 含冒号那一档）回 **400** + 那句域判决；其余内部异常回 **500** + 固定文案。
+
+```json
+{"success": true, "message": "断点已删除"}
+```
+
+### `GET /api/augment/report/{task_id}`
+
+取回那次增强的**报告**：失败明细在 `errors`（条目下标 / 异常类型 / 预览），`progress` 与
+`memory_monitor` 是运行期诊断。**边界**：报告只缓存在**处理那个任务的 worker 进程内存里**
+⇒ **单进程部署适用**；多 worker 部署时它可能落在另一个 worker 上而读不到 ⇒ 回 **404**
+「报告不存在（任务未完成或由其它 worker 处理）」。
+
+```json
+{
+  "task_id": "augment_9f2c1ab34d5e",
+  "input_file": "train_data.json",
+  "output_file": "train_data_augmented.json",
+  "input_count": 200,
+  "output_count": 186,
+  "quality_check": true,
+  "dedup": false,
+  "parallel": true,
+  "vector_index": null,
+  "errors": [],
+  "progress": null,
+  "memory_monitor": null
+}
 ```
 
 ---
