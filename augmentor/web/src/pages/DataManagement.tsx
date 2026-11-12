@@ -1079,7 +1079,11 @@ export default function DataManagement() {
                 {aggResult.conflicts.map((conflict) => (
                   <div key={conflict.key}>
                     「{conflict.key}」各源答案不一致：{conflict.values.join(' / ')}
-                    （来源 {conflict.sources.join(' / ')}）
+                    （来源 {conflict.sources.join(' / ')}
+                    {conflict.same_source
+                      ? '——同一个来源内部的分歧（这份文件里同问不同答）'
+                      : '——跨来源的分歧'}
+                    ）
                   </div>
                 ))}
               </div>

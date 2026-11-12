@@ -813,11 +813,16 @@ class TestReceiptCoversEveryResponseKey:
             assert f"{variable}.{key}" in page, f"{model.__name__}.{key} 在页面上没人读"
 
     def test_every_conflict_item_key_is_read_too(self):
-        """`conflicts` 那一项的三键也都要被读到：只报「有几处冲突」等于把判决内容吞掉"""
+        """`conflicts` 那一项的四键也都要被读到：只报「有几处冲突」等于把判决内容吞掉
+
+        **L319（A297）**：第四键 `same_source` 点名分歧是同源内部还是跨来源 —— 页面
+        按它分两种文案渲染，所以它也必须被读到（改前那三键仍在）。
+        """
         page = _page()
-        for key in ("key", "values", "sources"):
+        for key in ("key", "values", "sources", "same_source"):
             assert f"conflict.{key}" in page, f"AggregateConflict.{key} 在页面上没人读"
-        assert set(ts_interface_keys("AggregateConflict")) == {"key", "values", "sources"}
+        assert set(ts_interface_keys("AggregateConflict")) == {"key", "values", "sources",
+                                                             "same_source"}
 
 
 @needs_web_src

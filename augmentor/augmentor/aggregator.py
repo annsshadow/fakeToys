@@ -201,7 +201,7 @@ class DataAggregator:
                              datasets: Dict[str, List[Dict]]) -> AggregationResult:
         """一致性聚合：仅保留各源对相同 key 答案一致的数据
 
-        不一致的 key 会记录到 conflicts。
+        不一致的 key 会记录到 conflicts，每条带一格 `same_source`（**True** = 同源内部分歧、**False** = 跨来源分歧，A297）。
 
         Args:
             datasets: 源名 -> 数据列表
@@ -233,10 +233,10 @@ class DataAggregator:
                 item["_sources"] = [source for source, _ in pairs]
                 result.append(item)
             else:
+                sources = [source for source, _ in pairs]
                 conflicts.append({
-                    "key": key,
-                    "values": [value for _, value in pairs],
-                    "sources": [source for source, _ in pairs],
+                    "key": key, "values": [value for _, value in pairs], "sources": sources,
+                    "same_source": len(set(sources)) == 1,
                 })
 
         return AggregationResult(

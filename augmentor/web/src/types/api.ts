@@ -1155,14 +1155,19 @@ export interface SampleResponse {
 /**
  * `POST /api/dataset/aggregate` 回执里 `conflicts` 的一项
  *
- * 只有 `strategy="consistent"` 那一档会产出（其余三档实测恒为 `[]`）。三键由
+ * 只有 `strategy="consistent"` 那一档会产出（其余三档实测恒为 `[]`）。四键由
  * `augmentor/aggregator.py` 的 `aggregate_consistent()` 现造，`values` 与 `sources`
  * **等长且逐位对应**（同一个源出现两次就报两次，实测 `sources: ["甲","甲","乙","乙"]`）。
+ *
+ * `same_source` 点名**分歧发生在同一个来源内部还是跨来源**（A297）：`true` = 同一份文件
+ * 里同问不同答（这两条永不落地），`false` = 两个来源对同一个 key 给了不同答案。改前这一
+ * 格不区分 ⇒ 一份内部有重复提问的数据集会交出空的产物，而回执只说「冲突 N 处」。
  */
 export interface AggregateConflict {
   key: string
   values: string[]
   sources: string[]
+  same_source: boolean
 }
 
 /**
