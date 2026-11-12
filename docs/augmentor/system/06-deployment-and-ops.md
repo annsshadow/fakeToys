@@ -141,7 +141,7 @@ pytest --cov-report=html:htmlcov   # HTML 报告
 
 | 测试 | 守门对象 |
 |------|----------|
-| `tests/integration/test_api_openapi_contract.py` | 77 端点全声明 `response_model` + 全真实存在（双向） |
+| `tests/integration/test_api_openapi_contract.py` | 79 端点全声明 `response_model` + 全真实存在（双向） |
 | `tests/unit/test_api_endpoint_consumption_l224.py` | 每个端点都有消费入口（UNCONSUMED/CLI_ENTRY/NO_ENTRY 为空集） |
 | `tests/unit/test_config_three_side_l222.py` | `AppConfig.fields()` 与出厂 `config.yaml` 逐节全等 |
 | `tests/integration/test_cli_verdict_wiring.py` | CLI `--gate` 声明与 handler 源码双向推导 |

@@ -46,7 +46,7 @@
 | --- | --- | --- | --- |
 | 🦀 **[oa4rust](oa4rust/)** | Rust 重写的企业 OA 系统 | Rust · Axum · Vue3 · uni-app · PostgreSQL | 97 crate · 652 `.rs` |
 | 💥 **[laiyipao](laiyipao/)** | 塔防 + 元素反应小程序游戏 | Go · Fiber · uni-app · Vue3 · PostgreSQL | 397 `.go` · 50 表 |
-| 🧪 **[augmentor](augmentor/)** | AI 训练数据增强工具 v3.0 | Python · FastAPI · React · Ant Design | 77 端点 · 10196 单测 |
+| 🧪 **[augmentor](augmentor/)** | AI 训练数据增强工具 v3.0 | Python · FastAPI · React · Ant Design | 79 端点 · 10551 单测 |
 | ✅ **[auto-checkin](auto-checkin/)** | 大模型公益站自动签到面板 | Node · Playwright · Express | 3 站点 · 9 项棘轮 |
 | 🧠 **[llm-lab](llm-lab/)** | 从零学大模型训练 | Python · NumPy · PyTorch | 11 讲义 · 95 用例 |
 
@@ -65,9 +65,9 @@
 | 指标 | 数值 | 证据来源 |
 | :-- | :--: | :-- |
 | Rust · oa4rust 行覆盖 | **95.01%** | `docs/plans/2026-10-29-remaining-work-plan.md`（容器内实测） |
-| Python · augmentor 行覆盖 | **99.73%** | `augmentor/coverage.xml`（全量复跑） |
+| Python · augmentor 行覆盖 | **99.53%** | `augmentor/coverage.xml`（全量复跑，2026-11-12：TOTAL 15819/56/4382/38，门槛 99%） |
 | Go · laiyipao 语句覆盖 | **85.8%** | `docs/laiyipao/audits/coverage-2026-10-28.md` |
-| augmentor 单测 | **10196 passed / 0 failed** | CI 全量复跑（`ai-platform-ci.yml`） |
+| augmentor 单测 | **10551 passed / 0 failed / 6 skipped** | 本地全量复跑（`cd augmentor && python -m pytest tests -q`，548.53 s）——⚠️ `ai-platform-ci.yml` 那道 CI 门禁**自 2026-11-01 起长期红**，见 [`docs/plans/2026-11-12-remaining-ledger-inventory.md`](docs/plans/2026-11-12-remaining-ledger-inventory.md) §三 |
 | 编译告警门禁 | **13 通过 / 0 失败 / 0 跳过** | `node scripts/check-warnings.mjs` |
 | 全仓提交 | **3769** | `git rev-list --count HEAD` |
 
@@ -228,8 +228,8 @@ go run ./cmd/migrate && go run ./cmd/seed && go run ./cmd/api
 
 **v3.0 升级**
 - 性能：流式处理峰值 22.70MB→1.66MB、dedup 内存 9536MB→20MB
-- 健壮性：**10196 单测全绿**，核心包行覆盖 **99.73%**，错误分类、自动重试、配置写入闭环
-- API：**77 个 REST 端点**全部声明 `response_model`
+- 健壮性：**10551 单测全绿**，全量行覆盖 **99.53%**，错误分类、自动重试、配置写入闭环
+- API：**79 个 REST 端点**全部声明 `response_model`
 - Web：React 11 个功能页 + Ant Design
 
 ```bash

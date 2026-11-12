@@ -8,7 +8,7 @@
 > 仓内另有几份深度专项文档（与本目录互补，不重复）：
 > - [`docs/augmentor/README.md`](../README.md) — 使用指南 / 快速上手
 > - [`docs/augmentor/ARCHITECTURE.md`](../ARCHITECTURE.md) — 逐层架构与审计账本（体量大，侧重缺陷追溯）
-> - [`docs/augmentor/API.md`](../API.md) — 77 个 REST 端点逐条契约
+> - [`docs/augmentor/API.md`](../API.md) — 79 个 REST 端点逐条契约
 > - [`docs/augmentor/DEPLOYMENT.md`](../DEPLOYMENT.md) — 部署细节
 >
 > 本目录聚焦「**端**」这一视角，把上述材料重新组织成可查阅的系统手册。
@@ -67,7 +67,7 @@ augmentor/
 │   ├── main.py           #   应用装配（中间件 + 路由 + 静态挂载 + 异常兜底）
 │   ├── deps.py           #   管道单例、路径白名单、鉴权、异步 IO、异常映射
 │   ├── middleware/       #   限流 / 请求追踪 / 请求日志 / 上传尺寸闸 / 匿名写传输闸
-│   └── routes/           #   15 个按领域拆分的 router（77 端点，全部声明 response_model）
+│   └── routes/           #   15 个按领域拆分的 router（79 端点，全部声明 response_model）
 ├── web/                  # ★ 客户端 Web 管理端（React 19 + TS + Ant Design 6 + Vite 8）
 │   ├── src/pages/        #   11 个功能页
 │   ├── src/services/     #   api.ts（axios 封装 + 写操作鉴权拦截器 + 接线守门）

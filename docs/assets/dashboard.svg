@@ -50,7 +50,7 @@
             transform="rotate(-90)" filter="url(#soft)">
       <animate attributeName="stroke-dashoffset" from="389.56" to="1.03" dur="1.6s" fill="freeze" calcMode="spline" keyTimes="0;1" keySplines="0.22 1 0.36 1"/>
     </circle>
-    <text y="2" text-anchor="middle" font-family="ui-monospace,Consolas,monospace" font-size="30" font-weight="700" fill="#a78bfa">99.73%</text>
+    <text y="2" text-anchor="middle" font-family="ui-monospace,Consolas,monospace" font-size="30" font-weight="700" fill="#a78bfa">99.53%</text>
     <text y="26" text-anchor="middle" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="12" fill="#94a3b8">行覆盖</text>
     <text y="88" text-anchor="middle" font-family="ui-monospace,Consolas,monospace" font-size="13" fill="#e2e8f0">🧪 augmentor</text>
     <text y="106" text-anchor="middle" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="11" fill="#64748b">Python · 核心包</text>
@@ -72,7 +72,7 @@
 
   <g font-family="ui-monospace,Consolas,monospace" font-size="12">
     <rect x="46" y="272" width="252" height="38" rx="10" fill="#ffffff" fill-opacity="0.05" stroke="#ffffff" stroke-opacity="0.10"/>
-    <text x="66" y="296" fill="#93c5fd">10196</text>
+    <text x="66" y="296" fill="#93c5fd">10551</text>
     <text x="140" y="296" fill="#94a3b8">augmentor 单测全绿</text>
 
     <rect x="316" y="272" width="252" height="38" rx="10" fill="#ffffff" fill-opacity="0.05" stroke="#ffffff" stroke-opacity="0.10"/>
