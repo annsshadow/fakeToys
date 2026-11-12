@@ -196,7 +196,25 @@ class TestTheCapIsWired:
 
 
 class TestTheCapUnderConcurrency:
-    """并发那一维：封顶开着时版本一个都不许丢，封顶关着时只留 N 份"""
+    """并发那一维：封顶开着时版本一个都不许丢，封顶关着时只留 N 份
+
+    **L326：数「版本目录」时必须按产品自己的口径把 `current` 排除掉**
+    （`VersionManager.list_versions()` 也是 `version_dir.name != "current"` 才收）——
+    `current` 是指向当前版本目录的**符号链接**，而 `Path.is_dir()` **会跟随符号链接**
+    ⇒ 在**能建符号链接的平台上**（POSIX）它被算成「一份版本」，
+    在**建不出来的平台上**（Windows 无管理员特权 ⇒ 改落成一个普通文件）
+    它不算 ⇒ **同一份产品、同一份测试，两个平台上数出来的份数差一**
+    ⇒ 改前：封顶开着那一支在 CI 的 ubuntu 上数出 **25**（24 份版本 + 那条 `current` 链接）
+    ⇒ 「盘上少了 -1 份」；封顶关着那一支数出 **11**（10 份版本 + 同一条链接）
+    ⇒ 「assert 11 == 10」。**本机（Windows）两支都绿** ⇒ 只有 CI 看得见这一格。
+    这不是并发缺陷、也不是封顶缺陷，**是数法漏了一个排除项**。
+    """
+
+    #: 版本目录的名册口径 —— 与 `VersionManager.list_versions()` 逐字同一条：
+    #: `current` 是**指针**（符号链接 / `.txt`），不是一份版本。
+    @staticmethod
+    def _version_dirs(root):
+        return {p.name for p in root.iterdir() if p.is_dir() and p.name != "current"}
 
     def test_with_the_cap_open_no_version_is_lost(self, tmp_path):
         """封顶开到够用的值 ⇒ 并发建的版本一份都不丢（与 l273 那一支同口径）"""
@@ -212,7 +230,7 @@ class TestTheCapUnderConcurrency:
 
         assert len({info.version_id for info in infos}) == 24, "版本号重复"
         labels = {info.label for info in infos}
-        on_disk = {p.name for p in root.iterdir() if p.is_dir()}
+        on_disk = self._version_dirs(root)
         assert len(on_disk) == 24, "盘上少了 %d 份" % (24 - len(on_disk))
         assert labels == {"L%d" % i for i in range(24)}
 
@@ -228,4 +246,4 @@ class TestTheCapUnderConcurrency:
             list(pool.map(
                 lambda i: mgr.create_version(payload, label="L%d" % i), range(24)))
 
-        assert len({p.name for p in root.iterdir() if p.is_dir()}) == 10
+        assert len(self._version_dirs(root)) == 10
