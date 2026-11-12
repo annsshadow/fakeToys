@@ -434,7 +434,10 @@ class TestTheAutoFortyTwoTwoIsHonestOnlyOnThreeEntries:
         for path, payload in cases:
             response = _post(ctx, path, payload)
             assert response.status_code == 422, (path, response.text[:120])
-            assert isinstance(response.json()["detail"], list), path
+            #: A311 / L325 之后 422 的 `detail` 是**一句中文**（字符串），不是 pydantic 那份数组
+            detail = response.json()["detail"]
+            assert isinstance(detail, str), (path, detail)
+            assert "参数校验失败" in detail, (path, detail)
 
     def test_unreachable_on_the_three_without_a_body(self, ctx):
         """`backup_dir` 是字符串查询参数：任何值都合法，六档尝试没有一档落到 422

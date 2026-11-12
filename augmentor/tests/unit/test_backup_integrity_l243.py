@@ -337,9 +337,11 @@ class TestCleanupKeepsTheNewestByIndexRows:
         r = client.post("/api/system/backups/cleanup", json={"max_backups": "abc"})
 
         assert r.status_code == 422, r.text
-        first = r.json()["detail"][0]
-        assert first["type"] == "int_parsing"
-        assert first["loc"] == ["body", "max_backups"]
+        #: A311 / L325 之后 `detail` 是**一句中文**（字符串），不是 pydantic 那份数组
+        detail = r.json()["detail"]
+        assert isinstance(detail, str), detail
+        assert "max_backups" in detail, detail
+        assert "不是合法整数" in detail, detail
 
     def test_numeric_strings_are_coerced_by_pydantic(self, three_backups):
         """`"3"` 不是 422：pydantic 把它 coercion 成 3，判参之后走的是正常保留算术"""

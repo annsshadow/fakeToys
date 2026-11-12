@@ -311,11 +311,15 @@ from starlette.requests import Request
 
 
 def _finite_safe(value: object) -> object:
-    """把错误回显里的非有限浮点换成字符串 token，使 `allow_nan=False` 渲染得动
+    """把判决回显里的非有限浮点换成字符串 token，使 `allow_nan=False` 渲染得动
+
+    **L325 起这一层挂在 4xx 那一支**（A311 之后 422 不再回显原值 ⇒ 它不再需要）；
+    留下的理由是同一族的洞在 4xx 那一侧也开着：判决回显里嵌着请求原文，
+    而请求原文**理论上**可以带着一枚非有限浮点（今天的判决都是字符串，
+    这一层是**兜底**而不是当前必需的那一层）。
 
     Args:
-        value: `jsonable_encoder(exc.errors())` 的某个节点（容器只会是 dict / list，
-            因为 `loc` 那类元组已被 `jsonable_encoder` 转成列表）
+        value: `exc.detail` 的某个节点（容器只会是 dict / list）
 
     Returns:
         `NaN` / `Infinity` / `-Infinity` 换成同名字符串，dict / list 逐元素递归，
@@ -334,28 +338,87 @@ def _finite_safe(value: object) -> object:
     return value
 
 
-@app.exception_handler(RequestValidationError)
-async def validation_error_with_finite_echo(
-    request: Request, exc: RequestValidationError
-) -> JSONResponse:
-    """422 回执渲染不动非有限浮点时，换成 token 再渲染一次，状态码不变
+#: 校验失败的中文理由（按 pydantic v2 的 `type` 查表）
+#:
+#: **只查 `type`、不抄 `msg`**：`msg` 是英文原文（`Field required` 那一族），
+#: 而本条要收掉的正是「一段英文结构体」⇒ 抄它进来等于把双轨又请回来。
+#: 仓里没有任何一支自定义 validator（`field_validator` / `model_validator` 全仓 0 命中），
+#: 所以 422 的 `type` 永远落在下表或兜底那一档 ⇒ 句子**恒为中文**。
+_VALIDATION_REASONS = {
+    "missing": "缺少必填字段",
+    "extra_forbidden": "多余字段，不予接受",
+    "string_too_short": "长度不足",
+    "string_too_long": "长度超限",
+    "string_pattern_mismatch": "格式不符",
+    "int_parsing": "不是合法整数",
+    "float_parsing": "不是合法数字",
+    "bool_parsing": "不是合法布尔值",
+    "int_type": "不是合法整数",
+    "float_type": "不是合法数字",
+    "bool_type": "不是合法布尔值",
+    "str_type": "不是合法字符串",
+    "bytes_type": "不是合法字节串",
+    "list_type": "不是合法列表",
+    "dict_type": "不是合法对象",
+    "enum": "取值不在允许范围内",
+    "date_parsing": "不是合法日期",
+    "datetime_parsing": "不是合法时间",
+    "greater_than": "超出允许范围",
+    "greater_than_equal": "超出允许范围",
+    "less_than": "超出允许范围",
+    "less_than_equal": "超出允许范围",
+    "multiple_of": "不是允许的倍数",
+    "json_invalid": "请求体不是合法 JSON",
+    "value_error": "取值不合法",
+}
+#: 未知 `type` 的兜底理由（**不带英文原文** ⇒ 句子恒为中文）
+_DEFAULT_VALIDATION_REASON = "参数不合法"
+#: `loc` 开头那几段是「值从哪儿来」，不是字段名 ⇒ 拼字段名时剔掉
+_VALIDATION_SCOPE_PREFIXES = frozenset({"body", "query", "path", "header", "cookie"})
+#: 一句里最多列几处错（超出的并成「等共 N 处」）
+_VALIDATION_MAX_ITEMS = 3
+
+
+def _validation_detail(exc: RequestValidationError) -> str:
+    """把 pydantic 的错误列表折成**一句中文**（与本仓其余 4xx 同一形状）
 
     Args:
-        request: 触发校验失败的请求（默认处理器只用它，本函数不回显它的内容）
         exc: FastAPI/pydantic 的校验失败异常
 
     Returns:
-        422 的 `JSONResponse`。载荷合法时与 FastAPI 默认那支逐字节相同；
-        默认那支因 `allow_nan=False` 抛 ValueError 时，回有限值安全渲染
+        一句中文，形如「参数校验失败：input_file 缺少必填字段」；
+        多处错时用「；」并列，超过三处并成「等共 N 处」
     """
-    try:
-        return await request_validation_exception_handler(request, exc)
-    except ValueError:
-        return JSONResponse(
-            status_code=422,
-            content={"detail": _encodable(
-                _finite_safe(jsonable_encoder(exc.errors())))},
-        )
+    parts: list[str] = []
+    for err in exc.errors():
+        loc = [str(item) for item in err.get("loc", ())]
+        field = ".".join(
+            item for item in loc if item not in _VALIDATION_SCOPE_PREFIXES
+        ) or "请求体"
+        reason = _VALIDATION_REASONS.get(str(err.get("type", "")), _DEFAULT_VALIDATION_REASON)
+        parts.append(f"{field} {reason}")
+    if not parts:
+        return "参数校验失败"
+    if len(parts) > _VALIDATION_MAX_ITEMS:
+        head = "；".join(parts[:_VALIDATION_MAX_ITEMS])
+        return f"参数校验失败：{head}；等共 {len(parts)} 处"
+    return "参数校验失败：" + "；".join(parts)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_error_in_chinese(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
+    """422 也回中文一句，与本仓其余 4xx 同一形状（A311）
+
+    Args:
+        request: 触发校验失败的请求（本函数不回显它的内容）
+        exc: FastAPI/pydantic 的校验失败异常
+
+    Returns:
+        422 的 `JSONResponse`，载荷是 `{"detail": "一句中文"}`
+    """
+    return JSONResponse(status_code=422, content={"detail": _validation_detail(exc)})
 
 
 # ============ 4xx 判决的孤立代理对兜底 ============
@@ -417,7 +480,7 @@ async def http_error_with_encodable_echo(
     except UnicodeEncodeError:
         return JSONResponse(
             status_code=exc.status_code,
-            content={"detail": _encodable(exc.detail)},
+            content={"detail": _encodable(_finite_safe(exc.detail))},
             headers=getattr(exc, "headers", None),
         )
 

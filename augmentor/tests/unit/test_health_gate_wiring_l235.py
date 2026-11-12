@@ -488,13 +488,17 @@ class TestTheVerdictsAreWhatThePageSays:
         client, _ = http
         assert gate(client, pass_rate=None).status_code == 200
         assert gate(client, weights=None).status_code == 200
-        for field, err in (("pass_rate_min", "float_type"),
-                           ("duplicate_rate_max", "float_type"),
-                           ("completeness_min", "float_type"),
-                           ("block_on_warning", "bool_type")):
+        for field, err in (("pass_rate_min", "不是合法数字"),
+                           ("duplicate_rate_max", "不是合法数字"),
+                           ("completeness_min", "不是合法数字"),
+                           ("block_on_warning", "不是合法布尔值")):
             r = gate(client, **{field: None})
             assert r.status_code == 422, (field, r.text[:200])
-            assert r.json()["detail"][0]["type"] == err, field
+            #: A311 / L325 之后 `detail` 是**一句中文**（字符串），不是 pydantic 那份数组
+            detail = r.json()["detail"]
+            assert isinstance(detail, str), (field, detail)
+            assert field in detail, (field, detail)
+            assert err in detail, (field, detail)
 
     def test_the_four_error_shapes(self, http):
         client, _ = http
@@ -507,8 +511,11 @@ class TestTheVerdictsAreWhatThePageSays:
         assert r.status_code == 404 and r.json()["detail"] == "文件不存在"
         r = client.post("/api/quality/health-gate", json={})
         assert r.status_code == 422
-        assert r.json()["detail"][0]["type"] == "missing"
-        # 四档 detail 都是前端 `apiErrorDetail` 认得的形状（字符串或 pydantic 列表）
+        #: A311 / L325 之后缺必填格也是**一句中文**
+        detail = r.json()["detail"]
+        assert isinstance(detail, str), detail
+        assert "缺少必填字段" in detail, detail
+        # 四档 detail 都是前端 `apiErrorDetail` 认得的形状（**本仓后端一律是字符串**）
         for body in ({"pass_rate": 1.5}, {"input_file": "empty.json"}):
             d = client.post("/api/quality/health-gate",
                             json={"input_file": "dup.json", **body}).json()["detail"]

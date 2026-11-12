@@ -330,6 +330,6 @@ describe('System 血缘卡的诚实口径', () => {
     expect(screen.getAllByText(/配置管理 → 写操作鉴权/s)).toHaveLength(3)
     // 这一格 L234 起页面上有两处（血缘卡与新的迁移/流式卡都写着同一批号），所以按数目钉
     expect(screen.getAllByText(/（A302 \/ A312 已收）/s)).toHaveLength(2)
-    expect(screen.getByText(/两种错误体都要认/s)).toBeInTheDocument()
+    expect(screen.getByText(/错误体统一是一句中文/s)).toBeInTheDocument()
   })
 })

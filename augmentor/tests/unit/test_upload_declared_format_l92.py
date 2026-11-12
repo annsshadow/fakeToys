@@ -287,12 +287,16 @@ class TestEndpointAcceptsWhatTheUiSends:
         assert "input_format" in detail and "alpaca" in detail
         assert list(root.glob("*")) == []
 
-    def test_a_missing_file_is_422_and_its_detail_is_the_array_the_ui_handles(self, api_env):
-        """跨语言形状凭据：422 的 detail 确实是 `[{msg: 字符串}]`，vitest 那支不是想象"""
+    def test_a_missing_file_is_422_and_its_detail_is_a_chinese_line_the_ui_handles(self, api_env):
+        """跨语言形状凭据：422 的 detail 确实是**一句中文**，vitest 那支不是想象
+
+        **A311 / L325 之后**这一族的 `detail` 从 pydantic 那份数组翻成了中文一句
+        （状态码仍 422）⇒ 形状这一格跟着改准。
+        """
         http, root, _ = api_env
         response = http.post("/api/data/upload", data={"input_format": ""})
         assert response.status_code == 422, response.text
         detail = response.json()["detail"]
-        assert isinstance(detail, list) and detail, type(detail)
-        assert all(isinstance(item.get("msg"), str) for item in detail)
+        assert isinstance(detail, str) and detail, type(detail)
+        assert "参数校验失败" in detail, detail
         assert list(root.glob("*")) == []

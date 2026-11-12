@@ -26,7 +26,7 @@
    `api/main.py` 文末先走 FastAPI 默认的校验失败处理器，渲染抛 ValueError 才把非有限浮点换成
    同名**字符串** token 重渲染 ⇒ 表里那一格从 `CRASH` 翻成 `422`，判据也同步从「洞的快照」
    翻成正判决，并由同一支里的反向臂钉住「摘掉兜底立刻回到 CRASH」。
-   **A311 的本体没有收**——「缺必填格走英文 422、其余坏参数走中文 4xx」那一族双轨仍在账上待拍。
+   **A311 的本体已收**（L325）——「缺必填格走英文 422、其余坏参数走中文 4xx」那一族双轨已归一：422 的 `detail` 现在也是一句中文（A311 / L325）。
 
 **「范围」那一维在 L272 与 L277 两轮的边界不同，必须分开读**：
 
@@ -635,33 +635,38 @@ class TestHttpFace:
             assert INTERNAL_ERROR_DETAIL not in text, (shape, text[:120])
 
     def test_a311_new_cell_render_crash_stays_pinned(self, tmp_path):
-        """422 渲染崩溃那一格 L284 已收口：现量钉「422 + 同名 token」，反向臂钉「摘掉就回 CRASH」
+        """A311 本体已收（L325）：422 翻成中文一句 ⇒ 渲染崩溃那一格**结构上**不可能再发生
 
         改前（L272 现量）：`fuzzy_threshold=NaN` 先被模型字段的 `le=1.0` 判错，而 pydantic v2
         每条错误项都带 `input`（回显**解析后的请求体**），starlette 渲染钉 `allow_nan=False`
-        ⇒ 错误回执自己在渲染阶段抛 `ValueError` ⇒ 整个响应没了。L284 在 `api/main.py` 文末兜
-        了一层，本格的现量（逐格见循环日志 L284）翻成四形全 422，非有限值在 `input` 那一格换成
-        `"NaN"` / `"Infinity"` / `"-Infinity"` 三个字符串 token，而 `type` / `msg` / `ctx`
-        一字未动 ⇒ 兜底只换了渲染不了的字节，没有换判决。
+        ⇒ 错误回执自己在渲染阶段抛 `ValueError` ⇒ 整个响应没了。L284 兜了一层（本轮 L325
+        之前那一档是把非有限值换成同名 token 再回显）；**L325（A311 本体）把兜法整个换掉**：
+        422 的回执**不回显原值**，只回一句中文 ⇒ 那枚非有限浮点**连字面量都不在响应体里**
+        ⇒ 这一格从「换 token 换得对」升级成「根本没有可换的东西」。
 
-        判据因此从「洞的快照」升成正判决，但仍留一条反向臂压着：**把处理器换回 FastAPI 默认
-        那支**，同一个请求必须当场回到 CRASH。少了这条臂，这一格会退化成「表里写了 422 所以
-        永远绿」——那正是 A311 立账时点名的那种不可失败。A311 本体（英文 422 与中文 4xx 双轨）
-        不在这一格的射程里，仍待拍。
+        判据因此从「洞的快照」升成正判决，但**反向臂照旧压着**：把处理器换回 FastAPI 默认
+        那支，同一个请求必须当场回到 CRASH（那一支仍回显原值 ⇒ 仍会炸）——少了这条臂，
+        这一格会退化成「表里写了 422 所以永远绿」，那正是 A311 立账时点名的那种不可失败。
         """
         files = self._files(tmp_path)
         body = _base_body("/api/leakage/check", files)
         body["fuzzy_threshold"] = NAN
         code, text = _post(self.client, "/api/leakage/check", body)
         assert code == "422", text[:200]
-        item = json.loads(text)["detail"][0]
-        assert (item["type"], item["ctx"]) == ("less_than_equal", {"le": 1.0}), item
-        assert item["input"] == "NaN", item
+        detail = json.loads(text)["detail"]
+        #: A311 之后 `detail` 是**一句中文**（字符串），不是 FastAPI 那份数组
+        assert isinstance(detail, str), detail
+        assert "参数校验失败" in detail, detail
+        assert "fuzzy_threshold" in detail, detail
+        assert "超出允许范围" in detail, detail
+        #: 原值不回显 ⇒ 非有限浮点不在响应体里
+        assert "NaN" not in text, text[:200]
 
-        for value, echoed in ((INF, "Infinity"), (5.0, 5.0), (-1.0, -1.0)):
+        for value in (INF, 5.0, -1.0):
             body["fuzzy_threshold"] = value
             got = json.loads(_post(self.client, "/api/leakage/check", body)[1])
-            assert got["detail"][0]["input"] == echoed, (value, got)
+            assert isinstance(got["detail"], str), got
+            assert "Infinity" not in json.dumps(got), (value, got)
 
         saved = app.exception_handlers[RequestValidationError]
         app.exception_handlers[RequestValidationError] = (

@@ -22,8 +22,8 @@
   元素**逐键相同**（两侧同为 `DatasetInfo.to_dict()`）。`dataset_id` 是 **`md5(name)[:8]`**
   （实测 `dsA` → `8c7f0201`、`dsB` → `0d2cace8`），`path` 是服务端 resolve 后的**绝对路径**，
   `item_count` 是登记时真读文件数出来的（3 条语料 ⇒ 3）。
-* 缺 `input_file` ⇒ **422**，`detail` 是 FastAPI 的英文 `Field required`；而其余坏参数一律走
-  中文 400/403/404 ⇒ 前端要同时认两种错误体（**A311**）。
+* 缺 `input_file` ⇒ **422**（L325 / A311 收口后 `detail` 是一句中文，不再是 FastAPI 的
+  英文结构）；而其余坏参数一律走中文 400/403/404 ⇒ 错误体**归一**成同一种形状（**A311**）。
 * 同名同文件再 `POST` 一次 ⇒ 200，索引与磁盘各 **1** 条（dict 按 id 覆盖，与备份那一族留两条
   索引的形状**不同**），但 `created_at` 被**刷新**成第二次的时间，且没有 409、没有任何
   「已存在被覆盖」的提示；第二次送空 `description` / `tags` 会把旧值**抹成空**（**A306**）。
@@ -250,7 +250,7 @@ class TestThePageCarriesTheThreeOperations:
             "回显即丢",                  # A305：本轮收掉的那条
             "不是同一份",                # A308：三份默认目录
             "构造不再碰磁盘",              # A307：只读端点建目录，L249 收口
-            "两种错误体都要认",           # A311：422 英文 vs 中文 4xx
+            "错误体统一是一句中文",       # A311 / L325：422 与其余 4xx 同一形状了
             "白名单外是 403",             # 白名单档位
             "数据文件的顶层必须是 JSON 数组",  # 这一族独有的那档判决原文
         ):
@@ -328,14 +328,20 @@ class TestMeasuredEndpointBehavior:
         assert entry["description"] == "描述B", "磁盘上描述仍是空 ⇒ 只改了回执"
         assert entry["tags"] == ["t1", "t2"], "磁盘上标签仍是空 ⇒ 只改了回执"
 
-    def test_missing_input_file_is_the_only_english_422(self, http_with_registry):
-        """A311：缺必填格走 FastAPI 的英文 422，与其余中文 4xx 并存"""
+    def test_missing_input_file_is_a_chinese_422_now(self, http_with_registry):
+        """A311（L325 收口）：缺必填格也回**一句中文** ⇒ 错误体不再双轨
+
+        改前那一格钉的是「英文 422 与中文 4xx 并存」（`detail` 是 FastAPI 那份数组，
+        `msg` 逐字 `Field required`）。改后 `detail` 是**字符串** ⇒ 与其余 4xx 同一形状。
+        """
         http, *_ = http_with_registry
         r = http.post("/api/system/dependency/datasets", json={"name": "x"})
         assert r.status_code == 422
         detail = r.json()["detail"]
-        assert detail[0]["msg"] == "Field required"
-        assert detail[0]["loc"] == ["body", "input_file"]
+        assert isinstance(detail, str), detail
+        assert "参数校验失败" in detail, detail
+        assert "input_file" in detail, detail
+        assert "缺少必填字段" in detail, detail
 
     def test_same_name_twice_overwrites_and_resets_created_at(self, http_with_registry):
         """A306：同 id 覆盖（不留重复），但 `created_at` 被刷新，且空值会抹掉旧值"""

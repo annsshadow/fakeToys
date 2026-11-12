@@ -240,9 +240,12 @@ export const BULK_REQUEST_TIMEOUT_MS = 30 * 60 * 1000
  * 页面原先一律 `catch { message.error('上传失败') }`，等于把后端专门攒起来的那批诊断
  * 吞成一句没有信息量的「失败」⇒ 这一层负责把它取回来。
  *
- * 两种形状都要处理：400/403/413 的 detail 是字符串，422（校验失败）是
- * `[{ loc, msg, type }]` 数组。`error` 收成 `unknown` 而不是 `any`：本层不解释错误对象
- * 的来历（axios 错误、原生 Error、甚至字符串都可能是），逐层可选访问，取不到就走 fallback。
+ * 两种形状都要处理：本仓后端**一律回字符串**（400/403/413 是中文判决，422 也是中文一句 ——
+ * L325 / A311 收口后 422 的 `detail` 从 FastAPI 那份英文数组翻成了中文），而**数组那一支
+ * 留作兜底**（别的服务、或本仓后端回退到默认处理器时仍可能是 `[{ loc, msg, type }]`）
+ * ⇒ 本层对两种形状都认，页面不用自己分。`error` 收成 `unknown` 而不是 `any`：本层不解释
+ * 错误对象的来历（axios 错误、原生 Error、甚至字符串都可能是），逐层可选访问，取不到就走
+ * fallback。
  *
  * **401 单独加一句去处**：后端那句 detail 只说「缺少或无效的 X-API-Key」，它没说 key 该
  * 填在哪儿，而 21 个页面动作都会撞这一档（见 `API_KEY_HEADER` 那段）。加在 `apiErrorDetail`
@@ -1473,8 +1476,9 @@ export const listDependencyDatasets = async (
 /**
  * `POST /api/system/dependency/datasets`
  *
- * 必填两格 `name` 与 `input_file`；缺 `input_file` 是 **422**（FastAPI 英文 `Field required`），
- * 而其余坏参数走中文 400/403/404 —— 页面那句错误提示因此不能只认一种错误体（A311）。
+ * 必填两格 `name` 与 `input_file`；缺 `input_file` 是 **422**，而其余坏参数走中文
+ * 400/403/404 —— 状态码各归各位，**错误体统一是一句中文**（A311 / L325：422 那一轨也翻成
+ * 中文了，不再是 FastAPI 的英文结构体）。
  * `input_file` 不存在是 **404**「文件不存在」，白名单外是 **403**，带 `..` 是 **400**，
  * 空串是 **400**「文件路径 不能为空」，顶层不是 JSON 数组是 **400**「数据文件的顶层必须是
  * JSON 数组，当前是对象」。`dataset_id = md5(name)[:8]`，所以**同名再登记是覆盖**（不留
@@ -1535,7 +1539,7 @@ export const getDependencyGraph = async (
  * `POST /api/system/monitor`
  *
  * 只读不写盘，但**不是 GET**（同族四只都是 POST 带 body）。`input_file` 必填：缺是 **422**
- * 英文 `Field required`，不存在是 **404**「文件不存在」，白名单外 **403**，带 `..` **400**
+ * （中文一句，A311 / L325），不存在是 **404**「文件不存在」，白名单外 **403**，带 `..` **400**
  * 「路径包含非法组件」——与同族其余写盘端点逐字同一套判决。多送未知键被静默忽略（实测 200）。
  */
 export const runQualityMonitor = async (inputFile: string): Promise<QualitySnapshotResponse> => {

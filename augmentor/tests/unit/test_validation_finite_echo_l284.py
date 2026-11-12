@@ -23,8 +23,11 @@ pydantic v2 的每一项都带 `input`，即**回显解析后的请求体**；st
 `TestSurrogateEchoGuard`），`/api/dataset/search` 的 `query` / `pattern` / `regex_pattern`
 三只缺别的必填键时走的是 422 回显那一支，由同一处兜底的 `_encodable` 覆盖。
 
-修法只兜错误路径：`api/main.py` 那两节各先走默认处理器，渲染抛了才把非有限浮点换成
-字符串 token、把编不出的字符换成反斜杠原文，重渲染后状态码不变。**成功路径刻意不脱敏**
+修法只兜错误路径。**A311（L325）把 422 那一支整个换掉了**：现在 `api/main.py` 的
+`RequestValidationError` 处理器**自己渲染一句中文**（`{"detail": "一句中文"}`）⇒
+**回执里根本没有原值** ⇒ 非有限浮点与孤立代理对**结构上进不去响应体**
+⇒ 那一格从「换 token」升级成「不可能渲染不出来」。**4xx 那一支没动**：它仍要回显请求原文
+（判决要指路），所以 `_encodable` 那层转义仍在。**成功路径刻意不脱敏**
 （不换 `default_response_class`），否则会掩盖服务端自己算出来的 NaN 或坏字符。
 
 本文件的非恒真证据：`TestFallbackTeeth` 把处理器换回 FastAPI 默认那支，同一个请求当场
@@ -54,7 +57,7 @@ from api.main import (
     _finite_safe,
     app,
     http_error_with_encodable_echo,
-    validation_error_with_finite_echo,
+    validation_error_in_chinese,
 )
 
 #: 逐字取自 `api/deps.py` 的 header 别名
@@ -161,7 +164,7 @@ class TestReproClosed:
 
     @pytest.mark.parametrize("path", ENDPOINTS)
     def test_nan_echo_returns_422_not_500(self, client, path):
-        """`input_file` 换成 NaN ⇒ 422 而不是裸文本 500
+        """`input_file` 换成 NaN ⇒ 422 而不是裸文本 500，且**回执里没有原值**
 
         Args:
             client: 带密钥的 TestClient
@@ -172,18 +175,19 @@ class TestReproClosed:
         assert resp.status_code == 422, resp.text
         assert "Internal Server Error" not in resp.text
         payload = resp.json()  # 「渲染得动」本身就是要钉的那件事
-        assert "NaN" in resp.text
-
+        #: A311 之后 422 的 `detail` 是**一句中文**（字符串），不是 FastAPI 那份数组。
         detail = payload["detail"]
-        assert detail, "422 必须带可行动的错误项，不能退化成空数组"
-        #: 逐条点名要有 `type` / `loc` / `msg` 三格才谈得上「可行动」。判据不钉具体
-        #: 是哪一类错：`input_file` 只在 search 上是字符串字段，另外四只把它当额外键忽略，
-        #: 于是同一份载荷在它们那边报的是「缺必填字段」，回显里躺着的仍是那个 NaN。
-        for item in detail:
-            assert {"type", "loc", "msg"} <= set(item), item
+        assert isinstance(detail, str), detail
+        assert detail, "422 必须带一句可行动的中文，不能退化成空串"
+        assert "参数校验失败" in detail, detail
+        #: **原值不回显** ⇒ 非有限浮点连字面量都不在响应体里 ⇒ 渲染炸不掉
+        assert "NaN" not in resp.text, resp.text
 
-    def test_inf_and_neg_inf_get_named_tokens(self, client):
-        """`Infinity` 与 `-Infinity` 各回同名 token，不合并成一格
+    def test_inf_and_neg_inf_never_reach_the_body(self, client):
+        """`Infinity` 与 `-Infinity` **一个都不进响应体**（A311：原值不回显）
+
+        改前那一档是把它们换成同名 token 再回显；改后连回显都没有 ⇒
+        三种非有限值给出的**是同一句中文**（那句话只说字段与理由，不带值）。
 
         Args:
             client: 带密钥的 TestClient
@@ -194,11 +198,14 @@ class TestReproClosed:
                           headers=HEADERS)
 
         assert pos.status_code == 422 and neg.status_code == 422
-        assert '"Infinity"' in pos.text and '"Infinity"' not in neg.text
-        assert '"-Infinity"' in neg.text
+        assert "Infinity" not in pos.text and "-Infinity" not in neg.text
+        assert pos.json()["detail"] == neg.json()["detail"], (pos.text, neg.text)
 
-    def test_nan_inside_nested_containers_is_walked(self, client):
-        """非有限值藏在数组与对象里同样要换成 token（错误项的 `input` 是整份请求体）
+    def test_nan_inside_nested_containers_never_reaches_the_body(self, client):
+        """非有限值藏在数组与对象里同样**进不去**响应体（A311：原值不回显）
+
+        改前那一档是「递归走过去把非有限值换成 token」；改后没有回显 ⇒
+        递归那一档**不再需要**（嵌套多深都一样）。
 
         Args:
             client: 带密钥的 TestClient
@@ -211,13 +218,17 @@ class TestReproClosed:
         )
 
         assert resp.status_code == 422, resp.text
-        assert "NaN" in resp.text and "-Infinity" in resp.text
+        assert "NaN" not in resp.text and "-Infinity" not in resp.text
         json.loads(resp.text)  # 递归面漏一层就会在这里抛
 
-    def test_legal_422_payload_unchanged(self, client):
-        """载荷里没有非有限值时，回执与 FastAPI 默认那支逐字节相同
+    def test_legal_422_payload_is_the_chinese_shape(self, client):
+        """合法载荷的 422 回执是**中文一句**，且**逐字不同**于 FastAPI 默认那支
 
-        这条是「改动克制」的钉子：兜底只允许在默认那支渲染不动时才生效。
+        这条是 A311 的**行为变更**的钉子：默认那支回的是英文数组（`type` / `loc` /
+        `msg` / `input` 四格），本仓那支回的是一句中文 ⇒ 两者**必然**逐字不同
+        （`ours.content != default.content` 本身就是「形状真变了」的证据）。
+        反方向仍由 `test_default_handler_alone_still_500s` 压着：换回默认那支，
+        同一份载荷当场 500。
 
         Args:
             client: 带密钥的 TestClient
@@ -232,7 +243,10 @@ class TestReproClosed:
             _restore_handler(saved)
 
         assert ours.status_code == 422 == default.status_code
-        assert ours.content == default.content
+        detail = ours.json()["detail"]
+        assert isinstance(detail, str) and "参数校验失败" in detail, detail
+        assert isinstance(default.json()["detail"], list), default.text
+        assert ours.content != default.content
 
 
 class TestFallbackTeeth:
@@ -279,53 +293,42 @@ class TestFallbackTeeth:
         摘掉 `@app.exception_handler` 那一行就红，不依赖具体载荷。
         """
         assert app.exception_handlers[RequestValidationError] is (
-            validation_error_with_finite_echo
+            validation_error_in_chinese
         )
 
 
-class TestDelegationToDefault:
-    """兜底不是替身：默认那支才是主路，本仓那支只在它渲染抛错时接手"""
+class TestNotDelegatingToDefault:
+    """A311 之后本仓那支**自己**渲染中文一句 ⇒ 不再委托 FastAPI 默认那支
+
+    改前那一族钉的是「默认那支才是主路，本仓那支只在它渲染抛错时接手」。
+    改后本仓那支**自己**出判决（一句中文、不回显原值）⇒ 委托那一族整体作废，
+    换成这一族：**默认那支一次都不该被调到**（它一旦被调，回执就是英文数组，
+    而载荷形状那一格已经钉了「`detail` 是字符串」⇒ 两条互斥）。
+
+    判据不靠「数调用次数」（那要猴补 FastAPI 的模块属性），而靠**载荷形状**：
+    本仓那支 ⇒ `detail` 是字符串；默认那支 ⇒ `detail` 是数组。
+    """
 
     @pytest.mark.parametrize(
         ("fields", "status"),
         [({"input_file": 123}, 422), ({"input_file": NAN}, 422)],
-        ids=["finite-echo", "non-finite-echo"],
+        ids=["finite-payload", "non-finite-payload"],
     )
-    def test_default_handler_called_once(self, client, monkeypatch, fields, status):
-        """两种载荷都恰好调用默认那支一次
-
-        「逐字节不变」那条主张要靠这个才不只是巧合：如果本仓那支直接自己渲染，
-        合法载荷同样能对出相同字节，但它已经悄悄换掉了 FastAPI 的口径。
+    def test_the_detail_is_ours_not_the_default_shape(self, client, fields, status):
+        """两种载荷都给出**本仓那支**的形状（字符串），不是默认那支的数组
 
         Args:
             client: 带密钥的 TestClient
-            monkeypatch: pytest 内置 fixture
             fields: 请求体字段
             status: 期望状态码
         """
-        calls = []
-        real = request_validation_exception_handler
-
-        async def spy(request, exc):
-            """替身：记一次调用后原样交回默认那支
-
-            Args:
-                request: 触发校验失败的请求
-                exc: 校验失败异常
-
-            Returns:
-                默认那支的响应
-            """
-            calls.append(exc)
-            return await real(request, exc)
-
-        monkeypatch.setattr("api.main.request_validation_exception_handler", spy)
-
         resp = client.post("/api/dataset/search", content=_body(**fields),
                            headers=HEADERS)
 
         assert resp.status_code == status, resp.text
-        assert len(calls) == 1, f"默认处理器应被调用一次，实得 {len(calls)}"
+        detail = resp.json()["detail"]
+        assert isinstance(detail, str), detail
+        assert "参数校验失败" in detail, detail
 
 
 class TestSurrogateEchoGuard:
@@ -412,24 +415,24 @@ class TestSurrogateEchoGuard:
         )
 
     @pytest.mark.parametrize("field", ["query", "pattern", "regex_pattern"])
-    def test_surrogate_in_the_422_echo_is_also_escaped(self, client, field):
-        """422 那一支也吃下了孤立代理：`UnicodeEncodeError` 是 `ValueError` 的子类
+    def test_surrogate_never_reaches_the_422_body(self, client, field):
+        """422 那一支**不吃**孤立代理了 —— 原值压根不回显（A311）
 
-        探针实测（本轮 L284 仓外）：这三只字段缺别的必填键 ⇒ 必定 422，而 pydantic 的
-        错误项把**整份请求体**放进 `input`，那枚代理就在回显里。上一节的
-        `except ValueError` 因此天然覆盖这一格，兜底里串的 `_encodable` 负责转义。
+        改前那一格是「回显里带孤立代理 ⇒ `_encodable` 把它转义成反斜杠原文」。
+        改后 422 的回执**不回显原值** ⇒ 那枚代理**结构上进不去响应体**
+        ⇒ 这一格从「转义得对」升级成「根本不必转义」。
 
         Args:
             client: 带密钥的 TestClient
-            field: 回显里带孤立代理的字段名
+            field: 请求体里带孤立代理的字段名
         """
         resp = client.post("/api/dataset/search",
                            content=_body(**{field: SURR}), headers=HEADERS)
 
         assert resp.status_code == 422, resp.text
         assert SURR not in resp.text, "原样回带那枚字符就还是渲染崩"
-        #: 响应文本是 JSON，字符串里的那枚反斜杠自身再被转义一次 ⇒ 两个反斜杠
-        assert "\\\\ud800" in resp.text, resp.text
+        #: 回执里连那枚字符的名字都不该出现（它压根不在响应体里）
+        assert "ud800" not in resp.text, resp.text
         json.loads(resp.text)
 
     @pytest.mark.parametrize(
@@ -466,7 +469,11 @@ class TestSurrogateEchoGuard:
 
 
 class TestFiniteSafeUnit:
-    """递归函数的逐档读数（覆盖率与「只改非有限值」这一主张都要它）"""
+    """递归函数的逐档读数（覆盖率与「只改非有限值」这一主张都要它）
+
+    **L325 起这一层挂在 4xx 那一支**（A311 之后 422 不再回显原值 ⇒ 422 那条路不再需要它），
+    但它仍是判决回显那一侧的兜底 ⇒ 逐档读数照旧钉着。
+    """
 
     @pytest.mark.parametrize(
         ("value", "expected"),
