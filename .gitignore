@@ -107,6 +107,10 @@ oa4rust/backend/check_tables.sql
 oa4rust/backend/deploy/.backups/
 
 *.txt
+# augmentor 的依赖清单四份（`*.txt` 那条把它们一并挡掉 ⇒ 清单漏进仓 ⇒
+# `test_requirements_dead_deps_l36` 那支守卫在**干净检出**上读不到
+# `requirements-legacy.txt` ⇒ CI 红；本机因为文件在盘上而全绿 ⇒ 只有 CI 看得见）。
+!augmentor/requirements*.txt
 !oa4rust/backend/docs/ops/*.txt
 # O10 棘轮基线：idor_matrix.rs 的 handler500 集合包含断言读此文件，
 # 删文件=废棘轮（测试硬编码 expect 存在），必须入库。

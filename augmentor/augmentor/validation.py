@@ -17,7 +17,7 @@ import math
 import re
 from typing import List, Dict, Optional, Any, Set, Iterable
 from dataclasses import dataclass, field
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from enum import Enum
 
 from augmentor.exceptions import DataValidationError, DatasetTextError
@@ -1028,7 +1028,23 @@ def require_within_dir(label: str, value: Any, base: Path) -> Path:
     # 已被 L286 那一档堵住，剩下的是「落点名变形」这一格。
     # 名字里带冒号在 Windows 上本来就落不了盘（NTFS 用 `:` 当流分隔符）⇒
     # 这一档与 `..` 同一口径：**400，不静默变形**。
-    if candidate.drive:
+    #
+    # **L326：判据按 Windows 形状取，两个平台同形**。这一档问的是
+    # 「这个名字**会不会被当成盘符**」，而盘符形状是 **Windows 的命名规则**，
+    # 不是「当前这台机器怎么解析路径」—— 改前用 `Path`（当前平台的 flavor）取 drive：
+    # Windows 上 `Path("C:foo").drive == "C:"` ⇒ 拒；**POSIX 上同一个形状的 drive 是空的**
+    # ⇒ 放行 ⇒ **同一份产品在两个平台上对同一个名字给出两种判决**，而 POSIX 那一种
+    # （放行）恰好是危险的那一种（落点名会变形）。实测后果：CI 的 ubuntu 跑轮上
+    # `test_colon_shape_l312` / `test_dir_self_landing_l286` / `test_boundary_narrowing_l314`
+    # 共 **6 支**红（"DID NOT RAISE DataValidationError" / 版本面 500），
+    # 而本机（Windows）全绿 ⇒ **这不是平台差异，是判据漏了一维**。
+    # 改成 `PureWindowsPath` 取 drive 之后：**Windows 上的行为一格未动**
+    # （`PureWindowsPath("C:foo").drive == "C:"` 与 `Path("C:foo").drive` 同值），
+    # POSIX 上从「放行」收成「拒」⇒ 两边同形。
+    # **与备份名那一档（l277 / A366）不是同一件事**：那一档问的是
+    # 「这个**文件系统**能不能存这个名字」（NTFS 存不下带冒号的名字）⇒ 按平台判是对的；
+    # 这一档问的是「这个名字**会不会变形**」⇒ 按 Windows 形状判。
+    if PureWindowsPath(value.strip()).drive:
         raise DataValidationError(
             f"{label} 不能含冒号（`C:` 会被当成盘符，落点名与回执里的 id 会不是一个东西）"
         )

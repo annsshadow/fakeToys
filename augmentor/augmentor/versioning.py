@@ -174,21 +174,40 @@ class VersionManager:
     
     def _generate_version_id(self) -> str:
         """生成版本 ID
-        
-        使用微秒级时间戳并做存在性去重，避免同一秒内连续创建导致快照互相覆盖。
-        
+
+        **唯一性按构造给，不靠「看存不存在再改」**（L326）：原实现是
+        「微秒时间戳 + 存在性去重」，而那个存在性检查是**典型的 check-then-act** ——
+        两个线程在同一微秒里申领到同一个基名时，第二个只有在**第一个已经把目录建出来**
+        的窗口之后才能看见它（窗口在 `mkdir` 之前）；看不见时两个线程就拿到同一个 id
+        ⇒ 后建的那一份**覆盖**先建的那一份 ⇒ 盘上少一份、回执里两个 id 相同。
+        那一档的另一个窗口更宽：**目录被封顶清理删掉之后**，同一个基名又变成「可用」，
+        而持有它的线程还没建目录 ⇒ 同样撞车。
+        实测（CI 的 ubuntu 跑轮，2 vCPU）：**24 支并发建版本 ⇒ 盘上只剩 23 份**
+        （`test_with_the_cap_open_no_version_is_lost` 红：「盘上少了 1 份」）；
+        封顶那一支看到 22 份在册 ⇒ 按「受保护的一版 + 最新 9 份」删到 **11** 份
+        （闸门要 10）⇒ `test_with_the_cap_closed_the_oldest_are_dropped` 红
+        （「assert 11 == 10」）。本机（16 核）连跑 20 轮全绿 ⇒ **快机器上撞不上，
+        慢机器上撞得上** —— 这正是「判据靠调度」那一族。
+        **修法**：把 `mkdir` 本身当申领票（`exist_ok=False` ⇒ 撞上就抛 `FileExistsError`）
+        ⇒ 「这枚 id 归我了」是**原子**的，不依赖任何一次 `exists()` 读到的形状；
+        跨进程也成立（`path_lock` 只是进程内的线程锁，这一族在多 worker 部署下同样会撞）。
+        **id 的形状一格未动**（仍是 `v_<时间戳>`，撞上时补 `_1` / `_2` …）⇒
+        别人给的 `v_20261013_120000` 那一族既有形状照旧被接受。
+
         Returns:
             版本 ID
         """
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-        version_id = f"v_{timestamp}"
-        
-        suffix = 1
-        while self._get_version_dir(version_id).exists():
-            version_id = f"v_{timestamp}_{suffix}"
-            suffix += 1
-        
-        return version_id
+        base = f"v_{timestamp}"
+        suffix = 0
+        while True:
+            version_id = base if suffix == 0 else f"{base}_{suffix}"
+            try:
+                self._get_version_dir(version_id).mkdir(parents=True, exist_ok=False)
+            except FileExistsError:
+                suffix += 1
+                continue
+            return version_id
     
     def create_version(self,
                       items: List[Dict],
@@ -217,6 +236,8 @@ class VersionManager:
             previous_current = self.get_current_version()
             version_id = self._generate_version_id()
             version_dir = self._get_version_dir(version_id)
+            # L326：目录**已经由 `_generate_version_id` 原子申领出来了**（那里用
+            # `exist_ok=False` 的 mkdir 当票）⇒ 这一句只是幂等确认，不再是「谁先建谁赢」。
             version_dir.mkdir(parents=True, exist_ok=True)
         
             # 保存数据（紧凑格式）

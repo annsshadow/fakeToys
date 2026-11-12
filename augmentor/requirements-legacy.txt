@@ -1,0 +1,4 @@
+# 旧版脚本 archive/enhanceTXT.py 的依赖（第 36 轮）。
+# 该脚本不在 augmentor 包内，也不被 API/CLI 引用 —— 需要运行它的人单独安装。
+nlpaug>=1.1.0
+nlpcda>=2.5.8
