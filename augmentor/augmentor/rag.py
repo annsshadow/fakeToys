@@ -247,3 +247,16 @@ class RAGFormatter:
                 "language": metadata.get("language", "")
             })
         return records
+
+
+#: 出厂默认的 RAG 目标格式（A295）。
+#:
+#: 它与 `RAGFormatter.format` 那个形参默认**逐字相同**，但两处各写一遍字面量就是
+#: 「两份权威」——所以这一份是**唯一**被引用的名字，守卫
+#: `tests/unit/test_rag_default_format_l318.py` 钉住它与形参默认、与 `RAGConfig`
+#: 的出厂默认三者逐字相等（谁改了一处而没改另一处，当场红）。
+#:
+#: **为什么写在文件末尾**：账本与文档里有多处在册引用指着本文件早先的行号
+#: （`augmentor/rag.py:187` 那一格形参默认），常量插在中间会把它们整批顶移；
+#: 写在末尾则既有行号**一格未动**（与 A285 那只常数的处置同款）。
+DEFAULT_RAG_FORMAT = "llamaindex"
