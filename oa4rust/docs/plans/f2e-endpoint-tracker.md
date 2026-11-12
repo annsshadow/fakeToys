@@ -273,13 +273,42 @@
   `sabotage false-green-warnlog-owner`：写受害者常量 →
   `[LEAK] t2|program_center|warnlog_create`（`owner=gate-victim`）。
 
-### 仍未解决的假绿项
+### 仍未解决的假绿项 —— **已清空（2026-11-12 按现量复核）**
 
-- `x_portal` 共享读 2 条（`portal_id_icon` / `portal_id_permission`）：写入已可归属，
-  但共享臂/公开口径未裁决，谓词未加，仍不得记为「已防住」。
-- 其他写侧常量扫描判为 admin-only 的表（qrcode、query_statement、query_processing、
-  ai_file、x_file 等）：写侧已改会话，但读侧若仍无谓词，属未闭环暴露，不算假绿已修。
-  已由下节「读侧无谓词收口批」处理。
+> 原文两条：
+> ① 「`x_portal` 共享读 2 条（`portal_id_icon` / `portal_id_permission`）：写入已可归属，
+>    但共享臂/公开口径未裁决，谓词未加，仍不得记为「已防住」」；
+> ② 「其他写侧常量扫描判为 admin-only 的表（qrcode、query_statement、query_processing、
+>    ai_file、x_file 等）：写侧已改会话，但读侧若仍无谓词，属未闭环暴露，不算假绿已修。
+>    已由下节『读侧无谓词收口批』处理」。
+>
+> **① 已不成立（代码层复核）**：`x_portal` 那两条**早就带着归属门** ——
+> `crates/portal_assemble_designer/src/lib.rs` 的 `designer_owned_read_gate`
+> （该文件第 2401 行起）以
+> `SELECT 1 AS hit FROM x_portal WHERE id = $1 AND deleted_at IS NULL
+>    AND (creator = $2::text OR $3::boolean)`
+> 判定，谓词就是 **creator = 会话人 OR is_admin**，NULL 归属 **fail-closed**（查不到命中再回落到
+> 「行不存在」）；两个调用点分别是 `portal_id_icon`（第 2502 行）与
+> `portal_id_permission`（第 2539 行），两处都调那一只门。
+> ⇒ 它们**不属于「无谓词」，也不属于假绿**。
+> 2026-11-08 的交接文档 §10.2 已把这一条现场核过并写下同样的结论
+> （「P0-1 由『待裁决』改为『**已判定不可补**』；两条从『仍未解决的假绿』清单移除」）。
+> **共享臂为什么判为不可补**：`x_portal.permission` 是**管理员可写任意 JSON** 的列
+> （没有类型 / 结构契约）⇒ 拿它当读授权等于把授权绑到一段不可校验的 JSON ⇒
+> 补上反而会造出新的「写得进、读不出」假绿；若业务确需「共享给指定人」，
+> 属**新需求**（新增结构化列 + 专用写端点 + 历史行不回填 + sabotage 点名），
+> 不是本线可自行裁决的谓词。
+>
+> **② 本来就在下一节落地**：「读侧无谓词 / 无 admin 门收口批」那一节
+> （`fix/admin-write-read-gates`）已经处理完 qrcode / query_statement / query_processing /
+> ai_file / x_file 那一族（12 条读端点），实测 `cases=345 pass=345 leak=0 unverified=0
+> integrity=0`，`sabotage admin-write-read-gates` 逐条点名 12 个端点；
+> 上一档「NO-OWNER-COL B 档」也把 `x_cms_fileinfo` 那一族收口（`cases=286 pass=286`）。
+>
+> ⇒ **本节清空**：两条都不再是「仍未解决」的假绿项。
+> （与 `docs/plans/2026-10-29-remaining-work-plan.md` §四 记的
+> 「账本过时的一个反例（提醒：引用前先复核）」、
+> 与 `docs/laiyipao/KNOWN_LIMITS.md` 第 17 条那一次收口同一族。）
 
 ## NO-OWNER-COL B 档（2026-11-08，`fix/no-owner-col-b`）
 
