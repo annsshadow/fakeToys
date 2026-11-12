@@ -218,6 +218,20 @@ PR_DESCRIPTION.md
 target-loop2
 Temp
 
+# 浏览器探针产物（Playwright CLI 的截图 / 页面快照 / 控制台日志）。
+#
+# 2026-11-12 实测：上一轮 H5 调试把 14 份控制台日志留在工作树里，那些日志带着
+# **测试环境的真域名** ⇒ `laiyipao/server/internal/domain/secrets_leak_test.go`
+# 的「真值不进仓库」那条当场红（14 处命中，`.workbuddy` 的工作日志另有 1 处私钥路径）。
+# 结论有两条：① 探针产物一律不入库；② 真要留证据，先把域名 / IP / 口令 / 私钥路径
+# 换成占位符（`<YOUR_TEST_DOMAIN>` / `<TEST_HOST>` / `~/.ssh/<KEY>.pem`）再落盘。
+# 注意：.gitignore 只挡「入库」，**挡不住那条守卫**——守卫扫的是文件系统，不是 git 索引，
+# 所以产物落在工作树里照样会让守卫变红（这正是它该做的：fail loud）。
+.playwright-cli/
+# 同一批探针的裸名残留（截图 / 页面快照 YAML）。
+battle-t*.png
+b0.yaml
+
 # 代理工具的工作记忆目录：只留在本机，不入库。
 #
 # ⚠️ 这些目录里**已跟踪**的文件必须用 `git rm --cached` 取消跟踪 ——
