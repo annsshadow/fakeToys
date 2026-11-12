@@ -2600,6 +2600,44 @@ tests 树里被写进某处 `setattr` / `patch` 的目标位——上一段那�
 HTTP 端到端（伪造换行只落一行、ANSI 不再原样进流、响应体仍回显原文）、非恒真（把消毒器换回裸 `Formatter`，
 同一支请求当场回到 2 行）。
 
+### 3.36 L320：CLI 默认出口接上消毒 + traceback 的载荷段也进消毒（关闭 A387 / A388）
+
+**A387（纯 CLI 进程的默认出口从未消毒）**：出厂配置不写 `logging` 节时，root logger 一条 handler 都没有 ⇒
+stdlib 走 `logging.lastResort`。那是一条 **stdlib 内置**的 handler，它的 Formatter 不经我们的构造点 ⇒
+**CLI 面的日志至今没有消毒**（L285 那一支覆盖的是 API 面与「装了 `logging` 节的 CLI 面」，缺的正是这一格）。
+
+实测（仓外探针）：配置里放一个键名带换行的未知键（YAML 双引号串，`"evil\n[2026] INFO ROOT admin login"`），
+加载期那条「键没人读取」的 WARNING 把键名原样拼进消息 ⇒ stderr 落成**两支物理行**，第二行逐字是
+`[2026] INFO ROOT admin login（值不会生效）` —— 一条凭空多出来的「日志」，时间戳 / 级别 / logger 名全是
+攻击者写的。
+
+**修法与口径**：`augmentor/logging_setup.py` 新增 `install_default_cli_logging()`，CLI 入口 `cli.py:main()`
+调它一次。口径是**与 `lastResort` 逐字节同形、只多一道消毒**：stderr + `%(message)s` 裸消息 + WARNING 档
+三档照抄，于是**干净载荷的输出逐字节不变**（既有那条「出厂默认档一字未改」的主张继续成立，由
+`tests/integration/test_cli_logging_wiring.py` 那 17 支钉着），脏载荷才被消毒。级别钉在 WARNING 是为了与
+`lastResort` 一致 —— `logging.level: DEBUG` 那时 root 的级别被调低，但 `lastResort` 自己仍只放 WARNING ⇒
+控制台的可见档位一字不变。**只在 root 一条 handler 都没有时装**（`lastResort` 本来也只在那时兜底；装第二条
+的后果是同一条日志打两遍）。那一支的 `stream` **现取**而不是构造那一刻钉死（与 stdlib 的 `_StderrHandler`
+同形）⇒ 之后谁替换了 `sys.stderr`（测试捕获、`contextlib.redirect_stderr`），日志也跟着走。
+
+**A388（traceback 的载荷段从未消毒）**：`Formatter.format()` 的形状是「`formatMessage` → 若带 `exc_info` 则把
+`formatException` 的结果**追加**在后面」，L285 那一支只覆写了前一半 ⇒ **异常消息**里的载荷原样进流：
+`ValueError("inner\n[2026-10-17 02:00:00] INFO ROOT admin login")` 让第二行看起来是一条**真的**日志，与 A387
+同一族、只是换了触发点。
+
+**修法只动载荷那一半**：覆写 `formatException`，被消毒的是异常消息（`str(exc)`）、`__notes__` 与
+`SyntaxError` 的 `msg`；**栈帧**（`  File "..."` 与源码行）保持原样多行 —— 那是可观测性的底线，且它们的行首
+由结构决定、攻击者写不进去。因果链（`__cause__` / `__context__`）上的每一段照同一口径处理。取法与 stdlib 的
+`print_exception` 同一（异常名取 `type(value)` 而非 `exc_info` 的类型位），故**干净异常下与 stdlib 的
+`Formatter` 逐字节相同** —— 标准可读形一字未改，本轮改的只是「载荷里的换行」。
+
+**机械守卫**：`tests/unit/test_cli_logging_sanitization_l320.py`（17 支 / 零 `parametrize`）六面 ——
+接线面（AST 钉 `cli.py:main()` 真的调了那一只）、装配面（恰好一条、类型 / 级别 / formatter、幂等、root 已有
+出口时不装第二条）、同形面（干净载荷与 `lastResort` **逐字节相同**、`stream` 现取）、端到端面（真子进程：载荷
+仍落一行、默认档仍是裸消息）、非恒真面（**只少装那一支** ⇒ 立刻回到两支物理行）、载荷面（伪造段不在任何
+一支物理行的行首、栈仍多行、干净异常与 stdlib 逐字节相同、因果链与 notes 都消毒、换回裸 `Formatter` 当场回到
+两行、异常对象与 record 一个字节都没被改写）。
+
 ## 4. 核心数据流
 
 ### 4.1 数据增强主流程

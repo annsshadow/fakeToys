@@ -285,13 +285,45 @@ class ControlSafeFormatter(logging.Formatter):
 
     为什么落在汇（sink）而不是 170 处调用点：一条 record 要经过 formatter 才变成「一行」，
     所以 `logging.format` 写成什么串都覆盖得到，而调用点逐个消毒既要改 170 处又必然漏。
-    为什么**只**消毒 `formatMessage`：`Formatter.format()` 在这一步之后才追加 traceback，
-    栈保持原样多行是可观测性的底线 —— 代价是栈里那条 `ValueError: inner\n伪造行` 仍落成
-    两行，这一格留给待拍（A388），不在本轮单方面改掉。
+    消毒覆写**两跳**（L320 / A388）：`formatMessage` 管消息本体，`formatException` 管
+    traceback 里那段**载荷**文本 —— 栈帧（`  File "..."` 与源码行）保持原样多行，那是
+    可观测性的底线，而它们的行首由结构决定、攻击者写不进去；被消毒的是异常消息本身
+    （`str(exc)`）、`__notes__` 与 `SyntaxError` 的 `msg`，它们的换行会变成 `\x0a`
+    字面量 ⇒ 伪造行回到同一行内。
     """
 
     def formatMessage(self, record: logging.LogRecord) -> str:
         return escape_control(super().formatMessage(record))
+
+    def formatException(self, ei) -> str:
+        r"""traceback 的载荷段也消毒，栈帧的结构换行原样保留（L320 / A388）
+
+        `Formatter.format()` 的形状是「`formatMessage` → 若带 `exc_info` 则把
+        `formatException` 的结果**追加**在后面」。上一跳只覆盖前一半 ⇒ 异常消息里的
+        载荷原样进流：实测 `ValueError("inner\n[2026-10-17 02:00:00] INFO ROOT admin
+        login")` 让第二行看起来是一条**真的**日志（时间戳 / 级别 / logger 名全是
+        攻击者写的），与 A387 同一族、只是换了触发点。
+
+        改法只动**载荷**那一半：栈帧保持原样多行（可观测性的底线，且行首由结构决定），
+        被消毒的是异常消息 / `__notes__` / `SyntaxError` 的 `msg`。因果链
+        （`__cause__` / `__context__`）上的每一段照同一口径处理。
+
+        Args:
+            ei: `sys.exc_info()` 那三元组（类型 / 值 / traceback 对象）
+
+        Returns:
+            与 stdlib `Formatter.formatException` **逐字节相同**的栈文本，只是载荷段里
+            的控制字符被写成 `\xNN` 字面量
+        """
+        # 与 stdlib 的 `print_exception` 同一取法：异常名取 `type(value)` 而不是 `ei[0]`
+        # （`exc_info` 的类型位在「没有异常」时是 None，那时 stdlib 打的也是 NoneType）。
+        value = ei[1]
+        te = traceback.TracebackException(type(value), value, ei[2])
+        _escape_traceback_payload(te)
+        text = "".join(te.format())
+        if text.endswith("\n"):
+            text = text[:-1]
+        return text
 
 
 def build_handler(fmt: str) -> logging.StreamHandler:
@@ -302,4 +334,93 @@ def build_handler(fmt: str) -> logging.StreamHandler:
     """
     handler = logging.StreamHandler(sys.stderr)
     handler.setFormatter(ControlSafeFormatter(fmt))
+    return handler
+
+
+# ============ 栈载荷的消毒与 CLI 默认出口（L320，A388 / A387）============
+#
+# 仍落在本模块**尾部**（理由见上面那段注释）：文件头与中段插行会把账本对本模块的活引用
+# 整体顶下一行。`import traceback` 同理——它只在本模块的函数体里按名取，模块级导入在
+# 文件尾部执行时早已完成，运行期取得到。
+import traceback  # noqa: E402  （刻意不在文件头，理由见上)
+
+
+def _escape_traceback_payload(te) -> None:
+    """把一条 traceback 链上「载荷」那一段的控制字符消毒（就地改写，L320 / A388）
+
+    载荷 = 异常消息（`str(exc)`）、`__notes__` 与 `SyntaxError` 的 `msg`；**不含**栈帧，
+    栈帧是结构（行首恒为 `  File "..."` / 源码行），保持原样多行。
+
+    因果链只走**已经是 `TracebackException` 的那一支**（3.11+ 的形状）：3.10 那一版把
+    `__cause__` / `__context__` 放在**异常对象**上而不是 `TracebackException` 上，改它就得
+    改用户的异常对象（本轮不做）⇒ 那一档的链上载荷不消毒，链上消息仍可能劈行。
+
+    Args:
+        te: `traceback.TracebackException` 实例（就地改写它的消息字段）
+    """
+    te._str = escape_control(te._str)
+    notes = getattr(te, "__notes__", None)
+    if isinstance(notes, list):
+        te.__notes__ = [
+            escape_control(item) if isinstance(item, str) else item for item in notes
+        ]
+    msg = getattr(te, "msg", None)
+    if isinstance(msg, str):
+        te.msg = escape_control(msg)
+    for attr in ("__cause__", "__context__"):
+        nxt = getattr(te, attr, None)
+        if isinstance(nxt, traceback.TracebackException):
+            _escape_traceback_payload(nxt)
+
+
+class _CliStderrHandler(logging.StreamHandler):
+    """stderr handler，但 `stream` **每次现取**（与 stdlib 的 `_StderrHandler` 同形）
+
+    `logging.StreamHandler(sys.stderr)` 在构造那一刻把流对象钉死 ⇒ 之后谁替换了
+    `sys.stderr`（测试捕获、`contextlib.redirect_stderr`），日志就写到旧流上去了，
+    观察者会以为「这条日志没出来」。这里改成属性现取，形状与 stdlib 那一支一致。
+
+    `__init__` 刻意**不**调 `StreamHandler.__init__`（它会把 `self.stream = stream`
+    写死在一个只读属性上）：只调 `logging.Handler.__init__`，与 stdlib 的
+    `_StderrHandler` 同一手法。
+    """
+
+    def __init__(self, level: int = logging.NOTSET) -> None:
+        logging.Handler.__init__(self, level)
+
+    @property
+    def stream(self):
+        """当前那支 stderr（现取，不缓存）"""
+        return sys.stderr
+
+
+def install_default_cli_logging() -> Optional[logging.Handler]:
+    """给纯 CLI 进程装一条与 `logging.lastResort` 同形、但**带消毒**的 handler（L320 / A387）
+
+    **为什么需要它**：出厂配置不写 `logging` 节时，root logger 一条 handler 都没有 ⇒
+    stdlib 走 `logging.lastResort` —— 它是 stdlib 内置的 handler，Formatter 不经我们
+    的构造点 ⇒ **CLI 面的日志至今没有消毒**。实测（API 面与「装了 `logging` 节的 CLI
+    面」都被 L285 那一支覆盖，缺的就是这一格）：载荷 `evil\n[2026] INFO ROOT admin
+    login` 在没有 `logging` 节的 CLI 进程里落成**两支物理行**，第二行逐字是
+    `[2026] INFO ROOT admin login` —— 一条凭空多出来的「日志」。
+
+    **口径：与 `lastResort` 逐字节同形，只多一道消毒**。`lastResort` 是 stderr +
+    `%(message)s` 裸消息 + WARNING 档 ⇒ 这一支照抄那三档，于是**干净载荷的输出逐字节
+    不变**（既有那条「出厂默认档一字未改」的主张继续成立），脏载荷才被消毒。
+    级别钉在 WARNING 是为了与 `lastResort` 一致：`logging.level: DEBUG` 那时 root 的
+    级别被调低，但 `lastResort` 自己仍只放 WARNING ⇒ 控制台的可见档位一字不变。
+
+    **只在 root 没有 handler 时装**：`lastResort` 本来就只在「root 一条 handler 都
+    没有」时才兜底，已有出口时装第二条就是让同一条日志打两遍（`apply_logging_config`
+    的 `and not root.handlers` 那一支防的正是这件事）。
+
+    Returns:
+        装上的那条 handler；root 已有 handler 时返回 `None`（没装，也没该装）
+    """
+    root = logging.getLogger()
+    if root.handlers:
+        return None
+    handler = _CliStderrHandler(logging.WARNING)
+    handler.setFormatter(ControlSafeFormatter("%(message)s"))
+    root.addHandler(handler)
     return handler

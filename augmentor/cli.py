@@ -27,11 +27,17 @@ from augmentor import load_config
 from augmentor.cli import COMMANDS
 from augmentor.cli.io import harden_stdio
 from augmentor.cli.parser import build_parser
+from augmentor.logging_setup import install_default_cli_logging
 
 
 def main():
     """CLI 主入口"""
     harden_stdio()
+    # 出厂配置不写 `logging` 节时 root 上一条 handler 都没有 ⇒ stdlib 走
+    # `logging.lastResort`，而它是 stdlib 内置的 handler、Formatter 不经我们的构造点
+    # ⇒ CLI 面的日志至今没有消毒（A387）。这一支与 `lastResort` 逐字节同形
+    # （stderr + `%(message)s` + WARNING），只多一道消毒，干净载荷的输出不变。
+    install_default_cli_logging()
     parser = build_parser()
     args = parser.parse_args()
 

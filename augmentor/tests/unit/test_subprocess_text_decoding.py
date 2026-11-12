@@ -71,6 +71,12 @@ BYTE_MODE_ALLOWLIST = {
         102: "字节模式：proc.stdout.decode(\"gbk\", \"replace\") 具名解码；"
              "子进程 env 里钉了 PYTHONIOENCODING=gbk",
     },
+    "unit/test_cli_logging_sanitization_l320.py": {
+        223: "字节模式：后面用 err.decode(\"utf-8\") 具名解码；"
+             "子进程 env 里钉了 PYTHONIOENCODING=utf-8",
+        275: "字节模式：stderr 用 .decode(\"utf-8\") 具名解码；"
+             "子进程 env 里钉了 PYTHONIOENCODING=utf-8",
+    },
     "unit/test_repo_residue_l94.py": {
         227: "字节模式：(run.stdout + run.stderr).decode(\"utf-8\", \"replace\") "
              "具名解码",
