@@ -109,13 +109,18 @@ jobs:
           # `GET /repos/{owner}/{repo}/check-runs/{id}/annotations`，**公开仓库无需 token 就能读**
           # ⇒ 「哪几支红 / 覆盖率差多少」这件事连匿名访客都问得到。
           # 只取前 12 支失败 + 两行覆盖率读数（注解多了会被折叠，且真正要修的通常就在最前面）。
-          grep -E "^(FAILED|ERROR) " pytest.log | head -n 12 | while IFS= read -r line; do
+          # 每条 grep 都必须带 `|| true`：GitHub 的默认 shell 是 `bash -eo pipefail`
+          # ⇒ pipefail 让管道里任何一支非零都算整条失败，而**测试全绿时那两条 grep
+          # 恰恰一条都匹配不上**（grep 退出码 1）⇒ 不带 `|| true` 的话，
+          # **测试全绿反而把这一步打红**（本轮实测踩到过：上一枚提交那一步红了，
+          # 而日志里一支失败都没有 —— 红的是这条 grep 自己）。
+          (grep -E "^(FAILED|ERROR) " pytest.log || true) | head -n 12 | while IFS= read -r line; do
             echo "::error::${line}"
           done
-          grep -E "Required test coverage|^TOTAL " pytest.log | head -n 2 | while IFS= read -r line; do
+          (grep -E "Required test coverage|^TOTAL " pytest.log || true) | head -n 2 | while IFS= read -r line; do
             echo "::error::${line}"
           done
-          tail -n 1 pytest.log | grep -E "passed|failed|error" | while IFS= read -r line; do
+          (tail -n 1 pytest.log | grep -E "passed|failed|error" || true) | while IFS= read -r line; do
             echo "::error::pytest 收尾读数：${line}"
           done
           exit $rc
