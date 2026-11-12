@@ -85,8 +85,27 @@ jobs:
           python -W error::SyntaxWarning -m compileall -q augmentor api cli.py
 
       - name: Run tests with coverage gate
-        # pytest.ini 中已配置 --cov-fail-under=80，覆盖率不足会直接失败
-        run: pytest
+        # pytest.ini 里配的是 --cov-fail-under=99（**不是 80** —— 这行注释自己过时过一轮，
+        # 门槛是 99%），覆盖率不足会直接失败。
+        #
+        # 为什么把输出同时写进 job summary：这道门禁**红的时候，只有 step 日志里才有答案**，
+        # 而 step 日志要登录网页才能看 ⇒ 一道「红但看不出是哪一格」的门禁，
+        # 等于把「谁该修」这个问题原样留给下一个人（这一道门禁在 2026-11-02 到
+        # 2026-11-12 之间一直红，而**没有任何一处**记录过它红在哪一格）。
+        # 写进 $GITHUB_STEP_SUMMARY 之后，GitHub 的 check-run API
+        # （**公开仓库无需 token 就能读**）就能拿到失败名单与覆盖率读数
+        # ⇒ 「谁该修」这件事从此有机器可读的答案。
+        run: |
+          rc=0
+          pytest 2>&1 | tee pytest.log || rc=$?
+          {
+            echo "### augmentor · pytest（CI 口径：$(python -V 2>&1)）"
+            echo
+            echo '```'
+            tail -n 200 pytest.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit $rc
 
       - name: Coverage summary
         if: always()
