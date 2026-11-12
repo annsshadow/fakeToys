@@ -8,11 +8,15 @@
 > 已按现量收口（见 §二「本轮清掉的账」）。
 >
 > **本轮做过的实测（逐项可复跑）**：
-> augmentor 全量门禁 `python -m pytest tests -q -p no:cacheprovider` ⇒ **0 failed / 10551 passed / 6 skipped**；
+> augmentor 全量门禁 `python -m pytest tests -q -p no:cacheprovider` ⇒ **0 failed / 10551 passed / 6 skipped**
+> （548.53 s；覆盖率 **99.53%**，门槛 99%）；
 > augmentor 前端 `npx vitest run` ⇒ **24 文件 / 427 支全绿**（`tsc --noEmit` / `eslint --max-warnings 0` / `prettier --check src` 同绿）；
 > laiyipao 归属守卫 `go test ./internal/service/ -run "TestUserScoped…|TestOwnerScoped…|TestOwnership…"` ⇒ **3 支全绿**；
+> laiyipao 依赖闸门 `govulncheck -show verbose ./...`（Go **1.26.11**）⇒ **No vulnerabilities found**；
 > llm-lab `python -m pytest tests` ⇒ **130 支全绿**（本机装了 torch ⇒ 无 skip）；
-> auto-checkin `npx tsx --test test/*.test.ts` ⇒ **163 支全绿**；`npm run test:ratchet` ⇒ **九档全绿**。
+> auto-checkin `npx tsx --test test/*.test.ts` ⇒ **163 支全绿**；`npm run test:ratchet` ⇒ **九档全绿**；
+> 跨子项目告警门禁 `node scripts/check-warnings.mjs --only rust-lints,llm-lab,llm-lab-tests,augmentor-web,license`
+> ⇒ 修一处后 **5 项检查 5 通过**（见 §三）。
 
 ---
 
@@ -23,15 +27,18 @@
 | 账本 | 位置 | 剩余 | 本轮状态 |
 |---|---|---|---|
 | 卷一 `OPTIMIZATION_LOOP.md` | 卷一 Backlog B（功能增强） | **6 格里 2 笔本轮收口**（B1 / B8），余 B2（前半关闭）/ B3 / B5 / B7（B5 与 B7 = 卷二 A271 / A273 两族） | 本轮还动了 6 处引用落点（歧义清账）与卷一 Backlog B 的 B1 / B8 |
-| 卷二 `OPTIMIZATION_LOOP_2.md` | Backlog A（质量缺口） | **35 笔**（A267…A385） | 本轮 **L322 / L323 / L324** 三轮把全量门禁从 28 支红收到 **0 支红** |
+| 卷二 `OPTIMIZATION_LOOP_2.md` | Backlog A（质量缺口） | **34 笔**（A267…A385；**A311 已收口**） | 本轮 **L322 / L323 / L324** 三轮把全量门禁从 28 支红收到 **0 支红**；**L325 收掉 A311**（422 的错误体翻成中文同一形状）⇒ 34 笔 |
 | 卷二 | Backlog B（功能增强） | **0 笔**（28 笔全闭） | — |
 
-**剩余 35 笔的形状**（按定级）：
+**剩余 34 笔的形状**（按定级）：
 
 | 定级 | 笔数 | 名单 | 能不能本仓自己推进 |
 |---|---|---|---|
-| **M** | 25 | A267 A268 A269 A271 A273 A289 A290 A293 A296 A306 A309 A345 A346 A349 A351 A353 A354 A355 A356 A357 A358 A364 A371 A376 A384 A385 | 多为「**口径要拍**」或「**要动 SDK 公开契约**」 |
-| **S** | 10 | A272 A278 A287 A301 A308 A311 A335 A370 | A311 是本轮 L321/L322 块里点名的下一轮候选 |
+| **M** | 27 | A267 A268 A269 A271 A273 A289 A290 A293 A296 A306 A309 A345 A346 A349 A351 A353 A354 A355 A356 A357 A358 A364 A371 A376 A381 A384 A385 | 多为「**口径要拍**」或「**要动 SDK 公开契约**」 |
+| **S** | 7 | A272 A278 A287 A301 A308 A335 A370 | **A311 已收（L325）**；余下这 7 笔里 A308 / A370 是「要产品拍板」、A335 要动 SDK 公开契约 |
+
+> **口径说明**：这份名单是**按现量数出来的**，不是按印象（A311 收口前 S 级 8 笔、M 级 27 笔；
+> 收口后 S 级 7 笔、M 级 27 笔 ⇒ 余 34 笔）。
 
 **三类「本仓自己推不动」的形状**（逐条读过原文，不是印象）：
 
@@ -65,8 +72,8 @@ A317 / A323 / A386 / A387 / A388 那一族在 L315–L323 连续九轮里逐笔�
 | P0-2 | `x_message_mass.creator` 从不写入 | 门禁缺「管理员攻击者档」⇒ **先设计一个能翻转门禁的断言**，再改 `mass_create` | 不能（本轮无 Postgres + Rust 全量构建窗口） |
 | P1-1 | attendance 五张配置表写侧只写 `creator_person` | 先构造「写后读一致性」用例，再补写 | 同上 |
 | P1-2 | Go 侧未复跑门禁 / sabotage | 需要真库 | 同上 |
-| P1-3 | CI `sccache` 基础设施红 | 外部基础设施抖动 | 不能（观察即可） |
-| P2-1 | 本地环境债 | Swagger zip / 本地 DB 的 bam 用例 / github.com:443 断网 | 不能（环境债） |
+| P1-3 | CI `sccache` 基础设施红 | 外部基础设施抖动 | 不能（观察即可）—— **但本轮实测：2026-11-12 main 上的红项已经不是「基础设施抖动」那一族**（见 §三） |
+| P2-1 | 本地环境债 | Swagger zip / 本地 DB 的 bam 用例 / github.com:443 断网 | 不能（环境债）—— 本轮实测：github.com:443 **确凿**间歇断网（同一分钟内两次 `Invoke-RestMethod` 报「unexpected EOF」，重试可过）⇒ 该条**现量成立**；本机另**无 Postgres / 无 Docker** ⇒ P0-2 / P1-1 / P1-2 三条在本机**无法复跑**（不是「没做」，是「没有真库」） |
 
 **另有一处本轮量到的规模差**（与 P1-2 同族，值得记下）：交接文档 §10.3 写
 「读侧 701 条，其中 514 条静态初筛无门禁标记、251 条是 GET + 路径参数」，
@@ -78,10 +85,10 @@ A317 / A323 / A386 / A387 / A388 那一族在 L315–L323 连续九轮里逐笔�
 
 | 账本 | 位置 | 剩余 | 本轮状态 |
 |---|---|---|---|
-| 已知边界（诚实声明） | `docs/laiyipao/KNOWN_LIMITS.md` | 30 条编号里 **12 条仍开着**，其余已闭或已被判「不该做」 | 本轮收口第 17 条（§二） |
+| 已知边界（诚实声明） | `docs/laiyipao/KNOWN_LIMITS.md` | 30 条编号里 **15 条仍开着**，其余已闭或已被判「不该做」 | 本轮收口第 17 条（§二）；**笔数按现量重数**（原文写 12 条、名单列了 14 条 ⇒ 实际 15 条，见下） |
 | 优化台账 Go 段 | `docs/plans/optimization-1000-oa4rust-laiyipao.md` | R 轮次已认领到 R152 | — |
 
-**仍开着的 12 条，按「能不能本仓自己推进」分**：
+**仍开着的 15 条，按「能不能本仓自己推进」分**：
 
 - **要凭证**（拿不到就动不了）：第 1 条（微信支付内购 / 流量主广告 —— 要 AppID 与商户号）、
   第 2 条（微信登录通道 —— `jscode2session` 已实现但客户端未接；服务端没配 AppID/Secret 时回 501）。
@@ -94,6 +101,17 @@ A317 / A323 / A386 / A387 / A388 那一族在 L315–L323 连续九轮里逐笔�
 - **要引擎级改动**（双端 TS + Go）：第 15 条附带的「按波次轮换地形种类」。
 - **设计意图、不是缺陷**（原文已说明）：第 7 条（油桶「集火才点燃」是有意保留）、
   第 9 条（槽位上限缺省值是重放哈希的锚点）、第 10 条（装备 `level` / `star` 实测后确认「不该做」）。
+- **本轮补上的一格**（原文名单漏了它）：第 30 条（2026-10-23 那一轮**明确决定不做**的三件事 ——
+  邮件 / 补偿系统、BGM、真机帧率测量，另带两个「已接通但仍有边界」的点）⇒ 它**整条开着**，
+  原文的名单把它漏在外面 ⇒ 笔数从名单的 14 条改成 **15 条**。
+
+> **口径订正（按现量，不按印象）**：这份盘点原稿写的是「30 条编号里 **12** 条仍开着」，
+> 而它自己的名单列了 **14** 条 —— 两个数互相对不上。本轮把 `KNOWN_LIMITS.md` 的 30 个编号
+> 逐条数过一遍：**已闭或已被判「不该做」**的是第 11 / 14 / 17 / 18 / 19 / 20 / 21 / 22 / 24 / 25 /
+> 26 / 27 / 28 / 29 条（其中第 29 条自己写着「上面『仍无获取途径』这句**已经过时**」），
+> **仍开着**的是 15 条（上列）⇒ 笔数取 **15**，并把漏掉的第 30 条补进名单。
+> 承 `docs/plans/2026-10-29-remaining-work-plan.md` §四 那条教训：
+> **账本记载只作线索，结论以本轮复跑现量为准** —— 这一格连「账本自己说的那条数」都不作数。
 
 ### 4. llm-lab
 
@@ -124,29 +142,58 @@ newapi-client 94.58% / server 95.8% / lock 91.3% / scheduler 91.16% / runner 87.
 | 项目 | 账本位置 | 原文写的 | 本轮实测 | 处置 |
 |---|---|---|---|---|
 | **laiyipao** | `docs/laiyipao/KNOWN_LIMITS.md` 第 17 条 | 「`battle_records` 里除战报外的玩家数据没有归属校验 …… 按 `user_id` 过滤的完整性**没有结构性守卫**」 | `server/internal/service/ownership_scan_test.go`（第 78 轮）就是那道守卫：`battle_records` 登记在 `ownerScopedTables`（归属列 `user_id`），`TestOwnerScopedTableRegistryCoversSchema` 直接从 migrations 核对集合完整性；复跑读数「扫到 **106** 条按用户分区的语句，**全部**带归属过滤（豁免 **7** 处）」「schema 里 **29** 张按用户分区的表：登记 **12** 张、豁免 **3**」，7 处豁免逐条点名全是运营侧聚合 | **整条关闭**（`831094f8c`） |
+| **augmentor** | 卷二 Backlog A 的 **A311** | 「缺必填字段走 FastAPI 英文 422、其余坏参数走中文 4xx」那一族双轨 | **L325 收口（自决取修法①）**：全局 `RequestValidationError` 处理器**自己渲染一句中文**（状态码仍 422，形如「参数校验失败：input_file 缺少必填字段」）；理由按 pydantic 的 `type` 查表、**不抄英文的 `msg`** ⇒ 句子恒为中文；**原值不回显** ⇒ 请求体里的非有限浮点与孤立代理对**结构上进不去响应体** ⇒ L272 量到的那一格「整个响应没了」从机制上根除。八处认 422 的用例同批重钉（含 l284 那支「合法回执逐字节不改」被本条的行为变更**作废**） | **整条关闭**（本批） |
 | **augmentor** | `augmentor/OPTIMIZATION_LOOP.md` 卷一 Backlog B 的 **B1 / B8** | B1：「把 `/api/system/*`(13) 与 `/api/dataset/*`(12) 接入 UI —— `api.ts` 对二者零引用」；B8：「前端 5 个未接线服务函数 + 运行时 schema 校验」 | ① 接线队列 A279 分**十一批**（L225–L236）全部走完 ⇒ 契约面 **79** 条操作**全数**被前端调到，`test_api_endpoint_consumption_l224.py` 的 `test_roster_scale_is_pinned` 现在钉的是「已消费 79 = 契约面 79」、`test_unconsumed_matches_the_roster` 钉的是「实测缺口 == 空名单」⇒ 再有一条端点没接当场红；② 那 5 个未接线服务函数早已在对应页面真实接线，`api.wiring.test.ts` 的 `KNOWN_UNWIRED` 白名单**已清空**（那把守门仍在）；运行时 schema 校验也已落地（zod 面 + `main-schemas.conformance.test.ts` 把键集与后端契约面逐格对着） | **两格按现量收口**（本批） || **oa4rust** | `oa4rust/docs/plans/f2e-endpoint-tracker.md`「仍未解决的假绿项」 | ① `x_portal` 共享读 2 条「谓词未加」；② admin-only 表那一族「未闭环暴露」 | ① `portal_assemble_designer` 的 `designer_owned_read_gate` 就是 `creator = 会话人 OR is_admin`、NULL fail-closed，两个调用点（`portal_id_icon` / `portal_id_permission`）都走它 —— 与 2026-11-08 交接文档 §10.2 的结论一致；② 原文自己就写着「已由下节『读侧无谓词收口批』处理」，下一节已落地（`cases=345 pass=345`，sabotage 点名 12 个端点） | **本节清空**（本批） |
 
 ---
 
-## 三、下一轮候选（按「能不能自证」排序）
+## 三、本轮查出来的三处 red CI 门禁（两处已修，一处待查）
+
+> **为什么这一节在这里**：上面五节的盘点都是**账本里写着的**条目；本节是**账本没写、
+> 但 CI 天天在报**的那一族 —— 它们同样是「账本」的一种（门禁即账本：红了就是欠账）。
+> 本轮的入口是 GitHub API（`/actions/runs`，无需 token）：**2026-11-12 main 的 HEAD 上
+> 三个 workflow 红**，逐个 job / step 读出来是哪一格红。
+
+| # | workflow | 红的那一格 | 定性 | 处置 |
+|---|---|---|---|---|
+| 1 | `laiyipao CI` | `Dependency vulnerability gate` → **govulncheck (must find no reachable vulnerability)** | **代码可达的标准库漏洞** `GO-2026-6859` / CVE-2026-97054（`net/http` 的 `MaxBytesReader` 头部竞态 ⇒ HTTP/1 服务端在「读请求体」与「写响应头」并发时可能 panic）。本地复跑逐字：`Found in: net/http@go1.26.10` / `Fixed in: net/http@go1.26.11` / `Your code is affected by 1 vulnerability from the Go standard library`；调用链点名 `service.code2Session → http.Client.Do`、`api.startPprof → http.ListenAndServe` ⇒ **不是第三方模块，是工具链下限** | **已修**（`765489466`）：`go.mod` 一行 `go 1.26.10` → `go 1.26.11`；复跑 `govulncheck` ⇒ **No vulnerabilities found**；四份写着下限的文档同步（含两条漏洞各自的调用链） |
+| 2 | `warnings-gate` | `Cross-subproject warning gates` → **license header（全仓源码 SPDX 标识符）** | `node scripts/check-license-headers.mjs` 读数逐字：**2448 个源码文件，缺失 1** ⇒ 点名 `augmentor/tests/unit/test_checkpoint_total_items_l295.py`（L295 那一轮新立的守卫落笔时漏了两行文件头） | **已修**（`3e351e48d`）：补上仓里通行的两行（`# Copyright (C) 2026 annsshadow` + `# SPDX-License-Identifier: AGPL-3.0-or-later`）⇒ 复跑 **缺失 0**；守卫**一字未改**，且补的是文件头 ⇒ 全仓在册定位引用零位移 |
+| 3 | `AI platform CI` | `Backend tests & coverage` → **Run tests with coverage gate** | **长期红**（不是今天才红）：逐个 run 读出来，最后一次 **success** 是 **2026-11-01 09:40**，此后每一枚都红（11-02 起连续）。本地同口径全量 ⇒ **0 failed / 10551 passed / 6 skipped、覆盖率 99.53%** ⇒ **红的那一格不在本机复现**。**待查的假设（本轮只到假设这一步，如实记）**：CI 在 `augmentor/` 下跑 `pytest`，而 `pytest.ini` 的覆盖率闸是 **99%**、覆盖面是 `--cov=augmentor --cov=api --cov=cli`；**`faiss-cpu` 只在 `requirements.txt`、不在 `requirements-dev.txt`** ⇒ CI 环境**装不上 faiss** ⇒ `augmentor/vector/faiss.py`（185 条语句）与依赖它的分支在 CI 里**大面积未覆盖** ⇒ 总覆盖率掉到 99% 闸以下 ⇒ **step 以覆盖率红**（与 `docs/solutions/development-workflow/main-existing-reds-fix-2026-10-19.md` §2.5 记的「CI 只装 requirements-dev.txt ⇒ 依赖不进清单这些用例恒红」同一族，那次的处方是**把依赖补进清单**）。**下一步（本机可做）**：用一份「`import faiss` 失败」的替身把本机环境复刻成 CI 口径，复跑全量读覆盖率 —— 若复现，则按先例把 `faiss-cpu` 补进 `requirements-dev.txt`（或把 faiss 从覆盖率面里剔出去并记明理由） | **待查**（本轮只到「本地复现不出 + 假设 + 下一步」这一步，**没有**动任何代码） |
+
+> **为什么第 3 条不许含糊**：交接文档 §4 的 P1-3 把 CI 红项定性成「**基础设施抖动**（非代码）」——
+> 本轮实测**那不成立**：红的是**代码级**的门禁（govulncheck 的工具链下限、license 门禁少一个文件头），
+> 两处已经各自收掉；剩下第 3 条的红**仍然不能用「抖动」两个字盖过去** ⇒ 记成待查，
+> 并把「下一次拿到 CI 日志要做的第一件事」写清楚（见上表第 3 行的「下一步」）。
+
+---
+
+## 四、下一轮候选（按「能不能自证」排序）
 
 | 优先 | 项 | 归属 | 判据 |
 |---|---|---|---|
-| 1 | 卷二 Backlog A 的 10 笔 **S** 级（A272 A278 A287 A301 A308 A311 A335 A370） | augmentor | 本仓可自证；其中 A311（全局 `RequestValidationError` 处理器把 422 翻成中文同一形状）已被 L321 / L322 两轮点名为下一轮方向 |
-| 2 | 卷二 Backlog A 的 25 笔 **M** 级里**已拍口径**的那些 | augmentor | 口径已定 ⇒ 只差实现；**要动 SDK 公开契约**的另起一轮 |
+| 1 | 卷二 Backlog A 余下的 **7 笔 S 级**（A272 A278 A287 A301 A308 A335 A370） | augmentor | 本仓可自证；**A311 已于 L325 收口**（全局 `RequestValidationError` 处理器把 422 翻成中文同一形状）。余下 7 笔里 A308 / A370 是「要产品拍板」、A335 要动 SDK 公开契约 ⇒ 真正能自证的只剩 A272 / A278 / A287 / A301 |
+| 2 | 卷二 Backlog A 的 27 笔 **M** 级里**已拍口径**的那些 | augmentor | 口径已定 ⇒ 只差实现；**要动 SDK 公开契约**的另起一轮 |
 | 3 | `x_message_mass.creator`（P0-2）与 attendance 五表（oa4rust P1-1） | oa4rust | 需要真库 + Rust 构建窗口；第一步都是「先设计一个能翻转门禁的断言」 |
 | 4 | 第 2 条微信登录通道 | laiyipao | 需要 AppID/Secret + 客户端接线 |
 | 5 | 第 23 条 `levels` 表权威 | laiyipao | 两条候选路径都要产品拍板 |
+| 6 | **`AI platform CI` 的覆盖率红**（§三 第 3 行） | augmentor | 先把 CI 口径复刻到本机（`import faiss` 失败的替身）读一次覆盖率；若复现，按先例把 `faiss-cpu` 补进 `requirements-dev.txt` —— **判据是「CI 环境下全量 pytest 退出码 0」**，不是「本机绿」 |
 
-## 四、复跑命令
+## 五、复跑命令
 
 ```bash
-# augmentor 全量门禁（本轮：**0 failed / 10551 passed / 6 skipped**）
+# augmentor 全量门禁（本轮：**0 failed / 10551 passed / 6 skipped**，覆盖率 99.53%）
 cd augmentor && python -m pytest tests -q -p no:cacheprovider
 cd augmentor/web && npx vitest run && npx tsc --noEmit && npx eslint . --max-warnings 0 && npx prettier --check src
 
+# 跨子项目告警门禁（本轮：**5 项 5 通过**；§三 第 2 行那道 license 门禁就在其中）
+node scripts/check-warnings.mjs --only rust-lints,llm-lab,llm-lab-tests,augmentor-web,license
+node scripts/check-license-headers.mjs   # 单跑那道：读数「2448 个源码文件，缺失 0」
+
 # laiyipao 归属守卫（本轮：3 支全绿，读数见 §二）
 cd laiyipao/server && go test ./internal/service/ -run "TestUserScopedQueriesMustFilterByOwner|TestOwnerScopedTableRegistryCoversSchema|TestOwnershipScannerSeesTheRealPackage" -count=1
+
+# laiyipao 依赖漏洞门禁（本轮：**No vulnerabilities found** —— Go 1.26.11 之后）
+cd laiyipao/server && go install golang.org/x/vuln/cmd/govulncheck@v1.9.0 && govulncheck -show verbose ./...
 
 # llm-lab（本轮：130 支全绿）
 cd llm-lab && python -m pytest tests -q
@@ -154,7 +201,7 @@ cd llm-lab && python -m pytest tests -q
 # auto-checkin（本轮：163 支全绿 + 棘轮九档全绿）
 cd auto-checkin && npx tsx --test test/*.test.ts && npm run test:ratchet
 
-# oa4rust 门禁（需真库 + Rust 构建窗口；本轮未跑）
+# oa4rust 门禁（需真库 + Rust 构建窗口；本轮未跑 —— 本机无 Postgres、无 Docker）
 cd oa4rust/backend && cargo test --test security_regression -- --nocapture
 ```
 
@@ -162,3 +209,7 @@ cd oa4rust/backend && cargo test --test security_regression -- --nocapture
 > augmentor 全量 pytest 运行期间**不要做 git 提交 / 推送** —— `test_ledger_hash_reachability_l270` 与
 > `test_log_block_bullet_ownership_l264` 依赖远端 ref 面，运行中改 HEAD/refs 会让它们随机红
 > （本轮实测到一次，23 支红全属这一族，与产品面无关）。
+>
+> ⚠️ **本轮新增的一条**：**augmentor 全量 pytest 期间也不要编辑 `augmentor/tests/**`**
+> —— 本轮那 1 支 ERROR（`test_http_exception_passthrough_l265`）就是并行跑第二轮时撞出来的，
+> 单独复跑全绿 ⇒ **同一棵树里同时跑两轮 pytest 会互相踩**（本轮那两次重叠的全量跑就是这个教训）。
