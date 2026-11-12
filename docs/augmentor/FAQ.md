@@ -92,11 +92,11 @@
   原默认是 `["."]`（放行整个工作目录），后按 F-07 收紧；代价与迁移处方写在
   OPTIMIZATION_PLAN.md §3.2。
 - **读**：裸文件名会在白名单各根目录内查找，命中不了才按工作目录解释
-  （`augmentor/api/deps.py:394`）；越界的符号链接仍会被拦下。
+  （`augmentor/api/deps.py:449`）；越界的符号链接仍会被拦下。
 - **写**：必须显式给白名单内的路径，例如 data/out.json；服务端不替文件选目录
-  （`augmentor/api/deps.py:442`）。
+  （`augmentor/api/deps.py:452`）。
 - **环境变量优先**：`AUGMENTOR_DATA_ROOTS`（`os.pathsep` 分隔）优先于配置文件
-  （`augmentor/api/deps.py:166`）。
+  （`augmentor/api/deps.py:233`）。
 
 所以「列表里看得见、读得到，但一写就 403」通常不是 bug，而是写路径没带 `data/` 前缀。
 
