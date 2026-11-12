@@ -319,6 +319,13 @@ jobs:
   #    go.sum 未动 —— setup-go 走 go-version-file，会自动装新工具链。
   #    这正是「闸门」的价值：代码一行没改，红是漏洞库长出来的。
   #
+  #    2026-11-12 第三轮：go1.26.10 上又扫出 GO-2026-6859 / CVE-2026-97054
+  #    （net/http 的 MaxBytesReader 头部竞态 —— HTTP/1 服务端在「读请求体」与
+  #    「写响应头」并发时可能 panic），调用链同样 **代码可达**
+  #    （service.code2Session → http.Client.Do、api.startPprof → http.ListenAndServe），
+  #    修于 go1.26.11 ⇒ 仍是 go.mod 一行（`go 1.26.10` → `go 1.26.11`）。
+  #    **两次都是「代码一行没改，红是漏洞库长出来的」** —— 这道闸门不能拆。
+  #
   # 2. **pnpm audit 是回归闸门，不是「必须 0」。** 剩下的 39 条全挂在
   #    @dcloudio 构建链/测试链上，@dcloudio/vite-plugin-uni 声明的是
   #    `"vite": "5.2.8"` 这种精确 pin，强推版本会打破它、构建假红。

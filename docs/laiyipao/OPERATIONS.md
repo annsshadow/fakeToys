@@ -30,15 +30,18 @@
 
 | 依赖 | 版本 | 检查 |
 |---|---|---|
-| Go | 1.26.10 | `go version` |
+| Go | 1.26.11 | `go version` |
 | PostgreSQL | 15+ | `psql --version` |
 | Node | 20+ | `node -v` |
 | pnpm | 11 | `pnpm -v` |
 
-> ⚠️ Go 的下限是 **1.26.10**，不是「大致 1.26」。1.26.9 及以下含
-> `GO-2026-6809`（`crypto/x509` 不拒绝被攻破的中间证书），而本服务的调用链
-> **代码可达**（`service.RecordRecompute → fmt.Fprintf → x509.Certificate.Verify`）——
-> CI 的 govulncheck 闸门会直接红。想降版本之前先看
+> ⚠️ Go 的下限是 **1.26.11**，不是「大致 1.26」。两条标准库漏洞各顶了一次下限：
+> ① 1.26.9 及以下含 `GO-2026-6809`（`crypto/x509` 不拒绝被攻破的中间证书），调用链
+> **代码可达**（`service.RecordRecompute → fmt.Fprintf → x509.Certificate.Verify`）；
+> ② 1.26.10 含 `GO-2026-6859` / CVE-2026-97054（`net/http` 的 `MaxBytesReader` 头部竞态 ⇒
+> HTTP/1 服务端在「读请求体」与「写响应头」并发时可能 panic），调用链同样**代码可达**
+> （`service.code2Session → http.Client.Do`、`api.startPprof → http.ListenAndServe`）。
+> 两条都会让 CI 的 govulncheck 闸门直接红。想降版本之前先看
 > `.github/workflows/laiyipao-ci.yml` 的 `dependency-audit` 一节：
 > 那条闸门的判据是「**代码可达**的漏洞必须为 0」，不是「漏洞库里有几条」。
 

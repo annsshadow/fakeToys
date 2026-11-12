@@ -11,17 +11,20 @@
 
 | 组件 | 版本 | 用途 |
 |---|---|---|
-| Go | **1.26.10** | 后端编译（下限不是随手写的，见下） |
+| Go | **1.26.11** | 后端编译（下限不是随手写的，见下） |
 | PostgreSQL | **15+** | 数据库（需要 `num_nonnulls`、`GENERATED … AS IDENTITY`） |
 | Node | **20+** | 前端构建 |
 | pnpm | 11 | 依赖管理 |
 | nginx | 任意稳定版 | 反代 + 静态托管 |
 | systemd | 任意 | 服务托管 |
 
-后端 Go 的下限是 **1.26.10**，不是「大致 1.26」：1.26.9 及以下含
-`GO-2026-6809`（`crypto/x509` 不拒绝被攻破的中间证书），而本服务的调用链
-**代码可达**（`service.RecordRecompute → fmt.Fprintf → x509.Certificate.Verify`），
-CI 的 govulncheck 闸门会直接红。升级方式只是 `go.mod` 一行 ——
+后端 Go 的下限是 **1.26.11**，不是「大致 1.26」——两条标准库漏洞都把下限顶到了这里：
+① **1.26.9 及以下**含 `GO-2026-6809`（`crypto/x509` 不拒绝被攻破的中间证书），
+本服务的调用链 **代码可达**（`service.RecordRecompute → fmt.Fprintf → x509.Certificate.Verify`）；
+② **1.26.10** 含 `GO-2026-6859` / CVE-2026-97054（`net/http` 的 `MaxBytesReader` 头部竞态 ——
+「读请求体」与「写响应头」并发时 HTTP/1 服务端可能 panic），调用链同样**代码可达**
+（`service.code2Session → http.Client.Do`、`api.startPprof → http.ListenAndServe`）。
+两条都会让 CI 的 govulncheck 闸门直接红。升级方式只是 `go.mod` 一行 ——
 `setup-go` 走 `go-version-file`，会自动装新工具链，`go.sum` 不用动。
 
 前端工具链版本有**硬锁**，不要随手升级：
