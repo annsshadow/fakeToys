@@ -157,8 +157,9 @@ newapi-client 94.58% / server 95.8% / lock 91.3% / scheduler 91.16% / runner 87.
 | # | workflow | 红的那一格 | 定性 | 处置 |
 |---|---|---|---|---|
 | 1 | `laiyipao CI` | `Dependency vulnerability gate` → **govulncheck (must find no reachable vulnerability)** | **代码可达的标准库漏洞** `GO-2026-6859` / CVE-2026-97054（`net/http` 的 `MaxBytesReader` 头部竞态 ⇒ HTTP/1 服务端在「读请求体」与「写响应头」并发时可能 panic）。本地复跑逐字：`Found in: net/http@go1.26.10` / `Fixed in: net/http@go1.26.11` / `Your code is affected by 1 vulnerability from the Go standard library`；调用链点名 `service.code2Session → http.Client.Do`、`api.startPprof → http.ListenAndServe` ⇒ **不是第三方模块，是工具链下限** | **已修**（`765489466`）：`go.mod` 一行 `go 1.26.10` → `go 1.26.11`；复跑 `govulncheck` ⇒ **No vulnerabilities found**；四份写着下限的文档同步（含两条漏洞各自的调用链） |
-| 2 | `warnings-gate` | `Cross-subproject warning gates` → **license header（全仓源码 SPDX 标识符）** | `node scripts/check-license-headers.mjs` 读数逐字：**2448 个源码文件，缺失 1** ⇒ 点名 `augmentor/tests/unit/test_checkpoint_total_items_l295.py`（L295 那一轮新立的守卫落笔时漏了两行文件头） | **已修**（`3e351e48d`）：补上仓里通行的两行（`# Copyright (C) 2026 annsshadow` + `# SPDX-License-Identifier: AGPL-3.0-or-later`）⇒ 复跑 **缺失 0**；守卫**一字未改**，且补的是文件头 ⇒ 全仓在册定位引用零位移 |
-| 3 | `AI platform CI` | `Backend tests & coverage` → **Run tests with coverage gate** | **长期红**（不是今天才红）：逐个 run 读出来，最后一次 **success** 是 **2026-11-01 09:40**，此后每一枚都红（11-02 起连续）。本地同口径全量 ⇒ **0 failed / 10551 passed / 6 skipped、覆盖率 99.53%** ⇒ **红的那一格不在本机复现**。**待查的假设（本轮只到假设这一步，如实记）**：CI 在 `augmentor/` 下跑 `pytest`，而 `pytest.ini` 的覆盖率闸是 **99%**、覆盖面是 `--cov=augmentor --cov=api --cov=cli`；**`faiss-cpu` 只在 `requirements.txt`、不在 `requirements-dev.txt`** ⇒ CI 环境**装不上 faiss** ⇒ `augmentor/vector/faiss.py`（185 条语句）与依赖它的分支在 CI 里**大面积未覆盖** ⇒ 总覆盖率掉到 99% 闸以下 ⇒ **step 以覆盖率红**（与 `docs/solutions/development-workflow/main-existing-reds-fix-2026-10-19.md` §2.5 记的「CI 只装 requirements-dev.txt ⇒ 依赖不进清单这些用例恒红」同一族，那次的处方是**把依赖补进清单**）。**下一步（本机可做）**：用一份「`import faiss` 失败」的替身把本机环境复刻成 CI 口径，复跑全量读覆盖率 —— 若复现，则按先例把 `faiss-cpu` 补进 `requirements-dev.txt`（或把 faiss 从覆盖率面里剔出去并记明理由） | **待查**（本轮只到「本地复现不出 + 假设 + 下一步」这一步，**没有**动任何代码） |
+| 2 | `laiyipao CI` | 同一个 job 的**第二格** → **Audit gates must not regress** | 第一格修好之后，红的**挪到了第二格**（同一个 job 的下一步）⇒ 逐条读出来：`audit-gate.cjs check-overrides` 逐字点名 **9 只**「override 不在 pnpm-workspace.yaml 里了」（vue / `@vue/compiler-*` / `@vue/reactivity` / `@vue/runtime-*` / `@vue/shared`）—— **根因**：`f7d15a76e`（vue 运行时家族回 3.4.21 修 uni-h5-vue 兼容）改了 `pnpm-workspace.yaml`，**没同步** `audit-baseline.ini` 的 `[miniapp.overrides]` 名册 ⇒ **账本没回写那一族**（改的是闸门查的东西，没回头改闸门记的东西） | **已修**（`b4ed7a9e7`）：那 9 只按现值改成 **3.4.21**（`@vue/server-renderer` 保持 3.5.42）⇒ **不是放宽闸门**：闸门查「override 在不在、版本对不对」，名册记的应是**现值**；漏洞计数两格一格未动（miniapp 1 / admin 0）⇒ 复跑三格全绿（overrides 齐全 33 条 / miniapp 1 条持平 / admin 0 条持平） |
+| 3 | `warnings-gate` | `Cross-subproject warning gates` → **license header（全仓源码 SPDX 标识符）** | `node scripts/check-license-headers.mjs` 读数逐字：**2448 个源码文件，缺失 1** ⇒ 点名 `augmentor/tests/unit/test_checkpoint_total_items_l295.py`（L295 那一轮新立的守卫落笔时漏了两行文件头） | **已修**（`3e351e48d`）：补上仓里通行的两行（`# Copyright (C) 2026 annsshadow` + `# SPDX-License-Identifier: AGPL-3.0-or-later`）⇒ 复跑 **缺失 0**；守卫**一字未改**，且补的是文件头 ⇒ 全仓在册定位引用零位移。**CI 侧已验证**：该 workflow 在 `765489466` 之后的每一枚都是 **success** |
+| 4 | `AI platform CI` | `Backend tests & coverage` → **Run tests with coverage gate** | **长期红**（不是今天才红）：逐个 run 读出来，最后一次 **success** 是 **2026-11-01 09:40**，此后每一枚都红（11-02 起连续）。本机同口径全量 ⇒ **0 failed / 10551 passed / 6 skipped、覆盖率 99.53%** ⇒ **红的那一格在本机复现不出**。**本轮把假设逐个否证掉（都留下读数）**：① **faiss 假设 —— 否证**：`faiss-cpu` 只在 `requirements.txt`、不在 `requirements-dev.txt` ⇒ CI 装不上；本机用一份「`import faiss` 抛 ImportError」的替身复刻 CI 口径跑全量 ⇒ **10551 passed / 6 skipped、覆盖率仍是 99.53%**、`augmentor/vector/faiss.py` 仍 **99%**（那模块自带 ImportError 兜底 ⇒ 没装 faiss 也照样被覆盖）⇒ **不是 faiss**；② **依赖漂移假设 —— 否证**：CI 每次装**最新**依赖而本机是旧版 ⇒ 新建一只干净 venv 装 `requirements-dev.txt`（fastapi 0.162.5 / pydantic 2.14.3 / pytest 9.2.0 / anyio 4.16.0 / pandas 3.1.1）复跑全量 ⇒ **10551 passed / 6 skipped、99.53%** ⇒ **不是依赖漂移**；③ **Python 版本**：CI 钉 **3.11**、本机 3.12.10（卷二 L239 / L292 那几把尺子对 3.12 / 3.13 做过逐版钉版）；④ **Linux vs Windows**：仓里那一族 Windows 专属的路径语义（盘符 / 冒号 / 自着陆）是最可疑的一维。**剩下的两格还没查**：③ 与 ④ 各自单独是不是元凶。**本轮为此把 CI 改成「红的时候带人话」**（`713267cc5`）：pytest 的输出同时写进 `$GITHUB_STEP_SUMMARY` ⇒ **check-run API（公开仓库无需 token 就能读）**能拿到失败名单与覆盖率读数 ⇒ 下一轮不必再猜 | **待查**（已把「怎么拿到答案」这一步铺好；本轮**没有**动任何产品代码） |
 
 > **为什么第 3 条不许含糊**：交接文档 §4 的 P1-3 把 CI 红项定性成「**基础设施抖动**（非代码）」——
 > 本轮实测**那不成立**：红的是**代码级**的门禁（govulncheck 的工具链下限、license 门禁少一个文件头），
@@ -176,7 +177,7 @@ newapi-client 94.58% / server 95.8% / lock 91.3% / scheduler 91.16% / runner 87.
 | 3 | `x_message_mass.creator`（P0-2）与 attendance 五表（oa4rust P1-1） | oa4rust | 需要真库 + Rust 构建窗口；第一步都是「先设计一个能翻转门禁的断言」 |
 | 4 | 第 2 条微信登录通道 | laiyipao | 需要 AppID/Secret + 客户端接线 |
 | 5 | 第 23 条 `levels` 表权威 | laiyipao | 两条候选路径都要产品拍板 |
-| 6 | **`AI platform CI` 的覆盖率红**（§三 第 3 行） | augmentor | 先把 CI 口径复刻到本机（`import faiss` 失败的替身）读一次覆盖率；若复现，按先例把 `faiss-cpu` 补进 `requirements-dev.txt` —— **判据是「CI 环境下全量 pytest 退出码 0」**，不是「本机绿」 |
+| 6 | **`AI platform CI` 的覆盖率红**（§三 第 4 行） | augmentor | 先把 CI 口径复刻到本机（`import faiss` 失败的替身）读一次覆盖率；若复现，按先例把 `faiss-cpu` 补进 `requirements-dev.txt` —— **判据是「CI 环境下全量 pytest 退出码 0」**，不是「本机绿」 |
 
 ## 五、复跑命令
 
@@ -185,7 +186,7 @@ newapi-client 94.58% / server 95.8% / lock 91.3% / scheduler 91.16% / runner 87.
 cd augmentor && python -m pytest tests -q -p no:cacheprovider
 cd augmentor/web && npx vitest run && npx tsc --noEmit && npx eslint . --max-warnings 0 && npx prettier --check src
 
-# 跨子项目告警门禁（本轮：**5 项 5 通过**；§三 第 2 行那道 license 门禁就在其中）
+# 跨子项目告警门禁（本轮：**5 项 5 通过**；§三 第 3 行那道 license 门禁就在其中）
 node scripts/check-warnings.mjs --only rust-lints,llm-lab,llm-lab-tests,augmentor-web,license
 node scripts/check-license-headers.mjs   # 单跑那道：读数「2448 个源码文件，缺失 0」
 
