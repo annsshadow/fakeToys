@@ -105,6 +105,19 @@ jobs:
             tail -n 200 pytest.log
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+          # 同一份读数再写成 **GitHub 注解**（`::error::`）：注解走
+          # `GET /repos/{owner}/{repo}/check-runs/{id}/annotations`，**公开仓库无需 token 就能读**
+          # ⇒ 「哪几支红 / 覆盖率差多少」这件事连匿名访客都问得到。
+          # 只取前 12 支失败 + 两行覆盖率读数（注解多了会被折叠，且真正要修的通常就在最前面）。
+          grep -E "^(FAILED|ERROR) " pytest.log | head -n 12 | while IFS= read -r line; do
+            echo "::error::${line}"
+          done
+          grep -E "Required test coverage|^TOTAL " pytest.log | head -n 2 | while IFS= read -r line; do
+            echo "::error::${line}"
+          done
+          tail -n 1 pytest.log | grep -E "passed|failed|error" | while IFS= read -r line; do
+            echo "::error::pytest 收尾读数：${line}"
+          done
           exit $rc
 
       - name: Coverage summary
