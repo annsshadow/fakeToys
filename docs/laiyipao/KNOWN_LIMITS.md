@@ -189,15 +189,38 @@
 
     ⚠️ **`PENDING_TOKENS` 现在是空表。** 空表本身不是「完成」的证明 ——
     往 `walletTokens` 加新道具时会被守卫当场要求二选一。
-17. **战报复现与验真的「读不到别人的」只到第 75 轮为止** ——
+17. ~~**战报复现与验真的「读不到别人的」只到第 75 轮为止**~~ **已收（第 75 轮 + 第 78 轮，2026-11-12 按现量复核）** ——
     `GET /battle/:id/replay` 与 `POST /battle/verify` 此前都只按
     `br.id = $1` 查（连续 BIGSERIAL，任何注册用户可遍历），
     能读走别人的 seed / build_snapshot / card_picks 并把别人的战报
     标成「验真不通过」。第 75 轮补了归属过滤（玩家侧）与
     `replay_hash` 长度上界。
-    **仍然未做**：`battle_records` 里除战报外的玩家数据没有归属校验 ——
-    例如「我的战报列表」以外的分页/统计接口若存在，按 `user_id` 过滤的
-    完整性**没有结构性守卫**，新增接口时可能再漏一次。
+    **本条原先记的「仍然未做」那一半已过时** —— 原文写的是
+    「`battle_records` 里除战报外的玩家数据没有归属校验 ……
+    按 `user_id` 过滤的完整性**没有结构性守卫**，新增接口时可能再漏一次」，
+    而**那道结构性守卫第 78 轮就建起来了**：
+    `server/internal/service/ownership_scan_test.go` 用 go/ast 精确取每条 SQL
+    字符串**字面量**所在的语句位置，把「任何 `SELECT … FROM <用户数据表>`
+    若没有 `user_id` 过滤，就必须出现在一份**具名**豁免表里并写清理由」
+    变成常驻哨兵；`battle_records` 明确登记在 `ownerScopedTables`
+    （归属列 `user_id`），且 `TestOwnerScopedTableRegistryCoversSchema`
+    直接从 migrations 里读出「所有带 `user_id` 列的表」逐张核对是否登记
+    ⇒ **集合完整性不再靠那份手写名单自觉**（新增无前缀的用户表会当场红）。
+    **实测（2026-11-12 复跑）**：
+    `go test ./internal/service/ -run "TestUserScopedQueriesMustFilterByOwner|TestOwnerScopedTableRegistryCoversSchema|TestOwnershipScannerSeesTheRealPackage"`
+    ⇒ 三支全绿，读数逐字：「扫到 **106** 条按用户分区的语句，**全部**带归属过滤
+    （豁免 **7** 处）」、「schema 里 **29** 张按用户分区的表：user_ 前缀若干，
+    登记 **12** 张，豁免 **3**」、「守卫视野里 106 条按用户分区的语句，
+    其中 7 条未带归属过滤」。
+    那 **7** 处豁免逐条点名**全是运营侧聚合**
+    （`adminDashboardUncached` / `reconcileWalletCurrency` / `ChallengeDefense` /
+    `recomputeMismatchRate` 等），玩家面那两条
+    （`MyBattleHistoryPage` 的 `user_id = $1`、`MyBattleDetail` 的 userID 入参）
+    在**带归属过滤的那 106 条里**，不在豁免表里。
+    ⇒ 本条**整条关闭**：不是「这一轮补了一道守卫」，而是
+    **那道守卫早就存在而这条记账没跟上** ——
+    与 `docs/plans/2026-10-29-remaining-work-plan.md` §四 记的
+    「账本过时的一个反例（提醒：引用前先复核）」同一族。
 
 23. **`levels` 表不是玩家侧的关卡来源（第 107 轮发现）** ——
     `PUT /admin/levels/:id` 调参会**落库**（后台列表与响应都显示改后值），
