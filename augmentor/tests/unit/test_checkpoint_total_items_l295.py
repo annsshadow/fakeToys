@@ -1,3 +1,6 @@
+# Copyright (C) 2026 annsshadow
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """L295: checkpoint total_items 与实际输入校平守卫
 
 A406: `CheckpointManager.get_remaining_indices`把盘上断点的 `total_items`当全集权威，
