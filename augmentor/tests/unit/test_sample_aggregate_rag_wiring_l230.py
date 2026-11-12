@@ -62,10 +62,11 @@
 * **consistent 连同源自比也算冲突，冲突条目整份不落盘（A297）**：单源两条同问不同答 ⇒
   `aggregated_count 0`、`conflicts` 一项且 `sources` 两个都是「甲」。名字叫「一致性聚合」，
   读起来像跨源比对，实测同源自比同样触发，且这些条目**不进产物**。
-* **RAG 那一档站着第四份默认（A295）**：`fmt = request.format or rag_config.default_format or
-  "langchain"`（`api/routes/dataset_tools.py:948`）。请求默认 `None`、config 默认 `"llamaindex"`
-  （`augmentor/config.py:545`）、SDK 签名默认也是 `"llamaindex"`（`augmentor/rag.py:187`），
-  只有路由那第三个字面量是 `"langchain"`，且只在 config 被设成空串时才轮得到它。
+* **RAG 那一档的第三档兜底（A295，L318 已收口）**：`fmt = request.format or rag_config.default_format or
+  DEFAULT_RAG_FORMAT`（`api/routes/dataset_tools.py:948`）。请求默认 `None`、config 默认 `"llamaindex"`
+  （`augmentor/config.py:545`）、SDK 签名默认也是 `"llamaindex"`（`augmentor/rag.py:187`）——
+  **三者逐字相等**（第三档引的是 `augmentor.rag.DEFAULT_RAG_FORMAT` 那只常量）；改前那一档写死的是
+  `"langchain"`，只在 config 被设成空串时才轮得到它，而那一档的产物形状与文档承诺的不一样。
   另外实测：请求里**多送** `chunk_size` 一格 ⇒ 200 且产物逐字相同（请求模型没这一格，
   两个切块旋钮只从服务端配置读，`api/routes/dataset_tools.py:950`）；`format` 送空串与省略
   **等价**（两者都回 `llamaindex`）。三档 `record_count` 都等于 `input_count`（短文本不触发切块），
@@ -710,13 +711,20 @@ class TestEveryArmTheUiCanSendForRag:
         assert "chunk_size=rag_config.chunk_size" in \
             DATASET_TOOLS_PY.read_text(encoding="utf-8")
 
-    def test_the_fourth_default_literal_disagrees_with_both_authorities(self):
-        """A295：路由那第三个兜底字面量是 `langchain`，config 与 SDK 两处都是 `llamaindex`"""
+    def test_the_third_fallback_now_agrees_with_both_authorities(self):
+        """A295 已收口（L318）：路由那第三个兜底档从前写死 `langchain`（与两处权威
+        **不一致** ⇒ 一只埋着的谎），现改成与出厂默认同源的那只常量 ⇒ 三者逐字相等
+
+        **判据只升不降**：旧断言只说「第三档与两处权威不同」，新断言钉住「第三档引的
+        就是那只常量」**且**「那个字面量在代码面里一个字都不剩」。
+        """
         route = DATASET_TOOLS_PY.read_text(encoding="utf-8")
-        assert 'request.format or rag_config.default_format or "langchain"' in route
+        assert "request.format or rag_config.default_format or DEFAULT_RAG_FORMAT" in route
+        assert 'or "langchain"' not in route
         from augmentor.config import RAGConfig
-        assert RAGConfig.__dataclass_fields__["default_format"].default == "llamaindex"
-        assert inspect.signature(RAGFormatter.format).parameters["fmt"].default == "llamaindex"
+        from augmentor.rag import DEFAULT_RAG_FORMAT
+        assert RAGConfig.__dataclass_fields__["default_format"].default == DEFAULT_RAG_FORMAT
+        assert inspect.signature(RAGFormatter.format).parameters["fmt"].default == DEFAULT_RAG_FORMAT
 
     def test_record_count_is_input_count_for_short_texts(self, http_with_dataset_tools):
         """三档都是 20 进 20 出：这一格不能读成「条数 = 块数」的保证（短文本不触发切块）"""
