@@ -104,9 +104,18 @@ class TestMemoryTrends:
         assert any("内存使用警告" in r.message for r in caplog.records)
 
     def test_reset_clears_state(self, monkeypatch):
+        """`reset()` 要把快照队列**清空** —— 判据用长度而不是拿队列去比列表
+
+        **这一格原先写的是 `monitor._snapshots == []`**：`_snapshots` 是 `deque`
+        （`augmentor/memory_monitor.py` 的 `deque(maxlen=MAX_SNAPSHOTS)`，注释里写着
+        「旧实现 `_snapshots` 是普通 `list`」）⇒ **`deque([]) == []` 恒为 False**
+        ⇒ 这一支**无论实现对错都红**，是一支恒红的死判据。
+        本轮把判据改成 `len(...) == 0`（**清空这件事照旧被钉住**，只是换成一个真能判的写法）
+        ⇒ 产品面 `_snapshots.clear()` 那一行一字未动。
+        """
         monitor = self._monitor_with_usages([1, 2, 3])
         monitor.reset()
-        assert monitor._snapshots == []
+        assert len(monitor._snapshots) == 0
         assert monitor._current_usage_mb == 0.0
 
 

@@ -42,6 +42,7 @@ const spies = vi.hoisted(() => ({
   getProgress: null as unknown as ReturnType<typeof vi.fn>,
   getCheckpoints: null as unknown as ReturnType<typeof vi.fn>,
   deleteCheckpoint: null as unknown as ReturnType<typeof vi.fn>,
+  getAugmentReport: null as unknown as ReturnType<typeof vi.fn>,
   getDataFiles: null as unknown as ReturnType<typeof vi.fn>,
 }))
 
@@ -56,6 +57,20 @@ vi.mock('../services/api', async (importOriginal) => {
   spies.getProgress = vi.fn().mockResolvedValue({ status: 'no_checkpoint' })
   spies.getCheckpoints = vi.fn().mockResolvedValue({ checkpoints: [] })
   spies.deleteCheckpoint = vi.fn().mockResolvedValue({ success: true, message: 'ok' })
+  spies.getAugmentReport = vi.fn().mockResolvedValue({
+    task_id: 't-report',
+    input_file: 'seed.json',
+    output_file: 'augmented_output.json',
+    input_count: 10,
+    output_count: 9,
+    quality_check: true,
+    dedup: true,
+    parallel: false,
+    vector_index: null,
+    errors: [{ index: 3, error: 'ValueError' }],
+    progress: null,
+    memory_monitor: { rss_mb: 12 },
+  })
   spies.getDataFiles = vi.fn().mockResolvedValue({ files: [{ name: 'seed.json' }] })
   return {
     ...actual,
@@ -63,6 +78,7 @@ vi.mock('../services/api', async (importOriginal) => {
     getProgress: spies.getProgress,
     getCheckpoints: spies.getCheckpoints,
     deleteCheckpoint: spies.deleteCheckpoint,
+    getAugmentReport: spies.getAugmentReport,
     getDataFiles: spies.getDataFiles,
   }
 })
@@ -319,6 +335,60 @@ describe('Augmentation 断点列表（L211 接线）', () => {
     await waitFor(() => expect(spies.deleteCheckpoint).toHaveBeenCalledWith('ck-a'))
     // 删除后刷新列表
     await waitFor(() => expect(spies.getCheckpoints.mock.calls.length).toBeGreaterThanOrEqual(2))
+  })
+})
+
+describe('Augmentation 增强报告（L322）', () => {
+  beforeEach(() => {
+    // 上一族用例把 getDataFiles 设成了 reject / 空清单 —— 显式复位，免得漏进来
+    spies.getDataFiles.mockResolvedValue({ files: [{ name: 'seed.json' }] })
+    spies.getCheckpoints.mockResolvedValue({ checkpoints: [] })
+    spies.getProgress.mockResolvedValue({ status: 'no_checkpoint' })
+  })
+
+  it('填了任务 ID 点「查看报告」→ 调报告端点并把回执逐格渲出来', async () => {
+    render(<Augmentation />)
+
+    await waitFor(() => expect(spies.getDataFiles).toHaveBeenCalled())
+    fireEvent.change(screen.getByPlaceholderText('增强任务的任务 ID'), {
+      target: { value: 't-report' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /查看报告/ }))
+
+    await waitFor(() => expect(spies.getAugmentReport).toHaveBeenCalledWith('t-report'))
+    expect(await screen.findByTestId('augment-report')).toBeInTheDocument()
+    expect(document.body.textContent).toContain('seed.json')
+    expect(document.body.textContent).toContain('10 → 9')
+    expect(document.body.textContent).toContain('失败明细: 1 条')
+  })
+
+  it('没填任务 ID 就点按钮 → 只给一句 warning，不调服务层', async () => {
+    render(<Augmentation />)
+
+    await waitFor(() => expect(spies.getDataFiles).toHaveBeenCalled())
+    fireEvent.click(screen.getByRole('button', { name: /查看报告/ }))
+
+    await waitFor(() => expect(document.body.textContent).toContain('请填写任务 ID'))
+    expect(spies.getAugmentReport).not.toHaveBeenCalled()
+  })
+
+  it('读不到（404）时把那句判决透给用户，并清掉上一次那份', async () => {
+    spies.getAugmentReport.mockRejectedValue({
+      response: { status: 404, data: { detail: '报告不存在（任务未完成或由其它 worker 处理）' } },
+    })
+
+    render(<Augmentation />)
+
+    await waitFor(() => expect(spies.getDataFiles).toHaveBeenCalled())
+    fireEvent.change(screen.getByPlaceholderText('增强任务的任务 ID'), {
+      target: { value: 't-ghost' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /查看报告/ }))
+
+    await waitFor(() =>
+      expect(document.body.textContent).toContain('报告不存在（任务未完成或由其它 worker 处理）'),
+    )
+    expect(screen.queryByTestId('augment-report')).not.toBeInTheDocument()
   })
 })
 

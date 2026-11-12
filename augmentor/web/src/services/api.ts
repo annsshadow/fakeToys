@@ -68,6 +68,7 @@ import {
 import {
   analyzeResponseSchema,
   augmentProgressSchema,
+  augmentReportResponseSchema,
   checkpointListResponseSchema,
   deleteCheckpointSchema,
   createVersionResponseSchema,
@@ -89,6 +90,7 @@ import type {
   AppConfig,
   AuditResponse,
   AugmentProgress,
+  AugmentReport,
   AutoConfigResponse,
   BackupInfo,
   BackupListResponse,
@@ -122,6 +124,7 @@ import type {
   LanguageProfileResponse,
   LeakageResponse,
   MergeResponse,
+  MessageResponse,
   MigrationResponse,
   ModelsResponse,
   MultimodalFormatsResponse,
@@ -535,13 +538,32 @@ export const getCheckpoints = async (): Promise<CheckpointListResponse> => {
   )
 }
 
-/** 删除一个断点（第 56 轮）：同一输入文件的下一次运行从头开始。 */
-export const deleteCheckpoint = async (taskId: string): Promise<{ success: boolean }> => {
+/**
+ * 删除一个断点（第 56 轮）：同一输入文件的下一次运行从头开始。
+ *
+ * 回执走 `MessageResponse`（`success` / `message` 两格都必填）——契约面
+ * `DELETE /api/augment/checkpoints/{task_id}` 用的就是这个模型，所以类型面
+ * 照抄它，**不写内联对象字面量**：写了就解析不动（`l237` 那把尺子当场点名）。
+ */
+export const deleteCheckpoint = async (taskId: string): Promise<MessageResponse> => {
   const response = await api.delete(`/augment/checkpoints/${taskId}`)
-  return checkedData<{ success: boolean }>(
-    'deleteCheckpoint',
-    deleteCheckpointSchema,
-    response.data,
+  return checkedData<MessageResponse>('deleteCheckpoint', deleteCheckpointSchema, response.data)
+}
+
+/**
+ * 读一次增强任务的报告（第 35 轮端点，**L322 第一次接进页面**）。
+ *
+ * **边界照抄服务端那句**：报告只缓存在**处理那个任务的 worker 进程内存里**
+ * ⇒ 单进程部署适用；多 worker 时它可能落在另一个 worker 上而读不到 ⇒ 回 404
+ * 「报告不存在（任务未完成或由其它 worker 处理）」。
+ *
+ * 这只端点**挂着 `verify_api_key` 门禁**（它回的是落盘路径与逐条失败预览，
+ * 属于密面）⇒ 开了鉴权以后页面读它要带上 key；L233 那条通道对**所有**请求
+ * 生效（含 GET）⇒ 配了 key 之后页面照样读得到。
+ */
+export const getAugmentReport = async (taskId: string): Promise<AugmentReport> => {
+  return checkedResponse<AugmentReport>('getAugmentReport', augmentReportResponseSchema, () =>
+    api.get(`/augment/report/${taskId}`),
   )
 }
 

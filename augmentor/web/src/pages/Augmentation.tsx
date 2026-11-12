@@ -1,7 +1,7 @@
 // Copyright (C) 2026 annsshadow
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Card, Button, Space, Select, Switch, message, Progress, Tag } from 'antd'
+import { Card, Button, Space, Select, Switch, message, Progress, Tag, Input } from 'antd'
 import { RocketOutlined, ReloadOutlined } from '@ant-design/icons'
 import {
   apiErrorDetail,
@@ -9,9 +9,10 @@ import {
   getProgress,
   getCheckpoints,
   deleteCheckpoint,
+  getAugmentReport,
   getDataFiles,
 } from '../services/api'
-import type { AugmentProgressDetail } from '../types/api'
+import type { AugmentProgressDetail, AugmentReport } from '../types/api'
 
 export default function Augmentation() {
   const [files, setFiles] = useState<string[]>([])
@@ -44,6 +45,12 @@ export default function Augmentation() {
   // 于是任务完成后定时器照跑——「增强任务完成！」每 2 秒重发一次，页面永远在打
   // `GET /api/augment/progress`。
   const [polling, setPolling] = useState(false)
+  // L322：增强报告（`GET /api/augment/report/{task_id}`）第一次进这个页面。
+  // 任务 ID 由服务端按解析后的输入路径算出来 ⇒ 客户端自己算不出来，
+  // 所以这一格是**手填**的（启动回执递回的那一枚会自动填进来）。
+  const [reportTaskId, setReportTaskId] = useState('')
+  const [report, setReport] = useState<AugmentReport | null>(null)
+  const [reportLoading, setReportLoading] = useState(false)
 
   const loadFiles = async () => {
     try {
@@ -71,6 +78,34 @@ export default function Augmentation() {
       setCheckpoints(result.checkpoints)
     } catch (err) {
       message.error(apiErrorDetail(err, '加载断点列表失败'))
+    }
+  }
+
+  /**
+   * L322：读一次增强报告。
+   *
+   * 服务端那只端点**挂着 `verify_api_key` 门禁** ⇒ 开了鉴权以后它要带 key；
+   * L233 那条通道对**所有**请求生效（含 GET）⇒ 配了 key 之后这里照样读得到。
+   *
+   * **404 是正常结局而不是故障**：报告只缓存在处理那个任务的 worker 内存里，
+   * 任务没跑完、或跑在另一个 worker 上，都会回 404 ⇒ 那句「报告不存在」直接
+   * 透给用户（走 `apiErrorDetail` 这一个漏斗），页面上把上一次那份清掉。
+   */
+  const loadReport = async () => {
+    const id = reportTaskId.trim()
+    if (!id) {
+      message.warning('请填写任务 ID')
+      return
+    }
+    setReportLoading(true)
+    try {
+      const result = await getAugmentReport(id)
+      setReport(result)
+    } catch (err) {
+      setReport(null)
+      message.error(apiErrorDetail(err, '读取增强报告失败'))
+    } finally {
+      setReportLoading(false)
     }
   }
 
@@ -148,6 +183,9 @@ export default function Augmentation() {
       )
       // A408：任务身份由服务端递回（客户端算不出来）⇒ 之后轮询点名读**这次**的进度
       taskIdRef.current = started.task_id
+      // L322：同一个 id 顺手填进「增强报告」那一格 —— 报告按任务 id 查，
+      // 而客户端能拿到的唯一一枚 id 就是这一枚（服务端递回的那一枚）。
+      setReportTaskId(started.task_id)
       message.success('增强任务已启动')
       // 上一轮到终态时把表关了；这里重新打开，否则第二次点「开始增强」页面不会再刷进度。
       setPolling(true)
@@ -275,6 +313,61 @@ export default function Augmentation() {
         ) : (
           <span style={{ color: '#999' }}>暂无断点</span>
         )}
+      </Card>
+
+      <Card
+        title="增强报告"
+        style={{ marginTop: 16 }}
+        extra={
+          <Button
+            size="small"
+            icon={<ReloadOutlined />}
+            onClick={loadReport}
+            loading={reportLoading}
+          >
+            查看报告
+          </Button>
+        }
+      >
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <div>
+            <label>任务 ID：</label>
+            <Input
+              style={{ width: 320 }}
+              value={reportTaskId}
+              onChange={(e) => setReportTaskId(e.target.value)}
+              placeholder="增强任务的任务 ID"
+            />
+          </div>
+          {report ? (
+            <div data-testid="augment-report">
+              <Space direction="vertical">
+                <div>
+                  任务 ID: <Tag>{report.task_id}</Tag>
+                </div>
+                <div>输入文件: {report.input_file}</div>
+                <div>输出文件: {report.output_file}</div>
+                <div>
+                  条数: {report.input_count} → {report.output_count}
+                </div>
+                <div>
+                  开关: 质量检查 {report.quality_check ? '开' : '关'} / 去重{' '}
+                  {report.dedup ? '开' : '关'} / 并行 {report.parallel ? '开' : '关'}
+                </div>
+                <div>失败明细: {report.errors.length} 条</div>
+                {report.errors.map((item, index) => (
+                  <div key={index} style={{ color: '#a8071a' }}>
+                    {Object.entries(item)
+                      .map(([k, v]) => `${k}: ${typeof v === 'string' ? v : JSON.stringify(v)}`)
+                      .join(' / ')}
+                  </div>
+                ))}
+              </Space>
+            </div>
+          ) : (
+            <span style={{ color: '#999' }}>暂无报告</span>
+          )}
+        </Space>
       </Card>
     </div>
   )

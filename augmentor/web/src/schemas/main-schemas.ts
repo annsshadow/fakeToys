@@ -124,10 +124,16 @@ export const messageResponseSchema = z.object({
   message: z.string(),
 })
 
-/** 第 56 轮：`DELETE /api/augment/checkpoints/{taskId}` → 删除结果 */
+/**
+ * 第 56 轮：`DELETE /api/augment/checkpoints/{taskId}` → 删除结果
+ *
+ * 契约面用的是 `MessageResponse`（`success` / `message` **两格都必填**）
+ * ⇒ 这里跟着契约：`message` 改成必填，不是「有时有」。
+ * 改前写成可选，是把「回执文案可能没有」这句猜测当成了契约。
+ */
 export const deleteCheckpointSchema = z.object({
   success: z.boolean(),
-  message: z.string().optional(),
+  message: z.string(),
 })
 
 /** 第 35 轮：`GET /api/augment/report/{taskId}` → 增强任务报告（含失败明细） */

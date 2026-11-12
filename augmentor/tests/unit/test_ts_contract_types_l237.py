@@ -15,11 +15,21 @@
 | 机器对账的守卫 | **没有**（A281 立账时只是一份仓外一次性脚本） | 本文件 |
 | 页面上看得见这些值 | 看不见 | 系统状态页两格重试读数、配置页一张只读回显卡 + 一张保存回执卡 |
 
-上面这张表是 **L237 那一轮**的改前/改后，数字冻在那一轮。fetcher 只数后来动过两次：**L243** 给
-备份完整性加了两员、**L251** 给 `/api/data/list` 的宽档加了一员 ⇒ 现在按现量钉的是 **78 只**（见
-`test_the_measured_scale_is_pinned`）。新加的三员一上线都带着 `Promise<T>` 标注，第一层尺子直接
+上面这张表是 **L237 那一轮**的改前/改后，数字冻在那一轮。fetcher 只数后来动过几次：**L243** 给
+备份完整性加了两员、**L251** 给 `/api/data/list` 的宽档加了一员、**L56** 的 `deleteCheckpoint`
+与 **L322** 的 `getAugmentReport` 各一员 ⇒ 现在按现量钉的是 **80 只**（见
+`test_the_measured_scale_is_pinned`）。新加的这些员一上线都带着 `Promise<T>` 标注，第一层尺子直接
 把逐只对账。L251 那一员还留下本尺子从没见过的形状：**两只 fetcher 配到同一只操作**（默认档与
 `?all_files=true` 档），所以「对账行数」比「操作数」多 1——行数按 fetcher 计，操作数按契约计。
+**L308（A408）** 又留下第二个形状：`getProgress` 一块里发**两次**调用（点名任务走
+`params.task_id`、不点名走裸路径）⇒ 「多调用」那一族从空集变成一员具名名单。
+
+**L322 那一轮修的两处真缺口**（不是重钉）：① `deleteCheckpoint` 的回执类型原先写的是
+**内联对象字面量** `{ success: boolean }` ⇒ 这把尺子解析不动它（`unresolved` 一员）——
+改成具名的 `MessageResponse`（与契约 `api/schemas.py` 那个模型同名），
+zod 面 `message` 也从「可选」改成**必填**（契约里它必填）；
+② `VersionDataResponse` 少三格（`total` / `page` / `page_size`，第 52 轮的分页那三格）⇒
+类型面按契约补齐。**两处补完之后 `mismatched` 与 `unresolved` 同时归空。**
 
 **为什么是两层尺子，一层不够**：`ConfigResponse` 的九节在契约里全是
 `{"type": "object", "additionalProperties": true}` 的自由字典 ⇒ 节内键**根本不进契约**，
@@ -453,18 +463,31 @@ class TestTheRulerStandsUpFirst:
         assert ts.props("DataItem[]") == ts.props("DataItem") is not None
 
     def test_the_fetcher_scan_is_not_vacuous(self, face):
-        """扫描面要有量：86 只 `export const` 里 78 只是 fetcher，一只都不能少扫
+        """扫描面要有量：88 只 `export const` 里 80 只是 fetcher，一只都不能少扫
 
         L237 立账时是「83 只里 75 只」，那一轮一只 fetcher 未增未减；**L243** 给备份完整性
         加了两员（`verifyBackups` / `cleanupBackups`），**L251** 又加了宽档那一员
         （`getBackupSourceCandidates`），于是三格同涨到 86 / 78 / 78。这一支管的是「尺子没瞎」，
         不是「fetcher 数量不许变」。
+
+        **归因（两笔旧账 + 本轮一笔，按现量不是按推算）**：本文件随文档合流进 main 时
+        按 **L251 那一轮的读数**（86 / 78 / 78）钉下，而那三格此后又动过两次 ——
+        ① **L56 的 `deleteCheckpoint`**（删断点那只 fetcher）落在 main 上时**没跟着走**这把
+        尺子的钉数 ⇒ 86 → **87** / 78 → **79** / 78 → **79**；
+        ② **L308（A408）** 把 `getProgress` 改成**两臂调用**（点名任务走 `params.task_id`，
+        不点名走裸路径）⇒ 多一处调用 ⇒ 79 → **80**（fetcher 数不变，仍 79）。
+        ⇒ 尺子**落库当天就是红的**（HEAD 的现读是 87 / 80 / 79）。
+        本轮 **L322** 接走 `GET /api/augment/report/{task_id}`（新增一只 fetcher）
+        ⇒ 88 / 81 / **80**。
         """
         src = strip_comments(SERVICES_TS.read_text(encoding="utf-8"))
-        assert len(EXPORT_CONST.findall(src)) == 86
-        assert len(API_CALL.findall(src)) == 78
-        assert len(face["rows"]) + len(face["unannotated"]) + len(face["unresolved"]) == 78
-        assert face["multi_call"] == []
+        assert len(EXPORT_CONST.findall(src)) == 88
+        assert len(API_CALL.findall(src)) == 81
+        assert len(face["rows"]) + len(face["unannotated"]) + len(face["unresolved"]) == 80
+        # 「一块里发多次调用」这一族**不是空集**：A408 把 `getProgress` 改成两臂调用之后，
+        # 它就是本尺子里唯一一员多调用。改前这里是空集（那时 `getProgress` 只有一条臂）。
+        # 写成具名名单而不是空集：多一员照样红（往任一只 fetcher 里再加一次调用即红）。
+        assert face["multi_call"] == [("getProgress", 2)]
         names = {r["name"] for r in face["rows"]}
         assert {"getConfig", "updateConfig", "getServiceStatus", "getDemoData"} <= names
 
@@ -498,14 +521,21 @@ class TestEveryFetcherMatchesItsOwnOperation:
         assert face["unresolved"] == []
 
     def test_the_measured_scale_is_pinned(self, face):
-        """规模钉：78 只对账、0 只缺口。多一只少一只都要在这里响（L237 立账时是 75）"""
-        assert len(face["rows"]) == 78
+        """规模钉：80 只对账、0 只缺口。多一只少一只都要在这里响（L237 立账时是 75）
+
+        **归因**：L251 那一轮钉的是 78。此后 **L56 的 `deleteCheckpoint`**（+1）
+        与 **L308（A408）**（多一员多调用、fetcher 数不变）把读数顶到 79，
+        而这把尺子随文档合流进 main 时按 L251 的旧读数钉下 ⇒ 落库当天就是红的。
+        本轮 **L322** 接走报告那只 ⇒ **80**。契约面 79 条操作**全数有 fetcher**（见
+        `test_the_two_fetchers_on_one_operation_are_not_a_scan_artifact`）。
+        """
+        assert len(face["rows"]) == 80
         assert len(face["mismatched"]) == 0
 
     def test_the_two_fetchers_on_one_operation_are_not_a_scan_artifact(self, face):
         """L251 起本尺子第一次有两只 fetcher 配到同一只操作，那一格要单独点名
 
-        行数 78 比契约的 77 条操作多 1，差额必须**恰好**是 `GET /api/data/list` 的默认档与
+        行数 80 比契约的 79 条操作多 1，差额必须**恰好**是 `GET /api/data/list` 的默认档与
         `?all_files=true` 档共用同一份响应模型，而不是扫描器把某只 fetcher 数了两遍。
         """
         same_op = [r["name"] for r in face["rows"] if r["op"] == "GET /api/data/list"]
@@ -516,6 +546,8 @@ class TestEveryFetcherMatchesItsOwnOperation:
         assert a["ts"] == b["ts"]
         ops = [r["op"] for r in face["rows"]]
         assert len(ops) - len(set(ops)) == 1, "同操作多 fetcher 只许这一对"
+        # 契约面 79 条操作**一条都不缺**：80 行 - 1 对重复 = 79 条，正好是契约面的全部
+        assert len(set(ops)) == 79
 
     def test_the_three_a281_targets_are_now_whole(self, face):
         """A281 那三只逐个点名：缺口补齐之后属性集与契约**逐格相等**"""

@@ -260,7 +260,15 @@ class TestTheFrontendAsksForTheWideModeOnlyWhereItSaysSo:
         assert page.count("options={dataFiles.map") == 6
 
     def test_the_default_fetcher_still_has_eight_page_consumers(self):
-        """其余页面一字未动：默认档的选择器现量 8 处调用"""
+        """其余页面一字未动：默认档的选择器现量 **9** 处调用（8 个页面，其中增强页占 2 处）
+
+        **归因（按现量，不是按推算）**：钉数那一轮量到的是 **8** 处。后来**增强页自己**
+        多了一处 —— 第 34 轮那一句「产物已落盘，立刻刷新文件列表」（改前左侧输入选择器
+        看不到新文件，用户要手动刷新页面才能加载增强结果）⇒ `Augmentation.tsx` 里
+        `getDataFiles()` 从 1 处变成 **2** 处（挂载一次 + 终态一次）⇒ 8 → **9**。
+        本轮按现量续钉，**不把这一处算成新缺陷**：宽档那一族的两条判据（api.ts 里各恰好一处
+        调用、系统页只吃宽档）本轮一格未动，动的只是「默认档还剩几处」这一格计数。
+        """
         callers = []
         for path in sorted(SRC.rglob("*.tsx")):
             if ".test." in path.name:
@@ -268,4 +276,4 @@ class TestTheFrontendAsksForTheWideModeOnlyWhereItSaysSo:
             count = strip_comments(path.read_text(encoding="utf-8")).count("getDataFiles(")
             if count:
                 callers.append((path.name, count))
-        assert sum(c for _, c in callers) == 8, callers
+        assert sum(c for _, c in callers) == 9, callers

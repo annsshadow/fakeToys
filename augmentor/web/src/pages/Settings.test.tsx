@@ -392,12 +392,18 @@ describe('Settings 写操作鉴权（L233）', () => {
     expect(text).toContain('AUGMENTOR_API_KEY')
     expect(text).toContain('明文')
     // 影响面是 L233 探针在真契约面上量到的两个数，不是估的（L234：21 → 23；L236 接走 translate ⇒ 24，尾巴清空；
-    // L243 给清理旧备份加了一只挂门禁的端点 ⇒ 25 / 25，未接线那一档仍为空）
-    expect(text).toContain('77 条操作里有 25 条挂着这道门禁')
-    expect(text).toContain('25 条是页面上已')
+    // L243 给清理旧备份加了一只挂门禁的端点 ⇒ 25 / 25，未接线那一档仍为空；
+    // L322 给两只 augment 端点各加了一只 ⇒ 27 / 27，未接线那一档仍为空）
+    expect(text).toContain('79 条操作里有 27 条挂着这道门禁')
+    expect(text).toContain('27 条是页面上已')
     expect(text).toContain('不是登录')
     expect(text).toContain('不替代 HTTPS')
     expect(text).not.toContain('校验通过')
+    // L322 拍下的口径要写在页面上：唯一一只挂着门禁的**读**操作是「读增强报告」，
+    // 以及「开了鉴权以后页面读它也要带 key」这个代价与它的兜底。
+    expect(text).toContain('唯一一只挂着门禁的')
+    expect(text).toContain('读增强报告')
+    expect(text).toContain('照样读得到')
   })
 })
 

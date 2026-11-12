@@ -1,7 +1,7 @@
 # Copyright (C) 2026 annsshadow
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-"""后端 77 条操作与前端服务层调用面的消费对账（A279 立账轮）
+"""后端 79 条操作与前端服务层调用面的消费对账（A279 立账轮）
 
 **为什么建这把尺子**：`web/src/services/api.wiring.test.ts`（L211 那批）钉的是「`api.ts`
 导出的每个函数都在页面上被引用」，它管的是**封装之后**那一环；而「后端有 75 条操作，
@@ -458,20 +458,26 @@ class TestRulerSeesTheRealSurface:
 
     def test_backend_face_scale(self):
         ops = operations()
-        assert len(ops) == 77, f"契约操作数现量 77，实得 {len(ops)}"
-        assert len({p for _, p in ops}) == 73, "路径数现量 73"
+        assert len(ops) == 79, f"契约操作数现量 79，实得 {len(ops)}"
+        assert len({p for _, p in ops}) == 75, "路径数现量 75"
 
     def test_frontend_face_scale(self):
-        """形状数现量 **78**：L251 起它第一次比操作数（77）多一格
+        """形状数现量 **80**：L251 起它第一次比操作数多一格，L322 之后是 80 对 79
 
         多出来的那一格是 `GET /api/data/list` 的两档调用（默认档裸路径 + 宽档把
         `all_files=true` 写在路径串里）。两侧的对账判据走的是「每条形状能不能绑到一条操作」
         与「每条操作有没有被绑到」，都不要求形状数与操作数相等，所以这一格差 1 不是缺口，
         而是这张表第一次出现「一只操作、两种吃法」。它钉在这里是因为不钉的话，下一个加档的人
-        会把 78 当成漂移改回来。
+        会把 80 当成漂移改回来。
+
+        **归因（按现量，不是按推算）**：这把尺子随文档合流进 main 时按 L251 那一轮的读数
+        钉下（78 处调用），而 `api.ts` 的调用面此后**多了一格** ⇒ 尺子**落库当天就是红的**
+        （HEAD 的现读是 79，与钉下的 78 差一格）。L322 接走 `GET /api/augment/report/{task_id}`
+        之后是 **80** ⇒ 79 → 80 是本轮那一格，78 → 79 那一格是**上一轮之前就漂的**，
+        两格分开记，不把旧漂算成本轮的。
         """
         shapes = call_shapes()
-        assert len(shapes) == 78, f"服务层调用形状现量 78，实得 {len(shapes)}"
+        assert len(shapes) == 80, f"服务层调用形状现量 80，实得 {len(shapes)}"
         # 旧写法是 `<= {"GET","POST","PUT","DELETE","PATCH"}`，而 CALL 那条正则本身只可能
         # 匹到这五个动词 ⇒ 构造式恒真。换成与契约面（另一侧权威）对账，才有牙齿。
         assert {m for m, _, _ in shapes} <= {m for m, _ in operations()}, \
@@ -664,14 +670,14 @@ class TestConsumptionRoster:
             f"已接好或已消失 {sorted(set(UNCONSUMED) - measured)}")
 
     def test_roster_scale_is_pinned(self):
-        """缺口 0 / 已消费 75 / 总操作 75：接线一轮就要回填这三个数（缺口只降不升）
+        """缺口 0 / 已消费 79 / 总操作 79：接线一轮就要回填这三个数（缺口只降不升）
 
         L236 收到 ∅ 之后这一格的意义变了：从前它钉的是「还剩几条没接」，现在它钉的是
         **「不许再退回」**——契约面新增一条端点而服务层没接，`consumed_operations()` 就
-        少于 77、`unconsumed_operations()` 就非空，两个数一起红。
+        少于 79、`unconsumed_operations()` 就非空，两个数一起红。
         """
         assert len(UNCONSUMED) == 0, len(UNCONSUMED)
-        assert len(consumed_operations()) == 77, len(consumed_operations())
+        assert len(consumed_operations()) == 79, len(consumed_operations())
         assert len(consumed_operations()) == len(operations()), "契约面全数被消费才算收口"
 
     def test_roster_entries_are_real_operations(self):
@@ -769,14 +775,14 @@ class TestCliEntryClaimsAreReal:
 
         判据不是「名单为空」，而是「**实测**为空且尺子仍能看见东西」：
         ① parser 那 37 个子命令仍被逐名解析出来（尺子没瞎）；
-        ② 契约面 75 条操作**每一条**都在服务层有对应调用形状（缺口是量出来的 0）；
+        ② 契约面 79 条操作**每一条**都在服务层有对应调用形状（缺口是量出来的 0）；
         ③ 反证：把任一员的调用形状摘掉，`unconsumed_operations()` 立刻非空 ——
            空集相等这条判据仍会响，不是恒真。摘法走 monkeypatch 换掉 `call_shapes`
            的返回值，不改磁盘上一个字节。
         """
         assert len(cli_subcommands()) == 37, "parser 一个子命令都读不到 ⇒ 判据坏了"
         assert unconsumed_operations() == set()
-        assert len(consumed_operations()) == len(operations()) == 77
+        assert len(consumed_operations()) == len(operations()) == 79
 
     def test_unwiring_one_operation_turns_the_empty_roster_red(self, monkeypatch):
         """③ 的反证臂：摘掉 `translate` 的调用形状，缺口必须立刻点名它"""

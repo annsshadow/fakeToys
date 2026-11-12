@@ -73,7 +73,7 @@ npm test         # vitest run
 FastAPI 提供 **79 个端点**，全部声明 `response_model` —— `/openapi.json` 里
 不存在「无 schema 的 200 响应」。契约由
 `tests/integration/test_api_openapi_contract.py` 双向守门：既要每个端点都声明
-契约，也要每个已声明契约的端点都真实存在。消费面同样对账到底：77 条操作**全部**有入口（`tests/unit/test_api_endpoint_consumption_l224.py`；L236 收掉最后两员——`POST /api/dataset/translate` 与 `GET /api/system/dependencies`——之后，`UNCONSUMED`、`CLI_ENTRY`、`NO_ENTRY` 三个名单都是空集，且那把尺子带两支「空集也会响」的牙齿）。
+契约，也要每个已声明契约的端点都真实存在。消费面同样对账到底：79 条操作**全部**有入口（`tests/unit/test_api_endpoint_consumption_l224.py`；L236 收掉最后两员——`POST /api/dataset/translate` 与 `GET /api/system/dependencies`——之后 `UNCONSUMED`、`CLI_ENTRY`、`NO_ENTRY` 三个名单都是空集，L322 又把两只 augment 端点接进页面；那把尺子带两支「空集也会响」的牙齿）。
 
 ```bash
 uvicorn api.main:app --host 0.0.0.0 --port 8000

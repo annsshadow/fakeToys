@@ -13,7 +13,7 @@
 | 挂 `verify_api_key` 的操作 | **24** |
 | 其中前端**已接线**的形状 | **24** ⇒ 开了鉴权就有 24 个页面动作点不动（L236 接走 translate 后与门禁总数相等） |
 | 挂门禁但还没接线的 | **0**（L236 接走 translate；此前 L234 把 migrate / stream 接进页面后从 3 降到 1） |
-| 现量（L243 之后） | 契约面 **77** 条操作 / 挂门禁 **25** / 已接线 **25**（L243 给清理旧备份加了一只挂门禁的 HTTP 入口） |
+| 现量（L322 之后） | 契约面 **79** 条操作 / 挂门禁 **27** / 已接线 **27**（L243 给清理旧备份加了一只挂门禁的 HTTP 入口；L322 给两只 augment 端点各加了一只） |
 
 真链路上量到的档位（`TestClient`，白名单根指向临时目录，跑完不留产物）：无头 ⇒ **401**，
 detail 逐字「缺少或无效的 X-API-Key」；错值 ⇒ 同样 **401**；对值 ⇒ 放行（拿「删一个不存在
@@ -24,8 +24,9 @@ detail 逐字「缺少或无效的 X-API-Key」；错值 ⇒ 同样 **401**；�
 
 三面判据，各对应一种真实失效形状：
 
-1. **规模**（`TestGateScale`）：25 / 25 与那 25 条的逐条名单（L233 定标 24 / 21 → L234 接走
-   migrate / stream 挪到 23 → L236 接走 translate 到 24 → L243 给清理旧备份加 HTTP 入口后到 25）。
+1. **规模**（`TestGateScale`）：27 / 27 与那 27 条的逐条名单（L233 定标 24 / 21 → L234 接走
+   migrate / stream 挪到 23 → L236 接走 translate 到 24 → L243 给清理旧备份加 HTTP 入口后到 25
+   → L322 给两只 augment 端点各加一只后到 27）。
    多挂一条门禁、或前端多接
    一条写操作，都会红 —— 那一格正是「页面上有多少动作会被鉴权掐死」的真值。
 2. **通道形状**（`TestTheChannelShape`）：头名的带引号字面量在前端**只有一处**
@@ -69,15 +70,19 @@ QUOTED_TOKEN = re.compile(rf"['\"`]{re.escape(TOKEN)}")
 CARD = "配置管理 → 写操作鉴权"
 
 #: 探针量到的两个数（`GATED_CONSUMED`：L233 定标 21 → L234 挪到 23（migrate / stream 进页面）→
-#: L236 到 24（translate）→ L243 到 25（cleanup）⇒ 与 `GATED_TOTAL` 相等，「挂门禁但没接线」清空）
-GATED_TOTAL = 25
-GATED_CONSUMED = 25
+#: L236 到 24（translate）→ L243 到 25（cleanup）→ **L322 到 27**（两只 augment 端点：
+#: `DELETE /api/augment/checkpoints/{task_id}` 与 `GET /api/augment/report/{task_id}`，
+#: 前者 L321 已接、后者 L322 接进页面）⇒ 与 `GATED_TOTAL` 相等，「挂门禁但没接线」清空）
+GATED_TOTAL = 27
+GATED_CONSUMED = 27
 
-#: 那 25 条：前端已接线、且服务端开了鉴权就会 401 的形状（逐条来自探针，不是推的）
+#: 那 27 条：前端已接线、且服务端开了鉴权就会 401 的形状（逐条来自探针，不是推的）
 CONSUMED_AND_GATED = frozenset({
+    ("DELETE", "/api/augment/checkpoints/{task_id}"),
     ("DELETE", "/api/data/delete/{filename}"),
     ("DELETE", "/api/system/backups/{backup_id}"),
     ("DELETE", "/api/versions/{version_id}"),
+    ("GET", "/api/augment/report/{task_id}"),
     ("POST", "/api/augment/start"),
     ("POST", "/api/config"),
     ("POST", "/api/data/export"),
@@ -103,9 +108,27 @@ CONSUMED_AND_GATED = frozenset({
 })
 
 #: 挂门禁但前端还没接线的尾巴：**空**（L236 接走 translate 后 24 = 24 + 0，L243 给 cleanup
-#: 接了页面后 25 = 25 + 0）。这一格清空之后判据仍会响——它比的是集合相等，不是「非空」；
+#: 接了页面后 25 = 25 + 0，L322 接走报告那只后 27 = 27 + 0）。这一格清空之后判据仍会响——它比的是集合相等，不是「非空」；
 #: 往契约面新挂一条门禁而不接线，这里当场多出一员
 GATED_NOT_YET_CONSUMED = frozenset()
+
+#: **L322 拍下的门禁口径**：门禁只管**写面**，读面原则上不挂门禁 —— 唯一的例外是
+#: `GET /api/augment/report/{task_id}`。
+#:
+#: **为什么它是例外（自决，记理由）**：那只端点回的是**任务级内部诊断**——落盘的
+#: `input_file` / `output_file` 路径与逐条失败预览，而任务 id 是「输入文件路径的 md5 前 12 位」
+#: ⇒ 知道文件名的人**推得出**别人的任务 id ⇒ 不挂门禁就等于把别人的落盘路径与失败明细
+#: 敞开给任何能猜到 id 的人。另一条路（把门禁从这只端点上摘掉）本轮**不取**，
+#: 理由就是这一句：那是拿信息泄漏换「读操作一律不挂门禁」这条好记的口径。
+#:
+#: **代价与它的兜底**：开了鉴权以后页面读这只端点要带 key ⇒ 「开了鉴权后页面仍然读得到东西」
+#: 这句话对**它**不再成立。兜底是现成的：L233 建的那条通道对**所有**请求生效（含 GET），
+#: 所以配了 key 之后页面照样读得到 —— 这一点由 `TestTheChannelShape` 那几支钉住
+#: （拦截器不按方法分流）。
+#:
+#: 这一格因此从「一条 GET 都不许挂」收紧成「挂门禁的 GET **恰好**是这一只」——
+#: 比原来那一格**更严**：多一只挂门禁的读操作照样红。
+GATED_READ_EXCEPTION = frozenset({("GET", "/api/augment/report/{task_id}")})
 
 
 def walk_api_routes(routes):
@@ -183,7 +206,7 @@ GHOST_BACKUP = "/api/system/backups/20990101_000000_probe"
 
 
 class TestGateScale:
-    """第 1 面：门禁的规模。数字全部现量，25 / 25 两个常数是探针读数的钉子"""
+    """第 1 面：门禁的规模。数字全部现量，27 / 27 两个常数是探针读数的钉子"""
 
     def test_the_walker_is_not_blind(self):
         """反向元断言：走法写错时这里先红，而不是让后面所有交集判据空转成绿"""
@@ -193,16 +216,17 @@ class TestGateScale:
         assert walked == operations(), (
             f"展平后读到 {len(walked)} 条，契约面是 {len(operations())} 条 ⇒ 走法漂了")
 
-    def test_25_of_the_77_operations_are_key_gated(self):
+    def test_27_of_the_79_operations_are_key_gated(self):
         assert len(gated_operations()) == GATED_TOTAL, sorted(gated_operations())
 
-    def test_25_gated_operations_are_already_wired_into_the_ui(self):
+    def test_27_gated_operations_are_already_wired_into_the_ui(self):
         consumed = consumed_operations()
         assert consumed & gated_operations() == CONSUMED_AND_GATED
         assert len(CONSUMED_AND_GATED) == GATED_CONSUMED
 
     def test_the_unwired_tail_is_empty(self):
-        """25 = 25 + 0：L236 接走 translate、L243 接走 cleanup 之后，挂门禁却没接线的形状一个都不剩
+        """27 = 27 + 0：L236 接走 translate、L243 接走 cleanup、L322 接走报告那只之后，
+        挂门禁却没接线的形状一个都不剩
 
         这一格**不是**因为清空就变成恒真——它比的是集合相等：往契约面新挂一条门禁而前端
         不接线，右边空集合立刻与左边不等；反过来把已接线的一条从 `CONSUMED_AND_GATED` 里
@@ -213,9 +237,16 @@ class TestGateScale:
         assert gated - consumed_operations() == GATED_NOT_YET_CONSUMED
         assert len(gated) == GATED_CONSUMED + len(GATED_NOT_YET_CONSUMED)
 
-    def test_no_read_operation_is_gated(self):
-        """门禁只管写：25 条里没有一条 GET（开了鉴权后页面仍然读得到东西）"""
-        assert not [op for op in gated_operations() if op[0] == "GET"]
+    def test_the_only_gated_read_is_the_named_one(self):
+        """门禁只管写面 —— **唯一的例外是 `GET /api/augment/report/{task_id}`**
+
+        L322 拍下的口径（理由见 `GATED_READ_EXCEPTION` 那段注释）：门禁管的是**密面**，
+        而报告端点回的是落盘路径与逐条失败预览 ⇒ 它算密面，哪怕它是一只 GET。
+        「读操作一律不挂门禁」这句好记的口径因此被这一格**收紧**成「挂门禁的 GET 恰好是
+        这一只」——比原来那一格更严：多一只挂门禁的读操作照样红。
+        """
+        gated_reads = {op for op in gated_operations() if op[0] == "GET"}
+        assert gated_reads == GATED_READ_EXCEPTION, sorted(gated_reads)
 
 
 class TestTheChannelShape:

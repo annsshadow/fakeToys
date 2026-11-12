@@ -120,9 +120,15 @@ def test_export_roster_scale():
 
 
 def test_scanned_corpus_scale():
-    """尺子读的语料规模钉住：产品面 133 只 + 测试面 415 只（现量，不含再导出点自身）
+    """尺子读的语料规模钉住：产品面 133 只 + 测试面 457 只（现量，不含再导出点自身）
 
     扫描面缩水（换目录、加过滤）会把「量不到的 0」重新变成假绿，所以这里先量自己。
+    **L322 那一笔**：456 → **457** 就是本轮新增的那一支守卫
+    （`test_augment_report_wiring_l322.py`，两只 augment 端点进前端面 + l233 的门禁口径）；
+    它**零 `parametrize`** ⇒ l97 / l98 那两把尺子的量面没有新增成员。
+    同轮产品面只改 `web/src` 那几份前端源码与两份文档的**内容**、没新增产品文件
+    ⇒ 133 第十八次确认不动。断言消息里那个「现量 (133, 455)」是**旧读数**（与同行的
+    456 已经对不上）——本轮按现量一并改准，不留半截数字。
     413 = 412 只已跟踪 + 1 只未跟踪（L291 那一支已转入已跟踪侧，本轮 L294 新增的那一支守卫尚未提交，`git ls-files tests` 与 `--others` 两侧现量；
     提交之后它换到已跟踪侧，总数一格不动 —— 这一维本来就只钉总数）。
     改数之前那一份读数是 405 = 386 只已跟踪 + 19 只**当时**尚未跟踪的本轮系列新增测试文件 ⇒
@@ -138,8 +144,8 @@ def test_scanned_corpus_scale():
     """
     n_products = len([p for p in _PRODUCTS if p != _EXPORT_SITE])
     n_tests = len(_TESTS)
-    assert (n_products, n_tests) == (133, 456), \
-        f"语料规模现量 (133, 455)，实得 {(n_products, n_tests)}"
+    assert (n_products, n_tests) == (133, 457), \
+        f"语料规模现量 (133, 457)，实得 {(n_products, n_tests)}"
 
 
 def test_every_all_symbol_has_a_consumer():

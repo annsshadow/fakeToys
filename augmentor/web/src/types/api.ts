@@ -148,6 +148,39 @@ export interface CheckpointListResponse {
   checkpoints: string[]
 }
 
+/**
+ * `GET /api/augment/report/{task_id}` → `AugmentReportResponse`
+ *
+ * 失败明细在 `errors`（条目下标 / 异常类型 / 预览），`progress` 与
+ * `memory_monitor` 是运行期诊断。键集与契约**逐格相等**（`l237` 那把尺子
+ * 逐只对账），所以这三格的可选性照抄契约的 `Optional[...]`。
+ */
+export interface AugmentReport {
+  task_id: string
+  input_file: string
+  output_file: string
+  input_count: number
+  output_count: number
+  quality_check: boolean
+  dedup: boolean
+  parallel: boolean
+  vector_index?: unknown
+  errors: Record<string, unknown>[]
+  progress?: Record<string, unknown>
+  memory_monitor: Record<string, unknown>
+}
+
+/**
+ * `MessageResponse` —— 带人类可读说明的操作结果
+ *
+ * 契约面（`api/schemas.py` 的 `MessageResponse`）的两格**都必填**；
+ * `DELETE /api/augment/checkpoints/{task_id}` 用的就是它。
+ */
+export interface MessageResponse {
+  success: boolean
+  message: string
+}
+
 // ============ 数据分析 ============
 
 /** 长度分布。`short` / `medium` / `long` 是**比例**（0~1），不是条数。 */
@@ -242,6 +275,16 @@ export interface CreateVersionResponse {
 
 export interface VersionDataResponse {
   items: DataItem[]
+  /**
+   * 第 52 轮起分页三格随响应一起回（`total` 恒为全量条数）。
+   *
+   * 契约里这三格都带默认值（`total=0` / `page=1` / `page_size=0`）⇒ **恒在**；
+   * 但前端 zod 面把它们写成可选（旧客户端那一档形状）⇒ 这里跟着 zod 面，
+   * 否则「类型说必有、校验说可无」就又是一处两套口径。
+   */
+  total?: number
+  page?: number
+  page_size?: number
 }
 
 /** `POST /api/versions/diff` */

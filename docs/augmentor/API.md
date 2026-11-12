@@ -432,9 +432,9 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | `GET` | `/api/augment/checkpoints` | 列出断点 |
-| `DELETE` | `/api/augment/checkpoints/{task_id}` | 删除断点（删完从头重跑） |
+| `DELETE` | `/api/augment/checkpoints/{task_id}` | 删除断点（删完从头重跑），**挂鉴权** |
 | `GET` | `/api/augment/progress` | 获取增强进度 |
-| `GET` | `/api/augment/report/{task_id}` | 获取增强任务报告（含失败明细） |
+| `GET` | `/api/augment/report/{task_id}` | 获取增强任务报告（含失败明细），**挂鉴权**（唯一一只挂门禁的读操作） |
 | `POST` | `/api/augment/start` | 启动增强任务 |
 
 ### config（3）
@@ -913,6 +913,8 @@ JSONL 进料交给转换器的读边解析成规范记录（`instruction` / `inp
 
 删除一个断点（进度文件与增量文件一起清）⇒ 删除后**同一输入文件的下一次运行从头开始**。
 任务 ID 非法（越界 / 含冒号那一档）回 **400** + 那句域判决；其余内部异常回 **500** + 固定文案。
+**挂 `verify_api_key`**（写操作）：服务端设了 `AUGMENTOR_API_KEY` 而请求没带 `X-API-Key` 就是 401。
+前端自第 56 轮起在增强页「断点列表」那一张卡上接线（点断点标签的关闭按钮即删）。
 
 ```json
 {"success": true, "message": "断点已删除"}
@@ -924,6 +926,13 @@ JSONL 进料交给转换器的读边解析成规范记录（`instruction` / `inp
 `memory_monitor` 是运行期诊断。**边界**：报告只缓存在**处理那个任务的 worker 进程内存里**
 ⇒ **单进程部署适用**；多 worker 部署时它可能落在另一个 worker 上而读不到 ⇒ 回 **404**
 「报告不存在（任务未完成或由其它 worker 处理）」。
+
+**挂 `verify_api_key`** —— 它是**契约面上唯一一只挂着门禁的读操作**（L322 拍的口径）：
+门禁管的是**密面**，而这一只回的是落盘路径（`input_file` / `output_file`）与逐条失败预览，
+任务 id 又能由输入文件名推出来 ⇒ 不挂门禁等于把那些东西敞开给任何猜得到 id 的人。
+代价是「开了鉴权后页面仍然读得到东西」这句话对**它**不成立：开了鉴权以后读它要带 key，
+而前端那条通道（`X-API-Key`，由请求拦截器随**每个**请求送出）对 GET 一样生效 ⇒
+配了 key 之后页面照样读得到。前端自 L322 起在增强页「增强报告」那张卡上接线。
 
 ```json
 {
