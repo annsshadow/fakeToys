@@ -38,7 +38,6 @@ A4 把 CI 里那一步删掉 ⇒ 第 3 面红。
 import pathlib
 import re
 
-import pytest
 from tests.unit.test_wired_dropdown_choices_l226 import strip_comments
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -215,10 +214,13 @@ class TestInjections:
         assert "npm run format:check" not in mutated, "注入臂没生效：判据读不出 CI 里那一步"
 
 
-@pytest.mark.parametrize(
-    "needle",
-    [WARN_NO_SOURCE, WARN_NO_TARGET],
-)
-def test_both_gate_messages_exist_in_the_page(needle: str):
-    """两格判空的原话逐字在页面上（文案改了要连判据一起改）"""
-    assert needle in _system_code()
+def test_both_gate_messages_exist_in_the_page():
+    """两格判空的原话逐字在页面上（文案改了要连判据一起改）
+
+    **零 parametrize**：仓里那两把参数化普查尺（l97 / l98）把每一处 `parametrize`
+    都记进名册，而本仓近几轮的惯例是**新守卫一律零 parametrize**（L316 那一支也是）
+    ⇒ 这里逐格点名，不进那两张名册。
+    """
+    code = _system_code()
+    assert WARN_NO_SOURCE in code, f"页面少了一句判空提示：{WARN_NO_SOURCE}"
+    assert WARN_NO_TARGET in code, f"页面少了一句判空提示：{WARN_NO_TARGET}"
