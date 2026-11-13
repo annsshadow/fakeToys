@@ -120,10 +120,10 @@ def test_export_roster_scale():
 
 
 def test_scanned_corpus_scale():
-    """尺子读的语料规模钉住：产品面 133 只 + 测试面 458 只（现量，不含再导出点自身）
+    """尺子读的语料规模钉住：产品面 133 只 + 测试面 460 只（现量，不含再导出点自身）
 
     扫描面缩水（换目录、加过滤）会把「量不到的 0」重新变成假绿，所以这里先量自己。
-    **L326 那一笔**：457 → **458** 就是本轮新增的那一支守卫
+    **L326 那一笔**：457 → **458** 就是那轮新增的那一支守卫；**L327 那一笔**：458 → **460** 就是本轮新增的两支守卫（`test_config_multilingual_readonly_l327.py` / `test_free_subobject_whitelist_l327.py`，两支**都零 `parametrize`** ⇒ l97 / l98 的量面没有新增成员）
     （`test_version_id_atomic_claim_l326.py`，版本 id 的原子申领）；
     它**零 `parametrize`** ⇒ l97 / l98 那两把尺子的量面没有新增成员。
     **L322 那一笔**：456 → **457** 就是那轮新增的那一支守卫
@@ -147,8 +147,8 @@ def test_scanned_corpus_scale():
     """
     n_products = len([p for p in _PRODUCTS if p != _EXPORT_SITE])
     n_tests = len(_TESTS)
-    assert (n_products, n_tests) == (133, 458), \
-        f"语料规模现量 (133, 458)，实得 {(n_products, n_tests)}"
+    assert (n_products, n_tests) == (133, 460), \
+        f"语料规模现量 (133, 460)，实得 {(n_products, n_tests)}"
 
 
 def test_every_all_symbol_has_a_consumer():

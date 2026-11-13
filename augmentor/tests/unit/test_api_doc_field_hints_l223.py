@@ -59,6 +59,12 @@ from tests.unit.test_api_doc_endpoint_coverage_l210 import (
 )
 from tests.unit.test_config_three_side_l222 import schema_keys
 
+# L327（A278）：「自由子对象白名单」那一档 —— 自由子对象（`Dict[str, Any]` ⇒ OpenAPI 上
+# `additionalProperties: true`）里的键名**不在契约面里**，只能靠散文说明；这一档把
+# 「哪些键在哪一格里被文档写出来」写成一份**可证伪**的名单，而不是含糊过去。
+# **按别名导入**（不叫 `Test*`）⇒ 名单那一支的用例不会在本文件里被收第二遍。
+from tests.unit import test_free_subobject_whitelist_l327 as whitelist
+
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
@@ -337,7 +343,15 @@ def evidence_for(method, path, token):
     kinds = []
     if token in face_of(method, path):
         kinds.append("face")
-    if token in row_literal_tokens(method, path):
+    # L327（A278）：**第六档「自由子对象白名单」，且它对名单里的键是权威档** ——
+    # 自由子对象（`Dict[str, Any]`）的键名不在契约面里，只能靠散文说明；那一份名单
+    # （按 (端点, 自由子对象) 逐格登记、每项都可证伪）就是它们**唯一的**证据来源。
+    # 名单优先于字面量档 ⇒ **键来自多深的模块都与判据无关**（这正是 A278 要解决的那一格：
+    # 「一旦某个自由子对象的键来自更深的模块（超过两跳），它就会被报成无据，而那不是文档错」）。
+    # 名单**只对登记过的那几格**有效 ⇒ 名单外的键，证据档仍然只有原来那几档。
+    if whitelist.whitelist_evidence(method, path, token):
+        kinds.append("free")
+    elif token in row_literal_tokens(method, path):
         kinds.append("literal")
     if token in DEFINITIONS:
         kinds.append("symbol")
@@ -422,7 +436,7 @@ class TestFieldHintsBindToRealEvidence:
 
 
 class TestEvidenceKindsAllHaveTeeth:
-    """五种证据档谁都不是摆设
+    """六种证据档谁都不是摆设
 
     `face` / `literal` / `symbol` 在**今天的语料**里各有独占成员（现量 face 3、
     literal 6、symbol 1 格）。`config` 与 `cli` 两档一个独占成员都没有 —— 它们今天
@@ -431,10 +445,14 @@ class TestEvidenceKindsAllHaveTeeth:
     一起删。两档的索引是**全仓**的（`literal` 才是逐格限作用域的），这一点由
     `TestRulerIsNotBlind.test_variable_names_are_not_evidence` 兜住：真存在过的局部
     变量名（`output_path`）不许从任何一档混进来。
+
+    **L327（A278）新增第六档 `free`**（自由子对象白名单）：它对名单里登记过的键是
+    **权威档**（名单优先于字面量档）⇒ 那几个键在语料里的证据**只有** `free` 一档 ⇒
+    它有**独占成员**（若没有，说明名单登记的键全被别的档罩住了 ⇒ 这一档是摆设）。
     """
 
-    def test_three_kinds_have_exclusive_members(self):
-        exclusive = {kind: [] for kind in ("face", "literal", "symbol")}
+    def test_four_kinds_have_exclusive_members(self):
+        exclusive = {kind: [] for kind in ("face", "literal", "symbol", "free")}
         for method, path, text in ROWS:
             for token in tokens_in(text):
                 kinds = evidence_for(method, path, token)
@@ -467,7 +485,7 @@ class TestEvidenceKindsAllHaveTeeth:
         assert evidence_for("POST", "/api/dataset/convert", pool[0]) == ["cli"]
 
     def test_every_kind_binds_something_in_the_corpus(self):
-        bound = {kind: 0 for kind in ("face", "literal", "symbol", "config", "cli")}
+        bound = {kind: 0 for kind in ("face", "literal", "symbol", "config", "cli", "free")}
         for method, path, text in ROWS:
             for token in tokens_in(text):
                 for kind in evidence_for(method, path, token):

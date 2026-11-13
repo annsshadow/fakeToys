@@ -44,6 +44,14 @@ class ConfigResponse(BaseModel):
     # 所以这里的语义是「操作者看得见生效值」，不是「这里可以改它」。
     versioning: Dict[str, Any]
     visualization: Dict[str, Any]
+    # L327（A272 收口）：`multilingual` 也成一只**只读**节 —— 它四只键
+    # （`enabled` / `default_target_lang` / `supported_langs` / `translate_batch_size`）
+    # 从 L217 起就有正牌读者（`api/routes/language.py` 的语言画像与翻译两条端点
+    # 在**运行时**消费它们），按 L214 定下的规矩「**有读者 ⇒ 必须可见**」，
+    # 它就该在回显面上看得见；而它**不在** `POST /api/config` 的写入清单里
+    # （改它要重启、且牵动翻译路径的生效时机）⇒ 这里的语义同样是
+    # 「操作者看得见生效值」，**不是**「这里可以改它」。
+    multilingual: Dict[str, Any]
 
 
 class ModelsResponse(BaseModel):
@@ -186,6 +194,17 @@ async def get_config():
             },
             "visualization": {
                 "enabled": p.config.visualization.enabled
+            },
+            # L327（A272 收口）：`multilingual` 同样**整节不在写入清单里**，
+            # 而它四只键**全部**有正牌读者（`api/routes/language.py` 的语言画像与翻译
+            # 两条端点在运行时消费它们）⇒ 按「有读者 ⇒ 必须可见」整节回显。
+            # **只读**的含义：改它只能改 `config.yaml` 并重启，
+            # `POST /api/config` 送这一节会落进 `ignored_keys`（不静默、也不写入）。
+            "multilingual": {
+                "enabled": p.config.multilingual.enabled,
+                "default_target_lang": p.config.multilingual.default_target_lang,
+                "supported_langs": list(p.config.multilingual.supported_langs),
+                "translate_batch_size": p.config.multilingual.translate_batch_size
             }
         }
     except Exception as e:

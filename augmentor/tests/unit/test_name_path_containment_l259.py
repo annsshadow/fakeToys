@@ -12,7 +12,7 @@ L258 装上了权威（`augmentor/validation.require_within_dir`）并接了十�
 - `FAISSDB(collection="../escaped", storage_dir=<tmp>/db).persist()` 把 `escaped_vectors.npy`
   与 `escaped_meta.json` 写到 **`storage_dir` 之外**（实测目录内 `[]`、目录外那两份文件），
   `load()` 从目录外读回内容（实测 `faiss_load_outside_ids == ["x"]`）。
-  这一处 HTTP **两步可达**：`vector` 在 `WRITABLE_SECTIONS` 里（`api/routes/config.py:101`，
+  这一处 HTTP **两步可达**：`vector` 在 `WRITABLE_SECTIONS` 里（`api/routes/config.py:109`，
   L277 给该节新添的目录值白名单闸排在它下面两行，所以行号由 100 重钉为 101），
   而 `VectorConfig` 对 `vector.collection` **只过 `require_string`**（`augmentor/config.py`
   那一节：判非空、不判包含）⇒ `POST /api/config` 写 `collection: ../escaped` 拿 200，

@@ -101,6 +101,12 @@ const CONFIG: AppConfig = {
   },
   versioning: { enabled: true },
   visualization: { enabled: true },
+  multilingual: {
+    enabled: false,
+    default_target_lang: 'en',
+    supported_langs: ['zh', 'en'],
+    translate_batch_size: 10,
+  },
 }
 
 afterEach(() => {

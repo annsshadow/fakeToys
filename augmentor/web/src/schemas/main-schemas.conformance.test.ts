@@ -399,7 +399,7 @@ describe('schema 解析器自证（防恒真）', () => {
 const ALL_MODELS = [...MODELS, ...FULL_MODELS]
 
 describe('zod schema ↔ 后端 response_model 契约', () => {
-  it('覆盖面非空：86 个模型、全部字段都可解析', () => {
+  it('覆盖面非空：87 个模型、全部字段都可解析', () => {
     expect(MODELS).toHaveLength(17)
     expect(FULL_MODELS).toHaveLength(70)
     expect(ALL_MODELS).toHaveLength(87)
@@ -411,7 +411,7 @@ describe('zod schema ↔ 后端 response_model 契约', () => {
       expect(fields!.length, `${model.className} 解析出 0 个字段`).toBeGreaterThan(0)
       pythonFields += fields!.length
     }
-    expect(pythonFields).toBe(411)
+    expect(pythonFields).toBe(412)
   })
 
   it('full-schemas 的「文件:行号」映射与类定义现量一致', () => {

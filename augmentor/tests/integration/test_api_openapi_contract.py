@@ -336,8 +336,10 @@ CALLS = {
             "export", "vector", "rag", "multimodal",
             # L215：`versioning.enabled` / `visualization.enabled` 接上管道阶段入口这个
             # 读者之后必须可见，于是新增两只**只读**节（写入清单不含它们）。
+            # L327（A272）：`multilingual` 四只键同样有正牌读者（语言画像与翻译两条端点
+            # 在运行时消费它们）⇒ 按「有读者 ⇒ 必须可见」整节可见，而它**不在**写入清单里。
             # 这份清单不手抄：多一节少一节都会在这里红。
-            "versioning", "visualization",
+            "versioning", "visualization", "multilingual",
         ),
     ),
     ("POST", "/api/config"): _Case(

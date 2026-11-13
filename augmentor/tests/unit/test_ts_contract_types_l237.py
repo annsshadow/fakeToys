@@ -638,12 +638,14 @@ class TestTheFreeDictionaryFaceNeedsTheLiveResponse:
         live = live_config()
         assert set(live) == {
             "default_model", "augmentation", "quality", "dedup", "export",
-            "vector", "rag", "multimodal", "versioning", "visualization"}
+            "vector", "rag", "multimodal", "versioning", "visualization",
+            "multilingual"}
         nested = sum(len(v) for k, v in live.items() if isinstance(v, dict))
         assert nested >= 17, nested
         # 契约面确实看不见这些键：九节全是自由字典，没有 `properties`
         schema = openapi()["components"]["schemas"]["ConfigResponse"]["properties"]
-        for section in ("vector", "rag", "multimodal", "versioning", "visualization"):
+        for section in ("vector", "rag", "multimodal", "versioning", "visualization",
+                        "multilingual"):
             assert schema[section].get("additionalProperties") is True
             assert "properties" not in schema[section]
 
@@ -811,7 +813,8 @@ class TestTheRenderingFaceOwnsWhatTheTypesNowCarry:
         form_sections = {"augmentation", "quality", "dedup"}
         echoed = {k for k in live if k != "default_model" and k not in form_sections}
         assert echoed == {
-            "export", "vector", "rag", "multimodal", "versioning", "visualization"}
+            "export", "vector", "rag", "multimodal", "versioning", "visualization",
+            "multilingual"}
         # 这六节里的键此刻都在类型面上（不然回显卡渲染出来是 `undefined`）
         ts = TsFace(TYPES_TS.read_text(encoding="utf-8"))
         for section in echoed:

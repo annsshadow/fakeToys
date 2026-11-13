@@ -68,6 +68,14 @@ python api/main.py             # 读配置：web.host / web.port / web.static_di
 理由见下面 `rag` 那一跨键界；界仍然只住 `augmentor/config.py` 一处），任一条越界即
 整批退回原值并回 **400**（`detail` 点名是哪个键、当前值多少），内存与磁盘都停在改前状态。
 未知子键的既有契约不变：仍然 200，键名列在响应的 `ignored_keys` 里。
+**只读节看得见、但改不了（L327 / A272）**：`GET /api/config` 回显的各节里，
+`versioning` / `visualization` / **`multilingual`** 三节**不在** `POST /api/config` 的可写清单里
+（可写的是**七节**：`augmentation` / `quality` / `dedup` / `export` / `vector` / `rag` /
+`multimodal`）⇒ 送这三节回来会落进响应的 `ignored_keys`（**出声、不静默、也不写入**），
+要改它们只能改 `config.yaml` 并重启。`multilingual` 自 L327 起进回显面：它四只键
+（`enabled` / `default_target_lang` / `supported_langs` / `translate_batch_size`）
+从 L217 起就有正牌读者（语言画像与翻译两条端点在**运行时**消费它们）⇒ 按
+「**有读者 ⇒ 必须可见**」整节可见；**可见 ≠ 可改** —— 它**仍不在**可写清单里。
 `quality` / `dedup` 两节自 L76 起**也有**判据了：`enabled` 走新增的
 `validation.require_bool`，`threshold` 走 `require_ratio`，且上界与静态规格共用
 `QUALITY_THRESHOLD_RANGE` / `DEDUP_THRESHOLD_RANGE` 两个常数（界只住 `config.py` 一处），

@@ -132,9 +132,11 @@ export const configResponseSchema = z.object({
   multimodal: z.record(z.string(), z.unknown()),
   versioning: z.record(z.string(), z.unknown()),
   visualization: z.record(z.string(), z.unknown()),
+  /** 只读节（L327 / A272）：不在 `POST /api/config` 的写入清单里，可见但不可改 */
+  multilingual: z.record(z.string(), z.unknown()),
 })
 
-/** `api/routes/config.py:78` → ConfigUpdateResponse */
+/** `api/routes/config.py:86` → ConfigUpdateResponse */
 export const configUpdateResponseSchema = z.object({
   success: z.boolean(),
   message: z.string(),
@@ -336,7 +338,7 @@ export const migrationResponseSchema = z.object({
   timestamp: z.string(),
 })
 
-/** `api/routes/config.py:49` → ModelsResponse */
+/** `api/routes/config.py:57` → ModelsResponse */
 export const modelsResponseSchema = z.object({
   models: z.array(z.string()),
   default: z.string(),

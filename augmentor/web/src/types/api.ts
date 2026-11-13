@@ -553,6 +553,17 @@ export interface AppConfig {
   visualization: {
     enabled: boolean
   }
+  /**
+   * 只读节（L327 / A272）：同样不在写入清单里 —— 改它要改 `config.yaml` 并重启。
+   * 四只键从 L217 起就有正牌读者（语言画像与翻译两条端点在运行时消费它们），
+   * 所以整节可见；**可见 ≠ 可改**。
+   */
+  multilingual: {
+    enabled: boolean
+    default_target_lang: string
+    supported_langs: string[]
+    translate_batch_size: number
+  }
 }
 
 /** `POST /api/config` */
