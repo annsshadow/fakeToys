@@ -13,11 +13,14 @@ n=14 / 16 / 18 / 20 / 22 的耗时 0.0008 / 0.00316 / 0.01324 / 0.05305 / 0.2083
 
 本模块的四把尺子：
 
-1. **真值表**（现量，逐格点名）：`find_repeated_ambiguous_group` 对 26 条危险形状
-   **全部**判中、对 20 条常用合法形状**全部**放行；另有 2 格**已知误伤**
-   （`[a](\\[[^\\]]*\\])+` 与 `[b](?:[^,]+,){3}[^,]+`，见 `KNOWN_FALSE_POSITIVES`）
+1. **真值表**（现量，逐格点名）：`find_repeated_ambiguous_group` 对 30 条危险形状
+   **全部**判中（26 条原有 + **A370 / L329** 新增的 4 条「豁免那一档不许放过」的孪生）、
+   对 22 条常用合法形状**全部**放行（20 条原有 + 2 条豁免族）；
+   另有 **2 格 formerly 误伤**（`[a](\\[[^\\]]*\\])+` 与 `[b](?:[^,]+,){3}[^,]+`）
+   —— **A370 / L329 已把这两格放行**（实测它们不是指数级 ⇒ 拒它们是闸的假阳性；
+   闸新增了一档「锚点不相交 ⇒ 豁免」，见 `EXEMPTED_BY_DISJOINTNESS`）——
    和 6 格**本闸不判**的族（`[c]` 交替公共前缀 / 可选量词 / `(?#…)`），
-   两张贴在表里钉住 ⇒ 判据一旦变宽或变窄，这里先红，不许静默漂移。
+   全部贴在表里钉住 ⇒ 判据一旦变宽或变窄，这里先红，不许静默漂移。
 2. **单一权威**：非空 / 长度 / 形状三道闸只有一个产地 `require_search_pattern`，
    产品码里除它以外没有第二处给模式串定长度；`_search_regex` 那一格必须**现读**到
    它对 `query` 的调用（源码锚点，不是行号）。
@@ -122,6 +125,11 @@ DANGER_PATTERNS = (
     r"(?i:((a+)))+b",
     # 改前「挂一枚认不出的扩展记号就废掉整把闸」：这一形合法、实测指数、改前读 None
     "()(?(1)a)(a+)+b",
+    # A370 / L329：豁免那一档**不许**放过的四格（见 MUST_STILL_BE_CAUGHT 的注释）
+    "(a*b*)+",
+    "(a*|b)+",
+    "([a-z]*a)+",
+    "(a*.)+",
 )
 
 #: 合法形状（现量 20 格，逐格都要放行）：数据集检索里真正在写的模式。
@@ -142,20 +150,51 @@ ALLOWED_PATTERNS = (
     "公.*租房",
     r"^\s*(\d+)\s*[年月日]$",
     "(colou?r)+",
-    # 以下四形改前误伤或炸域外异常：`{0,1}` 与 `?` 同形、含空格/多逗号的计数 `re` 当字面量
+    # 以下三形改前误伤或炸域外异常：`{0,1}` 与 `?` 同形、含空格/多逗号的计数 `re` 当字面量
     r"(a{0,1})+b",
     r"(a{1, 2})+",
     "a{1,2,3}",
     "a{ }",
+    # A370 / L329：豁免那一族（片段的长度被组体末尾那个必现字符钉死 ⇒ 重复它不炸）
+    "(a*b)+",
+    r"(\d*b)+",
 )
 
-#: 已知误伤（现量 2 格）：形状上「组内含可变长片段」但每段被必现字面量钉住，
-#: 实际不指数级。要消掉它得做字符类不相交判定（本闸不做，见 A3xx 新的一格），
-#: 所以先把误伤**钉在这一格里点名**：哪天判定变准了，这一格必须跟着改，
-#: 而不是让「合法模式被拒」这件事从散文里飘走。
-KNOWN_FALSE_POSITIVES = (
+#: **A370 / L329 之后**：这两格**不再**被拒。
+#:
+#: 它们原来在 `KNOWN_FALSE_POSITIVES` 里（闸把合法模式误伤了）。实测它们**不是**
+#: 指数级：在 n=14/16/18/20/22 的必败语料上，两格都是 ~0.0003~0.002 ms 的**平坦**
+#: 曲线，而基准 `(a+)+b` 是 0.0007 → 0.0032 → 0.0132 → 0.0531 → 0.2083 秒（每 +2 字 ×4）
+#: ⇒ 拒它们是**闸的假阳性**，不是安全闸该有的严格。
+#:
+#: 根因：闸的判据是「组体里含可变长片段 ⇒ 该组被重复 ⇒ 危险」，而**这两族的片段
+#: 长度被组体末尾那个必现字符钉死了**（`[^\]]*` 吃不到 `]`、`[^,]+` 吃不到 `,`）
+#: ⇒ 组体对同一条输入只有一种切法 ⇒ 重复它不炸。**A370 / L329** 给闸加了
+#: 「锚点不相交 ⇒ 豁免」那一档（判据见 `augmentor/validation.py` 的
+#: `_pattern_group_is_exempt`）。
+#:
+#: 这一格现在钉的是**反向**：哪天闸又把它们拒了（豁免那一档被拆掉 / 判据被改窄），
+#: 这里当场红。
+EXEMPTED_BY_DISJOINTNESS = (
     r"(\[[^\]]*\])+",
     r"(?:[^,]+,){3}[^,]+",
+)
+
+#: **A370 / L329 新增**：同族的另外两格（片段被一个必现字符钉死 ⇒ 豁免）。
+#: 与上面那两格一起进 `ALLOWED_PATTERNS` 的合法面。
+DISJOINT_EXEMPT_FAMILY = (
+    "(a*b)+",              # 片段 `a*` 吃不到 `b`
+    r"(\d*b)+",            # 片段 `\d*` 吃不到 `b`
+)
+
+#: **A370 / L329 新增**：豁免那一档**不许**放过的四格（它们与上面那几格长得极像，
+#: 差别在「锚点不是必现」/「有分支」/「字符集相同」/「锚点算不出来」）。
+#: 这一格是**判据自己的反证**：豁免做宽了就会漏掉真正的指数形。
+MUST_STILL_BE_CAUGHT = (
+    "(a*b*)+",             # 锚点 `b` 是可选的（`*`）⇒ 片段的长度没被钉死
+    "(a*|b)+",             # 有分支 ⇒ 「片段 ↔ 锚点」的配对跨支不成立
+    "([a-z]*a)+",          # 锚点 `a` 落在片段自己的字符集里 ⇒ 吃得到 ⇒ 没钉死
+    "(a*.)+",              # 锚点是 `.`（任意字符）⇒ 字符集算不出来 ⇒ 保守
 )
 
 #: 本闸**不下判断**的族（现量 6 格，逐格读数为 `None`）：交替分支公共前缀
@@ -204,23 +243,45 @@ class TestTruthTable:
         assert missed == []
 
     def test_the_danger_face_is_the_measured_size(self):
-        assert len(DANGER_PATTERNS) == 26
+        assert len(DANGER_PATTERNS) == 30
 
     def test_every_allowed_shape_passes_except_the_named_two(self):
         hits = [p for p in ALLOWED_PATTERNS if find_repeated_ambiguous_group(p) is not None]
         assert hits == []
 
     def test_the_allowed_face_is_the_measured_size(self):
-        assert len(ALLOWED_PATTERNS) == 20
+        assert len(ALLOWED_PATTERNS) == 22
 
-    def test_the_known_false_positive_grid_is_exactly_two(self):
-        """误伤只有这两格，且**这两格确实被拒**——判据变准了就要在这里红一次。"""
-        assert len(KNOWN_FALSE_POSITIVES) == 2
+    def test_the_two_exempted_shapes_are_now_allowed(self):
+        """**A370 / L329**：原先被误伤的那两格**现在放行**
+
+        改前这两格在 `KNOWN_FALSE_POSITIVES` 里（闸判中 ⇒ 400）；A370 判决「误伤是闸的
+        缺陷，不是对外契约」⇒ 闸加了一档「锚点不相交 ⇒ 豁免」（片段的长度被组体末尾
+        那个必现字符钉死 ⇒ 组体只有一种切法 ⇒ 重复它不炸）。
+
+        这一格钉的是**反向**：哪天闸又把它们拒了（豁免那一档被拆掉），这里当场红。
+        """
+        assert len(EXEMPTED_BY_DISJOINTNESS) == 2
         assert [find_repeated_ambiguous_group(p) is not None
-                for p in KNOWN_FALSE_POSITIVES] == [True, True]
-        for pattern in KNOWN_FALSE_POSITIVES:
-            with pytest.raises(DataValidationError):
-                require_search_pattern("query", pattern)
+                for p in EXEMPTED_BY_DISJOINTNESS] == [False, False]
+        for pattern in EXEMPTED_BY_DISJOINTNESS:
+            assert require_search_pattern("query", pattern) == pattern
+
+    def test_the_exemption_family_is_measured(self):
+        assert len(DISJOINT_EXEMPT_FAMILY) == 2
+        assert [find_repeated_ambiguous_group(p) is not None
+                for p in DISJOINT_EXEMPT_FAMILY] == [False, False]
+
+    def test_the_exemption_does_not_let_the_twins_through(self):
+        """豁免那一档的**反证**：四格长得极像，但必须仍然被拦
+
+        （`a*` 后面那个锚点要么可选、要么在另一支、要么吃得到、要么算不出字符集
+        ⇒ 片段的长度没被钉死 ⇒ 重复它会炸。）
+        """
+        assert len(MUST_STILL_BE_CAUGHT) == 4
+        missed = [p for p in MUST_STILL_BE_CAUGHT
+                  if find_repeated_ambiguous_group(p) is None]
+        assert missed == [], f"豁免做宽了：{missed}"
 
     def test_the_unjudged_families_stay_unjudged(self):
         """不判的族逐格读 `None`：这一格防的是「把尺子偷偷收进不认识的形状里」。"""

@@ -41,7 +41,8 @@ l227 因为**没有**这种常数（`["instruction", "input", "output"]` 只是 
 * B 侧 0 条时 `size_ratio` 在 SDK 里是 `float('inf')`（`compare_enhanced.py:190`），
   Pydantic 序列化到线上是 **`null`**（严格 JSON 面安全，但 TS 不能当纯 `number`）⇒ **A288**；
 * `similarity_to_a` / `similarity_to_b` 在 `comparison.py` 里**只有 dataclass 默认值与
-  `to_dict()` 两处**，全仓无赋值点 ⇒ 恒 `0.0` 的死面，页面不渲它 ⇒ **A287**；
+  `to_dict()` 两处**，全仓无赋值点 ⇒ 恒 `0.0` 的死面，页面不渲它 ⇒ **A287**
+  （**L329 已收口**：那两个键已从质量面删掉，相似度的唯一权威是重叠面那一格）；
 * 两侧同文件 ⇒ `winner == "tie"`、`quality_diff` 四项全 `0.0`（判据是
   `abs(avg_a − avg_b) < 0.01`，`comparison.py:260`）⇒ 三态而不是「有没有胜者」；
 * `min_coverage` 出厂 `0.1`（`feature_detect.py:59`）且 `POST /api/dataset/features` 的请求模型
@@ -50,6 +51,7 @@ l227 因为**没有**这种常数（`["instruction", "input", "output"]` 只是 
 跑法：`python -m pytest tests/unit/test_stats_features_compare_wiring_l228.py -q --no-cov`
 """
 
+import ast
 import json
 import pathlib
 import re
@@ -96,7 +98,9 @@ KEYED_LABEL_RE = re.compile(r"^\s*(\w+):\s*\{\s*label:\s*'([^']+)'", re.M)
 KIND_RE = re.compile(r"(\w+):\s*\{[^{}]*kind:\s*'(\w+)'")
 TUPLE_ROW_RE = re.compile(r"\['(\w+)',\s*'([^']+)',\s*'(\w+)'\]")
 EMPTY_LIST_STATE_RE = re.compile(r"const \[(\w+), set\w+\] = useState<string\[\]>\(\[\]\)")
-ASSIGN_RE = re.compile(r"(?:self|result)\.similarity_to_[ab]\s*=[^=]")
+#: L329 之前这里有一把 `ASSIGN_RE`（「有赋值点 ⇒ 死面活了」）。A287 收口后那两个名字
+#: **整个不许存在**，所以「有没有赋值点」这一问已经没有对象了 ⇒ 这把尺子随之退场
+#: （留着一把没有对象的尺子，下一个读它的人会以为它还在管什么）。
 
 
 def _page() -> str:
@@ -424,17 +428,35 @@ class TestPresentationCoversProducedKeys:
 class TestDeadAndNullableFaces:
     """两个「写进契约但没人用」与「形状会变」的面，处置必须各有其形"""
 
-    def test_similarity_to_faces_are_never_assigned(self):
-        """**A287**：`similarity_to_a` / `similarity_to_b` 只有 dataclass 默认与序列化两处
+    def test_similarity_to_faces_are_gone_from_the_quality_face(self):
+        """**A287**：`similarity_to_a` / `similarity_to_b` 已于 **L329** 从质量面删掉
 
-        全仓（`comparison.py`）找不到对它们的赋值 ⇒ 恒为 `0.0`。这不是「这次的数据恰好 0」：
-        两份不同数据的实测回执里它们也是 `0.0`。
+        原先它们只有 dataclass 默认值与 `to_dict()` 两处、全仓无赋值点 ⇒ 恒为 `0.0`
+        （两份完全不同的数据也照样 `0.0`）。恒零的数会被读成「A 与 B 毫不相似」，
+        真相是「这一档从未被计算」⇒ **已删**。相似度的唯一权威在重叠面
+        （`overlap_comparison.metrics.similarity_score`）。
+
+        这一支现在钉的是**反向棘轮**：那两个名字不许回到质量面来（悄悄复活 = 恒零的谎话
+        回到对外契约）。口径是**活代码**（AST 的标识符与字典键），不是整份文本 ——
+        `comparison.py` 里解释「为什么删」的那几行注释必须提到这两个名字。
         """
-        source = COMPARISON_PY.read_text(encoding="utf-8")
-        mentions = [line.strip() for line in source.splitlines()
-                    if "similarity_to_a" in line or "similarity_to_b" in line]
-        assert mentions, "comparison.py 里这两个键没了 ⇒ 本条的判据要跟着换形状"
-        assert not ASSIGN_RE.search(source), f"出现了赋值点，死面活了: {mentions}"
+        tree = ast.parse(COMPARISON_PY.read_text(encoding="utf-8"))
+        names = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Name):
+                names.add(node.id)
+            elif isinstance(node, ast.Attribute):
+                names.add(node.attr)
+            elif isinstance(node, ast.Dict):
+                for key in node.keys:
+                    if isinstance(key, ast.Constant) and isinstance(key.value, str):
+                        names.add(key.value)
+        for dead in ("similarity_to_a", "similarity_to_b"):
+            assert dead not in names, f"{dead} 回到了 comparison.py ⇒ 恒零死面复活了"
+            # 前端类型面：扫的是**活代码**（剥掉注释）——类型面的注解释「为什么删」时
+            # 必须提到这两个名字。
+            assert dead not in strip_comments(TYPES_TS.read_text(encoding="utf-8")), \
+                f"{dead} 回到了前端类型面 ⇒ 恒零死面复活了"
 
     def test_the_page_does_not_render_the_dead_faces(self):
         """页面不渲恒 0 的死面：渲出来等于给用户一条永不移动的假读数"""
@@ -442,14 +464,14 @@ class TestDeadAndNullableFaces:
         for dead in ("similarity_to_a", "similarity_to_b"):
             assert dead not in page, f"{dead} 被页面渲染了（它恒 0.0，见 A287）"
 
-    def test_the_dead_faces_are_still_zero_on_two_different_datasets(self, http_with_datasets):
-        """行为差取证：两份不同数据也照样 0.0（与上一条的源码扫描互相咬合）"""
+    def test_the_dead_faces_are_absent_on_two_different_datasets(self, http_with_datasets):
+        """行为差取证：两份不同数据的回执里**没有那两格**，而胜负仍判得出"""
         http, _ = http_with_datasets
         quality = http.post("/api/dataset/compare",
                             json={"dataset_a": "p.json", "dataset_b": "n.json"}).json(
                             )["quality_comparison"]
-        assert quality["similarity_to_a"] == 0.0
-        assert quality["similarity_to_b"] == 0.0
+        for dead in ("similarity_to_a", "similarity_to_b"):
+            assert dead not in quality, f"{dead} 还在回执里（恒 0.0 的死面，见 A287）"
         assert quality["winner"] == "a", "两份数据的质量分本该有别"
 
     def test_size_ratio_arrives_as_null_when_b_side_is_empty(self, http_with_datasets):

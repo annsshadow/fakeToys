@@ -252,7 +252,15 @@ class DependencyGraphResponse(BaseModel):
 
 
 class BackupInfoResponse(BaseModel):
-    """备份信息（与 `BackupInfo.to_dict()` 的键一一对应）"""
+    """备份信息（与 `BackupInfo.to_dict()` 的键一一对应）
+
+    `name` 是**调用方自己起的那个名字**（A335 / L329）：给了 `name` 就是它，
+    没给就是 `null`（那时 `backup_id` 是服务端生成的 `backup_<YYYYmmdd_HHMMSS>`）。
+    这一格把那件事说清：`backup_id` 是**寻址用的 id**，从它看不出「这个 id 是我起的
+    还是服务端编的」⇒ 调用方以前只能靠 `backup_` 前缀去猜。
+    存量索引行（L329 之前写下的）没有这一格 ⇒ 读出来是 `null`，
+    语义是「当时没被记下来」，不是「当时服务端编的」。
+    """
     backup_id: str
     timestamp: str
     source_path: str
@@ -260,6 +268,7 @@ class BackupInfoResponse(BaseModel):
     item_count: int
     file_size: int
     checksum: str
+    name: Optional[str] = None
 
 
 class BackupListResponse(BaseModel):

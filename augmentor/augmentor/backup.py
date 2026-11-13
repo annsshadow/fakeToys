@@ -32,7 +32,18 @@ class BackupInfo:
     item_count: int
     file_size: int
     checksum: str
-    
+    #: **调用方自己起的那个名字**（A335 / L329）：给了 `name` 就是它，没给就是 `None`。
+    #:
+    #: 为什么单独一格：`backup_id` 是**寻址用的 id**（给了名字时它就等于那个名字，
+    #: 没给时是服务端生成的 `backup_<YYYYmmdd_HHMMSS>`）⇒ 从 `backup_id` 看不出
+    #: 「这个 id 是我起的，还是服务端编的」——只能靠 `backup_` 前缀去猜，而那只在
+    #: **没给名字**时成立（本轮收口前，调用方给一个自己起的 `backup_xxx` 名字，
+    #: 前缀这一招就认不出来了）。这一格把那件事说清：`name` 非空 ⇒ 调用方起的；
+    #: `name` 为 `None` ⇒ 服务端编的。
+    #:
+    #: 它**不参与寻址**：`restore` / `delete` 仍只认 `backup_id`。
+    name: Optional[str] = None
+
     def to_dict(self) -> Dict:
         """转换为字典"""
         return {
@@ -42,7 +53,8 @@ class BackupInfo:
             "backup_path": self.backup_path,
             "item_count": self.item_count,
             "file_size": self.file_size,
-            "checksum": self.checksum
+            "checksum": self.checksum,
+            "name": self.name
         }
 
 
@@ -140,7 +152,11 @@ class DatasetBackup:
             backup_path=str(backup_path),
             item_count=len(items),
             file_size=file_size,
-            checksum=checksum
+            checksum=checksum,
+            # A335 / L329：把「调用方起的那个名字」原样带上（没给就是 None）。
+            # 上面那行把「给了名字 / 没给名字」两种情形分开了（给了就用它，
+            # 没给就按秒级时间戳编一个），而这一格把那件事**说**出来。
+            name=name
         )
         
         # 更新索引（A298 / L250：同名先摘旧行 ⇒ 行数与磁盘份数一一对应。L273：整段
@@ -202,11 +218,26 @@ class DatasetBackup:
     
     def list_backups(self) -> List[Dict]:
         """列出所有备份
-        
+
         Returns:
-            备份列表
+            备份列表。**每一行的形状一致**（A335 / L329）：`name` 恒在
+            （L329 之前写出的索引行没有这一格 ⇒ 补 `None`，而不是让同一份清单里
+            有的行有、有的行没有）。
         """
-        return self._index["backups"]
+        return [self._normalize_row(b) for b in self._index["backups"]]
+
+    @staticmethod
+    def _normalize_row(row: Dict) -> Dict:
+        """把一条索引行补成**同一个形状**（A335 / L329）
+
+        `name` 这一格是 L329 加的 ⇒ **L329 之前写出的索引行没有它**。同一份清单里
+        「有的行有、有的行没有」是两种形状，调用方每读一行都得先问「这行有没有那格」
+        ⇒ 存量行补 `None`（含义：那只备份的名字当时**没有**被记下来，
+        与「当时服务端编的 id」在语义上不完全等价，但那是历史事实，不补假名）。
+        """
+        if "name" in row:
+            return row
+        return {**row, "name": None}
     
     def delete_backup(self, backup_id: str) -> bool:
         """删除备份
@@ -260,7 +291,7 @@ class DatasetBackup:
         """
         for backup in self._index["backups"]:
             if backup["backup_id"] == backup_id:
-                return backup
+                return self._normalize_row(backup)
         return None
 
 

@@ -150,9 +150,14 @@ def test_scanned_corpus_scale():
     # **L328 记账批重量**：460 → **461**（本轮新增一支守卫
     # `tests/unit/test_cli_api_default_dirs_l328.py` ⇒ 测试面 +1；
     # 产品面 133 **一格未动** —— 本轮 CLI 那处改动是**改内容**不是加文件）。
+    # **L329 重量**：461 → **463**（本轮新增两支守卫
+    # `tests/unit/test_contract_faces_l329.py` 与 `tests/unit/test_pattern_disjoint_exempt_l329.py`
+    # ⇒ 测试面 +2；产品面 133 **仍一格未动** —— 本轮改的是 `validation.py` /
+    # `comparison.py` / `backup.py` / `api/routes/system_ops.py` 四个文件的**内容**，
+    # 没新增产品文件，也没删）。
     # 改数不改判据：这一族判的是「语料规模现量」这一个数，逐条判据一字未动。
-    assert (n_products, n_tests) == (133, 461), \
-        f"语料规模现量 (133, 461)，实得 {(n_products, n_tests)}"
+    assert (n_products, n_tests) == (133, 463), \
+        f"语料规模现量 (133, 463)，实得 {(n_products, n_tests)}"
 
 
 def test_every_all_symbol_has_a_consumer():

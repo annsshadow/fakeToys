@@ -13,9 +13,10 @@
 **仓外探针量到的行为矩阵**（白名单根为临时目录，探针两支跑完即删）：
 
 * 空目录列表 ⇒ **200** `{"backups": []}`，不是 404 也不是 null。
-* 创建不给 `name` ⇒ 200，`backup_id` 是 `backup_<YYYYmmdd_HHMMSS>`（秒级），回执七键
+* 创建不给 `name` ⇒ 200，`backup_id` 是 `backup_<YYYYmmdd_HHMMSS>`（秒级），回执**八键**
   （`backup_id` / `timestamp` / `source_path` / `backup_path` / `item_count` / `file_size` /
-  `checksum`），`source_path` 与 `backup_path` 都是**服务端绝对路径**，`checksum` 是备份文件的
+  `checksum` / `name`，**`name` 是 A335 / L329 加的那一格**：没给名字时它是 `null`），
+  `source_path` 与 `backup_path` 都是**服务端绝对路径**，`checksum` 是备份文件的
   sha256，实测 `item_count 5` / `file_size 231`。
 * 同名创建两次（`name=mybak`）**改前实测**：列表回**三条**（时间戳 id 一条 + `mybak` 两条），
   磁盘上只有**一份** `mybak.json`，两条 `mybak` 的 `timestamp` 不同而 `backup_path` 逐字相同
@@ -206,7 +207,9 @@ class TestTsFaceMatchesThePydanticModels:
 
     def test_backup_info_keys(self):
         assert set(ts_interface_keys("BackupInfo")) == set(BackupInfoResponse.model_fields)
-        assert len(ts_interface_keys("BackupInfo")) == 7
+        # A335 / L329：七键 → **八键**（多的是 `name` 那一格）
+        assert len(ts_interface_keys("BackupInfo")) == 8
+        assert "name" in ts_interface_keys("BackupInfo")
 
     def test_backup_list_keys(self):
         assert set(ts_interface_keys("BackupListResponse")) == set(PyBackupListResponse.model_fields)
@@ -273,7 +276,8 @@ class TestMeasuredEndpointBehavior:
         r = http.get("/api/system/backups")
         assert r.status_code == 200 and r.json() == {"backups": []}
 
-    def test_create_receipt_has_the_seven_keys(self, http_with_backups):
+    def test_create_receipt_has_the_eight_keys(self, http_with_backups):
+        """回执八键（A335 / L329 加了 `name`）：`name` 说清「这个 id 是谁起的」"""
         http, root, *_ = http_with_backups
         r = http.post("/api/system/backups", json={"input_file": "p.json"})
         assert r.status_code == 200, r.text
@@ -285,6 +289,17 @@ class TestMeasuredEndpointBehavior:
         assert pathlib.Path(got["source_path"]).is_absolute()
         assert pathlib.Path(got["backup_path"]).is_absolute()
         assert (root / ".backups" / f"{got['backup_id']}.json").is_file()
+        # 没给名字 ⇒ `name` 是 `null`（不是空串、也不是那个服务端编的 id）
+        assert got["name"] is None, got
+
+    def test_the_receipt_name_is_the_name_the_caller_gave(self, http_with_backups):
+        """给了名字 ⇒ `name` 就是它，而 `backup_id` 恰好等于它（寻址仍只认 id）"""
+        http, root, *_ = http_with_backups
+        got = http.post("/api/system/backups",
+                        json={"input_file": "p.json", "name": "mybak"}).json()
+        assert got["name"] == "mybak", got
+        assert got["backup_id"] == "mybak", got
+        assert (root / ".backups" / "mybak.json").is_file()
 
     def test_same_name_twice_leaves_one_index_row_and_one_file(self, http_with_backups):
         """A298 的前半（**L250 收成 ①**）：文件按名覆盖，索引那一行跟着更新 ⇒ 两面数得上

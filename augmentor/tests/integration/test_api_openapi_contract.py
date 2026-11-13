@@ -768,7 +768,7 @@ CALLS = {
         ),
         keys=_keys(
             "backup_id", "timestamp", "source_path", "backup_path",
-            "item_count", "file_size", "checksum",
+            "item_count", "file_size", "checksum", "name",
         ),
     ),
     ("POST", "/api/system/backups/{backup_id}/restore"): _Case(

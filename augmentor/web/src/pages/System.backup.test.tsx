@@ -56,8 +56,15 @@ const fx = vi.hoisted(() => {
     item_count: 5,
     file_size: 231,
     checksum: CHECKSUM,
+    // A335 / L329：`name` 是**调用方自己起的那个名字**，服务端编的 id 就是 `null`。
+    name: null,
   }
-  const NAMED = { ...STAMPED, backup_id: 'mybak', backup_path: 'D:\\data\\.backups\\mybak.json' }
+  const NAMED = {
+    ...STAMPED,
+    backup_id: 'mybak',
+    backup_path: 'D:\\data\\.backups\\mybak.json',
+    name: 'mybak',
+  }
   // 存量索引（**L250 之前**写出的 `index.json`）的真实形状：三条记录、两条同 id，而磁盘上只有
   // 一份 mybak.json——写侧自 L250 起按 id 收敛，端点上造不出这个形状，所以这里继续手工喂。
   // 两条同 id 的 timestamp 逐字不同（那一版每写一行读一次钟），行键正是拼了这一格。
@@ -65,7 +72,7 @@ const fx = vi.hoisted(() => {
   const LIST_DUP = {
     backups: [{ ...NAMED, timestamp: '2026-10-11T17:58:33.991804' }, NAMED_2, STAMPED],
   }
-  const CREATE_OK = { ...STAMPED, backup_id: 'mybak' }
+  const CREATE_OK = { ...STAMPED, backup_id: 'mybak', name: 'mybak' }
   const RESTORE_OK = {
     backup_id: 'mybak',
     output_path: 'D:\\data\\r.json',
@@ -242,6 +249,16 @@ describe('System 备份列表渲染', () => {
       (el) => el.getAttribute('title') === CHECKSUM,
     )
     expect(cell).toBeTruthy()
+  })
+
+  it('只有服务端编的 id 那几行标「自动生成」（A335 / L329）', async () => {
+    render(<System />)
+
+    await waitBackups()
+    // 三行：两条 `mybak`（调用方起的）+ 一条 `backup_20261011_175833`（服务端编的）
+    expect(screen.getAllByText('自动生成')).toHaveLength(1)
+    // 给了名字的那两行**不**标 ⇒ 标记只出现在该标的地方
+    expect(screen.getAllByText('mybak')).toHaveLength(2)
   })
 })
 

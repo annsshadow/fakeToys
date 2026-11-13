@@ -1357,6 +1357,16 @@ def _read_repeat_bound(source: str, start: int) -> Optional[tuple]:
     `DataValidationError` 也不是 `re.error`，`_search_regex` 的 `except re.error`
     接不住 ⇒ 域外异常逃出产品入口（HTTP 面 500）。
 
+    **A370 / L329 补记**：`{+1}` 那一族**不是**合法的重复计数（`re` 自己也不当量词
+    读它），但 **`re` 与本闸在这一点上是同口径的** —— 实测 `re` 把 `a{+1}` 读成
+    「字面 `a` + 一个或多个 `{` + 字面 `1` + 字面 `}`」
+    （`re._parser.parse("a{+1}")` ⇒ `[(LITERAL, 97), (MAX_REPEAT, (1, MAXREPEAT,
+    [(LITERAL, 123)])), (LITERAL, 49), (LITERAL, 125)]`），而本闸读同一串时
+    **先把 `{` 当字面量、再把后面的 `+` 照常当量词** ⇒ 两边模型一致。
+    （账本 A370 原文把这格记成「闸按字面量放行、与权威不同字」，那是**子读取器**
+    `_read_repeat_bound` 的措辞，不是**整体判决**的差别：实测 `(a{+1})+b` 与
+    `(\\{{+1})+b` 两形都被本闸判中。）
+
     Args:
         source: 模式串
         start: `{` 的下标
@@ -1495,6 +1505,200 @@ def _group_extension_end(source: str, start: int) -> Optional[int]:
     return start + 2
 
 
+# ---------- 模式串 · 字符集（A370 / L329：「误伤」那一格的修法） ----------
+
+#: 「一类字符」转义各自匹配的字符集合（**有限**的那些）。
+_ESCAPE_CLASS_FINITE = {
+    "d": frozenset("0123456789"),
+    "w": frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"),
+    "s": frozenset(" \t\n\r\f\v"),
+}
+
+#: 转义字母 → 它代表的**字面字符**（其余字母类的一律算不出来）。
+_ESCAPE_LITERAL_CHAR = {
+    "n": "\n", "t": "\t", "r": "\r", "f": "\f", "v": "\v",
+}
+
+#: 字符类里区间的展开上限：超过这个跨度就**算不出来**（返回 None ⇒ 保守）。
+_MAX_CLASS_RANGE = 4096
+
+
+def _escape_literal_char(ch: str) -> Optional[str]:
+    r"""一个转义字母代表哪个字面字符；算不出来就 `None`
+
+    `\n` / `\t` / `\r` / `\f` / `\v` 有确定的字面字符；转义**标点**（`\.` `\*` `\\` …）
+    就是那个标点本身；而 `\x41` / `\u4e2d` / `\1` 这类**算不准** ⇒ `None`
+    （宁可不算，也不要算错 —— 算错会让不相交那一档**放过**危险形状）。
+    """
+    if ch in _ESCAPE_LITERAL_CHAR:
+        return _ESCAPE_LITERAL_CHAR[ch]
+    if ch.isalnum():
+        return None
+    return ch
+
+
+def _escape_char_set(ch: str) -> Optional[tuple]:
+    """一个反斜杠转义能匹配的字符集；算不出（零宽断言）就 `None`"""
+    if ch in _ESCAPE_CLASS_FINITE:
+        return ("finite", _ESCAPE_CLASS_FINITE[ch])
+    if ch in ("D", "W", "S"):
+        return ("comp", _ESCAPE_CLASS_FINITE[ch.lower()])
+    if ch in ("b", "B", "A", "Z", "z", "G"):
+        return None                      # 零宽断言：它不匹配任何字符
+    literal = _escape_literal_char(ch)
+    if literal is None:
+        return None
+    return ("finite", frozenset({literal}))
+
+
+def _class_positive_chars(content: str) -> Optional[frozenset]:
+    """字符类里「正面」那一半能匹配哪些字符；算不出就 `None`
+
+    算不出的一类：`\\d` / `\\w` / `\\s` 这类「一类字符」（它们匹配的不是一个字符）、
+    `\\x41` 这类算不准的转义、以及跨度过大的区间。
+    """
+    chars = set()
+    i = 0
+    n = len(content)
+    while i < n:
+        ch = content[i]
+        if ch == "\\":
+            if i + 1 >= n:
+                return None
+            nxt = content[i + 1]
+            if nxt in ("d", "D", "w", "W", "s", "S"):
+                return None              # 类内的一类字符
+            literal = _escape_literal_char(nxt)
+            if literal is None:
+                return None
+            chars.add(literal)
+            i += 2
+            continue
+        if i + 2 < n and content[i + 1] == "-" and content[i + 2] != "]":
+            end = content[i + 2]
+            if end == "\\" or ord(ch) > ord(end):
+                return None
+            if ord(end) - ord(ch) > _MAX_CLASS_RANGE:
+                return None
+            chars.update(chr(code) for code in range(ord(ch), ord(end) + 1))
+            i += 3
+            continue
+        chars.add(ch)
+        i += 1
+    return frozenset(chars)
+
+
+def _class_char_set(unit: str) -> Optional[tuple]:
+    """一个字符类 `[...]` 能匹配的字符集；算不出就 `None`"""
+    if not (unit.startswith("[") and unit.endswith("]")):
+        return None
+    content = unit[1:-1]
+    negated = content.startswith("^")
+    if negated:
+        content = content[1:]
+    positive = _class_positive_chars(content)
+    if positive is None:
+        return None
+    if negated:
+        return ("comp", positive)
+    return ("finite", positive)
+
+
+def _unit_char_set(unit: str) -> Optional[tuple]:
+    """一个「单元」能匹配的字符集；算不出（组 / 多字符 / 零宽）就 `None`
+
+    只覆盖**只匹配一个字符**的单元：字面字符、转义、字符类。
+    `.`（任意字符）与零宽断言算不出来 ⇒ `None`（⇒ 不参与不相交判定，保守）。
+    """
+    if unit.startswith("\\"):
+        return _escape_char_set(unit[1])
+    if unit.startswith("["):
+        return _class_char_set(unit)
+    if len(unit) == 1:
+        if unit in (".", "^", "$"):
+            return None                  # 任意字符 / 零宽锚点：不是「一个字符」
+        return ("finite", frozenset({unit}))
+    return None
+
+
+def _char_sets_disjoint(left: Optional[tuple], right: Optional[tuple]) -> bool:
+    """两个字符集**不相交**吗？（算不出来的一律答「不相交不成立」）
+
+    * 有限 ∩ 有限：真不相交才算；
+    * 有限 ∩ 「除某些之外」：那个有限集**整体落在**被排除的那一半里才算；
+    * 「除某些之外」 ∩ 「除某些之外」：两半的补集必有交集 ⇒ **不算不相交**。
+    """
+    if left is None or right is None:
+        return False
+    (left_kind, left_set), (right_kind, right_set) = left, right
+    if left_kind == "finite" and right_kind == "finite":
+        return left_set.isdisjoint(right_set)
+    if left_kind == "finite" and right_kind == "comp":
+        return left_set <= right_set
+    if left_kind == "comp" and right_kind == "finite":
+        return right_set <= left_set
+    return False
+
+
+def _new_pattern_frame() -> dict:
+    """模式串扫描栈里的一帧（根帧与组帧同形状）
+
+    * `ambiguous` —— 本帧里**第一个**可变长片段的源码（没有就是 `None`）；
+    * `ambig_cs` —— 那个片段**所作用的那个单元**的字符集（算不出就是 `None`
+      ⇒ 本帧不参与「锚点不相交」那一档豁免）；
+    * `anchor_cs` —— 紧跟在片段之后的那个**单元**的字符集（候选锚点）；
+    * `anchor_state` —— `unset`（还没到）/ `candidate`（锚点已定且它是组体**最后一个**
+      单元）/ `invalid`（这一组不参与豁免：分支、第二个片段、可选锚点…）。
+    """
+    return {"col": -1, "ambiguous": None, "unit": None, "unit_cs": None,
+            "ambig_cs": None, "anchor_cs": None, "anchor_state": "unset",
+            "unit_is_fragment": False, "has_alt": False}
+
+
+def _take_pattern_unit(frame: dict, unit: str, col: int, next_pos: int,
+                       source: str) -> None:
+    """登记一个单元：记它的字符集，并在「它紧跟在片段之后」时把它当**锚点候选**"""
+    char_set = _unit_char_set(unit)
+    if frame["unit_is_fragment"]:
+        # 这个单元紧跟在可变长片段之后 ⇒ 它是锚点候选。
+        # 锚点必须**必现**（后面不能再跟量词）且**只匹配一个字符**。
+        if next_pos < len(source) and source[next_pos] in "+*?{":
+            frame["anchor_cs"] = None
+            frame["anchor_state"] = "invalid"
+        else:
+            frame["anchor_cs"] = char_set
+            frame["anchor_state"] = "candidate" if char_set is not None else "invalid"
+        frame["unit_is_fragment"] = False
+    elif frame["anchor_state"] == "candidate":
+        # 锚点后面还有单元 ⇒ 「锚点是组体最后一个单元」那一格不成立。
+        frame["anchor_state"] = "invalid"
+    frame["unit"] = (False, False, unit, col, None)
+    frame["unit_cs"] = char_set
+
+
+def _pattern_group_is_exempt(frame: dict) -> bool:
+    r"""这个组的**内部切分唯一**吗？（⇒ 重复它不会炸）
+
+    判据（A370 / L329 那一档）：组里那个可变长片段**紧跟**着一个**必现的单字符
+    单元**，而两者的字符集**不相交** ⇒ 片段吃不到那个字符 ⇒ 片段的长度被它**钉死**
+    ⇒ 组体对同一条输入只有一种切法 ⇒ 重复它不产生组合爆炸。
+
+    成立的那两格（实测它们**不是**指数级，见账本 A370 的读数）：
+    `(\\[[^\\]]*\\])+`（片段 `[^\]]*` 吃不到 `]`）与 `(?:[^,]+,){3}[^,]+`
+    （片段 `[^,]+` 吃不到 `,`）。
+
+    **判不出去的一律不豁免**（字符集算不出 / 有分支 / 锚点不是最后一个单元 /
+    锚点可选 / 片段来自子组）⇒ 闸只会**比 `re` 宽**，不会比 `re` 窄。
+    """
+    if frame["ambiguous"] is None or frame["has_alt"]:
+        return False
+    if frame["ambig_cs"] is None:
+        return False
+    if frame["anchor_state"] != "candidate":
+        return False
+    return _char_sets_disjoint(frame["ambig_cs"], frame["anchor_cs"])
+
+
 def find_repeated_ambiguous_group(source: str) -> Optional[tuple]:
     r"""静态找出「**可变长的组被重复到 ≥2 次**」这一族形状（栈式单遍扫描）。
 
@@ -1502,6 +1706,13 @@ def find_repeated_ambiguous_group(source: str) -> Optional[tuple]:
     或一个本身可变长的子组），而它自己又被能重复到 ≥2 次的量词套住 ⇒ 判危险。
     `(a+)+b`、`(.*)*c`、`(a*){2,}`、`((a+))+`、`(a|a+)+b`、`(\w+\s?)*`、`([0-9]+)+x`
     都在这一族里；`(foo|bar)+`、`(abc){3}`、`(?:\d{2}){4}`、`colou?r` 不在。
+
+    **A370 / L329 加的那一档「锚点不相交 ⇒ 豁免」**：组里那个可变长片段若紧跟一个
+    **必现的单字符单元**、而两者的字符集**不相交**（片段吃不到那个字符）⇒ 片段的长度
+    被钉死 ⇒ 组体只有一种切法 ⇒ 重复它**不炸** ⇒ 判据不成立（原先那一刀是**误伤**：
+    合法模式被无理由拒）。实测成立的两格是 `(\[[^\]]*\])+` 与 `(?:[^,]+,){3}[^,]+`
+    （两格在 n=14…22 的必败语料上都是 ~0.0003~0.002 ms 的**平坦**曲线，
+    而基准 `(a+)+b` 是 0.0007 → 174 ms 每 +2 字 ×4）。
 
     复杂度对**模式串本身**线性（每个字符至多看两次），不看语料、不跑 `re` 引擎，
     所以它自己不可能成为新的 DoS 面。
@@ -1516,7 +1727,7 @@ def find_repeated_ambiguous_group(source: str) -> Optional[tuple]:
         `re.compile` 的语法错，所以到不了匹配那一步。认不出的 `(?` 扩展**不在**这一列
         （改前在，于是一枚扩展记号就能废掉整把闸，见 `_group_extension_end`）。
     """
-    root = {"col": -1, "ambiguous": None, "unit": None}
+    root = _new_pattern_frame()
     stack = [root]
     i = 0
     n = len(source)
@@ -1526,14 +1737,14 @@ def find_repeated_ambiguous_group(source: str) -> Optional[tuple]:
         if ch == "\\":
             if i + 1 >= n:
                 return None
-            frame["unit"] = (False, False, source[i:i + 2], i, None)
+            _take_pattern_unit(frame, source[i:i + 2], i, i + 2, source)
             i += 2
             continue
         if ch == "[":
             end = _skip_char_class(source, i)
             if end is None:
                 return None
-            frame["unit"] = (False, False, source[i:end], i, None)
+            _take_pattern_unit(frame, source[i:end], i, end, source)
             i = end
             continue
         if ch == "(":
@@ -1541,18 +1752,19 @@ def find_repeated_ambiguous_group(source: str) -> Optional[tuple]:
                 end = source.find(")", i + 4)
                 if end < 0:
                     return None
-                frame["unit"] = (False, False, source[i:end], i, None)
+                _take_pattern_unit(frame, source[i:end], i, end + 1, source)
                 i = end + 1
                 continue
             directive = _flag_directive_end(source, i)
             if directive is not None:
-                frame["unit"] = (False, False, source[i:directive], i, None)
+                _take_pattern_unit(frame, source[i:directive], i, directive, source)
                 i = directive
                 continue
             end = _group_extension_end(source, i)
             if end is None:
                 return None
-            stack.append({"col": i, "ambiguous": None, "unit": None})
+            stack.append(_new_pattern_frame())
+            stack[-1]["col"] = i
             i = end
             continue
         if ch == ")":
@@ -1560,24 +1772,38 @@ def find_repeated_ambiguous_group(source: str) -> Optional[tuple]:
                 return None
             closed = stack.pop()
             group_src = source[closed["col"]:i + 1]
-            variable = closed["ambiguous"] is not None
+            # A370 / L329：这一组若「内部切分唯一」⇒ 它不是歧义源 ⇒ 重复它不炸。
+            exempt = _pattern_group_is_exempt(closed)
+            variable = closed["ambiguous"] is not None and not exempt
             parent = stack[-1]
             if variable and parent["ambiguous"] is None:
                 # 可变长的子组本身就是「父组里那个可变长片段」：`((a+))+` 要在最外层
                 # 那把 `+` 上红，所以父帧的歧义源得从子组继承，不能只认直接写出的量词。
                 parent["ambiguous"] = group_src
+                # 组不是「一个字符」⇒ 它的字符集算不出来 ⇒ 继承来的歧义源没有字符集
+                # ⇒ 父组不参与「锚点不相交」那一档豁免（保守）。
+                parent["ambig_cs"] = None
             parent["unit"] = (variable, True, group_src, closed["col"],
-                              closed["ambiguous"])
+                              closed["ambiguous"] if variable else None)
+            parent["unit_cs"] = None
+            parent["unit_is_fragment"] = False
             i += 1
             continue
         if ch == "|":
             frame["unit"] = None
+            frame["unit_cs"] = None
+            # 分支一换，「片段 ↔ 锚点」的配对就作废（片段可能在另一支里）
+            frame["has_alt"] = True
+            frame["anchor_state"] = "invalid"
+            frame["unit_is_fragment"] = False
             i += 1
             continue
         if ch in "+*?{":
             quant = _read_quantifier(source, i)
             if quant is None:
-                frame["unit"] = (False, False, ch, i, None)
+                # `{` 不是合法重复计数 ⇒ 按字面量读（`re` 的口径）：`{` 本身是一个单元，
+                # 后面的 `+` 照常是量词（`re` 读 `a{+1}` 也是这个形状）。
+                _take_pattern_unit(frame, ch, i, i + 1, source)
                 i += 1
                 continue
             end, can_repeat, variable, text = quant
@@ -1591,13 +1817,22 @@ def find_repeated_ambiguous_group(source: str) -> Optional[tuple]:
             if variable:
                 if frame["ambiguous"] is None:
                     frame["ambiguous"] = inner_src or source[unit_col:end]
+                    frame["ambig_cs"] = frame["unit_cs"]
+                # 新的片段 ⇒ 之前那个锚点候选作废（这一组有第二个片段 ⇒ 不豁免）
+                frame["anchor_state"] = "invalid"
+                frame["unit_is_fragment"] = True
                 frame["unit"] = (True, is_group, source[unit_col:end], unit_col,
                                  inner_src or source[unit_col:end])
             else:
+                # `?` / `{k}` 这类：单元仍然出现，但**可以只出现零次**（`?`）⇒
+                # 它当锚点就不「必现」了 ⇒ 锚点作废。
+                if frame["anchor_state"] == "candidate":
+                    frame["anchor_state"] = "invalid"
+                frame["unit_is_fragment"] = False
                 frame["unit"] = (was_variable, is_group, unit_src, unit_col, inner_src)
             i = end
             continue
-        frame["unit"] = (False, False, ch, i, None)
+        _take_pattern_unit(frame, ch, i, i + 1, source)
         i += 1
     if len(stack) != 1:
         return None

@@ -56,10 +56,23 @@ class ComparisonResult:
     vocabulary_a: Dict[str, int] = field(default_factory=dict)
     vocabulary_b: Dict[str, int] = field(default_factory=dict)
     
-    # 相似度对比
-    similarity_to_a: float = 0.0
-    similarity_to_b: float = 0.0
-    
+    # 相似度对比：**这一格空着**（A287 / L329）
+    #
+    # 原先这里挂着 `similarity_to_a` / `similarity_to_b` 两个键，而全仓**没有任何赋值点**
+    # （dataclass 默认值 + `to_dict()` 两处，源码面量到的就是这两处）⇒ 它们恒为 `0.0`。
+    # 恒零的数会被读成「A 与 B 毫不相似」，而真相是「这一档从未被计算」——**一个恒零的数
+    # 比没有这个数更会骗人**（账本 A287 原文）。
+    #
+    # 相似度的唯一权威在**重叠面**（`compare_enhanced` 的 `metrics.similarity_score`，
+    # 口径 = 匹配键集合的 Jaccard 相似度，见 `EnhancedComparator._calculate_metrics`）。
+    # 质量面不再挂近义数：同一个值有两个出处就是「一个值两个权威」（A123 / A126 那一族的
+    # 忌讳），而质量面本来的职责是质量（分 / 通过率 / 长度 / 词汇量），相似度不归它管。
+    #
+    # 破坏面（改动前逐格量过）：SDK 的 `ComparisonResult` 属性与 `to_dict()`、HTTP 面
+    # `quality_comparison` 自由字典里的那两格、CLI `compare --output` 落盘 JSON 的那两格。
+    # 前端**不消费**它们（页面从 L228 起就不渲，TS 类型里也已删），`docs/augmentor/API.md`
+    # 全文没有这两个名字 ⇒ 线上消费者 0 个。
+
     # 结论
     winner: str = "tie"  # "a", "b", "tie"
     summary: str = ""
@@ -84,8 +97,6 @@ class ComparisonResult:
             "length_b": self.length_b,
             "vocabulary_a": self.vocabulary_a,
             "vocabulary_b": self.vocabulary_b,
-            "similarity_to_a": self.similarity_to_a,
-            "similarity_to_b": self.similarity_to_b,
             "winner": self.winner,
             "summary": self.summary
         }

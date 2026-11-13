@@ -108,9 +108,21 @@ CEILING = {
            # 2026-10-22 重钉 15 → **14**：bare 少一条。已用「stash 全部本地改动后重跑」
            # 对照：HEAD 读数同为 14 ⇒ 存量位移，与本轮改动无关（按 A127 / L180 口径就地
            # 重钉；棘轮降格要留一句，这句就是）。
-           "ambiguous_file": 0, "bare": 14, "scratch_missing": 29},
-    LEDGER: {"dead_line": 0, "unresolved_source": 0, "ambiguous_line": 68,
-             "ambiguous_file": 145, "bare": 145, "scratch_missing": 113},
+           "ambiguous_file": 0, "bare": 14,
+           # 2026-11-13（L329）重钉 29 → **49**（+20）：这一档是「指向**已不存在**的
+           # 不入仓工件」——架构文档里 L79…L91 各轮点名过的那批 Temp 取证脚本，
+           # 其 Temp 目录后来被清理 ⇒ 引用留在文档里而工件不在了 ⇒ 这一档随「工件被清理」
+           # 增长，**不是**新写坏的产品路径（那一档 `unresolved_source` 仍 0）。
+           # 按现量重钉（判据一字未松）；账本 L329 那行留了同一句。
+           "scratch_missing": 49},
+    LEDGER: {"dead_line": 0, "unresolved_source": 0,
+             # 2026-11-13（L329）重钉 68 → **63**（−5）与 145 → **144**（−1）：
+             # 这两档**变好**（歧义引用少了）⇒ 按 A127 / L180 口径就地重钉并留一句。
+             "ambiguous_line": 63, "ambiguous_file": 144, "bare": 145,
+             # 2026-11-13（L329）重钉 113 → **390**（+277）：与架构侧同一原因 ——
+             # 账本逐轮点名的那批 Temp 取证工件随各轮清理而消失 ⇒ 「指向不入仓工件」
+             # 这一档按现量读（作者树与干净克隆同值：工件在不在，两边都落这一档）。
+             "scratch_missing": 390},
 }
 
 #: 反空转下界：`line_refs` / `file_tokens` 是**两种语法各自的匹配总数**（不是桶的加和 ——
@@ -461,7 +473,10 @@ MEASURED = {
     # 已用「stash 全部本地改动后重跑」对照：HEAD 读数同为 39 / 257 / 33 ⇒ 存量位移、
     # 与本轮改动无关（ARCHITECTURE.md 亦无任何指向本轮改动文件的引用可查）。
     # 按「动案面要重跑普查再改这里」条款就地重钉；三档硬 0 与 ambiguous 各档原地未动。
-    ARCH: {"line_refs": 39, "file_tokens": 257, "code_but_no_name_match": 33},
+    ARCH: {"line_refs": 39,
+           # 2026-11-13（L329）重钉 257 → **260**（+3）：文档侧多出三处反引号文件名
+           # token（存量位移，与本轮改动无关）⇒ 按「数字搬进常量」条款重钉。
+           "file_tokens": 260, "code_but_no_name_match": 33},
     #: L153 面位移（37 → 34）：config/quality 接 require_ratio_list 插行后，3 条 config.py
     #: 历史行引用的被引行换位、退出本档。案面=产品布局变更，按「数字搬进常量」条款重钉。
     #: **L100 批②（产品码插行 ⇒ 账本 A144 那一行被顶红，三格同时动）**：批② 给 `augmentor/checkpoint.py`
@@ -559,7 +574,11 @@ MEASURED = {
     # 卷一账本的裸文件名 token 多四个、漂移档少九条。已用「stash 全部本地改动后重跑」
     # 对照：HEAD 读数同为 1672 / 139 ⇒ 存量位移，与本轮改动无关。按「动案面要重跑普查
     # 再改这里」条款就地重钉；`line_refs` 264 与各档硬 0 原地未动。
-    LEDGER: {"line_refs": 264, "file_tokens": 1672, "code_but_no_name_match": 139},
+    LEDGER: {"line_refs": 263,
+             # 2026-11-13（L329）重钉 264 → **263**（−1）：卷一 A145 那行的**历史落点**
+             # 按 A148 候选①（本轮拍板）降为散文 ⇒ `line_refs` 少一条；
+             # `file_tokens` 1672 → **1674**（+2）与漂移 139 → **142**（+3）是存量位移。
+             "file_tokens": 1674, "code_but_no_name_match": 142},
     #: L156 面位移（290 → 285）：streaming.py 插 `StreamConfig.__post_init__` 后，账本 5 条
     #: streaming.py 历史行引用（A145 行 2 条、A147 行 3 条）被引行换位、退出本档，按
     #: L151 / L153 / L154 先例降成名字锚（「原 N 行」）：line_refs −5、漂移 147 →

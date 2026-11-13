@@ -130,7 +130,7 @@ MEASURED_CALL_SITES = {
 #: `except FileNotFoundError`，docstring 两行；拼接与处置理由一格未动，本行读数由守卫自己
 #: 现量得到（红读数逐字是 `At index 1 diff: 'augmentor/cache.py:268' != 'augmentor/cache.py:262'`）。
 MEASURED_RESIDUAL_JOINS = {
-    "augmentor/backup.py:117": "L231 给备份名落下的手判（`.parents` 那一档），与权威同口径",
+    "augmentor/backup.py:129": "L231 给备份名落下的手判（`.parents` 那一档），与权威同口径 —— **L329 重量**：本轮给 `BackupInfo` 加了 `name` 那一格（docstring + 字段 + 序列化共 12 行，落在本文件上部）⇒ 本行随之内移 117 → **129**（拼接与处置理由一格未动 ⇒ 判据未松，只是落点续钉）",
     "augmentor/cache.py:268": "键是 md5 十六进制摘要，形状上不含分隔符与 `..` ⇒ 惰性",
     "augmentor/validation.py:1053": "权威自己那一行 `root / candidate`（判完才拼）—— **L326 重量**：那一档改成按 **Windows 形状**取 drive（`PureWindowsPath`）⇒ 本行随注释块一起平移 1037 → **1053**（同一句 `root / candidate`，内容一格未动 ⇒ 判据未松，只是落点续钉）",
     "augmentor/visualizer.py:93": "返回的那句拼接：上一行刚刚用权威判过同一个 `output_file`",

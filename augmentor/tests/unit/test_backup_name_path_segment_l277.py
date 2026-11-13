@@ -437,11 +437,17 @@ class TestTheRulerAndTheWiring:
         lines = src.split("\n")
         birth = [i for i, ln in enumerate(lines, 1) if "require_path_segment(" in ln]
         assert len(birth) == 1
-        # 同行包裹（不插行）：`backup.py:117` 那一句拼接被 l259 的名册按行号点名，
+        # 同行包裹（不插行）：`backup.py:129` 那一句拼接被 l259 的名册按行号点名，
         # 插一行会把它平移出被指认的位置 ⇒ 修法必须写成 `= require_path_segment(… or …)`
+        #
+        # **L329 重量**：116 → **128**（出生行）/ 117 → **129**（下一行）。
+        # 本轮给 `BackupInfo` 加了 `name` 那一格（docstring + 字段 + 序列化共 12 行，
+        # 落在本文件上部）⇒ 这两行整体下移 12 行 ⇒ l259 的名册同步改成
+        # `augmentor/backup.py:129`（那一格已同批重钉）。
+        # **拼接与处置理由一格未动 ⇒ 判据未松，只是落点续钉。**
         assert "backup_id = require_path_segment(" in lines[birth[0] - 1]
-        assert "backup_path = self._backup_dir / f\"{backup_id}.json\"" in lines[116]
-        assert birth[0] == 116, f"出生点漂了（现量第 {birth[0]} 行）⇒ l259 名册行号要跟着重量"
+        assert "backup_path = self._backup_dir / f\"{backup_id}.json\"" in lines[128]
+        assert birth[0] == 128, f"出生点漂了（现量第 {birth[0]} 行）⇒ l259 名册行号要跟着重量"
 
     def test_the_old_landing_gate_is_kept_as_second_line(self):
         src = BACKUP_PY.read_text(encoding="utf-8")

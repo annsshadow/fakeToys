@@ -1052,9 +1052,15 @@ export interface QualityScoreFace {
  *
  * `winner` 实测三态：`"a"` / `"b"` / `"tie"`（同一份文件自己比自己就是 `tie`），
  * 页面按三态渲染而不是「有 winner 就行」。
- * `similarity_to_a` / `similarity_to_b` 是**恒为 0.0 的死面**：`augmentor/comparison.py` 里
- * 只在 dataclass 默认值与 `to_dict()` 出现，全仓没有任何赋值点，实测两份不同数据也照样 0.0
- * ⇒ 页面不渲染它们（账本 **A287**）。
+ *
+ * **相似度不在这一面**（账本 **A287**，L329 收口）：原先这里有两个键
+ * `similarity_to_a` / `similarity_to_b`，而 `augmentor/comparison.py` 里只出现过
+ * dataclass 默认值与 `to_dict()` 两处、**全仓没有任何赋值点** ⇒ 它们恒为 `0.0`
+ * （两份完全不同的数据也照样 `0.0`）。恒零的数会被读成「A 与 B 毫不相似」，
+ * 真相是「这一档从未被计算」⇒ **已从这一面删掉**。
+ *
+ * 相似度的唯一权威是**重叠面** `overlap_comparison.metrics.similarity_score`
+ * （匹配键集合的 Jaccard 相似度）⇒ 要相似度就去那一面取，别在质量面找。
  */
 export interface QualityComparisonFace {
   dataset_a_name: string
@@ -1070,8 +1076,6 @@ export interface QualityComparisonFace {
   length_b: { avg: number; min: number; max: number; std: number }
   vocabulary_a: { unique_chars: number; total_chars: number }
   vocabulary_b: { unique_chars: number; total_chars: number }
-  similarity_to_a: number
-  similarity_to_b: number
   winner: string
   summary: string
 }
@@ -1260,7 +1264,7 @@ export interface RagResponse {
 
 /**
  * `GET /api/system/backups` 列表里的一项，也是 `POST /api/system/backups` 的整份回执
- * （与 `BackupInfo.to_dict()` 的七键逐字相等）
+ * （与 `BackupInfo.to_dict()` 的八键逐字相等）
  *
  * `backup_id` **就是创建时传的 `name`**（省略时才是 `backup_<YYYYmmdd_HHMMSS>`），所以
  * 同名创建两次会覆盖同一份文件，索引里那一行跟着更新成新读数（**A298 已于 L250 收口**；
@@ -1269,6 +1273,11 @@ export interface RagResponse {
  * `datetime.now()`（**A303 已于 L250 收口**，改前是两次调用、跨秒对不上）。`checksum` 是备份
  * 文件的 sha256，恢复前重算比对、对不上就抛（**A299 已于 L243 收口**），所以它不是「历史的
  * 完整性保证」，而是「这一次恢复会不会拦」。
+ *
+ * `name` 是**调用方自己起的那个名字**（**A335 / L329**）：给了 `name` 就是它，没给就是
+ * `null`（那时 `backup_id` 是服务端编的时间戳 id）。从 `backup_id` 看不出「这个 id 是我起的
+ * 还是服务端编的」——只能靠 `backup_` 前缀去猜，而那只在**没给名字**时成立 ⇒ 这一格
+ * 把那件事说清。存量索引行（L329 之前写下的）没有这一格 ⇒ 读出来是 `null`。
  */
 export interface BackupInfo {
   backup_id: string
@@ -1278,6 +1287,7 @@ export interface BackupInfo {
   item_count: number
   file_size: number
   checksum: string
+  name: string | null
 }
 
 /** `GET /api/system/backups`：空目录实测回 `{"backups": []}`，不是 404 也不是 null */

@@ -800,7 +800,21 @@ export default function System() {
             dataSource={backups}
             pagination={false}
             columns={[
-              { title: '备份 id', dataIndex: 'backup_id' },
+              {
+                title: '备份 id',
+                dataIndex: 'backup_id',
+                // A335 / L329：回执多了 `name` 那一格 = **调用方自己起的那个名字**
+                // （没给就是 `null`，那时 id 是服务端编的 `backup_<YYYYmmdd_HHMMSS>`）。
+                // 给了名字时 `name` **逐字等于** `backup_id`（`backup_id = name or backup_<ts>`）
+                // ⇒ 另开一列会把同一串字印两遍 ⇒ 改成在**自动生成**的那几行标一个记号，
+                // 这一列就从「读 id 猜来源」变成「一眼看得出哪几只是我起的」。
+                render: (backupId: string, row: BackupInfo) => (
+                  <Space size={4}>
+                    <span>{backupId}</span>
+                    {row.name === null ? <Tag>自动生成</Tag> : null}
+                  </Space>
+                ),
+              },
               { title: '时间', dataIndex: 'timestamp', width: 190 },
               { title: '条数', dataIndex: 'item_count', width: 70 },
               { title: '字节', dataIndex: 'file_size', width: 80 },

@@ -53,7 +53,7 @@ export const autoConfigResponseSchema = z.object({
   source_stats: z.record(z.string(), z.unknown()),
 })
 
-/** `api/routes/system_ops.py:807` → BackupCleanupResponse */
+/** `api/routes/system_ops.py:816` → BackupCleanupResponse */
 export const backupCleanupResponseSchema = z.object({
   deleted_count: z.number(),
   max_backups: z.number(),
@@ -68,14 +68,16 @@ export const backupInfoResponseSchema = z.object({
   item_count: z.number(),
   file_size: z.number(),
   checksum: z.string(),
+  /** 调用方自己起的那个名字（A335 / L329）：没给就是 `null`（那时 id 是服务端编的） */
+  name: z.string().nullable(),
 })
 
-/** `api/routes/system_ops.py:265` → BackupListResponse */
+/** `api/routes/system_ops.py:274` → BackupListResponse */
 export const backupListResponseSchema = z.object({
   backups: z.array(backupInfoResponseSchema),
 })
 
-/** `api/routes/system_ops.py:783` → BackupVerifyEntryResponse */
+/** `api/routes/system_ops.py:792` → BackupVerifyEntryResponse */
 export const backupVerifyEntryResponseSchema = z.object({
   backup_id: z.string(),
   exists: z.boolean(),
@@ -84,7 +86,7 @@ export const backupVerifyEntryResponseSchema = z.object({
   timestamp: z.string(),
 })
 
-/** `api/routes/system_ops.py:797` → BackupVerifyResponse */
+/** `api/routes/system_ops.py:806` → BackupVerifyResponse */
 export const backupVerifyResponseSchema = z.object({
   results: z.array(backupVerifyEntryResponseSchema),
 })
@@ -453,7 +455,7 @@ export const ragResponseSchema = z.object({
   record_count: z.number(),
 })
 
-/** `api/routes/system_ops.py:270` → RestoreBackupResponse */
+/** `api/routes/system_ops.py:279` → RestoreBackupResponse */
 export const restoreBackupResponseSchema = z.object({
   backup_id: z.string(),
   output_path: z.string(),
