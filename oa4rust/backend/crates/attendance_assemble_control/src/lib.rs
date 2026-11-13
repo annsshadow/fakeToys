@@ -65,6 +65,9 @@ mod security_gate_tests_b63;
 mod security_gate_tests_idor_b6;
 #[cfg(test)]
 #[allow(clippy::module_inception)]
+mod creator_columns_tests;
+#[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
@@ -4785,9 +4788,9 @@ pub async fn attendanceemployeeconfig_create(
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
-            "INSERT INTO x_attendance_employee_config (id, top_unit_name, unit_name, employee_name, employee_number, config_type, person_id, creator_person, create_time, update_time) \
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())",
-            &[&id, &top_unit_name, &unit_name, &employee_name, &employee_number, &config_type, &person_id, &session.person_unique],
+            "INSERT INTO x_attendance_employee_config (id, top_unit_name, unit_name, employee_name, employee_number, config_type, person_id, creator_person, creator, create_time, update_time) \
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())",
+            &[&id, &top_unit_name, &unit_name, &employee_name, &employee_number, &config_type, &person_id, &session.person_unique, &session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -4824,9 +4827,9 @@ pub async fn attendanceschedulesetting_create(
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
-            "INSERT INTO x_attendance_schedule_setting (id, name, setting_data, unit_id, creator_person, create_time, update_time) \
-             VALUES ($1, $2, $3, $4, $5, NOW(), NOW())",
-            &[&id, &name, &setting_data, &unit_id, &session.person_unique],
+            "INSERT INTO x_attendance_schedule_setting (id, name, setting_data, unit_id, creator_person, creator, create_time, update_time) \
+             VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())",
+            &[&id, &name, &setting_data, &unit_id, &session.person_unique, &session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -4867,9 +4870,9 @@ pub async fn attendanceselfholiday_create(
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
-            "INSERT INTO x_attendance_selfholiday (id, person_id, holiday_date, reason, creator_person, create_time, update_time) \
-             VALUES ($1, $2, $3, $4, $5, NOW(), NOW())",
-            &[&id, &person_id, &holiday_date, &reason, &session.person_unique],
+            "INSERT INTO x_attendance_selfholiday (id, person_id, holiday_date, reason, creator_person, creator, create_time, update_time) \
+             VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())",
+            &[&id, &person_id, &holiday_date, &reason, &session.person_unique, &session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -4915,9 +4918,9 @@ pub async fn attendancedetail_create(
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
-            "INSERT INTO x_attendance_detail (id, person_id, date, status, unit_id, creator_person, create_time, update_time) \
-             VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())",
-            &[&id, &person_id, &date, &status, &unit_id, &session.person_unique],
+            "INSERT INTO x_attendance_detail (id, person_id, date, status, unit_id, creator_person, creator, create_time, update_time) \
+             VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())",
+            &[&id, &person_id, &date, &status, &unit_id, &session.person_unique, &session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -4958,9 +4961,9 @@ pub async fn selfholidaysimple_create(
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
-            "INSERT INTO x_attendance_selfholiday (id, person_id, holiday_date, reason, creator_person, create_time, update_time) \
-             VALUES ($1, $2, $3, $4, $5, NOW(), NOW())",
-            &[&id, &person_id, &holiday_date, &reason, &session.person_unique],
+            "INSERT INTO x_attendance_selfholiday (id, person_id, holiday_date, reason, creator_person, creator, create_time, update_time) \
+             VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())",
+            &[&id, &person_id, &holiday_date, &reason, &session.person_unique, &session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -4996,9 +4999,9 @@ pub async fn attendancesetting_create(
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
-            "INSERT INTO x_attendance_setting (id, code, name, value, creator_person, create_time, update_time) \
-             VALUES ($1, $2, $3, $4, $5, NOW(), NOW())",
-            &[&id, &code, &name, &value, &session.person_unique],
+            "INSERT INTO x_attendance_setting (id, code, name, value, creator_person, creator, create_time, update_time) \
+             VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())",
+            &[&id, &code, &name, &value, &session.person_unique, &session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -5036,9 +5039,9 @@ pub async fn attendancestatisticalcycle_create(
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
-            "INSERT INTO x_attendance_statistical_cycle (id, top_unit_name, unit_name, cycle_year, cycle_month, year, month, description, creator_person, create_time, update_time) \
-             VALUES ($1, $2, $3, $4, $5, $4, $5, $6, $7, NOW(), NOW())",
-            &[&id, &top_unit_name, &unit_name, &cycle_year, &cycle_month, &description, &session.person_unique],
+            "INSERT INTO x_attendance_statistical_cycle (id, top_unit_name, unit_name, cycle_year, cycle_month, year, month, description, creator_person, creator, create_time, update_time) \
+             VALUES ($1, $2, $3, $4, $5, $4, $5, $6, $7, $8, NOW(), NOW())",
+            &[&id, &top_unit_name, &unit_name, &cycle_year, &cycle_month, &description, &session.person_unique, &session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -5074,9 +5077,9 @@ pub async fn attendancestatisticrequirelog_create(
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
-            "INSERT INTO x_attendance_statistic_require_log (id, require_type, status, creator_person, create_time, update_time) \
-             VALUES ($1, $2, $3, $4, NOW(), NOW())",
-            &[&id, &require_type, &status, &session.person_unique],
+            "INSERT INTO x_attendance_statistic_require_log (id, require_type, status, creator_person, creator, create_time, update_time) \
+             VALUES ($1, $2, $3, $4, $5, NOW(), NOW())",
+            &[&id, &require_type, &status, &session.person_unique, &session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -5112,9 +5115,9 @@ pub async fn attendanceworkdayconfig_create(
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
-            "INSERT INTO x_attendance_workday_config (id, work_date, is_workday, creator_person, create_time, update_time) \
-             VALUES ($1, $2, $3, $4, NOW(), NOW())",
-            &[&id, &work_date, &is_workday, &session.person_unique],
+            "INSERT INTO x_attendance_workday_config (id, work_date, is_workday, creator_person, creator, create_time, update_time) \
+             VALUES ($1, $2, $3, $4, $5, NOW(), NOW())",
+            &[&id, &work_date, &is_workday, &session.person_unique, &session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -5148,9 +5151,9 @@ pub async fn workplace_create(
     let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
-            "INSERT INTO x_attendance_workplace (id, name, address, creator_person, create_time, update_time) \
-             VALUES ($1, $2, $3, $4, NOW(), NOW())",
-            &[&id, &name, &address, &session.person_unique],
+            "INSERT INTO x_attendance_workplace (id, name, address, creator_person, creator, create_time, update_time) \
+             VALUES ($1, $2, $3, $4, $5, NOW(), NOW())",
+            &[&id, &name, &address, &session.person_unique, &session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -6320,9 +6323,9 @@ pub async fn v2_config_post(
             let id = uuid::Uuid::new_v4().to_string();
             client
                 .execute(
-                    "INSERT INTO x_attendance_config (id, name, value, category, creator, create_time, update_time) \
-                     VALUES ($1, $2, $3, 'v2', $4, NOW(), NOW())",
-                    &[&id, &name, &value, &session.person_unique],
+                    "INSERT INTO x_attendance_config (id, name, value, category, creator, creator_person, create_time, update_time) \
+                     VALUES ($1, $2, $3, 'v2', $4, $5, NOW(), NOW())",
+                    &[&id, &name, &value, &session.person_unique, &session.person_unique],
                 )
                 .await
                 .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -6404,9 +6407,9 @@ pub async fn v2_config_person_post(
             let id = uuid::Uuid::new_v4().to_string();
             client
                 .execute(
-                    "INSERT INTO x_attendance_config (id, name, value, category, creator, create_time, update_time) \
-                     VALUES ($1, $2, $3, 'v2_person', $4, NOW(), NOW())",
-                    &[&id, &name, &value, &sess.person_unique],
+                    "INSERT INTO x_attendance_config (id, name, value, category, creator, creator_person, create_time, update_time) \
+                     VALUES ($1, $2, $3, 'v2_person', $4, $5, NOW(), NOW())",
+                    &[&id, &name, &value, &sess.person_unique, &sess.person_unique],
                 )
                 .await
                 .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -7962,9 +7965,9 @@ pub async fn v2_detail_rebuild_person_date(
     let new_id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
-            "INSERT INTO x_attendance_detail (id, person_id, date, status, creator_person, create_time, update_time) \
-             VALUES ($1, $2, $3, 'init', $4, NOW(), NOW())",
-            &[&new_id, &person, &date, &session.person_unique],
+            "INSERT INTO x_attendance_detail (id, person_id, date, status, creator_person, creator, create_time, update_time) \
+             VALUES ($1, $2, $3, 'init', $4, $5, NOW(), NOW())",
+            &[&new_id, &person, &date, &session.person_unique, &session.person_unique],
         )
         .await
         .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
@@ -8214,9 +8217,10 @@ pub async fn v2_group_rebuild_detail_group_date(
     .map_err(|e| AppError::internal_with_source(concat!(file!(), ":", line!()), e))?;
 
     use deadpool_postgres::tokio_postgres::types::ToSql;
-    // 每行 4 个参数（id / person_id / date / creator_person）；
+    // 每行 5 个参数（id / person_id / date / creator_person / creator）；
     // status 与两个时间戳是 SQL 字面量，不占参数位。
-    const ROW_PARAMS: usize = 4;
+    // P1-1：归属事实**两列同写**（`creator` 与 `creator_person` 落同一个会话身份）。
+    const ROW_PARAMS: usize = 5;
     for chunk in participate.chunks(65535 / ROW_PARAMS) {
         let mut values_sql = Vec::with_capacity(chunk.len());
         let mut params: Vec<Box<dyn ToSql + Sync + Send>> =
@@ -8225,20 +8229,22 @@ pub async fn v2_group_rebuild_detail_group_date(
             // 占位符全局连续，不按行重置——否则参数错位且不报错。
             let base = params.len() + 1;
             values_sql.push(format!(
-                "(${}, ${}, ${}, 'init', ${}, NOW(), NOW())",
+                "(${}, ${}, ${}, 'init', ${}, ${}, NOW(), NOW())",
                 base,
                 base + 1,
                 base + 2,
-                base + 3
+                base + 3,
+                base + 4
             ));
             params.push(Box::new(uuid::Uuid::new_v4().to_string()));
             params.push(Box::new(person.clone()));
             params.push(Box::new(date.to_string()));
             params.push(Box::new(session.person_unique.clone()));
+            params.push(Box::new(session.person_unique.clone()));
         }
         let sql = format!(
             "INSERT INTO x_attendance_detail \
-             (id, person_id, date, status, creator_person, create_time, update_time) \
+             (id, person_id, date, status, creator_person, creator, create_time, update_time) \
              VALUES {}",
             values_sql.join(", ")
         );
