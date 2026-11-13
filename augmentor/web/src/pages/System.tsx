@@ -909,8 +909,9 @@ export default function System() {
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           backup_dir 这一格页面不送，落点由服务端决定：白名单首个根目录下的 .backups（出厂
-          data/.backups）。CLI 的 --backup-dir 默认值是 .backups（相对工作目录），**与这里看到的
-          不是同一个目录**（A301）。
+          data/.backups）。CLI 的 --backup-dir 默认值已改成 data/.backups，
+          **与备份这一族端点同一份**（A301 已收）⇒ CLI 建的备份这张卡上看得到；SDK 的库级默认 仍是
+          .backups（相对工作目录，那一层没有白名单概念 ⇒ 与这里不是同一处）。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           服务端设了 AUGMENTOR_API_KEY 时，这一族的写操作会回 401「缺少或无效的
@@ -1074,10 +1075,11 @@ export default function System() {
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           registry_path 这一格页面不送，落点由服务端决定：白名单首个根目录下的
-          .dependency_registry（出厂 data/.dependency_registry）。CLI 的 --registry-path 默认值 是
-          .dependency_registry（**相对工作目录**），两边不是同一份，所以 CLI 登记的数据集在
-          这张卡上看不见（A308）。这两支只读端点曾经会把不存在的注册表目录建出来 （A307），L249
-          起构造不再碰磁盘，刷页面不留东西了。
+          .dependency_registry（出厂 data/.dependency_registry）。CLI 的 --registry-path 默认值
+          已改成 data/.dependency_registry，**与登记这一族端点同一份**（A308 已收）⇒ CLI 登记的
+          数据集这张卡上看得到；SDK 的库级默认仍是 .dependency_registry（相对工作目录，那一层
+          没有白名单概念 ⇒ 与这里不是同一处）。这两支只读端点曾经会把不存在的注册表目录建出来
+          （A307），L249 起构造不再碰磁盘，刷页面不留东西了。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           登记这一支挂鉴权门禁（两条 GET 不挂）：服务端设了 AUGMENTOR_API_KEY 时它会回 401

@@ -1331,8 +1331,9 @@ export const convertToRag = async (
  * `backup_dir` 省略时落点是**白名单首个根目录下的 `.backups`**（出厂即 `data/.backups`），
  * 显式送空串是 **400**「目录路径 不能为空」、`..` 是 **400**「路径包含非法组件」、白名单外的
  * 绝对路径是 **403**——所以本层把页面上的空串丢成 `undefined`，这一处哨兵**是躲判决的**
- * （与 `convertToRag` 那处只做形状卫生的不同）。CLI 的 `--backup-dir` 默认值是 `.backups`
- * （相对工作目录），与这里的缺省**不是同一个目录**（账本 A301）。
+ * （与 `convertToRag` 那处只做形状卫生的不同）。CLI 的 `--backup-dir` 默认值**已与这一份
+ * 同源**（L328 收口，默认 `data/.backups` ⇒ 项目根目录下 CLI 建的备份页面看得见，
+ * 账本 A301 已收）；SDK 的库级默认仍是 `.backups`（相对工作目录，那一层没有白名单概念）。
  */
 export const listBackups = async (backupDir?: string): Promise<BackupListResponse> => {
   const response = await api.get('/system/backups', {
@@ -1457,7 +1458,9 @@ export const cleanupBackups = async (
  * `data/.dependency_registry`），显式送空串是 **400**「目录路径 不能为空」、`..` 是 **400**
  * 「路径包含非法组件」、白名单外的绝对路径是 **403**——所以本层把页面上的空串丢成
  * `undefined`，这一处哨兵**是躲判决的**（与 `listBackups` 同款）。CLI 的 `--registry-path`
- * 默认值是 `.dependency_registry`（相对工作目录），与这里的缺省**不是同一个目录**（A308）。
+ * 默认值**已与这一份同源**（L328 收口，默认 `data/.dependency_registry` ⇒ 项目根目录下
+ * CLI 登记的数据集页面看得见，账本 A308 已收）；SDK 的库级默认仍是 `.dependency_registry`
+ * （相对工作目录，那一层没有白名单概念）。
  * 另有一条口径：注册表目录不存在时这两支只读端点**不会**把它建出来（A307，L249 收口）。
  */
 export const listDependencyDatasets = async (

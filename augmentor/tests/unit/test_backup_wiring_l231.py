@@ -42,10 +42,15 @@
   `GET /api/system/backups/ck/verify` ⇒ **404**（没有这只端点）⇒ 页面上做不到「清理旧备份」与
   「单独校验一份备份」（**A300**）。**L243 已收**：契约面这两族从 4 只变 **6** 只，下面
   `TestTheEntriesThatAreStillMissing` 里那一支跟着从「没有入口」重钉成「入口的形状」。
-* 「默认备份目录」在仓内有**三份**：CLI 的 `--backup-dir` 默认 `.backups`（相对工作目录）、SDK
+* 「默认备份目录」在仓内原有**三份**：CLI 的 `--backup-dir` 默认 `.backups`（相对工作目录）、SDK
   四个模块级函数的形参默认也是 `.backups`、端点走 `default_backup_dir()`＝白名单首个根目录下的
   `.backups`（出厂 `data/.backups`）。端点总是显式传目录 ⇒ SDK 那份默认在 HTTP 面上不可达，
-  但 CLI 与页面看的**不是同一个目录**（**A301**）。
+  而 CLI 与页面看的**不是同一个目录**（**A301**）。
+  **L328 收口**（用户 2026-11-13 拍板①）：**CLI 的默认改成 `data/.backups`** ⇒ 与端点那一份
+  **同源**（出厂数据根 `data` 下逐字相等）；**SDK 的库级默认不动**（那一层没有白名单概念
+  ⇒ 保持 CWD 相对是库的惯例）。**留下的残留**：CLI 这一份按出厂数据根 `data` 写死 ⇒
+  部署把 `web.data_roots` 改名时两份又会漂开 ⇒ 本支把这一格**钉成机器可查**
+  （出厂数据根名一改 ⇒ 这一支当场红）。
 * 写操作都挂 `Depends(verify_api_key)`，`GET` 那两只没挂；L231 当时是「三只写 / 四只端点」，
   **L243 加进 cleanup 之后是四只写 / 六只端点**（`test_three_write_ops_are_key_gated` 已重钉）。
   `AUGMENTOR_API_KEY` 一旦设上，页面上这几只写操作一律 401（**A302**）。当时量到「前端零通道」，
@@ -131,6 +136,19 @@ def http_with_backups(tmp_path, monkeypatch):
 
     return TestClient(app), root, outside, tmp_path
 
+
+def _shipped_first_data_root() -> str:
+    """**出厂** `config.yaml` 里 `web.data_roots` 的第一项（出厂即 `data`）
+
+    读的是**出厂配置**，不是夹具那份临时数据根 —— 夹具把数据根换到 tmp 目录下，
+    那是测试的安排、不是出厂形状；而「CLI 默认与端点默认同源」这句话说的是**出厂形状**。
+    """
+    import yaml
+
+    config = yaml.safe_load((ROOT / "config.yaml").read_text(encoding="utf-8"))
+    roots = config["web"]["data_roots"]
+    assert isinstance(roots, list) and roots, roots
+    return roots[0]
 
 class TestTheFourFetchersMatchTheContract:
     """服务层那四条：动词、路径、body 与 query 的分工逐个对上契约"""
@@ -235,7 +253,7 @@ class TestThePageCarriesTheFourOperations:
             "它现在**会拦**",           # A299：L243 把「不拦截恢复」收成 409（这句原话已不在页面上）
             "output_path",              # 回执落点键名
             "现已有 HTTP 入口",         # A300：L243 给两员加了端点，口径从「没有入口」翻面
-            "不是同一个目录",           # A301：两个默认目录
+            "与备份这一族端点同一份",   # A301 / L328：CLI 默认已与端点那一份同源
             "X-API-Key",                # A302：设了 key 就 401
             "路径包含非法组件",         # 白名单三档之一
             "train_data*.json",         # A304：候选口径
@@ -470,17 +488,47 @@ class TestTheEntriesThatAreStillMissing:
             ("POST", "/api/system/backups/cleanup"),
         }, sorted(ops)
 
-    def test_three_defaults_for_the_backup_dir(self, http_with_backups):
-        """A301：CLI、SDK 形参、端点各有一份「默认」，而端点那份与前两份不是同一个目录"""
+    def test_the_cli_and_the_endpoint_share_one_default(self, http_with_backups):
+        """A301：**L328 收口**（用户 2026-11-13 拍板①）—— CLI 与端点那一份**同源**了
+
+        **改前**：三份默认各说各话 —— CLI `--backup-dir` 默认 `.backups`（CWD 相对）、
+        SDK 四个模块级函数的形参默认也是 `.backups`、端点走 `default_backup_dir()`
+        （白名单首个根目录下的 `.backups`，出厂 `data/.backups`）⇒ **CLI 建的备份在页面上
+        看不见**（反之亦然）。
+
+        **改后**：**CLI 的默认改成 `data/.backups`** ⇒ 与端点那一份**同源**；
+        **SDK 的库级默认不动**（它没有白名单概念 ⇒ CWD 相对是库的惯例）。
+        """
         _, root, *_ = http_with_backups
         cli = re.search(r'add_argument\("--backup-dir"[^)]*default="([^"]+)"',
                         PARSER_PY.read_text(encoding="utf-8"))
-        assert cli and cli.group(1) == ".backups", "CLI 的默认目录换了 ⇒ 这条缺口要重新量"
+        assert cli and cli.group(1) == "data/.backups", (
+            "CLI 的默认目录换了 ⇒ 这条缺口要重新量")
+        assert default_backup_dir() == root / ".backups"
+        assert str(default_backup_dir()) != ".backups"
+
+    def test_the_sdk_default_is_untouched(self):
+        """决策的另一半：**SDK 的库级默认不动**（它没有白名单概念）"""
         sdk = re.findall(r'def \w+\([^)]*backup_dir: str = "([^"]+)"',
                          BACKUP_PY.read_text(encoding="utf-8"))
         assert sdk and set(sdk) == {".backups"}, sdk
-        assert default_backup_dir() == root / ".backups"
-        assert str(default_backup_dir()) != ".backups"
+
+    def test_the_cli_default_follows_the_shipped_data_root(self, http_with_backups):
+        """**同源那一格**：CLI 那份的默认 == **出厂配置**第一个数据根下的那一份
+
+        比的是**出厂 `config.yaml`** 的数据根（不是夹具那份临时目录 —— 夹具把数据根换到
+        tmp 目录下，那是测试的安排、不是出厂形状）⇒ 断言把「CLI 默认的父目录名 == 出厂数据根名」
+        **钉成机器可查的一格**：哪天有人把 `web.data_roots` 的第一项改了名而没同步 CLI 默认，
+        **这一支当场红** ⇒ 那条「残留」从此不靠人记着。
+        """
+        _, root, *_ = http_with_backups
+        cli = re.search(r'add_argument\("--backup-dir"[^)]*default="([^"]+)"',
+                        PARSER_PY.read_text(encoding="utf-8"))
+        cli_default = pathlib.Path(cli.group(1))
+        shipped_root = _shipped_first_data_root()
+        assert cli_default == pathlib.Path(shipped_root) / ".backups", (
+            "CLI 默认 %r 与出厂数据根 %r 下的那一份对不上 ⇒ 两份又漂开了"
+            % (str(cli_default), shipped_root))
 
     def test_four_write_ops_are_key_gated(self):
         """A302 的**后端那一半**：写操作挂 `verify_api_key`，两只 `GET` 没挂

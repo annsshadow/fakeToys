@@ -367,8 +367,8 @@ describe('System 备份卡的诚实口径（L231 实测，L243 两面翻正）',
     expect(text).toContain('索引登记的每一行')
     expect(text).toContain('点一次查一次')
     expect(text).toContain('页面把下限钉在 1')
-    // A301：CLI 与页面的「默认目录」不是同一个
-    expect(text).toContain('不是同一个目录')
+    // A301（L328 收口）：CLI 的默认目录已与端点那一份同源 ⇒ CLI 建的备份页面看得见
+    expect(text).toContain('与备份这一族端点同一份')
     // A302：设了 API Key 就 401（key 存进「配置管理」页那张卡后由拦截器送出去，L233）
     expect(text).toContain('X-API-Key')
     // 白名单三档与候选口径

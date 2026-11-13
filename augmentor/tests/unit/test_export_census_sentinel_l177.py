@@ -147,8 +147,12 @@ def test_scanned_corpus_scale():
     """
     n_products = len([p for p in _PRODUCTS if p != _EXPORT_SITE])
     n_tests = len(_TESTS)
-    assert (n_products, n_tests) == (133, 460), \
-        f"语料规模现量 (133, 460)，实得 {(n_products, n_tests)}"
+    # **L328 记账批重量**：460 → **461**（本轮新增一支守卫
+    # `tests/unit/test_cli_api_default_dirs_l328.py` ⇒ 测试面 +1；
+    # 产品面 133 **一格未动** —— 本轮 CLI 那处改动是**改内容**不是加文件）。
+    # 改数不改判据：这一族判的是「语料规模现量」这一个数，逐条判据一字未动。
+    assert (n_products, n_tests) == (133, 461), \
+        f"语料规模现量 (133, 461)，实得 {(n_products, n_tests)}"
 
 
 def test_every_all_symbol_has_a_consumer():

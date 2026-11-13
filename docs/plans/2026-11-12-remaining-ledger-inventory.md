@@ -8,8 +8,8 @@
 > 已按现量收口（见 §二「本轮清掉的账」）。
 >
 > **本轮做过的实测（逐项可复跑）**：
-> augmentor 全量门禁 `python -m pytest tests -q -p no:cacheprovider` ⇒ **0 failed / 10551 passed / 6 skipped**
-> （548.53 s；覆盖率 **99.53%**，门槛 99%）；
+> augmentor 全量门禁 `python -m pytest tests -q -p no:cacheprovider` ⇒ **0 failed / 10581 passed / 6 skipped**
+> （**L328 记账批收尾后复跑**：552.94 s；覆盖率 **99.53%**，门槛 99%）；
 > augmentor 前端 `npx vitest run` ⇒ **24 文件 / 427 支全绿**（`tsc --noEmit` / `eslint --max-warnings 0` / `prettier --check src` 同绿）；
 > laiyipao 归属守卫 `go test ./internal/service/ -run "TestUserScoped…|TestOwnerScoped…|TestOwnership…"` ⇒ **3 支全绿**；
 > laiyipao 依赖闸门 `govulncheck -show verbose ./...`（Go **1.26.11**）⇒ **No vulnerabilities found**；
@@ -27,28 +27,33 @@
 | 账本 | 位置 | 剩余 | 本轮状态 |
 |---|---|---|---|
 | 卷一 `OPTIMIZATION_LOOP.md` | 卷一 Backlog B（功能增强） | **6 格里 2 笔本轮收口**（B1 / B8），余 B2（前半关闭）/ B3 / B5 / B7（B5 与 B7 = 卷二 A271 / A273 两族） | 本轮还动了 6 处引用落点（歧义清账）与卷一 Backlog B 的 B1 / B8 |
-| 卷二 `OPTIMIZATION_LOOP_2.md` | Backlog A（质量缺口） | **32 笔**（A267…A385；**A311 / A272 / A278 已收口**） | 本轮 **L322 / L323 / L324** 三轮把全量门禁从 28 支红收到 **0 支红**；**L325 收掉 A311**（422 的错误体翻成中文同一形状）；**L327 收掉 A272 与 A278**（`multilingual` 那一节的口径写实 + A277 那一把尺子的「自由子对象白名单」一档）⇒ 32 笔 |
+| 卷二 `OPTIMIZATION_LOOP_2.md` | Backlog A（质量缺口） | **30 笔**（A267…A385；**A311 / A272 / A278 / A301 / A308 已收口**） | 本轮 **L322 / L323 / L324** 三轮把全量门禁从 28 支红收到 **0 支红**；**L325 收掉 A311**（422 的错误体翻成中文同一形状）；**L327 收掉 A272 与 A278**（`multilingual` 那一节的口径写实 + A277 那一把尺子的「自由子对象白名单」一档）；**L328 收掉 A301 与 A308**（三份默认目录那一族：CLI 默认改成 `data/.backups` / `data/.dependency_registry`、**SDK 库级默认不动**）⇒ 30 笔 |
 | 卷二 | Backlog B（功能增强） | **0 笔**（28 笔全闭） | — |
 
-**剩余 32 笔的形状**（按定级）：
+**剩余 30 笔的形状**（按定级）：
 
 | 定级 | 笔数 | 名单 | 能不能本仓自己推进 |
 |---|---|---|---|
 | **M** | 27 | A267 A268 A269 A271 A273 A289 A290 A293 A296 A306 A309 A345 A346 A349 A351 A353 A354 A355 A356 A357 A358 A364 A371 A376 A381 A384 A385 | 多为「**口径要拍**」或「**要动 SDK 公开契约**」 |
-| **S** | 5 | A287 A301 A308 A335 A370 | **A311 已收（L325）**；**A272 / A278 已收（L327）**；余下这 5 笔里 A308 / A370 是「要产品拍板」、A335 要动 SDK 公开契约 ⇒ **真正能自证的只剩 A287 / A301** |
+| **S** | 3 | A287 A335 A370 | **A311 已收（L325）**；**A272 / A278 已收（L327）**；**A301 / A308 已收（L328）**；余下这 3 笔里 A370 是「要产品拍板」、A335 要动 SDK 公开契约 ⇒ **真正能自证的只剩 A287** |
 
 > **口径说明**：这份名单是**按现量数出来的**，不是按印象（A311 收口前 S 级 8 笔、M 级 27 笔；
 > A311 收口后 S 级 7 笔、M 级 27 笔 ⇒ 余 34 笔；**L327 收掉 A272 / A278 后** S 级 5 笔、
-> M 级 27 笔 ⇒ 余 **32** 笔）。
+> M 级 27 笔 ⇒ 余 **32** 笔；**L328 收掉 A301 / A308 后** S 级 3 笔、M 级 27 笔 ⇒ 余 **30** 笔）。
 
 **三类「本仓自己推不动」的形状**（逐条读过原文，不是印象）：
 
-- **要产品拍板**（拍的是对外语义，自决就要改契约）：A308（`multilingual` 那一节的**写**权限：L327 只把它的口径写实、**没有**开成可写节 ⇒ 真要开是另一笔对外行为变更）、
-  A287（`similarity_to_a` / `similarity_to_b` 两个恒零键：接计算还是删键 = 破坏性变更）、
-  A278（OpenAPI 自由子对象要不要给最小形状）、A306（两处 `created_at` 覆盖 / 空值抹旧值）、
-  A308（`{param}` 豁免把写路由一并匿名放行）、A309（默认注册表目录三份、端点那份与另两份不是同一个地方）、
+- **要产品拍板**（拍的是对外语义，自决就要改契约）：A287（`similarity_to_a` / `similarity_to_b` 两个恒零键：接计算还是删键 = 破坏性变更）、
+  A306（两处 `created_at` 覆盖 / 空值抹旧值）、
   A273（`self.expander` / `self.tracker`：接消费者 = 新端点，删构造 = 缩公开属性面）、
   A271（十只 `config.*.enabled` 接进阶段入口 = **对外破坏面**）。
+  - **本轮从这份名单里删掉的三格（已收口）**：`multilingual` 那一节的**写**权限（**A272** —— L327 只把口径写实、
+    **没有**开成可写节 ⇒ 开成可写节是另一笔对外行为变更）、OpenAPI 自由子对象要不要给最小形状（**A278** ——
+    L327 取②「维持自由 + 加一档白名单」，**不改响应模型**）、**A301 / A308**「三份默认目录」那一族
+    （L328 取①「只动 CLI 一处默认值」⇒ 四个候选里只有它不新增对外能力）。
+  - **原稿的编号有两处对不上（如实记，不静默改）**：`multilingual` 那一节原稿写的是「A308」、
+    「默认注册表目录三份」原稿写的是「A309」⇒ 卷二里的真身分别是 **A272** 与 **A308**；
+    另有一格「`{param}` 豁免把写路由一并匿名放行」**本轮未在卷二核到对应编号** ⇒ 暂留原样待核。
 - **要环境/前置**（不是写代码能补的）：A268（真模型嵌入要一个装了 `sentence-transformers` 的环境）、
   A269（chromadb 后端要一个装了它的环境来定标）。
 - **要动 SDK 公开契约**（⇒ 单独一轮）：A357（落点对、内容错那一族）、A335、A370。
@@ -70,11 +75,11 @@ A317 / A323 / A386 / A387 / A388 那一族在 L315–L323 连续九轮里逐笔�
 | 编号 | 项 | 前置条件（原文） | 本轮能不能推 |
 |---|---|---|---|
 | P0-1 | `x_portal` 共享读 2 条 | **已判定不可补**（§10.2）⇒ 等业务提新需求 | 不能（要产品提新需求） |
-| P0-2 | `x_message_mass.creator` 从不写入 | 门禁缺「管理员攻击者档」⇒ **先设计一个能翻转门禁的断言**，再改 `mass_create` | 不能（本轮无 Postgres + Rust 全量构建窗口） |
-| P1-1 | attendance 五张配置表写侧只写 `creator_person` | 先构造「写后读一致性」用例，再补写 | 同上 |
-| P1-2 | Go 侧未复跑门禁 / sabotage | 需要真库 | 同上 |
+| P0-2 | `x_message_mass.creator` 从不写入 | 门禁缺「管理员攻击者档」⇒ **先设计一个能翻转门禁的断言**，再改 `mass_create` | **账本过时**（本轮实测：源码里 `mass_create` **已经**同时写 `creator` + `creator_person`，仓里**已有**断言 `r7_mass_create_writes_session_creator` ⇒ 首跑报红是另一棵工作树的**旧构建产物**，`touch` 重编后该支 **ok**） |
+| P1-1 | attendance 五张配置表写侧只写 `creator_person` | 先构造「写后读一致性」用例，再补写 | **待拍板**（本轮实测：写侧确实**只**写 `creator_person`、读侧谓词是 `owner_scope(&["creator","creator_person"], …)` ⇒ 两列都认 ⇒ **不造成读写不一致**；要不要让写侧同时写 `creator` = **多写一列数据** ⇒ 已列入拍板台账议程 #5） |
+| P1-2 | Go 侧未复跑门禁 / sabotage | 需要真库 | **收口**（本轮实测：docker 起 Postgres 16（`pg_hba` 改 trust ⇒ 与 CI 的 postgres service 同口径）⇒ Go 门禁 `cases=29 pass=29 leak=0`、Rust 门禁 `cases=346 pass=346 leak=0 integrity=0`） |
 | P1-3 | CI `sccache` 基础设施红 | 外部基础设施抖动 | 不能（观察即可）—— **但本轮实测：2026-11-12 main 上的红项已经不是「基础设施抖动」那一族**（见 §三） |
-| P2-1 | 本地环境债 | Swagger zip / 本地 DB 的 bam 用例 / github.com:443 断网 | 不能（环境债）—— 本轮实测：github.com:443 **确凿**间歇断网（同一分钟内两次 `Invoke-RestMethod` 报「unexpected EOF」，重试可过）⇒ 该条**现量成立**；本机另**无 Postgres / 无 Docker** ⇒ P0-2 / P1-1 / P1-2 三条在本机**无法复跑**（不是「没做」，是「没有真库」） |
+| P2-1 | 本地环境债 | Swagger zip / 本地 DB 的 bam 用例 / github.com:443 断网 | 不能（环境债）—— 本轮实测：github.com:443 **确凿**间歇断网（同一分钟内两次 `Invoke-RestMethod` 报「unexpected EOF」，重试可过）⇒ 该条**现量成立**；**本机有 Docker**（本轮起 Postgres 16 容器 `auggate-pg` 可用 ⇒ 真库到位 ⇒ P0-2 / P1-2 两条**已能复跑**，P1-1 仍待拍板）；Swagger zip 那格仍是环境债（`utoipa-swagger-ui` 的 build.rs 要联网下载 ⇒ 断网时编译失败 ⇒ 本轮按文档给的复用办法从 `target/.../out/` 里拷了一份才编译通过） |
 
 **另有一处本轮量到的规模差**（与 P1-2 同族，值得记下）：交接文档 §10.3 写
 「读侧 701 条，其中 514 条静态初筛无门禁标记、251 条是 GET + 路径参数」，
@@ -173,17 +178,17 @@ newapi-client 94.58% / server 95.8% / lock 91.3% / scheduler 91.16% / runner 87.
 
 | 优先 | 项 | 归属 | 判据 |
 |---|---|---|---|
-| 1 | 卷二 Backlog A 余下的 **5 笔 S 级**（A287 A301 A308 A335 A370） | augmentor | **A311 已于 L325 收口**、**A272 / A278 已于 L327 收口**（`multilingual` 那一节的口径写实 + A277 那一把尺子的「自由子对象白名单」一档）。余下 5 笔里 A308 / A370 是「要产品拍板」、A335 要动 SDK 公开契约 ⇒ 真正能自证的只剩 **A287 / A301** |
+| 1 | 卷二 Backlog A 余下的 **3 笔 S 级**（A287 A335 A370） | augmentor | **A311 已于 L325 收口**、**A272 / A278 已于 L327 收口**（`multilingual` 那一节的口径写实 + A277 那一把尺子的「自由子对象白名单」一档）、**A301 / A308 已于 L328 收口**（三份默认目录那一族 ⇒ 用户拍板①「只动 CLI 一处默认值」）。余下 3 笔里 A370 是「要产品拍板」、A335 要动 SDK 公开契约 ⇒ 真正能自证的只剩 **A287** |
 | 2 | 卷二 Backlog A 的 27 笔 **M** 级里**已拍口径**的那些 | augmentor | 口径已定 ⇒ 只差实现；**要动 SDK 公开契约**的另起一轮 |
 | 3 | `x_message_mass.creator`（P0-2）与 attendance 五表（oa4rust P1-1） | oa4rust | 需要真库 + Rust 构建窗口；第一步都是「先设计一个能翻转门禁的断言」 |
 | 4 | 第 2 条微信登录通道 | laiyipao | 需要 AppID/Secret + 客户端接线 |
 | 5 | 第 23 条 `levels` 表权威 | laiyipao | 两条候选路径都要产品拍板 |
-| 6 | **A287**（`similarity_to_a` / `similarity_to_b` 两个恒零键）与 **A301**（「默认备份目录」三份那一族，与 A308 同根） | augmentor | **本仓可自证的前提是先量语义**：A287 先量「接计算」需要拍哪一条语义（B 相对 A 还是 A 相对 B）、「删键」是破坏性变更；A301 / A308 先量「三份默认」各自的现值与收敛点，再决定是「改 CLI/SDK 的相对默认」还是「三面收敛到一个函数」 |
+| 6 | **A287**（`similarity_to_a` / `similarity_to_b` 两个恒零键） | augmentor | **本仓可自证的前提是先量语义**：先量「接计算」需要拍哪一条语义（B 相对 A 还是 A 相对 B）、「删键」是破坏性变更。**（A301 / A308「三份默认目录」那一族已于 L328 收口 ⇒ 这条只剩 A287。）** |
 
 ## 五、复跑命令
 
 ```bash
-# augmentor 全量门禁（本轮：**0 failed / 10551 passed / 6 skipped**，覆盖率 99.53%）
+# augmentor 全量门禁（**L328 记账批收尾后**：**0 failed / 10581 passed / 6 skipped**，覆盖率 99.53%）
 cd augmentor && python -m pytest tests -q -p no:cacheprovider
 cd augmentor/web && npx vitest run && npx tsc --noEmit && npx eslint . --max-warnings 0 && npx prettier --check src
 

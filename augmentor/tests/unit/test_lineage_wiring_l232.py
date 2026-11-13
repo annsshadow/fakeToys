@@ -248,7 +248,7 @@ class TestThePageCarriesTheThreeOperations:
             "md5(名称) 的前 8 位",        # A306：id 只由名字算
             "created_at 会被刷新",        # A306
             "回显即丢",                  # A305：本轮收掉的那条
-            "不是同一份",                # A308：三份默认目录
+            "与登记这一族端点同一份",    # A308 / L328：CLI 默认已与端点那一份同源
             "构造不再碰磁盘",              # A307：只读端点建目录，L249 收口
             "错误体统一是一句中文",       # A311 / L325：422 与其余 4xx 同一形状了
             "白名单外是 403",             # 白名单档位
@@ -522,29 +522,75 @@ class TestTheFamilyHasNoProductLevelWriteEntries:
         assert {p for p in paths if p.startswith(FAMILY)} == {p for _, p in FETCHERS}
 
 
-class TestThreeDefaultsDisagree:
-    """A308：三份默认注册表目录，端点那一份与 CLI/SDK 不是同一个地方"""
+def _shipped_first_data_root() -> str:
+    """**出厂** `config.yaml` 里 `web.data_roots` 的第一项（出厂即 `data`）
 
-    def test_cli_and_sdk_defaults_are_cwd_relative(self):
+    读的是**出厂配置**，不是夹具那份临时数据根 —— 夹具把数据根换到 tmp 目录下，
+    那是测试的安排、不是出厂形状；而「CLI 默认与端点默认同源」这句话说的是**出厂形状**。
+    """
+    import yaml
+
+    config = yaml.safe_load((ROOT / "config.yaml").read_text(encoding="utf-8"))
+    roots = config["web"]["data_roots"]
+    assert isinstance(roots, list) and roots, roots
+    return roots[0]
+
+
+class TestTheCliAndTheEndpointShareOneDefault:
+    """A308：**L328 收口**（用户 2026-11-13 拍板①）—— CLI 与端点那一份**同源**了
+
+    **改前**（本支的旧形状）：三份默认各说各话 —— CLI `--registry-path` 默认
+    `.dependency_registry`（CWD 相对）、SDK 形参默认 `.dependency_registry`（CWD 相对）、
+    端点省略参数时走 `default_registry_dir()`（白名单首个根目录下的 `.dependency_registry`
+    ＝ 出厂 `data/.dependency_registry`）⇒ **CLI 登记的数据集在页面上看不见**（反之亦然）。
+
+    **改后**（用户拍板①）：**CLI 的默认改成 `data/.dependency_registry`** ⇒ 与端点那一份
+    **同源**（出厂数据根 `data` 下逐字相等）；**SDK 的库级默认不动**（那一层没有白名单概念
+    ⇒ 保持 CWD 相对是库的惯例）。
+
+    **留下的残留（如实记，不藏）**：CLI 这一份是**按出厂数据根 `data` 写死**的 ⇒
+    部署把 `web.data_roots` 改成别的名字时，CLI 与端点**又漂开** ⇒
+    「让 CLI 读配置取数据根」是**下一档**的候选（那要另拍一次）。
+    """
+
+    def test_the_cli_default_is_the_data_root_scoped_one(self):
         parser_src = PARSER_PY.read_text(encoding="utf-8")
         found = re.search(r'"--registry-path",\s*type=str,\s*default="([^"]+)"', parser_src)
         assert found, "CLI 的 --registry-path 默认值换了形状 ⇒ 判据要跟着换"
-        assert found.group(1) == ".dependency_registry"
+        assert found.group(1) == "data/.dependency_registry", found.group(1)
         assert not pathlib.Path(found.group(1)).is_absolute(), "CLI 那份默认不再是相对路径"
 
+    def test_the_sdk_default_is_untouched(self):
+        """决策的另一半：**SDK 的库级默认不动**（那一层没有白名单概念）"""
         sdk_src = DEPENDENCY_PY.read_text(encoding="utf-8")
         assert 'registry_path: str = ".dependency_registry"' in sdk_src, \
-            "SDK 形参默认值换了 ⇒ 三份默认这条口径要重新量"
+            "SDK 形参默认值换了 ⇒ 决策的另一半被改动了"
 
     def test_the_endpoint_default_follows_the_whitelist(self, http_with_registry):
         _, root, *_ = http_with_registry
         assert default_registry_dir() == root / ".dependency_registry"
         assert default_registry_dir().is_absolute()
-        # CLI 那份默认是相对工作目录的，与端点这份**不是同一个目录**
-        assert pathlib.Path(".dependency_registry").resolve() != default_registry_dir()
 
-    def test_the_manager_default_is_not_the_endpoint_default(self, http_with_registry):
-        """把两边都解成绝对路径再比：同一条命令在同一个 cwd 下落的不是同一份注册表"""
+    def test_the_cli_default_and_the_endpoint_default_are_one_directory(self, http_with_registry):
+        """**同源那一格**：CLI 那份的默认 == **出厂配置**第一个数据根下的那一份
+
+        这里比的是**出厂 `config.yaml`** 的数据根（不是夹具那份临时目录 —— 夹具把
+        数据根换成了 tmp 目录，那是测试的安排、不是出厂形状）⇒ 断言把
+        「CLI 默认的父目录名 == 出厂数据根名」**钉成机器可查的一格**：
+        哪天有人把 `web.data_roots` 的第一项改了名而没同步 CLI 默认，
+        **这一支当场红** ⇒ 那条「残留」从此不是靠人记着。
+        """
+        _, root, *_ = http_with_registry
+        parser_src = PARSER_PY.read_text(encoding="utf-8")
+        found = re.search(r'"--registry-path",\s*type=str,\s*default="([^"]+)"', parser_src)
+        cli_default = pathlib.Path(found.group(1))
+        shipped_root = _shipped_first_data_root()
+        assert cli_default == pathlib.Path(shipped_root) / ".dependency_registry", (
+            "CLI 默认 %r 与出厂数据根 %r 下的那一份对不上 ⇒ 两份又漂开了"
+            % (str(cli_default), shipped_root))
+
+    def test_the_sdk_default_is_still_the_library_convention(self, http_with_registry):
+        """**仍然分得清**：SDK 那份仍是库惯例（CWD 相对），与端点那份**不是**同一处"""
         _, root, _, tmp_path = http_with_registry
         from augmentor.dependency import DependencyManager
 

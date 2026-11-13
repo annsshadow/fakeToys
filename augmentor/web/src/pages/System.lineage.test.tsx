@@ -13,7 +13,7 @@
  * ⑤ 白名单外被判 403 时，页面上是服务端那句判决原话，不是页面自己编的「失败了」；
  * ⑥ 血缘那一面取不到只降级自己（出现「已登记数据集未取到」），服务状态与备份面照常渲染；
  * ⑦ 六条实测过的**诚实口径**留在卡上（A306 覆盖并刷新 created_at、A307 只读端点建目录、
- *    A308 三份默认注册表不是同一份、A309 边建不出来且登记删不掉、A310 成环也报出来了、
+ *    A308 CLI 与端点的默认注册表已同源、A309 边建不出来且登记删不掉、A310 成环也报出来了、
  *    A312 写那一支挂 X-API-Key 而前端没有送头的通道）。
  *
  * 夹具里的 dataset_id、item_count、路径与时间戳逐字来自探针在真实端点上量到的回执
@@ -316,9 +316,9 @@ describe('System 血缘卡的诚实口径', () => {
     // A305：描述与标签曾回显即丢，本轮已修
     expect(screen.getByText(/回显即丢/s)).toBeInTheDocument()
     expect(screen.getByText(/随登记一起写下去（A305）/s)).toBeInTheDocument()
-    // A308：三份默认注册表不是同一份；A307：只读端点建目录那一格 L249 已收口
-    expect(screen.getByText(/两边不是同一份/s)).toBeInTheDocument()
-    expect(screen.getByText(/（A308）/s)).toBeInTheDocument()
+    // A308（L328 收口）：CLI 与端点的默认注册表已同源；A307：只读端点建目录那一格 L249 已收口
+    expect(screen.getByText(/与登记这一族端点同一份/s)).toBeInTheDocument()
+    expect(screen.getByText(/（A308 已收）/s)).toBeInTheDocument()
     expect(screen.getByText(/构造不再碰磁盘/s)).toBeInTheDocument()
     expect(screen.getByText(/（A307）/s)).toBeInTheDocument()
     // A312 / A302：写那一支挂鉴权门禁；**L233 起前端有了送头的通道**（key 存在「配置管理」

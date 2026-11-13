@@ -401,7 +401,13 @@ def build_parser() -> argparse.ArgumentParser:
     backup_parser.add_argument("--input", type=str, help="输入文件路径")
     backup_parser.add_argument("--output", type=str, help="输出文件路径")
     backup_parser.add_argument("--name", type=str, help="备份名称")
-    backup_parser.add_argument("--backup-dir", type=str, default=".backups", help="备份目录")
+    # L328（A301，用户 2026-11-13 拍板①）：CLI 的默认目录改成 `data/.backups`
+    # —— **与 HTTP 端点那一份同源**（端点省略参数时走 `deps.default_backup_dir()`
+    # ＝ 白名单首个根目录下的 `.backups`，出厂数据根 `data` ⇒ 就是 `data/.backups`）。
+    # 改前 CLI 默认是 `.backups`（CWD 相对）⇒ **CLI 建的备份在页面上看不见**（反之亦然）。
+    # **SDK 的库级默认不动**（那一层没有白名单概念 ⇒ 保持 CWD 相对是库的惯例）。
+    backup_parser.add_argument("--backup-dir", type=str, default="data/.backups",
+                                help="备份目录（默认 data/.backups —— 与 API 面同一份）")
     backup_parser.add_argument("--max-backups", type=int, default=10, help="cleanup 保留的最新份数（不小于 1）")
 
     # PII 脱敏命令
@@ -476,7 +482,14 @@ def build_parser() -> argparse.ArgumentParser:
     dependency_parser.add_argument("--input", type=str, help="输入文件路径")
     dependency_parser.add_argument("--name", type=str, help="数据集名称")
     dependency_parser.add_argument("--output", type=str, help="输出报告路径")
-    dependency_parser.add_argument("--registry-path", type=str, default=".dependency_registry", help="注册表路径")
+    # L328（A308，用户 2026-11-13 拍板①，与 A301 同一族同一条）：CLI 的默认注册表路径改成
+    # `data/.dependency_registry` —— **与 HTTP 端点那一份同源**（端点省略参数时走
+    # `deps.default_registry_dir()` ＝ 白名单首个根目录下的 `.dependency_registry`，
+    # 出厂数据根 `data` ⇒ 就是 `data/.dependency_registry`）。改前 CLI 默认是
+    # `.dependency_registry`（CWD 相对）⇒ **CLI 登记的数据集在页面上看不见**（反之亦然）。
+    # **SDK 的库级默认不动**（那一层没有白名单概念 ⇒ 保持 CWD 相对是库的惯例）。
+    dependency_parser.add_argument("--registry-path", type=str, default="data/.dependency_registry",
+                                   help="注册表路径（默认 data/.dependency_registry —— 与 API 面同一份）")
 
     # 迁移命令
     migrate_parser = subparsers.add_parser(
