@@ -1376,9 +1376,9 @@ export interface DependencyGraphNode {
 /**
  * 依赖图的一条边，实测三键 `{source, target, type}`
  *
- * `type` 是 `derived` / `merged` / `filtered` 那一族字符串。**边在产品面上建不出来**：
- * 三条 HTTP 端点里没有建边入口，CLI 的 `dependency --action` 只有 register/list/graph/
- * validate，所以纯前端用户的 `edges` 恒为空数组（账本 A309）。
+ * `type` 是 `derived` / `merged` / `filtered` 那一族字符串。**L338/A309 起** HTTP 补了
+ * POST /system/dependency/edges 建边入口，边不再只能由 SDK 的 add_dependency 建立；
+ * 纯前端页面暂未接这个入口，所以页面上的 `edges` 仍可能是空数组，但那是没有边。
  */
 export interface DependencyGraphEdge {
   source: string
@@ -1621,4 +1621,15 @@ export interface HealthGateResponse {
   health: HealthGateReport
   gate: HealthGateVerdict
   skipped_rules: string[]
+}
+
+/** `DELETE /api/system/dependency/datasets/{dataset_id}` 的回执（L338/A309） */
+export interface DependencyDeleteResponse {
+  deleted: boolean
+  dataset_id: string
+}
+
+/** `POST /api/system/dependency/edges` 的回执（L338/A309） */
+export interface DependencyEdgeResponse {
+  edge: Record<string, unknown>
 }

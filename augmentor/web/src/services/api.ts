@@ -25,6 +25,8 @@ import {
   dependenciesResponseSchema,
   dependencyDatasetListResponseSchema,
   dependencyGraphResponseSchema,
+  dependencyDeleteResponseSchema,
+  dependencyEdgeResponseSchema,
   evaluateResponseSchema,
   exportFormatsResponseSchema,
   exportResponseSchema,
@@ -96,6 +98,8 @@ import type {
   BackupListResponse,
   BackupVerifyResponse,
   BackupCleanupResponse,
+  DependencyDeleteResponse,
+  DependencyEdgeResponse, // L338/A309
   BatchExportResponse,
   BenchmarkResponse,
   CheckpointListResponse,
@@ -1782,4 +1786,49 @@ export const translateDataset = async (
     keep_original: opts.keepOriginal,
   })
   return checkedData<TranslateResponse>('translateDataset', translateResponseSchema, response.data)
+}
+
+// ============ 系统 · 依赖图写入口（L338 / A309） ============
+
+/**
+ * `DELETE /api/system/dependency/datasets/{dataset_id}`
+ *
+ * 服务层写入口：注销已登记数据集，并顺手清掉与它相连的依赖边（SDK `remove_dataset`）。
+ * 回执 `deleted=false` 表示这个 id 本来就不存在（DELETE 幂等，不抛异常）。
+ * 这两条写入口走服务端默认注册表目录；要显式指定目录请用 SDK / CLI 的 `--registry-path`。
+ */
+export const deleteDependencyDataset = async (
+  datasetId: string,
+): Promise<DependencyDeleteResponse> => {
+  const response = await api.delete(`/system/dependency/datasets/${datasetId}`)
+  return checkedData<DependencyDeleteResponse>(
+    'deleteDependencyDataset',
+    dependencyDeleteResponseSchema,
+    response.data,
+  )
+}
+
+/**
+ * `POST /api/system/dependency/edges`
+ *
+ * 服务层写入口：在两个已登记数据集之间建一条边，`dependency_type` 缺省为 `derived`。
+ * 端点挂鉴权门禁，错误体与其它 system 端点同为中文一句。
+ */
+export const addDependencyEdge = async (opts: {
+  sourceDataset: string
+  targetDataset: string
+  dependencyType?: string
+  description?: string
+}): Promise<DependencyEdgeResponse> => {
+  const response = await api.post('/system/dependency/edges', {
+    source_dataset: opts.sourceDataset,
+    target_dataset: opts.targetDataset,
+    dependency_type: opts.dependencyType,
+    description: opts.description,
+  })
+  return checkedData<DependencyEdgeResponse>(
+    'addDependencyEdge',
+    dependencyEdgeResponseSchema,
+    response.data,
+  )
 }

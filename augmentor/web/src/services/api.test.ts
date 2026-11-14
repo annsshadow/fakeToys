@@ -552,7 +552,8 @@ describe('服务状态与演示数据', () => {
 
     await api.getServiceStatus()
 
-    expect(instance.get).toHaveBeenCalledWith('/status')
+    expect(instance.get.mock.calls[0][0]).toBe('/status') // L333/A381
+    expect(instance.get.mock.calls[0][1]).toHaveProperty('validateStatus')
   })
 
   it('getDemoData 请求 /demo/data 并把裸数组原样返回', async () => {
@@ -791,7 +792,7 @@ describe('大块请求的每请求超时', () => {
 
     expect(instance.post.mock.calls).toHaveLength(0)
     expect(instance.get.mock.calls[0]).toEqual(['/data/list'])
-    expect(instance.get.mock.calls[1]).toEqual(['/status'])
+    expect(instance.get.mock.calls[1][0]).toEqual('/status') // L333/A381
   })
 })
 

@@ -25,6 +25,8 @@ import {
   deleteBackup,
   getBackupSourceCandidates,
   getDependencyGraph,
+  addDependencyEdge,
+  deleteDependencyDataset,
   getServiceStatus,
   getVectorStatus,
   listBackups,
@@ -987,6 +989,46 @@ export default function System() {
           </Button>
         </Space>
 
+        <Space size="small" wrap style={{ marginTop: 12 }}>
+          <Button
+            size="small"
+            onClick={async () => {
+              const source = window.prompt('源数据集 id')
+              const target = window.prompt('目标数据集 id')
+              if (!source || !target) return
+              try {
+                await addDependencyEdge({ sourceDataset: source, targetDataset: target })
+                message.success('依赖边已建立')
+                await refreshLineage()
+              } catch (err) {
+                message.error(apiErrorDetail(err, '建边失败'))
+              }
+            }}
+          >
+            建立依赖边
+          </Button>
+          <Popconfirm
+            title="注销后与它相连的边会一起清掉"
+            onConfirm={async () => {
+              const id = window.prompt('要注销的数据集 id')
+              if (!id) return
+              try {
+                const receipt = await deleteDependencyDataset(id)
+                message.success(
+                  receipt.deleted ? '已注销（连边一起清掉）' : '这个 id 本来就不在注册表里',
+                )
+                await refreshLineage()
+              } catch (err) {
+                message.error(apiErrorDetail(err, '注销失败'))
+              }
+            }}
+          >
+            <Button size="small" danger>
+              注销数据集
+            </Button>
+          </Popconfirm>
+        </Space>
+
         {datasets ? (
           <Table
             size="small"
@@ -1067,10 +1109,10 @@ export default function System() {
         )}
 
         <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
-          「图中边」这一格对纯前端用户**恒为 0**，不是没数据：三条端点里没有建边入口，CLI 的
-          dependency --action 也只有 register/list/graph/validate，边只能由 SDK 的 add_dependency
-          建立（A309）。同理，登记过的数据集**在产品面上删不掉**——HTTP 没有 注销端点，连 SDK 都没有
-          remove_dataset，只能手改注册表里的 datasets.json。
+          「图中边」这一格自 L338/A309 起不再是恒 0：HTTP 补了 POST .../edges 建边入口， SDK 的
+          add_dependency 现在从产品面也调得到（下面两只按钮就是入口）。登记过的数据集 同样可以注销
+          —— DELETE 注销端点会顺手清掉与它相连的边（remove_dataset）， 不必再手改注册表里的
+          datasets.json。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           「校验问题」报三类：悬空端点（missing_source / missing_target）与**依赖成环**

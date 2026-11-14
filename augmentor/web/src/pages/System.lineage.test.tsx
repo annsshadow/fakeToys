@@ -300,11 +300,11 @@ describe('System 血缘卡的诚实口径', () => {
   it('六条实测脾气都留在卡上，一条都不许被美化掉', async () => {
     render(<System />)
     await waitDatasets()
-    // A309：边在产品面上建不出来 + 登记了删不掉
-    expect(screen.getByText(/恒为 0.*不是没数据/s)).toBeInTheDocument()
-    expect(screen.getByText(/add_dependency 建立（A309）/s)).toBeInTheDocument()
-    expect(screen.getByText(/在产品面上删不掉/s)).toBeInTheDocument()
-    expect(screen.getByText(/连 SDK 都没有 remove_dataset/s)).toBeInTheDocument()
+    // L338/A309：建边与注销两条写入口已补，旧的三句「做不到」不许留着
+    expect(screen.getByText(/L338\/A309 起不再是恒 0/s)).toBeInTheDocument()
+    expect(screen.getByText(/POST ...\/edges 建边入口/s)).toBeInTheDocument()
+    expect(screen.getByText(/DELETE .../s)).toBeInTheDocument()
+    expect(screen.getByText(/remove_dataset/s)).toBeInTheDocument()
     // A310 / L311：现在成环也报出来了（改前 issues 为空不能读成「没问题」）
     expect(screen.getByText(/依赖成环/s)).toBeInTheDocument()
     expect(screen.getByText(/cycle，A310 \/ L311 加的/s)).toBeInTheDocument()

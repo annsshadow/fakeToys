@@ -639,3 +639,14 @@ export const versionDiffResponseSchema = z.object({
 export const versionHistoryResponseSchema = z.object({
   history: z.array(z.record(z.string(), z.unknown())),
 })
+
+/** `api/routes/system_ops.py:917` → DependencyDeleteResponse */
+export const dependencyDeleteResponseSchema = z.object({
+  deleted: z.boolean(),
+  dataset_id: z.string(),
+})
+
+/** `api/routes/system_ops.py:923` → DependencyEdgeResponse */
+export const dependencyEdgeResponseSchema = z.object({
+  edge: z.record(z.string(), z.unknown()),
+})

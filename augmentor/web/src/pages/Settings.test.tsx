@@ -400,8 +400,8 @@ describe('Settings 写操作鉴权（L233）', () => {
     // 影响面是 L233 探针在真契约面上量到的两个数，不是估的（L234：21 → 23；L236 接走 translate ⇒ 24，尾巴清空；
     // L243 给清理旧备份加了一只挂门禁的端点 ⇒ 25 / 25，未接线那一档仍为空；
     // L322 给两只 augment 端点各加了一只 ⇒ 27 / 27，未接线那一档仍为空）
-    expect(text).toContain('79 条操作里有 27 条挂着这道门禁')
-    expect(text).toContain('27 条是页面上已')
+    expect(text).toContain('81 条操作里有 29 条挂着这道门禁')
+    expect(text).toContain('29 条是页面上已')
     expect(text).toContain('不是登录')
     expect(text).toContain('不替代 HTTPS')
     expect(text).not.toContain('校验通过')

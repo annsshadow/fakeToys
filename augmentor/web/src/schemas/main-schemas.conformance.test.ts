@@ -14,7 +14,7 @@
  * 所以不走 `TestClient` 生成真实响应——那一路的运行时证据由后端的 pytest 套件提供，
  * 本文件只守「两侧声明是否同形」。
  *
- * ## Z-FULL（10-27 计划 §3）：覆盖面从 15 个模型扩到全部 85 个
+ * ## Z-FULL（10-27 计划 §3）：覆盖面从 15 个模型扩到全部 89 个
  *
  * `full-schemas.ts` 每个 schema 上方那行注释就是它与后端类的映射
  * （`文件:行号 → 类名`），本文件**直接读那行注释**建表，而不是手抄 70 条
@@ -122,11 +122,17 @@ function parseOwnFields(source: string, className: string): ParsedModel | null {
     }
     if (quoteCount > 0) continue // 单行 docstring
 
-    const match = /^ {4}([A-Za-z_]\w*)\s*:\s*(.+)$/.exec(line)
-    if (!match) continue
-    const [, name, annotation] = match
-    // 注解里不会出现 `=`；出现即字段默认值（`Optional[str] = None` 也算）
-    fields.push({ name, hasDefault: annotation.includes('=') })
+    // L338：L334/L336 为守净零行把字段压成同行分号（`a: int; b: str`）。
+    // 旧正则每行只认第一格 ⇒ 后半个字段被静默漏读，键集守卫反而报「zod 多出」。
+    // 按分号逐段解析，判据变严（原来根本没数到），不是放宽。
+    const body = line.replace(/^ {4}/, '')
+    for (const part of body.split(';')) {
+      const match = /^([A-Za-z_]\w*)\s*:\s*(.+)$/.exec(part.trim())
+      if (!match) continue
+      const [, name, annotation] = match
+      // 注解里不会出现 `=`；出现即字段默认值（`Optional[str] = None` 也算）
+      fields.push({ name, hasDefault: annotation.includes('=') })
+    }
   }
 
   return { fields, bases }
@@ -399,10 +405,10 @@ describe('schema 解析器自证（防恒真）', () => {
 const ALL_MODELS = [...MODELS, ...FULL_MODELS]
 
 describe('zod schema ↔ 后端 response_model 契约', () => {
-  it('覆盖面非空：87 个模型、全部字段都可解析', () => {
+  it('覆盖面非空：89 个模型、全部字段都可解析', () => {
     expect(MODELS).toHaveLength(17)
-    expect(FULL_MODELS).toHaveLength(70)
-    expect(ALL_MODELS).toHaveLength(87)
+    expect(FULL_MODELS).toHaveLength(72)
+    expect(ALL_MODELS).toHaveLength(89)
 
     let pythonFields = 0
     for (const model of ALL_MODELS) {
@@ -411,8 +417,8 @@ describe('zod schema ↔ 后端 response_model 契约', () => {
       expect(fields!.length, `${model.className} 解析出 0 个字段`).toBeGreaterThan(0)
       pythonFields += fields!.length
     }
-    // 412 → **413**（A335 / L329：`BackupInfoResponse` 多了 `name` 那一格）
-    expect(pythonFields).toBe(413)
+    // 412 → 413（A335 / L329）→ **420**（L338：同行分号 + 两只新模型一共补到 420）
+    expect(pythonFields).toBe(420) // **L338**：解析器补读同行分号字段 + 两只新模型
   })
 
   it('full-schemas 的「文件:行号」映射与类定义现量一致', () => {
