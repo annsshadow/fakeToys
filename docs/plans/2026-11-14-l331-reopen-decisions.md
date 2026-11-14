@@ -129,9 +129,10 @@ cd augmentor && python -m pytest tests/unit/test_backlog_*.py \
 | L335 | A385 A358 | `6b1b1795d` + `a7551dc86` | 10661 passed / 0 failed |
 | L336 | A296 A345 A371 | `f01348630` + `8d4b32b59` | 10667 passed / 0 failed |
 | L337 | A289 A356 | `4385c1866` + `2c810dbe1` | 10673 passed / 0 failed |
-| L338 | A309 | 本批两批提交（见 git log） | 10681 passed / 0 failed，覆盖率 99.37% |
+| L338 | A309 | `f19e70ce0` + `8e6b0c2e1` + `b40327f63` | 10681 passed / 0 failed，覆盖率 99.37% |
+| L339 | A267 A364 | 本批两批提交（见 git log） | 全量门禁读数见本批提交说明 |
 
-**累计 18 笔有终局结论**（15 笔实装改判已修 + 批次 1 三笔单进程事实判定）。覆盖率 99.37%–99.40%。
+**累计 20 笔有终局结论**（17 笔实装改判已修 + 批次 1 三笔单进程事实判定）。覆盖率 99.37%–99.40%。
 
 > **后续（L338）**：下面这一节是首轮回退当时的判断，按本仓惯例保留不改写；
 > A309 已在第二轮从这份 diff 起步完整闭环，见本节末尾「A309 闭环记录」。
@@ -158,15 +159,13 @@ cd augmentor && python -m pytest tests/unit/test_backlog_*.py \
 （422 行）与 `Temp/l330q/a309_new_guard.py.bak`（82 行）。下一轮可直接从这份 diff 起步，
 按 §八 两族清单批量重钉常数/名册、给前端加两个 fetcher 与页面调用，再跑一次全量门禁。
 
-### 剩余 9 笔与各自前置
+### 剩余 7 笔与各自前置
 
 | ID | 性质 | 本会话未做的原因 |
 |---|---|---|
 | A268 | 真模型嵌入 + 维度冲突策略 | 本机与 CI 都不装 `sentence-transformers`；接真模型臂会写一条任何环境都跑不到的死路径，需先在装包环境定标 |
 | A269 | chromadb 的 exists / count 与「GET 不落盘」 | 同上，需装包定标；假模块只能验接线不能验语义 |
 | A273 | `AugmentorPipeline` 的 expander / tracker | 判词明写「这是消费条目不是性能条目」，接消费者要新增产品入口并动 SDK 公开面 |
-| A364 | `log_metric` 加 run 把手 | 对外签名变更，牵动 tracker 族多支守卫与 run-scoped 缓存取舍 |
-| A267 | `visualization.types` 接成出图清单 | 要先定 `scores` 从哪来；接上 timeline 会第一次真的出图（产物面变更） |
 | A271 | 10 只 `config.*.enabled` 接进阶段入口 | 牵动配置三侧对账（dataclass / yaml / 静态规格表）与「零读者」棘轮，是专门一轮 |
 | A346 A349 A357 | 守卫判据面 | 分别是 a184 三档现量、not_a_commit 名册 11→147 格、历史引用内容审计；纯判据面，需专门一轮重钉 |
 
@@ -188,3 +187,18 @@ cd augmentor && python -m pytest tests/unit/test_backlog_*.py \
 **新增三条纪律**：文档补表追加在文件末尾（插中间会让全仓历史行号引用成批失效）；
 TS 注释只认 `//`；跨语言静态解析器按「每行一格」读字段，净零行只应对被引用文件成立，
 不能当成通用排版口径。
+
+### L339 闭环记录（A267 / A364）
+
+- **A267**：`types` 从出厂死清单接成真实出图清单，pipeline 与 CLI 两个产品调用点显式传。
+  显式清单含 `timeline` ⇒ 今天第一次真的出图（累计条数曲线，数据集条目没有时间字段，
+  不伪造时间轴）；`types=None` 保留向后兼容档（旧四类，不调 timeline）。
+  `quality_distribution` 仍需 `scores`，两个产品点今天都不传 ⇒ 该类恒跳过，
+  这是明确留下的边界而非漏接：真启用要先定 scores 来源，属新需求。
+  census 的零读者名册同步移出该键（注释行占位，行数不漂）。
+- **A364**：`log_metric` 加可选 `experiment_id`。指定 run 时从磁盘读目标实验写入，
+  实例级 `_current_experiment` 一字不动；没有当前实验也能写，run 不存在静默 no-op；
+  两参旧调用零改动。方法体净零行改写，`tracker.py:86` 历史引用未位移。
+- **读数**：定向守卫 527 passed、新守卫 10 passed、账本守卫族 285 passed。
+- **剩余 7 笔**：A268 / A269（需装包定标）、A273（接消费者，涉及 SDK 公开面）、
+  A271（10 只 enabled，配置三侧对账）、A346 / A349 / A357（纯守卫判据面专门轮）。

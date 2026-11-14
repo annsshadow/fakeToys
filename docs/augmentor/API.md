@@ -1519,3 +1519,13 @@ A：秒（浮点）。它计的是服务端处理耗时，不含网络往返，�
 | --- | --- | --- | --- |
 | `DELETE` | `/api/system/dependency/datasets/{dataset_id}` | 注销已登记数据集 | **写**：在目录锁内重读注册表 → 删数据集 → 清掉与它相连的边 → 写回两份文件；id 不存在时回 `deleted=false`（DELETE 幂等），不抛异常。 |
 | `POST` | `/api/system/dependency/edges` | 建一条依赖边 | **写**：入参四格 `source_dataset` / `target_dataset` / `dependency_type` / `description`，回执是 `{edge: {...}}`；边不再只能由 SDK 的 `add_dependency` 建立。 |
+
+---
+
+## 补记：L339 / A267 出图清单口径
+
+`GET /api/visualize/{filename}` 与 CLI `visualize` 图表模式自 L339 起按
+`config.visualization.types` 出图，清单外的名字静默忽略。出厂五值里
+`timeline` 第一次真的生成：数据集条目没有时间字段，出的是「累计条数曲线」而不是
+伪造时间轴。`quality_distribution` 仍需调用方给质量分，今天两个产品调用点都不传，
+所以该类型恒跳过——这是语义边界，不是故障。不传清单的内部调用保持旧的四类行为。
