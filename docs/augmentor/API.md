@@ -1529,3 +1529,15 @@ A：秒（浮点）。它计的是服务端处理耗时，不含网络往返，�
 `timeline` 第一次真的生成：数据集条目没有时间字段，出的是「累计条数曲线」而不是
 伪造时间轴。`quality_distribution` 仍需调用方给质量分，今天两个产品调用点都不传，
 所以该类型恒跳过——这是语义边界，不是故障。不传清单的内部调用保持旧的四类行为。
+
+---
+
+## 补记：L340 / A269 向量状态面
+
+`GET /api/dataset/vector-status` 配 `vector.backend: chromadb` 时自 L340 起回
+**200** 而不是 400：`exists` 由 `storage_dir` 下的持久化标记文件判定，`count` 恒回 0，
+因为该后端自管落盘、条数只有真客户端读得到——这是「条数不可得」的能力边界，
+不是「索引为空」。这条 GET 不 import chromadb、不构造客户端，目录零写入。
+`POST` 侧的落盘建库仍只支持有显式 `persist` / `load` 面的 faiss，chromadb 照旧被拒。
+`embed_texts` 的模型输出宽度与 `vector.dimension` 冲突时一律抛错（拒配置），
+不忽略配置也不截断补齐。
