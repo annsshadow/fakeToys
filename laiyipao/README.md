@@ -1,11 +1,11 @@
 ﻿# 来一炮
 
-仿微信小游戏《向僵尸开炮》玩法内核自研的**塔防 + 元素反应**小程序游戏。美术 100% Canvas 程序化绘制，不使用任何原作名称、素材、UI 或文案。
+仿微信小游戏《向僵尸开炮》玩法内核自研的**塔防 + 元素反应** H5 游戏。美术 100% Canvas 程序化绘制，不使用任何原作名称、素材、UI 或文案。
 
 ```
 laiyipao/
 ├─ server/     Go Fiber + PostgreSQL 后端
-├─ miniapp/    uni-app（微信小程序 / H5 双端）
+├─ miniapp/    uni-app（仅 H5 端）
 ├─ admin/      Vue 3 运营后台 + 玩家玩法文档站
 └─ scripts/    端到端验收脚本
 ```
@@ -45,13 +45,12 @@ go run ./cmd/api       # 监听 :8080
 
 健康检查：`curl http://127.0.0.1:8080/readyz` → `{"ok":true,"db":"up"}`
 
-### 2. 起小程序（H5 预览）
+### 2. 起 H5 端
 
 ```bash
 cd laiyipao/miniapp
 pnpm install
 pnpm dev:h5            # http://127.0.0.1:5174
-pnpm dev:mp-weixin     # 产物在 dist/dev/mp-weixin，用微信开发者工具打开
 ```
 
 API 地址在 `src/api/client.ts` 的 `BASE_URL`。真机调试需改成局域网 IP（H5 用了 `/api/v1` 相对路径时由 devServer 代理）。

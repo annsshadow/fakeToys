@@ -23,7 +23,7 @@
  * | `vitest` / `coverage-v8` | `vitest` 的 `peerDependencies.vite` | 区间；必须覆盖 `pnpm-workspace.yaml` 里 override 的 vite |
  *
  * 契约一旦变了（peer 变区间、版本号变），这里先红 —— 红的时候要做的是
- * **重新跑 `type-check` + 全量测试 + `build:h5` + `build:mp-weixin` 四件套**，
+ * **重新跑 `type-check` + 全量测试 + `build:h5` H5 三件套**，
  * 再决定新值，而不是把断言改成新值了事。
  *
  * # 已知且刻意保留的冲突
@@ -36,7 +36,7 @@
  * `vite`：dcloudio 的 peer 是精确值 `5.2.8`，而本仓 override 到 `6.4.4`
  * （5.4.x 线没有新一批 advisory 的修复版本，见 pnpm-workspace.yaml）。这是
  * 第二个刻意保留的 unmet peer，理由同 pinia：构建实际跑的是 override 后的版本，
- * 且 type-check / test / build:h5 / build:mp-weixin 四件套在 6.4.4 上验证过。
+ * 且 type-check / test / build:h5 / H5 三件套在 6.4.4 上验证过。
  */
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
@@ -74,8 +74,8 @@ function expectMatchesPeer(
   expect(
     theirs,
     `${sourcePkg} 的 ${what} 从精确值变成了 "${theirs}"。` +
-      '区间意味着「装哪个都行」，但本项目只验证过精确 pin 下的四件套' +
-      '（type-check / test / build:h5 / build:mp-weixin）。' +
+      '区间意味着「装哪个都行」，但本项目只验证过精确 pin 下的 H5 三件套' +
+      '（type-check / test / build:h5）。' +
       '正确动作：按新区间逐个版本验证，再把本守卫改成区间比较。',
   ).toMatch(EXACT_SEMVER)
   expect(
@@ -227,7 +227,7 @@ describe('工具链 pin 守卫（dependabot 多次打破过，勿删）', () => 
         '\n\ndependabot 只看单个包的版本区间，没有「按发布列车升级」的概念 —— ' +
         '所以它会提出只升其中几个的 PR。uni-app 这一族互相按精确版本引用，' +
         '分裂后彼此找不到，mini-app 构建必坏。' +
-        '正确动作：整族一起升，并在升之前重跑四件套。',
+        '正确动作：整族一起升，并在升之前重跑 H5 三件套。',
     ).toBe(1)
   })
 
