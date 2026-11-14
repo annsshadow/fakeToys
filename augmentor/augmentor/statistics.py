@@ -11,7 +11,7 @@
     要整体评估与改进建议（质量 / 多样性 / 完整性分数 + insights），用 `analytics`。
 """
 
-import re
+import re; from augmentor.validation import require_item_text  # L335/A358 在场非字符串即拒
 import logging
 from typing import List, Dict, Optional, Any, Set
 from dataclasses import dataclass, field
@@ -179,7 +179,7 @@ class DatasetStatisticsCalculator:
 
             if value:
                 filled_count += 1
-                text = value if isinstance(value, str) else str(value)
+                text = require_item_text([{field_name: value}], field_name, label="数据集")[0][field_name]  # L335/A358
                 lengths.append(len(text))
                 values.append(text)
         

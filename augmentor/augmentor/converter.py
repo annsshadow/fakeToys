@@ -135,7 +135,7 @@ def excel_cell(value: Any) -> Any:
             return ""
     except TypeError:  # pd.NA：比较结果不可真值化，同样是缺失
         return ""
-    return str(value)
+    return str(value)  # L335/A358 显式例外：读入侧把异构标量转成文本再落库，是产出口径而非「把值当文本用」
 
 
 class DataFormat(Enum):

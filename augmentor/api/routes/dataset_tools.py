@@ -66,7 +66,7 @@ from augmentor.search_enhanced import SEARCH_METHODS
 #: （客户端自己抬高上限就等于绕过这一道闸）。
 MAX_MERGE_INPUTS = 100
 MAX_AGGREGATE_DATASETS = 100
-from augmentor.validation import DatasetValidator, require_item_field
+from augmentor.validation import DatasetValidator, require_item_field, require_item_text  # L335/A358
 VALIDATION_PRESETS = tuple(DatasetValidator.PRESET_RULES)
 
 
@@ -315,7 +315,7 @@ class SearchResponse(BaseModel):
     同理，只在**本次真的过滤了**时非空，用来把「被过滤到 0 条」与「检索本来就没命中」
     分开（前者 `matches_before_filters > 0` 而 `total_matches == 0`）。
     四键都必须声明在这里——FastAPI 会按模型字段过滤返回值，模型少写一键，
-    该键就从响应里**静默消失**且不报错。
+    该键就从响应里**静默消失**且不报错。`query` 回显自 L335/A385 起是安全化后的查询词。
     """
     query: str
     method: str
@@ -590,7 +590,7 @@ def _as_column(items: List[dict], field_name: str, label: str) -> List[str]:
     与 `_require_any_field` 管「整体拼错」不同，这里管**逐条**：评估会把两侧按索引
     配对，静默补空串等于凭空造一条 0 分样本，指标被稀释却看不出来源。
     """
-    values: List[str] = []
+    values: List[str] = []; require_item_text(items, field_name, label=label)  # L335/A358 在场非字符串即拒
     for index, item in enumerate(items):
         if field_name not in item:
             raise HTTPException(
@@ -600,7 +600,7 @@ def _as_column(items: List[dict], field_name: str, label: str) -> List[str]:
                     f"（该条实际字段: {', '.join(sorted(item)) or '（无）'}）"
                 ),
             )
-        values.append(str(item[field_name]))
+        values.append(item[field_name])  # L335/A358：判据已保证是 str
     return values
 
 

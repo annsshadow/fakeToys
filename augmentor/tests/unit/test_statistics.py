@@ -268,12 +268,12 @@ class TestFieldStatisticsExtended:
         assert stats.median_length == 2
 
     def test_non_string_values(self):
-        """非字符串值应转换为字符串计算长度"""
+        """L336/A358：在场非字符串即拒，不再折成长度 5 的文本（与 merge 侧同口径）"""
+        from augmentor.exceptions import DatasetTextError
         items = [{"field": 12345}]
         calculator = DatasetStatisticsCalculator(items)
-        stats = calculator._calculate_field_statistics("field")
-        
-        assert stats.avg_length == 5
+        with pytest.raises(DatasetTextError, match="field"):
+            calculator._calculate_field_statistics("field")
 
     def test_partial_empty_values(self):
         """部分空值的字段统计"""
@@ -403,10 +403,10 @@ class TestSinglePassInvariants:
     """
 
     def test_each_value_is_stringified_once(self):
-        """字段统计里每个值的 `str()` 只该发生 1 次，不是 3 次
+        """L336/A358：非字符串当场拒，拒绝发生在任何 `str()` 之前
 
         HEAD 版把原始值存进 `values`，之后「长度」「唯一值数量」「热门值」各自
-        扫一遍并各自 `str(v)`，同一个值转 3 次。
+        扫一遍并各自 `str(v)`；现在这一步连一次都不该跑到。
         """
         calls = []
 
@@ -418,14 +418,14 @@ class TestSinglePassInvariants:
                 calls.append(self.text)
                 return self.text
 
+        from augmentor.exceptions import DatasetTextError  # L336/A358
         items = [{"f": Valued("v%d" % (i % 2))} for i in range(10)]
-        stats = DatasetStatisticsCalculator(items)._calculate_field_statistics("f")
-
-        assert stats.unique_count == 2
-        assert stats.top_values == [("v0", 5), ("v1", 5)]
-        assert len(calls) == 10, (
-            f"`str()` 被调了 {len(calls)} 次（只有 10 条数据）：每个值至多转一次，"
-            "多出来的是「唯一值」与「热门值」各自重扫了全表（HEAD 版是 3 次/值）"
+        with pytest.raises(DatasetTextError, match="f"):
+            DatasetStatisticsCalculator(items)._calculate_field_statistics("f")
+        # L336/A358：拒绝发生在任何 `str()` 之前 ⇒ 一次归一都不许跑
+        assert calls == [], (
+            f"`str()` 被调了 {len(calls)} 次：非字符串现在当场被拒，"
+            "而不是折成文本再扫全表（HEAD 版是 3 次/值）"
         )
 
     def test_quality_metrics_reads_two_keys_per_item(self):
@@ -523,7 +523,7 @@ class TestMergedPassSemantics:
         =1.1875 → 标准差 √1.1875；唯一值 {aa, aaaa, '7'} 共 3 个；
         热门值同频时按首次出现排，`aa` 出现 2 次排第一。
         """
-        items = [{"f": "aa"}, {"f": ""}, {"f": "aaaa"}, {"f": "aa"}, {"f": 7}]
+        items = [{"f": "aa"}, {"f": ""}, {"f": "aaaa"}, {"f": "aa"}, {"f": "7"}]  # L336/A358
         stats = DatasetStatisticsCalculator(items)._calculate_field_statistics("f")
 
         assert stats.total_count == 5

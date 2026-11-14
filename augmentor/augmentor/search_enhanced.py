@@ -65,7 +65,7 @@ class SearchResult:
             "items": self.items,
             "total_matches": self.total_matches,
             "query_time_ms": self.query_time_ms,
-            "query": self.query,
+            "query": self.query.encode("utf-8", "replace").decode("utf-8"),  # L335/A385：成功 200 回显安全化
             "method": self.method,
             "highlights": self.highlights,
             "fuzzy_threshold": self.fuzzy_threshold,

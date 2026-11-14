@@ -90,30 +90,24 @@ WIRING_ROSTER = {
     ("augmentor/analytics.py", "analyze"): 1,
     ("augmentor/quality_report.py", "generate_report"): 1,
     ("augmentor/visualizer.py", "generate_statistics"): 1,
+    # **L335 / A358**：评估侧与统计侧两格接线到同一条权威，判据不再并存。
+    ("api/routes/dataset_tools.py", "_as_column"): 1,
+    ("augmentor/statistics.py", "_calculate_field_statistics"): 1,
 }
 
 #: 声明盲区（写明，不装）：本轮量到「同一形仍会炸」或「口径与本轮相反」的点。
 #: 每一格都要求 `require_item_text` **没有**出现在那个函数里——谁去接线，这一格当场红，
 #: 必须把该条从盲区挪进 `WIRING_ROSTER` 并同步账本，而不是悄悄留着。
 #:
-#: **L310 / A359**：原先三只 CLI-only 盲区（`analytics.analyze` /
-#: `quality_report.generate_report` / `visualizer.generate_statistics`）已接线并
-#: 挪进 `WIRING_ROSTER` ⇒ 下面只剩两格：一格口径相反（`_as_column` 走 `str()`
-#: 归一，A358 待拍），一格是读入侧的同类归一（`read_conversation_turns`）。
+#: **L310 / A359**：三只 CLI-only 盲区已接线挪进 `WIRING_ROSTER`。
+#: **L335 / A358**：评估侧 `_as_column` 与统计侧 `_calculate_field_statistics`
+#: 两格也已接线；下面只剩读入侧那一格，它是**显式例外**而非漏网——
+#: 把异构标量转成文本再落库是产出口径，不是「把值当文本用」。
 BLIND_ROSTER = {
-    ("api/routes/dataset_tools.py", "_as_column"):
-        "口径相反的一侧：在场非字符串走 `str()` 归一而不是拒绝（评估两侧按索引配对，"
-        "补空串会凭空造 0 分样本）⇒ 与本轮判据并存，记在 **A358** 待拍",
     ("augmentor/converter.py", "read_conversation_turns"):
-        "读入侧的 `str()` 归一（把 JSON 里的数字转成文本再落库），同样是 A358 那一格"
-        "的另一半，本轮不改口径",
-    ("augmentor/statistics.py", "_calculate_field_statistics"):
-        "**L310 新记的第三个实例**（A358 那一族的「口径相反的一侧」）：`statistics.py` 的"
-        "字段统计那一段写着 `text = value if isinstance(value, str) else str(value)` ⇒ "
-        "在场非字符串被**静默折成文本再量长度**。CLI `stats` 子命令面上可达：退化语料"
-        "`[{\"instruction\": 1, \"output\": 2}]` ⇒ rc=0 且读数是「instruction: 填充率 "
-        "100.0%, 平均长度 1.0」——**一个 int 被读成「长度 1 的文本」**，没有任何提示。"
-        "本轮只把它记进名册（谁接线那一格当场红），口径仍归 A358 待拍",
+        "读入侧的 `str()` 归一（把 JSON 里的数字转成文本再落库）：L335/A358 拍为"
+        "**显式例外** —— 它是产出面的口径，不是把值当文本用；删掉它会让"
+        "CSV / Excel 的数字单元格在读入时整片失败，与本族判据的适用面不同",
 }
 
 #: `POST /api/dataset/filter` 不是这一族的端点，而是「本轮一格未动」那一档的锚：`/api/dataset/*`
@@ -241,7 +235,7 @@ class TestWiringRoster:
             assert reason, (rel, func)
 
     def test_the_authority_is_called_nowhere_else(self):
-        """出厂面（`augmentor/` + `api/` + `cli/`）里 `require_item_text` 的调用点恰好 5 处
+        """出厂面（`augmentor/` + `api/` + `cli/`）里 `require_item_text` 的调用点数必须等于 `WIRING_ROSTER` 的总和（L335 起为 10 处）
 
         写成总数而不是逐文件枚举：新增接线必然让这一格与 `WIRING_ROSTER` 同时动，
         两道锁一起红，不会出现「名册说一处、实际两处」那种自欺。
