@@ -1541,3 +1541,23 @@ A：秒（浮点）。它计的是服务端处理耗时，不含网络往返，�
 `POST` 侧的落盘建库仍只支持有显式 `persist` / `load` 面的 faiss，chromadb 照旧被拒。
 `embed_texts` 的模型输出宽度与 `vector.dimension` 冲突时一律抛错（拒配置），
 不忽略配置也不截断补齐。
+
+---
+
+## 补记：L345 / A271 阶段闸
+
+十只 `config.<section>.enabled` 出厂全为 True，与今天行为一致 ⇒ 默认零漂移。
+显式把某只设为 False 时，ASGI 中间件按 `STAGE_ENDPOINTS` 映射挡下对应端点，
+回 **400** 与固定文案「能力未启用：<section>.enabled 为 false」。判定实时读配置，
+改完配置无需重启；读数失败 fail-open 放行，配置门不把全站打成 500。
+
+- `sampler` → `POST /api/dataset/sample`
+- `rag` → `POST /api/dataset/rag`
+- `evaluation` → `POST /api/dataset/evaluate`
+- `multimodal` → `POST /api/multimodal/process`、`POST /api/multimodal/scan`、`GET /api/multimodal/formats`
+- `benchmark` → `POST /api/quality/benchmark`
+- `context`、`expander`、`tracker`、`active_learning`、`frameworks` 五节在产品侧
+  没有可关的端点，明确登记为「无对象可关」，不是遗漏；将来接出消费者时补映射。
+
+中间件不注册路由、不改契约：这七只端点的 200 成功面与原有 4xx 判据未变，
+400 只是在闸关闭时新出现的一档。

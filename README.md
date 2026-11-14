@@ -46,7 +46,7 @@
 | --- | --- | --- | --- |
 | 🦀 **[oa4rust](oa4rust/)** | Rust 重写的企业 OA 系统 | Rust · Axum · Vue3 · uni-app · PostgreSQL | 97 crate · 652 `.rs` |
 | 💥 **[laiyipao](laiyipao/)** | 塔防 + 元素反应 H5 游戏 | Go · Fiber · uni-app · Vue3 · PostgreSQL | 397 `.go` · 50 表 |
-| 🧪 **[augmentor](augmentor/)** | AI 训练数据增强工具 v3.0 | Python · FastAPI · React · Ant Design | 81 端点 · 10721 单测 |
+| 🧪 **[augmentor](augmentor/)** | AI 训练数据增强工具 v3.0 | Python · FastAPI · React · Ant Design | 81 端点 · 10729 单测 |
 | ✅ **[auto-checkin](auto-checkin/)** | 大模型公益站自动签到面板 | Node · Playwright · Express | 3 站点 · 9 项棘轮 |
 | 🧠 **[llm-lab](llm-lab/)** | 从零学大模型训练 | Python · NumPy · PyTorch | 11 讲义 · 95 用例 |
 
@@ -65,9 +65,9 @@
 | 指标 | 数值 | 证据来源 |
 | :-- | :--: | :-- |
 | Rust · oa4rust 行覆盖 | **95.01%** | `docs/plans/2026-10-29-remaining-work-plan.md`（容器内实测） |
-| Python · augmentor 行覆盖 | **99.51%** | `augmentor/coverage.xml`（全量复跑，2026-11-14：TOTAL 16035/78/4472/52，门槛 99%） |
+| Python · augmentor 行覆盖 | **99.51%** | `augmentor/coverage.xml`（全量复跑，2026-11-15：TOTAL 16071/78/4478/52，门槛 99%） |
 | Go · laiyipao 语句覆盖 | **85.8%** | `docs/laiyipao/audits/coverage-2026-10-28.md` |
-| augmentor 单测 | **10721 passed / 0 failed / 2 skipped** | 本地全量复跑（`cd augmentor && python -m pytest tests -q`，752.04 s，覆盖率 99.37%）；`ai-platform-ci.yml` 的四格红已在本轮收口，见 [`docs/plans/2026-11-12-remaining-ledger-inventory.md`](docs/plans/2026-11-12-remaining-ledger-inventory.md) §三 |
+| augmentor 单测 | **10729 passed / 0 failed / 2 skipped** | 本地全量复跑（`cd augmentor && python -m pytest tests -q`，733.61 s，覆盖率 99.37%）；`ai-platform-ci.yml` 的四格红已在本轮收口，见 [`docs/plans/2026-11-12-remaining-ledger-inventory.md`](docs/plans/2026-11-12-remaining-ledger-inventory.md) §三 |
 | 编译告警门禁 | **13 通过 / 0 失败 / 0 跳过** | `node scripts/check-warnings.mjs`（本轮抽查 rust-lints / llm-lab / llm-lab-tests / augmentor-web / license 五项亦全绿） |
 | 全仓提交 | **以 `git rev-list --count HEAD` 为准** | 浅克隆下读数会偏小，不写死数字 |
 
@@ -236,7 +236,7 @@ go run ./cmd/migrate && go run ./cmd/seed && go run ./cmd/api
 
 **v3.0 升级**
 - 性能：流式处理峰值 22.70MB→1.66MB、dedup 内存 9536MB→20MB
-- 健壮性：**10721 单测全绿 / 2 skipped**（`coverage.xml` 行覆盖 **99.51%**、门禁汇总 **99.37%**），错误分类、自动重试、配置写入闭环
+- 健壮性：**10729 单测全绿 / 2 skipped**（`coverage.xml` 行覆盖 **99.51%**、门禁汇总 **99.37%**），错误分类、自动重试、配置写入闭环
 - API：**81 个 REST 端点**全部声明 `response_model`
 - Web：React 11 个功能页 + Ant Design
 
