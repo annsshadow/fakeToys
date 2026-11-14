@@ -758,6 +758,17 @@ CALLS = {
         request=lambda c: c.get("/api/system/dependency/graph"),
         keys=_keys("nodes", "edges", "issues"),
     ),
+    # L338/A309：用不存在的 id 打 DELETE ⇒ deleted=False，不删任何登记（幂等臂）
+    ("DELETE", "/api/system/dependency/datasets/{dataset_id}"): _Case(
+        request=lambda c: c.delete("/api/system/dependency/datasets/no-such-id"),
+        keys=_keys("deleted", "dataset_id"),
+    ),
+    ("POST", "/api/system/dependency/edges"): _Case(
+        request=lambda c: c.post("/api/system/dependency/edges", json={
+            "source_dataset": "ghost-a", "target_dataset": "ghost-b"},
+        ),
+        keys=_keys("edge"),
+    ),
     ("GET", "/api/system/backups"): _Case(
         request=lambda c: c.get("/api/system/backups"),
         keys=_keys("backups"),

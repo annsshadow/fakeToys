@@ -192,7 +192,7 @@ class TestPreviouslyUndocumentedGroupsHaveNotes:
         assert not missing, f"{tag} 组这些端点没有说明行：{missing}"
 
     def test_the_groups_scale_is_pinned(self):
-        """钉住规模：dataset **18 路径 / 18 操作**，system **13 路径 / 15 操作**
+        """钉住规模：dataset **18 路径 / 18 操作**，system **15 路径 / 17 操作**
 
         `/api/system/backups` 同时挂 GET(列出)/POST(创建)，
         `/api/system/dependency/datasets` 同时挂两个 GET。所以「端点」按方法算比按路径算多
@@ -207,8 +207,8 @@ class TestPreviouslyUndocumentedGroupsHaveNotes:
         → 13 路径 / 15 操作。
         """
         assert len(paths_of_tag("dataset")) == 18           # 18 路径 = 18 操作（L217 +2）
-        assert len(paths_of_tag("system")) == 13            # 13 路径（L243 +2）
-        assert len(operations_of_tag("system")) == 15       # 15 操作（L243 +2）
+        assert len(paths_of_tag("system")) == 15  # **L338**：13 → 15            # 13 路径（L243 +2）
+        assert len(operations_of_tag("system")) == 17  # **L338**：15 → 17       # 15 操作（L243 +2）
 
 
 class TestTheRulerSeesSomething:

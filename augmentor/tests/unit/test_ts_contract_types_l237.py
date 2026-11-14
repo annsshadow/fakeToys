@@ -463,7 +463,7 @@ class TestTheRulerStandsUpFirst:
         assert ts.props("DataItem[]") == ts.props("DataItem") is not None
 
     def test_the_fetcher_scan_is_not_vacuous(self, face):
-        """扫描面要有量：88 只 `export const` 里 80 只是 fetcher，一只都不能少扫
+        """扫描面要有量：90 只 `export const` 里 82 只是 fetcher，一只都不能少扫
 
         L237 立账时是「83 只里 75 只」，那一轮一只 fetcher 未增未减；**L243** 给备份完整性
         加了两员（`verifyBackups` / `cleanupBackups`），**L251** 又加了宽档那一员
@@ -481,9 +481,9 @@ class TestTheRulerStandsUpFirst:
         ⇒ 88 / 81 / **80**。
         """
         src = strip_comments(SERVICES_TS.read_text(encoding="utf-8"))
-        assert len(EXPORT_CONST.findall(src)) == 88
-        assert len(API_CALL.findall(src)) == 81
-        assert len(face["rows"]) + len(face["unannotated"]) + len(face["unresolved"]) == 80
+        assert len(EXPORT_CONST.findall(src)) == 90  # **L338**：两条写入口
+        assert len(API_CALL.findall(src)) == 83  # **L338**
+        assert len(face["rows"]) + len(face["unannotated"]) + len(face["unresolved"]) == 82  # **L338**
         # 「一块里发多次调用」这一族**不是空集**：A408 把 `getProgress` 改成两臂调用之后，
         # 它就是本尺子里唯一一员多调用。改前这里是空集（那时 `getProgress` 只有一条臂）。
         # 写成具名名单而不是空集：多一员照样红（往任一只 fetcher 里再加一次调用即红）。
@@ -521,7 +521,7 @@ class TestEveryFetcherMatchesItsOwnOperation:
         assert face["unresolved"] == []
 
     def test_the_measured_scale_is_pinned(self, face):
-        """规模钉：80 只对账、0 只缺口。多一只少一只都要在这里响（L237 立账时是 75）
+        """规模钉：82 只对账、0 只缺口。多一只少一只都要在这里响（L237 立账时是 75）
 
         **归因**：L251 那一轮钉的是 78。此后 **L56 的 `deleteCheckpoint`**（+1）
         与 **L308（A408）**（多一员多调用、fetcher 数不变）把读数顶到 79，
@@ -529,7 +529,7 @@ class TestEveryFetcherMatchesItsOwnOperation:
         本轮 **L322** 接走报告那只 ⇒ **80**。契约面 79 条操作**全数有 fetcher**（见
         `test_the_two_fetchers_on_one_operation_are_not_a_scan_artifact`）。
         """
-        assert len(face["rows"]) == 80
+        assert len(face["rows"]) == 82  # **L338**
         assert len(face["mismatched"]) == 0
 
     def test_the_two_fetchers_on_one_operation_are_not_a_scan_artifact(self, face):
@@ -546,8 +546,8 @@ class TestEveryFetcherMatchesItsOwnOperation:
         assert a["ts"] == b["ts"]
         ops = [r["op"] for r in face["rows"]]
         assert len(ops) - len(set(ops)) == 1, "同操作多 fetcher 只许这一对"
-        # 契约面 79 条操作**一条都不缺**：80 行 - 1 对重复 = 79 条，正好是契约面的全部
-        assert len(set(ops)) == 79
+        # 契约面 81 条操作**一条都不缺**：82 行 - 1 对重复 = 81 条，正好是契约面的全部
+        assert len(set(ops)) == 81  # **L338**：契约面 79 → 81
 
     def test_the_three_a281_targets_are_now_whole(self, face):
         """A281 那三只逐个点名：缺口补齐之后属性集与契约**逐格相等**"""

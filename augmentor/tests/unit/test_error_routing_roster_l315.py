@@ -15,7 +15,7 @@
   客户端入参；配置坏了是服务端自己的问题）⇒ **保持 500 + 固定文案**（A280 记的方向②
   「维持现状并把契约写下来」）。**「资源不存在」那一面早已是 404**（`resolve_data_path`
   对读操作查存在性 ⇒ 404；`resolve_within_roots` 越界 ⇒ 403）。
-* **分档那 35 处**（`to_http_error`）：`api/routes/dataset_tools.py` 14 / `api/routes/system_ops.py` 14 /
+* **分档那 37 处**（`to_http_error`）：`api/routes/dataset_tools.py` 14 / `api/routes/system_ops.py` 16 /
   `api/routes/language.py` 2 / `api/routes/vector.py` 2 / `api/routes/config.py` 1 /
   `api/routes/data.py` 2。那扇门已经分档：`FileNotFoundError` → 404、`JSONDecodeError` → 400
   （中文判决）、**具名域判决** → 400 + 原文、其余 → 500 + 固定文案 ⇒ **「资源不存在拿不到 404」
@@ -28,7 +28,7 @@
 
 **四道面各自要能单独喊红**：
 
-1. **名册面**（AST）：一刀切那 10 处与分档那 35 处的**逐文件**调用点数 ⇒ 谁再塞一处一刀切、
+1. **名册面**（AST）：一刀切那 10 处与分档那 37 处的**逐文件**调用点数 ⇒ 谁再塞一处一刀切、
    或把某一处挪了地方，这一张名册当场红。
 2. **判决面**：一刀切那 10 处**逐处**点名（注入一个内部异常 ⇒ 500 + 固定文案 + **原文不外泄**）；
    分档那扇门的**四档**逐档点名。
@@ -71,7 +71,7 @@ SPLIT_ROSTER = {
     "data.py": 2,
     "dataset_tools.py": 14,
     "language.py": 2,
-    "system_ops.py": 14,
+    "system_ops.py": 16,  # **L338**：14 → 16
     "vector.py": 2,
 }
 
@@ -114,7 +114,7 @@ class TestTheRoutingRoster:
     def test_the_split_door_family_is_exactly_thirty_five_sites(self):
         got = {fn: _call_sites(fn, "to_http_error") for fn in SPLIT_ROSTER}
         assert got == SPLIT_ROSTER, got
-        assert sum(got.values()) == 35, sum(got.values())
+        assert sum(got.values()) == 37, sum(got.values())  # **L338**：35 → 37
 
     def test_no_route_file_uses_a_catch_all_outside_the_roster(self):
         """名册之外没有第三处一刀切（谁新塞一处 ⇒ 这里当场红）"""

@@ -1345,7 +1345,7 @@ class TestWriteRouteAuthCoverage:
         ("POST", "/api/system/backups/{backup_id}/restore"),
         # L243（A300）：清理旧备份会删文件并改写索引，与创建 / 恢复 / 删除同档。
         ("POST", "/api/system/backups/cleanup"),
-        ("POST", "/api/system/dependency/datasets"),
+        ("POST", "/api/system/dependency/datasets"), ("DELETE", "/api/system/dependency/datasets/{dataset_id}"), ("POST", "/api/system/dependency/edges"),  # L338/A309
         ("POST", "/api/system/migrate"),
         ("POST", "/api/system/stream"),
         ("POST", "/api/versions/create"),

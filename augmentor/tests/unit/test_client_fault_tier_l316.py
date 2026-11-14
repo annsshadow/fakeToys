@@ -251,7 +251,7 @@ class TestTheNamedSymptomIsGone:
 
 
 class TestTheRosterIsWrittenDown:
-    """名册面：35 处分档门逐文件点名 + 窄口没有挂在任何路由上"""
+    """名册面：37 处分档门逐文件点名 + 窄口没有挂在任何路由上"""
 
     def test_the_split_door_sites_are_still_where_the_roster_says(self):
         roster = {
@@ -259,7 +259,7 @@ class TestTheRosterIsWrittenDown:
             "data.py": 2,
             "dataset_tools.py": 14,
             "language.py": 2,
-            "system_ops.py": 14,
+            "system_ops.py": 16,  # **L338**：14 → 16
             "vector.py": 2,
         }
         got = {}
@@ -273,7 +273,7 @@ class TestTheRosterIsWrittenDown:
             if hits:
                 got[path.name] = hits
         assert got == roster, got
-        assert sum(got.values()) == 35, sum(got.values())
+        assert sum(got.values()) == 37, sum(got.values())  # **L338**：35 → 37
 
     def test_no_route_releases_a_narrow_port_yet(self):
         """窄口住在门口上、**没有**挂在任何路由上（逐处证明的结果是「默认名单够用」）"""

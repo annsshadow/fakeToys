@@ -469,7 +469,7 @@ class TestTheFamilyCensus:
         assert with_extra == set(SIX), sorted(with_extra)
 
     def test_the_measured_split_of_the_whole_surface(self):
-        """现量（L322 之后）：79 员 = 6（本轮补的）+ 61（`{200,422}`）+ 12（只有 `200`）
+        """现量（L338 之后）：81 员 = 6（本轮补的）+ 63（`{200,422}`）+ 12（只有 `200`）
 
         那 12 员全是**无任何参数**的 GET（`/api/health`、`/api/config`、`/api/models` 那一类），
         框架连 422 都不挂，所以它们不在 A336 的面上。新增端点会动这三个数：按现量重钉并写归因，
@@ -483,12 +483,12 @@ class TestTheFamilyCensus:
         ② **L308（A408）** 给 `GET /api/augment/progress` 加了 `task_id` 查询参数
         ⇒ 它从「只有 `200`」那一档**移进** `AUTO` ⇒ `AUTO` 60 → **61**、
         「只有 `200`」13 → **12**。
-        ⇒ 现量 79 = 6 + 61 + 12。**本轮（L322）契约面零改动** ⇒ 这三个数一格都不是本轮动的，
+        ⇒ 现量 81 = 6 + 63 + 12（L338 两条新端点都带参数，落在 AUTO 档）。**本轮（L322）契约面零改动** ⇒ 这三个数一格都不是本轮动的，
         本轮只做「按现量续钉 + 写清归因」，不碰尺子的口径。
         """
         sets = [set(v) for v in all_openapi_responses().values()]
-        assert len(sets) == 79, len(sets)
-        assert sum(1 for s in sets if s == AUTO) == 61
+        assert len(sets) == 81, len(sets)
+        assert sum(1 for s in sets if s == AUTO) == 63
         assert sum(1 for s in sets if s == {"200"}) == 12
         assert sum(1 for s in sets if s - AUTO) == 6
 

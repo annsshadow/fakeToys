@@ -392,6 +392,27 @@ class DependencyManager:
         
         return issues
     
+    def remove_dataset(self, dataset_id: str) -> bool:
+        """注销一个已登记数据集，并清掉与它相连的依赖边（L338/A309）。
+
+        与 register_dataset / add_dependency 同一把目录锁内「重读 → 改 → 写回」，
+        避免跨请求丢更新；不存在时返回 False 不抛异常（DELETE 幂等）。
+        两条边一起清是为了不留下悬空端点：validate_dependencies 会把指向已注销
+        节点的边报成 missing_source / missing_target，注销时就该顺手收干净。
+        """
+        with path_lock(self._registry_path):
+            datasets = self._load_datasets()
+            if dataset_id not in datasets:
+                return False
+            del datasets[dataset_id]
+            kept = [d for d in self._load_dependencies()
+                    if d.source_dataset != dataset_id and d.target_dataset != dataset_id]
+            atomic_write_json(self._datasets_file,
+                              {k: v.to_dict() for k, v in datasets.items()})
+            atomic_write_json(self._dependencies_file, [d.to_dict() for d in kept])
+            self._datasets, self._dependencies = datasets, kept
+            return True
+
     def _detect_cycles(self) -> List[Dict]:
         """找出依赖图里的有向环，每个环报一条 `type: "cycle"` 的 issue
         

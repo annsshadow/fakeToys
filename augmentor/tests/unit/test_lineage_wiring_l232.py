@@ -104,6 +104,13 @@ FETCHERS = {
     ("GET", "/api/system/dependency/graph"): "getDependencyGraph",
 }
 
+#: **L338/A309** 补上的两条写入口。前端服务层尚无对应 fetcher，故不并入 `FETCHERS`
+#: （那本名册同时被「三条 fetcher 逐条对路径」与「页面 import/调用」两支尺子读）。
+WRITE_ENTRIES = {
+    ("DELETE", "/api/system/dependency/datasets/{dataset_id}"),
+    ("POST", "/api/system/dependency/edges"),
+}
+
 
 def _page() -> str:
     assert PAGE_TSX.is_file(), "前端源码不在场 ⇒ 本文件的判据全部失效"
@@ -156,7 +163,7 @@ class TestTheThreeFetchersMatchTheContract:
     def test_nothing_else_in_the_service_layer_touches_the_dependency_family(self):
         hits = re.findall(r"api\.(?:get|post|put|delete|patch)\([^)]*?/system/dependency",
                           _api_ts().replace("\n", " "))
-        assert len(hits) == 3, f"血缘一族的调用现量 3 处，实得 {len(hits)}：{hits}"
+        assert len(hits) == 5, f"血缘一族的调用现量 5 处（三条读/登记 + L338 两条写入口），实得 {len(hits)}：{hits}"
 
     def test_registry_path_is_a_query_param_and_never_a_body_key(self):
         for name in FETCHERS.values():
@@ -238,10 +245,10 @@ class TestThePageCarriesTheThreeOperations:
     def test_the_measured_caveats_stay_on_the_card(self):
         page = _page()
         for phrase in (
-            "恒为 0",                    # A309：边在产品面上建不出来
-            "add_dependency 建立",       # A309：边只能由 SDK 建
-            "在产品面上删不掉",           # A309：没有注销入口
-            "remove_dataset",            # A309：连 SDK 都没有
+            "L338/A309",                 # A309：两条写入口已补
+            "POST .../edges",            # A309：建边入口
+            "DELETE",                    # A309：注销入口
+            "remove_dataset",            # A309：SDK 注销已接进 HTTP
             "依赖成环",                   # A310 / L311：成环现在也报出来了
             "cycle",                     # A310 / L311：那一档的 type 名
             "0 才真的读得成「没问题」",    # A310 / L311：0 才读得成校验通过
@@ -472,8 +479,8 @@ class TestMeasuredEndpointBehavior:
             seen.add((verb, path))
             if any(dep.call is verify_api_key for dep in route.dependant.dependencies):
                 gated.add((verb, path))
-        assert seen == {(v, p) for v, p in FETCHERS}, sorted(seen)
-        assert gated == {("POST", "/api/system/dependency/datasets")}, sorted(gated)
+        assert seen == {(v, p) for v, p in FETCHERS} | WRITE_ENTRIES, sorted(seen)
+        assert gated == {("POST", "/api/system/dependency/datasets")} | WRITE_ENTRIES, sorted(gated)
 
         http, *_ = http_with_registry
         monkeypatch.setenv("AUGMENTOR_API_KEY", "secret-key")
@@ -490,13 +497,13 @@ class TestMeasuredEndpointBehavior:
 class TestTheFamilyHasNoProductLevelWriteEntries:
     """A309：三条端点里没有删除、没有注销、没有建边；SDK 那几个方法一个都没上线"""
 
-    def test_the_contract_carries_exactly_three_dependency_operations(self):
+    def test_the_contract_carries_five_dependency_operations(self):  # L338/A309
         from api.main import app
 
         ops = {(m.upper(), p) for p, ms in app.openapi()["paths"].items()
                if p.startswith(FAMILY) for m in ms}
-        assert ops == {(v, p) for v, p in FETCHERS}, sorted(ops)
-        assert not [v for v, _ in ops if v == "DELETE"]
+        assert ops == {(v, p) for v, p in FETCHERS} | WRITE_ENTRIES, sorted(ops)
+        assert [v for v, _ in ops if v == "DELETE"], "注销入口又不见了"
 
     def test_the_manager_methods_that_never_reached_http(self):
         from augmentor.dependency import DependencyManager
@@ -504,8 +511,8 @@ class TestTheFamilyHasNoProductLevelWriteEntries:
         public = {n for n in vars(DependencyManager) if not n.startswith("_")}
         assert {"add_dependency", "remove_dependency", "get_dependencies",
                 "validate_dependencies"} <= public, sorted(public)
-        # 连 SDK 都没有注销数据集的方法 ⇒ 登记了只能手改 datasets.json
-        assert not [n for n in public if "remove_dataset" in n or "unregister" in n]
+        # L338/A309：SDK 补上了 remove_dataset，并由 DELETE 端点接进产品面
+        assert "remove_dataset" in public, "SDK 的注销入口又不见了"
 
         from api.main import app
 
@@ -517,11 +524,12 @@ class TestTheFamilyHasNoProductLevelWriteEntries:
         for name in ("add_dependency", "remove_dependency", "get_dependencies"):
             assert name not in ids, f"{name} 竟然有了 HTTP 入口 ⇒ 这条缺口要重新量"
 
-    def test_the_router_carries_no_fourth_dependency_route(self):
+    def test_the_router_carries_exactly_five_dependency_routes(self):  # L338/A309
         from api.routes.system_ops import router
 
         paths = {getattr(r, "path", "") for r in router.routes}
-        assert {p for p in paths if p.startswith(FAMILY)} == {p for _, p in FETCHERS}
+        assert {p for p in paths if p.startswith(FAMILY)} == (
+            {p for _, p in FETCHERS} | {p for _, p in WRITE_ENTRIES})
 
 
 def _shipped_first_data_root() -> str:

@@ -902,3 +902,69 @@ async def cleanup_backups_endpoint(
         raise
     except Exception as e:
         raise to_http_error(e) from e
+
+
+# L338/A309：dependency 族补上注销与建边入口，两只都挂 `verify_api_key`
+# （与 POST 登记端点同档：它们会改注册表，属写操作）。
+class AddDependencyRequest(BaseModel):
+    """建边请求（L338/A309）"""
+    source_dataset: str
+    target_dataset: str
+    dependency_type: str = "derived"
+    description: str = ""
+
+
+class DependencyDeleteResponse(BaseModel):
+    """注销回执：deleted=False 表示本来就没有这个 id（DELETE 幂等）"""
+    deleted: bool
+    dataset_id: str
+
+
+class DependencyEdgeResponse(BaseModel):
+    """建边回执：只回新边本身，不夹带整张图"""
+    edge: Dict[str, Any]
+
+
+@router.delete(
+    "/api/system/dependency/datasets/{dataset_id}",
+    response_model=DependencyDeleteResponse, summary="注销数据集",
+    dependencies=[Depends(verify_api_key)],
+)
+async def dependency_unregister(
+    dataset_id: str,
+    registry_path: Optional[str] = Query(None, description=REGISTRY_PATH_DESC),
+):
+    """注销登记过的数据集，并清掉与它相连的依赖边；不存在时 deleted=False（幂等）"""
+    try:
+        manager = _dependency_manager(registry_path)
+        deleted = await run_in_thread(manager.remove_dataset, dataset_id)
+        return {"deleted": deleted, "dataset_id": dataset_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise to_http_error(e) from e
+
+
+@router.post(
+    "/api/system/dependency/edges",
+    response_model=DependencyEdgeResponse, summary="建立数据集依赖边",
+    dependencies=[Depends(verify_api_key)],
+)
+async def dependency_add_edge(
+    request: AddDependencyRequest,
+    registry_path: Optional[str] = Query(None, description=REGISTRY_PATH_DESC),
+):
+    """在两个数据集之间建一条依赖边：edges 不再只能由 SDK 的 add_dependency 产生"""
+    try:
+        manager = _dependency_manager(registry_path)
+
+        def run():
+            return manager.add_dependency(
+                request.source_dataset, request.target_dataset,
+                request.dependency_type, request.description).to_dict()
+
+        return {"edge": await run_in_thread(run)}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise to_http_error(e) from e

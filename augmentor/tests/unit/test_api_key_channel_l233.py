@@ -73,10 +73,10 @@ CARD = "配置管理 → 写操作鉴权"
 #: L236 到 24（translate）→ L243 到 25（cleanup）→ **L322 到 27**（两只 augment 端点：
 #: `DELETE /api/augment/checkpoints/{task_id}` 与 `GET /api/augment/report/{task_id}`，
 #: 前者 L321 已接、后者 L322 接进页面）⇒ 与 `GATED_TOTAL` 相等，「挂门禁但没接线」清空）
-GATED_TOTAL = 27
-GATED_CONSUMED = 27
+GATED_TOTAL = 29  # **L338**：27 → 29（DELETE 注销 + POST 建边）
+GATED_CONSUMED = 29  # **L338**：27 → 29（两条都已在服务层接上）
 
-#: 那 27 条：前端已接线、且服务端开了鉴权就会 401 的形状（逐条来自探针，不是推的）
+#: 那 29 条：前端已接线、且服务端开了鉴权就会 401 的形状（逐条来自探针，不是推的）
 CONSUMED_AND_GATED = frozenset({
     ("DELETE", "/api/augment/checkpoints/{task_id}"),
     ("DELETE", "/api/data/delete/{filename}"),
@@ -104,7 +104,7 @@ CONSUMED_AND_GATED = frozenset({
     ("POST", "/api/system/stream"),
     ("POST", "/api/versions/create"),
     ("POST", "/api/versions/{version_id}/rollback"),
-    ("PUT", "/api/data/update/{filename}"),
+    ("PUT", "/api/data/update/{filename}"), ("DELETE", "/api/system/dependency/datasets/{dataset_id}"), ("POST", "/api/system/dependency/edges"),  # L338/A309 两条写入口
 })
 
 #: 挂门禁但前端还没接线的尾巴：**空**（L236 接走 translate 后 24 = 24 + 0，L243 给 cleanup

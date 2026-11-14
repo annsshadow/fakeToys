@@ -458,11 +458,11 @@ class TestRulerSeesTheRealSurface:
 
     def test_backend_face_scale(self):
         ops = operations()
-        assert len(ops) == 79, f"契约操作数现量 79，实得 {len(ops)}"
-        assert len({p for _, p in ops}) == 75, "路径数现量 75"
+        assert len(ops) == 81, f"契约操作数现量 81，实得 {len(ops)}"  # **L338**
+        assert len({p for _, p in ops}) == 77, "路径数现量 77"  # **L338**
 
     def test_frontend_face_scale(self):
-        """形状数现量 **80**：L251 起它第一次比操作数多一格，L322 之后是 80 对 79
+        """形状数现量 **82**：L251 起它第一次比操作数多一格，L338 之后是 82 对 81
 
         多出来的那一格是 `GET /api/data/list` 的两档调用（默认档裸路径 + 宽档把
         `all_files=true` 写在路径串里）。两侧的对账判据走的是「每条形状能不能绑到一条操作」
@@ -477,7 +477,7 @@ class TestRulerSeesTheRealSurface:
         两格分开记，不把旧漂算成本轮的。
         """
         shapes = call_shapes()
-        assert len(shapes) == 80, f"服务层调用形状现量 80，实得 {len(shapes)}"
+        assert len(shapes) == 82, f"服务层调用形状现量 82，实得 {len(shapes)}"  # **L338**：两条写入口
         # 旧写法是 `<= {"GET","POST","PUT","DELETE","PATCH"}`，而 CALL 那条正则本身只可能
         # 匹到这五个动词 ⇒ 构造式恒真。换成与契约面（另一侧权威）对账，才有牙齿。
         assert {m for m, _, _ in shapes} <= {m for m, _ in operations()}, \
@@ -674,10 +674,10 @@ class TestConsumptionRoster:
 
         L236 收到 ∅ 之后这一格的意义变了：从前它钉的是「还剩几条没接」，现在它钉的是
         **「不许再退回」**——契约面新增一条端点而服务层没接，`consumed_operations()` 就
-        少于 79、`unconsumed_operations()` 就非空，两个数一起红。
+        少于 81、`unconsumed_operations()` 就非空，两个数一起红。
         """
         assert len(UNCONSUMED) == 0, len(UNCONSUMED)
-        assert len(consumed_operations()) == 79, len(consumed_operations())
+        assert len(consumed_operations()) == 81, len(consumed_operations())  # **L338**
         assert len(consumed_operations()) == len(operations()), "契约面全数被消费才算收口"
 
     def test_roster_entries_are_real_operations(self):
@@ -775,14 +775,14 @@ class TestCliEntryClaimsAreReal:
 
         判据不是「名单为空」，而是「**实测**为空且尺子仍能看见东西」：
         ① parser 那 37 个子命令仍被逐名解析出来（尺子没瞎）；
-        ② 契约面 79 条操作**每一条**都在服务层有对应调用形状（缺口是量出来的 0）；
+        ② 契约面 81 条操作**每一条**都在服务层有对应调用形状（缺口是量出来的 0）；
         ③ 反证：把任一员的调用形状摘掉，`unconsumed_operations()` 立刻非空 ——
            空集相等这条判据仍会响，不是恒真。摘法走 monkeypatch 换掉 `call_shapes`
            的返回值，不改磁盘上一个字节。
         """
         assert len(cli_subcommands()) == 37, "parser 一个子命令都读不到 ⇒ 判据坏了"
         assert unconsumed_operations() == set()
-        assert len(consumed_operations()) == len(operations()) == 79
+        assert len(consumed_operations()) == len(operations()) == 81  # **L338**
 
     def test_unwiring_one_operation_turns_the_empty_roster_red(self, monkeypatch):
         """③ 的反证臂：摘掉 `translate` 的调用形状，缺口必须立刻点名它"""

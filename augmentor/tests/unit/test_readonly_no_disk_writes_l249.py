@@ -71,7 +71,7 @@ BACKUP_MANAGER_READ_METHODS = {"get_backup_info", "list_backups"}
 BACKUP_MANAGER_WRITE_METHODS = {"backup", "delete_backup", "restore"}
 REGISTRY_READ_METHODS = {"get_dataset", "get_dependencies", "get_dependency_graph",
                          "list_datasets", "validate_dependencies"}
-REGISTRY_WRITE_METHODS = {"add_dependency", "register_dataset", "remove_dependency"}
+REGISTRY_WRITE_METHODS = {"add_dependency", "register_dataset", "remove_dependency", "remove_dataset"}  # L338/A309
 SDK_BACKUP_READ_FUNCTIONS = {"list_backups", "verify_backup_integrity"}
 SDK_BACKUP_WRITE_FUNCTIONS = {"clean_old_backups", "create_backup", "delete_backup",
                               "restore_backup"}
