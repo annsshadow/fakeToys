@@ -62,7 +62,7 @@ REST 层只做「协议转换 + 横切关注点（鉴权/限流/追踪/上传闸
 | `middleware/` | `rate_limit`（滑动窗口限流）、`trace`（X-Request-ID）、`RequestLoggingMiddleware`、`upload_gate`（上传体尺寸闸）、`write_auth_gate`（匿名写传输闸） |
 | `routes/` | 15 个按领域拆分的 router（下表） |
 
-**15 个 router → 79 端点**（按 OpenAPI tag 归组）：
+**15 个 router → 81 端点**（按 OpenAPI tag 归组）：
 
 | router 文件 | tag | 端点数 | 覆盖 |
 |-------------|-----|:------:|------|

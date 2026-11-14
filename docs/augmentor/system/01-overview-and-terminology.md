@@ -42,7 +42,7 @@
 | 代码位置 | `augmentor/`、`api/` | `web/` | `cli.py`、`augmentor/cli/` |
 | 语言/框架 | Python 3.10+ / FastAPI / Pydantic v2 | React 19 / TypeScript / Vite 8 / Ant Design 6 | Python / argparse |
 | 运行 | `uvicorn api.main:app`（:8000） | `npm run dev`（:3000）或 `npm run build` 后由后端静态托管 | `python cli.py <cmd>` |
-| 职责 | 实现全部能力、暴露 79 个 REST 端点、挂载前端静态产物 | 把能力做成表单/图表/表格，驱动 REST | 把能力做成子命令，离线/脚本化驱动 |
+| 职责 | 实现全部能力、暴露 81 个 REST 端点、挂载前端静态产物 | 把能力做成表单/图表/表格，驱动 REST | 把能力做成子命令，离线/脚本化驱动 |
 | 数据存储 | 本地 JSON + 可选向量库（faiss/chromadb）+ 断点/版本目录 | 无自有存储，全走 API | 同服务端，读本地文件 |
 
 > **没有移动端**：仓内无原生 App / React Native / Flutter / Ionic 代码或产物。

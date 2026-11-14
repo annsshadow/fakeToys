@@ -63,7 +63,7 @@ web/
     ├── services/
     │   ├── api.ts                 ★ axios 实例 + 全部后端封装 + 写操作鉴权拦截器
     │   └── api.wiring.test.ts     ★ 接线守门测试
-    ├── types/api.ts               ★ 与后端 79 端点对齐的 TS 类型（~80 个响应接口）
+    ├── types/api.ts               ★ 与后端 81 端点对齐的 TS 类型（~80 个响应接口）
     └── test/setup.ts              vitest 环境
 ```
 

@@ -281,7 +281,7 @@ $ python cli.py validate-config --config typo_config.yaml
 - `vector.dimension` **真的改产物**：它是哈希嵌入的宽度，同一查询在 4 维与 1024 维下的相似度分值
   与排名都不同（`test_dimension_changes_scores_and_ranking` 现量）。旧文那句「维度由所选嵌入
   模型决定」描述的是**没有嵌入模型参与**时的假想接法——本轮用的是零依赖的确定性哈希嵌入，所以宽度
-  就是配置值。真模型接法（模型维度与本键冲突怎么收）已立账待拍。
+  就是配置值。真模型接法（模型维度与本键冲突怎么收）已于 **L340 / A268** 收口：不等就拒配置，见 `assert_model_dimension`。
 - `vector.storage_dir` / `vector.collection` 决定落盘点与文件名、向量 ID 前缀；`vector.enabled` 决定
   增强结束时建不建库（两个入口同一道判）。
 
@@ -301,7 +301,7 @@ $ python cli.py validate-config --config typo_config.yaml
 按字面判则随包 API 的这三项既有能力当场消失，13 支集成测试全红。⇒ 四只 true 键的消费点**已在 L215 落地**
 （`quality.enabled` / `dedup.enabled` 进同步与异步两个增强入口的默认解析、
 `versioning.enabled` 与既有 `auto_snapshot` 串联、`visualization.enabled` 进出图阶段入口），
-十二只 false 键立账待拍，端点面全部保持不变。调用参数在 L215 之后仍是最高一档：
+十只 false 键已于 **L343 / A271** 对齐为出厂开并由 `stage_gates()` 真实读取，端点面全部保持不变。调用参数在 L215 之后仍是最高一档：
 `use_quality_check` / `use_dedup` 的默认值从 `True` 换成 `None` 哨兵，`None` 的意思是
 「调用方没点，交给配置」，不是「关掉」。
 （这一族不是新发现的病：Backlog **B5** 的 AST 尺子早已量出全仓 37 只死键，其中「16 格是各节的启用闸门」
@@ -354,7 +354,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 | 状态码 | 含义 | 触发场景 |
 |--------|------|----------|
 | 200 | 成功 | — |
-| 400 | 请求参数错误 | 索引越界、扩展名不支持、`chunk_overlap >= chunk_size`、**路径名被操作系统判死**（`OSError` 的 `errno` 是 `EINVAL` / `ENAMETOOLONG`：名字里有当前系统禁止的字符或名字过长，L271 / A351。`detail` 用固定文案 `文件路径含当前系统不接受的字符或超出长度上限`，**不含**部署根路径；同族的 NUL 那一形由操作系统抛 `ValueError`，走「原文照回」支，所以它的 `detail` 是英文原文——两形文案不同是已登记的余面，不是笔误）。**判决文案里嵌请求原文**那一格同形会崩（`source_format` 喂一枚孤立代理 ⇒ `detail` 带原文 ⇒ `JSONResponse.render` 抛 `UnicodeEncodeError`）：`api/main.py` 为 `HTTPException` 也兜了一层（L284），默认那支抛了才把编不出的字符换成反斜杠原文重渲染，状态码、响应头与其余字节不动；而成功路径把原文回显进响应体那一格（`POST /api/dataset/search` 的 `query`）**未兜**，实测仍 500，已立 A385 待拍 |
+| 400 | 请求参数错误 | 索引越界、扩展名不支持、`chunk_overlap >= chunk_size`、**路径名被操作系统判死**（`OSError` 的 `errno` 是 `EINVAL` / `ENAMETOOLONG`：名字里有当前系统禁止的字符或名字过长，L271 / A351。`detail` 用固定文案 `文件路径含当前系统不接受的字符或超出长度上限`，**不含**部署根路径；同族的 NUL 那一形由操作系统抛 `ValueError`，走「原文照回」支，所以它的 `detail` 是英文原文——两形文案不同是已登记的余面，不是笔误）。**判决文案里嵌请求原文**那一格同形会崩（`source_format` 喂一枚孤立代理 ⇒ `detail` 带原文 ⇒ `JSONResponse.render` 抛 `UnicodeEncodeError`）：`api/main.py` 为 `HTTPException` 也兜了一层（L284），默认那支抛了才把编不出的字符换成反斜杠原文重渲染，状态码、响应头与其余字节不动；而成功路径把原文回显进响应体那一格（`POST /api/dataset/search` 的 `query`）曾未兜、实测 500（A385）；**L335 起** `SearchResult.to_dict()` 对回显做 UTF-8 安全化，孤立代理不再打穿成功 200 |
 | 401 | 鉴权失败 | 服务端已设置 `AUGMENTOR_API_KEY`，而写/删请求未携带或携带了错误的 `X-API-Key`（前端那份 key 在「配置管理 → 写操作鉴权」卡上存，由请求拦截器随每个请求送出；401 的 `detail` 会被服务层 `apiErrorDetail` 追加一句指路） |
 | 403 | 路径超出白名单 | 见上「路径白名单」（`detail` 为「路径超出允许的数据目录范围」，与 401 的鉴权失败可区分） |
 | 404 | 资源不存在 | 文件不存在、版本不存在 **409** 不在这张表的行里，它是「备份内容坏了」而不是「资源不在」：备份在、id 也在而校验和对不上，恢复被拒且零写入。备份一族六员的错误档自 **L252** 起逐档声明在 OpenAPI 的 `responses` 里（A330 已收），本表加一整行会平移本文件被账本引用的那一族行号，所以按净 0 同行追加在这里；而「文件不存在」这一档在备份一族里既可能是源数据文件不在场，也可能是 `backup_id` 不在索引里，两种都由 404 出声。 |
