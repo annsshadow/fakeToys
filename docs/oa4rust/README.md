@@ -1,7 +1,7 @@
 # OA4Rust 项目文档
 
 > 本目录是 OA4Rust（`oa4rust/`）的统一文档入口，覆盖项目定位、架构、模块、接口、流程、环境、运行、示例、FAQ 与维护约定。
-> 所有内容基于当前代码实测梳理（2026-10-26 快照，2026-11-14 现量复核）。路径引用均以仓库根（`fakeToys/`）为基准。
+> 所有内容基于当前代码实测梳理（2026-10-26 快照，2026-11-15 现量复核）。路径引用均以仓库根（`fakeToys/`）为基准。
 
 ## 文档导航
 
@@ -62,3 +62,13 @@ fakeToys/
 P0-1 关闭的是「要不要新增共享读臂」这个新需求，**不是**删归属门：两条端点
 `creator = 会话人 OR is_admin`、NULL fail-closed 的判据仍在。将来业务真提共享范围，
 另立新需求条目，不重开 P0-1。
+
+### Swagger UI（2026-11-15 补记）
+
+`/swagger-ui/` 已挂载，指向既有的 `/openapi.json`。实现刻意不用
+`SwaggerUi::url("/openapi.json", ApiDoc::openapi())`：那个形状会再注册一条
+`/openapi.json` 路由，与 `src/main.rs` 里带 `OnceLock` 缓存的 handler 重叠，
+`Router::merge` 会直接 panic，还会在启动时第二次生成 4733 个 path item。
+现在用 `Config::new(["/openapi.json"])` 只把页面指向既有端点，文档本体仍走缓存。
+行为面 3 支 Rust 测试钉住：裸路径补斜杠、页面可取、静态资源可取、
+初始化脚本指向 `/openapi.json`、SwaggerUi 单独成 Router 时不带文档路由。

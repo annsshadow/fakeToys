@@ -19,6 +19,7 @@ use std::sync::OnceLock;
 use shared::rate_limit::RateLimiter;
 use shared::session::SessionManager;
 use tracing_subscriber::EnvFilter;
+use utoipa_swagger_ui::{Config, SwaggerUi};
 
 /// 第 44 轮：OpenAPI 文档是静态的（4733 个 path item），此前**每次请求**
 /// 都重新 `ApiDoc::openapi().to_json()` 序列化一遍（数百 KB / 数十 ms）。
@@ -40,6 +41,20 @@ async fn openapi_json_handler() -> Result<Vec<u8>, axum::response::Json<serde_js
         Ok(json) => Ok(json.as_bytes().to_vec()),
         Err(e) => Err(axum::Json(serde_json::json!({"error": e}))),
     }
+}
+
+/// 2026-11-15：文档路由（OpenAPI JSON + Swagger UI 页面）。
+///
+/// 刻意**不用** `SwaggerUi::url("/openapi.json", ApiDoc::openapi())`：那个写法会替
+/// 同名路径再注册一条 GET 路由，与下面 `.route("/openapi.json", ...)` 重叠，
+/// `Router::merge` 会直接 panic；而且会在启动时第二次生成 4733 个 path item。
+/// 改成 `Config::new(["/openapi.json"])` 只把页面指向既有端点：
+/// Swagger UI 只挂 `/swagger-ui`、`/swagger-ui/`、`/swagger-ui/{*rest}` 三条，
+/// 文档本体仍走 `openapi_json()` 的 OnceLock 缓存。
+fn docs_router() -> Router {
+    Router::new()
+        .route("/openapi.json", axum::routing::get(openapi_json_handler))
+        .merge(SwaggerUi::new("/swagger-ui").config(Config::new(["/openapi.json"])))
 }
 
 #[tokio::main]
@@ -102,8 +117,8 @@ async fn main() -> anyhow::Result<()> {
     let app =
         oa4rust::create_app(pool.clone(), session_manager.clone(), rate_limiter.clone()).await?;
 
-    // Mount OpenAPI JSON and Swagger UI before other layers
-    let app = app.route("/openapi.json", axum::routing::get(openapi_json_handler));
+    // Mount OpenAPI JSON and Swagger UI before other layers（2026-11-15：UI 真正挂上）
+    let app = app.merge(docs_router());
 
     // Optionally mount the MCP HTTP endpoint at /mcp when --http flag is present.
     let security_state = shared::middleware::SecurityState {
@@ -519,5 +534,72 @@ mod mcp_guard_tests {
             .await
             .unwrap();
         assert_eq!(resp.status(), StatusCode::PAYLOAD_TOO_LARGE);
+    }
+}
+
+#[cfg(test)]
+mod docs_router_tests {
+    use super::docs_router;
+    use axum::body::{to_bytes, Body};
+    use axum::http::{Request, StatusCode};
+    use tower::ServiceExt;
+    use utoipa_swagger_ui::{Config, SwaggerUi};
+
+    async fn get(path: &str) -> (StatusCode, String) {
+        let resp = docs_router()
+            .oneshot(Request::builder().uri(path).body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        let status = resp.status();
+        let bytes = to_bytes(resp.into_body(), 4 * 1024 * 1024).await.unwrap();
+        (status, String::from_utf8_lossy(&bytes).into_owned())
+    }
+
+    #[tokio::test]
+    async fn swagger_ui_page_is_served_and_points_at_the_cached_openapi_endpoint() {
+        let (redirect_status, _) = get("/swagger-ui").await;
+        assert_eq!(redirect_status, StatusCode::SEE_OTHER, "裸路径应补斜杠");
+
+        let (status, body) = get("/swagger-ui/").await;
+        assert_eq!(status, StatusCode::OK);
+        assert!(body.contains("swagger-ui"), "页面应含 Swagger UI 挂载点");
+
+        let (css_status, _) = get("/swagger-ui/swagger-ui.css").await;
+        assert_eq!(css_status, StatusCode::OK, "vendored 静态资源应随页面可取");
+
+        let (init_status, init) = get("/swagger-ui/swagger-initializer.js").await;
+        assert_eq!(init_status, StatusCode::OK);
+        assert!(
+            init.contains("/openapi.json"),
+            "初始化脚本应指向既有的缓存端点，而不是第二份文档路由"
+        );
+    }
+
+    #[tokio::test]
+    async fn openapi_json_endpoint_is_still_served_from_the_once_cache() {
+        let (status, body) = get("/openapi.json").await;
+        assert_eq!(status, StatusCode::OK);
+        assert!(body.contains(r#""paths""#));
+        assert!(body.len() > 1000, "文档不应被 Swagger UI 换成空壳");
+    }
+
+    #[tokio::test]
+    async fn swagger_ui_alone_registers_no_openapi_route() {
+        // 反证臂：只用 SwaggerUi 自己那份 Router 时不应出现 /openapi.json。
+        // 若这里变成 200，说明 `.url()` 形状被误用，merge 时会与 docs_router 的
+        // .route 重叠而 panic。
+        let standalone: axum::Router = axum::Router::from(
+            SwaggerUi::new("/swagger-ui").config(Config::new(["/openapi.json"])),
+        );
+        let resp = standalone
+            .oneshot(
+                Request::builder()
+                    .uri("/openapi.json")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::NOT_FOUND);
     }
 }

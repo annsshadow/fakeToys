@@ -97,5 +97,5 @@
 | --- | --- | --- |
 | 端口 81/8001 混淆 | — | 与本项目无关（那是 BMP 门禁链路的坑）；oa4rust 固定 **:3000**，o2server 基准容器（开发期 parity 用）docker :18080 |
 | `migrations: 0 applied, 111 skipped` | 以为迁移坏了 | 幂等：已应用即跳过，属正常 |
-| `/openapi.json` 打不开 Swagger UI | 以为有网页 | 当前仅暴露 JSON 端点（utoipa ApiDoc）；Swagger UI 未挂载（L340 的 vendored 只解决编译期联网，不等于挂了 UI） |
+| `/openapi.json` 打不开 Swagger UI | 以为有网页 | **2026-11-15 起已挂载**：访问 `/swagger-ui/`（裸 `/swagger-ui` 会补斜杠）；页面指向既有带缓存的 `/openapi.json`，不另注册文档路由 |
 | 移动端接口 401 | 以为 token 通道坏了 | 现状 Cookie 模型，原生/小程序通道未补齐（见 Q7） |
