@@ -21,7 +21,7 @@ deadpool.workspace = true
 # 这里显式关闭 default 只取 ring 后端，保持与既有依赖图一致。
 tokio-postgres-rustls = "0.14"
 rustls = { version = "0.23", default-features = false, features = ["std", "tls12", "ring"] }
-webpki-roots = "0.26"
+webpki-roots = "1.0"
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
