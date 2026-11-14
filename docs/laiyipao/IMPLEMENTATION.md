@@ -248,7 +248,7 @@ pnpm vitest run src/test/contract_coverage.test.ts
 | `vue-tsc`（admin + miniapp） | 0 error |
 | `e2e.ps1` 19 步 | 全通过 |
 | **I-6 闭环端到端** | **通过** —— 引擎重放哈希 == 服务端记录；篡改种子必被证伪 |
-| 构建 | miniapp H5 ✓ / mp-weixin ✓ / admin ✓ |
+| 构建 | miniapp H5 ✓ / admin ✓ |
 | 工具链 pin 守卫 | `miniapp/src/test/toolchain_pin.test.ts` —— vite 必须锁 `@dcloudio/vite-plugin-uni` 的 peer 硬锁 `5.2.8`、vitest 留 `^2.1.9`。dependabot 两次自动升级（→6.4.3→8.3.4）曾把 `npm install`（ERESOLVE）/ `type-check`（TS2307）/ `build:h5`（Rolldown 解析不了 vue-demi）同时打坏，此守卫让漂移直接变红 |
 | **全 100 关** | **won 100 / lost 0，零死锁、零难度回归**，平均 280s、最长 594s |
 

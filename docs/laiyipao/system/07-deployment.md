@@ -238,7 +238,7 @@ pnpm size          # 报告首屏 raw / gzip 与逐路由代价
 pnpm size:check    # 超预算退出码 1（raw 220 KB / gzip 80 KB）
 ```
 
-### 4.3 小程序 H5
+### 4.3 H5 构建
 
 ```bash
 cd laiyipao/miniapp
@@ -246,20 +246,6 @@ pnpm install
 VITE_API_BASE="https://<DOMAIN>/laiyipao-api/api/v1" pnpm build:h5
 # 产物：miniapp/dist/build/h5
 ```
-
-### 4.4 微信小程序包
-
-```bash
-pnpm build:mp-weixin
-# 产物：miniapp/dist/build/mp-weixin → 用微信开发者工具上传
-```
-
-注意：
-
-- `manifest.json` 的 `mp-weixin.appid` 为空，需填入真实 AppID；
-- 真机调试要把 `VITE_API_BASE` 改成局域网地址（会打印明文告警），
-  或配置微信「合法域名」；
-- `manifest.json` 的 `urlCheck: false` 仅用于开发。
 
 ---
 

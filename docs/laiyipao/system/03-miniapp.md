@@ -1,6 +1,6 @@
-# 03 · 小程序端（miniapp）
+# 03 · H5 端（miniapp）
 
-> uni-app 3（微信小程序 + H5 双端）+ Vue 3.4 + Pinia 2 + TypeScript 5.9。
+> uni-app 3（**仅 H5 端**，小程序端已于 2026-11-14 移除）+ Vue 3.4 + Pinia 2 + TypeScript 5.9。
 > 本文的重点是**分层边界**：哪些代码可以碰 `uni`，哪些绝对不能；
 > 以及那条贯穿全系统的战斗闭环。
 
@@ -25,9 +25,7 @@ build:h5 与 install。
 
 ```bash
 pnpm dev:h5            # http://127.0.0.1:5174
-pnpm dev:mp-weixin     # 产物在 dist/dev/mp-weixin
 pnpm build:h5          # dist/build/h5
-pnpm build:mp-weixin
 pnpm type-check        # vue-tsc --noEmit
 pnpm test              # vitest run
 ```

@@ -21,7 +21,7 @@ D1–D5 落地轮次，含结算重算闸门 R1、宝石洗练、道具消费闭
 | **README.md**（本文） | 从哪读起、术语是什么、系统长什么样 | 所有人 |
 | [01-architecture.md](./01-architecture.md) | 三端怎么连起来、谁是谁的权威、一次请求怎么走 | 架构 / 新人 |
 | [02-server.md](./02-server.md) | Go 后端怎么分层、每个包管什么、核心流程怎么编排 | 后端 / 测试 |
-| [03-miniapp.md](./03-miniapp.md) | 小程序端的引擎 / 渲染 / 页面 / 状态怎么切分 | 客户端 / 测试 |
+| [03-miniapp.md](./03-miniapp.md) | H5 端的引擎 / 渲染 / 页面 / 状态怎么切分 | 客户端 / 测试 |
 | [04-admin.md](./04-admin.md) | 运营后台有哪些页、每页打哪些接口、权限怎么收口 | 前端 / 运营 |
 | [05-api-reference.md](./05-api-reference.md) | 75 个端点的入参、出参、错误码、限流 | 前后端 / 联调 |
 | [06-data-model.md](./06-data-model.md) | 50 张表的字段、索引、JSONB 结构、不变量 | 后端 / 数据 |
@@ -45,7 +45,7 @@ D1–D5 落地轮次，含结算重算闸门 R1、宝石洗练、道具消费闭
 
 ```
                        ┌──────────────────────────────────────────┐
-                       │            玩家（微信小程序 / H5）        │
+                       │            玩家（H5）        │
                        └───────────────────┬──────────────────────┘
                                            │ HTTPS  Bearer
                        ┌───────────────────▼──────────────────────┐
@@ -92,7 +92,7 @@ D1–D5 落地轮次，含结算重算闸门 R1、宝石洗练、道具消费闭
 | 数据访问 | pgx v5 + goose | `uni.request` | `fetch` |
 | 鉴权 | HS256 JWT + 可吊销 refresh / 管理员 sid 会话 | localStorage（`uni.*Storage`） | localStorage |
 | 端口（dev） | `:8080` | `:5174`（H5） | `:5175` |
-| 产物 | 单二进制 `lyp-server-amd64` | `dist/build/h5` 或 `dist/dev/mp-weixin` | `dist/`（`base=/laiyipao-admin/`） |
+| 产物 | 单二进制 `lyp-server-amd64` | `dist/build/h5` | `dist/`（`base=/laiyipao-admin/`） |
 | 测试 | `go test ./...`（267 个 Go 文件，含大量契约/守卫测试） | Vitest（内核可无头跑） | Vitest + 体积预算 |
 | 代码量（非测试） | ≈ 25.3k 行 Go | ≈ 14.2k 行 TS/Vue | ≈ 6.4k 行 TS/Vue |
 

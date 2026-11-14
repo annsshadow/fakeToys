@@ -1,6 +1,6 @@
 # 来一炮 · 文档总览
 
-仿微信小游戏玩法内核自研的**塔防 + 元素反应**小程序游戏。美术 100% Canvas 程序化绘制，不使用任何原作名称、素材、UI 或文案。
+仿微信小游戏玩法内核自研的**塔防 + 元素反应** H5 游戏。美术 100% Canvas 程序化绘制，不使用任何原作名称、素材、UI 或文案。
 
 本页是 `docs/` 站的来一炮文档入口；源码与运行说明见仓库根目录的 `laiyipao/README.md`。
 
@@ -14,14 +14,14 @@
 | [决策记录](DECISIONS.md) | 关键技术选型的背景与取舍 |
 | [已知限制](KNOWN_LIMITS.md) | 明确未做或有意不做的部分 |
 | [运维手册](OPERATIONS.md) | 部署、监控、故障处置流程 |
-| [系统设计](system/README.md) | 架构、服务端、小程序、后台、API、数据模型、部署、契约八册 |
+| [系统设计](system/README.md) | 架构、服务端、H5 端、后台、API、数据模型、部署、契约八册 |
 
 ## 代码结构
 
 ```
 laiyipao/
 ├─ server/     Go Fiber + PostgreSQL 后端
-├─ miniapp/    uni-app（微信小程序 / H5 双端）
+├─ miniapp/    uni-app（仅 H5 端）
 ├─ admin/      Vue 3 运营后台 + 玩家玩法文档站
 └─ scripts/    端到端验收脚本
 ```
