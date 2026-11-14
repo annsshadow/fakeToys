@@ -64,12 +64,24 @@ mod creator_columns_tests {
     ///   `creator` 取的是请求体里的 `creator`（缺省 `system`）⇒ 没有「会话身份」
     ///   可落 ⇒ 那一格要先把会话加进形参（对外契约变更），单独一轮。
     const SOURCE_EXEMPTIONS: &[(&str, &str)] = &[
-        ("x_attendance_v2_group", "迁移 061 建表时只有 creator_person，没有 creator 列"),
-        ("x_attendance_v2_shift", "迁移 061 建表时只有 creator_person，没有 creator 列"),
-        ("x_attendance_v2_leave", "迁移 061 建表时只有 creator_person，没有 creator 列"),
+        (
+            "x_attendance_v2_group",
+            "迁移 061 建表时只有 creator_person，没有 creator 列",
+        ),
+        (
+            "x_attendance_v2_shift",
+            "迁移 061 建表时只有 creator_person，没有 creator 列",
+        ),
+        (
+            "x_attendance_v2_leave",
+            "迁移 061 建表时只有 creator_person，没有 creator 列",
+        ),
         ("x_attendance_v2_group_schedule", "表本身没有 creator 列"),
         ("x_attendance_v2_checkin_record", "表本身没有 creator 列"),
-        ("x_attendance_config", "attendanceconfig_save 的形参里没有会话（creator 取请求体）"),
+        (
+            "x_attendance_config",
+            "attendanceconfig_save 的形参里没有会话（creator 取请求体）",
+        ),
     ];
 
     /// 从 `lib.rs` 里抽出每一个 `INSERT INTO x_attendance*` 的 (表名, 列名清单)。
@@ -112,7 +124,10 @@ mod creator_columns_tests {
     fn every_write_site_lands_both_owner_columns() {
         let source = include_str!("lib.rs");
         let sites = insert_sites(source);
-        assert!(!sites.is_empty(), "没扫到任何 INSERT ⇒ 判据失效（源码形状变了？）");
+        assert!(
+            !sites.is_empty(),
+            "没扫到任何 INSERT ⇒ 判据失效（源码形状变了？）"
+        );
         let mut bad: Vec<String> = Vec::new();
         for (table, cols) in &sites {
             if is_exempt(table) {
@@ -154,7 +169,9 @@ mod creator_columns_tests {
             );
         }
         assert!(
-            exempted.iter().all(|t| SOURCE_EXEMPTIONS.iter().any(|(x, _)| x == t)),
+            exempted
+                .iter()
+                .all(|t| SOURCE_EXEMPTIONS.iter().any(|(x, _)| x == t)),
             "源码里出现了不在豁免表里的半列写点：{exempted:?}"
         );
     }
@@ -223,12 +240,21 @@ mod creator_columns_tests {
         )
         .await
         .unwrap();
-        shared::testing::upsert_fixture_person(c, ADMIN_PERSON, ADMIN_PERSON, "p11 attendance admin")
-            .await;
+        shared::testing::upsert_fixture_person(
+            c,
+            ADMIN_PERSON,
+            ADMIN_PERSON,
+            "p11 attendance admin",
+        )
+        .await;
         c.execute(
             "INSERT INTO auth_person_role (person_id, role_id, unit_id) \
              VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
-            &[&ADMIN_PERSON.to_string(), &ROLE_ID.to_string(), &UNIT_ID.to_string()],
+            &[
+                &ADMIN_PERSON.to_string(),
+                &ROLE_ID.to_string(),
+                &UNIT_ID.to_string(),
+            ],
         )
         .await
         .unwrap();
@@ -253,8 +279,11 @@ mod creator_columns_tests {
         )
         .await
         .unwrap();
-        c.execute("DELETE FROM auth_role WHERE id = $1", &[&ROLE_ID.to_string()])
-            .await
-            .unwrap();
+        c.execute(
+            "DELETE FROM auth_role WHERE id = $1",
+            &[&ROLE_ID.to_string()],
+        )
+        .await
+        .unwrap();
     }
 }

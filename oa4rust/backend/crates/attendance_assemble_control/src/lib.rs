@@ -58,14 +58,14 @@ fn date_keyset(table: &'static str, column: &'static [KeyColumn]) -> KeySet<'sta
 
 #[cfg(test)]
 #[allow(clippy::module_inception)]
+mod creator_columns_tests;
+#[cfg(test)]
+#[allow(clippy::module_inception)]
 mod security_gate_tests;
 #[cfg(test)]
 mod security_gate_tests_b63;
 #[cfg(test)]
 mod security_gate_tests_idor_b6;
-#[cfg(test)]
-#[allow(clippy::module_inception)]
-mod creator_columns_tests;
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests;
