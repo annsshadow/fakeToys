@@ -57,7 +57,7 @@ miniapp/src/
 
 这条边界带来三个直接收益：
 
-1. 同一份内核能跑在微信 canvas、H5 canvas 和 Node（Vitest）里；
+1. 同一份内核能跑在 H5 canvas 与 Node（Vitest）里；
 2. 100 关平衡扫描、确定性测试、变异测试都能在毫秒级完成；
 3. 服务端镜像引擎可以与它逐位对拍（`engine_pure_vectors.json`）。
 
@@ -89,7 +89,7 @@ miniapp/src/
 所有比例、速度、坐标用 `bigint` 存千分比（`×1000`）。
 不用 `number` 的理由不是精度洁癖，而是**跨端一致性**：
 
-- 浮点在不同引擎（V8 / JavaScriptCore / 小程序运行时）上可能产生末位差异；
+- 浮点在不同引擎（V8 / JavaScriptCore）上可能产生末位差异；
 - 一次差异会沿着 tick 累积，最终让回放哈希对不上；
 - 而哈希对不上的症状是「验真把正常玩家判成作弊」，排查方向会完全跑偏。
 
@@ -259,7 +259,7 @@ render/canvas.ts
   画面与逻辑分叉，而分叉在回放时表现为哈希不符。
 - 视口用 **CSS 像素**，canvas 内部按 dpr 放大。混用会把画面缩小 dpr 倍
   （表现为画布空白 / 元素挤在角落）。
-- `raf` 不可用（部分小程序基础库）时降级到 `setInterval`，`renderMode` 会记录当前模式。
+- `raf` 不可用（部分浏览器后台标签页）时降级到 `setInterval`，`renderMode` 会记录当前模式。
 
 ---
 
@@ -304,7 +304,7 @@ request(path, opts)
 **刷新必须单飞**（`refreshInflight`）。服务端轮换 refresh token 是原子的
 （条件 UPDATE + RETURNING），N 个并发刷新里恰好 1 次成功、N-1 次 401。
 若每个 401 各自处理，失败分支会 `clearTokens()` 把刚写入的新令牌删掉 →
-用户被静默登出。触发场景不需要攻击者：access token 2h 过期后回到小程序，
+用户被静默登出。触发场景不需要攻击者：access token 2h 过期后回到页面，
 某页面并发拉 wallet + me + tasks + mastery 就是 4 个 401。
 
 `tokenExpiringSoon()` 用**本地时钟**且刻意不做时钟校正：

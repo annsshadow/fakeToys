@@ -49,3 +49,16 @@
 - **为何判为不可达（补偿控制）**：augmentor 只用**嵌入式** `chromadb.PersistentClient(path=...)`（`augmentor/vector/chromadb.py:80`，`semantic.py` 注释「自管落盘」），**从不**起 chromadb HTTP server（无 `HttpClient` / `chromadb run` / 监听端口）。四条漏洞全是 chromadb **服务端** API 的预认证/越权/RCE，需要暴露的网络服务与鉴权边界才触达；单进程本地嵌入式用法下不可达。
 - **处置**：登记为已接受技术债（不等同于「安全」）。待 chromadb 发布修补版即升；若将来改用 `HttpClient` 连远端/共享 chromadb server，必须重新评估（届时可达）。
 - **同期已修（对照）**：本轮 dependabot 清理中，cargo 侧 rustls/webpki-roots/rustls-webpki/ctutils 已升到修补版（清 7 条），zip/rsa/lopdf 按既有 rustsec-exceptions.toml 登记例外；npm augmentor/web 的 @vitest/mocker 已升 5.0.5（清 2 条）；pnpm oa4rust 的 postcss-selector-parser 已覆盖到 7.1.6（清 1 条）。
+
+---
+
+## 2026-11-14 现量复核
+
+| ID | 复核结论 |
+| --- | --- |
+| TD-1 | 仍为已修复；本轮未改 `save_config()` 写回路径 |
+| TD-2 | 仍为已修复（依赖链已移除）。注意 `@dcloudio/uni-mp-weixin` 的这条记录属 **oa4rust mobile**；laiyipao 的小程序构建目标已移除，两者不是同一处 |
+| TD-3 | 仍为已接受。本轮 L340 / A269 新增的 `index_status` chromadb 分支是**只读探查**：不 import chromadb、不构造 `PersistentClient`，`count` 恒 0 并写明「条数不可得」⇒ 没有新增可达面，原「嵌入式用法不可达」的论证继续成立 |
+
+三笔均保持原状态，本轮只补口径，不重开技术债。当前全仓现量见
+`docs/ops/current-state.md`。

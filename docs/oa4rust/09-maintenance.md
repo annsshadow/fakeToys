@@ -72,7 +72,7 @@ pnpm test && pnpm typecheck && pnpm lint:check && pnpm build
 | --- | --- | --- |
 | `sms`、`captcha_store` crate 真实化 | todo（最后 2 个业务 crate） | endpoint-inventory 汇总 |
 | 移动端原生/小程序 token 鉴权通道 | 待后端提供（Cookie 不跨容器） | `mobile/README.md` 鉴权模型 |
-| Swagger UI 挂载 | zip 已备（swagger-ui-v5.17.12.zip）未接线 | `backend/` 根目录 |
+| Swagger UI 挂载 | 未接线（2026-11-14：编译期联网已由 `vendored` 解决，UI 挂载仍是独立待办） | `backend/` 根目录 |
 | lopdf 0.26.0 例外 | 2026-10-28 到期（genpdf 生成 PDF 用，无解析入口） | security/rustsec-exceptions.toml |
 | rsa 0.9.10 例外 | 2026-11-08 到期（仅 dev-dependency 可达） | 同上 |
 | `spent` 精确耗时 | 未实现（信封恒 0，对齐 o2server v9 行为） | response.rs 注释 |

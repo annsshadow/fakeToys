@@ -1,7 +1,7 @@
 # OA4Rust 项目文档
 
 > 本目录是 OA4Rust（`oa4rust/`）的统一文档入口，覆盖项目定位、架构、模块、接口、流程、环境、运行、示例、FAQ 与维护约定。
-> 所有内容基于当前代码实测梳理（2026-10-26 快照，分支 `optimism20261012`）。路径引用均以仓库根（`fakeToys/`）为基准。
+> 所有内容基于当前代码实测梳理（2026-10-26 快照，2026-11-14 现量复核）。路径引用均以仓库根（`fakeToys/`）为基准。
 
 ## 文档导航
 
@@ -44,3 +44,21 @@ fakeToys/
     ├── e2e/               # Playwright E2E（需 live 后端）
     └── vendor/            # Windows 本机 GNU 工具链（不入 git，README 可复现）
 ```
+
+---
+
+## 2026-11-14 现量补记
+
+本节记录 2026-10-26 快照之后的变化；上文各分册若与本节冲突，**以本节为准**。
+
+| 面 | 现量 | 来源 |
+| --- | --- | --- |
+| 编译期联网 | `utoipa-swagger-ui` 两处启用 `vendored` feature，build 脚本改走内嵌 zip；`cargo check -p openapi --offline` 通过 | `oa4rust/backend/Cargo.toml`、`Cargo.lock` |
+| 旧绕法 | 「从别的 `target/debug/build/.../out/` 拷 Swagger UI zip」已作废，不要再写进运行手册 | 交接文档 P2-1 |
+| 交付台账 | `x_portal` 共享读臂（P0-1）业务无新需求，整条关闭；本地环境债（P2-1）三条关闭 | `oa4rust/docs/plans/handoff-2026-11-08.md` §4 |
+| crate 口径 | `[workspace].members` 为 **96**；连同根包共 **97** 个 `Cargo.toml`。上文写 96、仓库根 README 写 97，是同一事实的两种数法，不是矛盾 | `oa4rust/backend/Cargo.toml` |
+| 移动端 | `mobile` 仍含 H5 与微信小程序双构建（`dev:mp-weixin` 仍在）；移除小程序端的是 **laiyipao**，不是本项目的 mobile | `oa4rust/mobile/package.json` |
+
+P0-1 关闭的是「要不要新增共享读臂」这个新需求，**不是**删归属门：两条端点
+`creator = 会话人 OR is_admin`、NULL fail-closed 的判据仍在。将来业务真提共享范围，
+另立新需求条目，不重开 P0-1。

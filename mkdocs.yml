@@ -110,7 +110,7 @@ nav:
           - 总览: laiyipao/system/README.md
           - 01 架构: laiyipao/system/01-architecture.md
           - 02 服务端: laiyipao/system/02-server.md
-          - 03 小程序: laiyipao/system/03-miniapp.md
+          - 03 H5 端: laiyipao/system/03-miniapp.md
           - 04 管理后台: laiyipao/system/04-admin.md
           - 05 API 参考: laiyipao/system/05-api-reference.md
           - 06 数据模型: laiyipao/system/06-data-model.md
