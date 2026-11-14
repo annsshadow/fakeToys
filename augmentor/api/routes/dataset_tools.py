@@ -107,10 +107,10 @@ class ConvertRequest(BaseModel):
 
 
 class MergeRequest(BaseModel):
-    """合并请求"""
-    inputs: List[str]
-    output_file: str
+    """合并请求；L334/A290：四档旋钮全接，不再只转发一档"""
+    inputs: List[str]; output_file: str
     deduplicate: bool = True
+    dedup_threshold: float = 0.9; preserve_order: bool = True; max_items: Optional[int] = None
 
 
 class SampleRequest(BaseModel):
@@ -189,15 +189,15 @@ class CompareRequest(BaseModel):
 
 
 class AggregateRequest(BaseModel):
-    """聚合请求
+    """聚合请求；L334/A293：三只 SDK 旋钮全接，weighted 可复现
 
     `datasets` 是「来源名 → 数据集文件」的映射；`strategy` 支持
     union / intersection / weighted / consistent。
     """
-    datasets: Dict[str, str]
-    output_file: str
-    strategy: str = "union"
-    target_size: Optional[int] = None
+    datasets: Dict[str, str]; output_file: str
+    strategy: str = "union"; target_size: Optional[int] = None
+    key_fields: Optional[List[str]] = None; value_fields: Optional[List[str]] = None
+    random_state: Optional[int] = None
 
 
 class RagRequest(BaseModel):
@@ -278,12 +278,12 @@ class ConvertResponse(BaseModel):
 
 
 class MergeResponse(BaseModel):
-    """合并结果（与 `DatasetOperations.merge_files()` 的返回键一一对应）"""
+    """合并结果（L334/A290：与 merge_files() 六键一一对应）"""
     input_files: int
-    output_file: str
-    total_input: int
+    output_file: str; total_input: int
     total_output: int
     removed_duplicates: int
+    truncated_by_max_items: int
 
 
 class SampleResponse(BaseModel):
@@ -359,12 +359,12 @@ class FeaturesResponse(BaseModel):
 
 
 class AggregateResponse(BaseModel):
-    """聚合结果：产物路径与汇总计数"""
-    output_file: str
-    aggregated_count: int
-    source_counts: Dict[str, int]
-    removed_duplicates: int
+    """聚合结果（L334/A293：冲突只回条数与截断读数，明细截断到 20 条）"""
+    output_file: str; aggregated_count: int
+    source_counts: Dict[str, int]; removed_duplicates: int
     conflicts: List[Dict[str, Any]]
+    conflict_count: int
+    conflicts_truncated: int
 
 
 class AutoConfigResponse(BaseModel):
@@ -799,7 +799,7 @@ async def dataset_merge(request: MergeRequest):
             return ops.merge_files(
                 input_paths,
                 str(output_path),
-                MergeConfig(deduplicate=request.deduplicate),
+                MergeConfig(deduplicate=request.deduplicate, dedup_threshold=request.dedup_threshold, preserve_order=request.preserve_order, max_items=request.max_items),  # L334/A290
             )
 
         return await run_in_thread(run)
@@ -905,16 +905,16 @@ async def dataset_aggregate(request: AggregateRequest):
         output_path = resolve_data_path(request.output_file, for_write=True)
 
         def run():
-            result = DataAggregator().aggregate(
-                datasets, request.strategy, target_size=request.target_size
-            )
+            agg = DataAggregator(key_fields=request.key_fields, value_fields=request.value_fields, random_state=request.random_state)  # L334/A293
+            result = agg.aggregate(datasets, request.strategy, target_size=request.target_size)
             _dump(result.aggregated, output_path)
+            receipt = result.to_dict(); shown = receipt["conflicts"][:20]  # L334/A293：一份权威、明细截断
             return {
                 "output_file": str(output_path),
-                "aggregated_count": result.total_count,
-                "source_counts": result.source_counts,
-                "removed_duplicates": result.removed_duplicates,
-                "conflicts": result.conflicts,
+                "aggregated_count": receipt["total_count"],
+                "source_counts": receipt["source_counts"],
+                "removed_duplicates": receipt["removed_duplicates"],
+                "conflicts": shown, "conflict_count": receipt["conflict_count"], "conflicts_truncated": len(receipt["conflicts"]) - len(shown),
             }
 
         return await run_in_thread(run)

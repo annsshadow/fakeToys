@@ -19,6 +19,8 @@ export const aggregateResponseSchema = z.object({
   source_counts: z.record(z.string(), z.number()),
   removed_duplicates: z.number(),
   conflicts: z.array(z.record(z.string(), z.unknown())),
+  conflict_count: z.number(),
+  conflicts_truncated: z.number(), // L334/A293
 })
 
 /** `api/routes/quality.py:88` → AnnotateResponse */
@@ -325,6 +327,7 @@ export const mergeResponseSchema = z.object({
   total_input: z.number(),
   total_output: z.number(),
   removed_duplicates: z.number(),
+  truncated_by_max_items: z.number(), // L334/A290
 })
 
 /** `api/routes/system_ops.py:204` → MigrationResponse */

@@ -1159,12 +1159,9 @@ export interface ConvertResponse {
 }
 
 /**
- * `POST /api/dataset/merge`
- *
- * `removed_duplicates` 只在 `deduplicate` 为真时才可能非零（实测同一份文件合并两次：
- * 开去重 `total_output 5 / removed 5`，关去重 `10 / 0`）。SDK 还另外产出一个
- * `truncated_by_max_items`（`augmentor/dataset_ops.py:229`），但响应模型没有声明它，
- * FastAPI 按模型字段过滤 ⇒ 线上永远看不到这一格（账本 **A290**）。
+ * `POST /api/dataset/merge`；`removed_duplicates` 只在 `deduplicate` 为真时非零（实测开去重 5/5、关去重 10/0）。
+ * SDK 的 `truncated_by_max_items`（`augmentor/dataset_ops.py:229`）自 L334/A290 起上线：四档全接。
+ * 截断与去重删除**分开报**，`max_items` 不再静默改产物条数（账本 **A290** 已修）。
  */
 export interface MergeResponse {
   input_files: number
@@ -1172,6 +1169,7 @@ export interface MergeResponse {
   total_input: number
   total_output: number
   removed_duplicates: number
+  truncated_by_max_items: number
 }
 
 /** `POST /api/dataset/split` 的单支产物：落盘绝对路径 + 条数（**0 条也占一格**） */
@@ -1234,7 +1232,7 @@ export interface AggregateConflict {
  * `aggregated_count` 是**落盘条数**，`source_counts` 是各源**读进来**的条数，两者不必
  * 有关系（实测 consistent 单源同问不同答 ⇒ `source_counts {"甲":2}` 而 `aggregated_count 0`：
  * 两条都被判成冲突整份丢掉）。`conflicts` 是**明细整份上线**，与本组「写盘变换类只回写到哪、
- * 写了多少」的约定不一致，SDK 的 `to_dict()` 同一件事只报 `conflict_count`（账本 **A293**）。
+ * 写了多少」不一致；L334/A293 起明细截断 20 条并补 conflict_count / conflicts_truncated，回执取自 to_dict()（已修）。
  */
 export interface AggregateResponse {
   output_file: string
@@ -1242,6 +1240,8 @@ export interface AggregateResponse {
   source_counts: Record<string, number>
   removed_duplicates: number
   conflicts: AggregateConflict[]
+  conflict_count: number
+  conflicts_truncated: number
 }
 
 /**

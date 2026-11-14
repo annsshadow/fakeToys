@@ -497,20 +497,20 @@ class TestReceiptCoversEveryResponseKey:
             assert f"part.{key}" in page, f"SplitPart.{key} 在页面上没人读"
         assert "Object.entries(splitResult.splits)" in page
 
-    def test_the_merge_endpoint_forwards_one_knob_of_four_and_reports_five_of_six(
+    def test_the_merge_endpoint_forwards_all_four_knobs_and_reports_six_of_six(  # L334/A290
             self):
-        """A290 的两半都钉住：`MergeConfig` 四档只接 `deduplicate`；SDK 六键只上线五键
+        """L334/A290：四档旋钮全接、SDK 六键全上线，截断数与去重删除分开报
 
-        这两句是卡上「这一档只控开 / 关」那条口径的证据。少了它们，页面上那个 checkbox 会被读成
-        整套去重策略的控制面；把 SDK 的截断计数留在本地，用户看到的 `removed_duplicates` 就可能
-        被当成「少掉的条数的全部」（`augmentor/dataset_ops.py:229` 起特意把两件事分开报）。
+        改前只转一档、回执丢截断数，用户会把 `removed_duplicates` 当成「少掉的全部」；
+        现在端点逐档转发 `MergeConfig`，页面回执真读截断数，`max_items` 不再静默改产物。
         """
         assert set(MergeConfig.__dataclass_fields__) == {
             "deduplicate", "dedup_threshold", "preserve_order", "max_items"}
         assert set(MergeResponse.model_fields) == {
-            "input_files", "output_file", "total_input", "total_output", "removed_duplicates"}
+            "input_files", "output_file", "total_input", "total_output",
+            "removed_duplicates", "truncated_by_max_items"}
         assert '"truncated_by_max_items"' in DATASET_OPS_PY.read_text(encoding="utf-8")
-        assert "truncated_by_max_items" not in _page()
+        assert "truncated_by_max_items" in _page()
 
 
 @needs_web_src
@@ -521,10 +521,10 @@ class TestHonestyCopyOnTheThreeCards:
         """写边不认 xls 这件事必须写在卡上：两份下拉长得不一样，用户会以为是页面 bug"""
         assert "读边认它，写边刻意不认" in _page()
 
-    def test_the_dedup_threshold_is_declared_not_on_this_endpoint(self):
-        """卡上那句「只控开 / 关」点名 A290：不写它，一个开关会被读成整套去重策略"""
+    def test_the_dedup_threshold_is_now_on_the_endpoint(self):  # L334/A290
+        """卡上必须写明四档全可调：L334 之前这里只控开 / 关，读法完全不同"""
         page = _page()
-        assert "去重阈值在这只端点上不可调" in page
+        assert "四档全可调" in page and "dedup_threshold" in page
         assert "A290" in page
 
     def test_the_two_branch_guards_and_the_ghost_key_are_all_declared(self):

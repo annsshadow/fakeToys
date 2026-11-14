@@ -791,14 +791,14 @@ export default function DataManagement() {
           </Space>
         </Space>
         <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
-          这一档只控「开 / 关」：SDK 里那个宽松 / 保守两档的去重阈值在这只端点上不可调（见账本
-          A290）。
+          四档全可调：宽松 / 保守两档的 dedup_threshold、preserve_order、max_items 自 L334
+          起接进端点；回执把去重删除与 max_items 截断**分开报**（A290 已修）。
         </div>
         {mergeResult && (
           <div aria-label="合并回执" style={{ marginTop: 8 }}>
             {mergeResult.input_files} 份输入共 {mergeResult.total_input} 条 ⇒{' '}
-            {mergeResult.total_output} 条出，其中去重删掉 {mergeResult.removed_duplicates} 条 ⇒{' '}
-            {mergeResult.output_file}
+            {mergeResult.total_output} 条出，其中去重删掉 {mergeResult.removed_duplicates} 条、
+            max_items 截断 {mergeResult.truncated_by_max_items} 条 ⇒ {mergeResult.output_file}
           </div>
         )}
       </Card>
@@ -1054,9 +1054,9 @@ export default function DataManagement() {
         <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
           来源名由**页面**起（初始取文件名去掉扩展名，可改）：契约只收「名字 →
           文件」的映射，不替你取名。 判重恒认 <code>instruction</code>、一致性恒认{' '}
-          <code>output</code> —— SDK 的 key_fields / value_fields / random_state
-          在这只端点上一个都不可设，所以同问不同答的两条会被并成一条（留第一条）， 而 weighted
-          **不可复现**：同一份请求两次跑出的落盘内容不同（A293）。
+          <code>output</code> 是默认值：L334/A293 起 key_fields / value_fields / random_state
+          三档都可调，指定 random_state 后 weighted 可复现、不指定时仍**不可复现**； 冲突明细截断到
+          20 条并带 conflict_count / conflicts_truncated（A293 已修）。
         </div>
         <div style={{ marginTop: 4, fontSize: 12, opacity: 0.75 }}>
           目标条数只对 weighted 生效，配其余三支**完全空转**（实测填 1 配 union 仍交全量，A294）；
@@ -1066,7 +1066,9 @@ export default function DataManagement() {
         {aggResult && (
           <div aria-label="聚合回执" style={{ marginTop: 8 }}>
             落盘 {aggResult.aggregated_count} 条，去重删掉 {aggResult.removed_duplicates} 条 ⇒{' '}
-            {aggResult.output_file}
+            {aggResult.output_file}；冲突 {aggResult.conflict_count} 处（明细收窄{' '}
+            {aggResult.conflicts_truncated} 条）
+            {/* L334/A293：conflict_count 与 conflicts_truncated 都是回执真读数 */}
             <div style={{ marginTop: 4, fontSize: 12 }}>
               各源读入：
               {Object.entries(aggResult.source_counts)

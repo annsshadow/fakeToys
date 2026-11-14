@@ -627,7 +627,7 @@ CALLS = {
             json={"inputs": ["data.json", "train.json"], "output_file": "merged.json"},
         ),
         keys=_keys(
-            "input_files", "output_file", "total_input", "total_output", "removed_duplicates"
+            "input_files", "output_file", "total_input", "total_output", "removed_duplicates", "truncated_by_max_items",  # L334/A290
         ),
     ),
     ("POST", "/api/dataset/sample"): _Case(
@@ -651,7 +651,7 @@ CALLS = {
         ),
         keys=_keys(
             "output_file", "aggregated_count", "source_counts",
-            "removed_duplicates", "conflicts",
+            "removed_duplicates", "conflicts", "conflict_count", "conflicts_truncated",  # L334/A293
         ),
     ),
     ("POST", "/api/dataset/rag"): _Case(

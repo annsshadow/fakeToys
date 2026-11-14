@@ -534,13 +534,13 @@ class TestEveryArmTheUiCanSendForSample:
 class TestEveryArmTheUiCanSendForAggregate:
     """聚合卡的闸：三个不可设的旋钮各自留下实测后果，空转的那一格点名说清"""
 
-    def test_key_fields_are_not_settable_so_same_question_different_answer_collapses(
+    def test_key_fields_are_settable_so_the_default_still_collapses(  # L334/A293
             self, http_with_dataset_tools):
-        """A293 的判重那一半：union 把同问不同答并成一条，活下来的是**第一条**"""
+        """三档现可设；默认仍按 instruction 对齐 ⇒ union 同问不同答并成第一条"""
         http, _root, _outside, disk = http_with_dataset_tools
-        assert not {"key_fields", "value_fields", "random_state"} & set(
+        assert {"key_fields", "value_fields", "random_state"} <= set(
             AggregateRequest.model_fields)
-        assert "DataAggregator()" in DATASET_TOOLS_PY.read_text(encoding="utf-8")
+        assert "DataAggregator(key_fields=" in DATASET_TOOLS_PY.read_text(encoding="utf-8")
         resp = http.post("/api/dataset/aggregate", json={
             "datasets": {"甲": "sameq.json"}, "output_file": "k.json", "strategy": "union"})
         assert resp.status_code == 200, resp.json()
@@ -617,41 +617,41 @@ class TestEveryArmTheUiCanSendForAggregate:
 
     def test_two_hand_maintained_receipt_key_sets_drift_and_both_carry_the_detail(
             self, http_with_dataset_tools):
-        """A293 的回执那一半：**两份手写的键集各自漂**，而明细两侧都整份上线
+        """L334/A293 的回执：端点改走 to_dict() 一份权威，明细截断 20 条并补两个计数
 
         改前想象被实测推翻过一轮：本支初稿钉的是「SDK 的 `to_dict()` 只报 `conflict_count`、
         线上才有明细」——真跑一遍 `to_dict()`（`augmentor/aggregator.py:37`）交回五个键，
-        `conflict_count` 与 `conflicts` **都在**。真形状是：端点在 `api/routes/dataset_tools.py:912`
-        手拼了一份回执而没调 `to_dict()`，两份键集从此各走各路（`total_count` 改名
-        `aggregated_count`、`conflict_count` 在线上被丢掉、`output_file` 只在线上有）。
-        判据因此写成「逐键列出两份、点名差在哪」，而不是「一边有明细一边没有」。
+        `conflict_count` 与 `conflicts` **都在**；改前端点曾手拼一份回执而不调它
+        ⇒ 两份键集各走各路（`total_count` 改名 `aggregated_count`、线上丢 `conflict_count`）。
+        L334 把回执收成一份权威，并把明细收窄、不带回执的条数单独报出来。
+        判据仍逐键列出两份，但差集只剩「端点自有的路径 / 计数」这几格真差异。
 
-        明细整份上线这一格与 `docs/augmentor/API.md` 给 dataset 那组定的「写盘变换类只回写到哪、
-        写了多少」相反，所以页面把每条冲突逐字渲出来（不藏），同时在卡上写明它偏了约定。
+        明细截断这一格与 `docs/augmentor/API.md` 给 dataset 那组定的「写盘变换类只回写到哪、
+        写了多少」仍有张力，所以页面逐字渲出前 20 条并写明收窄了多少、总数多少。
         """
         sdk_keys = set(AggregationResult(aggregated=[], source_counts={}).to_dict())
         online_keys = set(AggregateResponse.model_fields)
         assert sdk_keys == {"total_count", "source_counts", "removed_duplicates",
                             "conflict_count", "conflicts"}
         assert online_keys == {"output_file", "aggregated_count", "source_counts",
-                               "removed_duplicates", "conflicts"}
-        assert sdk_keys - online_keys == {"total_count", "conflict_count"}
-        assert online_keys - sdk_keys == {"output_file", "aggregated_count"}
+                               "removed_duplicates", "conflicts", "conflict_count", "conflicts_truncated"}  # L334/A293
+        assert sdk_keys - online_keys == {"total_count"}  # L334/A293：conflict_count 已上线
+        assert online_keys - sdk_keys == {"output_file", "aggregated_count", "conflicts_truncated"}
 
-        # 端点那一支里根本没有 `to_dict()`：两份键集是各自手写的，不是一份转另一份
+        # L334/A293：端点必须真的调 `to_dict()`，否则两份键集又会各走各路
         route = DATASET_TOOLS_PY.read_text(encoding="utf-8")
         _, _, tail = route.partition("async def dataset_aggregate")
         assert tail, "dataset_aggregate 端点没了 ⇒ 判据要跟着换形状"
         branch = tail.split("@router.post", 1)[0]
-        assert "to_dict()" not in branch
+        assert "to_dict()" in branch
 
         http, _root, _outside, _disk = http_with_dataset_tools
         resp = http.post("/api/dataset/aggregate", json={
             "datasets": {"甲": "sameq.json", "乙": "sameq.json"},
             "output_file": "cf.json", "strategy": "consistent"})
         assert resp.status_code == 200, resp.json()
-        conflicts = resp.json()["conflicts"]
-        assert len(conflicts) == 1
+        body = resp.json(); conflicts = body["conflicts"]  # L334/A293
+        assert len(conflicts) == 1 and body["conflict_count"] == 1 and body["conflicts_truncated"] == 0
         assert set(conflicts[0]) == set(ts_interface_keys("AggregateConflict"))
         assert conflicts[0]["sources"] == ["甲", "甲", "乙", "乙"]
         assert conflicts[0]["values"] == ["答案甲", "答案乙", "答案甲", "答案乙"]

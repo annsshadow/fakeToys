@@ -1193,12 +1193,20 @@ export const convertDataset = async (
 export const mergeDatasets = async (
   inputs: string[],
   outputFile: string,
-  opts: { deduplicate?: boolean } = {},
+  opts: {
+    deduplicate?: boolean
+    dedupThreshold?: number
+    preserveOrder?: boolean
+    maxItems?: number
+  } = {}, // L334/A290
 ): Promise<MergeResponse> => {
   const response = await api.post('/dataset/merge', {
     inputs,
     output_file: outputFile,
     deduplicate: opts.deduplicate,
+    dedup_threshold: opts.dedupThreshold,
+    preserve_order: opts.preserveOrder,
+    max_items: opts.maxItems,
   })
   return checkedData<MergeResponse>('mergeDatasets', mergeResponseSchema, response.data)
 }
@@ -1290,13 +1298,22 @@ export const sampleDataset = async (
 export const aggregateDatasets = async (
   datasets: Record<string, string>,
   outputFile: string,
-  opts: { strategy?: string; targetSize?: number } = {},
+  opts: {
+    strategy?: string
+    targetSize?: number
+    keyFields?: string[]
+    valueFields?: string[]
+    randomState?: number
+  } = {}, // L334/A293
 ): Promise<AggregateResponse> => {
   const response = await api.post('/dataset/aggregate', {
     datasets,
     output_file: outputFile,
     strategy: opts.strategy,
     target_size: opts.targetSize,
+    key_fields: opts.keyFields,
+    value_fields: opts.valueFields,
+    random_state: opts.randomState,
   })
   return checkedData<AggregateResponse>('aggregateDatasets', aggregateResponseSchema, response.data)
 }
