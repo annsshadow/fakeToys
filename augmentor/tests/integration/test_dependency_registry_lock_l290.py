@@ -355,16 +355,13 @@ def test_stale_write_site_is_named_by_the_l273_census(tmp_path):
     assert "dependency.py::DependencyManager.register_dataset" in sites, sites
     assert bad == [], bad
 
-    unlocked = SRC.replace(
-        "        with path_lock(self._registry_path):\n"
-        "            self._datasets = self._load_datasets()\n"
-        "            self._datasets[dataset_id] = info\n"
-        "            self._save_datasets()\n",
-        "        self._datasets = self._load_datasets()\n"
-        "        self._datasets[dataset_id] = info\n"
-        "        self._save_datasets()\n",
-        1,
-    )
+    # L332 / A306：锁内新增了冲突判据，整块字符串锚点会失真 ⇒ 改为只在
+    # register_dataset 的函数体内替换那一处 with（if True: 保持缩进合法，且真的没有锁调用）。
+    head, tail = SRC.split("    def register_dataset", 1)
+    body, rest = tail.split("\n    def ", 1)
+    assert "with path_lock(self._registry_path):" in body
+    body = body.replace("with path_lock(self._registry_path):", "if True:", 1)
+    unlocked = head + "    def register_dataset" + body + "\n    def " + rest
     assert unlocked != SRC, "锚点失真：这一臂没有真的摘掉锁"
     sites2, bad2 = l273.census_tree(ast.parse(unlocked), "dependency.py")
     assert "dependency.py::DependencyManager.register_dataset" in sites2, sites2

@@ -180,3 +180,19 @@ class DatasetTextError(DataValidationError):
     ——都是「映射的形状决定必须新立类型」。
     """
     pass
+
+
+class DatasetAlreadyRegistered(Exception):
+    """L332 / A306：同名再登记（dataset_id 已存在）时的具名冲突。
+
+    不是 ValueError 的子类 —— `to_http_error` 按**具名类型**放行 400 判决
+    （A386 / L316），混进那一族会把 409 吞成 400。路由显式捕获本类回 409。
+    """
+
+    def __init__(self, dataset_id: str, name: str):
+        self.dataset_id = dataset_id
+        self.name = name
+        super().__init__(
+            "数据集已登记：名称 %s 对应的 id %s 已存在；本次登记未写入，"
+            "原有 created_at 与描述/标签保持不变。" % (name, dataset_id)
+        )

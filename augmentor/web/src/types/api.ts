@@ -1345,8 +1345,8 @@ export interface BackupCleanupResponse {
  *
  * `GET /api/system/dependency/datasets` 的元素，也是 `POST` 同一路径的回执（两侧同为
  * `DatasetInfo.to_dict()`，实测九键逐字相同）。`dataset_id` 是 **`md5(name)[:8]`**——
- * 只由名字决定，所以同名再登记一次是**覆盖同一条**（索引与磁盘各 1 条，不留重复），
- * 但 `created_at` 会被刷新成第二次的时间（账本 A306）。`path` 是服务端 resolve 后的
+ * 只由名字决定，所以**同名再登记回 409**（A306 / L332 收口）：索引与磁盘仍各 1 条，
+ * 原有 `created_at`、描述与标签都不变。`path` 是服务端 resolve 后的
  * **绝对路径**，页面照抄显示。`item_count` 是登记时真读文件数出来的。
  */
 export interface DatasetRegistryEntry {

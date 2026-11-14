@@ -341,7 +341,7 @@ class TestRaiseInternalErrorL180:
             # L313：两处 `except ValueError` 泛档删掉（内部异常原文不再回成 400 判决）
             # ⇒ 路由面上只剩 `_validate_health_gate` 那一处。
             "api/routes/quality.py": 1,
-            "api/routes/system_ops.py": 1,
+            "api/routes/system_ops.py": 2,  # **L332 重量**：1 → 2（A306 的 409 具名捕获把冲突类原文回进 detail；判据未松）。
             # **L314**：`api/routes/multimodal.py` 那一处 `except ValueError` 泛档也删掉了
             # （目录不可读 / 坏图片改走**具名窄口** ⇒ 400 + 那句原判决；其余异常 500）
             # ⇒ 这一族路由面上**零处**原文回 detail 的调用点。

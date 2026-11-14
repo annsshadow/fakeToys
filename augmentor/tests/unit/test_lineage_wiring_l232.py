@@ -246,7 +246,7 @@ class TestThePageCarriesTheThreeOperations:
             "cycle",                     # A310 / L311：那一档的 type 名
             "0 才真的读得成「没问题」",    # A310 / L311：0 才读得成校验通过
             "md5(名称) 的前 8 位",        # A306：id 只由名字算
-            "created_at 会被刷新",        # A306
+            "同名再登记回 409",          # A306 / L332：改判 409，原有 created_at 保住
             "回显即丢",                  # A305：本轮收掉的那条
             "与登记这一族端点同一份",    # A308 / L328：CLI 默认已与端点那一份同源
             "构造不再碰磁盘",              # A307：只读端点建目录，L249 收口
@@ -343,21 +343,23 @@ class TestMeasuredEndpointBehavior:
         assert "input_file" in detail, detail
         assert "缺少必填字段" in detail, detail
 
-    def test_same_name_twice_overwrites_and_resets_created_at(self, http_with_registry):
-        """A306：同 id 覆盖（不留重复），但 `created_at` 被刷新，且空值会抹掉旧值"""
+    def test_same_name_twice_returns_409_and_keeps_first(self, http_with_registry):
+        """A306 / L332：同名再登记回 409，原有 created_at / 描述 / 标签一字不动。"""
         http, root, *_ = http_with_registry
         first = http.post("/api/system/dependency/datasets", json={
             "name": "dsA", "input_file": "ds_a.json",
             "description": "第一份", "tags": ["keep"]}).json()
         again = http.post("/api/system/dependency/datasets", json={
-            "name": "dsA", "input_file": "ds_a.json"}).json()
-        assert again["dataset_id"] == first["dataset_id"]
+            "name": "dsA", "input_file": "ds_a.json"})
+        assert again.status_code == 409, again.text
+        assert "已登记" in again.json()["detail"]
         listed = http.get("/api/system/dependency/datasets").json()["datasets"]
-        assert len(listed) == 1, "同名两次不该留两条（与备份那一族的形状不同）"
+        assert len(listed) == 1, "冲突不得新增登记（与备份那一族的形状不同）"
         assert len(_disk_registry(root)) == 1
-        assert again["created_at"] != first["created_at"], "created_at 没被刷新 ⇒ A306 要重写"
-        assert again["description"] == "" and again["tags"] == [], \
-            "第二次不送这两格时旧值没被抹掉 ⇒ A306 那半句要重写"
+        kept = listed[0]
+        assert kept["created_at"] == first["created_at"], "created_at 不得被刷新"
+        assert kept["description"] == "第一份" and kept["tags"] == ["keep"], \
+            "第二次不送这两格时旧值必须保留"
 
     @pytest.mark.parametrize("bad, status, detail", [
         ("nope.json", 404, "文件不存在"),

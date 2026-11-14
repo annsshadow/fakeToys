@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .atomic_write import atomic_write_json, path_lock
-from .exceptions import DataValidationError
+from .exceptions import DataValidationError, DatasetAlreadyRegistered
 from .validation import require_choice
 from datetime import datetime
 
@@ -177,6 +177,11 @@ class DependencyManager:
         # 同一条口径）；锁按注册表目录取，与 `versioning.py` 用目录做键同一形状。
         with path_lock(self._registry_path):
             self._datasets = self._load_datasets()
+            # L332 / A306：同名（同 id）再登记是覆盖，会刷新 created_at、
+            # 并用第二次的空 description/tags 抹掉旧值。改判为 409 ⇒ 判在
+            # 写回之前（与 _load_datasets 的「锁内重读」同一把锁内，无 TOCTOU）。
+            if dataset_id in self._datasets:
+                raise DatasetAlreadyRegistered(dataset_id, name)
             self._datasets[dataset_id] = info
             self._save_datasets()
         

@@ -309,10 +309,10 @@ describe('System 血缘卡的诚实口径', () => {
     expect(screen.getByText(/依赖成环/s)).toBeInTheDocument()
     expect(screen.getByText(/cycle，A310 \/ L311 加的/s)).toBeInTheDocument()
     expect(screen.getByText(/0 才真的读得成「没问题」/s)).toBeInTheDocument()
-    // A306：同名覆盖 + created_at 被刷新，且没有 409
+    // A306 / L332：同名再登记改判 409，原有 created_at 保住
     expect(screen.getByText(/md5\(名称\) 的前 8 位/s)).toBeInTheDocument()
-    expect(screen.getByText(/created_at 会被刷新成第二次的时间/s)).toBeInTheDocument()
-    expect(screen.getByText(/（A306）/s)).toBeInTheDocument()
+    expect(screen.getByText(/同名再登记回 409/s)).toBeInTheDocument()
+    expect(screen.getByText(/（A306 \/ L332 收口）/s)).toBeInTheDocument()
     // A305：描述与标签曾回显即丢，本轮已修
     expect(screen.getByText(/回显即丢/s)).toBeInTheDocument()
     expect(screen.getByText(/随登记一起写下去（A305）/s)).toBeInTheDocument()

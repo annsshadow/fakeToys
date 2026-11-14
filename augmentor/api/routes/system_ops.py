@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
-from augmentor.exceptions import BackupError, BackupIntegrityError, DataValidationError
+from augmentor.exceptions import BackupError, BackupIntegrityError, DataValidationError, DatasetAlreadyRegistered
 from augmentor.migration import BUILTIN_MIGRATION_RULE_IDS
 from augmentor.auto_test import DEFAULT_SUITE_NAME
 
@@ -566,8 +566,8 @@ async def dependency_register(
             return info.to_dict()
 
         return await run_in_thread(run)
-    except HTTPException:
-        raise
+    except HTTPException: raise
+    except DatasetAlreadyRegistered as e: raise HTTPException(status_code=409, detail=str(e)) from e  # L332 / A306：同名再登记回 409，原有登记一字未动；具名捕获，不落 500 兜底
     except Exception as e:
         raise to_http_error(e) from e
 

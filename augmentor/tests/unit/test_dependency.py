@@ -266,11 +266,19 @@ class TestDependencyExtended2:
         """无注册数据集时列表为空"""
         assert manager.list_datasets() == []
 
-    def test_register_same_name_overwrites(self, manager):
-        """同名数据集按 name 键覆盖，列表只保留最新一条"""
-        manager.register_dataset("same", "/a", 1)
-        manager.register_dataset("same", "/b", 2)
+    def test_register_same_name_is_rejected(self, manager):
+        """L332 / A306：同名再登记回具名冲突，原有登记一字不动（改前是静默覆盖）。"""
+        import pytest
+
+        from augmentor.exceptions import DatasetAlreadyRegistered
+
+        first = manager.register_dataset("same", "/a", 1, description="初版")
+        with pytest.raises(DatasetAlreadyRegistered):
+            manager.register_dataset("same", "/b", 2, description="")
         datasets = manager.list_datasets()
         same = [d for d in datasets if d.name == "same"]
         assert len(same) == 1
-        assert same[0].item_count == 2
+        assert same[0].item_count == 1
+        assert same[0].path == "/a"
+        assert same[0].created_at == first.created_at
+        assert same[0].description == "初版"
