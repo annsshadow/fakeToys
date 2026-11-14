@@ -11,9 +11,9 @@
 只存在于那一段被吞掉的异常里，盘上一字未留。同仓的 `deps` 面 500 支走的是「原文只落服务端
 日志、不进响应体」，这一格连日志都不留，属于同一族里的漏网，不是另一条主张。
 
-修法克制：只补 `logger.warning`，**不动响应体** —— `status` 字段是否该从 `"ok"` 降级成
+L283 修法克制：只补 `logger.warning`，**不动响应体**；L333 补状态码 503 —— `status` 是否降级成
 `"degraded"` 是对外契约的判决（前端与探针按 `status` 判存活），记为待拍 A381，本守卫只钉
-「必须出声」与「响应契约不因补日志而变」。
+「必须出声」；L333 起降级另回 503，响应契约本身仍不因补日志而变。
 """
 
 import logging
@@ -48,7 +48,7 @@ def test_pipeline_failure_is_logged(client, monkeypatch, caplog):
     with caplog.at_level(logging.WARNING, logger="api.routes.status"):
         response = client.get("/api/status")
 
-    assert response.status_code == 200
+    assert response.status_code == 503  # L333/A381：降级出声
     records = [r for r in caplog.records if r.name == "api.routes.status"]
     assert len(records) == 1
     assert records[0].levelno == logging.WARNING
@@ -59,20 +59,20 @@ def test_pipeline_failure_is_logged(client, monkeypatch, caplog):
 
 
 def test_degrade_contract_unchanged(client, monkeypatch):
-    """响应契约一字不让：降级仍回 200，`model_default` 落 `unknown`、后端判不可用、重试两键为 `None`
+    """L333/A381：降级回 503 但响应体键集一字不变；`model_default=unknown`、后端不可用、重试两键 `None`
 
-    这条是补日志的护栏 —— 修的是「不出声」，不是把状态端点变成失败端点。
+    L283 修的是「不出声」，L333 修的是「状态码」；两支都不得改动响应体键集。
     """
     _break_pipeline(monkeypatch)
     response = client.get("/api/status")
 
-    assert response.status_code == 200
+    assert response.status_code == 503  # L333/A381：降级出声
     payload = response.json()
     assert payload["model_default"] == "unknown"
     assert payload["model_available"] is False
     assert payload["model_retry_count"] is None
     assert payload["model_retry_wait_seconds"] is None
-    assert "status" in payload  # A381 待拍：本格只钉「键仍在」，不钉它的值该不该降级
+    assert "status" in payload  # L333：本格只钉「键仍在」，值仍为 ok（降级由状态码表达）
 
 
 def test_healthy_pipeline_leaves_no_warning(client, monkeypatch, caplog):

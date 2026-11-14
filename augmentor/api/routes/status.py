@@ -8,7 +8,7 @@
 
 import logging
 
-from fastapi import APIRouter
+from fastapi import APIRouter; from fastapi.responses import JSONResponse  # L333/A381 降级 503 仍回同形响应体
 from pydantic import BaseModel
 from typing import Optional
 
@@ -51,9 +51,9 @@ class HealthResponse(BaseModel):
 
 @router.get("/api/status", response_model=StatusResponse, summary="服务综合状态")
 async def get_status():
-    """获取服务综合状态"""
-    model_retry_count = None
-    model_retry_wait_seconds = None
+    """获取服务综合状态；L333/A381：管道不可用回 503，响应体键集不变"""
+    degraded = False  # L333/A381：降级标志，唯一写入点在下面 except 里
+    model_retry_count = model_retry_wait_seconds = None
     model_generate_seconds = None
     try:
         p = get_pipeline()
@@ -66,17 +66,17 @@ async def get_status():
     except Exception as e:
         # 原文只落服务端日志、不进响应体，与 `deps` 的 500 支同一口径；从前这一格连日志都不留
         logger.warning(f"读取管道状态失败，按模型后端不可用回执: {e}")
-        default_model = "unknown"
+        degraded, default_model = True, "unknown"
         model_available = False
 
-    deps = check_dependencies()
-    return StatusResponse(
+    status_code = 503 if degraded else 200  # L333/A381
+    payload = StatusResponse(
         status="ok",
         version=__version__,
         model_default=default_model,
         model_available=model_available,
-        model_retry_count=model_retry_count,
-        model_retry_wait_seconds=model_retry_wait_seconds,
+        model_retry_count=model_retry_count, model_retry_wait_seconds=model_retry_wait_seconds,
         model_generate_seconds=model_generate_seconds,
-        dependencies=deps.to_dict(),
+        dependencies=check_dependencies().to_dict(),
     ).model_dump()
+    return JSONResponse(status_code=status_code, content=payload)

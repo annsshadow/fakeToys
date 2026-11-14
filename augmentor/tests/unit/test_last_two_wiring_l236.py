@@ -324,7 +324,7 @@ class TestTheSystemPageOwnsTheDependencyFace:
         status = client.get("/api/status")
         deps = client.get("/api/system/dependencies")
 
-        assert status.status_code == 200, status.text
+        assert status.status_code == 503, status.text  # L333/A381：SelectiveBackend 让管道降级
         assert deps.status_code == 200, deps.text
         assert status.json()["dependencies"] == deps.json()
 
@@ -348,7 +348,7 @@ class TestTheSystemPageOwnsTheDependencyFace:
 
         assert still.status_code == 200, still.text
         assert still.json() == baseline
-        assert degraded.status_code == 200, degraded.text
+        assert degraded.status_code == 503, degraded.text  # L333/A381
         assert degraded.json()["model_default"] == "unknown"
         assert degraded.json()["model_available"] is False
         # 综合状态里那一份诊断照旧齐备 ⇒ 页面「自取失败就退回它」这条退路不是空的

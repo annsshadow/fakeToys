@@ -93,7 +93,7 @@ def atomic_write_json(file_path: Path, data: Union[List, Any],
 
     Raises:
         OSError: 建目录失败，或临时件写失败，或替换在重试上限内始终被拒绝
-        TypeError: `data` 里有 JSON 不可序列化的值（发生在临时件上，目标不受影响）
+        TypeError: 不可序列化的值；ValueError: 非有限浮点 NaN/Inf（L333/A353，均在临时件上抛，目标不受影响）
     """
     file_path = Path(file_path)
     file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -103,9 +103,9 @@ def atomic_write_json(file_path: Path, data: Union[List, Any],
     try:
         with open(tmp, "w", encoding="utf-8") as f:
             if indent is None:
-                json.dump(data, f, ensure_ascii=ensure_ascii, separators=(",", ":"))
+                json.dump(data, f, ensure_ascii=ensure_ascii, separators=(",", ":"), allow_nan=False)  # L333/A353 严格 JSON
             else:
-                json.dump(data, f, ensure_ascii=ensure_ascii, indent=indent)
+                json.dump(data, f, ensure_ascii=ensure_ascii, indent=indent, allow_nan=False)  # L333/A353
         _replace_with_retry(tmp, file_path)
     finally:
         _discard_tmp(tmp)

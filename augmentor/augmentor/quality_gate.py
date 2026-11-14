@@ -285,12 +285,12 @@ def gate_dataset_health(items: List[Dict[str, Any]],
 
     require_item_field("text_field", items, text_field)
     # 本轮只接「有限性」这一维（改前三兄弟无人判，NaN 让比较恒 False ⇒ 无声错判决）。
-    # 范围那一维此前是**实测合法**的（`pass_rate_min=-1.0`、`duplicate_rate_max=5.0`、
-    # `completeness_min=-3.0` 全收且判决随阈值单调变化，L235 逐格量过并写进守卫），收紧它
-    # 等于凭空造一条后端原有的规则、把 200 改成 400 ⇒ 属对外行为变更，立 A354 待拍。
-    require_ratio("pass_rate_min", pass_rate_min, minimum=-float("inf"), maximum=float("inf"))
-    require_ratio("duplicate_rate_max", duplicate_rate_max, minimum=-float("inf"), maximum=float("inf"))
-    require_ratio("completeness_min", completeness_min, minimum=-float("inf"), maximum=float("inf"))
+    # L333/A354：范围那一维此前实测合法（`-1.0` / `5.0` / `-3.0` 全收），现按语义收 [0,1]：
+    # 越界值从 200 改 400 属题 1 放行的对外契约变更，调用方与守卫同批重钉。
+    # 原三行 `minimum=-inf, maximum=+inf` 是「只判有限性」的旧形状，已收成闭区间。
+    require_ratio("pass_rate_min", pass_rate_min, minimum=0.0, maximum=1.0)  # L333/A354
+    require_ratio("duplicate_rate_max", duplicate_rate_max, minimum=0.0, maximum=1.0)  # L333/A354
+    require_ratio("completeness_min", completeness_min, minimum=0.0, maximum=1.0)  # L333/A354
 
     health = DatasetHealthScore(weights=weights).score(items)
 

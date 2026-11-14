@@ -386,9 +386,9 @@ class TestTheVerdictsAreWhatThePageSays:
         assert body["gate"]["warned_rules"] == ["completeness"]
 
     def test_passed_is_reachable_by_loosening_the_duplicate_ceiling(self, http):
-        """三档 verdict 都得有真证据：把上限放到 99.0，同一份数据就 passed 了"""
+        """三档 verdict 都得有真证据：上限放到合法端点 1.0，同一份数据就 passed 了"""
         client, _ = http
-        body = gate(client, duplicate_rate_max=99.0).json()
+        body = gate(client, duplicate_rate_max=1.0).json()  # L333/A354 收 [0,1]
         assert body["gate"]["verdict"] == GateVerdict.PASSED
         assert body["gate"]["passed"] is True
         assert body["gate"]["failed_rules"] == [] and body["gate"]["warned_rules"] == []
@@ -472,16 +472,16 @@ class TestTheVerdictsAreWhatThePageSays:
             with pytest.raises(DataValidationError):
                 gate_dataset_health(DUP_ITEMS, text_field=text_field)
 
-    def test_the_three_thresholds_have_no_range_gate(self, http):
-        """负数与大于 1 的值全收，判决随阈值单调变化 ⇒ 页面刻意不给这三个框设 min/max"""
+    def test_the_three_thresholds_have_a_range_gate(self, http):  # L333/A354
+        """三只阈值按 [0,1] 收口：有限越界一律 400，端点 1.0 仍在端点上出判决"""
         client, _ = http
-        assert gate(client, pass_rate=0.0, pass_rate_min=-1.0).json()[
-            "gate"]["failed_rules"] == ["duplicate_rate"]
-        assert gate(client, pass_rate=1.0, pass_rate_min=5.0).json()[
-            "gate"]["failed_rules"] == ["pass_rate", "duplicate_rate"]
-        assert gate(client, completeness_min=-3.0).status_code == 200
-        assert gate(client, duplicate_rate_max=-0.1).json()[
-            "gate"]["failed_rules"] == ["duplicate_rate"]
+        # L333/A354：端点合法、越界五格 400，与 l272 的 CENSUS 同批重钉
+        assert gate(client, pass_rate_min=-1.0).status_code == 400
+        assert gate(client, pass_rate_min=5.0).status_code == 400
+        assert gate(client, completeness_min=-3.0).status_code == 400
+        assert gate(client, duplicate_rate_max=-0.1).status_code == 400
+        assert gate(client, duplicate_rate_max=99.0).status_code == 400
+        assert gate(client, duplicate_rate_max=1.0).status_code == 200
 
     def test_null_is_asymmetric_between_optional_and_required_fields(self, http):
         """服务层那四处 `?? undefined` 的证据：非 Optional 送 null 是 422，Optional 是 200"""
@@ -530,7 +530,7 @@ class TestTheVerdictsAreWhatThePageSays:
             {"input_file": "dup.json", "weights": [0.0, 0.0, 0.0, 1.0]},
             # L238 起 `text_field` 的坏值走 400，不进评分器 ⇒ 这一档换成合法的另一列
             {"input_file": "dup.json", "text_field": "output"},
-            {"input_file": "dup.json", "duplicate_rate_max": 99.0},
+            {"input_file": "dup.json", "duplicate_rate_max": 1.0},  # L333/A354
             {"input_file": "sparse.json", "block_on_warning": True},
         ]
         for shape in shapes:

@@ -433,8 +433,8 @@ def resolve_within_roots(name: str, label: str) -> Path:
     Raises:
         HTTPException: 400 参数非法；403 路径越界
     """
-    if not isinstance(name, str) or not name.strip():
-        raise HTTPException(status_code=400, detail=f"{label} 不能为空")
+    if not isinstance(name, str) or not name.strip() or any(ord(c) < 32 for c in name) or len(name) > 255:
+        raise HTTPException(status_code=400, detail=INVALID_PATH_NAME_DETAIL if isinstance(name, str) and name.strip() else f"{label} 不能为空")  # L333/A351
 
     raw = Path(name.strip())
     if ".." in raw.parts:
@@ -741,7 +741,7 @@ def read_items(file_path: Path) -> list:
         数据列表
 
     Raises:
-        HTTPException: 400 文件不是合法 JSON；或顶层不是数组 / 数组元素不是对象
+        HTTPException: 400 文件不是合法 JSON（含 NaN/Infinity，L333/A353）；或顶层不是数组 / 数组元素不是对象
 
     形态校验在 `assert_dataset_shape`（本函数与 `POST /api/data/upload` 共用同一份）
     而不是各调用点，是因为下游一律按 `item.get(...)` 取字段：
@@ -753,7 +753,7 @@ def read_items(file_path: Path) -> list:
     """
     try:
         with open(file_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
+            data = json.load(f, parse_constant=_reject_nonfinite)  # L333/A353 严格 JSON
     except json.JSONDecodeError as e:
         raise to_http_error(e) from e
 
@@ -978,3 +978,11 @@ async def mutate_json_file(file_path: Path, transform: Callable[[List], None]) -
             atomic_write_json(file_path, items)
 
     await asyncio.to_thread(_read_modify_write)
+
+
+# L333/A353：严格 JSON 读侧的唯一判据。`json.load(parse_constant=...)` 把
+# `NaN` / `Infinity` / `-Infinity` 三个字面量交给它；抛 HTTPException(400) 而不是
+# ValueError，是为了让「不是合法 JSON」与 to_http_error 的 400 口径一致，同时保留
+# read_items 里 `raise to_http_error(e) from e` 这格直接出声形状（l265 名册不因此变松）。
+def _reject_nonfinite(_literal: str):
+    raise HTTPException(status_code=400, detail="数据集含非有限数值，不是合法 JSON")

@@ -92,15 +92,15 @@ WIRING_ROSTER = {
 }
 
 #: 每一只 `require_ratio` 咽喉**推到 ±inf 的界实参数**：`(文件, 函数) -> 个数`。
-#: L277 只把 `dataset_ops.py` 那一格收回默认 0-1（⇒ 0），另外两站仍必须把界推到两端
-#: （范围那一维属 A354 待拍）。写成集合相等而不是 `>=`：这一格同时是双向尺 ——
-#: 有人把 A354 顺手拍了（quality_gate / impact 收回实界）或者把 sample 那一格又推回
-#: ±inf（洞复活），两种都当场红。它同时是 `TestOpenBoundRoster` 的正控制：识别函数
-#: 若瞎掉，`0` 那一格会跟着变成恒真，`6` / `2` 两格立刻兜住它。
+#: L333 把 A354 拍了：quality_gate 三只阈值收回 0-1（⇒ 0 个 inf 界）；
+#: impact 的 min_scale_gain 只收下界到 -1，上界仍是 +inf（⇒ 1 个 inf 界）。
+#: 写成集合相等而不是 `>=`：这一格同时是双向尺 —— 有人把界推回 ±inf（洞复活）
+#: 或把 1 那一格也收成实界（改了 scale_gain 的定义域），两种都当场红。
+#: 它同时是 `TestOpenBoundRoster` 的正控制：识别函数瞎掉，dataset_ops 的 0 会恒真。
 OPEN_BOUND_ROSTER = {
     ("dataset_ops.py", "require_ratio"): 0,
-    ("quality_gate.py", "require_ratio"): 6,
-    ("impact.py", "require_ratio"): 2,
+    ("quality_gate.py", "require_ratio"): 0,  # L333/A354
+    ("impact.py", "require_ratio"): 1,  # L333/A354：上界仍 +inf
 }
 
 #: 现量表：`(路径, 旋钮) -> (NaN, 无穷, 5.0, -1.0)` 四档的 HTTP 归宿。
@@ -121,9 +121,9 @@ CENSUS = {
     ("/api/dataset/search", "fuzzy_threshold"): ("400", "400", "400", "400"),
     ("/api/dataset/impact", "min_scale_gain"): ("400", "400", "200", "200"),
     ("/api/quality/health-gate", "pass_rate"): ("400", "400", "400", "400"),
-    ("/api/quality/health-gate", "pass_rate_min"): ("400", "400", "200", "200"),
-    ("/api/quality/health-gate", "duplicate_rate_max"): ("400", "400", "200", "200"),
-    ("/api/quality/health-gate", "completeness_min"): ("400", "400", "200", "200"),
+    ("/api/quality/health-gate", "pass_rate_min"): ("400", "400", "400", "400"),  # L333/A354
+    ("/api/quality/health-gate", "duplicate_rate_max"): ("400", "400", "400", "400"),  # L333
+    ("/api/quality/health-gate", "completeness_min"): ("400", "400", "400", "400"),  # L333
     ("/api/quality/outliers", "threshold"): ("400", "200", "200", "400"),
     ("/api/quality/evaluate", "threshold"): ("400", "400", "400", "400"),
     ("/api/quality/report", "threshold"): ("400", "400", "400", "400"),
@@ -422,17 +422,17 @@ class TestGateThresholdSinks:
                 with pytest.raises(DataValidationError, match=key):
                     self._gate(**{key: bad})
 
-    def test_three_thresholds_range_face_is_untouched(self):
-        """有限越界本轮一格不收紧：`5.0` / `-1.0` / `99.0` 照旧出一份判决（**A354 待拍**）
+    def test_three_thresholds_range_face_is_closed(self):  # L333/A354
+        """有限越界不再出判决：逐格抛 DataValidationError 并点名那只旋钮
 
-        L235 那把尺子逐格量过「判决随阈值单调变化」，收紧范围等于凭空造一条后端
-        原本没有的规则并把 200 改成 400 —— 那是对外行为变更，要拍板才动。
+        题 1 放行对外契约变更，l235 的 HTTP 面与 CENSUS 同批重钉。收紧之后
+        「门槛设在值域之外」这种静默恒放行的用法不再可达。
         """
-        for key, legal in (("pass_rate_min", 5.0), ("pass_rate_min", -1.0),
-                           ("duplicate_rate_max", 99.0), ("completeness_min", -3.0),
-                           ("completeness_min", 5.0)):
-            report = self._gate(**{key: legal})
-            assert "gate" in report, (key, legal)
+        for key, bad in (("pass_rate_min", 5.0), ("pass_rate_min", -1.0),
+                         ("duplicate_rate_max", 99.0), ("completeness_min", -3.0),
+                         ("completeness_min", 5.0)):
+            with pytest.raises(DataValidationError, match=key):
+                self._gate(**{key: bad})
 
     def test_defaults_still_reach_a_verdict(self):
         report = self._gate()
@@ -476,13 +476,13 @@ class TestImpactSink:
         assert self._verdict_marker(5.0) is False
         assert self._verdict_marker(0.5) is True
 
-    def test_below_the_semantic_floor_is_still_legal(self):
-        """`-1.0` 是 `scale_gain` 的值域下界，但比它更低的门槛**此前就收**：判死它是对外行为变更
+    def test_below_the_semantic_floor_is_rejected(self):  # L333/A354
+        """`-1.0` 是 `scale_gain` 的合法下界；低于它的门槛现在被判死
 
-        门槛设在值域之下等于「永远放行」，那是一种用法而不是一个笔误 ⇒ A354 待拍。
-        """
+        门槛设在值域之下等于「永远放行」，范围判据收口后不再静默恒真。"""
         assert self._verdict_marker(-1.0) is True
-        assert self._verdict_marker(-2.0) is True
+        with pytest.raises(DataValidationError, match="min_scale_gain"):
+            self._verdict_marker(-2.0)
 
     def test_bool_rejected(self):
         """`True` 会被读成 1.0 ⇒ 门槛悄悄抬到「规模必须翻倍」"""
@@ -740,9 +740,9 @@ class TestOpenBoundRoster:
         assert _open_bound_args("dataset_ops.py", "require_ratio") == 0
 
     def test_a354_sites_still_hand_the_bound_to_both_infinities(self):
-        """A354 未拍 ⇒ 这两站的界**必须**仍是 ±inf：6 = 3 只阈值 × 2 端，2 = 1 只 × 2 端"""
-        assert _open_bound_args("quality_gate.py", "require_ratio") == 6
-        assert _open_bound_args("impact.py", "require_ratio") == 2
+        """L333/A354 已拍：quality_gate 收成 0 个 inf 界，impact 只剩上界 +inf 共 1 个"""
+        assert _open_bound_args("quality_gate.py", "require_ratio") == 0
+        assert _open_bound_args("impact.py", "require_ratio") == 1
 
 
 class TestRulerBites:

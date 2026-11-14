@@ -829,7 +829,7 @@ export const healthCheck = async (): Promise<HealthResponse> => {
  * status 会构造管道并检查可选依赖，因此能回答「当前环境缺什么」。
  */
 export const getServiceStatus = async (): Promise<StatusResponse> => {
-  const response = await api.get('/status')
+  const response = await api.get('/status', { validateStatus: (s) => s === 200 || s === 503 }) // L333/A381：降级 503 响应体同形
   return checkedData<StatusResponse>('getServiceStatus', statusResponseSchema, response.data)
 }
 

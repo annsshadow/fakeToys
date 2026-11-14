@@ -68,7 +68,7 @@ class TestStatusEndpoint:
         monkeypatch.setattr(status_module, "get_pipeline", _boom)
         client = TestClient(app)
         response = client.get("/api/status")
-        assert response.status_code == 200
+        assert response.status_code == 503  # L333/A381
         payload = response.json()
         assert payload["model_default"] == "unknown"
         assert payload["model_available"] is False
