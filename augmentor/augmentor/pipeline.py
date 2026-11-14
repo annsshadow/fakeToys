@@ -941,7 +941,7 @@ class AugmentorPipeline:
         # 调用方注入的替身方法，代价只有一次对象复制。
         visualizer = copy.copy(self.visualizer)
         visualizer.output_dir = Path(output_dir)
-        return visualizer.generate_all_visualizations(items)
+        return visualizer.generate_all_visualizations(items, types=self.config.visualization.types)  # L339/A267
     
     async def augment_async(self,
                             input_file: str,

@@ -301,43 +301,43 @@ class DataVisualizer:
         logger.info(f"生成时间线图: {output_path}")
         return str(output_path)
     
-    def generate_all_visualizations(self,
-                                   items: List[Dict],
-                                   text_key: str = "instruction",
-                                   scores: Optional[List[float]] = None) -> Dict[str, str]:
-        """生成所有可视化图表
+    def generate_all_visualizations(self, items: List[Dict], text_key: str = "instruction", scores: Optional[List[float]] = None, types: Optional[List[str]] = None) -> Dict[str, str]:  # L339/A267：types 接成出图清单
+        """按出图清单生成图表
         
         Args:
             items: 数据列表
             text_key: 文本字段名
-            scores: 质量评分列表
+            scores: 质量评分列表（`quality_distribution` 专用）
+            types: 出图清单；None 是向后兼容档（沿用旧四类，不生成时间线）
         
         Returns:
-            图表文件路径字典
+            图表文件路径字典；缺依赖或空数据的类型不进字典
         """
+        wanted = set(types) if types is not None else None  # None ⇒ 旧行为，产品调用点一律显式传清单
         results = {}
-        
-        # 词云图
-        wordcloud_path = self.generate_wordcloud(items, text_key)
-        if wordcloud_path:
-            results["wordcloud"] = wordcloud_path
-        
-        # 长度分布图
-        length_dist_path = self.generate_length_distribution(items, text_key)
-        if length_dist_path:
-            results["length_distribution"] = length_dist_path
-        
-        # 话题聚类图
-        topic_cluster_path = self.generate_topic_cluster(items, text_key)
-        if topic_cluster_path:
-            results["topic_cluster"] = topic_cluster_path
-        
-        # 质量评分分布图
-        if scores:
-            quality_dist_path = self.generate_quality_distribution(scores)
-            if quality_dist_path:
-                results["quality_distribution"] = quality_dist_path
-        
+        if wanted is None or "wordcloud" in wanted:
+            wordcloud_path = self.generate_wordcloud(items, text_key)
+            if wordcloud_path:
+                results["wordcloud"] = wordcloud_path
+        if wanted is None or "length_distribution" in wanted:
+            length_dist_path = self.generate_length_distribution(items, text_key)
+            if length_dist_path:
+                results["length_distribution"] = length_dist_path
+        if wanted is None or "topic_cluster" in wanted:
+            topic_cluster_path = self.generate_topic_cluster(items, text_key)
+            if topic_cluster_path:
+                results["topic_cluster"] = topic_cluster_path
+        # L339/A267：数据集条目没有时间字段，出累计条数曲线，不伪造时间轴
+        if wanted is not None and "timeline" in wanted:
+            progress = [{"timestamp": str(i + 1), "count": i + 1} for i in range(len(items))]
+            timeline_path = self.generate_timeline(progress)
+            if timeline_path:
+                results["timeline"] = timeline_path
+        if wanted is None or "quality_distribution" in wanted:
+            if scores:
+                quality_dist_path = self.generate_quality_distribution(scores)
+                if quality_dist_path:
+                    results["quality_distribution"] = quality_dist_path
         return results
     
     def generate_statistics(self, items: List[Dict], text_key: str = "instruction") -> Dict:

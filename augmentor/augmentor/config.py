@@ -509,8 +509,8 @@ class VisualizationConfig:
     def __post_init__(self):
         """取值判据（A140 余 11 节 / L154）：图表类型是字符串列表。
 
-        `visualizer` 只把本节类型当函数形参用，没有任何产品接线读 `config.visualization`
-        （属性面普查，L154 / B224），改前形状各档全静默放行。
+        L339/A267 起 `types` 由 pipeline.visualize_dataset 与 CLI visualize 显式传给生成器；
+        `quality_distribution` 仍需 scores，今天两个产品点都不给 ⇒ 该类恒跳过。
         """
         _reject_null_fields('visualization', self)
         require_bool('visualization.enabled', self.enabled)

@@ -293,7 +293,7 @@ class TestVisualizationEnabledIsConsumed:
         Returns:
             同一个管道实例
         """
-        def fake(items):
+        def fake(items, **kwargs):  # L339/A267：出图清单作为 kwarg 传下来
             calls.append(items)
             return {}
 

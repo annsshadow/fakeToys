@@ -105,21 +105,21 @@ class ExperimentTracker:
         except Exception as e:
             logger.error(f"保存实验失败: {e}")
     
-    def log_metric(self, metric_name: str, value: float):
+    def log_metric(self, metric_name: str, value: float, experiment_id: Optional[str] = None):  # L339/A364：run 把手
         """记录指标
         
         Args:
             metric_name: 指标名称
-            value: 指标值
+            value: 指标值；experiment_id: 目标 run（缺省沿用实例当前实验）
         """
-        if self._current_experiment is None:
+        target = self.load_experiment(experiment_id) if experiment_id is not None else self._current_experiment  # 指定 run 不依赖实例把手
+        if target is None:
             return
+        if metric_name not in target.metrics:
+            target.metrics[metric_name] = []
         
-        if metric_name not in self._current_experiment.metrics:
-            self._current_experiment.metrics[metric_name] = []
-        
-        self._current_experiment.metrics[metric_name].append(value)
-        self._save_experiment(self._current_experiment)
+        target.metrics[metric_name].append(value)
+        self._save_experiment(target)
     
     def end_experiment(self):
         """结束实验"""

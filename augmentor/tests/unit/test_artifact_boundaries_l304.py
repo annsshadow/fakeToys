@@ -193,7 +193,7 @@ class RecordingVisualizer:
         """本组用例不经过统计入口"""
         raise AssertionError("visualize_dataset 不该调用统计入口")
 
-    def generate_all_visualizations(self, items):
+    def generate_all_visualizations(self, items, **kwargs):  # L339/A267：接住 types 清单
         """记录调用时的目录并返回空清单
 
         Args:
@@ -222,7 +222,7 @@ class TestSharedVisualizerIsNotRelocated:
 
         pipeline = object.__new__(AugmentorPipeline)
         pipeline.config = SimpleNamespace(
-            visualization=SimpleNamespace(enabled=True)
+            visualization=SimpleNamespace(enabled=True, types=["wordcloud", "timeline"])  # L339/A267
         )
         visualizer = RecordingVisualizer(tmp_path / "singleton")
         pipeline.visualizer = visualizer

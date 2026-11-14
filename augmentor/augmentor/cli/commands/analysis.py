@@ -129,7 +129,7 @@ def run_visualize(args, config):
     from augmentor.visualizer import DataVisualizer
 
     visualizer = DataVisualizer(output_dir=args.output_dir or "visualizations")
-    _print(visualizer.generate_all_visualizations(items))
+    _print(visualizer.generate_all_visualizations(items, types=config.visualization.types))  # L339/A267
 
 
 # ============ 数据集对比 ============

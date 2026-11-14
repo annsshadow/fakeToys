@@ -134,7 +134,7 @@ _UNREAD = {
     "sampler.dimensions": "四个分布硬写在 `analyze_coverage` 体内，它只收 `items`；端点侧也没有同名清单",
     "tracker.enabled": "追踪器由管道无条件 `ExperimentTracker()` 构造，不看本节",
     "tracker.metrics": "指标名只有逐条运行时入参 `log_metric(metric_name, value)`，没有清单型入口（`self.tracker` 构造后也从未被用，见 A273）",
-    "visualization.types": "出图清单硬编码在 `DataVisualizer` 的方法集里，`visualize_dataset` 只收 `input_file`/`output_dir`；B224/A267 已在案",
+    # L339/A267：visualization.types 已由 pipeline.visualize_dataset 与 CLI visualize 显式读取 ⇒ 移出零读者档
 }
 
 #: 每只零读者键的「等价旋钮现在住在哪」，必须是下面五种证据之一（由
@@ -163,7 +163,7 @@ _UNREAD_KNOB = {
     "sampler.dimensions": ("absent", "augmentor.sampler:ActiveSampler.analyze_coverage", "dimensions"),
     "tracker.enabled": ("none", None, None),
     "tracker.metrics": ("absent", "augmentor.tracker:ExperimentTracker.__init__", "metrics"),
-    "visualization.types": ("absent", "augmentor.pipeline:AugmentorPipeline.visualize_dataset", "types"),
+    # L339/A267：上键的 absent 证据随之作废（visualize_dataset 现在真的读了 types）
 }
 
 #: 散文与证据的一致性判据：理由里点了「请求」就必须真是 request 档，点了「形参」就必须
