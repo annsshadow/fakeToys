@@ -18,7 +18,7 @@
 在 CI 与本机都没装，接上模型臂意味着写一条**任何环境都跑不到**的产品路径——那正是本仓
 一直在收的「只写不读」面。字符二元组哈希嵌入零依赖、跨进程确定（用 `zlib.crc32`，不用
 `hash()`，后者受 `PYTHONHASHSEED` 随机化），所以本模块的每条分支都有现量测试。
-真模型嵌入要先解决「模型维度与 `vector.dimension` 冲突」，已立账待拍。
+真模型嵌入的维度冲突策略已于 **L340/A268** 定为「拒配置」：模型宽度与配置不等即抛 `VectorError`，不忽略/不截断；判据 `assert_model_dimension` 哈希臂今天就在调。真模型臂仍需装包定标，本仓不写不可达路径。
 """
 
 import logging
@@ -80,12 +80,12 @@ def embed_texts(texts: List[str], dimension: int) -> List[np.ndarray]:
         dimension: 向量宽度，必须是正整数（与 `create_vector_db` 同一道判）
 
     Returns:
-        长度为 `len(texts)` 的一维数组清单，逐个形状为 `(dimension,)`
+        长度为 `len(texts)` 的一维数组清单，逐个形状为 `(dimension,)`；L340/A268 宽度自检
     """
     if not isinstance(dimension, int) or isinstance(dimension, bool) or dimension <= 0:
         raise VectorError(f"向量维度必须为正整数，当前是 {dimension}")
 
-    rows = np.zeros((len(texts), dimension), dtype=np.float32)
+    rows = np.zeros((len(texts), dimension), dtype=np.float32); assert_model_dimension(rows.shape[1], dimension)  # L340/A268：写出的矩阵宽度必须等于配置
     for i, text in enumerate(texts):
         # crc32 而非 hash()：后者每进程随机化，同一份数据两次构建会出两套向量。
         for ngram in _ngrams(text):
@@ -222,10 +222,12 @@ def index_status(*, backend: str,
     **实际引擎**：本机没装 `faiss-cpu` 时它是 `"numpy"`（精确检索退化）。退化属依赖层事实，
     权威住在 `/api/system/dependencies`，这里不另立第二个口径——三面带同一只键名就该同义。
 
-    能力闸在构造**之前**：`GET /api/dataset/vector-status` 必须是只读的，而没有
-    `load()` 面的后端在构造阶段就会写目录，所以那种配置得到的是一句 `VectorError`，
-    不是目录与空集合。
+    能力闸在构造**之前**：`GET /api/dataset/vector-status` 必须是只读的。L340/A269 起 chromadb
+    走 `_chroma_status` 只读探查（不构造客户端、不建目录）：`exists` 由持久化标记判定，
+    `count` 恒 0 是「条数不可得」的能力边界；`persist_index` 仍拒 chromadb（无 persist/load 面）。
     """
+    if backend == "chromadb":  # L340/A269：只读探查，不构造 PersistentClient
+        return _chroma_status(backend, dimension, collection, storage_dir)
     _require_persistence_surface(backend)
     db = create_vector_db(
         backend=backend,
@@ -241,4 +243,44 @@ def index_status(*, backend: str,
         "dimension": db.dimension,
         "collection": db.collection,
         "storage_dir": str(Path(storage_dir)),
+    }
+
+
+def assert_model_dimension(model_dimension: int, configured_dimension: int) -> None:
+    """L340/A268：模型输出宽度与 `config.vector.dimension` 冲突即拒配置。
+
+    口径是三条候选里最硬的一条：不等就抛，不「忽略配置」也不「静默截断补齐」——
+    后两者会让同一份语料在不同配置下悄悄换一套向量，检索排名变了却没有出声。
+
+    今天哈希嵌入把 `dimension` 当输出宽度用，`embed_texts` 用写出的矩阵宽度调本函数；
+    将来接真模型（`sentence-transformers`）时，模型给 384 而配置写 768 也必须走这里，
+    所以这条策略不是给死路径预留的装饰。
+
+    Raises:
+        VectorError: 两侧宽度不等
+    """
+    if model_dimension != configured_dimension:
+        raise VectorError(
+            f"模型输出宽度 {model_dimension} 与配置 dimension={configured_dimension} 冲突；"
+            "L340/A268 的策略是拒配置，不忽略、不截断补齐"
+        )
+
+
+def _chroma_status(backend: str, dimension: int,
+                   collection: str, storage_dir: str) -> Dict[str, Any]:
+    """L340/A269：chromadb 的只读状态探查（GET 不落盘）。
+
+    不 import chromadb、不构造 PersistentClient —— 后者在构造阶段就 `mkdir` 并注册
+    集合，会把一条 GET 变成写操作。`exists` 只看持久化标记文件；`count` 恒 0，
+    因为条数只有真客户端读得到，这里宁可把「不可得」写明，也不编一个假数。
+    标记文件是整个 `storage_dir` 一份，不区分 collection，回执里的 collection 只是回显配置。
+    """
+    root = Path(storage_dir)
+    return {
+        "exists": (root / "chroma.sqlite3").is_file(),
+        "count": 0,
+        "backend": backend,
+        "dimension": dimension,
+        "collection": collection,
+        "storage_dir": str(root),
     }

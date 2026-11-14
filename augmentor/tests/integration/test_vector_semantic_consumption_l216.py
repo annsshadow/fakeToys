@@ -171,15 +171,15 @@ class TestPersistenceSurfaceIsGated:
         assert "chromadb" in str(exc.value)
         assert not target.exists()
 
-    def test_status_refuses_it_before_creating_the_dir(self, tmp_path):
-        """`index_status` 是 GET 的那条路：闸必须先于构造，否则承诺不成立"""
+    def test_status_probes_readonly_and_creates_nothing(self, tmp_path):
+        """L340/A269：chromadb 走只读探查，GET 不落盘的承诺仍在（不构造客户端）"""
         target = tmp_path / "status_dir"
-        with pytest.raises(VectorError):
-            index_status(
-                backend="chromadb", dimension=16,
-                collection="default", storage_dir=str(target),
-            )
-        assert not target.exists()
+        status = index_status(
+            backend="chromadb", dimension=16,
+            collection="default", storage_dir=str(target),
+        )
+        assert (status["exists"], status["count"]) == (False, 0)
+        assert status["backend"] == "chromadb" and not target.exists()
 
     def test_faiss_keeps_the_surface(self, tmp_path):
         """反面对照：同一个 storage_dir 下 faiss 会真的落盘，防「闸把两条都关掉」"""
@@ -472,17 +472,17 @@ class TestVectorStatusEndpoint:
         assert body["exists"] is True
         assert body["count"] == len(ITEMS)
 
-    def test_backend_without_the_surface_is_400_and_creates_nothing(
+    def test_backend_without_the_surface_reports_readonly_status(
             self, tmp_path, monkeypatch):
-        """配 `chromadb` 的 GET 收 400 而不是 500，且临时目录里什么都没长出来
+        """L340/A269：chromadb 状态面从 400 改成可回显的只读探查
 
-        这条是 `TestPersistenceSurfaceIsGated` 的端点面：SDK 那道闸若位置不对（写在
-        构造之后），这里就会看到目录；若漏了，就是 500。
+        `exists` 由持久化标记判定、`count` 恒 0；构造从未发生 ⇒ 目录什么都没长。
         """
         config = vector_config(tmp_path, **{"vector.backend": "chromadb"})
         response = self._client(monkeypatch, config).get(
             "/api/dataset/vector-status"
         )
-        assert response.status_code == 400
-        assert "chromadb" in response.json()["detail"]
+        assert response.status_code == 200
+        assert (response.json()["exists"], response.json()["count"]) == (False, 0)
+        assert response.json()["backend"] == "chromadb"
         assert not Path(config.vector.storage_dir).exists()
