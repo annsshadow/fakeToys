@@ -80,7 +80,7 @@ def pipeline(tmp_path, monkeypatch):
     backend = FakeModelBackend()
     instance.model_backend = backend
     instance.context_augmentor.model_backend = backend
-    instance.expander.model_backend = backend
+    # L341/A273：管道已不构造扩展器，这一臂的后端注入随之撤除
     return instance
 
 
@@ -409,7 +409,7 @@ class TestPipelineInitFailure:
         instance = AugmentorPipeline(config)
         assert instance.model_backend is None
         assert instance.context_augmentor is None
-        assert instance.expander is None
+        assert not hasattr(instance, "expander")  # L341/A273：公开属性面已缩
 
 
 class TestRetryKnobWiring:

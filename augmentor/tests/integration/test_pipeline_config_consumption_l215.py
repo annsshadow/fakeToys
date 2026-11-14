@@ -101,7 +101,7 @@ def make_pipeline(tmp_path, tag, variants=3, **overrides):
     backend = VariantBackend(variants)
     instance.model_backend = backend
     instance.context_augmentor.model_backend = backend
-    instance.expander.model_backend = backend
+    # L341/A273：管道已不构造扩展器，这一臂的后端注入随之撤除
 
     # 阶段入口读的是 self.config.<节>.enabled，构造之后改这只键即可生效
     for dotted, value in overrides.items():

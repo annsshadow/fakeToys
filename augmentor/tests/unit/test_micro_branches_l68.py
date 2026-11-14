@@ -58,7 +58,7 @@ def _make_pipeline(tmp_path, variants=1):
     backend = _FakeBackend(variants)
     pipeline.model_backend = backend
     pipeline.context_augmentor.model_backend = backend
-    pipeline.expander.model_backend = backend
+    # L341/A273：管道已不构造扩展器，这一臂的后端注入随之撤除
     return pipeline
 
 

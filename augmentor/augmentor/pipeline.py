@@ -31,8 +31,8 @@ from .checkpoint import CheckpointManager
 from .memory_monitor import MemoryMonitor, get_memory_summary
 from .versioning import VersionManager
 from .sampler import ActiveSampler
-from .expander import DomainExpander
-from .tracker import ExperimentTracker
+# L341/A273：扩展器仍由 augmentor/__init__.py 导出，管道不再构造（理由见卷二 L341）
+# L341/A273：追踪器同上；A364 的 run 把手在 SDK 层继续有效
 from .visualizer import DataVisualizer
 from .semantic import persist_index
 
@@ -156,10 +156,10 @@ class AugmentorPipeline:
         self.sampler = ActiveSampler()
         
         # 领域扩展器
-        self.expander = DomainExpander(self.model_backend) if self.model_backend else None
+        # L341/A273：扩展器属性已从公开面撤除，能力留在 SDK 的 DomainExpander.batch_expand
         
         # 实验追踪器
-        self.tracker = ExperimentTracker()
+        # L341/A273：追踪器属性同样撤除，能力留在 SDK 的 ExperimentTracker.log_metric
         
         # 可视化器
         self.visualizer = DataVisualizer()

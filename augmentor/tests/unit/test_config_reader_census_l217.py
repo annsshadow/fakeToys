@@ -124,16 +124,16 @@ _UNREAD = {
     "benchmark.enabled": "基准端点 `/api/quality/benchmark` 无条件可用，不看闸",
     "context.enabled": "`ContextAugmentor` 由管道无条件构造（只读 `num_turns`），这只闸是装饰",
     "evaluation.enabled": "评估端点无条件可用，不看闸",
-    "expander.enabled": "扩展器由管道无条件 `DomainExpander(backend)` 构造，不看本节",
-    "expander.strategies": "策略清单是 `batch_expand` 的方法形参，而该方法无产品调用者（`self.expander` 构造之后从未被用，见 A273）",
+    "expander.enabled": "扩展器构造已于 L341/A273 从管道撤除，本节闸没有可判的对象",
+    "expander.strategies": "策略清单是 `batch_expand` 的方法形参，而该方法无产品调用者（管道已不构造扩展器，L341/A273）",
     "frameworks.enabled": "框架导出在产品侧没有入口，这只闸无处可判",
     "frameworks.frameworks": "两个集成类的构造器只收 `text_key`/`answer_key`，没有清单型入口，且产品侧零实例化",
     "multimodal.enabled": "扫描与格式端点无条件可用，不看闸（L214 只接了两只 extensions）",
     "rag.enabled": "RAG 端点无条件可用，不看闸（L214 接了 chunk_size/chunk_overlap/default_format）",
     "sampler.enabled": "采样端点无条件可用，本节闸从未被读（与 benchmark/evaluation 同形状）",
     "sampler.dimensions": "四个分布硬写在 `analyze_coverage` 体内，它只收 `items`；端点侧也没有同名清单",
-    "tracker.enabled": "追踪器由管道无条件 `ExperimentTracker()` 构造，不看本节",
-    "tracker.metrics": "指标名只有逐条运行时入参 `log_metric(metric_name, value)`，没有清单型入口（`self.tracker` 构造后也从未被用，见 A273）",
+    "tracker.enabled": "追踪器构造已于 L341/A273 从管道撤除，本节闸没有可判的对象",
+    "tracker.metrics": "指标名只有逐条运行时入参 `log_metric(metric_name, value)`，没有清单型入口（管道已不构造追踪器，L341/A273）",
     # L339/A267：visualization.types 已由 pipeline.visualize_dataset 与 CLI visualize 显式读取 ⇒ 移出零读者档
 }
 
