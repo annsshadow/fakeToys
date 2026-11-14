@@ -75,7 +75,7 @@ PRODUCT_FILES = ("cli.py",)
 #: 红读数逐字 `assert 134 == 133`（由仓外探针 `Temp/probe_l282_face.py` 把常数拨回 133 在新语料面上
 #: 实跑取出，非推断），且 `cli.py` 进面后普查读数仍是 **0**（它不含任何动手类调用），
 #: ⇒ L281 那十格的结论没有被这次修面推翻，被推翻的只有「133 就是全仓」这句话。
-MEASURED_PRODUCT_FILES = 134
+MEASURED_PRODUCT_FILES = 135  # **L345 重量**：134 → 135（api/stage_gate.py 进产品语料面）
 
 #: 现量（L281）：`atomic_write.py` 里 `.exists()` 预检的剩余调用点（两格随裸 unlink 一起摘掉）
 MEASURED_ATOMIC_WRITE_PRECHECKS = 0

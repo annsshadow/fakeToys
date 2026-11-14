@@ -302,9 +302,9 @@ class TestRaiseInternalErrorL180:
         assert any("未分类异常收敛为 500" in r.message for r in caplog.records)
 
     def test_no_raw_500_detail_str_leak_in_routes(self):
-        """禁令主判据：`api/` 全包 25 只源文件里，500 档的原文泄漏点恰好 0 处"""
+        """禁令主判据：`api/` 全包 26 只源文件里，500 档的原文泄漏点恰好 0 处"""
         files = api_source_files()
-        assert len(files) == 25, f"扫描面现量 25 只源文件，实得 {len(files)} 只 ⇒ 语料变了先在这里红"
+        assert len(files) == 26, f"扫描面现量 26 只源文件，实得 {len(files)} 只 ⇒ 语料变了先在这里红"
         offenders = []
         for path in files:
             rel = path.relative_to(AI_DIR).as_posix()

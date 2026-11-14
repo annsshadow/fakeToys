@@ -115,7 +115,7 @@ def get_pipeline() -> AugmentorPipeline:
     if _pipeline is None:
         with _PIPELINE_LOCK:
             if _pipeline is None:
-                _pipeline = AugmentorPipeline(load_config(str(config_file_path()))); _pipeline.stage_gates = stage_gates(_pipeline.config)  # L343/A271
+                _pipeline = AugmentorPipeline(load_config(str(config_file_path()))); _pipeline.stage_gates = stage_gates(_pipeline.config)  # L343/A271 启动快照；L345 关闸以实时 config 为准
     return _pipeline
 
 
@@ -1020,8 +1020,8 @@ def stage_gates(config) -> dict:
     再让它们有真实读者：本函数由 get_pipeline() 在装配时调用一次，
     结果挂在管道上供阶段入口与排障回显读取。
 
-    「设为 False 时具体关掉哪个端点/阶段」是要产品验收口径的新需求，
-    本轮不擅自改十个端点的行为（见卷二 L343 日志块）。
+    L345 起关闸判定实时走本函数：StageGateMiddleware 按 STAGE_ENDPOINTS 映射
+    把对应端点挡回 400；出厂全 True ⇒ 零行为漂移（见卷二 L343 日志块）。
     """
     return {
         "context": config.context.enabled,

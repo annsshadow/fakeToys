@@ -485,6 +485,12 @@ async def http_error_with_encodable_echo(
         )
 
 
+# L345/A271：阶段闸执行放在 ASGI 中间件层 —— 零路由改动、零 OpenAPI 契约变化。
+# 出厂十只全 True 时恒放行；模块级注册仍早于 Starlette 启动时构建 middleware stack。
+from api.stage_gate import StageGateMiddleware
+
+app.add_middleware(StageGateMiddleware)
+
 if __name__ == "__main__":
     import uvicorn
 

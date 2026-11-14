@@ -301,7 +301,7 @@ def identity(rows):
 #: 它把 A341 那道白名单闸的 400/403 原样送出去。两只新格同一处、同一形状，
 #: 且 `_reject_escaping_dir_value` 在 try 体里是**被调用**的，所以调用维也看得见它 ⇒
 #: 装载维独有的名册 `MEASURED_LOAD_ONLY_TRIES` 仍是那 13 只，调用盲文件仍是那 3 只。
-MEASURED_FILES = 25
+MEASURED_FILES = 26  # **L345 重量**：25 → 26（api/stage_gate.py 进 api/ 全包扫描面）
 MEASURED_RAISERS = 109  # **L338 重量**：107 → 109（两条新路由各带一组 except 子句）。 **L337 重量**：106 → **107**（新增 _read_json_with_retry 这只真实闸，重试耗尽回 503）。 **L333 重量**：105 → **106**（read_items 严格 JSON 读侧新增的判据函数 _reject_nonfinite 是一只真实闸，被闭包当场数到）。 **L308 记账批重量**：102 → **105**（既有欠账：HEAD 态实测闭包已是 105 只，常量停在 102 ⇒ `test_the_raiser_closure_is_the_measured_one` 与 `test_the_closure_seeds_every_direct_producer` 两支从那以后一直红着。实测：**闭包一只没动**（HEAD 态跑同一把尺子也是 105）⇒ 这笔是补记不是本轮引入。**L307 记账批重量**：102 → **105**
 #: 名册里必须出现的锚点：闸与上传面各挑几枚，防止闭包算成一堆同音名字却漏掉正主
 ANCHOR_RAISERS = ("resolve_within_roots", "resolve_data_path", "verify_api_key",
