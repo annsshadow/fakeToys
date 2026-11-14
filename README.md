@@ -229,7 +229,7 @@ go run ./cmd/migrate && go run ./cmd/seed && go run ./cmd/api
 **v3.0 升级**
 - 性能：流式处理峰值 22.70MB→1.66MB、dedup 内存 9536MB→20MB
 - 健壮性：**10551 单测全绿**，全量行覆盖 **99.53%**，错误分类、自动重试、配置写入闭环
-- API：**79 个 REST 端点**全部声明 `response_model`
+- API：**81 个 REST 端点**全部声明 `response_model`
 - Web：React 11 个功能页 + Ant Design
 
 ```bash

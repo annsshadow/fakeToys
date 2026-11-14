@@ -403,7 +403,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 
 ### 响应契约
 
-**每个端点都声明了 `response_model`**（共 79 个），因此 `/openapi.json` 里不存在
+**每个端点都声明了 `response_model`**（共 81 个），因此 `/openapi.json` 里不存在
 「无 schema 的 200 响应」。这条由 `tests/integration/test_api_openapi_contract.py`
 双向守门：既要每个端点都声明契约，也要**每个已声明契约的端点都真实存在**
 （防止文档里留着一个早就删掉的端点）。
@@ -434,7 +434,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 
 ## 端点总览
 
-按 OpenAPI tag 分组，共 **79** 个端点。
+按 OpenAPI tag 分组，共 **81** 个端点。
 
 ### audit（1）
 
@@ -623,7 +623,7 @@ API；而 `cors_credentials: true` 即使来源不在白名单里，响应里也
 > `health` 刻意只报存活，不含可能失败的字段；`status` 会真的构造管道并检查
 > 可选依赖，因此能回答「当前环境缺什么、哪些功能会降级」，也可能更慢或失败。它另带 `model_retry_count` 与 `model_retry_wait_seconds` 两只后端重试统计（`health` 刻意不含这两键）：**管道缺失时它们是 `null` 而不是 0**——「没有后端」与「后端重试过 0 次」是两句话，折叠成一个数字就丢掉了前半句。前端自 L237 起在系统状态页按这两档分别渲染（`null` ⇒ 「无后端」）。
 
-### system（15）
+### system（17）
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
@@ -1502,3 +1502,20 @@ A：进度是**单进程内的全局状态**，多个并发增强会互相覆盖
 **Q：响应头里的 `X-Process-Time` 是什么单位**
 A：秒（浮点）。它计的是服务端处理耗时，不含网络往返，可用来定位慢端点（见 §慢请求）。
 
+
+---
+
+## 补记：L338 / A309 新增两条依赖图写入口
+
+> 这两组行单独放在文末，是为了不改动上文任何表格行的行号——本仓有多把守卫按行号引用本文件。
+> 两条端点都挂在 `system` 组、都挂 `verify_api_key`，回执体同为中文一句。
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| `DELETE` | `/api/system/dependency/datasets/{dataset_id}` | 注销已登记数据集 |
+| `POST` | `/api/system/dependency/edges` | 建一条依赖边 |
+
+| 方法 | 路径 | 说明 | 人读提示 |
+| --- | --- | --- | --- |
+| `DELETE` | `/api/system/dependency/datasets/{dataset_id}` | 注销已登记数据集 | **写**：在目录锁内重读注册表 → 删数据集 → 清掉与它相连的边 → 写回两份文件；id 不存在时回 `deleted=false`（DELETE 幂等），不抛异常。 |
+| `POST` | `/api/system/dependency/edges` | 建一条依赖边 | **写**：入参四格 `source_dataset` / `target_dataset` / `dependency_type` / `description`，回执是 `{edge: {...}}`；边不再只能由 SDK 的 `add_dependency` 建立。 |
