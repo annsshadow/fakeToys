@@ -279,8 +279,8 @@ class TestRulerBites:
         窗口里只有 ` | M |` 与注入串自身 ⇒ 干净。这一换同时是 `SCOPE` 那 24 字窗口**会吞掉真判决**的
         现场证据：所以本守卫的牙齿不只靠 `FULL_VERDICT == ∅`，还靠 `MEASURED_HITS` 的精确相等——
         任何一行新掉进半程档都会把盲区数推离 5 并当场红，逼人来读那一句到底收了没有。"""
-        volumes = _patch_text(_patch_text(load_volumes(), "OPTIMIZATION_LOOP_2.md", "A371", "~~M~~ 已关闭（L331）", "M"),
-                              "OPTIMIZATION_LOOP_2.md", "A371", "定级 M，待拍。", "定级 M，待拍。本轮已收口，见 L263")  # **L331**：主体已结案 ⇒ 先在内存里还原开放定级格，注入臂仍验同一判据
+        volumes = _patch_text(_patch_text(load_volumes(), "OPTIMIZATION_LOOP_2.md", "A371", "~~M~~ 已修（L336）", "M"),
+                              "OPTIMIZATION_LOOP_2.md", "A371", "定级 M，待拍。", "定级 M，待拍。本轮已收口，见 L263")  # **L336**：主体已改判已修 ⇒ 先在内存里还原开放定级格，注入臂仍验同一判据
         got = blind_face(volumes)
         assert "A371" in got and got["A371"]["grade"] == FULL, got.get("A371")
         assert [h for _k, h, _b in got["A371"]["hits"]][0] == "已收口，见 L263", got["A371"]["hits"]
