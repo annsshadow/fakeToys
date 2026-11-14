@@ -135,10 +135,10 @@ class SplitRequest(BaseModel):
     三个比例之和必须为 1（±0.01 含端点）；判据只住 `validation.require_ratio_list` 一处
     （A324 / L256）。`stratify=True` 时走分层支路（委托 `DataSplitter`），`stratify_key` 是分组
     字段，空值报 400；两条支路对同一个 `ratios` 给出同一句判决，不再各有自己的容差（§3.16）。
-    `shuffle` 在两条支路上的口径**不同**（实测，20 条语料 0.5/0.25/0.25）：分层支路只把
-    每段成员按输入的原始相对顺序回排，成员与条数都不变，`seed` 仍决定谁进哪段；默认支路
-    是「先整份打乱再按位置切片」，所以 False 会连同成员一起改变，且三段恒为输入的前
-    50%/25%/25% —— 此时 `seed` 完全空转。可复现性一律交给 `seed`。
+    **L337/A289 起两支的 `shuffle` 口径统一**：`seed` 一律决定谁进哪一段（不再空转），
+    `shuffle` 只管三段内部的顺序 —— True 沿用打乱后的次序，False 把每段按 `items` 的
+    原始相对顺序回排；成员与条数在两档下都不变。可复现性一律交给 `seed`。改前默认支
+    `shuffle=False` 会连同成员一起变成输入的前 50%/25%/25%，本轮按题 5 代拍收口。
     """
     input_file: str
     output_dir: str

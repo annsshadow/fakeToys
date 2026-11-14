@@ -302,7 +302,7 @@ def identity(rows):
 #: 且 `_reject_escaping_dir_value` 在 try 体里是**被调用**的，所以调用维也看得见它 ⇒
 #: 装载维独有的名册 `MEASURED_LOAD_ONLY_TRIES` 仍是那 13 只，调用盲文件仍是那 3 只。
 MEASURED_FILES = 25
-MEASURED_RAISERS = 106  # **L333 重量**：105 → **106**（read_items 严格 JSON 读侧新增的判据函数 _reject_nonfinite 是一只真实闸，被闭包当场数到）。 **L308 记账批重量**：102 → **105**（既有欠账：HEAD 态实测闭包已是 105 只，常量停在 102 ⇒ `test_the_raiser_closure_is_the_measured_one` 与 `test_the_closure_seeds_every_direct_producer` 两支从那以后一直红着。实测：**闭包一只没动**（HEAD 态跑同一把尺子也是 105）⇒ 这笔是补记不是本轮引入。**L307 记账批重量**：102 → **105**
+MEASURED_RAISERS = 107  # **L337 重量**：106 → **107**（新增 _read_json_with_retry 这只真实闸，重试耗尽回 503）。 **L333 重量**：105 → **106**（read_items 严格 JSON 读侧新增的判据函数 _reject_nonfinite 是一只真实闸，被闭包当场数到）。 **L308 记账批重量**：102 → **105**（既有欠账：HEAD 态实测闭包已是 105 只，常量停在 102 ⇒ `test_the_raiser_closure_is_the_measured_one` 与 `test_the_closure_seeds_every_direct_producer` 两支从那以后一直红着。实测：**闭包一只没动**（HEAD 态跑同一把尺子也是 105）⇒ 这笔是补记不是本轮引入。**L307 记账批重量**：102 → **105**
 #: 名册里必须出现的锚点：闸与上传面各挑几枚，防止闭包算成一堆同音名字却漏掉正主
 ANCHOR_RAISERS = ("resolve_within_roots", "resolve_data_path", "verify_api_key",
                   "assert_dataset_shape", "_read_upload_body", "_assert_within_roots",
@@ -313,7 +313,7 @@ ANCHOR_RAISERS = ("resolve_within_roots", "resolve_data_path", "verify_api_key",
 #: raiser。播种规则是「任何直接出声的函数名都是种子」，所以面内**没有**一只直接出声函数
 #: 落在闭包之外 —— 新增一只闸天然入面，不必等谁把它登记进名册（这一格的尺子见
 #: ``test_the_closure_seeds_every_direct_producer``，注入臂见闭包播种臂）。
-MEASURED_PRODUCERS = 70  # **L333 重量**：69 → **70**（同上；间接面 106 − 70 = 36 未动）。 **L314 记账批重量**：70 → **69**（本轮：`api/routes/multimodal.py` 那一支 `except ValueError` 泛档被摩掉 ⇒ `scan_directory` 体里的「直接出声」的 `raise HTTPException(...)` 一只不再在 ⇒ 直接出声的那一面 **-1**；它的判定改走**具名窄口** → 目录不存在与坏图片那两格仍是 400）。**L308 记账批重量**：68 → **70**（既有欠账，同上：HEAD 态实测「体里直接出声」已是 70 只。**L307 记账批重量**：68 → **70**
+MEASURED_PRODUCERS = 71  # **L337 重量**：70 → **71**（同上；间接面 107 − 71 = 36 未动）。 **L333 重量**：69 → **70**（同上；间接面 106 − 70 = 36 未动）。 **L314 记账批重量**：70 → **69**（本轮：`api/routes/multimodal.py` 那一支 `except ValueError` 泛档被摩掉 ⇒ `scan_directory` 体里的「直接出声」的 `raise HTTPException(...)` 一只不再在 ⇒ 直接出声的那一面 **-1**；它的判定改走**具名窄口** → 目录不存在与坏图片那两格仍是 400）。**L308 记账批重量**：68 → **70**（既有欠账，同上：HEAD 态实测「体里直接出声」已是 70 只。**L307 记账批重量**：68 → **70**
 MEASURED_INDIRECT_RAISERS = 36  # **L314 记账批重量**：35 → **36**（本轮 `MEASURED_PRODUCERS` 70 → **69** ⇒ 闭包 105 − 直接出声 69 = 36，与那两格同批；`multimodal.py` 那一支泛档删掉 ⇒ `scan_directory` 不再是「直接出声」的那一只）（闭包 105 − 直接出声 70 = 35，与上两格同批；HEAD 态同样是 105 / 70 ⇒ 同样是既有欠账）
 MEASURED_CLAUSES = 61  # **L314 记账批重量**：60 → **61**（本轮：`api/routes/data.py` 的 `load_data` 加了一支 `except HTTPException: raise`（那一支的体里有可达 raiser，配对面按**名字**判，但 `load_data` 体里是 `read_json_file` 与 `require_item_text` 两个调用 ⇒ 不是本仓的 raiser 名字 ⇒ 那一支是「纯防御性」的）⇒ 支面 +1）。**L308 记账批重量**：59 → **60**（本轮：`get_augment_progress` 加了「点名任务没有断点 ⇒ 404」那一支 `except HTTPException: raise` ⇒ 支面 +1。**L307 记账批重量**：59 → **60**
 #: 支数 59 而所在函数 58 —— 唯一一只「同一函数两只支」是 ``upload_data``（读侧与写侧各一支）

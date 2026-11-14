@@ -443,20 +443,20 @@ class DatasetOperations:
             # 分层的算法口径只有 `DataSplitter` 那一份，这里只接线（见 `_stratified`）
             train, val, test = self._stratified(items, config)
         else:
-            # 打乱数据
+            # L337/A289：成员分配恒由 seed 决定，与分层支同一口径
             data = items.copy()
-            if config.shuffle:
-                random.Random(config.seed).shuffle(data)
+            random.Random(config.seed).shuffle(data)  # shuffle 只管三段内部顺序
 
             # 计算各部分大小：余数不得整份偏给 test（实测 n=7 名义 10% 的测试集
             # 实际拿到 28.6%，而 0.1 的验证集在 n ≤ 9 时交出 0 条）
-            n = len(data)
-            train_size, val_size, _ = largest_remainder(n, config.ratios)
+            n = len(data); train_size, val_size, _ = largest_remainder(n, config.ratios)
 
-            # 分割
+            # 分割：shuffle=False 时三段各自按 items 原始相对顺序回排
             train = data[:train_size]
             val = data[train_size:train_size + val_size]
             test = data[train_size + val_size:]
+            if not config.shuffle:
+                train, val, test = tuple(_in_original_order(_position_table(items), s) for s in (train, val, test))
 
         logger.info(f"分割完成: 训练集 {len(train)}, 验证集 {len(val)}, 测试集 {len(test)}")
         return train, val, test

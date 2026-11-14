@@ -874,7 +874,8 @@ export default function DataManagement() {
         <div style={{ marginTop: 8, fontSize: 12, opacity: 0.75 }}>
           两条支路的判据不同：比例之和的容差默认支是 0.01、分层支是
           1e-6，负数只有分层支会拦（A289）。
-          分层字段给一个不存在的名字**不报错**——它把全部条目塌成一个分组，分段数看起来与用默认键时一样。
+          分层字段给一个不存在的名字**不报错**——它把全部条目塌成一个分组，分段数看起来与用默认键时一样。L337/A289
+          起两支 shuffle 口径一致：seed 决定谁进哪段。
         </div>
         {splitResult && (
           <Table

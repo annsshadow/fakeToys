@@ -171,8 +171,8 @@ def test_a_denied_read_raises_the_same_permission_error_shape(tmp_path):
 
 
 @WINDOWS_ONLY
-def test_get_load_folds_a_denied_read_into_the_fixed_500(tmp_path, monkeypatch, caplog):
-    """`GET /api/data/load` 撞上读拒绝 ⇒ 500 + 固定文案；原文只进日志；解锁后同请求 200
+def test_get_load_retries_then_returns_503(tmp_path, monkeypatch, caplog):  # L337/A356
+    """`GET /api/data/load` 撞上读拒绝 ⇒ 有限重试耗尽后 503；原文只进日志；解锁后 200
 
     判据分三格：① 状态码与响应体逐字（不泄漏 `Permission` / `Errno 13`）；② 日志里
     确实有那一支 `PermissionError`（证明固定文案不是靠吞异常换来的）；③ 窗口解除后
@@ -187,8 +187,8 @@ def test_get_load_folds_a_denied_read_into_the_fixed_500(tmp_path, monkeypatch, 
                 "GET", f"/api/data/load/{name}", params={"page": 1, "page_size": 3}
             )
 
-    assert denied.status_code == 500, denied.text
-    assert denied.json() == {"detail": INTERNAL_ERROR_DETAIL}
+    assert denied.status_code == 503, denied.text  # L337/A356 候选③：瞬时 OS 失败算 503
+    assert denied.json() == {"detail": "数据集正被写入，请稍后重试"}
     assert "Permission" not in denied.text
     assert "Errno 13" not in denied.text
     assert str(tmp_path) not in denied.text

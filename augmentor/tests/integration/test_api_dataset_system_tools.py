@@ -1436,19 +1436,19 @@ class TestDatasetSplitContractKnobs:
             assert got == sorted(got, key=lambda o: int(o[1:]))
             assert want != sorted(want, key=lambda o: int(o[1:]))
 
-    def test_shuffle_false_on_default_path_freezes_the_seed(self, tools_env):
-        """默认支路上 `shuffle=False` 是另一套口径：成员整段换掉，且 seed 空转
-
-        这不是本轮引入的新行为，而是「先整份打乱再按位置切片」的既有形状 —— 接上旋钮就
-        必须把它钉成事实，免得日后被当成回归。两个不同 seed 的 `shuffle=False` 产物逐条
-        同答，三段就是输入的前 10 / 中 5 / 后 5 条。口径统一（另立 Backlog A60）。
+    def test_shuffle_false_now_keeps_seed_and_restores_order(self, tools_env):  # L337/A289
+        """L337/A289：两支统一后 shuffle=False 不再冻结 seed，也不再是输入前 N 条
+        改前默认支是「不打乱、按位置切前 10/中 5/后 5」，seed 完全空转（Backlog A60）。
+        现在 seed 一律决定谁进哪一段，shuffle 只管段内顺序：两个不同 seed 的产物必须
+        不同，且每段内部按输入的原始相对顺序（output 编号递增）回排，全集仍是 20 条。
         """
         _, first = self._split(tools_env, "d0", seed=0, shuffle=False)
         _, second = self._split(tools_env, "d1", seed=99, shuffle=False)
-        assert first == second, "默认支路的 shuffle=False 仍随 seed 变，口径说明已失效"
-        assert [row["output"] for row in first["train"]] == [f"o{i}" for i in range(10)]
-        assert [row["output"] for row in first["val"]] == [f"o{i}" for i in range(10, 15)]
-        assert [row["output"] for row in first["test"]] == [f"o{i}" for i in range(15, 20)]
+        assert first != second, "seed 又空转了：两支统一被回潮"
+        for face in (first, second):
+            for key in ("train", "val", "test"):
+                nums = [int(row["output"][1:]) for row in face[key]]
+                assert nums == sorted(nums), (key, nums)
 
     def test_new_knobs_default_to_pre_l42_behavior(self, tools_env):
         """三个新字段全省略 == 显式默认值 == L42 之前的请求：逐字节同产物

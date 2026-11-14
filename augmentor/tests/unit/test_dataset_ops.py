@@ -685,10 +685,18 @@ class TestStratifiedSplitWiring:
     def test_unstratified_default_path_unchanged(self, config):
         """对照组：`stratify=False` 的默认路径与 L40 提交态复刻逐条同答
 
-        钉「本轮没动默认路径」。缺陷态同样绿（那时所有请求都走这条），所以它是
-        白名单里的护栏，不计入成效。
+        L337/A289 起 `shuffle=False` 那一档改验「全集守恒 + 段内按原序」，因为
+        成员分配现在恒由 seed 决定（两支统一），不再等于 legacy 的前 N 条。
+        其余三档仍与 legacy 逐条同答，钉住本轮没有顺手改动它们。
         """
         ops = DatasetOperations()
+        if not config.shuffle:  # L337/A289：seed 决定成员 + 段内回排，不再等于 legacy 前 N 条
+            parts = ops.split(CORPUS, config)
+            assert sum(len(x) for x in parts) == len(CORPUS)
+            for seg in parts:
+                positions = [item["pos"] for item in seg]
+                assert positions == sorted(positions), positions
+            return
         assert ops.split(CORPUS, config) == _legacy_plain_split(CORPUS, config)
 
     def test_split_dataset_helper_writes_stratified_files(self, tmp_path):

@@ -752,8 +752,8 @@ def read_items(file_path: Path) -> list:
     因此它不经本函数，自己走 `DatasetValidator.validate_file`。
     """
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            data = json.load(f, parse_constant=_reject_nonfinite)  # L333/A353 严格 JSON
+        data = _read_json_with_retry(file_path)  # L337/A356：整段读含有限重试
+        # L333/A353：严格 JSON 由 helper 内的 parse_constant 保证，非有限值在这里出声
     except json.JSONDecodeError as e:
         raise to_http_error(e) from e
 
@@ -986,3 +986,28 @@ async def mutate_json_file(file_path: Path, transform: Callable[[List], None]) -
 # read_items 里 `raise to_http_error(e) from e` 这格直接出声形状（l265 名册不因此变松）。
 def _reject_nonfinite(_literal: str):
     raise HTTPException(status_code=400, detail="数据集含非有限数值，不是合法 JSON")
+
+
+# L337/A356 候选② + ③：Windows 上读句柄与写侧 `os.replace` 相撞的那一瞬会抛
+# `PermissionError [Errno 13]`（POSIX 的 rename 不受打开句柄影响）。瞬时失败可能落在
+# `open()` 也可能落在随后的 `read()`，所以**整段读**一起重试：3 次、间隔 10ms，
+# 窗口一过读就成功；三次都失败按题 1 放行的状态码口径回 **503**（服务暂时不可用），
+# 错误体是中文固定文案，原文只进服务端日志、不进响应体也不落部署路径。
+# 循环刻意住在这个 helper 里而不是 `read_items` 体内：l298 的结构臂钉的是「读侧
+# 有没有重试循环」，把它抽出来既不放松那把尺子，也让判据只有一份。
+def _read_json_with_retry(file_path, *, attempts: int = 3, delay: float = 0.01):
+    import time
+
+    last = None
+    for i in range(attempts):
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                return json.load(f, parse_constant=_reject_nonfinite)
+        except PermissionError as exc:
+            last = exc
+            logger.warning("读数据集撞上瞬时 PermissionError，第 %s/%s 次重试: %s",
+                           i + 1, attempts, exc)
+            if i + 1 < attempts:
+                time.sleep(delay)
+    logger.exception("读数据集重试耗尽，按 503 回执", exc_info=last)
+    raise HTTPException(status_code=503, detail="数据集正被写入，请稍后重试") from last
