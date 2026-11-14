@@ -140,7 +140,7 @@ def run_annotate(args, config):
 # ============ RAG 格式 ============
 def run_rag(args, config):
     """`rag` 子命令"""
-    from augmentor.rag import RAGFormatter
+    from augmentor.rag import RAGFormatter; _require_stage(config, "rag")  # L346/A271
 
     items = _load_items(args.input)
     formatter = RAGFormatter(
@@ -155,7 +155,7 @@ def run_rag(args, config):
 # ============ 质量基准 ============
 def run_benchmark(args, config):
     """`benchmark` 子命令"""
-    from augmentor.benchmark import QualityBenchmark
+    from augmentor.benchmark import QualityBenchmark; _require_stage(config, "benchmark")  # L346/A271
 
     items = _load_items(args.input)
     bench = QualityBenchmark(
@@ -208,3 +208,13 @@ def run_health_gate(args, config):
 
     _print(result)
     verdict_exit(result["gate"]["passed"])
+
+
+def _require_stage(config, section):
+    """L346/A271：CLI 侧阶段闸。关掉时非零退出，不静默跳过、不写产物。
+
+    与 HTTP 门的 400 文案保持一致（守卫逐字对账）。用 SystemExit 而不是
+    return：脚本调用方能从退出码感知「这次没干活」，不会误以为成功。
+    """
+    if not getattr(getattr(config, section), "enabled", True):
+        raise SystemExit(f"能力未启用：{section}.enabled 为 false")

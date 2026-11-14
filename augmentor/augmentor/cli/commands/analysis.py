@@ -70,7 +70,7 @@ def run_analyze(args, config):
     report = analyze_dataset(items, args.fields)
 
     payload = report.to_dict()
-    payload["coverage_analysis"] = ActiveSampler().analyze_coverage(items)
+    payload["coverage_analysis"] = ActiveSampler().analyze_coverage(items) if config.sampler.enabled else {}  # L346/A271
     payload["statistics"] = generate_statistics(items)
     payload["dedup_report"] = Deduplicator(
         threshold=config.dedup.threshold

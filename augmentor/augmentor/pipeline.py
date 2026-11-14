@@ -896,7 +896,7 @@ class AugmentorPipeline:
             items = json.load(f)
         
         # 覆盖分析
-        coverage = self.sampler.analyze_coverage(items)
+        coverage = self.sampler.analyze_coverage(items) if self.config.sampler.enabled else {}  # L346/A271
         
         # 统计信息
         stats = self.visualizer.generate_statistics(items)
