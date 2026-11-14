@@ -13,8 +13,8 @@
 
 | 面 | 现量 | 取证方式 |
 | --- | --- | --- |
-| augmentor 全量门禁 | **10729 passed / 2 skipped / 0 failed**（733.61 s） | `cd augmentor && python -m pytest tests -q -p no:cacheprovider` |
-| augmentor 覆盖率 | 门禁汇总 **99.37%**；`coverage.xml` 行覆盖 **99.51%**（16071 行 / 78 未覆盖 / 4478 分支 / 52 未覆盖），门槛 99% | pytest-cov 汇总与 `augmentor/coverage.xml` |
+| augmentor 全量门禁 | **10737 passed / 2 skipped / 0 failed**（648.61 s） | `cd augmentor && python -m pytest tests -q -p no:cacheprovider` |
+| augmentor 覆盖率 | 门禁汇总 **99.37%**；`coverage.xml` 行覆盖 **99.51%**（16074 行 / 78 未覆盖 / 4480 分支 / 52 未覆盖），门槛 99% | pytest-cov 汇总与 `augmentor/coverage.xml` |
 | 账本与名册守卫族 | 13 把账本守卫 + 3 份 L342 名册守卫，终态全绿 | 定点复跑；声明面按现量重钉 |
 | augmentor 前端 | **430 passed**；`tsc --noEmit` / `eslint --max-warnings 0` / `prettier --check src` 全绿 | `cd augmentor/web && npm test` |
 | laiyipao H5 | 单测 **1264 passed / 2 skipped**；`vue-tsc` 通过；`build:h5` exit 0 | `cd laiyipao/miniapp` |
@@ -109,7 +109,8 @@
 | Swagger UI 挂载 | 已挂 `/swagger-ui/` | `oa4rust/backend/src/main.rs` 的 `docs_router()`：`Config::new(["/openapi.json"])` 指向既有缓存端点，不重复注册文档路由；3 支 Rust 行为面测试；离线 `cargo check` 与 `openapi-paths` 门禁通过 |
 | A271 关闸语义 | 十只闸真正生效 | `augmentor/api/stage_gate.py` 的 ASGI 中间件 + `STAGE_ENDPOINTS` 映射：5 节覆盖 7 个端点，关掉回 400 固定中文文案；另 5 节明确登记「产品侧无消费者可关」。默认全 True ⇒ 零漂移，实时读配置，读数失败 fail-open |
 
-**A271 的口径**：中间件不注册路由、不改 OpenAPI 契约、不动前端 fetcher。
+**A271 的口径（L346 后为两层）**：中间件不注册路由、不改 OpenAPI 契约、不动前端 fetcher；
+管道内阶段与 CLI 直调另有一层判据，见下节。
 关闸映射见 `api/stage_gate.py` 的 `STAGE_ENDPOINTS`，守卫逐格钉住表形状、
 零漂移反证、隔离反证、热更新实时性、fail-open 与真身 app 行为面。
 `context` / `expander` / `tracker` / `active_learning` / `frameworks` 五节今天
@@ -124,3 +125,26 @@
 | Rust 新守卫 | 3 支 `docs_router_tests`（补斜杠 / 页面与静态资源 / 反证不重复注册文档路由） |
 | 定点守卫 | 引用尺与文档守卫 305 passed；l281 重钉后 57 passed；三处语料面常数按红读数重钉 |
 | 离机构建 | `cargo check -p oa4rust --offline` exit 0；`openapi-paths` / `rust-lints` 门禁 PASS |
+
+## 七、关闸语义的第二层（2026-11-15，L346）
+
+按分档建议把「关掉某只闸」从 HTTP 门扩到非 HTTP 入口，仍不凭空造消费者：
+
+| 档 | 处置 | 落地 |
+| --- | --- | --- |
+| 干净跳过、产物可接受 | 做 | `sampler`：管道与 CLI 两处条件表达式同读一只闸，关掉时 `coverage_analysis` 键保留、值空 dict，前端零改动 |
+| 会改回执形状 | 拍板为「保持键、值空 dict + 日志出声」 | 不删键避免 KeyError，不报错避免把只读分析变 5xx；`statistics` / `dedup_report` 照常 |
+| 只有构造点、无可观察行为 | **不做** | `context`：`ContextAugmentor` 构造后全文件零引用，关掉零效果，做了是假绿 |
+| 产品侧零实例化 | 保持「无对象可关」 | `expander` / `tracker`（L341 缩面）、`active_learning` / `frameworks` |
+
+CLI 的 `rag` / `benchmark` 关掉时 `SystemExit` 非零退出、不落产物，文案与 HTTP 400
+逐字一致并由守卫对账。默认十只全 True ⇒ 三层（HTTP / 管道 / CLI）全部零行为漂移。
+
+### L346 本轮新增验证
+
+| 面 | 读数 |
+| --- | --- |
+| Python 新守卫 | 9 支 `test_stage_gate_pipeline_l346.py`（两处判据对账 / 管道零漂移 / 关闸回执 / CLI rag·benchmark 非零退出 / CLI analyze 空 dict / 文案一致 / 关闸点名册 / 五节无消费者） |
+| 引用尺与名册 | a184 / l79 / l268 / A357 内容名册 / A346 点号主张 93 passed |
+| 全量门禁 | **10737 passed / 2 skipped / 0 failed**，覆盖率 99.37%（648.61 s） |
+| 过程留痕 | 首轮报 census 撞车名消失 + git 面 ref 未更新，次轮报文档残留已删符号；三处都按现量修正后重跑取终态读数 |

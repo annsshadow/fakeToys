@@ -1561,3 +1561,23 @@ A：秒（浮点）。它计的是服务端处理耗时，不含网络往返，�
 
 中间件不注册路由、不改契约：这七只端点的 200 成功面与原有 4xx 判据未变，
 400 只是在闸关闭时新出现的一档。
+
+---
+
+## 补记：L346 阶段闸的第二层（管道与 CLI）
+
+L345 的中间件只挡 HTTP 入口；`analyze_dataset()` 与 CLI 子命令绕过它，
+同名能力照跑。本轮按分档补齐，判据仍是同一句「能力未启用：<section>.enabled 为 false」。
+
+- `sampler`：管道与 CLI 各有一处条件表达式，都只读配置里的同一只闸。
+  关掉时 `coverage_analysis` **键保留、值为空 dict** ——
+  `DatasetAnalysisResponse.coverage_analysis` 是 `Dict[str, Any]`，空 dict 合法 ⇒
+  前端形状零改动；不删键（会 KeyError）、不报错（会把只读分析变成 5xx）。
+  `statistics` / `dedup_report` 两段照常产出。
+- `rag` / `benchmark`：CLI 子命令在能力入口判闸，关掉时 `SystemExit` 非零退出、
+  不写产物、不静默成功；脚本调用方能从退出码感知「这次没干活」。
+- `context` / `expander` / `tracker` / `active_learning` / `frameworks` 五节
+  **仍明确不做**：context 只有构造点且构造后零引用（关掉零可观察效果，做了是假绿），
+  其余四节产品侧零实例化。保持「无对象可关」的登记，不凭空造阶段。
+
+HTTP 400 与 CLI 退出文案由守卫逐字对账；CLI 关闸点名册精确到两个能力入口。
