@@ -117,22 +117,22 @@ _LOADER_CONSUMED = (
 #: 也没有任何形参。散文骗过人眼，所以这一档从 L218 起**每键再挂一条机器可验的证据**
 #: （见 `_UNREAD_KNOB`），理由与证据不一致就红。
 _UNREAD = {
-    "active_learning.enabled": "主动学习循环在产品侧连实例都没建过（只有包导出），这只闸无人问",
+    # L343/A271：active_learning.enabled 已由 stage_gates() 真实读取，移出零读者档
     "active_learning.strategy": "同名旋钮在 `ActiveLearningLoop.__init__`，但那个类没有产品调用者",
     "active_learning.batch_size": "同名旋钮同在 `ActiveLearningLoop.__init__`，同样没有产品调用者",
     "active_learning.max_iterations": "轮数旋钮是 `run` 的方法形参 `iterations`，且默认 None⇒1 轮（与出厂 10 不同，接线即行为变更）",
-    "benchmark.enabled": "基准端点 `/api/quality/benchmark` 无条件可用，不看闸",
-    "context.enabled": "`ContextAugmentor` 由管道无条件构造（只读 `num_turns`），这只闸是装饰",
-    "evaluation.enabled": "评估端点无条件可用，不看闸",
-    "expander.enabled": "扩展器构造已于 L341/A273 从管道撤除，本节闸没有可判的对象",
+    # L343/A271：benchmark.enabled 已由 stage_gates() 真实读取，移出零读者档
+    # L343/A271：context.enabled 已由 stage_gates() 真实读取，移出零读者档
+    # L343/A271：evaluation.enabled 已由 stage_gates() 真实读取，移出零读者档
+    # L343/A271：expander.enabled 已由 stage_gates() 真实读取，移出零读者档
     "expander.strategies": "策略清单是 `batch_expand` 的方法形参，而该方法无产品调用者（管道已不构造扩展器，L341/A273）",
-    "frameworks.enabled": "框架导出在产品侧没有入口，这只闸无处可判",
+    # L343/A271：frameworks.enabled 已由 stage_gates() 真实读取，移出零读者档
     "frameworks.frameworks": "两个集成类的构造器只收 `text_key`/`answer_key`，没有清单型入口，且产品侧零实例化",
-    "multimodal.enabled": "扫描与格式端点无条件可用，不看闸（L214 只接了两只 extensions）",
-    "rag.enabled": "RAG 端点无条件可用，不看闸（L214 接了 chunk_size/chunk_overlap/default_format）",
-    "sampler.enabled": "采样端点无条件可用，本节闸从未被读（与 benchmark/evaluation 同形状）",
+    # L343/A271：multimodal.enabled 已由 stage_gates() 真实读取，移出零读者档
+    # L343/A271：rag.enabled 已由 stage_gates() 真实读取，移出零读者档
+    # L343/A271：sampler.enabled 已由 stage_gates() 真实读取，移出零读者档
     "sampler.dimensions": "四个分布硬写在 `analyze_coverage` 体内，它只收 `items`；端点侧也没有同名清单",
-    "tracker.enabled": "追踪器构造已于 L341/A273 从管道撤除，本节闸没有可判的对象",
+    # L343/A271：tracker.enabled 已由 stage_gates() 真实读取，移出零读者档
     "tracker.metrics": "指标名只有逐条运行时入参 `log_metric(metric_name, value)`，没有清单型入口（管道已不构造追踪器，L341/A273）",
     # L339/A267：visualization.types 已由 pipeline.visualize_dataset 与 CLI visualize 显式读取 ⇒ 移出零读者档
 }
@@ -146,22 +146,22 @@ _UNREAD = {
 #: - `("none", None, None)`：产品侧不存在任何同名旋钮（只许用于「闸」这类无旋钮可接的键）。
 #: 目标写法与 `_LOADER_CONSUMED` 同规：路径相对仓库根，符号名逐字可查。
 _UNREAD_KNOB = {
-    "active_learning.enabled": ("none", None, None),
+    # L343/A271：active_learning.enabled 已由 stage_gates() 真实读取，移出零读者档
     "active_learning.strategy": ("ctor", "augmentor.active_learning:ActiveLearningLoop.__init__", "strategy"),
     "active_learning.batch_size": ("ctor", "augmentor.active_learning:ActiveLearningLoop.__init__", "batch_size"),
     "active_learning.max_iterations": ("method", "augmentor.active_learning:ActiveLearningLoop.run", "iterations"),
-    "benchmark.enabled": ("none", None, None),
-    "context.enabled": ("none", None, None),
-    "evaluation.enabled": ("none", None, None),
-    "expander.enabled": ("none", None, None),
+    # L343/A271：benchmark.enabled 已由 stage_gates() 真实读取，移出零读者档
+    # L343/A271：context.enabled 已由 stage_gates() 真实读取，移出零读者档
+    # L343/A271：evaluation.enabled 已由 stage_gates() 真实读取，移出零读者档
+    # L343/A271：expander.enabled 已由 stage_gates() 真实读取，移出零读者档
     "expander.strategies": ("method", "augmentor.expander:DomainExpander.batch_expand", "strategies"),
-    "frameworks.enabled": ("none", None, None),
+    # L343/A271：frameworks.enabled 已由 stage_gates() 真实读取，移出零读者档
     "frameworks.frameworks": ("absent", "augmentor.frameworks.langchain:LangChainIntegration.__init__", "frameworks"),
-    "multimodal.enabled": ("none", None, None),
-    "rag.enabled": ("none", None, None),
-    "sampler.enabled": ("none", None, None),
+    # L343/A271：multimodal.enabled 已由 stage_gates() 真实读取，移出零读者档
+    # L343/A271：rag.enabled 已由 stage_gates() 真实读取，移出零读者档
+    # L343/A271：sampler.enabled 已由 stage_gates() 真实读取，移出零读者档
     "sampler.dimensions": ("absent", "augmentor.sampler:ActiveSampler.analyze_coverage", "dimensions"),
-    "tracker.enabled": ("none", None, None),
+    # L343/A271：tracker.enabled 已由 stage_gates() 真实读取，移出零读者档
     "tracker.metrics": ("absent", "augmentor.tracker:ExperimentTracker.__init__", "metrics"),
     # L339/A267：上键的 absent 证据随之作废（visualize_dataset 现在真的读了 types）
 }
@@ -510,11 +510,22 @@ class TestKnobClaimsAreFalsifiable:
         否则它会变成假理由的新堆放处——写不动就往 `none` 一扔。
         """
         none_keys = sorted(k for k, e in _UNREAD_KNOB.items() if e[0] == "none")
-        assert none_keys, "证据表里一个 `none` 都没有 ⇒ 这条判据在空转"
+        # L343/A271：十只 enabled 接上读者后 none 档清空是**预期终态**，
+        # 不是判据空转。防空转改由「名册非空 + 下面那支注入反证」两格承担。
+        assert _UNREAD_KNOB, "证据表整个空了 ⇒ 接线把名册也删没了"
         assert all(k.endswith(".enabled") for k in none_keys), (
             f"这些非闸键声称没有任何等价旋钮，要去 `TestKnobClaimsAreFalsifiable` 的真档里挂证据: "
             f"{[k for k in none_keys if not k.endswith('.enabled')]}"
         )
+
+    def test_injecting_a_non_switch_none_is_still_caught(self, monkeypatch):
+        """L343/A271：none 档清空之后判据仍有牙齿（反证臂，不是把断言改成恒真）"""
+        patched = dict(_UNREAD_KNOB)
+        patched["evaluation.reference_field"] = ("none", None, None)
+        monkeypatch.setattr("tests.unit.test_config_reader_census_l217._UNREAD_KNOB", patched)
+        bad = sorted(k for k, e in patched.items()
+                     if e[0] == "none" and not k.endswith(".enabled"))
+        assert bad == ["evaluation.reference_field"], bad
 
     def test_ctor_and_method_params_really_are_in_the_signature(self):
         bad = []

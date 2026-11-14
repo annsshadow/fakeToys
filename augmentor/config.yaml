@@ -162,7 +162,7 @@ export:
 # 对话上下文配置
 context:
   # 启用对话上下文增强
-  enabled: false
+  enabled: true  # L343/A271：零行为漂移
   
   # 对话轮数
   num_turns: 3
@@ -187,7 +187,7 @@ versioning:
 # 主动学习配置
 sampler:
   # 启用主动学习选样
-  enabled: false
+  enabled: true  # L343/A271：零行为漂移
   
   # 分析维度
   dimensions:
@@ -199,7 +199,7 @@ sampler:
 # 领域扩展配置
 expander:
   # 启用自动领域扩展
-  enabled: false
+  enabled: true  # L343/A271：零行为漂移
   
   # 扩展策略
   strategies:
@@ -210,7 +210,7 @@ expander:
 # 效果追踪配置
 tracker:
   # 启用微调效果追踪
-  enabled: false
+  enabled: true  # L343/A271：零行为漂移
   
   # 追踪指标
   metrics:
@@ -250,7 +250,7 @@ multilingual:
 # RAG 训练数据配置
 rag:
   # 启用 RAG 数据格式
-  enabled: false
+  enabled: true  # L343/A271：零行为漂移
   
   # 默认格式 (llamaindex / langchain / custom)
   default_format: llamaindex
@@ -264,7 +264,7 @@ rag:
 # 模型评估配置
 evaluation:
   # 启用模型评估
-  enabled: false
+  enabled: true  # L343/A271：零行为漂移
   
   # 评估指标
   metrics:
@@ -298,7 +298,7 @@ vector:
 # 多模态数据配置
 multimodal:
   # 启用多模态处理
-  enabled: false
+  enabled: true  # L343/A271：零行为漂移
   
   # 支持的图像扩展名
   image_extensions:
@@ -319,7 +319,7 @@ multimodal:
 # 数据质量基准配置
 benchmark:
   # 启用质量基准
-  enabled: false
+  enabled: true  # L343/A271：零行为漂移
   
   # 基准文件路径
   baseline_file: data/benchmark_baseline.json
@@ -334,7 +334,7 @@ benchmark:
 # 主动学习循环配置
 active_learning:
   # 启用主动学习
-  enabled: false
+  enabled: true  # L343/A271：零行为漂移
   
   # 采样策略 (uncertainty / diversity / hybrid / random)
   strategy: uncertainty
@@ -348,7 +348,7 @@ active_learning:
 # LLM 框架集成配置
 frameworks:
   # 启用框架集成
-  enabled: false
+  enabled: true  # L343/A271：零行为漂移
   
   # 集成的框架
   frameworks:

@@ -134,6 +134,12 @@ _SYM = r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*"
 #: 当符号，普查当场数出 220 条假缺陷：逻辑运算符、文件名、键名全进了死档。
 SYM_CALL = re.compile(r"`(" + _SYM + r")\(\)`")
 SYM_PAREN = re.compile(r"`(" + _SYM + r")`\(")
+#: L342/A346：点号主张（路径冒号后接符号名，而不是行号）——两把尺原先都看不见。
+#: 改前 REF 只把它当「文件引用」，符号换名或拼错两把尺都看不见。
+DOT_CLAIM = re.compile(r"`([A-Za-z0-9_/.-]*[A-Za-z0-9_][.]py):([A-Za-z_]\w*)`")
+#: 讲判据时举的形状示例，不是主张：占位符名 + 找不到的示例文件名一律跳过，
+#: 但跳过本身要有读数（DOT_EXAMPLE_HITS），不许静默忽略。
+DOT_EXAMPLE_SYMS = frozenset({"NNN", "NN", "N", "MMM", "X", "x"})
 #: 内容维（A331 / L245）：引用**紧跟的后括弧**——`\s*[（(] … [）)]`，中间不许再套括弧
 TAIL_PAREN = re.compile(r"\s*[（(]([^（()）]*)[）)]")
 #: 主张括弧的**正文开头**必须正好是一个裸标识符的反引号跨度才算点了名。用 `match` 而不是
@@ -683,6 +689,19 @@ def audit(items, index, src, dirs, universe):
                                 dead.append((rel, lineno, match.group(0), "dead_anchor",
                                              "%s 点名 %s 现量跨度 %s"
                                              % (note, name, list(spans))))
+            # L342/A346：点号主张按符号跨度判定（不受 NO_SYM_SCAN 豁免影响）
+            for dot in DOT_CLAIM.finditer(text):
+                name = dot.group(2)
+                if name in DOT_EXAMPLE_SYMS:
+                    counts["dot_example"] += 1
+                    continue
+                if declared_or_external(name, universe):
+                    counts["symbol_live"] += 1
+                    counts["dot_claim_live"] += 1
+                else:
+                    counts["symbol_dead"] += 1
+                    counts["dead_symbol"] += 1
+                    sym_dead.append((rel, lineno, name))
             if rel in NO_SYM_SCAN:
                 continue
             seen = set()

@@ -115,7 +115,7 @@ def get_pipeline() -> AugmentorPipeline:
     if _pipeline is None:
         with _PIPELINE_LOCK:
             if _pipeline is None:
-                _pipeline = AugmentorPipeline(load_config(str(config_file_path())))
+                _pipeline = AugmentorPipeline(load_config(str(config_file_path()))); _pipeline.stage_gates = stage_gates(_pipeline.config)  # L343/A271
     return _pipeline
 
 
@@ -1011,3 +1011,27 @@ def _read_json_with_retry(file_path, *, attempts: int = 3, delay: float = 0.01):
                 time.sleep(delay)
     logger.exception("读数据集重试耗尽，按 503 回执", exc_info=last)
     raise HTTPException(status_code=503, detail="数据集正被写入，请稍后重试") from last
+
+def stage_gates(config) -> dict:
+    """L343/A271：十只出厂与行为对齐的阶段闸，逐节读一次并回显生效值。
+
+    今天这十只端点/阶段都无条件在跑，出厂值原先却是 False —— 真接进阶段入口
+    会一次性关掉十个功能。按用户代拍口径先把出厂值对齐成 True（行为零漂移），
+    再让它们有真实读者：本函数由 get_pipeline() 在装配时调用一次，
+    结果挂在管道上供阶段入口与排障回显读取。
+
+    「设为 False 时具体关掉哪个端点/阶段」是要产品验收口径的新需求，
+    本轮不擅自改十个端点的行为（见卷二 L343 日志块）。
+    """
+    return {
+        "context": config.context.enabled,
+        "sampler": config.sampler.enabled,
+        "expander": config.expander.enabled,
+        "tracker": config.tracker.enabled,
+        "rag": config.rag.enabled,
+        "evaluation": config.evaluation.enabled,
+        "multimodal": config.multimodal.enabled,
+        "benchmark": config.benchmark.enabled,
+        "active_learning": config.active_learning.enabled,
+        "frameworks": config.frameworks.enabled,
+    }

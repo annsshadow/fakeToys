@@ -404,7 +404,7 @@ class ExportConfig:
 @dataclass
 class ContextConfig:
     """对话上下文配置"""
-    enabled: bool = False
+    enabled: bool = True  # L343/A271：与今天无条件在跑的行为对齐
     num_turns: int = 3
 
     def __post_init__(self):
@@ -454,7 +454,7 @@ class VersioningConfig:
 @dataclass
 class SamplerConfig:
     """主动学习配置"""
-    enabled: bool = False
+    enabled: bool = True  # L343/A271：与今天无条件在跑的行为对齐
     dimensions: list = field(default_factory=lambda: ["topic", "question_type", "length", "complexity"])
 
     def __post_init__(self):
@@ -471,7 +471,7 @@ class SamplerConfig:
 @dataclass
 class ExpanderConfig:
     """领域扩展配置"""
-    enabled: bool = False
+    enabled: bool = True  # L343/A271：与今天无条件在跑的行为对齐
     strategies: list = field(default_factory=lambda: ["similar", "related", "scenario"])
 
     def __post_init__(self):
@@ -487,7 +487,7 @@ class ExpanderConfig:
 @dataclass
 class TrackerConfig:
     """效果追踪配置"""
-    enabled: bool = False
+    enabled: bool = True  # L343/A271：与今天无条件在跑的行为对齐
     metrics: list = field(default_factory=lambda: ["train_loss", "eval_accuracy", "perplexity"])
 
     def __post_init__(self):
@@ -541,7 +541,7 @@ class MultilingualConfig:
 @dataclass
 class RAGConfig:
     """RAG 训练数据配置"""
-    enabled: bool = False
+    enabled: bool = True  # L343/A271：与今天无条件在跑的行为对齐
     default_format: str = "llamaindex"
     chunk_size: int = 512
     chunk_overlap: int = 64
@@ -571,7 +571,7 @@ class RAGConfig:
 @dataclass
 class EvaluationConfig:
     """模型评估配置"""
-    enabled: bool = False
+    enabled: bool = True  # L343/A271：与今天无条件在跑的行为对齐
     metrics: list = field(default_factory=lambda: ["bleu", "rouge_l", "similarity"])
     generated_field: str = "output"
     reference_field: str = "output"
@@ -633,7 +633,7 @@ class VectorConfig:
 @dataclass
 class MultimodalConfig:
     """多模态数据配置"""
-    enabled: bool = False
+    enabled: bool = True  # L343/A271：与今天无条件在跑的行为对齐
     image_extensions: list = field(default_factory=lambda: [".jpg", ".jpeg", ".png", ".bmp", ".webp"])
     audio_extensions: list = field(default_factory=lambda: [".wav", ".mp3", ".flac", ".ogg", ".m4a"])
 
@@ -658,7 +658,7 @@ class MultimodalConfig:
 @dataclass
 class BenchmarkConfig:
     """数据质量基准配置"""
-    enabled: bool = False
+    enabled: bool = True  # L343/A271：与今天无条件在跑的行为对齐
     baseline_file: str = "data/benchmark_baseline.json"
     metrics: list = field(default_factory=lambda: ["pass_rate", "avg_total_score", "diversity", "duplication_rate"])
 
@@ -677,7 +677,7 @@ class BenchmarkConfig:
 @dataclass
 class ActiveLearningConfig:
     """主动学习循环配置"""
-    enabled: bool = False
+    enabled: bool = True  # L343/A271：与今天无条件在跑的行为对齐
     strategy: str = "uncertainty"
     batch_size: int = 50
     max_iterations: int = 10
@@ -698,7 +698,7 @@ class ActiveLearningConfig:
 @dataclass
 class FrameworkConfig:
     """LLM 框架集成配置"""
-    enabled: bool = False
+    enabled: bool = True  # L343/A271：与今天无条件在跑的行为对齐
     frameworks: list = field(default_factory=lambda: ["langchain", "llamaindex"])
 
     def __post_init__(self):
