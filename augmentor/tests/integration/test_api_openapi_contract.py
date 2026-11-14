@@ -635,7 +635,7 @@ CALLS = {
             "/api/dataset/sample",
             json={"input_file": "data.json", "output_file": "sampled.json", "size": 2},
         ),
-        keys=_keys("input_file", "output_file", "input_count", "output_count"),
+        keys=_keys("input_file", "output_file", "input_count", "output_count", "stratify_group_count"),  # L336/A296
     ),
     ("POST", "/api/dataset/split"): _Case(
         request=lambda c: c.post(

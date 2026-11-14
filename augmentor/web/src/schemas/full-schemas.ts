@@ -471,6 +471,7 @@ export const sampleResponseSchema = z.object({
   output_file: z.string(),
   input_count: z.number(),
   output_count: z.number(),
+  stratify_group_count: z.number(), // L336/A296
 })
 
 /** `api/routes/privacy.py:24` → SanitizeReportResponse */

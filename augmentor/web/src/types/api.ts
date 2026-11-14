@@ -1198,14 +1198,14 @@ export interface SplitResponse {
  *
  * `output_count` 可以合法地是 **0**：`size=0`，或 `ratio` 小到 `int()` 归零，实测都是
  * 200 并在盘上留一份内容为 `[]` 的空文件（不是「不落盘」也不是报错）。`input_file` /
- * `output_file` 都是解析后的绝对路径。这一面**不回**采样方法、seed 或分层键——回执里
- * 只有「从哪读、写到哪、几条进几条出」，所以页面显示的是自己发出去的那几格。
+ * `output_file` 都是解析后的绝对路径；回执只报「从哪读、写到哪、几条进几条出」，L336/A296 起另带真实组数。
  */
 export interface SampleResponse {
   input_file: string
   output_file: string
   input_count: number
   output_count: number
+  stratify_group_count: number
 }
 
 /**

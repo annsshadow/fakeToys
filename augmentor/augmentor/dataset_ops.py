@@ -128,7 +128,7 @@ class DatasetOperations:
     
     def __init__(self):
         """初始化操作工具"""
-        pass
+        self._last_stratify_group_count = 0  # L336/A296：分层组数回执
     
     # ==================== 合并操作 ====================
     
@@ -362,8 +362,8 @@ class DatasetOperations:
         groups = {}
         for item in items:
             value = item.get(key, "")
-            # 简化：使用前10个字符作为分组键
-            group_key = value[:10] if value else "empty"
+            # L336/A296：分组键取全值，不再按前缀折叠不同类
+            group_key = value if value else "empty"
             if group_key not in groups:
                 groups[group_key] = []
             groups[group_key].append(item)
@@ -372,7 +372,7 @@ class DatasetOperations:
         # （20 组各 1 条、要 5 条 → 先攒 20 条），再 `rng.sample(sampled, 5)` 随机砍
         # （实测三个种子交出三组互不相干的类别，「分层」退化成「随机挑组」）；而
         # 4 组等权要 7 条时逐组 `int(1.75)` 只交回 4 条，少 3 条且无人提示。
-        names = list(groups)
+        names = list(groups); self._last_stratify_group_count = len(groups)  # L336/A296 回执出声
         group_sizes = [len(groups[name]) for name in names]
         quotas = largest_remainder(sample_size, group_sizes,
                                    caps=group_sizes, minimum_each=1)
@@ -410,11 +410,11 @@ class DatasetOperations:
         output.parent.mkdir(parents=True, exist_ok=True)
         atomic_write_json(output, sampled)
         
+        # L336/A296：真实组数随回执出声，调用方能核对「有没有塌组」
         return {
-            "input_file": input_path,
-            "output_file": output_path,
-            "input_count": len(items),
-            "output_count": len(sampled)
+            "input_file": input_path, "output_file": output_path,
+            "input_count": len(items), "output_count": len(sampled),
+            "stratify_group_count": self._last_stratify_group_count,
         }
     
     # ==================== 分割操作 ====================

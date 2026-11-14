@@ -29,7 +29,7 @@ RAG 格式转换。此前这些能力只能通过命令行使用。
 调同步版本 = 让整个服务在那几十毫秒内无法响应任何其他请求，见 A4 / A13。
 """
 
-import json
+import json, asyncio  # L336/A345 请求级超时
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -65,7 +65,7 @@ from augmentor.search_enhanced import SEARCH_METHODS
 #: 处理了 100 个」而客户端毫不知情。数字是**出厂默认**，请求面**不接受覆盖**
 #: （客户端自己抬高上限就等于绕过这一道闸）。
 MAX_MERGE_INPUTS = 100
-MAX_AGGREGATE_DATASETS = 100
+MAX_AGGREGATE_DATASETS = 100; SEARCH_TIMEOUT_SECONDS = 5.0  # L336/A345 请求级超时（秒）
 from augmentor.validation import DatasetValidator, require_item_field, require_item_text  # L335/A358
 VALIDATION_PRESETS = tuple(DatasetValidator.PRESET_RULES)
 
@@ -291,7 +291,7 @@ class SampleResponse(BaseModel):
     input_file: str
     output_file: str
     input_count: int
-    output_count: int
+    output_count: int; stratify_group_count: int = 0  # L336/A296
 
 
 class SplitPart(BaseModel):
@@ -475,7 +475,7 @@ async def dataset_search(request: SearchRequest):
 
         path = resolve_data_path(request.input_file)
         items = await read_json_file(path)
-        result = await run_in_thread(
+        result = await asyncio.wait_for(run_in_thread(  # L336/A345
             search_dataset,
             items,
             request.query,
@@ -486,12 +486,12 @@ async def dataset_search(request: SearchRequest):
             fuzzy_threshold=request.fuzzy_threshold,
             ngram_n=request.ngram_n,
             filters=request.filters,
-        )
+        ), timeout=SEARCH_TIMEOUT_SECONDS)
         return result.to_dict()
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise to_http_error(e) from e
+    except HTTPException: raise
+    except asyncio.TimeoutError as e:
+        raise HTTPException(status_code=504, detail="搜索超时，请收窄模式或缩小数据集") from e  # L336/A345
+    except Exception as e: raise to_http_error(e) from e
 
 
 @router.post("/api/dataset/compare", response_model=CompareResponse, summary="数据集对比")

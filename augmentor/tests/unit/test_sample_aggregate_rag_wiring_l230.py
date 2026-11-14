@@ -497,22 +497,22 @@ class TestEveryArmTheUiCanSendForSample:
         assert ghost.status_code == 200
         assert ghost.json()["output_count"] == 8
 
-    def test_the_stratify_group_key_collapses_at_ten_chars(self, http_with_dataset_tools):
-        """A296 的决定性一格：前 10 个字符相同的两条被当成同一层，配额按**折叠后**的组数摊
+    def test_full_value_group_key_does_not_collapse_the_prefix(self, http_with_dataset_tools):  # L336/A296
+        """L336/A296：分组键取全值，前 10 个字符相同的甲乙不再塌成同一层
 
-        夹具三条 = `AAAAAAAAAA甲` / `AAAAAAAAAA乙` / `BBBBBBBBBB丙`。折叠 ⇒ 两组（2 与 1），
-        `largest_remainder(2, [2, 1], caps=[2, 1], minimum_each=1)` 给 `[1, 1]` ⇒ 丙必在内、
-        甲乙只留一条。不折叠 ⇒ 三组各一条、`_unit_cap_quota` 给 `[1, 1, 0]` ⇒ 甲乙都在、**丙不在**。
-        两种读法的产物集合互斥，所以这一支不靠 seed 也判得住。
+        改前按前缀折叠成两组（2 与 1），`largest_remainder(2, [2, 1])` 给 `[1, 1]` ⇒
+        丙必在内、甲乙只留一条。现在三组各一条，配额 `[1, 1, 0]`（seed=7 落在甲乙）⇒
+        **甲乙都在、丙不在**；回执另报 `stratify_group_count == 3`。两种读法产物互斥，
+        这一支不靠 seed 也判得住，且新回执把「分了几组」变成可核对的真读数。
         """
         http, _root, _outside, disk = http_with_dataset_tools
         resp = http.post("/api/dataset/sample", json={
             "input_file": "collapse.json", "output_file": "c.json", "method": "stratified",
             "size": 2, "seed": 7, "stratify_key": "instruction"})
         assert resp.status_code == 200, resp.json()
+        assert resp.json()["stratify_group_count"] == 3, resp.json()
         got = [item["instruction"] for item in disk("c.json")]
-        assert "BBBBBBBBBB丙" in got, got
-        assert sum(1 for g in got if g.startswith("AAAAAAAAAA")) == 1, got
+        assert len(got) == 2 and sum(1 for g in got if g.startswith("AAAAAAAAAA")) == 2, got
         assert set(got) <= {"AAAAAAAAAA甲", "AAAAAAAAAA乙", "BBBBBBBBBB丙"}
 
     def test_unknown_method_is_a_verdict_naming_the_value(self, http_with_dataset_tools):
@@ -829,13 +829,13 @@ class TestReceiptCoversEveryResponseKey:
 class TestHonestyCopyOnTheThreeCards:
     """三张卡上那几句「这一档其实拦不住 / 其实不可设」的口径，每一句都要有实测陪着"""
 
-    def test_the_sample_card_says_the_ratio_split_and_the_ten_char_collapse(self):
+    def test_the_sample_card_says_the_ratio_split_and_the_full_value_key(self):  # L336/A296
         page = _page()
         assert "条数赢" in page
         assert "一律 400" in page and "一种结局" in page
         assert "负数切片" in page  # 只作为**改前**的取证留在卡上
         assert "没有判据" not in page  # L277 收了 A292 的范围维，这句成了假话
-        assert "前 10 个字符" in page
+        assert "不再按前 10 个字符折叠" in page
         assert "塌成一个分组" in page
         assert "A292" in page and "A296" in page
 

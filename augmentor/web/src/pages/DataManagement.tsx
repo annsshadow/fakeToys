@@ -976,14 +976,16 @@ export default function DataManagement() {
           比例越界**一律 400**，三种方法一种结局：判决是那句「ratio 必须是 0.0 到 1.0 之间的比例」，
           且 400 之前不落任何产物。改前这里是三种方法三种后果（random 支回 400 且是 CPython 的英文
           原话、systematic 支用负数切片交**前 10 条**、分层支交 0 条），那一格的账就是 **A292**，
-          范围维在 L277 收口。
-          分层那一档：字段名不存在**不报错**（全部塌成一个分组），而分组键只取字段值的**前 10
-          个字符**—— 前 10 个字相同的两条会被当成同一层，配额因此按折叠后的组数摊（A296）。
+          范围维在 L277 收口。 分层那一档：字段名不存在**不报错**（全部塌成一个分组）；L336/A296
+          起分组键取**全值**， 不再按前 10 个字符折叠 —— 前缀相同的两条仍是两层，回执带
+          stratify_group_count 报真组数（A296）。
         </div>
         {sampleResult && (
           <div aria-label="采样回执" style={{ marginTop: 8 }}>
             {sampleResult.input_count} 条进 / {sampleResult.output_count} 条出 ⇒{' '}
             {sampleResult.output_file}（源 {sampleResult.input_file}）
+            {sampleResult.stratify_group_count > 0 &&
+              ` · 分层 ${sampleResult.stratify_group_count} 组（全值分组）`}
           </div>
         )}
       </Card>
