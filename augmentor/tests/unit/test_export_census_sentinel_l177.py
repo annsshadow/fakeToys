@@ -156,10 +156,10 @@ def test_scanned_corpus_scale():
     # `comparison.py` / `backup.py` / `api/routes/system_ops.py` 四个文件的**内容**，
     # 没新增产品文件，也没删）。
     # 改数不改判据：这一族判的是「语料规模现量」这一个数，逐条判据一字未动。
-    # **L336 重量**：467 → **468**（新增 `test_contract_hardening_l333.py` ⇒ 测试面 +1；
+    # **L337 重量**：468 → **469**（新增 `test_contract_hardening_l333.py` ⇒ 测试面 +1；
     # 产品面 133 一格未动 —— 本轮改的是既有产品文件的内容，没新增产品文件）。
-    assert (n_products, n_tests) == (133, 468), \
-        f"语料规模现量 (133, 468)，实得 {(n_products, n_tests)}"
+    assert (n_products, n_tests) == (133, 469), \
+        f"语料规模现量 (133, 469)，实得 {(n_products, n_tests)}"
 
 
 def test_every_all_symbol_has_a_consumer():
