@@ -14,7 +14,7 @@
 #
 #   也就是说：`paths` 过滤与 required check 互斥。
 #
-#   代价是每个 PR 都会跑一遍 laiyipao 的三端（约 6~8 分钟，含双构建）。
+#   代价是每个 PR 都会跑一遍 laiyipao 的三端（约 6~8 分钟，含 H5 构建）。
 #   oa4rust 那边没有改 —— 97 个 crate 全量跑太贵，先只用 laiyipao 做闸门。
 #   若日后要把 ai-platform / oa4rust 的 job 也设为 required，
 #   必须**先**去掉它们的 paths，否则会把仓库锁死。
@@ -207,8 +207,11 @@ jobs:
         # 一个「量不出来」的闸门等于没有闸门 —— 放进 CI 才能让它坏掉时立刻红。
         run: pnpm size:check
 
-  # ── miniapp 小程序端（uni-app）：类型检查 + 单测 + H5/微信双构建 ─────────
-  # mp-weixin 构建对 vite 5.2.8 pin 敏感（依赖升级曾假红），进 CI 后回归可见。
+  # ── miniapp H5 端（uni-app）：类型检查 + 单测 + H5 构建 ───────────────
+  # 2026-11-14 用户确认「小程序端已移除，只交付 H5」（c77f63fb7）：
+  # build:mp-weixin 脚本与 manifest 平台段已删，故此处不再跑微信双构建。
+  # 遗留的 mp-weixin 构建/主包体积两步若保留，会因脚本不存在直接退出 1，
+  # 让这个 required check 长期红 —— 与依赖升级无关，属平台范围未同步。
   miniapp:
     name: Miniapp type-check, test & build
     runs-on: ubuntu-24.04
@@ -285,20 +288,10 @@ jobs:
           set -o pipefail
           pnpm build:h5 2>&1 | tee /tmp/build-miniapp-h5.log
           bash "$GITHUB_WORKSPACE/scripts/assert-no-warnings.sh" /tmp/build-miniapp-h5.log "laiyipao miniapp (H5)"
-      - name: Build WeChat mini program
-        run: |
-          set -o pipefail
-          pnpm build:mp-weixin 2>&1 | tee /tmp/build-miniapp-mp.log
-          bash "$GITHUB_WORKSPACE/scripts/assert-no-warnings.sh" /tmp/build-miniapp-mp.log "laiyipao miniapp (mp-weixin)"
-      # 小程序主包体积闸门（2026-10-21 P6-9）。
-      #
-      # 此前 admin 有 `size:check`，miniapp **没有** —— 而微信主包上限是
-      # 2 MB，且本项目未分包（全部文件进主包）。
-      # 没有闸门 = 某天加个依赖就把包撑爆，**直到上传失败才发现**。
-      #
-      # 判据：主包总大小 ≤ 1536 KB（微信硬上限 2048 KB，留 25% 余量）。
-      - name: Mini program main-package size must stay within budget
-        run: pnpm size:check
+      # 小程序主包体积闸门（2026-10-21 P6-9）随 2026-11-14 平台范围调整移除：
+      # size:check 的判据是 dist/build/mp-weixin（微信主包 ≤1536 KB），
+      # 已无对应产物，保留只会让本 job 永远红。
+      # 若日后恢复小程序端，需同时恢复 build:mp-weixin 脚本、本步骤与双构建。
 
   # ── 依赖漏洞闸门（2026-10-15 安全审计轮新增）────────────────────────────
   #
