@@ -167,3 +167,46 @@ CLI 的 `rag` / `benchmark` 关掉时 `SystemExit` 非零退出、不落产物�
 **边界**：本节处理的是「上一轮明确登记、真实仍开着的待办」。laiyipao 已知边界 39 条、
 TD-3 已接受的上游无补丁漏洞、llm-lab 教学范围声明、卷一「成本，不是缺陷」观察记录、
 A271 五节「无对象可关」都属于**有结论地开着的诚实声明**，不是待办，不因本节而消失。
+
+---
+
+## 九、分支拓扑与 main 同步（2026-11-15）
+
+`main` 已从 `b07393761` **fast-forward** 到 `17958aff8`（47 个提交，普通推送非 force），
+远端与本地一致。此后 `main` 持有 L330–L348 的全部工作。
+
+### 远端分支相对 main 的关系（同步前实测）
+
+| 分支 | ahead | behind | 关系 | 处置 |
+| --- | ---: | ---: | --- | --- |
+| `docs/ledger-l330-closure` | 47 | 0 | 直系后代、可 FF | **已合入 main** |
+| `fix/admin-write-owner-gates` | 3 | 108 | 分叉 | 不合并：内容早已在 main，见下 |
+| `opt1000/oa4rust-o14` | 4000 | 113 | 分叉 | 不合并：长期开发分支，tip 停在 11-04，合入会灌入 4000+ 旧提交与大量冲突 |
+| `gh-pages` | 2 | 113 | **与 main 无共同祖先** | 不合并：MkDocs 部署产物 orphan 分支 |
+| 7 个 `dependabot/*` | 各 1 | 50~83 | 分叉 | 不本地合并：依赖升级走 GitHub PR 流程逐个验证 |
+
+本地另有 **73 个 `[gone]` 分支**（远端已删除的历史 PR 分支，多数 `ahead 4000+ / behind 113`），
+不属于远端拓扑，不参与合并。
+
+### 「写侧归属统一落会话人」查重结论
+
+用户授权挑出 `fix/admin-write-owner-gates` 的实质修复 `3f8dd90f5`。逐点核对后判定
+**该修复已在 main，无需也不能再 cherry-pick**：
+
+- main 已有等价提交 `3a569b2dd fix(owner): 写侧归属统一落会话人 (#287)`，
+  以及合并整条分支的 `480cd9b3c Fix/admin write owner gates (#291)`。
+- `ai_assemble_control` 的 `config_create_mcp` / `config_create_model` / `config_save`
+  三处均为 `let creator = session.person_unique.clone();`（连注释逐字相同）；
+  `general_assemble_control` 的 security clearance INSERT 用 `$4 + session.person_unique`。
+- 4 个 crate 的 `src` 与旧分支 `git diff` **为空**；4 个 `r7_*` 建→改→删回环测试都在 main。
+- `.trae` 忽略已在 `.gitignore:251`。
+
+⇒ 再合并会重复改动并制造冲突，故不产生提交。旧分支只是未清理的合并残留。
+
+### 维护约定
+
+HTTPS 出口在本仓经常抖（`Empty reply` / `schannel close_notify` / `CONNECT 502`），
+SSH 通道通常可用。**用 SSH URL 直推后必须补**
+`git update-ref refs/remotes/origin/<branch> "$(git rev-parse HEAD)"`，
+否则 `origin/*` 追踪引用落后，augmentor 的 git 面守卫（`test_log_block_bullet_ownership_l264.py`）
+会因 `ref_face()` 查不到 HEAD 而凭空红。
