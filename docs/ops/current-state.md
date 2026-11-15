@@ -210,3 +210,32 @@ SSH 通道通常可用。**用 SSH URL 直推后必须补**
 `git update-ref refs/remotes/origin/<branch> "$(git rev-parse HEAD)"`，
 否则 `origin/*` 追踪引用落后，augmentor 的 git 面守卫（`test_log_block_bullet_ownership_l264.py`）
 会因 `ref_face()` 查不到 HEAD 而凭空红。
+
+---
+
+## 十、generated-tests 门禁修复（2026-11-15，L354）
+
+**根因**：`generate_handler_tests.py` 的 `get_pool_type()` 只要看到
+`Extension<...Session` 就判成必需 Session，把 handler 一刀切写成
+`// SKIPPED: ... requires Session parameter`。但很多 handler 的签名是
+`Option<Extension<Session>>` —— axum 在请求未注入时给 `None`，
+`crate::router(pool)` + `oneshot` 的路由探针照样能跑。已提交产物里这类
+handler 有真实 `#[tokio::test]`，于是 91 个产物中 **37 个与生成器逐字不一致**，
+35 个首差异都是「生成器新增 SKIPPED: requires Session」。此前跨项目告警门禁
+只抽查 5 项（19 项 `CHECKS` 之一未覆盖），所以长期没暴露。
+
+**修复**（不用「洗掉产物换绿」）：
+
+| 动作 | 内容 |
+| --- | --- |
+| 修生成器 | 区分必需 / 可选 Session；`Option<Extension<Session>>` 不再判 `session` |
+| 门禁加回归自检 | `check_generated_tests_up_to_date.py` 新增 3 条判据断言（可选不判 session / 必需判 session / 普通 Pool 判 pool），防止只靠重生成盖住症状 |
+| 重生成 91 个产物 | `#[tokio::test]` 从 **1313 → 1689（+376）**，是覆盖提升而非回退；门禁下限 1200 |
+
+**验证**：`generated-tests` / `generated-artifacts` / `rust-lints` 门禁 **3/3 PASS**；
+`cargo test --workspace --no-run --offline` exit 0（全 workspace 测试目标编译通过）；
+`cargo fmt --all -- --check` exit 0；`git diff --check` 无空白错误；
+抽样 `cargo test -p ai_assemble_control --lib test_config_get_mcp_flag --offline` → 1 passed。
+
+口径：这是 #288 合并时生成器与生成物来自不同版本、之后未重生成造成的历史漂移，
+不是本轮其它改动引入；修复后门禁自身带判据自检，后续生成器退化会当场红。
