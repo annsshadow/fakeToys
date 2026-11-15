@@ -13,7 +13,7 @@ mod tests {
     // SKIPPED: get_detail requires Session parameter
     // SKIPPED: save_signature requires Session parameter
     // SKIPPED: face_list requires Session parameter
-    // SKIPPED: face_create requires Session parameter
-    // SKIPPED: face_save requires Session parameter
-    // SKIPPED: face_delete requires Session parameter
+    // SKIPPED: face_create not accessible
+    // SKIPPED: face_save not accessible
+    // SKIPPED: face_delete not accessible
 }

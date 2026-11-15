@@ -113,7 +113,7 @@ mod tests {
 
     // SKIPPED: delete_room requires Session parameter
     // SKIPPED: meeting_list_by_room not accessible
-    // SKIPPED: create_meeting requires Session parameter
+    // SKIPPED: create_meeting not accessible
     // SKIPPED: update_meeting requires Session parameter
     // SKIPPED: delete_meeting requires Session parameter
 }

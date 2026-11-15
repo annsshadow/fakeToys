@@ -9,7 +9,34 @@ mod tests {
 
     use tower::util::ServiceExt;
 
-    // SKIPPED: update_control_config requires Session parameter
+    #[tokio::test]
+    async fn test_update_control_config() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/file/assemble/control/update/control/config")
+                    .method("PUT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "update_control_config route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_list_files() {
         let pool = shared::testing::test_pool();
@@ -60,10 +87,109 @@ mod tests {
         }
     }
 
-    // SKIPPED: upload_file requires Session parameter
-    // SKIPPED: create_file requires Session parameter
-    // SKIPPED: delete_file requires Session parameter
-    // SKIPPED: create_file_entity requires Session parameter
+    #[tokio::test]
+    async fn test_upload_file() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/file/assemble/control/file/upload")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(!bytes.is_empty(), "upload_file route should be registered");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_create_file() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/file/assemble/control/file/create")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(!bytes.is_empty(), "create_file route should be registered");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_delete_file() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/file/assemble/control/file/delete/test-id")
+                    .method("DELETE")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(!bytes.is_empty(), "delete_file route should be registered");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_create_file_entity() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/file/core/entity/file/create")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "create_file_entity route should be registered"
+            );
+        }
+    }
+
     // SKIPPED: update_file_entity requires Session parameter
     // SKIPPED: delete_file_entity requires Session parameter
     #[tokio::test]
@@ -418,8 +544,61 @@ mod tests {
         }
     }
 
-    // SKIPPED: file_clean_unused_referencetype_cmsdocument_manage requires Session parameter
-    // SKIPPED: file_copy_attachment_attachmentId_referencetype_referenceType_reference_reference_scale_scale requires Session parameter
+    #[tokio::test]
+    async fn test_file_clean_unused_referencetype_cmsdocument_manage() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/file/assemble/control/file/clean/unused/referencetype/cmsdocument/manage")
+                    .method("DELETE")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "file_clean_unused_referencetype_cmsdocument_manage route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_file_copy_attachment_attachmentId_referencetype_referenceType_reference_reference_scale_scale(
+    ) {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/file/assemble/control/file/copy/attachment/test-id/referencetype/test-id/reference/test-id/scale/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(!bytes.is_empty(),
+                "file_copy_attachment_attachmentId_referencetype_referenceType_reference_reference_scale_scale route should be registered");
+        }
+    }
+
     // SKIPPED: file_list_referencetype_referenceType_reference_reference requires Session parameter
     #[tokio::test]
     async fn test_file_list_unused_referencetype_cmsdocument_manage() {
@@ -455,7 +634,34 @@ mod tests {
     // SKIPPED: file_list_id_prev_count requires Session parameter
     // SKIPPED: file_list_id_prev_count_all requires Session parameter
     // SKIPPED: file_list_id_prev_count_referencetype_referenceType requires Session parameter
-    // SKIPPED: file_upload_with_url requires Session parameter
+    #[tokio::test]
+    async fn test_file_upload_with_url() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/file/assemble/control/file/upload/with/url")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "file_upload_with_url route should be registered"
+            );
+        }
+    }
+
     // SKIPPED: file_id_binary_base64 requires Session parameter
     // SKIPPED: file_id_download requires Session parameter
     // SKIPPED: file_id_download_stream requires Session parameter
@@ -540,7 +746,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: folder2_batch_download requires Session parameter
+    #[tokio::test]
+    async fn test_folder2_batch_download() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/folder2/batch/download")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "folder2_batch_download route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_folder2_list_top() {
         let pool = shared::testing::test_pool();
@@ -793,14 +1026,95 @@ mod tests {
         }
     }
 
-    // SKIPPED: u2_file_upload_octet_stream requires Session parameter
-    // SKIPPED: u2_file_upload_callback requires Session parameter
+    #[tokio::test]
+    async fn test_u2_file_upload_octet_stream() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/file/assemble/control/file/upload/referencetype/test-id/reference/test-id/scale/test-id")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "u2_file_upload_octet_stream route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_u2_file_upload_callback() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/file/assemble/control/file/upload/referencetype/test-id/reference/test-id/scale/test-id/callback/test-id")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "u2_file_upload_callback route should be registered"
+            );
+        }
+    }
+
     // SKIPPED: u2_attachment_update_content requires Session parameter
     // SKIPPED: u2_attachment_update_content_callback requires Session parameter
     // SKIPPED: u2_file_delete_by_id requires Session parameter
     // SKIPPED: u2_file_delete_by_reference requires Session parameter
     // SKIPPED: u2_file_list_reference_types requires Session parameter
-    // SKIPPED: u2_folder_create requires Session parameter
+    #[tokio::test]
+    async fn test_u2_folder_create() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/folder2")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "u2_folder_create route should be registered"
+            );
+        }
+    }
+
     // SKIPPED: u2_share_create requires Session parameter
     #[tokio::test]
     async fn test_u2_share_get() {
@@ -856,24 +1170,78 @@ mod tests {
         }
     }
 
-    // SKIPPED: u2_share_save_to_folder requires Session parameter
+    #[tokio::test]
+    async fn test_u2_share_save_to_folder() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/share/share/test-id/file/test-id/folder/test-id")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "u2_share_save_to_folder route should be registered"
+            );
+        }
+    }
+
     // SKIPPED: u2_attachment2_list_type_page_size_size requires Session parameter
-    // SKIPPED: u2_config_save_system_config requires Session parameter
+    #[tokio::test]
+    async fn test_u2_config_save_system_config() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/config")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "u2_config_save_system_config route should be registered"
+            );
+        }
+    }
+
     // SKIPPED: get_control_config not accessible
     // SKIPPED: list_storage_pools not accessible
     // SKIPPED: list_control_categories not accessible
-    // SKIPPED: attachment_upload_folder_folderId requires Session parameter
-    // SKIPPED: attachment_upload_folder_folderId_callback_callback requires Session parameter
-    // SKIPPED: attachment_upload_folder_callback_callback_legacy requires Session parameter
+    // SKIPPED: attachment_upload_folder_folderId not accessible
+    // SKIPPED: attachment_upload_folder_folderId_callback_callback not accessible
+    // SKIPPED: attachment_upload_folder_callback_callback_legacy not accessible
     // SKIPPED: attachment2_list_type_page_size_size requires Session parameter
-    // SKIPPED: attachment2_upload_folder_folderId requires Session parameter
+    // SKIPPED: attachment2_upload_folder_folderId not accessible
     // SKIPPED: file_list_referencetype not accessible
     // SKIPPED: file_upload_referencetype_referenceType_reference_reference_scale_scale requires Session parameter
     // SKIPPED: file_upload_referencetype_referenceType_reference_reference_scale_scale_callback_callback requires Session parameter
     // SKIPPED: file_id not accessible
     // SKIPPED: share_list_my2_shareType_fileType requires Session parameter
     // SKIPPED: share_list_to_me2_fileType requires Session parameter
-    // SKIPPED: u2_file_upload_multipart requires Session parameter
+    // SKIPPED: u2_file_upload_multipart not accessible
     // SKIPPED: u2_attachment_delete requires Session parameter
     // SKIPPED: u2_attachment2_update requires Session parameter
     // SKIPPED: u2_attachment2_delete requires Session parameter

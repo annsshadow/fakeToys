@@ -29,24 +29,24 @@ mod tests {
     // SKIPPED: excel_excelName_excelName not accessible
     // SKIPPED: excel_excelName_excelName_sheetList not accessible
     // SKIPPED: excel_result_flag not accessible
-    // SKIPPED: excel_upload requires Session parameter
-    // SKIPPED: excel_upload_with_url requires Session parameter
+    // SKIPPED: excel_upload not accessible
+    // SKIPPED: excel_upload_with_url not accessible
     // SKIPPED: generalfile_download_flag_flag not accessible
     // SKIPPED: generalfile_flag_flag not accessible
     // SKIPPED: generalfile_flag_flag_binary_base64 not accessible
-    // SKIPPED: invoice_create requires Session parameter
+    // SKIPPED: invoice_create not accessible
     // SKIPPED: invoice_delete_id requires Session parameter
     // SKIPPED: invoice_download_flag_flag not accessible
     // SKIPPED: invoice_get_id not accessible
     // SKIPPED: invoice_list_paging_page_size_size not accessible
     // SKIPPED: invoice_update_apply_status_id requires Session parameter
     // SKIPPED: invoice_update_id requires Session parameter
-    // SKIPPED: invoice_upload requires Session parameter
-    // SKIPPED: invoice_upload_for_create requires Session parameter
-    // SKIPPED: invoice_upload_with_url requires Session parameter
-    // SKIPPED: office_html_to_word requires Session parameter
+    // SKIPPED: invoice_upload not accessible
+    // SKIPPED: invoice_upload_for_create not accessible
+    // SKIPPED: invoice_upload_with_url not accessible
+    // SKIPPED: office_html_to_word not accessible
     // SKIPPED: office_html_to_word_result_flag not accessible
-    // SKIPPED: qrcode_width_width_height_height_text_text requires Session parameter
+    // SKIPPED: qrcode_width_width_height_height_text_text not accessible
     // SKIPPED: qrcode_list not accessible
     // SKIPPED: qrcode_get not accessible
     // SKIPPED: qrcode_delete requires Session parameter
@@ -70,6 +70,6 @@ mod tests {
     // SKIPPED: worktime_isworkday_date not accessible
     // SKIPPED: worktime_isworktime_date not accessible
     // SKIPPED: worktime_minutesofworkday not accessible
-    // SKIPPED: generalfile_create requires Session parameter
-    // SKIPPED: qrcode_create requires Session parameter
+    // SKIPPED: generalfile_create not accessible
+    // SKIPPED: qrcode_create not accessible
 }

@@ -7,5 +7,5 @@ mod tests {
 
     // SKIPPED: user_setting not accessible
     // SKIPPED: user_role_list not accessible
-    // SKIPPED: custom_mockputtopost requires Session parameter
+    // SKIPPED: custom_mockputtopost not accessible
 }

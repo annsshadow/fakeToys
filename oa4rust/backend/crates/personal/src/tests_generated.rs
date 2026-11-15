@@ -23,7 +23,7 @@ mod tests {
     // SKIPPED: send_code not accessible
     // SKIPPED: reset_password not accessible
     // SKIPPED: reset_password_anonymous not accessible
-    // SKIPPED: reset_password_mockputtopost requires Session parameter
+    // SKIPPED: reset_password_mockputtopost not accessible
     // SKIPPED: list requires Session parameter
     // SKIPPED: delete requires Session parameter
     // SKIPPED: manager_list requires Session parameter

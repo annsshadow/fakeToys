@@ -223,7 +223,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: export_export_all requires Session parameter
+    #[tokio::test]
+    async fn test_export_export_all() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/organization/assemble/control/export/export/all")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "export_export_all route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_export_result_flag_flag() {
         let pool = shared::testing::test_pool();
@@ -252,7 +279,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: export_zhengwudingding_person requires Session parameter
+    #[tokio::test]
+    async fn test_export_zhengwudingding_person() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/organization/assemble/control/export/zhengwudingding/person")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "export_zhengwudingding_person route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_group_list_like_mockputtopost() {
         let pool = shared::testing::test_pool();
@@ -2447,6 +2501,7 @@ mod tests {
 
     // SKIPPED: require_admin not accessible
     // SKIPPED: require_admin_opt not accessible
+    // SKIPPED: owned_read_row_exists not accessible
     // SKIPPED: client_of not accessible
     // SKIPPED: resolve_generic_id not accessible
     // SKIPPED: soft_delete_generic not accessible
@@ -2554,7 +2609,7 @@ mod tests {
     // SKIPPED: person_list_filter_paging not accessible
     // SKIPPED: person_list_delete_paging not accessible
     // SKIPPED: threemember_list not accessible
-    // SKIPPED: threemember_create requires Session parameter
-    // SKIPPED: threemember_save requires Session parameter
-    // SKIPPED: threemember_delete requires Session parameter
+    // SKIPPED: threemember_create not accessible
+    // SKIPPED: threemember_save not accessible
+    // SKIPPED: threemember_delete not accessible
 }

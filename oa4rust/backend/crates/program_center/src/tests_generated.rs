@@ -88,10 +88,112 @@ mod tests {
     }
 
     // SKIPPED: collect_list requires Session parameter
-    // SKIPPED: collect_add requires Session parameter
-    // SKIPPED: collect_create requires Session parameter
-    // SKIPPED: collect_save requires Session parameter
-    // SKIPPED: collect_delete requires Session parameter
+    #[tokio::test]
+    async fn test_collect_add() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/collect")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(!bytes.is_empty(), "collect_add route should be registered");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_collect_create() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/collect/create")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "collect_create route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_collect_save() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/collect/save/test-id")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(!bytes.is_empty(), "collect_save route should be registered");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_collect_delete() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/collect/delete/test-id")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "collect_delete route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_agent_flag_file() {
         let pool = shared::testing::test_pool();
@@ -120,7 +222,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: andfx_pull_sync requires Session parameter
+    #[tokio::test]
+    async fn test_andfx_pull_sync() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/andfx/pull/sync")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "andfx_pull_sync route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_appstyle_current_style() {
         let pool = shared::testing::test_pool();
@@ -205,7 +334,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: appstyle_image_application_top_erase requires Session parameter
+    #[tokio::test]
+    async fn test_appstyle_image_application_top_erase() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/appstyle/image/application/top/erase")
+                    .method("DELETE")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "appstyle_image_application_top_erase route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_appstyle_image_launch_logo() {
         let pool = shared::testing::test_pool();
@@ -234,7 +390,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: appstyle_image_launch_logo_erase requires Session parameter
+    #[tokio::test]
+    async fn test_appstyle_image_launch_logo_erase() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/appstyle/image/launch/logo/erase")
+                    .method("DELETE")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "appstyle_image_launch_logo_erase route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_appstyle_image_login_avatar() {
         let pool = shared::testing::test_pool();
@@ -263,7 +446,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: appstyle_image_login_avatar_erase requires Session parameter
+    #[tokio::test]
+    async fn test_appstyle_image_login_avatar_erase() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/appstyle/image/login/avatar/erase")
+                    .method("DELETE")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "appstyle_image_login_avatar_erase route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_appstyle_image_menu_logo_blur() {
         let pool = shared::testing::test_pool();
@@ -292,7 +502,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: appstyle_image_menu_logo_blur_erase requires Session parameter
+    #[tokio::test]
+    async fn test_appstyle_image_menu_logo_blur_erase() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/appstyle/image/menu/logo/blur/erase")
+                    .method("DELETE")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "appstyle_image_menu_logo_blur_erase route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_appstyle_image_menu_logo_focus() {
         let pool = shared::testing::test_pool();
@@ -321,7 +558,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: appstyle_image_menu_logo_focus_erase requires Session parameter
+    #[tokio::test]
+    async fn test_appstyle_image_menu_logo_focus_erase() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/appstyle/image/menu/logo/focus/erase")
+                    .method("DELETE")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "appstyle_image_menu_logo_focus_erase route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_appstyle_image_process_default() {
         let pool = shared::testing::test_pool();
@@ -350,7 +614,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: appstyle_image_process_default_erase requires Session parameter
+    #[tokio::test]
+    async fn test_appstyle_image_process_default_erase() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/appstyle/image/process/default/erase")
+                    .method("DELETE")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "appstyle_image_process_default_erase route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_appstyle_image_setup_about_logo() {
         let pool = shared::testing::test_pool();
@@ -379,7 +670,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: appstyle_image_setup_about_logo_erase requires Session parameter
+    #[tokio::test]
+    async fn test_appstyle_image_setup_about_logo_erase() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/appstyle/image/setup/about/logo/erase")
+                    .method("DELETE")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "appstyle_image_setup_about_logo_erase route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_appstyle_index_portal() {
         let pool = shared::testing::test_pool();
@@ -573,7 +891,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: captcha_v2_create_width_width_height_height requires Session parameter
+    #[tokio::test]
+    async fn test_captcha_v2_create_width_width_height_height() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/captcha/v2/create/width/test-id/height/test-id")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "captcha_v2_create_width_width_height_height route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_captcha_id_validate_answer_answer() {
         let pool = shared::testing::test_pool();
@@ -686,7 +1031,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: code_create_mobile_mobile requires Session parameter
+    #[tokio::test]
+    async fn test_code_create_mobile_mobile() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/code/create/mobile/test-id")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "code_create_mobile_mobile route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_code_list() {
         let pool = shared::testing::test_pool();
@@ -2126,10 +2498,118 @@ mod tests {
         }
     }
 
-    // SKIPPED: dingding_pull_sync requires Session parameter
-    // SKIPPED: dingding_request_pull_sync requires Session parameter
-    // SKIPPED: dingding_sync_organization_callback requires Session parameter
-    // SKIPPED: dingding_sync_organization_register_callback_enable requires Session parameter
+    #[tokio::test]
+    async fn test_dingding_pull_sync() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/dingding/pull/sync")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "dingding_pull_sync route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_dingding_request_pull_sync() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/dingding/request/pull/sync")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "dingding_request_pull_sync route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_dingding_sync_organization_callback() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/dingding/sync/organization/callback")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "dingding_sync_organization_callback route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_dingding_sync_organization_register_callback_enable() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/dingding/sync/organization/register/callback/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "dingding_sync_organization_register_callback_enable route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_distribute_assemble_source_source() {
         let pool = shared::testing::test_pool();
@@ -2454,8 +2934,62 @@ mod tests {
         }
     }
 
-    // SKIPPED: invoke_flag_execute requires Session parameter
-    // SKIPPED: invoke_flag_execute_get requires Session parameter
+    #[tokio::test]
+    async fn test_invoke_flag_execute() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/invoke/flag/execute")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "invoke_flag_execute route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_invoke_flag_execute_get() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/invoke/test-id/execute/get")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "invoke_flag_execute_get route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_invoke_flag_file() {
         let pool = shared::testing::test_pool();
@@ -2512,7 +3046,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: jest_clear_cache_source requires Session parameter
+    #[tokio::test]
+    async fn test_jest_clear_cache_source() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/jest/clear/cache/source")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "jest_clear_cache_source route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_jest_list() {
         let pool = shared::testing::test_pool();
@@ -2591,7 +3152,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: market_install_offline requires Session parameter
+    #[tokio::test]
+    async fn test_market_install_offline() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/market/install/offline")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "market_install_offline route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_market_list_category() {
         let pool = shared::testing::test_pool();
@@ -2813,7 +3401,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: market_flag_install_or_update requires Session parameter
+    #[tokio::test]
+    async fn test_market_flag_install_or_update() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/market/test-id/install/or/update")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "market_flag_install_or_update route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_market_flag_installed_version() {
         let pool = shared::testing::test_pool();
@@ -2842,7 +3457,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: market_flag_uninstall requires Session parameter
+    #[tokio::test]
+    async fn test_market_flag_uninstall() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/market/test-id/uninstall")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "market_flag_uninstall route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_market_id_download() {
         let pool = shared::testing::test_pool();
@@ -3260,7 +3902,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: mpweixin_menu_delete_id requires Session parameter
+    #[tokio::test]
+    async fn test_mpweixin_menu_delete_id() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/mpweixin/menu/delete/test-id")
+                    .method("DELETE")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "mpweixin_menu_delete_id route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_mpweixin_menu_list_weixin() {
         let pool = shared::testing::test_pool();
@@ -3317,7 +3986,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: mpweixin_menu_update_id requires Session parameter
+    #[tokio::test]
+    async fn test_mpweixin_menu_update_id() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/mpweixin/menu/update/test-id")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "mpweixin_menu_update_id route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_mpweixin_message_template_send() {
         let pool = shared::testing::test_pool();
@@ -3731,8 +4427,62 @@ mod tests {
         }
     }
 
-    // SKIPPED: qiyeweixin_pull_sync requires Session parameter
-    // SKIPPED: qiyeweixin_send_getprivateinfo_message requires Session parameter
+    #[tokio::test]
+    async fn test_qiyeweixin_pull_sync() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/qiyeweixin/pull/sync")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "qiyeweixin_pull_sync route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_qiyeweixin_send_getprivateinfo_message() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/qiyeweixin/send/getprivateinfo/message")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "qiyeweixin_send_getprivateinfo_message route should be registered"
+            );
+        }
+    }
+
     // SKIPPED: application_create requires Session parameter
     #[tokio::test]
     async fn test_application_get_by_id() {
@@ -4157,11 +4907,146 @@ mod tests {
         }
     }
 
-    // SKIPPED: validation_timeout_timeout requires Session parameter
-    // SKIPPED: zhengwudingding_pull_sync requires Session parameter
-    // SKIPPED: zhengwudingding_regist_callback requires Session parameter
-    // SKIPPED: zhengwudingding_sync_organization_callback requires Session parameter
-    // SKIPPED: warnlog_create requires Session parameter
+    #[tokio::test]
+    async fn test_validation_timeout_timeout() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/validation/timeout/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "validation_timeout_timeout route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_zhengwudingding_pull_sync() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/zhengwudingding/pull/sync")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "zhengwudingding_pull_sync route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_zhengwudingding_regist_callback() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/zhengwudingding/regist/callback")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "zhengwudingding_regist_callback route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_zhengwudingding_sync_organization_callback() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/zhengwudingding/sync/organization/callback")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "zhengwudingding_sync_organization_callback route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_warnlog_create() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/warnlog")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "warnlog_create route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_warnlog_id() {
         let pool = shared::testing::test_pool();
@@ -4356,7 +5241,34 @@ mod tests {
     }
 
     // SKIPPED: adminlogin_logout requires Session parameter
-    // SKIPPED: authentication_who requires Session parameter
+    #[tokio::test]
+    async fn test_authentication_who() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/authentication")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "authentication_who route should be registered"
+            );
+        }
+    }
+
     // SKIPPED: cachedispatch_dispatch requires Session parameter
     // SKIPPED: center_regist_applications_update requires Session parameter
     #[tokio::test]
@@ -4667,7 +5579,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: u3_config_change_password_post requires Session parameter
+    #[tokio::test]
+    async fn test_u3_config_change_password_post() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/config/change/password")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "u3_config_change_password_post route should be registered"
+            );
+        }
+    }
+
     // SKIPPED: u3_config_open_post requires Session parameter
     // SKIPPED: u3_config_open_run_time_post requires Session parameter
     // SKIPPED: u3_config_ternary_management_post requires Session parameter
@@ -4815,10 +5754,91 @@ mod tests {
     // SKIPPED: invoke_create requires Session parameter
     // SKIPPED: invoke_save requires Session parameter
     // SKIPPED: invoke_delete requires Session parameter
-    // SKIPPED: u3_invoke_execute requires Session parameter
-    // SKIPPED: u3_invoke_execute_with_token requires Session parameter
+    #[tokio::test]
+    async fn test_u3_invoke_execute() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/invoke/test-id/execute")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "u3_invoke_execute route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_u3_invoke_execute_with_token() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/invoke/test-id/client/test-id/token/test-id/execute")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "u3_invoke_execute_with_token route should be registered"
+            );
+        }
+    }
+
     // SKIPPED: u3_invoke_file_put requires Session parameter
-    // SKIPPED: u3_jest_clear_cache_source requires Session parameter
+    #[tokio::test]
+    async fn test_u3_jest_clear_cache_source() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/jest/clear/cache/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "u3_jest_clear_cache_source route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_u3_market_get_flag() {
         let pool = shared::testing::test_pool();
@@ -5015,9 +6035,90 @@ mod tests {
         }
     }
 
-    // SKIPPED: u3_module_output_put requires Session parameter
-    // SKIPPED: u3_module_list_put requires Session parameter
-    // SKIPPED: u3_module_compare_upload_put requires Session parameter
+    #[tokio::test]
+    async fn test_u3_module_output_put() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/module/output")
+                    .method("PUT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "u3_module_output_put route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_u3_module_list_put() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/module/list")
+                    .method("PUT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "u3_module_list_put route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_u3_module_compare_upload_put() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/module/compare/upload")
+                    .method("PUT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "u3_module_compare_upload_put route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_u3_mpweixin_menu_latest() {
         let pool = shared::testing::test_pool();
@@ -5074,12 +6175,147 @@ mod tests {
         }
     }
 
-    // SKIPPED: u3_mpweixin_template_send_post requires Session parameter
+    #[tokio::test]
+    async fn test_u3_mpweixin_template_send_post() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/mpweixin/message/template/send")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "u3_mpweixin_template_send_post route should be registered"
+            );
+        }
+    }
+
     // SKIPPED: u3_output_select_put requires Session parameter
-    // SKIPPED: u3_prompterrorlog_create requires Session parameter
-    // SKIPPED: u3_unexpectederrorlog_create requires Session parameter
-    // SKIPPED: u3_qiyeweixin_create requires Session parameter
-    // SKIPPED: u3_qiyeweixin_request_pull_sync_post requires Session parameter
+    #[tokio::test]
+    async fn test_u3_prompterrorlog_create() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/prompterrorlog")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "u3_prompterrorlog_create route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_u3_unexpectederrorlog_create() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/unexpectederrorlog")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "u3_unexpectederrorlog_create route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_u3_qiyeweixin_create() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/qiyeweixin")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "u3_qiyeweixin_create route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_u3_qiyeweixin_request_pull_sync_post() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/qiyeweixin/request/pull/sync")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "u3_qiyeweixin_request_pull_sync_post route should be registered"
+            );
+        }
+    }
+
     // SKIPPED: u3_schedule_fire_post requires Session parameter
     // SKIPPED: u3_script_save_name requires Session parameter
     #[tokio::test]
@@ -5110,8 +6346,62 @@ mod tests {
         }
     }
 
-    // SKIPPED: u3_welink_pull_sync requires Session parameter
-    // SKIPPED: u3_welink_request_pull_sync_post requires Session parameter
+    #[tokio::test]
+    async fn test_u3_welink_pull_sync() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/welink/pull/sync")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "u3_welink_pull_sync route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_u3_welink_request_pull_sync_post() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/welink/request/pull/sync")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "u3_welink_request_pull_sync_post route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_apppack_info_list() {
         let pool = shared::testing::test_pool();
@@ -5255,10 +6545,61 @@ mod tests {
         }
     }
 
-    // SKIPPED: dict_create requires Session parameter
+    #[tokio::test]
+    async fn test_dict_create() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/dict")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(!bytes.is_empty(), "dict_create route should be registered");
+        }
+    }
+
     // SKIPPED: dict_data_save_put requires Session parameter
     // SKIPPED: dict_delete_id requires Session parameter
-    // SKIPPED: script_create requires Session parameter
+    #[tokio::test]
+    async fn test_script_create() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/program_center/script")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "script_create route should be registered"
+            );
+        }
+    }
+
     // SKIPPED: script_save_flag requires Session parameter
     // SKIPPED: config_get not accessible
     // SKIPPED: agent_flag not accessible

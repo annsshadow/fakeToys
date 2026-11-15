@@ -34,7 +34,31 @@ mod tests {
         }
     }
 
-    // SKIPPED: send_message requires Session parameter
+    #[tokio::test]
+    async fn test_send_message() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/message/assemble/communicate/send")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(!bytes.is_empty(), "send_message route should be registered");
+        }
+    }
+
     #[tokio::test]
     async fn test_receive_list() {
         let pool = shared::testing::test_pool();
@@ -60,7 +84,31 @@ mod tests {
         }
     }
 
-    // SKIPPED: mark_read requires Session parameter
+    #[tokio::test]
+    async fn test_mark_read() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/message/assemble/communicate/mark_read/test-id")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(!bytes.is_empty(), "mark_read route should be registered");
+        }
+    }
+
     #[tokio::test]
     async fn test_consume_list_consume_count_count() {
         let pool = shared::testing::test_pool();
@@ -173,9 +221,90 @@ mod tests {
         }
     }
 
-    // SKIPPED: consume_type_type_mockputtopost requires Session parameter
-    // SKIPPED: consume_id_type_type requires Session parameter
-    // SKIPPED: im_conversation requires Session parameter
+    #[tokio::test]
+    async fn test_consume_type_type_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/message/assemble/communicate/consume/type/test-id/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "consume_type_type_mockputtopost route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_consume_id_type_type() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/message/assemble/communicate/consume/test-id/type/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "consume_id_type_type route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_im_conversation() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/message/assemble/communicate/im/conversation")
+                    .method("PUT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "im_conversation route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_im_conversation_business_businessId() {
         let pool = shared::testing::test_pool();
@@ -260,7 +389,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: im_conversation_mockputtopost requires Session parameter
+    #[tokio::test]
+    async fn test_im_conversation_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/message/assemble/communicate/im/conversation/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "im_conversation_mockputtopost route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_im_conversation_id() {
         let pool = shared::testing::test_pool();
@@ -317,9 +473,63 @@ mod tests {
         }
     }
 
-    // SKIPPED: im_manager_config_post requires Session parameter
+    #[tokio::test]
+    async fn test_im_manager_config_post() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/message/assemble/communicate/im/manager/config")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "im_manager_config_post route should be registered"
+            );
+        }
+    }
+
     // SKIPPED: im_conversation_update requires Session parameter
-    // SKIPPED: im_conversation_id_group_mockdeletetoget requires Session parameter
+    #[tokio::test]
+    async fn test_im_conversation_id_group_mockdeletetoget() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/message/assemble/communicate/im/conversation/test-id/group/mockdeletetoget")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "im_conversation_id_group_mockdeletetoget route should be registered"
+            );
+        }
+    }
+
     // SKIPPED: im_conversation_id_group_quit_self requires Session parameter
     #[tokio::test]
     async fn test_im_conversation_id_icon() {
@@ -350,7 +560,34 @@ mod tests {
     }
 
     // SKIPPED: im_conversation_id_read requires Session parameter
-    // SKIPPED: im_conversation_id_read_mockputtopost requires Session parameter
+    #[tokio::test]
+    async fn test_im_conversation_id_read_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/message/assemble/communicate/im/conversation/test-id/read/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "im_conversation_id_read_mockputtopost route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_im_conversation_id_single() {
         let pool = shared::testing::test_pool();
@@ -379,10 +616,118 @@ mod tests {
         }
     }
 
-    // SKIPPED: im_conversation_id_top_cancel requires Session parameter
-    // SKIPPED: im_conversation_id_top_cancel_mockputtopost requires Session parameter
-    // SKIPPED: im_conversation_id_top_set requires Session parameter
-    // SKIPPED: im_conversation_id_top_set_mockputtopost requires Session parameter
+    #[tokio::test]
+    async fn test_im_conversation_id_top_cancel() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/message/assemble/communicate/im/conversation/test-id/top/cancel")
+                    .method("PUT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "im_conversation_id_top_cancel route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_im_conversation_id_top_cancel_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/message/assemble/communicate/im/conversation/test-id/top/cancel/mockputtopost")
+                    .method("PUT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "im_conversation_id_top_cancel_mockputtopost route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_im_conversation_id_top_set() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/message/assemble/communicate/im/conversation/test-id/top/set")
+                    .method("PUT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "im_conversation_id_top_set route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_im_conversation_id_top_set_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/message/assemble/communicate/im/conversation/test-id/top/set/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "im_conversation_id_top_set_mockputtopost route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_im_manager_config() {
         let pool = shared::testing::test_pool();
@@ -411,9 +756,84 @@ mod tests {
         }
     }
 
-    // SKIPPED: im_msg requires Session parameter
-    // SKIPPED: im_msg_clear requires Session parameter
-    // SKIPPED: im_msg_collection requires Session parameter
+    #[tokio::test]
+    async fn test_im_msg() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/message/assemble/communicate/im/msg")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(!bytes.is_empty(), "im_msg route should be registered");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_im_msg_clear() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/message/assemble/communicate/im/msg/clear")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(!bytes.is_empty(), "im_msg_clear route should be registered");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_im_msg_collection() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/message/assemble/communicate/im/msg/collection")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "im_msg_collection route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_im_msg_collection_list_page_size_size() {
         let pool = shared::testing::test_pool();
@@ -442,7 +862,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: im_msg_collection_remove requires Session parameter
+    #[tokio::test]
+    async fn test_im_msg_collection_remove() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/message/assemble/communicate/im/msg/collection/remove")
+                    .method("DELETE")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "im_msg_collection_remove route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_im_msg_download_id() {
         let pool = shared::testing::test_pool();
@@ -555,8 +1002,62 @@ mod tests {
         }
     }
 
-    // SKIPPED: im_msg_revoke_id requires Session parameter
-    // SKIPPED: im_msg_upload_conversationId_type_type requires Session parameter
+    #[tokio::test]
+    async fn test_im_msg_revoke_id() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/message/assemble/communicate/im/msg/revoke/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "im_msg_revoke_id route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_im_msg_upload_conversationId_type_type() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/message/assemble/communicate/im/msg/upload/test-id/type/test-id")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "im_msg_upload_conversationId_type_type route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_instant_currentperson_consumed() {
         let pool = shared::testing::test_pool();
@@ -613,7 +1114,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: instant_currentperson_consumed_mockputtopost requires Session parameter
+    #[tokio::test]
+    async fn test_instant_currentperson_consumed_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/message/assemble/communicate/instant/currentperson/consumed/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "instant_currentperson_consumed_mockputtopost route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_instant_list_currentperson_consumed_count_count_asc() {
         let pool = shared::testing::test_pool();
@@ -862,7 +1390,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: mass_enable_type requires Session parameter
+    #[tokio::test]
+    async fn test_mass_enable_type() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/message/assemble/communicate/mass/enable/type")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "mass_enable_type route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_mass_list_id_next_count() {
         let pool = shared::testing::test_pool();
@@ -944,7 +1499,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: message_custom_create requires Session parameter
+    #[tokio::test]
+    async fn test_message_custom_create() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/message/assemble/communicate/message/custom/create")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "message_custom_create route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_message_list_paging_page_size_size() {
         let pool = shared::testing::test_pool();
@@ -973,8 +1555,59 @@ mod tests {
         }
     }
 
-    // SKIPPED: connector_create requires Session parameter
-    // SKIPPED: ws_create requires Session parameter
+    #[tokio::test]
+    async fn test_connector_create() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/message/assemble/communicate/connector")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "connector_create route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_ws_create() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/message/assemble/communicate/ws")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(!bytes.is_empty(), "ws_create route should be registered");
+        }
+    }
+
     #[tokio::test]
     async fn test_ws_count_person() {
         let pool = shared::testing::test_pool();

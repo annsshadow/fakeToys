@@ -70,10 +70,10 @@ mod tests {
     // SKIPPED: cipher_hotpic_cms_id not accessible
     // SKIPPED: cipher_hotpic_filter_list_page_page_count_count not accessible
     // SKIPPED: cipher_hotpic_id not accessible
-    // SKIPPED: user_hotpic_changeTitle requires Session parameter
+    // SKIPPED: user_hotpic_changeTitle not accessible
     // SKIPPED: user_hotpic_exists_check not accessible
     // SKIPPED: user_hotpic_filter_list_page_page_count_count not accessible
     // SKIPPED: user_hotpic_application_infoId not accessible
-    // SKIPPED: user_hotpic_id requires Session parameter
-    // SKIPPED: user_hotpic_delete_by_ids requires Session parameter
+    // SKIPPED: user_hotpic_id not accessible
+    // SKIPPED: user_hotpic_delete_by_ids not accessible
 }

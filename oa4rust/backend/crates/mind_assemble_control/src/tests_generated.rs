@@ -62,13 +62,37 @@ mod tests {
         }
     }
 
-    // SKIPPED: save_folder requires Session parameter
-    // SKIPPED: update_control_config requires Session parameter
+    #[tokio::test]
+    async fn test_save_folder() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/mind/assemble/control/folder/save")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(!bytes.is_empty(), "save_folder route should be registered");
+        }
+    }
+
+    // SKIPPED: update_control_config not accessible
     // SKIPPED: list_folders not accessible
-    // SKIPPED: update_folder requires Session parameter
-    // SKIPPED: folder_move_folderId requires Session parameter
+    // SKIPPED: update_folder not accessible
+    // SKIPPED: folder_move_folderId not accessible
     // SKIPPED: folder_id not accessible
-    // SKIPPED: folder_id_force requires Session parameter
+    // SKIPPED: folder_id_force not accessible
     // SKIPPED: folder_delete requires Session parameter
     // SKIPPED: mind_filter_list not accessible
     // SKIPPED: mind_filter_received requires Session parameter
@@ -78,7 +102,7 @@ mod tests {
     // SKIPPED: mind_version_list not accessible
     // SKIPPED: mind_recycle requires Session parameter
     // SKIPPED: mind_restore requires Session parameter
-    // SKIPPED: mind_save requires Session parameter
+    // SKIPPED: mind_save not accessible
     // SKIPPED: mind_share requires Session parameter
     // SKIPPED: mind_share_cancel requires Session parameter
     // SKIPPED: mind_version_get not accessible

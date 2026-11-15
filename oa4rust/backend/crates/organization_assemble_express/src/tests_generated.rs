@@ -398,7 +398,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: empowerlog_create requires Session parameter
+    #[tokio::test]
+    async fn test_empowerlog_create() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/empowerlog")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "empowerlog_create route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_distinguishedname_list() {
         let pool = shared::testing::test_pool();
@@ -1124,13 +1151,13 @@ mod tests {
     // SKIPPED: personattr_list_name_person not accessible
     // SKIPPED: personattr_list_attribute_person_name not accessible
     // SKIPPED: personattr_list_person_object not accessible
-    // SKIPPED: personattr_set_person_name requires Session parameter
-    // SKIPPED: personattr_append_person_name requires Session parameter
+    // SKIPPED: personattr_set_person_name not accessible
+    // SKIPPED: personattr_append_person_name not accessible
     // SKIPPED: unitattr_list_name_unit not accessible
     // SKIPPED: unitattr_list_attribute_unit_name not accessible
     // SKIPPED: unitattr_list_unit_object not accessible
-    // SKIPPED: unitattr_set_unit_name requires Session parameter
-    // SKIPPED: unitattr_append_unit_name requires Session parameter
+    // SKIPPED: unitattr_set_unit_name not accessible
+    // SKIPPED: unitattr_append_unit_name not accessible
     // SKIPPED: empower_list_identity_object not accessible
     // SKIPPED: role_list_person_object not accessible
     // SKIPPED: unitduty_list_identity_unit_name not accessible

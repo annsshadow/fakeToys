@@ -34,7 +34,7 @@ mod tests {
         }
     }
 
-    // SKIPPED: work_terminate requires Session parameter
+    // SKIPPED: work_terminate not accessible
     // SKIPPED: work_processing not accessible
     // SKIPPED: task_processing not accessible
     // SKIPPED: work_count_with_person not accessible

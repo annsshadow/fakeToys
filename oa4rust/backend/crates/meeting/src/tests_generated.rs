@@ -62,7 +62,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: create_meeting requires Session parameter
+    #[tokio::test]
+    async fn test_create_meeting() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/meeting/create")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "create_meeting route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_get_meeting() {
         let pool = shared::testing::test_pool();
@@ -145,6 +172,6 @@ mod tests {
     }
 
     // SKIPPED: openmeeting_list_room not accessible
-    // SKIPPED: add_participant requires Session parameter
+    // SKIPPED: add_participant not accessible
     // SKIPPED: list_participants not accessible
 }

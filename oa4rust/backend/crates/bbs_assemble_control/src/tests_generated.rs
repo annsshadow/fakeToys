@@ -62,8 +62,56 @@ mod tests {
         }
     }
 
-    // SKIPPED: create_topic requires Session parameter
-    // SKIPPED: create_reply requires Session parameter
+    #[tokio::test]
+    async fn test_create_topic() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/bbs/assemble/control/topic/create")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(!bytes.is_empty(), "create_topic route should be registered");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_create_reply() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/bbs/assemble/control/reply/create")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(!bytes.is_empty(), "create_reply route should be registered");
+        }
+    }
+
     // SKIPPED: user_info requires Session parameter
     #[tokio::test]
     async fn test_uuid_generate() {
@@ -94,10 +142,10 @@ mod tests {
     }
 
     // SKIPPED: list_control_sections not accessible
-    // SKIPPED: section_create requires Session parameter
-    // SKIPPED: section_update requires Session parameter
+    // SKIPPED: section_create not accessible
+    // SKIPPED: section_update not accessible
     // SKIPPED: section_delete requires Session parameter
-    // SKIPPED: update_control_config requires Session parameter
+    // SKIPPED: update_control_config not accessible
     // SKIPPED: get_forum not accessible
     // SKIPPED: list_topics_by_forum not accessible
     // SKIPPED: forum_view_all not accessible
@@ -152,24 +200,24 @@ mod tests {
     // SKIPPED: subjectattach_list not accessible
     // SKIPPED: u2_attachment_download not accessible
     // SKIPPED: u2_attachment_download_stream not accessible
-    // SKIPPED: u2_attachment_upload requires Session parameter
-    // SKIPPED: u2_attachment_upload_callback requires Session parameter
+    // SKIPPED: u2_attachment_upload not accessible
+    // SKIPPED: u2_attachment_upload_callback not accessible
     // SKIPPED: picture_encode not accessible
     // SKIPPED: picture_section_icon requires Session parameter
     // SKIPPED: section_syn not accessible
     // SKIPPED: u2_subject_get not accessible
-    // SKIPPED: u2_subject_save requires Session parameter
+    // SKIPPED: u2_subject_save not accessible
     // SKIPPED: u2_subject_accept_reply requires Session parameter
     // SKIPPED: u2_subject_unaccept_reply requires Session parameter
     // SKIPPED: u2_subject_soft_delete requires Session parameter
     // SKIPPED: u2_subject_change_section requires Session parameter
-    // SKIPPED: u2_vote_submit requires Session parameter
+    // SKIPPED: u2_vote_submit not accessible
     // SKIPPED: u2_voterecord_list not accessible
     // SKIPPED: u2_my_subject_list requires Session parameter
     // SKIPPED: u2_my_reply_list requires Session parameter
     // SKIPPED: u2_reply_get not accessible
     // SKIPPED: u2_reply_filter_list not accessible
-    // SKIPPED: u2_user_reply_save requires Session parameter
+    // SKIPPED: u2_user_reply_save not accessible
     // SKIPPED: u2_user_reply_accept requires Session parameter
     // SKIPPED: u2_user_reply_delete requires Session parameter
     // SKIPPED: u2_user_forum_save requires Session parameter

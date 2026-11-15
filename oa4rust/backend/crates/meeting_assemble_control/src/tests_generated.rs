@@ -37,7 +37,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: create_meeting_control requires Session parameter
+    #[tokio::test]
+    async fn test_create_meeting_control() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/meeting/assemble/control/create")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "create_meeting_control route should be registered"
+            );
+        }
+    }
+
     // SKIPPED: delete_meeting_control requires Session parameter
     #[tokio::test]
     async fn test_building_list() {
@@ -204,7 +231,34 @@ mod tests {
         }
     }
 
-    // SKIPPED: config_system_config_manage requires Session parameter
+    #[tokio::test]
+    async fn test_config_system_config_manage() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/meeting/assemble/control/config/system/config/manage")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "config_system_config_manage route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_meeting_list_applied_completed() {
         let pool = shared::testing::test_pool();
@@ -652,19 +706,208 @@ mod tests {
         }
     }
 
-    // SKIPPED: create_meeting requires Session parameter
+    #[tokio::test]
+    async fn test_create_meeting() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/meeting/assemble/control/meeting")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "create_meeting route should be registered"
+            );
+        }
+    }
+
     // SKIPPED: save_meeting requires Session parameter
     // SKIPPED: delete_meeting requires Session parameter
     // SKIPPED: meeting_id_accept requires Session parameter
     // SKIPPED: meeting_id_add_invite requires Session parameter
-    // SKIPPED: meeting_id_checkin requires Session parameter
+    #[tokio::test]
+    async fn test_meeting_id_checkin() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/meeting/assemble/control/meeting/test-id/checkin")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "meeting_id_checkin route should be registered"
+            );
+        }
+    }
+
     // SKIPPED: meeting_id_confirm_allow requires Session parameter
     // SKIPPED: meeting_id_confirm_deny requires Session parameter
-    // SKIPPED: meeting_id_delete_invite requires Session parameter
-    // SKIPPED: meeting_id_manual_completed requires Session parameter
-    // SKIPPED: meeting_id_modify_completedtime requires Session parameter
-    // SKIPPED: meeting_id_modify_starttime requires Session parameter
-    // SKIPPED: meeting_id_reject requires Session parameter
+    #[tokio::test]
+    async fn test_meeting_id_delete_invite() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/meeting/assemble/control/meeting/test-id/delete/invite")
+                    .method("PUT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "meeting_id_delete_invite route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_meeting_id_manual_completed() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/meeting/assemble/control/meeting/test-id/manual/completed")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "meeting_id_manual_completed route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_meeting_id_modify_completedtime() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/meeting/assemble/control/meeting/test-id/modify/completedtime")
+                    .method("PUT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "meeting_id_modify_completedtime route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_meeting_id_modify_starttime() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/meeting/assemble/control/meeting/test-id/modify/starttime")
+                    .method("PUT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "meeting_id_modify_starttime route should be registered"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn test_meeting_id_reject() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/meeting/assemble/control/meeting/test-id/reject")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(
+                !bytes.is_empty(),
+                "meeting_id_reject route should be registered"
+            );
+        }
+    }
+
     #[tokio::test]
     async fn test_openmeeting_list_room() {
         let pool = shared::testing::test_pool();
@@ -770,11 +1013,11 @@ mod tests {
     // SKIPPED: u2_attachment_download requires Session parameter
     // SKIPPED: u2_attachment_update requires Session parameter
     // SKIPPED: u2_attachment_update_callback requires Session parameter
-    // SKIPPED: u2_attachment_create_from_processplatform requires Session parameter
+    // SKIPPED: u2_attachment_create_from_processplatform not accessible
     // SKIPPED: u2_attachment_list_next not accessible
     // SKIPPED: u2_attachment_list_prev not accessible
-    // SKIPPED: u2_attachment_upload requires Session parameter
-    // SKIPPED: u2_attachment_upload_callback requires Session parameter
+    // SKIPPED: u2_attachment_upload not accessible
+    // SKIPPED: u2_attachment_upload_callback not accessible
     // SKIPPED: u2_attachment_delete requires Session parameter
     // SKIPPED: u2_building_create requires Session parameter
     // SKIPPED: u2_building_edit requires Session parameter
@@ -784,10 +1027,10 @@ mod tests {
     // SKIPPED: u2_meeting_delete_owned requires Session parameter
     // SKIPPED: u2_meeting_modify requires Session parameter
     // SKIPPED: u2_meeting_put_save requires Session parameter
-    // SKIPPED: u2_meeting_checkin_get requires Session parameter
+    // SKIPPED: u2_meeting_checkin_get not accessible
     // SKIPPED: u2_openmeeting_get not accessible
     // SKIPPED: u2_room_create requires Session parameter
     // SKIPPED: u2_room_edit requires Session parameter
     // SKIPPED: u2_room_delete requires Session parameter
-    // SKIPPED: u2_room_set_photo requires Session parameter
+    // SKIPPED: u2_room_set_photo not accessible
 }

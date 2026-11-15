@@ -66,7 +66,31 @@ mod tests {
     }
 
     // SKIPPED: config_save requires Session parameter
-    // SKIPPED: file_upload requires Session parameter
+    #[tokio::test]
+    async fn test_file_upload() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/ai_assemble_control/file/upload")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        if response.status() == StatusCode::NOT_FOUND {
+            // Route-presence probe: an unregistered path hits the axum fallback
+            // (empty 404 body); a matched handler may legitimately answer 404
+            // (e.g. NotFound for missing row) but always with a JSON envelope.
+            let bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+                .await
+                .unwrap_or_default();
+            assert!(!bytes.is_empty(), "file_upload route should be registered");
+        }
+    }
+
     #[tokio::test]
     async fn test_file_flag() {
         let pool = shared::testing::test_pool();
@@ -133,21 +157,21 @@ mod tests {
     // SKIPPED: config_list_model_paging_page_size_size not accessible
     // SKIPPED: config_update_mcp_flag requires Session parameter
     // SKIPPED: config_update_model_flag requires Session parameter
-    // SKIPPED: file_copy_file requires Session parameter
-    // SKIPPED: file_delete_flag requires Session parameter
+    // SKIPPED: file_copy_file not accessible
+    // SKIPPED: file_delete_flag not accessible
     // SKIPPED: file_list_with_ids not accessible
     // SKIPPED: file_list_paging_page_size_size not accessible
     // SKIPPED: file_id_download not accessible
     // SKIPPED: file_id_download_scale not accessible
     // SKIPPED: index_cms_doc_with_app_appId not accessible
     // SKIPPED: index_cms_doc_docId not accessible
-    // SKIPPED: index_delete_flag requires Session parameter
+    // SKIPPED: index_delete_flag not accessible
     // SKIPPED: index_list_paging_page_size_size not accessible
-    // SKIPPED: index_sync_to_knowledge requires Session parameter
-    // SKIPPED: chat_completion requires Session parameter
-    // SKIPPED: chat_completion_stream requires Session parameter
+    // SKIPPED: index_sync_to_knowledge not accessible
+    // SKIPPED: chat_completion not accessible
+    // SKIPPED: chat_completion_stream not accessible
     // SKIPPED: chat_list_paging_page_size_size requires Session parameter
     // SKIPPED: chat_list_completion_clue_id_paging_page_size_size not accessible
-    // SKIPPED: chat_delete_clue_id requires Session parameter
-    // SKIPPED: chat_write_completion_extra requires Session parameter
+    // SKIPPED: chat_delete_clue_id not accessible
+    // SKIPPED: chat_write_completion_extra not accessible
 }

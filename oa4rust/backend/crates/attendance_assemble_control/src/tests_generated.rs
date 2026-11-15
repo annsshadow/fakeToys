@@ -6,30 +6,30 @@ mod tests {
     #![allow(non_snake_case)]
 
     // SKIPPED: list_control_rules not accessible
-    // SKIPPED: create_control_rule requires Session parameter
+    // SKIPPED: create_control_rule not accessible
     // SKIPPED: list_statistics not accessible
-    // SKIPPED: delete_control_rule requires Session parameter
-    // SKIPPED: toggle_control_rule requires Session parameter
+    // SKIPPED: delete_control_rule not accessible
+    // SKIPPED: toggle_control_rule not accessible
     // SKIPPED: attendanceadmin_list_all not accessible
     // SKIPPED: attendanceadmin_id not accessible
-    // SKIPPED: attendanceappealInfo_appeal_id requires Session parameter
+    // SKIPPED: attendanceappealInfo_appeal_id not accessible
     // SKIPPED: attendanceconfig_list not accessible
     // SKIPPED: attendanceconfig_save not accessible
-    // SKIPPED: attendanceappealInfo_archive_id requires Session parameter
+    // SKIPPED: attendanceappealInfo_archive_id not accessible
     // SKIPPED: attendanceappealInfo_audit requires Session parameter
     // SKIPPED: attendanceappealInfo_check requires Session parameter
     // SKIPPED: attendanceappealInfo_filter_list_id_next_count not accessible
     // SKIPPED: attendanceappealInfo_filter_list_id_prev_count not accessible
     // SKIPPED: attendanceappealInfo_manager_list_id_next_count not accessible
-    // SKIPPED: attendanceappealInfo_workflow_appeal_id requires Session parameter
+    // SKIPPED: attendanceappealInfo_workflow_appeal_id not accessible
     // SKIPPED: attendanceappealInfo_workflow_sync requires Session parameter
     // SKIPPED: attendanceappealInfo_id not accessible
-    // SKIPPED: attendancedetail_analyse requires Session parameter
-    // SKIPPED: attendancedetail_analyse_id_id requires Session parameter
+    // SKIPPED: attendancedetail_analyse not accessible
+    // SKIPPED: attendancedetail_analyse_id_id not accessible
     // SKIPPED: attendancedetail_analyse_redo requires Session parameter
-    // SKIPPED: attendancedetail_analyse_startDate_endDate requires Session parameter
-    // SKIPPED: attendancedetail_archive_id requires Session parameter
-    // SKIPPED: attendancedetail_checkDetailWithPersonByCycle_cycleYear_cycleMonth requires Session parameter
+    // SKIPPED: attendancedetail_analyse_startDate_endDate not accessible
+    // SKIPPED: attendancedetail_archive_id not accessible
+    // SKIPPED: attendancedetail_checkDetailWithPersonByCycle_cycleYear_cycleMonth not accessible
     // SKIPPED: attendancedetail_filter_list not accessible
     // SKIPPED: attendancedetail_filter_list_topUnit not accessible
     // SKIPPED: attendancedetail_filter_list_unit not accessible
@@ -41,10 +41,10 @@ mod tests {
     // SKIPPED: attendancedetail_mobile_filter_list_page_page_count_count not accessible
     // SKIPPED: attendancedetail_mobile_mobilepreview not accessible
     // SKIPPED: attendancedetail_mobile_my not accessible
-    // SKIPPED: attendancedetail_mobile_recive requires Session parameter
+    // SKIPPED: attendancedetail_mobile_recive not accessible
     // SKIPPED: attendancedetail_mobile_id not accessible
-    // SKIPPED: attendancedetail_recive requires Session parameter
-    // SKIPPED: attendancedetail_reciveSingle requires Session parameter
+    // SKIPPED: attendancedetail_recive not accessible
+    // SKIPPED: attendancedetail_reciveSingle not accessible
     // SKIPPED: attendancedetail_id not accessible
     // SKIPPED: attendanceemployeeconfig_list_all not accessible
     // SKIPPED: attendanceemployeeconfig_id not accessible
@@ -59,7 +59,7 @@ mod tests {
     // SKIPPED: attendanceselfholiday_list_all not accessible
     // SKIPPED: attendanceselfholiday_id not accessible
     // SKIPPED: attendancesetting_code_code not accessible
-    // SKIPPED: attendancesetting_enable_type requires Session parameter
+    // SKIPPED: attendancesetting_enable_type not accessible
     // SKIPPED: attendancesetting_list_all not accessible
     // SKIPPED: attendancesetting_id not accessible
     // SKIPPED: attendancestatisticalcycle_cycleDetail_year_month not accessible
@@ -124,7 +124,7 @@ mod tests {
     // SKIPPED: selfholidaysimple_docId_docId_delete requires Session parameter
     // SKIPPED: v2_group_get not accessible
     // SKIPPED: v2_group_delete requires Session parameter
-    // SKIPPED: v2_group_refresh_participate requires Session parameter
+    // SKIPPED: v2_group_refresh_participate not accessible
     // SKIPPED: v2_group_person_date requires Session parameter
     // SKIPPED: v2_group_create requires Session parameter
     // SKIPPED: v2_group_list_page_size not accessible
@@ -141,13 +141,13 @@ mod tests {
     // SKIPPED: v2_config_get not accessible
     // SKIPPED: v2_config_post requires Session parameter
     // SKIPPED: v2_config_person_get requires Session parameter
-    // SKIPPED: v2_config_person_post requires Session parameter
+    // SKIPPED: v2_config_person_post not accessible
     // SKIPPED: v2_record_get not accessible
     // SKIPPED: v2_record_list_page_size not accessible
     // SKIPPED: v2_detail_list_page_size not accessible
     // SKIPPED: v2_my_statistic requires Session parameter
     // SKIPPED: dingding_delete_all requires Session parameter
-    // SKIPPED: dingding_sync_start requires Session parameter
+    // SKIPPED: dingding_sync_start not accessible
     // SKIPPED: dingding_sync_list not accessible
     // SKIPPED: dingding_attendance_list_next not accessible
     // SKIPPED: dingding_statistic_person_trigger requires Session parameter
@@ -156,7 +156,7 @@ mod tests {
     // SKIPPED: dingdingstatistic_person_unit not accessible
     // SKIPPED: dingdingstatistic_unit not accessible
     // SKIPPED: qywx_delete_all requires Session parameter
-    // SKIPPED: qywx_sync_start requires Session parameter
+    // SKIPPED: qywx_sync_start not accessible
     // SKIPPED: qywx_sync_list not accessible
     // SKIPPED: qywx_attendance_list_next not accessible
     // SKIPPED: qywx_statistic_person_trigger requires Session parameter
