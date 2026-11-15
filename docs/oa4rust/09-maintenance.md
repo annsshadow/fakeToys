@@ -66,15 +66,15 @@ pnpm test && pnpm typecheck && pnpm lint:check && pnpm build
 | 安全例外到期前 | 复验可达性：升版本或续期（必须留审计记录） | rustsec-exceptions.toml 到期日 |
 | 每次发布 | 静态门禁全绿 + live E2E 通过即上线；回滚 = 回退上一 Rust 版本 | `backend/docs/ops/REALIZE_RUNBOOK.md` §4.2（待确认：该文件当前不在仓库中） |
 
-## 7. 已知待办与风险登记（2026-10-26 快照）
+## 7. 已知待办与风险登记（2026-10-26 快照，2026-11-15 复核到期日）
 
 | 项 | 状态 | 位置 |
 | --- | --- | --- |
 | `sms`、`captcha_store` crate 真实化 | todo（最后 2 个业务 crate） | endpoint-inventory 汇总 |
 | 移动端原生/小程序 token 鉴权通道 | 待后端提供（Cookie 不跨容器） | `mobile/README.md` 鉴权模型 |
 | Swagger UI 挂载 | **已完成（2026-11-15）**：`docs_router()` 只挂页面并复用既有 JSON 端点；3 支 Rust 行为面测试 | `src/main.rs` |
-| lopdf 0.26.0 例外 | 2026-10-28 到期（genpdf 生成 PDF 用，无解析入口） | security/rustsec-exceptions.toml |
-| rsa 0.9.10 例外 | 2026-11-08 到期（仅 dev-dependency 可达） | 同上 |
+| lopdf 0.26.0 例外 | 30 天重 triage，现量到期 **2026-11-26**（genpdf 生成 PDF 用，无解析入口） | security/rustsec-exceptions.toml |
+| rsa 0.9.10 例外 | 30 天重 triage，现量到期 **2026-12-08**（lockfile-only，未编译进工作区） | 同上 |
 | `spent` 精确耗时 | 未实现（信封恒 0，对齐 o2server v9 行为） | response.rs 注释 |
 | 平均 DB 真实化率 13.8% | done crate 仍有深层 DB 化空间（handler 已无桩） | endpoint-inventory |
 | FI-002 列完整性扫描 | **已收口**：`scripts/fi002_column_scan.py` 固化（WHERE/ORDER BY/引号列/视图投影列/大小写关系全盲补），基线 7→0；CI 棘轮 `fi002-column-scan` job 每轮跑，新增违规即红。2026-10-26 批次 105–112 迁移收口 fresh-DB 500 端点（含 `PP_E_APPLICATION` 视图、`x_program_field.sort_order`、`x_work.category` 等），`schema_diff.py` 对账脚本入库 | `backend/scripts/fi002_column_scan.py`、`backend/scripts/schema_diff.py`、`migrations/105–112` |
