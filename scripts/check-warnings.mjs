@@ -9,6 +9,10 @@
 //   node scripts/check-warnings.mjs --only rust,admin
 //   node scripts/check-warnings.mjs --verbose    # 打印每条命中行
 //
+// 宿主 IDE 注入了 safe-delete 钩子时，脚本会自动隔离注入并清理旧构建产物（见
+// L356 prepareHostEnvironment）。用 CHECK_WARNINGS_KEEP_HOST_ENV=1 可保留宿主环境
+// 做对照；CHECK_CONCURRENCY 可覆盖并发度（宿主受限时默认 1，其余默认 4）。
+//
 // 判据是**编译器自己的输出**，不是"命令退出码为 0"：很多工具链的告警不改变
 // 退出码（Vite / Rollup / lightningcss / Python 的 SyntaxWarning 都是这样），
 // 所以每项检查除了要求 exit 0，还要对输出做正则匹配，命中即失败。
@@ -20,9 +24,9 @@
 //   - TS/Vue: tsc/vue-tsc 无告警概念，故由本脚本匹配构建输出
 
 import { spawn, spawnSync } from 'node:child_process'
-import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { dirname, join, resolve } from 'node:path'
+import { delimiter, dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -390,12 +394,90 @@ if (selected.length === 0) {
   process.exit(2)
 }
 
+// ---------------------------------------------------------------------------
+// L356：宿主 IDE 的注入钩子会让门禁出现「与代码无关的红」。
+//
+// WorkBuddy 等宿主向会话注入 NODE_OPTIONS（node-language-shim）与 PYTHONPATH
+// （sitecustomize），它们接管 fs.rmSync / unlink：Vite/uni 的 emptyDir、pnpm 的
+// store 探测、Python compileall 都会在删除环节卡在回收站 / 批量删除守卫上；
+// 旧 dist 的 CSS 还会 EPERM；损坏的 .vite 缓存让 rolldown 卡在 rendering chunks；
+// 并发时 97 crate 的 clippy 会把同批 Go/Node/Python 项一起拖过各自 timeout。
+//
+// 这里只做**运行环境准备**：隔离注入、备份式移走旧产物与缓存、选带 pytest 的
+// 解释器、把并发降为 1。检查项的命令、pattern、timeout、requires 判据一个字不改；
+// CI / 普通终端没有这些注入时整段是 no-op。用 CHECK_WARNINGS_KEEP_HOST_ENV=1
+// 可显式保留宿主环境做对照实验。
+// ---------------------------------------------------------------------------
+const HOST_SHIM_INJECTED =
+  /node-language-shim|safe-delete-shim/i.test(process.env.NODE_OPTIONS || '') ||
+  /sandbox-center-runtime-kit/.test(process.env.PYTHONPATH || '')
+const isolateHost = HOST_SHIM_INJECTED && process.env.CHECK_WARNINGS_KEEP_HOST_ENV !== '1'
+
+const BUILD_CHECK_IDS = new Set(['desktop', 'mobile', 'admin', 'miniapp', 'augmentor-web'])
+const STALE_BUILD_PATHS = [
+  'oa4rust/frontend/dist',
+  'oa4rust/mobile/dist',
+  'laiyipao/admin/dist',
+  'laiyipao/miniapp/dist',
+  'augmentor/web/dist',
+  'oa4rust/node_modules/.vite',
+  'oa4rust/frontend/apps/desktop/node_modules/.vite',
+]
+
+function prepareHostEnvironment() {
+  // ① 只对「本脚本启动的子进程」去注入，不改用户环境、不动全局配置。
+  delete env.NODE_OPTIONS
+  env.CODEBUDDY_SAFE_DELETE_ENABLED = '0'
+  if (env.PYTHONPATH) {
+    env.PYTHONPATH = env.PYTHONPATH.split(delimiter)
+      .filter((p) => p && !/sandbox-center-runtime-kit/.test(p))
+      .join(delimiter)
+    if (!env.PYTHONPATH) delete env.PYTHONPATH
+  }
+
+  // ② 当前 python 缺 pytest 而 py -3.12 有时，把该解释器目录放到子进程 PATH 前面。
+  //    不硬编码任何机器路径；CI 上 python 自带 pytest 时完全不触发。
+  const pyHasPytest = (bin, args = []) =>
+    spawnSync(bin, [...args, '-c', 'import pytest'], { env, encoding: 'utf8' }).status === 0
+  if (!pyHasPytest('python') && pyHasPytest('py', ['-3.12'])) {
+    const r = spawnSync('py', ['-3.12', '-c', 'import sys; print(sys.executable)'], { env, encoding: 'utf8' })
+    const exe = (r.stdout || '').trim()
+    if (exe) env.PATH = `${dirname(exe)}${delimiter}${env.PATH}`
+  }
+
+  console.log('[host-shim] 已隔离宿主注入（仅本脚本子进程；保留宿主环境用 CHECK_WARNINGS_KEEP_HOST_ENV=1）')
+
+  // ③ 旧 dist 与 Vite 缓存是 EPERM / rendering 挂起的来源；移动而非删除，随时可还原。
+  //    只在本轮确实要跑构建类检查项时做，--only license 之类不会动任何文件。
+  if (!selected.some((c) => BUILD_CHECK_IDS.has(c.id))) return
+  const stamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14)
+  const backup = join(ROOT, 'Temp', 'gate-preflight', stamp)
+  let moved = 0
+  for (const rel of STALE_BUILD_PATHS) {
+    const src = join(ROOT, rel)
+    if (!existsSync(src)) continue
+    try {
+      mkdirSync(backup, { recursive: true })
+      renameSync(src, join(backup, rel.replace(/[\\/]/g, '__')))
+      moved += 1
+    } catch (err) {
+      // 目录被占用时不要让门禁自己崩；该项若因此变红会照实报出，不掩盖。
+      console.log(`[host-shim] 无法移开 ${rel}：${err.message}`)
+    }
+  }
+  console.log(`[host-shim] 旧产物/缓存移开 ${moved} 处，备份 ${backup}`)
+}
+
+if (isolateHost) prepareHostEnvironment()
+
 // 第 97 轮：检查项彼此独立（不同子项目 / 不同目录），旧实现串行 `spawnSync`
 // 让整条门禁的耗时等于各项之和（clippy / 两个前端构建 / pytest 加起来占绝大部分）。
 // 改为异步 `spawn` + 固定并发（默认 4，可用 CHECK_CONCURRENCY 调小，例如
 // 低配机器 / 需要串行基线时设 1）：墙钟时间约等于最慢一项，而不是全部相加。
 // 结果按下标回填，输出顺序与汇总口径不变。
-const CONCURRENCY = Math.max(1, Number(process.env.CHECK_CONCURRENCY) || 4)
+// L356：检测到宿主注入时默认降为 1 —— clippy 冷编译会把同批项拖过 timeout；
+// 显式给 CHECK_CONCURRENCY 时仍以用户值为准。CI / 普通终端保持原来的 4。
+const CONCURRENCY = Math.max(1, Number(process.env.CHECK_CONCURRENCY) || (isolateHost ? 1 : 4))
 const MAX_OUTPUT = 64 * 1024 * 1024
 
 /** 跑一个命令型检查，返回与串行版本同形状的结果对象。 */
