@@ -30,9 +30,9 @@
 #
 # ## 什么时候可以放开
 #
-# 放开任一条之前，必须重跑 `build:h5` **和** `build:mp-weixin` 双构建
-# + 全量测试。README 验证状态表里「构建 miniapp H5 ✓」一度是假的
-# （PR checks 没设 required，破坏被直接合进 main）。
+# 放开任一条之前，必须重跑 `build:h5`（2026-11-14 起小程序端已移除，
+# 只交付 H5）+ 全量测试。README 验证状态表里「构建 miniapp H5 ✓」一度是
+# 假的（PR checks 没设 required，破坏被直接合进 main）。
 #
 # # 二、为什么列了这么多目录
 #
@@ -107,6 +107,23 @@ updates:
       # 因为两个版本线要的 vue 一样高。本项目选 dcloudio 一侧
       # （它在构建路径上），代价是留一个 pinia 的 unmet peer 警告。
       - dependency-name: "pinia"
+
+      # ── vue 运行时家族：由 pnpm-workspace.yaml overrides 统一钉 3.4.21 ──
+      # 2026-11-11 修正（见 laiyipao/miniapp/pnpm-workspace.yaml:115-140）：
+      # uni-h5-vue 是 Vue 3.4.21 的 fork，与 @vue/shared ≥3.5 的 def()
+      # 语义不兼容，升到 3.5 会触发移动端渲染崩溃 / reLaunch 组件树连环崩。
+      # 机器人只改 package.json 会被无条件 override 压住，合进去既是空心
+      # 改动又埋雷（PR #295 即此形态，已关）。
+      # @vue/server-renderer 单独留在 3.5.x 修 GHSA-g2v6，**不在此列**。
+      - dependency-name: "vue"
+      - dependency-name: "@vue/runtime-core"
+      - dependency-name: "@vue/runtime-dom"
+      - dependency-name: "@vue/reactivity"
+      - dependency-name: "@vue/shared"
+      - dependency-name: "@vue/compiler-core"
+      - dependency-name: "@vue/compiler-dom"
+      - dependency-name: "@vue/compiler-sfc"
+      - dependency-name: "@vue/compiler-ssr"
 
   # ── 其余 npm 依赖树：保持默认行为，不做任何限制 ──────────────────
   - package-ecosystem: "npm"
