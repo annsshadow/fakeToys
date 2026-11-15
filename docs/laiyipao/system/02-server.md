@@ -119,7 +119,7 @@ cmd/*  ──▶  httpapi  ──▶  service  ──▶  domain
 - `DevDefaultWarnings()` 与 prod 守卫**同源判据**（同一个 `HasPrefix` 与同一个
   `os.Getenv(...)==""`），避免两套判据分叉后出现「prod 会 panic 但这里不告警」。
 
-完整变量表见 [07 §2](./07-deployment.md#2-环境变量全表)。
+完整变量表见 [07 §2](./07-deployment.md#env-vars)。
 
 ### 4.2 `auth`
 

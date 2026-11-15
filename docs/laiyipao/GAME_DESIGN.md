@@ -4,7 +4,7 @@
 >
 > ⚠️ **本文档的地位**：玩法**设计意图** + 与实现的**差异清单**。
 > 它**不是**实现的单一事实源 —— 实现的单一事实源是代码与
-> [`server/testdata/`](../../laiyipao/server/testdata/) 里的契约夹具。
+> 源码仓库 `laiyipao/server/testdata/` 里的契约夹具（文档站不含源码，故不设站内链接）。
 >
 > 本文档与代码不一致的地方，本文档**已经标注**（每处注明实测值与核实方式）。
 > 数字改动后请跑 `go -C server test ./internal/domain -run "GameDesign|OpsDoc|DesignDoc" -v` ——

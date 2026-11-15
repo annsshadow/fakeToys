@@ -84,7 +84,7 @@ miniapp/src/
 | `defense.ts` | 防线挑战本地模拟 | `runChallenge` / `validateSnapshot` / `snapshotDigest` |
 | `replay.ts` | 回放与构筑映射 | `replay` / `equippedFromSnapshot` / `BuildSnapshot` / `ReplayInfo` |
 
-### 3.1 定点整数
+### 3.1 定点整数 <a id="fixed-point"></a> <a id="fixed-point"></a> <a id="fixed-point"></a>
 
 所有比例、速度、坐标用 `bigint` 存千分比（`×1000`）。
 不用 `number` 的理由不是精度洁癖，而是**跨端一致性**：

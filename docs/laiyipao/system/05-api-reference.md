@@ -620,7 +620,7 @@
 
 失败：码不存在 / 已过期 / 已停用 / 已用完 / 本人已用过 → 400。
 
-### 3.8 诊断
+### 3.8 诊断 <a id="diagnose"></a> <a id="diagnose"></a> <a id="diagnose"></a>
 
 #### `GET /api/v1/diagnose?level_id=5`
 
