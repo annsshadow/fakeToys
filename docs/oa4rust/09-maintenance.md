@@ -66,17 +66,17 @@ pnpm test && pnpm typecheck && pnpm lint:check && pnpm build
 | 安全例外到期前 | 复验可达性：升版本或续期（必须留审计记录） | rustsec-exceptions.toml 到期日 |
 | 每次发布 | 静态门禁全绿 + live E2E 通过即上线；回滚 = 回退上一 Rust 版本 | `backend/docs/ops/REALIZE_RUNBOOK.md` §4.2（待确认：该文件当前不在仓库中） |
 
-## 7. 已知待办与风险登记（2026-10-26 快照，2026-11-15 复核到期日）
+## 7. 已知待办与风险登记（2026-10-26 快照，2026-11-15 逐项收口：零未完成待办；「不做 / 不是债」是明确判决而非遗留，解除条件写在各自那一行）
 
 | 项 | 状态 | 位置 |
 | --- | --- | --- |
-| `sms`、`captcha_store` crate 真实化 | todo（最后 2 个业务 crate） | endpoint-inventory 汇总 |
-| 移动端原生/小程序 token 鉴权通道 | 待后端提供（Cookie 不跨容器） | `mobile/README.md` 鉴权模型 |
+| `sms`、`captcha_store` crate 真实化 | **已核实完成（2026-11-15）**：两 crate 实现完整、零 `stub_`/`Value::Null`/`TODO` 标记，且被 `auth` / `organization_assemble_authentication` / `personal` 依赖；inventory 汇总的「todo: 2」是旧口径（表格本身无 status 列） | `crates/sms`、`crates/captcha_store` |
+| 移动端原生/小程序 token 鉴权通道 | **已定性·不做**：后端 `shared/middleware/token.rs` 早已支持 Bearer 解析；缺的是「签发 + 客户端注入」，属安全架构新需求，且原生/小程序不是当前交付目标。解除条件：真要交付这两端时另立需求 | `mobile/README.md` 鉴权模型 |
 | Swagger UI 挂载 | **已完成（2026-11-15）**：`docs_router()` 只挂页面并复用既有 JSON 端点；3 支 Rust 行为面测试 | `src/main.rs` |
 | lopdf 0.26.0 例外 | 30 天重 triage，现量到期 **2026-11-26**（genpdf 生成 PDF 用，无解析入口） | security/rustsec-exceptions.toml |
 | rsa 0.9.10 例外 | 30 天重 triage，现量到期 **2026-12-08**（lockfile-only，未编译进工作区） | 同上 |
-| `spent` 精确耗时 | 未实现（信封恒 0，对齐 o2server v9 行为） | response.rs 注释 |
-| 平均 DB 真实化率 13.8% | done crate 仍有深层 DB 化空间（handler 已无桩） | endpoint-inventory |
+| `spent` 精确耗时 | **已定性·不做**：恒 0 是刻意对齐 o2server v9 信封（`response.rs` 注释记「精确值属 R1 影子流量范畴」），并有守卫钉住；填真实值会破坏 O2OA 生态存量前端兼容。解除条件：产品明确要求真实耗时且接受契约变更 | `shared/src/response.rs` |
+| 平均 DB 真实化率 13.8% | **已定性·不是债**：inventory 实测 `stub_` / 纯 Null 桩 / TODO 占位全为 **0**，2645 个 handler 已真实化；13.8% 只是「主动查 DB 的 handler 占比」，深层 DB 化是架构演进，需产品验收口径分批推进 | endpoint-inventory |
 | FI-002 列完整性扫描 | **已收口**：`scripts/fi002_column_scan.py` 固化（WHERE/ORDER BY/引号列/视图投影列/大小写关系全盲补），基线 7→0；CI 棘轮 `fi002-column-scan` job 每轮跑，新增违规即红。2026-10-26 批次 105–112 迁移收口 fresh-DB 500 端点（含 `PP_E_APPLICATION` 视图、`x_program_field.sort_order`、`x_work.category` 等），`schema_diff.py` 对账脚本入库 | `backend/scripts/fi002_column_scan.py`、`backend/scripts/schema_diff.py`、`migrations/105–112` |
 | fresh-DB 500 端点收口台账 | 第三轮全量收口完成，台账存档于 `fakeToys/docs/plans/2026-10-26-fresh-db-500-closure-round.md`（F-1~F-8/FX-1 缺陷 + B-1~B-7 扫描器盲区，B 族全收口） | 该计划文档 |
 

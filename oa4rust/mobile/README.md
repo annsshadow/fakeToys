@@ -36,8 +36,8 @@ monorepo 的一个 workspace 成员（`apps/mobile`），与桌面端 `apps/desk
 - **H5 目标**：同源部署或经 dev-server 代理（`/api` → `http://localhost:3000`），
   请求携带 `withCredentials`，Cookie 鉴权直接可用。
 - **原生 / 小程序目标**：需 `setApiBase` 指向后端绝对地址（`import.meta.env.VITE_OA_API_BASE`）。
-  Cookie 会话在原生容器 / 小程序中不会自动跨域携带，须由后端提供配套的
-  令牌（token）鉴权通道后，在此传输层注入 `Authorization` 头。
+  Cookie 会话在原生容器 / 小程序中不会自动跨域携带。后端**已支持 Bearer 解析**（`shared/middleware/token.rs`），但签发与客户端 `Authorization` 注入未接线；属安全架构新需求，且这两端不是当前交付目标 ⇒ 已定性「不做」，见 `docs/oa4rust/09-maintenance.md` §7。
+  当前 H5 目标用 Cookie 即可，无需额外动作。
 
 ## 开发
 
