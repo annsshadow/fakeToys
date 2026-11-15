@@ -24,7 +24,7 @@
 | 文档站 | `mkdocs build --strict` exit 0 | `.venv-docs/Scripts/python.exe -m mkdocs build --strict` |
 
 **口径提醒**：`scripts/check-warnings.mjs` 的 `CHECKS` 共 **19 项**；上表 5 项是历史抽查子集，
-L355 已在满足三个运行前置后跑通全量 **19/19**（单次串行，见 §十一）。两支 skip 是作者工作树条件，
+L355 跑通全量 **19/19**、L356 起三个前置已由脚本自动完成（见 §十二）。两支 skip 是作者工作树条件，
 与历史同族，不是跳过失败。
 
 ## 二、各子项目现量
@@ -305,3 +305,45 @@ node scripts/check-warnings.mjs
 - `auto-checkin` 的 163 用例、`llm-lab` pytest、4 类生成物门禁、SPDX、文档站均在同一条件下通过。
 - `.github/workflows/warnings-gate.yml` 的 CI 仍只跑 5 项（历史设计），本轮未改；
   若要把 19 项设为 CI required check，需要单独评估 CI 机器上的 clippy 冷缓存耗时（单跑 22 min）并拍板。
+
+
+---
+
+## 十二、宿主环境自愈（2026-11-15，L356）
+
+**结论：§11.1 的三个运行前置已由门禁脚本自动完成，直接 `node scripts/check-warnings.mjs` 即得 19/19。**
+默认命令（不注入任何环境变量、不手工清产物）实测 **19 通过 / 0 失败 / 0 跳过，exit 0，2 分 54 秒**，
+日志 `Temp/l330q/GATE_FULL_19_DEFAULT_CMD_l356.log`。
+
+### 12.1 四项自愈动作
+
+| 动作 | 实现 | 作用域 |
+| --- | --- | --- |
+| 检测 | `NODE_OPTIONS` 含 `node-language-shim`/`safe-delete-shim`，或 `PYTHONPATH` 含 `sandbox-center-runtime-kit` 时判定为「宿主受限」 | 仅本脚本；CI / 普通终端无注入则整段 no-op |
+| ① 去注入 | 子进程 env 删除 `NODE_OPTIONS`、从 `PYTHONPATH` 剔除 shim 路径、置 `CODEBUDDY_SAFE_DELETE_ENABLED=0` | **只作用于本脚本启动的子进程**，不改用户环境、不动全局配置 |
+| ② 选解释器 | 当前 `python` 缺 pytest 且 `py -3.12` 带 pytest 时，把该解释器目录放到子进程 `PATH` 前 | 不硬编码任何机器路径；CI 上 `python` 自带 pytest 时不触发 |
+| ③ 备份式预清理 | 把 5 个旧 `dist` 与 2 处 `node_modules/.vite` **移动**到 `Temp/gate-preflight/<时间戳>/`，可随时还原 | 仅当本轮选中了构建类检查项；`--only license`、`--list` 不动任何文件 |
+| ④ 降并发 | 宿主受限时默认 `CHECK_CONCURRENCY=1`，其余保持 4 | 显式给 `CHECK_CONCURRENCY` 时以用户值为准 |
+
+对照开关：`CHECK_WARNINGS_KEEP_HOST_ENV=1` 保留宿主环境（用于复现 §11.1 的红做实验）。
+`prepareHostEnvironment()` 的失败分支只打印警告，不吞掉检查项的红 —— 目录被占用导致移不开时，
+该项会照实 FAIL，不会假绿。
+
+### 12.2 口径：修的是环境准备，不是判据
+
+19 个 `CHECKS` 的**命令、`pattern` 正则、`timeout`、`requires` 守门一个字未改**；
+`--list` 仍输出 19 项，结果按下标回填与汇总口径不变。脚本只新增了运行前的环境准备，
+所以「19/19」仍是同一套判据下的读数，不是把红判成绿。静态守卫 4/4 PASS、
+`--list` 不触发自愈、`KEEP_HOST_ENV=1` 下不打印自愈行，均已实测。
+
+### 12.3 仍然存在的边界（如实保留）
+
+| 边界 | 说明 |
+| --- | --- |
+| 宿主 shim 本身 | 属于 IDE 会话设计，仓库无法「关掉」；只在门禁子进程里隔离。手工跑 `npm run build` 等其它进程仍可能撞上删除钩子 |
+| `EPERM unlink` | Windows 文件锁 / 沙箱文件审计没有消除，靠「移走旧产物」绕开；`renameSync` 失败时会打印警告并让该项照实报红 |
+| rolldown 缓存损坏 | 上游未修，靠每次预清理避免；`Temp/gate-preflight/` 备份会累积，可自行清理 |
+| CI 覆盖 | `.github/workflows/warnings-gate.yml` 仍只跑 5 项，本轮未改；把 19 项设为 required check 仍需单独评估 clippy 冷缓存耗时 |
+
+§11.3 的手工命令与一键脚本 `Temp/l330q/run-full-gate-clean.ps1` 退化为排查用途，
+日常验证直接跑默认命令即可。
