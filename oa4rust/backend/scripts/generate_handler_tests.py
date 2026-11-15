@@ -276,7 +276,15 @@ def get_pool_type(params: List[str]) -> str:
     """Determine which pool type to use based on handler params."""
     has_pool = any(re.search(r'Extension\s*<\s*Pool\s*>', p) for p in params)
     has_db = any('Extension<DatabaseConnection>' in p for p in params)
-    has_session = any(re.search(r'Extension\s*<[^>]*Session', p) for p in params)
+    # 只有「必需」的 Extension<Session...> 才无法构造：axum 在请求没注入时
+    # 会给 Option<Extension<...>> 一个 None，router 探针照样能跑。
+    # 旧版把可选 Session 也一刀切判成 session，使 100+ 条本可生成的路由
+    # 注册测试被写成 SKIPPED，并让产物与生成器逐字比对长期对不上（L354）。
+    has_session = any(
+        re.search(r'Extension\s*<[^>]*Session', p)
+        and not re.search(r'Option\s*<\s*Extension\s*<[^>]*Session', p)
+        for p in params
+    )
     
     if has_session:
         return 'session'

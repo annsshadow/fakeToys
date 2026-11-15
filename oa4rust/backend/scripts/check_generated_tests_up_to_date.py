@@ -32,11 +32,40 @@ def fail(msg):
     failures.append(msg)
 
 
+def verify_pool_type_rules():
+    """L354 判据回归自检：可选 Session 不得再被判成「必需 Session」。
+
+    旧版生成器把 Option<Extension<Session>> 也判成 session，直接把 handler
+    写成 SKIPPED，既丢测试又让产物/生成器长期对不上。这里把判据本身钉住，
+    避免只靠「重生成产物」把症状盖过去。
+    """
+    sys.path.insert(0, os.path.dirname(GENERATOR))
+    try:
+        import generate_handler_tests as generator
+    except Exception as e:
+        fail(f'无法导入生成器做判据自检：{e}')
+        return
+
+    optional = generator.get_pool_type(
+        ['session: Option<Extension<shared::session::Session>>'])
+    if optional == 'session':
+        fail('生成器判据退化：可选 Session 不应判成 session')
+    required = generator.get_pool_type(
+        ['session: Extension<shared::session::Session>'])
+    if required != 'session':
+        fail(f'生成器判据退化：必需 Session 应判 session，实得 {required!r}')
+    plain = generator.get_pool_type(['pool: Extension<Pool>'])
+    if plain != 'pool':
+        fail(f'生成器判据退化：普通 Pool 应判 pool，实得 {plain!r}')
+
+
 def rel(path):
     return os.path.relpath(path, BACKEND_DIR).replace('\\', '/')
 
 
 def main():
+    verify_pool_type_rules()
+
     if not os.path.isfile(GENERATOR):
         fail(f'生成器不存在：{rel(GENERATOR)}')
         return
