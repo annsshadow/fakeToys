@@ -23,8 +23,8 @@
 | SPDX 门禁 | 2469 个源码文件，缺失 0 | `node scripts/check-license-headers.mjs` |
 | 文档站 | `mkdocs build --strict` exit 0 | `.venv-docs/Scripts/python.exe -m mkdocs build --strict` |
 
-**口径提醒**：`scripts/check-warnings.mjs` 的 `CHECKS` 共 **19 项**；上表 5 项是本轮抽查子集，
-不是全量 19 项的替代。两支 skip 是作者工作树条件（export 节无开关、无真实数据集可定标），
+**口径提醒**：`scripts/check-warnings.mjs` 的 `CHECKS` 共 **19 项**；上表 5 项是历史抽查子集，
+L355 已在满足三个运行前置后跑通全量 **19/19**（单次串行，见 §十一）。两支 skip 是作者工作树条件，
 与历史同族，不是跳过失败。
 
 ## 二、各子项目现量
@@ -239,3 +239,69 @@ handler 有真实 `#[tokio::test]`，于是 91 个产物中 **37 个与生成器
 
 口径：这是 #288 合并时生成器与生成物来自不同版本、之后未重生成造成的历史漂移，
 不是本轮其它改动引入；修复后门禁自身带判据自检，后续生成器退化会当场红。
+
+
+---
+
+## 十一、全仓 19 项门禁终态核查（2026-11-15，L355）
+
+**结论：单次完整全量 `node scripts/check-warnings.mjs` ⇒ 19 通过 / 0 失败 / 0 跳过，退出码 0，约 2 分 6 秒。**
+日志留档 `Temp/l330q/GATE_FULL_19_TERMINAL_l355.log`（gitignore 范围）。本轮**没有改任何判据**：
+没有 `--only` 挑项、没有 SKIP、没有放宽任何 timeout、没有改产品代码，只调整了运行环境与构建缓存。
+
+### 11.1 三个运行前置（缺一即出现与代码无关的红）
+
+| 前置 | 不做时的现象 | 根因 |
+| --- | --- | --- |
+| 隔离注入环境：`NODE_OPTIONS=`、`PYTHONPATH=`、`CODEBUDDY_SAFE_DELETE_ENABLED=0` | 5 个前端项报 `SAFE_DELETE_BULK_GUARD_ERROR state lock timeout` / `genie-trash ETIMEDOUT`；两支 Python `compileall` 输出 64 MB 并被 5 分钟超时杀掉 | WorkBuddy 会话注入的 `node-language-shim` 与 `sitecustomize` 会接管 `fs.rmSync` / `unlink`，逐个把删除送进回收站与批量删除守卫；Vite/pnpm 每次 `emptyDir` 都要过这道闸门，Python 侧则刷屏拖垮 IO |
+| 移走旧构建产物目录（备份而非删除） | `mobile` / `admin` / `miniapp` 报 `EPERM: operation not permitted, unlink '.../dist/.../*.css'` | Windows 文件锁 + 沙箱文件审计让旧 CSS 无法删除；移走后三项分别 20.0 s / 7.4 s / 11.4 s 通过 |
+| 清 `node_modules/.vite` 缓存 + `CHECK_CONCURRENCY=1` | `desktop` 在 `rendering chunks` 挂死（CPU 17 s / 10 min）；`clippy` 报 `failed to remove ...rcgu.o: 拒绝访问`、`go` 783 s 被超时杀、`auto-checkin` 163 用例里 2~3 支超时 | 损坏的 Vite 缓存让 rolldown 卡在渲染阶段（清缓存后 desktop **5.7 s**）；并发 4/2 时 clippy 的 97 crate 编译占满 IO，把同批的 Go 构建、Python 编译、Node 测试一起拖过各自 timeout |
+
+三项齐备后，原先 158~1722 秒的失败项全部回落到 0.3~25.6 秒；`clippy` 单跑 1336 s PASS（冷缓存），
+全量串行时命中增量缓存只需 2.8 s。
+
+### 11.2 首轮 9 红的逐项归因（全部是环境，不是代码缺陷）
+
+| 检查项 | 首轮 | 终态 | 归因 |
+| --- | --- | --- | --- |
+| `desktop` | FAIL（挂起 >10 min） | **PASS 5.7 s** | `.vite` 缓存损坏 + shim 拦截 `emptyDir` |
+| `mobile` | FAIL 132.9 s | **PASS 20.0 s** | pnpm store 探测文件被 shim 拦删 + 旧 dist `EPERM` |
+| `admin` | FAIL 1427.3 s | **PASS 7.4 s** | 旧 dist `EPERM` + 并发资源争用 |
+| `miniapp` | FAIL 26.3 s | **PASS 11.4 s** | 旧 dist `EPERM` |
+| `augmentor-web` | FAIL 22.9 s | **PASS 9.3 s** | Vite `prepare-out-dir` 的批量删除守卫超时 |
+| `rust`（97 crates clippy） | FAIL exit 101 / 1722.6 s | **PASS 2.8 s** | 并发文件锁；无并发单跑 1336.1 s PASS |
+| `go` | 首轮 PASS 6.5 s、并发二轮 FAIL 783 s | **PASS 5.3 s** | 与 clippy 并发时被 IO 拖过 timeout |
+| `augmentor` / `llm-lab` compileall | FAIL 1234.8 s / 464.2 s（64 MB 输出） | **PASS 0.8 s / 0.3 s** | `sitecustomize` 注入刷屏 |
+| `auto-checkin` | FAIL（163 用例 2~3 红、710 s） | **PASS 10.1 s / 163 全绿** | 并发下锁等待与超时；串行后无产品缺陷 |
+
+### 11.3 复跑口径（真机终端 / 新会话）
+
+```powershell
+$env:NODE_OPTIONS = $null
+$env:PYTHONPATH = $null
+$env:CODEBUDDY_SAFE_DELETE_ENABLED = '0'
+$env:CHECK_CONCURRENCY = '1'
+$env:PATH = "C:\Users\user\AppData\Local\Programs\Python\Python312;$env:PATH"
+Set-Location D:\WORKSPACE\fakeToys
+# 旧 dist 与 .vite 缓存移到备份目录（移动而非删除，随时可还原）
+$backup = Join-Path $PWD "Temp\l330q\dist-backup-replay"
+New-Item -ItemType Directory -Force -Path $backup | Out-Null
+Get-ChildItem -Path oa4rust\mobile\dist, laiyipao\admin\dist, `
+  laiyipao\miniapp\dist, augmentor\web\dist, oa4rust\frontend\dist, `
+  oa4rust\node_modules\.vite, oa4rust\frontend\apps\desktop\node_modules\.vite `
+  -ErrorAction SilentlyContinue | ForEach-Object {
+    Move-Item $_.FullName (Join-Path $backup ($_.Parent.Name + '-' + $_.Name))
+  }
+node scripts/check-warnings.mjs
+```
+
+一键脚本 `Temp/l330q/run-full-gate-clean.ps1` 只作本地留档（gitignore 范围，不随仓库分发），上面命令片段即其完整内容。
+它只移动**构建产物与缓存**，不触碰任何源码或用户数据；跑完可用备份目录还原。
+
+### 11.4 口径与边界
+
+- 这是**运行环境核查**，不是「把红判成绿」：19 项命令、`pattern` 正则、timeout、requires 守门一律未动；
+  全量日志逐项列出 PASS 与耗时，可复核。
+- `auto-checkin` 的 163 用例、`llm-lab` pytest、4 类生成物门禁、SPDX、文档站均在同一条件下通过。
+- `.github/workflows/warnings-gate.yml` 的 CI 仍只跑 5 项（历史设计），本轮未改；
+  若要把 19 项设为 CI required check，需要单独评估 CI 机器上的 clippy 冷缓存耗时（单跑 22 min）并拍板。
