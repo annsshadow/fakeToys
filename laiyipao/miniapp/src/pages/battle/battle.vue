@@ -10,7 +10,7 @@
     />
 
     <!-- 顶部信息层 -->
-    <view class="overlay-top safe-top" :style="{ paddingTop: statusBarPad }">
+    <view class="overlay-top" :style="{ paddingTop: statusBarPad }">
       <view class="hp-box">
         <text class="hp-label">防线</text>
         <text class="hp-value mono">{{ hpText }}</text>
@@ -73,7 +73,7 @@
     </view>
 
     <!-- 选牌界面（I-2） -->
-    <view v-if="showCards" class="card-overlay">
+    <view v-if="showCards" class="sheet">
       <view class="card-header">
         <text class="card-title">这一波给你 3 张卡，点一张就装备上</text>
         <text class="card-hint">
@@ -106,7 +106,7 @@
     </view>
 
     <!-- 结算界面 -->
-    <view v-if="settleResult" class="card-overlay">
+    <view v-if="settleResult" class="sheet">
       <text class="result-title">{{ settleResult.win ? '通关' : '防线失守' }}</text>
       <view class="stars-big">
         <text
@@ -150,7 +150,7 @@
     </view>
 
     <!-- 启动失败提示 -->
-    <view v-if="startError" class="card-overlay">
+    <view v-if="startError" class="sheet">
       <text class="result-title" style="color: var(--bad)">无法开始战斗</text>
       <text class="muted">{{ startError }}</text>
       <view class="btn" style="margin-top: 24rpx" @click="backToStage">返回</view>
@@ -973,7 +973,7 @@ onShareAppMessage(() =>
   border-radius: 8rpx;
   background: rgba(255, 209, 61, 0.2);
   color: #ffd33d;
-  font-size: 20rpx;
+  font-size: 24rpx;
   text-align: center;
 }
 
@@ -993,14 +993,14 @@ onShareAppMessage(() =>
 }
 
 .speed-chip {
-  /* 24rpx ≈ 12px 字号 + 上下 6rpx 内边距 → 触控高度约 34rpx，
-     比「放弃」按钮略小，避免遮挡画面中央的战场 */
-  padding: 4rpx 12rpx;
+  /* 24rpx 字号 + 上下 8rpx 内边距 → 触控高度约 40rpx；
+     仍比「放弃」按钮小，避免遮挡画面中央的战场 */
+  padding: 8rpx 14rpx;
   border-radius: 8rpx;
   border: 1rpx solid var(--border);
   background: rgba(0, 0, 0, 0.45);
   color: var(--muted);
-  font-size: 20rpx;
+  font-size: 24rpx;
   line-height: 1.4;
 }
 
@@ -1031,7 +1031,7 @@ onShareAppMessage(() =>
 }
 
 .hp-label {
-  font-size: 20rpx;
+  font-size: 24rpx;
   color: var(--muted);
 }
 
@@ -1060,12 +1060,12 @@ onShareAppMessage(() =>
 
 .wave-text,
 .kill-text {
-  font-size: 22rpx;
+  font-size: 26rpx;
   color: var(--muted);
   display: block;
 }
 
-.card-overlay {
+.sheet {
   position: absolute;
   left: 0;
   right: 0;
@@ -1074,17 +1074,6 @@ onShareAppMessage(() =>
   border-top: 1rpx solid var(--border);
   padding: 28rpx 24rpx 40rpx;
   animation: fade-in-up 0.25s ease-out;
-}
-
-.debug-tag {
-  position: absolute;
-  top: 120rpx;
-  left: 24rpx;
-  font-size: 18rpx;
-  color: var(--dim);
-  background: rgba(0, 0, 0, 0.4);
-  padding: 4rpx 10rpx;
-  border-radius: 6rpx;
 }
 
 .card-header {
@@ -1137,7 +1126,7 @@ onShareAppMessage(() =>
 }
 
 .hand-kind {
-  font-size: 18rpx;
+  font-size: 22rpx;
   color: var(--muted);
 }
 
@@ -1148,7 +1137,7 @@ onShareAppMessage(() =>
 }
 
 .hand-descr {
-  font-size: 20rpx;
+  font-size: 22rpx;
   color: var(--muted);
   line-height: 1.5;
   flex: 1;
@@ -1226,7 +1215,7 @@ onShareAppMessage(() =>
 .hash-note {
   display: block;
   text-align: center;
-  font-size: 18rpx;
+  font-size: 22rpx;
   color: var(--dim);
   font-variant-numeric: tabular-nums;
 }

@@ -22,7 +22,7 @@
         <text class="muted" style="display: block; margin-bottom: 12rpx">
           数值与描述直接来自服务端 /config。共 {{ ownedCount }} 颗已拥有。
         </text>
-        <view v-for="g in filteredGems" :key="g.id" class="gem">
+        <view v-for="g in filteredGems" :key="g.id" class="rxn gem">
           <view class="rxn-head">
             <text class="rxn-name">{{ g.name }}</text>
             <text class="dim">{{ attrLabel(g.attr) }}</text>
@@ -109,25 +109,5 @@ onShow(() => {
 </script>
 
 <style scoped>
-.gem {
-  border-top: 1rpx solid var(--border, #eee);
-  padding: 16rpx 0;
-}
-
-/* 图鉴搜索（2026-11-01 新一轮第 75 轮） */
-.search-inp {
-  display: block;
-  height: 72rpx;
-  padding: 0 20rpx;
-  margin-bottom: 12rpx;
-  background: var(--panel-2, #f5f6f7);
-  border: 1rpx solid var(--border, #eee);
-  border-radius: 12rpx;
-  font-size: 26rpx;
-  color: var(--text, #222);
-}
-
-.ph {
-  color: var(--dim, #9aa0a6);
-}
+/* 条目分隔线走共享的 .rxn（styles/common.css），本页无需额外样式 */
 </style>

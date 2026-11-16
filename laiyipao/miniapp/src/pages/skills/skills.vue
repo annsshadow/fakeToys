@@ -23,7 +23,7 @@
           数值直接来自服务端 /config，与游戏内实际生效的一致。
           {{ ownedCount }} / {{ skills.length }} 个已解锁（背包可查看拥有状态）。
         </text>
-        <view v-for="s in filteredSkills" :key="s.id" class="skill">
+        <view v-for="s in filteredSkills" :key="s.id" class="rxn skill">
           <view class="rxn-head">
             <text class="rxn-name">{{ s.name }}</text>
             <text class="tag" :class="'tag-' + s.element">{{ elementName(s.element) }}</text>
@@ -105,25 +105,5 @@ function elementName(e: Element): string {
 </script>
 
 <style scoped>
-.skill {
-  border-top: 1rpx solid var(--border, #eee);
-  padding: 16rpx 0;
-}
-
-/* 图鉴搜索（2026-11-01 新一轮第 71 轮） */
-.search-inp {
-  display: block;
-  height: 72rpx;
-  padding: 0 20rpx;
-  margin-bottom: 12rpx;
-  background: var(--panel-2, #f5f6f7);
-  border: 1rpx solid var(--border, #eee);
-  border-radius: 12rpx;
-  font-size: 26rpx;
-  color: var(--text, #222);
-}
-
-.ph {
-  color: var(--dim, #9aa0a6);
-}
+/* 条目分隔线走共享的 .rxn（styles/common.css），本页无需额外样式 */
 </style>

@@ -1,8 +1,11 @@
 <template>
-  <view class="page-root safe-top" :style="{ paddingTop: statusBarPad }">
-    <view class="pad safe-bottom" style="padding-top: 100rpx">
+  <view class="page-root" :style="{ paddingTop: statusBarPad }">
+    <view class="pad safe-bottom">
       <view class="card">
         <view class="row" style="gap: 20rpx">
+          <!-- 返回入口（2026-11-16）：本页是自定义导航（无系统返回栏），
+               此前只能靠浏览器后退 / 系统手势返回。栈底（直接打开本页）时不显示。 -->
+          <text v-if="canGoBack" class="back-btn tap" @click="goBack">‹ 返回</text>
           <view class="avatar">炮</view>
           <view class="flex-1">
             <!-- 昵称 + 改名入口（2026-10-30 实质优化第 9 轮）。
@@ -58,7 +61,7 @@
         </view>
       </view>
 
-      <view class="card">
+      <view v-show="meTab === 'main'" class="card">
         <text class="card-title">资源</text>
         <view class="res-grid">
           <view class="res-cell">
@@ -87,8 +90,23 @@
         </text>
       </view>
 
+      <!--
+        页签（2026-11-16）：本页此前 14 个卡片纵排（1532 行），「记录」类卡片
+        （挑战/被挑战/战报/购买/兑换/订单）占了近一半，却与账号主体无关。
+        拆成两个页签；用 `v-show` 保留全部 DOM，数据加载与测试断言不受影响。
+      -->
+      <view class="chip-row me-tabs">
+        <text
+          v-for="t in meTabDefs"
+          :key="t.key"
+          class="chip tap"
+          :class="{ hit: meTab === t.key }"
+          @click="meTab = t.key"
+        >{{ t.label }}</text>
+      </view>
+
       <!-- 设置：战斗音效开关（2026-11-01 新一轮第 79 轮） -->
-      <view class="card">
+      <view v-show="meTab === 'main'" class="card">
         <text class="card-title">设置</text>
         <view class="row" style="justify-content: space-between; align-items: center">
           <text>战斗音效</text>
@@ -102,7 +120,7 @@
       <!-- 离线收益（2026-10-31 新一轮第 7 轮）。
            offline_rewards 表与 OFFLINE_CAP_HOURS 配置存在已久，
            但一直没有玩家入口 —— 这里补上「挂机收益领取」。 -->
-      <view v-if="offlineReward" class="card">
+      <view v-if="offlineReward" v-show="meTab === 'main'" class="card">
         <text class="card-title">离线收益</text>
         <view class="row" style="justify-content: space-between; align-items: center">
           <view class="flex-1">
@@ -124,7 +142,7 @@
         </view>
       </view>
 
-      <view class="card">
+      <view v-show="meTab === 'main'" class="card">
         <text class="card-title">进度</text>
         <view class="kv"><text class="muted">最高关卡</text><text class="mono">第 {{ store.maxStage || 1 }} 关</text></view>
         <view class="kv"><text class="muted">战力</text><text class="mono">{{ store.power }}</text></view>
@@ -142,7 +160,7 @@
         </text>
       </view>
 
-      <view class="card">
+      <view v-show="meTab === 'main'" class="card">
         <text class="card-title">防线值守</text>
         <text class="muted" style="display: block; margin-bottom: 16rpx">
           你的构筑会被固化成防线快照，其他玩家挑战它时会用<b>同一套引擎在他们的设备上本地模拟</b>，
@@ -193,7 +211,7 @@
         </view>
       </view>
 
-      <view v-if="candidates.length" class="card">
+      <view v-if="candidates.length" v-show="meTab === 'main'" class="card">
         <text class="card-title">可挑战的防线</text>
         <text class="dim" style="display: block; margin-bottom: 12rpx">
           挑战在<b>你的设备上本地模拟</b>：用你的构筑攻对方快照，战斗数据不上传。
@@ -229,6 +247,7 @@
 
       <view
         v-if="lastChallenge"
+        v-show="meTab === 'main'"
         class="card"
         :style="{ borderColor: lastChallenge.won ? 'var(--ok)' : 'var(--bad)' }"
       >
@@ -270,7 +289,7 @@
 
       <!-- 挑战历史（2026-10-30 实质优化第 18 轮）。
            此前玩家只能看到最近一次挑战结果，历史记录没有入口。 -->
-      <view v-if="challengeHistory.length" class="card">
+      <view v-if="challengeHistory.length" v-show="meTab === 'records'" class="card">
         <text class="card-title">挑战历史</text>
         <view
           v-for="h in challengeHistory"
@@ -294,7 +313,7 @@
 
       <!-- 被挑战记录（2026-10-31 新一轮第 3 轮）。
            此前只有挑战者能看历史，防守方不知道谁攻过自己的防线。 -->
-      <view v-if="defenseChallengeHistory.length" class="card">
+      <view v-if="defenseChallengeHistory.length" v-show="meTab === 'records'" class="card">
         <text class="card-title">被挑战记录</text>
         <view
           v-for="h in defenseChallengeHistory"
@@ -318,7 +337,7 @@
 
       <!-- 最近战报（2026-10-30 实质优化第 19 轮）。
            玩家打完关卡后没有任何历史战报入口。 -->
-      <view v-if="battleHistory.length" class="card">
+      <view v-if="battleHistory.length" v-show="meTab === 'records'" class="card">
         <text class="card-title">最近战报</text>
         <view v-for="b in battleHistory" :key="b.id" class="ch-row">
           <view class="flex-1" style="min-width: 0">
@@ -351,7 +370,7 @@
 
       <!-- 购买记录（2026-10-30 实质优化第 20 轮）。
            玩家每次商城购买都落库，但没有任何入口查看历史。 -->
-      <view v-if="purchaseHistory.length" class="card">
+      <view v-if="purchaseHistory.length" v-show="meTab === 'records'" class="card">
         <text class="card-title">购买记录</text>
         <view v-for="p in purchaseHistory" :key="p.id" class="ch-row">
           <view class="flex-1 row" style="gap: 8rpx; min-width: 0">
@@ -364,7 +383,7 @@
 
       <!-- 兑换记录（2026-10-30 实质优化第 21 轮）。
            玩家每次兑换都落库，但没有任何历史入口。 -->
-      <view v-if="redemptionHistory.length" class="card">
+      <view v-if="redemptionHistory.length" v-show="meTab === 'records'" class="card">
         <text class="card-title">兑换记录</text>
         <view v-for="r in redemptionHistory" :key="r.id" class="ch-row">
           <view class="flex-1 row" style="gap: 8rpx; min-width: 0">
@@ -377,7 +396,7 @@
 
       <!-- 订单记录（2026-10-31 实质优化第 27 轮）。
            支付订单（mock provider）此前玩家端没有任何入口。 -->
-      <view v-if="orderHistory.length" class="card">
+      <view v-if="orderHistory.length" v-show="meTab === 'records'" class="card">
         <text class="card-title">订单记录</text>
         <view v-for="o in orderHistory" :key="o.id" class="ch-row">
           <view class="flex-1" style="min-width: 0">
@@ -594,6 +613,38 @@ function schedulePending(fn: () => void, ms: number): void {
 
 /** 顶部让开状态栏（2026-10-21 P6-2）。 */
 const { statusBarPad } = useStatusBarPad()
+
+/**
+ * 返回入口（2026-11-16）。
+ *
+ * `getCurrentPages()` 是 uni-app 的页面栈：长度 > 1 说明是从别的页面
+ * navigateTo 过来的，返回有意义；直接打开 / 刷新后栈长 1，返回无目标 ——
+ * 此时**不渲染**按钮，而不是渲染一个点了没反应的按钮。
+ */
+const canGoBack = (() => {
+  try {
+    return getCurrentPages().length > 1
+  } catch {
+    return false
+  }
+})()
+
+function goBack(): void {
+  uni.navigateBack({ delta: 1 })
+}
+
+/**
+ * 「我的」页签（2026-11-16）。
+ * main = 账号 / 资源 / 设置 / 防线（原首屏），records = 六类历史流水。
+ * 默认 main，玩家进入本页的第一眼内容不变。
+ */
+type MeTab = 'main' | 'records'
+const meTab = ref<MeTab>('main')
+const meTabDefs: Array<{ key: MeTab; label: string }> = [
+  { key: 'main', label: '账号与防线' },
+  { key: 'records', label: '记录' },
+]
+
 const myDefense = ref<DefenseView | null>(null)
 const candidates = ref<DefenseView[]>([])
 const attackLeft = ref(3)
@@ -1354,11 +1405,26 @@ onUnload(() => {
 </script>
 
 <style scoped>
+.me-tabs {
+  margin-bottom: 4rpx;
+}
+
+.back-btn {
+  flex-shrink: 0;
+  min-height: 56rpx;
+  padding: 8rpx 14rpx 8rpx 0;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  color: var(--accent);
+  font-size: var(--fs-sm);
+}
+
 .avatar {
   width: 96rpx;
   height: 96rpx;
   border-radius: 20rpx;
-  background: linear-gradient(135deg, #ff6b35, #ff3d71);
+  background: var(--accent-grad);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1373,21 +1439,7 @@ onUnload(() => {
 }
 
 /* 修改密码表单的输入框（与 login.vue 同款外观）。 */
-.inp {
-  display: block;
-  height: 80rpx;
-  padding: 0 20rpx;
-  margin-bottom: 16rpx;
-  background: var(--panel-2);
-  border: 1rpx solid var(--border);
-  border-radius: 12rpx;
-  font-size: 26rpx;
-  color: var(--text);
-}
 
-.ph {
-  color: var(--dim);
-}
 
 .pwd-form {
   margin-bottom: 8rpx;
@@ -1408,19 +1460,8 @@ onUnload(() => {
   border-bottom: none;
 }
 
-.ellipsis {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
 /* 昵称编辑：链接样式的「改名」入口。 */
-.link {
-  text-decoration: underline;
-  color: var(--ice);
-  font-size: 24rpx;
-  padding: 4rpx 0;
-}
 
 .nick-edit-row {
   display: flex;
@@ -1475,21 +1516,11 @@ onUnload(() => {
 }
 
 .res-note {
-  font-size: 18rpx;
+  font-size: 22rpx;
   color: var(--dim);
 }
 
-.kv {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  padding: 10rpx 0;
-  font-size: 24rpx;
-}
 
-.hash {
-  font-size: 20rpx;
-}
 
 .def-box {
   background: var(--panel-2);

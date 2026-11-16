@@ -8,8 +8,24 @@
       <view v-else-if="allSkills.length === 0" class="card">
         <text class="muted">还没有可用技能</text>
       </view>
+
+      <!--
+        页签（2026-11-16）：9 个卡片此前全部纵排在一页（1091 行），滚动成本极高。
+        拆成 4 个页签，用 `v-show` 而不是 `v-if` —— DOM 全部保留，
+        数据加载、测试断言（wrapper.text()）与交互触发都不受影响。
+        「合成配方」卡与「熔炼」卡渲染同一份 recipes，前者删除（信息重复）。
+      -->
+      <view v-if="!loading && allSkills.length" class="chip-row bag-tabs">
+        <text
+          v-for="t in bagTabDefs"
+          :key="t.key"
+          class="chip tap"
+          :class="{ hit: bagTab === t.key }"
+          @click="bagTab = t.key"
+        >{{ t.label }}</text>
+      </view>
       <!-- 技能槽配置 -->
-      <view class="card">
+      <view v-show="bagTab === 'skills'" class="card">
         <text class="card-title">出战技能（最多 4 个主动槽）</text>
         <text class="muted" style="display: block; margin-bottom: 16rpx">
           技能携带的元素决定你能打出哪些反应链。凑齐 2 种以上元素才能触发大部分反应。
@@ -38,7 +54,7 @@
       <!-- 熔炼：两个已拥有的材料技能 → 高阶技能。
            材料会被消耗；等级门槛由服务端判定（产物 unlock_level 30..62）。
            未集齐材料的配方**不给按钮**（约束 19：不给假按钮）。 -->
-      <view v-if="recipes.length" class="card">
+      <view v-if="recipes.length" v-show="bagTab === 'skills'" class="card">
         <text class="card-title">熔炼</text>
         <text class="muted" style="display: block; margin-bottom: 16rpx">
           两个材料技能熔炼成高阶技能，材料会被消耗。
@@ -66,7 +82,7 @@
       </view>
 
       <!-- 技能列表 -->
-      <view class="card">
+      <view v-show="bagTab === 'skills'" class="card">
         <text class="card-title">技能库</text>
         <text class="muted" style="display: block; margin-bottom: 16rpx">
           等级只提升**伤害**，不影响热量与冷却。
@@ -118,7 +134,7 @@
       </view>
 
       <!-- 装备 -->
-      <view class="card">
+      <view v-show="bagTab === 'gear'" class="card">
         <text class="card-title">装备</text>
         <text class="muted" style="display: block; margin-bottom: 16rpx">
           装备提供**护甲**（减漏怪造成的伤害）与**通用增益**。
@@ -176,7 +192,7 @@
       </view>
 
       <!-- 宝石 -->
-      <view class="card">
+      <view v-show="bagTab === 'gems'" class="card">
         <text class="card-title">宝石</text>
         <view class="gem-row">
           <view v-for="g in gems" :key="g.id" class="gem-chip">
@@ -250,7 +266,7 @@
       <!-- 阵型预设（第 49 轮）：L-3 死表接活后的客户端入口。
            保存当前构筑为预设（技能/装备/宝石快照），一键应用——
            应用时依次走既有的服务端写端点（出战槽/装备整组替换/宝石先卸后戴）。 -->
-      <view class="card">
+      <view v-show="bagTab === 'skills'" class="card">
         <text class="card-title">阵型预设</text>
         <text class="muted" style="display: block; margin-bottom: 12rpx">
           保存当前出战技能、装备与佩戴宝石为一套配装，之后一键切换。
@@ -298,24 +314,11 @@
         </view>
       </view>
 
-      <!-- 合成配方（第 150 轮）：recipes 此前从不下发到客户端，
-           玩家看到「合成技能」却完全不知道它由哪两个技能合成。
-           配方是内容表的一部分，缺了它就是一个悬空的词条。 -->
-      <view v-if="recipes.length" class="card">
-        <text class="card-title">合成配方</text>
-        <text class="muted" style="display: block; margin-bottom: 12rpx">
-          合成技能由两个基础技能组合而来；配方来自服务端，与实际可合成的组合逐字一致。
-        </text>
-        <view v-for="r in recipes" :key="r.output" class="recipe-row">
-          <text class="dim">{{ skillNameOf(r.a) }} + {{ skillNameOf(r.b) }}</text>
-          <text class="dim">→</text>
-          <text class="skill-name">{{ skillNameOf(r.output) }}</text>
-          <text class="dim">T{{ r.out_tier }}</text>
-        </view>
-      </view>
+      <!-- 「合成配方」卡已删（2026-11-16）：与「熔炼」卡渲染同一份 recipes，信息重复。
+           配方说明保留在「熔炼」卡的引导文案里。 -->
 
       <!-- 皮肤（第 150 轮） -->
-      <view v-if="skins.length" class="card">
+      <view v-if="skins.length" v-show="bagTab === 'more'" class="card">
         <text class="card-title">皮肤</text>
         <text class="muted" style="display: block; margin-bottom: 12rpx">
           皮肤是**机制词条**而非数值加成。
@@ -332,7 +335,7 @@
       </view>
 
       <!-- 道具（第 150 轮）：/wallet 的 tokens 首次有了消费方。 -->
-      <view class="card">
+      <view v-show="bagTab === 'more'" class="card">
         <text class="card-title">道具</text>
         <view v-for="t in tokenRows" :key="t.kind" class="equip-row">
           <view class="flex-1">
@@ -359,6 +362,20 @@ import type { SkillDef } from '@/game/types'
 /** 加载中（2026-10-21 P6-1）。 */
 const loading = ref(false)
 const store = useGameStore()
+
+/**
+ * 背包页签（2026-11-16）。默认页签 = 原首屏内容（出战技能），
+ * 避免改变玩家进入背包后的第一动作。
+ */
+type BagTab = 'skills' | 'gear' | 'gems' | 'more'
+const bagTab = ref<BagTab>('skills')
+const bagTabDefs: Array<{ key: BagTab; label: string }> = [
+  { key: 'skills', label: '技能' },
+  { key: 'gear', label: '装备' },
+  { key: 'gems', label: '宝石' },
+  { key: 'more', label: '皮肤与道具' },
+]
+
 const selected = ref<number[]>([0, 0, 0, 0])
 /** 保存中：保存期间禁用操作，避免连点产生竞态 */
 const saving = ref(false)
@@ -964,6 +981,10 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.bag-tabs {
+  margin-bottom: 4rpx;
+}
+
 .preset-save-row {
   display: flex;
   flex-direction: row;
@@ -1040,13 +1061,12 @@ onMounted(async () => {
   margin-left: 16rpx;
 }
 
-.link {
-  font-size: 24rpx;
-  color: var(--fire);
-  padding: 8rpx 20rpx;
-  border-radius: 8rpx;
-  background: rgba(255, 107, 53, 0.12);
-}
+/*
+ * 这里以前有一份 `.link` 定义（橙底胶囊），而「我的」页里有另一份
+ * （蓝色下划线）—— 同一个类名两种外观，玩家无法判断哪个能点。
+ * 现在 `.link` 统一在 styles/common.css 里（主色文字 + 足够大的点击盒）。
+ * 需要「看起来像按钮」的操作改用 `.chip-btn`。
+ */
 
 .equip-row {
   display: flex;

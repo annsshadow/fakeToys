@@ -462,7 +462,7 @@ onMounted(() => {
   position: absolute;
   top: 6rpx;
   right: 8rpx;
-  font-size: 16rpx;
+  font-size: 22rpx;
   color: var(--fire);
 }
 
@@ -477,7 +477,7 @@ onMounted(() => {
 }
 
 .star {
-  font-size: 18rpx;
+  font-size: 20rpx;
   color: var(--warn);
 }
 

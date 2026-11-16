@@ -291,34 +291,9 @@ onUnload(() => {
 </script>
 
 <style scoped>
-.inp {
-  flex: 1;
-  height: 72rpx;
-  background: var(--panel-2);
-  border: 1rpx solid var(--border);
-  border-radius: 10rpx;
-  padding: 0 20rpx;
-  font-size: 26rpx;
-  color: var(--text);
-}
 
-.ph {
-  color: var(--dim);
-}
 
-.kv {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  padding: 8rpx 0;
-  font-size: 24rpx;
-  gap: 16rpx;
-}
 
-.hash {
-  font-size: 20rpx;
-  text-align: right;
-}
 
 .verdict-box {
   border-radius: 10rpx;

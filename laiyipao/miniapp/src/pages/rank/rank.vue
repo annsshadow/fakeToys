@@ -94,7 +94,8 @@ const curDesc = computed(() => {
 })
 
 function formatScore(v: number): string {
-  if (curType.value === 'efficiency') return String(v)
+  // 2026-11-16：删掉同值死分支 —— 两个分支返回的都是 String(v)，
+  // 「效率榜将来会格式化」的意图用这条注释保留，真需要时再写。
   return String(v)
 }
 
@@ -215,9 +216,10 @@ onMounted(async () => {
   font-weight: 700;
 }
 
-.rank-no.no-1 { color: #ffd700; }
-.rank-no.no-2 { color: #c0c0c0; }
-.rank-no.no-3 { color: #cd7f32; }
+/* 名次色走主题令牌（common.css 的 --rank-*），不要在页面里写死 */
+.rank-no.no-1 { color: var(--rank-gold); }
+.rank-no.no-2 { color: var(--rank-silver); }
+.rank-no.no-3 { color: var(--rank-bronze); }
 
 .rank-name {
   font-size: 26rpx;

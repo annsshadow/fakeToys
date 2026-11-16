@@ -1,33 +1,37 @@
 ﻿<template>
-  <view class="page">
-    <view class="wallet-bar">
-      <text class="dim">钻石 {{ wallet.gem ?? 0 }} · 金币 {{ wallet.coin ?? 0 }} · 体力 {{ wallet.energy ?? 0 }}</text>
-    </view>
+  <!-- 2026-11-16：之前根节点是全项目未定义的 `.page`，也没有 `.pad` / `.safe-bottom`
+       —— 商城成了唯一左右贴边、底部压 Home indicator 的页面。 -->
+  <view class="page-root">
+    <view class="pad safe-bottom">
+      <view class="wallet-bar">
+        <text class="dim">钻石 {{ wallet.gem ?? 0 }} · 金币 {{ wallet.coin ?? 0 }} · 体力 {{ wallet.energy ?? 0 }}</text>
+      </view>
 
-    <view v-for="g in groups" :key="g.key">
-      <text class="card-title">{{ g.label }}</text>
-      <view v-for="it in g.items" :key="it.id" class="shop-row">
-        <view class="flex-1">
-          <text class="skill-name">{{ it.name }}</text>
-          <text class="dim" style="display: block">{{ priceText(it) }}</text>
-          <!-- 每日限购进度（2026-11-01 新一轮第 49 轮） -->
-          <text v-if="purchaseProgressText(it)" class="dim">{{ purchaseProgressText(it) }}</text>
-        </view>
-        <view class="skill-act">
-          <text v-if="buyingId === it.id" class="dim">购买中…</text>
-          <text
-            v-else
-            class="link"
-            :class="{ disabled: soldOut(it) }"
-            @click="doBuy(it)"
-          >{{ soldOut(it) ? '已售罄' : '购买' }}</text>
+      <view v-for="g in groups" :key="g.key" class="card">
+        <text class="card-title">{{ g.label }}</text>
+        <view v-for="it in g.items" :key="it.id" class="shop-row">
+          <view class="flex-1">
+            <text class="skill-name">{{ it.name }}</text>
+            <text class="dim block">{{ priceText(it) }}</text>
+            <!-- 每日限购进度（2026-11-01 新一轮第 49 轮） -->
+            <text v-if="purchaseProgressText(it)" class="dim">{{ purchaseProgressText(it) }}</text>
+          </view>
+          <view class="skill-act">
+            <text v-if="buyingId === it.id" class="dim">购买中…</text>
+            <text
+              v-else
+              class="link"
+              :class="{ 'is-disabled': soldOut(it) }"
+              @click="doBuy(it)"
+            >{{ soldOut(it) ? '已售罄' : '购买' }}</text>
+          </view>
         </view>
       </view>
-    </view>
 
-    <text v-if="loading" class="dim">加载中…</text>
-    <text v-else-if="loadError" class="dim">加载失败：{{ loadError }}</text>
-    <text v-else-if="items.length === 0" class="dim">商城暂无可售商品。</text>
+      <view v-if="loading" class="card"><text class="muted">加载中…</text></view>
+      <view v-else-if="loadError" class="card"><text class="muted">加载失败：{{ loadError }}</text></view>
+      <view v-else-if="items.length === 0" class="card"><text class="muted">商城暂无可售商品。</text></view>
+    </view>
   </view>
 </template>
 
@@ -217,15 +221,23 @@ onMounted(async () => {
 
 <style scoped>
 .wallet-bar {
-  padding: 24rpx 0 8rpx;
+  padding: 0 0 12rpx;
 }
 .shop-row {
   display: flex;
   align-items: center;
   padding: 20rpx 0;
-  border-bottom: 1rpx solid #1c2430;
+  border-bottom: 1rpx solid var(--border-soft);
 }
-.disabled {
-  color: #55606e;
+.shop-row:last-child {
+  border-bottom: none;
+}
+.skill-name {
+  font-size: var(--fs-md);
+  font-weight: 600;
+}
+.skill-act {
+  flex-shrink: 0;
+  margin-left: 16rpx;
 }
 </style>

@@ -287,10 +287,6 @@ onMounted(async () => {
   margin-top: 16rpx;
 }
 
-.link-off {
-  color: var(--muted) !important;
-  pointer-events: none;
-}
 
 .layer {
   margin-bottom: 28rpx;
@@ -337,7 +333,7 @@ onMounted(async () => {
 }
 
 .node-name {
-  font-size: 20rpx;
+  font-size: 22rpx;
   text-align: center;
 }
 

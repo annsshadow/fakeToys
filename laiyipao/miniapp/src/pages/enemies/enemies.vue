@@ -23,7 +23,7 @@
           数值直接来自服务端 /config，与游戏内实际生效的一致。
           抗性为千分比：正值减伤、负值易伤。
         </text>
-        <view v-for="en in filteredEnemies" :key="en.id" class="enemy">
+        <view v-for="en in filteredEnemies" :key="en.id" class="rxn enemy">
           <view class="rxn-head">
             <text class="rxn-name">{{ en.name }}</text>
             <text class="dim">{{ categoryLabel(en.category) }}</text>
@@ -111,25 +111,5 @@ function resistEntries(en: { resist?: Record<string, number> }): [string, number
 </script>
 
 <style scoped>
-.enemy {
-  border-top: 1rpx solid var(--border, #eee);
-  padding: 16rpx 0;
-}
-
-/* 图鉴搜索（2026-11-01 新一轮第 70 轮） */
-.search-inp {
-  display: block;
-  height: 72rpx;
-  padding: 0 20rpx;
-  margin-bottom: 12rpx;
-  background: var(--panel-2, #f5f6f7);
-  border: 1rpx solid var(--border, #eee);
-  border-radius: 12rpx;
-  font-size: 26rpx;
-  color: var(--text, #222);
-}
-
-.ph {
-  color: var(--dim, #9aa0a6);
-}
+/* 条目分隔线走共享的 .rxn（styles/common.css），本页无需额外样式 */
 </style>

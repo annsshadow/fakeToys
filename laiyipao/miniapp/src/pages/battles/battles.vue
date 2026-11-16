@@ -31,7 +31,7 @@
         <view
           v-for="it in items"
           :key="it.id"
-          class="battle-row"
+          class="battle-row tap"
           :class="{ expanded: expandedId === it.id }"
           @click="toggleDetail(it)"
         >
@@ -325,7 +325,7 @@ onMounted(async () => {
 
 .battle-stars {
   color: var(--warn);
-  font-size: 22rpx;
+  font-size: 24rpx;
 }
 
 .battle-score {
@@ -337,7 +337,7 @@ onMounted(async () => {
   flex-direction: row;
   justify-content: space-between;
   margin-top: 4rpx;
-  font-size: 22rpx;
+  font-size: 24rpx;
 }
 
 .battle-detail {
@@ -346,19 +346,7 @@ onMounted(async () => {
   border-top: 1rpx dashed var(--border);
 }
 
-.kv {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  gap: 16rpx;
-  padding: 6rpx 0;
-  font-size: 24rpx;
-}
 
-.hash {
-  font-size: 20rpx;
-  word-break: break-all;
-}
 
 /* 复制回放哈希（2026-11-01 新一轮第 87 轮） */
 .copy-hash-btn {

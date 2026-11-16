@@ -1,7 +1,7 @@
 ﻿<template>
   <view class="page-root home">
     <!-- 顶部资源栏 -->
-    <view class="topbar safe-top" :style="{ paddingTop: statusBarPad }">
+    <view class="topbar" :style="{ paddingTop: statusBarPad }">
       <view class="player">
         <view class="avatar">炮</view>
         <view class="player-info">
@@ -88,7 +88,7 @@
       </view>
 
       <!-- 主行动 -->
-      <view class="action-card" @click="goStage">
+      <view class="action-card tap" @click="goStage">
         <view class="flex-1">
           <text class="action-title">第 {{ store.unlockedLevel }} 关</text>
           <text class="action-sub">守住防线，清完全部波次</text>
@@ -96,11 +96,27 @@
         <text class="action-go">开始 ›</text>
       </view>
 
-      <!-- 功能入口 -->
-      <view class="grid">
-        <view v-for="m in menus" :key="m.path" class="grid-item" @click="go(m.path)">
-          <text class="grid-icon">{{ m.icon }}</text>
-          <text class="grid-label">{{ m.label }}</text>
+      <!-- 功能入口（2026-11-16 分组）：
+           15 个入口此前混在一个 3 列网格里，最后一行只有 3 个，右边缘空缺；
+           「图鉴」与「功能」两类语义不同的入口也无层级。
+           现在拆成「玩法」9 项 +「图鉴」6 项两组，每组都能被 3 整除，无残缺尾行。 -->
+      <view class="grid-group">
+        <text class="grid-group-title">玩法</text>
+        <view class="grid">
+          <view v-for="m in playMenus" :key="m.path" class="grid-item tap" @click="go(m.path)">
+            <text class="grid-icon">{{ m.icon }}</text>
+            <text class="grid-label">{{ m.label }}</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="grid-group">
+        <text class="grid-group-title">图鉴</text>
+        <view class="grid">
+          <view v-for="m in codexMenus" :key="m.path" class="grid-item tap" @click="go(m.path)">
+            <text class="grid-icon">{{ m.icon }}</text>
+            <text class="grid-label">{{ m.label }}</text>
+          </view>
         </view>
       </view>
 
@@ -196,31 +212,19 @@ const elements = ELEMENT_ORDER.map((k) => ({
   color: ELEMENT_COLOR[k],
 }))
 
-const menus = [
+/**
+ * 首页入口（2026-11-16 分组）。
+ *
+ * 拆成「玩法」（操作型：去打、去花、去领）与「图鉴」（查阅型：看数值、看说明）
+ * 两组。每组的条目数都能被 3 整除（9 / 6），3 列网格不再有残缺尾行。
+ */
+const playMenus = [
   { path: '/pages/stage/stage', label: '关卡', icon: '🎯' },
   { path: '/pages/bag/bag', label: '背包', icon: '🎒' },
   // 商城（第 151 轮）。此前三种道具唯一的发放途径就是商城，
   // 而这里没有入口 —— 服务端扣减逻辑齐全，玩家却拿不到道具。
   { path: '/pages/shop/shop', label: '商城', icon: '🛒' },
   { path: '/pages/mastery/mastery', label: '专精', icon: '🌲' },
-  // 反应图鉴（2026-10-21 P4-2/P4-3）：`/config.reactions` 与
-  // `reachableReactions` 此前**零 UI 消费** —— 玩家查不到「我能打出哪些反应」。
-  { path: '/pages/reactions/reactions', label: '反应', icon: '⚗️' },
-  // 敌人图鉴（2026-10-31 新一轮第 24 轮）：`/config.enemies` 的属性与
-  // 抗性此前零 UI 消费 —— 玩家无法在战斗前了解敌人。
-  { path: '/pages/enemies/enemies', label: '敌人', icon: '👾' },
-  // 技能图鉴（2026-10-31 新一轮第 25 轮）：`/config.skills` 的伤害/热量/
-  // 解锁等级此前只对已拥有技能可见 —— 未解锁技能全靠猜。
-  { path: '/pages/skills/skills', label: '技能', icon: '⚔️' },
-  // 装备图鉴（2026-10-31 新一轮第 26 轮）：`/config.equipment` 的护甲/加成/
-  // 解锁等级此前只对已拥有装备可见。
-  { path: '/pages/equipment/equipment', label: '装备', icon: '🛡️' },
-  // 宝石图鉴（2026-10-31 新一轮第 27 轮）：`/config.gems` 的 8 种宝石
-  // 此前只对已拥有实例可见。
-  { path: '/pages/gems/gems', label: '宝石', icon: '💎' },
-  // 皮肤图鉴（2026-10-31 新一轮第 35 轮）：`/config.skins` 的 6 款皮肤
-  // 定义此前零 UI 消费。
-  { path: '/pages/skins/skins', label: '皮肤', icon: '🎨' },
   { path: '/pages/signin/signin', label: '签到', icon: '📅' },
   // 我的战报（2026-11-01 新一轮第 41 轮）：`/me/battles` 端点早已存在，
   // 客户端却没有任何战报历史入口 —— 打完就再也找不到那一局的记录。
@@ -228,6 +232,19 @@ const menus = [
   { path: '/pages/rank/rank', label: '排行', icon: '🏆' },
   { path: '/pages/verify/verify', label: '验真', icon: '🔍' },
   { path: '/pages/me/me', label: '我的', icon: '👤' },
+]
+
+// 反应图鉴（2026-10-21 P4-2/P4-3）：`/config.reactions` 与
+// `reachableReactions` 此前**零 UI 消费** —— 玩家查不到「我能打出哪些反应」。
+// 敌人 / 技能 / 装备 / 宝石 / 皮肤图鉴同批（2026-10-31 新一轮第 24~35 轮），
+// 把 `/config` 下发但零消费的权威表逐个接上 UI。
+const codexMenus = [
+  { path: '/pages/reactions/reactions', label: '反应', icon: '⚗️' },
+  { path: '/pages/enemies/enemies', label: '敌人', icon: '👾' },
+  { path: '/pages/skills/skills', label: '技能', icon: '⚔️' },
+  { path: '/pages/equipment/equipment', label: '装备', icon: '🛡️' },
+  { path: '/pages/gems/gems', label: '宝石', icon: '💎' },
+  { path: '/pages/skins/skins', label: '皮肤', icon: '🎨' },
 ]
 
 /**
@@ -264,35 +281,35 @@ const dims = computed(() => {
       label: '元素覆盖',
       value: `${r?.element_coverage ?? 0}/5`,
       pct: ((r?.element_coverage ?? 0) / 5) * 100,
-      color: '#58a6ff',
+      color: 'var(--ice)',
       weight: wOf('element_coverage'),
     },
     {
       label: '反应链',
       value: `${r?.reaction_coverage ?? 0}/7`,
       pct: ((r?.reaction_coverage ?? 0) / 7) * 100,
-      color: '#7ee787',
+      color: 'var(--corrosion)',
       weight: wOf('reaction_coverage'),
     },
     {
       label: '专精投入',
       value: `${r?.mastery_done ?? 0}/8`,
       pct: ((r?.mastery_done ?? 0) / 8) * 100,
-      color: '#c9a7ff',
+      color: 'var(--kinetic)',
       weight: wOf('mastery_done'),
     },
     {
       label: '装备契合',
       value: `${r?.equipment_synergy ?? 0}/18`,
       pct: Math.min(100, ((r?.equipment_synergy ?? 0) / 18) * 100),
-      color: '#ffd33d',
+      color: 'var(--lightning)',
       weight: wOf('equipment_synergy'),
     },
     {
       label: '机制深度',
       value: `${r?.mechanic_depth ?? 0}/8`,
       pct: ((r?.mechanic_depth ?? 0) / 8) * 100,
-      color: '#ff7b72',
+      color: 'var(--bad)',
       weight: wOf('mechanic_depth'),
     },
   ].map((d) => ({
@@ -365,12 +382,10 @@ onShareAppMessage(() => indexShare())
 .topbar {
   position: sticky;
   top: 0;
-  z-index: 10;
-  top: 0;
   left: 0;
   right: 0;
   z-index: 10;
-  background: #10151c;
+  background: var(--panel-2);
   border-bottom: 1rpx solid var(--border);
   padding: 20rpx 24rpx;
   display: flex;
@@ -390,7 +405,7 @@ onShareAppMessage(() => indexShare())
   width: 72rpx;
   height: 72rpx;
   border-radius: 16rpx;
-  background: linear-gradient(135deg, #ff6b35, #ff3d71);
+  background: var(--accent-grad);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -496,7 +511,7 @@ onShareAppMessage(() => indexShare())
   display: flex;
   flex-direction: row;
   align-items: center;
-  background: linear-gradient(135deg, #1f2a38, #16202b);
+  background: linear-gradient(135deg, var(--panel-3), var(--panel));
   border: 1rpx solid var(--border);
   border-radius: 16rpx;
   padding: 32rpx 28rpx;
@@ -522,16 +537,30 @@ onShareAppMessage(() => indexShare())
   font-weight: 600;
 }
 
+/* 分组标题（2026-11-16）：玩法 / 图鉴 两组入口 */
+.grid-group {
+  margin-bottom: 8rpx;
+}
+
+.grid-group-title {
+  display: block;
+  font-size: 24rpx;
+  color: var(--dim);
+  letter-spacing: 2rpx;
+  margin-bottom: 12rpx;
+}
+
 .grid {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  gap: 16rpx;
+  gap: 18rpx;
   margin-bottom: 20rpx;
 }
 
+/* 3 列网格：每组条目数是 3 的倍数，不再有残缺尾行 */
 .grid-item {
-  width: calc(25% - 12rpx);
+  width: calc(33.333% - 12rpx);
   background: var(--panel);
   border: 1rpx solid var(--border);
   border-radius: 16rpx;
@@ -541,14 +570,21 @@ onShareAppMessage(() => indexShare())
   align-items: center;
 }
 
+/* 图标固定盒子：emoji 在三端字形/基线不一，统一尺寸能消除大半参差感 */
 .grid-icon {
+  width: 64rpx;
+  height: 64rpx;
+  line-height: 1;
   font-size: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .grid-label {
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: var(--muted);
-  margin-top: 10rpx;
+  margin-top: 8rpx;
 }
 
 .elem-row {

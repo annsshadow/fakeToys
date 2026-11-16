@@ -313,7 +313,7 @@ onMounted(async () => {
 }
 
 .day-no {
-  font-size: 20rpx;
+  font-size: 22rpx;
   color: var(--muted);
 }
 
@@ -325,7 +325,7 @@ onMounted(async () => {
 
 .day-gem,
 .day-energy {
-  font-size: 18rpx;
+  font-size: 22rpx;
   color: var(--ok);
 }
 

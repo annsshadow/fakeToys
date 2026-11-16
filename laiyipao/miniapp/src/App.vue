@@ -17,10 +17,12 @@ onLaunch(() => {
 <style>
 @import './styles/common.css';
 
+/*
+ * 2026-11-16：删除这里与 common.css 重复的背景/文字/字体声明 ——
+ * 同一套主题之前定义了两次（`page` 一次、`.app-root` 一次），字体栈逐字重复。
+ * 主题真源在 styles/common.css；.app-root 只保留布局职责。
+ */
 .app-root {
-  background-color: #0d1117;
-  color: #e6edf3;
   min-height: 100vh;
-  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 </style>

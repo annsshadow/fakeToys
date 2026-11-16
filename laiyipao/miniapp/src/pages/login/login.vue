@@ -1,6 +1,6 @@
 <template>
   <view class="page-root">
-    <view class="pad safe-bottom" style="padding-top: 120rpx">
+    <view class="pad safe-bottom" :style="{ paddingTop: statusBarPad }">
       <view class="card">
         <view class="row" style="gap: 20rpx">
           <view class="avatar">炮</view>
@@ -90,8 +90,12 @@ import { onLoad } from '@dcloudio/uni-app'
 
 import { useGameStore } from '@/store/game'
 import { loadLastUsername } from '@/api/client'
+import { useStatusBarPad } from '@/utils/statusBar'
 
 const store = useGameStore()
+
+/** 本页是 `navigationStyle: custom`：顶部避让只走这一种机制（2026-11-16）。 */
+const { statusBarPad } = useStatusBarPad()
 
 const username = ref('')
 const password = ref('')
