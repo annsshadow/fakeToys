@@ -66,11 +66,6 @@ const loggingOut = ref(false)
  *   `<data-line>` / `<reading>` 这类无意义自定义元素。
  *   **也就是说侧边栏 10 个图标全是空的**，只有文字标签撑着。
  *
- * 之所以一直没人发现：`vue-tsc --noEmit` **不报**未解析组件，
- * 而 `tests/AdminLayout.test.ts` 又用一份**硬编码的图标名列表**
- * 注册了空壳替身（注释写「测试环境没有全局注册」）——
- * 那实际上把**产品缺陷**写成了「测试环境的限制」，测试因此永远绿。
- *
  * 改成组件引用后：名字写错就是**编译错误**，而不是运行时一个空元素。
  */
 interface NavItem {
@@ -99,14 +94,7 @@ const groups: Array<{ title: string; items: NavItem[] }> = [
       { path: '/admin/battles', title: '战斗记录与验真', icon: Aim },
       // 重算审计紧跟在战报页后面：两者回答的是同一个问题的两层 ——
       // 战报页看「这一局长什么样」，这一页看「重算认为它对不对、拒没拒」。
-      // 放在 `defenses` 之后会把它们拆开，而值班的人往往是从战报页
-      // 一路点到重算页的。
-      // 用 `Warning` 而不是复用 `Aim`：复用一个图标会让值班的人
-      // 在两个语义完全不同的地方找同一个入口。
       { path: '/admin/recomputes', title: '结算重算审计', icon: Warning },
-      // 原本写的是 `Shield`，而 @element-plus/icons-vue 的 293 个导出里
-      // **根本没有 Shield**（最接近的只有 Lock / AlarmClock）。
-      // 也就是说这一项即使在修好注册之后仍然是坏的 —— 换成了真实存在的 Lock。
       { path: '/admin/defenses', title: '防线值守', icon: Lock },
     ],
   },
@@ -126,7 +114,6 @@ const activePath = computed(() => route.path)
  *
  * 此前 `adminMe()` **从未被调用** —— 于是 `role` 从未被读取，
  * readonly 账号看得见全部写按钮，只有点下去吃一个 403 才知道自己不能写。
- * 那个 403 出现在**动作已经发生之后**（比如「已封禁」之后才发现没权限）。
  *
  * 现在布局在挂载时取一次身份，并把它挂到 `provide` 上，
  * 视图用 `useAdminRole()` 读。
@@ -186,7 +173,7 @@ onMounted(loadIdentity)
     <el-aside width="216px" class="sidebar" :class="{ 'aside-narrow': narrow }">
       <div class="brand">
         <div class="brand-mark">炮</div>
-        <div>
+        <div class="brand-text">
           <div class="brand-name">来一炮</div>
           <div class="brand-sub">运营后台</div>
         </div>
@@ -201,26 +188,28 @@ onMounted(loadIdentity)
             :to="item.path"
             class="nav-item"
             :class="{ active: activePath === item.path }"
+            :title="item.title"
           >
             <el-icon><component :is="item.icon" /></el-icon>
-            <span>{{ item.title }}</span>
+            <span class="nav-label">{{ item.title }}</span>
           </router-link>
         </div>
       </el-scrollbar>
 
       <div class="sidebar-foot">
-        <router-link to="/wiki" class="wiki-link">
+        <router-link to="/wiki" class="wiki-link" title="玩家玩法文档站">
           <el-icon><Reading /></el-icon>
-          <span>玩家玩法文档站</span>
+          <span class="nav-label">玩家玩法文档站</span>
         </router-link>
       </div>
     </el-aside>
 
-    <el-container>
+    <el-container class="shell-body">
       <el-header class="topbar">
         <div class="topbar-title">{{ currentTitle }}</div>
         <div class="topbar-right">
-          <el-tag type="info" size="small" effect="dark">API {{ apiLabel }}</el-tag>
+          <el-tag v-if="adminName" type="info" size="small" effect="plain">{{ adminName }}</el-tag>
+          <el-tag type="info" size="small" effect="dark" class="api-tag">API {{ apiLabel }}</el-tag>
           <el-button
             size="small"
             :loading="loggingOut"
@@ -244,28 +233,17 @@ onMounted(loadIdentity)
 </template>
 
 <style scoped>
-/*
- * 窄屏（2026-10-21 P6-11）。
- *
- * 之前侧栏是固定 216px，而项目里 0 个 `@media` ——
- * 375px 的手机上侧栏本身占 57% 宽度。
- */
-@media (max-width: 900px) {
-  .aside-narrow {
-    width: 64px !important;
-  }
-  .aside-narrow :deep(.el-menu) {
-    --el-menu-item-height: 48px;
-  }
-}
-
 .admin-shell {
   height: 100vh;
 }
 
+.shell-body {
+  min-width: 0;
+}
+
 .sidebar {
-  background: #10151c;
-  border-right: 1px solid var(--lyp-border);
+  background: var(--lyp-panel);
+  border-right: 1px solid var(--lyp-border-soft);
   display: flex;
   flex-direction: column;
 }
@@ -275,14 +253,16 @@ onMounted(loadIdentity)
   align-items: center;
   gap: 10px;
   padding: 16px 16px 14px;
-  border-bottom: 1px solid var(--lyp-border);
+  border-bottom: 1px solid var(--lyp-border-soft);
+  overflow: hidden;
 }
 
 .brand-mark {
+  flex: 0 0 auto;
   width: 34px;
   height: 34px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #ff6b35, #ff3d71);
+  border-radius: 9px;
+  background: var(--lyp-accent-grad);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -291,14 +271,20 @@ onMounted(loadIdentity)
   color: #fff;
 }
 
+.brand-text {
+  min-width: 0;
+}
+
 .brand-name {
   font-weight: 600;
   font-size: 15px;
+  white-space: nowrap;
 }
 
 .brand-sub {
   font-size: 11px;
   color: var(--lyp-muted);
+  white-space: nowrap;
 }
 
 .nav-scroll {
@@ -312,9 +298,10 @@ onMounted(loadIdentity)
 
 .nav-group-title {
   font-size: 11px;
-  color: #6e7681;
+  color: var(--lyp-dim);
   padding: 10px 16px 6px;
   letter-spacing: 1px;
+  white-space: nowrap;
 }
 
 .nav-item {
@@ -322,26 +309,38 @@ onMounted(loadIdentity)
   align-items: center;
   gap: 9px;
   padding: 9px 16px;
-  color: #adbac7;
+  color: var(--lyp-text-2);
   text-decoration: none;
   font-size: 13px;
   border-left: 2px solid transparent;
-  transition: all 0.15s;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.nav-item .el-icon {
+  flex: 0 0 auto;
+}
+
+.nav-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .nav-item:hover {
-  background: #1a2029;
+  background: var(--lyp-panel-2);
   color: var(--lyp-text);
 }
 
 .nav-item.active {
-  background: #1c2430;
+  background: var(--lyp-panel-3);
   color: #ff9d6b;
-  border-left-color: #ff6b35;
+  border-left-color: var(--lyp-accent);
 }
 
 .sidebar-foot {
-  border-top: 1px solid var(--lyp-border);
+  border-top: 1px solid var(--lyp-border-soft);
   padding: 10px 0;
 }
 
@@ -350,36 +349,108 @@ onMounted(loadIdentity)
   align-items: center;
   gap: 9px;
   padding: 9px 16px;
-  color: #adbac7;
+  color: var(--lyp-text-2);
   text-decoration: none;
   font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .wiki-link:hover {
   color: var(--lyp-text);
+  background: var(--lyp-panel-2);
 }
 
 .topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #10151c;
-  border-bottom: 1px solid var(--lyp-border);
+  gap: 12px;
+  background: var(--lyp-panel);
+  border-bottom: 1px solid var(--lyp-border-soft);
   height: 52px;
-}
-
-.logout-btn {
-  margin-left: 10px;
 }
 
 .topbar-title {
   font-size: 15px;
   font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.logout-btn {
+  margin-left: 2px;
 }
 
 .content {
-  padding: 20px;
+  padding: 20px 24px 40px;
   overflow-y: auto;
   background: var(--lyp-bg);
+  min-width: 0;
+}
+
+/*
+ * 窄屏（2026-10-21 P6-11，2026-11-16 修「只改宽度」）。
+ *
+ * 之前这里只把 aside 宽度改成 64px，**没隐藏文字** ——
+ * 于是每个导航项的文字在 64px 里逐字折行，一项高 87~122px，
+ * 品牌名高 60px，整条侧栏看起来像被压扁的竖排文本。
+ *
+ * 现在：文字全部隐藏、图标居中、行高固定 44px，并用 title 属性
+ * 保留鼠标悬停提示。
+ */
+@media (max-width: 900px) {
+  .aside-narrow {
+    width: 64px !important;
+  }
+  .aside-narrow .brand {
+    justify-content: center;
+    padding: 14px 0 12px;
+  }
+  .aside-narrow .brand-text,
+  .aside-narrow .nav-group-title,
+  .aside-narrow .nav-label {
+    display: none;
+  }
+  .aside-narrow .nav-item,
+  .aside-narrow .wiki-link {
+    justify-content: center;
+    height: 44px;
+    padding: 0;
+    gap: 0;
+  }
+  .aside-narrow .nav-item .el-icon,
+  .aside-narrow .wiki-link .el-icon {
+    font-size: 18px;
+  }
+  .content {
+    padding: 14px 12px 32px;
+  }
+  .topbar {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  /* API 标签在窄屏最不重要，让位给标题与登出 */
+  .api-tag {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .aside-narrow {
+    width: 52px !important;
+  }
+  .content {
+    padding: 10px 8px 28px;
+  }
 }
 </style>

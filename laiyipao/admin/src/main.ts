@@ -5,6 +5,14 @@ import { createPinia } from 'pinia'
 
 import App from './App.vue'
 import { router } from './router'
+
+// ⚠️ 必须先于 main.css 引入：Element Plus 的深色变量定义在
+// `html.dark` 下，而 main.css 要在它之后把品牌色板映射回 `--el-*`。
+// 顺序颠倒时，dark 包的默认灰会盖掉品牌色。
+//
+// 为什么需要它：后台页面一直是深色（`--lyp-bg: #0d1117`），但 Element Plus
+// 默认是浅色主题 —— 卡片/表格/输入框全是纯白，和深色底拼在一起割裂感很强。
+import 'element-plus/theme-chalk/dark/css-vars.css'
 import './styles/main.css'
 
 // ⚠️ 这里**不再** `app.use(ElementPlus)`。

@@ -337,7 +337,7 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
 </script>
 
 <template>
-  <div>
+  <div class="page">
     <!--
       重算档位（2026-10-21 P3-3）：此前它**不可读也不可改** ——
       运营知道有「档位」这回事，却看不到当前是哪个档、也切不了。
@@ -345,7 +345,7 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
       ⚠️ `mode` 与 `configured_mode` 不一致 = 被熔断降级了
       （此时 enforce 该拒发的奖励正在**放行**）—— 这是最该被看见的状态。
     -->
-    <el-card v-if="modeState" shadow="never" style="margin-bottom: 12px">
+    <el-card v-if="modeState" shadow="never" class="mb-2">
       <div class="toolbar">
         <span class="toolbar-label">重算档位</span>
         <el-tag
@@ -399,8 +399,7 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
       v-if="summary?.demoted"
       type="warning"
       show-icon
-      :closable="false"
-      style="margin-bottom: 12px"
+      :closable="false" class="mb-2"
       title="熔断已触发：引擎侧不再拒发奖励"
       :description="`配置档位是 ${summary.configured_mode}，但近 ${hours} 小时不符率超阈值后已自动降级为 ${summary.engine_mode}。本该拒发的上报正在被放行。原因：${summary.demoted_reason}。修复后需人工把 SETTLE_RECOMPUTE_MODE 改回 enforce —— 不会自动升档。 注意：熔断**只影响引擎侧**，S 段（replay_skills）照常拒发不符上报。`"
     />
@@ -415,17 +414,20 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
       v-if="engineAlertType"
       :type="engineAlertType === 'error' ? 'error' : 'warning'"
       show-icon
-      :closable="false"
-      style="margin-bottom: 12px"
+      :closable="false" class="mb-2"
       :title="engineAlertType === 'error' ? '重算从未成功：防护其实是死的' : '重算长期算不出来：被放行的理由不是没问题'"
       :description="`${engineStatus}。 verified=${summary?.engine?.verified ?? 0} / mismatch=${summary?.engine?.mismatch ?? 0} / cannot_run=${summary?.engine?.cannot_run ?? 0} / skipped=${summary?.engine?.skipped ?? 0}（从进程启动累计；settled_total=${summary?.engine?.settled_total ?? 0}）`"
     />
 
-    <div class="page-title">结算重算审计</div>
-    <p class="page-subtitle">
-      服务端重算与上报不符的记录。判读要点：<strong>不符集中在少数关卡</strong>说明引擎某段算错（回滚），
-      <strong>不符只来自一个号</strong>说明玩家在作弊（封号）—— 两者的处置完全相反，不要混为一谈。
-    </p>
+    <div class="page-header">
+      <div class="page-heading">
+        <div class="page-title">结算重算审计</div>
+      <p class="page-subtitle">
+        服务端重算与上报不符的记录。判读要点：<strong>不符集中在少数关卡</strong>说明引擎某段算错（回滚），
+        <strong>不符只来自一个号</strong>说明玩家在作弊（封号）—— 两者的处置完全相反，不要混为一谈。
+      </p>
+      </div>
+    </div>
 
     <el-card shadow="never" class="mb">
       <div class="toolbar">
@@ -657,23 +659,6 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
 .mb {
   margin-bottom: 12px;
 }
-.toolbar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-.toolbar-spacer {
-  flex: 1;
-}
-.muted {
-  color: var(--lyp-muted);
-  font-size: 12px;
-}
-.danger {
-  color: #ff6b35;
-  font-weight: 600;
-}
 .stat-row {
   display: flex;
   flex-wrap: wrap;
@@ -694,11 +679,5 @@ const asLevel = (r: unknown) => r as RecomputeLevelStat
 }
 .stat-note {
   font-size: 11px;
-}
-.section-title {
-  margin: 16px 0 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--lyp-muted);
 }
 </style>

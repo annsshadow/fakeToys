@@ -257,12 +257,16 @@ load()
 </script>
 
 <template>
-  <div v-loading="loading">
-    <div class="page-title">防线值守</div>
-    <p class="page-subtitle">
-      玩家把构筑固化成防线快照，其他玩家挑战它时<strong>在客户端用同一套引擎本地模拟</strong>，
-      胜者窃取 10% 资源。服务端不跑战斗引擎，因此不需要维护两套引擎保持同步。
-    </p>
+  <div class="page" v-loading="loading">
+    <div class="page-header">
+      <div class="page-heading">
+        <div class="page-title">防线值守</div>
+      <p class="page-subtitle">
+        玩家把构筑固化成防线快照，其他玩家挑战它时<strong>在客户端用同一套引擎本地模拟</strong>，
+        胜者窃取 10% 资源。服务端不跑战斗引擎，因此不需要维护两套引擎保持同步。
+      </p>
+      </div>
+    </div>
 
     <el-alert
       v-if="suspiciousRows.length > 0"
@@ -396,7 +400,7 @@ load()
 
     <!-- 防线挑战记录（2026-10-31 新一轮第 30 轮） -->
     <el-dialog v-model="challengeVisible" title="防线挑战记录" width="760px">
-      <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px">
+      <div class="row-wrap mb-1">
         <el-input-number
           v-model="challengeDefenseId"
           :controls="false"
@@ -470,22 +474,5 @@ load()
 </template>
 
 <style scoped>
-.toolbar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-.toolbar-spacer {
-  flex: 1;
-}
-.muted {
-  color: var(--lyp-muted);
-  font-size: 12px;
-}
-.hash {
-  font-family: ui-monospace, monospace;
-  font-size: 11px;
-  color: var(--lyp-muted);
-}
+/* 页内特有样式；toolbar / muted / hash 已收敛到 styles/main.css */
 </style>

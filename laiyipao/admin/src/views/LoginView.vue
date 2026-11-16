@@ -99,8 +99,7 @@ onMounted(async () => {
           type="error"
           :closable="false"
           show-icon
-          :title="errMsg"
-          style="margin-bottom: 12px"
+          :title="errMsg" class="mb-2"
         />
 
         <el-button type="primary" :loading="loading" style="width: 100%" @click="submit">
@@ -118,18 +117,20 @@ onMounted(async () => {
 
 <style scoped>
 .login-page {
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--lyp-bg);
+  padding: 24px 20px;
+  background: radial-gradient(1200px 600px at 50% -10%, #1a2330 0%, var(--lyp-bg) 60%);
 }
 .login-card {
-  width: 340px;
-  background: #10151c;
+  width: min(368px, 100%);
+  background: var(--lyp-panel);
   border: 1px solid var(--lyp-border);
-  border-radius: 10px;
-  padding: 26px;
+  border-radius: 14px;
+  padding: 28px 26px;
+  box-shadow: var(--lyp-shadow);
 }
 .brand {
   display: flex;
@@ -141,7 +142,7 @@ onMounted(async () => {
   width: 38px;
   height: 38px;
   border-radius: 9px;
-  background: linear-gradient(135deg, #ff6b35, #ff3d71);
+  background: var(--lyp-accent-grad);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -160,12 +161,12 @@ onMounted(async () => {
 .hint {
   margin: 16px 0 0;
   font-size: 11px;
-  color: #6e7681;
+  color: var(--lyp-dim);
   line-height: 1.7;
 }
 code {
   font-family: ui-monospace, monospace;
-  background: #1c2430;
+  background: var(--lyp-panel-2);
   padding: 1px 4px;
   border-radius: 3px;
 }

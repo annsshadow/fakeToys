@@ -69,13 +69,17 @@ onActivated(() => {
 </script>
 
 <template>
-  <div v-loading="loading">
-    <div class="page-title">装备 · 宝石 · 皮肤</div>
-    <p class="page-subtitle">
-      装备带元素标签。与技能<strong>同系</strong>给反应伤害大幅加成（<code>SynergySameFamilyPct=300</code>），
-      异系只给少量直接伤害（<code>SynergyOtherFamilyPct=100</code>）——
-      所以装备和技能必须成套配，单独堆装备收益很低。
-    </p>
+  <div class="page" v-loading="loading">
+    <div class="page-header">
+      <div class="page-heading">
+        <div class="page-title">装备 · 宝石 · 皮肤</div>
+      <p class="page-subtitle">
+        装备带元素标签。与技能<strong>同系</strong>给反应伤害大幅加成（<code>SynergySameFamilyPct=300</code>），
+        异系只给少量直接伤害（<code>SynergyOtherFamilyPct=100</code>）——
+        所以装备和技能必须成套配，单独堆装备收益很低。
+      </p>
+      </div>
+    </div>
 
     <el-tabs v-model="activeTab">
       <!-- 装备 -->
@@ -117,8 +121,7 @@ onActivated(() => {
           :closable="false"
           show-icon
           title="注意「元素石」"
-          description="元素石提高元素系数，而反应伤害与面板攻击力无关（攻击力在反应中的权重结构性 ≤30%）。因此元素石的收益普遍高于攻击力宝石 —— 若玩家反馈「宝石没感觉」，先检查元素石词条数值是否偏低。"
-          style="margin-bottom: 12px"
+          description="元素石提高元素系数，而反应伤害与面板攻击力无关（攻击力在反应中的权重结构性 ≤30%）。因此元素石的收益普遍高于攻击力宝石 —— 若玩家反馈「宝石没感觉」，先检查元素石词条数值是否偏低。" class="mb-2"
         />
         <el-table :data="gems" size="small" stripe>
           <el-table-column prop="id" label="ID" width="55" />
@@ -155,7 +158,7 @@ onActivated(() => {
 code {
   font-family: ui-monospace, monospace;
   font-size: 11px;
-  background: #1c2430;
+  background: var(--lyp-panel-2);
   padding: 1px 4px;
   border-radius: 3px;
 }

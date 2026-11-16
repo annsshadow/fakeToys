@@ -929,8 +929,7 @@ onUnmounted(() => {
             :closable="false"
             show-icon
             title="装备怎么生效"
-            description="装备提供护甲（减少漏怪造成的伤害）与通用攻击加成。**元素标签当前不参与任何结算** —— 按标签给加成的机制没有实现，所以这里不宣传它。一个部位同时只能装一件。"
-            style="margin-bottom: 12px"
+            description="装备提供护甲（减少漏怪造成的伤害）与通用攻击加成。**元素标签当前不参与任何结算** —— 按标签给加成的机制没有实现，所以这里不宣传它。一个部位同时只能装一件。" class="mb-2"
           />
           <el-table
             :data="cfg?.equipment ?? []"
@@ -1009,7 +1008,7 @@ onUnmounted(() => {
             血量＋护盾换算成分」加「全部击杀分」得出，
             所以<strong>打法不同不影响门槛，只有实际拿到的分影响</strong>。
           </p>
-          <el-table :data="starRatioRows" size="small" border style="margin-bottom: 8px">
+          <el-table :data="starRatioRows" size="small" border class="mb-1">
             <el-table-column prop="label" label="星级" width="100" />
             <el-table-column prop="v" label="占理论满分" width="140" />
             <template #empty>
@@ -1148,7 +1147,7 @@ onUnmounted(() => {
 code {
   font-family: ui-monospace, monospace;
   font-size: 11px;
-  background: #1c2430;
+  background: var(--lyp-panel-2);
   padding: 1px 4px;
   border-radius: 3px;
 }
@@ -1171,7 +1170,7 @@ h4 {
   padding: 8px 12px;
   border: 1px solid var(--lyp-border);
   border-radius: 6px;
-  background: #0b0f14;
+  background: var(--lyp-bg);
   color: var(--lyp-text);
   font-size: 13px;
   outline: none;
@@ -1216,7 +1215,7 @@ h4 {
   cursor: pointer;
 }
 .search-hit:hover {
-  background: #1c2430;
+  background: var(--lyp-panel-2);
 }
 
 .hit-kind {
@@ -1285,7 +1284,7 @@ h4 {
   cursor: pointer;
 }
 .nav-item:hover {
-  background: #1c2430;
+  background: var(--lyp-panel-2);
 }
 .nav-item.on {
   background: #1f6feb26;
@@ -1308,7 +1307,7 @@ h4 {
 }
 .nav-sub-item:hover {
   color: var(--lyp-text);
-  background: #1c2430;
+  background: var(--lyp-panel-2);
 }
 
 .wiki-main {
@@ -1351,7 +1350,7 @@ h4 {
   position: relative;
   flex: 1;
   height: 9px;
-  background: #1c2430;
+  background: var(--lyp-panel-2);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -1361,7 +1360,7 @@ h4 {
   top: 0;
   bottom: 0;
   width: 1px;
-  background: #30363d;
+  background: var(--lyp-border);
 }
 .resist-fill {
   position: absolute;
@@ -1402,9 +1401,25 @@ h4 {
 }
 .node {
   font-size: 11px;
-  background: #1c2430;
+  background: var(--lyp-panel-2);
   border-radius: 3px;
   padding: 2px 7px;
+}
+
+/* ---------- 表格：窄屏横向滚动，而不是被压扁 ---------- */
+
+.wiki-main :deep(.el-table) {
+  min-width: var(--wiki-table-min, 0);
+}
+
+@media (max-width: 900px) {
+  /* ⚠️ 与 AdminLayout 的表格策略一致：滚动发生在这一层，页面本身不横溢。
+     这里不用 `min-width` 撑宽表格（列本来就带 min-width，会自己撑开），
+     只负责给一个可滚动的容器。 */
+  .wiki-main :deep(.el-table__body-wrapper),
+  .wiki-main :deep(.el-scrollbar__wrap) {
+    overflow-x: auto;
+  }
 }
 
 /* ---------- 窄屏：目录变成顶部横向条 ---------- */

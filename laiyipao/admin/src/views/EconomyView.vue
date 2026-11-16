@@ -382,14 +382,18 @@ loadOrders()
 </script>
 
 <template>
-  <div v-loading="loading">
-    <div class="page-title">经济与商城</div>
-    <p class="page-subtitle">
-      货币<strong>净流入为正</strong>意味着在贬值。这与 I-1 的反通胀设计直接相关：
-      如果金币能靠刷战斗无限增长，「正确元素搭配」的优势就会被数值堆叠淹没。
-    </p>
+  <div class="page" v-loading="loading">
+    <div class="page-header">
+      <div class="page-heading">
+        <div class="page-title">经济与商城</div>
+      <p class="page-subtitle">
+        货币<strong>净流入为正</strong>意味着在贬值。这与 I-1 的反通胀设计直接相关：
+        如果金币能靠刷战斗无限增长，「正确元素搭配」的优势就会被数值堆叠淹没。
+      </p>
+      </div>
+    </div>
 
-    <el-row :gutter="12" style="margin-bottom: 12px">
+    <el-row :gutter="12" class="mb-2">
       <el-col v-for="cur in Object.keys(CURRENCY_LABEL)" :key="cur" :span="6">
         <el-card shadow="never">
           <div class="kpi-label">{{ CURRENCY_LABEL[cur] }}净流入</div>
@@ -435,7 +439,7 @@ loadOrders()
     </el-card>
 
     <!-- 订单明细（2026-10-31 实质优化第 33 轮） -->
-    <el-card shadow="never" header="支付订单" style="margin-top: 12px">
+    <el-card shadow="never" header="支付订单" class="mt-2">
       <div class="toolbar" style="margin-bottom: 8px">
         <!-- 订单筛选（2026-10-31 新一轮第 16 轮）：状态 + 日期范围 -->
         <el-select v-model="orderStatus" placeholder="全部状态" clearable style="width: 130px" @change="applyOrderFilter">
@@ -458,7 +462,7 @@ loadOrders()
           start-placeholder="创建开始日期"
           end-placeholder="创建结束日期"
           value-format="YYYY-MM-DD"
-          style="width: 260px; margin-left: 8px"
+          style="margin-left: 8px"
         />
         <el-button @click="applyOrderFilter">查询</el-button>
         <!-- 订单 CSV 导出（2026-11-01 新一轮第 40 轮） -->
@@ -519,7 +523,7 @@ loadOrders()
       />
     </el-card>
 
-    <el-card shadow="never" header="商城商品" style="margin-top: 12px">
+    <el-card shadow="never" header="商城商品" class="mt-2">
       <el-table :data="shop" size="small" stripe>
         <el-table-column label="ID" width="100">
           <!-- 复制商品 ID（2026-11-01 新一轮第 97 轮）：运营工单/排查 -->
@@ -595,16 +599,3 @@ loadOrders()
   </div>
 </template>
 
-<style scoped>
-.kpi-label {
-  font-size: 12px;
-  color: var(--lyp-muted);
-}
-.kpi-value {
-  margin: 6px 0 4px;
-}
-.kpi-sub {
-  font-size: 12px;
-  color: #6e7681;
-}
-</style>

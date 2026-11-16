@@ -189,12 +189,16 @@ const asRow = (r: unknown) => r as AdminSkillView
 </script>
 
 <template>
-  <div v-loading="loading">
-    <div class="page-title">技能与合成配方</div>
-    <p class="page-subtitle">
-      <strong>热量效率</strong>是 I-2 的平衡核心：玩家总热量预算只有 100 点。
-      效率（每点热量换到的 DPS）过低的技能会让玩家在"想用"与"用得起"之间反复挫败。
-    </p>
+  <div class="page" v-loading="loading">
+    <div class="page-header">
+      <div class="page-heading">
+        <div class="page-title">技能与合成配方</div>
+      <p class="page-subtitle">
+        <strong>热量效率</strong>是 I-2 的平衡核心：玩家总热量预算只有 100 点。
+        效率（每点热量换到的 DPS）过低的技能会让玩家在"想用"与"用得起"之间反复挫败。
+      </p>
+      </div>
+    </div>
 
     <el-card shadow="never">
       <div class="toolbar">
@@ -259,7 +263,7 @@ const asRow = (r: unknown) => r as AdminSkillView
 </el-table>
     </el-card>
 
-    <el-card shadow="never" header="合成配方" style="margin-top: 12px">
+    <el-card shadow="never" header="合成配方" class="mt-2">
       <div class="recipe-grid">
         <div v-for="(r, i) in recipes" :key="i" class="recipe">
           {{ recipeText(r) }}
@@ -295,20 +299,6 @@ const asRow = (r: unknown) => r as AdminSkillView
 </template>
 
 <style scoped>
-.toolbar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
-}
-.toolbar-spacer {
-  flex: 1;
-}
-.muted {
-  color: var(--lyp-muted);
-  font-size: 12px;
-}
 .elem {
   font-weight: 600;
 }

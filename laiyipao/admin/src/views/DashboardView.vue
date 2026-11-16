@@ -188,12 +188,16 @@ load()
 </script>
 
 <template>
-  <div v-loading="loading">
-    <div class="page-title">数据看板</div>
-    <p class="page-subtitle">
-      重点关注两件事：<strong>反应使用分布</strong>（验证 I-1 元素机制是否真的被使用，而不是玩家全在堆数值）
-      与<strong>验真一致率</strong>（I-6 可复现分数的完整性）
-    </p>
+  <div class="page" v-loading="loading">
+    <div class="page-header">
+      <div class="page-heading">
+        <div class="page-title">数据看板</div>
+      <p class="page-subtitle">
+        重点关注两件事：<strong>反应使用分布</strong>（验证 I-1 元素机制是否真的被使用，而不是玩家全在堆数值）
+        与<strong>验真一致率</strong>（I-6 可复现分数的完整性）
+      </p>
+      </div>
+    </div>
 
     <el-alert
       v-if="loadError"
@@ -201,12 +205,11 @@ load()
       :closable="false"
       show-icon
       :title="`后端不可达：${loadError}`"
-      description="请先启动 server（go run ./cmd/api）并确认已执行数据库迁移。"
-      style="margin-bottom: 16px"
+      description="请先启动 server（go run ./cmd/api）并确认已执行数据库迁移。" class="mb-3"
     />
 
     <template v-if="data">
-      <el-row :gutter="12" style="margin-bottom: 12px">
+      <el-row :gutter="12" class="mb-2">
         <el-col :span="6" :xs="24" :sm="12" :md="6">
           <el-card shadow="never">
             <div class="kpi-label">注册用户</div>
@@ -247,7 +250,7 @@ load()
         </el-col>
       </el-row>
 
-      <el-row :gutter="12" style="margin-bottom: 12px">
+      <el-row :gutter="12" class="mb-2">
         <el-col :span="6" :xs="24" :sm="12" :md="6">
           <el-card shadow="never">
             <div class="kpi-label">金币流入 / 流出</div>
@@ -305,26 +308,10 @@ load()
         </el-col>
       </el-row>
 
-      <el-card shadow="never" header="关卡漏斗（前 30 关）" style="margin-top: 12px">
+      <el-card shadow="never" header="关卡漏斗（前 30 关）" class="mt-2">
         <div ref="funnelRef" style="height: 260px" />
       </el-card>
     </template>
   </div>
 </template>
 
-<style scoped>
-.kpi-label {
-  font-size: 12px;
-  color: var(--lyp-muted);
-}
-.kpi-value {
-  font-size: 26px;
-  font-weight: 600;
-  margin: 6px 0 4px;
-  font-variant-numeric: tabular-nums;
-}
-.kpi-sub {
-  font-size: 12px;
-  color: #6e7681;
-}
-</style>

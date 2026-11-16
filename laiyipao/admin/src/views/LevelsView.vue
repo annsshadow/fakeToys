@@ -317,18 +317,22 @@ const asRow = (r: unknown) => r as AdminLevelView
 </script>
 
 <template>
-  <div v-loading="loading">
-    <div class="page-title">关卡配置</div>
-    <p class="page-subtitle">
-      100 关由种子化生成器产出，<strong>难度必须全局单调</strong>（1000‰ → 4200‰）。
-      若出现断崖，说明生成器的章节边界算错了 —— 这会让玩家在某一关突然卡死。
-    </p>
-    <p class="page-subtitle">
-      <strong>注意：本页的编辑只写 `levels` 表（规划记录），不影响线上玩家。</strong>
-      玩家侧关卡由生成器按种子产出（`domain.GenerateLevel`），从不查库 ——
-      回执里 `applied_to_players` 恒为 false 就是这个意思。
-      要让改动真正生效，需要产品决策改走「表权威」路线（已知边界第 23 条）。
-    </p>
+  <div class="page" v-loading="loading">
+    <div class="page-header">
+      <div class="page-heading">
+        <div class="page-title">关卡配置</div>
+      <p class="page-subtitle">
+        100 关由种子化生成器产出，<strong>难度必须全局单调</strong>（1000‰ → 4200‰）。
+        若出现断崖，说明生成器的章节边界算错了 —— 这会让玩家在某一关突然卡死。
+      </p>
+      <p class="page-subtitle">
+        <strong>注意：本页的编辑只写 `levels` 表（规划记录），不影响线上玩家。</strong>
+        玩家侧关卡由生成器按种子产出（`domain.GenerateLevel`），从不查库 ——
+        回执里 `applied_to_players` 恒为 false 就是这个意思。
+        要让改动真正生效，需要产品决策改走「表权威」路线（已知边界第 23 条）。
+      </p>
+      </div>
+    </div>
 
     <el-card shadow="never">
       <div class="toolbar">
@@ -436,8 +440,7 @@ const asRow = (r: unknown) => r as AdminLevelView
         :closable="false"
         show-icon
         title="这些修改记录在规划表里，不影响线上玩家"
-        description="玩家侧的关卡由生成器产出（第 23 条产品决策）。后台改的值不会立刻生效 —— 那是「已生效」与「已记录」的区别。"
-        style="margin-bottom: 8px"
+        description="玩家侧的关卡由生成器产出（第 23 条产品决策）。后台改的值不会立刻生效 —— 那是「已生效」与「已记录」的区别。" class="mb-1"
       />
       <template #footer>
         <el-button @click="editOpen = false">取消</el-button>
@@ -460,16 +463,5 @@ const asRow = (r: unknown) => r as AdminLevelView
 </template>
 
 <style scoped>
-.toolbar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-.toolbar-spacer {
-  flex: 1;
-}
-.muted {
-  color: var(--lyp-muted);
-}
+/* 页内特有样式；toolbar / muted 已收敛到 styles/main.css */
 </style>

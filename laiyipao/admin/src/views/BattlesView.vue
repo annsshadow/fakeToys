@@ -303,13 +303,17 @@ const asRow = (r: unknown) => r as AdminBattleView
 </script>
 
 <template>
-  <div v-loading="loading">
-    <div class="page-title">战斗记录与验真</div>
-    <p class="page-subtitle">
-      每条记录的 <code>replay_hash</code> 都是可复现凭证：拿 <code>battle_id</code> 换回种子后本地重放，
-      算出的哈希不一致即证明分数被篡改。这里<strong>不重放</strong>（重放要跑完整引擎），
-      只做结构化审查与快速异常标记。
-    </p>
+  <div class="page" v-loading="loading">
+    <div class="page-header">
+      <div class="page-heading">
+        <div class="page-title">战斗记录与验真</div>
+      <p class="page-subtitle">
+        每条记录的 <code>replay_hash</code> 都是可复现凭证：拿 <code>battle_id</code> 换回种子后本地重放，
+        算出的哈希不一致即证明分数被篡改。这里<strong>不重放</strong>（重放要跑完整引擎），
+        只做结构化审查与快速异常标记。
+      </p>
+      </div>
+    </div>
 
     <el-card shadow="never">
       <div class="toolbar">
@@ -350,7 +354,7 @@ const asRow = (r: unknown) => r as AdminBattleView
           start-placeholder="开始日期"
           end-placeholder="结束日期"
           value-format="YYYY-MM-DD"
-          style="width: 260px; margin-left: 12px"
+          style="margin-left: 12px"
         />
         <el-checkbox v-model="onlyMismatched" style="margin-left: 12px">
           只看验真不匹配
@@ -483,8 +487,7 @@ const asRow = (r: unknown) => r as AdminBattleView
         <el-alert
           type="info"
           :closable="false"
-          show-icon
-          style="margin-bottom: 8px"
+          show-icon class="mb-1"
           title="本后台不重放：需要你在能跑引擎的地方用种子重放，把算出的哈希贴到下面。"
           description="该比对防的是「改了数据却没改凭证」。若上报方本身就是伪造的客户端，它可以报一个相同的哈希让结果「一致」。"
         />
@@ -544,33 +547,6 @@ const asRow = (r: unknown) => r as AdminBattleView
 </template>
 
 <style scoped>
-.toolbar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-.toolbar-spacer {
-  flex: 1;
-}
-.muted {
-  color: var(--lyp-muted);
-  font-size: 12px;
-}
-.danger {
-  color: #ff6b35;
-  font-weight: 600;
-}
-.hash {
-  font-family: ui-monospace, monospace;
-  font-size: 12px;
-}
-.section-title {
-  margin: 18px 0 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--lyp-muted);
-}
 /* 验真区：种子 + 粘贴框 + 结果同一行的阅读节奏 */
 .verify-row {
   display: flex;
@@ -585,7 +561,7 @@ const asRow = (r: unknown) => r as AdminBattleView
 }
 .chip {
   font-size: 12px;
-  background: #1c2430;
+  background: var(--lyp-panel-2);
   border-radius: 4px;
   padding: 3px 8px;
 }

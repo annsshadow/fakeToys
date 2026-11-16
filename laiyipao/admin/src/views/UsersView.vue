@@ -501,12 +501,16 @@ const asRow = (r: unknown) => r as AdminUserView
 </script>
 
 <template>
-  <div v-loading="loading">
-    <div class="page-title">用户管理</div>
-    <p class="page-subtitle">
-      全部改动（封禁 / 发资源）都会写入审计日志。
-      「战力高但停在第 1 关」是需要人工看一眼的信号 —— 分数正确性由 I-6 哈希兜底，但资源异常仍要查。
-    </p>
+  <div class="page" v-loading="loading">
+    <div class="page-header">
+      <div class="page-heading">
+        <div class="page-title">用户管理</div>
+      <p class="page-subtitle">
+        全部改动（封禁 / 发资源）都会写入审计日志。
+        「战力高但停在第 1 关」是需要人工看一眼的信号 —— 分数正确性由 I-6 哈希兜底，但资源异常仍要查。
+      </p>
+      </div>
+    </div>
 
     <el-card shadow="never">
       <div class="toolbar">
@@ -538,7 +542,7 @@ const asRow = (r: unknown) => r as AdminUserView
           start-placeholder="注册开始日期"
           end-placeholder="注册结束日期"
           value-format="YYYY-MM-DD"
-          style="width: 260px; margin-left: 12px"
+          style="margin-left: 12px"
         />
         <!-- 最后登录时间范围（2026-11-01 新一轮第 46 轮）：查「最近活跃」的用户 -->
         <el-date-picker
@@ -548,12 +552,14 @@ const asRow = (r: unknown) => r as AdminUserView
           start-placeholder="最后登录开始"
           end-placeholder="最后登录结束"
           value-format="YYYY-MM-DD"
-          style="width: 240px; margin-left: 8px"
+          style="margin-left: 8px"
         />
         <span class="toolbar-spacer" />
-        <span class="muted">共 {{ total }} 名用户 · 第 {{ page }} / {{ pageCount }} 页</span>
-        <el-button size="small" :disabled="offset <= 0" @click="prevPage">上一页</el-button>
-        <el-button size="small" :disabled="!canGoNext(offset, limit, total)" @click="nextPage">下一页</el-button>
+        <span class="toolbar-group toolbar-group--end">
+          <span class="muted">共 {{ total }} 名用户 · 第 {{ page }} / {{ pageCount }} 页</span>
+          <el-button size="small" :disabled="offset <= 0" @click="prevPage">上一页</el-button>
+          <el-button size="small" :disabled="!canGoNext(offset, limit, total)" @click="nextPage">下一页</el-button>
+        </span>
       </div>
 
       <el-table :data="users" size="small" stripe>
@@ -767,32 +773,6 @@ const asRow = (r: unknown) => r as AdminUserView
 </template>
 
 <style scoped>
-.toolbar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-.toolbar-spacer {
-  flex: 1;
-}
-.muted {
-  color: var(--lyp-muted);
-  font-size: 12px;
-}
-
-.drawer-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-/* 钱包流水正负（2026-11-01 新一轮第 66 轮） */
-.flow-pos {
-  color: var(--lyp-ok, #67c23a);
-}
-
-.flow-neg {
-  color: var(--lyp-danger, #f56c6c);
-}
+/* 页内特有样式；toolbar / muted / drawer-actions / flow-pos / flow-neg
+   已收敛到 styles/main.css */
 </style>

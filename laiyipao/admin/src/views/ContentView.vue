@@ -740,11 +740,15 @@ loadAll()
 </script>
 
 <template>
-  <div v-loading="loading">
-    <div class="page-title">公告与兑换码</div>
-    <p class="page-subtitle">
-      兑换码是<strong>客服与内测</strong>的主要补偿通道。所有后台改动都会记入审计日志。
-    </p>
+  <div class="page" v-loading="loading">
+    <div class="page-header">
+      <div class="page-heading">
+        <div class="page-title">公告与兑换码</div>
+      <p class="page-subtitle">
+        兑换码是<strong>客服与内测</strong>的主要补偿通道。所有后台改动都会记入审计日志。
+      </p>
+      </div>
+    </div>
 
     <el-tabs v-model="activeTab">
       <!-- 公告 -->
@@ -773,7 +777,7 @@ loadAll()
           </el-col>
           <el-col :span="14" :xs="24" :sm="24" :md="14">
             <el-card shadow="never" header="已有公告">
-              <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px">
+              <div class="row-wrap mb-1">
                 <!-- 公告筛选（2026-10-31 新一轮第 21 轮） -->
                 <el-select v-model="annPublished" placeholder="发布状态" clearable style="width: 110px" @change="applyAnnFilter">
                   <el-option label="已发布" :value="true" />
@@ -862,7 +866,7 @@ loadAll()
 
         <!-- 公告玩家端预览（2026-11-01 新一轮第 54 轮） -->
         <el-dialog v-model="previewVisible" title="玩家端预览" width="520px">
-          <div style="border: 1rpx solid var(--el-border-color); border-radius: 8px; padding: 16px 20px">
+          <div style="border: 1px solid var(--el-border-color); border-radius: 8px; padding: 16px 20px">
             <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 16px">
               <strong>{{ annForm.title }}</strong>
               <span class="muted" style="font-size: 12px">
@@ -916,8 +920,8 @@ loadAll()
           </el-form>
         </el-card>
 
-        <el-card shadow="never" style="margin-top: 12px">
-          <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px">
+        <el-card shadow="never" class="mt-2">
+          <div class="row-wrap mb-1">
             <!-- 兑换码筛选（2026-10-31 新一轮第 20 轮） -->
             <el-input
               v-model="codeKeyword"
@@ -999,7 +1003,7 @@ loadAll()
 
         <!-- 兑换码使用记录（2026-10-31 新一轮第 17 轮） -->
         <el-dialog v-model="redeemUsageVisible" title="兑换码使用记录" width="720px">
-          <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px">
+          <div class="row-wrap mb-1">
             <!-- 使用记录筛选（2026-10-31 新一轮第 23 轮） -->
             <el-input
               v-model="redeemCodeKeyword"
@@ -1083,7 +1087,7 @@ loadAll()
       <!-- 审计日志 -->
       <el-tab-pane label="审计日志" name="logs">
         <el-card shadow="never">
-          <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px">
+          <div class="row-wrap mb-1">
             <!-- 审计筛选（2026-10-31 新一轮第 18 轮） -->
             <el-input
               v-model="logAction"
@@ -1231,8 +1235,8 @@ loadAll()
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8rpx 12rpx;
-  border-bottom: 1rpx solid var(--el-border-color-lighter);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
   font-size: 13px;
 }
 
