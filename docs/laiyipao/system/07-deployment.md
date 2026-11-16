@@ -7,6 +7,17 @@
 
 ---
 
+## 现量复核（2026-11-16）
+
+> 权威现量入口：`docs/ops/current-state.md`（2026-11-15 复核）。本分册历史正文保留不改；以下只记与现量不一致、已收口的部分。
+
+| 项 | 现量 | 依据 |
+|---|---|---|
+| 部署形态 | 本文 §4.3 仅 `build:h5`、nginx 仅托管 H5，与现量一致：laiyipao 只交付 H5，小程序端的构建脚本 / 平台段 / appid 占位符 / 部署章节已移除 | `docs/ops/current-state.md` §二 |
+| 测试读数 | `pnpm test` 现量 laiyipao H5 单测 **1264 passed / 2 skipped**，本文检查清单只写「全绿」不写数字，无需改动 | `docs/ops/current-state.md` §一 |
+
+---
+
 ## 1. 依赖与版本
 
 | 组件 | 版本 | 用途 |

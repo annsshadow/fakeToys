@@ -1,5 +1,16 @@
 # 运维手册
 
+---
+
+## 现量复核（2026-11-16）
+
+> 权威现量入口：`docs/ops/current-state.md`（2026-11-15 复核）。本分册历史正文保留不改；以下只记与现量不一致、已收口的部分。
+
+| 项 | 现量 | 依据 |
+|---|---|---|
+| §2「微信（未接通）」 | 该段为服务端既有代码说明，属实：`WECHAT_APP_ID` 未配时 `/auth/wechat` 返回 501。但客户端侧**微信登录通道已于 2026-11-14 随小程序端移除关闭**，本项目只交付 H5；这些环境变量不再作为交付前置，保留代码仅为不启用 | `KNOWN_LIMITS.md` 第 2 条、`docs/ops/current-state.md` §三 |
+| 交付形态 | 部署 / 构建只针对 H5（`build:h5`）；`build:mp-weixin` 脚本已删除，文中若仍列小程序构建步骤以本条为准 | `docs/ops/current-state.md` §二 |
+
 > 面向**部署与值班**。玩法设计见 [`GAME_DESIGN.md`](./GAME_DESIGN.md)，
 > 工程约束见 [`ENGINEERING.md`](./ENGINEERING.md)，已知边界见 [`KNOWN_LIMITS.md`](./KNOWN_LIMITS.md)。
 >
