@@ -742,6 +742,41 @@ describe('battle.vue 暂停（2026-10-23）', () => {
   })
 })
 
+describe('battle.vue 战场图例（2026-11-17）', () => {
+  it('帮助 chip 开合图例遮罩；图例覆盖热量/技能槽/全部反应名', async () => {
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+
+    expect(wrapper.find('.legend-overlay').exists()).toBe(false)
+    await wrapper.find('.help-chip').trigger('click')
+    expect(wrapper.find('.legend-overlay').exists()).toBe(true)
+    const legendText = wrapper.find('.legend-box').text()
+    // 三块核心解释必须都在：热量档位、技能槽读法、反应链（全部 7 条）
+    expect(legendText).toContain('热量条')
+    expect(legendText).toContain('技能槽')
+    expect(legendText).toContain('蒸汽爆发')
+    expect(legendText).toContain('破甲击退')
+    expect(legendText).toContain('腐蚀扩散')
+    // 点遮罩空白处关闭
+    await wrapper.find('.legend-overlay').trigger('click')
+    expect(wrapper.find('.legend-overlay').exists()).toBe(false)
+  })
+
+  it('图例关闭按钮与再点帮助 chip 都能收起', async () => {
+    const Battle = await loadPage()
+    const { wrapper } = mountPage(Battle)
+    await setupDone(wrapper)
+    await wrapper.find('.help-chip').trigger('click')
+    await wrapper.find('.legend-close').trigger('click')
+    expect(wrapper.find('.legend-overlay').exists()).toBe(false)
+    await wrapper.find('.help-chip').trigger('click')
+    expect(wrapper.find('.legend-overlay').exists()).toBe(true)
+    await wrapper.find('.help-chip').trigger('click')
+    expect(wrapper.find('.legend-overlay').exists()).toBe(false)
+  })
+})
+
 describe('battle.vue 音效接线（2026-10-23）', () => {
   // 映射规则由 audio/battle-sfx.test.ts 覆盖。这里只守一件更基础的事：
   // 页面**真的把事件交给了音效层**。

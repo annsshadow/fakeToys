@@ -32,6 +32,15 @@
           <Icon :name="muted ? 'volume-off' : 'volume-on'" :size="30" />
         </view>
         <!--
+          战场图例（2026-11-17）：画布底部的热量条与技能槽此前只有颜色块，
+          没有任何语义说明（用户反馈「红蓝黄块看不出是干嘛的」）。
+          图例遮罩逐项解释 HUD 元素、热量档位、技能槽读法与全部反应链。
+          打开图例不改变战斗状态 —— 想边看边停可以自己点暂停。
+        -->
+        <view class="help-chip" :class="{ on: helpVisible }" aria-label="战场图例" @click="helpVisible = !helpVisible">
+          <text>?</text>
+        </view>
+        <!--
           倍速档位（2026-10-22）。
           加它是因为「等一波打完」是测试时最耗时间的一件事：1× 跑完一局
           要几分钟，改一行数值就得重跑一次。
@@ -77,6 +86,74 @@
       </view>
     </view>
 
+    <!-- 战场图例（2026-11-17）：解释画布 HUD 的全部视觉语言 -->
+    <view v-if="helpVisible" class="legend-overlay" @click="helpVisible = false">
+      <view class="legend-box" @click.stop>
+        <view class="legend-head">
+          <text class="legend-title">战场图例</text>
+          <view class="legend-close" @click="helpVisible = false"><text>×</text></view>
+        </view>
+        <scroll-view scroll-y class="legend-scroll">
+          <!-- 画布底部：热量条 -->
+          <view class="legend-sec">
+            <text class="legend-sec-title">热量条（画布底部蓝/黄/橙长条）</text>
+            <text class="legend-p">释放技能会积累<b>热量</b>；热量随时间自动下降。</text>
+            <view class="legend-rows">
+              <view class="legend-row"><view class="dot" style="background: #58a6ff" /><text>蓝色 = 常态，随便放</text></view>
+              <view class="legend-row"><view class="dot" style="background: #ffd33d" /><text>黄色 = 已过 80%，快到上限</text></view>
+              <view class="legend-row"><view class="dot" style="background: #ff6b35" /><text>橙色 = <b>过热</b>：技能全部锁定 2 秒（元素层数保留，高热量爆发是可用的战术）</text></view>
+            </view>
+          </view>
+          <!-- 画布底部：技能槽 -->
+          <view class="legend-sec">
+            <text class="legend-sec-title">技能槽（热量条下方的小方格）</text>
+            <view class="legend-slot-demo">
+              <view class="slot-demo">
+                <DefIcon name="elem:fire" :size="30" style="color: #ff6b35" />
+                <view class="slot-cost"><text>20</text></view>
+              </view>
+              <text class="legend-p">每个格子 = 一个出战技能。中央图形是它的元素（和图鉴一致），</text>
+            </view>
+            <view class="legend-rows">
+              <view class="legend-row"><view class="dot dot-ring" style="border-color: #ffd33d" /><text>右上角数字 = 热量费用（每次释放消耗多少热量）</text></view>
+              <view class="legend-row"><view class="dot dot-ring" style="border-color: #8b949e" /><text>格内变暗 + 剩余秒数 = 冷却中；描边亮起 = 就绪</text></view>
+              <view class="legend-row"><view class="dot dot-ring" style="border-color: #58a6ff" /><text>格子数量 = 你携带的元素种类，「元素层数 N 技能」即来源于此</text></view>
+            </view>
+          </view>
+          <!-- 元素与反应 -->
+          <view class="legend-sec">
+            <text class="legend-sec-title">元素反应（核心玩法）</text>
+            <text class="legend-p">敌人身上先挂一种元素，再用另一种元素命中它就会触发<b>反应</b> —— 反应伤害与面板攻击力关系不大，凑齐元素搭配更重要。</text>
+            <view v-for="k in REACTION_ORDER" :key="k" class="legend-rxn">
+              <view class="legend-rxn-head">
+                <text class="legend-rxn-name">{{ REACTIONS[k].name }}</text>
+                <view class="pair-chip">
+                  <template v-for="(pair, i) in REACTION_PAIRS[k]" :key="i">
+                    <text v-if="i > 0" class="dim">/</text>
+                    <text class="tag" :class="'tag-' + pair[0]">{{ ELEMENT_NAME[pair[0]] }}</text>
+                    <text class="tag" :class="'tag-' + pair[1]">{{ ELEMENT_NAME[pair[1]] }}</text>
+                  </template>
+                </view>
+              </view>
+              <text class="legend-rxn-descr">{{ REACTIONS[k].descr }}</text>
+            </view>
+          </view>
+          <!-- 顶部与控制 -->
+          <view class="legend-sec">
+            <text class="legend-sec-title">顶部信息与控制</text>
+            <view class="legend-rows">
+              <view class="legend-row"><Icon name="shield" :size="26" style="color: #58a6ff" /><text>防线 = 你的血量，漏怪会扣，扣光即失败</text></view>
+              <view class="legend-row"><Icon name="scroll" :size="26" style="color: #8b949e" /><text>波次 = 本关共几波敌人；击杀 = 已消灭数</text></view>
+              <view class="legend-row"><Icon name="volume-on" :size="26" style="color: #8b949e" /><text>音效开关；倍速档只压缩等待，不影响战斗结果与回放</text></view>
+              <view class="legend-row"><Icon name="flag" :size="26" style="color: #ff7b72" /><text>放弃 = 作废本局并退还体力（无战报无奖励）</text></view>
+              <view class="legend-row"><Icon name="pause" :size="26" style="color: #58a6ff" /><text>暂停 = 战斗时间冻结，切后台会自动暂停</text></view>
+            </view>
+          </view>
+          <text class="legend-foot">元素 / 反应 / 技能 / 敌人 / 装备 / 宝石 / 皮肤的完整数值见首页「图鉴」入口。</text>
+        </scroll-view>
+      </view>
+    </view>
+
     <!-- 选牌界面（I-2） -->
     <view v-if="showCards" class="sheet">
       <view class="card-header">
@@ -94,7 +171,14 @@
           :class="[`rarity-${c.rarity}`, `kind-${c.kind}`]"
           @click="takeCard(c.id)"
         >
-          <text class="hand-kind">{{ kindLabel(c.kind) }}</text>
+          <view class="hand-top">
+            <text class="hand-kind">{{ kindLabel(c.kind) }}</text>
+            <text class="rarity-chip" :class="'rarity-' + c.rarity">{{ rarityLabel(c.rarity) }}</text>
+          </view>
+          <!-- 卡面图标：技能卡 = 元素图形，属性/机制卡 = 对应类别图形（与图鉴同语言） -->
+          <view class="hand-icon" :class="handBadgeClass(c)">
+            <DefIcon :name="handIconName(c)" :size="44" />
+          </view>
           <text class="hand-name">{{ c.name }}</text>
           <text class="hand-descr">{{ c.descr }}</text>
           <view class="hand-foot">
@@ -122,10 +206,22 @@
         >★</text>
       </view>
       <view class="result-stats">
-        <view class="rstat"><text class="muted">击杀</text><text class="mono">{{ settleResult.kills }}</text></view>
-        <view class="rstat"><text class="muted">漏怪</text><text class="mono">{{ settleResult.leaked }}</text></view>
-        <view class="rstat"><text class="muted">反应</text><text class="mono">{{ settleResult.reactions }}</text></view>
-        <view class="rstat"><text class="muted">分数</text><text class="mono">{{ settleResult.score }}</text></view>
+        <view class="rstat">
+          <Icon name="sword" :size="30" style="color: #8b949e" />
+          <text class="muted">击杀</text><text class="mono">{{ settleResult.kills }}</text>
+        </view>
+        <view class="rstat">
+          <Icon name="flag" :size="30" style="color: #ff7b72" />
+          <text class="muted">漏怪</text><text class="mono">{{ settleResult.leaked }}</text>
+        </view>
+        <view class="rstat">
+          <DefIcon name="reaction" :size="30" style="color: #7ee787" />
+          <text class="muted">反应</text><text class="mono">{{ settleResult.reactions }}</text>
+        </view>
+        <view class="rstat">
+          <Icon name="trophy" :size="30" style="color: #ffd33d" />
+          <text class="muted">分数</text><text class="mono">{{ settleResult.score }}</text>
+        </view>
       </view>
       <view v-if="settleResult.clamped" class="clamp-note">
         服务端已修正本次结算：{{ settleResult.clamp_note }}
@@ -133,9 +229,10 @@
       <!-- 结算接口失败时的兜底提示：否则用户只能看到本地统计，无从得知上报失败 -->
       <text v-if="settleResult.error" class="clamp-note">{{ settleResult.error }}</text>
       <view class="reward-row">
-        <text v-for="(v, k) in settleResult.loot" :key="k" class="reward">
-          {{ currencyName(String(k)) }} +{{ v }}
-        </text>
+        <view v-for="(v, k) in settleResult.loot" :key="k" class="reward">
+          <Icon :name="currencyIcon(String(k))" :size="28" />
+          <text>{{ currencyName(String(k)) }} +{{ v }}</text>
+        </view>
       </view>
       <text class="hash-note">回放哈希 {{ settleResult.replay_hash }}（可验真）</text>
       <!-- 查看本局战报（2026-11-01 新一轮第 43 轮）：结算响应带 battle_id，
@@ -190,10 +287,12 @@ import {
   logicIntervalMs,
   normalizeSpeed,
 } from '@/render/canvas'
-import { ELEMENT_NAME, type Element } from '@/game/elements'
+import { ELEMENT_NAME, REACTIONS, REACTION_ORDER, type Element } from '@/game/elements'
+import { REACTION_PAIRS } from '@/utils/reactionPairs'
 import { scoreRulesFromServer } from '@/game/score'
 import type { Card, EquippedSkill } from '@/game/heatmap'
 import type { GeneratedLevel } from '@/game/types'
+import DefIcon from '@/components/DefIcon.vue'
 
 const store = useGameStore()
 
@@ -302,6 +401,35 @@ function elementName(e: Element): string {
 
 function kindLabel(k: string): string {
   return k === 'skill' ? '技能' : k === 'attribute' ? '属性' : '机制'
+}
+
+// ── 战场图例（2026-11-17，见模板内说明）────────────────────────────
+const helpVisible = ref(false)
+
+/** 手牌稀有度中文名。 */
+function rarityLabel(r: string): string {
+  return r === 'rare' ? '稀有' : r === 'epic' ? '史诗' : '普通'
+}
+
+/** 手卡图标：技能卡用元素图形，属性卡用冲击星，机制卡用双环（反应）。 */
+function handIconName(c: Card): string {
+  if (c.kind === 'skill' && c.element) return `elem:${c.element}`
+  return c.kind === 'mechanic' ? 'reaction' : 'elem:kinetic'
+}
+
+/** 手卡图标底座配色：跟随元素；无元素的类别卡走稀有度色。 */
+function handBadgeClass(c: Card): string {
+  if (c.element) return `badge-${c.element}`
+  if (c.rarity === 'rare') return 'badge-rare'
+  if (c.rarity === 'epic') return 'badge-epic'
+  return ''
+}
+
+/** 结算奖励的货币图标（与顶栏资源胶囊同语言）。 */
+function currencyIcon(k: string): string {
+  if (k === 'gem') return 'gemcurrency'
+  if (k === 'energy') return 'bolt'
+  return 'coin'
 }
 
 
@@ -935,6 +1063,222 @@ onShareAppMessage(() =>
 }
 
 /*
+ * 战场图例按钮（2026-11-17）。
+ * ⚠️ 与 .abandon-btn / .speed-row 同一条坑：`.overlay-top` 的
+ * pointer-events: none 可继承，不写 auto 就点不动（见同文件其他 chip 注释）。
+ */
+.help-chip {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 14rpx;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1rpx solid var(--border-soft);
+  color: var(--muted);
+  font-size: 30rpx;
+  font-weight: 700;
+}
+
+.help-chip.on {
+  background: rgba(88, 166, 255, 0.18);
+  border-color: rgba(88, 166, 255, 0.4);
+  color: #58a6ff;
+}
+
+/* 图例遮罩：结构同暂停遮罩，内容可滚动 */
+.legend-overlay {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(13, 17, 23, 0.86);
+}
+
+.legend-box {
+  width: 86%;
+  max-height: 82vh;
+  padding: 28rpx 28rpx 20rpx;
+  border-radius: 20rpx;
+  background: var(--panel);
+  border: 1rpx solid var(--border);
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-2);
+}
+
+.legend-head {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14rpx;
+}
+
+.legend-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.legend-close {
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 34rpx;
+}
+
+.legend-scroll {
+  max-height: 62vh;
+}
+
+.legend-sec {
+  padding: 14rpx 0;
+  border-top: 1rpx solid var(--border-soft);
+}
+
+.legend-sec:first-child {
+  border-top: none;
+}
+
+.legend-sec-title {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 10rpx;
+}
+
+.legend-p {
+  display: block;
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: var(--muted);
+  margin-bottom: 8rpx;
+}
+
+.legend-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.legend-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 14rpx;
+  font-size: 24rpx;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+
+.legend-row .dot {
+  width: 20rpx;
+  height: 20rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-row .dot-ring {
+  background: transparent;
+  border: 3rpx solid var(--border);
+}
+
+.legend-slot-demo {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 10rpx;
+}
+
+.slot-demo {
+  position: relative;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 12rpx;
+  background: rgba(22, 27, 34, 0.9);
+  border: 2rpx solid #ff6b35;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.slot-cost {
+  position: absolute;
+  top: -10rpx;
+  right: -10rpx;
+  width: 30rpx;
+  height: 30rpx;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slot-cost text {
+  font-size: 16rpx;
+  color: #ffd33d;
+  font-weight: 700;
+}
+
+.legend-rxn {
+  padding: 10rpx 0;
+}
+
+.legend-rxn-head {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+
+.legend-rxn-name {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.pair-chip {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6rpx;
+}
+
+.legend-rxn-descr {
+  display: block;
+  font-size: 22rpx;
+  line-height: 1.5;
+  color: var(--muted);
+  margin-top: 4rpx;
+}
+
+.legend-foot {
+  display: block;
+  padding: 12rpx 0 4rpx;
+  font-size: 22rpx;
+  color: var(--dim);
+}
+
+/*
  * 暂停遮罩。
  *
  * 除了展示，它还承担一个功能：**挡住画布**。
@@ -1173,6 +1517,29 @@ onShareAppMessage(() =>
   color: var(--muted);
 }
 
+/* 卡面顶部行：类别 + 稀有度徽章 */
+.hand-top {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8rpx;
+}
+
+/* 卡面图标座：元素 / 类别的视觉锚点（与图鉴同一套语言） */
+.hand-icon {
+  width: 84rpx;
+  height: 84rpx;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--panel-2);
+  color: var(--text-2);
+  margin: 4rpx 0 10rpx;
+  align-self: flex-start;
+}
+
 .hand-name {
   font-size: 28rpx;
   font-weight: 600;
@@ -1231,6 +1598,7 @@ onShareAppMessage(() =>
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 4rpx;
 }
 
 .clamp-note {
@@ -1251,6 +1619,10 @@ onShareAppMessage(() =>
 }
 
 .reward {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8rpx;
   font-size: 24rpx;
   color: var(--ok);
 }
