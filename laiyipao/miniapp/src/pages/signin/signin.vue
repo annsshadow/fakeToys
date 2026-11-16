@@ -371,7 +371,4 @@ onMounted(async () => {
   color: var(--text);
 }
 
-.ph {
-  color: var(--dim);
-}
 </style>

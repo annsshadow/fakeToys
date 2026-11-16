@@ -165,9 +165,6 @@ async function submit(): Promise<void> {
   color: var(--text);
 }
 
-.ph {
-  color: var(--dim);
-}
 
 /*
  * 登录按钮保持可点击（仅视觉变灰）。
