@@ -1,5 +1,12 @@
 # B2 · invoke token 零验签 —— 存储与校验方案草案（2026-10-30）
 
+> **终态复核（2026-11-16）**：方案**已实施完毕**——迁移 `114_add_program_invoke_token_hash.sql`
+> 落 `token_hash` 列，`program_center/src/lib.rs` 已有 `verify_invoke_token` 常量时间比对；
+> §四「待拍板清单」按代拍结果结案。§六 C1 覆盖率 94% 为当时条件项，现量口径见
+> `docs/ops/current-state.md`。**注意**：invoke token 验签属于「程序调用凭据」，与
+> `2026-11-16-open-value-backlog.md` §二 A1 的「第三方回调真验签族」是两件事，不要混。
+> 本文件历史正文保留不改。
+
 > **性质**：前置设计草案，供产品拍板后落地。本文件只含方案与 SQL 草案，
 > **不包含**任何已生效的迁移或 handler 改动（避免未拍板先改行为）。
 > 对应 `docs/plans/2026-10-29-remaining-work-plan.md` 的 **B2** 行。

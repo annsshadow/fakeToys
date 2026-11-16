@@ -1,5 +1,10 @@
 # 全仓测试增补方案：把「覆盖率」变成「可证伪的证据」
 
+> **终态复核（2026-11-16）**：头部已记 B1–B9 全部执行复验（2026-10-28）、B3 达成 92% 目标，
+> 本轮执行完毕。覆盖率现量口径：augmentor 门禁汇总 99.37% / `coverage.xml` 行覆盖 99.51%，
+> laiyipao server 基线见 `docs/laiyipao/audits/coverage-2026-10-28.md`，`shared` 行覆盖 81.63%
+> （均为历史快照，非当前门禁读数）。权威现量见 `docs/ops/current-state.md`。本文件历史正文保留不改。
+
 - 日期：2026-10-27
 - 范围：`augmentor` / `auto-checkin` / `cool` / `laiyipao` / `llm-lab` / `oa4rust` 六个子项目
 - 状态：**B1–B9 已全部执行并复验（2026-10-28）；B3 亦已达成 92% 目标（2026-10-28，语句 92.48% / 行 94.28%，ratchet 已抬，见 §5）**；B2 行覆盖 81.63%，B1 Go 全量基线见 `docs/laiyipao/audits/coverage-2026-10-28.md`（头部「B3 未达」为 10-27 当晚快照，2026-10-28 收尾后未同步，现已回填）

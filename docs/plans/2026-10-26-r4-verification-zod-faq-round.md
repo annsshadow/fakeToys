@@ -1,5 +1,10 @@
 # 第四轮 · 有库深度验证 + augmentor 前端 zod + LIMIT 抽样 + 文档 FAQ · 执行计划
 
+> **终态复核（2026-11-16）**：§6 验证台账各项已完成；文中 L-SKIP-LEDGER 的「14 处逐条名册未落盘」
+> 已由后续 `2026-10-27-gap-closure-round.md` 的 LIMIT 抽样收口，不再开放。
+> §8 的 zod / FAQ 改动亦已并入后续。权威现量见 `docs/ops/current-state.md`。
+> 本文件历史正文保留不改。
+
 - **登记日**：2026-10-26
 - **范围**：oa4rust（有库行为验证 / LIMIT 抽样 / FAQ 文档）、augmentor/web（zod 运行时 schema 校验 + FAQ）
 - **目标**：10-26 第三轮（P0~P1 批次 + §5.2 有库轮次）已把 FI002 的 41 对迁移缺列 + 7 对遗留表**静态收口**

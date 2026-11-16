@@ -1,5 +1,11 @@
 # 全面优化第二轮 · 跨子项目功能与性能改进计划
 
+> **终态复核（2026-11-16）**：§9 台账 B1–B6 各项均已「已完成」并附 commit，本轮执行完毕。
+> §10 延期台账里 `FI002-LEGACY-TABLES`（7 对遗留表）已由
+> `2026-10-26-fresh-db-500-closure-round.md` 收口；`WF-REQUIRED`（3 个 bypassed checks）属当时 CI
+> 快照，现量全仓门禁 19/19 全绿（L355/L356）。权威现量见 `docs/ops/current-state.md`。
+> 本文件历史正文保留不改。
+
 - **登记日**：2026-10-24
 - **范围**：fakeToys monorepo 全子项目（oa4rust / laiyipao / augmentor / auto-checkin / scripts / CI / docs）
 - **目标**：在 2026-10-23 第一轮（见 `2026-10-23-cross-subproject-optimization-backlog.md` §7 台账）之上，修复新发现的**真实缺陷**（含 2 个生产环境 404 的功能断层、1 个 CI 全仓 clippy 失败、1 个口令模式下面板完全不可用的 bug），落地已验证的低风险性能改进，并把工程卫生（CI 门禁、死脚本、文档漂移）收口。

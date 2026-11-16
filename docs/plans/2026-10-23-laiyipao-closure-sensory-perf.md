@@ -1,5 +1,10 @@
 # 来一炮 · 闭环 / 体感 / 性能 三批落地 · 执行计划
 
+> **终态复核（2026-11-16）**：本轮已执行完毕，§6.4 门禁（server go test / miniapp 79 文件 1150 通过 /
+> vue-tsc 零错 / H5+mp-weixin 构建）为当时实测快照。其中 `build:mp-weixin` 属历史：
+> **laiyipao 小程序端 2026-11-14 整体移除**，现在只交付 H5。H5 现量 1264 passed / 2 skipped。
+> 权威现量见 `docs/ops/current-state.md`。本文件历史正文保留不改。
+
 > **日期**：2026-10-23
 > **范围**：`laiyipao/` 三端（`server` Go/Fiber/PG、`miniapp` uni-app、`admin` Vue 3）
 > **前序**：`2026-10-21-laiyipao-three-end-optimization.md`（两轮审计 55 + 33 条已销账）
