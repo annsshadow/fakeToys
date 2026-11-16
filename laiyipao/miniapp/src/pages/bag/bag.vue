@@ -58,14 +58,22 @@
 
       <!-- 熔炼：两个已拥有的材料技能 → 高阶技能。
            材料会被消耗；等级门槛由服务端判定（产物 unlock_level 30..62）。
-           未集齐材料的配方**不给按钮**（约束 19：不给假按钮）。 -->
+           未集齐材料的配方**不给按钮**（约束 19：不给假按钮）。
+           2026-11-17（100 轮打磨 R8）：默认只显示**当前可熔炼**的配方，
+           其余收进「查看全部」—— 此前 20+ 行配方一屏到底，可熔炼的
+           两三行被淹在里面，是背包「点开太长」的最大单一来源。 -->
       <view v-if="recipes.length" v-show="bagTab === 'skills'" class="card">
-        <text class="card-title">熔炼</text>
+        <view class="row" style="justify-content: space-between; margin-bottom: 12rpx">
+          <text class="card-title" style="margin-bottom: 0">熔炼</text>
+          <text class="chip" :class="{ hit: craftableRecipes.length > 0 }">
+            可熔炼 {{ craftableRecipes.length }} / {{ recipes.length }}
+          </text>
+        </view>
         <text class="muted" style="display: block; margin-bottom: 16rpx">
           两个材料技能熔炼成高阶技能，材料会被消耗。
           产物需要等级达标（由服务端判定，不足时会提示所需等级）。
         </text>
-        <view v-for="r in recipes" :key="r.output" class="skill-row">
+        <view v-for="r in shownRecipes" :key="r.output" class="skill-row recipe-row">
           <view class="flex-1">
             <view class="row" style="gap: 8rpx">
               <text class="skill-name">{{ skillNameOf(r.a) }}</text>
@@ -84,19 +92,50 @@
             <text v-else class="link" @click="doSynthesize(r)">熔炼</text>
           </view>
         </view>
+        <text v-if="craftableRecipes.length === 0 && !showAllRecipes" class="muted">
+          当前没有可熔炼的配方 —— 集齐下面的材料技能后这里会出现入口。
+        </text>
+        <text
+          v-if="recipes.length > craftableRecipes.length"
+          class="link"
+          style="margin-top: 8rpx"
+          @click="showAllRecipes = !showAllRecipes"
+        >{{ showAllRecipes ? '收起，只看可熔炼' : `查看全部 ${recipes.length} 条配方` }}</text>
       </view>
 
       <!-- 技能列表 -->
       <view v-show="bagTab === 'skills'" class="card">
-        <text class="card-title">技能库</text>
-        <text class="muted" style="display: block; margin-bottom: 16rpx">
+        <view class="row" style="justify-content: space-between">
+          <text class="card-title" style="margin-bottom: 0">技能库</text>
+          <text class="dim">{{ filteredSkills.length }} / {{ allSkills.length }}</text>
+        </view>
+        <text class="muted" style="display: block; margin-bottom: 12rpx">
           等级只提升**伤害**，不影响热量与冷却。
           每级 +<text v-if="skillRules">{{ skillRules.coef_permille }}‰</text>伤害，满级
           <text v-if="skillRules">{{ skillRules.max_level }}</text> 级。
           基础技能按等级自动解锁；高阶技能靠熔炼（见上）。
           标「未解锁」的不能装备或升级。
         </text>
-        <view v-for="s in allSkills" :key="s.id" class="skill-row">
+        <!--
+          筛选行（2026-11-17 100 轮打磨 R7）：40+ 个技能一屏到底没法找，
+          元素筛选 + 只看已拥有是最短路径。默认「全部」保持既有测试口径
+          （.skill-row 全量渲染）。
+        -->
+        <view class="filter-row">
+          <text
+            v-for="f in SKILL_FILTERS"
+            :key="f.key"
+            class="chip tap"
+            :class="{ hit: skillFilterEl === f.key }"
+            @click="skillFilterEl = f.key"
+          >{{ f.label }}</text>
+          <text
+            class="chip tap"
+            :class="{ hit: skillOwnedOnly }"
+            @click="skillOwnedOnly = !skillOwnedOnly"
+          >只看已拥有</text>
+        </view>
+        <view v-for="s in filteredSkills" :key="s.id" class="skill-row">
           <view class="flex-1">
             <view class="row" style="gap: 12rpx">
               <view class="icon-badge" :class="'badge-' + s.element" style="width: 60rpx; height: 60rpx">
@@ -106,9 +145,9 @@
               <text class="dim">{{ familyName(s.family) }}</text>
               <text v-if="levelOf(s.id) > 1" class="dim">Lv.{{ levelOf(s.id) }}</text>
             </view>
-            <text class="muted" style="display: block; margin-top: 6rpx">{{ s.descr }}</text>
+            <text class="muted skill-descr" style="margin-top: 6rpx">{{ s.descr }}</text>
             <text class="dim" style="display: block; margin-top: 4rpx">
-              伤害 {{ damageAt(s) }}<template v-if="!isMaxLevel(s.id)"> → {{ nextDamageAt(s) }}</template> · 热量 {{ s.heat_cost }} · 冷却 {{ s.cooldown_ms }}ms
+              伤害 {{ damageAt(s) }}<template v-if="!isMaxLevel(s.id)"> → {{ nextDamageAt(s) }}</template> · 热量 {{ s.heat_cost }} · 冷却 {{ (s.cooldown_ms / 1000).toFixed(1) }}s
               <text v-if="s.pierce"> · 穿透 {{ s.pierce }}</text>
               <text v-if="s.aoe_radius"> · 溅射 {{ s.aoe_radius }}</text>
             </text>
@@ -427,6 +466,21 @@ const skillById = computed(() => {
 })
 
 /**
+ * 技能库筛选视图（2026-11-17 100 轮打磨 R7）。
+ * 元素筛选 + 只看已拥有；两个条件都关时返回原数组（引用不变，避免无谓重渲染）。
+ */
+const filteredSkills = computed<SkillDef[]>(() => {
+  const el = skillFilterEl.value
+  const ownedOnly = skillOwnedOnly.value
+  if (!el && !ownedOnly) return allSkills.value
+  return allSkills.value.filter((s) => {
+    if (el && s.element !== el) return false
+    if (ownedOnly && !isOwned(s.id)) return false
+    return true
+  })
+})
+
+/**
  * 玩家的装备（目录 + 拥有/装配状态）。
  *
  * 2026-10-21（P4-1）：这一段此前**不存在** ——
@@ -506,6 +560,34 @@ const gemQualities = computed<{ name: string; affix_count: number; mult: number 
 const recipes = computed<{ output: number; a: number; b: number; out_tier: number }[]>(
   () => store.config?.recipes ?? [],
 )
+
+// ── 背包可用性重构（2026-11-17 100 轮打磨 R7/R8）────────────────────
+
+/** 技能库元素筛选（'' = 全部）。默认全量渲染，保持既有测试口径。 */
+const SKILL_FILTERS: Array<{ key: string; label: string }> = [
+  { key: '', label: '全部' },
+  { key: 'fire', label: '焰' },
+  { key: 'ice', label: '冰' },
+  { key: 'lightning', label: '电' },
+  { key: 'corrosion', label: '毒' },
+  { key: 'kinetic', label: '动能' },
+]
+const skillFilterEl = ref('')
+const skillOwnedOnly = ref(false)
+
+/** 熔炼折叠：默认只显示当前可熔炼的配方，其余收进「查看全部」。 */
+const showAllRecipes = ref(false)
+
+/** 当前可熔炼的配方（两个材料都拥有）。 */
+const craftableRecipes = computed(() => recipes.value.filter((r) => missingFor(r).length === 0))
+
+/** 熔炼区实际渲染的配方：未展开时只给可熔炼的，展开时全量（可熔炼的排前面）。 */
+const shownRecipes = computed(() => {
+  if (showAllRecipes.value) {
+    return [...craftableRecipes.value, ...recipes.value.filter((r) => missingFor(r).length > 0)]
+  }
+  return craftableRecipes.value
+})
 
 /** 技能名查表：配方两端都是技能 id，界面要显示名字。 */
 function skillNameOf(id: number): string {
@@ -1020,8 +1102,20 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/*
+ * 页签吸顶（2026-11-17 100 轮打磨 R10）。
+ *
+ * 背包即使重构后仍是全页最长的页面 —— 滚到技能库第 40 行想切「宝石」时，
+ * 页签早已滚出屏幕。sticky 吸顶让页签在任何滚动深度都可达；
+ * 背景填 var(--bg) 并用负边距盖住两侧，避免滚动内容从字缝里透出。
+ */
 .bag-tabs {
-  margin-bottom: 4rpx;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  margin: 0 -8rpx 4rpx;
+  padding: 14rpx 8rpx;
+  background: var(--bg);
 }
 
 .preset-save-row {
@@ -1108,6 +1202,14 @@ onMounted(async () => {
   white-space: nowrap;
 }
 
+/* 技能描述单行省略（2026-11-17 100 轮打磨 R9）：行高可控，长描述不再把行撑成三行 */
+.skill-descr {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .skill-act {
   flex-shrink: 0;
   max-width: 42%;
@@ -1151,6 +1253,19 @@ onMounted(async () => {
 }
 
 /* 宝石条目切面图标座（2026-11-17）：属性配色走共享 badge 类 */
+/* 筛选行（2026-11-17 100 轮打磨 R7）：元素 chips + 只看已拥有 */
+.filter-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin-bottom: 16rpx;
+}
+.filter-row .chip {
+  padding: 8rpx 20rpx;
+  font-size: var(--fs-xs);
+}
+
 .gem-chip-icon {
   width: 44rpx;
   height: 44rpx;

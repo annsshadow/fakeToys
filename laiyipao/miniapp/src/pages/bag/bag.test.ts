@@ -129,7 +129,7 @@ function owned(...ids: number[]): Record<string, { id: number; level: number; sl
 
 
 /** 技能库：普通 + 带穿透/溅射 + 被动 + 未知元素/家族（驱动名称映射回退分支） */
-function bagConfig(): GameConfig {
+function bagConfig(over: Partial<GameConfig> = {}): GameConfig {
   return makeConfig({
     skills: [
       makeSkill({ id: 1, name: '燃烧弹', element: 'fire' as any, family: 'flame' }),
@@ -144,6 +144,7 @@ function bagConfig(): GameConfig {
       { id: 2, name: '神秘戒', element: 'ice', descr: '未知槽位', slot: 'ring', tier: 1 },
     ],
     gems: [{ id: 1, name: '元素石', descr: '提高元素系数' }],
+    ...over,
   })
 }
 
@@ -814,3 +815,81 @@ describe('bag.vue 阵型预设（第 49 轮）', () => {
   })
 })
 
+
+// ==================== 背包可用性重构（2026-11-17 100 轮打磨 R7/R14）====================
+
+describe('bag.vue 背包可用性（100 轮打磨）', () => {
+  it('R7 技能库筛选：元素 chip 与「只看已拥有」叠加过滤', async () => {
+    // 5（未解锁途径）/ 101（合成）未拥有，其余已拥有 —— 过滤才分辨得出「拥有」
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7,
+      build: { skills: owned(1, 2, 3, 4) },
+      build_rating: null,
+      power: 9,
+    } as any)
+    const { wrapper } = mountPage(Bag)
+    await flushPromises()
+    // 默认「全部」：全量渲染（既有口径不变）
+    expect(wrapper.findAll('.skill-row').length).toBe(6)
+
+    const chips = () => wrapper.findAll('.filter-row .chip')
+    // 焰 → 燃烧弹 + 蒸汽弹（都是 fire）
+    await chips().find((c) => c.text() === '焰')!.trigger('click')
+    await flushPromises()
+    let rows = wrapper.findAll('.skill-row')
+    expect(rows.length).toBe(2)
+    expect(wrapper.text()).toContain('燃烧弹')
+    expect(wrapper.text()).toContain('蒸汽弹')
+
+    // 叠加「只看已拥有」：蒸汽弹(101) 未拥有 → 只剩燃烧弹
+    await chips().find((c) => c.text() === '只看已拥有')!.trigger('click')
+    await flushPromises()
+    rows = wrapper.findAll('.skill-row')
+    expect(rows.length).toBe(1)
+    expect(rows[0]!.text()).toContain('燃烧弹')
+
+    // 回到「全部」但保留只看已拥有：已拥有 = 1..4
+    await chips().find((c) => c.text() === '全部')!.trigger('click')
+    await flushPromises()
+    expect(wrapper.findAll('.skill-row').length).toBe(4)
+  })
+
+  it('R8 熔炼折叠：默认只显示可熔炼配方，展开后全部可见且可熔炼排前', async () => {
+    // 配方：101 = 1+2（材料齐，可熔炼）；102 = 3+5（缺 5，不可熔炼）
+    mockApi.fetchConfigIfVersion.mockResolvedValue({
+      status: 'modified',
+      config: bagConfig({
+        recipes: [
+          { output: 102, a: 3, b: 5, out_tier: 3 },
+          { output: 101, a: 1, b: 2, out_tier: 2 },
+        ],
+      }),
+      serverTimeMs: 0,
+    })
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7,
+      build: { skills: owned(1, 2, 3, 4) }, // 5 未拥有
+      build_rating: null,
+      power: 9,
+    } as any)
+    const { wrapper } = mountPage(Bag)
+    await flushPromises()
+
+    // 默认折叠：只渲染可熔炼的 101 配方行；102 的「缺 奇异弹」不可见
+    const recipeRows = () => wrapper.findAll('.skill-row.recipe-row')
+    expect(recipeRows().length).toBe(1)
+    expect(recipeRows()[0]!.text()).toContain('蒸汽弹')
+    expect(wrapper.text()).toContain('可熔炼 1 / 2')
+    expect(wrapper.text()).not.toContain('缺 奇异弹')
+
+    // 展开：两条都在，可熔炼的排前（101 在 102 之前）
+    await wrapper.findAll('.link').find((l) => l.text().includes('查看全部 2 条配方'))!.trigger('click')
+    await flushPromises()
+    expect(recipeRows().length).toBe(2)
+    expect(recipeRows()[0]!.text()).toContain('蒸汽弹')
+    expect(wrapper.text()).toContain('缺 奇异弹')
+
+    // 收起文案切换
+    expect(wrapper.text()).toContain('收起，只看可熔炼')
+  })
+})
