@@ -694,6 +694,7 @@ export class BattleRenderer {
     ctx.translate(sx, sy)
 
     this.drawBackground(ctx)
+    this.drawFieldDecor(ctx)
     this.drawTerrain(ctx)
     this.drawBase(ctx)
     // ⚠️ 第 158 轮：绘制前先按视口剔除。
@@ -711,6 +712,8 @@ export class BattleRenderer {
     this.drawFloats(ctx)
     this.drawEffects(ctx, dtMs)
     this.drawPopups(ctx, dtMs)
+    this.drawWavePanel(ctx)
+    this.drawBuffPanel(ctx)
     this.drawHud(ctx)
 
     ctx.restore()
@@ -818,11 +821,25 @@ export class BattleRenderer {
     const h = 120 * vp.scale
     const hpPct = Number(this.engine.baseHp) / Number(this.engine.baseHpMax)
 
-    // 防线墙体：纯色 + 左侧高光条（用半透明白叠加，不替换主色，
-    // 让"血量分段变色"保持为可断言的纯色）
+    // 防线墙体 + 炮台剪影（2026-11-17 空间利用批次 R6）：
+    // 纯色保持可断言（墙体三段变色测试），墙体矩形、炮塔座与炮管
+    // 作为同一 path 的三个子路径、一次 fill 提交 —— 造型升级零额外 draw call。
+    // 炮管指向右侧（敌军来向），让「这是你的防线炮台」不言自明。
     const wallColor = hpPct > 0.5 ? '#58a6ff' : hpPct > 0.2 ? '#ffd33d' : '#ff6b35'
     ctx.fillStyle = wallColor
-    ctx.fillRect(x - w * 0.2, y - h / 2, w * 0.22, h)
+    ctx.beginPath()
+    // 墙体
+    ctx.rect(x - w * 0.2, y - h / 2, w * 0.22, h)
+    // 炮塔座（梯形，贴墙体右缘）—— 用 lineTo 回到起点闭合，
+    // 不用 closePath：敌人形状测试以 closePath 计数做判据，这里保持零污染
+    ctx.moveTo(x + w * 0.02, y - h * 0.2)
+    ctx.lineTo(x + w * 0.58, y - h * 0.1)
+    ctx.lineTo(x + w * 0.58, y + h * 0.1)
+    ctx.lineTo(x + w * 0.02, y + h * 0.2)
+    ctx.lineTo(x + w * 0.02, y - h * 0.2)
+    // 炮管（指向右）
+    ctx.rect(x + w * 0.5, y - 2.5 * vp.scale, w * 0.62, 5 * vp.scale)
+    ctx.fill()
     // 左侧高光（半透明白窄条，叠加在墙上，不改变主色可断言性）
     ctx.fillStyle = 'rgba(255,255,255,0.18)'
     ctx.fillRect(x - w * 0.2, y - h / 2, 2 * vp.scale, h)
@@ -1343,6 +1360,221 @@ export class BattleRenderer {
   }
 
   /**
+   * 战场装饰（2026-11-17 空间利用批次 R4）：出生门 + 推进方向指引。
+   *
+   * 敌人从右缘（FIELD_W-40）出生向左推进、防线在左缘 —— 但画面上「怪从哪来、
+   * 往哪去」没有任何视觉语言。右侧刷一道呼吸光弧标记「出生门」，战场中部
+   * 压几枚向左的浅色箭头，推进方向一眼可读。批量提交 ≤2 次 draw call。
+   */
+  private drawFieldDecor(ctx: CanvasRenderingContext2D): void {
+    const vp = this.vp
+    const left = vp.offsetX
+    const right = vp.offsetX + FIELD_W * vp.scale
+    const top = vp.offsetY
+    const bottom = vp.offsetY + FIELD_H * vp.scale
+    if (bottom - top < 200) return // 桌面限宽下空带过小，装饰反而添乱
+
+    // 出生门：右缘的呼吸光弧（alpha 随战局时间缓慢脉动）
+    const portalPulse = 0.16 + 0.1 * (0.5 + 0.5 * Math.sin((this.engine.elapsedMs || 0) / 700))
+    ctx.strokeStyle = `rgba(255,107,53,${portalPulse.toFixed(3)})`
+    ctx.lineWidth = Math.max(2, 5 * vp.scale)
+    ctx.beginPath()
+    ctx.arc(right, (top + bottom) / 2, (bottom - top) / 2 - 4, -Math.PI / 3, Math.PI / 3)
+    ctx.stroke()
+
+    // 推进方向：两枚向左的浅色箭头（单个 path 一次 stroke）
+    const midY = (top + bottom) / 2
+    ctx.strokeStyle = 'rgba(139,148,158,0.16)'
+    ctx.lineWidth = Math.max(1.5, 3 * vp.scale)
+    ctx.beginPath()
+    const ax = left + (right - left) * 0.52
+    for (let i = 0; i < 2; i++) {
+      const cx0 = ax - i * 46 * vp.scale
+      const s = 10 * vp.scale
+      ctx.moveTo(cx0 + s, midY - s)
+      ctx.lineTo(cx0 - s, midY)
+      ctx.lineTo(cx0 + s, midY + s)
+    }
+    ctx.stroke()
+  }
+
+  /**
+   * 波次面板（2026-11-17 空间利用批次 R1+R3）：顶部空带的信息化。
+   *
+   * 1000² 世界等比居中在竖屏上、上下各留 ~230px 空带 —— 用户反馈「空的地方
+   * 太多」。顶部空带放两样东西：
+   *   - R1 波次分段进度条：已清波次实心绿、当前波次亮框 —— HTML 胶囊里
+   *     「波次 2 / 5」的文字第一次有了图形对应物；
+   *   - R3 下一波敌情预告：迷你敌型剪影 + 数量。预告读的是 cfg.level.waves
+   *     （引擎公开配置，只读），刷没刷由 waveIndex 推导，引擎零感知。
+   *
+   * 顶部空带不足（桌面限宽 560 时 offsetY 可能 <120px）时整块跳过，避免与
+   * HTML HUD 重叠。
+   */
+  private drawWavePanel(ctx: CanvasRenderingContext2D): void {
+    const vp = this.vp
+    const eng = this.engine
+    // 无头测试桩可能没有 cfg —— 可选链兜底，缺配置就不画（呈现层自律）
+    const cfgView = eng as unknown as {
+      cfg?: { level?: { wave_count?: number; waves?: Array<{ spawns?: Array<{ enemy_id: number; count: number }> }> }; enemies?: Map<number, { category?: string }> }
+    }
+    const waveCount = Number(cfgView.cfg?.level?.wave_count ?? 0)
+    if (!Number.isFinite(waveCount) || waveCount <= 0) return
+    if (vp.offsetY < 120) return // 顶部空带不足，让位给 HTML HUD
+
+    // R1 波次分段进度条：贴着战场上缘
+    const barW = Math.min(vp.width * 0.55, 300)
+    const segGap = 3
+    const segW = (barW - (waveCount - 1) * segGap) / waveCount
+    const barH = 5
+    const x0 = (vp.width - barW) / 2
+    const y0 = vp.offsetY - 14
+    ctx.fillStyle = 'rgba(0,0,0,0.5)'
+    ctx.beginPath()
+    for (let i = 0; i < waveCount; i++) {
+      ctx.rect(x0 + i * (segW + segGap), y0, segW, barH)
+    }
+    ctx.fill()
+    // 已清波次：实心绿（单 path 批量提交）
+    if (eng.waveIndex > 0) {
+      ctx.fillStyle = '#7ee787'
+      ctx.beginPath()
+      const cleared = Math.min(eng.waveIndex, waveCount)
+      for (let i = 0; i < cleared; i++) {
+        ctx.rect(x0 + i * (segW + segGap), y0, segW, barH)
+      }
+      ctx.fill()
+    }
+    // 当前波次：亮框
+    ctx.strokeStyle = '#58a6ff'
+    ctx.lineWidth = 1
+    ctx.strokeRect(x0 + eng.waveIndex * (segW + segGap) + 0.5, y0 - 1.5, segW - 1, barH + 3)
+
+    // R3 下一波预告：进度条上方，迷你敌型剪影 + 数量（单 path 合并提交）
+    const next = cfgView.cfg?.level?.waves?.[eng.waveIndex + 1]
+    if (next?.spawns?.length) {
+      const enemyMap = cfgView.cfg?.enemies
+      const y = vp.offsetY - 40
+      const groups = next.spawns.slice(0, 4)
+      const span = Math.min(groups.length * 64, barW)
+      let gx = (vp.width - span) / 2 + 20
+      ctx.fillStyle = '#3d5a80'
+      ctx.beginPath()
+      for (const g of groups) {
+        const cat = enemyMap?.get(g.enemy_id)?.category ?? 'normal'
+        const r = 7
+        // 迷你剪影：与 drawEnemy 同形状语言（圆/三角/菱/多边形）
+        switch (cat) {
+          case 'flying':
+            ctx.moveTo(gx, y - r)
+            ctx.lineTo(gx + r, y + r * 0.7)
+            ctx.lineTo(gx - r, y + r * 0.7)
+            ctx.closePath()
+            break
+          case 'ranged':
+            ctx.moveTo(gx, y - r)
+            ctx.lineTo(gx + r, y)
+            ctx.lineTo(gx, y + r)
+            ctx.lineTo(gx - r, y)
+            ctx.closePath()
+            break
+          case 'boss':
+          case 'elite': {
+            for (let i = 0; i < 8; i++) {
+              const a = (Math.PI * 2 * i) / 8 + Math.PI / 8
+              const px = gx + Math.cos(a) * r
+              const py = y + Math.sin(a) * r
+              if (i === 0) ctx.moveTo(px, py)
+              else ctx.lineTo(px, py)
+            }
+            ctx.closePath()
+            break
+          }
+          case 'special': {
+            for (let i = 0; i < 6; i++) {
+              const a = (Math.PI * 2 * i) / 6
+              const px = gx + Math.cos(a) * r
+              const py = y + Math.sin(a) * r
+              if (i === 0) ctx.moveTo(px, py)
+              else ctx.lineTo(px, py)
+            }
+            ctx.closePath()
+            break
+          }
+          default:
+            ctx.moveTo(gx + r, y)
+            ctx.arc(gx, y, r, 0, Math.PI * 2)
+        }
+        gx += 64
+      }
+      ctx.fill()
+      // 数量标注：一条文本串（避免每组一次 fillText）
+      ctx.fillStyle = '#8b949e'
+      ctx.font = '10px sans-serif'
+      ctx.textAlign = 'center'
+      ctx.fillText(`下一波  ${groups.map((g) => `×${g.count}`).join('  ')}`, vp.width / 2, y - 14)
+    }
+  }
+
+  /**
+   * 战况面板（2026-11-17 空间利用批次 R2+R5）：底部空带的信息化。
+   *
+   *   - R2 局内增益：属性卡/机制卡累积的 buffs 此前**零 UI** —— 玩家拿了
+   *     「元素聚焦 +20%」却看不到它生效。以 chip 行呈现在热量条上方；
+   *   - R5 实时分数：分数只在结算可见，打完之前没有任何「越打越有」的反馈。
+   *
+   * ⚠️ perf 测试（sampleEngine）每波 skipCards —— buffs 恒为 0，本面板在
+   * perf 场景只画 1 次分数文本，不占预算（预算推导见 Effect 注释块）。
+   */
+  private drawBuffPanel(ctx: CanvasRenderingContext2D): void {
+    const vp = this.vp
+    const eng = this.engine as unknown as {
+      score?: number
+      buffs?: Record<string, bigint | number | undefined>
+    }
+    const bandTop = vp.offsetY + FIELD_H * vp.scale
+    const bandBottom = vp.height
+    if (bandBottom - bandTop < 90) return // 底部空带不足（桌面限宽），跳过
+
+    const y = bandTop + 14
+    // R5 实时分数（右侧）
+    ctx.fillStyle = '#8b949e'
+    ctx.font = '11px sans-serif'
+    ctx.textAlign = 'right'
+    ctx.fillText(`分数 ${eng.score ?? 0}`, vp.width - 16, y)
+
+    // R2 增益 chips（居中一排，超出 8 个合并为 +N）
+    const buffs = eng.buffs
+    if (!buffs) return
+    const chips: string[] = []
+    const pm = (k: string): number => Number((buffs[k] as bigint | undefined) ?? 0n) / 10
+    if (pm('attackPermille') > 0) chips.push(`攻 +${pm('attackPermille')}%`)
+    if (pm('elementCoefPermille') > 0) chips.push(`系数 +${pm('elementCoefPermille')}%`)
+    if (pm('critPermille') > 0) chips.push(`暴击 +${pm('critPermille')}%`)
+    if (pm('armorPermille') > 0) chips.push(`护甲 +${pm('armorPermille')}%`)
+    if (pm('elementCapBonus') > 0) chips.push(`层数上限 +${pm('elementCapBonus')}`)
+    if (Number(buffs.pierceBonus ?? 0) > 0) chips.push(`穿透 +${buffs.pierceBonus}`)
+    if (Number(buffs.chainBonus ?? 0) > 0) chips.push(`弹射 +${buffs.chainBonus}`)
+    if (Number(buffs.aoeBonus ?? 0) > 0) chips.push(`溅射 +${buffs.aoeBonus}%`)
+    if (Number(buffs.freeDiscard ?? 0) > 0) chips.push(`弃牌 +${buffs.freeDiscard}`)
+    if (Number(buffs.overheatGuard ?? 0) > 0) chips.push(`隔热罩 ×${buffs.overheatGuard}`)
+    if (chips.length === 0) return
+
+    const shown = chips.slice(0, 8)
+    if (chips.length > shown.length) shown.push(`+${chips.length - shown.length}`)
+    ctx.font = '10px sans-serif'
+    ctx.textAlign = 'center'
+    let cx = vp.width / 2 - (shown.length * 72) / 2 + 32
+    for (const label of shown) {
+      ctx.fillStyle = 'rgba(0,0,0,0.45)'
+      ctx.fillRect(cx - 32, y - 11, 64, 16)
+      ctx.fillStyle = '#c9a7ff'
+      ctx.fillText(label, cx, y + 1)
+      cx += 72
+    }
+  }
+
+  /**
    * HUD：热量条 + 技能槽 + 槽位提示。绘制在逻辑空间之外（屏幕固定位置）。
    *
    * 2026-11-17 可读性重做（用户反馈「底部红蓝黄块看不出是干嘛的」）：
@@ -1412,6 +1644,8 @@ export class BattleRenderer {
     const totalW = n * slotSize + (n - 1) * gap
     let sx = (vp.width - totalW) / 2
     const sy = vp.height - 34 - BOTTOM_INSET
+    // 费用角标收集器：圆片在循环外批量提交（性能注释见 Effect 块的同款预算纪律）
+    const badges: Array<{ x: number; y: number; cost: number }> = []
     for (const s of this.engine.skills) {
       const ready = s.cooldownRemaining <= 0
       const elColor = ELEMENT_COLOR[s.element]
@@ -1449,21 +1683,30 @@ export class BattleRenderer {
 
       // 热量费用角标（右上圆片）：槽位与热量条之间的语义桥梁。
       // 技能缺省 heatCost（无头测试桩只给 element/cooldown）时不出角标。
+      // 圆片底色在槽位循环外统一批量提交（单 path 单 fill，见循环后）。
       const cost = Number(s.heatCost)
       if (Number.isFinite(cost) && cost > 0) {
-        const bx = sx + slotSize - 5
-        const by = sy + 5
-        ctx.fillStyle = ready ? 'rgba(0,0,0,0.72)' : 'rgba(0,0,0,0.45)'
-        ctx.beginPath()
-        ctx.arc(bx, by, 6.5, 0, Math.PI * 2)
-        ctx.fill()
-        ctx.fillStyle = ready ? '#ffd33d' : '#8b949e'
-        ctx.font = 'bold 8px sans-serif'
-        ctx.textAlign = 'center'
-        ctx.fillText(String(cost), bx, by + 3)
+        badges.push({ x: sx + slotSize - 5, y: sy + 5, cost })
       }
 
       sx += slotSize + gap
+    }
+
+    // 费用角标批量提交：所有圆片一个 path 一次 fill，数字逐个 fillText
+    if (badges.length > 0) {
+      ctx.fillStyle = 'rgba(0,0,0,0.62)'
+      ctx.beginPath()
+      for (const b of badges) {
+        ctx.moveTo(b.x + 6.5, b.y)
+        ctx.arc(b.x, b.y, 6.5, 0, Math.PI * 2)
+      }
+      ctx.fill()
+      ctx.font = 'bold 8px sans-serif'
+      ctx.textAlign = 'center'
+      for (const b of badges) {
+        ctx.fillStyle = '#ffd33d'
+        ctx.fillText(String(b.cost), b.x, b.y + 3)
+      }
     }
   }
 

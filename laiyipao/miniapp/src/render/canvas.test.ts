@@ -568,6 +568,12 @@ function fakeEngine(
     skills: Array<Record<string, unknown>>
     baseHp: bigint
     baseHpMax: bigint
+    /** 2026-11-17 空间利用轮次新增：cfg（波次面板）/ buffs（局内增益面板）/ score（实时分数） */
+    cfg: Record<string, unknown>
+    buffs: Record<string, unknown>
+    score: number
+    elapsedMs: number
+    waveIndex: number
   }> = {},
 ): BattleEngine {
   return {
@@ -579,6 +585,8 @@ function fakeEngine(
     skills: [],
     baseHp: 900n,
     baseHpMax: 1000n,
+    waveIndex: 0,
+    elapsedMs: 0,
     ...over,
   } as unknown as BattleEngine
 }
@@ -863,6 +871,90 @@ describe('BattleRenderer 分支覆盖（假引擎直驱绘制分支）', () => {
     // fire 特效无粒子 → 环 + 光环 = 每个最多 2 次 arc；8 个上限 = 16
     const arcCount = canvas.__ctx.calls.filter((c) => c === 'arc').length
     expect(arcCount).toBeLessThanOrEqual(16)
+  })
+
+  // ==================== 空间利用批次（2026-11-17 R1–R6）====================
+
+  it('波次面板（R1）：分段进度条画出已清波次与当前波次亮框', () => {
+    const r = makeRenderer(
+      fakeEngine({
+        waveIndex: 2,
+        cfg: {
+          level: {
+            wave_count: 5,
+            waves: Array.from({ length: 5 }, (_, i) => ({
+              wave_index: i,
+              spawns: [{ enemy_id: 1, count: 2, interval: 0, delay: 0 }],
+            })),
+          },
+          enemies: new Map([[1, { category: 'normal' }]]),
+        },
+      }),
+    )
+    r.draw(TICK_MS)
+    // 已清 2 波 → 实心绿提交两次；当前波亮框 → #58a6ff 描边
+    expect(canvas.__ctx.fillStyles.filter((s) => s === '#7ee787').length).toBeGreaterThanOrEqual(1)
+    expect(canvas.__ctx.strokeStyles).toContain('#58a6ff')
+  })
+
+  it('波次面板（R3）：下一波敌情预告（迷你剪影 + 数量标注）', () => {
+    const r = makeRenderer(
+      fakeEngine({
+        waveIndex: 0,
+        cfg: {
+          level: {
+            wave_count: 3,
+            waves: [
+              { wave_index: 0, spawns: [{ enemy_id: 1, count: 3, interval: 0, delay: 0 }] },
+              { wave_index: 1, spawns: [{ enemy_id: 3, count: 1, interval: 0, delay: 0 }] },
+              { wave_index: 2, spawns: [{ enemy_id: 1, count: 4, interval: 0, delay: 0 }] },
+            ],
+          },
+          enemies: new Map([
+            [1, { category: 'normal' }],
+            [3, { category: 'boss' }],
+          ]),
+        },
+      }),
+    )
+    r.draw(TICK_MS)
+    const texts = popupTexts()
+    // 下一波 = waves[1] = boss×1 → 数量标注一条文本
+    expect(texts.some((t) => t.startsWith('下一波') && t.includes('×1'))).toBe(true)
+  })
+
+  it('战况面板（R2+R5）：实时分数与局内增益 chips 呈现', () => {
+    const r = makeRenderer(
+      fakeEngine({
+        score: 1234,
+        buffs: { attackPermille: 150n, elementCoefPermille: 200n, pierceBonus: 1 },
+      }),
+    )
+    r.draw(TICK_MS)
+    const texts = popupTexts()
+    expect(texts).toContain('分数 1234')
+    expect(texts).toContain('攻 +15%')
+    expect(texts).toContain('系数 +20%')
+    expect(texts).toContain('穿透 +1')
+  })
+
+  it('战况面板：零增益时不画 chips（perf 场景 skipCards → 预算为零）', () => {
+    const r = makeRenderer(fakeEngine({ score: 10 }))
+    canvas.__ctx.calls.length = 0
+    r.draw(TICK_MS)
+    const texts = popupTexts().filter((t) => t.startsWith('分数') || t.includes('%'))
+    expect(texts.some((t) => t.startsWith('分数'))).toBe(true)
+    expect(texts.some((t) => t.includes('%'))).toBe(false)
+  })
+
+  it('战场装饰（R4）：出生门呼吸光弧与推进方向箭头', () => {
+    const r = makeRenderer(fakeEngine({ elapsedMs: 500 }))
+    r.draw(TICK_MS)
+    // 出生门：橙色系动态 alpha 弧；箭头：固定浅灰
+    expect(
+      canvas.__ctx.strokeStyles.some((s) => String(s).startsWith('rgba(255,107,53,')),
+    ).toBe(true)
+    expect(canvas.__ctx.strokeStyles).toContain('rgba(139,148,158,0.16)')
   })
 
   it('防线墙体颜色随血量三段变化（>0.5 / >0.2 / 其余）', () => {
