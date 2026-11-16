@@ -1043,9 +1043,9 @@ onMounted(async () => {
 .skill-row {
   display: flex;
   flex-direction: row;
-  align-items: center;
-  padding: 18rpx 0;
-  border-bottom: 1rpx solid var(--border);
+  align-items: flex-start;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid var(--border-soft);
 }
 
 .skill-row:last-child {
@@ -1055,10 +1055,18 @@ onMounted(async () => {
 .skill-name {
   font-size: 26rpx;
   font-weight: 600;
+  /* 技能名不竖折：挤了就省略号，行高一致 */
+  white-space: nowrap;
 }
 
 .skill-act {
+  flex-shrink: 0;
+  max-width: 42%;
   margin-left: 16rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6rpx;
 }
 
 /*
@@ -1082,14 +1090,12 @@ onMounted(async () => {
 }
 
 .gem-row {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12rpx;
 }
 
 .gem-chip {
-  width: calc(50% - 6rpx);
   background: var(--panel-2);
   border-radius: 10rpx;
   padding: 14rpx 16rpx;

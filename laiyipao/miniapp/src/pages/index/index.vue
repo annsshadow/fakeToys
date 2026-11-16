@@ -1,18 +1,27 @@
 ﻿<template>
   <view class="page-root home">
-    <!-- 顶部资源栏 -->
+    <!-- 顶部资源栏（v2）：资源从纯文本改为图标胶囊 -->
     <view class="topbar" :style="{ paddingTop: statusBarPad }">
       <view class="player">
         <view class="avatar">炮</view>
         <view class="player-info">
           <text class="nick">{{ store.nickname || '玩家' }}</text>
-          <text class="muted">{{ store.isGuest ? '游客账号' : '账号登录' }}</text>
+          <text class="dim">{{ store.isGuest ? '游客账号' : '账号登录' }}</text>
         </view>
       </view>
       <view class="res-row">
-        <text class="res">金 {{ store.wallet.coin }}</text>
-        <text class="res">钻 {{ store.wallet.gem }}</text>
-        <text class="res">体 {{ store.wallet.energy }}</text>
+        <view class="res-pill">
+          <Icon name="coin" :size="26" />
+          <text class="mono">{{ store.wallet.coin }}</text>
+        </view>
+        <view class="res-pill">
+          <Icon name="gemcurrency" :size="26" />
+          <text class="mono">{{ store.wallet.gem }}</text>
+        </view>
+        <view class="res-pill">
+          <Icon name="bolt" :size="26" />
+          <text class="mono">{{ store.wallet.energy }}</text>
+        </view>
       </view>
     </view>
 
@@ -87,34 +96,43 @@
         </view>
       </view>
 
-      <!-- 主行动 -->
-      <view class="action-card tap" @click="goStage">
+      <!-- 主行动（v2 hero）：页面唯一的渐变强调块，一眼看到「该点哪里」 -->
+      <view class="action-card card-hero tap" @click="goStage">
         <view class="flex-1">
+          <text class="action-kicker">当前关卡</text>
           <text class="action-title">第 {{ store.unlockedLevel }} 关</text>
           <text class="action-sub">守住防线，清完全部波次</text>
         </view>
-        <text class="action-go">开始 ›</text>
+        <view class="action-go">
+          <text>开始</text>
+          <Icon name="chevron-right" :size="28" />
+        </view>
       </view>
 
       <!-- 功能入口（2026-11-16 分组）：
-           15 个入口此前混在一个 3 列网格里，最后一行只有 3 个，右边缘空缺；
-           「图鉴」与「功能」两类语义不同的入口也无层级。
-           现在拆成「玩法」9 项 +「图鉴」6 项两组，每组都能被 3 整除，无残缺尾行。 -->
+           15 个入口拆成「玩法」9 项 +「图鉴」6 项两组，每组都能被 3 整除，
+           网格用 CSS Grid 恒定 3 列（修真机亚像素溢出导致的两列）。 -->
       <view class="grid-group">
-        <text class="grid-group-title">玩法</text>
+        <view class="grid-group-head">
+          <text class="grid-group-title">玩法</text>
+          <text class="grid-group-count">{{ playMenus.length }}</text>
+        </view>
         <view class="grid">
           <view v-for="m in playMenus" :key="m.path" class="grid-item tap" @click="go(m.path)">
-            <text class="grid-icon">{{ m.icon }}</text>
+            <view class="icon-badge grid-icon"><Icon :name="m.icon" :size="44" /></view>
             <text class="grid-label">{{ m.label }}</text>
           </view>
         </view>
       </view>
 
       <view class="grid-group">
-        <text class="grid-group-title">图鉴</text>
+        <view class="grid-group-head">
+          <text class="grid-group-title">图鉴</text>
+          <text class="grid-group-count">{{ codexMenus.length }}</text>
+        </view>
         <view class="grid">
           <view v-for="m in codexMenus" :key="m.path" class="grid-item tap" @click="go(m.path)">
-            <text class="grid-icon">{{ m.icon }}</text>
+            <view class="icon-badge grid-icon"><Icon :name="m.icon" :size="44" /></view>
             <text class="grid-label">{{ m.label }}</text>
           </view>
         </view>
@@ -148,6 +166,7 @@ import * as api from '@/api/client'
 import type { Announcement } from '@/api/client'
 import { indexShare } from '@/utils/share'
 import { ELEMENT_ORDER, ELEMENT_NAME, ELEMENT_COLOR } from '@/game/elements'
+import Icon from '@/components/Icon.vue'
 
 const store = useGameStore()
 
@@ -219,19 +238,19 @@ const elements = ELEMENT_ORDER.map((k) => ({
  * 两组。每组的条目数都能被 3 整除（9 / 6），3 列网格不再有残缺尾行。
  */
 const playMenus = [
-  { path: '/pages/stage/stage', label: '关卡', icon: '🎯' },
-  { path: '/pages/bag/bag', label: '背包', icon: '🎒' },
+  { path: '/pages/stage/stage', label: '关卡', icon: 'target' },
+  { path: '/pages/bag/bag', label: '背包', icon: 'bag' },
   // 商城（第 151 轮）。此前三种道具唯一的发放途径就是商城，
   // 而这里没有入口 —— 服务端扣减逻辑齐全，玩家却拿不到道具。
-  { path: '/pages/shop/shop', label: '商城', icon: '🛒' },
-  { path: '/pages/mastery/mastery', label: '专精', icon: '🌲' },
-  { path: '/pages/signin/signin', label: '签到', icon: '📅' },
+  { path: '/pages/shop/shop', label: '商城', icon: 'cart' },
+  { path: '/pages/mastery/mastery', label: '专精', icon: 'mastery' },
+  { path: '/pages/signin/signin', label: '签到', icon: 'calendar' },
   // 我的战报（2026-11-01 新一轮第 41 轮）：`/me/battles` 端点早已存在，
   // 客户端却没有任何战报历史入口 —— 打完就再也找不到那一局的记录。
-  { path: '/pages/battles/battles', label: '战报', icon: '📜' },
-  { path: '/pages/rank/rank', label: '排行', icon: '🏆' },
-  { path: '/pages/verify/verify', label: '验真', icon: '🔍' },
-  { path: '/pages/me/me', label: '我的', icon: '👤' },
+  { path: '/pages/battles/battles', label: '战报', icon: 'scroll' },
+  { path: '/pages/rank/rank', label: '排行', icon: 'trophy' },
+  { path: '/pages/verify/verify', label: '验真', icon: 'verify' },
+  { path: '/pages/me/me', label: '我的', icon: 'user' },
 ]
 
 // 反应图鉴（2026-10-21 P4-2/P4-3）：`/config.reactions` 与
@@ -239,12 +258,12 @@ const playMenus = [
 // 敌人 / 技能 / 装备 / 宝石 / 皮肤图鉴同批（2026-10-31 新一轮第 24~35 轮），
 // 把 `/config` 下发但零消费的权威表逐个接上 UI。
 const codexMenus = [
-  { path: '/pages/reactions/reactions', label: '反应', icon: '⚗️' },
-  { path: '/pages/enemies/enemies', label: '敌人', icon: '👾' },
-  { path: '/pages/skills/skills', label: '技能', icon: '⚔️' },
-  { path: '/pages/equipment/equipment', label: '装备', icon: '🛡️' },
-  { path: '/pages/gems/gems', label: '宝石', icon: '💎' },
-  { path: '/pages/skins/skins', label: '皮肤', icon: '🎨' },
+  { path: '/pages/reactions/reactions', label: '反应', icon: 'flask' },
+  { path: '/pages/enemies/enemies', label: '敌人', icon: 'ghost' },
+  { path: '/pages/skills/skills', label: '技能', icon: 'sword' },
+  { path: '/pages/equipment/equipment', label: '装备', icon: 'shield' },
+  { path: '/pages/gems/gems', label: '宝石', icon: 'gem' },
+  { path: '/pages/skins/skins', label: '皮肤', icon: 'palette' },
 ]
 
 /**
@@ -427,13 +446,11 @@ onShareAppMessage(() => indexShare())
 .res-row {
   display: flex;
   flex-direction: row;
-  gap: 20rpx;
+  gap: 12rpx;
+  white-space: nowrap;
 }
-
-.res {
-  font-size: 24rpx;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
+.res-row :deep(.res-pill svg) {
+  color: var(--fire);
 }
 
 .score {
@@ -457,9 +474,9 @@ onShareAppMessage(() => indexShare())
 
 .bar {
   flex: 1;
-  height: 14rpx;
-  background: var(--panel-2);
-  border-radius: 7rpx;
+  height: 12rpx;
+  background: var(--panel-3);
+  border-radius: 6rpx;
   overflow: hidden;
   margin: 0 16rpx;
 }
@@ -470,18 +487,17 @@ onShareAppMessage(() => indexShare())
 }
 
 .dim-value {
-  width: 80rpx;
+  width: 88rpx;
   text-align: right;
-  font-size: 22rpx;
-  color: var(--muted);
+  font-size: 24rpx;
+  color: var(--text-2);
 }
 
 .dim-weight {
-  width: 120rpx;
+  width: 110rpx;
   text-align: right;
-  font-size: 20rpx;
-  color: var(--muted);
-  opacity: 0.8;
+  font-size: 22rpx;
+  color: var(--dim);
 }
 
 .weakness-box {
@@ -511,11 +527,19 @@ onShareAppMessage(() => indexShare())
   display: flex;
   flex-direction: row;
   align-items: center;
-  background: linear-gradient(135deg, var(--panel-3), var(--panel));
-  border: 1rpx solid var(--border);
-  border-radius: 16rpx;
-  padding: 32rpx 28rpx;
-  margin-bottom: 20rpx;
+  gap: 16rpx;
+  border-radius: var(--radius-lg);
+  padding: 30rpx 28rpx;
+  margin-bottom: 24rpx;
+  box-shadow: var(--shadow-2);
+}
+
+.action-kicker {
+  font-size: 22rpx;
+  color: var(--fire);
+  letter-spacing: 2rpx;
+  display: block;
+  margin-bottom: 6rpx;
 }
 
 .action-title {
@@ -532,9 +556,23 @@ onShareAppMessage(() => indexShare())
 }
 
 .action-go {
-  font-size: 32rpx;
-  color: var(--fire);
-  font-weight: 600;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6rpx;
+  white-space: nowrap;
+  height: 88rpx;
+  padding: 0 30rpx;
+  border-radius: 999rpx;
+  background: var(--accent-grad);
+  color: #fff;
+  font-size: var(--fs-md);
+  font-weight: 700;
+  box-shadow: 0 6rpx 18rpx rgba(255, 107, 53, 0.35);
+}
+/* uni-text 的 span 自带 pre-line，会把「开始」按字折行 —— 显式关掉 */
+.action-go :deep(span) {
+  white-space: nowrap;
 }
 
 /* 分组标题（2026-11-16）：玩法 / 图鉴 两组入口 */
@@ -542,43 +580,60 @@ onShareAppMessage(() => indexShare())
   margin-bottom: 8rpx;
 }
 
+.grid-group-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12rpx;
+  margin-bottom: 14rpx;
+}
+
 .grid-group-title {
-  display: block;
   font-size: 24rpx;
   color: var(--dim);
   letter-spacing: 2rpx;
-  margin-bottom: 12rpx;
+  position: relative;
+  padding-left: 20rpx;
+}
+.grid-group-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8rpx;
+  height: 24rpx;
+  border-radius: 4rpx;
+  background: var(--accent-grad);
+}
+
+.grid-group-count {
+  font-size: 22rpx;
+  color: var(--dim);
 }
 
 .grid {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 18rpx;
+  /* 2026-11-16 v2：flex+calc(33.333%-12rpx) 的组合在真机上因亚像素舍入溢出
+     <0.01px，第 3 项被挤到下一行 → 整页变两列。CSS Grid 的轨道计算不产生
+     这类溢出，minmax(0,1fr) 同时禁止内容撑破列宽。 */
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16rpx;
   margin-bottom: 20rpx;
 }
 
-/* 3 列网格：每组条目数是 3 的倍数，不再有残缺尾行 */
 .grid-item {
-  width: calc(33.333% - 12rpx);
   background: var(--panel);
-  border: 1rpx solid var(--border);
-  border-radius: 16rpx;
-  padding: 24rpx 0;
+  border: 1rpx solid var(--border-soft);
+  border-radius: var(--radius);
+  padding: 24rpx 0 20rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
+  box-shadow: var(--shadow-1);
 }
 
-/* 图标固定盒子：emoji 在三端字形/基线不一，统一尺寸能消除大半参差感 */
 .grid-icon {
-  width: 64rpx;
-  height: 64rpx;
-  line-height: 1;
-  font-size: 40rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  color: var(--text-2);
 }
 
 .grid-label {

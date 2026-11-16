@@ -761,18 +761,20 @@ describe('battle.vue 音效接线（2026-10-23）', () => {
   })
 
   it('静音开关：点一下写入存储并换图标，再点一下取消', async () => {
+    // 2026-11-17 v2：图标从 emoji 换成 SVG（Icon 组件），可断言的形态
+    // 从文本内容改为 aria-label —— 意图不变：状态可见、随点击切换、落存储。
     const Battle = await loadPage()
     const { wrapper } = mountPage(Battle)
     await setupDone(wrapper)
 
     const chip = wrapper.find('.mute-chip')
-    expect(chip.text()).toBe('🔊')
+    expect(chip.attributes('aria-label')).toBe('静音')
     await chip.trigger('click')
-    expect(wrapper.find('.mute-chip').text()).toBe('🔇')
+    expect(wrapper.find('.mute-chip').attributes('aria-label')).toBe('取消静音')
     expect(um.mock.setStorageSync).toHaveBeenCalledWith('lyp_sfx_muted', '1')
 
     await wrapper.find('.mute-chip').trigger('click')
-    expect(wrapper.find('.mute-chip').text()).toBe('🔊')
+    expect(wrapper.find('.mute-chip').attributes('aria-label')).toBe('静音')
     expect(um.mock.setStorageSync).toHaveBeenLastCalledWith('lyp_sfx_muted', '0')
   })
 })

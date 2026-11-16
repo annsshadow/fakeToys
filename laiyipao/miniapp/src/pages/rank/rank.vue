@@ -210,10 +210,24 @@ onMounted(async () => {
 }
 
 .rank-no {
-  width: 60rpx;
+  width: 64rpx;
   font-size: 28rpx;
   color: var(--muted);
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 前三名次做成圆形徽章（色由 --rank-* 令牌下发） */
+.rank-row .rank-no.no-1,
+.rank-row .rank-no.no-2,
+.rank-row .rank-no.no-3 {
+  height: 56rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--panel-3);
+  border: 1rpx solid currentColor;
 }
 
 /* 名次色走主题令牌（common.css 的 --rank-*），不要在页面里写死 */

@@ -280,15 +280,13 @@ onMounted(async () => {
 
 <style scoped>
 .days {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12rpx;
   margin-top: 16rpx;
 }
 
 .day {
-  width: calc(25% - 9rpx);
   background: var(--panel-2);
   border: 1rpx solid var(--border-soft, var(--border));
   border-radius: 14rpx;

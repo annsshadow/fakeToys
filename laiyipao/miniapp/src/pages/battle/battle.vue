@@ -11,21 +11,26 @@
 
     <!-- 顶部信息层 -->
     <view class="overlay-top" :style="{ paddingTop: statusBarPad }">
-      <view class="hp-box">
-        <text class="hp-label">防线</text>
-        <text class="hp-value mono">{{ hpText }}</text>
-        <view class="hp-bar">
-          <view class="hp-fill" :style="{ width: hpPct + '%' }" />
+      <view class="hud-row">
+        <view class="hp-box">
+          <view class="hp-line">
+            <text class="hp-label">防线</text>
+            <text class="hp-value mono">{{ hpText }}</text>
+          </view>
+          <view class="hp-bar">
+            <view class="hp-fill" :style="{ width: hpPct + '%' }" />
+          </view>
         </view>
+        <view class="hud-spacer" />
+        <view class="hud-pill"><text class="wave-text">波次 {{ waveText }}</text></view>
+        <view class="hud-pill"><text class="kill-text">击杀 {{ engine?.kills ?? 0 }}</text></view>
       </view>
-      <view class="top-right">
-        <!--
-          2026-10-21（P6-4）：拿不到 canvas 时明确告诉玩家。
-          此前是**静默**降级 —— 玩家只看到黑屏，以为游戏卡了。
-        -->
-        <view v-if="renderMode === 'fallback'" class="mode-note">兼容模式</view>
-        <text class="wave-text">波次 {{ waveText }}</text>
-        <text class="kill-text">击杀 {{ engine?.kills ?? 0 }}</text>
+      <view class="hud-row">
+        <!-- 音效开关（2026-10-23）：放在战斗 HUD 而不是设置页 —— 玩家想静音
+             的时刻几乎总是"正在打"，让他退出战斗去找设置等于把开关藏起来。 -->
+        <view class="mute-chip" :aria-label="muted ? '取消静音' : '静音'" @click="toggleMute">
+          <Icon :name="muted ? 'volume-off' : 'volume-on'" :size="30" />
+        </view>
         <!--
           倍速档位（2026-10-22）。
           加它是因为「等一波打完」是测试时最耗时间的一件事：1× 跑完一局
@@ -33,12 +38,6 @@
           倍速只压缩等待，不改模拟 —— 理由见 render/canvas.ts 的
           `BATTLE_SPEED_STEPS`（动 TICK_MS 会毁掉 I-6 的可重放性）。
         -->
-        <!--
-          音效开关（2026-10-23）。
-          放在战斗 HUD 而不是设置页：玩家想静音的时刻几乎总是"正在打"，
-          让他退出战斗去找设置，等于把开关藏起来。
-        -->
-        <view class="mute-chip" @click="toggleMute">{{ muted ? '🔇' : '🔊' }}</view>
         <view v-if="!settled" class="speed-row">
           <view
             v-for="s in SPEED_STEPS"
@@ -48,16 +47,22 @@
             @click="setSpeed(s)"
           >{{ s }}×</view>
         </view>
+        <view class="hud-spacer" />
+        <!-- 2026-10-21（P6-4）：拿不到 canvas 时明确告诉玩家（此前静默降级）。 -->
+        <view v-if="renderMode === 'fallback'" class="mode-note">兼容模式</view>
         <!--
           2026-10-21（P4-5）：放弃入口。
           此前体力在开战时就扣了，而页面**没有**任何放弃路径 ——
           中途退出等于「什么都没发生，但资源没了」。
         -->
         <view v-if="!settled" class="abandon-btn" @click="abandon">
-          {{ abandoning ? '处理中…' : '放弃' }}
+          <Icon name="flag" :size="26" />
+          <text>{{ abandoning ? '处理中…' : '放弃' }}</text>
         </view>
         <!-- 暂停（2026-10-23）：切后台会自动暂停，回来由玩家自己点继续。 -->
-        <view v-if="!settled && !paused" class="pause-btn" @click="doPause()">暂停</view>
+        <view v-if="!settled && !paused" class="pause-btn" @click="doPause()">
+          <Icon name="pause" :size="26" />
+        </view>
       </view>
     </view>
 
@@ -160,6 +165,7 @@
 
 <script setup lang="ts">
 import { currencyName } from '@/utils/labels'
+import Icon from '@/components/Icon.vue'
 import { useStatusBarPad } from '@/utils/statusBar'
 import { ref, computed, getCurrentInstance, triggerRef } from 'vue'
 import { onLoad, onUnload, onHide, onShow, onShareAppMessage } from '@dcloudio/uni-app'
@@ -382,8 +388,9 @@ function startFallbackLoop(): void {
 
 async function setup() {
   const info = uni.getSystemInfoSync()
-  canvasW.value = info.windowWidth
-  canvasH.value = info.windowHeight
+  // 桌面 H5 内容列限宽 560：画布跟随容器宽，否则画布会横向溢出内容列
+  canvasW.value = Math.min(Number(info.windowWidth) || 375, 560)
+  canvasH.value = Number(info.windowHeight) || 667
 
   // 必须等登录完成再申请凭证：否则可能带着上一个账号的 token 去开局，
   // 服务端会按那个账号扣体力，出现"钱包体力充足但开不了局"。
@@ -855,7 +862,9 @@ onShareAppMessage(() =>
 <style scoped>
 .battle-page {
   position: relative;
-  width: 100vw;
+  /* 100vw 在 uni-page-body 限宽 560 的桌面 H5 下会比内容列更宽（含滚动条宽），
+     造成横向溢出；100% 跟随容器即可 */
+  width: 100%;
   height: 100vh;
   overflow: hidden;
 }
@@ -878,13 +887,16 @@ onShareAppMessage(() =>
    * 玩家只会以为游戏卡了。
    */
   pointer-events: auto;
-  margin-top: 10rpx;
-  padding: 6rpx 18rpx;
-  border-radius: 10rpx;
-  background: rgba(255, 123, 114, 0.22);
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  height: 60rpx;
+  padding: 0 22rpx;
+  border-radius: 14rpx;
+  background: rgba(255, 123, 114, 0.18);
+  border: 1rpx solid rgba(255, 123, 114, 0.4);
   color: #ff7b72;
-  font-size: 22rpx;
-  text-align: center;
+  font-size: 24rpx;
 }
 
 /*
@@ -898,23 +910,28 @@ onShareAppMessage(() =>
 .mute-chip {
   /* 与 .abandon-btn / .speed-row / .pause-btn 同一条坑：父级 pointer-events: none */
   pointer-events: auto;
-  margin-bottom: 6rpx;
-  padding: 4rpx 12rpx;
-  border-radius: 8rpx;
-  background: rgba(255, 255, 255, 0.08);
-  font-size: 24rpx;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 14rpx;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1rpx solid var(--border-soft);
+  color: var(--text-2);
 }
 
 .pause-btn {
   pointer-events: auto;
-  margin-top: 10rpx;
-  padding: 6rpx 18rpx;
-  border-radius: 10rpx;
-  background: rgba(88, 166, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 14rpx;
+  background: rgba(88, 166, 255, 0.18);
+  border: 1rpx solid rgba(88, 166, 255, 0.4);
   color: #58a6ff;
-  font-size: 22rpx;
-  text-align: center;
 }
 
 /*
@@ -968,13 +985,11 @@ onShareAppMessage(() =>
 
 .mode-note {
   pointer-events: auto;
-  margin-bottom: 8rpx;
   padding: 4rpx 12rpx;
   border-radius: 8rpx;
   background: rgba(255, 209, 61, 0.2);
   color: #ffd33d;
-  font-size: 24rpx;
-  text-align: center;
+  font-size: 22rpx;
 }
 
 /**
@@ -987,21 +1002,23 @@ onShareAppMessage(() =>
   pointer-events: auto;
   display: flex;
   flex-direction: row;
-  justify-content: flex-end;
   gap: 8rpx;
-  margin-top: 10rpx;
 }
 
 .speed-chip {
   /* 24rpx 字号 + 上下 8rpx 内边距 → 触控高度约 40rpx；
      仍比「放弃」按钮小，避免遮挡画面中央的战场 */
-  padding: 8rpx 14rpx;
-  border-radius: 8rpx;
-  border: 1rpx solid var(--border);
-  background: rgba(0, 0, 0, 0.45);
+  min-width: 64rpx;
+  height: 60rpx;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14rpx;
+  border: 1rpx solid var(--border-soft);
+  background: rgba(0, 0, 0, 0.5);
   color: var(--muted);
   font-size: 24rpx;
-  line-height: 1.4;
 }
 
 .speed-chip.on {
@@ -1016,18 +1033,50 @@ onShareAppMessage(() =>
   top: 0;
   left: 0;
   right: 0;
-  padding: 24rpx;
+  padding: 20rpx 20rpx 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+  pointer-events: none;
+}
+
+/* HUD 行：胶囊各自排布，行内不再互相拉伸 */
+.hud-row {
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
-  pointer-events: none;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.hud-spacer {
+  flex: 1;
+}
+
+/* 波次 / 击杀胶囊 */
+.hud-pill {
+  display: inline-flex;
+  align-items: center;
+  height: 56rpx;
+  padding: 0 20rpx;
+  border-radius: 999rpx;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1rpx solid var(--border-soft);
 }
 
 .hp-box {
   background: rgba(0, 0, 0, 0.5);
-  border-radius: 12rpx;
+  border: 1rpx solid var(--border-soft);
+  border-radius: 16rpx;
   padding: 12rpx 20rpx;
   min-width: 240rpx;
+}
+
+.hp-line {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16rpx;
 }
 
 .hp-label {
@@ -1036,16 +1085,15 @@ onShareAppMessage(() =>
 }
 
 .hp-value {
-  font-size: 26rpx;
-  font-weight: 600;
-  display: block;
+  font-size: 28rpx;
+  font-weight: 700;
 }
 
 .hp-bar {
-  height: 8rpx;
+  height: 10rpx;
   background: rgba(255, 255, 255, 0.12);
-  border-radius: 4rpx;
-  margin-top: 8rpx;
+  border-radius: 5rpx;
+  margin-top: 10rpx;
   overflow: hidden;
 }
 
@@ -1054,15 +1102,10 @@ onShareAppMessage(() =>
   background: var(--ok);
 }
 
-.top-right {
-  text-align: right;
-}
-
 .wave-text,
 .kill-text {
-  font-size: 26rpx;
-  color: var(--muted);
-  display: block;
+  font-size: 24rpx;
+  color: var(--text-2);
 }
 
 .sheet {

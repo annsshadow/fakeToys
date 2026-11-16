@@ -1,23 +1,20 @@
 <template>
   <view class="page-root">
     <view class="pad safe-bottom" :style="{ paddingTop: statusBarPad }">
+      <!-- 品牌头部（v2）：登录页是产品的第一眼 -->
+      <view class="login-hero">
+        <view class="avatar">炮</view>
+        <text class="nick">来一炮</text>
+        <text class="dim">测试环境 · 账号登录</text>
+      </view>
+
       <view class="card">
-        <view class="row" style="gap: 20rpx">
-          <view class="avatar">炮</view>
-          <view class="flex-1">
-            <text class="nick">来一炮</text>
-            <text class="dim" style="display: block">测试环境 · 账号登录</text>
-          </view>
-        </view>
-        <text class="muted" style="display: block; margin-top: 16rpx">
+        <text class="muted" style="display: block; margin-bottom: 20rpx">
           本环境要求用账号登录，<b>全体测试者共用同一个账号</b> ——
           这样金币、关卡进度、专精、战报都聚在同一个号上，
           不会散成「每个浏览器一个游客号」。
         </text>
-      </view>
-
-      <view class="card">
-        <text class="card-title">账号</text>
+        <text class="card-title" style="text-align: left">账号</text>
         <input
           v-model="username"
           class="inp"
@@ -134,16 +131,31 @@ async function submit(): Promise<void> {
 </script>
 
 <style scoped>
+.login-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+  padding: 48rpx 0 36rpx;
+}
+
+.login-hero .nick {
+  font-size: 44rpx;
+  font-weight: 800;
+  letter-spacing: 4rpx;
+}
+
 .avatar {
-  width: 96rpx;
-  height: 96rpx;
-  border-radius: 20rpx;
-  background: linear-gradient(135deg, #ff6b35, #ff3d71);
+  width: 128rpx;
+  height: 128rpx;
+  border-radius: 28rpx;
+  background: var(--accent-grad);
+  box-shadow: 0 10rpx 30rpx rgba(255, 107, 53, 0.35);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 44rpx;
-  font-weight: 700;
+  font-size: 60rpx;
+  font-weight: 800;
   color: #fff;
 }
 

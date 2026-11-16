@@ -371,6 +371,12 @@ onMounted(() => {
 .chapter-scroll {
   white-space: nowrap;
   margin-bottom: 20rpx;
+  /* 章节 chips 吸顶：切章不必滚回页首 */
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: 12rpx 0;
+  background: linear-gradient(180deg, var(--bg) 82%, rgba(7, 10, 16, 0));
 }
 
 .chapter-row {
@@ -380,10 +386,10 @@ onMounted(() => {
 }
 
 .chapter-chip {
-  padding: 12rpx 24rpx;
+  padding: 12rpx 26rpx;
   border-radius: 999rpx;
   background: var(--panel);
-  border: 1rpx solid var(--border);
+  border: 1rpx solid var(--border-soft);
   font-size: 24rpx;
   color: var(--muted);
   white-space: nowrap;
@@ -415,19 +421,18 @@ onMounted(() => {
 }
 
 .grid {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16rpx;
   margin-bottom: 20rpx;
 }
 
 .level-cell {
-  width: calc(25% - 12rpx);
   height: 150rpx;
-  border-radius: 16rpx;
+  border-radius: var(--radius);
   background: var(--panel);
-  border: 1rpx solid var(--border);
+  border: 1rpx solid var(--border-soft);
+  box-shadow: var(--shadow-1);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -436,7 +441,8 @@ onMounted(() => {
 }
 
 .level-cell.locked {
-  opacity: 0.35;
+  opacity: 0.32;
+  box-shadow: none;
 }
 
 .level-cell.cleared {

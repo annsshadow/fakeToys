@@ -1029,8 +1029,10 @@ export class BattleRenderer {
     const heat = this.engine.heat
     const barW = vp.width * 0.6
     const barH = 10
+    // 底部安全间距：贴屏幕下缘时槽位会被手势条/圆角裁掉一半（真机实测）
+    const BOTTOM_INSET = 18
     const x = (vp.width - barW) / 2
-    const y = vp.height - 46
+    const y = vp.height - 46 - BOTTOM_INSET
 
     // 热量条（纯色填充 + 圆角遮罩，关键色保持可断言的纯色）
     ctx.fillStyle = 'rgba(0,0,0,0.55)'
@@ -1064,7 +1066,7 @@ export class BattleRenderer {
     const gap = 6
     const totalW = this.engine.skills.length * slotSize + (this.engine.skills.length - 1) * gap
     let sx = (vp.width - totalW) / 2
-    const sy = vp.height - 30
+    const sy = vp.height - 30 - BOTTOM_INSET
     for (const s of this.engine.skills) {
       ctx.fillStyle = 'rgba(22,27,34,0.85)'
       ctx.fillRect(sx, sy, slotSize, slotSize)

@@ -61,6 +61,21 @@
         </view>
       </view>
 
+      <!--
+        页签（2026-11-16）：本页此前 14 个卡片纵排（1532 行），「记录」类卡片
+        （挑战/被挑战/战报/购买/兑换/订单）占了近一半，却与账号主体无关。
+        拆成两个页签；用 `v-show` 保留全部 DOM，数据加载与测试断言不受影响。
+      -->
+      <view class="chip-row me-tabs">
+        <text
+          v-for="t in meTabDefs"
+          :key="t.key"
+          class="chip tap"
+          :class="{ hit: meTab === t.key }"
+          @click="meTab = t.key"
+        >{{ t.label }}</text>
+      </view>
+
       <view v-show="meTab === 'main'" class="card">
         <text class="card-title">资源</text>
         <view class="res-grid">
@@ -88,21 +103,6 @@
         <text class="muted" style="display: block; margin-top: 12rpx">
           四种货币各只有一个用途 —— 这样它们之间无法互相替代，也就没有「哪个更划算」的纠结。
         </text>
-      </view>
-
-      <!--
-        页签（2026-11-16）：本页此前 14 个卡片纵排（1532 行），「记录」类卡片
-        （挑战/被挑战/战报/购买/兑换/订单）占了近一半，却与账号主体无关。
-        拆成两个页签；用 `v-show` 保留全部 DOM，数据加载与测试断言不受影响。
-      -->
-      <view class="chip-row me-tabs">
-        <text
-          v-for="t in meTabDefs"
-          :key="t.key"
-          class="chip tap"
-          :class="{ hit: meTab === t.key }"
-          @click="meTab = t.key"
-        >{{ t.label }}</text>
       </view>
 
       <!-- 设置：战斗音效开关（2026-11-01 新一轮第 79 轮） -->
@@ -1489,23 +1489,22 @@ onUnload(() => {
 }
 
 .res-grid {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12rpx;
 }
 
 .res-cell {
-  width: calc(50% - 6rpx);
   background: var(--panel-2);
-  border-radius: 12rpx;
-  padding: 18rpx 20rpx;
+  border-radius: 14rpx;
+  padding: 16rpx 20rpx;
 }
 
 .res-v {
-  font-size: 36rpx;
+  font-size: 34rpx;
   font-weight: 700;
   display: block;
+  font-variant-numeric: tabular-nums;
 }
 
 .res-k {

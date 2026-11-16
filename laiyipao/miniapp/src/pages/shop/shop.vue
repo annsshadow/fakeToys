@@ -4,15 +4,29 @@
   <view class="page-root">
     <view class="pad safe-bottom">
       <view class="wallet-bar">
-        <text class="dim">钻石 {{ wallet.gem ?? 0 }} · 金币 {{ wallet.coin ?? 0 }} · 体力 {{ wallet.energy ?? 0 }}</text>
+        <view class="res-pill">
+          <Icon name="gemcurrency" :size="26" />
+          <text class="mono">{{ wallet.gem ?? 0 }}</text>
+        </view>
+        <view class="res-pill">
+          <Icon name="coin" :size="26" />
+          <text class="mono">{{ wallet.coin ?? 0 }}</text>
+        </view>
+        <view class="res-pill">
+          <Icon name="bolt" :size="26" />
+          <text class="mono">{{ wallet.energy ?? 0 }}</text>
+        </view>
       </view>
 
       <view v-for="g in groups" :key="g.key" class="card">
         <text class="card-title">{{ g.label }}</text>
         <view v-for="it in g.items" :key="it.id" class="shop-row">
+          <view class="icon-badge">
+            <Icon :name="it.category === 'gem' ? 'gem' : it.category === 'boost' ? 'bolt' : 'bag'" :size="40" />
+          </view>
           <view class="flex-1">
             <text class="skill-name">{{ it.name }}</text>
-            <text class="dim block">{{ priceText(it) }}</text>
+            <text class="price-text block">{{ priceText(it) }}</text>
             <!-- 每日限购进度（2026-11-01 新一轮第 49 轮） -->
             <text v-if="purchaseProgressText(it)" class="dim">{{ purchaseProgressText(it) }}</text>
           </view>
@@ -53,6 +67,7 @@
 import { onMounted, ref } from 'vue'
 import * as api from '@/api/client'
 import { useGameStore } from '@/store/game'
+import Icon from '@/components/Icon.vue'
 
 const store = useGameStore()
 const items = ref<ShopItem[]>([])
@@ -221,11 +236,18 @@ onMounted(async () => {
 
 <style scoped>
 .wallet-bar {
-  padding: 0 0 12rpx;
+  display: flex;
+  flex-direction: row;
+  gap: 12rpx;
+  padding: 0 0 16rpx;
+}
+.wallet-bar :deep(svg) {
+  color: var(--fire);
 }
 .shop-row {
   display: flex;
   align-items: center;
+  gap: 16rpx;
   padding: 20rpx 0;
   border-bottom: 1rpx solid var(--border-soft);
 }
@@ -235,6 +257,12 @@ onMounted(async () => {
 .skill-name {
   font-size: var(--fs-md);
   font-weight: 600;
+}
+.price-text {
+  color: var(--warn);
+  font-size: var(--fs-sm);
+  margin-top: 4rpx;
+  font-variant-numeric: tabular-nums;
 }
 .skill-act {
   flex-shrink: 0;

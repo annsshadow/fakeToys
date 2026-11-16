@@ -12,12 +12,15 @@
 
 page,
 :root {
-  --bg: #0d1117;
-  --panel: #161b22;
-  --panel-2: #1c2430;
-  --panel-3: #222b36;
-  --border: #30363d;
-  --border-soft: rgba(48, 54, 61, 0.5);
+  /* v2 表面分层：页面底最深 → 卡片 → 浮起元素。层次靠明度差 + 阴影，不靠描边堆砌 */
+  --bg: #070a10;
+  --panel: #121826;
+  --panel-2: #1a2233;
+  --panel-3: #222c3d;
+  --border: #2a3547;
+  --border-soft: rgba(42, 53, 71, 0.55);
+  --shadow-1: 0 2rpx 10rpx rgba(0, 0, 0, 0.35);
+  --shadow-2: 0 14rpx 36rpx rgba(0, 0, 0, 0.5);
   --text: #e6edf3;
   --text-2: #c2ccd6;
   --muted: #8b949e;
@@ -70,6 +73,8 @@ page,
   --radius-lg: 18rpx;
 
   background-color: var(--bg);
+  background-image: radial-gradient(120% 36% at 50% -6%, rgba(255, 107, 53, 0.10) 0%, rgba(255, 107, 53, 0) 60%);
+  background-repeat: no-repeat;
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
@@ -129,12 +134,18 @@ page,
 
 /* 卡片：带更柔和的阴影与微渐变，提升层级感 */
 .card {
-  background: linear-gradient(180deg, var(--panel-2) 0%, var(--panel) 100%);
+  background: var(--panel);
   border: 1rpx solid var(--border-soft);
   border-radius: var(--radius-lg);
   padding: 28rpx;
   margin-bottom: 20rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-1);
+}
+
+/* 强调卡：页面唯一的重点区域（hero 行动卡等） */
+.card-hero {
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.16), rgba(255, 61, 113, 0.10)), var(--panel);
+  border: 1rpx solid rgba(255, 107, 53, 0.35);
 }
 
 .card-title {
@@ -409,6 +420,131 @@ page,
 }
 .star-big:nth-child(2) { animation-delay: 0.12s; }
 .star-big:nth-child(3) { animation-delay: 0.24s; }
+
+/* ── v2 共享组件类 ──────────────────────────────────────────────────── */
+
+/* 页头：返回 + 标题（+ 右侧动作）。所有二级页统一用这行 */
+.page-head {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 4rpx 0 20rpx;
+}
+.page-head-title {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  text-align: center;
+}
+.page-head-side {
+  flex: 0 0 auto;
+  min-width: 88rpx;
+}
+
+/* 返回按钮（页头左侧） */
+.back-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: var(--panel-2);
+  color: var(--text-2);
+  font-size: 34rpx;
+  line-height: 1;
+}
+
+/* 页签行（bag / me / rank 等复用）；配合 .chip/.chip.hit */
+.chip-tabs {
+  display: flex;
+  flex-direction: row;
+  gap: 12rpx;
+  padding: 4rpx 0 16rpx;
+}
+.chip-tabs .chip {
+  padding: 12rpx 28rpx;
+  background: var(--panel-2);
+  color: var(--muted);
+}
+.chip-tabs .chip.hit {
+  background: var(--fire-soft);
+  color: var(--fire);
+  border: 1rpx solid rgba(255, 107, 53, 0.4);
+}
+
+/* 图标底座：圆角小方块，SVG 图标的统一容器 */
+.icon-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 18rpx;
+  background: var(--panel-2);
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+
+/* 列表行：左图标 + 主文 + 右侧值。商城/战报/兑换/榜单等统一 */
+.list-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 20rpx;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid var(--border-soft);
+}
+.list-row:last-child {
+  border-bottom: none;
+}
+.list-main {
+  flex: 1;
+  min-width: 0;
+}
+.list-title {
+  font-size: var(--fs-md);
+  font-weight: 600;
+  color: var(--text);
+}
+.list-sub {
+  display: block;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  margin-top: 4rpx;
+}
+.list-side {
+  flex-shrink: 0;
+  text-align: right;
+}
+
+/* 顶栏资源胶囊 */
+.res-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  height: 56rpx;
+  padding: 0 18rpx;
+  border-radius: 999rpx;
+  background: var(--panel-2);
+  border: 1rpx solid var(--border-soft);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+.res-pill .mono {
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* 加载 / 空 / 错误 三态块 */
+.state-block {
+  padding: 48rpx 24rpx;
+  text-align: center;
+}
+.state-block .muted {
+  display: block;
+}
 
 /*
  * 桌面 H5 限宽。
