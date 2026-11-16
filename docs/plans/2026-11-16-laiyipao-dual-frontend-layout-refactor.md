@@ -342,3 +342,14 @@ pnpm size:check
 | 批 5 M5–M7 | 完成 | 桌面 1280px：`uni-page-body` 限宽 560px、卡片 536px、外层背景 `#07090a`、无横溢（改前卡片 1241px/网格 306px）；首页两组 9+6（3 列无残缺尾行，改前 15 项尾行 3 个）；battle HUD wave 26rpx/speed 24rpx（触控高约 40rpx）、battles 元信息 24rpx、me res-note/stage 星级/signin/mastery 提到 20–24rpx；grid-item/action-card/battle-row 挂 `.tap`；type-check ✓ / 1264 测试 ✓ | M6 IA 分组（playMenus/codexMenus，保留 `.grid-item/.grid-label` 类名）；M7 字阶触控 |
 | 批 6 M8–M9 | 完成 | bag 4 页签（技能/装备/宝石/皮肤与道具，v-show 全 DOM 保留，删除与「熔炼」重复的「合成配方」卡）；me 2 页签（账号与防线/记录，六类历史流水入「记录」）；me 顶部返回入口（`getCurrentPages()>1` 才渲染）；实测：页签切换 gearDisplay block/skillDisplay none、resDisplay none，返回按钮从首页进入时显示；type-check ✓ / 1264 测试 ✓ | M8 页签默认项 = 原首屏内容，测试断言不受影响；M9 仅 me 页（battle 有放弃/暂停出口） |
 | 批 7 回归 | 完成 | 双端门禁全绿（admin：type-check/434 测试/build/size ✓；miniapp：type-check/type-check:test/1264 测试/build:h5 ✓）；H5 17 页走查 `pageHScroll = 0`、图鉴页全部 flex；首页/背包/我的页签交互实测；battle 开局→HUD→放弃确认→回首页闭环实测；admin 登录→看板（144 战报）→用户表 7 行→详情抽屉（4 表）→登出→登录页闭环实测；`git diff` 复核：仅 .vue/.css/.html/.ts 入口改动，无 api/store/game/server/测试文件改动 | 遗留（非本次引入）：`admin type-check:test` 有 4 处测试夹具与生成类型的既有漂移（CI 的 admin 门禁不含 type-check:test，本次未触碰 tests/） |
+
+### 7.1 测试环境部署（2026-11-16 23:37）
+
+- 双前端按 deploy/README.md 流程构建（`VITE_API_BASE` 烘焙测试域 API 地址），产物校验：
+  admin/h5 入口 JS 无 localhost 残留（h5 里的 `127.0.0.1:8080` 为 `resolveBaseURL` 兜底字面量，非实际地址）。
+- 上传安装：`/usr/local/laiyipao/{admin,h5}`，旧产物备份为 `*.old-202611162337`（硬链接，省空间）。
+- 验证：远端入口 JS 哈希与本地新构建一致；`/laiyipao-admin/`、`/laiyipao-h5/` 均 200；
+  API 反代 `/laiyipao-api/api/v1/config` 200；后端 `laiyipao.service` active（本轮零后端改动，未重启）。
+- 真域浏览器 E2E：admin 登录页/看板深色主题生效；H5 强制账号登录（测试环境口径）→
+  首页新 IA（玩法 9 + 图鉴 6）→ 图鉴页共享样式（flex/block/徽章底色）全部生效。
+- 注意：4 个提交在本地 main，尚未推送远端仓库。
