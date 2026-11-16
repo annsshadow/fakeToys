@@ -2,6 +2,17 @@
 
 > crate 全量清单与迁移状态以 `oa4rust/backend/docs/brainstorms/oa4rust-endpoint-inventory.md`（脚本自动生成）为准，本册给业务视角的分组导读。
 
+---
+
+## 现量复核（2026-11-16）
+
+> 权威现量入口：`docs/ops/current-state.md`（2026-11-15 复核）。本分册历史正文保留不改；以下只记与现量不一致、已收口的部分。
+
+| 项 | 现量 | 依据 |
+|---|---|---|
+| `sms` / `captcha_store` | 不再待迁移：两 crate 已核实完整实现、零 `stub_` / `Value::Null` / `TODO`，被 `auth` / `organization_assemble_authentication` / `personal` 依赖；旧「todo: 2」为无 status 列历史口径 | `docs/ops/current-state.md` §八 |
+| 生成的 handler 测试门禁 | 生成器已修（可选 `Option<Extension<Session>>` 不再误判需 Session）+ 3 条判据自检；重生成 91 个产物，`#[tokio::test]` 1313→1689 | `docs/ops/current-state.md` §十 |
+
 ## 1. 业务域分组（U1–U7 波次）
 
 ### 认证与组织（U1–U4 首批试点）

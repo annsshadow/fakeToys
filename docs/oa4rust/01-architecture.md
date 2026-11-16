@@ -1,5 +1,17 @@
 # 01 · 项目定位与整体架构
 
+---
+
+## 现量复核（2026-11-16）
+
+> 权威现量入口：`docs/ops/current-state.md`（2026-11-15 复核）。本分册历史正文保留不改；以下只记与现量不一致、已收口的部分。
+
+| 项 | 现量 | 依据 |
+|---|---|---|
+| crate 口径 | `[workspace].members` = 96，连同根包共 97 个 `Cargo.toml`，同一事实两种数法 | `oa4rust/backend/Cargo.toml` |
+| 迁移真实性 | 90 个业务 crate 已全部真实化（`sms`、`captcha_store` 已核实完整实现，旧「todo: 2」为无 status 列历史口径）；2645 个 handler 已真实化；平均 DB 真实化率 13.8% 仅为「主动查 DB 的 handler 占比」，不是债 | `docs/ops/current-state.md` §八 |
+| API 文档路由 | `/swagger-ui/` 已挂载，指向既有带 `OnceLock` 缓存的 `/openapi.json`（L345），3 支 Rust 行为面测试 | `docs/ops/current-state.md` §六 |
+
 ## 1. 项目定位
 
 OA4Rust 是 **O2OA 开源办公平台（Java 版 o2server）的 Rust 重写项目**，同时配套重写桌面 Web 端与移动端。核心定位：
@@ -8,7 +20,7 @@ OA4Rust 是 **O2OA 开源办公平台（Java 版 o2server）的 Rust 重写项�
 2. **行为对齐**：API 路径、请求/响应信封与 o2server v9（Gson 序列化）保持一致，使 O2OA 生态的存量前端（o2 官方 Web / 三方集成）可**无感接入**。对齐结论来自行为对比实跑（基准 o2server v9 Gson 实测，见 `oa4rust/backend/crates/shared/src/response.rs` 注释）。
 3. **独立交付**：本项目**从未上线、无 Java 存量系统、无迁移切换包袱**；与 o2server 的关联仅存在于开发期——接口契约对齐与 parity 行为测试基准（见 §6）。
 
-**现状（2026-10）**：90 个业务 crate 中 88 个已完成真实化（无 stub 桩、无 `Value::Null` 桩），真实 handler 共 2645 个；待迁移仅剩 2 个（`sms`、`captcha_store` 等基础设施级 crate，见端点清单汇总）。
+**现状（2026-10）**：90 个业务 crate 已全部真实化（`sms`、`captcha_store` 已核实完整实现，旧「todo: 2」为无 status 列的历史口径；无 stub 桩、无 `Value::Null` 桩），真实 handler 共 2645 个。
 
 ## 2. 总体架构
 

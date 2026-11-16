@@ -1,5 +1,16 @@
 # 05 · 环境依赖与配置
 
+---
+
+## 现量复核（2026-11-16）
+
+> 权威现量入口：`docs/ops/current-state.md`（2026-11-15 复核）。本分册历史正文保留不改；以下只记与现量不一致、已收口的部分。
+
+| 项 | 现量 | 依据 |
+|---|---|---|
+| RustSec 例外到期日 | lopdf 0.26.0 → 2026-11-26、rsa 0.9.10 → 2026-12-08、zip 族 → 2026-11-23；本册 §6 示例日期（lopdf 2026-10-28、rsa 2026-11-08）为同步前旧值 | `oa4rust/backend/security/rustsec-exceptions.toml`（d743ab601） |
+| 离线编译 | `utoipa-swagger-ui` 两处启用 `vendored`，build 走内嵌 zip；`cargo check -p openapi --offline` exit 0；旧「从别的 `target/debug/build/.../out/` 拷 Swagger UI zip」绕法作废 | `docs/ops/current-state.md` §一 |
+
 ## 1. 环境依赖
 
 ### 后端（Rust）

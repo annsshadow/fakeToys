@@ -1,5 +1,18 @@
 # 09 · 后续维护与更新约定
 
+---
+
+## 现量复核（2026-11-16）
+
+> 权威现量入口：`docs/ops/current-state.md`（2026-11-15 复核）。本分册历史正文保留不改；以下只记与现量不一致、已收口的部分。
+
+| 项 | 现量 | 依据 |
+|---|---|---|
+| 门禁项数 | `scripts/check-warnings.mjs` 现量 **19 项**（L355 全量 19/19 绿；L356 起默认命令自愈宿主注入即得 19/19），CI workflow 仍只跑 5 项为历史设计；旧「13 项」为过期口径 | `docs/ops/current-state.md` §十一 / §十二 |
+| generated-tests 门禁 | 生成器已区分必需 / 可选 Session，91 个产物重生成、`#[tokio::test]` 1313→1689；旧漂移红已消除 | `docs/ops/current-state.md` §十 |
+| `REALIZE_RUNBOOK.md` | 表内「待确认：该文件当前不在仓库中」保留原样，属历史留痕 | 本分册正文 |
+| 文档同步 | 改数字前先读 `docs/ops/current-state.md` §四「文档维护约定」（净零行 / 名册重钉 / 守卫钉住的数字 / 白名单） | `docs/ops/current-state.md` §四 |
+
 ## 1. 文档分层与"单一信息源"原则
 
 | 信息 | 权威来源 | 本文档集的角色 |

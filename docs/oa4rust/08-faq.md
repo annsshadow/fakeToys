@@ -1,5 +1,17 @@
 # 08 · 常见问题与注意事项
 
+---
+
+## 现量复核（2026-11-16）
+
+> 权威现量入口：`docs/ops/current-state.md`（2026-11-15 复核）。本分册历史正文保留不改；以下只记与现量不一致、已收口的部分。
+
+| 项 | 现量 | 依据 |
+|---|---|---|
+| 编译期联网 | `utoipa-swagger-ui` 启用 `vendored`，旧「从 target 拷 zip」绕法作废；`cargo check -p openapi --offline` exit 0。F&Q 中若仍提手工拷 zip，以现量为准 | `docs/ops/current-state.md` §二 / §六 |
+| 迁移真实性 | `sms` / `captcha_store` 已核实完整实现，旧「待迁移 2 个」是 inventory 无 status 列的历史口径 | `docs/ops/current-state.md` §八 |
+| 其余 | 64MB 栈 / CSRF 403 / Cookie 跨域等条目与现量一致 | — |
+
 ## 1. 编译 / 启动期
 
 ### Q1：`create_app` 阶段栈溢出（Stack overflow）

@@ -1,5 +1,16 @@
 # 03 · 关键数据结构与接口说明
 
+---
+
+## 现量复核（2026-11-16）
+
+> 权威现量入口：`docs/ops/current-state.md`（2026-11-15 复核）。本分册历史正文保留不改；以下只记与现量不一致、已收口的部分。
+
+| 项 | 现量 | 依据 |
+|---|---|---|
+| 迁移完成度 | 90/90 业务 crate 已真实化（原写 88/90），2645 个 handler；`sms` / `captcha_store` 已核实完整实现 | `docs/ops/current-state.md` §八 |
+| API 文档路由 | `/swagger-ui/` 已挂载（L345），用 `Config::new(["/openapi.json"])` 指向既有带缓存的 `/openapi.json`，不重复注册文档路由 | `docs/ops/current-state.md` §六 |
+
 ## 1. 统一响应信封 `ActionResult<T>`
 
 定义：`oa4rust/backend/crates/shared/src/response.rs`。**所有 API 响应的统一 JSON 结构**，字段与 o2server v9（Gson）实测对齐，`None` 字段跳过序列化：

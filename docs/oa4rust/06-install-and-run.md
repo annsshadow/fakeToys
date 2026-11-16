@@ -1,5 +1,16 @@
 # 06 · 安装与运行方式
 
+---
+
+## 现量复核（2026-11-16）
+
+> 权威现量入口：`docs/ops/current-state.md`（2026-11-15 复核）。本分册历史正文保留不改；以下只记与现量不一致、已收口的部分。
+
+| 项 | 现量 | 依据 |
+|---|---|---|
+| 离线编译 | `cargo check -p openapi --offline` exit 0（`utoipa-swagger-ui` vendored，build 走内嵌 zip）；旧「从别的 `target/debug/build/.../out/` 拷 Swagger UI zip」绕法作废，不要写进运行手册 | `docs/ops/current-state.md` §一、本目录 README 现量补记 |
+| Swagger UI 验证 | `/swagger-ui/` 已挂载（裸 `/swagger-ui` 补斜杠），指向带 `OnceLock` 缓存的 `/openapi.json`，不另注册文档路由；验证入口新增 `curl http://localhost:3000/swagger-ui/` | `docs/ops/current-state.md` §六 |
+
 ## 1. 后端：从零到运行
 
 ### 1.1 准备依赖
