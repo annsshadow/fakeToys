@@ -15,7 +15,7 @@
 
 import { TICK_MS, type BattleEngine } from '../game/engine'
 import type { BattleEvent } from '../game/engine'
-import { ELEMENT_COLOR, ELEMENT_ORDER, REACTIONS, type Element } from '../game/elements'
+import { ELEMENT_COLOR, ELEMENT_ORDER, REACTIONS, type Element, type ReactionKey } from '../game/elements'
 import { TERRAIN_NAME } from '../game/terrain'
 import { BASE_X, BASE_Y, FIELD_H, FIELD_W } from '../game/terrain'
 import type { Enemy, Projectile } from '../game/types'
@@ -167,6 +167,56 @@ function makeRadialSprite(
   return layer
 }
 
+// ---------- 特效粒子预生成（逻辑单位；所有形状只用 moveTo/lineTo/arc，见 Effect 注释块） ----------
+
+/**
+ * 放射状爆散粒子。`upBias` ∈ [-1, 0) 时粒子整体向上偏（火焰/毒泡/蒸汽的上浮感），
+ * `dirBias` ∈ [0.5, 1] 时粒子整体向右偏（破甲击退的方向感）。
+ */
+function makeBurstParts(count: number, dist: number, upBias = 0, dirBias = 0): Effect['parts'] {
+  const parts: Effect['parts'] = []
+  for (let i = 0; i < count; i++) {
+    // 确定性伪随机：黄金角均分 + 指数级扰动，避免 Math.random 让同一次
+    // 爆炸在不同帧的重绘之间跳变（特效不需要跨端一致，但同一帧内必须稳定）
+    const a = (Math.PI * 2 * i) / count + (i % 3) * 0.35
+    const d = dist * (0.6 + (i % 4) * 0.14)
+    parts.push({
+      dx: Math.cos(a) * d + dirBias * d * 0.6,
+      dy: Math.sin(a) * d * (1 + upBias) + upBias * d * 0.5,
+      pr: 2.2 + (i % 3),
+    })
+  }
+  return parts
+}
+
+/** 碎片状粒子（冰晶/金属屑）：细长的直线段，用线宽补足「尖」的感觉 */
+function makeShardParts(count: number, dist: number, dirBias = 0): Effect['parts'] {
+  const parts: Effect['parts'] = []
+  for (let i = 0; i < count; i++) {
+    const a = (Math.PI * 2 * i) / count + 0.5 + dirBias * 0.4
+    const d = dist * (0.7 + (i % 3) * 0.16)
+    parts.push({
+      dx: Math.cos(a) * d + dirBias * d * 0.8,
+      dy: Math.sin(a) * d,
+      pr: 1.6 + (i % 2),
+    })
+  }
+  return parts
+}
+
+/** 电弧折线：从中点向两侧的 zigzag（预生成，绘制时一次 stroke） */
+function makeArcPts(len: number): Array<{ dx: number; dy: number }> {
+  const pts = [{ dx: -len, dy: -len * 0.2 }]
+  const segs = 4
+  for (let i = 1; i <= segs; i++) {
+    const px = -len + (len * 2 * i) / segs
+    // 交替上下折：锯齿高度随段号衰减，末端收敛到 (len, len*0.15)
+    const py = (i % 2 === 0 ? 1 : -1) * len * 0.22 * (1 - i / (segs + 1)) + len * 0.15 * (i / segs)
+    pts.push({ dx: px, dy: py })
+  }
+  return pts
+}
+
 /** 逻辑坐标 → 画布坐标 */
 export interface Viewport {
   width: number
@@ -196,6 +246,65 @@ export function toCanvasY(vp: Viewport, fixedY: bigint): number {
   return vp.offsetY + Number(fixedY) / 1000 * vp.scale
 }
 
+/**
+ * 呈现层特效（2026-11-17 战斗特效重构）。
+ *
+ * # 设计边界
+ *
+ * 特效层与 popups 一样**只消费事件**，绝不读写引擎状态 —— 引擎对它零感知，
+ * 回放哈希不受任何影响（渲染层本来就不在哈希路径上）。
+ *
+ * # 性能预算（perf_frame.test.ts 的硬约束）
+ *
+ * 每帧 draw call 预算：普通最坏关 120（第 158 轮实测峰值 88，余量 32）、
+ * 满载压力 700（实测峰值 622，余量 78）、渐变对象 **恒为 0**。
+ * 因此本层立了两条自律：
+ *   1. `MAX_EFFECTS` 封顶同时存在的特效数，超限丢最旧 —— 最坏情况
+ *      `MAX_EFFECTS × 2` 次提交，留足余量；
+ *   2. 每个特效**最多 2 次 draw call**：一次描边（环/折线）+ 一次批量填充
+ *      （所有粒子合并进单个 path，一次 fill）。
+ *   3. **零渐变**：光晕感靠 globalAlpha 分层叠画实心圆实现，不建渐变对象；
+ *   4. 只用 moveTo/lineTo/arc/closePath —— 不用 quadratic/bezier/roundRect，
+ *      与无头测试桩支持的最小 API 集合保持一致。
+ *
+ * # 为什么粒子偏移要预生成
+ *
+ * 命中/爆散的粒子轨迹如果每帧重算，需要为每粒存速度并积分；而特效寿命
+ * 只有几百毫秒，视觉上「一次性炸开、整体淡出」与「逐粒运动」几乎不可分。
+ * 预生成固定偏移让绘制退化为一次批量 fill，成本恒定。
+ */
+interface Effect {
+  /** 逻辑坐标（0..1000，与 popups 同一空间，绘制时统一 ×scale+offset） */
+  x: number
+  y: number
+  /** 主色（元素主题色 / 语义色） */
+  color: string
+  age: number
+  life: number
+  /** 环特效：起始/结束半径（逻辑单位） */
+  r0: number
+  r1: number
+  /** 爆散粒子：预生成的相对偏移与半径（逻辑单位） */
+  parts: Array<{ dx: number; dy: number; pr: number }>
+  /** 电弧折线顶点（相对偏移，逻辑单位） */
+  pts: Array<{ dx: number; dy: number }> | null
+  /** 附加描边环（第二层，alpha 更低半径更大） */
+  halo: boolean
+}
+
+/** 生成时的形状：age 由 spawnFx 统一置 0，调用方不必传 */
+type EffectSpawn = Omit<Effect, 'age'>
+
+/** 同时存在的特效上限。超限丢最旧（见本注释块的预算推导）。 */
+const MAX_EFFECTS = 6
+
+/**
+ * 高负载门槛：同屏敌人超过此数时特效按半频生成。
+ * 依据：最坏关 L100 实测同屏 84 敌，而 draw call 预算的余量
+ * （120 − 88）只有 32 —— 大波次恰恰是预算最紧的时刻。
+ */
+const EFFECT_LOAD_GATE = 20
+
 export class BattleRenderer {
   private ctx: CanvasRenderingContext2D
   private vp: Viewport
@@ -204,6 +313,10 @@ export class BattleRenderer {
   private shake = 0
   /** 反应文字弹窗 */
   private popups: Array<{ text: string; color: string; lifeMs: number; x: number; y: number }> = []
+  /** 呈现层特效（命中环/反应爆散/电弧/防线受击闪光） */
+  private effects: Effect[] = []
+  /** 高负载时的半频门闩（见 spawnFx） */
+  private fxGate = false
   private rafId: number | null = null
   /** 逻辑时钟（setInterval）。与页面可见性无关，战斗不会因切后台停摆。 */
   private logicTimer: number | null = null
@@ -315,25 +428,92 @@ export class BattleRenderer {
             x: Number(e.x) / 1000,
             y: Number(e.y) / 1000,
           })
-          // ⚠️ 第 83 轮：删掉 `if (spec.aoeRadius > 0) this.shake = 4`。
-          //
-          // 那是 `aoeRadius` 在整个仓库里**唯一**的消费者 ——
-          // 而它做的事是「屏幕震动」。
-          //
-          // 问题不在于震动本身，而在于它是一个**假信号**：
-          // 玩家从震动推断「这里炸到了」，而实际上溅射从未被实现，
-          // 一个敌人都没被打到。于是这条反应「看起来生效了但其实没有」，
-          // 比完全没有反馈更让人困惑。
-          //
-          // 同理 `spec` 现在只用于 `spec.name`（弹字），
-          // 所以这个 case 里不再需要它。
-          void spec
+          // 2026-11-17：七种反应各自专属特效（见 spawnReactionFx）。
+          // 抗性未触发的反应只弹灰字，不出特效 —— 「看起来生效了但没生效」
+          // 正是第 83 轮删掉假震动的原因，这里保持同一判据。
+          if (!e.resisted) {
+            this.spawnReactionFx(e.reaction, Number(e.x) / 1000, Number(e.y) / 1000)
+          }
+          break
+        }
+        case 'fire': {
+          // 施放反馈：防线炮口处按技能元素色扩散一圈（260ms）。
+          // 槽位不同给一点纵向错位，多技能齐射时能看出「两发」而不是重合成一发。
+          const muzzle = BASE_X - 26
+          const spread = (e.slot % 4) * 6 - 9
+          this.spawnFx({
+            x: muzzle,
+            y: BASE_Y + spread,
+            color: '#e6edf3',
+            life: 260,
+            r0: 4,
+            r1: 22,
+            parts: [],
+            pts: null,
+            halo: false,
+          })
+          break
+        }
+        case 'hit': {
+          // 命中反馈：小冲击环。暴击加爆散粒子与更大的环 —— 伤害数字已经在
+          // floats 里由引擎生成，这里只负责「打中了」的瞬间感。
+          const x = Number(e.x) / 1000
+          const y = Number(e.y) / 1000
+          if (e.crit) {
+            this.spawnFx({
+              x,
+              y,
+              color: '#ffd33d',
+              life: 420,
+              r0: 6,
+              r1: 34,
+              parts: makeBurstParts(6, 26),
+              pts: null,
+              halo: true,
+            })
+          } else {
+            this.spawnFx({
+              x,
+              y,
+              color: '#e6edf3',
+              life: 240,
+              r0: 3,
+              r1: 16,
+              parts: [],
+              pts: null,
+              halo: false,
+            })
+          }
           break
         }
         case 'kill':
+          // 死亡爆散：环形消散 + 少量碎片。BOSS 已有震屏，这里补视觉终点。
+          this.spawnFx({
+            x: Number(e.x) / 1000,
+            y: Number(e.y) / 1000,
+            color: e.boss ? '#ff6b35' : '#8b949e',
+            life: e.boss ? 560 : 340,
+            r0: e.boss ? 10 : 6,
+            r1: e.boss ? 52 : 26,
+            parts: makeBurstParts(e.boss ? 8 : 5, e.boss ? 34 : 20),
+            pts: null,
+            halo: e.boss,
+          })
           if (e.boss) this.shake = 14
           break
         case 'leak':
+          // 防线受击：墙体位置的红色闪光（方向性反馈 —— 漏怪发生在防线）。
+          this.spawnFx({
+            x: BASE_X - 6,
+            y: BASE_Y,
+            color: '#ff3d71',
+            life: 320,
+            r0: 8,
+            r1: 40,
+            parts: [],
+            pts: null,
+            halo: true,
+          })
           this.shake = Math.max(this.shake, 8)
           break
         case 'wave_start':
@@ -351,6 +531,18 @@ export class BattleRenderer {
           break
         case 'overheat':
           this.popups.push({ text: '过热！', color: '#ff6b35', lifeMs: 1200, x: 500, y: 300 })
+          // 过热全屏警示：以屏幕中心为源的大号橙色闪光。
+          this.spawnFx({
+            x: 500,
+            y: 500,
+            color: '#ff6b35',
+            life: 480,
+            r0: 60,
+            r1: 340,
+            parts: [],
+            pts: null,
+            halo: true,
+          })
           this.shake = Math.max(this.shake, 6)
           break
         case 'won':
@@ -362,6 +554,132 @@ export class BattleRenderer {
       }
     }
     if (this.popups.length > 8) this.popups.splice(0, this.popups.length - 8)
+  }
+
+  /**
+   * 追加一个特效。超过 `MAX_EFFECTS` 时丢最旧 —— 高频事件（连发命中）
+   * 下宁可牺牲旧特效也不能让 draw call 预算失控（见 Effect 注释块）。
+   *
+   * 高负载自适应：同屏敌人 > `EFFECT_LOAD_GATE`（最坏关 L100 实测 84 只）
+   * 时按半频丢弃 —— perf 预算的紧张时刻恰是大波次时刻，
+   * 特效作为「奢侈品」必须先给实体绘制让路。
+   */
+  private spawnFx(e: EffectSpawn): void {
+    if (this.engine.enemies.length > EFFECT_LOAD_GATE) {
+      this.fxGate = !this.fxGate
+      if (!this.fxGate) return
+    }
+    if (this.effects.length >= MAX_EFFECTS) this.effects.shift()
+    this.effects.push({ ...e, age: 0 })
+  }
+
+  /**
+   * 反应 → 专属特效映射。
+   *
+   * 视觉语言与「反应图鉴」的元素对齐：蒸汽=白蓝环、过热=橙爆、
+   * 燃烧云=上浮火粒、超导=电弧折线、急冻=冰晶碎片、腐蚀=毒泡、
+   * 破甲=金属碎片横飞。每种 ≤2 次 draw call（预算见 Effect 注释块）。
+   */
+  private spawnReactionFx(reaction: ReactionKey, x: number, y: number): void {
+    switch (reaction) {
+      case 'steam_burst':
+        // 蒸汽爆发：白蓝双环冲击波（外环半径 = 溅射半径 120 的可视化）
+        this.spawnFx({ x, y, color: '#bfe3ff', life: 460, r0: 8, r1: 120, parts: makeBurstParts(5, 60, -0.4), pts: null, halo: true })
+        break
+      case 'overheat':
+        // 过热：橙红爆闪 + 放射火花（溅射半径 90）
+        this.spawnFx({ x, y, color: '#ff6b35', life: 440, r0: 6, r1: 90, parts: makeBurstParts(6, 46), pts: null, halo: true })
+        break
+      case 'burn_cloud':
+        // 燃烧云：上浮火焰粒子群（负 dy 让粒子聚在命中点上方）
+        this.spawnFx({ x, y, color: '#ff6b35', life: 520, r0: 10, r1: 30, parts: makeBurstParts(7, 34, -0.55), pts: null, halo: false })
+        break
+      case 'superconduct':
+        // 超导：冰蓝电弧折线（zigzag 顶点预生成，一次 stroke 画完）
+        this.spawnFx({ x, y, color: '#58a6ff', life: 380, r0: 0, r1: 44, parts: [], pts: makeArcPts(44), halo: true })
+        break
+      case 'flash_freeze':
+        // 急速冻结：冰晶碎片爆散（直线碎晶，ice 色）
+        this.spawnFx({ x, y, color: '#58a6ff', life: 460, r0: 6, r1: 40, parts: makeShardParts(6, 38), pts: null, halo: true })
+        break
+      case 'corrosion_spread':
+        // 腐蚀扩散：毒泡上浮 + 传播半径环（120 = spread 半径的可视化）
+        this.spawnFx({ x, y, color: '#7ee787', life: 520, r0: 8, r1: 120, parts: makeBurstParts(6, 40, -0.5), pts: null, halo: true })
+        break
+      case 'armor_break':
+        // 破甲击退：金属碎片向右横飞（击退方向 = 远离防线）
+        this.spawnFx({ x, y, color: '#c9a7ff', life: 400, r0: 4, r1: 30, parts: makeShardParts(5, 44, 1), pts: null, halo: false })
+        break
+    }
+  }
+
+  /** 绘制特效层（在飘字之后、弹字之前 —— 特效属于「世界」，弹字属于「UI」） */
+  private drawEffects(ctx: CanvasRenderingContext2D, dtMs: number): void {
+    const vp = this.vp
+    // 双写指针压缩（与 drawPopups 同款）：一趟完成老化 + 剔除 + 绘制
+    let w = 0
+    for (let i = 0; i < this.effects.length; i++) {
+      const fx = this.effects[i]
+      fx.age += dtMs
+      if (fx.age >= fx.life) continue
+      this.effects[w++] = fx
+
+      const t = fx.age / fx.life
+      const alpha = 1 - t
+      const x = vp.offsetX + fx.x * vp.scale
+      const y = vp.offsetY + fx.y * vp.scale
+      ctx.globalAlpha = alpha
+
+      // 主环：半径随寿命扩张，线宽随收窄 —— 冲击波的标准画法
+      if (fx.r1 > fx.r0) {
+        ctx.beginPath()
+        ctx.arc(x, y, (fx.r0 + (fx.r1 - fx.r0) * t) * vp.scale, 0, Math.PI * 2)
+        ctx.strokeStyle = fx.color
+        ctx.lineWidth = Math.max(1, 4 * vp.scale * (1 - t))
+        ctx.stroke()
+      }
+
+      // 外圈光环（低 alpha 大半径）：只有需要「炸开感」的特效带 halo。
+      // ⚠️ 与粒子互斥：环 + 光环 + 粒子填充 = 3 次 draw call 会突破
+      // 「每特效 ≤2 次」的预算线（见 Effect 注释块），有粒子时让位给粒子。
+      if (fx.halo && fx.parts.length === 0) {
+        ctx.globalAlpha = alpha * 0.35
+        ctx.beginPath()
+        ctx.arc(x, y, (fx.r0 + (fx.r1 - fx.r0) * t) * vp.scale * 1.5, 0, Math.PI * 2)
+        ctx.lineWidth = Math.max(1, 2.5 * vp.scale)
+        ctx.stroke()
+        ctx.globalAlpha = alpha
+      }
+
+      // 电弧折线：zigzag 顶点一次 stroke
+      if (fx.pts) {
+        ctx.beginPath()
+        for (let k = 0; k < fx.pts.length; k++) {
+          const px = x + fx.pts[k].dx * vp.scale
+          const py = y + fx.pts[k].dy * vp.scale
+          if (k === 0) ctx.moveTo(px, py)
+          else ctx.lineTo(px, py)
+        }
+        ctx.strokeStyle = fx.color
+        ctx.lineWidth = Math.max(1, 2 * vp.scale)
+        ctx.stroke()
+      }
+
+      // 爆散粒子：全部合并进单个 path，一次 fill（draw call 预算的关键）
+      if (fx.parts.length > 0) {
+        ctx.beginPath()
+        for (const p of fx.parts) {
+          const px = x + p.dx * vp.scale * t
+          const py = y + p.dy * vp.scale * t + (p.dy < 0 ? -6 * vp.scale * t : 0)
+          ctx.moveTo(px + p.pr * vp.scale, py)
+          ctx.arc(px, py, Math.max(0.6, p.pr * vp.scale * (1 - t * 0.6)), 0, Math.PI * 2)
+        }
+        ctx.fillStyle = fx.color
+        ctx.fill()
+      }
+    }
+    this.effects.length = w
+    ctx.globalAlpha = 1
   }
 
   /** 绘制一帧 */
@@ -391,6 +709,7 @@ export class BattleRenderer {
       if (this.visible(toCanvasX(this.vp, e.x), toCanvasY(this.vp, e.y))) this.drawEnemy(ctx, e)
     }
     this.drawFloats(ctx)
+    this.drawEffects(ctx, dtMs)
     this.drawPopups(ctx, dtMs)
     this.drawHud(ctx)
 
@@ -1023,7 +1342,19 @@ export class BattleRenderer {
     ctx.globalAlpha = 1
   }
 
-  /** HUD：热量条 + 技能槽 + 槽位提示。绘制在逻辑空间之外（屏幕固定位置） */
+  /**
+   * HUD：热量条 + 技能槽 + 槽位提示。绘制在逻辑空间之外（屏幕固定位置）。
+   *
+   * 2026-11-17 可读性重做（用户反馈「底部红蓝黄块看不出是干嘛的」）：
+   *   - 热量条：保留档位色与「热量 n/m」文本（呈现层判据，见 canvas.test），
+   *     新增 25% 刻度线与过热脉冲 —— 颜色语义（蓝=常态、黄=接近上限、
+   *     橙=过热锁定）第一次有了可解释的形状；
+   *   - 技能槽：从「中央一块元素色方块」升级为「元素图形 + 描边态 +
+   *     冷却扇形遮罩 + 剩余秒数 + 热量费用角标」。费用角标是理解
+   *     「这块东西跟热量条什么关系」的关键。
+   *
+   * ⚠️ 文本与档位色是测试断言（canvas.test.ts HUD 分支），只增不改。
+   */
   private drawHud(ctx: CanvasRenderingContext2D): void {
     const vp = this.vp
     const heat = this.engine.heat
@@ -1032,22 +1363,35 @@ export class BattleRenderer {
     // 底部安全间距：贴屏幕下缘时槽位会被手势条/圆角裁掉一半（真机实测）
     const BOTTOM_INSET = 18
     const x = (vp.width - barW) / 2
-    const y = vp.height - 46 - BOTTOM_INSET
+    const y = vp.height - 50 - BOTTOM_INSET
 
-    // 热量条（纯色填充 + 圆角遮罩，关键色保持可断言的纯色）
-    ctx.fillStyle = 'rgba(0,0,0,0.55)'
-    ctx.fillRect(x, y, barW, barH)
     const cap = Number(heat.cap)
     const pct = cap > 0 ? Number(heat.heat) / cap : 0
     const heatColor = heat.overheated ? '#ff6b35' : pct > 0.8 ? '#ffd33d' : '#58a6ff'
+
+    // 热量条底 + 档位色填充（可断言纯色）
+    ctx.fillStyle = 'rgba(0,0,0,0.55)'
+    ctx.fillRect(x, y, barW, barH)
     ctx.fillStyle = heatColor
     ctx.fillRect(x, y, barW * Math.min(1, pct), barH)
-    // 热量条顶部高光（半透明白），增强立体感
-    ctx.fillStyle = 'rgba(255,255,255,0.15)'
-    ctx.fillRect(x, y, barW * Math.min(1, pct), 2)
-    ctx.strokeStyle = '#30363d'
+
+    // 25% 刻度线：让「还差多少到黄区/过热」可读（单 path 批量提交）
+    ctx.strokeStyle = 'rgba(255,255,255,0.28)'
     ctx.lineWidth = 1
-    ctx.strokeRect(x, y, barW, barH)
+    ctx.beginPath()
+    for (let i = 1; i < 4; i++) {
+      const tx = Math.round(x + (barW * i) / 4) + 0.5
+      ctx.moveTo(tx, y + 1)
+      ctx.lineTo(tx, y + barH - 1)
+    }
+    ctx.stroke()
+
+    // 过热脉冲：条体上方叠一层呼吸 alpha 的警示罩（时间源自 tick，确定性）
+    if (heat.overheated) {
+      const pulse = 0.18 + 0.14 * (0.5 + 0.5 * Math.sin((this.engine.elapsedMs || 0) / 120))
+      ctx.fillStyle = `rgba(255,107,53,${pulse.toFixed(3)})`
+      ctx.fillRect(x - 3, y - 3, barW + 6, barH + 6)
+    }
 
     ctx.fillStyle = '#8b949e'
     ctx.font = '11px sans-serif'
@@ -1061,28 +1405,152 @@ export class BattleRenderer {
       ctx.fillText(`元素层数 ${this.engine.skills.length} 技能`, x + barW, y - 4)
     }
 
-    // 技能槽（图标为几何图形）
-    const slotSize = 30
-    const gap = 6
-    const totalW = this.engine.skills.length * slotSize + (this.engine.skills.length - 1) * gap
+    // 技能槽：元素图形 + 就绪描边 + 冷却扇形 + 剩余秒数 + 费用角标
+    const slotSize = 38
+    const gap = 8
+    const n = this.engine.skills.length
+    const totalW = n * slotSize + (n - 1) * gap
     let sx = (vp.width - totalW) / 2
-    const sy = vp.height - 30 - BOTTOM_INSET
+    const sy = vp.height - 34 - BOTTOM_INSET
     for (const s of this.engine.skills) {
-      ctx.fillStyle = 'rgba(22,27,34,0.85)'
+      const ready = s.cooldownRemaining <= 0
+      const elColor = ELEMENT_COLOR[s.element]
+
+      // 底座
+      ctx.fillStyle = 'rgba(22,27,34,0.88)'
       ctx.fillRect(sx, sy, slotSize, slotSize)
-      ctx.strokeStyle = ELEMENT_COLOR[s.element]
-      ctx.lineWidth = 1.5
-      ctx.strokeRect(sx, sy, slotSize, slotSize)
-      // 冷却遮罩
-      if (s.cooldownRemaining > 0) {
+
+      // 描边：就绪 = 元素色（亮），冷却 = 暗灰 —— 「能不能放」一眼可辨
+      ctx.strokeStyle = ready ? elColor : '#3a4354'
+      ctx.lineWidth = ready ? 1.6 : 1
+      ctx.strokeRect(sx + 0.5, sy + 0.5, slotSize - 1, slotSize - 1)
+
+      // 元素图形（五元素各自专属形状，与 DefIcon/图鉴同形）
+      this.drawElementGlyph(ctx, s.element, sx + slotSize / 2, sy + slotSize / 2, slotSize * 0.3, elColor)
+
+      // 冷却：径向扇形遮罩（比旧版纵向条更符合「转圈」直觉）+ 剩余秒数
+      if (!ready) {
         const cd = s.cooldownRemaining / Math.max(1, s.cooldownMs)
-        ctx.fillStyle = 'rgba(0,0,0,0.55)'
-        ctx.fillRect(sx, sy + slotSize * (1 - cd), slotSize, slotSize * cd)
+        const cx = sx + slotSize / 2
+        const cy = sy + slotSize / 2
+        ctx.fillStyle = 'rgba(0,0,0,0.62)'
+        ctx.beginPath()
+        ctx.moveTo(cx, cy)
+        // 遮罩覆盖量 = 剩余冷却比例：刚释放时全覆盖，随恢复逐渐「擦亮」
+        ctx.arc(cx, cy, slotSize * 0.52, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * cd)
+        ctx.closePath()
+        ctx.fill()
+        const secLeft = Math.ceil(s.cooldownRemaining / 100) / 10
+        ctx.fillStyle = '#e6edf3'
+        ctx.font = '10px sans-serif'
+        ctx.textAlign = 'center'
+        ctx.fillText(`${secLeft}s`, cx, cy + 3.5)
       }
-      // 元素色块
-      ctx.fillStyle = ELEMENT_COLOR[s.element]
-      ctx.fillRect(sx + 8, sy + 8, slotSize - 16, slotSize - 16)
+
+      // 热量费用角标（右上圆片）：槽位与热量条之间的语义桥梁。
+      // 技能缺省 heatCost（无头测试桩只给 element/cooldown）时不出角标。
+      const cost = Number(s.heatCost)
+      if (Number.isFinite(cost) && cost > 0) {
+        const bx = sx + slotSize - 5
+        const by = sy + 5
+        ctx.fillStyle = ready ? 'rgba(0,0,0,0.72)' : 'rgba(0,0,0,0.45)'
+        ctx.beginPath()
+        ctx.arc(bx, by, 6.5, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.fillStyle = ready ? '#ffd33d' : '#8b949e'
+        ctx.font = 'bold 8px sans-serif'
+        ctx.textAlign = 'center'
+        ctx.fillText(String(cost), bx, by + 3)
+      }
+
       sx += slotSize + gap
+    }
+  }
+
+  /**
+   * 五元素图形（HUD 槽位用）。
+   *
+   * 与 `components/DefIcon.vue` 的 elem:* 图形同形 —— 战斗内外的元素语言统一。
+   * 只用 moveTo/lineTo/arc/closePath（无头测试桩的最小 API 集，
+   * 见 canvas.ts 头注释）；单一 fill/stroke 提交。
+   */
+  private drawElementGlyph(
+    ctx: CanvasRenderingContext2D,
+    el: Element,
+    cx: number,
+    cy: number,
+    r: number,
+    color: string,
+  ): void {
+    ctx.fillStyle = color
+    ctx.strokeStyle = color
+    ctx.lineWidth = Math.max(1, r * 0.22)
+    switch (el) {
+      case 'fire': {
+        // 焰：尖顶火苗（两侧内凹的折线轮廓）
+        ctx.beginPath()
+        ctx.moveTo(cx, cy - r)
+        ctx.lineTo(cx + r * 0.82, cy + r * 0.25)
+        ctx.lineTo(cx + r * 0.3, cy + r * 0.28)
+        ctx.lineTo(cx, cy + r)
+        ctx.lineTo(cx - r * 0.3, cy + r * 0.28)
+        ctx.lineTo(cx - r * 0.82, cy + r * 0.25)
+        ctx.closePath()
+        ctx.fill()
+        break
+      }
+      case 'ice': {
+        // 冰：六向雪晶（三条贯穿线）
+        ctx.beginPath()
+        for (let i = 0; i < 3; i++) {
+          const a = (Math.PI * i) / 3
+          const dx = Math.cos(a) * r
+          const dy = Math.sin(a) * r
+          ctx.moveTo(cx - dx, cy - dy)
+          ctx.lineTo(cx + dx, cy + dy)
+        }
+        ctx.stroke()
+        break
+      }
+      case 'lightning': {
+        // 电：闪电折线（封闭多边形）
+        ctx.beginPath()
+        ctx.moveTo(cx + r * 0.28, cy - r)
+        ctx.lineTo(cx - r * 0.55, cy + r * 0.15)
+        ctx.lineTo(cx - r * 0.05, cy + r * 0.15)
+        ctx.lineTo(cx - r * 0.28, cy + r)
+        ctx.lineTo(cx + r * 0.55, cy - r * 0.15)
+        ctx.lineTo(cx + r * 0.05, cy - r * 0.15)
+        ctx.closePath()
+        ctx.fill()
+        break
+      }
+      case 'corrosion': {
+        // 毒：液滴（圆身 + 上尖角，一个 path 一次 fill）
+        ctx.beginPath()
+        ctx.arc(cx, cy + r * 0.18, r * 0.78, 0, Math.PI * 2)
+        ctx.moveTo(cx, cy - r)
+        ctx.lineTo(cx + r * 0.42, cy + r * 0.02)
+        ctx.lineTo(cx - r * 0.42, cy + r * 0.02)
+        ctx.closePath()
+        ctx.fill()
+        break
+      }
+      case 'kinetic': {
+        // 动能：四角冲击星（凹边菱形）
+        ctx.beginPath()
+        ctx.moveTo(cx, cy - r)
+        ctx.lineTo(cx + r * 0.3, cy - r * 0.3)
+        ctx.lineTo(cx + r, cy)
+        ctx.lineTo(cx + r * 0.3, cy + r * 0.3)
+        ctx.lineTo(cx, cy + r)
+        ctx.lineTo(cx - r * 0.3, cy + r * 0.3)
+        ctx.lineTo(cx - r, cy)
+        ctx.lineTo(cx - r * 0.3, cy - r * 0.3)
+        ctx.closePath()
+        ctx.fill()
+        break
+      }
     }
   }
 

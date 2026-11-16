@@ -16,7 +16,7 @@ import { BattleRenderer, BATTLE_SPEED_STEPS, MAX_BATTLE_SPEED, logicIntervalMs, 
 import { BattleEngine, TICK_MS } from '../game/engine'
 import { defaultAttacker } from '../game/damage'
 import type { Enemy, EnemyDef, FloatText, GeneratedLevel, SkillDef } from '../game/types'
-import { ELEMENT_COLOR, type Element } from '../game/elements'
+import { ELEMENT_COLOR, REACTION_ORDER, type Element } from '../game/elements'
 
 /** 打桩的 2D 上下文：记录调用，不做任何实际绘制。 */
 class StubContext {
@@ -775,6 +775,94 @@ describe('BattleRenderer 分支覆盖（假引擎直驱绘制分支）', () => {
     expect(texts.some((t) => t.startsWith('热量 5/0'))).toBe(true)
     expect(texts.some((t) => t.startsWith('过热 '))).toBe(true)
     expect(canvas.__ctx.fillStyles).toContain('#ff6b35')
+  })
+
+  it('HUD（2026-11-17 可读性重做）：冷却秒数、元素图形与费用角标', () => {
+    const skills = [
+      { element: 'fire' as Element, cooldownRemaining: 400, cooldownMs: 800, heatCost: 20n },
+      { element: 'ice' as Element, cooldownRemaining: 0, cooldownMs: 800, heatCost: 0n },
+    ]
+    const r = makeRenderer(fakeEngine({ skills }))
+    r.draw(TICK_MS)
+    const texts = popupTexts()
+    // 冷却中的技能要显示剩余秒数（可读性核心：不再是看不懂的黑遮罩）
+    expect(texts).toContain('0.4s')
+    // 费用角标：热量费用 > 0 的槽位显示费用数字；0 费用/缺省不显示
+    expect(texts).toContain('20')
+    // 元素图形：火苗走 fill、雪晶走 stroke，都以元素色提交
+    expect(canvas.__ctx.fillStyles).toContain(ELEMENT_COLOR.fire)
+    expect(canvas.__ctx.strokeStyles).toContain(ELEMENT_COLOR.ice)
+    // 冷却中的槽位描边退为暗灰（「能不能放」一眼可辨）
+    expect(canvas.__ctx.strokeStyles).toContain('#3a4354')
+  })
+
+  it('特效层（2026-11-17）：七种反应各自有专属着色', () => {
+    const r = makeRenderer(fakeEngine({}))
+    const mkEvent = (reaction: (typeof REACTION_ORDER)[number]) => ({
+      type: 'reaction' as const,
+      reaction,
+      x: 500n,
+      y: 500n,
+      damage: 1n,
+      resisted: false,
+    })
+    // 分两波触发（特效层有 MAX_EFFECTS 上限，7 个一次会丢最旧），
+    // 两波的提交累计断言：每种反应的主色必须出现（映射缺失 → 对应色缺席 → 红）
+    const strokes: unknown[] = []
+    const fills: unknown[] = []
+    r.handleEvents(REACTION_ORDER.slice(0, 4).map(mkEvent))
+    r.draw(TICK_MS)
+    strokes.push(...canvas.__ctx.strokeStyles)
+    fills.push(...canvas.__ctx.fillStyles)
+    r.handleEvents(REACTION_ORDER.slice(4).map(mkEvent))
+    r.draw(TICK_MS)
+    strokes.push(...canvas.__ctx.strokeStyles)
+    fills.push(...canvas.__ctx.fillStyles)
+    expect(strokes).toContain('#bfe3ff') // 蒸汽爆发：白蓝冲击环
+    expect(fills).toContain('#ff6b35') // 过热/燃烧云：火粒
+    expect(strokes).toContain('#58a6ff') // 超导电弧 / 急冻环
+    expect(fills).toContain('#7ee787') // 腐蚀扩散：毒泡
+    expect(fills).toContain('#c9a7ff') // 破甲击退：碎片
+  })
+
+  it('特效层：抗性反应只弹灰字不出特效（第 83 轮「诚实反馈」判据延续）', () => {
+    const r = makeRenderer(fakeEngine({}))
+    r.handleEvents([
+      { type: 'reaction', reaction: 'steam_burst', x: 500n, y: 500n, damage: 1n, resisted: true },
+    ])
+    r.draw(TICK_MS)
+    expect(canvas.__ctx.strokeStyles).not.toContain('#bfe3ff')
+    expect(popupTexts()).toContain('蒸汽爆发')
+    expect(canvas.__ctx.textStyles).toContain('#8b949e')
+  })
+
+  it('特效层：开火/命中/暴击/击杀/漏怪/过热均有瞬时反馈', () => {
+    const r = makeRenderer(fakeEngine({}))
+    r.handleEvents([
+      { type: 'fire', slot: 0, skillId: 1 },
+      { type: 'hit', x: 30000n, y: 30000n, damage: 10n, crit: false },
+      { type: 'hit', x: 40000n, y: 30000n, damage: 10n, crit: true },
+      { type: 'kill', x: 20000n, y: 40000n, boss: false },
+      { type: 'leak', damage: 5n },
+      { type: 'overheat' },
+    ])
+    r.draw(TICK_MS)
+    expect(canvas.__ctx.strokeStyles).toContain('#e6edf3') // 开火环 / 普通命中环
+    expect(canvas.__ctx.fillStyles).toContain('#ffd33d') // 暴击金色爆散
+    expect(canvas.__ctx.strokeStyles).toContain('#ff3d71') // 漏怪：防线红闪
+    expect(canvas.__ctx.fillStyles).toContain('#8b949e') // 击杀消散碎片
+    expect(canvas.__ctx.strokeStyles).toContain('#ff6b35') // 过热全屏警示环
+  })
+
+  it('特效层封顶：超过上限丢最旧，draw call 不随事件量失控', () => {
+    const r = makeRenderer(fakeEngine({}))
+    for (let i = 0; i < 30; i++) {
+      r.handleEvents([{ type: 'fire', slot: 0, skillId: 1 }])
+    }
+    r.draw(TICK_MS)
+    // fire 特效无粒子 → 环 + 光环 = 每个最多 2 次 arc；8 个上限 = 16
+    const arcCount = canvas.__ctx.calls.filter((c) => c === 'arc').length
+    expect(arcCount).toBeLessThanOrEqual(16)
   })
 
   it('防线墙体颜色随血量三段变化（>0.5 / >0.2 / 其余）', () => {
