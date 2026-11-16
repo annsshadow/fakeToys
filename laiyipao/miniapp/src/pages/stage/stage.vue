@@ -39,13 +39,17 @@
           :class="{
             locked: lv.id > store.unlockedLevel,
             cleared: starOf(lv.id) > 0,
+            current: lv.id === store.unlockedLevel,
             terrain: lv.terrain && lv.terrain.length > 0,
             boss: lv.is_boss,
           }"
           @click="enter(lv.id)"
         >
+          <!-- 锁定关（100 轮打磨 R11）：锁图标替代纯暗格 —— 「为什么点不了」不再靠猜 -->
+          <Icon v-if="lv.id > store.unlockedLevel" name="lock" :size="36" class="lock-glyph" />
           <text class="level-no">{{ lv.id }}</text>
-          <text v-if="lv.is_boss" class="level-badge">BOSS</text>
+          <text v-if="lv.id === store.unlockedLevel" class="level-badge current-badge">当前</text>
+          <text v-else-if="lv.is_boss" class="level-badge">BOSS</text>
           <text v-else-if="lv.terrain && lv.terrain.length > 0" class="level-badge terrain">
             地形
           </text>
@@ -115,8 +119,14 @@
         </view>
       </view>
 
+      <!--
+        开始按钮 sticky 置底（2026-11-17 100 轮打磨 R13）：
+        详情卡很长（敌人组成/掉落预览/星级门槛），此前按钮压在页尾，
+        选完关要滚过三屏才能点「开始」。吸底后随时可开战；
+        不可进入时依旧整钮降透明（btn-disabled 语义不变）。
+      -->
       <view
-        class="btn btn-primary"
+        class="btn btn-primary start-btn"
         :class="{ 'btn-disabled': !canEnter }"
         @click="startBattle"
       >
@@ -143,6 +153,7 @@ import {onLoad, onShow} from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import { unlockSfx } from '@/audio/sfx'
 import * as api from '@/api/client'
+import Icon from '@/components/Icon.vue'
 import { TERRAIN_NAME, TERRAIN_DESCR } from '@/game/terrain'
 import type { LevelSummary, TerrainKind, Wave } from '@/game/types'
 
@@ -441,12 +452,41 @@ onMounted(() => {
 }
 
 .level-cell.locked {
-  opacity: 0.32;
+  opacity: 0.5;
   box-shadow: none;
+}
+
+/* 锁定关锁图标（100 轮打磨 R11）：盖在暗格中央，编号让位 */
+.lock-glyph {
+  color: var(--muted);
+  margin-bottom: 2rpx;
+}
+
+/* 当前关（100 轮打磨 R12）：品牌色描边 + 呼吸光晕 —— 「下一步打哪」一眼可见 */
+.level-cell.current {
+  border-color: var(--fire);
+  animation: current-glow 1.6s ease-in-out infinite;
+}
+
+@keyframes current-glow {
+  0%, 100% { box-shadow: 0 0 0 rgba(255, 107, 53, 0); }
+  50%      { box-shadow: 0 0 18rpx rgba(255, 107, 53, 0.4); }
+}
+
+.level-badge.current-badge {
+  color: var(--fire);
+  font-weight: 600;
 }
 
 .level-cell.cleared {
   border-color: rgba(126, 231, 135, 0.4);
+}
+
+/* 开始按钮吸底（100 轮打磨 R13）：详情卡再长也随时可开战 */
+.start-btn {
+  position: sticky;
+  bottom: calc(16rpx + env(safe-area-inset-bottom));
+  z-index: 15;
 }
 
 .level-cell.terrain {

@@ -332,3 +332,44 @@ describe('stage.vue 选关页', () => {
     expect(wrapper.text()).toContain('第 1 关 · 测试关')
   })
 })
+
+// ==================== 关卡页状态化（2026-11-17 100 轮打磨 R11/R12/R13）====================
+
+describe('stage.vue 关卡页状态化（100 轮打磨）', () => {
+  it('R11+R12：锁定关出锁图标，当前关带 current 描边与「当前」徽章', async () => {
+    const { wrapper, store } = mountPage(Stage)
+    await flushPromises()
+    triggerUniHook(wrapper.vm, 'onLoad', {})
+    await flushPromises()
+    store.setMaxStage(0) // unlockedLevel = 1 → 第 1 关是当前关、第 2 关锁定（夹具每章 2 关）
+    await flushPromises()
+
+    const cells = wrapper.findAll('.level-cell')
+    expect(cells.length).toBe(2)
+    // 第 1 关 = 当前关：current 类 + 「当前」徽章，无锁图标
+    expect(cells[0]!.classes()).toContain('current')
+    expect(cells[0]!.find('.current-badge').exists()).toBe(true)
+    expect(cells[0]!.find('.lock-glyph').exists()).toBe(false)
+    // 第 2 关锁定：锁图标 + locked 类
+    expect(cells[1]!.classes()).toContain('locked')
+    expect(cells[1]!.find('.lock-glyph').exists()).toBe(true)
+    expect(cells[1]!.find('.stars').exists()).toBe(false)
+  })
+
+  it('R13 开始按钮吸底：sticky 类常驻，不可进入仍走 btn-disabled 降透明', async () => {
+    const { wrapper, store } = mountPage(Stage)
+    await flushPromises()
+    triggerUniHook(wrapper.vm, 'onLoad', {})
+    await flushPromises()
+    const btn = wrapper.find('.start-btn')
+    expect(btn.exists()).toBe(true)
+    expect(btn.classes()).toContain('btn-primary')
+    // 锁定关：选中第 99 关（若存在）→ btn-disabled；否则保持可点语义
+    const locked = wrapper.findAll('.level-cell.locked')[0]
+    if (locked) {
+      await locked.trigger('click')
+      await flushPromises()
+      expect(wrapper.find('.start-btn').classes()).toContain('btn-disabled')
+    }
+  })
+})
