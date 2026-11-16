@@ -71,3 +71,39 @@ const AFFIX_NAME: Record<string, string> = {
 export function affixName(a: string): string {
   return AFFIX_NAME[a] ?? a
 }
+
+/**
+ * 宝石属性 → 图标底座配色类（2026-11-17 全物品视觉化）。
+ *
+ * 用元素色系给属性一个「家族感」锚点（攻击→焰、暴击→雷、生存→中性），
+ * 颜色本身不承载语义 —— 只让 8 种属性在长列表里能被扫读。
+ * gems 图鉴页与背包页共用这一份映射；未映射的属性回退中性底座。
+ */
+export function gemAttrBadge(a: string): string {
+  const map: Record<string, string> = {
+    attack: 'badge-fire',
+    element_coef: 'badge-kinetic',
+    crit: 'badge-lightning',
+    reaction_mult: 'badge-corrosion',
+    element_cap: 'badge-ice',
+    heat_cap: 'badge-fire',
+    skill_damage: 'badge-ice',
+    // armor 不映射 → 中性默认
+  }
+  return map[a] ?? ''
+}
+
+/**
+ * 宝石品质 → 图标配色类。品质档位（灰/蓝/紫/红/金）与品质名的
+ * 中英文 key 同源（QUALITY_NAME），未知品质回退中性。
+ */
+export function gemQualityBadge(q: string): string {
+  const map: Record<string, string> = {
+    gray: '',
+    blue: 'badge-rare',
+    purple: 'badge-epic',
+    red: 'badge-fire',
+    gold: 'badge-legendary',
+  }
+  return map[q] ?? ''
+}

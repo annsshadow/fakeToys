@@ -25,6 +25,10 @@
         </text>
         <view v-for="e in filteredItems" :key="e.id" class="rxn equip">
           <view class="rxn-head">
+            <!-- 部位图标座：装备的类别锚点（武器/头盔/胸甲…各有专属线性图标） -->
+            <view class="icon-badge" style="width: 64rpx; height: 64rpx">
+              <DefIcon :name="'slot:' + e.slot" :size="40" />
+            </view>
             <text class="rxn-name">{{ e.name }}</text>
             <text class="dim">{{ slotLabel(e.slot) }} · {{ tierLabel(e.tier) }}</text>
             <text v-if="e.element" class="tag" :class="'tag-' + e.element">{{ elementName(e.element) }}</text>
@@ -47,6 +51,7 @@
 import { computed, ref } from 'vue'
 import { useGameStore } from '@/store/game'
 import { ELEMENT_NAME, type Element } from '@/game/elements'
+import DefIcon from '@/components/DefIcon.vue'
 
 const store = useGameStore()
 

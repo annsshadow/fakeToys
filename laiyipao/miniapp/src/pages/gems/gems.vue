@@ -24,6 +24,10 @@
         </text>
         <view v-for="g in filteredGems" :key="g.id" class="rxn gem">
           <view class="rxn-head">
+            <!-- 宝石切面图标：颜色按属性映射（共享表见 utils/labels.gemAttrBadge） -->
+            <view class="icon-badge" :class="gemAttrBadge(g.attr)" style="width: 64rpx; height: 64rpx">
+              <DefIcon name="gem" :size="40" />
+            </view>
             <text class="rxn-name">{{ g.name }}</text>
             <text class="dim">{{ attrLabel(g.attr) }}</text>
             <text v-if="ownedCountOf(g.id) > 0" class="chip hit">已拥有 ×{{ ownedCountOf(g.id) }}</text>
@@ -41,6 +45,8 @@ import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import { fetchGems, type OwnedGem } from '@/api/client'
+import { gemAttrBadge } from '@/utils/labels'
+import DefIcon from '@/components/DefIcon.vue'
 
 const store = useGameStore()
 

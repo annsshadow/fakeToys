@@ -25,6 +25,9 @@
         </text>
         <view v-for="s in filteredSkills" :key="s.id" class="rxn skill">
           <view class="rxn-head">
+            <view class="icon-badge" :class="'badge-' + s.element" style="width: 64rpx; height: 64rpx">
+              <DefIcon :name="'elem:' + s.element" :size="40" />
+            </view>
             <text class="rxn-name">{{ s.name }}</text>
             <text class="tag" :class="'tag-' + s.element">{{ elementName(s.element) }}</text>
             <text class="dim">{{ s.kind === 'active' ? '主动' : '被动' }}</text>
@@ -53,6 +56,7 @@
 import { computed, ref } from 'vue'
 import { useGameStore } from '@/store/game'
 import { ELEMENT_NAME, type Element } from '@/game/elements'
+import DefIcon from '@/components/DefIcon.vue'
 
 const store = useGameStore()
 

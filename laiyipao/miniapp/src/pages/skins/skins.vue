@@ -25,8 +25,14 @@
         </text>
         <view v-for="s in filteredSkins" :key="s.id" class="rxn skin">
           <view class="rxn-head">
+            <!-- 皮肤图标座：稀有度决定底座配色（传说带金色描边） -->
+            <view class="icon-badge" :class="rarityBadgeClass(s.rarity)" style="width: 64rpx; height: 64rpx">
+              <DefIcon name="skin" :size="40" />
+            </view>
             <text class="rxn-name">{{ s.name }}</text>
-            <text class="dim">{{ rarityLabel(s.rarity) }}</text>
+            <text class="rarity-chip" :class="'rarity-' + (s.rarity in RARITY_CLASS ? s.rarity : 'common')">
+              {{ rarityLabel(s.rarity) }}
+            </text>
           </view>
           <text class="rxn-descr">{{ s.descr || '（服务端未提供说明）' }}</text>
           <view class="rxn-stats">
@@ -42,6 +48,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useGameStore } from '@/store/game'
+import DefIcon from '@/components/DefIcon.vue'
 
 const store = useGameStore()
 
@@ -78,6 +85,19 @@ function rarityLabel(r: string): string {
   const map: Record<string, string> = { rare: '稀有', epic: '史诗', legendary: '传说' }
   return map[r] ?? r
 }
+
+/** 稀有度 → 图标底座配色；未知稀有度回退中性。 */
+function rarityBadgeClass(r: string): string {
+  const map: Record<string, string> = {
+    rare: 'badge-rare',
+    epic: 'badge-epic',
+    legendary: 'badge-legendary',
+  }
+  return map[r] ?? ''
+}
+
+/** 模板里 rarity-chip 类名的白名单校验（未知稀有度走 common 中性样式）。 */
+const RARITY_CLASS: Record<string, true> = { rare: true, epic: true, legendary: true, common: true }
 
 function passiveLabel(p: string): string {
   const map: Record<string, string> = {

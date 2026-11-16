@@ -56,6 +56,14 @@ page,
   --rank-silver: #c9ced6;
   --rank-bronze: #cd7f32;
 
+  /* 稀有度色（2026-11-17 全物品视觉化）：common 默认中性，不设专用变量 */
+  --rare: #58a6ff;
+  --epic: #c9a7ff;
+  --legendary: #ffd700;
+  --rare-soft: rgba(88, 166, 255, 0.18);
+  --epic-soft: rgba(201, 167, 255, 0.18);
+  --legendary-soft: rgba(255, 215, 0, 0.16);
+
   /* 字阶与间距：让「正文最小 24rpx」这类约束有名字可引用 */
   --fs-xs: 22rpx;
   --fs-sm: 24rpx;
@@ -486,6 +494,37 @@ page,
   color: var(--text-2);
   flex-shrink: 0;
 }
+
+/*
+ * 图标底座变体（2026-11-17 全物品视觉化）。
+ *
+ * 元素 / 稀有度决定底色与描边 —— 用「soft 底 + 主题色字」的既有语言，
+ * 让图鉴条目在纯文本流里获得一眼可辨的类别锚点。
+ */
+.badge-fire      { background: var(--fire-soft);      color: var(--fire); }
+.badge-ice       { background: var(--ice-soft);       color: var(--ice); }
+.badge-lightning { background: var(--lightning-soft); color: var(--lightning); }
+.badge-corrosion { background: var(--corrosion-soft); color: var(--corrosion); }
+.badge-kinetic   { background: var(--kinetic-soft);   color: var(--kinetic); }
+.badge-rare      { background: var(--rare-soft);      color: var(--rare); }
+.badge-epic      { background: var(--epic-soft);      color: var(--epic); }
+.badge-legendary {
+  background: var(--legendary-soft);
+  color: var(--legendary);
+  border: 1rpx solid rgba(255, 215, 0, 0.4);
+}
+
+/* 稀有度文字 chip（皮肤/宝石的品质标签） */
+.rarity-chip {
+  display: inline-block;
+  padding: 2rpx 14rpx;
+  border-radius: 999rpx;
+  font-size: var(--fs-xs);
+}
+.rarity-rare      { background: var(--rare-soft);      color: var(--rare); }
+.rarity-epic      { background: var(--epic-soft);      color: var(--epic); }
+.rarity-legendary { background: var(--legendary-soft); color: var(--legendary); }
+.rarity-common    { background: var(--neutral-soft);   color: var(--muted); }
 
 /* 列表行：左图标 + 主文 + 右侧值。商城/战报/兑换/榜单等统一 */
 .list-row {

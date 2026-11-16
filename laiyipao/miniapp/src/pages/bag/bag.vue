@@ -37,9 +37,14 @@
             class="slot"
             :class="{ empty: !selected[i - 1] }"
           >
-            <text v-if="selected[i - 1]" class="tag" :class="'tag-' + skillOf(i - 1)?.element">
-              {{ elementName(skillOf(i - 1)!.element) }}
-            </text>
+            <!-- 槽位图标：元素图形（与战斗画布/图鉴同语言），替代纯文字 tag -->
+            <view
+              v-if="selected[i - 1]"
+              class="slot-icon"
+              :class="'badge-' + skillOf(i - 1)?.element"
+            >
+              <DefIcon :name="'elem:' + skillOf(i - 1)!.element" :size="34" />
+            </view>
             <text v-if="selected[i - 1]" class="slot-name">{{ skillOf(i - 1)!.name }}</text>
             <text v-else class="dim">空槽</text>
             <text
@@ -94,7 +99,9 @@
         <view v-for="s in allSkills" :key="s.id" class="skill-row">
           <view class="flex-1">
             <view class="row" style="gap: 12rpx">
-              <text class="tag" :class="'tag-' + s.element">{{ elementName(s.element) }}</text>
+              <view class="icon-badge" :class="'badge-' + s.element" style="width: 60rpx; height: 60rpx">
+                <DefIcon :name="'elem:' + s.element" :size="36" />
+              </view>
               <text class="skill-name">{{ s.name }}</text>
               <text class="dim">{{ familyName(s.family) }}</text>
               <text v-if="levelOf(s.id) > 1" class="dim">Lv.{{ levelOf(s.id) }}</text>
@@ -155,7 +162,10 @@
           {{ equipError ? '装备读取失败（见下方提示）' : '正在读取装备…' }}
         </view>
         <view v-for="e in myEquipments" :key="e.id" class="equip-row">
-          <text class="tag" :class="'tag-' + e.element">{{ elementName(e.element as Element) }}</text>
+          <!-- 部位图标座：装备的类别锚点（武器/头盔/胸甲…，与装备图鉴一致） -->
+          <view class="icon-badge" style="width: 60rpx; height: 60rpx">
+            <DefIcon :name="'slot:' + e.slot" :size="36" />
+          </view>
           <view class="flex-1">
             <text class="skill-name">{{ e.name }}</text>
             <text class="dim" style="display: block">
@@ -196,7 +206,12 @@
         <text class="card-title">宝石</text>
         <view class="gem-row">
           <view v-for="g in gems" :key="g.id" class="gem-chip">
-            <text class="gem-name">{{ g.name }}</text>
+            <view class="row" style="gap: 8rpx">
+              <view class="gem-chip-icon" :class="gemAttrBadge(g.attr)">
+                <DefIcon name="gem" :size="26" />
+              </view>
+              <text class="gem-name">{{ g.name }}</text>
+            </view>
             <text class="dim">{{ g.descr }}</text>
           </view>
         </view>
@@ -231,6 +246,10 @@
             :key="g.id"
             class="equip-row owned-gem"
           >
+            <!-- 品质决定图标配色：蓝=稀有紫=史诗红=焰金=传说（见 labels.gemQualityBadge） -->
+            <view class="icon-badge" :class="gemQualityBadge(g.quality)" style="width: 60rpx; height: 60rpx">
+              <DefIcon name="gem" :size="36" />
+            </view>
             <view class="flex-1">
               <text class="skill-name">
                 {{ g.name }}
@@ -326,11 +345,17 @@
           词条也**未接入战斗结算** —— 所以这里只作图鉴展示。
         </text>
         <view v-for="s in skins" :key="s.id" class="equip-row">
+          <!-- 皮肤图标座：稀有度配色（与皮肤图鉴一致） -->
+          <view class="icon-badge" :class="skinBadgeClass(s.rarity)" style="width: 60rpx; height: 60rpx">
+            <DefIcon name="skin" :size="36" />
+          </view>
           <view class="flex-1">
             <text class="skill-name">{{ s.name }}</text>
             <text class="dim" style="display: block">{{ s.descr }}</text>
           </view>
-          <text class="dim">{{ s.rarity }}</text>
+          <text class="rarity-chip" :class="'rarity-' + (SKIN_RARITY[s.rarity] ? s.rarity : 'common')">
+            {{ skinRarityLabel(s.rarity) }}
+          </text>
         </view>
       </view>
 
@@ -350,14 +375,14 @@
 </template>
 
 <script setup lang="ts">
-import { qualityName, affixName } from '@/utils/labels'
+import { qualityName, affixName, gemAttrBadge, gemQualityBadge } from '@/utils/labels'
 import { ref, computed, onMounted } from 'vue'
 import { useGameStore } from '@/store/game'
 import * as api from '@/api/client'
-import { ELEMENT_NAME, type Element } from '@/game/elements'
 import { skillBaseDamageAtLevel } from '@/game/skill'
 import type { OwnedGem } from '@/api/client'
 import type { SkillDef } from '@/game/types'
+import DefIcon from '@/components/DefIcon.vue'
 
 /** 加载中（2026-10-21 P6-1）。 */
 const loading = ref(false)
@@ -488,6 +513,24 @@ function skillNameOf(id: number): string {
 }
 
 const skins = computed<any[]>(() => store.config?.skins ?? [])
+
+/** 皮肤稀有度 → 图标底座配色（与皮肤图鉴共用同一套 badge 类）。 */
+function skinBadgeClass(r: string): string {
+  const map: Record<string, string> = {
+    rare: 'badge-rare',
+    epic: 'badge-epic',
+    legendary: 'badge-legendary',
+  }
+  return map[r] ?? ''
+}
+
+/** 模板里 rarity-chip 类名的白名单校验（未知稀有度走 common 中性样式）。 */
+const SKIN_RARITY: Record<string, true> = { rare: true, epic: true, legendary: true, common: true }
+
+function skinRarityLabel(r: string): string {
+  const map: Record<string, string> = { rare: '稀有', epic: '史诗', legendary: '传说' }
+  return map[r] ?? r
+}
 
 /** 品质中文名；未知品质原样返回（不要吞掉后端新增的档位）。 */
 
@@ -783,10 +826,6 @@ async function doSynthesize(r: { a: number; b: number; output: number }): Promis
   }
 }
 
-function elementName(e: Element): string {
-  return ELEMENT_NAME[e] ?? e
-}
-
 function familyName(f: string): string {
   const m: Record<string, string> = {
     flame: '焰',
@@ -1036,6 +1075,16 @@ onMounted(async () => {
   opacity: 0.4;
 }
 
+/* 槽位元素图标座（2026-11-17）：替代原元素文字 tag */
+.slot-icon {
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .slot-name {
   font-size: 22rpx;
 }
@@ -1099,6 +1148,17 @@ onMounted(async () => {
   background: var(--panel-2);
   border-radius: 10rpx;
   padding: 14rpx 16rpx;
+}
+
+/* 宝石条目切面图标座（2026-11-17）：属性配色走共享 badge 类 */
+.gem-chip-icon {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 10rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .gem-name {

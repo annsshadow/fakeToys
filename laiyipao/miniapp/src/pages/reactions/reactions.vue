@@ -39,8 +39,20 @@
         </text>
         <view v-for="r in filteredReactions" :key="r.key" class="rxn">
           <view class="rxn-head">
+            <!-- 反应图标：双环交叠（两个元素圈相碰的隐喻） -->
+            <view class="icon-badge" style="width: 64rpx; height: 64rpx">
+              <DefIcon name="reaction" :size="40" />
+            </view>
             <text class="rxn-name">{{ r.name }}</text>
             <text v-if="reachable.has(r.key as ReactionKey)" class="rxn-hit">可达</text>
+          </view>
+          <!-- 触发元素对（本地由 lookupReaction 反查，与服务端反应表同源） -->
+          <view v-if="reactionPairs(r.key)" class="rxn-stats">
+            <view v-for="(pair, i) in reactionPairs(r.key)" :key="i" class="pair-chip">
+              <text class="tag" :class="'tag-' + pair[0]">{{ ELEMENT_NAME[pair[0]] }}</text>
+              <text class="dim">+</text>
+              <text class="tag" :class="'tag-' + pair[1]">{{ ELEMENT_NAME[pair[1]] }}</text>
+            </view>
           </view>
           <text class="rxn-descr">{{ r.descr || '（服务端未提供说明）' }}</text>
           <view class="rxn-stats">
@@ -69,9 +81,16 @@
 import { computed, onMounted, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
-import { reachableReactions, type ReactionKey } from '@/game/elements'
+import { ELEMENT_NAME, reachableReactions, type Element, type ReactionKey } from '@/game/elements'
+import { REACTION_PAIRS } from '@/utils/reactionPairs'
+import DefIcon from '@/components/DefIcon.vue'
 
 const store = useGameStore()
+
+/** 反应 → 触发元素对（派生表见 utils/reactionPairs，与图例共用）。 */
+function reactionPairs(key: string): Array<[Element, Element]> {
+  return REACTION_PAIRS[key as ReactionKey] ?? []
+}
 
 /**
  * 反应表（服务端 /config 下发）。
@@ -146,4 +165,13 @@ onMounted(() => {
 
 <style scoped>
 /* 图鉴样式已下沉到 styles/common.css（跨 6 个图鉴页复用） */
+/* 触发元素对：两个元素 tag + 加号的小胶囊组 */
+.pair-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 2rpx 10rpx;
+  border-radius: 999rpx;
+  background: rgba(127, 127, 127, 0.12);
+}
 </style>

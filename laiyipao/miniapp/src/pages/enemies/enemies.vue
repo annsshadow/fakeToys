@@ -25,6 +25,10 @@
         </text>
         <view v-for="en in filteredEnemies" :key="en.id" class="rxn enemy">
           <view class="rxn-head">
+            <!-- 敌型图标座：形状与战斗画布里的敌型一一对应（圆/菱/三角/六边/八边+冠） -->
+            <view class="icon-badge" :class="en.is_boss ? 'badge-fire' : ''" style="width: 64rpx; height: 64rpx">
+              <DefIcon :name="'enemy:' + en.category" :size="40" />
+            </view>
             <text class="rxn-name">{{ en.name }}</text>
             <text class="dim">{{ categoryLabel(en.category) }}</text>
             <text v-if="en.is_boss" class="chip hit">Boss</text>
@@ -60,6 +64,7 @@
 import { computed, ref } from 'vue'
 import { useGameStore } from '@/store/game'
 import { ELEMENT_NAME, type Element } from '@/game/elements'
+import DefIcon from '@/components/DefIcon.vue'
 
 const store = useGameStore()
 
