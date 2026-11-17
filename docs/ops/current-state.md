@@ -1120,6 +1120,36 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 ### 37.4 交付与边界
 
 - 本轮三提交 843e07307、8efecfdde、486cde317 及本现量文档 §37 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+
+## 三十八、第29轮：R179组织搜索类型错配 + 防线剩余挑战次数未回填（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两路并行子代理（oaopt-r179 / lybug-r29），主线程独立复核 diff + 复跑测试 + 全量门禁后提交。lybug-r29 为本轮首个服务端（Go）真 bug 修复。
+
+### 38.1 oa4rust R179 组织选择器切类型后旧类型结果写回新视图（提交 a715de8b9）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | OrganizationSelector.vue 原用 searchSequence 递增序号判重，但 watch(activeType) 切类型只清列表/重置状态、不递增序号，也不取消在途请求。旧类型在途请求返回时 sequence===searchSequence 仍成立，把旧类型结果写进新类型视图——用户切到「人员」却看到「组织」的结果 | 真实可达竞态，用户可感知 |
+| 修复 | 新增 organizationSearchSession.ts 会话令牌：shouldApply 同时校验序号与类型（防止旧类型结果写回），isLatest 只看序号（负责收起 loading，避免切类型后按钮永久停在搜索中）；Selector 接入 begin/shouldApply/isLatest/switchType | 最小改动，保留原搜索流程 |
+| 门禁 | organizationSearchSession.test.ts 4 条行为测试（deferred 模拟切类型后旧请求晚到）RED 类型错配→GREEN；主代理独立复核 diff；pnpm test 1326 passed、typecheck 6 包、lint 357 文件 0 error | — |
+
+### 38.2 laiyipao 服务端防线列表未回填今日挑战次数（提交 a26af72d1）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | progression.go ListDefenses 函数开头已通过 dailyChallengeCounters 读到当日真实 attempts（用于 :487 算候选 can_challenge=attempts<DefenseAttemptLimit），但构造 own DefenseView 时从未回填 MyAttemptsToday/AttemptLimit，GET /api/v1/defenses 的 mine.my_attempts_today 恒为缺省 0。客户端 me.vue:1197 attackLeft=(attempt_limit??3)-(mine.my_attempts_today??0) 据此显示「今日剩余 N 次」，玩家次数用尽后仍显示满额，点挑战才被服务端 403 拒绝 | 服务端契约三处印证：DefenseView 声明字段、ChallengeResult 结算回填 MyAttempts=attempts+1、me.test.ts 已锁前端读取语义 |
+| 修复 | own DefenseView 后补 own.MyAttemptsToday=attempts / own.AttemptLimit=DefenseAttemptLimit 两行，与候选 can_challenge 同源 | 最小改动，不碰前端 |
+| 门禁 | defense_attempt_view_test.go 行为测试（openTestService 真实建防线、真实消耗 2 次挑战并断言 res.MyAttempts==i、再调 ListDefenses 断言 mine.MyAttemptsToday==2）RED（实际 0）→GREEN；主代理独立跑 Go 定向测试 PASS（ok 2.547s）；前端 pnpm test 1468 passed｜2 skipped、tsc/vue-tsc 双 exit0 | 注：服务包全量 go test 为重 DB 集成套件，10 分钟超时阻塞与本修复无关，定点测试已验证 |
+
+### 38.3 主线程侦察（记账，未改动）
+
+- 复核 oa4rust/mobile 的 form.ts（moduleList 多形态定位、容器分组去重、字段类型归一）与 loadList.ts（失败保留旧数据、错误优先于空态、统一 map 钩子），守卫成熟、契约测试齐备，无可确证新缺口，不臆造修复。
+
+### 38.4 交付与边界
+
+- 本轮两提交 a715de8b9、a26af72d1 及本现量文档 §38 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中（服务端测试连接串为本地回环+占位，无真值）；工作树仅含本轮改动。
+- B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）；目标二 augmentor 维持 §33.3 交付边界。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）；目标二 augmentor 维持 §33.3 交付边界。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
