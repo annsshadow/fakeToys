@@ -124,6 +124,19 @@ describe('downstream message dispatch', () => {
     expect(seen[0]).toEqual({ event: 'notification', data: { x: 1 } })
   })
 
+  it('a single downstream frame notifies a $all listener exactly once with the merged envelope', async () => {
+    // dispatch() 内部已按约定广播 $all({event,data})；onmessage 又显式 dispatch('$all', msg.data)，
+    // 于是每一帧会让 $all 监听触发 3 次：正确信封、裸 data、误导性的 $all 事件名。
+    // $all 监听（全局审计/未读计数等）会把一帧当三帧处理，重复计入。
+    await openClient()
+    const seen: unknown[] = []
+    client.on('$all', (d) => seen.push(d))
+    FakeWebSocket.instances[0].simulateMessage(
+      JSON.stringify({ type: 'im_create', data: { body: 'hi' }, sender: 'u-1', room: 'conv-9' }),
+    )
+    expect(seen).toEqual([{ event: 'im_create', data: { body: 'hi', sender: 'u-1', room: 'conv-9' } }])
+  })
+
   it('non-JSON payloads fall back to the raw channel', async () => {
     await openClient()
     const seen: unknown[] = []

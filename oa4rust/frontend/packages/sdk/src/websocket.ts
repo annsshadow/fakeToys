@@ -95,7 +95,8 @@ export class O2WebSocketClient {
             ...dataObj,
           }
           this.dispatch(msg.type, envelope)
-          this.dispatch('$all', msg.data)
+          // dispatch() 内部已向 $all 广播统一 {event,data} 信封；这里再显式发一次
+          // 会让全局监听一帧收 3 次（正确信封 / 裸 data / 误导的 $all 信封）。
         } catch {
           // raw message, dispatch as-is
           this.dispatch('raw', event.data)
