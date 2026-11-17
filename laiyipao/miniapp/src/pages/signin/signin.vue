@@ -41,7 +41,7 @@
           style="margin-top: 20rpx"
           @click="doSignIn"
         >
-          {{ canSign ? '领取今日奖励' : signedToday ? '今日已签到' : '七日签到已完成' }}
+          {{ canSign ? '领取今日奖励' : signedToday ? '✓ 今日已签到' : '✓ 七日签到已完成' }}
         </view>
         <text
           v-if="lastResult"
@@ -52,6 +52,44 @@
         >
           {{ lastResult }}
         </text>
+      </view>
+
+      <!--
+        离线收益（第六批 R1）：与签到同页。
+
+        此前入口埋在「我的」页深处，而「每日签到」和「离线收益」都是
+        每天回来第一件事要点的领取动作 —— 两个领取分在两页，玩家
+        领完签到还要跨页去找挂机收益。这里把它们并到同一页，
+        领完今日签到顺手就能领挂机金币。
+      -->
+      <view v-if="offlineReward" class="card offline-card">
+        <text class="card-title">离线收益</text>
+        <view class="row" style="justify-content: space-between; align-items: center">
+          <view class="flex-1">
+            <view class="row" style="gap: 12rpx; align-items: baseline">
+              <text class="res-v mono">{{ offlineReward.coin }}</text>
+              <text class="res-k">金币可领</text>
+            </view>
+            <text class="dim" style="display: block">
+              已挂机 {{ offlineElapsed }}（上限 {{ offlineReward.cap_hours }} 小时）
+            </text>
+            <text
+              v-if="offlineMsg"
+              :key="offlineMsg"
+              class="offline-msg"
+              :class="{ shake: offlineMsg.startsWith('领取失败') }"
+            >
+              {{ offlineMsg }}
+            </text>
+          </view>
+          <view
+            class="btn btn-mini btn-primary offline-claim"
+            :class="{ disabled: offlineReward.coin <= 0 || offlineClaiming }"
+            @click="claimOffline"
+          >
+            {{ offlineClaiming ? '领取中' : offlineReward.coin > 0 ? '领取' : '已领完' }}
+          </view>
+        </view>
       </view>
 
       <view class="card">
@@ -82,6 +120,8 @@
             @click="switchScope(s.key)"
           >
             {{ s.label }}
+            <!-- 第六批 R65：当前周期有几项可领，一眼可见，不必逐行找「领取」 -->
+            <text v-if="scope === s.key && claimableCount > 0" class="task-claimable">{{ claimableCount }}</text>
           </text>
         </view>
         <view
@@ -220,6 +260,49 @@ function rewardText(reward: Record<string, number>): string {
 /** R40 七日签到的连续进度（0–100%）。 */
 const streakPct = computed(() => Math.min(100, Math.round((claimedCount.value / 7) * 100)))
 
+/* -------------------------------------------------------------------------- */
+/* 离线收益（第六批 R1）                                                        */
+/* 从「我的」页搬来，与签到同页 —— 两个每日领取动作放在同一处。                  */
+/* -------------------------------------------------------------------------- */
+const offlineReward = ref<api.OfflineRewardStatus | null>(null)
+const offlineClaiming = ref(false)
+const offlineMsg = ref('')
+
+/** 挂机时长转可读文本（与旧「我的」页实现一致）。 */
+function fmtElapsed(hours: number): string {
+  if (!isFinite(hours) || hours <= 0) return '不足 1 小时'
+  if (hours < 1) return `${Math.round(hours * 60)} 分钟`
+  return `${hours.toFixed(1)} 小时`
+}
+
+const offlineElapsed = computed(() => fmtElapsed(offlineReward.value?.elapsed_hours ?? 0))
+
+async function loadOfflineReward() {
+  try {
+    offlineReward.value = await api.offlineRewardStatus()
+  } catch {
+    /* 离线收益是辅助信息，加载失败不打扰签到主流程 */
+  }
+}
+
+/** 领取离线收益：成功则刷新收益状态与钱包；失败保留按钮可重试。 */
+async function claimOffline() {
+  if (offlineClaiming.value || !offlineReward.value || offlineReward.value.coin <= 0) return
+  offlineClaiming.value = true
+  try {
+    const res = await api.claimOfflineReward()
+    offlineMsg.value = `领取成功：${res.coin} 金币`
+    await Promise.all([loadOfflineReward(), store.refreshWallet()])
+  } catch (e) {
+    offlineMsg.value = `领取失败：${(e as Error).message}`
+  } finally {
+    offlineClaiming.value = false
+  }
+}
+
+/** 第六批 R65：当前周期可领取的任务数。 */
+const claimableCount = computed(() => tasks.value.filter((t) => t.done && !t.claimed).length)
+
 /** 任务完成度百分比（2026-11-01 新一轮第 36 轮）。 */
 function taskPercent(t: { progress: number; target: number }): number {
   if (!t.target || t.target <= 0) return 0
@@ -321,7 +404,8 @@ onMounted(async () => {
   if (!store.loggedIn) await store.login()
   // 第 135 轮：拉服务端权威签到日历（与 load 并发，互不阻塞）
   // 第 141 轮：并发回读签到状态（点亮已签天 / 决定按钮可否点）
-  await Promise.all([loadCalendar(), loadStatus(), load()])
+  // 第六批 R1：并发拉离线收益（与签到同页展示）
+  await Promise.all([loadCalendar(), loadStatus(), load(), loadOfflineReward()])
 })
 </script>
 
@@ -451,6 +535,30 @@ onMounted(async () => {
 .task-percent.done {
   color: var(--ok);
   font-weight: 600;
+}
+
+/* 第六批 R65 可领任务数徽章 */
+.task-claimable {
+  display: inline-block;
+  margin-left: 6rpx;
+  min-width: 28rpx;
+  text-align: center;
+  border-radius: 999rpx;
+  background: var(--fire);
+  color: #fff;
+  font-size: 18rpx;
+}
+
+/* 第六批 R1 离线收益反馈 */
+.offline-msg {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: var(--ok);
+}
+
+.offline-msg.shake {
+  color: var(--bad);
 }
 
 /* R82 兑换失败输入框红框 */

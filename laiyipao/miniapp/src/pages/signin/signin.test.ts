@@ -36,6 +36,9 @@ vi.mock('@/api/client', () => ({
   redeem: vi.fn(),
   fetchSignInCalendar: vi.fn(),
   fetchSignInStatus: vi.fn(),
+  // 第六批 R1：离线收益入口迁到签到页
+  offlineRewardStatus: vi.fn(),
+  claimOfflineReward: vi.fn(),
 }))
 
 const mockApi = vi.mocked(api, true)
@@ -62,6 +65,10 @@ beforeEach(() => {
   })
   // 缺省：日历拉取失败 → 回落本地缺省公式（保持既有用例的展示值不变）
   mockApi.fetchSignInCalendar.mockRejectedValue(new Error('offline'))
+  // 第六批 R1：离线收益缺省可领
+  mockApi.offlineRewardStatus.mockResolvedValue({
+    coin: 600, elapsed_hours: 2, cap_hours: 12, last_claim_at: '',
+  })
 })
 
 afterEach(() => {
@@ -342,5 +349,33 @@ describe('signin.vue 签到页', () => {
     const { wrapper } = mountPage(Signin)
     await flushPromises()
     expect(wrapper.find('.streak-fill').attributes('style')).toContain('width: 29%')
+  })
+
+  // ── 第六批 R1 离线收益与签到同页 ──────────────────────────────────
+  it('R1 签到页展示离线收益卡片，点击可领取并反馈', async () => {
+    mockApi.claimOfflineReward.mockResolvedValue({ coin: 600 })
+    const { wrapper } = mountPage(Signin)
+    await flushPromises()
+    expect(wrapper.find('.offline-card').exists()).toBe(true)
+    expect(wrapper.text()).toContain('离线收益')
+    expect(wrapper.text()).toContain('600')
+    expect(wrapper.text()).toContain('2.0 小时')
+    const claimBtn = wrapper.find('.offline-claim')
+    expect(claimBtn.exists()).toBe(true)
+    await claimBtn.trigger('click')
+    await flushPromises()
+    expect(mockApi.claimOfflineReward).toHaveBeenCalledOnce()
+    expect(wrapper.text()).toContain('领取成功：600 金币')
+  })
+
+  it('R1 无可领金币时领取按钮禁用', async () => {
+    mockApi.offlineRewardStatus.mockResolvedValue({
+      coin: 0, elapsed_hours: 0, cap_hours: 12, last_claim_at: '',
+    })
+    const { wrapper } = mountPage(Signin)
+    await flushPromises()
+    expect(wrapper.find('.offline-claim').classes()).toContain('disabled')
+    await wrapper.find('.offline-claim').trigger('click')
+    expect(mockApi.claimOfflineReward).not.toHaveBeenCalled()
   })
 })
