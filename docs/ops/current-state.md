@@ -779,6 +779,40 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 ### 26.4 交付与边界
 
 - 本轮三提交 13f40bc39、8b87a5f08、c024150e1 及本现量文档 §26 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+
+## 二十七、第18轮：R168表单校验边界修复 + process/contacts页token化 + 签到周期长度契约修复（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两路并行子代理（oaopt-r168 / lybug-r18）+ 主线程 R161 token 化增量续批，均经独立复跑确认 GREEN 后提交。
+
+### 27.1 oa4rust R168 表单字段校验统一（提交 adb8fd9d3）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | FormDesigner.vue 两套独立校验（validatePreview:1249-1267、validateField:1816-1835）共用 falsy 缺陷：!value 把 0/false/'0' 合法值误判必填未填（slider 默认0/rating/布尔首当其冲）；范围校验挂 value&& 使 0 绕过 min、Number('abc')=NaN 比较恒false静默放行；new RegExp(field.pattern) 遇非法正则直接抛异常中断整表 | 真实业务后果，行为可验证；已排除 xform.ts validateFormValues 另一套口径（有 xform.test.ts） |
+| 修复 | 新增 utils/formFieldValidation.ts verifyFieldValue(field,value)：分离空值与有效值判定，按 required→数值min/max→长度→pattern 顺序返首错，try/catch 兜非法正则；两处校验路径改调 helper（净-29/+7行） | 未实现 FieldValidation.customMsg（原两套均未执行，属独立功能缺口，避免引入无约定新语义）；validateField 改返首条错误，调用方本就按字段聚合行为等价 |
+| 门禁 | formFieldValidation.test.ts 5 例行为测试；RED 4 failed→GREEN | 主代理从 oa4rust 根复跑 5 passed；pnpm test 1305 passed、typecheck 6 包、lint 352 文件 0 error |
+
+### 27.2 oa4rust 移动端 R161 增量续批：process + contacts 页 token 化（提交 a52739783）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 承接三轮续批，process/process 页 28 处、contacts 页 27 处硬编码色仍未归一；另有 #fdf2f0(浅红错误背景,7页)、#5b6572(正文灰,7页)、#c0c4cc(占位符灰,4页) 反复出现却无 token | 主线程增量，与子代理写范围不重叠 |
+| 修复 | App.vue 新增 3 个跨页复用 token：--color-error-tint(#fdf2f0)、--color-text-body(#5b6572)、--color-placeholder(#c0c4cc)；两页 55 处硬编码色全部归一；契约测试新增 22 项选择器+属性断言 | 改后两页硬编码色 0 处，style 仍 scoped 纯 CSS；契约测试选择器名依实际 DOM 类校正（首版误用 .search/.reject 致 1 failed，改 .tabs/.tip-error 后 GREEN） |
+| 门禁 | pnpm test 252 passed、tsc --noEmit 0、uni build 成功（Compiler 5.26）、改动文件 biome 0 error | 主代理独立核验四门禁 |
+
+### 27.3 laiyipao 签到周期天数写死 7（提交 c8824cdd5）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 服务端 economy.go SignInStatus 用 cycleLen=len(days)（日历行数）判周期、SignIn 以 MAX(day_index)+1 不在日历判满——周期长度由服务端日历行数权威决定；前端 signin.vue 却把 7 写死三处：格子 v-for="d in 7"、进度条 claimedCount/7、签满文案「七日签到已完成」。运营改 14 天日历→前端只显示7天、进度50%封顶、已签满仍显示可领错乱 | 真实契约错配，组件行为可验证 |
+| 修复 | 新增 calendarDayCount(ref 默认7)，loadCalendar 成功按 res.days.length 更新（失败/空表保留7不阻断）；格子改 v-for cycleDays、进度分母 calendarDayCount、说明 cycleHint 动态；签满文案 cycleCompleteText 默认7沿用历史文案、非7用「N天签到已完成」 | 未改服务端；离线回落 7 天保底 |
+| 门禁 | signin_cycle_length.test.ts jsdom 组件行为 RED 2 failed(expected 7 to be 14)→GREEN 3 passed | 主代理独立复跑 3 passed；全量 pnpm test 1458 passed｜2 skipped；tsc/vue-tsc 双 exit0 |
+
+### 27.4 交付与边界
+
+- 本轮四提交 adb8fd9d3、a52739783、c8824cdd5 及本现量文档 §27 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
+- B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0（修掉 battles.test.ts 末尾空行）、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
