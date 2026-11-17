@@ -36,6 +36,14 @@ describe('第七批 其它页面实质功能守卫', () => {
     expect(src).toContain('元素反应覆盖矩阵')
   })
 
+  it('G91 战斗评级徽章 + G92 下次目标', () => {
+    const src = read('../pages/battle/battle.vue')
+    expect(src).toContain('battleGrade')
+    expect(src).toContain('grade-badge')
+    expect(src).toContain('nextGoal')
+    expect(src).toContain('下次目标')
+  })
+
   it('G88 战报星级分布', () => {
     const src = read('../pages/battles/battles.vue')
     expect(src).toContain('starDistribution')
