@@ -152,7 +152,11 @@ describe('reactions.vue 反应图鉴', () => {
     expect(text).toContain('过热')
     // 参数（这些此前客户端一处都没读）
     expect(text).toContain('系数 60')
-    expect(text).toContain('攻击力权重 300%')
+    // 服务端契约（domain/elements.go:112-114）：attack_weight_pct 是千分比，
+    // 红线 300‰ = 30%。页面顶部说明也写「权重被结构性限制在 30% 以内」，
+    // 所以显示成「300%」是自相矛盾的单位错（与 amplify_pct 同类）。
+    expect(text).toContain('攻击力权重 30%')
+    expect(text).not.toContain('攻击力权重 300%')
     expect(text).toContain('溅射半径 120')
     expect(text).toContain('持续 1.5s')
     expect(text).toContain('驱散护盾')

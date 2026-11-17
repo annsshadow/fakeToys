@@ -113,7 +113,7 @@
           <text class="rxn-descr">{{ r.descr || '（服务端未提供说明）' }}</text>
           <view class="rxn-stats">
             <text class="stat">系数 {{ r.base_coef }}</text>
-            <text class="stat">攻击力权重 {{ r.attack_weight_pct }}%</text>
+            <text class="stat">攻击力权重 {{ r.attack_weight_pct / 10 }}%</text>
             <text v-if="r.status_duration_ms > 0" class="stat">
               持续 {{ (r.status_duration_ms / 1000).toFixed(1) }}s
             </text>
