@@ -382,3 +382,31 @@ node scripts/check-warnings.mjs
 | B1 弱网文案未归一化 | client.ts:465 把 request:fail abort 技术串直接透给玩家，而同类 :487/:784 已归一化；既有测试只断言 code 漏掉 message | test-first 复现红后改 1 行同口径文案，复测绿；全量数字同上 |
 
 B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复现并行 23505、需先定 id 生成权威」，不可确证为真实 bug，按「不为改而改」不动。server go test 因改动全在 miniapp TS、与 Go 无关且 job 未产出有效数字，如实记为未采集，不伪报。
+---
+
+## 十四、第5轮：R155桌面SDK归一化 + laiyipao评级bug + augmentor部署边界（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮三路并行：oa4rust 前端实质优化、laiyipao 真 bug 排查、augmentor 部署通道核实。成果均已提交推送到当前分支（非 main）。
+
+### 14.1 oa4rust R155 桌面SDK传输层弱网文案归一化（提交 f8d6a48db）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 桌面SDK request()/upload()/uploadBytes()/stream() 的 fetch catch 直接 throw 原始 TypeError: Failed to fetch；uploadWithProgress XHR 直接产 Network error/Timeout/Request aborted；经 describeListError 拼成「加载失败：Failed to fetch」呈现在 ListLoadError.vue，全站 32+ 列表页共用 | R133/R136 已做移动端、492a1b6c8 已做 laiyipao 401，桌面端是同型遗漏 |
+| 修复 | api.ts 增三个中文文案常量 + networkFailure() 工厂；6 处 catch 归一化；stream() 加 `if (err instanceof ApiError) throw err` 守卫避免吞 PermissionError/502 | 保留 status:0 与 RequestCancelledError 语义不变 |
+| 门禁 | test-first RED 6 failed→GREEN 8 passed；新增 api.transport-failure.test.ts 8例 | 主代理独立复跑：pnpm test 75 文件/1198 passed exit0；pnpm typecheck 6 包全 Done exit0 |
+
+### 14.2 laiyipao 构筑评级分母口径错误（评级恒为 S，提交 a7d778167）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | index.vue:483-489 ratingGrade 用未加权上界之和 5+7+8+18+8=46 作分母，而服务端 total 是加权求和（默认权重 12/15/10/12/8，加权满分 525）；分母小 11.4 倍 + Math.min(100) 夹紧使评级恒为 S，阈值 80/60/40/20 全失真 | 同文件 dims 注释明确 total 为加权求和，旧值自相矛盾；此前仅被 toContain("ratingGrade") 字符串守卫覆盖，无行为测试 |
+| 修复 | max 改为按服务端下发 rating_weights 算 Σ(上界×权重)，随运营调权重自动生效；保留 max<=0 除零兜底；修正测试注释满分笔误 | 五维键名与 client.ts 类型定义、dims 既有用法一致 |
+| 门禁 | test-first RED（total=250 期望 B 实得 S）→GREEN（B） | 主代理独立复跑：miniapp pnpm test 124 passed|1 skipped 文件、1440 passed|2 skipped 测试（基线 1439+1），exit0 |
+| 未动 | B3（auth_person id≠uid）按 R152「未复现并行23505、需先定 id 权威」不可确证，未计为 bug 未改 | 不为改而改 |
+
+### 14.3 augmentor 部署通道核实（augverify-r5，只读）
+
+- 结论：**远程测试服本会话不可部署**，缺外部凭据——laiyipao/deploy/.local.keys 仅四个业务变量名（值未读未回显），无 SSH 主机/用户/私钥；CD 通路 .github/workflows/ai-platform-cd.yml 依赖 GitHub 服务端 secrets.DEPLOY_HOST/DEPLOY_USER/DEPLOY_SSH_KEY/DEPLOY_PATH 与 vars.AI_PLATFORM_DEPLOY_ENABLED/AI_PLATFORM_URL，本会话读不到；augmentor/deploy 无自身真值文件。
+- 本地验收服务仍在运行：curl 127.0.0.1:8000/api/health → HTTP200 {status:ok,version:3.0.0}。
+- 访问口径不变：本地 http://127.0.0.1:8000/ 可访问；无传统用户名/密码，写操作走 X-API-Key，口令即 AUGMENTOR_API_KEY（gitignored Temp/aug-key.txt，严禁回显）；远程路径测试域名 /augmentor/ + /augmentor-api/ 待外部凭据条件满足后按 augmentor/deploy/README.md 落地。
