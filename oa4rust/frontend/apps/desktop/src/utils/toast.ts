@@ -20,6 +20,8 @@ function getContainer(): HTMLDivElement {
   if (!container) {
     container = document.createElement('div')
     container.className = 'oa4-toast-container'
+    container.setAttribute('role', 'status')
+    container.setAttribute('aria-live', 'polite')
     container.style.cssText = `
       position: fixed; top: 20px; right: 20px; z-index: 9999;
       display: flex; flex-direction: column; gap: 8px;
@@ -53,6 +55,8 @@ function showToast(opts: ToastOptions): void {
 
   const el = document.createElement('div')
   el.className = 'oa4-toast'
+  el.setAttribute('role', type === 'error' ? 'alert' : 'status')
+  el.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite')
   el.style.cssText = `
     display: flex; align-items: center; gap: 10px;
     padding: 10px 14px; border-radius: 8px;
@@ -141,6 +145,9 @@ export async function copyText(text: string): Promise<boolean> {
 export function confirmMsg(message: string, title = '确认操作'): Promise<boolean> {
   if (typeof document === 'undefined') return Promise.resolve(false)
 
+  // Remember the element that triggered the dialog so focus can be restored on close.
+  const opener = document.activeElement as HTMLElement | null
+
   return new Promise((resolve) => {
     // Remove existing overlay if any
     const existing = document.getElementById('oa4-confirm-overlay')
@@ -155,6 +162,10 @@ export function confirmMsg(message: string, title = '确认操作'): Promise<boo
     `
 
     const box = document.createElement('div')
+    box.setAttribute('role', 'dialog')
+    box.setAttribute('aria-modal', 'true')
+    box.setAttribute('aria-labelledby', 'oa4-confirm-title')
+    box.setAttribute('aria-describedby', 'oa4-confirm-desc')
     box.style.cssText = `
       background: rgba(15, 23, 42, 0.98);
       border: 1px solid rgba(59,130,246,0.4);
@@ -170,6 +181,7 @@ export function confirmMsg(message: string, title = '确认操作'): Promise<boo
       color: #3b82f6; margin-bottom: 12px; font-weight: 700;
       text-shadow: 0 0 10px rgba(59,130,246,0.5);
     `
+    titleEl.id = 'oa4-confirm-title'
     titleEl.textContent = `⚠ ${title}`
 
     const msgEl = document.createElement('div')
@@ -177,6 +189,7 @@ export function confirmMsg(message: string, title = '确认操作'): Promise<boo
       font-size: 13px; color: #cbd5e1; line-height: 1.6;
       margin-bottom: 20px; white-space: pre-wrap;
     `
+    msgEl.id = 'oa4-confirm-desc'
     msgEl.textContent = message
 
     const btnRow = document.createElement('div')
@@ -202,6 +215,8 @@ export function confirmMsg(message: string, title = '确认操作'): Promise<boo
     const finish = (result: boolean) => {
       document.removeEventListener('keydown', onKeyDown)
       overlay.remove()
+      // Give focus back to the control that opened the dialog.
+      if (opener && typeof opener.focus === 'function' && document.body.contains(opener)) opener.focus()
       resolve(result)
     }
 
@@ -234,14 +249,27 @@ export function confirmMsg(message: string, title = '确认操作'): Promise<boo
     overlay.appendChild(box)
     document.body.appendChild(overlay)
 
+    // Move focus into the dialog so keyboard/screen-reader users land on it.
+    cancelBtn.focus()
+
     // Close on overlay click
     overlay.onclick = (e: MouseEvent) => {
       if (e.target === overlay) finish(false)
     }
 
-    // Close on Escape
+    // Close on Escape; trap Tab inside the two action buttons.
     onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') finish(false)
+      if (e.key === 'Escape') {
+        finish(false)
+      } else if (e.key === 'Tab') {
+        e.preventDefault()
+        const active = document.activeElement
+        if (e.shiftKey) {
+          ;(active === cancelBtn ? okBtn : cancelBtn).focus()
+        } else {
+          ;(active === okBtn ? cancelBtn : okBtn).focus()
+        }
+      }
     }
     document.addEventListener('keydown', onKeyDown)
   })
