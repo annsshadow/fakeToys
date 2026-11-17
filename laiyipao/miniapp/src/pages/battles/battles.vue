@@ -98,6 +98,10 @@
                 <text class="mono" style="color: var(--ok)">{{ lootText(detail.loot) || '—' }}</text>
               </view>
               <view v-if="elementText" class="kv"><text class="muted">元素</text><text class="flex-1">{{ elementText }}</text></view>
+              <!-- G78 元素使用频次构成条（不是伤害量，服务端无按元素伤害拆分） -->
+              <view v-if="elementMix.length" class="mix-bar">
+                <view v-for="(m, i) in elementMix" :key="i" class="mix-seg" :style="{ width: m.pct + '%' }" :title="m.name" />
+              </view>
               <view v-if="reactionText" class="kv"><text class="muted">反应</text><text class="flex-1">{{ reactionText }}</text></view>
               <view v-if="terrainText" class="kv"><text class="muted">地形</text><text class="flex-1">{{ terrainText }}</text></view>
               <view class="kv">
@@ -256,6 +260,19 @@ const elementText = computed(() => {
     .join('、')
 })
 
+/* G78 元素使用构成（第七批）：注意 BattleDetail 只有「使用次数」，无按元素伤害数值，
+   所以这里诚实标注是「使用频次构成」，绝不声称伤害量。 */
+const elementMix = computed(() => {
+  const d = detail.value
+  if (!d) return []
+  const entries = Object.entries(d.elements_used).filter(([, v]) => v > 0)
+  const total = entries.reduce((s, [, v]) => s + v, 0) || 1
+  return entries.map(([k, v]) => ({
+    name: ELEMENT_NAME[k as keyof typeof ELEMENT_NAME] ?? k,
+    pct: Math.round(v / total * 100),
+  }))
+})
+
 const reactionText = computed(() => {
   const d = detail.value
   if (!d) return ''
@@ -362,6 +379,14 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* G78 元素使用频次构成条 */
+.mix-bar { display: flex; flex-direction: row; height: 12rpx; border-radius: 6rpx; overflow: hidden; margin: 6rpx 0 10rpx; }
+.mix-seg { height: 100%; background: var(--ice); }
+.mix-seg:nth-child(5n+2) { background: var(--fire); }
+.mix-seg:nth-child(5n+3) { background: var(--lightning); }
+.mix-seg:nth-child(5n+4) { background: var(--corrosion); }
+.mix-seg:nth-child(5n+5) { background: var(--kinetic); }
+
 /* G70 战绩趋势折线 */
 .trend-card .card-title { margin-bottom: 8rpx; }
 .trend-svg { width: 100%; height: 192rpx; overflow: visible; }

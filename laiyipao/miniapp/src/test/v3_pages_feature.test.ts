@@ -36,6 +36,27 @@ describe('第七批 其它页面实质功能守卫', () => {
     expect(src).toContain('元素反应覆盖矩阵')
   })
 
+  it('G76 榜单分数分布柱状图', () => {
+    const src = read('../pages/rank/rank.vue')
+    expect(src).toContain('scoreDistribution')
+    expect(src).toContain('dist-bar')
+    expect(src).toContain('分数分布')
+  })
+
+  it('G71 专精投入总览', () => {
+    const src = read('../pages/mastery/mastery.vue')
+    expect(src).toContain('familyOverview')
+    expect(src).toContain('totalInvested')
+    expect(src).toContain('fo-fill')
+  })
+
+  it('G78 元素使用频次构成条（诚实标注非伤害量）', () => {
+    const src = read('../pages/battles/battles.vue')
+    expect(src).toContain('elementMix')
+    expect(src).toContain('mix-bar')
+    expect(src).toContain('使用频次构成')
+  })
+
   it('G66 技能元素×类型覆盖矩阵', () => {
     const src = read('../pages/skills/skills.vue')
     expect(src).toContain('skillMatrix')

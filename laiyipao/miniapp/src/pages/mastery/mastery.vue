@@ -53,6 +53,21 @@
         </view>
       </scroll-view>
 
+      <!-- G71 专精投入总览：跨系柱状图，看清点数倾斜与各系进度 -->
+      <view v-if="familyOverview.length" class="card overview-card">
+        <view class="card-title">
+          <text>专精投入总览</text>
+          <text class="mono">共 {{ totalInvested }} 点</text>
+        </view>
+        <view v-for="f in familyOverview" :key="f.family" class="fo-row" :class="{ active: f.active }">
+          <text class="dim fo-name">{{ f.name }}</text>
+          <view class="fo-track">
+            <view class="fo-fill" :style="{ width: f.pct + '%' }" />
+          </view>
+          <text class="mono fo-val">{{ f.got }}/{{ f.cap }}</text>
+        </view>
+      </view>
+
       <view v-if="curNodes.length" class="card">
         <text class="card-title">{{ curName }}专精树</text>
         <!-- 第六批 R62：说明锁定原因，玩家不必靠点一下才收到 toast 才知道 -->
@@ -170,6 +185,27 @@ function invested(family: string): number {
   return n
 }
 
+/* -------------------------------------------------------------------------- */
+/* G71 专精投入总览（第七批）                                                   */
+/* 跨所有系的点数分布柱状图 + 剩余可点节点数，帮玩家看「专精往哪倾斜、还能点哪」。  */
+/* 数据来自 families + selectedSet，纯客户端派生。                               */
+/* -------------------------------------------------------------------------- */
+const familyOverview = computed(() => {
+  const max = Math.max(1, ...families.value.map((f) => f.nodes.length))
+  return families.value.map((f) => {
+    const got = f.nodes.filter((n) => selectedSet.value.has(n.id)).length
+    return {
+      family: f.family,
+      name: f.name,
+      got,
+      cap: f.nodes.length,
+      pct: Math.round(got / max * 100),
+      active: f.family === curFamily.value,
+    }
+  })
+})
+const totalInvested = computed(() => familyOverview.value.reduce((s, f) => s + f.got, 0))
+
 async function toggle(n: MasteryNode) {
   if (selected.value.includes(n.id)) {
     uni.showToast({ title: '已点亮的节点需通过重置取消', icon: 'none' })
@@ -251,6 +287,15 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* G71 专精投入总览 */
+.overview-card .card-title .mono { color: var(--kinetic); }
+.fo-row { display: flex; flex-direction: row; align-items: center; gap: 12rpx; margin: 8rpx 0; }
+.fo-row.active .fo-name { color: var(--kinetic); font-weight: 600; }
+.fo-name { width: 140rpx; flex-shrink: 0; }
+.fo-track { flex: 1; height: 10rpx; background: var(--panel-3); border-radius: 999rpx; overflow: hidden; }
+.fo-fill { height: 100%; background: var(--kinetic); border-radius: 999rpx; }
+.fo-val { width: 80rpx; text-align: right; font-size: 22rpx; }
+
 .points {
   font-size: 44rpx;
   font-weight: 700;
