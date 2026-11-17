@@ -936,6 +936,38 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 ### 31.4 交付与边界
 
 - 本轮两提交 0332b408c、f1d70db47 及本现量文档 §31 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+
+## 三十二、第23轮：R173 websocket重连定时器残留 + 战报详情剩余血量单位（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两路并行子代理（oaopt-r173 / lybug-r23），主线程独立复核 diff + 复跑测试 + 全量门禁后提交。主线程另侦察移动端 form/datetime/format 工具与分组渲染（未发现可确证新缺口，记账）。
+
+### 32.1 oa4rust R173 close() 清重连定时器未置空致永久不重连（提交 49d213fb9）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | websocket.ts:160 close() 只 clearTimeout(reconnectTimer) 未置 null，而 scheduleReconnect 用 if(reconnectTimer) return 守卫。意外断线排 T1→用户主动 close（退登/离开聊天）只清 T1 引用仍在→重连成功后再次意外断线时守卫读陈旧引用直接 return→永久不重连、IM 消息再也收不到，无报错无恢复路径 | 真实可达且用户可感知 |
+| 修复 | close() 清定时器后同步 reconnectTimer=null，使守卫状态与实际定时器生命周期一致；未动其他逻辑 | 最小改动 |
+| 门禁 | websocket.test.ts 新增行为测试（FakeWebSocket 实例数+断线/重连时序）RED（二次断线 3s 内未开第 3 个 socket）→GREEN 26/26；主代理独立复跑 26 passed；pnpm test 1319 passed、typecheck 6 包、lint 357 文件 0 error | — |
+
+### 32.2 laiyipao 战报详情剩余血量绝对值误标百分号（提交 7a13f2421）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | me.vue:396 战报详情 hp_left 后硬拼 %，但 hp_left 是绝对剩余血量点数（可达数百上千）。服务端 economy.go:1366 HpLeft int、battle.go:298 validateHPLeft 上界 gl.BaseHP、客户端 engine.ts:2547 上报 Number(baseHp) 均证明量纲为绝对血量；真正百分比字段 hp_left_pct 在 BattleDetail 响应不存在。显示成「剩余血量 500%」荒谬值 | 契约佐证充分，非风格 |
+| 修复 | 去掉错误的 % 后缀，显示纯数字；唯一源码改动一行 | 不碰服务端与共享 schema |
+| 门禁 | me_battle_hp_left.test.ts 组件行为测试（jsdom 挂载 me.vue、mock API、点详情、断言 kv 文本）RED（500% 含 %）→GREEN 1/1；主代理独立复跑 1 passed；全量 pnpm test 1465 passed｜2 skipped、tsc/vue-tsc 双 exit0 | — |
+
+### 32.3 主线程移动端侦察（记账，未改动）
+
+- 复核 mobile/src/utils/format.ts（formatFileSize 分档）、datetime.ts（parseServerDate iOS 兼容+非法日期回读校验）、form.ts（parseMobileForm/computeGroupOrder 去重与默认组前插）、latest.ts（createLatestGate 只认最新请求）均有成熟守卫与既有契约测试。
+- 检查 computeGroupOrder/fieldsInGroup 对默认组（groupId=''）与具名组的处理，既有测试已覆盖扁平表单重复渲染、默认组前插、同 label 跨容器去重；后端 unlabeled 容器不在样本中出现，未构造成可确证的用户可感知缺口，不臆造修复。
+- 全仓 mobile .vue 硬编码 hex 色已于 R171 收官归零，剩余仅 rgba 半透明叠层（非主题色不 token 化）。
+
+### 32.4 交付与边界
+
+- 本轮两提交 49d213fb9、7a13f2421 及本现量文档 §32 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
+- B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
