@@ -294,6 +294,10 @@
           <text class="dim" style="display: block; margin-bottom: 8rpx">
             我的宝石（已佩戴 {{ equippedGemCount }}/6）
           </text>
+          <!-- G100 已佩戴词条总加成：6 颗宝石一共加了多少 -->
+          <view v-if="equippedAffixTotal.length" class="gem-affix-total">
+            <text v-for="a in equippedAffixTotal" :key="a.key" class="gat-chip">{{ a.name }} +{{ a.value }}</text>
+          </view>
           <!-- R51 空态给可点入口：此前只说「去商城买一颗」却不能点 -->
           <view v-if="ownedGems.length === 0" class="row" style="gap: 8rpx">
             <text class="dim">还没有宝石。</text>
@@ -742,6 +746,20 @@ const gemBusyId = ref(0)
 /** 已佩戴计数（标题里的 x/6，与服务端 EquipSlotLimit 一致）。 */
 const equippedGemCount = computed(() => ownedGems.value.filter((g) => g.equipped_slot).length)
 
+/** G100 已佩戴宝石词条总加成：跨 6 颗求和，玩家不必自己心算「一共加了多少」。 */
+const equippedAffixTotal = computed(() => {
+  const m = new Map<string, number>()
+  for (const g of ownedGems.value) {
+    if (!g.equipped_slot) continue
+    for (const a of g.affixes ?? []) {
+      m.set(a.affix, (m.get(a.affix) ?? 0) + a.value)
+    }
+  }
+  return [...m.entries()]
+    .map(([key, value]) => ({ key, name: affixName(key), value }))
+    .sort((a, b) => b.value - a.value)
+})
+
 /**
  * 佩戴一颗宝石（第 20 轮）。这是宝石词条生效的唯一开关 ——
  * 服务端把 equipped_slot 写上之后，构筑侧立刻吃到词条。
@@ -1185,6 +1203,16 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* G100 已佩戴宝石词条总加成 */
+.gem-affix-total { display: flex; flex-wrap: wrap; gap: 8rpx; margin-bottom: 12rpx; }
+.gat-chip {
+  background: var(--kinetic-soft);
+  color: var(--kinetic);
+  border-radius: 8rpx;
+  padding: 4rpx 12rpx;
+  font-size: 22rpx;
+}
+
 /* G65 换装建议 */
 .gear-suggest-card {
   background: rgba(126, 231, 135, 0.06);

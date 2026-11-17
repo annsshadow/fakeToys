@@ -80,6 +80,22 @@
           <text class="clear-search" @click="keyword = ''">清除搜索</text>
         </view>
       </view>
+
+      <!-- G98 合成技能专区：此前图鉴完全缺失的熔炼产物 -->
+      <view v-if="compositeSkills.length" class="card">
+        <text class="card-title">合成技能<text class="dim">（熔炼产物）</text></text>
+        <text class="muted" style="display: block; margin-bottom: 12rpx">
+          这些高阶技能不在常规解锁列表里，由背包熔炼两个材料技能获得。
+        </text>
+        <view v-for="s in compositeSkills" :key="s.id" class="rxn composite">
+          <view class="rxn-head">
+            <text class="rxn-name">{{ s.name }}</text>
+            <text class="tag" :class="'tag-' + s.element">{{ elementName(s.element) }}</text>
+            <text v-if="s.tier" class="chip">{{ s.tier }} 阶</text>
+          </view>
+          <text class="dim">合成：{{ s.materialA }} + {{ s.materialB }}</text>
+        </view>
+      </view>
     </view>
   </view>
 </template>
@@ -101,6 +117,34 @@ const store = useGameStore()
  * 这里补上图鉴页，并标注已拥有状态。
  */
 const skills = computed(() => store.config?.skills ?? [])
+
+/* -------------------------------------------------------------------------- */
+/* G98 合成技能专区（第七批）                                                   */
+/* 图鉴此前只取 config.skills，18 个合成技能（composite_skills）根本看不到 ——     */
+/* 这是图鉴最大的内容缺口。这里补上：产物 + 由哪两个材料熔炼而来。                 */
+/* 数据来自 config.composite_skills / recipes，纯客户端派生。                     */
+/* -------------------------------------------------------------------------- */
+const allSkillDefs = computed(() => [
+  ...(store.config?.skills ?? []),
+  ...(store.config?.composite_skills ?? []),
+])
+const compositeSkills = computed(() => {
+  const byId = new Map(allSkillDefs.value.map((s) => [s.id, s]))
+  const recipes = store.config?.recipes ?? []
+  const composites = store.config?.composite_skills ?? []
+  return composites.map((s) => {
+    const recipe = recipes.find((r) => r.output === s.id)
+    return {
+      id: s.id,
+      name: s.name,
+      element: s.element,
+      kind: s.kind,
+      tier: recipe?.out_tier ?? 0,
+      materialA: recipe ? byId.get(recipe.a)?.name ?? `#${recipe.a}` : '—',
+      materialB: recipe ? byId.get(recipe.b)?.name ?? `#${recipe.b}` : '—',
+    }
+  })
+})
 
 /** 图鉴搜索（2026-11-01 新一轮第 71 轮）：名称/元素/主动被动过滤。 */
 const keyword = ref('')

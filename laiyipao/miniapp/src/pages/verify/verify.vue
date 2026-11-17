@@ -72,6 +72,10 @@
           <text class="muted">攻方攻击力</text>
           <text class="mono">{{ attackerText }}</text>
         </view>
+        <!-- G99 冻结构筑分区快照：验真的前提是看清当时用的是哪套构筑 -->
+        <view class="build-snapshot">
+          <text v-for="s in buildSnapshotCard" :key="s.label" class="bs-item">{{ s.label }} {{ s.value }}</text>
+        </view>
         <view class="kv"><text class="muted">记录时间</text><text class="mono">{{ replayInfo.created_at }}</text></view>
         <view class="kv">
           <text class="muted">服务端记录的哈希</text>
@@ -226,6 +230,23 @@ const attackerText = computed(() => {
   return `攻击 ${a.attack}‰ · 暴击 ${a.crit_permille}‰ · 元素系数 ${a.element_coef_permille}‰`
 })
 
+/** G99 冻结构筑分区快照：把验真战报里冻结的各维度数量化展示（验真前提是看清当时的构筑）。 */
+const buildSnapshotCard = computed(() => {
+  const b = replayInfo.value?.build
+  if (!b) return []
+  const skills = Object.values((b.skills ?? {}) as Record<string, any>)
+  const elements = b.elements ?? b.skill_ids ?? []
+  const equip = Array.isArray(b.equipment) ? b.equipment : Object.keys((b.equipment ?? {}) as object)
+  const mastery = Array.isArray(b.mastery_nodes) ? b.mastery_nodes : Object.keys((b.mastery_nodes ?? {}) as object)
+  return [
+    { label: '出战技能', value: `${skills.filter((s) => s && s.slot >= 0).length} 个` },
+    { label: '元素覆盖', value: `${elements.length} 种` },
+    { label: '主动槽位', value: `${b.active_slots ?? 4} 个` },
+    { label: '装备', value: `${equip.length} 件` },
+    { label: '专精节点', value: `${mastery.length} 个` },
+  ]
+})
+
 function pretty(h: string): string {
   return prettyHash(h)
 }
@@ -340,6 +361,17 @@ onUnload(() => {
 </script>
 
 <style scoped>
+/* G99 冻结构筑分区快照 */
+.build-snapshot { display: flex; flex-wrap: wrap; gap: 8rpx; margin: 8rpx 0; }
+.bs-item {
+  background: var(--panel-2);
+  border: 1rpx solid var(--border-soft);
+  border-radius: 8rpx;
+  padding: 4rpx 12rpx;
+  font-size: 22rpx;
+  color: var(--text-2);
+}
+
 /* R83 校验失败输入框红框 */
 .input-error {
   border-color: var(--bad);

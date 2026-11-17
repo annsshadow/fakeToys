@@ -44,6 +44,28 @@ describe('第七批 其它页面实质功能守卫', () => {
     expect(src).toContain('下次目标')
   })
 
+  it('G98 技能图鉴合成技能专区（补齐图鉴最大内容缺口）', () => {
+    const src = read('../pages/skills/skills.vue')
+    expect(src).toContain('compositeSkills')
+    expect(src).toContain('composite_skills')
+    expect(src).toContain('合成技能')
+    expect(src).toContain('materialA')
+  })
+
+  it('G99 验真冻结构筑分区快照', () => {
+    const src = read('../pages/verify/verify.vue')
+    expect(src).toContain('buildSnapshotCard')
+    expect(src).toContain('build-snapshot')
+    expect(src).toContain('主动槽位')
+  })
+
+  it('G100 已佩戴宝石词条总加成', () => {
+    const src = read('../pages/bag/bag.vue')
+    expect(src).toContain('equippedAffixTotal')
+    expect(src).toContain('gat-chip')
+    expect(src).toContain('已佩戴词条总加成')
+  })
+
   it('G88 战报星级分布', () => {
     const src = read('../pages/battles/battles.vue')
     expect(src).toContain('starDistribution')

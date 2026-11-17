@@ -21,6 +21,17 @@
         <text class="filter-count">{{ hasMore ? '已加载' : '共' }} {{ items.length }} 场</text>
       </view>
 
+      <!-- G96 战绩总账：击杀/漏怪/分数累计与均分 -->
+      <view v-if="!loading && items.length" class="card total-card">
+        <view class="card-title">战绩总账</view>
+        <view class="total-grid">
+          <view class="total-item"><text class="mono total-val">{{ battleTotals.count }}</text><text class="dim">场数</text></view>
+          <view class="total-item"><text class="mono total-val">{{ battleTotals.kills }}</text><text class="dim">总击杀</text></view>
+          <view class="total-item"><text class="mono total-val">{{ battleTotals.leaked }}</text><text class="dim">总漏怪</text></view>
+          <view class="total-item"><text class="mono total-val">{{ battleTotals.avgScore }}</text><text class="dim">均分</text></view>
+        </view>
+      </view>
+
       <!-- G70 战绩趋势折线：分数走势 + 胜负色点，趋势一眼可见 -->
       <view v-if="trend.count >= 2" class="card trend-card">
         <view class="card-title">
@@ -285,6 +296,22 @@ const elementText = computed(() => {
 })
 
 /* -------------------------------------------------------------------------- */
+/* G96 战绩总量统计（第七批）                                                   */
+/* 已加载战报的击杀/漏怪/反应/分数总和与均值 —— 一个「我的战斗生涯」总账。        */
+/* -------------------------------------------------------------------------- */
+const battleTotals = computed(() => {
+  const n = items.value.length || 1
+  const sum = (k: string) => items.value.reduce((s, it) => s + (Number((it as any)[k]) || 0), 0)
+  return {
+    count: items.value.length,
+    kills: sum('kills'),
+    leaked: sum('leaked'),
+    score: sum('score'),
+    avgScore: Math.round(sum('score') / n),
+  }
+})
+
+/* -------------------------------------------------------------------------- */
 /* G88 星级分布（第七批）                                                       */
 /* 已加载战报按 0/1/2/3 星聚合，看「我的通关质量」。数据来自 items[].stars。      */
 /* -------------------------------------------------------------------------- */
@@ -437,6 +464,11 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* G96 战绩总账 */
+.total-grid { display: flex; flex-direction: row; }
+.total-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4rpx; }
+.total-val { font-size: 36rpx; font-weight: 700; color: var(--fire); }
+
 /* G88 星级分布 */
 .sd-row { display: flex; flex-direction: row; align-items: center; gap: 12rpx; margin: 8rpx 0; }
 .sd-label { width: 80rpx; flex-shrink: 0; }
