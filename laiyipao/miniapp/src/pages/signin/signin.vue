@@ -10,14 +10,14 @@
       </view>
       <view class="card">
         <text class="card-title">每日签到</text>
-        <text class="muted">连续 7 天，第 7 天额外获得体力。</text>
+        <text class="muted">{{ cycleHint }}</text>
         <!-- R40 连续进度条：已签天数一眼可见，不必数格子 -->
         <view class="streak-track">
           <view class="streak-fill" :style="{ width: streakPct + '%' }" />
         </view>
         <view class="days">
           <view
-            v-for="d in 7"
+            v-for="d in cycleDays"
             :key="d"
             class="day"
             :class="{
@@ -41,7 +41,7 @@
           style="margin-top: 20rpx"
           @click="doSignIn"
         >
-          {{ canSign ? '领取今日奖励' : signedToday ? '✓ 今日已签到' : '✓ 七日签到已完成' }}
+          {{ canSign ? '领取今日奖励' : signedToday ? '✓ 今日已签到' : `✓ ${cycleCompleteText}` }}
         </view>
         <text
           v-if="lastResult"
@@ -214,6 +214,16 @@ function flashFeedback(kind: 'sign' | 'task', id = 0) {
 // 第 135 轮：七日签到奖励表改由服务端下发（权威），不再本地硬编码。
 // key = day_index。未加载成功时为空对象 → rewardFor 回落本地缺省公式。
 const calendar = ref<Record<number, Record<string, number>>>({})
+/** 服务端日历天数：周期长度的唯一权威（缺省 7 与历史行为一致）。 */
+const calendarDayCount = ref(7)
+/** 天数格子序号（1..cycleDays），由服务端日历长度驱动。 */
+const cycleDays = computed(() => Array.from({ length: calendarDayCount.value }, (_, i) => i + 1))
+/** 顶部说明跟随真实周期，避免日历拉长后仍写「连续 7 天」。 */
+const cycleHint = computed(() => `连续 ${calendarDayCount.value} 天，第 ${calendarDayCount.value} 天额外获得体力。`)
+/** 周期签满文案：默认 7 天沿用历史「七日签到已完成」，其余长度用数字。 */
+const cycleCompleteText = computed(() =>
+  calendarDayCount.value === 7 ? '七日签到已完成' : `${calendarDayCount.value} 天签到已完成`,
+)
 
 async function loadCalendar() {
   try {
@@ -221,6 +231,8 @@ async function loadCalendar() {
     const m: Record<number, Record<string, number>> = {}
     for (const d of res.days ?? []) m[d.day_index] = d.reward
     calendar.value = m
+    // 日历加载成功才采用服务端周期长度；失败/空表保留缺省 7，不阻断页面。
+    if (res.days?.length) calendarDayCount.value = res.days.length
   } catch {
     /* 离线/失败：回落本地缺省公式（preview 可能与服务端不一致，但不阻断页面） */
   }
@@ -257,8 +269,8 @@ function rewardText(reward: Record<string, number>): string {
     .join(' · ')
 }
 
-/** R40 七日签到的连续进度（0–100%）。 */
-const streakPct = computed(() => Math.min(100, Math.round((claimedCount.value / 7) * 100)))
+/** R40 签到连续进度（0–100%）：分母跟随服务端日历天数，不再写死 7。 */
+const streakPct = computed(() => Math.min(100, Math.round((claimedCount.value / calendarDayCount.value) * 100)))
 
 /* -------------------------------------------------------------------------- */
 /* 离线收益（第六批 R1）                                                        */
