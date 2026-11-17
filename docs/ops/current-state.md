@@ -1032,6 +1032,36 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 ### 34.5 交付与边界
 
 - 本轮三提交 6ed75c6cb、efb7dac4b、cd21d507b 及本现量文档 §34 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+
+## 三十五、第26轮：R176防抖搜索悬挂Promise + 反应图鉴攻击力权重千分比（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两路并行子代理（oaopt-r176 / lybug-r26），主线程独立复核 diff + 复跑测试 + 全量门禁后提交。主线程另侦察 mobile feed 类模块（无新缺口，记账）。
+
+### 35.1 oa4rust R176 防抖搜索被取代时 run() 悬挂（提交 9e379df2a）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | searchRunner.ts createSearchRunner 防抖分支 run() 先 await 一个 setTimeout Promise（:54-62），后续 run()/cancel() 调 clearTimer()（:42-46）只 clearTimeout 取消定时器却不 resolve 该 Promise：被取代的旧 run 永久悬挂，接口承诺的「被取代返回 undefined」在防抖路径不成立，其 onSettled/finally 永不执行。OrgViewer.vue:1489 debounceMs=300 逐字符 await run，连续输入旧击键变僵尸、loading 状态残留；原测试仅 void 调用旧 run 或测非防抖路径，漏检 | 真实可达 async 僵尸，用户可感知状态残留 |
+| 修复 | 加 debounceResolve 保存防抖 Promise 的 resolve；clearTimer() 无论定时器是否仍存在都唤醒它（置空后 resolve()），使旧 run 从 await 恢复并命中 token!==seq 返回 undefined；定时器自然触发时清空 debounceResolve | 最小改动，不改对外契约与 cancel 语义 |
+| 门禁 | 新增 2 条行为测试断言被取代/被 cancel 的 run settle 为 undefined，RED（settle 仍 false）→GREEN 12/12；主代理独立复跑 12 passed；pnpm test 1323 passed、typecheck 6 包、lint 357 文件 0 error | — |
+
+### 35.2 laiyipao 反应图鉴攻击力权重千分比当百分比（提交 01865dab9）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | reactions.vue:116 把千分比 attack_weight_pct（300‰=30%）直接显示成「攻击力权重 300%」，与同页顶部说明「权重被结构性限制在 30% 以内」自相矛盾、放大 10 倍误导玩家；与已修 amplify_pct 属同类单位错 | 服务端 elements.go:112-114 注释千分比红线 300、damage.go:309/410 按千分比参与上限、MaxReactionAttackWeightPermille=300、testdata 全部 200~300 佐证 |
+| 修复 | 显示改 value/10 + % 单行最小改动 | 与同页说明和已修 amplify_pct 同口径 |
+| 门禁 | 测试断言由「300%」改「30%」并加不含「300%」反向断言，RED→GREEN 4/4；主代理独立复跑 4 passed；全量 pnpm test 1466 passed｜2 skipped、tsc/vue-tsc 双 exit0 | — |
+
+### 35.3 主线程侦察（记账，未改动）
+
+- 复核 oa4rust/mobile 的 bbsFeed/browseFeed/messageFeed/collectFeed/docFeed 与 format.ts：失败保留旧数据、错误文案归一、按 personId 过滤与无 id 行丢弃、双清单并发拉取、formatFileSize KB/MB/GB 分档均有成熟守卫与契约测试，未发现新的可确证用户可感知缺口，不臆造修复。
+
+### 35.4 交付与边界
+
+- 本轮两提交 9e379df2a、01865dab9 及本现量文档 §35 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
+- B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）；目标二 augmentor 维持 §33.3 交付边界。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）；目标二 augmentor 维持 §33.3 交付边界。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
