@@ -602,6 +602,40 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 ### 20.4 交付与边界
 
 - 本轮三提交 f6f48dbf1、c1d077215、8ee937cd6 及本现量文档 §20 一并 SSH 推送；推送后 git fetch origin + git update-ref 同步追踪引用。
+
+## 二十一、第12轮：R162视图层模态焦点管理 + laiyipao签到竞态修复 + lint回归修复（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两路并行子代理（oaopt-r162 / lybug-r12），均经主线程独立复跑确认 GREEN 后提交。
+
+### 21.1 oa4rust R162 视图层模态 ESC 与焦点陷阱（提交 228079495）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | src/views 下 class=modal-overlay 命中 44 文件/163 处，全是手写 div@click.self 只做点遮罩关闭；全仓 activeElement/.focus()/keydown/Escape/Tab/trapFocus 在视图层零命中——无 ESC 关闭、初始焦点、Tab 陷阱、关闭还原焦点、背景 aria-hidden。R160 只修了 toast.confirmMsg，视图层 163 处仍空白 | 多页面、行为可验证的普遍缺口 |
+| 修复 | 新增全局委托 modalFocus.ts（installViewModalManager，main.ts:559 挂载前一次安装，零改 44 视图）：MutationObserver 观察 body；ESC 向 overlay 派发冒泡 click 复用各页 @click.self 关闭（零状态耦合）；Tab 两按钮/首元素循环；打开移入首焦点、关闭归还 opener；背景 aria-hidden；与 R160 confirmMsg 打开时互斥挂起 | 不用 WeakMap（不可迭代改 Map）；跳过 confirm overlay 兄弟节点 |
+| 门禁 | modalFocus.test.ts 6 例 jsdom 行为测试（role/焦点移入/背景拉回/多模态叠加）；RED 3 failed→GREEN 6 passed | 主代理在 desktop 包复跑 6 passed；pnpm test 1281 passed、typecheck 6 包、范围 lint 227 文件 0 error |
+
+### 21.2 laiyipao 签到任务周期切换陈旧响应覆盖（提交 c6d01a3e6）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | signin.vue load() 每次 fetchTasks(scope) 后无条件 tasks.value=res.items 无序号守卫，switchScope 快速切换并发两请求；daily 先发慢到、weekly 后发先到时旧 daily 响应覆盖当前 weekly 列表。rank.vue:233-258 有同类 loadSeq 守卫，签到页没有 | 前端展示与用户选择/服务端契约不一致的竞态 |
+| 修复 | load() 加 let loadSeq=0，开头 const seq=++loadSeq，await 后及 catch/finally 加 if(seq!==loadSeq) return（finally 用 if(seq===loadSeq) 才复位 loading），只认最后请求 | 与 rank.vue 同范式，+10 行 |
+| 门禁 | 新增组件测试（两可控 Promise 让 daily 先发慢到）：RED 1 failed（断言每周-当前任务实得每日-慢到任务）→GREEN | 主代理独立复跑 signin 24/24；全量 pnpm test 1448 passed｜2 skipped；vue-tsc/tsc 双 typecheck exit0（子代理中途 mock 签名 TS2345 已按 (scope?:string) 修正） |
+
+### 21.3 design-tokens 契约测试格式回归修复（提交 4a749bc81）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 第 11 轮 R161 引入的 design-tokens.contract.test.ts:9-10 箭头函数体换行不符 biome format，是全仓 pnpm lint 唯一 error（oaopt-r162 全仓 lint 时发现并报告） | 主线程承担修复（oaopt-r162 写范围不含 mobile） |
+| 修复 | 箭头函数体改单行 | 最小格式修复 |
+| 门禁 | pnpm lint 0 error（8 infos 不失败）；design-tokens 契约 10 passed 行为不变 | 主代理独立复跑确认 |
+
+### 21.4 交付与边界
+
+- 本轮三提交 228079495、4a749bc81、c6d01a3e6 及本现量文档 §21 一并 SSH 推送；推送后 git fetch origin + git update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
+- B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中（唯一 "design token" 注释命中非真值）；工作树仅含本轮改动，无真值入库。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
