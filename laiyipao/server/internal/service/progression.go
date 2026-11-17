@@ -503,6 +503,12 @@ func (s *Service) ListDefenses(ctx context.Context, userID int64) (mine *Defense
 	}
 
 	var own DefenseView
+	// DefenseView 声明了 my_attempts_today / attempt_limit，且函数开头已经
+	// 读到当日真实 attempts（候选的 can_challenge 就是据此算的）。必须回填，
+	// 否则 GET /api/v1/defenses 的 mine 恒为 0，客户端「今日剩余 N 次」
+	// 永远显示满额，玩家次数用尽后点挑战才被 403 拒绝。
+	own.MyAttemptsToday = attempts
+	own.AttemptLimit = DefenseAttemptLimit
 	err = s.pool.QueryRow(ctx, `
 		SELECT d.id, d.owner_id, u.nickname, d.name, d.power, d.element_coverage, d.mastery_done,
 		       d.wins, d.losses, d.shielded_until, d.snapshot, d.snapshot_hash
