@@ -122,7 +122,7 @@
             <td>{{ fmtTime(item.updateTime) }}</td>
             <td>
               <button class="btn-sm" @click="editItem(item)">编辑</button>
-              <button class="btn-sm btn-del" @click="deleteItem(item)">删除</button>
+              <button class="btn-sm btn-del" :disabled="deletingId === item.id" @click="deleteItem(item)">删除</button>
             </td>
           </tr>
         </tbody>
@@ -716,6 +716,7 @@ const saveM = useMutation({
 function saveItem() {
   saveM.mutate(form.value as Item)
 }
+const deletingId = ref('')
 const delM = useMutation({
   onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: async (id: string) => api.post(`/api/cms/core/entity/index/delete/${id}`),
@@ -724,7 +725,10 @@ const delM = useMutation({
   },
 })
 async function deleteItem(item: Item) {
-  if (await confirmMsg('确定删除该索引？')) delM.mutate(item.id)
+  if (deletingId.value) return
+  if (!(await confirmMsg('确定删除该索引？'))) return
+  deletingId.value = item.id
+  delM.mutate(item.id, { onSettled: () => (deletingId.value = '') })
 }
 function loadData() {
   reload()
@@ -873,7 +877,7 @@ async function loadCmsTwin3() {
 .desc-cell{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mono{font-family:'Fira Code',monospace;font-size:12px;color:var(--color-secondary)}
 .btn-sm{padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);cursor:pointer;font-size:12px}
-.btn-del{border-color:var(--color-danger);color:var(--color-danger)}
+.btn-del{border-color:var(--color-danger);color:var(--color-danger)}.btn-del:disabled{opacity:.5;cursor:not-allowed}
 .loading-state,.empty-state{padding:40px;text-align:center;color:var(--text-muted)}
 .empty-icon{font-size:32px;margin-bottom:8px}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:100}
@@ -888,5 +892,3 @@ async function loadCmsTwin3() {
 .btn-save:disabled{opacity:0.5;cursor:not-allowed}
 .skel{height:16px;background:var(--bg-elevated);border-radius:4px;margin-bottom:8px;animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-.cfg-note{margin:8px 0;padding:8px 12px;border-radius:var(--radius-md);background:var(--bg-elevated);border:1px solid var(--border-color);font-size:12px;color:var(--text-secondary);word-break:break-all}
-</style>

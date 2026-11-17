@@ -31,7 +31,7 @@
             <td>
               <button class="btn-sm" @click="editItem(item)">编辑</button>
               <button class="btn-sm" @click="runInvoke(item)">执行</button>
-              <button class="btn-sm btn-del" @click="deleteItem(item)">删除</button>
+              <button class="btn-sm btn-del" :disabled="deletingId === item.id" @click="deleteItem(item)">删除</button>
             </td>
           </tr>
         </tbody>
@@ -161,6 +161,7 @@ const saveM = useMutation({
 function saveItem() {
   saveM.mutate()
 }
+const deletingId = ref('')
 const delM = useMutation({
   onError: (e) => toast.error(mutationErrorMessage(e)),
   mutationFn: async (id: string) => api.post(`/api/program_center/invoke/delete/${id}`),
@@ -169,7 +170,10 @@ const delM = useMutation({
   },
 })
 async function deleteItem(item: Item) {
-  if (await confirmMsg('确定删除该服务调用？')) delM.mutate(item.id)
+  if (deletingId.value) return
+  if (!(await confirmMsg('确定删除该服务调用？'))) return
+  deletingId.value = item.id
+  delM.mutate(item.id, { onSettled: () => (deletingId.value = '') })
 }
 
 // 执行服务调用（POST /invoke/{flag}/execute；后端按 id/name/alias 三者命中）
@@ -208,7 +212,7 @@ function loadData() {
 .data-table tr:hover{background:var(--bg-hover)}
 .mono{font-family:'Fira Code',monospace;font-size:12px;color:var(--color-secondary)}
 .btn-sm{padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--border-color);background:var(--bg-elevated);color:var(--text-primary);cursor:pointer;font-size:12px}
-.btn-del{border-color:var(--color-danger);color:var(--color-danger)}
+.btn-del{border-color:var(--color-danger);color:var(--color-danger)}.btn-del:disabled{opacity:.5;cursor:not-allowed}
 .loading-state,.empty-state{padding:40px;text-align:center;color:var(--text-muted)}
 .empty-icon{font-size:32px;margin-bottom:8px}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:100}
