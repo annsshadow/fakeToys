@@ -24,9 +24,26 @@
           改变战斗方式而非只加数值。
         </text>
         <!-- 第六批 R49：稀有度构成一眼可见，搜索前就知道有哪些档次 -->
-        <text class="muted" style="display: block; margin-bottom: 8rpx">
-          稀有度分布：传说 {{ countByRarity('legendary') }} · 史诗 {{ countByRarity('epic') }} · 稀有 {{ countByRarity('rare') }} · 普通 {{ countByRarity('common') }}
-        </text>
+        <!-- G75 稀有度分布环图：四段弧按数量占比，构成一眼可见 -->
+        <view class="donut-wrap">
+          <svg class="donut-svg" viewBox="0 0 100 100" aria-label="稀有度分布环图">
+            <circle class="donut-bg" cx="50" cy="50" r="40" />
+            <circle
+              v-for="seg in rarityDonut"
+              :key="seg.key"
+              class="donut-seg"
+              cx="50" cy="50" r="40"
+              :stroke="seg.color"
+              :stroke-dasharray="`${seg.dash} ${251.3 - seg.dash}`"
+              :stroke-dashoffset="seg.offset"
+            />
+          </svg>
+          <view class="donut-legend">
+            <text v-for="seg in rarityDonut" :key="'lg' + seg.key" class="donut-lg">
+              <text class="donut-dot" :style="{ background: seg.color }" />{{ seg.label }} {{ seg.pct }}%
+            </text>
+          </view>
+        </view>
         <!-- 第六批 R50：与背包口径一致，明说当前版本无获得途径，避免误以为能抽到 -->
         <text class="dim" style="display: block; margin-bottom: 8rpx">
           当前版本皮肤暂无获得途径，图鉴用于了解被动机制。
@@ -89,6 +106,28 @@ function countByRarity(rarity: string): number {
   return skins.value.filter((s) => (s.rarity in RARITY_CLASS ? s.rarity : 'common') === rarity).length
 }
 
+/* -------------------------------------------------------------------------- */
+/* G75 稀有度分布环图（第七批）                                                 */
+/* 四档稀有度按数量占比切成环形段（SVG stroke-dasharray），比纯文本更直观地看构成。 */
+/* -------------------------------------------------------------------------- */
+const rarityDonut = computed(() => {
+  const defs = [
+    { key: 'legendary', label: '传说', color: '#ffd700', count: countByRarity('legendary') },
+    { key: 'epic', label: '史诗', color: '#c9a7ff', count: countByRarity('epic') },
+    { key: 'rare', label: '稀有', color: '#58a6ff', count: countByRarity('rare') },
+    { key: 'common', label: '普通', color: '#8b949e', count: countByRarity('common') },
+  ]
+  const total = defs.reduce((s, d) => s + d.count, 0)
+  const C = 2 * Math.PI * 40 // 半径 40 的周长
+  let acc = 0
+  return defs.map((d) => {
+    const frac = total > 0 ? d.count / total : 0
+    const seg = { ...d, pct: Math.round(frac * 100), dash: frac * C, offset: -acc * C }
+    acc += frac
+    return seg
+  })
+})
+
 /** 图鉴搜索（2026-11-01 新一轮第 78 轮）：名称/稀有度中文过滤。 */
 const keyword = ref('')
 
@@ -132,6 +171,19 @@ function passiveLabel(p: string): string {
 </script>
 
 <style scoped>
+/* G75 稀有度分布环图 */
+.donut-wrap { display: flex; align-items: center; gap: 24rpx; margin: 8rpx 0 16rpx; }
+.donut-svg { width: 160rpx; height: 160rpx; transform: rotate(-90deg); }
+.donut-bg { fill: none; stroke: var(--panel-3); stroke-width: 12; }
+.donut-seg { fill: none; stroke-width: 12; }
+.donut-legend { display: flex; flex-direction: column; gap: 8rpx; flex: 1; }
+.donut-lg { font-size: 22rpx; color: var(--muted); }
+.donut-dot {
+  display: inline-block;
+  width: 16rpx; height: 16rpx;
+  border-radius: 50%;
+  margin-right: 8rpx;
+}
 /* 条目分隔线走共享的 .rxn（styles/common.css） */
 /* R68 传说稀有度 chip 微光，强化「稀有」价值感 */
 .rarity-chip.rarity-legendary {

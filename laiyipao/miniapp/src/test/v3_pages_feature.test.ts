@@ -36,6 +36,21 @@ describe('第七批 其它页面实质功能守卫', () => {
     expect(src).toContain('元素反应覆盖矩阵')
   })
 
+  it('G75 皮肤稀有度分布环图', () => {
+    const src = read('../pages/skins/skins.vue')
+    expect(src).toContain('rarityDonut')
+    expect(src).toContain('stroke-dasharray')
+    expect(src).toContain('donut-seg')
+  })
+
+  it('G65 背包装备换装建议', () => {
+    const src = read('../pages/bag/bag.vue')
+    expect(src).toContain('gearSuggestions')
+    expect(src).toContain('GearSuggestion')
+    expect(src).toContain('换装建议')
+    expect(src).toContain('gear-gain')
+  })
+
   it('G70 战绩趋势折线', () => {
     const src = read('../pages/battles/battles.vue')
     expect(src).toContain('const trend = computed')

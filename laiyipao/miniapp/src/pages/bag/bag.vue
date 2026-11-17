@@ -197,6 +197,18 @@
 
           现在：拥有的装备可以穿/脱（整组替换，服务端在一个事务里校验）。
         -->
+        <!-- G65 换装建议：同部位有更强装备时主动提示，把目录变成决策 -->
+        <view v-if="gearSuggestions.length" class="gear-suggest-card">
+          <text class="card-title">换装建议</text>
+          <view v-for="g in gearSuggestions" :key="g.slot" class="gear-suggest-row">
+            <text class="dim">{{ g.slotLabel }}</text>
+            <text class="dim">{{ g.current!.name }} →</text>
+            <text class="gear-better">{{ g.best.name }}</text>
+            <text v-if="g.gainArmor > 0" class="gear-gain">护甲 +{{ g.gainArmor }}‰</text>
+            <text v-if="g.gainBonus > 0" class="gear-gain">攻击 +{{ g.gainBonus }}‰</text>
+          </view>
+        </view>
+
         <view v-if="myEquipments.length === 0" class="dim">
           {{ equipError ? '装备读取失败（见下方提示）' : '正在读取装备…' }}
         </view>
@@ -509,6 +521,44 @@ const filteredSkills = computed<SkillDef[]>(() => {
  */
 const myEquipments = ref<api.MyEquipment[]>([])
 const equipError = ref('')
+
+/* -------------------------------------------------------------------------- */
+/* G65 同部位换装建议（第七批）                                                 */
+/* 按 slot 分组：当前已装备 vs 该部位已拥有的最强一件（护甲+攻击），
+/* 有更优可换时给出明确提示 —— 把「装备列表」变成「换装决策」。数据全来自 myEquipments。 */
+/* -------------------------------------------------------------------------- */
+interface GearSuggestion {
+  slot: string
+  slotLabel: string
+  current: api.MyEquipment | null
+  best: api.MyEquipment
+  gainArmor: number
+  gainBonus: number
+}
+const gearSuggestions = computed<GearSuggestion[]>(() => {
+  const groups = new Map<string, api.MyEquipment[]>()
+  for (const e of myEquipments.value) {
+    if (!e.owned) continue
+    const arr = groups.get(e.slot) ?? []
+    arr.push(e)
+    groups.set(e.slot, arr)
+  }
+  const out: GearSuggestion[] = []
+  for (const [slot, arr] of groups) {
+    const current = arr.find((e) => e.equipped) ?? null
+    const best = [...arr].sort((a, b) =>
+      (b.base_armor + b.base_bonus_pct) - (a.base_armor + a.base_bonus_pct))[0]!
+    // 只有当最强那件不是当前已装备、且确实更强时才建议
+    if (current && best.id !== current.id) {
+      const gainArmor = best.base_armor - current.base_armor
+      const gainBonus = best.base_bonus_pct - current.base_bonus_pct
+      if (gainArmor > 0 || gainBonus > 0) {
+        out.push({ slot, slotLabel: slotName(slot), current, best, gainArmor, gainBonus })
+      }
+    }
+  }
+  return out
+})
 
 /** 装配请求在途标志：防止连点发出多个 PUT。 */
 const equipping = ref(false)
@@ -1135,6 +1185,30 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* G65 换装建议 */
+.gear-suggest-card {
+  background: rgba(126, 231, 135, 0.06);
+  border: 1rpx solid rgba(126, 231, 135, 0.3);
+  border-radius: 12rpx;
+  padding: 16rpx;
+  margin-bottom: 20rpx;
+}
+.gear-suggest-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  align-items: baseline;
+  padding: 6rpx 0;
+}
+.gear-better { color: var(--ok); font-weight: 600; }
+.gear-gain {
+  color: var(--warn);
+  font-size: 20rpx;
+  background: var(--panel-3);
+  padding: 2rpx 8rpx;
+  border-radius: 6rpx;
+}
 /*
  * 页签吸顶（2026-11-17 100 轮打磨 R10）。
  *
