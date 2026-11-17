@@ -388,3 +388,65 @@ describe('stage.vue 关卡页状态化（100 轮打磨）', () => {
     expect(fill.attributes('style')).toContain('width:')
   })
 })
+
+// ==================== 选关即时反馈（第六批 R2）====================
+// 用户点名：最新是第 4 关、点了第 2 关，页面上方毫无反馈，要往下划才知道。
+// 判据：当前关=玩家选择的关；最新关=服务端解锁进度；两个概念各自的徽章不串位。
+describe('stage.vue 选关即时反馈（第六批 R2）', () => {
+  function fourLevelConfig() {
+    mockApi.fetchConfigIfVersion.mockResolvedValue({
+      status: 'modified',
+      config: makeConfig({
+        levels: [
+          makeLevel({ id: 1, chapter: 1 }),
+          makeLevel({ id: 2, chapter: 1 }),
+          makeLevel({ id: 3, chapter: 1 }),
+          makeLevel({ id: 4, chapter: 1 }),
+        ],
+      }),
+      serverTimeMs: 0,
+    })
+  }
+
+  it('R2 点第 2 关后「当前」跟到第二关，「最新」仍留在第四关', async () => {
+    fourLevelConfig()
+    const { wrapper, store } = mountPage(Stage)
+    await flushPromises()
+    triggerUniHook(wrapper.vm, 'onLoad', {})
+    await flushPromises()
+    store.setMaxStage(3) // unlockedLevel = 4 → 第 4 关是最新关
+    await flushPromises()
+
+    let cells = wrapper.findAll('.level-cell')
+    expect(cells.length).toBe(4)
+    // 未点选：当前=最新，合并徽章在第 4 关
+    expect(cells[3]!.find('.current-badge.both').exists()).toBe(true)
+    expect(cells[3]!.find('.current-badge').text()).toContain('最新')
+
+    // 点第 2 关（用户场景）
+    await cells[1]!.trigger('click')
+    await flushPromises()
+    cells = wrapper.findAll('.level-cell')
+    // 当前关跟着玩家的选择走
+    expect(cells[1]!.classes()).toContain('current')
+    expect(cells[1]!.find('.current-badge').exists()).toBe(true)
+    expect(cells[1]!.find('.latest-badge').exists()).toBe(false)
+    // 最新关仍表达服务端解锁进度，不再被「当前」占用
+    expect(cells[3]!.find('.latest-badge').exists()).toBe(true)
+    expect(cells[3]!.find('.current-badge').exists()).toBe(false)
+    expect(cells[3]!.find('.play-glyph').exists()).toBe(true)
+  })
+
+  it('R2 点选后自动把详情卡滚进视野（无需手动下划）', async () => {
+    const { wrapper } = mountPage(Stage)
+    await flushPromises()
+    triggerUniHook(wrapper.vm, 'onLoad', {})
+    await flushPromises()
+    expect(um.mock.pageScrollTo).not.toHaveBeenCalled()
+    await wrapper.findAll('.level-cell')[0]!.trigger('click')
+    await flushPromises()
+    expect(um.mock.pageScrollTo).toHaveBeenCalledWith(
+      expect.objectContaining({ selector: '#level-detail' }),
+    )
+  })
+})

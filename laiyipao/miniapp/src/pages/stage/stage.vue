@@ -21,6 +21,8 @@
             @click="switchChapter(ch.id)"
           >
             {{ ch.name }}
+            <!-- 第六批 R7 关卡数：切章前就知道这一章有多少关 -->
+            <text class="chapter-count">{{ chapterLevelCount(ch.id) }}</text>
             <!-- R69 章节全清标记：切章节前就知道哪些已经打完 -->
             <text v-if="chapterAllCleared(ch.id)" class="chapter-clear-dot">★</text>
           </view>
@@ -31,7 +33,9 @@
            玩家能一眼看到本章节还差多少星才全清。 -->
       <view v-if="chapterLevels.length" class="star-progress">
         <text class="muted">本章节星级</text>
-        <text class="mono">{{ chapterStars }} / {{ chapterTotal }}</text>
+        <!-- 第六批 R68：星级未到之前不要显示成 0/总，避免误读为「一星没拿」 -->
+        <text v-if="!starsLoaded" class="dim">加载中…</text>
+        <text v-else class="mono">{{ chapterStars }} / {{ chapterTotal }}</text>
         <view class="chapter-star-track">
           <view
             class="chapter-star-fill"
@@ -49,7 +53,7 @@
           :class="{
             locked: lv.id > store.unlockedLevel,
             cleared: starOf(lv.id) > 0,
-            current: lv.id === store.unlockedLevel,
+            current: lv.id === activeLevelId,
             terrain: lv.terrain && lv.terrain.length > 0,
             boss: lv.is_boss,
           }"
@@ -58,21 +62,35 @@
           <!-- 锁定关（100 轮打磨 R11）：锁图标替代纯暗格 —— 「为什么点不了」不再靠猜 -->
           <Icon v-if="lv.id > store.unlockedLevel" name="lock" :size="36" class="lock-glyph" />
           <text class="level-no">{{ lv.id }}</text>
-          <text v-if="lv.id === store.unlockedLevel" class="level-badge current-badge">当前</text>
-          <!-- R41 当前关的「可以打」提示：呼吸播放键，比只有描边更明确 -->
+          <!--
+            第六批 R2：把「当前」与「最新」拆成两个概念。
+
+            改前两者都绑在 store.unlockedLevel（最新解锁关）：玩家点第 2 关，
+            「当前」仍挂在第 4 关上，页面上方毫无反馈，要往下划才知道选了哪关。
+            改后「当前」跟着玩家的选择走（点谁谁亮），「最新」才表示进度。
+          -->
+          <text
+            v-if="lv.id === activeLevelId"
+            class="level-badge current-badge"
+            :class="{ both: lv.id === store.unlockedLevel }"
+          >{{ lv.id === store.unlockedLevel ? '当前·最新' : '当前' }}</text>
+          <text v-else-if="lv.id === store.unlockedLevel" class="level-badge latest-badge">最新</text>
+          <!-- 第六批 R67：BOSS 与地形可同时存在，此前 v-else-if 只显示其中一个 -->
+          <text v-if="lv.id !== activeLevelId && lv.id !== store.unlockedLevel && lv.is_boss" class="level-badge">BOSS</text>
+          <text
+            v-if="lv.id !== activeLevelId && lv.id !== store.unlockedLevel && lv.terrain && lv.terrain.length > 0"
+            class="level-badge terrain"
+          >地形</text>
+          <!-- R41 「可以打」提示保留在最新关：那是下一个该推进的目标 -->
           <text v-if="lv.id === store.unlockedLevel" class="play-glyph">▶</text>
-          <text v-else-if="lv.is_boss" class="level-badge">BOSS</text>
-          <text v-else-if="lv.terrain && lv.terrain.length > 0" class="level-badge terrain">
-            地形
-          </text>
           <view v-if="starOf(lv.id) > 0" class="stars">
             <text v-for="i in 3" :key="i" class="star" :class="{ off: i > starOf(lv.id) }">★</text>
           </view>
         </view>
       </view>
 
-      <!-- 当前关卡详情 -->
-      <view v-if="selected" class="card">
+      <!-- 当前关卡详情（第六批 R2：id 供点选后自动滚动定位） -->
+      <view v-if="selected" id="level-detail" class="card">
         <text class="card-title">第 {{ selected.id }} 关 · {{ selected.name }}</text>
         <!-- R70 详情卡补历史最佳：重打前能看到自己这关的最好成绩 -->
         <view v-if="starOf(selected.id) > 0" class="info-row">
@@ -165,7 +183,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import {onLoad, onShow} from '@dcloudio/uni-app'
 import { useGameStore } from '@/store/game'
 import { unlockSfx } from '@/audio/sfx'
@@ -217,6 +235,15 @@ const selected = computed<LevelSummary | null>(() => {
   if (selectedId.value) return store.levelMap.get(selectedId.value) ?? null
   return chapterLevels.value.find((l) => l.id === store.unlockedLevel) ?? null
 })
+
+/**
+ * 第六批 R2：玩家正在查看的关卡 id。
+ *
+ * 未显式点选时回落到最新解锁关（保持进入页面的初始行为不变）；
+ * 点选后就是被点中的那关 ——「当前」徽章与呼吸描边都跟着它走。
+ * 「最新」仍然由 store.unlockedLevel 单独表达，两者不再混淆。
+ */
+const activeLevelId = computed(() => selected.value?.id ?? store.unlockedLevel)
 
 const canEnter = computed(() => !!selected.value && selected.value.id <= store.unlockedLevel)
 
@@ -307,6 +334,11 @@ const startLabel = computed(() => {
   return `开始战斗（消耗 ${selected.value.energy_cost} 体力）`
 })
 
+/** 第六批 R7 章节关卡数（内容元数据，只读）。 */
+function chapterLevelCount(id: number): number {
+  return (store.config?.levels ?? []).filter((l) => l.chapter === id).length
+}
+
 /** R69 本章所有关卡是否都已拿到星。 */
 function chapterAllCleared(id: number): boolean {
   const levels = (store.config?.levels ?? []).filter((l) => l.chapter === id)
@@ -330,6 +362,11 @@ function switchChapter(id: number) {
 function enter(id: number) {
   selectedId.value = id
   diagnoseInfo.value = null
+  // 第六批 R2：点关卡后立刻把详情卡滚进视野 —— 此前只有下方详情卡在变，
+  // 玩家不往下划就以为「点了没反应」。等 DOM 更新（当前徽章/详情都就位）后再滚。
+  void nextTick(() => {
+    uni.pageScrollTo({ selector: '#level-detail', duration: 250 })
+  })
 }
 
 function startBattle() {
@@ -435,6 +472,13 @@ onMounted(() => {
   color: var(--fire);
 }
 
+/* 第六批 R7 章节关卡数 */
+.chapter-count {
+  margin-left: 8rpx;
+  font-size: 20rpx;
+  color: var(--muted);
+}
+
 /* R69 章节全清星标 */
 .chapter-clear-dot {
   margin-left: 8rpx;
@@ -529,6 +573,16 @@ onMounted(() => {
 .level-badge.current-badge {
   color: var(--fire);
   font-weight: 600;
+}
+
+/* 第六批 R2：最新关（进度）用亮蓝，与「当前」（玩家选择，橙）区分 */
+.level-badge.latest-badge {
+  color: #58a6ff;
+  font-weight: 600;
+}
+
+.level-badge.current-badge.both {
+  font-size: 20rpx;
 }
 
 /* R41 当前关播放键：呼吸提醒「这关可打」 */
