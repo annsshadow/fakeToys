@@ -443,3 +443,36 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 
 - 本轮两提交 7dceab7f3、05a707788 已 SSH 推送，refs/remotes/origin/feat/h5-battle-substantive-100 同步至 05a707788，本地与远端追踪引用一致、工作树干净。
 - B3（auth_person id≠uid）按 R152「未复现并行 23505、需先定 id 权威」仍不可确证，继续不动。
+
+## 十六、第7轮：R157 CRUD表单提交重入守卫 + laiyipao战报battle_id修复 + 部署链路复核（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两路并行子代理（oaopt-r157 / lybug-r7）+ 主线程部署链路与安全候选取证。成果均经 RED→GREEN 与门禁验证后提交推送。
+
+### 16.1 oa4rust R157 桌面 CRUD 表单提交重入守卫（提交 5291472bf）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 28 个 CRUD 页 saveM.mutationFn 采用无 await 的 return promise：saving.value=true 后 try/finally 在 POST settle 前同步复位，saving 瞬间 true→false，按钮 :disabled 挡不住真实双击——与 R156 删除守卫同形的真实缺口。全仓 grep 确认 isPending 零使用 | Node 探针实测执行序：set true｜finally reset false｜right after fn()｜post settled；代表性 AnnApp.vue:133-151 / CollectApp.vue:138-161 / QueryQueryApp.vue:172-195 |
+| 修复 | 守卫前移到 saveItem()：mutate 前同步 if(saving.value) return + saving.value=true；mutationFn 移除误导 try/finally 直接返回请求 promise；onSettled 双路径复位 | 28 页按钮 :disabled 与 .btn-save:disabled CSS 视觉态已存在，无需新增 |
+| 门禁 | 新增 crudSaveGuards.test.ts 28 例（逐页查声明/onSettled/守卫顺序/disabled）；RED 28 failed→GREEN | pnpm test 77 文件/1252 passed、typecheck 6 包全绿、lint(biome) 337 文件 0 错误；main.test.ts 仅一处既有 biome 格式换行修正 |
+
+### 16.2 laiyipao 战斗结算漏写 battle_id（提交 25a777390）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | battle.vue:269 模板 v-if=settleResult.battle_id 控制「查看本局战报」按钮，goBattleReport():829 读 settleResult.value?.battle_id 拼深链；服务端 game.go SettleResp.BattleID json=battle_id 在事务内明确赋值下发，但前端成功分支构造 settleResult 时从未写入该字段——按钮条件恒假、战报深链整体失效 | 现有 battle_result_report_link_feature.test.ts 只做源码字符串扫描，故长期绿但功能断 |
+| 修复 | 成功分支 settleResult 首行补 battle_id: res.battle_id（一处最小改动，BOM 恢复无附带格式变化） | 新增 battle_settle_battleid_contract.test.ts 可执行契约测试 RED→GREEN；主代理独立复跑 1 passed |
+| 门禁 | miniapp pnpm test 126 文件/1442 passed｜2 skipped 全绿 | go test ./... 13 包 ok、2 FAIL 均为 baseline：TestNoRealSecretsInRepo 命中 gitignored Temp/ 历史备份真值（非入库文件），signin_status_cache_test.go:22 的 TestSignInStatusReusesCalendarCache 10 分钟超时（DB 集成环境挂起），与本轮纯前端改动无调用关系 |
+
+### 16.3 主线程部署链路与候选取证（未改代码）
+
+- **augmentor 远程部署边界**：完整读取 .github/workflows/ai-platform-cd.yml——publish-image 由 tag ai-platform-v* 或 workflow_dispatch 触发并推 GHCR；deploy job 需 vars.AI_PLATFORM_DEPLOY_ENABLED==true + secrets DEPLOY_HOST/DEPLOY_USER/DEPLOY_SSH_KEY/DEPLOY_PATH；访问地址取 vars.AI_PLATFORM_URL，健康检查 ${url}/api/health。gh CLI 本环境 command not found，无法读取仓库 Secrets/Variables，远程部署确认超出本会话边界。本地服务存活：curl /api/health=200、/=200（http://127.0.0.1:8000/）。
+- **桌面/移动弱网文案口径**：桌面 SDK api.ts:51-56 NETWORK_FAILURE_MESSAGE/UPLOAD_* 与移动 http.ts:106 transportFailureMessage 文案一致（网络连接失败/上传失败/超时请检查网络后重试），无 R155 遗留缺口。
+- **A5 尺子判据债**：审计脚本 audit_write_gating.mjs 基线 exit 1，报缺陷 28（general_core_entity 12 写路由有 4 把混入 SQL 字面量致样本污染），属既有失败；缺陷 26（gateEvidence 注释不剥离致假阴）与 require_actor 冗余词均需连见证重钉全量读数，风险高且不占实质轮次，本轮不动。运行脚本重写的 write_routes_matrix.tsv/write_routes_ungated.tsv 已 git checkout 还原。
+- **其他未修同族面**（oaopt-r157 普查记录，异形待后续单列）：BBSForum createTopic/replyMutation、QueryManager/QueryManagerDeep createQuery、MeetingApp.createMeeting、Personal.vue avatarMutation、ProgramCenterApp、QueryStatementDesigner（无 saving ref）。
+
+### 16.4 交付与边界
+
+- 本轮两提交 5291472bf、25a777390 及本现量文档 §16 一并 SSH 推送；推送后 git fetch origin + git update-ref 同步追踪引用。
+- B3（auth_person id≠uid）按 R152 仍不可确证，继续不动；A1/A2/A5 安全候选维持既有记账不擅动。
+- 当前分支 feat/h5-battle-substantive-100，工作树仅含本轮三提交，无真值入库。
