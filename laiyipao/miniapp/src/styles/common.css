@@ -846,3 +846,50 @@ uni-page-body {
     box-shadow: 0 0 48px rgba(0, 0, 0, 0.5);
   }
 }
+
+/* ============ Z 批：收尾审计与回归（R71–R75 全局一致性）============ */
+
+/* R71 chip / tag 按压与层次 */
+.chip:active,
+.tag:active {
+  transform: scale(0.94);
+}
+
+.chip,
+.tag {
+  transition: transform 0.12s, background 0.12s;
+}
+
+/* R72 H5 滚动条细化（桌面窄窗口预览时不再是一条粗灰条） */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* R73 次级文字对比度微调（深底上更易读） */
+.muted { color: var(--text-2); }
+.dim { color: var(--muted); }
+
+/* R74 长哈希可读性：字距 + 选中高亮 */
+.hash {
+  letter-spacing: 0.5rpx;
+}
+
+::selection {
+  background: var(--fire-soft);
+  color: var(--text);
+}
+
+/* R75 按钮最小点击区（触屏误点防护） */
+.btn {
+  min-height: 72rpx;
+}

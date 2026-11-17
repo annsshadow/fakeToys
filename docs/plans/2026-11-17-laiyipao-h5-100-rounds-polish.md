@@ -115,3 +115,8 @@
 | R68 | 11-17 | 皮肤图鉴·传说微光 | 传说稀有度 chip 加金色呼吸光 | y_batch_feature.test R68 |
 | R69 | 11-17 | 关卡·章节全清标记 | 章节 chip 上加 ★，切章节前就知道打没打完 | y_batch_feature.test R69 |
 | R70 | 11-17 | 关卡·详情历史最佳 | 选中关卡详情卡显示该关历史最高星数 | y_batch_feature.test R70 |
+| R71 | 11-17 | 全局·chip/tag 按压 | 小徽章按下缩放，交互一致性对齐按钮 | z_audit_feature.test R71 |
+| R72 | 11-17 | 全局·H5 滚动条细化 | 桌面窄窗口预览的滚动条改为 6px 细条 | z_audit_feature.test R72 |
+| R73 | 11-17 | 全局·次级文字对比度 | muted/dim 两档文字在深底上更易读 | z_audit_feature.test R73 |
+| R74 | 11-17 | 全局·哈希字距与选中 | 长哈希加字距，选中高亮用品牌色 | z_audit_feature.test R74 |
+| R75 | 11-17 | 全局·按钮最小点击区 | .btn 设 min-height 72rpx，防触屏误点 | z_audit_feature.test R75 |
