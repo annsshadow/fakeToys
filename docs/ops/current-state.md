@@ -1148,6 +1148,37 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 ### 38.4 交付与边界
 
 - 本轮两提交 a715de8b9、a26af72d1 及本现量文档 §38 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+
+## 三十九、第30轮：R180 i18n早期locale脱节 + 防线被偷次数漏回填 + 提交推送§39（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两路并行子代理（oaopt-r180 / lybug-r30），主线程独立复核 diff + 复跑测试 + 全量门禁后提交。
+
+### 39.1 oa4rust R180 早期 setLocale 与惰性 i18n 实例语言脱节（提交 4df9fcfe0）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | i18n.ts 以 _locale ref（初值 zh-cn）+ 惰性单例 _i18n 管理语言，setLocale 仅在实例已存在时同步其 locale。宿主读用户偏好后在首组件挂载前（实例未创建）调 setLocale('en')，随后 useI18nInstance() 仍以硬编码 DEFAULT_LOCALE=zh-cn 建实例：getLocale() 报 en，UI 却渲染中文，语言状态与界面永久脱节 | 初始化时序导致的状态错配，非样式/文案 |
+| 修复 | createI18n 选项 locale: DEFAULT_LOCALE → locale: _locale.value 一行，实例建立时继承已选语言 | 最小改动 |
+| 门禁 | i18n.early-locale.test.ts 行为测试（vi.resetModules→setLocale(en)→建实例断言 global.locale.value===en）RED（zh-cn≠en）→GREEN 1/1；既有 i18n.test.ts 6 passed；主代理独立复跑 7 passed；pnpm test 1330 passed、typecheck 6 包、lint 360 文件 0 error | — |
+
+### 39.2 laiyipao 服务端防线列表 my_stolen_today 恒 0（提交 866ea7252）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | progression.go ListDefenses 开头 dailyChallengeCounters 已读到当日 stolen_times（:465 却用 _ 丢弃），构造 own DefenseView 时未回填 MyStolenToday：API 文档化的 mine.my_stolen_today 字段对任何玩家恒 0，防守方看不到自己当天被偷几次。ChallengeDefense 每次胜利给 owner 的 stolen_times+1 并以 ChallengeResult.OwnerStolenToday 权威回显同一计数器。与 §38.2 刚修的 MyAttemptsToday 漏回填完全同族（同函数、同一次读取、同一 View，只漏另一字段） | 服务端 DefensView 声明 + API 参考文档:663-671 + 迁移表注释 + 权威回显口径四重佐证 |
+| 修复 | attempts,_ → attempts,stolen；own.MyAttemptsToday 后补 own.MyStolenToday=stolen 及注释 | 最小改动，不碰前端 |
+| 门禁 | defense_stolen_view_test.go 行为测试（openTestService 真实胜利挑战 2 次、断言每次 ChallengeResult.OwnerStolenToday 依次 0/1、再断言 owner 视角 mine.MyStolenToday==2）RED（实际 0）→GREEN；主代理独立跑 4 个定点 Go 测试全 PASS（ok 2.230s）、go vet 0；前端 pnpm test 1468 passed｜2 skipped、tsc/vue-tsc 双 exit0 | — |
+
+### 39.3 诚实边界与主线程侦察（记账）
+
+- 前端 miniapp 目前无页面读取 my_stolen_today，本 bug 直接受害者是 API 消费者/契约一致性而非现有 H5 可见文案；修复严格限于服务端契约正确性（文档化响应字段恒 0 是确定错误行为），证据链完整。ChallengedToday（json:challenged_today）同样全树无赋值无消费者、语义歧义，未纳入本次最小修复。
+- 主线程复核 mobile services/http.ts（401 refresh 合并与单次重放、403/404 文案、设备 token 用 Web Crypto getRandomValues）与 index.ts 各业务 API 层，守卫成熟、契约测试齐备，无可确证新缺口，不臆造修复。
+
+### 39.4 交付与边界
+
+- 本轮两提交 4df9fcfe0、866ea7252 及本现量文档 §39 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中（新 Go 测试已 gofmt 规范化）；工作树仅含本轮改动。
+- B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）；目标二 augmentor 维持 §33.3 交付边界。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中（服务端测试连接串为本地回环+占位，无真值）；工作树仅含本轮改动。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）；目标二 augmentor 维持 §33.3 交付边界。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
