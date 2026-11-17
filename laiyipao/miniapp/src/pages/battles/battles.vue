@@ -537,7 +537,7 @@ async function loadMore() {
   if (loadingMore.value || !hasMore.value) return
   loadingMore.value = true
   try {
-    const res = await api.myBattleHistory(20, items.value.length)
+    const res = await api.myBattleHistory(20, items.value.length, filter.value === 'all' ? '' : filter.value)
     const more = res.items ?? []
     const existing = new Set(items.value.map((it) => it.id))
     items.value = items.value.concat(more.filter((it) => !existing.has(it.id)))

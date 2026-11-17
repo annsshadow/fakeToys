@@ -137,3 +137,70 @@ describe('battles.vue 趋势胜负色必须与战报 result 一致', () => {
     expect(dots[1]!.classes()).toContain('trend-win')
   })
 })
+
+/**
+ * 服务端契约：/me/battles 的 result 是**全量分页过滤**参数
+ * （routes.go myBattleHistory → Svc.MyBattleHistoryPage(..., result, ...)，
+ * economy.go `if result != "" { where += " AND result = $4" }`）。
+ * 因此筛选「胜利」后点「加载更多」，后续页必须仍带 result=win；
+ * 否则服务端回的是未过滤混合页，失败战报会混进胜利列表。
+ */
+describe('battles.vue 筛选下的加载更多必须沿用服务端 result 过滤', () => {
+  const win = (id: number) => ({
+    id,
+    result: 'win',
+    stars: 3,
+    level_id: 4,
+    score: 1000 + id,
+    kills: 12,
+    leaked: 0,
+    created_at: '2026-11-17T10:00:00Z',
+  })
+  const lose = (id: number) => ({
+    id,
+    result: 'lose',
+    stars: 0,
+    level_id: 5,
+    score: 10,
+    kills: 1,
+    leaked: 9,
+    created_at: '2026-11-15T10:00:00Z',
+  })
+
+  it('胜利筛选下加载更多：请求带 result=win，列表不出现失败战报', async () => {
+    // 模拟服务端：只有带 result='win' 才过滤；缺失则回混合页（当前 bug 现状）。
+    mockApi.myBattleHistory.mockImplementation((limit: number, offset: number, result?: string) => {
+      const wins = Array.from({ length: 20 }, (_, i) => win(100 + offset + i))
+      if (result === 'win') return Promise.resolve({ items: wins } as any)
+      // 未过滤的第二页混入一场失败，模拟服务端不过滤的结果
+      const mixed = offset === 0 ? wins : [...wins.slice(0, 19), lose(999)]
+      return Promise.resolve({ items: mixed } as any)
+    })
+
+    const { wrapper } = mountPage(Battles)
+    await flushPromises()
+
+    // 切到「胜利」：reload 带 result=win 重新拉第一页
+    const winChip = wrapper.findAll('.filter-chip').find((c) => c.text() === '胜利')!
+    await winChip.trigger('click')
+    await flushPromises()
+
+    // 筛选后应全是胜场，且满一页 → 出现「加载更多」
+    const before = wrapper.findAll('.result-badge')
+    expect(before.length).toBe(20)
+    expect(before.every((b) => b.text() === '胜')).toBe(true)
+    expect(wrapper.find('.load-more').exists()).toBe(true)
+
+    await wrapper.find('.load-more').trigger('click')
+    await flushPromises()
+
+    // 行为断言：胜利筛选下翻页后仍不能出现「负」
+    const badges = wrapper.findAll('.result-badge')
+    expect(badges.length).toBe(40)
+    expect(badges.filter((b) => b.text() === '负').length).toBe(0)
+
+    // 请求契约断言：第二次分页请求必须把筛选条件带给服务端
+    const last = mockApi.myBattleHistory.mock.calls.at(-1)!
+    expect(last[2]).toBe('win')
+  })
+})
