@@ -225,10 +225,13 @@ describe('bag.vue 背包页', () => {
     expect(text).not.toContain('尚未接入')
   })
 
-  it('复活币接通消费端点后必须写成「可用」，不能还留着「已下架」', async () => {
-    // 第 150 轮续：服务端已在 StartBattle 接通复活币（开战扣 1 枚 + 血量加成），
-    // 商品也恢复了上架。界面如果还写「已下架」，就是在陈述一个已经不成立的
-    // 事实 —— 玩家会以为自己买了却用不了，而实际上开战就自动生效了。
+  it('复活币文案必须匹配服务端契约：多扛 3 次漏怪，而非无效的「基础血量 +50%」', async () => {
+    // 服务端 server/internal/domain/revive.go 明确：
+    //   - ReviveExtraBaseHP(l) = l.BaseHP*3/10，加在【当前血量】上，baseHpMax 不变；
+    //   - LeakDamageDivisor=10，每次普通漏怪扣 baseHpMax/10；
+    //   - 所以一枚复活币 ≈ 多扛 3 次漏怪。
+    // 旧「+50% 基础血量」是第 148 轮被证明无效的设计（倍率改不动漏怪数），
+    // 界面继续承诺它等于在骗玩家花钱买了个没效果的 buff。
     mockApi.fetchWallet.mockResolvedValue({
       coin: 1, gem: 2, energy: 3, keys: 4,
       tokens: { revive_token: 2 },
@@ -238,7 +241,11 @@ describe('bag.vue 背包页', () => {
     const text = wrapper.text()
     expect(text).toContain('复活币')
     expect(text).toContain('开战时自动消耗 1 枚')
-    expect(text).toContain('+50%')
+    // 断言用户实际看到的行为语义，不扫源码字符串
+    expect(text).toContain('多扛 3 次漏怪')
+    expect(text).toContain('30%')
+    expect(text).not.toContain('+50%')
+    expect(text).not.toContain('基础血量 +50%')
   })
 
   it('背包页不再承诺「词条可洗练」—— 玩家拿不到宝石实例', async () => {
