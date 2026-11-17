@@ -49,6 +49,14 @@ describe('Z 批收尾审计守卫', () => {
     expect(readPages('rank')).toContain('rank-count')
     expect(readPages('me')).toContain('cand-count')
   })
+
+  it('R81–R85 表单校验与失败反馈', () => {
+    expect(readPages('login')).toContain('form-hint')
+    expect(readPages('signin')).toContain('input-error')
+    expect(readPages('verify')).toContain('input-error')
+    expect(readPages('shop')).toContain('buy-failed')
+    expect(readPages('bag')).toContain('preset-saved-hint')
+  })
 })
 
 function readPages(name: string): string {

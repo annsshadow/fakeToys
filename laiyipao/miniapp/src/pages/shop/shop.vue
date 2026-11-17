@@ -24,7 +24,7 @@
           v-for="it in g.items"
           :key="it.id"
           class="shop-row"
-          :class="{ 'bought-flash': justBoughtId === it.id }"
+          :class="{ 'bought-flash': justBoughtId === it.id, 'buy-failed': justFailedId === it.id }"
         >
           <view class="icon-badge">
             <Icon :name="it.category === 'gem' ? 'gem' : it.category === 'boost' ? 'bolt' : 'bag'" :size="40" />
@@ -115,7 +115,10 @@ const loadError = ref('')
 const buyingId = ref(0)
 /** R35 购买成功行高亮（1.2s 后自动熄灭）。 */
 const justBoughtId = ref(0)
+/** R84 购买失败行红闪。 */
+const justFailedId = ref(0)
 let boughtTimer: ReturnType<typeof setTimeout> | null = null
+let failedTimer: ReturnType<typeof setTimeout> | null = null
 const wallet = ref({ coin: 0, gem: 0, energy: 0, keys: 0 })
 
 /** 与服务端 `economy.ShopItemView` 一一对应。 */
@@ -266,6 +269,13 @@ async function doBuy(it: ShopItem) {
     }, 1200)
     uni.showToast({ title: '购买成功', icon: 'none' })
   } catch (e) {
+    // R84 失败行红闪：明确「是这一件没买成」，而不是只弹一个 toast
+    if (failedTimer) clearTimeout(failedTimer)
+    justFailedId.value = it.id
+    failedTimer = setTimeout(() => {
+      justFailedId.value = 0
+      failedTimer = null
+    }, 1200)
     uni.showToast({ title: (e as Error).message, icon: 'none' })
     // 失败也重拉：限次/余额可能已被别的请求改变，页面此刻是陈旧的。
     await load()
@@ -307,6 +317,16 @@ onMounted(async () => {
 }
 .shop-row:last-child {
   border-bottom: none;
+}
+
+/* R84 购买失败：刚失败的那一行红闪 */
+.shop-row.buy-failed {
+  animation: buy-failed 0.6s ease-out;
+}
+
+@keyframes buy-failed {
+  0% { background: rgba(255, 123, 114, 0.28); }
+  100% { background: rgba(255, 123, 114, 0); }
 }
 
 /* R35 购买成功：刚买的那一行短促高亮 */

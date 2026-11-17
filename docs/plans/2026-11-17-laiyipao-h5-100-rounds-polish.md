@@ -125,3 +125,8 @@
 | R78 | 11-17 | 战报·筛选结果计数 | 筛选 chip 行加「共 N 场」 | battles.test R78 |
 | R79 | 11-17 | 排行榜·榜单条数 | 榜单描述行加「共 N 人上榜」 | rank.test R79 |
 | R80 | 11-17 | 我的·候选防线计数 | 可挑战防线卡标题加「N 条」 | z_audit_feature.test R80 |
+| R81 | 11-17 | 登录·空字段实时提示 | 用户名/口令未填时按钮变暗同时说明原因 | z_audit_feature.test R81 |
+| R82 | 11-17 | 签到·兑换失败红框 | 兑换码报错时输入框标红，与成功态区分 | z_audit_feature.test R82 |
+| R83 | 11-17 | 验真·无效 ID 红框 | battle_id 校验失败时输入框标红 | z_audit_feature.test R83 |
+| R84 | 11-17 | 商城·失败行红闪 | 购买失败的那一件短促红闪，明确是哪件没买成 | z_audit_feature.test R84 |
+| R85 | 11-17 | 背包·预设保存留痕 | 保存成功后页内显示「✓ 已保存 N」，不依赖一闪而过的 toast | z_audit_feature.test R85 |

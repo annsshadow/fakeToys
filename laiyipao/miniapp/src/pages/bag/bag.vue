@@ -348,6 +348,7 @@
           还没有预设，<text class="link" @click="focusPreset">点这里填名字保存一套</text>。
           <text v-if="presetFocus" class="link">已定位到上方输入框</text>
         </view>
+        <text v-if="presetSavedName" class="preset-saved-hint">✓ 已保存「{{ presetSavedName }}」</text>
         <view v-for="p in presets" :key="p.id" class="equip-row preset-item">
           <view class="flex-1">
             <text class="skill-name">
@@ -1021,6 +1022,8 @@ const presets = ref<api.PresetView[]>([])
 const presetName = ref('')
 /** Y 批 R51/R52：空态可执行化。 */
 const presetFocus = ref(false)
+/** R85 最近一次保存成功的预设名。 */
+const presetSavedName = ref('')
 function focusPreset() {
   presetFocus.value = true
 }
@@ -1047,6 +1050,8 @@ async function doSavePreset() {
   try {
     await api.saveCurrentPreset(name)
     presetName.value = ''
+    // R85 保存成功后在页内留痕（toast 会消失，玩家可能没看清）
+    presetSavedName.value = name
     await loadPresets()
     uni.showToast({ title: '预设已保存', icon: 'none' })
   } catch (e) {
@@ -1132,6 +1137,14 @@ onMounted(async () => {
  * 页签早已滚出屏幕。sticky 吸顶让页签在任何滚动深度都可达；
  * 背景填 var(--bg) 并用负边距盖住两侧，避免滚动内容从字缝里透出。
  */
+/* R85 预设保存成功留痕 */
+.preset-saved-hint {
+  display: block;
+  font-size: 22rpx;
+  color: var(--ok);
+  margin: 8rpx 0;
+}
+
 /* R76 页签数量徽章 */
 .tab-count {
   margin-left: 6rpx;

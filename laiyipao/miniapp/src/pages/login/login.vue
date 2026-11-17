@@ -45,6 +45,8 @@
             <text class="pw-toggle-label">{{ showPassword ? '隐藏' : '显示' }}</text>
           </view>
         </view>
+        <!-- R81 空字段实时提示：按钮变暗的同时说明为什么 -->
+        <text v-if="!username || !password" class="form-hint">请填写用户名与口令后可登录</text>
         <view
           class="btn btn-primary"
           :class="{ 'btn-dim': submitting || !username || !password }"
@@ -139,6 +141,14 @@ async function submit(): Promise<void> {
 </script>
 
 <style scoped>
+/* R81 表单必填提示 */
+.form-hint {
+  display: block;
+  font-size: 22rpx;
+  color: var(--warn);
+  margin: 4rpx 0 12rpx;
+}
+
 /* R29 口令显隐：眼睛图标 + 足够大的点击盒 + 聚焦反馈 */
 .pw-toggle {
   display: flex;

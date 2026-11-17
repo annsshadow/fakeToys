@@ -37,6 +37,7 @@
           <input
             v-model="battleId"
             class="inp"
+            :class="{ 'input-error': !!errMsg }"
             type="number"
             placeholder="例如 1"
             placeholder-class="ph"
@@ -310,6 +311,11 @@ onUnload(() => {
 </script>
 
 <style scoped>
+/* R83 校验失败输入框红框 */
+.input-error {
+  border-color: var(--bad);
+}
+
 /* R21 流程步骤条 */
 .steps {
   display: flex;

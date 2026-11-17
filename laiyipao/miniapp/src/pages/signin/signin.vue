@@ -126,6 +126,7 @@
           <input
             v-model="code"
             class="code-input"
+            :class="{ 'input-error': !!redeemMsg && !redeemMsg.startsWith('兑换成功') }"
             placeholder="输入兑换码"
             placeholder-class="ph"
           />
@@ -450,6 +451,11 @@ onMounted(async () => {
 .task-percent.done {
   color: var(--ok);
   font-weight: 600;
+}
+
+/* R82 兑换失败输入框红框 */
+.code-input.input-error {
+  border-color: var(--bad);
 }
 
 .code-input {
