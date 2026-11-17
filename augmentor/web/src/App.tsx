@@ -159,8 +159,9 @@ function AppLayout() {
 }
 
 function App() {
+  // 子路径部署时让 React Router 认 Vite base（默认 '/' 时 basename='/' 与原来一致）。
   return (
-    <Router>
+    <Router basename={import.meta.env.BASE_URL}>
       <AppLayout />
     </Router>
   )

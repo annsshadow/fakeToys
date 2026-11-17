@@ -165,8 +165,12 @@ import type {
   VisualizeResponse,
 } from '../types/api'
 
+// 默认 '/api' 与根路径部署一致；子路径部署时可用 VITE_API_BASE 显式指向
+// 同源的 /augmentor-api/api（由 nginx 剥离前缀反代到后端）。
+const API_BASE = import.meta.env.VITE_API_BASE || '/api'
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE,
   timeout: 30000,
 })
 

@@ -4,6 +4,9 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 export default defineConfig({
+  // 测试服子路径部署：默认 '/' 保持根路径行为不变；
+  // 仅当显式注入 VITE_BASE 时才切到 /augmentor/ 等子路径。
+  base: process.env.VITE_BASE || '/',
   plugins: [react()],
   server: {
     port: 3000,
