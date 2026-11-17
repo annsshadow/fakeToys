@@ -875,6 +875,40 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 ### 29.4 交付与边界
 
 - 本轮三提交 769669fde、398bc82e2、43ae1a524 及本现量文档 §29 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+
+## 三十、第21轮：R171沙箱并发回调队列 + 移动端token化收官 + 背包热量上限单位（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两路并行子代理（oaopt-r171 / lybug-r21）+ 主线程移动端 token 化收官，均独立复跑 GREEN 后提交。
+
+### 30.1 oa4rust R171 沙箱并发调用共享回调槽（提交 939c44890）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | sandbox.ts runInSandbox 用单模块级 pendingCallback 存全部在途 resolve，:77 每次调用直接覆盖上一人；单例 iframe 下 ProcessDesigner.vue:8472 连点两次「运行脚本」，首个调用永久挂起，连自己的超时兜底都够不到 | 真实可达逻辑缺陷，非风格 |
+| 修复 | 改 FIFO 队列 PendingRun[]（id/resolve/timer）：消息按序 shift 消费最早调用+清自身定时器；每次调用独立定时器只清自己；destroySandbox 以错误结果兑现全部在途杜绝悬挂 promise | 最小改动，对齐 iframe 顺序回传语义 |
+| 门禁 | 新增并发行为测试（软超时保护，缺陷版首个 promise 永不 settle）RED→GREEN；主代理独立复跑 sandbox 8/8、桌面 tsc 0；子代理全量 pnpm test 1317 passed、typecheck 6 包、lint 0 error | — |
+
+### 30.2 oa4rust 移动端全仓设计 token 化收官（提交 65d7b8ce8）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | 承接 R161 续批，尚有 9 页硬编码 hex 色（recycle 19 / bbs-topic 18 / browse 17 / bbs-new 9 / search 16 / doc 15 / message 12 / collect 10 / process/meeting 残余） | 主线程增量，与子代理写范围不重叠 |
+| 修复 | 全部归一到现有语义 token（recycle 危险按钮走 --color-error、浅红走 --color-error-tint；search 淡蓝走 --color-primary-soft、灰走 --color-placeholder；message 警告文字走 --color-warning-text；collect 浅红走 --color-error-bg）；契约测试新增 recycle/三页语义断言 RED→GREEN 23 例 | 全仓 .vue 硬编码 hex 色归零；残余仅 rgba 半透明叠层（非主题色不 token 化） |
+| 门禁 | pnpm test 261 passed、tsc 0、uni build 成功；主代理独立复跑契约 23 passed | — |
+
+### 30.3 laiyipao 背包出战热量上限单位（提交 130d08a63）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | bag.vue:514 heatBudget 把 heat_cap_permille（千分比加成）当绝对热量点且缺省 1000/10：无加成上限显示 0（进度条恒空、永不提示过热），200‰ 加成显示 20（真实 120、低估 6 倍） | 服务端 damage.go:98/engine.go:463 契约+引擎 heatmap.ts:136 HEAT_MAX=100n/cap 公式佐证 |
+| 修复 | 复用引擎 HEAT_MAX 与同 cap 公式（bonus<=0→100；否则 100*(1000+bonus)/1000），缺省 0；store 字段已是 bigint 兼容 | 两条行为测试挂载 Bag 页面断言文本与进度条 RED(40/0、40/20)→GREEN(40/100、40/120) |
+| 门禁 | 主代理独立复跑 2 passed、全量 pnpm test 1463 passed｜2 skipped、tsc/vue-tsc 双 exit0 | — |
+
+### 30.4 交付与边界
+
+- 本轮四提交 65d7b8ce8、939c44890、130d08a63 及本现量文档 §30 一并 SSH 推送；推送后先 git ls-remote 核验远端真实 HEAD=本地 HEAD 再 update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
+- B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
