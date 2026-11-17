@@ -12,6 +12,7 @@ const app = src('App.vue')
 const bbs = src('pages/bbs/bbs.vue')
 const login = src('pages/login/login.vue')
 const mine = src('pages/mine/mine.vue')
+const start = src('pages/process/start.vue')
 
 /** 从页面 <style scoped> 中按选择器+属性取值，确保断言绑定在实际渲染规则上。 */
 function styleValue(page: string, selector: string, property: string): string {
@@ -33,6 +34,7 @@ const tokens: Record<string, string> = {
   '--color-surface': '#ffffff',
   '--color-border': '#e3e6eb',
   '--color-divider': '#f0f2f5',
+  '--color-primary-soft': '#f0f7ff',
 }
 
 describe('移动端设计 token 语义落地契约', () => {
@@ -120,6 +122,23 @@ describe('移动端设计 token 语义落地契约', () => {
     expect(mine).not.toMatch(/color: #[0-9a-fA-F]{3,6}/)
     expect(mine).not.toMatch(/background: #[0-9a-fA-F]{3,6}/)
     expect(mine).not.toMatch(/border: 1px solid #[0-9a-fA-F]{3,6}/)
+  })
+
+  it('process/start 页面：35 处硬编码色全部归一到语义 token', () => {
+    expect(styleValue(start, '.page', 'background')).toBe('var(--color-bg-page)')
+    expect(styleValue(start, '.card', 'background')).toBe('var(--color-surface)')
+    expect(styleValue(start, '.card-title', 'color')).toBe('var(--color-text-primary)')
+    expect(styleValue(start, '.group-title', 'color')).toBe('var(--color-primary)')
+    expect(styleValue(start, '.group-title', 'border-left')).toBe('6rpx solid var(--color-primary)')
+    expect(styleValue(start, '.proc-item', 'border')).toBe('1px solid var(--color-border)')
+    expect(styleValue(start, '.proc-item.on', 'background')).toBe('var(--color-primary-soft)')
+    expect(styleValue(start, '.error-banner', 'background')).toBe('var(--color-error-bg)')
+    expect(styleValue(start, '.error-banner', 'color')).toBe('var(--color-error)')
+    expect(styleValue(start, '.retry-btn', 'border')).toBe('1px solid var(--color-error)')
+    expect(styleValue(start, '.label', 'color')).toBe('var(--color-text-secondary)')
+    expect(styleValue(start, '.attach-btn', 'border')).toBe('1px dashed var(--color-primary)')
+    expect(styleValue(start, '.submit', 'background')).toBe('var(--color-primary)')
+    expect(start).not.toMatch(/#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/)
   })
 
   it('两页面 style 仍为 scoped 纯 CSS，未偷偷引入 sass/lang', () => {

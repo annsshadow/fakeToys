@@ -21,6 +21,7 @@ page {
   --color-surface: #ffffff;
   --color-border: #e3e6eb;
   --color-divider: #f0f2f5;
+  --color-primary-soft: #f0f7ff;
 
   background-color: var(--color-bg-page);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;

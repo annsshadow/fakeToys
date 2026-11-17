@@ -390,12 +390,12 @@ function removeAttachment(field: MobileFormField, id: string): void {
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #f5f7fa;
+  background: var(--color-bg-page);
   padding: 24rpx;
   box-sizing: border-box;
 }
 .card {
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 16rpx;
   padding: 28rpx;
   margin-bottom: 24rpx;
@@ -403,7 +403,7 @@ function removeAttachment(field: MobileFormField, id: string): void {
 .card-title {
   font-size: 30rpx;
   font-weight: 700;
-  color: #263238;
+  color: var(--color-text-primary);
   margin-bottom: 20rpx;
 }
 .group {
@@ -412,10 +412,10 @@ function removeAttachment(field: MobileFormField, id: string): void {
 .group-title {
   font-size: 26rpx;
   font-weight: 600;
-  color: #2d8cf0;
+  color: var(--color-primary);
   margin: 8rpx 0 16rpx;
   padding-left: 8rpx;
-  border-left: 6rpx solid #2d8cf0;
+  border-left: 6rpx solid var(--color-primary);
 }
 .proc-list {
   display: flex;
@@ -424,19 +424,19 @@ function removeAttachment(field: MobileFormField, id: string): void {
 }
 .proc-item {
   padding: 20rpx;
-  border: 1px solid #e3e6eb;
+  border: 1px solid var(--color-border);
   border-radius: 12rpx;
-  color: #4a4a4a;
+  color: var(--color-text-secondary);
   font-size: 28rpx;
 }
 .proc-item.on {
-  border-color: #2d8cf0;
-  color: #2d8cf0;
-  background: #f0f7ff;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
   font-weight: 600;
 }
 .tip {
-  color: #90979f;
+  color: var(--color-text-secondary);
   font-size: 26rpx;
   padding: 20rpx 0;
 }
@@ -451,8 +451,8 @@ function removeAttachment(field: MobileFormField, id: string): void {
   gap: 8px;
   padding: 10px 12px;
   border-radius: 8px;
-  background: #fdecea;
-  color: #c0392b;
+  background: var(--color-error-bg);
+  color: var(--color-error);
   font-size: 13px;
 }
 .error-banner .error-text {
@@ -462,8 +462,8 @@ function removeAttachment(field: MobileFormField, id: string): void {
   flex: none;
   padding: 4px 12px;
   border-radius: 12px;
-  border: 1px solid #c0392b;
-  color: #c0392b;
+  border: 1px solid var(--color-error);
+  color: var(--color-error);
   font-size: 13px;
 }
 .field {
@@ -471,33 +471,33 @@ function removeAttachment(field: MobileFormField, id: string): void {
 }
 .label {
   font-size: 26rpx;
-  color: #666;
+  color: var(--color-text-secondary);
   display: block;
   margin-bottom: 10rpx;
 }
 .req {
-  color: #f56c6c;
+  color: var(--color-error);
 }
 .input,
 .textarea {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid #e3e6eb;
+  border: 1px solid var(--color-border);
   border-radius: 12rpx;
   padding: 18rpx;
   font-size: 28rpx;
-  background: #f5f7fa;
+  background: var(--color-bg-page);
 }
 .textarea {
   min-height: 140rpx;
 }
 .picker {
-  border: 1px solid #e3e6eb;
+  border: 1px solid var(--color-border);
   border-radius: 12rpx;
   padding: 18rpx;
   font-size: 28rpx;
-  background: #f5f7fa;
-  color: #263238;
+  background: var(--color-bg-page);
+  color: var(--color-text-primary);
 }
 .checks {
   display: flex;
@@ -509,7 +509,7 @@ function removeAttachment(field: MobileFormField, id: string): void {
   align-items: center;
   gap: 8rpx;
   font-size: 26rpx;
-  color: #4a4a4a;
+  color: var(--color-text-secondary);
 }
 .attach {
   display: flex;
@@ -525,49 +525,49 @@ function removeAttachment(field: MobileFormField, id: string): void {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border: 1px solid #e3e6eb;
+  border: 1px solid var(--color-border);
   border-radius: 10rpx;
   padding: 12rpx 16rpx;
-  background: #f5f7fa;
+  background: var(--color-bg-page);
 }
 .attach-name {
   font-size: 26rpx;
-  color: #263238;
+  color: var(--color-text-primary);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .attach-del {
-  color: #f56c6c;
+  color: var(--color-error);
   font-size: 28rpx;
   padding: 0 8rpx;
 }
 .attach-empty {
   font-size: 24rpx;
-  color: #90979f;
+  color: var(--color-text-secondary);
 }
 .attach-btn {
   font-size: 26rpx;
-  color: #2d8cf0;
-  background: #f0f7ff;
-  border: 1px dashed #2d8cf0;
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+  border: 1px dashed var(--color-primary);
   border-radius: 10rpx;
 }
 .err {
-  color: #f56c6c;
+  color: var(--color-error);
   font-size: 24rpx;
 }
 .submit-tip {
   display: block;
-  color: #f56c6c;
+  color: var(--color-error);
   font-size: 26rpx;
   margin-bottom: 16rpx;
   padding: 0 8rpx;
 }
 .submit {
-  background: #2d8cf0;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-surface);
   border-radius: 12rpx;
   font-size: 32rpx;
 }
