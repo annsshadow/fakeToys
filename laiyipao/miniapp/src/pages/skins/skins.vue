@@ -45,6 +45,11 @@
           </view>
         </view>
         <!-- 第六批 R50：与背包口径一致，明说当前版本无获得途径，避免误以为能抽到 -->
+        <!-- G90 被动机制分类：有哪几类皮肤机制、各几款 -->
+        <view v-if="passiveGroups.length" class="passive-groups">
+          <text class="dim" style="display: block; margin-bottom: 8rpx">被动机制分类</text>
+          <text v-for="g in passiveGroups" :key="g.key" class="passive-chip">{{ g.name }} ×{{ g.n }}</text>
+        </view>
         <text class="dim" style="display: block; margin-bottom: 8rpx">
           当前版本皮肤暂无获得途径，图鉴用于了解被动机制。
         </text>
@@ -157,6 +162,18 @@ function rarityBadgeClass(r: string): string {
 /** 模板里 rarity-chip 类名的白名单校验（未知稀有度走 common 中性样式）。 */
 const RARITY_CLASS: Record<string, true> = { rare: true, epic: true, legendary: true, common: true }
 
+/* -------------------------------------------------------------------------- */
+/* G90 被动机制分类统计（第七批）                                               */
+/* 按 passive 类型聚合皮肤数量，看「这游戏有哪几类皮肤机制」。数据来自 skins。     */
+/* -------------------------------------------------------------------------- */
+const passiveGroups = computed(() => {
+  const m = new Map<string, number>()
+  for (const s of skins.value) {
+    m.set(s.passive, (m.get(s.passive) ?? 0) + 1)
+  }
+  return [...m.entries()].map(([key, n]) => ({ key, name: passiveLabel(key), n }))
+})
+
 function passiveLabel(p: string): string {
   const map: Record<string, string> = {
     kinetic_bonus: '动能加成（额外破甲击退）',
@@ -171,6 +188,18 @@ function passiveLabel(p: string): string {
 </script>
 
 <style scoped>
+/* G90 被动机制分类 */
+.passive-groups { margin: 8rpx 0; }
+.passive-chip {
+  display: inline-block;
+  background: var(--kinetic-soft);
+  color: var(--kinetic);
+  border-radius: 8rpx;
+  padding: 4rpx 12rpx;
+  font-size: 22rpx;
+  margin: 0 8rpx 8rpx 0;
+}
+
 /* G75 稀有度分布环图 */
 .donut-wrap { display: flex; align-items: center; gap: 24rpx; margin: 8rpx 0 16rpx; }
 .donut-svg { width: 160rpx; height: 160rpx; transform: rotate(-90deg); }

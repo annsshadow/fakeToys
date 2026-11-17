@@ -36,6 +36,27 @@ describe('第七批 其它页面实质功能守卫', () => {
     expect(src).toContain('元素反应覆盖矩阵')
   })
 
+  it('G88 战报星级分布', () => {
+    const src = read('../pages/battles/battles.vue')
+    expect(src).toContain('starDistribution')
+    expect(src).toContain('sd-fill')
+    expect(src).toContain('星级分布')
+  })
+
+  it('G89 挑战战绩统计', () => {
+    const src = read('../pages/me/me.vue')
+    expect(src).toContain('challengeStats')
+    expect(src).toContain('cs-dot')
+    expect(src).toContain('挑战胜负统计')
+  })
+
+  it('G90 皮肤被动机制分类', () => {
+    const src = read('../pages/skins/skins.vue')
+    expect(src).toContain('passiveGroups')
+    expect(src).toContain('passive-chip')
+    expect(src).toContain('被动机制分类')
+  })
+
   it('G85 本章难度曲线', () => {
     const src = read('../pages/stage/stage.vue')
     expect(src).toContain('difficultyCurve')

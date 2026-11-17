@@ -50,6 +50,18 @@
         </view>
       </view>
 
+      <!-- G88 星级分布：0-3 星各占比，看通关质量 -->
+      <view v-if="!loading && items.length" class="card stardist-card">
+        <view class="card-title">星级分布</view>
+        <view v-for="s in starDistribution" :key="s.stars" class="sd-row">
+          <text class="dim sd-label">{{ s.stars }} 星</text>
+          <view class="sd-track">
+            <view class="sd-fill" :style="{ width: s.pct + '%' }" />
+          </view>
+          <text class="mono sd-val">{{ s.n }}</text>
+        </view>
+      </view>
+
       <view v-if="loading" class="card">
         <text class="muted">加载中…</text>
         <view v-for="n in 3" :key="n" class="skeleton-row">
@@ -273,6 +285,20 @@ const elementText = computed(() => {
 })
 
 /* -------------------------------------------------------------------------- */
+/* G88 星级分布（第七批）                                                       */
+/* 已加载战报按 0/1/2/3 星聚合，看「我的通关质量」。数据来自 items[].stars。      */
+/* -------------------------------------------------------------------------- */
+const starDistribution = computed(() => {
+  const counts = [0, 0, 0, 0]
+  for (const it of items.value) {
+    const s = Math.max(0, Math.min(3, it.stars ?? 0))
+    counts[s]++
+  }
+  const total = counts.reduce((a, b) => a + b, 0) || 1
+  return counts.map((n, stars) => ({ stars, n, pct: Math.round(n / total * 100) }))
+})
+
+/* -------------------------------------------------------------------------- */
 /* G83 关卡胜率分布（第七批）                                                   */
 /* 已加载战报按 level_id 聚合胜/负，展示每关打赢比例 —— 看「哪些关还卡着」。       */
 /* 数据来自 items[].level_id/result，纯客户端派生。                               */
@@ -411,6 +437,13 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* G88 星级分布 */
+.sd-row { display: flex; flex-direction: row; align-items: center; gap: 12rpx; margin: 8rpx 0; }
+.sd-label { width: 80rpx; flex-shrink: 0; }
+.sd-track { flex: 1; height: 12rpx; background: var(--panel-3); border-radius: 999rpx; overflow: hidden; }
+.sd-fill { height: 100%; background: var(--warn); border-radius: 999rpx; }
+.sd-val { width: 60rpx; text-align: right; font-size: 22rpx; color: var(--warn); }
+
 /* G83 关卡胜率分布 */
 .wr-row { display: flex; flex-direction: row; align-items: center; gap: 12rpx; margin: 8rpx 0; }
 .wr-label { width: 140rpx; flex-shrink: 0; }

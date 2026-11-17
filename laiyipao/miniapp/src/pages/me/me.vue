@@ -289,6 +289,18 @@
            此前玩家只能看到最近一次挑战结果，历史记录没有入口。 -->
       <view v-if="challengeHistory.length" v-show="meTab === 'records'" class="card">
         <text class="card-title">挑战历史<text class="cand-count">{{ challengeHistory.length }} 条</text></text>
+        <!-- G89 挑战胜负统计 + 近期序列 -->
+        <view class="challenge-stats">
+          <text class="dim">{{ challengeStats.win }} 胜 {{ challengeStats.lose }} 负 · 胜率 {{ challengeStats.total ? Math.round(challengeStats.win / challengeStats.total * 100) : 0 }}%</text>
+          <view class="challenge-seq">
+            <view
+              v-for="(w, i) in challengeStats.recent"
+              :key="i"
+              class="cs-dot"
+              :class="w ? 'win' : 'lose'"
+            />
+          </view>
+        </view>
         <view
           v-for="h in challengeHistory"
           :key="h.id"
@@ -689,6 +701,18 @@ const shieldRemainText = computed(() => {
 
 // 挑战历史（2026-10-30 实质优化第 18 轮）。
 const challengeHistory = ref<api.ChallengeHistoryItem[]>([])
+
+/** G89 挑战战绩统计：胜负次数 + 近 N 次胜负序列（数据来自 challengeHistory[].won）。 */
+const challengeStats = computed(() => {
+  const list = [...challengeHistory.value].reverse() // 时间正序
+  const win = list.filter((h) => h.won).length
+  return {
+    win,
+    lose: list.length - win,
+    total: list.length,
+    recent: list.slice(-12).map((h) => h.won),
+  }
+})
 
 // 被挑战记录（2026-10-31 新一轮第 3 轮）。
 const defenseChallengeHistory = ref<api.DefenseChallengeItem[]>([])
@@ -1406,6 +1430,13 @@ onUnload(() => {
 </script>
 
 <style scoped>
+/* G89 挑战胜负统计 */
+.challenge-stats { margin-bottom: 12rpx; }
+.challenge-seq { display: flex; flex-direction: row; gap: 6rpx; margin-top: 8rpx; }
+.cs-dot { width: 24rpx; height: 24rpx; border-radius: 6rpx; }
+.cs-dot.win { background: var(--ok); }
+.cs-dot.lose { background: var(--bad); }
+
 /* G84 消费统计摘要 */
 .spend-summary { display: flex; flex-wrap: wrap; gap: 8rpx; align-items: center; margin-bottom: 12rpx; }
 .spend-chip {
