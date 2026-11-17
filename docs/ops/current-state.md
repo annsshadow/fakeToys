@@ -347,3 +347,38 @@ node scripts/check-warnings.mjs
 
 §11.3 的手工命令与一键脚本 `Temp/l330q/run-full-gate-clean.ps1` 退化为排查用途，
 日常验证直接跑默认命令即可。
+---
+
+## 十三、测试服子路径部署与 laiyipao 真实 bug 修复（2026-11-17，分支 feat/h5-battle-substantive-100）
+
+本轮三项目标各落地一个可验证增量，均已提交推送到当前分支（非 main）。
+
+### 13.1 oa4rust 双前端子路径部署（提交 29aac0513）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| desktop | base=/oa4rust/、API=/oa4rust-api、WS=/oa4rust-ws；sw.js 资源与注册改子路径 | SDK 新增 setBase()/setWebSocketBase()，默认空前缀行为不变 |
+| mobile | base=/oa4rust-h5/、API 默认 /oa4rust-api（VITE_OA_API_BASE 优先） | 两套独立产物挂不同子路径，本身不冲突 |
+| 门禁 | 修复 2 处由改动引入的测试回归（源码形状断言 + 注释字面量触发端点守卫误报） | pnpm test 74 文件/1190 passed/0 failed；desktop+mobile typecheck 全绿；mobile 单测 30 文件/238 passed |
+| 边界 | 仓库内无 /oa4rust/、/oa4rust-h5/、/oa4rust-api、/oa4rust-ws 的 nginx 权威定义 | 上线前需部署侧确认前缀反代口径；不影响代码提交 |
+
+### 13.2 augmentor 测试服子路径部署（提交 b36805bfd）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 前端 | vite base 默认 / 不变、显式 VITE_BASE 切 /augmentor/；Router basename 认 BASE_URL；API 基址 VITE_API_BASE 可注入；favicon 用 %BASE_URL% | 默认构建+子路径构建两次 build:check 均通过；子路径产物资源前缀确为 /augmentor/assets/ |
+| 门禁 | check-dist.mjs 资源引用正则兼容可选子路径前缀 | 单测 430 passed/0 failed；typecheck 全绿 |
+| 部署脚手架 | augmentor/deploy/{README.md,nginx/augmentor-test.conf}（全占位符），compose 注入 AUGMENTOR_API_KEY，.env.example 补键名 | nginx 片段挂 /augmentor/ + /augmentor-api/，与 laiyipao 子路径规范一致 |
+| 验收 | 本地 uvicorn 起服务（口令由 Temp/aug-key.txt 注入，不入库） | /api/health HTTP 200（status ok/version 3.0.0）；根页面 HTTP 200；无 key POST /api/config 回 401，带 key 回 200 |
+| 边界 | 本地 Docker 构建在 apt-get install 阶段失败（宿主代理对 deb.debian.org trixie-updates 返回 502 Bad Gateway，exit 100） | 环境问题非代码缺陷；远程部署机无此代理按 README 构建；本地改走 uvicorn 验收 |
+
+**访问方式**：前端 http://<YOUR_TEST_DOMAIN>/augmentor/（真域名取本地 .local.keys，不入库）；无传统用户名/密码，写操作走 X-API-Key，口令即环境变量 AUGMENTOR_API_KEY（前端配置页填入存 localStorage）。本地验收 http://127.0.0.1:8000/。
+
+### 13.3 laiyipao 真实 bug 修复（提交 492a1b6c8）
+
+| bug | 证据 | 修复与验证 |
+| --- | --- | --- |
+| B7 防复活守卫缺失 | rank.vue:211-215 死分支已删、源码 .debug-tag 命中 0，但 backlog 要求的守卫从未落地；注入 .debug-tag 后既有测试全绿无人拦 | 新增 dead_code_guard.test.ts 两条守卫，临时注入实测能变红；miniapp 1439 passed/2 skipped，admin 434 passed |
+| B1 弱网文案未归一化 | client.ts:465 把 request:fail abort 技术串直接透给玩家，而同类 :487/:784 已归一化；既有测试只断言 code 漏掉 message | test-first 复现红后改 1 行同口径文案，复测绿；全量数字同上 |
+
+B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复现并行 23505、需先定 id 生成权威」，不可确证为真实 bug，按「不为改而改」不动。server go test 因改动全在 miniapp TS、与 Go 无关且 job 未产出有效数字，如实记为未采集，不伪报。
