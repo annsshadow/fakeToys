@@ -52,7 +52,14 @@
         </view>
       </view>
 
-      <view v-if="loading" class="card"><text class="muted">加载中…</text></view>
+      <view v-if="loading" class="card">
+        <text class="muted">加载中…</text>
+        <view v-for="n in 3" :key="n" class="skeleton-row">
+          <view class="skeleton-bar" style="width: 64rpx; height: 64rpx; border-radius: 12rpx" />
+          <view class="skeleton-bar" style="width: 42%" />
+          <view class="skeleton-bar" style="width: 12%; margin-left: auto" />
+        </view>
+      </view>
       <view v-else-if="loadError" class="card"><text class="muted">加载失败：{{ loadError }}</text></view>
       <view v-else-if="items.length === 0" class="card empty-block">
         <text class="empty-glyph">🛒</text>

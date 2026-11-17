@@ -459,6 +459,50 @@ page,
   transform: scale(0.985);
 }
 
+/* X 批 R31：按钮/链接的按压反馈（此前注释称有 .btn:active，实际缺失） */
+.btn:active:not(.btn-disabled) {
+  transform: scale(0.97);
+  filter: brightness(0.92);
+}
+
+.link:active {
+  opacity: 0.6;
+}
+
+/* 无障碍：系统开启「减少动态效果」时关掉装饰性动画 */
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .tap,
+  .limit-fill,
+  .task-progress-fill,
+  .skeleton-bar {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* X 批 R32：骨架屏 —— 加载中不再是孤零零一行字，行的形状先占位 */
+.skeleton-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16rpx;
+  padding: 18rpx 0;
+}
+
+.skeleton-bar {
+  height: 28rpx;
+  border-radius: 8rpx;
+  background: linear-gradient(90deg, var(--panel-2) 25%, var(--panel-3) 50%, var(--panel-2) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 .is-disabled {
   opacity: 0.45;
   pointer-events: none;

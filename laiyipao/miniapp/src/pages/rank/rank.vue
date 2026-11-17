@@ -14,7 +14,14 @@
       </view>
       <text class="muted" style="display: block; margin-bottom: 16rpx">{{ curDesc }}</text>
 
-      <view v-if="loading" class="card"><text class="muted">加载中…</text></view>
+      <view v-if="loading" class="card">
+        <text class="muted">加载中…</text>
+        <view v-for="n in 3" :key="n" class="skeleton-row">
+          <view class="skeleton-bar" style="width: 48rpx; height: 48rpx; border-radius: 50%" />
+          <view class="skeleton-bar" style="width: 38%" />
+          <view class="skeleton-bar" style="width: 16%; margin-left: auto" />
+        </view>
+      </view>
       <view v-else-if="items.length === 0" class="card empty-block">
         <text class="empty-glyph">🏆</text>
         <text class="muted">暂无数据</text>

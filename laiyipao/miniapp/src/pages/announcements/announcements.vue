@@ -5,7 +5,13 @@
         全部运营公告。首页只展示最新几条，这里可以回看历史公告。
       </text>
 
-      <view v-if="loading" class="card"><text class="muted">加载中…</text></view>
+      <view v-if="loading" class="card">
+        <text class="muted">加载中…</text>
+        <view v-for="n in 3" :key="n" class="skeleton-row">
+          <view class="skeleton-bar" style="width: 55%" />
+          <view class="skeleton-bar" style="width: 18%; margin-left: auto" />
+        </view>
+      </view>
 
       <view v-else-if="items.length === 0" class="card empty-block">
         <text class="empty-glyph">📢</text>

@@ -130,11 +130,12 @@ describe('rank.vue 排行榜', () => {
     expect(wrapper.text()).not.toContain('STALE_STAGE')
   })
 
-  it('加载中 → 显示加载文案', async () => {
+  it('加载中 → 显示加载文案 + 骨架占位（R32）', async () => {
     mockApi.fetchLeaderboard.mockImplementation(() => new Promise(() => {}))
     const { wrapper } = mountPage(Rank)
     await flushPromises()
     expect(wrapper.text()).toContain('加载中…')
+    expect(wrapper.findAll('.skeleton-row').length).toBe(3)
   })
 
   it('榜单为空 → 显示"暂无数据"（items 缺失时 ?? [] 回退）', async () => {

@@ -18,7 +18,14 @@
         </view>
       </view>
 
-      <view v-if="loading" class="card"><text class="muted">加载中…</text></view>
+      <view v-if="loading" class="card">
+        <text class="muted">加载中…</text>
+        <view v-for="n in 3" :key="n" class="skeleton-row">
+          <view class="skeleton-bar" style="width: 44rpx; height: 44rpx; border-radius: 8rpx" />
+          <view class="skeleton-bar" style="width: 50%" />
+          <view class="skeleton-bar" style="width: 14%; margin-left: auto" />
+        </view>
+      </view>
 
       <view v-else-if="items.length === 0" class="card empty-state">
         <!-- R19 空态不再是一行孤零零的文字：给一个锚点 + 明确下一步 -->

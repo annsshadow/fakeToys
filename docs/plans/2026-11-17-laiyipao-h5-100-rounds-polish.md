@@ -75,3 +75,5 @@
 | R28 | 11-17 | 反应图鉴·搜索反馈 | 同上 | codex_search_ux.test R28 |
 | R29 | 11-17 | 登录·口令显隐与聚焦 | 显示/隐藏切换换成眼睛图标（新增 eye/eye-off 图标）+ 更大点击盒；输入框聚焦高亮 | login.test R29（图标态与 password 属性同步） |
 | R30 | 11-17 | W 批收尾·空态骨架统一 | 榜单/商城/公告三处裸空态补「图标 + 主文案 + 下一步」共享骨架 | rank.test R30 + shop/announcements 源码守卫 |
+| R31 | 11-17 | 按压反馈与无障碍 | 补上注释声称存在但实际缺失的 .btn:active；.link:active；系统减少动效时关装饰动画 | micro_interaction_feature.test R31 |
+| R32 | 11-17 | 列表加载骨架屏 | 榜单/战报/商城/公告加载态由一行字改为 3 行 shimmer 骨架，保留「加载中…」文案锚点 | rank.test R32 + micro_interaction_feature.test R32 |
