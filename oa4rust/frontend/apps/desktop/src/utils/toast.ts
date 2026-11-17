@@ -86,10 +86,11 @@ function showToast(opts: ToastOptions): void {
   el.addEventListener('click', () => removeToast(el))
   container.appendChild(el)
 
-  const timer = setTimeout(() => removeToast(el), duration)
+  let timer = setTimeout(() => removeToast(el), duration)
   el.addEventListener('mouseenter', () => clearTimeout(timer))
   el.addEventListener('mouseleave', () => {
-    setTimeout(() => removeToast(el), duration / 2)
+    clearTimeout(timer)
+    timer = setTimeout(() => removeToast(el), duration / 2)
   })
 }
 

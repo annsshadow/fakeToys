@@ -348,6 +348,36 @@ describe('toast notifications (showToast pipeline)', () => {
     }
   })
 
+  it('keeps a toast visible when the pointer re-enters after a brief leave', () => {
+    // 用户把鼠标短暂移开又移回 toast 上时，它不应在悬停期间开始退场动画。
+    vi.useFakeTimers()
+    try {
+      toast.toast.warning('重新悬停', 1000)
+      const [t] = toastContainer().toasts
+      const removeSpy = vi.spyOn(t, 'remove')
+
+      t._fire('mouseenter', undefined)
+      t._fire('mouseleave', undefined)
+      vi.advanceTimersByTime(200)
+      t._fire('mouseenter', undefined)
+      vi.advanceTimersByTime(600) // 距移开 800ms，远超 duration/2，且鼠标已移回
+      expect(t.style.animation).not.toBe('oa4ToastOut 0.2s ease forwards')
+      expect(removeSpy).not.toHaveBeenCalled()
+      expect(toastContainer().toasts).toHaveLength(1)
+      expect(toastTexts(t)[1]).toBe('重新悬停')
+
+      // 再次移开后仍应能正常消失（用新的定时器，且只退场一次）
+      t._fire('mouseleave', undefined)
+      vi.advanceTimersByTime(500)
+      expect(t.style.animation).toBe('oa4ToastOut 0.2s ease forwards')
+      vi.advanceTimersByTime(200)
+      expect(removeSpy).toHaveBeenCalledTimes(1)
+      expect(toastContainer().toasts).toHaveLength(0)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('dismisses a toast on click', () => {
     vi.useFakeTimers()
     try {
