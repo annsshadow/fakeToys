@@ -20,6 +20,8 @@
           <view class="hp-bar">
             <view class="hp-fill" :style="{ width: hpPct + '%' }" />
           </view>
+          <!-- 第六批 R5：HUD 常驻当前关卡名，切波/结算前都知道自己在打哪一关 -->
+          <text v-if="levelTitle" class="hp-level">{{ levelTitle }}</text>
         </view>
         <view class="hud-spacer" />
         <view class="hud-pill"><text class="wave-text">波次 {{ waveText }}</text></view>
@@ -37,7 +39,13 @@
           图例遮罩逐项解释 HUD 元素、热量档位、技能槽读法与全部反应链。
           打开图例不改变战斗状态 —— 想边看边停可以自己点暂停。
         -->
-        <view class="help-chip" :class="{ on: helpVisible }" aria-label="战场图例" @click="helpVisible = !helpVisible">
+        <!-- 第六批 R70：首次进战斗给图例按钮一个呼吸提示，读过一次后记住，不再打扰 -->
+        <view
+          class="help-chip"
+          :class="{ on: helpVisible, 'help-first': !helpSeen }"
+          aria-label="战场图例"
+          @click="openHelp"
+        >
           <text>?</text>
         </view>
         <!--
@@ -138,6 +146,18 @@
               <text class="legend-rxn-descr">{{ REACTIONS[k].descr }}</text>
             </view>
           </view>
+          <!-- 第六批 R4：敌人视觉语言说明 —— R3 给每种敌人加了独立配色/徽记/形状，
+               若图例不讲，玩家只看到「花花绿绿」而不懂这意味着什么。 -->
+          <view class="legend-sec">
+            <text class="legend-sec-title">敌人外观（怎么分辨敌种）</text>
+            <text class="legend-p">每种敌人有独立的<b>本体色 + 五官徽记</b>，形状标记它的行动方式：</text>
+            <view class="legend-rows">
+              <view class="legend-row"><view class="dot" style="background: #6f9e5c" /><text>绿=游荡者、黄=疾行者、灰=石肤兽…同屏扫一眼就能分种</text></view>
+              <view class="legend-row"><view class="dot" style="background: #4aa3b8" /><text>圆=普通，三角=飞行，菱形=远程，六边形=特殊，八边形=精英/BOSS</text></view>
+              <view class="legend-row"><view class="dot" style="background: #f0f6fc" /><text>白点五官=双眼/护目镜/核心环等徽记；身上的小方块=元素层数</text></view>
+              <view class="legend-row"><view class="dot dot-ring" style="border-color: #58a6ff" /><text>蓝环=护盾；受伤才出红色血条；BOSS 带橙色警示描边</text></view>
+            </view>
+          </view>
           <!-- 顶部与控制 -->
           <view class="legend-sec">
             <text class="legend-sec-title">顶部信息与控制</text>
@@ -160,7 +180,8 @@
         <text class="card-title">这一波给你 3 张卡，点一张就装备上</text>
         <text class="card-hint">
           <text>不想？点卡上的「弃」丢掉，还能回 1 点热量（热量攒满就会过热卡 2 秒）。</text>
-          <text> 本波还能弃 {{ deck.discardsLeft }} 张。</text>
+          <!-- 第六批 R69：牌堆剩余此前完全不展示，玩家不知道这波卡是从多少张里抽的 -->
+          <text> 本波还能弃 {{ deck.discardsLeft }} 张，牌堆剩 {{ deck.size }} 张。</text>
         </text>
       </view>
       <view class="cards">
@@ -392,6 +413,12 @@ const waveText = computed(() => {
   const total = engine.value.cfg.level.wave_count
   return `${engine.value.waveIndex + 1} / ${total}`
 })
+/** 第六批 R5：当前关卡名（引擎公开字段，只读）。 */
+const levelTitle = computed(() => {
+  if (!engine.value) return ''
+  const lv = engine.value.cfg.level
+  return `第 ${lv.id} 关 · ${lv.name}`
+})
 const showCards = computed(() => engine.value?.phase === 'card_select' && !settleResult.value)
 const deck = computed(() => engine.value?.deck ?? { discardsLeft: 0, size: 0 } as any)
 
@@ -405,6 +432,16 @@ function kindLabel(k: string): string {
 
 // ── 战场图例（2026-11-17，见模板内说明）────────────────────────────
 const helpVisible = ref(false)
+/** 第六批 R70：是否读过图例（本机记忆）。 */
+const helpSeen = ref(uni.getStorageSync('battle_help_seen') === '1')
+
+function openHelp() {
+  helpVisible.value = !helpVisible.value
+  if (helpVisible.value && !helpSeen.value) {
+    helpSeen.value = true
+    uni.setStorageSync('battle_help_seen', '1')
+  }
+}
 
 /** 手牌稀有度中文名。 */
 function rarityLabel(r: string): string {
@@ -1088,6 +1125,13 @@ onShareAppMessage(() =>
   color: #58a6ff;
 }
 
+/* 第六批 R70 首次未读图例的呼吸提示 */
+.help-chip.help-first {
+  border-color: var(--fire);
+  color: var(--fire);
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
 /* 图例遮罩：结构同暂停遮罩，内容可滚动 */
 .legend-overlay {
   position: absolute;
@@ -1444,6 +1488,18 @@ onShareAppMessage(() =>
 .hp-fill {
   height: 100%;
   background: var(--ok);
+}
+
+/* 第六批 R5 当前关卡名 */
+.hp-level {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 20rpx;
+  color: var(--muted);
+  max-width: 320rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .wave-text,

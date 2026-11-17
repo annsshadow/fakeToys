@@ -802,6 +802,12 @@ page,
   color: var(--text);
 }
 
+/* R37 无 icon 资源（如钥匙）用文字符号，尺寸对齐 Icon 26 */
+.res-glyph {
+  font-size: 26rpx;
+  line-height: 1;
+}
+
 /* R42 资源变动高亮 */
 .res-pill.res-bump {
   animation: res-bump 0.6s ease-out;
@@ -982,4 +988,168 @@ html {
 .grid-group,
 .card {
   scroll-margin-top: 120rpx;
+}
+
+/* ============ 第六批 v2 R73–R95 交互反馈与层次 ============ */
+/* R73 英雄卡内发光：主行动区从背景里浮出来 */
+.card-hero {
+  box-shadow: var(--shadow-2), inset 0 0 40rpx rgba(255, 107, 53, 0.06);
+}
+/* R74 公告行 hover：可展开行给出可点暗示 */
+.ann-item { transition: background 0.15s, transform 0.15s; }
+.ann-item:hover { background: var(--panel-2); }
+/* R75 任务行 hover：领取行与说明行区分 */
+.task { transition: background 0.15s; }
+.task:hover { background: rgba(255, 255, 255, 0.03); }
+/* R76 技能行 hover：长列表扫读定位 */
+.skill-row { transition: background 0.15s; }
+.skill-row:hover { background: var(--panel-2); }
+/* R77 专精节点 hover 微抬：可点节点手感 */
+.node { transition: transform 0.14s, box-shadow 0.14s; }
+.node.selectable:hover { transform: translateY(-2rpx); box-shadow: var(--shadow-2); }
+/* R78 榜单行 hover */
+.rank-row:hover { background: var(--panel-2); }
+/* R79 挑战历史行 hover */
+.ch-row:hover { background: rgba(255, 255, 255, 0.03); }
+/* R80 资源胶囊 hover 微亮 */
+.res-pill:hover { border-color: var(--border); }
+/* R81 图鉴行 hover */
+.rxn:hover { background: rgba(255, 255, 255, 0.02); }
+/* R82 手牌 hover 微抬：明确「这张可以拿」 */
+.hand-card { transition: transform 0.15s, box-shadow 0.15s; }
+.hand-card:hover { transform: translateY(-6rpx); box-shadow: var(--shadow-2); }
+/* R83 倍速 chip hover */
+.speed-chip:hover { border-color: var(--fire); }
+/* R84 章节 chip hover */
+.chapter-chip:hover { border-color: var(--fire); }
+/* R85 关卡格 hover 微抬（未锁定） */
+.level-cell:not(.locked):hover { transform: translateY(-2rpx); box-shadow: var(--shadow-2); }
+/* R86 开始按钮呼吸光 */
+.start-btn { box-shadow: 0 0 16rpx rgba(255, 107, 53, 0.25); }
+/* R87 chip.tap 按压反馈统一 */
+.chip.tap:active { transform: scale(0.94); }
+/* R88 小按钮按压反馈 */
+.btn-mini:active { transform: translateY(2rpx); }
+/* R89 输入框 hover 边框 */
+.inp:hover, .search-inp:hover { border-color: var(--border); }
+/* R90 搜索空态留白 */
+.search-empty { padding: 24rpx 0; }
+/* R91 空态块渐变底 */
+.empty-block { background: linear-gradient(180deg, var(--panel), transparent); }
+/* R92 图例行 hover */
+.legend-row:hover { background: rgba(255, 255, 255, 0.04); }
+/* R93 图例按钮首次未读脉冲 */
+.help-chip.help-first { box-shadow: 0 0 12rpx rgba(255, 107, 53, 0.35); }
+/* R94 我的排名卡描边 */
+.my-rank { border-color: rgba(255, 107, 53, 0.35); }
+/* R95 减少动效时关闭本批新增位移 */
+@media (prefers-reduced-motion: reduce) {
+  .ann-item, .node.selectable:hover, .hand-card:hover,
+  .level-cell:not(.locked):hover, .chip.tap:active, .btn-mini:active {
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ============ 第六批 v2 R8–R27：全局可用性再打磨 ============ */
+
+/* R8 主按钮按压位移：触屏「按下去」有真实反馈（非单纯变色） */
+.btn-primary:active {
+  transform: translateY(2rpx);
+}
+
+/* R9 禁用按钮明确不可点：光标语义化，避免「看起来能点却没反应」 */
+.btn-disabled {
+  cursor: not-allowed;
+}
+
+/* R10 卡片标题轻微字距：长标题扫读更清晰 */
+.card-title {
+  letter-spacing: 0.5rpx;
+}
+
+/* R11/R12 次级文字行高：多行说明不再挤成一团 */
+.muted { line-height: 1.5; }
+.dim { line-height: 1.5; }
+
+/* R13 图鉴描述行高放宽，长描述可读 */
+.rxn-descr { line-height: 1.7; }
+
+/* R14 统计小块加浅描边，深底上更立体 */
+.stat {
+  border: 1rpx solid var(--border-soft);
+}
+
+/* R15 chip 加浅描边，与 tag/btn 视觉语言统一 */
+.chip {
+  border: 1rpx solid var(--border-soft);
+}
+
+/* R16 文字链接下划线偏移，避免贴住文字底部 */
+.link {
+  text-underline-offset: 4rpx;
+}
+
+/* R17 空态块留白：图标与主文案不再贴边 */
+.empty-block {
+  padding: 40rpx 20rpx;
+}
+
+/* R18 数值统一等宽数字，跳动时不抖动 */
+.res-v {
+  font-variant-numeric: tabular-nums;
+}
+
+/* R19 键值行分隔线：长信息列表可逐行扫读 */
+.kv {
+  border-bottom: 1rpx solid var(--border-soft);
+  padding: 8rpx 0;
+}
+.kv:last-child {
+  border-bottom: none;
+}
+
+/* R20 输入控件状态过渡：聚焦/失焦不再硬切 */
+.inp,
+.search-inp {
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+/* R21 结果计数字距，与小标签区分 */
+.result-count {
+  letter-spacing: 0.5rpx;
+}
+
+/* R22 清除搜索按钮按压反馈 */
+.clear-search:active {
+  opacity: 0.6;
+}
+
+/* R23 筛选 chip 描边：未激活态也有边界，不会融进背景 */
+.filter-chip {
+  border: 1rpx solid var(--border-soft);
+}
+
+/* R24 页签透明描边占位：激活前后尺寸一致，切换不跳动 */
+.tab {
+  border: 1rpx solid transparent;
+}
+
+/* R25 小按钮最小点击区，防触屏误点 */
+.btn-mini {
+  min-height: 56rpx;
+}
+
+/* R26 省略号文字限制最大宽度，长昵称/描述不再撑破卡片 */
+.ellipsis {
+  max-width: 100%;
+}
+
+/* R27 减少动效时关闭新增的按压位移（无障碍补全） */
+@media (prefers-reduced-motion: reduce) {
+  .btn-primary:active,
+  .clear-search:active {
+    transform: none;
+    opacity: 1;
+  }
 }
