@@ -482,7 +482,17 @@ const weaknesses = computed<string[]>(() => store.buildRating?.weaknesses ?? [])
 /** G141 构筑评分等级：把总分换成 S/A/B/C 评级 + 进度，给玩家一个可追求的目标。 */
 const ratingGrade = computed(() => {
   const total = Number(store.buildRating?.total ?? 0)
-  const max = 5 + 7 + 8 + 18 + 8 // 五维上界之和（与 dims 口径一致）
+  const w = store.config?.rating_weights
+  const wOf = (k: keyof NonNullable<typeof w>): number => Number(w?.[k] ?? 0)
+  // total 是服务端按权重加权求和（domain/power.go ComputeBuildRating:350-354），
+  // 分母必须同为「各维上界 × 权重」之和。此前用未加权上界之和 5+7+8+18+8=46，
+  // 既非加权满分（默认权重下为 525）也非任何比例，评级阈值 80/60/40/20 全部失真。
+  const max =
+    5 * wOf('element_coverage') +
+    7 * wOf('reaction_coverage') +
+    8 * wOf('mastery_done') +
+    18 * wOf('equipment_synergy') +
+    8 * wOf('mechanic_depth')
   const pct = max > 0 ? Math.min(100, Math.round(total / max * 100)) : 0
   const grade = pct >= 80 ? 'S' : pct >= 60 ? 'A' : pct >= 40 ? 'B' : pct >= 20 ? 'C' : 'D'
   return { grade, pct, total, max }

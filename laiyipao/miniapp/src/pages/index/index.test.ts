@@ -189,6 +189,44 @@ describe('index.vue 首页', () => {
     expect(fills[3]!.attributes('style')).toContain('width: 100%')
   })
 
+  it('构筑评级（G141）用加权满分做分母，未加权上界之和 46 会让评级恒为 S', async () => {
+    // 服务端 total = Σ(维度×权重)（power.go ComputeBuildRating:350-354），
+    // 默认权重 12/15/10/12/8 → 加权满分 5*12+7*15+8*10+18*12+8*8 = 525。
+    // index.vue 此前用未加权上界之和 5+7+8+18+8=46 做分母：
+    // 250/525≈48% 应为 B，250/46≈543%→夹到 100% 变成 S —— 评级完全失真。
+    mockApi.fetchConfigIfVersion.mockResolvedValue({
+      status: 'modified',
+      config: makeConfig({
+        rating_weights: {
+          element_coverage: 12,
+          reaction_coverage: 15,
+          mastery_done: 10,
+          equipment_synergy: 12,
+          mechanic_depth: 8,
+        },
+      }),
+      serverTimeMs: 0,
+    })
+    mockApi.fetchMe.mockResolvedValue({
+      user_id: 7,
+      build: null,
+      build_rating: {
+        total: 250,
+        element_coverage: 5,
+        reaction_coverage: 7,
+        mastery_done: 8,
+        equipment_synergy: 6,
+        mechanic_depth: 4,
+        weaknesses: [],
+      },
+      power: 9,
+    } as any)
+    mountPage()
+    await flushPromises()
+    // 用户可见行为：徽章须是 B，而不是被爆表分母夹成 S。
+    expect(wrapper.find('.rating-grade').text()).toBe('B')
+  })
+
   it('点击功能入口 → uni.navigateTo 携带对应路径', async () => {
     mountPage()
     await flushPromises()
