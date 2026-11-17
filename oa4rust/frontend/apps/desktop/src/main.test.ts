@@ -50,7 +50,7 @@ describe('main.ts executable verification', () => {
   describe('Core initialization functions', () => {
     test('Source contains router creation', () => {
       expect(mainSource).toContain('createRouter({')
-      expect(mainSource).toContain('history: createWebHistory()')
+      expect(mainSource).toContain("history: createWebHistory('/oa4rust/')")
     })
 
     test('Source contains route definitions', () => {
@@ -117,7 +117,7 @@ describe('main.ts executable verification', () => {
 
   describe('Theme provider setup', () => {
     test('Imports theme provider', () => {
-      expect(mainSource).toContain('createThemeProvider, useSession')
+      expect(mainSource).toContain('createThemeProvider, setWebSocketBase, useSession')
     })
 
     test('Creates and initializes theme provider', () => {
@@ -205,7 +205,7 @@ describe('main.ts executable verification', () => {
     })
 
     test('Imports OA4Rust SDK', () => {
-      expect(mainSource).toContain("import { createThemeProvider, useSession } from '@oa4rust/sdk'")
+      expect(mainSource).toContain("import { api, createThemeProvider, setWebSocketBase, useSession } from '@oa4rust/sdk'")
     })
 
     test('Imports UI components', () => {

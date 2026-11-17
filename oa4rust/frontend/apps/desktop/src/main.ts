@@ -1,7 +1,7 @@
 // Copyright (C) 2026 annsshadow
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { createThemeProvider, useSession } from '@oa4rust/sdk'
+import { api, createThemeProvider, setWebSocketBase, useSession } from '@oa4rust/sdk'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import { NConfigProvider } from 'naive-ui'
 import { createPinia } from 'pinia'
@@ -14,8 +14,13 @@ import AppShell from '@oa4rust/ui/components/AppShell.vue'
 import LoginScreen from '@oa4rust/ui/components/LoginScreen.vue'
 import OAuthCallback from '@oa4rust/ui/views/OAuthCallback.vue'
 
+// 测试服子路径部署：API / WS 走独立前缀，由 nginx 反代到后端服务。
+// 前端代码里的 API 与 WS 路径字面量保持不变，只在入口统一注入前缀。
+api.setBase('/oa4rust-api')
+setWebSocketBase('/oa4rust-ws')
+
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory('/oa4rust/'),
   routes: [
     { path: '/login', name: 'Login', component: LoginScreen, meta: { requiresAuth: false } },
     {

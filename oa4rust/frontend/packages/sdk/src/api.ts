@@ -120,6 +120,11 @@ export class ApiClient {
     this.base = base
   }
 
+  /** 子路径部署时设置 API 前缀（如 '/oa4rust-api'），其后所有请求自动带上该前缀。 */
+  setBase(base: string): void {
+    this.base = base
+  }
+
   setAuthenticationFailureHandler(handler: (() => void) | null): void {
     this.authenticationFailureHandler = handler
   }
@@ -137,7 +142,7 @@ export class ApiClient {
   }
 
   private isRefreshRequest(path: string): boolean {
-    return this.resolveUrl(path).pathname === '/api/authentication/refresh'
+    return path === '/api/authentication/refresh'
   }
 
   async refreshSession(): Promise<void> {

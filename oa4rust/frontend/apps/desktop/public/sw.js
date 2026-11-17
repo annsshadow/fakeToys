@@ -1,7 +1,8 @@
 // Copyright (C) 2026 annsshadow
 // SPDX-License-Identifier: AGPL-3.0-or-later
 const CACHE_NAME = 'oa4rust-v1'
-const ASSETS = ['/', '/index.html', '/favicon.svg', '/manifest.json']
+// 相对 SW 自身作用域解析（子路径部署 /oa4rust/ 下不能写绝对根路径）。
+const ASSETS = ['./', './index.html', './favicon.svg', './manifest.json']
 
 // Install: cache core assets
 self.addEventListener('install', (event) => {

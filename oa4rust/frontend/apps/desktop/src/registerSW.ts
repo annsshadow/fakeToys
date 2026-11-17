@@ -8,7 +8,9 @@
 export async function registerSW(): Promise<void> {
   if ('serviceWorker' in navigator && import.meta.env.PROD) {
     try {
-      const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      const registration = await navigator.serviceWorker.register('/oa4rust/sw.js', {
+        scope: '/oa4rust/',
+      })
       console.log('[PWA] ServiceWorker registered:', registration.scope)
 
       // 监听更新

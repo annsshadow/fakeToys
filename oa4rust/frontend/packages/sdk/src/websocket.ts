@@ -6,6 +6,14 @@
  * 替代 o2web 的 layout.desktop.socket
  */
 
+/** 子路径部署时的 WebSocket 前缀（如 '/oa4rust-ws'）；默认空串保持根路径兼容。 */
+let wsBasePath = ''
+
+/** 设置 WebSocket URL 前缀，须在首次 connect() 前调用。 */
+export function setWebSocketBase(base: string): void {
+  wsBasePath = base.replace(/\/+$/, '')
+}
+
 type MessageHandler = (data: unknown) => void
 type EventMap = {
   im_create: MessageHandler
@@ -65,7 +73,7 @@ export class O2WebSocketClient {
       this.intentionalClose = false
 
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-      const wsUrl = `${protocol}//${window.location.host}${this.url}`
+      const wsUrl = `${protocol}//${window.location.host}${wsBasePath}${this.url}`
 
       this.ws = new WebSocket(wsUrl)
 

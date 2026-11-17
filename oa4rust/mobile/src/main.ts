@@ -20,8 +20,9 @@ export function createApp() {
     })
   }
   app.use(createPinia())
-  // 原生 App / 小程序目标：后端为跨域绝对地址；H5 目标经 dev-server 同源代理，无需设置。
-  const base = import.meta.env.VITE_OA_API_BASE
+  // 原生 App / 小程序目标：后端为跨域绝对地址（由 VITE_OA_API_BASE 注入）。
+  // H5 目标：测试服挂在 testmall 子路径下，API 走 /oa4rust-api 前缀（nginx 反代去掉前缀到后端）。
+  const base = import.meta.env.VITE_OA_API_BASE || '/oa4rust-api'
   if (base) setApiBase(base)
   return { app }
 }
