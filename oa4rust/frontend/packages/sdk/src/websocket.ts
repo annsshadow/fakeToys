@@ -157,7 +157,10 @@ export class O2WebSocketClient {
     this.intentionalClose = true
     this.reconnectAttempts = 0
     this.stopHeartbeat()
-    if (this.reconnectTimer) clearTimeout(this.reconnectTimer)
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer)
+      this.reconnectTimer = null
+    }
     this.ws?.close()
     this.ws = null
     this._connected = false
