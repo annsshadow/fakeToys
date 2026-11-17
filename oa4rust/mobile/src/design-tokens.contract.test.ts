@@ -13,6 +13,8 @@ const bbs = src('pages/bbs/bbs.vue')
 const login = src('pages/login/login.vue')
 const mine = src('pages/mine/mine.vue')
 const start = src('pages/process/start.vue')
+const process = src('pages/process/process.vue')
+const contacts = src('pages/contacts/contacts.vue')
 
 /** 从页面 <style scoped> 中按选择器+属性取值，确保断言绑定在实际渲染规则上。 */
 function styleValue(page: string, selector: string, property: string): string {
@@ -35,6 +37,9 @@ const tokens: Record<string, string> = {
   '--color-border': '#e3e6eb',
   '--color-divider': '#f0f2f5',
   '--color-primary-soft': '#f0f7ff',
+  '--color-error-tint': '#fdf2f0',
+  '--color-text-body': '#5b6572',
+  '--color-placeholder': '#c0c4cc',
 }
 
 describe('移动端设计 token 语义落地契约', () => {
@@ -139,6 +144,31 @@ describe('移动端设计 token 语义落地契约', () => {
     expect(styleValue(start, '.attach-btn', 'border')).toBe('1px dashed var(--color-primary)')
     expect(styleValue(start, '.submit', 'background')).toBe('var(--color-primary)')
     expect(start).not.toMatch(/#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/)
+  })
+
+  it('process/process 页面：28 处硬编码色全部归一到语义 token', () => {
+    expect(styleValue(process, '.page', 'background')).toBe('var(--color-bg-page)')
+    expect(styleValue(process, '.tabs', 'background')).toBe('var(--color-surface)')
+    expect(styleValue(process, '.tab.on', 'color')).toBe('var(--color-primary)')
+    expect(styleValue(process, '.tab.on', 'border-bottom')).toBe('4rpx solid var(--color-primary)')
+    expect(styleValue(process, '.tip-error', 'color')).toBe('var(--color-error)')
+    expect(styleValue(process, '.error-banner', 'background')).toBe('var(--color-error-tint)')
+    expect(styleValue(process, '.item', 'border-bottom')).toBe('1px solid var(--color-divider)')
+    expect(styleValue(process, '.fab', 'background')).toBe('var(--color-primary)')
+    expect(process).not.toMatch(/#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/)
+  })
+
+  it('contacts 页面：27 处硬编码色全部归一到语义 token', () => {
+    expect(styleValue(contacts, '.page', 'background')).toBe('var(--color-bg-page)')
+    expect(styleValue(contacts, '.search', 'background')).toBe('var(--color-surface)')
+    expect(styleValue(contacts, '.input', 'border')).toBe('1px solid var(--color-border)')
+    expect(styleValue(contacts, '.error-banner', 'background')).toBe('var(--color-error-tint)')
+    expect(styleValue(contacts, '.item', 'border-bottom')).toBe('1px solid var(--color-divider)')
+    expect(styleValue(contacts, '.avatar', 'background')).toBe('var(--color-primary)')
+    expect(styleValue(contacts, '.mode', 'color')).toBe('var(--color-text-body)')
+    expect(styleValue(contacts, '.mode.on', 'background')).toBe('var(--color-primary)')
+    expect(styleValue(contacts, '.detail-empty', 'color')).toBe('var(--color-placeholder)')
+    expect(contacts).not.toMatch(/#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})\b/)
   })
 
   it('两页面 style 仍为 scoped 纯 CSS，未偷偷引入 sass/lang', () => {

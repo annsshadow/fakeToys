@@ -293,30 +293,30 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #f5f7fa;
+  background: var(--color-bg-page);
 }
 .search {
   display: flex;
   gap: 16rpx;
   padding: 24rpx;
-  background: #fff;
+  background: var(--color-surface);
 }
 .input {
   flex: 1;
-  border: 1px solid #e3e6eb;
+  border: 1px solid var(--color-border);
   border-radius: 32rpx;
   padding: 14rpx 24rpx;
   font-size: 28rpx;
-  background: #f5f7fa;
+  background: var(--color-bg-page);
 }
 .tip {
   padding: 120rpx 0;
   text-align: center;
-  color: #90979f;
+  color: var(--color-text-secondary);
   font-size: 28rpx;
 }
 .tip-error {
-  color: #c0392b;
+  color: var(--color-error);
 }
 .error-text {
   display: block;
@@ -327,32 +327,32 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
   display: inline-block;
   padding: 8rpx 28rpx;
   border-radius: 24rpx;
-  border: 1rpx solid #c0392b;
-  color: #c0392b;
+  border: 1rpx solid var(--color-error);
+  color: var(--color-error);
   font-size: 26rpx;
 }
 .error-banner {
   padding: 24rpx 32rpx;
   text-align: center;
-  background: #fdf2f0;
-  border-bottom: 1px solid #f0f2f5;
+  background: var(--color-error-tint);
+  border-bottom: 1px solid var(--color-divider);
 }
 .list {
-  background: #fff;
+  background: var(--color-surface);
 }
 .item {
   display: flex;
   align-items: center;
   gap: 20rpx;
   padding: 28rpx 32rpx;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid var(--color-divider);
 }
 .avatar {
   width: 72rpx;
   height: 72rpx;
   border-radius: 50%;
-  background: #2d8cf0;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-surface);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -364,13 +364,13 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
 }
 .title {
   font-size: 30rpx;
-  color: #263238;
+  color: var(--color-text-primary);
   font-weight: 600;
 }
 .meta {
   margin-top: 6rpx;
   font-size: 24rpx;
-  color: #90979f;
+  color: var(--color-text-secondary);
 }
 .chat-btn {
   flex-shrink: 0;
@@ -386,17 +386,17 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
   text-align: center;
   padding: 14rpx 0;
   font-size: 28rpx;
-  color: #5b6572;
-  background: #fff;
+  color: var(--color-text-body);
+  background: var(--color-surface);
   border-radius: 12rpx;
 }
 .mode.on {
-  background: #2d8cf0;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-surface);
   font-weight: 600;
 }
 .detail {
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 16rpx;
   padding: 24rpx;
   margin-top: 20rpx;
@@ -409,16 +409,16 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
 .detail-title {
   font-size: 30rpx;
   font-weight: 700;
-  color: #263238;
+  color: var(--color-text-primary);
 }
 .detail-close {
   font-size: 26rpx;
-  color: #2d8cf0;
+  color: var(--color-primary);
 }
 .detail-sub {
   margin-top: 8rpx;
   font-size: 24rpx;
-  color: #90979f;
+  color: var(--color-text-secondary);
 }
 .detail-sec {
   margin-top: 20rpx;
@@ -426,16 +426,16 @@ async function startChat(row: Record<string, unknown>): Promise<void> {
 .detail-label {
   font-size: 26rpx;
   font-weight: 600;
-  color: #263238;
+  color: var(--color-text-primary);
 }
 .detail-item {
   font-size: 26rpx;
-  color: #5b6572;
+  color: var(--color-text-body);
   padding: 8rpx 0;
 }
 .detail-empty {
   font-size: 26rpx;
-  color: #c0c4cc;
+  color: var(--color-placeholder);
   padding: 8rpx 0;
 }
 </style>
