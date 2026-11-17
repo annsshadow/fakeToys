@@ -938,3 +938,48 @@ uni-page-body {
 .tag {
   border: 1rpx solid rgba(255, 255, 255, 0.08);
 }
+
+/* ============ Z 批 R96–R100：最终收尾 ============ */
+
+/* R96 减少动效补全：覆盖所有装饰动画（含伪元素） */
+@media (prefers-reduced-motion: reduce) {
+  .page-root,
+  .pop-in,
+  .claim-pop,
+  .stagger-in > *,
+  .medal,
+  .result-badge,
+  .chapter-star-fill,
+  .btn-primary::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* R97 键盘焦点可见（无障碍） */
+:focus-visible {
+  outline: 3rpx solid var(--fire);
+  outline-offset: 2rpx;
+}
+
+/* R98 桌面宽屏卡片悬停微抬 */
+@media (min-width: 561px) {
+  .card {
+    transition: transform 0.16s, box-shadow 0.16s;
+  }
+  .card:hover {
+    transform: translateY(-2rpx);
+    box-shadow: var(--shadow-2);
+  }
+}
+
+/* R99 锚点平滑滚动 */
+html {
+  scroll-behavior: smooth;
+}
+
+/* R100 锚点滚动避让顶部（防止被吸顶页签盖住） */
+.grid-group,
+.card {
+  scroll-margin-top: 120rpx;
+}

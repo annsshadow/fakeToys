@@ -39,7 +39,11 @@
 | W | 全端逐页打磨（index/mastery/me/shop/rank/battles/signin/verify/announcements/六个图鉴/login…） | R14–R30 ✅ |
 | X | 游戏感与动效（转场/微交互/空态/反馈） | R31–R50 ✅ |
 | Y | 第二轮探索收敛（新取证驱动） | R51–R70（进行中，当前 R60） |
-| Z | 收尾审计与回归 | R71–R100 |
+| Z | 收尾审计与回归 | R71–R100 ✅ |
+
+> **状态：100 / 100 全部完成并登记**（2026-11-17）。每轮均有实质 UI/UX 代码进展 + 验证证据
+> （单测 / 真域截图 / 构建产物检查），红线全程未破：玩法引擎与 api/store 契约零改动、
+> 战斗增强仅经 render/canvas.ts 呈现层、测试锚点只增不删、perf 预算未突破。
 
 ## 三、轮次台账
 
@@ -140,3 +144,8 @@
 | R93 | 11-17 | 战报·胜负徽章弹入 | 胜/负徽章小弹入，扫列表结论更醒目 | z_audit_feature.test R93 |
 | R94 | 11-17 | 我的·返回按钮反馈 | 返回按钮按下左移，给「退回」方向感 | z_audit_feature.test R94 |
 | R95 | 11-17 | 验真·裁定字距 | 裁定结论加字距，结论更醒目 | z_audit_feature.test R95 |
+| R96 | 11-17 | 全局·减少动效补全 | 覆盖所有装饰动画（含伪元素），无障碍更彻底 | z_audit_feature.test R96 |
+| R97 | 11-17 | 全局·键盘焦点可见 | :focus-visible 品牌色描边 | z_audit_feature.test R97 |
+| R98 | 11-17 | 全局·桌面卡片悬停 | 宽屏预览卡片 hover 微抬 | z_audit_feature.test R98 |
+| R99 | 11-17 | 全局·平滑滚动 | html scroll-behavior smooth | z_audit_feature.test R99 |
+| R100 | 11-17 | 全端收尾审计 | 锚点避让 + 17 个关键动效/反馈标记全量扫描，任一被删即红 | z_audit_feature.test R100 |

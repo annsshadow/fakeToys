@@ -74,6 +74,40 @@ describe('Z 批收尾审计守卫', () => {
     expect(readPages('me')).toContain('.back-btn:active')
     expect(readPages('verify')).toContain('R95 裁定文字加字距')
   })
+
+  it('R96 减少动效补全', () => {
+    const css = CSS()
+    expect(css).toContain('R96 减少动效补全')
+    expect(css).toContain('.btn-primary::after')
+  })
+
+  it('R97 键盘焦点可见', () => {
+    expect(CSS()).toContain(':focus-visible')
+  })
+
+  it('R98 桌面卡片悬停', () => {
+    expect(CSS()).toContain('.card:hover')
+  })
+
+  it('R99 平滑滚动', () => {
+    expect(CSS()).toContain('scroll-behavior: smooth')
+  })
+
+  it('R100 锚点避让 + 全端审计关键标记齐全', () => {
+    const css = CSS()
+    expect(css).toContain('scroll-margin-top: 120rpx')
+    // 全端 100 轮的关键动效/反馈标记任何一处被删都会红
+    for (const marker of [
+      'skeleton-shimmer', 'pop-in', 'claim-pop', 'stagger-in', 'shake',
+      'ok-pulse', 'spin', 'page-in', 'chip-pop', 'stars-in', 'empty-float',
+      'btn-sheen', 'prefers-reduced-motion', ':focus-visible',
+    ]) {
+      expect(css, marker).toContain(marker)
+    }
+    // 页面级动效标记（不在 common.css 中）
+    expect(readPages('rank')).toContain('medal-float')
+    expect(readPages('battles')).toContain('badge-pop')
+  })
 })
 
 function readPages(name: string): string {
