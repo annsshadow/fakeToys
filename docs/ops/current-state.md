@@ -541,5 +541,36 @@ B3（auth_person 8 处 id≠uid）在 2026-11-02 路线图 R152 明确「未复�
 ### 18.4 交付与边界
 
 - 本轮两提交 6fb796002、130add509 及本现量文档 §18 一并 SSH 推送；推送后 git fetch origin + git update-ref 同步追踪引用。
+
+## 十九、第10轮：R160 confirmMsg无障碍 + laiyipao离线收益时钟回拨修复（2026-11-18，分支 feat/h5-battle-substantive-100）
+
+本轮两路并行子代理（oaopt-r160 / lybug-r10）。oaopt-r160 正常完成；lybug-r10 修复正确但卡在 DB 集成测试超时，主线程中断后收口（用纯函数测试锚定 bug，删去依赖 DB 的第二测试），两修复经独立 RED→GREEN 验证后提交。
+
+### 19.1 oa4rust R160 confirmMsg 无障碍与 toast 实时播报（提交 33e6c2ef5）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | confirmMsg（toast.ts:145-276）是全站自定义确认弹窗，71 处调用散布 50+ 视图（security.test.ts:48-49 钉死复用）。原有 ESC/遮罩/去重/textContent 防 XSS 已完善，但：box 无 dialog 语义（读屏器不识别模态框）、打开后焦点不进入且 Tab 泄漏到背景、关闭不还原触发元素焦点、toast 容器无 live region（读屏器播报不到操作结果，错误提示尤甚） | 改一处覆盖全站 71 调用点 |
+| 修复 | toast.ts 9 处最小改动：容器 role=status/aria-live=polite；toast 节点 error→alert/assertive 其余 status/polite；opener 捕获；box role=dialog/aria-modal/aria-labelledby/aria-describedby + 标题/消息 id；关闭还原焦点；打开聚焦取消按钮；Tab/Shift+Tab 两按钮循环 + ESC 关闭 | 最小修复：弹窗内无其他可聚焦控件，Tab 陷阱在两按钮间循环即可；若后续加表单控件需扩展 |
+| 门禁 | toast.test.ts DOM stub 扩展 + 6 个行为断言（dialog 语义/焦点进入还原/Tab 陷阱/live region 分级）；RED 5 failed→GREEN 23 passed | 主代理独立复跑 toast.test.ts 23 passed（root=frontend）；全量 pnpm test 1275 passed、typecheck 6 包、lint 338 文件 0 error |
+
+### 19.2 laiyipao 离线收益时钟回拨负金币（提交 e09b2e238）
+
+| 面 | 落地 | 验证 |
+| --- | --- | --- |
+| 缺口 | offlineRewardFor（economy.go:678）直接 elapsed=now.Sub(lastClaimAt)；PG now() 与 Go 进程时钟不同源（容器/NTP 偏差）致 last_claim_at 落未来时 elapsed<0，coin=int64(负数) 得负金币，前端 signin.vue 直接展示「-XXX 金币」/ElapsedHours 负值 | 子代理先写 DB 契约测试卡在 baseline 的 signin_status DB 超时；主线程改纯函数测试锚定 |
+| 修复 | elapsed<0 时钳为 0（一行守卫 + 注释） | 不吞掉已有挂机时间，只是无负收益 |
+| 门禁 | 新增纯函数测试 offline_reward_clock_skew_test.go（零值 Service + Cfg CAS 注入，不依赖 DB）；RED 实测 coin=-1800/elapsed=-3h→GREEN | 主代理独立跑 go test ./internal/service -run TestOfflineRewardForFutureLastClaimHasNoNegativeCoin GREEN 2.0s；临时删修复行复现 RED 后恢复。DB 集成版测试因 baseline 超时删去；go test 全量含既有 2 FAIL（Temp/ 真值备份 + signin_status DB 超时），与本轮无关 |
+
+### 19.3 移动端色值语义不一致取证（主线程，未改代码）
+
+- 精确统计 19 页纯 CSS 硬编码色：主蓝 #2d8cf0(41) vs #2f6bff(3)、错误红 #c0392b(51)/#f56c6c(9)/#e74c3c(2) 三态、主文字灰阶 6 种（#263238 33、#90979f 38、#5b6572 12、#8a94a6 8、#1f2733 5、#5a6478 3）。同语义多色值证实「统一设计标准」缺口真实存在。
+- 全量 token 化需引 sass 预处理器 + 真机视觉验收（backlog C3），不可本会话闭环，继续记账待专门批次。
+
+### 19.4 交付与边界
+
+- 本轮两提交 33e6c2ef5、e09b2e238 及本现量文档 §19 一并 SSH 推送；推送后 git fetch origin + git update-ref 同步追踪引用。
+- 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
+- B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
 - 提交前 git diff --check EXIT=0、git diff 敏感字面量扫描无命中；工作树仅含本轮改动，无真值入库。
 - B3、A1/A2/A5 维持既有记账不擅动（理由同 §15.3/§16.3）。
