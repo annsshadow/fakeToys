@@ -75,11 +75,34 @@ function reactionFixtures() {
   ]
 }
 
-async function mountReactions(elements: 'fire_ice' | 'fire_only' = 'fire_ice') {
+function reactionFixturesWithAmplify() {
+  return [
+    ...reactionFixtures(),
+    {
+      key: 'superconduct',
+      name: '超导',
+      base_coef: 50,
+      attack_weight_pct: 250,
+      status_duration_ms: 4000,
+      aoe_radius: 0,
+      spread_stacks: 0,
+      dispel_shield: false,
+      amplify_pct: 600, // 服务端契约：600‰ = +60%
+      armor_shred_permille: 0,
+      knockback: 0,
+      descr: '受击伤害 +60%',
+    },
+  ]
+}
+
+async function mountReactions(
+  elements: 'fire_ice' | 'fire_only' = 'fire_ice',
+  reactions = reactionFixtures(),
+) {
   const pinia = createPinia()
   setActivePinia(pinia)
   const cfg = makeConfig({
-    reactions: reactionFixtures() as never,
+    reactions: reactions as never,
   })
   mockApi.fetchConfigIfVersion.mockResolvedValue({
     status: 'modified',
@@ -150,6 +173,19 @@ describe('reactions.vue 反应图鉴', () => {
     const wrapper = await mountReactions('fire_only')
     expect(wrapper.findAll('.rxn-hit').length).toBe(0)
     expect(wrapper.text()).toContain('凑不出任何反应链')
+    wrapper.unmount()
+  })
+
+  it('amplify_pct 是千分比：显示成百分比且强度排行按千分比计算', async () => {
+    const wrapper = await mountReactions('fire_ice', reactionFixturesWithAmplify())
+    const text = wrapper.text()
+    // 服务端 600‰ = 60%，应显示「增幅 60%」而不是「增幅 600%」
+    expect(text).toContain('增幅 60%')
+    expect(text).not.toContain('增幅 600%')
+    // 强度排行：超导 base_coef 50 × (1 + 600/1000) = 80，不是 350
+    const rows = wrapper.findAll('.sr-row')
+    const sc = rows.find((r) => r.find('.sr-name')?.text() === '超导')
+    expect(sc?.find('.sr-val').text()).toBe('80')
     wrapper.unmount()
   })
 })

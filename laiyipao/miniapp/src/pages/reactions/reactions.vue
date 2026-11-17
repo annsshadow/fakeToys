@@ -120,7 +120,7 @@
             <text v-if="r.aoe_radius > 0" class="stat">溅射半径 {{ r.aoe_radius }}</text>
             <text v-if="r.spread_stacks > 0" class="stat">层数传播 {{ r.spread_stacks }}</text>
             <text v-if="r.dispel_shield" class="stat">驱散护盾</text>
-            <text v-if="r.amplify_pct > 0" class="stat">增幅 {{ r.amplify_pct }}%</text>
+            <text v-if="r.amplify_pct > 0" class="stat">增幅 {{ r.amplify_pct / 10 }}%</text>
             <text v-if="r.armor_shred_permille > 0" class="stat">
               削甲 {{ r.armor_shred_permille }}‰
             </text>
@@ -201,7 +201,7 @@ const strengthRank = computed(() => {
   const arr = allReactions.value.map((r) => ({
     key: r.key,
     name: r.name,
-    score: Number(r.base_coef ?? 0) * (1 + Number(r.amplify_pct ?? 0) / 100),
+    score: Number(r.base_coef ?? 0) * (1 + Number(r.amplify_pct ?? 0) / 1000),
   })).sort((a, b) => b.score - a.score)
   const max = Math.max(1, ...arr.map((a) => a.score))
   return arr.map((a) => ({ ...a, pct: Math.round(a.score / max * 100), label: Math.round(a.score * 100) / 100 }))
