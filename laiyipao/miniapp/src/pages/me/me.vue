@@ -711,7 +711,8 @@ const orderSummary = computed(() => ({
 /** G114 被挑战损失排行：按每次被破防的 loot 总和取 Top5，看防线最常被谁攻破。 */
 const topLooters = computed(() =>
   defenseChallengeHistory.value
-    .filter((d) => !d.won)
+    // won=true = 挑战者获胜 = 防线被破，loot 才有偷取明细；只统计被破记录
+    .filter((d) => d.won)
     .map((d) => ({
       name: d.challenger_nickname || '匿名',
       total: Object.values(d.loot ?? {}).reduce((s, v) => s + v, 0),
@@ -726,7 +727,8 @@ const unifiedTimeline = computed(() => {
   const evs: Ev[] = []
   for (const b of battleHistory.value) evs.push({ at: b.created_at, kind: '战斗', text: `第 ${b.level_id} 关 · ${b.result === 'win' ? '胜' : '负'} ${b.score}分` })
   for (const c of challengeHistory.value) evs.push({ at: c.created_at, kind: '挑战', text: c.won ? '攻破成功' : '挑战失败' })
-  for (const d of defenseChallengeHistory.value) evs.push({ at: d.created_at, kind: '被挑战', text: d.won ? '防线守住' : '防线被破' })
+  // won=true = 挑战者获胜 = 防线被破（与模板 :350 h.won?'被攻破':'守住' 同口径）
+  for (const d of defenseChallengeHistory.value) evs.push({ at: d.created_at, kind: '被挑战', text: d.won ? '防线被破' : '防线守住' })
   for (const p of purchaseHistory.value) evs.push({ at: p.created_at, kind: '购买', text: p.item_name })
   for (const r of redemptionHistory.value) evs.push({ at: r.created_at, kind: '兑换', text: r.code })
   for (const o of orderHistory.value) evs.push({ at: o.created_at, kind: '订单', text: o.sku })
